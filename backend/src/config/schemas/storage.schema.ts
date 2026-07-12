@@ -17,6 +17,15 @@ export const StorageEnvSchema = z.object({
     .string()
     .describe('Location where new files should be stored to')
     .default('local'),
+  STORAGE_ENCRYPTION_KEYS: z
+    .string()
+    .describe(
+      'Comma-separated `keyId:base64Key` master keys for file encryption at ' +
+        'rest (32-byte keys, e.g. `openssl rand -base64 32`). The first key ' +
+        'encrypts new files; older keys remain valid for decryption. ' +
+        'Unset disables encryption.',
+    )
+    .optional(),
   MAX_FILE_SIZE: z.coerce
     .number()
     .positive()

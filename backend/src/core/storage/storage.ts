@@ -1,4 +1,4 @@
-import type fs from 'fs';
+import type { Readable } from 'stream';
 
 export interface StorageFile {
   id: string;
@@ -15,5 +15,5 @@ export interface Storage {
   removeFile: (fileName: string) => Promise<void>;
   moveToStorage: (filename: string) => Promise<void>;
   getFileNames: () => Promise<string[]>;
-  stream: (file: StorageFile) => fs.ReadStream;
+  stream: (file: StorageFile) => Readable;
 }

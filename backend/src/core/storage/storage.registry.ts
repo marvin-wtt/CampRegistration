@@ -1,13 +1,27 @@
 import type { Storage } from '#core/storage/storage';
 import { DiskStorage } from '#core/storage/disk.storage';
 import { StaticStorage } from '#core/storage/static.storage';
-import type { StorageConfig } from '#config/index';
+import { EncryptedStorage } from '#core/storage/encrypted.storage';
+import { parseStorageKeyring } from '#core/storage/encryption/keyring';
+import type { KeyringNode } from '@aws-crypto/client-node';
+import type { StorageConfig } from '#config';
+import logger from '#core/logger';
 
 export class StorageRegistry {
   private storageCache: Map<string, Storage>;
+  private readonly keyring: KeyringNode | null;
 
   constructor(private options: StorageConfig) {
     this.storageCache = new Map();
+    this.keyring = options.encryptionKeys
+      ? parseStorageKeyring(options.encryptionKeys)
+      : null;
+
+    if (this.keyring === null) {
+      logger.warn(
+        'STORAGE_ENCRYPTION_KEYS is not set — uploaded files are stored unencrypted',
+      );
+    }
   }
 
   getStorage(identifier?: string): Storage {
@@ -27,6 +41,18 @@ export class StorageRegistry {
   }
 
   private loadStorage(identifier: string): Storage {
+    const storage = this.createStorage(identifier);
+
+    // Static assets are public and served plaintext; every upload store
+    // (local today, s3 later) is encrypted at rest when a key is configured.
+    if (this.keyring === null || identifier === 'static') {
+      return storage;
+    }
+
+    return new EncryptedStorage(storage, this.keyring, this.options.tmpDir);
+  }
+
+  private createStorage(identifier: string): Storage {
     if (identifier === 'local') {
       return new DiskStorage(this.options.uploadDir);
     }
