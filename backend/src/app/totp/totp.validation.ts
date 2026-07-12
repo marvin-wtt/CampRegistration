@@ -15,8 +15,17 @@ const enable = z.object({
 const disable = z.object({
   body: z.object({
     password: z.string(),
-    otp: z.string().length(6),
+    // Either a 6-digit TOTP or a longer recovery code.
+    otp: z.string().min(6),
   }),
 });
 
-export default { setup, enable, disable };
+const generateRecoveryCodes = z.object({
+  body: z.object({
+    password: z.string(),
+    // Either a 6-digit TOTP or a longer recovery code.
+    otp: z.string().min(6),
+  }),
+});
+
+export default { setup, enable, disable, generateRecoveryCodes };

@@ -104,7 +104,7 @@ export class AuthController extends BaseController {
 
     const { userId } = this.tokenService.verifyTotpToken(token);
     const user = await this.userService.getUserByIdOrFail(userId);
-    this.totpService.verifyTOTP(user, otp);
+    await this.totpService.verifyTwoFactor(user, otp);
 
     await this.sendAuthResponse(req, res, userId, remember);
   }

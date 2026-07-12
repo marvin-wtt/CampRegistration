@@ -69,10 +69,17 @@ const destroy = z.object({
   }),
 });
 
+const resetTwoFactor = z.object({
+  params: z.object({
+    userId: z.ulid(),
+  }),
+});
+
 export default {
   show,
   index,
   store,
   update,
   destroy,
+  resetTwoFactor,
 };

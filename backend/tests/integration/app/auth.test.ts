@@ -708,6 +708,67 @@ describe('/api/v1/auth', async () => {
         })
         .expect(400);
     });
+
+    it('should accept a valid recovery code and consume it', async () => {
+      const user = await createUser();
+      const token = generateOTPToken(user);
+
+      // Stored hashes use the normalized (dash-stripped, upper-cased) form.
+      const recoveryCode = await prisma.twoFactorRecoveryCode.create({
+        data: {
+          userId: user.id,
+          code: bcrypt.hashSync('ABCDE12345', 8),
+        },
+      });
+
+      await request()
+        .post('/api/v1/auth/verify-otp')
+        .send({
+          // Client sends the formatted code; the server normalizes it.
+          otp: 'ABCDE-12345',
+          token,
+        })
+        .expect(200);
+
+      const dbCode = await prisma.twoFactorRecoveryCode.findUnique({
+        where: { id: recoveryCode.id },
+      });
+      expect(dbCode?.usedAt).not.toBeNull();
+    });
+
+    it('should reject an already used recovery code', async () => {
+      const user = await createUser();
+      const token = generateOTPToken(user);
+
+      await prisma.twoFactorRecoveryCode.create({
+        data: {
+          userId: user.id,
+          code: bcrypt.hashSync('ABCDE12345', 8),
+          usedAt: new Date(),
+        },
+      });
+
+      await request()
+        .post('/api/v1/auth/verify-otp')
+        .send({
+          otp: 'ABCDE-12345',
+          token,
+        })
+        .expect(400);
+    });
+
+    it('should reject an unknown recovery code', async () => {
+      const user = await createUser();
+      const token = generateOTPToken(user);
+
+      await request()
+        .post('/api/v1/auth/verify-otp')
+        .send({
+          otp: 'ZZZZZ-99999',
+          token,
+        })
+        .expect(400);
+    });
   });
 
   describe('POST /api/v1/auth/logout', () => {

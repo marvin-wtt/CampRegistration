@@ -100,6 +100,7 @@ export class UserService extends BaseService {
         email: true,
         locale: true,
         emailVerified: true,
+        twoFactorEnabled: true,
         role: true,
         locked: true,
         lastSeen: true,
@@ -207,5 +208,20 @@ export class UserService extends BaseService {
 
   async deleteUserById(userId: string) {
     await this.prisma.user.delete({ where: { id: userId } });
+  }
+
+  async resetTwoFactorById(userId: string) {
+    const [user] = await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          twoFactorEnabled: false,
+          totpSecret: null,
+        },
+      }),
+      this.prisma.twoFactorRecoveryCode.deleteMany({ where: { userId } }),
+    ]);
+
+    return user;
   }
 }

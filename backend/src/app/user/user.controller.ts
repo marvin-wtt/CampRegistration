@@ -96,4 +96,14 @@ export class UserController extends BaseController {
 
     res.sendStatus(httpStatus.NO_CONTENT);
   }
+
+  async resetTwoFactor(req: Request, res: Response) {
+    const {
+      params: { userId },
+    } = await req.validate(validator.resetTwoFactor);
+
+    const user = await this.userService.resetTwoFactorById(userId);
+
+    res.resource(new UserResource(user));
+  }
 }
