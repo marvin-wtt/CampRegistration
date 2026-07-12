@@ -12,6 +12,11 @@ import { encryptPassword, isPasswordMatch } from '#core/encryption';
 const RECOVERY_CODE_COUNT = 10;
 const RECOVERY_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
+// Per-account throttling (RFC 6238 §5.2): the IP rate limiter alone still
+// allows enough guesses per day to brute-force a 6-digit code from a botnet.
+const MAX_FAILED_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MS = 15 * 60 * 1000;
+
 @injectable()
 export class TotpService extends BaseService {
   constructor(@Config() private readonly config: AppConfig) {
@@ -57,6 +62,12 @@ export class TotpService extends BaseService {
   }
 
   verifyTOTP(user: User, token: string) {
+    if (!this.isValidTOTP(user, token)) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid TOTP');
+    }
+  }
+
+  private isValidTOTP(user: User, token: string): boolean {
     if (!user.totpSecret) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'TOTP setup required');
     }
@@ -70,11 +81,7 @@ export class TotpService extends BaseService {
     });
 
     // Validate the token
-    const delta = totp.validate({ token, window: 1 });
-
-    if (delta === null) {
-      throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid TOTP');
-    }
+    return totp.validate({ token, window: 1 }) !== null;
   }
 
   async disableTOTP(user: User) {
@@ -122,22 +129,59 @@ export class TotpService extends BaseService {
 
   /**
    * Verify a login challenge that may be either a TOTP token or a recovery
-   * code. Recovery codes are consumed on a successful match.
+   * code. Recovery codes are consumed on a successful match. Repeated
+   * failures lock the account's second factor temporarily.
    */
   async verifyTwoFactor(user: User, code: string): Promise<void> {
+    if (user.twoFactorLockedUntil && user.twoFactorLockedUntil > new Date()) {
+      throw new ApiError(
+        httpStatus.TOO_MANY_REQUESTS,
+        'Too many failed two-factor attempts. Try again later.',
+      );
+    }
+
     const normalized = code.trim();
 
     // A 6-digit numeric value is a TOTP token; anything else is treated as a
     // recovery code.
-    if (/^\d{6}$/.test(normalized)) {
-      this.verifyTOTP(user, normalized);
-      return;
+    const valid = /^\d{6}$/.test(normalized)
+      ? this.isValidTOTP(user, normalized)
+      : await this.consumeRecoveryCode(user, normalized);
+
+    if (!valid) {
+      await this.registerFailedTwoFactorAttempt(user);
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid TOTP');
     }
 
-    await this.consumeRecoveryCode(user, normalized);
+    if (user.twoFactorFailedAttempts > 0 || user.twoFactorLockedUntil) {
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { twoFactorFailedAttempts: 0, twoFactorLockedUntil: null },
+      });
+    }
   }
 
-  private async consumeRecoveryCode(user: User, code: string): Promise<void> {
+  private async registerFailedTwoFactorAttempt(user: User): Promise<void> {
+    const updated = await this.prisma.user.update({
+      where: { id: user.id },
+      data: { twoFactorFailedAttempts: { increment: 1 } },
+    });
+
+    if (updated.twoFactorFailedAttempts >= MAX_FAILED_ATTEMPTS) {
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          twoFactorFailedAttempts: 0,
+          twoFactorLockedUntil: new Date(Date.now() + LOCKOUT_DURATION_MS),
+        },
+      });
+    }
+  }
+
+  private async consumeRecoveryCode(
+    user: User,
+    code: string,
+  ): Promise<boolean> {
     const normalized = normalizeRecoveryCode(code);
 
     const candidates = await this.prisma.twoFactorRecoveryCode.findMany({
@@ -150,11 +194,11 @@ export class TotpService extends BaseService {
           where: { id: candidate.id },
           data: { usedAt: new Date() },
         });
-        return;
+        return true;
       }
     }
 
-    throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid TOTP');
+    return false;
   }
 }
 

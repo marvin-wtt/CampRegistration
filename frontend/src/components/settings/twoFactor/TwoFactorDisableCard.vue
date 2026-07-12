@@ -34,49 +34,13 @@
           </template>
         </q-input>
 
-        <q-input
-          v-if="!useRecovery"
-          v-model="otp"
-          :label="t('field.otp.label')"
-          :rules="[
-            (val?: string) => !!val || t('field.otp.rule.required'),
-            (val: string) => val.length === 6 || t('field.otp.rule.invalid'),
-          ]"
-          hide-bottom-space
-          mask="######"
-          outlined
-          rounded
-          class="settings-input"
-        >
-          <template #before>
-            <q-icon name="pin" />
-          </template>
-        </q-input>
-
-        <q-input
-          v-else
-          v-model="recoveryCode"
-          :label="t('field.recoveryCode.label')"
-          :rules="[
-            (val?: string) => !!val || t('field.recoveryCode.rule.required'),
-          ]"
+        <two-factor-code-input
+          v-model="code"
           hide-bottom-space
           outlined
           rounded
           class="settings-input"
-        >
-          <template #before>
-            <q-icon name="vpn_key" />
-          </template>
-        </q-input>
-
-        <a
-          href="#"
-          class="recovery-toggle"
-          @click.prevent="useRecovery = !useRecovery"
-        >
-          {{ useRecovery ? t('recovery.useApp') : t('recovery.useCode') }}
-        </a>
+        />
       </q-card-section>
 
       <div
@@ -96,7 +60,6 @@
           type="submit"
           color="primary"
           :loading
-          outline
           rounded
         />
       </q-card-actions>
@@ -107,6 +70,7 @@
 <script lang="ts" setup>
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import TwoFactorCodeInput from '@/components/settings/twoFactor/TwoFactorCodeInput.vue';
 
 const { t } = useI18n();
 
@@ -120,27 +84,12 @@ const emit = defineEmits<{
 }>();
 
 const password = ref<string>('');
-const otp = ref<string>('');
-const recoveryCode = ref<string>('');
-const useRecovery = ref<boolean>(false);
+const code = ref<string>('');
 
 function onDisable() {
-  const code = useRecovery.value ? recoveryCode.value.trim() : otp.value;
-  emit('disable', password.value, code);
+  emit('disable', password.value, code.value.trim());
 }
 </script>
-
-<style scoped lang="scss">
-.recovery-toggle {
-  color: var(--md3-primary);
-  font-size: 0.875rem;
-  text-decoration: none;
-
-  &:hover {
-    text-decoration: underline;
-  }
-}
-</style>
 
 <i18n lang="yaml" locale="en">
 title: 'Two-Factor Authentication'
@@ -153,19 +102,6 @@ field:
     label: 'Password'
     rule:
       required: 'Password is required.'
-  otp:
-    label: 'OTP'
-    rule:
-      required: 'OTP is required.'
-      invalid: 'OTP must be 6 digits.'
-  recoveryCode:
-    label: 'Recovery code'
-    rule:
-      required: 'Recovery code is required.'
-
-recovery:
-  useCode: 'Use a recovery code instead'
-  useApp: 'Use your authenticator app instead'
 
 action:
   disable: 'Disable 2FA'
@@ -183,19 +119,6 @@ field:
     label: 'Passwort'
     rule:
       required: 'Passwort ist erforderlich.'
-  otp:
-    label: 'OTP'
-    rule:
-      required: 'OTP ist erforderlich.'
-      invalid: 'OTP muss 6 Ziffern haben.'
-  recoveryCode:
-    label: 'Wiederherstellungscode'
-    rule:
-      required: 'Wiederherstellungscode ist erforderlich.'
-
-recovery:
-  useCode: 'Stattdessen einen Wiederherstellungscode verwenden'
-  useApp: 'Stattdessen die Authentifizierungs-App verwenden'
 
 action:
   disable: '2FA deaktivieren'
@@ -210,19 +133,6 @@ field:
     label: 'Mot de passe'
     rule:
       required: 'Le mot de passe est requis.'
-  otp:
-    label: 'OTP'
-    rule:
-      required: "L'OTP est requis."
-      invalid: "L'OTP doit contenir 6 chiffres."
-  recoveryCode:
-    label: 'Code de récupération'
-    rule:
-      required: 'Le code de récupération est requis.'
-
-recovery:
-  useCode: 'Utiliser plutôt un code de récupération'
-  useApp: "Utiliser plutôt votre application d'authentification"
 
 action:
   disable: 'Désactiver 2FA'
@@ -238,19 +148,6 @@ field:
     label: 'Hasło'
     rule:
       required: 'Hasło jest wymagane.'
-  otp:
-    label: 'OTP'
-    rule:
-      required: 'Kod OTP jest wymagany.'
-      invalid: 'Kod OTP musi składać się z 6 cyfr.'
-  recoveryCode:
-    label: 'Kod odzyskiwania'
-    rule:
-      required: 'Kod odzyskiwania jest wymagany.'
-
-recovery:
-  useCode: 'Użyj zamiast tego kodu odzyskiwania'
-  useApp: 'Użyj zamiast tego aplikacji uwierzytelniającej'
 
 action:
   disable: 'Wyłącz 2FA'
@@ -266,19 +163,6 @@ field:
     label: 'Heslo'
     rule:
       required: 'Heslo je povinné.'
-  otp:
-    label: 'OTP'
-    rule:
-      required: 'OTP kód je povinný.'
-      invalid: 'OTP kód musí mít 6 číslic.'
-  recoveryCode:
-    label: 'Kód pro obnovení'
-    rule:
-      required: 'Kód pro obnovení je povinný.'
-
-recovery:
-  useCode: 'Použít místo toho kód pro obnovení'
-  useApp: 'Použít místo toho autentizační aplikaci'
 
 action:
   disable: 'Deaktivovat 2FA'

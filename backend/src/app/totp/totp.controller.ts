@@ -62,25 +62,7 @@ export class TotPController extends BaseController {
       body: { password, otp },
     } = await req.validate(validator.disable);
 
-    const userId = req.authUserId();
-    const user = await this.userService.getUserByIdOrFail(userId);
-
-    // Verify password
-    const match = await isPasswordMatch(password, user.password);
-    if (!match) {
-      throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid password');
-    }
-
-    if (!user.twoFactorEnabled) {
-      throw new ApiError(
-        httpStatus.BAD_REQUEST,
-        'Two factor authentication not enabled.',
-      );
-    }
-
-    // Verify the second factor — accept a TOTP token or a recovery code so a
-    // user who lost their authenticator can still turn 2FA off.
-    await this.totpService.verifyTwoFactor(user, otp);
+    const user = await this.verifyCredentials(req.authUserId(), password, otp);
 
     // Disable
     await this.totpService.disableTOTP(user);
@@ -93,7 +75,18 @@ export class TotPController extends BaseController {
       body: { password, otp },
     } = await req.validate(validator.generateRecoveryCodes);
 
-    const userId = req.authUserId();
+    const user = await this.verifyCredentials(req.authUserId(), password, otp);
+
+    const codes = await this.totpService.generateRecoveryCodes(user);
+
+    res.resource(new TotpRecoveryCodesResource(codes));
+  }
+
+  private async verifyCredentials(
+    userId: string,
+    password: string,
+    otp: string,
+  ) {
     const user = await this.userService.getUserByIdOrFail(userId);
 
     // Verify password
@@ -109,13 +102,9 @@ export class TotPController extends BaseController {
       );
     }
 
-    // Require the second factor — minting new recovery codes creates fresh
-    // credentials that bypass the authenticator, so it must be as protected as
-    // disabling 2FA. Accept a TOTP token or an existing recovery code.
+    // Require the second factor
     await this.totpService.verifyTwoFactor(user, otp);
 
-    const codes = await this.totpService.generateRecoveryCodes(user);
-
-    res.resource(new TotpRecoveryCodesResource(codes));
+    return user;
   }
 }

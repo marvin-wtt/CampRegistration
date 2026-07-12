@@ -769,6 +769,81 @@ describe('/api/v1/auth', async () => {
         })
         .expect(400);
     });
+
+    it('should lock the second factor after too many failed attempts', async () => {
+      const user = await createUser();
+      const token = generateOTPToken(user);
+
+      for (let i = 0; i < 5; i++) {
+        await request()
+          .post('/api/v1/auth/verify-otp')
+          .send({
+            otp: 'ZZZZZ-99999',
+            token,
+          })
+          .expect(400);
+      }
+
+      // Even a correct code is rejected while locked
+      await request()
+        .post('/api/v1/auth/verify-otp')
+        .send({
+          otp: generateTOTP(user),
+          token,
+        })
+        .expect(429);
+
+      const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
+      expect(dbUser?.twoFactorLockedUntil).not.toBeNull();
+      expect(dbUser?.twoFactorFailedAttempts).toBe(0);
+    });
+
+    it('should reset the failed attempt counter on success', async () => {
+      const user = await createUser();
+      const token = generateOTPToken(user);
+
+      for (let i = 0; i < 4; i++) {
+        await request()
+          .post('/api/v1/auth/verify-otp')
+          .send({
+            otp: 'ZZZZZ-99999',
+            token,
+          })
+          .expect(400);
+      }
+
+      await request()
+        .post('/api/v1/auth/verify-otp')
+        .send({
+          otp: generateTOTP(user),
+          token,
+        })
+        .expect(200);
+
+      const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
+      expect(dbUser?.twoFactorFailedAttempts).toBe(0);
+    });
+
+    it('should accept a correct code after the lock has expired', async () => {
+      const user = await createUser();
+      const token = generateOTPToken(user);
+
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { twoFactorLockedUntil: new Date(Date.now() - 1000) },
+      });
+
+      await request()
+        .post('/api/v1/auth/verify-otp')
+        .send({
+          otp: generateTOTP(user),
+          token,
+        })
+        .expect(200);
+
+      const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
+      expect(dbUser?.twoFactorLockedUntil).toBeNull();
+    });
   });
 
   describe('POST /api/v1/auth/logout', () => {
