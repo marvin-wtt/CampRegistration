@@ -1,9 +1,10 @@
+import type { SettingKey } from '@camp-registration/common/settings';
 import { BaseService } from '#core/base/BaseService';
 import { injectable } from 'inversify';
 
 @injectable()
 export class SettingService extends BaseService {
-  async getSetting(campId: string, key: string) {
+  async getSetting(campId: string, key: SettingKey) {
     return this.prisma.campSetting.findUnique({
       where: { campId_key: { campId, key } },
     });
@@ -11,7 +12,7 @@ export class SettingService extends BaseService {
 
   async upsertSetting(
     campId: string,
-    key: string,
+    key: SettingKey,
     data: Record<string, unknown>,
   ) {
     return this.prisma.campSetting.upsert({

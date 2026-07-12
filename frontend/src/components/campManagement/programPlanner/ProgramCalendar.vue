@@ -219,14 +219,14 @@ import CalendarNavigationBar from '@/components/campManagement/programPlanner/Ca
 import CalendarItem from '@/components/campManagement/programPlanner/CalendarItem.vue';
 import CalendarDayItem from '@/components/campManagement/programPlanner/CalendarDayItem.vue';
 import type { DragAndDropScope } from '@/components/campManagement/programPlanner/DragAndDropScope';
-import type { CalendarSettings } from '@/components/campManagement/programPlanner/CalendarSettings';
+import type { ProgramPlannerSettings } from '@camp-registration/common/settings';
 import ProgramEventAddDialog from '@/components/campManagement/programPlanner/dialogs/ProgramEventAddDialog.vue';
 import ProgramEventEditDialog from '@/components/campManagement/programPlanner/dialogs/ProgramEventEditDialog.vue';
 import CalendarSettingsDialog from '@/components/campManagement/programPlanner/dialogs/CalendarSettingsDialog.vue';
 import CalendarBacklogPanel from '@/components/campManagement/programPlanner/CalendarBacklogPanel.vue';
 import { daysBetweenDates } from '@/utils/date';
 import { openPrintIframe } from '@/utils/printIframe';
-import { useCampSettings } from '@/composables/campSetting';
+import { useCampSettings } from '@/composables/campSettings';
 import { SETTING_KEYS } from '@camp-registration/common/settings';
 import { usePermissions } from '@/composables/permissions';
 
@@ -256,7 +256,7 @@ const selectedDate = ref<string>(initialSelectedDate());
 const range = ref<number>(initialRange());
 const activePlan = ref<'a' | 'b' | 'both'>('both');
 
-const { settings } = useCampSettings<CalendarSettings>(
+const { settings } = useCampSettings<ProgramPlannerSettings>(
   SETTING_KEYS.PROGRAM_PLANNER,
   {
     dayStart: '08:00',
@@ -666,7 +666,7 @@ function onSettingsOpen() {
         settings: { ...settings },
       },
     })
-    .onOk((newSettings: CalendarSettings) => {
+    .onOk((newSettings: ProgramPlannerSettings) => {
       Object.assign(settings, newSettings);
     });
 }

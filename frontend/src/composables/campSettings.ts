@@ -1,4 +1,5 @@
-import { reactive, ref, watch, type Ref } from 'vue';
+import { nextTick, reactive, ref, watch, type Ref } from 'vue';
+import type { SettingKey } from '@camp-registration/common/settings';
 import { useCampDetailsStore } from '@/stores/camp-details-store';
 import { useRealtimeStore } from '@/stores/realtime-store';
 import { useAPIService } from '@/services/APIService';
@@ -13,14 +14,14 @@ import { useAPIService } from '@/services/APIService';
  * rather than trusting pushed data.
  */
 export function useCampSettings<T extends object>(
-  key: string,
+  key: SettingKey,
   defaults: T,
 ): { settings: T; isLoading: Ref<boolean> } {
   const campDetailsStore = useCampDetailsStore();
   const realtime = useRealtimeStore();
   const api = useAPIService();
 
-  const settings = reactive<T>({ ...defaults }) as T;
+  const settings = reactive<T>({ ...defaults });
   const isLoading = ref(false);
   // Guards the save watcher below from re-saving a value we just applied
   // ourselves from a fetch/remote change (would otherwise loop).
@@ -36,9 +37,21 @@ export function useCampSettings<T extends object>(
     try {
       const fetched = await api.fetchCampSetting<T>(campId, key);
 
+      // Stale guard: the camp changed while the fetch was in flight — applying
+      // would show (and, via the save watcher, write) this camp's values under
+      // the new camp.
+      if (campDetailsStore.data?.id !== campId) {
+        return;
+      }
+
       applyingRemote = true;
       Object.assign(settings, defaults, fetched?.data ?? {});
-      applyingRemote = false;
+      // The save watcher flushes on the next tick, so the guard must outlive
+      // this synchronous block or the fetched values get re-saved (and would
+      // ping-pong between clients via realtime events).
+      void nextTick(() => {
+        applyingRemote = false;
+      });
     } finally {
       isLoading.value = false;
     }
@@ -58,7 +71,7 @@ export function useCampSettings<T extends object>(
         return;
       }
 
-      void api.updateCampSetting<T>(campId, key, { ...settings });
+      void api.updateCampSetting<T>(campId, key, { ...settings } as T);
     },
     { deep: true },
   );
@@ -71,5 +84,5 @@ export function useCampSettings<T extends object>(
     void load();
   });
 
-  return { settings, isLoading };
+  return { settings: settings as T, isLoading };
 }

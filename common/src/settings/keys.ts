@@ -7,3 +7,6 @@ export const SETTING_KEYS = {
   ROOM_PLANNER: 'room-planner',
   PROGRAM_PLANNER: 'program-planner',
 } as const;
+
+/** Union of all known setting keys, e.g. `'room-planner' | 'program-planner'`. */
+export type SettingKey = (typeof SETTING_KEYS)[keyof typeof SETTING_KEYS];

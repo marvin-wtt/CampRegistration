@@ -5,6 +5,7 @@ import { campPermissionRegistry } from '#core/permission-registry';
 
 export interface UserWithCampRoles extends Omit<User, 'password'> {
   campRoles: CampManager[];
+  twoFactor?: { confirmedAt: Date | null } | null;
 }
 
 export class ProfileResource extends JsonResource<
@@ -16,7 +17,7 @@ export class ProfileResource extends JsonResource<
       name: this.data.name,
       email: this.data.email,
       role: this.data.role,
-      twoFactorEnabled: this.data.twoFactorEnabled,
+      twoFactorEnabled: this.data.twoFactor?.confirmedAt != null,
       locale: this.data.locale,
       campAccess: this.data.campRoles.map((manager) => ({
         campId: manager.campId,

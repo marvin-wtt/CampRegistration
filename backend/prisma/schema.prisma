@@ -13,28 +13,43 @@ datasource db {
 }
 
 model User {
-  id               String    @id @unique(map: "users_id_unique") @default(ulid()) @db.Char(26)
-  name             String    @db.VarChar(255)
-  email            String    @unique(map: "users_email_unique") @db.VarChar(255)
-  emailVerified    Boolean   @default(false) @map("email_verified")
-  password         String    @db.VarChar(255)
-  twoFactorEnabled Boolean   @default(false) @map("two_factor_enabled")
-  totpSecret       String?   @map("totp_secret") @db.Char(32)
-  role             Role      @default(USER)
-  locale           String    @default("en-US") @db.VarChar(5)
-  locked           Boolean   @default(false)
-  lastSeen         DateTime? @map("last_seen")
-  createdAt        DateTime  @default(now()) @map("created_at")
-  updatedAt        DateTime? @updatedAt @map("updated_at")
+  id            String    @id @unique(map: "users_id_unique") @default(ulid()) @db.Char(26)
+  name          String    @db.VarChar(255)
+  email         String    @unique(map: "users_email_unique") @db.VarChar(255)
+  emailVerified Boolean   @default(false) @map("email_verified")
+  password      String    @db.VarChar(255)
+  role          Role      @default(USER)
+  locale        String    @default("en-US") @db.VarChar(5)
+  locked        Boolean   @default(false)
+  lastSeen      DateTime? @map("last_seen")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime? @updatedAt @map("updated_at")
 
   campRoles              CampManager[]
   tokens                 Token[]
   newsletterManagers     NewsletterManager[]
   sentNewsletterMessages NewsletterMessage[]
   sentMessages           Message[]
-  recoveryCodes          TwoFactorRecoveryCode[]
+  twoFactor UserTwoFactor?
 
   @@map("users")
+}
+
+model UserTwoFactor {
+  userId         String    @id @map("user_id") @db.Char(26)
+  secret         String    @db.Char(32)
+  /// Set once the user confirmed the setup with a valid code; null while
+  /// setup is pending.
+  confirmedAt    DateTime? @map("confirmed_at")
+  failedAttempts Int       @default(0) @map("failed_attempts")
+  lockedUntil    DateTime? @map("locked_until")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime? @updatedAt @map("updated_at")
+
+  user          User                    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "user_two_factor_user_id_foreign")
+  recoveryCodes TwoFactorRecoveryCode[]
+
+  @@map("user_two_factor")
 }
 
 model TwoFactorRecoveryCode {
@@ -44,7 +59,7 @@ model TwoFactorRecoveryCode {
   usedAt    DateTime? @map("used_at")
   createdAt DateTime  @default(now()) @map("created_at")
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  twoFactor UserTwoFactor @relation(fields: [userId], references: [userId], onDelete: Cascade, onUpdate: Cascade, map: "two_factor_recovery_codes_user_id_foreign")
 
   @@index([userId], map: "two_factor_recovery_codes_user_id_index")
   @@map("two_factor_recovery_codes")
@@ -481,11 +496,11 @@ enum LegalDocumentType {
 }
 
 model LegalDocument {
-  id   String            @id @unique(map: "legal_documents_id_unique") @default(ulid()) @db.Char(26)
-  type LegalDocumentType @unique(map: "legal_documents_type_unique")
+  id        String            @id @unique(map: "legal_documents_id_unique") @default(ulid()) @db.Char(26)
+  type      LegalDocumentType @unique(map: "legal_documents_type_unique")
   /// ![string | Record<string, string>]
-  content   Json?     @db.Json
-  updatedAt DateTime? @updatedAt @map("updated_at")
+  content   Json?             @db.Json
+  updatedAt DateTime?         @updatedAt @map("updated_at")
 
   @@map("legal_documents")
 }
