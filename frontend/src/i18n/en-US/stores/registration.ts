@@ -20,4 +20,9 @@ export default {
     error: 'Failed to delete registration',
     invalid: 'Invalid registration id or camp id',
   },
+  realtimeCreate: {
+    message: 'New registration received',
+    caption: '{name} registered.',
+    fallbackName: 'Someone',
+  },
 };

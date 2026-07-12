@@ -11,10 +11,18 @@ import type {
 import { useServiceHandler } from '@/composables/serviceHandler';
 import { useRealtimeCollection } from '@/composables/realtimeCollection';
 import { useAuthBus, useCampBus, useRegistrationBus } from '@/composables/bus';
+import { useQuasar } from 'quasar';
+import { useI18n } from 'vue-i18n';
+import { formatPersonName } from '@/utils/formatters';
+import { useRegistrationHelper } from '@/composables/registrationHelper';
 
 export const useRegistrationsStore = defineStore('registrations', () => {
   const route = useRoute();
   const apiService = useAPIService();
+  const quasar = useQuasar();
+  const { t } = useI18n({
+    useScope: 'global',
+  });
   const authBus = useAuthBus();
   const bus = useRegistrationBus();
   const campBus = useCampBus();
@@ -47,10 +55,39 @@ export const useRegistrationsStore = defineStore('registrations', () => {
     invalidate,
     reload: () => fetchData(undefined, { background: true }),
     fetchOne: (campId, id) => apiService.fetchRegistration(campId, id),
-    onCreate: (registration) => bus.emit('create', registration),
+    onCreate: (registration) => {
+      bus.emit('create', registration);
+      showRealtimeCreateNotification(registration);
+    },
     onUpdate: (registration) => bus.emit('update', registration),
     onDelete: (id) => bus.emit('delete', id),
   });
+
+  function showRealtimeCreateNotification(registration: Registration) {
+    const name = registrationName(registration);
+
+    quasar.notify({
+      type: 'positive',
+      icon: 'person_add',
+      message: t('stores.registration.realtimeCreate.message'),
+      caption: t('stores.registration.realtimeCreate.caption', { name }),
+      timeout: 5000,
+    });
+  }
+
+  function registrationName(registration: Registration): string {
+    const name = [
+      registration.computedData.firstName,
+      registration.computedData.lastName,
+    ]
+      .map((part) => part?.trim())
+      .filter((part): part is string => Boolean(part))
+      .join(' ');
+
+    return name.length > 0
+      ? formatPersonName(name)
+      : t('stores.registration.realtimeCreate.fallbackName');
+  }
 
   async function fetchData(campId?: string, opts?: { background?: boolean }) {
     const cid: string = campId ?? (route.params.campId as string);

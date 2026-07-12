@@ -20,4 +20,9 @@ export default {
     error: 'Fehler beim Löschen der Anmeldung',
     invalid: 'Ungültige Anmeldungs-ID oder Camp-ID',
   },
+  realtimeCreate: {
+    message: 'Neue Anmeldung eingegangen',
+    caption: '{name} hat sich angemeldet.',
+    fallbackName: 'Jemand',
+  },
 };
