@@ -365,8 +365,12 @@ describe('/api/v1/users/', () => {
   describe('POST /api/v1/users/:userId/reset-two-factor', () => {
     const createUserWith2fa = async () => {
       const user = await UserFactory.create({
-        twoFactorEnabled: true,
-        totpSecret: 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP',
+        twoFactor: {
+          create: {
+            secret: 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP',
+            confirmedAt: new Date(),
+          },
+        },
       });
       await prisma.twoFactorRecoveryCode.createMany({
         data: [
@@ -387,9 +391,10 @@ describe('/api/v1/users/', () => {
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
-      const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
-      expect(dbUser?.twoFactorEnabled).toBe(false);
-      expect(dbUser?.totpSecret).toBeNull();
+      const dbTwoFactor = await prisma.userTwoFactor.findUnique({
+        where: { userId: user.id },
+      });
+      expect(dbTwoFactor).toBeNull();
 
       const codes = await prisma.twoFactorRecoveryCode.findMany({
         where: { userId: user.id },
@@ -407,8 +412,10 @@ describe('/api/v1/users/', () => {
         .auth(accessToken, { type: 'bearer' })
         .expect(403);
 
-      const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
-      expect(dbUser?.twoFactorEnabled).toBe(true);
+      const dbTwoFactor = await prisma.userTwoFactor.findUnique({
+        where: { userId: user.id },
+      });
+      expect(dbTwoFactor?.confirmedAt).not.toBeNull();
     });
 
     it('should respond with `401` status code when unauthenticated', async () => {

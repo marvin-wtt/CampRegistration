@@ -1,4 +1,4 @@
-import type { User } from '#generated/prisma/client.js';
+import type { User, UserTwoFactor } from '#generated/prisma/client.js';
 import * as OTPAuth from 'otpauth';
 import { randomInt } from 'node:crypto';
 import { type AppConfig } from '#config';
@@ -23,7 +23,28 @@ export class TotpService extends BaseService {
     super();
   }
 
+  async isTwoFactorEnabled(userId: string): Promise<boolean> {
+    const twoFactor = await this.prisma.userTwoFactor.findUnique({
+      where: { userId },
+      select: { confirmedAt: true },
+    });
+
+    return twoFactor?.confirmedAt != null;
+  }
+
   async generateTOTP(user: User) {
+    const existing = await this.prisma.userTwoFactor.findUnique({
+      where: { userId: user.id },
+    });
+
+    // Prevent reset
+    if (existing?.confirmedAt) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'Two factor authentication already enabled.',
+      );
+    }
+
     const secret = new OTPAuth.Secret();
 
     const totp = new OTPAuth.TOTP({
@@ -35,10 +56,17 @@ export class TotpService extends BaseService {
       period: 30,
     });
 
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: {
-        totpSecret: secret.base32,
+    await this.prisma.userTwoFactor.upsert({
+      where: { userId: user.id },
+      create: {
+        userId: user.id,
+        secret: secret.base32,
+      },
+      update: {
+        secret: secret.base32,
+        confirmedAt: null,
+        failedAttempts: 0,
+        lockedUntil: null,
       },
     });
 
@@ -49,52 +77,26 @@ export class TotpService extends BaseService {
     };
   }
 
-  async validateTOTP(user: User, token: string) {
-    this.verifyTOTP(user, token);
+  async validateTOTP(userId: string, token: string) {
+    const twoFactor = await this.getTwoFactorOrFail(userId);
 
-    // Enable 2FA after validation
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: {
-        twoFactorEnabled: true,
-      },
-    });
-  }
-
-  verifyTOTP(user: User, token: string) {
-    if (!this.isValidTOTP(user, token)) {
+    if (!this.isValidTOTP(twoFactor.secret, token)) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid TOTP');
     }
-  }
 
-  private isValidTOTP(user: User, token: string): boolean {
-    if (!user.totpSecret) {
-      throw new ApiError(httpStatus.BAD_REQUEST, 'TOTP setup required');
-    }
-
-    // Create a TOTP object with the user's secret
-    const totp = new OTPAuth.TOTP({
-      secret: OTPAuth.Secret.fromBase32(user.totpSecret),
-      algorithm: 'SHA1',
-      digits: 6,
-      period: 30,
-    });
-
-    // Validate the token
-    return totp.validate({ token, window: 1 }) !== null;
-  }
-
-  async disableTOTP(user: User) {
-    await this.prisma.user.update({
-      where: { id: user.id },
+    // Enable 2FA after validation
+    await this.prisma.userTwoFactor.update({
+      where: { userId },
       data: {
-        totpSecret: null,
-        twoFactorEnabled: false,
+        confirmedAt: twoFactor.confirmedAt ?? new Date(),
       },
     });
+  }
 
-    await this.prisma.twoFactorRecoveryCode.deleteMany({
-      where: { userId: user.id },
+  async disableTOTP(userId: string) {
+    // Recovery codes are removed by the cascade
+    await this.prisma.userTwoFactor.deleteMany({
+      where: { userId },
     });
   }
 
@@ -103,7 +105,7 @@ export class TotpService extends BaseService {
    * any existing ones. Only the hashes are stored; the plaintext codes are
    * returned once and cannot be recovered afterwards.
    */
-  async generateRecoveryCodes(user: User): Promise<string[]> {
+  async generateRecoveryCodes(userId: string): Promise<string[]> {
     const codes = Array.from({ length: RECOVERY_CODE_COUNT }, () =>
       generateRecoveryCode(),
     );
@@ -114,11 +116,11 @@ export class TotpService extends BaseService {
 
     await this.prisma.$transaction([
       this.prisma.twoFactorRecoveryCode.deleteMany({
-        where: { userId: user.id },
+        where: { userId },
       }),
       this.prisma.twoFactorRecoveryCode.createMany({
         data: hashed.map((code) => ({
-          userId: user.id,
+          userId,
           code,
         })),
       }),
@@ -132,8 +134,17 @@ export class TotpService extends BaseService {
    * code. Recovery codes are consumed on a successful match. Repeated
    * failures lock the account's second factor temporarily.
    */
-  async verifyTwoFactor(user: User, code: string): Promise<void> {
-    if (user.twoFactorLockedUntil && user.twoFactorLockedUntil > new Date()) {
+  async verifyTwoFactor(userId: string, code: string): Promise<void> {
+    const twoFactor = await this.getTwoFactorOrFail(userId);
+
+    if (!twoFactor.confirmedAt) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'Two factor authentication not enabled.',
+      );
+    }
+
+    if (twoFactor.lockedUntil && twoFactor.lockedUntil > new Date()) {
       throw new ApiError(
         httpStatus.TOO_MANY_REQUESTS,
         'Too many failed two-factor attempts. Try again later.',
@@ -145,47 +156,72 @@ export class TotpService extends BaseService {
     // A 6-digit numeric value is a TOTP token; anything else is treated as a
     // recovery code.
     const valid = /^\d{6}$/.test(normalized)
-      ? this.isValidTOTP(user, normalized)
-      : await this.consumeRecoveryCode(user, normalized);
+      ? this.isValidTOTP(twoFactor.secret, normalized)
+      : await this.consumeRecoveryCode(userId, normalized);
 
     if (!valid) {
-      await this.registerFailedTwoFactorAttempt(user);
+      await this.registerFailedAttempt(twoFactor);
       throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid TOTP');
     }
 
-    if (user.twoFactorFailedAttempts > 0 || user.twoFactorLockedUntil) {
-      await this.prisma.user.update({
-        where: { id: user.id },
-        data: { twoFactorFailedAttempts: 0, twoFactorLockedUntil: null },
+    if (twoFactor.failedAttempts > 0 || twoFactor.lockedUntil) {
+      await this.prisma.userTwoFactor.update({
+        where: { userId },
+        data: { failedAttempts: 0, lockedUntil: null },
       });
     }
   }
 
-  private async registerFailedTwoFactorAttempt(user: User): Promise<void> {
-    const updated = await this.prisma.user.update({
-      where: { id: user.id },
-      data: { twoFactorFailedAttempts: { increment: 1 } },
+  private async getTwoFactorOrFail(userId: string): Promise<UserTwoFactor> {
+    const twoFactor = await this.prisma.userTwoFactor.findUnique({
+      where: { userId },
     });
 
-    if (updated.twoFactorFailedAttempts >= MAX_FAILED_ATTEMPTS) {
-      await this.prisma.user.update({
-        where: { id: user.id },
+    if (!twoFactor) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'TOTP setup required');
+    }
+
+    return twoFactor;
+  }
+
+  private isValidTOTP(secret: string, token: string): boolean {
+    // Create a TOTP object with the user's secret
+    const totp = new OTPAuth.TOTP({
+      secret: OTPAuth.Secret.fromBase32(secret),
+      algorithm: 'SHA1',
+      digits: 6,
+      period: 30,
+    });
+
+    // Validate the token
+    return totp.validate({ token, window: 1 }) !== null;
+  }
+
+  private async registerFailedAttempt(twoFactor: UserTwoFactor): Promise<void> {
+    const updated = await this.prisma.userTwoFactor.update({
+      where: { userId: twoFactor.userId },
+      data: { failedAttempts: { increment: 1 } },
+    });
+
+    if (updated.failedAttempts >= MAX_FAILED_ATTEMPTS) {
+      await this.prisma.userTwoFactor.update({
+        where: { userId: twoFactor.userId },
         data: {
-          twoFactorFailedAttempts: 0,
-          twoFactorLockedUntil: new Date(Date.now() + LOCKOUT_DURATION_MS),
+          failedAttempts: 0,
+          lockedUntil: new Date(Date.now() + LOCKOUT_DURATION_MS),
         },
       });
     }
   }
 
   private async consumeRecoveryCode(
-    user: User,
+    userId: string,
     code: string,
   ): Promise<boolean> {
     const normalized = normalizeRecoveryCode(code);
 
     const candidates = await this.prisma.twoFactorRecoveryCode.findMany({
-      where: { userId: user.id, usedAt: null },
+      where: { userId, usedAt: null },
     });
 
     for (const candidate of candidates) {

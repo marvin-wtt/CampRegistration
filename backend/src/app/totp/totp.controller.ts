@@ -32,14 +32,7 @@ export class TotPController extends BaseController {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid password');
     }
 
-    // Prevent reset
-    if (user.twoFactorEnabled) {
-      throw new ApiError(
-        httpStatus.BAD_REQUEST,
-        'Two factor authentication already enabled.',
-      );
-    }
-
+    // Rejects with an error when 2FA is already enabled
     const totp = await this.totpService.generateTOTP(user);
 
     res.resource(new TotpResource(totp));
@@ -50,9 +43,8 @@ export class TotPController extends BaseController {
       body: { otp },
     } = await req.validate(validator.enable);
     const userId = req.authUserId();
-    const user = await this.userService.getUserByIdOrFail(userId);
 
-    await this.totpService.validateTOTP(user, otp);
+    await this.totpService.validateTOTP(userId, otp);
 
     res.sendStatus(httpStatus.NO_CONTENT);
   }
@@ -65,7 +57,7 @@ export class TotPController extends BaseController {
     const user = await this.verifyCredentials(req.authUserId(), password, otp);
 
     // Disable
-    await this.totpService.disableTOTP(user);
+    await this.totpService.disableTOTP(user.id);
 
     res.status(httpStatus.NO_CONTENT).end();
   }
@@ -77,7 +69,7 @@ export class TotPController extends BaseController {
 
     const user = await this.verifyCredentials(req.authUserId(), password, otp);
 
-    const codes = await this.totpService.generateRecoveryCodes(user);
+    const codes = await this.totpService.generateRecoveryCodes(user.id);
 
     res.resource(new TotpRecoveryCodesResource(codes));
   }
@@ -95,15 +87,8 @@ export class TotPController extends BaseController {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid password');
     }
 
-    if (!user.twoFactorEnabled) {
-      throw new ApiError(
-        httpStatus.BAD_REQUEST,
-        'Two factor authentication not enabled.',
-      );
-    }
-
-    // Require the second factor
-    await this.totpService.verifyTwoFactor(user, otp);
+    // Require the second factor; rejects when 2FA is not enabled
+    await this.totpService.verifyTwoFactor(user.id, otp);
 
     return user;
   }

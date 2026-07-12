@@ -456,7 +456,12 @@ describe('/api/v1/auth', async () => {
       await UserFactory.create({
         email: 'test@email.net',
         password: 'password',
-        twoFactorEnabled: true,
+        twoFactor: {
+          create: {
+            secret: new OTPAuth.Secret().base32,
+            confirmedAt: new Date(),
+          },
+        },
       });
 
       const { body, headers } = await request()
@@ -566,20 +571,24 @@ describe('/api/v1/auth', async () => {
   });
 
   describe('POST /api/v1/auth/verify-otp', () => {
-    const createUser = async () => {
-      const secret = new OTPAuth.Secret();
+    const TOTP_SECRET = new OTPAuth.Secret().base32;
 
+    const createUser = async () => {
       return UserFactory.create({
         email: 'test@email.net',
         password: 'password',
-        twoFactorEnabled: true,
-        totpSecret: secret.base32,
+        twoFactor: {
+          create: {
+            secret: TOTP_SECRET,
+            confirmedAt: new Date(),
+          },
+        },
       });
     };
 
-    const generateTOTP = (user: User) => {
+    const generateTOTP = () => {
       const totp = new OTPAuth.TOTP({
-        secret: OTPAuth.Secret.fromBase32(user.totpSecret!),
+        secret: OTPAuth.Secret.fromBase32(TOTP_SECRET),
         algorithm: 'SHA1',
         digits: 6,
         period: 30,
@@ -590,7 +599,7 @@ describe('/api/v1/auth', async () => {
 
     it('should respond with a `200` status code when totp is correct', async () => {
       const user = await createUser();
-      const totp = generateTOTP(user);
+      const totp = generateTOTP();
       const token = generateOTPToken(user);
 
       await request()
@@ -605,7 +614,7 @@ describe('/api/v1/auth', async () => {
     describe('response', () => {
       it('should respond with access token', async () => {
         const user = await createUser();
-        const totp = generateTOTP(user);
+        const totp = generateTOTP();
         const token = generateOTPToken(user);
 
         const { token: csrfToken, cookies: csrfCookies } = await fetchCsrf();
@@ -638,7 +647,7 @@ describe('/api/v1/auth', async () => {
 
       it('should respond with refresh token when remember is set', async () => {
         const user = await createUser();
-        const totp = generateTOTP(user);
+        const totp = generateTOTP();
         const token = generateOTPToken(user);
 
         const { token: csrfToken, cookies: csrfCookies } = await fetchCsrf();
@@ -696,7 +705,7 @@ describe('/api/v1/auth', async () => {
 
     it('should respond with a `400` status code when token is invalid', async () => {
       const user = await createUser();
-      const totp = generateTOTP(user);
+      const totp = generateTOTP();
 
       const token = generateAccessToken(user);
 
@@ -788,14 +797,16 @@ describe('/api/v1/auth', async () => {
       await request()
         .post('/api/v1/auth/verify-otp')
         .send({
-          otp: generateTOTP(user),
+          otp: generateTOTP(),
           token,
         })
         .expect(429);
 
-      const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
-      expect(dbUser?.twoFactorLockedUntil).not.toBeNull();
-      expect(dbUser?.twoFactorFailedAttempts).toBe(0);
+      const dbTwoFactor = await prisma.userTwoFactor.findUnique({
+        where: { userId: user.id },
+      });
+      expect(dbTwoFactor?.lockedUntil).not.toBeNull();
+      expect(dbTwoFactor?.failedAttempts).toBe(0);
     });
 
     it('should reset the failed attempt counter on success', async () => {
@@ -815,34 +826,38 @@ describe('/api/v1/auth', async () => {
       await request()
         .post('/api/v1/auth/verify-otp')
         .send({
-          otp: generateTOTP(user),
+          otp: generateTOTP(),
           token,
         })
         .expect(200);
 
-      const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
-      expect(dbUser?.twoFactorFailedAttempts).toBe(0);
+      const dbTwoFactor = await prisma.userTwoFactor.findUnique({
+        where: { userId: user.id },
+      });
+      expect(dbTwoFactor?.failedAttempts).toBe(0);
     });
 
     it('should accept a correct code after the lock has expired', async () => {
       const user = await createUser();
       const token = generateOTPToken(user);
 
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { twoFactorLockedUntil: new Date(Date.now() - 1000) },
+      await prisma.userTwoFactor.update({
+        where: { userId: user.id },
+        data: { lockedUntil: new Date(Date.now() - 1000) },
       });
 
       await request()
         .post('/api/v1/auth/verify-otp')
         .send({
-          otp: generateTOTP(user),
+          otp: generateTOTP(),
           token,
         })
         .expect(200);
 
-      const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
-      expect(dbUser?.twoFactorLockedUntil).toBeNull();
+      const dbTwoFactor = await prisma.userTwoFactor.findUnique({
+        where: { userId: user.id },
+      });
+      expect(dbTwoFactor?.lockedUntil).toBeNull();
     });
   });
 

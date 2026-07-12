@@ -2,21 +2,34 @@ import { describe, expect, it } from 'vitest';
 import * as OTPAuth from 'otpauth';
 import bcrypt from 'bcryptjs';
 import { UserFactory } from '../../../prisma/factories/index.js';
-import { User } from '#generated/prisma/client.js';
 import { request } from '../utils/request.js';
 import { generateAccessToken } from './utils/token.js';
 import prisma from '../utils/prisma.js';
 
 describe('/api/v1/totp/', () => {
-  const generateTOTP = (user: User) => {
+  const TOTP_SECRET = new OTPAuth.Secret().base32;
+
+  const generateTOTP = () => {
     const totp = new OTPAuth.TOTP({
-      secret: OTPAuth.Secret.fromBase32(user.totpSecret!),
+      secret: OTPAuth.Secret.fromBase32(TOTP_SECRET),
       algorithm: 'SHA1',
       digits: 6,
       period: 30,
     });
 
     return totp.generate();
+  };
+
+  const createTwoFactorUser = (confirmed = true) => {
+    return UserFactory.create({
+      password: 'password',
+      twoFactor: {
+        create: {
+          secret: TOTP_SECRET,
+          confirmedAt: confirmed ? new Date() : null,
+        },
+      },
+    });
   };
 
   describe('POST /api/v1/totp/setup', () => {
@@ -39,12 +52,13 @@ describe('/api/v1/totp/', () => {
         secret: expect.any(String),
       });
 
-      const dbUser = await prisma.user.findUnique({
-        where: { id: user.id },
+      const dbTwoFactor = await prisma.userTwoFactor.findUnique({
+        where: { userId: user.id },
       });
 
-      expect(dbUser?.twoFactorEnabled).toBe(false);
-      expect(dbUser?.totpSecret).toBe(body.data.secret);
+      // Setup is pending until the user confirms with a valid code
+      expect(dbTwoFactor?.confirmedAt).toBeNull();
+      expect(dbTwoFactor?.secret).toBe(body.data.secret);
     });
 
     it('should respond with a `400` status code when password does not match', async () => {
@@ -63,10 +77,7 @@ describe('/api/v1/totp/', () => {
     });
 
     it('should respond with a `400` status code when 2fa is already enabled', async () => {
-      const user = await UserFactory.create({
-        password: 'password',
-        twoFactorEnabled: true,
-      });
+      const user = await createTwoFactorUser();
       const accessToken = generateAccessToken(user);
 
       await request()
@@ -90,31 +101,25 @@ describe('/api/v1/totp/', () => {
 
   describe('POST /api/v1/totp/enable', () => {
     it('should respond with a `204` status code', async () => {
-      const secret = new OTPAuth.Secret();
-      const user = await UserFactory.create({
-        totpSecret: secret.base32,
-      });
+      const user = await createTwoFactorUser(false);
       const accessToken = generateAccessToken(user);
 
       await request()
         .post('/api/v1/totp/enable')
         .auth(accessToken, { type: 'bearer' })
         .send({
-          otp: generateTOTP(user),
+          otp: generateTOTP(),
         })
         .expect(204);
 
-      const dbUser = await prisma.user.findUnique({
-        where: { id: user.id },
+      const dbTwoFactor = await prisma.userTwoFactor.findUnique({
+        where: { userId: user.id },
       });
-      expect(dbUser?.twoFactorEnabled).toBe(true);
+      expect(dbTwoFactor?.confirmedAt).not.toBeNull();
     });
 
     it('should respond with a `400` status code when otp is invalid', async () => {
-      const secret = new OTPAuth.Secret();
-      const user = await UserFactory.create({
-        totpSecret: secret.base32,
-      });
+      const user = await createTwoFactorUser(false);
       const accessToken = generateAccessToken(user);
 
       await request()
@@ -140,15 +145,12 @@ describe('/api/v1/totp/', () => {
     });
 
     it('should respond with a `401` status code when unauthenticated', async () => {
-      const secret = new OTPAuth.Secret();
-      const user = await UserFactory.create({
-        totpSecret: secret.base32,
-      });
+      await createTwoFactorUser(false);
 
       await request()
         .post('/api/v1/totp/enable')
         .send({
-          otp: generateTOTP(user),
+          otp: generateTOTP(),
         })
         .expect(401);
     });
@@ -156,36 +158,26 @@ describe('/api/v1/totp/', () => {
 
   describe('POST /api/v1/totp/disable', () => {
     it('should respond with a `204` status code', async () => {
-      const secret = new OTPAuth.Secret();
-      const user = await UserFactory.create({
-        twoFactorEnabled: true,
-        totpSecret: secret.base32,
-        password: 'password',
-      });
+      const user = await createTwoFactorUser();
       const accessToken = generateAccessToken(user);
 
       await request()
         .post('/api/v1/totp/disable')
         .auth(accessToken, { type: 'bearer' })
         .send({
-          otp: generateTOTP(user),
+          otp: generateTOTP(),
           password: 'password',
         })
         .expect(204);
 
-      const dbUser = await prisma.user.findUnique({
-        where: { id: user.id },
+      const dbTwoFactor = await prisma.userTwoFactor.findUnique({
+        where: { userId: user.id },
       });
-      expect(dbUser?.twoFactorEnabled).toBe(false);
+      expect(dbTwoFactor).toBeNull();
     });
 
     it('should respond with a `400` status code when otp is invalid', async () => {
-      const secret = new OTPAuth.Secret();
-      const user = await UserFactory.create({
-        twoFactorEnabled: true,
-        totpSecret: secret.base32,
-        password: 'password',
-      });
+      const user = await createTwoFactorUser();
       const accessToken = generateAccessToken(user);
 
       await request()
@@ -199,67 +191,47 @@ describe('/api/v1/totp/', () => {
     });
 
     it('should respond with a `400` status code when password is invalid', async () => {
-      const secret = new OTPAuth.Secret();
-      const user = await UserFactory.create({
-        twoFactorEnabled: true,
-        totpSecret: secret.base32,
-        password: 'password',
-      });
+      const user = await createTwoFactorUser();
       const accessToken = generateAccessToken(user);
 
       await request()
         .post('/api/v1/totp/disable')
         .auth(accessToken, { type: 'bearer' })
         .send({
-          otp: generateTOTP(user),
+          otp: generateTOTP(),
           password: 'invalid',
         })
         .expect(400);
     });
 
     it('should respond with a `400` status code when otp is disabled', async () => {
-      const secret = new OTPAuth.Secret();
-      const user = await UserFactory.create({
-        twoFactorEnabled: false,
-        totpSecret: secret.base32,
-        password: 'password',
-      });
+      const user = await createTwoFactorUser(false);
       const accessToken = generateAccessToken(user);
 
       await request()
         .post('/api/v1/totp/disable')
         .auth(accessToken, { type: 'bearer' })
         .send({
-          otp: generateTOTP(user),
+          otp: generateTOTP(),
           password: 'password',
         })
         .expect(400);
     });
 
     it('should respond with a `401` status code when unauthenticated', async () => {
-      const secret = new OTPAuth.Secret();
-      const user = await UserFactory.create({
-        twoFactorEnabled: true,
-        totpSecret: secret.base32,
-        password: 'password',
-      });
+      await createTwoFactorUser();
 
       await request()
         .post('/api/v1/totp/disable')
         .send({
-          otp: generateTOTP(user),
+          otp: generateTOTP(),
           password: 'password',
         })
         .expect(401);
     });
 
     it('should disable using a recovery code instead of a totp', async () => {
-      const secret = new OTPAuth.Secret();
-      const user = await UserFactory.create({
-        twoFactorEnabled: true,
-        totpSecret: secret.base32,
-        password: 'password',
-      });
+      const user = await createTwoFactorUser();
       await prisma.twoFactorRecoveryCode.create({
         data: {
           userId: user.id,
@@ -277,8 +249,10 @@ describe('/api/v1/totp/', () => {
         })
         .expect(204);
 
-      const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
-      expect(dbUser?.twoFactorEnabled).toBe(false);
+      const dbTwoFactor = await prisma.userTwoFactor.findUnique({
+        where: { userId: user.id },
+      });
+      expect(dbTwoFactor).toBeNull();
       // Disabling 2FA clears any remaining recovery codes.
       const codes = await prisma.twoFactorRecoveryCode.findMany({
         where: { userId: user.id },
@@ -289,12 +263,7 @@ describe('/api/v1/totp/', () => {
 
   describe('POST /api/v1/totp/recovery-codes', () => {
     it('should generate and persist recovery codes', async () => {
-      const secret = new OTPAuth.Secret();
-      const user = await UserFactory.create({
-        twoFactorEnabled: true,
-        totpSecret: secret.base32,
-        password: 'password',
-      });
+      const user = await createTwoFactorUser();
       const accessToken = generateAccessToken(user);
 
       const { body } = await request()
@@ -302,7 +271,7 @@ describe('/api/v1/totp/', () => {
         .auth(accessToken, { type: 'bearer' })
         .send({
           password: 'password',
-          otp: generateTOTP(user),
+          otp: generateTOTP(),
         })
         .expect(200);
 
@@ -318,24 +287,19 @@ describe('/api/v1/totp/', () => {
     });
 
     it('should replace previously generated recovery codes', async () => {
-      const secret = new OTPAuth.Secret();
-      const user = await UserFactory.create({
-        twoFactorEnabled: true,
-        totpSecret: secret.base32,
-        password: 'password',
-      });
+      const user = await createTwoFactorUser();
       const accessToken = generateAccessToken(user);
 
       const first = await request()
         .post('/api/v1/totp/recovery-codes')
         .auth(accessToken, { type: 'bearer' })
-        .send({ password: 'password', otp: generateTOTP(user) })
+        .send({ password: 'password', otp: generateTOTP() })
         .expect(200);
 
       const second = await request()
         .post('/api/v1/totp/recovery-codes')
         .auth(accessToken, { type: 'bearer' })
-        .send({ password: 'password', otp: generateTOTP(user) })
+        .send({ password: 'password', otp: generateTOTP() })
         .expect(200);
 
       expect(second.body.data.codes).not.toEqual(first.body.data.codes);
@@ -347,28 +311,18 @@ describe('/api/v1/totp/', () => {
     });
 
     it('should respond with a `400` status code when password is invalid', async () => {
-      const secret = new OTPAuth.Secret();
-      const user = await UserFactory.create({
-        twoFactorEnabled: true,
-        totpSecret: secret.base32,
-        password: 'password',
-      });
+      const user = await createTwoFactorUser();
       const accessToken = generateAccessToken(user);
 
       await request()
         .post('/api/v1/totp/recovery-codes')
         .auth(accessToken, { type: 'bearer' })
-        .send({ password: 'invalid', otp: generateTOTP(user) })
+        .send({ password: 'invalid', otp: generateTOTP() })
         .expect(400);
     });
 
     it('should respond with a `400` status code when the otp is invalid', async () => {
-      const secret = new OTPAuth.Secret();
-      const user = await UserFactory.create({
-        twoFactorEnabled: true,
-        totpSecret: secret.base32,
-        password: 'password',
-      });
+      const user = await createTwoFactorUser();
       const accessToken = generateAccessToken(user);
 
       await request()
@@ -385,7 +339,6 @@ describe('/api/v1/totp/', () => {
 
     it('should respond with a `400` status code when 2fa is not enabled', async () => {
       const user = await UserFactory.create({
-        twoFactorEnabled: false,
         password: 'password',
       });
       const accessToken = generateAccessToken(user);
