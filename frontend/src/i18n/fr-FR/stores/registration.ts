@@ -20,4 +20,9 @@ export default {
     error: 'Échec de suppression du modèle',
     invalid: 'ID de camp ou de modèle invalide',
   },
+  realtimeCreate: {
+    message: 'Nouvelle inscription reçue',
+    caption: '{name} vient de s’inscrire.',
+    fallbackName: 'Quelqu’un',
+  },
 };
