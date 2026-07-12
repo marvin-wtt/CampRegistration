@@ -17,7 +17,7 @@
 
 <script lang="ts" setup>
 import { computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useCampDetailsStore } from '@/stores/camp-details-store';
 import { useRegistrationsStore } from '@/stores/registration-store';
 import ResultTableInteractive from '@/components/campManagement/table/ResultTableInteractive.vue';
@@ -42,6 +42,7 @@ const templateStore = useTemplateStore();
 const { data: templates } = storeToRefs(templateStore);
 
 const router = useRouter();
+const route = useRoute();
 const { getStringQueryParam } = useRouteQueryParams();
 const quasar = useQuasar();
 const { locale } = useI18n();
@@ -67,17 +68,25 @@ function openLinkedRegistration(): void {
     (r) => r.id === registrationId,
   );
 
-  if (registration) {
-    quasar.dialog({
-      component: RegistrationDetailsDialog,
-      componentProps: { registration },
+  const removeQueryParam = () => {
+    // Drop the param so refresh/back-nav doesn't reopen the dialog
+    void router.replace({
+      query: { ...route.query, registrationId: undefined },
     });
+  };
+
+  if (!registration) {
+    removeQueryParam();
   }
 
-  // Drop the param so refresh/back-nav doesn't reopen the dialog
-  void router.replace({
-    query: { ...router.currentRoute.value.query, registrationId: undefined },
-  });
+  quasar
+    .dialog({
+      component: RegistrationDetailsDialog,
+      componentProps: { registration },
+    })
+    .onDismiss(() => {
+      removeQueryParam();
+    });
 }
 
 const loading = computed<boolean>(() => {
