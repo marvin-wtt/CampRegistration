@@ -85,6 +85,7 @@ model Camp {
   files            File[]
   programEvents    ProgramEvent[]
   tasks            Task[]
+  campSettings     CampSetting[]
 
   @@map("camps")
 }
@@ -191,6 +192,20 @@ model TableTemplate {
 
   @@index([campId], map: "table_templates_camp_id_foreign")
   @@map("table_templates")
+}
+
+model CampSetting {
+  id        String    @id @unique(map: "camp_settings_id_unique") @default(ulid()) @db.Char(26)
+  campId    String    @map("camp_id") @db.Char(26)
+  key       String    @db.VarChar(100)
+  /// ![Record<string, unknown>]
+  data      Json      @db.Json
+  updatedAt DateTime? @updatedAt @map("updated_at")
+
+  camp Camp @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "camp_settings_camp_id_foreign")
+
+  @@unique([campId, key], map: "camp_settings_camp_id_key_unique")
+  @@map("camp_settings")
 }
 
 model Token {

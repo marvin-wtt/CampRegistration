@@ -219,14 +219,15 @@ import CalendarNavigationBar from '@/components/campManagement/programPlanner/Ca
 import CalendarItem from '@/components/campManagement/programPlanner/CalendarItem.vue';
 import CalendarDayItem from '@/components/campManagement/programPlanner/CalendarDayItem.vue';
 import type { DragAndDropScope } from '@/components/campManagement/programPlanner/DragAndDropScope';
-import type { CalendarSettings } from '@/components/campManagement/programPlanner/CalendarSettings';
+import type { ProgramPlannerSettings } from '@camp-registration/common/settings';
 import ProgramEventAddDialog from '@/components/campManagement/programPlanner/dialogs/ProgramEventAddDialog.vue';
 import ProgramEventEditDialog from '@/components/campManagement/programPlanner/dialogs/ProgramEventEditDialog.vue';
 import CalendarSettingsDialog from '@/components/campManagement/programPlanner/dialogs/CalendarSettingsDialog.vue';
 import CalendarBacklogPanel from '@/components/campManagement/programPlanner/CalendarBacklogPanel.vue';
 import { daysBetweenDates } from '@/utils/date';
 import { openPrintIframe } from '@/utils/printIframe';
-import { useCampStorage } from '@/composables/campStorage';
+import { useCampSettings } from '@/composables/campSettings';
+import { SETTING_KEYS } from '@camp-registration/common/settings';
 import { usePermissions } from '@/composables/permissions';
 
 const { t, locale } = useI18n();
@@ -255,12 +256,15 @@ const selectedDate = ref<string>(initialSelectedDate());
 const range = ref<number>(initialRange());
 const activePlan = ref<'a' | 'b' | 'both'>('both');
 
-const settings = useCampStorage<CalendarSettings>('program-planner-settings', {
-  dayStart: '08:00',
-  dayEnd: '21:00',
-  timeInterval: 30,
-  showAllTranslations: false,
-});
+const { settings } = useCampSettings<ProgramPlannerSettings>(
+  SETTING_KEYS.PROGRAM_PLANNER,
+  {
+    dayStart: '08:00',
+    dayEnd: '21:00',
+    timeInterval: 30,
+    showAllTranslations: false,
+  },
+);
 
 onMounted(() => {
   setTimeout(() => {
@@ -662,7 +666,7 @@ function onSettingsOpen() {
         settings: { ...settings },
       },
     })
-    .onOk((newSettings: CalendarSettings) => {
+    .onOk((newSettings: ProgramPlannerSettings) => {
       Object.assign(settings, newSettings);
     });
 }

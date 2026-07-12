@@ -134,17 +134,17 @@
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { reactive, toRaw } from 'vue';
-import type { CalendarSettings } from '@/components/campManagement/programPlanner/CalendarSettings';
+import type { ProgramPlannerSettings } from '@camp-registration/common/settings';
 
 const { settings } = defineProps<{
-  settings: Partial<CalendarSettings>;
+  settings: Partial<ProgramPlannerSettings>;
 }>();
 
 defineEmits([...useDialogPluginComponent.emits]);
 
-const data = reactive<Partial<CalendarSettings>>(initialValue());
+const data = reactive<Partial<ProgramPlannerSettings>>(initialValue());
 
-function initialValue(): Partial<CalendarSettings> {
+function initialValue(): Partial<ProgramPlannerSettings> {
   return structuredClone(toRaw(settings));
 }
 

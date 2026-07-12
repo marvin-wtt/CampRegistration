@@ -2,6 +2,7 @@ import { useAuthService } from '@/services/AuthService';
 import { useCampService } from '@/services/CampService';
 import { useRegistrationService } from '@/services/RegistrationService';
 import { useTableTemplateService } from '@/services/TableTemplateService';
+import { useCampSettingService } from '@/services/CampSettingService';
 import { useUserService } from '@/services/UserService';
 import { useRoomService } from '@/services/RoomService';
 import { useCampManagerService } from '@/services/CampManagerService';
@@ -31,6 +32,7 @@ export function useAPIService() {
     ...useCampManagerService(),
     ...useRegistrationService(),
     ...useTableTemplateService(),
+    ...useCampSettingService(),
     ...useRoomService(),
     ...useFileService(),
     ...useFeedbackService(),
