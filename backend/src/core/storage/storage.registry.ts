@@ -12,10 +12,12 @@ import logger from '#core/logger';
 
 export class StorageRegistry {
   private storageCache: Map<string, Storage>;
+  private rawStorageCache: Map<string, Storage>;
   private readonly keyring: StorageKeyring | null;
 
   constructor(private options: StorageConfig) {
     this.storageCache = new Map();
+    this.rawStorageCache = new Map();
     this.keyring = options.encryptionKeys
       ? parseStorageKeyring(options.encryptionKeys)
       : null;
@@ -35,6 +37,30 @@ export class StorageRegistry {
     }
 
     const storage = this.storageCache.get(identifier);
+    /* c8 ignore next 3 */
+    if (!storage) {
+      throw new Error('Invalid storage');
+    }
+
+    return storage;
+  }
+
+  /**
+   * The undecorated driver for `identifier` — no transparent encryption.
+   * Application code should use `getStorage()`; this is for tooling that
+   * manages ciphertext directly, such as the file-encryption migration
+   * script, so it can write a blob's bytes as-is on any driver (disk today,
+   * s3 later) without `EncryptedStorage` re-encrypting (or refusing to
+   * decrypt) on top.
+   */
+  getRawStorage(identifier?: string): Storage {
+    identifier ??= this.options.location;
+
+    if (!this.rawStorageCache.has(identifier)) {
+      this.rawStorageCache.set(identifier, this.createStorage(identifier));
+    }
+
+    const storage = this.rawStorageCache.get(identifier);
     /* c8 ignore next 3 */
     if (!storage) {
       throw new Error('Invalid storage');
