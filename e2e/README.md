@@ -37,7 +37,7 @@ The backend uses the `.env.e2e` configuration when run for end-to-end testing.
 npm run test --workspace e2e
 
 # Open the interactive Playwright UI
-npm run run:ui --workspace e2e
+npm run dev --workspace e2e
 
 # Run a single project (e.g. mobile only)
 npx playwright test --project=mobile-chrome --project=mobile-safari

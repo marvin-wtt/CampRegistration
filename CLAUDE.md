@@ -67,7 +67,7 @@ npx vitest src/path/to/test.ts --workspace frontend
 
 ```bash
 npm run test --workspace e2e                         # Start backend + run Playwright
-npm run run:ui --workspace e2e                       # Playwright interactive UI
+npm run dev --workspace e2e                       # Playwright interactive UI
 ```
 
 ## Local Services (Docker)

@@ -85,7 +85,7 @@ async function main() {
   await waitForPort(host, port);
   console.log("Database is ready!");
 
-  await run("npm", ["run", "dev:run"], { cwd: e2eDir });
+  await run("npm", ["run", "test:ui"], { cwd: e2eDir });
 }
 
 main().catch((err) => {
