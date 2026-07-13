@@ -20,4 +20,9 @@ export default {
     error: 'Błąd podczas usuwania zgłoszenia',
     invalid: 'Nieprawidłowy identyfikator zgłoszenia lub obozu',
   },
+  realtimeCreate: {
+    message: 'Otrzymano nowe zgłoszenie',
+    caption: '{name} właśnie się zarejestrował(a).',
+    fallbackName: 'Ktoś',
+  },
 };
