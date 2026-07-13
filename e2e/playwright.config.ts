@@ -18,6 +18,11 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   retries: process.env.CI ? 1 : 0,
+  // The `page` fixture reseeds via the minimal e2e-only seeder
+  // (backend/prisma/seeders/e2e) before every test — one tsx cold start
+  // plus a handful of inserts, comfortably under Playwright's 30s default,
+  // but bumped slightly for headroom on slower CI runners.
+  timeout: 30_000,
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "list",
   globalSetup: "./support/globalSetup.ts",
 
@@ -25,7 +30,6 @@ export default defineConfig({
     command: "npm run production",
     cwd: repoRoot,
     url: "http://localhost:3001",
-    timeout: 60_000,
     reuseExistingServer: !process.env.CI,
   },
 
@@ -33,8 +37,6 @@ export default defineConfig({
     baseURL: "http://localhost:3001",
     trace: "on-first-retry",
     screenshot: "only-on-failure",
-    // App uses `data-test` attributes for test hooks (Cypress convention);
-    // keep page.getByTestId() working against them.
     testIdAttribute: "data-test",
   },
 

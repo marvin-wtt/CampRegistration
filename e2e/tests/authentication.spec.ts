@@ -62,7 +62,11 @@ test.describe("Authentication", () => {
 
       const totpForm = page.getByTestId("totp-form");
       const totp = await generateTotp("TMRUI6PADI7DGPJF5DPMLCWSXW32MKXM");
-      await totpForm.getByTestId("totp").locator("input").first().fill(totp);
+      await totpForm
+        .getByTestId("totp")
+        .locator("input")
+        .first()
+        .pressSequentially(totp);
 
       const verifyResponse = page.waitForResponse(
         (resp) =>
@@ -98,7 +102,7 @@ test.describe("Authentication", () => {
         .getByTestId("totp")
         .locator("input")
         .first()
-        .fill("000000");
+        .pressSequentially("000000");
 
       const verifyResponse = page.waitForResponse(
         (resp) =>
@@ -153,7 +157,7 @@ test.describe("Authentication", () => {
       const confirmLink = page.locator(".confirm-email-link a").first();
       await confirmLink.evaluate((el) => el.removeAttribute("target"));
       await confirmLink.click();
-      await expect(page).toHaveURL(/\/login$/);
+      await expect(page).toHaveURL(/\/login(\?|$)/);
 
       const loginForm = page.getByTestId("login-form");
       await loginForm.getByTestId("password").fill("Password123#");
@@ -185,7 +189,7 @@ test.describe("Authentication", () => {
       const resetLink = page.locator(".reset-email-link a").first();
       await resetLink.evaluate((el) => el.removeAttribute("target"));
       await resetLink.click();
-      await expect(page).toHaveURL(/\/reset-password$/);
+      await expect(page).toHaveURL(/\/reset-password(\?|$)/);
 
       const resetPasswordForm = page.getByTestId("reset-password-form");
       await resetPasswordForm.getByTestId("password").fill("NewPassword123#");

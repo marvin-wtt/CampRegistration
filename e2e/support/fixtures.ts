@@ -1,11 +1,10 @@
 import { test as base } from "@playwright/test";
-import { truncateDatabase, seedDatabase } from "./db";
+import { seedE2eDatabase } from "./db";
 import { deleteAllMessages } from "./maildev";
 
 export const test = base.extend({
   page: async ({ page }, use) => {
-    truncateDatabase();
-    seedDatabase();
+    seedE2eDatabase();
     await deleteAllMessages();
 
     await use(page);
