@@ -110,7 +110,10 @@ export class FileService extends BaseService {
     await this.storageRegistry.getStorage().moveToStorage(filename);
     await this.prisma.file.updateMany({
       where: { name: filename },
-      data: { uploadStatus: 'READY' },
+      data: {
+        uploadStatus: 'READY',
+        encryption: this.storageRegistry.getEncryptionFormat(),
+      },
     });
   }
 
@@ -459,6 +462,9 @@ export class FileService extends BaseService {
             accessLevel: file.accessLevel,
             storageLocation: file.storageLocation,
             uploadStatus: file.uploadStatus,
+            // The duplicate points at the same stored blob, so it must
+            // record the same encryption format.
+            encryption: file.encryption,
             field: sessionId,
           },
         }),

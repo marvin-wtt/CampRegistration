@@ -2,6 +2,7 @@ import type { Storage } from '#core/storage/storage';
 import { DiskStorage } from '#core/storage/disk.storage';
 import { StaticStorage } from '#core/storage/static.storage';
 import { EncryptedStorage } from '#core/storage/encrypted.storage';
+import { ENCRYPTION_FORMAT } from '#core/storage/encryption/envelope';
 import {
   parseStorageKeyring,
   type StorageKeyring,
@@ -40,6 +41,19 @@ export class StorageRegistry {
     }
 
     return storage;
+  }
+
+  /**
+   * The `File.encryption` value that `moveToStorage` on the given storage
+   * produces: the envelope format when encryption applies, `null` when the
+   * file is stored as plaintext.
+   */
+  getEncryptionFormat(identifier?: string): string | null {
+    identifier ??= this.options.location;
+
+    return this.keyring !== null && identifier !== 'static'
+      ? ENCRYPTION_FORMAT
+      : null;
   }
 
   private loadStorage(identifier: string): Storage {

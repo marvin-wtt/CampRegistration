@@ -9,7 +9,7 @@ const KEY_LENGTH = 32;
 const MAX_KEY_ID_LENGTH = 255;
 
 // Baked into every encrypted message; changing it breaks decryption.
-export const KEY_NAMESPACE = 'camp-registration/file-storage';
+const KEY_NAMESPACE = 'camp-registration/file-storage';
 
 /**
  * Encrypt and decrypt are separate keyrings on purpose: a multi-keyring
