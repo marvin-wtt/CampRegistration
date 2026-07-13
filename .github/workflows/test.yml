@@ -64,6 +64,54 @@ jobs:
           --from-migrations prisma/migrations
           --to-schema prisma/schema.prisma
 
+  # Builds common + backend + frontend once and shares the output with every
+  # job below via artifacts, instead of each job (incl. the 5-way e2e matrix)
+  # recompiling identical TypeScript/Vite output independently.
+  build:
+    runs-on: ubuntu-24.04
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+
+      - name: Cache dependencies
+        id: node-modules-cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node22-modules-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.node-modules-cache.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - name: Build common
+        run: npm run build --workspace common
+
+      - name: Build backend
+        run: npm run build --workspace backend
+
+      - name: Build frontend
+        run: npm run build --workspace frontend
+
+      - name: Upload build output
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: |
+            common/dist
+            backend/build
+            backend/src/generated
+            frontend/dist/spa
+          retention-days: 1
+
   test-common:
     runs-on: ubuntu-24.04
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
@@ -78,7 +126,15 @@ jobs:
           node-version: 24
           cache: "npm"
 
+      - name: Cache dependencies
+        id: node-modules-cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node24-modules-${{ hashFiles('package-lock.json') }}
+
       - name: Install dependencies
+        if: steps.node-modules-cache.outputs.cache-hit != 'true'
         run: npm ci
 
       - name: Test common
@@ -96,6 +152,7 @@ jobs:
           file-coverage-mode: changes
 
   test-backend:
+    needs: build
     runs-on: ubuntu-24.04
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
 
@@ -155,14 +212,21 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: "npm"
 
+      - name: Cache dependencies
+        id: node-modules-cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node${{ matrix.node }}-modules-${{ hashFiles('package-lock.json') }}
+
       - name: Install dependencies
+        if: steps.node-modules-cache.outputs.cache-hit != 'true'
         run: npm ci
 
-      - name: Build common
-        run: npm run build --workspace common
-
-      - name: Build backend
-        run: npm run build --workspace backend
+      - name: Download build output
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
 
       - name: Migrate test database
         run: npm run migrate --workspace backend
@@ -186,6 +250,7 @@ jobs:
           file-coverage-mode: changes
 
   test-frontend:
+    needs: build
     runs-on: ubuntu-24.04
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
 
@@ -199,11 +264,21 @@ jobs:
           node-version: 24
           cache: "npm"
 
+      - name: Cache dependencies
+        id: node-modules-cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node24-modules-${{ hashFiles('package-lock.json') }}
+
       - name: Install dependencies
+        if: steps.node-modules-cache.outputs.cache-hit != 'true'
         run: npm ci
 
-      - name: Build common
-        run: npm run build --workspace common
+      - name: Download build output
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
 
       - name: Test frontend
         run: >
@@ -224,6 +299,7 @@ jobs:
           file-coverage-mode: changes
 
   test-e2e:
+    needs: build
     runs-on: ubuntu-24.04
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
 
@@ -288,33 +364,32 @@ jobs:
           node-version: 22
           cache: "npm"
 
+      - name: Cache dependencies
+        id: node-modules-cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node22-modules-${{ hashFiles('package-lock.json') }}
+
       - name: Install dependencies
+        if: steps.node-modules-cache.outputs.cache-hit != 'true'
         run: npm ci
+
+      - name: Download build output
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
 
       - name: Install Playwright browsers
         working-directory: e2e
         run: npx playwright install --with-deps
 
-      - name: Build and migrate
-        run: npm run build-and-migrate
-
-      - name: Start server
-        run: nohup npm run production > server.log 2>&1 &
-
-      - name: Wait for server
-        run: npx wait-on http://localhost:3001 --timeout 60000
+      - name: Migrate test database
+        run: npm run migrate --workspace backend
 
       - name: Run Playwright tests
         working-directory: e2e
         run: npx playwright test --project="${{ matrix.project }}"
-
-      - name: Upload server log
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: server-log-${{ matrix.project }}
-          path: server.log
-          retention-days: 14
 
       - name: Upload Playwright report
         if: always()
