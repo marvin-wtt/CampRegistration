@@ -260,6 +260,7 @@ jobs:
       EMAIL_FROM: noreply@yourapp.com
       EMAIL_REPLY_TO: noreply@yourapp.com
       EMAIL_ADMIN: admin@yourapp.com
+      RATE_LIMIT_DISABLED: true
 
     steps:
       - name: Checkout code

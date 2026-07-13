@@ -68,6 +68,9 @@ const config = {
   log: {
     level: env.LOG_LEVEL,
   },
+  rateLimit: {
+    disabled: env.RATE_LIMIT_DISABLED,
+  },
 };
 
 export type StorageConfig = (typeof config)['storage'];
