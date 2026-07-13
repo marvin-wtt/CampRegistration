@@ -11,9 +11,9 @@ import {
   type StorageKeyring,
 } from '#core/storage/encryption/keyring';
 import {
-  MAGIC,
+  ENCRYPTION_FORMAT,
   createDecryptStream,
-  createEncryptStreams,
+  createEncryptStream,
 } from '#core/storage/encryption/envelope';
 import type { Storage, StorageFile } from '#core/storage/storage';
 
@@ -22,7 +22,11 @@ const KEY_2 = crypto.randomBytes(32).toString('base64');
 
 const keyring = parseStorageKeyring(`k1:${KEY_1}`);
 
-const storageFile = (name: string, size = 0): StorageFile => ({
+const storageFile = (
+  name: string,
+  size = 0,
+  encryption: string | null = ENCRYPTION_FORMAT,
+): StorageFile => ({
   id: name,
   originalName: name,
   name,
@@ -31,6 +35,7 @@ const storageFile = (name: string, size = 0): StorageFile => ({
   type: 'application/octet-stream',
   accessLevel: null,
   storageLocation: 'memory',
+  encryption,
 });
 
 const streamToBuffer = async (stream: Readable): Promise<Buffer> => {
@@ -49,7 +54,7 @@ const encrypt = async (
   const collected = streamToBuffer(out);
   await pipeline([
     Readable.from([data]),
-    ...createEncryptStreams(ring.encrypt),
+    createEncryptStream(ring.encrypt),
     out,
   ]);
   return collected;
@@ -77,14 +82,17 @@ class MemoryStorage implements Storage {
     this.files.delete(fileName);
   }
 
-  async moveToStorage(filename: string): Promise<void> {
+  async moveToStorage(
+    filename: string,
+    sourceFileName = filename,
+  ): Promise<void> {
     this.moveCalls++;
     if (this.failNextMove) {
       this.failNextMove = false;
       throw new Error('inner storage unavailable');
     }
 
-    const filePath = path.join(this.tmpDir, filename);
+    const filePath = path.join(this.tmpDir, sourceFileName);
     this.files.set(filename, await fse.readFile(filePath));
     await fse.remove(filePath);
   }
@@ -127,15 +135,15 @@ describe('parseStorageKeyring', () => {
   });
 });
 
-describe('createEncryptStreams / createDecryptStream', () => {
+describe('createEncryptStream / createDecryptStream', () => {
   it(
     'round-trips data spanning multiple frames',
     { timeout: 30_000 },
     async () => {
       // Delivered as a single chunk crossing many frame boundaries: the
       // pattern that triggered silent frame loss in old ESDK versions
-      // (aws-encryption-sdk-javascript#507, fixed since v2). Guards against
-      // a regression sneaking in via a dependency bump.
+      // (aws-encryption-sdk-javascript#507, fixed since v2). Guards
+      // against a regression sneaking in via a dependency bump.
       const data = crypto.randomBytes(1024 * 1024);
 
       const blob = await encrypt(data);
@@ -185,12 +193,11 @@ describe('createEncryptStreams / createDecryptStream', () => {
     await expect(decrypt(blob)).resolves.toEqual(Buffer.alloc(0));
   });
 
-  it('produces a blob that starts with the magic bytes and hides the plaintext', async () => {
+  it('hides the plaintext', async () => {
     const data = Buffer.from('participant medical certificate'.repeat(100));
 
     const blob = await encrypt(data);
 
-    expect(blob.subarray(0, MAGIC.length)).toEqual(MAGIC);
     expect(blob.includes('medical')).toBe(false);
   });
 
@@ -239,18 +246,6 @@ describe('createEncryptStreams / createDecryptStream', () => {
 
     await expect(decrypt(blob.subarray(0, blob.length - 20))).rejects.toThrow();
   });
-
-  it('passes legacy plaintext through unchanged', async () => {
-    const data = crypto.randomBytes(5000);
-
-    await expect(decrypt(data)).resolves.toEqual(data);
-  });
-
-  it('passes tiny legacy plaintext through unchanged', async () => {
-    const data = Buffer.from('hi');
-
-    await expect(decrypt(data)).resolves.toEqual(data);
-  });
 });
 
 describe('EncryptedStorage', () => {
@@ -280,7 +275,6 @@ describe('EncryptedStorage', () => {
 
     const blob = inner.files.get('file.bin');
     expect(blob).toBeDefined();
-    expect(blob?.subarray(0, MAGIC.length)).toEqual(MAGIC);
     expect(blob?.equals(data)).toBe(false);
 
     await expect(
@@ -288,13 +282,26 @@ describe('EncryptedStorage', () => {
     ).resolves.toEqual(data);
   });
 
-  it('does not double-encrypt when the upload job is retried', async () => {
+  it('cleans up the plaintext tmp file and staging files after the move', async () => {
+    await writeTmpFile('file.bin', crypto.randomBytes(1000));
+
+    await storage.moveToStorage('file.bin');
+
+    await expect(fse.readdir(tmpDir)).resolves.toEqual([]);
+  });
+
+  it('re-encrypts from the untouched plaintext when the upload job is retried', async () => {
     const data = crypto.randomBytes(1000);
     await writeTmpFile('file.bin', data);
 
     inner.failNextMove = true;
     await expect(storage.moveToStorage('file.bin')).rejects.toThrow(
       /unavailable/,
+    );
+
+    // The plaintext source must survive a failed attempt untouched.
+    await expect(fse.readFile(path.join(tmpDir, 'file.bin'))).resolves.toEqual(
+      data,
     );
 
     await storage.moveToStorage('file.bin');
@@ -305,43 +312,21 @@ describe('EncryptedStorage', () => {
     ).resolves.toEqual(data);
   });
 
-  it('refuses to encrypt a file that looks encrypted but has no readable key', async () => {
-    // A retry may find the tmp file encrypted by an earlier attempt whose
-    // key was since removed; re-encrypting it would corrupt it for good.
-    const blob = await encrypt(crypto.randomBytes(1000));
-    await writeTmpFile('file.bin', blob);
-
-    const otherKeys = new EncryptedStorage(
-      inner,
-      parseStorageKeyring(`k2:${KEY_2}`),
-      tmpDir,
-    );
-
-    await expect(otherKeys.moveToStorage('file.bin')).rejects.toThrow(
-      /refusing to encrypt it again/,
-    );
-    expect(inner.moveCalls).toBe(0);
-  });
-
-  it('encrypts a plaintext upload that starts with the magic bytes', async () => {
-    const data = Buffer.concat([MAGIC, crypto.randomBytes(500)]);
-    await writeTmpFile('spoof.bin', data);
-
-    await storage.moveToStorage('spoof.bin');
-
-    expect(inner.files.get('spoof.bin')?.equals(data)).toBe(false);
-    await expect(
-      streamToBuffer(storage.stream(storageFile('spoof.bin', data.length))),
-    ).resolves.toEqual(data);
-  });
-
-  it('streams files stored before encryption was enabled unchanged', async () => {
+  it('streams files recorded as plaintext unchanged', async () => {
     const data = crypto.randomBytes(1000);
     inner.files.set('legacy.bin', data);
 
     await expect(
-      streamToBuffer(storage.stream(storageFile('legacy.bin'))),
+      streamToBuffer(storage.stream(storageFile('legacy.bin', 0, null))),
     ).resolves.toEqual(data);
+  });
+
+  it('errors on an unknown encryption format', async () => {
+    inner.files.set('odd.bin', crypto.randomBytes(100));
+
+    await expect(
+      streamToBuffer(storage.stream(storageFile('odd.bin', 0, 'pgp'))),
+    ).rejects.toThrow(/unknown encryption format/);
   });
 
   it('propagates inner stream errors', async () => {
@@ -373,31 +358,16 @@ describe('EncryptedStorage', () => {
 
       expect(inner.files.get('file.bin')?.equals(data)).toBe(true);
       await expect(
-        streamToBuffer(plain.stream(storageFile('file.bin', data.length))),
+        streamToBuffer(plain.stream(storageFile('file.bin', 0, null))),
       ).resolves.toEqual(data);
     });
 
-    it('refuses to serve a previously encrypted file as raw ciphertext', async () => {
-      const blob = await encrypt(crypto.randomBytes(1000));
-      inner.files.set('old.bin', blob);
+    it('refuses to serve a file recorded as encrypted', async () => {
+      inner.files.set('old.bin', await encrypt(crypto.randomBytes(1000)));
 
       await expect(
         streamToBuffer(plain.stream(storageFile('old.bin'))),
       ).rejects.toThrow(/STORAGE_ENCRYPTION_KEYS/);
-    });
-
-    it('rejects a plaintext upload that spoofs the magic bytes', async () => {
-      // Stored as-is it would be mistaken for ciphertext — and become
-      // unservable — once encryption is enabled.
-      await writeTmpFile(
-        'spoof.bin',
-        Buffer.concat([MAGIC, crypto.randomBytes(100)]),
-      );
-
-      await expect(plain.moveToStorage('spoof.bin')).rejects.toThrow(
-        /magic bytes/,
-      );
-      expect(inner.moveCalls).toBe(0);
     });
   });
 });
