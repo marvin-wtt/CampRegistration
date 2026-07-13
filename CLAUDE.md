@@ -13,7 +13,7 @@ npm workspaces monorepo with four workspaces:
 - **`common/`** – Shared TypeScript types, entities, form definitions, and permissions (must build first)
 - **`backend/`** – Node.js/Express 5 REST API (TypeScript, Prisma, InversifyJS, driver-based queues, croner scheduler)
 - **`frontend/`** – Vue 3/Quasar SPA (TypeScript, Pinia, SurveyJS, vue-i18n)
-- **`e2e/`** – Cypress end-to-end tests
+- **`e2e/`** – Playwright end-to-end tests (desktop + mobile device projects)
 
 ## Commands
 
@@ -66,8 +66,8 @@ npx vitest src/path/to/test.ts --workspace frontend
 ### E2E
 
 ```bash
-npm run test --workspace e2e                         # Start backend + run Cypress
-npm run run:ui --workspace e2e                       # Cypress interactive UI
+npm run test --workspace e2e                         # Start backend + run Playwright
+npm run run:ui --workspace e2e                       # Playwright interactive UI
 ```
 
 ## Local Services (Docker)
@@ -289,7 +289,10 @@ literals for the SurveyJS theme editor, which can't parse `var()`/`color-mix()`.
 
 - **Unit tests** (backend): mock dependencies with `vitest-mock-extended`; no real I/O
 - **Integration tests** (backend): require MariaDB + Redis; migrations run automatically before the suite via `tests/integration/setup.ts`
-- **E2E** (Cypress): prefer `data-cy` attributes for selectors; use `cypress-maildev` for email assertions and `otplib` for TOTP code generation
+- **E2E** (Playwright): prefer `data-test` attributes for selectors (`page.getByTestId()`); use `support/maildev.ts` (
+  MailDev REST API) for email assertions and `otplib` for TOTP code generation; suite runs `workers: 1` against a shared
+  database, truncated/reseeded per test; desktop (Chromium/Firefox/WebKit) and mobile (Pixel 7/iPhone 14) device
+  projects defined in `e2e/playwright.config.ts`
 
 ## Key Pitfalls
 

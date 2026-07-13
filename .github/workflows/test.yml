@@ -51,7 +51,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: 'npm'
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci
@@ -63,7 +63,6 @@ jobs:
           --exit-code
           --from-migrations prisma/migrations
           --to-schema prisma/schema.prisma
-
 
   test-common:
     runs-on: ubuntu-24.04
@@ -77,7 +76,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: 'npm'
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci
@@ -154,7 +153,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
-          cache: 'npm'
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci
@@ -198,7 +197,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: 'npm'
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci
@@ -229,9 +228,9 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
 
     strategy:
+      fail-fast: false
       matrix:
-        browser: [chrome, firefox]
-        node: [22]
+        project: [ chromium, firefox, webkit, mobile-chrome, mobile-safari ]
 
     services:
       mariadb:
@@ -286,18 +285,41 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node }}
-          cache: 'npm'
+          node-version: 22
+          cache: "npm"
 
-      - name: Cypress run
-        uses: cypress-io/github-action@v6
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        working-directory: e2e
+        run: npx playwright install --with-deps
+
+      - name: Build and migrate
+        run: npm run build-and-migrate
+
+      - name: Start server
+        run: nohup npm run production > server.log 2>&1 &
+
+      - name: Wait for server
+        run: npx wait-on http://localhost:3001 --timeout 60000
+
+      - name: Run Playwright tests
+        working-directory: e2e
+        run: npx playwright test --project="${{ matrix.project }}"
+
+      - name: Upload server log
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          project: ./e2e
-          build: npm run build-and-migrate
-          start: npm run production
-          wait-on: 'http://localhost:3001'
-          browser: ${{ matrix.browser }}
-          record: true
-        env:
-          CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: server-log-${{ matrix.project }}
+          path: server.log
+          retention-days: 14
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ matrix.project }}
+          path: e2e/playwright-report/
+          retention-days: 14

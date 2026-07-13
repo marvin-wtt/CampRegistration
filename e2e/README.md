@@ -1,12 +1,13 @@
 # Camp Registration E2E
 
 `@camp-registration/e2e` — end-to-end tests for the Camp Registration application,
-powered by [Cypress](https://www.cypress.io/).
+powered by [Playwright](https://playwright.dev/).
 
 ## Technologies
 
-- **Cypress** — end-to-end test runner
-- **cypress-maildev** — assert on emails captured by MailDev
+- **Playwright** — end-to-end test runner, with desktop (Chromium, Firefox,
+  WebKit) and mobile (Pixel 7, iPhone 14) device projects
+- **MailDev REST API** (`support/maildev.ts`) — assert on emails captured by MailDev
 - **otplib** — generate TOTP codes for 2FA flows
 - **start-server-and-test** — boot the backend before running the suite
 
@@ -32,18 +33,25 @@ The backend uses the `.env.e2e` configuration when run for end-to-end testing.
 ## Running the Tests
 
 ```bash
-# Start the backend, then run the suite headlessly
+# Start the backend, then run the suite headlessly across all projects
 npm run test --workspace e2e
 
-# Open the interactive Cypress UI
+# Open the interactive Playwright UI
 npm run run:ui --workspace e2e
+
+# Run a single project (e.g. mobile only)
+npx playwright test --project=mobile-chrome --project=mobile-safari
 ```
 
 ## Conventions
 
-- Prefer `data-cy` attributes for selectors.
-- Use `cypress-maildev` to assert on outgoing emails.
-- Use `otplib` to generate TOTP codes when testing 2FA.
+- Prefer `data-test` attributes for selectors; use `page.getByTestId()`
+  (configured to read `data-test` in `playwright.config.ts`).
+- Use `support/maildev.ts` to assert on outgoing emails via MailDev's REST API.
+- Use `otplib` (`support/totp.ts`) to generate TOTP codes when testing 2FA.
+- Tests share a single MySQL database and truncate/reseed it per test
+  (`support/fixtures.ts`), so the suite runs with `workers: 1` — don't
+  parallelize without giving each worker its own database.
 
 ## License
 
