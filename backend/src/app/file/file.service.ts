@@ -368,7 +368,18 @@ export class FileService extends BaseService {
   }
 
   getFileStream(file: StorageFile) {
-    return this.storageRegistry.getStorage(file.storageLocation).stream(file);
+    const stream = this.storageRegistry
+      .getStorage(file.storageLocation)
+      .stream(file);
+
+    // Decryption/storage errors surface asynchronously, possibly before the
+    // consumer (HTTP response, mail transport) attaches its own 'error'
+    // listener — without one here, such an error crashes the process.
+    stream.on('error', (error: Error) => {
+      logger.error(`Error while streaming file "${file.id}"`, error);
+    });
+
+    return stream;
   }
 
   async updateFile(

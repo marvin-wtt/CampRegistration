@@ -9,17 +9,30 @@ const KEY_LENGTH = 32;
 const MAX_KEY_ID_LENGTH = 255;
 
 // Baked into every encrypted message; changing it breaks decryption.
-const KEY_NAMESPACE = 'camp-registration/file-storage';
+export const KEY_NAMESPACE = 'camp-registration/file-storage';
 
 /**
- * Builds the ESDK keyring holding the master keys that wrap per-file data
- * keys, from a `keyId:base64Key[,keyId:base64Key...]` spec (see
- * `STORAGE_ENCRYPTION_KEYS`). The first key encrypts new files; all keys
- * remain available for decryption so that keys can be rotated without
- * re-encrypting existing files. Keys must decode to exactly 32 bytes,
- * e.g. generated with `openssl rand -base64 32`.
+ * Encrypt and decrypt are separate keyrings on purpose: a multi-keyring
+ * wraps the data key with *every* member on encrypt, so using one keyring
+ * for both would let a rotated-out (possibly compromised) key decrypt
+ * newly written files.
  */
-export function parseStorageKeyring(spec: string): KeyringNode {
+export interface StorageKeyring {
+  /** The first configured key only — wraps the data key of new files. */
+  encrypt: KeyringNode;
+  /** All configured keys — old keys stay readable after rotation. */
+  decrypt: KeyringNode;
+}
+
+/**
+ * Builds the ESDK keyrings holding the master keys that wrap per-file data
+ * keys, from a `keyId:base64Key[,keyId:base64Key...]` spec (see
+ * `STORAGE_ENCRYPTION_KEYS`). The first key encrypts new files; the
+ * remaining keys can only decrypt files written while they were first.
+ * Keys must decode to exactly 32 bytes, e.g. generated with
+ * `openssl rand -base64 32`.
+ */
+export function parseStorageKeyring(spec: string): StorageKeyring {
   const entries = spec
     .split(',')
     .map((entry) => entry.trim())
@@ -71,7 +84,11 @@ export function parseStorageKeyring(spec: string): KeyringNode {
 
   const [generator, ...children] = keyrings;
 
-  return children.length === 0
-    ? generator
-    : new MultiKeyringNode({ generator, children });
+  return {
+    encrypt: generator,
+    decrypt:
+      children.length === 0
+        ? generator
+        : new MultiKeyringNode({ generator, children }),
+  };
 }

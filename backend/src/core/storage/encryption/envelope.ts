@@ -13,6 +13,7 @@ import {
   buildClient,
   type KeyringNode,
 } from '@aws-crypto/client-node';
+import { KEY_NAMESPACE } from '#core/storage/encryption/keyring';
 
 /**
  * Envelope for files encrypted at rest: our 8-byte magic prefix followed by
@@ -33,13 +34,6 @@ const ENCRYPTION_CONTEXT = {
   app: 'camp-registration',
   purpose: 'file-storage',
 };
-// The ESDK's VerifyStream silently drops frames when a chunk crosses frame
-// boundaries in certain frame-length/chunk-size combinations (e.g.
-// https://github.com/aws/aws-encryption-sdk-javascript/issues/507). The
-// default 4096-byte frame length together with input chunks capped at the
-// frame length is the combination verified to round-trip; both are pinned
-// here and the plaintext length is additionally checked on decryption.
-const SAFE_CHUNK_SIZE = 4096;
 // Generous upper bound for an ESDK header with our single-EDK messages,
 // used by the retry probe in `isEncryptedByUs`.
 const PROBE_LENGTH = 4096;
@@ -71,20 +65,6 @@ class PrependMagic extends Transform {
       this.pushed = true;
       this.push(MAGIC);
     }
-  }
-}
-
-/** Splits chunks so the ESDK never sees one crossing a frame boundary. */
-class Rechunk extends Transform {
-  _transform(
-    chunk: Buffer,
-    _encoding: BufferEncoding,
-    callback: TransformCallback,
-  ): void {
-    for (let i = 0; i < chunk.length; i += SAFE_CHUNK_SIZE) {
-      this.push(chunk.subarray(i, i + SAFE_CHUNK_SIZE));
-    }
-    callback();
   }
 }
 
@@ -127,7 +107,6 @@ class LengthGuard extends Transform {
 /** Transforms to pipe a plaintext stream through to produce an envelope. */
 export function createEncryptStreams(keyring: KeyringNode): Duplex[] {
   return [
-    new Rechunk(),
     encryptStream(keyring, {
       suiteId: SUITE_ID,
       encryptionContext: ENCRYPTION_CONTEXT,
@@ -191,10 +170,12 @@ async function peek(
  * prefix (files stored before encryption was enabled) are passed through
  * unchanged; source and decryption errors destroy the returned stream.
  * `expectedSize` (the plaintext size from the file model, when known) guards
- * encrypted reads against silent truncation.
+ * encrypted reads against silent truncation. A `null` keyring (encryption
+ * not configured) still passes plaintext through, but fails loudly on
+ * encrypted sources instead of serving raw ciphertext.
  */
 export function createDecryptStream(
-  keyring: KeyringNode,
+  keyring: KeyringNode | null,
   source: Readable,
   expectedSize?: number,
 ): Readable {
@@ -204,13 +185,15 @@ export function createDecryptStream(
     const { prefix, rest } = await peek(source, MAGIC.length);
 
     if (prefix.equals(MAGIC)) {
+      if (keyring === null) {
+        throw new Error(
+          'File is encrypted at rest, but STORAGE_ENCRYPTION_KEYS is not configured',
+        );
+      }
       const guards =
-        expectedSize !== undefined && expectedSize > 0
-          ? [new LengthGuard(expectedSize)]
-          : [];
+        expectedSize !== undefined ? [new LengthGuard(expectedSize)] : [];
       await pipeline([
         rest,
-        new Rechunk(),
         decryptUnsignedMessageStream(keyring),
         ...guards,
         out,
@@ -231,16 +214,7 @@ export function createDecryptStream(
   return out;
 }
 
-/**
- * Cryptographically checks whether the file was encrypted by us: the magic
- * prefix alone could be forged by an uploaded file, but the ESDK message
- * header only parses when one of our master keys authentically unwraps its
- * data key. Used to keep retried upload jobs from encrypting twice.
- */
-export async function isEncryptedByUs(
-  keyring: KeyringNode,
-  filePath: string,
-): Promise<boolean> {
+async function readProbe(filePath: string): Promise<Buffer> {
   const buffer = Buffer.alloc(PROBE_LENGTH);
 
   // eslint-disable-next-line security/detect-non-literal-fs-filename
@@ -252,7 +226,54 @@ export async function isEncryptedByUs(
     await handle.close();
   }
 
-  const probe = buffer.subarray(0, bytesRead);
+  return buffer.subarray(0, bytesRead);
+}
+
+/** Whether the file starts with the envelope magic bytes. */
+export async function hasMagicPrefix(filePath: string): Promise<boolean> {
+  const probe = await readProbe(filePath);
+
+  return (
+    probe.length >= MAGIC.length &&
+    probe.subarray(0, MAGIC.length).equals(MAGIC)
+  );
+}
+
+// Structural (non-cryptographic) shape of our envelopes: ESDK message format
+// v2 (the only format for committing suites), our pinned suite id, and our
+// key namespace embedded in an EDK. Forgeable by an uploader, but forging it
+// only makes their own upload job fail — see `isEncryptedByUs`.
+// The suite id as it appears serialized in a message header.
+const SUITE_ID_VALUE: number = SUITE_ID;
+
+function looksLikeOurEnvelope(body: Buffer): boolean {
+  return (
+    body.length >= 3 &&
+    body[0] === 0x02 &&
+    body.readUInt16BE(1) === SUITE_ID_VALUE &&
+    body.includes(KEY_NAMESPACE)
+  );
+}
+
+/**
+ * Cryptographically checks whether the file was encrypted by us: the magic
+ * prefix alone could be forged by an uploaded file, but the ESDK message
+ * header only parses when one of our master keys authentically unwraps its
+ * data key. Used to keep retried upload jobs from encrypting twice.
+ *
+ * When the header cannot be unwrapped but the file structurally matches our
+ * envelope format, the promise rejects instead of resolving `false`:
+ * encrypting such a file again would wrap ciphertext whose key may have been
+ * rotated away, silently and irreversibly corrupting it. Failing the upload
+ * job is recoverable; double encryption is not. (A crafted plaintext upload
+ * can spoof the structural match, but that only fails the uploader's own
+ * job.)
+ */
+export async function isEncryptedByUs(
+  keyring: KeyringNode,
+  filePath: string,
+): Promise<boolean> {
+  const probe = await readProbe(filePath);
   if (
     probe.length < MAGIC.length ||
     !probe.subarray(0, MAGIC.length).equals(MAGIC)
@@ -260,20 +281,30 @@ export async function isEncryptedByUs(
     return false;
   }
 
+  const body = probe.subarray(MAGIC.length);
   const decryptor = decryptUnsignedMessageStream(keyring);
 
-  return new Promise<boolean>((resolve) => {
+  return new Promise<boolean>((resolve, reject) => {
     // `on` rather than `once`: post-settlement errors (e.g. the probe ends
     // mid-body) must be swallowed, not raised as unhandled.
     decryptor.on('MessageHeader', () => {
       resolve(true);
     });
-    decryptor.on('error', () => {
-      resolve(false);
+    decryptor.on('error', (error: Error) => {
+      if (looksLikeOurEnvelope(body)) {
+        reject(
+          new Error(
+            `File "${filePath}" looks like it was encrypted by us, but no configured key can read it — refusing to encrypt it again. Was a key removed from STORAGE_ENCRYPTION_KEYS?`,
+            { cause: error },
+          ),
+        );
+      } else {
+        resolve(false);
+      }
     });
     decryptor.resume();
 
-    Readable.from([probe.subarray(MAGIC.length)]).pipe(decryptor);
+    Readable.from([body]).pipe(decryptor);
   }).finally(() => {
     decryptor.destroy();
   });

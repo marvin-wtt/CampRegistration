@@ -6,13 +6,15 @@ import { pipeline } from 'stream/promises';
 import fse from 'fs-extra';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { EncryptedStorage } from '#core/storage/encrypted.storage';
-import { parseStorageKeyring } from '#core/storage/encryption/keyring';
+import {
+  parseStorageKeyring,
+  type StorageKeyring,
+} from '#core/storage/encryption/keyring';
 import {
   MAGIC,
   createDecryptStream,
   createEncryptStreams,
 } from '#core/storage/encryption/envelope';
-import type { KeyringNode } from '@aws-crypto/client-node';
 import type { Storage, StorageFile } from '#core/storage/storage';
 
 const KEY_1 = crypto.randomBytes(32).toString('base64');
@@ -41,16 +43,23 @@ const streamToBuffer = async (stream: Readable): Promise<Buffer> => {
 
 const encrypt = async (
   data: Buffer,
-  ring: KeyringNode = keyring,
+  ring: StorageKeyring = keyring,
 ): Promise<Buffer> => {
   const out = new PassThrough();
   const collected = streamToBuffer(out);
-  await pipeline([Readable.from([data]), ...createEncryptStreams(ring), out]);
+  await pipeline([
+    Readable.from([data]),
+    ...createEncryptStreams(ring.encrypt),
+    out,
+  ]);
   return collected;
 };
 
-const decrypt = (data: Buffer, ring: KeyringNode = keyring): Promise<Buffer> =>
-  streamToBuffer(createDecryptStream(ring, Readable.from([data])));
+const decrypt = (
+  data: Buffer,
+  ring: StorageKeyring = keyring,
+): Promise<Buffer> =>
+  streamToBuffer(createDecryptStream(ring.decrypt, Readable.from([data])));
 
 /**
  * Inner driver shaped like a future object storage driver: `moveToStorage`
@@ -123,8 +132,10 @@ describe('createEncryptStreams / createDecryptStream', () => {
     'round-trips data spanning multiple frames',
     { timeout: 30_000 },
     async () => {
-      // Delivered as a single chunk: the pattern that triggers silent frame
-      // loss in unpatched ESDK frame-length/chunk-size combinations.
+      // Delivered as a single chunk crossing many frame boundaries: the
+      // pattern that triggered silent frame loss in old ESDK versions
+      // (aws-encryption-sdk-javascript#507, fixed since v2). Guards against
+      // a regression sneaking in via a dependency bump.
       const data = crypto.randomBytes(1024 * 1024);
 
       const blob = await encrypt(data);
@@ -137,14 +148,34 @@ describe('createEncryptStreams / createDecryptStream', () => {
     const blob = await encrypt(data);
 
     const short = streamToBuffer(
-      createDecryptStream(keyring, Readable.from([blob]), data.length - 1),
+      createDecryptStream(
+        keyring.decrypt,
+        Readable.from([blob]),
+        data.length - 1,
+      ),
     );
     await expect(short).rejects.toThrow(/expected/);
 
     const exact = streamToBuffer(
-      createDecryptStream(keyring, Readable.from([blob]), data.length),
+      createDecryptStream(keyring.decrypt, Readable.from([blob]), data.length),
     );
     await expect(exact).resolves.toEqual(data);
+  });
+
+  it('applies the length guard to empty files', async () => {
+    const empty = await encrypt(Buffer.alloc(0));
+    await expect(
+      streamToBuffer(
+        createDecryptStream(keyring.decrypt, Readable.from([empty]), 0),
+      ),
+    ).resolves.toEqual(Buffer.alloc(0));
+
+    const nonEmpty = await encrypt(Buffer.from('x'));
+    await expect(
+      streamToBuffer(
+        createDecryptStream(keyring.decrypt, Readable.from([nonEmpty]), 0),
+      ),
+    ).rejects.toThrow(/expected/);
   });
 
   it('round-trips an empty file', async () => {
@@ -170,6 +201,14 @@ describe('createEncryptStreams / createDecryptStream', () => {
     await expect(decrypt(blob, rotated)).resolves.toEqual(
       Buffer.from('rotate me'),
     );
+  });
+
+  it('does not let a retired key decrypt files encrypted after rotation', async () => {
+    const rotated = parseStorageKeyring(`k2:${KEY_2},k1:${KEY_1}`);
+    const blob = await encrypt(Buffer.from('post-rotation'), rotated);
+
+    const retiredOnly = parseStorageKeyring(`k1:${KEY_1}`);
+    await expect(decrypt(blob, retiredOnly)).rejects.toThrow();
   });
 
   it('fails for an unknown key id', async () => {
@@ -262,8 +301,26 @@ describe('EncryptedStorage', () => {
 
     expect(inner.moveCalls).toBe(2);
     await expect(
-      streamToBuffer(storage.stream(storageFile('file.bin'))),
+      streamToBuffer(storage.stream(storageFile('file.bin', data.length))),
     ).resolves.toEqual(data);
+  });
+
+  it('refuses to encrypt a file that looks encrypted but has no readable key', async () => {
+    // A retry may find the tmp file encrypted by an earlier attempt whose
+    // key was since removed; re-encrypting it would corrupt it for good.
+    const blob = await encrypt(crypto.randomBytes(1000));
+    await writeTmpFile('file.bin', blob);
+
+    const otherKeys = new EncryptedStorage(
+      inner,
+      parseStorageKeyring(`k2:${KEY_2}`),
+      tmpDir,
+    );
+
+    await expect(otherKeys.moveToStorage('file.bin')).rejects.toThrow(
+      /refusing to encrypt it again/,
+    );
+    expect(inner.moveCalls).toBe(0);
   });
 
   it('encrypts a plaintext upload that starts with the magic bytes', async () => {
@@ -274,7 +331,7 @@ describe('EncryptedStorage', () => {
 
     expect(inner.files.get('spoof.bin')?.equals(data)).toBe(false);
     await expect(
-      streamToBuffer(storage.stream(storageFile('spoof.bin'))),
+      streamToBuffer(storage.stream(storageFile('spoof.bin', data.length))),
     ).resolves.toEqual(data);
   });
 
@@ -299,5 +356,48 @@ describe('EncryptedStorage', () => {
     await expect(storage.getFileNames()).resolves.toEqual(['a.bin']);
     await storage.removeFile('a.bin');
     await expect(storage.getFileNames()).resolves.toEqual([]);
+  });
+
+  describe('without a configured keyring', () => {
+    let plain: EncryptedStorage;
+
+    beforeEach(() => {
+      plain = new EncryptedStorage(inner, null, tmpDir);
+    });
+
+    it('stores and streams plaintext unchanged', async () => {
+      const data = crypto.randomBytes(1000);
+      await writeTmpFile('file.bin', data);
+
+      await plain.moveToStorage('file.bin');
+
+      expect(inner.files.get('file.bin')?.equals(data)).toBe(true);
+      await expect(
+        streamToBuffer(plain.stream(storageFile('file.bin', data.length))),
+      ).resolves.toEqual(data);
+    });
+
+    it('refuses to serve a previously encrypted file as raw ciphertext', async () => {
+      const blob = await encrypt(crypto.randomBytes(1000));
+      inner.files.set('old.bin', blob);
+
+      await expect(
+        streamToBuffer(plain.stream(storageFile('old.bin'))),
+      ).rejects.toThrow(/STORAGE_ENCRYPTION_KEYS/);
+    });
+
+    it('rejects a plaintext upload that spoofs the magic bytes', async () => {
+      // Stored as-is it would be mistaken for ciphertext — and become
+      // unservable — once encryption is enabled.
+      await writeTmpFile(
+        'spoof.bin',
+        Buffer.concat([MAGIC, crypto.randomBytes(100)]),
+      );
+
+      await expect(plain.moveToStorage('spoof.bin')).rejects.toThrow(
+        /magic bytes/,
+      );
+      expect(inner.moveCalls).toBe(0);
+    });
   });
 });

@@ -21,8 +21,10 @@ export const StorageEnvSchema = z.object({
     .string()
     .describe(
       'Comma-separated `keyId:base64Key` master keys for file encryption at ' +
-        'rest (32-byte keys, e.g. `openssl rand -base64 32`). The first key ' +
-        'encrypts new files; older keys remain valid for decryption. ' +
+        'rest (32-byte keys, e.g. `openssl rand -base64 32`). Only the ' +
+        'first key encrypts new files; the remaining keys can only decrypt ' +
+        'files written while they were first, so rotating a compromised ' +
+        'key to a later position protects everything uploaded afterwards. ' +
         'Unset disables encryption.',
     )
     .optional(),

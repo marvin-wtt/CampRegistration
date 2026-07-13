@@ -2,14 +2,16 @@ import type { Storage } from '#core/storage/storage';
 import { DiskStorage } from '#core/storage/disk.storage';
 import { StaticStorage } from '#core/storage/static.storage';
 import { EncryptedStorage } from '#core/storage/encrypted.storage';
-import { parseStorageKeyring } from '#core/storage/encryption/keyring';
-import type { KeyringNode } from '@aws-crypto/client-node';
+import {
+  parseStorageKeyring,
+  type StorageKeyring,
+} from '#core/storage/encryption/keyring';
 import type { StorageConfig } from '#config';
 import logger from '#core/logger';
 
 export class StorageRegistry {
   private storageCache: Map<string, Storage>;
-  private readonly keyring: KeyringNode | null;
+  private readonly keyring: StorageKeyring | null;
 
   constructor(private options: StorageConfig) {
     this.storageCache = new Map();
@@ -43,9 +45,11 @@ export class StorageRegistry {
   private loadStorage(identifier: string): Storage {
     const storage = this.createStorage(identifier);
 
-    // Static assets are public and served plaintext; every upload store
-    // (local today, s3 later) is encrypted at rest when a key is configured.
-    if (this.keyring === null || identifier === 'static') {
+    // Static assets are public and served plaintext. Every upload store
+    // (local today, s3 later) goes through EncryptedStorage even without a
+    // configured key: it then stores plaintext but refuses to serve
+    // previously encrypted files as raw ciphertext.
+    if (identifier === 'static') {
       return storage;
     }
 
