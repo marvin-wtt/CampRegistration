@@ -42,6 +42,7 @@ import { useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { useAPIService } from '@/services/APIService';
 import type { ServiceFile } from '@camp-registration/common/entities';
+import { createUuid } from '@/utils/uuid';
 
 const api = useAPIService();
 const quasar = useQuasar();
@@ -98,7 +99,7 @@ function updateFiles(updatedFiles: File[]) {
 
   model.value.push(
     ...updatedFiles.slice(model.value.length).map((file) => {
-      const progressId = crypto.randomUUID();
+      const progressId = createUuid();
 
       api
         .createTemporaryFile({ file })

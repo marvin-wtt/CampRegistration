@@ -138,7 +138,7 @@ function showDetails(): void {
   quasar.dialog({
     component: RegistrationDetailsDialog,
     componentProps: {
-      registration,
+      registrationId: registration.id,
     },
   });
 }
