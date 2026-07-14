@@ -20,17 +20,13 @@ export interface StorageMoveFile {
   tmpFileName: string;
 }
 
-export interface StorageDownloadUrlOptions {
-  contentDisposition?: string;
-}
-
 export interface Storage {
   removeFile: (fileName: string) => Promise<void>;
   /**
-   * Moves a tmp-dir file into the storage under `filename`. When
-   * `sourceFileName` is given, that tmp-dir file is consumed instead (used
-   * by EncryptedStorage to move a ciphertext staging file while leaving
-   * the plaintext original untouched until the move succeeded).
+   * Moves the tmp-dir file named `file.tmpFileName` into the storage under
+   * `file.name`. `EncryptedStorage` consumes the same contract by pointing
+   * `tmpFileName` at a ciphertext staging file, so drivers never need to
+   * know whether the bytes are plaintext or an encryption envelope.
    */
   moveToStorage: (file: StorageMoveFile) => Promise<void>;
   getFileNames: () => Promise<string[]>;

@@ -673,5 +673,21 @@ describe('file cleanup', () => {
       // eslint-disable-next-line security/detect-non-literal-fs-filename
       expect(fse.existsSync(path.join(tmpDir, fileName))).toBeTruthy();
     });
+
+    it('should keep old files that still back a pending upload', async () => {
+      const { tmpDir } = config.storage;
+
+      // Old enough to be cleaned, but still the only copy of an upload whose
+      // job has not completed (e.g. storage is temporarily unavailable), so it
+      // must survive so the upload can recover instead of being lost.
+      const fileName = ulid(moment().subtract(1, 'day').unix()) + '.pdf';
+      await copyResource(tmpDir, fileName);
+      await FileFactory.create({ name: fileName, uploadStatus: 'PENDING' });
+
+      await resolve(FileService).deleteTempFiles();
+
+      // eslint-disable-next-line security/detect-non-literal-fs-filename
+      expect(fse.existsSync(path.join(tmpDir, fileName))).toBeTruthy();
+    });
   });
 });

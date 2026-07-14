@@ -15,7 +15,11 @@ import {
   createDecryptStream,
   createEncryptStream,
 } from '#core/storage/encryption/envelope';
-import type { Storage, StorageFile } from '#core/storage/storage';
+import type {
+  Storage,
+  StorageFile,
+  StorageMoveFile,
+} from '#core/storage/storage';
 
 const KEY_1 = crypto.randomBytes(32).toString('base64');
 const KEY_2 = crypto.randomBytes(32).toString('base64');
@@ -36,6 +40,14 @@ const storageFile = (
   accessLevel: null,
   storageLocation: 'memory',
   encryption,
+});
+
+const moveFile = (name: string): StorageMoveFile => ({
+  id: name,
+  name,
+  originalName: name,
+  type: 'application/octet-stream',
+  tmpFileName: name,
 });
 
 const streamToBuffer = async (stream: Readable): Promise<Buffer> => {
@@ -67,9 +79,9 @@ const decrypt = (
   streamToBuffer(createDecryptStream(ring.decrypt, Readable.from([data])));
 
 /**
- * Inner driver shaped like a future object storage driver: `moveToStorage`
- * consumes the tmp file into an opaque blob store and `stream` feeds a
- * PassThrough asynchronously.
+ * Inner driver shaped like an object storage driver: `moveToStorage`
+ * consumes the tmp file named by `tmpFileName` into an opaque blob store
+ * keyed by `name`, and `openReadStream` feeds a PassThrough asynchronously.
  */
 class MemoryStorage implements Storage {
   files = new Map<string, Buffer>();
@@ -82,18 +94,15 @@ class MemoryStorage implements Storage {
     this.files.delete(fileName);
   }
 
-  async moveToStorage(
-    filename: string,
-    sourceFileName = filename,
-  ): Promise<void> {
+  async moveToStorage(file: StorageMoveFile): Promise<void> {
     this.moveCalls++;
     if (this.failNextMove) {
       this.failNextMove = false;
       throw new Error('inner storage unavailable');
     }
 
-    const filePath = path.join(this.tmpDir, sourceFileName);
-    this.files.set(filename, await fse.readFile(filePath));
+    const filePath = path.join(this.tmpDir, file.tmpFileName);
+    this.files.set(file.name, await fse.readFile(filePath));
     await fse.remove(filePath);
   }
 
@@ -101,7 +110,7 @@ class MemoryStorage implements Storage {
     return [...this.files.keys()];
   }
 
-  stream(file: StorageFile): Readable {
+  openReadStream(file: StorageFile): Promise<Readable> {
     const out = new PassThrough();
     const blob = this.files.get(file.name);
 
@@ -113,7 +122,7 @@ class MemoryStorage implements Storage {
       }
     });
 
-    return out;
+    return Promise.resolve(out);
   }
 }
 
@@ -271,21 +280,23 @@ describe('EncryptedStorage', () => {
     const data = crypto.randomBytes(200 * 1024);
     await writeTmpFile('file.bin', data);
 
-    await storage.moveToStorage('file.bin');
+    await storage.moveToStorage(moveFile('file.bin'));
 
     const blob = inner.files.get('file.bin');
     expect(blob).toBeDefined();
     expect(blob?.equals(data)).toBe(false);
 
     await expect(
-      streamToBuffer(storage.stream(storageFile('file.bin', data.length))),
+      streamToBuffer(
+        await storage.openReadStream(storageFile('file.bin', data.length)),
+      ),
     ).resolves.toEqual(data);
   });
 
   it('cleans up the plaintext tmp file and staging files after the move', async () => {
     await writeTmpFile('file.bin', crypto.randomBytes(1000));
 
-    await storage.moveToStorage('file.bin');
+    await storage.moveToStorage(moveFile('file.bin'));
 
     await expect(fse.readdir(tmpDir)).resolves.toEqual([]);
   });
@@ -295,7 +306,7 @@ describe('EncryptedStorage', () => {
     await writeTmpFile('file.bin', data);
 
     inner.failNextMove = true;
-    await expect(storage.moveToStorage('file.bin')).rejects.toThrow(
+    await expect(storage.moveToStorage(moveFile('file.bin'))).rejects.toThrow(
       /unavailable/,
     );
 
@@ -304,11 +315,13 @@ describe('EncryptedStorage', () => {
       data,
     );
 
-    await storage.moveToStorage('file.bin');
+    await storage.moveToStorage(moveFile('file.bin'));
 
     expect(inner.moveCalls).toBe(2);
     await expect(
-      streamToBuffer(storage.stream(storageFile('file.bin', data.length))),
+      streamToBuffer(
+        await storage.openReadStream(storageFile('file.bin', data.length)),
+      ),
     ).resolves.toEqual(data);
   });
 
@@ -317,7 +330,9 @@ describe('EncryptedStorage', () => {
     inner.files.set('legacy.bin', data);
 
     await expect(
-      streamToBuffer(storage.stream(storageFile('legacy.bin', 0, null))),
+      streamToBuffer(
+        await storage.openReadStream(storageFile('legacy.bin', 0, null)),
+      ),
     ).resolves.toEqual(data);
   });
 
@@ -325,13 +340,15 @@ describe('EncryptedStorage', () => {
     inner.files.set('odd.bin', crypto.randomBytes(100));
 
     await expect(
-      streamToBuffer(storage.stream(storageFile('odd.bin', 0, 'pgp'))),
+      streamToBuffer(
+        await storage.openReadStream(storageFile('odd.bin', 0, 'pgp')),
+      ),
     ).rejects.toThrow(/unknown encryption format/);
   });
 
   it('propagates inner stream errors', async () => {
     await expect(
-      streamToBuffer(storage.stream(storageFile('missing.bin'))),
+      streamToBuffer(await storage.openReadStream(storageFile('missing.bin'))),
     ).rejects.toThrow(/missing blob/);
   });
 
@@ -354,11 +371,13 @@ describe('EncryptedStorage', () => {
       const data = crypto.randomBytes(1000);
       await writeTmpFile('file.bin', data);
 
-      await plain.moveToStorage('file.bin');
+      await plain.moveToStorage(moveFile('file.bin'));
 
       expect(inner.files.get('file.bin')?.equals(data)).toBe(true);
       await expect(
-        streamToBuffer(plain.stream(storageFile('file.bin', 0, null))),
+        streamToBuffer(
+          await plain.openReadStream(storageFile('file.bin', 0, null)),
+        ),
       ).resolves.toEqual(data);
     });
 
@@ -366,7 +385,7 @@ describe('EncryptedStorage', () => {
       inner.files.set('old.bin', await encrypt(crypto.randomBytes(1000)));
 
       await expect(
-        streamToBuffer(plain.stream(storageFile('old.bin'))),
+        streamToBuffer(await plain.openReadStream(storageFile('old.bin'))),
       ).rejects.toThrow(/STORAGE_ENCRYPTION_KEYS/);
     });
   });

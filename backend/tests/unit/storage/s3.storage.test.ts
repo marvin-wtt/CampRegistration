@@ -13,9 +13,8 @@ import fse from 'fs-extra';
 import httpStatus from 'http-status';
 import ApiError from '#utils/ApiError';
 
-const { sendMock, getSignedUrlMock } = vi.hoisted(() => ({
+const { sendMock } = vi.hoisted(() => ({
   sendMock: vi.fn(),
-  getSignedUrlMock: vi.fn(),
 }));
 
 vi.mock('@aws-sdk/client-s3', async (importOriginal) => {
@@ -28,10 +27,6 @@ vi.mock('@aws-sdk/client-s3', async (importOriginal) => {
   };
 });
 
-vi.mock('@aws-sdk/s3-request-presigner', () => ({
-  getSignedUrl: getSignedUrlMock,
-}));
-
 // Imported after the mocks are registered so the storage picks up the mocked
 // client.
 const { S3Storage } = await import('#core/storage/s3.storage');
@@ -43,7 +38,6 @@ const baseOptions = {
   accessKeyId: 'key',
   secretAccessKey: 'secret',
   forcePathStyle: true,
-  presignedDownloadLifetimeSeconds: 60,
   tmpDir: os.tmpdir(),
 };
 
@@ -76,7 +70,6 @@ function serviceError(name: string, httpStatusCode: number, retryable = false) {
 describe('S3Storage', () => {
   beforeEach(() => {
     sendMock.mockReset();
-    getSignedUrlMock.mockReset();
   });
 
   afterEach(() => {
@@ -185,7 +178,6 @@ describe('S3Storage', () => {
         Key: 'target.txt',
         ContentType: 'text/plain',
         ContentLength: 5,
-        IfNoneMatch: '*',
       });
       expect(await fse.pathExists(sourcePath)).toBe(false);
 

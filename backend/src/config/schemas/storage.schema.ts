@@ -8,11 +8,7 @@ const requiredS3Keys = [
   'S3_SECRET_ACCESS_KEY',
 ] as const;
 
-const optionalS3Keys = [
-  'S3_FORCE_PATH_STYLE',
-  'S3_OBJECT_PREFIX',
-  'S3_PRESIGNED_DOWNLOAD_LIFETIME_SECONDS',
-] as const;
+const optionalS3Keys = ['S3_FORCE_PATH_STYLE', 'S3_OBJECT_PREFIX'] as const;
 
 const s3Keys = [...requiredS3Keys, ...optionalS3Keys] as const;
 
@@ -38,14 +34,6 @@ const s3EnvShape = {
     .min(1)
     .optional()
     .describe('Optional object-key prefix for uploaded files'),
-
-  S3_PRESIGNED_DOWNLOAD_LIFETIME_SECONDS: z.coerce
-    .number()
-    .int()
-    .positive()
-    .max(300)
-    .default(60)
-    .describe('Presigned S3 download URL lifetime in seconds'),
 };
 
 const CommonStorageEnvSchema = z.object({
@@ -71,11 +59,11 @@ const CommonStorageEnvSchema = z.object({
     .string()
     .describe(
       'Comma-separated `keyId:base64Key` master keys for file encryption at ' +
-      'rest (32-byte keys, e.g. `openssl rand -base64 32`). Only the ' +
-      'first key encrypts new files; the remaining keys can only decrypt ' +
-      'files written while they were first, so rotating a compromised ' +
-      'key to a later position protects everything uploaded afterwards. ' +
-      'Unset disables encryption.',
+        'rest (32-byte keys, e.g. `openssl rand -base64 32`). Only the ' +
+        'first key encrypts new files; the remaining keys can only decrypt ' +
+        'files written while they were first, so rotating a compromised ' +
+        'key to a later position protects everything uploaded afterwards. ' +
+        'Unset disables encryption.',
     )
     .optional(),
   MAX_FILE_SIZE: z.coerce
@@ -97,13 +85,6 @@ const optionalS3EnvShape = {
     .optional()
     .describe('Use S3 path-style URL format'),
   S3_OBJECT_PREFIX: s3EnvShape.S3_OBJECT_PREFIX,
-  S3_PRESIGNED_DOWNLOAD_LIFETIME_SECONDS: z.coerce
-    .number()
-    .int()
-    .positive()
-    .max(300)
-    .optional()
-    .describe('Presigned S3 download URL lifetime in seconds'),
 };
 
 const DiskStorageEnvSchema = CommonStorageEnvSchema.extend({
@@ -138,10 +119,12 @@ const StorageEnvUnionSchema = z.discriminatedUnion('STORAGE_LOCATION', [
 ]);
 
 /**
- * STORAGE_LOCATION defaults to "disk" when it is not present.
+ * STORAGE_LOCATION defaults to "disk" when it is not present, and the legacy
+ * "local" value (the previous default) is normalized to "disk" so existing
+ * deployments keep booting after the rename.
  *
- * The default is inserted before evaluating the discriminated union because
- * the discriminator is required to select the appropriate branch.
+ * Both are resolved before evaluating the discriminated union because the
+ * discriminator is required to select the appropriate branch.
  */
 export const StorageEnvSchema = z.preprocess((input) => {
   if (typeof input !== 'object' || input === null || Array.isArray(input)) {
@@ -150,13 +133,14 @@ export const StorageEnvSchema = z.preprocess((input) => {
 
   const data = input as Record<string, unknown>;
 
-  if (data.STORAGE_LOCATION !== undefined) {
-    return data;
-  }
+  const location =
+    data.STORAGE_LOCATION === undefined || data.STORAGE_LOCATION === 'local'
+      ? 'disk'
+      : data.STORAGE_LOCATION;
 
   return {
     ...data,
-    STORAGE_LOCATION: 'disk',
+    STORAGE_LOCATION: location,
   };
 }, StorageEnvUnionSchema);
 

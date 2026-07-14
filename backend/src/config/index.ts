@@ -9,7 +9,6 @@ interface S3Config {
   secretAccessKey: string;
   forcePathStyle: boolean;
   objectPrefix?: string;
-  presignedDownloadLifetimeSeconds: number;
 }
 
 function hasS3Config(
@@ -41,8 +40,6 @@ function s3Config(): S3Config | undefined {
     secretAccessKey: env.S3_SECRET_ACCESS_KEY,
     forcePathStyle: env.S3_FORCE_PATH_STYLE ?? true,
     objectPrefix: env.S3_OBJECT_PREFIX,
-    presignedDownloadLifetimeSeconds:
-      env.S3_PRESIGNED_DOWNLOAD_LIFETIME_SECONDS ?? 60,
   };
 }
 

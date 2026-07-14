@@ -578,6 +578,19 @@ export class FileService extends BaseService {
     const fileNames = await this.tmpStorage.getFileNames();
     const currentTime = Date.now();
 
+    // Tmp files that are still the only copy of an upload which has not yet
+    // reached storage — e.g. the storage provider is temporarily unavailable
+    // and the upload job is still being retried (or awaiting an admin retry).
+    // Their tmp name matches the File row's `name`, so preserving them lets
+    // the upload recover once storage is reachable again instead of the file
+    // being lost to cleanup. Encryption staging files (`<name>.<uuid>.enc`)
+    // never match a File name, so orphaned ones are still pruned.
+    const pendingUploads = await this.prisma.file.findMany({
+      where: { uploadStatus: 'PENDING' },
+      select: { name: true },
+    });
+    const pendingNames = new Set(pendingUploads.map((file) => file.name));
+
     const getFileCreationTime = (fileName: string) => {
       const id = fileName.split('.')[0];
 
@@ -592,9 +605,12 @@ export class FileService extends BaseService {
       return timeDifference > oneHourInMilliseconds;
     };
 
+    const isExpired = (fileName: string): boolean =>
+      isOlderThanOneHour(fileName) && !pendingNames.has(fileName);
+
     const results = await Promise.all(
       fileNames
-        .filter(isOlderThanOneHour)
+        .filter(isExpired)
         .map((fileName) => this.tmpStorage.removeFile(fileName)),
     );
 

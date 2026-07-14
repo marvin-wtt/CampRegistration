@@ -20,10 +20,10 @@ export class DiskStorage implements Storage {
     await fse.remove(filePath);
   }
 
-  async moveToStorage(file: StorageMoveFile, sourceFileName?: string) {
+  async moveToStorage(file: StorageMoveFile) {
     const sourcePath = safeJoinFilePath(
       config.storage.tmpDir,
-      sourceFileName ?? file.name,
+      file.tmpFileName,
     );
     const destinationPath = safeJoinFilePath(this.storageDir, file.name);
 

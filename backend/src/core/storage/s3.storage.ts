@@ -16,7 +16,7 @@ import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 import fse from 'fs-extra';
 import { Readable } from 'stream';
-import path from 'path';
+import { safeJoinFilePath } from '#core/storage/safe-path';
 
 export interface S3StorageOptions {
   endpoint: string;
@@ -26,7 +26,6 @@ export interface S3StorageOptions {
   secretAccessKey?: string;
   forcePathStyle: boolean;
   objectPrefix?: string;
-  presignedDownloadLifetimeSeconds: number;
   tmpDir: string;
 }
 
@@ -101,23 +100,6 @@ export class S3Storage implements Storage {
     return this.objectPrefix.length ? `${this.objectPrefix}/` : undefined;
   }
 
-  private isDirectoryPathValid(filePath: string, rootPath: string): boolean {
-    const resolvedFilePath = path.resolve(filePath);
-    const resolvedRootPath = path.resolve(rootPath);
-
-    return resolvedFilePath.startsWith(resolvedRootPath);
-  }
-
-  private safeJoinFilePath(rootPath: string, filename: string): string {
-    const filePath = path.join(rootPath, filename);
-
-    if (!this.isDirectoryPathValid(filePath, rootPath)) {
-      throw new Error('Invalid file');
-    }
-
-    return filePath;
-  }
-
   private toApiError(error: unknown): ApiError {
     if (error instanceof ApiError) {
       return error;
@@ -178,10 +160,7 @@ export class S3Storage implements Storage {
   }
 
   async moveToStorage(file: StorageMoveFile): Promise<void> {
-    const sourcePath = this.safeJoinFilePath(
-      this.options.tmpDir,
-      file.tmpFileName,
-    );
+    const sourcePath = safeJoinFilePath(this.options.tmpDir, file.tmpFileName);
     // eslint-disable-next-line security/detect-non-literal-fs-filename
     const { size } = await fse.stat(sourcePath);
     // eslint-disable-next-line security/detect-non-literal-fs-filename
@@ -198,7 +177,6 @@ export class S3Storage implements Storage {
           // that reject `aws-chunked` uploads still accept the request.
           ContentLength: size,
           Body: sourceFileStream,
-          IfNoneMatch: '*',
         }),
       );
 
