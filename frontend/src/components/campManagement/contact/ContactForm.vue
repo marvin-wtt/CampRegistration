@@ -3,69 +3,74 @@
     ref="formRef"
     class="contact-form"
     :class="{ 'contact-form--standalone': standalone }"
+    data-test="contact-form"
     @submit="send()"
     @reset="reset()"
   >
     <div class="composer">
       <div class="composer-fields">
-        <contact-select
-          v-model="to"
-          :label="t('input.to.label')"
-          :registrations
-          :rules="[
-            (val?: Contact[]) =>
-              (!!val && val.length > 0) || t('input.to.rule.required'),
-          ]"
-          hide-bottom-space
-          :disable="sendInProgress"
-          outlined
-          rounded
-          dense
-          @blur="onToBlur"
-        />
-
-        <div class="composer-meta">
-          <q-input
-            v-model="replyTo"
-            type="email"
-            :label="t('input.replyTo.label')"
+        <div data-test="to">
+          <contact-select
+            v-model="to"
+            :label="t('input.to.label')"
+            :registrations
             :rules="[
-              (val?: string) => !!val || t('input.replyTo.required'),
-              (val?: string) =>
-                !val ||
-                /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) ||
-                t('input.replyTo.rule.invalid'),
+              (val?: Contact[]) =>
+                (!!val && val.length > 0) || t('input.to.rule.required'),
             ]"
             hide-bottom-space
             :disable="sendInProgress"
             outlined
             rounded
             dense
-          >
-            <template
-              v-if="
-                suggestedReplyTo &&
-                suggestedReplyTo !== replyTo &&
-                to.length > 0
-              "
-              #append
+            @blur="onToBlur"
+          />
+        </div>
+
+        <div class="composer-meta">
+          <div data-test="reply-to">
+            <q-input
+              v-model="replyTo"
+              type="email"
+              :label="t('input.replyTo.label')"
+              :rules="[
+                (val?: string) => !!val || t('input.replyTo.required'),
+                (val?: string) =>
+                  !val ||
+                  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) ||
+                  t('input.replyTo.rule.invalid'),
+              ]"
+              hide-bottom-space
+              :disable="sendInProgress"
+              outlined
+              rounded
+              dense
             >
-              <q-btn
-                icon="autorenew"
-                size="xs"
-                flat
-                round
-                :disable="sendInProgress"
-                @click.stop="replyTo = suggestedReplyTo"
+              <template
+                v-if="
+                  suggestedReplyTo &&
+                  suggestedReplyTo !== replyTo &&
+                  to.length > 0
+                "
+                #append
               >
-                <q-tooltip>
-                  {{
-                    t('input.replyTo.suggestion', { email: suggestedReplyTo })
-                  }}
-                </q-tooltip>
-              </q-btn>
-            </template>
-          </q-input>
+                <q-btn
+                  icon="autorenew"
+                  size="xs"
+                  flat
+                  round
+                  :disable="sendInProgress"
+                  @click.stop="replyTo = suggestedReplyTo"
+                >
+                  <q-tooltip>
+                    {{
+                      t('input.replyTo.suggestion', { email: suggestedReplyTo })
+                    }}
+                  </q-tooltip>
+                </q-btn>
+              </template>
+            </q-input>
+          </div>
 
           <q-btn
             v-if="quasar.screen.lt.sm"
@@ -154,6 +159,7 @@
           ]"
           hide-bottom-space
           :disable="sendInProgress"
+          data-test="subject"
           rounded
           outlined
           single-line
@@ -174,6 +180,7 @@
           ]"
           hide-bottom-space
           :disable="sendInProgress"
+          data-test="message"
           class="message-editor"
           rounded
           outlined
@@ -208,6 +215,7 @@
           type="submit"
           icon-right="send"
           color="primary"
+          data-test="send"
           rounded
           unelevated
           no-caps

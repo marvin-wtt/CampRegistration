@@ -13,6 +13,11 @@ on:
       - synchronize
       - ready_for_review
 
+# Cancel superseded PR runs, but let every main-branch run finish.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 permissions:
   contents: read
   pull-requests: write
@@ -45,13 +50,14 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 24
-          cache: 'npm'
+          cache: npm
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -64,20 +70,20 @@ jobs:
           --from-migrations prisma/migrations
           --to-schema prisma/schema.prisma
 
-
   test-common:
     runs-on: ubuntu-24.04
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 24
-          cache: 'npm'
+          cache: npm
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -148,17 +154,20 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node }}
-          cache: 'npm'
+          cache: npm
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
         run: npm ci
 
+      # Build on both supported Node versions. Reusing a Node 22 build here would
+      # stop this matrix from verifying that the project also compiles on Node 24.
       - name: Build common
         run: npm run build --workspace common
 
@@ -192,13 +201,14 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 24
-          cache: 'npm'
+          cache: npm
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -224,14 +234,88 @@ jobs:
           comment-on: pr
           file-coverage-mode: changes
 
+  # Production assets are built once per workflow run and passed only to E2E jobs.
+  # This avoids five identical builds without delaying the independent unit tests.
+  build-e2e:
+    runs-on: ubuntu-24.04
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+
+    env:
+      APP_PORT: 3001
+      APP_URL: http://localhost:3001
+      APP_NAME: Test App
+      DATABASE_URL: mysql://root:admin123@localhost:3306/test_db
+      SHADOW_DATABASE_URL: mysql://root:admin123@localhost:3306/shadow_db
+      TMP_DIR: tests/tmp/storage/tmp/
+      UPLOAD_DIR: tests/tmp/storage/uploads/
+      STORAGE_LOCATION: local
+      JWT_SECRET: oxcch29nu7OKSZ2Wia8U7Y/4TiCqd9lWpIm/skZOpVM=
+      CSRF_SECRET: pwXh922dSwF1tjaDmpwhrWZjNbu771PCgv70cRc37so=
+      TOTP_RECOVERY_CODE_SECRET: gDHSH6MScBYrYWg7lXPprOewzZWBr0+srB+avI4SfQM=
+      SMTP_HOST: localhost
+      SMTP_PORT: 1025
+      SMTP_SECURE: false
+      SMTP_USERNAME: user
+      SMTP_PASSWORD: password
+      EMAIL_FROM: noreply@yourapp.com
+      EMAIL_REPLY_TO: noreply@yourapp.com
+      EMAIL_ADMIN: admin@yourapp.com
+      RATE_LIMIT_DISABLED: true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build common
+        run: npm run build --workspace common
+
+      - name: Build backend
+        run: npm run build --workspace backend
+
+      - name: Build frontend
+        run: npm run build --workspace frontend
+
+      - name: Upload E2E build
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-build-${{ github.sha }}
+          path: |
+            common/dist/
+            backend/build/
+            backend/src/generated/
+            frontend/dist/spa/
+          if-no-files-found: error
+          retention-days: 1
+
   test-e2e:
+    needs: build-e2e
     runs-on: ubuntu-24.04
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
 
     strategy:
+      fail-fast: false
       matrix:
-        browser: [chrome, firefox]
-        node: [22]
+        include:
+          - project: chromium
+            browser: chromium
+          - project: firefox
+            browser: firefox
+          - project: webkit
+            browser: webkit
+          - project: mobile-chrome
+            browser: chromium
+          - project: mobile-safari
+            browser: webkit
 
     services:
       mariadb:
@@ -259,6 +343,7 @@ jobs:
           - 1081:1081
 
     env:
+      CI: true
       APP_PORT: 3001
       APP_URL: http://localhost:3001
       APP_NAME: Test App
@@ -281,23 +366,46 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: ${{ matrix.node }}
-          cache: 'npm'
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
 
-      - name: Cypress run
-        uses: cypress-io/github-action@v6
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download E2E build
+        uses: actions/download-artifact@v8
         with:
-          project: ./e2e
-          build: npm run build-and-migrate
-          start: npm run production
-          wait-on: 'http://localhost:3001'
-          browser: ${{ matrix.browser }}
-          record: true
-        env:
-          CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: e2e-build-${{ github.sha }}
+          path: .
+
+      # Mobile Chrome uses Chromium; Mobile Safari uses WebKit. Install only the
+      # engine required by this matrix entry instead of all Playwright browsers.
+      - name: Install Playwright browser
+        working-directory: e2e
+        run: npx playwright install --with-deps "${{ matrix.browser }}"
+
+      - name: Migrate test database
+        run: npm run migrate --workspace backend
+
+      # The Playwright config should start the already-built application through
+      # its webServer configuration; it must not invoke a build command here.
+      - name: Run Playwright tests
+        working-directory: e2e
+        run: npx playwright test --project="${{ matrix.project }}"
+
+      - name: Upload Playwright results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-${{ matrix.project }}-${{ github.sha }}
+          path: |
+            e2e/playwright-report/
+            e2e/test-results/
+          if-no-files-found: ignore
+          retention-days: 14

@@ -10,39 +10,53 @@
 
     <div
       v-if="submitState !== null"
-      class="registration-submit-status"
+      class="registration-submit-status row justify-center content-center q-pa-md"
       data-test="registration-submit-status"
     >
-      <div
+      <q-card
+        flat
         class="registration-submit-status__card rounded-xl elevation-1"
-        :class="`registration-submit-status__card--${submitState}`"
+        :data-test="`registration-submit-status-${submitState}`"
       >
-        <div class="registration-submit-status__badge">
-          <q-spinner
-            v-if="submitState === 'saving'"
-            size="40px"
-            :thickness="4"
-          />
-          <q-icon
-            v-else
-            :name="submitState === 'success' ? 'check_circle' : 'error'"
-            size="44px"
-          />
-        </div>
+        <q-card-section class="column items-center q-gutter-y-sm text-center">
+          <q-avatar
+            size="88px"
+            font-size="44px"
+            :color="badgeColor"
+            :text-color="badgeTextColor"
+            :icon="submitState !== 'saving' ? badgeIcon : undefined"
+            class="registration-submit-status__badge"
+          >
+            <q-spinner
+              v-if="submitState === 'saving'"
+              size="40px"
+              :thickness="4"
+            />
+          </q-avatar>
 
-        <h3 class="registration-submit-status__title">{{ statusTitle }}</h3>
-        <p class="registration-submit-status__text">{{ statusText }}</p>
+          <div class="text-h5 text-weight-medium">{{ statusTitle }}</div>
+          <p class="text-body1 text-on-surface-variant q-mb-none">
+            {{ statusText }}
+          </p>
+        </q-card-section>
 
-        <p
+        <q-card-section
           v-if="submitState === 'error' && submitError"
-          class="registration-submit-status__detail"
+          class="q-pt-none"
         >
-          {{ submitError }}
-        </p>
+          <q-banner
+            dense
+            rounded
+            class="bg-error-container text-on-error-container text-body2"
+          >
+            {{ submitError }}
+          </q-banner>
+        </q-card-section>
 
-        <div
+        <q-card-actions
           v-if="submitState === 'success'"
-          class="registration-submit-status__actions"
+          align="center"
+          class="q-gutter-sm q-pb-md"
         >
           <m-btn
             primary
@@ -60,11 +74,12 @@
             :label="t('complete.exploreCamps')"
             :to="{ name: 'camps' }"
           />
-        </div>
+        </q-card-actions>
 
-        <div
+        <q-card-actions
           v-else-if="submitState === 'error'"
-          class="registration-submit-status__actions"
+          align="center"
+          class="q-pb-md"
         >
           <m-btn
             primary
@@ -73,8 +88,8 @@
             data-test="registration-submit-retry"
             @click="retrySubmit"
           />
-        </div>
-      </div>
+        </q-card-actions>
+      </q-card>
     </div>
   </div>
 </template>
@@ -153,6 +168,32 @@ const statusText = computed(() => {
       return '';
   }
 });
+
+const badgeColor = computed(() => {
+  switch (submitState.value) {
+    case 'success':
+      return 'positive-container';
+    case 'error':
+      return 'error-container';
+    default:
+      return 'primary-container';
+  }
+});
+
+const badgeTextColor = computed(() => {
+  switch (submitState.value) {
+    case 'success':
+      return 'on-positive-container';
+    case 'error':
+      return 'on-error-container';
+    default:
+      return 'on-primary-container';
+  }
+});
+
+const badgeIcon = computed(() =>
+  submitState.value === 'success' ? 'check_circle' : 'error',
+);
 
 const model = createModel(
   props.campDetails.id,
@@ -476,22 +517,13 @@ complete:
 }
 
 .registration-submit-status {
-  display: flex;
-  align-items: center;
-  justify-content: center;
   min-height: 55vh;
-  padding: 32px 16px;
 }
 
 .registration-submit-status__card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
   width: 100%;
   max-width: 440px;
-  padding: 40px 32px 32px;
-  text-align: center;
+  padding-top: 24px;
 
   background-color: var(--md3-surface-container-low);
   color: var(--md3-on-surface);
@@ -500,62 +532,7 @@ complete:
 }
 
 .registration-submit-status__badge {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 88px;
-  height: 88px;
-  margin-bottom: 6px;
-  border-radius: 50%;
-
-  // Defaults to the "saving" look; state modifiers recolor it below.
-  background-color: var(--md3-primary-container);
-  color: var(--md3-on-primary-container);
-
   animation: registration-submit-pop 0.4s cubic-bezier(0.2, 0.8, 0.2, 1.2) both;
-}
-
-.registration-submit-status__card--success .registration-submit-status__badge {
-  background-color: var(--md3-positive-container);
-  color: var(--md3-on-positive-container);
-}
-
-.registration-submit-status__card--error .registration-submit-status__badge {
-  background-color: var(--md3-error-container);
-  color: var(--md3-on-error-container);
-}
-
-.registration-submit-status__title {
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 600;
-  line-height: 1.25;
-}
-
-.registration-submit-status__text {
-  margin: 0;
-  max-width: 34ch;
-  font-size: 1rem;
-  line-height: 1.5;
-  color: var(--md3-on-surface-variant);
-}
-
-.registration-submit-status__detail {
-  margin: 6px 0 0;
-  padding: 10px 16px;
-  border-radius: 12px;
-  font-size: 0.85rem;
-  line-height: 1.4;
-  color: var(--md3-on-error-container);
-  background-color: var(--md3-error-container);
-}
-
-.registration-submit-status__actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 12px;
-  margin-top: 22px;
 }
 
 @keyframes registration-submit-rise {

@@ -1,4 +1,5 @@
 import { type Prisma } from '#generated/prisma/client.js';
+import { pathToFileURL } from 'node:url';
 import prisma from '../client.js';
 
 export async function main() {
@@ -23,12 +24,18 @@ export async function main() {
   await prisma.$transaction(transactions);
 }
 
-main()
-  .then(async () => {
-    await prisma.$disconnect();
-  })
-  .catch(async (e) => {
-    console.error(e);
-    await prisma.$disconnect();
-    process.exit(1);
-  });
+const isMainModule =
+  process.argv[1] !== undefined &&
+  import.meta.url === pathToFileURL(process.argv[1]).href;
+
+if (isMainModule) {
+  main()
+    .then(async () => {
+      await prisma.$disconnect();
+    })
+    .catch(async (e) => {
+      console.error(e);
+      await prisma.$disconnect();
+      process.exit(1);
+    });
+}

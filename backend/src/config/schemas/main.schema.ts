@@ -20,6 +20,10 @@ export const MainEnvSchema = z.object({
     .enum(['error', 'warn', 'info', 'http', 'debug'])
     .optional()
     .describe('Override the default log level.'),
+  RATE_LIMIT_DISABLED: z
+    .stringbool()
+    .default(false)
+    .describe('Disable IP rate limiting. Opt-in override for e2e tests.'),
 });
 
 export type MainEnv = z.output<typeof MainEnvSchema>;
