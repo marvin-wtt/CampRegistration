@@ -1,7 +1,7 @@
 <template>
   <q-select
     v-model="selected"
-    v-bind="$attrs"
+    v-bind="attrs"
     :options="filteredOptions"
     map-options
     emit-value
@@ -69,7 +69,7 @@
 import { useI18n } from 'vue-i18n';
 import { type QSelectProps } from 'quasar';
 import type { Registration } from '@camp-registration/common/entities';
-import { computed, ref, watch } from 'vue';
+import { computed, ref, useAttrs, watch } from 'vue';
 import { useRegistrationHelper } from '@/composables/registrationHelper';
 import type { NamedColor } from 'quasar';
 import { formatPersonName } from '@/utils/formatters';
@@ -77,6 +77,9 @@ import { type Contact } from '@/components/campManagement/contact/Contact';
 
 const { t } = useI18n();
 const { fullName, role, country } = useRegistrationHelper();
+const attrs = useAttrs();
+
+defineOptions({ inheritAttrs: false });
 
 const model = defineModel<Contact[]>({
   required: true,
