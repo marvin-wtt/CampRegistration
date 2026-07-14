@@ -175,6 +175,15 @@ function onFilePicked(file: File | null) {
   api
     .createTemporaryFile({ file })
     .then((serviceFile) => {
+      // Initial upload (no existing file): save straight away. Only prompt for
+      // confirmation when we're about to overwrite an existing file.
+      if (!fileId.value) {
+        void save(serviceFile.id).finally(() => {
+          loading.value = false;
+        });
+        return;
+      }
+
       quasar
         .dialog({
           title: t('dialog.replace.title'),

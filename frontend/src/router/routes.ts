@@ -313,6 +313,7 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/pages/settings/ProfileSettingsPage.vue'),
       },
       {
+        name: 'settings.security',
         path: 'security',
         component: () => import('@/pages/settings/SecuritySettingsPage.vue'),
       },

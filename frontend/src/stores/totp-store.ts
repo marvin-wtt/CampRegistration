@@ -39,17 +39,41 @@ export const useTotpStore = defineStore('totp', () => {
       });
 
       data.value = undefined;
+      recoveryCodes.value = undefined;
 
       await profileStore.fetchProfile();
     });
+  }
+
+  const recoveryCodes = ref<string[] | undefined>(undefined);
+
+  async function generateRecoveryCodes(
+    password: string,
+    otp: string,
+  ): Promise<void> {
+    await errorOnFailure(async () => {
+      const result = await apiService.generateTotpRecoveryCodes({
+        password,
+        otp,
+      });
+
+      recoveryCodes.value = result.codes;
+    });
+  }
+
+  function clearRecoveryCodes(): void {
+    recoveryCodes.value = undefined;
   }
 
   return {
     data,
     error,
     loading: isLoading,
+    recoveryCodes,
     setupTotp,
     enableTotp,
     disableTotp,
+    generateRecoveryCodes,
+    clearRecoveryCodes,
   };
 });

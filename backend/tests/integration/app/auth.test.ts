@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import bcrypt from 'bcryptjs';
+import argon2 from 'argon2';
 import prisma from '../utils/prisma.js';
 import { TokenType, User } from '#generated/prisma/client.js';
 import {
@@ -21,6 +22,7 @@ import {
   verifyToken,
 } from './utils/token.js';
 import { request } from '../utils/request.js';
+import { hashRecoveryCode } from './utils/recoveryCode.js';
 import { randomUUID } from 'node:crypto';
 import { fetchCsrf } from '../utils/csrf.js';
 import * as OTPAuth from 'otpauth';
@@ -197,7 +199,7 @@ describe('/api/v1/auth', async () => {
       });
 
       expect(user).toBeDefined();
-      expect(bcrypt.compareSync(data.password, user.password)).toBeTruthy();
+      expect(await argon2.verify(user.password, data.password)).toBeTruthy();
     });
 
     it('should set USER role as default', async () => {
@@ -456,7 +458,12 @@ describe('/api/v1/auth', async () => {
       await UserFactory.create({
         email: 'test@email.net',
         password: 'password',
-        twoFactorEnabled: true,
+        twoFactor: {
+          create: {
+            secret: new OTPAuth.Secret().base32,
+            confirmedAt: new Date(),
+          },
+        },
       });
 
       const { body, headers } = await request()
@@ -550,6 +557,54 @@ describe('/api/v1/auth', async () => {
       expect(body).not.toHaveProperty('token');
     });
 
+    it('should rehash the password to argon2 when logging in with a legacy bcrypt hash', async () => {
+      const { id } = await createUser();
+
+      const userBefore = await prisma.user.findUniqueOrThrow({
+        where: { id },
+      });
+      expect(userBefore.password.startsWith('$2')).toBe(true);
+
+      await request()
+        .post('/api/v1/auth/login')
+        .send({
+          email: 'test@email.net',
+          password: 'password',
+        })
+        .expect(200);
+
+      const userAfter = await prisma.user.findUniqueOrThrow({
+        where: { id },
+      });
+
+      expect(userAfter.password.startsWith('$argon2')).toBe(true);
+      expect(await argon2.verify(userAfter.password, 'password')).toBeTruthy();
+    });
+
+    it('should not rehash the password when it is already argon2', async () => {
+      const { id } = await createUser();
+      const argon2Hash = await argon2.hash('password');
+
+      await prisma.user.update({
+        where: { id },
+        data: { password: argon2Hash },
+      });
+
+      await request()
+        .post('/api/v1/auth/login')
+        .send({
+          email: 'test@email.net',
+          password: 'password',
+        })
+        .expect(200);
+
+      const userAfter = await prisma.user.findUniqueOrThrow({
+        where: { id },
+      });
+
+      expect(userAfter.password).toBe(argon2Hash);
+    });
+
     // TODO Rate limiter must not be mocked for this test
     it.skip('should respond with a `429` status code when too many invalid requests are send', async () => {
       const sendRequest = () => {
@@ -566,20 +621,24 @@ describe('/api/v1/auth', async () => {
   });
 
   describe('POST /api/v1/auth/verify-otp', () => {
-    const createUser = async () => {
-      const secret = new OTPAuth.Secret();
+    const TOTP_SECRET = new OTPAuth.Secret().base32;
 
+    const createUser = async () => {
       return UserFactory.create({
         email: 'test@email.net',
         password: 'password',
-        twoFactorEnabled: true,
-        totpSecret: secret.base32,
+        twoFactor: {
+          create: {
+            secret: TOTP_SECRET,
+            confirmedAt: new Date(),
+          },
+        },
       });
     };
 
-    const generateTOTP = (user: User) => {
+    const generateTOTP = () => {
       const totp = new OTPAuth.TOTP({
-        secret: OTPAuth.Secret.fromBase32(user.totpSecret!),
+        secret: OTPAuth.Secret.fromBase32(TOTP_SECRET),
         algorithm: 'SHA1',
         digits: 6,
         period: 30,
@@ -590,7 +649,7 @@ describe('/api/v1/auth', async () => {
 
     it('should respond with a `200` status code when totp is correct', async () => {
       const user = await createUser();
-      const totp = generateTOTP(user);
+      const totp = generateTOTP();
       const token = generateOTPToken(user);
 
       await request()
@@ -605,7 +664,7 @@ describe('/api/v1/auth', async () => {
     describe('response', () => {
       it('should respond with access token', async () => {
         const user = await createUser();
-        const totp = generateTOTP(user);
+        const totp = generateTOTP();
         const token = generateOTPToken(user);
 
         const { token: csrfToken, cookies: csrfCookies } = await fetchCsrf();
@@ -638,7 +697,7 @@ describe('/api/v1/auth', async () => {
 
       it('should respond with refresh token when remember is set', async () => {
         const user = await createUser();
-        const totp = generateTOTP(user);
+        const totp = generateTOTP();
         const token = generateOTPToken(user);
 
         const { token: csrfToken, cookies: csrfCookies } = await fetchCsrf();
@@ -696,7 +755,7 @@ describe('/api/v1/auth', async () => {
 
     it('should respond with a `400` status code when token is invalid', async () => {
       const user = await createUser();
-      const totp = generateTOTP(user);
+      const totp = generateTOTP();
 
       const token = generateAccessToken(user);
 
@@ -707,6 +766,148 @@ describe('/api/v1/auth', async () => {
           token,
         })
         .expect(400);
+    });
+
+    it('should accept a valid recovery code and consume it', async () => {
+      const user = await createUser();
+      const token = generateOTPToken(user);
+
+      // Stored hashes use the normalized (dash-stripped, upper-cased) form.
+      const recoveryCode = await prisma.twoFactorRecoveryCode.create({
+        data: {
+          userId: user.id,
+          code: hashRecoveryCode('ABCDE12345'),
+        },
+      });
+
+      await request()
+        .post('/api/v1/auth/verify-otp')
+        .send({
+          // Client sends the formatted code; the server normalizes it.
+          otp: 'ABCDE-12345',
+          token,
+        })
+        .expect(200);
+
+      const dbCode = await prisma.twoFactorRecoveryCode.findUnique({
+        where: { id: recoveryCode.id },
+      });
+      expect(dbCode?.usedAt).not.toBeNull();
+    });
+
+    it('should reject an already used recovery code', async () => {
+      const user = await createUser();
+      const token = generateOTPToken(user);
+
+      await prisma.twoFactorRecoveryCode.create({
+        data: {
+          userId: user.id,
+          code: hashRecoveryCode('ABCDE12345'),
+          usedAt: new Date(),
+        },
+      });
+
+      await request()
+        .post('/api/v1/auth/verify-otp')
+        .send({
+          otp: 'ABCDE-12345',
+          token,
+        })
+        .expect(400);
+    });
+
+    it('should reject an unknown recovery code', async () => {
+      const user = await createUser();
+      const token = generateOTPToken(user);
+
+      await request()
+        .post('/api/v1/auth/verify-otp')
+        .send({
+          otp: 'ZZZZZ-99999',
+          token,
+        })
+        .expect(400);
+    });
+
+    it('should lock the second factor after too many failed attempts', async () => {
+      const user = await createUser();
+      const token = generateOTPToken(user);
+
+      for (let i = 0; i < 5; i++) {
+        await request()
+          .post('/api/v1/auth/verify-otp')
+          .send({
+            otp: 'ZZZZZ-99999',
+            token,
+          })
+          .expect(400);
+      }
+
+      // Even a correct code is rejected while locked
+      await request()
+        .post('/api/v1/auth/verify-otp')
+        .send({
+          otp: generateTOTP(),
+          token,
+        })
+        .expect(429);
+
+      const dbTwoFactor = await prisma.userTwoFactor.findUnique({
+        where: { userId: user.id },
+      });
+      expect(dbTwoFactor?.lockedUntil).not.toBeNull();
+      expect(dbTwoFactor?.failedAttempts).toBe(0);
+    });
+
+    it('should reset the failed attempt counter on success', async () => {
+      const user = await createUser();
+      const token = generateOTPToken(user);
+
+      for (let i = 0; i < 4; i++) {
+        await request()
+          .post('/api/v1/auth/verify-otp')
+          .send({
+            otp: 'ZZZZZ-99999',
+            token,
+          })
+          .expect(400);
+      }
+
+      await request()
+        .post('/api/v1/auth/verify-otp')
+        .send({
+          otp: generateTOTP(),
+          token,
+        })
+        .expect(200);
+
+      const dbTwoFactor = await prisma.userTwoFactor.findUnique({
+        where: { userId: user.id },
+      });
+      expect(dbTwoFactor?.failedAttempts).toBe(0);
+    });
+
+    it('should accept a correct code after the lock has expired', async () => {
+      const user = await createUser();
+      const token = generateOTPToken(user);
+
+      await prisma.userTwoFactor.update({
+        where: { userId: user.id },
+        data: { lockedUntil: new Date(Date.now() - 1000) },
+      });
+
+      await request()
+        .post('/api/v1/auth/verify-otp')
+        .send({
+          otp: generateTOTP(),
+          token,
+        })
+        .expect(200);
+
+      const dbTwoFactor = await prisma.userTwoFactor.findUnique({
+        where: { userId: user.id },
+      });
+      expect(dbTwoFactor?.lockedUntil).toBeNull();
     });
   });
 

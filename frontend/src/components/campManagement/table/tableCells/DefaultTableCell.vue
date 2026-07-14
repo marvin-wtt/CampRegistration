@@ -36,10 +36,10 @@ const empty = computed<boolean>(() => {
   opacity: 0.6;
 }
 
-/* Preserve newlines (e.g. Shift+Enter in the inline editor) instead of
-   collapsing them to a single inline line, while still wrapping long lines. */
+/* Preserve user-typed newlines (e.g. Shift+Enter in the inline editor) but do
+   not insert automatic line breaks: long lines stay on one line and are
+   clipped/ellipsized by the parent instead of wrapping. */
 .cell-value {
-  white-space: pre-wrap;
-  word-break: break-word;
+  white-space: pre;
 }
 </style>

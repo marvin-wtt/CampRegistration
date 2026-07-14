@@ -22,6 +22,7 @@ import { QueueModule } from '#app/queue/queue.module';
 import { ProgramEventModule } from '#app/programEvent/program-event.module';
 import { TaskModule } from '#app/task/task.module';
 import { MailModule } from '#app/mail/mail.module';
+import { SettingModule } from '#app/setting/setting.module';
 import { NewsletterModule } from '#app/newsletter/newsletter.module';
 import { NewsletterSubscriberModule } from '#app/newsletterSubscriber/newsletter-subscriber.module';
 import { NewsletterManagerModule } from '#app/newsletterManager/newsletter-manager.module';
@@ -32,6 +33,7 @@ import { AdminModule } from '#app/admin/admin.module';
 // Order matters: earlier modules boot first and shut down last.
 export const createModules = (): AppModule[] => [
   new MailModule(),
+  new SettingModule(),
   new HealthModule(),
   new QueueModule(),
   new TokenModule(),

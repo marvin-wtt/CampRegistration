@@ -1,6 +1,8 @@
+import { pipeline } from 'stream/promises';
 import { FileService } from './file.service.js';
 import httpStatus from 'http-status';
 import ApiError from '#utils/ApiError';
+import logger from '#core/logger';
 import type { Request, Response } from 'express';
 import { FileResource } from './file.resource.js';
 import validator from './file.validation.js';
@@ -13,6 +15,13 @@ interface ModelData {
   id: string;
   name: string;
 }
+
+// pipeline reports a client that disconnected mid-download as a premature
+// close of the destination; that is routine, not a server error.
+const isClientDisconnect = (error: unknown): boolean =>
+  error instanceof Error &&
+  'code' in error &&
+  error.code === 'ERR_STREAM_PREMATURE_CLOSE';
 
 @injectable()
 export class FileController extends BaseController {
@@ -60,7 +69,27 @@ export class FileController extends BaseController {
 
     res.setHeader('Content-disposition', contentDispositionHeader);
 
-    fileStream.pipe(res); // Pipe the file stream to the response
+    // pipeline (unlike pipe) propagates stream errors and tears the whole
+    // chain down when either side fails or the client disconnects.
+    try {
+      await pipeline(fileStream, res);
+    } catch (error) {
+      if (isClientDisconnect(error)) {
+        return;
+      }
+
+      if (!res.headersSent) {
+        throw new ApiError(
+          httpStatus.INTERNAL_SERVER_ERROR,
+          'Failed to read file',
+        );
+      }
+
+      // Mid-stream failure: the status is already out, so destroying the
+      // socket is the only way to signal a truncated response.
+      logger.error(`Failed to stream file "${file.id}"`, error);
+      res.destroy();
+    }
   }
 
   show(req: Request, res: Response) {

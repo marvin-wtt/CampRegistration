@@ -83,10 +83,14 @@ const config = {
     uploadDir: appPath(env.UPLOAD_DIR),
     staticDir: appPath(env.STATIC_DIR),
     maxFileSize: env.MAX_FILE_SIZE,
+    encryptionKeys: env.STORAGE_ENCRYPTION_KEYS,
     s3: s3Config(),
   },
   csrf: {
     secret: env.CSRF_SECRET,
+  },
+  totp: {
+    recoveryCodeSecret: env.TOTP_RECOVERY_CODE_SECRET,
   },
   redis: {
     host: env.REDIS_HOST,

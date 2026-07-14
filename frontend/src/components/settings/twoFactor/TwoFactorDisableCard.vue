@@ -34,23 +34,13 @@
           </template>
         </q-input>
 
-        <q-input
-          v-model="otp"
-          :label="t('field.otp.label')"
-          :rules="[
-            (val?: string) => !!val || t('field.otp.rule.required'),
-            (val: string) => val.length === 6 || t('field.otp.rule.required'),
-          ]"
+        <two-factor-code-input
+          v-model="code"
           hide-bottom-space
-          mask="######"
           outlined
           rounded
           class="settings-input"
-        >
-          <template #before>
-            <q-icon name="pin" />
-          </template>
-        </q-input>
+        />
       </q-card-section>
 
       <div
@@ -70,7 +60,6 @@
           type="submit"
           color="primary"
           :loading
-          outline
           rounded
         />
       </q-card-actions>
@@ -81,6 +70,7 @@
 <script lang="ts" setup>
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import TwoFactorCodeInput from '@/components/settings/twoFactor/TwoFactorCodeInput.vue';
 
 const { t } = useI18n();
 
@@ -94,14 +84,12 @@ const emit = defineEmits<{
 }>();
 
 const password = ref<string>('');
-const otp = ref<string>('');
+const code = ref<string>('');
 
 function onDisable() {
-  emit('disable', password.value, otp.value);
+  emit('disable', password.value, code.value.trim());
 }
 </script>
-
-<style scoped></style>
 
 <i18n lang="yaml" locale="en">
 title: 'Two-Factor Authentication'
@@ -114,11 +102,6 @@ field:
     label: 'Password'
     rule:
       required: 'Password is required.'
-  otp:
-    label: 'OTP'
-    rule:
-      required: 'OTP is required.'
-      invalid: 'OTP must be 6 digits.'
 
 action:
   disable: 'Disable 2FA'
@@ -136,11 +119,6 @@ field:
     label: 'Passwort'
     rule:
       required: 'Passwort ist erforderlich.'
-  otp:
-    label: 'OTP'
-    rule:
-      required: 'OTP ist erforderlich.'
-      invalid: 'OTP muss 6 Ziffern haben.'
 
 action:
   disable: '2FA deaktivieren'
@@ -155,11 +133,6 @@ field:
     label: 'Mot de passe'
     rule:
       required: 'Le mot de passe est requis.'
-  otp:
-    label: 'OTP'
-    rule:
-      required: "L'OTP est requis."
-      invalid: "L'OTP doit contenir 6 chiffres."
 
 action:
   disable: 'Désactiver 2FA'
@@ -175,11 +148,6 @@ field:
     label: 'Hasło'
     rule:
       required: 'Hasło jest wymagane.'
-  otp:
-    label: 'OTP'
-    rule:
-      required: 'Kod OTP jest wymagany.'
-      invalid: 'Kod OTP musi składać się z 6 cyfr.'
 
 action:
   disable: 'Wyłącz 2FA'
@@ -195,11 +163,6 @@ field:
     label: 'Heslo'
     rule:
       required: 'Heslo je povinné.'
-  otp:
-    label: 'OTP'
-    rule:
-      required: 'OTP kód je povinný.'
-      invalid: 'OTP kód musí mít 6 číslic.'
 
 action:
   disable: 'Deaktivovat 2FA'

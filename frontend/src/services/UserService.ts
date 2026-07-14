@@ -47,6 +47,12 @@ export function useUserService() {
     await api.delete(`users/${id}/`);
   }
 
+  async function resetUserTwoFactor(id: string): Promise<User> {
+    const response = await api.post(`users/${id}/reset-two-factor`);
+
+    return response?.data?.data;
+  }
+
   return {
     fetchUsers,
     fetchUsersPaginated,
@@ -54,5 +60,6 @@ export function useUserService() {
     createUser,
     updateUser,
     deleteUser,
+    resetUserTwoFactor,
   };
 }

@@ -4,7 +4,7 @@
     persistent
     @hide="onDialogHide"
   >
-    <q-card class="q-dialog-plugin q-pb-none">
+    <q-card class="q-dialog-plugin q-pb-none camp-create-dialog-card">
       <q-btn
         icon="close"
         class="absolute-top-right z-top"
@@ -22,7 +22,6 @@
         animated
         flat
         header-nav
-        class="column col-xs-12 col-sm-7 col-md-5 col-lg-4 col-xl-3"
       >
         <!-- Template -->
         <camp-edit-step
@@ -42,6 +41,11 @@
             emit-value
             map-options
           >
+            <template #selected-item="scope">
+              <span class="ellipsis">
+                {{ scope.opt.label }}
+              </span>
+            </template>
           </q-select>
 
           <!-- Template -->
@@ -62,6 +66,11 @@
           >
             <template #before>
               <q-icon name="content_copy" />
+            </template>
+            <template #selected-item="scope">
+              <span class="ellipsis">
+                {{ scope.opt.label }}
+              </span>
             </template>
           </q-select>
         </camp-edit-step>
@@ -171,6 +180,8 @@
           <date-range-input
             v-model:from="data.startAt"
             v-model:to="data.endAt"
+            :default-start-time="defaultStartTime"
+            :default-end-time="defaultEndTime"
             :disable="loading"
             :label="t('field.dateRange')"
             :rules="[
@@ -208,7 +219,14 @@
               v-model="data.endAt"
               :disable="loading"
               :label="t('field.endTime')"
-              :rules="[(val?: string) => !!val || t('validation.endAt.empty')]"
+              :rules="[
+                (val?: string) => !!val || t('validation.endAt.empty'),
+                () =>
+                  !data.startAt ||
+                  !data.endAt ||
+                  new Date(data.endAt) > new Date(data.startAt) ||
+                  t('validation.endAt.min'),
+              ]"
               class="col-xs-12 col-sm-6 col-md-6 col-lg-6 col-xl-6"
               hide-bottom-space
               outlined
@@ -380,7 +398,11 @@
 </template>
 
 <script setup lang="ts">
-import { type QSelectOption, useDialogPluginComponent } from 'quasar';
+import {
+  date as dateUtil,
+  type QSelectOption,
+  useDialogPluginComponent,
+} from 'quasar';
 import TimeInput from '@/components/common/inputs/TimeInput.vue';
 import CampEditStep from '@/components/campManagement/settings/create/CampEditStep.vue';
 import CountrySelect from '@/components/common/CountrySelect.vue';
@@ -388,6 +410,7 @@ import TranslatedInput from '@/components/common/inputs/TranslatedInput.vue';
 import DateRangeInput from '@/components/common/inputs/DateRangeInput.vue';
 import { computed, ref, watch } from 'vue';
 import type {
+  Camp,
   CampCreateData,
   CampDetails,
 } from '@camp-registration/common/entities';
@@ -412,6 +435,24 @@ const data = ref<CampCreateData>({
 });
 const { t } = useI18n();
 const { to } = useObjectTranslation();
+
+const referenceCamp = computed<Camp | undefined>(() => {
+  return assignedCampsStore.data?.find(
+    (camp) => camp.id === data.value.referenceCampId,
+  );
+});
+
+// Pre-fill the times of the reference camp when dates are picked
+const defaultStartTime = computed<string | undefined>(() =>
+  toTime(referenceCamp.value?.startAt),
+);
+const defaultEndTime = computed<string | undefined>(() =>
+  toTime(referenceCamp.value?.endAt),
+);
+
+function toTime(iso?: string): string | undefined {
+  return iso ? dateUtil.formatDate(new Date(iso), 'HH:mm') : undefined;
+}
 
 type ReferenceCampOptions = QSelectOption<string | undefined>[];
 const referenceCampOptions = computed<ReferenceCampOptions>(() => {
@@ -460,13 +501,7 @@ const presetOptions = computed<QSelectOption<CampCreateData['preset']>[]>(
 watch(
   () => data.value.referenceCampId,
   () => {
-    if (!data.value.referenceCampId) {
-      return;
-    }
-
-    const refCamp = assignedCampsStore.data?.find(
-      (camp) => camp.id === data.value.referenceCampId,
-    );
+    const refCamp = referenceCamp.value;
     if (!refCamp) {
       return;
     }
@@ -514,7 +549,11 @@ function clearReferenceCamp() {
 }
 </script>
 
-<style scoped></style>
+<style scoped>
+.camp-create-dialog-card {
+  width: 500px;
+}
+</style>
 
 <i18n lang="yaml" locale="en">
 step:
@@ -570,6 +609,7 @@ validation:
     empty: 'Please select a start time'
   endAt:
     empty: 'Please select an end time'
+    min: 'End time must be after the start time'
   minAge:
     empty: 'Please enter a minimum age'
     nonNegative: 'Minimum age must not be negative'
@@ -644,6 +684,7 @@ validation:
     empty: 'Bitte wählen Sie eine Startzeit aus'
   endAt:
     empty: 'Bitte wählen Sie eine Endzeit aus'
+    min: 'Die Endzeit muss nach der Startzeit liegen'
   minAge:
     empty: 'Bitte geben Sie ein Mindestalter ein'
     nonNegative: 'Das Mindestalter darf nicht negativ sein'
@@ -718,6 +759,7 @@ validation:
     empty: 'Veuillez sélectionner une heure de début'
   endAt:
     empty: 'Veuillez sélectionner une heure de fin'
+    min: "L'heure de fin doit être postérieure à l'heure de début"
   minAge:
     empty: 'Veuillez entrer un âge minimum'
     nonNegative: "L'âge minimum ne doit pas être négatif"
@@ -792,6 +834,7 @@ validation:
     empty: 'Wybierz godzinę rozpoczęcia'
   endAt:
     empty: 'Wybierz godzinę zakończenia'
+    min: 'Godzina zakończenia musi być późniejsza niż godzina rozpoczęcia'
   minAge:
     empty: 'Podaj minimalny wiek'
     nonNegative: 'Minimalny wiek nie może być liczbą ujemną'
@@ -866,6 +909,7 @@ validation:
     empty: 'Vyberte čas začátku'
   endAt:
     empty: 'Vyberte čas konce'
+    min: 'Čas konce musí být pozdější než čas začátku'
   minAge:
     empty: 'Zadejte minimální věk'
     nonNegative: 'Minimální věk nesmí být záporný'

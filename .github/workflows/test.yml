@@ -138,6 +138,7 @@ jobs:
       STORAGE_LOCATION: local
       JWT_SECRET: oxcch29nu7OKSZ2Wia8U7Y/4TiCqd9lWpIm/skZOpVM=
       CSRF_SECRET: pwXh922dSwF1tjaDmpwhrWZjNbu771PCgv70cRc37so=
+      TOTP_RECOVERY_CODE_SECRET: gDHSH6MScBYrYWg7lXPprOewzZWBr0+srB+avI4SfQM=
       EMAIL_DRIVER: noop
       EMAIL_FROM: noreply@yourapp.com
       EMAIL_REPLY_TO: noreply@yourapp.com
@@ -268,6 +269,7 @@ jobs:
       STORAGE_LOCATION: local
       JWT_SECRET: oxcch29nu7OKSZ2Wia8U7Y/4TiCqd9lWpIm/skZOpVM=
       CSRF_SECRET: pwXh922dSwF1tjaDmpwhrWZjNbu771PCgv70cRc37so=
+      TOTP_RECOVERY_CODE_SECRET: gDHSH6MScBYrYWg7lXPprOewzZWBr0+srB+avI4SfQM=
       SMTP_HOST: localhost
       SMTP_PORT: 1025
       SMTP_SECURE: false

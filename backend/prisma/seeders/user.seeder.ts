@@ -20,8 +20,12 @@ class UserSeeder extends BaseSeeder {
       email: 'admin@email.com',
       password: 'admin-password',
       emailVerified: true,
-      twoFactorEnabled: true,
-      totpSecret: 'TMRUI6PADI7DGPJF5DPMLCWSXW32MKXM',
+      twoFactor: {
+        create: {
+          secret: 'TMRUI6PADI7DGPJF5DPMLCWSXW32MKXM',
+          confirmedAt: new Date(),
+        },
+      },
       role: 'ADMIN',
     });
   }

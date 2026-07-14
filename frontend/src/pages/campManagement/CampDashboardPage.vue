@@ -144,9 +144,9 @@
         <div class="row q-col-gutter-md">
           <div class="col-6 col-md-3 col-xs-12">
             <stat-card
-              :label="t('kpi.registrations')"
-              :value="stats.counts.value.total"
-              :caption="t('kpi.registrationsCaption')"
+              :label="t('kpi.participants')"
+              :value="stats.counts.value.accepted"
+              :caption="t('kpi.participantsCaption')"
               icon="how_to_reg"
               color="indigo"
             />
@@ -522,8 +522,8 @@ function goTo(routeName: string) {
 
 <i18n lang="yaml" locale="en">
 kpi:
-  registrations: 'Registrations'
-  registrationsCaption: 'All participants'
+  participants: 'Participants'
+  participantsCaption: 'Accepted registrations'
   pending: 'Pending'
   pendingCaption: 'Awaiting confirmation'
   waitlisted: 'Waitlisted'
@@ -559,8 +559,8 @@ attention:
 
 <i18n lang="yaml" locale="de">
 kpi:
-  registrations: 'Anmeldungen'
-  registrationsCaption: 'Alle Teilnehmenden'
+  participants: 'Teilnehmende'
+  participantsCaption: 'Angenommene Anmeldungen'
   pending: 'Ausstehend'
   pendingCaption: 'Warten auf Bestätigung'
   waitlisted: 'Warteliste'
@@ -596,8 +596,8 @@ attention:
 
 <i18n lang="yaml" locale="fr">
 kpi:
-  registrations: 'Inscriptions'
-  registrationsCaption: 'Tous les participants'
+  participants: 'Participants'
+  participantsCaption: 'Inscriptions acceptées'
   pending: 'En attente'
   pendingCaption: 'En attente de confirmation'
   waitlisted: "Liste d'attente"
@@ -633,8 +633,8 @@ attention:
 
 <i18n lang="yaml" locale="pl">
 kpi:
-  registrations: 'Rejestracje'
-  registrationsCaption: 'Wszyscy uczestnicy'
+  participants: 'Uczestnicy'
+  participantsCaption: 'Zaakceptowane rejestracje'
   pending: 'Oczekujący'
   pendingCaption: 'Oczekują na potwierdzenie'
   waitlisted: 'Lista rezerwowa'
@@ -670,8 +670,8 @@ attention:
 
 <i18n lang="yaml" locale="cs">
 kpi:
-  registrations: 'Registrace'
-  registrationsCaption: 'Všichni účastníci'
+  participants: 'Účastníci'
+  participantsCaption: 'Přijaté registrace'
   pending: 'Čekající'
   pendingCaption: 'Čeká na potvrzení'
   waitlisted: 'Čekací listina'

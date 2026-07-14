@@ -17,13 +17,16 @@
 
 <script lang="ts" setup>
 import { computed, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useCampDetailsStore } from '@/stores/camp-details-store';
 import { useRegistrationsStore } from '@/stores/registration-store';
 import ResultTableInteractive from '@/components/campManagement/table/ResultTableInteractive.vue';
 import { useTemplateStore } from '@/stores/template-store';
 import { useObjectTranslation } from '@/composables/objectTranslation';
+import { useRouteQueryParams } from '@/composables/useRouteQueryParams';
 import type { TableColumnTemplate } from '@camp-registration/common/entities';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
+import RegistrationDetailsDialog from '@/components/campManagement/table/dialogs/RegistrationDetailsDialog.vue';
 import { extractFormFields } from '@/utils/surveyJS';
 import type { PrintTablesPayload } from '@/components/campManagement/table/PrintTablesPayload';
 import { openPrintIframe } from '@/utils/printIframe';
@@ -38,6 +41,9 @@ const { data: registrations } = storeToRefs(registrationStore);
 const templateStore = useTemplateStore();
 const { data: templates } = storeToRefs(templateStore);
 
+const router = useRouter();
+const route = useRoute();
+const { getStringQueryParam } = useRouteQueryParams();
 const quasar = useQuasar();
 const { locale } = useI18n();
 const { to } = useObjectTranslation();
@@ -48,7 +54,40 @@ onMounted(async () => {
     registrationStore.fetchData(),
     templateStore.fetchData(),
   ]);
+
+  openLinkedRegistration();
 });
+
+function openLinkedRegistration(): void {
+  const registrationId = getStringQueryParam('registrationId');
+  if (!registrationId) {
+    return;
+  }
+
+  const registration = registrations.value?.find(
+    (r) => r.id === registrationId,
+  );
+
+  const removeQueryParam = () => {
+    // Drop the param so refresh/back-nav doesn't reopen the dialog
+    void router.replace({
+      query: { ...route.query, registrationId: undefined },
+    });
+  };
+
+  if (!registration) {
+    removeQueryParam();
+  }
+
+  quasar
+    .dialog({
+      component: RegistrationDetailsDialog,
+      componentProps: { registration },
+    })
+    .onDismiss(() => {
+      removeQueryParam();
+    });
+}
 
 const loading = computed<boolean>(() => {
   return (

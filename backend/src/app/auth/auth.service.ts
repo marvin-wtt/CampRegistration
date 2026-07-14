@@ -3,7 +3,7 @@ import { UserService } from '#app/user/user.service';
 import { TokenService } from '#app/token/token.service';
 import ApiError from '#utils/ApiError';
 import { TokenType } from '#generated/prisma/client.js';
-import { isPasswordMatch } from '#core/encryption';
+import { isPasswordMatch, passwordNeedsRehash } from '#core/encryption';
 import type { AuthTokensResponse } from '#types/response';
 import { BaseService } from '#core/base/BaseService';
 import { inject, injectable } from 'inversify';
@@ -25,6 +25,10 @@ export class AuthService extends BaseService {
         httpStatus.BAD_REQUEST,
         'Incorrect email or password.',
       );
+    }
+
+    if (passwordNeedsRehash(user.password)) {
+      await this.userService.updateUserById(user.id, { password });
     }
 
     if (user.locked) {

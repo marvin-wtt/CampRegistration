@@ -121,9 +121,12 @@ export class FileService extends BaseService {
       .getStorage(payload.storageLocation)
       .moveToStorage(payload);
 
-    await this.prisma.file.update({
-      where: { id: payload.id },
-      data: { uploadStatus: 'READY' },
+    await this.prisma.file.updateMany({
+      where: { name: payload.name },
+      data: {
+        uploadStatus: 'READY',
+        encryption: this.storageRegistry.getEncryptionFormat(),
+      },
     });
   }
 
@@ -394,17 +397,18 @@ export class FileService extends BaseService {
   }
 
   async getFileStream(file: StorageFile) {
-    return this.storageRegistry
+    const stream = await this.storageRegistry
       .getStorage(file.storageLocation)
       .openReadStream(file);
-  }
 
-  async getFileDownloadUrl(file: StorageFile, contentDisposition?: string) {
-    return this.storageRegistry
-      .getStorage(file.storageLocation)
-      .createDownloadUrl(file, {
-        contentDisposition,
-      });
+    // Decryption/storage errors surface asynchronously, possibly before the
+    // consumer (HTTP response, mail transport) attaches its own 'error'
+    // listener — without one here, such an error crashes the process.
+    stream.on('error', (error: Error) => {
+      logger.error(`Error while streaming file "${file.id}"`, error);
+    });
+
+    return stream;
   }
 
   async updateFile(
@@ -484,6 +488,9 @@ export class FileService extends BaseService {
             accessLevel: file.accessLevel,
             storageLocation: file.storageLocation,
             uploadStatus: file.uploadStatus,
+            // The duplicate points at the same stored blob, so it must
+            // record the same encryption format.
+            encryption: file.encryption,
             field: sessionId,
           },
         }),

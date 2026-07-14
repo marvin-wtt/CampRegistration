@@ -20,4 +20,9 @@ export default {
     error: 'Chyba při odstraňování přihlášky',
     invalid: 'Neplatné ID přihlášky nebo tábora',
   },
+  realtimeCreate: {
+    message: 'Přijata nová přihláška',
+    caption: '{name} se právě přihlásil(a).',
+    fallbackName: 'Někdo',
+  },
 };
