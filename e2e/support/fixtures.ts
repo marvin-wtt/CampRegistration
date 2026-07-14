@@ -27,7 +27,7 @@ export const test = base.extend({
     });
 
     await use(page);
-  };,
+  },
 });
 
 export { expect } from "@playwright/test";
