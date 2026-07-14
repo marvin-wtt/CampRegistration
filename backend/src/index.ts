@@ -61,6 +61,6 @@ async function main() {
 }
 
 main().catch((err: unknown) => {
-  logger.error('Failed to start', err);
+  logger.error('Failed to start:', err);
   process.exit(1);
 });

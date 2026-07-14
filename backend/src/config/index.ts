@@ -1,6 +1,48 @@
 import { env } from '#config/enviroment';
 import { appPath } from '#utils/paths';
 
+interface S3Config {
+  endpoint: string;
+  region: string;
+  bucket: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+  forcePathStyle: boolean;
+  objectPrefix?: string;
+}
+
+function hasS3Config(
+  value: typeof env,
+): value is typeof env &
+  Required<
+    Pick<
+      typeof env,
+      | 'S3_ENDPOINT'
+      | 'S3_REGION'
+      | 'S3_BUCKET'
+      | 'S3_ACCESS_KEY_ID'
+      | 'S3_SECRET_ACCESS_KEY'
+    >
+  > {
+  return value.S3_ENDPOINT !== undefined;
+}
+
+function s3Config(): S3Config | undefined {
+  if (!hasS3Config(env)) {
+    return undefined;
+  }
+
+  return {
+    endpoint: env.S3_ENDPOINT,
+    region: env.S3_REGION,
+    bucket: env.S3_BUCKET,
+    accessKeyId: env.S3_ACCESS_KEY_ID,
+    secretAccessKey: env.S3_SECRET_ACCESS_KEY,
+    forcePathStyle: env.S3_FORCE_PATH_STYLE ?? true,
+    objectPrefix: env.S3_OBJECT_PREFIX,
+  };
+}
+
 const config = {
   env: env.NODE_ENV,
   appName: env.APP_NAME,
@@ -38,6 +80,8 @@ const config = {
     uploadDir: appPath(env.UPLOAD_DIR),
     staticDir: appPath(env.STATIC_DIR),
     maxFileSize: env.MAX_FILE_SIZE,
+    encryptionKeys: env.STORAGE_ENCRYPTION_KEYS,
+    s3: s3Config(),
   },
   csrf: {
     secret: env.CSRF_SECRET,

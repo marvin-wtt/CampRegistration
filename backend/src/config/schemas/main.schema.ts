@@ -25,3 +25,5 @@ export const MainEnvSchema = z.object({
     .default(false)
     .describe('Disable IP rate limiting. Opt-in override for e2e tests.'),
 });
+
+export type MainEnv = z.output<typeof MainEnvSchema>;

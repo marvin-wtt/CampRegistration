@@ -15,9 +15,12 @@
     "db:reset": "npx prisma db push --force-reset --accept-data-loss",
     "db:truncate": "tsx prisma/scripts/truncate.ts",
     "db:seed:e2e": "tsx prisma/seeders/e2e/index.ts",
+    "storage:transfer": "tsx prisma/scripts/transfer-storage.ts",
     "db:push": "prisma db push",
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
+    "files:encrypt": "tsx prisma/scripts/encrypt-files.ts encrypt",
+    "files:decrypt": "tsx prisma/scripts/encrypt-files.ts decrypt",
     "secrets:generate": "node ./scripts/generate-secrets.mjs",
     "test": "vitest -c ./vitest.config.ts",
     "test:unit": "vitest -c ./vitest.config.unit.ts",
@@ -60,6 +63,9 @@
     "#generated/*": "./src/generated/*.js"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1083.0",
+    "@aws-sdk/s3-request-presigner": "^3.1083.0",
+    "@aws-crypto/client-node": "^5.0.0",
     "@camp-registration/common": "*",
     "@camp-registration/web": "*",
     "@candoimage/prisma-extension-soft-delete": "^2.1.2",

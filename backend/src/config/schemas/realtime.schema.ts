@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const RealtimeSchema = z.object({
+export const RealtimeEnvSchema = z.object({
   REALTIME_DRIVER: z
     .enum(['redis', 'memory'])
     .readonly()
@@ -10,3 +10,5 @@ export const RealtimeSchema = z.object({
     )
     .optional(),
 });
+
+export type RealtimeEnv = z.output<typeof RealtimeEnvSchema>;
