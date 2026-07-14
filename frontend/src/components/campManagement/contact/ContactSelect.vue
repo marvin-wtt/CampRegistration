@@ -141,14 +141,8 @@ watch(model, (value) => {
   }
 });
 
-const eligibleRegistrations = computed<Registration[]>(() =>
-  props.registrations.filter(
-    (registration) => registration.status !== 'PENDING',
-  ),
-);
-
 const options = computed<Contact[]>(() => {
-  const registrationOptions = eligibleRegistrations.value.map(
+  const registrationOptions = props.registrations.map(
     (registration): Contact => ({
       registration,
       name: formatPersonName(fullName(registration)),
@@ -157,7 +151,7 @@ const options = computed<Contact[]>(() => {
   );
 
   return sortItems([
-    ...createGroups(eligibleRegistrations.value),
+    ...createGroups(props.registrations),
     ...registrationOptions,
   ]);
 });
@@ -270,7 +264,7 @@ function getRegistrationType(
   registration: Registration,
 ): Exclude<Contact['type'], 'group'> {
   if (registration.status === 'PENDING') {
-    throw new Error('Pending registrations must be filtered out beforehand.');
+    return 'pending';
   }
 
   if (registration.status === 'WAITLISTED') {
@@ -295,6 +289,11 @@ function createGroups(registrations: Registration[]): Contact[] {
   const groups = new Map<string, ContactGroupData>();
 
   for (const registration of registrations) {
+    // Pending registrations are offered only as individual contacts
+    if (registration.status === 'PENDING') {
+      continue;
+    }
+
     const registrationRole = role(registration);
     const registrationCountry = country(registration);
     const waitingList = registration.status === 'WAITLISTED';
@@ -361,6 +360,7 @@ const typeSortOrder: Record<Contact['type'], number> = {
   participant: 1,
   counselor: 2,
   waitingList: 3,
+  pending: 4,
 };
 
 function sortItems(items: Contact[]): Contact[] {
@@ -376,6 +376,7 @@ const typeColors: Record<Contact['type'], NamedColor> = {
   participant: 'primary',
   counselor: 'secondary',
   waitingList: 'warning',
+  pending: 'grey',
 };
 </script>
 
@@ -389,6 +390,7 @@ type:
   group: 'Group'
   participant: 'Participant'
   waitingList: 'Waiting list'
+  pending: 'Pending'
 
 role:
   counselor: 'Counselor'
@@ -405,6 +407,7 @@ type:
   group: 'Gruppe'
   participant: 'Teilnehmer'
   waitingList: 'Warteliste'
+  pending: 'Ausstehend'
 
 role:
   counselor: 'Betreuer'
@@ -421,6 +424,7 @@ type:
   group: 'Groupe'
   participant: 'Participant'
   waitingList: 'Liste d’attente'
+  pending: 'En attente'
 
 role:
   counselor: 'Conseiller'
@@ -437,6 +441,7 @@ type:
   group: 'Grupa'
   participant: 'Uczestnik'
   waitingList: 'Lista oczekujących'
+  pending: 'Oczekujące'
 
 role:
   counselor: 'Opiekun'
@@ -453,6 +458,7 @@ type:
   group: 'Skupina'
   participant: 'Účastník'
   waitingList: 'Čekací listina'
+  pending: 'Čekající'
 
 role:
   counselor: 'Vedoucí'

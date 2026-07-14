@@ -69,7 +69,7 @@ describe('ContactSelect', () => {
     expect(mountContactSelect([]).exists()).toBe(true);
   });
 
-  it('excludes PENDING registrations from options', () => {
+  it('includes PENDING registrations as individual options with pending type', () => {
     const pending = createRegistration({ status: 'PENDING' });
     const accepted = createRegistration({ status: 'ACCEPTED' });
 
@@ -80,8 +80,23 @@ describe('ContactSelect', () => {
         : [o.registration.id],
     );
 
-    expect(allIds).not.toContain(pending.id);
+    expect(allIds).toContain(pending.id);
     expect(allIds).toContain(accepted.id);
+
+    const pendingContact = options.find(
+      (o) => o.type !== 'group' && o.registration.id === pending.id,
+    );
+    expect(pendingContact?.type).toBe('pending');
+  });
+
+  it('never rolls PENDING registrations up into a group', () => {
+    const pending1 = createRegistration({ status: 'PENDING' });
+    const pending2 = createRegistration({ status: 'PENDING' });
+
+    const options = getOptions(mountContactSelect([pending1, pending2]));
+
+    expect(options.filter((o) => o.type === 'group')).toHaveLength(0);
+    expect(options.filter((o) => o.type === 'pending')).toHaveLength(2);
   });
 
   it('creates an individual contact for each non-PENDING registration', () => {
