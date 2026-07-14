@@ -17,7 +17,7 @@
     "dev": "node ./scripts/run-end-to-end.mjs"
   },
   "devDependencies": {
-    "@playwright/test": "^1.57.1",
+    "@playwright/test": "^1.61.1",
     "@types/node": "^25.9.3",
     "dotenv": "^17.4.2",
     "otplib": "^13.4.0",

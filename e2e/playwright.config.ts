@@ -17,12 +17,6 @@ export default defineConfig({
   // run concurrently against it
   fullyParallel: false,
   workers: 1,
-  retries: process.env.CI ? 1 : 0,
-  // The `page` fixture reseeds via the minimal e2e-only seeder
-  // (backend/prisma/seeders/e2e) before every test — one tsx cold start
-  // plus a handful of inserts, comfortably under Playwright's 30s default,
-  // but bumped slightly for headroom on slower CI runners.
-  timeout: 30_000,
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "list",
   globalSetup: "./support/globalSetup.ts",
 
