@@ -48,25 +48,14 @@ export class StorageRegistry {
   /**
    * The undecorated driver for `identifier` — no transparent encryption.
    * Application code should use `getStorage()`; this is for tooling that
-   * manages ciphertext directly, such as the file-encryption migration
-   * script, so it can write a blob's bytes as-is on any driver (disk today,
-   * s3 later) without `EncryptedStorage` re-encrypting (or refusing to
+   * manages ciphertext directly, so it can write a blob's bytes as-is on
+   * any driver without `EncryptedStorage` re-encrypting (or refusing to
    * decrypt) on top.
    */
   getRawStorage(identifier?: string): Storage {
     identifier ??= this.options.location;
 
-    if (!this.rawStorageCache.has(identifier)) {
-      this.rawStorageCache.set(identifier, this.createStorage(identifier));
-    }
-
-    const storage = this.rawStorageCache.get(identifier);
-    /* c8 ignore next 3 */
-    if (!storage) {
-      throw new Error('Invalid storage');
-    }
-
-    return storage;
+    return this.rawStorage(identifier);
   }
 
   /**
@@ -83,17 +72,33 @@ export class StorageRegistry {
   }
 
   private loadStorage(identifier: string): Storage {
-    const storage = this.createStorage(identifier);
+    const storage = this.rawStorage(identifier);
 
-    // Static assets are public and served plaintext. Every upload store
-    // (local today, s3 later) goes through EncryptedStorage even without a
-    // configured key: it then stores plaintext but refuses to serve
-    // previously encrypted files as raw ciphertext.
+    // Static assets are public and served plaintext.
     if (identifier === 'static') {
       return storage;
     }
 
     return new EncryptedStorage(storage, this.keyring, this.options.tmpDir);
+  }
+
+  /**
+   * Cache-backed undecorated driver for `identifier`. Backs both
+   * `getRawStorage()` and the inner storage `loadStorage()` wraps, so each
+   * location has a single underlying driver instance.
+   */
+  private rawStorage(identifier: string): Storage {
+    if (!this.rawStorageCache.has(identifier)) {
+      this.rawStorageCache.set(identifier, this.createStorage(identifier));
+    }
+
+    const storage = this.rawStorageCache.get(identifier);
+    /* c8 ignore next 3 */
+    if (!storage) {
+      throw new Error('Invalid storage');
+    }
+
+    return storage;
   }
 
   private createStorage(identifier: string): Storage {
@@ -110,5 +115,6 @@ export class StorageRegistry {
 
   reset() {
     this.storageCache.clear();
+    this.rawStorageCache.clear();
   }
 }
