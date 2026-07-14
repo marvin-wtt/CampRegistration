@@ -18,9 +18,28 @@ test.describe("message", () => {
 
     const contactForm = page.getByTestId("contact-form");
 
-    await contactForm.getByTestId("to").locator("input").fill("Tom");
+    const toField = contactForm.getByTestId("to");
+    await toField.click();
+
+    const toValue = "Tom";
+
+    const dialog = page.getByRole("dialog");
+    if (await dialog.isVisible()) {
+      await dialog.locator("input").fill(toValue);
+    } else {
+      await toField.locator("input").fill(toValue);
+    }
 
     await page.getByText("Tom Smith", { exact: true }).click();
+
+    if (await dialog.isVisible()) {
+      // Close the dialog.
+      await page.keyboard.press("Escape");
+    }
+
+    const replyToInput = contactForm.getByTestId("reply-to").locator("input");
+    await replyToInput.clear();
+    await replyToInput.fill("test@email.com");
 
     const subjectField = contactForm.getByTestId("subject");
     await subjectField.click();
