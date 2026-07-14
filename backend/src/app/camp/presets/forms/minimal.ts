@@ -364,6 +364,7 @@ export default {
     cs: 'Dokončit registraci',
     default: 'Complete Registration',
   },
+  showCompletePage: false,
   headerView: 'advanced',
   widthMode: 'static',
 };
