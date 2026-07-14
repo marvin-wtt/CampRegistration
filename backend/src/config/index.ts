@@ -38,6 +38,7 @@ const config = {
     uploadDir: appPath(env.UPLOAD_DIR),
     staticDir: appPath(env.STATIC_DIR),
     maxFileSize: env.MAX_FILE_SIZE,
+    encryptionKeys: env.STORAGE_ENCRYPTION_KEYS,
   },
   csrf: {
     secret: env.CSRF_SECRET,

@@ -8,7 +8,7 @@ import { remove } from 'fs-extra';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 import logger from '#core/logger';
-import { resolve as resolvePath, sep } from 'path';
+import { isPathInside } from '#core/storage/safe-path';
 
 type ParameterType = string | Field | readonly Field[] | null | undefined;
 
@@ -109,18 +109,16 @@ const formatterMiddleware = async (
   req.body = removePrototype(req.body) as unknown;
 
   const files = getAllFiles(req);
-  const resolvedTmpDir = resolvePath(config.storage.tmpDir) + sep;
 
   const removeTmpFile = async (f: Express.Multer.File) => {
-    const resolvedPath = resolvePath(f.path);
-    if (!resolvedPath.startsWith(resolvedTmpDir)) {
+    if (!isPathInside(f.path, config.storage.tmpDir)) {
       logger.warn('Refusing to remove file outside tmpDir', {
-        path: resolvedPath,
+        path: f.path,
       });
       return;
     }
 
-    return remove(resolvedPath).catch((e: unknown) => {
+    return remove(f.path).catch((e: unknown) => {
       logger.warn('Failed to remove tmp file', e);
     });
   };

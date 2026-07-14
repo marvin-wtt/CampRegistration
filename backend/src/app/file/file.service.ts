@@ -110,7 +110,10 @@ export class FileService extends BaseService {
     await this.storageRegistry.getStorage().moveToStorage(filename);
     await this.prisma.file.updateMany({
       where: { name: filename },
-      data: { uploadStatus: 'READY' },
+      data: {
+        uploadStatus: 'READY',
+        encryption: this.storageRegistry.getEncryptionFormat(),
+      },
     });
   }
 
@@ -368,7 +371,18 @@ export class FileService extends BaseService {
   }
 
   getFileStream(file: StorageFile) {
-    return this.storageRegistry.getStorage(file.storageLocation).stream(file);
+    const stream = this.storageRegistry
+      .getStorage(file.storageLocation)
+      .stream(file);
+
+    // Decryption/storage errors surface asynchronously, possibly before the
+    // consumer (HTTP response, mail transport) attaches its own 'error'
+    // listener — without one here, such an error crashes the process.
+    stream.on('error', (error: Error) => {
+      logger.error(`Error while streaming file "${file.id}"`, error);
+    });
+
+    return stream;
   }
 
   async updateFile(
@@ -448,6 +462,9 @@ export class FileService extends BaseService {
             accessLevel: file.accessLevel,
             storageLocation: file.storageLocation,
             uploadStatus: file.uploadStatus,
+            // The duplicate points at the same stored blob, so it must
+            // record the same encryption format.
+            encryption: file.encryption,
             field: sessionId,
           },
         }),
