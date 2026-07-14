@@ -52,16 +52,6 @@ export class FileController extends BaseController {
       download,
     );
 
-    const downloadUrl = await this.fileService.getFileDownloadUrl(
-      file,
-      contentDispositionHeader,
-    );
-
-    if (downloadUrl) {
-      res.redirect(downloadUrl);
-      return;
-    }
-
     const fileStream = await this.fileService.getFileStream(file);
 
     // Set response headers for image display

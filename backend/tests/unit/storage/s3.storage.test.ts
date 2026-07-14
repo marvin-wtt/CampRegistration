@@ -161,28 +161,6 @@ describe('S3Storage', () => {
     });
   });
 
-  describe('createDownloadUrl', () => {
-    it('signs a GET request with the configured lifetime', async () => {
-      getSignedUrlMock.mockResolvedValue('https://signed.example/file');
-      const storage = new S3Storage({
-        ...baseOptions,
-        presignedDownloadLifetimeSeconds: 120,
-      });
-
-      const url = await storage.createDownloadUrl(storageFile('file.txt'), {
-        contentDisposition: 'attachment; filename="f.txt"',
-      });
-
-      expect(url).toBe('https://signed.example/file');
-      const [, command, options] = getSignedUrlMock.mock.calls[0];
-      expect(command).toBeInstanceOf(GetObjectCommand);
-      expect(command.input).toMatchObject({
-        ResponseContentDisposition: 'attachment; filename="f.txt"',
-      });
-      expect(options).toEqual({ expiresIn: 120 });
-    });
-  });
-
   describe('moveToStorage', () => {
     it('uploads with a known content length and removes the temp file', async () => {
       sendMock.mockResolvedValue({});

@@ -1,4 +1,8 @@
-import type { Storage, StorageFile } from '#core/storage/storage';
+import type {
+  Storage,
+  StorageFile,
+  StorageMoveFile,
+} from '#core/storage/storage';
 import fse from 'fs-extra';
 import config from '#config/index';
 import ApiError from '#utils/ApiError';
@@ -16,9 +20,12 @@ export class DiskStorage implements Storage {
     await fse.remove(filePath);
   }
 
-  async moveToStorage(filename: string, sourceFileName = filename) {
-    const sourcePath = safeJoinFilePath(config.storage.tmpDir, sourceFileName);
-    const destinationPath = safeJoinFilePath(this.storageDir, filename);
+  async moveToStorage(file: StorageMoveFile, sourceFileName?: string) {
+    const sourcePath = safeJoinFilePath(
+      config.storage.tmpDir,
+      sourceFileName ?? file.name,
+    );
+    const destinationPath = safeJoinFilePath(this.storageDir, file.name);
 
     await fse.ensureDir(this.storageDir);
     await fse.move(sourcePath, destinationPath, {

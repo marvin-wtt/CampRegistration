@@ -1,6 +1,5 @@
 import type {
   Storage,
-  StorageDownloadUrlOptions,
   StorageFile,
   StorageMoveFile,
 } from '#core/storage/storage';
@@ -13,7 +12,6 @@ import {
   S3ServiceException,
   DeleteObjectCommand,
 } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 import fse from 'fs-extra';
@@ -282,26 +280,6 @@ export class S3Storage implements Storage {
       }
 
       return result.Body;
-    } catch (error) {
-      throw this.toApiError(error);
-    }
-  }
-
-  async createDownloadUrl(
-    file: StorageFile,
-    options?: StorageDownloadUrlOptions,
-  ): Promise<string | null> {
-    try {
-      const command = new GetObjectCommand({
-        Bucket: this.options.bucket,
-        Key: this.withPrefix(file.name),
-        ResponseContentType: file.type,
-        ResponseContentDisposition: options?.contentDisposition,
-      });
-
-      return await getSignedUrl(this.client, command, {
-        expiresIn: this.options.presignedDownloadLifetimeSeconds,
-      });
     } catch (error) {
       throw this.toApiError(error);
     }
