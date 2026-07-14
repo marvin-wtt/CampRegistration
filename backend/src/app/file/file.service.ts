@@ -92,16 +92,15 @@ export class FileService extends BaseService {
 
   private mapFields = (
     file: RequestFile,
-    originalName?: string,
-    storageName?: string,
+    name?: string,
     field?: string,
     locale?: string | null,
     accessLevel?: string,
   ): Prisma.FileCreateInput => {
     return {
       type: file.mimetype,
-      originalName: originalName ?? file.originalname,
-      name: storageName ?? file.filename,
+      originalName: name ?? file.originalname,
+      name: file.filename,
       size: file.size,
       field: extractKeyFromFieldName(field ?? file.fieldname),
       locale: locale ?? null,
@@ -292,10 +291,6 @@ export class FileService extends BaseService {
     locale?: string | null,
     accessLevel?: string,
   ) {
-    const fileId = ulid();
-    const storageName =
-      this.config.storage.location === 's3' ? fileId : file.filename;
-
     const originalFileName = name
       ? name + fileNameExtension(file.filename)
       : file.originalname;
@@ -303,7 +298,6 @@ export class FileService extends BaseService {
     const fileData = this.mapFields(
       file,
       originalFileName,
-      storageName,
       field,
       locale,
       accessLevel,
@@ -312,7 +306,6 @@ export class FileService extends BaseService {
 
     const created = await this.prisma.file.create({
       data: {
-        id: fileId,
         ...fileData,
         ...modelData,
         uploadStatus: 'PENDING',

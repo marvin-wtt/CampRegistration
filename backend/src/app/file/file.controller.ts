@@ -47,17 +47,15 @@ export class FileController extends BaseController {
       );
     }
 
-    const contentDispositionHeader = this.buildContentDisposition(
-      file.originalName,
-      download,
-    );
-
     const fileStream = await this.fileService.getFileStream(file);
 
     // Set response headers for image display
     res.contentType(file.type);
 
-    res.setHeader('Content-disposition', contentDispositionHeader);
+    res.setHeader(
+      'Content-disposition',
+      this.buildContentDisposition(file.originalName, download),
+    );
 
     // pipeline (unlike pipe) propagates stream errors and tears the whole
     // chain down when either side fails or the client disconnects.
