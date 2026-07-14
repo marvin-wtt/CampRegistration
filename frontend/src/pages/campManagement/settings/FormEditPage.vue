@@ -28,6 +28,7 @@ import type { SurveyJSCampData } from '@camp-registration/common/entities';
 import type { ITheme } from 'survey-core';
 import EditorRestrictedAccessDialog from '@/components/campManagement/settings/form/EditorRestrictedAccessDialog.vue';
 import { toRelativeUrl } from '@/utils/url';
+import { createUuid } from '@/utils/uuid';
 
 const quasar = useQuasar();
 const campDetailsStore = useCampDetailsStore();
@@ -119,7 +120,7 @@ async function saveFile(file: File): Promise<string> {
 
   const newFile = await campFileStore.createEntry({
     name: file.name.replace(/\.[^/.]+$/, ''),
-    field: crypto.randomUUID(),
+    field: createUuid(),
     file,
     accessLevel: 'public',
   });

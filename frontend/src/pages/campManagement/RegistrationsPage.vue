@@ -82,7 +82,7 @@ function openLinkedRegistration(): void {
   quasar
     .dialog({
       component: RegistrationDetailsDialog,
-      componentProps: { registration },
+      componentProps: { registrationId },
     })
     .onDismiss(() => {
       removeQueryParam();

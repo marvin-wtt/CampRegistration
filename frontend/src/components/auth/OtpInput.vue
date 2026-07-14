@@ -99,12 +99,14 @@ function onPaste(event: ClipboardEvent, index: number) {
     return;
   }
 
-  const pastedData = clipboardData.getData('text/plain');
-  if (pastedData.length > length - index) {
+  const pastedData = clipboardData.getData('text/plain').trim();
+  if (pastedData.length === 0 || pastedData.length > length - index) {
     return;
   }
 
-  for (let i = index; i < pastedData.length; i++) {
+  event.preventDefault();
+
+  for (let i = 0; i < pastedData.length; i++) {
     fieldValues.value[index + i] = pastedData[i]!;
   }
 

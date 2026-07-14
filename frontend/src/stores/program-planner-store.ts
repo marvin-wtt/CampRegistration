@@ -9,6 +9,7 @@ import { useAPIService } from '@/services/APIService';
 import { useServiceHandler } from '@/composables/serviceHandler';
 import { useAuthBus, useCampBus } from '@/composables/bus';
 import { useRealtimeCollection } from '@/composables/realtimeCollection';
+import { createUuid } from '@/utils/uuid';
 
 export const useProgramPlannerStore = defineStore('program-planner', () => {
   const route = useRoute();
@@ -66,7 +67,7 @@ export const useProgramPlannerStore = defineStore('program-planner', () => {
     const campId = route.params.campId as string;
     checkNotNullWithError(campId);
 
-    const tmpId = `#${crypto.randomUUID()}`;
+    const tmpId = `#${createUuid()}`;
 
     // Optimistic update: add event immediately so it appears in the calendar
     const tmpEvent: ProgramEvent = {

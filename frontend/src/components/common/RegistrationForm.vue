@@ -1,21 +1,93 @@
 <template>
-  <survey-component
-    v-if="model"
-    id="survey"
-    :model="model"
-    data-test="registration-form"
-  />
+  <div class="registration-form">
+    <survey-component
+      v-if="model"
+      v-show="submitState === null"
+      id="survey"
+      :model="model"
+      data-test="registration-form"
+    />
+
+    <div
+      v-if="submitState !== null"
+      class="registration-submit-status"
+      data-test="registration-submit-status"
+    >
+      <div
+        class="registration-submit-status__card rounded-xl elevation-1"
+        :class="`registration-submit-status__card--${submitState}`"
+      >
+        <div class="registration-submit-status__badge">
+          <q-spinner
+            v-if="submitState === 'saving'"
+            size="40px"
+            :thickness="4"
+          />
+          <q-icon
+            v-else
+            :name="submitState === 'success' ? 'check_circle' : 'error'"
+            size="44px"
+          />
+        </div>
+
+        <h3 class="registration-submit-status__title">{{ statusTitle }}</h3>
+        <p class="registration-submit-status__text">{{ statusText }}</p>
+
+        <p
+          v-if="submitState === 'error' && submitError"
+          class="registration-submit-status__detail"
+        >
+          {{ submitError }}
+        </p>
+
+        <div
+          v-if="submitState === 'success'"
+          class="registration-submit-status__actions"
+        >
+          <m-btn
+            primary
+            icon="person_add"
+            :label="t('complete.registerAnother')"
+            :to="{
+              name: 'camp',
+              params: { campId: props.campDetails.id },
+            }"
+          />
+          <m-btn
+            outline
+            primary
+            icon="explore"
+            :label="t('complete.exploreCamps')"
+            :to="{ name: 'camps' }"
+          />
+        </div>
+
+        <div
+          v-else-if="submitState === 'error'"
+          class="registration-submit-status__actions"
+        >
+          <m-btn
+            primary
+            icon="refresh"
+            :label="t('submit.error.retry')"
+            data-test="registration-submit-retry"
+            @click="retrySubmit"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script lang="ts" setup>
 import 'survey-core/survey-core.min.css';
 
 import { useI18n } from 'vue-i18n';
-import { useRouter } from 'vue-router';
 import { createMarkdownConverter } from '@/utils/markdown';
-import { onMounted, ref, toRef, watchEffect } from 'vue';
+import { computed, onMounted, ref, toRef, watchEffect } from 'vue';
 import { SurveyModel } from 'survey-core';
 import { SurveyComponent } from 'survey-vue3-ui';
+import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import {
   startAutoDataUpdate,
   startAutoThemeUpdate,
@@ -28,7 +100,6 @@ import { useErrorExtractor } from '@/composables/serviceHandler';
 const mdConverter = createMarkdownConverter();
 
 const { locale, t } = useI18n();
-const router = useRouter();
 const api = useAPIService();
 const { extractErrorText } = useErrorExtractor();
 
@@ -51,6 +122,37 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   (e: 'bgColorUpdate', color: string | undefined): void;
 }>();
+
+// Submit lifecycle shown by the custom overlay. While it is non-null the
+// survey (including its own completed page) is hidden and this UI takes over.
+const submitState = ref<'saving' | 'success' | 'error' | null>(null);
+const submitError = ref<string>();
+
+const statusTitle = computed(() => {
+  switch (submitState.value) {
+    case 'saving':
+      return t('submit.saving.title');
+    case 'success':
+      return t('complete.title');
+    case 'error':
+      return t('submit.error.title');
+    default:
+      return '';
+  }
+});
+
+const statusText = computed(() => {
+  switch (submitState.value) {
+    case 'saving':
+      return t('submit.saving.text');
+    case 'success':
+      return t('complete.text');
+    case 'error':
+      return t('submit.error.text');
+    default:
+      return '';
+  }
+});
 
 const model = createModel(
   props.campDetails.id,
@@ -90,17 +192,10 @@ function createModel(campId: string, form: object): SurveyModel {
   const survey = new SurveyModel(form);
   survey.locale = locale.value;
 
-  // survey.completedHtml always falls back to survey-core's built-in
-  // "Thank you for completing the survey" text, so it can't be used to
-  // detect whether the form itself defines one — check the raw JSON instead.
-  if (!hasCustomCompletedHtml(form)) {
-    survey.completedHtml = createDefaultCompletedHtml(campId);
-  }
-
-  let completedHtmlBeforeSubmit: string | undefined;
-  let completedHtmlOnConditionBeforeSubmit:
-    SurveyModel['completedHtmlOnCondition'] | undefined;
-  let showCompletePageBeforeSubmit: boolean | undefined;
+  // When the form defines its own completed page we let survey-core render it;
+  // otherwise the default success UI is a Vue panel (see submitState) rather
+  // than survey-core's built-in "Thank you" text.
+  const hasFormCompletedHtml = hasCustomCompletedHtml(form);
 
   if (props.moderation) {
     const hideComplete = () => {
@@ -169,100 +264,48 @@ function createModel(campId: string, form: object): SurveyModel {
   // Resolve {_file.<slot>} placeholders to locale-aware file URLs on demand.
   addFileSlotResolver(survey, campId, api);
 
-  // Send data to server
-  survey.onComplete.add(async (sender, options) => {
-    completedHtmlBeforeSubmit ??= sender.completedHtml;
-    completedHtmlOnConditionBeforeSubmit ??= sender.completedHtmlOnCondition;
-    showCompletePageBeforeSubmit ??= sender.showCompletePage;
-
-    sender.completedHtmlOnCondition = [];
-    sender.completedHtml = createSubmitStateHtml(
-      t('submit.saving.title'),
-      t('submit.saving.text'),
-    );
-    sender.showCompletePage = true;
-
-    options.showSaveInProgress();
+  // Send data to server. The saving/error UI is rendered by the Vue overlay
+  // (see submitState), so the survey's own completed page stays hidden until
+  // the submission actually succeeds.
+  survey.onComplete.add(async (sender) => {
+    submitError.value = undefined;
+    submitState.value = 'saving';
 
     mapFileQuestionValues(sender);
 
-    const registration = sender.data ?? {};
-
     try {
-      await props.submitFn(campId, registration, sender.locale);
-      sender.completedHtml = completedHtmlBeforeSubmit ?? '';
-      sender.completedHtmlOnCondition =
-        completedHtmlOnConditionBeforeSubmit ?? [];
-      sender.showCompletePage = showCompletePageBeforeSubmit ?? true;
-      sender.render();
-
-      completedHtmlBeforeSubmit = undefined;
-      completedHtmlOnConditionBeforeSubmit = undefined;
-      showCompletePageBeforeSubmit = undefined;
-
-      options.showSaveSuccess();
+      await props.submitFn(campId, sender.data ?? {}, sender.locale);
+      if (sender.showCompletePage && hasFormCompletedHtml) {
+        // Reveal the form-defined completed page (survey-core shows it by
+        // default; the survey element is unhidden as submitState clears).
+        submitState.value = null;
+        sender.render();
+      } else {
+        submitState.value = 'success';
+      }
     } catch (e: unknown) {
-      sender.completedHtml = createSubmitStateHtml(
-        t('submit.error.title'),
-        t('submit.error.text'),
-      );
-      sender.showCompletePage = true;
-      sender.render();
-
-      options.showSaveError(extractErrorText(e));
+      submitError.value = extractErrorText(e);
+      submitState.value = 'error';
     }
   });
 
   return survey;
 }
 
+function retrySubmit() {
+  if (model.state !== 'completed') {
+    return;
+  }
+  model.clear(false, false);
+  model.doComplete();
+}
+
 function hasCustomCompletedHtml(form: object): boolean {
-  return Boolean((form as { completedHtml?: unknown }).completedHtml);
-}
-
-function createDefaultCompletedHtml(campId: string): string {
-  const registerAgainHref = router.resolve({
-    name: 'camp',
-    params: { campId },
-  }).href;
-  const exploreCampsHref = router.resolve({ name: 'camps' }).href;
-
-  return [
-    `<h3>${escapeHtml(t('complete.title'))}</h3>`,
-    `<p style="font-size: 18px">${escapeHtml(t('complete.text'))}</p>`,
-    '<div class="registration-complete-actions">',
-    '<a',
-    ' class="registration-complete-actions__btn registration-complete-actions__btn--primary rounded-full elevation-1"',
-    ` href="${escapeHtml(registerAgainHref)}"`,
-    '>',
-    '<i class="notranslate material-icons" aria-hidden="true">person_add</i>',
-    escapeHtml(t('complete.registerAnother')),
-    '</a>',
-    '<a',
-    ' class="registration-complete-actions__btn registration-complete-actions__btn--secondary rounded-full"',
-    ` href="${escapeHtml(exploreCampsHref)}"`,
-    '>',
-    '<i class="notranslate material-icons" aria-hidden="true">explore</i>',
-    escapeHtml(t('complete.exploreCamps')),
-    '</a>',
-    '</div>',
-  ].join('');
-}
-
-function createSubmitStateHtml(title: string, text: string): string {
-  return [
-    `<h3>${escapeHtml(title)}</h3>`,
-    `<p style="font-size: 18px">${escapeHtml(text)}</p>`,
-  ].join('');
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
+  return (
+    'completedHtml' in form &&
+    typeof form.completedHtml === 'string' &&
+    form.completedHtml.length > 0
+  );
 }
 
 function readFile(file: File) {
@@ -343,6 +386,7 @@ submit:
   error:
     title: 'Registration failed'
     text: 'Your registration could not be saved. Please try again.'
+    retry: 'Try again'
 complete:
   title: 'Registration complete!'
   text: "Thanks for signing up — we've received your registration and can't wait to see you at camp."
@@ -358,6 +402,7 @@ submit:
   error:
     title: 'Anmeldung fehlgeschlagen'
     text: 'Deine Anmeldung konnte nicht gespeichert werden. Bitte versuche es erneut.'
+    retry: 'Erneut versuchen'
 complete:
   title: 'Anmeldung abgeschlossen!'
   text: 'Danke für deine Anmeldung — wir haben sie erhalten und freuen uns schon darauf, dich im Camp zu begrüßen.'
@@ -373,6 +418,7 @@ submit:
   error:
     title: "Échec de l'inscription"
     text: "Votre inscription n'a pas pu être enregistrée. Veuillez réessayer."
+    retry: 'Réessayer'
 complete:
   title: 'Inscription terminée !'
   text: "Merci pour ton inscription — nous l'avons bien reçue et avons hâte de te voir au camp."
@@ -388,6 +434,7 @@ submit:
   error:
     title: 'Rejestracja nie powiodła się'
     text: 'Nie udało się zapisać rejestracji. Spróbuj ponownie.'
+    retry: 'Spróbuj ponownie'
 complete:
   title: 'Rejestracja zakończona!'
   text: 'Dziękujemy za rejestrację — otrzymaliśmy Twoje zgłoszenie i nie możemy się doczekać spotkania na obozie.'
@@ -403,6 +450,7 @@ submit:
   error:
     title: 'Registrace se nezdařila'
     text: 'Registraci se nepodařilo uložit. Zkus to prosím znovu.'
+    retry: 'Zkusit znovu'
 complete:
   title: 'Registrace dokončena!'
   text: 'Děkujeme za registraci — tvou přihlášku jsme přijali a těšíme se na tebe na táboře.'
@@ -418,11 +466,6 @@ complete:
     font-style: oblique;
   }
 
-  .sv-save-data_root {
-    bottom: calc(3rem + env(safe-area-inset-bottom, 0px));
-    z-index: 2100;
-  }
-
   .sd-completedpage {
     // survey-core already applies generous top/bottom padding by default
     // (and that's what visually centers the complete page); only the
@@ -430,56 +473,117 @@ complete:
     padding-left: 24px;
     padding-right: 24px;
   }
+}
 
-  .registration-complete-actions {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 12px;
-    margin-top: 24px;
+.registration-submit-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 55vh;
+  padding: 32px 16px;
+}
+
+.registration-submit-status__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 440px;
+  padding: 40px 32px 32px;
+  text-align: center;
+
+  background-color: var(--md3-surface-container-low);
+  color: var(--md3-on-surface);
+
+  animation: registration-submit-rise 0.35s cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+.registration-submit-status__badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 88px;
+  height: 88px;
+  margin-bottom: 6px;
+  border-radius: 50%;
+
+  // Defaults to the "saving" look; state modifiers recolor it below.
+  background-color: var(--md3-primary-container);
+  color: var(--md3-on-primary-container);
+
+  animation: registration-submit-pop 0.4s cubic-bezier(0.2, 0.8, 0.2, 1.2) both;
+}
+
+.registration-submit-status__card--success .registration-submit-status__badge {
+  background-color: var(--md3-positive-container);
+  color: var(--md3-on-positive-container);
+}
+
+.registration-submit-status__card--error .registration-submit-status__badge {
+  background-color: var(--md3-error-container);
+  color: var(--md3-on-error-container);
+}
+
+.registration-submit-status__title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.registration-submit-status__text {
+  margin: 0;
+  max-width: 34ch;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--md3-on-surface-variant);
+}
+
+.registration-submit-status__detail {
+  margin: 6px 0 0;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: var(--md3-on-error-container);
+  background-color: var(--md3-error-container);
+}
+
+.registration-submit-status__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+@keyframes registration-submit-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
   }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
-  .registration-complete-actions__btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
+@keyframes registration-submit-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
 
-    padding: 10px 24px;
-
-    font-size: 14px;
-    font-weight: 500;
-    font-style: normal;
-    text-decoration: none;
-    white-space: nowrap;
-
-    transition:
-      box-shadow 0.2s ease,
-      background-color 0.2s ease,
-      color 0.2s ease;
-
-    .material-icons {
-      font-size: 18px;
-    }
-
-    &--primary {
-      background-color: var(--md3-primary);
-      color: var(--md3-on-primary);
-
-      &:hover {
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
-      }
-    }
-
-    &--secondary {
-      background-color: transparent;
-      color: var(--md3-primary);
-      border: 1px solid var(--md3-outline);
-
-      &:hover {
-        background-color: var(--md3-primary-container);
-        color: var(--md3-on-primary-container);
-      }
-    }
+@media (prefers-reduced-motion: reduce) {
+  .registration-submit-status__card,
+  .registration-submit-status__badge {
+    animation: none;
   }
 }
 </style>

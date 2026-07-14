@@ -39,5 +39,6 @@ export const useAssignedCampsStore = defineStore('assignedCamps', () => {
     isLoading,
     error,
     fetchData,
+    reload,
   };
 });

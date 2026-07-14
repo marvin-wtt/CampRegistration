@@ -259,7 +259,7 @@ import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import { type QSelectOption, useQuasar } from 'quasar';
 import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
 import CampManagerCreateDialog from '@/components/campManagement/settings/access/CampManagerCreateDialog.vue';
-import { useProfileStore } from '@/stores/profile-store';
+import { useAssignedCampsStore } from '@/stores/assigned-camps-store';
 import { useCampDetailsStore } from '@/stores/camp-details-store';
 import CampManagerUpdateDialog from '@/components/campManagement/settings/access/CampManagerUpdateDialog.vue';
 import RolePermissionsDialog from '@/components/campManagement/settings/access/RolePermissionsDialog.vue';
@@ -270,7 +270,7 @@ import { useRouter } from 'vue-router';
 const quasar = useQuasar();
 const { t, d } = useI18n();
 const campManagerStore = useCampManagerStore();
-const profileStore = useProfileStore();
+const assignedCampsStore = useAssignedCampsStore();
 const campDetailsStore = useCampDetailsStore();
 const { can } = usePermissions();
 const router = useRouter();
@@ -455,7 +455,7 @@ function showLeaveDialog(manager: CampManager) {
 
 async function leaveCamp(manager: CampManager) {
   await campManagerStore.deleteData(manager.id);
-  await profileStore.fetchProfile();
+  await assignedCampsStore.reload();
   await router.push({ name: 'management.camps' });
 }
 </script>
