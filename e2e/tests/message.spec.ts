@@ -1,5 +1,5 @@
 import { test, expect } from "../support/fixtures";
-import { getMessageBySentTo } from "../support/maildev";
+import { waitForMessageBySentTo } from "../support/maildev";
 
 test.describe("message", () => {
   test("should send a message to a registration and deliver it by email", async ({
@@ -63,12 +63,8 @@ test.describe("message", () => {
 
     expect(response.status()).toBe(201);
 
-    // Wait for the email queue to deliver.
-    await page.waitForTimeout(1000);
-
-    const email = await getMessageBySentTo("tom.smith@example.com");
-    expect(email).not.toBeNull();
-    expect(email!.subject).toBe("Welcome to camp");
-    expect(email!.text).toContain("See you soon!");
+    const email = await waitForMessageBySentTo("tom.smith@example.com");
+    expect(email.subject).toBe("Welcome to camp");
+    expect(email.text).toContain("See you soon!");
   });
 });

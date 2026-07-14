@@ -1,3 +1,5 @@
+import { expect } from "@playwright/test";
+
 export interface MaildevAddress {
   address: string;
   name: string;
@@ -64,6 +66,31 @@ export async function getMessageBySentTo(
   }
 
   return null;
+}
+
+export async function waitForMessageBySentTo(
+  address: string,
+  options?: { timeout?: number },
+): Promise<MaildevMessage> {
+  // Emails are queued, so they arrive in MailDev asynchronously after the
+  // triggering request returns. Poll until the message shows up instead of
+  // reading the mailbox once (which races the queue).
+  let message: MaildevMessage | null = null;
+
+  await expect
+    .poll(
+      async () => {
+        message = await getMessageBySentTo(address);
+        return message !== null;
+      },
+      {
+        timeout: options?.timeout ?? 10_000,
+        message: `Timed out waiting for email to ${address}`,
+      },
+    )
+    .toBe(true);
+
+  return message!;
 }
 
 export async function deleteAllMessages(): Promise<void> {
