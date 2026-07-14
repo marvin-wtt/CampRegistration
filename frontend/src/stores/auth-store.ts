@@ -338,6 +338,7 @@ export const useAuthStore = defineStore('auth', () => {
     loading: isLoading,
     init,
     reset,
+    refreshTokens,
     login,
     logout,
     register,
