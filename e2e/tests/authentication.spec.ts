@@ -1,6 +1,6 @@
 import { test, expect } from "../support/fixtures";
 import { generateTotp } from "../support/totp";
-import { getMessageBySentTo } from "../support/maildev";
+import { waitForMessageBySentTo } from "../support/maildev";
 
 test.describe("Authentication", () => {
   test.describe("Login", () => {
@@ -150,9 +150,8 @@ test.describe("Authentication", () => {
 
       await expect(page).toHaveURL(/\/verify-email$/);
 
-      const email = await getMessageBySentTo("test@example.com");
-      expect(email).not.toBeNull();
-      await page.setContent(email!.html);
+      const email = await waitForMessageBySentTo("test@example.com");
+      await page.setContent(email.html);
 
       const confirmLink = page.locator(".confirm-email-link a").first();
       await confirmLink.evaluate((el) => el.removeAttribute("target"));
@@ -182,9 +181,8 @@ test.describe("Authentication", () => {
       await forgotPasswordForm.getByTestId("submit").click();
       expect((await forgotPasswordResponse).status()).toBe(204);
 
-      const email = await getMessageBySentTo("john@example.com");
-      expect(email).not.toBeNull();
-      await page.setContent(email!.html);
+      const email = await waitForMessageBySentTo("john@example.com");
+      await page.setContent(email.html);
 
       const resetLink = page.locator(".reset-email-link a").first();
       await resetLink.evaluate((el) => el.removeAttribute("target"));
