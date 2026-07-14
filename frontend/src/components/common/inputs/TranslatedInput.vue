@@ -149,10 +149,10 @@ const {
   always = false,
   defaultUntranslated = false,
 } = defineProps<{
-  label?: string;
-  locales?: string[];
-  always?: boolean;
-  defaultUntranslated?: boolean;
+  label?: string | undefined;
+  locales?: string[] | undefined;
+  always?: boolean | undefined;
+  defaultUntranslated?: boolean | undefined;
 }>();
 
 const useTranslations = ref(defaultUseTranslations());
