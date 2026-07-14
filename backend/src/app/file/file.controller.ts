@@ -47,7 +47,7 @@ export class FileController extends BaseController {
       );
     }
 
-    const fileStream = this.fileService.getFileStream(file);
+    const fileStream = await this.fileService.getFileStream(file);
 
     // Set response headers for image display
     res.contentType(file.type);

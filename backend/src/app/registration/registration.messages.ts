@@ -290,7 +290,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
     };
   }
 
-  protected attachments(): MailAttachment[] | Promise<MailAttachment[]> {
+  protected async attachments(): Promise<MailAttachment[]> {
     const files = this.payload.message.attachments;
     if (!files.length) {
       return [];
@@ -298,11 +298,13 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
 
     const fileService = resolve(FileService);
 
-    return files.map((file) => ({
-      filename: file.originalName,
-      content: fileService.getFileStream(file),
-      contentType: file.type,
-    }));
+    return Promise.all(
+      files.map(async (file) => ({
+        filename: file.originalName,
+        content: await fileService.getFileStream(file),
+        contentType: file.type,
+      })),
+    );
   }
 
   async build(): Promise<BuiltMail> {

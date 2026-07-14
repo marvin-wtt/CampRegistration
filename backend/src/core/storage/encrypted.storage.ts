@@ -3,7 +3,11 @@ import { randomUUID } from 'crypto';
 import { pipeline } from 'stream/promises';
 import { PassThrough, type Readable } from 'stream';
 import fse from 'fs-extra';
-import type { Storage, StorageFile } from '#core/storage/storage';
+import type {
+  Storage,
+  StorageFile,
+  StorageMoveFile,
+} from '#core/storage/storage';
 import type { StorageKeyring } from '#core/storage/encryption/keyring';
 import { safeJoinFilePath } from '#core/storage/safe-path';
 import {
@@ -39,9 +43,9 @@ export class EncryptedStorage implements Storage {
     return this.inner.getFileNames();
   }
 
-  async moveToStorage(filename: string): Promise<void> {
+  async moveToStorage(file: StorageMoveFile): Promise<void> {
     if (this.keyring === null) {
-      await this.inner.moveToStorage(filename);
+      await this.inner.moveToStorage(file);
       return;
     }
 
@@ -51,8 +55,8 @@ export class EncryptedStorage implements Storage {
     // nothing ever needs to detect (or could double-encrypt) an already
     // encrypted file. Unique staging names keep concurrent attempts from
     // interleaving writes, and the hourly tmp cleanup prunes orphans.
-    const sourcePath = safeJoinFilePath(this.tmpDir, filename);
-    const stagingName = `${filename}.${randomUUID()}.enc`;
+    const sourcePath = safeJoinFilePath(this.tmpDir, file.tmpFileName);
+    const stagingName = `${file.tmpFileName}.${randomUUID()}.enc`;
     const stagingPath = safeJoinFilePath(this.tmpDir, stagingName);
 
     try {
@@ -63,7 +67,9 @@ export class EncryptedStorage implements Storage {
         // eslint-disable-next-line security/detect-non-literal-fs-filename
         createWriteStream(stagingPath),
       ]);
-      await this.inner.moveToStorage(filename, stagingName);
+      // The inner driver moves whatever `tmpFileName` names, so point it at
+      // the ciphertext staging file while `name` (the stored blob) is kept.
+      await this.inner.moveToStorage({ ...file, tmpFileName: stagingName });
     } catch (error) {
       await fse.remove(stagingPath);
       throw error;
@@ -72,9 +78,9 @@ export class EncryptedStorage implements Storage {
     await fse.remove(sourcePath);
   }
 
-  stream(file: StorageFile): Readable {
+  async openReadStream(file: StorageFile): Promise<Readable> {
     if (file.encryption === null) {
-      return this.inner.stream(file);
+      return this.inner.openReadStream(file);
     }
 
     if (file.encryption !== ENCRYPTION_FORMAT) {
@@ -95,7 +101,7 @@ export class EncryptedStorage implements Storage {
 
     return createDecryptStream(
       this.keyring.decrypt,
-      this.inner.stream(file),
+      await this.inner.openReadStream(file),
       file.size,
     );
   }

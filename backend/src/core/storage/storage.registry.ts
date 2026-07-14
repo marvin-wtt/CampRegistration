@@ -9,6 +9,7 @@ import {
 } from '#core/storage/encryption/keyring';
 import type { StorageConfig } from '#config';
 import logger from '#core/logger';
+import { S3Storage } from '#core/storage/s3.storage';
 
 export class StorageRegistry {
   private storageCache: Map<string, Storage>;
@@ -31,6 +32,8 @@ export class StorageRegistry {
 
   getStorage(identifier?: string): Storage {
     identifier ??= this.options.location;
+    // Backwards compatibility
+    identifier = identifier === 'local' ? 'disk' : identifier;
 
     if (!this.storageCache.has(identifier)) {
       this.storageCache.set(identifier, this.loadStorage(identifier));
@@ -102,12 +105,23 @@ export class StorageRegistry {
   }
 
   private createStorage(identifier: string): Storage {
-    if (identifier === 'local') {
+    if (identifier === 'disk') {
       return new DiskStorage(this.options.uploadDir);
     }
 
     if (identifier === 'static') {
       return new StaticStorage();
+    }
+
+    if (identifier === 's3') {
+      if (!this.options.s3) {
+        throw new Error('S3 storage is not configured');
+      }
+
+      return new S3Storage({
+        ...this.options.s3,
+        tmpDir: this.options.tmpDir,
+      });
     }
 
     throw new Error(`Unknown storage strategy ${identifier}`);

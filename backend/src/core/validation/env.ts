@@ -1,12 +1,12 @@
-import { type ZodObject, type z, ZodError } from 'zod';
-import { type ZodReadonly } from 'zod';
+import { type z, ZodError } from 'zod';
 import process from 'node:process';
 
-export function validateEnv<R extends ZodObject, T extends ZodReadonly<R>>(
-  schema: T,
-): z.infer<T> {
+export function validateEnv<T extends z.ZodType>(schema: T): z.output<T> {
   try {
-    return schema.parse(process.env);
+    // Parse a shallow copy rather than `process.env` directly: `process.env`
+    // is an exotic host object that cannot be frozen, so a schema ending in
+    // `.readonly()` would throw when the parsed value still aliases it.
+    return schema.parse({ ...process.env });
   } catch (error) {
     if (error instanceof ZodError) {
       console.error('❌ Invalid environment variables:');
