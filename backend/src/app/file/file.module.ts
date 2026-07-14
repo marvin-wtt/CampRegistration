@@ -18,7 +18,7 @@ export class FileModule implements AppModule {
   }
 
   registerJobs(scheduler: JobScheduler): void {
-    scheduler.schedule('tmp-file-cleanup', '0 4 * * *', () =>
+    scheduler.schedule('tmp-file-cleanup', '0 * * * *', () =>
       resolve(FileService).deleteTempFiles(),
     );
     scheduler.schedule('unused-file-cleanup', '15 4 * * *', () =>

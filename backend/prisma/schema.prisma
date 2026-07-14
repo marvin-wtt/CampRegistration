@@ -281,6 +281,7 @@ model File {
   accessLevel         String?      @map("access_level")
   storageLocation     String       @map("storage_location")
   uploadStatus        UploadStatus @default(READY) @map("upload_status")
+  encryption          String?
   createdAt           DateTime     @default(now()) @map("created_at")
 
   camp              Camp?              @relation(fields: [campId], references: [id], onDelete: SetNull)

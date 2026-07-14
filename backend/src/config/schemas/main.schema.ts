@@ -21,3 +21,5 @@ export const MainEnvSchema = z.object({
     .optional()
     .describe('Override the default log level.'),
 });
+
+export type MainEnv = z.output<typeof MainEnvSchema>;

@@ -1,42 +1,31 @@
-import type { Storage, StorageFile } from '#core/storage/storage';
+import type {
+  Storage,
+  StorageFile,
+  StorageMoveFile,
+} from '#core/storage/storage';
 import fse from 'fs-extra';
 import config from '#config/index';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
-import path from 'path';
+import { safeJoinFilePath } from '#core/storage/safe-path';
 
 export class DiskStorage implements Storage {
   constructor(private readonly storageDir: string) {
     fse.ensureDirSync(this.storageDir);
   }
 
-  private isDirectoryPathValid(filePath: string, rootPath: string): boolean {
-    // Make sure, that the file path does not escape the root path
-    const resolvedFilePath = path.resolve(filePath);
-    const resolvedRootPath = path.resolve(rootPath);
-
-    return resolvedFilePath.startsWith(resolvedRootPath);
-  }
-
-  private safeJoinFilePath(rootPath: string, filename: string): string {
-    const filePath = path.join(rootPath, filename);
-
-    if (!this.isDirectoryPathValid(filePath, rootPath)) {
-      throw new Error('Invalid file');
-    }
-
-    return filePath;
-  }
-
   async removeFile(fileName: string) {
-    const filePath = this.safeJoinFilePath(this.storageDir, fileName);
+    const filePath = safeJoinFilePath(this.storageDir, fileName);
 
     await fse.remove(filePath);
   }
 
-  async moveToStorage(filename: string) {
-    const sourcePath = this.safeJoinFilePath(config.storage.tmpDir, filename);
-    const destinationPath = this.safeJoinFilePath(this.storageDir, filename);
+  async moveToStorage(file: StorageMoveFile) {
+    const sourcePath = safeJoinFilePath(
+      config.storage.tmpDir,
+      file.tmpFileName,
+    );
+    const destinationPath = safeJoinFilePath(this.storageDir, file.name);
 
     await fse.ensureDir(this.storageDir);
     await fse.move(sourcePath, destinationPath, {
@@ -49,8 +38,8 @@ export class DiskStorage implements Storage {
     return fse.readdir(this.storageDir);
   }
 
-  stream(file: StorageFile) {
-    const filePath = this.safeJoinFilePath(this.storageDir, file.name);
+  openReadStream(file: StorageFile) {
+    const filePath = safeJoinFilePath(this.storageDir, file.name);
 
     // eslint-disable-next-line security/detect-non-literal-fs-filename
     if (!fse.existsSync(filePath)) {
@@ -58,6 +47,6 @@ export class DiskStorage implements Storage {
     }
 
     // eslint-disable-next-line security/detect-non-literal-fs-filename
-    return fse.createReadStream(filePath);
+    return Promise.resolve(fse.createReadStream(filePath));
   }
 }
