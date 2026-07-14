@@ -59,7 +59,33 @@ describe('RegistrationForm', () => {
     expect(wrapper.exists()).toBeTruthy();
   });
 
-  it('replaces success completed HTML when submit fails', async () => {
+  it('shows the custom success panel when the form defines no completed page', async () => {
+    const submitFn = vi.fn().mockResolvedValue(undefined);
+
+    const wrapper = mount(RegistrationForm, {
+      props: {
+        // simpleCampDetails.form has no completedHtml
+        campDetails: { ...simpleCampDetails, id: 'camp-1' },
+        submitFn,
+        uploadFileFn: () => Promise.reject(new Error()),
+      },
+    });
+    const survey = wrapper
+      .getComponent(SurveyComponent)
+      .props('model') as SurveyModel;
+
+    survey.doComplete();
+    await flushPromises();
+
+    expect(submitFn).toHaveBeenCalledTimes(1);
+
+    // When the form has no completed page, our Vue success panel takes over.
+    const status = wrapper.find('[data-test="registration-submit-status"]');
+    expect(status.exists()).toBe(true);
+    expect(status.text()).toContain('complete.title');
+  });
+
+  it('shows the custom error status without touching the completed page', async () => {
     const submitFn = vi.fn(() =>
       // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
       Promise.reject({
@@ -95,12 +121,68 @@ describe('RegistrationForm', () => {
     await flushPromises();
 
     expect(submitFn).toHaveBeenCalledTimes(1);
-    expect(survey.showCompletePage).toBe(true);
-    expect(survey.completedHtml).toContain('submit.error.title');
-    expect(survey.completedHtml).not.toContain('Registration successful');
-    expect(survey.completedState).toBe('error');
-    expect(survey.completedStateText).toBe('Registration is closed');
+    // The form-defined completed page is left untouched; the error UI is a
+    // separate Vue overlay shown over the (hidden) survey.
+    expect(survey.completedHtml).toBe('Registration successful');
+
+    const status = wrapper.find('[data-test="registration-submit-status"]');
+    expect(status.exists()).toBe(true);
+    expect(status.text()).toContain('submit.error.title');
+    expect(status.text()).toContain('Registration is closed');
   });
+
+  it('retries the submission when the retry button is clicked', async () => {
+    const submitFn = vi
+      .fn()
+      .mockRejectedValueOnce({
+        isAxiosError: true,
+        response: {
+          data: { message: 'Temporary error' },
+          statusText: 'Service Unavailable',
+        },
+      })
+      .mockResolvedValueOnce(undefined);
+
+    const wrapper = mount(RegistrationForm, {
+      props: {
+        campDetails: {
+          ...simpleCampDetails,
+          id: 'camp-1',
+          form: {
+            ...simpleCampDetails.form,
+            completedHtml: 'Registration successful',
+          },
+        },
+        submitFn,
+        uploadFileFn: () => Promise.reject(new Error()),
+      },
+    });
+    const survey = wrapper
+      .getComponent(SurveyComponent)
+      .props('model') as SurveyModel;
+
+    survey.doComplete();
+    await flushPromises();
+
+    expect(submitFn).toHaveBeenCalledTimes(1);
+    expect(
+      wrapper.find('[data-test="registration-submit-status"]').text(),
+    ).toContain('submit.error.title');
+
+    await wrapper
+      .find('[data-test="registration-submit-retry"]')
+      .trigger('click');
+    await flushPromises();
+
+    // The retry re-fires onComplete and, on success, reveals the survey's
+    // completed page and dismisses the error overlay.
+    expect(submitFn).toHaveBeenCalledTimes(2);
+    expect(survey.showCompletePage).toBe(true);
+    expect(
+      wrapper.find('[data-test="registration-submit-status"]').exists(),
+    ).toBe(false);
+  });
+
   it.todo('should set variables');
 
   it.todo('should render markdown');

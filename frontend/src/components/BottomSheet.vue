@@ -39,7 +39,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, useTemplateRef } from 'vue';
+import { computed, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue';
 import { useDialogPluginComponent } from 'quasar';
 
 const {
@@ -67,12 +67,49 @@ defineEmits([...useDialogPluginComponent.emits]);
 const sheet = useTemplateRef('sheet');
 const dragOffset = ref(0);
 const dragging = ref(false);
+const keyboardInset = ref(0);
 
-const sheetStyle = computed(() =>
-  dragOffset.value > 0
-    ? { transform: `translateY(${dragOffset.value}px)` }
-    : undefined,
-);
+// The dialog is anchored with `bottom: 0` against the layout viewport, which
+// mobile browsers keep full-height when the on-screen keyboard opens (only
+// the visual viewport shrinks). Without this, a sheet short enough to fit
+// under the keyboard's height ends up entirely hidden behind it.
+function updateKeyboardInset() {
+  const viewport = window.visualViewport;
+
+  keyboardInset.value = viewport
+    ? Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop)
+    : 0;
+}
+
+watch(model, (isOpen) => {
+  const viewport = window.visualViewport;
+  if (!viewport) {
+    return;
+  }
+
+  if (isOpen) {
+    updateKeyboardInset();
+    viewport.addEventListener('resize', updateKeyboardInset);
+    viewport.addEventListener('scroll', updateKeyboardInset);
+  } else {
+    viewport.removeEventListener('resize', updateKeyboardInset);
+    viewport.removeEventListener('scroll', updateKeyboardInset);
+    keyboardInset.value = 0;
+  }
+});
+
+onBeforeUnmount(() => {
+  window.visualViewport?.removeEventListener('resize', updateKeyboardInset);
+  window.visualViewport?.removeEventListener('scroll', updateKeyboardInset);
+});
+
+const sheetStyle = computed(() => {
+  const translateY = dragOffset.value - keyboardInset.value;
+
+  return translateY !== 0
+    ? { transform: `translateY(${translateY}px)` }
+    : undefined;
+});
 
 interface TouchPanDetails {
   isFirst?: boolean;

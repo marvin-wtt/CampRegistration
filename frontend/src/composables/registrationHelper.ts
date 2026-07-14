@@ -99,7 +99,7 @@ export function useRegistrationHelper() {
     return registration.computedData.address;
   }
 
-  function role(registration: Registration): string | undefined {
+  function role(registration: Registration): string {
     // Default to participant
     return registration.computedData.role ?? 'participant';
   }

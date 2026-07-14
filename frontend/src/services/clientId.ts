@@ -1,3 +1,5 @@
+import { createUuid } from '@/utils/uuid';
+
 /**
  * A unique id for this app instance (one per browser tab / page load), sent on
  * mutating requests so the server can stamp realtime events' `origin`. The
@@ -8,4 +10,4 @@
  * suppress events, and each tab must have its own id so a user's other tabs
  * still react to changes.
  */
-export const clientId: string = crypto.randomUUID();
+export const clientId: string = createUuid();
