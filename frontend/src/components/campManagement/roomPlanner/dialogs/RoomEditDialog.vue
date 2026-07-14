@@ -16,13 +16,14 @@
           <translated-input
             v-model="modifiedRoom.name"
             :label="t('fields.name.label')"
+            :locales="props.locales"
             :rules="[
               (val: string | Record<string, string> | undefined) =>
                 !!val || t('fields.name.rules.required'),
             ]"
+            hide-bottom-space
             outlined
             rounded
-            :locales="props.locales"
           />
 
           <q-input
