@@ -16,6 +16,7 @@
       <div
         class="registration-submit-status__card rounded-xl elevation-1"
         :class="`registration-submit-status__card--${submitState}`"
+        :data-test="`registration-submit-status-${submitState}`"
       >
         <div class="registration-submit-status__badge">
           <q-spinner
