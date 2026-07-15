@@ -7,11 +7,11 @@ export function useRegistrationHelper() {
   const registrationStore = useRegistrationsStore();
 
   function firstName(registration: Registration): string | undefined {
-    return registration.computedData.firstName ?? undefined;
+    return registration.computedData.firstName?.trim() || undefined;
   }
 
   function lastName(registration: Registration): string | undefined {
-    return registration.computedData.lastName ?? undefined;
+    return registration.computedData.lastName?.trim() || undefined;
   }
 
   function fullName(registration: Registration): string | undefined {
@@ -111,12 +111,12 @@ export function useRegistrationHelper() {
   function email(registration: Registration): string | undefined {
     return registration.computedData.emails !== null &&
       registration.computedData.emails.length > 0
-      ? registration.computedData.emails[0]
+      ? registration.computedData.emails[0]?.trim()
       : undefined;
   }
 
   function emails(registration: Registration): string[] {
-    return registration.computedData.emails ?? [];
+    return registration.computedData.emails?.map((e) => e.trim()) ?? [];
   }
 
   return {
