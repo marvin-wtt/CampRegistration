@@ -495,7 +495,7 @@ export class FileService extends BaseService {
     const fileModels = await this.prisma.file.findMany({
       where: {
         storageLocation: {
-          in: ['local', 'disk', 's3'],
+          in: ['disk', 's3'],
         },
       },
       select: {
