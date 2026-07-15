@@ -21,6 +21,7 @@ import { useProgramEventService } from '@/services/ProgramEventService';
 import { useQueueService } from '@/services/QueueService';
 import { useTaskService } from '@/services/TaskService';
 import { useAdminService } from '@/services/AdminService';
+import { useTranslationService } from '@/services/TranslationService';
 
 export function useAPIService() {
   return {
@@ -46,6 +47,7 @@ export function useAPIService() {
     ...useProgramEventService(),
     ...useQueueService(),
     ...useTaskService(),
+    ...useTranslationService(),
   };
 }
 

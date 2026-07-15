@@ -11,6 +11,7 @@ import { RoomModule } from '#app/room/room.module';
 import { BedModule } from '#app/bed/bed.module';
 import { FeedbackModule } from '#app/feedback/feedback.module';
 import { ProfileModule } from '#app/profile/profile.module';
+import { TranslationModule } from '#app/translation/translation.module';
 import { TotpModule } from '#app/totp/totp.module';
 import { UserModule } from '#app/user/user.module';
 import { SetupModule } from '#app/setup/setup.module';
@@ -62,4 +63,5 @@ export const createModules = (): AppModule[] => [
   new NewsletterManagerModule(),
   new NewsletterMessageModule(),
   new RealtimeModule(),
+  new TranslationModule(),
 ];

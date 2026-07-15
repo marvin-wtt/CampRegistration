@@ -66,6 +66,27 @@
                   </div>
                 </template>
 
+                <template
+                  v-if="translationAvailable"
+                  #append
+                >
+                  <q-btn
+                    icon="auto_awesome"
+                    round
+                    flat
+                    dense
+                    size="sm"
+                    class="translate-action"
+                    :disable="!translations[locale] || autoTranslating"
+                    :loading="autoTranslatingFrom === locale"
+                    @click.stop="autoTranslateFrom(locale)"
+                  >
+                    <q-tooltip>
+                      {{ t('autoTranslate') }}
+                    </q-tooltip>
+                  </q-btn>
+                </template>
+
                 <!-- Parent slots (locale flag replaces the field icon here) -->
                 <template
                   v-for="(data, name, slotIndex) in translatedSlots"
@@ -96,6 +117,25 @@
                     <span class="locale-code">{{ locale.toUpperCase() }}</span>
                     <q-tooltip>{{ localeName(locale) }}</q-tooltip>
                   </div>
+                </template>
+
+                <template
+                  v-if="translationAvailable"
+                  #append
+                >
+                  <q-btn
+                    icon="auto_awesome"
+                    round
+                    flat
+                    dense
+                    size="sm"
+                    class="translate-action"
+                    :disable="!translations[locale] || autoTranslating"
+                    :loading="autoTranslatingFrom === locale"
+                    @click.stop="autoTranslateFrom(locale)"
+                  >
+                    <q-tooltip>{{ t('autoTranslate') }}</q-tooltip>
+                  </q-btn>
                 </template>
 
                 <!-- Parent slots (locale flag replaces the field icon here) -->
@@ -132,13 +172,25 @@ import { computed, ref, useAttrs, watch } from 'vue';
 import { type QInputSlots } from 'quasar';
 import TranslationToggleBtn from '@/components/common/inputs/TranslationToggleBtn.vue';
 import { useI18n } from 'vue-i18n';
+import { useTranslationStore } from '@/stores/translation-store';
 
 type Translations = Record<string, string | number>;
 type ModelValueType = undefined | null | string | number | Translations;
 
+// Global scope for the `country.*` lookup in localeName() below — explicit
+// because this component also has its own local <i18n> block (for the
+// auto-translate tooltip), which flips useI18n()'s default scope to 'local'.
 // eslint-disable-next-line @typescript-eslint/unbound-method
-const { locale, t, te } = useI18n();
+const { locale, t: tGlobal, te } = useI18n({ useScope: 'global' });
+const { t } = useI18n();
 const attrs = useAttrs();
+
+const translationStore = useTranslationStore();
+// Cached app-wide and shared by every instance; see translation-store.ts.
+void translationStore.checkAvailability();
+const translationAvailable = computed<boolean>(
+  () => translationStore.available === true,
+);
 
 const [model, modifiers] = defineModel<ModelValueType>();
 const slots = defineSlots<QInputSlots>();
@@ -175,7 +227,7 @@ const translatedSlots = computed<Partial<QInputSlots>>(() => {
 // the uppercased code when no global `country.*` key exists for the value.
 function localeName(value: string): string {
   const key = `country.${value.toLowerCase()}`;
-  return te(key) ? t(key) : value.toUpperCase();
+  return te(key) ? tGlobal(key) : value.toUpperCase();
 }
 
 function defaultUseTranslations(): boolean {
@@ -234,6 +286,45 @@ function clearTranslation(locale: string) {
   }
 }
 
+const autoTranslatingFrom = ref<string | null>(null);
+const autoTranslating = computed<boolean>(
+  () => autoTranslatingFrom.value !== null,
+);
+
+async function autoTranslateFrom(sourceLocale: string) {
+  const sourceValue = translations.value[sourceLocale];
+  if (sourceValue == null || sourceValue === '' || autoTranslating.value) {
+    return;
+  }
+
+  autoTranslatingFrom.value = sourceLocale;
+  try {
+    const targetLocales = locales.filter((l) => l !== sourceLocale);
+    const results = await Promise.all(
+      targetLocales.map((targetLocale) =>
+        translationStore.translate(
+          String(sourceValue),
+          targetLocale,
+          sourceLocale,
+        ),
+      ),
+    );
+
+    // A per-locale `undefined` means that translation failed (the store
+    // already surfaced an error notification); leave that field untouched.
+    targetLocales.forEach((targetLocale, index) => {
+      const translated = results[index];
+      if (translated != null) {
+        translations.value[targetLocale] = modifiers.number
+          ? Number(translated)
+          : translated;
+      }
+    });
+  } finally {
+    autoTranslatingFrom.value = null;
+  }
+}
+
 watch(useTranslations, (enabled, wasEnabled) => {
   if (!enabled || wasEnabled || value.value === '' || value.value === 0) {
     return;
@@ -262,6 +353,26 @@ watch(
   },
 );
 </script>
+
+<i18n lang="yaml" locale="en">
+autoTranslate: 'Auto-translate other languages'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+autoTranslate: 'Andere Sprachen automatisch übersetzen'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+autoTranslate: 'Traduire automatiquement les autres langues'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+autoTranslate: 'Automatycznie przetłumacz pozostałe języki'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+autoTranslate: 'Automaticky přeložit ostatní jazyky'
+</i18n>
 
 <style scoped>
 .layer1,
@@ -296,6 +407,11 @@ watch(
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.04em;
+  color: var(--md3-on-surface-variant);
+}
+
+/* Per-locale auto-translate trigger, styled like a marginal field icon. */
+.translate-action {
   color: var(--md3-on-surface-variant);
 }
 

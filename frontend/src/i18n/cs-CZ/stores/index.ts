@@ -12,6 +12,7 @@ import newsletterSubscriber from './newsletter-subscriber';
 import newsletterMessage from './newsletter-message';
 import newsletterManager from './newsletter-manager';
 import task from './task';
+import translation from './translation';
 
 export default {
   camp,
@@ -28,4 +29,5 @@ export default {
   newsletterMessage,
   newsletterManager,
   task,
+  translation,
 };

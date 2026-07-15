@@ -18,6 +18,7 @@ export * from './Room.js';
 export * from './ServiceFile.js';
 export * from './TableTemplate.js';
 export * from './Task.js';
+export * from './Translation.js';
 export * from './User.js';
 
 export * from './Message.js';

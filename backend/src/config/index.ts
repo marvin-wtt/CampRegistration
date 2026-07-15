@@ -43,6 +43,58 @@ function s3Config(): S3Config | undefined {
   };
 }
 
+interface AzureTranslationConfig {
+  key: string;
+  region: string;
+  endpoint: string;
+}
+
+interface DeepLTranslationConfig {
+  key: string;
+  url: string;
+}
+
+interface GoogleTranslationConfig {
+  key: string;
+}
+
+function azureTranslationConfig(): AzureTranslationConfig | undefined {
+  if (!env.AZURE_TRANSLATOR_KEY || !env.AZURE_TRANSLATOR_REGION) {
+    return undefined;
+  }
+
+  return {
+    key: env.AZURE_TRANSLATOR_KEY,
+    region: env.AZURE_TRANSLATOR_REGION,
+    endpoint: env.AZURE_TRANSLATOR_ENDPOINT,
+  };
+}
+
+function deeplTranslationConfig(): DeepLTranslationConfig | undefined {
+  if (!env.DEEPL_API_KEY) {
+    return undefined;
+  }
+
+  return {
+    key: env.DEEPL_API_KEY,
+    url:
+      env.DEEPL_API_URL ??
+      (env.DEEPL_API_KEY.endsWith(':fx')
+        ? 'https://api-free.deepl.com'
+        : 'https://api.deepl.com'),
+  };
+}
+
+function googleTranslationConfig(): GoogleTranslationConfig | undefined {
+  if (!env.GOOGLE_TRANSLATE_API_KEY) {
+    return undefined;
+  }
+
+  return {
+    key: env.GOOGLE_TRANSLATE_API_KEY,
+  };
+}
+
 const config = {
   env: env.NODE_ENV,
   appName: env.APP_NAME,
@@ -105,6 +157,12 @@ const config = {
     driver:
       env.REALTIME_DRIVER ??
       (env.QUEUE_DRIVER === 'redis' ? ('redis' as const) : ('memory' as const)),
+  },
+  translation: {
+    driver: env.TRANSLATION_DRIVER,
+    azure: azureTranslationConfig(),
+    deepl: deeplTranslationConfig(),
+    google: googleTranslationConfig(),
   },
   sentry: {
     dsn: env.SENTRY_DSN,
