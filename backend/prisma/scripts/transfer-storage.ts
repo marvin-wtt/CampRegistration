@@ -15,7 +15,7 @@ import { ulid } from '#utils/ulid';
  *
  *   tsx prisma/scripts/transfer-storage.ts <source> <target> [options]
  *
- *   <source> / <target>   storage identifiers: `disk` (alias `local`) or `s3`
+ *   <source> / <target>   storage identifiers: `disk` or `s3`
  *
  * Options:
  *   --delete-source       remove each file from the source once it has been
@@ -30,18 +30,6 @@ import { ulid } from '#utils/ulid';
  */
 
 const KNOWN_STORAGES = new Set(['disk', 's3']);
-
-// The registry treats the legacy `local` identifier as `disk`; mirror that here
-// so both the physical storage and the stored `storage_location` values line up.
-function canonical(identifier: string): string {
-  return identifier === 'local' ? 'disk' : identifier;
-}
-
-// Every `storage_location` value that maps to the same physical backend, so
-// legacy `local` rows are picked up when transferring from `disk`.
-function locationAliases(identifier: string): string[] {
-  return canonical(identifier) === 'disk' ? ['disk', 'local'] : [identifier];
-}
 
 interface Options {
   source: string;
@@ -74,13 +62,13 @@ function parseArgs(argv: string[]): Options {
     );
   }
 
-  if (!KNOWN_STORAGES.has(canonical(source))) {
+  if (!KNOWN_STORAGES.has(source)) {
     throw new Error(`Unknown source storage "${source}"`);
   }
-  if (!KNOWN_STORAGES.has(canonical(target))) {
+  if (!KNOWN_STORAGES.has(target)) {
     throw new Error(`Unknown target storage "${target}"`);
   }
-  if (canonical(source) === canonical(target)) {
+  if (source === target) {
     throw new Error('Source and target storage must differ');
   }
 
@@ -100,7 +88,7 @@ interface FileGroup {
 async function loadSourceGroups(source: string): Promise<FileGroup[]> {
   const rows = await prisma.file.findMany({
     where: {
-      storageLocation: { in: locationAliases(source) },
+      storageLocation: source,
       uploadStatus: 'READY',
     },
     select: {
@@ -108,6 +96,7 @@ async function loadSourceGroups(source: string): Promise<FileGroup[]> {
       name: true,
       originalName: true,
       type: true,
+      encryption: true,
     },
     orderBy: { name: 'asc' },
   });
@@ -132,6 +121,7 @@ async function loadSourceGroups(source: string): Promise<FileGroup[]> {
         type: row.type,
         accessLevel: null,
         storageLocation: source,
+        encryption: row.encryption,
       },
     });
   }
@@ -217,9 +207,9 @@ async function main(): Promise<void> {
       const updated = await prisma.file.updateMany({
         where: {
           name: group.name,
-          storageLocation: { in: locationAliases(options.source) },
+          storageLocation: options.source,
         },
-        data: { storageLocation: canonical(options.target) },
+        data: { storageLocation: options.target },
       });
       repointedRows += updated.count;
 

@@ -32,8 +32,6 @@ export class StorageRegistry {
 
   getStorage(identifier?: string): Storage {
     identifier ??= this.options.location;
-    // Backwards compatibility
-    identifier = identifier === 'local' ? 'disk' : identifier;
 
     if (!this.storageCache.has(identifier)) {
       this.storageCache.set(identifier, this.loadStorage(identifier));

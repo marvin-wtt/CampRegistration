@@ -141,7 +141,7 @@ jobs:
       SHADOW_DATABASE_URL: mysql://root:admin123@mariadb:3306/shadow_db
       TMP_DIR: tests/tmp/storage/tmp/
       UPLOAD_DIR: tests/tmp/storage/uploads/
-      STORAGE_LOCATION: local
+      STORAGE_LOCATION: disk
       JWT_SECRET: oxcch29nu7OKSZ2Wia8U7Y/4TiCqd9lWpIm/skZOpVM=
       CSRF_SECRET: pwXh922dSwF1tjaDmpwhrWZjNbu771PCgv70cRc37so=
       TOTP_RECOVERY_CODE_SECRET: gDHSH6MScBYrYWg7lXPprOewzZWBr0+srB+avI4SfQM=
@@ -248,7 +248,7 @@ jobs:
       SHADOW_DATABASE_URL: mysql://root:admin123@localhost:3306/shadow_db
       TMP_DIR: tests/tmp/storage/tmp/
       UPLOAD_DIR: tests/tmp/storage/uploads/
-      STORAGE_LOCATION: local
+      STORAGE_LOCATION: disk
       JWT_SECRET: oxcch29nu7OKSZ2Wia8U7Y/4TiCqd9lWpIm/skZOpVM=
       CSRF_SECRET: pwXh922dSwF1tjaDmpwhrWZjNbu771PCgv70cRc37so=
       TOTP_RECOVERY_CODE_SECRET: gDHSH6MScBYrYWg7lXPprOewzZWBr0+srB+avI4SfQM=
@@ -351,7 +351,7 @@ jobs:
       SHADOW_DATABASE_URL: mysql://root:admin123@localhost:3306/shadow_db
       TMP_DIR: tests/tmp/storage/tmp/
       UPLOAD_DIR: tests/tmp/storage/uploads/
-      STORAGE_LOCATION: local
+      STORAGE_LOCATION: disk
       JWT_SECRET: oxcch29nu7OKSZ2Wia8U7Y/4TiCqd9lWpIm/skZOpVM=
       CSRF_SECRET: pwXh922dSwF1tjaDmpwhrWZjNbu771PCgv70cRc37so=
       TOTP_RECOVERY_CODE_SECRET: gDHSH6MScBYrYWg7lXPprOewzZWBr0+srB+avI4SfQM=

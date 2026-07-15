@@ -54,7 +54,7 @@ const CommonStorageEnvSchema = z.object({
   STORAGE_LOCATION: z
     .string()
     .describe('Location where new files should be stored to')
-    .default('local'),
+    .default('disk'),
   STORAGE_ENCRYPTION_KEYS: z
     .string()
     .describe(
@@ -119,11 +119,8 @@ const StorageEnvUnionSchema = z.discriminatedUnion('STORAGE_LOCATION', [
 ]);
 
 /**
- * STORAGE_LOCATION defaults to "disk" when it is not present, and the legacy
- * "local" value (the previous default) is normalized to "disk" so existing
- * deployments keep booting after the rename.
- *
- * Both are resolved before evaluating the discriminated union because the
+ * STORAGE_LOCATION defaults to "disk" when it is not present. The default is
+ * resolved before evaluating the discriminated union because the
  * discriminator is required to select the appropriate branch.
  */
 export const StorageEnvSchema = z.preprocess((input) => {
@@ -133,14 +130,9 @@ export const StorageEnvSchema = z.preprocess((input) => {
 
   const data = input as Record<string, unknown>;
 
-  const location =
-    data.STORAGE_LOCATION === undefined || data.STORAGE_LOCATION === 'local'
-      ? 'disk'
-      : data.STORAGE_LOCATION;
-
   return {
     ...data,
-    STORAGE_LOCATION: location,
+    STORAGE_LOCATION: data.STORAGE_LOCATION ?? 'disk',
   };
 }, StorageEnvUnionSchema);
 

@@ -41,7 +41,7 @@ services:
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USERNAME: ${SMTP_USERNAME}
       SMTP_PASSWORD: ${SMTP_PASSWORD}
-      STORAGE_LOCATION: local
+      STORAGE_LOCATION: disk
       UPLOAD_DIR: /data/uploads/
       TMP_DIR: /data/tmp/
     volumes:
