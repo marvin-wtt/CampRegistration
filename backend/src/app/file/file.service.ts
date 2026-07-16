@@ -372,11 +372,13 @@ export class FileService extends BaseService {
       sortType?: 'asc' | 'desc';
     } = {},
   ) {
-    const limit = options.limit ?? 0;
     const sortBy = options.sortBy ?? 'name';
     const sortType = options.sortType ?? 'desc';
 
-    const skip = options.page ? (options.page - 1) * limit : undefined;
+    const skip =
+      options.page && options.limit
+        ? (options.page - 1) * options.limit
+        : undefined;
     const take = options.limit;
 
     return this.prisma.file.findMany({
