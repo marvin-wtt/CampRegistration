@@ -52,6 +52,7 @@
             :transition-next="range === 1 ? 'slide-left' : 'fade'"
             :transition-prev="range === 1 ? 'slide-right' : 'fade'"
             :interval-class="outOfCampIntervalClass"
+            :weekday-class="anchorWeekdayClass"
             @click-head-day="onDayEventAdd"
           >
             <template #head-day-event="{ scope: { timestamp } }">
@@ -1385,6 +1386,14 @@ function outOfCampIntervalClass({
   return { 'cal-outside-camp': outside };
 }
 
+function anchorWeekdayClass({
+  scope,
+}: {
+  scope: { timestamp: Timestamp };
+}): Record<string, boolean> {
+  return { 'cal-anchor-day': scope.timestamp.date === anchorDate.value };
+}
+
 const selectedEventIds = ref<Set<string>>(new Set());
 
 function isSelected(id: string): boolean {
@@ -1578,12 +1587,14 @@ function formatDate(date: Date): string {
   --calendar-active-date-background: var(--md3-primary);
   --calendar-active-date-color: white;
   --calendar-active-date-background-dark: var(--md3-primary-container);
-  // The selected day marks the anchor (the day the user chose); mirror the
-  // active-date colors so it reads as the current selection in both themes.
-  --calendar-selected-background: var(--md3-primary);
-  --calendar-selected-color: var(--md3-on-primary);
-  --calendar-selected-background-dark: var(--md3-primary-container);
-  --calendar-selected-color-dark: var(--md3-on-primary-container);
+}
+
+// The anchor day's date button, styled to match the built-in active-date look
+// (which is disabled via `no-active-date`). MD3 tokens auto-switch, so this
+// reads correctly in both light and dark themes.
+.q-calendar-day__head--day.cal-anchor-day .q-calendar__button {
+  color: var(--md3-on-primary);
+  background: var(--md3-primary);
 }
 
 .droppable {
