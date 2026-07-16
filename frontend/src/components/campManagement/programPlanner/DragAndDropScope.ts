@@ -1,4 +1,4 @@
-import type { Timestamp } from '@quasar/quasar-ui-qcalendar';
+import type { Timestamp } from '@timestamp-js/core';
 
 export interface DragAndDropScope {
   timestamp: Timestamp;

@@ -11,17 +11,17 @@
       class="col-shrink"
       :start="camp.startAt"
       :end="camp.endAt"
-      :current="selectedDate"
+      :current="anchorDate"
+      :restrict-to-camp="!settings.browseOutsideCampDates"
       :editable="canUpdate"
       :deletable="canDelete"
       :creatable="canCreate"
       @next="onNextNavigation"
       @previous="onPreviousNavigation"
-      @jump="(date) => (selectedDate = date)"
+      @jump="(date) => (anchorDate = date)"
       @print="onPrint"
       @settings="onSettingsOpen"
     />
-
     <div
       class="col row no-wrap"
       style="min-height: 0"
@@ -33,6 +33,7 @@
             class="fit"
             v-model="selectedDate"
             view="day"
+            no-active-date
             :locale="locale"
             :drag-enter-func="onDragEnter"
             :drag-over-func="onDragOver"
@@ -51,6 +52,7 @@
             :transition-next="range === 1 ? 'slide-left' : 'fade'"
             :transition-prev="range === 1 ? 'slide-right' : 'fade'"
             :interval-class="outOfCampIntervalClass"
+            :weekday-class="anchorWeekdayClass"
             @click-head-day="onDayEventAdd"
           >
             <template #head-day-event="{ scope: { timestamp } }">
@@ -215,7 +217,8 @@
 
 <script lang="ts" setup>
 import '@quasar/quasar-ui-qcalendar/dist/index.css';
-import { QCalendarDay, type Timestamp } from '@quasar/quasar-ui-qcalendar';
+import { QCalendarDay } from '@quasar/quasar-ui-qcalendar';
+import { type Timestamp } from '@timestamp-js/core';
 import { useI18n } from 'vue-i18n';
 import type {
   CampDetails,
@@ -261,11 +264,6 @@ const emit = defineEmits<{
   (e: 'delete', id: string): void;
 }>();
 
-const calendarRef = ref<QCalendarDay | null>(null);
-const selectedDate = ref<string>(initialSelectedDate());
-const range = ref<number>(initialRange());
-const activePlan = ref<'a' | 'b' | 'both'>('both');
-
 const { settings } = useCampSettings<ProgramPlannerSettings>(
   SETTING_KEYS.PROGRAM_PLANNER,
   {
@@ -273,21 +271,54 @@ const { settings } = useCampSettings<ProgramPlannerSettings>(
     dayEnd: '21:00',
     timeInterval: 30,
     showAllTranslations: false,
+    browseOutsideCampDates: false,
   },
 );
 
+const calendarRef = ref<QCalendarDay | null>(null);
+const range = ref<number>(initialRange());
+const anchorDate = ref<string>(initialAnchorDate());
+const selectedDate = computed<string>({
+  get: () => clampWindowStart(anchorDate.value, range.value),
+  set: (value) => {
+    anchorDate.value = value;
+  },
+});
+const activePlan = ref<'a' | 'b' | 'both'>('both');
+
+let bodyResizeObserver: ResizeObserver | null = null;
+
 onMounted(() => {
-  setTimeout(() => {
-    updateIntervalHeight();
-  }, 500);
+  observeCalendarBody();
   window.addEventListener('keydown', onKeydown);
   window.addEventListener('click', onGlobalClick);
 });
 
 onUnmounted(() => {
+  bodyResizeObserver?.disconnect();
+  bodyResizeObserver = null;
   window.removeEventListener('keydown', onKeydown);
   window.removeEventListener('click', onGlobalClick);
 });
+
+// The row height depends on the measured height of the calendar body. A
+// ResizeObserver on that element fires as soon as it has a real, laid-out
+// height (and again on every later size change) — replacing the fixed
+// startup delay that guessed when layout was done.
+function observeCalendarBody() {
+  const el = getCalendarElement();
+  if (!el) {
+    // Body not in the DOM yet — retry on the next frame.
+    requestAnimationFrame(observeCalendarBody);
+    return;
+  }
+
+  bodyResizeObserver?.disconnect();
+  bodyResizeObserver = new ResizeObserver(() => {
+    updateIntervalHeight();
+  });
+  bodyResizeObserver.observe(el);
+}
 
 // Clicking anywhere that isn't an event (blank calendar space, the nav bar,
 // the backlog, ...) clears the selection — events handle deselecting
@@ -424,8 +455,33 @@ watch(
   },
 );
 
-function initialSelectedDate(): string {
-  return camp.startAt.substring(0, 10);
+function initialAnchorDate(): string {
+  const startDate = parseLocalDate(camp.startAt.substring(0, 10));
+  const endDate = parseLocalDate(camp.endAt.substring(0, 10));
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  if (today < startDate || today > endDate) {
+    return formatDate(startDate);
+  }
+
+  return formatDate(today);
+}
+
+function clampWindowStart(date: string, days: number): string {
+  if (settings.browseOutsideCampDates) {
+    return date;
+  }
+
+  const startMs = parseLocalDate(camp.startAt.substring(0, 10)).getTime();
+  const endMs = parseLocalDate(camp.endAt.substring(0, 10)).getTime();
+  const dayMs = 24 * 60 * 60 * 1000;
+  const maxStartMs = endMs - (days - 1) * dayMs;
+  const pickedMs = parseLocalDate(date).getTime();
+
+  return formatDate(
+    new Date(Math.max(startMs, Math.min(pickedMs, maxStartMs))),
+  );
 }
 
 function parseLocalDate(dateStr: string): Date {
@@ -626,7 +682,7 @@ function onScheduleFromBacklog(event: ProgramEvent) {
     return;
   }
   emit('update', event.id, {
-    date: selectedDate.value,
+    date: anchorDate.value,
     time: null,
     duration: null,
   });
@@ -1051,7 +1107,8 @@ function onDragEnter(
     isCopyDragActive.value = isCopy;
   }
   if (type === 'interval') {
-    const [h, m] = scope.timestamp.time.split(':').map(Number);
+    const time = scope.timestamp.time ?? '';
+    const [h, m] = time.split(':').map(Number);
     const rawMinutes = (h ?? 0) * 60 + (m ?? 0) - draggingGrabOffset;
     const snapped =
       Math.round(Math.max(0, rawMinutes) / settings.timeInterval) *
@@ -1226,7 +1283,8 @@ function onDrop(
     case 'interval': {
       const grabOffsetMinutes =
         parseInt(e.dataTransfer?.getData('text/grab-offset') ?? '0') || 0;
-      const [dh, dm] = scope.timestamp.time.split(':').map(Number);
+      const time = scope.timestamp.time ?? '';
+      const [dh, dm] = time.split(':').map(Number);
       const adjustedMinutes = Math.max(
         0,
         (dh ?? 0) * 60 + (dm ?? 0) - grabOffsetMinutes,
@@ -1342,11 +1400,19 @@ function outOfCampIntervalClass({
 
   const outside =
     date < start.date ||
-    (date === start.date && time < start.time) ||
+    (date === start.date && time != undefined && time < start.time) ||
     date > end.date ||
-    (date === end.date && time >= end.time);
+    (date === end.date && time != undefined && time >= end.time);
 
   return { 'cal-outside-camp': outside };
+}
+
+function anchorWeekdayClass({
+  scope,
+}: {
+  scope: { timestamp: Timestamp };
+}): Record<string, boolean> {
+  return { 'cal-anchor-day': scope.timestamp.date === anchorDate.value };
 }
 
 const selectedEventIds = ref<Set<string>>(new Set());
@@ -1495,26 +1561,26 @@ function onKeydown(e: KeyboardEvent) {
   }
 }
 
+// Paging by a full window (range days). Paging is a fresh intent, so the anchor
+// becomes the new (clamped) window start — keeping it in-range means the
+// selected-day highlight always stays within the visible window. Clamping is a
+// no-op when browsing outside the camp dates is enabled.
 function onNextNavigation() {
-  const endDate = parseLocalDate(camp.endAt.substring(0, 10));
-  const currentDate = parseLocalDate(selectedDate.value);
-
-  const rangeMs = range.value * DAY_IN_MS;
-  const maxTime = endDate.getTime() - (rangeMs - DAY_IN_MS);
-  const updateMs = Math.min(maxTime, currentDate.getTime() + rangeMs);
-
-  selectedDate.value = formatDate(new Date(updateMs));
+  const next =
+    parseLocalDate(selectedDate.value).getTime() + range.value * DAY_IN_MS;
+  selectedDate.value = clampWindowStart(
+    formatDate(new Date(next)),
+    range.value,
+  );
 }
 
 function onPreviousNavigation() {
-  const startDate = parseLocalDate(camp.startAt.substring(0, 10));
-  const currentDate = parseLocalDate(selectedDate.value);
-
-  const rangeMs = range.value * DAY_IN_MS;
-  const minTime = currentDate.getTime() - rangeMs;
-  const updateMs = Math.max(startDate.getTime(), minTime);
-
-  selectedDate.value = formatDate(new Date(updateMs));
+  const prev =
+    parseLocalDate(selectedDate.value).getTime() - range.value * DAY_IN_MS;
+  selectedDate.value = clampWindowStart(
+    formatDate(new Date(prev)),
+    range.value,
+  );
 }
 
 function formatDate(date: Date): string {
@@ -1542,6 +1608,14 @@ function formatDate(date: Date): string {
   --calendar-active-date-background: var(--md3-primary);
   --calendar-active-date-color: white;
   --calendar-active-date-background-dark: var(--md3-primary-container);
+}
+
+// The anchor day's date button, styled to match the built-in active-date look
+// (which is disabled via `no-active-date`). MD3 tokens auto-switch, so this
+// reads correctly in both light and dark themes.
+.q-calendar-day__head--day.cal-anchor-day .q-calendar__button {
+  color: var(--md3-on-primary);
+  background: var(--md3-primary);
 }
 
 .droppable {

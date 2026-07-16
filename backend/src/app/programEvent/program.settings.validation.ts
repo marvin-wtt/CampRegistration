@@ -6,4 +6,5 @@ export const ProgramSettingsValidation = z.object({
   dayEnd: z.string(),
   timeInterval: z.number(),
   showAllTranslations: z.boolean(),
+  browseOutsideCampDates: z.boolean(),
 }) satisfies z.ZodType<ProgramPlannerSettings>;

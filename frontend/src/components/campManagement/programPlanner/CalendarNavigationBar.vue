@@ -180,6 +180,7 @@ const {
   start,
   end,
   current,
+  restrictToCamp = true,
   editable = false,
   deletable = false,
   creatable = false,
@@ -187,6 +188,7 @@ const {
   start: string;
   end: string;
   current: string;
+  restrictToCamp?: boolean;
   editable?: boolean;
   deletable?: boolean;
   creatable?: boolean;
@@ -280,10 +282,16 @@ const maxDays = computed<number>(() => {
 });
 
 const prevDisabled = computed<boolean>(() => {
+  if (!restrictToCamp) {
+    return false;
+  }
   return current <= start.substring(0, 10);
 });
 
 const nextDisabled = computed<boolean>(() => {
+  if (!restrictToCamp) {
+    return false;
+  }
   const [y, m, d] = current.split('-').map(Number);
   const lastDay = new Date(
     y ?? 0,
@@ -319,17 +327,26 @@ const dateRangeLabel = computed<string>(() => {
   return `${startStr} – ${endStr}`;
 });
 
-const navYearMonthMin = computed<string>(() => {
+const navYearMonthMin = computed<string | undefined>(() => {
+  if (!restrictToCamp) {
+    return undefined;
+  }
   const [y, m] = start.split('-');
   return `${y}/${m}`;
 });
 
-const navYearMonthMax = computed<string>(() => {
+const navYearMonthMax = computed<string | undefined>(() => {
+  if (!restrictToCamp) {
+    return undefined;
+  }
   const [y, m] = end.split('-');
   return `${y}/${m}`;
 });
 
 function dateOptions(date: string): boolean {
+  if (!restrictToCamp) {
+    return true;
+  }
   const d = date.replace(/\//g, '-');
   return d >= start.substring(0, 10) && d <= end.substring(0, 10);
 }
