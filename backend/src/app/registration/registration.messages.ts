@@ -27,7 +27,7 @@ import { addressLikeToString } from '#app/mail/mail.utils';
 import { resolve } from '#core/ioc/container';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
-import type { CampWithFreePlacesAndFiles } from '#app/camp/camp.types';
+import type { CampWithFreePlaces } from '#app/camp/camp.types';
 
 function dateToString(date: Date | string | null): string | null {
   if (date === null) {
@@ -48,7 +48,7 @@ function formatDate(date: Date | string | null, locale: string): string | null {
 }
 
 async function createPdfAttachment(
-  camp: CampWithFreePlacesAndFiles,
+  camp: CampWithFreePlaces,
   registration: Registration,
 ): Promise<MailAttachment> {
   const buffer = await exportPDF(camp, registration);
@@ -101,7 +101,7 @@ abstract class RegistrationMessage<
 }
 
 export class RegistrationNotifyMessage extends MailBase<{
-  camp: CampWithFreePlacesAndFiles;
+  camp: CampWithFreePlaces;
   registration: Registration;
 }> {
   static readonly type = 'registration:notify';
@@ -188,14 +188,14 @@ export class RegistrationNotifyMessage extends MailBase<{
 
 interface RegistrationTemplatePayload {
   registration: Registration;
-  camp: CampWithFreePlacesAndFiles;
+  camp: CampWithFreePlaces;
   message: RenderableMessage;
   email: string;
 }
 
 export class RegistrationTemplateMessage extends RegistrationMessage<{
   registration: Registration;
-  camp: CampWithFreePlacesAndFiles;
+  camp: CampWithFreePlaces;
   message: RenderableMessage;
   email: string;
 }> {
@@ -390,7 +390,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
   }
 
   protected static prepareForRegistration(
-    camp: CampWithFreePlacesAndFiles,
+    camp: CampWithFreePlaces,
     registration: Registration,
     message: RenderableMessage,
   ): RegistrationTemplatePayload[] | null {
@@ -410,7 +410,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
 
   static async enqueueFor(
     this: typeof RegistrationTemplateMessage,
-    camp: CampWithFreePlacesAndFiles,
+    camp: CampWithFreePlaces,
     registration: Registration,
     message: RenderableMessage,
   ): Promise<void> {
@@ -424,7 +424,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
 
   static async enqueueForAll(
     this: typeof RegistrationTemplateMessage,
-    camp: CampWithFreePlacesAndFiles,
+    camp: CampWithFreePlaces,
     registrations: Registration[],
     message: RenderableMessage,
   ): Promise<void> {
@@ -438,7 +438,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
 
   static async sendFor(
     this: typeof RegistrationTemplateMessage,
-    camp: CampWithFreePlacesAndFiles,
+    camp: CampWithFreePlaces,
     registration: Registration,
     message: RenderableMessage,
   ): Promise<void> {
@@ -498,7 +498,7 @@ export function messageToRenderable(
 }
 
 async function loadMessageTemplate(
-  camp: CampWithFreePlacesAndFiles,
+  camp: CampWithFreePlaces,
   event: string,
   country: string | null | undefined,
 ): Promise<MessageTemplateWithFiles | null> {
@@ -527,7 +527,7 @@ class RegistrationEventMessage extends RegistrationTemplateMessage {
 
   static async enqueueFor(
     this: typeof RegistrationEventMessage,
-    camp: CampWithFreePlacesAndFiles,
+    camp: CampWithFreePlaces,
     registration: Registration,
   ): Promise<void> {
     const messageTemplate = await loadMessageTemplate(
@@ -557,7 +557,7 @@ class RegistrationEventMessage extends RegistrationTemplateMessage {
 
   static async sendFor(
     this: typeof RegistrationEventMessage,
-    camp: CampWithFreePlacesAndFiles,
+    camp: CampWithFreePlaces,
     registration: Registration,
   ): Promise<void> {
     const messageTemplate = await loadMessageTemplate(

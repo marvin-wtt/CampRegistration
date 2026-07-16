@@ -9,7 +9,7 @@ import {
 } from '#app/registration/registration.helper';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service';
-import { CampWithFreePlacesAndFiles } from '#app/camp/camp.types';
+import { CampWithFreePlaces } from '#app/camp/camp.types';
 
 @injectable()
 export class RegistrationService extends BaseService {
@@ -72,7 +72,7 @@ export class RegistrationService extends BaseService {
   }
 
   async createRegistration(
-    camp: CampWithFreePlacesAndFiles,
+    camp: CampWithFreePlaces,
     data: Pick<Registration, 'data' | 'locale'>,
     fileField: string,
   ) {
@@ -159,7 +159,7 @@ export class RegistrationService extends BaseService {
   }
 
   async updateRegistrationById(
-    camp: CampWithFreePlacesAndFiles,
+    camp: CampWithFreePlaces,
     registrationId: string,
     data: Pick<
       Prisma.RegistrationUpdateInput,
@@ -241,9 +241,7 @@ export class RegistrationService extends BaseService {
     await this.prisma.registration.delete({ where: { id: registration.id } });
   }
 
-  async updateRegistrationsComputedDataByCamp(
-    camp: CampWithFreePlacesAndFiles,
-  ) {
+  async updateRegistrationsComputedDataByCamp(camp: CampWithFreePlaces) {
     const form = formUtils(camp);
     const registrations = await this.queryRegistrations(camp.id);
 

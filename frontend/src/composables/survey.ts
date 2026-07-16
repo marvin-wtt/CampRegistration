@@ -2,7 +2,10 @@ import type { ITheme, SurveyModel } from 'survey-core';
 import type { CampDetails } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
 import { nextTick, type Ref, watch, watchEffect } from 'vue';
-import { setVariables } from '@camp-registration/common/form';
+import {
+  fileDynamicTextProcessor,
+  setVariables,
+} from '@camp-registration/common/form';
 import { useQuasar } from 'quasar';
 import type { useAPIService } from '@/services/APIService';
 import { md3SurveyThemes } from '@/lib/surveyJs/themes/md3';
@@ -47,6 +50,12 @@ export function addFileSlotResolver(
   campId: string,
   api: ReturnType<typeof useAPIService>,
 ) {
+  model.onProcessDynamicText.add(
+    fileDynamicTextProcessor((slot) =>
+      api.getCampFileSlotUrl(campId, slot, model.locale),
+    ),
+  );
+
   model.onProcessDynamicText.add((sender, options) => {
     if (options.isExists) {
       return;
