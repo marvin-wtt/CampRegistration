@@ -106,11 +106,11 @@ import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import {
   startAutoDataUpdate,
   startAutoThemeUpdate,
-  addFileSlotResolver,
 } from '@/composables/survey';
 import type { CampDetails } from '@camp-registration/common/entities';
 import { useAPIService } from '@/services/APIService';
 import { useErrorExtractor } from '@/composables/serviceHandler';
+import { fileDynamicTextProcessor } from '@camp-registration/common/form';
 
 const mdConverter = createMarkdownConverter();
 
@@ -303,7 +303,11 @@ function createModel(campId: string, form: object): SurveyModel {
   });
 
   // Resolve {_file.<slot>} placeholders to locale-aware file URLs on demand.
-  addFileSlotResolver(survey, campId, api);
+  model.onProcessDynamicText.add(
+    fileDynamicTextProcessor((slot) =>
+      api.getCampFileSlotUrl(campId, slot, model.locale),
+    ),
+  );
 
   // Send data to server. The saving/error UI is rendered by the Vue overlay
   // (see submitState), so the survey's own completed page stays hidden until
