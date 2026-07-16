@@ -215,7 +215,8 @@
 
 <script lang="ts" setup>
 import '@quasar/quasar-ui-qcalendar/dist/index.css';
-import { QCalendarDay, type Timestamp } from '@quasar/quasar-ui-qcalendar';
+import { QCalendarDay } from '@quasar/quasar-ui-qcalendar';
+import type { Timestamp } from '@timestamp-js/core';
 import { useI18n } from 'vue-i18n';
 import type {
   CampDetails,
