@@ -286,18 +286,39 @@ const selectedDate = computed<string>({
 });
 const activePlan = ref<'a' | 'b' | 'both'>('both');
 
+let bodyResizeObserver: ResizeObserver | null = null;
+
 onMounted(() => {
-  setTimeout(() => {
-    updateIntervalHeight();
-  }, 500);
+  observeCalendarBody();
   window.addEventListener('keydown', onKeydown);
   window.addEventListener('click', onGlobalClick);
 });
 
 onUnmounted(() => {
+  bodyResizeObserver?.disconnect();
+  bodyResizeObserver = null;
   window.removeEventListener('keydown', onKeydown);
   window.removeEventListener('click', onGlobalClick);
 });
+
+// The row height depends on the measured height of the calendar body. A
+// ResizeObserver on that element fires as soon as it has a real, laid-out
+// height (and again on every later size change) — replacing the fixed
+// startup delay that guessed when layout was done.
+function observeCalendarBody() {
+  const el = getCalendarElement();
+  if (!el) {
+    // Body not in the DOM yet — retry on the next frame.
+    requestAnimationFrame(observeCalendarBody);
+    return;
+  }
+
+  bodyResizeObserver?.disconnect();
+  bodyResizeObserver = new ResizeObserver(() => {
+    updateIntervalHeight();
+  });
+  bodyResizeObserver.observe(el);
+}
 
 // Clicking anywhere that isn't an event (blank calendar space, the nav bar,
 // the backlog, ...) clears the selection — events handle deselecting
