@@ -14,7 +14,7 @@ import type {
   MailAttachment,
   MailPriority,
 } from '#app/mail/mail.types';
-import { exportPDF } from '#utils/form';
+import { generatePDF } from '#app/registration/registration.pdf';
 import { generateUrl } from '#utils/url';
 import { uniqueLowerCase } from '#utils/string';
 import { safeFileName } from '#utils/file';
@@ -51,7 +51,7 @@ async function createPdfAttachment(
   camp: CampWithFreePlaces,
   registration: Registration,
 ): Promise<MailAttachment> {
-  const buffer = await exportPDF(camp, registration);
+  const buffer = await generatePDF(camp, registration);
   const filename = safeFileName(
     ['Registration', registration.lastName, registration.firstName]
       .filter((v) => v != null)
