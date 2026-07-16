@@ -3,6 +3,7 @@ import { campPermissionRegistry } from '#core/permission-registry';
 import type { Prisma } from '#generated/prisma/client.js';
 import type { Permission } from '@camp-registration/common/permissions';
 import { injectable } from 'inversify';
+import { RESOURCE_VIEW_PERMISSION } from '@camp-registration/common/realtime';
 
 type ManagerCreateData = Pick<
   Prisma.CampManagerCreateInput,
@@ -16,7 +17,7 @@ type ManagerUpdateData = Pick<
 
 export interface ManagerAuthorization {
   managerId: string;
-  permissions: Permission[];
+  permissions: ReadonlySet<Permission>;
   expiresAt: Date | null;
 }
 
@@ -44,8 +45,16 @@ export class CampManagerService extends BaseService {
 
     return {
       managerId: manager.id,
-      permissions: campPermissionRegistry.getPermissions(manager.role),
+      permissions: new Set(campPermissionRegistry.getPermissions(manager.role)),
       expiresAt: manager.expiresAt,
+    };
+  }
+
+  getAdminAuthorization(): ManagerAuthorization {
+    return {
+      managerId: '',
+      permissions: new Set(Object.values(RESOURCE_VIEW_PERMISSION)),
+      expiresAt: null,
     };
   }
 
@@ -68,7 +77,7 @@ export class CampManagerService extends BaseService {
   ): Promise<boolean> {
     const authorization = await this.getManagerAuthorization(campId, userId);
 
-    return authorization?.permissions.includes(permission) ?? false;
+    return authorization?.permissions.has(permission) ?? false;
   }
 
   async getManagers(campId: string) {

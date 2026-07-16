@@ -61,7 +61,7 @@ export const or = (...guardFns: GuardFn[]): GuardFn => {
   };
 };
 
-export const admin = (req: Request): boolean | string => {
+export const admin = (req: Request): boolean => {
   return (
     req.user !== undefined &&
     'role' in req.user &&

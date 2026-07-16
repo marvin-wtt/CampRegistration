@@ -2,6 +2,7 @@ import { CampManagerService } from '#app/campManager/camp-manager.service';
 import type { Request } from 'express';
 import type { Permission } from '@camp-registration/common/permissions';
 import { resolve } from '#core/ioc/container';
+import { admin } from '#core/guard';
 import type { SubscriberResolver } from '#app/realtime/realtime.stream';
 
 export const campManager = (
@@ -34,23 +35,22 @@ export const campManagerSelf = (req: Request): boolean => {
  * `null` when the user is not (or no longer) a non-expired manager, ending the
  * stream. Shares its authorization logic with `campManager()` above via
  * {@link CampManagerService.getManagerAuthorization}.
+ *
+ * System administrators are not camp managers and so have no manager record,
+ * but the connect guard admits them via its `admin` bypass — mirror that here
+ * by granting them every resource view permission (so `shouldDeliver` passes
+ * for all events), a never-expiring snapshot, and an empty `managerId` (no
+ * `manager` event can target them, so their permissions never need refreshing).
  */
 export const campManagerSubscriber: SubscriberResolver = async (req) => {
-  const userId = req.authUserId();
-  const campId = req.modelOrFail('camp').id;
   const managerService = resolve(CampManagerService);
 
-  const authorization = await managerService.getManagerAuthorization(
-    campId,
-    userId,
-  );
-  if (authorization === null) {
-    return null;
+  if (admin(req)) {
+    return managerService.getAdminAuthorization();
   }
 
-  return {
-    managerId: authorization.managerId,
-    permissions: new Set(authorization.permissions),
-    expiresAt: authorization.expiresAt,
-  };
+  const userId = req.authUserId();
+  const campId = req.modelOrFail('camp').id;
+
+  return managerService.getManagerAuthorization(campId, userId);
 };
