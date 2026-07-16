@@ -1,9 +1,10 @@
 <template>
   <default-table-cell
     v-if="gridMode"
-    :props="props"
-    :camp="camp"
-    :printing="printing"
+    :props
+    :camp
+    :printing
+    :grid-mode
   />
 
   <div
@@ -39,8 +40,11 @@ import type { TableCellProps } from '@/components/campManagement/table/tableCell
 import type { TextOptions } from '@/components/campManagement/table/tableCells/TextOptions';
 import DefaultTableCell from '@/components/campManagement/table/tableCells/DefaultTableCell.vue';
 
-const { props: cellProps, options } =
-  defineProps<TableCellProps<TextOptions>>();
+const {
+  props: cellProps,
+  options,
+  gridMode = false,
+} = defineProps<TableCellProps<TextOptions>>();
 
 const DEFAULT_LIMIT = 25;
 

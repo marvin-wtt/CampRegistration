@@ -5,6 +5,13 @@
   >
     —
   </span>
+  <!-- Break words in grid mode -->
+  <span
+    v-else-if="gridMode"
+    class="grid-value"
+  >
+    {{ cellProps.value }}
+  </span>
   <span
     v-else
     class="cell-value"
@@ -41,5 +48,13 @@ const empty = computed<boolean>(() => {
    clipped/ellipsized by the parent instead of wrapping. */
 .cell-value {
   white-space: pre;
+}
+
+/* Outside the table grid (row card dialog) there's no fixed cell width to
+   clip to: wrap long lines instead of overflowing, while still preserving
+   user-typed newlines. */
+.grid-value {
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 </style>
