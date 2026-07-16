@@ -1,11 +1,11 @@
 import { EventBus } from 'quasar';
-import { defineBoot } from '#q-app/wrappers';
+import { defineBoot } from '#q-app';
 import {
   AUTH_BUS,
   CAMP_BUS,
   REGISTRATION_BUS,
   TEMPLATE_BUS,
-} from 'src/utils/keys';
+} from '@/utils/keys';
 
 export default defineBoot(({ app }) => {
   const busses = [AUTH_BUS, CAMP_BUS, REGISTRATION_BUS, TEMPLATE_BUS];

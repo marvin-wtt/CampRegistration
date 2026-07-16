@@ -1,5 +1,5 @@
-import { useProfileStore } from 'stores/profile-store';
-import { useCampDetailsStore } from 'stores/camp-details-store';
+import { useProfileStore } from '@/stores/profile-store';
+import { useCampDetailsStore } from '@/stores/camp-details-store';
 import type { Permission } from '@camp-registration/common/permissions';
 import { storeToRefs } from 'pinia';
 
@@ -30,13 +30,26 @@ export function usePermissions() {
     return canFor(camp.value?.id, ...permissions);
   }
 
+  function canAny(...permissions: Permission[]): boolean {
+    return permissions.some((value) => can(value));
+  }
+
   function cannot(...permissions: Permission[]): boolean {
     return !can(...permissions);
   }
 
+  function canAccessAny(permission?: Permission | Permission[]): boolean {
+    if (!permission) {
+      return true;
+    }
+    return Array.isArray(permission) ? canAny(...permission) : can(permission);
+  }
+
   return {
     can,
+    canAny,
     canFor,
     cannot,
+    canAccessAny,
   };
 }

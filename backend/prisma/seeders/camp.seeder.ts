@@ -2,6 +2,8 @@ import { CampFactory } from '../factories';
 import { BaseSeeder } from './BaseSeeder';
 import { RegistrationSeeder } from './registration.seeder';
 import { ProgramEventSeeder } from './program-event.seeder';
+import { MessageTemplateSeeder } from './message-template.seeder';
+import { TaskSeeder } from './task.seeder';
 import { defaultMessageTemplatesForCountries } from '#app/camp/presets/messageTemplates.js';
 
 class CampSeeder extends BaseSeeder {
@@ -1009,6 +1011,8 @@ class CampSeeder extends BaseSeeder {
       status: 'PENDING',
     });
     await new ProgramEventSeeder(exampleCamp).seed();
+    await new MessageTemplateSeeder(exampleCamp).seed();
+    await new TaskSeeder(exampleCamp).seed();
   }
 }
 

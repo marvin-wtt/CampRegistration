@@ -21,6 +21,8 @@ export interface Camp extends Identifiable {
   location: Translatable | null;
   price: number;
   freePlaces: Translatable<number> | null;
+  /** Derived from the registration window. */
+  registrationStatus: CampRegistrationStatus;
 }
 
 export interface CampDetails extends Camp {
@@ -30,7 +32,7 @@ export interface CampDetails extends Camp {
 
 export type CampCreateData = Omit<
   Partial<CampDetails> & Camp,
-  'id' | 'freePlaces'
+  'id' | 'freePlaces' | 'registrationStatus'
 > & {
   referenceCampId?: string | undefined;
   preset?: 'standard' | 'minimal' | undefined | null;
@@ -38,8 +40,10 @@ export type CampCreateData = Omit<
 
 export type CampUpdateData = Partial<CampCreateData>;
 
+export type CampRegistrationStatus = 'open' | 'upcoming' | 'closed';
+
 export interface CampQuery {
-  page?: number;
+  cursor?: string;
   limit?: number;
   sortBy?: keyof Camp;
   sortType?: 'asc' | 'desc';
@@ -49,6 +53,9 @@ export interface CampQuery {
   age?: number;
   startAt?: string;
   endAt?: string;
+
+  public?: boolean;
+  status?: CampRegistrationStatus;
 
   view?: 'all' | 'assigned';
 }

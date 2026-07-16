@@ -6,6 +6,7 @@ export default {
     progress: 'Création du modèle en cours...',
     success: 'Modèle créé avec succès',
     error: 'Échec de création du modèle',
+    invalid: 'ID de camp invalide',
   },
   update: {
     progress: 'Mise à jour du modèle en cours...',
@@ -18,5 +19,10 @@ export default {
     success: 'Modèle supprimé avec succès',
     error: 'Échec de suppression du modèle',
     invalid: 'ID de camp ou de modèle invalide',
+  },
+  realtimeCreate: {
+    message: 'Nouvelle inscription reçue',
+    caption: '{name} vient de s’inscrire.',
+    fallbackName: 'Quelqu’un',
   },
 };

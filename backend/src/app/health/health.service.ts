@@ -1,12 +1,20 @@
 import { inject, injectable } from 'inversify';
 import { QueueManager } from '#core/queue/QueueManager';
-import prisma from '#core/database';
+import { BaseService } from '#core/base/BaseService';
+import v8 from 'v8';
 
 export interface HealthStatus {
   status: 'ok' | 'degraded';
   checks: {
     database: 'ok' | 'error';
     queues?: Record<string, QueueCheckResult>;
+  };
+  memory: {
+    rssMb: number;
+    heapUsedMb: number;
+    heapTotalMb: number;
+    heapLimitMb: number;
+    externalMb: number;
   };
 }
 
@@ -15,10 +23,12 @@ export type QueueCheckResult =
   | 'error';
 
 @injectable()
-export class HealthService {
+export class HealthService extends BaseService {
   constructor(
     @inject(QueueManager) private readonly queueManager: QueueManager,
-  ) {}
+  ) {
+    super();
+  }
 
   async check(): Promise<HealthStatus> {
     let healthy = true;
@@ -34,18 +44,21 @@ export class HealthService {
       healthy = false;
     }
 
+    const memory = this.getMemoryUsage();
+
     return {
       status: healthy ? 'ok' : 'degraded',
       checks: {
         database: databaseStatus,
         ...(queues.length > 0 && { queues: queueStatuses }),
       },
+      memory,
     };
   }
 
   private async checkDatabase(): Promise<'ok' | 'error'> {
     try {
-      await prisma.$queryRaw`SELECT 1`;
+      await this.prisma.$queryRaw`SELECT 1`;
       return 'ok';
     } catch {
       return 'error';
@@ -66,5 +79,19 @@ export class HealthService {
     );
 
     return Object.fromEntries(results) as Record<string, QueueCheckResult>;
+  }
+
+  private getMemoryUsage() {
+    const usage = process.memoryUsage();
+    const heapLimit = v8.getHeapStatistics().heap_size_limit;
+    const BYTE_TO_MB = 1024 * 1024;
+
+    return {
+      rssMb: usage.rss / BYTE_TO_MB,
+      heapUsedMb: usage.heapUsed / BYTE_TO_MB,
+      heapTotalMb: usage.heapTotal / BYTE_TO_MB,
+      heapLimitMb: heapLimit / BYTE_TO_MB,
+      externalMb: usage.external / BYTE_TO_MB,
+    };
   }
 }

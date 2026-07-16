@@ -5,8 +5,10 @@ import type {
   Registration,
   TableTemplate,
   Message,
+  MessageDelivery,
   MessageTemplate,
   CampManager,
+  Invitation,
   Bed,
   Room,
   File,
@@ -15,6 +17,7 @@ import type {
   NewsletterSubscriber,
   NewsletterMessage,
   ProgramEvent,
+  Task,
 } from '../../src/generated/prisma/client.js';
 import type { ZodObject, z } from 'zod';
 import type { JsonResource } from '#core/resource/JsonResource';
@@ -22,16 +25,19 @@ import type { JsonResource } from '#core/resource/JsonResource';
 declare global {
   namespace Express {
     interface Models {
-      user?: UserModel;
-      camp?: Camp & {
-        freePlaces: number | Record<string, number>;
-        files: Pick<'id' | 'field' | 'locale'>[];
+      user?: UserModel & {
+        twoFactor: { confirmedAt: Date | null } | null;
       };
+      camp?: Camp & { freePlaces: number | Record<string, number> };
       registration?: Registration;
       tableTemplate?: TableTemplate;
       message?: Message & { attachments: File[] };
+      messageDelivery?: MessageDelivery & { attachments: File[] };
       messageTemplate?: MessageTemplate & { attachments: File[] };
-      campManager?: CampManager;
+      campManager?: CampManager & {
+        user: UserModel | null;
+        invitation: Invitation | null;
+      };
       room?: Room & { beds: Bed[] };
       bed?: Bed;
       file?: File;
@@ -40,6 +46,7 @@ declare global {
       newsletterMessage?: NewsletterMessage;
       newsletterSubscriber?: NewsletterSubscriber;
       programEvent?: ProgramEvent;
+      task?: Task;
     }
 
     interface AuthUser {

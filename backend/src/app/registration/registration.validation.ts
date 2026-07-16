@@ -57,6 +57,7 @@ const update = z.object({
     .object({
       data: RegistrationDataSchema,
       customData: z.record(z.string(), z.unknown()),
+      customFiles: z.record(z.string().regex(/^[^\s.]+$/), z.ulid().nullable()),
       status: z.enum(['PENDING', 'WAITLISTED', 'ACCEPTED']).optional(),
     })
     .partial(),

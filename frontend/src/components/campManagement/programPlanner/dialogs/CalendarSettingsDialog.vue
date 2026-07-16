@@ -107,6 +107,11 @@
             v-model="data.showAllTranslations"
             :label="t('field.showAllTranslations.label')"
           />
+          <!-- Browse outside camp dates -->
+          <q-toggle
+            v-model="data.browseOutsideCampDates"
+            :label="t('field.browseOutsideCampDates.label')"
+          />
         </q-card-section>
 
         <!-- action buttons -->
@@ -134,17 +139,17 @@
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { reactive, toRaw } from 'vue';
-import type { CalendarSettings } from 'components/campManagement/programPlanner/CalendarSettings';
+import type { ProgramPlannerSettings } from '@camp-registration/common/settings';
 
 const { settings } = defineProps<{
-  settings: Partial<CalendarSettings>;
+  settings: Partial<ProgramPlannerSettings>;
 }>();
 
 defineEmits([...useDialogPluginComponent.emits]);
 
-const data = reactive<Partial<CalendarSettings>>(initialValue());
+const data = reactive<Partial<ProgramPlannerSettings>>(initialValue());
 
-function initialValue(): Partial<CalendarSettings> {
+function initialValue(): Partial<ProgramPlannerSettings> {
   return structuredClone(toRaw(settings));
 }
 
@@ -177,6 +182,8 @@ field:
     hint: 'Minutes per interval'
   showAllTranslations:
     label: 'Show all translations'
+  browseOutsideCampDates:
+    label: 'Allow browsing outside camp dates'
 
 actions:
   save: 'Save'
@@ -197,6 +204,8 @@ field:
     hint: 'Minuten pro Intervall'
   showAllTranslations:
     label: 'Alle Übersetzungen anzeigen'
+  browseOutsideCampDates:
+    label: 'Navigation außerhalb des Camp-Zeitraums erlauben'
 
 actions:
   save: 'Speichern'
@@ -217,6 +226,8 @@ field:
     hint: 'Minutes par intervalle'
   showAllTranslations:
     label: 'Afficher toutes les traductions'
+  browseOutsideCampDates:
+    label: 'Autoriser la navigation en dehors des dates du camp'
 
 actions:
   save: 'Enregistrer'
@@ -237,6 +248,8 @@ field:
     hint: 'Minuty na przedział'
   showAllTranslations:
     label: 'Pokaż wszystkie tłumaczenia'
+  browseOutsideCampDates:
+    label: 'Zezwól na przeglądanie poza datami obozu'
 
 actions:
   save: 'Zapisz'
@@ -257,6 +270,8 @@ field:
     hint: 'Minut na interval'
   showAllTranslations:
     label: 'Zobrazit všechny překlady'
+  browseOutsideCampDates:
+    label: 'Povolit procházení mimo termíny tábora'
 
 actions:
   save: 'Uložit'

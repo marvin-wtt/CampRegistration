@@ -51,13 +51,13 @@
 <script lang="ts" setup>
 import { useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { useObjectTranslation } from 'src/composables/objectTranslation';
+import { useObjectTranslation } from '@/composables/objectTranslation';
 import type { Camp, TableTemplate } from '@camp-registration/common/entities';
-import TableTemplateEditDialog from 'components/campManagement/table/dialogs/TableTemplateEditDialog.vue';
-import SortableList from 'components/common/SortableList.vue';
+import TableTemplateEditDialog from '@/components/campManagement/table/dialogs/TableTemplateEditDialog.vue';
+import SortableList from '@/components/common/SortableList.vue';
 import { ref, toRaw } from 'vue';
-import { usePermissions } from 'src/composables/permissions';
-import { deepToRaw } from 'src/utils/deepToRaw';
+import { usePermissions } from '@/composables/permissions';
+import { deepToRaw } from '@/utils/deepToRaw';
 
 const { camp, templates } = defineProps<{
   templates: TableTemplate[];
@@ -163,7 +163,7 @@ function onOKClick() {
 <style scoped></style>
 
 <i18n lang="yaml" locale="en">
-title: 'Edit Templated'
+title: 'Edit Tables'
 
 action:
   ok: 'Ok'
@@ -174,7 +174,7 @@ default:
 </i18n>
 
 <i18n lang="yaml" locale="de">
-title: 'Vorlagen bearbeiten'
+title: 'Tabellen bearbeiten'
 
 action:
   ok: 'Ok'
@@ -185,7 +185,7 @@ default:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-title: 'Modifier le modèle'
+title: 'Modifier les tableaux'
 
 action:
   ok: 'Ok'
@@ -196,7 +196,7 @@ default:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-title: 'Edytuj szablony'
+title: 'Edytuj tabele'
 
 action:
   ok: 'OK'
@@ -207,7 +207,7 @@ default:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-title: 'Upravit šablony'
+title: 'Upravit tabulky'
 
 action:
   ok: 'OK'

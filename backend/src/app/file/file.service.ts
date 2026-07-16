@@ -13,10 +13,19 @@ import { Config } from '#core/ioc/decorators';
 import type { AppConfig } from '#config';
 import { Queue } from '#core/queue/Queue';
 import { QueueManager } from '#core/queue/QueueManager';
-import { StorageFile } from '#core/storage/storage';
+import type { StorageFile } from '#core/storage/storage';
 import { selectFileByLocale } from '@camp-registration/common/form';
 
 type RequestFile = Express.Multer.File;
+
+interface FileUploadJobPayload {
+  id: string;
+  name: string;
+  originalName: string;
+  type: string;
+  tmpFileName: string;
+  storageLocation: string;
+}
 
 interface ModelData {
   id: string;
@@ -42,6 +51,7 @@ const fileRelationIdFieldsNull: RequireIdKeys<Prisma.FileWhereInput, null> = {
   campId: null,
   registrationId: null,
   messageId: null,
+  messageDeliveryId: null,
   messageTemplateId: null,
   newsletterMessageId: null,
 };
@@ -55,7 +65,7 @@ const fileRelationIdFieldsUndefined = Object.keys(
 export class FileService extends BaseService {
   private tmpStorage: DiskStorage;
   private storageRegistry: StorageRegistry;
-  private queue: Queue<string>;
+  private queue: Queue<FileUploadJobPayload>;
 
   constructor(
     @Config() private readonly config: AppConfig,
@@ -66,7 +76,7 @@ export class FileService extends BaseService {
     this.tmpStorage = new DiskStorage(config.storage.tmpDir);
     this.storageRegistry = new StorageRegistry(config.storage);
 
-    this.queue = queueManager.create<string>('file', {
+    this.queue = queueManager.create<FileUploadJobPayload>('file', {
       retryDelay: 1000 * 10,
     });
 
@@ -105,11 +115,17 @@ export class FileService extends BaseService {
     });
   }
 
-  private async uploadFile(filename: string) {
-    await this.storageRegistry.getStorage().moveToStorage(filename);
+  private async uploadFile(payload: FileUploadJobPayload) {
+    await this.storageRegistry
+      .getStorage(payload.storageLocation)
+      .moveToStorage(payload);
+
     await this.prisma.file.updateMany({
-      where: { name: filename },
-      data: { uploadStatus: 'READY' },
+      where: { name: payload.name },
+      data: {
+        uploadStatus: 'READY',
+        encryption: this.storageRegistry.getEncryptionFormat(),
+      },
     });
   }
 
@@ -154,12 +170,18 @@ export class FileService extends BaseService {
     ownerId: string,
     fileIds: string[],
     sessionId: string,
+    options?: { excludeFieldPrefix?: string },
   ) {
     // 1) Detach removed ones
     await tx.file.updateMany({
       where: {
         [ownerKey]: ownerId,
         id: { notIn: fileIds.length ? fileIds : ['__none__'] }, // avoid `notIn: []` edge cases
+        // Files in an excluded field namespace are managed by a different
+        // sync (e.g. custom-data files during a form-data sync).
+        ...(options?.excludeFieldPrefix
+          ? { NOT: { field: { startsWith: options.excludeFieldPrefix } } }
+          : {}),
       },
       data: {
         [ownerKey]: null,
@@ -178,6 +200,87 @@ export class FileService extends BaseService {
     }));
 
     return { connect };
+  }
+
+  /**
+   * Synchronizes a set of named file slots (`field = prefix + name`) for an
+   * owner in one pass: each slot is pointed at its given file id, or cleared
+   * when the id is `null`. The previous occupant of a changed slot is
+   * detached and picked up by the unassigned-file cleanup job.
+   *
+   * A file is only attachable when it already occupies a slot of the same
+   * namespace on this owner or is an unreferenced temp file of the given
+   * session. Slots whose id could not be resolved are left untouched and
+   * their names are returned so the caller can decide how to fail.
+   */
+  async syncFileSlots(
+    tx: PrismaTransaction,
+    ownerKey: FileOwnerKey,
+    ownerId: string,
+    prefix: string,
+    slots: Record<string, string | null>,
+    sessionId: string,
+  ): Promise<string[]> {
+    const entries = Object.entries(slots);
+    const requestedIds = entries
+      .map(([, fileId]) => fileId)
+      .filter((id) => id !== null);
+
+    // One query validates every requested id at once.
+    const validIds = new Set(
+      requestedIds.length
+        ? await tx.file
+            .findMany({
+              where: {
+                id: { in: requestedIds },
+                OR: [
+                  { [ownerKey]: ownerId, field: { startsWith: prefix } },
+                  { ...this.getUnreferencedModelArgs(), field: sessionId },
+                ],
+              },
+              select: { id: true },
+            })
+            .then((files) => files.map((file) => file.id))
+        : [],
+    );
+
+    const invalidNames: string[] = [];
+    const toAttach: { name: string; fileId: string }[] = [];
+    const toDetach: Prisma.FileWhereInput[] = [];
+
+    for (const [name, fileId] of entries) {
+      if (fileId !== null && !validIds.has(fileId)) {
+        invalidNames.push(name);
+        continue;
+      }
+
+      if (fileId !== null) {
+        toAttach.push({ name, fileId });
+      }
+
+      toDetach.push({
+        field: prefix + name,
+        ...(fileId !== null ? { id: { not: fileId } } : {}),
+      });
+    }
+
+    await Promise.all(
+      toAttach.map(({ name, fileId }) =>
+        tx.file.update({
+          where: { id: fileId },
+          data: { [ownerKey]: ownerId, field: prefix + name },
+        }),
+      ),
+    );
+
+    if (toDetach.length > 0) {
+      await tx.file.updateMany({
+        where: { [ownerKey]: ownerId, OR: toDetach },
+        data: { [ownerKey]: null, field: null },
+      });
+    }
+
+    return invalidNames;
   }
 
   async saveModelFile(
@@ -209,7 +312,14 @@ export class FileService extends BaseService {
       },
     });
 
-    await this.queue.add('upload', file.filename);
+    await this.queue.add('upload', {
+      id: created.id,
+      name: created.name,
+      originalName: created.originalName,
+      type: created.type,
+      storageLocation: created.storageLocation,
+      tmpFileName: file.filename,
+    });
 
     return created;
   }
@@ -240,7 +350,13 @@ export class FileService extends BaseService {
       },
     });
 
-    return selectFileByLocale(files, locale ?? 'en') ?? null;
+    if (files.length === 0) {
+      return null;
+    }
+
+    // Select the best matching file for the locale.
+    // If no locale is given, default to English or fallback to the first file.
+    return selectFileByLocale(files, locale ?? 'en') ?? files[0];
   }
 
   async queryModelFiles(
@@ -275,8 +391,19 @@ export class FileService extends BaseService {
     });
   }
 
-  getFileStream(file: StorageFile) {
-    return this.storageRegistry.getStorage(file.storageLocation).stream(file);
+  async getFileStream(file: StorageFile) {
+    const stream = await this.storageRegistry
+      .getStorage(file.storageLocation)
+      .openReadStream(file);
+
+    // Decryption/storage errors surface asynchronously, possibly before the
+    // consumer (HTTP response, mail transport) attaches its own 'error'
+    // listener — without one here, such an error crashes the process.
+    stream.on('error', (error: Error) => {
+      logger.error(`Error while streaming file "${file.id}"`, error);
+    });
+
+    return stream;
   }
 
   async updateFile(
@@ -339,10 +466,39 @@ export class FileService extends BaseService {
     return fileName + fileExtension;
   }
 
+  /**
+   * Duplicates the file models without model relationship so that they can be attached to a new model by another request
+   */
+  async duplicateFiles(files: File[], sessionId: string) {
+    // CreateManyAndReturn is currently not supported for MySQL
+    return this.prisma.$transaction(
+      files.map((file) =>
+        this.prisma.file.create({
+          data: {
+            name: file.name,
+            originalName: file.originalName,
+            type: file.type,
+            size: file.size,
+            locale: file.locale,
+            accessLevel: file.accessLevel,
+            storageLocation: file.storageLocation,
+            uploadStatus: file.uploadStatus,
+            // The duplicate points at the same stored blob, so it must
+            // record the same encryption format.
+            encryption: file.encryption,
+            field: sessionId,
+          },
+        }),
+      ),
+    );
+  }
+
   async deleteUnreferencedFiles(): Promise<void> {
     const fileModels = await this.prisma.file.findMany({
       where: {
-        storageLocation: 'local',
+        storageLocation: {
+          in: ['disk', 's3'],
+        },
       },
       select: {
         name: true,
@@ -424,6 +580,19 @@ export class FileService extends BaseService {
     const fileNames = await this.tmpStorage.getFileNames();
     const currentTime = Date.now();
 
+    // Tmp files that are still the only copy of an upload which has not yet
+    // reached storage — e.g. the storage provider is temporarily unavailable
+    // and the upload job is still being retried (or awaiting an admin retry).
+    // Their tmp name matches the File row's `name`, so preserving them lets
+    // the upload recover once storage is reachable again instead of the file
+    // being lost to cleanup. Encryption staging files (`<name>.<uuid>.enc`)
+    // never match a File name, so orphaned ones are still pruned.
+    const pendingUploads = await this.prisma.file.findMany({
+      where: { uploadStatus: 'PENDING' },
+      select: { name: true },
+    });
+    const pendingNames = new Set(pendingUploads.map((file) => file.name));
+
     const getFileCreationTime = (fileName: string) => {
       const id = fileName.split('.')[0];
 
@@ -438,15 +607,24 @@ export class FileService extends BaseService {
       return timeDifference > oneHourInMilliseconds;
     };
 
+    const isExpired = (fileName: string): boolean =>
+      isOlderThanOneHour(fileName) && !pendingNames.has(fileName);
+
     const results = await Promise.all(
       fileNames
-        .filter(isOlderThanOneHour)
+        .filter(isExpired)
         .map((fileName) => this.tmpStorage.removeFile(fileName)),
     );
 
     logger.info(
       `Deleted ${results.length.toString()} unused temporary file(s) from disk`,
     );
+  }
+
+  public async getOverviewCounts() {
+    const total = await this.prisma.file.count();
+
+    return { total };
   }
 
   public async close() {

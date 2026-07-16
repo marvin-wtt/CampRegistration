@@ -5,7 +5,7 @@
     :loading
     class="files-page row justify-center"
   >
-    <div class="files-content col-12 col-md-11 col-lg-10 column q-gutter-y-lg">
+    <div class="files-content col-12 col-md-11 col-lg-10 q-gutter-y-lg">
       <!-- Header -->
       <div class="row items-end justify-between q-col-gutter-y-sm">
         <div class="col-12 col-sm page-title">
@@ -88,7 +88,7 @@
 
               <q-item-section
                 side
-                class="file-meta"
+                class="file-meta file-meta--inline"
               >
                 <q-chip
                   v-if="doc.locale"
@@ -166,17 +166,19 @@
                   >
                     {{ file.name }}
                   </a>
+                </q-item-label>
+                <q-item-label class="file-caption">
                   <q-badge
                     v-if="file.locale"
                     rounded
                     class="locale-badge"
                     :label="file.locale.toUpperCase()"
                   />
-                </q-item-label>
-                <q-item-label class="file-caption ellipsis">
-                  {{ formatBytes(file.size) }}
-                  ·
-                  {{ formatUtcDateTime(file.createdAt) }}
+                  <span class="ellipsis">
+                    {{ formatBytes(file.size) }}
+                    ·
+                    {{ formatUtcDateTime(file.createdAt) }}
+                  </span>
                 </q-item-label>
               </q-item-section>
 
@@ -208,18 +210,6 @@
                 class="file-buttons"
               >
                 <q-btn
-                  :aria-label="t('action.copy_link')"
-                  icon="link"
-                  class="file-action-btn"
-                  flat
-                  round
-                  size="sm"
-                  @click="copyLink(campFileStore.getUrl(file.id))"
-                >
-                  <q-tooltip>{{ t('action.copy_link') }}</q-tooltip>
-                </q-btn>
-
-                <q-btn
                   :aria-label="t('action.menu')"
                   icon="more_vert"
                   class="file-action-btn"
@@ -229,6 +219,21 @@
                 >
                   <q-menu>
                     <q-list style="min-width: 180px">
+                      <q-item
+                        clickable
+                        v-close-popup
+                        @click="copyLink(campFileStore.getUrl(file.id))"
+                      >
+                        <q-item-section avatar>
+                          <q-icon
+                            name="link"
+                            size="sm"
+                          />
+                        </q-item-section>
+                        <q-item-section>
+                          {{ t('action.copy_link') }}
+                        </q-item-section>
+                      </q-item>
                       <q-item
                         clickable
                         v-close-popup
@@ -337,17 +342,17 @@
 </template>
 
 <script lang="ts" setup>
-import PageStateHandler from 'components/common/PageStateHandler.vue';
-import { useCampDetailsStore } from 'stores/camp-details-store';
+import PageStateHandler from '@/components/common/PageStateHandler.vue';
+import { useCampDetailsStore } from '@/stores/camp-details-store';
 import { useI18n } from 'vue-i18n';
 import { computed, onMounted, ref } from 'vue';
 import { copyToClipboard, useQuasar } from 'quasar';
-import FileUploadDialog from 'components/campManagement/settings/files/FileUploadDialog.vue';
+import FileUploadDialog from '@/components/campManagement/settings/files/FileUploadDialog.vue';
 import type { ServiceFile } from '@camp-registration/common/entities';
-import { formatBytes } from 'src/utils/formatters/formatBytes';
-import { formatUtcDateTime } from 'src/utils/formatters/formatUtcDateTime';
-import { useCampFilesStore } from 'stores/camp-files-store';
-import { usePermissions } from 'src/composables/permissions';
+import { formatBytes } from '@/utils/formatters/formatBytes';
+import { formatUtcDateTime } from '@/utils/formatters/formatUtcDateTime';
+import { useCampFilesStore } from '@/stores/camp-files-store';
+import { usePermissions } from '@/composables/permissions';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
 // eslint-disable-next-line @typescript-eslint/unbound-method
@@ -363,7 +368,43 @@ onMounted(async () => {
 
 const uploadOngoing = ref(false);
 
-const files = computed<ServiceFile[]>(() => campFileStore.data ?? []);
+const files = computed<ServiceFile[]>(() =>
+  sortFiles(campFileStore.data ?? []),
+);
+
+/**
+ * Presentational ordering for the file list:
+ * 1. Fielded slot documents (rules, toc, …) first, grouped by `field`.
+ * 2. Within a field, by `locale` so language variants cluster together.
+ * 3. Free uploads (no field) last, newest first.
+ * `id` is the final tiebreaker to keep the order stable across refetches.
+ */
+function sortFiles(list: ServiceFile[]): ServiceFile[] {
+  return [...list].sort((a, b) => {
+    if (!!a.field !== !!b.field) {
+      return a.field ? -1 : 1;
+    }
+
+    if (a.field && b.field) {
+      const byField = a.field.localeCompare(b.field);
+      if (byField !== 0) {
+        return byField;
+      }
+
+      const byLocale = (a.locale ?? '').localeCompare(b.locale ?? '');
+      if (byLocale !== 0) {
+        return byLocale;
+      }
+    } else {
+      const byDate = b.createdAt.localeCompare(a.createdAt);
+      if (byDate !== 0) {
+        return byDate;
+      }
+    }
+
+    return a.id.localeCompare(b.id);
+  });
+}
 
 interface MissingDocument {
   id: string;
@@ -606,13 +647,22 @@ function copyLink(url: string) {
 
   min-width: 0;
   max-width: 100%;
+  overflow: hidden;
   font-weight: 500;
+}
+
+/* The text child (file name link or upload hint) must shrink so long names
+   truncate instead of widening the row; the locale badge stays at its size.
+   `flex-basis: 0` (not auto) keeps the name from contributing its full intrinsic
+   width, so it always truncates into the space left beside the badge. */
+.file-name > .ellipsis,
+.file-name-link {
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .file-name-link {
   display: block;
-  min-width: 0;
-  max-width: 100%;
 
   color: inherit;
   text-decoration: none;
@@ -635,8 +685,17 @@ function copyLink(url: string) {
 }
 
 .file-caption {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+
   color: var(--md3-on-surface-variant);
   font-size: 12px;
+}
+
+.file-caption > .ellipsis {
+  min-width: 0;
 }
 
 .file-meta {
@@ -647,6 +706,11 @@ function copyLink(url: string) {
   gap: 8px;
   max-width: 45%;
   min-width: 0;
+
+  /* Quasar only sets border-box on html/body, not globally, so be explicit:
+     the mobile rule below adds padding-left to a flex: 0 0 100% section, which
+     would otherwise add on top of the 100% and overflow the row. */
+  box-sizing: border-box;
 }
 
 .file-buttons {
@@ -725,6 +789,16 @@ function copyLink(url: string) {
     max-width: 100%;
     justify-content: flex-start;
     padding-left: 56px;
+  }
+
+  /* Missing-document rows only carry a small locale chip, so keep it inline
+     next to the chevron instead of dropping it onto its own indented line. */
+  .file-meta--inline {
+    order: 0;
+    flex: 0 0 auto;
+    max-width: 50%;
+    justify-content: flex-end;
+    padding-left: 0;
   }
 
   .field-chip {

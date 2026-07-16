@@ -16,11 +16,7 @@ const index = z.object({
   params: z.object({
     campId: z.ulid(),
   }),
-  query: z
-    .object({
-      hasEvent: z.stringbool().optional(),
-    })
-    .partial() satisfies ZodType<MessageTemplateQuery>,
+  query: z.object({}).partial() satisfies ZodType<MessageTemplateQuery>,
 });
 
 const store = z.object({

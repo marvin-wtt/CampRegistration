@@ -5,6 +5,7 @@ import {
   CampFactory,
   CampManagerFactory,
   FileFactory,
+  RegistrationFactory,
   UserFactory,
 } from '../../../prisma/factories/index.js';
 import { uploadFile, verifyFileExists } from './utils/file.js';
@@ -12,6 +13,12 @@ import { generateAccessToken } from './utils/token.js';
 import { Prisma } from '#generated/prisma/client.js';
 import { ulid } from 'ulidx';
 import crypto from 'crypto';
+import config from '#config/index';
+import { resolve } from '#core/ioc/container';
+import { FileService } from '#app/file/file.service';
+import fse from 'fs-extra';
+import path from 'path';
+import moment from 'moment';
 
 const createCampWithManagerAndToken = async (
   campData: Partial<Prisma.CampCreateInput> = {},
@@ -496,6 +503,191 @@ describe('/api/v1/files/', () => {
       await request()
         .get(`/api/v1/camps/${camp.id}/files/slots/unknown`)
         .expect(404);
+    });
+  });
+});
+
+describe('file cleanup', () => {
+  const copyResource = async (dir: string, name: string) => {
+    await fse.copy(
+      path.join(__dirname, 'resources', 'blank.pdf'),
+      path.join(dir, name),
+    );
+  };
+
+  describe('deleteUnreferencedFiles', () => {
+    it('should clear all uploaded files that are not used', async () => {
+      const { uploadDir } = config.storage;
+
+      const existingFileName = ulid() + '.pdf';
+      const nonexistentFileName = ulid() + '.pdf';
+
+      // Prepare files for test
+      await copyResource(uploadDir, existingFileName);
+      await copyResource(uploadDir, nonexistentFileName);
+
+      // Create file entry
+      await FileFactory.create({
+        name: existingFileName,
+      });
+
+      await resolve(FileService).deleteUnreferencedFiles();
+
+      expect(
+        // eslint-disable-next-line security/detect-non-literal-fs-filename
+        fse.existsSync(path.join(uploadDir, existingFileName)),
+      ).toBeTruthy();
+      expect(
+        // eslint-disable-next-line security/detect-non-literal-fs-filename
+        fse.existsSync(path.join(uploadDir, nonexistentFileName)),
+      ).toBeFalsy();
+    });
+  });
+
+  describe('deleteUnassignedFiles', () => {
+    it('should delete files that do not belong to any model', async () => {
+      const { uploadDir } = config.storage;
+
+      const date = moment().subtract(25, 'h').toDate();
+
+      const campFileName = ulid() + '.pdf';
+      await copyResource(uploadDir, campFileName);
+      const camp = await CampFactory.create();
+      await FileFactory.create({
+        name: campFileName,
+        camp: { connect: { id: camp.id } },
+        createdAt: date,
+      });
+
+      const registrationFileName = ulid() + '.pdf';
+      await copyResource(uploadDir, registrationFileName);
+      const registration = await RegistrationFactory.create({
+        camp: { connect: { id: camp.id } },
+      });
+      await FileFactory.create({
+        name: registrationFileName,
+        registration: { connect: { id: registration.id } },
+        createdAt: date,
+      });
+
+      const unassignedFileName = ulid() + '.pdf';
+      await copyResource(uploadDir, unassignedFileName);
+      await FileFactory.create({
+        name: unassignedFileName,
+        createdAt: date,
+      });
+
+      await resolve(FileService).deleteUnassignedFiles();
+
+      const fileCount = await prisma.file.count();
+      expect(fileCount).toBe(2);
+
+      expect(
+        // eslint-disable-next-line security/detect-non-literal-fs-filename
+        fse.existsSync(path.join(uploadDir, campFileName)),
+      ).toBeTruthy();
+      expect(
+        // eslint-disable-next-line security/detect-non-literal-fs-filename
+        fse.existsSync(path.join(uploadDir, registrationFileName)),
+      ).toBeTruthy();
+      expect(
+        // eslint-disable-next-line security/detect-non-literal-fs-filename
+        fse.existsSync(path.join(uploadDir, unassignedFileName)),
+      ).toBeFalsy();
+    });
+
+    it('should not delete files that where recently deleted', async () => {
+      const { uploadDir } = config.storage;
+
+      const unassignedFileName = ulid() + '.pdf';
+      await copyResource(uploadDir, unassignedFileName);
+      await FileFactory.create({
+        name: unassignedFileName,
+      });
+
+      await resolve(FileService).deleteUnassignedFiles();
+
+      const fileCount = await prisma.file.count();
+      expect(fileCount).toBe(1);
+
+      expect(
+        // eslint-disable-next-line security/detect-non-literal-fs-filename
+        fse.existsSync(path.join(uploadDir, unassignedFileName)),
+      ).toBeTruthy();
+    });
+
+    it('should not delete a file from storage if it is reference by another model', async () => {
+      const { uploadDir } = config.storage;
+
+      const createdAt = moment().subtract(25, 'h').toDate();
+
+      const fileName = ulid() + '.pdf';
+      await copyResource(uploadDir, fileName);
+      const camp = await CampFactory.create();
+      await FileFactory.create({
+        name: fileName,
+        camp: { connect: { id: camp.id } },
+        createdAt,
+      });
+
+      await FileFactory.create({
+        name: fileName,
+        createdAt,
+      });
+
+      await resolve(FileService).deleteUnassignedFiles();
+
+      const fileCount = await prisma.file.count();
+      expect(fileCount).toBe(1);
+
+      expect(
+        // eslint-disable-next-line security/detect-non-literal-fs-filename
+        fse.existsSync(path.join(uploadDir, fileName)),
+      ).toBeTruthy();
+    });
+  });
+
+  describe('deleteTempFiles', () => {
+    it('should delete temporary files from storage', async () => {
+      const { tmpDir } = config.storage;
+
+      // Prepare files for test
+      const fileName = ulid(moment().subtract(1, 'day').unix()) + '.pdf';
+      await copyResource(tmpDir, fileName);
+
+      await resolve(FileService).deleteTempFiles();
+
+      // eslint-disable-next-line security/detect-non-literal-fs-filename
+      expect(fse.existsSync(path.join(tmpDir, fileName))).toBeFalsy();
+    });
+
+    it('should keep files that where created recently', async () => {
+      const { tmpDir } = config.storage;
+
+      // Prepare files for test
+      const fileName = ulid() + '.pdf';
+      await fse.createFile(path.join(tmpDir, fileName));
+
+      await resolve(FileService).deleteTempFiles();
+
+      // eslint-disable-next-line security/detect-non-literal-fs-filename
+      expect(fse.existsSync(path.join(tmpDir, fileName))).toBeTruthy();
+    });
+
+    it('should keep old files that still back a pending upload', async () => {
+      const { tmpDir } = config.storage;
+
+      // Old enough to be cleaned, but still the only copy of an upload whose
+      // job has not completed (e.g. storage is temporarily unavailable), so it
+      // must survive so the upload can recover instead of being lost.
+      const fileName = ulid(moment().subtract(1, 'day').unix()) + '.pdf';
+      await copyResource(tmpDir, fileName);
+      await FileFactory.create({ name: fileName, uploadStatus: 'PENDING' });
+
+      await resolve(FileService).deleteTempFiles();
+
+      // eslint-disable-next-line security/detect-non-literal-fs-filename
+      expect(fse.existsSync(path.join(tmpDir, fileName))).toBeTruthy();
     });
   });
 });

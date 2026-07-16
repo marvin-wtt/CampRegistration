@@ -1,133 +1,139 @@
 <template>
   <page-state-handler :error>
-    <q-table
-      :title="t('title')"
-      :loading
-      :rows="queues ?? []"
-      :columns
-      row-key="name"
-      :rows-per-page-options="[0]"
-      hide-bottom
-      class="absolute fit"
-    >
-      <template #top-right>
+    <div class="admin-page column no-wrap fit">
+      <div class="admin-header row items-center justify-between q-mb-md">
+        <div class="text-h6 text-weight-medium">{{ t('title') }}</div>
         <q-btn
           icon="refresh"
           round
           flat
           :loading
           @click="refresh"
-        />
-      </template>
-
-      <template #body-cell-active="props">
-        <q-td :props="props">
-          <q-chip
-            v-if="props.value > 0"
-            color="primary"
-            text-color="white"
-            dense
-            size="sm"
-          >
-            {{ props.value }}
-          </q-chip>
-          <span
-            v-else
-            class="text-grey-5"
-            >{{ props.value }}</span
-          >
-        </q-td>
-      </template>
-
-      <template #body-cell-pending="props">
-        <q-td :props="props">
-          <q-chip
-            v-if="props.value > 0"
-            color="info"
-            text-color="white"
-            dense
-            size="sm"
-          >
-            {{ props.value }}
-          </q-chip>
-          <span
-            v-else
-            class="text-grey-5"
-            >{{ props.value }}</span
-          >
-        </q-td>
-      </template>
-
-      <template #body-cell-delayed="props">
-        <q-td :props="props">
-          <q-chip
-            v-if="props.value > 0"
-            color="warning"
-            text-color="white"
-            dense
-            size="sm"
-          >
-            {{ props.value }}
-          </q-chip>
-          <span
-            v-else
-            class="text-grey-5"
-            >{{ props.value }}</span
-          >
-        </q-td>
-      </template>
-
-      <template #body-cell-failed="props">
-        <q-td :props="props">
-          <q-chip
-            v-if="props.value > 0"
-            color="negative"
-            text-color="white"
-            dense
-            size="sm"
-          >
-            {{ props.value }}
-          </q-chip>
-          <span
-            v-else
-            class="text-grey-5"
-            >{{ props.value }}</span
-          >
-        </q-td>
-      </template>
-
-      <template #body-cell-action="props">
-        <q-td
-          :props
-          auto-width
         >
-          <div class="row no-wrap q-gutter-x-sm justify-center">
-            <q-btn
-              icon="replay"
+          <q-tooltip>{{ t('refresh') }}</q-tooltip>
+        </q-btn>
+      </div>
+
+      <q-table
+        :loading
+        :rows="queues ?? []"
+        :columns
+        row-key="name"
+        :rows-per-page-options="[0]"
+        hide-bottom
+        flat
+        bordered
+        class="admin-table col rounded-borders"
+      >
+        <template #body-cell-active="props">
+          <q-td :props="props">
+            <q-chip
+              v-if="props.value > 0"
+              color="primary"
+              text-color="white"
+              dense
+              size="sm"
+            >
+              {{ props.value }}
+            </q-chip>
+            <span
+              v-else
+              class="text-grey-5"
+              >{{ props.value }}</span
+            >
+          </q-td>
+        </template>
+
+        <template #body-cell-pending="props">
+          <q-td :props="props">
+            <q-chip
+              v-if="props.value > 0"
+              color="info"
+              text-color="white"
+              dense
+              size="sm"
+            >
+              {{ props.value }}
+            </q-chip>
+            <span
+              v-else
+              class="text-grey-5"
+              >{{ props.value }}</span
+            >
+          </q-td>
+        </template>
+
+        <template #body-cell-delayed="props">
+          <q-td :props="props">
+            <q-chip
+              v-if="props.value > 0"
               color="warning"
-              round
-              flat
+              text-color="white"
+              dense
               size="sm"
-              :disable="props.row.counts.failed === 0"
-              @click="onRetryFailed(props.row)"
             >
-              <q-tooltip>{{ t('action.retry') }}</q-tooltip>
-            </q-btn>
-            <q-btn
-              icon="delete_sweep"
+              {{ props.value }}
+            </q-chip>
+            <span
+              v-else
+              class="text-grey-5"
+              >{{ props.value }}</span
+            >
+          </q-td>
+        </template>
+
+        <template #body-cell-failed="props">
+          <q-td :props="props">
+            <q-chip
+              v-if="props.value > 0"
               color="negative"
-              round
-              flat
+              text-color="white"
+              dense
               size="sm"
-              :disable="props.row.counts.failed === 0"
-              @click="onDeleteFailed(props.row)"
             >
-              <q-tooltip>{{ t('action.delete') }}</q-tooltip>
-            </q-btn>
-          </div>
-        </q-td>
-      </template>
-    </q-table>
+              {{ props.value }}
+            </q-chip>
+            <span
+              v-else
+              class="text-grey-5"
+              >{{ props.value }}</span
+            >
+          </q-td>
+        </template>
+
+        <template #body-cell-action="props">
+          <q-td
+            :props
+            auto-width
+          >
+            <div class="row no-wrap q-gutter-x-sm justify-center">
+              <q-btn
+                icon="replay"
+                color="warning"
+                round
+                flat
+                size="sm"
+                :disable="props.row.counts.failed === 0"
+                @click="onRetryFailed(props.row)"
+              >
+                <q-tooltip>{{ t('action.retry') }}</q-tooltip>
+              </q-btn>
+              <q-btn
+                icon="delete_sweep"
+                color="negative"
+                round
+                flat
+                size="sm"
+                :disable="props.row.counts.failed === 0"
+                @click="onDeleteFailed(props.row)"
+              >
+                <q-tooltip>{{ t('action.delete') }}</q-tooltip>
+              </q-btn>
+            </div>
+          </q-td>
+        </template>
+      </q-table>
+    </div>
   </page-state-handler>
 </template>
 
@@ -135,10 +141,10 @@
 import { computed, onMounted, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useQuasar, type QTableColumn } from 'quasar';
-import PageStateHandler from 'components/common/PageStateHandler.vue';
-import { useAPIService } from 'src/services/APIService';
-import { useServiceHandler } from 'src/composables/serviceHandler';
-import type { QueueInfo } from 'src/services/QueueService';
+import PageStateHandler from '@/components/common/PageStateHandler.vue';
+import { useAPIService } from '@/services/APIService';
+import { useServiceHandler } from '@/composables/serviceHandler';
+import type { QueueInfo } from '@/services/QueueService';
 
 const { t } = useI18n();
 const quasar = useQuasar();
@@ -260,8 +266,34 @@ async function deleteFailed(name: string) {
 }
 </script>
 
+<style scoped lang="scss">
+.admin-page {
+  position: absolute;
+  inset: 0;
+  padding: 16px;
+}
+
+.admin-header {
+  padding: 4px 0 12px;
+}
+
+.admin-table {
+  // Fill remaining height and scroll internally rather than growing the page.
+  min-height: 0;
+  background: var(--md3-surface);
+
+  :deep(thead tr th) {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--md3-surface-container-low);
+  }
+}
+</style>
+
 <i18n lang="yaml" locale="en">
-title: 'Queues'
+title: 'Jobs'
+refresh: 'Refresh'
 
 action:
   retry: 'Retry failed jobs'
@@ -288,7 +320,8 @@ dialog:
 </i18n>
 
 <i18n lang="yaml" locale="de">
-title: 'Warteschlangen'
+title: 'Aufgaben'
+refresh: 'Aktualisieren'
 
 action:
   retry: 'Fehlgeschlagene Jobs wiederholen'
@@ -315,7 +348,8 @@ dialog:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-title: "Files d'attente"
+title: 'Tâches'
+refresh: 'Actualiser'
 
 action:
   retry: 'Relancer les tâches échouées'
@@ -342,7 +376,8 @@ dialog:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-title: 'Kolejki'
+title: 'Zadania'
+refresh: 'Odśwież'
 
 action:
   retry: 'Ponów nieudane zadania'
@@ -369,7 +404,8 @@ dialog:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-title: 'Fronty'
+title: 'Úlohy'
+refresh: 'Obnovit'
 
 action:
   retry: 'Zopakovat neúspěšné úlohy'

@@ -22,4 +22,10 @@ export interface NewsletterUpdateData {
 
 export interface NewsletterQuery {
   view?: 'all' | 'assigned';
+
+  cursor?: string;
+  limit?: number;
+  sortBy?: 'name' | 'createdAt' | 'updatedAt';
+  sortType?: 'asc' | 'desc';
+  name?: string;
 }

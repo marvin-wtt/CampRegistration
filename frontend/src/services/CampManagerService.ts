@@ -1,4 +1,4 @@
-import { api } from 'src/services/api';
+import { api } from '@/services/api';
 import type {
   CampManager,
   CampManagerCreateData,
@@ -8,6 +8,15 @@ import type {
 export function useCampManagerService() {
   async function fetchCampManagers(campId: string): Promise<CampManager[]> {
     const response = await api.get(`camps/${campId}/managers/`);
+
+    return response?.data?.data;
+  }
+
+  async function fetchCampManager(
+    campId: string,
+    id: string,
+  ): Promise<CampManager> {
+    const response = await api.get(`camps/${campId}/managers/${id}/`);
 
     return response?.data?.data;
   }
@@ -37,6 +46,7 @@ export function useCampManagerService() {
 
   return {
     fetchCampManagers,
+    fetchCampManager,
     createCampManager,
     updateCampManager,
     deleteCampManager,

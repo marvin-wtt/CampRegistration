@@ -1,13 +1,18 @@
-import type {
-  Camp as CampResourceData,
-  CampDetails as CampDetailsResourceData,
+import type { Camp } from '#generated/prisma/client.js';
+import {
+  type Camp as CampResourceData,
+  type CampDetails as CampDetailsResourceData,
 } from '@camp-registration/common/entities';
 import { JsonResource } from '#core/resource/JsonResource';
 import { countriesToLocales } from '#utils/countriesToLocales';
-import type { CampWithFreePlacesAndFiles } from '#app/camp/camp.types';
+import { campRegistrationStatus } from '#app/camp/camp.util';
+
+export interface CampWithFreePlaces extends Camp {
+  freePlaces: Record<string, number> | number;
+}
 
 export class CampResource extends JsonResource<
-  CampWithFreePlacesAndFiles,
+  CampWithFreePlaces,
   CampResourceData
 > {
   transform(): CampResourceData {
@@ -31,12 +36,13 @@ export class CampResource extends JsonResource<
       price: this.data.price,
       location: this.data.location ?? null,
       freePlaces: this.data.freePlaces,
+      registrationStatus: campRegistrationStatus(this.data),
     };
   }
 }
 
 export class CampDetailsResource extends JsonResource<
-  CampWithFreePlacesAndFiles,
+  CampWithFreePlaces,
   CampDetailsResourceData
 > {
   transform(): CampDetailsResourceData {

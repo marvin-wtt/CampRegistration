@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia';
-import { useAPIService } from 'src/services/APIService';
-import { useServiceHandler } from 'src/composables/serviceHandler';
+import { useAPIService } from '@/services/APIService';
+import { useServiceHandler } from '@/composables/serviceHandler';
 import type { TotpData } from '@camp-registration/common/entities';
-import { useProfileStore } from 'stores/profile-store';
+import { useProfileStore } from '@/stores/profile-store';
 import { ref } from 'vue';
 
 export const useTotpStore = defineStore('totp', () => {
@@ -39,17 +39,41 @@ export const useTotpStore = defineStore('totp', () => {
       });
 
       data.value = undefined;
+      recoveryCodes.value = undefined;
 
       await profileStore.fetchProfile();
     });
+  }
+
+  const recoveryCodes = ref<string[] | undefined>(undefined);
+
+  async function generateRecoveryCodes(
+    password: string,
+    otp: string,
+  ): Promise<void> {
+    await errorOnFailure(async () => {
+      const result = await apiService.generateTotpRecoveryCodes({
+        password,
+        otp,
+      });
+
+      recoveryCodes.value = result.codes;
+    });
+  }
+
+  function clearRecoveryCodes(): void {
+    recoveryCodes.value = undefined;
   }
 
   return {
     data,
     error,
     loading: isLoading,
+    recoveryCodes,
     setupTotp,
     enableTotp,
     disableTotp,
+    generateRecoveryCodes,
+    clearRecoveryCodes,
   };
 });

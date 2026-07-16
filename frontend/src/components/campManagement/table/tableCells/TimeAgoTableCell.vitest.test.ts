@@ -1,8 +1,8 @@
 import { describe, it, vi, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
-import TimeAgoTableCell from 'components/campManagement/table/tableCells/TimeAgoTableCell.vue';
-import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
-import { installQuasarPlugin } from 'app/test/vitest/utils/quasar';
+import TimeAgoTableCell from '@/components/campManagement/table/tableCells/TimeAgoTableCell.vue';
+import type { TableCellProps } from '@/components/campManagement/table/tableCells/TableCellProps';
+import { installQuasarPlugin } from '@/../test/vitest/utils/quasar';
 import type {
   CampDetails,
   Registration,
@@ -69,6 +69,7 @@ const createCamp = (
   price: 50,
   location: 'Test Location',
   freePlaces: 10,
+  registrationStatus: 'closed' as const,
   form: {} as CampDetails['form'],
   themes: {},
   ...overrides,

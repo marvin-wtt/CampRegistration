@@ -79,6 +79,7 @@
       </div>
 
       <q-btn
+        v-if="showHelp"
         icon="help_outline"
         flat
         round
@@ -113,18 +114,23 @@
                 <div class="cal-help__desc">{{ row.label }}</div>
               </div>
 
-              <q-separator class="q-my-sm" />
+              <q-separator
+                v-if="mouseShortcuts.length"
+                class="q-my-sm"
+              />
             </template>
 
-            <div class="cal-help__section-label">{{ t('help.mouse') }}</div>
-            <ul class="cal-help__list">
-              <li
-                v-for="(row, i) in mouseShortcuts"
-                :key="`m${i}`"
-              >
-                {{ row }}
-              </li>
-            </ul>
+            <template v-if="mouseShortcuts.length">
+              <div class="cal-help__section-label">{{ t('help.mouse') }}</div>
+              <ul class="cal-help__list">
+                <li
+                  v-for="(row, i) in mouseShortcuts"
+                  :key="`m${i}`"
+                >
+                  {{ row }}
+                </li>
+              </ul>
+            </template>
           </div>
         </q-menu>
       </q-btn>
@@ -156,7 +162,7 @@
 import { useI18n } from 'vue-i18n';
 import { useQuasar, type QPopupProxy } from 'quasar';
 import { computed, onMounted, ref } from 'vue';
-import { daysBetweenDates } from 'src/utils/date';
+import { daysBetweenDates } from '@/utils/date';
 
 const { t, locale } = useI18n();
 const quasar = useQuasar();
@@ -170,10 +176,22 @@ const plan = defineModel<'a' | 'b' | 'both'>('plan', {
   required: true,
 });
 
-const { start, end, current } = defineProps<{
+const {
+  start,
+  end,
+  current,
+  restrictToCamp = true,
+  editable = false,
+  deletable = false,
+  creatable = false,
+} = defineProps<{
   start: string;
   end: string;
   current: string;
+  restrictToCamp?: boolean;
+  editable?: boolean;
+  deletable?: boolean;
+  creatable?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -208,32 +226,72 @@ const planOptions = computed(() => {
   ];
 });
 
-const keyboardShortcuts = computed<{ keys: string[]; label: string }[]>(() => [
-  { keys: ['←', '→'], label: t('help.shortcuts.navigate') },
-  { keys: ['Esc'], label: t('help.shortcuts.deselect') },
-  { keys: ['P'], label: t('help.shortcuts.switchPlan') },
-  { keys: ['Del'], label: t('help.shortcuts.delete') },
-  { keys: ['Ctrl', 'Z'], label: t('help.shortcuts.undo') },
-]);
+// Only surface shortcuts the user has permission to perform; navigate and
+// deselect are read-only and always shown.
+const keyboardShortcuts = computed<{ keys: string[]; label: string }[]>(() => {
+  const rows = [
+    { keys: ['←', '→'], label: t('help.shortcuts.navigate') },
+    { keys: ['Esc'], label: t('help.shortcuts.deselect') },
+  ];
+  if (editable) {
+    rows.push({ keys: ['P'], label: t('help.shortcuts.switchPlan') });
+  }
+  if (deletable) {
+    rows.push({ keys: ['Del'], label: t('help.shortcuts.delete') });
+  }
+  if (editable || creatable) {
+    rows.push({ keys: ['Ctrl', 'Z'], label: t('help.shortcuts.undo') });
+  }
+  return rows;
+});
 
-const mouseShortcuts = computed<string[]>(() => [
-  t('help.shortcuts.create'),
-  t('help.shortcuts.move'),
-  t('help.shortcuts.copy'),
-  t('help.shortcuts.unschedule'),
-  t('help.shortcuts.resize'),
-  t('help.shortcuts.allDay'),
-]);
+// Every mouse/drag shortcut is an editing action, so the whole section is
+// hidden for users without create or update permission.
+const mouseShortcuts = computed<string[]>(() => {
+  const rows: string[] = [];
+  if (editable || deletable) {
+    rows.push(t('help.shortcuts.multiSelect'));
+  }
+  if (creatable) {
+    rows.push(t('help.shortcuts.create'));
+  }
+  if (editable) {
+    rows.push(t('help.shortcuts.move'));
+  }
+  if (creatable) {
+    rows.push(t('help.shortcuts.copy'));
+  }
+  if (editable) {
+    rows.push(t('help.shortcuts.unschedule'));
+    rows.push(t('help.shortcuts.resize'));
+  }
+  if (creatable) {
+    rows.push(t('help.shortcuts.allDay'));
+  }
+  return rows;
+});
+
+// On mobile only the mouse section renders; hide the whole help button when
+// there is nothing useful left to show.
+const showHelp = computed<boolean>(
+  () => quasar.screen.gt.xs || mouseShortcuts.value.length > 0,
+);
 
 const maxDays = computed<number>(() => {
   return daysBetweenDates(new Date(start), new Date(end)) + 1;
 });
 
 const prevDisabled = computed<boolean>(() => {
+  if (!restrictToCamp) {
+    return false;
+  }
   return current <= start.substring(0, 10);
 });
 
 const nextDisabled = computed<boolean>(() => {
+  if (!restrictToCamp) {
+    return false;
+  }
   const [y, m, d] = current.split('-').map(Number);
   const lastDay = new Date(
     y ?? 0,
@@ -269,17 +327,26 @@ const dateRangeLabel = computed<string>(() => {
   return `${startStr} – ${endStr}`;
 });
 
-const navYearMonthMin = computed<string>(() => {
+const navYearMonthMin = computed<string | undefined>(() => {
+  if (!restrictToCamp) {
+    return undefined;
+  }
   const [y, m] = start.split('-');
   return `${y}/${m}`;
 });
 
-const navYearMonthMax = computed<string>(() => {
+const navYearMonthMax = computed<string | undefined>(() => {
+  if (!restrictToCamp) {
+    return undefined;
+  }
   const [y, m] = end.split('-');
   return `${y}/${m}`;
 });
 
 function dateOptions(date: string): boolean {
+  if (!restrictToCamp) {
+    return true;
+  }
   const d = date.replace(/\//g, '-');
   return d >= start.substring(0, 10) && d <= end.substring(0, 10);
 }
@@ -451,12 +518,13 @@ help:
   mouse: 'Mouse & drag'
   shortcuts:
     navigate: 'Previous / next days'
-    deselect: 'Deselect event'
-    switchPlan: "Switch selected event's plan"
-    delete: 'Delete selected event'
+    deselect: 'Clear selection'
+    switchPlan: 'Switch plan of selected events'
+    delete: 'Delete selected events'
     undo: 'Undo last change'
+    multiSelect: 'Hold Ctrl / ⌘ and click to select multiple events'
     create: 'Drag over free space to create an event'
-    move: 'Drag an event to move it'
+    move: 'Drag an event to move it — drags the whole selection if selected'
     copy: 'Hold Ctrl / ⌘ while dragging to copy'
     unschedule: 'Drag onto "Unscheduled" to remove from the plan'
     resize: "Drag an event's bottom edge to resize"
@@ -478,12 +546,13 @@ help:
   mouse: 'Maus & Ziehen'
   shortcuts:
     navigate: 'Vorherige / nächste Tage'
-    deselect: 'Ereignis abwählen'
-    switchPlan: 'Plan des gewählten Ereignisses wechseln'
-    delete: 'Gewähltes Ereignis löschen'
+    deselect: 'Auswahl aufheben'
+    switchPlan: 'Plan der ausgewählten Ereignisse wechseln'
+    delete: 'Ausgewählte Ereignisse löschen'
     undo: 'Letzte Änderung rückgängig machen'
+    multiSelect: 'Strg / ⌘ halten und klicken, um mehrere Ereignisse auszuwählen'
     create: 'Über freie Fläche ziehen, um ein Ereignis zu erstellen'
-    move: 'Ereignis ziehen, um es zu verschieben'
+    move: 'Ereignis ziehen, um es zu verschieben — verschiebt die ganze Auswahl, falls ausgewählt'
     copy: 'Strg / ⌘ beim Ziehen halten, um zu kopieren'
     unschedule: 'Auf "Ungeplant" ziehen, um aus dem Plan zu entfernen'
     resize: 'Untere Kante eines Ereignisses ziehen, um die Größe zu ändern'
@@ -505,12 +574,13 @@ help:
   mouse: 'Souris et glisser'
   shortcuts:
     navigate: 'Jours précédents / suivants'
-    deselect: "Désélectionner l'événement"
-    switchPlan: "Changer le plan de l'événement sélectionné"
-    delete: "Supprimer l'événement sélectionné"
+    deselect: 'Effacer la sélection'
+    switchPlan: 'Changer le plan des événements sélectionnés'
+    delete: 'Supprimer les événements sélectionnés'
     undo: 'Annuler la dernière modification'
+    multiSelect: 'Maintenir Ctrl / ⌘ et cliquer pour sélectionner plusieurs événements'
     create: 'Glisser sur un espace libre pour créer un événement'
-    move: 'Glisser un événement pour le déplacer'
+    move: 'Glisser un événement pour le déplacer — déplace toute la sélection si elle est sélectionnée'
     copy: 'Maintenir Ctrl / ⌘ en glissant pour copier'
     unschedule: 'Glisser sur "Non planifié" pour retirer du plan'
     resize: "Glisser le bord inférieur d'un événement pour le redimensionner"
@@ -532,12 +602,13 @@ help:
   mouse: 'Mysz i przeciąganie'
   shortcuts:
     navigate: 'Poprzednie / następne dni'
-    deselect: 'Odznacz wydarzenie'
-    switchPlan: 'Zmień plan wybranego wydarzenia'
-    delete: 'Usuń wybrane wydarzenie'
+    deselect: 'Wyczyść zaznaczenie'
+    switchPlan: 'Zmień plan zaznaczonych wydarzeń'
+    delete: 'Usuń zaznaczone wydarzenia'
     undo: 'Cofnij ostatnią zmianę'
+    multiSelect: 'Przytrzymaj Ctrl / ⌘ i kliknij, aby zaznaczyć wiele wydarzeń'
     create: 'Przeciągnij po wolnym miejscu, aby utworzyć wydarzenie'
-    move: 'Przeciągnij wydarzenie, aby je przenieść'
+    move: 'Przeciągnij wydarzenie, aby je przenieść — przenosi całe zaznaczenie, jeśli jest ustawione'
     copy: 'Przytrzymaj Ctrl / ⌘ podczas przeciągania, aby skopiować'
     unschedule: 'Przeciągnij na "Niezaplanowane", aby usunąć z planu'
     resize: 'Przeciągnij dolną krawędź wydarzenia, aby zmienić rozmiar'
@@ -559,12 +630,13 @@ help:
   mouse: 'Myš a tažení'
   shortcuts:
     navigate: 'Předchozí / další dny'
-    deselect: 'Zrušit výběr události'
-    switchPlan: 'Změnit plán vybrané události'
-    delete: 'Smazat vybranou událost'
+    deselect: 'Zrušit výběr'
+    switchPlan: 'Změnit plán vybraných událostí'
+    delete: 'Smazat vybrané události'
     undo: 'Vrátit poslední změnu'
+    multiSelect: 'Podržte Ctrl / ⌘ a klikněte pro výběr více událostí'
     create: 'Tažením přes volné místo vytvoříte událost'
-    move: 'Tažením události ji přesunete'
+    move: 'Tažením události ji přesunete — přesune celý výběr, pokud je nastaven'
     copy: 'Podržte Ctrl / ⌘ při tažení pro kopírování'
     unschedule: 'Přetažením na "Neplánované" odeberete z plánu'
     resize: 'Tažením dolního okraje události změníte velikost'

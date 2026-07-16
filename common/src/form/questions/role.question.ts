@@ -27,7 +27,7 @@ const roleQuestion: RoleQuestionConfiguration = {
         value: 'participant',
         text: {
           de: 'Teilnehmer',
-          en: 'Particiapnt',
+          en: 'Participant',
           fr: 'Participant',
           pl: 'Uczestnicy',
           cs: 'Účastníci',

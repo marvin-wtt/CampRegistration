@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { mount } from '@vue/test-utils';
-import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
-import { installQuasarPlugin } from 'app/test/vitest/utils/quasar';
+import TranslatedInput from '@/components/common/inputs/TranslatedInput.vue';
+import { installQuasarPlugin } from '@/../test/vitest/utils/quasar';
 
 installQuasarPlugin();
 

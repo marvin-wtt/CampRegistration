@@ -19,7 +19,7 @@ export class MessageRouter extends ModuleRouter {
   }
 
   protected defineRoutes() {
-    const messageController = resolve(MessageController);
+    const messageController: MessageController = resolve(MessageController);
 
     this.router.use(auth());
 
@@ -48,6 +48,11 @@ export class MessageRouter extends ModuleRouter {
       '/:messageId',
       guard(campManager('camp.messages.delete')),
       controller(messageController, 'destroy'),
+    );
+    this.router.post(
+      '/:messageId/attachments',
+      guard(campManager('camp.messages.create')),
+      controller(messageController, 'duplicateAttachments'),
     );
   }
 }

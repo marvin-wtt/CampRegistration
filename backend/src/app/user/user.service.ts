@@ -31,35 +31,118 @@ export class UserService extends BaseService {
         role: data.role,
         locale: data.locale,
       },
+      include: { twoFactor: { select: { confirmedAt: true } } },
     });
   }
 
-  async queryUsers() {
-    return this.prisma.user.findMany({
+  private userWhere(
+    filter: {
+      search?: string;
+      name?: string;
+      email?: string;
+      role?: Prisma.UserWhereInput['role'];
+      status?: 'active' | 'locked' | 'unverified';
+    } = {},
+  ): Prisma.UserWhereInput {
+    const status: Prisma.UserWhereInput =
+      filter.status === 'locked'
+        ? { locked: true }
+        : filter.status === 'unverified'
+          ? { emailVerified: false }
+          : filter.status === 'active'
+            ? { locked: false, emailVerified: true }
+            : {};
+
+    return {
+      ...(filter.search
+        ? {
+            OR: [
+              { name: { contains: filter.search } },
+              { email: { contains: filter.search } },
+            ],
+          }
+        : {}),
+      name: filter.name ? { contains: filter.name } : undefined,
+      email: filter.email ? { contains: filter.email } : undefined,
+      role: filter.role,
+      ...status,
+    };
+  }
+
+  async queryUsers(
+    filter: {
+      search?: string;
+      name?: string;
+      email?: string;
+      role?: Prisma.UserWhereInput['role'];
+      status?: 'active' | 'locked' | 'unverified';
+    } = {},
+    options: {
+      limit?: number;
+      cursor?: string;
+      sortBy?: string;
+      sortType?: 'asc' | 'desc';
+    } = {},
+  ) {
+    const limit = options.limit ?? 25;
+    const sortBy = options.sortBy ?? 'lastSeen';
+    const sortType = options.sortType ?? 'desc';
+
+    const where = this.userWhere(filter);
+
+    const items = await this.prisma.user.findMany({
+      where,
+      take: limit + 1,
+      ...(options.cursor ? { cursor: { id: options.cursor }, skip: 1 } : {}),
+      orderBy: [{ [sortBy]: sortType }, { id: sortType }],
       select: {
         id: true,
         name: true,
         email: true,
         locale: true,
         emailVerified: true,
+        twoFactor: { select: { confirmedAt: true } },
         role: true,
         locked: true,
         lastSeen: true,
         createdAt: true,
       },
     });
+
+    const hasMore = items.length > limit;
+    const users = hasMore ? items.slice(0, limit) : items;
+    const nextCursor = hasMore ? (users[users.length - 1]?.id ?? null) : null;
+    const total = options.cursor
+      ? undefined
+      : await this.prisma.user.count({ where });
+
+    return { users, nextCursor, limit, total };
+  }
+
+  async getOverviewCounts() {
+    const [total, unverified, locked] = await this.prisma.$transaction([
+      this.prisma.user.count(),
+      this.prisma.user.count({ where: { emailVerified: false } }),
+      this.prisma.user.count({ where: { locked: true } }),
+    ]);
+
+    return { total, unverified, locked };
   }
 
   async getUserByIdWithCampRoles(id: string) {
     return this.prisma.user.findUniqueOrThrow({
       where: { id },
-      include: { campRoles: true },
+      include: {
+        campRoles: true,
+        twoFactor: { select: { confirmedAt: true } },
+      },
     });
   }
 
-  async getUserById(id: string): Promise<User | null> {
+  async getUserById(id: string) {
     return this.prisma.user.findUnique({
       where: { id },
+      include: { twoFactor: { select: { confirmedAt: true } } },
     });
   }
 
@@ -84,7 +167,10 @@ export class UserService extends BaseService {
       data: {
         lastSeen: new Date(),
       },
-      include: { campRoles: true },
+      include: {
+        campRoles: true,
+        twoFactor: { select: { confirmedAt: true } },
+      },
     });
 
     const camps = await this.campService.getCampsByUserId(userId);
@@ -124,11 +210,24 @@ export class UserService extends BaseService {
         locale: data.locale,
         locked: data.locked,
       },
-      include: { campRoles: true },
+      include: {
+        campRoles: true,
+        twoFactor: { select: { confirmedAt: true } },
+      },
     });
   }
 
   async deleteUserById(userId: string) {
     await this.prisma.user.delete({ where: { id: userId } });
+  }
+
+  async resetTwoFactorById(userId: string) {
+    // Recovery codes are removed by the cascade
+    await this.prisma.userTwoFactor.deleteMany({ where: { userId } });
+
+    return this.prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+      include: { twoFactor: { select: { confirmedAt: true } } },
+    });
   }
 }

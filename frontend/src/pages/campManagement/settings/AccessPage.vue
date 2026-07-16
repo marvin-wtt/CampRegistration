@@ -17,11 +17,19 @@
           </div>
         </div>
 
-        <div
-          v-if="can('camp.managers.create')"
-          class="col-12 col-sm-auto"
-        >
+        <div class="col-12 col-sm-auto row items-center q-gutter-sm">
+          <q-btn
+            :label="quasar.screen.gt.sm ? t('action.roles') : undefined"
+            :aria-label="t('action.roles')"
+            icon="info_outline"
+            flat
+            no-caps
+            dense
+            class="text-grey-6"
+            @click="showPermissionsDialog"
+          />
           <m-btn
+            v-if="can('camp.managers.create')"
             :label="t('action.add')"
             color="primary"
             icon="person_add"
@@ -105,11 +113,6 @@
                 class="member-meta"
               >
                 <q-chip
-                  class="md3-chip role-chip"
-                  :class="roleClass(manager.role)"
-                  :label="t('role.' + manager.role.toLowerCase())"
-                />
-                <q-chip
                   v-if="isExpired(manager)"
                   class="md3-chip expired-chip"
                   icon="schedule"
@@ -129,10 +132,15 @@
                     })
                   }}
                 </span>
+                <q-chip
+                  class="md3-chip role-chip"
+                  :class="roleClass(manager.role)"
+                  :label="t('role.' + manager.role.toLowerCase())"
+                />
               </q-item-section>
 
               <q-item-section
-                v-if="canManage(manager)"
+                v-if="canManage(manager) || canLeave(manager)"
                 side
                 class="member-actions"
               >
@@ -146,7 +154,7 @@
                   <q-menu>
                     <q-list style="min-width: 180px">
                       <q-item
-                        v-if="can('camp.managers.edit')"
+                        v-if="canManage(manager) && can('camp.managers.edit')"
                         clickable
                         v-close-popup
                         @click="showEditDialog(manager)"
@@ -162,7 +170,7 @@
                         </q-item-section>
                       </q-item>
                       <q-item
-                        v-if="can('camp.managers.delete')"
+                        v-if="canManage(manager) && can('camp.managers.delete')"
                         clickable
                         v-close-popup
                         class="text-negative"
@@ -176,6 +184,23 @@
                         </q-item-section>
                         <q-item-section>
                           {{ t('action.delete') }}
+                        </q-item-section>
+                      </q-item>
+                      <q-item
+                        v-if="canLeave(manager)"
+                        clickable
+                        v-close-popup
+                        class="text-negative"
+                        @click="showLeaveDialog(manager)"
+                      >
+                        <q-item-section avatar>
+                          <q-icon
+                            name="logout"
+                            size="sm"
+                          />
+                        </q-item-section>
+                        <q-item-section>
+                          {{ t('action.leave') }}
                         </q-item-section>
                       </q-item>
                     </q-list>
@@ -222,29 +247,33 @@
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
-import { useCampManagerStore } from 'stores/camp-manager-store';
+import { useCampManagerStore } from '@/stores/camp-manager-store';
 import { computed, onMounted } from 'vue';
 import type {
   CampManager,
   CampManagerCreateData,
+  CampManagerRole,
   CampManagerUpdateData,
 } from '@camp-registration/common/entities';
-import PageStateHandler from 'components/common/PageStateHandler.vue';
+import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import { type QSelectOption, useQuasar } from 'quasar';
-import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
-import CampManagerCreateDialog from 'components/campManagement/settings/access/CampManagerCreateDialog.vue';
-import { useProfileStore } from 'stores/profile-store';
-import { useCampDetailsStore } from 'stores/camp-details-store';
-import CampManagerUpdateDialog from 'components/campManagement/settings/access/CampManagerUpdateDialog.vue';
-import { usePermissions } from 'src/composables/permissions';
+import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
+import CampManagerCreateDialog from '@/components/campManagement/settings/access/CampManagerCreateDialog.vue';
+import { useAssignedCampsStore } from '@/stores/assigned-camps-store';
+import { useCampDetailsStore } from '@/stores/camp-details-store';
+import CampManagerUpdateDialog from '@/components/campManagement/settings/access/CampManagerUpdateDialog.vue';
+import RolePermissionsDialog from '@/components/campManagement/settings/access/RolePermissionsDialog.vue';
+import { usePermissions } from '@/composables/permissions';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
+import { useRouter } from 'vue-router';
 
 const quasar = useQuasar();
 const { t, d } = useI18n();
 const campManagerStore = useCampManagerStore();
-const profileStore = useProfileStore();
+const assignedCampsStore = useAssignedCampsStore();
 const campDetailsStore = useCampDetailsStore();
 const { can } = usePermissions();
+const router = useRouter();
 
 onMounted(async () => {
   await Promise.allSettled([
@@ -277,7 +306,7 @@ interface AccessSection {
 
 const sections = computed<AccessSection[]>(() => {
   const pending = (manager: CampManager) =>
-    manager.status.toLowerCase() === 'pending';
+    manager.status.toUpperCase() === 'PENDING';
 
   return [
     {
@@ -333,13 +362,32 @@ function canManage(manager: CampManager): boolean {
   );
 }
 
-function getRoleOptions(): QSelectOption[] {
-  const roles = ['VIEWER', 'COUNSELOR', 'COORDINATOR', 'DIRECTOR'] as const;
+function isSoleDirector(manager: CampManager): boolean {
+  if (manager.role !== 'DIRECTOR' || manager.expiresAt != null) {
+    return false;
+  }
+
+  return (
+    rows.value.filter((m) => m.role === 'DIRECTOR' && m.expiresAt === null)
+      .length <= 1
+  );
+}
+
+function canLeave(manager: CampManager): boolean {
+  return userEmail.value === manager.email && !isSoleDirector(manager);
+}
+
+function getRoleOptions(): QSelectOption<CampManagerRole>[] {
+  const roles = ['DIRECTOR', 'COORDINATOR', 'COUNSELOR', 'VIEWER'] as const;
 
   return roles.map((role) => ({
     label: t('role.' + role.toLocaleLowerCase()),
     value: role,
   }));
+}
+
+function showPermissionsDialog() {
+  quasar.dialog({ component: RolePermissionsDialog });
 }
 
 function showAddDialog() {
@@ -387,6 +435,28 @@ function showDeleteDialog(manager: CampManager) {
     .onOk(() => {
       void campManagerStore.deleteData(manager.id);
     });
+}
+
+function showLeaveDialog(manager: CampManager) {
+  quasar
+    .dialog({
+      component: SafeDeleteDialog,
+      componentProps: {
+        title: t('dialog.leave.title'),
+        message: t('dialog.leave.message'),
+        label: t('dialog.leave.label'),
+        value: manager.email,
+      },
+    })
+    .onOk(() => {
+      void leaveCamp(manager);
+    });
+}
+
+async function leaveCamp(manager: CampManager) {
+  await campManagerStore.deleteData(manager.id);
+  await assignedCampsStore.reload();
+  await router.push({ name: 'management.camps' });
 }
 </script>
 
@@ -535,10 +605,12 @@ function showDeleteDialog(manager: CampManager) {
   }
 
   .member-meta {
+    padding-top: 10px;
     order: 5;
     flex: 0 0 100%;
-    justify-content: flex-start;
+    justify-content: flex-end;
     padding-left: 56px;
+    flex-direction: row-reverse;
   }
 }
 </style>
@@ -551,7 +623,9 @@ action:
   add: 'Add'
   delete: 'Remove'
   edit: 'Edit'
+  leave: 'Leave camp'
   menu: 'Actions'
+  roles: 'Role permissions'
 
 section:
   members: 'Members'
@@ -561,6 +635,10 @@ dialog:
   delete:
     title: 'Revoke access'
     message: 'Do you really want to revoke access for this user?'
+    label: 'Email'
+  leave:
+    title: 'Leave camp'
+    message: 'Do you really want to leave this camp? You will lose access.'
     label: 'Email'
 
 expiry:
@@ -588,7 +666,9 @@ action:
   add: 'Hinzufügen'
   delete: 'Entfernen'
   edit: 'Bearbeiten'
+  leave: 'Camp verlassen'
   menu: 'Aktionen'
+  roles: 'Rollenberechtigungen'
 
 section:
   members: 'Mitglieder'
@@ -598,6 +678,10 @@ dialog:
   delete:
     title: 'Zugriff entziehen'
     message: 'Möchten Sie den Zugriff dieses Nutzers wirklich entziehen?'
+    label: 'E-Mail'
+  leave:
+    title: 'Camp verlassen'
+    message: 'Möchten Sie dieses Camp wirklich verlassen? Sie verlieren dadurch den Zugriff.'
     label: 'E-Mail'
 
 expiry:
@@ -618,40 +702,46 @@ role:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-title: 'Gérer l’accès'
-subtitle: 'Contrôlez qui peut accéder à ce camp et quel rôle chaque personne possède.'
+title: ‘Gérer l’accès’
+subtitle: ‘Contrôlez qui peut accéder à ce camp et quel rôle chaque personne possède.’
 
 action:
-  add: 'Ajouter'
-  delete: 'Supprimer'
-  edit: 'Modifier'
-  menu: 'Actions'
+  add: ‘Ajouter’
+  delete: ‘Supprimer’
+  edit: ‘Modifier’
+  leave: ‘Quitter le camp’
+  menu: ‘Actions’
+  roles: ‘Permissions par rôle’
 
 section:
-  members: 'Membres'
-  invitations: 'Invitations en attente'
+  members: ‘Membres’
+  invitations: ‘Invitations en attente’
 
 dialog:
   delete:
-    title: 'Révoquer l’accès'
-    message: 'Voulez-vous vraiment révoquer l’accès de cet utilisateur ?'
-    label: 'E-mail'
+    title: ‘Révoquer l’accès’
+    message: ‘Voulez-vous vraiment révoquer l’accès de cet utilisateur ?’
+    label: ‘E-mail’
+  leave:
+    title: ‘Quitter le camp’
+    message: ‘Voulez-vous vraiment quitter ce camp ? Vous perdrez l’accès.’
+    label: ‘E-mail’
 
 expiry:
-  until: 'Jusqu’au {date}'
-  expired: 'Expiré'
+  until: ‘Jusqu’au {date}’
+  expired: ‘Expiré’
 
 empty:
-  title: 'Personne n’a encore accès'
-  message: 'Invitez des membres de l’équipe pour gérer ce camp ensemble.'
+  title: ‘Personne n’a encore accès’
+  message: ‘Invitez des membres de l’équipe pour gérer ce camp ensemble.’
 
-you: 'Vous'
+you: ‘Vous’
 
 role:
-  coordinator: 'Coordinateur'
-  counselor: 'Conseiller'
-  director: 'Directeur'
-  viewer: 'Lecteur'
+  coordinator: ‘Coordinateur’
+  counselor: ‘Conseiller’
+  director: ‘Directeur’
+  viewer: ‘Lecteur’
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -662,7 +752,9 @@ action:
   add: 'Dodaj'
   delete: 'Usuń'
   edit: 'Edytuj'
+  leave: 'Opuść obóz'
   menu: 'Akcje'
+  roles: 'Uprawnienia ról'
 
 section:
   members: 'Członkowie'
@@ -672,6 +764,10 @@ dialog:
   delete:
     title: 'Cofnij dostęp'
     message: 'Czy na pewno chcesz cofnąć dostęp temu użytkownikowi?'
+    label: 'E-mail'
+  leave:
+    title: 'Opuść obóz'
+    message: 'Czy na pewno chcesz opuścić ten obóz? Stracisz do niego dostęp.'
     label: 'E-mail'
 
 expiry:
@@ -699,7 +795,9 @@ action:
   add: 'Přidat'
   delete: 'Odstranit'
   edit: 'Upravit'
+  leave: 'Opustit tábor'
   menu: 'Akce'
+  roles: 'Oprávnění rolí'
 
 section:
   members: 'Členové'
@@ -709,6 +807,10 @@ dialog:
   delete:
     title: 'Odebrat přístup'
     message: 'Opravdu chcete odebrat přístup tomuto uživateli?'
+    label: 'E-mail'
+  leave:
+    title: 'Opustit tábor'
+    message: 'Opravdu chcete opustit tento tábor? Ztratíte k němu přístup.'
     label: 'E-mail'
 
 expiry:

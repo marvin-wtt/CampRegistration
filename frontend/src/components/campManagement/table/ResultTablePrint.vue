@@ -57,7 +57,7 @@
 
 <script lang="ts" setup>
 import { type QTableColumn } from 'quasar';
-import { useObjectTranslation } from 'src/composables/objectTranslation';
+import { useObjectTranslation } from '@/composables/objectTranslation';
 
 import type {
   CampDetails,
@@ -66,8 +66,8 @@ import type {
   Registration,
 } from '@camp-registration/common/entities';
 
-import TableCellWrapper from 'components/campManagement/table/TableCellWrapper.vue';
-import type { QTableBodyCellProps } from 'src/types/quasar/QTableBodyCellProps';
+import TableCellWrapper from '@/components/campManagement/table/TableCellWrapper.vue';
+import type { QTableBodyCellProps } from '@/types/quasar/QTableBodyCellProps';
 import { useResultTableModel } from './useResultTableModel';
 import { toRef } from 'vue';
 
@@ -115,6 +115,13 @@ const { pagination, rows, columns, renderers } = useResultTableModel(
   thead tr th {
     position: static;
     background: white;
+  }
+
+  // Never split a single row across a page boundary.
+  tbody tr,
+  thead tr {
+    break-inside: avoid;
+    page-break-inside: avoid; // legacy fallback
   }
 }
 </style>

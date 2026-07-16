@@ -11,13 +11,14 @@ CampRegistration is a full-stack web application for managing youth camp registr
 npm workspaces monorepo with four workspaces:
 
 - **`common/`** – Shared TypeScript types, entities, form definitions, and permissions (must build first)
-- **`backend/`** – Node.js/Express 5 REST API (TypeScript, Prisma, InversifyJS, BullMQ)
+- **`backend/`** – Node.js/Express 5 REST API (TypeScript, Prisma, InversifyJS, driver-based queues, croner scheduler)
 - **`frontend/`** – Vue 3/Quasar SPA (TypeScript, Pinia, SurveyJS, vue-i18n)
-- **`e2e/`** – Cypress end-to-end tests
+- **`e2e/`** – Playwright end-to-end tests (desktop + mobile device projects)
 
 ## Commands
 
 ### Root
+
 ```bash
 npm install
 npm run build                                        # Build all workspaces
@@ -26,6 +27,7 @@ npm run format:check --workspaces --if-present
 ```
 
 ### Backend
+
 ```bash
 npm run dev --workspace backend                      # Dev server with hot reload
 npm run build --workspace backend
@@ -48,6 +50,7 @@ npm run db:studio --workspace backend                # Prisma Studio GUI
 ```
 
 ### Frontend
+
 ```bash
 npm run dev --workspace frontend                     # Quasar dev server
 npm run build --workspace frontend
@@ -61,9 +64,10 @@ npx vitest src/path/to/test.ts --workspace frontend
 ```
 
 ### E2E
+
 ```bash
-npm run test --workspace e2e                         # Start backend + run Cypress
-npm run run:ui --workspace e2e                       # Cypress interactive UI
+npm run test --workspace e2e                         # Start backend + run Playwright
+npm run dev --workspace e2e                       # Playwright interactive UI
 ```
 
 ## Local Services (Docker)
@@ -80,14 +84,32 @@ Integration tests use a separate DB on port 3307 and run serially (`maxWorkers: 
 
 ### Module System
 
-Each feature is an `AppModule` with four responsibilities:
+Each feature is an `AppModule`; all lifecycle hooks are optional and called during boot:
 
 ```ts
 class ExampleModule implements AppModule {
-  bindContainers(container: Container): void { /* DI bindings */ }
-  configure(app: Application): void { /* middleware */ }
-  registerRoutes(app: Application): void { /* mount router */ }
-  registerPermissions(): void { /* RBAC permissions */ }
+  bindContainers(options: BindOptions): void {
+    /* DI bindings */
+  }
+  configure(options: ModuleOptions): void {
+    /* middleware */
+  }
+  registerRoutes(router: AppRouter): void {
+    /* mount router */
+  }
+  registerPermissions(): RoleToPermissions<CampManagerRole, Permission> {
+    /* RBAC */
+  }
+  registerNewsletterPermissions(): RoleToPermissions<
+    NewsletterManagerRole,
+    NewsletterPermission
+  > {}
+  registerJobs(scheduler: JobScheduler): void {
+    /* recurring cron jobs */
+  }
+  shutdown(): Promise<void> | void {
+    /* cleanup on shutdown */
+  }
 }
 ```
 
@@ -106,6 +128,7 @@ Request → Router → Controller → Service (business logic) → Prisma → Re
 
 - Use `Zod` for complex data shapes (JSON columns, form definitions)
 - Extend `ModuleRouter` for all routers; use model binding for route params (`:campId` → `Camp` entity)
+- In controllers, prefer the bound model's `.id` (e.g. `req.modelOrFail('camp').id`) over the raw route param (`req.params.campId`) for service calls and realtime emits — the binding already fetched and validated the entity, so there's no cost to using it, and it's the only option for guard-derived bindings that have no route param at all
 - Throw `ApiError` from services; centralized error middleware handles the response
 - Use RBAC permission guards — never write ad-hoc role comparisons
 
@@ -128,6 +151,61 @@ Request → Router → Controller → Service (business logic) → Prisma → Re
 - MJML templates in `backend/src/views/emails/`
 - Use `Mailable` pattern; register in the mailable registry
 - Dev email preview: http://localhost:1080 (MailDev)
+
+### Background Jobs & Queues
+
+Two distinct systems, both wired through the module lifecycle:
+
+**Async work queues** (`src/core/queue/`) — for deferred/retried unit-of-work jobs
+(e.g. sending mail, processing file uploads).
+
+- `Queue` is an abstract base with three interchangeable drivers selected by the
+  `QUEUE_DRIVER` env var: `database` (default, backed by the Prisma `Job` model),
+  `redis` (BullMQ), and `memory` (in-process, for tests).
+- Inject `QueueManager` and call `queueManager.create<Payload, Result>('name', options)`
+  in a service constructor, then `.process(handler)` to consume and `.add(name, payload, opts)`
+  to enqueue. `QueueManager` keeps every queue as a singleton and closes them on shutdown.
+- Queue options cover `maxAttempts`, `retryDelay`/`retryDelayType`, rate `limit`,
+  stalled-job handling, and `repeat` (cron/interval). Job options: `delay`, `priority`.
+- Admin queue inspection/retry lives in `src/app/queue/` (`/admin/queues` routes).
+
+**Recurring scheduler** (`src/core/scheduler/JobScheduler.ts`) — for cron-style
+recurring tasks (e.g. token cleanup, pruning old job records).
+
+- Wraps `croner`. Modules register jobs in the `registerJobs(scheduler)` hook:
+  `scheduler.schedule('job-name', '0 3 * * *', () => resolve(Service).method())`.
+- Registration is idempotent (duplicate names ignored); the scheduler owns job
+  lifecycle logging and is stopped deterministically on shutdown.
+
+### Realtime (SSE live updates)
+
+Permission-filtered, invalidation-only SSE — full design in
+`docs/live-updates-plan.md`. One stream per camp
+(`GET /camps/:campId/events`); events carry `{resource, id, operation}` plus a
+`requiredPermission` that the stream handler enforces per subscriber; clients
+refetch via REST (single auth path). Echo suppression: the `X-Client-Id` header
+is stored in the ambient request context (`core/context/requestContext.ts`,
+AsyncLocalStorage) and stamped onto `event.origin` by `RealtimeService` itself.
+
+Adding realtime to a module (no routing/stream changes needed):
+
+1. `common/src/realtime/events.ts`: add the resource to `RealtimeResource` +
+   `RESOURCE_VIEW_PERMISSION`; rebuild `common`.
+2. Backend: inject `RealtimeService` into the **controller** and call
+   `void realtimeService.emit(campId, '<resource>', id, op)` after each write
+   (`emitInvalidation(campId, '<resource>')` for bulk operations) — fire-and-forget
+   (`void`, not `await`): errors are swallowed internally, so awaiting would only
+   add latency. Emits live exclusively in controllers — never inject
+   `RealtimeService` into services. Source `campId`/`id` from the bound model
+   (`req.modelOrFail('camp').id`, the service's returned entity) rather than
+   the raw route param — see the model binding note above.
+3. Frontend: call `useRealtimeCollection('<resource>', { data, invalidate, reload, fetchOne? })`
+   (`src/composables/realtimeCollection.ts`) in the feature store or page —
+   it handles refetch coalescing, ordering, and reconnect reloads.
+
+Driver: `REALTIME_DRIVER` env (`redis`/`memory`); defaults to `redis` only when
+`QUEUE_DRIVER=redis`. Multi-instance deploys on other queue drivers must set
+`REALTIME_DRIVER=redis`.
 
 ### Backend Path Alias
 
@@ -160,7 +238,7 @@ a few MD3-specific components. It is wired up in `frontend/quasar.config.ts`:
   tokens so both modes work.
 
 **Design tokens — use `var(--md3-*)` for all colors.** Most existing custom CSS
-already does this. The full token set lives in the package's `dist/theme/base.scss`; 
+already does this. The full token set lives in the package's `dist/theme/base.scss`;
 common families:
 
 - **Color roles**: `--md3-primary`, `--md3-on-primary`, `--md3-primary-container`,
@@ -181,11 +259,11 @@ common families:
   (disable button-group widening). Shape tokens are also Sass vars
   (`$md3-corner-*`, `$md3-easing-*`) for use inside `<style lang="scss">`.
 
-**MD3 components** — import from subpaths (these are *not* auto-registered):
+**MD3 components** — import from subpaths (these are _not_ auto-registered):
 
 ```ts
-import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
-import { MToolbar } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eToolbar';
+import { MBtn } from "@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn";
+import { MToolbar } from "@anoyomoose/q2-fresh-paint-md3e/components/Md3eToolbar";
 // also available: Md3eBtnGroup, Md3eFab, Md3eFabAction, Md3eSlider
 ```
 
@@ -211,7 +289,10 @@ literals for the SurveyJS theme editor, which can't parse `var()`/`color-mix()`.
 
 - **Unit tests** (backend): mock dependencies with `vitest-mock-extended`; no real I/O
 - **Integration tests** (backend): require MariaDB + Redis; migrations run automatically before the suite via `tests/integration/setup.ts`
-- **E2E** (Cypress): prefer `data-cy` attributes for selectors; use `cypress-maildev` for email assertions and `otplib` for TOTP code generation
+- **E2E** (Playwright): prefer `data-test` attributes for selectors (`page.getByTestId()`); use `support/maildev.ts` (
+  MailDev REST API) for email assertions and `otplib` for TOTP code generation; suite runs `workers: 1` against a shared
+  database, truncated/reseeded per test; desktop (Chromium/Firefox/WebKit) and mobile (Pixel 7/iPhone 14) device
+  projects defined in `e2e/playwright.config.ts`
 
 ## Key Pitfalls
 

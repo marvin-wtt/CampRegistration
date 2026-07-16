@@ -89,14 +89,14 @@ import type {
   Registration,
   Translatable,
 } from '@camp-registration/common/entities';
-import type { CTableColumnTemplate } from 'src/types/CTableTemplate';
-import type { TableCellRenderer } from 'components/campManagement/table/TableCellRenderer';
-import type { QTableBodyCellProps } from 'src/types/quasar/QTableBodyCellProps';
-import { useObjectTranslation } from 'src/composables/objectTranslation';
-import { objectValueByPath } from 'src/utils/objectValueByPath';
-import TableCellWrapper from 'components/campManagement/table/TableCellWrapper.vue';
-import RegistrationActionList from 'components/campManagement/table/RegistrationActionList.vue';
-import RegistrationDialogHeader from 'components/campManagement/table/dialogs/RegistrationDialogHeader.vue';
+import type { CTableColumnTemplate } from '@/types/CTableTemplate';
+import type { TableCellRenderer } from '@/components/campManagement/table/TableCellRenderer';
+import type { QTableBodyCellProps } from '@/types/quasar/QTableBodyCellProps';
+import { useObjectTranslation } from '@/composables/objectTranslation';
+import { objectValueByPath } from '@/utils/objectValueByPath';
+import TableCellWrapper from '@/components/campManagement/table/TableCellWrapper.vue';
+import RegistrationActionList from '@/components/campManagement/table/RegistrationActionList.vue';
+import RegistrationDialogHeader from '@/components/campManagement/table/dialogs/RegistrationDialogHeader.vue';
 
 defineEmits([...useDialogPluginComponent.emits]);
 

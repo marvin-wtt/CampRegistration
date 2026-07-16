@@ -1,8 +1,9 @@
 import { defineStore } from 'pinia';
 import { useRoute } from 'vue-router';
-import { useAPIService } from 'src/services/APIService';
-import { useServiceHandler } from 'src/composables/serviceHandler';
-import { useAuthBus, useCampBus } from 'src/composables/bus';
+import { useAPIService } from '@/services/APIService';
+import { useServiceHandler } from '@/composables/serviceHandler';
+import { useAuthBus, useCampBus } from '@/composables/bus';
+import { useRealtimeCollection } from '@/composables/realtimeCollection';
 import type {
   CampManager,
   CampManagerCreateData,
@@ -22,6 +23,7 @@ export const useCampManagerStore = defineStore('campManager', () => {
     invalidate,
     withProgressNotification,
     lazyFetch,
+    backgroundFetch,
     checkNotNullWithError,
     checkNotNullWithNotification,
   } = useServiceHandler<CampManager[]>('campManager');
@@ -34,13 +36,20 @@ export const useCampManagerStore = defineStore('campManager', () => {
     invalidate();
   });
 
-  async function fetchData(campId?: string) {
+  // React to live changes pushed from other clients.
+  useRealtimeCollection<CampManager>('manager', {
+    data,
+    invalidate,
+    reload: () => fetchData(undefined, { background: true }),
+    fetchOne: (campId, id) => api.fetchCampManager(campId, id),
+  });
+
+  async function fetchData(campId?: string, opts?: { background?: boolean }) {
     campId ??= route.params.campId as string;
 
     const cid = checkNotNullWithError(campId);
-    await lazyFetch(async () => {
-      return await api.fetchCampManagers(cid);
-    });
+    const fetcher = () => api.fetchCampManagers(cid);
+    await (opts?.background ? backgroundFetch(fetcher) : lazyFetch(fetcher));
   }
 
   async function createData(newData: CampManagerCreateData) {

@@ -2,6 +2,10 @@ import { z } from 'zod';
 
 export const AuthEnvSchema = z.object({
   JWT_SECRET: z.string().describe('JWT secret key').readonly(),
+  TOTP_RECOVERY_CODE_SECRET: z
+    .string()
+    .describe('HMAC key for hashing two-factor recovery codes')
+    .readonly(),
   TOKEN_EXPIRATION_ACCESS: z.coerce
     .number()
     .int()
@@ -27,3 +31,5 @@ export const AuthEnvSchema = z.object({
     .describe('Time in minutes until email verification token expires')
     .default(10),
 });
+
+export type AuthEnv = z.output<typeof AuthEnvSchema>;

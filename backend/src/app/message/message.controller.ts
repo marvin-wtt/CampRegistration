@@ -3,34 +3,50 @@ import { RegistrationService } from '#app/registration/registration.service';
 import { BaseController } from '#core/base/BaseController';
 import type { Request, Response } from 'express';
 import validator from '#app/message/message.validation';
-import { MessageTemplateService } from '#app/messageTemplate/message-template.service';
+import { MessageService } from '#app/message/message.service';
 import ApiError from '#utils/ApiError';
-import { RegistrationTemplateMessage } from '#app/registration/registration.messages';
-import { MessageTemplateResource } from '#app/messageTemplate/message-template.resource';
+import {
+  messageToRenderable,
+  RegistrationTemplateMessage,
+} from '#app/registration/registration.messages';
+import { MessageResource } from '#app/message/message.resource';
+import { FileResource } from '#app/file/file.resource';
 import { inject, injectable } from 'inversify';
-import { sanitizeEmailHtml } from '#utils/sanitize';
+import { FileService } from '#app/file/file.service';
+import { RealtimeService } from '#core/realtime/RealtimeService';
 
 @injectable()
 export class MessageController extends BaseController {
   constructor(
     @inject(RegistrationService)
     private readonly registrationService: RegistrationService,
-    @inject(MessageTemplateService)
-    private readonly messageTemplateService: MessageTemplateService,
+    @inject(MessageService)
+    private readonly messageService: MessageService,
+    @inject(FileService)
+    private readonly fileService: FileService,
+    @inject(RealtimeService)
+    private readonly realtimeService: RealtimeService,
   ) {
     super();
   }
 
-  index(_req: Request, res: Response) {
-    res.sendStatus(httpStatus.NOT_IMPLEMENTED);
+  async index(req: Request, res: Response) {
+    await req.validate(validator.index);
+    const camp = req.modelOrFail('camp');
+
+    const messages = await this.messageService.queryMessages(camp.id);
+
+    res.status(httpStatus.OK).resource(MessageResource.collection(messages));
   }
 
-  show(_req: Request, res: Response) {
-    res.sendStatus(httpStatus.NOT_IMPLEMENTED);
+  async show(req: Request, res: Response) {
+    await req.validate(validator.show);
+    const message = req.modelOrFail('message');
+
+    res.resource(new MessageResource(message));
   }
 
   async store(req: Request, res: Response) {
-    const camp = req.modelOrFail('camp');
     const {
       body: {
         subject,
@@ -41,6 +57,8 @@ export class MessageController extends BaseController {
         attachmentIds,
       },
     } = await req.validate(validator.store);
+    const camp = req.modelOrFail('camp');
+    const userId = req.authUserId();
 
     const registrations = await this.registrationService.getRegistrationsByIds(
       camp.id,
@@ -59,11 +77,12 @@ export class MessageController extends BaseController {
       );
     }
 
-    const template = await this.messageTemplateService.createTemplate(
+    const message = await this.messageService.createMessage(
       camp.id,
+      userId,
       {
         subject,
-        body: sanitizeEmailHtml(body),
+        body,
         priority,
         replyTo,
         attachmentIds,
@@ -74,23 +93,57 @@ export class MessageController extends BaseController {
     await RegistrationTemplateMessage.enqueueForAll(
       camp,
       registrations,
-      template,
+      messageToRenderable(message),
     );
 
-    res
-      .status(httpStatus.CREATED)
-      .resource(new MessageTemplateResource(template));
+    void this.realtimeService.emit(camp.id, 'message', message.id, 'created');
+
+    // The per-recipient deliveries are processed asynchronously, so expose the
+    // targeted registrations directly on the response.
+    res.status(httpStatus.CREATED).resource(
+      new MessageResource({
+        ...message,
+        deliveries: registrations.map((registration) => ({
+          registrationId: registration.id,
+          to: null,
+        })),
+      }),
+    );
   }
 
   async resend(req: Request, res: Response) {
     await req.validate(validator.resend);
 
-    // TODO Create and enqueue new message
+    // TODO Create and enqueue new delivery
 
     res.sendStatus(httpStatus.NOT_IMPLEMENTED);
   }
 
-  destroy(_req: Request, res: Response) {
-    res.sendStatus(httpStatus.NOT_IMPLEMENTED);
+  async destroy(req: Request, res: Response) {
+    await req.validate(validator.destroy);
+    const message = req.modelOrFail('message');
+
+    await this.messageService.deleteMessageById(message.id, message.campId);
+
+    void this.realtimeService.emit(
+      message.campId,
+      'message',
+      message.id,
+      'deleted',
+    );
+
+    res.sendStatus(httpStatus.NO_CONTENT);
+  }
+
+  async duplicateAttachments(req: Request, res: Response) {
+    await req.validate(validator.duplicateAttachments);
+    const message = req.modelOrFail('message');
+
+    const files = await this.fileService.duplicateFiles(
+      message.attachments,
+      req.sessionId,
+    );
+
+    res.status(httpStatus.CREATED).resource(FileResource.collection(files));
   }
 }

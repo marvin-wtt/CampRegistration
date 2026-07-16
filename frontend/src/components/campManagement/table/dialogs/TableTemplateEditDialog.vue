@@ -216,19 +216,19 @@ import {
   useQuasar,
 } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { useObjectTranslation } from 'src/composables/objectTranslation';
+import { useObjectTranslation } from '@/composables/objectTranslation';
 import type {
   TableTemplate,
   TableColumnTemplate,
   Camp,
 } from '@camp-registration/common/entities';
-import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
+import TranslatedInput from '@/components/common/inputs/TranslatedInput.vue';
 import { computed, reactive, ref } from 'vue';
-import SortableList from 'components/common/SortableList.vue';
-import TableTemplateColumnEditDialog from 'components/campManagement/table/dialogs/TableTemplateColumnEditDialog.vue';
-import type { PartialBy } from 'src/types';
-import { uniqueName } from 'src/utils/uniqueName';
-import { deepToRaw } from 'src/utils/deepToRaw';
+import SortableList from '@/components/common/SortableList.vue';
+import TableTemplateColumnEditDialog from '@/components/campManagement/table/dialogs/TableTemplateColumnEditDialog.vue';
+import type { PartialBy } from '@/types';
+import { uniqueName } from '@/utils/uniqueName';
+import { deepToRaw } from '@/utils/deepToRaw';
 
 interface Props {
   template: TableTemplate;
@@ -310,17 +310,22 @@ function addColumn(): void {
       },
     })
     .onOk((payload: TableColumnTemplate) => {
-      payload.name = payload.name ?? createColumnName(payload.label);
+      payload.name = payload.name || createColumnName(payload.label);
 
       template.columns.push(payload);
     });
 }
 
-function createColumnName(label: TableColumnTemplate['label']): string {
+function createColumnName(
+  label: TableColumnTemplate['label'],
+  exclude?: string,
+): string {
   const labelString =
     typeof label === 'string' ? label : (Object.values(label)[0] ?? '');
   const name = labelString.toLowerCase().replaceAll(' ', '_');
-  const names = template.columns.map((column) => column.name);
+  const names = template.columns
+    .map((column) => column.name)
+    .filter((columnName) => columnName !== exclude);
 
   return uniqueName(name, names);
 }
@@ -338,6 +343,9 @@ function editColumn(column: TableColumnTemplate): void {
       },
     })
     .onOk((payload: TableColumnTemplate) => {
+      payload.name =
+        payload.name || createColumnName(payload.label, column.name);
+
       const index = template.columns.indexOf(column);
       template.columns.splice(index, 1, payload);
     });
@@ -369,7 +377,7 @@ function roleFilterFn(value: string, update: (fn: () => void) => void) {
 <style scoped></style>
 
 <i18n lang="yaml" locale="en">
-title: 'Edit Template'
+title: 'Edit Table'
 
 advanced:
   hide: 'Hide advanced options'
@@ -413,7 +421,7 @@ fields:
 </i18n>
 
 <i18n lang="yaml" locale="de">
-title: 'Vorlage bearbeiten'
+title: 'Tabelle bearbeiten'
 
 advanced:
   hide: 'Erweiterte Optionen ausblenden'
@@ -457,7 +465,7 @@ fields:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-title: 'Modifier le modèle'
+title: 'Modifier le tableau'
 
 advanced:
   hide: 'Masquer les options avancées'
@@ -501,7 +509,7 @@ fields:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-title: 'Edytuj szablon'
+title: 'Edytuj tabelę'
 
 advanced:
   hide: 'Ukryj opcje zaawansowane'
@@ -545,7 +553,7 @@ fields:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-title: 'Upravit šablonu'
+title: 'Upravit tabulku'
 
 advanced:
   hide: 'Skrýt pokročilé možnosti'

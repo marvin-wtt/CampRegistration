@@ -6,6 +6,13 @@ const index = z.object({
   }),
 });
 
+const show = z.object({
+  params: z.object({
+    campId: z.ulid(),
+    campManagerId: z.ulid(),
+  }),
+});
+
 const store = z.object({
   params: z.object({
     campId: z.ulid(),
@@ -46,6 +53,7 @@ const accept = z.object({
 
 export default {
   index,
+  show,
   store,
   update,
   destroy,

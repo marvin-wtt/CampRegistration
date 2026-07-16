@@ -4,8 +4,8 @@ import { useI18n } from 'vue-i18n';
 import { nextTick, type Ref, watch, watchEffect } from 'vue';
 import { setVariables } from '@camp-registration/common/form';
 import { useQuasar } from 'quasar';
-import type { useAPIService } from 'src/services/APIService';
-import { md3SurveyThemes } from 'src/lib/surveyJs/themes/md3';
+import type { useAPIService } from '@/services/APIService';
+import { md3SurveyThemes } from '@/lib/surveyJs/themes/md3';
 
 export function startAutoDataUpdate(
   model: SurveyModel,

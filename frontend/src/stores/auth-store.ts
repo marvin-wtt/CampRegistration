@@ -1,15 +1,20 @@
 import { defineStore } from 'pinia';
-import { useAPIService } from 'src/services/APIService';
+import { useAPIService } from '@/services/APIService';
 import type {
   AuthTokens,
   Authentication,
+  Profile,
 } from '@camp-registration/common/entities';
 import { useRoute, useRouter } from 'vue-router';
-import { useAuthBus } from 'src/composables/bus';
-import { useServiceHandler } from 'src/composables/serviceHandler';
-import { useProfileStore } from 'stores/profile-store';
-import { createInitialAdmin } from 'src/services/SetupService';
-import { isCustomAxiosError } from 'src/services/AuthService';
+import { useAuthBus } from '@/composables/bus';
+import { useServiceHandler } from '@/composables/serviceHandler';
+import { useProfileStore } from '@/stores/profile-store';
+import { createInitialAdmin } from '@/services/SetupService';
+import { isCustomAxiosError } from '@/services/AuthService';
+import { Dialog } from 'quasar';
+import TwoFactorSuggestionDialog from '@/components/settings/twoFactor/TwoFactorSuggestionDialog.vue';
+
+const TWO_FACTOR_SUGGESTION_DISMISSED_KEY = 'two-factor-suggestion-dismissed';
 
 export const useAuthStore = defineStore('auth', () => {
   const apiService = useAPIService();
@@ -33,7 +38,12 @@ export const useAuthStore = defineStore('auth', () => {
   let ongoingRefresh: Promise<boolean> | null = null;
 
   router.beforeEach((to) => {
-    if (!to.meta.auth || profileStore.loading || profileStore.user) {
+    if (
+      !to.meta.auth ||
+      isLoading.value ||
+      profileStore.loading ||
+      profileStore.user
+    ) {
       return;
     }
 
@@ -57,8 +67,9 @@ export const useAuthStore = defineStore('auth', () => {
     return {
       name: 'login',
       query: {
-        origin: encodeURIComponent(route.path),
+        origin: encodeURIComponent(route.fullPath),
       },
+      replace: false,
     };
   }
 
@@ -164,6 +175,30 @@ export const useAuthStore = defineStore('auth', () => {
         : { name: 'management.camps' };
 
     await router.push(destination);
+
+    maybeSuggestTwoFactor(auth.profile);
+  }
+
+  function maybeSuggestTwoFactor(profile: Profile) {
+    if (profile.twoFactorEnabled) {
+      return;
+    }
+
+    if (localStorage.getItem(TWO_FACTOR_SUGGESTION_DISMISSED_KEY) === 'true') {
+      return;
+    }
+
+    Dialog.create({
+      component: TwoFactorSuggestionDialog,
+    }).onOk((result: { enable: boolean; dontRemind: boolean }) => {
+      if (result.dontRemind) {
+        localStorage.setItem(TWO_FACTOR_SUGGESTION_DISMISSED_KEY, 'true');
+      }
+
+      if (result.enable) {
+        void router.push({ name: 'settings.security' });
+      }
+    });
   }
 
   async function refreshTokens(): Promise<boolean> {
@@ -171,6 +206,8 @@ export const useAuthStore = defineStore('auth', () => {
     if (ongoingRefresh) {
       return ongoingRefresh;
     }
+
+    isLoading.value = true;
 
     ongoingRefresh = apiService
       .refreshTokens()
@@ -180,6 +217,7 @@ export const useAuthStore = defineStore('auth', () => {
       .finally(() => {
         // allow a new refresh after this one settles
         ongoingRefresh = null;
+        isLoading.value = false;
       });
 
     return ongoingRefresh;
@@ -300,6 +338,7 @@ export const useAuthStore = defineStore('auth', () => {
     loading: isLoading,
     init,
     reset,
+    refreshTokens,
     login,
     logout,
     register,

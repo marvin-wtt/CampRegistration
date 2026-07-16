@@ -115,7 +115,7 @@ import { QForm, type QSelectOption, useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { ref } from 'vue';
 import { type UserCreateData } from '@camp-registration/common/entities';
-import { generateRandomPassword } from 'src/utils/passwordGenerator';
+import { generateRandomPassword } from '@/utils/passwordGenerator';
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
@@ -238,4 +238,64 @@ input:
     option:
       user: 'Utilisateur'
       admin: 'Administrateur'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+title: 'Utwórz użytkownika'
+
+action:
+  cancel: 'Anuluj'
+  ok: 'Zapisz'
+
+input:
+  email:
+    label: 'E-mail'
+    rule:
+      required: 'E-mail jest wymagany'
+  name:
+    label: 'Nazwa'
+    rule:
+      required: 'Nazwa jest wymagana'
+  locale:
+    label: 'Język'
+    rule:
+      required: 'Język jest wymagany'
+  password:
+    label: 'Hasło'
+    required: 'Hasło jest wymagane'
+  role:
+    label: 'Rola'
+    option:
+      user: 'Użytkownik'
+      admin: 'Administrator'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Vytvořit uživatele'
+
+action:
+  cancel: 'Zrušit'
+  ok: 'Uložit'
+
+input:
+  email:
+    label: 'E-mail'
+    rule:
+      required: 'E-mail je povinný'
+  name:
+    label: 'Jméno'
+    rule:
+      required: 'Jméno je povinné'
+  locale:
+    label: 'Jazyk'
+    rule:
+      required: 'Jazyk je povinný'
+  password:
+    label: 'Heslo'
+    required: 'Heslo je povinné'
+  role:
+    label: 'Role'
+    option:
+      user: 'Uživatel'
+      admin: 'Administrátor'
 </i18n>

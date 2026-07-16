@@ -1,15 +1,15 @@
 import { describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { nextTick } from 'vue';
-import { installQuasarPlugin } from 'app/test/vitest/utils/quasar';
+import { installQuasarPlugin } from '@/../test/vitest/utils/quasar';
 import { QSelect } from 'quasar';
-import ContactSelect from 'components/campManagement/contact/ContactSelect.vue';
+import ContactSelect from '@/components/campManagement/contact/ContactSelect.vue';
 import type { Registration } from '@camp-registration/common/entities';
-import type { Contact } from 'components/campManagement/contact/Contact';
+import type { Contact } from '@/components/campManagement/contact/Contact';
 
 installQuasarPlugin();
 
-vi.mock('src/composables/registrationHelper', () => ({
+vi.mock('@/composables/registrationHelper', () => ({
   useRegistrationHelper: () => ({
     fullName: (r: Registration): string | undefined => {
       const parts = [r.computedData.firstName, r.computedData.lastName].filter(
@@ -69,7 +69,7 @@ describe('ContactSelect', () => {
     expect(mountContactSelect([]).exists()).toBe(true);
   });
 
-  it('excludes PENDING registrations from options', () => {
+  it('includes PENDING registrations as individual options with pending type', () => {
     const pending = createRegistration({ status: 'PENDING' });
     const accepted = createRegistration({ status: 'ACCEPTED' });
 
@@ -80,8 +80,23 @@ describe('ContactSelect', () => {
         : [o.registration.id],
     );
 
-    expect(allIds).not.toContain(pending.id);
+    expect(allIds).toContain(pending.id);
     expect(allIds).toContain(accepted.id);
+
+    const pendingContact = options.find(
+      (o) => o.type !== 'group' && o.registration.id === pending.id,
+    );
+    expect(pendingContact?.type).toBe('pending');
+  });
+
+  it('never rolls PENDING registrations up into a group', () => {
+    const pending1 = createRegistration({ status: 'PENDING' });
+    const pending2 = createRegistration({ status: 'PENDING' });
+
+    const options = getOptions(mountContactSelect([pending1, pending2]));
+
+    expect(options.filter((o) => o.type === 'group')).toHaveLength(0);
+    expect(options.filter((o) => o.type === 'pending')).toHaveLength(2);
   });
 
   it('creates an individual contact for each non-PENDING registration', () => {

@@ -7,6 +7,7 @@ import validator from '#app/campManager/camp-manager.validation';
 import { type Request, type Response } from 'express';
 import { CampManagerInvitationMessage } from '#app/campManager/camp-manager.messages';
 import { BaseController } from '#core/base/BaseController';
+import { RealtimeService } from '#core/realtime/RealtimeService';
 import { inject, injectable } from 'inversify';
 
 @injectable()
@@ -15,18 +16,26 @@ export class CampManagerController extends BaseController {
     @inject(CampManagerService)
     private readonly managerService: CampManagerService,
     @inject(UserService) private readonly userService: UserService,
+    @inject(RealtimeService)
+    private readonly realtimeService: RealtimeService,
   ) {
     super();
   }
 
   async index(req: Request, res: Response) {
-    const {
-      params: { campId },
-    } = await req.validate(validator.index);
+    const camp = req.modelOrFail('camp');
+    await req.validate(validator.index);
 
-    const managers = await this.managerService.getManagers(campId);
+    const managers = await this.managerService.getManagers(camp.id);
 
     res.resource(CampManagerResource.collection(managers));
+  }
+
+  async show(req: Request, res: Response) {
+    await req.validate(validator.show);
+    const manager = req.modelOrFail('campManager');
+
+    res.resource(new CampManagerResource(manager));
   }
 
   async store(req: Request, res: Response) {
@@ -63,14 +72,29 @@ export class CampManagerController extends BaseController {
       manager,
     });
 
+    void this.realtimeService.emit(camp.id, 'manager', manager.id, 'created');
+
     res.status(httpStatus.CREATED).resource(new CampManagerResource(manager));
   }
 
   async update(req: Request, res: Response) {
+    const camp = req.modelOrFail('camp');
     const manager = req.modelOrFail('campManager');
     const {
       body: { role, expiresAt },
     } = await req.validate(validator.update);
+
+    // Verify the camp has another non-expiring director available.
+    const nextRole = role ?? manager.role;
+    const nextExpiresAt =
+      expiresAt === undefined ? manager.expiresAt : expiresAt;
+    if (
+      manager.role === 'DIRECTOR' &&
+      manager.expiresAt === null &&
+      (nextRole !== 'DIRECTOR' || nextExpiresAt !== null)
+    ) {
+      await this.checkDirectorConstraints(camp.id, manager.id);
+    }
 
     const updatedManager = await this.managerService.updateManagerById(
       manager.id,
@@ -80,24 +104,42 @@ export class CampManagerController extends BaseController {
       },
     );
 
+    void this.realtimeService.emit(
+      camp.id,
+      'manager',
+      updatedManager.id,
+      'updated',
+    );
+
     res.resource(new CampManagerResource(updatedManager));
   }
 
   async destroy(req: Request, res: Response) {
-    const {
-      params: { campId, campManagerId },
-    } = await req.validate(validator.destroy);
+    const camp = req.modelOrFail('camp');
+    const manager = req.modelOrFail('campManager');
+    await req.validate(validator.destroy);
 
-    const managers = await this.managerService.getManagers(campId);
-    if (managers.length <= 1) {
-      throw new ApiError(
-        httpStatus.BAD_REQUEST,
-        'The camp must always have at least one camp manager.',
-      );
+    // Verify the camp has another non-expiring director available.
+    if (manager.role === 'DIRECTOR' && manager.expiresAt === null) {
+      await this.checkDirectorConstraints(camp.id, manager.id);
     }
 
-    await this.managerService.removeManager(campManagerId);
+    await this.managerService.removeManager(manager.id);
+
+    void this.realtimeService.emit(camp.id, 'manager', manager.id, 'deleted');
 
     res.sendStatus(httpStatus.NO_CONTENT);
+  }
+
+  private async checkDirectorConstraints(campId: string, managerId: string) {
+    const hasOtherDirector =
+      await this.managerService.hasOtherNonExpiringDirector(campId, managerId);
+
+    if (!hasOtherDirector) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'The camp must always have a camp manager with the director role that does not expire.',
+      );
+    }
   }
 }

@@ -3,7 +3,7 @@ import type {
   TableTemplateCreateData,
   TableTemplateUpdateData,
 } from '@camp-registration/common/entities';
-import { api } from 'src/services/api';
+import { api } from '@/services/api';
 
 export function useTableTemplateService() {
   async function fetchTableTemplates(campId: string): Promise<TableTemplate[]> {

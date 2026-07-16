@@ -36,9 +36,6 @@
     "quasar": {
       "@types/express": "^5.0.0",
       "@types/express-serve-static-core": "^5.0.0"
-    },
-    "nodemailer-mock": {
-      "nodemailer": "^8.0.4"
     }
   }
 }

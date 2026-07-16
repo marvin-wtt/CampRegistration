@@ -113,11 +113,11 @@
 </template>
 
 <script lang="ts" setup>
-import RoomListItem from 'components/campManagement/roomPlanner/RoomListItem.vue';
+import RoomListItem from '@/components/campManagement/roomPlanner/RoomListItem.vue';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import type { Roommate, RoomWithRoommates } from 'src/types/Room';
-import { useObjectTranslation } from 'src/composables/objectTranslation';
+import type { Roommate, RoomWithRoommates } from '@/types/Room';
+import { useObjectTranslation } from '@/composables/objectTranslation';
 
 const { t } = useI18n();
 const { to } = useObjectTranslation();

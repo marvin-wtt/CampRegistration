@@ -1,9 +1,10 @@
-import { api } from 'src/services/api';
+import { api } from '@/services/api';
 import type {
   Newsletter,
   NewsletterCreateData,
   NewsletterUpdateData,
   NewsletterQuery,
+  CursorPaginated,
 } from '@camp-registration/common/entities';
 
 export function useNewsletterService() {
@@ -12,6 +13,16 @@ export function useNewsletterService() {
   ): Promise<Newsletter[]> {
     const response = await api.get('newsletters/', { params });
     return response?.data?.data;
+  }
+
+  async function fetchNewslettersPaginated(
+    params?: NewsletterQuery,
+  ): Promise<CursorPaginated<Newsletter>> {
+    const response = await api.get('newsletters/', { params });
+    return {
+      data: response?.data?.data ?? [],
+      meta: response?.data?.meta,
+    };
   }
 
   async function fetchNewsletter(id: string): Promise<Newsletter> {
@@ -40,6 +51,7 @@ export function useNewsletterService() {
 
   return {
     fetchNewsletters,
+    fetchNewslettersPaginated,
     fetchNewsletter,
     createNewsletter,
     updateNewsletter,

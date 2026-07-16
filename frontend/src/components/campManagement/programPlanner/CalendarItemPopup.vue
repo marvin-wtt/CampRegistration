@@ -1,5 +1,7 @@
 <template>
   <q-popup-proxy
+    ref="popupProxyRef"
+    :no-parent-event="noParentEvent"
     transition-show="scale"
     transition-hide="fade"
     :offset="[10, 10]"
@@ -11,7 +13,7 @@
     >
       <q-card-actions align="right">
         <q-btn
-          v-if="!event.date"
+          v-if="!event.date && editable"
           v-close-popup
           icon="event"
           size="sm"
@@ -22,7 +24,7 @@
           <q-tooltip>{{ t('action.schedule') }}</q-tooltip>
         </q-btn>
         <q-btn
-          v-if="event.date"
+          v-if="event.date && editable"
           v-close-popup
           icon="inbox"
           size="sm"
@@ -33,6 +35,7 @@
           <q-tooltip>{{ t('action.moveToBacklog') }}</q-tooltip>
         </q-btn>
         <q-btn
+          v-if="creatable"
           v-close-popup
           icon="content_copy"
           size="sm"
@@ -43,6 +46,7 @@
           <q-tooltip>{{ t('action.duplicate') }}</q-tooltip>
         </q-btn>
         <q-btn
+          v-if="editable"
           v-close-popup
           icon="edit"
           size="sm"
@@ -53,6 +57,7 @@
           <q-tooltip>{{ t('action.edit') }}</q-tooltip>
         </q-btn>
         <q-btn
+          v-if="deletable"
           v-close-popup
           icon="delete"
           size="sm"
@@ -132,15 +137,28 @@
 
 <script lang="ts" setup>
 import type { ProgramEvent } from '@camp-registration/common/entities';
-import { useObjectTranslation } from 'src/composables/objectTranslation';
-import { computed } from 'vue';
+import { useObjectTranslation } from '@/composables/objectTranslation';
+import { computed, useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';
+import type { QPopupProxy } from 'quasar';
 
 const { locale, t } = useI18n();
 const { to } = useObjectTranslation();
 
-const { event } = defineProps<{
+const {
+  event,
+  editable = false,
+  deletable = false,
+  creatable = false,
+  noParentEvent = false,
+} = defineProps<{
   event: ProgramEvent;
+  editable?: boolean;
+  deletable?: boolean;
+  creatable?: boolean;
+  // Disables the popup's default open-on-parent-click behavior so a caller
+  // can decide itself (e.g. via `show()`) when the popup should open.
+  noParentEvent?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -150,6 +168,13 @@ const emit = defineEmits<{
   (e: 'schedule'): void;
   (e: 'move-to-backlog'): void;
 }>();
+
+const popupProxyRef = useTemplateRef<QPopupProxy>('popupProxyRef');
+
+defineExpose({
+  show: (evt?: Event) => popupProxyRef.value?.show(evt),
+  hide: (evt?: Event) => popupProxyRef.value?.hide(evt),
+});
 
 const dateTime = computed<string>(() => {
   if (!event.date) {

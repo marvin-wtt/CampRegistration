@@ -220,7 +220,7 @@
                   :rules="[
                     (val?: number) => !!val || t('validation.maxAge.empty'),
                     (val: number) =>
-                      (camp.minAge && val >= camp.minAge) ||
+                      (camp?.minAge && val >= camp.minAge) ||
                       t('validation.maxAge.min'),
                     (val: number) => val < 100 || t('validation.minAge.max'),
                   ]"
@@ -304,6 +304,11 @@
                   :label="t('field.endTime')"
                   :rules="[
                     (val?: string) => !!val || t('validation.endAt.empty'),
+                    () =>
+                      !camp?.startAt ||
+                      !camp?.endAt ||
+                      new Date(camp?.endAt) > new Date(camp?.startAt) ||
+                      t('validation.endAt.min'),
                   ]"
                   class="col"
                   hide-bottom-space
@@ -346,7 +351,7 @@
                 :rules="[
                   (val?: string | null) =>
                     !val ||
-                    !camp.registrationClosesAt ||
+                    !camp?.registrationClosesAt ||
                     new Date(val) < new Date(camp.registrationClosesAt) ||
                     t('validation.registrationOpensAt.before_close'),
                 ]"
@@ -368,7 +373,7 @@
                 :rules="[
                   (val?: string | null) =>
                     !val ||
-                    !camp.registrationOpensAt ||
+                    !camp?.registrationOpensAt ||
                     new Date(val) > new Date(camp.registrationOpensAt) ||
                     t('validation.registrationClosesAt.after_open'),
                 ]"
@@ -466,6 +471,7 @@
         <m-btn
           :label="t('action.submit.edit')"
           :loading
+          :disable="!can('camp.edit')"
           color="primary"
           type="submit"
         />
@@ -478,23 +484,25 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import type { Camp, CampDetails } from '@camp-registration/common/entities';
 import { useRoute, useRouter } from 'vue-router';
-import { useCampDetailsStore } from 'stores/camp-details-store';
+import { useCampDetailsStore } from '@/stores/camp-details-store';
 import { storeToRefs } from 'pinia';
-import PageStateHandler from 'components/common/PageStateHandler.vue';
-import TimeInput from 'components/common/inputs/TimeInput.vue';
-import CountrySelect from 'components/common/CountrySelect.vue';
-import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
-import DateRangeInput from 'components/common/inputs/DateRangeInput.vue';
-import DateTimeInput from 'components/common/inputs/DateTimeInput.vue';
+import PageStateHandler from '@/components/common/PageStateHandler.vue';
+import TimeInput from '@/components/common/inputs/TimeInput.vue';
+import CountrySelect from '@/components/common/CountrySelect.vue';
+import TranslatedInput from '@/components/common/inputs/TranslatedInput.vue';
+import DateRangeInput from '@/components/common/inputs/DateRangeInput.vue';
+import DateTimeInput from '@/components/common/inputs/DateTimeInput.vue';
 import { useI18n } from 'vue-i18n';
 import type { QSelectOption } from 'quasar';
-import { deepToRaw } from 'src/utils/deepToRaw';
+import { deepToRaw } from '@/utils/deepToRaw';
 import { MToolbar } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eToolbar';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
+import { usePermissions } from '@/composables/permissions';
 
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
+const { can } = usePermissions();
 
 const campStore = useCampDetailsStore();
 const { data, error, isLoading } = storeToRefs(campStore);
@@ -658,6 +666,7 @@ validation:
     empty: 'Please select a start time'
   endAt:
     empty: 'Please select an end time'
+    min: 'End time must be after the start time'
   minAge:
     empty: 'Please enter a minimum age'
     positive: 'Minimum age must be a positive number'
@@ -739,6 +748,7 @@ validation:
     empty: 'Bitte wählen Sie eine Startzeit aus'
   endAt:
     empty: 'Bitte wählen Sie eine Endzeit aus'
+    min: 'Die Endzeit muss nach der Startzeit liegen'
   minAge:
     empty: 'Bitte geben Sie ein Mindestalter ein'
     positive: 'Das Mindestalter muss eine positive Zahl sein'
@@ -820,6 +830,7 @@ validation:
     empty: 'Veuillez sélectionner une heure de début'
   endAt:
     empty: 'Veuillez sélectionner une heure de fin'
+    min: "L'heure de fin doit être postérieure à l'heure de début"
   minAge:
     empty: 'Veuillez entrer un âge minimum'
     positive: "L'âge minimum doit être un nombre positif"
@@ -901,6 +912,7 @@ validation:
     empty: 'Wybierz godzinę rozpoczęcia'
   endAt:
     empty: 'Wybierz godzinę zakończenia'
+    min: 'Godzina zakończenia musi być późniejsza niż godzina rozpoczęcia'
   minAge:
     empty: 'Podaj minimalny wiek'
     positive: 'Minimalny wiek musi być liczbą dodatnią'
@@ -982,6 +994,7 @@ validation:
     empty: 'Vyberte čas začátku'
   endAt:
     empty: 'Vyberte čas konce'
+    min: 'Čas konce musí být pozdější než čas začátku'
   minAge:
     empty: 'Zadejte minimální věk'
     positive: 'Minimální věk musí být kladné číslo'

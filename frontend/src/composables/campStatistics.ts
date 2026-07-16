@@ -1,9 +1,9 @@
 import type { Registration } from '@camp-registration/common/entities';
 import type { Translatable } from '@camp-registration/common/entities';
 import { computed } from 'vue';
-import { useCampDetailsStore } from 'stores/camp-details-store';
-import { useRegistrationsStore } from 'stores/registration-store';
-import { useRegistrationHelper } from 'src/composables/registrationHelper';
+import { useCampDetailsStore } from '@/stores/camp-details-store';
+import { useRegistrationsStore } from '@/stores/registration-store';
+import { useRegistrationHelper } from '@/composables/registrationHelper';
 
 export type Dimension = 'age' | 'gender' | 'country';
 

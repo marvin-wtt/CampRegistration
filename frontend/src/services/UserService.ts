@@ -1,8 +1,10 @@
-import { api } from 'src/services/api';
+import { api } from '@/services/api';
 import type {
   User,
   UserCreateData,
   UserUpdateData,
+  UserQuery,
+  CursorPaginated,
 } from '@camp-registration/common/entities';
 
 export function useUserService() {
@@ -10,6 +12,17 @@ export function useUserService() {
     const response = await api.get('users/');
 
     return response?.data?.data;
+  }
+
+  async function fetchUsersPaginated(
+    query?: UserQuery,
+  ): Promise<CursorPaginated<User>> {
+    const response = await api.get('users/', { params: query });
+
+    return {
+      data: response?.data?.data ?? [],
+      meta: response?.data?.meta,
+    };
   }
 
   async function fetchUser(id?: string): Promise<User> {
@@ -34,11 +47,19 @@ export function useUserService() {
     await api.delete(`users/${id}/`);
   }
 
+  async function resetUserTwoFactor(id: string): Promise<User> {
+    const response = await api.post(`users/${id}/reset-two-factor`);
+
+    return response?.data?.data;
+  }
+
   return {
     fetchUsers,
+    fetchUsersPaginated,
     fetchUser,
     createUser,
     updateUser,
     deleteUser,
+    resetUserTwoFactor,
   };
 }

@@ -1,7 +1,19 @@
-import { describe, expect, it } from 'vitest';
-import { mount } from '@vue/test-utils';
-import RegistrationForm from 'components/common/RegistrationForm.vue';
-import { installQuasarPlugin } from 'app/test/vitest/utils/quasar';
+import { describe, expect, it, vi } from 'vitest';
+import { flushPromises, mount } from '@vue/test-utils';
+import RegistrationForm from '@/components/common/RegistrationForm.vue';
+import { installQuasarPlugin } from '@/../test/vitest/utils/quasar';
+import { SurveyComponent } from 'survey-vue3-ui';
+import type { SurveyModel } from 'survey-core';
+
+// The completed-page markup builds action links via `router.resolve(...)`;
+// stub it out since routing itself is irrelevant to these tests.
+vi.mock('vue-router', () => ({
+  useRouter: () => ({
+    resolve: (to: { name: string; params?: Record<string, string> }) => ({
+      href: `/${[to.name, ...Object.values(to.params ?? {})].join('/')}`,
+    }),
+  }),
+}));
 
 installQuasarPlugin();
 
@@ -25,6 +37,7 @@ describe('RegistrationForm', () => {
     price: 0,
     location: '',
     freePlaces: 0,
+    registrationStatus: 'closed' as const,
     form: {
       title: '',
       description: '',
@@ -44,6 +57,130 @@ describe('RegistrationForm', () => {
       },
     });
     expect(wrapper.exists()).toBeTruthy();
+  });
+
+  it('shows the custom success panel when the form defines no completed page', async () => {
+    const submitFn = vi.fn().mockResolvedValue(undefined);
+
+    const wrapper = mount(RegistrationForm, {
+      props: {
+        // simpleCampDetails.form has no completedHtml
+        campDetails: { ...simpleCampDetails, id: 'camp-1' },
+        submitFn,
+        uploadFileFn: () => Promise.reject(new Error()),
+      },
+    });
+    const survey = wrapper
+      .getComponent(SurveyComponent)
+      .props('model') as SurveyModel;
+
+    survey.doComplete();
+    await flushPromises();
+
+    expect(submitFn).toHaveBeenCalledTimes(1);
+
+    // When the form has no completed page, our Vue success panel takes over.
+    const status = wrapper.find('[data-test="registration-submit-status"]');
+    expect(status.exists()).toBe(true);
+    expect(status.text()).toContain('complete.title');
+  });
+
+  it('shows the custom error status without touching the completed page', async () => {
+    const submitFn = vi.fn(() =>
+      // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
+      Promise.reject({
+        isAxiosError: true,
+        response: {
+          data: {
+            message: 'Registration is closed',
+          },
+          statusText: 'Forbidden',
+        },
+      }),
+    );
+
+    const wrapper = mount(RegistrationForm, {
+      props: {
+        campDetails: {
+          ...simpleCampDetails,
+          id: 'camp-1',
+          form: {
+            ...simpleCampDetails.form,
+            completedHtml: 'Registration successful',
+          },
+        },
+        submitFn,
+        uploadFileFn: () => Promise.reject(new Error()),
+      },
+    });
+    const survey = wrapper
+      .getComponent(SurveyComponent)
+      .props('model') as SurveyModel;
+
+    survey.doComplete();
+    await flushPromises();
+
+    expect(submitFn).toHaveBeenCalledTimes(1);
+    // The form-defined completed page is left untouched; the error UI is a
+    // separate Vue overlay shown over the (hidden) survey.
+    expect(survey.completedHtml).toBe('Registration successful');
+
+    const status = wrapper.find('[data-test="registration-submit-status"]');
+    expect(status.exists()).toBe(true);
+    expect(status.text()).toContain('submit.error.title');
+    expect(status.text()).toContain('Registration is closed');
+  });
+
+  it('retries the submission when the retry button is clicked', async () => {
+    const submitFn = vi
+      .fn()
+      .mockRejectedValueOnce({
+        isAxiosError: true,
+        response: {
+          data: { message: 'Temporary error' },
+          statusText: 'Service Unavailable',
+        },
+      })
+      .mockResolvedValueOnce(undefined);
+
+    const wrapper = mount(RegistrationForm, {
+      props: {
+        campDetails: {
+          ...simpleCampDetails,
+          id: 'camp-1',
+          form: {
+            ...simpleCampDetails.form,
+            completedHtml: 'Registration successful',
+          },
+        },
+        submitFn,
+        uploadFileFn: () => Promise.reject(new Error()),
+      },
+    });
+    const survey = wrapper
+      .getComponent(SurveyComponent)
+      .props('model') as SurveyModel;
+
+    survey.doComplete();
+    await flushPromises();
+
+    expect(submitFn).toHaveBeenCalledTimes(1);
+    expect(
+      wrapper.find('[data-test="registration-submit-status"]').text(),
+    ).toContain('submit.error.title');
+
+    await wrapper
+      .find('[data-test="registration-submit-retry"]')
+      .trigger('click');
+    await flushPromises();
+
+    // The retry re-fires onComplete and, on success, reveals the survey's
+    // completed page and dismisses the error overlay.
+    expect(submitFn).toHaveBeenCalledTimes(2);
+    expect(survey.showCompletePage).toBe(true);
+    expect(
+      wrapper.find('[data-test="registration-submit-status"]').exists(),
+    ).toBe(false);
   });
 
   it.todo('should set variables');

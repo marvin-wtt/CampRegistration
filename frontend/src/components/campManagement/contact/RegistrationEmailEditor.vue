@@ -8,15 +8,15 @@
 <script setup lang="ts">
 import type { CampDetails } from '@camp-registration/common/entities';
 import { computed } from 'vue';
-import { extractFormFields } from 'src/utils/surveyJS';
-import EmailEditor from 'components/campManagement/contact/EmailEditor.vue';
+import { extractFormFields } from '@/utils/surveyJS';
+import EmailEditor from '@/components/campManagement/contact/EmailEditor.vue';
 import { useI18n } from 'vue-i18n';
 import type {
   RegistrationComputedPath,
   RegistrationDataPath,
   TokenNode,
   TokenValue,
-} from 'components/campManagement/contact/TokenNode';
+} from '@/components/campManagement/contact/TokenNode';
 
 const { t } = useI18n();
 

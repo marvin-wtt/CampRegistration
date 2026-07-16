@@ -8,6 +8,7 @@ export type FilePermission =
 
 export type RegistrationPermission =
   | 'camp.registrations.view'
+  | 'camp.registrations.create'
   | 'camp.registrations.edit'
   | 'camp.registrations.delete';
 
@@ -18,9 +19,7 @@ export type ManagerPermission =
   | 'camp.managers.delete';
 
 export type MessagePermission =
-  | 'camp.messages.view'
-  | 'camp.messages.create'
-  | 'camp.messages.delete';
+  'camp.messages.view' | 'camp.messages.create' | 'camp.messages.delete';
 
 export type MessageTemplatePermission =
   | 'camp.message_templates.view'
@@ -41,15 +40,19 @@ export type RoomPermission =
   | 'camp.rooms.delete';
 
 export type BedPermission =
-  | 'camp.rooms.beds.create'
-  | 'camp.rooms.beds.edit'
-  | 'camp.rooms.beds.delete';
+  'camp.rooms.beds.create' | 'camp.rooms.beds.edit' | 'camp.rooms.beds.delete';
 
 export type ProgramEventPermission =
   | 'camp.program_events.view'
   | 'camp.program_events.create'
   | 'camp.program_events.update'
   | 'camp.program_events.delete';
+
+export type TaskPermission =
+  | 'camp.tasks.view'
+  | 'camp.tasks.create'
+  | 'camp.tasks.update'
+  | 'camp.tasks.delete';
 
 export type NewsletterPermission =
   | 'newsletter.view'
@@ -76,6 +79,7 @@ export type Permission =
   | RoomPermission
   | BedPermission
   | ProgramEventPermission
+  | TaskPermission
   | NewsletterPermission;
 
 export type Permissions = Permission[];

@@ -4,9 +4,10 @@ import type {
   CampCreateData,
   CampUpdateData,
   CampQuery,
+  CursorPaginated,
 } from '@camp-registration/common/entities';
-import { api } from 'src/services/api';
-import { extendAxiosConfig } from 'src/services/AuthService';
+import { api } from '@/services/api';
+import { extendAxiosConfig } from '@/services/AuthService';
 
 export function useCampService() {
   async function fetchCamps(query?: CampQuery): Promise<Camp[]> {
@@ -15,6 +16,19 @@ export function useCampService() {
     });
 
     return response?.data?.data;
+  }
+
+  async function fetchCampsPaginated(
+    query?: CampQuery,
+  ): Promise<CursorPaginated<Camp>> {
+    const response = await api.get('camps/', {
+      params: query,
+    });
+
+    return {
+      data: response?.data?.data ?? [],
+      meta: response?.data?.meta,
+    };
   }
 
   async function fetchCamp(
@@ -52,6 +66,7 @@ export function useCampService() {
 
   return {
     fetchCamps,
+    fetchCampsPaginated,
     fetchCamp,
     createCamp,
     updateCamp,

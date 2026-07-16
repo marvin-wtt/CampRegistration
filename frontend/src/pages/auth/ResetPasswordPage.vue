@@ -101,7 +101,7 @@
 <script lang="ts" setup>
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useAuthStore } from 'stores/auth-store';
+import { useAuthStore } from '@/stores/auth-store';
 import { storeToRefs } from 'pinia';
 import { useQuasar } from 'quasar';
 
@@ -144,7 +144,7 @@ action:
 <i18n lang="yaml" locale="de">
 title: 'Passwort zurücksetzen'
 
-describe: 'Erstellen Sie ein neues Passwort, um wieder Zugriff auf Ihr Konto zu erhalten.'
+description: 'Erstellen Sie ein neues Passwort, um wieder Zugriff auf Ihr Konto zu erhalten.'
 
 field:
   password:
@@ -163,7 +163,7 @@ action:
 <i18n lang="yaml" locale="fr">
 title: 'Réinitialiser le mot de passe'
 
-describe: "Créez un nouveau mot de passe pour retrouver l'accès à votre compte."
+description: "Créez un nouveau mot de passe pour retrouver l'accès à votre compte."
 
 field:
   password:
@@ -182,7 +182,7 @@ action:
 <i18n lang="yaml" locale="pl">
 title: 'Zresetuj hasło'
 
-describe: 'Utwórz nowe hasło, aby odzyskać dostęp do swojego konta.'
+description: 'Utwórz nowe hasło, aby odzyskać dostęp do swojego konta.'
 
 field:
   password:
@@ -201,7 +201,7 @@ action:
 <i18n lang="yaml" locale="cs">
 title: 'Obnovení hesla'
 
-describe: 'Vytvořte nové heslo, abyste znovu získali přístup ke svému účtu.'
+description: 'Vytvořte nové heslo, abyste znovu získali přístup ke svému účtu.'
 
 field:
   password:

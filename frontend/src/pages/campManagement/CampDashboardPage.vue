@@ -65,6 +65,13 @@
         </div>
       </section>
 
+      <section
+        v-if="canAccessAny('camp.tasks.view')"
+        class="dashboard-section"
+      >
+        <tasks-due-widget />
+      </section>
+
       <q-card
         v-if="attentionItems.length > 0"
         flat
@@ -96,7 +103,7 @@
               :key="item.key"
               type="button"
               class="attention-item"
-              @click="goToTemplate(item.template)"
+              @click="goToItem(item)"
             >
               <div class="attention-icon row items-center justify-center">
                 <q-icon
@@ -135,18 +142,18 @@
         </div>
 
         <div class="row q-col-gutter-md">
-          <div class="col-6 col-md-3">
+          <div class="col-6 col-md-3 col-xs-12">
             <stat-card
-              :label="t('kpi.registrations')"
-              :value="stats.counts.value.total"
-              :caption="t('kpi.registrationsCaption')"
+              :label="t('kpi.participants')"
+              :value="stats.counts.value.accepted"
+              :caption="t('kpi.participantsCaption')"
               icon="how_to_reg"
               color="indigo"
             />
           </div>
           <div
             v-if="showPending"
-            class="col-6 col-md-3"
+            class="col-6 col-md-3 col-xs-12"
           >
             <stat-card
               :label="t('kpi.pending')"
@@ -156,7 +163,7 @@
               color="orange"
             />
           </div>
-          <div class="col-6 col-md-3">
+          <div class="col-6 col-md-3 col-xs-12">
             <stat-card
               :label="t('kpi.waitlisted')"
               :value="stats.counts.value.waitlisted"
@@ -165,7 +172,7 @@
               color="blue-grey"
             />
           </div>
-          <div class="col-6 col-md-3">
+          <div class="col-6 col-md-3 col-xs-12">
             <stat-card
               :label="t('kpi.team')"
               :value="stats.staff.value.length"
@@ -199,28 +206,35 @@ import { computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
-import PageStateHandler from 'components/common/PageStateHandler.vue';
-import CampSummaryHero from 'components/campManagement/dashboard/CampSummaryHero.vue';
-import StatCard from 'components/campManagement/dashboard/StatCard.vue';
-import CountryBreakdownTable from 'components/campManagement/dashboard/CountryBreakdownTable.vue';
-import DemographicsExplorer from 'components/campManagement/dashboard/DemographicsExplorer.vue';
-import { useCampDetailsStore } from 'stores/camp-details-store';
-import { useRegistrationsStore } from 'stores/registration-store';
-import { useCampStatistics } from 'src/composables/campStatistics';
-import { useRegistrationHelper } from 'src/composables/registrationHelper';
+import PageStateHandler from '@/components/common/PageStateHandler.vue';
+import CampSummaryHero from '@/components/campManagement/dashboard/CampSummaryHero.vue';
+import StatCard from '@/components/campManagement/dashboard/StatCard.vue';
+import CountryBreakdownTable from '@/components/campManagement/dashboard/CountryBreakdownTable.vue';
+import DemographicsExplorer from '@/components/campManagement/dashboard/DemographicsExplorer.vue';
+import TasksDueWidget from '@/components/campManagement/dashboard/TasksDueWidget.vue';
+import { useCampDetailsStore } from '@/stores/camp-details-store';
+import { useRegistrationsStore } from '@/stores/registration-store';
+import { useCampFilesStore } from '@/stores/camp-files-store';
+import { useTaskStore } from '@/stores/task-store';
+import { useCampStatistics } from '@/composables/campStatistics';
+import { useRegistrationHelper } from '@/composables/registrationHelper';
+import { usePermissions } from '@/composables/permissions';
 import {
   LOCAL_TEMPLATE_AGE,
   LOCAL_TEMPLATE_MISSING,
   LOCAL_TEMPLATE_PENDING,
-} from 'components/campManagement/table/localTableTemplates';
+} from '@/components/campManagement/table/localTableTemplates';
 
 const { t } = useI18n();
 const router = useRouter();
 
 const campDetailsStore = useCampDetailsStore();
 const registrationStore = useRegistrationsStore();
+const campFilesStore = useCampFilesStore();
+const taskStore = useTaskStore();
 const stats = useCampStatistics();
 const helper = useRegistrationHelper();
+const { canAccessAny } = usePermissions();
 
 const {
   data: camp,
@@ -241,6 +255,8 @@ const error = computed<string | null>(
 onMounted(() => {
   void registrationStore.fetchData();
   void campDetailsStore.fetchData();
+  void campFilesStore.fetchData();
+  void taskStore.fetchData();
 });
 
 // Pending only matters when registrations are confirmed manually.
@@ -283,7 +299,19 @@ const quickActions = computed(() => [
   },
 ]);
 
-const attentionItems = computed(() => {
+interface AttentionItem {
+  key: string;
+  label: string;
+  count: number;
+  icon: string;
+  color: string;
+  // Deep-links into the participants table via a hidden local template…
+  template?: string;
+  // …or navigates to another management route (e.g. file settings).
+  route?: string;
+}
+
+const attentionItems = computed<AttentionItem[]>(() => {
   const participants = stats.participants.value;
   const camp = campDetailsStore.data;
 
@@ -301,7 +329,11 @@ const attentionItems = computed(() => {
     return age < camp.minAge || age > camp.maxAge;
   }).length;
 
-  const items = [
+  // Camp file slots that need attention: declared but not uploaded, plus slots
+  // missing a file for one of the camp's locales (see camp-files-store).
+  const missingFiles = campFilesStore.missingFilesCount;
+
+  const items: AttentionItem[] = [
     {
       key: 'pending',
       label: t('attention.pending'),
@@ -326,10 +358,28 @@ const attentionItems = computed(() => {
       color: 'deep-orange',
       template: LOCAL_TEMPLATE_AGE,
     },
+    {
+      key: 'files',
+      label: t('attention.files'),
+      count: missingFiles,
+      icon: 'upload_file',
+      color: 'blue',
+      route: 'management.camp.settings.files',
+    },
   ];
 
   return items.filter((item) => item.count > 0);
 });
+
+function goToItem(item: AttentionItem) {
+  if (item.template) {
+    goToTemplate(item.template);
+    return;
+  }
+  if (item.route) {
+    goTo(item.route);
+  }
+}
 
 function goToTemplate(template: string) {
   void router.push({
@@ -472,8 +522,8 @@ function goTo(routeName: string) {
 
 <i18n lang="yaml" locale="en">
 kpi:
-  registrations: 'Registrations'
-  registrationsCaption: 'All participants'
+  participants: 'Participants'
+  participantsCaption: 'Accepted registrations'
   pending: 'Pending'
   pendingCaption: 'Awaiting confirmation'
   waitlisted: 'Waitlisted'
@@ -504,12 +554,13 @@ attention:
   pending: 'Pending confirmations'
   missing: 'Missing contact details'
   age: 'Age outside camp range'
+  files: 'Missing files'
 </i18n>
 
 <i18n lang="yaml" locale="de">
 kpi:
-  registrations: 'Anmeldungen'
-  registrationsCaption: 'Alle Teilnehmenden'
+  participants: 'Teilnehmende'
+  participantsCaption: 'Angenommene Anmeldungen'
   pending: 'Ausstehend'
   pendingCaption: 'Warten auf Bestätigung'
   waitlisted: 'Warteliste'
@@ -540,12 +591,13 @@ attention:
   pending: 'Ausstehende Bestätigungen'
   missing: 'Fehlende Kontaktdaten'
   age: 'Alter außerhalb des Bereichs'
+  files: 'Fehlende Dateien'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 kpi:
-  registrations: 'Inscriptions'
-  registrationsCaption: 'Tous les participants'
+  participants: 'Participants'
+  participantsCaption: 'Inscriptions acceptées'
   pending: 'En attente'
   pendingCaption: 'En attente de confirmation'
   waitlisted: "Liste d'attente"
@@ -576,12 +628,13 @@ attention:
   pending: 'Confirmations en attente'
   missing: 'Coordonnées manquantes'
   age: 'Âge hors de la plage'
+  files: 'Fichiers manquants'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
 kpi:
-  registrations: 'Rejestracje'
-  registrationsCaption: 'Wszyscy uczestnicy'
+  participants: 'Uczestnicy'
+  participantsCaption: 'Zaakceptowane rejestracje'
   pending: 'Oczekujący'
   pendingCaption: 'Oczekują na potwierdzenie'
   waitlisted: 'Lista rezerwowa'
@@ -612,12 +665,13 @@ attention:
   pending: 'Oczekujące potwierdzenia'
   missing: 'Brakujące dane kontaktowe'
   age: 'Wiek poza zakresem'
+  files: 'Brakujące pliki'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
 kpi:
-  registrations: 'Registrace'
-  registrationsCaption: 'Všichni účastníci'
+  participants: 'Účastníci'
+  participantsCaption: 'Přijaté registrace'
   pending: 'Čekající'
   pendingCaption: 'Čeká na potvrzení'
   waitlisted: 'Čekací listina'
@@ -648,4 +702,5 @@ attention:
   pending: 'Čekající potvrzení'
   missing: 'Chybějící kontaktní údaje'
   age: 'Věk mimo rozsah'
+  files: 'Chybějící soubory'
 </i18n>

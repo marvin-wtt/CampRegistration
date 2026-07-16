@@ -1,17 +1,17 @@
 import type { Registration } from '@camp-registration/common/entities';
-import { useCampDetailsStore } from 'stores/camp-details-store';
-import { useRegistrationsStore } from 'stores/registration-store';
+import { useCampDetailsStore } from '@/stores/camp-details-store';
+import { useRegistrationsStore } from '@/stores/registration-store';
 
 export function useRegistrationHelper() {
   const campDetailsStore = useCampDetailsStore();
   const registrationStore = useRegistrationsStore();
 
   function firstName(registration: Registration): string | undefined {
-    return registration.computedData.firstName ?? undefined;
+    return registration.computedData.firstName?.trim() || undefined;
   }
 
   function lastName(registration: Registration): string | undefined {
-    return registration.computedData.lastName ?? undefined;
+    return registration.computedData.lastName?.trim() || undefined;
   }
 
   function fullName(registration: Registration): string | undefined {
@@ -99,7 +99,7 @@ export function useRegistrationHelper() {
     return registration.computedData.address;
   }
 
-  function role(registration: Registration): string | undefined {
+  function role(registration: Registration): string {
     // Default to participant
     return registration.computedData.role ?? 'participant';
   }
@@ -111,12 +111,12 @@ export function useRegistrationHelper() {
   function email(registration: Registration): string | undefined {
     return registration.computedData.emails !== null &&
       registration.computedData.emails.length > 0
-      ? registration.computedData.emails[0]
+      ? registration.computedData.emails[0]?.trim()
       : undefined;
   }
 
   function emails(registration: Registration): string[] {
-    return registration.computedData.emails ?? [];
+    return registration.computedData.emails?.map((e) => e.trim()) ?? [];
   }
 
   return {

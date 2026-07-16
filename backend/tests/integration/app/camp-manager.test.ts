@@ -63,7 +63,7 @@ describe('/api/v1/camps/:campId/managers', () => {
             name: user.name,
             email: user.email,
             expiresAt: null,
-            status: 'accepted',
+            status: 'ACCEPTED',
             role,
           });
           expect(response.body.data[1]).toEqual({
@@ -71,7 +71,7 @@ describe('/api/v1/camps/:campId/managers', () => {
             name: null,
             email: invitation.email,
             expiresAt: '2030-01-01T00:00:00.000Z',
-            status: 'pending',
+            status: 'PENDING',
             role: 'DIRECTOR',
           });
         }
@@ -96,6 +96,78 @@ describe('/api/v1/camps/:campId/managers', () => {
         .get(`/api/v1/camps/${camp.id}/managers`)
         .send()
         .expect(401);
+    });
+  });
+
+  describe('GET /api/v1/camps/:campId/managers/:managerId', () => {
+    it.each([
+      { role: 'DIRECTOR', expectedStatus: 200 },
+      { role: 'COORDINATOR', expectedStatus: 200 },
+      { role: 'COUNSELOR', expectedStatus: 200 },
+      { role: 'VIEWER', expectedStatus: 403 },
+    ])(
+      'should respond with `$expectedStatus` status code when user is $role',
+      async ({ role, expectedStatus }) => {
+        const { camp, manager, accessToken, user } =
+          await createCampWithManagerAndToken(role);
+
+        const response = await request()
+          .get(`/api/v1/camps/${camp.id}/managers/${manager.id}`)
+          .send()
+          .auth(accessToken, { type: 'bearer' })
+          .expect(expectedStatus);
+
+        if (expectedStatus === 200) {
+          expect(response.body).toHaveProperty('data');
+          expect(response.body.data).toEqual({
+            id: manager.id,
+            name: user.name,
+            email: user.email,
+            expiresAt: null,
+            status: 'ACCEPTED',
+            role,
+          });
+        }
+      },
+    );
+
+    it('should respond with `403` status code when user is not camp manager', async () => {
+      const camp = await CampFactory.create();
+      const manager = await CampManagerFactory.create({
+        camp: { connect: { id: camp.id } },
+        invitation: { create: InvitationFactory.build() },
+      });
+      const accessToken = generateAccessToken(await UserFactory.create());
+
+      await request()
+        .get(`/api/v1/camps/${camp.id}/managers/${manager.id}`)
+        .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expect(403);
+    });
+
+    it('should respond with `401` status code when unauthenticated', async () => {
+      const camp = await CampFactory.create();
+      const manager = await CampManagerFactory.create({
+        camp: { connect: { id: camp.id } },
+        invitation: { create: InvitationFactory.build() },
+      });
+
+      await request()
+        .get(`/api/v1/camps/${camp.id}/managers/${manager.id}`)
+        .send()
+        .expect(401);
+    });
+
+    it('should respond with `404` status code when manager does not exist', async () => {
+      const { camp, accessToken } = await createCampWithManagerAndToken();
+      const managerId = ulid();
+
+      await request()
+        .get(`/api/v1/camps/${camp.id}/managers/${managerId}`)
+        .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expect(404);
     });
   });
 
@@ -129,7 +201,7 @@ describe('/api/v1/camps/:campId/managers', () => {
             id: expect.anything(),
             email: 'invited@email.net',
             name: 'Jhon Doe',
-            status: 'accepted',
+            status: 'ACCEPTED',
             expiresAt: null,
             role: 'COUNSELOR',
           });
@@ -170,7 +242,7 @@ describe('/api/v1/camps/:campId/managers', () => {
         id: expect.anything(),
         email: 'invited@email.net',
         name: 'Jhon Doe',
-        status: 'accepted',
+        status: 'ACCEPTED',
         expiresAt: '2030-01-01T00:00:00.000Z',
         role: 'COUNSELOR',
       });
@@ -205,7 +277,7 @@ describe('/api/v1/camps/:campId/managers', () => {
         email: 'invited@email.net',
         name: null,
         expiresAt: null,
-        status: 'pending',
+        status: 'PENDING',
         role: 'COUNSELOR',
       });
 
@@ -242,7 +314,7 @@ describe('/api/v1/camps/:campId/managers', () => {
         email: 'invited@email.net',
         name: null,
         expiresAt: '2030-01-01T00:00:00.000Z',
-        status: 'pending',
+        status: 'PENDING',
         role: 'COUNSELOR',
       });
 
@@ -407,6 +479,12 @@ describe('/api/v1/camps/:campId/managers', () => {
       async ({ role, expectedStatus }) => {
         const { camp, manager, accessToken } =
           await createCampWithManagerAndToken(role);
+        // A second non-expiring director so this permission-focused case
+        // doesn't also trip the "must keep a director" invariant.
+        await CampManagerFactory.create({
+          camp: { connect: { id: camp.id } },
+          user: { create: UserFactory.build() },
+        });
 
         const response = await request()
           .patch(`/api/v1/camps/${camp.id}/managers/${manager.id}`)
@@ -457,6 +535,12 @@ describe('/api/v1/camps/:campId/managers', () => {
     it('should respond with `200` status code when role is set', async () => {
       const { camp, manager, accessToken } =
         await createCampWithManagerAndToken();
+      // A second non-expiring director so demoting `manager` away from
+      // DIRECTOR doesn't trip the "must keep a director" invariant.
+      await CampManagerFactory.create({
+        camp: { connect: { id: camp.id } },
+        user: { create: UserFactory.build() },
+      });
 
       const { body } = await request()
         .patch(`/api/v1/camps/${camp.id}/managers/${manager.id}`)
@@ -467,6 +551,61 @@ describe('/api/v1/camps/:campId/managers', () => {
         .expect(200);
 
       expect(body).toHaveProperty('data.expiresAt', null);
+    });
+
+    it('should respond with `400` status code when demoting the sole non-expiring director', async () => {
+      const { camp, manager, accessToken } =
+        await createCampWithManagerAndToken();
+
+      await request()
+        .patch(`/api/v1/camps/${camp.id}/managers/${manager.id}`)
+        .send({
+          role: 'VIEWER',
+        })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(400);
+
+      const updated = await prisma.campManager.findUniqueOrThrow({
+        where: { id: manager.id },
+      });
+      expect(updated.role).toBe('DIRECTOR');
+    });
+
+    it('should respond with `400` status code when adding an expiration to the sole non-expiring director', async () => {
+      const { camp, manager, accessToken } =
+        await createCampWithManagerAndToken();
+
+      await request()
+        .patch(`/api/v1/camps/${camp.id}/managers/${manager.id}`)
+        .send({
+          expiresAt: new Date(Date.UTC(2030, 0)).toISOString(),
+        })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(400);
+
+      const updated = await prisma.campManager.findUniqueOrThrow({
+        where: { id: manager.id },
+      });
+      expect(updated.expiresAt).toBeNull();
+    });
+
+    it('should respond with `200` status code when demoting a director while another non-expiring director remains', async () => {
+      const { camp, manager, accessToken } =
+        await createCampWithManagerAndToken();
+      await CampManagerFactory.create({
+        camp: { connect: { id: camp.id } },
+        user: { create: UserFactory.build() },
+      });
+
+      const { body } = await request()
+        .patch(`/api/v1/camps/${camp.id}/managers/${manager.id}`)
+        .send({
+          role: 'VIEWER',
+        })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body).toHaveProperty('data.role', 'VIEWER');
     });
 
     it('should respond with `400` status code when role is null', async () => {
@@ -636,6 +775,43 @@ describe('/api/v1/camps/:campId/managers', () => {
       });
 
       expect(count).toBe(1);
+    });
+
+    it('should respond with `204` status code when a manager without delete permission leaves and another director remains', async () => {
+      const { camp, accessToken, manager } =
+        await createCampWithManagerAndToken('COORDINATOR');
+      // COORDINATOR lacks `camp.managers.delete`; only `campManagerSelf`
+      // should allow this request through.
+      await CampManagerFactory.create({
+        camp: { connect: { id: camp.id } },
+        user: { create: UserFactory.build() },
+      });
+
+      await request()
+        .delete(`/api/v1/camps/${camp.id}/managers/${manager.id}`)
+        .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expect(204);
+
+      const count = await prisma.campManager.count({
+        where: { id: manager.id },
+      });
+      expect(count).toBe(0);
+    });
+
+    it('should respond with `403` status code when a manager without delete permission removes someone else', async () => {
+      const { camp, accessToken } =
+        await createCampWithManagerAndToken('COORDINATOR');
+      const target = await CampManagerFactory.create({
+        camp: { connect: { id: camp.id } },
+        user: { create: UserFactory.build() },
+      });
+
+      await request()
+        .delete(`/api/v1/camps/${camp.id}/managers/${target.id}`)
+        .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expect(403);
     });
 
     it('should respond with `403` status code when user is not camp manager', async () => {

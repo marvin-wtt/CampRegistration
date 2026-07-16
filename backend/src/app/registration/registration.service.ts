@@ -3,13 +3,29 @@ import httpStatus from 'http-status';
 import { Prisma, type Registration } from '#generated/prisma/client.js';
 import { formUtils } from '#utils/form';
 import { BaseService } from '#core/base/BaseService';
-import { RegistrationCampDataHelper } from '#app/registration/registration.helper';
+import {
+  CUSTOM_FILE_FIELD_PREFIX,
+  RegistrationCampDataHelper,
+} from '#app/registration/registration.helper';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service';
 import { CampWithFreePlacesAndFiles } from '#app/camp/camp.types';
 
 @injectable()
 export class RegistrationService extends BaseService {
+  /**
+   * `files` is the read model for custom file slots: the slot assignments
+   * live solely on the File rows (`field = 'custom:<slot>'`) and are projected
+   * into the resource's `files` record on read.
+   */
+  private readonly registrationInclude = {
+    bed: { include: { room: true } },
+    files: {
+      select: { id: true, field: true },
+      where: { field: { startsWith: CUSTOM_FILE_FIELD_PREFIX } },
+    },
+  } satisfies Prisma.RegistrationInclude;
+
   constructor(@inject(FileService) private readonly fileService: FileService) {
     super();
   }
@@ -17,9 +33,7 @@ export class RegistrationService extends BaseService {
   async getRegistrationById(campId: string, id: string) {
     return this.prisma.registration.findFirst({
       where: { id, campId },
-      include: {
-        bed: { include: { room: true } },
-      },
+      include: this.registrationInclude,
     });
   }
 
@@ -30,9 +44,7 @@ export class RegistrationService extends BaseService {
         campId,
         status: { not: 'PENDING' },
       },
-      include: {
-        bed: { include: { room: true } },
-      },
+      include: this.registrationInclude,
     });
   }
 
@@ -40,8 +52,8 @@ export class RegistrationService extends BaseService {
     return this.prisma.registration.findUnique({
       where: { id },
       include: {
+        ...this.registrationInclude,
         camp: { select: { id: true } },
-        bed: { include: { room: true } },
       },
     });
   }
@@ -49,10 +61,14 @@ export class RegistrationService extends BaseService {
   async queryRegistrations(campId: string) {
     return this.prisma.registration.findMany({
       where: { campId },
-      include: {
-        bed: { include: { room: true } },
-      },
+      include: this.registrationInclude,
     });
+  }
+
+  async getOverviewCounts() {
+    const total = await this.prisma.registration.count();
+
+    return { total };
   }
 
   async createRegistration(
@@ -148,36 +164,64 @@ export class RegistrationService extends BaseService {
     data: Pick<
       Prisma.RegistrationUpdateInput,
       'status' | 'data' | 'customData'
-    >,
+    > & {
+      customFiles?: Record<string, string | null>;
+    },
     sessionId: string,
   ) {
-    if (!data.data) {
+    // Status and custom data are plain field writes; only form data and
+    // custom file slots require a transactional file sync.
+    if (!data.data && !data.customFiles) {
       return this.prisma.registration.update({
         where: { id: registrationId },
         data: {
           customData: data.customData,
           status: data.status,
         },
-        include: {
-          bed: { include: { room: true } },
-        },
+        include: this.registrationInclude,
       });
     }
 
-    const form = formUtils(camp);
-    form.updateData(data.data);
-    const computedData = this.createComputedData(form.extractCampData());
+    let computedData: Partial<Prisma.RegistrationCreateInput> = {};
+    let formFileIds: string[] | undefined;
 
-    const fileIds = form.getFileIds();
+    if (data.data) {
+      const form = formUtils(camp);
+      form.updateData(data.data);
+      computedData = this.createComputedData(form.extractCampData());
+      formFileIds = form.getFileIds();
+    }
 
     return this.prisma.$transaction(async (tx) => {
-      const files = await this.fileService.syncFilesForOwner(
-        tx,
-        'registrationId',
-        registrationId,
-        fileIds,
-        sessionId,
-      );
+      if (data.customFiles) {
+        const invalidSlots = await this.fileService.syncFileSlots(
+          tx,
+          'registrationId',
+          registrationId,
+          CUSTOM_FILE_FIELD_PREFIX,
+          data.customFiles,
+          sessionId,
+        );
+
+        if (invalidSlots.length > 0) {
+          throw new ApiError(
+            httpStatus.BAD_REQUEST,
+            `Invalid file for custom file field(s): ${invalidSlots.join(', ')}`,
+          );
+        }
+      }
+
+      const files = formFileIds
+        ? await this.fileService.syncFilesForOwner(
+            tx,
+            'registrationId',
+            registrationId,
+            formFileIds,
+            sessionId,
+            // Custom file slots are managed above and must survive form syncs
+            { excludeFieldPrefix: CUSTOM_FILE_FIELD_PREFIX },
+          )
+        : undefined;
 
       return tx.registration.update({
         where: { id: registrationId },
@@ -188,9 +232,7 @@ export class RegistrationService extends BaseService {
           status: data.status,
           files,
         },
-        include: {
-          bed: { include: { room: true } },
-        },
+        include: this.registrationInclude,
       });
     });
   }

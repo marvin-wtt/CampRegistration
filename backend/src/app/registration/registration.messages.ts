@@ -1,5 +1,6 @@
 import type {
   File,
+  Message,
   MessageTemplate,
   Registration,
 } from '#generated/prisma/client.js';
@@ -20,7 +21,7 @@ import { safeFileName } from '#utils/file';
 import Handlebars from 'handlebars';
 import { MessageTemplateService } from '#app/messageTemplate/message-template.service';
 import logger from '#core/logger';
-import { MessageService } from '#app/message/message.service';
+import { MessageDeliveryService } from '#app/messageDelivery/message-delivery.service';
 import { FileService } from '#app/file/file.service';
 import { addressLikeToString } from '#app/mail/mail.utils';
 import { resolve } from '#core/ioc/container';
@@ -142,7 +143,9 @@ export class RegistrationNotifyMessage extends MailBase<{
     const camp = this.payload.camp;
     const registration = this.payload.registration;
 
-    const url = generateUrl(['management', 'camps', camp.id]);
+    const url = generateUrl(['management', 'camps', camp.id, 'participants'], {
+      registrationId: registration.id,
+    });
 
     return {
       template: 'registration-manager-notification',
@@ -186,14 +189,14 @@ export class RegistrationNotifyMessage extends MailBase<{
 interface RegistrationTemplatePayload {
   registration: Registration;
   camp: CampWithFreePlacesAndFiles;
-  messageTemplate: MessageTemplateWithFiles;
+  message: RenderableMessage;
   email: string;
 }
 
 export class RegistrationTemplateMessage extends RegistrationMessage<{
   registration: Registration;
   camp: CampWithFreePlacesAndFiles;
-  messageTemplate: MessageTemplateWithFiles;
+  message: RenderableMessage;
   email: string;
 }> {
   static readonly type: string = 'registration:template:simple';
@@ -219,7 +222,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
 
   protected subject(): string | Promise<string> {
     let template = translateObject(
-      this.payload.messageTemplate.subject,
+      this.payload.message.subject,
       this.payload.registration.country ?? this.locale(),
     );
 
@@ -244,8 +247,8 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
   }
 
   protected replyTo(): AddressLike | undefined {
-    if (this.payload.messageTemplate.replyTo) {
-      return this.payload.messageTemplate.replyTo;
+    if (this.payload.message.replyTo) {
+      return this.payload.message.replyTo;
     }
     return translateObject(
       this.payload.camp.contactEmail,
@@ -254,7 +257,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
   }
 
   protected priority(): MailPriority {
-    const priority = this.payload.messageTemplate.priority;
+    const priority = this.payload.message.priority;
     if (priority === 'low' || priority === 'normal' || priority === 'high') {
       return priority;
     }
@@ -309,38 +312,54 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
     };
   }
 
-  protected attachments(): MailAttachment[] | Promise<MailAttachment[]> {
-    const files = this.payload.messageTemplate.attachments;
+  protected async attachments(): Promise<MailAttachment[]> {
+    const files = this.payload.message.attachments;
     if (!files.length) {
       return [];
     }
 
     const fileService = resolve(FileService);
 
-    return files.map((file) => ({
-      filename: file.originalName,
-      content: fileService.getFileStream(file),
-      contentType: file.type,
-    }));
+    return Promise.all(
+      files.map(async (file) => ({
+        filename: file.originalName,
+        content: await fileService.getFileStream(file),
+        contentType: file.type,
+      })),
+    );
   }
 
   async build(): Promise<BuiltMail> {
     const mail = await super.build();
 
-    const messageService = resolve(MessageService);
-    await messageService.createMessage(
-      this.payload.registration,
-      this.payload.messageTemplate,
-      {
-        subject: mail.subject,
-        body: mail.html ?? mail.text ?? '',
-        priority: mail.priority,
-        to: mail.to ? addressLikeToString(mail.to) : undefined,
-        cc: mail.cc ? addressLikeToString(mail.cc) : undefined,
-        bcc: mail.bcc ? addressLikeToString(mail.bcc) : undefined,
-        replyTo: mail.replyTo ? addressLikeToString(mail.replyTo) : undefined,
-      },
-    );
+    const message = this.payload.message;
+    const messageDeliveryService = resolve(MessageDeliveryService);
+    try {
+      await messageDeliveryService.createDelivery(
+        this.payload.registration,
+        {
+          kind: message.kind,
+          id: message.id,
+          attachments: message.attachments,
+        },
+        {
+          subject: mail.subject,
+          body: mail.html ?? mail.text ?? '',
+          priority: mail.priority,
+          to: mail.to ? addressLikeToString(mail.to) : undefined,
+          cc: mail.cc ? addressLikeToString(mail.cc) : undefined,
+          bcc: mail.bcc ? addressLikeToString(mail.bcc) : undefined,
+          replyTo: mail.replyTo ? addressLikeToString(mail.replyTo) : undefined,
+        },
+      );
+    } catch (err) {
+      // Recording the delivery is bookkeeping, not a precondition for
+      // sending. Never let a failure here (e.g. the Message was deleted
+      // in the meantime) block the actual mail send.
+      logger.warn(
+        `Failed to record message delivery for registration ${this.payload.registration.id} (message ${message.id}): ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
 
     return mail;
   }
@@ -348,7 +367,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
   protected content(): Content | Promise<Content> {
     const locale = this.payload.registration.country ?? this.locale();
 
-    const template = translateObject(this.payload.messageTemplate.body, locale);
+    const template = translateObject(this.payload.message.body, locale);
 
     const compile = Handlebars.compile(template, {
       knownHelpersOnly: true,
@@ -373,7 +392,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
   protected static prepareForRegistration(
     camp: CampWithFreePlacesAndFiles,
     registration: Registration,
-    messageTemplate: MessageTemplateWithFiles,
+    message: RenderableMessage,
   ): RegistrationTemplatePayload[] | null {
     const emails = Array.from(new Set(registration.emails));
     if (emails.length === 0) {
@@ -384,7 +403,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
     return emails.map((email) => ({
       camp,
       registration,
-      messageTemplate,
+      message,
       email,
     }));
   }
@@ -393,13 +412,9 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
     this: typeof RegistrationTemplateMessage,
     camp: CampWithFreePlacesAndFiles,
     registration: Registration,
-    messageTemplate: MessageTemplateWithFiles,
+    message: RenderableMessage,
   ): Promise<void> {
-    const payloads = this.prepareForRegistration(
-      camp,
-      registration,
-      messageTemplate,
-    );
+    const payloads = this.prepareForRegistration(camp, registration, message);
     if (!payloads) {
       return;
     }
@@ -411,11 +426,11 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
     this: typeof RegistrationTemplateMessage,
     camp: CampWithFreePlacesAndFiles,
     registrations: Registration[],
-    messageTemplate: MessageTemplateWithFiles,
+    message: RenderableMessage,
   ): Promise<void> {
     const payloads = registrations.flatMap(
       (registration) =>
-        this.prepareForRegistration(camp, registration, messageTemplate) ?? [],
+        this.prepareForRegistration(camp, registration, message) ?? [],
     );
 
     await this.enqueueBulk(payloads);
@@ -425,13 +440,9 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
     this: typeof RegistrationTemplateMessage,
     camp: CampWithFreePlacesAndFiles,
     registration: Registration,
-    messageTemplate: MessageTemplateWithFiles,
+    message: RenderableMessage,
   ): Promise<void> {
-    const payloads = this.prepareForRegistration(
-      camp,
-      registration,
-      messageTemplate,
-    );
+    const payloads = this.prepareForRegistration(camp, registration, message);
     if (!payloads) {
       return;
     }
@@ -441,6 +452,50 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
 }
 
 type MessageTemplateWithFiles = MessageTemplate & { attachments: File[] };
+
+// The unified shape the render pipeline consumes, satisfied by both an ad-hoc
+// Message and an automated MessageTemplate.
+export interface RenderableMessage {
+  kind: 'message' | 'template';
+  id: string;
+  subject: string;
+  body: string;
+  priority: string;
+  replyTo: string | null;
+  attachments: File[];
+}
+
+function templateToRenderable(
+  template: MessageTemplateWithFiles,
+): RenderableMessage {
+  return {
+    kind: 'template',
+    id: template.id,
+    subject: template.subject,
+    body: template.body,
+    priority: template.priority,
+    replyTo: template.replyTo,
+    attachments: template.attachments,
+  };
+}
+
+type MessageWithFiles = Message & { attachments: File[] };
+
+// Adapts an ad-hoc Message into the shared RenderableMessage contract, mirroring
+// templateToRenderable so both send paths build the shape in exactly one place.
+export function messageToRenderable(
+  message: MessageWithFiles,
+): RenderableMessage {
+  return {
+    kind: 'message',
+    id: message.id,
+    subject: message.subject,
+    body: message.body,
+    priority: message.priority,
+    replyTo: message.replyTo,
+    attachments: message.attachments,
+  };
+}
 
 async function loadMessageTemplate(
   camp: CampWithFreePlacesAndFiles,
@@ -490,7 +545,7 @@ class RegistrationEventMessage extends RegistrationTemplateMessage {
     const payload = this.prepareForRegistration(
       camp,
       registration,
-      messageTemplate,
+      templateToRenderable(messageTemplate),
     );
 
     if (!payload) {
@@ -517,7 +572,7 @@ class RegistrationEventMessage extends RegistrationTemplateMessage {
     const payload = this.prepareForRegistration(
       camp,
       registration,
-      messageTemplate,
+      templateToRenderable(messageTemplate),
     );
 
     if (!payload) {
@@ -535,10 +590,10 @@ export class RegistrationSubmittedMessage extends RegistrationEventMessage {
   protected async attachments(): Promise<MailAttachment[]> {
     const attachments = await super.attachments();
 
-    return [
+    return Promise.resolve([
       ...attachments,
       await createPdfAttachment(this.payload.camp, this.payload.registration),
-    ];
+    ]);
   }
 }
 
@@ -549,10 +604,10 @@ export class RegistrationConfirmedMessage extends RegistrationEventMessage {
   protected async attachments(): Promise<MailAttachment[]> {
     const attachments = await super.attachments();
 
-    return [
+    return Promise.resolve([
       ...attachments,
       await createPdfAttachment(this.payload.camp, this.payload.registration),
-    ];
+    ]);
   }
 }
 
@@ -577,10 +632,10 @@ export class RegistrationUpdatedMessage extends RegistrationEventMessage {
   protected async attachments(): Promise<MailAttachment[]> {
     const attachments = await super.attachments();
 
-    return [
+    return Promise.resolve([
       ...attachments,
       await createPdfAttachment(this.payload.camp, this.payload.registration),
-    ];
+    ]);
   }
 }
 

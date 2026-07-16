@@ -4,6 +4,7 @@
     @hide="onDialogHide"
   >
     <q-card
+      v-if="registration"
       class="details-card rounded-xl"
       style="width: min(700px, 95vw); max-width: min(900px, 95vw)"
     >
@@ -111,7 +112,7 @@
             </q-list>
 
             <!-- Contact -->
-            <template v-if="registration.computedData.emails?.length">
+            <template v-if="emails?.length">
               <q-separator inset />
               <q-list>
                 <q-item-label header>
@@ -133,7 +134,7 @@
                       {{ t('field.email') }}
                     </q-item-label>
                     <q-item-label
-                      v-for="email in registration.computedData.emails"
+                      v-for="email in emails"
                       :key="email"
                     >
                       <a
@@ -252,10 +253,12 @@
 <script setup lang="ts">
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { computed } from 'vue';
-import type { Registration } from '@camp-registration/common/entities';
-import { useObjectTranslation } from 'src/composables/objectTranslation';
-import RegistrationDialogHeader from 'components/campManagement/table/dialogs/RegistrationDialogHeader.vue';
+import { computed, watch } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useObjectTranslation } from '@/composables/objectTranslation';
+import { formatPersonName } from '@/utils/formatters';
+import { useRegistrationsStore } from '@/stores/registration-store';
+import RegistrationDialogHeader from '@/components/campManagement/table/dialogs/RegistrationDialogHeader.vue';
 
 defineEmits([...useDialogPluginComponent.emits]);
 
@@ -264,24 +267,52 @@ const { t, te, locale } = useI18n();
 const { to } = useObjectTranslation();
 const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent();
 
-const { registration } = defineProps<{
-  registration: Registration;
+const { registrationId } = defineProps<{
+  registrationId: string;
 }>();
 
+const { data: registrations } = storeToRefs(useRegistrationsStore());
+
+// Reactive lookup instead of a static snapshot, so edits made elsewhere
+// (e.g. the table's inline cell editors) are reflected while the dialog is open.
+const registration = computed(() =>
+  registrations.value?.find((r) => r.id === registrationId),
+);
+
+// Close automatically if the registration is deleted while the dialog is open.
+watch(registration, (value) => {
+  if (!value) {
+    dialogRef.value?.hide();
+  }
+});
+
 const personName = computed<string>(() => {
-  const firstName = registration.computedData.firstName?.trim() ?? '';
-  const lastName = registration.computedData.lastName?.trim() ?? '';
+  const firstName = registration.value?.computedData.firstName?.trim() ?? '';
+  const lastName = registration.value?.computedData.lastName?.trim() ?? '';
   const fullName = `${firstName} ${lastName}`.trim();
-  return fullName.length > 0 ? fullName : '?';
+
+  return fullName.length > 0 ? formatPersonName(fullName) : '?';
+});
+
+const emails = computed<string[] | null>(() => {
+  const values = registration.value?.computedData.emails;
+
+  if (!values) {
+    return null;
+  }
+
+  const normalizeEmail = (email: string): string => email.trim().toLowerCase();
+
+  return [...new Set(values.map(normalizeEmail).filter(Boolean))];
 });
 
 const hasAddress = computed<boolean>(() => {
-  const addr = registration.computedData.address;
-  return !!(addr.street || addr.city || addr.zipCode || addr.country);
+  const addr = registration.value?.computedData.address;
+  return !!(addr?.street || addr?.city || addr?.zipCode || addr?.country);
 });
 
 const translatedGender = computed<string>(() => {
-  const g = registration.computedData.gender;
+  const g = registration.value?.computedData.gender;
   if (!g) {
     return '';
   }
@@ -292,7 +323,7 @@ const translatedGender = computed<string>(() => {
 });
 
 const translatedRole = computed<string>(() => {
-  const r = registration.computedData.role;
+  const r = registration.value?.computedData.role;
   if (!r) {
     return '';
   }
@@ -303,7 +334,7 @@ const translatedRole = computed<string>(() => {
 });
 
 const formattedDateOfBirth = computed<string>(() => {
-  const dob = registration.computedData.dateOfBirth;
+  const dob = registration.value?.computedData.dateOfBirth;
   if (!dob) {
     return '';
   }
@@ -317,7 +348,11 @@ const formattedDateOfBirth = computed<string>(() => {
 });
 
 const formattedCreatedAt = computed<string>(() => {
-  const date = new Date(registration.createdAt);
+  const createdAt = registration.value?.createdAt;
+  if (!createdAt) {
+    return '';
+  }
+  const date = new Date(createdAt);
   return date.toLocaleString(locale.value, {
     year: 'numeric',
     month: '2-digit',
@@ -328,12 +363,12 @@ const formattedCreatedAt = computed<string>(() => {
 });
 
 const street = computed<string | null>(
-  () => registration.computedData.address.street,
+  () => registration.value?.computedData.address.street ?? null,
 );
 
 const city = computed<string | null>(() => {
-  const zipCode = registration.computedData.address.zipCode;
-  const city = registration.computedData.address.city;
+  const zipCode = registration.value?.computedData.address.zipCode;
+  const city = registration.value?.computedData.address.city;
 
   if (zipCode == null && city == null) {
     return null;
@@ -343,9 +378,9 @@ const city = computed<string | null>(() => {
 });
 
 const country = computed<string | null>(() => {
-  const country = registration.computedData.address.country;
+  const country = registration.value?.computedData.address.country;
   if (country == null) {
-    return country;
+    return country ?? null;
   }
 
   return te(`country.${country}`) ? t(`country.${country}`) : country;

@@ -9,15 +9,28 @@ const show = z.object({
   }),
 });
 
+const UserSortBySchema = z.enum([
+  'name',
+  'email',
+  'role',
+  'lastSeen',
+  'createdAt',
+  'emailVerified',
+  'locked',
+]);
+
 const index = z.object({
   query: z
     .object({
+      search: z.string(),
       name: z.string(),
-      email: z.email(),
-      role: z.string(),
-      sortBy: z.string(),
-      limit: z.number().int().positive(),
-      page: z.number().int().positive(),
+      email: z.string(),
+      role: RoleSchema,
+      status: z.enum(['active', 'locked', 'unverified']),
+      sortBy: UserSortBySchema,
+      sortType: z.enum(['asc', 'desc']),
+      limit: z.coerce.number().int().positive().max(100),
+      cursor: z.ulid(),
     })
     .partial(),
 });
@@ -56,10 +69,17 @@ const destroy = z.object({
   }),
 });
 
+const resetTwoFactor = z.object({
+  params: z.object({
+    userId: z.ulid(),
+  }),
+});
+
 export default {
   show,
   index,
   store,
   update,
   destroy,
+  resetTwoFactor,
 };

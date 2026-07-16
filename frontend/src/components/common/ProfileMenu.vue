@@ -193,11 +193,11 @@
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
-import CountryIcon from 'components/common/localization/CountryIcon.vue';
+import CountryIcon from '@/components/common/localization/CountryIcon.vue';
 import { useQuasar } from 'quasar';
 import type { Profile } from '@camp-registration/common/entities';
-import { useProfileStore } from 'stores/profile-store';
-import { useAuthStore } from 'stores/auth-store';
+import { useProfileStore } from '@/stores/profile-store';
+import { useAuthStore } from '@/stores/auth-store';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
 const profileStore = useProfileStore();

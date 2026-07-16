@@ -1,8 +1,9 @@
 import { defineStore } from 'pinia';
-import { useAPIService } from 'src/services/APIService';
-import { useServiceHandler } from 'src/composables/serviceHandler';
-import { useAuthBus, useCampBus } from 'src/composables/bus';
-import { useCampDetailsStore } from 'stores/camp-details-store';
+import { useAPIService } from '@/services/APIService';
+import { useServiceHandler } from '@/composables/serviceHandler';
+import { useAuthBus, useCampBus } from '@/composables/bus';
+import { useRealtimeCollection } from '@/composables/realtimeCollection';
+import { useCampDetailsStore } from '@/stores/camp-details-store';
 import type {
   ServiceFileCreateData,
   ServiceFileUpdateData,
@@ -30,6 +31,7 @@ export const useCampFilesStore = defineStore('campFiles', () => {
     checkNotNullWithNotification,
     queryParam,
     lazyFetch,
+    backgroundFetch,
   } = useServiceHandler<ServiceFile[]>('campFiles');
 
   authBus.on('logout', () => {
@@ -38,6 +40,16 @@ export const useCampFilesStore = defineStore('campFiles', () => {
 
   campBus.on('change', () => {
     invalidate();
+  });
+
+  // React to live changes pushed from other clients. List mode (no per-id
+  // metadata endpoint). Note: the async upload-completion (READY) status flip
+  // does not emit — the list refreshes on the next created/updated/deleted
+  // event or page load.
+  useRealtimeCollection<ServiceFile>('file', {
+    data,
+    invalidate,
+    reload: () => fetchData({ background: true }),
   });
 
   // Slots declared in the form via {_file.slotName} that have no uploaded file yet.
@@ -99,12 +111,23 @@ export const useCampFilesStore = defineStore('campFiles', () => {
     });
   });
 
-  async function fetchData() {
+  // Number of files that need attention: one per declared-but-not-uploaded slot,
+  // plus one per missing locale on slots that already have files. A pending slot
+  // has no files at all, so the two sets are disjoint and can be summed.
+  const missingFilesCount = computed<number>(
+    () =>
+      pendingSlots.value.length +
+      slotsWithMissingLocales.value.reduce(
+        (sum, { missingLocales }) => sum + missingLocales.length,
+        0,
+      ),
+  );
+
+  async function fetchData(opts?: { background?: boolean }) {
     const campId = queryParam('campId');
 
-    await lazyFetch(async () => {
-      return await apiService.fetchCampFiles(campId);
-    });
+    const fetcher = () => apiService.fetchCampFiles(campId);
+    await (opts?.background ? backgroundFetch(fetcher) : lazyFetch(fetcher));
   }
 
   async function createEntry(
@@ -187,6 +210,7 @@ export const useCampFilesStore = defineStore('campFiles', () => {
     error,
     pendingSlots,
     slotsWithMissingLocales,
+    missingFilesCount,
     downloadFile,
     getUrl,
     fetchData,

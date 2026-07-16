@@ -1,19 +1,15 @@
 import type {
-  MessageTemplateQuery,
   MessageTemplate,
   MessageTemplateCreateData,
   MessageTemplateUpdateData,
 } from '@camp-registration/common/entities';
-import { api } from 'src/services/api';
+import { api } from '@/services/api';
 
 export function useMessageTemplateService() {
   async function fetchMessageTemplates(
     campId: string,
-    params: MessageTemplateQuery = {},
   ): Promise<MessageTemplate[]> {
-    const response = await api.get(`camps/${campId}/message-templates/`, {
-      params,
-    });
+    const response = await api.get(`camps/${campId}/message-templates/`);
 
     return response?.data?.data;
   }

@@ -8,7 +8,7 @@ import type {
 import { CampManagerRouter } from '#app/campManager/camp-manager.routes';
 import type {
   ManagerPermission,
-  ManagerRole,
+  CampManagerRole,
 } from '@camp-registration/common/permissions';
 import { CampManagerController } from '#app/campManager/camp-manager.controller';
 import { CampManagerService } from '#app/campManager/camp-manager.service';
@@ -30,7 +30,7 @@ export class CampManagerModule implements AppModule {
     router.useRouter('/camps/:campId/managers', new CampManagerRouter());
   }
 
-  registerPermissions(): RoleToPermissions<ManagerRole, ManagerPermission> {
+  registerPermissions(): RoleToPermissions<CampManagerRole, ManagerPermission> {
     return {
       DIRECTOR: [
         'camp.managers.view',

@@ -1,9 +1,9 @@
-import TableComponentRegistry from 'components/campManagement/table/ComponentRegistry';
+import TableComponentRegistry from '@/components/campManagement/table/ComponentRegistry';
 import { computed, type Ref, ref, watch } from 'vue';
-import { ExpressionEvaluator } from 'components/ExpressionEvaluator';
-import { objectValueByPath } from 'src/utils/objectValueByPath';
-import { useRegistrationHelper } from 'src/composables/registrationHelper';
-import { TableCellRenderer } from 'components/campManagement/table/TableCellRenderer';
+import { ExpressionEvaluator } from '@/components/ExpressionEvaluator';
+import { objectValueByPath } from '@/utils/objectValueByPath';
+import { useRegistrationHelper } from '@/composables/registrationHelper';
+import { TableCellRenderer } from '@/components/campManagement/table/TableCellRenderer';
 
 import type { QTable } from 'quasar';
 import type {
@@ -15,11 +15,11 @@ import type {
 import type {
   CTableTemplate,
   CTableColumnTemplate,
-} from 'src/types/CTableTemplate';
+} from '@/types/CTableTemplate';
 import {
   buildLocalTableTemplates,
   type LocalTableTemplate,
-} from 'components/campManagement/table/localTableTemplates';
+} from '@/components/campManagement/table/localTableTemplates';
 
 type Pagination = Exclude<QTable['pagination'], undefined>;
 
@@ -238,7 +238,7 @@ export function useResultTableModel(
     }
 
     // Add actions column at the end
-    if (template.value.actions) {
+    if (template.value.actions !== false) {
       cols.push({
         name: '_action',
         align: 'center',
@@ -257,7 +257,11 @@ export function useResultTableModel(
     const rendererMap = new Map<string, TableCellRenderer>();
 
     columns.value.forEach((column) => {
-      column.renderAs ??= 'default';
+      // Custom (staff-entered) fields are meant to be editable text by
+      // default, even if a column was ever persisted without an explicit
+      // renderAs (e.g. via direct API use) — fall back to the editor rather
+      // than the generic read-only default cell.
+      column.renderAs ??= column.source === 'custom' ? 'editor' : 'default';
       const componentEntry = TableComponentRegistry.load(column.renderAs);
       const renderComponent = componentEntry.component;
 

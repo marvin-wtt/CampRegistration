@@ -4,9 +4,9 @@ import type {
   CampCreateData,
   CampUpdateData,
 } from '@camp-registration/common/entities';
-import { useAPIService } from 'src/services/APIService';
-import { useServiceHandler } from 'src/composables/serviceHandler';
-import { useCampBus } from 'src/composables/bus';
+import { useAPIService } from '@/services/APIService';
+import { useServiceHandler } from '@/composables/serviceHandler';
+import { useCampBus } from '@/composables/bus';
 
 export const useCampsStore = defineStore('camps', () => {
   const apiService = useAPIService();
@@ -32,7 +32,14 @@ export const useCampsStore = defineStore('camps', () => {
   }
 
   async function fetchData() {
-    return lazyFetch(async () => await apiService.fetchCamps());
+    return lazyFetch(
+      async () =>
+        await apiService.fetchCamps({
+          status: 'open',
+          public: true,
+          limit: 50,
+        }),
+    );
   }
 
   async function createEntry(createData: CampCreateData): Promise<Camp> {

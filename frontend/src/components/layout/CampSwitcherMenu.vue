@@ -1,5 +1,5 @@
 <template>
-  <q-list style="min-width: 240px">
+  <q-list class="camp-switcher-menu">
     <q-item-label header>
       {{ t('switch_camp') }}
     </q-item-label>
@@ -14,8 +14,10 @@
       <q-item-section avatar>
         <q-icon name="cabin" />
       </q-item-section>
-      <q-item-section>
-        {{ to(camp.name) }}
+      <q-item-section class="camp-switcher-menu__name">
+        <div class="camp-switcher-menu__label">
+          {{ to(camp.name) }}
+        </div>
       </q-item-section>
     </q-item>
 
@@ -35,8 +37,10 @@
         <q-item-section avatar>
           <q-icon name="cabin" />
         </q-item-section>
-        <q-item-section>
-          {{ to(camp.name) }}
+        <q-item-section class="camp-switcher-menu__name">
+          <div class="camp-switcher-menu__label">
+            {{ to(camp.name) }}
+          </div>
         </q-item-section>
       </q-item>
     </q-expansion-item>
@@ -62,9 +66,9 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
-import { useAssignedCampsStore } from 'stores/assigned-camps-store';
-import { useObjectTranslation } from 'src/composables/objectTranslation';
-import { isCampArchived } from 'src/utils/campPhase';
+import { useAssignedCampsStore } from '@/stores/assigned-camps-store';
+import { useObjectTranslation } from '@/composables/objectTranslation';
+import { isCampArchived } from '@/utils/campPhase';
 import type { Camp } from '@camp-registration/common/entities';
 
 const route = useRoute();
@@ -129,3 +133,20 @@ camps: 'Moje Campy'
 switch_camp: 'Změnit tábor'
 archived: 'Archivované'
 </i18n>
+
+<style scoped>
+.camp-switcher-menu {
+  min-width: min(240px, calc(100vw - 32px));
+  max-width: min(420px, calc(100vw - 32px));
+}
+
+.camp-switcher-menu__name {
+  min-width: 0;
+}
+
+.camp-switcher-menu__label {
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+</style>

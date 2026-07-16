@@ -11,23 +11,19 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue';
-import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
-import type { IconMappingOptions } from 'components/campManagement/table/tableCells/IconMappingOptions';
+import type { TableCellProps } from '@/components/campManagement/table/tableCells/TableCellProps';
+import type { IconMappingOptions } from '@/components/campManagement/table/tableCells/IconMappingOptions';
 
 const { props: cellProps, options } =
   defineProps<TableCellProps<IconMappingOptions>>();
 
-const config = computed<IconMappingOptions>(() => {
-  return options as IconMappingOptions;
-});
-
 const match = computed<{ icon: string | undefined; color: string }>(() => {
   const value = cellProps.value;
-  const mapping = config.value.mappings?.find(
+  const mapping = options?.mappings?.find(
     (m) => String(m.value) === String(value),
   );
 
-  const fallback = config.value.fallback;
+  const fallback = options?.fallback;
   // When render options were never configured, fall back to a placeholder so the
   // column isn't blank. Once a fallback is configured, an empty icon is honored
   // as "show nothing".

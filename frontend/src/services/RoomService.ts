@@ -1,4 +1,4 @@
-import { api } from 'src/services/api';
+import { api } from '@/services/api';
 import type {
   Bed,
   Room,

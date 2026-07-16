@@ -6,7 +6,7 @@
     :style="{ backgroundColor: bgColor }"
   >
     <registration-form
-      v-if="camp && registrationStatus === 'open'"
+      v-if="camp && registrationFormVisible"
       :camp-details="camp"
       :submit-fn="submit"
       :upload-file-fn="uploadFile"
@@ -55,67 +55,67 @@
           rounded
           color="primary"
         />
+
+        <q-btn
+          v-if="canCreateRegistrationAsManager"
+          :label="t('action.open_form_for_manager')"
+          color="primary"
+          icon="lock_open"
+          rounded
+          @click="enableManagerRegistrationOverride()"
+        />
       </div>
     </div>
   </page-state-handler>
 </template>
 
 <script lang="ts" setup>
-import PageStateHandler from 'components/common/PageStateHandler.vue';
+import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useMeta } from 'quasar';
-import { useObjectTranslation } from 'src/composables/objectTranslation';
-import RegistrationForm from 'components/common/RegistrationForm.vue';
-import type { CampDetails } from '@camp-registration/common/entities';
-import { isAPIServiceError, useAPIService } from 'src/services/APIService';
+import { useObjectTranslation } from '@/composables/objectTranslation';
+import RegistrationForm from '@/components/common/RegistrationForm.vue';
+import {
+  type CampDetails,
+  type CampRegistrationStatus,
+} from '@camp-registration/common/entities';
+import { isAPIServiceError, useAPIService } from '@/services/APIService';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { useErrorExtractor } from 'src/composables/serviceHandler';
+import { useErrorExtractor } from '@/composables/serviceHandler';
+import { usePermissions } from '@/composables/permissions';
 
 const { t, d } = useI18n();
 const { to } = useObjectTranslation();
 const api = useAPIService();
 const route = useRoute();
 const { extractErrorText } = useErrorExtractor();
+const { canFor } = usePermissions();
 
+const managerRegistrationOverrideEnabled = ref<boolean>(false);
 const bgColor = ref<string>();
 const camp = ref<CampDetails | undefined>();
 const loading = ref<boolean>(false);
 const error = ref<string | null>(null);
 const knownError = ref<'unavailable' | 'not_found' | null>(null);
-const now = ref(new Date());
 
 let openTimer: ReturnType<typeof setTimeout> | null = null;
 
-watch(
-  () => camp.value?.registrationOpensAt,
-  (opensAt) => {
-    if (openTimer !== null) {
-      clearTimeout(openTimer);
-      openTimer = null;
-    }
-    if (!opensAt) {
-      return;
-    }
-    const delay = new Date(opensAt).getTime() - Date.now();
-    const offset = 1000;
-    if (delay > 0) {
-      openTimer = setTimeout(() => {
-        now.value = new Date();
-      }, delay + offset);
-    }
-  },
-);
+onMounted(async () => {
+  await loadCamp();
+});
 
 onUnmounted(() => {
-  if (openTimer !== null) {
-    clearTimeout(openTimer);
-  }
+  stopRegistrationOpenTimer();
 });
 
-onMounted(async () => {
-  await init();
-});
+watch(
+  [
+    () => camp.value?.registrationOpensAt,
+    () => camp.value?.registrationClosesAt,
+  ],
+  ([openAt, closeAt]) => startRegistrationOpenTimer(openAt, closeAt),
+);
 
 useMeta(() => {
   return {
@@ -123,7 +123,21 @@ useMeta(() => {
   };
 });
 
-async function init() {
+const registrationFormVisible = computed<boolean>(() => {
+  return (
+    registrationStatus.value === 'open' ||
+    managerRegistrationOverrideEnabled.value
+  );
+});
+
+const canCreateRegistrationAsManager = computed<boolean>(() => {
+  return (
+    camp.value !== undefined &&
+    canFor(camp.value.id, 'camp.registrations.create')
+  );
+});
+
+async function loadCamp() {
   try {
     loading.value = true;
 
@@ -160,36 +174,18 @@ async function init() {
   }
 }
 
-type RegistrationStatus =
-  | 'open'
-  | 'not_open'
-  | 'closed'
-  | 'unavailable'
-  | 'not_found';
+type RegistrationStatus = CampRegistrationStatus | 'unavailable' | 'not_found';
 
 const registrationStatus = computed<RegistrationStatus>(() => {
   if (knownError.value) {
     return knownError.value;
   }
+
   if (!camp.value) {
     return 'not_found';
   }
 
-  const { registrationOpensAt, registrationClosesAt } = camp.value;
-
-  if (!registrationOpensAt && !registrationClosesAt) {
-    return 'closed';
-  }
-
-  if (registrationOpensAt && now.value < new Date(registrationOpensAt)) {
-    return 'not_open';
-  }
-
-  if (registrationClosesAt && now.value > new Date(registrationClosesAt)) {
-    return 'closed';
-  }
-
-  return 'open';
+  return camp.value.registrationStatus;
 });
 
 const campContactEmail = computed<string | null>(() => {
@@ -203,7 +199,7 @@ const campContactEmail = computed<string | null>(() => {
 
 const statusIcon = computed<string>(() => {
   switch (registrationStatus.value) {
-    case 'not_open':
+    case 'upcoming':
       return 'schedule';
     case 'closed':
       return 'event_busy';
@@ -216,7 +212,7 @@ const statusIcon = computed<string>(() => {
 
 const statusDate = computed<string | null>(() => {
   if (
-    registrationStatus.value === 'not_open' &&
+    registrationStatus.value === 'upcoming' &&
     camp.value?.registrationOpensAt
   ) {
     return t('date.opens', {
@@ -228,8 +224,8 @@ const statusDate = computed<string | null>(() => {
 
 const statusText = computed<string>(() => {
   switch (registrationStatus.value) {
-    case 'not_open':
-      return t('error.not_open');
+    case 'upcoming':
+      return t('error.upcoming');
     case 'closed':
       return t('error.closed');
     case 'not_found':
@@ -258,58 +254,114 @@ async function uploadFile(file: File): Promise<string> {
 function updateBgColor(color: string | undefined) {
   bgColor.value = color;
 }
+
+function startRegistrationOpenTimer(
+  opensAt: string | null | undefined,
+  closesAt: string | null | undefined,
+) {
+  stopRegistrationOpenTimer();
+
+  const offset = 1000;
+
+  for (const timestamp of [opensAt, closesAt]) {
+    if (!timestamp) {
+      continue;
+    }
+
+    const delay = new Date(timestamp).getTime() - Date.now();
+    // Use negative offset to avoid data race between the status and the timestamp
+    if (delay < -offset) {
+      continue;
+    }
+
+    openTimer = setTimeout(
+      () => {
+        void loadCamp();
+      },
+      Math.max(delay, 0) + offset,
+    );
+
+    return;
+  }
+}
+
+function stopRegistrationOpenTimer() {
+  if (openTimer !== null) {
+    clearTimeout(openTimer);
+    openTimer = null;
+  }
+}
+
+function enableManagerRegistrationOverride() {
+  managerRegistrationOverrideEnabled.value = true;
+}
 </script>
 
 <i18n lang="yaml" locale="en">
+action:
+  open_form_for_manager: 'Open form as manager'
+
 date:
   opens: 'Opens on {date}'
 
 error:
-  not_open: 'Registration for this camp has not opened yet.'
+  upcoming: 'Registration for this camp has not opened yet.'
   closed: 'Registration for this camp is already closed.'
   unavailable: 'This camp is not available.'
   not_found: 'The camp you are looking for could not be found. Please check the URL.'
 </i18n>
 
 <i18n lang="yaml" locale="de">
+action:
+  open_form_for_manager: 'Als Camp-Manager öffnen'
+
 date:
   opens: 'Öffnet am {date}'
 
 error:
-  not_open: 'Die Anmeldung für dieses Camp hat noch nicht begonnen.'
+  upcoming: 'Die Anmeldung für dieses Camp hat noch nicht begonnen.'
   closed: 'Die Anmeldung für dieses Camp ist bereits geschlossen.'
   unavailable: 'Dieses Camp ist nicht verfügbar.'
   not_found: 'Das gesuchte Camp konnte nicht gefunden werden. Bitte überprüfen Sie die URL.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
+action:
+  open_form_for_manager: 'Ouvrir comme gestionnaire'
+
 date:
   opens: 'Ouvre le {date}'
 
 error:
-  not_open: "L'inscription à ce camp n'a pas encore commencé."
+  upcoming: "L'inscription à ce camp n'a pas encore commencé."
   closed: "L'inscription à ce camp est déjà terminée."
   unavailable: "Ce camp n'est pas disponible."
   not_found: "Le camp que vous recherchez est introuvable. Veuillez vérifier l'URL."
 </i18n>
 
 <i18n lang="yaml" locale="pl">
+action:
+  open_form_for_manager: 'Otwórz jako menedżer'
+
 date:
   opens: 'Otwiera się {date}'
 
 error:
-  not_open: 'Rejestracja na ten obóz jeszcze się nie rozpoczęła.'
+  upcoming: 'Rejestracja na ten obóz jeszcze się nie rozpoczęła.'
   closed: 'Rejestracja na ten obóz jest już zamknięta.'
   unavailable: 'Ten obóz jest niedostępny.'
   not_found: 'Nie znaleziono szukanego obozu. Sprawdź adres URL.'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
+action:
+  open_form_for_manager: 'Otevřít jako správce'
+
 date:
   opens: 'Otevírá se {date}'
 
 error:
-  not_open: 'Registrace na tento tábor ještě nezačala.'
+  upcoming: 'Registrace na tento tábor ještě nezačala.'
   closed: 'Registrace na tento tábor je již uzavřena.'
   unavailable: 'Tento tábor není dostupný.'
   not_found: 'Požadovaný tábor nebyl nalezen. Zkontrolujte prosím URL adresu.'

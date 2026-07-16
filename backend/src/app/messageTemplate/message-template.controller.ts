@@ -24,17 +24,12 @@ export class MessageTemplateController extends BaseController {
   }
 
   async index(req: Request, res: Response) {
-    const {
-      params: { campId },
-      query: { hasEvent },
-    } = await req.validate(validator.index);
+    await req.validate(validator.index);
+    const camp = req.modelOrFail('camp');
 
-    let templates =
-      await this.messageTemplateService.queryMessageTemplates(campId);
-
-    if (hasEvent) {
-      templates = templates.filter((template) => !!template.event === hasEvent);
-    }
+    const templates = await this.messageTemplateService.queryMessageTemplates(
+      camp.id,
+    );
 
     res
       .status(httpStatus.OK)
@@ -43,13 +38,13 @@ export class MessageTemplateController extends BaseController {
 
   async store(req: Request, res: Response) {
     const {
-      params: { campId },
       body: { country, event, subject, body, priority, attachmentIds },
     } = await req.validate(validator.store);
+    const camp = req.modelOrFail('camp');
 
     // Duplicate events for the same camp are not allowed
     const existing = await this.messageTemplateService.getMessageTemplateByName(
-      campId,
+      camp.id,
       event,
       country,
     );
@@ -62,7 +57,7 @@ export class MessageTemplateController extends BaseController {
     }
 
     const template = await this.messageTemplateService.createTemplate(
-      campId,
+      camp.id,
       { event, country, subject, body, priority, attachmentIds },
       req.sessionId,
     );
@@ -74,13 +69,13 @@ export class MessageTemplateController extends BaseController {
 
   async update(req: Request, res: Response) {
     const {
-      params: { campId, messageTemplateId },
       body: { subject, body, priority, attachmentIds },
     } = await req.validate(validator.update);
+    const messageTemplate = req.modelOrFail('messageTemplate');
 
     const template = await this.messageTemplateService.updateMessageTemplate(
-      messageTemplateId,
-      campId,
+      messageTemplate.id,
+      messageTemplate.campId,
       { subject, body, priority, attachmentIds },
       req.sessionId,
     );
@@ -89,13 +84,12 @@ export class MessageTemplateController extends BaseController {
   }
 
   async destroy(req: Request, res: Response) {
-    const {
-      params: { messageTemplateId, campId },
-    } = await req.validate(validator.destroy);
+    await req.validate(validator.destroy);
+    const messageTemplate = req.modelOrFail('messageTemplate');
 
     await this.messageTemplateService.deleteMessageTemplateById(
-      messageTemplateId,
-      campId,
+      messageTemplate.id,
+      messageTemplate.campId,
     );
 
     res.sendStatus(httpStatus.NO_CONTENT);

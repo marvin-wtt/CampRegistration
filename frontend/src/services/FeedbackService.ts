@@ -1,4 +1,4 @@
-import { api } from 'src/services/api';
+import { api } from '@/services/api';
 
 export function useFeedbackService() {
   async function sendFeedback(

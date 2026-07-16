@@ -7,6 +7,6 @@ dotenv.config({
   quiet: true,
 });
 
-import { EnvSchema } from './schemas/index.js';
+import { EnvSchema, type Env } from './schemas/index.js';
 
-export const env = validateEnv(EnvSchema);
+export const env: Env = validateEnv(EnvSchema);

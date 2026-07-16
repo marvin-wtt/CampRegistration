@@ -1,7 +1,8 @@
 <template>
   <div
-    class="editor-cell row items-center no-wrap full-width full-height"
-    :class="{ 'cursor-pointer': enabled, 'editor-cell--grid': gridMode }"
+    v-if="enabled"
+    class="editor-cell row items-center no-wrap full-width full-height cursor-pointer"
+    :class="{ 'editor-cell--grid': gridMode }"
     @click="onCellClick()"
   >
     <!-- Displayed value (hidden while editing inline so the input takes the
@@ -21,7 +22,6 @@
 
       <!-- Edit affordance for editable cells. -->
       <q-icon
-        v-if="enabled"
         class="editor-edit-icon"
         name="edit"
         size="18px"
@@ -35,11 +35,13 @@
       v-model="modelValue"
       :disable="loading"
       class="editor-inline-input full-width"
+      type="textarea"
+      autogrow
       autofocus
       dense
       outlined
       hide-bottom-space
-      @keydown.enter="onSave"
+      @keydown.enter.exact.prevent="onSave"
       @keydown.esc="onCancel"
       @focusout="onBlurCommit()"
       @click.stop
@@ -71,7 +73,7 @@
 
     <!-- Popup editor (small screens) -->
     <q-dialog
-      v-if="enabled && !largeScreen"
+      v-if="!largeScreen"
       v-model="editMode"
     >
       <q-card style="min-width: 280px">
@@ -102,13 +104,15 @@
             v-model="modelValue"
             :label
             :disable="loading || !!error"
+            type="textarea"
+            autogrow
             autofocus
             dense
             rounded
             outlined
             clearable
             @clear="clearValue"
-            @keydown.enter="onSave"
+            @keydown.enter.exact.prevent="onSave"
           />
         </q-card-section>
 
@@ -138,20 +142,28 @@
       size="24px"
     />
   </div>
+
+  <default-table-cell
+    v-else
+    :props="cellProps"
+    :camp="camp"
+    :printing="printing"
+    :grid-mode="gridMode"
+  />
 </template>
 
 <script lang="ts" setup>
-import type { TableCellProps } from 'components/campManagement/table/tableCells/TableCellProps';
+import type { TableCellProps } from '@/components/campManagement/table/tableCells/TableCellProps';
 import { computed, ref, watch, watchEffect } from 'vue';
-import { useRegistrationsStore } from 'stores/registration-store';
-import { updateObjectAtPath } from 'src/utils/updateObjectAtPath';
+import { useRegistrationsStore } from '@/stores/registration-store';
+import { updateObjectAtPath } from '@/utils/updateObjectAtPath';
 import { useI18n } from 'vue-i18n';
-import { useObjectTranslation } from 'src/composables/objectTranslation';
-import { usePermissions } from 'src/composables/permissions';
+import { useObjectTranslation } from '@/composables/objectTranslation';
+import { usePermissions } from '@/composables/permissions';
 import { useQuasar } from 'quasar';
-import { formatPersonName } from 'src/utils/formatters';
-import { deepToRaw } from 'src/utils/deepToRaw';
-import DefaultTableCell from 'components/campManagement/table/tableCells/DefaultTableCell.vue';
+import { formatPersonName } from '@/utils/formatters';
+import { deepToRaw } from '@/utils/deepToRaw';
+import DefaultTableCell from '@/components/campManagement/table/tableCells/DefaultTableCell.vue';
 
 const {
   props: cellProps,

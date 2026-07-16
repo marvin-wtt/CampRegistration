@@ -29,6 +29,8 @@
     "./form": "./dist/form/index.js",
     "./entities": "./dist/entities/index.js",
     "./permissions": "./dist/permissions/index.js",
+    "./realtime": "./dist/realtime/index.js",
+    "./settings": "./dist/settings/index.js",
     "./utils": "./dist/utils/index.js"
   },
   "imports": {

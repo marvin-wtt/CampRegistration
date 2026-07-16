@@ -3,6 +3,7 @@
     class="cal-day-event cursor-pointer"
     :class="{ 'cal-day-event--selected': selected }"
     :style="badgeStyles"
+    @click="onClick"
     @dragstart="onDragStart"
     @dragend="isDragging = false"
   >
@@ -17,7 +18,12 @@
     </span>
 
     <calendar-item-popup
+      ref="popupRef"
       :event="event"
+      :editable="editable"
+      :deletable="deletable"
+      :creatable="creatable"
+      no-parent-event
       @edit="emit('edit')"
       @delete="emit('delete')"
       @duplicate="emit('duplicate')"
@@ -29,19 +35,27 @@
 <script lang="ts" setup>
 import type { ProgramEvent } from '@camp-registration/common/entities';
 import { computed, ref, type StyleValue } from 'vue';
-import { useObjectTranslation } from 'src/composables/objectTranslation';
-import CalendarItemPopup from 'components/campManagement/programPlanner/CalendarItemPopup.vue';
+import { useObjectTranslation } from '@/composables/objectTranslation';
+import CalendarItemPopup from '@/components/campManagement/programPlanner/CalendarItemPopup.vue';
 
 const {
   event,
   viewBoth,
   showAllTranslations,
   selected = false,
+  dimmed = false,
+  editable = false,
+  deletable = false,
+  creatable = false,
 } = defineProps<{
   event: ProgramEvent;
   viewBoth?: boolean;
   showAllTranslations?: boolean;
   selected?: boolean;
+  dimmed?: boolean;
+  editable?: boolean;
+  deletable?: boolean;
+  creatable?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -55,6 +69,17 @@ const { to, toAll } = useObjectTranslation();
 
 const isDragging = ref(false);
 const isCopyDrag = ref(false);
+
+const popupRef = ref<InstanceType<typeof CalendarItemPopup> | null>(null);
+
+// Ctrl/cmd-click is the multi-select gesture — don't also pop open the
+// event's detail/actions menu while the user is building a selection.
+function onClick(e: MouseEvent) {
+  if (e.ctrlKey || e.metaKey) {
+    return;
+  }
+  popupRef.value?.show(e);
+}
 
 function onDragStart(e: DragEvent) {
   isCopyDrag.value = e.ctrlKey || e.metaKey;
@@ -83,8 +108,8 @@ function onDragStart(e: DragEvent) {
 const badgeStyles = computed<StyleValue>(() => ({
   backgroundColor: event.color ?? '#2196F3',
   borderLeft: `3px solid rgba(0,0,0,0.2)`,
-  opacity: isDragging.value && !isCopyDrag.value ? 0 : undefined,
-  pointerEvents: isDragging.value ? 'none' : undefined,
+  opacity: (isDragging.value && !isCopyDrag.value) || dimmed ? 0 : undefined,
+  pointerEvents: isDragging.value || dimmed ? 'none' : undefined,
 }));
 </script>
 
@@ -109,6 +134,16 @@ const badgeStyles = computed<StyleValue>(() => ({
     box-shadow:
       0 0 0 2px var(--md3-surface),
       0 0 0 4px var(--md3-primary);
+
+    // `:hover` alone has higher specificity than `--selected` alone (two
+    // simple selectors vs. one), so it would otherwise clobber the ring —
+    // re-assert it here, layered with the hover elevation.
+    &:hover {
+      box-shadow:
+        0 0 0 2px var(--md3-surface),
+        0 0 0 4px var(--md3-primary),
+        0 2px 6px rgba(0, 0, 0, 0.25);
+    }
   }
 
   &__title {

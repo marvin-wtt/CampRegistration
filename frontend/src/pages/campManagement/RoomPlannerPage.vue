@@ -267,16 +267,16 @@
 <script lang="ts" setup>
 import { computed, onMounted, ref } from 'vue';
 import { useQuasar } from 'quasar';
-import { useCampDetailsStore } from 'stores/camp-details-store';
-import { useRegistrationsStore } from 'stores/registration-store';
-import type { Roommate, RoomWithRoommates } from 'src/types/Room';
-import PageStateHandler from 'components/common/PageStateHandler.vue';
-import CountryIcon from 'components/common/localization/CountryIcon.vue';
-import RoomList from 'components/campManagement/roomPlanner/RoomList.vue';
-import RoomListSkeleton from 'components/campManagement/roomPlanner/RoomListSkeleton.vue';
-import RoomOrderDialog from 'components/campManagement/roomPlanner/dialogs/RoomOrderDialog.vue';
-import RoomCreateDialog from 'components/campManagement/roomPlanner/dialogs/RoomCreateDialog.vue';
-import RoomEditDialog from 'components/campManagement/roomPlanner/dialogs/RoomEditDialog.vue';
+import { useCampDetailsStore } from '@/stores/camp-details-store';
+import { useRegistrationsStore } from '@/stores/registration-store';
+import type { Roommate, RoomWithRoommates } from '@/types/Room';
+import PageStateHandler from '@/components/common/PageStateHandler.vue';
+import CountryIcon from '@/components/common/localization/CountryIcon.vue';
+import RoomList from '@/components/campManagement/roomPlanner/RoomList.vue';
+import RoomListSkeleton from '@/components/campManagement/roomPlanner/RoomListSkeleton.vue';
+import RoomOrderDialog from '@/components/campManagement/roomPlanner/dialogs/RoomOrderDialog.vue';
+import RoomCreateDialog from '@/components/campManagement/roomPlanner/dialogs/RoomCreateDialog.vue';
+import RoomEditDialog from '@/components/campManagement/roomPlanner/dialogs/RoomEditDialog.vue';
 import type {
   Room,
   RoomCreateData,
@@ -284,12 +284,15 @@ import type {
   Registration,
 } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
-import { usePermissions } from 'src/composables/permissions';
-import { useServiceHandler } from 'src/composables/serviceHandler';
-import { formatPersonName } from 'src/utils/formatters';
-import { useRegistrationHelper } from 'src/composables/registrationHelper';
-import { useCampStorage } from 'src/composables/campStorage';
-import { useAPIService } from 'src/services/APIService';
+import { usePermissions } from '@/composables/permissions';
+import { useServiceHandler } from '@/composables/serviceHandler';
+import { useRealtimeCollection } from '@/composables/realtimeCollection';
+import { formatPersonName } from '@/utils/formatters';
+import { useRegistrationHelper } from '@/composables/registrationHelper';
+import { useCampSettings } from '@/composables/campSettings';
+import { SETTING_KEYS } from '@camp-registration/common/settings';
+import type { RoomPlannerSettings } from '@camp-registration/common/settings';
+import { useAPIService } from '@/services/APIService';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
 const quasar = useQuasar();
@@ -304,28 +307,38 @@ const addLoading = ref(false);
 
 const isMobile = computed<boolean>(() => quasar.screen.lt.sm);
 
-interface PlannerSettings {
-  skipGenderFilter: boolean;
-  skipRoleFilter: boolean;
-}
-
-const settings = useCampStorage<PlannerSettings>('room-planner-settings', {
-  skipGenderFilter: false,
-  skipRoleFilter: false,
-});
+const { settings } = useCampSettings<RoomPlannerSettings>(
+  SETTING_KEYS.ROOM_PLANNER,
+  {
+    skipGenderFilter: false,
+    skipRoleFilter: false,
+  },
+);
 
 const {
   data,
   isLoading,
   error: roomError,
+  invalidate,
   withProgressNotification,
   withErrorNotification,
   lazyFetch,
+  backgroundFetch,
   queryParam,
   asyncUpdate,
   requestPending,
   checkNotNullWithError,
 } = useServiceHandler<Room[]>();
+
+// React to live room/bed changes pushed from other clients while the planner
+// is open (bed changes arrive as 'room updated' events for the parent room;
+// bulk reorders arrive as one collection-level invalidation).
+useRealtimeCollection<Room>('room', {
+  data,
+  invalidate,
+  reload: () => fetchRooms({ background: true }),
+  fetchOne: (campId, id) => apiService.fetchRoom(campId, id),
+});
 
 onMounted(async () => {
   await registrationsStore.fetchData();
@@ -402,11 +415,12 @@ const availablePeople = computed<Roommate[]>(() => {
     .sort((a, b) => (a.age ?? 999) - (b.age ?? 999));
 });
 
-async function fetchRooms() {
+async function fetchRooms(opts?: { background?: boolean }) {
   const campId = queryParam('campId');
 
   const cid = checkNotNullWithError(campId);
-  await lazyFetch(() => apiService.fetchRooms(cid));
+  const fetcher = () => apiService.fetchRooms(cid);
+  await (opts?.background ? backgroundFetch(fetcher) : lazyFetch(fetcher));
 }
 
 function addRoom() {

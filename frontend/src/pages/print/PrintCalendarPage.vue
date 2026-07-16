@@ -141,7 +141,7 @@
 <script lang="ts" setup>
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { usePrintPage, waitForStableLayout } from 'src/composables/printPage';
+import { usePrintPage, waitForStableLayout } from '@/composables/printPage';
 import type {
   ProgramEvent,
   Translatable,

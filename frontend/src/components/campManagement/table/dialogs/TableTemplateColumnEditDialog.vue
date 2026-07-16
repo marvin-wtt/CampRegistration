@@ -23,6 +23,7 @@
               (val: string | Record<string, string> | undefined) =>
                 !!val || t('field.label.rules.required'),
             ]"
+            hide-bottom-space
             outlined
             rounded
           />
@@ -54,9 +55,9 @@
             :label="t('field.field.label')"
             :hint="t('field.field.hint')"
             :options="fieldFilterOptions"
-            :rules="[(val: string) => !!val || t('field.field.rules.required')]"
             emit-value
             use-input
+            :rules="[(val: string) => !!val || t('field.field.rules.required')]"
             hide-bottom-space
             outlined
             rounded
@@ -87,9 +88,10 @@
             v-model="data.field"
             :label="t('field.field.label')"
             :options="fieldOptions"
-            :rules="[(val: string) => !!val || t('field.field.rules.required')]"
             emit-value
             map-options
+            :rules="[(val: string) => !!val || t('field.field.rules.required')]"
+            hide-bottom-space
             clearable
             outlined
             rounded
@@ -99,18 +101,18 @@
             v-else
             v-model="data.field"
             :label="t('field.field.label')"
-            :rules="[(val: string) => !!val || t('field.field.rules.required')]"
+            :rules="customFieldRules"
+            hide-bottom-space
             outlined
             rounded
           />
 
           <q-select
-            v-if="data.source !== 'custom'"
             v-model="data.renderAs"
             :label="t('field.renderAs.label')"
             :hint="t('field.renderAs.hint')"
             :options="renderAsOptions"
-            clearable
+            :clearable="data.source !== 'custom'"
             emit-value
             map-options
             outlined
@@ -194,10 +196,10 @@
                 :label="t('field.name.label')"
                 :hint="t('field.name.hint')"
                 :rules="[
-                  (val: string) => !!val || t('field.name.rules.required'),
                   (val: string) =>
-                    !/\s/.test(val) || t('field.name.rules.no_spaces'),
+                    !val || !/\s/.test(val) || t('field.name.rules.no_spaces'),
                 ]"
+                clearable
                 outlined
                 rounded
               />
@@ -258,15 +260,16 @@ import {
 import type {
   CampDetails,
   TableColumnTemplate,
+  Registration,
 } from '@camp-registration/common/entities';
-import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
-import { useObjectTranslation } from 'src/composables/objectTranslation';
-import ComponentRegistry from 'components/campManagement/table/ComponentRegistry';
-import ToggleItem from 'components/common/ToggleItem.vue';
-import { extractFormFields } from 'src/utils/surveyJS';
-import type { PartialBy } from 'src/types';
-import { deepToRaw } from 'src/utils/deepToRaw';
-import { FormSelectCache } from 'components/campManagement/table/tableCells/FormSelectCache';
+import TranslatedInput from '@/components/common/inputs/TranslatedInput.vue';
+import { useObjectTranslation } from '@/composables/objectTranslation';
+import ComponentRegistry from '@/components/campManagement/table/ComponentRegistry';
+import ToggleItem from '@/components/common/ToggleItem.vue';
+import { extractFormFields } from '@/utils/surveyJS';
+import type { PartialBy } from '@/types';
+import { deepToRaw } from '@/utils/deepToRaw';
+import { FormSelectCache } from '@/components/campManagement/table/tableCells/FormSelectCache';
 
 const { camp, column } = defineProps<{
   column: TableColumnTemplate;
@@ -293,6 +296,23 @@ const FIELD_MAP: Record<PrefixedSource, string> = {
   custom: 'customData',
 } as const;
 
+// Custom file columns read from the registration's file-slot record instead
+// of customData.
+const CUSTOM_FILES_FIELD_PREFIX = 'customFiles';
+
+// Registration metadata columns. Unlike the other sources these are not
+// prefixed — they sit at the top level of the row — so they are matched by
+// exact field name both when building the picker and when guessing the source
+// of an existing column.
+const META_FIELDS = [
+  'status',
+  'room',
+  'createdAt',
+] as const satisfies readonly (keyof Omit<
+  Registration,
+  'data' | 'computedData' | 'customData' | 'customFiles'
+>)[];
+
 const data = reactive<PartialBy<TableColumnTemplate, 'name'>>({
   ...structuredClone(deepToRaw(column)),
   source: getFieldSource(),
@@ -300,15 +320,27 @@ const data = reactive<PartialBy<TableColumnTemplate, 'name'>>({
 });
 
 function getFieldSource(): TableColumnTemplate['source'] {
+  if (column.field.startsWith(`${CUSTOM_FILES_FIELD_PREFIX}.`)) {
+    return 'custom';
+  }
+
   const entry = (Object.entries(FIELD_MAP) as [PrefixedSource, string][]).find(
     ([, prefix]) => column.field.startsWith(`${prefix}.`),
   );
-  return entry?.[0] ?? column.source;
+  if (entry) {
+    return entry[0];
+  }
+
+  if ((META_FIELDS as readonly string[]).includes(column.field)) {
+    return 'meta';
+  }
+
+  return column.source;
 }
 
 function removeFieldPrefix(): string {
-  const prefix = Object.values(FIELD_MAP).find((p) =>
-    column.field.startsWith(`${p}.`),
+  const prefix = [...Object.values(FIELD_MAP), CUSTOM_FILES_FIELD_PREFIX].find(
+    (p) => column.field.startsWith(`${p}.`),
   );
   return prefix ? column.field.slice(`${prefix}.`.length) : column.field;
 }
@@ -391,6 +423,19 @@ const alignOptions = computed<QSelectOption[]>(() => {
   ];
 });
 
+const customFieldRules = computed(() => {
+  const rules = [(val: string) => !!val || t('field.field.rules.required')];
+
+  // File slot names must stay addressable as flat `files.<slot>` paths.
+  if (data.renderAs === 'file_editor') {
+    rules.push(
+      (val: string) => !val.includes('.') || t('field.field.rules.no_dots'),
+    );
+  }
+
+  return rules;
+});
+
 const customOptionsComponent = computed<Component | undefined>(() => {
   if (!data.renderAs) {
     return undefined;
@@ -400,6 +445,14 @@ const customOptionsComponent = computed<Component | undefined>(() => {
 });
 
 const renderAsOptions = computed<QSelectOption[]>(() => {
+  // Custom fields are staff-entered: plain text or an uploaded file.
+  if (data.source === 'custom') {
+    return [
+      { label: t('cellType.text'), value: 'editor' },
+      { label: t('cellType.file'), value: 'file_editor' },
+    ];
+  }
+
   return Array.from(ComponentRegistry.all().entries(), ([key, value]) => {
     const options = value.options;
     if (options.internal) {
@@ -467,11 +520,10 @@ const fieldOptions = computed<QSelectOption[]>(() => {
   }
 
   if (data.source === 'meta') {
-    return [
-      { label: t('field.field.options.status'), value: 'status' },
-      { label: t('field.field.options.room'), value: 'room' },
-      { label: t('field.field.options.createdAt'), value: 'createdAt' },
-    ].sort((a, b) => a.label.localeCompare(b.label));
+    return META_FIELDS.map((value) => ({
+      label: t(`field.field.options.${value}`),
+      value,
+    })).sort((a, b) => a.label.localeCompare(b.label));
   }
 
   return extractFormFields(camp.form);
@@ -507,7 +559,10 @@ function updateFieldPath(): string {
     return data.field;
   }
 
-  const prefix = FIELD_MAP[data.source];
+  const prefix =
+    data.source === 'custom' && data.renderAs === 'file_editor'
+      ? CUSTOM_FILES_FIELD_PREFIX
+      : FIELD_MAP[data.source];
   if (
     !prefix ||
     data.field.length === 0 ||
@@ -532,7 +587,7 @@ function onOKClick(): void {
 <style scoped></style>
 
 <i18n lang="yaml" locale="en">
-title: 'Edit Template Column'
+title: 'Edit Column'
 
 action:
   ok: 'Ok'
@@ -547,7 +602,6 @@ field:
     label: 'Name'
     hint: 'A unique name to identify the column (some_name)'
     rules:
-      required: 'Name must not be empty'
       no_spaces: 'Use underscores instead of spaces'
   label:
     label: 'Label'
@@ -574,6 +628,7 @@ field:
     hint: 'Name of corresponding form field'
     rules:
       required: 'Field must not be empty'
+      no_dots: 'File field names must not contain dots'
     options:
       createdAt: 'Creation date'
       room: 'Room'
@@ -644,7 +699,7 @@ cellType:
 </i18n>
 
 <i18n lang="yaml" locale="de">
-title: 'Template-Spalte bearbeiten'
+title: 'Spalte bearbeiten'
 
 action:
   ok: 'Ok'
@@ -659,7 +714,6 @@ field:
     label: 'Name'
     hint: 'Ein eindeutiger Name zur Identifizierung (some_name)'
     rules:
-      required: 'Name darf nicht leer sein'
       no_spaces: 'Unterstriche statt Leerzeichen verwenden'
   label:
     label: 'Label'
@@ -686,6 +740,7 @@ field:
     hint: 'Name des entsprechenden Formularfelds'
     rules:
       required: 'Feld darf nicht leer sein'
+      no_dots: 'Dateifeld-Namen dürfen keine Punkte enthalten'
     options:
       createdAt: 'Erstellungsdatum'
       room: 'Raum'
@@ -756,7 +811,7 @@ cellType:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-title: 'Modifier la colonne de modèle'
+title: 'Modifier la colonne'
 
 action:
   ok: 'Ok'
@@ -771,7 +826,6 @@ field:
     label: 'Nom'
     hint: 'Un nom unique pour identifier la colonne (some_name)'
     rules:
-      required: 'Le nom ne doit pas être vide'
       no_spaces: "Utiliser des traits de soulignement au lieu d'espaces"
   label:
     label: 'Libellé'
@@ -798,6 +852,7 @@ field:
     hint: 'Nom du champ de formulaire correspondant'
     rules:
       required: 'Le champ ne doit pas être vide'
+      no_dots: 'Les noms de champs de fichier ne doivent pas contenir de points'
     options:
       createdAt: 'Date de création'
       room: 'Salle'
@@ -868,7 +923,7 @@ cellType:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-title: 'Edytuj kolumnę szablonu'
+title: 'Edytuj kolumnę'
 
 action:
   ok: 'OK'
@@ -883,7 +938,6 @@ field:
     label: 'Nazwa'
     hint: 'Unikalna nazwa identyfikacyjna (np. some_name)'
     rules:
-      required: 'Nazwa nie może być pusta'
       no_spaces: 'Użyj podkreśleń zamiast spacji'
   label:
     label: 'Etykieta'
@@ -910,6 +964,7 @@ field:
     hint: 'Nazwa odpowiedniego pola formularza'
     rules:
       required: 'Pole nie może być puste'
+      no_dots: 'Nazwy pól plików nie mogą zawierać kropek'
     options:
       createdAt: 'Data utworzenia'
       room: 'Pokój'
@@ -980,7 +1035,7 @@ cellType:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-title: 'Upravit sloupec šablony'
+title: 'Upravit sloupec'
 
 action:
   ok: 'OK'
@@ -995,7 +1050,6 @@ field:
     label: 'Název'
     hint: 'Jedinečný název pro identifikaci (např. some_name)'
     rules:
-      required: 'Název nesmí být prázdný'
       no_spaces: 'Použijte podtržítka místo mezer'
   label:
     label: 'Popisek'
@@ -1022,6 +1076,7 @@ field:
     hint: 'Název odpovídajícího pole ve formuláři'
     rules:
       required: 'Pole nesmí být prázdné'
+      no_dots: 'Názvy souborových polí nesmí obsahovat tečky'
     options:
       createdAt: 'Datum vytvoření'
       room: 'Pokoj'

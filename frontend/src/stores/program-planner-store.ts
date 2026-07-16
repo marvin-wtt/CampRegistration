@@ -5,9 +5,11 @@ import type {
   ProgramEventUpdateData,
 } from '@camp-registration/common/entities';
 import { useRoute } from 'vue-router';
-import { useAPIService } from 'src/services/APIService';
-import { useServiceHandler } from 'src/composables/serviceHandler';
-import { useAuthBus, useCampBus } from 'src/composables/bus';
+import { useAPIService } from '@/services/APIService';
+import { useServiceHandler } from '@/composables/serviceHandler';
+import { useAuthBus, useCampBus } from '@/composables/bus';
+import { useRealtimeCollection } from '@/composables/realtimeCollection';
+import { createUuid } from '@/utils/uuid';
 
 export const useProgramPlannerStore = defineStore('program-planner', () => {
   const route = useRoute();
@@ -22,6 +24,7 @@ export const useProgramPlannerStore = defineStore('program-planner', () => {
     invalidate,
     withErrorNotification,
     lazyFetch,
+    backgroundFetch,
     checkNotNullWithError,
   } = useServiceHandler<ProgramEvent[]>('programPlanner');
 
@@ -33,18 +36,38 @@ export const useProgramPlannerStore = defineStore('program-planner', () => {
     invalidate();
   });
 
-  async function fetchData(campId?: string): Promise<void> {
+  // React to live changes pushed from other clients.
+  useRealtimeCollection<ProgramEvent>('program_event', {
+    data,
+    invalidate,
+    reload: () => fetchData(undefined, { background: true }),
+    fetchOne: (campId, id) => apiService.fetchProgramEvent(campId, id),
+  });
+
+  // Replace the event with this id, or append it if not present.
+  function upsertEntry(event: ProgramEvent) {
+    const list = data.value ?? [];
+    data.value = list.some((e) => e.id === event.id)
+      ? list.map((e) => (e.id === event.id ? event : e))
+      : [...list, event];
+  }
+
+  async function fetchData(
+    campId?: string,
+    opts?: { background?: boolean },
+  ): Promise<void> {
     const cid = checkNotNullWithError(
       campId ?? (route.params.campId as string),
     );
-    await lazyFetch(async () => await apiService.fetchProgramEvents(cid));
+    const fetcher = () => apiService.fetchProgramEvents(cid);
+    await (opts?.background ? backgroundFetch(fetcher) : lazyFetch(fetcher));
   }
 
   async function createEntry(event: ProgramEventCreateData) {
     const campId = route.params.campId as string;
     checkNotNullWithError(campId);
 
-    const tmpId = `#${crypto.randomUUID()}`;
+    const tmpId = `#${createUuid()}`;
 
     // Optimistic update: add event immediately so it appears in the calendar
     const tmpEvent: ProgramEvent = {
@@ -65,10 +88,11 @@ export const useProgramPlannerStore = defineStore('program-planner', () => {
     );
 
     if (result) {
-      // Replace temporary event with server response
-      data.value = data.value?.map((value) =>
-        value.id === tmpId ? result : value,
-      );
+      // Drop the optimistic placeholder and upsert the server response. Using
+      // an id-keyed upsert (rather than a plain replace) dedupes the case where
+      // the realtime "created" echo already inserted the server event.
+      data.value = (data.value ?? []).filter((value) => value.id !== tmpId);
+      upsertEntry(result);
     } else {
       // Error occurred - remove optimistic event
       data.value = data.value?.filter((value) => value.id !== tmpId);

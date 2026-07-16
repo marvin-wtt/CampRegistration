@@ -3,10 +3,10 @@ import {
   type QNotifyUpdateOptions,
   useQuasar,
 } from 'quasar';
-import { hasMessage } from 'src/composables/errorChecker';
+import { hasMessage } from '@/composables/errorChecker';
 import { useI18n } from 'vue-i18n';
 import { computed, ref } from 'vue';
-import { isAPIServiceError } from 'src/services/APIService';
+import { isAPIServiceError } from '@/services/APIService';
 import { useRoute } from 'vue-router';
 
 export interface ProgressOptions {
@@ -34,6 +34,10 @@ export function useServiceHandler<T>(storeName?: string) {
   const error = ref<string | null>(null);
   const needsUpdate = ref<boolean>(true);
   const pendingRequests = ref<number>(0);
+  // Bumped on every fetch; lets a resolving promise detect it's been
+  // superseded by a newer fetch (e.g. the user switched camps again before
+  // the previous request settled) and skip applying its now-stale result.
+  let requestToken = 0;
 
   const requestPending = computed<boolean>(() => {
     return pendingRequests.value > 0;
@@ -42,8 +46,11 @@ export function useServiceHandler<T>(storeName?: string) {
   async function forceFetch(
     fn: () => Promise<T> | Promise<undefined>,
   ): Promise<void> {
-    await errorOnFailure(fn);
-    needsUpdate.value = false;
+    const token = ++requestToken;
+    await errorOnFailure(fn, token);
+    if (token === requestToken) {
+      needsUpdate.value = false;
+    }
   }
 
   async function asyncUpdate(fn: () => Promise<unknown>) {
@@ -53,17 +60,27 @@ export function useServiceHandler<T>(storeName?: string) {
 
   async function errorOnFailure(
     fn: () => Promise<T> | Promise<undefined>,
+    token: number = ++requestToken,
   ): Promise<void> {
     isLoading.value = true;
     error.value = null;
     data.value = undefined;
     try {
-      data.value = await fn();
+      const result = await fn();
+      if (token !== requestToken) {
+        return;
+      }
+      data.value = result;
       needsUpdate.value = false;
     } catch (err: unknown) {
+      if (token !== requestToken) {
+        return;
+      }
       error.value = extractErrorText(err);
     } finally {
-      isLoading.value = false;
+      if (token === requestToken) {
+        isLoading.value = false;
+      }
     }
   }
 
@@ -75,6 +92,28 @@ export function useServiceHandler<T>(storeName?: string) {
     }
 
     await forceFetch(fn);
+  }
+
+  async function backgroundFetch(
+    fn: () => Promise<T> | Promise<undefined>,
+  ): Promise<void> {
+    const token = ++requestToken;
+    await asyncUpdate(async () => {
+      try {
+        const result = await fn();
+        if (token !== requestToken) {
+          return;
+        }
+        data.value = result;
+        error.value = null;
+        needsUpdate.value = false;
+      } catch {
+        if (token !== requestToken) {
+          return;
+        }
+        needsUpdate.value = true;
+      }
+    });
   }
 
   function checkNotNullWithError(
@@ -93,6 +132,7 @@ export function useServiceHandler<T>(storeName?: string) {
   }
 
   function reset() {
+    requestToken++;
     data.value = undefined;
     isLoading.value = false;
     error.value = null;
@@ -119,6 +159,7 @@ export function useServiceHandler<T>(storeName?: string) {
     errorOnFailure,
     forceFetch,
     lazyFetch,
+    backgroundFetch,
     asyncUpdate,
     checkNotNullWithError,
     queryParam,

@@ -107,10 +107,10 @@
 import { computed, ref } from 'vue';
 import { useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import CountryIcon from 'components/common/localization/CountryIcon.vue';
-import BottomSheet from 'components/BottomSheet.vue';
-import BedPickerList from 'components/campManagement/roomPlanner/BedPickerList.vue';
-import type { Roommate } from 'src/types/Room';
+import CountryIcon from '@/components/common/localization/CountryIcon.vue';
+import BottomSheet from '@/components/BottomSheet.vue';
+import BedPickerList from '@/components/campManagement/roomPlanner/BedPickerList.vue';
+import type { Roommate } from '@/types/Room';
 
 const quasar = useQuasar();
 const { t } = useI18n();

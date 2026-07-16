@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia';
 import type { Camp } from '@camp-registration/common/entities';
-import { useAPIService } from 'src/services/APIService';
-import { useServiceHandler } from 'src/composables/serviceHandler';
-import { useAuthBus, useCampBus } from 'src/composables/bus';
+import { useAPIService } from '@/services/APIService';
+import { useServiceHandler } from '@/composables/serviceHandler';
+import { useAuthBus, useCampBus } from '@/composables/bus';
 
 export const useAssignedCampsStore = defineStore('assignedCamps', () => {
   const apiService = useAPIService();
@@ -39,5 +39,6 @@ export const useAssignedCampsStore = defineStore('assignedCamps', () => {
     isLoading,
     error,
     fetchData,
+    reload,
   };
 });

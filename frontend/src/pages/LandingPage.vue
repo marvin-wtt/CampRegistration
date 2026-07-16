@@ -35,7 +35,7 @@
               icon-right="arrow_forward"
               size="16px"
               no-caps
-              data-cy="landing-organizer-cta"
+              data-test="landing-organizer-cta"
             />
             <m-btn
               v-if="!user"
@@ -44,7 +44,7 @@
               text
               size="16px"
               no-caps
-              data-cy="landing-login"
+              data-test="landing-login"
             />
           </div>
         </article>
@@ -65,7 +65,7 @@
               tertiary
               icon-right="arrow_forward"
               no-caps
-              data-cy="landing-participant-cta"
+              data-test="landing-participant-cta"
             />
           </div>
         </article>
@@ -166,7 +166,7 @@
             icon="code"
             icon-right="open_in_new"
             no-caps
-            data-cy="landing-github"
+            data-test="landing-github"
           />
         </div>
 
@@ -201,7 +201,7 @@
           size="16px"
           class="cta__btn"
           no-caps
-          data-cy="landing-bottom-cta"
+          data-test="landing-bottom-cta"
         />
         <p class="cta__hint">
           {{ t('cta.participant_hint') }}
@@ -219,7 +219,7 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useMeta } from 'quasar';
 import { storeToRefs } from 'pinia';
-import { useProfileStore } from 'stores/profile-store';
+import { useProfileStore } from '@/stores/profile-store';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
 const { t } = useI18n();

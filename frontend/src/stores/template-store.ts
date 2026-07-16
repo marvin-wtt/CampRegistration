@@ -5,9 +5,10 @@ import type {
   TableTemplateUpdateData,
 } from '@camp-registration/common/entities';
 import { useRoute } from 'vue-router';
-import { useAPIService } from 'src/services/APIService';
-import { useServiceHandler } from 'src/composables/serviceHandler';
-import { useAuthBus, useCampBus } from 'src/composables/bus';
+import { useAPIService } from '@/services/APIService';
+import { useServiceHandler } from '@/composables/serviceHandler';
+import { useAuthBus, useCampBus } from '@/composables/bus';
+import { useRealtimeCollection } from '@/composables/realtimeCollection';
 
 export const useTemplateStore = defineStore('templates', () => {
   const route = useRoute();
@@ -23,6 +24,7 @@ export const useTemplateStore = defineStore('templates', () => {
     withProgressNotification,
     withMultiProgressNotification,
     lazyFetch,
+    backgroundFetch,
     checkNotNullWithError,
     checkNotNullWithNotification,
   } = useServiceHandler<TableTemplate[]>('template');
@@ -35,21 +37,31 @@ export const useTemplateStore = defineStore('templates', () => {
     invalidate();
   });
 
+  // React to live changes pushed from other clients. List mode: a template
+  // sync fans out many create/update/delete calls, so remote clients coalesce
+  // the resulting event burst into one debounced list refetch.
+  useRealtimeCollection<TableTemplate>('table_template', {
+    data,
+    invalidate,
+    reload: () => fetchData(undefined, { background: true }),
+  });
+
   async function forceFetchData(id?: string) {
     invalidate();
     return fetchData(id);
   }
 
-  async function fetchData(campId?: string) {
+  async function fetchData(campId?: string, opts?: { background?: boolean }) {
     campId = campId ?? (route.params.campId as string | undefined);
 
     const cid = checkNotNullWithError(campId);
-    await lazyFetch(async () => {
+    const fetcher = async () => {
       const data = await apiService.fetchTableTemplates(cid);
       return data.sort((a, b) => {
         return a.order - b.order;
       });
-    });
+    };
+    await (opts?.background ? backgroundFetch(fetcher) : lazyFetch(fetcher));
   }
 
   async function updateCollection(templates: TableTemplate[]) {

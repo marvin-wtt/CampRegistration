@@ -3,89 +3,131 @@
     ref="formRef"
     class="contact-form"
     :class="{ 'contact-form--standalone': standalone }"
+    data-test="contact-form"
     @submit="send()"
     @reset="reset()"
   >
     <div class="composer">
-      <div
-        v-if="standalone"
-        class="composer-heading"
-      >
-        <div>
-          <div class="text-h5 text-weight-medium">
-            {{ t('heading.title') }}
-          </div>
-          <div class="text-body2 text-grey-6">
-            {{ t('heading.caption') }}
-          </div>
-        </div>
-        <q-chip
-          v-if="recipientCount"
-          dense
-          color="primary"
-          text-color="white"
-          icon="group"
-        >
-          {{ recipientCount }}
-        </q-chip>
-      </div>
-
       <div class="composer-fields">
-        <contact-select
-          v-model="to"
-          :label="t('input.to.label')"
-          :registrations
-          :rules="[
-            (val?: Contact[]) =>
-              (!!val && val.length > 0) || t('input.to.rule.required'),
-          ]"
-          hide-bottom-space
-          :disable="sendInProgress"
-          outlined
-          rounded
-          dense
-        />
-
-        <div class="composer-meta">
-          <q-input
-            v-model="replyTo"
-            type="email"
-            :label="t('input.replyTo.label')"
+        <div data-test="to">
+          <contact-select
+            v-model="to"
+            :label="t('input.to.label')"
+            :registrations
             :rules="[
-              (val?: string) => !!val || t('input.replyTo.required'),
-              (val?: string) =>
-                !val ||
-                /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) ||
-                t('input.replyTo.rule.invalid'),
+              (val?: Contact[]) =>
+                (!!val && val.length > 0) || t('input.to.rule.required'),
             ]"
             hide-bottom-space
             :disable="sendInProgress"
             outlined
             rounded
             dense
-          >
-            <template
-              v-if="suggestedReplyTo && suggestedReplyTo !== replyTo"
-              #append
+            @blur="onToBlur"
+          />
+        </div>
+
+        <div class="composer-meta">
+          <div data-test="reply-to">
+            <q-input
+              v-model="replyTo"
+              type="email"
+              :label="t('input.replyTo.label')"
+              :rules="[
+                (val?: string) => !!val || t('input.replyTo.required'),
+                (val?: string) =>
+                  !val ||
+                  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) ||
+                  t('input.replyTo.rule.invalid'),
+              ]"
+              hide-bottom-space
+              :disable="sendInProgress"
+              outlined
+              rounded
+              dense
             >
-              <q-btn
-                icon="autorenew"
-                size="xs"
-                flat
-                round
-                :disable="sendInProgress"
-                @click.stop="replyTo = suggestedReplyTo"
+              <template
+                v-if="
+                  suggestedReplyTo &&
+                  suggestedReplyTo !== replyTo &&
+                  to.length > 0
+                "
+                #append
               >
-                <q-tooltip>
-                  {{
-                    t('input.replyTo.suggestion', { email: suggestedReplyTo })
-                  }}
-                </q-tooltip>
-              </q-btn>
-            </template>
-          </q-input>
+                <q-btn
+                  icon="autorenew"
+                  size="xs"
+                  flat
+                  round
+                  :disable="sendInProgress"
+                  @click.stop="replyTo = suggestedReplyTo"
+                >
+                  <q-tooltip>
+                    {{
+                      t('input.replyTo.suggestion', { email: suggestedReplyTo })
+                    }}
+                  </q-tooltip>
+                </q-btn>
+              </template>
+            </q-input>
+          </div>
+
+          <q-btn
+            v-if="quasar.screen.lt.sm"
+            :icon="priorityIcon"
+            :color="priorityColor"
+            :aria-label="priorityMenuLabel"
+            :disable="sendInProgress"
+            size="sm"
+            round
+            outline
+            class="priority-menu-button"
+          >
+            <q-tooltip>
+              {{ priorityMenuLabel }}
+            </q-tooltip>
+
+            <q-menu
+              anchor="bottom right"
+              self="top right"
+              auto-close
+            >
+              <q-list
+                dense
+                class="priority-menu"
+              >
+                <q-item
+                  v-for="option in priorityOptions"
+                  :key="option.value"
+                  clickable
+                  :active="option.value === priority"
+                  @click="setPriority(option.value)"
+                >
+                  <q-item-section avatar>
+                    <q-icon
+                      :name="priorityOptionIcon(option.value)"
+                      :color="priorityOptionColor(option.value)"
+                    />
+                  </q-item-section>
+                  <q-item-section>
+                    {{ option.label }}
+                  </q-item-section>
+                  <q-item-section
+                    v-if="option.value === priority"
+                    side
+                  >
+                    <q-icon
+                      name="check"
+                      size="xs"
+                    />
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-menu>
+          </q-btn>
 
           <q-select
+            v-if="!quasar.screen.lt.sm"
             v-model="priority"
             :label="t('input.priority')"
             :options="priorityOptions"
@@ -117,6 +159,7 @@
           ]"
           hide-bottom-space
           :disable="sendInProgress"
+          data-test="subject"
           rounded
           outlined
           single-line
@@ -137,6 +180,7 @@
           ]"
           hide-bottom-space
           :disable="sendInProgress"
+          data-test="message"
           class="message-editor"
           rounded
           outlined
@@ -167,9 +211,11 @@
         <q-btn
           :label="sendLabel"
           :loading="sendInProgress"
+          :disable="!can('camp.messages.create')"
           type="submit"
           icon-right="send"
           color="primary"
+          data-test="send"
           rounded
           unelevated
           no-caps
@@ -181,41 +227,47 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, nextTick, onMounted, ref } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import ContactSelect from 'components/campManagement/contact/ContactSelect.vue';
-import type { Registration } from '@camp-registration/common/entities';
-import type { Contact } from 'components/campManagement/contact/Contact';
+import ContactSelect from '@/components/campManagement/contact/ContactSelect.vue';
+import type { Message, Registration } from '@camp-registration/common/entities';
+import type {
+  Contact,
+  ContactDraft,
+} from '@/components/campManagement/contact/Contact';
 import { QForm, type QSelectOption, useQuasar } from 'quasar';
 import { type QRejectedEntry } from 'quasar';
-import { useCampDetailsStore } from 'stores/camp-details-store';
-import RegistrationEmailEditor from 'components/campManagement/contact/RegistrationEmailEditor.vue';
-import { useServiceNotifications } from 'src/composables/serviceHandler';
-import { useAPIService } from 'src/services/APIService';
+import { useCampDetailsStore } from '@/stores/camp-details-store';
+import RegistrationEmailEditor from '@/components/campManagement/contact/RegistrationEmailEditor.vue';
+import { useServiceNotifications } from '@/composables/serviceHandler';
+import { useAPIService } from '@/services/APIService';
 import FileInput, {
   type FileInputModel,
-} from 'components/common/inputs/FileInput.vue';
+} from '@/components/common/inputs/FileInput.vue';
+import { usePermissions } from '@/composables/permissions';
 
 const {
   registrations,
   initialContacts,
+  draft = null,
   standalone = false,
 } = defineProps<{
   registrations: Registration[];
   initialContacts?: Contact[];
+  draft?: ContactDraft | null;
   standalone?: boolean;
 }>();
 
 const emit = defineEmits<{
-  (e: 'sent'): void;
+  (e: 'sent', message: Message): void;
 }>();
 
 const quasar = useQuasar();
 const { t } = useI18n();
-
 const apiService = useAPIService();
 const campDetailsStore = useCampDetailsStore();
 const { withResultNotification } = useServiceNotifications();
+const { can } = usePermissions();
 
 onMounted(async () => {
   if (initialContacts?.length) {
@@ -224,7 +276,12 @@ onMounted(async () => {
   // Ensure camp details (contact email, form) are available before deriving
   // the default reply-to address.
   await campDetailsStore.fetchData();
-  replyTo.value = defaultReplyTo();
+  // Only pre-fill when recipients are already known (e.g. opened from a
+  // registration). Otherwise the reply-to is derived once the user has picked
+  // recipients and the "To" field loses focus (see onToBlur).
+  if (to.value.length > 0) {
+    applyDefaultReplyTo();
+  }
 });
 
 const formRef = ref<QForm>();
@@ -270,9 +327,25 @@ function defaultReplyTo(): string {
   return Object.values(contactEmail)[0] ?? '';
 }
 
+// Fill the reply-to with the derived default, but never overwrite a value the
+// user has already entered (or one carried over from a draft).
+function applyDefaultReplyTo() {
+  if (!replyTo.value) {
+    replyTo.value = defaultReplyTo();
+  }
+}
+
+// Once the user finishes choosing recipients, derive the reply-to from the
+// selected recipients' countries — but only when the field is still empty so a
+// manually entered address is preserved.
+function onToBlur() {
+  applyDefaultReplyTo();
+}
+
 const subject = ref<string>('');
 const attachments = ref<FileInputModel[]>([]);
-const priority = ref<'high' | 'normal' | 'low'>('normal');
+type MessagePriority = 'high' | 'normal' | 'low';
+const priority = ref<MessagePriority>('normal');
 const text = ref<string>('');
 const sendInProgress = ref<boolean>(false);
 
@@ -291,20 +364,32 @@ const priorityOptions = computed<QSelectOption[]>(() => [
   },
 ]);
 
-const recipientCount = computed<number>(() => {
+function isMessagePriority(value: unknown): value is MessagePriority {
+  return value === 'high' || value === 'normal' || value === 'low';
+}
+
+function setPriority(value: unknown) {
+  if (isMessagePriority(value)) {
+    priority.value = value;
+  }
+}
+
+function recipientIds(contacts: Contact[]): Set<string> {
   const ids = new Set<string>();
-  to.value.forEach((contact) => {
+  contacts.forEach((contact) => {
     if (contact.type === 'group') {
       contact.registrations.forEach((r: Registration) => ids.add(r.id));
     } else {
       ids.add(contact.registration.id);
     }
   });
-  return ids.size;
-});
+  return ids;
+}
 
-const priorityIcon = computed<string>(() => {
-  switch (priority.value) {
+const recipientCount = computed<number>(() => recipientIds(to.value).size);
+
+function priorityOptionIcon(value: unknown): string {
+  switch (value) {
     case 'high':
       return 'keyboard_double_arrow_up';
     case 'low':
@@ -312,10 +397,10 @@ const priorityIcon = computed<string>(() => {
     default:
       return 'remove';
   }
-});
+}
 
-const priorityColor = computed<string | undefined>(() => {
-  switch (priority.value) {
+function priorityOptionColor(value: unknown): string | undefined {
+  switch (value) {
     case 'high':
       return 'negative';
     case 'low':
@@ -323,6 +408,23 @@ const priorityColor = computed<string | undefined>(() => {
     default:
       return undefined;
   }
+}
+
+const priorityIcon = computed<string>(() => priorityOptionIcon(priority.value));
+
+const priorityColor = computed<string | undefined>(() => {
+  return priorityOptionColor(priority.value);
+});
+
+const priorityMenuLabel = computed<string>(() => {
+  const option = priorityOptions.value.find(
+    (item) => item.value === priority.value,
+  );
+
+  const label =
+    typeof option?.label === 'string' ? option.label : t('priority.normal');
+
+  return `${t('input.priority')}: ${label}`;
 });
 
 const sendLabel = computed<string>(() => {
@@ -380,7 +482,7 @@ async function send() {
 
   sendInProgress.value = true;
   try {
-    await withResultNotification('send', async () => {
+    const message = await withResultNotification('send', async () => {
       return apiService.createMessage(campId, {
         registrationIds: to.value.flatMap((contact) => {
           return contact.type === 'group'
@@ -399,22 +501,84 @@ async function send() {
 
     // Reset all fields on success
     reset();
-    emit('sent');
+    emit('sent', message);
   } finally {
     sendInProgress.value = false;
   }
 }
+
+// Loading a draft (e.g. resending a sent message) replaces the message content
+// but intentionally starts with an empty recipient list so the user chooses who
+// to send to. Attachments arrive pre-duplicated as fresh session files.
+watch(
+  () => draft,
+  (value) => {
+    if (!value) {
+      return;
+    }
+
+    to.value = initialContacts?.length ? [...initialContacts] : [];
+    subject.value = value.subject;
+    text.value = value.body;
+    priority.value = value.priority;
+    // Keep the draft's reply-to if set; otherwise derive it only when we already
+    // have recipients, leaving it empty to be filled on "To" blur if not.
+    replyTo.value = value.replyTo ?? '';
+    if (to.value.length > 0) {
+      applyDefaultReplyTo();
+    }
+    attachments.value = [...value.attachments];
+
+    void nextTick(() => formRef.value?.resetValidation());
+  },
+);
 
 function reset() {
   to.value = initialContacts?.length ? [...initialContacts] : [];
   subject.value = '';
   text.value = '';
   priority.value = 'normal';
-  replyTo.value = defaultReplyTo();
+  // Derive only when recipients are pre-filled; otherwise wait for "To" blur.
+  replyTo.value = '';
+  if (to.value.length > 0) {
+    applyDefaultReplyTo();
+  }
   attachments.value = [];
 
   void nextTick(() => formRef.value?.resetValidation());
 }
+
+function sameIds(a: Set<string>, b: Set<string>): boolean {
+  return a.size === b.size && [...a].every((id) => b.has(id));
+}
+
+function attachmentsChanged(): boolean {
+  const baseline = draft?.attachments ?? [];
+  if (attachments.value.length !== baseline.length) {
+    return true;
+  }
+  const baselineIds = new Set(baseline.map((file) => file.id));
+  // An attachment still uploading (no id) is always a change.
+  return attachments.value.some(
+    (file) => file.id === undefined || !baselineIds.has(file.id),
+  );
+}
+
+// Whether the user has changed anything relative to the pristine state the form
+// was initialised with: recipients from `initialContacts` and message content
+// from `draft` (all empty when composing a new message). The reply-to is
+// excluded because it is derived automatically rather than authored.
+const dirty = computed<boolean>(() => {
+  return (
+    !sameIds(recipientIds(to.value), recipientIds(initialContacts ?? [])) ||
+    subject.value !== (draft?.subject ?? '') ||
+    text.value !== (draft?.body ?? '') ||
+    priority.value !== (draft?.priority ?? 'normal') ||
+    attachmentsChanged()
+  );
+});
+
+defineExpose({ dirty });
 </script>
 
 <style scoped>
@@ -442,14 +606,6 @@ function reset() {
   flex-direction: column;
 }
 
-.composer-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 24px 8px;
-  gap: 16px;
-}
-
 .composer-fields {
   display: flex;
   padding: 16px 20px;
@@ -465,6 +621,16 @@ function reset() {
 
 .priority-select {
   min-width: 0;
+}
+
+.priority-menu-button {
+  width: 40px;
+  height: 40px;
+  align-self: start;
+}
+
+.priority-menu {
+  min-width: 160px;
 }
 
 .composer-message {
@@ -500,11 +666,7 @@ function reset() {
 
 @media (max-width: 599px) {
   .contact-form--standalone {
-    padding: 16px;
-  }
-
-  .composer-heading {
-    padding: 16px 16px 10px;
+    padding: 0 16px 16px;
   }
 
   .composer-fields {
@@ -512,7 +674,8 @@ function reset() {
   }
 
   .composer-meta {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) 40px;
+    align-items: start;
   }
 
   .composer-message {
@@ -532,10 +695,6 @@ function reset() {
 </style>
 
 <i18n lang="yaml" locale="en">
-heading:
-  title: 'Send a message'
-  caption: 'Compose an email for one or more registrations.'
-
 action:
   send: 'Send'
   sendTo: 'Send ({count})'
@@ -583,10 +742,6 @@ request:
 </i18n>
 
 <i18n lang="yaml" locale="de">
-heading:
-  title: 'Nachricht senden'
-  caption: 'Verfasse eine E-Mail für eine oder mehrere Anmeldungen.'
-
 action:
   send: 'Senden'
   sendTo: 'Senden ({count})'
@@ -634,10 +789,6 @@ request:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-heading:
-  title: 'Envoyer un message'
-  caption: 'Rédigez un e-mail pour une ou plusieurs inscriptions.'
-
 action:
   send: 'Envoyer'
   sendTo: 'Envoyer ({count})'
@@ -685,10 +836,6 @@ request:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-heading:
-  title: 'Wyślij wiadomość'
-  caption: 'Napisz wiadomość e-mail do jednego lub kilku zgłoszeń.'
-
 action:
   send: 'Wyślij'
   sendTo: 'Wyślij ({count})'
@@ -736,10 +883,6 @@ request:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-heading:
-  title: 'Odeslat zprávu'
-  caption: 'Napište e-mail pro jednu nebo více registrací.'
-
 action:
   send: 'Odeslat'
   sendTo: 'Odeslat ({count})'

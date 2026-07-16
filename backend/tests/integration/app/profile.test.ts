@@ -9,7 +9,7 @@ import {
 import { generateAccessToken } from './utils/token.js';
 import prisma from '../utils/prisma.js';
 import { TokenType } from '#generated/prisma/client.js';
-import bcrypt from 'bcryptjs';
+import argon2 from 'argon2';
 import { profileUpdateBody } from './fixtures/profile.fixtures.js';
 
 describe('/api/v1/profile', () => {
@@ -42,6 +42,7 @@ describe('/api/v1/profile', () => {
           'camp.edit',
           'camp.delete',
           'camp.registrations.view',
+          'camp.registrations.create',
           'camp.registrations.edit',
           'camp.registrations.delete',
           'camp.managers.view',
@@ -57,6 +58,7 @@ describe('/api/v1/profile', () => {
           'camp.view',
           'camp.edit',
           'camp.registrations.view',
+          'camp.registrations.create',
           'camp.registrations.edit',
           'camp.registrations.delete',
           'camp.managers.view',
@@ -72,6 +74,7 @@ describe('/api/v1/profile', () => {
         expectedPermissions: [
           'camp.view',
           'camp.registrations.view',
+          'camp.registrations.create',
           'camp.managers.view',
         ],
         unexpectedPermissions: [
@@ -90,6 +93,7 @@ describe('/api/v1/profile', () => {
         unexpectedPermissions: [
           'camp.edit',
           'camp.delete',
+          'camp.registrations.create',
           'camp.registrations.edit',
           'camp.registrations.delete',
           'camp.managers.view',
@@ -310,7 +314,7 @@ describe('/api/v1/profile', () => {
 
       expect(updatedUser).toBeDefined();
       expect(
-        bcrypt.compareSync(data.password, updatedUser.password),
+        await argon2.verify(updatedUser.password, data.password),
       ).toBeTruthy();
     });
 

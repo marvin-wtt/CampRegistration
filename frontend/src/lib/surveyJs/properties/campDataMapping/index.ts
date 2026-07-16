@@ -1,4 +1,4 @@
-import type { CampDataType } from 'src/lib/surveyJs/properties/campDataMapping/CampDataType';
+import type { CampDataType } from '@/lib/surveyJs/properties/campDataMapping/CampDataType';
 import { type IPropertyGridEditor } from 'survey-creator-core';
 import {
   waitingList,
@@ -12,7 +12,7 @@ import {
   gender,
   lastName,
   name,
-} from 'src/lib/surveyJs/properties/campDataMapping/types';
+} from '@/lib/surveyJs/properties/campDataMapping/types';
 
 const dataTypes: CampDataType[] = [];
 

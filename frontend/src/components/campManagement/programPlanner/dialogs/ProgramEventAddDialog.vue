@@ -28,7 +28,7 @@
             outlined
             rounded
           >
-            <template #prepend>
+            <template #before>
               <q-icon name="title" />
             </template>
           </translated-input>
@@ -41,7 +41,7 @@
             outlined
             rounded
           >
-            <template #prepend>
+            <template #before>
               <q-icon name="place" />
             </template>
           </translated-input>
@@ -55,7 +55,7 @@
             outlined
             rounded
           >
-            <template #prepend>
+            <template #before>
               <q-icon name="description" />
             </template>
           </translated-input>
@@ -231,22 +231,17 @@
 </template>
 
 <script lang="ts" setup>
-import {
-  addToDate,
-  getTime,
-  parseTimestamp,
-} from '@quasar/quasar-ui-qcalendar';
-
+import { addToDate, getTime, parseTimestamp } from '@timestamp-js/core';
 import { QPopupProxy, useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { computed, reactive } from 'vue';
-import TranslatedInput from 'components/common/inputs/TranslatedInput.vue';
-import ColorPickerInput from 'components/common/inputs/ColorPickerInput.vue';
+import TranslatedInput from '@/components/common/inputs/TranslatedInput.vue';
+import ColorPickerInput from '@/components/common/inputs/ColorPickerInput.vue';
 import type {
   ProgramEventCreateData,
   Translatable,
 } from '@camp-registration/common/entities';
-import { isValidTimeRange, timeDifference } from 'src/utils/date';
+import { isValidTimeRange, timeDifference } from '@/utils/date';
 
 const { t } = useI18n();
 const $q = useQuasar();

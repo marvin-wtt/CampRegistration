@@ -19,5 +19,9 @@ export class TotpRouter extends ModuleRouter {
     this.router.post('/setup', controller(totpController, 'setup'));
     this.router.post('/enable', controller(totpController, 'enable'));
     this.router.post('/disable', controller(totpController, 'disable'));
+    this.router.post(
+      '/recovery-codes',
+      controller(totpController, 'generateRecoveryCodes'),
+    );
   }
 }

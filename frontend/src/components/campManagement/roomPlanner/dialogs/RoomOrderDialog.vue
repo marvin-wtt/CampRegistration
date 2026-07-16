@@ -46,11 +46,11 @@
 <script lang="ts" setup>
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { useObjectTranslation } from 'src/composables/objectTranslation';
-import SortableList from 'components/common/SortableList.vue';
+import { useObjectTranslation } from '@/composables/objectTranslation';
+import SortableList from '@/components/common/SortableList.vue';
 import { onBeforeUpdate, ref } from 'vue';
-import type { RoomWithRoommates } from 'src/types/Room';
-import { deepToRaw } from 'src/utils/deepToRaw';
+import type { RoomWithRoommates } from '@/types/Room';
+import { deepToRaw } from '@/utils/deepToRaw';
 
 const { rooms } = defineProps<{
   rooms: RoomWithRoommates[];
@@ -87,9 +87,6 @@ title: 'Edit Rooms'
 action:
   ok: 'Ok'
   cancel: 'Cancel'
-
-default:
-  title: 'New template'
 </i18n>
 
 <i18n lang="yaml" locale="de">

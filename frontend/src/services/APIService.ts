@@ -1,33 +1,38 @@
-import { useAuthService } from 'src/services/AuthService';
-import { useCampService } from 'src/services/CampService';
-import { useRegistrationService } from 'src/services/RegistrationService';
-import { useTableTemplateService } from 'src/services/TableTemplateService';
-import { useUserService } from 'src/services/UserService';
-import { useRoomService } from 'src/services/RoomService';
-import { useCampManagerService } from 'src/services/CampManagerService';
+import { useAuthService } from '@/services/AuthService';
+import { useCampService } from '@/services/CampService';
+import { useRegistrationService } from '@/services/RegistrationService';
+import { useTableTemplateService } from '@/services/TableTemplateService';
+import { useCampSettingService } from '@/services/CampSettingService';
+import { useUserService } from '@/services/UserService';
+import { useRoomService } from '@/services/RoomService';
+import { useCampManagerService } from '@/services/CampManagerService';
 import axios, { type AxiosError } from 'axios';
-import { useFileService } from 'src/services/FileService';
-import { useFeedbackService } from 'src/services/FeedbackService';
-import { useProfileService } from 'src/services/ProfileService';
-import { useTotpService } from 'src/services/TotpService';
-import { useMessageTemplateService } from 'src/services/MessageTemplateService';
-import { useMessageService } from 'src/services/MessageService';
-import { useNewsletterService } from 'src/services/NewsletterService';
-import { useNewsletterManagerService } from 'src/services/NewsletterManagerService';
-import { useNewsletterSubscriberService } from 'src/services/NewsletterSubscriberService';
-import { useNewsletterMessageService } from 'src/services/NewsletterMessageService';
-import { useProgramEventService } from 'src/services/ProgramEventService';
-import { useQueueService } from 'src/services/QueueService';
+import { useFileService } from '@/services/FileService';
+import { useFeedbackService } from '@/services/FeedbackService';
+import { useProfileService } from '@/services/ProfileService';
+import { useTotpService } from '@/services/TotpService';
+import { useMessageTemplateService } from '@/services/MessageTemplateService';
+import { useMessageService } from '@/services/MessageService';
+import { useNewsletterService } from '@/services/NewsletterService';
+import { useNewsletterManagerService } from '@/services/NewsletterManagerService';
+import { useNewsletterSubscriberService } from '@/services/NewsletterSubscriberService';
+import { useNewsletterMessageService } from '@/services/NewsletterMessageService';
+import { useProgramEventService } from '@/services/ProgramEventService';
+import { useQueueService } from '@/services/QueueService';
+import { useTaskService } from '@/services/TaskService';
+import { useAdminService } from '@/services/AdminService';
 
 export function useAPIService() {
   return {
     ...useAuthService(),
+    ...useAdminService(),
     ...useProfileService(),
     ...useUserService(),
     ...useCampService(),
     ...useCampManagerService(),
     ...useRegistrationService(),
     ...useTableTemplateService(),
+    ...useCampSettingService(),
     ...useRoomService(),
     ...useFileService(),
     ...useFeedbackService(),
@@ -40,6 +45,7 @@ export function useAPIService() {
     ...useNewsletterMessageService(),
     ...useProgramEventService(),
     ...useQueueService(),
+    ...useTaskService(),
   };
 }
 

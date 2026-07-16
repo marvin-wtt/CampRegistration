@@ -1,10 +1,10 @@
-import { api, ensureCsrfToken } from 'src/services/api';
+import { api, ensureCsrfToken } from '@/services/api';
 import type {
   AuthTokens,
   Authentication,
 } from '@camp-registration/common/entities';
-import authRefreshToken from 'src/services/authRefreshToken';
-import csrfTokenRetry from 'src/services/csrfTokenRetry';
+import authRefreshToken from '@/services/authRefreshToken';
+import csrfTokenRetry from '@/services/csrfTokenRetry';
 import { type AxiosError, type AxiosRequestConfig, isAxiosError } from 'axios';
 
 export type CustomRequestConfig = AxiosRequestConfig & {

@@ -11,7 +11,7 @@
         <!-- Only show editor when focused or with content to prevent the label to float -->
         <div
           v-if="editor && (focused || model.length > 0)"
-          class="column fit q-gutter-sm no-wrap"
+          class="email-editor__layout column fit q-gutter-sm no-wrap"
         >
           <bubble-menu
             v-if="!plainText"
@@ -261,7 +261,7 @@
             <q-separator inset />
           </div>
 
-          <div class="col">
+          <div class="email-editor__content col">
             <editor-content
               :editor
               class="editor fit"
@@ -287,8 +287,8 @@ import {
 import type {
   Token,
   TokenRegistry,
-} from 'components/campManagement/contact/TokenRegistry';
-import TokenSelectionDialog from 'components/campManagement/contact/TokenSelectionDialog.vue';
+} from '@/components/campManagement/contact/TokenRegistry';
+import TokenSelectionDialog from '@/components/campManagement/contact/TokenSelectionDialog.vue';
 import StarterKit from '@tiptap/starter-kit';
 import { EditorContent, useEditor } from '@tiptap/vue-3';
 import { BubbleMenu } from '@tiptap/vue-3/menus';
@@ -397,6 +397,24 @@ const editor = useEditor({
     }),
     Typography,
   ],
+  editorProps: {
+    handlePaste: (view, event) => {
+      // If plainText is true, we want to paste only the plain text content
+      if (!plainText) {
+        return false;
+      }
+
+      const text = event.clipboardData?.getData('text/plain');
+
+      if (text == null) {
+        return false;
+      }
+
+      view.dispatch(view.state.tr.insertText(text));
+
+      return true;
+    },
+  },
   content: wrapTemplateVariables(model.value),
   onUpdate: ({ editor }) => {
     model.value = unwrapTemplateVariables(getEditorValue(editor));
@@ -441,7 +459,12 @@ function unwrapTemplateVariables(html: string): string {
 
 watch(
   () => attrs.disable as boolean | undefined,
-  (disabled) => editor.value?.setEditable(!disabled),
+  // `setEditable`'s `emitUpdate` defaults to `true` and unconditionally
+  // re-emits 'update' regardless of whether the doc actually changed —
+  // toggling editability isn't a content edit, so suppress it explicitly.
+  // Otherwise this clobbers `model` with the editor's current serialization
+  // (e.g. an empty doc becomes '<p></p>' instead of the '' it was reset to).
+  (disabled) => editor.value?.setEditable(!disabled, false),
 );
 
 async function onFieldClick() {
@@ -478,7 +501,21 @@ function onAddToken() {
   .q-field__control {
     display: flex;
     height: 100%;
+    overflow: hidden;
   }
+}
+
+.email-editor__layout,
+.email-editor__content {
+  min-height: 0;
+}
+
+.email-editor__content {
+  overflow-y: auto;
+}
+
+.email-editor__content .editor {
+  overflow-y: auto;
 }
 
 /* Basic editor styles */
@@ -520,7 +557,8 @@ function onAddToken() {
 }
 
 .tiptap {
-  height: 100%;
+  box-sizing: border-box;
+  min-height: 100%;
   padding: 10px;
 
   :first-child {

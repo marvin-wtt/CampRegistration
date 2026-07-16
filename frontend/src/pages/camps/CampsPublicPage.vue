@@ -15,7 +15,7 @@
             v-if="!loading"
             rounded
             class="count-badge"
-            :label="filteredCamps.length"
+            :label="camps.length"
           />
         </div>
         <div class="camp-index__subtitle text-body2 q-mt-xs">
@@ -25,7 +25,7 @@
 
       <!-- Empty state -->
       <div
-        v-if="!loading && filteredCamps.length === 0"
+        v-if="!loading && camps.length === 0"
         class="empty-state col column items-center justify-center"
       >
         <q-icon
@@ -54,7 +54,7 @@
         </template>
         <template v-else>
           <camp-card
-            v-for="(camp, index) in filteredCamps"
+            v-for="(camp, index) in camps"
             :key="camp.id"
             :camp
             class="camp-grid__item"
@@ -67,12 +67,12 @@
 </template>
 
 <script lang="ts" setup>
-import { useCampsStore } from 'stores/camps-store';
+import { useCampsStore } from '@/stores/camps-store';
 import { computed, onMounted } from 'vue';
 import type { Camp } from '@camp-registration/common/entities';
-import PageStateHandler from 'components/common/PageStateHandler.vue';
-import CampCard from 'components/camps/CampCard.vue';
-import CampCardSkeleton from 'components/camps/CampCardSkeleton.vue';
+import PageStateHandler from '@/components/common/PageStateHandler.vue';
+import CampCard from '@/components/camps/CampCard.vue';
+import CampCardSkeleton from '@/components/camps/CampCardSkeleton.vue';
 import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n();
@@ -82,19 +82,8 @@ onMounted(async () => {
   await Promise.allSettled([campsStore.fetchData()]);
 });
 
-function isRegistrationOpen(camp: Camp): boolean {
-  if (!camp.registrationOpensAt && !camp.registrationClosesAt) {
-    return false;
-  }
-  const now = new Date();
-  return (
-    (!camp.registrationOpensAt || now >= new Date(camp.registrationOpensAt)) &&
-    (!camp.registrationClosesAt || now <= new Date(camp.registrationClosesAt))
-  );
-}
-
-const filteredCamps = computed<Camp[]>(() => {
-  return (campsStore.data ?? []).filter(isRegistrationOpen);
+const camps = computed<Camp[]>(() => {
+  return campsStore.data ?? [];
 });
 
 const error = computed(() => {

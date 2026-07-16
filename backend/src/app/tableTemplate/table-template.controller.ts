@@ -4,6 +4,7 @@ import validator from './table-template.validation.js';
 import { type Request, type Response } from 'express';
 import { TableTemplateResource } from '#app/tableTemplate/table-template.resource';
 import { BaseController } from '#core/base/BaseController';
+import { RealtimeService } from '#core/realtime/RealtimeService';
 import { inject, injectable } from 'inversify';
 
 @injectable()
@@ -11,6 +12,8 @@ export class TableTemplateController extends BaseController {
   constructor(
     @inject(TableTemplateService)
     private readonly tableTemplateService: TableTemplateService,
+    @inject(RealtimeService)
+    private readonly realtimeService: RealtimeService,
   ) {
     super();
   }
@@ -22,24 +25,28 @@ export class TableTemplateController extends BaseController {
   }
 
   async index(req: Request, res: Response) {
-    const {
-      params: { campId },
-    } = await req.validate(validator.index);
+    const camp = req.modelOrFail('camp');
+    await req.validate(validator.index);
 
-    const templates = await this.tableTemplateService.queryTemplates(campId);
+    const templates = await this.tableTemplateService.queryTemplates(camp.id);
 
     res.resource(TableTemplateResource.collection(templates));
   }
 
   async store(req: Request, res: Response) {
-    const {
-      params: { campId },
-      body,
-    } = await req.validate(validator.store);
+    const camp = req.modelOrFail('camp');
+    const { body } = await req.validate(validator.store);
 
     const template = await this.tableTemplateService.createTemplate(
-      campId,
+      camp.id,
       body,
+    );
+
+    void this.realtimeService.emit(
+      camp.id,
+      'table_template',
+      template.id,
+      'created',
     );
 
     res
@@ -48,25 +55,38 @@ export class TableTemplateController extends BaseController {
   }
 
   async update(req: Request, res: Response) {
-    const {
-      params: { tableTemplateId },
-      body,
-    } = await req.validate(validator.update);
+    const camp = req.modelOrFail('camp');
+    const tableTemplate = req.modelOrFail('tableTemplate');
+    const { body } = await req.validate(validator.update);
 
     const template = await this.tableTemplateService.updateTemplateById(
-      tableTemplateId,
+      tableTemplate.id,
       body,
+    );
+
+    void this.realtimeService.emit(
+      camp.id,
+      'table_template',
+      template.id,
+      'updated',
     );
 
     res.resource(new TableTemplateResource(template));
   }
 
   async destroy(req: Request, res: Response) {
-    const {
-      params: { tableTemplateId },
-    } = await req.validate(validator.destroy);
+    const camp = req.modelOrFail('camp');
+    const tableTemplate = req.modelOrFail('tableTemplate');
+    await req.validate(validator.destroy);
 
-    await this.tableTemplateService.deleteTemplateById(tableTemplateId);
+    await this.tableTemplateService.deleteTemplateById(tableTemplate.id);
+
+    void this.realtimeService.emit(
+      camp.id,
+      'table_template',
+      tableTemplate.id,
+      'deleted',
+    );
 
     res.status(httpStatus.NO_CONTENT).send();
   }
