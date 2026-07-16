@@ -247,6 +247,9 @@ const keyboardShortcuts = computed<{ keys: string[]; label: string }[]>(() => {
 // hidden for users without create or update permission.
 const mouseShortcuts = computed<string[]>(() => {
   const rows: string[] = [];
+  if (editable || deletable) {
+    rows.push(t('help.shortcuts.multiSelect'));
+  }
   if (creatable) {
     rows.push(t('help.shortcuts.create'));
   }
@@ -498,12 +501,13 @@ help:
   mouse: 'Mouse & drag'
   shortcuts:
     navigate: 'Previous / next days'
-    deselect: 'Deselect event'
-    switchPlan: "Switch selected event's plan"
-    delete: 'Delete selected event'
+    deselect: 'Clear selection'
+    switchPlan: 'Switch plan of selected events'
+    delete: 'Delete selected events'
     undo: 'Undo last change'
+    multiSelect: 'Hold Ctrl / ⌘ and click to select multiple events'
     create: 'Drag over free space to create an event'
-    move: 'Drag an event to move it'
+    move: 'Drag an event to move it — drags the whole selection if selected'
     copy: 'Hold Ctrl / ⌘ while dragging to copy'
     unschedule: 'Drag onto "Unscheduled" to remove from the plan'
     resize: "Drag an event's bottom edge to resize"
@@ -525,12 +529,13 @@ help:
   mouse: 'Maus & Ziehen'
   shortcuts:
     navigate: 'Vorherige / nächste Tage'
-    deselect: 'Ereignis abwählen'
-    switchPlan: 'Plan des gewählten Ereignisses wechseln'
-    delete: 'Gewähltes Ereignis löschen'
+    deselect: 'Auswahl aufheben'
+    switchPlan: 'Plan der ausgewählten Ereignisse wechseln'
+    delete: 'Ausgewählte Ereignisse löschen'
     undo: 'Letzte Änderung rückgängig machen'
+    multiSelect: 'Strg / ⌘ halten und klicken, um mehrere Ereignisse auszuwählen'
     create: 'Über freie Fläche ziehen, um ein Ereignis zu erstellen'
-    move: 'Ereignis ziehen, um es zu verschieben'
+    move: 'Ereignis ziehen, um es zu verschieben — verschiebt die ganze Auswahl, falls ausgewählt'
     copy: 'Strg / ⌘ beim Ziehen halten, um zu kopieren'
     unschedule: 'Auf "Ungeplant" ziehen, um aus dem Plan zu entfernen'
     resize: 'Untere Kante eines Ereignisses ziehen, um die Größe zu ändern'
@@ -552,12 +557,13 @@ help:
   mouse: 'Souris et glisser'
   shortcuts:
     navigate: 'Jours précédents / suivants'
-    deselect: "Désélectionner l'événement"
-    switchPlan: "Changer le plan de l'événement sélectionné"
-    delete: "Supprimer l'événement sélectionné"
+    deselect: 'Effacer la sélection'
+    switchPlan: 'Changer le plan des événements sélectionnés'
+    delete: 'Supprimer les événements sélectionnés'
     undo: 'Annuler la dernière modification'
+    multiSelect: 'Maintenir Ctrl / ⌘ et cliquer pour sélectionner plusieurs événements'
     create: 'Glisser sur un espace libre pour créer un événement'
-    move: 'Glisser un événement pour le déplacer'
+    move: 'Glisser un événement pour le déplacer — déplace toute la sélection si elle est sélectionnée'
     copy: 'Maintenir Ctrl / ⌘ en glissant pour copier'
     unschedule: 'Glisser sur "Non planifié" pour retirer du plan'
     resize: "Glisser le bord inférieur d'un événement pour le redimensionner"
@@ -579,12 +585,13 @@ help:
   mouse: 'Mysz i przeciąganie'
   shortcuts:
     navigate: 'Poprzednie / następne dni'
-    deselect: 'Odznacz wydarzenie'
-    switchPlan: 'Zmień plan wybranego wydarzenia'
-    delete: 'Usuń wybrane wydarzenie'
+    deselect: 'Wyczyść zaznaczenie'
+    switchPlan: 'Zmień plan zaznaczonych wydarzeń'
+    delete: 'Usuń zaznaczone wydarzenia'
     undo: 'Cofnij ostatnią zmianę'
+    multiSelect: 'Przytrzymaj Ctrl / ⌘ i kliknij, aby zaznaczyć wiele wydarzeń'
     create: 'Przeciągnij po wolnym miejscu, aby utworzyć wydarzenie'
-    move: 'Przeciągnij wydarzenie, aby je przenieść'
+    move: 'Przeciągnij wydarzenie, aby je przenieść — przenosi całe zaznaczenie, jeśli jest ustawione'
     copy: 'Przytrzymaj Ctrl / ⌘ podczas przeciągania, aby skopiować'
     unschedule: 'Przeciągnij na "Niezaplanowane", aby usunąć z planu'
     resize: 'Przeciągnij dolną krawędź wydarzenia, aby zmienić rozmiar'
@@ -606,12 +613,13 @@ help:
   mouse: 'Myš a tažení'
   shortcuts:
     navigate: 'Předchozí / další dny'
-    deselect: 'Zrušit výběr události'
-    switchPlan: 'Změnit plán vybrané události'
-    delete: 'Smazat vybranou událost'
+    deselect: 'Zrušit výběr'
+    switchPlan: 'Změnit plán vybraných událostí'
+    delete: 'Smazat vybrané události'
     undo: 'Vrátit poslední změnu'
+    multiSelect: 'Podržte Ctrl / ⌘ a klikněte pro výběr více událostí'
     create: 'Tažením přes volné místo vytvoříte událost'
-    move: 'Tažením události ji přesunete'
+    move: 'Tažením události ji přesunete — přesune celý výběr, pokud je nastaven'
     copy: 'Podržte Ctrl / ⌘ při tažení pro kopírování'
     unschedule: 'Přetažením na "Neplánované" odeberete z plánu'
     resize: 'Tažením dolního okraje události změníte velikost'

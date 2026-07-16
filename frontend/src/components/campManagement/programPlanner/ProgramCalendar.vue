@@ -87,12 +87,13 @@
                   :event="event"
                   :view-both="viewBoth"
                   :show-all-translations="settings.showAllTranslations"
-                  :selected="event.id === selectedEventId"
+                  :selected="isSelected(event.id)"
+                  :dimmed="dimmedEventIds.has(event.id)"
                   :draggable="canDrag"
                   :editable="canUpdate"
                   :deletable="canDelete"
                   :creatable="canCreate"
-                  @click.stop="selectedEventId = event.id"
+                  @click.stop="selectEvent(event.id, $event)"
                   @dragstart="(e: DragEvent) => onDragStart(e, event)"
                   @edit="onEventEdit(event)"
                   @delete="onEventDelete(event)"
@@ -110,38 +111,46 @@
               <!-- Drag-to-create overlay: sits behind events, handles empty-area clicks -->
               <div
                 class="cal-create-overlay"
-                :class="{ 'cal-create-overlay--readonly': !canCreate }"
+                :class="{
+                  'cal-create-overlay--readonly':
+                    !canCreate || selectedEventIds.size > 0,
+                }"
                 :style="{ pointerEvents: isDraggingEvent ? 'none' : undefined }"
                 @mousedown.left.prevent="
-                  (e) => {
-                    selectedEventId = null;
-                    canCreate &&
-                      !quasar.platform.is.mobile &&
-                      onBodyMouseDown(e, timestamp, timeDurationHeight);
-                  }
+                  (e) => onOverlayMouseDown(e, timestamp, timeDurationHeight)
                 "
-                @click="
-                  (e) => {
-                    selectedEventId = null;
-                    canCreate &&
-                      quasar.platform.is.mobile &&
-                      onBodyClick(e, timestamp, timeDurationHeight);
-                  }
+                @click="(e) => onOverlayClick(e, timestamp, timeDurationHeight)"
+                @mousemove="
+                  (e) => onBodyMouseMove(e, timestamp, timeDurationHeight)
                 "
+                @mouseleave="onBodyMouseLeave"
               />
 
-              <!-- Drop preview while dragging an existing event -->
+              <!-- Hover highlight showing the slot a click would create an
+                   event in -->
               <div
-                v-if="
-                  dragHoverPreview && dragHoverPreview.date === timestamp.date
-                "
+                v-if="hoverSlot && hoverSlot.date === timestamp.date"
+                class="cal-hover-slot"
+                :style="{
+                  top: `${(hoverSlot.startMinutes - hoverSlot.dayStartMinutes) * hoverSlot.pxPerMinute}px`,
+                  height: `${(hoverSlot.endMinutes - hoverSlot.startMinutes) * hoverSlot.pxPerMinute}px`,
+                }"
+              />
+
+              <!-- Drop preview while dragging an existing event (one box per
+                   event when dragging a multi-selection) -->
+              <div
+                v-for="preview in dragHoverPreview.filter(
+                  (p) => p.date === timestamp.date,
+                )"
+                :key="preview.id"
                 class="cal-drop-preview"
                 :style="{
-                  top: `${timeStartPos(dragHoverPreview.startTime) || 0}px`,
-                  height: `${timeDurationHeight(dragHoverPreview.duration)}px`,
-                  backgroundColor: hexToRgba(dragHoverPreview.color, 0.2),
-                  borderColor: hexToRgba(dragHoverPreview.color, 0.7),
-                  ...dragPreviewSideStyle,
+                  top: `${timeStartPos(preview.startTime) || 0}px`,
+                  height: `${timeDurationHeight(preview.duration)}px`,
+                  backgroundColor: hexToRgba(preview.color, 0.2),
+                  borderColor: hexToRgba(preview.color, 0.7),
+                  ...previewSideStyle(preview),
                 }"
               />
 
@@ -163,13 +172,14 @@
                 :time-duration-height="timeDurationHeight"
                 :view-both="viewBoth"
                 :show-all-translations="settings.showAllTranslations"
-                :selected="event.id === selectedEventId"
+                :selected="isSelected(event.id)"
+                :dimmed="dimmedEventIds.has(event.id)"
                 :draggable="canDrag"
                 :editable="canUpdate"
                 :deletable="canDelete"
                 :creatable="canCreate"
                 :snap="settings.timeInterval"
-                @click.stop="selectedEventId = event.id"
+                @click.stop="selectEvent(event.id, $event)"
                 @dragstart="(e: DragEvent) => onDragStart(e, event)"
                 @edit="onEventEdit(event)"
                 @delete="onEventDelete(event)"
@@ -224,7 +234,7 @@ import ProgramEventAddDialog from '@/components/campManagement/programPlanner/di
 import ProgramEventEditDialog from '@/components/campManagement/programPlanner/dialogs/ProgramEventEditDialog.vue';
 import CalendarSettingsDialog from '@/components/campManagement/programPlanner/dialogs/CalendarSettingsDialog.vue';
 import CalendarBacklogPanel from '@/components/campManagement/programPlanner/CalendarBacklogPanel.vue';
-import { daysBetweenDates } from '@/utils/date';
+import { daysBetweenDates, parseTimeToMinutes } from '@/utils/date';
 import { openPrintIframe } from '@/utils/printIframe';
 import { useCampSettings } from '@/composables/campSettings';
 import { SETTING_KEYS } from '@camp-registration/common/settings';
@@ -271,11 +281,30 @@ onMounted(() => {
     updateIntervalHeight();
   }, 500);
   window.addEventListener('keydown', onKeydown);
+  window.addEventListener('click', onGlobalClick);
 });
 
 onUnmounted(() => {
   window.removeEventListener('keydown', onKeydown);
+  window.removeEventListener('click', onGlobalClick);
 });
+
+// Clicking anywhere that isn't an event (blank calendar space, the nav bar,
+// the backlog, ...) clears the selection — events handle deselecting
+// themselves via `selectEvent`, this covers everywhere else with the mouse.
+function onGlobalClick(e: MouseEvent) {
+  if (selectedEventIds.value.size === 0) {
+    return;
+  }
+  const target = e.target;
+  if (
+    target instanceof Element &&
+    target.closest('.cal-event, .cal-day-event')
+  ) {
+    return;
+  }
+  clearSelection();
+}
 
 const eventTimeRange = computed<{
   minMinutes: number;
@@ -483,6 +512,9 @@ function onEventResize(event: ProgramEvent, duration: number) {
   if (!canUpdate.value) {
     return;
   }
+  pushUndo([
+    { type: 'update', id: event.id, data: { duration: event.duration } },
+  ]);
   emit('update', event.id, { duration });
 }
 
@@ -571,10 +603,22 @@ function onMoveToBacklog(id: string) {
   }
   // Dropping on the backlog removes the dragged item from the calendar DOM,
   // which can suppress its `dragend` event — clear lingering drag state here.
-  clearDragHighlight();
-  cancelPreviewUpdate(null);
-  isDraggingEvent.value = false;
-  emit('update', id, { date: null, time: null });
+  resetDragState();
+
+  const ids = selectionGroup(id);
+  const actions: UndoAction[] = [];
+  for (const eventId of ids) {
+    const other = events.find((v) => v.id === eventId);
+    if (other) {
+      actions.push({
+        type: 'update',
+        id: eventId,
+        data: { date: other.date, time: other.time },
+      });
+    }
+    emit('update', eventId, { date: null, time: null });
+  }
+  pushUndo(actions);
 }
 
 function onScheduleFromBacklog(event: ProgramEvent) {
@@ -674,7 +718,29 @@ function onSettingsOpen() {
 let dragHighlightEl: Element | null = null;
 const isDraggingEvent = ref(false);
 
+// The full set of ids being dragged together (the selection, when the
+// dragged event is part of one; otherwise just that event). Ctrl/cmd held
+// during the drag means "copy the single dragged event" instead, so the
+// rest of the group stays put and shouldn't be hidden or previewed.
+const draggingGroupIds = ref<Set<string>>(new Set());
+const isCopyDragActive = ref(false);
+
+// Events other than the one actually under the cursor that should be hidden
+// while dragging — their destination is represented by the drop preview
+// boxes instead, so showing both would look like two copies of each event.
+const dimmedEventIds = computed<Set<string>>(() => {
+  if (isCopyDragActive.value || draggingGroupIds.value.size === 0) {
+    return new Set();
+  }
+  const ids = new Set(draggingGroupIds.value);
+  if (draggingEventId) {
+    ids.delete(draggingEventId);
+  }
+  return ids;
+});
+
 interface DragHoverPreview {
+  id: string;
   date: string;
   startTime: string;
   duration: number;
@@ -682,7 +748,8 @@ interface DragHoverPreview {
   plan: 'a' | 'b' | 'both';
 }
 
-const dragHoverPreview = ref<DragHoverPreview | null>(null);
+const dragHoverPreview = ref<DragHoverPreview[]>([]);
+let draggingEventId: string | null = null;
 let draggingEventDuration = 60;
 let draggingEventColor = '#2196F3';
 let draggingEventPlan: 'a' | 'b' | 'both' = 'both';
@@ -690,20 +757,19 @@ let draggingGrabOffset = 0;
 
 // Mirror CalendarItem's side placement: in both-plans view, a single-plan
 // event occupies the left (a) or right (b) half of the column.
-const dragPreviewSideStyle = computed(() => {
-  const preview = dragHoverPreview.value;
-  if (!preview || !viewBoth.value || preview.plan === 'both') {
+function previewSideStyle(preview: DragHoverPreview) {
+  if (!viewBoth.value || preview.plan === 'both') {
     return {};
   }
   return preview.plan === 'b'
     ? { left: 'calc(50% + 2px)', right: 'auto', width: 'calc(50% - 4px)' }
     : { left: '2px', right: 'auto', width: 'calc(50% - 4px)' };
-});
+}
 
 let previewRafId: number | null = null;
-let pendingPreview: DragHoverPreview | null | undefined = undefined;
+let pendingPreview: DragHoverPreview[] | undefined = undefined;
 
-function schedulePreviewUpdate(preview: DragHoverPreview | null) {
+function schedulePreviewUpdate(preview: DragHoverPreview[]) {
   pendingPreview = preview;
   if (previewRafId === null) {
     previewRafId = requestAnimationFrame(() => {
@@ -716,7 +782,7 @@ function schedulePreviewUpdate(preview: DragHoverPreview | null) {
   }
 }
 
-function cancelPreviewUpdate(immediate: DragHoverPreview | null) {
+function cancelPreviewUpdate(immediate: DragHoverPreview[]) {
   if (previewRafId !== null) {
     cancelAnimationFrame(previewRafId);
     previewRafId = null;
@@ -743,6 +809,35 @@ interface DragSelection {
 
 const dragSelection = ref<DragSelection | null>(null);
 
+// A click on blank space while something is selected just clears the
+// selection — it must not also open the create dialog, or deselecting
+// becomes a trap that accidentally schedules a new event.
+function onOverlayMouseDown(
+  e: MouseEvent,
+  timestamp: Timestamp,
+  timeDurationHeight: (d?: number) => number,
+) {
+  const hadSelection = selectedEventIds.value.size > 0;
+  clearSelection();
+  if (hadSelection || !canCreate.value || quasar.platform.is.mobile) {
+    return;
+  }
+  onBodyMouseDown(e, timestamp, timeDurationHeight);
+}
+
+function onOverlayClick(
+  e: MouseEvent,
+  timestamp: Timestamp,
+  timeDurationHeight: (d?: number) => number,
+) {
+  const hadSelection = selectedEventIds.value.size > 0;
+  clearSelection();
+  if (hadSelection || !canCreate.value || !quasar.platform.is.mobile) {
+    return;
+  }
+  onBodyClick(e, timestamp, timeDurationHeight);
+}
+
 function onBodyMouseDown(
   e: MouseEvent,
   timestamp: Timestamp,
@@ -751,6 +846,7 @@ function onBodyMouseDown(
   if (!canCreate.value) {
     return;
   }
+  hoverSlot.value = null;
   const bodyEl = e.currentTarget as HTMLElement;
   const pxPerMinute = timeDurationHeight(60) / 60;
   const dayStartMinutes = intervalStart.value * settings.timeInterval;
@@ -852,9 +948,71 @@ function onBodyClick(
     });
 }
 
+interface HoverSlot {
+  date: string;
+  startMinutes: number;
+  endMinutes: number;
+  dayStartMinutes: number;
+  pxPerMinute: number;
+}
+
+// Highlights the exact interval a click would create an event in — desktop
+// only, since there's no persistent hover state on touch devices.
+const hoverSlot = ref<HoverSlot | null>(null);
+
+function onBodyMouseMove(
+  e: MouseEvent,
+  timestamp: Timestamp,
+  timeDurationHeight: (d?: number) => number,
+) {
+  if (
+    !canCreate.value ||
+    quasar.platform.is.mobile ||
+    dragSelection.value ||
+    isDraggingEvent.value ||
+    selectedEventIds.value.size > 0
+  ) {
+    hoverSlot.value = null;
+    return;
+  }
+
+  const bodyEl = e.currentTarget as HTMLElement;
+  const pxPerMinute = timeDurationHeight(60) / 60;
+  const dayStartMinutes = intervalStart.value * settings.timeInterval;
+  const y = e.clientY - bodyEl.getBoundingClientRect().top;
+  const raw = y / pxPerMinute + dayStartMinutes;
+  const start = Math.floor(raw / settings.timeInterval) * settings.timeInterval;
+
+  hoverSlot.value = {
+    date: timestamp.date,
+    startMinutes: start,
+    endMinutes: start + settings.timeInterval,
+    dayStartMinutes,
+    pxPerMinute,
+  };
+}
+
+function onBodyMouseLeave() {
+  hoverSlot.value = null;
+}
+
 function clearDragHighlight() {
   dragHighlightEl?.classList.remove('droppable');
   dragHighlightEl = null;
+}
+
+// A drop that changes an event's date moves it into a different day cell's
+// (or the backlog's) v-for list, which can cause Vue to unmount/remount the
+// dragged element's DOM node before the native `dragend` event fires on it —
+// silently suppressing that event. Drop handlers must call this themselves
+// rather than rely solely on the `dragend` listener below.
+function resetDragState() {
+  isDraggingEvent.value = false;
+  draggingEventId = null;
+  draggingGroupIds.value = new Set();
+  isCopyDragActive.value = false;
+  cancelPreviewUpdate([]);
+  clearDragHighlight();
 }
 
 function onDragStart(e: DragEvent, event: ProgramEvent): void {
@@ -865,6 +1023,9 @@ function onDragStart(e: DragEvent, event: ProgramEvent): void {
   e.dataTransfer.effectAllowed = 'copyMove';
   e.dataTransfer.setData('text/plain', event.id);
 
+  draggingEventId = event.id;
+  draggingGroupIds.value = new Set(selectionGroup(event.id));
+  isCopyDragActive.value = false;
   draggingEventDuration = event.duration ?? 60;
   draggingEventColor = event.color ?? '#2196F3';
   draggingEventPlan = event.plan;
@@ -873,11 +1034,7 @@ function onDragStart(e: DragEvent, event: ProgramEvent): void {
 
   isDraggingEvent.value = true;
   const onDragEnd = () => {
-    isDraggingEvent.value = false;
-    cancelPreviewUpdate(null);
-    // Drops outside the calendar (e.g. the backlog) never fire the calendar's
-    // drop/leave handlers, so clear any lingering cell highlight here.
-    clearDragHighlight();
+    resetDragState();
     document.removeEventListener('dragend', onDragEnd);
   };
   document.addEventListener('dragend', onDragEnd);
@@ -889,6 +1046,10 @@ function onDragEnter(
   { scope }: { scope: DragAndDropScope },
 ): boolean {
   e.preventDefault();
+  const isCopy = e.ctrlKey || e.metaKey;
+  if (isCopyDragActive.value !== isCopy) {
+    isCopyDragActive.value = isCopy;
+  }
   if (type === 'interval') {
     const [h, m] = scope.timestamp.time.split(':').map(Number);
     const rawMinutes = (h ?? 0) * 60 + (m ?? 0) - draggingGrabOffset;
@@ -896,15 +1057,67 @@ function onDragEnter(
       Math.round(Math.max(0, rawMinutes) / settings.timeInterval) *
       settings.timeInterval;
     const startTime = `${String(Math.floor(snapped / 60)).padStart(2, '0')}:${String(snapped % 60).padStart(2, '0')}`;
-    schedulePreviewUpdate({
-      date: scope.timestamp.date,
-      startTime,
-      duration: draggingEventDuration,
-      color: draggingEventColor,
-      plan: draggingEventPlan,
-    });
+
+    const previews: DragHoverPreview[] = [
+      {
+        id: draggingEventId ?? '',
+        date: scope.timestamp.date,
+        startTime,
+        duration: draggingEventDuration,
+        color: draggingEventColor,
+        plan: draggingEventPlan,
+      },
+    ];
+
+    // Preview the rest of the selection too, offset the same way the drop
+    // will move (or copy) them, so the whole group's destination is visible
+    // while dragging — not just the event under the cursor.
+    if (draggingEventId) {
+      const draggedEvent = events.find((v) => v.id === draggingEventId);
+      const groupIds = draggedEvent
+        ? selectionGroup(draggingEventId).filter((id) => id !== draggingEventId)
+        : [];
+
+      if (draggedEvent?.date && groupIds.length > 0) {
+        const dayDelta = daysBetweenDates(
+          parseLocalDate(draggedEvent.date),
+          parseLocalDate(scope.timestamp.date),
+        );
+        const minuteDelta = draggedEvent.time
+          ? parseTimeToMinutes(startTime)! -
+            parseTimeToMinutes(draggedEvent.time)!
+          : null;
+
+        for (const id of groupIds) {
+          const other = events.find((v) => v.id === id);
+          if (!other?.date || !other.time) {
+            continue;
+          }
+          const otherTime =
+            minuteDelta !== null
+              ? addMinutesToTime(other.time, minuteDelta)
+              : other.time;
+          const otherDate = formatDate(
+            new Date(
+              parseLocalDate(other.date).getTime() + dayDelta * DAY_IN_MS,
+            ),
+          );
+
+          previews.push({
+            id,
+            date: otherDate,
+            startTime: otherTime,
+            duration: other.duration ?? 60,
+            color: other.color ?? '#2196F3',
+            plan: other.plan,
+          });
+        }
+      }
+    }
+
+    schedulePreviewUpdate(previews);
   } else {
-    schedulePreviewUpdate(null);
+    schedulePreviewUpdate([]);
     // Direct DOM manipulation avoids Vue reactivity re-renders on every cell hover
     if (
       e.currentTarget instanceof Element &&
@@ -920,8 +1133,12 @@ function onDragEnter(
 
 function onDragOver(e: DragEvent): boolean {
   e.preventDefault();
+  const isCopy = e.ctrlKey || e.metaKey;
   if (e.dataTransfer) {
-    e.dataTransfer.dropEffect = e.ctrlKey || e.metaKey ? 'copy' : 'move';
+    e.dataTransfer.dropEffect = isCopy ? 'copy' : 'move';
+  }
+  if (isCopyDragActive.value !== isCopy) {
+    isCopyDragActive.value = isCopy;
   }
   return false;
 }
@@ -936,13 +1153,64 @@ function onDragLeave(e: DragEvent): boolean {
   return false;
 }
 
+interface GroupTarget {
+  id: string;
+  date: string | null;
+  time: string | null;
+}
+
+// Projects where the rest of a drag group lands, given the drop target
+// computed for the primary dragged event — each member keeps its offset
+// from the drop target rather than snapping to the exact same date/time.
+// Shared by the move and copy drop paths so both treat the group the same.
+function computeGroupTargets(
+  sourceEvent: ProgramEvent,
+  eventUpdate: ProgramEventUpdateData,
+  groupIds: string[],
+): GroupTarget[] {
+  if (eventUpdate.date == null) {
+    return groupIds.map((id) => ({ id, date: null, time: null }));
+  }
+
+  const dayDelta = sourceEvent.date
+    ? daysBetweenDates(
+        parseLocalDate(sourceEvent.date),
+        parseLocalDate(eventUpdate.date),
+      )
+    : 0;
+  const minuteDelta =
+    sourceEvent.time && eventUpdate.time
+      ? parseTimeToMinutes(eventUpdate.time)! -
+        parseTimeToMinutes(sourceEvent.time)!
+      : null;
+
+  const targets: GroupTarget[] = [];
+  for (const id of groupIds) {
+    const other = events.find((value) => value.id === id);
+    if (!other?.date) {
+      continue;
+    }
+    const otherDate = formatDate(
+      new Date(parseLocalDate(other.date).getTime() + dayDelta * DAY_IN_MS),
+    );
+    const otherTime =
+      other.time && minuteDelta !== null
+        ? addMinutesToTime(other.time, minuteDelta)
+        : other.time;
+
+    targets.push({ id, date: otherDate, time: otherTime });
+  }
+  return targets;
+}
+
 function onDrop(
   e: DragEvent,
   type: string,
   { scope }: { scope: DragAndDropScope },
 ): boolean {
-  clearDragHighlight();
-  cancelPreviewUpdate(null);
+  // Same DOM-remount caveat as onMoveToBacklog: don't rely on `dragend`
+  // alone to clear the drag/dim state.
+  resetDragState();
   const eventId = e.dataTransfer?.getData('text/plain');
   if (!eventId) {
     return false;
@@ -986,6 +1254,8 @@ function onDrop(
       };
   }
 
+  const groupIds = selectionGroup(eventId).filter((id) => id !== eventId);
+
   if (e.ctrlKey || e.metaKey) {
     if (!canCreate.value) {
       return false;
@@ -998,13 +1268,58 @@ function onDrop(
       plan: event.plan,
       ...eventUpdate,
     } as ProgramEventCreateData);
-  } else {
-    if (!canUpdate.value) {
-      return false;
+
+    // Duplicate the rest of the selection too, at the same offset from the
+    // drop target as the primary event — a copy-drag of a multi-selection
+    // should copy the whole group, not just the event under the cursor.
+    for (const target of computeGroupTargets(event, eventUpdate, groupIds)) {
+      const other = events.find((value) => value.id === target.id);
+      if (!other) {
+        continue;
+      }
+      emit('add', {
+        title: other.title,
+        location: other.location,
+        details: other.details,
+        color: other.color,
+        plan: other.plan,
+        date: target.date,
+        time: target.time,
+        duration: other.duration,
+      } as ProgramEventCreateData);
     }
-    emit('update', eventId, eventUpdate);
+    return false;
   }
 
+  if (!canUpdate.value) {
+    return false;
+  }
+
+  const actions: UndoAction[] = [
+    {
+      type: 'update',
+      id: eventId,
+      data: { date: event.date, time: event.time, duration: event.duration },
+    },
+  ];
+  emit('update', eventId, eventUpdate);
+
+  // Move the rest of the selection along with the dragged event, preserving
+  // each event's offset from the drop target rather than snapping all of
+  // them to the exact same date/time.
+  for (const target of computeGroupTargets(event, eventUpdate, groupIds)) {
+    const other = events.find((value) => value.id === target.id);
+    if (other) {
+      actions.push({
+        type: 'update',
+        id: target.id,
+        data: { date: other.date, time: other.time },
+      });
+    }
+    emit('update', target.id, { date: target.date, time: target.time });
+  }
+
+  pushUndo(actions);
   return false;
 }
 
@@ -1034,15 +1349,58 @@ function outOfCampIntervalClass({
   return { 'cal-outside-camp': outside };
 }
 
-const selectedEventId = ref<string | null>(null);
+const selectedEventIds = ref<Set<string>>(new Set());
 
-type UndoEntry =
+function isSelected(id: string): boolean {
+  return selectedEventIds.value.has(id);
+}
+
+// Selection is a ctrl/cmd-only gesture: ctrl/cmd-click toggles an event within
+// the current multi-selection so several events can be deleted or moved
+// together, while a plain click just clears it and falls through to the
+// event's normal click behavior (e.g. opening details).
+function selectEvent(id: string, e: MouseEvent) {
+  if (!e.ctrlKey && !e.metaKey) {
+    clearSelection();
+    return;
+  }
+  const next = new Set(selectedEventIds.value);
+  if (next.has(id)) {
+    next.delete(id);
+  } else {
+    next.add(id);
+  }
+  selectedEventIds.value = next;
+}
+
+function clearSelection() {
+  selectedEventIds.value = new Set();
+}
+
+// Resolves the set of event ids an action on `id` should apply to: the full
+// selection when `id` is part of a multi-selection, otherwise just `id`.
+function selectionGroup(id: string): string[] {
+  if (selectedEventIds.value.has(id) && selectedEventIds.value.size > 1) {
+    return Array.from(selectedEventIds.value);
+  }
+  return [id];
+}
+
+type UndoAction =
   | { type: 'update'; id: string; data: ProgramEventUpdateData }
   | { type: 'delete'; eventData: ProgramEventCreateData };
+
+// One entry groups every sub-action of a single user gesture (a bulk delete,
+// a multi-event drag, ...) so one undo reverts the whole gesture at once
+// rather than requiring ctrl+Z once per affected event.
+type UndoEntry = UndoAction[];
 
 const undoStack: UndoEntry[] = [];
 
 function pushUndo(entry: UndoEntry) {
+  if (entry.length === 0) {
+    return;
+  }
   undoStack.push(entry);
   if (undoStack.length > 20) {
     undoStack.shift();
@@ -1059,7 +1417,7 @@ function onKeydown(e: KeyboardEvent) {
     return;
   }
   if (e.key === 'Escape') {
-    selectedEventId.value = null;
+    clearSelection();
   } else if (e.key === 'ArrowRight') {
     onNextNavigation();
   } else if (e.key === 'ArrowLeft') {
@@ -1068,20 +1426,35 @@ function onKeydown(e: KeyboardEvent) {
     if (!canUpdate.value) {
       return;
     }
-    const event = events.find((ev) => ev.id === selectedEventId.value);
-    if (event) {
-      pushUndo({ type: 'update', id: event.id, data: { plan: event.plan } });
+    const actions: UndoAction[] = [];
+    for (const id of selectedEventIds.value) {
+      const event = events.find((ev) => ev.id === id);
+      if (!event) {
+        continue;
+      }
+      actions.push({
+        type: 'update',
+        id: event.id,
+        data: { plan: event.plan },
+      });
       const nextPlan =
         event.plan === 'both' ? 'a' : event.plan === 'a' ? 'b' : 'both';
       emit('update', event.id, { plan: nextPlan });
     }
+    pushUndo(actions);
   } else if (e.key === 'Delete' || e.key === 'Backspace') {
     if (!canDelete.value) {
       return;
     }
-    const event = events.find((ev) => ev.id === selectedEventId.value);
-    if (event) {
-      pushUndo({
+    const ids = Array.from(selectedEventIds.value);
+    clearSelection();
+    const actions: UndoAction[] = [];
+    for (const id of ids) {
+      const event = events.find((ev) => ev.id === id);
+      if (!event) {
+        continue;
+      }
+      actions.push({
         type: 'delete',
         eventData: {
           title: event.title,
@@ -1094,23 +1467,30 @@ function onKeydown(e: KeyboardEvent) {
           plan: event.plan,
         },
       });
-      selectedEventId.value = null;
       emit('delete', event.id);
     }
+    pushUndo(actions);
   } else if (e.key === 'z' && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
     const entry = undoStack[undoStack.length - 1];
-    if (entry?.type === 'update' && !canUpdate.value) {
+    if (!entry) {
       return;
     }
-    if (entry?.type === 'delete' && !canCreate.value) {
+    const blocked = entry.some(
+      (action) =>
+        (action.type === 'update' && !canUpdate.value) ||
+        (action.type === 'delete' && !canCreate.value),
+    );
+    if (blocked) {
       return;
     }
     undoStack.pop();
-    if (entry?.type === 'update') {
-      emit('update', entry.id, entry.data);
-    } else if (entry?.type === 'delete') {
-      emit('add', entry.eventData);
+    for (const action of entry) {
+      if (action.type === 'update') {
+        emit('update', action.id, action.data);
+      } else {
+        emit('add', action.eventData);
+      }
     }
   }
 }
@@ -1178,6 +1558,19 @@ function formatDate(date: Date): string {
   &--readonly {
     cursor: default;
   }
+}
+
+// Sits just above the overlay (z-index 0, later in DOM order) but below
+// actual events, so it never visually competes with real content.
+.cal-hover-slot {
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  background-color: color-mix(in srgb, var(--md3-primary) 6%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--md3-primary) 45%, transparent);
+  border-radius: 6px;
+  pointer-events: none;
+  transition: opacity 0.1s ease;
 }
 
 .cal-day-actions {

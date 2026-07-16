@@ -4,6 +4,7 @@
     class="cal-event"
     :class="{ 'cal-event--selected': selected }"
     :style="badgeStyles"
+    @click="onClick"
     @dragstart="onDragStart"
     @dragend="isDragging = false"
   >
@@ -20,10 +21,12 @@
     />
 
     <calendar-item-popup
+      ref="popupRef"
       :event="event"
       :editable="editable"
       :deletable="deletable"
       :creatable="creatable"
+      no-parent-event
       @edit="emit('edit')"
       @delete="emit('delete')"
       @duplicate="emit('duplicate')"
@@ -43,6 +46,7 @@ const {
   viewBoth = false,
   showAllTranslations = false,
   selected = false,
+  dimmed = false,
   editable = false,
   deletable = false,
   creatable = false,
@@ -54,6 +58,9 @@ const {
   viewBoth?: boolean;
   showAllTranslations?: boolean;
   selected?: boolean;
+  // True while another event in the same drag group is being dragged —
+  // this one is hidden in favor of its drop preview box.
+  dimmed?: boolean;
   editable?: boolean;
   deletable?: boolean;
   creatable?: boolean;
@@ -75,6 +82,17 @@ const { to, toAll } = useObjectTranslation();
 const resizeDuration = ref<number | null>(null);
 const isDragging = ref(false);
 const isCopyDrag = ref(false);
+
+const popupRef = ref<InstanceType<typeof CalendarItemPopup> | null>(null);
+
+// Ctrl/cmd-click is the multi-select gesture — don't also pop open the
+// event's detail/actions menu while the user is building a selection.
+function onClick(e: MouseEvent) {
+  if (e.ctrlKey || e.metaKey) {
+    return;
+  }
+  popupRef.value?.show(e);
+}
 
 function onDragStart(e: DragEvent) {
   if (e.dataTransfer && e.currentTarget instanceof HTMLElement) {
@@ -162,8 +180,8 @@ const badgeStyles = computed<StyleValue>(() => {
     height,
     left,
     width,
-    opacity: isDragging.value && !isCopyDrag.value ? 0 : undefined,
-    pointerEvents: isDragging.value ? 'none' : undefined,
+    opacity: (isDragging.value && !isCopyDrag.value) || dimmed ? 0 : undefined,
+    pointerEvents: isDragging.value || dimmed ? 'none' : undefined,
   };
 });
 
@@ -219,6 +237,16 @@ function startResize(e: MouseEvent) {
     box-shadow:
       0 0 0 2px var(--md3-surface),
       0 0 0 4px var(--md3-primary);
+
+    // `:hover` alone has higher specificity than `--selected` alone (two
+    // simple selectors vs. one), so it would otherwise clobber the ring —
+    // re-assert it here, layered with the hover elevation.
+    &:hover {
+      box-shadow:
+        0 0 0 2px var(--md3-surface),
+        0 0 0 4px var(--md3-primary),
+        0 2px 6px rgba(0, 0, 0, 0.25);
+    }
   }
 
   &__inner {
