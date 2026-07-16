@@ -185,9 +185,8 @@ const { locale, t: tGlobal, te } = useI18n({ useScope: 'global' });
 const { t } = useI18n();
 const attrs = useAttrs();
 
+// Availability is checked once by the store itself; see translation-store.ts.
 const translationStore = useTranslationStore();
-// Cached app-wide and shared by every instance; see translation-store.ts.
-void translationStore.checkAvailability();
 const translationAvailable = computed<boolean>(
   () => translationStore.available === true,
 );

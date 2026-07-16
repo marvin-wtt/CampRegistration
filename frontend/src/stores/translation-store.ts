@@ -7,32 +7,18 @@ export const useTranslationStore = defineStore('translation', () => {
   const apiService = useAPIService();
   const { withErrorNotification } = useServiceNotifications('translation');
 
-  // `null` means "not checked yet"; the check is cached for the app's
-  // lifetime and shared by every TranslatedInput instance.
-  const available = ref<boolean | null>(null);
-  let pendingCheck: Promise<void> | undefined;
-
-  async function checkAvailability(): Promise<boolean> {
-    if (available.value !== null) {
-      return available.value;
-    }
-
-    pendingCheck ??= apiService
-      .fetchTranslationStatus()
-      .then((status) => {
-        available.value = status.available;
-      })
-      .catch(() => {
-        available.value = false;
-      })
-      .finally(() => {
-        pendingCheck = undefined;
-      });
-
-    await pendingCheck;
-
-    return available.value ?? false;
-  }
+  // `null` means "not checked yet". Checked once, the moment the store is
+  // first created (Pinia stores are singletons), so consumers can just read
+  // `available` instead of each having to trigger the check themselves.
+  const available = ref<boolean | null>(true);
+  void apiService
+    .fetchTranslationStatus()
+    .then((status) => {
+      available.value = status.available;
+    })
+    .catch(() => {
+      available.value = false;
+    });
 
   async function translate(
     text: string,
@@ -46,7 +32,6 @@ export const useTranslationStore = defineStore('translation', () => {
 
   return {
     available,
-    checkAvailability,
     translate,
   };
-});
+};);
