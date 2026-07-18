@@ -1,5 +1,5 @@
 <template>
-  <div class="registration-form">
+  <div>
     <survey-component
       v-if="model"
       v-show="submitState === null"
@@ -522,7 +522,7 @@ complete:
 
 .registration-submit-status__card {
   width: 100%;
-  max-width: 440px;
+  max-width: 600px;
   padding-top: 24px;
 
   background-color: var(--md3-surface-container-low);
