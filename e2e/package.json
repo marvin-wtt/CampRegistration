@@ -15,7 +15,7 @@
     "test:ui": "playwright test --ui",
     "test": "playwright test",
     "dev": "node ./scripts/run-end-to-end.mjs",
-    "update-snapshots": "node ./scripts/update-snapshots.mjs"
+    "update-snapshots": "docker compose --profile snapshots run --rm snapshots"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",
