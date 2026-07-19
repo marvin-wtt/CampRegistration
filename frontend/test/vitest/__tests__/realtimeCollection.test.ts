@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Mock } from 'vitest';
 import { effectScope, ref } from 'vue';
 import type { EffectScope, Ref } from 'vue';
 import type {
@@ -73,8 +74,8 @@ const notFound = () => ({
 describe('useRealtimeCollection', () => {
   let scope: EffectScope;
   let data: Ref<Item[] | undefined>;
-  let invalidate: ReturnType<typeof vi.fn>;
-  let reload: ReturnType<typeof vi.fn>;
+  let invalidate: Mock<() => void>;
+  let reload: Mock<() => Promise<void> | void>;
 
   function mount(options?: {
     fetchOne?: (campId: string, id: string) => Promise<Item>;

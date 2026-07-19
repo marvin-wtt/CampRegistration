@@ -180,9 +180,9 @@ function onOKClick(): void {
     ? { ...data }
     : {
         title: data.title ?? '',
-        notes: data.notes,
-        dueDate: data.dueDate,
-        assigneeId: data.assigneeId,
+        notes: data.notes ?? null,
+        dueDate: data.dueDate ?? null,
+        assigneeId: data.assigneeId ?? null,
       };
 
   onDialogOK(payload);

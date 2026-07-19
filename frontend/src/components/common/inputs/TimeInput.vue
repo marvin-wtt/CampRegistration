@@ -98,8 +98,8 @@ function timeToIso(inputTime?: string): string | undefined {
   const [hours, minutes] = inputTime.split(':').map(Number);
 
   const date = new Date(dateString);
-  date.setHours(hours);
-  date.setMinutes(minutes);
+  date.setHours(hours ?? 0);
+  date.setMinutes(minutes ?? 0);
 
   return date.toISOString();
 }

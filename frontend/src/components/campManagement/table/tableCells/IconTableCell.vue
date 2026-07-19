@@ -11,7 +11,12 @@
 import { computed } from 'vue';
 import type { TableCellProps } from '@/components/campManagement/table/tableCells/TableCellProps';
 
-const props = defineProps<TableCellProps>();
+interface IconOptions {
+  color?: string | undefined;
+  name?: string | undefined;
+}
+
+const props = defineProps<TableCellProps<IconOptions>>();
 
 const visible = computed<boolean>(() => {
   // Visibility should be defined via the showIf / hideIf fields
@@ -19,26 +24,12 @@ const visible = computed<boolean>(() => {
   return true;
 });
 
-const color = computed<string>(() => {
-  if (
-    props.options !== undefined &&
-    'color' in props.options &&
-    typeof props.options.color === 'string'
-  ) {
-    return props.options.color;
-  }
-  return '';
+const color = computed<string | undefined>(() => {
+  return props.options?.color;
 });
 
 const name = computed<string>(() => {
-  if (
-    props.options !== undefined &&
-    'name' in props.options &&
-    typeof props.options.name === 'string'
-  ) {
-    return props.options.name;
-  }
-  return '';
+  return props.options?.name || '';
 });
 
 const size = computed<string>(() => {
