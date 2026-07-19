@@ -1,5 +1,10 @@
-import { z } from 'zod';
+import { z, type ZodType } from 'zod';
 import { LocaleSchema, PasswordSchema } from '#core/validation/helper';
+import type {
+  UserCreateData,
+  UserUpdateData,
+  UserQuery,
+} from '@camp-registration/common/entities';
 
 const RoleSchema = z.enum(['USER', 'ADMIN']);
 
@@ -32,7 +37,7 @@ const index = z.object({
       limit: z.coerce.number().int().positive().max(100),
       cursor: z.ulid(),
     })
-    .partial(),
+    .partial() satisfies ZodType<UserQuery>,
 });
 
 const store = z.object({
@@ -43,7 +48,7 @@ const store = z.object({
     role: RoleSchema.optional(),
     locale: LocaleSchema.optional(),
     locked: z.boolean().optional(),
-  }),
+  }) satisfies ZodType<UserCreateData>,
 });
 
 const update = z.object({
@@ -60,7 +65,7 @@ const update = z.object({
       locked: z.boolean(),
       emailVerified: z.boolean(),
     })
-    .partial(),
+    .partial() satisfies ZodType<UserUpdateData>,
 });
 
 const destroy = z.object({

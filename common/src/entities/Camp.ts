@@ -45,7 +45,7 @@ export type CampRegistrationStatus = 'open' | 'upcoming' | 'closed';
 export interface CampQuery {
   cursor?: string;
   limit?: number;
-  sortBy?: keyof Camp;
+  sortBy?: string;
   sortType?: 'asc' | 'desc';
 
   name?: string;
