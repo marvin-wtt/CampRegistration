@@ -1,4 +1,8 @@
-import { z } from 'zod';
+import { z, type ZodType } from 'zod';
+import type {
+  NewsletterSubscriberCreateData,
+  NewsletterSubscriberImportData,
+} from '@camp-registration/common/entities';
 
 const index = z.object({
   params: z.object({
@@ -13,7 +17,7 @@ const store = z.object({
   body: z.object({
     email: z.email(),
     name: z.string().max(255).nullable().optional(),
-  }),
+  }) satisfies ZodType<NewsletterSubscriberCreateData>,
 });
 
 const importFromCamp = z.object({
@@ -24,7 +28,7 @@ const importFromCamp = z.object({
     campId: z.ulid(),
     country: z.string().max(5).nullable().optional(),
     requireConsent: z.boolean().optional(),
-  }),
+  }) satisfies ZodType<NewsletterSubscriberImportData>,
 });
 
 const destroy = z.object({

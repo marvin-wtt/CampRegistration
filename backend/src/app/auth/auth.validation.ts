@@ -1,5 +1,6 @@
-import { z } from 'zod';
+import { z, type ZodType } from 'zod';
 import { PasswordSchema } from '#core/validation/helper';
+import type { LoginData } from '@camp-registration/common/entities';
 
 const register = z.object({
   body: z.object({
@@ -14,7 +15,7 @@ const login = z.object({
     email: z.email(),
     password: z.string(),
     remember: z.boolean().default(false),
-  }),
+  }) satisfies ZodType<LoginData>,
 });
 
 const verifyOTP = z.object({

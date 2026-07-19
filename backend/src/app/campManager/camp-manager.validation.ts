@@ -1,4 +1,8 @@
-import { z } from 'zod';
+import { z, type ZodType } from 'zod';
+import type {
+  CampManagerCreateData,
+  CampManagerUpdateData,
+} from '@camp-registration/common/entities';
 
 const index = z.object({
   params: z.object({
@@ -21,7 +25,7 @@ const store = z.object({
     email: z.email(),
     role: z.enum(['DIRECTOR', 'COORDINATOR', 'COUNSELOR', 'VIEWER']),
     expiresAt: z.iso.datetime().optional(),
-  }),
+  }) satisfies ZodType<CampManagerCreateData>,
 });
 
 const update = z.object({
@@ -34,7 +38,7 @@ const update = z.object({
       role: z.enum(['DIRECTOR', 'COORDINATOR', 'COUNSELOR', 'VIEWER']),
       expiresAt: z.iso.datetime().nullable(),
     })
-    .partial(),
+    .partial() satisfies ZodType<CampManagerUpdateData>,
 });
 
 const destroy = z.object({

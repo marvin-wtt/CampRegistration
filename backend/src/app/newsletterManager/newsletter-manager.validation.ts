@@ -1,4 +1,5 @@
-import { z } from 'zod';
+import { z, type ZodType } from 'zod';
+import type { NewsletterManagerCreateData } from '@camp-registration/common/entities';
 
 const index = z.object({
   params: z.object({
@@ -13,7 +14,7 @@ const store = z.object({
   body: z.object({
     email: z.email(),
     role: z.enum(['OWNER', 'EDITOR', 'VIEWER']).optional(),
-  }),
+  }) satisfies ZodType<NewsletterManagerCreateData>,
 });
 
 const destroy = z.object({

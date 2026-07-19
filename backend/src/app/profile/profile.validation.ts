@@ -1,5 +1,6 @@
-import { z } from 'zod';
+import { z, type ZodType } from 'zod';
 import { LocaleSchema, PasswordSchema } from '#core/validation/helper';
+import type { ProfileUpdateData } from '@camp-registration/common/entities';
 
 const update = z.object({
   body: z
@@ -21,7 +22,7 @@ const update = z.object({
           input: val.currentPassword,
         });
       }
-    }),
+    }) satisfies ZodType<ProfileUpdateData>,
 });
 
 export default { update };
