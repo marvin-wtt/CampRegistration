@@ -398,15 +398,112 @@ jobs:
 
       # The Playwright config should start the already-built application through
       # its webServer configuration; it must not invoke a build command here.
+      # Screenshot assertions are skipped here — they are compared in the
+      # `test-e2e-visual` job, which runs in the same container image the
+      # baselines were captured in.
       - name: Run Playwright tests
         working-directory: e2e
-        run: npx playwright test --project="${{ matrix.project }}"
+        run: npx playwright test --project="${{ matrix.project }}" --ignore-snapshots
 
       - name: Upload Playwright results
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
           name: playwright-${{ matrix.project }}-${{ github.sha }}
+          path: |
+            e2e/playwright-report/
+            e2e/test-results/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  test-e2e-visual:
+    needs: build-e2e
+    runs-on: ubuntu-24.04
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+
+    container:
+      image: mcr.microsoft.com/playwright:v1.61.1-noble
+      # Chromium needs more shared memory than the container default
+      options: --ipc=host
+
+    services:
+      mariadb:
+        image: mariadb:10.11.15
+        env:
+          MYSQL_DATABASE: test_db
+          MYSQL_ROOT_PASSWORD: admin123
+        options: >-
+          --health-cmd "mysqladmin ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 3
+
+      maildev:
+        image: maildev/maildev:2.2.1
+        env:
+          MAILDEV_SMTP_PORT: 1025
+          MAILDEV_WEB_PORT: 1081
+          MAILDEV_INCOMING_USER: user
+          MAILDEV_INCOMING_PASS: password
+
+    env:
+      CI: true
+      APP_PORT: 3001
+      APP_URL: http://localhost:3001
+      APP_NAME: Test App
+      # Inside a job container the services are reachable by their label, not
+      # on localhost, and on their container-internal ports.
+      DATABASE_URL: mysql://root:admin123@mariadb:3306/test_db
+      SHADOW_DATABASE_URL: mysql://root:admin123@mariadb:3306/shadow_db
+      TMP_DIR: tests/tmp/storage/tmp/
+      UPLOAD_DIR: tests/tmp/storage/uploads/
+      STORAGE_LOCATION: disk
+      JWT_SECRET: oxcch29nu7OKSZ2Wia8U7Y/4TiCqd9lWpIm/skZOpVM=
+      CSRF_SECRET: pwXh922dSwF1tjaDmpwhrWZjNbu771PCgv70cRc37so=
+      TOTP_RECOVERY_CODE_SECRET: gDHSH6MScBYrYWg7lXPprOewzZWBr0+srB+avI4SfQM=
+      SMTP_HOST: maildev
+      SMTP_PORT: 1025
+      SMTP_SECURE: false
+      SMTP_USERNAME: user
+      SMTP_PASSWORD: password
+      MAILDEV_HOST: maildev
+      EMAIL_FROM: noreply@yourapp.com
+      EMAIL_REPLY_TO: noreply@yourapp.com
+      EMAIL_ADMIN: admin@yourapp.com
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      # No setup-node and no `playwright install` here: the image already
+      # provides both Node and the matching browser binaries. Adding either
+      # would reintroduce the environment drift this job exists to avoid.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download E2E build
+        uses: actions/download-artifact@v8
+        with:
+          name: e2e-build-${{ github.sha }}
+          path: .
+
+      - name: Migrate test database
+        run: npm run migrate --workspace backend
+
+      - name: Compare visual snapshots
+        working-directory: e2e
+        run: npx playwright test visual.spec --project=chromium --project=mobile-chrome
+
+      - name: Explain how to update the baselines
+        if: failure()
+        run: |
+          echo "::notice::Visual baselines differ. Download the 'playwright-visual' artifact to review the diffs. If the change is intended, regenerate with: npm run update-snapshots --workspace e2e"
+
+      - name: Upload Playwright results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-visual-${{ github.sha }}
           path: |
             e2e/playwright-report/
             e2e/test-results/

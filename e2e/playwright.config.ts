@@ -34,6 +34,13 @@ export default defineConfig({
     testIdAttribute: "data-test",
   },
 
+  expect: {
+    toHaveScreenshot: {
+      animations: "disabled",
+      maxDiffPixels: 100,
+    },
+  },
+
   projects: [
     {
       name: "chromium",

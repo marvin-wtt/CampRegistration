@@ -1,29 +1,79 @@
-version: '3.8'
 services:
   db:
     image: mariadb:10.11.15
     restart: on-failure
     environment:
-      MYSQL_DATABASE: 'database'
-      MYSQL_USER: 'user'
-      MYSQL_PASSWORD: 'password'
-      MYSQL_ROOT_PASSWORD: 'root'
+      MYSQL_DATABASE: "database"
+      MYSQL_USER: "user"
+      MYSQL_PASSWORD: "password"
+      MYSQL_ROOT_PASSWORD: "root"
       MYSQL_TCP_PORT: 3308
     ports:
-      - '3308:3308'
+      - "3308:3308"
     volumes:
       - db:/var/lib/mysql
+    healthcheck:
+      test: [ "CMD", "healthcheck.sh", "--connect", "--innodb_initialized" ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
   mail:
     image: maildev/maildev:2.2.1
     restart: on-failure
     ports:
-      - '1081:1081'
-      - '1026:1026'
+      - "1081:1081"
+      - "1026:1026"
     environment:
-      MAILDEV_SMTP_PORT: '1026'
-      MAILDEV_WEB_PORT: '1081'
-      MAILDEV_INCOMING_USER: 'user'
-      MAILDEV_INCOMING_PASS: 'password'
+      MAILDEV_SMTP_PORT: "1026"
+      MAILDEV_WEB_PORT: "1081"
+      MAILDEV_INCOMING_USER: "user"
+      MAILDEV_INCOMING_PASS: "password"
+
+  # Regenerates the visual-regression baselines inside the Ubuntu noble image
+  # CI uses, since screenshots cannot be captured on the host OS. Started only
+  # through the `snapshots` profile — see README.md.
+  snapshots:
+    profiles: [ "snapshots" ]
+    # Must match the installed @playwright/test version; a mismatch fails
+    # loudly with "Executable doesn't exist".
+    image: mcr.microsoft.com/playwright:v1.61.1-noble
+    init: true
+    # Chromium needs more shared memory than the container default
+    ipc: host
+    working_dir: /work
+    entrypoint: [ "bash", "e2e/scripts/update-snapshots.sh" ]
+    depends_on:
+      db:
+        condition: service_healthy
+      mail:
+        condition: service_started
+    # These take precedence over the localhost values in backend/.env.e2e
+    # (dotenv never overrides existing process.env entries).
+    environment:
+      DATABASE_URL: "mysql://root:root@db:3308/database"
+      SHADOW_DATABASE_URL: "mysql://root:root@db:3308/shadow_database"
+      SMTP_HOST: "mail"
+      MAILDEV_HOST: "mail"
+    volumes:
+      - ../:/work
+      # Host node_modules and the generated Prisma client hold host-native
+      # binaries, so they are shadowed with Linux-side volumes. The volumes
+      # double as a cache: only the first run pays for the install and build.
+      - node-modules:/work/node_modules
+      - nm-common:/work/common/node_modules
+      - nm-backend:/work/backend/node_modules
+      - nm-frontend:/work/frontend/node_modules
+      - nm-e2e:/work/e2e/node_modules
+      - prisma-client:/work/backend/src/generated
+      - npm-cache:/root/.npm
+
 volumes:
   db:
     driver: local
+  node-modules:
+  nm-common:
+  nm-backend:
+  nm-frontend:
+  nm-e2e:
+  prisma-client:
+  npm-cache:
