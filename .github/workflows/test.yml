@@ -216,6 +216,9 @@ jobs:
       - name: Build common
         run: npm run build --workspace common
 
+      - name: Typecheck frontend
+        run: npm run typecheck --workspace frontend
+
       - name: Test frontend
         run: >
           npm run test --workspace frontend --
