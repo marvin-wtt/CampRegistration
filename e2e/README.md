@@ -43,6 +43,30 @@ npm run dev --workspace e2e
 npx playwright test --project=mobile-chrome --project=mobile-safari
 ```
 
+## Visual Regression Snapshots
+
+`camp-page.visual.spec.ts` compares rendered screenshots against committed baselines. Screenshots are rendering-engine
+_and_ platform specific — the baselines are stored with a `-linux` suffix and compared on the `ubuntu-24.04`
+CI runners, so they cannot be captured on Windows or macOS directly.
+
+Regenerate them inside the official Playwright Docker image (same Ubuntu noble base as CI). Requires Docker Desktop (or
+a Docker daemon) to be running:
+
+```bash
+npm run update-snapshots --workspace e2e
+
+# Limit to a single test
+npm run update-snapshots --workspace e2e -- -g "registration closed"
+```
+
+The script starts the e2e compose services, then runs `npm ci`, the workspace builds, and the Chromium projects of the
+visual specs inside the container, with the repository bind-mounted so the updated baselines land in the working tree
+(`e2e/tests/**/*-snapshots/`). Host `node_modules` and the generated Prisma client are shadowed with named Docker
+volumes because they contain host-native binaries; those volumes also act as a cache, so only the first run pays for the
+install and build.
+
+Review the resulting PNG diffs before committing them.
+
 ## Conventions
 
 - Prefer `data-test` attributes for selectors; use `page.getByTestId()`

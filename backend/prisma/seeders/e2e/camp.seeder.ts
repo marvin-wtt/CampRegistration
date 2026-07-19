@@ -46,4 +46,24 @@ export async function seedE2eCamps(): Promise<void> {
       ],
     },
   });
+
+  // Registration window opens in the far future -> "upcoming" status.
+  await CampFactory.create({
+    id: '01JHP0CXJFR4MQS8SF1HQJCA10',
+    name: 'Upcoming Camp',
+    public: true,
+    registrationOpensAt: '2999-01-01T09:00:00.000Z',
+    registrationClosesAt: null,
+    form: { name: 'Upcoming camp', elements: [] },
+  });
+
+  // Registration window already ended -> "closed" status.
+  await CampFactory.create({
+    id: '01JHP0CXJFR4MQS8SF1HQJCA20',
+    name: 'Closed Camp',
+    public: true,
+    registrationOpensAt: null,
+    registrationClosesAt: '2020-06-01T09:00:00.000Z',
+    form: { name: 'Closed camp', elements: [] },
+  });
 }
