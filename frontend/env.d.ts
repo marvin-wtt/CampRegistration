@@ -11,5 +11,5 @@
  * }
  */
 interface ImportMetaEnv {
-  readonly SURVEYJS_LICENCE_KEY: string;
+  readonly SURVEYJS_LICENSE_KEY: string;
 }

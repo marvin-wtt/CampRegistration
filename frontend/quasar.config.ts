@@ -64,7 +64,7 @@ export default defineConfig((ctx) => {
       // publicPath: '/',
       // analyze: true,
       defineEnv: {
-        SURVEYJS_LICENCE_KEY: import.meta.env.SURVEYJS_LICENCE_KEY,
+        SURVEYJS_LICENSE_KEY: import.meta.env.SURVEYJS_LICENSE_KEY,
       },
       // define: {}
       // ignorePublicFolder: true,
