@@ -372,10 +372,14 @@ export class FileService extends BaseService {
       sortType?: 'asc' | 'desc';
     } = {},
   ) {
-    const page = options.page ?? 1;
-    const limit = options.limit ?? 10;
     const sortBy = options.sortBy ?? 'name';
     const sortType = options.sortType ?? 'desc';
+
+    const skip =
+      options.page && options.limit
+        ? (options.page - 1) * options.limit
+        : undefined;
+    const take = options.limit;
 
     return this.prisma.file.findMany({
       where: {
@@ -383,8 +387,8 @@ export class FileService extends BaseService {
         type: filter.type,
         [`${model.name}Id`]: model.id,
       },
-      skip: (page - 1) * limit,
-      take: limit,
+      skip,
+      take,
       orderBy: sortBy ? { [sortBy]: sortType } : undefined,
     });
   }

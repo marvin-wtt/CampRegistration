@@ -30,7 +30,8 @@
     "./entities": "./dist/entities/index.js",
     "./permissions": "./dist/permissions/index.js",
     "./realtime": "./dist/realtime/index.js",
-    "./settings": "./dist/settings/index.js"
+    "./settings": "./dist/settings/index.js",
+    "./utils": "./dist/utils/index.js"
   },
   "imports": {
     "#enteties": "./src/enteties/index.js",
@@ -38,6 +39,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/markdown-it": "^14.1.2",
     "@types/node": "^24.13.2",
     "@vitest/coverage-v8": "^4.1.8",
     "@vitest/ui": "^4.1.8",
@@ -48,9 +50,12 @@
     "vitest": "^4.1.8"
   },
   "peerDependencies": {
-    "survey-core": "2.5.29"
+    "survey-core": "^3.0.0-beta.8"
   },
   "engines": {
     "node": ">=22 <25"
+  },
+  "dependencies": {
+    "markdown-it": "^14.2.0"
   }
 }

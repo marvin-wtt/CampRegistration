@@ -7,16 +7,11 @@
 import 'survey-core/survey-core.min.css';
 import 'survey-creator-core/survey-creator-core.min.css';
 // JS
-import 'survey-core/i18n/english';
-import 'survey-creator-core/i18n/english';
-import 'survey-core/i18n/german';
-import 'survey-creator-core/i18n/german';
-import 'survey-core/i18n/french';
-import 'survey-creator-core/i18n/french';
-import 'survey-core/i18n/polish';
-import 'survey-creator-core/i18n/polish';
-import 'survey-core/i18n/czech';
-import 'survey-creator-core/i18n/czech';
+import 'survey-core/i18n';
+// Json editor
+import 'ace-builds/src-noconflict/ace';
+import 'ace-builds/src-noconflict/ext-searchbox';
+import 'ace-builds/src-noconflict/theme-clouds_midnight';
 
 import { watch, watchEffect } from 'vue';
 import {
@@ -38,7 +33,7 @@ import {
   Serializer,
 } from 'survey-core';
 import { surveyLocalization } from 'survey-core';
-import { createMarkdownConverter } from '@/utils/markdown';
+import { createMarkdownConverter } from '@camp-registration/common/utils';
 import FileSelectionDialog from '@/components/campManagement/settings/files/FileSelectionDialog.vue';
 import type {
   CampDetails,
@@ -46,12 +41,18 @@ import type {
 } from '@camp-registration/common/entities';
 import { useQuasar } from 'quasar';
 import type { SurveyJSCampData } from '@camp-registration/common/entities';
-import { setVariables } from '@camp-registration/common/form';
-import { addFileSlotResolver } from '@/composables/survey';
+import {
+  fileDynamicTextProcessor,
+  setVariables,
+} from '@camp-registration/common/form';
 import { useAPIService } from '@/services/APIService';
 import { surveyCreatorCustomLocaleConfig } from '@/components/campManagement/settings/form/form-editor-translations';
 import { createStaticMd3SurveyThemes } from '@/lib/surveyJs/themes/md3';
 import { md3CreatorThemes } from '@/lib/surveyJs/themes/md3-creator';
+import { AceJsonEditorModel } from 'survey-creator-core';
+
+AceJsonEditorModel.aceBasePath =
+  'https://unpkg.com/ace-builds/src-min-noconflict/';
 
 const props = defineProps<{
   camp: CampDetails;
@@ -235,10 +236,14 @@ creator.onSurveyInstanceCreated.add((_, options) => {
 
   if (['preview-tab', 'theme-tab'].includes(options.area)) {
     setVariables(survey, props.camp);
-    addFileSlotResolver(survey, props.camp.id, api);
     survey.onLocaleChangedEvent.add((sender) => {
       setVariables(sender, props.camp);
     });
+    survey.onProcessDynamicText.add(
+      fileDynamicTextProcessor((slot) =>
+        api.getCampFileSlotUrl(props.camp.id, slot, survey.locale),
+      ),
+    );
   }
 
   if (['preview-tab'].includes(options.area)) {

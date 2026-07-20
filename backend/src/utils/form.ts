@@ -1,12 +1,11 @@
 import { SurveyModel } from 'survey-core';
 import type { Question } from 'survey-core';
 import { setVariables } from '@camp-registration/common/form';
-import type { Camp } from '#generated/prisma/client.js';
+import type { CampWithFreePlaces } from '#app/camp/camp.types';
 
-export const formUtils = (
-  camp: Camp & { freePlaces: number | Record<string, number> },
-  data?: unknown,
-) => {
+import 'survey-core/i18n';
+
+export const formUtils = (camp: CampWithFreePlaces, data?: unknown) => {
   const survey = new SurveyModel(camp.form);
 
   survey.locale = 'en-US';

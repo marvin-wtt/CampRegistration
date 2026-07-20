@@ -16,6 +16,10 @@ export const MainEnvSchema = z.object({
     .default('#338d8e')
     .describe('Primary color used in email templates.'),
   SENTRY_DSN: z.url().optional().describe('Sentry DSN for error tracking.'),
+  SURVEYJS_LICENSE_KEY: z
+    .string()
+    .optional()
+    .describe('License key for SurveyJS library.'),
   LOG_LEVEL: z
     .enum(['error', 'warn', 'info', 'http', 'debug'])
     .optional()

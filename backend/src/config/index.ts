@@ -109,6 +109,9 @@ const config = {
   sentry: {
     dsn: env.SENTRY_DSN,
   },
+  surveyjs: {
+    licenceKey: env.SURVEYJS_LICENSE_KEY,
+  },
   log: {
     level: env.LOG_LEVEL,
   },
