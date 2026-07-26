@@ -102,6 +102,23 @@ const isCopyDrag = ref(false);
 const popupRef =
   useTemplateRef<InstanceType<typeof CalendarItemPopup>>('popup');
 
+// The mouseup ending a resize makes the browser dispatch a click on whatever
+// ancestor both ends of the gesture share — the event block itself (opening
+// the detail popup) or the day column (clearing the selection). Swallow that
+// one click in the capture phase, before any of those handlers see it.
+function suppressNextClick() {
+  const swallow = (ev: MouseEvent) => {
+    ev.stopPropagation();
+  };
+  window.addEventListener('click', swallow, { capture: true, once: true });
+  // A gesture that ends where no click is derived from it must not leave the
+  // listener behind to eat the user's next real click. Timers run after that
+  // click would have been dispatched.
+  setTimeout(() => {
+    window.removeEventListener('click', swallow, true);
+  }, 0);
+}
+
 // Ctrl/cmd-click is the multi-select gesture — don't also pop open the
 // event's detail/actions menu while the user is building a selection.
 function onClick(e: MouseEvent) {
@@ -231,6 +248,7 @@ function startResize(e: MouseEvent) {
     resizeDuration.value = null;
     window.removeEventListener('mousemove', onMove);
     window.removeEventListener('mouseup', onUp);
+    suppressNextClick();
   }
 
   window.addEventListener('mousemove', onMove);
@@ -271,6 +289,7 @@ function startPlanResize(e: MouseEvent, side: 'left' | 'right') {
     resizePlan.value = null;
     window.removeEventListener('mousemove', onMove);
     window.removeEventListener('mouseup', onUp);
+    suppressNextClick();
 
     if (plan !== event.plan) {
       emit('change-plan', plan);
