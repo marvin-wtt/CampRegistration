@@ -10,18 +10,12 @@ import { BaseController } from '#core/base/BaseController';
 import { RealtimeService } from '#core/realtime/RealtimeService';
 import { inject, injectable } from 'inversify';
 import contentDisposition from 'content-disposition';
+import { isClientDisconnect } from '#utils/stream';
 
 interface ModelData {
   id: string;
   name: string;
 }
-
-// pipeline reports a client that disconnected mid-download as a premature
-// close of the destination; that is routine, not a server error.
-const isClientDisconnect = (error: unknown): boolean =>
-  error instanceof Error &&
-  'code' in error &&
-  error.code === 'ERR_STREAM_PREMATURE_CLOSE';
 
 @injectable()
 export class FileController extends BaseController {
