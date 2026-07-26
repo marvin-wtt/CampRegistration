@@ -151,6 +151,11 @@ test.describe("Authentication", () => {
       await expect(page).toHaveURL(/\/verify-email$/);
 
       const email = await waitForMessageBySentTo("test@example.com");
+      // `setContent` reopens the current document. If the SPA still has an
+      // in-flight lazy-route chunk at that moment, Firefox never fires `load`
+      // for the reopened document and `setContent` hangs until the test times
+      // out. Navigating away first cancels those pending requests.
+      await page.goto("about:blank");
       await page.setContent(email.html);
 
       const confirmLink = page.locator(".confirm-email-link a").first();
@@ -182,6 +187,8 @@ test.describe("Authentication", () => {
       expect((await forgotPasswordResponse).status()).toBe(204);
 
       const email = await waitForMessageBySentTo("john@example.com");
+      // See above: clear pending SPA requests so `setContent` can settle.
+      await page.goto("about:blank");
       await page.setContent(email.html);
 
       const resetLink = page.locator(".reset-email-link a").first();

@@ -93,34 +93,29 @@
           <div class="cal-help__panel">
             <div class="text-subtitle2 q-mb-sm">{{ t('help.title') }}</div>
 
-            <template v-if="quasar.screen.gt.xs">
-              <div class="cal-help__section-label">
-                {{ t('help.keyboard') }}
+            <div class="cal-help__section-label">
+              {{ t('help.keyboard') }}
+            </div>
+            <div
+              v-for="(row, i) in keyboardShortcuts"
+              :key="`k${i}`"
+              class="cal-help__row"
+            >
+              <div class="cal-help__keys">
+                <kbd
+                  v-for="key in row.keys"
+                  :key="key"
+                  class="cal-help__kbd"
+                >
+                  {{ key }}
+                </kbd>
               </div>
-              <div
-                v-for="(row, i) in keyboardShortcuts"
-                :key="`k${i}`"
-                class="cal-help__row"
-              >
-                <div class="cal-help__keys">
-                  <kbd
-                    v-for="key in row.keys"
-                    :key="key"
-                    class="cal-help__kbd"
-                  >
-                    {{ key }}
-                  </kbd>
-                </div>
-                <div class="cal-help__desc">{{ row.label }}</div>
-              </div>
-
-              <q-separator
-                v-if="mouseShortcuts.length"
-                class="q-my-sm"
-              />
-            </template>
+              <div class="cal-help__desc">{{ row.label }}</div>
+            </div>
 
             <template v-if="mouseShortcuts.length">
+              <q-separator class="q-my-sm" />
+
               <div class="cal-help__section-label">{{ t('help.mouse') }}</div>
               <ul class="cal-help__list">
                 <li
@@ -226,6 +221,11 @@ const planOptions = computed(() => {
   ];
 });
 
+// The help panel only documents keyboard and mouse/drag gestures, none of
+// which exist on touch devices — hide the whole button there rather than show
+// a menu of things that can't be done.
+const isTouch = computed<boolean>(() => quasar.platform.is.mobile);
+
 // Only surface shortcuts the user has permission to perform; navigate and
 // deselect are read-only and always shown.
 const keyboardShortcuts = computed<{ keys: string[]; label: string }[]>(() => {
@@ -264,6 +264,8 @@ const mouseShortcuts = computed<string[]>(() => {
   if (editable) {
     rows.push(t('help.shortcuts.unschedule'));
     rows.push(t('help.shortcuts.resize'));
+    rows.push(t('help.shortcuts.resizePlan'));
+    rows.push(t('help.shortcuts.movePlan'));
   }
   if (creatable) {
     rows.push(t('help.shortcuts.allDay'));
@@ -271,10 +273,12 @@ const mouseShortcuts = computed<string[]>(() => {
   return rows;
 });
 
-// On mobile only the mouse section renders; hide the whole help button when
-// there is nothing useful left to show.
+// Hidden on touch (nothing to show), and on desktop when both sections would
+// be empty.
 const showHelp = computed<boolean>(
-  () => quasar.screen.gt.xs || mouseShortcuts.value.length > 0,
+  () =>
+    !isTouch.value &&
+    (keyboardShortcuts.value.length > 0 || mouseShortcuts.value.length > 0),
 );
 
 const maxDays = computed<number>(() => {
@@ -527,7 +531,9 @@ help:
     move: 'Drag an event to move it — drags the whole selection if selected'
     copy: 'Hold Ctrl / ⌘ while dragging to copy'
     unschedule: 'Drag onto "Unscheduled" to remove from the plan'
-    resize: "Drag an event's bottom edge to resize"
+    resize: "Drag an event's bottom edge to resize — resizes the whole selection if selected"
+    resizePlan: "With both plans shown, drag an event's side edge to extend it to both plans or back — applies to the whole selection if selected"
+    movePlan: 'With both plans shown, drop an event in the other half to switch between plan A and B'
     allDay: 'Click a day header to add an all-day event'
 </i18n>
 
@@ -555,7 +561,9 @@ help:
     move: 'Ereignis ziehen, um es zu verschieben — verschiebt die ganze Auswahl, falls ausgewählt'
     copy: 'Strg / ⌘ beim Ziehen halten, um zu kopieren'
     unschedule: 'Auf "Ungeplant" ziehen, um aus dem Plan zu entfernen'
-    resize: 'Untere Kante eines Ereignisses ziehen, um die Größe zu ändern'
+    resize: 'Untere Kante eines Ereignisses ziehen, um die Größe zu ändern — ändert die ganze Auswahl, falls ausgewählt'
+    resizePlan: 'Bei Anzeige beider Pläne die seitliche Kante eines Ereignisses ziehen, um es auf beide Pläne auszudehnen oder zurückzunehmen — gilt für die ganze Auswahl, falls ausgewählt'
+    movePlan: 'Bei Anzeige beider Pläne ein Ereignis in die andere Hälfte ziehen, um zwischen Plan A und B zu wechseln'
     allDay: 'Tagesüberschrift anklicken, um ein ganztägiges Ereignis hinzuzufügen'
 </i18n>
 
@@ -583,7 +591,9 @@ help:
     move: 'Glisser un événement pour le déplacer — déplace toute la sélection si elle est sélectionnée'
     copy: 'Maintenir Ctrl / ⌘ en glissant pour copier'
     unschedule: 'Glisser sur "Non planifié" pour retirer du plan'
-    resize: "Glisser le bord inférieur d'un événement pour le redimensionner"
+    resize: "Glisser le bord inférieur d'un événement pour le redimensionner — redimensionne toute la sélection si elle est sélectionnée"
+    resizePlan: "Avec les deux plans affichés, glisser le bord latéral d'un événement pour l'étendre aux deux plans ou revenir en arrière — s'applique à toute la sélection si elle est sélectionnée"
+    movePlan: "Avec les deux plans affichés, déposer un événement dans l'autre moitié pour basculer entre le plan A et le plan B"
     allDay: "Cliquer sur l'en-tête d'un jour pour ajouter un événement sur la journée"
 </i18n>
 
@@ -611,7 +621,9 @@ help:
     move: 'Przeciągnij wydarzenie, aby je przenieść — przenosi całe zaznaczenie, jeśli jest ustawione'
     copy: 'Przytrzymaj Ctrl / ⌘ podczas przeciągania, aby skopiować'
     unschedule: 'Przeciągnij na "Niezaplanowane", aby usunąć z planu'
-    resize: 'Przeciągnij dolną krawędź wydarzenia, aby zmienić rozmiar'
+    resize: 'Przeciągnij dolną krawędź wydarzenia, aby zmienić rozmiar — zmienia całe zaznaczenie, jeśli jest ustawione'
+    resizePlan: 'Przy widocznych obu planach przeciągnij boczną krawędź wydarzenia, aby rozszerzyć je na oba plany lub cofnąć — dotyczy całego zaznaczenia, jeśli jest ustawione'
+    movePlan: 'Przy widocznych obu planach upuść wydarzenie w drugiej połowie, aby przełączyć między planem A i B'
     allDay: 'Kliknij nagłówek dnia, aby dodać wydarzenie całodniowe'
 </i18n>
 
@@ -639,6 +651,8 @@ help:
     move: 'Tažením události ji přesunete — přesune celý výběr, pokud je nastaven'
     copy: 'Podržte Ctrl / ⌘ při tažení pro kopírování'
     unschedule: 'Přetažením na "Neplánované" odeberete z plánu'
-    resize: 'Tažením dolního okraje události změníte velikost'
+    resize: 'Tažením dolního okraje události změníte velikost — změní celý výběr, pokud je nastaven'
+    resizePlan: 'Při zobrazení obou plánů táhněte boční okraj události, abyste ji rozšířili na oba plány nebo zpět — platí pro celý výběr, pokud je nastaven'
+    movePlan: 'Při zobrazení obou plánů přetáhněte událost do druhé poloviny pro přepnutí mezi plánem A a B'
     allDay: 'Kliknutím na záhlaví dne přidáte celodenní událost'
 </i18n>
