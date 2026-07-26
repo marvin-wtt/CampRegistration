@@ -188,6 +188,7 @@
                 @duplicate="onEventDuplicate(event)"
                 @move-to-backlog="onMoveToBacklog(event.id)"
                 @resize="(e) => onEventResize(event, e)"
+                @change-plan="(plan) => onEventPlanChange(event, plan)"
               />
             </template>
           </q-calendar-day>
@@ -574,6 +575,14 @@ function onEventResize(event: ProgramEvent, duration: number) {
   emit('update', event.id, { duration });
 }
 
+function onEventPlanChange(event: ProgramEvent, plan: ProgramEvent['plan']) {
+  if (!canUpdate.value) {
+    return;
+  }
+  pushUndo([{ type: 'update', id: event.id, data: { plan: event.plan } }]);
+  emit('update', event.id, { plan });
+}
+
 function snapTime(time: string, intervalMinutes: number): string {
   const [h, m] = time.split(':').map(Number);
   const total = (h ?? 0) * 60 + (m ?? 0);
@@ -810,6 +819,41 @@ let draggingEventDuration = 60;
 let draggingEventColor = '#2196F3';
 let draggingEventPlan: 'a' | 'b' | 'both' = 'both';
 let draggingGrabOffset = 0;
+
+// Rebuilding the preview is only worth it when the drop target actually
+// changed — dragover fires continuously, and the plan half changes on purely
+// horizontal movement that never leaves the current interval.
+let lastPreviewKey: string | null = null;
+
+// Which plan half of the day column the cursor is over, or null when dropping
+// there must not change the plan: outside the both-plans view there are no
+// halves, and a full-width `both` event is never demoted by a plain move —
+// that transition is reserved for the horizontal resize handles.
+function planFromDropX(
+  e: DragEvent,
+  currentPlan: ProgramEvent['plan'],
+): ProgramEvent['plan'] | null {
+  if (!viewBoth.value || currentPlan === 'both') {
+    return null;
+  }
+  if (!(e.currentTarget instanceof Element)) {
+    return null;
+  }
+  const column = e.currentTarget.closest('.q-calendar-day__day');
+  if (!column) {
+    return null;
+  }
+  const rect = column.getBoundingClientRect();
+
+  return e.clientX < rect.left + rect.width / 2 ? 'a' : 'b';
+}
+
+function swapPlan(plan: ProgramEvent['plan']): ProgramEvent['plan'] {
+  if (plan === 'both') {
+    return 'both';
+  }
+  return plan === 'a' ? 'b' : 'a';
+}
 
 // Mirror CalendarItem's side placement: in both-plans view, a single-plan
 // event occupies the left (a) or right (b) half of the column.
@@ -1067,6 +1111,7 @@ function resetDragState() {
   draggingEventId = null;
   draggingGroupIds.value = new Set();
   isCopyDragActive.value = false;
+  lastPreviewKey = null;
   cancelPreviewUpdate([]);
   clearDragHighlight();
 }
@@ -1096,6 +1141,82 @@ function onDragStart(e: DragEvent, event: ProgramEvent): void {
   document.addEventListener('dragend', onDragEnd);
 }
 
+function updateIntervalPreview(e: DragEvent, scope: DragAndDropScope): void {
+  const time = scope.timestamp.time ?? '';
+  const [h, m] = time.split(':').map(Number);
+  const rawMinutes = (h ?? 0) * 60 + (m ?? 0) - draggingGrabOffset;
+  const snapped =
+    Math.round(Math.max(0, rawMinutes) / settings.timeInterval) *
+    settings.timeInterval;
+  const startTime = `${String(Math.floor(snapped / 60)).padStart(2, '0')}:${String(snapped % 60).padStart(2, '0')}`;
+
+  const targetPlan = planFromDropX(e, draggingEventPlan) ?? draggingEventPlan;
+  const planSwapped = targetPlan !== draggingEventPlan;
+
+  const key = `${scope.timestamp.date}|${startTime}|${targetPlan}`;
+  if (key === lastPreviewKey) {
+    return;
+  }
+  lastPreviewKey = key;
+
+  const previews: DragHoverPreview[] = [
+    {
+      id: draggingEventId ?? '',
+      date: scope.timestamp.date,
+      startTime,
+      duration: draggingEventDuration,
+      color: draggingEventColor,
+      plan: targetPlan,
+    },
+  ];
+
+  // Preview the rest of the selection too, offset the same way the drop
+  // will move (or copy) them, so the whole group's destination is visible
+  // while dragging — not just the event under the cursor.
+  if (draggingEventId) {
+    const draggedEvent = events.find((v) => v.id === draggingEventId);
+    const groupIds = draggedEvent
+      ? selectionGroup(draggingEventId).filter((id) => id !== draggingEventId)
+      : [];
+
+    if (draggedEvent?.date && groupIds.length > 0) {
+      const dayDelta = daysBetweenDates(
+        parseLocalDate(draggedEvent.date),
+        parseLocalDate(scope.timestamp.date),
+      );
+      const minuteDelta = draggedEvent.time
+        ? parseTimeToMinutes(startTime)! -
+          parseTimeToMinutes(draggedEvent.time)!
+        : null;
+
+      for (const id of groupIds) {
+        const other = events.find((v) => v.id === id);
+        if (!other?.date || !other.time) {
+          continue;
+        }
+        const otherTime =
+          minuteDelta !== null
+            ? addMinutesToTime(other.time, minuteDelta)
+            : other.time;
+        const otherDate = formatDate(
+          new Date(parseLocalDate(other.date).getTime() + dayDelta * DAY_IN_MS),
+        );
+
+        previews.push({
+          id,
+          date: otherDate,
+          startTime: otherTime,
+          duration: other.duration ?? 60,
+          color: other.color ?? '#2196F3',
+          plan: planSwapped ? swapPlan(other.plan) : other.plan,
+        });
+      }
+    }
+  }
+
+  schedulePreviewUpdate(previews);
+}
+
 function onDragEnter(
   e: DragEvent,
   type: string,
@@ -1107,73 +1228,9 @@ function onDragEnter(
     isCopyDragActive.value = isCopy;
   }
   if (type === 'interval') {
-    const time = scope.timestamp.time ?? '';
-    const [h, m] = time.split(':').map(Number);
-    const rawMinutes = (h ?? 0) * 60 + (m ?? 0) - draggingGrabOffset;
-    const snapped =
-      Math.round(Math.max(0, rawMinutes) / settings.timeInterval) *
-      settings.timeInterval;
-    const startTime = `${String(Math.floor(snapped / 60)).padStart(2, '0')}:${String(snapped % 60).padStart(2, '0')}`;
-
-    const previews: DragHoverPreview[] = [
-      {
-        id: draggingEventId ?? '',
-        date: scope.timestamp.date,
-        startTime,
-        duration: draggingEventDuration,
-        color: draggingEventColor,
-        plan: draggingEventPlan,
-      },
-    ];
-
-    // Preview the rest of the selection too, offset the same way the drop
-    // will move (or copy) them, so the whole group's destination is visible
-    // while dragging — not just the event under the cursor.
-    if (draggingEventId) {
-      const draggedEvent = events.find((v) => v.id === draggingEventId);
-      const groupIds = draggedEvent
-        ? selectionGroup(draggingEventId).filter((id) => id !== draggingEventId)
-        : [];
-
-      if (draggedEvent?.date && groupIds.length > 0) {
-        const dayDelta = daysBetweenDates(
-          parseLocalDate(draggedEvent.date),
-          parseLocalDate(scope.timestamp.date),
-        );
-        const minuteDelta = draggedEvent.time
-          ? parseTimeToMinutes(startTime)! -
-            parseTimeToMinutes(draggedEvent.time)!
-          : null;
-
-        for (const id of groupIds) {
-          const other = events.find((v) => v.id === id);
-          if (!other?.date || !other.time) {
-            continue;
-          }
-          const otherTime =
-            minuteDelta !== null
-              ? addMinutesToTime(other.time, minuteDelta)
-              : other.time;
-          const otherDate = formatDate(
-            new Date(
-              parseLocalDate(other.date).getTime() + dayDelta * DAY_IN_MS,
-            ),
-          );
-
-          previews.push({
-            id,
-            date: otherDate,
-            startTime: otherTime,
-            duration: other.duration ?? 60,
-            color: other.color ?? '#2196F3',
-            plan: other.plan,
-          });
-        }
-      }
-    }
-
-    schedulePreviewUpdate(previews);
+    updateIntervalPreview(e, scope);
   } else {
+    lastPreviewKey = null;
     schedulePreviewUpdate([]);
     // Direct DOM manipulation avoids Vue reactivity re-renders on every cell hover
     if (
@@ -1188,7 +1245,11 @@ function onDragEnter(
   return false;
 }
 
-function onDragOver(e: DragEvent): boolean {
+function onDragOver(
+  e: DragEvent,
+  type: string,
+  { scope }: { scope: DragAndDropScope },
+): boolean {
   e.preventDefault();
   const isCopy = e.ctrlKey || e.metaKey;
   if (e.dataTransfer) {
@@ -1196,6 +1257,11 @@ function onDragOver(e: DragEvent): boolean {
   }
   if (isCopyDragActive.value !== isCopy) {
     isCopyDragActive.value = isCopy;
+  }
+  // Moving sideways within one interval never fires dragenter, so the plan
+  // half of the preview can only follow the cursor from here.
+  if (type === 'interval') {
+    updateIntervalPreview(e, scope);
   }
   return false;
 }
@@ -1214,17 +1280,24 @@ interface GroupTarget {
   id: string;
   date: string | null;
   time: string | null;
+  // Only set when the drop swapped the primary event between plans
+  plan?: ProgramEvent['plan'];
 }
 
 // Projects where the rest of a drag group lands, given the drop target
 // computed for the primary dragged event — each member keeps its offset
 // from the drop target rather than snapping to the exact same date/time.
+// A plan swap on the primary event is mirrored onto the group's single-plan
+// members so the group keeps its arrangement relative to the plan halves.
 // Shared by the move and copy drop paths so both treat the group the same.
 function computeGroupTargets(
   sourceEvent: ProgramEvent,
   eventUpdate: ProgramEventUpdateData,
   groupIds: string[],
 ): GroupTarget[] {
+  const planSwapped =
+    eventUpdate.plan != null && eventUpdate.plan !== sourceEvent.plan;
+
   if (eventUpdate.date == null) {
     return groupIds.map((id) => ({ id, date: null, time: null }));
   }
@@ -1255,7 +1328,12 @@ function computeGroupTargets(
         ? addMinutesToTime(other.time, minuteDelta)
         : other.time;
 
-    targets.push({ id, date: otherDate, time: otherTime });
+    targets.push({
+      id,
+      date: otherDate,
+      time: otherTime,
+      ...(planSwapped ? { plan: swapPlan(other.plan) } : {}),
+    });
   }
   return targets;
 }
@@ -1290,10 +1368,15 @@ function onDrop(
         (dh ?? 0) * 60 + (dm ?? 0) - grabOffsetMinutes,
       );
       const adjustedTime = `${String(Math.floor(adjustedMinutes / 60) % 24).padStart(2, '0')}:${String(adjustedMinutes % 60).padStart(2, '0')}`;
+      // Dropping a single-plan event in the other half moves it between plans
+      const targetPlan = planFromDropX(e, event.plan);
       eventUpdate = {
         date: scope.timestamp.date,
         time: snapTime(adjustedTime, settings.timeInterval),
         duration: event.duration ?? 60,
+        ...(targetPlan !== null && targetPlan !== event.plan
+          ? { plan: targetPlan }
+          : {}),
       };
       break;
     }
@@ -1340,7 +1423,7 @@ function onDrop(
         location: other.location,
         details: other.details,
         color: other.color,
-        plan: other.plan,
+        plan: target.plan ?? other.plan,
         date: target.date,
         time: target.time,
         duration: other.duration,
@@ -1357,7 +1440,12 @@ function onDrop(
     {
       type: 'update',
       id: eventId,
-      data: { date: event.date, time: event.time, duration: event.duration },
+      data: {
+        date: event.date,
+        time: event.time,
+        duration: event.duration,
+        ...(eventUpdate.plan != null ? { plan: event.plan } : {}),
+      },
     },
   ];
   emit('update', eventId, eventUpdate);
@@ -1371,10 +1459,18 @@ function onDrop(
       actions.push({
         type: 'update',
         id: target.id,
-        data: { date: other.date, time: other.time },
+        data: {
+          date: other.date,
+          time: other.time,
+          ...(target.plan != null ? { plan: other.plan } : {}),
+        },
       });
     }
-    emit('update', target.id, { date: target.date, time: target.time });
+    emit('update', target.id, {
+      date: target.date,
+      time: target.time,
+      ...(target.plan != null ? { plan: target.plan } : {}),
+    });
   }
 
   pushUndo(actions);
