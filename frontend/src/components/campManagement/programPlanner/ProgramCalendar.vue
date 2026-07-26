@@ -31,6 +31,7 @@
           <q-calendar-day
             ref="calendarRef"
             class="fit"
+            :class="{ 'cal--dragging': isDraggingEvent }"
             v-model="selectedDate"
             view="day"
             no-active-date
@@ -86,6 +87,7 @@
                 <calendar-day-item
                   v-for="event in getFullDayEvents(timestamp.date)"
                   :key="event.id"
+                  :class="{ 'cal-drag-source': draggingGroupIds.has(event.id) }"
                   :event="event"
                   :view-both="viewBoth"
                   :show-all-translations="settings.showAllTranslations"
@@ -182,6 +184,7 @@
                 :editable="canUpdate"
                 :deletable="canDelete"
                 :creatable="canCreate"
+                :class="{ 'cal-drag-source': draggingGroupIds.has(event.id) }"
                 :duration-override="resizedDuration(event)"
                 :plan-override="resizedPlan(event)"
                 @click.stop="selectEvent(event.id, $event)"
@@ -2035,6 +2038,24 @@ function formatDate(date: Date): string {
 .droppable {
   box-shadow: inset 0 0 0 1px var(--md3-primary);
   background: color-mix(in srgb, var(--md3-primary) 8%, transparent);
+}
+
+// While a native drag is in flight, event blocks must not intercept it: the
+// interval cells underneath are the drop targets, and they are siblings of
+// the day-body slot rather than ancestors of the events drawn in it, so an
+// event under the cursor would swallow the dragover/drop instead of passing
+// it on — leaving the preview stale and the drop lost. Letting the drag fall
+// through makes an occupied slot behave like any other one.
+//
+// The events being dragged are excluded: changing the drag source's
+// pointer-events from within the dragstart handler makes the browser cancel
+// the drag outright. They turn transparent through their own `isDragging` /
+// `dimmed` styling instead, which is applied a tick later for that reason.
+.cal--dragging {
+  .cal-event:not(.cal-drag-source),
+  .cal-day-event:not(.cal-drag-source) {
+    pointer-events: none;
+  }
 }
 
 .cal-create-overlay {
