@@ -2,7 +2,10 @@
   <div
     v-if="event.time"
     class="cal-event"
-    :class="{ 'cal-event--selected': selected }"
+    :class="{
+      'cal-event--selected': selected,
+      'cal-event--stacked': depth > 0,
+    }"
     :style="badgeStyles"
     @click="onClick"
     @dragstart="onDragStart"
@@ -68,6 +71,7 @@ const {
   timeStartPosition,
   durationOverride,
   planOverride,
+  depth = 0,
 } = defineProps<{
   event: ProgramEvent;
   viewBoth?: boolean;
@@ -86,6 +90,8 @@ const {
   // including this one, even when it is the one being dragged.
   durationOverride?: number | undefined;
   planOverride?: ProgramEvent['plan'] | undefined;
+  // How many events in the same span this one is stacked on top of
+  depth?: number;
 }>();
 
 const emit = defineEmits<{
@@ -201,6 +207,9 @@ function onDragStart(e: DragEvent) {
 // side by side — in a single-plan view there is no other half to drag into.
 const planResizable = computed<boolean>(() => editable && viewBoth);
 
+const INSET_PER_LEVEL = 12;
+const MAX_INSET_FRACTION = 0.4;
+
 const badgeStyles = computed<StyleValue>(() => {
   const top = event.time ? timeStartPosition(event.time) + 'px' : undefined;
 
@@ -208,15 +217,23 @@ const badgeStyles = computed<StyleValue>(() => {
   const height = dur ? `calc(${timeDurationHeight(dur)}px - 2px)` : undefined;
 
   const plan = planOverride ?? event.plan;
-  let left = '0';
-  let width = 'calc(100% - 4px)';
+  const halfSpan = viewBoth && plan !== 'both';
+  const spanPercent = halfSpan ? 50 : 100;
+  const basePercent = halfSpan && plan === 'b' ? 50 : 0;
 
-  if (viewBoth && plan !== 'both') {
-    width = 'calc(50% - 4px)';
-    if (plan === 'b') {
-      left = '50%';
-    }
-  }
+  // Stacked events step in from the left so a strip of the one below stays
+  // visible and grabbable. The cap is expressed in CSS rather than px because
+  // the column width is only known there — it keeps a deep stack from
+  // collapsing the block on a narrow column, at 40% of the event's own span.
+  const inset =
+    depth > 0
+      ? `min(${depth * INSET_PER_LEVEL}px, ${spanPercent * MAX_INSET_FRACTION}%)`
+      : null;
+
+  const left = inset ? `calc(${basePercent}% + ${inset})` : `${basePercent}%`;
+  const width = inset
+    ? `calc(${spanPercent}% - 4px - ${inset})`
+    : `calc(${spanPercent}% - 4px)`;
 
   return {
     backgroundColor: event.color ?? '#2196F3',
@@ -224,6 +241,9 @@ const badgeStyles = computed<StyleValue>(() => {
     height,
     left,
     width,
+    // Consumed by the stylesheet, so `:hover` can still raise a covered event
+    // above the stack — an inline z-index would win over any rule.
+    '--cal-depth': String(depth),
     opacity: (isDragging.value && !isCopyDrag.value) || dimmed ? 0 : undefined,
     pointerEvents: isDragging.value || dimmed ? 'none' : undefined,
   };
@@ -307,9 +327,22 @@ function startPlanResize(e: MouseEvent, side: 'left' | 'right') {
   border-left: 3px solid rgba(0, 0, 0, 0.2);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
   transition: box-shadow 0.15s cubic-bezier(0.2, 0, 0, 1);
+  // Each further event of an overlapping stack draws above the previous one
+  z-index: var(--cal-depth, 0);
 
   &:hover {
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+    // Lift a covered event out of the stack so it can be read in full — the
+    // whole point of leaving a strip of it exposed to hover in the first place
+    z-index: 10;
+  }
+
+  // A shadow along the inset edge reads as a card lying on top of another,
+  // rather than as one wide block with a stripe
+  &--stacked {
+    box-shadow:
+      -2px 0 4px rgba(0, 0, 0, 0.25),
+      0 1px 2px rgba(0, 0, 0, 0.15);
   }
 
   &--selected {

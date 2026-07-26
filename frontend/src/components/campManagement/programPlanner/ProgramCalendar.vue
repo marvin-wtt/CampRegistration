@@ -185,6 +185,7 @@
                 :deletable="canDelete"
                 :creatable="canCreate"
                 :class="{ 'cal-drag-source': draggingGroupIds.has(event.id) }"
+                :depth="eventDepths[event.id] ?? 0"
                 :duration-override="resizedDuration(event)"
                 :plan-override="resizedPlan(event)"
                 @click.stop="selectEvent(event.id, $event)"
@@ -506,8 +507,23 @@ function parseLocalDate(dateStr: string): Date {
 
 const viewBoth = computed<boolean>(() => activePlan.value === 'both');
 
+// The one order a day's events are laid out and painted in: all-day entries
+// first, then by start time, the longer event first when two start together so
+// the shorter one ends up on top of it, and the id as a last resort so the
+// result never depends on the order the store happened to return.
+function compareForLayout(a: ProgramEvent, b: ProgramEvent): number {
+  const aStart = a.time ? (parseTimeToMinutes(a.time) ?? 0) : -1;
+  const bStart = b.time ? (parseTimeToMinutes(b.time) ?? 0) : -1;
+
+  return (
+    aStart - bStart ||
+    (b.duration ?? 60) - (a.duration ?? 60) ||
+    a.id.localeCompare(b.id)
+  );
+}
+
 const eventsMap = computed<Record<string, ProgramEvent[]>>(() => {
-  return events
+  const map = events
     .filter((event) => {
       if (event.date == null) {
         return false;
@@ -530,6 +546,12 @@ const eventsMap = computed<Record<string, ProgramEvent[]>>(() => {
       },
       {} as Record<string, ProgramEvent[]>,
     );
+
+  for (const dayEvents of Object.values(map)) {
+    dayEvents.sort(compareForLayout);
+  }
+
+  return map;
 });
 
 const backlogEvents = computed<ProgramEvent[]>(() =>
@@ -545,6 +567,72 @@ function getFullDayEvents(date: string) {
 function getEvents(date: string) {
   return eventsMap.value[date] || [];
 }
+
+// How many events an event is stacked on top of. Events are drawn as absolutely
+// positioned boxes, so two overlapping ones would hide each other completely;
+// the depth insets each further event from the left and lifts it, leaving a
+// strip of the one beneath visible and grabbable.
+//
+// Two events only fight over pixels when their spans intersect: with both plans
+// shown the halves are disjoint, so an `a` and a `b` event never do — but a
+// `both` event covers the full width and so competes with either of them. In a
+// single-plan view everything is full width, so everything competes.
+function spansOverlap(
+  a: ProgramEvent['plan'],
+  b: ProgramEvent['plan'],
+): boolean {
+  if (!viewBoth.value) {
+    return true;
+  }
+
+  return a === 'both' || b === 'both' || a === b;
+}
+
+const eventDepths = computed<Record<string, number>>(() => {
+  const depths: Record<string, number> = {};
+
+  for (const dayEvents of Object.values(eventsMap.value)) {
+    const placed: {
+      start: number;
+      end: number;
+      plan: ProgramEvent['plan'];
+      depth: number;
+    }[] = [];
+
+    // `eventsMap` is already in layout order, so everything an event can be
+    // stacked on has been placed by the time it is reached.
+    for (const event of dayEvents) {
+      if (!event.time) {
+        continue;
+      }
+      const start = parseTimeToMinutes(event.time);
+      if (start === null) {
+        continue;
+      }
+      const end = start + (event.duration ?? 60);
+
+      // One level deeper than the deepest event it covers. Counting the covered
+      // events instead would let two events that overlap each other, but sit on
+      // different neighbours, land on the same level — same inset, same stacking
+      // order, one hidden behind the other again.
+      let depth = 0;
+      for (const other of placed) {
+        if (
+          other.start < end &&
+          other.end > start &&
+          spansOverlap(other.plan, event.plan)
+        ) {
+          depth = Math.max(depth, other.depth + 1);
+        }
+      }
+
+      depths[event.id] = depth;
+      placed.push({ start, end, plan: event.plan, depth });
+    }
+  }
+
+  return depths;
+});
 
 // A half handed out earlier in the same gesture. The events of a multi-move
 // have all vacated their old slots, so they can only be kept apart by holding
@@ -2098,6 +2186,9 @@ function formatDate(date: Date): string {
   }
 }
 
+// Both sit above the whole event cascade (see `--cal-depth` in CalendarItem,
+// and the hover raise at z-index 10), so a gesture's feedback is never buried
+// under the events it is about to rearrange.
 .cal-selection {
   position: absolute;
   left: 2px;
@@ -2106,7 +2197,7 @@ function formatDate(date: Date): string {
   border: 1px solid var(--md3-primary);
   border-radius: 6px;
   pointer-events: none;
-  z-index: 1;
+  z-index: 20;
 }
 
 .cal-drop-preview {
@@ -2116,7 +2207,7 @@ function formatDate(date: Date): string {
   border: 2px dashed;
   border-radius: 6px;
   pointer-events: none;
-  z-index: 1;
+  z-index: 20;
 }
 
 // Diagonal hatching marks hours outside the camp period as unavailable;
