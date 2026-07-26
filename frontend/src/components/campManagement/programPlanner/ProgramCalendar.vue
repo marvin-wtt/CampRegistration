@@ -136,6 +136,7 @@
                 :style="{
                   top: `${(hoverSlot.startMinutes - hoverSlot.dayStartMinutes) * hoverSlot.pxPerMinute}px`,
                   height: `${(hoverSlot.endMinutes - hoverSlot.startMinutes) * hoverSlot.pxPerMinute}px`,
+                  ...planSideStyle(hoverSlot.plan),
                 }"
               />
 
@@ -152,7 +153,7 @@
                   height: `${timeDurationHeight(preview.duration)}px`,
                   backgroundColor: hexToRgba(preview.color, 0.2),
                   borderColor: hexToRgba(preview.color, 0.7),
-                  ...previewSideStyle(preview),
+                  ...planSideStyle(preview.plan),
                 }"
               />
 
@@ -163,6 +164,7 @@
                 :style="{
                   top: `${(dragSelection.startMinutes - dragSelection.dayStartMinutes) * dragSelection.pxPerMinute}px`,
                   height: `${(dragSelection.endMinutes - dragSelection.startMinutes) * dragSelection.pxPerMinute}px`,
+                  ...planSideStyle(dragSelection.plan),
                 }"
               />
 
@@ -536,6 +538,41 @@ function getEvents(date: string) {
   return eventsMap.value[date] || [];
 }
 
+// A new event should land in whichever plan half the slot still has free: if
+// an overlapping event already occupies plan a — and only plan a — the new
+// one defaults to plan b, and vice versa. Events spanning both plans give no
+// such hint, and outside the both-plans view the active plan always wins.
+function planForNewEvent(
+  date: string,
+  startMinutes: number,
+  endMinutes: number,
+): ProgramEvent['plan'] {
+  if (activePlan.value !== 'both') {
+    return activePlan.value;
+  }
+
+  const occupied = new Set<ProgramEvent['plan']>();
+  for (const event of getEvents(date)) {
+    if (!event.time || event.plan === 'both') {
+      continue;
+    }
+    const start = parseTimeToMinutes(event.time);
+    if (start === null) {
+      continue;
+    }
+    if (start < endMinutes && start + (event.duration ?? 60) > startMinutes) {
+      occupied.add(event.plan);
+    }
+  }
+
+  // Neither half taken, or both — nothing to derive, so keep spanning both
+  if (occupied.size !== 1) {
+    return 'both';
+  }
+
+  return occupied.has('a') ? 'b' : 'a';
+}
+
 interface CalendarEvent {
   event: PointerEvent;
   scope: {
@@ -856,12 +893,14 @@ function swapPlan(plan: ProgramEvent['plan']): ProgramEvent['plan'] {
 }
 
 // Mirror CalendarItem's side placement: in both-plans view, a single-plan
-// event occupies the left (a) or right (b) half of the column.
-function previewSideStyle(preview: DragHoverPreview) {
-  if (!viewBoth.value || preview.plan === 'both') {
+// event occupies the left (a) or right (b) half of the column. Shared by the
+// drop preview, the hover slot and the drag-to-create selection so all three
+// sit exactly where the event they stand for will.
+function planSideStyle(plan: ProgramEvent['plan']) {
+  if (!viewBoth.value || plan === 'both') {
     return {};
   }
-  return preview.plan === 'b'
+  return plan === 'b'
     ? { left: 'calc(50% + 2px)', right: 'auto', width: 'calc(50% - 4px)' }
     : { left: '2px', right: 'auto', width: 'calc(50% - 4px)' };
 }
@@ -902,6 +941,7 @@ interface DragSelection {
   date: string;
   startMinutes: number;
   endMinutes: number;
+  plan: ProgramEvent['plan'];
   pxPerMinute: number;
   dayStartMinutes: number;
   bodyEl: HTMLElement;
@@ -963,6 +1003,7 @@ function onBodyMouseDown(
     date: timestamp.date,
     startMinutes: start,
     endMinutes: start + settings.timeInterval,
+    plan: planForNewEvent(timestamp.date, start, start + settings.timeInterval),
     pxPerMinute,
     dayStartMinutes,
     bodyEl,
@@ -973,11 +1014,19 @@ function onBodyMouseDown(
       return;
     }
     const end = yToSnapped(ev.clientY);
+    const endMinutes = Math.max(
+      dragSelection.value.startMinutes + settings.timeInterval,
+      end,
+    );
     dragSelection.value = {
       ...dragSelection.value,
-      endMinutes: Math.max(
-        dragSelection.value.startMinutes + settings.timeInterval,
-        end,
+      endMinutes,
+      // Growing the selection can bring it over another plan's event, so the
+      // free half has to be re-derived for the range as it stands now
+      plan: planForNewEvent(
+        dragSelection.value.date,
+        dragSelection.value.startMinutes,
+        endMinutes,
       ),
     };
   };
@@ -988,7 +1037,7 @@ function onBodyMouseDown(
     if (!dragSelection.value) {
       return;
     }
-    const { date, startMinutes, endMinutes } = dragSelection.value;
+    const { date, startMinutes, endMinutes, plan } = dragSelection.value;
     dragSelection.value = null;
     const time = `${String(Math.floor(startMinutes / 60)).padStart(2, '0')}:${String(startMinutes % 60).padStart(2, '0')}`;
     quasar
@@ -998,7 +1047,7 @@ function onBodyMouseDown(
           date,
           time,
           duration: endMinutes - startMinutes,
-          plan: activePlan.value === 'both' ? 'both' : activePlan.value,
+          plan,
           dateTimeMin: camp.startAt,
           dateTimeMax: camp.endAt,
           locales: camp.locales,
@@ -1037,7 +1086,11 @@ function onBodyClick(
         date: timestamp.date,
         time,
         duration: settings.timeInterval,
-        plan: activePlan.value === 'both' ? 'both' : activePlan.value,
+        plan: planForNewEvent(
+          timestamp.date,
+          snapped,
+          snapped + settings.timeInterval,
+        ),
         dateTimeMin: camp.startAt,
         dateTimeMax: camp.endAt,
         locales: camp.locales,
@@ -1052,6 +1105,7 @@ interface HoverSlot {
   date: string;
   startMinutes: number;
   endMinutes: number;
+  plan: ProgramEvent['plan'];
   dayStartMinutes: number;
   pxPerMinute: number;
 }
@@ -1087,6 +1141,7 @@ function onBodyMouseMove(
     date: timestamp.date,
     startMinutes: start,
     endMinutes: start + settings.timeInterval,
+    plan: planForNewEvent(timestamp.date, start, start + settings.timeInterval),
     dayStartMinutes,
     pxPerMinute,
   };
