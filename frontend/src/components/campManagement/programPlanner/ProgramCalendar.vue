@@ -538,22 +538,20 @@ function getEvents(date: string) {
   return eventsMap.value[date] || [];
 }
 
-// A new event should land in whichever plan half the slot still has free: if
-// an overlapping event already occupies plan a — and only plan a — the new
-// one defaults to plan b, and vice versa. Events spanning both plans give no
-// such hint, and outside the both-plans view the active plan always wins.
-function planForNewEvent(
+// The plan half a time range leaves free, or null when there is nothing to
+// derive because neither half is taken or both are. Events spanning both
+// plans cover the halves equally and so say nothing about which one is free —
+// they are deliberately not counted. `ignoreIds` leaves out events that are
+// themselves on the move and will have vacated the slot.
+function freePlanHalf(
   date: string,
   startMinutes: number,
   endMinutes: number,
-): ProgramEvent['plan'] {
-  if (activePlan.value !== 'both') {
-    return activePlan.value;
-  }
-
-  const occupied = new Set<ProgramEvent['plan']>();
+  ignoreIds?: Set<string>,
+): 'a' | 'b' | null {
+  const occupied = new Set<'a' | 'b'>();
   for (const event of getEvents(date)) {
-    if (!event.time || event.plan === 'both') {
+    if (!event.time || event.plan === 'both' || ignoreIds?.has(event.id)) {
       continue;
     }
     const start = parseTimeToMinutes(event.time);
@@ -565,12 +563,27 @@ function planForNewEvent(
     }
   }
 
-  // Neither half taken, or both — nothing to derive, so keep spanning both
   if (occupied.size !== 1) {
-    return 'both';
+    return null;
   }
 
   return occupied.has('a') ? 'b' : 'a';
+}
+
+// A new event should land in whichever plan half the slot still has free: if
+// an overlapping event already occupies plan a — and only plan a — the new
+// one defaults to plan b, and vice versa. Outside the both-plans view the
+// active plan always wins.
+function planForNewEvent(
+  date: string,
+  startMinutes: number,
+  endMinutes: number,
+): ProgramEvent['plan'] {
+  if (activePlan.value !== 'both') {
+    return activePlan.value;
+  }
+
+  return freePlanHalf(date, startMinutes, endMinutes) ?? 'both';
 }
 
 interface CalendarEvent {
@@ -869,7 +882,7 @@ let lastPreviewKey: string | null = null;
 function planFromDropX(
   e: DragEvent,
   currentPlan: ProgramEvent['plan'],
-): ProgramEvent['plan'] | null {
+): 'a' | 'b' | null {
   if (!viewBoth.value || currentPlan === 'both') {
     return null;
   }
@@ -890,6 +903,35 @@ function swapPlan(plan: ProgramEvent['plan']): ProgramEvent['plan'] {
     return 'both';
   }
   return plan === 'a' ? 'b' : 'a';
+}
+
+// The plan a dragged event ends up in:
+//   * pointing at the other half is an explicit a↔b swap and always wins,
+//     even when that half is occupied;
+//   * otherwise the event takes the half the target slot leaves free — a
+//     `both` event narrows into it just like a single-plan one moves over;
+//   * and when no single half is free, it keeps its plan and the drop still
+//     goes through as an overlap.
+function planForDrop(
+  cursorHalf: 'a' | 'b' | null,
+  currentPlan: ProgramEvent['plan'],
+  date: string,
+  startMinutes: number,
+  duration: number,
+  ignoreIds: Set<string>,
+): ProgramEvent['plan'] {
+  // Halves only exist as a visible, droppable target in the both-plans view
+  if (!viewBoth.value) {
+    return currentPlan;
+  }
+  if (cursorHalf !== null && cursorHalf !== currentPlan) {
+    return cursorHalf;
+  }
+
+  return (
+    freePlanHalf(date, startMinutes, startMinutes + duration, ignoreIds) ??
+    currentPlan
+  );
 }
 
 // Mirror CalendarItem's side placement: in both-plans view, a single-plan
@@ -1205,7 +1247,15 @@ function updateIntervalPreview(e: DragEvent, scope: DragAndDropScope): void {
     settings.timeInterval;
   const startTime = `${String(Math.floor(snapped / 60)).padStart(2, '0')}:${String(snapped % 60).padStart(2, '0')}`;
 
-  const targetPlan = planFromDropX(e, draggingEventPlan) ?? draggingEventPlan;
+  const targetPlan = planForDrop(
+    planFromDropX(e, draggingEventPlan),
+    draggingEventPlan,
+    scope.timestamp.date,
+    snapped,
+    draggingEventDuration,
+    // A copy-drag leaves the originals in place, so they still occupy their half
+    isCopyDragActive.value ? new Set() : draggingGroupIds.value,
+  );
   const planSwapped = targetPlan !== draggingEventPlan;
 
   const key = `${scope.timestamp.date}|${startTime}|${targetPlan}`;
@@ -1350,8 +1400,14 @@ function computeGroupTargets(
   eventUpdate: ProgramEventUpdateData,
   groupIds: string[],
 ): GroupTarget[] {
+  // Only an a↔b flip carries over to the group: a `both` event narrowing into
+  // the half its target slot left free says nothing about where the other
+  // members belong.
   const planSwapped =
-    eventUpdate.plan != null && eventUpdate.plan !== sourceEvent.plan;
+    sourceEvent.plan !== 'both' &&
+    eventUpdate.plan != null &&
+    eventUpdate.plan !== 'both' &&
+    eventUpdate.plan !== sourceEvent.plan;
 
   if (eventUpdate.date == null) {
     return groupIds.map((id) => ({ id, date: null, time: null }));
@@ -1411,6 +1467,8 @@ function onDrop(
     return false;
   }
 
+  const isCopy = e.ctrlKey || e.metaKey;
+
   let eventUpdate: ProgramEventUpdateData;
   switch (type) {
     case 'interval': {
@@ -1423,15 +1481,22 @@ function onDrop(
         (dh ?? 0) * 60 + (dm ?? 0) - grabOffsetMinutes,
       );
       const adjustedTime = `${String(Math.floor(adjustedMinutes / 60) % 24).padStart(2, '0')}:${String(adjustedMinutes % 60).padStart(2, '0')}`;
-      // Dropping a single-plan event in the other half moves it between plans
-      const targetPlan = planFromDropX(e, event.plan);
+      const snappedTime = snapTime(adjustedTime, settings.timeInterval);
+      const duration = event.duration ?? 60;
+      const targetPlan = planForDrop(
+        planFromDropX(e, event.plan),
+        event.plan,
+        scope.timestamp.date,
+        parseTimeToMinutes(snappedTime) ?? 0,
+        duration,
+        // A copy-drag leaves the originals in place, so they still occupy their half
+        isCopy ? new Set() : new Set(selectionGroup(eventId)),
+      );
       eventUpdate = {
         date: scope.timestamp.date,
-        time: snapTime(adjustedTime, settings.timeInterval),
-        duration: event.duration ?? 60,
-        ...(targetPlan !== null && targetPlan !== event.plan
-          ? { plan: targetPlan }
-          : {}),
+        time: snappedTime,
+        duration,
+        ...(targetPlan !== event.plan ? { plan: targetPlan } : {}),
       };
       break;
     }
@@ -1452,7 +1517,7 @@ function onDrop(
 
   const groupIds = selectionGroup(eventId).filter((id) => id !== eventId);
 
-  if (e.ctrlKey || e.metaKey) {
+  if (isCopy) {
     if (!canCreate.value) {
       return false;
     }
