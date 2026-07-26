@@ -66,7 +66,8 @@ const {
   creatable = false,
   timeDurationHeight,
   timeStartPosition,
-  snap,
+  durationOverride,
+  planOverride,
 } = defineProps<{
   event: ProgramEvent;
   viewBoth?: boolean;
@@ -80,7 +81,11 @@ const {
   creatable?: boolean;
   timeStartPosition: (time?: string) => number;
   timeDurationHeight: (duration?: number) => number;
-  snap?: number;
+  // Live values while a resize is in flight. A resize acts on the whole
+  // selection, so the parent owns the preview for every affected event —
+  // including this one, even when it is the one being dragged.
+  durationOverride?: number | undefined;
+  planOverride?: ProgramEvent['plan'] | undefined;
 }>();
 
 const emit = defineEmits<{
@@ -88,14 +93,14 @@ const emit = defineEmits<{
   (e: 'delete'): void;
   (e: 'duplicate'): void;
   (e: 'move-to-backlog'): void;
-  (e: 'resize', duration: number): void;
-  (e: 'change-plan', plan: ProgramEvent['plan']): void;
+  // `preview` is true for the continuous updates during the drag and false on
+  // the final one, which is the only that gets persisted.
+  (e: 'resize', deltaMinutes: number, preview: boolean): void;
+  (e: 'change-plan', plan: ProgramEvent['plan'], preview: boolean): void;
 }>();
 
 const { to, toAll } = useObjectTranslation();
 
-const resizeDuration = ref<number | null>(null);
-const resizePlan = ref<ProgramEvent['plan'] | null>(null);
 const isDragging = ref(false);
 const isCopyDrag = ref(false);
 
@@ -199,10 +204,10 @@ const planResizable = computed<boolean>(() => editable && viewBoth);
 const badgeStyles = computed<StyleValue>(() => {
   const top = event.time ? timeStartPosition(event.time) + 'px' : undefined;
 
-  const dur = resizeDuration.value ?? event.duration;
+  const dur = durationOverride ?? event.duration;
   const height = dur ? `calc(${timeDurationHeight(dur)}px - 2px)` : undefined;
 
-  const plan = resizePlan.value ?? event.plan;
+  const plan = planOverride ?? event.plan;
   let left = '0';
   let width = 'calc(100% - 4px)';
 
@@ -224,30 +229,26 @@ const badgeStyles = computed<StyleValue>(() => {
   };
 });
 
+// Reports the raw drag distance in minutes; snapping and clamping happen in
+// the parent, which is the only place that can see the whole selection the
+// resize applies to.
 function startResize(e: MouseEvent) {
   if (!timeDurationHeight || !event.duration) {
     return;
   }
 
   const startY = e.clientY;
-  const startDuration = event.duration;
   const pixelsPerMinute = timeDurationHeight(60) / 60;
-  const snapTo = snap ?? 15;
+  const deltaAt = (clientY: number) => (clientY - startY) / pixelsPerMinute;
 
   function onMove(ev: MouseEvent) {
-    const deltaMinutes = (ev.clientY - startY) / pixelsPerMinute;
-    const raw = startDuration + deltaMinutes;
-    resizeDuration.value = Math.max(snapTo, Math.round(raw / snapTo) * snapTo);
+    emit('resize', deltaAt(ev.clientY), true);
   }
 
   function onUp(ev: MouseEvent) {
-    const deltaMinutes = (ev.clientY - startY) / pixelsPerMinute;
-    const raw = startDuration + deltaMinutes;
-    const final = Math.max(snapTo, Math.round(raw / snapTo) * snapTo);
-    emit('resize', final);
-    resizeDuration.value = null;
     window.removeEventListener('mousemove', onMove);
     window.removeEventListener('mouseup', onUp);
+    emit('resize', deltaAt(ev.clientY), false);
     suppressNextClick();
   }
 
@@ -281,19 +282,14 @@ function startPlanResize(e: MouseEvent, side: 'left' | 'right') {
   };
 
   function onMove(ev: MouseEvent) {
-    resizePlan.value = planAt(ev.clientX);
+    emit('change-plan', planAt(ev.clientX), true);
   }
 
   function onUp(ev: MouseEvent) {
-    const plan = planAt(ev.clientX);
-    resizePlan.value = null;
     window.removeEventListener('mousemove', onMove);
     window.removeEventListener('mouseup', onUp);
+    emit('change-plan', planAt(ev.clientX), false);
     suppressNextClick();
-
-    if (plan !== event.plan) {
-      emit('change-plan', plan);
-    }
   }
 
   window.addEventListener('mousemove', onMove);

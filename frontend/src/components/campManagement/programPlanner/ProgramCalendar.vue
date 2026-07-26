@@ -182,15 +182,20 @@
                 :editable="canUpdate"
                 :deletable="canDelete"
                 :creatable="canCreate"
-                :snap="settings.timeInterval"
+                :duration-override="resizedDuration(event)"
+                :plan-override="resizedPlan(event)"
                 @click.stop="selectEvent(event.id, $event)"
                 @dragstart="(e: DragEvent) => onDragStart(e, event)"
                 @edit="onEventEdit(event)"
                 @delete="onEventDelete(event)"
                 @duplicate="onEventDuplicate(event)"
                 @move-to-backlog="onMoveToBacklog(event.id)"
-                @resize="(e) => onEventResize(event, e)"
-                @change-plan="(plan) => onEventPlanChange(event, plan)"
+                @resize="
+                  (delta, preview) => onEventResize(event, delta, preview)
+                "
+                @change-plan="
+                  (plan, preview) => onEventPlanChange(event, plan, preview)
+                "
               />
             </template>
           </q-calendar-day>
@@ -538,6 +543,16 @@ function getEvents(date: string) {
   return eventsMap.value[date] || [];
 }
 
+// A half handed out earlier in the same gesture. The events of a multi-move
+// have all vacated their old slots, so they can only be kept apart by holding
+// on to where each of them is being put.
+interface PlanClaim {
+  date: string;
+  startMinutes: number;
+  endMinutes: number;
+  plan: 'a' | 'b';
+}
+
 // The plan half a time range leaves free, or null when there is nothing to
 // derive because neither half is taken or both are. Events spanning both
 // plans cover the halves equally and so say nothing about which one is free —
@@ -548,6 +563,7 @@ function freePlanHalf(
   startMinutes: number,
   endMinutes: number,
   ignoreIds?: Set<string>,
+  claims?: PlanClaim[],
 ): 'a' | 'b' | null {
   const occupied = new Set<'a' | 'b'>();
   for (const event of getEvents(date)) {
@@ -560,6 +576,16 @@ function freePlanHalf(
     }
     if (start < endMinutes && start + (event.duration ?? 60) > startMinutes) {
       occupied.add(event.plan);
+    }
+  }
+
+  for (const claim of claims ?? []) {
+    if (
+      claim.date === date &&
+      claim.startMinutes < endMinutes &&
+      claim.endMinutes > startMinutes
+    ) {
+      occupied.add(claim.plan);
     }
   }
 
@@ -615,22 +641,117 @@ function onDayEventAdd({ scope }: CalendarEvent) {
     });
 }
 
-function onEventResize(event: ProgramEvent, duration: number) {
-  if (!canUpdate.value) {
-    return;
-  }
-  pushUndo([
-    { type: 'update', id: event.id, data: { duration: event.duration } },
-  ]);
-  emit('update', event.id, { duration });
+// Both resize gestures act on the whole selection, so the preview for every
+// affected event is owned here rather than by the item under the cursor.
+const resizePreview = ref<
+  | { kind: 'duration'; ids: Set<string>; durations: Map<string, number> }
+  | { kind: 'plan'; ids: Set<string>; plan: ProgramEvent['plan'] }
+  | null
+>(null);
+
+function resizedDuration(event: ProgramEvent): number | undefined {
+  const preview = resizePreview.value;
+
+  return preview?.kind === 'duration'
+    ? preview.durations.get(event.id)
+    : undefined;
 }
 
-function onEventPlanChange(event: ProgramEvent, plan: ProgramEvent['plan']) {
+function resizedPlan(event: ProgramEvent): ProgramEvent['plan'] | undefined {
+  const preview = resizePreview.value;
+
+  return preview?.kind === 'plan' && preview.ids.has(event.id)
+    ? preview.plan
+    : undefined;
+}
+
+// Every event of the gesture grows by the same amount, so the selection keeps
+// its relative lengths. The raw delta is first clamped so the shortest member
+// stays at one interval — clamping per event instead would let the short ones
+// pile up on the floor while the rest keep shrinking. Each result is then
+// snapped to the interval grid. All-day members have no duration to change.
+function groupDurations(ids: string[], rawDelta: number): Map<string, number> {
+  const interval = settings.timeInterval;
+
+  const resizable: { id: string; duration: number }[] = [];
+  for (const id of ids) {
+    const event = events.find((value) => value.id === id);
+    if (!event || event.time == null || event.duration == null) {
+      continue;
+    }
+    resizable.push({ id: event.id, duration: event.duration });
+  }
+
+  const shortest = Math.min(...resizable.map(({ duration }) => duration));
+  const delta = Math.max(rawDelta, interval - shortest);
+
+  const durations = new Map<string, number>();
+  for (const { id, duration } of resizable) {
+    durations.set(
+      id,
+      Math.max(interval, Math.round((duration + delta) / interval) * interval),
+    );
+  }
+  return durations;
+}
+
+function onEventResize(event: ProgramEvent, delta: number, preview: boolean) {
   if (!canUpdate.value) {
     return;
   }
-  pushUndo([{ type: 'update', id: event.id, data: { plan: event.plan } }]);
-  emit('update', event.id, { plan });
+  clearForeignSelection(event.id);
+  const ids = selectionGroup(event.id);
+  const durations = groupDurations(ids, delta);
+
+  if (preview) {
+    resizePreview.value = { kind: 'duration', ids: new Set(ids), durations };
+    return;
+  }
+
+  resizePreview.value = null;
+  const actions: UndoAction[] = [];
+  for (const [id, duration] of durations) {
+    const target = events.find((value) => value.id === id);
+    if (!target || target.duration === duration) {
+      continue;
+    }
+    actions.push({
+      type: 'update',
+      id,
+      data: { duration: target.duration },
+    });
+    emit('update', id, { duration });
+  }
+  pushUndo(actions);
+}
+
+function onEventPlanChange(
+  event: ProgramEvent,
+  plan: ProgramEvent['plan'],
+  preview: boolean,
+) {
+  if (!canUpdate.value) {
+    return;
+  }
+  clearForeignSelection(event.id);
+  const ids = selectionGroup(event.id);
+
+  if (preview) {
+    resizePreview.value = { kind: 'plan', ids: new Set(ids), plan };
+    return;
+  }
+
+  resizePreview.value = null;
+  const actions: UndoAction[] = [];
+  for (const id of ids) {
+    const target = events.find((value) => value.id === id);
+    if (!target || target.plan === plan) {
+      continue;
+    }
+    actions.push({ type: 'update', id, data: { plan: target.plan } });
+    emit('update', id, { plan });
+  }
+  pushUndo(actions);
 }
 
 function snapTime(time: string, intervalMinutes: number): string {
@@ -919,6 +1040,7 @@ function planForDrop(
   startMinutes: number,
   duration: number,
   ignoreIds: Set<string>,
+  claims?: PlanClaim[],
 ): ProgramEvent['plan'] {
   // Halves only exist as a visible, droppable target in the both-plans view
   if (!viewBoth.value) {
@@ -929,8 +1051,13 @@ function planForDrop(
   }
 
   return (
-    freePlanHalf(date, startMinutes, startMinutes + duration, ignoreIds) ??
-    currentPlan
+    freePlanHalf(
+      date,
+      startMinutes,
+      startMinutes + duration,
+      ignoreIds,
+      claims,
+    ) ?? currentPlan
   );
 }
 
@@ -1221,6 +1348,8 @@ function onDragStart(e: DragEvent, event: ProgramEvent): void {
   e.dataTransfer.effectAllowed = 'copyMove';
   e.dataTransfer.setData('text/plain', event.id);
 
+  clearForeignSelection(event.id);
+
   draggingEventId = event.id;
   draggingGroupIds.value = new Set(selectionGroup(event.id));
   isCopyDragActive.value = false;
@@ -1247,16 +1376,28 @@ function updateIntervalPreview(e: DragEvent, scope: DragAndDropScope): void {
     settings.timeInterval;
   const startTime = `${String(Math.floor(snapped / 60)).padStart(2, '0')}:${String(snapped % 60).padStart(2, '0')}`;
 
+  // A copy-drag leaves the originals in place, so they still occupy their half
+  const ignoreIds = isCopyDragActive.value
+    ? new Set<string>()
+    : draggingGroupIds.value;
+  const claims: PlanClaim[] = [];
+
   const targetPlan = planForDrop(
     planFromDropX(e, draggingEventPlan),
     draggingEventPlan,
     scope.timestamp.date,
     snapped,
     draggingEventDuration,
-    // A copy-drag leaves the originals in place, so they still occupy their half
-    isCopyDragActive.value ? new Set() : draggingGroupIds.value,
+    ignoreIds,
   );
-  const planSwapped = targetPlan !== draggingEventPlan;
+  if (targetPlan !== 'both') {
+    claims.push({
+      date: scope.timestamp.date,
+      startMinutes: snapped,
+      endMinutes: snapped + draggingEventDuration,
+      plan: targetPlan,
+    });
+  }
 
   const key = `${scope.timestamp.date}|${startTime}|${targetPlan}`;
   if (key === lastPreviewKey) {
@@ -1275,47 +1416,37 @@ function updateIntervalPreview(e: DragEvent, scope: DragAndDropScope): void {
     },
   ];
 
-  // Preview the rest of the selection too, offset the same way the drop
-  // will move (or copy) them, so the whole group's destination is visible
-  // while dragging — not just the event under the cursor.
-  if (draggingEventId) {
-    const draggedEvent = events.find((v) => v.id === draggingEventId);
-    const groupIds = draggedEvent
-      ? selectionGroup(draggingEventId).filter((id) => id !== draggingEventId)
-      : [];
+  // Preview the rest of the selection too, through the very function the drop
+  // will use, so what is shown is what will happen — offsets, mirrored swap
+  // and per-member plan fit alike.
+  const draggedEvent = draggingEventId
+    ? events.find((v) => v.id === draggingEventId)
+    : undefined;
+  if (draggedEvent) {
+    const groupIds = selectionGroup(draggedEvent.id).filter(
+      (id) => id !== draggedEvent.id,
+    );
+    const targets = computeGroupTargets(
+      draggedEvent,
+      { date: scope.timestamp.date, time: startTime, plan: targetPlan },
+      groupIds,
+      ignoreIds,
+      claims,
+    );
 
-    if (draggedEvent?.date && groupIds.length > 0) {
-      const dayDelta = daysBetweenDates(
-        parseLocalDate(draggedEvent.date),
-        parseLocalDate(scope.timestamp.date),
-      );
-      const minuteDelta = draggedEvent.time
-        ? parseTimeToMinutes(startTime)! -
-          parseTimeToMinutes(draggedEvent.time)!
-        : null;
-
-      for (const id of groupIds) {
-        const other = events.find((v) => v.id === id);
-        if (!other?.date || !other.time) {
-          continue;
-        }
-        const otherTime =
-          minuteDelta !== null
-            ? addMinutesToTime(other.time, minuteDelta)
-            : other.time;
-        const otherDate = formatDate(
-          new Date(parseLocalDate(other.date).getTime() + dayDelta * DAY_IN_MS),
-        );
-
-        previews.push({
-          id,
-          date: otherDate,
-          startTime: otherTime,
-          duration: other.duration ?? 60,
-          color: other.color ?? '#2196F3',
-          plan: planSwapped ? swapPlan(other.plan) : other.plan,
-        });
+    for (const target of targets) {
+      const other = events.find((v) => v.id === target.id);
+      if (!other || !target.date || !target.time) {
+        continue;
       }
+      previews.push({
+        id: target.id,
+        date: target.date,
+        startTime: target.time,
+        duration: other.duration ?? 60,
+        color: other.color ?? '#2196F3',
+        plan: target.plan ?? other.plan,
+      });
     }
   }
 
@@ -1393,12 +1524,17 @@ interface GroupTarget {
 // computed for the primary dragged event — each member keeps its offset
 // from the drop target rather than snapping to the exact same date/time.
 // A plan swap on the primary event is mirrored onto the group's single-plan
-// members so the group keeps its arrangement relative to the plan halves.
-// Shared by the move and copy drop paths so both treat the group the same.
+// members so the group keeps its arrangement relative to the plan halves, and
+// each member is then fitted into the half its own destination leaves free.
+// `claims` starts with the primary event's own target and grows as members are
+// placed, so two of them never end up in the same half. Shared by the move and
+// copy drop paths and by the drag preview, so all three agree by construction.
 function computeGroupTargets(
   sourceEvent: ProgramEvent,
   eventUpdate: ProgramEventUpdateData,
   groupIds: string[],
+  ignoreIds: Set<string>,
+  claims: PlanClaim[],
 ): GroupTarget[] {
   // Only an a↔b flip carries over to the group: a `both` event narrowing into
   // the half its target slot left free says nothing about where the other
@@ -1439,11 +1575,38 @@ function computeGroupTargets(
         ? addMinutesToTime(other.time, minuteDelta)
         : other.time;
 
+    // The mirrored swap is this member's intent; the fit then only moves it
+    // when something actually occupies that half at its destination.
+    const desiredPlan = planSwapped ? swapPlan(other.plan) : other.plan;
+    const startMinutes = otherTime ? parseTimeToMinutes(otherTime) : null;
+    const duration = other.duration ?? 60;
+    const plan =
+      startMinutes === null
+        ? desiredPlan
+        : planForDrop(
+            null,
+            desiredPlan,
+            otherDate,
+            startMinutes,
+            duration,
+            ignoreIds,
+            claims,
+          );
+
+    if (startMinutes !== null && plan !== 'both') {
+      claims.push({
+        date: otherDate,
+        startMinutes,
+        endMinutes: startMinutes + duration,
+        plan,
+      });
+    }
+
     targets.push({
       id,
       date: otherDate,
       time: otherTime,
-      ...(planSwapped ? { plan: swapPlan(other.plan) } : {}),
+      ...(plan !== other.plan ? { plan } : {}),
     });
   }
   return targets;
@@ -1468,6 +1631,11 @@ function onDrop(
   }
 
   const isCopy = e.ctrlKey || e.metaKey;
+  // A copy-drag leaves the originals in place, so they still occupy their half
+  const ignoreIds = isCopy
+    ? new Set<string>()
+    : new Set(selectionGroup(eventId));
+  const claims: PlanClaim[] = [];
 
   let eventUpdate: ProgramEventUpdateData;
   switch (type) {
@@ -1483,15 +1651,24 @@ function onDrop(
       const adjustedTime = `${String(Math.floor(adjustedMinutes / 60) % 24).padStart(2, '0')}:${String(adjustedMinutes % 60).padStart(2, '0')}`;
       const snappedTime = snapTime(adjustedTime, settings.timeInterval);
       const duration = event.duration ?? 60;
+      const startMinutes = parseTimeToMinutes(snappedTime) ?? 0;
       const targetPlan = planForDrop(
         planFromDropX(e, event.plan),
         event.plan,
         scope.timestamp.date,
-        parseTimeToMinutes(snappedTime) ?? 0,
+        startMinutes,
         duration,
-        // A copy-drag leaves the originals in place, so they still occupy their half
-        isCopy ? new Set() : new Set(selectionGroup(eventId)),
+        ignoreIds,
       );
+      // The group is fitted around wherever the dragged event just landed
+      if (targetPlan !== 'both') {
+        claims.push({
+          date: scope.timestamp.date,
+          startMinutes,
+          endMinutes: startMinutes + duration,
+          plan: targetPlan,
+        });
+      }
       eventUpdate = {
         date: scope.timestamp.date,
         time: snappedTime,
@@ -1533,7 +1710,13 @@ function onDrop(
     // Duplicate the rest of the selection too, at the same offset from the
     // drop target as the primary event — a copy-drag of a multi-selection
     // should copy the whole group, not just the event under the cursor.
-    for (const target of computeGroupTargets(event, eventUpdate, groupIds)) {
+    for (const target of computeGroupTargets(
+      event,
+      eventUpdate,
+      groupIds,
+      ignoreIds,
+      claims,
+    )) {
       const other = events.find((value) => value.id === target.id);
       if (!other) {
         continue;
@@ -1573,7 +1756,13 @@ function onDrop(
   // Move the rest of the selection along with the dragged event, preserving
   // each event's offset from the drop target rather than snapping all of
   // them to the exact same date/time.
-  for (const target of computeGroupTargets(event, eventUpdate, groupIds)) {
+  for (const target of computeGroupTargets(
+    event,
+    eventUpdate,
+    groupIds,
+    ignoreIds,
+    claims,
+  )) {
     const other = events.find((value) => value.id === target.id);
     if (other) {
       actions.push({
@@ -1657,6 +1846,15 @@ function selectEvent(id: string, e: MouseEvent) {
 
 function clearSelection() {
   selectedEventIds.value = new Set();
+}
+
+// A drag or resize started on an event outside the current selection acts on
+// that event alone — leaving the old selection highlighted would suggest it
+// comes along, and neither gesture produces the click that would clear it.
+function clearForeignSelection(id: string) {
+  if (selectedEventIds.value.size > 0 && !selectedEventIds.value.has(id)) {
+    clearSelection();
+  }
 }
 
 // Resolves the set of event ids an action on `id` should apply to: the full

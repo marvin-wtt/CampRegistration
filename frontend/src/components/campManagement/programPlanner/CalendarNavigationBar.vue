@@ -531,8 +531,8 @@ help:
     move: 'Drag an event to move it — drags the whole selection if selected'
     copy: 'Hold Ctrl / ⌘ while dragging to copy'
     unschedule: 'Drag onto "Unscheduled" to remove from the plan'
-    resize: "Drag an event's bottom edge to resize"
-    resizePlan: "With both plans shown, drag an event's side edge to extend it to both plans or back"
+    resize: "Drag an event's bottom edge to resize — resizes the whole selection if selected"
+    resizePlan: "With both plans shown, drag an event's side edge to extend it to both plans or back — applies to the whole selection if selected"
     movePlan: 'With both plans shown, drop an event in the other half to switch between plan A and B'
     allDay: 'Click a day header to add an all-day event'
 </i18n>
@@ -561,8 +561,8 @@ help:
     move: 'Ereignis ziehen, um es zu verschieben — verschiebt die ganze Auswahl, falls ausgewählt'
     copy: 'Strg / ⌘ beim Ziehen halten, um zu kopieren'
     unschedule: 'Auf "Ungeplant" ziehen, um aus dem Plan zu entfernen'
-    resize: 'Untere Kante eines Ereignisses ziehen, um die Größe zu ändern'
-    resizePlan: 'Bei Anzeige beider Pläne die seitliche Kante eines Ereignisses ziehen, um es auf beide Pläne auszudehnen oder zurückzunehmen'
+    resize: 'Untere Kante eines Ereignisses ziehen, um die Größe zu ändern — ändert die ganze Auswahl, falls ausgewählt'
+    resizePlan: 'Bei Anzeige beider Pläne die seitliche Kante eines Ereignisses ziehen, um es auf beide Pläne auszudehnen oder zurückzunehmen — gilt für die ganze Auswahl, falls ausgewählt'
     movePlan: 'Bei Anzeige beider Pläne ein Ereignis in die andere Hälfte ziehen, um zwischen Plan A und B zu wechseln'
     allDay: 'Tagesüberschrift anklicken, um ein ganztägiges Ereignis hinzuzufügen'
 </i18n>
@@ -591,8 +591,8 @@ help:
     move: 'Glisser un événement pour le déplacer — déplace toute la sélection si elle est sélectionnée'
     copy: 'Maintenir Ctrl / ⌘ en glissant pour copier'
     unschedule: 'Glisser sur "Non planifié" pour retirer du plan'
-    resize: "Glisser le bord inférieur d'un événement pour le redimensionner"
-    resizePlan: "Avec les deux plans affichés, glisser le bord latéral d'un événement pour l'étendre aux deux plans ou revenir en arrière"
+    resize: "Glisser le bord inférieur d'un événement pour le redimensionner — redimensionne toute la sélection si elle est sélectionnée"
+    resizePlan: "Avec les deux plans affichés, glisser le bord latéral d'un événement pour l'étendre aux deux plans ou revenir en arrière — s'applique à toute la sélection si elle est sélectionnée"
     movePlan: "Avec les deux plans affichés, déposer un événement dans l'autre moitié pour basculer entre le plan A et le plan B"
     allDay: "Cliquer sur l'en-tête d'un jour pour ajouter un événement sur la journée"
 </i18n>
@@ -621,8 +621,8 @@ help:
     move: 'Przeciągnij wydarzenie, aby je przenieść — przenosi całe zaznaczenie, jeśli jest ustawione'
     copy: 'Przytrzymaj Ctrl / ⌘ podczas przeciągania, aby skopiować'
     unschedule: 'Przeciągnij na "Niezaplanowane", aby usunąć z planu'
-    resize: 'Przeciągnij dolną krawędź wydarzenia, aby zmienić rozmiar'
-    resizePlan: 'Przy widocznych obu planach przeciągnij boczną krawędź wydarzenia, aby rozszerzyć je na oba plany lub cofnąć'
+    resize: 'Przeciągnij dolną krawędź wydarzenia, aby zmienić rozmiar — zmienia całe zaznaczenie, jeśli jest ustawione'
+    resizePlan: 'Przy widocznych obu planach przeciągnij boczną krawędź wydarzenia, aby rozszerzyć je na oba plany lub cofnąć — dotyczy całego zaznaczenia, jeśli jest ustawione'
     movePlan: 'Przy widocznych obu planach upuść wydarzenie w drugiej połowie, aby przełączyć między planem A i B'
     allDay: 'Kliknij nagłówek dnia, aby dodać wydarzenie całodniowe'
 </i18n>
@@ -651,8 +651,8 @@ help:
     move: 'Tažením události ji přesunete — přesune celý výběr, pokud je nastaven'
     copy: 'Podržte Ctrl / ⌘ při tažení pro kopírování'
     unschedule: 'Přetažením na "Neplánované" odeberete z plánu'
-    resize: 'Tažením dolního okraje události změníte velikost'
-    resizePlan: 'Při zobrazení obou plánů táhněte boční okraj události, abyste ji rozšířili na oba plány nebo zpět'
+    resize: 'Tažením dolního okraje události změníte velikost — změní celý výběr, pokud je nastaven'
+    resizePlan: 'Při zobrazení obou plánů táhněte boční okraj události, abyste ji rozšířili na oba plány nebo zpět — platí pro celý výběr, pokud je nastaven'
     movePlan: 'Při zobrazení obou plánů přetáhněte událost do druhé poloviny pro přepnutí mezi plánem A a B'
     allDay: 'Kliknutím na záhlaví dne přidáte celodenní událost'
 </i18n>
