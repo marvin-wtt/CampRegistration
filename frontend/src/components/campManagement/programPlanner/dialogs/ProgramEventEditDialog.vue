@@ -20,7 +20,7 @@
             :label="t('field.title.label')"
             :locales="props.locales ?? []"
             :rules="[
-              (val?: string) => val?.length || t('field.title.rule.required'),
+              (val?: string) => !!val?.length || t('field.title.rule.required'),
             ]"
             hide-bottom-space
             default-untranslated

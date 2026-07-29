@@ -20,7 +20,7 @@
             :locales="props.locales ?? []"
             :label="t('field.title.label')"
             :rules="[
-              (val?: string) => val?.length || t('field.title.rule.required'),
+              (val?: string) => !!val?.length || t('field.title.rule.required'),
             ]"
             hide-bottom-space
             autofocus
