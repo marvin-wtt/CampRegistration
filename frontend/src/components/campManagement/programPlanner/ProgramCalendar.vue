@@ -249,7 +249,13 @@ import ProgramEventAddDialog from '@/components/campManagement/programPlanner/di
 import ProgramEventEditDialog from '@/components/campManagement/programPlanner/dialogs/ProgramEventEditDialog.vue';
 import CalendarSettingsDialog from '@/components/campManagement/programPlanner/dialogs/CalendarSettingsDialog.vue';
 import CalendarBacklogPanel from '@/components/campManagement/programPlanner/CalendarBacklogPanel.vue';
-import { daysBetweenDates, parseTimeToMinutes } from '@/utils/date';
+import {
+  daysBetweenDates,
+  formatLocalDate,
+  isoToLocalDate,
+  parseLocalDate,
+  parseTimeToMinutes,
+} from '@/utils/date';
 import { openPrintIframe } from '@/utils/printIframe';
 import { useCampSettings } from '@/composables/campSettings';
 import { SETTING_KEYS } from '@camp-registration/common/settings';
@@ -468,16 +474,16 @@ watch(
 );
 
 function initialAnchorDate(): string {
-  const startDate = parseLocalDate(camp.startAt.substring(0, 10));
-  const endDate = parseLocalDate(camp.endAt.substring(0, 10));
+  const startDate = parseLocalDate(isoToLocalDate(camp.startAt));
+  const endDate = parseLocalDate(isoToLocalDate(camp.endAt));
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   if (today < startDate || today > endDate) {
-    return formatDate(startDate);
+    return formatLocalDate(startDate);
   }
 
-  return formatDate(today);
+  return formatLocalDate(today);
 }
 
 function clampWindowStart(date: string, days: number): string {
@@ -485,23 +491,14 @@ function clampWindowStart(date: string, days: number): string {
     return date;
   }
 
-  const startMs = parseLocalDate(camp.startAt.substring(0, 10)).getTime();
-  const endMs = parseLocalDate(camp.endAt.substring(0, 10)).getTime();
+  const startMs = parseLocalDate(isoToLocalDate(camp.startAt)).getTime();
+  const endMs = parseLocalDate(isoToLocalDate(camp.endAt)).getTime();
   const dayMs = 24 * 60 * 60 * 1000;
   const maxStartMs = endMs - (days - 1) * dayMs;
   const pickedMs = parseLocalDate(date).getTime();
 
-  return formatDate(
+  return formatLocalDate(
     new Date(Math.max(startMs, Math.min(pickedMs, maxStartMs))),
-  );
-}
-
-function parseLocalDate(dateStr: string): Date {
-  const [y, m, d] = dateStr.split('-');
-  return new Date(
-    parseInt(y ?? '0'),
-    parseInt(m ?? '0') - 1,
-    parseInt(d ?? '0'),
   );
 }
 
@@ -1658,7 +1655,7 @@ function computeGroupTargets(
     if (!other?.date) {
       continue;
     }
-    const otherDate = formatDate(
+    const otherDate = formatLocalDate(
       new Date(parseLocalDate(other.date).getTime() + dayDelta * DAY_IN_MS),
     );
     const otherTime =
@@ -1880,7 +1877,7 @@ function onDrop(
 function localDateTimeParts(isoString: string): { date: string; time: string } {
   const dt = new Date(isoString);
   return {
-    date: formatDate(dt),
+    date: formatLocalDate(dt),
     time: `${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`,
   };
 }
@@ -2074,7 +2071,7 @@ function onNextNavigation() {
   const next =
     parseLocalDate(selectedDate.value).getTime() + range.value * DAY_IN_MS;
   selectedDate.value = clampWindowStart(
-    formatDate(new Date(next)),
+    formatLocalDate(new Date(next)),
     range.value,
   );
 }
@@ -2083,17 +2080,9 @@ function onPreviousNavigation() {
   const prev =
     parseLocalDate(selectedDate.value).getTime() - range.value * DAY_IN_MS;
   selectedDate.value = clampWindowStart(
-    formatDate(new Date(prev)),
+    formatLocalDate(new Date(prev)),
     range.value,
   );
-}
-
-function formatDate(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-
-  return `${y}-${m}-${d}`;
 }
 </script>
 

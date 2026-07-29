@@ -241,7 +241,7 @@ import type {
   ProgramEventCreateData,
   Translatable,
 } from '@camp-registration/common/entities';
-import { isValidTimeRange, timeDifference } from '@/utils/date';
+import { isoToLocalDate, isValidTimeRange, timeDifference } from '@/utils/date';
 
 const { t } = useI18n();
 const $q = useQuasar();
@@ -339,16 +339,15 @@ const monthYearMax = computed<string | undefined>(() => {
   return props.dateTimeMax ? extractYearMonth(props.dateTimeMax) : undefined;
 });
 
-function extractYearMonth(date: string): string {
-  const year = date.substring(0, 4);
-  const month = date.substring(5, 7);
+function extractYearMonth(dateTime: string): string {
+  const [year, month] = isoToLocalDate(dateTime).split('-');
   return `${year}/${month}`;
 }
 
 function dateOptions(date: string): boolean {
   const dateStr = date.replace(/\//g, '-');
-  const dateMin = props.dateTimeMin?.substring(0, 10) ?? null;
-  const dateMax = props.dateTimeMax?.substring(0, 10) ?? null;
+  const dateMin = props.dateTimeMin ? isoToLocalDate(props.dateTimeMin) : null;
+  const dateMax = props.dateTimeMax ? isoToLocalDate(props.dateTimeMax) : null;
 
   return (!dateMin || dateStr >= dateMin) && (!dateMax || dateStr <= dateMax);
 }
