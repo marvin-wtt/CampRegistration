@@ -77,20 +77,14 @@ const {
   viewBoth?: boolean;
   showAllTranslations?: boolean;
   selected?: boolean;
-  // True while another event in the same drag group is being dragged —
-  // this one is hidden in favor of its drop preview box.
   dimmed?: boolean;
   editable?: boolean;
   deletable?: boolean;
   creatable?: boolean;
   timeStartPosition: (time?: string) => number;
   timeDurationHeight: (duration?: number) => number;
-  // Live values while a resize is in flight. A resize acts on the whole
-  // selection, so the parent owns the preview for every affected event —
-  // including this one, even when it is the one being dragged.
   durationOverride?: number | undefined;
   planOverride?: ProgramEvent['plan'] | undefined;
-  // How many events in the same span this one is stacked on top of
   depth?: number;
 }>();
 
@@ -99,8 +93,6 @@ const emit = defineEmits<{
   (e: 'delete'): void;
   (e: 'duplicate'): void;
   (e: 'move-to-backlog'): void;
-  // `preview` is true for the continuous updates during the drag and false on
-  // the final one, which is the only that gets persisted.
   (e: 'resize', deltaMinutes: number, preview: boolean): void;
   (e: 'change-plan', plan: ProgramEvent['plan'], preview: boolean): void;
 }>();
@@ -183,10 +175,14 @@ function onDragStart(e: DragEvent) {
   isCopyDrag.value = e.ctrlKey || e.metaKey;
 
   const onKeyDown = (ev: KeyboardEvent) => {
-    if (ev.key === 'Control' || ev.key === 'Meta') isCopyDrag.value = true;
+    if (ev.key === 'Control' || ev.key === 'Meta') {
+      isCopyDrag.value = true;
+    }
   };
   const onKeyUp = (ev: KeyboardEvent) => {
-    if (ev.key === 'Control' || ev.key === 'Meta') isCopyDrag.value = false;
+    if (ev.key === 'Control' || ev.key === 'Meta') {
+      isCopyDrag.value = false;
+    }
   };
   window.addEventListener('keydown', onKeyDown);
   window.addEventListener('keyup', onKeyUp);

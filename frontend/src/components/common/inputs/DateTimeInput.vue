@@ -2,10 +2,7 @@
   <!-- TODO Mask and validate correctly  -->
   <q-input
     v-model="modelValue"
-    hide-bottom-space
-    outlined
-    rounded
-    v-bind="attrs"
+    v-bind="inputProps"
   >
     <template #append>
       <q-icon
@@ -57,25 +54,37 @@
 
     <!-- Parent slots -->
     <template
-      v-for="(data, name, index) in $slots as unknown as QInputSlots"
-      :key="index"
+      v-for="(_, name) in slots"
+      :key="name"
       #[name]
     >
-      <slot
-        :name="name"
-        v-bind="data"
-      />
+      <slot :name />
     </template>
   </q-input>
 </template>
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
-import { type QInputSlots, type QPopupProxy } from 'quasar';
-import { nextTick, ref, useAttrs } from 'vue';
+import { type QInputProps, type QPopupProxy } from 'quasar';
+import { nextTick, ref } from 'vue';
+import {
+  type ForwardedFieldSlots,
+  usePassthroughProps,
+} from '@/composables/passthroughProps';
 
-const attrs = useAttrs();
 const { t } = useI18n();
+
+type Props = Omit<QInputProps, 'modelValue' | 'onUpdate:modelValue'>;
+
+const slots = defineSlots<ForwardedFieldSlots>();
+
+const props = withDefaults(defineProps<Props>(), {
+  hideBottomSpace: true,
+  outlined: true,
+  rounded: true,
+});
+
+const inputProps = usePassthroughProps(props);
 
 const datePopupRef = ref<QPopupProxy>();
 const timePopupRef = ref<QPopupProxy>();

@@ -1,11 +1,9 @@
 <template>
   <q-input
-    v-model="modelValue"
-    hide-bottom-space
-    outlined
-    rounded
-    v-bind="$attrs"
-    @focus="($refs.popup as QPopupProxy).show()"
+    v-model="time"
+    v-bind="inputProps"
+    @focus="popup?.show()"
+    @blur="onBlur"
   >
     <template #append>
       <q-icon
@@ -19,7 +17,7 @@
           transition-show="scale"
         >
           <q-time
-            v-model="modelValue"
+            v-model="time"
             mask="HH:mm"
             format24h
           >
@@ -28,7 +26,7 @@
                 v-close-popup
                 color="primary"
                 flat
-                :label="t('actions.ok')"
+                :label="t('action.ok')"
               />
             </div>
           </q-time>
@@ -38,39 +36,77 @@
 
     <!-- Parent slots -->
     <template
-      v-for="(data, name, index) in $slots as unknown as QInputSlots"
-      :key="index"
+      v-for="(_, name) in slots"
+      :key="name"
       #[name]
     >
-      <slot
-        :name="name"
-        v-bind="data"
-      />
+      <slot :name />
     </template>
   </q-input>
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
+import { computed, ref, useTemplateRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { type QInputSlots, type QPopupProxy } from 'quasar';
+import { type QInputProps, type QPopupProxy } from 'quasar';
+import {
+  type ForwardedFieldSlots,
+  usePassthroughProps,
+} from '@/composables/passthroughProps';
+
+type Props = Omit<
+  QInputProps,
+  'modelValue' | 'onUpdate:modelValue' | 'onFocus' | 'onBlur'
+>;
+
+const TIME_REGEX = /^(0[0-9]|1[0-9]|2[0-3]):([0-5][0-9])$/;
 
 const { t } = useI18n();
 
-interface Props {
-  modelValue?: string;
-}
+const model = defineModel<string | undefined>();
+const slots = defineSlots<ForwardedFieldSlots>();
 
-const props = defineProps<Props>();
-
-const emit = defineEmits<{
-  (e: 'update:modelValue', value?: string): void;
-}>();
-
-const modelValue = computed<string | undefined>({
-  get: () => isoToTime(props.modelValue),
-  set: (val) => emit('update:modelValue', timeToIso(val)),
+const props = withDefaults(defineProps<Props>(), {
+  hideBottomSpace: true,
+  outlined: true,
+  rounded: true,
 });
+
+const inputProps = usePassthroughProps(props);
+
+const popup = useTemplateRef<QPopupProxy>('popup');
+
+// The typed text is kept locally so half-typed input ("0", "09:") does not
+// reach the model — it carries the date as well, which clearing it would
+// throw away.
+const text = ref<string | undefined>(isoToTime(model.value));
+
+watch(model, (value) => {
+  text.value = isoToTime(value);
+});
+
+const time = computed<string | undefined>({
+  get: () => text.value,
+  set: (value) => {
+    text.value = value;
+
+    if (!value) {
+      model.value = undefined;
+      return;
+    }
+
+    const iso = timeToIso(value);
+    if (iso) {
+      model.value = iso;
+    }
+  },
+});
+
+// Input that never became a valid time leaves the field showing something the
+// model does not hold, so drop it once editing ends.
+function onBlur() {
+  text.value = isoToTime(model.value);
+}
 
 function isoToTime(dateString?: string): string | undefined {
   if (!dateString) {
@@ -84,22 +120,17 @@ function isoToTime(dateString?: string): string | undefined {
   return `${hours}:${minutes}`;
 }
 
-function timeToIso(inputTime?: string): string | undefined {
-  const dateString = props.modelValue;
-  if (!dateString || !inputTime) {
-    return undefined;
-  }
-
-  const timeRegex = /^(0[0-9]|1[0-9]|2[0-3]):([0-5][0-9])$/;
-  if (!timeRegex.test(inputTime)) {
+function timeToIso(inputTime: string): string | undefined {
+  if (!TIME_REGEX.test(inputTime)) {
     return undefined;
   }
 
   const [hours, minutes] = inputTime.split(':').map(Number);
 
-  const date = new Date(dateString);
-  date.setHours(hours ?? 0);
-  date.setMinutes(minutes ?? 0);
+  // Without a value yet the time alone has no day to sit on — anchor it to
+  // today, so picking a date afterwards keeps this time of day.
+  const date = model.value ? new Date(model.value) : new Date();
+  date.setHours(hours ?? 0, minutes ?? 0, 0, 0);
 
   return date.toISOString();
 }
@@ -108,26 +139,26 @@ function timeToIso(inputTime?: string): string | undefined {
 <style scoped></style>
 
 <i18n lang="yaml" locale="en">
-actions:
+action:
   ok: 'Ok'
 </i18n>
 
 <i18n lang="yaml" locale="de">
-actions:
+action:
   ok: 'Ok'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-actions:
+action:
   ok: 'Ok'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-actions:
+action:
   ok: 'Ok'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-actions:
+action:
   ok: 'Ok'
 </i18n>

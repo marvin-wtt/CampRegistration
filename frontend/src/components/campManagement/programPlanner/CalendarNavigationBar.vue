@@ -157,7 +157,11 @@
 import { useI18n } from 'vue-i18n';
 import { useQuasar, type QPopupProxy } from 'quasar';
 import { computed, onMounted, ref } from 'vue';
-import { daysBetweenDates } from '@/utils/date';
+import {
+  daysBetweenDates,
+  formatLocalDate,
+  isoToLocalDate,
+} from '@/utils/date';
 
 const { t, locale } = useI18n();
 const quasar = useQuasar();
@@ -285,11 +289,14 @@ const maxDays = computed<number>(() => {
   return daysBetweenDates(new Date(start), new Date(end)) + 1;
 });
 
+const startDay = computed<string>(() => isoToLocalDate(start));
+const endDay = computed<string>(() => isoToLocalDate(end));
+
 const prevDisabled = computed<boolean>(() => {
   if (!restrictToCamp) {
     return false;
   }
-  return current <= start.substring(0, 10);
+  return current <= startDay.value;
 });
 
 const nextDisabled = computed<boolean>(() => {
@@ -302,8 +309,7 @@ const nextDisabled = computed<boolean>(() => {
     (m ?? 1) - 1,
     (d ?? 1) + daysRange.value - 1,
   );
-  const lastDayStr = `${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, '0')}-${String(lastDay.getDate()).padStart(2, '0')}`;
-  return lastDayStr >= end.substring(0, 10);
+  return formatLocalDate(lastDay) >= endDay.value;
 });
 
 // Shows current visible date range between the navigation arrows
@@ -335,7 +341,7 @@ const navYearMonthMin = computed<string | undefined>(() => {
   if (!restrictToCamp) {
     return undefined;
   }
-  const [y, m] = start.split('-');
+  const [y, m] = startDay.value.split('-');
   return `${y}/${m}`;
 });
 
@@ -343,7 +349,7 @@ const navYearMonthMax = computed<string | undefined>(() => {
   if (!restrictToCamp) {
     return undefined;
   }
-  const [y, m] = end.split('-');
+  const [y, m] = endDay.value.split('-');
   return `${y}/${m}`;
 });
 
@@ -352,7 +358,7 @@ function dateOptions(date: string): boolean {
     return true;
   }
   const d = date.replace(/\//g, '-');
-  return d >= start.substring(0, 10) && d <= end.substring(0, 10);
+  return d >= startDay.value && d <= endDay.value;
 }
 
 function onDatePick(date: string | null) {
