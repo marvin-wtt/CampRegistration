@@ -75,7 +75,7 @@ describe('SafeDeleteDialog', () => {
         modelModifiers: {
           number: true,
         },
-        type: 'number',
+        type: 'number' as const,
         locales: ['de', 'fr'],
         'onUpdate:modelValue': (e) => wrapper.setProps({ modelValue: e }),
       },

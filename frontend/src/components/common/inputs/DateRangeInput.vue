@@ -1,11 +1,8 @@
 <template>
   <q-input
     :model-value="displayValue"
-    hide-bottom-space
-    outlined
-    rounded
+    v-bind="inputProps"
     readonly
-    v-bind="attrs"
     @focus="popup?.show()"
   >
     <template #append>
@@ -44,34 +41,54 @@
 
     <!-- Parent slots -->
     <template
-      v-for="(data, name, index) in $slots as unknown as QInputSlots"
-      :key="index"
+      v-for="(_, name) in slots"
+      :key="name"
       #[name]
     >
-      <slot
-        :name="name"
-        v-bind="data"
-      />
+      <slot :name />
     </template>
   </q-input>
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, useAttrs, useTemplateRef, watch } from 'vue';
+import { computed, ref, useTemplateRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { date as dateUtil, type QInputSlots, type QPopupProxy } from 'quasar';
+import { date as dateUtil, type QInputProps, type QPopupProxy } from 'quasar';
+import {
+  type ForwardedFieldSlots,
+  usePassthroughProps,
+} from '@/composables/passthroughProps';
 
 const { t } = useI18n();
-const attrs = useAttrs();
 
-type DateRange = { from?: string | undefined; to?: string | undefined };
-
-const { defaultStartTime = '09:00', defaultEndTime = '18:00' } = defineProps<{
+interface Props extends Omit<
+  QInputProps,
+  'modelValue' | 'onUpdate:modelValue' | 'onFocus' | 'readonly'
+> {
   // Time of day (HH:mm, local) applied when a date is set without an
   // existing time to preserve
   defaultStartTime?: string | undefined;
   defaultEndTime?: string | undefined;
-}>();
+}
+
+type DateRange = { from?: string | undefined; to?: string | undefined };
+
+const slots = defineSlots<ForwardedFieldSlots>();
+
+const props = withDefaults(defineProps<Props>(), {
+  defaultStartTime: '09:00',
+  defaultEndTime: '18:00',
+  hideBottomSpace: true,
+  outlined: true,
+  rounded: true,
+});
+
+const inputProps = usePassthroughProps(props, [
+  'from',
+  'to',
+  'defaultStartTime',
+  'defaultEndTime',
+]);
 
 // QDate rejects a plain date string in range mode and a {from, to} object in
 // single mode, so the model shape must follow the singleDay toggle.
@@ -125,8 +142,8 @@ function onSingleDayToggle(value: boolean): void {
 }
 
 function applyRange(range?: DateRange): void {
-  from.value = toIso(range?.from, from.value, defaultStartTime);
-  to.value = toIso(range?.to, to.value, defaultEndTime);
+  from.value = toIso(range?.from, from.value, props.defaultStartTime);
+  to.value = toIso(range?.to, to.value, props.defaultEndTime);
 }
 
 function toDay(iso?: string): string | undefined {
