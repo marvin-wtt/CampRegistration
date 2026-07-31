@@ -1,11 +1,8 @@
 <template>
-  <page-state-handler
-    :error
-    :loading
-  >
+  <page-state-handler :error>
     <result-table-interactive
-      v-if="camp"
       class="absolute fit"
+      :loading
       :questions="columns"
       :registrations="registrations ?? []"
       :templates="templates ?? []"
@@ -93,7 +90,8 @@ const loading = computed<boolean>(() => {
   return (
     registrationStore.isLoading ||
     campDetailStore.isLoading ||
-    templateStore.isLoading
+    templateStore.isLoading ||
+    true
   );
 });
 

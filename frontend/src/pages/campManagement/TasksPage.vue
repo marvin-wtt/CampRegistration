@@ -2,7 +2,6 @@
   <page-state-handler
     padding
     :error
-    :loading
     class="tasks-page row justify-center"
   >
     <div class="tasks-content col-12 col-md-11 col-lg-10 column q-gutter-y-lg">
@@ -31,9 +30,12 @@
         </div>
       </div>
 
+      <!-- Loading skeleton (data region only; header stays real) -->
+      <task-list-skeleton v-if="loading" />
+
       <!-- Task list -->
       <q-card
-        v-if="tasks.length > 0"
+        v-else-if="tasks.length > 0"
         flat
         bordered
         class="section-card"
@@ -169,6 +171,7 @@ import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
 import TaskFormDialog from '@/components/campManagement/tasks/dialogs/TaskFormDialog.vue';
 import TaskDetailsDialog from '@/components/campManagement/tasks/dialogs/TaskDetailsDialog.vue';
 import TaskRow from '@/components/campManagement/tasks/TaskRow.vue';
+import TaskListSkeleton from '@/components/campManagement/tasks/TaskListSkeleton.vue';
 import { usePermissions } from '@/composables/permissions';
 import { useCurrentManager } from '@/composables/currentManager';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';

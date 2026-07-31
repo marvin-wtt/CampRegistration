@@ -30,10 +30,17 @@ async function main() {
     logger.info(`Listening to port ${config.port.toString()}`);
   });
 
-  const exitHandler = (err?: unknown) => {
-    if (err) {
-      logger.error(err);
+  const exitHandler = (signalOrErr?: unknown) => {
+    // Signal handlers pass the signal name (a string); the crash handlers
+    // (uncaughtException/unhandledRejection) pass an Error. Only the latter is
+    // an actual failure — a plain SIGTERM/SIGINT is a normal shutdown.
+    const isError = signalOrErr instanceof Error;
+    if (isError) {
+      logger.error(signalOrErr);
+    } else if (typeof signalOrErr === 'string') {
+      logger.info(`Received ${signalOrErr}, shutting down`);
     }
+
     server.close(() => {
       logger.info('HTTP server closed');
       shutdown()
@@ -42,9 +49,21 @@ async function main() {
         })
         .finally(() => {
           logger.close();
-          process.exit(err ? 1 : 0);
+          process.exit(isError ? 1 : 0);
         });
     });
+
+    // Drop idle keep-alive sockets right away so they don't hold the server open.
+    server.closeIdleConnections();
+
+    // Long-lived SSE realtime streams (text/event-stream, keep-alive) never end
+    // on their own, so server.close() would otherwise wait forever for them and
+    // its callback — and thus shutdown() — would never run. Give normal in-flight
+    // requests a grace window to drain, then force-drop whatever's left (SSE
+    // streams, stuck requests) so the close callback can fire.
+    setTimeout(() => {
+      server.closeAllConnections();
+    }, 5_000).unref();
 
     setTimeout(() => {
       logger.error('Forcing process exit');
