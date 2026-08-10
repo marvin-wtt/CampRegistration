@@ -138,7 +138,7 @@
           </q-item-section>
 
           <q-menu
-            anchor="top start"
+            anchor="bottom end"
             auto-close
             self="top end"
           >
