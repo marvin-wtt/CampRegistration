@@ -2,7 +2,7 @@
   <q-input
     v-model="time"
     v-bind="inputProps"
-    @focus="popup?.show()"
+    @focus="onFocus"
     @blur="onBlur"
   >
     <template #append>
@@ -48,7 +48,7 @@
 <script lang="ts" setup>
 import { computed, ref, useTemplateRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { type QInputProps, type QPopupProxy } from 'quasar';
+import { type QInputProps, type QPopupProxy, useQuasar } from 'quasar';
 import {
   type ForwardedFieldSlots,
   usePassthroughProps,
@@ -62,6 +62,7 @@ type Props = Omit<
 const TIME_REGEX = /^(0[0-9]|1[0-9]|2[0-3]):([0-5][0-9])$/;
 
 const { t } = useI18n();
+const quasar = useQuasar();
 
 const model = defineModel<string | undefined>();
 const slots = defineSlots<ForwardedFieldSlots>();
@@ -97,6 +98,16 @@ const time = computed<string | undefined>({
     }
   },
 });
+
+// On desktop, focus fires on Tab too — auto-opening there would pop the
+// picker over every field a keyboard user tabs past. Touch devices get no
+// such drive-by focus, and typing into a masked field is awkward, so only
+// they open on focus; everyone else uses the icon.
+function onFocus() {
+  if (quasar.platform.has.touch) {
+    popup.value?.show();
+  }
+}
 
 // Input that never became a valid time leaves the field showing something the
 // model does not hold, so drop it once editing ends.
