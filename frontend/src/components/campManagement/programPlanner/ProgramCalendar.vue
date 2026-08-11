@@ -982,6 +982,7 @@ function onEventDelete(event: ProgramEvent) {
 
 function printCalendar(date: string, days: number) {
   const printData = {
+    locale: locale.value,
     camp: {
       name: camp.name,
       startAt: camp.startAt,
