@@ -1705,6 +1705,9 @@ function onDrop(
   type: string,
   { scope }: { scope: DragAndDropScope },
 ): boolean {
+  // Without this, Safari mobile's native default drop action for text/plain
+  // data fires (opening a new tab and searching the dropped text).
+  e.preventDefault();
   // Same DOM-remount caveat as onMoveToBacklog: don't rely on `dragend`
   // alone to clear the drag/dim state.
   resetDragState();
