@@ -26,7 +26,7 @@
                 v-close-popup
                 color="primary"
                 flat
-                :label="t('action.ok')"
+                :label="t('close')"
               />
             </div>
           </q-time>
@@ -66,11 +66,7 @@ const { t } = useI18n();
 const model = defineModel<string | undefined>();
 const slots = defineSlots<ForwardedFieldSlots>();
 
-const props = withDefaults(defineProps<Props>(), {
-  hideBottomSpace: true,
-  outlined: true,
-  rounded: true,
-});
+const props = defineProps<Props>();
 
 const inputProps = usePassthroughProps(props);
 
@@ -139,26 +135,21 @@ function timeToIso(inputTime: string): string | undefined {
 <style scoped></style>
 
 <i18n lang="yaml" locale="en">
-action:
-  ok: 'Ok'
+close: 'Close'
 </i18n>
 
 <i18n lang="yaml" locale="de">
-action:
-  ok: 'Ok'
+close: 'Schließen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-action:
-  ok: 'Ok'
+close: 'Fermer'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-action:
-  ok: 'Ok'
+close: 'Zamknij'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-action:
-  ok: 'Ok'
+close: 'Zavřít'
 </i18n>

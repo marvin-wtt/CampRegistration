@@ -64,6 +64,8 @@
           :label="t('field.opens')"
           clearable
           hide-bottom-space
+          outlined
+          rounded
         >
           <template #before>
             <q-icon name="lock_open" />
@@ -77,6 +79,8 @@
           :error-message="t('validation.order')"
           clearable
           hide-bottom-space
+          outlined
+          rounded
         >
           <template #before>
             <q-icon name="lock" />

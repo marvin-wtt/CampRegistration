@@ -29,6 +29,9 @@
             v-model="data.expiresAt"
             :label="t('input.expiresAt')"
             clearable
+            hide-bottom-space
+            outlined
+            rounded
           />
         </q-card-section>
 

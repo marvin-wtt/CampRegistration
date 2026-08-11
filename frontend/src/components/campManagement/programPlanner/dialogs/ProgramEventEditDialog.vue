@@ -115,83 +115,31 @@
             class="row q-gutter-sm"
           >
             <!-- time -->
-            <q-input
+            <time-of-day-input
               v-model="data.time"
               :label="t('field.start.label')"
-              mask="time"
               :rules="['time']"
+              class="col-12 col-sm"
               hide-bottom-space
               outlined
               rounded
-              class="col-12 col-sm"
-            >
-              <template #append>
-                <q-icon
-                  name="access_time"
-                  class="cursor-pointer"
-                >
-                  <q-popup-proxy
-                    cover
-                    transition-show="scale"
-                    transition-hide="scale"
-                  >
-                    <q-time v-model="data.time">
-                      <div class="row items-center justify-end">
-                        <q-btn
-                          v-close-popup
-                          :label="t('action.close')"
-                          color="primary"
-                          flat
-                          rounded
-                        />
-                      </div>
-                    </q-time>
-                  </q-popup-proxy>
-                </q-icon>
-              </template>
-            </q-input>
+            />
 
             <!-- duration -->
-            <q-input
+            <time-of-day-input
               v-model="timeEnd"
               :label="t('field.end.label')"
-              mask="time"
               :rules="[
                 'time',
                 (val: string) =>
                   (data.time && isValidTimeRange(data.time, val)) ||
                   t('field.end.rule.later'),
               ]"
+              class="col-12 col-sm"
               hide-bottom-space
               outlined
               rounded
-              class="col-12 col-sm"
-            >
-              <template #append>
-                <q-icon
-                  name="access_time"
-                  class="cursor-pointer"
-                >
-                  <q-popup-proxy
-                    transition-show="scale"
-                    transition-hide="scale"
-                    cover
-                  >
-                    <q-time v-model="timeEnd">
-                      <div class="row items-center justify-end">
-                        <q-btn
-                          v-close-popup
-                          :label="t('action.close')"
-                          color="primary"
-                          flat
-                          rounded
-                        />
-                      </div>
-                    </q-time>
-                  </q-popup-proxy>
-                </q-icon>
-              </template>
-            </q-input>
+            />
           </div>
 
           <!-- color -->
@@ -233,11 +181,12 @@
 
 <script lang="ts" setup>
 import { addToDate, getTime, parseTimestamp } from '@timestamp-js/core';
-import { QPopupProxy, useDialogPluginComponent, useQuasar } from 'quasar';
+import { useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { computed, reactive, toRaw } from 'vue';
+import { computed, reactive, ref, toRaw, watch } from 'vue';
 import TranslatedInput from '@/components/common/inputs/TranslatedInput.vue';
 import ColorPickerInput from '@/components/common/inputs/ColorPickerInput.vue';
+import TimeOfDayInput from '@/components/common/inputs/TimeOfDayInput.vue';
 import type {
   ProgramEvent,
   ProgramEventUpdateData,
@@ -267,39 +216,47 @@ function initialData(): ProgramEventUpdateData {
   return data;
 }
 
-const fullDay = computed<boolean>({
-  get() {
-    return !data.time || !data.duration;
-  },
-  set(fullDay) {
-    data.time = fullDay ? null : (props.event.time ?? '12:00');
-    data.duration = fullDay ? null : (props.event.duration ?? 30);
-  },
+const fullDay = ref<boolean>(!data.time || !data.duration);
+
+function computeEndTime(
+  time: string | null | undefined,
+  duration: number | null | undefined,
+): string {
+  if (!time) {
+    return '23:59';
+  }
+
+  if (!duration) {
+    return time;
+  }
+
+  const ts = parseTimestamp('0000-00-00 ' + time);
+  if (!ts) {
+    return '--:--';
+  }
+
+  return getTime(addToDate(ts, { minute: duration }));
+}
+
+const timeEnd = ref<string>(computeEndTime(data.time, data.duration));
+
+watch(fullDay, (value) => {
+  data.time = value ? null : (props.event.time ?? '12:00');
+  data.duration = value ? null : (props.event.duration ?? 30);
+
+  if (!value) {
+    timeEnd.value = computeEndTime(data.time, data.duration);
+  }
 });
 
-const timeEnd = computed<string>({
-  get() {
-    if (!data.time) {
-      return '23:59';
-    }
+// Start and end are independent inputs; editing one keeps the other fixed
+// and recomputes duration, rather than duration staying fixed and end drifting.
+watch([() => data.time, timeEnd], ([time, end]) => {
+  if (!time) {
+    return;
+  }
 
-    if (!data.duration) {
-      return data.time;
-    }
-
-    const ts = parseTimestamp('0000-00-00 ' + data.time);
-    if (!ts) {
-      return '--:--';
-    }
-
-    return getTime(addToDate(ts, { minute: data.duration }));
-  },
-  set(time) {
-    if (!data.time) {
-      data.time = '00:00';
-    }
-    data.duration = timeDifference(data.time, time);
-  },
+  data.duration = timeDifference(time, end);
 });
 
 const planOptions = computed(() => {
