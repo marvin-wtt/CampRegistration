@@ -1,6 +1,7 @@
-import { z } from 'zod';
+import { z, type ZodType } from 'zod';
 import { translatedValue } from '#core/validation/helper';
 import type { Camp } from '#generated/prisma/client.js';
+import type { CampQuery } from '@camp-registration/common/entities';
 
 const show = z.object({
   params: z.object({
@@ -26,7 +27,7 @@ const index = z.object({
       sortBy: z.string(),
       sortType: z.enum(['asc', 'desc']),
     })
-    .partial(),
+    .partial() satisfies ZodType<CampQuery>,
 });
 
 function validateRecordKeys(

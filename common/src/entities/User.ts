@@ -18,8 +18,16 @@ interface UserWithPassword extends User {
 
 export type UserCreateData = Omit<
   UserWithPassword,
-  'id' | 'emailVerified' | 'twoFactorEnabled' | 'lastSeen' | 'createdAt'
->;
+  | 'id'
+  | 'emailVerified'
+  | 'twoFactorEnabled'
+  | 'lastSeen'
+  | 'createdAt'
+  | 'role'
+  | 'locale'
+  | 'locked'
+> &
+  Partial<Pick<UserWithPassword, 'role' | 'locale' | 'locked'>>;
 
 export type UserUpdateData = Partial<
   Omit<UserWithPassword, 'id' | 'twoFactorEnabled' | 'createdAt'>

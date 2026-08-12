@@ -1,9 +1,13 @@
-import { z } from 'zod';
+import { z, type ZodType } from 'zod';
 import {
   translatedValue,
   DateSchema,
   TimeSchema,
 } from '#core/validation/helper';
+import type {
+  ProgramEventCreateData,
+  ProgramEventUpdateData,
+} from '@camp-registration/common/entities';
 
 const planSchema = z.enum(['a', 'b', 'both']);
 const colorSchema = z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/);
@@ -34,7 +38,7 @@ const store = z.object({
     duration: z.number().min(1).optional().nullable(),
     color: colorSchema.optional().nullable(),
     plan: planSchema.optional(),
-  }),
+  }) satisfies ZodType<ProgramEventCreateData>,
 });
 
 const update = z.object({
@@ -53,7 +57,7 @@ const update = z.object({
       color: colorSchema.nullable(),
       plan: planSchema,
     })
-    .partial(),
+    .partial() satisfies ZodType<ProgramEventUpdateData>,
 });
 
 const destroy = z.object({

@@ -1,6 +1,12 @@
-import { z } from 'zod';
+import { z, type ZodType } from 'zod';
 import { LocaleSchema } from '#core/validation/helper';
 import { formUtils } from '#utils/form';
+import type {
+  RegistrationCreateData,
+  RegistrationUpdateData,
+  RegistrationUpdateQuery,
+  RegistrationDeleteQuery,
+} from '@camp-registration/common/entities';
 
 type CampWithFreePlaces = Parameters<typeof formUtils>[0];
 
@@ -45,7 +51,7 @@ const store = (camp: CampWithFreePlaces) =>
         }
       }),
       locale: LocaleSchema.nullable().optional(),
-    }),
+    }) satisfies ZodType<RegistrationCreateData>,
   });
 
 const update = z.object({
@@ -60,12 +66,12 @@ const update = z.object({
       customFiles: z.record(z.string().regex(/^[^\s.]+$/), z.ulid().nullable()),
       status: z.enum(['PENDING', 'WAITLISTED', 'ACCEPTED']).optional(),
     })
-    .partial(),
+    .partial() satisfies ZodType<RegistrationUpdateData>,
   query: z
     .object({
       suppressMessage: z.stringbool(),
     })
-    .partial(),
+    .partial() satisfies ZodType<RegistrationUpdateQuery>,
 });
 
 const destroy = z.object({
@@ -77,7 +83,7 @@ const destroy = z.object({
     .object({
       suppressMessage: z.stringbool(),
     })
-    .partial(),
+    .partial() satisfies ZodType<RegistrationDeleteQuery>,
 });
 
 export default {

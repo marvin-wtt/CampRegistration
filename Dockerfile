@@ -17,6 +17,12 @@ WORKDIR /app
 
 ENV CYPRESS_INSTALL_BINARY=0
 
+# SurveyJS licence key is inlined into the SPA bundle at build time (see
+# frontend/quasar.config.ts `defineEnv`), so it must be present here — setting
+# it on the runtime container has no effect. It is not a secret: the key ships
+# in the public client bundle and is domain-bound.
+ARG SURVEYJS_LICENSE_KEY
+
 COPY . .
 RUN npm ci
 RUN npm run build

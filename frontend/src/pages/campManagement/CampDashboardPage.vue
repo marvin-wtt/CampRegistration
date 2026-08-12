@@ -224,6 +224,7 @@ import {
   LOCAL_TEMPLATE_MISSING,
   LOCAL_TEMPLATE_PENDING,
 } from '@/components/campManagement/table/localTableTemplates';
+import type { Permission } from '@camp-registration/common/permissions';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -264,40 +265,58 @@ const showPending = computed<boolean>(
   () => camp.value?.confirmationMode !== 'AUTOMATIC',
 );
 
-const quickActions = computed(() => [
-  {
-    key: 'participants',
-    label: t('actions.participants.label'),
-    caption: t('actions.participants.caption'),
-    icon: 'groups',
-    color: 'primary',
-    route: 'management.camp.participants',
-  },
-  {
-    key: 'contact',
-    label: t('actions.contact.label'),
-    caption: t('actions.contact.caption'),
-    icon: 'mark_email_unread',
-    color: 'teal',
-    route: 'management.camp.contact',
-  },
-  {
-    key: 'program',
-    label: t('actions.program.label'),
-    caption: t('actions.program.caption'),
-    icon: 'calendar_month',
-    color: 'deep-orange',
-    route: 'management.camp.program-planner',
-  },
-  {
-    key: 'rooms',
-    label: t('actions.rooms.label'),
-    caption: t('actions.rooms.caption'),
-    icon: 'bed',
-    color: 'deep-purple',
-    route: 'management.camp.room-planner',
-  },
-]);
+interface QuickAction {
+  key: string;
+  label: string;
+  caption: string;
+  icon: string;
+  color: string;
+  route: string;
+  permission: Permission | Permission[];
+}
+
+const quickActions = computed<QuickAction[]>(() =>
+  (
+    [
+      {
+        key: 'participants',
+        label: t('actions.participants.label'),
+        caption: t('actions.participants.caption'),
+        icon: 'groups',
+        color: 'primary',
+        route: 'management.camp.participants',
+        permission: 'camp.registrations.view',
+      },
+      {
+        key: 'contact',
+        label: t('actions.contact.label'),
+        caption: t('actions.contact.caption'),
+        icon: 'mark_email_unread',
+        color: 'teal',
+        route: 'management.camp.contact',
+        permission: ['camp.messages.create', 'camp.messages.view'],
+      },
+      {
+        key: 'program',
+        label: t('actions.program.label'),
+        caption: t('actions.program.caption'),
+        icon: 'calendar_month',
+        color: 'deep-orange',
+        route: 'management.camp.program-planner',
+        permission: 'camp.program_events.view',
+      },
+      {
+        key: 'rooms',
+        label: t('actions.rooms.label'),
+        caption: t('actions.rooms.caption'),
+        icon: 'bed',
+        color: 'deep-purple',
+        route: 'management.camp.room-planner',
+        permission: 'camp.rooms.view',
+      },
+    ] satisfies QuickAction[]
+  ).filter((action) => canAccessAny(action.permission)),
+);
 
 interface AttentionItem {
   key: string;

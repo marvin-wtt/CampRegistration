@@ -51,13 +51,13 @@ const text = computed<Translatable>(() => {
 
   return Object.keys(value)
     .sort()
-    .reduce(
-      (obj, key) => {
-        obj[key] = value[key];
-        return obj;
-      },
-      {} as Record<string, string>,
-    );
+    .reduce<Record<string, string>>((obj, key) => {
+      const entry = value[key];
+      if (entry) {
+        obj[key] = entry;
+      }
+      return obj;
+    }, {});
 });
 </script>
 

@@ -10,14 +10,15 @@
       :camp-details="camp"
       :submit-fn="submit"
       :upload-file-fn="uploadFile"
-      class="col-xs-12 col-sm-12 col-md-8 col-lg-6 col-xl-6"
+      class="full-width"
       @bg-color-update="(color) => updateBgColor(color)"
     />
 
     <!-- Not available / registration closed -->
     <div
       v-else
-      class="column justify-center q-pa-md col-xs-12 col-sm-8 col-md-5 col-lg-3"
+      class="column justify-center q-pa-md col-xs-12 col-sm-8 col-md-5 col-lg-4"
+      :data-test="`camp-registration-status-${registrationStatus}`"
     >
       <div class="col-shrink column items-center q-gutter-md">
         <q-avatar

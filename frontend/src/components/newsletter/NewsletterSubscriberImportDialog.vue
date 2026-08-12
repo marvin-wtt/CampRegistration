@@ -147,8 +147,8 @@ watch(campId, () => {
 function onSubmit() {
   const data: NewsletterSubscriberImportData = {
     campId: campId.value,
-    country: country.value || null,
-    requireConsent: requireConsent.value || undefined,
+    country: country.value ?? null,
+    requireConsent: requireConsent.value ?? undefined,
   };
   onDialogOK(data);
 }

@@ -2,6 +2,7 @@ import { BaseService } from '#core/base/BaseService';
 import { campPermissionRegistry } from '#core/permission-registry';
 import type { Prisma } from '#generated/prisma/client.js';
 import type { Permission } from '@camp-registration/common/permissions';
+import { RESOURCE_VIEW_PERMISSION } from '@camp-registration/common/realtime';
 import { injectable } from 'inversify';
 
 type ManagerCreateData = Pick<
@@ -16,7 +17,7 @@ type ManagerUpdateData = Pick<
 
 export interface ManagerAuthorization {
   managerId: string;
-  permissions: Permission[];
+  permissions: Set<Permission>;
   expiresAt: Date | null;
 }
 
@@ -44,8 +45,23 @@ export class CampManagerService extends BaseService {
 
     return {
       managerId: manager.id,
-      permissions: campPermissionRegistry.getPermissions(manager.role),
+      permissions: new Set(campPermissionRegistry.getPermissions(manager.role)),
       expiresAt: manager.expiresAt,
+    };
+  }
+
+  /**
+   * Authorization for a system administrator, who is not a camp manager and so
+   * has no manager record. Grants every resource view permission (so
+   * `shouldDeliver` passes for all events), a never-expiring snapshot, and an
+   * empty `managerId` (no `manager` event can target them, so their permissions
+   * never need refreshing).
+   */
+  getAdminAuthorization(): ManagerAuthorization {
+    return {
+      managerId: '',
+      permissions: new Set(Object.values(RESOURCE_VIEW_PERMISSION)),
+      expiresAt: null,
     };
   }
 
@@ -68,7 +84,7 @@ export class CampManagerService extends BaseService {
   ): Promise<boolean> {
     const authorization = await this.getManagerAuthorization(campId, userId);
 
-    return authorization?.permissions.includes(permission) ?? false;
+    return authorization?.permissions.has(permission) ?? false;
   }
 
   async getManagers(campId: string) {

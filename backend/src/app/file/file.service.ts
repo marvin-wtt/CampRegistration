@@ -8,6 +8,7 @@ import { DiskStorage } from '#core/storage/disk.storage';
 import { StorageRegistry } from '#core/storage/storage.registry';
 import { BaseService } from '#core/base/BaseService';
 import { fileNameExtension } from '#utils/file';
+import { isClientDisconnect } from '#utils/stream';
 import { inject, injectable } from 'inversify';
 import { Config } from '#core/ioc/decorators';
 import type { AppConfig } from '#config';
@@ -402,6 +403,13 @@ export class FileService extends BaseService {
     // consumer (HTTP response, mail transport) attaches its own 'error'
     // listener — without one here, such an error crashes the process.
     stream.on('error', (error: Error) => {
+      // Says nothing about the file, and every cancelled preview emits one —
+      // reporting it is the consumer's call, not ours.
+      if (isClientDisconnect(error)) {
+        logger.debug(`Stream for file "${file.id}" closed by consumer`);
+        return;
+      }
+
       logger.error(`Error while streaming file "${file.id}"`, error);
     });
 

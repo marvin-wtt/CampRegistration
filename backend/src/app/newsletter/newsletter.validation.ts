@@ -1,4 +1,9 @@
-import { z } from 'zod';
+import { z, type ZodType } from 'zod';
+import type {
+  NewsletterCreateData,
+  NewsletterUpdateData,
+  NewsletterQuery,
+} from '@camp-registration/common/entities';
 
 const index = z.object({
   query: z
@@ -11,7 +16,7 @@ const index = z.object({
       sortType: z.enum(['asc', 'desc']),
     })
     .partial()
-    .optional(),
+    .optional() satisfies ZodType<NewsletterQuery | undefined>,
 });
 
 const show = z.object({
@@ -25,7 +30,7 @@ const store = z.object({
     name: z.string().min(1).max(255),
     description: z.string().max(5000).nullable().optional(),
     replyTo: z.email().max(255).nullable().optional(),
-  }),
+  }) satisfies ZodType<NewsletterCreateData>,
 });
 
 const update = z.object({
@@ -38,7 +43,7 @@ const update = z.object({
       description: z.string().max(5000).nullable(),
       replyTo: z.email().max(255).nullable(),
     })
-    .partial(),
+    .partial() satisfies ZodType<NewsletterUpdateData>,
 });
 
 const destroy = z.object({

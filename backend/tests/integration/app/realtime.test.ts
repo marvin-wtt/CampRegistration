@@ -160,6 +160,33 @@ describe('/api/v1/camps/:campId/events (SSE)', () => {
     expect(client.status).toBe(403);
   });
 
+  it('admits a system admin who is not a camp manager and delivers permission-gated events', async () => {
+    const port = await listen();
+    const camp = await CampFactory.create();
+    const director = await createManagerWithToken(camp, 'DIRECTOR');
+    const admin = await UserFactory.create({ role: 'ADMIN' });
+
+    // The admin is not a manager of this camp, yet the stream opens (connect
+    // bypass) and carries even the manager resource a VIEWER couldn't see —
+    // admins hold every resource view permission.
+    const adminStream = await openStream(
+      port,
+      camp.id,
+      generateAccessToken(admin),
+    );
+    expect(adminStream.status).toBe(200);
+
+    await request()
+      .post(`/api/v1/camps/${camp.id}/managers`)
+      .send({ email: 'new-manager@example.com', role: 'VIEWER' })
+      .auth(director.accessToken, { type: 'bearer' })
+      .expect(201);
+
+    await expect(
+      adminStream.waitForEvent((e) => e.resource === 'manager'),
+    ).resolves.toMatchObject({ operation: 'created' });
+  });
+
   it('delivers task events to all roles', async () => {
     const port = await listen();
     const camp = await CampFactory.create();

@@ -1,5 +1,6 @@
-import { z } from 'zod';
+import { z, type ZodType } from 'zod';
 import { translatedValue } from '#core/validation/helper';
+import type { LegalDocumentUpdateData } from '@camp-registration/common/entities';
 
 const LegalDocumentTypeSchema = z.enum(['IMPRINT', 'PRIVACY_POLICY']);
 
@@ -15,7 +16,7 @@ const update = z.object({
   }),
   body: z.object({
     content: translatedValue(z.string()).nullable(),
-  }),
+  }) satisfies ZodType<LegalDocumentUpdateData>,
 });
 
 export default {

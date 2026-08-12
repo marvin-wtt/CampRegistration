@@ -1,5 +1,10 @@
-import z from 'zod';
+import z, { type ZodType } from 'zod';
 import { translatedValue } from '#core/validation/helper';
+import type {
+  RoomCreateData,
+  RoomUpdateData,
+  RoomBulkUpdateData,
+} from '@camp-registration/common/entities';
 
 const show = z.object({
   params: z.object({
@@ -21,7 +26,7 @@ const store = z.object({
   body: z.object({
     name: translatedValue(z.string()),
     capacity: z.number().int().positive().default(1),
-  }),
+  }) satisfies ZodType<RoomCreateData>,
 });
 
 const update = z.object({
@@ -34,7 +39,7 @@ const update = z.object({
       name: translatedValue(z.string()),
       sortOrder: z.number(),
     })
-    .partial(),
+    .partial() satisfies ZodType<RoomUpdateData>,
 });
 
 const bulkUpdate = z.object({
@@ -51,7 +56,7 @@ const bulkUpdate = z.object({
         }),
       )
       .min(1),
-  }),
+  }) satisfies ZodType<RoomBulkUpdateData>,
 });
 
 const destroy = z.object({

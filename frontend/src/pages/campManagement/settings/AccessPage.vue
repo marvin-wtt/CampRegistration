@@ -266,12 +266,14 @@ import RolePermissionsDialog from '@/components/campManagement/settings/access/R
 import { usePermissions } from '@/composables/permissions';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import { useRouter } from 'vue-router';
+import { useProfileStore } from '@/stores/profile-store';
 
 const quasar = useQuasar();
 const { t, d } = useI18n();
 const campManagerStore = useCampManagerStore();
 const assignedCampsStore = useAssignedCampsStore();
 const campDetailsStore = useCampDetailsStore();
+const profileStore = useProfileStore();
 const { can } = usePermissions();
 const router = useRouter();
 

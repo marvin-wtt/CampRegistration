@@ -9,6 +9,7 @@ import {
   campManagerSelf,
   campManagerSubscriber,
 } from '#app/campManager/camp-manager.guard';
+import { RESOURCE_VIEW_PERMISSION } from '@camp-registration/common/realtime';
 
 const managerService = mock<CampManagerService>();
 
@@ -81,6 +82,28 @@ describe('campManagerSelf', () => {
 });
 
 describe('campManagerSubscriber', () => {
+  const fakeAdminReq = (camp: Partial<Camp>): Request =>
+    ({
+      authUserId: () => 'admin-1',
+      modelOrFail: () => camp,
+      user: { id: 'admin-1', role: 'ADMIN' },
+    }) as unknown as Request;
+
+  it('resolves an admin via getAdminAuthorization without a manager lookup', async () => {
+    const adminAuthorization = {
+      managerId: '',
+      permissions: new Set(Object.values(RESOURCE_VIEW_PERMISSION)),
+      expiresAt: null,
+    };
+    managerService.getAdminAuthorization.mockReturnValue(adminAuthorization);
+
+    const result = await campManagerSubscriber(fakeAdminReq({ id: 'camp-1' }));
+
+    expect(result).toBe(adminAuthorization);
+    expect(managerService.getAdminAuthorization).toHaveBeenCalledOnce();
+    expect(managerService.getManagerAuthorization).not.toHaveBeenCalled();
+  });
+
   it('returns null when the user is not (or no longer) a manager', async () => {
     managerService.getManagerAuthorization.mockResolvedValue(null);
 
@@ -93,7 +116,7 @@ describe('campManagerSubscriber', () => {
     const expiresAt = new Date('2030-01-01T00:00:00Z');
     managerService.getManagerAuthorization.mockResolvedValue({
       managerId: 'manager-1',
-      permissions: ['camp.view', 'camp.tasks.view'],
+      permissions: new Set(['camp.view', 'camp.tasks.view']),
       expiresAt,
     });
 
