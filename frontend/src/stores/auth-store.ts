@@ -35,7 +35,6 @@ export const useAuthStore = defineStore('auth', () => {
   let partialAuthToken: string | undefined = undefined;
 
   let accessTokenTimer: NodeJS.Timeout | null = null;
-  let ongoingRefresh: Promise<boolean> | null = null;
 
   router.beforeEach((to) => {
     if (
@@ -58,6 +57,8 @@ export const useAuthStore = defineStore('auth', () => {
 
     return redirectToLogin();
   });
+
+  apiService.setOnTokenRefresh(handleTokenRefresh);
 
   async function redirectToLogin() {
     return router.push(buildLoginRoute());
@@ -202,25 +203,18 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function refreshTokens(): Promise<boolean> {
-    // if there’s already a refresh in progress, return its promise
-    if (ongoingRefresh) {
-      return ongoingRefresh;
-    }
-
     isLoading.value = true;
 
-    ongoingRefresh = apiService
+    // The underlying network call is deduped in AuthService itself, so
+    // concurrent callers (proactive timer, SSE-resume, 401 retry) always
+    // share a single in-flight request.
+    return apiService
       .refreshTokens()
-      .then(handleTokenRefresh)
       .then(() => true)
       .catch(() => false)
       .finally(() => {
-        // allow a new refresh after this one settles
-        ongoingRefresh = null;
         isLoading.value = false;
       });
-
-    return ongoingRefresh;
   }
 
   function handleTokenRefresh(tokens: AuthTokens) {

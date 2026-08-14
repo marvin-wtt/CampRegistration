@@ -26,82 +26,24 @@
           />
 
           <!-- Day start -->
-          <q-input
+          <time-of-day-input
             v-model="data.dayStart"
             :label="t('field.dayStart.label')"
-            mask="time"
             :rules="['time']"
             hide-bottom-space
             outlined
             rounded
-          >
-            <template #append>
-              <q-icon
-                name="access_time"
-                class="cursor-pointer"
-              >
-                <q-popup-proxy
-                  cover
-                  transition-show="scale"
-                  transition-hide="scale"
-                >
-                  <q-time
-                    v-model="data.dayStart"
-                    format24h
-                  >
-                    <div class="row items-center justify-end">
-                      <q-btn
-                        v-close-popup
-                        :label="t('actions.close')"
-                        color="primary"
-                        flat
-                        rounded
-                      />
-                    </div>
-                  </q-time>
-                </q-popup-proxy>
-              </q-icon>
-            </template>
-          </q-input>
+          />
 
           <!-- Day end -->
-          <q-input
+          <time-of-day-input
             v-model="data.dayEnd"
             :label="t('field.dayEnd.label')"
-            mask="time"
             :rules="['time']"
             hide-bottom-space
             outlined
             rounded
-          >
-            <template #append>
-              <q-icon
-                name="access_time"
-                class="cursor-pointer"
-              >
-                <q-popup-proxy
-                  cover
-                  transition-show="scale"
-                  transition-hide="scale"
-                >
-                  <q-time
-                    v-model="data.dayEnd"
-                    format24h
-                  >
-                    <div class="row items-center justify-end">
-                      <q-btn
-                        v-close-popup
-                        :label="t('actions.close')"
-                        color="primary"
-                        flat
-                        rounded
-                      />
-                    </div>
-                  </q-time>
-                </q-popup-proxy>
-              </q-icon>
-            </template>
-          </q-input>
+          />
           <!-- Show all translations -->
           <q-toggle
             v-model="data.showAllTranslations"
@@ -139,6 +81,7 @@
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { reactive, toRaw } from 'vue';
+import TimeOfDayInput from '@/components/common/inputs/TimeOfDayInput.vue';
 import type { ProgramPlannerSettings } from '@camp-registration/common/settings';
 
 const { settings } = defineProps<{
@@ -188,7 +131,6 @@ field:
 actions:
   save: 'Save'
   cancel: 'Cancel'
-  close: 'Close'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -210,7 +152,6 @@ field:
 actions:
   save: 'Speichern'
   cancel: 'Abbrechen'
-  close: 'Schließen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -232,7 +173,6 @@ field:
 actions:
   save: 'Enregistrer'
   cancel: 'Annuler'
-  close: 'Fermer'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -254,7 +194,6 @@ field:
 actions:
   save: 'Zapisz'
   cancel: 'Anuluj'
-  close: 'Zamknij'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -276,7 +215,6 @@ field:
 actions:
   save: 'Uložit'
   cancel: 'Zrušit'
-  close: 'Zavřít'
 </i18n>
 
 <style lang="scss">

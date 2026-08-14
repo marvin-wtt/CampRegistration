@@ -155,6 +155,7 @@ interface PrintCamp {
 }
 
 interface PrintData {
+  locale?: string;
   camp: PrintCamp;
   events: ProgramEvent[];
   date: string;
