@@ -126,44 +126,53 @@
           </q-item-section>
         </q-item>
 
-        <q-item clickable>
-          <q-item-section avatar>
-            <q-icon name="language" />
-          </q-item-section>
-          <q-item-section>
-            {{ t('language') }}
-          </q-item-section>
-          <q-item-section side>
-            <country-icon :locale="locale" />
-          </q-item-section>
+        <template v-if="!hideLanguage">
+          <q-item clickable>
+            <q-item-section avatar>
+              <q-icon name="language" />
+            </q-item-section>
+            <q-item-section>
+              {{ t('language') }}
+            </q-item-section>
+            <q-item-section side>
+              <div class="row items-center no-wrap q-gutter-x-xs">
+                <country-icon :locale="locale" />
+                <q-icon
+                  name="chevron_right"
+                  size="20px"
+                />
+              </div>
+            </q-item-section>
 
-          <q-menu
-            anchor="bottom end"
-            auto-close
-            self="top end"
-          >
-            <q-list>
-              <q-item
-                v-for="localeOption in locales"
-                :key="localeOption.value"
-                clickable
-                :active="locale === localeOption.value"
-                @click="updateLocale(localeOption.value)"
-              >
-                <q-item-section avatar>
-                  <country-icon :locale="localeOption.value" />
-                </q-item-section>
-                <q-item-section>
-                  <q-item-label>
-                    {{ localeOption.label }}
-                  </q-item-label>
-                </q-item-section>
-              </q-item>
-            </q-list>
-          </q-menu>
-        </q-item>
+            <q-menu
+              :anchor="languageMenuAnchor.anchor"
+              :self="languageMenuAnchor.self"
+              auto-close
+              style="min-width: 200px"
+            >
+              <q-list>
+                <q-item
+                  v-for="localeOption in locales"
+                  :key="localeOption.value"
+                  clickable
+                  :active="locale === localeOption.value"
+                  @click="updateLocale(localeOption.value)"
+                >
+                  <q-item-section avatar>
+                    <country-icon :locale="localeOption.value" />
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label>
+                      {{ localeOption.label }}
+                    </q-item-label>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-menu>
+          </q-item>
 
-        <q-separator spaced />
+          <q-separator spaced />
+        </template>
 
         <q-item
           v-close-popup
@@ -194,7 +203,7 @@
 import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
 import CountryIcon from '@/components/common/localization/CountryIcon.vue';
-import { useQuasar } from 'quasar';
+import { useQuasar, type QSelectOption, type QMenuProps } from 'quasar';
 import type { Profile } from '@camp-registration/common/entities';
 import { useProfileStore } from '@/stores/profile-store';
 import { useAuthStore } from '@/stores/auth-store';
@@ -209,7 +218,11 @@ const { locale } = useI18n({
   useScope: 'global',
 });
 
-const locales = computed(() => [
+const { hideLanguage = false } = defineProps<{
+  hideLanguage?: boolean;
+}>();
+
+const locales = computed<QSelectOption[]>(() => [
   { label: 'Deutsch', value: 'de-DE' },
   { label: 'Français', value: 'fr-FR' },
   { label: 'English', value: 'en-US' },
@@ -249,6 +262,16 @@ const administrator = computed<boolean>(() => {
 
 const darkMode = computed<boolean>(() => {
   return quasar.dark.isActive;
+});
+
+// Flyout to the side on desktop, where the rail/floating profile menu has
+// room to the right. On mobile the profile menu opens from a screen-edge
+// toolbar button, so a side flyout gets squeezed by Quasar's collision
+// avoidance — stack below instead, growing leftward with the full width.
+const languageMenuAnchor = computed<Pick<QMenuProps, 'anchor' | 'self'>>(() => {
+  return quasar.screen.gt.xs
+    ? { anchor: 'top end', self: 'top start' }
+    : { anchor: 'bottom end', self: 'top end' };
 });
 
 function updateLocale(value: string) {
