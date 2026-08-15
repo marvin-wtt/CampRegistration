@@ -252,7 +252,6 @@ model Registration {
   locale            String             @default("en-US") @db.VarChar(5)
   //
   status            RegistrationStatus @default(PENDING)
-  deletedAt         DateTime?
   createdAt         DateTime           @default(now()) @map("created_at")
   updatedAt         DateTime?          @updatedAt @map("updated_at")
 

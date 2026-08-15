@@ -137,16 +137,12 @@ describe('/api/v1/admin/overview', () => {
       expect(body.data.files.total).toBe(1);
     });
 
-    it('should count total registrations, excluding soft-deleted ones', async () => {
+    it('should count total registrations', async () => {
       const { accessToken } = await createAdminWithToken();
       const camp = await CampFactory.create();
 
       await RegistrationFactory.create({ camp: { connect: { id: camp.id } } });
       await RegistrationFactory.create({ camp: { connect: { id: camp.id } } });
-      await RegistrationFactory.create({
-        camp: { connect: { id: camp.id } },
-        deletedAt: new Date(),
-      });
 
       const { body } = await request()
         .get('/api/v1/admin/overview')

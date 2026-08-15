@@ -144,24 +144,6 @@ describe('/api/v1/camps/:campId/registrations', () => {
       },
     );
 
-    it('should not include deleted registrations', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
-      await createRegistration(camp);
-      await RegistrationFactory.create({
-        camp: { connect: { id: camp.id } },
-        deletedAt: new Date(),
-      });
-
-      const { body } = await request()
-        .get(`/api/v1/camps/${camp.id}/registrations`)
-        .send()
-        .auth(accessToken, { type: 'bearer' })
-        .expect(200);
-
-      expect(body).toHaveProperty('data');
-      expect(body.data).toHaveLength(1);
-    });
-
     it('should respond with `403` status code when user is not camp manager', async () => {
       const camp = await CampFactory.create();
       const accessToken = generateAccessToken(await UserFactory.create());
@@ -304,7 +286,6 @@ describe('/api/v1/camps/:campId/registrations', () => {
       const { camp, accessToken } = await createCampWithManagerAndToken();
       const registration = await RegistrationFactory.create({
         camp: { connect: { id: camp.id } },
-        deletedAt: new Date(),
       });
 
       await request()
@@ -1377,7 +1358,6 @@ describe('/api/v1/camps/:campId/registrations', () => {
       const { camp, accessToken } = await createCampWithManagerAndToken();
       const registration = await RegistrationFactory.create({
         camp: { connect: { id: camp.id } },
-        deletedAt: new Date(),
       });
 
       await request()
@@ -2288,7 +2268,6 @@ describe('/api/v1/camps/:campId/registrations', () => {
         const registrationCount = await prisma.registration.count({
           where: {
             campId: camp.id,
-            deletedAt: null,
           },
         });
         expect(registrationCount).toBe(expectedCount);
