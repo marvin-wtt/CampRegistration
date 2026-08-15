@@ -5,6 +5,7 @@ import { ProgramEventSeeder } from './program-event.seeder';
 import { MessageTemplateSeeder } from './message-template.seeder';
 import { TaskSeeder } from './task.seeder';
 import { defaultMessageTemplatesForCountries } from '#app/camp/presets/messageTemplates.js';
+import { SEED_ORGANIZATION_ID } from './organization.seeder';
 
 class CampSeeder extends BaseSeeder {
   name(): string {
@@ -14,6 +15,7 @@ class CampSeeder extends BaseSeeder {
   async run(): Promise<void> {
     await CampFactory.create({
       id: '01JHP0CXJFR4MQS8SF1HQJCY38',
+      organization: { connect: { id: SEED_ORGANIZATION_ID } },
       name: 'Simple Camp',
       public: true,
       form: {
@@ -36,6 +38,7 @@ class CampSeeder extends BaseSeeder {
 
     await CampFactory.create({
       id: '01JKEMXG5C62NBMA6V0QQDJ7JD',
+      organization: { connect: { id: SEED_ORGANIZATION_ID } },
       name: 'Files Camp',
       public: true,
       registrationOpensAt: '2025-11-05T20:13:53.577Z',
@@ -60,6 +63,7 @@ class CampSeeder extends BaseSeeder {
 
     const exampleCamp = await CampFactory.create({
       id: '01K9ATF1H9KD1K6H12F3YK8RWR',
+      organization: { connect: { id: SEED_ORGANIZATION_ID } },
       public: true,
       confirmationMode: 'MANUAL',
       countries: ['gb', 'fr'],

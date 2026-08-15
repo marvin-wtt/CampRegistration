@@ -3,12 +3,19 @@ import { defineBoot } from '#q-app';
 import {
   AUTH_BUS,
   CAMP_BUS,
+  ORGANIZATION_BUS,
   REGISTRATION_BUS,
   TEMPLATE_BUS,
 } from '@/utils/keys';
 
 export default defineBoot(({ app }) => {
-  const busses = [AUTH_BUS, CAMP_BUS, REGISTRATION_BUS, TEMPLATE_BUS];
+  const busses = [
+    AUTH_BUS,
+    CAMP_BUS,
+    ORGANIZATION_BUS,
+    REGISTRATION_BUS,
+    TEMPLATE_BUS,
+  ];
 
   for (const busName of busses) {
     const bus = new EventBus();

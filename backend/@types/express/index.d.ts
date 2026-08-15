@@ -16,11 +16,15 @@ import type {
   NewsletterManager,
   NewsletterSubscriber,
   NewsletterMessage,
+  Organization,
+  OrganizationMember,
+  OrganizationInvitation,
   ProgramEvent,
   Task,
 } from '../../src/generated/prisma/client.js';
 import type { ZodObject, z } from 'zod';
 import type { JsonResource } from '#core/resource/JsonResource';
+import type { CampWithFreePlaces } from '#app/camp/camp.resource';
 
 declare global {
   namespace Express {
@@ -28,7 +32,7 @@ declare global {
       user?: UserModel & {
         twoFactor: { confirmedAt: Date | null } | null;
       };
-      camp?: Camp & { freePlaces: number | Record<string, number> };
+      camp?: CampWithFreePlaces;
       registration?: Registration;
       tableTemplate?: TableTemplate;
       message?: Message & { attachments: File[] };
@@ -41,6 +45,11 @@ declare global {
       room?: Room & { beds: Bed[] };
       bed?: Bed;
       file?: File;
+      organization?: Organization;
+      organizationMember?: OrganizationMember & {
+        user: UserModel | null;
+        invitation: OrganizationInvitation | null;
+      };
       newsletter?: Newsletter;
       newsletterManager?: NewsletterManager;
       newsletterMessage?: NewsletterMessage;

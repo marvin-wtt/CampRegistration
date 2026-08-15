@@ -9,6 +9,8 @@ import {
   TableTemplateFactory,
   FileFactory,
   MessageTemplateFactory,
+  OrganizationFactory,
+  OrganizationMemberFactory,
 } from '../../../prisma/factories/index.js';
 import { Camp, Prisma } from '#generated/prisma/client.js';
 import { campRegistrationStatus } from '#app/camp/camp.util';
@@ -23,6 +25,7 @@ import {
   campUpdateBody,
   campWithForm,
   campUpdateBodyWithForm,
+  CAMP_CREATE_ORGANIZATION_ID,
 } from './fixtures/camp.fixtures.js';
 import { request } from '../utils/request.js';
 import { campWithMaxParticipantsRolesInternational } from './fixtures/registration.fixtures.js';
@@ -44,6 +47,7 @@ const assertCampModel = async (id: string, data: CampCreateData) => {
 
   expect(camp).toEqual({
     id: data.id ?? expect.anything(),
+    organizationId: data.organizationId ?? expect.anything(),
     public: data.public,
     registrationOpensAt: data.registrationOpensAt
       ? new Date(data.registrationOpensAt)
@@ -79,6 +83,9 @@ const assertCampResponseBody = (
 
   expect(body.data).toEqual({
     id: data.id ?? expect.anything(),
+    organizationId: data.organizationId ?? expect.anything(),
+    organizationName: expect.any(String),
+    organizationVerificationStatus: expect.stringMatching(/^(PENDING|VERIFIED|REJECTED)$/),
     public: data.public,
     registrationOpensAt: data.registrationOpensAt ?? null,
     registrationClosesAt: data.registrationClosesAt ?? null,
@@ -106,8 +113,12 @@ const createCampWithManagerAndToken = async (
   campData: Partial<Prisma.CampCreateInput> = {},
   role = 'DIRECTOR',
 ) => {
-  const camp = await CampFactory.create(campData);
   const user = await UserFactory.create();
+  // Before the camp: reference-camp tests clone through `POST /camps`, which
+  // needs the caller to belong to the organization the create fixtures name —
+  // and `campData` may reference that same organization.
+  await joinCampCreationOrganization(user.id);
+  const camp = await CampFactory.create(campData);
   const manager = await CampManagerFactory.create({
     camp: { connect: { id: camp.id } },
     user: { connect: { id: user.id } },
@@ -121,6 +132,51 @@ const createCampWithManagerAndToken = async (
     manager,
     accessToken,
   };
+};
+
+/**
+ * Makes `userId` an administrator of the verified organization the camp-creation
+ * fixtures point at ({@link CAMP_CREATE_ORGANIZATION_ID}) — creating a camp now
+ * requires membership of the organization named in the request body.
+ *
+ * Upserts so several users in one test can share it. Camps built by
+ * `CampFactory` get their own organization, so this never grants incidental
+ * access to them.
+ */
+const joinCampCreationOrganization = async (userId: string) => {
+  await prisma.organization.upsert({
+    where: { id: CAMP_CREATE_ORGANIZATION_ID },
+    update: { members: { create: { userId, role: 'ADMIN' } } },
+    create: {
+      ...OrganizationFactory.build({
+        id: CAMP_CREATE_ORGANIZATION_ID,
+        verificationStatus: 'VERIFIED',
+      }),
+      members: { create: { userId, role: 'ADMIN' } },
+    },
+  });
+};
+
+const createCampCreatorToken = async () => {
+  const user = await UserFactory.create();
+  await joinCampCreationOrganization(user.id);
+
+  return generateAccessToken(user);
+};
+
+/** An administrator of an organization still awaiting moderation. */
+const createUnverifiedOrganizationAdmin = async () => {
+  const user = await UserFactory.create();
+  const organization = await OrganizationFactory.create({
+    verificationStatus: 'PENDING',
+  });
+  await OrganizationMemberFactory.create({
+    organization: { connect: { id: organization.id } },
+    user: { connect: { id: user.id } },
+    role: 'ADMIN',
+  });
+
+  return { organization, user, accessToken: generateAccessToken(user) };
 };
 
 describe('/api/v1/camps', () => {
@@ -420,6 +476,9 @@ describe('/api/v1/camps', () => {
       expect(body).toHaveProperty('data');
       expect(body.data).toEqual({
         id: camp.id,
+        organizationId: camp.organizationId,
+        organizationName: expect.any(String),
+        organizationVerificationStatus: expect.stringMatching(/^(PENDING|VERIFIED|REJECTED)$/),
         confirmationMode: camp.confirmationMode,
         public: camp.public,
         registrationOpensAt: camp.registrationOpensAt?.toISOString() ?? null,
@@ -449,6 +508,47 @@ describe('/api/v1/camps', () => {
       });
 
       await request().get(`/api/v1/camps/${camp.id}`).send().expect(200);
+    });
+
+    describe('unverified organization', () => {
+      // A private camp stays reachable by link, but one owned by an unvetted
+      // entity does not: its managers are the only audience.
+      const unverifiedCamp = {
+        ...campPublic,
+        organization: {
+          create: OrganizationFactory.build({
+            verificationStatus: 'PENDING' as const,
+          }),
+        },
+      };
+
+      it('should respond with `401` status code when unauthenticated', async () => {
+        const camp = await CampFactory.create(unverifiedCamp);
+
+        await request().get(`/api/v1/camps/${camp.id}`).send().expect(401);
+      });
+
+      it('should respond with `403` status code when user does not manage the camp', async () => {
+        const camp = await CampFactory.create(unverifiedCamp);
+        const accessToken = await createCampCreatorToken();
+
+        await request()
+          .get(`/api/v1/camps/${camp.id}`)
+          .send()
+          .auth(accessToken, { type: 'bearer' })
+          .expect(403);
+      });
+
+      it('should respond with `200` status code when user manages the camp', async () => {
+        const { camp, accessToken } =
+          await createCampWithManagerAndToken(unverifiedCamp);
+
+        await request()
+          .get(`/api/v1/camps/${camp.id}`)
+          .send()
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+      });
     });
 
     describe('free places', () => {
@@ -559,7 +659,7 @@ describe('/api/v1/camps', () => {
       const camp = await CampFactory.create({
         registrationClosesAt: new Date('2020-01-01'),
       });
-      const accessToken = generateAccessToken(await UserFactory.create());
+      const accessToken = await createCampCreatorToken();
 
       await request()
         .get(`/api/v1/camps/${camp.id}`)
@@ -605,7 +705,7 @@ describe('/api/v1/camps', () => {
     };
 
     it('should respond with `201` status code when user is authenticated', async () => {
-      const accessToken = generateAccessToken(await UserFactory.create());
+      const accessToken = await createCampCreatorToken();
       const data = campCreateNational;
 
       const { body } = await request()
@@ -619,7 +719,7 @@ describe('/api/v1/camps', () => {
     });
 
     it('should respond with `201` status code with international camp', async () => {
-      const accessToken = generateAccessToken(await UserFactory.create());
+      const accessToken = await createCampCreatorToken();
 
       const data = campCreateInternational;
 
@@ -638,7 +738,7 @@ describe('/api/v1/camps', () => {
     });
 
     it('should have no registration window by default', async () => {
-      const accessToken = generateAccessToken(await UserFactory.create());
+      const accessToken = await createCampCreatorToken();
 
       const { body } = await request()
         .post(`/api/v1/camps/`)
@@ -650,12 +750,56 @@ describe('/api/v1/camps', () => {
       expect(body).toHaveProperty('data.registrationClosesAt', null);
     });
 
+    describe('unverified organization', () => {
+      it('should accept a registration window', async () => {
+        // Scheduling is preparation, not publication: the route guard refuses
+        // the registrations themselves until the organization is verified.
+        const { organization, accessToken } =
+          await createUnverifiedOrganizationAdmin();
+        const registrationOpensAt = moment()
+          .add(10, 'days')
+          .startOf('hour')
+          .toDate()
+          .toISOString();
+
+        const { body } = await request()
+          .post(`/api/v1/camps/`)
+          .send({
+            ...campCreateNational,
+            organizationId: organization.id,
+            registrationOpensAt,
+          })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(201);
+
+        expect(body).toHaveProperty(
+          'data.registrationOpensAt',
+          registrationOpensAt,
+        );
+      });
+
+      it('should respond with `403` status code when the camp is public', async () => {
+        const { organization, accessToken } =
+          await createUnverifiedOrganizationAdmin();
+
+        await request()
+          .post(`/api/v1/camps/`)
+          .send({
+            ...campCreateNational,
+            organizationId: organization.id,
+            public: true,
+          })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(403);
+      });
+    });
+
     describe('invalid request body', () => {
       it.each(campCreatedBody)(
         'should validate the request body | $name',
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         async ({ data, expected }) => {
-          const accessToken = generateAccessToken(await UserFactory.create());
+          const accessToken = await createCampCreatorToken();
 
           await request()
             .post(`/api/v1/camps/`)
@@ -668,7 +812,7 @@ describe('/api/v1/camps', () => {
 
     describe('defaults', () => {
       it('should set default form', async () => {
-        const accessToken = generateAccessToken(await UserFactory.create());
+        const accessToken = await createCampCreatorToken();
 
         const { body } = await request()
           .post(`/api/v1/camps/`)
@@ -680,7 +824,7 @@ describe('/api/v1/camps', () => {
       });
 
       it('should create default table templates', async () => {
-        const accessToken = generateAccessToken(await UserFactory.create());
+        const accessToken = await createCampCreatorToken();
 
         const { body } = await request()
           .post(`/api/v1/camps/`)
@@ -699,7 +843,7 @@ describe('/api/v1/camps', () => {
 
       describe('message templates', () => {
         it('should create default message templates', async () => {
-          const accessToken = generateAccessToken(await UserFactory.create());
+          const accessToken = await createCampCreatorToken();
 
           const { body } = await request()
             .post(`/api/v1/camps/`)
@@ -717,7 +861,7 @@ describe('/api/v1/camps', () => {
         });
 
         it('should create default message templates when country code does not match language', async () => {
-          const accessToken = generateAccessToken(await UserFactory.create());
+          const accessToken = await createCampCreatorToken();
 
           const { body } = await request()
             .post(`/api/v1/camps/`)
@@ -738,7 +882,7 @@ describe('/api/v1/camps', () => {
         });
 
         it('should filter message template languages based on camp countries', async () => {
-          const accessToken = generateAccessToken(await UserFactory.create());
+          const accessToken = await createCampCreatorToken();
 
           const { body } = await request()
             .post(`/api/v1/camps/`)
@@ -1000,7 +1144,7 @@ describe('/api/v1/camps', () => {
       });
 
       it('should respond with `403` status code when user does not manage the reference camp', async () => {
-        const accessToken = generateAccessToken(await UserFactory.create());
+        const accessToken = await createCampCreatorToken();
         const camp = await CampFactory.create();
 
         const data = {
@@ -1016,7 +1160,7 @@ describe('/api/v1/camps', () => {
       });
 
       it('should respond with `403` status code when reference camp does not exist', async () => {
-        const accessToken = generateAccessToken(await UserFactory.create());
+        const accessToken = await createCampCreatorToken();
 
         const data = {
           ...campCreateNational,
@@ -1091,6 +1235,50 @@ describe('/api/v1/camps', () => {
         }
       },
     );
+
+    describe('unverified organization', () => {
+      const unverifiedCamp = {
+        organization: {
+          create: OrganizationFactory.build({
+            verificationStatus: 'PENDING' as const,
+          }),
+        },
+      };
+
+      it('should accept a registration window', async () => {
+        const { camp, accessToken } =
+          await createCampWithManagerAndToken(unverifiedCamp);
+        const registrationOpensAt = moment()
+          .add(10, 'days')
+          .startOf('hour')
+          .toDate()
+          .toISOString();
+
+        const { body } = await request()
+          .patch(`/api/v1/camps/${camp.id}`)
+          .send({ registrationOpensAt })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        expect(body).toHaveProperty(
+          'data.registrationOpensAt',
+          registrationOpensAt,
+        );
+      });
+
+      it('should respond with `403` status code when publishing the camp', async () => {
+        const { camp, accessToken } = await createCampWithManagerAndToken({
+          ...unverifiedCamp,
+          ...campPrivate,
+        });
+
+        await request()
+          .patch(`/api/v1/camps/${camp.id}`)
+          .send({ public: true })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(403);
+      });
+    });
 
     it('should update camp data for all registrations', async () => {
       const { camp, accessToken } =
@@ -1191,7 +1379,7 @@ describe('/api/v1/camps', () => {
 
     it('should respond with `403` status code when user is not camp manager', async () => {
       const camp = await CampFactory.create();
-      const accessToken = generateAccessToken(await UserFactory.create());
+      const accessToken = await createCampCreatorToken();
 
       await request()
         .patch(`/api/v1/camps/${camp.id}`)
@@ -1207,7 +1395,7 @@ describe('/api/v1/camps', () => {
     });
 
     it('should respond with `404` status code when camp id does not exists', async () => {
-      const accessToken = generateAccessToken(await UserFactory.create());
+      const accessToken = await createCampCreatorToken();
       const campId = ulid();
       const data = {
         public: true,
@@ -1279,7 +1467,7 @@ describe('/api/v1/camps', () => {
 
     it('should respond with `403` status code when user is not camp manager', async () => {
       const camp = await CampFactory.create();
-      const accessToken = generateAccessToken(await UserFactory.create());
+      const accessToken = await createCampCreatorToken();
 
       await request()
         .delete(`/api/v1/camps/${camp.id}`)
@@ -1301,7 +1489,7 @@ describe('/api/v1/camps', () => {
     });
 
     it('should respond with `404` status code when camp id does not exists', async () => {
-      const accessToken = generateAccessToken(await UserFactory.create());
+      const accessToken = await createCampCreatorToken();
       const campId = ulid();
 
       await request()
@@ -1312,5 +1500,48 @@ describe('/api/v1/camps', () => {
     });
 
     it.todo('should delete all files');
+  });
+
+  describe('PATCH /api/v1/camps/:campId/organization', () => {
+    it('should keep the camp public when moving it to an unverified organization', async () => {
+      // Visibility follows the new owner's moderation status on read; the
+      // camp's own flag is the organization's to set, and only a rejection
+      // takes it away.
+      const camp = await CampFactory.create(campPublic);
+      const organization = await OrganizationFactory.create({
+        verificationStatus: 'PENDING',
+      });
+      const admin = await UserFactory.create({ role: 'ADMIN' });
+
+      const { body } = await request()
+        .patch(`/api/v1/camps/${camp.id}/organization`)
+        .send({ organizationId: organization.id })
+        .auth(generateAccessToken(admin), { type: 'bearer' })
+        .expect(200);
+
+      expect(body).toHaveProperty('data.public', true);
+
+      const movedCamp = await prisma.camp.findFirst({ where: { id: camp.id } });
+      expect(movedCamp?.public).toBe(true);
+      expect(movedCamp?.organizationId).toBe(organization.id);
+    });
+
+    it('should drop the camp from the public listing while the new organization is unverified', async () => {
+      const camp = await CampFactory.create(campPublic);
+      const organization = await OrganizationFactory.create({
+        verificationStatus: 'PENDING',
+      });
+      const admin = await UserFactory.create({ role: 'ADMIN' });
+
+      await request()
+        .patch(`/api/v1/camps/${camp.id}/organization`)
+        .send({ organizationId: organization.id })
+        .auth(generateAccessToken(admin), { type: 'bearer' })
+        .expect(200);
+
+      const { body } = await request().get(`/api/v1/camps/`).send().expect(200);
+
+      expect(body.data).toHaveLength(0);
+    });
   });
 });

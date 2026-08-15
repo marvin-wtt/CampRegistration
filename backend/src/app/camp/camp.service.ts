@@ -1,13 +1,12 @@
 import type { Camp, File, Prisma } from '#generated/prisma/client.js';
 import { ulid } from '#utils/ulid';
+import { dbNullable } from '#utils/db';
 import type { OptionalByKeys } from '#types/utils';
 import { BaseService } from '#core/base/BaseService';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service.js';
 
-export interface CampWithFreePlaces extends Camp {
-  freePlaces: number | Record<string, number>;
-}
+export type { CampWithFreePlaces } from './camp.resource.js';
 
 type TableTemplateCreateData = OptionalByKeys<
   Prisma.TableTemplateCreateManyCampInput,
@@ -18,6 +17,12 @@ type MessageTemplateCreateData = (OptionalByKeys<
   'id'
 > & { attachments?: File[] })[];
 type FileCreateData = OptionalByKeys<Prisma.FileCreateManyCampInput, 'id'>[];
+
+// The camp's own fields, as plain values. Relations, generated columns and the
+// query shape are the service's business — a caller never writes Prisma input.
+export type CampCreateData = Omit<Camp, 'id' | 'createdAt' | 'updatedAt'>;
+// Ownership moves through `moveCampToOrganization`, never a field update.
+export type CampUpdateData = Partial<Omit<CampCreateData, 'organizationId'>>;
 
 type CampRegistrationStatusFilter = 'open' | 'upcoming' | 'closed';
 
@@ -37,6 +42,7 @@ interface CampQueryArgs {
   country?: string | undefined;
   status?: CampRegistrationStatusFilter | undefined;
   managerUserId?: string | undefined;
+  organizationId?: string | undefined;
 }
 
 @injectable()
@@ -67,7 +73,10 @@ export class CampService extends BaseService {
     return camps.map(enrichFreePlaces);
   }
 
-  private campRegistrationInclude(): Prisma.CampInclude {
+  // `satisfies` rather than a return-type annotation: annotating this as
+  // `Prisma.CampInclude` erases the literal `select` shapes, and every caller
+  // would infer the full Organization instead of the two fields it asks for.
+  private campRegistrationInclude() {
     return {
       registrations: {
         where: {
@@ -75,7 +84,10 @@ export class CampService extends BaseService {
         },
         select: { country: true },
       },
-    };
+      organization: {
+        select: { id: true, name: true, verificationStatus: true },
+      },
+    } satisfies Prisma.CampInclude;
   }
 
   /**
@@ -157,6 +169,12 @@ export class CampService extends BaseService {
   ): Promise<Prisma.CampWhereInput> {
     const where: Prisma.CampWhereInput = {
       public: filter.public,
+      organizationId: filter.organizationId,
+      // The public directory only ever lists camps run by a vetted
+      // organization, independent of the camp's own `public` flag.
+      ...(filter.public === true
+        ? { organization: { verificationStatus: 'VERIFIED' as const } }
+        : {}),
       minAge: { lte: filter.age },
       maxAge: { gte: filter.age },
       startAt: { gte: filter.startAt },
@@ -226,7 +244,7 @@ export class CampService extends BaseService {
 
   async createCamp(
     userId: string,
-    data: Omit<Prisma.CampCreateInput, 'id'>,
+    data: CampCreateData,
     tableTemplates: TableTemplateCreateData = [],
     messageTemplates: MessageTemplateCreateData = [],
     files: FileCreateData = [],
@@ -256,6 +274,7 @@ export class CampService extends BaseService {
     const camp = await this.prisma.camp.create({
       data: {
         ...data,
+        location: dbNullable(data.location),
         form,
         campManager: {
           create: {
@@ -319,11 +338,24 @@ export class CampService extends BaseService {
     return JSON.parse(formStr) as Record<string, unknown>;
   }
 
-  async updateCamp(camp: Camp, data: Omit<Prisma.CampUpdateInput, 'id'>) {
+  async moveCampToOrganization(campId: string, organizationId: string) {
+    const updatedCamp = await this.prisma.camp.update({
+      where: { id: campId },
+      data: {
+        organization: { connect: { id: organizationId } },
+      },
+      include: { ...this.campRegistrationInclude() },
+    });
+
+    return enrichFreePlaces(updatedCamp);
+  }
+
+  async updateCamp(camp: Camp, data: CampUpdateData) {
     const updatedCamp = await this.prisma.camp.update({
       where: { id: camp.id },
       data: {
         ...data,
+        location: dbNullable(data.location),
       },
       include: { ...this.campRegistrationInclude() },
     });
@@ -336,9 +368,13 @@ export class CampService extends BaseService {
   }
 }
 
-const enrichFreePlaces = (
-  camp: Camp & { registrations: { country: string | null }[] },
-): CampWithFreePlaces => {
+// Generic so whatever relations the caller included (the owning organization,
+// in particular) survive into the returned type.
+const enrichFreePlaces = <
+  T extends Camp & { registrations: { country: string | null }[] },
+>(
+  camp: T,
+): T & { freePlaces: number | Record<string, number> } => {
   if (typeof camp.maxParticipants === 'number') {
     return {
       ...camp,

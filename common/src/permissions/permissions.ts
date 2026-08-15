@@ -68,6 +68,18 @@ export type NewsletterPermission =
   | 'newsletter.messages.create'
   | 'newsletter.messages.delete';
 
+export type OrganizationPermission =
+  | 'organization.view'
+  | 'organization.edit'
+  | 'organization.delete'
+  | 'organization.members.view'
+  | 'organization.members.create'
+  | 'organization.members.edit'
+  | 'organization.members.delete'
+  | 'organization.camps.view'
+  | 'organization.camps.create'
+  | 'organization.newsletters.create';
+
 export type Permission =
   | CampPermission
   | FilePermission
@@ -80,6 +92,32 @@ export type Permission =
   | BedPermission
   | ProgramEventPermission
   | TaskPermission
-  | NewsletterPermission;
+  | NewsletterPermission
+  | OrganizationPermission;
 
 export type Permissions = Permission[];
+
+/**
+ * Organization roles that carry implicit access to the organization's camps.
+ * MEMBERs get nothing implicit — they must be invited as camp managers.
+ */
+export const ORGANIZATION_CAMP_ACCESS_ROLES = ['ADMIN'] as const;
+
+/**
+ * The complete, fixed camp permission set an organization OWNER/ADMIN holds on
+ * every camp their organization owns, without any camp-manager record.
+ *
+ * Deliberately minimal: see that the camp exists, stop it accepting
+ * registrations (`camp.edit`), and see who manages it. It must NEVER include
+ * `camp.registrations.view` or any other camp permission — an organization role
+ * is an ownership and accountability relationship, not a grant of access to
+ * participants' personal data.
+ *
+ * A fixed constant rather than a registry lookup, so an organization role can
+ * never widen into arbitrary camp permissions.
+ */
+export const ORGANIZATION_CAMP_PERMISSIONS = [
+  'camp.view',
+  'camp.edit',
+  'camp.managers.view',
+] as const satisfies readonly Permission[];

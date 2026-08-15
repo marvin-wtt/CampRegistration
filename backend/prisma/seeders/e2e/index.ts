@@ -1,6 +1,7 @@
 import prisma from '../../client.js';
 import { main as truncateAll } from '../../scripts/truncate.js';
 import { seedE2eUsers } from './user.seeder.js';
+import { seedE2eOrganizations } from './organization.seeder.js';
 import { seedE2eCamps } from './camp.seeder.js';
 import { seedE2eCampManagers } from './camp-manager.seeder.js';
 import { seedE2eRegistrations } from './registration.seeder.js';
@@ -8,6 +9,7 @@ import { seedE2eRegistrations } from './registration.seeder.js';
 async function main() {
   await truncateAll();
   await seedE2eUsers();
+  await seedE2eOrganizations();
   await seedE2eCamps();
   await seedE2eCampManagers();
   await seedE2eRegistrations();

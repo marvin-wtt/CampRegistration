@@ -234,6 +234,52 @@ const routes: RouteRecordRaw[] = [
     ],
   },
   {
+    path: '/management/organizations',
+    component: () => import('@/layouts/OrganizationLayout.vue'),
+    meta: {
+      auth: true,
+    },
+    children: [
+      {
+        path: '',
+        name: 'management.organizations',
+        component: () =>
+          import('@/pages/organization/OrganizationIndexPage.vue'),
+      },
+      {
+        path: ':organizationId',
+        name: 'management.organization',
+        redirect: { name: 'management.organization.members' },
+        children: [
+          {
+            path: 'camps',
+            name: 'management.organization.camps',
+            component: () =>
+              import('@/pages/organization/OrganizationCampsPage.vue'),
+          },
+          {
+            path: 'members',
+            name: 'management.organization.members',
+            component: () =>
+              import('@/pages/organization/OrganizationMembersPage.vue'),
+          },
+          {
+            path: 'verification',
+            name: 'management.organization.verification',
+            component: () =>
+              import('@/pages/organization/OrganizationVerificationPage.vue'),
+          },
+          {
+            path: 'settings',
+            name: 'management.organization.settings',
+            component: () =>
+              import('@/pages/organization/OrganizationSettingsPage.vue'),
+          },
+        ],
+      },
+    ],
+  },
+  {
     path: '/management/newsletters',
     component: () => import('@/layouts/NewsletterLayout.vue'),
     meta: {
@@ -267,6 +313,12 @@ const routes: RouteRecordRaw[] = [
         },
         component: () =>
           import('@/pages/administration/AdministrationIndexPage.vue'),
+      },
+      {
+        path: 'organizations',
+        name: 'administration.organizations',
+        component: () =>
+          import('@/pages/administration/OrganizationIndexPage.vue'),
       },
       {
         path: 'camps',

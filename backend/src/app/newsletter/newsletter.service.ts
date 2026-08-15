@@ -58,6 +58,7 @@ export class NewsletterService extends BaseService {
   async createNewsletter(
     userId: string,
     data: {
+      organizationId: string;
       name: string;
       description?: string | null;
       replyTo?: string | null;
@@ -65,6 +66,7 @@ export class NewsletterService extends BaseService {
   ) {
     return this.prisma.newsletter.create({
       data: {
+        organization: { connect: { id: data.organizationId } },
         name: data.name,
         description: data.description,
         replyTo: data.replyTo,

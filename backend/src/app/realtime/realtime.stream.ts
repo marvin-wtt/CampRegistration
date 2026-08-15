@@ -23,6 +23,17 @@ export interface RealtimeSubscriber {
   permissions: ReadonlySet<Permission>;
   /** Camp-manager expiry; `null` = never expires. */
   expiresAt: Date | null;
+  /**
+   * Re-resolve this subscriber on every heartbeat rather than only when a
+   * `manager` event names their record.
+   *
+   * Set for authorizations that draw (partly) on organization membership:
+   * organization role changes emit no realtime event, so `shouldRefreshOn`
+   * would never fire and a demoted organization administrator would keep their
+   * snapshot for the life of the connection. Bounds that staleness to one
+   * heartbeat instead.
+   */
+  revalidate?: boolean;
 }
 
 /**
@@ -230,6 +241,11 @@ export function realtimeStream(
       if (subscriber === null || isExpired(subscriber)) {
         close();
         return;
+      }
+      // Organization-derived permissions have no event to react to, so they are
+      // re-resolved on the heartbeat instead (see `revalidate`).
+      if (subscriber.revalidate) {
+        refresh();
       }
       send(': heartbeat\n\n');
     }, HEARTBEAT_INTERVAL_MS);

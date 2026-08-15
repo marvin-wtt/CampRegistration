@@ -6,6 +6,50 @@
     class="row justify-center"
   >
     <div class="dashboard-shell col-12 col-md-11 col-xl-10">
+      <!-- The most consequential thing a manager can be unaware of: the camp is
+           configured correctly but reaching nobody. Shares the visual language
+           of the "needs attention" card below, one step more urgent. -->
+      <q-card
+        v-if="camp && blockedReason"
+        flat
+        bordered
+        class="blocked-card q-mb-md"
+      >
+        <q-card-section class="row items-center no-wrap q-gutter-md">
+          <div class="blocked-icon row items-center justify-center">
+            <q-icon
+              :name="blockedReason === 'rejected' ? 'gpp_bad' : 'gpp_maybe'"
+              color="negative"
+              size="22px"
+            />
+          </div>
+          <div class="col">
+            <div class="text-subtitle1 text-weight-bold">
+              {{ t(`unverified.${blockedReason}.title`) }}
+            </div>
+            <div class="text-body2 text-grey-7">
+              {{
+                t(`unverified.${blockedReason}.message`, {
+                  organization: camp.organizationName,
+                })
+              }}
+            </div>
+          </div>
+          <q-btn
+            v-if="canOrgFor(camp.organizationId, 'organization.view')"
+            :label="t('unverified.action')"
+            outline
+            rounded
+            no-caps
+            color="negative"
+            :to="{
+              name: 'management.organization.verification',
+              params: { organizationId: camp.organizationId },
+            }"
+          />
+        </q-card-section>
+      </q-card>
+
       <camp-summary-hero />
 
       <section class="dashboard-section">
@@ -219,6 +263,7 @@ import { useTaskStore } from '@/stores/task-store';
 import { useCampStatistics } from '@/composables/campStatistics';
 import { useRegistrationHelper } from '@/composables/registrationHelper';
 import { usePermissions } from '@/composables/permissions';
+import { useOrganizationPermissions } from '@/composables/organizationPermissions';
 import {
   LOCAL_TEMPLATE_AGE,
   LOCAL_TEMPLATE_MISSING,
@@ -229,6 +274,21 @@ import type { Permission } from '@camp-registration/common/permissions';
 const { t } = useI18n();
 const router = useRouter();
 
+// Only members of the owning organization get the link — a camp manager
+// invited from outside has no business being sent to its verification page.
+const { canOrgFor } = useOrganizationPermissions();
+
+/** `null` while the organization is verified and the camp is reaching people. */
+const blockedReason = computed<'pending' | 'rejected' | null>(() => {
+  const status = camp.value?.organizationVerificationStatus;
+  if (status === 'PENDING') {
+    return 'pending';
+  }
+  if (status === 'REJECTED') {
+    return 'rejected';
+  }
+  return null;
+});
 const campDetailsStore = useCampDetailsStore();
 const registrationStore = useRegistrationsStore();
 const campFilesStore = useCampFilesStore();
@@ -413,6 +473,22 @@ function goTo(routeName: string) {
 </script>
 
 <style scoped>
+/* Mirrors `.attention-card`, but keyed to `error`: that card lists things to
+   get around to, this one says the camp is currently reaching nobody. */
+.blocked-card {
+  border-radius: 16px;
+  border-left: 4px solid var(--md3-error);
+  background: color-mix(in srgb, var(--md3-error) 7%, var(--md3-surface));
+}
+
+.blocked-icon {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  border-radius: 13px;
+  background: rgba(127, 127, 127, 0.1);
+}
+
 .dashboard-shell {
   display: flex;
   flex-direction: column;
@@ -549,6 +625,14 @@ kpi:
   waitlistedCaption: 'Waiting for a place'
   team: 'Team'
   teamCaption: 'Leaders and staff'
+unverified:
+  pending:
+    title: 'This camp is not reaching anyone yet'
+    message: '{organization} is still awaiting verification, so this camp is hidden from the public listing and cannot accept registrations — regardless of its registration window.'
+  rejected:
+    title: 'This camp cannot go live'
+    message: '{organization} was not verified, so this camp stays hidden from the public listing and cannot accept registrations. Correct the organization details and submit them for verification again.'
+  action: 'View verification'
 actions:
   eyebrow: 'Coordinator tools'
   title: 'Quick actions'
@@ -586,6 +670,14 @@ kpi:
   waitlistedCaption: 'Warten auf einen Platz'
   team: 'Team'
   teamCaption: 'Leitung und Mitarbeitende'
+unverified:
+  pending:
+    title: 'Dieses Camp erreicht noch niemanden'
+    message: '{organization} wartet noch auf die Verifizierung. Dieses Camp ist daher nicht öffentlich sichtbar und nimmt keine Anmeldungen an — unabhängig vom Anmeldezeitraum.'
+  rejected:
+    title: 'Dieses Camp kann nicht live gehen'
+    message: '{organization} wurde nicht verifiziert. Dieses Camp bleibt daher nicht öffentlich sichtbar und nimmt keine Anmeldungen an. Korrigiere die Angaben der Organisation und reiche sie erneut zur Verifizierung ein.'
+  action: 'Verifizierung ansehen'
 actions:
   eyebrow: 'Werkzeuge'
   title: 'Schnellzugriff'
@@ -623,6 +715,14 @@ kpi:
   waitlistedCaption: "En attente d'une place"
   team: 'Équipe'
   teamCaption: 'Responsables et équipe'
+unverified:
+  pending:
+    title: "Ce camp n'atteint encore personne"
+    message: "{organization} attend encore sa vérification : ce camp est masqué de la liste publique et ne peut pas accepter d'inscriptions, quelle que soit la période d'inscription."
+  rejected:
+    title: 'Ce camp ne peut pas être mis en ligne'
+    message: "{organization} n'a pas été vérifiée : ce camp reste masqué de la liste publique et ne peut pas accepter d'inscriptions. Corrige les informations de l'organisation et soumets-les à nouveau."
+  action: 'Voir la vérification'
 actions:
   eyebrow: 'Outils de coordination'
   title: 'Actions rapides'
@@ -660,6 +760,14 @@ kpi:
   waitlistedCaption: 'Oczekują na miejsce'
   team: 'Zespół'
   teamCaption: 'Kadra i personel'
+unverified:
+  pending:
+    title: 'Ten obóz nie dociera jeszcze do nikogo'
+    message: '{organization} wciąż oczekuje na weryfikację, więc ten obóz jest ukryty na liście publicznej i nie przyjmuje zapisów — niezależnie od okresu rejestracji.'
+  rejected:
+    title: 'Ten obóz nie może zostać opublikowany'
+    message: '{organization} nie została zweryfikowana, więc ten obóz pozostaje ukryty na liście publicznej i nie przyjmuje zapisów. Popraw dane organizacji i zgłoś je ponownie do weryfikacji.'
+  action: 'Zobacz weryfikację'
 actions:
   eyebrow: 'Narzędzia koordynatora'
   title: 'Szybkie działania'
@@ -697,6 +805,14 @@ kpi:
   waitlistedCaption: 'Čekají na místo'
   team: 'Tým'
   teamCaption: 'Vedoucí a personál'
+unverified:
+  pending:
+    title: 'Tento tábor zatím nikoho neoslovuje'
+    message: '{organization} stále čeká na ověření, takže tento tábor je skrytý ve veřejném seznamu a nepřijímá registrace — bez ohledu na registrační období.'
+  rejected:
+    title: 'Tento tábor nelze zveřejnit'
+    message: '{organization} nebyla ověřena, takže tento tábor zůstává skrytý ve veřejném seznamu a nepřijímá registrace. Uprav údaje organizace a odešli je znovu k ověření.'
+  action: 'Zobrazit ověření'
 actions:
   eyebrow: 'Nástroje koordinátora'
   title: 'Rychlé akce'

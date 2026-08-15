@@ -177,6 +177,7 @@ import RowActions, {
 import { computed, ref } from 'vue';
 import { useQuasar } from 'quasar';
 import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
+import CampOrganizationDialog from '@/components/organization/CampOrganizationDialog.vue';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { useRouter } from 'vue-router';
 import { useAPIService } from '@/services/APIService';
@@ -252,6 +253,12 @@ const columns = computed<QTableColumn<Camp>[]>(() => [
     field: 'name',
     align: 'left',
     required: true,
+  },
+  {
+    name: 'organization',
+    label: t('column.organization'),
+    field: 'organizationName',
+    align: 'left',
   },
   {
     name: 'organizer',
@@ -335,6 +342,7 @@ const columnFilterOptions = computed<QTableColumn<Camp>[]>(() => {
 const visibleColumns = ref([
   'name',
   'organizer',
+  'organization',
   'countries',
   'startAt',
   'registrationStatus',
@@ -389,6 +397,13 @@ function rowActionsFn(camp: Camp): RowAction[] {
           handler: () => onActivateCamp(camp),
         },
     {
+      key: 'move',
+      label: t('action.move'),
+      icon: 'drive_file_move',
+      separatorBefore: true,
+      handler: () => onMoveCamp(camp),
+    },
+    {
       key: 'delete',
       label: t('action.delete'),
       icon: 'delete',
@@ -396,6 +411,24 @@ function rowActionsFn(camp: Camp): RowAction[] {
       handler: () => onDeleteCamp(camp),
     },
   ];
+}
+
+/**
+ * Reassigning ownership is administrator-only: it hands the target
+ * organization's admins camp permissions, so it is not self-serve.
+ */
+function onMoveCamp(camp: Camp) {
+  quasar
+    .dialog({
+      component: CampOrganizationDialog,
+      componentProps: { camp },
+    })
+    .onOk((organizationId: string) => {
+      void withProgressNotification('move', async () => {
+        await api.moveCampToOrganization(camp.id, organizationId);
+        reload();
+      });
+    });
 }
 
 function statusColor(status: CampRegistrationStatus): string {
@@ -569,27 +602,7 @@ async function deleteCamp(id: string) {
 }
 </script>
 
-<style scoped lang="scss">
-.admin-page {
-  position: absolute;
-  inset: 0;
-  padding: 16px;
-}
-
-.admin-table {
-  // Let the table fill the remaining height and scroll internally instead of
-  // growing the page (min-height:0 lets the flex child shrink below content).
-  min-height: 0;
-  background: var(--md3-surface);
-
-  :deep(thead tr th) {
-    position: sticky;
-    top: 0;
-    z-index: 1;
-    background: var(--md3-surface-container-low);
-  }
-}
-</style>
+<style scoped></style>
 
 <i18n lang="yaml" locale="en">
 title: 'Camps'
@@ -597,6 +610,7 @@ title: 'Camps'
 action:
   activate: 'Activate'
   deactivate: 'Deactivate'
+  move: 'Move to organization'
   delete: 'Delete'
   form: 'Form'
   publish: 'Publish'
@@ -612,6 +626,7 @@ column:
   maxParticipants: 'Max Participants'
   minAge: 'Min Age'
   name: 'Name'
+  organization: 'Organization'
   organizer: 'Organizer'
   price: 'Price'
   public: 'Public'
@@ -663,6 +678,7 @@ title: 'Camps'
 action:
   activate: 'Aktivieren'
   deactivate: 'Deaktivieren'
+  move: 'In Organisation verschieben'
   delete: 'Löschen'
   form: 'Formular'
   publish: 'Veröffentlichen'
@@ -678,6 +694,7 @@ column:
   maxParticipants: 'Max. Teilnehmerzahl'
   minAge: 'Min. Alter'
   name: 'Name'
+  organization: 'Organisation'
   organizer: 'Veranstalter'
   price: 'Preis'
   public: 'Öffentlich'
@@ -730,6 +747,7 @@ title: 'Camps'
 action:
   activate: 'Activer'
   deactivate: 'Désactiver'
+  move: 'Déplacer vers une organisation'
   delete: 'Supprimer'
   form: 'Formulaire'
   publish: 'Publier'
@@ -745,6 +763,7 @@ column:
   maxParticipants: 'Participants max'
   minAge: 'Âge min'
   name: 'Nom'
+  organization: 'Organisation'
   organizer: 'Organisateur'
   price: 'Prix'
   public: 'Public'
@@ -797,6 +816,7 @@ title: 'Obozy'
 action:
   activate: 'Aktywuj'
   deactivate: 'Dezaktywuj'
+  move: 'Przenieś do organizacji'
   delete: 'Usuń'
   form: 'Formularz'
   publish: 'Opublikuj'
@@ -812,6 +832,7 @@ column:
   maxParticipants: 'Maks. uczestników'
   minAge: 'Min. wiek'
   name: 'Nazwa'
+  organization: 'Organizacja'
   organizer: 'Organizator'
   price: 'Cena'
   public: 'Publiczny'
@@ -863,6 +884,7 @@ title: 'Tábory'
 action:
   activate: 'Aktivovat'
   deactivate: 'Deaktivovat'
+  move: 'Přesunout do organizace'
   delete: 'Smazat'
   form: 'Formulář'
   publish: 'Zveřejnit'
@@ -878,6 +900,7 @@ column:
   maxParticipants: 'Max. účastníků'
   minAge: 'Min. věk'
   name: 'Název'
+  organization: 'Organizace'
   organizer: 'Organizátor'
   price: 'Cena'
   public: 'Veřejný'

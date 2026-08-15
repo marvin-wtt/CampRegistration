@@ -1,6 +1,8 @@
 import type { AppModule } from '#core/base/AppModule';
 import { AuthModule } from '#app/auth/auth.module';
 import { CampModule } from '#app/camp/camp.module';
+import { OrganizationModule } from '#app/organization/organization.module';
+import { OrganizationMemberModule } from '#app/organizationMember/organization-member.module';
 import { RegistrationModule } from '#app/registration/registration.module';
 import { TableTemplateModule } from '#app/tableTemplate/table-template.module';
 import { CampManagerModule } from '#app/campManager/camp-manager.module.js';
@@ -42,6 +44,8 @@ export const createModules = (): AppModule[] => [
   new TotpModule(),
   new ProfileModule(),
   new FileModule(),
+  new OrganizationModule(),
+  new OrganizationMemberModule(),
   new CampModule(),
   new UserModule(),
   new AdminModule(),

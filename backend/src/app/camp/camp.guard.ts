@@ -14,6 +14,10 @@ export const registrationOpen = (req: Request): boolean => {
   return status === 'open';
 };
 
+export const campOrganizationVerified = (req: Request): boolean => {
+  return req.modelOrFail('camp').organization.verificationStatus === 'VERIFIED';
+};
+
 async function prepareRequestModels(req: Request) {
   const file = req.modelOrFail('file');
 

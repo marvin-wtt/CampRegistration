@@ -3,6 +3,14 @@ import { useCampDetailsStore } from '@/stores/camp-details-store';
 import type { Permission } from '@camp-registration/common/permissions';
 import { storeToRefs } from 'pinia';
 
+/**
+ * Camp-scoped permissions, resolved against `profile.campAccess`.
+ *
+ * Note `Permission` also contains the newsletter and organization unions, so
+ * `can('organization.view')` type-checks here but always returns false — those
+ * scopes have their own resolvers (`useOrganizationPermissions`, and the
+ * newsletter manager list).
+ */
 export function usePermissions() {
   const profileStore = useProfileStore();
   const campDetailsStore = useCampDetailsStore();

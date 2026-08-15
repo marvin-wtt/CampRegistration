@@ -53,6 +53,12 @@ describe('/api/v1/admin/overview', () => {
           unverified: expect.any(Number),
           locked: expect.any(Number),
         },
+        organizations: {
+          total: expect.any(Number),
+          pending: expect.any(Number),
+          verified: expect.any(Number),
+          rejected: expect.any(Number),
+        },
         camps: {
           total: expect.any(Number),
           open: expect.any(Number),

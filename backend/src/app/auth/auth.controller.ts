@@ -7,6 +7,7 @@ import type { AuthTokensResponse } from '#types/response';
 import type { AppConfig } from '#config';
 import ApiError from '#utils/ApiError';
 import { CampManagerService } from '#app/campManager/camp-manager.service.js';
+import { OrganizationMemberService } from '#app/organizationMember/organization-member.service.js';
 import authResource from './auth.resource.js';
 import validator from './auth.validation.js';
 import { TotpService } from '#app/totp/totp.service';
@@ -31,6 +32,8 @@ export class AuthController extends BaseController {
     @inject(UserService) private readonly userService: UserService,
     @inject(CampManagerService)
     private readonly managerService: CampManagerService,
+    @inject(OrganizationMemberService)
+    private readonly organizationMemberService: OrganizationMemberService,
     @inject(TokenService) private readonly tokenService: TokenService,
     @inject(TotpService) private readonly totpService: TotpService,
   ) {
@@ -51,6 +54,10 @@ export class AuthController extends BaseController {
     });
 
     await this.managerService.resolveManagerInvitations(user.email, user.id);
+    await this.organizationMemberService.resolveMemberInvitations(
+      user.email,
+      user.id,
+    );
 
     const verifyEmailToken =
       await this.tokenService.generateVerifyEmailToken(user);

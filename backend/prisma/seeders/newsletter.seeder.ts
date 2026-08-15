@@ -4,6 +4,7 @@ import {
   NewsletterMessageFactory,
   NewsletterSubscriberFactory,
 } from '../factories';
+import { SEED_ORGANIZATION_ID } from './organization.seeder';
 
 class NewsletterSeeder extends BaseSeeder {
   name(): string {
@@ -15,6 +16,7 @@ class NewsletterSeeder extends BaseSeeder {
     const newsletter1 = await NewsletterFactory.create({
       name: 'Camp Updates',
       description: 'General updates and news about upcoming camps.',
+      organization: { connect: { id: SEED_ORGANIZATION_ID } },
       managers: {
         create: {
           userId: '01H4BK7J4WV75DZNAQBHMM99MA',
@@ -39,6 +41,7 @@ class NewsletterSeeder extends BaseSeeder {
     const newsletter2 = await NewsletterFactory.create({
       name: 'Registration Reminders',
       description: 'Reminders and deadlines for camp registrations.',
+      organization: { connect: { id: SEED_ORGANIZATION_ID } },
       managers: {
         create: {
           userId: '01H4BK7J4WV75DZNAQBHMM99MA',

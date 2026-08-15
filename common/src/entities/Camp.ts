@@ -2,8 +2,24 @@ import { SurveyJSCampData } from './SurveyJSCampData.js';
 import { Identifiable } from './Identifiable.js';
 import { ITheme } from 'survey-core';
 import { Translatable } from './Translatable.js';
+import type { OrganizationVerificationStatus } from './Organization.js';
 
 export interface Camp extends Identifiable {
+  organizationId: string;
+  /** The owning organization's name, for display next to the camp. */
+  organizationName: string;
+  /**
+   * The owning organization's moderation status. Anything other than
+   * `VERIFIED` means the camp is absent from the public directory and refuses
+   * registrations regardless of its own `public` flag and registration window —
+   * so management surfaces must say so rather than let it look live.
+   *
+   * The full status rather than a boolean, because "awaiting review" and
+   * "rejected" need different wording. Safe to carry: a camp whose organization
+   * is unverified is only readable by its own managers, so the status never
+   * reaches the public.
+   */
+  organizationVerificationStatus: OrganizationVerificationStatus;
   public: boolean;
   registrationOpensAt: string | null;
   registrationClosesAt: string | null;
@@ -32,13 +48,22 @@ export interface CampDetails extends Camp {
 
 export type CampCreateData = Omit<
   Partial<CampDetails> & Camp,
-  'id' | 'freePlaces' | 'registrationStatus'
+  | 'id'
+  | 'freePlaces'
+  | 'registrationStatus'
+  | 'organizationName'
+  | 'organizationVerificationStatus'
 > & {
   referenceCampId?: string | undefined;
   preset?: 'standard' | 'minimal' | undefined | null;
 };
 
-export type CampUpdateData = Partial<CampCreateData>;
+/** Moving a camp between organizations is a system-administrator action. */
+export type CampUpdateData = Omit<Partial<CampCreateData>, 'organizationId'>;
+
+export interface CampOrganizationUpdateData {
+  organizationId: string;
+}
 
 export type CampRegistrationStatus = 'open' | 'upcoming' | 'closed';
 
@@ -56,6 +81,7 @@ export interface CampQuery {
 
   public?: boolean;
   status?: CampRegistrationStatus;
+  organizationId?: string;
 
   view?: 'all' | 'assigned';
 }

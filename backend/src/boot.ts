@@ -4,6 +4,7 @@ import { createModules } from './modules.js';
 import {
   campPermissionRegistry,
   newsletterPermissionRegistry,
+  organizationPermissionRegistry,
 } from '#core/permission-registry';
 import { initI18n } from '#core/i18n';
 import { JobScheduler } from '#core/scheduler/JobScheduler';
@@ -61,6 +62,11 @@ function registerModulePermissions(modules: AppModule[]) {
     if (module.registerNewsletterPermissions) {
       newsletterPermissionRegistry.registerAll(
         module.registerNewsletterPermissions(),
+      );
+    }
+    if (module.registerOrganizationPermissions) {
+      organizationPermissionRegistry.registerAll(
+        module.registerOrganizationPermissions(),
       );
     }
   }

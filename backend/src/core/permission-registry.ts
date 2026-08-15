@@ -1,8 +1,10 @@
 import type {
   CampManagerRole,
   NewsletterManagerRole,
+  OrganizationRole,
   Permission,
   NewsletterPermission,
+  OrganizationPermission,
 } from '@camp-registration/common/permissions';
 
 export class PermissionRegistry<
@@ -51,4 +53,9 @@ export const campPermissionRegistry = new PermissionRegistry<
 export const newsletterPermissionRegistry = new PermissionRegistry<
   NewsletterManagerRole,
   NewsletterPermission
+>();
+
+export const organizationPermissionRegistry = new PermissionRegistry<
+  OrganizationRole,
+  OrganizationPermission
 >();

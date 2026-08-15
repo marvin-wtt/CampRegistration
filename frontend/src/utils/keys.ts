@@ -6,3 +6,5 @@ export const CAMP_BUS: InjectionKey<EventBus> = Symbol('campBus');
 export const TEMPLATE_BUS: InjectionKey<EventBus> = Symbol('templateBus');
 export const REGISTRATION_BUS: InjectionKey<EventBus> =
   Symbol('registrationBus');
+export const ORGANIZATION_BUS: InjectionKey<EventBus> =
+  Symbol('organizationBus');

@@ -2,8 +2,10 @@ import type { Router } from 'express';
 import type {
   CampManagerRole,
   NewsletterManagerRole,
+  OrganizationRole,
   Permission,
   NewsletterPermission,
+  OrganizationPermission,
 } from '@camp-registration/common/permissions';
 import type { ModuleRouter } from '#core/router/ModuleRouter';
 import type { JobScheduler } from '#core/scheduler/JobScheduler';
@@ -34,6 +36,11 @@ export interface AppModule {
   registerNewsletterPermissions?(): RoleToPermissions<
     NewsletterManagerRole,
     NewsletterPermission
+  >;
+
+  registerOrganizationPermissions?(): RoleToPermissions<
+    OrganizationRole,
+    OrganizationPermission
   >;
 
   registerJobs?(scheduler: JobScheduler): void;

@@ -10,7 +10,15 @@ export const campPrivate = {
   public: false,
 };
 
+/**
+ * Fixed id for the verified organization every camp-creation fixture is created
+ * under. The suite truncates between tests, so a constant is safe and keeps the
+ * fixtures free of per-test wiring.
+ */
+export const CAMP_CREATE_ORGANIZATION_ID = '01K9ATF1H9KD1K6H12F3YK8RGZ';
+
 export const campCreateNational = {
+  organizationId: CAMP_CREATE_ORGANIZATION_ID,
   public: false,
   confirmationMode: 'AUTOMATIC' as const,
   countries: ['de'],

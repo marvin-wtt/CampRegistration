@@ -1,6 +1,8 @@
 import type { Identifiable } from './Identifiable.js';
 
 export interface Newsletter extends Identifiable {
+  /** The verified organization that owns the newsletter. */
+  organizationId: string;
   name: string;
   description: string | null;
   replyTo: string | null;
@@ -9,6 +11,7 @@ export interface Newsletter extends Identifiable {
 }
 
 export interface NewsletterCreateData {
+  organizationId: string;
   name: string;
   description?: string | null;
   replyTo?: string | null;
@@ -28,4 +31,5 @@ export interface NewsletterQuery {
   sortBy?: 'name' | 'createdAt' | 'updatedAt';
   sortType?: 'asc' | 'desc';
   name?: string;
+  organizationId?: string;
 }

@@ -30,7 +30,9 @@ model User {
   newsletterManagers     NewsletterManager[]
   sentNewsletterMessages NewsletterMessage[]
   sentMessages           Message[]
-  twoFactor UserTwoFactor?
+  organizationMembers   OrganizationMember[]
+  reviewedOrganizations Organization[]       @relation("OrganizationReviewer")
+  twoFactor             UserTwoFactor?
 
   @@map("users")
 }
@@ -75,8 +77,81 @@ enum ConfirmationMode {
   MANUAL
 }
 
+enum OrganizationVerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+model Organization {
+  id                 String                         @id @unique(map: "organizations_id_unique") @default(ulid()) @db.Char(26)
+  name               String                         @db.VarChar(255)
+  verificationStatus OrganizationVerificationStatus @default(PENDING) @map("verification_status")
+
+  contactEmail       String  @map("contact_email") @db.VarChar(255)
+  phone              String? @db.VarChar(50)
+  website            String? @db.VarChar(255)
+  registrationNumber String  @map("registration_number") @db.VarChar(100)
+
+  addressStreet  String @map("address_street") @db.VarChar(255)
+  addressZipCode String @map("address_zip_code") @db.VarChar(20)
+  addressCity    String @map("address_city") @db.VarChar(255)
+  country        String @db.Char(2)
+
+  verificationNote String?   @map("verification_note") @db.Text
+  reviewNote       String?   @map("review_note") @db.Text
+  reviewedAt       DateTime? @map("reviewed_at")
+  reviewedByUserId String?   @map("reviewed_by_user_id") @db.Char(26)
+  submittedAt      DateTime  @default(now()) @map("submitted_at")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime? @updatedAt @map("updated_at")
+
+  reviewedBy  User?                    @relation("OrganizationReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "organizations_reviewed_by_user_id_foreign")
+  members     OrganizationMember[]
+  invitations OrganizationInvitation[]
+  camps       Camp[]
+  newsletters Newsletter[]
+
+  @@index([verificationStatus], map: "organizations_verification_status_index")
+  @@index([reviewedByUserId], map: "organizations_reviewed_by_user_id_index")
+  @@map("organizations")
+}
+
+model OrganizationMember {
+  id             String   @id @unique(map: "organization_members_id_unique") @default(ulid()) @db.Char(26)
+  organizationId String   @map("organization_id") @db.Char(26)
+  userId         String?  @map("user_id") @db.Char(26)
+  role           String   @default("MEMBER") @db.VarChar(50)
+  invitationId   String?  @map("invitation_id") @db.Char(26)
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  organization Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "organization_members_organization_id_foreign")
+  user         User?                   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "organization_members_user_id_foreign")
+  invitation   OrganizationInvitation? @relation(fields: [invitationId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "organization_members_invitation_id_foreign")
+
+  @@unique([organizationId, userId], map: "organization_members_organization_id_user_id_unique")
+  @@index([userId], map: "organization_members_user_id_index")
+  @@index([invitationId], map: "organization_members_invitation_id_index")
+  @@map("organization_members")
+}
+
+model OrganizationInvitation {
+  id             String @id @unique(map: "organization_invitations_id_unique") @default(ulid()) @db.Char(26)
+  organizationId String @map("organization_id") @db.Char(26)
+  email          String @db.VarChar(255)
+
+  organization Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "organization_invitations_organization_id_foreign")
+  members      OrganizationMember[]
+
+  @@index([organizationId], map: "organization_invitations_organization_id_index")
+  @@index([email], map: "organization_invitations_email_index")
+  @@map("organization_invitations")
+}
+
 model Camp {
   id                   String           @id @unique(map: "camps_id_unique") @default(ulid()) @db.Char(26)
+  organizationId String @map("organization_id") @db.Char(26)
   public               Boolean
   registrationOpensAt  DateTime?        @map("registration_opens_at") @db.DateTime(0)
   registrationClosesAt DateTime?        @map("registration_closes_at") @db.DateTime(0)
@@ -105,6 +180,7 @@ model Camp {
   createdAt            DateTime?        @default(now()) @map("created_at")
   updatedAt            DateTime?        @updatedAt @map("updated_at")
 
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "camps_organization_id_foreign")
   campManager      CampManager[]
   registrations    Registration[]
   rooms            Room[]
@@ -116,6 +192,7 @@ model Camp {
   tasks            Task[]
   campSettings     CampSetting[]
 
+  @@index([organizationId], map: "camps_organization_id_index")
   @@map("camps")
 }
 
@@ -394,17 +471,20 @@ model JobRateLimit {
 }
 
 model Newsletter {
-  id          String    @id @unique(map: "newsletters_id_unique") @default(ulid()) @db.Char(26)
-  name        String    @db.VarChar(255)
-  description String?   @db.Text
-  replyTo     String?   @map("reply_to") @db.Char(255)
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime? @updatedAt @map("updated_at")
+  id             String    @id @unique(map: "newsletters_id_unique") @default(ulid()) @db.Char(26)
+  organizationId String    @map("organization_id") @db.Char(26)
+  name           String    @db.VarChar(255)
+  description    String?   @db.Text
+  replyTo        String?   @map("reply_to") @db.Char(255)
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime? @updatedAt @map("updated_at")
 
-  managers    NewsletterManager[]
-  subscribers NewsletterSubscriber[]
-  messages    NewsletterMessage[]
+  organization Organization           @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "newsletters_organization_id_foreign")
+  managers     NewsletterManager[]
+  subscribers  NewsletterSubscriber[]
+  messages     NewsletterMessage[]
 
+  @@index([organizationId], map: "newsletters_organization_id_index")
   @@map("newsletters")
 }
 

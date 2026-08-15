@@ -59,6 +59,14 @@ const { t } = useI18n();
 
 const items = computed(() => [
   {
+    name: 'organizations',
+    label: t('organizations.label'),
+    description: t('organizations.description'),
+    icon: 'apartment',
+    color: 'tertiary',
+    to: { name: 'management.organizations' },
+  },
+  {
     name: 'camps',
     label: t('camps.label'),
     description: t('camps.description'),
@@ -80,6 +88,9 @@ const items = computed(() => [
 <i18n lang="yaml" locale="en">
 title: 'Management'
 subtitle: 'Select a section to get started.'
+organizations:
+  label: 'Organizations'
+  description: 'Manage the organizations you run camps and newsletters under.'
 camps:
   label: 'Camps'
   description: 'View registrations, manage participants, and configure camp settings.'
@@ -91,6 +102,9 @@ newsletters:
 <i18n lang="yaml" locale="de">
 title: 'Verwaltung'
 subtitle: 'Wähle einen Bereich aus, um zu beginnen.'
+organizations:
+  label: 'Organisationen'
+  description: 'Verwalte die Organisationen, unter denen du Camps und Newsletter betreibst.'
 camps:
   label: 'Camps'
   description: 'Anmeldungen einsehen, Teilnehmende verwalten und Camp-Einstellungen konfigurieren.'
@@ -102,6 +116,9 @@ newsletters:
 <i18n lang="yaml" locale="fr">
 title: 'Gestion'
 subtitle: 'Sélectionnez une section pour commencer.'
+organizations:
+  label: 'Organisations'
+  description: 'Gérez les organisations sous lesquelles vous organisez camps et newsletters.'
 camps:
   label: 'Camps'
   description: 'Consulter les inscriptions, gérer les participants et configurer les paramètres du camp.'
@@ -113,6 +130,9 @@ newsletters:
 <i18n lang="yaml" locale="pl">
 title: 'Zarządzanie'
 subtitle: 'Wybierz sekcję, aby rozpocząć.'
+organizations:
+  label: 'Organizacje'
+  description: 'Zarządzaj organizacjami, w ramach których prowadzisz obozy i newslettery.'
 camps:
   label: 'Obozy'
   description: 'Przeglądaj rejestracje, zarządzaj uczestnikami i konfiguruj ustawienia obozu.'
@@ -124,6 +144,9 @@ newsletters:
 <i18n lang="yaml" locale="cs">
 title: 'Správa'
 subtitle: 'Vyberte sekci pro začátek.'
+organizations:
+  label: 'Organizace'
+  description: 'Spravuj organizace, pod kterými pořádáš tábory a newslettery.'
 camps:
   label: 'Tábory'
   description: 'Zobrazit registrace, spravovat účastníky a konfigurovat nastavení tábora.'

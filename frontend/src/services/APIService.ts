@@ -21,6 +21,8 @@ import { useProgramEventService } from '@/services/ProgramEventService';
 import { useQueueService } from '@/services/QueueService';
 import { useTaskService } from '@/services/TaskService';
 import { useAdminService } from '@/services/AdminService';
+import { useOrganizationService } from '@/services/OrganizationService';
+import { useOrganizationMemberService } from '@/services/OrganizationMemberService';
 
 export function useAPIService() {
   return {
@@ -28,6 +30,8 @@ export function useAPIService() {
     ...useAdminService(),
     ...useProfileService(),
     ...useUserService(),
+    ...useOrganizationService(),
+    ...useOrganizationMemberService(),
     ...useCampService(),
     ...useCampManagerService(),
     ...useRegistrationService(),

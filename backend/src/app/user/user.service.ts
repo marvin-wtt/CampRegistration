@@ -7,6 +7,30 @@ import { BaseService } from '#core/base/BaseService';
 import { CampService } from '#app/camp/camp.service';
 import { inject, injectable } from 'inversify';
 
+/**
+ * Everything {@link ProfileResource} needs to derive the caller's camp- and
+ * organization-scoped permissions. Shared by every loader that feeds it so the
+ * profile payload cannot differ between login and a later refetch.
+ */
+export const profileAccessInclude = {
+  campRoles: true,
+  twoFactor: { select: { confirmedAt: true } },
+  organizationMembers: {
+    include: {
+      organization: {
+        select: {
+          id: true,
+          verificationStatus: true,
+          // Needed to project organization-derived camp access into
+          // `campAccess`, so the client gates UI exactly as the server gates
+          // requests.
+          camps: { select: { id: true } },
+        },
+      },
+    },
+  },
+} satisfies Prisma.UserInclude;
+
 @injectable()
 export class UserService extends BaseService {
   constructor(@inject(CampService) private readonly campService: CampService) {
@@ -132,10 +156,15 @@ export class UserService extends BaseService {
   async getUserByIdWithCampRoles(id: string) {
     return this.prisma.user.findUniqueOrThrow({
       where: { id },
-      include: {
-        campRoles: true,
-        twoFactor: { select: { confirmedAt: true } },
-      },
+      include: profileAccessInclude,
+    });
+  }
+
+  /** System administrators, for notifications that need a human moderator. */
+  async getAdministrators() {
+    return this.prisma.user.findMany({
+      where: { role: 'ADMIN', locked: false },
+      select: { name: true, email: true, locale: true },
     });
   }
 
@@ -167,10 +196,7 @@ export class UserService extends BaseService {
       data: {
         lastSeen: new Date(),
       },
-      include: {
-        campRoles: true,
-        twoFactor: { select: { confirmedAt: true } },
-      },
+      include: profileAccessInclude,
     });
 
     const camps = await this.campService.getCampsByUserId(userId);
@@ -210,10 +236,7 @@ export class UserService extends BaseService {
         locale: data.locale,
         locked: data.locked,
       },
-      include: {
-        campRoles: true,
-        twoFactor: { select: { confirmedAt: true } },
-      },
+      include: profileAccessInclude,
     });
   }
 

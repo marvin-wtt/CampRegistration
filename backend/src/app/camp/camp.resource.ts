@@ -1,4 +1,7 @@
-import type { Camp } from '#generated/prisma/client.js';
+import type {
+  Camp,
+  OrganizationVerificationStatus,
+} from '#generated/prisma/client.js';
 import {
   type Camp as CampResourceData,
   type CampDetails as CampDetailsResourceData,
@@ -7,8 +10,19 @@ import { JsonResource } from '#core/resource/JsonResource';
 import { countriesToLocales } from '#utils/countriesToLocales';
 import { campRegistrationStatus } from '#app/camp/camp.util';
 
+/**
+ * A camp as every service query loads it: the record itself, the participant
+ * countries `freePlaces` is derived from, and the owning organization's
+ * moderation status for the publication and registration guards.
+ */
 export interface CampWithFreePlaces extends Camp {
   freePlaces: Record<string, number> | number;
+  registrations: { country: string | null }[];
+  organization: {
+    id: string;
+    name: string;
+    verificationStatus: OrganizationVerificationStatus;
+  };
 }
 
 export class CampResource extends JsonResource<
@@ -18,6 +32,9 @@ export class CampResource extends JsonResource<
   transform(): CampResourceData {
     return {
       id: this.data.id,
+      organizationId: this.data.organizationId,
+      organizationName: this.data.organization.name,
+      organizationVerificationStatus: this.data.organization.verificationStatus,
       public: this.data.public,
       registrationOpensAt: this.data.registrationOpensAt?.toISOString() ?? null,
       registrationClosesAt:

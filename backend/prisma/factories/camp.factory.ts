@@ -2,6 +2,7 @@ import { faker } from '@faker-js/faker/locale/en';
 import { Prisma } from '#generated/prisma/client.js';
 import prisma from '../client.js';
 import { MessageTemplateFactory } from './message-template.factory';
+import { OrganizationFactory } from './organization.factory';
 
 export const CampFactory = {
   build: (
@@ -25,6 +26,12 @@ export const CampFactory = {
 
     const countries = data.countries ?? ['de'];
     return {
+      // Give the camp an owner unless the caller named one. Checked against the
+      // scalar id too: passing both the relation and the foreign key is a
+      // Prisma validation error.
+      ...('organization' in data || 'organizationId' in data
+        ? {}
+        : { organization: { create: OrganizationFactory.build() } }),
       public: faker.datatype.boolean(),
       countries,
       name: faker.lorem.word(),

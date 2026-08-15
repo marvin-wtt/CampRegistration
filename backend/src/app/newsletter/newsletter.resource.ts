@@ -9,6 +9,7 @@ export class NewsletterResource extends JsonResource<
   transform(): NewsletterData {
     return {
       id: this.data.id,
+      organizationId: this.data.organizationId,
       name: this.data.name,
       description: this.data.description ?? null,
       replyTo: this.data.replyTo ?? null,

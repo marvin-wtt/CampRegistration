@@ -5,6 +5,7 @@ import validator from './newsletter.validation.js';
 import { type Request, type Response } from 'express';
 import { BaseController } from '#core/base/BaseController';
 import { inject, injectable } from 'inversify';
+import ApiError from '#utils/ApiError';
 
 @injectable()
 export class NewsletterController extends BaseController {
@@ -58,7 +59,21 @@ export class NewsletterController extends BaseController {
     const { body } = await req.validate(validator.store);
     const userId = req.authUserId();
 
+    // Bound and authorized by the route: the id arrives in the body, so
+    // `organizationFromBody()` resolves it before the guard runs.
+    const organization = req.modelOrFail('organization');
+
+    // Unlike camps, a newsletter has no draft state — it exists to send mail —
+    // so it requires a verified organization outright.
+    if (organization.verificationStatus !== 'VERIFIED') {
+      throw new ApiError(
+        httpStatus.FORBIDDEN,
+        'The organization must be verified before it can create newsletters.',
+      );
+    }
+
     const newsletter = await this.newsletterService.createNewsletter(userId, {
+      organizationId: organization.id,
       name: body.name,
       description: body.description,
       replyTo: body.replyTo,

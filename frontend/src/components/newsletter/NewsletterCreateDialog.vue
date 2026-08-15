@@ -13,12 +13,25 @@
         </q-card-section>
 
         <q-card-section class="q-pt-none q-gutter-md">
+          <q-select
+            v-model="organizationId"
+            :label="t('input.organization.label')"
+            :hint="t('input.organization.hint')"
+            :options="organizationOptions"
+            :rules="[
+              (val?: string) => !!val || t('input.organization.rule.required'),
+            ]"
+            emit-value
+            map-options
+            hide-bottom-space
+            rounded
+            outlined
+          />
           <q-input
             v-model="name"
             :label="t('input.name.label')"
             :rules="[(val?: string) => !!val || t('input.name.rule.required')]"
             hide-bottom-space
-            autofocus
             rounded
             outlined
           />
@@ -63,9 +76,12 @@
 </template>
 
 <script lang="ts" setup>
-import { useDialogPluginComponent } from 'quasar';
+import { useDialogPluginComponent, type QSelectOption } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useOrganizationsStore } from '@/stores/organizations-store';
+import { useOrganizationPermissions } from '@/composables/organizationPermissions';
 import type { NewsletterCreateData } from '@camp-registration/common/entities';
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
@@ -73,23 +89,60 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 const { t } = useI18n();
 defineEmits([...useDialogPluginComponent.emits]);
 
+const organizationsStore = useOrganizationsStore();
+const { data: organizations } = storeToRefs(organizationsStore);
+const { newsletterCreationOrganizationIds } = useOrganizationPermissions();
+
+const organizationId = ref<string | null>(null);
 const name = ref('');
 const description = ref('');
 const replyTo = ref('');
 
+// A newsletter has no draft state, so only verified organizations qualify.
+const organizationOptions = computed<QSelectOption<string>[]>(() => {
+  const eligible = newsletterCreationOrganizationIds.value;
+
+  return (organizations.value ?? [])
+    .filter((organization) => eligible.includes(organization.id))
+    .map((organization) => ({
+      label: organization.name,
+      value: organization.id,
+    }));
+});
+
 function onSubmit() {
+  if (!organizationId.value) {
+    return;
+  }
+
   const data: NewsletterCreateData = {
+    organizationId: organizationId.value,
     name: name.value,
     description: description.value || null,
     replyTo: replyTo.value || null,
   };
   onDialogOK(data);
 }
+
+onMounted(async () => {
+  await organizationsStore.fetchData();
+
+  // Skip a pointless choice when there is only one.
+  const eligible = organizationOptions.value;
+  if (eligible.length === 1) {
+    organizationId.value = eligible[0]!.value;
+  }
+});
 </script>
 
 <i18n lang="yaml" locale="en">
 title: 'Create Newsletter'
 input:
+  organization:
+    label: 'Organization'
+    hint: 'Only verified organizations can send newsletters'
+    rule:
+      required: 'Organization is required'
   name:
     label: 'Name'
     rule:
@@ -106,6 +159,11 @@ action:
 <i18n lang="yaml" locale="de">
 title: 'Newsletter erstellen'
 input:
+  organization:
+    label: 'Organisation'
+    hint: 'Nur verifizierte Organisationen können Newsletter versenden'
+    rule:
+      required: 'Organisation ist erforderlich'
   name:
     label: 'Name'
     rule:
@@ -122,6 +180,11 @@ action:
 <i18n lang="yaml" locale="fr">
 title: 'Créer une newsletter'
 input:
+  organization:
+    label: 'Organisation'
+    hint: 'Seules les organisations vérifiées peuvent envoyer des newsletters'
+    rule:
+      required: "L'organisation est requise"
   name:
     label: 'Nom'
     rule:
@@ -138,6 +201,11 @@ action:
 <i18n lang="yaml" locale="pl">
 title: 'Utwórz newsletter'
 input:
+  organization:
+    label: 'Organizacja'
+    hint: 'Tylko zweryfikowane organizacje mogą wysyłać newslettery'
+    rule:
+      required: 'Organizacja jest wymagana'
   name:
     label: 'Nazwa'
     rule:
@@ -154,6 +222,11 @@ action:
 <i18n lang="yaml" locale="cs">
 title: 'Vytvořit newsletter'
 input:
+  organization:
+    label: 'Organizace'
+    hint: 'Newslettery mohou posílat jen ověřené organizace'
+    rule:
+      required: 'Organizace je povinná'
   name:
     label: 'Název'
     rule:

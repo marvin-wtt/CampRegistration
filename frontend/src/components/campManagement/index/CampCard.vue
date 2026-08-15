@@ -128,6 +128,20 @@
           size="13px"
           class="mgmt-card__status-edit"
         />
+        <q-tooltip
+          v-if="status.kind === 'blocked'"
+          anchor="bottom start"
+          self="top start"
+        >
+          {{
+            t(
+              camp.organizationVerificationStatus === 'REJECTED'
+                ? 'status.organizationRejectedHint'
+                : 'status.pendingVerificationHint',
+              { organization: camp.organizationName },
+            )
+          }}
+        </q-tooltip>
       </component>
     </div>
 
@@ -303,12 +317,31 @@ function shortDate(value: string): string {
 }
 
 interface Status {
-  kind: 'open' | 'closes' | 'opens' | 'closed';
+  kind: 'open' | 'closes' | 'opens' | 'closed' | 'blocked';
   icon: string;
   label: string;
 }
 
 const status = computed<Status>(() => {
+  // Takes precedence over the registration window: while the organization is
+  // unverified the camp is unlisted and refuses registrations, so showing
+  // "registration open" here would be a plain untruth.
+  if (camp.organizationVerificationStatus === 'PENDING') {
+    return {
+      kind: 'blocked',
+      icon: 'gpp_maybe',
+      label: t('status.pendingVerification'),
+    };
+  }
+
+  if (camp.organizationVerificationStatus === 'REJECTED') {
+    return {
+      kind: 'blocked',
+      icon: 'gpp_bad',
+      label: t('status.organizationRejected'),
+    };
+  }
+
   if (camp.registrationStatus === 'open') {
     if (camp.registrationClosesAt) {
       return {
@@ -736,6 +769,13 @@ async function withLoading(flag: Ref<boolean>, fn: () => Promise<void>) {
   color: var(--md3-on-surface-variant);
 }
 
+/* Distinct from `closed`: nothing the manager configures will change it until
+   the organization is verified. */
+.mgmt-card__status--blocked {
+  background: var(--md3-error-container);
+  color: var(--md3-on-error-container);
+}
+
 /* Quick navigation */
 .mgmt-card__nav {
   display: flex;
@@ -781,6 +821,10 @@ status:
   closes: 'Closes {date}'
   opens: 'Opens {date}'
   closed: 'Registration closed'
+  pendingVerification: 'Pending verification'
+  organizationRejected: 'Organization rejected'
+  pendingVerificationHint: '{organization} is still awaiting verification, so this camp is hidden from the public listing and refuses registrations — whatever its registration window says.'
+  organizationRejectedHint: '{organization} was not verified, so this camp is hidden from the public listing and refuses registrations. Correct its details and submit it for verification again.'
 dialog:
   delete:
     title: 'Delete camp'
@@ -809,6 +853,10 @@ status:
   closes: 'Schließt {date}'
   opens: 'Öffnet {date}'
   closed: 'Anmeldung geschlossen'
+  pendingVerification: 'Verifizierung ausstehend'
+  organizationRejected: 'Organisation abgelehnt'
+  pendingVerificationHint: '{organization} wartet noch auf die Verifizierung. Dieses Camp ist daher nicht öffentlich sichtbar und lehnt Anmeldungen ab — unabhängig vom Anmeldezeitraum.'
+  organizationRejectedHint: '{organization} wurde nicht verifiziert. Dieses Camp ist daher nicht öffentlich sichtbar und lehnt Anmeldungen ab. Korrigiere die Angaben und reiche sie erneut zur Verifizierung ein.'
 dialog:
   delete:
     title: 'Camp löschen'
@@ -837,6 +885,10 @@ status:
   closes: 'Ferme le {date}'
   opens: 'Ouvre le {date}'
   closed: 'Inscription fermée'
+  pendingVerification: 'Vérification en attente'
+  organizationRejected: 'Organisation refusée'
+  pendingVerificationHint: "{organization} attend encore sa vérification : ce camp est masqué de la liste publique et refuse les inscriptions, quelle que soit sa période d'inscription."
+  organizationRejectedHint: "{organization} n'a pas été vérifiée : ce camp est masqué de la liste publique et refuse les inscriptions. Corrige ses informations et soumets-la à nouveau."
 dialog:
   delete:
     title: 'Supprimer le camp'
@@ -865,6 +917,10 @@ status:
   closes: 'Zamyka się {date}'
   opens: 'Otwiera się {date}'
   closed: 'Rejestracja zamknięta'
+  pendingVerification: 'Oczekuje na weryfikację'
+  organizationRejected: 'Organizacja odrzucona'
+  pendingVerificationHint: '{organization} wciąż oczekuje na weryfikację, więc ten obóz jest ukryty na liście publicznej i odrzuca zapisy — niezależnie od okresu rejestracji.'
+  organizationRejectedHint: '{organization} nie została zweryfikowana, więc ten obóz jest ukryty na liście publicznej i odrzuca zapisy. Popraw dane i zgłoś ją ponownie do weryfikacji.'
 dialog:
   delete:
     title: 'Usuń obóz'
@@ -893,6 +949,10 @@ status:
   closes: 'Uzavírá se {date}'
   opens: 'Otevírá se {date}'
   closed: 'Registrace uzavřena'
+  pendingVerification: 'Čeká na ověření'
+  organizationRejected: 'Organizace zamítnuta'
+  pendingVerificationHint: '{organization} stále čeká na ověření, takže tento tábor je skrytý ve veřejném seznamu a odmítá registrace — bez ohledu na registrační období.'
+  organizationRejectedHint: '{organization} nebyla ověřena, takže tento tábor je skrytý ve veřejném seznamu a odmítá registrace. Uprav její údaje a odešli ji znovu k ověření.'
 dialog:
   delete:
     title: 'Smazat tábor'

@@ -103,10 +103,16 @@ import CampCardSkeleton from '@/components/campManagement/index/CampCardSkeleton
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import CampCreateDialog from '@/components/campManagement/index/CampCreateDialog.vue';
 import { phaseOf, type CampPhase } from '@/utils/campPhase';
+import { useRouter } from 'vue-router';
+import { useOrganizationsStore } from '@/stores/organizations-store';
+import { useOrganizationPermissions } from '@/composables/organizationPermissions';
 
 const { t } = useI18n();
 const quasar = useQuasar();
+const router = useRouter();
 const assignedCampsStore = useAssignedCampsStore();
+const organizationsStore = useOrganizationsStore();
+const { campCreationOrganizationIds } = useOrganizationPermissions();
 
 const {
   data: camps,
@@ -174,7 +180,32 @@ function byStartDesc(a: Camp, b: Camp) {
   return new Date(b.startAt).getTime() - new Date(a.startAt).getTime();
 }
 
-function onCreateCamp() {
+async function onCreateCamp() {
+  // A camp must name an organization the user belongs to. Without one, send
+  // them to create an organization rather than into a dialog that would 403.
+  await organizationsStore.fetchData();
+
+  if (campCreationOrganizationIds.value.length === 0) {
+    quasar
+      .dialog({
+        title: t('organization_required.title'),
+        message: t('organization_required.message'),
+        cancel: {
+          outline: true,
+          color: 'primary',
+        },
+        ok: {
+          label: t('organization_required.action'),
+          color: 'primary',
+          rounded: true,
+        },
+      })
+      .onOk(() => {
+        void router.push({ name: 'management.organizations' });
+      });
+    return;
+  }
+
   quasar.dialog({
     component: CampCreateDialog,
   });
@@ -217,6 +248,10 @@ function onCreateCamp() {
 
 <i18n lang="yaml" locale="en">
 title: 'My camps'
+organization_required:
+  title: 'Organization required'
+  message: 'Camps are run by an organization. Create one first — you can start building your camp right after, even before it is verified.'
+  action: 'Go to organizations'
 subtitle: 'Manage registrations, rooms and program for the camps you run.'
 group:
   ongoing: 'Happening now'
@@ -233,6 +268,10 @@ empty:
 
 <i18n lang="yaml" locale="de">
 title: 'Meine Camps'
+organization_required:
+  title: 'Organisation erforderlich'
+  message: 'Camps werden von einer Organisation betrieben. Erstelle zuerst eine — dein Camp kannst du direkt danach anlegen, auch vor der Verifizierung.'
+  action: 'Zu den Organisationen'
 subtitle: 'Verwalte Anmeldungen, Räume und Programm für die Camps, die du leitest.'
 group:
   ongoing: 'Aktuell'
@@ -249,6 +288,10 @@ empty:
 
 <i18n lang="yaml" locale="fr">
 title: 'Mes camps'
+organization_required:
+  title: 'Organisation requise'
+  message: "Les camps sont gérés par une organisation. Crée-en une d'abord — tu pourras préparer ton camp juste après, même avant la vérification."
+  action: 'Aller aux organisations'
 subtitle: 'Gérez les inscriptions, les chambres et le programme des camps que vous dirigez.'
 group:
   ongoing: 'En cours'
@@ -265,6 +308,10 @@ empty:
 
 <i18n lang="yaml" locale="pl">
 title: 'Moje obozy'
+organization_required:
+  title: 'Wymagana organizacja'
+  message: 'Obozy prowadzone są przez organizację. Najpierw utwórz organizację — obóz możesz przygotować zaraz potem, jeszcze przed weryfikacją.'
+  action: 'Przejdź do organizacji'
 subtitle: 'Zarządzaj zapisami, pokojami i programem obozów, które prowadzisz.'
 group:
   ongoing: 'Trwające'
@@ -281,6 +328,10 @@ empty:
 
 <i18n lang="yaml" locale="cs">
 title: 'Moje tábory'
+organization_required:
+  title: 'Vyžadována organizace'
+  message: 'Tábory pořádá organizace. Nejprve nějakou vytvoř — tábor můžeš připravovat hned poté, i před ověřením.'
+  action: 'Přejít na organizace'
 subtitle: 'Spravujte registrace, pokoje a program táborů, které vedete.'
 group:
   ongoing: 'Probíhající'

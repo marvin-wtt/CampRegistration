@@ -3,7 +3,8 @@ import { campPermissionRegistry } from '#core/permission-registry';
 import type { Prisma } from '#generated/prisma/client.js';
 import type { Permission } from '@camp-registration/common/permissions';
 import { RESOURCE_VIEW_PERMISSION } from '@camp-registration/common/realtime';
-import { injectable } from 'inversify';
+import { inject, injectable } from 'inversify';
+import { OrganizationMemberService } from '#app/organizationMember/organization-member.service';
 
 type ManagerCreateData = Pick<
   Prisma.CampManagerCreateInput,
@@ -19,34 +20,66 @@ export interface ManagerAuthorization {
   managerId: string;
   permissions: Set<Permission>;
   expiresAt: Date | null;
+  revalidate?: boolean;
 }
 
 @injectable()
 export class CampManagerService extends BaseService {
+  constructor(
+    @inject(OrganizationMemberService)
+    private readonly organizationMembers: OrganizationMemberService,
+  ) {
+    super();
+  }
+
   /**
    * Resolves a user's current authorization for a camp: their own manager
    * record id, effective permission set, and expiry. Returns `null` when the
-   * user is not a manager of the camp, or their manager record has expired.
+   * user has neither a live manager record nor organization-derived access.
    * Shared by the REST permission guard and the realtime-stream subscriber
    * resolver so both stay in sync.
+   *
+   * Two sources are merged here, and this is the only place they meet: an
+   * explicit camp-manager record, and the fixed minimal set an administrator of
+   * the owning organization holds (see ORGANIZATION_CAMP_PERMISSIONS).
    */
   async getManagerAuthorization(
     campId: string,
     userId: string,
   ): Promise<ManagerAuthorization | null> {
-    const manager = await this.getManagerByUserId(campId, userId);
-    if (manager === null) {
-      return null;
-    }
+    const [manager, organizationPermissions] = await Promise.all([
+      this.getManagerByUserId(campId, userId),
+      this.organizationMembers.getOrganizationCampPermissions(campId, userId),
+    ]);
 
-    if (manager.expiresAt !== null && manager.expiresAt <= new Date()) {
+    // An expired record grants nothing, but must not mask organization-derived
+    // access, which has no expiry of its own.
+    const expired =
+      manager !== null &&
+      manager.expiresAt !== null &&
+      manager.expiresAt <= new Date();
+    const active = expired ? null : manager;
+
+    const managerPermissions = active
+      ? campPermissionRegistry.getPermissions(active.role)
+      : [];
+
+    if (
+      managerPermissions.length === 0 &&
+      organizationPermissions.length === 0
+    ) {
       return null;
     }
 
     return {
-      managerId: manager.id,
-      permissions: new Set(campPermissionRegistry.getPermissions(manager.role)),
-      expiresAt: manager.expiresAt,
+      managerId: active?.id ?? '',
+      permissions: new Set([...managerPermissions, ...organizationPermissions]),
+      // Keep the record's expiry even when organization permissions also apply.
+      // Clearing it would let the *wider* manager set keep serving an open
+      // stream past expiry; instead the stream closes and the reconnect
+      // re-resolves the user down to the organization-only set.
+      expiresAt: active?.expiresAt ?? null,
+      revalidate: organizationPermissions.length > 0,
     };
   }
 

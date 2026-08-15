@@ -39,6 +39,12 @@ const items = computed<NavigationItemProps[]>(() => [
     to: { name: 'administration.users' },
   },
   {
+    name: 'organizations',
+    label: t('organizations'),
+    icon: 'apartment',
+    to: { name: 'administration.organizations' },
+  },
+  {
     name: 'camps',
     label: t('camps'),
     icon: 'home',
@@ -68,6 +74,7 @@ const items = computed<NavigationItemProps[]>(() => [
 <i18n lang="yaml" locale="en">
 title: 'Administration'
 
+organizations: 'Organizations'
 camps: 'Camps'
 newsletters: 'Newsletters'
 queues: 'Jobs'
@@ -79,6 +86,7 @@ legal: 'Legal Content'
 <i18n lang="yaml" locale="de">
 title: 'Verwaltung'
 
+organizations: 'Organisationen'
 camps: 'Camps'
 newsletters: 'Newsletter'
 queues: 'Aufgaben'
@@ -90,6 +98,7 @@ legal: 'Rechtliches'
 <i18n lang="yaml" locale="fr">
 title: 'Administration'
 
+organizations: 'Organisations'
 camps: 'Camps'
 newsletters: 'Newsletters'
 queues: 'Tâches'
@@ -101,6 +110,7 @@ legal: 'Contenu légal'
 <i18n lang="yaml" locale="pl">
 title: 'Administracja'
 
+organizations: 'Organizacje'
 camps: 'Obozy'
 newsletters: 'Newslettery'
 queues: 'Zadania'
@@ -112,6 +122,7 @@ legal: 'Treści prawne'
 <i18n lang="yaml" locale="cs">
 title: 'Administrace'
 
+organizations: 'Organizace'
 camps: 'Tábory'
 newsletters: 'Newslettery'
 queues: 'Úlohy'

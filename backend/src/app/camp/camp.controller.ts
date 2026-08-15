@@ -76,6 +76,7 @@ export class CampController extends BaseController {
   async store(req: Request, res: Response) {
     const { body } = await req.validate(validator.store);
     const userId = req.authUserId();
+    const organization = req.modelOrFail('organization');
 
     // Check if the user is allowed to create a camp based on the reference camp
     // This must happen here because the body needs to be validated first
@@ -125,6 +126,7 @@ export class CampController extends BaseController {
     const camp = await this.campService.createCamp(
       userId,
       {
+        organizationId: organization.id,
         countries: body.countries,
         name: body.name,
         organizer: body.organizer,
@@ -149,6 +151,29 @@ export class CampController extends BaseController {
     );
 
     res.status(httpStatus.CREATED).resource(new CampDetailsResource(camp));
+  }
+
+  /**
+   * Moves a camp to another organization. Administrators only.
+   *
+   * Moving a public camp under an unverified organization neither refuses nor
+   * rewrites `public`: the camp drops out of the directory for as long as the
+   * new owner is unvetted, and comes back if it is verified. Only a rejection
+   * takes publication away for good.
+   */
+  async updateOrganization(req: Request, res: Response) {
+    const camp = req.modelOrFail('camp');
+    const organization = req.modelOrFail('organization');
+    await req.validate(validator.updateOrganization);
+
+    const updatedCamp = await this.campService.moveCampToOrganization(
+      camp.id,
+      organization.id,
+    );
+
+    void this.realtimeService.emit(camp.id, 'camp', camp.id, 'updated');
+
+    res.resource(new CampResource(updatedCamp));
   }
 
   async update(req: Request, res: Response) {

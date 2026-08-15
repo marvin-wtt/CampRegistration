@@ -104,6 +104,10 @@ class ExampleModule implements AppModule {
     NewsletterManagerRole,
     NewsletterPermission
   > {}
+  registerOrganizationPermissions(): RoleToPermissions<
+    OrganizationRole,
+    OrganizationPermission
+  > {}
   registerJobs(scheduler: JobScheduler): void {
     /* recurring cron jobs */
   }
@@ -137,7 +141,11 @@ Request → Router → Controller → Service (business logic) → Prisma → Re
 - **Prisma** with MySQL/MariaDB; schema in `backend/prisma/schema.prisma`
 - Primary keys are **ULID strings** (26 chars), never integers
 - Multilingual fields stored as **JSON columns**
-- After changing `schema.prisma`, run `prisma migrate dev` — never edit migration SQL manually
+- After changing `schema.prisma`, run `prisma migrate dev`. Never edit a migration that has already been applied;
+  hand-written backfill SQL added with `--create-only` _before_
+  the first apply is fine, and is sometimes the only option — **data migrations (`migration.ts`) run only after
+  `prisma migrate deploy` has applied every schema migration**, so a column cannot be backfilled by one and made
+  `NOT NULL` by another in the same release
 - Migrations in `backend/prisma/migrations/`
 
 ### Authentication
@@ -145,6 +153,7 @@ Request → Router → Controller → Service (business logic) → Prisma → Re
 - JWT bearer tokens; TOTP 2FA support
 - System roles: `USER`, `ADMIN`
 - Camp-scoped roles: `DIRECTOR`, `COORDINATOR`, `COUNSELOR`, `VIEWER`
+- Organization-scoped roles: `ADMIN`, `MEMBER` (separate registry from the system role)
 
 ### Email
 
@@ -176,6 +185,26 @@ recurring tasks (e.g. token cleanup, pruning old job records).
   `scheduler.schedule('job-name', '0 3 * * *', () => resolve(Service).method())`.
 - Registration is idempotent (duplicate names ignored); the scheduler owns job
   lifecycle logging and is stopped deterministically on shutdown.
+
+### Organizations
+
+Camps and newsletters are owned by an `Organization`, moderated by system administrators — full design in
+`docs/organizations.md`. Roles are `ADMIN`/`MEMBER`, resolved through a third registry
+(`organizationPermissionRegistry`) alongside the camp and newsletter ones.
+
+- `organizationId` is **required** on `POST /camps` and `POST /newsletters`; there is no server-side default. The id
+  arrives in the body and guards run before validation, so
+  `organizationFromBody()` binds it as the `organization` model ahead of
+  `guard(organizationMember(…))`.
+- An unverified organization may build camps freely, publication settings included — visibility is **derived at read
+  time**, never gated at write time. The three gates are
+  `buildCampWhere` (public listing), the `show` route guard, and `registrationOpen`
+  combined with `campOrganizationVerified` (registrations). Management UI reads
+  `Camp.organizationVerificationStatus` to explain why a camp isn't reaching anyone.
+- Organization `ADMIN`s hold exactly `ORGANIZATION_CAMP_PERMISSIONS`
+  (`camp.view`, `camp.edit`, `camp.managers.view`) on every camp their organization owns, merged in
+  `CampManagerService.getManagerAuthorization()`. **Never extend that constant to registration data** — a test asserts
+  its exact contents.
 
 ### Realtime (SSE live updates)
 
@@ -298,9 +327,15 @@ literals for the SurveyJS theme editor, which can't parse `var()`/`color-mix()`.
 
 1. **Build order**: always build `common` before `backend` or `frontend`
 2. **ULID keys**: all PKs are ULID strings — never integers
-3. **Prisma migrations**: use `prisma migrate dev`; never edit migration SQL directly
+3. **Prisma migrations**: use `prisma migrate dev`; never edit a migration that has already been applied. Hand-written
+   backfill SQL added with `--create-only` before the first apply is fine — and is the only option when a `NOT NULL`
+   column needs data, since `prisma/data-migrations/runner.ts` runs after _all_ schema migrations of a deploy
 4. **i18n**: add translation keys to all 5 locale files
 5. **Type imports**: use `import type` for type-only imports (ESLint enforced)
 6. **InversifyJS**: every new service needs `@injectable()` and registration in `bindContainers`
 7. **Permissions**: use RBAC guards, not manual role checks
-8. **MD3 colors**: style with `var(--md3-*)` tokens (never hardcoded hex/light-dark colors); use `<m-btn>`/`<m-toolbar>` and `.rounded-*`/`.elevation-*` utilities. Don't edit the patched `@anoyomoose/q2-fresh-paint-md3e` in `node_modules`
+8. **Organizations**: camps and newsletters need an `organizationId`; an unverified org's camps are hidden and refuse
+   registrations, but that is derived at read time — don't add write-time publication gates. Org `ADMIN`s hold only
+   `ORGANIZATION_CAMP_PERMISSIONS` on their org's camps — never registration data
+9. **MD3 colors**: style with `var(--md3-*)` tokens (never hardcoded hex/light-dark colors); use `<m-btn>`/`<m-toolbar>`
+   and `.rounded-*`/`.elevation-*` utilities. Don't edit the patched `@anoyomoose/q2-fresh-paint-md3e` in `node_modules`
