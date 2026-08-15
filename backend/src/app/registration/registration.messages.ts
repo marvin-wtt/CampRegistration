@@ -152,16 +152,6 @@ export class RegistrationNotifyMessage extends MailBase<{
       location: translateObject(camp.location, locale),
     };
   }
-
-  protected attachments(): MailAttachment[] {
-    return [
-      {
-        filename: 'data.json',
-        contentType: 'application/json',
-        content: JSON.stringify(this.payload.registration),
-      },
-    ];
-  }
 }
 
 interface RegistrationTemplatePayload {
