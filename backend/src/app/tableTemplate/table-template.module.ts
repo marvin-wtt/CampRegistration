@@ -1,14 +1,6 @@
-import type {
-  AppModule,
-  AppRouter,
-  BindOptions,
-  RoleToPermissions,
-} from '#core/base/AppModule';
+import type { AppModule, AppRouter, BindOptions } from '#core/base/AppModule';
 import { TableTemplateRouter } from '#app/tableTemplate/table-template.routes';
-import type {
-  CampManagerRole,
-  TableTemplatePermission,
-} from '@camp-registration/common/permissions';
+import type { ScopedPermissions } from '@camp-registration/common/permissions';
 import { resolve } from '#core/ioc/container';
 import { TableTemplateService } from '#app/tableTemplate/table-template.service';
 import { TableTemplateController } from '#app/tableTemplate/table-template.controller';
@@ -27,25 +19,24 @@ export class TableTemplateModule implements AppModule {
     );
   }
 
-  registerPermissions(): RoleToPermissions<
-    CampManagerRole,
-    TableTemplatePermission
-  > {
+  registerPermissions(): ScopedPermissions {
     return {
-      DIRECTOR: [
-        'camp.table_templates.view',
-        'camp.table_templates.create',
-        'camp.table_templates.edit',
-        'camp.table_templates.delete',
-      ],
-      COORDINATOR: [
-        'camp.table_templates.view',
-        'camp.table_templates.create',
-        'camp.table_templates.edit',
-        'camp.table_templates.delete',
-      ],
-      COUNSELOR: ['camp.table_templates.view'],
-      VIEWER: ['camp.table_templates.view'],
+      camp: {
+        DIRECTOR: [
+          'camp.table_templates.view',
+          'camp.table_templates.create',
+          'camp.table_templates.edit',
+          'camp.table_templates.delete',
+        ],
+        COORDINATOR: [
+          'camp.table_templates.view',
+          'camp.table_templates.create',
+          'camp.table_templates.edit',
+          'camp.table_templates.delete',
+        ],
+        COUNSELOR: ['camp.table_templates.view'],
+        VIEWER: ['camp.table_templates.view'],
+      },
     };
   }
 }

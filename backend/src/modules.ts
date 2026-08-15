@@ -31,6 +31,7 @@ import { NewsletterManagerModule } from '#app/newsletterManager/newsletter-manag
 import { NewsletterMessageModule } from '#app/newsletterMessage/newsletter-message.module';
 import { RealtimeModule } from '#app/realtime/realtime.module';
 import { AdminModule } from '#app/admin/admin.module';
+import { PermissionModule } from '#app/permission/permission.module';
 
 // Order matters: earlier modules boot first and shut down last.
 export const createModules = (): AppModule[] => [
@@ -66,4 +67,6 @@ export const createModules = (): AppModule[] => [
   new NewsletterManagerModule(),
   new NewsletterMessageModule(),
   new RealtimeModule(),
+  // Last: serves the policy every other module has contributed to.
+  new PermissionModule(),
 ];

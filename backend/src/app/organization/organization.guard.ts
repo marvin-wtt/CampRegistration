@@ -1,22 +1,31 @@
 import type { Request } from 'express';
-import type { OrganizationPermission } from '@camp-registration/common/permissions';
+import type { ScopePermission } from '@camp-registration/common/permissions';
 import { resolve } from '#core/ioc/container';
+import type { GuardFn } from '#core/guard';
+import {
+  registerScopeResolver,
+  scoped,
+  type ScopeResolver,
+} from '#core/permission.guard';
 import { OrganizationMemberService } from '#app/organizationMember/organization-member.service';
 
-export const organizationMember = (
-  permission: OrganizationPermission,
-): ((req: Request) => Promise<boolean>) => {
-  return async (req: Request) => {
-    const userId = req.authUserId();
-    const organizationId = req.modelOrFail('organization').id;
-
-    return resolve(OrganizationMemberService).hasPermission(
+export const organizationScopeResolver: ScopeResolver<'organization'> = {
+  model: 'organization',
+  async resolve(organizationId, userId) {
+    return resolve(OrganizationMemberService).getMemberPermissions(
       organizationId,
       userId,
-      permission,
     );
-  };
+  },
 };
+
+export function registerOrganizationScopeResolver(): void {
+  registerScopeResolver('organization', organizationScopeResolver);
+}
+
+export const organizationMember = (
+  permission: ScopePermission<'organization'>,
+): GuardFn => scoped('organization', permission);
 
 /**
  * Allows a member to act on their own membership row (leaving the

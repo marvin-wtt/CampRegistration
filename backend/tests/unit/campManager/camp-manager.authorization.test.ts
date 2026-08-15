@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 import { CampManagerService } from '#app/campManager/camp-manager.service';
 import { OrganizationMemberService } from '#app/organizationMember/organization-member.service';
-import { campPermissionRegistry } from '#core/permission-registry';
+import { permissionRegistry } from '#core/permission-registry';
 import {
   ORGANIZATION_CAMP_PERMISSIONS,
   type Permission,
@@ -46,7 +46,7 @@ beforeEach(() => {
 
   // The registry is populated at boot by the feature modules; register the
   // slice these tests rely on.
-  campPermissionRegistry.registerAll({
+  permissionRegistry.for('camp').registerAll({
     DIRECTOR: [
       'camp.view',
       'camp.edit',

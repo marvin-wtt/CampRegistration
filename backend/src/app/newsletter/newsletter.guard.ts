@@ -1,28 +1,27 @@
 import { NewsletterManagerService } from '#app/newsletterManager/newsletter-manager.service.js';
-import type { Request } from 'express';
-import type { NewsletterPermission } from '@camp-registration/common/permissions';
-import { newsletterPermissionRegistry } from '#core/permission-registry';
+import type { ScopePermission } from '@camp-registration/common/permissions';
 import { resolve } from '#core/ioc/container';
+import type { GuardFn } from '#core/guard';
+import {
+  registerScopeResolver,
+  scoped,
+  type ScopeResolver,
+} from '#core/permission.guard';
 
-export const newsletterManager = (
-  permission: NewsletterPermission,
-): ((req: Request) => Promise<boolean>) => {
-  return async (req: Request) => {
-    const userId = req.authUserId();
-    const newsletterId = req.modelOrFail('newsletter').id;
-
-    const managerService = resolve(NewsletterManagerService);
-    const manager = await managerService.getManagerByUserId(
+export const newsletterScopeResolver: ScopeResolver<'newsletter'> = {
+  model: 'newsletter',
+  async resolve(newsletterId, userId) {
+    return resolve(NewsletterManagerService).getManagerPermissions(
       newsletterId,
       userId,
     );
-    if (manager === null) {
-      return false;
-    }
-
-    const permissions = newsletterPermissionRegistry.getPermissions(
-      manager.role,
-    );
-    return permissions.includes(permission);
-  };
+  },
 };
+
+export function registerNewsletterScopeResolver(): void {
+  registerScopeResolver('newsletter', newsletterScopeResolver);
+}
+
+export const newsletterManager = (
+  permission: ScopePermission<'newsletter'>,
+): GuardFn => scoped('newsletter', permission);

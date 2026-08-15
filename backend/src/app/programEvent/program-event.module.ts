@@ -1,15 +1,11 @@
 import type {
   AppModule,
   AppRouter,
-  RoleToPermissions,
   BindOptions,
   ModuleOptions,
 } from '#core/base/AppModule';
 import { ProgramEventRouter } from '#app/programEvent/program-event.routes';
-import type {
-  CampManagerRole,
-  ProgramEventPermission,
-} from '@camp-registration/common/permissions';
+import type { ScopedPermissions } from '@camp-registration/common/permissions';
 import { SETTING_KEYS } from '@camp-registration/common/settings';
 import { ProgramEventService } from '#app/programEvent/program-event.service';
 import { ProgramEventController } from '#app/programEvent/program-event.controller';
@@ -39,30 +35,29 @@ export class ProgramEventModule implements AppModule {
     );
   }
 
-  registerPermissions(): RoleToPermissions<
-    CampManagerRole,
-    ProgramEventPermission
-  > {
+  registerPermissions(): ScopedPermissions {
     return {
-      DIRECTOR: [
-        'camp.program_events.view',
-        'camp.program_events.create',
-        'camp.program_events.update',
-        'camp.program_events.delete',
-      ],
-      COORDINATOR: [
-        'camp.program_events.view',
-        'camp.program_events.create',
-        'camp.program_events.update',
-        'camp.program_events.delete',
-      ],
-      COUNSELOR: [
-        'camp.program_events.view',
-        'camp.program_events.create',
-        'camp.program_events.update',
-        'camp.program_events.delete',
-      ],
-      VIEWER: ['camp.program_events.view'],
+      camp: {
+        DIRECTOR: [
+          'camp.program_events.view',
+          'camp.program_events.create',
+          'camp.program_events.update',
+          'camp.program_events.delete',
+        ],
+        COORDINATOR: [
+          'camp.program_events.view',
+          'camp.program_events.create',
+          'camp.program_events.update',
+          'camp.program_events.delete',
+        ],
+        COUNSELOR: [
+          'camp.program_events.view',
+          'camp.program_events.create',
+          'camp.program_events.update',
+          'camp.program_events.delete',
+        ],
+        VIEWER: ['camp.program_events.view'],
+      },
     };
   }
 }

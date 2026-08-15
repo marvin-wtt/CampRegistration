@@ -50,7 +50,7 @@ interface OrganizationNavigationItem {
   permission: OrganizationPermission;
 }
 
-const navigationItems = computed<NavigationItemProps[]>(() => {
+const navigationItems = computed<NavigationItemProps<'organization'>[]>(() => {
   if (!organizationId.value) {
     return [];
   }

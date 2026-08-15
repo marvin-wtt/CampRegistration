@@ -1,21 +1,37 @@
 import { CampManagerService } from '#app/campManager/camp-manager.service';
 import type { Request } from 'express';
-import type { Permission } from '@camp-registration/common/permissions';
+import type { ScopePermission } from '@camp-registration/common/permissions';
 import { resolve } from '#core/ioc/container';
-import { admin } from '#core/guard';
+import { admin, type GuardFn } from '#core/guard';
+import {
+  registerScopeResolver,
+  scoped,
+  type ScopeResolver,
+} from '#core/permission.guard';
 import type { SubscriberResolver } from '#app/realtime/realtime.stream';
 
-export const campManager = (
-  permission: Permission,
-): ((req: Request) => Promise<boolean | string>) => {
-  return async (req: Request) => {
-    const userId = req.authUserId();
-    const campId = req.modelOrFail('camp').id;
-    const managerService = resolve(CampManagerService);
+/**
+ * Camp permissions resolve through {@link CampManagerService.getManagerAuthorization}
+ * and nowhere else, so the REST guard, the realtime subscriber and
+ * `profile.campAccess` cannot drift — see `docs/organizations.md`.
+ */
+export const campScopeResolver: ScopeResolver<'camp'> = {
+  model: 'camp',
+  async resolve(campId, userId) {
+    const authorization = await resolve(
+      CampManagerService,
+    ).getManagerAuthorization(campId, userId);
 
-    return managerService.campManagerHasPermission(campId, userId, permission);
-  };
+    return authorization?.permissions ?? null;
+  },
 };
+
+export function registerCampScopeResolver(): void {
+  registerScopeResolver('camp', campScopeResolver);
+}
+
+export const campManager = (permission: ScopePermission<'camp'>): GuardFn =>
+  scoped('camp', permission);
 
 /**
  * Allows a manager to act on their own camp-manager record (e.g. leaving the

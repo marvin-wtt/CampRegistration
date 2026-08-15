@@ -8,16 +8,13 @@ import type {
   Profile as ProfileResourceData,
   OrganizationRole,
 } from '@camp-registration/common/entities';
-import type { Permissions } from '@camp-registration/common/permissions';
+import type { CampScopedPermission } from '@camp-registration/common/permissions';
 import {
   ORGANIZATION_CAMP_ACCESS_ROLES,
   ORGANIZATION_CAMP_PERMISSIONS,
 } from '@camp-registration/common/permissions';
 import { JsonResource } from '#core/resource/JsonResource';
-import {
-  campPermissionRegistry,
-  organizationPermissionRegistry,
-} from '#core/permission-registry';
+import { permissionRegistry } from '#core/permission-registry';
 
 type OrganizationMembership = OrganizationMember & {
   organization: {
@@ -51,9 +48,9 @@ export class ProfileResource extends JsonResource<
       organizationAccess: this.data.organizationMembers.map((membership) => ({
         organizationId: membership.organizationId,
         role: membership.role as OrganizationRole,
-        permissions: organizationPermissionRegistry.getPermissions(
-          membership.role,
-        ),
+        permissions: permissionRegistry
+          .for('organization')
+          .getPermissions(membership.role),
         verificationStatus: membership.organization.verificationStatus,
       })),
     };
@@ -71,13 +68,15 @@ export class ProfileResource extends JsonResource<
   private buildCampAccess(): ProfileResourceData['campAccess'] {
     const access = new Map<
       string,
-      { role: string; permissions: Permissions }
+      { role: string; permissions: CampScopedPermission[] }
     >();
 
     for (const manager of this.data.campRoles) {
       access.set(manager.campId, {
         role: manager.role,
-        permissions: campPermissionRegistry.getPermissions(manager.role),
+        permissions: permissionRegistry
+          .for('camp')
+          .getPermissions(manager.role),
       });
     }
 

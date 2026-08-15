@@ -1,4 +1,7 @@
-import type { OrganizationPermission, Permissions } from '#permissions';
+import type {
+  CampScopedPermission,
+  OrganizationPermission,
+} from '#permissions';
 import type { OrganizationRole } from './OrganizationMember.js';
 import type { OrganizationVerificationStatus } from './Organization.js';
 
@@ -9,7 +12,7 @@ interface CampAccess {
    * derived purely from an organization OWNER/ADMIN membership.
    */
   role: string;
-  permissions: Permissions;
+  permissions: CampScopedPermission[];
 }
 
 interface OrganizationAccess {

@@ -60,7 +60,7 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { type RouteLocationRaw } from 'vue-router';
 import { usePermissions } from '@/composables/permissions';
-import type { Permission } from '@camp-registration/common/permissions';
+import type { ScopePermission } from '@camp-registration/common/permissions';
 
 const { t } = useI18n();
 const { canAccessAny } = usePermissions();
@@ -72,7 +72,7 @@ interface SettingsItem {
   icon: string;
   color: string;
   to: RouteLocationRaw;
-  permission?: Permission;
+  permission?: ScopePermission<'camp'>;
 }
 
 const items = computed<SettingsItem[]>(() => [

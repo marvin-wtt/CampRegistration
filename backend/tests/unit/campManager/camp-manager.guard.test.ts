@@ -8,8 +8,13 @@ import {
   campManager,
   campManagerSelf,
   campManagerSubscriber,
+  registerCampScopeResolver,
 } from '#app/campManager/camp-manager.guard';
 import { RESOURCE_VIEW_PERMISSION } from '@camp-registration/common/realtime';
+
+// `campManager()` is an alias of the generic `scoped('camp', …)` guard, which
+// looks the camp resolver up in the boot-time registry.
+registerCampScopeResolver();
 
 const managerService = mock<CampManagerService>();
 
@@ -31,22 +36,40 @@ afterEach(() => {
 });
 
 describe('campManager', () => {
-  it('delegates to CampManagerService.campManagerHasPermission', async () => {
-    managerService.campManagerHasPermission.mockResolvedValue(true);
+  const authorization = (permissions: string[]) => ({
+    managerId: 'manager-1',
+    permissions: new Set(permissions),
+    expiresAt: null,
+  });
+
+  it('resolves through CampManagerService.getManagerAuthorization', async () => {
+    managerService.getManagerAuthorization.mockResolvedValue(
+      authorization(['camp.tasks.view']),
+    );
     const guard = campManager('camp.tasks.view');
 
     const result = await guard(fakeReq({ id: 'camp-1' }, 'user-1'));
 
     expect(result).toBe(true);
-    expect(managerService.campManagerHasPermission).toHaveBeenCalledWith(
+    expect(managerService.getManagerAuthorization).toHaveBeenCalledWith(
       'camp-1',
       'user-1',
-      'camp.tasks.view',
     );
   });
 
-  it('returns false when the service reports no permission', async () => {
-    managerService.campManagerHasPermission.mockResolvedValue(false);
+  it('returns false when the permission is not in the resolved set', async () => {
+    managerService.getManagerAuthorization.mockResolvedValue(
+      authorization(['camp.view']),
+    );
+    const guard = campManager('camp.tasks.view');
+
+    const result = await guard(fakeReq({ id: 'camp-1' }));
+
+    expect(result).toBe(false);
+  });
+
+  it('returns false when the user has no authorization at all', async () => {
+    managerService.getManagerAuthorization.mockResolvedValue(null);
     const guard = campManager('camp.tasks.view');
 
     const result = await guard(fakeReq({ id: 'camp-1' }));

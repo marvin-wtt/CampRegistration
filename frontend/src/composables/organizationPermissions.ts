@@ -1,14 +1,13 @@
 import { computed } from 'vue';
 import { useProfileStore } from '@/stores/profile-store';
 import { useOrganizationDetailsStore } from '@/stores/organization-details-store';
-import type { OrganizationPermission } from '@camp-registration/common/permissions';
 import { storeToRefs } from 'pinia';
+import { createScopePermissions } from '@/composables/scopePermissions';
 
 /**
- * Organization-scoped counterpart to {@link usePermissions}, which resolves
- * against `campAccess` only. Kept separate on purpose: because
- * `OrganizationPermission` is part of the `Permission` union,
- * `can('organization.view')` type-checks there but always returns false.
+ * Organization-scoped counterpart to {@link usePermissions}. Kept as its own
+ * composable so the two scopes' helpers cannot be confused at a call site; the
+ * shared logic lives in {@link createScopePermissions}.
  */
 export function useOrganizationPermissions() {
   const profileStore = useProfileStore();
@@ -17,45 +16,15 @@ export function useOrganizationPermissions() {
   const { user } = storeToRefs(profileStore);
   const { data: organization } = storeToRefs(organizationDetailsStore);
 
-  function canOrgFor(
-    organizationId: string | undefined,
-    ...permissions: OrganizationPermission[]
-  ): boolean {
-    if (user.value?.role === 'ADMIN') {
-      return true;
-    }
-
-    const access = user.value?.organizationAccess ?? [];
-    const granted =
-      access.find((value) => value.organizationId === organizationId)
-        ?.permissions ?? [];
-
-    return permissions.every((value) => granted.includes(value));
-  }
-
-  function canOrg(...permissions: OrganizationPermission[]): boolean {
-    return canOrgFor(organization.value?.id, ...permissions);
-  }
-
-  function canAnyOrg(...permissions: OrganizationPermission[]): boolean {
-    return permissions.some((value) => canOrg(value));
-  }
-
-  function cannotOrg(...permissions: OrganizationPermission[]): boolean {
-    return !canOrg(...permissions);
-  }
-
-  function canAccessAnyOrg(
-    permission?: OrganizationPermission | OrganizationPermission[],
-  ): boolean {
-    if (!permission) {
-      return true;
-    }
-
-    return Array.isArray(permission)
-      ? canAnyOrg(...permission)
-      : canOrg(permission);
-  }
+  const { can, canAny, canFor, cannot, canAccessAny } =
+    createScopePermissions<'organization'>({
+      isAdmin: () => user.value?.role === 'ADMIN',
+      granted: (organizationId) =>
+        (user.value?.organizationAccess ?? []).find(
+          (value) => value.organizationId === organizationId,
+        )?.permissions ?? [],
+      currentSubjectId: () => organization.value?.id,
+    });
 
   /**
    * Organizations the user may create a camp under. Drives the create-camp
@@ -81,11 +50,11 @@ export function useOrganizationPermissions() {
   );
 
   return {
-    canOrg,
-    canOrgFor,
-    canAnyOrg,
-    cannotOrg,
-    canAccessAnyOrg,
+    canOrg: can,
+    canOrgFor: canFor,
+    canAnyOrg: canAny,
+    cannotOrg: cannot,
+    canAccessAnyOrg: canAccessAny,
     campCreationOrganizationIds,
     newsletterCreationOrganizationIds,
   };

@@ -1,6 +1,10 @@
 import { BaseService } from '#core/base/BaseService';
 import { injectable } from 'inversify';
-import type { NewsletterManagerRole } from '@camp-registration/common/permissions';
+import type {
+  NewsletterManagerRole,
+  NewsletterPermission,
+} from '@camp-registration/common/permissions';
+import { permissionRegistry } from '#core/permission-registry';
 
 @injectable()
 export class NewsletterManagerService extends BaseService {
@@ -16,6 +20,20 @@ export class NewsletterManagerService extends BaseService {
     return this.prisma.newsletterManager.findFirst({
       where: { newsletterId, userId },
     });
+  }
+
+  async getManagerPermissions(
+    newsletterId: string,
+    userId: string,
+  ): Promise<ReadonlySet<NewsletterPermission> | null> {
+    const manager = await this.getManagerByUserId(newsletterId, userId);
+    if (manager === null) {
+      return null;
+    }
+
+    return new Set(
+      permissionRegistry.for('newsletter').getPermissions(manager.role),
+    );
   }
 
   async getManagerById(newsletterId: string, id: string) {

@@ -1,10 +1,10 @@
 import { BaseService } from '#core/base/BaseService';
 import { injectable } from 'inversify';
-import { organizationPermissionRegistry } from '#core/permission-registry';
+import { permissionRegistry } from '#core/permission-registry';
 import type {
+  CampScopedPermission,
   OrganizationPermission,
   OrganizationRole,
-  Permission,
 } from '@camp-registration/common/permissions';
 import {
   ORGANIZATION_CAMP_ACCESS_ROLES,
@@ -55,19 +55,33 @@ export class OrganizationMemberService extends BaseService {
     return members.map((member) => member.user).filter((user) => user !== null);
   }
 
+  /**
+   * The organization permissions `userId` holds on `organizationId`, or `null`
+   * when they are not a member. The single resolution point for the scope — the
+   * route guard and `profile.organizationAccess` both go through it.
+   */
+  async getMemberPermissions(
+    organizationId: string,
+    userId: string,
+  ): Promise<ReadonlySet<OrganizationPermission> | null> {
+    const member = await this.getMemberByUserId(organizationId, userId);
+    if (member === null) {
+      return null;
+    }
+
+    return new Set(
+      permissionRegistry.for('organization').getPermissions(member.role),
+    );
+  }
+
   async hasPermission(
     organizationId: string,
     userId: string,
     permission: OrganizationPermission,
   ): Promise<boolean> {
-    const member = await this.getMemberByUserId(organizationId, userId);
-    if (member === null) {
-      return false;
-    }
+    const permissions = await this.getMemberPermissions(organizationId, userId);
 
-    return organizationPermissionRegistry
-      .getPermissions(member.role)
-      .includes(permission);
+    return permissions?.has(permission) ?? false;
   }
 
   /**
@@ -82,7 +96,7 @@ export class OrganizationMemberService extends BaseService {
   async getOrganizationCampPermissions(
     campId: string,
     userId: string,
-  ): Promise<readonly Permission[]> {
+  ): Promise<readonly CampScopedPermission[]> {
     const membership = await this.prisma.organizationMember.findFirst({
       where: {
         userId,

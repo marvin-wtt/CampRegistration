@@ -1,11 +1,7 @@
 import type { AppModule } from '#core/base/AppModule';
 import apiRouter from '#routes/api';
 import { createModules } from './modules.js';
-import {
-  campPermissionRegistry,
-  newsletterPermissionRegistry,
-  organizationPermissionRegistry,
-} from '#core/permission-registry';
+import { permissionRegistry } from '#core/permission-registry';
 import { initI18n } from '#core/i18n';
 import { JobScheduler } from '#core/scheduler/JobScheduler';
 import { verifyDatabaseConnection, disconnectDatabase } from '#core/database';
@@ -56,18 +52,9 @@ async function configureModules(modules: AppModule[]) {
 
 function registerModulePermissions(modules: AppModule[]) {
   for (const module of modules) {
-    if (module.registerPermissions) {
-      campPermissionRegistry.registerAll(module.registerPermissions());
-    }
-    if (module.registerNewsletterPermissions) {
-      newsletterPermissionRegistry.registerAll(
-        module.registerNewsletterPermissions(),
-      );
-    }
-    if (module.registerOrganizationPermissions) {
-      organizationPermissionRegistry.registerAll(
-        module.registerOrganizationPermissions(),
-      );
+    const scoped = module.registerPermissions?.();
+    if (scoped) {
+      permissionRegistry.registerAll(scoped);
     }
   }
 }

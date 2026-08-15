@@ -28,7 +28,20 @@
       <q-separator />
 
       <q-card-section class="q-pa-none dialog-content">
-        <div class="pm-wrap">
+        <div
+          v-if="loading"
+          class="pm-loading"
+        >
+          <q-spinner
+            color="primary"
+            size="32px"
+          />
+        </div>
+
+        <div
+          v-else
+          class="pm-wrap"
+        >
           <div
             class="pm-matrix"
             role="table"
@@ -40,7 +53,7 @@
             >
               <div class="pm-feature-col" />
               <div
-                v-for="role in ROLES"
+                v-for="role in roles"
                 :key="role"
                 class="pm-role-col pm-role-head"
                 role="columnheader"
@@ -49,15 +62,15 @@
                   class="md3-chip role-chip"
                   :class="roleClass(role)"
                 >
-                  {{ t('role.' + role.toLowerCase()) }}
+                  {{ roleLabel(role) }}
                 </span>
               </div>
             </div>
 
             <!-- Feature rows -->
             <div
-              v-for="group in permissionGroups"
-              :key="group.key"
+              v-for="row in orderedRows"
+              :key="row.group"
               class="pm-row pm-body-row"
               role="row"
             >
@@ -70,33 +83,33 @@
                   class="pm-feature-avatar"
                 >
                   <q-icon
-                    :name="group.icon"
+                    :name="groupIcon(row.group)"
                     size="18px"
                   />
                 </q-avatar>
                 <span class="pm-feature-label">
-                  {{ t('permissions.group.' + group.key) }}
+                  {{ groupLabel(row.group) }}
                 </span>
               </div>
 
               <div
-                v-for="role in ROLES"
+                v-for="role in roles"
                 :key="role"
                 class="pm-role-col"
-                :data-role="t('role.' + role.toLowerCase())"
+                :data-role="roleLabel(role)"
                 role="cell"
               >
                 <div
-                  v-if="group.actions[role].length"
+                  v-if="row.actions[role]?.length"
                   class="pm-actions"
                 >
                   <q-chip
-                    v-for="action in group.actions[role]"
+                    v-for="action in row.actions[role]"
                     :key="action"
                     dense
                     class="pm-action-chip"
                     :icon="actionIcon(action)"
-                    :label="t('permissions.action.' + action)"
+                    :label="actionLabel(action)"
                   />
                 </div>
                 <span
@@ -119,151 +132,121 @@
 </template>
 
 <script lang="ts" setup>
+import { computed, onMounted, ref } from 'vue';
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
+import { usePermissionMatrix } from '@/composables/permissionMatrix';
 
 defineEmits([...useDialogPluginComponent.emits]);
 
 const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent();
-const { t } = useI18n();
+const i18n = useI18n();
+const t = (key: string) => i18n.t(key);
+// Wrapped rather than destructured: `te` reads `this` internally.
+const te = (key: string) => i18n.te(key);
 
-const ROLES = ['DIRECTOR', 'COORDINATOR', 'COUNSELOR', 'VIEWER'] as const;
-type Role = (typeof ROLES)[number];
+const { load, roles, rows } = usePermissionMatrix('camp');
 
-interface PermissionGroup {
-  key: string;
-  icon: string;
-  actions: Record<Role, string[]>;
-}
+const loading = ref(true);
 
-const permissionGroups: PermissionGroup[] = [
-  {
-    key: 'camp',
-    icon: 'tune',
-    actions: {
-      DIRECTOR: ['view', 'edit', 'delete'],
-      COORDINATOR: ['view', 'edit'],
-      COUNSELOR: ['view'],
-      VIEWER: ['view'],
-    },
-  },
-  {
-    key: 'files',
-    icon: 'folder_open',
-    actions: {
-      DIRECTOR: ['view', 'create', 'edit', 'delete'],
-      COORDINATOR: ['view', 'create', 'edit', 'delete'],
-      COUNSELOR: ['view'],
-      VIEWER: ['view'],
-    },
-  },
-  {
-    key: 'registrations',
-    icon: 'how_to_reg',
-    actions: {
-      DIRECTOR: ['view', 'edit', 'delete'],
-      COORDINATOR: ['view', 'edit', 'delete'],
-      COUNSELOR: ['view'],
-      VIEWER: ['view'],
-    },
-  },
-  {
-    key: 'managers',
-    icon: 'manage_accounts',
-    actions: {
-      DIRECTOR: ['view', 'create', 'edit', 'delete'],
-      COORDINATOR: ['view'],
-      COUNSELOR: ['view'],
-      VIEWER: [],
-    },
-  },
-  {
-    key: 'messages',
-    icon: 'mail',
-    actions: {
-      DIRECTOR: ['view', 'create', 'delete'],
-      COORDINATOR: ['view', 'create', 'delete'],
-      COUNSELOR: [],
-      VIEWER: [],
-    },
-  },
-  {
-    key: 'message_templates',
-    icon: 'mark_email_read',
-    actions: {
-      DIRECTOR: ['view', 'create', 'edit', 'delete'],
-      COORDINATOR: ['view', 'create', 'edit', 'delete'],
-      COUNSELOR: ['view'],
-      VIEWER: [],
-    },
-  },
-  {
-    key: 'table_templates',
-    icon: 'table_chart',
-    actions: {
-      DIRECTOR: ['view', 'create', 'edit', 'delete'],
-      COORDINATOR: ['view', 'create', 'edit', 'delete'],
-      COUNSELOR: ['view'],
-      VIEWER: ['view'],
-    },
-  },
-  {
-    key: 'rooms',
-    icon: 'meeting_room',
-    actions: {
-      DIRECTOR: ['view', 'create', 'edit', 'delete'],
-      COORDINATOR: ['view', 'create', 'edit', 'delete'],
-      COUNSELOR: ['view'],
-      VIEWER: ['view'],
-    },
-  },
-  {
-    key: 'beds',
-    icon: 'bed',
-    actions: {
-      DIRECTOR: ['create', 'edit', 'delete'],
-      COORDINATOR: ['create', 'edit', 'delete'],
-      COUNSELOR: ['edit'],
-      VIEWER: [],
-    },
-  },
-  {
-    key: 'program',
-    icon: 'event_note',
-    actions: {
-      DIRECTOR: ['view', 'create', 'edit', 'delete'],
-      COORDINATOR: ['view', 'create', 'edit', 'delete'],
-      COUNSELOR: ['view', 'create', 'edit', 'delete'],
-      VIEWER: ['view'],
-    },
-  },
-  {
-    key: 'tasks',
-    icon: 'task_alt',
-    actions: {
-      DIRECTOR: ['view', 'create', 'edit', 'delete'],
-      COORDINATOR: ['view', 'create', 'edit', 'delete'],
-      COUNSELOR: ['view', 'create', 'edit', 'delete'],
-      VIEWER: ['view'],
-    },
-  },
+onMounted(async () => {
+  try {
+    await load();
+  } finally {
+    loading.value = false;
+  }
+});
+
+/**
+ * Display order. Groups the server sends that are not listed here still render,
+ * appended at the end — a new permission must never silently vanish from the
+ * matrix the way the previously hardcoded table let it.
+ */
+const GROUP_ORDER = [
+  'camp',
+  'files',
+  'registrations',
+  'managers',
+  'messages',
+  'message_templates',
+  'table_templates',
+  'rooms',
+  'rooms.beds',
+  'program_events',
+  'tasks',
 ];
 
-const roleOrder = ['director', 'coordinator', 'counselor', 'viewer'];
+const GROUP_ICONS: Record<string, string> = {
+  camp: 'tune',
+  files: 'folder_open',
+  registrations: 'how_to_reg',
+  managers: 'manage_accounts',
+  messages: 'mail',
+  message_templates: 'mark_email_read',
+  table_templates: 'table_chart',
+  rooms: 'meeting_room',
+  'rooms.beds': 'bed',
+  program_events: 'event_note',
+  tasks: 'task_alt',
+};
+
+/** Group keys whose translation predates the derived name. */
+const GROUP_I18N_ALIAS: Record<string, string> = {
+  'rooms.beds': 'beds',
+  program_events: 'program',
+};
+
+/** `camp.tasks.update` and `camp.program_events.update` read as "edit" in the UI. */
+const ACTION_I18N_ALIAS: Record<string, string> = { update: 'edit' };
+
+const ACTION_ICONS: Record<string, string> = {
+  view: 'visibility',
+  create: 'add_circle',
+  edit: 'edit',
+  update: 'edit',
+  delete: 'delete',
+};
+
+const orderedRows = computed(() =>
+  [...rows.value].sort((a, b) => {
+    const ai = GROUP_ORDER.indexOf(a.group);
+    const bi = GROUP_ORDER.indexOf(b.group);
+
+    return (
+      (ai === -1 ? GROUP_ORDER.length : ai) -
+      (bi === -1 ? GROUP_ORDER.length : bi)
+    );
+  }),
+);
+
+const KNOWN_ROLE_CLASSES = ['director', 'coordinator', 'counselor', 'viewer'];
 
 function roleClass(role: string): string {
   const normalized = role.toLowerCase();
-  return `role--${roleOrder.includes(normalized) ? normalized : 'viewer'}`;
+  return `role--${KNOWN_ROLE_CLASSES.includes(normalized) ? normalized : 'viewer'}`;
+}
+
+function roleLabel(role: string): string {
+  const key = `role.${role.toLowerCase()}`;
+  return te(key) ? t(key) : role;
+}
+
+function groupLabel(group: string): string {
+  const key = `permissions.group.${GROUP_I18N_ALIAS[group] ?? group}`;
+  return te(key) ? t(key) : group;
+}
+
+function actionLabel(action: string): string {
+  const key = `permissions.action.${ACTION_I18N_ALIAS[action] ?? action}`;
+  return te(key) ? t(key) : action;
+}
+
+function groupIcon(group: string): string {
+  return GROUP_ICONS[group] ?? 'category';
 }
 
 function actionIcon(action: string): string {
-  const icons: Record<string, string> = {
-    view: 'visibility',
-    create: 'add_circle',
-    edit: 'edit',
-    delete: 'delete',
-  };
-  return icons[action] ?? 'circle';
+  return ACTION_ICONS[action] ?? 'circle';
 }
 </script>
 
@@ -285,6 +268,13 @@ function actionIcon(action: string): string {
 .pm-wrap {
   overflow-x: auto;
   padding: 16px;
+}
+
+.pm-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
 }
 
 .pm-matrix {

@@ -80,7 +80,12 @@ export type OrganizationPermission =
   | 'organization.camps.create'
   | 'organization.newsletters.create';
 
-export type Permission =
+/**
+ * Everything resolvable against a camp-manager role. Named separately from
+ * {@link Permission} so camp-scoped APIs can refuse a newsletter or
+ * organization string at compile time instead of silently never matching.
+ */
+export type CampScopedPermission =
   | CampPermission
   | FilePermission
   | RegistrationPermission
@@ -91,9 +96,10 @@ export type Permission =
   | RoomPermission
   | BedPermission
   | ProgramEventPermission
-  | TaskPermission
-  | NewsletterPermission
-  | OrganizationPermission;
+  | TaskPermission;
+
+export type Permission =
+  CampScopedPermission | NewsletterPermission | OrganizationPermission;
 
 export type Permissions = Permission[];
 
@@ -120,4 +126,4 @@ export const ORGANIZATION_CAMP_PERMISSIONS = [
   'camp.view',
   'camp.edit',
   'camp.managers.view',
-] as const satisfies readonly Permission[];
+] as const satisfies readonly CampScopedPermission[];

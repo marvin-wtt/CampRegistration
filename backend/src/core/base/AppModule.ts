@@ -1,12 +1,5 @@
 import type { Router } from 'express';
-import type {
-  CampManagerRole,
-  NewsletterManagerRole,
-  OrganizationRole,
-  Permission,
-  NewsletterPermission,
-  OrganizationPermission,
-} from '@camp-registration/common/permissions';
+import type { ScopedPermissions } from '@camp-registration/common/permissions';
 import type { ModuleRouter } from '#core/router/ModuleRouter';
 import type { JobScheduler } from '#core/scheduler/JobScheduler';
 import type { ContainerModuleLoadOptions } from 'inversify';
@@ -19,11 +12,6 @@ export type ModuleOptions = object;
 
 export type BindOptions = ContainerModuleLoadOptions;
 
-export type RoleToPermissions<
-  TRole extends string,
-  TPermission extends string,
-> = Partial<Record<TRole, TPermission[]>>;
-
 export interface AppModule {
   configure?(options: ModuleOptions): Promise<void> | void;
 
@@ -31,17 +19,7 @@ export interface AppModule {
 
   registerRoutes?(router: AppRouter): void;
 
-  registerPermissions?(): RoleToPermissions<CampManagerRole, Permission>;
-
-  registerNewsletterPermissions?(): RoleToPermissions<
-    NewsletterManagerRole,
-    NewsletterPermission
-  >;
-
-  registerOrganizationPermissions?(): RoleToPermissions<
-    OrganizationRole,
-    OrganizationPermission
-  >;
+  registerPermissions?(): ScopedPermissions;
 
   registerJobs?(scheduler: JobScheduler): void;
 

@@ -75,7 +75,7 @@ const campName = computed<string | undefined>(() => {
   return name ? to(name) : undefined;
 });
 
-const items = computed<NavigationItemProps[]>(() => [
+const items = computed<NavigationItemProps<'camp'>[]>(() => [
   {
     name: 'dashboard',
     label: t('dashboard'),
@@ -137,11 +137,13 @@ const permissionsLoading = computed<boolean>(() => {
   );
 });
 
-const filteredItems = computed<NavigationItemProps[]>(() => {
+const filteredItems = computed<NavigationItemProps<'camp'>[]>(() => {
   return filterItems(items.value);
 });
 
-function filterItems(navItems: NavigationItemProps[]): NavigationItemProps[] {
+function filterItems(
+  navItems: NavigationItemProps<'camp'>[],
+): NavigationItemProps<'camp'>[] {
   return navItems
     .filter((item) => canAccessAny(item.permission))
     .map((item) => {

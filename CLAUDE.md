@@ -97,17 +97,10 @@ class ExampleModule implements AppModule {
   registerRoutes(router: AppRouter): void {
     /* mount router */
   }
-  registerPermissions(): RoleToPermissions<CampManagerRole, Permission> {
-    /* RBAC */
+
+  registerPermissions(): ScopedPermissions {
+    /* RBAC, keyed by scope: { camp?, newsletter?, organization? } */
   }
-  registerNewsletterPermissions(): RoleToPermissions<
-    NewsletterManagerRole,
-    NewsletterPermission
-  > {}
-  registerOrganizationPermissions(): RoleToPermissions<
-    OrganizationRole,
-    OrganizationPermission
-  > {}
   registerJobs(scheduler: JobScheduler): void {
     /* recurring cron jobs */
   }
@@ -153,7 +146,49 @@ Request → Router → Controller → Service (business logic) → Prisma → Re
 - JWT bearer tokens; TOTP 2FA support
 - System roles: `USER`, `ADMIN`
 - Camp-scoped roles: `DIRECTOR`, `COORDINATOR`, `COUNSELOR`, `VIEWER`
-- Organization-scoped roles: `ADMIN`, `MEMBER` (separate registry from the system role)
+- Newsletter-scoped roles: `OWNER`, `EDITOR`, `VIEWER`
+- Organization-scoped roles: `ADMIN`, `MEMBER` (a permission scope of its own, unrelated to the system role)
+
+### Permission scopes
+
+Permissions are scoped RBAC. All three scopes — `camp`, `newsletter`,
+`organization` — run through **one** generic mechanism, declared in
+`common/src/permissions/scopes.ts`:
+
+```ts
+export interface PermissionScopes {
+  camp: { role: CampManagerRole; permission: CampScopedPermission };
+  newsletter: { role: NewsletterManagerRole; permission: NewsletterPermission };
+  organization: { role: OrganizationRole; permission: OrganizationPermission };
+}
+```
+
+- **Declare**: a module returns its grants from `registerPermissions()`, keyed by scope. `boot.ts` merges them into the
+  single `permissionRegistry`
+  (`permissionRegistry.for('camp').getPermissions(role)`). Registration is additive, so no one file holds the whole
+  policy — `tests/unit/core/permission-registry.test.ts`
+  snapshots the assembled result.
+- **Guard**: `scoped(scope, permission)` (`#core/permission.guard`) reads the bound model named by the scope's
+  `ScopeResolver` and asks it for the user's permission set. `campManager(p)`, `newsletterManager(p)` and
+  `organizationMember(p)` are one-line aliases of it. Each owning module registers its resolver in `configure()`.
+- **Resolve once per scope**: `CampManagerService.getManagerAuthorization`,
+  `NewsletterManagerService.getManagerPermissions` and
+  `OrganizationMemberService.getMemberPermissions` are the only places their scope's permissions are computed; the
+  guard, the profile resource and (for camps) the SSE subscriber all go through them.
+- **Type safety**: use `ScopePermission<'camp'>` (or `CampScopedPermission`) for camp-only APIs. `Permission` is the
+  union of all three scopes — passing an organization string to a camp API must be a compile error, not a silent
+  `false`.
+- **Adding a permission**: add the string to its union in
+  `common/src/permissions/permissions.ts`, rebuild `common`, return it from the owning module's `registerPermissions()`,
+  guard the route, and update the registry snapshot. The role-permission dialog needs no edit — it renders
+  `GET /permissions`.
+- **Never hardcode the matrix in the frontend.** `GET /permissions` serves
+  `permissionRegistry.toMatrix()`; `usePermissionMatrix(scope)` consumes it.
+
+State and ownership rules (`registrationOpen`, `campOrganizationVerified`,
+`campManagerSelf`, `organizationMemberSelf`, `buildCampWhere`, `file.guard.ts`)
+are deliberately **not** permissions — they stay plain `GuardFn`s composed with
+`or`/`and`.
 
 ### Email
 
@@ -189,8 +224,8 @@ recurring tasks (e.g. token cleanup, pruning old job records).
 ### Organizations
 
 Camps and newsletters are owned by an `Organization`, moderated by system administrators — full design in
-`docs/organizations.md`. Roles are `ADMIN`/`MEMBER`, resolved through a third registry
-(`organizationPermissionRegistry`) alongside the camp and newsletter ones.
+`docs/organizations.md`. Roles are `ADMIN`/`MEMBER`, resolved through the
+`organization` permission scope (see [Permission scopes](#permission-scopes)).
 
 - `organizationId` is **required** on `POST /camps` and `POST /newsletters`; there is no server-side default. The id
   arrives in the body and guards run before validation, so

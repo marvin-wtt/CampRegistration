@@ -12,7 +12,8 @@ ownership and accountability relationship, deliberately _not_ a grant of access 
   verified. Moderation never blocks preparation work, and the reviewer sees a real camp rather than an empty shell.
 - **Fixed permission set, not a registry lookup.** Organization roles map to camp permissions through the constant
   `ORGANIZATION_CAMP_PERMISSIONS`, not through a role→permission registry. A registry invites incremental widening; a
-  constant with a test asserting its exact contents does not.
+  constant with a test asserting its exact contents does not. This is the one place the generic scope mechanism is
+  deliberately bypassed — organization→camp is a cross-scope derivation, and it is capped by hand.
 - **Two roles, not three.** `ADMIN`/`MEMBER`. An `OWNER` tier would only have protected one admin from another: deleting
   an organization that owns camps is already blocked by the `Restrict` foreign key, and the last-admin invariant already
   prevents lockout.
@@ -196,9 +197,12 @@ unbounded.
 
 1. **common**: add the string to `OrganizationPermission` in
    `common/src/permissions/permissions.ts`; rebuild `common`.
-2. **backend**: return it from the owning module's `registerOrganizationPermissions()`
-   hook and guard the route with `organizationMember('organization.…')`.
-3. **frontend**: gate the UI on `profile.organizationAccess`.
+2. **backend**: return it from the owning module's `registerPermissions()` hook under the
+   `organization` key, and guard the route with `organizationMember('organization.…')`.
+3. **backend**: update the registry snapshot in
+   `tests/unit/core/permission-registry.test.ts` — the diff is the review prompt for "did this role's reach change on
+   purpose?".
+4. **frontend**: gate the UI on `profile.organizationAccess` via `useOrganizationPermissions()`.
 
 Do **not** add camp permissions to `ORGANIZATION_CAMP_PERMISSIONS` as part of this — that constant is a privacy boundary
 and has a test asserting its exact contents.
