@@ -19,13 +19,14 @@ export class RegistrationSeeder {
       const role = (overrides.role as string | undefined) ?? 'participant';
       const firstName = faker.person.firstName();
       const lastName = faker.person.lastName();
+      // Counselors are grown-ups; the camp's age range applies to participants.
+      const [youngest, oldest] =
+        role === 'participant'
+          ? [this.camp.minAge, this.camp.maxAge]
+          : [19, 45];
       const dateOfBirth = faker.date.between({
-        from: moment(this.camp.startAt)
-          .subtract(this.camp.maxAge, 'years')
-          .toDate(),
-        to: moment(this.camp.startAt)
-          .subtract(this.camp.minAge, 'years')
-          .toDate(),
+        from: moment(this.camp.startAt).subtract(oldest, 'years').toDate(),
+        to: moment(this.camp.startAt).subtract(youngest, 'years').toDate(),
       });
       const email = faker.internet.email({ firstName, lastName });
       const street = faker.location.streetAddress();
