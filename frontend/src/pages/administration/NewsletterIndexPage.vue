@@ -102,6 +102,13 @@ const columns = computed<QTableColumn<Newsletter>[]>(() => [
     sortable: true,
   },
   {
+    name: 'organization',
+    label: t('column.organization'),
+    field: 'organizationName',
+    align: 'left',
+    sortable: false,
+  },
+  {
     name: 'description',
     label: t('column.description'),
     field: 'description',
@@ -184,6 +191,7 @@ action:
   delete: 'Delete'
 column:
   name: 'Name'
+  organization: 'Organization'
   description: 'Description'
   createdAt: 'Created'
   action: 'Actions'
@@ -201,6 +209,7 @@ action:
   delete: 'Löschen'
 column:
   name: 'Name'
+  organization: 'Organisation'
   description: 'Beschreibung'
   createdAt: 'Erstellt'
   action: 'Aktionen'
@@ -218,6 +227,7 @@ action:
   delete: 'Supprimer'
 column:
   name: 'Nom'
+  organization: 'Organisation'
   description: 'Description'
   createdAt: 'Créé le'
   action: 'Actions'
@@ -235,6 +245,7 @@ action:
   delete: 'Usuń'
 column:
   name: 'Nazwa'
+  organization: 'Organizacja'
   description: 'Opis'
   createdAt: 'Utworzono'
   action: 'Akcje'
@@ -252,6 +263,7 @@ action:
   delete: 'Smazat'
 column:
   name: 'Název'
+  organization: 'Organizace'
   description: 'Popis'
   createdAt: 'Vytvořeno'
   action: 'Akce'

@@ -15,6 +15,17 @@
             </div>
             <div class="text-h5 text-weight-medium">{{ newsletter?.name }}</div>
             <div
+              v-if="newsletter"
+              class="row items-center q-gutter-x-xs q-mt-xs text-body2 text-grey-6"
+            >
+              <q-icon
+                name="apartment"
+                size="xs"
+              />
+              <span>{{ newsletter.organizationName }}</span>
+              <q-tooltip>{{ t('header.organization') }}</q-tooltip>
+            </div>
+            <div
               v-if="newsletter?.description"
               class="text-body2 text-grey-6 q-mt-xs"
             >
@@ -344,9 +355,9 @@
                 class="q-gutter-y-sm"
               >
                 <q-skeleton
-                  v-for="i in 4"
+                  v-for="i in 6"
                   :key="i"
-                  height="56px"
+                  height="36px"
                   class="rounded-borders"
                 />
               </div>
@@ -404,12 +415,15 @@
                 <q-item
                   v-for="subscriber in filteredSubscribers"
                   :key="subscriber.id"
+                  dense
+                  class="subscriber-item"
                 >
                   <q-item-section avatar>
                     <q-avatar
                       color="primary"
                       text-color="white"
-                      size="36px"
+                      size="24px"
+                      class="text-caption"
                     >
                       {{
                         (subscriber.name ?? subscriber.email)
@@ -419,23 +433,31 @@
                     </q-avatar>
                   </q-item-section>
                   <q-item-section>
-                    <q-item-label class="text-weight-medium">
-                      {{ subscriber.email }}
-                    </q-item-label>
                     <q-item-label
-                      v-if="subscriber.name"
-                      caption
+                      lines="1"
+                      class="text-body2"
                     >
-                      {{ subscriber.name }}
+                      {{ subscriber.email }}
+                      <span
+                        v-if="subscriber.name"
+                        class="text-grey-6"
+                      >
+                        &middot; {{ subscriber.name }}
+                      </span>
                     </q-item-label>
-                    <q-item-label caption>
-                      {{ d(subscriber.subscribedAt, 'date') }}
-                    </q-item-label>
+                  </q-item-section>
+                  <q-item-section
+                    v-if="quasar.screen.gt.xs"
+                    side
+                    class="text-caption text-grey-6"
+                  >
+                    {{ d(subscriber.subscribedAt, 'date') }}
                   </q-item-section>
                   <q-item-section side>
                     <q-btn
                       flat
                       round
+                      dense
                       icon="person_remove"
                       color="negative"
                       size="sm"
@@ -815,6 +837,7 @@ header:
   subscribers: '{count} subscribers'
   sent: '{count} sent'
   edit: 'Edit newsletter'
+  organization: 'Owning organization'
 
 compose:
   subject: 'Subject'
@@ -880,6 +903,7 @@ header:
   subscribers: '{count} Abonnenten'
   sent: '{count} gesendet'
   edit: 'Newsletter bearbeiten'
+  organization: 'Besitzende Organisation'
 
 compose:
   subject: 'Betreff'
@@ -945,6 +969,7 @@ header:
   subscribers: '{count} abonnés'
   sent: '{count} envoyés'
   edit: 'Modifier la newsletter'
+  organization: 'Organisation propriétaire'
 
 compose:
   subject: 'Sujet'
@@ -1010,6 +1035,7 @@ header:
   subscribers: '{count} subskrybentów'
   sent: '{count} wysłanych'
   edit: 'Edytuj newsletter'
+  organization: 'Organizacja właścicielska'
 
 compose:
   subject: 'Temat'
@@ -1075,6 +1101,7 @@ header:
   subscribers: '{count} odběratelů'
   sent: '{count} odesláno'
   edit: 'Upravit newsletter'
+  organization: 'Vlastnící organizace'
 
 compose:
   subject: 'Předmět'
@@ -1148,6 +1175,20 @@ managers:
 .list-scroll {
   overflow-y: auto;
   min-height: 0;
+}
+
+.subscriber-item {
+  min-height: 36px;
+  padding: 2px 8px;
+}
+
+.subscriber-item .q-item__section--avatar {
+  min-width: 0;
+  padding-right: 8px;
+}
+
+.subscriber-item .q-item__section--side {
+  padding-left: 8px;
 }
 
 .newsletter-preview {

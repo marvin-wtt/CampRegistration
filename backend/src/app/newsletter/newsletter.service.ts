@@ -2,10 +2,20 @@ import type { Prisma } from '#generated/prisma/client.js';
 import { BaseService } from '#core/base/BaseService';
 import { injectable } from 'inversify';
 
+// `NewsletterResource` shows the owning organization, so every read loads it.
+// `satisfies` rather than an annotation, so callers keep the two selected
+// fields instead of inferring the full Organization — see `camp.service`.
+const includeOrganization = {
+  organization: { select: { id: true, name: true } },
+} satisfies Prisma.NewsletterInclude;
+
 @injectable()
 export class NewsletterService extends BaseService {
   async getNewsletterById(id: string) {
-    return this.prisma.newsletter.findUnique({ where: { id } });
+    return this.prisma.newsletter.findUnique({
+      where: { id },
+      include: includeOrganization,
+    });
   }
 
   async queryNewsletters(
@@ -27,6 +37,7 @@ export class NewsletterService extends BaseService {
 
     const items = await this.prisma.newsletter.findMany({
       where,
+      include: includeOrganization,
       take: limit + 1,
       ...(options.cursor ? { cursor: { id: options.cursor }, skip: 1 } : {}),
       orderBy: [{ [sortBy]: sortType }, { id: sortType }],
@@ -51,6 +62,7 @@ export class NewsletterService extends BaseService {
           some: { userId },
         },
       },
+      include: includeOrganization,
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -74,6 +86,7 @@ export class NewsletterService extends BaseService {
           create: { userId, role: 'OWNER' },
         },
       },
+      include: includeOrganization,
     });
   }
 
@@ -92,6 +105,7 @@ export class NewsletterService extends BaseService {
         description: data.description,
         replyTo: data.replyTo,
       },
+      include: includeOrganization,
     });
   }
 

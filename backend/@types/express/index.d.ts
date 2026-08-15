@@ -12,7 +12,6 @@ import type {
   Bed,
   Room,
   File,
-  Newsletter,
   NewsletterManager,
   NewsletterSubscriber,
   NewsletterMessage,
@@ -25,6 +24,7 @@ import type {
 import type { ZodObject, z } from 'zod';
 import type { JsonResource } from '#core/resource/JsonResource';
 import type { CampWithFreePlaces } from '#app/camp/camp.resource';
+import type { NewsletterWithOrganization } from '#app/newsletter/newsletter.resource';
 
 declare global {
   namespace Express {
@@ -50,7 +50,7 @@ declare global {
         user: UserModel | null;
         invitation: OrganizationInvitation | null;
       };
-      newsletter?: Newsletter;
+      newsletter?: NewsletterWithOrganization;
       newsletterManager?: NewsletterManager;
       newsletterMessage?: NewsletterMessage;
       newsletterSubscriber?: NewsletterSubscriber;

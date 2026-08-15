@@ -3,6 +3,8 @@ import type { Identifiable } from './Identifiable.js';
 export interface Newsletter extends Identifiable {
   /** The verified organization that owns the newsletter. */
   organizationId: string;
+  /** The owning organization's name, for display next to the newsletter. */
+  organizationName: string;
   name: string;
   description: string | null;
   replyTo: string | null;

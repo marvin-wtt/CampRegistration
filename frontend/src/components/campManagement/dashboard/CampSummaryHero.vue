@@ -52,6 +52,15 @@
           </h1>
           <div class="camp-meta">
             <q-chip
+              v-if="camp?.organizationName"
+              outline
+              icon="apartment"
+              :label="camp.organizationName"
+              class="meta-chip"
+            >
+              <q-tooltip>{{ t('organization') }}</q-tooltip>
+            </q-chip>
+            <q-chip
               outline
               icon="calendar_month"
               :label="dateRange"
@@ -553,6 +562,7 @@ function daysFromNow(date: string): number {
 <i18n lang="yaml" locale="en">
 confirmed: 'confirmed'
 campOverview: 'Camp overview'
+organization: 'Owning organization'
 ageRange: 'Ages {min}–{max}'
 capacity: 'Participant capacity'
 capacityUnset: 'No participant limit configured'
@@ -579,6 +589,7 @@ copyLink:
 <i18n lang="yaml" locale="de">
 confirmed: 'bestätigt'
 campOverview: 'Camp-Übersicht'
+organization: 'Besitzende Organisation'
 ageRange: 'Alter {min}–{max}'
 capacity: 'Teilnehmendenkapazität'
 capacityUnset: 'Kein Teilnehmendenlimit festgelegt'
@@ -605,6 +616,7 @@ copyLink:
 <i18n lang="yaml" locale="fr">
 confirmed: 'confirmés'
 campOverview: 'Aperçu du camp'
+organization: 'Organisation propriétaire'
 ageRange: 'De {min} à {max} ans'
 capacity: 'Capacité des participants'
 capacityUnset: 'Aucune limite de participants'
@@ -631,6 +643,7 @@ copyLink:
 <i18n lang="yaml" locale="pl">
 confirmed: 'potwierdzonych'
 campOverview: 'Przegląd obozu'
+organization: 'Organizacja właścicielska'
 ageRange: 'Wiek {min}–{max}'
 capacity: 'Limit uczestników'
 capacityUnset: 'Nie ustawiono limitu uczestników'
@@ -657,6 +670,7 @@ copyLink:
 <i18n lang="yaml" locale="cs">
 confirmed: 'potvrzených'
 campOverview: 'Přehled tábora'
+organization: 'Vlastnící organizace'
 ageRange: 'Věk {min}–{max}'
 capacity: 'Kapacita účastníků'
 capacityUnset: 'Limit účastníků není nastaven'

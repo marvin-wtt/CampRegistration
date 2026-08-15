@@ -52,6 +52,17 @@
                     {{ newsletter.name }}
                   </div>
                   <div
+                    class="row items-center q-gutter-x-xs text-caption text-grey-6 no-wrap"
+                  >
+                    <q-icon
+                      name="apartment"
+                      size="xs"
+                    />
+                    <span class="ellipsis">
+                      {{ newsletter.organizationName }}
+                    </span>
+                  </div>
+                  <div
                     v-if="newsletter.description"
                     class="text-body2 text-grey-6 q-mt-xs description-clamp"
                   >

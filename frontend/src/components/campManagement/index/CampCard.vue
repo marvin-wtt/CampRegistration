@@ -43,6 +43,19 @@
             {{ relLabel }}
           </span>
         </div>
+        <div class="mgmt-card__org">
+          <q-icon
+            name="apartment"
+            size="13px"
+          />
+          <span class="ellipsis">{{ camp.organizationName }}</span>
+          <q-tooltip
+            anchor="bottom start"
+            self="top start"
+          >
+            {{ t('organization', { organization: camp.organizationName }) }}
+          </q-tooltip>
+        </div>
       </div>
 
       <q-btn
@@ -627,6 +640,18 @@ async function withLoading(flag: Ref<boolean>, fn: () => Promise<void>) {
   color: var(--md3-primary);
 }
 
+.mgmt-card__org {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  min-width: 0;
+  margin-top: 2px;
+
+  color: var(--md3-on-surface-variant);
+  font-size: 12px;
+}
+
 .mgmt-card__more {
   flex-shrink: 0;
   color: var(--md3-on-surface-variant);
@@ -814,6 +839,7 @@ registration:
   manage: 'Manage registration'
 phase:
   ongoing: 'Ongoing'
+organization: 'Owned by {organization}'
 action:
   more: 'More actions'
 status:
@@ -846,6 +872,7 @@ registration:
   manage: 'Anmeldung verwalten'
 phase:
   ongoing: 'Laufend'
+organization: 'Gehört zu {organization}'
 action:
   more: 'Weitere Aktionen'
 status:
@@ -878,6 +905,7 @@ registration:
   manage: "Gérer l'inscription"
 phase:
   ongoing: 'En cours'
+organization: 'Appartient à {organization}'
 action:
   more: "Plus d'actions"
 status:
@@ -910,6 +938,7 @@ registration:
   manage: 'Zarządzaj rejestracją'
 phase:
   ongoing: 'W trakcie'
+organization: 'Należy do {organization}'
 action:
   more: 'Więcej akcji'
 status:
@@ -942,6 +971,7 @@ registration:
   manage: 'Spravovat registraci'
 phase:
   ongoing: 'Probíhá'
+organization: 'Patří organizaci {organization}'
 action:
   more: 'Další akce'
 status:

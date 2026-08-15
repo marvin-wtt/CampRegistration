@@ -301,6 +301,26 @@ describe(BASE, () => {
       });
     });
 
+    it('should include the owning organization', async () => {
+      const user = await UserFactory.create();
+      const accessToken = generateAccessToken(user);
+      const organization = await OrganizationFactory.create();
+      const newsletter = await NewsletterFactory.create({
+        organization: { connect: { id: organization.id } },
+        managers: { create: { userId: user.id, role: 'OWNER' } },
+      });
+
+      const { body } = await request()
+        .get(`${BASE}/${newsletter.id}`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body.data).toMatchObject({
+        organizationId: organization.id,
+        organizationName: organization.name,
+      });
+    });
+
     it('should respond with `401` when unauthenticated', async () => {
       const newsletter = await NewsletterFactory.create();
 
