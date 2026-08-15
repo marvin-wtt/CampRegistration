@@ -15,6 +15,7 @@ import task from './task';
 import organization from './organization';
 import organizationMember from './organization-member';
 import organizationCamps from './organization-camps';
+import organizationNewsletters from './organization-newsletters';
 
 export default {
   camp,
@@ -34,4 +35,5 @@ export default {
   organization,
   organizationMember,
   organizationCamps,
+  organizationNewsletters,
 };

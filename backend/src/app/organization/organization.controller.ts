@@ -8,11 +8,12 @@ import {
   OrganizationResource,
   OrganizationDetailsResource,
 } from './organization.resource.js';
-import { ORGANIZATION_NOT_EMPTY } from '@camp-registration/common/entities';
 import type { Organization } from '#generated/prisma/client.js';
 import validator from './organization.validation.js';
 import { CampService } from '#app/camp/camp.service';
 import { CampResource } from '#app/camp/camp.resource';
+import { NewsletterService } from '#app/newsletter/newsletter.service';
+import { NewsletterResource } from '#app/newsletter/newsletter.resource';
 import { RealtimeService } from '#core/realtime/RealtimeService';
 import { UserService } from '#app/user/user.service';
 import { OrganizationMemberService } from '#app/organizationMember/organization-member.service';
@@ -28,6 +29,8 @@ export class OrganizationController extends BaseController {
     @inject(OrganizationService)
     private readonly organizationService: OrganizationService,
     @inject(CampService) private readonly campService: CampService,
+    @inject(NewsletterService)
+    private readonly newsletterService: NewsletterService,
     @inject(RealtimeService)
     private readonly realtimeService: RealtimeService,
     @inject(UserService) private readonly userService: UserService,
@@ -63,6 +66,36 @@ export class OrganizationController extends BaseController {
 
     res.resource(
       CampResource.collection(camps).withCursor(nextCursor, limit, total),
+    );
+  }
+
+  /**
+   * The organization's own newsletters — the counterpart of `camps`, and
+   * unreachable without it for the same reason: an administrator holds
+   * `newsletter.view` on them but has no newsletter-manager record, so they
+   * never appear under `GET /newsletters`.
+   */
+  async newsletters(req: Request, res: Response) {
+    const organization = req.modelOrFail('organization');
+    const { query } = await req.validate(validator.newsletters);
+
+    const { newsletters, nextCursor, limit, total } =
+      await this.newsletterService.queryNewsletters(
+        { organizationId: organization.id },
+        {
+          cursor: query.cursor,
+          limit: query.limit,
+          sortBy: query.sortBy ?? 'createdAt',
+          sortType: query.sortType ?? 'desc',
+        },
+      );
+
+    res.resource(
+      NewsletterResource.collection(newsletters).withCursor(
+        nextCursor,
+        limit,
+        total,
+      ),
     );
   }
 
@@ -184,9 +217,6 @@ export class OrganizationController extends BaseController {
       throw new ApiError(
         httpStatus.CONFLICT,
         `The organization still owns ${camps.toString()} camp(s) and ${newsletters.toString()} newsletter(s). Move or delete them first.`,
-        true,
-        '',
-        ORGANIZATION_NOT_EMPTY,
       );
     }
 

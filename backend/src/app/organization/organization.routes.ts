@@ -48,12 +48,18 @@ export class OrganizationRouter extends ModuleRouter {
       controller(organizationController, 'destroy'),
     );
 
-    // The organization's camps. Its administrators hold camp permissions that
-    // no other listing would surface — see the controller.
+    // The organization's camps and newsletters. Its administrators hold
+    // permissions on both that no other listing would surface — see the
+    // controller.
     this.router.get(
       '/:organizationId/camps',
       guard(organizationMember('organization.camps.view')),
       controller(organizationController, 'camps'),
+    );
+    this.router.get(
+      '/:organizationId/newsletters',
+      guard(organizationMember('organization.newsletters.view')),
+      controller(organizationController, 'newsletters'),
     );
 
     // Resubmit after a rejection.

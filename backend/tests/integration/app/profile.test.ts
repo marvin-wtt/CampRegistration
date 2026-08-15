@@ -31,6 +31,7 @@ describe('/api/v1/profile', () => {
         role: 'USER',
         twoFactorEnabled: false,
         campAccess: [],
+        newsletterAccess: [],
         organizationAccess: [],
       });
     });
@@ -169,6 +170,7 @@ describe('/api/v1/profile', () => {
         role: 'USER',
         twoFactorEnabled: false,
         campAccess: [],
+        newsletterAccess: [],
         organizationAccess: [],
       });
     });

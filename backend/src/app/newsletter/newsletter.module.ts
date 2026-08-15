@@ -1,8 +1,9 @@
 import type { AppModule, AppRouter, BindOptions } from '#core/base/AppModule';
 import { NewsletterRouter } from './newsletter.routes.js';
-import { registerNewsletterScopeResolver } from './newsletter.guard.js';
+import { newsletterScopeResolver } from './newsletter.guard.js';
 import { NewsletterService } from './newsletter.service.js';
 import { NewsletterController } from './newsletter.controller.js';
+import type { ScopeResolvers } from '#core/permission.guard';
 import type { ScopedPermissions } from '@camp-registration/common/permissions';
 
 export class NewsletterModule implements AppModule {
@@ -11,8 +12,8 @@ export class NewsletterModule implements AppModule {
     options.bind(NewsletterController).toSelf().inSingletonScope();
   }
 
-  configure() {
-    registerNewsletterScopeResolver();
+  registerScopeResolvers(): ScopeResolvers {
+    return { newsletter: newsletterScopeResolver };
   }
 
   registerRoutes(router: AppRouter): void {

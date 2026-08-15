@@ -25,7 +25,7 @@ export interface PermissionRow {
  * A permission naming the scope itself (`camp.view`) falls into the group named
  * after the scope.
  */
-function splitPermission(
+export function splitPermission(
   scope: PermissionScope,
   permission: string,
 ): { group: string; action: string } {

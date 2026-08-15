@@ -3,12 +3,14 @@ import { injectable } from 'inversify';
 import { permissionRegistry } from '#core/permission-registry';
 import type {
   CampScopedPermission,
+  NewsletterPermission,
   OrganizationPermission,
   OrganizationRole,
 } from '@camp-registration/common/permissions';
 import {
   ORGANIZATION_CAMP_ACCESS_ROLES,
   ORGANIZATION_CAMP_PERMISSIONS,
+  ORGANIZATION_NEWSLETTER_PERMISSIONS,
 } from '@camp-registration/common/permissions';
 
 @injectable()
@@ -107,6 +109,27 @@ export class OrganizationMemberService extends BaseService {
     });
 
     return membership === null ? [] : ORGANIZATION_CAMP_PERMISSIONS;
+  }
+
+  /**
+   * The newsletter counterpart of `getOrganizationCampPermissions`. Empty for
+   * MEMBERs, for non-members, and for organizations that do not own the
+   * newsletter.
+   */
+  async getOrganizationNewsletterPermissions(
+    newsletterId: string,
+    userId: string,
+  ): Promise<readonly NewsletterPermission[]> {
+    const membership = await this.prisma.organizationMember.findFirst({
+      where: {
+        userId,
+        role: { in: [...ORGANIZATION_CAMP_ACCESS_ROLES] },
+        organization: { newsletters: { some: { id: newsletterId } } },
+      },
+      select: { id: true },
+    });
+
+    return membership === null ? [] : ORGANIZATION_NEWSLETTER_PERMISSIONS;
   }
 
   /** Whether the organization has an admin other than `excludeMemberId`. */

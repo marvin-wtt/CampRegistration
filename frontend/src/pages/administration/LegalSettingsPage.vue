@@ -86,7 +86,10 @@ import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import LegalDocumentEditor from '@/components/administration/legal/LegalDocumentEditor.vue';
 import { useLegalService } from '@/services/LegalService';
 import { useErrorExtractor } from '@/composables/serviceHandler';
+import { useRouteTab } from '@/composables/routeTab';
 import type { LegalDocument } from '@camp-registration/common/entities';
+
+const TABS = ['IMPRINT', 'PRIVACY_POLICY'] as const;
 
 const { t } = useI18n();
 const { fetchLegalDocuments } = useLegalService();
@@ -95,7 +98,7 @@ const { extractErrorText } = useErrorExtractor();
 const documents = ref<LegalDocument[]>([]);
 const loading = ref<boolean>(true);
 const error = ref<string | null>(null);
-const tab = ref<'IMPRINT' | 'PRIVACY_POLICY'>('IMPRINT');
+const tab = useRouteTab(TABS);
 
 const imprintEditorRef = ref<InstanceType<typeof LegalDocumentEditor> | null>(
   null,

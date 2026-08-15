@@ -6,8 +6,6 @@ import { BaseService } from '#core/base/BaseService';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service.js';
 
-export type { CampWithFreePlaces } from './camp.resource.js';
-
 type TableTemplateCreateData = OptionalByKeys<
   Prisma.TableTemplateCreateManyCampInput,
   'id'

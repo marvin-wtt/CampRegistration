@@ -5,7 +5,8 @@ import type {
   ModuleOptions,
 } from '#core/base/AppModule';
 import { CampManagerRouter } from '#app/campManager/camp-manager.routes';
-import { registerCampScopeResolver } from '#app/campManager/camp-manager.guard';
+import { campScopeResolver } from '#app/campManager/camp-manager.guard';
+import type { ScopeResolvers } from '#core/permission.guard';
 import type { ScopedPermissions } from '@camp-registration/common/permissions';
 import { CampManagerController } from '#app/campManager/camp-manager.controller';
 import { CampManagerService } from '#app/campManager/camp-manager.service';
@@ -20,8 +21,11 @@ export class CampManagerModule implements AppModule {
   }
 
   configure(_options: ModuleOptions): Promise<void> | void {
-    registerCampScopeResolver();
     resolve(MailableRegistry).register(CampManagerInvitationMessage);
+  }
+
+  registerScopeResolvers(): ScopeResolvers {
+    return { camp: campScopeResolver };
   }
 
   registerRoutes(router: AppRouter): void {

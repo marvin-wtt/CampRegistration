@@ -162,6 +162,7 @@ exports[`the assembled permission policy > grants organization roles exactly the
     "organization.members.edit",
     "organization.members.view",
     "organization.newsletters.create",
+    "organization.newsletters.view",
     "organization.view",
   ],
   "MEMBER": [

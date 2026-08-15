@@ -14,6 +14,7 @@ import { inject, injectable } from 'inversify';
  */
 export const profileAccessInclude = {
   campRoles: true,
+  newsletterManagers: true,
   twoFactor: { select: { confirmedAt: true } },
   organizationMembers: {
     include: {
@@ -21,10 +22,11 @@ export const profileAccessInclude = {
         select: {
           id: true,
           verificationStatus: true,
-          // Needed to project organization-derived camp access into
-          // `campAccess`, so the client gates UI exactly as the server gates
-          // requests.
+          // Needed to project organization-derived camp and newsletter access
+          // into `campAccess`/`newsletterAccess`, so the client gates UI
+          // exactly as the server gates requests.
           camps: { select: { id: true } },
+          newsletters: { select: { id: true } },
         },
       },
     },

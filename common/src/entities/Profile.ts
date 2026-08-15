@@ -1,5 +1,6 @@
 import type {
   CampScopedPermission,
+  NewsletterPermission,
   OrganizationPermission,
 } from '#permissions';
 import type { OrganizationRole } from './OrganizationMember.js';
@@ -13,6 +14,16 @@ interface CampAccess {
    */
   role: string;
   permissions: CampScopedPermission[];
+}
+
+interface NewsletterAccess {
+  newsletterId: string;
+  /**
+   * The newsletter-manager role, or the sentinel `'ORGANIZATION'` when the
+   * access is derived purely from an organization ADMIN membership.
+   */
+  role: string;
+  permissions: NewsletterPermission[];
 }
 
 interface OrganizationAccess {
@@ -33,6 +44,7 @@ export interface Profile {
   twoFactorEnabled: boolean;
   locale: string;
   campAccess: CampAccess[];
+  newsletterAccess: NewsletterAccess[];
   organizationAccess: OrganizationAccess[];
 }
 

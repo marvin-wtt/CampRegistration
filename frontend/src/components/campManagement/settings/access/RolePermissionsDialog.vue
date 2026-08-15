@@ -125,6 +125,40 @@
               </div>
             </div>
           </div>
+
+          <!-- Access that no camp role grants, so the matrix alone misleads. -->
+          <div class="org-note">
+            <q-icon
+              name="apartment"
+              size="20px"
+              class="org-note-icon"
+            />
+            <div class="org-note-body">
+              <div class="org-note-title">
+                {{ t('organization.title') }}
+              </div>
+              <div class="org-note-text">
+                {{ t('organization.description') }}
+              </div>
+              <div class="pm-actions org-note-actions">
+                <q-chip
+                  v-for="grant in organizationGrants"
+                  :key="grant.permission"
+                  dense
+                  class="pm-action-chip"
+                  :icon="actionIcon(grant.action)"
+                  :label="`${groupLabel(grant.group)}: ${actionLabel(grant.action)}`"
+                />
+              </div>
+              <div class="org-note-text org-note-limit">
+                <q-icon
+                  name="lock"
+                  size="14px"
+                />
+                {{ t('organization.limit') }}
+              </div>
+            </div>
+          </div>
         </div>
       </q-card-section>
     </q-card>
@@ -135,7 +169,11 @@
 import { computed, onMounted, ref } from 'vue';
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { usePermissionMatrix } from '@/composables/permissionMatrix';
+import {
+  splitPermission,
+  usePermissionMatrix,
+} from '@/composables/permissionMatrix';
+import { ORGANIZATION_CAMP_PERMISSIONS } from '@camp-registration/common/permissions';
 
 defineEmits([...useDialogPluginComponent.emits]);
 
@@ -217,6 +255,19 @@ const orderedRows = computed(() =>
       (bi === -1 ? GROUP_ORDER.length : bi)
     );
   }),
+);
+
+/**
+ * The fixed set an administrator of the owning organization holds on every camp
+ * it owns, without a manager record. Read from the shared constant the backend
+ * enforces rather than restated here, so the two cannot drift — it is
+ * deliberately absent from `GET /permissions`, which only serves role grants.
+ */
+const organizationGrants = computed(() =>
+  ORGANIZATION_CAMP_PERMISSIONS.map((permission) => ({
+    permission,
+    ...splitPermission('camp', permission),
+  })),
 );
 
 const KNOWN_ROLE_CLASSES = ['director', 'coordinator', 'counselor', 'viewer'];
@@ -380,6 +431,53 @@ function actionIcon(action: string): string {
   color: var(--md3-outline);
 }
 
+.org-note {
+  display: flex;
+  gap: 12px;
+
+  margin-top: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--md3-outline-variant);
+  border-radius: 16px;
+  background: var(--md3-surface-container-low);
+}
+
+.org-note-icon {
+  flex: none;
+  margin-top: 2px;
+  color: var(--md3-primary);
+}
+
+.org-note-body {
+  min-width: 0;
+}
+
+.org-note-title {
+  color: var(--md3-on-surface);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.org-note-text {
+  margin-top: 4px;
+  color: var(--md3-on-surface-variant);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.org-note-actions {
+  justify-content: flex-start;
+  margin-top: 10px;
+}
+
+.org-note-limit {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-weight: 500;
+}
+
 .md3-chip {
   height: 24px;
   margin: 0;
@@ -504,6 +602,11 @@ permissions:
     create: 'Create'
     edit: 'Edit'
     delete: 'Delete'
+
+organization:
+  title: 'Organization administrators have partial access'
+  description: 'Administrators of the organization that owns this camp always have the following access, even without being listed as a member. It cannot be removed here.'
+  limit: 'They can never see registrations, participants or their personal data.'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -534,6 +637,11 @@ permissions:
     create: 'Erstellen'
     edit: 'Bearbeiten'
     delete: 'Löschen'
+
+organization:
+  title: 'Organisations-Administratoren haben eingeschränkten Zugriff'
+  description: 'Administratoren der Organisation, der dieses Camp gehört, haben immer den folgenden Zugriff, auch ohne als Mitglied aufgeführt zu sein. Er kann hier nicht entzogen werden.'
+  limit: 'Sie können niemals Anmeldungen, Teilnehmer oder deren personenbezogene Daten einsehen.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -564,6 +672,11 @@ permissions:
     create: 'Créer'
     edit: 'Modifier'
     delete: 'Supprimer'
+
+organization:
+  title: "Les administrateurs de l'organisation ont un accès partiel"
+  description: "Les administrateurs de l'organisation propriétaire de ce camp disposent toujours des accès suivants, même sans figurer parmi les membres. Ils ne peuvent pas être retirés ici."
+  limit: 'Ils ne peuvent jamais consulter les inscriptions, les participants ni leurs données personnelles.'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -594,6 +707,11 @@ permissions:
     create: 'Tworzenie'
     edit: 'Edycja'
     delete: 'Usuwanie'
+
+organization:
+  title: 'Administratorzy organizacji mają częściowy dostęp'
+  description: 'Administratorzy organizacji będącej właścicielem tego obozu zawsze mają poniższy dostęp, nawet jeśli nie są wymienieni jako członkowie. Nie można go tutaj odebrać.'
+  limit: 'Nigdy nie mogą zobaczyć rejestracji, uczestników ani ich danych osobowych.'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -624,4 +742,9 @@ permissions:
     create: 'Vytvořit'
     edit: 'Upravit'
     delete: 'Smazat'
+
+organization:
+  title: 'Správci organizace mají částečný přístup'
+  description: 'Správci organizace, která vlastní tento tábor, mají vždy následující přístup, i když nejsou uvedeni jako členové. Zde jej nelze odebrat.'
+  limit: 'Nikdy nemohou vidět registrace, účastníky ani jejich osobní údaje.'
 </i18n>

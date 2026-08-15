@@ -5,6 +5,7 @@ import { OrganizationMemberService } from '#app/organizationMember/organization-
 import { permissionRegistry } from '#core/permission-registry';
 import {
   ORGANIZATION_CAMP_PERMISSIONS,
+  ORGANIZATION_NEWSLETTER_PERMISSIONS,
   type Permission,
 } from '@camp-registration/common/permissions';
 import type { CampManager } from '#generated/prisma/client.js';
@@ -174,6 +175,18 @@ describe('ORGANIZATION_CAMP_PERMISSIONS', () => {
       'camp.view',
       'camp.edit',
       'camp.managers.view',
+    ]);
+  });
+});
+
+describe('ORGANIZATION_NEWSLETTER_PERMISSIONS', () => {
+  it('grants only viewing the newsletter and seeing its managers', () => {
+    // Same privacy review as the camp set. Subscribers are personal data and
+    // `newsletter.messages.*` would let an owner read or send the
+    // organization's mail without ever being made a manager.
+    expect([...ORGANIZATION_NEWSLETTER_PERMISSIONS]).toEqual<Permission[]>([
+      'newsletter.view',
+      'newsletter.managers.view',
     ]);
   });
 });

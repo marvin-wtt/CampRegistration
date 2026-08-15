@@ -3,6 +3,7 @@ import type {
   PermissionScope,
   ScopePermission,
 } from '@camp-registration/common/permissions';
+import { PERMISSION_SCOPES } from '@camp-registration/common/permissions';
 import type { GuardFn } from '#core/guard';
 
 /**
@@ -23,13 +24,42 @@ export interface ScopeResolver<S extends PermissionScope> {
   ): Promise<ReadonlySet<ScopePermission<S>> | null>;
 }
 
+/** What a module returns from `registerScopeResolvers()`. */
+export type ScopeResolvers = {
+  [S in PermissionScope]?: ScopeResolver<S>;
+};
+
 const resolvers = new Map<PermissionScope, ScopeResolver<PermissionScope>>();
 
+/**
+ * Exactly one module owns each scope, so a second registration is a wiring
+ * mistake rather than an override — unlike the permission registry, which is
+ * deliberately additive.
+ */
 export function registerScopeResolver<S extends PermissionScope>(
   scope: S,
   resolver: ScopeResolver<S>,
 ): void {
+  if (resolvers.has(scope)) {
+    throw new Error(`Duplicate permission resolver for scope '${scope}'`);
+  }
+
   resolvers.set(scope, resolver);
+}
+
+/**
+ * Fails the boot of an app whose scopes are not all wired. Without it a missing
+ * resolver surfaces as a 500 on the first request to guard that scope, which
+ * may be long after deploy and only on some routes.
+ */
+export function assertScopeResolversComplete(): void {
+  const missing = PERMISSION_SCOPES.filter((scope) => !resolvers.has(scope));
+
+  if (missing.length > 0) {
+    throw new Error(
+      `No permission resolver registered for scope(s): ${missing.join(', ')}`,
+    );
+  }
 }
 
 /** Test seam — the resolver map is a boot-time singleton like the registry. */

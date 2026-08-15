@@ -17,9 +17,9 @@ const BASE = '/api/v1/newsletters';
 const NEWSLETTER_ORGANIZATION_ID = '01K9ATF1H9KD1K6H12F3YK8NWZ';
 
 /**
- * Creating a newsletter now requires a verified organization named in the body.
- * These tests authenticate as a system administrator, who bypasses the
- * membership check but not the verification one.
+ * Creating a newsletter requires an organization named in the body, verified or
+ * not. These tests authenticate as a system administrator, who bypasses the
+ * membership check.
  */
 const createOrganizationAdmin = async (
   verificationStatus: 'PENDING' | 'VERIFIED' | 'REJECTED' = 'VERIFIED',
@@ -226,9 +226,9 @@ describe(BASE, () => {
         .expect(400);
     });
 
-    it('should respond with `403` when the organization is not verified', async () => {
-      // A newsletter has no draft state, so it needs a moderated organization
-      // outright — unlike a camp, which may be prepared as a private draft.
+    it('should let an unverified organization create one', async () => {
+      // Like a camp, a newsletter may be set up before moderation — only
+      // sending is gated, by `newsletterOrganizationVerified`.
       const { accessToken } = await createOrganizationAdmin('PENDING');
 
       await request()
@@ -238,7 +238,7 @@ describe(BASE, () => {
           name: 'My Newsletter',
         })
         .auth(accessToken, { type: 'bearer' })
-        .expect(403);
+        .expect(201);
     });
 
     it('should let a member of a verified organization create one', async () => {

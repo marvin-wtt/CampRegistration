@@ -1,6 +1,7 @@
 import { api } from '@/services/api';
 import type {
   Camp,
+  Newsletter,
   Organization,
   OrganizationCreateData,
   OrganizationDetails,
@@ -87,6 +88,19 @@ export function useOrganizationService() {
     return response?.data?.data;
   }
 
+  /**
+   * The organization's own newsletters. A dedicated endpoint for the same
+   * reason as the camps one: `GET /newsletters` only returns newsletters the
+   * user manages directly.
+   */
+  async function fetchOrganizationNewsletters(
+    id: string,
+  ): Promise<Newsletter[]> {
+    const response = await api.get(`organizations/${id}/newsletters/`);
+
+    return response?.data?.data;
+  }
+
   async function moveCampToOrganization(
     campId: string,
     organizationId: string,
@@ -108,6 +122,7 @@ export function useOrganizationService() {
     submitOrganizationVerification,
     reviewOrganization,
     fetchOrganizationCamps,
+    fetchOrganizationNewsletters,
     moveCampToOrganization,
   };
 }

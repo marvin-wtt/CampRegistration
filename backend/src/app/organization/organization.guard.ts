@@ -2,11 +2,7 @@ import type { Request } from 'express';
 import type { ScopePermission } from '@camp-registration/common/permissions';
 import { resolve } from '#core/ioc/container';
 import type { GuardFn } from '#core/guard';
-import {
-  registerScopeResolver,
-  scoped,
-  type ScopeResolver,
-} from '#core/permission.guard';
+import { scoped, type ScopeResolver } from '#core/permission.guard';
 import { OrganizationMemberService } from '#app/organizationMember/organization-member.service';
 
 export const organizationScopeResolver: ScopeResolver<'organization'> = {
@@ -18,10 +14,6 @@ export const organizationScopeResolver: ScopeResolver<'organization'> = {
     );
   },
 };
-
-export function registerOrganizationScopeResolver(): void {
-  registerScopeResolver('organization', organizationScopeResolver);
-}
 
 export const organizationMember = (
   permission: ScopePermission<'organization'>,

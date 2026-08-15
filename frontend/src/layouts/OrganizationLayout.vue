@@ -57,11 +57,25 @@ const navigationItems = computed<NavigationItemProps<'organization'>[]>(() => {
 
   const items: OrganizationNavigationItem[] = [
     {
+      name: 'dashboard',
+      label: t('nav.dashboard'),
+      icon: 'dashboard',
+      to: { name: 'management.organization.dashboard' },
+      permission: 'organization.view',
+    },
+    {
       name: 'camps',
       label: t('nav.camps'),
       icon: 'holiday_village',
       to: { name: 'management.organization.camps' },
       permission: 'organization.camps.view',
+    },
+    {
+      name: 'newsletters',
+      label: t('nav.newsletters'),
+      icon: 'mail',
+      to: { name: 'management.organization.newsletters' },
+      permission: 'organization.newsletters.view',
     },
     {
       name: 'members',
@@ -107,7 +121,9 @@ onMounted(async () => {
 <i18n lang="yaml" locale="en">
 title: 'Organizations'
 nav:
+  dashboard: 'Overview'
   camps: 'Camps'
+  newsletters: 'Newsletters'
   members: 'Members'
   verification: 'Verification'
   settings: 'Settings'
@@ -116,7 +132,9 @@ nav:
 <i18n lang="yaml" locale="de">
 title: 'Organisationen'
 nav:
+  dashboard: 'Übersicht'
   camps: 'Camps'
+  newsletters: 'Newsletter'
   members: 'Mitglieder'
   verification: 'Verifizierung'
   settings: 'Einstellungen'
@@ -125,7 +143,9 @@ nav:
 <i18n lang="yaml" locale="fr">
 title: 'Organisations'
 nav:
+  dashboard: 'Aperçu'
   camps: 'Camps'
+  newsletters: 'Newsletters'
   members: 'Membres'
   verification: 'Vérification'
   settings: 'Paramètres'
@@ -134,7 +154,9 @@ nav:
 <i18n lang="yaml" locale="pl">
 title: 'Organizacje'
 nav:
+  dashboard: 'Przegląd'
   camps: 'Obozy'
+  newsletters: 'Newslettery'
   members: 'Członkowie'
   verification: 'Weryfikacja'
   settings: 'Ustawienia'
@@ -143,7 +165,9 @@ nav:
 <i18n lang="yaml" locale="cs">
 title: 'Organizace'
 nav:
+  dashboard: 'Přehled'
   camps: 'Tábory'
+  newsletters: 'Newslettery'
   members: 'Členové'
   verification: 'Ověření'
   settings: 'Nastavení'

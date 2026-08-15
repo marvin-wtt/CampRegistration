@@ -249,13 +249,25 @@ const routes: RouteRecordRaw[] = [
       {
         path: ':organizationId',
         name: 'management.organization',
-        redirect: { name: 'management.organization.members' },
+        redirect: { name: 'management.organization.dashboard' },
         children: [
+          {
+            path: 'dashboard',
+            name: 'management.organization.dashboard',
+            component: () =>
+              import('@/pages/organization/OrganizationDashboardPage.vue'),
+          },
           {
             path: 'camps',
             name: 'management.organization.camps',
             component: () =>
               import('@/pages/organization/OrganizationCampsPage.vue'),
+          },
+          {
+            path: 'newsletters',
+            name: 'management.organization.newsletters',
+            component: () =>
+              import('@/pages/organization/OrganizationNewslettersPage.vue'),
           },
           {
             path: 'members',

@@ -3,11 +3,7 @@ import type { Request } from 'express';
 import type { ScopePermission } from '@camp-registration/common/permissions';
 import { resolve } from '#core/ioc/container';
 import { admin, type GuardFn } from '#core/guard';
-import {
-  registerScopeResolver,
-  scoped,
-  type ScopeResolver,
-} from '#core/permission.guard';
+import { scoped, type ScopeResolver } from '#core/permission.guard';
 import type { SubscriberResolver } from '#app/realtime/realtime.stream';
 
 /**
@@ -25,10 +21,6 @@ export const campScopeResolver: ScopeResolver<'camp'> = {
     return authorization?.permissions ?? null;
   },
 };
-
-export function registerCampScopeResolver(): void {
-  registerScopeResolver('camp', campScopeResolver);
-}
 
 export const campManager = (permission: ScopePermission<'camp'>): GuardFn =>
   scoped('camp', permission);

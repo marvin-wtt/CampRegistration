@@ -74,10 +74,6 @@ export class CampManagerService extends BaseService {
     return {
       managerId: active?.id ?? '',
       permissions: new Set([...managerPermissions, ...organizationPermissions]),
-      // Keep the record's expiry even when organization permissions also apply.
-      // Clearing it would let the *wider* manager set keep serving an open
-      // stream past expiry; instead the stream closes and the reconnect
-      // re-resolves the user down to the organization-only set.
       expiresAt: active?.expiresAt ?? null,
       revalidate: organizationPermissions.length > 0,
     };

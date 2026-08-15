@@ -6,7 +6,9 @@ import { injectable } from 'inversify';
 // `satisfies` rather than an annotation, so callers keep the two selected
 // fields instead of inferring the full Organization — see `camp.service`.
 const includeOrganization = {
-  organization: { select: { id: true, name: true } },
+  organization: {
+    select: { id: true, name: true, verificationStatus: true },
+  },
 } satisfies Prisma.NewsletterInclude;
 
 @injectable()
@@ -19,7 +21,7 @@ export class NewsletterService extends BaseService {
   }
 
   async queryNewsletters(
-    filter: { name?: string } = {},
+    filter: { name?: string; organizationId?: string } = {},
     options: {
       limit?: number;
       cursor?: string;
@@ -33,6 +35,7 @@ export class NewsletterService extends BaseService {
 
     const where: Prisma.NewsletterWhereInput = {
       name: filter.name ? { contains: filter.name } : undefined,
+      organizationId: filter.organizationId,
     };
 
     const items = await this.prisma.newsletter.findMany({

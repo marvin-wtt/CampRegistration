@@ -8,13 +8,15 @@ import {
   campManager,
   campManagerSelf,
   campManagerSubscriber,
-  registerCampScopeResolver,
+  campScopeResolver,
 } from '#app/campManager/camp-manager.guard';
+import { registerScopeResolver } from '#core/permission.guard';
 import { RESOURCE_VIEW_PERMISSION } from '@camp-registration/common/realtime';
 
 // `campManager()` is an alias of the generic `scoped('camp', …)` guard, which
-// looks the camp resolver up in the boot-time registry.
-registerCampScopeResolver();
+// looks the camp resolver up in the boot-time registry. `boot()` does not run
+// here, so stand the one scope under test up by hand.
+registerScopeResolver('camp', campScopeResolver);
 
 const managerService = mock<CampManagerService>();
 

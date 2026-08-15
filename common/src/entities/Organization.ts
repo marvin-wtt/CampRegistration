@@ -42,9 +42,6 @@ export interface OrganizationDetails extends Organization {
   ownedNewsletters: number;
 }
 
-/** Returned as `errorCode` when a delete is refused because it still owns things. */
-export const ORGANIZATION_NOT_EMPTY = 'ORGANIZATION_NOT_EMPTY';
-
 /**
  * Fields describing the legal entity that was actually vetted. Changing any of
  * them sends the organization back to PENDING for re-review.

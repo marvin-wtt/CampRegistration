@@ -1,7 +1,6 @@
 import express from 'express';
 import type {
   User as UserModel,
-  Camp,
   Registration,
   TableTemplate,
   Message,
@@ -23,8 +22,8 @@ import type {
 } from '../../src/generated/prisma/client.js';
 import type { ZodObject, z } from 'zod';
 import type { JsonResource } from '#core/resource/JsonResource';
-import type { CampWithFreePlaces } from '#app/camp/camp.resource';
-import type { NewsletterWithOrganization } from '#app/newsletter/newsletter.resource';
+import type { CampWithFreePlaces } from '#app/camp/camp.types';
+import type { NewsletterWithOrganization } from '#app/newsletter/newsletter.types';
 
 declare global {
   namespace Express {

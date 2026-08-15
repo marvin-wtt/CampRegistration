@@ -101,6 +101,10 @@ class ExampleModule implements AppModule {
   registerPermissions(): ScopedPermissions {
     /* RBAC, keyed by scope: { camp?, newsletter?, organization? } */
   }
+
+    registerScopeResolvers(): ScopeResolvers {
+        /* how a request becomes a permission set, for scopes this module owns */
+    }
   registerJobs(scheduler: JobScheduler): void {
     /* recurring cron jobs */
   }
@@ -170,7 +174,10 @@ export interface PermissionScopes {
   snapshots the assembled result.
 - **Guard**: `scoped(scope, permission)` (`#core/permission.guard`) reads the bound model named by the scope's
   `ScopeResolver` and asks it for the user's permission set. `campManager(p)`, `newsletterManager(p)` and
-  `organizationMember(p)` are one-line aliases of it. Each owning module registers its resolver in `configure()`.
+  `organizationMember(p)` are one-line aliases of it. The owning module declares its resolver by returning it from
+  `registerScopeResolvers()`; `boot.ts` registers each one and then calls `assertScopeResolversComplete()`, so a scope
+  left unwired fails the boot instead of 500-ing on the first guarded request. Exactly one module owns a scope —
+  registering a second resolver for it throws.
 - **Resolve once per scope**: `CampManagerService.getManagerAuthorization`,
   `NewsletterManagerService.getManagerPermissions` and
   `OrganizationMemberService.getMemberPermissions` are the only places their scope's permissions are computed; the
@@ -231,15 +238,23 @@ Camps and newsletters are owned by an `Organization`, moderated by system admini
   arrives in the body and guards run before validation, so
   `organizationFromBody()` binds it as the `organization` model ahead of
   `guard(organizationMember(…))`.
-- An unverified organization may build camps freely, publication settings included — visibility is **derived at read
-  time**, never gated at write time. The three gates are
-  `buildCampWhere` (public listing), the `show` route guard, and `registrationOpen`
-  combined with `campOrganizationVerified` (registrations). Management UI reads
-  `Camp.organizationVerificationStatus` to explain why a camp isn't reaching anyone.
+- An unverified organization may build camps and newsletters freely, publication settings included — reach is **gated at
+  the outward-facing action**, never at write time. The gates are
+  `buildCampWhere` (public listing), the camp `show` route guard, `registrationOpen`
+  combined with `campOrganizationVerified` (registrations), and
+  `newsletterOrganizationVerified` (sending newsletter messages). Management UI reads
+  `Camp.organizationVerificationStatus` / `Newsletter.organizationVerificationStatus` to explain why a camp isn't
+  reaching anyone or why sending is disabled.
 - Organization `ADMIN`s hold exactly `ORGANIZATION_CAMP_PERMISSIONS`
   (`camp.view`, `camp.edit`, `camp.managers.view`) on every camp their organization owns, merged in
-  `CampManagerService.getManagerAuthorization()`. **Never extend that constant to registration data** — a test asserts
-  its exact contents.
+  `CampManagerService.getManagerAuthorization()`, and exactly `ORGANIZATION_NEWSLETTER_PERMISSIONS`
+  (`newsletter.view`, `newsletter.managers.view`) on every newsletter it owns, merged in
+  `NewsletterManagerService.getManagerPermissions()`. **Never extend either constant to personal data** — registrations
+  for camps, subscribers for newsletters — nor to `newsletter.messages.*`; tests assert both sets' exact contents.
+- Those implicit grants carry no manager record, so the owning entities never appear under
+  `GET /camps?view=assigned` or `GET /newsletters`. `GET /organizations/:id/camps` and
+  `GET /organizations/:id/newsletters` exist to make them reachable — add the matching listing whenever a new implicit
+  grant is introduced, or the permission is unreachable outside a direct link.
 
 ### Realtime (SSE live updates)
 
@@ -370,7 +385,9 @@ literals for the SurveyJS theme editor, which can't parse `var()`/`color-mix()`.
 6. **InversifyJS**: every new service needs `@injectable()` and registration in `bindContainers`
 7. **Permissions**: use RBAC guards, not manual role checks
 8. **Organizations**: camps and newsletters need an `organizationId`; an unverified org's camps are hidden and refuse
-   registrations, but that is derived at read time — don't add write-time publication gates. Org `ADMIN`s hold only
-   `ORGANIZATION_CAMP_PERMISSIONS` on their org's camps — never registration data
+   registrations and its newsletters refuse to send, but that is gated at the outward-facing action — don't add
+   write-time publication gates. Org `ADMIN`s hold only
+   `ORGANIZATION_CAMP_PERMISSIONS` on their org's camps and `ORGANIZATION_NEWSLETTER_PERMISSIONS` on its newsletters —
+   never registrations, never subscribers
 9. **MD3 colors**: style with `var(--md3-*)` tokens (never hardcoded hex/light-dark colors); use `<m-btn>`/`<m-toolbar>`
    and `.rounded-*`/`.elevation-*` utilities. Don't edit the patched `@anoyomoose/q2-fresh-paint-md3e` in `node_modules`

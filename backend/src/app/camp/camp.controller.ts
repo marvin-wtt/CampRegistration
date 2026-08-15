@@ -153,14 +153,6 @@ export class CampController extends BaseController {
     res.status(httpStatus.CREATED).resource(new CampDetailsResource(camp));
   }
 
-  /**
-   * Moves a camp to another organization. Administrators only.
-   *
-   * Moving a public camp under an unverified organization neither refuses nor
-   * rewrites `public`: the camp drops out of the directory for as long as the
-   * new owner is unvetted, and comes back if it is verified. Only a rejection
-   * takes publication away for good.
-   */
   async updateOrganization(req: Request, res: Response) {
     const camp = req.modelOrFail('camp');
     const organization = req.modelOrFail('organization');

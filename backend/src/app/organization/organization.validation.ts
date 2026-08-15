@@ -87,6 +87,20 @@ const camps = z.object({
     .partial(),
 });
 
+const newsletters = z.object({
+  params: z.object({
+    organizationId: z.ulid(),
+  }),
+  query: z
+    .object({
+      cursor: z.ulid(),
+      limit: z.coerce.number().int().positive().max(100),
+      sortBy: z.enum(['name', 'createdAt', 'updatedAt']),
+      sortType: z.enum(['asc', 'desc']),
+    })
+    .partial(),
+});
+
 const review = z.object({
   params: z.object({
     organizationId: z.ulid(),
@@ -106,4 +120,5 @@ export default {
   submitVerification,
   review,
   camps,
+  newsletters,
 };
