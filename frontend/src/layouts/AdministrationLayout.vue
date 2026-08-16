@@ -2,33 +2,31 @@
   <general-layout
     :navigation-items="items"
     :title="t('title')"
-    :back-to="backTo"
-  />
+  >
+    <template #toolbar>
+      <workspace-switcher />
+    </template>
+
+    <template #navigation>
+      <workspace-switcher rail />
+    </template>
+  </general-layout>
 </template>
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
 import type { NavigationItemProps } from '@/components/NavigationItemProps.ts';
 import GeneralLayout from '@/components/layout/GeneralLayout.vue';
+import WorkspaceSwitcher from '@/components/layout/WorkspaceSwitcher.vue';
 import { computed, onMounted } from 'vue';
 import { useAuthStore } from '@/stores/auth-store';
-import { useRoute, type RouteLocationRaw } from 'vue-router';
 
 const { t } = useI18n();
-const route = useRoute();
 
 const authStore = useAuthStore();
 
 onMounted(async () => {
   await authStore.init();
-});
-
-const backTo = computed<RouteLocationRaw>(() => {
-  if (route.name === 'administration') {
-    return { name: 'management' };
-  }
-
-  return { name: 'administration' };
 });
 
 const items = computed<NavigationItemProps[]>(() => [

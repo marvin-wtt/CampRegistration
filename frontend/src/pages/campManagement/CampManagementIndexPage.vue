@@ -19,6 +19,7 @@
 
         <q-btn
           :label="quasar.screen.gt.xs ? t('action.create') : ''"
+          :aria-label="t('action.create')"
           color="primary"
           icon="add"
           unelevated

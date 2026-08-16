@@ -5,15 +5,22 @@
     class="row justify-center"
   >
     <div class="column col-sm-10 col-md-9 col-lg-8 col-12">
-      <div class="row justify-between items-center q-mb-lg">
-        <div class="text-h5 text-weight-medium page-title">
-          {{ t('title') }}
+      <div class="row items-start justify-between no-wrap q-mb-lg">
+        <div class="col page-title">
+          <div class="text-h5 text-weight-medium">
+            {{ t('title') }}
+          </div>
+          <div class="text-body2 text-grey-6 q-mt-xs">
+            {{ t('subtitle') }}
+          </div>
         </div>
         <q-btn
           color="primary"
           icon="add"
-          :label="t('action.create')"
-          rounded
+          :label="quasar.screen.gt.xs ? t('action.create') : ''"
+          :aria-label="t('action.create')"
+          :round="quasar.screen.lt.sm"
+          :rounded="quasar.screen.gt.xs"
           unelevated
           no-caps
           :disable="!isAdmin"
@@ -226,6 +233,7 @@ function showDeleteDialog(newsletter: Newsletter) {
 
 <i18n lang="yaml" locale="en">
 title: 'Newsletters'
+subtitle: 'Create newsletters and send messages to your subscribers.'
 empty: 'No newsletters yet. Create one to get started.'
 adminOnly: 'Only administrators can create newsletters.'
 action:
@@ -241,6 +249,7 @@ dialog:
 
 <i18n lang="yaml" locale="de">
 title: 'Newsletter'
+subtitle: 'Newsletter erstellen und Nachrichten an Abonnenten senden.'
 empty: 'Noch keine Newsletter. Erstellen Sie einen, um loszulegen.'
 adminOnly: 'Nur Administratoren können Newsletter erstellen.'
 action:
@@ -256,6 +265,7 @@ dialog:
 
 <i18n lang="yaml" locale="fr">
 title: 'Newsletters'
+subtitle: 'Créer des newsletters et envoyer des messages à vos abonnés.'
 empty: 'Aucune newsletter pour le moment. Créez-en une pour commencer.'
 adminOnly: 'Seuls les administrateurs peuvent créer des newsletters.'
 action:
@@ -271,6 +281,7 @@ dialog:
 
 <i18n lang="yaml" locale="pl">
 title: 'Newslettery'
+subtitle: 'Twórz newslettery i wysyłaj wiadomości do swoich subskrybentów.'
 empty: 'Brak newsletterów. Utwórz pierwszy, aby zacząć.'
 adminOnly: 'Tylko administratorzy mogą tworzyć newslettery.'
 action:
@@ -286,6 +297,7 @@ dialog:
 
 <i18n lang="yaml" locale="cs">
 title: 'Newslettery'
+subtitle: 'Vytvářejte newslettery a odesílejte zprávy svým odběratelům.'
 empty: 'Zatím žádné newslettery. Vytvořte první a začněte.'
 adminOnly: 'Newslettery mohou vytvářet pouze správci.'
 action:

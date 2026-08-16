@@ -134,12 +134,7 @@ const routes: RouteRecordRaw[] = [
     children: [
       {
         path: '',
-        name: 'management',
-        meta: {
-          hideDrawer: true,
-        },
-        component: () =>
-          import('@/pages/campManagement/ManagementIndexPage.vue'),
+        redirect: { name: 'management.camps' },
       },
       {
         path: 'camps',
@@ -149,9 +144,6 @@ const routes: RouteRecordRaw[] = [
             component: () =>
               import('@/pages/campManagement/CampManagementIndexPage.vue'),
             name: 'management.camps',
-            meta: {
-              hideDrawer: true,
-            },
           },
           {
             path: ':campId',
@@ -341,9 +333,6 @@ const routes: RouteRecordRaw[] = [
       {
         path: '',
         name: 'administration',
-        meta: {
-          hideDrawer: true,
-        },
         component: () =>
           import('@/pages/administration/AdministrationIndexPage.vue'),
       },

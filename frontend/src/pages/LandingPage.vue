@@ -235,7 +235,7 @@ const organizerCtaLabel = computed<string>(() =>
 );
 
 const organizerCtaTo = computed(() =>
-  user.value ? { name: 'management' } : { name: 'register' },
+  user.value ? { name: 'management.camps' } : { name: 'register' },
 );
 
 const features = [

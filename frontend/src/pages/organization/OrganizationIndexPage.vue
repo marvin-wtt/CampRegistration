@@ -5,15 +5,22 @@
     class="row justify-center"
   >
     <div class="column col-sm-10 col-md-9 col-lg-8 col-12">
-      <div class="row justify-between items-center q-mb-lg">
-        <div class="text-h5 text-weight-medium page-title">
-          {{ t('title') }}
+      <div class="row items-start justify-between no-wrap q-mb-lg">
+        <div class="col page-title">
+          <div class="text-h5 text-weight-medium">
+            {{ t('title') }}
+          </div>
+          <div class="text-body2 text-grey-6 q-mt-xs">
+            {{ t('subtitle') }}
+          </div>
         </div>
         <q-btn
           color="primary"
           icon="add"
-          :label="t('action.create')"
-          rounded
+          :label="quasar.screen.gt.xs ? t('action.create') : ''"
+          :aria-label="t('action.create')"
+          :round="quasar.screen.lt.sm"
+          :rounded="quasar.screen.gt.xs"
           unelevated
           no-caps
           data-test="organization-create"
@@ -151,6 +158,7 @@ onMounted(async () => {
 
 <i18n lang="yaml" locale="en">
 title: 'Organizations'
+subtitle: 'Manage the organizations you run camps and newsletters under.'
 action:
   create: 'Create organization'
 status:
@@ -164,6 +172,7 @@ empty:
 
 <i18n lang="yaml" locale="de">
 title: 'Organisationen'
+subtitle: 'Verwalte die Organisationen, unter denen du Camps und Newsletter betreibst.'
 action:
   create: 'Organisation erstellen'
 status:
@@ -177,6 +186,7 @@ empty:
 
 <i18n lang="yaml" locale="fr">
 title: 'Organisations'
+subtitle: 'Gérez les organisations sous lesquelles vous organisez camps et newsletters.'
 action:
   create: 'Créer une organisation'
 status:
@@ -190,6 +200,7 @@ empty:
 
 <i18n lang="yaml" locale="pl">
 title: 'Organizacje'
+subtitle: 'Zarządzaj organizacjami, w ramach których prowadzisz obozy i newslettery.'
 action:
   create: 'Utwórz organizację'
 status:
@@ -203,6 +214,7 @@ empty:
 
 <i18n lang="yaml" locale="cs">
 title: 'Organizace'
+subtitle: 'Spravuj organizace, pod kterými pořádáš tábory a newslettery.'
 action:
   create: 'Vytvořit organizaci'
 status:

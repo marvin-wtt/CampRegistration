@@ -1,10 +1,17 @@
 <template>
   <general-layout
     :title="title"
-    :back-to="backTo"
     :navigation-items="navigationItems"
     :loading="isLoading"
-  />
+  >
+    <template #toolbar>
+      <workspace-switcher />
+    </template>
+
+    <template #navigation>
+      <workspace-switcher rail />
+    </template>
+  </general-layout>
 </template>
 
 <script lang="ts" setup>
@@ -12,8 +19,9 @@ import { computed, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import GeneralLayout from '@/components/layout/GeneralLayout.vue';
 import { useAuthStore } from '@/stores/auth-store';
-import { useRoute, type RouteLocationRaw } from 'vue-router';
+import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
+import WorkspaceSwitcher from '@/components/layout/WorkspaceSwitcher.vue';
 import { useOrganizationDetailsStore } from '@/stores/organization-details-store';
 import { useOrganizationPermissions } from '@/composables/organizationPermissions';
 import type { NavigationItemProps } from '@/components/NavigationItemProps';
@@ -33,14 +41,6 @@ const organizationId = computed(
 const title = computed(() =>
   organizationId.value ? (organization.value?.name ?? '') : t('title'),
 );
-
-const backTo = computed<RouteLocationRaw>(() => {
-  if (route.name === 'management.organizations') {
-    return { name: 'management' };
-  }
-
-  return { name: 'management.organizations' };
-});
 
 interface OrganizationNavigationItem {
   name: string;

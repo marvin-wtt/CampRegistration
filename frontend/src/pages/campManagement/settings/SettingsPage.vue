@@ -11,6 +11,14 @@
         <div class="text-body2 text-grey-6 q-mt-xs">
           {{ t('subtitle') }}
         </div>
+        <owning-organization-chip
+          v-if="camp"
+          class="q-mt-sm"
+          subject="camp"
+          :organization-id="camp.organizationId"
+          :organization-name="camp.organizationName"
+          :verification-status="camp.organizationVerificationStatus"
+        />
       </div>
 
       <q-list
@@ -61,9 +69,13 @@ import { useI18n } from 'vue-i18n';
 import { type RouteLocationRaw } from 'vue-router';
 import { usePermissions } from '@/composables/permissions';
 import type { PermissionRequirement } from '@/composables/scopePermissions';
+import { useCampDetailsStore } from '@/stores/camp-details-store';
+import { storeToRefs } from 'pinia';
+import OwningOrganizationChip from '@/components/common/OwningOrganizationChip.vue';
 
 const { t } = useI18n();
 const { canAccess } = usePermissions();
+const { data: camp } = storeToRefs(useCampDetailsStore());
 
 interface SettingsItem {
   name: string;

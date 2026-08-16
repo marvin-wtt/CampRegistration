@@ -20,17 +20,14 @@
             >
               {{ newsletter.description }}
             </div>
-            <div
+            <owning-organization-chip
               v-if="newsletter"
-              class="row items-center q-gutter-x-xs q-mt-xs text-body2 text-grey-6"
-            >
-              <q-icon
-                name="apartment"
-                size="xs"
-              />
-              <span>{{ newsletter.organizationName }}</span>
-              <q-tooltip>{{ t('header.organization') }}</q-tooltip>
-            </div>
+              class="q-mt-xs"
+              subject="newsletter"
+              :organization-id="newsletter.organizationId"
+              :organization-name="newsletter.organizationName"
+              :verification-status="newsletter.organizationVerificationStatus"
+            />
             <div
               v-if="newsletter?.replyTo"
               class="row items-center q-gutter-x-xs q-mt-xs text-body2 text-grey-6"
@@ -643,6 +640,7 @@ import { useNewsletterManagerStore } from '@/stores/newsletter-manager-store';
 import { useNewsletterSubscriberStore } from '@/stores/newsletter-subscriber-store';
 import { useNewsletterMessageStore } from '@/stores/newsletter-message-store';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
+import OwningOrganizationChip from '@/components/common/OwningOrganizationChip.vue';
 import EmailEditor from '@/components/campManagement/contact/EmailEditor.vue';
 import FileInput, {
   type FileInputModel,
@@ -975,7 +973,6 @@ header:
   subscribers: '{count} subscribers'
   sent: '{count} sent'
   edit: 'Edit newsletter'
-  organization: 'Owning organization'
 
 unverified:
   pending:
@@ -1052,7 +1049,6 @@ header:
   subscribers: '{count} Abonnenten'
   sent: '{count} gesendet'
   edit: 'Newsletter bearbeiten'
-  organization: 'Besitzende Organisation'
 
 unverified:
   pending:
@@ -1129,7 +1125,6 @@ header:
   subscribers: '{count} abonnés'
   sent: '{count} envoyés'
   edit: 'Modifier la newsletter'
-  organization: 'Organisation propriétaire'
 
 unverified:
   pending:
@@ -1206,7 +1201,6 @@ header:
   subscribers: '{count} subskrybentów'
   sent: '{count} wysłanych'
   edit: 'Edytuj newsletter'
-  organization: 'Organizacja właścicielska'
 
 unverified:
   pending:
@@ -1283,7 +1277,6 @@ header:
   subscribers: '{count} odběratelů'
   sent: '{count} odesláno'
   edit: 'Upravit newsletter'
-  organization: 'Vlastnící organizace'
 
 unverified:
   pending:
