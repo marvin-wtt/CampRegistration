@@ -40,7 +40,7 @@ import GeneralLayout from '@/components/layout/GeneralLayout.vue';
 const route = useRoute();
 const { t } = useI18n();
 const { to } = useObjectTranslation();
-const { canAccessAny } = usePermissions();
+const { canAccess } = usePermissions();
 
 const authStore = useAuthStore();
 const profileStore = useProfileStore();
@@ -94,7 +94,7 @@ const items = computed<NavigationItemProps<'camp'>[]>(() => [
     name: 'contact',
     label: t('contact'),
     icon: 'send',
-    permission: ['camp.messages.create', 'camp.messages.view'],
+    permission: { any: ['camp.messages.create', 'camp.messages.view'] },
     to: { name: 'management.camp.contact' },
   },
   {
@@ -145,7 +145,7 @@ function filterItems(
   navItems: NavigationItemProps<'camp'>[],
 ): NavigationItemProps<'camp'>[] {
   return navItems
-    .filter((item) => canAccessAny(item.permission))
+    .filter((item) => canAccess(item.permission))
     .map((item) => {
       if ('children' in item && item.children !== undefined) {
         return {

@@ -184,7 +184,11 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
 
       const { body } = await request()
         .post(`${BASE}/${newsletter.id}/subscribers`)
-        .send({ email: 'new@example.com', name: 'New Person' })
+        .send({
+          email: 'new@example.com',
+          name: 'New Person',
+          consentConfirmed: true,
+        })
         .auth(accessToken, { type: 'bearer' })
         .expect(201);
 
@@ -201,7 +205,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
 
       const { body } = await request()
         .post(`${BASE}/${newsletter.id}/subscribers`)
-        .send({ email: 'noname@example.com' })
+        .send({ email: 'noname@example.com', consentConfirmed: true })
         .auth(accessToken, { type: 'bearer' })
         .expect(201);
 
@@ -213,7 +217,11 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
 
       const { body } = await request()
         .post(`${BASE}/${newsletter.id}/subscribers`)
-        .send({ email: 'nullname@example.com', name: null })
+        .send({
+          email: 'nullname@example.com',
+          name: null,
+          consentConfirmed: true,
+        })
         .auth(accessToken, { type: 'bearer' })
         .expect(201);
 
@@ -225,7 +233,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
 
       await request()
         .post(`${BASE}/${newsletter.id}/subscribers`)
-        .send({ email: 'persist@example.com' })
+        .send({ email: 'persist@example.com', consentConfirmed: true })
         .auth(accessToken, { type: 'bearer' })
         .expect(201);
 
@@ -244,7 +252,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
 
       await request()
         .post(`${BASE}/${newsletter.id}/subscribers`)
-        .send({ email: 'dup@example.com' })
+        .send({ email: 'dup@example.com', consentConfirmed: true })
         .auth(accessToken, { type: 'bearer' })
         .expect(400);
     });
@@ -254,7 +262,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
 
       await request()
         .post(`${BASE}/${newsletter.id}/subscribers`)
-        .send({ email: 'not-an-email' })
+        .send({ email: 'not-an-email', consentConfirmed: true })
         .auth(accessToken, { type: 'bearer' })
         .expect(400);
     });
@@ -264,7 +272,27 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
 
       await request()
         .post(`${BASE}/${newsletter.id}/subscribers`)
-        .send({ name: 'No email' })
+        .send({ name: 'No email', consentConfirmed: true })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(400);
+    });
+
+    it('should respond with `400` when consent confirmation is missing', async () => {
+      const { accessToken, newsletter } = await createNewsletterWithManager();
+
+      await request()
+        .post(`${BASE}/${newsletter.id}/subscribers`)
+        .send({ email: 'unconfirmed@example.com' })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(400);
+    });
+
+    it('should respond with `400` when consent is not confirmed', async () => {
+      const { accessToken, newsletter } = await createNewsletterWithManager();
+
+      await request()
+        .post(`${BASE}/${newsletter.id}/subscribers`)
+        .send({ email: 'declined@example.com', consentConfirmed: false })
         .auth(accessToken, { type: 'bearer' })
         .expect(400);
     });
@@ -309,7 +337,10 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
       const { accessToken, newsletter } = await createNewsletterWithRole(role);
       await request()
         .post(`${BASE}/${newsletter.id}/subscribers`)
-        .send({ email: `${role.toLowerCase()}-sub@example.com` })
+        .send({
+          email: `${role.toLowerCase()}-sub@example.com`,
+          consentConfirmed: true,
+        })
         .auth(accessToken, { type: 'bearer' })
         .expect(status);
     });
@@ -330,7 +361,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
 
       const { body } = await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ campId: camp.id })
+        .send({ campId: camp.id, consentConfirmed: true })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -352,7 +383,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
 
       const { body } = await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ campId: camp.id })
+        .send({ campId: camp.id, consentConfirmed: true })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -369,7 +400,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
 
       const { body } = await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ campId: camp.id })
+        .send({ campId: camp.id, consentConfirmed: true })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -387,7 +418,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
 
       const { body } = await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ campId: camp.id })
+        .send({ campId: camp.id, consentConfirmed: true })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -409,7 +440,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
 
       const { body } = await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ campId: camp.id })
+        .send({ campId: camp.id, consentConfirmed: true })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -436,7 +467,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
 
       const { body } = await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ campId: camp.id })
+        .send({ campId: camp.id, consentConfirmed: true })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -459,7 +490,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
 
       const { body } = await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ campId: camp.id, country: 'de' })
+        .send({ campId: camp.id, country: 'de', consentConfirmed: true })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -487,7 +518,11 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
 
       const { body } = await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ campId: camp.id, requireConsent: false })
+        .send({
+          campId: camp.id,
+          requireConsent: false,
+          consentConfirmed: true,
+        })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -529,6 +564,17 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
       expect(subscriber?.email).toBe('consent-true@example.com');
     });
 
+    it('should respond with `400` when consent is neither required nor confirmed', async () => {
+      const { accessToken, newsletter, camp } =
+        await createNewsletterAndCampWithManager();
+
+      await request()
+        .post(`${BASE}/${newsletter.id}/subscribers/import`)
+        .send({ campId: camp.id, requireConsent: false })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(400);
+    });
+
     it('should set subscriber name from firstName and lastName', async () => {
       const { accessToken, newsletter, camp } =
         await createNewsletterAndCampWithManager();
@@ -541,7 +587,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
 
       await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ campId: camp.id })
+        .send({ campId: camp.id, consentConfirmed: true })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -563,7 +609,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
 
       await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ campId: camp.id })
+        .send({ campId: camp.id, consentConfirmed: true })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -585,7 +631,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
 
       await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ campId: camp.id })
+        .send({ campId: camp.id, consentConfirmed: true })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -607,7 +653,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
 
       await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ campId: camp.id })
+        .send({ campId: camp.id, consentConfirmed: true })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -654,7 +700,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
 
       await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ campId: camp.id })
+        .send({ campId: camp.id, consentConfirmed: true })
         .auth(accessToken, { type: 'bearer' })
         .expect(403);
     });

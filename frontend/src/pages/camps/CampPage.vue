@@ -5,14 +5,23 @@
     class="row justify-center"
     :style="{ backgroundColor: bgColor }"
   >
-    <registration-form
+    <div
       v-if="camp && registrationFormVisible"
-      :camp-details="camp"
-      :submit-fn="submit"
-      :upload-file-fn="uploadFile"
       class="full-width"
-      @bg-color-update="(color) => updateBgColor(color)"
-    />
+    >
+      <registration-form
+        :camp-details="camp"
+        :submit-fn="submit"
+        :upload-file-fn="uploadFile"
+        class="full-width"
+        @bg-color-update="(color) => updateBgColor(color)"
+        @active-change="(active) => (formActive = active)"
+      />
+      <privacy-notice-disclosure
+        v-if="formActive"
+        :camp-id="camp.id"
+      />
+    </div>
 
     <!-- Not available / registration closed -->
     <div
@@ -76,6 +85,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useMeta } from 'quasar';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import RegistrationForm from '@/components/common/RegistrationForm.vue';
+import PrivacyNoticeDisclosure from '@/components/privacy/PrivacyNoticeDisclosure.vue';
 import {
   type CampDetails,
   type CampRegistrationStatus,
@@ -94,6 +104,7 @@ const { extractErrorText } = useErrorExtractor();
 const { canFor } = usePermissions();
 
 const managerRegistrationOverrideEnabled = ref<boolean>(false);
+const formActive = ref<boolean>(true);
 const bgColor = ref<string>();
 const camp = ref<CampDetails | undefined>();
 const loading = ref<boolean>(false);

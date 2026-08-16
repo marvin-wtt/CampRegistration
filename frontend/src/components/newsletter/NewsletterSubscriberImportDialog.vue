@@ -49,29 +49,24 @@
               v-model="requireConsent"
               :label="t('input.consent.label')"
             />
-            <div class="text-caption text-grey-6 q-ml-sm">
+            <div class="text-caption text-on-surface-variant q-ml-sm">
               {{ t('input.consent.hint') }}
+            </div>
+          </div>
+
+          <div v-if="!requireConsent">
+            <q-checkbox
+              v-model="consentConfirmed"
+              :label="t('input.consentConfirmation.label')"
+            />
+            <div class="text-caption text-on-surface-variant q-ml-sm">
+              {{ t('input.consentConfirmation.hint') }}
             </div>
           </div>
         </q-card-section>
 
-        <q-card-section class="q-pt-none">
-          <q-banner
-            rounded
-            :class="
-              quasar.dark.isActive
-                ? 'bg-blue-10 text-blue-2'
-                : 'bg-blue-1 text-blue-10'
-            "
-          >
-            <template #avatar>
-              <q-icon
-                name="info"
-                :color="quasar.dark.isActive ? 'blue-3' : 'info'"
-              />
-            </template>
-            {{ t('notice') }}
-          </q-banner>
+        <q-card-section class="q-pt-none text-caption text-on-surface-variant">
+          {{ t('notice') }}
         </q-card-section>
 
         <q-card-actions
@@ -89,6 +84,7 @@
             :label="t('action.import')"
             type="submit"
             color="primary"
+            :disable="!requireConsent && !consentConfirmed"
             rounded
           />
         </q-card-actions>
@@ -98,7 +94,7 @@
 </template>
 
 <script lang="ts" setup>
-import { useDialogPluginComponent, useQuasar } from 'quasar';
+import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { computed, onMounted, ref, watch } from 'vue';
 import type { NewsletterSubscriberImportData } from '@camp-registration/common/entities';
@@ -107,7 +103,6 @@ import { useObjectTranslation } from '@/composables/objectTranslation';
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
-const quasar = useQuasar();
 const { t } = useI18n();
 const { to } = useObjectTranslation();
 const assignedCampsStore = useAssignedCampsStore();
@@ -121,6 +116,7 @@ onMounted(async () => {
 const campId = ref<string>('');
 const country = ref<string | null>(null);
 const requireConsent = ref(true);
+const consentConfirmed = ref(false);
 
 const campOptions = computed(() => {
   return (assignedCampsStore.data ?? []).map((camp) => ({
@@ -144,11 +140,16 @@ watch(campId, () => {
   requireConsent.value = true;
 });
 
+watch(requireConsent, () => {
+  consentConfirmed.value = false;
+});
+
 function onSubmit() {
   const data: NewsletterSubscriberImportData = {
     campId: campId.value,
     country: country.value ?? null,
-    requireConsent: requireConsent.value ?? undefined,
+    requireConsent: requireConsent.value,
+    consentConfirmed: consentConfirmed.value,
   };
   onDialogOK(data);
 }
@@ -168,7 +169,10 @@ input:
   consent:
     label: 'Require explicit newsletter consent'
     hint: 'Registrations that declined are always excluded.'
-notice: 'Only registrations with an email address will be imported. Existing subscribers will be skipped.'
+  consentConfirmation:
+    label: 'I confirm that these people agreed to receive this newsletter'
+    hint: 'Required when importing registrations that did not explicitly consent.'
+notice: 'Registrations without an email address and existing subscribers are skipped.'
 action:
   import: 'Import'
   cancel: 'Cancel'
@@ -188,7 +192,10 @@ input:
   consent:
     label: 'Ausdrückliche Newsletter-Einwilligung erforderlich'
     hint: 'Anmeldungen, die abgelehnt haben, werden immer ausgeschlossen.'
-notice: 'Es werden nur Anmeldungen mit E-Mail-Adresse importiert. Bestehende Abonnenten werden übersprungen.'
+  consentConfirmation:
+    label: 'Ich bestätige, dass diese Personen dem Erhalt dieses Newsletters zugestimmt haben'
+    hint: 'Erforderlich beim Import von Anmeldungen ohne ausdrückliche Einwilligung.'
+notice: 'Anmeldungen ohne E-Mail-Adresse und bereits vorhandene Abonnenten werden übersprungen.'
 action:
   import: 'Importieren'
   cancel: 'Abbrechen'
@@ -208,7 +215,10 @@ input:
   consent:
     label: 'Exiger un consentement explicite à la newsletter'
     hint: 'Les inscriptions ayant refusé sont toujours exclues.'
-notice: 'Seules les inscriptions avec une adresse e-mail seront importées. Les abonnés existants seront ignorés.'
+  consentConfirmation:
+    label: 'Je confirme que ces personnes ont accepté de recevoir cette newsletter'
+    hint: "Requis lors de l'import d'inscriptions sans consentement explicite."
+notice: 'Les inscriptions sans adresse e-mail et les abonnés existants sont ignorés.'
 action:
   import: 'Importer'
   cancel: 'Annuler'
@@ -228,7 +238,10 @@ input:
   consent:
     label: 'Wymagaj wyraźnej zgody na newsletter'
     hint: 'Zgłoszenia, które odmówiły, są zawsze wykluczone.'
-notice: 'Importowane będą tylko zgłoszenia z adresem e-mail. Istniejący subskrybenci zostaną pominięci.'
+  consentConfirmation:
+    label: 'Potwierdzam, że te osoby wyraziły zgodę na otrzymywanie tego newslettera'
+    hint: 'Wymagane przy imporcie zgłoszeń bez wyraźnej zgody.'
+notice: 'Zgłoszenia bez adresu e-mail oraz istniejący subskrybenci są pomijani.'
 action:
   import: 'Importuj'
   cancel: 'Anuluj'
@@ -248,7 +261,10 @@ input:
   consent:
     label: 'Vyžadovat výslovný souhlas s newsletterem'
     hint: 'Registrace, které odmítly, jsou vždy vyloučeny.'
-notice: 'Importovány budou pouze registrace s e-mailovou adresou. Stávající odběratelé budou přeskočeni.'
+  consentConfirmation:
+    label: 'Potvrzuji, že tyto osoby souhlasily se zasíláním tohoto newsletteru'
+    hint: 'Vyžadováno při importu registrací bez výslovného souhlasu.'
+notice: 'Registrace bez e-mailové adresy a stávající odběratelé budou přeskočeni.'
 action:
   import: 'Importovat'
   cancel: 'Zrušit'

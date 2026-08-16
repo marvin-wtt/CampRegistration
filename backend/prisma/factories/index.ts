@@ -18,4 +18,5 @@ export * from './program-event.factory';
 export * from './task.factory';
 export * from './camp-setting.factory';
 export * from './organization.factory';
+export * from './privacy-notice.factory';
 export * from './organization-member.factory';

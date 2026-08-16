@@ -20,6 +20,7 @@ import { FileModule } from '#app/file/file.module';
 import { TokenModule } from '#app/token/token.module';
 import { HealthModule } from '#app/health/health.module';
 import { LegalModule } from '#app/legal/legal.module';
+import { PrivacyNoticeModule } from '#app/privacyNotice/privacy-notice.module';
 import { QueueModule } from '#app/queue/queue.module';
 import { ProgramEventModule } from '#app/programEvent/program-event.module';
 import { TaskModule } from '#app/task/task.module';
@@ -51,6 +52,9 @@ export const createModules = (): AppModule[] => [
   new UserModule(),
   new AdminModule(),
   new LegalModule(),
+  // After Legal and Setting: it reads the platform policy and registers the
+  // camp addendum as a camp setting.
+  new PrivacyNoticeModule(),
   new RegistrationModule(),
   new TableTemplateModule(),
   new CampManagerModule(),

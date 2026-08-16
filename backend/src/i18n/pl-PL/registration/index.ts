@@ -1,6 +1,7 @@
 export default {
   email: {
     reason: '$t(email:footer.cause) ponieważ zarejestrowałeś się na ten obóz.',
+    privacyLink: 'Informacje o ochronie danych dla tego obozu',
     managerNotification: {
       subject: 'Nowe zgłoszenie | {{ camp.name }}',
       preview: 'Nowe zgłoszenie na obóz: {{ camp.name }}',

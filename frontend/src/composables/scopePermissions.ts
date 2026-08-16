@@ -3,6 +3,19 @@ import type {
   ScopePermission,
 } from '@camp-registration/common/permissions';
 
+/**
+ * A declarative access requirement, used by navigation items, quick actions and
+ * anything else that stores "what it takes to see this" as data.
+ *
+ * A bare array is deliberately *not* a valid requirement: it would mean any-of
+ * or all-of depending on which helper the consumer happened to call, so the
+ * quantifier is spelled out at the declaration site instead.
+ */
+export type PermissionRequirement<S extends PermissionScope> =
+  | ScopePermission<S>
+  | { any: ScopePermission<S>[] }
+  | { all: ScopePermission<S>[] };
+
 interface ScopePermissionOptions<S extends PermissionScope> {
   /** Whether the current user bypasses every check (system administrator). */
   isAdmin: () => boolean;
@@ -46,13 +59,19 @@ export function createScopePermissions<S extends PermissionScope>(
   }
 
   /** Undefined means "not gated" — used by the declarative navigation items. */
-  function canAccessAny(permission?: P | P[]): boolean {
-    if (!permission) {
+  function canAccess(requirement?: PermissionRequirement<S>): boolean {
+    if (requirement === undefined) {
       return true;
     }
 
-    return Array.isArray(permission) ? canAny(...permission) : can(permission);
+    if (typeof requirement === 'string') {
+      return can(requirement);
+    }
+
+    return 'any' in requirement
+      ? canAny(...requirement.any)
+      : can(...requirement.all);
   }
 
-  return { can, canAny, canFor, cannot, canAccessAny };
+  return { can, canAny, canFor, cannot, canAccess };
 }

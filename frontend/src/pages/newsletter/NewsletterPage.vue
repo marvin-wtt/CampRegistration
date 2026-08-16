@@ -15,6 +15,12 @@
             </div>
             <div class="text-h5 text-weight-medium">{{ newsletter?.name }}</div>
             <div
+              v-if="newsletter?.description"
+              class="text-body2 text-grey-6 q-mt-xs"
+            >
+              {{ newsletter.description }}
+            </div>
+            <div
               v-if="newsletter"
               class="row items-center q-gutter-x-xs q-mt-xs text-body2 text-grey-6"
             >
@@ -24,12 +30,6 @@
               />
               <span>{{ newsletter.organizationName }}</span>
               <q-tooltip>{{ t('header.organization') }}</q-tooltip>
-            </div>
-            <div
-              v-if="newsletter?.description"
-              class="text-body2 text-grey-6 q-mt-xs"
-            >
-              {{ newsletter.description }}
             </div>
             <div
               v-if="newsletter?.replyTo"
@@ -164,7 +164,7 @@
               class="q-pa-none q-pt-lg"
               style="overflow-y: auto"
             >
-              <div class="q-gutter-y-md">
+              <div class="column no-wrap q-gutter-y-md full-height">
                 <q-input
                   v-model="sendSubject"
                   :label="t('compose.subject')"
@@ -177,16 +177,14 @@
                   </template>
                 </q-input>
 
-                <div>
-                  <div class="text-caption text-grey-7 q-mb-xs q-ml-sm">
-                    {{ t('compose.body') }}
-                  </div>
+                <div class="compose-body">
                   <email-editor
                     v-model="sendBody"
+                    :label="t('compose.body')"
                     :placeholder="t('compose.bodyPlaceholder')"
                     outlined
                     rounded
-                    style="min-height: 200px"
+                    class="compose-body__editor"
                   />
                 </div>
 
@@ -542,7 +540,10 @@
               class="q-pa-none q-pt-lg"
               style="overflow-y: auto"
             >
-              <div class="row items-center justify-between q-gutter-sm q-mb-md">
+              <div
+                v-if="canNewsletter('newsletter.managers.create')"
+                class="row items-center justify-between q-gutter-sm q-mb-md"
+              >
                 <!-- Organization admins hold this list without appearing on it. -->
                 <div class="col row items-center no-wrap q-gutter-xs">
                   <q-icon
@@ -555,10 +556,9 @@
                   </div>
                 </div>
                 <q-btn
-                  v-if="canNewsletter('newsletter.managers.create')"
+                  :label="t('managers.action.add')"
                   color="primary"
                   icon="person_add"
-                  :label="t('managers.action.add')"
                   rounded
                   unelevated
                   no-caps
@@ -1369,6 +1369,17 @@ managers:
 .newsletter-panels :deep(.q-tab-panel) {
   flex: 1;
   min-height: 0;
+}
+
+.compose-body {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.compose-body__editor {
+  flex: 1 1 auto;
+  min-height: 200px;
 }
 
 .list-scroll {

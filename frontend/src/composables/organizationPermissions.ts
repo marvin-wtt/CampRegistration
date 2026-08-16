@@ -16,7 +16,7 @@ export function useOrganizationPermissions() {
   const { user } = storeToRefs(profileStore);
   const { data: organization } = storeToRefs(organizationDetailsStore);
 
-  const { can, canAny, canFor, cannot, canAccessAny } =
+  const { can, canAny, canFor, cannot, canAccess } =
     createScopePermissions<'organization'>({
       isAdmin: () => user.value?.role === 'ADMIN',
       granted: (organizationId) =>
@@ -54,7 +54,7 @@ export function useOrganizationPermissions() {
     canOrgFor: canFor,
     canAnyOrg: canAny,
     cannotOrg: cannot,
-    canAccessAnyOrg: canAccessAny,
+    canAccessOrg: canAccess,
     campCreationOrganizationIds,
     newsletterCreationOrganizationIds,
   };

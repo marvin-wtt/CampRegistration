@@ -88,6 +88,35 @@
           </div>
           <div class="text-body2">{{ organization.reviewNote }}</div>
         </q-banner>
+
+        <!-- Part of what a moderator vets: an organization cannot be verified
+             until it has published a complete notice, so the decision needs to
+             be made with the notice on screen. -->
+        <q-expansion-item
+          :label="t('privacyNotice.title')"
+          icon="privacy_tip"
+          class="q-mt-sm"
+          @show="loadNotice"
+        >
+          <q-banner
+            v-if="noticeState === 'missing'"
+            dense
+            class="review-banner rounded-md"
+          >
+            {{ t('privacyNotice.missing') }}
+          </q-banner>
+          <div
+            v-else-if="noticeState === 'loading'"
+            class="q-pa-md"
+          >
+            <q-spinner size="24px" />
+          </div>
+          <privacy-notice
+            v-else-if="notice"
+            :notice
+            class="q-pa-md"
+          />
+        </q-expansion-item>
       </q-card-section>
 
       <q-separator />
@@ -107,17 +136,71 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { countryName } from '@/utils/countries';
 import type { Organization } from '@camp-registration/common/entities';
+import {
+  composePrivacyNotice,
+  supervisoryAuthorityFor,
+  type PublishedPrivacyNotice,
+} from '@camp-registration/common/privacy';
+import PrivacyNotice from '@/components/privacy/PrivacyNotice.vue';
+import { usePrivacyNoticeService } from '@/services/PrivacyNoticeService';
 
 const props = defineProps<{ organization: Organization }>();
 
 const { dialogRef, onDialogHide } = useDialogPluginComponent();
 const { t, d, locale } = useI18n();
+const { fetchOrganizationNotice } = usePrivacyNoticeService();
 defineEmits([...useDialogPluginComponent.emits]);
+
+const noticeState = ref<'idle' | 'loading' | 'ready' | 'missing'>('idle');
+const notice = ref<PublishedPrivacyNotice | null>(null);
+
+/**
+ * Assembled here rather than fetched: the moderator reviews the organization's
+ * own notice, which has no camp to compose it against, and the controller
+ * identity and supervisory authority are already derivable from the
+ * organization on screen.
+ */
+async function loadNotice() {
+  if (noticeState.value !== 'idle') {
+    return;
+  }
+
+  noticeState.value = 'loading';
+  try {
+    const stored = await fetchOrganizationNotice(props.organization.id);
+
+    if (stored.publishedVersion === null) {
+      noticeState.value = 'missing';
+      return;
+    }
+
+    notice.value = {
+      controller: {
+        name: props.organization.name,
+        contactEmail: props.organization.contactEmail,
+        phone: props.organization.phone,
+        website: props.organization.website,
+        addressStreet: props.organization.addressStreet,
+        addressZipCode: props.organization.addressZipCode,
+        addressCity: props.organization.addressCity,
+        country: props.organization.country,
+        registrationNumber: props.organization.registrationNumber,
+      },
+      supervisoryAuthority: supervisoryAuthorityFor(props.organization.country),
+      notice: composePrivacyNotice(stored.content),
+      organizationVersion: stored.publishedVersion,
+      campVersion: null,
+    };
+    noticeState.value = 'ready';
+  } catch {
+    noticeState.value = 'missing';
+  }
+}
 
 interface DetailRow {
   label: string;
@@ -249,6 +332,9 @@ field:
   reviewNote: 'Previous review note'
 action:
   close: 'Close'
+privacyNotice:
+  title: 'Privacy notice'
+  missing: 'This organisation has not published a privacy notice. It cannot be verified until it does.'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -272,6 +358,9 @@ field:
   reviewNote: 'Vorherige Prüfnotiz'
 action:
   close: 'Schließen'
+privacyNotice:
+  title: 'Datenschutzinformationen'
+  missing: 'Diese Organisation hat keine Datenschutzinformationen veröffentlicht. Bis dahin kann sie nicht verifiziert werden.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -295,6 +384,9 @@ field:
   reviewNote: 'Note de contrôle précédente'
 action:
   close: 'Fermer'
+privacyNotice:
+  title: 'Informations sur la protection des données'
+  missing: "Cette organisation n'a pas publié d'informations sur la protection des données. Elle ne peut pas être vérifiée tant que ce n'est pas fait."
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -318,6 +410,9 @@ field:
   reviewNote: 'Poprzednia uwaga weryfikatora'
 action:
   close: 'Zamknij'
+privacyNotice:
+  title: 'Informacje o ochronie danych'
+  missing: 'Ta organizacja nie opublikowała informacji o ochronie danych. Do tego czasu nie może zostać zweryfikowana.'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -341,4 +436,7 @@ field:
   reviewNote: 'Předchozí poznámka z kontroly'
 action:
   close: 'Zavřít'
+privacyNotice:
+  title: 'Informace o ochraně osobních údajů'
+  missing: 'Tato organizace nezveřejnila informace o ochraně osobních údajů. Do té doby ji nelze ověřit.'
 </i18n>

@@ -6,5 +6,10 @@ declare global {
     type GenericObject = Record<string, unknown>;
 
     type RegistrationCampData = Record<string, unknown[]>;
+
+    type PrivacyNoticeContent =
+      import('@camp-registration/common/privacy').PrivacyNoticeContent;
+    type PrivacyNoticeAddendum =
+      import('@camp-registration/common/privacy').PrivacyNoticeAddendum;
   }
 }

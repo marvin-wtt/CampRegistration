@@ -1,6 +1,9 @@
 import type { Prisma } from '#generated/prisma/client.js';
 import { BaseService } from '#core/base/BaseService';
-import { injectable } from 'inversify';
+import { inject, injectable } from 'inversify';
+import httpStatus from 'http-status';
+import ApiError from '#utils/ApiError';
+import { PrivacyNoticeService } from '#app/privacyNotice/privacy-notice.service';
 import type {
   OrganizationCreateData,
   OrganizationUpdateData,
@@ -11,6 +14,13 @@ import type { Organization } from '#generated/prisma/client.js';
 
 @injectable()
 export class OrganizationService extends BaseService {
+  constructor(
+    @inject(PrivacyNoticeService)
+    private readonly privacyNoticeService: PrivacyNoticeService,
+  ) {
+    super();
+  }
+
   async getOrganizationById(id: string) {
     return this.prisma.organization.findUnique({ where: { id } });
   }
@@ -161,13 +171,30 @@ export class OrganizationService extends BaseService {
       reviewNote?: string | null;
     },
   ) {
+    // Verifying an organization is the moment its camps become able to reach
+    // the public, so it is also the moment its privacy notice has to hold up.
+    // Rejection is never blocked — a notice-less organization must stay
+    // rejectable.
+    if (decision.status === 'VERIFIED') {
+      const blocker = await this.privacyNoticeService.verificationBlocker(id);
+
+      if (blocker) {
+        throw new ApiError(
+          httpStatus.UNPROCESSABLE_ENTITY,
+          `Organization cannot be verified while ${blocker}.`,
+        );
+      }
+    }
+
+    const reviewedAt = new Date();
+
     return this.prisma.$transaction(async (tx) => {
       const organization = await tx.organization.update({
         where: { id },
         data: {
           verificationStatus: decision.status,
           reviewNote: decision.reviewNote ?? null,
-          reviewedAt: new Date(),
+          reviewedAt,
           reviewedByUserId: reviewerUserId,
         },
       });

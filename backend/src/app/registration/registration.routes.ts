@@ -1,7 +1,7 @@
 import { RegistrationController } from './registration.controller.js';
 import { auth, guard } from '#middlewares/index';
 import { or, and } from '#core/guard';
-import { campManager } from '#app/campManager/camp-manager.guard';
+import { campManager } from '#app/camp/camp.guard';
 import { controller } from '#utils/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';
 import { RegistrationService } from '#app/registration/registration.service';

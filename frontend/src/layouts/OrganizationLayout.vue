@@ -24,7 +24,7 @@ const authStore = useAuthStore();
 const route = useRoute();
 const organizationStore = useOrganizationDetailsStore();
 const { data: organization, isLoading } = storeToRefs(organizationStore);
-const { canAccessAnyOrg } = useOrganizationPermissions();
+const { canAccessOrg } = useOrganizationPermissions();
 
 const organizationId = computed(
   () => route.params.organizationId as string | undefined,
@@ -85,6 +85,13 @@ const navigationItems = computed<NavigationItemProps<'organization'>[]>(() => {
       permission: 'organization.members.view',
     },
     {
+      name: 'privacy',
+      label: t('nav.privacy'),
+      icon: 'privacy_tip',
+      to: { name: 'management.organization.privacy' },
+      permission: 'organization.view',
+    },
+    {
       name: 'verification',
       label: t('nav.verification'),
       icon: 'verified_user',
@@ -100,7 +107,7 @@ const navigationItems = computed<NavigationItemProps<'organization'>[]>(() => {
     },
   ];
 
-  return items.filter((item) => canAccessAnyOrg(item.permission));
+  return items.filter((item) => canAccessOrg(item.permission));
 });
 
 watch(
@@ -125,6 +132,7 @@ nav:
   camps: 'Camps'
   newsletters: 'Newsletters'
   members: 'Members'
+  privacy: 'Privacy'
   verification: 'Verification'
   settings: 'Settings'
 </i18n>
@@ -136,6 +144,7 @@ nav:
   camps: 'Camps'
   newsletters: 'Newsletter'
   members: 'Mitglieder'
+  privacy: 'Datenschutz'
   verification: 'Verifizierung'
   settings: 'Einstellungen'
 </i18n>
@@ -147,6 +156,7 @@ nav:
   camps: 'Camps'
   newsletters: 'Newsletters'
   members: 'Membres'
+  privacy: 'Confidentialité'
   verification: 'Vérification'
   settings: 'Paramètres'
 </i18n>
@@ -158,6 +168,7 @@ nav:
   camps: 'Obozy'
   newsletters: 'Newslettery'
   members: 'Członkowie'
+  privacy: 'Prywatność'
   verification: 'Weryfikacja'
   settings: 'Ustawienia'
 </i18n>
@@ -169,6 +180,7 @@ nav:
   camps: 'Tábory'
   newsletters: 'Newslettery'
   members: 'Členové'
+  privacy: 'Soukromí'
   verification: 'Ověření'
   settings: 'Nastavení'
 </i18n>

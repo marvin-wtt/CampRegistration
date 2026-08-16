@@ -1,10 +1,25 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Request } from 'express';
+import { mock } from 'vitest-mock-extended';
 import type { Camp } from '#generated/prisma/client';
+import * as container from '#core/ioc/container';
+import { CampManagerService } from '#app/campManager/camp-manager.service';
 import {
+  campManager,
   campOrganizationVerified,
+  campScopeResolver,
   registrationOpen,
 } from '#app/camp/camp.guard';
+import { registerScopeResolver } from '#core/permission.guard';
+
+// `campManager()` is an alias of the generic `scoped('camp', …)` guard, which
+// looks the camp resolver up in the boot-time registry. `boot()` does not run
+// here, so stand the one scope under test up by hand.
+registerScopeResolver('camp', campScopeResolver);
+
+const managerService = mock<CampManagerService>();
+
+vi.spyOn(container, 'resolve').mockReturnValue(managerService);
 
 type CampFixture = Partial<Camp> & {
   organization?: { id: string; verificationStatus: string };
@@ -26,6 +41,49 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.useRealTimers();
+});
+
+describe('campManager', () => {
+  const authorization = (permissions: string[]) => ({
+    managerId: 'manager-1',
+    permissions: new Set(permissions),
+    expiresAt: null,
+  });
+
+  it('resolves through CampManagerService.getManagerAuthorization', async () => {
+    managerService.getManagerAuthorization.mockResolvedValue(
+      authorization(['camp.tasks.view']),
+    );
+    const guard = campManager('camp.tasks.view');
+
+    const result = await guard(fakeReq({ id: 'camp-1' }, 'user-1'));
+
+    expect(result).toBe(true);
+    expect(managerService.getManagerAuthorization).toHaveBeenCalledWith(
+      'camp-1',
+      'user-1',
+    );
+  });
+
+  it('returns false when the permission is not in the resolved set', async () => {
+    managerService.getManagerAuthorization.mockResolvedValue(
+      authorization(['camp.view']),
+    );
+    const guard = campManager('camp.tasks.view');
+
+    const result = await guard(fakeReq({ id: 'camp-1' }));
+
+    expect(result).toBe(false);
+  });
+
+  it('returns false when the user has no authorization at all', async () => {
+    managerService.getManagerAuthorization.mockResolvedValue(null);
+    const guard = campManager('camp.tasks.view');
+
+    const result = await guard(fakeReq({ id: 'camp-1' }));
+
+    expect(result).toBe(false);
+  });
 });
 
 describe('registrationOpen', () => {

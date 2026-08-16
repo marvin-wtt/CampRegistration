@@ -2,15 +2,12 @@ import { ModuleRouter } from '#core/router/ModuleRouter';
 import { CampController } from '#app/camp/camp.controller';
 import { CampService } from './camp.service.js';
 import { auth, guard } from '#middlewares/index';
-import {
-  campManager,
-  campManagerSubscriber,
-} from '#app/campManager/camp-manager.guard';
+import { campManagerSubscriber } from '#app/campManager/camp-manager.guard';
 import type { CampQuery } from '@camp-registration/common/entities';
 import { controller } from '#utils/bindController';
 import { realtimeStream } from '#app/realtime/realtime.stream';
 import { resolve } from '#core/ioc/container';
-import { campOrganizationVerified } from '#app/camp/camp.guard';
+import { campManager, campOrganizationVerified } from '#app/camp/camp.guard';
 import { or } from '#core/guard';
 import { organizationFromBody } from '#app/organization/organization.middleware';
 import { organizationMember } from '#app/organization/organization.guard';

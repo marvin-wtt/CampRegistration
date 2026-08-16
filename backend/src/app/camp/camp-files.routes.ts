@@ -2,7 +2,7 @@ import httpStatus from 'http-status';
 import { FileController } from '#app/file/file.controller';
 import { FileService } from '#app/file/file.service';
 import { auth, guard, multipart } from '#middlewares/index';
-import { campManager } from '#app/campManager/camp-manager.guard';
+import { campManager } from '#app/camp/camp.guard';
 import fileAccessGuard from '#app/file/file.guard';
 import { controller } from '#utils/bindController';
 import { catchMiddlewareAsync } from '#utils/catchAsync';

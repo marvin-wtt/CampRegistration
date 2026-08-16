@@ -1,11 +1,27 @@
 import type { Request } from 'express';
-import { campManager } from '#app/campManager/camp-manager.guard';
+import type { ScopePermission } from '@camp-registration/common/permissions';
 import { type GuardFn, or } from '#core/guard';
+import { scoped, type ScopeResolver } from '#core/permission.guard';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 import { CampService } from '#app/camp/camp.service';
+import { CampManagerService } from '#app/campManager/camp-manager.service';
 import { resolve } from '#core/ioc/container';
 import { campRegistrationStatus } from '#app/camp/camp.util';
+
+export const campScopeResolver: ScopeResolver<'camp'> = {
+  model: 'camp',
+  async resolve(campId, userId) {
+    const authorization = await resolve(
+      CampManagerService,
+    ).getManagerAuthorization(campId, userId);
+
+    return authorization?.permissions ?? null;
+  },
+};
+
+export const campManager = (permission: ScopePermission<'camp'>): GuardFn =>
+  scoped('camp', permission);
 
 export const registrationOpen = (req: Request): boolean => {
   const camp = req.modelOrFail('camp');

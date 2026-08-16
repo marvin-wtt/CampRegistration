@@ -61,7 +61,7 @@ class TableTemplateSeeder extends BaseSeeder {
           },
           {
             name: 'country',
-            field: 'country',
+            field: 'computedData.address.country',
             label: { en: 'Country', de: 'Land', fr: 'Pays' },
             align: 'left',
             sortable: true,

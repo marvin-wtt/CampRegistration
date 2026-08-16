@@ -1,7 +1,7 @@
 import type { Request } from 'express';
 import type { GuardFn } from '#core/guard';
 import { resolve } from '#core/ioc/container';
-import { campManager } from '#app/campManager/camp-manager.guard';
+import { campManager } from '#app/camp/camp.guard';
 import { SettingsRegistry } from '#app/setting/setting.registry';
 
 /**

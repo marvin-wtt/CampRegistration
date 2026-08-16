@@ -110,7 +110,7 @@
       </section>
 
       <section
-        v-if="canAccessAny('camp.tasks.view')"
+        v-if="can('camp.tasks.view')"
         class="dashboard-section"
       >
         <tasks-due-widget />
@@ -269,7 +269,7 @@ import {
   LOCAL_TEMPLATE_MISSING,
   LOCAL_TEMPLATE_PENDING,
 } from '@/components/campManagement/table/localTableTemplates';
-import type { Permission } from '@camp-registration/common/permissions';
+import type { PermissionRequirement } from '@/composables/scopePermissions';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -295,7 +295,7 @@ const campFilesStore = useCampFilesStore();
 const taskStore = useTaskStore();
 const stats = useCampStatistics();
 const helper = useRegistrationHelper();
-const { canAccessAny } = usePermissions();
+const { can, canAccess } = usePermissions();
 
 const {
   data: camp,
@@ -332,7 +332,7 @@ interface QuickAction {
   icon: string;
   color: string;
   route: string;
-  permission: Permission | Permission[];
+  permission: PermissionRequirement<'camp'>;
 }
 
 const quickActions = computed<QuickAction[]>(() =>
@@ -354,7 +354,7 @@ const quickActions = computed<QuickAction[]>(() =>
         icon: 'mark_email_unread',
         color: 'teal',
         route: 'management.camp.contact',
-        permission: ['camp.messages.create', 'camp.messages.view'],
+        permission: { any: ['camp.messages.create', 'camp.messages.view'] },
       },
       {
         key: 'program',
@@ -375,7 +375,7 @@ const quickActions = computed<QuickAction[]>(() =>
         permission: 'camp.rooms.view',
       },
     ] satisfies QuickAction[]
-  ).filter((action) => canAccessAny(action.permission)),
+  ).filter((action) => canAccess(action.permission)),
 );
 
 interface AttentionItem {

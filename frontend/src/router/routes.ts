@@ -23,6 +23,15 @@ const routes: RouteRecordRaw[] = [
             name: 'camp',
             component: () => import('@/pages/camps/CampPage.vue'),
           },
+          // A permanent address for the Art. 13 information, so the
+          // confirmation mail can link to it and a registrant can come back to
+          // it after submitting.
+          {
+            path: ':campId/privacy',
+            name: 'camp.privacy',
+            component: () => import('@/pages/camps/CampPrivacyPage.vue'),
+            props: true,
+          },
         ],
       },
       {
@@ -225,6 +234,12 @@ const routes: RouteRecordRaw[] = [
                     component: () =>
                       import('@/pages/campManagement/settings/FormEditPage.vue'),
                   },
+                  {
+                    path: 'privacy',
+                    name: 'management.camp.settings.privacy',
+                    component: () =>
+                      import('@/pages/campManagement/settings/CampPrivacyPage.vue'),
+                  },
                 ],
               },
             ],
@@ -274,6 +289,12 @@ const routes: RouteRecordRaw[] = [
             name: 'management.organization.members',
             component: () =>
               import('@/pages/organization/OrganizationMembersPage.vue'),
+          },
+          {
+            path: 'privacy',
+            name: 'management.organization.privacy',
+            component: () =>
+              import('@/pages/organization/OrganizationPrivacyPage.vue'),
           },
           {
             path: 'verification',

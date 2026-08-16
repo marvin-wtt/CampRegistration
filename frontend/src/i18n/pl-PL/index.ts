@@ -1,10 +1,11 @@
 import stores from './stores';
+import privacy from './privacy';
 
 export default {
   //app_name: '',
 
   stores,
-
+  privacy,
   service: {
     internal: 'Błąd wewnętrzny',
     invalidParams: 'Nieprawidłowe parametry.',

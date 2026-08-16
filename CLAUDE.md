@@ -102,9 +102,9 @@ class ExampleModule implements AppModule {
     /* RBAC, keyed by scope: { camp?, newsletter?, organization? } */
   }
 
-    registerScopeResolvers(): ScopeResolvers {
-        /* how a request becomes a permission set, for scopes this module owns */
-    }
+  registerScopeResolvers(): ScopeResolvers {
+    /* how a request becomes a permission set, for scopes this module owns */
+  }
   registerJobs(scheduler: JobScheduler): void {
     /* recurring cron jobs */
   }
@@ -177,7 +177,10 @@ export interface PermissionScopes {
   `organizationMember(p)` are one-line aliases of it. The owning module declares its resolver by returning it from
   `registerScopeResolvers()`; `boot.ts` registers each one and then calls `assertScopeResolversComplete()`, so a scope
   left unwired fails the boot instead of 500-ing on the first guarded request. Exactly one module owns a scope —
-  registering a second resolver for it throws.
+  registering a second resolver for it throws. Both the resolver and its alias live in the **subject** module's guard
+  file, named after the scope's bound model (`camp/camp.guard.ts`, `newsletter/newsletter.guard.ts`,
+  `organization/organization.guard.ts`) — not in the membership module whose service they call. Guards over a membership
+  _record_ (`campManagerSelf`, `campManagerSubscriber`) stay with that record's module.
 - **Resolve once per scope**: `CampManagerService.getManagerAuthorization`,
   `NewsletterManagerService.getManagerPermissions` and
   `OrganizationMemberService.getMemberPermissions` are the only places their scope's permissions are computed; the

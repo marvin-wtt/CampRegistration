@@ -13,6 +13,12 @@ import {
 } from '#app/registration/registration.helper';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service';
+import { PrivacyNoticeService } from '#app/privacyNotice/privacy-notice.service';
+
+/** The create uses relation connects throughout, so the stamp must too. */
+function connectVersion(id: string | null) {
+  return id ? { connect: { id } } : undefined;
+}
 
 @injectable()
 export class RegistrationService extends BaseService {
@@ -29,7 +35,11 @@ export class RegistrationService extends BaseService {
     },
   } satisfies Prisma.RegistrationInclude;
 
-  constructor(@inject(FileService) private readonly fileService: FileService) {
+  constructor(
+    @inject(FileService) private readonly fileService: FileService,
+    @inject(PrivacyNoticeService)
+    private readonly privacyNoticeService: PrivacyNoticeService,
+  ) {
     super();
   }
 
@@ -135,6 +145,14 @@ export class RegistrationService extends BaseService {
       return registrationCount >= camp.maxParticipants[computedData.country];
     };
 
+    // Which privacy information this person was shown, resolved before the
+    // transaction: it is a read of published state, and the create runs
+    // Serializable.
+    const privacyStamp = await this.privacyNoticeService.getStampForCamp(
+      camp.id,
+      camp.organizationId,
+    );
+
     return this.prisma.$transaction(
       async (transaction) => {
         const waitingList = await isWaitingList(transaction);
@@ -152,6 +170,14 @@ export class RegistrationService extends BaseService {
             id: undefined, // Force new ID generation
             data: formData,
             status,
+            platformPrivacyPolicyUpdatedAt:
+              privacyStamp.platformPrivacyPolicyUpdatedAt,
+            organizationPrivacyNotice: connectVersion(
+              privacyStamp.organizationPrivacyNoticeVersionId,
+            ),
+            campPrivacyNotice: connectVersion(
+              privacyStamp.campPrivacyNoticeVersionId,
+            ),
             camp: { connect: { id: camp.id } },
             files: this.fileService.getFileConnectInput(fileIds, fileField),
           },

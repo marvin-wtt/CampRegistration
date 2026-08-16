@@ -1,6 +1,7 @@
 export default {
   email: {
     reason: '$t(email:footer.cause) Sie sich für dieses Camp angemeldet haben.',
+    privacyLink: 'Datenschutzinformationen zu diesem Camp',
     managerNotification: {
       subject: 'Neue Anmeldung | {{ camp.name }}',
       preview: 'Neue Anmeldung für das Camp: {{ camp.name }}',

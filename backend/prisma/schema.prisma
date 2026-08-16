@@ -230,36 +230,45 @@ enum RegistrationStatus {
 }
 
 model Registration {
-  id                String             @id @unique(map: "registrations_id_unique") @default(ulid()) @db.Char(26)
-  campId            String             @map("camp_id") @db.Char(26)
+  id                                 String             @id @unique(map: "registrations_id_unique") @default(ulid()) @db.Char(26)
+  campId                             String             @map("camp_id") @db.Char(26)
   /// ![Record<string, unknown>]
-  data              Json               @db.Json
+  data                               Json               @db.Json
   /// ![Record<string, unknown>]
-  customData        Json?              @map("custom_data") @db.Json
+  customData                         Json?              @map("custom_data") @db.Json
   // Computed fields
-  firstName         String?            @map("first_name")
-  lastName          String?            @map("last_name")
-  role              String?
-  gender            String?
-  dateOfBirth       DateTime?          @map("date_of_birth") @db.Date
+  firstName                          String?            @map("first_name")
+  lastName                           String?            @map("last_name")
+  role                               String?
+  gender                             String?
+  dateOfBirth                        DateTime?          @map("date_of_birth") @db.Date
   /// ![Array<string>]
-  emails            Json?
-  street            String?
-  city              String?
-  zipCode           String?            @map("zip_code")
-  country           String?
-  newsletterConsent Boolean?           @map("newsletter_consent")
-  locale            String             @default("en-US") @db.VarChar(5)
+  emails                             Json?
+  street                             String?
+  city                               String?
+  zipCode                            String?            @map("zip_code")
+  country                            String?
+  newsletterConsent                  Boolean?           @map("newsletter_consent")
+  locale                             String             @default("en-US") @db.VarChar(5)
   //
-  status            RegistrationStatus @default(PENDING)
-  createdAt         DateTime           @default(now()) @map("created_at")
-  updatedAt         DateTime?          @updatedAt @map("updated_at")
+  status                             RegistrationStatus @default(PENDING)
+  // Which privacy information this person was actually shown. Nullable because
+  // registrations predating the feature were shown none — do not backfill.
+  organizationPrivacyNoticeVersionId String?            @map("organization_privacy_notice_version_id") @db.Char(26)
+  campPrivacyNoticeVersionId         String?            @map("camp_privacy_notice_version_id") @db.Char(26)
+  platformPrivacyPolicyUpdatedAt     DateTime?          @map("platform_privacy_policy_updated_at")
+  createdAt                          DateTime           @default(now()) @map("created_at")
+  updatedAt                          DateTime?          @updatedAt @map("updated_at")
 
-  camp       Camp              @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "registrations_camp_id_foreign")
-  bed        Bed?
-  files      File[]
-  deliveries MessageDelivery[]
+  camp                      Camp                  @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "registrations_camp_id_foreign")
+  organizationPrivacyNotice PrivacyNoticeVersion? @relation("RegistrationOrganizationPrivacyNotice", fields: [organizationPrivacyNoticeVersionId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "registrations_organization_privacy_notice_version_id_foreign")
+  campPrivacyNotice         PrivacyNoticeVersion? @relation("RegistrationCampPrivacyNotice", fields: [campPrivacyNoticeVersionId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "registrations_camp_privacy_notice_version_id_foreign")
+  bed                       Bed?
+  files                     File[]
+  deliveries                MessageDelivery[]
 
+  @@index([organizationPrivacyNoticeVersionId], map: "registrations_organization_privacy_notice_version_id_index")
+  @@index([campPrivacyNoticeVersionId], map: "registrations_camp_privacy_notice_version_id_index")
   @@map("registrations")
 }
 
@@ -583,4 +592,29 @@ model LegalDocument {
   updatedAt DateTime?         @updatedAt @map("updated_at")
 
   @@map("legal_documents")
+}
+
+enum PrivacyNoticeScope {
+  ORGANIZATION
+  CAMP
+}
+
+/// Append-only. A registration points at the exact version it was shown, so an
+/// organization can still prove what the notice said months later.
+model PrivacyNoticeVersion {
+  id      String             @id @unique(map: "privacy_notice_versions_id_unique") @default(ulid()) @db.Char(26)
+  scope   PrivacyNoticeScope
+  scopeId String             @map("scope_id") @db.Char(26)
+  version Int
+  /// ![PrivacyNoticeContent]
+  content Json               @db.Json
+
+  publishedAt DateTime @default(now()) @map("published_at")
+
+  registrationsAsOrganization Registration[] @relation("RegistrationOrganizationPrivacyNotice")
+  registrationsAsCamp         Registration[] @relation("RegistrationCampPrivacyNotice")
+
+  @@unique([scope, scopeId, version], map: "privacy_notice_versions_scope_scope_id_version_unique")
+  @@index([scope, scopeId], map: "privacy_notice_versions_scope_scope_id_index")
+  @@map("privacy_notice_versions")
 }
