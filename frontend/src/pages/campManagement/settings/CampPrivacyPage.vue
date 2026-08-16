@@ -407,6 +407,7 @@ import { usePermissions } from '@/composables/permissions';
 import { useOrganizationPermissions } from '@/composables/organizationPermissions';
 import { usePrivacyLabels } from '@/composables/privacyLabels';
 import { useErrorExtractor } from '@/composables/serviceHandler';
+import { extractCampDataTypes } from '@/utils/surveyJS';
 import { APP_LOCALES as locales } from '@/i18n/locales';
 
 const { t, d } = useI18n();
@@ -644,38 +645,24 @@ const visibleRecipientKeys = computed(() =>
 );
 
 /**
- * Walks the camp's SurveyJS definition for questions the form author tagged
- * with a `campDataType` and maps those tags onto data categories. Partial by
- * construction — a free-text question can hold anything — so it only ever
- * proposes, and never proposes what the organization already covers.
+ * Maps the `campDataType` tags the form author put on this camp's questions
+ * onto data categories. Partial by construction — a free-text question can hold
+ * anything — so it only ever proposes, and never proposes what the organization
+ * already covers.
  */
 const suggestedCategories = computed<PrivacyDataCategoryKey[]>(() => {
-  const form = camp.value?.form as Record<string, unknown> | undefined;
+  const form = camp.value?.form;
   if (!form) {
     return [];
   }
 
   const found = new Set<PrivacyDataCategoryKey>();
-
-  const visit = (node: unknown): void => {
-    if (Array.isArray(node)) {
-      node.forEach(visit);
-      return;
+  for (const tag of extractCampDataTypes(form)) {
+    const category = CAMP_DATA_TYPE_DATA_CATEGORIES[tag];
+    if (category) {
+      found.add(category);
     }
-    if (node === null || typeof node !== 'object') {
-      return;
-    }
-
-    const record = node as Record<string, unknown>;
-    const tag = record.campDataType;
-    if (typeof tag === 'string' && tag in CAMP_DATA_TYPE_DATA_CATEGORIES) {
-      found.add(CAMP_DATA_TYPE_DATA_CATEGORIES[tag]!);
-    }
-
-    Object.values(record).forEach(visit);
-  };
-
-  visit(form);
+  }
 
   return [...found].filter(
     (key) => !hasDataCategory(key) && !inheritsCategory(key),
