@@ -325,12 +325,12 @@ describe('/api/v1/camps', () => {
       it('should respond with assigned camps when view is "assigned" and user is not an admin', async () => {
         const camp1 = await CampFactory.create(campPrivate);
         const camp2 = await CampFactory.create(campPrivate);
-
-        await CampFactory.create(campPublic);
-        await CampFactory.create(campPrivate);
+        const camp3 = await CampFactory.create(campPrivate);
+        const camp4 = await CampFactory.create(campPrivate);
         await CampFactory.create(campPrivate);
 
         const user = await UserFactory.create();
+        const otherUser = await UserFactory.create();
 
         await CampManagerFactory.create({
           camp: { connect: { id: camp1.id } },
@@ -339,6 +339,16 @@ describe('/api/v1/camps', () => {
         await CampManagerFactory.create({
           camp: { connect: { id: camp2.id } },
           user: { connect: { id: user.id } },
+          expiresAt: new Date('2060-01-01'),
+        });
+        await CampManagerFactory.create({
+          camp: { connect: { id: camp3.id } },
+          user: { connect: { id: user.id } },
+          expiresAt: new Date('2024-01-01'),
+        });
+        await CampManagerFactory.create({
+          camp: { connect: { id: camp4.id } },
+          user: { connect: { id: otherUser.id } },
         });
 
         const accessToken = generateAccessToken(user);

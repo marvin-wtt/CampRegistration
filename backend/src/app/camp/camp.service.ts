@@ -179,7 +179,14 @@ export class CampService extends BaseService {
       endAt: { lte: filter.endAt },
       countries: { array_contains: filter.country },
       ...(filter.managerUserId
-        ? { campManager: { some: { userId: filter.managerUserId } } }
+        ? {
+            campManager: {
+              some: {
+                userId: filter.managerUserId,
+                OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+              },
+            },
+          }
         : {}),
       ...(filter.status ? this.campStatusWhere(filter.status, new Date()) : {}),
     };
