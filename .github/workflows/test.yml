@@ -169,16 +169,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Build on both supported Node versions. Reusing a Node 22 build here would
-      # stop this matrix from verifying that the project also compiles on Node 24.
       - name: Build common
         run: npm run build --workspace common
 
       - name: Build backend
         run: npm run build --workspace backend
 
-      # `build` only compiles src/. This covers tests/, prisma/ factories and
-      # the data migrations, none of which the build ever sees.
       - name: Typecheck backend
         run: npm run typecheck --workspace backend
 
@@ -296,8 +292,6 @@ jobs:
       - name: Build frontend
         run: npm run build --workspace frontend
 
-      # Playwright strips types instead of checking them, so the specs are only
-      # ever verified here.
       - name: Typecheck e2e
         run: npm run typecheck --workspace e2e
 

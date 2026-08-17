@@ -7,7 +7,7 @@
   >
     <div
       v-if="camp && registrationFormVisible"
-      class="full-width"
+      class="camp-page__content full-width"
     >
       <registration-form
         :camp-details="camp"
@@ -20,6 +20,7 @@
       <privacy-notice-disclosure
         v-if="formActive"
         :camp-id="camp.id"
+        class="camp-page__privacy"
       />
     </div>
 
@@ -308,6 +309,22 @@ function enableManagerRegistrationOverride() {
   managerRegistrationOverrideEnabled.value = true;
 }
 </script>
+
+<style lang="scss" scoped>
+// No min-height here: the q-page is a flex row, so this stretches to its
+// content box on its own. Copying the page's min-height would add up with the
+// layout's top padding and push the footer below the fold.
+.camp-page__content {
+  display: flex;
+  flex-direction: column;
+}
+
+// Keeps the disclosure at the bottom edge for short forms instead of stranding
+// it mid-page; with a long form the auto margin collapses to zero.
+.camp-page__privacy {
+  margin-top: auto;
+}
+</style>
 
 <i18n lang="yaml" locale="en">
 action:
