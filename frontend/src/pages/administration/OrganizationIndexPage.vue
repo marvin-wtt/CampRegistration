@@ -155,7 +155,7 @@ const columns = computed<QTableColumn<Organization>[]>(() => [
   {
     name: 'registrationNumber',
     label: t('column.registrationNumber'),
-    field: 'registrationNumber',
+    field: (row) => row.registrationNumber ?? '—',
     align: 'left',
   },
   {

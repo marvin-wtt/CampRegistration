@@ -37,15 +37,9 @@ import { APP_LOCALES } from '@/i18n/locales';
 
 const model = defineModel<string>({ required: true });
 
-withDefaults(
-  defineProps<{
-    locales?: string[];
-    /** Locales that already have content, marked so gaps are visible at a glance. */
-    filled?: string[] | undefined;
-  }>(),
-  {
-    locales: () => [...APP_LOCALES],
-    filled: undefined,
-  },
-);
+const { locales = [...APP_LOCALES], filled } = defineProps<{
+  locales?: string[];
+  /** Locales that already have content, marked so gaps are visible at a glance. */
+  filled?: string[] | undefined;
+}>();
 </script>

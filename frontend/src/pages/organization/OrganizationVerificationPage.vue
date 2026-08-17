@@ -102,7 +102,10 @@ const details = computed(() => {
       label: t('field.address'),
       value: `${value.addressStreet}, ${value.addressZipCode} ${value.addressCity}, ${countryName(value.country, locale.value)}`,
     },
-    { label: t('field.registrationNumber'), value: value.registrationNumber },
+    {
+      label: t('field.registrationNumber'),
+      value: value.registrationNumber ?? '',
+    },
     { label: t('field.contactEmail'), value: value.contactEmail },
     { label: t('field.phone'), value: value.phone ?? '' },
     { label: t('field.website'), value: value.website ?? '' },

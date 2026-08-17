@@ -1,6 +1,6 @@
 import type { Camp } from '@camp-registration/common/entities';
 
-export type CampPhase = 'ongoing' | 'upcoming' | 'past' | 'archived';
+export type CampPhase = 'ongoing' | 'upcoming' | 'recentlyEnded' | 'past';
 
 const SIX_WEEKS_MS = 6 * 7 * 24 * 60 * 60 * 1000;
 
@@ -25,13 +25,13 @@ export function phaseOf(camp: Camp): CampPhase {
   if (now <= end) {
     return 'ongoing';
   }
-  // Ended — archive once registration is closed and it ended a while ago
+  // Ended — fully past once registration is closed and it ended a while ago
   if (!isRegistrationOpen(camp) && now - end > SIX_WEEKS_MS) {
-    return 'archived';
+    return 'past';
   }
-  return 'past';
+  return 'recentlyEnded';
 }
 
-export function isCampArchived(camp: Camp): boolean {
-  return phaseOf(camp) === 'archived';
+export function isCampPast(camp: Camp): boolean {
+  return phaseOf(camp) === 'past';
 }

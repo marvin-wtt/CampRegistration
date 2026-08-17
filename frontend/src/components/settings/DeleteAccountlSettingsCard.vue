@@ -1,26 +1,11 @@
 <template>
-  <q-card
-    flat
-    class="danger-card"
-  >
-    <q-card-section class="row items-start no-wrap q-gutter-sm">
-      <div class="danger-icon row items-center justify-center">
-        <q-icon
-          name="delete_forever"
-          size="22px"
-          class="text-error"
-        />
-      </div>
+  <danger-card icon="delete_forever">
+    <div class="text-subtitle2 text-weight-bold">{{ t('title') }}</div>
+    <div class="text-body2 text-on-surface-variant q-mt-xs">
+      {{ t('disclaimer.description') }}
+    </div>
 
-      <div class="col">
-        <div class="text-subtitle2 text-weight-bold">{{ t('title') }}</div>
-        <div class="text-body2 text-on-surface-variant q-mt-xs">
-          {{ t('disclaimer.description') }}
-        </div>
-      </div>
-    </q-card-section>
-
-    <q-card-section class="q-pt-none">
+    <template #body>
       <ul class="consequences text-body2 text-on-surface-variant">
         <li
           v-for="key in consequences"
@@ -44,9 +29,9 @@
           {{ t('disclaimer.irreversible') }}
         </span>
       </div>
-    </q-card-section>
+    </template>
 
-    <q-card-actions class="q-pt-none q-px-md q-pb-md">
+    <template #actions>
       <m-btn
         :label="t('action.delete')"
         icon="delete_forever"
@@ -54,12 +39,13 @@
         error
         @click="emit('delete')"
       />
-    </q-card-actions>
-  </q-card>
+    </template>
+  </danger-card>
 </template>
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
+import DangerCard from '@/components/common/DangerCard.vue';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
 const { t } = useI18n();
@@ -77,22 +63,6 @@ const consequences = [
 </script>
 
 <style lang="scss" scoped>
-// Danger zone treatment shared with OrganizationUnverifiedNotice: an error
-// accent and a faint error tint, rather than a fully red card.
-.danger-card {
-  border-radius: 16px;
-  border-left: 4px solid var(--md3-error);
-  background: color-mix(in srgb, var(--md3-error) 6%, var(--md3-surface));
-}
-
-.danger-icon {
-  width: 44px;
-  height: 44px;
-  flex: 0 0 auto;
-  border-radius: 13px;
-  background: color-mix(in srgb, var(--md3-error) 12%, transparent);
-}
-
 .consequences {
   margin: 0;
   padding: 0;

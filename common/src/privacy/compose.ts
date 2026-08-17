@@ -37,7 +37,7 @@ export interface PublishedPrivacyNotice {
     addressZipCode: string;
     addressCity: string;
     country: string;
-    registrationNumber: string;
+    registrationNumber: string | null;
   };
   supervisoryAuthority: SupervisoryAuthority | null;
   notice: ComposedPrivacyNotice | null;

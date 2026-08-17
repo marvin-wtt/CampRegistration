@@ -72,47 +72,6 @@
           </q-btn>
         </div>
 
-        <!-- Set-up is allowed before verification, sending is not — so say so
-             here rather than let the send button look available. -->
-        <q-card
-          v-if="newsletter && blockedReason"
-          flat
-          bordered
-          class="blocked-card q-mb-md"
-        >
-          <q-card-section class="row items-center no-wrap q-gutter-md">
-            <q-icon
-              :name="blockedReason === 'rejected' ? 'gpp_bad' : 'gpp_maybe'"
-              color="negative"
-              size="22px"
-            />
-            <div class="col">
-              <div class="text-subtitle1 text-weight-bold">
-                {{ t(`unverified.${blockedReason}.title`) }}
-              </div>
-              <div class="text-body2 text-grey-7">
-                {{
-                  t(`unverified.${blockedReason}.message`, {
-                    organization: newsletter.organizationName,
-                  })
-                }}
-              </div>
-            </div>
-            <q-btn
-              v-if="canOrgFor(newsletter.organizationId, 'organization.view')"
-              :label="t('unverified.action')"
-              outline
-              rounded
-              no-caps
-              color="negative"
-              :to="{
-                name: 'management.organization.verification',
-                params: { organizationId: newsletter.organizationId },
-              }"
-            />
-          </q-card-section>
-        </q-card>
-
         <!-- Tabs -->
         <div class="column no-wrap col newsletter-tabs">
           <q-tabs
@@ -162,6 +121,18 @@
               style="overflow-y: auto"
             >
               <div class="column no-wrap q-gutter-y-md full-height">
+                <!-- Set-up is allowed before verification, sending is not — so
+                     say so where the send button is, not on every tab. -->
+                <organization-unverified-notice
+                  v-if="newsletter"
+                  subject="newsletter"
+                  :organization-id="newsletter.organizationId"
+                  :organization-name="newsletter.organizationName"
+                  :verification-status="
+                    newsletter.organizationVerificationStatus
+                  "
+                />
+
                 <q-input
                   v-model="sendSubject"
                   :label="t('compose.subject')"
@@ -665,7 +636,7 @@ import NewsletterSubscriberAddDialog from '@/components/newsletter/NewsletterSub
 import NewsletterSubscriberImportDialog from '@/components/newsletter/NewsletterSubscriberImportDialog.vue';
 import NewsletterManagerAddDialog from '@/components/newsletter/NewsletterManagerAddDialog.vue';
 import { useAPIService } from '@/services/APIService';
-import { useOrganizationPermissions } from '@/composables/organizationPermissions';
+import OrganizationUnverifiedNotice from '@/components/organization/OrganizationUnverifiedNotice.vue';
 import { useNewsletterPermissions } from '@/composables/newsletterPermissions';
 import { useProfileStore } from '@/stores/profile-store';
 import { useRouteTab } from '@/composables/routeTab';
@@ -688,8 +659,6 @@ const quasar = useQuasar();
 const route = useRoute();
 const api = useAPIService();
 
-// Only members of the owning organization get the verification link.
-const { canOrgFor } = useOrganizationPermissions();
 const { canNewsletter } = useNewsletterPermissions();
 
 const profileStore = useProfileStore();
@@ -974,15 +943,6 @@ header:
   sent: '{count} sent'
   edit: 'Edit newsletter'
 
-unverified:
-  pending:
-    title: 'This newsletter cannot send yet'
-    message: '{organization} is awaiting verification. Set everything up now — only sending is disabled.'
-  rejected:
-    title: 'This newsletter cannot send'
-    message: '{organization} was not verified. Correct its details and submit them again.'
-  action: 'View verification'
-
 compose:
   subject: 'Subject'
   body: 'Message'
@@ -1049,15 +1009,6 @@ header:
   subscribers: '{count} Abonnenten'
   sent: '{count} gesendet'
   edit: 'Newsletter bearbeiten'
-
-unverified:
-  pending:
-    title: 'Dieser Newsletter kann noch nicht senden'
-    message: '{organization} wartet auf die Verifizierung. Sie können alles vorbereiten — nur das Senden ist deaktiviert.'
-  rejected:
-    title: 'Dieser Newsletter kann nicht senden'
-    message: '{organization} wurde nicht verifiziert. Korrigieren Sie die Angaben und reichen Sie sie erneut ein.'
-  action: 'Verifizierung ansehen'
 
 compose:
   subject: 'Betreff'
@@ -1126,15 +1077,6 @@ header:
   sent: '{count} envoyés'
   edit: 'Modifier la newsletter'
 
-unverified:
-  pending:
-    title: 'Cette newsletter ne peut pas encore être envoyée'
-    message: "{organization} attend sa vérification. Préparez tout dès maintenant : seul l'envoi est désactivé."
-  rejected:
-    title: 'Cette newsletter ne peut pas être envoyée'
-    message: "{organization} n'a pas été vérifiée. Corrigez ses informations et soumettez-les à nouveau."
-  action: 'Voir la vérification'
-
 compose:
   subject: 'Sujet'
   body: 'Message'
@@ -1201,15 +1143,6 @@ header:
   subscribers: '{count} subskrybentów'
   sent: '{count} wysłanych'
   edit: 'Edytuj newsletter'
-
-unverified:
-  pending:
-    title: 'Tego newslettera nie można jeszcze wysłać'
-    message: '{organization} oczekuje na weryfikację. Możesz wszystko przygotować — wyłączona jest tylko wysyłka.'
-  rejected:
-    title: 'Tego newslettera nie można wysłać'
-    message: '{organization} nie została zweryfikowana. Popraw jej dane i zgłoś je ponownie.'
-  action: 'Zobacz weryfikację'
 
 compose:
   subject: 'Temat'
@@ -1278,15 +1211,6 @@ header:
   sent: '{count} odesláno'
   edit: 'Upravit newsletter'
 
-unverified:
-  pending:
-    title: 'Tento newsletter zatím nelze odeslat'
-    message: '{organization} čeká na ověření. Vše si můžete připravit — vypnuté je jen odesílání.'
-  rejected:
-    title: 'Tento newsletter nelze odeslat'
-    message: '{organization} nebyla ověřena. Uprav její údaje a odešli je znovu.'
-  action: 'Zobrazit ověření'
-
 compose:
   subject: 'Předmět'
   body: 'Zpráva'
@@ -1342,12 +1266,6 @@ managers:
 </i18n>
 
 <style scoped>
-.blocked-card {
-  border-radius: 16px;
-  border-left: 4px solid var(--md3-error);
-  background: color-mix(in srgb, var(--md3-error) 7%, var(--md3-surface));
-}
-
 .newsletter-tabs {
   min-height: 0;
 }

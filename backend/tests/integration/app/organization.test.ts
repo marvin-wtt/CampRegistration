@@ -119,11 +119,23 @@ describe(BASE, () => {
       await request().post(BASE).send(validBody()).expect(401);
     });
 
+    it('should respond with `201` without a registration number', async () => {
+      const user = await UserFactory.create();
+      const accessToken = generateAccessToken(user);
+
+      const { body: response } = await request()
+        .post(BASE)
+        .send({ ...validBody(), registrationNumber: null })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(201);
+
+      expect(response.data.registrationNumber).toBeNull();
+    });
+
     it.each([
       ['name', { name: '' }],
       ['contactEmail', { contactEmail: 'not-an-email' }],
       ['country', { country: 'deu' }],
-      ['registrationNumber', { registrationNumber: '' }],
     ])('should respond with `400` for an invalid %s', async (_field, patch) => {
       const user = await UserFactory.create();
       const accessToken = generateAccessToken(user);

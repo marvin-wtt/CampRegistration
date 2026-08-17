@@ -137,8 +137,12 @@ export class PrivacyNoticeService extends BaseService {
 
   /**
    * No completeness gate: an addendum is optional by nature, and a camp that
-   * has nothing to add says so by adding nothing. Publishing an empty one would
-   * only mint a version that says the same as no version at all.
+   * has nothing to add says so by adding nothing. An empty addendum is refused
+   * as a first version — it would say the same as no version at all — but
+   * accepted once a version exists, because withdrawing every addition is the
+   * only way back to the organization's notice on its own. The withdrawal is a
+   * version of its own rather than a deletion: registrations are stamped with
+   * the version they were shown, so no version may disappear.
    */
   async publishCampAddendum(
     campId: string,
@@ -146,7 +150,10 @@ export class PrivacyNoticeService extends BaseService {
   ): Promise<CampPrivacyNotice> {
     const sanitized = this.sanitizeAddendum(content);
 
-    if (isEmptyAddendum(sanitized)) {
+    if (
+      isEmptyAddendum(sanitized) &&
+      !(await this.latestVersion('CAMP', campId))
+    ) {
       throw new ApiError(
         httpStatus.UNPROCESSABLE_ENTITY,
         'Privacy notice addendum is empty.',

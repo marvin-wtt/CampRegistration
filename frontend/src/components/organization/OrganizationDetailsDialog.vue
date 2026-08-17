@@ -242,7 +242,7 @@ const groups = computed<{ title: string; rows: DetailRow[] }[]>(() => {
         },
         {
           label: t('field.registrationNumber'),
-          value: organization.registrationNumber,
+          value: organization.registrationNumber ?? '',
         },
       ],
     },

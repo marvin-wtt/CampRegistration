@@ -32,9 +32,10 @@ const show = z.object({
   }),
 });
 
-// The full legal dataset is required up front: an organization is submitted for
+// The legal dataset is required up front: an organization is submitted for
 // moderation the moment it is created, so there is no state in which it may be
-// half-filled.
+// half-filled. The registration number is the exception — not every legal form
+// is entered in a public register.
 const organizationBody = {
   name: z.string().min(1).max(255),
   contactEmail: z.email().max(255),
@@ -44,7 +45,7 @@ const organizationBody = {
   addressStreet: z.string().min(1).max(255),
   addressZipCode: z.string().min(1).max(20),
   addressCity: z.string().min(1).max(255),
-  registrationNumber: z.string().min(1).max(100),
+  registrationNumber: z.string().max(100).nullable().optional(),
   verificationNote: z.string().max(5000).nullable().optional(),
 };
 

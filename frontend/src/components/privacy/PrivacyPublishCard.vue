@@ -3,11 +3,16 @@
     flat
     bordered
   >
-    <q-card-section v-if="$slots.default">
-      <slot />
-    </q-card-section>
+    <!-- A passed slot is not the same as a rendered one: both pages pass a
+         default slot whose contents are conditional, and an empty section with
+         a separator under it reads as a heading someone forgot to write. -->
+    <template v-if="hasDefaultContent">
+      <q-card-section>
+        <slot />
+      </q-card-section>
 
-    <q-separator v-if="$slots.default" />
+      <q-separator />
+    </template>
 
     <!-- Publishing is the only write, so the state answers one question: is
          what the registrant reads the same as what is on screen? -->
@@ -28,7 +33,7 @@
     </q-card-section>
 
     <q-card-section
-      v-if="$slots.note"
+      v-if="hasNoteContent"
       class="q-pt-none"
     >
       <slot name="note" />
@@ -54,7 +59,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
+import { Comment, Fragment, Text, computed, useSlots, type VNode } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
@@ -70,6 +75,12 @@ const props = defineProps<{
    * part of the state line that does.
    */
   unpublishedDetail: string;
+  /**
+   * What to say when nothing is published and nothing has been edited. Absent
+   * means that state is a draft worth warning about — true of an organization's
+   * own notice, but not of a camp's optional additions to it.
+   */
+  emptyStatus?: { title: string; detail: string };
   /** A reason of the page's own why publishing cannot go ahead yet. */
   publishDisabled?: boolean;
   publishing?: boolean;
@@ -82,8 +93,39 @@ const emit = defineEmits<{
 
 const { t, d } = useI18n({ useScope: 'global' });
 
+const slots = useSlots();
+
+// A `v-if` that fails still leaves a comment vnode behind, so the slot has to
+// be rendered and looked at rather than merely counted.
+function rendersContent(nodes: VNode[] | undefined): boolean {
+  return (nodes ?? []).some((node) => {
+    if (node.type === Comment) {
+      return false;
+    }
+    if (node.type === Fragment) {
+      return rendersContent(node.children as VNode[] | undefined);
+    }
+    if (node.type === Text) {
+      return typeof node.children === 'string' && node.children.trim() !== '';
+    }
+
+    return true;
+  });
+}
+
+const hasDefaultContent = computed(() => rendersContent(slots.default?.()));
+const hasNoteContent = computed(() => rendersContent(slots.note?.()));
+
 const status = computed(() => {
   if (props.publishedVersion === null) {
+    if (props.emptyStatus && !props.hasUnpublishedChanges) {
+      return {
+        icon: 'info',
+        color: 'on-surface-variant',
+        ...props.emptyStatus,
+      };
+    }
+
     return {
       icon: 'edit_note',
       color: 'warning',

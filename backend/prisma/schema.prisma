@@ -91,7 +91,7 @@ model Organization {
   contactEmail       String  @map("contact_email") @db.VarChar(255)
   phone              String? @db.VarChar(50)
   website            String? @db.VarChar(255)
-  registrationNumber String  @map("registration_number") @db.VarChar(100)
+  registrationNumber String? @map("registration_number") @db.VarChar(100)
 
   addressStreet  String @map("address_street") @db.VarChar(255)
   addressZipCode String @map("address_zip_code") @db.VarChar(20)

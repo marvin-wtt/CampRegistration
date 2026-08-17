@@ -80,11 +80,11 @@
         />
 
         <camp-card-section
-          v-if="archivedCamps.length"
-          :header="t('group.archived')"
-          icon="inventory_2"
-          :hint="t('group.archivedHint')"
-          :camps="archivedCamps"
+          v-if="pastCamps.length"
+          :header="t('group.past')"
+          icon="history"
+          :hint="t('group.pastHint')"
+          :camps="pastCamps"
           collapsible
         />
       </template>
@@ -126,7 +126,7 @@ onMounted(() => void assignedCampsStore.fetchData());
 const totalCamps = computed<number>(() => camps.value?.length ?? 0);
 
 interface Group {
-  key: Exclude<CampPhase, 'archived'>;
+  key: Exclude<CampPhase, 'past'>;
   header: string;
   icon: string;
   camps: Camp[];
@@ -141,8 +141,8 @@ const groups = computed<Group[]>(() => {
   const upcoming = all
     .filter((camp) => phaseOf(camp) === 'upcoming')
     .toSorted(byStartAsc);
-  const past = all
-    .filter((camp) => phaseOf(camp) === 'past')
+  const recentlyEnded = all
+    .filter((camp) => phaseOf(camp) === 'recentlyEnded')
     .toSorted(byStartDesc);
 
   return [
@@ -159,17 +159,17 @@ const groups = computed<Group[]>(() => {
       camps: upcoming,
     },
     {
-      key: 'past' as const,
-      header: t('group.past'),
-      icon: 'history',
-      camps: past,
+      key: 'recentlyEnded' as const,
+      header: t('group.recentlyEnded'),
+      icon: 'schedule',
+      camps: recentlyEnded,
     },
   ].filter((group) => group.camps.length > 0);
 });
 
-const archivedCamps = computed<Camp[]>(() => {
+const pastCamps = computed<Camp[]>(() => {
   return (camps.value ?? [])
-    .filter((camp) => phaseOf(camp) === 'archived')
+    .filter((camp) => phaseOf(camp) === 'past')
     .toSorted(byStartDesc);
 });
 
@@ -257,9 +257,9 @@ subtitle: 'Manage registrations, rooms and program for the camps you run.'
 group:
   ongoing: 'Happening now'
   upcoming: 'Upcoming'
-  past: 'Past'
-  archived: 'Archived'
-  archivedHint: 'Camps are archived automatically once they ended more than 6 weeks ago and registration is closed.'
+  recentlyEnded: 'Recently ended'
+  past: 'Past camps'
+  pastHint: 'Camps move here automatically once they ended more than 6 weeks ago and registration is closed.'
 action:
   create: 'Create camp'
 empty:
@@ -277,9 +277,9 @@ subtitle: 'Verwalte Anmeldungen, Räume und Programm für die Camps, die du leit
 group:
   ongoing: 'Aktuell'
   upcoming: 'Anstehend'
-  past: 'Vergangen'
-  archived: 'Archiviert'
-  archivedHint: 'Camps werden automatisch archiviert, wenn sie vor mehr als 6 Wochen endeten und die Anmeldung geschlossen ist.'
+  recentlyEnded: 'Kürzlich beendet'
+  past: 'Vergangene Camps'
+  pastHint: 'Camps landen automatisch hier, wenn sie vor mehr als 6 Wochen endeten und die Anmeldung geschlossen ist.'
 action:
   create: 'Camp erstellen'
 empty:
@@ -297,9 +297,9 @@ subtitle: 'Gérez les inscriptions, les chambres et le programme des camps que v
 group:
   ongoing: 'En cours'
   upcoming: 'À venir'
-  past: 'Passés'
-  archived: 'Archivés'
-  archivedHint: 'Les camps sont archivés automatiquement lorsqu’ils se sont terminés il y a plus de 6 semaines et que les inscriptions sont closes.'
+  recentlyEnded: 'Récemment terminés'
+  past: 'Camps passés'
+  pastHint: 'Les camps arrivent ici automatiquement lorsqu’ils se sont terminés il y a plus de 6 semaines et que les inscriptions sont closes.'
 action:
   create: 'Créer un camp'
 empty:
@@ -317,9 +317,9 @@ subtitle: 'Zarządzaj zapisami, pokojami i programem obozów, które prowadzisz.
 group:
   ongoing: 'Trwające'
   upcoming: 'Nadchodzące'
-  past: 'Zakończone'
-  archived: 'Zarchiwizowane'
-  archivedHint: 'Obozy są archiwizowane automatycznie, gdy zakończyły się ponad 6 tygodni temu, a zapisy są zamknięte.'
+  recentlyEnded: 'Niedawno zakończone'
+  past: 'Minione obozy'
+  pastHint: 'Obozy trafiają tutaj automatycznie, gdy zakończyły się ponad 6 tygodni temu, a zapisy są zamknięte.'
 action:
   create: 'Utwórz obóz'
 empty:
@@ -337,9 +337,9 @@ subtitle: 'Spravujte registrace, pokoje a program táborů, které vedete.'
 group:
   ongoing: 'Probíhající'
   upcoming: 'Nadcházející'
-  past: 'Minulé'
-  archived: 'Archivované'
-  archivedHint: 'Tábory se archivují automaticky, jakmile skončily před více než 6 týdny a registrace je uzavřena.'
+  recentlyEnded: 'Nedávno ukončené'
+  past: 'Minulé tábory'
+  pastHint: 'Tábory se zde objeví automaticky, jakmile skončily před více než 6 týdny a registrace je uzavřena.'
 action:
   create: 'Vytvořit tábor'
 empty:

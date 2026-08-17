@@ -372,17 +372,15 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/settings',
+    name: 'settings',
+    redirect: { name: 'settings.profile' },
     component: () => import('@/layouts/AccountSettingsLayout.vue'),
     meta: {
       auth: true,
     },
     children: [
       {
-        path: 'account',
-        component: () => import('@/pages/settings/AccountSettingsPage.vue'),
-      },
-      {
-        name: 'settings',
+        name: 'settings.profile',
         path: 'profile',
         component: () => import('@/pages/settings/ProfileSettingsPage.vue'),
       },
@@ -390,6 +388,11 @@ const routes: RouteRecordRaw[] = [
         name: 'settings.security',
         path: 'security',
         component: () => import('@/pages/settings/SecuritySettingsPage.vue'),
+      },
+      {
+        name: 'settings.account',
+        path: 'account',
+        component: () => import('@/pages/settings/AccountSettingsPage.vue'),
       },
     ],
   },

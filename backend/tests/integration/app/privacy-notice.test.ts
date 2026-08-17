@@ -352,6 +352,38 @@ describe('privacy notices', () => {
         .expect(422);
     });
 
+    it('should accept an empty addendum that withdraws published additions', async () => {
+      const organization = await OrganizationFactory.create();
+      const camp = await CampFactory.create({
+        organization: { connect: { id: organization.id } },
+      });
+      await PrivacyNoticeFactory.createCampAddendum(camp.id, {
+        recipients: [{ key: 'transport_provider', name: 'Bus Co' }],
+      });
+
+      const { body } = await request()
+        .put(`/api/v1/camps/${camp.id}/privacy-notice/addendum`)
+        .send({ content: {} })
+        .auth(await campManagerToken(camp.id), { type: 'bearer' })
+        .expect(200);
+
+      expect(body.data.publishedVersion).toBe(2);
+      expect(body.data.content.recipients ?? []).toStrictEqual([]);
+
+      // The withdrawal is a version of its own, so registrations stamped with
+      // the old one still resolve — but the camp adds nothing any more.
+      const published = await request()
+        .get(`/api/v1/camps/${camp.id}/privacy-notice`)
+        .expect(200);
+
+      expect(published.body.data.campVersion).toBe(2);
+      expect(
+        published.body.data.notice.recipients.map(
+          (recipient: { key: string }) => recipient.key,
+        ),
+      ).not.toContain('transport_provider');
+    });
+
     it('should sanitize the addendum free text', async () => {
       const organization = await OrganizationFactory.create();
       const camp = await CampFactory.create({

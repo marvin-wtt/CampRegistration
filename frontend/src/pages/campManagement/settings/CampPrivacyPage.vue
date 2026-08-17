@@ -318,6 +318,7 @@
           </div>
           <locale-tabs
             v-model="additionalLocale"
+            :locales="additionalLocales"
             :filled="filledAdditionalLocales"
           />
           <rich-text-editor
@@ -335,6 +336,10 @@
         :can-edit="canEdit"
         :publish-disabled="publishDisabled"
         :unpublished-detail="t('status.unpublishedDetail')"
+        :empty-status="{
+          title: t('status.none.title'),
+          detail: t('status.none.detail'),
+        }"
         :publishing
         @publish="publish"
         @preview="previewOpen = true"
@@ -345,13 +350,18 @@
         >
           {{ t('status.blocked') }}
         </div>
-        <!-- The server refuses an empty addendum, so say why the button is
-             disabled rather than leaving it inert. -->
+        <!-- An addendum that says nothing is a first version the server
+             refuses, but a withdrawal of everything the camp published so far —
+             two different things to say about the same empty screen. Only once
+             something has been changed: on an untouched camp the status line
+             already says it. -->
         <div
-          v-else-if="isEmptyAddendum(content)"
+          v-else-if="isEmptyAddendum(content) && hasUnpublishedChanges"
           class="text-body2 text-on-surface-variant"
         >
-          {{ t('status.empty') }}
+          {{
+            publishedVersion === null ? t('status.empty') : t('status.withdraw')
+          }}
         </div>
       </privacy-publish-card>
     </div>
@@ -373,7 +383,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
@@ -408,7 +418,7 @@ import { useOrganizationPermissions } from '@/composables/organizationPermission
 import { usePrivacyLabels } from '@/composables/privacyLabels';
 import { useErrorExtractor } from '@/composables/serviceHandler';
 import { extractCampDataTypes } from '@/utils/surveyJS';
-import { APP_LOCALES as locales } from '@/i18n/locales';
+import { APP_LOCALES, localesForCountries } from '@/i18n/locales';
 
 const { t, d } = useI18n();
 const { t: gt } = useI18n({ useScope: 'global' });
@@ -457,15 +467,27 @@ const hasUnpublishedChanges = computed(
 );
 
 /**
- * An addendum that says nothing has nothing to publish — the server refuses an
- * empty one rather than minting a version that reads like no version at all.
+ * An addendum that says nothing has nothing to publish — the server refuses one
+ * rather than minting a first version that reads like no version at all. Once
+ * something is published, though, saying nothing withdraws it, which is the
+ * only way back to the organization's notice on its own.
  */
 const publishDisabled = computed(
-  () => !organizationContent.value || isEmptyAddendum(content.value),
+  () =>
+    !organizationContent.value ||
+    (isEmptyAddendum(content.value) && publishedVersion.value === null),
 );
 
 function emptyAddendum(): PrivacyNoticeAddendum {
   return { dataCategories: [], recipients: [], additional: null };
+}
+
+/** Loads what is published into the editor and baselines the edit against it. */
+function loadPublished(published: PrivacyNoticeAddendum | undefined) {
+  content.value = { ...emptyAddendum(), ...published };
+  // Baseline it *after* normalising, or the page opens claiming edits the
+  // author never made.
+  publishedSnapshot.value = JSON.stringify(content.value);
 }
 
 onMounted(async () => {
@@ -485,16 +507,13 @@ onMounted(async () => {
       fetchCampNotice(id),
     ]);
 
-    content.value = { ...emptyAddendum(), ...context.content };
+    loadPublished(context.content);
     organizationContent.value = context.organizationContent;
     organizationPublishedVersion.value = context.organizationPublishedVersion;
     organizationPublishedAt.value = context.organizationPublishedAt;
     publishedVersion.value = context.publishedVersion;
     publishedAt.value = context.publishedAt;
     published.value = notice;
-    // Baseline it *after* normalising, or the page opens claiming edits the
-    // author never made.
-    publishedSnapshot.value = JSON.stringify(content.value);
   } catch (err) {
     error.value = extractErrorText(err);
   } finally {
@@ -754,8 +773,37 @@ const additionalForLocale = computed({
   },
 });
 
+/**
+ * Only the languages this camp's registrants read. The addendum is written by
+ * hand and never translated for the author, so a tab for a country the camp
+ * does not run in is only an invitation to write text nobody is served.
+ */
+const additionalLocales = computed(() => {
+  const own = localesForCountries(camp.value?.countries);
+
+  // Text written before the camp's countries changed stays reachable: it is
+  // published either way, and a tab nobody can open is a tab nobody can fix.
+  return APP_LOCALES.filter(
+    (loc) =>
+      own.includes(loc) ||
+      localeText(content.value.additional, loc).trim() !== '',
+  );
+});
+
+// The camp arrives after the page does, so the tab picked at load may not be
+// among the camp's own languages.
+watch(
+  additionalLocales,
+  (available) => {
+    if (!available.some((locale) => locale === additionalLocale.value)) {
+      additionalLocale.value = available[0] ?? 'en';
+    }
+  },
+  { immediate: true },
+);
+
 const filledAdditionalLocales = computed(() =>
-  locales.filter(
+  additionalLocales.value.filter(
     (loc) => localeText(content.value.additional, loc).trim() !== '',
   ),
 );
@@ -775,8 +823,7 @@ async function publish() {
     publishedAt.value = context.publishedAt;
     // From what came back, not from what was sent: the server sanitizes the
     // free-text field, so the two are not always the same document.
-    content.value = { ...emptyAddendum(), ...context.content };
-    publishedSnapshot.value = JSON.stringify(content.value);
+    loadPublished(context.content);
   } catch (err) {
     error.value = extractErrorText(err);
   } finally {
@@ -866,9 +913,13 @@ addendum:
 field:
   additionalPlaceholder: 'Additional privacy information for this camp…'
 status:
+  none:
+    title: 'No additions for this camp'
+    detail: 'Registrants see your organisation’s notice as it stands.'
   unpublishedDetail: 'Registrants see your organisation’s notice without these additions until you publish.'
   blocked: 'There is nothing to publish these additions on top of yet.'
   empty: 'Nothing to publish yet — tick what this camp adds, or write an addition below.'
+  withdraw: 'Publishing now withdraws this camp’s additions — registrants then see your organisation’s notice on its own.'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -904,9 +955,13 @@ addendum:
 field:
   additionalPlaceholder: 'Zusätzliche Datenschutzinformationen zu dieser Freizeit…'
 status:
+  none:
+    title: 'Keine Ergänzungen für diese Freizeit'
+    detail: 'Anmeldende sehen die Informationen eurer Organisation unverändert.'
   unpublishedDetail: 'Anmeldende sehen die Informationen der Organisation ohne diese Ergänzungen, bis du veröffentlichst.'
   blocked: 'Es gibt noch nichts, worauf diese Ergänzungen aufsetzen könnten.'
   empty: 'Noch nichts zu veröffentlichen – hake an, was diese Freizeit ergänzt, oder schreibe unten eine Ergänzung.'
+  withdraw: 'Beim Veröffentlichen werden die Ergänzungen dieser Freizeit zurückgezogen – Anmeldende sehen dann nur die Informationen eurer Organisation.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -942,9 +997,13 @@ addendum:
 field:
   additionalPlaceholder: 'Informations complémentaires pour ce séjour…'
 status:
+  none:
+    title: 'Aucun ajout pour ce séjour'
+    detail: "Les personnes qui s'inscrivent voient les informations de votre organisation telles quelles."
   unpublishedDetail: "Les personnes qui s'inscrivent voient les informations de votre organisation sans ces ajouts tant que vous n'avez pas publié."
   blocked: "Il n'y a encore rien sur quoi appuyer ces ajouts."
   empty: 'Rien à publier pour le moment — cochez ce que ce séjour ajoute, ou rédigez un ajout ci-dessous.'
+  withdraw: "Publier maintenant retire les ajouts de ce séjour — les personnes qui s'inscrivent ne verront plus que les informations de votre organisation."
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -980,9 +1039,13 @@ addendum:
 field:
   additionalPlaceholder: 'Další informace o ochraně osobních údajů pro tento tábor…'
 status:
+  none:
+    title: 'Žádná doplnění pro tento tábor'
+    detail: 'Přihlašující vidí informace vaší organizace beze změn.'
   unpublishedDetail: 'Přihlašující vidí informace vaší organizace bez těchto doplnění, dokud je nezveřejníš.'
   blocked: 'Zatím není na čem tato doplnění postavit.'
   empty: 'Zatím není co zveřejnit – zaškrtni, co tento tábor doplňuje, nebo níže napiš doplnění.'
+  withdraw: 'Zveřejněním se doplnění tohoto tábora stáhnou – přihlašující pak uvidí jen informace vaší organizace.'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -1018,7 +1081,11 @@ addendum:
 field:
   additionalPlaceholder: 'Dodatkowe informacje o ochronie danych dla tego obozu…'
 status:
+  none:
+    title: 'Brak uzupełnień dla tego obozu'
+    detail: 'Osoby zgłaszające się widzą informacje Waszej organizacji bez zmian.'
   unpublishedDetail: 'Osoby zgłaszające się widzą informacje Waszej organizacji bez tych uzupełnień, dopóki ich nie opublikujesz.'
   blocked: 'Nie ma jeszcze na czym oprzeć tych uzupełnień.'
   empty: 'Nie ma jeszcze czego publikować – zaznacz, co dodaje ten obóz, albo napisz uzupełnienie poniżej.'
+  withdraw: 'Publikacja wycofa uzupełnienia tego obozu – osoby zgłaszające się zobaczą wtedy same informacje Waszej organizacji.'
 </i18n>

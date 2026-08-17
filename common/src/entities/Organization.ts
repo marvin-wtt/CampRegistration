@@ -21,7 +21,7 @@ export interface Organization extends Identifiable {
   addressStreet: string;
   addressZipCode: string;
   addressCity: string;
-  registrationNumber: string;
+  registrationNumber: string | null;
 
   verificationNote: string | null;
   /** The moderator's decision reason; null while never reviewed. */
@@ -83,7 +83,7 @@ export interface OrganizationCreateData {
   addressStreet: string;
   addressZipCode: string;
   addressCity: string;
-  registrationNumber: string;
+  registrationNumber?: string | null;
   verificationNote?: string | null;
 }
 

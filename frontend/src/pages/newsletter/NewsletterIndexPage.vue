@@ -23,13 +23,9 @@
           :rounded="quasar.screen.gt.xs"
           unelevated
           no-caps
-          :disable="!isAdmin"
+          Improv
           @click="showCreateDialog"
-        >
-          <q-tooltip v-if="!isAdmin">
-            {{ t('adminOnly') }}
-          </q-tooltip>
-        </q-btn>
+        />
       </div>
 
       <div
@@ -142,22 +138,15 @@
         <div class="text-subtitle1 text-grey-6 text-center">
           {{ t('empty') }}
         </div>
-        <template v-if="isAdmin">
-          <q-btn
-            color="primary"
-            icon="add"
-            :label="t('action.create')"
-            rounded
-            unelevated
-            no-caps
-            @click="showCreateDialog"
-          />
-        </template>
-        <template v-else>
-          <div class="text-body2 text-grey-6 text-center">
-            {{ t('adminOnly') }}
-          </div>
-        </template>
+        <q-btn
+          color="primary"
+          icon="add"
+          :label="t('action.create')"
+          rounded
+          unelevated
+          no-caps
+          @click="showCreateDialog"
+        />
       </div>
     </div>
   </page-state-handler>
@@ -167,7 +156,7 @@
 import { useI18n } from 'vue-i18n';
 import { computed, onMounted } from 'vue';
 import { useNewsletterStore } from '@/stores/newsletter-store';
-import { useProfileStore } from '@/stores/profile-store';
+import { useOrganizationPermissions } from '@/composables/organizationPermissions';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import { useQuasar } from 'quasar';
 import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
@@ -184,7 +173,7 @@ const { t } = useI18n();
 const router = useRouter();
 const quasar = useQuasar();
 const newsletterStore = useNewsletterStore();
-const profileStore = useProfileStore();
+const { newsletterCreationOrganizationIds } = useOrganizationPermissions();
 
 onMounted(async () => {
   await newsletterStore.fetchData();
@@ -193,9 +182,31 @@ onMounted(async () => {
 const newsletters = computed<Newsletter[]>(() => newsletterStore.data ?? []);
 const isLoading = computed<boolean>(() => newsletterStore.isLoading);
 const error = computed<string | null>(() => newsletterStore.error);
-const isAdmin = computed<boolean>(() => profileStore.user?.role === 'ADMIN');
 
 function showCreateDialog() {
+  // A newsletter must name a verified organization the user may create in.
+  // Without one, explain that instead of opening a dialog that would 403.
+  if (newsletterCreationOrganizationIds.value.length === 0) {
+    quasar
+      .dialog({
+        title: t('organization_required.title'),
+        message: t('organization_required.message'),
+        cancel: {
+          outline: true,
+          color: 'primary',
+        },
+        ok: {
+          label: t('organization_required.action'),
+          color: 'primary',
+          rounded: true,
+        },
+      })
+      .onOk(() => {
+        void router.push({ name: 'management.organizations' });
+      });
+    return;
+  }
+
   quasar
     .dialog({ component: NewsletterCreateDialog })
     .onOk((data: NewsletterCreateData) => {
@@ -235,7 +246,10 @@ function showDeleteDialog(newsletter: Newsletter) {
 title: 'Newsletters'
 subtitle: 'Create newsletters and send messages to your subscribers.'
 empty: 'No newsletters yet. Create one to get started.'
-adminOnly: 'Only administrators can create newsletters.'
+organization_required:
+  title: 'Verified organization required'
+  message: 'Newsletters are sent by an organization. You need a verified organization that lets you create newsletters.'
+  action: 'Go to organizations'
 action:
   create: 'New Newsletter'
   edit: 'Edit'
@@ -251,7 +265,10 @@ dialog:
 title: 'Newsletter'
 subtitle: 'Newsletter erstellen und Nachrichten an Abonnenten senden.'
 empty: 'Noch keine Newsletter. Erstellen Sie einen, um loszulegen.'
-adminOnly: 'Nur Administratoren können Newsletter erstellen.'
+organization_required:
+  title: 'Verifizierte Organisation erforderlich'
+  message: 'Newsletter werden von einer Organisation versendet. Du brauchst eine verifizierte Organisation, in der du Newsletter erstellen darfst.'
+  action: 'Zu den Organisationen'
 action:
   create: 'Neuer Newsletter'
   edit: 'Bearbeiten'
@@ -267,7 +284,10 @@ dialog:
 title: 'Newsletters'
 subtitle: 'Créer des newsletters et envoyer des messages à vos abonnés.'
 empty: 'Aucune newsletter pour le moment. Créez-en une pour commencer.'
-adminOnly: 'Seuls les administrateurs peuvent créer des newsletters.'
+organization_required:
+  title: 'Organisation vérifiée requise'
+  message: 'Les newsletters sont envoyées par une organisation. Il te faut une organisation vérifiée dans laquelle tu peux créer des newsletters.'
+  action: 'Aller aux organisations'
 action:
   create: 'Nouvelle newsletter'
   edit: 'Modifier'
@@ -283,7 +303,10 @@ dialog:
 title: 'Newslettery'
 subtitle: 'Twórz newslettery i wysyłaj wiadomości do swoich subskrybentów.'
 empty: 'Brak newsletterów. Utwórz pierwszy, aby zacząć.'
-adminOnly: 'Tylko administratorzy mogą tworzyć newslettery.'
+organization_required:
+  title: 'Wymagana zweryfikowana organizacja'
+  message: 'Newslettery wysyła organizacja. Potrzebujesz zweryfikowanej organizacji, w której możesz tworzyć newslettery.'
+  action: 'Przejdź do organizacji'
 action:
   create: 'Nowy newsletter'
   edit: 'Edytuj'
@@ -299,7 +322,10 @@ dialog:
 title: 'Newslettery'
 subtitle: 'Vytvářejte newslettery a odesílejte zprávy svým odběratelům.'
 empty: 'Zatím žádné newslettery. Vytvořte první a začněte.'
-adminOnly: 'Newslettery mohou vytvářet pouze správci.'
+organization_required:
+  title: 'Vyžadována ověřená organizace'
+  message: 'Newslettery odesílá organizace. Potřebuješ ověřenou organizaci, ve které můžeš vytvářet newslettery.'
+  action: 'Přejít na organizace'
 action:
   create: 'Nový newsletter'
   edit: 'Upravit'

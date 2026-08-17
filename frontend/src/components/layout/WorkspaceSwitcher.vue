@@ -100,7 +100,6 @@ import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import { areaFromRouteName } from '@/components/layout/workspaceArea';
 
 defineProps<{
-  // Render as a compact pill for the navigation rail.
   rail?: boolean;
 }>();
 

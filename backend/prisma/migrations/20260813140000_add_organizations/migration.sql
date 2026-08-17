@@ -32,7 +32,7 @@ CREATE TABLE `organizations`
   `address_street`      VARCHAR(255) NOT NULL,
   `address_zip_code`    VARCHAR(20)  NOT NULL,
   `address_city`        VARCHAR(255) NOT NULL,
-  `registration_number` VARCHAR(100) NOT NULL,
+  `registration_number` VARCHAR(100) NULL,
   `verification_note`   TEXT NULL,
   `review_note`         TEXT NULL,
   `reviewed_at`         DATETIME(3) NULL,
@@ -87,13 +87,12 @@ CREATE TABLE `organization_members`
 INSERT INTO `organizations`
 (`id`, `name`, `verification_status`, `contact_email`, `country`,
  `address_street`, `address_zip_code`, `address_city`,
- `registration_number`, `verification_note`, `submitted_at`, `created_at`)
+ `verification_note`, `submitted_at`, `created_at`)
 SELECT '00000000000000000000000000',
        'Legacy',
        'VERIFIED',
        '',
        'de',
-       '',
        '',
        '',
        '',

@@ -10,8 +10,10 @@
         {{ countryName }}
       </p>
       <p>
-        {{ t('registrationNumber') }}: {{ notice.controller.registrationNumber
-        }}<br />
+        <template v-if="notice.controller.registrationNumber">
+          {{ t('registrationNumber') }}:
+          {{ notice.controller.registrationNumber }}<br />
+        </template>
         {{ t('email') }}:
         <a :href="`mailto:${notice.controller.contactEmail}`">
           {{ notice.controller.contactEmail }}

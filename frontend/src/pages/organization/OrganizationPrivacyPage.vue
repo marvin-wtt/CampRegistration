@@ -770,9 +770,10 @@ const countryLabel = computed(() =>
 );
 
 /**
- * The controller identity exactly as the notice renders it. Phone and website
- * are nullable on `Organization`, so an empty one is shown as "not set" rather
- * than silently dropped — the point of this step is noticing what is missing.
+ * The controller identity exactly as the notice renders it. Phone, website and
+ * the registration number are nullable on `Organization`, so an empty one is
+ * shown as "not set" rather than silently dropped — the point of this step is
+ * noticing what is missing.
  */
 const controllerRows = computed(() => {
   const org = organization.value;
@@ -790,7 +791,7 @@ const controllerRows = computed(() => {
     { label: t('step.controller.field.country'), value: countryLabel.value },
     {
       label: t('step.controller.field.registrationNumber'),
-      value: org.registrationNumber,
+      value: org.registrationNumber ?? '',
     },
     { label: t('step.controller.field.email'), value: org.contactEmail },
     { label: t('step.controller.field.phone'), value: org.phone ?? '' },

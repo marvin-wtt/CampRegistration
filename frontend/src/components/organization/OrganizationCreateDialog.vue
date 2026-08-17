@@ -106,7 +106,6 @@
               v-model="data.registrationNumber"
               :label="t('field.registrationNumber')"
               :hint="t('hint.registrationNumber')"
-              :rules="[required]"
               color="primary"
               hide-bottom-space
               rounded
@@ -191,6 +190,7 @@ async function onSubmit() {
       ...data.value,
       phone: data.value.phone || null,
       website: data.value.website || null,
+      registrationNumber: data.value.registrationNumber || null,
       verificationNote: data.value.verificationNote || null,
     });
 
@@ -236,7 +236,7 @@ field:
   addressZipCode: 'Postal code'
   addressCity: 'City'
   country: 'Country'
-  registrationNumber: 'Registration number'
+  registrationNumber: 'Registration number (optional)'
   verificationNote: 'Note for the reviewer (optional)'
 action:
   create: 'Create'
@@ -263,7 +263,7 @@ field:
   addressZipCode: 'Postleitzahl'
   addressCity: 'Stadt'
   country: 'Land'
-  registrationNumber: 'Registernummer'
+  registrationNumber: 'Registernummer (optional)'
   verificationNote: 'Hinweis für die Prüfung (optional)'
 action:
   create: 'Erstellen'
@@ -290,7 +290,7 @@ field:
   addressZipCode: 'Code postal'
   addressCity: 'Ville'
   country: 'Pays'
-  registrationNumber: "Numéro d'enregistrement"
+  registrationNumber: "Numéro d'enregistrement (optionnel)"
   verificationNote: 'Note pour le vérificateur (optionnel)'
 action:
   create: 'Créer'
@@ -317,7 +317,7 @@ field:
   addressZipCode: 'Kod pocztowy'
   addressCity: 'Miasto'
   country: 'Kraj'
-  registrationNumber: 'Numer rejestrowy'
+  registrationNumber: 'Numer rejestrowy (opcjonalnie)'
   verificationNote: 'Uwaga dla weryfikatora (opcjonalnie)'
 action:
   create: 'Utwórz'
@@ -344,7 +344,7 @@ field:
   addressZipCode: 'PSČ'
   addressCity: 'Město'
   country: 'Země'
-  registrationNumber: 'Registrační číslo'
+  registrationNumber: 'Registrační číslo (volitelné)'
   verificationNote: 'Poznámka pro ověřovatele (volitelné)'
 action:
   create: 'Vytvořit'
