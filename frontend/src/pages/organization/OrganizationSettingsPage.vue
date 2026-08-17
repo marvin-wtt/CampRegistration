@@ -91,6 +91,7 @@
                 :hint="t('field.registrationNumberHint')"
                 :disable="locked"
                 color="primary"
+                clearable
                 rounded
                 outlined
                 class="col-12 col-md-5"
@@ -362,7 +363,7 @@ function snapshot(value: OrganizationDetails): OrganizationUpdateData {
     addressZipCode: value.addressZipCode,
     addressCity: value.addressCity,
     country: value.country,
-    registrationNumber: value.registrationNumber ?? '',
+    registrationNumber: value.registrationNumber,
   };
 }
 
@@ -372,7 +373,9 @@ const saved = ref<OrganizationUpdateData>({});
 watch(
   organization,
   (value) => {
-    if (!value) return;
+    if (!value) {
+      return;
+    }
     saved.value = snapshot(value);
     form.value = { ...saved.value };
   },
@@ -395,9 +398,9 @@ function required(value?: string | null): true | string {
 async function persist() {
   await store.updateData({
     ...form.value,
-    phone: form.value.phone || null,
-    website: form.value.website || null,
-    registrationNumber: form.value.registrationNumber || null,
+    phone: form.value.phone ?? null,
+    website: form.value.website ?? null,
+    registrationNumber: form.value.registrationNumber ?? null,
   });
 }
 

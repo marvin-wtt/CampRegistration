@@ -23,7 +23,6 @@
           :rounded="quasar.screen.gt.xs"
           unelevated
           no-caps
-          Improv
           @click="showCreateDialog"
         />
       </div>
