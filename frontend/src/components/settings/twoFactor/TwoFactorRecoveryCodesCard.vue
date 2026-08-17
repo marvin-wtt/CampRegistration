@@ -1,23 +1,18 @@
 <template>
-  <q-card
-    flat
-    bordered
-  >
-    <q-card-section class="text-h6">
-      {{ t('title') }}
-    </q-card-section>
-
-    <q-card-section class="text-subtitle-2 q-pt-none">
-      {{ t('description') }}
+  <div>
+    <q-card-section class="q-pb-none">
+      <div class="text-subtitle2 text-weight-bold">{{ t('title') }}</div>
+      <div class="text-body2 text-on-surface-variant q-mt-xs">
+        {{ t('description') }}
+      </div>
     </q-card-section>
 
     <!-- Generated codes -->
     <template v-if="codes && codes.length">
-      <q-card-section class="q-pt-none">
+      <q-card-section>
         <q-banner
           dense
-          rounded
-          class="recovery-banner q-mb-md"
+          class="recovery-banner rounded-md q-mb-md"
         >
           <template #avatar>
             <q-icon name="warning" />
@@ -37,27 +32,24 @@
       </q-card-section>
 
       <q-card-actions>
-        <q-btn
+        <m-btn
           :label="t('action.copy')"
           icon="content_copy"
           color="primary"
           flat
-          rounded
           @click="onCopy"
         />
-        <q-btn
+        <m-btn
           :label="t('action.download')"
           icon="download"
           color="primary"
           flat
-          rounded
           @click="onDownload"
         />
         <q-space />
-        <q-btn
+        <m-btn
           :label="t('action.done')"
           color="primary"
-          rounded
           @click="emit('done')"
         />
       </q-card-actions>
@@ -68,64 +60,65 @@
       v-else
       @submit="onGenerate"
     >
-      <q-card-section
-        class="q-gutter-sm q-pt-none"
-        style="max-width: 500px"
-      >
-        <q-input
-          v-model="password"
-          :label="t('field.password.label')"
-          type="password"
-          autocomplete="current-password"
-          :rules="[
-            (val?: string) => !!val || t('field.password.rule.required'),
-          ]"
-          hide-bottom-space
-          outlined
-          rounded
-          class="settings-input"
-        >
-          <template #before>
-            <q-icon name="password" />
-          </template>
-        </q-input>
+      <q-card-section>
+        <div class="row q-col-gutter-md">
+          <q-input
+            v-model="password"
+            :label="t('field.password.label')"
+            type="password"
+            autocomplete="current-password"
+            :rules="[
+              (val?: string) => !!val || t('field.password.rule.required'),
+            ]"
+            hide-bottom-space
+            outlined
+            rounded
+            color="primary"
+            class="col-12 col-md-6"
+          >
+            <template #prepend>
+              <q-icon name="password" />
+            </template>
+          </q-input>
 
-        <two-factor-code-input
-          v-model="code"
-          hide-bottom-space
-          outlined
-          rounded
-          class="settings-input"
-        />
+          <two-factor-code-input
+            v-model="code"
+            hide-bottom-space
+            outlined
+            rounded
+            color="primary"
+            class="col-12 col-md-6"
+          />
+        </div>
+
+        <q-banner
+          v-if="error"
+          dense
+          class="error-banner rounded-md q-mt-md"
+        >
+          <template #avatar>
+            <q-icon name="warning" />
+          </template>
+          {{ error }}
+        </q-banner>
       </q-card-section>
 
-      <div
-        v-if="error"
-        class="q-px-md q-pb-sm text-negative text-body2"
-      >
-        <q-icon
-          name="warning"
-          size="xs"
-          class="q-mr-xs"
-        />{{ error }}
-      </div>
-
       <q-card-actions>
-        <q-btn
+        <m-btn
           :label="t('action.generate')"
           type="submit"
           color="primary"
           :loading
-          rounded
         />
       </q-card-actions>
     </q-form>
-  </q-card>
+  </div>
 </template>
 
 <script lang="ts" setup>
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import { copyToClipboard, useQuasar } from 'quasar';
 import { exportFile } from 'quasar';
 import TwoFactorCodeInput from '@/components/settings/twoFactor/TwoFactorCodeInput.vue';
@@ -174,6 +167,11 @@ function onDownload() {
 .recovery-banner {
   background: var(--md3-warning-container);
   color: var(--md3-on-warning-container);
+}
+
+.error-banner {
+  background: var(--md3-error-container);
+  color: var(--md3-on-error-container);
 }
 
 .recovery-grid {

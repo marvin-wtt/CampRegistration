@@ -1,20 +1,10 @@
 <template>
-  <q-card
-    flat
-    bordered
+  <q-form
+    @submit="onSave"
+    @reset="onReset"
   >
-    <q-form
-      @submit="onSave"
-      @reset="onReset"
-    >
-      <q-card-section class="text-h6">
-        {{ t('title') }}
-      </q-card-section>
-
-      <q-card-section
-        class="q-gutter-sm"
-        style="max-width: 500px"
-      >
+    <q-card-section>
+      <div class="row q-col-gutter-md">
         <q-input
           v-model="data.email"
           :label="t('field.email.label')"
@@ -24,15 +14,16 @@
           hide-bottom-space
           outlined
           rounded
-          class="settings-input"
+          color="primary"
+          class="col-12 col-md-6"
         >
-          <template #before>
+          <template #prepend>
             <q-icon name="email" />
           </template>
         </q-input>
 
         <q-input
-          v-model="confirmEamil"
+          v-model="confirmEmail"
           :label="t('field.confirmEmail.label')"
           type="email"
           autocomplete="email"
@@ -44,9 +35,10 @@
           hide-bottom-space
           outlined
           rounded
-          class="settings-input"
+          color="primary"
+          class="col-12 col-md-6"
         >
-          <template #before>
+          <template #prepend>
             <q-icon name="email" />
           </template>
         </q-input>
@@ -62,33 +54,41 @@
           hide-bottom-space
           outlined
           rounded
-          class="settings-input"
+          color="primary"
+          class="col-12"
         >
-          <template #before>
+          <template #prepend>
             <q-icon name="password" />
           </template>
         </q-input>
-      </q-card-section>
+      </div>
+    </q-card-section>
 
-      <q-card-actions>
-        <q-btn
-          :label="t('action.save')"
-          type="submit"
-          color="primary"
-          rounded
-        />
-      </q-card-actions>
-    </q-form>
-  </q-card>
+    <q-card-actions>
+      <m-btn
+        :label="t('action.save')"
+        type="submit"
+        color="primary"
+      />
+      <m-btn
+        :label="t('action.reset')"
+        type="reset"
+        :disable="!isModified"
+        flat
+        color="primary"
+      />
+    </q-card-actions>
+  </q-form>
 </template>
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
+import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import type {
   Profile,
   ProfileUpdateData,
 } from '@camp-registration/common/entities';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 
 const { t } = useI18n();
 
@@ -105,7 +105,15 @@ const data = ref({
   currentPassword: '',
 });
 
-const confirmEamil = ref<string>();
+const confirmEmail = ref<string>();
+
+const isModified = computed<boolean>(() => {
+  return (
+    data.value.email !== profile.email ||
+    data.value.currentPassword !== '' ||
+    !!confirmEmail.value
+  );
+});
 
 function onSave() {
   emit('save', data.value);
@@ -116,14 +124,13 @@ function onReset() {
     email: profile.email,
     currentPassword: '',
   };
+  confirmEmail.value = undefined;
 }
 </script>
 
 <style scoped></style>
 
 <i18n lang="yaml" locale="en">
-title: 'E-Mail'
-
 field:
   confirmEmail:
     label: 'Confirm E-Mail'
@@ -141,11 +148,10 @@ field:
 
 action:
   save: 'Update email'
+  reset: 'Reset'
 </i18n>
 
 <i18n lang="yaml" locale="de">
-title: 'E-Mail'
-
 field:
   confirmEmail:
     label: 'E-Mail bestätigen'
@@ -163,11 +169,10 @@ field:
 
 action:
   save: 'E-Mail aktualisieren'
+  reset: 'Zurücksetzen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-title: 'E-mail'
-
 field:
   confirmEmail:
     label: 'Confirmer l’e-mail'
@@ -185,11 +190,10 @@ field:
 
 action:
   save: 'Mettre à jour l’e-mail'
+  reset: 'Réinitialiser'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-title: 'E-mail'
-
 field:
   confirmEmail:
     label: 'Potwierdź e-mail'
@@ -207,11 +211,10 @@ field:
 
 action:
   save: 'Zaktualizuj e-mail'
+  reset: 'Resetuj'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-title: 'E-mail'
-
 field:
   confirmEmail:
     label: 'Potvrďte e-mail'
@@ -229,4 +232,5 @@ field:
 
 action:
   save: 'Aktualizovat e-mail'
+  reset: 'Obnovit'
 </i18n>

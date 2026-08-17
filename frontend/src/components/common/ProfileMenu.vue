@@ -347,7 +347,7 @@ organizations: 'Organizations'
 administration: 'Administration'
 light_mode: 'Light Mode'
 login: 'Login'
-logout: 'Sing out'
+logout: 'Sign out'
 language: 'Language'
 dark_mode: 'Dark Mode'
 </i18n>
