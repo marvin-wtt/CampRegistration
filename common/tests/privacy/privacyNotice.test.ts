@@ -169,10 +169,10 @@ describe('privacyNoticeCompleteness', () => {
 
   it('tolerates a draft saved before exceptions became a list', () => {
     const content = completeContent();
-    // @ts-expect-error legacy shape: exceptions used to be free text
     content.retention = {
       months: 24,
       anchor: 'camp_end',
+      // @ts-expect-error legacy shape: exceptions used to be free text
       exceptions: { en: 'Tax records' },
     };
 
@@ -358,7 +358,7 @@ describe('composePrivacyNotice', () => {
       purposes: [
         { key: 'registration_administration', legalBasis: 'legal_obligation' },
       ],
-      retention: { months: 6, anchor: 'submission' },
+      retention: { months: 6, anchor: 'submission', exceptions: [] },
     });
 
     expect(composed.purposes).toEqual([
@@ -379,7 +379,7 @@ describe('composePrivacyNotice', () => {
         anchor: 'camp_end',
         exceptions: [
           {
-            scope: 'financial_administration',
+            scope: 'payment_and_invoicing',
             months: 120,
             anchor: 'camp_end',
           },
@@ -400,7 +400,7 @@ describe('composePrivacyNotice', () => {
     // The camp names one exception; the statutory one its organization declared
     // must survive, or the notice quietly understates how long data is kept.
     expect(composed.retention?.exceptions.map((e) => e.scope)).toEqual([
-      'financial_administration',
+      'payment_and_invoicing',
       'photo_publication',
     ]);
     expect(composed.retention?.months).toBe(6);
@@ -414,7 +414,7 @@ describe('composePrivacyNotice', () => {
         anchor: 'camp_end',
         exceptions: [
           {
-            scope: 'financial_administration',
+            scope: 'payment_and_invoicing',
             months: 120,
             anchor: 'camp_end',
           },
@@ -427,13 +427,13 @@ describe('composePrivacyNotice', () => {
         months: 24,
         anchor: 'camp_end',
         exceptions: [
-          { scope: 'financial_administration', months: 84, anchor: 'camp_end' },
+          { scope: 'payment_and_invoicing', months: 84, anchor: 'camp_end' },
         ],
       },
     });
 
     expect(composed.retention?.exceptions).toEqual([
-      { scope: 'financial_administration', months: 84, anchor: 'camp_end' },
+      { scope: 'payment_and_invoicing', months: 84, anchor: 'camp_end' },
     ]);
   });
 
@@ -443,7 +443,7 @@ describe('composePrivacyNotice', () => {
       thirdCountryTransfers: {
         enabled: true,
         countries: ['US'],
-        safeguard: 'adequacy_decision',
+        safeguard: 'adequacy',
         note: null,
       },
     };
@@ -454,7 +454,7 @@ describe('composePrivacyNotice', () => {
 
     // A camp cannot un-declare a transfer its organization makes.
     expect(composed.thirdCountryTransfers.countries).toEqual(['US', 'CH']);
-    expect(composed.thirdCountryTransfers.safeguard).toBe('adequacy_decision');
+    expect(composed.thirdCountryTransfers.safeguard).toBe('adequacy');
   });
 
   it('keeps the organization values when the camp adds nothing', () => {

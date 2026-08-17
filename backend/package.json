@@ -22,6 +22,7 @@
     "files:encrypt": "tsx prisma/scripts/encrypt-files.ts encrypt",
     "files:decrypt": "tsx prisma/scripts/encrypt-files.ts decrypt",
     "secrets:generate": "node ./scripts/generate-secrets.mjs",
+    "typecheck": "tsc -p ./tsconfig.test.json",
     "test": "vitest -c ./vitest.config.ts",
     "test:unit": "vitest -c ./vitest.config.unit.ts",
     "test:unit:ui": "vitest -c ./vitest.config.unit.ts --ui",

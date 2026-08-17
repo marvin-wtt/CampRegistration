@@ -105,6 +105,7 @@ exports[`the assembled permission policy > grants camp roles exactly these permi
   ],
   "VIEWER": [
     "camp.files.view",
+    "camp.managers.view",
     "camp.program_events.view",
     "camp.registrations.view",
     "camp.rooms.view",

@@ -60,8 +60,41 @@ describe('/api/v1/camps/:campId/tasks', () => {
         expect(response.body.data[0]).toHaveProperty('dueDate');
         expect(response.body.data[0]).toHaveProperty('completed');
         expect(response.body.data[0]).toHaveProperty('assigneeId');
+        expect(response.body.data[0]).toHaveProperty('assignee');
       },
     );
+
+    // Embedded so a client can name the assignee without fetching the roster.
+    it('should embed the assignee', async () => {
+      const { camp, user, manager, accessToken } =
+        await createCampWithManagerAndToken();
+      await createTaskForCamp(camp, {
+        assignee: { connect: { id: manager.id } },
+      });
+
+      const response = await request()
+        .get(`/api/v1/camps/${camp.id}/tasks`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(response.body.data[0]).toHaveProperty('assignee', {
+        id: manager.id,
+        name: user.name,
+        email: user.email,
+      });
+    });
+
+    it('should embed a `null` assignee for unassigned tasks', async () => {
+      const { camp, accessToken } = await createCampWithManagerAndToken();
+      await createTaskForCamp(camp);
+
+      const response = await request()
+        .get(`/api/v1/camps/${camp.id}/tasks`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(response.body.data[0]).toHaveProperty('assignee', null);
+    });
 
     it('should only return tasks belonging to the requested camp', async () => {
       const { camp, accessToken } = await createCampWithManagerAndToken();

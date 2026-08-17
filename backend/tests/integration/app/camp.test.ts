@@ -32,9 +32,12 @@ import { campWithMaxParticipantsRolesInternational } from './fixtures/registrati
 
 type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 
+// The unchecked variant: these assertions describe a request body and the row
+// it produces, both of which carry a scalar `organizationId` rather than the
+// nested `organization` relation of `CampCreateInput`.
 type CampCreateData = PartialBy<
-  Prisma.CampCreateInput,
-  'id' | 'form' | 'themes'
+  Prisma.CampUncheckedCreateInput,
+  'id' | 'form' | 'themes' | 'organizationId'
 >;
 
 const assertCampModel = async (id: string, data: CampCreateData) => {

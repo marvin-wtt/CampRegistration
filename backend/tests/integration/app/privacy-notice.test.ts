@@ -451,7 +451,7 @@ describe('privacy notices', () => {
               anchor: 'camp_end',
               exceptions: [
                 {
-                  scope: 'financial_administration',
+                  scope: 'payment_and_invoicing',
                   months: 120,
                   anchor: 'camp_end',
                 },
@@ -490,7 +490,7 @@ describe('privacy notices', () => {
         body.data.notice.retention.exceptions.map(
           (e: { scope: string }) => e.scope,
         ),
-      ).toEqual(['financial_administration', 'photo_publication']);
+      ).toEqual(['payment_and_invoicing', 'photo_publication']);
     });
 
     it('should report a null notice when the organization published none', async () => {

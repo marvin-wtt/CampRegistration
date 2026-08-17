@@ -18,6 +18,7 @@
   "scripts": {
     "clean": "rimraf ./dist/ && rimraf ./node_modules/",
     "build": "tsc",
+    "typecheck": "tsc -p ./tsconfig.test.json",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "lint": "eslint src",

@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Request } from 'express';
 import { mock } from 'vitest-mock-extended';
 import type { Camp } from '#generated/prisma/client';
+import type { CampScopedPermission } from '@camp-registration/common/permissions';
 import * as container from '#core/ioc/container';
 import { CampManagerService } from '#app/campManager/camp-manager.service';
 import {
@@ -44,7 +45,7 @@ afterEach(() => {
 });
 
 describe('campManager', () => {
-  const authorization = (permissions: string[]) => ({
+  const authorization = (permissions: CampScopedPermission[]) => ({
     managerId: 'manager-1',
     permissions: new Set(permissions),
     expiresAt: null,

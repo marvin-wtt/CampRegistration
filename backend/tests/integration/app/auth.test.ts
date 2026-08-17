@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import bcrypt from 'bcryptjs';
 import argon2 from 'argon2';
 import prisma from '../utils/prisma.js';
 import { TokenType, User } from '#generated/prisma/client.js';

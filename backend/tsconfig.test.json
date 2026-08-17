@@ -12,5 +12,13 @@
     "tests/**/*.ts",
     "**/*.test.ts",
     "**/*.spec.ts"
+  ],
+  "exclude": [
+    // Baselined before the data-migration runner existed and therefore never
+    // re-run (see prisma/data-migrations/runner.ts). It was written against the
+    // schema shape that predates the Message/MessageDelivery split, so it cannot
+    // compile against the current client — and rewriting an applied migration is
+    // not an option.
+    "prisma/migrations/20260121175357_update_message_templates_add_country_column/migration.ts"
   ]
 }

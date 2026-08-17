@@ -88,6 +88,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Typecheck common
+        run: npm run typecheck --workspace common
+
       - name: Test common
         run: npm run test --workspace common
 
@@ -173,6 +176,11 @@ jobs:
 
       - name: Build backend
         run: npm run build --workspace backend
+
+      # `build` only compiles src/. This covers tests/, prisma/ factories and
+      # the data migrations, none of which the build ever sees.
+      - name: Typecheck backend
+        run: npm run typecheck --workspace backend
 
       - name: Migrate test database
         run: npm run migrate --workspace backend
@@ -287,6 +295,11 @@ jobs:
 
       - name: Build frontend
         run: npm run build --workspace frontend
+
+      # Playwright strips types instead of checking them, so the specs are only
+      # ever verified here.
+      - name: Typecheck e2e
+        run: npm run typecheck --workspace e2e
 
       - name: Upload E2E build
         uses: actions/upload-artifact@v7

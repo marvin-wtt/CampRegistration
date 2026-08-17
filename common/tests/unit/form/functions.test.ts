@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { SurveyModel } from 'survey-core';
-import '../../../src/form';
+import '../../../src/form/index.js';
 
 describe('functions', () => {
   describe('isMinor', () => {
