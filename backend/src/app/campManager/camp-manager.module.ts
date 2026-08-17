@@ -37,7 +37,7 @@ export class CampManagerModule implements AppModule {
         ],
         COORDINATOR: ['camp.managers.view'],
         COUNSELOR: ['camp.managers.view'],
-        VIEWER: [],
+        VIEWER: ['camp.managers.view'],
       },
     };
   }

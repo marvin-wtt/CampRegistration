@@ -76,7 +76,11 @@ export class ProfileResource extends JsonResource<
   private buildCampAccess(): ProfileResourceData['campAccess'] {
     const access = new Map<
       string,
-      { role: string; permissions: CampScopedPermission[] }
+      {
+        role: string;
+        permissions: CampScopedPermission[];
+        managerId: string | null;
+      }
     >();
 
     for (const manager of this.data.campRoles) {
@@ -85,6 +89,7 @@ export class ProfileResource extends JsonResource<
         permissions: permissionRegistry
           .for('camp')
           .getPermissions(manager.role),
+        managerId: manager.id,
       });
     }
 
@@ -106,6 +111,7 @@ export class ProfileResource extends JsonResource<
               ...ORGANIZATION_CAMP_PERMISSIONS,
             ]),
           ],
+          managerId: existing?.managerId ?? null,
         });
       }
     }

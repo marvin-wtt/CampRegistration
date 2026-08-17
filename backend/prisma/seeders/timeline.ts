@@ -29,8 +29,8 @@ export const PHASE = {
   upcoming: { start: 94, end: 101 },
   /** Started two days ago, ends in five. */
   ongoing: { start: -2, end: 5 },
-  /** Ended twelve days ago — still listed under "past". */
-  past: { start: -19, end: -12 },
-  /** Ended five months ago — past the six-week archive cutoff. */
-  archived: { start: -157, end: -150 },
+  /** Ended twelve days ago — still listed under "recently ended". */
+  recentlyEnded: { start: -19, end: -12 },
+  /** Ended five months ago — beyond the six-week cutoff, so fully past. */
+  past: { start: -157, end: -150 },
 } as const;

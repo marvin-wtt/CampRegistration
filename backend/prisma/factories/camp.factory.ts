@@ -26,12 +26,10 @@ export const CampFactory = {
 
     const countries = data.countries ?? ['de'];
     return {
-      // Give the camp an owner unless the caller named one. Checked against the
-      // scalar id too: passing both the relation and the foreign key is a
-      // Prisma validation error.
-      ...('organization' in data || 'organizationId' in data
-        ? {}
-        : { organization: { create: OrganizationFactory.build() } }),
+      // Give the camp an owner unless the caller named one.
+      organization: data.organization ?? {
+        create: OrganizationFactory.build(),
+      },
       public: faker.datatype.boolean(),
       countries,
       name: faker.lorem.word(),

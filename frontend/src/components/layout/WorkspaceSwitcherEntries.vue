@@ -24,14 +24,14 @@
   </q-item>
 
   <q-expansion-item
-    v-if="archived.length"
-    icon="inventory_2"
-    :label="archivedLabel"
-    :caption="String(archived.length)"
+    v-if="past.length"
+    icon="history"
+    :label="pastLabel"
+    :caption="String(past.length)"
     :header-inset-level="inset ? 0.5 : undefined"
   >
     <q-item
-      v-for="entry in archived"
+      v-for="entry in past"
       :key="entry.id"
       v-close-popup
       clickable
@@ -73,10 +73,10 @@
 import type { RouteLocationRaw } from 'vue-router';
 import type { WorkspaceEntry } from '@/components/layout/workspaceArea';
 
-const { archived = [] } = defineProps<{
+const { past = [] } = defineProps<{
   entries: WorkspaceEntry[];
-  archived?: WorkspaceEntry[];
-  archivedLabel?: string | undefined;
+  past?: WorkspaceEntry[];
+  pastLabel?: string | undefined;
   indexTo?: RouteLocationRaw | undefined;
   allLabel?: string | undefined;
   // Indent the rows, for when they sit inside an area expansion item.

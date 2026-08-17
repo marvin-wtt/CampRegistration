@@ -14,6 +14,12 @@ interface CampAccess {
    */
   role: string;
   permissions: CampScopedPermission[];
+  /**
+   * The user's own `CampManager` id, so a client can recognise records assigned
+   * to them (tasks, for one) without loading the roster. `null` when the access
+   * is organization-derived and no manager record exists.
+   */
+  managerId: string | null;
 }
 
 interface NewsletterAccess {

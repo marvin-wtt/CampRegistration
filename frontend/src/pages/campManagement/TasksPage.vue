@@ -204,19 +204,26 @@ const filterOptions = computed(() => [
   filterOption('unassigned', 'person_off', t('filter.unassigned')),
 ]);
 
+// The roster is only needed to populate the assignee picker; every role that can
+// create or update a task also holds `camp.managers.view`.
+const canAssign = computed<boolean>(
+  () => can('camp.tasks.create') || can('camp.tasks.update'),
+);
+
 onMounted(async () => {
-  await Promise.allSettled([
-    taskStore.fetchData(),
-    campManagerStore.fetchData(),
-  ]);
+  const requests = [taskStore.fetchData()];
+  if (canAssign.value) {
+    requests.push(campManagerStore.fetchData());
+  }
+  await Promise.allSettled(requests);
 });
 
 const error = computed<string | null>(() => {
-  return taskStore.error ?? campManagerStore.error;
+  return taskStore.error;
 });
 
 const loading = computed<boolean>(() => {
-  return taskStore.isLoading || campManagerStore.isLoading;
+  return taskStore.isLoading;
 });
 
 const tasks = computed<Task[]>(() => {
@@ -265,18 +272,16 @@ const completedTasks = computed<Task[]>(() => {
 
 // The real assignee name (never "You") — used where a badge conveys ownership.
 function assigneeName(task: Task): string {
-  if (!task.assigneeId) {
+  if (!task.assignee) {
     return t('unassigned');
   }
 
-  const manager = campManagerStore.data?.find((m) => m.id === task.assigneeId);
-
-  return manager?.name ?? manager?.email ?? t('unassigned');
+  return task.assignee.name ?? task.assignee.email;
 }
 
 // Compact label for list rows: shows "You" for the current user's tasks.
 function assigneeLabel(task: Task): string {
-  if (task.assigneeId && task.assigneeId === currentManagerId.value) {
+  if (isMine(task)) {
     return t('you');
   }
 

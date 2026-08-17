@@ -140,7 +140,7 @@ const items = computed<SettingsItem[]>(() => [
     icon: 'privacy_tip',
     color: 'tertiary',
     to: { name: 'management.camp.settings.privacy' },
-    permission: 'camp.view',
+    permission: 'camp.edit',
   },
 ]);
 

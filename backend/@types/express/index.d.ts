@@ -18,12 +18,12 @@ import type {
   OrganizationMember,
   OrganizationInvitation,
   ProgramEvent,
-  Task,
 } from '../../src/generated/prisma/client.js';
 import type { ZodObject, z } from 'zod';
 import type { JsonResource } from '#core/resource/JsonResource';
 import type { CampWithFreePlaces } from '#app/camp/camp.types';
 import type { NewsletterWithOrganization } from '#app/newsletter/newsletter.types';
+import type { TaskWithAssignee } from '#app/task/task.types';
 
 declare global {
   namespace Express {
@@ -54,7 +54,7 @@ declare global {
       newsletterMessage?: NewsletterMessage;
       newsletterSubscriber?: NewsletterSubscriber;
       programEvent?: ProgramEvent;
-      task?: Task;
+      task?: TaskWithAssignee;
     }
 
     interface AuthUser {

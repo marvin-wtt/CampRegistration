@@ -9,8 +9,8 @@
     <workspace-switcher-entries
       v-if="soleArea"
       :entries="soleArea.entries"
-      :archived="soleArea.archived"
-      :archived-label="t('archived')"
+      :past="soleArea.past"
+      :past-label="t('past')"
       :index-to="soleArea.indexTo"
       :all-label="soleArea.allLabel"
       @select="selectSole"
@@ -105,8 +105,8 @@
 
           <workspace-switcher-entries
             :entries="area.entries"
-            :archived="area.archived"
-            :archived-label="t('archived')"
+            :past="area.past"
+            :past-label="t('past')"
             inset
             @select="(id) => select(area.name, id)"
           />
@@ -145,7 +145,7 @@ import { useAssignedCampsStore } from '@/stores/assigned-camps-store';
 import { useNewsletterStore } from '@/stores/newsletter-store';
 import { useOrganizationsStore } from '@/stores/organizations-store';
 import { useObjectTranslation } from '@/composables/objectTranslation';
-import { isCampArchived } from '@/utils/campPhase';
+import { isCampPast } from '@/utils/campPhase';
 import WorkspaceSwitcherEntries from '@/components/layout/WorkspaceSwitcherEntries.vue';
 import {
   areaFromRouteName,
@@ -166,7 +166,7 @@ interface WorkspaceArea {
   // index from the header row.
   allLabel?: string | undefined;
   entries: WorkspaceEntry[];
-  archived: WorkspaceEntry[];
+  past: WorkspaceEntry[];
   count: number;
   loading: boolean;
 }
@@ -213,11 +213,11 @@ const campArea = computed<WorkspaceArea>(() => {
     indexTo: { name: 'management.camps' },
     allLabel: t('all_camps'),
     entries: camps
-      .filter((camp) => !isCampArchived(camp))
+      .filter((camp) => !isCampPast(camp))
       .slice(0, MAX_ENTRIES)
       .map((camp) => toEntry(camp.id, to(camp.name))),
-    archived: camps
-      .filter((camp) => isCampArchived(camp))
+    past: camps
+      .filter((camp) => isCampPast(camp))
       .slice(0, MAX_ENTRIES)
       .map((camp) => toEntry(camp.id, to(camp.name))),
     count: assignedCampsStore.data?.length ?? 0,
@@ -242,7 +242,7 @@ const newsletterArea = computed<WorkspaceArea>(() => {
         label: newsletter.name,
         icon: 'mail',
       })),
-    archived: [],
+    past: [],
     count: newsletterStore.data?.length ?? 0,
     loading: newsletterStore.isLoading,
   };
@@ -269,7 +269,7 @@ const organizationArea = computed<WorkspaceArea>(() => {
             ? undefined
             : t(`verification.${organization.verificationStatus}`),
       })),
-    archived: [],
+    past: [],
     count: organizationsStore.data?.length ?? 0,
     loading: organizationsStore.isLoading,
   };
@@ -309,7 +309,7 @@ onMounted(() => {
 });
 
 function hasEntries(area: WorkspaceArea): boolean {
-  return area.entries.length > 0 || area.archived.length > 0;
+  return area.entries.length > 0 || area.past.length > 0;
 }
 
 function selectSole(id: string) {
@@ -361,7 +361,7 @@ function goTo(rootName: string, param: string, id: string) {
 
 <i18n lang="yaml" locale="en">
 switch: 'Switch to'
-archived: 'Archived'
+past: 'Past'
 area:
   camps: 'Camps'
   newsletters: 'Newsletters'
@@ -376,7 +376,7 @@ verification:
 
 <i18n lang="yaml" locale="de">
 switch: 'Wechseln zu'
-archived: 'Archiviert'
+past: 'Vergangen'
 area:
   camps: 'Camps'
   newsletters: 'Newsletter'
@@ -391,7 +391,7 @@ verification:
 
 <i18n lang="yaml" locale="fr">
 switch: 'Aller à'
-archived: 'Archivés'
+past: 'Passés'
 area:
   camps: 'Camps'
   newsletters: 'Newsletters'
@@ -406,7 +406,7 @@ verification:
 
 <i18n lang="yaml" locale="pl">
 switch: 'Przejdź do'
-archived: 'Zarchiwizowane'
+past: 'Minione'
 area:
   camps: 'Obozy'
   newsletters: 'Newslettery'
@@ -421,7 +421,7 @@ verification:
 
 <i18n lang="yaml" locale="cs">
 switch: 'Přejít na'
-archived: 'Archivované'
+past: 'Minulé'
 area:
   camps: 'Tábory'
   newsletters: 'Newslettery'

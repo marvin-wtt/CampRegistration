@@ -8,10 +8,9 @@ export const NewsletterFactory = {
     data: Partial<Prisma.NewsletterCreateInput> = {},
   ): Prisma.NewsletterCreateInput => {
     return {
-      // See camp.factory: the relation and the scalar id are mutually exclusive.
-      ...('organization' in data || 'organizationId' in data
-        ? {}
-        : { organization: { create: OrganizationFactory.build() } }),
+      organization: data.organization ?? {
+        create: OrganizationFactory.build(),
+      },
       name: faker.lorem.words(3),
       description: faker.lorem.sentence(),
       replyTo: faker.internet.email(),

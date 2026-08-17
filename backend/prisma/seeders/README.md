@@ -45,20 +45,20 @@ Youth Adventures also has one member who was invited by email and never register
 
 `—` in the role column means John has no manager record for that camp.
 
-| Camp                 | Organization         | John's role        | Phase    | Notes                                                                             |
-|----------------------|----------------------|--------------------|----------|-----------------------------------------------------------------------------------|
-| **Summer Camp**      | Youth Adventures     | DIRECTOR           | upcoming | **The flagship — every child model is seeded**                                    |
-| Files Camp           | Youth Adventures     | COORDINATOR        | upcoming | File upload form; registration has not opened yet                                 |
-| Autumn Retreat       | Youth Adventures     | — (org ADMIN only) | upcoming | Only `camp.view` / `camp.edit` / `camp.managers.view`; not under "assigned camps" |
-| Spring Camp          | Youth Adventures     | DIRECTOR           | past     | Ended recently, registration closed                                               |
-| Winter Camp          | Youth Adventures     | DIRECTOR           | archived | Ended long ago, unlisted                                                          |
-| Mountain Weeks       | Alpine Explorers     | COORDINATOR        | upcoming | Pure role: no `camp.delete`, no manager administration                            |
-| City Camp            | Alpine Explorers     | COUNSELOR          | ongoing  | Pure role, camp in progress                                                       |
-| Simple Camp          | Alpine Explorers     | VIEWER             | upcoming | Pure role: read-only everywhere; no registration window                           |
-| Glacier Trek         | Alpine Explorers     | DIRECTOR (expired) | upcoming | The record still exists, the access does not                                      |
-| Colonie de Printemps | Nouvelle Association | DIRECTOR           | upcoming | `public`, yet hidden and refusing registrations                                   |
-| Harbour Sailing Week | Harbour Youth Trust  | DIRECTOR           | upcoming | Unpublished by the rejection                                                      |
-| Seaside Camp         | Coastal Camps        | —                  | upcoming | In the public directory; every management route must refuse                       |
+| Camp                 | Organization         | John's role        | Phase          | Notes                                                                             |
+|----------------------|----------------------|--------------------|----------------|-----------------------------------------------------------------------------------|
+| **Summer Camp**      | Youth Adventures     | DIRECTOR           | upcoming       | **The flagship — every child model is seeded**                                    |
+| Files Camp           | Youth Adventures     | COORDINATOR        | upcoming       | File upload form; registration has not opened yet                                 |
+| Autumn Retreat       | Youth Adventures     | — (org ADMIN only) | upcoming       | Only `camp.view` / `camp.edit` / `camp.managers.view`; not under "assigned camps" |
+| Spring Camp          | Youth Adventures     | DIRECTOR           | recently ended | Ended recently, registration closed                                               |
+| Winter Camp          | Youth Adventures     | DIRECTOR           | past           | Ended long ago, unlisted                                                          |
+| Mountain Weeks       | Alpine Explorers     | COORDINATOR        | upcoming       | Pure role: no `camp.delete`, no manager administration                            |
+| City Camp            | Alpine Explorers     | COUNSELOR          | ongoing        | Pure role, camp in progress                                                       |
+| Simple Camp          | Alpine Explorers     | VIEWER             | upcoming       | Pure role: read-only everywhere; no registration window                           |
+| Glacier Trek         | Alpine Explorers     | DIRECTOR (expired) | upcoming       | The record still exists, the access does not                                      |
+| Colonie de Printemps | Nouvelle Association | DIRECTOR           | upcoming       | `public`, yet hidden and refusing registrations                                   |
+| Harbour Sailing Week | Harbour Youth Trust  | DIRECTOR           | upcoming       | Unpublished by the rejection                                                      |
+| Seaside Camp         | Coastal Camps        | —                  | upcoming       | In the public directory; every management route must refuse                       |
 
 Because organization ADMINs hold `ORGANIZATION_CAMP_PERMISSIONS` on every camp their organization owns, a narrow role
 under **Youth Adventures** is always widened by `camp.edit`. The unmerged roles therefore live under **Alpine
