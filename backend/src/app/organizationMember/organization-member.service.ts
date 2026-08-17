@@ -132,13 +132,19 @@ export class OrganizationMemberService extends BaseService {
     return membership === null ? [] : ORGANIZATION_NEWSLETTER_PERMISSIONS;
   }
 
-  /** Whether the organization has an admin other than `excludeMemberId`. */
+  /**
+   * Whether the organization has an admin other than `excludeMemberId`. An
+   * unaccepted invitation does not count: its `userId` is still null, so nobody
+   * can act on it, and treating it as an admin would let the last real one leave
+   * an organization no one can manage.
+   */
   async hasOtherAdmin(organizationId: string, excludeMemberId: string) {
     return this.prisma.organizationMember
       .findFirst({
         where: {
           organizationId,
           role: 'ADMIN',
+          userId: { not: null },
           id: { not: excludeMemberId },
         },
       })

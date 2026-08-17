@@ -86,6 +86,7 @@ import OrganizationDetailsDialog from '@/components/organization/OrganizationDet
 import OrganizationReviewDialog from '@/components/organization/OrganizationReviewDialog.vue';
 import { useAPIService } from '@/services/APIService';
 import { useServerTable } from '@/composables/serverTable';
+import { useServiceNotifications } from '@/composables/serviceHandler';
 import { useRouter } from 'vue-router';
 import { countryName } from '@/utils/countries';
 import type {
@@ -98,6 +99,7 @@ const { t, d, locale } = useI18n();
 const quasar = useQuasar();
 const router = useRouter();
 const api = useAPIService();
+const { withErrorNotification } = useServiceNotifications();
 
 const status = ref<OrganizationVerificationStatus | null>(null);
 
@@ -261,11 +263,22 @@ function review(organization: Organization, decision: 'VERIFIED' | 'REJECTED') {
     })
     .onOk((reviewNote: string | null) => {
       void (async () => {
-        await api.reviewOrganization(organization.id, {
-          status: decision,
-          reviewNote,
-        });
-        reload();
+        // The decision can legitimately be refused — an organization cannot be
+        // verified before its privacy notice is published, which is the state of
+        // every fresh submission. Without this the dialog just closes.
+        const result = await withErrorNotification(
+          'review',
+          () =>
+            api.reviewOrganization(organization.id, {
+              status: decision,
+              reviewNote,
+            }),
+          { message: t('notify.reviewFailed') },
+        );
+
+        if (result !== undefined) {
+          reload();
+        }
       })();
     });
 }
@@ -292,6 +305,8 @@ action:
   reject: 'Reject'
   reinstate: 'Reinstate'
   revoke: 'Revoke verification'
+notify:
+  reviewFailed: 'The decision could not be saved'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -315,6 +330,8 @@ action:
   reject: 'Ablehnen'
   reinstate: 'Freigeben'
   revoke: 'Verifizierung entziehen'
+notify:
+  reviewFailed: 'Die Entscheidung konnte nicht gespeichert werden'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -338,6 +355,8 @@ action:
   reject: 'Refuser'
   reinstate: 'Réintégrer'
   revoke: 'Retirer la vérification'
+notify:
+  reviewFailed: "La décision n'a pas pu être enregistrée"
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -361,6 +380,8 @@ action:
   reject: 'Odrzuć'
   reinstate: 'Przywróć'
   revoke: 'Cofnij weryfikację'
+notify:
+  reviewFailed: 'Nie udało się zapisać decyzji'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -384,4 +405,6 @@ action:
   reject: 'Zamítnout'
   reinstate: 'Obnovit'
   revoke: 'Odebrat ověření'
+notify:
+  reviewFailed: 'Rozhodnutí se nepodařilo uložit'
 </i18n>

@@ -201,6 +201,26 @@ describe('organization members', () => {
         .expect(409);
     });
 
+    it('should respond with `409` when the only other administrator is an unaccepted invitation', async () => {
+      const { accessToken, organization, user } =
+        await createOrganizationWithRole('ADMIN');
+
+      await request()
+        .post(url(organization.id))
+        .send({ email: 'nobody@example.com', role: 'ADMIN' })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(201);
+
+      const member = await prisma.organizationMember.findFirstOrThrow({
+        where: { organizationId: organization.id, userId: user.id },
+      });
+
+      await request()
+        .delete(`${url(organization.id)}/${member.id}`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(409);
+    });
+
     it('should let a member leave the organization', async () => {
       const { organization } = await createOrganizationWithRole('ADMIN');
       const other = await UserFactory.create();

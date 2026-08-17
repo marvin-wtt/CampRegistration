@@ -698,8 +698,14 @@ async function onComplete() {
   }
 }
 
+// Drops what the reference camp filled in, but not the organization: that is
+// picked on step 1, before a template is ever chosen, and silently clearing it
+// makes an earlier step invalid again with nothing on screen to say so.
 function clearReferenceCamp() {
-  data.value = { ...DEFAULT_DATA };
+  data.value = {
+    ...DEFAULT_DATA,
+    organizationId: data.value.organizationId,
+  };
 }
 
 /**

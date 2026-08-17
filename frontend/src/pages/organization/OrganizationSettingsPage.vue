@@ -332,7 +332,7 @@ const reverificationRequired = computed(
   () =>
     organization.value !== undefined &&
     organization.value.verificationStatus !== 'PENDING' &&
-    requiresReverification(organization.value, form.value),
+    requiresReverification(organization.value, payload(form.value)),
 );
 
 /**
@@ -395,13 +395,23 @@ function required(value?: string | null): true | string {
   return !!value?.trim() || t('rule.required');
 }
 
+/**
+ * The inputs hold `''` for a field the entity stores as `null`. Coerce in one
+ * place so the re-verification check compares against the same shape the server
+ * receives — otherwise an organization without a registration number reports a
+ * change on every load.
+ */
+function payload(data: OrganizationUpdateData): OrganizationUpdateData {
+  return {
+    ...data,
+    phone: data.phone || null,
+    website: data.website || null,
+    registrationNumber: data.registrationNumber || null,
+  };
+}
+
 async function persist() {
-  await store.updateData({
-    ...form.value,
-    phone: form.value.phone ?? null,
-    website: form.value.website ?? null,
-    registrationNumber: form.value.registrationNumber ?? null,
-  });
+  await store.updateData(payload(form.value));
 }
 
 function save() {

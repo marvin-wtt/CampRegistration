@@ -2,7 +2,7 @@ import { BaseService } from '#core/base/BaseService';
 import { inject, injectable } from 'inversify';
 import httpStatus from 'http-status';
 import ApiError from '#utils/ApiError';
-import { sanitizeHtmlContent } from '#utils/sanitize';
+import { sanitizeHtmlContent, sanitizePlainText } from '#utils/sanitize';
 import {
   composePrivacyNotice,
   emptyPrivacyNoticeContent,
@@ -18,7 +18,7 @@ import {
 } from '@camp-registration/common/privacy';
 import type { Translatable } from '@camp-registration/common/entities';
 import { LegalService } from '#app/legal/legal.service';
-import type { Prisma } from '#generated/prisma/client.js';
+import { Prisma } from '#generated/prisma/client.js';
 
 /** Lets the version lookups run either standalone or inside a publish transaction. */
 type PrivacyNoticeClient = Pick<
@@ -176,25 +176,32 @@ export class PrivacyNoticeService extends BaseService {
     scopeId: string,
     content: PrivacyNoticeContent | PrivacyNoticeAddendum,
   ): Promise<void> {
-    await this.prisma.$transaction(async (tx) => {
-      const latest = await this.latestVersion(scope, scopeId, tx);
+    // Serializable: the version number is derived from the read, and
+    // `@@unique([scope, scopeId, version])` turns two concurrent publishes into
+    // a P2002 the author sees as a 500 — with no draft on the server to retry
+    // from.
+    await this.prisma.$transaction(
+      async (tx) => {
+        const latest = await this.latestVersion(scope, scopeId, tx);
 
-      if (
-        latest &&
-        JSON.stringify(latest.content) === JSON.stringify(content)
-      ) {
-        return;
-      }
+        if (
+          latest &&
+          JSON.stringify(latest.content) === JSON.stringify(content)
+        ) {
+          return;
+        }
 
-      await tx.privacyNoticeVersion.create({
-        data: {
-          scope,
-          scopeId,
-          version: (latest?.version ?? 0) + 1,
-          content,
-        },
-      });
-    });
+        await tx.privacyNoticeVersion.create({
+          data: {
+            scope,
+            scopeId,
+            version: (latest?.version ?? 0) + 1,
+            content,
+          },
+        });
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+    );
   }
 
   /**
@@ -279,7 +286,7 @@ export class PrivacyNoticeService extends BaseService {
       ...content,
       purposes: content.purposes.map((purpose) => ({
         ...purpose,
-        legitimateInterest: this.sanitizeTranslatable(
+        legitimateInterest: this.sanitizePlainTranslatable(
           purpose.legitimateInterest,
         ),
       })),
@@ -289,17 +296,19 @@ export class PrivacyNoticeService extends BaseService {
             exceptions: retentionExceptions(content.retention).map(
               (exception) => ({
                 ...exception,
-                label: this.sanitizeTranslatable(exception.label),
-                reason: this.sanitizeTranslatable(exception.reason),
+                label: this.sanitizePlainTranslatable(exception.label),
+                reason: this.sanitizePlainTranslatable(exception.reason),
               }),
             ),
           }
         : null,
       thirdCountryTransfers: {
         ...content.thirdCountryTransfers,
-        note: this.sanitizeTranslatable(content.thirdCountryTransfers.note),
+        note: this.sanitizePlainTranslatable(
+          content.thirdCountryTransfers.note,
+        ),
       },
-      automatedDecisionMakingDetails: this.sanitizeTranslatable(
+      automatedDecisionMakingDetails: this.sanitizePlainTranslatable(
         content.automatedDecisionMakingDetails,
       ),
       additional: this.sanitizeTranslatable(content.additional),
@@ -315,7 +324,7 @@ export class PrivacyNoticeService extends BaseService {
       ...content,
       purposes: content.purposes?.map((purpose) => ({
         ...purpose,
-        legitimateInterest: this.sanitizeTranslatable(
+        legitimateInterest: this.sanitizePlainTranslatable(
           purpose.legitimateInterest,
         ),
       })),
@@ -325,8 +334,8 @@ export class PrivacyNoticeService extends BaseService {
             exceptions: retentionExceptions(content.retention).map(
               (exception) => ({
                 ...exception,
-                label: this.sanitizeTranslatable(exception.label),
-                reason: this.sanitizeTranslatable(exception.reason),
+                label: this.sanitizePlainTranslatable(exception.label),
+                reason: this.sanitizePlainTranslatable(exception.reason),
               }),
             ),
           }
@@ -334,29 +343,43 @@ export class PrivacyNoticeService extends BaseService {
       thirdCountryTransfers: content.thirdCountryTransfers
         ? {
             ...content.thirdCountryTransfers,
-            note: this.sanitizeTranslatable(content.thirdCountryTransfers.note),
+            note: this.sanitizePlainTranslatable(
+              content.thirdCountryTransfers.note,
+            ),
           }
         : content.thirdCountryTransfers,
       additional: this.sanitizeTranslatable(content.additional),
     };
   }
 
+  /** The rich-text sections, authored with the editor and rendered as HTML. */
   private sanitizeTranslatable(
     value: Translatable | null | undefined,
+  ): Translatable | null {
+    return this.mapTranslatable(value, sanitizeHtmlContent);
+  }
+
+  /** The sections written in a plain text field and rendered as text. */
+  private sanitizePlainTranslatable(
+    value: Translatable | null | undefined,
+  ): Translatable | null {
+    return this.mapTranslatable(value, sanitizePlainText);
+  }
+
+  private mapTranslatable(
+    value: Translatable | null | undefined,
+    sanitize: (text: string) => string,
   ): Translatable | null {
     if (value === null || value === undefined) {
       return null;
     }
 
     if (typeof value === 'string') {
-      return sanitizeHtmlContent(value);
+      return sanitize(value);
     }
 
     return Object.fromEntries(
-      Object.entries(value).map(([locale, text]) => [
-        locale,
-        sanitizeHtmlContent(text),
-      ]),
+      Object.entries(value).map(([locale, text]) => [locale, sanitize(text)]),
     );
   }
 }

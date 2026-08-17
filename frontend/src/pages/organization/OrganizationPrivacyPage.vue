@@ -661,7 +661,10 @@ import PrivacyRetentionStep from '@/components/organization/privacy/PrivacyReten
 import { usePrivacyNoticeService } from '@/services/PrivacyNoticeService';
 import { useOrganizationDetailsStore } from '@/stores/organization-details-store';
 import { useOrganizationPermissions } from '@/composables/organizationPermissions';
-import { useErrorExtractor } from '@/composables/serviceHandler';
+import {
+  useErrorExtractor,
+  useServiceNotifications,
+} from '@/composables/serviceHandler';
 import { countryName } from '@/utils/countries';
 import { APP_LOCALES as locales } from '@/i18n/locales';
 
@@ -672,6 +675,7 @@ const organizationStore = useOrganizationDetailsStore();
 const { data: organization } = storeToRefs(organizationStore);
 const { canAccessOrg } = useOrganizationPermissions();
 const { extractErrorText } = useErrorExtractor();
+const { showErrorNotification } = useServiceNotifications();
 const { fetchOrganizationNotice, publishOrganizationNotice } =
   usePrivacyNoticeService();
 
@@ -717,11 +721,12 @@ onMounted(async () => {
     content.value = { ...emptyPrivacyNoticeContent(), ...notice.content };
     publishedAt.value = notice.publishedAt;
     publishedVersion.value = notice.publishedVersion;
-    // A notice published before these became implicit still has to carry them.
-    ALWAYS_RECIPIENT_KEYS.forEach(addRecipient);
-    // Baseline it *after* normalising, or the page opens claiming edits the
-    // author never made.
+    // Baseline what was actually published, *before* normalising: a notice
+    // published before these keys became implicit really is missing them, and
+    // baselining afterwards would report it as up to date while the recipient
+    // the editor shows is absent from what registrants read.
     publishedSnapshot.value = JSON.stringify(content.value);
+    ALWAYS_RECIPIENT_KEYS.forEach(addRecipient);
   } catch (err) {
     error.value = extractErrorText(err);
   } finally {
@@ -1058,7 +1063,13 @@ async function publish() {
     content.value = { ...emptyPrivacyNoticeContent(), ...notice.content };
     publishedSnapshot.value = JSON.stringify(content.value);
   } catch (err) {
-    error.value = extractErrorText(err);
+    // Notify rather than set `error`: that swaps the whole page for an error
+    // state, and since the draft lives only in this browser, it would throw away
+    // everything the author just wrote.
+    showErrorNotification('publish', {
+      message: t('notify.publishFailed'),
+      caption: extractErrorText(err),
+    });
   } finally {
     publishing.value = false;
   }
@@ -1197,6 +1208,8 @@ action:
   addCategory: 'Add another category'
   addPurpose: 'Add another purpose'
   remove: 'Remove'
+notify:
+  publishFailed: 'Publishing failed'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -1275,6 +1288,8 @@ action:
   addCategory: 'Weitere Kategorie hinzufügen'
   addPurpose: 'Weiteren Zweck hinzufügen'
   remove: 'Entfernen'
+notify:
+  publishFailed: 'Veröffentlichen fehlgeschlagen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -1353,6 +1368,8 @@ action:
   addCategory: 'Ajouter une catégorie'
   addPurpose: 'Ajouter une finalité'
   remove: 'Supprimer'
+notify:
+  publishFailed: 'Échec de la publication'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -1431,6 +1448,8 @@ action:
   addCategory: 'Přidat další kategorii'
   addPurpose: 'Přidat další účel'
   remove: 'Odebrat'
+notify:
+  publishFailed: 'Publikování se nezdařilo'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -1509,4 +1528,6 @@ action:
   addCategory: 'Dodaj kolejną kategorię'
   addPurpose: 'Dodaj kolejny cel'
   remove: 'Usuń'
+notify:
+  publishFailed: 'Publikacja nie powiodła się'
 </i18n>

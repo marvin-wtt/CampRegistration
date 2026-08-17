@@ -416,7 +416,10 @@ import { useCampDetailsStore } from '@/stores/camp-details-store';
 import { usePermissions } from '@/composables/permissions';
 import { useOrganizationPermissions } from '@/composables/organizationPermissions';
 import { usePrivacyLabels } from '@/composables/privacyLabels';
-import { useErrorExtractor } from '@/composables/serviceHandler';
+import {
+  useErrorExtractor,
+  useServiceNotifications,
+} from '@/composables/serviceHandler';
 import { extractCampDataTypes } from '@/utils/surveyJS';
 import { APP_LOCALES, localesForCountries } from '@/i18n/locales';
 
@@ -428,6 +431,7 @@ const { can } = usePermissions();
 const { canOrgFor } = useOrganizationPermissions();
 const { categoryLabel, purposeLabel, recipientLabel } = usePrivacyLabels();
 const { extractErrorText } = useErrorExtractor();
+const { showErrorNotification } = useServiceNotifications();
 const { fetchCampNoticeContext, publishCampAddendum, fetchCampNotice } =
   usePrivacyNoticeService();
 
@@ -778,6 +782,11 @@ const additionalForLocale = computed({
  * hand and never translated for the author, so a tab for a country the camp
  * does not run in is only an invitation to write text nobody is served.
  */
+// The tab currently being edited, once it has actually been opened. Without it
+// an out-of-country locale would lose its tab the moment its text is cleared —
+// pulling the editor out from under the author mid-edit.
+const pinnedAdditionalLocale = ref<string | null>(null);
+
 const additionalLocales = computed(() => {
   const own = localesForCountries(camp.value?.countries);
 
@@ -786,8 +795,15 @@ const additionalLocales = computed(() => {
   return APP_LOCALES.filter(
     (loc) =>
       own.includes(loc) ||
+      loc === pinnedAdditionalLocale.value ||
       localeText(content.value.additional, loc).trim() !== '',
   );
+});
+
+watch(additionalLocale, (locale) => {
+  if (additionalLocales.value.some((available) => available === locale)) {
+    pinnedAdditionalLocale.value = locale;
+  }
 });
 
 // The camp arrives after the page does, so the tab picked at load may not be
@@ -825,7 +841,13 @@ async function publish() {
     // free-text field, so the two are not always the same document.
     loadPublished(context.content);
   } catch (err) {
-    error.value = extractErrorText(err);
+    // Notify rather than set `error`: that swaps the whole page for an error
+    // state, and since the draft lives only in this browser, it would throw away
+    // everything the author just wrote.
+    showErrorNotification('publish', {
+      message: t('notify.publishFailed'),
+      caption: extractErrorText(err),
+    });
   } finally {
     publishing.value = false;
   }
@@ -920,6 +942,8 @@ status:
   blocked: 'There is nothing to publish these additions on top of yet.'
   empty: 'Nothing to publish yet — tick what this camp adds, or write an addition below.'
   withdraw: 'Publishing now withdraws this camp’s additions — registrants then see your organisation’s notice on its own.'
+notify:
+  publishFailed: 'Publishing failed'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -962,6 +986,8 @@ status:
   blocked: 'Es gibt noch nichts, worauf diese Ergänzungen aufsetzen könnten.'
   empty: 'Noch nichts zu veröffentlichen – hake an, was diese Freizeit ergänzt, oder schreibe unten eine Ergänzung.'
   withdraw: 'Beim Veröffentlichen werden die Ergänzungen dieser Freizeit zurückgezogen – Anmeldende sehen dann nur die Informationen eurer Organisation.'
+notify:
+  publishFailed: 'Veröffentlichen fehlgeschlagen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -1004,6 +1030,8 @@ status:
   blocked: "Il n'y a encore rien sur quoi appuyer ces ajouts."
   empty: 'Rien à publier pour le moment — cochez ce que ce séjour ajoute, ou rédigez un ajout ci-dessous.'
   withdraw: "Publier maintenant retire les ajouts de ce séjour — les personnes qui s'inscrivent ne verront plus que les informations de votre organisation."
+notify:
+  publishFailed: 'Échec de la publication'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -1046,6 +1074,8 @@ status:
   blocked: 'Zatím není na čem tato doplnění postavit.'
   empty: 'Zatím není co zveřejnit – zaškrtni, co tento tábor doplňuje, nebo níže napiš doplnění.'
   withdraw: 'Zveřejněním se doplnění tohoto tábora stáhnou – přihlašující pak uvidí jen informace vaší organizace.'
+notify:
+  publishFailed: 'Publikování se nezdařilo'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -1088,4 +1118,6 @@ status:
   blocked: 'Nie ma jeszcze na czym oprzeć tych uzupełnień.'
   empty: 'Nie ma jeszcze czego publikować – zaznacz, co dodaje ten obóz, albo napisz uzupełnienie poniżej.'
   withdraw: 'Publikacja wycofa uzupełnienia tego obozu – osoby zgłaszające się zobaczą wtedy same informacje Waszej organizacji.'
+notify:
+  publishFailed: 'Publikacja nie powiodła się'
 </i18n>

@@ -282,6 +282,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         .expect(404);
     });
 
+    // TODO This test returns 200 - but why did it pass before?
     it('should respond with `404` status code when user is camp manager', async () => {
       const { camp, accessToken } = await createCampWithManagerAndToken();
       const registration = await RegistrationFactory.create({
@@ -1354,6 +1355,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         .expect(404);
     });
 
+    // TODO This test returns 200 - but why did it pass before?
     it('should respond with `404` status code when user is camp manager', async () => {
       const { camp, accessToken } = await createCampWithManagerAndToken();
       const registration = await RegistrationFactory.create({

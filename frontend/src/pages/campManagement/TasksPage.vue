@@ -161,7 +161,7 @@
 import { useI18n } from 'vue-i18n';
 import { useTaskStore } from '@/stores/task-store';
 import { useCampManagerStore } from '@/stores/camp-manager-store';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import type { Task } from '@camp-registration/common/entities';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import { useQuasar } from 'quasar';
@@ -210,13 +210,22 @@ const canAssign = computed<boolean>(
   () => can('camp.tasks.create') || can('camp.tasks.update'),
 );
 
-onMounted(async () => {
-  const requests = [taskStore.fetchData()];
-  if (canAssign.value) {
-    requests.push(campManagerStore.fetchData());
-  }
-  await Promise.allSettled(requests);
+onMounted(() => {
+  void taskStore.fetchData();
 });
+
+// Permissions resolve with the profile and the camp, both of which the parent
+// layout loads after this page mounts — so the roster has to be fetched when
+// the answer arrives, not once at mount.
+watch(
+  canAssign,
+  (allowed) => {
+    if (allowed) {
+      void campManagerStore.fetchData();
+    }
+  },
+  { immediate: true },
+);
 
 const error = computed<string | null>(() => {
   return taskStore.error;
