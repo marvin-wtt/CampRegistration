@@ -104,9 +104,9 @@ export function shouldRefreshOn(
  * (identified by `event.id === subscriber.managerId`) — a role/expiry change
  * can only ever affect that one manager's own permissions, so other
  * subscribers' connections don't need to re-verify. The refresh check runs
- * independently of {@link shouldDeliver}, so a subscriber who lacks
- * `camp.managers.view` (e.g. a VIEWER being downgraded) still has their own
- * permissions refreshed even though they'd never see the event itself.
+ * independently of {@link shouldDeliver}, so a subscriber lacking
+ * `camp.managers.view` still has their own permissions refreshed even though
+ * they'd never see the event itself.
  *
  * Staleness window: between a role change committing and the async refresh
  * completing — one bus hop plus one DB round-trip (typically milliseconds),

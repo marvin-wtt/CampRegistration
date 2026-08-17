@@ -291,7 +291,7 @@ describe('/api/v1/camps/:campId/events (SSE)', () => {
     ).resolves.toBeDefined();
   });
 
-  it('hides manager events from viewers but delivers them to counselors', async () => {
+  it('delivers manager events to every camp role', async () => {
     const port = await listen();
     const camp = await CampFactory.create();
     const director = await createManagerWithToken(camp, 'DIRECTOR');
@@ -316,7 +316,9 @@ describe('/api/v1/camps/:campId/events (SSE)', () => {
     await expect(
       counselorStream.waitForEvent(isManager),
     ).resolves.toMatchObject({ operation: 'created' });
-    await viewerStream.expectSilence(isManager);
+    await expect(viewerStream.waitForEvent(isManager)).resolves.toMatchObject({
+      operation: 'created',
+    });
   });
 
   it('re-evaluates permissions on the open stream after a role change', async () => {
@@ -324,33 +326,48 @@ describe('/api/v1/camps/:campId/events (SSE)', () => {
     const camp = await CampFactory.create();
     const director = await createManagerWithToken(camp, 'DIRECTOR');
     const victim = await createManagerWithToken(camp, 'COORDINATOR');
+    const registration = await RegistrationFactory.create({
+      camp: { connect: { id: camp.id } },
+      emails: ['recipient@example.com'],
+    });
 
     const victimStream = await openStream(port, camp.id, victim.accessToken);
 
-    // As COORDINATOR the victim sees manager events — including their own
-    // downgrade (delivered with the pre-change permission set).
+    const sendMessage = (subject: string) =>
+      request()
+        .post(`/api/v1/camps/${camp.id}/messages`)
+        .send({
+          registrationIds: [registration.id],
+          subject,
+          body: 'Hello!',
+        })
+        .auth(director.accessToken, { type: 'bearer' })
+        .expect(201);
+
+    // As COORDINATOR the victim holds `camp.messages.view`.
+    await sendMessage('Before the downgrade');
+    await expect(
+      victimStream.waitForEvent((e) => e.resource === 'message'),
+    ).resolves.toBeDefined();
+
     await request()
       .patch(`/api/v1/camps/${camp.id}/managers/${victim.manager.id}`)
       .send({ role: 'VIEWER' })
       .auth(director.accessToken, { type: 'bearer' })
       .expect(200);
 
+    // The event naming the victim's own manager record triggers the refresh.
     await victimStream.waitForEvent(
-      (e) => e.resource === 'manager' && e.operation === 'updated',
+      (e) => e.resource === 'manager' && e.id === victim.manager.id,
     );
 
     // Give the async permission refresh a moment to hit the database.
     await new Promise((r) => setTimeout(r, 300));
     victimStream.events.length = 0;
 
-    // Further manager events are now hidden from the downgraded viewer …
-    await request()
-      .patch(`/api/v1/camps/${camp.id}/managers/${victim.manager.id}`)
-      .send({ role: 'VIEWER' })
-      .auth(director.accessToken, { type: 'bearer' })
-      .expect(200);
-
-    await victimStream.expectSilence((e) => e.resource === 'manager');
+    // A VIEWER no longer holds `camp.messages.view` …
+    await sendMessage('After the downgrade');
+    await victimStream.expectSilence((e) => e.resource === 'message');
 
     // … while permitted resources keep flowing on the same connection.
     await request()
