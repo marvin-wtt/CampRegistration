@@ -112,7 +112,7 @@ describe(BASE, () => {
 
   describe(`POST ${BASE}`, () => {
     it('should respond with `201` and the created newsletter', async () => {
-      const { user, accessToken } = await createOrganizationAdmin();
+      const { accessToken } = await createOrganizationAdmin();
 
       const { body } = await request()
         .post(BASE)
@@ -136,7 +136,7 @@ describe(BASE, () => {
     });
 
     it('should respond with `201` and include replyTo when provided', async () => {
-      const { user, accessToken } = await createOrganizationAdmin();
+      const { accessToken } = await createOrganizationAdmin();
 
       const { body } = await request()
         .post(BASE)

@@ -91,14 +91,17 @@ describe('/api/v1/profile', () => {
       },
       {
         role: 'VIEWER',
-        expectedPermissions: ['camp.view', 'camp.registrations.view'],
+        expectedPermissions: [
+          'camp.view',
+          'camp.registrations.view',
+          'camp.managers.view',
+        ],
         unexpectedPermissions: [
           'camp.edit',
           'camp.delete',
           'camp.registrations.create',
           'camp.registrations.edit',
           'camp.registrations.delete',
-          'camp.managers.view',
           'camp.managers.create',
           'camp.managers.edit',
           'camp.managers.delete',
@@ -111,7 +114,7 @@ describe('/api/v1/profile', () => {
         const accessToken = generateAccessToken(user);
 
         const camp = await CampFactory.create();
-        await CampManagerFactory.create({
+        const manager = await CampManagerFactory.create({
           camp: { connect: { id: camp.id } },
           user: { connect: { id: user.id } },
           role,
@@ -128,6 +131,7 @@ describe('/api/v1/profile', () => {
         expect(body.data.campAccess[0]).toHaveProperty('campId', camp.id);
         expect(body.data.campAccess[0]).toHaveProperty('role', role);
         expect(body.data.campAccess[0]).toHaveProperty('permissions');
+        expect(body.data.campAccess[0]).toHaveProperty('managerId', manager.id);
 
         // Verify expected permissions
         const permissions = body.data.campAccess[0].permissions;
