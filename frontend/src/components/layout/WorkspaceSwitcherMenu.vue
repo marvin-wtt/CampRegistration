@@ -114,24 +114,40 @@
       </template>
     </template>
 
-    <template v-if="administrator">
-      <q-separator spaced />
+    <q-separator spaced />
 
-      <q-item
-        v-close-popup
-        clickable
-        :to="{ name: 'administration' }"
-        active-class=""
-        exact-active-class=""
-      >
-        <q-item-section avatar>
-          <q-icon name="manage_accounts" />
-        </q-item-section>
-        <q-item-section>
-          {{ t('area.administration') }}
-        </q-item-section>
-      </q-item>
-    </template>
+    <!-- Management has no other way back to the public site, so the camp
+         overview is offered here rather than only from the landing page. -->
+    <q-item
+      v-close-popup
+      clickable
+      :to="{ name: 'camps' }"
+      active-class=""
+      exact-active-class=""
+    >
+      <q-item-section avatar>
+        <q-icon name="public" />
+      </q-item-section>
+      <q-item-section>
+        {{ t('public_camps') }}
+      </q-item-section>
+    </q-item>
+
+    <q-item
+      v-if="administrator"
+      v-close-popup
+      clickable
+      :to="{ name: 'administration' }"
+      active-class=""
+      exact-active-class=""
+    >
+      <q-item-section avatar>
+        <q-icon name="manage_accounts" />
+      </q-item-section>
+      <q-item-section>
+        {{ t('area.administration') }}
+      </q-item-section>
+    </q-item>
   </q-list>
 </template>
 
@@ -368,6 +384,7 @@ area:
   organizations: 'Organizations'
   administration: 'Administration'
 all_camps: 'All camps'
+public_camps: 'Camp overview'
 open: 'Open {area}'
 verification:
   PENDING: 'Awaiting review'
@@ -383,6 +400,7 @@ area:
   organizations: 'Organisationen'
   administration: 'Verwaltung'
 all_camps: 'Alle Camps'
+public_camps: 'Camp-Übersicht'
 open: '{area} öffnen'
 verification:
   PENDING: 'Wird geprüft'
@@ -398,6 +416,7 @@ area:
   organizations: 'Organisations'
   administration: 'Administration'
 all_camps: 'Tous les camps'
+public_camps: 'Aperçu des camps'
 open: 'Ouvrir {area}'
 verification:
   PENDING: 'En attente de vérification'
@@ -413,6 +432,7 @@ area:
   organizations: 'Organizacje'
   administration: 'Administracja'
 all_camps: 'Wszystkie obozy'
+public_camps: 'Przegląd obozów'
 open: 'Otwórz {area}'
 verification:
   PENDING: 'Oczekuje na weryfikację'
@@ -428,6 +448,7 @@ area:
   organizations: 'Organizace'
   administration: 'Administrace'
 all_camps: 'Všechny tábory'
+public_camps: 'Přehled táborů'
 open: 'Otevřít {area}'
 verification:
   PENDING: 'Čeká na ověření'
