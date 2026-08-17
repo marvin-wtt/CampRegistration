@@ -70,13 +70,25 @@ Explorers**, where John is only a MEMBER.
 
 - two countries (`gb`, `fr`) and a five-locale registration form
 - 58 registrations: accepted, waitlisted, pending, plus adult counselors
-- six rooms with 36 beds, three quarters of them assigned, one room left empty
-- a full week of program events on both plan A and plan B
+- seven rooms with 40 beds, 23 of them assigned, one room left empty
+- a program covering every day of the week, with A/B activity blocks
+- four documents: the rules and terms its form links, in both locales, plus a public packing list and a private internal
+  one
 - tasks with and without an assignee, one of them overdue
 - four hand-written table templates, the default message templates per country
 - three sent messages with per-recipient deliveries
 - stored room planner and program planner settings
 - five managers, one of them expiring, plus one invited by email
+
+### Camp documents
+
+Every camp whose form links a document through a `{_file.<slot>}` placeholder gets that document seeded as a real
+one-page PDF in storage, in each locale the camp supports — so the consent links on the registration form resolve and
+the files page has something to list. **Autumn Retreat is the exception**: its form declares a slot no file was ever
+uploaded for, which is what the files page warns about.
+
+Translated seed content (program events, room names) is narrowed to the locales the camp's countries imply, so no camp
+carries a translation it cannot show.
 
 ## Newsletters
 

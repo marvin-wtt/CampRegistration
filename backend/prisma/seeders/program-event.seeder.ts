@@ -1,11 +1,14 @@
 import { ProgramEventFactory } from '../factories/program-event.factory';
 import type { Camp } from '#generated/prisma/client.js';
+import { campLocales, forLocales } from './locales';
 import moment from 'moment';
 
+type Translated = string | Record<string, string>;
+
 type EventData = {
-  title: string | Record<string, string>;
-  details?: string | Record<string, string>;
-  location?: string | Record<string, string>;
+  title: Translated;
+  details?: Translated;
+  location?: Translated;
   /** Days after the camp start date. */
   day: number;
   time?: string | null;
@@ -14,244 +17,631 @@ type EventData = {
   plan?: 'a' | 'b' | 'both';
 };
 
+const COLOR = {
+  meal: '#FF9800',
+  outdoor: '#4CAF50',
+  sports: '#2196F3',
+  creative: '#9C27B0',
+  social: '#E91E63',
+  routine: '#607D8B',
+  excursion: '#00BCD4',
+  campfire: '#FF5722',
+};
+
+const TITLE = {
+  wakeUp: {
+    en: 'Wake-up and morning exercise',
+    de: 'Wecken und Morgensport',
+    fr: 'Réveil et gym du matin',
+  },
+  breakfast: { en: 'Breakfast', de: 'Frühstück', fr: 'Petit-déjeuner' },
+  lunch: { en: 'Lunch', de: 'Mittagessen', fr: 'Déjeuner' },
+  dinner: { en: 'Dinner', de: 'Abendessen', fr: 'Dîner' },
+  freeTime: { en: 'Free time', de: 'Freie Zeit', fr: 'Temps libre' },
+  climbing: { en: 'Climbing park', de: 'Kletterpark', fr: "Parc d'escalade" },
+  hike: {
+    en: 'Forest hike',
+    de: 'Waldwanderung',
+    fr: 'Randonnée en forêt',
+  },
+  bushcraft: {
+    en: 'Bushcraft and shelter building',
+    de: 'Bushcraft und Hüttenbau',
+    fr: 'Bushcraft et construction de cabanes',
+  },
+  teamChallenge: {
+    en: 'Team challenge',
+    de: 'Teamchallenge',
+    fr: "Défi d'équipe",
+  },
+};
+
+const LOCATION = {
+  courtyard: { en: 'Manor courtyard', de: 'Innenhof', fr: 'Cour du manoir' },
+  ropes: {
+    en: 'High ropes course',
+    de: 'Hochseilgarten',
+    fr: 'Parcours acrobatique',
+  },
+  forestTrail: {
+    en: 'North forest trail',
+    de: 'Waldpfad Nord',
+    fr: 'Sentier forestier nord',
+  },
+  forestCamp: { en: 'Forest camp', de: 'Waldlager', fr: 'Camp forestier' },
+  firePit: { en: 'Fire pit', de: 'Feuerstelle', fr: 'Foyer' },
+  sportsGround: {
+    en: 'Sports ground',
+    de: 'Sportplatz',
+    fr: 'Terrain de sport',
+  },
+  workshop: { en: 'Workshop room', de: 'Werkraum', fr: 'Salle de bricolage' },
+  meadow: {
+    en: 'Meadow behind the barn',
+    de: 'Wiese hinter der Scheune',
+    fr: 'Pré derrière la grange',
+  },
+  hall: { en: 'Great hall', de: 'Große Halle', fr: 'Grande salle' },
+  lido: { en: 'Lido', de: 'Freibad', fr: 'Piscine en plein air' },
+};
+
+/**
+ * A full week without a single empty day: the same daily rhythm of wake-up,
+ * meals and free time, and the two activity blocks split into an A and a B
+ * group that swap over so both plans are worth looking at.
+ */
 const EVENTS: EventData[] = [
+  // Day 0 — arrival afternoon.
   {
-    title: { de: 'Anreise', fr: 'Arrivée', en: 'Arrival' },
+    title: {
+      en: 'Arrival and check-in',
+      de: 'Anreise und Anmeldung',
+      fr: 'Arrivée et accueil',
+    },
+    location: LOCATION.courtyard,
     day: 0,
     time: '15:00',
     duration: 120,
-    color: '#4CAF50',
-    plan: 'both',
+    color: COLOR.outdoor,
   },
   {
-    title: { de: 'Abendessen', fr: 'Dîner', en: 'Dinner' },
+    title: {
+      en: 'House tour and camp rules',
+      de: 'Hausführung und Lagerregeln',
+      fr: 'Visite du site et règlement',
+    },
+    day: 0,
+    time: '17:00',
+    duration: 60,
+    color: COLOR.routine,
+  },
+  {
+    title: TITLE.dinner,
     day: 0,
     time: '18:30',
     duration: 60,
-    color: '#FF9800',
-    plan: 'both',
+    color: COLOR.meal,
   },
   {
     title: {
-      de: 'Morgenandacht',
-      fr: 'Dévotion du matin',
-      en: 'Morning devotion',
+      en: 'Welcome games',
+      de: 'Kennenlernspiele',
+      fr: 'Jeux de bienvenue',
     },
+    day: 0,
+    time: '20:00',
+    duration: 90,
+    color: COLOR.social,
+  },
+
+  // Day 1 — the A/B activity blocks swap after lunch.
+  {
+    title: TITLE.wakeUp,
     day: 1,
     time: '08:00',
     duration: 30,
-    color: '#9C27B0',
-    plan: 'both',
+    color: COLOR.routine,
   },
   {
-    title: { de: 'Frühstück', fr: 'Petit-déjeuner', en: 'Breakfast' },
+    title: TITLE.breakfast,
     day: 1,
     time: '08:30',
     duration: 60,
-    color: '#FF9800',
-    plan: 'both',
+    color: COLOR.meal,
   },
   {
-    title: { de: 'Bibelarbeit', fr: 'Étude biblique', en: 'Bible study' },
+    title: TITLE.climbing,
+    details: {
+      en: 'Safety briefing before the first climb',
+      de: 'Sicherheitseinweisung vor dem ersten Klettern',
+      fr: 'Briefing sécurité avant la première montée',
+    },
+    location: LOCATION.ropes,
     day: 1,
     time: '10:00',
-    duration: 90,
-    color: '#9C27B0',
-    plan: 'both',
-  },
-  {
-    title: { de: 'Mittagessen', fr: 'Déjeuner', en: 'Lunch' },
-    day: 1,
-    time: '12:30',
-    duration: 60,
-    color: '#FF9800',
-    plan: 'both',
-  },
-  {
-    title: { de: 'Kletterpark', fr: "Parc d'escalade", en: 'Climbing park' },
-    details: {
-      de: 'Sicherheitseinweisung um 14:00 Uhr',
-      en: 'Safety briefing at 14:00',
-    },
-    location: { de: 'Kletterpark Süd', en: 'South Climbing Park' },
-    day: 1,
-    time: '14:00',
     duration: 120,
-    color: '#2196F3',
+    color: COLOR.sports,
     plan: 'a',
   },
   {
-    title: { de: 'Wanderung', fr: 'Randonnée', en: 'Hiking' },
-    location: { de: 'Waldpfad Nord', en: 'North Forest Trail' },
+    title: TITLE.hike,
+    location: LOCATION.forestTrail,
     day: 1,
-    time: '14:00',
+    time: '10:00',
     duration: 120,
-    color: '#4CAF50',
+    color: COLOR.outdoor,
     plan: 'b',
   },
   {
-    title: { de: 'Abendessen', fr: 'Dîner', en: 'Dinner' },
+    title: TITLE.lunch,
+    day: 1,
+    time: '12:30',
+    duration: 60,
+    color: COLOR.meal,
+  },
+  {
+    title: TITLE.hike,
+    location: LOCATION.forestTrail,
+    day: 1,
+    time: '14:00',
+    duration: 120,
+    color: COLOR.outdoor,
+    plan: 'a',
+  },
+  {
+    title: TITLE.climbing,
+    details: {
+      en: 'Safety briefing before the first climb',
+      de: 'Sicherheitseinweisung vor dem ersten Klettern',
+      fr: 'Briefing sécurité avant la première montée',
+    },
+    location: LOCATION.ropes,
+    day: 1,
+    time: '14:00',
+    duration: 120,
+    color: COLOR.sports,
+    plan: 'b',
+  },
+  {
+    title: TITLE.freeTime,
+    day: 1,
+    time: '16:30',
+    duration: 90,
+    color: COLOR.routine,
+  },
+  {
+    title: TITLE.dinner,
     day: 1,
     time: '18:30',
     duration: 60,
-    color: '#FF9800',
-    plan: 'both',
+    color: COLOR.meal,
   },
   {
-    title: { de: 'Lagerfeuer', fr: 'Feu de camp', en: 'Campfire' },
-    location: { de: 'Feuerstelle', en: 'Fire pit' },
+    title: {
+      en: 'Campfire with songs',
+      de: 'Lagerfeuer mit Liedern',
+      fr: 'Feu de camp en chansons',
+    },
+    location: LOCATION.firePit,
     day: 1,
     time: '20:30',
     duration: 90,
-    color: '#FF5722',
-    plan: 'both',
+    color: COLOR.campfire,
   },
+
+  // Day 2 — one big morning block, workshops in the afternoon.
   {
-    title: {
-      de: 'Morgenandacht',
-      fr: 'Dévotion du matin',
-      en: 'Morning devotion',
-    },
+    title: TITLE.wakeUp,
     day: 2,
     time: '08:00',
     duration: 30,
-    color: '#9C27B0',
-    plan: 'both',
+    color: COLOR.routine,
   },
   {
-    title: { de: 'Frühstück', fr: 'Petit-déjeuner', en: 'Breakfast' },
+    title: TITLE.breakfast,
     day: 2,
     time: '08:30',
     duration: 60,
-    color: '#FF9800',
-    plan: 'both',
-  },
-  {
-    title: { de: 'Sporttag', fr: 'Journée sportive', en: 'Sports day' },
-    details: {
-      de: 'Fußball, Basketball, Volleyball',
-      en: 'Football, basketball, volleyball',
-    },
-    location: { de: 'Sportplatz', en: 'Sports ground' },
-    day: 2,
-    time: '10:00',
-    duration: 180,
-    color: '#2196F3',
-    plan: 'both',
-  },
-  {
-    title: { de: 'Mittagessen', fr: 'Déjeuner', en: 'Lunch' },
-    day: 2,
-    time: '13:00',
-    duration: 60,
-    color: '#FF9800',
-    plan: 'both',
-  },
-  {
-    title: { de: 'Freie Zeit', fr: 'Temps libre', en: 'Free time' },
-    day: 2,
-    time: '14:30',
-    duration: 90,
-    color: '#607D8B',
-    plan: 'both',
-  },
-  {
-    title: { de: 'Abendessen', fr: 'Dîner', en: 'Dinner' },
-    day: 2,
-    time: '18:30',
-    duration: 60,
-    color: '#FF9800',
-    plan: 'both',
-  },
-  {
-    title: { de: 'Spieleabend', fr: 'Soirée jeux', en: 'Game night' },
-    day: 2,
-    time: '20:00',
-    duration: 120,
-    color: '#E91E63',
-    plan: 'both',
-  },
-  {
-    title: { de: 'Ausflug', fr: 'Excursion', en: 'Day trip' },
-    details: { de: 'Fahrt in die Stadt', en: 'Trip to the city' },
-    day: 3,
-    time: '09:00',
-    duration: 360,
-    color: '#00BCD4',
-    plan: 'both',
-  },
-  {
-    title: { de: 'Abendessen', fr: 'Dîner', en: 'Dinner' },
-    day: 3,
-    time: '18:30',
-    duration: 60,
-    color: '#FF9800',
-    plan: 'both',
-  },
-  {
-    title: { de: 'Bibelarbeit', fr: 'Étude biblique', en: 'Bible study' },
-    day: 4,
-    time: '10:00',
-    duration: 90,
-    color: '#9C27B0',
-    plan: 'both',
-  },
-  {
-    title: { de: 'Mittagessen', fr: 'Déjeuner', en: 'Lunch' },
-    day: 4,
-    time: '12:30',
-    duration: 60,
-    color: '#FF9800',
-    plan: 'both',
+    color: COLOR.meal,
   },
   {
     title: {
-      de: 'Kreativangebot',
-      fr: 'Atelier créatif',
-      en: 'Creative workshop',
+      en: 'Camp Olympics',
+      de: 'Camp-Olympiade',
+      fr: 'Olympiades du camp',
     },
-    location: { de: 'Werkraum', en: 'Workshop room' },
-    day: 4,
-    time: '14:00',
+    details: {
+      en: 'Mixed teams of eight',
+      de: 'Gemischte Achterteams',
+      fr: 'Équipes mixtes de huit',
+    },
+    location: LOCATION.sportsGround,
+    day: 2,
+    time: '09:30',
+    duration: 180,
+    color: COLOR.sports,
+  },
+  {
+    title: TITLE.lunch,
+    day: 2,
+    time: '12:30',
+    duration: 60,
+    color: COLOR.meal,
+  },
+  {
+    title: {
+      en: 'Creative workshop',
+      de: 'Kreativwerkstatt',
+      fr: 'Atelier créatif',
+    },
+    location: LOCATION.workshop,
+    day: 2,
+    time: '14:30',
     duration: 120,
-    color: '#FF9800',
+    color: COLOR.creative,
     plan: 'a',
   },
   {
-    title: { de: 'Teambuilding', fr: 'Team building', en: 'Team building' },
-    day: 4,
-    time: '14:00',
+    title: { en: 'Archery', de: 'Bogenschießen', fr: "Tir à l'arc" },
+    location: LOCATION.meadow,
+    day: 2,
+    time: '14:30',
     duration: 120,
-    color: '#4CAF50',
+    color: COLOR.sports,
     plan: 'b',
   },
   {
-    title: { de: 'Abendessen', fr: 'Dîner', en: 'Dinner' },
-    day: 4,
+    title: TITLE.freeTime,
+    day: 2,
+    time: '16:30',
+    duration: 60,
+    color: COLOR.routine,
+  },
+  {
+    title: TITLE.dinner,
+    day: 2,
     time: '18:30',
     duration: 60,
-    color: '#FF9800',
-    plan: 'both',
+    color: COLOR.meal,
+  },
+  {
+    title: { en: 'Game night', de: 'Spieleabend', fr: 'Soirée jeux' },
+    location: LOCATION.hall,
+    day: 2,
+    time: '20:00',
+    duration: 120,
+    color: COLOR.social,
+  },
+
+  // Day 3 — the excursion takes the whole day, so nothing is split.
+  {
+    title: TITLE.breakfast,
+    day: 3,
+    time: '07:30',
+    duration: 60,
+    color: COLOR.meal,
   },
   {
     title: {
-      de: 'Abschlussfeier',
-      fr: 'Cérémonie de clôture',
-      en: 'Closing ceremony',
+      en: 'Day trip to Cheddar Gorge',
+      de: 'Tagesausflug zur Cheddar-Schlucht',
+      fr: 'Excursion aux gorges de Cheddar',
     },
-    day: 6,
-    time: '19:00',
-    duration: 120,
-    color: '#E91E63',
-    plan: 'both',
+    details: {
+      en: 'Packed lunch included, back by 15:00',
+      de: 'Lunchpaket inklusive, zurück um 15:00 Uhr',
+      fr: 'Panier-repas inclus, retour à 15h00',
+    },
+    day: 3,
+    time: '09:00',
+    duration: 360,
+    color: COLOR.excursion,
   },
   {
-    title: { de: 'Abreise', fr: 'Départ', en: 'Departure' },
+    title: TITLE.freeTime,
+    day: 3,
+    time: '16:00',
+    duration: 90,
+    color: COLOR.routine,
+  },
+  {
+    title: TITLE.dinner,
+    day: 3,
+    time: '18:30',
+    duration: 60,
+    color: COLOR.meal,
+  },
+  {
+    title: { en: 'Film night', de: 'Filmabend', fr: 'Soirée cinéma' },
+    location: LOCATION.hall,
+    day: 3,
+    time: '20:00',
+    duration: 120,
+    color: COLOR.social,
+  },
+
+  // Day 4 — the second A/B day, swapped again after lunch.
+  {
+    title: TITLE.wakeUp,
+    day: 4,
+    time: '08:00',
+    duration: 30,
+    color: COLOR.routine,
+  },
+  {
+    title: TITLE.breakfast,
+    day: 4,
+    time: '08:30',
+    duration: 60,
+    color: COLOR.meal,
+  },
+  {
+    title: TITLE.bushcraft,
+    location: LOCATION.forestCamp,
+    day: 4,
+    time: '10:00',
+    duration: 120,
+    color: COLOR.outdoor,
+    plan: 'a',
+  },
+  {
+    title: TITLE.teamChallenge,
+    location: LOCATION.meadow,
+    day: 4,
+    time: '10:00',
+    duration: 120,
+    color: COLOR.sports,
+    plan: 'b',
+  },
+  {
+    title: TITLE.lunch,
+    day: 4,
+    time: '12:30',
+    duration: 60,
+    color: COLOR.meal,
+  },
+  {
+    title: TITLE.teamChallenge,
+    location: LOCATION.meadow,
+    day: 4,
+    time: '14:00',
+    duration: 120,
+    color: COLOR.sports,
+    plan: 'a',
+  },
+  {
+    title: TITLE.bushcraft,
+    location: LOCATION.forestCamp,
+    day: 4,
+    time: '14:00',
+    duration: 120,
+    color: COLOR.outdoor,
+    plan: 'b',
+  },
+  {
+    title: TITLE.freeTime,
+    day: 4,
+    time: '16:00',
+    duration: 90,
+    color: COLOR.routine,
+  },
+  {
+    title: TITLE.dinner,
+    day: 4,
+    time: '18:30',
+    duration: 60,
+    color: COLOR.meal,
+  },
+  {
+    title: {
+      en: 'Night hike',
+      de: 'Nachtwanderung',
+      fr: 'Randonnée nocturne',
+    },
+    details: {
+      en: 'Torches are handed out at the gate',
+      de: 'Taschenlampen gibt es am Tor',
+      fr: 'Les lampes de poche sont distribuées au portail',
+    },
+    day: 4,
+    time: '20:30',
+    duration: 90,
+    color: COLOR.outdoor,
+  },
+
+  // Day 5 — pool day, and the first rehearsal for the closing show.
+  {
+    title: TITLE.wakeUp,
+    day: 5,
+    time: '08:00',
+    duration: 30,
+    color: COLOR.routine,
+  },
+  {
+    title: TITLE.breakfast,
+    day: 5,
+    time: '08:30',
+    duration: 60,
+    color: COLOR.meal,
+  },
+  {
+    title: {
+      en: 'Swimming and water games',
+      de: 'Schwimmen und Wasserspiele',
+      fr: "Baignade et jeux d'eau",
+    },
+    location: LOCATION.lido,
+    day: 5,
+    time: '10:00',
+    duration: 150,
+    color: COLOR.sports,
+  },
+  {
+    title: TITLE.lunch,
+    day: 5,
+    time: '13:00',
+    duration: 60,
+    color: COLOR.meal,
+  },
+  {
+    title: TITLE.freeTime,
+    day: 5,
+    time: '14:30',
+    duration: 90,
+    color: COLOR.routine,
+  },
+  {
+    title: {
+      en: 'Preparing the camp show',
+      de: 'Vorbereitung der Abschlussshow',
+      fr: 'Préparation du spectacle',
+    },
+    details: {
+      en: 'Every group prepares one act',
+      de: 'Jede Gruppe bereitet einen Beitrag vor',
+      fr: 'Chaque groupe prépare un numéro',
+    },
+    day: 5,
+    time: '16:00',
+    duration: 90,
+    color: COLOR.creative,
+  },
+  {
+    title: TITLE.dinner,
+    day: 5,
+    time: '18:30',
+    duration: 60,
+    color: COLOR.meal,
+  },
+  {
+    title: { en: 'Quiz night', de: 'Quizabend', fr: 'Soirée quiz' },
+    location: LOCATION.hall,
+    day: 5,
+    time: '20:00',
+    duration: 90,
+    color: COLOR.social,
+  },
+
+  // Day 6 — last full day: one more A/B morning, then the closing show.
+  {
+    title: TITLE.wakeUp,
+    day: 6,
+    time: '08:00',
+    duration: 30,
+    color: COLOR.routine,
+  },
+  {
+    title: TITLE.breakfast,
+    day: 6,
+    time: '08:30',
+    duration: 60,
+    color: COLOR.meal,
+  },
+  {
+    title: {
+      en: 'Mountain bike tour',
+      de: 'Mountainbike-Tour',
+      fr: 'Sortie VTT',
+    },
+    day: 6,
+    time: '10:00',
+    duration: 120,
+    color: COLOR.sports,
+    plan: 'a',
+  },
+  {
+    title: {
+      en: 'Orienteering',
+      de: 'Orientierungslauf',
+      fr: "Course d'orientation",
+    },
+    location: LOCATION.forestTrail,
+    day: 6,
+    time: '10:00',
+    duration: 120,
+    color: COLOR.outdoor,
+    plan: 'b',
+  },
+  {
+    title: TITLE.lunch,
+    day: 6,
+    time: '12:30',
+    duration: 60,
+    color: COLOR.meal,
+  },
+  {
+    title: {
+      en: 'Dress rehearsal',
+      de: 'Generalprobe',
+      fr: 'Répétition générale',
+    },
+    location: LOCATION.hall,
+    day: 6,
+    time: '14:00',
+    duration: 120,
+    color: COLOR.creative,
+  },
+  {
+    title: {
+      en: 'Tidy rooms and pack',
+      de: 'Zimmer aufräumen und packen',
+      fr: 'Rangement des chambres et bagages',
+    },
+    day: 6,
+    time: '16:30',
+    duration: 60,
+    color: COLOR.routine,
+  },
+  {
+    title: {
+      en: 'Farewell dinner',
+      de: 'Abschiedsessen',
+      fr: "Repas d'adieu",
+    },
+    day: 6,
+    time: '18:30',
+    duration: 90,
+    color: COLOR.meal,
+  },
+  {
+    title: {
+      en: 'Camp show and closing ceremony',
+      de: 'Abschlussshow und Abschlussfeier',
+      fr: 'Spectacle et cérémonie de clôture',
+    },
+    location: LOCATION.hall,
+    day: 6,
+    time: '20:30',
+    duration: 120,
+    color: COLOR.social,
+  },
+
+  // Day 7 — departure morning.
+  {
+    title: TITLE.breakfast,
+    day: 7,
+    time: '08:00',
+    duration: 60,
+    color: COLOR.meal,
+  },
+  {
+    title: {
+      en: 'Room handover',
+      de: 'Zimmerübergabe',
+      fr: 'État des lieux des chambres',
+    },
+    day: 7,
+    time: '09:00',
+    duration: 60,
+    color: COLOR.routine,
+  },
+  {
+    title: { en: 'Departure', de: 'Abreise', fr: 'Départ' },
+    location: LOCATION.courtyard,
     day: 7,
     time: '10:00',
     duration: null,
-    color: '#4CAF50',
-    plan: 'both',
+    color: COLOR.outdoor,
   },
 ];
 
@@ -261,11 +651,15 @@ export class ProgramEventSeeder {
 
   async seed(): Promise<void> {
     const start = moment(this.camp.startAt).startOf('day');
+    const locales = campLocales(this.camp);
 
-    for (const { day, ...event } of EVENTS) {
+    for (const { day, title, details, location, ...event } of EVENTS) {
       await ProgramEventFactory.create({
         camp: { connect: { id: this.camp.id } },
         date: start.clone().add(day, 'days').format('YYYY-MM-DD'),
+        title: forLocales(title, locales),
+        details: details ? forLocales(details, locales) : undefined,
+        location: location ? forLocales(location, locales) : undefined,
         ...event,
       });
     }

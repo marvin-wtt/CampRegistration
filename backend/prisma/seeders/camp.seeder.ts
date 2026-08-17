@@ -5,6 +5,7 @@ import { ProgramEventSeeder } from './program-event.seeder';
 import { MessageSeeder } from './message.seeder';
 import { RoomSeeder } from './room.seeder';
 import { CampSettingSeeder } from './camp-setting.seeder';
+import { CampFileSeeder } from './file.seeder';
 import {
   CAMP_PRESETS,
   defaultMessageTemplatesForCountries,
@@ -43,7 +44,7 @@ class CampSeeder extends BaseSeeder {
   /**
    * "Summer Camp": the one camp with every child model populated — two
    * countries, five locales, registrations in every status, rooms and beds,
-   * a full program, message history and both camp settings.
+   * a full program, message history, documents and both camp settings.
    */
   private async seedFlagshipCamp(): Promise<void> {
     const camp = await CampFactory.create({
@@ -100,6 +101,14 @@ class CampSeeder extends BaseSeeder {
     await new MessageSeeder(camp).seed();
     await new RoomSeeder(camp).seed();
     await new CampSettingSeeder(camp).seed();
+
+    // The form links its rules and terms through {_file.<slot>}, so both are
+    // uploaded in both of the camp's locales; the other two documents belong
+    // to no slot and only show up on the files page.
+    const files = new CampFileSeeder(camp);
+    await files.seedFormSlots();
+    await files.seedDocument('packing_list', 'public');
+    await files.seedDocument('insurance', 'private');
   }
 
   /**
@@ -174,6 +183,10 @@ class CampSeeder extends BaseSeeder {
 
     await new RegistrationSeeder(autumn).seed(9, { status: 'ACCEPTED' });
 
+    // Deliberately without documents: its preset form declares a {_file.toc}
+    // slot nothing was ever uploaded for, which is what the files page warns
+    // about.
+
     const spring = await CampFactory.create({
       id: CAMP_IDS.spring,
       organization,
@@ -196,6 +209,7 @@ class CampSeeder extends BaseSeeder {
 
     await new RegistrationSeeder(spring).seed(22, { status: 'ACCEPTED' });
     await new RoomSeeder(spring).seed();
+    await new CampFileSeeder(spring).seedFormSlots();
 
     const winter = await CampFactory.create({
       id: CAMP_IDS.winter,
@@ -218,6 +232,7 @@ class CampSeeder extends BaseSeeder {
     });
 
     await new RegistrationSeeder(winter).seed(26, { status: 'ACCEPTED' });
+    await new CampFileSeeder(winter).seedFormSlots();
   }
 
   /**
@@ -251,6 +266,7 @@ class CampSeeder extends BaseSeeder {
 
     await new RegistrationSeeder(mountain).seed(17, { status: 'ACCEPTED' });
     await new RegistrationSeeder(mountain).seed(2, { status: 'PENDING' });
+    await new CampFileSeeder(mountain).seedFormSlots();
 
     // COUNSELOR, and running right now: the dashboard, program planner and room
     // planner all show a camp in progress, with a role that may not edit it.
@@ -279,6 +295,7 @@ class CampSeeder extends BaseSeeder {
     await new RegistrationSeeder(city).seed(4, { status: 'WAITLISTED' });
     await new RoomSeeder(city).seed();
     await new CampSettingSeeder(city).seed();
+    await new CampFileSeeder(city).seedFormSlots();
 
     // VIEWER: every list is readable, every action must be gone.
     const simple = await CampFactory.create({
@@ -322,7 +339,7 @@ class CampSeeder extends BaseSeeder {
 
     // John's manager record here is expired — access must be gone even though
     // the record still exists.
-    await CampFactory.create({
+    const glacier = await CampFactory.create({
       id: CAMP_IDS.glacierTrek,
       organization,
       name: { de: 'Gletschertour', en: 'Glacier Trek' },
@@ -341,6 +358,8 @@ class CampSeeder extends BaseSeeder {
       form: CAMP_PRESETS.minimal.form,
       tableTemplates: presetTableTemplates('minimal'),
     });
+
+    await new CampFileSeeder(glacier).seedFormSlots();
   }
 
   /** Camps whose organization is not (or no longer) verified. */
@@ -370,6 +389,7 @@ class CampSeeder extends BaseSeeder {
     // Registrations that were captured on paper — the guard only blocks the
     // public endpoint, so the list is not necessarily empty.
     await new RegistrationSeeder(printemps).seed(3, { status: 'PENDING' });
+    await new CampFileSeeder(printemps).seedFormSlots();
 
     // REJECTED organization: the rejection unpublished the camp.
     const harbour = await CampFactory.create({
@@ -394,6 +414,7 @@ class CampSeeder extends BaseSeeder {
 
     // Taken before the organization was rejected.
     await new RegistrationSeeder(harbour).seed(4, { status: 'ACCEPTED' });
+    await new CampFileSeeder(harbour).seedFormSlots();
   }
 
   /** A camp John has no relationship to at all. */
@@ -419,6 +440,7 @@ class CampSeeder extends BaseSeeder {
     });
 
     await new RegistrationSeeder(seaside).seed(12, { status: 'ACCEPTED' });
+    await new CampFileSeeder(seaside).seedFormSlots();
   }
 }
 
