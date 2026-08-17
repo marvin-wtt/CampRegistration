@@ -1,6 +1,7 @@
 import moment from 'moment';
 import { Prisma } from '#generated/prisma/client.js';
 import { createForm } from '../utils/form.js';
+import type { CampCreateData } from '@camp-registration/common/entities';
 
 export const campPublic = {
   public: true,
@@ -19,6 +20,23 @@ export const CAMP_CREATE_ORGANIZATION_ID = '01K9ATF1H9KD1K6H12F3YK8RGZ';
 
 export const campCreateNational = {
   organizationId: CAMP_CREATE_ORGANIZATION_ID,
+  public: false,
+  confirmationMode: 'AUTOMATIC' as const,
+  countries: ['de'],
+  name: 'Test Camp',
+  organizer: 'Test Org',
+  contactEmail: 'test@example.com',
+  maxParticipants: 10,
+  minAge: 10,
+  maxAge: 15,
+  startAt: moment().add(20, 'days').startOf('hour').toDate().toISOString(),
+  endAt: moment().add(22, 'days').startOf('hour').toDate().toISOString(),
+  price: 100.0,
+  location: 'Somewhere',
+} satisfies CampCreateData;
+
+export const campInputNational: Partial<Prisma.CampCreateInput> = {
+  organization: { connect: { id: CAMP_CREATE_ORGANIZATION_ID } },
   public: false,
   confirmationMode: 'AUTOMATIC' as const,
   countries: ['de'],

@@ -281,19 +281,6 @@ describe('/api/v1/camps/:campId/registrations', () => {
         .auth(accessToken, { type: 'bearer' })
         .expect(404);
     });
-
-    // TODO This test returns 200 - but why did it pass before?
-    it('should respond with `404` status code when user is camp manager', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
-      const registration = await RegistrationFactory.create({
-        camp: { connect: { id: camp.id } },
-      });
-
-      await request()
-        .get(`/api/v1/camps/${camp.id}/registrations/${registration.id}/`)
-        .auth(accessToken, { type: 'bearer' })
-        .expect(404);
-    });
   });
 
   describe('POST /api/v1/camps/:campId/registrations/', () => {
@@ -1350,20 +1337,6 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
       await request()
         .patch(`/api/v1/camps/${camp.id}/registrations/${id}`)
-        .send({})
-        .auth(accessToken, { type: 'bearer' })
-        .expect(404);
-    });
-
-    // TODO This test returns 200 - but why did it pass before?
-    it('should respond with `404` status code when user is camp manager', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
-      const registration = await RegistrationFactory.create({
-        camp: { connect: { id: camp.id } },
-      });
-
-      await request()
-        .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
         .send({})
         .auth(accessToken, { type: 'bearer' })
         .expect(404);

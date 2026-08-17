@@ -46,6 +46,7 @@ export interface CampDetails extends Camp {
   themes: Record<string, ITheme>;
 }
 
+/** `locales` is derived from `countries` server-side. */
 export type CampCreateData = Omit<
   Partial<CampDetails> & Camp,
   | 'id'
@@ -53,7 +54,12 @@ export type CampCreateData = Omit<
   | 'registrationStatus'
   | 'organizationName'
   | 'organizationVerificationStatus'
+  | 'locales'
+  | 'registrationOpensAt'
+  | 'registrationClosesAt'
 > & {
+  registrationOpensAt?: string | null | undefined;
+  registrationClosesAt?: string | null | undefined;
   referenceCampId?: string | undefined;
   preset?: 'standard' | 'minimal' | undefined | null;
 };

@@ -37,12 +37,12 @@
       <div v-html="freeTextHtml" />
     </section>
 
-    <template v-else-if="notice.notice.mode === 'builder'">
-      <section v-if="notice.notice.dataCategories.length">
+    <template v-else-if="builderNotice">
+      <section v-if="builderNotice.dataCategories.length">
         <h3>{{ t('section.dataCategories') }}</h3>
         <ul>
           <li
-            v-for="category in notice.notice.dataCategories"
+            v-for="category in builderNotice.dataCategories"
             :key="category.key"
           >
             {{ categoryLabel(category) }}
@@ -61,11 +61,11 @@
         </ul>
       </section>
 
-      <section v-if="notice.notice.purposes.length">
+      <section v-if="builderNotice.purposes.length">
         <h3>{{ t('section.purposes') }}</h3>
         <ul>
           <li
-            v-for="purpose in notice.notice.purposes"
+            v-for="purpose in builderNotice.purposes"
             :key="purpose.key"
           >
             {{ purposeLabel(purpose) }}
@@ -83,11 +83,11 @@
         </ul>
       </section>
 
-      <section v-if="notice.notice.recipients.length">
+      <section v-if="builderNotice.recipients.length">
         <h3>{{ t('section.recipients') }}</h3>
         <ul>
           <li
-            v-for="recipient in notice.notice.recipients"
+            v-for="recipient in builderNotice.recipients"
             :key="recipient.key"
           >
             {{ gt(`privacy.recipient.${recipient.key}`) }}
@@ -96,14 +96,14 @@
         </ul>
       </section>
 
-      <section v-if="notice.notice.retention">
+      <section v-if="builderNotice.retention">
         <h3>{{ t('section.retention') }}</h3>
         <p>
           {{
             t('retentionSentence', {
-              months: notice.notice.retention.months,
+              months: builderNotice.retention.months,
               anchor: gt(
-                `privacy.retentionAnchor.${notice.notice.retention.anchor}`,
+                `privacy.retentionAnchor.${builderNotice.retention.anchor}`,
               ),
             })
           }}
@@ -133,15 +133,15 @@
         <p>{{ t('retentionLegalNote') }}</p>
       </section>
 
-      <section v-if="notice.notice.thirdCountryTransfers.enabled">
+      <section v-if="builderNotice.thirdCountryTransfers.enabled">
         <h3>{{ t('section.transfers') }}</h3>
         <p>
           {{
             t('transferSentence', {
               countries: transferCountries,
-              safeguard: notice.notice.thirdCountryTransfers.safeguard
+              safeguard: builderNotice.thirdCountryTransfers.safeguard
                 ? gt(
-                    `privacy.transferSafeguard.${notice.notice.thirdCountryTransfers.safeguard}`,
+                    `privacy.transferSafeguard.${builderNotice.thirdCountryTransfers.safeguard}`,
                   )
                 : '',
             })
@@ -150,13 +150,13 @@
         <p v-if="transferNote">{{ transferNote }}</p>
       </section>
 
-      <section v-if="notice.notice.dpo">
+      <section v-if="builderNotice.dpo">
         <h3>{{ t('section.dpo') }}</h3>
         <p>
-          {{ notice.notice.dpo.name }}<br />
+          {{ builderNotice.dpo.name }}<br />
           {{ t('email') }}:
-          <a :href="`mailto:${notice.notice.dpo.email}`">
-            {{ notice.notice.dpo.email }}
+          <a :href="`mailto:${builderNotice.dpo.email}`">
+            {{ builderNotice.dpo.email }}
           </a>
         </p>
       </section>
@@ -165,7 +165,7 @@
         <h3>{{ t('section.automated') }}</h3>
         <p>
           {{
-            notice.notice.automatedDecisionMaking
+            builderNotice.automatedDecisionMaking
               ? t('automatedYes')
               : t('automatedNo')
           }}
@@ -252,51 +252,37 @@ const props = defineProps<{
 }>();
 
 const { t } = useI18n();
-// The catalogue vocabulary and country names are global (`privacy.*`,
-// `country.*`), shared with the authoring wizard; this component's own copy
-// lives in the locale blocks below, which are a separate, local scope.
+// The catalogue vocabulary and country names are global
 const { t: gt } = useI18n({ useScope: 'global' });
 const { to } = useObjectTranslation();
 const { categoryLabel, purposeLabel, exceptionLabel, countryLabel } =
   usePrivacyLabels();
 
-/**
- * Authored by an organization administrator — a less trusted role than the
- * instance administrator behind the platform's own legal pages, so it is
- * sanitized on render as well as on write.
- */
-function sanitized(value: unknown): string | null {
-  const html = to(value as never);
-
-  return html ? DOMPurify.sanitize(html) : null;
-}
-
-const countryName = computed(() =>
+const countryName = computed<string>(() =>
   countryLabel(props.notice.controller.country),
 );
 
-const freeTextHtml = computed(() =>
+const freeTextHtml = computed<string | null>(() =>
   props.notice.notice?.mode === 'free_text'
     ? sanitized(props.notice.notice.freeText)
     : null,
 );
 
-/**
- * A free-text notice whose prose is blank says nothing, and neither branch
- * below would render it — the reader would get the controller block and their
- * rights with no notice in between, and no hint that anything was missing.
- */
-const noticeMissing = computed(
+const noticeMissing = computed<boolean>(
   () =>
     !props.notice.notice ||
     (props.notice.notice.mode === 'free_text' && !freeTextHtml.value),
 );
 
-const additionalHtml = computed(() =>
+const builderNotice = computed(() =>
+  props.notice.notice?.mode === 'builder' ? props.notice.notice : null,
+);
+
+const additionalHtml = computed<string | null>(() =>
   props.notice.notice ? sanitized(props.notice.notice.additional) : null,
 );
 
-const campAdditionalHtml = computed(() =>
+const campAdditionalHtml = computed<string | null>(() =>
   props.notice.notice ? sanitized(props.notice.notice.campAdditional) : null,
 );
 
@@ -304,23 +290,29 @@ const exceptions = computed(() =>
   retentionExceptions(props.notice.notice?.retention),
 );
 
-const automatedDetails = computed(() =>
+const automatedDetails = computed<string | null>(() =>
   props.notice.notice?.automatedDecisionMakingDetails
     ? to(props.notice.notice.automatedDecisionMakingDetails)
     : null,
 );
 
-const transferNote = computed(() =>
+const transferNote = computed<string | null>(() =>
   props.notice.notice?.thirdCountryTransfers.note
     ? to(props.notice.notice.thirdCountryTransfers.note)
     : null,
 );
 
-const transferCountries = computed(() =>
+const transferCountries = computed<string>(() =>
   (props.notice.notice?.thirdCountryTransfers.countries ?? [])
     .map(countryLabel)
     .join(', '),
 );
+
+function sanitized(value: unknown): string | null {
+  const html = to(value as never);
+
+  return html ? DOMPurify.sanitize(html) : null;
+}
 </script>
 
 <style lang="scss" scoped>

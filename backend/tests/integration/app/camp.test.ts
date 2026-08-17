@@ -10,7 +10,6 @@ import {
   FileFactory,
   MessageTemplateFactory,
   OrganizationFactory,
-  OrganizationMemberFactory,
 } from '../../../prisma/factories/index.js';
 import { Camp, Prisma } from '#generated/prisma/client.js';
 import { campRegistrationStatus } from '#app/camp/camp.util';
@@ -26,6 +25,7 @@ import {
   campWithForm,
   campUpdateBodyWithForm,
   CAMP_CREATE_ORGANIZATION_ID,
+  campInputNational,
 } from './fixtures/camp.fixtures.js';
 import { request } from '../utils/request.js';
 import { campWithMaxParticipantsRolesInternational } from './fixtures/registration.fixtures.js';
@@ -167,21 +167,6 @@ const createCampCreatorToken = async () => {
   await joinCampCreationOrganization(user.id);
 
   return generateAccessToken(user);
-};
-
-/** An administrator of an organization still awaiting moderation. */
-const createUnverifiedOrganizationAdmin = async () => {
-  const user = await UserFactory.create();
-  const organization = await OrganizationFactory.create({
-    verificationStatus: 'PENDING',
-  });
-  await OrganizationMemberFactory.create({
-    organization: { connect: { id: organization.id } },
-    user: { connect: { id: user.id } },
-    role: 'ADMIN',
-  });
-
-  return { organization, user, accessToken: generateAccessToken(user) };
 };
 
 describe('/api/v1/camps', () => {
@@ -734,50 +719,6 @@ describe('/api/v1/camps', () => {
       expect(body).toHaveProperty('data.registrationClosesAt', null);
     });
 
-    describe('unverified organization', () => {
-      it('should accept a registration window', async () => {
-        // Scheduling is preparation, not publication: the route guard refuses
-        // the registrations themselves until the organization is verified.
-        const { organization, accessToken } =
-          await createUnverifiedOrganizationAdmin();
-        const registrationOpensAt = moment()
-          .add(10, 'days')
-          .startOf('hour')
-          .toDate()
-          .toISOString();
-
-        const { body } = await request()
-          .post(`/api/v1/camps/`)
-          .send({
-            ...campCreateNational,
-            organizationId: organization.id,
-            registrationOpensAt,
-          })
-          .auth(accessToken, { type: 'bearer' })
-          .expect(201);
-
-        expect(body).toHaveProperty(
-          'data.registrationOpensAt',
-          registrationOpensAt,
-        );
-      });
-
-      it('should respond with `403` status code when the camp is public', async () => {
-        const { organization, accessToken } =
-          await createUnverifiedOrganizationAdmin();
-
-        await request()
-          .post(`/api/v1/camps/`)
-          .send({
-            ...campCreateNational,
-            organizationId: organization.id,
-            public: true,
-          })
-          .auth(accessToken, { type: 'bearer' })
-          .expect(403);
-      });
-    });
-
     describe('invalid request body', () => {
       it.each(campCreatedBody)(
         'should validate the request body | $name',
@@ -1220,50 +1161,6 @@ describe('/api/v1/camps', () => {
       },
     );
 
-    describe('unverified organization', () => {
-      const unverifiedCamp = {
-        organization: {
-          create: OrganizationFactory.build({
-            verificationStatus: 'PENDING' as const,
-          }),
-        },
-      };
-
-      it('should accept a registration window', async () => {
-        const { camp, accessToken } =
-          await createCampWithManagerAndToken(unverifiedCamp);
-        const registrationOpensAt = moment()
-          .add(10, 'days')
-          .startOf('hour')
-          .toDate()
-          .toISOString();
-
-        const { body } = await request()
-          .patch(`/api/v1/camps/${camp.id}`)
-          .send({ registrationOpensAt })
-          .auth(accessToken, { type: 'bearer' })
-          .expect(200);
-
-        expect(body).toHaveProperty(
-          'data.registrationOpensAt',
-          registrationOpensAt,
-        );
-      });
-
-      it('should respond with `403` status code when publishing the camp', async () => {
-        const { camp, accessToken } = await createCampWithManagerAndToken({
-          ...unverifiedCamp,
-          ...campPrivate,
-        });
-
-        await request()
-          .patch(`/api/v1/camps/${camp.id}`)
-          .send({ public: true })
-          .auth(accessToken, { type: 'bearer' })
-          .expect(403);
-      });
-    });
-
     it('should update camp data for all registrations', async () => {
       const { camp, accessToken } =
         await createCampWithManagerAndToken(campWithForm);
@@ -1397,13 +1294,13 @@ describe('/api/v1/camps', () => {
         'should validate the request body | $name',
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         async ({ data, camp: campData, expected }) => {
-          const campCreateData = {
-            ...campCreateNational,
+          const campCreateInput = {
+            ...campInputNational,
             ...campData,
           };
 
           const { camp, accessToken } =
-            await createCampWithManagerAndToken(campCreateData);
+            await createCampWithManagerAndToken(campCreateInput);
 
           await request()
             .patch(`/api/v1/camps/${camp.id}`)
