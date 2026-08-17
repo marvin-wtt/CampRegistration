@@ -1,9 +1,11 @@
 <template>
   <q-menu>
     <q-list style="min-width: 100px">
+      <!-- Sharing a camp nobody can register for yet (or any more) is a valid
+           thing to do, so the action stays available and only carries the
+           caveat the parent computed for it. -->
       <q-item
         v-close-popup
-        :disable="!active"
         clickable
         @click="emit('share')"
       >
@@ -15,8 +17,18 @@
             {{ t('action.share') }}
           </q-item-label>
         </q-item-section>
-        <q-tooltip v-if="!active">
-          {{ t('tooltip.share_disabled') }}
+        <q-item-section
+          v-if="shareWarning"
+          side
+        >
+          <q-icon
+            name="warning"
+            color="warning"
+            size="18px"
+          />
+        </q-item-section>
+        <q-tooltip v-if="shareWarning">
+          {{ shareWarning }}
         </q-tooltip>
       </q-item>
 
@@ -63,9 +75,10 @@ import { usePermissions } from '@/composables/permissions';
 const { t } = useI18n();
 const { canFor } = usePermissions();
 
-const { camp, active = false } = defineProps<{
+const { camp, shareWarning = null } = defineProps<{
   camp: Camp;
-  active?: boolean;
+  /** Caveat to attach to the share action, e.g. registration being closed. */
+  shareWarning?: string | null;
 }>();
 
 const emit = defineEmits<{
@@ -89,8 +102,6 @@ action:
   enable: 'Enable'
   share: 'Share'
   disable: 'Disable'
-tooltip:
-  share_disabled: 'Sharing is only available while registration is open'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -101,8 +112,6 @@ action:
   enable: 'Aktivieren'
   share: 'Teilen'
   disable: 'Deaktivieren'
-tooltip:
-  share_disabled: 'Teilen ist nur möglich, während die Anmeldung geöffnet ist'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -113,8 +122,6 @@ action:
   enable: 'Activer'
   share: 'Partager'
   disable: 'Désactiver'
-tooltip:
-  share_disabled: "Le partage n'est disponible que lorsque les inscriptions sont ouvertes"
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -125,8 +132,6 @@ action:
   enable: 'Aktywuj'
   share: 'Udostępnij'
   disable: 'Dezaktywuj'
-tooltip:
-  share_disabled: 'Udostępnianie jest dostępne tylko podczas otwartej rejestracji'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -137,6 +142,4 @@ action:
   enable: 'Aktivovat'
   share: 'Sdílet'
   disable: 'Deaktivovat'
-tooltip:
-  share_disabled: 'Sdílení je dostupné pouze během otevřené registrace'
 </i18n>

@@ -28,8 +28,14 @@
             />
             {{ registrationStatus.label }}
           </span>
+          <!-- Sharing stays offered outside the registration window — the camp
+               page is still reachable. The pill keeps its neutral look: the
+               registration state is already spelled out by the pill next to it,
+               and the unverified-organization case by the notice above the
+               hero, so an alarm colour here would only read as a malfunction.
+               The caveat rides along in the tooltip instead. -->
           <button
-            v-if="registrationStatus.open"
+            v-if="camp"
             type="button"
             class="status-pill copy-link-pill"
             @click="copyRegistrationLink"
@@ -39,7 +45,15 @@
               size="17px"
             />
             {{ t('copyLink.label') }}
-            <q-tooltip>{{ t('copyLink.tooltip') }}</q-tooltip>
+            <q-tooltip class="copy-link-tooltip">
+              <div>{{ t('copyLink.tooltip') }}</div>
+              <div
+                v-if="shareCaveat"
+                class="copy-link-tooltip__caveat"
+              >
+                {{ shareCaveat }}
+              </div>
+            </q-tooltip>
           </button>
         </div>
 
@@ -221,7 +235,6 @@ const registrationStatus = computed(() => {
       label: t('registration.unset'),
       tone: 'neutral',
       icon: 'help',
-      open: false,
     };
   }
 
@@ -230,7 +243,6 @@ const registrationStatus = computed(() => {
       label: t('registration.upcoming'),
       tone: 'info',
       icon: 'schedule',
-      open: false,
     };
   }
   if (c.registrationStatus === 'closed') {
@@ -238,7 +250,6 @@ const registrationStatus = computed(() => {
       label: t('registration.closed'),
       tone: 'neutral',
       icon: 'lock',
-      open: false,
     };
   }
 
@@ -246,8 +257,33 @@ const registrationStatus = computed(() => {
     label: t('registration.open'),
     tone: 'positive',
     icon: 'lock_open',
-    open: true,
   };
+});
+
+// The camp page stays reachable outside the registration window, so the link is
+// still worth sending — it just can't be signed up through. While the
+// organization is unverified the page 403s for everyone but its managers, which
+// is the one case where the link is of no use at all.
+const shareCaveat = computed<string | null>(() => {
+  const c = camp.value;
+  if (!c) {
+    return null;
+  }
+
+  if (c.organizationVerificationStatus !== 'VERIFIED') {
+    return t('copyLink.caveat.unverified', {
+      organization: c.organizationName,
+    });
+  }
+
+  switch (c.registrationStatus) {
+    case 'upcoming':
+      return t('copyLink.caveat.upcoming');
+    case 'closed':
+      return t('copyLink.caveat.closed');
+    default:
+      return null;
+  }
 });
 
 async function copyRegistrationLink() {
@@ -262,9 +298,14 @@ async function copyRegistrationLink() {
 
   try {
     await copyToClipboard(url);
+    // The copy itself succeeded either way — the caveat is context, not a
+    // failure, so it rides along as a caption rather than flipping the tone.
+    const showShareCaveat = shareCaveat.value != null;
+
     quasar.notify({
-      type: 'positive',
+      type: showShareCaveat ? 'warning' : 'positive',
       message: t('copyLink.success'),
+      caption: showShareCaveat ? shareCaveat.value : '',
       icon: 'assignment_turned_in',
     });
   } catch {
@@ -430,6 +471,15 @@ function daysFromNow(date: string): number {
   outline: none;
 }
 
+.copy-link-tooltip {
+  max-width: 260px;
+}
+
+.copy-link-tooltip__caveat {
+  margin-top: 4px;
+  opacity: 0.8;
+}
+
 .camp-meta {
   display: flex;
   flex-wrap: wrap;
@@ -584,6 +634,10 @@ copyLink:
   tooltip: 'Copy the public registration form link'
   success: 'Link copied to clipboard'
   fail: 'Failed to copy link to clipboard'
+  caveat:
+    closed: 'Registration is closed — visitors can view the camp but cannot sign up.'
+    upcoming: 'Registration has not opened yet — visitors can view the camp but cannot sign up yet.'
+    unverified: 'Only this camp’s managers can open the link while {organization} is unverified.'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -611,6 +665,10 @@ copyLink:
   tooltip: 'Link zum öffentlichen Anmeldeformular kopieren'
   success: 'Link in die Zwischenablage kopiert'
   fail: 'Link konnte nicht kopiert werden'
+  caveat:
+    closed: 'Die Anmeldung ist geschlossen — Besucher sehen das Camp, können sich aber nicht anmelden.'
+    upcoming: 'Die Anmeldung ist noch nicht geöffnet — Besucher sehen das Camp, können sich aber noch nicht anmelden.'
+    unverified: 'Solange {organization} nicht verifiziert ist, können nur die Verantwortlichen dieses Camps den Link öffnen.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -638,6 +696,10 @@ copyLink:
   tooltip: "Copier le lien du formulaire d'inscription public"
   success: 'Lien copié dans le presse-papiers'
   fail: 'Échec de la copie du lien'
+  caveat:
+    closed: 'Les inscriptions sont fermées — les visiteurs peuvent voir le camp mais pas s’inscrire.'
+    upcoming: 'Les inscriptions ne sont pas encore ouvertes — les visiteurs peuvent voir le camp mais pas encore s’inscrire.'
+    unverified: 'Tant que {organization} n’est pas vérifiée, seuls les responsables de ce camp peuvent ouvrir le lien.'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -665,6 +727,10 @@ copyLink:
   tooltip: 'Skopiuj link do publicznego formularza rejestracji'
   success: 'Link skopiowany do schowka'
   fail: 'Nie udało się skopiować linku'
+  caveat:
+    closed: 'Rejestracja jest zamknięta — odwiedzający zobaczą obóz, ale nie mogą się zapisać.'
+    upcoming: 'Rejestracja jeszcze się nie rozpoczęła — odwiedzający zobaczą obóz, ale nie mogą się jeszcze zapisać.'
+    unverified: 'Dopóki {organization} nie zostanie zweryfikowana, link mogą otworzyć tylko osoby zarządzające tym obozem.'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -692,4 +758,8 @@ copyLink:
   tooltip: 'Zkopírovat odkaz na veřejný registrační formulář'
   success: 'Odkaz zkopírován do schránky'
   fail: 'Odkaz se nepodařilo zkopírovat'
+  caveat:
+    closed: 'Registrace je uzavřena — návštěvníci tábor uvidí, ale nemohou se přihlásit.'
+    upcoming: 'Registrace ještě nezačala — návštěvníci tábor uvidí, ale zatím se nemohou přihlásit.'
+    unverified: 'Dokud není {organization} ověřena, může odkaz otevřít pouze správa tohoto tábora.'
 </i18n>
