@@ -225,6 +225,41 @@ describe('/api/v1/camps/:campId/table-templates', () => {
       const count = await prisma.tableTemplate.count();
       expect(count).toBe(0);
     });
+
+    it('should store the print orientation', async () => {
+      const { camp, accessToken } = await createCampWithManagerAndToken();
+
+      const data = {
+        title: 'Test Template',
+        columns: [{ name: 'name', label: 'Name', field: 'name' }],
+        order: 1,
+        printOptions: { orientation: 'landscape' },
+      };
+
+      const response = await request()
+        .post(`/api/v1/camps/${camp.id}/table-templates`)
+        .send(data)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(201);
+
+      expect(response.body.data).toHaveProperty(
+        'printOptions.orientation',
+        'landscape',
+      );
+
+      const stored = await request()
+        .get(
+          `/api/v1/camps/${camp.id}/table-templates/${response.body.data.id}`,
+        )
+        .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(stored.body.data).toHaveProperty(
+        'printOptions.orientation',
+        'landscape',
+      );
+    });
   });
 
   describe('PATCH /api/v1/camps/:campId/table-templates/:templateId', () => {
@@ -333,6 +368,31 @@ describe('/api/v1/camps/:campId/table-templates', () => {
         .send(data)
         .auth(accessToken, { type: 'bearer' })
         .expect(404);
+    });
+
+    it('should drop the print orientation when it is omitted', async () => {
+      const { camp, accessToken } = await createCampWithManagerAndToken();
+      const template = await TableTemplateFactory.create({
+        camp: { connect: { id: camp.id } },
+        data: {
+          title: 'Test Template',
+          columns: [{ name: 'name', label: 'Name', field: 'name' }],
+          order: 1,
+          printOptions: { orientation: 'landscape' },
+        },
+      });
+
+      const response = await request()
+        .put(`/api/v1/camps/${camp.id}/table-templates/${template.id}`)
+        .send({
+          title: 'Test Template',
+          columns: [{ name: 'name', label: 'Name', field: 'name' }],
+          order: 1,
+        })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(response.body.data.printOptions).toBeUndefined();
     });
   });
 
