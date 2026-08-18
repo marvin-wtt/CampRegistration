@@ -1,5 +1,8 @@
 <template>
-  <q-list class="workspace-switcher-menu">
+  <q-list
+    class="workspace-switcher-menu"
+    :class="{ 'workspace-switcher-menu--compact': compact }"
+  >
     <q-item-label header>
       {{ t('switch') }}
     </q-item-label>
@@ -46,17 +49,22 @@
           </q-item-section>
 
           <q-item-section side>
+            <q-skeleton
+              v-if="area.loading"
+              type="QBadge"
+            />
             <q-badge
-              v-if="!area.loading"
+              v-else
               :color="area.name === currentArea ? 'primary' : 'grey-6'"
               :label="area.count"
             />
           </q-item-section>
         </q-item>
 
-        <!-- The whole header expands, as a full-width target should. Opening
-             the area's index is the trailing arrow, so both actions stay one
-             click without competing for the same hit area. -->
+        <!-- The whole header expands, and nothing else — a second control
+             inside it would be a small target sharing an edge with a
+             full-width one, which touch cannot aim between. The area's index
+             is an "all …" row inside the panel instead. -->
         <q-expansion-item
           v-else
           group="workspace-switcher"
@@ -79,27 +87,15 @@
             </q-item-section>
 
             <q-item-section side>
-              <div class="row items-center no-wrap q-gutter-x-sm">
-                <q-badge
-                  v-if="!area.loading"
-                  :color="area.name === currentArea ? 'primary' : 'grey-6'"
-                  :label="area.count"
-                />
-                <q-btn
-                  v-close-popup
-                  dense
-                  flat
-                  round
-                  size="sm"
-                  icon="arrow_forward"
-                  :aria-label="t('open', { area: area.label })"
-                  @click.stop="goToIndex(area)"
-                >
-                  <q-tooltip>
-                    {{ t('open', { area: area.label }) }}
-                  </q-tooltip>
-                </q-btn>
-              </div>
+              <q-skeleton
+                v-if="area.loading"
+                type="QBadge"
+              />
+              <q-badge
+                v-else
+                :color="area.name === currentArea ? 'primary' : 'grey-6'"
+                :label="area.count"
+              />
             </q-item-section>
           </template>
 
@@ -107,7 +103,9 @@
             :entries="area.entries"
             :past="area.past"
             :past-label="t('past')"
-            inset
+            :index-to="area.indexTo"
+            :all-label="area.allLabel"
+            :inset="!compact"
             @select="(id) => select(area.name, id)"
           />
         </q-expansion-item>
@@ -152,7 +150,8 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted } from 'vue';
+import { computed } from 'vue';
+import { useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter, type RouteLocationRaw } from 'vue-router';
 import { storeToRefs } from 'pinia';
@@ -178,15 +177,14 @@ interface WorkspaceArea {
   label: string;
   icon: string;
   indexTo: RouteLocationRaw;
-  // Only the flat single-area rendering needs it; a folded area opens its
-  // index from the header row.
-  allLabel?: string | undefined;
+  allLabel: string;
   entries: WorkspaceEntry[];
   past: WorkspaceEntry[];
   count: number;
   loading: boolean;
 }
 
+const quasar = useQuasar();
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
@@ -198,6 +196,10 @@ const newsletterStore = useNewsletterStore();
 const organizationsStore = useOrganizationsStore();
 
 const { user } = storeToRefs(profileStore);
+
+// Rendered in a bottom sheet rather than an anchored menu: it owns the full
+// width, and indenting nested rows would spend it on nothing.
+const compact = computed<boolean>(() => quasar.screen.lt.sm);
 
 const administrator = computed<boolean>(() => user.value?.role === 'ADMIN');
 
@@ -249,6 +251,7 @@ const newsletterArea = computed<WorkspaceArea>(() => {
     label: t('area.newsletters'),
     icon: 'mail',
     indexTo: { name: 'management.newsletters' },
+    allLabel: t('all_newsletters'),
     entries: (newsletterStore.data ?? [])
       .filter((newsletter) => newsletter.id !== currentId)
       .sort((a, b) => a.name.localeCompare(b.name))
@@ -272,6 +275,7 @@ const organizationArea = computed<WorkspaceArea>(() => {
     label: t('area.organizations'),
     icon: 'apartment',
     indexTo: { name: 'management.organizations' },
+    allLabel: t('all_organizations'),
     entries: (organizationsStore.data ?? [])
       .filter((organization) => organization.id !== currentId)
       .sort((a, b) => a.name.localeCompare(b.name))
@@ -311,18 +315,9 @@ const soleArea = computed<WorkspaceArea | undefined>(() =>
   availableAreas.value.length === 1 ? availableAreas.value[0] : undefined,
 );
 
-// The menu lives inside a QMenu, so it mounts when the user opens it. The
-// stores are lazy, meaning this costs one small request per area per session.
-onMounted(() => {
-  void assignedCampsStore.fetchData();
-
-  if ((user.value?.newsletterAccess.length ?? 0) > 0) {
-    void newsletterStore.fetchData();
-  }
-  if ((user.value?.organizationAccess.length ?? 0) > 0) {
-    void organizationsStore.fetchData();
-  }
-});
+// This component mounts when the panel opens, which is too late to fetch —
+// `useWorkspacePrefetch()` in WorkspaceSwitcher has already warmed the stores
+// by then.
 
 function hasEntries(area: WorkspaceArea): boolean {
   return area.entries.length > 0 || area.past.length > 0;
@@ -373,6 +368,12 @@ function goTo(rootName: string, param: string, id: string) {
   min-width: min(260px, calc(100vw - 32px));
   max-width: min(420px, calc(100vw - 32px));
 }
+
+/* In the sheet the width is the sheet's, so the menu must not cap itself. */
+.workspace-switcher-menu--compact {
+  min-width: 100%;
+  max-width: 100%;
+}
 </style>
 
 <i18n lang="yaml" locale="en">
@@ -384,8 +385,9 @@ area:
   organizations: 'Organizations'
   administration: 'Administration'
 all_camps: 'All camps'
+all_newsletters: 'All newsletters'
+all_organizations: 'All organizations'
 listed_camps: 'Camp overview'
-open: 'Open {area}'
 verification:
   PENDING: 'Awaiting review'
   REJECTED: 'Rejected'
@@ -400,8 +402,9 @@ area:
   organizations: 'Organisationen'
   administration: 'Verwaltung'
 all_camps: 'Alle Camps'
+all_newsletters: 'Alle Newsletter'
+all_organizations: 'Alle Organisationen'
 listed_camps: 'Camp-Übersicht'
-open: '{area} öffnen'
 verification:
   PENDING: 'Wird geprüft'
   REJECTED: 'Abgelehnt'
@@ -416,8 +419,9 @@ area:
   organizations: 'Organisations'
   administration: 'Administration'
 all_camps: 'Tous les camps'
+all_newsletters: 'Toutes les newsletters'
+all_organizations: 'Toutes les organisations'
 listed_camps: 'Aperçu des camps'
-open: 'Ouvrir {area}'
 verification:
   PENDING: 'En attente de vérification'
   REJECTED: 'Refusée'
@@ -432,8 +436,9 @@ area:
   organizations: 'Organizacje'
   administration: 'Administracja'
 all_camps: 'Wszystkie obozy'
+all_newsletters: 'Wszystkie newslettery'
+all_organizations: 'Wszystkie organizacje'
 listed_camps: 'Przegląd obozów'
-open: 'Otwórz {area}'
 verification:
   PENDING: 'Oczekuje na weryfikację'
   REJECTED: 'Odrzucona'
@@ -448,8 +453,9 @@ area:
   organizations: 'Organizace'
   administration: 'Administrace'
 all_camps: 'Všechny tábory'
+all_newsletters: 'Všechny newslettery'
+all_organizations: 'Všechny organizace'
 listed_camps: 'Přehled táborů'
-open: 'Otevřít {area}'
 verification:
   PENDING: 'Čeká na ověření'
   REJECTED: 'Zamítnuto'

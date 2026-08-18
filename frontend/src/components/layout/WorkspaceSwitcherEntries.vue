@@ -49,8 +49,9 @@
     </q-item>
   </q-expansion-item>
 
-  <!-- Only needed when there is no area header to click; a folded area opens
-       its index from the header row instead. -->
+  <!-- The way into the area's index. It sits at the end of the list, not in
+       the area header, where a second control would share an edge with the
+       header's own full-width tap target. -->
   <q-item
     v-if="indexTo && allLabel"
     v-close-popup

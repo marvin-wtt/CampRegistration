@@ -2,8 +2,8 @@
   <q-skeleton
     v-if="loading"
     type="rect"
-    :height="rail ? '32px' : '2.5em'"
-    :width="rail ? '60px' : '12em'"
+    :height="rail ? '32px' : '40px'"
+    :width="rail ? '60px' : 'min(180px, 100%)'"
     :class="rail ? 'rounded-lg' : 'q-ml-xs'"
   />
 
@@ -52,57 +52,127 @@
   </div>
 
   <!-- Bar: width-constrained toolbar control with a truncating label + caret. -->
-  <m-btn
-    v-else
-    tonal
-    no-caps
-    no-morph
-    :aria-label="label"
-    class="workspace-switcher"
-  >
-    <q-icon
-      :name="icon"
-      size="20px"
-      class="on-left"
-    />
-    <span class="workspace-switcher__label">
-      {{ label }}
-    </span>
-    <q-icon
-      name="arrow_drop_down"
-      size="20px"
-      class="workspace-switcher__chevron on-right"
-    />
-
-    <q-tooltip>
-      {{ label }}
-    </q-tooltip>
-
-    <q-menu
-      anchor="bottom start"
-      self="top start"
+  <template v-else>
+    <m-btn
+      tonal
+      no-caps
+      no-morph
+      :aria-label="label"
+      class="workspace-switcher"
+      @click="openSheet"
     >
-      <workspace-switcher-menu />
-    </q-menu>
-  </m-btn>
+      <q-icon
+        :name="icon"
+        size="20px"
+        class="on-left"
+      />
+      <span class="workspace-switcher__label">
+        {{ label }}
+      </span>
+      <q-icon
+        name="arrow_drop_down"
+        size="20px"
+        class="workspace-switcher__chevron on-right"
+      />
+
+      <!-- Touch has no hover, so a tooltip cannot be what discloses the
+           truncated name — on phones the sheet header carries it in full. -->
+      <q-tooltip v-if="!sheetMode">
+        {{ label }}
+      </q-tooltip>
+
+      <q-menu
+        v-if="!sheetMode"
+        anchor="bottom start"
+        self="top start"
+      >
+        <workspace-switcher-menu />
+      </q-menu>
+    </m-btn>
+
+    <!-- Phones get a bottom sheet instead of an anchored menu: the menu opens
+         at the top edge, away from the thumb, and caps itself at a width the
+         nested lists cannot work in. -->
+    <q-dialog
+      v-if="sheetMode"
+      v-model="sheet"
+      position="bottom"
+      @hide="resetDrag"
+    >
+      <q-card
+        class="workspace-switcher-sheet"
+        :class="{ 'workspace-switcher-sheet--dragging': dragging }"
+        :style="{ transform: `translateY(${dragOffset}px)` }"
+      >
+        <!-- The handle drags unconditionally: it is the part of a sheet that
+             is not the content, so nothing else competes for the gesture. -->
+        <div
+          v-touch-pan.vertical.mouse.prevent="drag"
+          class="workspace-switcher-sheet__header"
+        >
+          <div class="workspace-switcher-sheet__grip" />
+
+          <div class="row items-center no-wrap">
+            <q-icon
+              :name="icon"
+              size="24px"
+              class="q-mr-md"
+            />
+            <div class="col">
+              <div class="workspace-switcher-sheet__name">
+                {{ label }}
+              </div>
+              <div
+                v-if="sheetCaption"
+                class="workspace-switcher-sheet__area"
+              >
+                {{ sheetCaption }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <q-separator />
+
+        <!-- No `prevent` here: the list has to keep scrolling normally, and
+             `dragFromContent` only takes the gesture when there is nothing
+             left to scroll. -->
+        <div
+          ref="scrollEl"
+          v-touch-pan.vertical.mouse="dragFromContent"
+          class="workspace-switcher-sheet__scroll"
+        >
+          <workspace-switcher-menu />
+        </div>
+      </q-card>
+    </q-dialog>
+  </template>
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
+import { TouchPan, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 import { useCampDetailsStore } from '@/stores/camp-details-store';
 import { useOrganizationDetailsStore } from '@/stores/organization-details-store';
 import { useNewsletterStore } from '@/stores/newsletter-store';
 import { useObjectTranslation } from '@/composables/objectTranslation';
+import { useSheetDrag } from '@/composables/sheetDrag';
 import WorkspaceSwitcherMenu from '@/components/layout/WorkspaceSwitcherMenu.vue';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
-import { areaFromRouteName } from '@/components/layout/workspaceArea';
+import {
+  areaFromRouteName,
+  useWorkspacePrefetch,
+} from '@/components/layout/workspaceArea';
 
 defineProps<{
   rail?: boolean;
 }>();
 
+const vTouchPan = TouchPan;
+
+const quasar = useQuasar();
 const route = useRoute();
 const { t } = useI18n();
 const { to } = useObjectTranslation();
@@ -112,6 +182,35 @@ const organizationDetailsStore = useOrganizationDetailsStore();
 const newsletterStore = useNewsletterStore();
 
 const area = computed(() => areaFromRouteName(route.name));
+
+// The panel is a sheet below `sm`; the rail variant is desktop-only, so only
+// the bar ever reaches it.
+const sheetMode = computed<boolean>(() => quasar.screen.lt.sm);
+
+const sheet = ref<boolean>(false);
+
+// The sheet is left where the finger let go, so the dialog's own slide-out
+// carries on from there instead of snapping back first.
+const {
+  dragging,
+  offset: dragOffset,
+  scrollEl,
+  drag,
+  dragFromContent,
+  reset: resetDrag,
+} = useSheetDrag(() => {
+  sheet.value = false;
+});
+
+function openSheet() {
+  if (sheetMode.value) {
+    sheet.value = true;
+  }
+}
+
+// The panel lists what the user can switch to, so it wants its data ready
+// before it opens rather than while it is being read.
+useWorkspacePrefetch();
 
 function param(key: string): string | undefined {
   const value = route.params[key];
@@ -164,6 +263,12 @@ const areaName = computed<string>(() => {
 
 const label = computed<string>(() => entityName.value || areaName.value);
 
+// Names the area the entity belongs to. On an index page the label already is
+// the area name, so a caption would only repeat it.
+const sheetCaption = computed<string | undefined>(() =>
+  entityName.value ? areaName.value : undefined,
+);
+
 const loading = computed<boolean>(() => {
   switch (area.value) {
     case 'camps':
@@ -178,7 +283,11 @@ const loading = computed<boolean>(() => {
 
 <style scoped>
 .workspace-switcher {
-  min-width: 0;
+  /* Standing in for the toolbar title, so it holds a title's worth of room
+     even when the name is short. Capped at the space the toolbar has left —
+     on a 320px screen that is ~190px, after the menu and profile buttons —
+     so the control can never push its neighbours out. */
+  min-width: min(180px, 100%);
   /* Grow into the space the toolbar has left rather than sitting at whatever
      width the current entity's name happens to need. */
   max-width: 100%;
@@ -196,11 +305,93 @@ const loading = computed<boolean>(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+
+  /* This is the page title on a phone, not a button caption — the button's own
+     14px reads as fine print in a 64px toolbar. Height is unaffected: 16px at
+     this line height still clears the 40px the button already had. */
+  font-size: 16px;
+  line-height: 1.25;
 }
 
 .workspace-switcher__chevron {
   flex: 0 0 auto;
-  margin-left: 6px;
+  /* Trailing edge, so the room the min-width holds open falls between label
+     and caret — the pill reads as a control rather than as a short label with
+     space left over after it. */
+  margin-left: auto;
+  padding-left: 6px;
+}
+
+.workspace-switcher-sheet {
+  display: flex;
+  flex-direction: column;
+
+  width: 100%;
+  max-width: 100%;
+  /* Leaves the page visible above it, so the sheet reads as a layer over the
+     workspace rather than as a new screen. */
+  max-height: 80vh;
+
+  border-radius: 28px 28px 0 0;
+  background: var(--md3-surface-container-low);
+
+  /* Only for the release: while a finger is on it the sheet has to track that
+     finger exactly, so the transition is off. */
+  transition: transform 220ms cubic-bezier(0.2, 0, 0, 1);
+  will-change: transform;
+}
+
+.workspace-switcher-sheet--dragging {
+  transition: none;
+}
+
+.workspace-switcher-sheet__header {
+  flex: 0 0 auto;
+  padding: 0 20px 12px;
+
+  cursor: grab;
+  user-select: none;
+  /* The browser must not claim the gesture — scrolling and pull-to-refresh
+     would both fight the drag. */
+  touch-action: none;
+}
+
+.workspace-switcher-sheet--dragging .workspace-switcher-sheet__header {
+  cursor: grabbing;
+}
+
+/* Drag handle: both the affordance and the target. */
+.workspace-switcher-sheet__grip {
+  width: 32px;
+  height: 4px;
+  margin: 12px auto 16px;
+
+  border-radius: 2px;
+  background: var(--md3-outline-variant);
+}
+
+/* Wraps rather than truncates: this is the one place the full name of the
+   current workspace is readable on a phone. */
+.workspace-switcher-sheet__name {
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--md3-on-surface);
+  overflow-wrap: anywhere;
+}
+
+.workspace-switcher-sheet__area {
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--md3-on-surface-variant);
+}
+
+.workspace-switcher-sheet__scroll {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  /* Reaching the end of the list must not start scrolling the page behind. */
+  overscroll-behavior: contain;
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 .workspace-switcher-rail__btn {
