@@ -83,7 +83,7 @@
           <q-banner
             v-if="selectedOrganizationUnverified"
             dense
-            class="draft-note rounded-md q-mt-sm"
+            class="unverified-note rounded-md q-mt-sm"
           >
             <template #avatar>
               <q-icon name="info" />
@@ -728,7 +728,7 @@ function createOrganization() {
   width: 500px;
 }
 
-.draft-note {
+.unverified-note {
   background: var(--md3-secondary-container);
   color: var(--md3-on-secondary-container);
 }
@@ -754,13 +754,13 @@ step:
 
 organization_note:
   title: 'Why an organization?'
-  entity: "It's the legal entity the camp runs under, accountable for it and for the data collected through it, and verified by us."
-  access: 'Its administrators never see registrations. They can view and edit the camp itself and see who manages it — nothing more.'
-  organizer: "It doesn't have to be the name participants see; you set that separately as the organizer."
-  create: "If this camp doesn't belong to any of the organizations listed, you can create a new one."
+  entity: "It's the legal entity behind the camp. It answers for the camp and for the data people enter when they register."
+  access: 'Its administrators can view and edit the camp and see who manages it. They never see registrations.'
+  organizer: 'The camp is presented under the organizer, which you set separately. The organization is still visible to participants: next to the organizer in the camp list, and in the privacy information.'
+  create: "Can't find the right one? Create a new organization."
   create_action: 'New organization'
 
-unverified_notice: 'This organization is awaiting verification. The camp will be saved as a private draft and cannot be published or open registration until it is verified.'
+unverified_notice: 'This organization is not verified. You can set the camp up now, but until it is verified the camp stays hidden from the public listing and cannot accept registrations.'
 rule:
   organization_required: 'Please choose an organization'
 field:
@@ -842,13 +842,13 @@ step:
 
 organization_note:
   title: 'Warum eine Organisation?'
-  entity: 'Sie ist der Rechtsträger, unter dem das Camp läuft, verantwortlich für das Camp und die darüber erhobenen Daten – und von uns geprüft.'
-  access: 'Ihre Administratoren sehen niemals Anmeldungen. Sie können das Camp selbst ansehen und bearbeiten und sehen, wer es leitet – mehr nicht.'
-  organizer: 'Sie muss nicht der Name sein, den Teilnehmende sehen; den legst du separat als Veranstalter fest.'
-  create: 'Gehört dieses Camp zu keiner der aufgeführten Organisationen, kannst du eine neue anlegen.'
+  entity: 'Sie ist der Rechtsträger hinter dem Camp und verantwortlich für die Daten, die bei der Anmeldung erhoben werden.'
+  access: 'Ihre Administratoren können das Camp ansehen und bearbeiten und sehen, wer es leitet. Anmeldungen sehen sie nie.'
+  organizer: 'Das Camp tritt unter dem Veranstalter auf, den du separat festlegst. Die Organisation sehen Teilnehmende trotzdem: neben dem Veranstalter in der Camp-Liste und in den Datenschutzinformationen.'
+  create: 'Ist die passende nicht dabei? Leg eine neue Organisation an.'
   create_action: 'Neue Organisation'
 
-unverified_notice: 'Diese Organisation wartet auf die Verifizierung. Das Camp wird als privater Entwurf gespeichert und kann bis dahin nicht veröffentlicht werden.'
+unverified_notice: 'Diese Organisation ist nicht verifiziert. Du kannst das Camp jetzt einrichten, aber bis zur Verifizierung ist es nicht öffentlich sichtbar und nimmt keine Anmeldungen an.'
 rule:
   organization_required: 'Bitte wähle eine Organisation'
 field:
@@ -930,13 +930,13 @@ step:
 
 organization_note:
   title: 'Pourquoi une organisation ?'
-  entity: "C'est l'entité juridique sous laquelle le camp est organisé, responsable du camp et des données collectées par son intermédiaire, et vérifiée par nos soins."
-  access: "Ses administrateurs ne voient jamais les inscriptions. Ils peuvent consulter et modifier le camp lui-même et voir qui l'encadre — rien de plus."
-  organizer: "Ce n'est pas forcément le nom que voient les participants ; celui-ci se définit séparément comme organisateur."
-  create: "Si ce camp n'appartient à aucune des organisations proposées, vous pouvez en créer une."
+  entity: "C'est l'entité juridique derrière le camp. Elle répond du camp et des données saisies lors des inscriptions."
+  access: "Ses administrateurs peuvent consulter et modifier le camp et voir qui l'encadre. Ils ne voient jamais les inscriptions."
+  organizer: "Le camp est présenté sous le nom de l'organisateur, que vous définissez séparément. L'organisation reste visible pour les participants : à côté de l'organisateur dans la liste des camps et dans les informations sur la protection des données."
+  create: 'Vous ne trouvez pas la bonne ? Créez une nouvelle organisation.'
   create_action: 'Nouvelle organisation'
 
-unverified_notice: 'Cette organisation attend sa vérification. Le camp sera enregistré comme brouillon privé et ne pourra pas être publié avant.'
+unverified_notice: "Cette organisation n'est pas vérifiée. Vous pouvez configurer le camp dès maintenant, mais tant qu'elle ne l'est pas, il reste masqué de la liste publique et ne peut pas accepter d'inscriptions."
 rule:
   organization_required: 'Choisis une organisation'
 field:
@@ -1018,13 +1018,13 @@ step:
 
 organization_note:
   title: 'Dlaczego organizacja?'
-  entity: 'To podmiot prawny, w ramach którego działa obóz, odpowiedzialny za obóz i za zbierane w nim dane, zweryfikowany przez nas.'
-  access: 'Jej administratorzy nigdy nie widzą zgłoszeń. Mogą przeglądać i edytować sam obóz oraz zobaczyć, kto go prowadzi — nic więcej.'
-  organizer: 'Nie musi to być nazwa widoczna dla uczestników; tę ustawiasz osobno jako organizatora.'
-  create: 'Jeśli ten obóz nie należy do żadnej z wymienionych organizacji, możesz utworzyć nową.'
+  entity: 'To podmiot prawny stojący za obozem. Odpowiada za obóz i za dane podawane podczas zapisów.'
+  access: 'Jej administratorzy mogą przeglądać i edytować obóz oraz zobaczyć, kto go prowadzi. Nigdy nie widzą zgłoszeń.'
+  organizer: 'Obóz występuje pod nazwą organizatora, którą ustawiasz osobno. Organizacja i tak jest widoczna dla uczestników: obok organizatora na liście obozów oraz w informacjach o ochronie danych.'
+  create: 'Nie ma tu tej właściwej? Utwórz nową organizację.'
   create_action: 'Nowa organizacja'
 
-unverified_notice: 'Ta organizacja oczekuje na weryfikację. Obóz zostanie zapisany jako prywatna wersja robocza i nie będzie mógł zostać opublikowany.'
+unverified_notice: 'Ta organizacja nie jest zweryfikowana. Obóz możesz przygotować już teraz, ale do czasu weryfikacji pozostaje ukryty na liście publicznej i nie przyjmuje zapisów.'
 rule:
   organization_required: 'Wybierz organizację'
 field:
@@ -1106,13 +1106,13 @@ step:
 
 organization_note:
   title: 'Proč organizace?'
-  entity: 'Je to právní subjekt, pod kterým tábor běží, odpovědný za tábor i za data prostřednictvím něj shromážděná, a námi ověřený.'
-  access: 'Její správci nikdy nevidí přihlášky. Mohou zobrazit a upravit samotný tábor a vidět, kdo jej vede — nic víc.'
-  organizer: 'Nemusí to být jméno, které vidí účastníci; to nastavíte zvlášť jako organizátora.'
-  create: 'Pokud tento tábor nepatří k žádné z uvedených organizací, můžete vytvořit novou.'
+  entity: 'Je to právní subjekt, který za táborem stojí. Odpovídá za tábor i za údaje zadané při přihlašování.'
+  access: 'Její správci mohou tábor zobrazit a upravit a vidí, kdo jej vede. Přihlášky nikdy nevidí.'
+  organizer: 'Tábor vystupuje pod organizátorem, kterého nastavíte zvlášť. Organizaci účastníci přesto uvidí: vedle organizátora v seznamu táborů a v informacích o ochraně osobních údajů.'
+  create: 'Není tu ta správná? Vytvořte novou organizaci.'
   create_action: 'Nová organizace'
 
-unverified_notice: 'Tato organizace čeká na ověření. Tábor bude uložen jako soukromý koncept a nelze jej zatím zveřejnit.'
+unverified_notice: 'Tato organizace není ověřená. Tábor můžete připravit už teď, ale do ověření zůstane skrytý ve veřejném seznamu a nebude přijímat registrace.'
 rule:
   organization_required: 'Vyber organizaci'
 field:
