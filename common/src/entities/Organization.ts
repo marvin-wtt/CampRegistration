@@ -33,9 +33,10 @@ export interface Organization extends Identifiable {
 }
 
 /**
- * A single organization, with what it owns. The counts are only carried on the
- * detail response — they cost a query each, and the list view has no use for
- * them. Mirrors the `Camp` / `CampDetails` split.
+ * A single organization, with what it owns. Every single-organization response
+ * carries the counts, creation included; only the list responses leave them off
+ * — they cost a query each, and the list view has no use for them. Mirrors the
+ * `Camp` / `CampDetails` split.
  */
 export interface OrganizationDetails extends Organization {
   ownedCamps: number;

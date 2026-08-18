@@ -182,7 +182,7 @@ export class OrganizationController extends BaseController {
 
     res
       .status(httpStatus.CREATED)
-      .resource(new OrganizationResource(organization));
+      .resource(await this.toDetailsResource(organization));
   }
 
   async update(req: Request, res: Response) {

@@ -108,6 +108,9 @@ describe(BASE, () => {
         .expect(201);
 
       expect(body.data.verificationStatus).toBe('PENDING');
+      // Same shape as every other single-organization response.
+      expect(body.data.ownedCamps).toBe(0);
+      expect(body.data.ownedNewsletters).toBe(0);
 
       const member = await prisma.organizationMember.findFirst({
         where: { organizationId: body.data.id, userId: user.id },

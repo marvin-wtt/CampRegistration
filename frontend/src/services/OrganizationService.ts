@@ -39,7 +39,7 @@ export function useOrganizationService() {
 
   async function createOrganization(
     data: OrganizationCreateData,
-  ): Promise<Organization> {
+  ): Promise<OrganizationDetails> {
     const response = await api.post('organizations/', data);
 
     return response?.data?.data;
@@ -71,7 +71,7 @@ export function useOrganizationService() {
   async function reviewOrganization(
     id: string,
     data: OrganizationReviewData,
-  ): Promise<Organization> {
+  ): Promise<OrganizationDetails> {
     const response = await api.patch(`organizations/${id}/verification/`, data);
 
     return response?.data?.data;
