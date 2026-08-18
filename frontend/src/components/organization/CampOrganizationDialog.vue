@@ -144,12 +144,12 @@ const allOptions = computed<OrganizationOption[]>(() =>
 );
 
 /**
- * Moving does not rewrite `public`. Visibility is derived from the owner's
+ * Moving does not rewrite `listed`. Visibility is derived from the owner's
  * moderation status on read, so a published camp simply drops out of the
  * directory while the new owner is unverified, and returns when it is verified.
  */
 const willHide = computed(() => {
-  if (!props.camp.public || !organizationId.value) {
+  if (!props.camp.listed || !organizationId.value) {
     return false;
   }
 

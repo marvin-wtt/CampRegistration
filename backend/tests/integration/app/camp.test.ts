@@ -16,8 +16,8 @@ import { campRegistrationStatus } from '#app/camp/camp.util';
 import moment from 'moment';
 import { ulid } from 'ulidx';
 import {
-  campPublic,
-  campPrivate,
+  campListed,
+  campUnlisted,
   campCreateInternational,
   campCreatedBody,
   campCreateNational,
@@ -51,7 +51,7 @@ const assertCampModel = async (id: string, data: CampCreateData) => {
   expect(camp).toEqual({
     id: data.id ?? expect.anything(),
     organizationId: data.organizationId ?? expect.anything(),
-    public: data.public,
+    listed: data.listed,
     registrationOpensAt: data.registrationOpensAt
       ? new Date(data.registrationOpensAt)
       : null,
@@ -91,7 +91,7 @@ const assertCampResponseBody = (
     organizationVerificationStatus: expect.stringMatching(
       /^(PENDING|VERIFIED|REJECTED)$/,
     ),
-    public: data.public,
+    listed: data.listed,
     registrationOpensAt: data.registrationOpensAt ?? null,
     registrationClosesAt: data.registrationClosesAt ?? null,
     confirmationMode: data.confirmationMode,
@@ -172,14 +172,14 @@ const createCampCreatorToken = async () => {
 describe('/api/v1/camps', () => {
   describe('GET /api/v1/camps', () => {
     it('should respond with `200` status code', async () => {
-      await CampFactory.create(campPublic);
+      await CampFactory.create(campListed);
 
       await request().get(`/api/v1/camps/`).send().expect(200);
     });
 
-    it('should show all public camps', async () => {
-      await CampFactory.create(campPublic);
-      await CampFactory.create(campPublic);
+    it('should show all listed camps', async () => {
+      await CampFactory.create(campListed);
+      await CampFactory.create(campListed);
 
       const { body } = await request().get(`/api/v1/camps/`).send().expect(200);
 
@@ -187,9 +187,9 @@ describe('/api/v1/camps', () => {
       expect(body.data.length).toBe(2);
     });
 
-    it('should only include public camps', async () => {
-      await CampFactory.create(campPublic);
-      await CampFactory.create(campPrivate);
+    it('should only include listed camps', async () => {
+      await CampFactory.create(campListed);
+      await CampFactory.create(campUnlisted);
 
       const { body } = await request().get(`/api/v1/camps/`).send();
 
@@ -199,11 +199,11 @@ describe('/api/v1/camps', () => {
 
     it('should calculate free places', async () => {
       const campA = await CampFactory.create({
-        ...campPublic,
+        ...campListed,
         maxParticipants: 10,
       });
       const campB = await CampFactory.create({
-        ...campPublic,
+        ...campListed,
         countries: ['de', 'fr'],
         maxParticipants: {
           de: 10,
@@ -242,9 +242,9 @@ describe('/api/v1/camps', () => {
 
     describe('query', () => {
       it('should respond with all camps if view is "all" and user is admin', async () => {
-        await CampFactory.create(campPublic);
-        await CampFactory.create(campPrivate);
-        await CampFactory.create(campPrivate);
+        await CampFactory.create(campListed);
+        await CampFactory.create(campUnlisted);
+        await CampFactory.create(campUnlisted);
 
         const user = await UserFactory.create({
           role: 'ADMIN',
@@ -265,9 +265,9 @@ describe('/api/v1/camps', () => {
       });
 
       it('should respond with `401` status code when view is "all" and user is unauthenticated', async () => {
-        await CampFactory.create(campPublic);
-        await CampFactory.create(campPrivate);
-        await CampFactory.create(campPrivate);
+        await CampFactory.create(campListed);
+        await CampFactory.create(campUnlisted);
+        await CampFactory.create(campUnlisted);
 
         await request()
           .get(`/api/v1/camps/`)
@@ -279,9 +279,9 @@ describe('/api/v1/camps', () => {
       });
 
       it('should respond with `403` status code when view is "all" and user is not an admin', async () => {
-        await CampFactory.create(campPublic);
-        await CampFactory.create(campPrivate);
-        await CampFactory.create(campPrivate);
+        await CampFactory.create(campListed);
+        await CampFactory.create(campUnlisted);
+        await CampFactory.create(campUnlisted);
 
         const user = await UserFactory.create();
         const accessToken = generateAccessToken(user);
@@ -297,9 +297,9 @@ describe('/api/v1/camps', () => {
       });
 
       it('should respond with `401` status code when view is "assigned" and user is unauthenticated', async () => {
-        await CampFactory.create(campPublic);
-        await CampFactory.create(campPrivate);
-        await CampFactory.create(campPrivate);
+        await CampFactory.create(campListed);
+        await CampFactory.create(campUnlisted);
+        await CampFactory.create(campUnlisted);
 
         await request()
           .get(`/api/v1/camps/`)
@@ -311,11 +311,11 @@ describe('/api/v1/camps', () => {
       });
 
       it('should respond with assigned camps when view is "assigned" and user is not an admin', async () => {
-        const camp1 = await CampFactory.create(campPrivate);
-        const camp2 = await CampFactory.create(campPrivate);
-        const camp3 = await CampFactory.create(campPrivate);
-        const camp4 = await CampFactory.create(campPrivate);
-        await CampFactory.create(campPrivate);
+        const camp1 = await CampFactory.create(campUnlisted);
+        const camp2 = await CampFactory.create(campUnlisted);
+        const camp3 = await CampFactory.create(campUnlisted);
+        const camp4 = await CampFactory.create(campUnlisted);
+        await CampFactory.create(campUnlisted);
 
         const user = await UserFactory.create();
         const otherUser = await UserFactory.create();
@@ -361,22 +361,22 @@ describe('/api/v1/camps', () => {
 
       it('should filter by name', async () => {
         const plainMatch = await CampFactory.create({
-          ...campPublic,
+          ...campListed,
           name: 'TestCamp',
         });
         const translatedMatch = await CampFactory.create({
-          ...campPublic,
+          ...campListed,
           name: {
             de: 'TestCampDE',
             en: 'TestCampEN',
           },
         });
         const plainNonMatch = await CampFactory.create({
-          ...campPublic,
+          ...campListed,
           name: 'OtherCamp',
         });
         const translatedNonMatch = await CampFactory.create({
-          ...campPublic,
+          ...campListed,
           name: {
             de: 'OtherCampDE',
             en: 'OtherCampEN',
@@ -405,11 +405,11 @@ describe('/api/v1/camps', () => {
 
       it('should treat name query wildcard characters literally', async () => {
         const literalMatch = await CampFactory.create({
-          ...campPublic,
+          ...campListed,
           name: 'Wild_100% Camp',
         });
         const wildcardNonMatch = await CampFactory.create({
-          ...campPublic,
+          ...campListed,
           name: 'WildA1000 Camp',
         });
 
@@ -431,11 +431,11 @@ describe('/api/v1/camps', () => {
 
       it('should ignore one-character name queries', async () => {
         await CampFactory.create({
-          ...campPublic,
+          ...campListed,
           name: 'Alpha Camp',
         });
         await CampFactory.create({
-          ...campPublic,
+          ...campListed,
           name: 'Beta Camp',
         });
 
@@ -462,9 +462,9 @@ describe('/api/v1/camps', () => {
   });
 
   describe('GET /api/v1/camps/:campId', () => {
-    it('should respond with `200` status code when camp is public', async () => {
+    it('should respond with `200` status code when camp is listed', async () => {
       const camp = await CampFactory.create({
-        public: true,
+        listed: true,
         countries: ['de', 'cz'],
       });
 
@@ -482,7 +482,7 @@ describe('/api/v1/camps', () => {
           /^(PENDING|VERIFIED|REJECTED)$/,
         ),
         confirmationMode: camp.confirmationMode,
-        public: camp.public,
+        listed: camp.listed,
         registrationOpensAt: camp.registrationOpensAt?.toISOString() ?? null,
         registrationClosesAt: camp.registrationClosesAt?.toISOString() ?? null,
         countries: camp.countries,
@@ -506,7 +506,7 @@ describe('/api/v1/camps', () => {
 
     it('should respond with `200` status code when camp is private', async () => {
       const camp = await CampFactory.create({
-        public: false,
+        listed: false,
       });
 
       await request().get(`/api/v1/camps/${camp.id}`).send().expect(200);
@@ -516,7 +516,7 @@ describe('/api/v1/camps', () => {
       // A private camp stays reachable by link, but one owned by an unvetted
       // entity does not: its managers are the only audience.
       const unverifiedCamp = {
-        ...campPublic,
+        ...campListed,
         organization: {
           create: OrganizationFactory.build({
             verificationStatus: 'PENDING' as const,
@@ -556,7 +556,7 @@ describe('/api/v1/camps', () => {
     describe('free places', () => {
       it('should calculate free places for national camps', async () => {
         const camp = await CampFactory.create({
-          ...campPublic,
+          ...campListed,
           maxParticipants: 10,
         });
 
@@ -586,7 +586,7 @@ describe('/api/v1/camps', () => {
 
       it('should calculate free places for international camps', async () => {
         const camp = await CampFactory.create({
-          ...campPublic,
+          ...campListed,
           countries: ['de', 'fr'],
           maxParticipants: {
             de: 8,
@@ -1119,7 +1119,7 @@ describe('/api/v1/camps', () => {
           confirmationMode: 'AUTOMATIC' as const,
           registrationOpensAt: null,
           registrationClosesAt: null,
-          public: false,
+          listed: false,
           countries: ['de'],
           name: 'Test Camp',
           organizer: 'Test Org',
@@ -1279,7 +1279,7 @@ describe('/api/v1/camps', () => {
       const accessToken = await createCampCreatorToken();
       const campId = ulid();
       const data = {
-        public: true,
+        listed: true,
       };
 
       await request()
@@ -1384,11 +1384,11 @@ describe('/api/v1/camps', () => {
   });
 
   describe('PATCH /api/v1/camps/:campId/organization', () => {
-    it('should keep the camp public when moving it to an unverified organization', async () => {
+    it('should keep the camp listed when moving it to an unverified organization', async () => {
       // Visibility follows the new owner's moderation status on read; the
       // camp's own flag is the organization's to set, and only a rejection
       // takes it away.
-      const camp = await CampFactory.create(campPublic);
+      const camp = await CampFactory.create(campListed);
       const organization = await OrganizationFactory.create({
         verificationStatus: 'PENDING',
       });
@@ -1400,15 +1400,15 @@ describe('/api/v1/camps', () => {
         .auth(generateAccessToken(admin), { type: 'bearer' })
         .expect(200);
 
-      expect(body).toHaveProperty('data.public', true);
+      expect(body).toHaveProperty('data.listed', true);
 
       const movedCamp = await prisma.camp.findFirst({ where: { id: camp.id } });
-      expect(movedCamp?.public).toBe(true);
+      expect(movedCamp?.listed).toBe(true);
       expect(movedCamp?.organizationId).toBe(organization.id);
     });
 
-    it('should drop the camp from the public listing while the new organization is unverified', async () => {
-      const camp = await CampFactory.create(campPublic);
+    it('should drop the camp from the listing while the new organization is unverified', async () => {
+      const camp = await CampFactory.create(campListed);
       const organization = await OrganizationFactory.create({
         verificationStatus: 'PENDING',
       });

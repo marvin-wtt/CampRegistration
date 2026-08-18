@@ -30,7 +30,7 @@ export const CampFactory = {
       organization: data.organization ?? {
         create: OrganizationFactory.build(),
       },
-      public: faker.datatype.boolean(),
+      listed: faker.datatype.boolean(),
       countries,
       name: faker.lorem.word(),
       organizer: faker.company.name(),

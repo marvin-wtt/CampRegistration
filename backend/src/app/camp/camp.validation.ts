@@ -21,7 +21,7 @@ const index = z.object({
       endAt: z.iso.datetime(),
       age: z.coerce.number(),
       country: z.string().length(2),
-      public: z.stringbool(),
+      listed: z.stringbool(),
       status: z.enum(['open', 'upcoming', 'closed']),
       view: z.enum(['all', 'assigned']),
       // Options
@@ -59,7 +59,7 @@ const store = z.object({
   body: z
     .object({
       organizationId: z.ulid(),
-      public: z.boolean().optional(),
+      listed: z.boolean().optional(),
       registrationOpensAt: z.iso
         .datetime()
         .transform((val) => new Date(val))
@@ -150,7 +150,7 @@ const update = (camp: Camp) =>
     }),
     body: z
       .object({
-        public: z.boolean(),
+        listed: z.boolean(),
         registrationOpensAt: z.iso
           .datetime()
           .transform((val) => new Date(val))

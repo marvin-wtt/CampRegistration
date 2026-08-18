@@ -455,10 +455,10 @@
           last
           @next-step="onComplete"
         >
-          <!-- Public -->
+          <!-- Listed -->
           <q-toggle
-            v-model="data.public"
-            :label="t('field.public')"
+            v-model="data.listed"
+            :label="t('field.listed')"
             :disable="selectedOrganizationUnverified"
           />
           <div
@@ -570,7 +570,7 @@ watch(selectedOrganization, (organization, previous) => {
 
 watch(selectedOrganizationUnverified, (unverified) => {
   if (unverified) {
-    data.value.public = false;
+    data.value.listed = false;
   }
 });
 
@@ -670,7 +670,7 @@ watch(
       'maxAge',
       'location',
       'price',
-      'public',
+      'listed',
       'confirmationMode',
     ] as const satisfies ReadonlyArray<
       keyof CampCreateData & keyof CampDetails
@@ -780,7 +780,7 @@ field:
   confirmation_mode: 'Accept registrations'
   location: 'Location'
   price: 'Price'
-  public: 'Show camp on main page'
+  listed: 'Show camp on main page'
 
 preset:
   standard: 'Standard'
@@ -868,7 +868,7 @@ field:
   confirmation_mode: 'Anmeldungen annehmen'
   location: 'Ort'
   price: 'Preis'
-  public: 'Camp auf Startseite anzeigen'
+  listed: 'Camp auf Startseite anzeigen'
 
 preset:
   standard: 'Standard'
@@ -956,7 +956,7 @@ field:
   confirmation_mode: 'Accepter les inscriptions'
   location: 'Emplacement'
   price: 'Prix'
-  public: "Afficher le camp sur la page d'accueil"
+  listed: "Afficher le camp sur la page d'accueil"
 
 preset:
   standard: 'Standard'
@@ -1044,7 +1044,7 @@ field:
   confirmation_mode: 'Przyjmowanie zgłoszeń'
   location: 'Miejsce'
   price: 'Cena'
-  public: 'Pokaż obóz na stronie głównej'
+  listed: 'Pokaż obóz na stronie głównej'
 
 preset:
   standard: 'Standard'
@@ -1132,7 +1132,7 @@ field:
   confirmation_mode: 'Přijímání přihlášek'
   location: 'Místo'
   price: 'Cena'
-  public: 'Zobrazit tábor na úvodní stránce'
+  listed: 'Zobrazit tábor na úvodní stránce'
 
 preset:
   standard: 'Standard'

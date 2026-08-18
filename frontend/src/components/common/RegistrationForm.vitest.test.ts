@@ -25,7 +25,7 @@ describe('RegistrationForm', () => {
     organizationVerificationStatus: 'VERIFIED' as const,
     name: 'Test',
     confirmationMode: 'AUTOMATIC' as const,
-    public: true,
+    listed: true,
     registrationOpensAt: null,
     registrationClosesAt: null,
     countries: [],

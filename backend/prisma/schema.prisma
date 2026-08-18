@@ -152,7 +152,7 @@ model OrganizationInvitation {
 model Camp {
   id                   String           @id @unique(map: "camps_id_unique") @default(ulid()) @db.Char(26)
   organizationId String @map("organization_id") @db.Char(26)
-  public               Boolean
+  listed               Boolean
   registrationOpensAt  DateTime?        @map("registration_opens_at") @db.DateTime(0)
   registrationClosesAt DateTime?        @map("registration_closes_at") @db.DateTime(0)
   confirmationMode     ConfirmationMode @default(AUTOMATIC) @map("confirmation_mode")

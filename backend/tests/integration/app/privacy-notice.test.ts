@@ -10,7 +10,7 @@ import { generateAccessToken } from './utils/token.js';
 import { request } from '../utils/request.js';
 import prisma from '../utils/prisma.js';
 import { emptyPrivacyNoticeContent } from '@camp-registration/common/privacy';
-import { campPublic } from './fixtures/registration.fixtures.js';
+import { campListed } from './fixtures/registration.fixtures.js';
 
 /** An organization whose notice was never published — the blocked state. */
 const organizationWithoutNotice = async (
@@ -513,7 +513,7 @@ describe('privacy notices', () => {
     it('should record the notice versions the registrant was shown', async () => {
       const organization = await OrganizationFactory.create();
       const camp = await CampFactory.create({
-        ...campPublic,
+        ...campListed,
         organization: { connect: { id: organization.id } },
       });
 
@@ -535,7 +535,7 @@ describe('privacy notices', () => {
     it('should keep the stamped version unchanged when the notice is published again', async () => {
       const organization = await OrganizationFactory.create();
       const camp = await CampFactory.create({
-        ...campPublic,
+        ...campListed,
         organization: { connect: { id: organization.id } },
       });
       const accessToken = await organizationAdmin(organization.id);

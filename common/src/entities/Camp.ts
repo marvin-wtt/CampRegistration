@@ -11,7 +11,7 @@ export interface Camp extends Identifiable {
   /**
    * The owning organization's moderation status. Anything other than
    * `VERIFIED` means the camp is absent from the public directory and refuses
-   * registrations regardless of its own `public` flag and registration window —
+   * registrations regardless of its own `listed` flag and registration window —
    * so management surfaces must say so rather than let it look live.
    *
    * The full status rather than a boolean, because "awaiting review" and
@@ -20,7 +20,7 @@ export interface Camp extends Identifiable {
    * reaches the public.
    */
   organizationVerificationStatus: OrganizationVerificationStatus;
-  public: boolean;
+  listed: boolean;
   registrationOpensAt: string | null;
   registrationClosesAt: string | null;
   confirmationMode: 'AUTOMATIC' | 'MANUAL';
@@ -85,7 +85,7 @@ export interface CampQuery {
   startAt?: string;
   endAt?: string;
 
-  public?: boolean;
+  listed?: boolean;
   status?: CampRegistrationStatus;
   organizationId?: string;
 

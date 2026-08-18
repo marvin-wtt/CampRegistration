@@ -446,10 +446,10 @@
                 </template>
               </q-input>
 
-              <!-- Public -->
+              <!-- Listed -->
               <q-toggle
-                v-model="camp.public"
-                :label="t('field.public')"
+                v-model="camp.listed"
+                :label="t('field.listed')"
               />
             </q-card-section>
           </q-card>
@@ -517,7 +517,7 @@ onMounted(async () => {
 const loading = computed(() => isLoading.value || updating.value);
 
 // Only guard against navigation while the form holds unsaved edits.
-// Compare against a freshly cloned baseline so the `public` default and key
+// Compare against a freshly cloned baseline so the `listed` default and key
 // order match the working copy and don't register as spurious changes.
 const preventLeave = computed<boolean>(() => {
   if (!data.value) {
@@ -545,7 +545,7 @@ const confirmationModeOptions = computed<
 // Clone so edits never mutate the shared store state.
 function clone(value: CampDetails): CampDetails {
   const cloned = structuredClone(deepToRaw(value));
-  cloned.public = cloned.public ?? false;
+  cloned.listed = cloned.listed ?? false;
 
   return cloned;
 }
@@ -645,7 +645,7 @@ field:
   confirmation_mode: 'Accept registrations'
   location: 'Location'
   price: 'Price'
-  public: 'Show camp on main page'
+  listed: 'Show camp on main page'
 
 validation:
   countries:
@@ -727,7 +727,7 @@ field:
   confirmation_mode: 'Anmeldungen annehmen'
   location: 'Ort'
   price: 'Preis'
-  public: 'Camp auf Startseite anzeigen'
+  listed: 'Camp auf Startseite anzeigen'
 
 validation:
   countries:
@@ -809,7 +809,7 @@ field:
   confirmation_mode: 'Accepter les inscriptions'
   location: 'Emplacement'
   price: 'Prix'
-  public: "Afficher le camp sur la page d'accueil"
+  listed: "Afficher le camp sur la page d'accueil"
 
 validation:
   countries:
@@ -891,7 +891,7 @@ field:
   confirmation_mode: 'Przyjmowanie zgłoszeń'
   location: 'Miejsce'
   price: 'Cena'
-  public: 'Pokaż obóz na stronie głównej'
+  listed: 'Pokaż obóz na stronie głównej'
 
 validation:
   countries:
@@ -973,7 +973,7 @@ field:
   confirmation_mode: 'Přijímání přihlášek'
   location: 'Místo'
   price: 'Cena'
-  public: 'Zobrazit tábor na úvodní stránce'
+  listed: 'Zobrazit tábor na úvodní stránce'
 
 validation:
   countries:

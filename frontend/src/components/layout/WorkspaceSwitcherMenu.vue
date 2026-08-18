@@ -129,7 +129,7 @@
         <q-icon name="public" />
       </q-item-section>
       <q-item-section>
-        {{ t('public_camps') }}
+        {{ t('listed_camps') }}
       </q-item-section>
     </q-item>
 
@@ -384,7 +384,7 @@ area:
   organizations: 'Organizations'
   administration: 'Administration'
 all_camps: 'All camps'
-public_camps: 'Camp overview'
+listed_camps: 'Camp overview'
 open: 'Open {area}'
 verification:
   PENDING: 'Awaiting review'
@@ -400,7 +400,7 @@ area:
   organizations: 'Organisationen'
   administration: 'Verwaltung'
 all_camps: 'Alle Camps'
-public_camps: 'Camp-Übersicht'
+listed_camps: 'Camp-Übersicht'
 open: '{area} öffnen'
 verification:
   PENDING: 'Wird geprüft'
@@ -416,7 +416,7 @@ area:
   organizations: 'Organisations'
   administration: 'Administration'
 all_camps: 'Tous les camps'
-public_camps: 'Aperçu des camps'
+listed_camps: 'Aperçu des camps'
 open: 'Ouvrir {area}'
 verification:
   PENDING: 'En attente de vérification'
@@ -432,7 +432,7 @@ area:
   organizations: 'Organizacje'
   administration: 'Administracja'
 all_camps: 'Wszystkie obozy'
-public_camps: 'Przegląd obozów'
+listed_camps: 'Przegląd obozów'
 open: 'Otwórz {area}'
 verification:
   PENDING: 'Oczekuje na weryfikację'
@@ -448,7 +448,7 @@ area:
   organizations: 'Organizace'
   administration: 'Administrace'
 all_camps: 'Všechny tábory'
-public_camps: 'Přehled táborů'
+listed_camps: 'Přehled táborů'
 open: 'Otevřít {area}'
 verification:
   PENDING: 'Čeká na ověření'

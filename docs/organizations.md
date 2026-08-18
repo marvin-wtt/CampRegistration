@@ -112,26 +112,26 @@ A camp page with no registration button is still an advertisement — it carries
 on its own, not as a side effect of the registration rule.
 
 - **Visibility is derived, not stored.** `buildCampWhere` restricts the public directory to `VERIFIED` organizations
-  independently of the camp's own `public` flag, so a camp hidden by its organization's status reappears when that
-  status changes, with the flag untouched. `GET /camps/:campId` is otherwise unguarded — `public: false` means
+  independently of the camp's own `listed` flag, so a camp hidden by its organization's status reappears when that
+  status changes, with the flag untouched. `GET /camps/:campId` is otherwise unguarded — `listed: false` means
   _unlisted_, not secret, and preview links are shareable — but
   `or(campOrganizationVerified, campManager('camp.view'))` narrows an unverified organization's camp to its camp
   managers, the organization's administrators (who hold
   `camp.view` by derivation) and system administrators.
-- **`camp.public` belongs to the organization.** It answers "do we want this listed", never "are we allowed to list it".
+- **`camp.listed` belongs to the organization.** It answers "do we want this listed", never "are we allowed to list it".
   Nothing but a rejection may rewrite it.
-- **There is no write-time publication gate**, deliberately. Setting `public: true` or a registration window under an
+- **There is no write-time publication gate**, deliberately. Setting `listed: true` or a registration window under an
   unverified organization succeeds; the camp simply does not appear and does not accept registrations until the
   organization is verified. A `403`
   would have been a second, differently-shaped copy of a rule the read side already enforces, it would have withheld
   exactly the preparation work `PENDING` exists to allow, and it would have contradicted the two paths that deliberately
-  leave `public: true` on a hidden camp — a demotion, and an administrator moving a camp to an unverified organization.
+  leave `listed: true` on a hidden camp — a demotion, and an administrator moving a camp to an unverified organization.
   The consequence is intended: a camp whose window is already open goes live the moment a moderator verifies the
   organization, with no further action by the organization.
 - **Destructive unpublish is reserved for rejection.** Every other path that makes a camp temporarily invisible — a
   demotion triggered by an identity edit, a transfer to an unverified organization — does it by derivation. Rejection is
   the one case where the organization must consciously re-publish afterwards, so it is the one case that rewrites
-  `public`.
+  `listed`.
 - **Management surfaces must say so.** Derived invisibility means a camp can be configured perfectly, report
   `registrationStatus: 'open'`, and still reach nobody. So `Camp` carries
   `organizationName` and `organizationVerificationStatus`, and the camp card and dashboard render "pending

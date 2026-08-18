@@ -57,7 +57,7 @@ const createCamp = (
   organizationVerificationStatus: 'VERIFIED',
   name: 'Test Camp',
   confirmationMode: 'AUTOMATIC' as const,
-  public: true,
+  listed: true,
   registrationOpensAt: null,
   registrationClosesAt: null,
   countries: [],

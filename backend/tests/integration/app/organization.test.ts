@@ -313,7 +313,7 @@ describe(BASE, () => {
         'VERIFIED',
       );
       const camp = await CampFactory.create({
-        public: true,
+        listed: true,
         organization: { connect: { id: organization.id } },
       });
 
@@ -324,7 +324,7 @@ describe(BASE, () => {
         .expect(200);
 
       const updated = await prisma.camp.findUnique({ where: { id: camp.id } });
-      expect(updated?.public).toBe(true);
+      expect(updated?.listed).toBe(true);
     });
   });
 
@@ -486,7 +486,7 @@ describe(BASE, () => {
       const { accessToken, organization } =
         await createOrganizationWithRole('ADMIN');
       await CampFactory.create({
-        public: false,
+        listed: false,
         organization: { connect: { id: organization.id } },
       });
 
@@ -552,7 +552,7 @@ describe(BASE, () => {
         verificationStatus: 'PENDING',
       });
       const camp = await CampFactory.create({
-        public: true,
+        listed: true,
         organization: { connect: { id: organization.id } },
       });
 
@@ -563,7 +563,7 @@ describe(BASE, () => {
         .expect(200);
 
       const updated = await prisma.camp.findUnique({ where: { id: camp.id } });
-      expect(updated?.public).toBe(false);
+      expect(updated?.listed).toBe(false);
     });
 
     it('should respond with `403` for the organizations own admin', async () => {
@@ -588,7 +588,7 @@ describe(BASE, () => {
         verificationStatus: 'VERIFIED',
       });
       const camp = await CampFactory.create({
-        public: true,
+        listed: true,
         organization: { connect: { id: organization.id } },
       });
 
@@ -602,7 +602,7 @@ describe(BASE, () => {
 
       // Revoking must unpublish just as a first-time rejection does.
       const updated = await prisma.camp.findUnique({ where: { id: camp.id } });
-      expect(updated?.public).toBe(false);
+      expect(updated?.listed).toBe(false);
     });
 
     it('should reinstate a previously rejected organization', async () => {
@@ -632,7 +632,7 @@ describe(BASE, () => {
         verificationStatus: 'REJECTED',
       });
       const camp = await CampFactory.create({
-        public: false,
+        listed: false,
         organization: { connect: { id: organization.id } },
       });
 
@@ -643,7 +643,7 @@ describe(BASE, () => {
         .expect(200);
 
       const updated = await prisma.camp.findUnique({ where: { id: camp.id } });
-      expect(updated?.public).toBe(false);
+      expect(updated?.listed).toBe(false);
     });
   });
 

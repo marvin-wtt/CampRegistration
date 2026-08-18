@@ -3,12 +3,12 @@ import { Prisma } from '#generated/prisma/client.js';
 import { createForm } from '../utils/form.js';
 import type { CampCreateData } from '@camp-registration/common/entities';
 
-export const campPublic = {
-  public: true,
+export const campListed = {
+  listed: true,
 };
 
-export const campPrivate = {
-  public: false,
+export const campUnlisted = {
+  listed: false,
 };
 
 /**
@@ -20,7 +20,7 @@ export const CAMP_CREATE_ORGANIZATION_ID = '01K9ATF1H9KD1K6H12F3YK8RGZ';
 
 export const campCreateNational = {
   organizationId: CAMP_CREATE_ORGANIZATION_ID,
-  public: false,
+  listed: false,
   confirmationMode: 'AUTOMATIC' as const,
   countries: ['de'],
   name: 'Test Camp',
@@ -37,7 +37,7 @@ export const campCreateNational = {
 
 export const campInputNational: Partial<Prisma.CampCreateInput> = {
   organization: { connect: { id: CAMP_CREATE_ORGANIZATION_ID } },
-  public: false,
+  listed: false,
   confirmationMode: 'AUTOMATIC' as const,
   countries: ['de'],
   name: 'Test Camp',
@@ -133,12 +133,12 @@ export const campCreatedBody: CreateBodyData[] = [
     },
     expected: 400,
   },
-  // Public
+  // Listed
   {
-    name: 'Public invalid',
+    name: 'Listed invalid',
     data: {
       ...campCreateInternational,
-      public: 'private',
+      listed: 'private',
     },
     expected: 400,
   },
@@ -657,18 +657,18 @@ export const campUpdateBody: UpdateBodyData[] = [
     },
     expected: 400,
   },
-  // Public
+  // Listed
   {
-    name: 'Public',
+    name: 'Listed',
     data: {
-      public: false,
+      listed: false,
     },
     expected: 200,
   },
   {
-    name: 'Public invalid',
+    name: 'Listed invalid',
     data: {
-      public: 'private',
+      listed: 'private',
     },
     expected: 400,
   },

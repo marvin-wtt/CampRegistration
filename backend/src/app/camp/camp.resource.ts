@@ -17,7 +17,7 @@ export class CampResource extends JsonResource<
       organizationId: this.data.organizationId,
       organizationName: this.data.organization.name,
       organizationVerificationStatus: this.data.organization.verificationStatus,
-      public: this.data.public,
+      listed: this.data.listed,
       registrationOpensAt: this.data.registrationOpensAt?.toISOString() ?? null,
       registrationClosesAt:
         this.data.registrationClosesAt?.toISOString() ?? null,

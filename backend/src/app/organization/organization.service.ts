@@ -161,7 +161,7 @@ export class OrganizationService extends BaseService {
    * The unpublish runs in the same transaction as the status change rather than
    * in a background job: the whole point of verification is that an unmoderated
    * entity must not be collecting participant data, so there must be no window
-   * in which the organization is rejected but its camps are still public.
+   * in which the organization is rejected but its camps are still listed.
    */
   async applyVerificationDecision(
     id: string,
@@ -201,17 +201,17 @@ export class OrganizationService extends BaseService {
 
       const unpublishedCampIds: string[] = [];
       if (decision.status === 'REJECTED') {
-        const publicCamps = await tx.camp.findMany({
-          where: { organizationId: id, public: true },
+        const listedCamps = await tx.camp.findMany({
+          where: { organizationId: id, listed: true },
           select: { id: true },
         });
 
-        if (publicCamps.length > 0) {
+        if (listedCamps.length > 0) {
           await tx.camp.updateMany({
-            where: { organizationId: id, public: true },
-            data: { public: false },
+            where: { organizationId: id, listed: true },
+            data: { listed: false },
           });
-          unpublishedCampIds.push(...publicCamps.map((camp) => camp.id));
+          unpublishedCampIds.push(...listedCamps.map((camp) => camp.id));
         }
       }
 

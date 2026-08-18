@@ -44,7 +44,7 @@
           <q-item-section side>
             <div class="row items-center q-gutter-xs">
               <q-chip
-                v-if="!camp.public"
+                v-if="!camp.listed"
                 dense
                 square
                 size="sm"

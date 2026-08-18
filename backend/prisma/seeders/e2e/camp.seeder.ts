@@ -8,7 +8,7 @@ export async function seedE2eCamps(): Promise<void> {
   await CampFactory.create({
     id: '01JHP0CXJFR4MQS8SF1HQJCY38',
     name: 'Simple Camp',
-    public: true,
+    listed: true,
     organization: { connect: { id: E2E_ORGANIZATION_ID } },
     contactEmail: 'simple-camp@example.com',
     form: {
@@ -32,7 +32,7 @@ export async function seedE2eCamps(): Promise<void> {
   await CampFactory.create({
     id: '01JKEMXG5C62NBMA6V0QQDJ7JD',
     name: 'Files Camp',
-    public: true,
+    listed: true,
     organization: { connect: { id: E2E_ORGANIZATION_ID } },
     contactEmail: 'files-camp@example.com',
     registrationOpensAt: '2025-11-05T20:13:53.577Z',
@@ -59,7 +59,7 @@ export async function seedE2eCamps(): Promise<void> {
   await CampFactory.create({
     id: '01JHP0CXJFR4MQS8SF1HQJCA10',
     name: 'Upcoming Camp',
-    public: true,
+    listed: true,
     organization: { connect: { id: E2E_ORGANIZATION_ID } },
     contactEmail: 'upcoming-camp@example.com',
     registrationOpensAt: '2999-01-01T09:00:00.000Z',
@@ -71,7 +71,7 @@ export async function seedE2eCamps(): Promise<void> {
   await CampFactory.create({
     id: '01JHP0CXJFR4MQS8SF1HQJCA20',
     name: 'Closed Camp',
-    public: true,
+    listed: true,
     organization: { connect: { id: E2E_ORGANIZATION_ID } },
     contactEmail: 'closed-camp@example.com',
     registrationOpensAt: null,

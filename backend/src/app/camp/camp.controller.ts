@@ -45,14 +45,14 @@ export class CampController extends BaseController {
   async index(req: Request, res: Response) {
     const { query } = await req.validate(validator.index);
 
-    const showPrivate = query.view === 'all' || query.view === 'assigned';
+    const showUnlisted = query.view === 'all' || query.view === 'assigned';
 
     const { camps, nextCursor, limit, total } =
       await this.campService.queryCamps(
         {
           managerUserId:
             query.view === 'assigned' ? req.authUserId() : undefined,
-          public: showPrivate ? query.public : true,
+          listed: showUnlisted ? query.listed : true,
           name: query.name,
           country: query.country,
           age: query.age,
@@ -131,7 +131,7 @@ export class CampController extends BaseController {
         name: body.name,
         organizer: body.organizer,
         contactEmail: body.contactEmail,
-        public: body.public ?? false,
+        listed: body.listed ?? false,
         registrationOpensAt: body.registrationOpensAt ?? null,
         registrationClosesAt: body.registrationClosesAt ?? null,
         maxParticipants: body.maxParticipants,
@@ -177,7 +177,7 @@ export class CampController extends BaseController {
       name: body.name,
       organizer: body.organizer,
       contactEmail: body.contactEmail,
-      public: body.public,
+      listed: body.listed,
       registrationOpensAt: body.registrationOpensAt,
       registrationClosesAt: body.registrationClosesAt,
       maxParticipants: body.maxParticipants,

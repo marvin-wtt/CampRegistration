@@ -32,7 +32,7 @@ type CampRegistrationStatusFilter = 'open' | 'upcoming' | 'closed';
 const MIN_NAME_FILTER_LENGTH = 2;
 
 interface CampQueryArgs {
-  public?: boolean | undefined;
+  listed?: boolean | undefined;
   name?: string | undefined;
   age?: number | undefined;
   startAt?: Date | string | undefined;
@@ -166,11 +166,11 @@ export class CampService extends BaseService {
     filter: CampQueryArgs,
   ): Promise<Prisma.CampWhereInput> {
     const where: Prisma.CampWhereInput = {
-      public: filter.public,
+      listed: filter.listed,
       organizationId: filter.organizationId,
       // The public directory only ever lists camps run by a vetted
-      // organization, independent of the camp's own `public` flag.
-      ...(filter.public === true
+      // organization, independent of the camp's own `listed` flag.
+      ...(filter.listed === true
         ? { organization: { verificationStatus: 'VERIFIED' as const } }
         : {}),
       minAge: { lte: filter.age },

@@ -26,9 +26,9 @@
           </div>
           <div class="col-6 col-sm-auto">
             <q-select
-              v-model="publicFilter"
-              :options="publicOptions"
-              :label="t('column.public')"
+              v-model="listedFilter"
+              :options="listedOptions"
+              :label="t('column.listed')"
               dense
               outlined
               rounded
@@ -121,7 +121,7 @@
           </q-td>
         </template>
 
-        <template #body-cell-public="props">
+        <template #body-cell-listed="props">
           <q-td :props="props">
             <q-chip
               :color="props.value ? 'positive' : 'grey-7'"
@@ -130,7 +130,7 @@
               square
               class="q-ml-none"
             >
-              {{ props.value ? t('value.public') : t('value.private') }}
+              {{ props.value ? t('value.listed') : t('value.unlisted') }}
             </q-chip>
           </q-td>
         </template>
@@ -200,8 +200,8 @@ const statusFilter = ref<CampRegistrationStatus | null>(
     'closed',
   ]),
 );
-const publicFilter = ref<boolean | null>(
-  routeQuery.getBooleanQueryParam('public'),
+const listedFilter = ref<boolean | null>(
+  routeQuery.getBooleanQueryParam('listed'),
 );
 
 const {
@@ -220,7 +220,7 @@ const {
   storeName: 'camp',
   sortBy: 'startAt',
   descending: true,
-  watchSources: [statusFilter, publicFilter],
+  watchSources: [statusFilter, listedFilter],
   fetch: (query) => api.fetchCampsPaginated(query),
   buildQuery: ({ cursor, limit, sortBy, sortType, search }) =>
     ({
@@ -231,7 +231,7 @@ const {
       sortType,
       name: search || undefined,
       status: statusFilter.value ?? undefined,
-      public: publicFilter.value ?? undefined,
+      listed: listedFilter.value ?? undefined,
     }) as CampQuery,
 });
 
@@ -241,9 +241,9 @@ const statusOptions = computed(() => [
   { label: t('value.closed'), value: 'closed' },
 ]);
 
-const publicOptions = computed(() => [
-  { label: t('value.public'), value: true },
-  { label: t('value.private'), value: false },
+const listedOptions = computed(() => [
+  { label: t('value.listed'), value: true },
+  { label: t('value.unlisted'), value: false },
 ]);
 
 const columns = computed<QTableColumn<Camp>[]>(() => [
@@ -320,9 +320,9 @@ const columns = computed<QTableColumn<Camp>[]>(() => [
     align: 'left',
   },
   {
-    name: 'public',
-    label: t('column.public'),
-    field: 'public',
+    name: 'listed',
+    label: t('column.listed'),
+    field: 'listed',
     align: 'left',
     sortable: true,
   },
@@ -346,7 +346,7 @@ const visibleColumns = ref([
   'countries',
   'startAt',
   'registrationStatus',
-  'public',
+  'listed',
   'action',
 ]);
 
@@ -366,7 +366,7 @@ function rowActionsFn(camp: Camp): RowAction[] {
       icon: 'open_in_new',
       handler: () => showCampResults(camp),
     },
-    camp.public
+    camp.listed
       ? {
           key: 'unpublish',
           label: t('action.unpublish'),
@@ -562,7 +562,7 @@ function onPublishCamp(camp: Camp) {
     })
     .onOk(() => {
       void updateCamp(camp.id, {
-        public: true,
+        listed: true,
       });
     });
 }
@@ -586,7 +586,7 @@ function onUnpublishCamp(camp: Camp) {
     })
     .onOk(() => {
       void updateCamp(camp.id, {
-        public: false,
+        listed: false,
       });
     });
 }
@@ -629,7 +629,7 @@ column:
   organization: 'Organization'
   organizer: 'Organizer'
   price: 'Price'
-  public: 'Public'
+  listed: 'Listed'
   start: 'Start'
 
 dialog:
@@ -668,8 +668,8 @@ value:
   open: 'Open'
   upcoming: 'Upcoming'
   closed: 'Closed'
-  public: 'Public'
-  private: 'Private'
+  listed: 'Listed'
+  unlisted: 'Unlisted'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -697,7 +697,7 @@ column:
   organization: 'Organisation'
   organizer: 'Veranstalter'
   price: 'Preis'
-  public: 'Öffentlich'
+  listed: 'Gelistet'
   start: 'Start'
 
 dialog:
@@ -737,8 +737,8 @@ value:
   open: 'Offen'
   upcoming: 'Bevorstehend'
   closed: 'Geschlossen'
-  public: 'Öffentlich'
-  private: 'Privat'
+  listed: 'Gelistet'
+  unlisted: 'Nicht gelistet'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -766,7 +766,7 @@ column:
   organization: 'Organisation'
   organizer: 'Organisateur'
   price: 'Prix'
-  public: 'Public'
+  listed: 'Répertorié'
   start: 'Début'
 
 dialog:
@@ -806,8 +806,8 @@ value:
   open: 'Ouvert'
   upcoming: 'À venir'
   closed: 'Fermé'
-  public: 'Public'
-  private: 'Privé'
+  listed: 'Répertorié'
+  unlisted: 'Non répertorié'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -835,7 +835,7 @@ column:
   organization: 'Organizacja'
   organizer: 'Organizator'
   price: 'Cena'
-  public: 'Publiczny'
+  listed: 'Widoczny'
   start: 'Start'
 
 dialog:
@@ -874,8 +874,8 @@ value:
   open: 'Otwarta'
   upcoming: 'Nadchodząca'
   closed: 'Zamknięta'
-  public: 'Publiczny'
-  private: 'Prywatny'
+  listed: 'Widoczny'
+  unlisted: 'Ukryty'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -903,7 +903,7 @@ column:
   organization: 'Organizace'
   organizer: 'Organizátor'
   price: 'Cena'
-  public: 'Veřejný'
+  listed: 'Zobrazený'
   start: 'Start'
 
 dialog:
@@ -942,6 +942,6 @@ value:
   open: 'Otevřená'
   upcoming: 'Nadcházející'
   closed: 'Uzavřená'
-  public: 'Veřejný'
-  private: 'Soukromý'
+  listed: 'Zobrazený'
+  unlisted: 'Skrytý'
 </i18n>

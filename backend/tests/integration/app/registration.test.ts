@@ -14,7 +14,7 @@ import { ulid } from 'ulidx';
 import crypto from 'crypto';
 import {
   campPrivate,
-  campPublic,
+  campListed,
   campWithAdditionalFields,
   campWithCampVariable,
   campWithCustomFields,
@@ -285,7 +285,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
   describe('POST /api/v1/camps/:campId/registrations/', () => {
     it('should respond with `201` status code', async () => {
-      const camp = await CampFactory.create(campPublic);
+      const camp = await CampFactory.create(campListed);
 
       const data = {
         data: {
@@ -323,7 +323,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
       async ({ role, expectedStatus }) => {
         const { camp, accessToken } = await createCampWithManagerAndToken(
           {
-            ...campPublic,
+            ...campListed,
             registrationClosesAt: moment().subtract(1, 'day').toDate(),
           },
           role,
@@ -346,7 +346,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
     it('set the registration status to pending without auto-accept', async () => {
       const camp = await CampFactory.create({
-        ...campPublic,
+        ...campListed,
         confirmationMode: 'MANUAL',
       });
 
@@ -496,7 +496,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
     describe('locale', () => {
       it('should set the users preferred locale', async () => {
-        const camp = await CampFactory.create(campPublic);
+        const camp = await CampFactory.create(campListed);
 
         const data = {
           data: {
@@ -518,7 +518,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should use given locale over users preferred locale', async () => {
-        const camp = await CampFactory.create(campPublic);
+        const camp = await CampFactory.create(campListed);
 
         const data = {
           data: {
