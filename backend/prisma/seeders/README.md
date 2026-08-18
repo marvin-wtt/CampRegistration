@@ -15,7 +15,7 @@ open, however old the database is.
 ## Accounts
 
 | Email                    | Password         | Role  | Why it exists                                     |
-|--------------------------|------------------|-------|---------------------------------------------------|
+| ------------------------ | ---------------- | ----- | ------------------------------------------------- |
 | `john@example.com`       | `password`       | USER  | The account every scenario below is built around  |
 | `admin@email.com`        | `admin-password` | ADMIN | System administrator, TOTP 2FA enabled            |
 | `erika@example.com`      | `password`       | USER  | Colleague, `de-DE`; admin of Alpine Explorers     |
@@ -30,7 +30,7 @@ open, however old the database is.
 ## Organizations
 
 | Organization         | Status   | John's role | What it is for                                                        |
-|----------------------|----------|-------------|-----------------------------------------------------------------------|
+| -------------------- | -------- | ----------- | --------------------------------------------------------------------- |
 | Youth Adventures     | VERIFIED | ADMIN       | The full organization experience, plus implicit access to its camps   |
 | Alpine Explorers     | VERIFIED | MEMBER      | Camp roles with **nothing** merged in — a MEMBER holds no camp access |
 | Nouvelle Association | PENDING  | ADMIN       | Camps hidden, registrations refused, newsletter refuses to send       |
@@ -46,7 +46,7 @@ Youth Adventures also has one member who was invited by email and never register
 `—` in the role column means John has no manager record for that camp.
 
 | Camp                 | Organization         | John's role        | Phase          | Notes                                                                             |
-|----------------------|----------------------|--------------------|----------------|-----------------------------------------------------------------------------------|
+| -------------------- | -------------------- | ------------------ | -------------- | --------------------------------------------------------------------------------- |
 | **Summer Camp**      | Youth Adventures     | DIRECTOR           | upcoming       | **The flagship — every child model is seeded**                                    |
 | Files Camp           | Youth Adventures     | COORDINATOR        | upcoming       | File upload form; registration has not opened yet                                 |
 | Autumn Retreat       | Youth Adventures     | — (org ADMIN only) | upcoming       | Only `camp.view` / `camp.edit` / `camp.managers.view`; not under "assigned camps" |
@@ -93,7 +93,7 @@ carries a translation it cannot show.
 ## Newsletters
 
 | Newsletter             | Organization         | John's role        | Subscribers | Sent |
-|------------------------|----------------------|--------------------|-------------|------|
+| ---------------------- | -------------------- | ------------------ | ----------- | ---- |
 | Camp Updates           | Youth Adventures     | OWNER              | 120         | 3    |
 | Registration Reminders | Youth Adventures     | EDITOR             | 5           | 0    |
 | Alumni Digest          | Youth Adventures     | VIEWER             | 42          | 2    |
