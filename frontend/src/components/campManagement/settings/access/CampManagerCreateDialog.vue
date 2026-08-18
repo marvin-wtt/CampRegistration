@@ -37,22 +37,9 @@
             outlined
           />
 
-          <q-checkbox
-            v-if="expiresAt === null"
+          <manager-expiration-input
             v-model="expiresAt"
-            :label="t('input.showExpiresAt')"
-            :true-value="date"
-            :false-value="null"
-          />
-
-          <date-time-input
-            v-else
-            v-model="expiresAt"
-            :label="t('input.expiresAt')"
-            clearable
-            hide-bottom-space
-            outlined
-            rounded
+            :camp-end-at="campEndAt"
           />
         </q-card-section>
 
@@ -83,7 +70,7 @@
 import { type QSelectOption, useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { ref } from 'vue';
-import DateTimeInput from '@/components/common/inputs/DateTimeInput.vue';
+import ManagerExpirationInput from '@/components/campManagement/settings/access/ManagerExpirationInput.vue';
 import type {
   CampManagerCreateData,
   CampManagerRole,
@@ -93,14 +80,14 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
 const { t } = useI18n();
 
-const { date, roles } = defineProps<{
-  date: string;
+defineProps<{
+  campEndAt: string | undefined;
   roles: QSelectOption<CampManagerRole>[];
 }>();
 defineEmits([...useDialogPluginComponent.emits]);
 
 const email = ref<string>('');
-const expiresAt = ref<string | null>(null);
+const expiresAt = ref<string | null | undefined>(undefined);
 const role = ref<CampManagerRole>('COUNSELOR');
 
 function onInvite() {
@@ -128,8 +115,6 @@ input:
     label: 'Role'
     rule:
       required: 'The role is required'
-  expiresAt: 'Expiration Date'
-  showExpiresAt: 'Set access expiration'
 
 action:
   invite: 'Invite'
@@ -148,8 +133,6 @@ input:
     label: 'Rolle'
     rule:
       required: 'Die Rolle ist erforderlich'
-  expiresAt: 'Ablaufdatum'
-  showExpiresAt: 'Zugriffsablauf festlegen'
 
 action:
   invite: 'Einladen'
@@ -168,8 +151,6 @@ input:
     label: 'Rôle'
     rule:
       required: 'Le rôle est requis'
-  expiresAt: 'Date d’expiration'
-  showExpiresAt: 'Définir la date d’expiration de l’accès'
 
 action:
   invite: 'Inviter'
@@ -188,8 +169,6 @@ input:
     label: 'Rola'
     rule:
       required: 'Rola jest wymagana'
-  expiresAt: 'Data wygaśnięcia'
-  showExpiresAt: 'Ustaw datę wygaśnięcia dostępu'
 
 action:
   invite: 'Zaproś'
@@ -208,8 +187,6 @@ input:
     label: 'Role'
     rule:
       required: 'Role je povinná'
-  expiresAt: 'Datum vypršení platnosti'
-  showExpiresAt: 'Nastavit datum vypršení přístupu'
 
 action:
   invite: 'Pozvat'

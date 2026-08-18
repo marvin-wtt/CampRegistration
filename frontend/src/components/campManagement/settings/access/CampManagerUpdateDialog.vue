@@ -25,13 +25,9 @@
             outlined
           />
 
-          <date-time-input
+          <manager-expiration-input
             v-model="data.expiresAt"
-            :label="t('input.expiresAt')"
-            clearable
-            hide-bottom-space
-            outlined
-            rounded
+            :camp-end-at="campEndAt"
           />
         </q-card-section>
 
@@ -62,7 +58,7 @@
 import { type QSelectOption, useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { reactive } from 'vue';
-import DateTimeInput from '@/components/common/inputs/DateTimeInput.vue';
+import ManagerExpirationInput from '@/components/campManagement/settings/access/ManagerExpirationInput.vue';
 import type {
   CampManager,
   CampManagerUpdateData,
@@ -72,8 +68,9 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
 const { t } = useI18n();
 
-const { manager, roles } = defineProps<{
+const { manager } = defineProps<{
   manager: CampManager;
+  campEndAt: string | undefined;
   roles: QSelectOption[];
 }>();
 
@@ -99,7 +96,6 @@ input:
     label: 'Role'
     rule:
       required: 'The role is required'
-  expiresAt: 'Expiration Date'
 
 action:
   cancel: 'Cancel'
@@ -114,7 +110,6 @@ input:
     label: 'Rolle'
     rule:
       required: 'Die Rolle ist erforderlich'
-  expiresAt: 'Ablaufdatum'
 
 action:
   cancel: 'Abbrechen'
@@ -129,7 +124,6 @@ input:
     label: 'Rôle'
     rule:
       required: 'Le rôle est requis'
-  expiresAt: 'Date d’expiration'
 
 action:
   cancel: 'Annuler'
@@ -144,7 +138,6 @@ input:
     label: 'Rola'
     rule:
       required: 'Rola jest wymagana'
-  expiresAt: 'Data wygaśnięcia'
 
 action:
   cancel: 'Anuluj'
@@ -159,7 +152,6 @@ input:
     label: 'Role'
     rule:
       required: 'Role je povinná'
-  expiresAt: 'Datum vypršení platnosti'
 
 action:
   cancel: 'Zrušit'

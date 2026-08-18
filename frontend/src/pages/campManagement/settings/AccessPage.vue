@@ -432,14 +432,11 @@ function showPermissionsDialog() {
 }
 
 function showAddDialog() {
-  const date = new Date(campDetailsStore.data?.endAt ?? '');
-  date.setHours(23, 59, 59, 999);
-
   quasar
     .dialog({
       component: CampManagerCreateDialog,
       componentProps: {
-        date: date.toISOString(),
+        campEndAt: campDetailsStore.data?.endAt,
         roles: getRoleOptions(),
       },
     })
@@ -454,6 +451,7 @@ function showEditDialog(manager: CampManager) {
       component: CampManagerUpdateDialog,
       componentProps: {
         manager,
+        campEndAt: campDetailsStore.data?.endAt,
         roles: getRoleOptions(),
       },
     })
