@@ -1,11 +1,4 @@
 import type {
-  CampManager,
-  NewsletterManager,
-  OrganizationMember,
-  OrganizationVerificationStatus,
-  User,
-} from '#generated/prisma/client.js';
-import type {
   Profile as ProfileResourceData,
   OrganizationRole,
 } from '@camp-registration/common/entities';
@@ -18,30 +11,15 @@ import {
   ORGANIZATION_CAMP_PERMISSIONS,
   ORGANIZATION_NEWSLETTER_PERMISSIONS,
 } from '@camp-registration/common/permissions';
+import type { ProfileUser } from './profile.types.js';
 import { JsonResource } from '#core/resource/JsonResource';
 import { permissionRegistry } from '#core/permission-registry';
-
-type OrganizationMembership = OrganizationMember & {
-  organization: {
-    id: string;
-    verificationStatus: OrganizationVerificationStatus;
-    camps: { id: string }[];
-    newsletters: { id: string }[];
-  };
-};
-
-export interface UserWithCampRoles extends Omit<User, 'password'> {
-  campRoles: CampManager[];
-  newsletterManagers: NewsletterManager[];
-  organizationMembers: OrganizationMembership[];
-  twoFactor?: { confirmedAt: Date | null } | null;
-}
 
 /** Marks camp access that comes from administering the owning organization. */
 const ORGANIZATION_DERIVED_ROLE = 'ORGANIZATION';
 
 export class ProfileResource extends JsonResource<
-  UserWithCampRoles,
+  ProfileUser,
   ProfileResourceData
 > {
   transform(): ProfileResourceData {

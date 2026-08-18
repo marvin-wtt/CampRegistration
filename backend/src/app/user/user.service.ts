@@ -6,13 +6,14 @@ import type { UserUpdateData } from '@camp-registration/common/entities';
 import { BaseService } from '#core/base/BaseService';
 import { CampService } from '#app/camp/camp.service';
 import { inject, injectable } from 'inversify';
+import type { ProfileUser } from '#app/profile/profile.types';
 
 /**
- * Everything {@link ProfileResource} needs to derive the caller's camp- and
- * organization-scoped permissions. Shared by every loader that feeds it so the
- * profile payload cannot differ between login and a later refetch.
+ * Everything {@link ProfileUser} declares. Every loader that feeds
+ * {@link ProfileResource} selects it, so the profile payload cannot differ
+ * between login and a later refetch.
  */
-export const profileAccessInclude = {
+const profileAccessInclude = {
   campRoles: true,
   newsletterManagers: true,
   twoFactor: { select: { confirmedAt: true } },
@@ -155,7 +156,7 @@ export class UserService extends BaseService {
     return { total, unverified, locked };
   }
 
-  async getUserByIdWithCampRoles(id: string) {
+  async getProfileUserById(id: string): Promise<ProfileUser> {
     return this.prisma.user.findUniqueOrThrow({
       where: { id },
       include: profileAccessInclude,

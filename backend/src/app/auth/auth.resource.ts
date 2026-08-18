@@ -3,13 +3,11 @@ import type {
   Token,
 } from '@camp-registration/common/entities';
 import type { AuthTokensResponse, TokenResponse } from '#types/response';
-import {
-  ProfileResource,
-  type UserWithCampRoles,
-} from '#app/profile/profile.resource';
+import { ProfileResource } from '#app/profile/profile.resource';
+import type { ProfileUser } from '#app/profile/profile.types';
 
 interface AuthWithData {
-  user: UserWithCampRoles;
+  user: ProfileUser;
   tokens: AuthTokensResponse;
 }
 

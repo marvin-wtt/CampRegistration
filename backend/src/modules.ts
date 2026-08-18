@@ -52,8 +52,6 @@ export const createModules = (): AppModule[] => [
   new UserModule(),
   new AdminModule(),
   new LegalModule(),
-  // After Legal and Setting: it reads the platform policy and registers the
-  // camp addendum as a camp setting.
   new PrivacyNoticeModule(),
   new RegistrationModule(),
   new TableTemplateModule(),
