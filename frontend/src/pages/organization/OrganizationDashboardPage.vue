@@ -58,6 +58,38 @@
         </div>
       </q-card>
 
+      <!-- Verification is refused while no privacy notice is published, so the
+           overview names the missing step instead of leaving it to a rejection. -->
+      <q-card
+        v-if="privacyNoticeMissing"
+        flat
+        bordered
+        class="privacy-note rounded-lg"
+      >
+        <div class="privacy-note-body">
+          <q-icon
+            name="privacy_tip"
+            size="22px"
+            class="privacy-note-icon"
+          />
+          <div class="col">
+            <div class="text-body2 text-weight-medium">
+              {{ t('privacy.title') }}
+            </div>
+            <p class="text-body2 q-my-none">{{ t('privacy.message') }}</p>
+          </div>
+          <q-btn
+            flat
+            no-caps
+            dense
+            color="primary"
+            class="privacy-note-action"
+            :label="t('privacy.action')"
+            :to="{ name: 'management.organization.privacy' }"
+          />
+        </div>
+      </q-card>
+
       <!-- Counts -->
       <div class="stat-grid">
         <q-card
@@ -124,13 +156,14 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import { useOrganizationDetailsStore } from '@/stores/organization-details-store';
 import { useOrganizationPermissions } from '@/composables/organizationPermissions';
+import { usePrivacyNoticeService } from '@/services/PrivacyNoticeService';
 import type { OrganizationPermission } from '@camp-registration/common/permissions';
 
 const { t } = useI18n();
@@ -138,10 +171,39 @@ const router = useRouter();
 const store = useOrganizationDetailsStore();
 const { data: organization, isLoading, error } = storeToRefs(store);
 const { canOrg } = useOrganizationPermissions();
+const { fetchOrganizationNotice } = usePrivacyNoticeService();
+
+// Null until the lookup answers, so the hint never flashes for an organization
+// that has published one.
+const privacyNoticePublished = ref<boolean | null>(null);
+
+const privacyNoticeMissing = computed(
+  () => privacyNoticePublished.value === false,
+);
 
 onMounted(async () => {
   await store.fetchData();
 });
+
+// Keyed on the organization, not on the mount: the page is reused when the
+// route switches to another organization.
+watch(
+  () => organization.value?.id,
+  async (id) => {
+    privacyNoticePublished.value = null;
+    if (!id) {
+      return;
+    }
+
+    try {
+      const notice = await fetchOrganizationNotice(id);
+      privacyNoticePublished.value = notice.publishedVersion !== null;
+    } catch {
+      // A hint, not a gate: if the lookup fails it simply stays hidden.
+    }
+  },
+  { immediate: true },
+);
 
 const statusIcon = computed(() => {
   const status = organization.value?.verificationStatus;
@@ -207,6 +269,12 @@ const links = computed<QuickLink[]>(() =>
         icon: 'group',
         label: t('link.members'),
         permission: 'organization.members.view',
+      },
+      {
+        to: 'management.organization.privacy',
+        icon: 'privacy_tip',
+        label: t('link.privacy'),
+        permission: 'organization.view',
       },
       {
         to: 'management.organization.verification',
@@ -300,6 +368,29 @@ const links = computed<QuickLink[]>(() =>
   flex: none;
 }
 
+/* Same shape as the status note, primary-accented: it names an action the
+   owner still has to take rather than a state they are waiting on. */
+.privacy-note {
+  border-left: 4px solid var(--md3-primary);
+  background: var(--md3-surface-container-low);
+}
+
+.privacy-note-body {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+}
+
+.privacy-note-icon {
+  flex: none;
+  color: var(--md3-primary);
+}
+
+.privacy-note-action {
+  flex: none;
+}
+
 .stat-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -336,11 +427,13 @@ const links = computed<QuickLink[]>(() =>
 
 /* The banner's action drops under the text before the column gets cramped. */
 @media (max-width: 599px) {
-  .status-note-body {
+  .status-note-body,
+  .privacy-note-body {
     flex-wrap: wrap;
   }
 
-  .status-note-action {
+  .status-note-action,
+  .privacy-note-action {
     margin-left: 34px;
   }
 }
@@ -356,11 +449,16 @@ note:
   PENDING: 'Camps stay hidden and newsletters cannot send until this organization is verified.'
   REJECTED: 'This organization was not verified. Camps stay hidden and newsletters cannot send.'
   action: 'Details'
+privacy:
+  title: 'Privacy notice missing'
+  message: 'This organization cannot be verified until its privacy notice is published. It is the baseline every camp of this organization uses.'
+  action: 'Set up'
 stat:
   camps: 'Camps'
   newsletters: 'Newsletters'
 link:
   members: 'Members'
+  privacy: 'Privacy'
   verification: 'Verification'
   settings: 'Settings'
 </i18n>
@@ -375,11 +473,16 @@ note:
   PENDING: 'Camps bleiben verborgen und Newsletter können nicht senden, bis diese Organisation verifiziert ist.'
   REJECTED: 'Diese Organisation wurde nicht verifiziert. Camps bleiben verborgen und Newsletter können nicht senden.'
   action: 'Details'
+privacy:
+  title: 'Datenschutzerklärung fehlt'
+  message: 'Diese Organisation kann erst verifiziert werden, wenn ihre Datenschutzerklärung veröffentlicht ist. Sie ist die Grundlage für jedes Camp dieser Organisation.'
+  action: 'Einrichten'
 stat:
   camps: 'Camps'
   newsletters: 'Newsletter'
 link:
   members: 'Mitglieder'
+  privacy: 'Datenschutz'
   verification: 'Verifizierung'
   settings: 'Einstellungen'
 </i18n>
@@ -394,11 +497,16 @@ note:
   PENDING: "Les camps restent masqués et les newsletters ne peuvent pas être envoyées tant que cette organisation n'est pas vérifiée."
   REJECTED: "Cette organisation n'a pas été vérifiée. Les camps restent masqués et les newsletters ne peuvent pas être envoyées."
   action: 'Détails'
+privacy:
+  title: 'Politique de confidentialité manquante'
+  message: "Cette organisation ne peut pas être vérifiée tant que sa politique de confidentialité n'est pas publiée. Elle sert de base à chacun de ses camps."
+  action: 'Configurer'
 stat:
   camps: 'Camps'
   newsletters: 'Newsletters'
 link:
   members: 'Membres'
+  privacy: 'Confidentialité'
   verification: 'Vérification'
   settings: 'Paramètres'
 </i18n>
@@ -413,11 +521,16 @@ note:
   PENDING: 'Obozy pozostają ukryte, a newslettery nie mogą być wysyłane, dopóki ta organizacja nie zostanie zweryfikowana.'
   REJECTED: 'Ta organizacja nie została zweryfikowana. Obozy pozostają ukryte, a newslettery nie mogą być wysyłane.'
   action: 'Szczegóły'
+privacy:
+  title: 'Brak informacji o ochronie danych'
+  message: 'Tej organizacji nie można zweryfikować, dopóki nie opublikuje informacji o ochronie danych. Stanowi ona podstawę dla każdego obozu tej organizacji.'
+  action: 'Skonfiguruj'
 stat:
   camps: 'Obozy'
   newsletters: 'Newslettery'
 link:
   members: 'Członkowie'
+  privacy: 'Prywatność'
   verification: 'Weryfikacja'
   settings: 'Ustawienia'
 </i18n>
@@ -432,11 +545,16 @@ note:
   PENDING: 'Tábory zůstávají skryté a newslettery nelze odesílat, dokud nebude tato organizace ověřena.'
   REJECTED: 'Tato organizace nebyla ověřena. Tábory zůstávají skryté a newslettery nelze odesílat.'
   action: 'Podrobnosti'
+privacy:
+  title: 'Chybí zásady ochrany osobních údajů'
+  message: 'Tuto organizaci nelze ověřit, dokud nezveřejní zásady ochrany osobních údajů. Jsou základem pro každý tábor této organizace.'
+  action: 'Nastavit'
 stat:
   camps: 'Tábory'
   newsletters: 'Newslettery'
 link:
   members: 'Členové'
+  privacy: 'Soukromí'
   verification: 'Ověření'
   settings: 'Nastavení'
 </i18n>
