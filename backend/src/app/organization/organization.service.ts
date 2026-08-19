@@ -155,27 +155,25 @@ export class OrganizationService extends BaseService {
   }
 
   /**
-   * Records a moderation decision and, on rejection, immediately unpublishes
-   * every camp the organization owns.
+   * Records a moderation decision.
    *
-   * The unpublish runs in the same transaction as the status change rather than
-   * in a background job: the whole point of verification is that an unmoderated
-   * entity must not be collecting participant data, so there must be no window
-   * in which the organization is rejected but its camps are still listed.
+   * Rejection does not touch the camps' `listed` flag. Reach is gated on the
+   * organization's live status at every outward-facing action — the public
+   * listing, the camp `show` route and registration creation — so a rejected
+   * organization's camps stop reaching anyone the moment the status flips,
+   * without overwriting a publication choice that is the owner's to make.
    */
   async applyVerificationDecision(
     id: string,
     reviewerUserId: string,
-    decision: {
-      status: Extract<OrganizationVerificationStatus, 'VERIFIED' | 'REJECTED'>;
-      reviewNote?: string | null;
-    },
+    status: Extract<OrganizationVerificationStatus, 'VERIFIED' | 'REJECTED'>,
+    reviewNote?: string | null,
   ) {
     // Verifying an organization is the moment its camps become able to reach
     // the public, so it is also the moment its privacy notice has to hold up.
     // Rejection is never blocked — a notice-less organization must stay
     // rejectable.
-    if (decision.status === 'VERIFIED') {
+    if (status === 'VERIFIED') {
       const blocker =
         await this.privacyNoticeService.verificationBlockReason(id);
 
@@ -187,36 +185,14 @@ export class OrganizationService extends BaseService {
       }
     }
 
-    const reviewedAt = new Date();
-
-    return this.prisma.$transaction(async (tx) => {
-      const organization = await tx.organization.update({
-        where: { id },
-        data: {
-          verificationStatus: decision.status,
-          reviewNote: decision.reviewNote ?? null,
-          reviewedAt,
-          reviewedByUserId: reviewerUserId,
-        },
-      });
-
-      const unpublishedCampIds: string[] = [];
-      if (decision.status === 'REJECTED') {
-        const listedCamps = await tx.camp.findMany({
-          where: { organizationId: id, listed: true },
-          select: { id: true },
-        });
-
-        if (listedCamps.length > 0) {
-          await tx.camp.updateMany({
-            where: { organizationId: id, listed: true },
-            data: { listed: false },
-          });
-          unpublishedCampIds.push(...listedCamps.map((camp) => camp.id));
-        }
-      }
-
-      return { organization, unpublishedCampIds };
+    return this.prisma.organization.update({
+      where: { id },
+      data: {
+        verificationStatus: status,
+        reviewNote: reviewNote ?? null,
+        reviewedAt: new Date(),
+        reviewedByUserId: reviewerUserId,
+      },
     });
   }
 

@@ -8,11 +8,6 @@ import { CampService } from '#app/camp/camp.service';
 import { inject, injectable } from 'inversify';
 import type { ProfileUser } from '#app/profile/profile.types';
 
-/**
- * Everything {@link ProfileUser} declares. Every loader that feeds
- * {@link ProfileResource} selects it, so the profile payload cannot differ
- * between login and a later refetch.
- */
 const profileAccessInclude = {
   campRoles: true,
   newsletterManagers: true,
@@ -33,6 +28,8 @@ const profileAccessInclude = {
     },
   },
 } satisfies Prisma.UserInclude;
+
+const profileAccessOmit = { password: true } satisfies Prisma.UserOmit;
 
 @injectable()
 export class UserService extends BaseService {
@@ -159,6 +156,7 @@ export class UserService extends BaseService {
   async getProfileUserById(id: string): Promise<ProfileUser> {
     return this.prisma.user.findUniqueOrThrow({
       where: { id },
+      omit: profileAccessOmit,
       include: profileAccessInclude,
     });
   }
@@ -199,6 +197,7 @@ export class UserService extends BaseService {
       data: {
         lastSeen: new Date(),
       },
+      omit: profileAccessOmit,
       include: profileAccessInclude,
     });
 

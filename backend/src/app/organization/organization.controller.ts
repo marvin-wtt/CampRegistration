@@ -14,7 +14,6 @@ import { CampService } from '#app/camp/camp.service';
 import { CampResource } from '#app/camp/camp.resource';
 import { NewsletterService } from '#app/newsletter/newsletter.service';
 import { NewsletterResource } from '#app/newsletter/newsletter.resource';
-import { RealtimeService } from '#core/realtime/RealtimeService';
 import { UserService } from '#app/user/user.service';
 import { OrganizationMemberService } from '#app/organizationMember/organization-member.service';
 import {
@@ -31,8 +30,6 @@ export class OrganizationController extends BaseController {
     @inject(CampService) private readonly campService: CampService,
     @inject(NewsletterService)
     private readonly newsletterService: NewsletterService,
-    @inject(RealtimeService)
-    private readonly realtimeService: RealtimeService,
     @inject(UserService) private readonly userService: UserService,
     @inject(OrganizationMemberService)
     private readonly organizationMemberService: OrganizationMemberService,
@@ -212,11 +209,12 @@ export class OrganizationController extends BaseController {
     const { camps, newsletters } =
       await this.organizationService.countOwnedResources(organization.id);
     if (camps > 0 || newsletters > 0) {
-      // Carries a stable code and the counts so the client can say what is
-      // blocking rather than parsing this sentence.
+      // Carries a stable code so the client can explain what is blocking
+      // rather than parsing this sentence.
       throw new ApiError(
         httpStatus.CONFLICT,
         `The organization still owns ${camps.toString()} camp(s) and ${newsletters.toString()} newsletter(s). Move or delete them first.`,
+        { code: 'ORGANIZATION_NOT_EMPTY' },
       );
     }
 
@@ -247,23 +245,20 @@ export class OrganizationController extends BaseController {
 
   async review(req: Request, res: Response) {
     const organization = req.modelOrFail('organization');
-    const { body } = await req.validate(validator.review);
+    const {
+      body: { status, reviewNote },
+    } = await req.validate(validator.review);
     const reviewerUserId = req.authUserId();
 
     // Reviewable from any state, not just PENDING: a verified organization can
     // turn out to be fraudulent and must be revocable, and a rejected one can
-    // be reinstated without waiting for it to resubmit. Rejecting always
-    // unpublishes its camps, whichever state it came from.
-    const { organization: updated, unpublishedCampIds } =
-      await this.organizationService.applyVerificationDecision(
-        organization.id,
-        reviewerUserId,
-        body,
-      );
-
-    for (const campId of unpublishedCampIds) {
-      void this.realtimeService.emit(campId, 'camp', campId, 'updated');
-    }
+    // be reinstated without waiting for it to resubmit.
+    const updated = await this.organizationService.applyVerificationDecision(
+      organization.id,
+      reviewerUserId,
+      status,
+      reviewNote,
+    );
 
     // Tell the organization the outcome — the reviewer already knows it.
     const recipients =
@@ -275,9 +270,11 @@ export class OrganizationController extends BaseController {
       recipient,
     }));
 
-    await (body.status === 'VERIFIED'
-      ? OrganizationVerifiedMessage.enqueueBulk(payloads)
-      : OrganizationRejectedMessage.enqueueBulk(payloads));
+    if (status === 'VERIFIED') {
+      await OrganizationVerifiedMessage.enqueueBulk(payloads);
+    } else {
+      await OrganizationRejectedMessage.enqueueBulk(payloads);
+    }
 
     res.resource(await this.toDetailsResource(updated));
   }

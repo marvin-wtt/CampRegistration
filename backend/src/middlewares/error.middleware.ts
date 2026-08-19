@@ -83,17 +83,19 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   const { statusCode } = err;
   // A fault's message describes an internal failure and must not reach the
   // client. The status code itself is safe to keep.
-  const message =
-    err.isFault && config.env === 'production'
-      ? statusToString(statusCode)
-      : err.message;
+  const masked = err.isFault && config.env === 'production';
+  const message = masked ? statusToString(statusCode) : err.message;
+  // `toApiError` copies `code` off whatever was thrown, so a fault's code names
+  // the internal cause (`ECONNREFUSED`, a driver code) just as its message
+  // does — mask it on the same terms, or the masking is undone by it.
+  const errorCode = masked ? undefined : err.code;
 
   res.locals.errorMessage = err.message;
 
   const response = {
     code: statusCode,
     message,
-    ...(err.code !== undefined && { errorCode: err.code }),
+    ...(errorCode !== undefined && { errorCode }),
     ...(config.env === 'development' && { stack: err.stack }),
   };
 

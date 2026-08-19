@@ -58,7 +58,12 @@ export const useOrganizationDetailsStore = defineStore(
         organizationId ?? (route.params.organizationId as string),
       );
 
-      await lazyFetch(() => api.fetchOrganization(id));
+      await lazyFetch(async () => {
+        const result = await api.fetchOrganization(id);
+        organizationBus.emit('change', result);
+
+        return result;
+      });
     }
 
     async function updateData(updateData: OrganizationUpdateData) {

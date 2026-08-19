@@ -26,7 +26,7 @@
             use-input
             fill-input
             hide-selected
-            input-debounce="0"
+            input-debounce="300"
             rounded
             outlined
             @filter="onFilter"
@@ -100,7 +100,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { useAPIService } from '@/services/APIService';
@@ -128,6 +128,9 @@ const organizations = ref<Organization[]>([]);
 const organizationId = ref<string | null>(null);
 const loading = ref<boolean>(false);
 const filteredOptions = ref<OrganizationOption[]>([]);
+// Searching replaces the option list, so the picked organization is kept on its
+// own — it may no longer be among the options by the time the form is read.
+const selectedOption = ref<OrganizationOption>();
 
 const campName = computed(() => to(props.camp.name));
 
@@ -149,26 +152,45 @@ const allOptions = computed<OrganizationOption[]>(() =>
  * directory while the new owner is unverified, and returns when it is verified.
  */
 const willHide = computed(() => {
-  if (!props.camp.listed || !organizationId.value) {
+  if (!props.camp.listed || !selectedOption.value) {
     return false;
   }
 
-  const target = allOptions.value.find(
-    (option) => option.value === organizationId.value,
-  );
-
-  return target !== undefined && !target.verified;
+  return !selectedOption.value.verified;
 });
 
-function onFilter(search: string, update: (fn: () => void) => void) {
-  update(() => {
-    const needle = search.toLowerCase().trim();
-    filteredOptions.value = needle
-      ? allOptions.value.filter((option) =>
-          option.label.toLowerCase().includes(needle),
-        )
-      : allOptions.value;
-  });
+// The listing is server-paginated, so searching has to go back to the API —
+// filtering the first page would hide every organization beyond it.
+async function onFilter(
+  search: string,
+  update: (fn: () => void) => void,
+  abort: () => void,
+) {
+  try {
+    const result = await fetchOrganizations(search);
+    update(() => {
+      organizations.value = result;
+      filteredOptions.value = allOptions.value;
+    });
+  } catch {
+    abort();
+  }
+}
+
+async function fetchOrganizations(search?: string): Promise<Organization[]> {
+  loading.value = true;
+  try {
+    const needle = search?.trim();
+
+    return await api.fetchOrganizations({
+      view: 'all',
+      ...(needle ? { name: needle } : {}),
+      sortBy: 'name',
+      sortType: 'asc',
+    });
+  } finally {
+    loading.value = false;
+  }
 }
 
 function onSubmit() {
@@ -177,14 +199,15 @@ function onSubmit() {
   }
 }
 
+watch(organizationId, (id) => {
+  selectedOption.value = id
+    ? allOptions.value.find((option) => option.value === id)
+    : undefined;
+});
+
 onMounted(async () => {
-  loading.value = true;
-  try {
-    organizations.value = await api.fetchOrganizations({ view: 'all' });
-    filteredOptions.value = allOptions.value;
-  } finally {
-    loading.value = false;
-  }
+  organizations.value = await fetchOrganizations();
+  filteredOptions.value = allOptions.value;
 });
 </script>
 

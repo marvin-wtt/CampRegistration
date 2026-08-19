@@ -548,11 +548,11 @@ describe(BASE, () => {
       expect(body.data.reviewedAt).not.toBeNull();
     });
 
-    it('should unpublish the organizations camps on rejection', async () => {
+    it('should hide a rejected organizations camps from the public listing', async () => {
       const admin = await UserFactory.create({ role: 'ADMIN' });
       const accessToken = generateAccessToken(admin);
       const organization = await OrganizationFactory.create({
-        verificationStatus: 'PENDING',
+        verificationStatus: 'VERIFIED',
       });
       const camp = await CampFactory.create({
         listed: true,
@@ -565,8 +565,9 @@ describe(BASE, () => {
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
-      const updated = await prisma.camp.findUnique({ where: { id: camp.id } });
-      expect(updated?.listed).toBe(false);
+      const { body } = await request().get('/api/v1/camps/').expect(200);
+
+      expect(body.data.map((c: { id: string }) => c.id)).not.toContain(camp.id);
     });
 
     it('should respond with `403` for the organizations own admin', async () => {
@@ -603,9 +604,10 @@ describe(BASE, () => {
 
       expect(body.data.verificationStatus).toBe('REJECTED');
 
-      // Revoking must unpublish just as a first-time rejection does.
+      // Revoking leaves `listed` alone just as a first-time rejection does; the
+      // camp stops reaching the public through the read-time gates instead.
       const updated = await prisma.camp.findUnique({ where: { id: camp.id } });
-      expect(updated?.listed).toBe(false);
+      expect(updated?.listed).toBe(true);
     });
 
     it('should reinstate a previously rejected organization', async () => {
@@ -627,8 +629,8 @@ describe(BASE, () => {
     });
 
     it('should not republish camps when reinstating', async () => {
-      // Unpublishing was a safety action; putting a camp back in front of the
-      // public is the organization's decision to make, not the reviewer's.
+      // Reviewing never writes `listed` in either direction — publishing is the
+      // organization's decision to make, not the reviewer's.
       const admin = await UserFactory.create({ role: 'ADMIN' });
       const accessToken = generateAccessToken(admin);
       const organization = await OrganizationFactory.create({

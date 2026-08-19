@@ -11,6 +11,13 @@
     <template #navigation>
       <workspace-switcher rail />
     </template>
+
+    <template #default="{ component }">
+      <component
+        :is="component"
+        :key="organizationId"
+      />
+    </template>
   </general-layout>
 </template>
 
