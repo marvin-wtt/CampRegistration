@@ -363,6 +363,26 @@
             publishedVersion === null ? t('status.empty') : t('status.withdraw')
           }}
         </div>
+
+        <!-- The same check the server runs before it accepts the addendum.
+             Shown here so the author reads what is missing next to the fields
+             that fix it, rather than as a rejected save. -->
+        <template
+          v-if="gaps.length"
+          #note
+        >
+          <div class="text-body2 text-warning">
+            {{ t('status.incomplete') }}
+          </div>
+          <ul class="privacy-gaps text-body2 text-on-surface-variant">
+            <li
+              v-for="gap in gaps"
+              :key="gap"
+            >
+              {{ gt(`privacy.gap.${gap}`) }}
+            </li>
+          </ul>
+        </template>
       </privacy-publish-card>
     </div>
 
@@ -392,6 +412,7 @@ import {
   DEFAULT_SPECIAL_CATEGORY_BASIS,
   PRIVACY_DATA_CATEGORY_KEYS,
   PRIVACY_RECIPIENT_KEYS,
+  addendumGaps,
   composePrivacyNotice,
   isEmptyAddendum,
   isSpecialCategory,
@@ -479,7 +500,19 @@ const hasUnpublishedChanges = computed(
 const publishDisabled = computed(
   () =>
     !organizationContent.value ||
-    (isEmptyAddendum(content.value) && publishedVersion.value === null),
+    (isEmptyAddendum(content.value) && publishedVersion.value === null) ||
+    gaps.value.length > 0,
+);
+
+/**
+ * What this camp adds that the composed notice cannot stand behind — the same
+ * list the server refuses the addendum with. An empty addendum is a withdrawal
+ * rather than a statement, so there is nothing to check.
+ */
+const gaps = computed(() =>
+  isEmptyAddendum(content.value)
+    ? []
+    : addendumGaps(organizationContent.value, content.value),
 );
 
 function emptyAddendum(): PrivacyNoticeAddendum {
@@ -940,6 +973,7 @@ status:
     detail: 'Registrants see your organisation’s notice as it stands.'
   unpublishedDetail: 'Registrants see your organisation’s notice without these additions until you publish.'
   blocked: 'There is nothing to publish these additions on top of yet.'
+  incomplete: 'These additions cannot be published yet:'
   empty: 'Nothing to publish yet — tick what this camp adds, or write an addition below.'
   withdraw: 'Publishing now withdraws this camp’s additions — registrants then see your organisation’s notice on its own.'
 notify:
@@ -984,6 +1018,7 @@ status:
     detail: 'Anmeldende sehen die Informationen eurer Organisation unverändert.'
   unpublishedDetail: 'Anmeldende sehen die Informationen der Organisation ohne diese Ergänzungen, bis du veröffentlichst.'
   blocked: 'Es gibt noch nichts, worauf diese Ergänzungen aufsetzen könnten.'
+  incomplete: 'Diese Ergänzungen können noch nicht veröffentlicht werden:'
   empty: 'Noch nichts zu veröffentlichen – hake an, was diese Freizeit ergänzt, oder schreibe unten eine Ergänzung.'
   withdraw: 'Beim Veröffentlichen werden die Ergänzungen dieser Freizeit zurückgezogen – Anmeldende sehen dann nur die Informationen eurer Organisation.'
 notify:
@@ -1028,6 +1063,7 @@ status:
     detail: "Les personnes qui s'inscrivent voient les informations de votre organisation telles quelles."
   unpublishedDetail: "Les personnes qui s'inscrivent voient les informations de votre organisation sans ces ajouts tant que vous n'avez pas publié."
   blocked: "Il n'y a encore rien sur quoi appuyer ces ajouts."
+  incomplete: 'Ces ajouts ne peuvent pas encore être publiés :'
   empty: 'Rien à publier pour le moment — cochez ce que ce séjour ajoute, ou rédigez un ajout ci-dessous.'
   withdraw: "Publier maintenant retire les ajouts de ce séjour — les personnes qui s'inscrivent ne verront plus que les informations de votre organisation."
 notify:
@@ -1072,6 +1108,7 @@ status:
     detail: 'Přihlašující vidí informace vaší organizace beze změn.'
   unpublishedDetail: 'Přihlašující vidí informace vaší organizace bez těchto doplnění, dokud je nezveřejníš.'
   blocked: 'Zatím není na čem tato doplnění postavit.'
+  incomplete: 'Tato doplnění zatím nelze zveřejnit:'
   empty: 'Zatím není co zveřejnit – zaškrtni, co tento tábor doplňuje, nebo níže napiš doplnění.'
   withdraw: 'Zveřejněním se doplnění tohoto tábora stáhnou – přihlašující pak uvidí jen informace vaší organizace.'
 notify:
@@ -1116,6 +1153,7 @@ status:
     detail: 'Osoby zgłaszające się widzą informacje Waszej organizacji bez zmian.'
   unpublishedDetail: 'Osoby zgłaszające się widzą informacje Waszej organizacji bez tych uzupełnień, dopóki ich nie opublikujesz.'
   blocked: 'Nie ma jeszcze na czym oprzeć tych uzupełnień.'
+  incomplete: 'Tych uzupełnień nie można jeszcze opublikować:'
   empty: 'Nie ma jeszcze czego publikować – zaznacz, co dodaje ten obóz, albo napisz uzupełnienie poniżej.'
   withdraw: 'Publikacja wycofa uzupełnienia tego obozu – osoby zgłaszające się zobaczą wtedy same informacje Waszej organizacji.'
 notify:

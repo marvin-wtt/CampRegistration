@@ -69,10 +69,10 @@
 <style scoped>
 .camp-card-skeleton {
   min-width: 0;
-  border-radius: 16px;
+  border-radius: var(--md3-corner-extra-large, 28px);
   overflow: hidden;
 
-  background: var(--md3-surface-container-low);
+  background: var(--md3-surface-container);
   box-shadow: none;
 }
 

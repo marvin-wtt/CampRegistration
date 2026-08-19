@@ -1,155 +1,352 @@
 <template>
+  <!--
+    A rail of outlined pills rather than a panel of form fields: it speaks the
+    same chip language as the landing page, stays one line deep, and each pill
+    reads as a sentence ("Anytime", "Germany", "Age 12") instead of an empty
+    input waiting to be filled in.
+
+    It scrolls away with the results on purpose — pinned, it reads as a band
+    hovering over the middle of the page, since the content column is narrower
+    than the viewport.
+  -->
   <div class="camp-filters">
-    <!-- Narrow screens keep the controls folded away: four stacked fields would
-         push the results below the fold. -->
-    <div
-      v-if="!controlsAlwaysVisible"
-      class="camp-filters__bar"
+    <!-- The search box lives in the hero, so once it scrolls away this is the
+         only thing telling the visitor their results are narrowed. -->
+    <button
+      v-if="search"
+      type="button"
+      class="filter-chip filter-chip--active"
+      data-test="camps-active-search"
+      @click="search = ''"
     >
-      <m-btn
-        :tonal="expanded"
-        :text="!expanded"
-        icon="tune"
-        :label="t('filters')"
-        :aria-expanded="expanded"
-        data-test="camps-filter-toggle"
-        @click="expanded = !expanded"
+      <q-icon
+        name="search"
+        size="16px"
+      />
+      <span class="filter-chip__label">{{ search }}</span>
+      <q-icon
+        name="close"
+        size="16px"
+      />
+    </button>
+
+    <!-- Dates -->
+    <button
+      type="button"
+      class="filter-chip"
+      :class="{ 'filter-chip--active': hasDates }"
+      aria-haspopup="true"
+      data-test="camps-filter-dates"
+    >
+      <q-icon
+        name="event"
+        size="16px"
+      />
+      <span class="filter-chip__label">{{ dateLabel }}</span>
+      <q-icon
+        name="expand_more"
+        size="16px"
+        class="filter-chip__caret"
+      />
+
+      <!--
+        Presets sit above the calendar rather than in QDate's own footer slot:
+        most visitors pick a season and are done, so the picker is the fallback
+        rather than the main act — and the slot renders below the calendar,
+        which buried them.
+      -->
+      <q-popup-proxy
+        class="filter-menu filter-menu--date"
+        transition-show="jump-down"
+        transition-hide="jump-up"
+        :offset="[0, 8]"
+        no-route-dismiss
       >
-        <q-badge
-          v-if="activeFilters.length > 0"
-          floating
-          rounded
-          color="primary"
-          :label="activeFilters.length"
-        />
-      </m-btn>
-    </div>
+        <div class="filter-pop filter-pop--date">
+          <div class="filter-pop__title">{{ t('dates') }}</div>
 
-    <q-slide-transition>
-      <div v-show="expanded || controlsAlwaysVisible">
-        <div class="row q-col-gutter-sm">
-          <div class="col-12 col-sm-6 col-md-3">
-            <q-input
-              v-model.number="age"
-              type="number"
-              :label="t('age')"
-              :min="0"
-              :max="99"
-              data-test="camps-filter-age"
-              debounce="400"
-              dense
-              outlined
-              rounded
-              clearable
-              hide-bottom-space
+          <div class="filter-pop__presets">
+            <button
+              v-for="preset in CAMP_DATE_PRESETS"
+              :key="preset"
+              type="button"
+              class="preset-chip"
+              :class="{ 'preset-chip--active': preset === activePreset }"
+              :aria-pressed="preset === activePreset"
+              :data-test="`camps-preset-${preset}`"
+              @click="togglePreset(preset)"
             >
-              <template #prepend>
-                <q-icon name="cake" />
-              </template>
-            </q-input>
+              {{ t(`preset.${preset}`) }}
+            </button>
           </div>
 
-          <div class="col-12 col-sm-6 col-md-3">
-            <date-range-input
-              v-model:from="startAt"
-              v-model:to="endAt"
-              :label="t('dates')"
-              default-start-time="00:00"
-              default-end-time="23:59"
-              data-test="camps-filter-dates"
-              dense
-              clearable
-              hide-bottom-space
-            >
-              <template #prepend>
-                <q-icon name="event" />
-              </template>
-            </date-range-input>
-          </div>
+          <!-- `minimal` drops the picker's headline: the chip already spells
+               the range out, and the header repeats it in 32px type. -->
+          <q-date
+            v-model="dayRange"
+            mask="YYYY-MM-DD"
+            range
+            minimal
+          />
 
-          <div class="col-12 col-sm-6 col-md-3">
-            <country-select
-              v-model="countries"
-              :label="t('countries')"
-              :countries="CAMP_COUNTRIES"
-              :display-value="countriesDisplayValue"
-              data-test="camps-filter-countries"
-              multiple
-              popup-no-route-dismiss
-              dense
-              outlined
-              rounded
-              clearable
-              hide-bottom-space
-            >
-              <template #prepend>
-                <q-icon name="public" />
-              </template>
-            </country-select>
-          </div>
-
-          <div class="col-12 col-sm-6 col-md-3">
-            <q-select
-              v-model="sort"
-              :options="sortOptions"
-              :label="t('sort_label')"
-              data-test="camps-filter-sort"
-              popup-no-route-dismiss
-              dense
-              outlined
-              rounded
-              emit-value
-              map-options
-              options-dense
-              hide-bottom-space
-            >
-              <template #prepend>
-                <q-icon name="swap_vert" />
-              </template>
-            </q-select>
+          <div class="filter-pop__actions">
+            <m-btn
+              text
+              no-caps
+              :label="t('any_dates')"
+              :disable="!hasDates"
+              @click="clearDates"
+            />
+            <m-btn
+              v-close-popup
+              text
+              primary
+              no-caps
+              :label="t('done')"
+            />
           </div>
         </div>
-      </div>
-    </q-slide-transition>
+      </q-popup-proxy>
+    </button>
 
-    <!-- What is actually narrowing the results, and how to undo each piece -->
-    <div
-      v-if="activeFilters.length > 0"
-      class="camp-filters__active"
+    <!-- Countries -->
+    <button
+      type="button"
+      class="filter-chip"
+      :class="{ 'filter-chip--active': selectedCountries.length > 0 }"
+      aria-haspopup="true"
+      data-test="camps-filter-countries"
     >
-      <q-chip
-        v-for="filter in activeFilters"
-        :key="filter.key"
-        removable
-        :label="filter.label"
-        class="active-chip"
-        :data-test="`camps-active-${filter.key}`"
-        @remove="filter.clear()"
+      <q-icon
+        name="public"
+        size="16px"
+      />
+      <span class="filter-chip__label">{{ countriesLabel }}</span>
+      <q-icon
+        name="expand_more"
+        size="16px"
+        class="filter-chip__caret"
       />
 
-      <m-btn
-        text
-        dense
-        icon="filter_alt_off"
-        :label="t('clear')"
-        data-test="camps-filter-clear"
-        @click="emit('clear')"
+      <q-menu
+        class="filter-menu"
+        :offset="[0, 8]"
+        no-route-dismiss
+      >
+        <div class="filter-pop">
+          <div class="filter-pop__title">{{ t('countries') }}</div>
+
+          <q-list class="filter-pop__list">
+            <q-item
+              v-for="code in CAMP_COUNTRIES"
+              :key="code"
+              clickable
+              class="filter-item"
+              :class="{
+                'filter-item--selected': selectedCountries.includes(code),
+              }"
+              role="menuitemcheckbox"
+              :aria-checked="selectedCountries.includes(code)"
+              :data-test="`camps-country-${code}`"
+              @click="toggleCountry(code)"
+            >
+              <q-item-section avatar>
+                <country-icon :country="code" />
+              </q-item-section>
+              <q-item-section>{{ countryName(code, locale) }}</q-item-section>
+              <!-- A checkbox rather than a lone tick: it is the only marker on
+                   the row, so the unselected state has to show as well. -->
+              <q-item-section side>
+                <q-icon
+                  :name="
+                    selectedCountries.includes(code)
+                      ? 'check_box'
+                      : 'check_box_outline_blank'
+                  "
+                  size="20px"
+                />
+              </q-item-section>
+            </q-item>
+          </q-list>
+
+          <div class="filter-pop__actions">
+            <m-btn
+              text
+              no-caps
+              :label="t('anywhere')"
+              :disable="selectedCountries.length === 0"
+              @click="countries = undefined"
+            />
+            <m-btn
+              v-close-popup
+              text
+              primary
+              no-caps
+              :label="t('done')"
+            />
+          </div>
+        </div>
+      </q-menu>
+    </button>
+
+    <!-- Age -->
+    <button
+      type="button"
+      class="filter-chip"
+      :class="{ 'filter-chip--active': age != null }"
+      aria-haspopup="true"
+      data-test="camps-filter-age"
+    >
+      <q-icon
+        name="cake"
+        size="16px"
       />
-    </div>
+      <span class="filter-chip__label">{{ ageLabel }}</span>
+      <q-icon
+        name="expand_more"
+        size="16px"
+        class="filter-chip__caret"
+      />
+
+      <q-menu
+        class="filter-menu"
+        :offset="[0, 8]"
+        no-route-dismiss
+      >
+        <div class="filter-pop">
+          <div class="filter-pop__title">{{ t('age_title') }}</div>
+
+          <div class="filter-pop__body">
+            <q-input
+              :model-value="ageInput"
+              class="age-field"
+              type="number"
+              :min="MIN_AGE"
+              :max="MAX_AGE"
+              :placeholder="t('age_placeholder')"
+              :aria-label="t('age_title')"
+              :suffix="age == null ? undefined : t('age_years')"
+              outlined
+              rounded
+              dense
+              hide-bottom-space
+              autofocus
+              @update:model-value="onAgeInput"
+            />
+
+            <p class="filter-pop__hint">{{ t('age_hint') }}</p>
+          </div>
+
+          <div class="filter-pop__actions">
+            <m-btn
+              text
+              no-caps
+              :label="t('any_age')"
+              :disable="age == null"
+              @click="age = undefined"
+            />
+            <m-btn
+              v-close-popup
+              text
+              primary
+              no-caps
+              :label="t('done')"
+            />
+          </div>
+        </div>
+      </q-menu>
+    </button>
+
+    <button
+      v-if="activeCount > 0"
+      type="button"
+      class="filter-clear"
+      data-test="camps-filter-clear"
+      @click="emit('clear')"
+    >
+      {{ t('clear') }}
+    </button>
+
+    <span class="camp-filters__count">
+      <slot name="status" />
+    </span>
+
+    <!-- Sorting is not a filter, so it sits apart from the rail. -->
+    <button
+      type="button"
+      class="filter-chip filter-chip--sort"
+      aria-haspopup="true"
+      :aria-label="t('sort_label')"
+      data-test="camps-filter-sort"
+    >
+      <q-icon
+        name="swap_vert"
+        size="16px"
+      />
+      <span class="filter-chip__label">{{ t(`sort.${sort}`) }}</span>
+      <q-icon
+        name="expand_more"
+        size="16px"
+        class="filter-chip__caret"
+      />
+
+      <!-- Right-aligned under its chip, which is the last thing on the rail:
+           a start-anchored menu would hang off the content column. -->
+      <q-menu
+        class="filter-menu"
+        anchor="bottom end"
+        self="top end"
+        :offset="[0, 8]"
+        no-route-dismiss
+      >
+        <div class="filter-pop">
+          <div class="filter-pop__title">{{ t('sort_label') }}</div>
+
+          <q-list class="filter-pop__list filter-pop__list--flush">
+            <q-item
+              v-for="option in CAMP_SORT_OPTIONS"
+              :key="option"
+              v-close-popup
+              clickable
+              class="filter-item"
+              :class="{ 'filter-item--selected': option === sort }"
+              role="menuitemradio"
+              :aria-checked="option === sort"
+              :data-test="`camps-sort-${option}`"
+              @click="sort = option"
+            >
+              <q-item-section>{{ t(`sort.${option}`) }}</q-item-section>
+              <q-item-section side>
+                <q-icon
+                  v-if="option === sort"
+                  name="check"
+                  size="20px"
+                />
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </div>
+      </q-menu>
+    </button>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { date as dateUtil, useQuasar } from 'quasar';
+import { date as dateUtil } from 'quasar';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
-import CountrySelect from '@/components/common/CountrySelect.vue';
-import DateRangeInput from '@/components/common/inputs/DateRangeInput.vue';
+import CountryIcon from '@/components/common/localization/CountryIcon.vue';
 import { countryName } from '@/utils/countries';
 import {
   CAMP_COUNTRIES,
+  CAMP_DATE_PRESETS,
   CAMP_SORT_OPTIONS,
+  datePresetRange,
+  dayRangeToIso,
+  isoToDay,
+  matchingDatePreset,
+  type CampDatePreset,
   type CampSortOption,
 } from '@/components/camps/filters';
 
@@ -167,204 +364,588 @@ const endAt = defineModel<string | undefined>('endAt');
 const sort = defineModel<CampSortOption>('sort', { required: true });
 
 const { t, locale } = useI18n();
-const quasar = useQuasar();
 
-const controlsAlwaysVisible = computed<boolean>(() => quasar.screen.gt.xs);
+/* ------------------------------------------------------------------ dates */
 
-const expanded = ref<boolean>(false);
-
-const sortOptions = computed(() =>
-  CAMP_SORT_OPTIONS.map((value) => ({ value, label: t(`sort.${value}`) })),
+const hasDates = computed<boolean>(
+  () => startAt.value !== undefined || endAt.value !== undefined,
 );
 
-/** Two or more countries would overflow the field; a count reads better. */
-const countriesDisplayValue = computed<string | undefined>(() => {
-  const selected = countries.value ?? [];
+const activePreset = computed<CampDatePreset | undefined>(() =>
+  matchingDatePreset(startAt.value, endAt.value),
+);
 
-  return selected.length > 1
-    ? t('countries_selected', { count: selected.length })
-    : undefined;
+/**
+ * QDate speaks plain days; the query speaks instants. The setter also has to
+ * take a bare string — that is what QDate emits when a range starts and ends
+ * on the same day.
+ */
+const dayRange = computed<{ from: string; to: string } | string | null>({
+  get: () =>
+    startAt.value && endAt.value
+      ? { from: isoToDay(startAt.value), to: isoToDay(endAt.value) }
+      : null,
+  set: (value) => {
+    if (value === null) {
+      clearDates();
+      return;
+    }
+
+    // QDate hands back a bare day when the range starts and ends on one day.
+    const range =
+      typeof value === 'string'
+        ? dayRangeToIso(value, value)
+        : dayRangeToIso(value.from, value.to);
+
+    startAt.value = range.startAt;
+    endAt.value = range.endAt;
+  },
 });
 
-interface ActiveFilter {
-  key: string;
-  label: string;
-  clear: () => void;
+function togglePreset(preset: CampDatePreset): void {
+  if (preset === activePreset.value) {
+    clearDates();
+    return;
+  }
+
+  const range = datePresetRange(preset);
+  startAt.value = range.startAt;
+  endAt.value = range.endAt;
 }
 
-const activeFilters = computed<ActiveFilter[]>(() => {
-  const filters: ActiveFilter[] = [];
-
-  if (search.value) {
-    filters.push({
-      key: 'search',
-      label: t('chip.search', { value: search.value }),
-      clear: () => (search.value = ''),
-    });
-  }
-
-  for (const code of countries.value ?? []) {
-    filters.push({
-      key: `country-${code}`,
-      label: countryName(code, locale.value),
-      clear: () =>
-        (countries.value = (countries.value ?? []).filter(
-          (value) => value !== code,
-        )),
-    });
-  }
-
-  if (age.value !== undefined && age.value !== null) {
-    filters.push({
-      key: 'age',
-      label: t('chip.age', { value: age.value }),
-      clear: () => (age.value = undefined),
-    });
-  }
-
-  if (startAt.value ?? endAt.value) {
-    filters.push({
-      key: 'dates',
-      label: dateLabel.value,
-      clear: () => {
-        startAt.value = undefined;
-        endAt.value = undefined;
-      },
-    });
-  }
-
-  return filters;
-});
+function clearDates(): void {
+  startAt.value = undefined;
+  endAt.value = undefined;
+}
 
 const dateLabel = computed<string>(() => {
+  if (activePreset.value) {
+    return t(`preset.${activePreset.value}`);
+  }
+
   const from = formatDay(startAt.value);
   const to = formatDay(endAt.value);
 
   if (from && to) {
-    return `${from} – ${to}`;
+    return from === to ? from : `${from} – ${to}`;
   }
 
-  return from ?? to ?? '';
+  return from ?? to ?? t('any_dates');
 });
 
 function formatDay(iso?: string): string | undefined {
-  return iso ? dateUtil.formatDate(new Date(iso), 'DD.MM.YYYY') : undefined;
+  return iso ? dateUtil.formatDate(new Date(iso), 'D MMM') : undefined;
 }
+
+/* -------------------------------------------------------------- countries */
+
+const selectedCountries = computed<string[]>(() => countries.value ?? []);
+
+function toggleCountry(code: string): void {
+  const next = selectedCountries.value.includes(code)
+    ? selectedCountries.value.filter((value) => value !== code)
+    : [...selectedCountries.value, code];
+
+  countries.value = next.length > 0 ? next : undefined;
+}
+
+const countriesLabel = computed<string>(() => {
+  const [first] = selectedCountries.value;
+
+  if (first === undefined) {
+    return t('anywhere');
+  }
+
+  return selectedCountries.value.length === 1
+    ? countryName(first, locale.value)
+    : t('countries_selected', { count: selectedCountries.value.length });
+});
+
+/* -------------------------------------------------------------------- age */
+
+const MIN_AGE = 0;
+const MAX_AGE = 99;
+
+const ageInput = computed<string>(() =>
+  age.value == null ? '' : String(age.value),
+);
+
+/**
+ * Deliberately undebounced. A debounced `v-model` on a controlled number field
+ * cannot be typed into two digits at a time: the first keystroke's delayed
+ * write lands back on the input and overwrites the second one, so "12" snaps
+ * back to "1". Committing every keystroke straight away keeps the field and
+ * the model in step.
+ */
+function onAgeInput(value: string | number | null): void {
+  const parsed =
+    typeof value === 'number'
+      ? value
+      : Number.parseInt(String(value ?? ''), 10);
+
+  age.value = Number.isFinite(parsed)
+    ? Math.min(MAX_AGE, Math.max(MIN_AGE, parsed))
+    : undefined;
+}
+
+const ageLabel = computed<string>(() =>
+  age.value == null ? t('any_age') : t('age_value', { value: age.value }),
+);
+
+/* ----------------------------------------------------------------- active */
+
+const activeCount = computed<number>(
+  () =>
+    (search.value ? 1 : 0) +
+    selectedCountries.value.length +
+    (age.value == null ? 0 : 1) +
+    (hasDates.value ? 1 : 0),
+);
 </script>
 
 <style scoped>
 .camp-filters {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.camp-filters__bar {
-  display: flex;
-  align-items: center;
-}
-
-.camp-filters__active {
-  display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 8px;
 }
 
-.active-chip {
-  margin: 0;
+.camp-filters__count {
+  margin-left: auto;
 
-  background: var(--md3-surface-container-high);
+  color: var(--md3-on-surface-variant);
+
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Chips */
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  max-width: 100%;
+  height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--md3-outline-variant);
+  border-radius: var(--md3-corner-full, 9999px);
+
+  background: transparent;
   color: var(--md3-on-surface);
+  cursor: pointer;
+
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+
+  transition:
+    background-color 0.2s
+      var(--md3-easing-emphasized, cubic-bezier(0.2, 0, 0, 1)),
+    border-color 0.2s var(--md3-easing-emphasized, cubic-bezier(0.2, 0, 0, 1)),
+    color 0.2s var(--md3-easing-emphasized, cubic-bezier(0.2, 0, 0, 1));
+}
+
+.filter-chip:hover {
+  background: var(--md3-surface-container);
+}
+
+.filter-chip:focus-visible {
+  outline: 2px solid var(--md3-primary);
+  outline-offset: 2px;
+}
+
+.filter-chip--active {
+  border-color: transparent;
+
+  background: var(--md3-secondary-container);
+  color: var(--md3-on-secondary-container);
+}
+
+.filter-chip--active:hover {
+  background: var(--md3-secondary-container);
+
+  filter: brightness(0.97);
+}
+
+.filter-chip__label {
+  overflow: hidden;
+
+  max-width: 22ch;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.filter-chip__caret {
+  margin-right: -4px;
+
+  color: var(--md3-on-surface-variant);
+}
+
+.filter-chip--active .filter-chip__caret {
+  color: inherit;
+}
+
+.filter-clear {
+  padding: 0 8px;
+  border: none;
+
+  background: transparent;
+  color: var(--md3-primary);
+  cursor: pointer;
+
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.filter-clear:focus-visible {
+  outline: 2px solid var(--md3-primary);
+  outline-offset: 2px;
+  border-radius: var(--md3-corner-small, 8px);
+}
+
+/*
+ * Popovers
+ *
+ * Every popup is the same three-part sheet — title, body, actions — so the
+ * four chips open into one recognisable thing rather than four.
+ *
+ * The surface belongs to the sheet rather than to the popup around it: below
+ * its 450px breakpoint QPopupProxy swaps the QMenu for a QDialog, whose only
+ * pre-painted child is a QCard — an unpainted sheet would sit transparent on
+ * the scrim. The menu keeps the matching radius so its elevation still falls
+ * around the right shape.
+ */
+.filter-menu.q-menu {
+  padding: 0;
+  border-radius: var(--md3-corner-large, 16px);
+
+  background: transparent;
+}
+
+.filter-pop {
+  display: flex;
+  flex-direction: column;
+
+  min-width: 244px;
+  border-radius: var(--md3-corner-large, 16px);
+
+  background: var(--md3-surface-container);
+}
+
+.filter-pop__title {
+  padding: 14px 16px 8px;
+
+  color: var(--md3-on-surface-variant);
+
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Rows carry their own 12px inset, so the list only needs a narrow rail —
+   a full 16px leaves every hover pill floating in the middle of the sheet. */
+.filter-pop__list {
+  overflow-y: auto;
+
+  max-height: min(46vh, 320px);
+  padding: 0 8px;
+}
+
+/* No actions below it, so the list supplies the sheet's bottom padding. */
+.filter-pop__list--flush {
+  padding-bottom: 8px;
+}
+
+.filter-pop__body {
+  padding: 0 16px;
+}
+
+.filter-pop__hint {
+  margin: 8px 2px 0;
+
+  color: var(--md3-on-surface-variant);
+
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.filter-pop__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+
+  margin-top: 12px;
+  padding: 8px;
+  border-top: 1px solid var(--md3-outline-variant);
+}
+
+.filter-item--selected {
+  color: var(--md3-primary);
+  font-weight: 600;
+}
+
+/* The theme paints every menu side section on-surface-variant, which outranks
+   a `color` prop on the icon — so the tick has to be coloured from here. */
+.filter-item--selected :deep(.q-item__section--side .q-icon) {
+  color: var(--md3-primary);
+}
+
+/*
+ * Date sheet. The picker ships its own 28px surface-container-high card, which
+ * inside a 16px menu of a different surface showed as a mismatched ring in the
+ * corners. Matching the radius and letting the picker go transparent makes the
+ * popup read as one sheet.
+ */
+.filter-menu--date.q-menu,
+.filter-pop--date {
+  border-radius: var(--md3-corner-extra-large, 28px);
+}
+
+.filter-pop--date {
+  /* The picker's natural width, but never wider than the dialog QPopupProxy
+     falls back to on a narrow screen. */
+  width: 328px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.filter-pop--date :deep(.q-date) {
+  width: 100%;
+  min-width: 0;
+  border-radius: 0;
+
+  background: transparent;
+}
+
+/*
+ * The sheet already pads its edges, so the view only needs room under the
+ * chips. The min-height is the theme's doing: it sizes day cells to 40px while
+ * Quasar gives each of the six week rows 16.66% of a 192px-min container — at
+ * the stock height the circles overflow their rows and collide. 344px leaves
+ * every row 42px.
+ */
+.filter-pop--date :deep(.q-date__view) {
+  min-height: 344px;
+  padding: 0 8px 8px;
+}
+
+.filter-pop__presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+
+  padding: 0 16px 4px;
+}
+
+.preset-chip {
+  padding: 6px 12px;
+  border: 1px solid var(--md3-outline-variant);
+  border-radius: var(--md3-corner-full, 9999px);
+
+  background: transparent;
+  color: var(--md3-on-surface-variant);
+  cursor: pointer;
+
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+
+  transition: background-color 0.2s
+    var(--md3-easing-emphasized, cubic-bezier(0.2, 0, 0, 1));
+}
+
+.preset-chip:hover {
+  background: var(--md3-surface-container-high);
+}
+
+.preset-chip:focus-visible {
+  outline: 2px solid var(--md3-primary);
+  outline-offset: 2px;
+}
+
+.preset-chip--active {
+  border-color: transparent;
+
+  background: var(--md3-primary-container);
+  color: var(--md3-on-primary-container);
+}
+
+.age-field :deep(input) {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+@media (max-width: 599.98px) {
+  .camp-filters {
+    /* One scrolling line rather than three wrapped rows of pills */
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .camp-filters::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* `auto` cannot push in a scroll container, so the count simply trails the
+     pills instead of being pinned right. */
+  .camp-filters__count {
+    order: 1;
+    margin-left: 0;
+  }
+
+  .filter-chip,
+  .filter-clear {
+    flex: none;
+  }
+
+  .filter-chip--sort {
+    order: 2;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .filter-chip,
+  .preset-chip {
+    transition: none;
+  }
 }
 </style>
 
 <i18n lang="yaml" locale="en">
-filters: 'Filters'
 countries: 'Countries'
 countries_selected: '{count} countries'
-age: 'Age'
+anywhere: 'Anywhere'
+age_title: 'Participant age'
+age_value: 'Age {value}'
+any_age: 'Any age'
+age_placeholder: 'e.g. 12'
+age_hint: 'Camps open to participants of this age.'
+age_years: 'years'
 dates: 'Dates'
+any_dates: 'Anytime'
+done: 'Done'
 sort_label: 'Sort'
 sort:
   start_asc: 'Starting soonest'
   start_desc: 'Starting latest'
   price_asc: 'Lowest price'
   price_desc: 'Highest price'
+preset:
+  this_month: 'This month'
+  next_3_months: 'Next 3 months'
+  summer: 'Summer'
 clear: 'Clear all'
-chip:
-  search: 'Search: {value}'
-  age: 'Age {value}'
 </i18n>
 
 <i18n lang="yaml" locale="de">
-filters: 'Filter'
 countries: 'Länder'
 countries_selected: '{count} Länder'
-age: 'Alter'
+anywhere: 'Überall'
+age_title: 'Alter'
+age_value: '{value} Jahre'
+any_age: 'Jedes Alter'
+age_placeholder: 'z. B. 12'
+age_hint: 'Camps, die für dieses Alter offen sind.'
+age_years: 'Jahre'
 dates: 'Zeitraum'
+any_dates: 'Jederzeit'
+done: 'Fertig'
 sort_label: 'Sortierung'
 sort:
   start_asc: 'Beginnt am frühesten'
   start_desc: 'Beginnt am spätesten'
   price_asc: 'Niedrigster Preis'
   price_desc: 'Höchster Preis'
-clear: 'Alle zurücksetzen'
-chip:
-  search: 'Suche: {value}'
-  age: 'Alter {value}'
+preset:
+  this_month: 'Diesen Monat'
+  next_3_months: 'Nächste 3 Monate'
+  summer: 'Sommer'
+clear: 'Zurücksetzen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-filters: 'Filtres'
 countries: 'Pays'
 countries_selected: '{count} pays'
-age: 'Âge'
+anywhere: 'Partout'
+age_title: 'Âge'
+age_value: '{value} ans'
+any_age: 'Tout âge'
+age_placeholder: 'p. ex. 12'
+age_hint: 'Camps ouverts aux participants de cet âge.'
+age_years: 'ans'
 dates: 'Période'
+any_dates: "N'importe quand"
+done: 'Terminé'
 sort_label: 'Trier'
 sort:
   start_asc: 'Commence le plus tôt'
   start_desc: 'Commence le plus tard'
   price_asc: 'Prix le plus bas'
   price_desc: 'Prix le plus élevé'
+preset:
+  this_month: 'Ce mois-ci'
+  next_3_months: 'Les 3 prochains mois'
+  summer: 'Été'
 clear: 'Tout effacer'
-chip:
-  search: 'Recherche : {value}'
-  age: 'Âge {value}'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-filters: 'Filtry'
 countries: 'Kraje'
 countries_selected: 'Kraje: {count}'
-age: 'Wiek'
+anywhere: 'Wszędzie'
+age_title: 'Wiek'
+age_value: 'Wiek {value}'
+any_age: 'Każdy wiek'
+age_placeholder: 'np. 12'
+age_hint: 'Obozy otwarte dla uczestników w tym wieku.'
+age_years: 'lat'
 dates: 'Termin'
+any_dates: 'Kiedykolwiek'
+done: 'Gotowe'
 sort_label: 'Sortowanie'
 sort:
   start_asc: 'Najbliższy termin'
   start_desc: 'Najpóźniejszy termin'
   price_asc: 'Najniższa cena'
   price_desc: 'Najwyższa cena'
-clear: 'Wyczyść wszystko'
-chip:
-  search: 'Szukaj: {value}'
-  age: 'Wiek {value}'
+preset:
+  this_month: 'W tym miesiącu'
+  next_3_months: 'Najbliższe 3 miesiące'
+  summer: 'Lato'
+clear: 'Wyczyść'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-filters: 'Filtry'
 countries: 'Země'
 countries_selected: 'Země: {count}'
-age: 'Věk'
+anywhere: 'Kdekoliv'
+age_title: 'Věk'
+age_value: 'Věk {value}'
+any_age: 'Jakýkoliv věk'
+age_placeholder: 'např. 12'
+age_hint: 'Tábory otevřené pro účastníky v tomto věku.'
+age_years: 'let'
 dates: 'Období'
+any_dates: 'Kdykoliv'
+done: 'Hotovo'
 sort_label: 'Řazení'
 sort:
   start_asc: 'Nejbližší začátek'
   start_desc: 'Nejpozdější začátek'
   price_asc: 'Nejnižší cena'
   price_desc: 'Nejvyšší cena'
-clear: 'Vymazat vše'
-chip:
-  search: 'Hledání: {value}'
-  age: 'Věk {value}'
+preset:
+  this_month: 'Tento měsíc'
+  next_3_months: 'Příští 3 měsíce'
+  summer: 'Léto'
+clear: 'Vymazat'
 </i18n>

@@ -1,50 +1,49 @@
 <template>
   <page-state-handler
     :error="fatalError"
-    padding
-    class="row justify-center"
+    class="camps"
   >
-    <div class="camp-index col-12 col-md-11 col-lg-10 col-xl-8 column no-wrap">
-      <!-- Hero: the page's whole job is "find a camp", so search leads. -->
-      <section class="camp-hero">
-        <span
-          class="camp-hero__shape camp-hero__shape--top"
-          aria-hidden="true"
+    <!--
+      HERO — deliberately one row deep. This is a directory, not a landing
+      page: the results have to be the first thing on screen, so the title and
+      the search box sit side by side instead of stacking.
+    -->
+    <section class="camps__section camps-hero">
+      <div
+        class="camps-hero__glow"
+        aria-hidden="true"
+      />
+
+      <div class="camps-hero__intro anim anim--1">
+        <h1 class="camps-hero__title">
+          {{ t('title') }}
+          <span class="camps-hero__highlight">{{ t('title_highlight') }}</span>
+        </h1>
+        <p class="camps-hero__subtitle">{{ t('subtitle') }}</p>
+      </div>
+
+      <div class="camps-hero__search anim anim--2">
+        <q-icon
+          name="search"
+          size="20px"
+          class="camps-hero__search-icon"
         />
-        <span
-          class="camp-hero__shape camp-hero__shape--bottom"
-          aria-hidden="true"
+        <q-input
+          v-model="search"
+          class="col"
+          :placeholder="t('search')"
+          :aria-label="t('search')"
+          data-test="camps-search"
+          debounce="300"
+          borderless
+          dense
+          clearable
         />
+      </div>
+    </section>
 
-        <div class="camp-hero__content">
-          <h1 class="camp-hero__title">
-            {{ t('title') }}
-          </h1>
-          <p class="camp-hero__subtitle">
-            {{ t('subtitle') }}
-          </p>
-
-          <div class="camp-hero__search">
-            <q-icon
-              name="search"
-              size="24px"
-              class="camp-hero__search-icon"
-            />
-            <q-input
-              v-model="search"
-              class="col"
-              :placeholder="t('search')"
-              :aria-label="t('search')"
-              data-test="camps-search"
-              debounce="300"
-              borderless
-              dense
-              clearable
-            />
-          </div>
-        </div>
-      </section>
-
+    <!-- =================================================== RESULTS -->
+    <section class="camps__section camps-results">
       <camp-filter-bar
         v-model:search="search"
         v-model:countries="countries"
@@ -52,26 +51,28 @@
         v-model:start-at="startAt"
         v-model:end-at="endAt"
         v-model:sort="sort"
-        class="camp-index__filters"
         @clear="clearFilters"
-      />
-
-      <!-- Result count. `role=status` so the change is announced, not just seen. -->
-      <div
-        class="camp-index__count"
-        role="status"
-        aria-live="polite"
-        data-test="camps-count"
       >
-        {{
-          initialLoading ? t('loading') : t('count', { count: total }, total)
-        }}
-      </div>
+        <!-- Result count. `role=status` so the change is announced, not just seen. -->
+        <template #status>
+          <span
+            role="status"
+            aria-live="polite"
+            data-test="camps-count"
+          >
+            {{
+              initialLoading
+                ? t('loading')
+                : t('count', { count: total }, total)
+            }}
+          </span>
+        </template>
+      </camp-filter-bar>
 
       <!-- Loading -->
       <div
         v-if="initialLoading"
-        class="camp-index__skeletons"
+        class="camps__skeletons"
       >
         <camp-card-skeleton
           v-for="n in 6"
@@ -82,23 +83,20 @@
       <!-- Nothing matches the current filters -->
       <div
         v-else-if="camps.length === 0 && activeFilterCount > 0"
-        class="empty-state column items-center justify-center"
+        class="camps-empty"
         data-test="camps-no-results"
       >
-        <q-icon
-          name="search_off"
-          size="64px"
-          class="empty-icon"
-        />
-        <div class="text-h6 q-mt-md">
-          {{ t('no_results.title') }}
+        <div class="camps-empty__icon">
+          <q-icon
+            name="search_off"
+            size="30px"
+          />
         </div>
-        <div class="camp-index__muted text-body2 q-mt-xs text-center">
-          {{ t('no_results.message') }}
-        </div>
+        <h2 class="camps-empty__title">{{ t('no_results.title') }}</h2>
+        <p class="camps-empty__text">{{ t('no_results.message') }}</p>
         <m-btn
-          class="q-mt-md"
           tonal
+          no-caps
           icon="filter_alt_off"
           :label="t('no_results.action')"
           @click="clearFilters"
@@ -108,20 +106,17 @@
       <!-- Nothing open at all -->
       <div
         v-else-if="camps.length === 0"
-        class="empty-state column items-center justify-center"
+        class="camps-empty"
         data-test="camps-empty"
       >
-        <q-icon
-          name="travel_explore"
-          size="64px"
-          class="empty-icon"
-        />
-        <div class="text-h6 q-mt-md">
-          {{ t('empty.title') }}
+        <div class="camps-empty__icon camps-empty__icon--tertiary">
+          <q-icon
+            name="travel_explore"
+            size="30px"
+          />
         </div>
-        <div class="camp-index__muted text-body2 q-mt-xs text-center">
-          {{ t('empty.message') }}
-        </div>
+        <h2 class="camps-empty__title">{{ t('empty.title') }}</h2>
+        <p class="camps-empty__text">{{ t('empty.message') }}</p>
       </div>
 
       <!-- Camps -->
@@ -134,10 +129,10 @@
         @load-more="loadMore"
       >
         <template #after>
-          <div class="camp-index__footer">
+          <div class="camps__footer">
             <div
               v-if="loadingMore"
-              class="camp-index__skeletons"
+              class="camps__skeletons"
             >
               <camp-card-skeleton
                 v-for="n in 3"
@@ -149,27 +144,26 @@
               v-else-if="error"
               class="column items-center q-gutter-y-sm"
             >
-              <div class="camp-index__muted text-body2">
-                {{ t('load_error') }}
-              </div>
+              <p class="camps__footer-text">{{ t('load_error') }}</p>
               <m-btn
                 text
+                no-caps
                 icon="refresh"
                 :label="t('retry')"
                 @click="loadMore"
               />
             </div>
 
-            <div
+            <p
               v-else-if="!hasMore"
-              class="camp-index__muted text-body2 text-center"
+              class="camps__footer-text"
             >
               {{ t('end_of_list') }}
-            </div>
+            </p>
           </div>
         </template>
       </camp-grid>
-    </div>
+    </section>
   </page-state-handler>
 </template>
 
@@ -322,155 +316,275 @@ function parseCountries(value: string | null): string[] | undefined {
 </script>
 
 <style scoped>
-.camp-index {
+/*
+ * Same shell as the landing page — a centred 1080px column on the plain page
+ * background, not a Quasar grid row — so a visitor arriving from "Browse open
+ * camps" stays inside one continuous design.
+ */
+.camps {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  padding: 0 24px 48px;
+  overflow-x: clip;
+
+  /* The theme ships shape and motion as Sass variables only, so mirror the
+   * ones used here as custom properties. Values from its variables.scss. */
+  --md3-corner-large: 16px;
+  --md3-corner-extra-large: 28px;
+  --md3-corner-full: 9999px;
+  --md3-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
+  --md3-easing-emphasized-decel: cubic-bezier(0.05, 0.7, 0.1, 1);
+}
+
+.camps__section {
+  width: 100%;
+  max-width: 1080px;
+}
+
+/* ========================================================== HERO */
+.camps-hero {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px 40px;
+
+  padding: 4px 0 0;
+}
+
+.camps-hero__glow {
+  position: absolute;
+  inset: -140px -20% auto;
+  z-index: -1;
+
+  height: 420px;
+  pointer-events: none;
+
+  background:
+    radial-gradient(
+      42% 55% at 18% 40%,
+      rgba(var(--md3-primary-rgb), 0.13),
+      transparent 70%
+    ),
+    radial-gradient(
+      36% 50% at 85% 30%,
+      rgba(var(--md3-primary-rgb), 0.07),
+      transparent 70%
+    );
+}
+
+.camps-hero__intro {
+  flex: 1 1 320px;
+
   min-width: 0;
 }
 
-.camp-index__muted {
-  color: var(--md3-on-surface-variant);
-}
-
-/* Hero */
-.camp-hero {
-  position: relative;
-
-  /* Clears the layout's floating header pills */
-  margin-top: 1rem;
-  padding: 40px 32px;
-  border-radius: 28px;
-  overflow: hidden;
-
-  background: linear-gradient(
-    135deg,
-    var(--md3-primary-container),
-    var(--md3-tertiary-container)
-  );
-  color: var(--md3-on-primary-container);
-}
-
-/* Same soft-shape language as the camp card banners */
-.camp-hero__shape {
-  position: absolute;
-  border-radius: 50%;
-
-  background: currentColor;
-  opacity: 0.08;
-}
-
-.camp-hero__shape--top {
-  top: -120px;
-  right: -60px;
-  width: 280px;
-  height: 280px;
-}
-
-.camp-hero__shape--bottom {
-  bottom: -100px;
-  left: -40px;
-  width: 200px;
-  height: 200px;
-}
-
-.camp-hero__content {
-  position: relative;
-
-  max-width: 640px;
-}
-
-.camp-hero__title {
+.camps-hero__title {
   margin: 0;
 
-  font-size: clamp(2rem, 5vw, 3rem);
-  font-weight: 500;
+  color: var(--md3-on-surface);
+
+  font-size: clamp(1.75rem, 3.4vw, 2.5rem);
+  font-weight: 800;
+  letter-spacing: -0.025em;
   line-height: 1.1;
-  letter-spacing: -0.02em;
 }
 
-.camp-hero__subtitle {
-  margin: 12px 0 0;
+.camps-hero__highlight {
+  display: inline-block;
 
-  font-size: 1rem;
+  padding: 0.04em 0.35em 0.1em;
+  border-radius: 0.32em 0.9em 0.32em 0.9em;
+
+  background: var(--md3-primary-container);
+  color: var(--md3-on-primary-container);
+
+  transform: rotate(-1.2deg);
+}
+
+.camps-hero__subtitle {
+  max-width: 46ch;
+  margin: 6px 0 0;
+
+  color: var(--md3-on-surface-variant);
+
+  font-size: 0.95rem;
   line-height: 1.5;
-
-  opacity: 0.85;
 }
 
-.camp-hero__search {
+.camps-hero__search {
   display: flex;
   align-items: center;
+  gap: 10px;
+  flex: 0 1 400px;
+
+  height: 52px;
+  padding: 0 8px 0 18px;
+  border: 1px solid var(--md3-outline-variant);
+  border-radius: var(--md3-corner-full);
+
+  background: var(--md3-surface-container-lowest);
+
+  transition:
+    border-color 0.2s var(--md3-easing-emphasized),
+    box-shadow 0.2s var(--md3-easing-emphasized);
+}
+
+.camps-hero__search:focus-within {
+  border-color: var(--md3-primary);
+  box-shadow: 0 0 0 3px rgba(var(--md3-primary-rgb), 0.16);
+}
+
+.camps-hero__search-icon {
+  color: var(--md3-on-surface-variant);
+}
+
+.camps-hero__search :deep(.q-field__control),
+.camps-hero__search :deep(input) {
+  height: 50px;
+  font-size: 1rem;
+}
+
+/* ======================================================= RESULTS */
+.camps-results {
+  display: flex;
+  flex-direction: column;
   gap: 12px;
 
-  margin-top: 28px;
-  height: 56px;
-  padding: 0 12px 0 20px;
-  border-radius: 28px;
-
-  background: var(--md3-surface);
-  color: var(--md3-on-surface);
-  box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.3),
-    0 2px 6px 2px rgba(0, 0, 0, 0.15);
+  padding-top: 12px;
 }
 
-.camp-hero__search-icon {
-  color: var(--md3-on-surface-variant);
-}
-
-.camp-hero__search :deep(.q-field__control) {
-  height: 56px;
-}
-
-.camp-index__filters {
-  margin-top: 24px;
-}
-
-.camp-index__count {
-  margin: 24px 0 12px;
-
-  color: var(--md3-on-surface-variant);
-
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.camp-index__skeletons {
+.camps__skeletons {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
   gap: 16px;
   align-items: stretch;
 }
 
-.camp-index__footer {
-  padding: 8px 0 32px;
+.camps__footer {
+  padding: 16px 0 32px;
 }
 
-.empty-state {
-  padding: 64px 16px;
-}
+.camps__footer-text {
+  margin: 0;
 
-.empty-icon {
   color: var(--md3-on-surface-variant);
 
-  opacity: 0.6;
+  font-size: 0.9rem;
+  text-align: center;
 }
 
-@media (max-width: 599px) {
-  .camp-hero {
-    padding: 28px 20px;
-    border-radius: 24px;
+/* Expressive asymmetric corner, as on the landing page's split cards */
+.camps-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  padding: clamp(40px, 6vw, 72px) clamp(24px, 5vw, 56px);
+  border-radius: var(--md3-corner-extra-large) var(--md3-corner-extra-large)
+    var(--md3-corner-extra-large) 72px;
+
+  background: var(--md3-surface-container-low);
+  text-align: center;
+}
+
+.camps-empty__icon {
+  display: inline-flex;
+
+  padding: 14px;
+  border-radius: var(--md3-corner-large);
+
+  background: var(--md3-secondary-container);
+  color: var(--md3-on-secondary-container);
+}
+
+.camps-empty__icon--tertiary {
+  background: var(--md3-tertiary-container);
+  color: var(--md3-on-tertiary-container);
+}
+
+.camps-empty__title {
+  margin: 20px 0 0;
+
+  color: var(--md3-on-surface);
+
+  font-size: clamp(1.25rem, 2.4vw, 1.6rem);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+}
+
+.camps-empty__text {
+  max-width: 48ch;
+  margin: 10px 0 20px;
+
+  color: var(--md3-on-surface-variant);
+
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+/* ===================================================== ENTRANCE */
+@media (prefers-reduced-motion: no-preference) {
+  .anim {
+    animation: camps-rise 0.7s var(--md3-easing-emphasized-decel) both;
   }
 
-  .camp-hero__search {
-    margin-top: 20px;
+  .anim--1 {
+    animation-delay: 0.05s;
+  }
+
+  .anim--2 {
+    animation-delay: 0.15s;
+  }
+}
+
+@keyframes camps-rise {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* =================================================== RESPONSIVE */
+@media (max-width: 700px) {
+  .camps {
+    padding: 0 16px 40px;
+  }
+
+  .camps-hero {
+    gap: 14px;
+  }
+
+  .camps-hero__search {
+    flex-basis: 100%;
+    height: 50px;
+  }
+
+  .camps-hero__search :deep(.q-field__control),
+  .camps-hero__search :deep(input) {
+    height: 48px;
+  }
+
+  .camps-empty {
+    border-radius: var(--md3-corner-extra-large) var(--md3-corner-extra-large)
+      var(--md3-corner-extra-large) 48px;
   }
 }
 </style>
 
 <i18n lang="yaml" locale="en">
-title: 'Find your camp'
-subtitle: 'Browse the camps that are open for registration right now.'
+title: 'Find your'
+title_highlight: 'next camp'
+subtitle: 'Every camp currently open for registration.'
 search: 'Search by name'
 loading: 'Loading camps…'
 count: 'No camps | 1 camp | {count} camps'
@@ -486,8 +600,9 @@ retry: 'Try again'
 end_of_list: 'That is every camp open right now.'
 </i18n>
 <i18n lang="yaml" locale="de">
-title: 'Finde dein Camp'
-subtitle: 'Entdecke die Camps, die gerade zur Anmeldung geöffnet sind.'
+title: 'Finde dein'
+title_highlight: 'nächstes Camp'
+subtitle: 'Alle Camps, die gerade zur Anmeldung geöffnet sind.'
 search: 'Nach Name suchen'
 loading: 'Camps werden geladen…'
 count: 'Keine Camps | 1 Camp | {count} Camps'
@@ -503,8 +618,9 @@ retry: 'Erneut versuchen'
 end_of_list: 'Das sind alle derzeit geöffneten Camps.'
 </i18n>
 <i18n lang="yaml" locale="fr">
-title: 'Trouve ton camp'
-subtitle: 'Découvre les camps actuellement ouverts aux inscriptions.'
+title: 'Trouve ton'
+title_highlight: 'prochain camp'
+subtitle: 'Tous les camps actuellement ouverts aux inscriptions.'
 search: 'Rechercher par nom'
 loading: 'Chargement des camps…'
 count: 'Aucun camp | 1 camp | {count} camps'
@@ -520,8 +636,9 @@ retry: 'Réessayer'
 end_of_list: 'Ce sont tous les camps actuellement ouverts.'
 </i18n>
 <i18n lang="yaml" locale="pl">
-title: 'Znajdź swój obóz'
-subtitle: 'Przeglądaj obozy, na które trwają obecnie zapisy.'
+title: 'Znajdź swój'
+title_highlight: 'następny obóz'
+subtitle: 'Wszystkie obozy, na które trwają obecnie zapisy.'
 search: 'Szukaj po nazwie'
 loading: 'Ładowanie obozów…'
 # Count-invariant phrasing — no Polish plural rules are configured
@@ -538,8 +655,9 @@ retry: 'Spróbuj ponownie'
 end_of_list: 'To wszystkie obecnie otwarte obozy.'
 </i18n>
 <i18n lang="yaml" locale="cs">
-title: 'Najdi svůj tábor'
-subtitle: 'Prohlédni si tábory, které jsou právě otevřené k registraci.'
+title: 'Najdi svůj'
+title_highlight: 'další tábor'
+subtitle: 'Všechny tábory, které jsou právě otevřené k registraci.'
 search: 'Hledat podle názvu'
 loading: 'Načítání táborů…'
 # Count-invariant phrasing — no Czech plural rules are configured

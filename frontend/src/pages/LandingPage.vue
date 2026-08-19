@@ -1,8 +1,14 @@
 <template>
   <q-page class="landing">
     <!-- ====================================================== HERO -->
-    <section class="landing__section hero">
-      <div class="hero__glow" />
+    <section
+      class="landing__section hero"
+      aria-labelledby="landing-hero-title"
+    >
+      <div
+        class="hero__glow"
+        aria-hidden="true"
+      />
 
       <div class="hero__eyebrow anim anim--1">
         <q-icon
@@ -12,7 +18,10 @@
         <span>{{ t('hero.eyebrow') }}</span>
       </div>
 
-      <h1 class="hero__title anim anim--2">
+      <h1
+        id="landing-hero-title"
+        class="hero__title anim anim--2"
+      >
         {{ t('hero.title') }}
         <br />
         <span class="hero__highlight">{{ t('hero.title_highlight') }}</span>
@@ -73,8 +82,16 @@
     </section>
 
     <!-- ================================================== FEATURES -->
-    <section class="landing__section features">
-      <h2 class="section-title">{{ t('feature.title') }}</h2>
+    <section
+      class="landing__section features"
+      aria-labelledby="landing-features-title"
+    >
+      <h2
+        id="landing-features-title"
+        class="section-title"
+      >
+        {{ t('feature.title') }}
+      </h2>
       <p class="section-subtitle">{{ t('feature.subtitle') }}</p>
 
       <div class="features__grid">
@@ -115,8 +132,16 @@
     </section>
 
     <!-- ===================================================== STEPS -->
-    <section class="landing__section steps">
-      <h2 class="section-title">{{ t('step.title') }}</h2>
+    <section
+      class="landing__section steps"
+      aria-labelledby="landing-steps-title"
+    >
+      <h2
+        id="landing-steps-title"
+        class="section-title"
+      >
+        {{ t('step.title') }}
+      </h2>
 
       <ol class="steps__list">
         <li
@@ -137,11 +162,19 @@
     </section>
 
     <!-- ================================================= SELF-HOST -->
-    <section class="landing__section selfhost">
+    <section
+      class="landing__section selfhost"
+      aria-labelledby="landing-selfhost-title"
+    >
       <div class="selfhost__card">
         <div class="selfhost__content">
           <span class="selfhost__eyebrow">{{ t('selfhost.eyebrow') }}</span>
-          <h2 class="selfhost__title">{{ t('selfhost.title') }}</h2>
+          <h2
+            id="landing-selfhost-title"
+            class="selfhost__title"
+          >
+            {{ t('selfhost.title') }}
+          </h2>
           <p class="selfhost__text">{{ t('selfhost.text') }}</p>
 
           <ul class="selfhost__points">
@@ -181,17 +214,25 @@
           </div>
           <pre class="selfhost__terminal-body">
             <span class="t-dim"># {{ t('selfhost.terminal_comment') }}</span>
-<span class="t-prompt">$</span> git clone marvin-wtt/CampRegistration
-<span class="t-prompt">$</span> docker compose up -d
-<span class="t-ok">✓</span> {{ t('selfhost.terminal_done') }}</pre>
+            <span class="t-prompt">$</span> git clone marvin-wtt/CampRegistration
+            <span class="t-prompt">$</span> docker compose up -d
+            <span class="t-ok">✓</span> {{ t('selfhost.terminal_done') }}</pre>
         </div>
       </div>
     </section>
 
     <!-- ======================================================= CTA -->
-    <section class="landing__section cta">
+    <section
+      class="landing__section cta"
+      aria-labelledby="landing-cta-title"
+    >
       <div class="cta__card">
-        <h2 class="cta__title">{{ t('cta.title') }}</h2>
+        <h2
+          id="landing-cta-title"
+          class="cta__title"
+        >
+          {{ t('cta.title') }}
+        </h2>
         <p class="cta__text">{{ t('cta.text') }}</p>
         <m-btn
           :label="organizerCtaLabel"
@@ -228,6 +269,12 @@ const { user } = storeToRefs(profileStore);
 
 useMeta(() => ({
   title: t('meta_title'),
+  meta: {
+    description: {
+      name: 'description',
+      content: t('meta_description'),
+    },
+  },
 }));
 
 const organizerCtaLabel = computed<string>(() =>
@@ -268,6 +315,14 @@ const extraChips = [
  * without manual overrides.
  */
 .landing {
+  /* The theme ships shape and motion as Sass variables only, so mirror the
+   * ones used here as custom properties. Values from its variables.scss. */
+  --md3-corner-large: 16px;
+  --md3-corner-extra-large: 28px;
+  --md3-corner-full: 9999px;
+  --md3-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
+  --md3-easing-emphasized-decel: cubic-bezier(0.05, 0.7, 0.1, 1);
+
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -468,7 +523,12 @@ const extraChips = [
   border-radius: var(--md3-corner-extra-large) 48px
     var(--md3-corner-extra-large) 48px;
   background: var(--md3-surface-container-high);
-  transform: translateY(-3px);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .feature-card:hover {
+    transform: translateY(-3px);
+  }
 }
 
 .feature-card__icon {
@@ -827,6 +887,7 @@ const extraChips = [
 
 <i18n lang="yaml" locale="en">
 meta_title: 'Camp management made simple'
+meta_description: '@:app_name is a free, open-source platform for organizing youth camps: online registration forms, participant tables, room and program planning, emails, and newsletters.'
 hero:
   eyebrow: 'Free & open-source camp management'
   title: 'Run your camp,'
@@ -912,6 +973,7 @@ cta:
 
 <i18n lang="yaml" locale="de">
 meta_title: 'Camp-Verwaltung einfach gemacht'
+meta_description: '@:app_name ist eine kostenlose Open-Source-Plattform für die Organisation von Camps: Online-Anmeldeformulare, Teilnehmendentabellen, Zimmer- und Programmplanung, E-Mails und Newsletter.'
 hero:
   eyebrow: 'Kostenlose Open-Source-Camp-Verwaltung'
   title: 'Organisiere dein Camp,'
@@ -997,6 +1059,7 @@ cta:
 
 <i18n lang="yaml" locale="fr">
 meta_title: 'La gestion de camps simplifiée'
+meta_description: '@:app_name est une plateforme gratuite et open source pour organiser des camps : formulaires d’inscription en ligne, tableaux de participants, planification des chambres et du programme, e-mails et newsletters.'
 hero:
   eyebrow: 'Gestion de camps gratuite et open source'
   title: 'Organisez votre camp,'
@@ -1082,6 +1145,7 @@ cta:
 
 <i18n lang="yaml" locale="pl">
 meta_title: 'Proste zarządzanie obozami'
+meta_description: '@:app_name to darmowa platforma open source do organizacji obozów: internetowe formularze zapisów, tabele uczestników, planowanie pokoi i programu, e-maile i newslettery.'
 hero:
   eyebrow: 'Darmowe zarządzanie obozami, open source'
   title: 'Organizuj obóz,'
@@ -1167,6 +1231,7 @@ cta:
 
 <i18n lang="yaml" locale="cs">
 meta_title: 'Jednoduchá správa táborů'
+meta_description: '@:app_name je bezplatná open-source platforma pro organizaci táborů: online registrační formuláře, tabulky účastníků, plánování pokojů a programu, e-maily a newslettery.'
 hero:
   eyebrow: 'Bezplatná open-source správa táborů'
   title: 'Organizujte tábor,'
