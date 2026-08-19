@@ -65,7 +65,7 @@ export interface CampQuery {
   sortType?: 'asc' | 'desc';
 
   name?: string;
-  country?: string;
+  country?: string | string[];
   age?: number;
   startAt?: string;
   endAt?: string;

@@ -1,4 +1,6 @@
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter, type LocationQuery } from 'vue-router';
+
+type QueryParamValue = string | number | boolean | null | undefined;
 
 interface EnumQueryParamOptions {
   caseInsensitive?: boolean;
@@ -6,6 +8,7 @@ interface EnumQueryParamOptions {
 
 export function useRouteQueryParams() {
   const route = useRoute();
+  const router = useRouter();
 
   /**
    * Returns a query parameter only when it occurs exactly once and has a
@@ -99,10 +102,39 @@ export function useRouteQueryParams() {
     return Number.isFinite(number) ? number : null;
   }
 
+  /**
+   * Merges `params` into the current query string. `null`, `undefined` and empty
+   * strings remove their key, so a filter reset leaves a clean URL.
+   *
+   * Navigates with `replace` rather than `push`: filter changes are not history
+   * steps, and a debounced search would otherwise bury the previous page under
+   * one entry per keystroke.
+   */
+  function setQueryParams(params: Record<string, QueryParamValue>): void {
+    const query: LocationQuery = { ...route.query };
+
+    for (const [field, value] of Object.entries(params)) {
+      if (value === null || value === undefined || value === '') {
+        delete query[field];
+      } else {
+        query[field] = String(value);
+      }
+    }
+
+    // Vue Router still resolves and notifies on an identical target; skip it so
+    // reactive writers can't loop.
+    if (JSON.stringify(query) === JSON.stringify(route.query)) {
+      return;
+    }
+
+    void router.replace({ query });
+  }
+
   return {
     getStringQueryParam,
     getEnumQueryParam,
     getBooleanQueryParam,
     getNumericQueryParam,
+    setQueryParams,
   };
 }

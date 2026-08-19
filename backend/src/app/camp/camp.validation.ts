@@ -20,14 +20,32 @@ const index = z.object({
       startAt: z.iso.datetime(),
       endAt: z.iso.datetime(),
       age: z.coerce.number(),
-      country: z.string().length(2),
+      // `?country=de,fr`. A repeated parameter is accepted too, but comma form
+      // is the documented one: Express 5's default query parser does not decode
+      // the `country[]=` shape an array serializer would produce.
+      country: z
+        .union([z.string(), z.array(z.string())])
+        .transform((value) =>
+          (Array.isArray(value) ? value : value.split(',')).map((code) =>
+            code.trim().toLowerCase(),
+          ),
+        )
+        .pipe(z.array(z.string().length(2)).nonempty()),
       listed: z.stringbool(),
       status: z.enum(['open', 'upcoming', 'closed']),
       view: z.enum(['all', 'assigned']),
       // Options
       cursor: z.ulid(),
       limit: z.coerce.number().int().positive().max(100),
-      sortBy: z.string(),
+      sortBy: z.enum([
+        'startAt',
+        'endAt',
+        'price',
+        'minAge',
+        'maxAge',
+        'listed',
+        'createdAt',
+      ]),
       sortType: z.enum(['asc', 'desc']),
     })
     .partial() satisfies ZodType<CampQuery>,

@@ -5,42 +5,14 @@ import type {
   CampUpdateData,
 } from '@camp-registration/common/entities';
 import { useAPIService } from '@/services/APIService';
-import { useServiceHandler } from '@/composables/serviceHandler';
+import { useServiceNotifications } from '@/composables/serviceHandler';
 import { useCampBus } from '@/composables/bus';
 
 export const useCampsStore = defineStore('camps', () => {
   const apiService = useAPIService();
   const bus = useCampBus();
-  const {
-    data,
-    isLoading,
-    error,
-    reset,
-    withProgressNotification,
-    lazyFetch,
-    checkNotNullWithNotification,
-  } = useServiceHandler<Camp[]>('camp');
-
-  // Always fetch again since the permissions could have changed
-  bus.on('create', () => void reload());
-  bus.on('update', () => void reload());
-  bus.on('delete', () => void reload());
-
-  async function reload() {
-    reset();
-    return fetchData();
-  }
-
-  async function fetchData() {
-    return lazyFetch(
-      async () =>
-        await apiService.fetchCamps({
-          status: 'open',
-          listed: true,
-          limit: 50,
-        }),
-    );
-  }
+  const { withProgressNotification, checkNotNullWithNotification } =
+    useServiceNotifications('camp');
 
   async function createEntry(createData: CampCreateData): Promise<Camp> {
     return withProgressNotification('update', async () => {
@@ -76,11 +48,6 @@ export const useCampsStore = defineStore('camps', () => {
   }
 
   return {
-    reset,
-    data,
-    isLoading,
-    error,
-    fetchData,
     createEntry,
     updateEntry,
     deleteEntry,
