@@ -9,6 +9,11 @@ export default {
     success: 'Newsletter updated successfully',
     error: 'Failed to update newsletter',
   },
+  move: {
+    progress: 'Moving newsletter...',
+    success: 'Newsletter moved successfully',
+    error: 'Failed to move newsletter',
+  },
   delete: {
     progress: 'Deleting newsletter...',
     success: 'Newsletter deleted successfully',

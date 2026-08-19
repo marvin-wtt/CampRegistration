@@ -25,6 +25,10 @@ export interface NewsletterUpdateData {
   replyTo?: string | null;
 }
 
+export interface NewsletterOrganizationUpdateData {
+  organizationId: string;
+}
+
 export interface NewsletterQuery {
   view?: 'all' | 'assigned';
   cursor?: string;

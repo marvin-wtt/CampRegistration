@@ -88,6 +88,19 @@ export class NewsletterController extends BaseController {
     res.resource(new NewsletterResource(updated));
   }
 
+  async updateOrganization(req: Request, res: Response) {
+    const newsletter = req.modelOrFail('newsletter');
+    const organization = req.modelOrFail('organization');
+    await req.validate(validator.updateOrganization);
+
+    const updated = await this.newsletterService.moveNewsletterToOrganization(
+      newsletter.id,
+      organization.id,
+    );
+
+    res.resource(new NewsletterResource(updated));
+  }
+
   async destroy(req: Request, res: Response) {
     const newsletter = req.modelOrFail('newsletter');
     await req.validate(validator.destroy);

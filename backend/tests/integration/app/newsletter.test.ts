@@ -485,6 +485,118 @@ describe(BASE, () => {
     });
   });
 
+  describe(`PATCH ${BASE}/:newsletterId/organization`, () => {
+    it('should respond with `200` and move the newsletter', async () => {
+      const newsletter = await NewsletterFactory.create();
+      const organization = await OrganizationFactory.create();
+      const admin = await UserFactory.create({ role: 'ADMIN' });
+
+      const { body } = await request()
+        .patch(`${BASE}/${newsletter.id}/organization`)
+        .send({ organizationId: organization.id })
+        .auth(generateAccessToken(admin), { type: 'bearer' })
+        .expect(200);
+
+      expect(body.data).toMatchObject({
+        id: newsletter.id,
+        organizationId: organization.id,
+        organizationName: organization.name,
+      });
+
+      const moved = await prisma.newsletter.findUnique({
+        where: { id: newsletter.id },
+      });
+      expect(moved?.organizationId).toBe(organization.id);
+    });
+
+    it('should keep subscribers and managers when moving', async () => {
+      const { newsletter } = await createNewsletterWithManager();
+      await NewsletterSubscriberFactory.create({
+        newsletter: { connect: { id: newsletter.id } },
+      });
+      const organization = await OrganizationFactory.create();
+      const admin = await UserFactory.create({ role: 'ADMIN' });
+
+      await request()
+        .patch(`${BASE}/${newsletter.id}/organization`)
+        .send({ organizationId: organization.id })
+        .auth(generateAccessToken(admin), { type: 'bearer' })
+        .expect(200);
+
+      const managers = await prisma.newsletterManager.findMany({
+        where: { newsletterId: newsletter.id },
+      });
+      const subscribers = await prisma.newsletterSubscriber.findMany({
+        where: { newsletterId: newsletter.id },
+      });
+      expect(managers).toHaveLength(1);
+      expect(subscribers).toHaveLength(1);
+    });
+
+    it('should move the newsletter to an unverified organization', async () => {
+      // Moderation gates sending, not ownership.
+      const newsletter = await NewsletterFactory.create();
+      const organization = await OrganizationFactory.create({
+        verificationStatus: 'PENDING',
+      });
+      const admin = await UserFactory.create({ role: 'ADMIN' });
+
+      const { body } = await request()
+        .patch(`${BASE}/${newsletter.id}/organization`)
+        .send({ organizationId: organization.id })
+        .auth(generateAccessToken(admin), { type: 'bearer' })
+        .expect(200);
+
+      expect(body).toHaveProperty(
+        'data.organizationVerificationStatus',
+        'PENDING',
+      );
+    });
+
+    it('should respond with `401` when unauthenticated', async () => {
+      const newsletter = await NewsletterFactory.create();
+      const organization = await OrganizationFactory.create();
+
+      await request()
+        .patch(`${BASE}/${newsletter.id}/organization`)
+        .send({ organizationId: organization.id })
+        .expect(401);
+    });
+
+    it('should respond with `403` when the user is not a system administrator', async () => {
+      const { accessToken, newsletter } = await createNewsletterWithManager();
+      const organization = await OrganizationFactory.create();
+
+      await request()
+        .patch(`${BASE}/${newsletter.id}/organization`)
+        .send({ organizationId: organization.id })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(403);
+    });
+
+    it('should respond with `404` when the newsletter does not exist', async () => {
+      const organization = await OrganizationFactory.create();
+      const admin = await UserFactory.create({ role: 'ADMIN' });
+
+      await request()
+        .patch(`${BASE}/${ulid()}/organization`)
+        .send({ organizationId: organization.id })
+        .auth(generateAccessToken(admin), { type: 'bearer' })
+        .expect(404);
+    });
+
+    it('should respond with `404` when the organization does not exist', async () => {
+      const newsletter = await NewsletterFactory.create();
+      const admin = await UserFactory.create({ role: 'ADMIN' });
+
+      await request()
+        .patch(`${BASE}/${newsletter.id}/organization`)
+        .send({ organizationId: ulid() })
+        .auth(generateAccessToken(admin), { type: 'bearer' })
+        .expect(404);
+    });
+  });
+
   describe(`DELETE ${BASE}/:newsletterId`, () => {
     it('should respond with `204` and delete the newsletter', async () => {
       const { accessToken, newsletter } = await createNewsletterWithManager();

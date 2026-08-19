@@ -19,7 +19,7 @@ ownership and accountability relationship, deliberately _not_ a grant of access 
   prevents lockout.
 - **Restrict, never cascade.** `Camp.organizationId` and `Newsletter.organizationId` use
   `onDelete: Restrict`. Deleting an organization must never silently take registrations with it; the endpoint returns
-  `409` and the administrator moves or deletes the camps first.
+  `409` and the administrator moves or deletes the camps and newsletters first.
 - **The legacy organization is conditional.** The migration creates it only when the database already contains camps or
   newsletters. Fresh installs get none, and no application code may assume it exists.
 - **No server-side default organization.** `organizationId` is required on
@@ -235,5 +235,6 @@ organizations must also come from the factories and seeders, or the foreign keys
   client-side, at the cost of duplicating the merge rule.
 - **`campAccess` does not model camp-manager expiry.** Pre-existing; the server-side guard remains authoritative.
 - **The legacy organization is a permission vacuum by design** — it owns pre-existing camps but has no members, so
-  nobody gains organization-derived access to them. Administrators reassign camps to real organizations over time via
-  `PATCH /camps/:campId/organization`.
+  nobody gains organization-derived access to them. Administrators reassign camps and newsletters to real organizations
+  over time via `PATCH /camps/:campId/organization` and
+  `PATCH /newsletters/:newsletterId/organization`.

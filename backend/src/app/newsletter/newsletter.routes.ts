@@ -45,6 +45,14 @@ export class NewsletterRouter extends ModuleRouter {
       guard(newsletterManager('newsletter.edit')),
       controller(newsletterController, 'update'),
     );
+    // Reassigning ownership is a system-administrator action — bare `guard()`.
+    this.router.patch(
+      '/:newsletterId/organization',
+      auth(),
+      organizationFromBody(),
+      guard(),
+      controller(newsletterController, 'updateOrganization'),
+    );
     this.router.delete(
       '/:newsletterId',
       auth(),
