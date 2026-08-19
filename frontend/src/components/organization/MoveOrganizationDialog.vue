@@ -107,23 +107,21 @@ import { useAPIService } from '@/services/APIService';
 import { countryName } from '@/utils/countries';
 import type { Organization } from '@camp-registration/common/entities';
 
-const props = defineProps<{
-  /** Display name of the camp or newsletter being moved. */
-  name: string;
-  /** The current owner, excluded from the options — moving there is a no-op. */
-  organizationId: string;
-  /**
-   * Shown once an unverified organization is picked. The consequence differs
-   * per subject, so the caller supplies the wording — and omits it when moving
-   * to an unverified organization changes nothing.
-   */
-  unverifiedWarning?: string | undefined;
-}>();
-
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
 const { t, locale } = useI18n();
 const api = useAPIService();
+
+const {
+  name,
+  organizationId: currentOrganizationId,
+  unverifiedWarning,
+} = defineProps<{
+  name: string;
+  organizationId: string;
+  unverifiedWarning?: string | undefined;
+}>();
+
 defineEmits([...useDialogPluginComponent.emits]);
 
 interface OrganizationOption {
@@ -143,7 +141,7 @@ const selectedOption = ref<OrganizationOption>();
 
 const allOptions = computed<OrganizationOption[]>(() =>
   organizations.value
-    .filter((organization) => organization.id !== props.organizationId)
+    .filter((organization) => organization.id !== currentOrganizationId)
     .map((organization) => ({
       label: organization.name,
       caption: countryName(organization.country, locale.value),
@@ -153,7 +151,7 @@ const allOptions = computed<OrganizationOption[]>(() =>
 );
 
 const showUnverifiedWarning = computed(() => {
-  if (!props.unverifiedWarning || !selectedOption.value) {
+  if (!unverifiedWarning || !selectedOption.value) {
     return false;
   }
 
