@@ -6,19 +6,7 @@ import type { OrganizationVerificationStatus } from './Organization.js';
 
 export interface Camp extends Identifiable {
   organizationId: string;
-  /** The owning organization's name, for display next to the camp. */
   organizationName: string;
-  /**
-   * The owning organization's moderation status. Anything other than
-   * `VERIFIED` means the camp is absent from the public directory and refuses
-   * registrations regardless of its own `listed` flag and registration window —
-   * so management surfaces must say so rather than let it look live.
-   *
-   * The full status rather than a boolean, because "awaiting review" and
-   * "rejected" need different wording. Safe to carry: a camp whose organization
-   * is unverified is only readable by its own managers, so the status never
-   * reaches the public.
-   */
   organizationVerificationStatus: OrganizationVerificationStatus;
   listed: boolean;
   registrationOpensAt: string | null;
@@ -37,7 +25,6 @@ export interface Camp extends Identifiable {
   location: Translatable | null;
   price: number;
   freePlaces: Translatable<number> | null;
-  /** Derived from the registration window. */
   registrationStatus: CampRegistrationStatus;
 }
 
@@ -46,7 +33,6 @@ export interface CampDetails extends Camp {
   themes: Record<string, ITheme>;
 }
 
-/** `locales` is derived from `countries` server-side. */
 export type CampCreateData = Omit<
   Partial<CampDetails> & Camp,
   | 'id'
@@ -64,7 +50,6 @@ export type CampCreateData = Omit<
   preset?: 'standard' | 'minimal' | undefined | null;
 };
 
-/** Moving a camp between organizations is a system-administrator action. */
 export type CampUpdateData = Omit<Partial<CampCreateData>, 'organizationId'>;
 
 export interface CampOrganizationUpdateData {

@@ -40,8 +40,6 @@ export interface UserQuery {
   limit?: number;
   sortBy?: keyof User;
   sortType?: 'asc' | 'desc';
-
-  /** Free-text search across name and email. */
   search?: string;
   name?: string;
   email?: string;
