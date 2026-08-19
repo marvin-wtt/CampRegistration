@@ -3,7 +3,7 @@ import {
   privacyNoticeCompleteness,
   type CampPrivacyNotice,
   type OrganizationPrivacyNotice,
-  type PrivacyNoticeCompleteness,
+  type OrganizationPrivacyNoticeDetails,
   type PublishedPrivacyNotice,
 } from '@camp-registration/common/privacy';
 
@@ -11,15 +11,11 @@ import {
  * Carries the completeness result alongside the notice so the wizard's progress
  * meter and the server's publish check can never disagree.
  */
-interface OrganizationPrivacyNoticeResourceData extends OrganizationPrivacyNotice {
-  completeness: PrivacyNoticeCompleteness;
-}
-
 export class OrganizationPrivacyNoticeResource extends JsonResource<
   OrganizationPrivacyNotice,
-  OrganizationPrivacyNoticeResourceData
+  OrganizationPrivacyNoticeDetails
 > {
-  transform(): OrganizationPrivacyNoticeResourceData {
+  transform(): OrganizationPrivacyNoticeDetails {
     return {
       ...this.data,
       completeness: privacyNoticeCompleteness(this.data.content),

@@ -25,14 +25,14 @@ export class OrganizationPrivacyNoticeRouter extends ModuleRouter {
     this.router.get(
       '/',
       guard(organizationMember('organization.view')),
-      controller(privacyNoticeController, 'show'),
+      controller(privacyNoticeController, 'showOrganization'),
     );
     // A replace, not an append: the client sends the notice it wants live, and
     // sending the same one twice leaves the same single version behind.
     this.router.put(
       '/',
       guard(organizationMember('organization.edit')),
-      controller(privacyNoticeController, 'update'),
+      controller(privacyNoticeController, 'updateOrganization'),
     );
   }
 }
@@ -65,14 +65,14 @@ export class CampPrivacyNoticeRouter extends ModuleRouter {
       '/addendum',
       auth(),
       guard(campManager('camp.view')),
-      controller(privacyNoticeController, 'showCamp'),
+      controller(privacyNoticeController, 'showAddendum'),
     );
 
     this.router.put(
       '/addendum',
       auth(),
       guard(campManager('camp.edit')),
-      controller(privacyNoticeController, 'updateCamp'),
+      controller(privacyNoticeController, 'updateAddendum'),
     );
   }
 }

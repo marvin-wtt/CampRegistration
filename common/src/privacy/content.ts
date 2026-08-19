@@ -1,4 +1,5 @@
 import type { Translatable } from '../entities/Translatable.js';
+import type { PrivacyNoticeCompleteness } from './completeness.js';
 import type {
   LegalBasisKey,
   PrivacyDataCategoryRef,
@@ -192,6 +193,15 @@ export interface OrganizationPrivacyNotice {
   content: PrivacyNoticeContent;
   publishedVersion: number | null;
   publishedAt: string | null;
+}
+
+/**
+ * The notice as the editor receives it. The completeness result travels with
+ * it so the wizard's progress meter and the server's publish check can never
+ * disagree — both read the one `privacyNoticeCompleteness`.
+ */
+export interface OrganizationPrivacyNoticeDetails extends OrganizationPrivacyNotice {
+  completeness: PrivacyNoticeCompleteness;
 }
 
 export type PrivacyNoticeUpdateData = Pick<

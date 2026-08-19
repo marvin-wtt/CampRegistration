@@ -18,7 +18,7 @@ export class PrivacyNoticeController extends BaseController {
     super();
   }
 
-  async show(req: Request, res: Response) {
+  async showOrganization(req: Request, res: Response) {
     const organization = req.modelOrFail('organization');
 
     const notice = await this.privacyNoticeService.getOrganizationNotice(
@@ -28,11 +28,11 @@ export class PrivacyNoticeController extends BaseController {
     res.resource(new OrganizationPrivacyNoticeResource(notice));
   }
 
-  async update(req: Request, res: Response) {
+  async updateOrganization(req: Request, res: Response) {
     const organization = req.modelOrFail('organization');
     const {
       body: { content },
-    } = await req.validate(validator.update);
+    } = await req.validate(validator.updateOrganization);
 
     const notice = await this.privacyNoticeService.publishOrganizationNotice(
       organization.id,
@@ -43,22 +43,26 @@ export class PrivacyNoticeController extends BaseController {
   }
 
   /** The camp's published addendum and the organization baseline it adds to. */
-  async showCamp(req: Request, res: Response) {
+  async showAddendum(req: Request, res: Response) {
     const camp = req.modelOrFail('camp');
 
-    const notice = await this.privacyNoticeService.getCampNotice(camp.id);
+    const notice = await this.privacyNoticeService.getCampAddendum(
+      camp.id,
+      camp.organizationId,
+    );
 
     res.resource(new CampPrivacyNoticeResource(notice));
   }
 
-  async updateCamp(req: Request, res: Response) {
+  async updateAddendum(req: Request, res: Response) {
     const camp = req.modelOrFail('camp');
     const {
       body: { content },
-    } = await req.validate(validator.updateCamp);
+    } = await req.validate(validator.updateAddendum);
 
     const notice = await this.privacyNoticeService.publishCampAddendum(
       camp.id,
+      camp.organizationId,
       content,
     );
 
@@ -68,7 +72,10 @@ export class PrivacyNoticeController extends BaseController {
   async showPublished(req: Request, res: Response) {
     const camp = req.modelOrFail('camp');
 
-    const notice = await this.privacyNoticeService.getPublishedNotice(camp.id);
+    const notice = await this.privacyNoticeService.getPublishedNotice(
+      camp.id,
+      camp.organizationId,
+    );
 
     res.resource(new PublishedPrivacyNoticeResource(notice));
   }

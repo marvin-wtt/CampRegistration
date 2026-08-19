@@ -1,16 +1,11 @@
 import { api } from '@/services/api';
 import type {
   CampPrivacyNotice,
-  OrganizationPrivacyNotice,
+  OrganizationPrivacyNoticeDetails,
   PrivacyNoticeAddendum,
-  PrivacyNoticeCompleteness,
   PrivacyNoticeContent,
   PublishedPrivacyNotice,
 } from '@camp-registration/common/privacy';
-
-export interface OrganizationPrivacyNoticeResult extends OrganizationPrivacyNotice {
-  completeness: PrivacyNoticeCompleteness;
-}
 
 /**
  * Publishing is the only write on either notice: there is no server-side draft,
@@ -19,7 +14,7 @@ export interface OrganizationPrivacyNoticeResult extends OrganizationPrivacyNoti
 export function usePrivacyNoticeService() {
   async function fetchOrganizationNotice(
     organizationId: string,
-  ): Promise<OrganizationPrivacyNoticeResult> {
+  ): Promise<OrganizationPrivacyNoticeDetails> {
     const response = await api.get(
       `organizations/${organizationId}/privacy-notice/`,
     );
@@ -30,7 +25,7 @@ export function usePrivacyNoticeService() {
   async function publishOrganizationNotice(
     organizationId: string,
     content: PrivacyNoticeContent,
-  ): Promise<OrganizationPrivacyNoticeResult> {
+  ): Promise<OrganizationPrivacyNoticeDetails> {
     const response = await api.put(
       `organizations/${organizationId}/privacy-notice/`,
       { content },
@@ -56,9 +51,7 @@ export function usePrivacyNoticeService() {
    * added to — the public endpoint above returns the two already merged, which
    * cannot tell an author which half is theirs.
    */
-  async function fetchCampNoticeContext(
-    campId: string,
-  ): Promise<CampPrivacyNotice> {
+  async function fetchCampAddendum(campId: string): Promise<CampPrivacyNotice> {
     const response = await api.get(`camps/${campId}/privacy-notice/addendum`);
 
     return response?.data?.data;
@@ -79,7 +72,7 @@ export function usePrivacyNoticeService() {
     fetchOrganizationNotice,
     publishOrganizationNotice,
     fetchCampNotice,
-    fetchCampNoticeContext,
+    fetchCampAddendum,
     publishCampAddendum,
   };
 }

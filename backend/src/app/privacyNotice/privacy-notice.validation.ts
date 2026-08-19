@@ -104,7 +104,7 @@ const ContentSchema = z.object({
 }) satisfies ZodType<PrivacyNoticeContent>;
 
 /** The camp addendum states only what differs, so every field is optional. */
-export const AddendumSchema = z.object({
+const AddendumSchema = z.object({
   purposes: z
     .array(PurposeSchema)
     .max(PRIVACY_PURPOSE_KEYS.length + MAX_CUSTOM_ENTRIES)
@@ -122,19 +122,19 @@ export const AddendumSchema = z.object({
   additional: TranslatableSchema.nullish(),
 }) satisfies ZodType<PrivacyNoticeAddendum>;
 
-const update = z.object({
+const updateOrganization = z.object({
   body: z.object({
     content: ContentSchema,
   }) satisfies ZodType<PrivacyNoticeUpdateData>,
 });
 
-const updateCamp = z.object({
+const updateAddendum = z.object({
   body: z.object({
     content: AddendumSchema,
   }) satisfies ZodType<CampPrivacyNoticeUpdateData>,
 });
 
 export default {
-  update,
-  updateCamp,
+  updateOrganization,
+  updateAddendum,
 };

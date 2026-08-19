@@ -12,13 +12,19 @@ import {
   supervisoryAuthorityFor,
   type CampPrivacyNotice,
   type OrganizationPrivacyNotice,
+  type PrivacyDataCategoryEntry,
   type PrivacyNoticeAddendum,
   type PrivacyNoticeContent,
+  type PrivacyPurposeEntry,
+  type PrivacyRecipientEntry,
+  type PrivacyRetention,
+  type PrivacyThirdCountryTransfers,
   type PublishedPrivacyNotice,
 } from '@camp-registration/common/privacy';
 import type { Translatable } from '@camp-registration/common/entities';
 import { LegalService } from '#app/legal/legal.service';
-import { Prisma } from '#generated/prisma/client.js';
+import { Prisma, type PrivacyNoticeVersion } from '#generated/prisma/client.js';
+import type { PrivacyNoticeScope } from '#generated/prisma/enums';
 
 /** Lets the version lookups run either standalone or inside a publish transaction. */
 type PrivacyNoticeClient = Pick<
@@ -55,13 +61,7 @@ export class PrivacyNoticeService extends BaseService {
   ): Promise<OrganizationPrivacyNotice> {
     const published = await this.latestVersion('ORGANIZATION', organizationId);
 
-    return {
-      content:
-        (published?.content as PrivacyNoticeContent | undefined) ??
-        emptyPrivacyNoticeContent(),
-      publishedVersion: published?.version ?? null,
-      publishedAt: published?.publishedAt.toISOString() ?? null,
-    };
+    return this.toOrganizationNotice(published);
   }
 
   /**
@@ -83,9 +83,13 @@ export class PrivacyNoticeService extends BaseService {
       );
     }
 
-    await this.appendVersion('ORGANIZATION', organizationId, sanitized);
+    const published = await this.appendVersion(
+      'ORGANIZATION',
+      organizationId,
+      sanitized,
+    );
 
-    return this.getOrganizationNotice(organizationId);
+    return this.toOrganizationNotice(published);
   }
 
   /**
@@ -93,16 +97,12 @@ export class PrivacyNoticeService extends BaseService {
    * in the way. Published rather than merely written: information the public
    * cannot read has not been given to the data subject.
    */
-  async verificationBlocker(organizationId: string): Promise<string | null> {
+  async verificationBlockReason(
+    organizationId: string,
+  ): Promise<string | null> {
     const published = await this.latestVersion('ORGANIZATION', organizationId);
 
     return published ? null : 'its privacy notice has not been published';
-  }
-
-  async getCampAddendum(campId: string): Promise<PrivacyNoticeAddendum> {
-    const published = await this.latestVersion('CAMP', campId);
-
-    return (published?.content as PrivacyNoticeAddendum | undefined) ?? {};
   }
 
   /**
@@ -110,29 +110,16 @@ export class PrivacyNoticeService extends BaseService {
    * added to — the editor has to show an author what their organization already
    * says before it can show what the camp adds to it.
    */
-  async getCampNotice(campId: string): Promise<CampPrivacyNotice> {
-    const camp = await this.prisma.camp.findUniqueOrThrow({
-      where: { id: campId },
-      select: { organizationId: true },
-    });
-
+  async getCampAddendum(
+    campId: string,
+    organizationId: string,
+  ): Promise<CampPrivacyNotice> {
     const [organizationVersion, campVersion] = await Promise.all([
-      this.latestVersion('ORGANIZATION', camp.organizationId),
+      this.latestVersion('ORGANIZATION', organizationId),
       this.latestVersion('CAMP', campId),
     ]);
 
-    return {
-      content:
-        (campVersion?.content as PrivacyNoticeAddendum | undefined) ?? {},
-      organizationContent:
-        (organizationVersion?.content as PrivacyNoticeContent | undefined) ??
-        null,
-      organizationPublishedVersion: organizationVersion?.version ?? null,
-      organizationPublishedAt:
-        organizationVersion?.publishedAt.toISOString() ?? null,
-      publishedVersion: campVersion?.version ?? null,
-      publishedAt: campVersion?.publishedAt.toISOString() ?? null,
-    };
+    return this.toCampNotice(organizationVersion, campVersion);
   }
 
   /**
@@ -146,6 +133,7 @@ export class PrivacyNoticeService extends BaseService {
    */
   async publishCampAddendum(
     campId: string,
+    organizationId: string,
     content: PrivacyNoticeAddendum,
   ): Promise<CampPrivacyNotice> {
     const sanitized = this.sanitizeAddendum(content);
@@ -160,66 +148,30 @@ export class PrivacyNoticeService extends BaseService {
       );
     }
 
-    await this.appendVersion('CAMP', campId, sanitized);
-
-    return this.getCampNotice(campId);
-  }
-
-  /**
-   * Appends a version unless it would say exactly what the current one says.
-   * Both sides come out of the same sanitizer, so key order matches and a
-   * string compare is enough — and a false "changed" only costs a version
-   * number, where a false "same" would silently drop a real edit.
-   */
-  private async appendVersion(
-    scope: 'ORGANIZATION' | 'CAMP',
-    scopeId: string,
-    content: PrivacyNoticeContent | PrivacyNoticeAddendum,
-  ): Promise<void> {
-    // Serializable: the version number is derived from the read, and
-    // `@@unique([scope, scopeId, version])` turns two concurrent publishes into
-    // a P2002 the author sees as a 500 — with no draft on the server to retry
-    // from.
-    await this.prisma.$transaction(
-      async (tx) => {
-        const latest = await this.latestVersion(scope, scopeId, tx);
-
-        if (
-          latest &&
-          JSON.stringify(latest.content) === JSON.stringify(content)
-        ) {
-          return;
-        }
-
-        await tx.privacyNoticeVersion.create({
-          data: {
-            scope,
-            scopeId,
-            version: (latest?.version ?? 0) + 1,
-            content,
-          },
-        });
-      },
-      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+    const campVersion = await this.appendVersion('CAMP', campId, sanitized);
+    const organizationVersion = await this.latestVersion(
+      'ORGANIZATION',
+      organizationId,
     );
+
+    return this.toCampNotice(organizationVersion, campVersion);
   }
 
   /**
    * What a registrant is served. Reads the published versions, so an edit still
    * open in an author's browser cannot change what the public page says.
    */
-  async getPublishedNotice(campId: string): Promise<PublishedPrivacyNotice> {
-    const camp = await this.prisma.camp.findUniqueOrThrow({
-      where: { id: campId },
-      include: { organization: true },
-    });
-
-    const [organizationVersion, campVersion] = await Promise.all([
-      this.latestVersion('ORGANIZATION', camp.organizationId),
+  async getPublishedNotice(
+    campId: string,
+    organizationId: string,
+  ): Promise<PublishedPrivacyNotice> {
+    const [organization, organizationVersion, campVersion] = await Promise.all([
+      this.prisma.organization.findUniqueOrThrow({
+        where: { id: organizationId },
+      }),
+      this.latestVersion('ORGANIZATION', organizationId),
       this.latestVersion('CAMP', campId),
     ]);
-
-    const organization = camp.organization;
 
     return {
       controller: {
@@ -264,8 +216,51 @@ export class PrivacyNoticeService extends BaseService {
     };
   }
 
+  /**
+   * Appends a version unless it would say exactly what the current one says,
+   * and returns whichever version is live afterwards — read inside the same
+   * transaction, so a concurrent publish cannot make the author's response
+   * describe someone else's write.
+   *
+   * Both sides of the comparison come out of the same sanitizer, so key order
+   * matches and a string compare is enough — and a false "changed" only costs a
+   * version number, where a false "same" would silently drop a real edit.
+   */
+  private async appendVersion(
+    scope: PrivacyNoticeScope,
+    scopeId: string,
+    content: PrivacyNoticeContent | PrivacyNoticeAddendum,
+  ): Promise<PrivacyNoticeVersion> {
+    // Serializable: the version number is derived from the read, and
+    // `@@unique([scope, scopeId, version])` turns two concurrent publishes into
+    // a P2002 the author sees as a 500 — with no draft on the server to retry
+    // from.
+    return this.prisma.$transaction(
+      async (tx) => {
+        const latest = await this.latestVersion(scope, scopeId, tx);
+
+        if (
+          latest &&
+          JSON.stringify(latest.content) === JSON.stringify(content)
+        ) {
+          return latest;
+        }
+
+        return tx.privacyNoticeVersion.create({
+          data: {
+            scope,
+            scopeId,
+            version: (latest?.version ?? 0) + 1,
+            content,
+          },
+        });
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+    );
+  }
+
   private async latestVersion(
-    scope: 'ORGANIZATION' | 'CAMP',
+    scope: PrivacyNoticeScope,
     scopeId: string,
     client: PrivacyNoticeClient = this.prisma,
   ) {
@@ -273,6 +268,36 @@ export class PrivacyNoticeService extends BaseService {
       where: { scope, scopeId },
       orderBy: { version: 'desc' },
     });
+  }
+
+  private toOrganizationNotice(
+    version: PrivacyNoticeVersion | null,
+  ): OrganizationPrivacyNotice {
+    return {
+      content:
+        (version?.content as PrivacyNoticeContent | undefined) ??
+        emptyPrivacyNoticeContent(),
+      publishedVersion: version?.version ?? null,
+      publishedAt: version?.publishedAt.toISOString() ?? null,
+    };
+  }
+
+  private toCampNotice(
+    organizationVersion: PrivacyNoticeVersion | null,
+    campVersion: PrivacyNoticeVersion | null,
+  ): CampPrivacyNotice {
+    return {
+      content:
+        (campVersion?.content as PrivacyNoticeAddendum | undefined) ?? {},
+      organizationContent:
+        (organizationVersion?.content as PrivacyNoticeContent | undefined) ??
+        null,
+      organizationPublishedVersion: organizationVersion?.version ?? null,
+      organizationPublishedAt:
+        organizationVersion?.publishedAt.toISOString() ?? null,
+      publishedVersion: campVersion?.version ?? null,
+      publishedAt: campVersion?.publishedAt.toISOString() ?? null,
+    };
   }
 
   /**
@@ -284,30 +309,13 @@ export class PrivacyNoticeService extends BaseService {
   private sanitizeContent(content: PrivacyNoticeContent): PrivacyNoticeContent {
     return {
       ...content,
-      purposes: content.purposes.map((purpose) => ({
-        ...purpose,
-        legitimateInterest: this.sanitizePlainTranslatable(
-          purpose.legitimateInterest,
-        ),
-      })),
-      retention: content.retention
-        ? {
-            ...content.retention,
-            exceptions: retentionExceptions(content.retention).map(
-              (exception) => ({
-                ...exception,
-                label: this.sanitizePlainTranslatable(exception.label),
-                reason: this.sanitizePlainTranslatable(exception.reason),
-              }),
-            ),
-          }
-        : null,
-      thirdCountryTransfers: {
-        ...content.thirdCountryTransfers,
-        note: this.sanitizePlainTranslatable(
-          content.thirdCountryTransfers.note,
-        ),
-      },
+      purposes: this.sanitizePurposes(content.purposes),
+      dataCategories: this.sanitizeDataCategories(content.dataCategories),
+      recipients: this.sanitizeRecipients(content.recipients),
+      retention: content.retention && this.sanitizeRetention(content.retention),
+      thirdCountryTransfers: this.sanitizeTransfers(
+        content.thirdCountryTransfers,
+      ),
       automatedDecisionMakingDetails: this.sanitizePlainTranslatable(
         content.automatedDecisionMakingDetails,
       ),
@@ -316,39 +324,78 @@ export class PrivacyNoticeService extends BaseService {
     };
   }
 
-  /** The addendum's subset of the same fields, authored by a camp manager. */
+  /**
+   * The addendum's subset of the same fields, authored by a camp manager. It
+   * runs through the very same per-field helpers as the organization notice:
+   * an author-written field that only one of the two sanitized would be a field
+   * the other publishes raw.
+   */
   private sanitizeAddendum(
     content: PrivacyNoticeAddendum,
   ): PrivacyNoticeAddendum {
     return {
       ...content,
-      purposes: content.purposes?.map((purpose) => ({
-        ...purpose,
-        legitimateInterest: this.sanitizePlainTranslatable(
-          purpose.legitimateInterest,
-        ),
-      })),
-      retention: content.retention
-        ? {
-            ...content.retention,
-            exceptions: retentionExceptions(content.retention).map(
-              (exception) => ({
-                ...exception,
-                label: this.sanitizePlainTranslatable(exception.label),
-                reason: this.sanitizePlainTranslatable(exception.reason),
-              }),
-            ),
-          }
-        : content.retention,
-      thirdCountryTransfers: content.thirdCountryTransfers
-        ? {
-            ...content.thirdCountryTransfers,
-            note: this.sanitizePlainTranslatable(
-              content.thirdCountryTransfers.note,
-            ),
-          }
-        : content.thirdCountryTransfers,
+      purposes: content.purposes && this.sanitizePurposes(content.purposes),
+      dataCategories:
+        content.dataCategories &&
+        this.sanitizeDataCategories(content.dataCategories),
+      recipients:
+        content.recipients && this.sanitizeRecipients(content.recipients),
+      retention: content.retention && this.sanitizeRetention(content.retention),
+      thirdCountryTransfers:
+        content.thirdCountryTransfers &&
+        this.sanitizeTransfers(content.thirdCountryTransfers),
       additional: this.sanitizeTranslatable(content.additional),
+    };
+  }
+
+  private sanitizePurposes(
+    purposes: PrivacyPurposeEntry[],
+  ): PrivacyPurposeEntry[] {
+    return purposes.map((purpose) => ({
+      ...purpose,
+      legitimateInterest: this.sanitizePlainTranslatable(
+        purpose.legitimateInterest,
+      ),
+      label: this.sanitizePlainTranslatable(purpose.label),
+    }));
+  }
+
+  private sanitizeDataCategories(
+    categories: PrivacyDataCategoryEntry[],
+  ): PrivacyDataCategoryEntry[] {
+    return categories.map((category) => ({
+      ...category,
+      label: this.sanitizePlainTranslatable(category.label),
+    }));
+  }
+
+  private sanitizeRecipients(
+    recipients: PrivacyRecipientEntry[],
+  ): PrivacyRecipientEntry[] {
+    return recipients.map((recipient) => ({
+      ...recipient,
+      name: recipient.name ? sanitizePlainText(recipient.name) : recipient.name,
+    }));
+  }
+
+  private sanitizeRetention(retention: PrivacyRetention): PrivacyRetention {
+    return {
+      ...retention,
+      exceptions: retentionExceptions(retention).map((exception) => ({
+        ...exception,
+        label: this.sanitizePlainTranslatable(exception.label),
+        reason: this.sanitizePlainTranslatable(exception.reason),
+      })),
+    };
+  }
+
+  private sanitizeTransfers(
+    transfers: PrivacyThirdCountryTransfers,
+  ): PrivacyThirdCountryTransfers {
+    return {
+      ...transfers,
+      note: this.sanitizePlainTranslatable(transfers.note),
     };
   }
 

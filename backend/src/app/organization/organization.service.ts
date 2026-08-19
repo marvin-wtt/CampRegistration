@@ -176,7 +176,8 @@ export class OrganizationService extends BaseService {
     // Rejection is never blocked — a notice-less organization must stay
     // rejectable.
     if (decision.status === 'VERIFIED') {
-      const blocker = await this.privacyNoticeService.verificationBlocker(id);
+      const blocker =
+        await this.privacyNoticeService.verificationBlockReason(id);
 
       if (blocker) {
         throw new ApiError(

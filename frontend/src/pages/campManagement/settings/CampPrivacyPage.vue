@@ -432,7 +432,7 @@ const { canOrgFor } = useOrganizationPermissions();
 const { categoryLabel, purposeLabel, recipientLabel } = usePrivacyLabels();
 const { extractErrorText } = useErrorExtractor();
 const { showErrorNotification } = useServiceNotifications();
-const { fetchCampNoticeContext, publishCampAddendum, fetchCampNotice } =
+const { fetchCampAddendum, publishCampAddendum, fetchCampNotice } =
   usePrivacyNoticeService();
 
 const loading = ref(true);
@@ -507,7 +507,7 @@ onMounted(async () => {
     }
 
     const [context, notice] = await Promise.all([
-      fetchCampNoticeContext(id),
+      fetchCampAddendum(id),
       fetchCampNotice(id),
     ]);
 

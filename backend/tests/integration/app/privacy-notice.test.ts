@@ -135,6 +135,38 @@ describe('privacy notices', () => {
       expect(body.data.content.additional.en).toBe('<p>Fine</p>');
     });
 
+    it('should sanitize the plain-text labels an author names entries with', async () => {
+      const organization = await organizationWithoutNotice();
+      const accessToken = await organizationAdmin(organization.id);
+
+      const { body } = await request()
+        .put(publishUrl(organization.id))
+        .send({
+          content: completePrivacyNoticeContent({
+            purposes: [
+              {
+                key: 'custom:1',
+                legalBasis: 'contract',
+                label: { en: '<b>Archery</b>' },
+              },
+            ],
+            dataCategories: [
+              { key: 'custom:1', label: { en: '<img src=x onerror=1>Skill' } },
+            ],
+            recipients: [
+              { key: 'camp_staff' },
+              { key: 'platform_operator', name: '<i>Acme</i>' },
+            ],
+          }),
+        })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body.data.content.purposes[0].label.en).toBe('Archery');
+      expect(body.data.content.dataCategories[0].label.en).toBe('Skill');
+      expect(body.data.content.recipients[1].name).toBe('Acme');
+    });
+
     it('should append a version and never overwrite the previous one', async () => {
       const organization = await organizationWithoutNotice();
       const accessToken = await organizationAdmin(organization.id);
