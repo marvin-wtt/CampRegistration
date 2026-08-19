@@ -13,7 +13,7 @@ async function main() {
       sendDefaultPii: false,
       beforeSend(event, hint) {
         const err = hint.originalException;
-        if (err instanceof ApiError && err.isOperational) {
+        if (err instanceof ApiError && !err.isFault) {
           return null;
         }
         return event;

@@ -1,15 +1,11 @@
 import type {
   AppModule,
   AppRouter,
-  RoleToPermissions,
   BindOptions,
   ModuleOptions,
 } from '#core/base/AppModule';
 import { RegistrationRouter } from '#app/registration/registration.routes';
-import type {
-  CampManagerRole,
-  RegistrationPermission,
-} from '@camp-registration/common/permissions';
+import type { ScopedPermissions } from '@camp-registration/common/permissions';
 import { registerFileGuard } from '#app/file/file.guard';
 import { registrationFileGuard } from '#app/registration/registration.guard';
 import { RegistrationFilesRouter } from '#app/registration/registration-files.routes';
@@ -58,28 +54,27 @@ export class RegistrationModule implements AppModule {
     router.useRouter('/camps/:campId/registrations', new RegistrationRouter());
   }
 
-  registerPermissions(): RoleToPermissions<
-    CampManagerRole,
-    RegistrationPermission
-  > {
+  registerPermissions(): ScopedPermissions {
     // The 'camp.registrations.create' permission bypasses the registration
     // open/close checks, allowing managers to create registrations outside
     // the normal registration period.
     return {
-      DIRECTOR: [
-        'camp.registrations.view',
-        'camp.registrations.create',
-        'camp.registrations.edit',
-        'camp.registrations.delete',
-      ],
-      COORDINATOR: [
-        'camp.registrations.view',
-        'camp.registrations.create',
-        'camp.registrations.edit',
-        'camp.registrations.delete',
-      ],
-      COUNSELOR: ['camp.registrations.view', 'camp.registrations.create'],
-      VIEWER: ['camp.registrations.view'],
+      camp: {
+        DIRECTOR: [
+          'camp.registrations.view',
+          'camp.registrations.create',
+          'camp.registrations.edit',
+          'camp.registrations.delete',
+        ],
+        COORDINATOR: [
+          'camp.registrations.view',
+          'camp.registrations.create',
+          'camp.registrations.edit',
+          'camp.registrations.delete',
+        ],
+        COUNSELOR: ['camp.registrations.view', 'camp.registrations.create'],
+        VIEWER: ['camp.registrations.view'],
+      },
     };
   }
 }

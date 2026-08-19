@@ -13,6 +13,11 @@ export default {
     error: 'Failed to update camp',
     invalid: 'Invalid camp id',
   },
+  move: {
+    progress: 'Moving camp...',
+    success: 'Camp moved successfully',
+    error: 'Failed to move camp',
+  },
   delete: {
     progress: 'Deleting camp...',
     success: 'Camp deleted successfully',

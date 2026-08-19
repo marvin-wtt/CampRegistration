@@ -23,6 +23,15 @@ const routes: RouteRecordRaw[] = [
             name: 'camp',
             component: () => import('@/pages/camps/CampPage.vue'),
           },
+          // A permanent address for the Art. 13 information, so the
+          // confirmation mail can link to it and a registrant can come back to
+          // it after submitting.
+          {
+            path: ':campId/privacy',
+            name: 'camp.privacy',
+            component: () => import('@/pages/camps/CampPrivacyPage.vue'),
+            props: true,
+          },
         ],
       },
       {
@@ -125,12 +134,7 @@ const routes: RouteRecordRaw[] = [
     children: [
       {
         path: '',
-        name: 'management',
-        meta: {
-          hideDrawer: true,
-        },
-        component: () =>
-          import('@/pages/campManagement/ManagementIndexPage.vue'),
+        redirect: { name: 'management.camps' },
       },
       {
         path: 'camps',
@@ -140,9 +144,6 @@ const routes: RouteRecordRaw[] = [
             component: () =>
               import('@/pages/campManagement/CampManagementIndexPage.vue'),
             name: 'management.camps',
-            meta: {
-              hideDrawer: true,
-            },
           },
           {
             path: ':campId',
@@ -225,9 +226,79 @@ const routes: RouteRecordRaw[] = [
                     component: () =>
                       import('@/pages/campManagement/settings/FormEditPage.vue'),
                   },
+                  {
+                    path: 'privacy',
+                    name: 'management.camp.settings.privacy',
+                    component: () =>
+                      import('@/pages/campManagement/settings/CampPrivacyPage.vue'),
+                  },
                 ],
               },
             ],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    path: '/management/organizations',
+    component: () => import('@/layouts/OrganizationLayout.vue'),
+    meta: {
+      auth: true,
+    },
+    children: [
+      {
+        path: '',
+        name: 'management.organizations',
+        component: () =>
+          import('@/pages/organization/OrganizationIndexPage.vue'),
+      },
+      {
+        path: ':organizationId',
+        name: 'management.organization',
+        redirect: { name: 'management.organization.dashboard' },
+        children: [
+          {
+            path: 'dashboard',
+            name: 'management.organization.dashboard',
+            component: () =>
+              import('@/pages/organization/OrganizationDashboardPage.vue'),
+          },
+          {
+            path: 'camps',
+            name: 'management.organization.camps',
+            component: () =>
+              import('@/pages/organization/OrganizationCampsPage.vue'),
+          },
+          {
+            path: 'newsletters',
+            name: 'management.organization.newsletters',
+            component: () =>
+              import('@/pages/organization/OrganizationNewslettersPage.vue'),
+          },
+          {
+            path: 'members',
+            name: 'management.organization.members',
+            component: () =>
+              import('@/pages/organization/OrganizationMembersPage.vue'),
+          },
+          {
+            path: 'privacy',
+            name: 'management.organization.privacy',
+            component: () =>
+              import('@/pages/organization/OrganizationPrivacyPage.vue'),
+          },
+          {
+            path: 'verification',
+            name: 'management.organization.verification',
+            component: () =>
+              import('@/pages/organization/OrganizationVerificationPage.vue'),
+          },
+          {
+            path: 'settings',
+            name: 'management.organization.settings',
+            component: () =>
+              import('@/pages/organization/OrganizationSettingsPage.vue'),
           },
         ],
       },
@@ -262,11 +333,14 @@ const routes: RouteRecordRaw[] = [
       {
         path: '',
         name: 'administration',
-        meta: {
-          hideDrawer: true,
-        },
         component: () =>
           import('@/pages/administration/AdministrationIndexPage.vue'),
+      },
+      {
+        path: 'organizations',
+        name: 'administration.organizations',
+        component: () =>
+          import('@/pages/administration/OrganizationIndexPage.vue'),
       },
       {
         path: 'camps',
@@ -298,17 +372,15 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/settings',
+    name: 'settings',
+    redirect: { name: 'settings.profile' },
     component: () => import('@/layouts/AccountSettingsLayout.vue'),
     meta: {
       auth: true,
     },
     children: [
       {
-        path: 'account',
-        component: () => import('@/pages/settings/AccountSettingsPage.vue'),
-      },
-      {
-        name: 'settings',
+        name: 'settings.profile',
         path: 'profile',
         component: () => import('@/pages/settings/ProfileSettingsPage.vue'),
       },
@@ -316,6 +388,11 @@ const routes: RouteRecordRaw[] = [
         name: 'settings.security',
         path: 'security',
         component: () => import('@/pages/settings/SecuritySettingsPage.vue'),
+      },
+      {
+        name: 'settings.account',
+        path: 'account',
+        component: () => import('@/pages/settings/AccountSettingsPage.vue'),
       },
     ],
   },

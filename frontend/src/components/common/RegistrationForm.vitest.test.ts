@@ -20,9 +20,12 @@ installQuasarPlugin();
 describe('RegistrationForm', () => {
   const simpleCampDetails = {
     id: '',
+    organizationId: '',
+    organizationName: '',
+    organizationVerificationStatus: 'VERIFIED' as const,
     name: 'Test',
     confirmationMode: 'AUTOMATIC' as const,
-    public: true,
+    listed: true,
     registrationOpensAt: null,
     registrationClosesAt: null,
     countries: [],

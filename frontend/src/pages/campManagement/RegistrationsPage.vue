@@ -142,6 +142,10 @@ function onTemplatesPrint(templateIds: string[]) {
 
   openPrintIframe(`/print/tables?key=${encodeURIComponent(key)}`, {
     messagePrefix: 'PRINT_TABLES',
+    // Render at A4 landscape printable size (the widest sheet) so the print
+    // page lays out in a desktop-sized viewport instead of a 0x0 one.
+    widthPx: 1032,
+    heightPx: 1123,
     onError: (error) => {
       quasar.notify({
         type: 'negative',

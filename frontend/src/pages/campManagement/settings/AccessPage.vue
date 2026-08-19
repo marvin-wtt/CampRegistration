@@ -241,6 +241,41 @@
           />
         </q-card-section>
       </q-card>
+
+      <!-- Access held outside this list, so it is not read as exhaustive. -->
+      <q-card
+        v-if="organizationName"
+        flat
+        bordered
+        class="section-card org-card"
+      >
+        <q-card-section class="row items-start no-wrap q-gutter-sm">
+          <q-icon
+            name="apartment"
+            color="primary"
+            size="20px"
+            class="org-icon"
+          />
+          <div class="col">
+            <div class="text-subtitle2 text-weight-bold">
+              {{ t('organization.title', { organization: organizationName }) }}
+            </div>
+            <div class="text-body2 text-grey-6 q-mt-xs">
+              {{ t('organization.message') }}
+            </div>
+            <q-btn
+              :label="t('action.roles')"
+              icon="info_outline"
+              flat
+              no-caps
+              dense
+              color="primary"
+              class="q-mt-sm"
+              @click="showPermissionsDialog"
+            />
+          </div>
+        </q-card-section>
+      </q-card>
     </div>
   </page-state-handler>
 </template>
@@ -298,6 +333,10 @@ const userEmail = computed<string | undefined>(() => {
 
 const rows = computed<CampManager[]>(() => {
   return campManagerStore.data ?? [];
+});
+
+const organizationName = computed<string | undefined>(() => {
+  return campDetailsStore.data?.organizationName;
 });
 
 interface AccessSection {
@@ -393,14 +432,11 @@ function showPermissionsDialog() {
 }
 
 function showAddDialog() {
-  const date = new Date(campDetailsStore.data?.endAt ?? '');
-  date.setHours(23, 59, 59, 999);
-
   quasar
     .dialog({
       component: CampManagerCreateDialog,
       componentProps: {
-        date: date.toISOString(),
+        campEndAt: campDetailsStore.data?.endAt,
         roles: getRoleOptions(),
       },
     })
@@ -415,6 +451,7 @@ function showEditDialog(manager: CampManager) {
       component: CampManagerUpdateDialog,
       componentProps: {
         manager,
+        campEndAt: campDetailsStore.data?.endAt,
         roles: getRoleOptions(),
       },
     })
@@ -477,6 +514,14 @@ async function leaveCamp(manager: CampManager) {
 
 .section-card {
   border-radius: 16px;
+}
+
+.org-card {
+  background: var(--md3-surface-container-low);
+}
+
+.org-icon {
+  margin-top: 2px;
 }
 
 .count-badge {
@@ -633,6 +678,10 @@ section:
   members: 'Members'
   invitations: 'Pending invitations'
 
+organization:
+  title: 'Administrators of {organization} also have partial access'
+  message: 'Administrators of the owning organization can view and edit the camp settings and see this list, without appearing here. They cannot see registrations, participants or their personal data.'
+
 dialog:
   delete:
     title: 'Revoke access'
@@ -676,6 +725,10 @@ section:
   members: 'Mitglieder'
   invitations: 'Ausstehende Einladungen'
 
+organization:
+  title: 'Administratoren von {organization} haben ebenfalls eingeschränkten Zugriff'
+  message: 'Administratoren der besitzenden Organisation können die Camp-Einstellungen einsehen und bearbeiten sowie diese Liste sehen, ohne hier aufgeführt zu sein. Anmeldungen, Teilnehmer und deren personenbezogene Daten können sie nicht einsehen.'
+
 dialog:
   delete:
     title: 'Zugriff entziehen'
@@ -704,46 +757,50 @@ role:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-title: ‘Gérer l’accès’
-subtitle: ‘Contrôlez qui peut accéder à ce camp et quel rôle chaque personne possède.’
+title: "Gérer l'accès"
+subtitle: 'Contrôlez qui peut accéder à ce camp et quel rôle chaque personne possède.'
 
 action:
-  add: ‘Ajouter’
-  delete: ‘Supprimer’
-  edit: ‘Modifier’
-  leave: ‘Quitter le camp’
-  menu: ‘Actions’
-  roles: ‘Permissions par rôle’
+  add: 'Ajouter'
+  delete: 'Supprimer'
+  edit: 'Modifier'
+  leave: 'Quitter le camp'
+  menu: 'Actions'
+  roles: 'Permissions par rôle'
 
 section:
-  members: ‘Membres’
-  invitations: ‘Invitations en attente’
+  members: 'Membres'
+  invitations: 'Invitations en attente'
+
+organization:
+  title: 'Les administrateurs de {organization} ont également un accès partiel'
+  message: "Les administrateurs de l'organisation propriétaire peuvent consulter et modifier les paramètres du camp et voir cette liste, sans y figurer. Ils ne peuvent pas consulter les inscriptions, les participants ni leurs données personnelles."
 
 dialog:
   delete:
-    title: ‘Révoquer l’accès’
-    message: ‘Voulez-vous vraiment révoquer l’accès de cet utilisateur ?’
-    label: ‘E-mail’
+    title: "Révoquer l'accès"
+    message: "Voulez-vous vraiment révoquer l'accès de cet utilisateur ?"
+    label: 'E-mail'
   leave:
-    title: ‘Quitter le camp’
-    message: ‘Voulez-vous vraiment quitter ce camp ? Vous perdrez l’accès.’
-    label: ‘E-mail’
+    title: 'Quitter le camp'
+    message: "Voulez-vous vraiment quitter ce camp ? Vous perdrez l'accès."
+    label: 'E-mail'
 
 expiry:
-  until: ‘Jusqu’au {date}’
-  expired: ‘Expiré’
+  until: "Jusqu'au {date}"
+  expired: 'Expiré'
 
 empty:
-  title: ‘Personne n’a encore accès’
-  message: ‘Invitez des membres de l’équipe pour gérer ce camp ensemble.’
+  title: "Personne n'a encore accès"
+  message: "Invitez des membres de l'équipe pour gérer ce camp ensemble."
 
-you: ‘Vous’
+you: 'Vous'
 
 role:
-  coordinator: ‘Coordinateur’
-  counselor: ‘Conseiller’
-  director: ‘Directeur’
-  viewer: ‘Lecteur’
+  coordinator: 'Coordinateur'
+  counselor: 'Conseiller'
+  director: 'Directeur'
+  viewer: 'Lecteur'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -761,6 +818,10 @@ action:
 section:
   members: 'Członkowie'
   invitations: 'Oczekujące zaproszenia'
+
+organization:
+  title: 'Administratorzy organizacji {organization} również mają częściowy dostęp'
+  message: 'Administratorzy organizacji będącej właścicielem mogą przeglądać i edytować ustawienia obozu oraz widzieć tę listę, nie będąc na niej wymienieni. Nie mogą przeglądać rejestracji, uczestników ani ich danych osobowych.'
 
 dialog:
   delete:
@@ -804,6 +865,10 @@ action:
 section:
   members: 'Členové'
   invitations: 'Čekající pozvánky'
+
+organization:
+  title: 'Částečný přístup mají také správci organizace {organization}'
+  message: 'Správci vlastnící organizace mohou zobrazit a upravovat nastavení tábora a vidět tento seznam, aniž by zde byli uvedeni. Nemohou zobrazit registrace, účastníky ani jejich osobní údaje.'
 
 dialog:
   delete:

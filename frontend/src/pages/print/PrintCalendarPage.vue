@@ -28,7 +28,7 @@
     <div
       v-else
       class="print-sheet"
-      :class="isPortrait ? 'print-sheet--upright' : 'print-sheet--left'"
+      :class="isPortrait ? 'print-sheet--portrait' : 'print-sheet--landscape'"
     >
       <!-- Page header -->
       <div
@@ -504,13 +504,13 @@ function formatDay(dateStr: string): string {
 
 // A4 usable widths: (paper_mm - 2*12mm margin) * 96px/25.4mm
 .print-sheet {
-  &--upright {
+  &--portrait {
     // portrait: 210mm - 24mm = 186mm ≈ 703px
     max-width: 703px;
     margin: 0 auto;
   }
 
-  &--left {
+  &--landscape {
     // landscape: 297mm - 24mm = 273mm ≈ 1032px
     max-width: 1032px;
     margin: 0 auto;

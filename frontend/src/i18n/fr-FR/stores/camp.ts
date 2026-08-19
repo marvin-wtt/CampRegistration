@@ -13,6 +13,11 @@ export default {
     error: 'Échec de mise à jour du camp',
     invalid: 'ID de camp invalide',
   },
+  move: {
+    progress: 'Déplacement du camp...',
+    success: 'Camp déplacé avec succès',
+    error: 'Échec du déplacement du camp',
+  },
   delete: {
     progress: 'Suppression du camp en cours...',
     success: 'Camp supprimé avec succès',

@@ -6,6 +6,16 @@
     class="row justify-center"
   >
     <div class="dashboard-shell col-12 col-md-11 col-xl-10">
+      <!-- The most consequential thing a manager can be unaware of: the camp is
+           configured correctly but reaching nobody. -->
+      <organization-unverified-notice
+        v-if="camp"
+        subject="camp"
+        :organization-id="camp.organizationId"
+        :organization-name="camp.organizationName"
+        :verification-status="camp.organizationVerificationStatus"
+      />
+
       <camp-summary-hero />
 
       <section class="dashboard-section">
@@ -66,7 +76,7 @@
       </section>
 
       <section
-        v-if="canAccessAny('camp.tasks.view')"
+        v-if="can('camp.tasks.view')"
         class="dashboard-section"
       >
         <tasks-due-widget />
@@ -219,12 +229,13 @@ import { useTaskStore } from '@/stores/task-store';
 import { useCampStatistics } from '@/composables/campStatistics';
 import { useRegistrationHelper } from '@/composables/registrationHelper';
 import { usePermissions } from '@/composables/permissions';
+import OrganizationUnverifiedNotice from '@/components/organization/OrganizationUnverifiedNotice.vue';
 import {
   LOCAL_TEMPLATE_AGE,
   LOCAL_TEMPLATE_MISSING,
   LOCAL_TEMPLATE_PENDING,
 } from '@/components/campManagement/table/localTableTemplates';
-import type { Permission } from '@camp-registration/common/permissions';
+import type { PermissionRequirement } from '@/composables/scopePermissions';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -235,7 +246,7 @@ const campFilesStore = useCampFilesStore();
 const taskStore = useTaskStore();
 const stats = useCampStatistics();
 const helper = useRegistrationHelper();
-const { canAccessAny } = usePermissions();
+const { can, canAccess } = usePermissions();
 
 const {
   data: camp,
@@ -272,7 +283,7 @@ interface QuickAction {
   icon: string;
   color: string;
   route: string;
-  permission: Permission | Permission[];
+  permission: PermissionRequirement<'camp'>;
 }
 
 const quickActions = computed<QuickAction[]>(() =>
@@ -294,7 +305,7 @@ const quickActions = computed<QuickAction[]>(() =>
         icon: 'mark_email_unread',
         color: 'teal',
         route: 'management.camp.contact',
-        permission: ['camp.messages.create', 'camp.messages.view'],
+        permission: { any: ['camp.messages.create', 'camp.messages.view'] },
       },
       {
         key: 'program',
@@ -315,7 +326,7 @@ const quickActions = computed<QuickAction[]>(() =>
         permission: 'camp.rooms.view',
       },
     ] satisfies QuickAction[]
-  ).filter((action) => canAccessAny(action.permission)),
+  ).filter((action) => canAccess(action.permission)),
 );
 
 interface AttentionItem {
@@ -413,6 +424,8 @@ function goTo(routeName: string) {
 </script>
 
 <style scoped>
+/* Mirrors `.attention-card`, but keyed to `error`: that card lists things to
+   get around to, this one says the camp is currently reaching nobody. */
 .dashboard-shell {
   display: flex;
   flex-direction: column;

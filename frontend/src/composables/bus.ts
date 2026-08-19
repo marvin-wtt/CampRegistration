@@ -3,11 +3,13 @@ import { EventBus } from 'quasar';
 import {
   AUTH_BUS,
   CAMP_BUS,
+  ORGANIZATION_BUS,
   REGISTRATION_BUS,
   TEMPLATE_BUS,
 } from '@/utils/keys';
 import type {
   Camp,
+  Organization,
   Registration,
   Profile,
 } from '@camp-registration/common/entities';
@@ -34,6 +36,15 @@ export function useRegistrationBus(): EventBus<{
   delete: (registrationId: string) => void;
 }> {
   return inject(REGISTRATION_BUS, new EventBus());
+}
+
+export function useOrganizationBus(): EventBus<{
+  change: (organization?: Organization) => void;
+  create: (organization: Organization) => void;
+  update: (organization: Organization) => void;
+  delete: (organizationId: string) => void;
+}> {
+  return inject(ORGANIZATION_BUS, new EventBus());
 }
 
 export function useTemplateBus(): EventBus {

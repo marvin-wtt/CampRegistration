@@ -45,14 +45,14 @@ export class CampController extends BaseController {
   async index(req: Request, res: Response) {
     const { query } = await req.validate(validator.index);
 
-    const showPrivate = query.view === 'all' || query.view === 'assigned';
+    const showUnlisted = query.view === 'all' || query.view === 'assigned';
 
     const { camps, nextCursor, limit, total } =
       await this.campService.queryCamps(
         {
           managerUserId:
             query.view === 'assigned' ? req.authUserId() : undefined,
-          public: showPrivate ? query.public : true,
+          listed: showUnlisted ? query.listed : true,
           name: query.name,
           country: query.country,
           age: query.age,
@@ -76,6 +76,7 @@ export class CampController extends BaseController {
   async store(req: Request, res: Response) {
     const { body } = await req.validate(validator.store);
     const userId = req.authUserId();
+    const organization = req.modelOrFail('organization');
 
     // Check if the user is allowed to create a camp based on the reference camp
     // This must happen here because the body needs to be validated first
@@ -125,11 +126,12 @@ export class CampController extends BaseController {
     const camp = await this.campService.createCamp(
       userId,
       {
+        organizationId: organization.id,
         countries: body.countries,
         name: body.name,
         organizer: body.organizer,
         contactEmail: body.contactEmail,
-        public: body.public ?? false,
+        listed: body.listed ?? false,
         registrationOpensAt: body.registrationOpensAt ?? null,
         registrationClosesAt: body.registrationClosesAt ?? null,
         maxParticipants: body.maxParticipants,
@@ -151,6 +153,21 @@ export class CampController extends BaseController {
     res.status(httpStatus.CREATED).resource(new CampDetailsResource(camp));
   }
 
+  async updateOrganization(req: Request, res: Response) {
+    const camp = req.modelOrFail('camp');
+    const organization = req.modelOrFail('organization');
+    await req.validate(validator.updateOrganization);
+
+    const updatedCamp = await this.campService.moveCampToOrganization(
+      camp.id,
+      organization.id,
+    );
+
+    void this.realtimeService.emit(camp.id, 'camp', camp.id, 'updated');
+
+    res.resource(new CampResource(updatedCamp));
+  }
+
   async update(req: Request, res: Response) {
     const camp = req.modelOrFail('camp');
     const { body } = await req.validate(validator.update(camp));
@@ -160,7 +177,7 @@ export class CampController extends BaseController {
       name: body.name,
       organizer: body.organizer,
       contactEmail: body.contactEmail,
-      public: body.public,
+      listed: body.listed,
       registrationOpensAt: body.registrationOpensAt,
       registrationClosesAt: body.registrationClosesAt,
       maxParticipants: body.maxParticipants,

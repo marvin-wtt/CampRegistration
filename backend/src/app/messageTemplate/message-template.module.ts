@@ -1,14 +1,6 @@
-import type {
-  AppModule,
-  AppRouter,
-  RoleToPermissions,
-  BindOptions,
-} from '#core/base/AppModule';
+import type { AppModule, AppRouter, BindOptions } from '#core/base/AppModule';
 import { MessageTemplateRouter } from '#app/messageTemplate/message-template.routes';
-import type {
-  CampManagerRole,
-  MessageTemplatePermission,
-} from '@camp-registration/common/permissions';
+import type { ScopedPermissions } from '@camp-registration/common/permissions';
 import { registerFileGuard } from '#app/file/file.guard';
 import { messageTemplateFileGuard } from '#app/messageTemplate/message-template.guard';
 import { resolve } from '#core/ioc/container';
@@ -33,25 +25,24 @@ export class MessageTemplateModule implements AppModule {
     );
   }
 
-  registerPermissions(): RoleToPermissions<
-    CampManagerRole,
-    MessageTemplatePermission
-  > {
+  registerPermissions(): ScopedPermissions {
     return {
-      DIRECTOR: [
-        'camp.message_templates.view',
-        'camp.message_templates.create',
-        'camp.message_templates.edit',
-        'camp.message_templates.delete',
-      ],
-      COORDINATOR: [
-        'camp.message_templates.view',
-        'camp.message_templates.create',
-        'camp.message_templates.edit',
-        'camp.message_templates.delete',
-      ],
-      COUNSELOR: ['camp.message_templates.view'],
-      VIEWER: [],
+      camp: {
+        DIRECTOR: [
+          'camp.message_templates.view',
+          'camp.message_templates.create',
+          'camp.message_templates.edit',
+          'camp.message_templates.delete',
+        ],
+        COORDINATOR: [
+          'camp.message_templates.view',
+          'camp.message_templates.create',
+          'camp.message_templates.edit',
+          'camp.message_templates.delete',
+        ],
+        COUNSELOR: ['camp.message_templates.view'],
+        VIEWER: [],
+      },
     };
   }
 }

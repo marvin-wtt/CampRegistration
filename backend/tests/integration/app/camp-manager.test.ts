@@ -34,7 +34,7 @@ describe('/api/v1/camps/:campId/managers', () => {
       { role: 'DIRECTOR', expectedStatus: 200 },
       { role: 'COORDINATOR', expectedStatus: 200 },
       { role: 'COUNSELOR', expectedStatus: 200 },
-      { role: 'VIEWER', expectedStatus: 403 },
+      { role: 'VIEWER', expectedStatus: 200 },
     ])(
       'should respond with `$expectedStatus` status code when user is $role',
       async ({ role, expectedStatus }) => {
@@ -104,7 +104,7 @@ describe('/api/v1/camps/:campId/managers', () => {
       { role: 'DIRECTOR', expectedStatus: 200 },
       { role: 'COORDINATOR', expectedStatus: 200 },
       { role: 'COUNSELOR', expectedStatus: 200 },
-      { role: 'VIEWER', expectedStatus: 403 },
+      { role: 'VIEWER', expectedStatus: 200 },
     ])(
       'should respond with `$expectedStatus` status code when user is $role',
       async ({ role, expectedStatus }) => {

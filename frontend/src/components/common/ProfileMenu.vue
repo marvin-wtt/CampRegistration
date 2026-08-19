@@ -50,6 +50,9 @@
 
         <q-separator spaced />
 
+        <!-- The switcher is the richer path once inside management, but it does
+             not exist on the public layout — so the areas are reachable here
+             too, gated exactly as the switcher gates them. -->
         <q-item
           v-close-popup
           clickable
@@ -58,7 +61,7 @@
           exact-active-class=""
         >
           <q-item-section avatar>
-            <q-icon name="home" />
+            <q-icon name="cabin" />
           </q-item-section>
           <q-item-section>
             {{ t('camps') }}
@@ -66,6 +69,7 @@
         </q-item>
 
         <q-item
+          v-if="hasNewsletters"
           v-close-popup
           clickable
           :to="{ name: 'management.newsletters' }"
@@ -79,6 +83,24 @@
             {{ t('newsletters') }}
           </q-item-section>
         </q-item>
+
+        <q-item
+          v-if="hasOrganizations"
+          v-close-popup
+          clickable
+          :to="{ name: 'management.organizations' }"
+          active-class=""
+          exact-active-class=""
+        >
+          <q-item-section avatar>
+            <q-icon name="apartment" />
+          </q-item-section>
+          <q-item-section>
+            {{ t('organizations') }}
+          </q-item-section>
+        </q-item>
+
+        <q-separator spaced />
 
         <q-item
           v-if="administrator"
@@ -112,19 +134,6 @@
         </q-item>
 
         <q-separator spaced />
-
-        <q-item
-          v-close-popup
-          clickable
-          @click="toggleDarkMode"
-        >
-          <q-item-section avatar>
-            <q-icon :name="darkMode ? 'light_mode' : 'dark_mode'" />
-          </q-item-section>
-          <q-item-section>
-            {{ t(darkMode ? 'light_mode' : 'dark_mode') }}
-          </q-item-section>
-        </q-item>
 
         <template v-if="!hideLanguage">
           <q-item clickable>
@@ -170,9 +179,22 @@
               </q-list>
             </q-menu>
           </q-item>
-
-          <q-separator spaced />
         </template>
+
+        <q-item
+          v-close-popup
+          clickable
+          @click="toggleDarkMode"
+        >
+          <q-item-section avatar>
+            <q-icon :name="darkMode ? 'light_mode' : 'dark_mode'" />
+          </q-item-section>
+          <q-item-section>
+            {{ t(darkMode ? 'light_mode' : 'dark_mode') }}
+          </q-item-section>
+        </q-item>
+
+        <q-separator spaced />
 
         <q-item
           v-close-popup
@@ -260,6 +282,16 @@ const administrator = computed<boolean>(() => {
   return profile.value?.role === 'ADMIN';
 });
 
+// Camps are always offered — the index carries the create flow for a user with
+// none. The other two would only lead to an empty page.
+const hasNewsletters = computed<boolean>(() => {
+  return (profile.value?.newsletterAccess.length ?? 0) > 0;
+});
+
+const hasOrganizations = computed<boolean>(() => {
+  return (profile.value?.organizationAccess.length ?? 0) > 0;
+});
+
 const darkMode = computed<boolean>(() => {
   return quasar.dark.isActive;
 });
@@ -309,12 +341,13 @@ function logout() {
 <i18n lang="yaml" locale="en">
 account: 'Account'
 username: 'Signed in as'
-camps: 'My camps'
+camps: 'Camps'
 newsletters: 'Newsletters'
+organizations: 'Organizations'
 administration: 'Administration'
 light_mode: 'Light Mode'
 login: 'Login'
-logout: 'Sing out'
+logout: 'Sign out'
 language: 'Language'
 dark_mode: 'Dark Mode'
 </i18n>
@@ -322,8 +355,9 @@ dark_mode: 'Dark Mode'
 <i18n lang="yaml" locale="de">
 account: 'Konto'
 username: 'Angemeldet als'
-camps: 'Meine Camps'
+camps: 'Camps'
 newsletters: 'Newsletter'
+organizations: 'Organisationen'
 administration: 'Verwaltung'
 light_mode: 'Hellmodus'
 login: 'Anmelden'
@@ -335,8 +369,9 @@ dark_mode: 'Dunkelmodus'
 <i18n lang="yaml" locale="fr">
 account: 'Compte'
 username: 'Connecté en tant que'
-camps: 'Mes camps'
+camps: 'Camps'
 newsletters: 'Newsletters'
+organizations: 'Organisations'
 administration: 'Administration'
 light_mode: 'Mode lumineux'
 login: 'Connexion'
@@ -348,8 +383,9 @@ dark_mode: 'Mode sombre'
 <i18n lang="yaml" locale="pl">
 account: 'Konto'
 username: 'Zalogowany jako'
-camps: 'Moje obozy'
+camps: 'Obozy'
 newsletters: 'Newslettery'
+organizations: 'Organizacje'
 administration: 'Administracja'
 light_mode: 'Tryb jasny'
 login: 'Zaloguj się'
@@ -361,8 +397,9 @@ dark_mode: 'Tryb ciemny'
 <i18n lang="yaml" locale="cs">
 account: 'Účet'
 username: 'Přihlášen jako'
-camps: 'Moje tábory'
+camps: 'Tábory'
 newsletters: 'Newslettery'
+organizations: 'Organizace'
 administration: 'Administrace'
 light_mode: 'Světlý režim'
 login: 'Přihlásit se'

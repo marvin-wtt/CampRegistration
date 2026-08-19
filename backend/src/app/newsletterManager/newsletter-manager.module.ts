@@ -1,16 +1,8 @@
-import type {
-  AppModule,
-  AppRouter,
-  BindOptions,
-  RoleToPermissions,
-} from '#core/base/AppModule';
+import type { AppModule, AppRouter, BindOptions } from '#core/base/AppModule';
 import { NewsletterManagerRouter } from './newsletter-manager.routes.js';
 import { NewsletterManagerService } from './newsletter-manager.service.js';
 import { NewsletterManagerController } from './newsletter-manager.controller.js';
-import type {
-  NewsletterManagerRole,
-  NewsletterPermission,
-} from '@camp-registration/common/permissions';
+import type { ScopedPermissions } from '@camp-registration/common/permissions';
 
 export class NewsletterManagerModule implements AppModule {
   bindContainers(options: BindOptions) {
@@ -25,18 +17,17 @@ export class NewsletterManagerModule implements AppModule {
     );
   }
 
-  registerNewsletterPermissions(): RoleToPermissions<
-    NewsletterManagerRole,
-    NewsletterPermission
-  > {
+  registerPermissions(): ScopedPermissions {
     return {
-      OWNER: [
-        'newsletter.managers.view',
-        'newsletter.managers.create',
-        'newsletter.managers.delete',
-      ],
-      EDITOR: ['newsletter.managers.view'],
-      VIEWER: [],
+      newsletter: {
+        OWNER: [
+          'newsletter.managers.view',
+          'newsletter.managers.create',
+          'newsletter.managers.delete',
+        ],
+        EDITOR: ['newsletter.managers.view'],
+        VIEWER: [],
+      },
     };
   }
 }

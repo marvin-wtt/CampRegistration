@@ -2,6 +2,7 @@ import { faker } from '@faker-js/faker/locale/en';
 import { Prisma } from '#generated/prisma/client.js';
 import prisma from '../client.js';
 import { MessageTemplateFactory } from './message-template.factory';
+import { OrganizationFactory } from './organization.factory';
 
 export const CampFactory = {
   build: (
@@ -25,7 +26,11 @@ export const CampFactory = {
 
     const countries = data.countries ?? ['de'];
     return {
-      public: faker.datatype.boolean(),
+      // Give the camp an owner unless the caller named one.
+      organization: data.organization ?? {
+        create: OrganizationFactory.build(),
+      },
+      listed: faker.datatype.boolean(),
       countries,
       name: faker.lorem.word(),
       organizer: faker.company.name(),

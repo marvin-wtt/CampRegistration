@@ -2,7 +2,7 @@ import { createForm } from '../utils/form.js';
 import { Prisma } from '#generated/prisma/client';
 
 export const campPrivate = {
-  public: false,
+  listed: false,
   form: createForm([
     {
       name: 'first_name',
@@ -12,8 +12,8 @@ export const campPrivate = {
   ]),
 };
 
-export const campPublic: Partial<Prisma.CampCreateInput> = {
-  public: false,
+export const campListed: Partial<Prisma.CampCreateInput> = {
+  listed: false,
   confirmationMode: 'AUTOMATIC',
   form: createForm([
     {
@@ -377,7 +377,7 @@ export const campWithEmailAndCountry = {
 };
 
 export const campWithMultipleEmails = {
-  ...campPublic,
+  ...campListed,
   form: createForm([
     {
       name: 'email',
@@ -398,7 +398,7 @@ export const campWithMultipleEmails = {
 };
 
 export const campWithContactEmailInternational = {
-  ...campPublic,
+  ...campListed,
   countries: ['de', 'fr'],
   contactEmail: {
     de: 'de@email.net',
@@ -414,7 +414,7 @@ export const campWithContactEmailInternational = {
 };
 
 export const campWithEmailAndMaxParticipants = {
-  ...campPublic,
+  ...campListed,
   maxParticipants: 0,
   countries: ['de', 'fr'],
   form: createForm([
@@ -442,7 +442,7 @@ export const campWithEmailAndMaxParticipants = {
 };
 
 export const campWithFormFunctions = {
-  ...campPublic,
+  ...campListed,
   form: createForm([
     {
       name: 'date',

@@ -71,6 +71,10 @@ import ResultTablePrint from '@/components/campManagement/table/ResultTablePrint
 import type { PrintTablesPayload } from '@/components/campManagement/table/PrintTablesPayload';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { usePrintPage, waitForStableLayout } from '@/composables/printPage';
+import {
+  assignPageOrientation,
+  printOrientationClass,
+} from '@/pages/print/pageOrientation';
 
 const { to } = useObjectTranslation();
 
@@ -105,62 +109,6 @@ function formatDate(iso: string, locale?: string): string {
   } catch {
     return date.toISOString();
   }
-}
-
-function mmToPx(mm: number): number {
-  // CSS inches are fixed: 96px per inch
-  return (mm / 25.4) * 96;
-}
-
-const UPRIGHT_CLASS_NAME = 'print-sheet--upright' as const;
-const LEFT_CLASS_NAME = 'print-sheet--left' as const;
-
-function assignPageOrientation() {
-  const pageWidthPx = mmToPx(210); // A4 width
-  const marginPx = mmToPx(12 * 2); // left + right
-  const printableWidthPx = pageWidthPx - marginPx;
-
-  const sheets = document.querySelectorAll<HTMLElement>('.print-sheet');
-
-  sheets.forEach((sheet) => {
-    if (
-      sheet.classList.contains('left') ||
-      sheet.classList.contains(UPRIGHT_CLASS_NAME)
-    ) {
-      // already assigned
-      return;
-    }
-
-    // IMPORTANT: target the actual <table>, not q-table wrappers
-    const table = sheet.querySelector<HTMLTableElement>('table');
-
-    if (!table) {
-      sheet.classList.add(UPRIGHT_CLASS_NAME);
-      return;
-    }
-
-    // scrollWidth = real required width
-    const requiredWidth = table.scrollWidth;
-
-    if (requiredWidth > printableWidthPx) {
-      sheet.classList.add(LEFT_CLASS_NAME);
-    } else {
-      sheet.classList.add(UPRIGHT_CLASS_NAME);
-    }
-  });
-}
-
-function printOrientationClass(
-  orientation: 'portrait' | 'landscape' | undefined,
-) {
-  if (orientation === 'landscape') {
-    return LEFT_CLASS_NAME;
-  }
-  if (orientation === 'portrait') {
-    return UPRIGHT_CLASS_NAME;
-  }
-
-  return '';
 }
 </script>
 

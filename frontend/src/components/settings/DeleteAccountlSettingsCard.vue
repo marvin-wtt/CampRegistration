@@ -1,40 +1,52 @@
 <template>
-  <q-card
-    flat
-    bordered
-  >
-    <q-form @submit="onSave">
-      <q-card-section class="text-h6 text-negative">
-        {{ t('title') }}
-      </q-card-section>
+  <danger-card icon="delete_forever">
+    <div class="text-subtitle2 text-weight-bold">{{ t('title') }}</div>
+    <div class="text-body2 text-on-surface-variant q-mt-xs">
+      {{ t('disclaimer.description') }}
+    </div>
 
-      <q-card-section>
-        <p>{{ t('disclaimer.description') }}</p>
-        <ul>
-          <li>{{ t('disclaimer.dataRemoval') }}</li>
-          <li>{{ t('disclaimer.accessLoss') }}</li>
-          <li>{{ t('disclaimer.collaborationImpact') }}</li>
-          <li>{{ t('disclaimer.campDeletion') }}</li>
-          <li>
-            <strong>{{ t('disclaimer.irreversible') }}</strong>
-          </li>
-        </ul>
-      </q-card-section>
+    <template #body>
+      <ul class="consequences text-body2 text-on-surface-variant">
+        <li
+          v-for="key in consequences"
+          :key="key"
+        >
+          <q-icon
+            name="remove"
+            size="16px"
+            class="consequences__bullet"
+          />
+          <span>{{ t(`disclaimer.${key}`) }}</span>
+        </li>
+      </ul>
 
-      <q-card-actions>
-        <q-btn
-          :label="t('action.delete')"
-          type="submit"
-          color="negative"
-          rounded
+      <div class="irreversible row items-center no-wrap q-gutter-xs">
+        <q-icon
+          name="error_outline"
+          size="16px"
         />
-      </q-card-actions>
-    </q-form>
-  </q-card>
+        <span class="text-body2 text-weight-medium">
+          {{ t('disclaimer.irreversible') }}
+        </span>
+      </div>
+    </template>
+
+    <template #actions>
+      <m-btn
+        :label="t('action.delete')"
+        icon="delete_forever"
+        tonal
+        error
+        @click="emit('delete')"
+      />
+    </template>
+  </danger-card>
 </template>
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
+import DangerCard from '@/components/common/DangerCard.vue';
+import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
 const { t } = useI18n();
 
@@ -42,12 +54,42 @@ const emit = defineEmits<{
   (e: 'delete'): void;
 }>();
 
-function onSave() {
-  emit('delete');
-}
+const consequences = [
+  'dataRemoval',
+  'accessLoss',
+  'collaborationImpact',
+  'campDeletion',
+] as const;
 </script>
 
-<style scoped></style>
+<style lang="scss" scoped>
+.consequences {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  li + li {
+    margin-top: 4px;
+  }
+
+  &__bullet {
+    flex: 0 0 auto;
+    margin-top: 2px;
+    opacity: 0.6;
+  }
+}
+
+.irreversible {
+  margin-top: 12px;
+  color: var(--md3-error);
+}
+</style>
 
 <i18n lang="yaml" locale="en">
 title: 'Delete account'

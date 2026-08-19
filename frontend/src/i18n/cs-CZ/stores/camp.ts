@@ -13,6 +13,11 @@ export default {
     error: 'Chyba při aktualizaci tábora',
     invalid: 'Neplatné ID tábora',
   },
+  move: {
+    progress: 'Přesouvání tábora...',
+    success: 'Tábor byl přesunut',
+    error: 'Nepodařilo se přesunout tábor',
+  },
   delete: {
     progress: 'Tábor se odstraňuje...',
     success: 'Tábor úspěšně odstraněn',

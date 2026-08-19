@@ -267,27 +267,8 @@ async function deleteFailed(name: string) {
 </script>
 
 <style scoped lang="scss">
-.admin-page {
-  position: absolute;
-  inset: 0;
-  padding: 16px;
-}
-
 .admin-header {
   padding: 4px 0 12px;
-}
-
-.admin-table {
-  // Fill remaining height and scroll internally rather than growing the page.
-  min-height: 0;
-  background: var(--md3-surface);
-
-  :deep(thead tr th) {
-    position: sticky;
-    top: 0;
-    z-index: 1;
-    background: var(--md3-surface-container-low);
-  }
 }
 </style>
 

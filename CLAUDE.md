@@ -97,13 +97,14 @@ class ExampleModule implements AppModule {
   registerRoutes(router: AppRouter): void {
     /* mount router */
   }
-  registerPermissions(): RoleToPermissions<CampManagerRole, Permission> {
-    /* RBAC */
+
+  registerPermissions(): ScopedPermissions {
+    /* RBAC, keyed by scope: { camp?, newsletter?, organization? } */
   }
-  registerNewsletterPermissions(): RoleToPermissions<
-    NewsletterManagerRole,
-    NewsletterPermission
-  > {}
+
+  registerScopeResolvers(): ScopeResolvers {
+    /* how a request becomes a permission set, for scopes this module owns */
+  }
   registerJobs(scheduler: JobScheduler): void {
     /* recurring cron jobs */
   }
@@ -137,7 +138,11 @@ Request → Router → Controller → Service (business logic) → Prisma → Re
 - **Prisma** with MySQL/MariaDB; schema in `backend/prisma/schema.prisma`
 - Primary keys are **ULID strings** (26 chars), never integers
 - Multilingual fields stored as **JSON columns**
-- After changing `schema.prisma`, run `prisma migrate dev` — never edit migration SQL manually
+- After changing `schema.prisma`, run `prisma migrate dev`. Never edit a migration that has already been applied;
+  hand-written backfill SQL added with `--create-only` _before_
+  the first apply is fine, and is sometimes the only option — **data migrations (`migration.ts`) run only after
+  `prisma migrate deploy` has applied every schema migration**, so a column cannot be backfilled by one and made
+  `NOT NULL` by another in the same release
 - Migrations in `backend/prisma/migrations/`
 
 ### Authentication
@@ -145,6 +150,55 @@ Request → Router → Controller → Service (business logic) → Prisma → Re
 - JWT bearer tokens; TOTP 2FA support
 - System roles: `USER`, `ADMIN`
 - Camp-scoped roles: `DIRECTOR`, `COORDINATOR`, `COUNSELOR`, `VIEWER`
+- Newsletter-scoped roles: `OWNER`, `EDITOR`, `VIEWER`
+- Organization-scoped roles: `ADMIN`, `MEMBER` (a permission scope of its own, unrelated to the system role)
+
+### Permission scopes
+
+Permissions are scoped RBAC. All three scopes — `camp`, `newsletter`,
+`organization` — run through **one** generic mechanism, declared in
+`common/src/permissions/scopes.ts`:
+
+```ts
+export interface PermissionScopes {
+  camp: { role: CampManagerRole; permission: CampScopedPermission };
+  newsletter: { role: NewsletterManagerRole; permission: NewsletterPermission };
+  organization: { role: OrganizationRole; permission: OrganizationPermission };
+}
+```
+
+- **Declare**: a module returns its grants from `registerPermissions()`, keyed by scope. `boot.ts` merges them into the
+  single `permissionRegistry`
+  (`permissionRegistry.for('camp').getPermissions(role)`). Registration is additive, so no one file holds the whole
+  policy — `tests/unit/core/permission-registry.test.ts`
+  snapshots the assembled result.
+- **Guard**: `scoped(scope, permission)` (`#core/permission.guard`) reads the bound model named by the scope's
+  `ScopeResolver` and asks it for the user's permission set. `campManager(p)`, `newsletterManager(p)` and
+  `organizationMember(p)` are one-line aliases of it. The owning module declares its resolver by returning it from
+  `registerScopeResolvers()`; `boot.ts` registers each one and then calls `assertScopeResolversComplete()`, so a scope
+  left unwired fails the boot instead of 500-ing on the first guarded request. Exactly one module owns a scope —
+  registering a second resolver for it throws. Both the resolver and its alias live in the **subject** module's guard
+  file, named after the scope's bound model (`camp/camp.guard.ts`, `newsletter/newsletter.guard.ts`,
+  `organization/organization.guard.ts`) — not in the membership module whose service they call. Guards over a membership
+  _record_ (`campManagerSelf`, `campManagerSubscriber`) stay with that record's module.
+- **Resolve once per scope**: `CampManagerService.getManagerAuthorization`,
+  `NewsletterManagerService.getManagerPermissions` and
+  `OrganizationMemberService.getMemberPermissions` are the only places their scope's permissions are computed; the
+  guard, the profile resource and (for camps) the SSE subscriber all go through them.
+- **Type safety**: use `ScopePermission<'camp'>` (or `CampScopedPermission`) for camp-only APIs. `Permission` is the
+  union of all three scopes — passing an organization string to a camp API must be a compile error, not a silent
+  `false`.
+- **Adding a permission**: add the string to its union in
+  `common/src/permissions/permissions.ts`, rebuild `common`, return it from the owning module's `registerPermissions()`,
+  guard the route, and update the registry snapshot. The role-permission dialog needs no edit — it renders
+  `GET /permissions`.
+- **Never hardcode the matrix in the frontend.** `GET /permissions` serves
+  `permissionRegistry.toMatrix()`; `usePermissionMatrix(scope)` consumes it.
+
+State and ownership rules (`registrationOpen`, `campOrganizationVerified`,
+`campManagerSelf`, `organizationMemberSelf`, `buildCampWhere`, `file.guard.ts`)
+are deliberately **not** permissions — they stay plain `GuardFn`s composed with
+`or`/`and`.
 
 ### Email
 
@@ -176,6 +230,34 @@ recurring tasks (e.g. token cleanup, pruning old job records).
   `scheduler.schedule('job-name', '0 3 * * *', () => resolve(Service).method())`.
 - Registration is idempotent (duplicate names ignored); the scheduler owns job
   lifecycle logging and is stopped deterministically on shutdown.
+
+### Organizations
+
+Camps and newsletters are owned by an `Organization`, moderated by system administrators — full design in
+`docs/organizations.md`. Roles are `ADMIN`/`MEMBER`, resolved through the
+`organization` permission scope (see [Permission scopes](#permission-scopes)).
+
+- `organizationId` is **required** on `POST /camps` and `POST /newsletters`; there is no server-side default. The id
+  arrives in the body and guards run before validation, so
+  `organizationFromBody()` binds it as the `organization` model ahead of
+  `guard(organizationMember(…))`.
+- An unverified organization may build camps and newsletters freely, publication settings included — reach is **gated at
+  the outward-facing action**, never at write time. The gates are
+  `buildCampWhere` (public listing), the camp `show` route guard, `registrationOpen`
+  combined with `campOrganizationVerified` (registrations), and
+  `newsletterOrganizationVerified` (sending newsletter messages). Management UI reads
+  `Camp.organizationVerificationStatus` / `Newsletter.organizationVerificationStatus` to explain why a camp isn't
+  reaching anyone or why sending is disabled.
+- Organization `ADMIN`s hold exactly `ORGANIZATION_CAMP_PERMISSIONS`
+  (`camp.view`, `camp.edit`, `camp.managers.view`) on every camp their organization owns, merged in
+  `CampManagerService.getManagerAuthorization()`, and exactly `ORGANIZATION_NEWSLETTER_PERMISSIONS`
+  (`newsletter.view`, `newsletter.managers.view`) on every newsletter it owns, merged in
+  `NewsletterManagerService.getManagerPermissions()`. **Never extend either constant to personal data** — registrations
+  for camps, subscribers for newsletters — nor to `newsletter.messages.*`; tests assert both sets' exact contents.
+- Those implicit grants carry no manager record, so the owning entities never appear under
+  `GET /camps?view=assigned` or `GET /newsletters`. `GET /organizations/:id/camps` and
+  `GET /organizations/:id/newsletters` exist to make them reachable — add the matching listing whenever a new implicit
+  grant is introduced, or the permission is unreachable outside a direct link.
 
 ### Realtime (SSE live updates)
 
@@ -298,9 +380,17 @@ literals for the SurveyJS theme editor, which can't parse `var()`/`color-mix()`.
 
 1. **Build order**: always build `common` before `backend` or `frontend`
 2. **ULID keys**: all PKs are ULID strings — never integers
-3. **Prisma migrations**: use `prisma migrate dev`; never edit migration SQL directly
+3. **Prisma migrations**: use `prisma migrate dev`; never edit a migration that has already been applied. Hand-written
+   backfill SQL added with `--create-only` before the first apply is fine — and is the only option when a `NOT NULL`
+   column needs data, since `prisma/data-migrations/runner.ts` runs after _all_ schema migrations of a deploy
 4. **i18n**: add translation keys to all 5 locale files
 5. **Type imports**: use `import type` for type-only imports (ESLint enforced)
 6. **InversifyJS**: every new service needs `@injectable()` and registration in `bindContainers`
 7. **Permissions**: use RBAC guards, not manual role checks
-8. **MD3 colors**: style with `var(--md3-*)` tokens (never hardcoded hex/light-dark colors); use `<m-btn>`/`<m-toolbar>` and `.rounded-*`/`.elevation-*` utilities. Don't edit the patched `@anoyomoose/q2-fresh-paint-md3e` in `node_modules`
+8. **Organizations**: camps and newsletters need an `organizationId`; an unverified org's camps are hidden and refuse
+   registrations and its newsletters refuse to send, but that is gated at the outward-facing action — don't add
+   write-time publication gates. Org `ADMIN`s hold only
+   `ORGANIZATION_CAMP_PERMISSIONS` on their org's camps and `ORGANIZATION_NEWSLETTER_PERMISSIONS` on its newsletters —
+   never registrations, never subscribers
+9. **MD3 colors**: style with `var(--md3-*)` tokens (never hardcoded hex/light-dark colors); use `<m-btn>`/`<m-toolbar>`
+   and `.rounded-*`/`.elevation-*` utilities. Don't edit the patched `@anoyomoose/q2-fresh-paint-md3e` in `node_modules`

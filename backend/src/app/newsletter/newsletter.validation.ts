@@ -27,6 +27,7 @@ const show = z.object({
 
 const store = z.object({
   body: z.object({
+    organizationId: z.ulid(),
     name: z.string().min(1).max(255),
     description: z.string().max(5000).nullable().optional(),
     replyTo: z.email().max(255).nullable().optional(),

@@ -23,10 +23,79 @@
         flat
         header-nav
       >
-        <!-- Template -->
+        <!-- Organization -->
         <camp-edit-step
           v-model="step"
           :name="0"
+          :title="t('step.organization')"
+          icon="apartment"
+        >
+          <q-select
+            v-model="data.organizationId"
+            :label="t('field.organization')"
+            :options="organizationOptions"
+            :rules="[
+              (val?: string) => !!val || t('rule.organization_required'),
+            ]"
+            hide-bottom-space
+            outlined
+            rounded
+            emit-value
+            map-options
+            data-test="camp-organization"
+          />
+
+          <div class="row items-center justify-between q-mt-xs">
+            <q-btn
+              :label="t('organization_note.title')"
+              icon="info"
+              size="md"
+              flat
+              dense
+              no-caps
+              rounded
+            >
+              <q-menu>
+                <div class="organization-note q-pa-md">
+                  <ul class="q-my-none q-pl-md">
+                    <li>{{ t('organization_note.entity') }}</li>
+                    <li>{{ t('organization_note.access') }}</li>
+                    <li>{{ t('organization_note.organizer') }}</li>
+                    <li>{{ t('organization_note.create') }}</li>
+                  </ul>
+                </div>
+              </q-menu>
+            </q-btn>
+
+            <q-btn
+              :label="t('organization_note.create_action')"
+              icon="add"
+              color="primary"
+              size="sm"
+              flat
+              dense
+              no-caps
+              rounded
+              @click="createOrganization"
+            />
+          </div>
+
+          <q-banner
+            v-if="selectedOrganizationUnverified"
+            dense
+            class="unverified-note rounded-md q-mt-sm"
+          >
+            <template #avatar>
+              <q-icon name="info" />
+            </template>
+            {{ t('unverified_notice') }}
+          </q-banner>
+        </camp-edit-step>
+
+        <!-- Template -->
+        <camp-edit-step
+          v-model="step"
+          :name="1"
           :title="t('step.template')"
           icon="settings"
         >
@@ -78,7 +147,7 @@
         <!-- General -->
         <camp-edit-step
           v-model="step"
-          :name="1"
+          :name="2"
           :title="t('step.general')"
           icon="info"
         >
@@ -125,7 +194,7 @@
         <!-- Organizer -->
         <camp-edit-step
           v-model="step"
-          :name="2"
+          :name="3"
           :title="t('step.organizer')"
           icon="business"
         >
@@ -172,7 +241,7 @@
         <!-- Date -->
         <camp-edit-step
           v-model="step"
-          :name="3"
+          :name="4"
           :title="t('step.dates')"
           icon="calendar_month"
         >
@@ -243,7 +312,7 @@
         <!-- Participants -->
         <camp-edit-step
           v-model="step"
-          :name="4"
+          :name="5"
           :title="t('step.participants')"
           icon="people"
         >
@@ -331,7 +400,7 @@
         <!-- Camp Details -->
         <camp-edit-step
           v-model="step"
-          :name="5"
+          :name="6"
           :title="t('step.details')"
           icon="edit"
         >
@@ -380,17 +449,24 @@
         <!-- Visibility -->
         <camp-edit-step
           v-model="step"
-          :name="6"
+          :name="7"
           :title="t('step.settings')"
           icon="settings"
           last
           @next-step="onComplete"
         >
-          <!-- Public -->
+          <!-- Listed -->
           <q-toggle
-            v-model="data.public"
-            :label="t('field.public')"
+            v-model="data.listed"
+            :label="t('field.listed')"
+            :disable="selectedOrganizationUnverified"
           />
+          <div
+            v-if="selectedOrganizationUnverified"
+            class="text-caption text-grey-7"
+          >
+            {{ t('unverified_notice') }}
+          </div>
         </camp-edit-step>
       </q-stepper>
     </q-card>
@@ -408,24 +484,33 @@ import CampEditStep from '@/components/campManagement/settings/create/CampEditSt
 import CountrySelect from '@/components/common/CountrySelect.vue';
 import TranslatedInput from '@/components/common/inputs/TranslatedInput.vue';
 import DateRangeInput from '@/components/common/inputs/DateRangeInput.vue';
-import { computed, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import type {
   Camp,
   CampCreateData,
   CampDetails,
+  Organization,
 } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { useAssignedCampsStore } from '@/stores/assigned-camps-store';
 import { useCampsStore } from '@/stores/camps-store';
+import { useOrganizationsStore } from '@/stores/organizations-store';
+import { useOrganizationPermissions } from '@/composables/organizationPermissions';
+import OrganizationCreateDialog from '@/components/organization/OrganizationCreateDialog.vue';
+import { storeToRefs } from 'pinia';
+import { useQuasar } from 'quasar';
 
 const assignedCampsStore = useAssignedCampsStore();
 const campStore = useCampsStore();
+const quasar = useQuasar();
 const { dialogRef, onDialogHide, onDialogOK } = useDialogPluginComponent();
 
 const DEFAULT_DATA = {
   confirmationMode: 'AUTOMATIC',
   preset: 'standard',
+  // Required by the API; the first step will not advance without it.
+  organizationId: '',
 } as CampCreateData;
 
 const step = ref<number>(0);
@@ -435,6 +520,69 @@ const data = ref<CampCreateData>({
 });
 const { t } = useI18n();
 const { to } = useObjectTranslation();
+
+const organizationsStore = useOrganizationsStore();
+const { data: organizations } = storeToRefs(organizationsStore);
+const { campCreationOrganizationIds } = useOrganizationPermissions();
+
+const organizationOptions = computed<QSelectOption<string>[]>(() => {
+  const eligible = campCreationOrganizationIds.value;
+
+  return (organizations.value ?? [])
+    .filter((organization) => eligible.includes(organization.id))
+    .map((organization) => ({
+      label: organization.name,
+      value: organization.id,
+    }));
+});
+
+const selectedOrganization = computed<Organization | undefined>(() =>
+  (organizations.value ?? []).find(
+    (organization) => organization.id === data.value.organizationId,
+  ),
+);
+
+/**
+ * An unverified organization may still prepare a camp, but the API refuses to
+ * publish it — mirror that here so the toggle cannot promise what it can't do.
+ */
+const selectedOrganizationUnverified = computed<boolean>(() => {
+  const selected = selectedOrganization.value;
+
+  return selected !== undefined && selected.verificationStatus !== 'VERIFIED';
+});
+
+// The organizer is almost always the owning organization, so offer its name.
+// A field still holding the previous organization's name was filled in here and
+// may be replaced; anything else was typed by hand and survives.
+watch(selectedOrganization, (organization, previous) => {
+  const organizer = data.value.organizer;
+  const edited =
+    organizer !== undefined && organizer !== '' && organizer !== previous?.name;
+
+  // A cloned camp takes its organizer from the reference camp instead.
+  if (edited || organization === undefined || data.value.referenceCampId) {
+    return;
+  }
+
+  data.value.organizer = organization.name;
+});
+
+watch(selectedOrganizationUnverified, (unverified) => {
+  if (unverified) {
+    data.value.listed = false;
+  }
+});
+
+onMounted(async () => {
+  await organizationsStore.fetchData();
+
+  // Skip a pointless choice when there is only one.
+  const eligible = organizationOptions.value;
+  if (eligible.length === 1) {
+    data.value.organizationId = eligible[0]!.value;
+  }
+});
 
 const referenceCamp = computed<Camp | undefined>(() => {
   return assignedCampsStore.data?.find(
@@ -506,6 +654,12 @@ watch(
       return;
     }
 
+    // The organization default is only a stand-in for a reference camp, so the
+    // reference camp's organizer replaces it. Anything typed by hand stays.
+    if (data.value.organizer === selectedOrganization.value?.name) {
+      data.value.organizer = refCamp.organizer;
+    }
+
     const copyKeys = [
       'countries',
       'name',
@@ -516,7 +670,7 @@ watch(
       'maxAge',
       'location',
       'price',
-      'public',
+      'listed',
       'confirmationMode',
     ] as const satisfies ReadonlyArray<
       keyof CampCreateData & keyof CampDetails
@@ -544,8 +698,28 @@ async function onComplete() {
   }
 }
 
+// Drops what the reference camp filled in, but not the organization: that is
+// picked on step 1, before a template is ever chosen, and silently clearing it
+// makes an earlier step invalid again with nothing on screen to say so.
 function clearReferenceCamp() {
-  data.value = { ...DEFAULT_DATA };
+  data.value = {
+    ...DEFAULT_DATA,
+    organizationId: data.value.organizationId,
+  };
+}
+
+/**
+ * Founding an organization mid-flow rather than sending the user to the
+ * organizations page, which would cost them the form. The store adds it to the
+ * options and refreshes the profile the permission filter reads, so the new
+ * organization can be selected straight away.
+ */
+function createOrganization() {
+  quasar
+    .dialog({ component: OrganizationCreateDialog })
+    .onOk((organization: Organization) => {
+      data.value.organizationId = organization.id;
+    });
 }
 </script>
 
@@ -553,10 +727,23 @@ function clearReferenceCamp() {
 .camp-create-dialog-card {
   width: 500px;
 }
+
+.unverified-note {
+  background: var(--md3-secondary-container);
+  color: var(--md3-on-secondary-container);
+}
+
+.organization-note {
+  max-width: 340px;
+  font-size: 0.85rem;
+  line-height: 1.35;
+  color: var(--md3-on-surface-variant);
+}
 </style>
 
 <i18n lang="yaml" locale="en">
 step:
+  organization: 'Organization'
   general: 'General'
   template: 'Template'
   details: 'Details'
@@ -565,7 +752,19 @@ step:
   participants: 'Participants'
   settings: 'Settings'
 
+organization_note:
+  title: 'Why an organization?'
+  entity: "It's the legal entity behind the camp. It answers for the camp and for the data people enter when they register."
+  access: 'Its administrators can view and edit the camp and see who manages it. They never see registrations.'
+  organizer: 'The camp is presented under the organizer, which you set separately. The organization is still visible to participants: next to the organizer in the camp list, and in the privacy information.'
+  create: "Can't find the right one? Create a new organization."
+  create_action: 'New organization'
+
+unverified_notice: 'This organization is not verified. You can set the camp up now, but until it is verified the camp stays hidden from the public listing and cannot accept registrations.'
+rule:
+  organization_required: 'Please choose an organization'
 field:
+  organization: 'Organization'
   countries: 'Countries'
   name: 'Camp name'
   use_template: 'Preset'
@@ -581,7 +780,7 @@ field:
   confirmation_mode: 'Accept registrations'
   location: 'Location'
   price: 'Price'
-  public: 'Show camp on main page'
+  listed: 'Show camp on main page'
 
 preset:
   standard: 'Standard'
@@ -632,6 +831,7 @@ confirmation_mode:
 
 <i18n lang="yaml" locale="de">
 step:
+  organization: 'Organisation'
   general: 'Allgemein'
   template: 'Vorlage'
   details: 'Details'
@@ -640,7 +840,19 @@ step:
   participants: 'Teilnehmer'
   settings: 'Einstellungen'
 
+organization_note:
+  title: 'Warum eine Organisation?'
+  entity: 'Sie ist der Rechtsträger hinter dem Camp und verantwortlich für die Daten, die bei der Anmeldung erhoben werden.'
+  access: 'Ihre Administratoren können das Camp ansehen und bearbeiten und sehen, wer es leitet. Anmeldungen sehen sie nie.'
+  organizer: 'Das Camp tritt unter dem Veranstalter auf, den du separat festlegst. Die Organisation sehen Teilnehmende trotzdem: neben dem Veranstalter in der Camp-Liste und in den Datenschutzinformationen.'
+  create: 'Ist die passende nicht dabei? Leg eine neue Organisation an.'
+  create_action: 'Neue Organisation'
+
+unverified_notice: 'Diese Organisation ist nicht verifiziert. Du kannst das Camp jetzt einrichten, aber bis zur Verifizierung ist es nicht öffentlich sichtbar und nimmt keine Anmeldungen an.'
+rule:
+  organization_required: 'Bitte wähle eine Organisation'
 field:
+  organization: 'Organisation'
   countries: 'Länder'
   name: 'Camp Name'
   use_template: 'Vorlage'
@@ -656,7 +868,7 @@ field:
   confirmation_mode: 'Anmeldungen annehmen'
   location: 'Ort'
   price: 'Preis'
-  public: 'Camp auf Startseite anzeigen'
+  listed: 'Camp auf Startseite anzeigen'
 
 preset:
   standard: 'Standard'
@@ -707,6 +919,7 @@ confirmation_mode:
 
 <i18n lang="yaml" locale="fr">
 step:
+  organization: 'Organisation'
   general: 'Général'
   template: 'Modèle'
   details: 'Détails'
@@ -715,7 +928,19 @@ step:
   participants: 'Participants'
   settings: 'Paramètres'
 
+organization_note:
+  title: 'Pourquoi une organisation ?'
+  entity: "C'est l'entité juridique derrière le camp. Elle répond du camp et des données saisies lors des inscriptions."
+  access: "Ses administrateurs peuvent consulter et modifier le camp et voir qui l'encadre. Ils ne voient jamais les inscriptions."
+  organizer: "Le camp est présenté sous le nom de l'organisateur, que vous définissez séparément. L'organisation reste visible pour les participants : à côté de l'organisateur dans la liste des camps et dans les informations sur la protection des données."
+  create: 'Vous ne trouvez pas la bonne ? Créez une nouvelle organisation.'
+  create_action: 'Nouvelle organisation'
+
+unverified_notice: "Cette organisation n'est pas vérifiée. Vous pouvez configurer le camp dès maintenant, mais tant qu'elle ne l'est pas, il reste masqué de la liste publique et ne peut pas accepter d'inscriptions."
+rule:
+  organization_required: 'Choisis une organisation'
 field:
+  organization: 'Organisation'
   countries: 'Pays'
   name: 'Nom du camp'
   use_template: 'Modèle'
@@ -731,7 +956,7 @@ field:
   confirmation_mode: 'Accepter les inscriptions'
   location: 'Emplacement'
   price: 'Prix'
-  public: "Afficher le camp sur la page d'accueil"
+  listed: "Afficher le camp sur la page d'accueil"
 
 preset:
   standard: 'Standard'
@@ -782,6 +1007,7 @@ confirmation_mode:
 
 <i18n lang="yaml" locale="pl">
 step:
+  organization: 'Organizacja'
   general: 'Ogólne'
   template: 'Szablon'
   details: 'Szczegóły'
@@ -790,7 +1016,19 @@ step:
   participants: 'Uczestnicy'
   settings: 'Ustawienia'
 
+organization_note:
+  title: 'Dlaczego organizacja?'
+  entity: 'To podmiot prawny stojący za obozem. Odpowiada za obóz i za dane podawane podczas zapisów.'
+  access: 'Jej administratorzy mogą przeglądać i edytować obóz oraz zobaczyć, kto go prowadzi. Nigdy nie widzą zgłoszeń.'
+  organizer: 'Obóz występuje pod nazwą organizatora, którą ustawiasz osobno. Organizacja i tak jest widoczna dla uczestników: obok organizatora na liście obozów oraz w informacjach o ochronie danych.'
+  create: 'Nie ma tu tej właściwej? Utwórz nową organizację.'
+  create_action: 'Nowa organizacja'
+
+unverified_notice: 'Ta organizacja nie jest zweryfikowana. Obóz możesz przygotować już teraz, ale do czasu weryfikacji pozostaje ukryty na liście publicznej i nie przyjmuje zapisów.'
+rule:
+  organization_required: 'Wybierz organizację'
 field:
+  organization: 'Organizacja'
   countries: 'Kraje'
   name: 'Nazwa obozu'
   use_template: 'Szablon'
@@ -806,7 +1044,7 @@ field:
   confirmation_mode: 'Przyjmowanie zgłoszeń'
   location: 'Miejsce'
   price: 'Cena'
-  public: 'Pokaż obóz na stronie głównej'
+  listed: 'Pokaż obóz na stronie głównej'
 
 preset:
   standard: 'Standard'
@@ -857,6 +1095,7 @@ confirmation_mode:
 
 <i18n lang="yaml" locale="cs">
 step:
+  organization: 'Organizace'
   general: 'Obecné'
   template: 'Šablona'
   details: 'Podrobnosti'
@@ -865,7 +1104,19 @@ step:
   participants: 'Účastníci'
   settings: 'Nastavení'
 
+organization_note:
+  title: 'Proč organizace?'
+  entity: 'Je to právní subjekt, který za táborem stojí. Odpovídá za tábor i za údaje zadané při přihlašování.'
+  access: 'Její správci mohou tábor zobrazit a upravit a vidí, kdo jej vede. Přihlášky nikdy nevidí.'
+  organizer: 'Tábor vystupuje pod organizátorem, kterého nastavíte zvlášť. Organizaci účastníci přesto uvidí: vedle organizátora v seznamu táborů a v informacích o ochraně osobních údajů.'
+  create: 'Není tu ta správná? Vytvořte novou organizaci.'
+  create_action: 'Nová organizace'
+
+unverified_notice: 'Tato organizace není ověřená. Tábor můžete připravit už teď, ale do ověření zůstane skrytý ve veřejném seznamu a nebude přijímat registrace.'
+rule:
+  organization_required: 'Vyber organizaci'
 field:
+  organization: 'Organizace'
   countries: 'Země'
   name: 'Název tábora'
   use_template: 'Šablona'
@@ -881,7 +1132,7 @@ field:
   confirmation_mode: 'Přijímání přihlášek'
   location: 'Místo'
   price: 'Cena'
-  public: 'Zobrazit tábor na úvodní stránce'
+  listed: 'Zobrazit tábor na úvodní stránce'
 
 preset:
   standard: 'Standard'

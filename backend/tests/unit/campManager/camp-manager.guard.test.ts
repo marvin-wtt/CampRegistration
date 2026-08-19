@@ -5,7 +5,6 @@ import type { Camp } from '#generated/prisma/client.js';
 import * as container from '#core/ioc/container';
 import { CampManagerService } from '#app/campManager/camp-manager.service';
 import {
-  campManager,
   campManagerSelf,
   campManagerSubscriber,
 } from '#app/campManager/camp-manager.guard';
@@ -28,31 +27,6 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.useRealTimers();
-});
-
-describe('campManager', () => {
-  it('delegates to CampManagerService.campManagerHasPermission', async () => {
-    managerService.campManagerHasPermission.mockResolvedValue(true);
-    const guard = campManager('camp.tasks.view');
-
-    const result = await guard(fakeReq({ id: 'camp-1' }, 'user-1'));
-
-    expect(result).toBe(true);
-    expect(managerService.campManagerHasPermission).toHaveBeenCalledWith(
-      'camp-1',
-      'user-1',
-      'camp.tasks.view',
-    );
-  });
-
-  it('returns false when the service reports no permission', async () => {
-    managerService.campManagerHasPermission.mockResolvedValue(false);
-    const guard = campManager('camp.tasks.view');
-
-    const result = await guard(fakeReq({ id: 'camp-1' }));
-
-    expect(result).toBe(false);
-  });
 });
 
 describe('campManagerSelf', () => {

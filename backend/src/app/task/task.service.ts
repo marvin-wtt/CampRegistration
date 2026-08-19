@@ -4,6 +4,11 @@ import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 import { inject, injectable } from 'inversify';
 
+/** The assignee is embedded in every task response — see `TaskResource`. */
+const TASK_INCLUDE = {
+  assignee: { include: { user: true, invitation: true } },
+} as const;
+
 interface TaskCreateDto {
   title: string;
   notes?: string | null;
@@ -31,6 +36,7 @@ export class TaskService extends BaseService {
   async getTaskById(campId: string, id: string) {
     return this.prisma.task.findFirst({
       where: { id, campId },
+      include: TASK_INCLUDE,
     });
   }
 
@@ -38,6 +44,7 @@ export class TaskService extends BaseService {
     return this.prisma.task.findMany({
       where: { campId },
       orderBy: [{ completed: 'asc' }, { dueDate: 'asc' }],
+      include: TASK_INCLUDE,
     });
   }
 
@@ -54,6 +61,7 @@ export class TaskService extends BaseService {
         dueDate: data.dueDate,
         assigneeId: data.assigneeId,
       },
+      include: TASK_INCLUDE,
     });
   }
 
@@ -65,6 +73,7 @@ export class TaskService extends BaseService {
     return this.prisma.task.update({
       where: { id },
       data,
+      include: TASK_INCLUDE,
     });
   }
 

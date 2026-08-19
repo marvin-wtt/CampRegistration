@@ -1,4 +1,4 @@
-import type { Permission } from '../permissions/permissions.js';
+import type { CampScopedPermission } from '../permissions/permissions.js';
 
 /**
  * Resources that can be broadcast over a realtime stream. Each maps to a single
@@ -43,7 +43,7 @@ export interface RealtimeEvent {
    * Enforced per event by the SSE stream handler, so a single camp stream can
    * carry resources that not every camp role may see (e.g. managers, messages).
    */
-  requiredPermission?: Permission;
+  requiredPermission?: CampScopedPermission;
   /**
    * Id of the client (browser tab / app instance) that triggered the change,
    * taken from the {@link CLIENT_ID_HEADER} request header. Clients ignore
@@ -62,8 +62,14 @@ export interface RealtimeEvent {
  */
 export const CLIENT_ID_HEADER = 'X-Client-Id';
 
-/** The view permission required to receive events for a given resource. */
-export const RESOURCE_VIEW_PERMISSION: Record<RealtimeResource, Permission> = {
+/**
+ * The view permission required to receive events for a given resource. The SSE
+ * layer is camp-scoped end to end, so these are always camp permissions.
+ */
+export const RESOURCE_VIEW_PERMISSION: Record<
+  RealtimeResource,
+  CampScopedPermission
+> = {
   camp: 'camp.view',
   registration: 'camp.registrations.view',
   program_event: 'camp.program_events.view',

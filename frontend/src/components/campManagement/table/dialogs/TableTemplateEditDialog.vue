@@ -139,6 +139,22 @@
             </template>
           </q-select>
 
+          <q-select
+            v-model="printOrientation"
+            :label="t('fields.print_orientation.label')"
+            :hint="t('fields.print_orientation.hint')"
+            :options="orientationOptions"
+            emit-value
+            map-options
+            hide-bottom-space
+            outlined
+            rounded
+          >
+            <template #prepend>
+              <q-icon name="print" />
+            </template>
+          </q-select>
+
           <q-btn
             :label="advanced ? t('advanced.hide') : t('advanced.show')"
             :icon="advanced ? 'keyboard_arrow_up' : 'keyboard_arrow_down'"
@@ -268,6 +284,35 @@ const statusOptions: QSelectOption[] = [
     label: t('fields.filter_status.options.pending'),
   },
 ];
+
+const orientationOptions: QSelectOption[] = [
+  {
+    value: 'auto',
+    label: t('fields.print_orientation.options.auto'),
+  },
+  {
+    value: 'portrait',
+    label: t('fields.print_orientation.options.portrait'),
+  },
+  {
+    value: 'landscape',
+    label: t('fields.print_orientation.options.landscape'),
+  },
+];
+
+// `auto` is the absence of the setting; the print page then derives the
+// orientation from the table's intrinsic width.
+const printOrientation = computed<'auto' | 'portrait' | 'landscape'>({
+  get: () => template.printOptions?.orientation ?? 'auto',
+  set: (value) => {
+    if (value === 'auto') {
+      delete template.printOptions;
+      return;
+    }
+
+    template.printOptions = { ...template.printOptions, orientation: value };
+  },
+});
 
 const sortByOptions = computed<QSelectOption[]>(() => {
   return template.columns.map((value) => {
@@ -418,6 +463,13 @@ fields:
       accepted: 'Accepted'
       pending: 'Pending'
       waitlisted: 'Waitlisted'
+  print_orientation:
+    label: 'Print orientation'
+    hint: 'Page orientation when this table is printed'
+    options:
+      auto: 'Automatic'
+      portrait: 'Portrait'
+      landscape: 'Landscape'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -462,6 +514,13 @@ fields:
       accepted: 'Akzeptiert'
       pending: 'Ausstehend'
       waitlisted: 'Auf der Warteliste'
+  print_orientation:
+    label: 'Druckausrichtung'
+    hint: 'Seitenausrichtung beim Drucken dieser Tabelle'
+    options:
+      auto: 'Automatisch'
+      portrait: 'Hochformat'
+      landscape: 'Querformat'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -506,6 +565,13 @@ fields:
       accepted: 'Accepté'
       pending: 'En attente'
       waitlisted: "Sur liste d'attente"
+  print_orientation:
+    label: "Orientation d'impression"
+    hint: "Orientation de la page lors de l'impression de ce tableau"
+    options:
+      auto: 'Automatique'
+      portrait: 'Portrait'
+      landscape: 'Paysage'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -550,6 +616,13 @@ fields:
       accepted: 'Zaakceptowane'
       pending: 'Oczekujące'
       waitlisted: 'Na liście oczekujących'
+  print_orientation:
+    label: 'Orientacja wydruku'
+    hint: 'Orientacja strony podczas drukowania tej tabeli'
+    options:
+      auto: 'Automatycznie'
+      portrait: 'Pionowa'
+      landscape: 'Pozioma'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -594,4 +667,11 @@ fields:
       accepted: 'Přijato'
       pending: 'Čeká na vyřízení'
       waitlisted: 'Na čekací listině'
+  print_orientation:
+    label: 'Orientace tisku'
+    hint: 'Orientace stránky při tisku této tabulky'
+    options:
+      auto: 'Automaticky'
+      portrait: 'Na výšku'
+      landscape: 'Na šířku'
 </i18n>

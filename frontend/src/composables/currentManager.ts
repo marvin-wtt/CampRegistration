@@ -1,23 +1,27 @@
 import { computed } from 'vue';
 import { storeToRefs } from 'pinia';
-import { useCampManagerStore } from '@/stores/camp-manager-store';
+import { useCampDetailsStore } from '@/stores/camp-details-store';
 import { useProfileStore } from '@/stores/profile-store';
 
-// Resolves the CampManager record that belongs to the currently signed-in user
-// for the active camp. Used to highlight tasks (and similar items) assigned to
-// the current user.
+// The CampManager id of the signed-in user for the active camp, used to
+// highlight items assigned to them. Comes from `profile.campAccess`, so it needs
+// no access to the manager roster; `undefined` for organization-derived access,
+// which has no manager record.
 export function useCurrentManager() {
-  const campManagerStore = useCampManagerStore();
+  const campDetailsStore = useCampDetailsStore();
   const profileStore = useProfileStore();
-  const { data: managers } = storeToRefs(campManagerStore);
+  const { data: camp } = storeToRefs(campDetailsStore);
   const { user } = storeToRefs(profileStore);
 
   const currentManagerId = computed<string | undefined>(() => {
-    const email = user.value?.email;
-    if (!email) {
+    const campId = camp.value?.id;
+    if (!campId) {
       return undefined;
     }
-    return managers.value?.find((manager) => manager.email === email)?.id;
+    return (
+      user.value?.campAccess.find((access) => access.campId === campId)
+        ?.managerId ?? undefined
+    );
   });
 
   return { currentManagerId };

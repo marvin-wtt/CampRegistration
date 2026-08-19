@@ -7,8 +7,7 @@ import type {
   RegistrationUpdateQuery,
   RegistrationDeleteQuery,
 } from '@camp-registration/common/entities';
-
-type CampWithFreePlaces = Parameters<typeof formUtils>[0];
+import type { CampWithFreePlaces } from '#app/camp/camp.types';
 
 const RegistrationDataSchema = z.record(z.string(), z.unknown());
 

@@ -1,15 +1,11 @@
 import type {
   AppModule,
   AppRouter,
-  RoleToPermissions,
   BindOptions,
   ModuleOptions,
 } from '#core/base/AppModule';
 import { RoomRouter } from '#app/room/room.routes';
-import type {
-  CampManagerRole,
-  RoomPermission,
-} from '@camp-registration/common/permissions';
+import type { ScopedPermissions } from '@camp-registration/common/permissions';
 import { SETTING_KEYS } from '@camp-registration/common/settings';
 import { resolve } from '#core/ioc/container';
 import { RoomController } from '#app/room/room.controller.js';
@@ -36,22 +32,24 @@ export class RoomModule implements AppModule {
     router.useRouter('/camps/:campId/rooms', resolve(RoomRouter));
   }
 
-  registerPermissions(): RoleToPermissions<CampManagerRole, RoomPermission> {
+  registerPermissions(): ScopedPermissions {
     return {
-      DIRECTOR: [
-        'camp.rooms.view',
-        'camp.rooms.create',
-        'camp.rooms.edit',
-        'camp.rooms.delete',
-      ],
-      COORDINATOR: [
-        'camp.rooms.view',
-        'camp.rooms.create',
-        'camp.rooms.edit',
-        'camp.rooms.delete',
-      ],
-      COUNSELOR: ['camp.rooms.view'],
-      VIEWER: ['camp.rooms.view'],
+      camp: {
+        DIRECTOR: [
+          'camp.rooms.view',
+          'camp.rooms.create',
+          'camp.rooms.edit',
+          'camp.rooms.delete',
+        ],
+        COORDINATOR: [
+          'camp.rooms.view',
+          'camp.rooms.create',
+          'camp.rooms.edit',
+          'camp.rooms.delete',
+        ],
+        COUNSELOR: ['camp.rooms.view'],
+        VIEWER: ['camp.rooms.view'],
+      },
     };
   }
 }

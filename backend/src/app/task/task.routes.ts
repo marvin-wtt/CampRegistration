@@ -1,5 +1,5 @@
 import { auth, guard } from '#middlewares/index';
-import { campManager } from '#app/campManager/camp-manager.guard';
+import { campManager } from '#app/camp/camp.guard';
 import { TaskService } from './task.service.js';
 import { TaskController } from './task.controller.js';
 import { ModuleRouter } from '#core/router/ModuleRouter';

@@ -36,7 +36,7 @@ export const useCampsStore = defineStore('camps', () => {
       async () =>
         await apiService.fetchCamps({
           status: 'open',
-          public: true,
+          listed: true,
           limit: 50,
         }),
     );

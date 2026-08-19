@@ -29,6 +29,9 @@ export * from './NewsletterManager.js';
 export * from './NewsletterSubscriber.js';
 export * from './NewsletterMessage.js';
 
+export * from './Organization.js';
+export * from './OrganizationMember.js';
+
 // Types
 export * from './AdminOverview.js';
 export * from './AuthTokens.js';

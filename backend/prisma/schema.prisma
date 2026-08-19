@@ -30,7 +30,9 @@ model User {
   newsletterManagers     NewsletterManager[]
   sentNewsletterMessages NewsletterMessage[]
   sentMessages           Message[]
-  twoFactor UserTwoFactor?
+  organizationMembers   OrganizationMember[]
+  reviewedOrganizations Organization[]       @relation("OrganizationReviewer")
+  twoFactor             UserTwoFactor?
 
   @@map("users")
 }
@@ -75,9 +77,82 @@ enum ConfirmationMode {
   MANUAL
 }
 
+enum OrganizationVerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+model Organization {
+  id                 String                         @id @unique(map: "organizations_id_unique") @default(ulid()) @db.Char(26)
+  name               String                         @db.VarChar(255)
+  verificationStatus OrganizationVerificationStatus @default(PENDING) @map("verification_status")
+
+  contactEmail       String  @map("contact_email") @db.VarChar(255)
+  phone              String? @db.VarChar(50)
+  website            String? @db.VarChar(255)
+  registrationNumber String? @map("registration_number") @db.VarChar(100)
+
+  addressStreet  String @map("address_street") @db.VarChar(255)
+  addressZipCode String @map("address_zip_code") @db.VarChar(20)
+  addressCity    String @map("address_city") @db.VarChar(255)
+  country        String @db.Char(2)
+
+  verificationNote String?   @map("verification_note") @db.Text
+  reviewNote       String?   @map("review_note") @db.Text
+  reviewedAt       DateTime? @map("reviewed_at")
+  reviewedByUserId String?   @map("reviewed_by_user_id") @db.Char(26)
+  submittedAt      DateTime  @default(now()) @map("submitted_at")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime? @updatedAt @map("updated_at")
+
+  reviewedBy  User?                    @relation("OrganizationReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "organizations_reviewed_by_user_id_foreign")
+  members     OrganizationMember[]
+  invitations OrganizationInvitation[]
+  camps       Camp[]
+  newsletters Newsletter[]
+
+  @@index([verificationStatus], map: "organizations_verification_status_index")
+  @@index([reviewedByUserId], map: "organizations_reviewed_by_user_id_index")
+  @@map("organizations")
+}
+
+model OrganizationMember {
+  id             String   @id @unique(map: "organization_members_id_unique") @default(ulid()) @db.Char(26)
+  organizationId String   @map("organization_id") @db.Char(26)
+  userId         String?  @map("user_id") @db.Char(26)
+  role           String   @default("MEMBER") @db.VarChar(50)
+  invitationId   String?  @map("invitation_id") @db.Char(26)
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  organization Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "organization_members_organization_id_foreign")
+  user         User?                   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "organization_members_user_id_foreign")
+  invitation   OrganizationInvitation? @relation(fields: [invitationId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "organization_members_invitation_id_foreign")
+
+  @@unique([organizationId, userId], map: "organization_members_organization_id_user_id_unique")
+  @@index([userId], map: "organization_members_user_id_index")
+  @@index([invitationId], map: "organization_members_invitation_id_index")
+  @@map("organization_members")
+}
+
+model OrganizationInvitation {
+  id             String @id @unique(map: "organization_invitations_id_unique") @default(ulid()) @db.Char(26)
+  organizationId String @map("organization_id") @db.Char(26)
+  email          String @db.VarChar(255)
+
+  organization Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "organization_invitations_organization_id_foreign")
+  members      OrganizationMember[]
+
+  @@index([organizationId], map: "organization_invitations_organization_id_index")
+  @@index([email], map: "organization_invitations_email_index")
+  @@map("organization_invitations")
+}
+
 model Camp {
   id                   String           @id @unique(map: "camps_id_unique") @default(ulid()) @db.Char(26)
-  public               Boolean
+  organizationId String @map("organization_id") @db.Char(26)
+  listed               Boolean
   registrationOpensAt  DateTime?        @map("registration_opens_at") @db.DateTime(0)
   registrationClosesAt DateTime?        @map("registration_closes_at") @db.DateTime(0)
   confirmationMode     ConfirmationMode @default(AUTOMATIC) @map("confirmation_mode")
@@ -105,6 +180,7 @@ model Camp {
   createdAt            DateTime?        @default(now()) @map("created_at")
   updatedAt            DateTime?        @updatedAt @map("updated_at")
 
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "camps_organization_id_foreign")
   campManager      CampManager[]
   registrations    Registration[]
   rooms            Room[]
@@ -116,6 +192,7 @@ model Camp {
   tasks            Task[]
   campSettings     CampSetting[]
 
+  @@index([organizationId], map: "camps_organization_id_index")
   @@map("camps")
 }
 
@@ -153,37 +230,45 @@ enum RegistrationStatus {
 }
 
 model Registration {
-  id                String             @id @unique(map: "registrations_id_unique") @default(ulid()) @db.Char(26)
-  campId            String             @map("camp_id") @db.Char(26)
+  id                                 String             @id @unique(map: "registrations_id_unique") @default(ulid()) @db.Char(26)
+  campId                             String             @map("camp_id") @db.Char(26)
   /// ![Record<string, unknown>]
-  data              Json               @db.Json
+  data                               Json               @db.Json
   /// ![Record<string, unknown>]
-  customData        Json?              @map("custom_data") @db.Json
+  customData                         Json?              @map("custom_data") @db.Json
   // Computed fields
-  firstName         String?            @map("first_name")
-  lastName          String?            @map("last_name")
-  role              String?
-  gender            String?
-  dateOfBirth       DateTime?          @map("date_of_birth") @db.Date
+  firstName                          String?            @map("first_name")
+  lastName                           String?            @map("last_name")
+  role                               String?
+  gender                             String?
+  dateOfBirth                        DateTime?          @map("date_of_birth") @db.Date
   /// ![Array<string>]
-  emails            Json?
-  street            String?
-  city              String?
-  zipCode           String?            @map("zip_code")
-  country           String?
-  newsletterConsent Boolean?           @map("newsletter_consent")
-  locale            String             @default("en-US") @db.VarChar(5)
+  emails                             Json?
+  street                             String?
+  city                               String?
+  zipCode                            String?            @map("zip_code")
+  country                            String?
+  newsletterConsent                  Boolean?           @map("newsletter_consent")
+  locale                             String             @default("en-US") @db.VarChar(5)
   //
-  status            RegistrationStatus @default(PENDING)
-  deletedAt         DateTime?
-  createdAt         DateTime           @default(now()) @map("created_at")
-  updatedAt         DateTime?          @updatedAt @map("updated_at")
+  status                             RegistrationStatus @default(PENDING)
+  // Which privacy information this person was actually shown. Nullable because
+  // registrations predating the feature were shown none — do not backfill.
+  organizationPrivacyNoticeVersionId String?            @map("organization_privacy_notice_version_id") @db.Char(26)
+  campPrivacyNoticeVersionId         String?            @map("camp_privacy_notice_version_id") @db.Char(26)
+  platformPrivacyPolicyUpdatedAt     DateTime?          @map("platform_privacy_policy_updated_at")
+  createdAt                          DateTime           @default(now()) @map("created_at")
+  updatedAt                          DateTime?          @updatedAt @map("updated_at")
 
-  camp       Camp              @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "registrations_camp_id_foreign")
-  bed        Bed?
-  files      File[]
-  deliveries MessageDelivery[]
+  camp                      Camp                  @relation(fields: [campId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "registrations_camp_id_foreign")
+  organizationPrivacyNotice PrivacyNoticeVersion? @relation("RegistrationOrganizationPrivacyNotice", fields: [organizationPrivacyNoticeVersionId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "registrations_organization_privacy_notice_version_id_foreign")
+  campPrivacyNotice         PrivacyNoticeVersion? @relation("RegistrationCampPrivacyNotice", fields: [campPrivacyNoticeVersionId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "registrations_camp_privacy_notice_version_id_foreign")
+  bed                       Bed?
+  files                     File[]
+  deliveries                MessageDelivery[]
 
+  @@index([organizationPrivacyNoticeVersionId], map: "registrations_organization_privacy_notice_version_id_index")
+  @@index([campPrivacyNoticeVersionId], map: "registrations_camp_privacy_notice_version_id_index")
   @@map("registrations")
 }
 
@@ -394,17 +479,20 @@ model JobRateLimit {
 }
 
 model Newsletter {
-  id          String    @id @unique(map: "newsletters_id_unique") @default(ulid()) @db.Char(26)
-  name        String    @db.VarChar(255)
-  description String?   @db.Text
-  replyTo     String?   @map("reply_to") @db.Char(255)
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime? @updatedAt @map("updated_at")
+  id             String    @id @unique(map: "newsletters_id_unique") @default(ulid()) @db.Char(26)
+  organizationId String    @map("organization_id") @db.Char(26)
+  name           String    @db.VarChar(255)
+  description    String?   @db.Text
+  replyTo        String?   @map("reply_to") @db.Char(255)
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime? @updatedAt @map("updated_at")
 
-  managers    NewsletterManager[]
-  subscribers NewsletterSubscriber[]
-  messages    NewsletterMessage[]
+  organization Organization           @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "newsletters_organization_id_foreign")
+  managers     NewsletterManager[]
+  subscribers  NewsletterSubscriber[]
+  messages     NewsletterMessage[]
 
+  @@index([organizationId], map: "newsletters_organization_id_index")
   @@map("newsletters")
 }
 
@@ -504,4 +592,29 @@ model LegalDocument {
   updatedAt DateTime?         @updatedAt @map("updated_at")
 
   @@map("legal_documents")
+}
+
+enum PrivacyNoticeScope {
+  ORGANIZATION
+  CAMP
+}
+
+/// Append-only. A registration points at the exact version it was shown, so an
+/// organization can still prove what the notice said months later.
+model PrivacyNoticeVersion {
+  id      String             @id @unique(map: "privacy_notice_versions_id_unique") @default(ulid()) @db.Char(26)
+  scope   PrivacyNoticeScope
+  scopeId String             @map("scope_id") @db.Char(26)
+  version Int
+  /// ![PrivacyNoticeContent]
+  content Json               @db.Json
+
+  publishedAt DateTime @default(now()) @map("published_at")
+
+  registrationsAsOrganization Registration[] @relation("RegistrationOrganizationPrivacyNotice")
+  registrationsAsCamp         Registration[] @relation("RegistrationCampPrivacyNotice")
+
+  @@unique([scope, scopeId, version], map: "privacy_notice_versions_scope_scope_id_version_unique")
+  @@index([scope, scopeId], map: "privacy_notice_versions_scope_scope_id_index")
+  @@map("privacy_notice_versions")
 }

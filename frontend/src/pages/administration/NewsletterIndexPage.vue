@@ -102,6 +102,13 @@ const columns = computed<QTableColumn<Newsletter>[]>(() => [
     sortable: true,
   },
   {
+    name: 'organization',
+    label: t('column.organization'),
+    field: 'organizationName',
+    align: 'left',
+    sortable: false,
+  },
+  {
     name: 'description',
     label: t('column.description'),
     field: 'description',
@@ -175,27 +182,7 @@ function showDeleteDialog(newsletter: Newsletter) {
 }
 </script>
 
-<style scoped lang="scss">
-.admin-page {
-  position: absolute;
-  inset: 0;
-  padding: 16px;
-}
-
-.admin-table {
-  // Let the table fill the remaining height and scroll internally instead of
-  // growing the page (min-height:0 lets the flex child shrink below content).
-  min-height: 0;
-  background: var(--md3-surface);
-
-  :deep(thead tr th) {
-    position: sticky;
-    top: 0;
-    z-index: 1;
-    background: var(--md3-surface-container-low);
-  }
-}
-</style>
+<style scoped></style>
 
 <i18n lang="yaml" locale="en">
 title: 'Newsletters'
@@ -204,6 +191,7 @@ action:
   delete: 'Delete'
 column:
   name: 'Name'
+  organization: 'Organization'
   description: 'Description'
   createdAt: 'Created'
   action: 'Actions'
@@ -221,6 +209,7 @@ action:
   delete: 'Löschen'
 column:
   name: 'Name'
+  organization: 'Organisation'
   description: 'Beschreibung'
   createdAt: 'Erstellt'
   action: 'Aktionen'
@@ -238,6 +227,7 @@ action:
   delete: 'Supprimer'
 column:
   name: 'Nom'
+  organization: 'Organisation'
   description: 'Description'
   createdAt: 'Créé le'
   action: 'Actions'
@@ -255,6 +245,7 @@ action:
   delete: 'Usuń'
 column:
   name: 'Nazwa'
+  organization: 'Organizacja'
   description: 'Opis'
   createdAt: 'Utworzono'
   action: 'Akcje'
@@ -272,6 +263,7 @@ action:
   delete: 'Smazat'
 column:
   name: 'Název'
+  organization: 'Organizace'
   description: 'Popis'
   createdAt: 'Vytvořeno'
   action: 'Akce'

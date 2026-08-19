@@ -19,6 +19,7 @@
 
         <q-btn
           :label="quasar.screen.gt.xs ? t('action.create') : ''"
+          :aria-label="t('action.create')"
           color="primary"
           icon="add"
           unelevated
@@ -79,11 +80,11 @@
         />
 
         <camp-card-section
-          v-if="archivedCamps.length"
-          :header="t('group.archived')"
-          icon="inventory_2"
-          :hint="t('group.archivedHint')"
-          :camps="archivedCamps"
+          v-if="pastCamps.length"
+          :header="t('group.past')"
+          icon="history"
+          :hint="t('group.pastHint')"
+          :camps="pastCamps"
           collapsible
         />
       </template>
@@ -103,10 +104,16 @@ import CampCardSkeleton from '@/components/campManagement/index/CampCardSkeleton
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import CampCreateDialog from '@/components/campManagement/index/CampCreateDialog.vue';
 import { phaseOf, type CampPhase } from '@/utils/campPhase';
+import { useRouter } from 'vue-router';
+import { useOrganizationsStore } from '@/stores/organizations-store';
+import { useOrganizationPermissions } from '@/composables/organizationPermissions';
 
 const { t } = useI18n();
 const quasar = useQuasar();
+const router = useRouter();
 const assignedCampsStore = useAssignedCampsStore();
+const organizationsStore = useOrganizationsStore();
+const { campCreationOrganizationIds } = useOrganizationPermissions();
 
 const {
   data: camps,
@@ -119,7 +126,7 @@ onMounted(() => void assignedCampsStore.fetchData());
 const totalCamps = computed<number>(() => camps.value?.length ?? 0);
 
 interface Group {
-  key: Exclude<CampPhase, 'archived'>;
+  key: Exclude<CampPhase, 'past'>;
   header: string;
   icon: string;
   camps: Camp[];
@@ -134,8 +141,8 @@ const groups = computed<Group[]>(() => {
   const upcoming = all
     .filter((camp) => phaseOf(camp) === 'upcoming')
     .toSorted(byStartAsc);
-  const past = all
-    .filter((camp) => phaseOf(camp) === 'past')
+  const recentlyEnded = all
+    .filter((camp) => phaseOf(camp) === 'recentlyEnded')
     .toSorted(byStartDesc);
 
   return [
@@ -152,17 +159,17 @@ const groups = computed<Group[]>(() => {
       camps: upcoming,
     },
     {
-      key: 'past' as const,
-      header: t('group.past'),
-      icon: 'history',
-      camps: past,
+      key: 'recentlyEnded' as const,
+      header: t('group.recentlyEnded'),
+      icon: 'schedule',
+      camps: recentlyEnded,
     },
   ].filter((group) => group.camps.length > 0);
 });
 
-const archivedCamps = computed<Camp[]>(() => {
+const pastCamps = computed<Camp[]>(() => {
   return (camps.value ?? [])
-    .filter((camp) => phaseOf(camp) === 'archived')
+    .filter((camp) => phaseOf(camp) === 'past')
     .toSorted(byStartDesc);
 });
 
@@ -174,7 +181,32 @@ function byStartDesc(a: Camp, b: Camp) {
   return new Date(b.startAt).getTime() - new Date(a.startAt).getTime();
 }
 
-function onCreateCamp() {
+async function onCreateCamp() {
+  // A camp must name an organization the user belongs to. Without one, send
+  // them to create an organization rather than into a dialog that would 403.
+  await organizationsStore.fetchData();
+
+  if (campCreationOrganizationIds.value.length === 0) {
+    quasar
+      .dialog({
+        title: t('organization_required.title'),
+        message: t('organization_required.message'),
+        cancel: {
+          outline: true,
+          color: 'primary',
+        },
+        ok: {
+          label: t('organization_required.action'),
+          color: 'primary',
+          rounded: true,
+        },
+      })
+      .onOk(() => {
+        void router.push({ name: 'management.organizations' });
+      });
+    return;
+  }
+
   quasar.dialog({
     component: CampCreateDialog,
   });
@@ -217,13 +249,17 @@ function onCreateCamp() {
 
 <i18n lang="yaml" locale="en">
 title: 'My camps'
+organization_required:
+  title: 'Organization required'
+  message: 'Camps are run by an organization. Create one first — you can start building your camp right after, even before it is verified.'
+  action: 'Go to organizations'
 subtitle: 'Manage registrations, rooms and program for the camps you run.'
 group:
   ongoing: 'Happening now'
   upcoming: 'Upcoming'
-  past: 'Past'
-  archived: 'Archived'
-  archivedHint: 'Camps are archived automatically once they ended more than 6 weeks ago and registration is closed.'
+  recentlyEnded: 'Recently ended'
+  past: 'Past camps'
+  pastHint: 'Camps move here automatically once they ended more than 6 weeks ago and registration is closed.'
 action:
   create: 'Create camp'
 empty:
@@ -233,13 +269,17 @@ empty:
 
 <i18n lang="yaml" locale="de">
 title: 'Meine Camps'
+organization_required:
+  title: 'Organisation erforderlich'
+  message: 'Camps werden von einer Organisation betrieben. Erstelle zuerst eine — dein Camp kannst du direkt danach anlegen, auch vor der Verifizierung.'
+  action: 'Zu den Organisationen'
 subtitle: 'Verwalte Anmeldungen, Räume und Programm für die Camps, die du leitest.'
 group:
   ongoing: 'Aktuell'
   upcoming: 'Anstehend'
-  past: 'Vergangen'
-  archived: 'Archiviert'
-  archivedHint: 'Camps werden automatisch archiviert, wenn sie vor mehr als 6 Wochen endeten und die Anmeldung geschlossen ist.'
+  recentlyEnded: 'Kürzlich beendet'
+  past: 'Vergangene Camps'
+  pastHint: 'Camps landen automatisch hier, wenn sie vor mehr als 6 Wochen endeten und die Anmeldung geschlossen ist.'
 action:
   create: 'Camp erstellen'
 empty:
@@ -249,13 +289,17 @@ empty:
 
 <i18n lang="yaml" locale="fr">
 title: 'Mes camps'
+organization_required:
+  title: 'Organisation requise'
+  message: "Les camps sont gérés par une organisation. Crée-en une d'abord — tu pourras préparer ton camp juste après, même avant la vérification."
+  action: 'Aller aux organisations'
 subtitle: 'Gérez les inscriptions, les chambres et le programme des camps que vous dirigez.'
 group:
   ongoing: 'En cours'
   upcoming: 'À venir'
-  past: 'Passés'
-  archived: 'Archivés'
-  archivedHint: 'Les camps sont archivés automatiquement lorsqu’ils se sont terminés il y a plus de 6 semaines et que les inscriptions sont closes.'
+  recentlyEnded: 'Récemment terminés'
+  past: 'Camps passés'
+  pastHint: 'Les camps arrivent ici automatiquement lorsqu’ils se sont terminés il y a plus de 6 semaines et que les inscriptions sont closes.'
 action:
   create: 'Créer un camp'
 empty:
@@ -265,13 +309,17 @@ empty:
 
 <i18n lang="yaml" locale="pl">
 title: 'Moje obozy'
+organization_required:
+  title: 'Wymagana organizacja'
+  message: 'Obozy prowadzone są przez organizację. Najpierw utwórz organizację — obóz możesz przygotować zaraz potem, jeszcze przed weryfikacją.'
+  action: 'Przejdź do organizacji'
 subtitle: 'Zarządzaj zapisami, pokojami i programem obozów, które prowadzisz.'
 group:
   ongoing: 'Trwające'
   upcoming: 'Nadchodzące'
-  past: 'Zakończone'
-  archived: 'Zarchiwizowane'
-  archivedHint: 'Obozy są archiwizowane automatycznie, gdy zakończyły się ponad 6 tygodni temu, a zapisy są zamknięte.'
+  recentlyEnded: 'Niedawno zakończone'
+  past: 'Minione obozy'
+  pastHint: 'Obozy trafiają tutaj automatycznie, gdy zakończyły się ponad 6 tygodni temu, a zapisy są zamknięte.'
 action:
   create: 'Utwórz obóz'
 empty:
@@ -281,13 +329,17 @@ empty:
 
 <i18n lang="yaml" locale="cs">
 title: 'Moje tábory'
+organization_required:
+  title: 'Vyžadována organizace'
+  message: 'Tábory pořádá organizace. Nejprve nějakou vytvoř — tábor můžeš připravovat hned poté, i před ověřením.'
+  action: 'Přejít na organizace'
 subtitle: 'Spravujte registrace, pokoje a program táborů, které vedete.'
 group:
   ongoing: 'Probíhající'
   upcoming: 'Nadcházející'
-  past: 'Minulé'
-  archived: 'Archivované'
-  archivedHint: 'Tábory se archivují automaticky, jakmile skončily před více než 6 týdny a registrace je uzavřena.'
+  recentlyEnded: 'Nedávno ukončené'
+  past: 'Minulé tábory'
+  pastHint: 'Tábory se zde objeví automaticky, jakmile skončily před více než 6 týdny a registrace je uzavřena.'
 action:
   create: 'Vytvořit tábor'
 empty:
