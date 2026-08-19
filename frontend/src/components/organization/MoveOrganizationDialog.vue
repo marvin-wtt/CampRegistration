@@ -3,12 +3,12 @@
     ref="dialogRef"
     @hide="onDialogHide"
   >
-    <q-card class="move-camp-card">
+    <q-card class="move-card">
       <q-form @submit="onSubmit">
         <q-card-section class="q-pb-none">
           <div class="text-h6">{{ t('title') }}</div>
           <div class="text-body2 text-on-surface-variant q-mt-xs">
-            {{ campName }}
+            {{ name }}
           </div>
         </q-card-section>
 
@@ -65,14 +65,14 @@
           </q-select>
 
           <q-banner
-            v-if="willHide"
+            v-if="showUnverifiedWarning"
             dense
             class="warn-note rounded-md"
           >
             <template #avatar>
               <q-icon name="warning" />
             </template>
-            {{ t('hiddenWarning') }}
+            {{ unverifiedWarning }}
           </q-banner>
         </q-card-section>
 
@@ -104,16 +104,25 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { useAPIService } from '@/services/APIService';
-import { useObjectTranslation } from '@/composables/objectTranslation';
 import { countryName } from '@/utils/countries';
-import type { Camp, Organization } from '@camp-registration/common/entities';
+import type { Organization } from '@camp-registration/common/entities';
 
-const props = defineProps<{ camp: Camp }>();
+const props = defineProps<{
+  /** Display name of the camp or newsletter being moved. */
+  name: string;
+  /** The current owner, excluded from the options — moving there is a no-op. */
+  organizationId: string;
+  /**
+   * Shown once an unverified organization is picked. The consequence differs
+   * per subject, so the caller supplies the wording — and omits it when moving
+   * to an unverified organization changes nothing.
+   */
+  unverifiedWarning?: string | undefined;
+}>();
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
 const { t, locale } = useI18n();
-const { to } = useObjectTranslation();
 const api = useAPIService();
 defineEmits([...useDialogPluginComponent.emits]);
 
@@ -132,12 +141,9 @@ const filteredOptions = ref<OrganizationOption[]>([]);
 // own — it may no longer be among the options by the time the form is read.
 const selectedOption = ref<OrganizationOption>();
 
-const campName = computed(() => to(props.camp.name));
-
 const allOptions = computed<OrganizationOption[]>(() =>
   organizations.value
-    // Moving a camp to the organization it already belongs to is a no-op.
-    .filter((organization) => organization.id !== props.camp.organizationId)
+    .filter((organization) => organization.id !== props.organizationId)
     .map((organization) => ({
       label: organization.name,
       caption: countryName(organization.country, locale.value),
@@ -146,13 +152,8 @@ const allOptions = computed<OrganizationOption[]>(() =>
     })),
 );
 
-/**
- * Moving does not rewrite `listed`. Visibility is derived from the owner's
- * moderation status on read, so a published camp simply drops out of the
- * directory while the new owner is unverified, and returns when it is verified.
- */
-const willHide = computed(() => {
-  if (!props.camp.listed || !selectedOption.value) {
+const showUnverifiedWarning = computed(() => {
+  if (!props.unverifiedWarning || !selectedOption.value) {
     return false;
   }
 
@@ -212,7 +213,7 @@ onMounted(async () => {
 </script>
 
 <style lang="scss" scoped>
-.move-camp-card {
+.move-card {
   width: 480px;
   max-width: 90vw;
 }
@@ -233,7 +234,6 @@ status:
 rule:
   required: 'Please choose an organization'
 noResults: 'No matching organization'
-hiddenWarning: 'This organization is not verified, so the camp will be hidden from the public directory and stop accepting registrations until it is. It stays published and reappears once the organization is verified.'
 action:
   move: 'Move'
   cancel: 'Cancel'
@@ -249,7 +249,6 @@ status:
 rule:
   required: 'Bitte wähle eine Organisation'
 noResults: 'Keine passende Organisation'
-hiddenWarning: 'Diese Organisation ist nicht verifiziert. Das Camp wird bis dahin nicht mehr öffentlich angezeigt und nimmt keine Anmeldungen an. Es bleibt veröffentlicht und erscheint nach der Verifizierung wieder.'
 action:
   move: 'Verschieben'
   cancel: 'Abbrechen'
@@ -265,7 +264,6 @@ status:
 rule:
   required: 'Choisis une organisation'
 noResults: 'Aucune organisation correspondante'
-hiddenWarning: "Cette organisation n'est pas vérifiée : le camp sera masqué de l'annuaire public et cessera d'accepter les inscriptions. Il reste publié et réapparaîtra après la vérification."
 action:
   move: 'Déplacer'
   cancel: 'Annuler'
@@ -281,7 +279,6 @@ status:
 rule:
   required: 'Wybierz organizację'
 noResults: 'Brak pasującej organizacji'
-hiddenWarning: 'Ta organizacja nie jest zweryfikowana, więc obóz zostanie ukryty w publicznym katalogu i przestanie przyjmować zapisy. Pozostaje opublikowany i wróci po weryfikacji.'
 action:
   move: 'Przenieś'
   cancel: 'Anuluj'
@@ -297,7 +294,6 @@ status:
 rule:
   required: 'Vyber organizaci'
 noResults: 'Žádná odpovídající organizace'
-hiddenWarning: 'Tato organizace není ověřená, takže tábor bude skryt z veřejného katalogu a přestane přijímat registrace. Zůstává zveřejněn a vrátí se po ověření.'
 action:
   move: 'Přesunout'
   cancel: 'Zrušit'
