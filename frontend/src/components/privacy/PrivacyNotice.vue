@@ -116,17 +116,30 @@
               :key="`${exception.scope}-${index}`"
             >
               {{ exceptionLabel(exception) }} —
-              {{
-                t('retentionSentenceShort', {
-                  months: exception.months,
-                  anchor: gt(`privacy.retentionAnchor.${exception.anchor}`),
-                })
-              }}
+              <!-- Nothing counts down here, so there is no period to state:
+                   what ends it is the withdrawal. -->
+              <template v-if="isConsentBoundException(exception)">
+                {{ gt('privacy.retentionUntil.consent_withdrawn') }}
+              </template>
+              <template v-else>
+                {{
+                  t('retentionSentenceShort', {
+                    months: exception.months,
+                    anchor: gt(`privacy.retentionAnchor.${exception.anchor}`),
+                  })
+                }}
+              </template>
               <template v-if="exception.reason">
                 ({{ to(exception.reason) }})
               </template>
             </li>
           </ul>
+          <!-- Art. 7(3): the withdrawal is what ends the storage, so the notice
+               has to say plainly that withdrawing is what erases it. How to
+               withdraw is in the rights section below. -->
+          <p v-if="hasConsentBoundException">
+            {{ gt('privacy.retentionConsentSentence') }}
+          </p>
         </template>
         <!-- A statutory retention duty overrides the period the controller
              picked, so the period above cannot be stated as the whole answer. -->
@@ -241,6 +254,7 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import DOMPurify from 'dompurify';
 import {
+  isConsentBoundException,
   retentionExceptions,
   type PublishedPrivacyNotice,
 } from '@camp-registration/common/privacy';
@@ -288,6 +302,10 @@ const campAdditionalHtml = computed<string | null>(() =>
 
 const exceptions = computed(() =>
   retentionExceptions(props.notice.notice?.retention),
+);
+
+const hasConsentBoundException = computed<boolean>(() =>
+  exceptions.value.some(isConsentBoundException),
 );
 
 const automatedDetails = computed<string | null>(() =>

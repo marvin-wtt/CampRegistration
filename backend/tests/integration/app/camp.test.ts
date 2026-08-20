@@ -72,6 +72,8 @@ const assertCampModel = async (id: string, data: CampCreateData) => {
     location: data.location,
     form: data.form ?? expect.anything(),
     themes: data.themes ?? expect.anything(),
+    // Written only by the retention reminder job, never on create or update.
+    retentionReminderSentAt: null,
     updatedAt: expect.anything(),
     createdAt: expect.anything(),
   });

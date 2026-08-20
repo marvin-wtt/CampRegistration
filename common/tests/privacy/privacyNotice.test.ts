@@ -5,6 +5,7 @@ import {
   PRIVACY_PURPOSE_PRESETS,
   PRIVACY_RECIPIENT_KEYS,
   SPECIAL_CATEGORY_DATA_KEYS,
+  addendumGaps,
   composePrivacyNotice,
   customKey,
   emptyPrivacyNoticeContent,
@@ -519,5 +520,110 @@ describe('supervisoryAuthorityFor', () => {
 
   it('returns null outside the covered countries', () => {
     expect(supervisoryAuthorityFor('US')).toBeNull();
+  });
+});
+
+describe('privacyNoticeCompleteness — consent-bound retention', () => {
+  it('accepts an exception with no period when it runs until withdrawal', () => {
+    const content = completeContent();
+    content.purposes.push({ key: 'photo_publication', legalBasis: 'consent' });
+    content.retention!.exceptions.push({
+      scope: 'photo_publication',
+      until: 'consent_withdrawn',
+    });
+
+    expect(privacyNoticeCompleteness(content)).toEqual({
+      complete: true,
+      gaps: [],
+    });
+  });
+
+  it('refuses indefinite retention hung on a purpose that is not consent', () => {
+    const content = completeContent();
+    content.retention!.exceptions.push({
+      scope: 'registration_administration',
+      until: 'consent_withdrawn',
+    });
+
+    expect(privacyNoticeCompleteness(content).gaps).toContain(
+      'retention_exception_consent_basis',
+    );
+  });
+
+  it('still requires a name for a consent-bound exception the author invented', () => {
+    const content = completeContent();
+    content.purposes.push({ key: customKey('1'), legalBasis: 'consent' });
+    content.retention!.exceptions.push({
+      scope: customKey('1'),
+      until: 'consent_withdrawn',
+    });
+
+    expect(privacyNoticeCompleteness(content).gaps).toContain(
+      'retention_exception',
+    );
+  });
+
+  it('routes the new gap to the retention step', () => {
+    expect(
+      gapsInSection(['retention_exception_consent_basis'], 'retention'),
+    ).toEqual(['retention_exception_consent_basis']);
+  });
+});
+
+describe('addendumGaps', () => {
+  it('reports nothing for an addendum that adds nothing of its own', () => {
+    expect(addendumGaps(completeContent(), {})).toEqual([]);
+  });
+
+  it('reports the Art. 9 basis a camp owes for a category it adds', () => {
+    expect(
+      addendumGaps(completeContent(), { dataCategories: [{ key: 'health' }] }),
+    ).toEqual(['special_category_basis']);
+  });
+
+  it('accepts the same category once the camp names its basis', () => {
+    expect(
+      addendumGaps(completeContent(), {
+        dataCategories: [
+          { key: 'health', specialCategoryBasis: 'explicit_consent' },
+        ],
+      }),
+    ).toEqual([]);
+  });
+
+  it('reports the explanation a camp owes for restating a purpose', () => {
+    expect(
+      addendumGaps(completeContent(), {
+        purposes: [
+          {
+            key: 'registration_administration',
+            legalBasis: 'legitimate_interests',
+          },
+        ],
+      }),
+    ).toEqual(['legitimate_interest_explanation']);
+  });
+
+  it('does not blame a camp for what its organization never published', () => {
+    expect(addendumGaps(null, { dataCategories: [{ key: 'identity' }] })).toEqual(
+      [],
+    );
+  });
+
+  it('reports a consent-bound exception the camp hangs on the wrong purpose', () => {
+    expect(
+      addendumGaps(completeContent(), {
+        retention: {
+          months: 24,
+          anchor: 'camp_end',
+          exceptions: [
+            {
+              scope: 'registration_administration',
+              until: 'consent_withdrawn',
+            },
+          ],
+        },
+      }),
+    ).toEqual(['retention_exception_consent_basis']);
   });
 });

@@ -177,6 +177,7 @@ model Camp {
   form                 Json             @db.Json
   /// ![Record<string, unknown>]
   themes               Json             @default("{}") @db.Json
+  retentionReminderSentAt DateTime?     @map("retention_reminder_sent_at")
   createdAt            DateTime?        @default(now()) @map("created_at")
   updatedAt            DateTime?        @updatedAt @map("updated_at")
 

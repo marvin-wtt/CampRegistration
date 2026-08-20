@@ -12,250 +12,351 @@
   <div class="camp-filters">
     <!-- The search box lives in the hero, so once it scrolls away this is the
          only thing telling the visitor their results are narrowed. -->
-    <button
+    <div
       v-if="search"
-      type="button"
       class="filter-chip filter-chip--active"
       data-test="camps-active-search"
-      @click="search = ''"
     >
-      <q-icon
-        name="search"
-        size="16px"
-      />
-      <span class="filter-chip__label">{{ search }}</span>
-      <q-icon
-        name="close"
-        size="16px"
-      />
-    </button>
+      <span class="filter-chip__body filter-chip__body--static">
+        <q-icon
+          name="search"
+          size="16px"
+        />
+        <span class="filter-chip__label">{{ search }}</span>
+      </span>
+
+      <button
+        type="button"
+        class="filter-chip__clear"
+        :aria-label="t('clear_one', { filter: t('search') })"
+        data-test="camps-clear-search"
+        @click="search = ''"
+      >
+        <q-icon
+          name="close"
+          size="16px"
+        />
+      </button>
+    </div>
 
     <!-- Dates -->
-    <button
-      type="button"
+    <div
       class="filter-chip"
       :class="{ 'filter-chip--active': hasDates }"
-      aria-haspopup="true"
-      data-test="camps-filter-dates"
     >
-      <q-icon
-        name="event"
-        size="16px"
-      />
-      <span class="filter-chip__label">{{ dateLabel }}</span>
-      <q-icon
-        name="expand_more"
-        size="16px"
-        class="filter-chip__caret"
-      />
-
-      <!--
-        Presets sit above the calendar rather than in QDate's own footer slot:
-        most visitors pick a season and are done, so the picker is the fallback
-        rather than the main act — and the slot renders below the calendar,
-        which buried them.
-      -->
-      <q-popup-proxy
-        class="filter-menu filter-menu--date"
-        transition-show="jump-down"
-        transition-hide="jump-up"
-        :offset="[0, 8]"
-        no-route-dismiss
+      <button
+        type="button"
+        class="filter-chip__body"
+        aria-haspopup="true"
+        data-test="camps-filter-dates"
       >
-        <div class="filter-pop filter-pop--date">
-          <div class="filter-pop__title">{{ t('dates') }}</div>
+        <q-icon
+          name="event"
+          size="16px"
+        />
+        <span class="filter-chip__label">{{ dateLabel }}</span>
+        <q-icon
+          v-if="!hasDates"
+          name="expand_more"
+          size="16px"
+          class="filter-chip__caret"
+        />
 
-          <div class="filter-pop__presets">
-            <button
-              v-for="preset in CAMP_DATE_PRESETS"
-              :key="preset"
-              type="button"
-              class="preset-chip"
-              :class="{ 'preset-chip--active': preset === activePreset }"
-              :aria-pressed="preset === activePreset"
-              :data-test="`camps-preset-${preset}`"
-              @click="togglePreset(preset)"
-            >
-              {{ t(`preset.${preset}`) }}
-            </button>
-          </div>
+        <!--
+          Presets sit above the calendar rather than in QDate's own footer
+          slot: most visitors pick a season and are done, so the picker is the
+          fallback rather than the main act — and the slot renders below the
+          calendar, which buried them.
+        -->
+        <q-popup-proxy
+          class="filter-menu filter-menu--date"
+          transition-show="jump-down"
+          transition-hide="jump-up"
+          :offset="[0, 8]"
+          no-route-dismiss
+        >
+          <div class="filter-pop filter-pop--date">
+            <div class="filter-pop__title">{{ t('dates') }}</div>
 
-          <!-- `minimal` drops the picker's headline: the chip already spells
-               the range out, and the header repeats it in 32px type. -->
-          <q-date
-            v-model="dayRange"
-            mask="YYYY-MM-DD"
-            range
-            minimal
-          />
+            <div class="filter-pop__presets">
+              <button
+                v-for="preset in CAMP_DATE_PRESETS"
+                :key="preset"
+                type="button"
+                class="preset-chip"
+                :class="{ 'preset-chip--active': preset === activePreset }"
+                :aria-pressed="preset === activePreset"
+                :data-test="`camps-preset-${preset}`"
+                @click="togglePreset(preset)"
+              >
+                {{ t(`preset.${preset}`) }}
+              </button>
+            </div>
 
-          <div class="filter-pop__actions">
-            <m-btn
-              text
-              no-caps
-              :label="t('any_dates')"
-              :disable="!hasDates"
-              @click="clearDates"
+            <!-- `minimal` drops the picker's headline: the chip already
+                 spells the range out, and the header repeats it in 32px. -->
+            <q-date
+              v-model="dayRange"
+              mask="YYYY-MM-DD"
+              range
+              minimal
             />
-            <m-btn
-              v-close-popup
-              text
-              primary
-              no-caps
-              :label="t('done')"
-            />
+
+            <div class="filter-pop__actions">
+              <m-btn
+                text
+                no-caps
+                :label="t('any_dates')"
+                :disable="!hasDates"
+                @click="clearDates"
+              />
+              <m-btn
+                v-close-popup
+                text
+                primary
+                no-caps
+                :label="t('done')"
+              />
+            </div>
           </div>
-        </div>
-      </q-popup-proxy>
-    </button>
+        </q-popup-proxy>
+      </button>
+
+      <button
+        v-if="hasDates"
+        type="button"
+        class="filter-chip__clear"
+        :aria-label="t('clear_one', { filter: t('dates') })"
+        data-test="camps-clear-dates"
+        @click="clearDates"
+      >
+        <q-icon
+          name="close"
+          size="16px"
+        />
+      </button>
+    </div>
 
     <!-- Countries -->
-    <button
-      type="button"
+    <div
       class="filter-chip"
       :class="{ 'filter-chip--active': selectedCountries.length > 0 }"
-      aria-haspopup="true"
-      data-test="camps-filter-countries"
     >
-      <q-icon
-        name="public"
-        size="16px"
-      />
-      <span class="filter-chip__label">{{ countriesLabel }}</span>
-      <q-icon
-        name="expand_more"
-        size="16px"
-        class="filter-chip__caret"
-      />
-
-      <q-menu
-        class="filter-menu"
-        :offset="[0, 8]"
-        no-route-dismiss
+      <button
+        type="button"
+        class="filter-chip__body"
+        aria-haspopup="true"
+        data-test="camps-filter-countries"
       >
-        <div class="filter-pop">
-          <div class="filter-pop__title">{{ t('countries') }}</div>
+        <q-icon
+          name="public"
+          size="16px"
+        />
+        <span class="filter-chip__label">{{ countriesLabel }}</span>
+        <q-icon
+          v-if="selectedCountries.length === 0"
+          name="expand_more"
+          size="16px"
+          class="filter-chip__caret"
+        />
 
-          <q-list class="filter-pop__list">
-            <q-item
-              v-for="code in CAMP_COUNTRIES"
-              :key="code"
-              clickable
-              class="filter-item"
-              :class="{
-                'filter-item--selected': selectedCountries.includes(code),
-              }"
-              role="menuitemcheckbox"
-              :aria-checked="selectedCountries.includes(code)"
-              :data-test="`camps-country-${code}`"
-              @click="toggleCountry(code)"
-            >
-              <q-item-section avatar>
-                <country-icon :country="code" />
-              </q-item-section>
-              <q-item-section>{{ countryName(code, locale) }}</q-item-section>
-              <!-- A checkbox rather than a lone tick: it is the only marker on
-                   the row, so the unselected state has to show as well. -->
-              <q-item-section side>
-                <q-icon
-                  :name="
-                    selectedCountries.includes(code)
-                      ? 'check_box'
-                      : 'check_box_outline_blank'
-                  "
-                  size="20px"
-                />
-              </q-item-section>
-            </q-item>
-          </q-list>
+        <q-menu
+          class="filter-menu"
+          :offset="[0, 8]"
+          no-route-dismiss
+        >
+          <div class="filter-pop">
+            <div class="filter-pop__title">{{ t('countries') }}</div>
 
-          <div class="filter-pop__actions">
-            <m-btn
-              text
-              no-caps
-              :label="t('anywhere')"
-              :disable="selectedCountries.length === 0"
-              @click="countries = undefined"
-            />
-            <m-btn
-              v-close-popup
-              text
-              primary
-              no-caps
-              :label="t('done')"
-            />
+            <q-list class="filter-pop__list">
+              <q-item
+                v-for="code in CAMP_COUNTRIES"
+                :key="code"
+                clickable
+                class="filter-item"
+                :class="{
+                  'filter-item--selected': selectedCountries.includes(code),
+                }"
+                role="menuitemcheckbox"
+                :aria-checked="selectedCountries.includes(code)"
+                :data-test="`camps-country-${code}`"
+                @click="toggleCountry(code)"
+              >
+                <q-item-section avatar>
+                  <country-icon :country="code" />
+                </q-item-section>
+                <q-item-section>{{ countryName(code, locale) }}</q-item-section>
+                <!-- A checkbox rather than a lone tick: it is the only
+                     marker on the row, so the unselected state has to show. -->
+                <q-item-section side>
+                  <q-icon
+                    :name="
+                      selectedCountries.includes(code)
+                        ? 'check_box'
+                        : 'check_box_outline_blank'
+                    "
+                    size="20px"
+                  />
+                </q-item-section>
+              </q-item>
+            </q-list>
+
+            <div class="filter-pop__actions">
+              <m-btn
+                text
+                no-caps
+                :label="t('anywhere')"
+                :disable="selectedCountries.length === 0"
+                @click="countries = undefined"
+              />
+              <m-btn
+                v-close-popup
+                text
+                primary
+                no-caps
+                :label="t('done')"
+              />
+            </div>
           </div>
-        </div>
-      </q-menu>
-    </button>
+        </q-menu>
+      </button>
+
+      <button
+        v-if="selectedCountries.length > 0"
+        type="button"
+        class="filter-chip__clear"
+        :aria-label="t('clear_one', { filter: t('countries') })"
+        data-test="camps-clear-countries"
+        @click="countries = undefined"
+      >
+        <q-icon
+          name="close"
+          size="16px"
+        />
+      </button>
+    </div>
 
     <!-- Age -->
-    <button
-      type="button"
+    <div
       class="filter-chip"
       :class="{ 'filter-chip--active': age != null }"
-      aria-haspopup="true"
-      data-test="camps-filter-age"
     >
-      <q-icon
-        name="cake"
-        size="16px"
-      />
-      <span class="filter-chip__label">{{ ageLabel }}</span>
-      <q-icon
-        name="expand_more"
-        size="16px"
-        class="filter-chip__caret"
-      />
-
-      <q-menu
-        class="filter-menu"
-        :offset="[0, 8]"
-        no-route-dismiss
+      <button
+        type="button"
+        class="filter-chip__body"
+        aria-haspopup="true"
+        data-test="camps-filter-age"
       >
-        <div class="filter-pop">
-          <div class="filter-pop__title">{{ t('age_title') }}</div>
+        <q-icon
+          name="cake"
+          size="16px"
+        />
+        <span class="filter-chip__label">{{ ageLabel }}</span>
+        <q-icon
+          v-if="age == null"
+          name="expand_more"
+          size="16px"
+          class="filter-chip__caret"
+        />
 
-          <div class="filter-pop__body">
-            <q-input
-              :model-value="ageInput"
-              class="age-field"
-              type="number"
-              :min="MIN_AGE"
-              :max="MAX_AGE"
-              :placeholder="t('age_placeholder')"
-              :aria-label="t('age_title')"
-              :suffix="age == null ? undefined : t('age_years')"
-              outlined
-              rounded
-              dense
-              hide-bottom-space
-              autofocus
-              @update:model-value="onAgeInput"
-            />
+        <q-menu
+          class="filter-menu"
+          :offset="[0, 8]"
+          no-route-dismiss
+        >
+          <div class="filter-pop">
+            <div class="filter-pop__title">{{ t('age_title') }}</div>
 
-            <p class="filter-pop__hint">{{ t('age_hint') }}</p>
+            <!--
+              A stepper rather than a bare number field: an age is picked one
+              year at a time, and `type=number` alone offers nothing but the
+              browser's own spin buttons, which are a few pixels tall and
+              cannot be themed. The field stays typeable for everything else;
+              clearing lives on the chip and in the footer, not here.
+            -->
+            <div class="filter-pop__body">
+              <div class="age-stepper">
+                <button
+                  type="button"
+                  class="age-step"
+                  :disabled="age != null && age <= MIN_AGE"
+                  :aria-label="t('age_decrease')"
+                  @click="stepAge(-1)"
+                >
+                  <q-icon
+                    name="remove"
+                    size="20px"
+                  />
+                </button>
+
+                <q-input
+                  :model-value="ageInput"
+                  class="age-stepper__field"
+                  type="number"
+                  inputmode="numeric"
+                  :min="MIN_AGE"
+                  :max="MAX_AGE"
+                  :placeholder="t('any_age')"
+                  :aria-label="t('age_title')"
+                  input-class="text-center"
+                  borderless
+                  dense
+                  hide-bottom-space
+                  autofocus
+                  @update:model-value="onAgeInput"
+                />
+
+                <button
+                  type="button"
+                  class="age-step"
+                  :disabled="age != null && age >= MAX_AGE"
+                  :aria-label="t('age_increase')"
+                  @click="stepAge(1)"
+                >
+                  <q-icon
+                    name="add"
+                    size="20px"
+                  />
+                </button>
+              </div>
+
+              <p class="filter-pop__hint">{{ t('age_hint') }}</p>
+            </div>
+
+            <div class="filter-pop__actions">
+              <m-btn
+                text
+                no-caps
+                :label="t('any_age')"
+                :disable="age == null"
+                @click="age = undefined"
+              />
+              <m-btn
+                v-close-popup
+                text
+                primary
+                no-caps
+                :label="t('done')"
+              />
+            </div>
           </div>
+        </q-menu>
+      </button>
 
-          <div class="filter-pop__actions">
-            <m-btn
-              text
-              no-caps
-              :label="t('any_age')"
-              :disable="age == null"
-              @click="age = undefined"
-            />
-            <m-btn
-              v-close-popup
-              text
-              primary
-              no-caps
-              :label="t('done')"
-            />
-          </div>
-        </div>
-      </q-menu>
-    </button>
+      <button
+        v-if="age != null"
+        type="button"
+        class="filter-chip__clear"
+        :aria-label="t('clear_one', { filter: t('age_title') })"
+        data-test="camps-clear-age"
+        @click="age = undefined"
+      >
+        <q-icon
+          name="close"
+          size="16px"
+        />
+      </button>
+    </div>
 
     <button
       v-if="activeCount > 0"
@@ -271,63 +372,66 @@
       <slot name="status" />
     </span>
 
-    <!-- Sorting is not a filter, so it sits apart from the rail. -->
-    <button
-      type="button"
-      class="filter-chip filter-chip--sort"
-      aria-haspopup="true"
-      :aria-label="t('sort_label')"
-      data-test="camps-filter-sort"
-    >
-      <q-icon
-        name="swap_vert"
-        size="16px"
-      />
-      <span class="filter-chip__label">{{ t(`sort.${sort}`) }}</span>
-      <q-icon
-        name="expand_more"
-        size="16px"
-        class="filter-chip__caret"
-      />
-
-      <!-- Right-aligned under its chip, which is the last thing on the rail:
-           a start-anchored menu would hang off the content column. -->
-      <q-menu
-        class="filter-menu"
-        anchor="bottom end"
-        self="top end"
-        :offset="[0, 8]"
-        no-route-dismiss
+    <!-- Sorting is not a filter, so it sits apart from the rail — and it can
+         never be cleared, so it is the one chip without a ✕. -->
+    <div class="filter-chip filter-chip--sort">
+      <button
+        type="button"
+        class="filter-chip__body"
+        aria-haspopup="true"
+        :aria-label="t('sort_label')"
+        data-test="camps-filter-sort"
       >
-        <div class="filter-pop">
-          <div class="filter-pop__title">{{ t('sort_label') }}</div>
+        <q-icon
+          name="swap_vert"
+          size="16px"
+        />
+        <span class="filter-chip__label">{{ t(`sort.${sort}`) }}</span>
+        <q-icon
+          name="expand_more"
+          size="16px"
+          class="filter-chip__caret"
+        />
 
-          <q-list class="filter-pop__list filter-pop__list--flush">
-            <q-item
-              v-for="option in CAMP_SORT_OPTIONS"
-              :key="option"
-              v-close-popup
-              clickable
-              class="filter-item"
-              :class="{ 'filter-item--selected': option === sort }"
-              role="menuitemradio"
-              :aria-checked="option === sort"
-              :data-test="`camps-sort-${option}`"
-              @click="sort = option"
-            >
-              <q-item-section>{{ t(`sort.${option}`) }}</q-item-section>
-              <q-item-section side>
-                <q-icon
-                  v-if="option === sort"
-                  name="check"
-                  size="20px"
-                />
-              </q-item-section>
-            </q-item>
-          </q-list>
-        </div>
-      </q-menu>
-    </button>
+        <!-- Right-aligned under its chip, which is the last thing on the
+             rail: a start-anchored menu would hang off the content column. -->
+        <q-menu
+          class="filter-menu"
+          anchor="bottom end"
+          self="top end"
+          :offset="[0, 8]"
+          no-route-dismiss
+        >
+          <div class="filter-pop">
+            <div class="filter-pop__title">{{ t('sort_label') }}</div>
+
+            <q-list class="filter-pop__list filter-pop__list--flush">
+              <q-item
+                v-for="option in CAMP_SORT_OPTIONS"
+                :key="option"
+                v-close-popup
+                clickable
+                class="filter-item"
+                :class="{ 'filter-item--selected': option === sort }"
+                role="menuitemradio"
+                :aria-checked="option === sort"
+                :data-test="`camps-sort-${option}`"
+                @click="sort = option"
+              >
+                <q-item-section>{{ t(`sort.${option}`) }}</q-item-section>
+                <q-item-section side>
+                  <q-icon
+                    v-if="option === sort"
+                    name="check"
+                    size="20px"
+                  />
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </div>
+        </q-menu>
+      </button>
+    </div>
   </div>
 </template>
 
@@ -465,6 +569,8 @@ const countriesLabel = computed<string>(() => {
 
 const MIN_AGE = 0;
 const MAX_AGE = 99;
+/** Where the stepper starts from when no age has been picked yet. */
+const DEFAULT_AGE = 12;
 
 const ageInput = computed<string>(() =>
   age.value == null ? '' : String(age.value),
@@ -486,6 +592,13 @@ function onAgeInput(value: string | number | null): void {
   age.value = Number.isFinite(parsed)
     ? Math.min(MAX_AGE, Math.max(MIN_AGE, parsed))
     : undefined;
+}
+
+/** Stepping out of "any age" lands on a plausible camp age, not on zero. */
+function stepAge(delta: number): void {
+  const base = age.value ?? DEFAULT_AGE - delta;
+
+  age.value = Math.min(MAX_AGE, Math.max(MIN_AGE, base + delta));
 }
 
 const ageLabel = computed<string>(() =>
@@ -521,21 +634,26 @@ const activeCount = computed<number>(
   white-space: nowrap;
 }
 
-/* Chips */
+/*
+ * Chips
+ *
+ * The pill is the wrapper, not the button, because an applied filter carries
+ * two targets: the body reopens the popup and the trailing ✕ drops the filter
+ * outright. Two sibling buttons keep that honest for the keyboard and for
+ * screen readers — a ✕ nested inside the body button would be invalid markup
+ * and would still have to fight the popup's own click handler.
+ */
 .filter-chip {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
 
   max-width: 100%;
   height: 38px;
-  padding: 0 14px;
   border: 1px solid var(--md3-outline-variant);
   border-radius: var(--md3-corner-full, 9999px);
 
   background: transparent;
   color: var(--md3-on-surface);
-  cursor: pointer;
 
   font-family: inherit;
   font-size: 0.88rem;
@@ -552,11 +670,6 @@ const activeCount = computed<number>(
   background: var(--md3-surface-container);
 }
 
-.filter-chip:focus-visible {
-  outline: 2px solid var(--md3-primary);
-  outline-offset: 2px;
-}
-
 .filter-chip--active {
   border-color: transparent;
 
@@ -568,6 +681,30 @@ const activeCount = computed<number>(
   background: var(--md3-secondary-container);
 
   filter: brightness(0.97);
+}
+
+.filter-chip__body {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  min-width: 0;
+  max-width: 100%;
+  height: 100%;
+  padding: 0 14px;
+  border: none;
+  border-radius: inherit;
+
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+
+  font: inherit;
+}
+
+/* The search chip has no popup behind it — its body is a label, not a control */
+.filter-chip__body--static {
+  cursor: default;
 }
 
 .filter-chip__label {
@@ -586,6 +723,37 @@ const activeCount = computed<number>(
 
 .filter-chip--active .filter-chip__caret {
   color: inherit;
+}
+
+/* Pulled back into the body's trailing padding so the ✕ sits inside the pill */
+.filter-chip__clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+
+  width: 26px;
+  height: 26px;
+  margin: 0 5px 0 -10px;
+  border: none;
+  border-radius: var(--md3-corner-full, 9999px);
+
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+
+  transition: background-color 0.2s
+    var(--md3-easing-emphasized, cubic-bezier(0.2, 0, 0, 1));
+}
+
+.filter-chip__clear:hover {
+  background: rgba(var(--md3-on-surface-rgb), 0.12);
+}
+
+.filter-chip__body:focus-visible,
+.filter-chip__clear:focus-visible {
+  outline: 2px solid var(--md3-primary);
+  outline-offset: 2px;
 }
 
 .filter-clear {
@@ -778,9 +946,72 @@ const activeCount = computed<number>(
   color: var(--md3-on-primary-container);
 }
 
-.age-field :deep(input) {
-  font-size: 1rem;
+/* Age stepper */
+.age-stepper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.age-step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--md3-outline-variant);
+  border-radius: var(--md3-corner-full, 9999px);
+
+  background: transparent;
+  color: var(--md3-on-surface-variant);
+  cursor: pointer;
+
+  transition: background-color 0.2s
+    var(--md3-easing-emphasized, cubic-bezier(0.2, 0, 0, 1));
+}
+
+.age-step:hover:not(:disabled) {
+  background: var(--md3-surface-container-high);
+}
+
+.age-step:focus-visible {
+  outline: 2px solid var(--md3-primary);
+  outline-offset: 2px;
+}
+
+.age-step:disabled {
+  cursor: default;
+  opacity: 0.38;
+}
+
+.age-stepper__field {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.age-stepper__field :deep(input) {
+  font-size: 1.35rem;
   font-weight: 600;
+}
+
+/* The placeholder carries the empty state, so it reads as prose, not as data */
+.age-stepper__field :deep(input::placeholder) {
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+/* The stepper buttons replace them, and they are unstyleable besides. */
+.age-stepper__field :deep(input[type='number']) {
+  appearance: textfield;
+}
+
+.age-stepper__field :deep(input::-webkit-outer-spin-button),
+.age-stepper__field :deep(input::-webkit-inner-spin-button) {
+  margin: 0;
+
+  appearance: none;
 }
 
 @media (max-width: 599.98px) {
@@ -814,7 +1045,9 @@ const activeCount = computed<number>(
 
 @media (prefers-reduced-motion: reduce) {
   .filter-chip,
-  .preset-chip {
+  .filter-chip__clear,
+  .preset-chip,
+  .age-step {
     transition: none;
   }
 }
@@ -827,9 +1060,9 @@ anywhere: 'Anywhere'
 age_title: 'Participant age'
 age_value: 'Age {value}'
 any_age: 'Any age'
-age_placeholder: 'e.g. 12'
 age_hint: 'Camps open to participants of this age.'
-age_years: 'years'
+age_decrease: 'One year younger'
+age_increase: 'One year older'
 dates: 'Dates'
 any_dates: 'Anytime'
 done: 'Done'
@@ -844,6 +1077,8 @@ preset:
   next_3_months: 'Next 3 months'
   summer: 'Summer'
 clear: 'Clear all'
+clear_one: 'Clear {filter}'
+search: 'Search'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -853,9 +1088,9 @@ anywhere: 'Überall'
 age_title: 'Alter'
 age_value: '{value} Jahre'
 any_age: 'Jedes Alter'
-age_placeholder: 'z. B. 12'
 age_hint: 'Camps, die für dieses Alter offen sind.'
-age_years: 'Jahre'
+age_decrease: 'Ein Jahr jünger'
+age_increase: 'Ein Jahr älter'
 dates: 'Zeitraum'
 any_dates: 'Jederzeit'
 done: 'Fertig'
@@ -870,6 +1105,8 @@ preset:
   next_3_months: 'Nächste 3 Monate'
   summer: 'Sommer'
 clear: 'Zurücksetzen'
+clear_one: '{filter} zurücksetzen'
+search: 'Suche'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -879,9 +1116,9 @@ anywhere: 'Partout'
 age_title: 'Âge'
 age_value: '{value} ans'
 any_age: 'Tout âge'
-age_placeholder: 'p. ex. 12'
 age_hint: 'Camps ouverts aux participants de cet âge.'
-age_years: 'ans'
+age_decrease: 'Un an de moins'
+age_increase: 'Un an de plus'
 dates: 'Période'
 any_dates: "N'importe quand"
 done: 'Terminé'
@@ -896,6 +1133,8 @@ preset:
   next_3_months: 'Les 3 prochains mois'
   summer: 'Été'
 clear: 'Tout effacer'
+clear_one: 'Effacer : {filter}'
+search: 'Recherche'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -905,9 +1144,9 @@ anywhere: 'Wszędzie'
 age_title: 'Wiek'
 age_value: 'Wiek {value}'
 any_age: 'Każdy wiek'
-age_placeholder: 'np. 12'
 age_hint: 'Obozy otwarte dla uczestników w tym wieku.'
-age_years: 'lat'
+age_decrease: 'Rok mniej'
+age_increase: 'Rok więcej'
 dates: 'Termin'
 any_dates: 'Kiedykolwiek'
 done: 'Gotowe'
@@ -922,6 +1161,8 @@ preset:
   next_3_months: 'Najbliższe 3 miesiące'
   summer: 'Lato'
 clear: 'Wyczyść'
+clear_one: 'Wyczyść: {filter}'
+search: 'Wyszukiwanie'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -931,9 +1172,9 @@ anywhere: 'Kdekoliv'
 age_title: 'Věk'
 age_value: 'Věk {value}'
 any_age: 'Jakýkoliv věk'
-age_placeholder: 'např. 12'
 age_hint: 'Tábory otevřené pro účastníky v tomto věku.'
-age_years: 'let'
+age_decrease: 'O rok méně'
+age_increase: 'O rok více'
 dates: 'Období'
 any_dates: 'Kdykoliv'
 done: 'Hotovo'
@@ -948,4 +1189,6 @@ preset:
   next_3_months: 'Příští 3 měsíce'
   summer: 'Léto'
 clear: 'Vymazat'
+clear_one: 'Zrušit: {filter}'
+search: 'Hledání'
 </i18n>

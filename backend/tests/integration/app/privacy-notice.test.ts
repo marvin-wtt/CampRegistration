@@ -416,6 +416,70 @@ describe('privacy notices', () => {
       ).not.toContain('transport_provider');
     });
 
+    it('should refuse a special category the camp adds with no Art. 9 basis', async () => {
+      const organization = await OrganizationFactory.create();
+      const camp = await CampFactory.create({
+        organization: { connect: { id: organization.id } },
+      });
+
+      await request()
+        .put(`/api/v1/camps/${camp.id}/privacy-notice/addendum`)
+        .send({ content: { dataCategories: [{ key: 'health' }] } })
+        .auth(await campManagerToken(camp.id), { type: 'bearer' })
+        .expect(422);
+    });
+
+    it('should accept the same category once the camp names its basis', async () => {
+      const organization = await OrganizationFactory.create();
+      const camp = await CampFactory.create({
+        organization: { connect: { id: organization.id } },
+      });
+
+      await request()
+        .put(`/api/v1/camps/${camp.id}/privacy-notice/addendum`)
+        .send({
+          content: {
+            dataCategories: [
+              { key: 'health', specialCategoryBasis: 'explicit_consent' },
+            ],
+          },
+        })
+        .auth(await campManagerToken(camp.id), { type: 'bearer' })
+        .expect(200);
+    });
+
+    it('should refuse a legitimate interest the camp relies on but does not name', async () => {
+      const organization = await OrganizationFactory.create();
+      const camp = await CampFactory.create({
+        organization: { connect: { id: organization.id } },
+      });
+
+      await request()
+        .put(`/api/v1/camps/${camp.id}/privacy-notice/addendum`)
+        .send({
+          content: {
+            purposes: [
+              { key: 'photo_documentation', legalBasis: 'legitimate_interests' },
+            ],
+          },
+        })
+        .auth(await campManagerToken(camp.id), { type: 'bearer' })
+        .expect(422);
+    });
+
+    it('should not hold a camp to gaps its organization never closed', async () => {
+      const organization = await organizationWithoutNotice();
+      const camp = await CampFactory.create({
+        organization: { connect: { id: organization.id } },
+      });
+
+      await request()
+        .put(`/api/v1/camps/${camp.id}/privacy-notice/addendum`)
+        .send({ content: { recipients: [{ key: 'transport_provider' }] } })
+        .auth(await campManagerToken(camp.id), { type: 'bearer' })
+        .expect(200);
+    });
+
     it('should sanitize the addendum free text', async () => {
       const organization = await OrganizationFactory.create();
       const camp = await CampFactory.create({

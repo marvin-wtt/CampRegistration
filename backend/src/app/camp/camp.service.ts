@@ -18,7 +18,12 @@ type FileCreateData = OptionalByKeys<Prisma.FileCreateManyCampInput, 'id'>[];
 
 // The camp's own fields, as plain values. Relations, generated columns and the
 // query shape are the service's business — a caller never writes Prisma input.
-export type CampCreateData = Omit<Camp, 'id' | 'createdAt' | 'updatedAt'>;
+// `retentionReminderSentAt` sits with the timestamps rather than the payload:
+// it is written once by the retention job and never by an author.
+export type CampCreateData = Omit<
+  Camp,
+  'id' | 'createdAt' | 'updatedAt' | 'retentionReminderSentAt'
+>;
 // Ownership moves through `moveCampToOrganization`, never a field update.
 export type CampUpdateData = Partial<Omit<CampCreateData, 'organizationId'>>;
 
