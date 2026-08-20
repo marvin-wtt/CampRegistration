@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   NewsletterFactory,
   NewsletterSubscriberFactory,
+  OrganizationFactory,
   UserFactory,
 } from '../../../prisma/factories/index.js';
 import { generateAccessToken } from './utils/token.js';
@@ -11,6 +12,26 @@ import { ulid } from 'ulidx';
 import type { NewsletterManagerRole } from '@camp-registration/common/permissions';
 
 const BASE = '/api/v1/newsletters';
+
+/** Fixed id — the suite truncates between tests. Crockford base32 only. */
+const NEWSLETTER_ORGANIZATION_ID = '01K9ATF1H9KD1K6H12F3YK8NWZ';
+
+/**
+ * Creating a newsletter requires an organization named in the body, verified or
+ * not. These tests authenticate as a system administrator, who bypasses the
+ * membership check.
+ */
+const createOrganizationAdmin = async (
+  verificationStatus: 'PENDING' | 'VERIFIED' | 'REJECTED' = 'VERIFIED',
+) => {
+  const user = await UserFactory.create({ role: 'ADMIN' });
+  await OrganizationFactory.create({
+    id: NEWSLETTER_ORGANIZATION_ID,
+    verificationStatus,
+  });
+
+  return { user, accessToken: generateAccessToken(user) };
+};
 
 const createNewsletterWithManager = async () => {
   const user = await UserFactory.create();
@@ -91,14 +112,15 @@ describe(BASE, () => {
 
   describe(`POST ${BASE}`, () => {
     it('should respond with `201` and the created newsletter', async () => {
-      const user = await UserFactory.create({
-        role: 'ADMIN',
-      });
-      const accessToken = generateAccessToken(user);
+      const { accessToken } = await createOrganizationAdmin();
 
       const { body } = await request()
         .post(BASE)
-        .send({ name: 'My Newsletter', description: 'A description' })
+        .send({
+          organizationId: NEWSLETTER_ORGANIZATION_ID,
+          name: 'My Newsletter',
+          description: 'A description',
+        })
         .auth(accessToken, { type: 'bearer' })
         .expect(201);
 
@@ -114,14 +136,15 @@ describe(BASE, () => {
     });
 
     it('should respond with `201` and include replyTo when provided', async () => {
-      const user = await UserFactory.create({
-        role: 'ADMIN',
-      });
-      const accessToken = generateAccessToken(user);
+      const { accessToken } = await createOrganizationAdmin();
 
       const { body } = await request()
         .post(BASE)
-        .send({ name: 'Newsletter With Reply', replyTo: 'reply@example.com' })
+        .send({
+          organizationId: NEWSLETTER_ORGANIZATION_ID,
+          name: 'Newsletter With Reply',
+          replyTo: 'reply@example.com',
+        })
         .auth(accessToken, { type: 'bearer' })
         .expect(201);
 
@@ -129,14 +152,14 @@ describe(BASE, () => {
     });
 
     it('should automatically add the creating user as manager', async () => {
-      const user = await UserFactory.create({
-        role: 'ADMIN',
-      });
-      const accessToken = generateAccessToken(user);
+      const { user, accessToken } = await createOrganizationAdmin();
 
       const { body } = await request()
         .post(BASE)
-        .send({ name: 'My Newsletter' })
+        .send({
+          organizationId: NEWSLETTER_ORGANIZATION_ID,
+          name: 'My Newsletter',
+        })
         .auth(accessToken, { type: 'bearer' })
         .expect(201);
 
@@ -147,12 +170,14 @@ describe(BASE, () => {
     });
 
     it('should add the creating user as OWNER', async () => {
-      const user = await UserFactory.create({ role: 'ADMIN' });
-      const accessToken = generateAccessToken(user);
+      const { user, accessToken } = await createOrganizationAdmin();
 
       const { body } = await request()
         .post(BASE)
-        .send({ name: 'My Newsletter' })
+        .send({
+          organizationId: NEWSLETTER_ORGANIZATION_ID,
+          name: 'My Newsletter',
+        })
         .auth(accessToken, { type: 'bearer' })
         .expect(201);
 
@@ -163,14 +188,15 @@ describe(BASE, () => {
     });
 
     it('should accept a null description', async () => {
-      const user = await UserFactory.create({
-        role: 'ADMIN',
-      });
-      const accessToken = generateAccessToken(user);
+      const { accessToken } = await createOrganizationAdmin();
 
       const { body } = await request()
         .post(BASE)
-        .send({ name: 'My Newsletter', description: null })
+        .send({
+          organizationId: NEWSLETTER_ORGANIZATION_ID,
+          name: 'My Newsletter',
+          description: null,
+        })
         .auth(accessToken, { type: 'bearer' })
         .expect(201);
 
@@ -178,31 +204,82 @@ describe(BASE, () => {
     });
 
     it('should respond with `400` when name is missing', async () => {
-      const user = await UserFactory.create({
-        role: 'ADMIN',
-      });
-      const accessToken = generateAccessToken(user);
+      const { accessToken } = await createOrganizationAdmin();
 
       await request()
         .post(BASE)
-        .send({ description: 'No name' })
+        .send({
+          organizationId: NEWSLETTER_ORGANIZATION_ID,
+          description: 'No name',
+        })
         .auth(accessToken, { type: 'bearer' })
         .expect(400);
+    });
+
+    it('should respond with `400` when the organization is missing', async () => {
+      const { accessToken } = await createOrganizationAdmin();
+
+      await request()
+        .post(BASE)
+        .send({ name: 'My Newsletter' })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(400);
+    });
+
+    it('should let an unverified organization create one', async () => {
+      // Like a camp, a newsletter may be set up before moderation — only
+      // sending is gated, by `newsletterOrganizationVerified`.
+      const { accessToken } = await createOrganizationAdmin('PENDING');
+
+      await request()
+        .post(BASE)
+        .send({
+          organizationId: NEWSLETTER_ORGANIZATION_ID,
+          name: 'My Newsletter',
+        })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(201);
+    });
+
+    it('should let a member of a verified organization create one', async () => {
+      // Creation is no longer restricted to system administrators.
+      const user = await UserFactory.create({ role: 'USER' });
+      const accessToken = generateAccessToken(user);
+      await OrganizationFactory.create({
+        id: NEWSLETTER_ORGANIZATION_ID,
+        verificationStatus: 'VERIFIED',
+        members: { create: { userId: user.id, role: 'ADMIN' } },
+      });
+
+      await request()
+        .post(BASE)
+        .send({
+          organizationId: NEWSLETTER_ORGANIZATION_ID,
+          name: 'My Newsletter',
+        })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(201);
     });
 
     it('should respond with `401` when unauthenticated', async () => {
       await request().post(BASE).send({ name: 'Test' }).expect(401);
     });
 
-    it('should respond with `403` when not an admin', async () => {
-      const user = await UserFactory.create({
-        role: 'USER',
-      });
+    it('should respond with `403` when not a member of the organization', async () => {
+      const user = await UserFactory.create({ role: 'USER' });
       const accessToken = generateAccessToken(user);
+      await OrganizationFactory.create({
+        id: NEWSLETTER_ORGANIZATION_ID,
+        verificationStatus: 'VERIFIED',
+      });
 
       await request()
         .post(BASE)
-        .send({ name: 'My Newsletter', description: null })
+        .send({
+          organizationId: NEWSLETTER_ORGANIZATION_ID,
+          name: 'My Newsletter',
+          description: null,
+        })
         .auth(accessToken, { type: 'bearer' })
         .expect(403);
     });
@@ -221,6 +298,26 @@ describe(BASE, () => {
         id: newsletter.id,
         name: newsletter.name,
         description: newsletter.description,
+      });
+    });
+
+    it('should include the owning organization', async () => {
+      const user = await UserFactory.create();
+      const accessToken = generateAccessToken(user);
+      const organization = await OrganizationFactory.create();
+      const newsletter = await NewsletterFactory.create({
+        organization: { connect: { id: organization.id } },
+        managers: { create: { userId: user.id, role: 'OWNER' } },
+      });
+
+      const { body } = await request()
+        .get(`${BASE}/${newsletter.id}`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body.data).toMatchObject({
+        organizationId: organization.id,
+        organizationName: organization.name,
       });
     });
 

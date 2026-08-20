@@ -9,10 +9,12 @@ export interface NewsletterSubscriber extends Identifiable {
 export interface NewsletterSubscriberCreateData {
   email: string;
   name?: string | null;
+  consentConfirmed: boolean;
 }
 
 export interface NewsletterSubscriberImportData {
   campId: string;
   country?: string | null;
   requireConsent?: boolean;
+  consentConfirmed?: boolean;
 }

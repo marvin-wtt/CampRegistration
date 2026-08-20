@@ -690,7 +690,7 @@ function onRowClick(evt: MouseEvent, row: Registration): void {
   quasar.dialog({
     component: RegistrationRowCardDialog,
     componentProps: {
-      registration: row,
+      registrationId: row.id,
       columns: columns.value,
       renderers: renderers.value,
       camp,

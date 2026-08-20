@@ -13,6 +13,11 @@ export default {
     error: 'Fehler beim Aktualisieren des Camps',
     invalid: 'Ungültige Camps-ID',
   },
+  move: {
+    progress: 'Camp wird verschoben...',
+    success: 'Camp erfolgreich verschoben',
+    error: 'Camp konnte nicht verschoben werden',
+  },
   delete: {
     progress: 'Camp wird gelöscht...',
     success: 'Camp erfolgreich gelöscht',

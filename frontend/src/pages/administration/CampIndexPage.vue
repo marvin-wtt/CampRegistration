@@ -26,9 +26,9 @@
           </div>
           <div class="col-6 col-sm-auto">
             <q-select
-              v-model="publicFilter"
-              :options="publicOptions"
-              :label="t('column.public')"
+              v-model="listedFilter"
+              :options="listedOptions"
+              :label="t('column.listed')"
               dense
               outlined
               rounded
@@ -121,7 +121,7 @@
           </q-td>
         </template>
 
-        <template #body-cell-public="props">
+        <template #body-cell-listed="props">
           <q-td :props="props">
             <q-chip
               :color="props.value ? 'positive' : 'grey-7'"
@@ -130,7 +130,7 @@
               square
               class="q-ml-none"
             >
-              {{ props.value ? t('value.public') : t('value.private') }}
+              {{ props.value ? t('value.listed') : t('value.unlisted') }}
             </q-chip>
           </q-td>
         </template>
@@ -177,6 +177,7 @@ import RowActions, {
 import { computed, ref } from 'vue';
 import { useQuasar } from 'quasar';
 import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
+import CampOrganizationDialog from '@/components/organization/CampOrganizationDialog.vue';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { useRouter } from 'vue-router';
 import { useAPIService } from '@/services/APIService';
@@ -199,8 +200,8 @@ const statusFilter = ref<CampRegistrationStatus | null>(
     'closed',
   ]),
 );
-const publicFilter = ref<boolean | null>(
-  routeQuery.getBooleanQueryParam('public'),
+const listedFilter = ref<boolean | null>(
+  routeQuery.getBooleanQueryParam('listed'),
 );
 
 const {
@@ -219,7 +220,7 @@ const {
   storeName: 'camp',
   sortBy: 'startAt',
   descending: true,
-  watchSources: [statusFilter, publicFilter],
+  watchSources: [statusFilter, listedFilter],
   fetch: (query) => api.fetchCampsPaginated(query),
   buildQuery: ({ cursor, limit, sortBy, sortType, search }) =>
     ({
@@ -230,7 +231,7 @@ const {
       sortType,
       name: search || undefined,
       status: statusFilter.value ?? undefined,
-      public: publicFilter.value ?? undefined,
+      listed: listedFilter.value ?? undefined,
     }) as CampQuery,
 });
 
@@ -240,9 +241,9 @@ const statusOptions = computed(() => [
   { label: t('value.closed'), value: 'closed' },
 ]);
 
-const publicOptions = computed(() => [
-  { label: t('value.public'), value: true },
-  { label: t('value.private'), value: false },
+const listedOptions = computed(() => [
+  { label: t('value.listed'), value: true },
+  { label: t('value.unlisted'), value: false },
 ]);
 
 const columns = computed<QTableColumn<Camp>[]>(() => [
@@ -252,6 +253,12 @@ const columns = computed<QTableColumn<Camp>[]>(() => [
     field: 'name',
     align: 'left',
     required: true,
+  },
+  {
+    name: 'organization',
+    label: t('column.organization'),
+    field: 'organizationName',
+    align: 'left',
   },
   {
     name: 'organizer',
@@ -313,9 +320,9 @@ const columns = computed<QTableColumn<Camp>[]>(() => [
     align: 'left',
   },
   {
-    name: 'public',
-    label: t('column.public'),
-    field: 'public',
+    name: 'listed',
+    label: t('column.listed'),
+    field: 'listed',
     align: 'left',
     sortable: true,
   },
@@ -335,10 +342,11 @@ const columnFilterOptions = computed<QTableColumn<Camp>[]>(() => {
 const visibleColumns = ref([
   'name',
   'organizer',
+  'organization',
   'countries',
   'startAt',
   'registrationStatus',
-  'public',
+  'listed',
   'action',
 ]);
 
@@ -358,7 +366,7 @@ function rowActionsFn(camp: Camp): RowAction[] {
       icon: 'open_in_new',
       handler: () => showCampResults(camp),
     },
-    camp.public
+    camp.listed
       ? {
           key: 'unpublish',
           label: t('action.unpublish'),
@@ -389,6 +397,13 @@ function rowActionsFn(camp: Camp): RowAction[] {
           handler: () => onActivateCamp(camp),
         },
     {
+      key: 'move',
+      label: t('action.move'),
+      icon: 'drive_file_move',
+      separatorBefore: true,
+      handler: () => onMoveCamp(camp),
+    },
+    {
       key: 'delete',
       label: t('action.delete'),
       icon: 'delete',
@@ -396,6 +411,24 @@ function rowActionsFn(camp: Camp): RowAction[] {
       handler: () => onDeleteCamp(camp),
     },
   ];
+}
+
+/**
+ * Reassigning ownership is administrator-only: it hands the target
+ * organization's admins camp permissions, so it is not self-serve.
+ */
+function onMoveCamp(camp: Camp) {
+  quasar
+    .dialog({
+      component: CampOrganizationDialog,
+      componentProps: { camp },
+    })
+    .onOk((organizationId: string) => {
+      void withProgressNotification('move', async () => {
+        await api.moveCampToOrganization(camp.id, organizationId);
+        reload();
+      });
+    });
 }
 
 function statusColor(status: CampRegistrationStatus): string {
@@ -529,7 +562,7 @@ function onPublishCamp(camp: Camp) {
     })
     .onOk(() => {
       void updateCamp(camp.id, {
-        public: true,
+        listed: true,
       });
     });
 }
@@ -553,7 +586,7 @@ function onUnpublishCamp(camp: Camp) {
     })
     .onOk(() => {
       void updateCamp(camp.id, {
-        public: false,
+        listed: false,
       });
     });
 }
@@ -569,27 +602,7 @@ async function deleteCamp(id: string) {
 }
 </script>
 
-<style scoped lang="scss">
-.admin-page {
-  position: absolute;
-  inset: 0;
-  padding: 16px;
-}
-
-.admin-table {
-  // Let the table fill the remaining height and scroll internally instead of
-  // growing the page (min-height:0 lets the flex child shrink below content).
-  min-height: 0;
-  background: var(--md3-surface);
-
-  :deep(thead tr th) {
-    position: sticky;
-    top: 0;
-    z-index: 1;
-    background: var(--md3-surface-container-low);
-  }
-}
-</style>
+<style scoped></style>
 
 <i18n lang="yaml" locale="en">
 title: 'Camps'
@@ -597,6 +610,7 @@ title: 'Camps'
 action:
   activate: 'Activate'
   deactivate: 'Deactivate'
+  move: 'Move to organization'
   delete: 'Delete'
   form: 'Form'
   publish: 'Publish'
@@ -612,9 +626,10 @@ column:
   maxParticipants: 'Max Participants'
   minAge: 'Min Age'
   name: 'Name'
+  organization: 'Organization'
   organizer: 'Organizer'
   price: 'Price'
-  public: 'Public'
+  listed: 'Listed'
   start: 'Start'
 
 dialog:
@@ -653,8 +668,8 @@ value:
   open: 'Open'
   upcoming: 'Upcoming'
   closed: 'Closed'
-  public: 'Public'
-  private: 'Private'
+  listed: 'Listed'
+  unlisted: 'Unlisted'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -663,6 +678,7 @@ title: 'Camps'
 action:
   activate: 'Aktivieren'
   deactivate: 'Deaktivieren'
+  move: 'In Organisation verschieben'
   delete: 'Löschen'
   form: 'Formular'
   publish: 'Veröffentlichen'
@@ -678,9 +694,10 @@ column:
   maxParticipants: 'Max. Teilnehmerzahl'
   minAge: 'Min. Alter'
   name: 'Name'
+  organization: 'Organisation'
   organizer: 'Veranstalter'
   price: 'Preis'
-  public: 'Öffentlich'
+  listed: 'Gelistet'
   start: 'Start'
 
 dialog:
@@ -720,8 +737,8 @@ value:
   open: 'Offen'
   upcoming: 'Bevorstehend'
   closed: 'Geschlossen'
-  public: 'Öffentlich'
-  private: 'Privat'
+  listed: 'Gelistet'
+  unlisted: 'Nicht gelistet'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -730,6 +747,7 @@ title: 'Camps'
 action:
   activate: 'Activer'
   deactivate: 'Désactiver'
+  move: 'Déplacer vers une organisation'
   delete: 'Supprimer'
   form: 'Formulaire'
   publish: 'Publier'
@@ -745,9 +763,10 @@ column:
   maxParticipants: 'Participants max'
   minAge: 'Âge min'
   name: 'Nom'
+  organization: 'Organisation'
   organizer: 'Organisateur'
   price: 'Prix'
-  public: 'Public'
+  listed: 'Répertorié'
   start: 'Début'
 
 dialog:
@@ -787,8 +806,8 @@ value:
   open: 'Ouvert'
   upcoming: 'À venir'
   closed: 'Fermé'
-  public: 'Public'
-  private: 'Privé'
+  listed: 'Répertorié'
+  unlisted: 'Non répertorié'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -797,6 +816,7 @@ title: 'Obozy'
 action:
   activate: 'Aktywuj'
   deactivate: 'Dezaktywuj'
+  move: 'Przenieś do organizacji'
   delete: 'Usuń'
   form: 'Formularz'
   publish: 'Opublikuj'
@@ -812,9 +832,10 @@ column:
   maxParticipants: 'Maks. uczestników'
   minAge: 'Min. wiek'
   name: 'Nazwa'
+  organization: 'Organizacja'
   organizer: 'Organizator'
   price: 'Cena'
-  public: 'Publiczny'
+  listed: 'Widoczny'
   start: 'Start'
 
 dialog:
@@ -853,8 +874,8 @@ value:
   open: 'Otwarta'
   upcoming: 'Nadchodząca'
   closed: 'Zamknięta'
-  public: 'Publiczny'
-  private: 'Prywatny'
+  listed: 'Widoczny'
+  unlisted: 'Ukryty'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -863,6 +884,7 @@ title: 'Tábory'
 action:
   activate: 'Aktivovat'
   deactivate: 'Deaktivovat'
+  move: 'Přesunout do organizace'
   delete: 'Smazat'
   form: 'Formulář'
   publish: 'Zveřejnit'
@@ -878,9 +900,10 @@ column:
   maxParticipants: 'Max. účastníků'
   minAge: 'Min. věk'
   name: 'Název'
+  organization: 'Organizace'
   organizer: 'Organizátor'
   price: 'Cena'
-  public: 'Veřejný'
+  listed: 'Zobrazený'
   start: 'Start'
 
 dialog:
@@ -919,6 +942,6 @@ value:
   open: 'Otevřená'
   upcoming: 'Nadcházející'
   closed: 'Uzavřená'
-  public: 'Veřejný'
-  private: 'Soukromý'
+  listed: 'Zobrazený'
+  unlisted: 'Skrytý'
 </i18n>

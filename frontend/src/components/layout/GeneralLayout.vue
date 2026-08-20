@@ -20,8 +20,11 @@
           text
           @click="toggleDrawer"
         />
+        <!-- Without a drawer there is nothing to open, and a layout that fills
+             the navigation slot puts the switcher in this toolbar — so a back
+             arrow beside it would be a second, weaker way to move. -->
         <m-btn
-          v-else
+          v-else-if="!slots.navigation"
           :aria-label="t('back')"
           icon="arrow_back"
           :to="backRoute"
@@ -29,15 +32,31 @@
           round
           text
         />
+        <!-- Placeholder so the switcher keeps the same position whether or not
+             this route has a drawer to open. Same button, so same geometry. -->
+        <m-btn
+          v-else
+          class="invisible"
+          icon="menu"
+          aria-hidden="true"
+          tabindex="-1"
+          disable
+          square
+          round
+          text
+        />
 
-        <slot
-          name="toolbar"
-          :drawer="showDrawer"
-        >
-          <q-toolbar-title>
-            {{ title }}
-          </q-toolbar-title>
-        </slot>
+        <div class="col app-top-bar__lead">
+          <slot
+            name="toolbar"
+            :drawer="showDrawer"
+          >
+            <q-toolbar-title>
+              {{ title }}
+            </q-toolbar-title>
+          </slot>
+        </div>
+
         <profile-menu />
       </m-toolbar>
     </q-header>
@@ -115,13 +134,20 @@
       </div>
     </q-drawer>
 
-    <!-- Newsletters has no sub-navigation, so on large screens it uses floating
-         controls (back + profile) instead of a rail, keeping the profile in the
-         same bottom-left spot as every other layout. -->
+    <!-- Index pages have no sub-navigation, so on large screens they use
+         floating controls instead of an empty rail, keeping the switcher and
+         the profile in the same spots as every other layout. -->
     <layout-floating-controls
       v-if="showFloatingControls"
       :back-to="backRoute"
-    />
+    >
+      <template
+        v-if="slots.navigation"
+        #navigation
+      >
+        <slot name="navigation" />
+      </template>
+    </layout-floating-controls>
 
     <q-page-container
       :class="{ 'q-page-container--floating-controls': showFloatingControls }"
@@ -138,7 +164,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue';
+import { computed, ref, useSlots } from 'vue';
 import { useI18n } from 'vue-i18n';
 import NavigationItem from '@/components/NavigationItem.vue';
 import ProfileMenu from '@/components/common/ProfileMenu.vue';
@@ -153,6 +179,7 @@ import LayoutFloatingControls from '@/components/layout/LayoutFloatingControls.v
 const quasar = useQuasar();
 const route = useRoute();
 const router = useRouter();
+const slots = useSlots();
 const { t } = useI18n();
 
 const {
@@ -179,7 +206,8 @@ const showDrawer = computed<boolean>(() => {
     return false;
   }
 
-  // Always hide the drawer if there are no items to be displayed
+  // Without sub-sections the rail would be an empty column, so those routes
+  // fall back to floating controls — which carry the same switcher.
   return !(!navigationItems || navigationItems.length <= 0);
 });
 
@@ -224,9 +252,9 @@ const backRoute = computed<RouteLocationRaw>(() => {
     return backTo;
   }
 
-  // Use management as first fallback layer
+  // Use the camp list as first fallback layer
   const fallback = {
-    name: 'management',
+    name: 'management.camps',
   };
 
   if (!isCurrentRoute(fallback)) {
@@ -270,8 +298,17 @@ back: 'Zpět'
   opacity: 0;
 }
 
+/* The floating controls are fixed-position, so the page has to reserve their
+   width itself: the 16px offset plus the switcher pill, whose caption is
+   hidden in this mode. */
 .q-page-container--floating-controls {
-  padding-left: 40px;
+  padding-left: 56px;
+}
+
+/* Lets the switcher take the width the toolbar has left, so a long camp name
+   gets room and ellipsises there instead of pushing the avatar off-screen. */
+.app-top-bar__lead {
+  min-width: 0;
 }
 
 /* MD3 only applies margin to the left - apply right margin manually */

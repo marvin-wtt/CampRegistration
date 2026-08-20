@@ -173,17 +173,6 @@ export class RegistrationNotifyMessage extends MailBase<{
       location: translateObject(camp.location, locale),
     };
   }
-
-  protected async attachments(): Promise<MailAttachment[]> {
-    return [
-      await createPdfAttachment(this.payload.camp, this.payload.registration),
-      {
-        filename: 'data.json',
-        contentType: 'application/json',
-        content: JSON.stringify(this.payload.registration),
-      },
-    ];
-  }
 }
 
 interface RegistrationTemplatePayload {
@@ -385,6 +374,11 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
         body: compile(this.context()),
         campName: translateObject(this.payload.camp.name, locale),
         reason: this.reason(),
+        // Art. 13 information has to stay reachable after submission, and the
+        // message body is manager-authored — so the link belongs in the footer
+        // we control, not in a template they may delete.
+        privacyUrl: generateUrl(['camps', this.payload.camp.id, 'privacy']),
+        privacyLabel: this.getTg()('registration:email.privacyLink'),
       },
     };
   }

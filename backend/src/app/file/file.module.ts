@@ -21,11 +21,15 @@ export class FileModule implements AppModule {
     scheduler.schedule('tmp-file-cleanup', '0 * * * *', () =>
       resolve(FileService).deleteTempFiles(),
     );
-    scheduler.schedule('unused-file-cleanup', '15 4 * * *', () =>
-      resolve(FileService).deleteUnreferencedFiles(),
-    );
-    scheduler.schedule('unassigned-file-cleanup', '30 4 * * *', () =>
+    // Order matters: `deleteUnassignedFiles` drops the File rows before
+    // removing their blobs, so a failed removal leaves a blob no row points at
+    // any more. `deleteUnreferencedFiles` is the sweeper for exactly that, and
+    // only sees the leftovers once the rows are gone — it has to run second.
+    scheduler.schedule('unassigned-file-cleanup', '15 4 * * *', () =>
       resolve(FileService).deleteUnassignedFiles(),
+    );
+    scheduler.schedule('unused-file-cleanup', '15 5 * * *', () =>
+      resolve(FileService).deleteUnreferencedFiles(),
     );
   }
 

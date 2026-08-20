@@ -46,7 +46,7 @@
             round
             dense
           />
-          <profile-menu />
+          <profile-menu hide-language />
         </m-toolbar>
       </div>
     </header>

@@ -67,7 +67,6 @@ const buildRegistration = (
     country: null,
     newsletterConsent: null,
     locale: 'en-US',
-    deletedAt: null,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
     bed: null,

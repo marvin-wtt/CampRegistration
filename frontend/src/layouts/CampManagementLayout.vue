@@ -1,16 +1,15 @@
 <template>
   <general-layout
-    :navigation-items="permissionsLoading ? items : filteredItems"
+    :navigation-items="navigationItems"
     :title="title"
-    :back-to="backTo"
     :loading="permissionsLoading"
   >
-    <template #toolbar="{ drawer }">
-      <camp-switcher v-if="drawer" />
+    <template #toolbar>
+      <workspace-switcher />
     </template>
 
     <template #navigation>
-      <camp-switcher rail />
+      <workspace-switcher rail />
     </template>
 
     <template #default="{ component }">
@@ -25,7 +24,7 @@
 <script lang="ts" setup>
 import { computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
-import CampSwitcher from '@/components/layout/CampSwitcher.vue';
+import WorkspaceSwitcher from '@/components/layout/WorkspaceSwitcher.vue';
 import { useCampDetailsStore } from '@/stores/camp-details-store';
 import { useAssignedCampsStore } from '@/stores/assigned-camps-store';
 import { useRoute } from 'vue-router';
@@ -40,7 +39,7 @@ import GeneralLayout from '@/components/layout/GeneralLayout.vue';
 const route = useRoute();
 const { t } = useI18n();
 const { to } = useObjectTranslation();
-const { canAccessAny } = usePermissions();
+const { canAccess } = usePermissions();
 
 const authStore = useAuthStore();
 const profileStore = useProfileStore();
@@ -75,7 +74,7 @@ const campName = computed<string | undefined>(() => {
   return name ? to(name) : undefined;
 });
 
-const items = computed<NavigationItemProps[]>(() => [
+const items = computed<NavigationItemProps<'camp'>[]>(() => [
   {
     name: 'dashboard',
     label: t('dashboard'),
@@ -94,7 +93,7 @@ const items = computed<NavigationItemProps[]>(() => [
     name: 'contact',
     label: t('contact'),
     icon: 'send',
-    permission: ['camp.messages.create', 'camp.messages.view'],
+    permission: { any: ['camp.messages.create', 'camp.messages.view'] },
     to: { name: 'management.camp.contact' },
   },
   {
@@ -137,13 +136,22 @@ const permissionsLoading = computed<boolean>(() => {
   );
 });
 
-const filteredItems = computed<NavigationItemProps[]>(() => {
-  return filterItems(items.value);
+// The camp sections all address a specific camp, so the index has none — it
+// falls back to the floating switcher rather than showing links that could not
+// resolve without a campId.
+const navigationItems = computed<NavigationItemProps<'camp'>[]>(() => {
+  if (!route.params.campId) {
+    return [];
+  }
+
+  return permissionsLoading.value ? items.value : filterItems(items.value);
 });
 
-function filterItems(navItems: NavigationItemProps[]): NavigationItemProps[] {
+function filterItems(
+  navItems: NavigationItemProps<'camp'>[],
+): NavigationItemProps<'camp'>[] {
   return navItems
-    .filter((item) => canAccessAny(item.permission))
+    .filter((item) => canAccess(item.permission))
     .map((item) => {
       if ('children' in item && item.children !== undefined) {
         return {
@@ -154,22 +162,9 @@ function filterItems(navItems: NavigationItemProps[]): NavigationItemProps[] {
       return item;
     });
 }
-
-const backTo = computed(() => {
-  if (route.name === 'management') {
-    return { name: 'camps' };
-  }
-
-  if (route.name === 'management.camps') {
-    return { name: 'management' };
-  }
-
-  return { name: 'management.camps' };
-});
 </script>
 
 <i18n lang="yaml" locale="en">
-back: 'Back'
 contact: 'Contact'
 dashboard: 'Dashboard'
 participants: 'Participants'
@@ -177,13 +172,11 @@ program_planner: 'Program'
 room_planner: 'Room Planner'
 settings: 'Settings'
 statistics: 'Statistics'
-switch_camp: 'Switch camp'
 tasks: 'Tasks'
 title: 'Camp Management'
 </i18n>
 
 <i18n lang="yaml" locale="de">
-back: 'Zurück'
 contact: 'Kontaktieren'
 dashboard: 'Dashboard'
 participants: 'Teilnehmende'
@@ -191,13 +184,11 @@ program_planner: 'Programm'
 room_planner: 'Raumplaner'
 settings: 'Einstellungen'
 statistics: 'Statistiken'
-switch_camp: 'Camp wechseln'
 tasks: 'Aufgaben'
 title: 'Camp-Verwaltung'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-back: 'Retour'
 contact: 'Contacter'
 dashboard: 'Dashboard'
 participants: 'Participants'
@@ -205,13 +196,11 @@ program_planner: 'Programme'
 room_planner: 'Aménageur'
 settings: 'Paramètres'
 statistics: 'Statistiques'
-switch_camp: 'Changer de camp'
 tasks: 'Tâches'
 title: 'Gestion du camp'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-back: 'Wstecz'
 contact: 'Kontakt'
 dashboard: 'Panel główny'
 participants: 'Uczestnicy'
@@ -219,13 +208,11 @@ program_planner: 'Program'
 room_planner: 'Plan pokoi'
 settings: 'Ustawienia'
 statistics: 'Statystyki'
-switch_camp: 'Zmień obóz'
 tasks: 'Zadania'
 title: 'Zarządzanie obozem'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-back: 'Zpět'
 contact: 'Kontakt'
 dashboard: 'Přehled'
 participants: 'Účastníci'
@@ -233,7 +220,6 @@ program_planner: 'Program'
 room_planner: 'Plán pokojů'
 settings: 'Nastavení'
 statistics: 'Statistiky'
-switch_camp: 'Změnit tábor'
 tasks: 'Úkoly'
 title: 'Správa tábora'
 </i18n>

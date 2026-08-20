@@ -117,9 +117,7 @@ export class S3Storage implements Storage {
         return new ApiError(
           httpStatus.INTERNAL_SERVER_ERROR,
           'Storage access failed due to invalid storage configuration.',
-          false,
-          error.stack,
-          'S3_AUTH_CONFIGURATION_ERROR',
+          { cause: error, code: 'S3_AUTH_CONFIGURATION_ERROR' },
         );
       }
 
@@ -127,9 +125,7 @@ export class S3Storage implements Storage {
         return new ApiError(
           httpStatus.SERVICE_UNAVAILABLE,
           'Storage provider is temporarily unavailable.',
-          true,
-          error.stack,
-          'S3_TEMPORARY_PROVIDER_ERROR',
+          { cause: error, code: 'S3_TEMPORARY_PROVIDER_ERROR', fault: false },
         );
       }
     }
@@ -144,18 +140,14 @@ export class S3Storage implements Storage {
       return new ApiError(
         httpStatus.SERVICE_UNAVAILABLE,
         'Storage provider is temporarily unavailable.',
-        true,
-        error instanceof Error ? error.stack : undefined,
-        'S3_TEMPORARY_NETWORK_ERROR',
+        { cause: error, code: 'S3_TEMPORARY_NETWORK_ERROR', fault: false },
       );
     }
 
     return new ApiError(
       httpStatus.BAD_GATEWAY,
       'Storage provider request failed.',
-      false,
-      error instanceof Error ? error.stack : undefined,
-      'S3_PROVIDER_ERROR',
+      { cause: error, code: 'S3_PROVIDER_ERROR' },
     );
   }
 
@@ -251,9 +243,7 @@ export class S3Storage implements Storage {
         throw new ApiError(
           httpStatus.BAD_GATEWAY,
           'Storage provider returned an invalid file stream.',
-          false,
-          undefined,
-          'S3_INVALID_STREAM',
+          { code: 'S3_INVALID_STREAM' },
         );
       }
 

@@ -103,9 +103,8 @@
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
-import { computed, onMounted } from 'vue';
+import { computed } from 'vue';
 import { useTaskStore } from '@/stores/task-store';
-import { useCampManagerStore } from '@/stores/camp-manager-store';
 import { useCurrentManager } from '@/composables/currentManager';
 import type { Task } from '@camp-registration/common/entities';
 import { taskPhaseOf } from '@/utils/taskPhase';
@@ -113,14 +112,7 @@ import { parseLocalDate } from '@/utils/date';
 
 const { t, d } = useI18n();
 const taskStore = useTaskStore();
-const campManagerStore = useCampManagerStore();
 const { currentManagerId } = useCurrentManager();
-
-onMounted(() => {
-  // Needed to highlight tasks assigned to the current user. Cached/no-op if
-  // another page already loaded the managers for this camp.
-  void campManagerStore.fetchData();
-});
 
 const openTasks = computed<Task[]>(() => {
   return (taskStore.data ?? []).filter((task) => !task.completed);

@@ -1,25 +1,12 @@
 import { PrismaClient } from '#generated/prisma/client.js';
 import { PrismaMariaDb } from '@prisma/adapter-mariadb';
-import { createSoftDeleteExtension } from '@candoimage/prisma-extension-soft-delete';
 import logger from '#core/logger';
 import config from '#config';
 
 function createClient(): PrismaClient {
   const adapter = new PrismaMariaDb(config.database.url);
 
-  return new PrismaClient({ adapter }).$extends(
-    createSoftDeleteExtension({
-      models: {
-        Registration: true,
-      },
-      defaultConfig: {
-        field: 'deletedAt',
-        createValue: (deleted) => {
-          return deleted ? new Date() : null;
-        },
-      },
-    }),
-  ) as PrismaClient;
+  return new PrismaClient({ adapter });
 }
 
 export const prisma: PrismaClient = createClient();

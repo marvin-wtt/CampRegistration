@@ -1,7 +1,12 @@
 import type { Camp } from '#generated/prisma/client';
+import type { OrganizationVerificationStatus } from '#generated/prisma/enums';
 
-interface FreePlaces {
-  freePlaces: number | Record<string, number>;
+export interface CampWithFreePlaces extends Camp {
+  freePlaces: Record<string, number> | number;
+  registrations: { country: string | null }[];
+  organization: {
+    id: string;
+    name: string;
+    verificationStatus: OrganizationVerificationStatus;
+  };
 }
-
-export type CampWithFreePlaces = Camp & FreePlaces;

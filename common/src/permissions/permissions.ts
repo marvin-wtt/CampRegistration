@@ -68,7 +68,25 @@ export type NewsletterPermission =
   | 'newsletter.messages.create'
   | 'newsletter.messages.delete';
 
-export type Permission =
+export type OrganizationPermission =
+  | 'organization.view'
+  | 'organization.edit'
+  | 'organization.delete'
+  | 'organization.members.view'
+  | 'organization.members.create'
+  | 'organization.members.edit'
+  | 'organization.members.delete'
+  | 'organization.camps.view'
+  | 'organization.camps.create'
+  | 'organization.newsletters.view'
+  | 'organization.newsletters.create';
+
+/**
+ * Everything resolvable against a camp-manager role. Named separately from
+ * {@link Permission} so camp-scoped APIs can refuse a newsletter or
+ * organization string at compile time instead of silently never matching.
+ */
+export type CampScopedPermission =
   | CampPermission
   | FilePermission
   | RegistrationPermission
@@ -79,7 +97,52 @@ export type Permission =
   | RoomPermission
   | BedPermission
   | ProgramEventPermission
-  | TaskPermission
-  | NewsletterPermission;
+  | TaskPermission;
+
+export type Permission =
+  CampScopedPermission | NewsletterPermission | OrganizationPermission;
 
 export type Permissions = Permission[];
+
+/**
+ * Organization roles that carry implicit access to the organization's camps and
+ * newsletters. MEMBERs get nothing implicit — they must be invited as camp or
+ * newsletter managers.
+ */
+export const ORGANIZATION_CAMP_ACCESS_ROLES = ['ADMIN'] as const;
+
+/**
+ * The complete, fixed camp permission set an organization OWNER/ADMIN holds on
+ * every camp their organization owns, without any camp-manager record.
+ *
+ * Deliberately minimal: see that the camp exists, stop it accepting
+ * registrations (`camp.edit`), and see who manages it. It must NEVER include
+ * `camp.registrations.view` or any other camp permission — an organization role
+ * is an ownership and accountability relationship, not a grant of access to
+ * participants' personal data.
+ *
+ * A fixed constant rather than a registry lookup, so an organization role can
+ * never widen into arbitrary camp permissions.
+ */
+export const ORGANIZATION_CAMP_PERMISSIONS = [
+  'camp.view',
+  'camp.edit',
+  'camp.managers.view',
+] as const satisfies readonly CampScopedPermission[];
+
+/**
+ * The newsletter counterpart of `ORGANIZATION_CAMP_PERMISSIONS`: what an
+ * organization ADMIN holds on every newsletter their organization owns, without
+ * any newsletter-manager record.
+ *
+ * Deliberately minimal, and narrower than the camp set: see that the newsletter
+ * exists and see who runs it. It must NEVER include
+ * `newsletter.subscribers.view` — the subscriber list is personal data, the
+ * newsletter equivalent of a camp's registrations — nor
+ * `newsletter.messages.*`, which would let an owner read or send the
+ * organization's mail without ever being made a manager.
+ */
+export const ORGANIZATION_NEWSLETTER_PERMISSIONS = [
+  'newsletter.view',
+  'newsletter.managers.view',
+] as const satisfies readonly NewsletterPermission[];

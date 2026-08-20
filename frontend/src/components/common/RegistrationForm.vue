@@ -99,7 +99,7 @@ import 'survey-core/survey-core.min.css';
 
 import { useI18n } from 'vue-i18n';
 import { createMarkdownConverter } from '@camp-registration/common/utils';
-import { computed, onMounted, ref, toRef, watchEffect } from 'vue';
+import { computed, onMounted, ref, toRef, watch, watchEffect } from 'vue';
 import { SurveyModel } from 'survey-core';
 import { SurveyComponent } from 'survey-vue3-ui';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
@@ -136,12 +136,22 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   (e: 'bgColorUpdate', color: string | undefined): void;
+  (e: 'activeChange', active: boolean): void;
 }>();
 
 // Submit lifecycle shown by the custom overlay. While it is non-null the
 // survey (including its own completed page) is hidden and this UI takes over.
 const submitState = ref<'saving' | 'success' | 'error' | null>(null);
 const submitError = ref<string>();
+// Stays true once the submission succeeded, including when survey-core takes
+// the screen back over to show the form's own completed page.
+const submitted = ref<boolean>(false);
+
+// Lets the page hide anything that only applies while the form is being
+// filled in — the privacy disclosure above all.
+watch([submitState, submitted], ([state, done]) =>
+  emit('activeChange', state === null && !done),
+);
 
 const statusTitle = computed(() => {
   switch (submitState.value) {
@@ -320,6 +330,7 @@ function createModel(campId: string, form: object): SurveyModel {
 
     try {
       await props.submitFn(campId, sender.data ?? {}, sender.locale);
+      submitted.value = true;
       if (sender.showCompletePage && hasFormCompletedHtml) {
         // Reveal the form-defined completed page (survey-core shows it by
         // default; the survey element is unhidden as submitState clears).

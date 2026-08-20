@@ -421,7 +421,7 @@ describe('/api/v1/files/', () => {
 
   describe('GET /api/v1/camps/:campId/files/slots/:slot', () => {
     it('should stream the public file matching the slot without authentication', async () => {
-      const camp = await CampFactory.create({ public: true });
+      const camp = await CampFactory.create({ listed: true });
       const fileName = crypto.randomUUID() + '.pdf';
       await uploadFile('blank.pdf', fileName);
       await FileFactory.create({
@@ -437,7 +437,7 @@ describe('/api/v1/files/', () => {
     });
 
     it('should select the locale-specific file when a locale is requested', async () => {
-      const camp = await CampFactory.create({ public: true });
+      const camp = await CampFactory.create({ listed: true });
 
       const defaultName = crypto.randomUUID() + '.pdf';
       await uploadFile('blank.pdf', defaultName);
@@ -471,7 +471,7 @@ describe('/api/v1/files/', () => {
     });
 
     it('should respond with `401` when the matching file is private and the user is anonymous', async () => {
-      const camp = await CampFactory.create({ public: true });
+      const camp = await CampFactory.create({ listed: true });
       await FileFactory.create({
         camp: { connect: { id: camp.id } },
         field: 'rules',
@@ -484,7 +484,7 @@ describe('/api/v1/files/', () => {
     });
 
     it('should respond with `409` when the matching file is not ready', async () => {
-      const camp = await CampFactory.create({ public: true });
+      const camp = await CampFactory.create({ listed: true });
       await FileFactory.create({
         camp: { connect: { id: camp.id } },
         field: 'rules',
@@ -498,7 +498,7 @@ describe('/api/v1/files/', () => {
     });
 
     it('should respond with `404` when no file matches the slot', async () => {
-      const camp = await CampFactory.create({ public: true });
+      const camp = await CampFactory.create({ listed: true });
 
       await request()
         .get(`/api/v1/camps/${camp.id}/files/slots/unknown`)

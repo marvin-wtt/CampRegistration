@@ -161,7 +161,7 @@
 import { useI18n } from 'vue-i18n';
 import { useTaskStore } from '@/stores/task-store';
 import { useCampManagerStore } from '@/stores/camp-manager-store';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import type { Task } from '@camp-registration/common/entities';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import { useQuasar } from 'quasar';
@@ -204,19 +204,35 @@ const filterOptions = computed(() => [
   filterOption('unassigned', 'person_off', t('filter.unassigned')),
 ]);
 
-onMounted(async () => {
-  await Promise.allSettled([
-    taskStore.fetchData(),
-    campManagerStore.fetchData(),
-  ]);
+// The roster is only needed to populate the assignee picker; every role that can
+// create or update a task also holds `camp.managers.view`.
+const canAssign = computed<boolean>(
+  () => can('camp.tasks.create') || can('camp.tasks.update'),
+);
+
+onMounted(() => {
+  void taskStore.fetchData();
 });
 
+// Permissions resolve with the profile and the camp, both of which the parent
+// layout loads after this page mounts — so the roster has to be fetched when
+// the answer arrives, not once at mount.
+watch(
+  canAssign,
+  (allowed) => {
+    if (allowed) {
+      void campManagerStore.fetchData();
+    }
+  },
+  { immediate: true },
+);
+
 const error = computed<string | null>(() => {
-  return taskStore.error ?? campManagerStore.error;
+  return taskStore.error;
 });
 
 const loading = computed<boolean>(() => {
-  return taskStore.isLoading || campManagerStore.isLoading;
+  return taskStore.isLoading;
 });
 
 const tasks = computed<Task[]>(() => {
@@ -265,18 +281,16 @@ const completedTasks = computed<Task[]>(() => {
 
 // The real assignee name (never "You") — used where a badge conveys ownership.
 function assigneeName(task: Task): string {
-  if (!task.assigneeId) {
+  if (!task.assignee) {
     return t('unassigned');
   }
 
-  const manager = campManagerStore.data?.find((m) => m.id === task.assigneeId);
-
-  return manager?.name ?? manager?.email ?? t('unassigned');
+  return task.assignee.name ?? task.assignee.email;
 }
 
 // Compact label for list rows: shows "You" for the current user's tasks.
 function assigneeLabel(task: Task): string {
-  if (task.assigneeId && task.assigneeId === currentManagerId.value) {
+  if (isMine(task)) {
     return t('you');
   }
 

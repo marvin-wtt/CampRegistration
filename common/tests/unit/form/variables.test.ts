@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { SurveyModel } from 'survey-core';
-import { fakeCampData } from '../../util/faker';
-import { setVariables } from '../../../src/form';
+import { fakeCampData } from '../../util/faker.js';
+import { setVariables } from '../../../src/form/index.js';
 
 describe('variables', () => {
   describe('translations', () => {

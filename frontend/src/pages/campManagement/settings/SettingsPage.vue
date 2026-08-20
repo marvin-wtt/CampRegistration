@@ -11,6 +11,14 @@
         <div class="text-body2 text-grey-6 q-mt-xs">
           {{ t('subtitle') }}
         </div>
+        <owning-organization-chip
+          v-if="camp"
+          class="q-mt-sm"
+          subject="camp"
+          :organization-id="camp.organizationId"
+          :organization-name="camp.organizationName"
+          :verification-status="camp.organizationVerificationStatus"
+        />
       </div>
 
       <q-list
@@ -60,10 +68,14 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { type RouteLocationRaw } from 'vue-router';
 import { usePermissions } from '@/composables/permissions';
-import type { Permission } from '@camp-registration/common/permissions';
+import type { PermissionRequirement } from '@/composables/scopePermissions';
+import { useCampDetailsStore } from '@/stores/camp-details-store';
+import { storeToRefs } from 'pinia';
+import OwningOrganizationChip from '@/components/common/OwningOrganizationChip.vue';
 
 const { t } = useI18n();
-const { canAccessAny } = usePermissions();
+const { canAccess } = usePermissions();
+const { data: camp } = storeToRefs(useCampDetailsStore());
 
 interface SettingsItem {
   name: string;
@@ -72,7 +84,7 @@ interface SettingsItem {
   icon: string;
   color: string;
   to: RouteLocationRaw;
-  permission?: Permission;
+  permission?: PermissionRequirement<'camp'>;
 }
 
 const items = computed<SettingsItem[]>(() => [
@@ -92,7 +104,7 @@ const items = computed<SettingsItem[]>(() => [
     icon: 'feed',
     color: 'primary',
     to: { name: 'management.camp.settings.form' },
-    permission: 'camp.edit',
+    permission: { all: ['camp.edit', 'camp.files.view'] },
   },
   {
     name: 'access',
@@ -121,10 +133,19 @@ const items = computed<SettingsItem[]>(() => [
     to: { name: 'management.camp.settings.files' },
     permission: 'camp.files.view',
   },
+  {
+    name: 'privacy',
+    label: t('privacy.label'),
+    description: t('privacy.description'),
+    icon: 'privacy_tip',
+    color: 'tertiary',
+    to: { name: 'management.camp.settings.privacy' },
+    permission: 'camp.edit',
+  },
 ]);
 
 const filteredItems = computed<SettingsItem[]>(() => {
-  return items.value.filter((item) => canAccessAny(item.permission));
+  return items.value.filter((item) => canAccess(item.permission));
 });
 </script>
 
@@ -155,6 +176,9 @@ emails:
 files:
   label: 'Files'
   description: 'Upload and manage files for this camp.'
+privacy:
+  label: 'Privacy'
+  description: 'What this camp adds to the privacy information of its organisation.'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -175,6 +199,9 @@ emails:
 files:
   label: 'Dateien'
   description: 'Lade Dateien für dieses Camp hoch und verwalte sie.'
+privacy:
+  label: 'Datenschutz'
+  description: 'Was diese Freizeit den Datenschutzinformationen ihrer Organisation hinzufügt.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -195,6 +222,9 @@ emails:
 files:
   label: 'Fichiers'
   description: 'Téléchargez et gérez les fichiers de ce camp.'
+privacy:
+  label: 'Confidentialité'
+  description: 'Ce que ce séjour ajoute aux informations de son organisation.'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -215,6 +245,9 @@ emails:
 files:
   label: 'Pliki'
   description: 'Przesyłaj pliki dla tego obozu i zarządzaj nimi.'
+privacy:
+  label: 'Prywatność'
+  description: 'Co ten obóz dodaje do informacji swojej organizacji.'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -235,4 +268,7 @@ emails:
 files:
   label: 'Soubory'
   description: 'Nahrávejte a spravujte soubory pro tento tábor.'
+privacy:
+  label: 'Soukromí'
+  description: 'Co tento tábor doplňuje k informacím své organizace.'
 </i18n>

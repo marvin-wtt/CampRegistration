@@ -50,6 +50,9 @@
 
         <q-separator spaced />
 
+        <!-- The switcher is the richer path once inside management, but it does
+             not exist on the public layout — so the areas are reachable here
+             too, gated exactly as the switcher gates them. -->
         <q-item
           v-close-popup
           clickable
@@ -58,7 +61,7 @@
           exact-active-class=""
         >
           <q-item-section avatar>
-            <q-icon name="home" />
+            <q-icon name="cabin" />
           </q-item-section>
           <q-item-section>
             {{ t('camps') }}
@@ -66,6 +69,7 @@
         </q-item>
 
         <q-item
+          v-if="hasNewsletters"
           v-close-popup
           clickable
           :to="{ name: 'management.newsletters' }"
@@ -79,6 +83,24 @@
             {{ t('newsletters') }}
           </q-item-section>
         </q-item>
+
+        <q-item
+          v-if="hasOrganizations"
+          v-close-popup
+          clickable
+          :to="{ name: 'management.organizations' }"
+          active-class=""
+          exact-active-class=""
+        >
+          <q-item-section avatar>
+            <q-icon name="apartment" />
+          </q-item-section>
+          <q-item-section>
+            {{ t('organizations') }}
+          </q-item-section>
+        </q-item>
+
+        <q-separator spaced />
 
         <q-item
           v-if="administrator"
@@ -113,6 +135,52 @@
 
         <q-separator spaced />
 
+        <template v-if="!hideLanguage">
+          <q-item clickable>
+            <q-item-section avatar>
+              <q-icon name="language" />
+            </q-item-section>
+            <q-item-section>
+              {{ t('language') }}
+            </q-item-section>
+            <q-item-section side>
+              <div class="row items-center no-wrap q-gutter-x-xs">
+                <country-icon :locale="locale" />
+                <q-icon
+                  name="chevron_right"
+                  size="20px"
+                />
+              </div>
+            </q-item-section>
+
+            <q-menu
+              :anchor="languageMenuAnchor.anchor"
+              :self="languageMenuAnchor.self"
+              auto-close
+              style="min-width: 200px"
+            >
+              <q-list>
+                <q-item
+                  v-for="localeOption in locales"
+                  :key="localeOption.value"
+                  clickable
+                  :active="locale === localeOption.value"
+                  @click="updateLocale(localeOption.value)"
+                >
+                  <q-item-section avatar>
+                    <country-icon :locale="localeOption.value" />
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label>
+                      {{ localeOption.label }}
+                    </q-item-label>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-menu>
+          </q-item>
+        </template>
+
         <q-item
           v-close-popup
           clickable
@@ -124,43 +192,6 @@
           <q-item-section>
             {{ t(darkMode ? 'light_mode' : 'dark_mode') }}
           </q-item-section>
-        </q-item>
-
-        <q-item clickable>
-          <q-item-section avatar>
-            <q-icon name="language" />
-          </q-item-section>
-          <q-item-section>
-            {{ t('language') }}
-          </q-item-section>
-          <q-item-section side>
-            <country-icon :locale="locale" />
-          </q-item-section>
-
-          <q-menu
-            anchor="top start"
-            auto-close
-            self="top end"
-          >
-            <q-list>
-              <q-item
-                v-for="localeOption in locales"
-                :key="localeOption.value"
-                clickable
-                :active="locale === localeOption.value"
-                @click="updateLocale(localeOption.value)"
-              >
-                <q-item-section avatar>
-                  <country-icon :locale="localeOption.value" />
-                </q-item-section>
-                <q-item-section>
-                  <q-item-label>
-                    {{ localeOption.label }}
-                  </q-item-label>
-                </q-item-section>
-              </q-item>
-            </q-list>
-          </q-menu>
         </q-item>
 
         <q-separator spaced />
@@ -194,7 +225,7 @@
 import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
 import CountryIcon from '@/components/common/localization/CountryIcon.vue';
-import { useQuasar } from 'quasar';
+import { useQuasar, type QSelectOption, type QMenuProps } from 'quasar';
 import type { Profile } from '@camp-registration/common/entities';
 import { useProfileStore } from '@/stores/profile-store';
 import { useAuthStore } from '@/stores/auth-store';
@@ -209,7 +240,11 @@ const { locale } = useI18n({
   useScope: 'global',
 });
 
-const locales = computed(() => [
+const { hideLanguage = false } = defineProps<{
+  hideLanguage?: boolean;
+}>();
+
+const locales = computed<QSelectOption[]>(() => [
   { label: 'Deutsch', value: 'de-DE' },
   { label: 'Français', value: 'fr-FR' },
   { label: 'English', value: 'en-US' },
@@ -247,8 +282,28 @@ const administrator = computed<boolean>(() => {
   return profile.value?.role === 'ADMIN';
 });
 
+// Camps are always offered — the index carries the create flow for a user with
+// none. The other two would only lead to an empty page.
+const hasNewsletters = computed<boolean>(() => {
+  return (profile.value?.newsletterAccess.length ?? 0) > 0;
+});
+
+const hasOrganizations = computed<boolean>(() => {
+  return (profile.value?.organizationAccess.length ?? 0) > 0;
+});
+
 const darkMode = computed<boolean>(() => {
   return quasar.dark.isActive;
+});
+
+// Flyout to the side on desktop, where the rail/floating profile menu has
+// room to the right. On mobile the profile menu opens from a screen-edge
+// toolbar button, so a side flyout gets squeezed by Quasar's collision
+// avoidance — stack below instead, growing leftward with the full width.
+const languageMenuAnchor = computed<Pick<QMenuProps, 'anchor' | 'self'>>(() => {
+  return quasar.screen.gt.xs
+    ? { anchor: 'top end', self: 'top start' }
+    : { anchor: 'bottom end', self: 'top end' };
 });
 
 function updateLocale(value: string) {
@@ -286,12 +341,13 @@ function logout() {
 <i18n lang="yaml" locale="en">
 account: 'Account'
 username: 'Signed in as'
-camps: 'My camps'
+camps: 'Camps'
 newsletters: 'Newsletters'
+organizations: 'Organizations'
 administration: 'Administration'
 light_mode: 'Light Mode'
 login: 'Login'
-logout: 'Sing out'
+logout: 'Sign out'
 language: 'Language'
 dark_mode: 'Dark Mode'
 </i18n>
@@ -299,8 +355,9 @@ dark_mode: 'Dark Mode'
 <i18n lang="yaml" locale="de">
 account: 'Konto'
 username: 'Angemeldet als'
-camps: 'Meine Camps'
+camps: 'Camps'
 newsletters: 'Newsletter'
+organizations: 'Organisationen'
 administration: 'Verwaltung'
 light_mode: 'Hellmodus'
 login: 'Anmelden'
@@ -312,8 +369,9 @@ dark_mode: 'Dunkelmodus'
 <i18n lang="yaml" locale="fr">
 account: 'Compte'
 username: 'Connecté en tant que'
-camps: 'Mes camps'
+camps: 'Camps'
 newsletters: 'Newsletters'
+organizations: 'Organisations'
 administration: 'Administration'
 light_mode: 'Mode lumineux'
 login: 'Connexion'
@@ -325,8 +383,9 @@ dark_mode: 'Mode sombre'
 <i18n lang="yaml" locale="pl">
 account: 'Konto'
 username: 'Zalogowany jako'
-camps: 'Moje obozy'
+camps: 'Obozy'
 newsletters: 'Newslettery'
+organizations: 'Organizacje'
 administration: 'Administracja'
 light_mode: 'Tryb jasny'
 login: 'Zaloguj się'
@@ -338,8 +397,9 @@ dark_mode: 'Tryb ciemny'
 <i18n lang="yaml" locale="cs">
 account: 'Účet'
 username: 'Přihlášen jako'
-camps: 'Moje tábory'
+camps: 'Tábory'
 newsletters: 'Newslettery'
+organizations: 'Organizace'
 administration: 'Administrace'
 light_mode: 'Světlý režim'
 login: 'Přihlásit se'

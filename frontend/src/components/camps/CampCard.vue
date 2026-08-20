@@ -51,7 +51,13 @@
         {{ to(props.camp.name) }}
       </div>
       <div class="camp-card__organizer ellipsis">
-        {{ to(props.camp.organizer) }}
+        {{ organizerLabel }}
+      </div>
+      <div
+        v-if="owningOrganization"
+        class="camp-card__owner ellipsis"
+      >
+        {{ t('via', { organization: owningOrganization }) }}
       </div>
 
       <div class="camp-card__meta">
@@ -178,6 +184,26 @@ const tone = computed<(typeof tones)[number]>(() => {
 
 const monogram = computed<string>(() => {
   return to(props.camp.name).trim().charAt(0).toUpperCase() || '•';
+});
+
+const organizerLabel = computed<string>(() => to(props.camp.organizer));
+
+/** Collapsed for comparison only — never for display. */
+function normalize(value: string): string {
+  return value.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+/**
+ * The owning organization is the vetted name; the organizer is camp-authored
+ * free text. Naming both is only informative when they actually differ, so the
+ * line is suppressed when it would just repeat the organizer already on screen.
+ */
+const owningOrganization = computed<string | null>(() => {
+  const organization = props.camp.organizationName;
+
+  return normalize(organization) === normalize(organizerLabel.value)
+    ? null
+    : organization;
 });
 
 interface AvailabilityEntry {
@@ -479,6 +505,15 @@ function navigateToRegistration() {
   font-size: 13px;
 }
 
+.camp-card__owner {
+  margin-top: 2px;
+
+  color: var(--md3-on-surface-variant);
+  opacity: 0.75;
+
+  font-size: 12px;
+}
+
 .camp-card__meta {
   display: flex;
   flex-direction: column;
@@ -607,6 +642,7 @@ function navigateToRegistration() {
 <i18n lang="yaml" locale="en">
 age_range: '{min}–{max} years'
 free: 'Free'
+via: 'via {organization}'
 until: 'Until {date}'
 waitlist: 'Waitlist'
 places_left: 'No places left | 1 place left | {count} places left'
@@ -615,6 +651,7 @@ places_left_label: 'Places left'
 <i18n lang="yaml" locale="de">
 age_range: '{min}–{max} Jahre'
 free: 'Kostenlos'
+via: 'über {organization}'
 until: 'Bis {date}'
 waitlist: 'Warteliste'
 places_left: 'Keine Plätze frei | Noch 1 Platz frei | Noch {count} Plätze frei'
@@ -623,6 +660,7 @@ places_left_label: 'Freie Plätze'
 <i18n lang="yaml" locale="fr">
 age_range: '{min}–{max} ans'
 free: 'Gratuit'
+via: 'via {organization}'
 until: "Jusqu'au {date}"
 waitlist: "Liste d'attente"
 places_left: 'Aucune place restante | 1 place restante | {count} places restantes'
@@ -631,6 +669,7 @@ places_left_label: 'Places restantes'
 <i18n lang="yaml" locale="pl">
 age_range: '{min}–{max} lat'
 free: 'Bezpłatnie'
+via: 'przez {organization}'
 until: 'Do {date}'
 waitlist: 'Lista rezerwowa'
 # Count-invariant phrasing — no Polish plural rules are configured
@@ -640,6 +679,7 @@ places_left_label: 'Wolne miejsca'
 <i18n lang="yaml" locale="cs">
 age_range: '{min}–{max} let'
 free: 'Zdarma'
+via: 'prostřednictvím {organization}'
 until: 'Do {date}'
 waitlist: 'Čekací listina'
 # Count-invariant phrasing — no Czech plural rules are configured

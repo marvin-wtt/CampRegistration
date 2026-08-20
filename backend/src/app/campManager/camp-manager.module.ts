@@ -1,15 +1,11 @@
 import type {
   AppModule,
   AppRouter,
-  RoleToPermissions,
   BindOptions,
   ModuleOptions,
 } from '#core/base/AppModule';
 import { CampManagerRouter } from '#app/campManager/camp-manager.routes';
-import type {
-  ManagerPermission,
-  CampManagerRole,
-} from '@camp-registration/common/permissions';
+import type { ScopedPermissions } from '@camp-registration/common/permissions';
 import { CampManagerController } from '#app/campManager/camp-manager.controller';
 import { CampManagerService } from '#app/campManager/camp-manager.service';
 import { MailableRegistry } from '#app/mail/mail.registry';
@@ -30,17 +26,19 @@ export class CampManagerModule implements AppModule {
     router.useRouter('/camps/:campId/managers', new CampManagerRouter());
   }
 
-  registerPermissions(): RoleToPermissions<CampManagerRole, ManagerPermission> {
+  registerPermissions(): ScopedPermissions {
     return {
-      DIRECTOR: [
-        'camp.managers.view',
-        'camp.managers.create',
-        'camp.managers.edit',
-        'camp.managers.delete',
-      ],
-      COORDINATOR: ['camp.managers.view'],
-      COUNSELOR: ['camp.managers.view'],
-      VIEWER: [],
+      camp: {
+        DIRECTOR: [
+          'camp.managers.view',
+          'camp.managers.create',
+          'camp.managers.edit',
+          'camp.managers.delete',
+        ],
+        COORDINATOR: ['camp.managers.view'],
+        COUNSELOR: ['camp.managers.view'],
+        VIEWER: ['camp.managers.view'],
+      },
     };
   }
 }

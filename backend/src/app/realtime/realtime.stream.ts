@@ -23,6 +23,17 @@ export interface RealtimeSubscriber {
   permissions: ReadonlySet<Permission>;
   /** Camp-manager expiry; `null` = never expires. */
   expiresAt: Date | null;
+  /**
+   * Re-resolve this subscriber on every heartbeat rather than only when a
+   * `manager` event names their record.
+   *
+   * Set for authorizations that draw (partly) on organization membership:
+   * organization role changes emit no realtime event, so `shouldRefreshOn`
+   * would never fire and a demoted organization administrator would keep their
+   * snapshot for the life of the connection. Bounds that staleness to one
+   * heartbeat instead.
+   */
+  revalidate?: boolean;
 }
 
 /**
@@ -93,9 +104,9 @@ export function shouldRefreshOn(
  * (identified by `event.id === subscriber.managerId`) — a role/expiry change
  * can only ever affect that one manager's own permissions, so other
  * subscribers' connections don't need to re-verify. The refresh check runs
- * independently of {@link shouldDeliver}, so a subscriber who lacks
- * `camp.managers.view` (e.g. a VIEWER being downgraded) still has their own
- * permissions refreshed even though they'd never see the event itself.
+ * independently of {@link shouldDeliver}, so a subscriber lacking
+ * `camp.managers.view` still has their own permissions refreshed even though
+ * they'd never see the event itself.
  *
  * Staleness window: between a role change committing and the async refresh
  * completing — one bus hop plus one DB round-trip (typically milliseconds),
@@ -230,6 +241,11 @@ export function realtimeStream(
       if (subscriber === null || isExpired(subscriber)) {
         close();
         return;
+      }
+      // Organization-derived permissions have no event to react to, so they are
+      // re-resolved on the heartbeat instead (see `revalidate`).
+      if (subscriber.revalidate) {
+        refresh();
       }
       send(': heartbeat\n\n');
     }, HEARTBEAT_INTERVAL_MS);

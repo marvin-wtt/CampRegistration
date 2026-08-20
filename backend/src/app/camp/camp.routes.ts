@@ -2,14 +2,15 @@ import { ModuleRouter } from '#core/router/ModuleRouter';
 import { CampController } from '#app/camp/camp.controller';
 import { CampService } from './camp.service.js';
 import { auth, guard } from '#middlewares/index';
-import {
-  campManager,
-  campManagerSubscriber,
-} from '#app/campManager/camp-manager.guard';
+import { campManagerSubscriber } from '#app/campManager/camp-manager.guard';
 import type { CampQuery } from '@camp-registration/common/entities';
 import { controller } from '#utils/bindController';
 import { realtimeStream } from '#app/realtime/realtime.stream';
 import { resolve } from '#core/ioc/container';
+import { campManager, campOrganizationVerified } from '#app/camp/camp.guard';
+import { or } from '#core/guard';
+import { organizationFromBody } from '#app/organization/organization.middleware';
+import { organizationMember } from '#app/organization/organization.guard';
 
 export class CampRouter extends ModuleRouter {
   protected registerBindings() {
@@ -29,7 +30,11 @@ export class CampRouter extends ModuleRouter {
       controller(campController, 'index'),
     );
 
-    this.router.get('/:campId', controller(campController, 'show'));
+    this.router.get(
+      '/:campId',
+      guard(or(campOrganizationVerified, campManager('camp.view'))),
+      controller(campController, 'show'),
+    );
 
     // The camp's single live-updates stream. Carries all camp resources; each
     // event is filtered against the subscriber's permission set, so resources
@@ -41,13 +46,28 @@ export class CampRouter extends ModuleRouter {
       realtimeStream(campManagerSubscriber),
     );
 
-    this.router.post('/', auth(), controller(campController, 'store'));
+    this.router.post(
+      '/',
+      auth(),
+      organizationFromBody(),
+      guard(organizationMember('organization.camps.create')),
+      controller(campController, 'store'),
+    );
 
     this.router.patch(
       '/:campId',
       auth(),
       guard(campManager('camp.edit')),
       controller(campController, 'update'),
+    );
+
+    // Reassigning ownership is a system-administrator action — bare `guard()`.
+    this.router.patch(
+      '/:campId/organization',
+      auth(),
+      organizationFromBody(),
+      guard(),
+      controller(campController, 'updateOrganization'),
     );
 
     this.router.delete(

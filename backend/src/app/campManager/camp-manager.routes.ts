@@ -1,8 +1,6 @@
 import { auth, guard } from '#middlewares/index';
-import {
-  campManager,
-  campManagerSelf,
-} from '#app/campManager/camp-manager.guard';
+import { campManagerSelf } from '#app/campManager/camp-manager.guard';
+import { campManager } from '#app/camp/camp.guard';
 import { CampManagerController } from './camp-manager.controller.js';
 import { controller } from '#utils/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';

@@ -1,8 +1,12 @@
-import type { Task } from '#generated/prisma/client';
 import type { Task as TaskResourceData } from '@camp-registration/common/entities';
 import { JsonResource } from '#core/resource/JsonResource';
+import { CampManagerIdentityResource } from '#app/campManager/camp-manager.resource';
+import type { TaskWithAssignee } from '#app/task/task.types';
 
-export class TaskResource extends JsonResource<Task, TaskResourceData> {
+export class TaskResource extends JsonResource<
+  TaskWithAssignee,
+  TaskResourceData
+> {
   transform(): TaskResourceData {
     return {
       id: this.data.id,
@@ -11,6 +15,9 @@ export class TaskResource extends JsonResource<Task, TaskResourceData> {
       dueDate: this.data.dueDate ?? null,
       completed: this.data.completed,
       assigneeId: this.data.assigneeId ?? null,
+      assignee: this.data.assignee
+        ? new CampManagerIdentityResource(this.data.assignee).transform()
+        : null,
     };
   }
 }

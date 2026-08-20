@@ -1,4 +1,4 @@
-import type { Permission } from '@camp-registration/common/permissions';
+import type { CampScopedPermission } from '@camp-registration/common/permissions';
 import type { SettingKey } from '@camp-registration/common/settings';
 import type { ZodType } from 'zod';
 import { injectable } from 'inversify';
@@ -7,8 +7,8 @@ import httpStatus from 'http-status';
 
 export interface SettingDefinition<T = unknown> {
   schema: ZodType<T>;
-  viewPermission: Permission;
-  editPermission: Permission;
+  viewPermission: CampScopedPermission;
+  editPermission: CampScopedPermission;
 }
 
 /**

@@ -2,9 +2,13 @@ import { SurveyJSCampData } from './SurveyJSCampData.js';
 import { Identifiable } from './Identifiable.js';
 import { ITheme } from 'survey-core';
 import { Translatable } from './Translatable.js';
+import type { OrganizationVerificationStatus } from './Organization.js';
 
 export interface Camp extends Identifiable {
-  public: boolean;
+  organizationId: string;
+  organizationName: string;
+  organizationVerificationStatus: OrganizationVerificationStatus;
+  listed: boolean;
   registrationOpensAt: string | null;
   registrationClosesAt: string | null;
   confirmationMode: 'AUTOMATIC' | 'MANUAL';
@@ -21,7 +25,6 @@ export interface Camp extends Identifiable {
   location: Translatable | null;
   price: number;
   freePlaces: Translatable<number> | null;
-  /** Derived from the registration window. */
   registrationStatus: CampRegistrationStatus;
 }
 
@@ -32,13 +35,26 @@ export interface CampDetails extends Camp {
 
 export type CampCreateData = Omit<
   Partial<CampDetails> & Camp,
-  'id' | 'freePlaces' | 'registrationStatus'
+  | 'id'
+  | 'freePlaces'
+  | 'registrationStatus'
+  | 'organizationName'
+  | 'organizationVerificationStatus'
+  | 'locales'
+  | 'registrationOpensAt'
+  | 'registrationClosesAt'
 > & {
+  registrationOpensAt?: string | null | undefined;
+  registrationClosesAt?: string | null | undefined;
   referenceCampId?: string | undefined;
   preset?: 'standard' | 'minimal' | undefined | null;
 };
 
-export type CampUpdateData = Partial<CampCreateData>;
+export type CampUpdateData = Omit<Partial<CampCreateData>, 'organizationId'>;
+
+export interface CampOrganizationUpdateData {
+  organizationId: string;
+}
 
 export type CampRegistrationStatus = 'open' | 'upcoming' | 'closed';
 
@@ -54,8 +70,9 @@ export interface CampQuery {
   startAt?: string;
   endAt?: string;
 
-  public?: boolean;
+  listed?: boolean;
   status?: CampRegistrationStatus;
+  organizationId?: string;
 
   view?: 'all' | 'assigned';
 }

@@ -89,6 +89,7 @@
 </template>
 
 <script lang="ts" setup>
+import { APP_LOCALES } from '@/i18n/locales';
 import { computed, reactive, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import CountryIcon from '@/components/common/localization/CountryIcon.vue';
@@ -111,7 +112,7 @@ const { withResultNotification } = useServiceNotifications();
 
 // The app's fixed locale set (see CLAUDE.md) — legal content is instance-wide,
 // unlike camp fields whose locales follow the camp's target countries.
-const locales = ['en', 'de', 'fr', 'cs', 'pl'];
+const locales = APP_LOCALES;
 
 // The editor works with a per-locale record; a plain string (a value shared
 // across every language) is kept separately in `shared` under "shared" mode.

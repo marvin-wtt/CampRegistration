@@ -1,12 +1,15 @@
 import { RegistrationController } from './registration.controller.js';
 import { auth, guard } from '#middlewares/index';
-import { or } from '#core/guard';
-import { campManager } from '#app/campManager/camp-manager.guard';
+import { or, and } from '#core/guard';
+import { campManager } from '#app/camp/camp.guard';
 import { controller } from '#utils/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';
 import { RegistrationService } from '#app/registration/registration.service';
 import { resolve } from '#core/ioc/container';
-import { registrationOpen } from '#app/camp/camp.guard';
+import {
+  registrationOpen,
+  campOrganizationVerified,
+} from '#app/camp/camp.guard';
 
 export class RegistrationRouter extends ModuleRouter {
   protected registerBindings() {
@@ -39,7 +42,12 @@ export class RegistrationRouter extends ModuleRouter {
     );
     this.router.post(
       '/',
-      guard(or(registrationOpen, campManager('camp.registrations.create'))),
+      guard(
+        or(
+          and(registrationOpen, campOrganizationVerified),
+          campManager('camp.registrations.create'),
+        ),
+      ),
       controller(registrationController, 'store'),
     );
     this.router.patch(

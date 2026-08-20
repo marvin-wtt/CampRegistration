@@ -1,23 +1,31 @@
-import type { Permission } from '@camp-registration/common/permissions';
+import type { PermissionScope } from '@camp-registration/common/permissions';
+import type { PermissionRequirement } from '@/composables/scopePermissions';
 
-interface BaseProps {
+interface BaseProps<S extends PermissionScope> {
   header?: boolean;
   name: string;
   label?: string | undefined;
   separated?: boolean | undefined;
   insertLevel?: number | undefined;
-  // A single permission, or an array meaning "any of these grants access".
-  permission?: Permission | Permission[] | undefined;
+  // A single permission, or `{ any: [...] }` / `{ all: [...] }`.
+  permission?: PermissionRequirement<S> | undefined;
 }
 
-interface HeaderItemProps extends BaseProps {
+interface HeaderItemProps<S extends PermissionScope> extends BaseProps<S> {
   header: true;
 }
 
-interface LinkItemProps extends BaseProps {
+interface LinkItemProps<S extends PermissionScope> extends BaseProps<S> {
   icon?: string | undefined;
   to?: string | object | undefined;
-  children?: LinkItemProps[] | undefined;
+  children?: LinkItemProps<S>[] | undefined;
 }
 
-export type NavigationItemProps = LinkItemProps | HeaderItemProps;
+/**
+ * Navigation items are gated per scope: a camp layout filters with
+ * `usePermissions().canAccess`, an organization layout with `canAccessOrg`.
+ * The scope parameter keeps a camp permission out of an organization menu,
+ * where it could never match.
+ */
+export type NavigationItemProps<S extends PermissionScope = PermissionScope> =
+  LinkItemProps<S> | HeaderItemProps<S>;

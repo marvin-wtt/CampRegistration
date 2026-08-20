@@ -2,33 +2,31 @@
   <general-layout
     :navigation-items="items"
     :title="t('title')"
-    :back-to="backTo"
-  />
+  >
+    <template #toolbar>
+      <workspace-switcher />
+    </template>
+
+    <template #navigation>
+      <workspace-switcher rail />
+    </template>
+  </general-layout>
 </template>
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
 import type { NavigationItemProps } from '@/components/NavigationItemProps.ts';
 import GeneralLayout from '@/components/layout/GeneralLayout.vue';
+import WorkspaceSwitcher from '@/components/layout/WorkspaceSwitcher.vue';
 import { computed, onMounted } from 'vue';
 import { useAuthStore } from '@/stores/auth-store';
-import { useRoute, type RouteLocationRaw } from 'vue-router';
 
 const { t } = useI18n();
-const route = useRoute();
 
 const authStore = useAuthStore();
 
 onMounted(async () => {
   await authStore.init();
-});
-
-const backTo = computed<RouteLocationRaw>(() => {
-  if (route.name === 'administration') {
-    return { name: 'management' };
-  }
-
-  return { name: 'administration' };
 });
 
 const items = computed<NavigationItemProps[]>(() => [
@@ -37,6 +35,12 @@ const items = computed<NavigationItemProps[]>(() => [
     label: t('users'),
     icon: 'person',
     to: { name: 'administration.users' },
+  },
+  {
+    name: 'organizations',
+    label: t('organizations'),
+    icon: 'apartment',
+    to: { name: 'administration.organizations' },
   },
   {
     name: 'camps',
@@ -68,6 +72,7 @@ const items = computed<NavigationItemProps[]>(() => [
 <i18n lang="yaml" locale="en">
 title: 'Administration'
 
+organizations: 'Organizations'
 camps: 'Camps'
 newsletters: 'Newsletters'
 queues: 'Jobs'
@@ -79,6 +84,7 @@ legal: 'Legal Content'
 <i18n lang="yaml" locale="de">
 title: 'Verwaltung'
 
+organizations: 'Organisationen'
 camps: 'Camps'
 newsletters: 'Newsletter'
 queues: 'Aufgaben'
@@ -90,6 +96,7 @@ legal: 'Rechtliches'
 <i18n lang="yaml" locale="fr">
 title: 'Administration'
 
+organizations: 'Organisations'
 camps: 'Camps'
 newsletters: 'Newsletters'
 queues: 'Tâches'
@@ -101,6 +108,7 @@ legal: 'Contenu légal'
 <i18n lang="yaml" locale="pl">
 title: 'Administracja'
 
+organizations: 'Organizacje'
 camps: 'Obozy'
 newsletters: 'Newslettery'
 queues: 'Zadania'
@@ -112,6 +120,7 @@ legal: 'Treści prawne'
 <i18n lang="yaml" locale="cs">
 title: 'Administrace'
 
+organizations: 'Organizace'
 camps: 'Tábory'
 newsletters: 'Newslettery'
 queues: 'Úlohy'

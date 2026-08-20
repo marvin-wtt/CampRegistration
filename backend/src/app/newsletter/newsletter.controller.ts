@@ -58,7 +58,12 @@ export class NewsletterController extends BaseController {
     const { body } = await req.validate(validator.store);
     const userId = req.authUserId();
 
+    // Bound and authorized by the route: the id arrives in the body, so
+    // `organizationFromBody()` resolves it before the guard runs.
+    const organization = req.modelOrFail('organization');
+
     const newsletter = await this.newsletterService.createNewsletter(userId, {
+      organizationId: organization.id,
       name: body.name,
       description: body.description,
       replyTo: body.replyTo,

@@ -13,6 +13,11 @@ export default {
     error: 'Błąd podczas aktualizowania obozu',
     invalid: 'Nieprawidłowy identyfikator obozu',
   },
+  move: {
+    progress: 'Przenoszenie obozu...',
+    success: 'Obóz został przeniesiony',
+    error: 'Nie udało się przenieść obozu',
+  },
   delete: {
     progress: 'Usuwanie obozu...',
     success: 'Obóz pomyślnie usunięty',

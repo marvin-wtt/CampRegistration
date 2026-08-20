@@ -43,6 +43,19 @@
             {{ relLabel }}
           </span>
         </div>
+        <div class="mgmt-card__org">
+          <q-icon
+            name="apartment"
+            size="13px"
+          />
+          <span class="ellipsis">{{ camp.organizationName }}</span>
+          <q-tooltip
+            anchor="bottom start"
+            self="top start"
+          >
+            {{ t('organization', { organization: camp.organizationName }) }}
+          </q-tooltip>
+        </div>
       </div>
 
       <q-btn
@@ -58,7 +71,7 @@
       >
         <camp-card-menu
           :camp
-          :active="registrationOpen"
+          :share-warning="shareWarning"
           @edit="editAction"
           @delete="deleteAction"
           @share="shareAction"
@@ -128,6 +141,20 @@
           size="13px"
           class="mgmt-card__status-edit"
         />
+        <q-tooltip
+          v-if="status.kind === 'blocked'"
+          anchor="bottom start"
+          self="top start"
+        >
+          {{
+            t(
+              camp.organizationVerificationStatus === 'REJECTED'
+                ? 'status.organizationRejectedHint'
+                : 'status.pendingVerificationHint',
+              { organization: camp.organizationName },
+            )
+          }}
+        </q-tooltip>
       </component>
     </div>
 
@@ -158,7 +185,7 @@ import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { copyToClipboard, useQuasar } from 'quasar';
 import type { Camp } from '@camp-registration/common/entities';
-import type { Permission } from '@camp-registration/common/permissions';
+import type { ScopePermission } from '@camp-registration/common/permissions';
 import { computed, type Ref, ref } from 'vue';
 import { useProfileStore } from '@/stores/profile-store';
 import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
@@ -291,8 +318,23 @@ const capacity = computed<Capacity | null>(() => {
   };
 });
 
-const registrationOpen = computed<boolean>(() => {
-  return camp.registrationStatus === 'open';
+// The public camp page stays reachable outside the registration window, so the
+// link is still worth sending — it just can't be signed up through. While the
+// organization is unverified the page 403s for everyone but its managers, which
+// is the one case where the link is of no use at all.
+const shareWarning = computed<string | null>(() => {
+  if (camp.organizationVerificationStatus !== 'VERIFIED') {
+    return t('share.unverified', { organization: camp.organizationName });
+  }
+
+  switch (camp.registrationStatus) {
+    case 'upcoming':
+      return t('share.upcoming');
+    case 'closed':
+      return t('share.closed');
+    default:
+      return null;
+  }
 });
 
 function shortDate(value: string): string {
@@ -303,12 +345,31 @@ function shortDate(value: string): string {
 }
 
 interface Status {
-  kind: 'open' | 'closes' | 'opens' | 'closed';
+  kind: 'open' | 'closes' | 'opens' | 'closed' | 'blocked';
   icon: string;
   label: string;
 }
 
 const status = computed<Status>(() => {
+  // Takes precedence over the registration window: while the organization is
+  // unverified the camp is unlisted and refuses registrations, so showing
+  // "registration open" here would be a plain untruth.
+  if (camp.organizationVerificationStatus === 'PENDING') {
+    return {
+      kind: 'blocked',
+      icon: 'gpp_maybe',
+      label: t('status.pendingVerification'),
+    };
+  }
+
+  if (camp.organizationVerificationStatus === 'REJECTED') {
+    return {
+      kind: 'blocked',
+      icon: 'gpp_bad',
+      label: t('status.organizationRejected'),
+    };
+  }
+
   if (camp.registrationStatus === 'open') {
     if (camp.registrationClosesAt) {
       return {
@@ -338,7 +399,7 @@ interface QuickLink {
   icon: string;
   label: string;
   name: string;
-  permission: Permission;
+  permission: ScopePermission<'camp'>;
 }
 
 const quickLinks = computed<QuickLink[]>(() => {
@@ -417,10 +478,12 @@ function shareAction() {
 
   copyToClipboard(url)
     .then(() => {
+      const warning = shareWarning.value;
       quasar.notify({
-        type: 'positive',
+        type: warning ? 'warning' : 'positive',
         message: t('notification.share_success'),
-        icon: 'assignment_turned_in',
+        ...(warning ? { caption: warning } : {}),
+        icon: warning ? 'warning' : 'assignment_turned_in',
       });
     })
     .catch(() => {
@@ -594,6 +657,18 @@ async function withLoading(flag: Ref<boolean>, fn: () => Promise<void>) {
   color: var(--md3-primary);
 }
 
+.mgmt-card__org {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  min-width: 0;
+  margin-top: 2px;
+
+  color: var(--md3-on-surface-variant);
+  font-size: 12px;
+}
+
 .mgmt-card__more {
   flex-shrink: 0;
   color: var(--md3-on-surface-variant);
@@ -736,6 +811,13 @@ async function withLoading(flag: Ref<boolean>, fn: () => Promise<void>) {
   color: var(--md3-on-surface-variant);
 }
 
+/* Distinct from `closed`: nothing the manager configures will change it until
+   the organization is verified. */
+.mgmt-card__status--blocked {
+  background: var(--md3-error-container);
+  color: var(--md3-on-error-container);
+}
+
 /* Quick navigation */
 .mgmt-card__nav {
   display: flex;
@@ -774,6 +856,7 @@ registration:
   manage: 'Manage registration'
 phase:
   ongoing: 'Ongoing'
+organization: 'Owned by {organization}'
 action:
   more: 'More actions'
 status:
@@ -781,6 +864,14 @@ status:
   closes: 'Closes {date}'
   opens: 'Opens {date}'
   closed: 'Registration closed'
+  pendingVerification: 'Pending verification'
+  organizationRejected: 'Organization rejected'
+  pendingVerificationHint: '{organization} is still awaiting verification, so this camp is hidden from the public listing and refuses registrations — whatever its registration window says.'
+  organizationRejectedHint: '{organization} was not verified, so this camp is hidden from the public listing and refuses registrations. Correct its details and submit it for verification again.'
+share:
+  closed: 'Registration is closed — visitors can view the camp but cannot sign up.'
+  upcoming: 'Registration has not opened yet — visitors can view the camp but cannot sign up yet.'
+  unverified: 'Only this camp’s managers can open the link while {organization} is unverified.'
 dialog:
   delete:
     title: 'Delete camp'
@@ -802,6 +893,7 @@ registration:
   manage: 'Anmeldung verwalten'
 phase:
   ongoing: 'Laufend'
+organization: 'Gehört zu {organization}'
 action:
   more: 'Weitere Aktionen'
 status:
@@ -809,6 +901,14 @@ status:
   closes: 'Schließt {date}'
   opens: 'Öffnet {date}'
   closed: 'Anmeldung geschlossen'
+  pendingVerification: 'Verifizierung ausstehend'
+  organizationRejected: 'Organisation abgelehnt'
+  pendingVerificationHint: '{organization} wartet noch auf die Verifizierung. Dieses Camp ist daher nicht öffentlich sichtbar und lehnt Anmeldungen ab — unabhängig vom Anmeldezeitraum.'
+  organizationRejectedHint: '{organization} wurde nicht verifiziert. Dieses Camp ist daher nicht öffentlich sichtbar und lehnt Anmeldungen ab. Korrigiere die Angaben und reiche sie erneut zur Verifizierung ein.'
+share:
+  closed: 'Die Anmeldung ist geschlossen — Besucher sehen das Camp, können sich aber nicht anmelden.'
+  upcoming: 'Die Anmeldung ist noch nicht geöffnet — Besucher sehen das Camp, können sich aber noch nicht anmelden.'
+  unverified: 'Solange {organization} nicht verifiziert ist, können nur die Verantwortlichen dieses Camps den Link öffnen.'
 dialog:
   delete:
     title: 'Camp löschen'
@@ -830,6 +930,7 @@ registration:
   manage: "Gérer l'inscription"
 phase:
   ongoing: 'En cours'
+organization: 'Appartient à {organization}'
 action:
   more: "Plus d'actions"
 status:
@@ -837,6 +938,14 @@ status:
   closes: 'Ferme le {date}'
   opens: 'Ouvre le {date}'
   closed: 'Inscription fermée'
+  pendingVerification: 'Vérification en attente'
+  organizationRejected: 'Organisation refusée'
+  pendingVerificationHint: "{organization} attend encore sa vérification : ce camp est masqué de la liste publique et refuse les inscriptions, quelle que soit sa période d'inscription."
+  organizationRejectedHint: "{organization} n'a pas été vérifiée : ce camp est masqué de la liste publique et refuse les inscriptions. Corrige ses informations et soumets-la à nouveau."
+share:
+  closed: 'Les inscriptions sont fermées — les visiteurs peuvent voir le camp mais pas s’inscrire.'
+  upcoming: 'Les inscriptions ne sont pas encore ouvertes — les visiteurs peuvent voir le camp mais pas encore s’inscrire.'
+  unverified: 'Tant que {organization} n’est pas vérifiée, seuls les responsables de ce camp peuvent ouvrir le lien.'
 dialog:
   delete:
     title: 'Supprimer le camp'
@@ -858,6 +967,7 @@ registration:
   manage: 'Zarządzaj rejestracją'
 phase:
   ongoing: 'W trakcie'
+organization: 'Należy do {organization}'
 action:
   more: 'Więcej akcji'
 status:
@@ -865,6 +975,14 @@ status:
   closes: 'Zamyka się {date}'
   opens: 'Otwiera się {date}'
   closed: 'Rejestracja zamknięta'
+  pendingVerification: 'Oczekuje na weryfikację'
+  organizationRejected: 'Organizacja odrzucona'
+  pendingVerificationHint: '{organization} wciąż oczekuje na weryfikację, więc ten obóz jest ukryty na liście publicznej i odrzuca zapisy — niezależnie od okresu rejestracji.'
+  organizationRejectedHint: '{organization} nie została zweryfikowana, więc ten obóz jest ukryty na liście publicznej i odrzuca zapisy. Popraw dane i zgłoś ją ponownie do weryfikacji.'
+share:
+  closed: 'Rejestracja jest zamknięta — odwiedzający zobaczą obóz, ale nie mogą się zapisać.'
+  upcoming: 'Rejestracja jeszcze się nie rozpoczęła — odwiedzający zobaczą obóz, ale nie mogą się jeszcze zapisać.'
+  unverified: 'Dopóki {organization} nie zostanie zweryfikowana, link mogą otworzyć tylko osoby zarządzające tym obozem.'
 dialog:
   delete:
     title: 'Usuń obóz'
@@ -886,6 +1004,7 @@ registration:
   manage: 'Spravovat registraci'
 phase:
   ongoing: 'Probíhá'
+organization: 'Patří organizaci {organization}'
 action:
   more: 'Další akce'
 status:
@@ -893,6 +1012,14 @@ status:
   closes: 'Uzavírá se {date}'
   opens: 'Otevírá se {date}'
   closed: 'Registrace uzavřena'
+  pendingVerification: 'Čeká na ověření'
+  organizationRejected: 'Organizace zamítnuta'
+  pendingVerificationHint: '{organization} stále čeká na ověření, takže tento tábor je skrytý ve veřejném seznamu a odmítá registrace — bez ohledu na registrační období.'
+  organizationRejectedHint: '{organization} nebyla ověřena, takže tento tábor je skrytý ve veřejném seznamu a odmítá registrace. Uprav její údaje a odešli ji znovu k ověření.'
+share:
+  closed: 'Registrace je uzavřena — návštěvníci tábor uvidí, ale nemohou se přihlásit.'
+  upcoming: 'Registrace ještě nezačala — návštěvníci tábor uvidí, ale zatím se nemohou přihlásit.'
+  unverified: 'Dokud není {organization} ověřena, může odkaz otevřít pouze správa tohoto tábora.'
 dialog:
   delete:
     title: 'Smazat tábor'

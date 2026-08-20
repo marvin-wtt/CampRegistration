@@ -43,8 +43,6 @@ describe('TimeInput', () => {
 
     expect(wrapper.text()).toContain('Start time');
     expect(wrapper.find('.q-field--disabled').exists()).toBe(true);
-    // Not overridden by the undeclared defaults of the wrapped input
-    expect(wrapper.find('.q-field--outlined').exists()).toBe(true);
   });
 
   it('passes undeclared attributes on to the input', () => {

@@ -5,14 +5,24 @@
     class="row justify-center"
     :style="{ backgroundColor: bgColor }"
   >
-    <registration-form
+    <div
       v-if="camp && registrationFormVisible"
-      :camp-details="camp"
-      :submit-fn="submit"
-      :upload-file-fn="uploadFile"
-      class="full-width"
-      @bg-color-update="(color) => updateBgColor(color)"
-    />
+      class="camp-page__content full-width"
+    >
+      <registration-form
+        :camp-details="camp"
+        :submit-fn="submit"
+        :upload-file-fn="uploadFile"
+        class="full-width"
+        @bg-color-update="(color) => updateBgColor(color)"
+        @active-change="(active) => (formActive = active)"
+      />
+      <privacy-notice-disclosure
+        v-if="formActive"
+        :camp-id="camp.id"
+        class="camp-page__privacy"
+      />
+    </div>
 
     <!-- Not available / registration closed -->
     <div
@@ -76,6 +86,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useMeta } from 'quasar';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import RegistrationForm from '@/components/common/RegistrationForm.vue';
+import PrivacyNoticeDisclosure from '@/components/privacy/PrivacyNoticeDisclosure.vue';
 import {
   type CampDetails,
   type CampRegistrationStatus,
@@ -94,6 +105,7 @@ const { extractErrorText } = useErrorExtractor();
 const { canFor } = usePermissions();
 
 const managerRegistrationOverrideEnabled = ref<boolean>(false);
+const formActive = ref<boolean>(true);
 const bgColor = ref<string>();
 const camp = ref<CampDetails | undefined>();
 const loading = ref<boolean>(false);
@@ -297,6 +309,22 @@ function enableManagerRegistrationOverride() {
   managerRegistrationOverrideEnabled.value = true;
 }
 </script>
+
+<style lang="scss" scoped>
+// No min-height here: the q-page is a flex row, so this stretches to its
+// content box on its own. Copying the page's min-height would add up with the
+// layout's top padding and push the footer below the fold.
+.camp-page__content {
+  display: flex;
+  flex-direction: column;
+}
+
+// Keeps the disclosure at the bottom edge for short forms instead of stranding
+// it mid-page; with a long form the auto margin collapses to zero.
+.camp-page__privacy {
+  margin-top: auto;
+}
+</style>
 
 <i18n lang="yaml" locale="en">
 action:

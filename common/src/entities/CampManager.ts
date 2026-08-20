@@ -5,9 +5,12 @@ export type CampManagerRole =
 
 export type CampManagerStatus = 'ACCEPTED' | 'PENDING';
 
-export interface CampManager extends Identifiable {
+export interface CampManagerIdentity extends Identifiable {
   name: string | null;
   email: string;
+}
+
+export interface CampManager extends CampManagerIdentity {
   role: CampManagerRole;
   status: CampManagerStatus;
   expiresAt: string | null;

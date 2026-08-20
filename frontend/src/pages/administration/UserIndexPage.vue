@@ -499,26 +499,6 @@ async function deleteUser(id: string) {
 </script>
 
 <style scoped lang="scss">
-.admin-page {
-  position: absolute;
-  inset: 0;
-  padding: 16px;
-}
-
-.admin-table {
-  // Let the table fill the remaining height and scroll internally instead of
-  // growing the page (min-height:0 lets the flex child shrink below content).
-  min-height: 0;
-  background: var(--md3-surface);
-
-  :deep(thead tr th) {
-    position: sticky;
-    top: 0;
-    z-index: 1;
-    background: var(--md3-surface-container-low);
-  }
-}
-
 .email-link {
   color: var(--md3-primary);
   text-decoration: none;

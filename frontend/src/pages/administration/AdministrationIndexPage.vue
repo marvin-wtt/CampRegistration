@@ -149,6 +149,14 @@ const platformStats = computed<StatTile[]>(() => {
       to: { name: 'administration.users' },
     },
     {
+      key: 'organizations',
+      icon: 'apartment',
+      color: data.organizations.pending > 0 ? 'warning' : 'tertiary',
+      value: data.organizations.total,
+      label: t('stat.organizations'),
+      to: { name: 'administration.organizations' },
+    },
+    {
       key: 'failedJobs',
       icon: 'error_outline',
       color: data.queues.failedJobs > 0 ? 'negative' : 'info',
@@ -236,6 +244,20 @@ const attention = computed<AttentionItem[]>(() => {
     });
   }
 
+  // The moderation queue: organizations cannot publish anything until reviewed,
+  // so a backlog here blocks real work.
+  if (data.organizations.pending > 0) {
+    items.push({
+      key: 'organizationsPending',
+      icon: 'apartment',
+      color: 'warning',
+      label: t('attention.organizationsPending', {
+        count: data.organizations.pending,
+      }),
+      to: { name: 'administration.organizations' },
+    });
+  }
+
   if (data.users.locked > 0) {
     items.push({
       key: 'locked',
@@ -261,6 +283,14 @@ const attention = computed<AttentionItem[]>(() => {
 });
 
 const sections = computed(() => [
+  {
+    name: 'organizations',
+    label: t('organizations.label'),
+    description: t('organizations.description'),
+    icon: 'apartment',
+    color: 'tertiary',
+    to: { name: 'administration.organizations' },
+  },
   {
     name: 'users',
     label: t('users.label'),
@@ -315,6 +345,7 @@ stat:
   platformTitle: 'Platform'
   campsTitle: 'Camps'
   users: 'Users'
+  organizations: 'Organizations'
   files: 'Files'
   camps: 'Camps'
   registrations: 'Registrations'
@@ -328,11 +359,15 @@ attention:
   failedJobs: '{count} failed jobs'
   unverified: '{count} unverified users'
   locked: '{count} locked users'
+  organizationsPending: '{count} organizations awaiting review'
   legalMissing: '{count} legal documents missing'
 
 sections:
   title: 'Manage'
 
+organizations:
+  label: 'Organizations'
+  description: 'Review and verify the organizations that run camps and newsletters.'
 users:
   label: 'Users'
   description: 'Manage user accounts, roles, and permissions.'
@@ -358,6 +393,7 @@ stat:
   platformTitle: 'Plattform'
   campsTitle: 'Camps'
   users: 'Benutzer'
+  organizations: 'Organisationen'
   files: 'Dateien'
   camps: 'Camps'
   registrations: 'Anmeldungen'
@@ -371,11 +407,15 @@ attention:
   failedJobs: '{count} fehlgeschlagene Jobs'
   unverified: '{count} unbestätigte Benutzer'
   locked: '{count} gesperrte Benutzer'
+  organizationsPending: '{count} Organisationen warten auf Prüfung'
   legalMissing: '{count} fehlende rechtliche Inhalte'
 
 sections:
   title: 'Verwalten'
 
+organizations:
+  label: 'Organisationen'
+  description: 'Organisationen prüfen und verifizieren, die Camps und Newsletter betreiben.'
 users:
   label: 'Benutzer'
   description: 'Benutzerkonten, Rollen und Berechtigungen verwalten.'
@@ -401,6 +441,7 @@ stat:
   platformTitle: 'Plateforme'
   campsTitle: 'Camps'
   users: 'Utilisateurs'
+  organizations: 'Organisations'
   files: 'Fichiers'
   camps: 'Camps'
   registrations: 'Inscriptions'
@@ -414,11 +455,15 @@ attention:
   failedJobs: '{count} tâches échouées'
   unverified: '{count} utilisateurs non vérifiés'
   locked: '{count} utilisateurs verrouillés'
+  organizationsPending: '{count} organisations en attente de contrôle'
   legalMissing: '{count} documents légaux manquants'
 
 sections:
   title: 'Gérer'
 
+organizations:
+  label: 'Organisations'
+  description: 'Contrôler et vérifier les organisations qui gèrent camps et newsletters.'
 users:
   label: 'Utilisateurs'
   description: 'Gérer les comptes utilisateurs, les rôles et les permissions.'
@@ -444,6 +489,7 @@ stat:
   platformTitle: 'Platforma'
   campsTitle: 'Obozy'
   users: 'Użytkownicy'
+  organizations: 'Organizacje'
   files: 'Pliki'
   camps: 'Obozy'
   registrations: 'Rejestracje'
@@ -457,11 +503,15 @@ attention:
   failedJobs: '{count} nieudanych zadań'
   unverified: '{count} niezweryfikowanych użytkowników'
   locked: '{count} zablokowanych użytkowników'
+  organizationsPending: '{count} organizacji oczekuje na sprawdzenie'
   legalMissing: '{count} brakujących dokumentów prawnych'
 
 sections:
   title: 'Zarządzaj'
 
+organizations:
+  label: 'Organizacje'
+  description: 'Sprawdzaj i weryfikuj organizacje prowadzące obozy i newslettery.'
 users:
   label: 'Użytkownicy'
   description: 'Zarządzaj kontami użytkowników, rolami i uprawnieniami.'
@@ -487,6 +537,7 @@ stat:
   platformTitle: 'Platforma'
   campsTitle: 'Tábory'
   users: 'Uživatelé'
+  organizations: 'Organizace'
   files: 'Pliki'
   camps: 'Tábory'
   registrations: 'Přihlášky'
@@ -500,11 +551,15 @@ attention:
   failedJobs: '{count} neúspěšných úloh'
   unverified: '{count} neověřených uživatelů'
   locked: '{count} zamčených uživatelů'
+  organizationsPending: '{count} organizací čeká na kontrolu'
   legalMissing: '{count} chybějících právních dokumentů'
 
 sections:
   title: 'Spravovat'
 
+organizations:
+  label: 'Organizace'
+  description: 'Kontroluj a ověřuj organizace, které pořádají tábory a newslettery.'
 users:
   label: 'Uživatelé'
   description: 'Spravujte uživatelské účty, role a oprávnění.'

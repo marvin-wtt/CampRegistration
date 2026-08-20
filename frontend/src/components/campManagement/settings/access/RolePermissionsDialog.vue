@@ -28,7 +28,20 @@
       <q-separator />
 
       <q-card-section class="q-pa-none dialog-content">
-        <div class="pm-wrap">
+        <div
+          v-if="loading"
+          class="pm-loading"
+        >
+          <q-spinner
+            color="primary"
+            size="32px"
+          />
+        </div>
+
+        <div
+          v-else
+          class="pm-wrap"
+        >
           <div
             class="pm-matrix"
             role="table"
@@ -40,7 +53,7 @@
             >
               <div class="pm-feature-col" />
               <div
-                v-for="role in ROLES"
+                v-for="role in roles"
                 :key="role"
                 class="pm-role-col pm-role-head"
                 role="columnheader"
@@ -49,15 +62,15 @@
                   class="md3-chip role-chip"
                   :class="roleClass(role)"
                 >
-                  {{ t('role.' + role.toLowerCase()) }}
+                  {{ roleLabel(role) }}
                 </span>
               </div>
             </div>
 
             <!-- Feature rows -->
             <div
-              v-for="group in permissionGroups"
-              :key="group.key"
+              v-for="row in orderedRows"
+              :key="row.group"
               class="pm-row pm-body-row"
               role="row"
             >
@@ -70,33 +83,33 @@
                   class="pm-feature-avatar"
                 >
                   <q-icon
-                    :name="group.icon"
+                    :name="groupIcon(row.group)"
                     size="18px"
                   />
                 </q-avatar>
                 <span class="pm-feature-label">
-                  {{ t('permissions.group.' + group.key) }}
+                  {{ groupLabel(row.group) }}
                 </span>
               </div>
 
               <div
-                v-for="role in ROLES"
+                v-for="role in roles"
                 :key="role"
                 class="pm-role-col"
-                :data-role="t('role.' + role.toLowerCase())"
+                :data-role="roleLabel(role)"
                 role="cell"
               >
                 <div
-                  v-if="group.actions[role].length"
+                  v-if="row.actions[role]?.length"
                   class="pm-actions"
                 >
                   <q-chip
-                    v-for="action in group.actions[role]"
+                    v-for="action in row.actions[role]"
                     :key="action"
                     dense
                     class="pm-action-chip"
                     :icon="actionIcon(action)"
-                    :label="t('permissions.action.' + action)"
+                    :label="actionLabel(action)"
                   />
                 </div>
                 <span
@@ -112,6 +125,40 @@
               </div>
             </div>
           </div>
+
+          <!-- Access that no camp role grants, so the matrix alone misleads. -->
+          <div class="org-note">
+            <q-icon
+              name="apartment"
+              size="20px"
+              class="org-note-icon"
+            />
+            <div class="org-note-body">
+              <div class="org-note-title">
+                {{ t('organization.title') }}
+              </div>
+              <div class="org-note-text">
+                {{ t('organization.description') }}
+              </div>
+              <div class="pm-actions org-note-actions">
+                <q-chip
+                  v-for="grant in organizationGrants"
+                  :key="grant.permission"
+                  dense
+                  class="pm-action-chip"
+                  :icon="actionIcon(grant.action)"
+                  :label="`${groupLabel(grant.group)}: ${actionLabel(grant.action)}`"
+                />
+              </div>
+              <div class="org-note-text org-note-limit">
+                <q-icon
+                  name="lock"
+                  size="14px"
+                />
+                {{ t('organization.limit') }}
+              </div>
+            </div>
+          </div>
         </div>
       </q-card-section>
     </q-card>
@@ -119,151 +166,138 @@
 </template>
 
 <script lang="ts" setup>
+import { computed, onMounted, ref } from 'vue';
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
+import {
+  splitPermission,
+  usePermissionMatrix,
+} from '@/composables/permissionMatrix';
+import { ORGANIZATION_CAMP_PERMISSIONS } from '@camp-registration/common/permissions';
 
 defineEmits([...useDialogPluginComponent.emits]);
 
 const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent();
-const { t } = useI18n();
+const i18n = useI18n();
+const t = (key: string) => i18n.t(key);
+// Wrapped rather than destructured: `te` reads `this` internally.
+const te = (key: string) => i18n.te(key);
 
-const ROLES = ['DIRECTOR', 'COORDINATOR', 'COUNSELOR', 'VIEWER'] as const;
-type Role = (typeof ROLES)[number];
+const { load, roles, rows } = usePermissionMatrix('camp');
 
-interface PermissionGroup {
-  key: string;
-  icon: string;
-  actions: Record<Role, string[]>;
-}
+const loading = ref(true);
 
-const permissionGroups: PermissionGroup[] = [
-  {
-    key: 'camp',
-    icon: 'tune',
-    actions: {
-      DIRECTOR: ['view', 'edit', 'delete'],
-      COORDINATOR: ['view', 'edit'],
-      COUNSELOR: ['view'],
-      VIEWER: ['view'],
-    },
-  },
-  {
-    key: 'files',
-    icon: 'folder_open',
-    actions: {
-      DIRECTOR: ['view', 'create', 'edit', 'delete'],
-      COORDINATOR: ['view', 'create', 'edit', 'delete'],
-      COUNSELOR: ['view'],
-      VIEWER: ['view'],
-    },
-  },
-  {
-    key: 'registrations',
-    icon: 'how_to_reg',
-    actions: {
-      DIRECTOR: ['view', 'edit', 'delete'],
-      COORDINATOR: ['view', 'edit', 'delete'],
-      COUNSELOR: ['view'],
-      VIEWER: ['view'],
-    },
-  },
-  {
-    key: 'managers',
-    icon: 'manage_accounts',
-    actions: {
-      DIRECTOR: ['view', 'create', 'edit', 'delete'],
-      COORDINATOR: ['view'],
-      COUNSELOR: ['view'],
-      VIEWER: [],
-    },
-  },
-  {
-    key: 'messages',
-    icon: 'mail',
-    actions: {
-      DIRECTOR: ['view', 'create', 'delete'],
-      COORDINATOR: ['view', 'create', 'delete'],
-      COUNSELOR: [],
-      VIEWER: [],
-    },
-  },
-  {
-    key: 'message_templates',
-    icon: 'mark_email_read',
-    actions: {
-      DIRECTOR: ['view', 'create', 'edit', 'delete'],
-      COORDINATOR: ['view', 'create', 'edit', 'delete'],
-      COUNSELOR: ['view'],
-      VIEWER: [],
-    },
-  },
-  {
-    key: 'table_templates',
-    icon: 'table_chart',
-    actions: {
-      DIRECTOR: ['view', 'create', 'edit', 'delete'],
-      COORDINATOR: ['view', 'create', 'edit', 'delete'],
-      COUNSELOR: ['view'],
-      VIEWER: ['view'],
-    },
-  },
-  {
-    key: 'rooms',
-    icon: 'meeting_room',
-    actions: {
-      DIRECTOR: ['view', 'create', 'edit', 'delete'],
-      COORDINATOR: ['view', 'create', 'edit', 'delete'],
-      COUNSELOR: ['view'],
-      VIEWER: ['view'],
-    },
-  },
-  {
-    key: 'beds',
-    icon: 'bed',
-    actions: {
-      DIRECTOR: ['create', 'edit', 'delete'],
-      COORDINATOR: ['create', 'edit', 'delete'],
-      COUNSELOR: ['edit'],
-      VIEWER: [],
-    },
-  },
-  {
-    key: 'program',
-    icon: 'event_note',
-    actions: {
-      DIRECTOR: ['view', 'create', 'edit', 'delete'],
-      COORDINATOR: ['view', 'create', 'edit', 'delete'],
-      COUNSELOR: ['view', 'create', 'edit', 'delete'],
-      VIEWER: ['view'],
-    },
-  },
-  {
-    key: 'tasks',
-    icon: 'task_alt',
-    actions: {
-      DIRECTOR: ['view', 'create', 'edit', 'delete'],
-      COORDINATOR: ['view', 'create', 'edit', 'delete'],
-      COUNSELOR: ['view', 'create', 'edit', 'delete'],
-      VIEWER: ['view'],
-    },
-  },
+onMounted(async () => {
+  try {
+    await load();
+  } finally {
+    loading.value = false;
+  }
+});
+
+/**
+ * Display order. Groups the server sends that are not listed here still render,
+ * appended at the end — a new permission must never silently vanish from the
+ * matrix the way the previously hardcoded table let it.
+ */
+const GROUP_ORDER = [
+  'camp',
+  'files',
+  'registrations',
+  'managers',
+  'messages',
+  'message_templates',
+  'table_templates',
+  'rooms',
+  'rooms.beds',
+  'program_events',
+  'tasks',
 ];
 
-const roleOrder = ['director', 'coordinator', 'counselor', 'viewer'];
+const GROUP_ICONS: Record<string, string> = {
+  camp: 'tune',
+  files: 'folder_open',
+  registrations: 'how_to_reg',
+  managers: 'manage_accounts',
+  messages: 'mail',
+  message_templates: 'mark_email_read',
+  table_templates: 'table_chart',
+  rooms: 'meeting_room',
+  'rooms.beds': 'bed',
+  program_events: 'event_note',
+  tasks: 'task_alt',
+};
+
+/** Group keys whose translation predates the derived name. */
+const GROUP_I18N_ALIAS: Record<string, string> = {
+  'rooms.beds': 'beds',
+  program_events: 'program',
+};
+
+/** `camp.tasks.update` and `camp.program_events.update` read as "edit" in the UI. */
+const ACTION_I18N_ALIAS: Record<string, string> = { update: 'edit' };
+
+const ACTION_ICONS: Record<string, string> = {
+  view: 'visibility',
+  create: 'add_circle',
+  edit: 'edit',
+  update: 'edit',
+  delete: 'delete',
+};
+
+const orderedRows = computed(() =>
+  [...rows.value].sort((a, b) => {
+    const ai = GROUP_ORDER.indexOf(a.group);
+    const bi = GROUP_ORDER.indexOf(b.group);
+
+    return (
+      (ai === -1 ? GROUP_ORDER.length : ai) -
+      (bi === -1 ? GROUP_ORDER.length : bi)
+    );
+  }),
+);
+
+/**
+ * The fixed set an administrator of the owning organization holds on every camp
+ * it owns, without a manager record. Read from the shared constant the backend
+ * enforces rather than restated here, so the two cannot drift — it is
+ * deliberately absent from `GET /permissions`, which only serves role grants.
+ */
+const organizationGrants = computed(() =>
+  ORGANIZATION_CAMP_PERMISSIONS.map((permission) => ({
+    permission,
+    ...splitPermission('camp', permission),
+  })),
+);
+
+const KNOWN_ROLE_CLASSES = ['director', 'coordinator', 'counselor', 'viewer'];
 
 function roleClass(role: string): string {
   const normalized = role.toLowerCase();
-  return `role--${roleOrder.includes(normalized) ? normalized : 'viewer'}`;
+  return `role--${KNOWN_ROLE_CLASSES.includes(normalized) ? normalized : 'viewer'}`;
+}
+
+function roleLabel(role: string): string {
+  const key = `role.${role.toLowerCase()}`;
+  return te(key) ? t(key) : role;
+}
+
+function groupLabel(group: string): string {
+  const key = `permissions.group.${GROUP_I18N_ALIAS[group] ?? group}`;
+  return te(key) ? t(key) : group;
+}
+
+function actionLabel(action: string): string {
+  const key = `permissions.action.${ACTION_I18N_ALIAS[action] ?? action}`;
+  return te(key) ? t(key) : action;
+}
+
+function groupIcon(group: string): string {
+  return GROUP_ICONS[group] ?? 'category';
 }
 
 function actionIcon(action: string): string {
-  const icons: Record<string, string> = {
-    view: 'visibility',
-    create: 'add_circle',
-    edit: 'edit',
-    delete: 'delete',
-  };
-  return icons[action] ?? 'circle';
+  return ACTION_ICONS[action] ?? 'circle';
 }
 </script>
 
@@ -285,6 +319,13 @@ function actionIcon(action: string): string {
 .pm-wrap {
   overflow-x: auto;
   padding: 16px;
+}
+
+.pm-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
 }
 
 .pm-matrix {
@@ -388,6 +429,53 @@ function actionIcon(action: string): string {
   border-radius: 999px;
   background: var(--md3-surface-container-low);
   color: var(--md3-outline);
+}
+
+.org-note {
+  display: flex;
+  gap: 12px;
+
+  margin-top: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--md3-outline-variant);
+  border-radius: 16px;
+  background: var(--md3-surface-container-low);
+}
+
+.org-note-icon {
+  flex: none;
+  margin-top: 2px;
+  color: var(--md3-primary);
+}
+
+.org-note-body {
+  min-width: 0;
+}
+
+.org-note-title {
+  color: var(--md3-on-surface);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.org-note-text {
+  margin-top: 4px;
+  color: var(--md3-on-surface-variant);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.org-note-actions {
+  justify-content: flex-start;
+  margin-top: 10px;
+}
+
+.org-note-limit {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-weight: 500;
 }
 
 .md3-chip {
@@ -514,6 +602,11 @@ permissions:
     create: 'Create'
     edit: 'Edit'
     delete: 'Delete'
+
+organization:
+  title: 'Organization administrators have partial access'
+  description: 'Administrators of the organization that owns this camp always have the following access, even without being listed as a member. It cannot be removed here.'
+  limit: 'They can never see registrations, participants or their personal data.'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -544,6 +637,11 @@ permissions:
     create: 'Erstellen'
     edit: 'Bearbeiten'
     delete: 'Löschen'
+
+organization:
+  title: 'Organisations-Administratoren haben eingeschränkten Zugriff'
+  description: 'Administratoren der Organisation, der dieses Camp gehört, haben immer den folgenden Zugriff, auch ohne als Mitglied aufgeführt zu sein. Er kann hier nicht entzogen werden.'
+  limit: 'Sie können niemals Anmeldungen, Teilnehmer oder deren personenbezogene Daten einsehen.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -574,6 +672,11 @@ permissions:
     create: 'Créer'
     edit: 'Modifier'
     delete: 'Supprimer'
+
+organization:
+  title: "Les administrateurs de l'organisation ont un accès partiel"
+  description: "Les administrateurs de l'organisation propriétaire de ce camp disposent toujours des accès suivants, même sans figurer parmi les membres. Ils ne peuvent pas être retirés ici."
+  limit: 'Ils ne peuvent jamais consulter les inscriptions, les participants ni leurs données personnelles.'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -604,6 +707,11 @@ permissions:
     create: 'Tworzenie'
     edit: 'Edycja'
     delete: 'Usuwanie'
+
+organization:
+  title: 'Administratorzy organizacji mają częściowy dostęp'
+  description: 'Administratorzy organizacji będącej właścicielem tego obozu zawsze mają poniższy dostęp, nawet jeśli nie są wymienieni jako członkowie. Nie można go tutaj odebrać.'
+  limit: 'Nigdy nie mogą zobaczyć rejestracji, uczestników ani ich danych osobowych.'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -634,4 +742,9 @@ permissions:
     create: 'Vytvořit'
     edit: 'Upravit'
     delete: 'Smazat'
+
+organization:
+  title: 'Správci organizace mají částečný přístup'
+  description: 'Správci organizace, která vlastní tento tábor, mají vždy následující přístup, i když nejsou uvedeni jako členové. Zde jej nelze odebrat.'
+  limit: 'Nikdy nemohou vidět registrace, účastníky ani jejich osobní údaje.'
 </i18n>

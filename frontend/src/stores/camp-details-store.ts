@@ -23,6 +23,7 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
     invalidate,
     handlerByType,
     lazyFetch,
+    backgroundFetch,
     checkNotNullWithError,
   } = useServiceHandler<CampDetails>('camp');
 
@@ -58,8 +59,7 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
     if (data.value === undefined) {
       return;
     }
-    invalidate();
-    void fetchData(data.value.id);
+    void fetchData(data.value.id, { background: true });
   });
 
   router.beforeEach(async (to, from) => {
@@ -78,16 +78,17 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
     }
   });
 
-  async function fetchData(id?: string) {
+  async function fetchData(id?: string, opts?: { background?: boolean }) {
     const campId = id ?? (route.params.campId as string);
 
     const cid = checkNotNullWithError(campId);
-    await lazyFetch(async () => {
+    const fetcher = async () => {
       const result = await api.fetchCamp(cid);
       bus.emit('change', result);
 
       return result;
-    });
+    };
+    await (opts?.background ? backgroundFetch(fetcher) : lazyFetch(fetcher));
   }
 
   async function updateData(
@@ -128,8 +129,7 @@ export const useCampDetailsStore = defineStore('campDetails', () => {
       return;
     }
 
-    invalidate();
-    await fetchData(event.id);
+    await fetchData(event.id, { background: true });
   }
 
   return {

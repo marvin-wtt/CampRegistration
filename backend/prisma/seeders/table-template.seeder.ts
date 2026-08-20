@@ -1,5 +1,6 @@
 import { BaseSeeder } from './BaseSeeder';
 import { TableTemplateFactory } from '../factories';
+import { CAMP_IDS } from './ids';
 
 class TableTemplateSeeder extends BaseSeeder {
   name(): string {
@@ -34,7 +35,7 @@ class TableTemplateSeeder extends BaseSeeder {
         actions: true,
         sortBy: 'first_name',
       },
-      camp: { connect: { id: '01JHP0CXJFR4MQS8SF1HQJCY38' } },
+      camp: { connect: { id: CAMP_IDS.simple } },
     });
 
     // Summer camp – Participants
@@ -60,7 +61,7 @@ class TableTemplateSeeder extends BaseSeeder {
           },
           {
             name: 'country',
-            field: 'country',
+            field: 'computedData.address.country',
             label: { en: 'Country', de: 'Land', fr: 'Pays' },
             align: 'left',
             sortable: true,
@@ -97,7 +98,7 @@ class TableTemplateSeeder extends BaseSeeder {
         actions: true,
         sortBy: 'first_name',
       },
-      camp: { connect: { id: '01K9ATF1H9KD1K6H12F3YK8RWR' } },
+      camp: { connect: { id: CAMP_IDS.summer } },
     });
 
     // Summer camp – Waiting List
@@ -153,7 +154,7 @@ class TableTemplateSeeder extends BaseSeeder {
         sortBy: 'created_at',
         sortDirection: 'asc',
       },
-      camp: { connect: { id: '01K9ATF1H9KD1K6H12F3YK8RWR' } },
+      camp: { connect: { id: CAMP_IDS.summer } },
     });
 
     // Summer camp – Medical
@@ -207,7 +208,7 @@ class TableTemplateSeeder extends BaseSeeder {
         indexed: true,
         sortBy: 'first_name',
       },
-      camp: { connect: { id: '01K9ATF1H9KD1K6H12F3YK8RWR' } },
+      camp: { connect: { id: CAMP_IDS.summer } },
     });
 
     // Summer camp – Permissions
@@ -273,7 +274,7 @@ class TableTemplateSeeder extends BaseSeeder {
         indexed: true,
         sortBy: 'first_name',
       },
-      camp: { connect: { id: '01K9ATF1H9KD1K6H12F3YK8RWR' } },
+      camp: { connect: { id: CAMP_IDS.summer } },
     });
   }
 }
