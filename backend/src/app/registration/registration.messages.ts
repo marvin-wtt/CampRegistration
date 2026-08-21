@@ -14,10 +14,8 @@ import type {
   MailAttachment,
   MailPriority,
 } from '#app/mail/mail.types';
-import { generatePDF } from '#app/registration/registration.pdf';
 import { generateUrl } from '#utils/url';
 import { uniqueLowerCase } from '#utils/string';
-import { safeFileName } from '#utils/file';
 import Handlebars from 'handlebars';
 import { MessageTemplateService } from '#app/messageTemplate/message-template.service';
 import logger from '#core/logger';
@@ -45,25 +43,6 @@ function formatDate(date: Date | string | null, locale: string): string | null {
     dateStyle: 'long',
     timeStyle: 'short',
   }).format(d);
-}
-
-async function createPdfAttachment(
-  camp: CampWithFreePlaces,
-  registration: Registration,
-): Promise<MailAttachment> {
-  const buffer = await generatePDF(camp, registration);
-  const filename = safeFileName(
-    ['Registration', registration.lastName, registration.firstName]
-      .filter((v) => v != null)
-      .join('_'),
-    'Registration',
-  );
-
-  return {
-    filename: `${filename}.pdf`,
-    content: Buffer.from(buffer),
-    contentType: 'application/pdf',
-  };
 }
 
 abstract class RegistrationMessage<
@@ -580,57 +559,21 @@ class RegistrationEventMessage extends RegistrationTemplateMessage {
 export class RegistrationSubmittedMessage extends RegistrationEventMessage {
   static readonly event = 'registration_submitted';
   static readonly type = 'registration:template:submitted';
-
-  protected async attachments(): Promise<MailAttachment[]> {
-    const attachments = await super.attachments();
-
-    return Promise.resolve([
-      ...attachments,
-      await createPdfAttachment(this.payload.camp, this.payload.registration),
-    ]);
-  }
 }
 
 export class RegistrationConfirmedMessage extends RegistrationEventMessage {
   static readonly event = 'registration_confirmed';
   static readonly type = 'registration:template:confirmed';
-
-  protected async attachments(): Promise<MailAttachment[]> {
-    const attachments = await super.attachments();
-
-    return Promise.resolve([
-      ...attachments,
-      await createPdfAttachment(this.payload.camp, this.payload.registration),
-    ]);
-  }
 }
 
 export class RegistrationWaitlistedMessage extends RegistrationEventMessage {
   static readonly event = 'registration_waitlisted';
   static readonly type = 'registration:template:waitlisted';
-
-  protected async attachments(): Promise<MailAttachment[]> {
-    const attachments = await super.attachments();
-
-    return [
-      ...attachments,
-      await createPdfAttachment(this.payload.camp, this.payload.registration),
-    ];
-  }
 }
 
 export class RegistrationUpdatedMessage extends RegistrationEventMessage {
   static readonly event = 'registration_updated';
   static readonly type = 'registration:template:updated';
-
-  protected async attachments(): Promise<MailAttachment[]> {
-    const attachments = await super.attachments();
-
-    return Promise.resolve([
-      ...attachments,
-      await createPdfAttachment(this.payload.camp, this.payload.registration),
-    ]);
-  }
 }
 
 export class RegistrationDeletedMessage extends RegistrationEventMessage {

@@ -13,7 +13,7 @@ import 'ace-builds/src-noconflict/ace';
 import 'ace-builds/src-noconflict/ext-searchbox';
 import 'ace-builds/src-noconflict/theme-clouds_midnight';
 
-import { watch, watchEffect } from 'vue';
+import { watchEffect } from 'vue';
 import {
   type ICreatorOptions,
   localization,
@@ -47,9 +47,8 @@ import {
 } from '@camp-registration/common/form';
 import { useAPIService } from '@/services/APIService';
 import { surveyCreatorCustomLocaleConfig } from '@/components/campManagement/settings/form/form-editor-translations';
-import { createStaticMd3SurveyThemes } from '@/lib/surveyJs/themes/md3';
-import { md3CreatorThemes } from '@/lib/surveyJs/themes/md3-creator';
 import { AceJsonEditorModel } from 'survey-creator-core';
+import { corporateTheme } from '@/lib/surveyJs/theme';
 
 AceJsonEditorModel.aceBasePath =
   'https://unpkg.com/ace-builds/src-min-noconflict/';
@@ -110,7 +109,7 @@ const creatorOptions: ICreatorOptions = {
   showEmbeddedSurveyTab: false,
   showCreatorThemeSettings: false,
   autoSaveEnabled: true,
-  showThemeTab: true,
+  showThemeTab: false,
   showJSONEditorTab: !props.restrictedAccess,
 };
 
@@ -120,15 +119,11 @@ surveyLocalization.supportedLocales = ['en', ...props.camp.locales];
 
 const creator = new SurveyCreatorModel(creatorOptions);
 
-// Frozen, resolve-on-load MD3 snapshot used as the editable default whenever a
-// camp has no saved theme. The editor parses color values back into its pickers,
-// so it must be fed literals — not the var()-based runtime themes.
-const md3DefaultThemes = createStaticMd3SurveyThemes();
-creator.themeEditor.addTheme(md3DefaultThemes.light);
-creator.themeEditor.addTheme(md3DefaultThemes.dark);
-
 creator.JSON = props.camp.form;
-creator.theme = props.camp.themes['light'] ?? md3DefaultThemes.light;
+// The same theme the public camp page applies, so the designer and preview
+// render the real thing. Copied because `SurveyCreatorModel.applyTheme` keeps
+// the object by reference rather than merging it.
+creator.theme = { ...corporateTheme };
 
 if (props.restrictedAccess) {
   const panelItem = creator.toolbox.getItemByName('panel');
@@ -145,25 +140,6 @@ if (props.restrictedAccess) {
 watchEffect(() => {
   creator.locale = locale.value.split(/[-_]/)[0] ?? 'en';
 });
-
-watch(() => quasar.dark.isActive, applyCreatorTheme);
-
-// Creator theme
-applyCreatorTheme(quasar.dark.isActive);
-
-function applyCreatorTheme(isDark: boolean) {
-  const theme = isDark ? md3CreatorThemes.dark : md3CreatorThemes.light;
-
-  creator.applyCreatorTheme(theme);
-
-  // TODO This is a workaround for the issue with the theme not being applied correctly
-  // The value is null because the backend middleware
-  // converts empty strings to null
-  // See https://github.com/surveyjs/survey-creator/issues/5552
-  if (creator.theme.backgroundImage === null) {
-    creator.theme.backgroundImage = '';
-  }
-}
 
 // Restrict valueName characters
 creator.onPropertyDisplayCustomError.add((_, options) => {
@@ -212,7 +188,28 @@ creator.saveThemeFunc = (
   saveNo: number,
   callback: (saveNo: number, success: boolean) => void,
 ) => {
-  const theme = creator.theme;
+  // `themeEditor` is the "theme" plugin, which only exists while `showThemeTab`
+  // is on. Kept wired so re-enabling the tab is a one-line change, but it must
+  // not throw in the meantime.
+  if (!creator.themeEditor) {
+    callback(saveNo, true);
+    return;
+  }
+
+  // Autosave fires just for opening the Themes tab, so skip untouched themes —
+  // otherwise a camp that never customised anything still ends up with a stored
+  // theme that pins it to one colour scheme.
+  if (!creator.themeEditor.isModified) {
+    callback(saveNo, true);
+    return;
+  }
+
+  // Store only what the director actually changed, not the fully resolved
+  // theme. A complete theme is a snapshot of literal colours that overrides the
+  // adapter for every token it names, which freezes the form to one palette and
+  // stops it following light/dark. A delta leaves everything untouched falling
+  // through to the live `--md3-*` tokens.
+  const theme = creator.themeEditor.getCurrentTheme(true);
 
   props
     .saveThemeFunc(theme)
@@ -370,10 +367,3 @@ function isObjColumn(obj: Base) {
   return !!obj && obj.getType() === 'matrixdropdowncolumn';
 }
 </script>
-
-<style lang="scss" scoped>
-body {
-  --sjs-primary-background-500: $primary;
-  --sjs-secondary-background-500: $secondary;
-}
-</style>

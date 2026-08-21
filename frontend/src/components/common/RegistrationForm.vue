@@ -53,12 +53,21 @@
           </q-banner>
         </q-card-section>
 
+        <q-card-section v-if="submitState === 'success' && submittedData">
+          <registration-copy-download
+            :camp-details="props.campDetails"
+            :data="submittedData"
+            :locale="submittedLocale || locale"
+          />
+        </q-card-section>
+
         <q-card-actions
           v-if="submitState === 'success'"
           align="center"
           class="q-gutter-sm q-pb-md"
         >
           <m-btn
+            outline
             primary
             icon="person_add"
             :label="t('complete.registerAnother')"
@@ -91,6 +100,26 @@
         </q-card-actions>
       </q-card>
     </div>
+
+    <!-- A form-defined completed page replaces the panel above, so the copy
+         offer is rendered alongside it rather than inside it. -->
+    <div
+      v-if="submitState === null && submitted && submittedData"
+      class="row justify-center q-pa-md"
+    >
+      <q-card
+        flat
+        class="registration-copy-card rounded-xl elevation-1"
+      >
+        <q-card-section>
+          <registration-copy-download
+            :camp-details="props.campDetails"
+            :data="submittedData"
+            :locale="submittedLocale || locale"
+          />
+        </q-card-section>
+      </q-card>
+    </div>
   </div>
 </template>
 
@@ -99,14 +128,24 @@ import 'survey-core/survey-core.min.css';
 
 import { useI18n } from 'vue-i18n';
 import { createMarkdownConverter } from '@camp-registration/common/utils';
-import { computed, onMounted, ref, toRef, watch, watchEffect } from 'vue';
+import {
+  computed,
+  onMounted,
+  ref,
+  toRaw,
+  toRef,
+  watch,
+  watchEffect,
+} from 'vue';
 import { SurveyModel } from 'survey-core';
 import { SurveyComponent } from 'survey-vue3-ui';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
+import RegistrationCopyDownload from '@/components/common/RegistrationCopyDownload.vue';
 import {
   startAutoDataUpdate,
-  startAutoThemeUpdate,
+  startAutoBackgroundUpdate,
 } from '@/composables/survey';
+import { corporateTheme } from '@/lib/surveyJs/theme';
 import type { CampDetails } from '@camp-registration/common/entities';
 import { useAPIService } from '@/services/APIService';
 import { useErrorExtractor } from '@/composables/serviceHandler';
@@ -146,6 +185,10 @@ const submitError = ref<string>();
 // Stays true once the submission succeeded, including when survey-core takes
 // the screen back over to show the form's own completed page.
 const submitted = ref<boolean>(false);
+// Snapshot of what was actually submitted. The registrant's copy is generated
+// from this rather than from the live model, which `retrySubmit` may clear.
+const submittedData = ref<Record<string, unknown>>();
+const submittedLocale = ref<string>();
 
 // Lets the page hide anything that only applies while the form is being
 // filled in — the privacy disclosure above all.
@@ -211,6 +254,7 @@ const model = createModel(
     ? createModerationForm(props.campDetails.form)
     : props.campDetails.form,
 );
+model.applyTheme(corporateTheme);
 model.validationEnabled = !props.moderation;
 if (props.data) {
   model.data = props.data;
@@ -228,7 +272,7 @@ watchEffect(() => {
 onMounted(() => {
   // Auto variables update on locale change
   startAutoDataUpdate(model, campData);
-  startAutoThemeUpdate(model, campData, bgColor);
+  startAutoBackgroundUpdate(bgColor);
 });
 
 function createModerationForm(form: object) {
@@ -313,9 +357,9 @@ function createModel(campId: string, form: object): SurveyModel {
   });
 
   // Resolve {_file.<slot>} placeholders to locale-aware file URLs on demand.
-  model.onProcessDynamicText.add(
+  survey.onProcessDynamicText.add(
     fileDynamicTextProcessor((slot) =>
-      api.getCampFileSlotUrl(campId, slot, model.locale),
+      api.getCampFileSlotUrl(campId, slot, survey.locale),
     ),
   );
 
@@ -330,6 +374,8 @@ function createModel(campId: string, form: object): SurveyModel {
 
     try {
       await props.submitFn(campId, sender.data ?? {}, sender.locale);
+      submittedData.value = structuredClone(toRaw(sender.data ?? {}));
+      submittedLocale.value = sender.locale;
       submitted.value = true;
       if (sender.showCompletePage && hasFormCompletedHtml) {
         // Reveal the form-defined completed page (survey-core shows it by
@@ -544,6 +590,16 @@ complete:
   color: var(--md3-on-surface);
 
   animation: registration-submit-rise 0.35s cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+// The form's own completed page already fills the screen, so the copy panel
+// shown alongside it takes the card's shape without the full-height centering.
+.registration-copy-card {
+  width: 100%;
+  max-width: 600px;
+
+  background-color: var(--md3-surface-container-low);
+  color: var(--md3-on-surface);
 }
 
 .registration-submit-status__badge {

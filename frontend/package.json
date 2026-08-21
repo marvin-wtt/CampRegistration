@@ -62,6 +62,7 @@
     "survey-core": "^3.0.0",
     "survey-creator-core": "^3.0.0",
     "survey-creator-vue": "^3.0.0",
+    "survey-pdf": "^3.0.0",
     "survey-vue3-ui": "^3.0.0",
     "uuid": "^14.0.0",
     "vue": "^3.5.38",

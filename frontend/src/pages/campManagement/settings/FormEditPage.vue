@@ -94,12 +94,13 @@ async function saveForm(form: SurveyJSCampData): Promise<void> {
 }
 
 async function saveTheme(theme: ITheme): Promise<void> {
-  const colorPlatte = theme.colorPalette ?? 'light';
-
+  // A camp keeps one theme. Light and dark used to be stored separately because
+  // the app had to pick between them; the MD3 adapter now supplies the colour
+  // scheme, so the saved theme is whatever the director customised on top.
   const data = {
     themes: {
       ...campDetailsStore.data?.themes,
-      [colorPlatte]: theme,
+      light: theme,
     },
   };
 

@@ -1,0 +1,3 @@
+-- Empty schema migration: hosts the `migration.ts` data migration that
+-- converts stored SurveyJS themes from the deprecated `--sjs-*` variables to
+-- the `--sjs2-*` design tokens introduced in SurveyJS v3.
