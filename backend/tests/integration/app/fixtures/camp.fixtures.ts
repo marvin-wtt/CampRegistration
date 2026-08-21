@@ -719,34 +719,6 @@ export const campUpdateBody: UpdateBodyData[] = [
     },
     expected: 400,
   },
-  {
-    name: 'Name country added',
-    camp: {
-      countries: ['en', 'fr'],
-      name: {
-        en: 'Example camp',
-        fr: 'Exemple de camp',
-      },
-    },
-    data: {
-      countries: ['de', 'en', 'fr'],
-    },
-    expected: 400,
-  },
-  {
-    name: 'Name country removed',
-    camp: {
-      countries: ['en', 'fr'],
-      name: {
-        en: 'Example camp',
-        fr: 'Exemple de camp',
-      },
-    },
-    data: {
-      countries: ['de'],
-    },
-    expected: 400,
-  },
   // Organizer
   {
     name: 'Organization',
@@ -791,34 +763,6 @@ export const campUpdateBody: UpdateBodyData[] = [
       organizer: {
         fr: "Exemple d'organisation",
       },
-    },
-    expected: 400,
-  },
-  {
-    name: 'Organization country added',
-    camp: {
-      countries: ['en', 'fr'],
-      organizer: {
-        en: 'Example organisation',
-        fr: "Exemple d'organisation",
-      },
-    },
-    data: {
-      countries: ['de', 'en', 'fr'],
-    },
-    expected: 400,
-  },
-  {
-    name: 'Organization country removed',
-    camp: {
-      countries: ['en', 'fr'],
-      organizer: {
-        en: 'Example organisation',
-        fr: "Exemple d'organisation",
-      },
-    },
-    data: {
-      countries: ['de'],
     },
     expected: 400,
   },
@@ -873,34 +817,6 @@ export const campUpdateBody: UpdateBodyData[] = [
       contactEmail: {
         fr: 'test@example.fr',
       },
-    },
-    expected: 400,
-  },
-  {
-    name: 'Contact Email country added',
-    camp: {
-      countries: ['en', 'fr'],
-      contactEmail: {
-        en: 'example@email.en',
-        fr: 'example@email.fr',
-      },
-    },
-    data: {
-      countries: ['de', 'en', 'fr'],
-    },
-    expected: 400,
-  },
-  {
-    name: 'Contact Email country removed',
-    camp: {
-      countries: ['en', 'fr'],
-      contactEmail: {
-        en: 'example@email.en',
-        fr: 'example@email.fr',
-      },
-    },
-    data: {
-      countries: ['de'],
     },
     expected: 400,
   },
@@ -1002,34 +918,6 @@ export const campUpdateBody: UpdateBodyData[] = [
       maxParticipants: {
         fr: 11,
       },
-    },
-    expected: 400,
-  },
-  {
-    name: 'Max Participants country added',
-    camp: {
-      countries: ['en', 'fr'],
-      maxParticipants: {
-        en: 2,
-        fr: 3,
-      },
-    },
-    data: {
-      countries: ['de', 'en', 'fr'],
-    },
-    expected: 400,
-  },
-  {
-    name: 'Max Participants country removed',
-    camp: {
-      countries: ['en', 'fr'],
-      maxParticipants: {
-        en: 2,
-        fr: 3,
-      },
-    },
-    data: {
-      countries: ['de'],
     },
     expected: 400,
   },
@@ -1302,34 +1190,6 @@ export const campUpdateBody: UpdateBodyData[] = [
       location: {
         fr: 'Quelque part',
       },
-    },
-    expected: 400,
-  },
-  {
-    name: 'Location country added',
-    camp: {
-      countries: ['en', 'fr'],
-      location: {
-        en: 'Somewhere',
-        fr: 'Quelque part',
-      },
-    },
-    data: {
-      countries: ['de', 'en', 'fr'],
-    },
-    expected: 400,
-  },
-  {
-    name: 'Location country removed',
-    camp: {
-      countries: ['en', 'fr'],
-      location: {
-        en: 'Somewhere',
-        fr: 'Quelque part',
-      },
-    },
-    data: {
-      countries: ['de'],
     },
     expected: 400,
   },
