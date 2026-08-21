@@ -78,7 +78,11 @@ export function getCampPreset(
   }
 
   const model = new SurveyModel(preset.form);
-  const form = model.toJSON({ locales }) as Record<string, unknown>;
+  const form = model.toJSON({ locales: ['default', ...locales] }) as Record<
+    string,
+    unknown
+  >;
+
   const tableTemplates = filterTableTemplateLocales(
     preset.tableTemplates,
     locales,
