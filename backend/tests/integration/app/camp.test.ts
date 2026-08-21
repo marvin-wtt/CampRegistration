@@ -13,6 +13,7 @@ import {
 } from '../../../prisma/factories/index.js';
 import { Camp, Prisma } from '#generated/prisma/client.js';
 import { campRegistrationStatus } from '#app/camp/camp.util';
+import { countriesToLocales } from '#utils/countriesToLocales';
 import moment from 'moment';
 import { ulid } from 'ulidx';
 import {
@@ -1312,6 +1313,23 @@ describe('/api/v1/camps', () => {
         );
       });
 
+      it('should respond with `400` status code when the reference camp countries do not match', async () => {
+        const { camp: referenceCamp, accessToken } =
+          await createCampWithManagerAndToken({ countries: ['fr'] });
+
+        const data = {
+          ...campCreateNational,
+          countries: ['de'],
+          referenceCampId: referenceCamp.id,
+        };
+
+        await request()
+          .post(`/api/v1/camps/`)
+          .send(data)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(400);
+      });
+
       it('should respond with `403` status code when user does not manage the reference camp', async () => {
         const accessToken = await createCampCreatorToken();
         const camp = await CampFactory.create();
@@ -1364,7 +1382,6 @@ describe('/api/v1/camps', () => {
           registrationOpensAt: null,
           registrationClosesAt: null,
           listed: false,
-          countries: ['de'],
           name: 'Test Camp',
           organizer: 'Test Org',
           contactEmail: 'test@example.com',
@@ -1390,17 +1407,20 @@ describe('/api/v1/camps', () => {
           .expect(expectedStatus);
 
         if (expectedStatus === 200) {
+          // Countries are immutable - the update leaves them untouched.
+          const expected = { ...data, countries: camp.countries };
+
           // Test response
           assertCampResponseBody(
             {
-              ...data,
-              locales: ['de'],
+              ...expected,
+              locales: [...new Set(countriesToLocales(camp.countries))],
             },
             response.body,
           );
 
           // Test model
-          await assertCampModel(camp.id, data);
+          await assertCampModel(camp.id, expected);
         }
       },
     );

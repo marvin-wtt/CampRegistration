@@ -179,7 +179,6 @@ const update = (camp: Camp) =>
           .transform((val) => new Date(val))
           .nullable()
           .optional(),
-        countries: z.array(z.string().length(2)).min(1),
         name: translatedValue(z.string()),
         organizer: translatedValue(z.string()),
         contactEmail: translatedValue(z.email()),
@@ -210,7 +209,7 @@ const update = (camp: Camp) =>
           if (
             value &&
             typeof value === 'object' &&
-            !validateRecordKeys(value, val.countries ?? camp.countries)
+            !validateRecordKeys(value, camp.countries)
           ) {
             ctx.addIssue({
               code: 'custom',

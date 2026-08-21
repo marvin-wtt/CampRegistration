@@ -1,16 +1,18 @@
+import {
+  APP_LOCALES as APP_LOCALES_READONLY,
+  type AppLocale,
+} from '@camp-registration/common/locales';
+
+export type { AppLocale };
+
 /**
- * The languages the application ships content in.
+ * The languages the application ships content in — shared with the backend
+ * (`@camp-registration/common/locales`) so forms, table templates, message
+ * templates and this list can't drift apart on what "supported" means.
  *
- * Kept separate from the message bundles so a component that renders one input
- * per language does not have to restate the list — three of them used to carry
- * their own copy, which is how a sixth locale would have been half-added.
+ * Mutable on purpose: it is passed straight to `string[]` component props.
  */
-const LOCALES = ['en', 'de', 'fr', 'cs', 'pl'] as const;
-
-export type AppLocale = (typeof LOCALES)[number];
-
-/** Mutable on purpose: it is passed straight to `string[]` component props. */
-export const APP_LOCALES: AppLocale[] = [...LOCALES];
+export const APP_LOCALES: AppLocale[] = [...APP_LOCALES_READONLY];
 
 /**
  * A camp declares the countries it runs in (`gb`, `us`, `cz`), while every

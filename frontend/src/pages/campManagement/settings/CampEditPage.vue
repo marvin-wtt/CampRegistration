@@ -47,26 +47,6 @@
             </q-card-section>
 
             <q-card-section class="column q-gutter-y-md">
-              <!-- Countries -->
-              <country-select
-                v-model="camp.countries"
-                :disable="loading"
-                :label="t('field.countries')"
-                :countries="['de', 'fr', 'gb', 'pl', 'cz']"
-                :rules="[
-                  (val?: string[]) =>
-                    (val && val.length > 0) || t('validation.countries.empty'),
-                ]"
-                hide-bottom-space
-                outlined
-                rounded
-                multiple
-              >
-                <template #before>
-                  <q-icon name="language" />
-                </template>
-              </country-select>
-
               <!-- Name -->
               <translated-input
                 v-model="camp.name"
@@ -488,7 +468,6 @@ import { useCampDetailsStore } from '@/stores/camp-details-store';
 import { storeToRefs } from 'pinia';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import TimeInput from '@/components/common/inputs/TimeInput.vue';
-import CountrySelect from '@/components/common/CountrySelect.vue';
 import TranslatedInput from '@/components/common/inputs/TranslatedInput.vue';
 import DateRangeInput from '@/components/common/inputs/DateRangeInput.vue';
 import DateTimeInput from '@/components/common/inputs/DateTimeInput.vue';
@@ -630,7 +609,6 @@ section:
   pricing: 'Pricing & visibility'
 
 field:
-  countries: 'Countries'
   name: 'Camp name'
   organizer: 'Organizer'
   contactEmail: 'Contact email'
@@ -648,8 +626,6 @@ field:
   listed: 'Show camp on main page'
 
 validation:
-  countries:
-    empty: 'Please select at least one countryQuestion'
   name:
     empty: 'Please enter a camp name'
     length: 'Camp name must not exceed 255 characters'
@@ -712,7 +688,6 @@ section:
   pricing: 'Preis & Sichtbarkeit'
 
 field:
-  countries: 'Länder'
   name: 'Camp Name'
   organizer: 'Veranstalter'
   contactEmail: 'Kontakt-Email'
@@ -730,8 +705,6 @@ field:
   listed: 'Camp auf Startseite anzeigen'
 
 validation:
-  countries:
-    empty: 'Bitte wählen Sie mindestens ein Land aus'
   name:
     empty: 'Bitte geben Sie einen Camp-Namen ein'
     length: 'Der Camp-Name darf maximal 255 Zeichen haben'
@@ -794,7 +767,6 @@ section:
   pricing: 'Prix et visibilité'
 
 field:
-  countries: 'Pays'
   name: 'Nom du camp'
   organizer: 'Organisateur'
   contactEmail: 'Email de contact'
@@ -812,8 +784,6 @@ field:
   listed: "Afficher le camp sur la page d'accueil"
 
 validation:
-  countries:
-    empty: 'Veuillez sélectionner au moins un pays'
   name:
     empty: 'Veuillez entrer un nom de camp'
     length: 'Le nom du camp ne doit pas dépasser 255 caractères'
@@ -876,7 +846,6 @@ section:
   pricing: 'Cena i widoczność'
 
 field:
-  countries: 'Kraje'
   name: 'Nazwa obozu'
   organizer: 'Organizator'
   contactEmail: 'E-mail kontaktowy'
@@ -894,8 +863,6 @@ field:
   listed: 'Pokaż obóz na stronie głównej'
 
 validation:
-  countries:
-    empty: 'Wybierz co najmniej jeden kraj'
   name:
     empty: 'Podaj nazwę obozu'
     length: 'Nazwa obozu może mieć maksymalnie 255 znaków'
@@ -958,7 +925,6 @@ section:
   pricing: 'Cena a viditelnost'
 
 field:
-  countries: 'Země'
   name: 'Název tábora'
   organizer: 'Organizátor'
   contactEmail: 'Kontaktní e-mail'
@@ -976,8 +942,6 @@ field:
   listed: 'Zobrazit tábor na úvodní stránce'
 
 validation:
-  countries:
-    empty: 'Vyberte alespoň jednu zemi'
   name:
     empty: 'Zadejte název tábora'
     length: 'Název tábora může mít maximálně 255 znaků'
