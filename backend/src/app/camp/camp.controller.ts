@@ -7,6 +7,7 @@ import httpStatus from 'http-status';
 import {
   defaultMessageTemplatesForCountries,
   getCampPreset,
+  localesForCountries,
 } from '#app/camp/presets/index.js';
 import validator from './camp.validation.js';
 import type { Request, Response } from 'express';
@@ -99,7 +100,27 @@ export class CampController extends BaseController {
       ? await this.campService.getCampById(body.referenceCampId)
       : undefined;
 
-    const preset = getCampPreset(body.preset);
+    // Verify that the countries of the new camp match the countries of the reference camp
+    // This is important to ensure that the translations are present
+    if (referenceCamp) {
+      const countriesMatch =
+        referenceCamp.countries.length === body.countries.length &&
+        referenceCamp.countries.every((country) =>
+          body.countries.includes(country),
+        );
+
+      if (!countriesMatch) {
+        throw new ApiError(
+          httpStatus.BAD_REQUEST,
+          'The countries of the new camp must match the countries of the reference camp.',
+        );
+      }
+    }
+
+    const preset = getCampPreset(
+      body.preset,
+      localesForCountries(body.countries),
+    );
 
     const form = body.form ?? referenceCamp?.form ?? preset.form;
     const themes = body.themes ?? referenceCamp?.themes ?? preset.themes;
@@ -173,7 +194,6 @@ export class CampController extends BaseController {
     const { body } = await req.validate(validator.update(camp));
 
     const updatedCamp = await this.campService.updateCamp(camp, {
-      countries: body.countries,
       name: body.name,
       organizer: body.organizer,
       contactEmail: body.contactEmail,

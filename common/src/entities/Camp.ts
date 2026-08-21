@@ -50,7 +50,10 @@ export type CampCreateData = Omit<
   preset?: 'standard' | 'minimal' | undefined | null;
 };
 
-export type CampUpdateData = Omit<Partial<CampCreateData>, 'organizationId'>;
+export type CampUpdateData = Omit<
+  Partial<CampCreateData>,
+  'organizationId' | 'countries'
+>;
 
 export interface CampOrganizationUpdateData {
   organizationId: string;

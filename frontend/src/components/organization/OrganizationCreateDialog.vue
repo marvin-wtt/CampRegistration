@@ -101,6 +101,7 @@
               :label="t('field.country')"
               :rules="[required]"
               class="col-12 col-sm-6"
+              rounded
             />
             <q-input
               v-model="data.registrationNumber"

@@ -1,4 +1,4 @@
-import { getCountryData, type TCountryCode } from 'countries-list';
+import { localeForCountry } from './locales.js';
 
 const messageTemplatesObj = {
   registration_submitted: {
@@ -193,19 +193,9 @@ const messageTemplatesObj = {
   },
 };
 
-const languageCodes = ['en', 'de', 'fr', 'pl', 'cs'] as const;
-type Code = (typeof languageCodes)[number];
-
 export function defaultMessageTemplatesForCountries(countries: string[]) {
   return countries.flatMap((country) => {
-    let code = getCountryData(
-      country.toUpperCase() as TCountryCode,
-    ).languages.find((code): code is Code => {
-      return languageCodes.includes(code.toLocaleLowerCase() as Code);
-    });
-
-    // Always fall back to English
-    code ??= 'en';
+    const code = localeForCountry(country);
 
     return Object.entries(messageTemplatesObj).map(
       ([event, { subject, body }]) => ({

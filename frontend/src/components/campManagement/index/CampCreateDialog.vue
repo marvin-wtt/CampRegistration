@@ -156,12 +156,13 @@
             v-model="data.countries"
             :disable="loading"
             :label="t('field.countries')"
+            :hint="t('field.countries_hint')"
             :countries="['de', 'fr', 'gb', 'pl', 'cz']"
             :rules="[
               (val?: string[]) =>
                 (val && val.length > 0) || t('validation.countries.empty'),
             ]"
-            hide-bottom-space
+            :readonly="data.referenceCampId != null"
             outlined
             rounded
             multiple
@@ -766,6 +767,7 @@ rule:
 field:
   organization: 'Organization'
   countries: 'Countries'
+  countries_hint: 'Cannot be changed after the camp is created'
   name: 'Camp name'
   use_template: 'Preset'
   template: 'Camp'
@@ -854,6 +856,7 @@ rule:
 field:
   organization: 'Organisation'
   countries: 'Länder'
+  countries_hint: 'Kann nach dem Erstellen des Camps nicht mehr geändert werden'
   name: 'Camp Name'
   use_template: 'Vorlage'
   template: 'Camp'
@@ -942,6 +945,7 @@ rule:
 field:
   organization: 'Organisation'
   countries: 'Pays'
+  countries_hint: 'Ne peut plus être modifié après la création du camp'
   name: 'Nom du camp'
   use_template: 'Modèle'
   template: 'Camp'
@@ -1030,6 +1034,7 @@ rule:
 field:
   organization: 'Organizacja'
   countries: 'Kraje'
+  countries_hint: 'Nie można zmienić po utworzeniu obozu'
   name: 'Nazwa obozu'
   use_template: 'Szablon'
   template: 'Obóz'
@@ -1118,6 +1123,7 @@ rule:
 field:
   organization: 'Organizace'
   countries: 'Země'
+  countries_hint: 'Po vytvoření tábora nelze změnit'
   name: 'Název tábora'
   use_template: 'Šablona'
   template: 'Tábor'

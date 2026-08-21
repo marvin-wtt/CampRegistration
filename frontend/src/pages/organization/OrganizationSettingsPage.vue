@@ -143,6 +143,7 @@
                 :rules="[required]"
                 :disable="locked"
                 class="col-12"
+                rounded
               />
             </div>
           </q-card-section>
