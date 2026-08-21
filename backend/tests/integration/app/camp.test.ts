@@ -13,6 +13,7 @@ import {
 } from '../../../prisma/factories/index.js';
 import { Camp, Prisma } from '#generated/prisma/client.js';
 import { campRegistrationStatus } from '#app/camp/camp.util';
+import { countriesToLocales } from '#utils/countriesToLocales';
 import moment from 'moment';
 import { ulid } from 'ulidx';
 import {
@@ -1120,7 +1121,6 @@ describe('/api/v1/camps', () => {
           registrationOpensAt: null,
           registrationClosesAt: null,
           listed: false,
-          countries: ['de'],
           name: 'Test Camp',
           organizer: 'Test Org',
           contactEmail: 'test@example.com',
@@ -1146,17 +1146,20 @@ describe('/api/v1/camps', () => {
           .expect(expectedStatus);
 
         if (expectedStatus === 200) {
+          // Countries are immutable - the update leaves them untouched.
+          const expected = { ...data, countries: camp.countries };
+
           // Test response
           assertCampResponseBody(
             {
-              ...data,
-              locales: ['de'],
+              ...expected,
+              locales: [...new Set(countriesToLocales(camp.countries))],
             },
             response.body,
           );
 
           // Test model
-          await assertCampModel(camp.id, data);
+          await assertCampModel(camp.id, expected);
         }
       },
     );

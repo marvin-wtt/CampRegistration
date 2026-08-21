@@ -672,35 +672,6 @@ export const campUpdateBody: UpdateBodyData[] = [
     },
     expected: 400,
   },
-  // Countries
-  {
-    name: 'Countries',
-    data: {
-      countries: ['de'],
-    },
-    expected: 200,
-  },
-  {
-    name: 'Countries empty',
-    data: {
-      countries: [],
-    },
-    expected: 400,
-  },
-  {
-    name: 'Countries invalid locale',
-    data: {
-      countries: ['de', 'invalid'],
-    },
-    expected: 400,
-  },
-  {
-    name: 'Countries invalid value',
-    data: {
-      countries: ['de', 1],
-    },
-    expected: 400,
-  },
   // Name
   {
     name: 'Name',
