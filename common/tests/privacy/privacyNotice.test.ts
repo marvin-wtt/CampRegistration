@@ -605,9 +605,9 @@ describe('addendumGaps', () => {
   });
 
   it('does not blame a camp for what its organization never published', () => {
-    expect(addendumGaps(null, { dataCategories: [{ key: 'identity' }] })).toEqual(
-      [],
-    );
+    expect(
+      addendumGaps(null, { dataCategories: [{ key: 'identity' }] }),
+    ).toEqual([]);
   });
 
   it('reports a consent-bound exception the camp hangs on the wrong purpose', () => {

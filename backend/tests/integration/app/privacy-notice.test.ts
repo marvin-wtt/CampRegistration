@@ -459,7 +459,10 @@ describe('privacy notices', () => {
         .send({
           content: {
             purposes: [
-              { key: 'photo_documentation', legalBasis: 'legitimate_interests' },
+              {
+                key: 'photo_documentation',
+                legalBasis: 'legitimate_interests',
+              },
             ],
           },
         })

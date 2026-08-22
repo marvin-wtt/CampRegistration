@@ -93,7 +93,8 @@ export default {
     consent_withdrawn: 'do wycofania zgody, na której się opierają',
   },
 
-  retentionConsentSentence: 'Przechowujemy je tak długo, jak długo wyrażasz na to zgodę, i usuwamy po jej wycofaniu.',
+  retentionConsentSentence:
+    'Przechowujemy je tak długo, jak długo wyrażasz na to zgodę, i usuwamy po jej wycofaniu.',
 
   transferSafeguard: {
     adequacy:
@@ -159,7 +160,8 @@ export default {
     retention: 'Nie określono okresu przechowywania',
     retention_exception:
       'Wyjątek nie ma okresu albo nie wskazano, czego dotyczy',
-    retention_exception_consent_basis: 'Dane przechowywane do wycofania zgody są powiązane z celem, który nie opiera się na zgodzie',
+    retention_exception_consent_basis:
+      'Dane przechowywane do wycofania zgody są powiązane z celem, który nie opiera się na zgodzie',
     transfer_countries:
       'Przy przekazywaniu poza EOG nie wskazano kraju docelowego',
     transfer_safeguard: 'Przy przekazywaniu poza EOG nie wskazano zabezpieczeń',

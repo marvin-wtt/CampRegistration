@@ -74,7 +74,9 @@ export function useServerTable<TRow, TQuery>(
 
     void list.loadMore().then(() => {
       // Let the virtual scroller recompute sizes/positions for the new chunk.
-      void nextTick(() => (details.ref as unknown as VirtualScrollRef).refresh());
+      void nextTick(() =>
+        (details.ref as unknown as VirtualScrollRef).refresh(),
+      );
     });
   }
 

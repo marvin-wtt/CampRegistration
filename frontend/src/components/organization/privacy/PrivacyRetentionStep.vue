@@ -386,9 +386,7 @@ const untilOptions = computed(() =>
   })),
 );
 
-function exceptionUntil(
-  exception: PrivacyRetentionException,
-): RetentionUntil {
+function exceptionUntil(exception: PrivacyRetentionException): RetentionUntil {
   return isConsentBoundException(exception) ? 'consent_withdrawn' : 'period';
 }
 
@@ -397,10 +395,7 @@ function exceptionUntil(
  * a union, and a `months` left behind on a consent-bound exception is a number
  * nothing reads and the next author believes.
  */
-function setExceptionUntil(
-  index: number,
-  until: RetentionUntil,
-) {
+function setExceptionUntil(index: number, until: RetentionUntil) {
   const retention = ensureRetention();
   const current = retention.exceptions[index];
   if (!current) {

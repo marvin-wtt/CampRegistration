@@ -93,7 +93,8 @@ export default {
     consent_withdrawn: 'dokud není odvolán souhlas, na kterém stojí',
   },
 
-  retentionConsentSentence: 'Uchováváme je tak dlouho, dokud s tím souhlasíš, a po odvolání souhlasu je smažeme.',
+  retentionConsentSentence:
+    'Uchováváme je tak dlouho, dokud s tím souhlasíš, a po odvolání souhlasu je smažeme.',
 
   transferSafeguard: {
     adequacy: 'rozhodnutí Evropské komise o odpovídající ochraně',
@@ -157,7 +158,8 @@ export default {
     recipients: 'Nebyli uvedeni žádní příjemci',
     retention: 'Nebyla stanovena doba uchování',
     retention_exception: 'U výjimky chybí doba nebo údaj, čeho se týká',
-    retention_exception_consent_basis: 'Údaje uchovávané do odvolání souhlasu patří k účelu, který na souhlasu nestojí',
+    retention_exception_consent_basis:
+      'Údaje uchovávané do odvolání souhlasu patří k účelu, který na souhlasu nestojí',
     transfer_countries: 'U předávání mimo EHP není uvedena cílová země',
     transfer_safeguard: 'U předávání mimo EHP nejsou uvedeny záruky',
     dpo_details:

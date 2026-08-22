@@ -88,10 +88,12 @@ export default {
 
   retentionUntil: {
     period: 'pour une durée déterminée',
-    consent_withdrawn: "jusqu'au retrait du consentement sur lequel elles reposent",
+    consent_withdrawn:
+      "jusqu'au retrait du consentement sur lequel elles reposent",
   },
 
-  retentionConsentSentence: 'Conservées aussi longtemps que vous y consentez, et effacées dès que vous retirez ce consentement.',
+  retentionConsentSentence:
+    'Conservées aussi longtemps que vous y consentez, et effacées dès que vous retirez ce consentement.',
 
   transferSafeguard: {
     adequacy: "une décision d'adéquation de la Commission européenne",
@@ -156,7 +158,8 @@ export default {
     retention: "Aucune durée de conservation n'a été définie",
     retention_exception:
       "Une exception n'a pas de durée, ou pas d'objet indiqué",
-    retention_exception_consent_basis: "Des données conservées jusqu'au retrait du consentement sont rattachées à une finalité qui ne repose pas sur le consentement",
+    retention_exception_consent_basis:
+      "Des données conservées jusqu'au retrait du consentement sont rattachées à une finalité qui ne repose pas sur le consentement",
     transfer_countries:
       "Les transferts hors EEE n'indiquent aucun pays de destination",
     transfer_safeguard: "Les transferts hors EEE n'indiquent aucune garantie",
