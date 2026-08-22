@@ -1,12 +1,25 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm run lint *)",
-      "Bash(npx tsc --noEmit *)",
-      "Bash(npx vue-tsc --noEmit *)",
-      "Bash(npx vitest run *)",
-      "Bash(npx eslint *)",
-      "Bash(node scripts/i18n/check.mjs *)"
+      "Bash(npm run lint:*)",
+      "Bash(npm run typecheck:*)",
+      "Bash(npm run format:check:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run test:*)",
+      "Bash(npm run i18n:check:*)",
+      "Bash(npx tsc --noEmit:*)",
+      "Bash(npx vue-tsc --noEmit:*)",
+      "Bash(npx vitest run:*)",
+      "Bash(npx eslint:*)",
+      "Bash(npx prettier --check:*)",
+      "Bash(npx prisma migrate diff:*)"
+    ],
+    "deny": [
+      "Read(./backend/.env)",
+      "Read(./backend/.env.dev)",
+      "Read(./backend/.env.e2e)",
+      "Read(./backend/.env.test)",
+      "Read(./frontend/.env)"
     ]
   },
   "hooks": {
@@ -16,9 +29,15 @@
         "hooks": [
           {
             "type": "command",
-            "command": "f=$(node -p \"(()=>{try{return JSON.parse(require('fs').readFileSync(0,'utf8')).tool_input.file_path||''}catch{return ''}})()\"); { [ -n \"$f\" ] && npx prettier --write --ignore-unknown \"$f\"; } 2>/dev/null || true",
+            "command": "node \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/prettier.mjs\"",
             "timeout": 30,
             "statusMessage": "Running Prettier"
+          },
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/i18n-check.mjs\"",
+            "timeout": 60,
+            "statusMessage": "Checking locales"
           }
         ]
       }
@@ -29,7 +48,17 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"let c='';try{c=JSON.parse(require('fs').readFileSync(0,'utf8')).tool_input.command||''}catch{};if(/db:reset|migrate\\s+reset|push\\s+\\S.*(--force|\\s-f\\b)|push\\s+(--force|-f)\\b|reset\\s+--hard/.test(c))console.log(JSON.stringify({hookSpecificOutput:{hookEventName:'PreToolUse',permissionDecision:'ask',permissionDecisionReason:'Risky command guard: destructive command - explicit approval required.'}}))\"",
+            "command": "node \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/guard-destructive.mjs\"",
+            "timeout": 15
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/guard-migrations.mjs\"",
             "timeout": 15
           }
         ]
