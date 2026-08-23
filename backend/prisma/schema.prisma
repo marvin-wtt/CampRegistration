@@ -30,9 +30,9 @@ model User {
   newsletterManagers     NewsletterManager[]
   sentNewsletterMessages NewsletterMessage[]
   sentMessages           Message[]
-  organizationMembers   OrganizationMember[]
-  reviewedOrganizations Organization[]       @relation("OrganizationReviewer")
-  twoFactor             UserTwoFactor?
+  organizationMembers    OrganizationMember[]
+  reviewedOrganizations  Organization[]       @relation("OrganizationReviewer")
+  twoFactor              UserTwoFactor?
 
   @@map("users")
 }
@@ -150,38 +150,38 @@ model OrganizationInvitation {
 }
 
 model Camp {
-  id                   String           @id @unique(map: "camps_id_unique") @default(ulid()) @db.Char(26)
-  organizationId String @map("organization_id") @db.Char(26)
-  listed               Boolean
-  registrationOpensAt  DateTime?        @map("registration_opens_at") @db.DateTime(0)
-  registrationClosesAt DateTime?        @map("registration_closes_at") @db.DateTime(0)
-  confirmationMode     ConfirmationMode @default(AUTOMATIC) @map("confirmation_mode")
+  id                      String           @id @unique(map: "camps_id_unique") @default(ulid()) @db.Char(26)
+  organizationId          String           @map("organization_id") @db.Char(26)
+  listed                  Boolean
+  registrationOpensAt     DateTime?        @map("registration_opens_at") @db.DateTime(0)
+  registrationClosesAt    DateTime?        @map("registration_closes_at") @db.DateTime(0)
+  confirmationMode        ConfirmationMode @default(AUTOMATIC) @map("confirmation_mode")
   /// ![Array<string>]
-  countries            Json             @db.Json
+  countries               Json             @db.Json
   /// ![string | Record<string, string>]
-  name                 Json             @db.Json
+  name                    Json             @db.Json
   /// ![string | Record<string, string>]
-  organizer            Json             @db.Json
+  organizer               Json             @db.Json
   /// ![string | Record<string, string>]
-  contactEmail         Json             @map("contact_email") @db.Json
+  contactEmail            Json             @map("contact_email") @db.Json
   /// ![number | Record<string, number>]
-  maxParticipants      Json             @map("max_participants") @db.Json
-  minAge               Int              @map("min_age") @db.UnsignedInt
-  maxAge               Int              @map("max_age") @db.UnsignedInt
-  startAt              DateTime         @map("start_at") @db.DateTime(0)
-  endAt                DateTime         @map("end_at") @db.DateTime(0)
-  price                Float
+  maxParticipants         Json             @map("max_participants") @db.Json
+  minAge                  Int              @map("min_age") @db.UnsignedInt
+  maxAge                  Int              @map("max_age") @db.UnsignedInt
+  startAt                 DateTime         @map("start_at") @db.DateTime(0)
+  endAt                   DateTime         @map("end_at") @db.DateTime(0)
+  price                   Float
   /// ![string | Record<string, string>]
-  location             Json?            @db.Json
+  location                Json?            @db.Json
   /// ![Record<string, unknown>]
-  form                 Json             @db.Json
+  form                    Json             @db.Json
   /// ![Record<string, unknown>]
-  themes               Json             @default("{}") @db.Json
-  retentionReminderSentAt DateTime?     @map("retention_reminder_sent_at")
-  createdAt            DateTime?        @default(now()) @map("created_at")
-  updatedAt            DateTime?        @updatedAt @map("updated_at")
+  themes                  Json             @default("{}") @db.Json
+  retentionReminderSentAt DateTime?        @map("retention_reminder_sent_at")
+  createdAt               DateTime?        @default(now()) @map("created_at")
+  updatedAt               DateTime?        @updatedAt @map("updated_at")
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "camps_organization_id_foreign")
+  organization     Organization      @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "camps_organization_id_foreign")
   campManager      CampManager[]
   registrations    Registration[]
   rooms            Room[]
@@ -405,7 +405,7 @@ model MessageDelivery {
   id             String   @id @unique(map: "message_delivery_id_unique") @default(ulid()) @db.Char(26)
   templateId     String?  @map("message_template_id") @db.Char(26)
   messageId      String?  @map("message_id") @db.Char(26)
-  registrationId String?  @map("registration_id") @db.Char(26)
+  registrationId String   @map("registration_id") @db.Char(26)
   to             String?  @db.TinyText
   cc             String?  @db.TinyText
   bcc            String?  @db.TinyText
@@ -417,7 +417,11 @@ model MessageDelivery {
 
   template     MessageTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
   message      Message?         @relation(fields: [messageId], references: [id], onDelete: SetNull)
-  registration Registration?    @relation(fields: [registrationId], references: [id])
+  // The durable owner: template and message are severed by their own deletions,
+  // so the registration is the only link that lives as long as the row. Erasing
+  // it — or the camp above it — takes the mails rendered about that
+  // participant, which is what makes them erasable at all.
+  registration Registration     @relation(fields: [registrationId], references: [id], onDelete: Cascade)
   attachments  File[]
 
   @@map("message_deliveries")

@@ -24,7 +24,7 @@ export const messageDeliveryFileGuard = async (
   const delivery = await messageService.getDeliveryWithCampById(
     file.messageDeliveryId,
   );
-  if (!delivery?.registration) {
+  if (!delivery) {
     throw new ApiError(
       httpStatus.INTERNAL_SERVER_ERROR,
       'Message delivery related to file not found',

@@ -582,11 +582,6 @@ describe('/api/v1/camps/:campId/messages', () => {
         registration: { connect: { id: registration.id } },
         to: 'second@example.com',
       });
-      // A delivery no longer linked to a registration must be dropped entirely.
-      await MessageDeliveryFactory.create({
-        message: { connect: { id: message.id } },
-        to: 'orphan@example.com',
-      });
 
       const { body } = await request()
         .get(`/api/v1/camps/${camp.id}/messages`)

@@ -75,10 +75,7 @@ export class MessageDeliveryService extends BaseService {
 
   async getDeliveryWithCampById(id: string) {
     return this.prisma.messageDelivery.findUnique({
-      where: {
-        id,
-        registrationId: { not: null },
-      },
+      where: { id },
       include: {
         // `campId` lives on the registration row directly — no camp JOIN needed.
         registration: { select: { campId: true } },
