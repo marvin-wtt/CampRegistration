@@ -61,10 +61,9 @@
           </q-item-section>
         </q-item>
 
-        <!-- The whole header expands, and nothing else — a second control
-             inside it would be a small target sharing an edge with a
-             full-width one, which touch cannot aim between. The area's index
-             is an "all …" row inside the panel instead. -->
+        <!-- The whole header expands; opening the area's index is the
+             trailing arrow, so both actions stay one click without competing
+             for the same hit area. -->
         <q-expansion-item
           v-else
           group="workspace-switcher"
@@ -87,15 +86,31 @@
             </q-item-section>
 
             <q-item-section side>
-              <q-skeleton
-                v-if="area.loading"
-                type="QBadge"
-              />
-              <q-badge
-                v-else
-                :color="area.name === currentArea ? 'primary' : 'grey-6'"
-                :label="area.count"
-              />
+              <div class="row items-center no-wrap q-gutter-x-sm">
+                <q-skeleton
+                  v-if="area.loading"
+                  type="QBadge"
+                />
+                <q-badge
+                  v-else
+                  :color="area.name === currentArea ? 'primary' : 'grey-6'"
+                  :label="area.count"
+                />
+                <q-btn
+                  v-close-popup
+                  dense
+                  flat
+                  round
+                  size="sm"
+                  icon="arrow_forward"
+                  :aria-label="t('open', { area: area.label })"
+                  @click.stop="goToIndex(area)"
+                >
+                  <q-tooltip>
+                    {{ t('open', { area: area.label }) }}
+                  </q-tooltip>
+                </q-btn>
+              </div>
             </q-item-section>
           </template>
 
@@ -103,8 +118,6 @@
             :entries="area.entries"
             :past="area.past"
             :past-label="t('past')"
-            :index-to="area.indexTo"
-            :all-label="area.allLabel"
             :inset="!compact"
             @select="(id) => select(area.name, id)"
           />
@@ -164,6 +177,7 @@ import { isCampPast } from '@/utils/campPhase';
 import WorkspaceSwitcherEntries from '@/components/layout/WorkspaceSwitcherEntries.vue';
 import {
   areaFromRouteName,
+  useWorkspaceAreaAccess,
   type WorkspaceAreaName,
   type WorkspaceEntry,
 } from '@/components/layout/workspaceArea';
@@ -196,6 +210,7 @@ const newsletterStore = useNewsletterStore();
 const organizationsStore = useOrganizationsStore();
 
 const { user } = storeToRefs(profileStore);
+const { hasNewsletters, hasOrganizations } = useWorkspaceAreaAccess();
 
 // Rendered in a bottom sheet rather than an anchored menu: it owns the full
 // width, and indenting nested rows would spend it on nothing.
@@ -296,15 +311,15 @@ const organizationArea = computed<WorkspaceArea>(() => {
 });
 
 // Camps are always offered: they are the core of the app, and the area's
-// "all camps" row is how a user with none reaches the create flow. The other
-// two appear only once the user actually holds access somewhere.
+// index is how a user with none reaches the create flow. The other two appear
+// only once the user actually holds access somewhere.
 const availableAreas = computed<WorkspaceArea[]>(() => {
   const areas = [campArea.value];
 
-  if ((user.value?.newsletterAccess.length ?? 0) > 0) {
+  if (hasNewsletters.value) {
     areas.push(newsletterArea.value);
   }
-  if ((user.value?.organizationAccess.length ?? 0) > 0) {
+  if (hasOrganizations.value) {
     areas.push(organizationArea.value);
   }
 
@@ -378,6 +393,7 @@ function goTo(rootName: string, param: string, id: string) {
 
 <i18n lang="yaml" locale="en">
 switch: 'Switch to'
+open: 'Open {area}'
 past: 'Past'
 area:
   camps: 'Camps'
@@ -395,6 +411,7 @@ verification:
 
 <i18n lang="yaml" locale="de">
 switch: 'Wechseln zu'
+open: '{area} öffnen'
 past: 'Vergangen'
 area:
   camps: 'Camps'
@@ -412,6 +429,7 @@ verification:
 
 <i18n lang="yaml" locale="fr">
 switch: 'Aller à'
+open: 'Ouvrir {area}'
 past: 'Passés'
 area:
   camps: 'Camps'
@@ -429,6 +447,7 @@ verification:
 
 <i18n lang="yaml" locale="pl">
 switch: 'Przejdź do'
+open: 'Otwórz {area}'
 past: 'Minione'
 area:
   camps: 'Obozy'
@@ -446,6 +465,7 @@ verification:
 
 <i18n lang="yaml" locale="cs">
 switch: 'Přejít na'
+open: 'Otevřít {area}'
 past: 'Minulé'
 area:
   camps: 'Tábory'

@@ -49,9 +49,8 @@
     </q-item>
   </q-expansion-item>
 
-  <!-- The way into the area's index. It sits at the end of the list, not in
-       the area header, where a second control would share an edge with the
-       header's own full-width tap target. -->
+  <!-- The way into the area's index, for the single-area list that has no
+       area header to carry the arrow. -->
   <q-item
     v-if="indexTo && allLabel"
     v-close-popup

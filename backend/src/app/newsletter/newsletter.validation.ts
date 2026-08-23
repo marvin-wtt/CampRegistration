@@ -2,6 +2,7 @@ import { z, type ZodType } from 'zod';
 import type {
   NewsletterCreateData,
   NewsletterUpdateData,
+  NewsletterOrganizationUpdateData,
   NewsletterQuery,
 } from '@camp-registration/common/entities';
 
@@ -47,6 +48,15 @@ const update = z.object({
     .partial() satisfies ZodType<NewsletterUpdateData>,
 });
 
+const updateOrganization = z.object({
+  params: z.object({
+    newsletterId: z.ulid(),
+  }),
+  body: z.object({
+    organizationId: z.ulid(),
+  }) satisfies ZodType<NewsletterOrganizationUpdateData>,
+});
+
 const destroy = z.object({
   params: z.object({
     newsletterId: z.ulid(),
@@ -58,5 +68,6 @@ export default {
   show,
   store,
   update,
+  updateOrganization,
   destroy,
 };

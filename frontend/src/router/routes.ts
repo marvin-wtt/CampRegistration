@@ -16,7 +16,7 @@ const routes: RouteRecordRaw[] = [
           {
             path: '',
             name: 'camps',
-            component: () => import('@/pages/camps/CampsPublicPage.vue'),
+            component: () => import('@/pages/camps/CampsListedPage.vue'),
           },
           {
             path: ':campId',

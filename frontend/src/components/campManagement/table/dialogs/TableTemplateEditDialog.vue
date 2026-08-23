@@ -15,7 +15,7 @@
       <q-card-section class="col-12 col-md-7 q-pt-none q-gutter-y-sm column">
         <translated-input
           v-model="template.title"
-          :label="t('fields.title.label')"
+          :label="t('field.title.label')"
           :locales="camp.locales"
           hide-bottom-space
           outlined
@@ -23,7 +23,7 @@
         />
 
         <a class="text-h6">
-          {{ t('sections.columns') }}
+          {{ t('section.columns') }}
         </a>
 
         <sortable-list
@@ -43,9 +43,6 @@
             <q-item-label>
               {{ to(slotProps.item.label) }}
             </q-item-label>
-            <q-item-label caption>
-              {{ slotProps.item.name }}
-            </q-item-label>
           </q-item-section>
         </sortable-list>
       </q-card-section>
@@ -53,13 +50,13 @@
       <div class="col-12 col-md-5">
         <q-card-section class="q-pt-none q-gutter-y-sm column">
           <a class="text-h6">
-            {{ t('sections.options') }}
+            {{ t('section.options') }}
           </a>
 
           <q-select
             v-model="template.sortBy"
-            :label="t('fields.sortBy.label')"
-            :hint="t('fields.sortBy.hint')"
+            :label="t('field.sortBy.label')"
+            :hint="t('field.sortBy.hint')"
             :options="sortByOptions"
             emit-value
             map-options
@@ -106,7 +103,7 @@
 
           <q-select
             v-model="template.filterStatus"
-            :label="t('fields.filter_status.label')"
+            :label="t('field.filter_status.label')"
             :options="statusOptions"
             emit-value
             map-options
@@ -122,7 +119,9 @@
 
           <q-select
             v-model="template.filterRoles"
-            :label="t('fields.filter_roles.label')"
+            :label="t('field.filter_roles.label')"
+            emit-value
+            map-options
             use-input
             use-chips
             outlined
@@ -141,8 +140,8 @@
 
           <q-select
             v-model="printOrientation"
-            :label="t('fields.print_orientation.label')"
-            :hint="t('fields.print_orientation.hint')"
+            :label="t('field.print_orientation.label')"
+            :hint="t('field.print_orientation.hint')"
             :options="orientationOptions"
             emit-value
             map-options
@@ -172,23 +171,23 @@
               class="q-gutter-y-sm column no-wrap"
             >
               <a class="text-h6">
-                {{ t('sections.advanced') }}
+                {{ t('section.advanced') }}
               </a>
 
               <q-toggle
                 v-model="template.indexed"
-                :label="t('fields.indexed.label')"
+                :label="t('field.indexed.label')"
               />
 
               <q-toggle
                 v-model="template.actions"
-                :label="t('fields.actions.label')"
+                :label="t('field.actions.label')"
               />
 
               <q-input
                 v-model="template.filter"
-                :label="t('fields.filter.label')"
-                :hint="t('fields.filter.hint')"
+                :label="t('field.filter.label')"
+                :hint="t('field.filter.hint')"
                 clearable
                 outlined
                 rounded
@@ -211,13 +210,13 @@
           outline
           rounded
           color="primary"
-          :label="t('actions.cancel')"
+          :label="t('action.cancel')"
           @click="onDialogCancel"
         />
         <q-btn
           rounded
           color="primary"
-          :label="t('actions.ok')"
+          :label="t('action.ok')"
           @click="onOKClick"
         />
       </q-card-actions>
@@ -237,6 +236,7 @@ import type {
   TableTemplate,
   TableColumnTemplate,
   Camp,
+  Registration,
 } from '@camp-registration/common/entities';
 import TranslatedInput from '@/components/common/inputs/TranslatedInput.vue';
 import { computed, reactive, ref } from 'vue';
@@ -267,42 +267,59 @@ const template = reactive<TableTemplate>(
 );
 const advanced = ref<boolean>(false);
 
-const roleOptions: (string | QSelectOption)[] = ['participant', 'counselor'];
-const roleFilteredOptions = ref<(string | QSelectOption)[]>(roleOptions);
+type RegistrationRole = Registration['computedData']['role'];
+const roleOptions: QSelectOption<RegistrationRole>[] = [
+  {
+    value: 'participant',
+    label: t('field.filter_roles.option.participant'),
+  },
+  {
+    value: 'counselor',
+    label: t('field.filter_roles.option.counselor'),
+  },
+];
+const roleFilteredOptions = ref<QSelectOption<RegistrationRole>[]>(roleOptions);
 
-const statusOptions: QSelectOption[] = [
+const statusOptions: QSelectOption<Registration['status']>[] = [
   {
     value: 'ACCEPTED',
-    label: t('fields.filter_status.options.accepted'),
+    label: t('field.filter_status.option.accepted'),
   },
   {
     value: 'WAITLISTED',
-    label: t('fields.filter_status.options.waitlisted'),
+    label: t('field.filter_status.option.waitlisted'),
   },
   {
     value: 'PENDING',
-    label: t('fields.filter_status.options.pending'),
+    label: t('field.filter_status.option.pending'),
   },
 ];
 
-const orientationOptions: QSelectOption[] = [
+// Use 'auto' as placeholder for undefined - will be removed by setter
+type PrintOrientation =
+  | Exclude<
+      Exclude<TableTemplate['printOptions'], undefined>['orientation'],
+      undefined
+    >
+  | 'auto';
+const orientationOptions: QSelectOption<PrintOrientation>[] = [
   {
     value: 'auto',
-    label: t('fields.print_orientation.options.auto'),
+    label: t('field.print_orientation.option.auto'),
   },
   {
     value: 'portrait',
-    label: t('fields.print_orientation.options.portrait'),
+    label: t('field.print_orientation.option.portrait'),
   },
   {
     value: 'landscape',
-    label: t('fields.print_orientation.options.landscape'),
+    label: t('field.print_orientation.option.landscape'),
   },
 ];
 
 // `auto` is the absence of the setting; the print page then derives the
 // orientation from the table's intrinsic width.
-const printOrientation = computed<'auto' | 'portrait' | 'landscape'>({
+const printOrientation = computed<PrintOrientation>({
   get: () => template.printOptions?.orientation ?? 'auto',
   set: (value) => {
     if (value === 'auto') {
@@ -410,11 +427,9 @@ function roleFilterFn(value: string, update: (fn: () => void) => void) {
       roleFilteredOptions.value = roleOptions;
       return;
     }
-    const needle = value.toLowerCase();
-    roleFilteredOptions.value = roleOptions.filter((v) => {
-      const roleName = typeof v === 'string' ? v : v.label;
-      return roleName.toLowerCase().indexOf(needle) > -1;
-    });
+    roleFilteredOptions.value = roleOptions.filter(
+      (v) => v.label.toLowerCase().indexOf(value.toLowerCase()) > -1,
+    );
   });
 }
 </script>
@@ -428,16 +443,16 @@ advanced:
   hide: 'Hide advanced options'
   show: 'Show advanced options'
 
-sections:
+section:
   advanced: 'Advanced options'
   columns: 'Columns'
   options: 'Options'
 
-actions:
+action:
   ok: 'Ok'
   cancel: 'Cancel'
 
-fields:
+field:
   title:
     label: 'Title'
     hint: ''
@@ -456,17 +471,20 @@ fields:
   filter_roles:
     label: 'Hide registrations with role'
     hint: ''
+    option:
+      participant: 'Participant'
+      counselor: 'Counselor'
   filter_status:
     label: 'Status'
     hint: ''
-    options:
+    option:
       accepted: 'Accepted'
       pending: 'Pending'
       waitlisted: 'Waitlisted'
   print_orientation:
     label: 'Print orientation'
     hint: 'Page orientation when this table is printed'
-    options:
+    option:
       auto: 'Automatic'
       portrait: 'Portrait'
       landscape: 'Landscape'
@@ -479,16 +497,16 @@ advanced:
   hide: 'Erweiterte Optionen ausblenden'
   show: 'Erweiterte Optionen anzeigen'
 
-sections:
+section:
   advanced: 'Erweiterte Optionen'
   columns: 'Spalten'
   options: 'Optionen'
 
-actions:
+action:
   ok: 'Ok'
   cancel: 'Abbrechen'
 
-fields:
+field:
   title:
     label: 'Titel'
     hint: ''
@@ -507,17 +525,20 @@ fields:
   filter_roles:
     label: 'Registrierungen mit Rolle ausblenden'
     hint: ''
+    option:
+      participant: 'Teilnehmer'
+      counselor: 'Betreuer'
   filter_status:
     label: 'Status'
     hint: ''
-    options:
+    option:
       accepted: 'Akzeptiert'
       pending: 'Ausstehend'
       waitlisted: 'Auf der Warteliste'
   print_orientation:
     label: 'Druckausrichtung'
     hint: 'Seitenausrichtung beim Drucken dieser Tabelle'
-    options:
+    option:
       auto: 'Automatisch'
       portrait: 'Hochformat'
       landscape: 'Querformat'
@@ -530,16 +551,16 @@ advanced:
   hide: 'Masquer les options avancées'
   show: 'Afficher les options avancées'
 
-sections:
+section:
   advanced: 'Options avancées'
   columns: 'Colonnes'
   options: 'Options'
 
-actions:
+action:
   ok: 'Ok'
   cancel: 'Annuler'
 
-fields:
+field:
   title:
     label: 'Titre'
     hint: ''
@@ -558,17 +579,20 @@ fields:
   filter_roles:
     label: 'Masquer les inscriptions avec rôle'
     hint: ''
+    option:
+      participant: 'Participant'
+      counselor: 'Animateur'
   filter_status:
     label: 'Statut'
     hint: ''
-    options:
+    option:
       accepted: 'Accepté'
       pending: 'En attente'
       waitlisted: "Sur liste d'attente"
   print_orientation:
     label: "Orientation d'impression"
     hint: "Orientation de la page lors de l'impression de ce tableau"
-    options:
+    option:
       auto: 'Automatique'
       portrait: 'Portrait'
       landscape: 'Paysage'
@@ -581,16 +605,16 @@ advanced:
   hide: 'Ukryj opcje zaawansowane'
   show: 'Pokaż opcje zaawansowane'
 
-sections:
+section:
   advanced: 'Opcje zaawansowane'
   columns: 'Kolumny'
   options: 'Opcje'
 
-actions:
+action:
   ok: 'OK'
   cancel: 'Anuluj'
 
-fields:
+field:
   title:
     label: 'Tytuł'
     hint: ''
@@ -609,17 +633,20 @@ fields:
   filter_roles:
     label: 'Ukryj rejestracje z rolą'
     hint: ''
+    option:
+      participant: 'Uczestnik'
+      counselor: 'Opiekun'
   filter_status:
     label: 'Status'
     hint: ''
-    options:
+    option:
       accepted: 'Zaakceptowane'
       pending: 'Oczekujące'
       waitlisted: 'Na liście oczekujących'
   print_orientation:
     label: 'Orientacja wydruku'
     hint: 'Orientacja strony podczas drukowania tej tabeli'
-    options:
+    option:
       auto: 'Automatycznie'
       portrait: 'Pionowa'
       landscape: 'Pozioma'
@@ -632,16 +659,16 @@ advanced:
   hide: 'Skrýt pokročilé možnosti'
   show: 'Zobrazit pokročilé možnosti'
 
-sections:
+section:
   advanced: 'Pokročilé možnosti'
   columns: 'Sloupce'
   options: 'Možnosti'
 
-actions:
+action:
   ok: 'OK'
   cancel: 'Zrušit'
 
-fields:
+field:
   title:
     label: 'Název'
     hint: ''
@@ -660,17 +687,20 @@ fields:
   filter_roles:
     label: 'Skrýt registrace s rolí'
     hint: ''
+    option:
+      participant: 'Účastník'
+      counselor: 'Vedoucí'
   filter_status:
     label: 'Stav'
     hint: ''
-    options:
+    option:
       accepted: 'Přijato'
       pending: 'Čeká na vyřízení'
       waitlisted: 'Na čekací listině'
   print_orientation:
     label: 'Orientace tisku'
     hint: 'Orientace stránky při tisku této tabulky'
-    options:
+    option:
       auto: 'Automaticky'
       portrait: 'Na výšku'
       landscape: 'Na šířku'

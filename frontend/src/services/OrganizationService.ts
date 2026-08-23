@@ -112,6 +112,18 @@ export function useOrganizationService() {
     return response?.data?.data;
   }
 
+  async function moveNewsletterToOrganization(
+    newsletterId: string,
+    organizationId: string,
+  ): Promise<Newsletter> {
+    const response = await api.patch(
+      `newsletters/${newsletterId}/organization/`,
+      { organizationId },
+    );
+
+    return response?.data?.data;
+  }
+
   return {
     fetchOrganizations,
     fetchOrganizationsPaginated,
@@ -124,5 +136,6 @@ export function useOrganizationService() {
     fetchOrganizationCamps,
     fetchOrganizationNewsletters,
     moveCampToOrganization,
+    moveNewsletterToOrganization,
   };
 }

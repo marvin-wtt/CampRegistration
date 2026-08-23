@@ -69,14 +69,55 @@ export type RetentionAnchor = (typeof RETENTION_ANCHORS)[number];
  * and `custom:<id>` covers anything the catalogue does not have. Nothing here
  * is a fixed list the author has to squeeze an exception into.
  */
-export interface PrivacyRetentionException {
+interface PrivacyRetentionExceptionBase {
   scope: PrivacyPurposeRef;
   /** What to call it. Set only on `custom:` scopes. */
   label?: Translatable | null;
-  months: number;
-  anchor: RetentionAnchor;
   /** Why it outlives the baseline, e.g. the statutory duty behind it. */
   reason?: Translatable | null;
+}
+
+/**
+ * An exception that still ends on a date — a longer period, possibly counted
+ * from somewhere else.
+ *
+ * `until` is optional rather than required because exceptions existed before
+ * there was anything to distinguish: a version published back then has no
+ * discriminator, and rewriting stored notices to add one is not an option when
+ * a registration points at the exact bytes it was shown.
+ */
+export interface PrivacyRetentionPeriodException extends PrivacyRetentionExceptionBase {
+  until?: 'period';
+  months: number;
+  anchor: RetentionAnchor;
+}
+
+/**
+ * Data kept for as long as the consent behind it stands — a published photo,
+ * a newsletter subscription — and erased once it is withdrawn.
+ *
+ * There is deliberately no period here. Naming one would be a promise the
+ * controller cannot keep in either direction: it may not delete on schedule
+ * what the person still consents to appearing, and it may not keep to the
+ * schedule once the person withdraws. What bounds this is the withdrawal, so
+ * that is what the notice says.
+ *
+ * Only lawful where the purpose it scopes to actually rests on consent —
+ * otherwise it is indefinite storage with nothing to end it, which is the
+ * storage-limitation breach this looks like. `privacyNoticeCompleteness`
+ * enforces that link.
+ */
+export interface PrivacyRetentionConsentException extends PrivacyRetentionExceptionBase {
+  until: 'consent_withdrawn';
+}
+
+export type PrivacyRetentionException =
+  PrivacyRetentionPeriodException | PrivacyRetentionConsentException;
+
+export function isConsentBoundException(
+  exception: PrivacyRetentionException,
+): exception is PrivacyRetentionConsentException {
+  return exception.until === 'consent_withdrawn';
 }
 
 export interface PrivacyRetention {

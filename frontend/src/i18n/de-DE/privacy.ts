@@ -91,6 +91,14 @@ export default {
     submission: 'nach Absenden der Anmeldung',
   },
 
+  retentionUntil: {
+    period: 'für eine feste Dauer',
+    consent_withdrawn: 'bis die zugrunde liegende Einwilligung widerrufen wird',
+  },
+
+  retentionConsentSentence:
+    'Wird so lange gespeichert, wie du einwilligst, und nach deinem Widerruf gelöscht.',
+
   transferSafeguard: {
     adequacy: 'einen Angemessenheitsbeschluss der Europäischen Kommission',
     scc: 'Standardvertragsklauseln',
@@ -155,6 +163,8 @@ export default {
     retention: 'Es wurde keine Speicherdauer festgelegt',
     retention_exception:
       'Einer Ausnahme fehlt die Frist oder die Angabe, wofür sie gilt',
+    retention_exception_consent_basis:
+      'Daten, die bis zum Widerruf gespeichert werden, gehören zu einem Zweck, der nicht auf einer Einwilligung beruht',
     transfer_countries:
       'Für Übermittlungen außerhalb des EWR fehlt das Zielland',
     transfer_safeguard:

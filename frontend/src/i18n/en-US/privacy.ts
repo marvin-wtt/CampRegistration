@@ -97,6 +97,14 @@ export default {
     submission: 'after you submit the registration',
   },
 
+  retentionUntil: {
+    period: 'for a fixed period',
+    consent_withdrawn: 'until the consent behind it is withdrawn',
+  },
+
+  retentionConsentSentence:
+    'Kept for as long as you consent to it, and erased once you withdraw that consent.',
+
   transferSafeguard: {
     adequacy: 'an adequacy decision of the European Commission',
     scc: 'standard contractual clauses',
@@ -165,6 +173,8 @@ export default {
     retention: 'No retention period has been set',
     retention_exception:
       'An exception has no period, or no name for what it covers',
+    retention_exception_consent_basis:
+      'Data kept until consent is withdrawn is tied to a purpose that does not rest on consent',
     transfer_countries: 'Transfers outside the EEA name no destination country',
     transfer_safeguard: 'Transfers outside the EEA name no safeguard',
     dpo_details: 'The data protection officer has no name or email',

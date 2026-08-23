@@ -9,6 +9,11 @@ export default {
     success: 'Newsletter byl úspěšně aktualizován',
     error: 'Nepodařilo se aktualizovat newsletter',
   },
+  move: {
+    progress: 'Přesouvání newsletteru...',
+    success: 'Newsletter byl úspěšně přesunut',
+    error: 'Nepodařilo se přesunout newsletter',
+  },
   delete: {
     progress: 'Mazání newsletteru...',
     success: 'Newsletter byl úspěšně smazán',

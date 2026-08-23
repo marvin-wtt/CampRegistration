@@ -177,7 +177,7 @@ import RowActions, {
 import { computed, ref } from 'vue';
 import { useQuasar } from 'quasar';
 import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
-import CampOrganizationDialog from '@/components/organization/CampOrganizationDialog.vue';
+import MoveOrganizationDialog from '@/components/organization/MoveOrganizationDialog.vue';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { useRouter } from 'vue-router';
 import { useAPIService } from '@/services/APIService';
@@ -420,8 +420,18 @@ function rowActionsFn(camp: Camp): RowAction[] {
 function onMoveCamp(camp: Camp) {
   quasar
     .dialog({
-      component: CampOrganizationDialog,
-      componentProps: { camp },
+      component: MoveOrganizationDialog,
+      componentProps: {
+        name: to(camp.name),
+        organizationId: camp.organizationId,
+        // Moving does not rewrite `listed`. Visibility is derived from the
+        // owner's moderation status on read, so a published camp drops out of
+        // the directory while the new owner is unverified, and returns once it
+        // is verified — only then is there anything to warn about.
+        unverifiedWarning: camp.listed
+          ? t('dialog.move.hiddenWarning')
+          : undefined,
+      },
     })
     .onOk((organizationId: string) => {
       void withProgressNotification('move', async () => {
@@ -650,6 +660,8 @@ dialog:
       This action is not reversible.
       Are you sure you want ot delete this camp?'
     label: 'Name'
+  move:
+    hiddenWarning: 'This organization is not verified, so the camp will be hidden from the public directory and stop accepting registrations until it is. It stays published and reappears once the organization is verified.'
   publish:
     title: 'Publish camp'
     message: 'Are you sure you want to publish { name }?'
@@ -719,6 +731,8 @@ dialog:
       Diese Aktion kann nicht rückgängig gemacht werden.
       Bist du sicher, dass du dieses Camp löschen möchtest?'
     label: 'Name'
+  move:
+    hiddenWarning: 'Diese Organisation ist nicht verifiziert. Das Camp wird bis dahin nicht mehr öffentlich angezeigt und nimmt keine Anmeldungen an. Es bleibt veröffentlicht und erscheint nach der Verifizierung wieder.'
   publish:
     title: 'Camp veröffentlichen'
     message: 'Bist du sicher, dass du { name } veröffentlichen möchtest?'
@@ -788,6 +802,8 @@ dialog:
       Cette action est irréversible.
       Es-tu sûr de vouloir supprimer ce camp ?'
     label: 'Nom'
+  move:
+    hiddenWarning: "Cette organisation n'est pas vérifiée : le camp sera masqué de l'annuaire public et cessera d'accepter les inscriptions. Il reste publié et réapparaîtra après la vérification."
   publish:
     title: 'Publier le camp'
     message: 'Es-tu sûr de vouloir publier { name } ?'
@@ -856,6 +872,8 @@ dialog:
       Ta akcja jest nieodwracalna.
       Czy na pewno chcesz usunąć ten obóz?'
     label: 'Nazwa'
+  move:
+    hiddenWarning: 'Ta organizacja nie jest zweryfikowana, więc obóz zostanie ukryty w publicznym katalogu i przestanie przyjmować zapisy. Pozostaje opublikowany i wróci po weryfikacji.'
   publish:
     title: 'Opublikuj obóz'
     message: 'Czy na pewno chcesz opublikować { name }?'
@@ -924,6 +942,8 @@ dialog:
       Tato akce je nevratná.
       Opravdu chcete tento tábor smazat?'
     label: 'Název'
+  move:
+    hiddenWarning: 'Tato organizace není ověřená, takže tábor bude skryt z veřejného katalogu a přestane přijímat registrace. Zůstává zveřejněn a vrátí se po ověření.'
   publish:
     title: 'Zveřejnit tábor'
     message: 'Opravdu chcete zveřejnit { name }?'

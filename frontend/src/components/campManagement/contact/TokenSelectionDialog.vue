@@ -4,13 +4,13 @@
     @hide="onDialogHide"
   >
     <q-card class="q-dialog-plugin">
-      <q-card-section class="text-h5 text-center">
-        <template v-if="selectedToken">
-          {{ selectedToken.label }}
-        </template>
-        <template v-else>
+      <q-card-section class="q-pb-none">
+        <div class="text-h6">
           {{ t('title') }}
-        </template>
+        </div>
+        <div class="description text-body2 q-mt-xs">
+          {{ t('description') }}
+        </div>
       </q-card-section>
 
       <q-card-section v-if="selectedToken">
@@ -82,24 +82,33 @@ function onTokenSelect(token: TokenRegistry | Token) {
 }
 </script>
 
-<style scoped></style>
+<style scoped>
+.description {
+  color: var(--md3-on-surface-variant);
+}
+</style>
 
 <i18n lang="yaml" locale="en">
-title: 'Select a token'
+title: 'Insert a token'
+description: 'Tokens are placeholders that are replaced with the actual values when the message is sent.'
 </i18n>
 
 <i18n lang="yaml" locale="de">
-title: 'Wählen Sie ein Token aus'
+title: 'Token einfügen'
+description: 'Token sind Platzhalter, die beim Versand der Nachricht durch die tatsächlichen Werte ersetzt werden.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-title: 'Sélectionner un jeton'
+title: 'Insérer un jeton'
+description: "Les jetons sont des espaces réservés qui sont remplacés par les valeurs réelles lors de l'envoi du message."
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-title: 'Wybierz zmienną'
+title: 'Wstaw zmienną'
+description: 'Zmienne to symbole zastępcze, które podczas wysyłania wiadomości są zastępowane rzeczywistymi wartościami.'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-title: 'Vyberte token'
+title: 'Vložit token'
+description: 'Tokeny jsou zástupné symboly, které se při odeslání zprávy nahradí skutečnými hodnotami.'
 </i18n>

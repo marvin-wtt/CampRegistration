@@ -56,33 +56,53 @@
                 outlined
                 hide-bottom-space
                 :disable="!canEdit"
+                :error="consentScopeInvalid(exception)"
+                :error-message="t('retention.exceptions.consentScopeError')"
                 class="col-12 col-sm-6"
               />
-              <q-input
-                v-model.number="exception.months"
-                type="number"
-                :label="t('field.retentionMonths')"
-                :min="1"
-                :max="600"
-                dense
-                outlined
-                hide-bottom-space
-                :disable="!canEdit"
-                :error="exception.months <= 0"
-                class="col-5 col-sm-2"
-              />
               <q-select
-                v-model="exception.anchor"
-                :options="retentionAnchorOptions"
-                :label="t('field.retentionAnchor')"
+                :model-value="exceptionUntil(exception)"
+                :options="untilOptions"
+                :label="t('retention.exceptions.until')"
                 emit-value
                 map-options
                 dense
                 outlined
                 hide-bottom-space
                 :disable="!canEdit"
-                class="col-7 col-sm-4"
+                class="col-12 col-sm-6"
+                @update:model-value="(v) => setExceptionUntil(index, v)"
               />
+              <!-- Consent-bound data has no period to state: the withdrawal is
+                 what ends it, so offering a number here would only invite one
+                 the notice cannot keep. -->
+              <template v-if="!isConsentBoundException(exception)">
+                <q-input
+                  v-model.number="exception.months"
+                  type="number"
+                  :label="t('field.retentionMonths')"
+                  :min="1"
+                  :max="600"
+                  dense
+                  outlined
+                  hide-bottom-space
+                  :disable="!canEdit"
+                  :error="exception.months <= 0"
+                  class="col-5 col-sm-4"
+                />
+                <q-select
+                  v-model="exception.anchor"
+                  :options="retentionAnchorOptions"
+                  :label="t('field.retentionAnchor')"
+                  emit-value
+                  map-options
+                  dense
+                  outlined
+                  hide-bottom-space
+                  :disable="!canEdit"
+                  class="col-7 col-sm-8"
+                />
+              </template>
             </div>
             <m-btn
               flat
@@ -249,14 +269,18 @@ import { useI18n } from 'vue-i18n';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import {
   RETENTION_ANCHORS,
+  RETENTION_UNTIL,
   TRANSFER_SAFEGUARDS,
   customKey,
+  isConsentBoundException,
   isCustomKey,
   nextCustomKey,
   privacyNoticeCompleteness,
   retentionExceptions,
   type PrivacyNoticeContent,
+  type PrivacyRetentionException,
   type RetentionAnchor,
+  type RetentionUntil,
 } from '@camp-registration/common/privacy';
 import type { Translatable } from '@camp-registration/common/entities';
 import TranslatedInput from '@/components/common/inputs/TranslatedInput.vue';
@@ -355,6 +379,62 @@ function addException() {
   });
 }
 
+const untilOptions = computed(() =>
+  RETENTION_UNTIL.map((key) => ({
+    value: key,
+    label: gt(`privacy.retentionUntil.${key}`),
+  })),
+);
+
+function exceptionUntil(exception: PrivacyRetentionException): RetentionUntil {
+  return isConsentBoundException(exception) ? 'consent_withdrawn' : 'period';
+}
+
+/**
+ * Switching mode replaces the entry rather than editing it: the two shapes are
+ * a union, and a `months` left behind on a consent-bound exception is a number
+ * nothing reads and the next author believes.
+ */
+function setExceptionUntil(index: number, until: RetentionUntil) {
+  const retention = ensureRetention();
+  const current = retention.exceptions[index];
+  if (!current) {
+    return;
+  }
+
+  // Normalised to null rather than carried across as-is: an explicit
+  // undefined is not assignable to an optional property under
+  // exactOptionalPropertyTypes, and both spellings mean the same absence.
+  const scope = current.scope;
+  const label = current.label ?? null;
+  const reason = current.reason ?? null;
+
+  retention.exceptions[index] =
+    until === 'consent_withdrawn'
+      ? { scope, label, reason, until }
+      : { scope, label, reason, months: 120, anchor: retention.anchor };
+}
+
+const consentPurposeKeys = computed(
+  () =>
+    new Set(
+      content.value.purposes
+        .filter((purpose) => purpose.legalBasis === 'consent')
+        .map((purpose) => purpose.key),
+    ),
+);
+
+/**
+ * Mirrors the `retention_exception_consent_basis` gap so the author sees it on
+ * the field that causes it, rather than only as a line in the summary.
+ */
+function consentScopeInvalid(exception: PrivacyRetentionException): boolean {
+  return (
+    isConsentBoundException(exception) &&
+    !consentPurposeKeys.value.has(exception.scope)
+  );
+}
+
 function removeException(index: number) {
   ensureRetention().exceptions.splice(index, 1);
 }
@@ -393,6 +473,8 @@ retention:
     title: 'Anything you keep longer?'
     hint: 'Most camps keep everything for the one period above and can skip this. Add an entry only where the law or a real need says otherwise.'
     scope: 'What it covers'
+    until: 'How long'
+    consentScopeError: 'Pick a purpose whose legal basis is consent, or choose a fixed period.'
     own: 'Something else…'
     label: 'What it covers'
     reason: 'Why (optional)'
@@ -420,6 +502,8 @@ retention:
     title: 'Wird etwas länger gespeichert?'
     hint: 'Die meisten Freizeiten speichern alles für die eine Frist oben und können das hier überspringen. Ergänze nur, wo das Gesetz oder ein echter Bedarf etwas anderes verlangt.'
     scope: 'Wofür es gilt'
+    until: 'Wie lange'
+    consentScopeError: 'Wähle einen Zweck, der auf einer Einwilligung beruht, oder eine feste Dauer.'
     own: 'Etwas anderes…'
     label: 'Wofür es gilt'
     reason: 'Warum (optional)'
@@ -447,6 +531,8 @@ retention:
     title: 'Conservez-vous quelque chose plus longtemps ?'
     hint: "La plupart des séjours conservent tout pendant la durée unique ci-dessus et peuvent passer cette étape. N'ajoutez une entrée que si la loi ou un besoin réel l'impose."
     scope: 'Ce que cela couvre'
+    until: 'Combien de temps'
+    consentScopeError: 'Choisissez une finalité fondée sur le consentement, ou une durée déterminée.'
     own: 'Autre chose…'
     label: 'Ce que cela couvre'
     reason: 'Pourquoi (facultatif)'
@@ -474,6 +560,8 @@ retention:
     title: 'Uchováváte něco déle?'
     hint: 'Většina táborů uchovává vše po jednu dobu uvedenou výše a tohle může přeskočit. Přidej záznam jen tam, kde to vyžaduje zákon nebo skutečná potřeba.'
     scope: 'Čeho se týká'
+    until: 'Jak dlouho'
+    consentScopeError: 'Vyber účel, který stojí na souhlasu, nebo zvol pevně danou dobu.'
     own: 'Něco jiného…'
     label: 'Čeho se týká'
     reason: 'Proč (volitelné)'
@@ -501,6 +589,8 @@ retention:
     title: 'Czy coś przechowujecie dłużej?'
     hint: 'Większość obozów przechowuje wszystko przez jeden okres podany wyżej i może to pominąć. Dodaj wpis tylko tam, gdzie wymaga tego prawo lub realna potrzeba.'
     scope: 'Czego dotyczy'
+    until: 'Jak długo'
+    consentScopeError: 'Wybierz cel oparty na zgodzie albo określony czas.'
     own: 'Coś innego…'
     label: 'Czego dotyczy'
     reason: 'Dlaczego (opcjonalnie)'

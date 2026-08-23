@@ -1,7 +1,7 @@
 <template>
   <div class="privacy-notice">
     <section>
-      <h3>{{ t('section.controller') }}</h3>
+      <h2>{{ t('section.controller') }}</h2>
       <p>
         {{ notice.controller.name }}<br />
         {{ notice.controller.addressStreet }}<br />
@@ -34,12 +34,15 @@
     <!-- The organization wrote its own prose; there is no structure to render. -->
     <section v-else-if="freeTextHtml">
       <!-- eslint-disable-next-line vue/no-v-html -- sanitized above and on write -->
-      <div v-html="freeTextHtml" />
+      <div
+        class="privacy-notice__prose"
+        v-html="freeTextHtml"
+      />
     </section>
 
     <template v-else-if="builderNotice">
       <section v-if="builderNotice.dataCategories.length">
-        <h3>{{ t('section.dataCategories') }}</h3>
+        <h2>{{ t('section.dataCategories') }}</h2>
         <ul>
           <li
             v-for="category in builderNotice.dataCategories"
@@ -62,7 +65,7 @@
       </section>
 
       <section v-if="builderNotice.purposes.length">
-        <h3>{{ t('section.purposes') }}</h3>
+        <h2>{{ t('section.purposes') }}</h2>
         <ul>
           <li
             v-for="purpose in builderNotice.purposes"
@@ -84,7 +87,7 @@
       </section>
 
       <section v-if="builderNotice.recipients.length">
-        <h3>{{ t('section.recipients') }}</h3>
+        <h2>{{ t('section.recipients') }}</h2>
         <ul>
           <li
             v-for="recipient in builderNotice.recipients"
@@ -97,7 +100,7 @@
       </section>
 
       <section v-if="builderNotice.retention">
-        <h3>{{ t('section.retention') }}</h3>
+        <h2>{{ t('section.retention') }}</h2>
         <p>
           {{
             t('retentionSentence', {
@@ -116,17 +119,30 @@
               :key="`${exception.scope}-${index}`"
             >
               {{ exceptionLabel(exception) }} —
-              {{
-                t('retentionSentenceShort', {
-                  months: exception.months,
-                  anchor: gt(`privacy.retentionAnchor.${exception.anchor}`),
-                })
-              }}
+              <!-- Nothing counts down here, so there is no period to state:
+                   what ends it is the withdrawal. -->
+              <template v-if="isConsentBoundException(exception)">
+                {{ gt('privacy.retentionUntil.consent_withdrawn') }}
+              </template>
+              <template v-else>
+                {{
+                  t('retentionSentenceShort', {
+                    months: exception.months,
+                    anchor: gt(`privacy.retentionAnchor.${exception.anchor}`),
+                  })
+                }}
+              </template>
               <template v-if="exception.reason">
                 ({{ to(exception.reason) }})
               </template>
             </li>
           </ul>
+          <!-- Art. 7(3): the withdrawal is what ends the storage, so the notice
+               has to say plainly that withdrawing is what erases it. How to
+               withdraw is in the rights section below. -->
+          <p v-if="hasConsentBoundException">
+            {{ gt('privacy.retentionConsentSentence') }}
+          </p>
         </template>
         <!-- A statutory retention duty overrides the period the controller
              picked, so the period above cannot be stated as the whole answer. -->
@@ -134,7 +150,7 @@
       </section>
 
       <section v-if="builderNotice.thirdCountryTransfers.enabled">
-        <h3>{{ t('section.transfers') }}</h3>
+        <h2>{{ t('section.transfers') }}</h2>
         <p>
           {{
             t('transferSentence', {
@@ -151,7 +167,7 @@
       </section>
 
       <section v-if="builderNotice.dpo">
-        <h3>{{ t('section.dpo') }}</h3>
+        <h2>{{ t('section.dpo') }}</h2>
         <p>
           {{ builderNotice.dpo.name }}<br />
           {{ t('email') }}:
@@ -162,7 +178,7 @@
       </section>
 
       <section>
-        <h3>{{ t('section.automated') }}</h3>
+        <h2>{{ t('section.automated') }}</h2>
         <p>
           {{
             builderNotice.automatedDecisionMaking
@@ -174,32 +190,38 @@
       </section>
 
       <section v-if="additionalHtml">
-        <h3>{{ t('section.additional') }}</h3>
+        <h2>{{ t('section.additional') }}</h2>
         <!-- eslint-disable-next-line vue/no-v-html -- sanitized above and on write -->
-        <div v-html="additionalHtml" />
+        <div
+          class="privacy-notice__prose"
+          v-html="additionalHtml"
+        />
       </section>
     </template>
 
     <!-- Outside the mode branch: a camp's addition applies whether its
          organization used the builder or wrote its own prose. -->
     <section v-if="campAdditionalHtml">
-      <h3>{{ t('section.campAdditional') }}</h3>
+      <h2>{{ t('section.campAdditional') }}</h2>
       <!-- eslint-disable-next-line vue/no-v-html -- sanitized above and on write -->
-      <div v-html="campAdditionalHtml" />
+      <div
+        class="privacy-notice__prose"
+        v-html="campAdditionalHtml"
+      />
     </section>
 
     <!-- Unconditional: it describes how the registration form behaves, which is
          the same for every organization and every camp, so nothing about it is
          the controller's to configure. -->
     <section>
-      <h3>{{ t('section.dataProvision') }}</h3>
+      <h2>{{ t('section.dataProvision') }}</h2>
       <p>{{ t('dataProvision') }}</p>
     </section>
 
     <!-- Fixed by law and identical for every organization, so it is generated
          rather than authored — see common/src/privacy. -->
     <section>
-      <h3>{{ t('section.rights') }}</h3>
+      <h2>{{ t('section.rights') }}</h2>
       <ul>
         <li>{{ t('rights.access') }}</li>
         <li>{{ t('rights.rectification') }}</li>
@@ -217,7 +239,7 @@
     </section>
 
     <section>
-      <h3>{{ t('section.complaint') }}</h3>
+      <h2>{{ t('section.complaint') }}</h2>
       <p>{{ t('complaint') }}</p>
       <p v-if="notice.supervisoryAuthority">
         {{ notice.supervisoryAuthority.name }}<br />
@@ -241,6 +263,7 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import DOMPurify from 'dompurify';
 import {
+  isConsentBoundException,
   retentionExceptions,
   type PublishedPrivacyNotice,
 } from '@camp-registration/common/privacy';
@@ -278,16 +301,27 @@ const builderNotice = computed(() =>
   props.notice.notice?.mode === 'builder' ? props.notice.notice : null,
 );
 
+// Both sit *under* a generated section heading, so the editor's own top level
+// (h2, the level a free-text notice writes its sections at) has to move down a
+// step to stay a subheading of it rather than outranking it.
 const additionalHtml = computed<string | null>(() =>
-  props.notice.notice ? sanitized(props.notice.notice.additional) : null,
+  props.notice.notice
+    ? demoteHeadings(sanitized(props.notice.notice.additional))
+    : null,
 );
 
 const campAdditionalHtml = computed<string | null>(() =>
-  props.notice.notice ? sanitized(props.notice.notice.campAdditional) : null,
+  props.notice.notice
+    ? demoteHeadings(sanitized(props.notice.notice.campAdditional))
+    : null,
 );
 
 const exceptions = computed(() =>
   retentionExceptions(props.notice.notice?.retention),
+);
+
+const hasConsentBoundException = computed<boolean>(() =>
+  exceptions.value.some(isConsentBoundException),
 );
 
 const automatedDetails = computed<string | null>(() =>
@@ -308,6 +342,15 @@ const transferCountries = computed<string>(() =>
     .join(', '),
 );
 
+// h3 first: rewriting h2 first would demote the result a second time.
+function demoteHeadings(html: string | null): string | null {
+  return (
+    html
+      ?.replace(/<(\/?)h3(\s|>)/gi, '<$1h4$2')
+      .replace(/<(\/?)h2(\s|>)/gi, '<$1h3$2') ?? null
+  );
+}
+
 function sanitized(value: unknown): string | null {
   const html = to(value as never);
 
@@ -323,7 +366,7 @@ function sanitized(value: unknown): string | null {
     margin-bottom: 1.5rem;
   }
 
-  h3 {
+  h2 {
     font-size: 1.1rem;
     line-height: 1.4;
     margin: 0 0 0.5rem;
@@ -341,6 +384,47 @@ function sanitized(value: unknown): string | null {
 
   a {
     color: var(--md3-primary);
+  }
+
+  /* Authored HTML, so it is out of reach of the scoped rules above and would
+     otherwise fall back to the browser's own scale — where an h2 written in
+     the editor renders larger than the section heading it sits under. */
+  &__prose {
+    :deep(h2) {
+      font-size: 1.1rem;
+      line-height: 1.4;
+      margin: 0 0 0.5rem;
+      color: var(--md3-on-surface);
+    }
+
+    :deep(h3) {
+      font-size: 1rem;
+      line-height: 1.4;
+      margin: 1rem 0 0.25rem;
+      color: var(--md3-on-surface);
+    }
+
+    :deep(h4) {
+      font-size: 0.9375rem;
+      line-height: 1.4;
+      margin: 0.75rem 0 0.25rem;
+      color: var(--md3-on-surface);
+    }
+
+    :deep(p),
+    :deep(ul),
+    :deep(ol) {
+      margin: 0 0 0.5rem;
+    }
+
+    :deep(ul),
+    :deep(ol) {
+      padding-left: 1.25rem;
+    }
+
+    :deep(a) {
+      color: var(--md3-primary);
+    }
   }
 
   &__basis,

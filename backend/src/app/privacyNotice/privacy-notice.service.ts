@@ -4,6 +4,7 @@ import httpStatus from 'http-status';
 import ApiError from '#utils/ApiError';
 import { sanitizeHtmlContent, sanitizePlainText } from '#utils/sanitize';
 import {
+  addendumGaps,
   composePrivacyNotice,
   emptyPrivacyNoticeContent,
   isEmptyAddendum,
@@ -123,13 +124,20 @@ export class PrivacyNoticeService extends BaseService {
   }
 
   /**
-   * No completeness gate: an addendum is optional by nature, and a camp that
-   * has nothing to add says so by adding nothing. An empty addendum is refused
-   * as a first version — it would say the same as no version at all — but
-   * accepted once a version exists, because withdrawing every addition is the
-   * only way back to the organization's notice on its own. The withdrawal is a
-   * version of its own rather than a deletion: registrations are stamped with
-   * the version they were shown, so no version may disappear.
+   * Saying nothing stays free: an addendum is optional by nature, and a camp
+   * that has nothing to add says so by adding nothing. An empty addendum is
+   * refused as a first version — it would say the same as no version at all —
+   * but accepted once a version exists, because withdrawing every addition is
+   * the only way back to the organization's notice on its own. The withdrawal
+   * is a version of its own rather than a deletion: registrations are stamped
+   * with the version they were shown, so no version may disappear.
+   *
+   * Saying something, however, is checked exactly as the organization's notice
+   * is. The gate runs on the composed document rather than the addendum alone,
+   * because the composed document is what a registrant reads: a camp adding
+   * `health` owes an Art. 9 basis for it no matter what its organization
+   * declared. Only the gaps the addendum itself opens are refused — see
+   * `addendumGaps`.
    */
   async publishCampAddendum(
     campId: string,
@@ -137,22 +145,34 @@ export class PrivacyNoticeService extends BaseService {
     content: PrivacyNoticeAddendum,
   ): Promise<CampPrivacyNotice> {
     const sanitized = this.sanitizeAddendum(content);
-
-    if (
-      isEmptyAddendum(sanitized) &&
-      !(await this.latestVersion('CAMP', campId))
-    ) {
-      throw new ApiError(
-        httpStatus.UNPROCESSABLE_ENTITY,
-        'Privacy notice addendum is empty.',
-      );
-    }
-
-    const campVersion = await this.appendVersion('CAMP', campId, sanitized);
     const organizationVersion = await this.latestVersion(
       'ORGANIZATION',
       organizationId,
     );
+
+    if (isEmptyAddendum(sanitized)) {
+      if (!(await this.latestVersion('CAMP', campId))) {
+        throw new ApiError(
+          httpStatus.UNPROCESSABLE_ENTITY,
+          'Privacy notice addendum is empty.',
+        );
+      }
+    } else {
+      const gaps = addendumGaps(
+        (organizationVersion?.content as PrivacyNoticeContent | undefined) ??
+          null,
+        sanitized,
+      );
+
+      if (gaps.length > 0) {
+        throw new ApiError(
+          httpStatus.UNPROCESSABLE_ENTITY,
+          `Privacy notice addendum is incomplete: ${gaps.join(', ')}`,
+        );
+      }
+    }
+
+    const campVersion = await this.appendVersion('CAMP', campId, sanitized);
 
     return this.toCampNotice(organizationVersion, campVersion);
   }

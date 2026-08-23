@@ -56,7 +56,10 @@ export const useOrganizationsStore = defineStore('organizations', () => {
     return withProgressNotification('create', async () => {
       const organization = await api.createOrganization(createData);
 
-      data.value?.push(organization);
+      // A user with no organization never had a list to fetch, so the new one
+      // has to create it — pushing into `undefined` would drop it and leave
+      // every list of organizations empty until the next full fetch.
+      data.value = [...(data.value ?? []), organization];
       organizationBus.emit('create', organization);
       // The new membership reaches the client only through the profile, and
       // every permission gate reads it from there.

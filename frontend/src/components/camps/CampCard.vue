@@ -342,21 +342,22 @@ function navigateToRegistration() {
   flex-direction: column;
 
   min-width: 0;
-  border-radius: 16px;
+  border-radius: var(--md3-corner-extra-large, 28px);
   overflow: hidden;
 
-  background: var(--md3-surface-container-low);
+  background: var(--md3-surface-container);
   box-shadow: none;
 
   transition:
-    box-shadow 0.2s cubic-bezier(0.2, 0, 0, 1),
-    transform 0.2s cubic-bezier(0.2, 0, 0, 1);
+    border-radius 0.35s var(--md3-easing-emphasized, cubic-bezier(0.2, 0, 0, 1)),
+    background-color 0.35s
+      var(--md3-easing-emphasized, cubic-bezier(0.2, 0, 0, 1)),
+    transform 0.35s var(--md3-easing-emphasized, cubic-bezier(0.2, 0, 0, 1));
 }
 
 .camp-card:hover {
-  box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.3),
-    0 4px 8px 3px rgba(0, 0, 0, 0.15);
+  border-radius: var(--md3-corner-extra-large, 28px) 48px
+    var(--md3-corner-extra-large, 28px) 48px;
 
   transform: translateY(-2px);
 }
@@ -432,16 +433,16 @@ function navigateToRegistration() {
 
 .camp-card__deadline {
   position: absolute;
-  bottom: 8px;
-  left: 8px;
+  top: 10px;
+  right: 10px;
 
   display: inline-flex;
   align-items: center;
   gap: 4px;
 
-  height: 24px;
+  height: 26px;
   padding: 0 10px;
-  border-radius: 12px;
+  border-radius: 13px;
 
   background: var(--md3-warning-container);
   color: var(--md3-on-warning-container);
@@ -462,7 +463,7 @@ function navigateToRegistration() {
 .camp-card__dates {
   color: var(--md3-on-surface-variant);
 
-  font-size: 11px;
+  font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -492,9 +493,10 @@ function navigateToRegistration() {
 
   color: var(--md3-on-surface);
 
-  font-size: 18px;
-  font-weight: 600;
-  line-height: 1.3;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
 }
 
 .camp-card__organizer {
@@ -550,8 +552,9 @@ function navigateToRegistration() {
 .camp-card__price {
   color: var(--md3-on-surface);
 
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
 }
 
@@ -636,6 +639,22 @@ function navigateToRegistration() {
 .camp-card__capacity-row--low .camp-card__capacity-count,
 .camp-card__capacity-row--full .camp-card__capacity-count {
   color: var(--md3-warning);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .camp-card,
+  .camp-card__monogram,
+  .camp-card__capacity-fill {
+    transition: none;
+  }
+
+  .camp-card:hover {
+    transform: none;
+  }
+
+  .camp-card:hover .camp-card__monogram {
+    transform: none;
+  }
 }
 </style>
 

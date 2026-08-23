@@ -14,9 +14,9 @@
         @click="goBack"
       />
 
-      <div class="text-h4 q-mb-sm">
+      <h1 class="text-h4 q-mt-none q-mb-sm">
         {{ t('title') }}
-      </div>
+      </h1>
 
       <p class="text-body2 q-mb-lg privacy-page__intro">
         {{ t('intro') }}

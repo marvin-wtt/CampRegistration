@@ -112,6 +112,16 @@ export class NewsletterService extends BaseService {
     });
   }
 
+  async moveNewsletterToOrganization(id: string, organizationId: string) {
+    return this.prisma.newsletter.update({
+      where: { id },
+      data: {
+        organization: { connect: { id: organizationId } },
+      },
+      include: includeOrganization,
+    });
+  }
+
   async deleteNewsletter(id: string) {
     return this.prisma.newsletter.delete({ where: { id } });
   }

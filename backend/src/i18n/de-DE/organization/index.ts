@@ -9,7 +9,7 @@ export default {
           '{{ organization.name }} wurde zur Verifizierung eingereicht. ' +
           'Bis zur Verifizierung kann sie keine Camps veröffentlichen und keine Newsletter versenden.',
         button: 'Organisationen prüfen',
-        greeting: 'Viele Grüße,',
+        greeting: 'Viele Grüße',
         teamName: '{{ appName }} Team',
       },
       footer: {
@@ -25,7 +25,7 @@ export default {
           '{{ organization.name }} wurde verifiziert. ' +
           'Du kannst jetzt ihre Camps veröffentlichen und Newsletter versenden.',
         button: 'Organisation öffnen',
-        greeting: 'Viele Grüße,',
+        greeting: 'Viele Grüße',
         teamName: '{{ appName }} Team',
       },
       footer: {
@@ -43,7 +43,7 @@ export default {
           'Du kannst die Angaben korrigieren und sie erneut einreichen.',
         reasonLabel: 'Grund',
         button: 'Angaben prüfen',
-        greeting: 'Viele Grüße,',
+        greeting: 'Viele Grüße',
         teamName: '{{ appName }} Team',
       },
       footer: {

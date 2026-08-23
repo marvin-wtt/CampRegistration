@@ -73,6 +73,8 @@ const assertCampModel = async (id: string, data: CampCreateData) => {
     location: data.location,
     form: data.form ?? expect.anything(),
     themes: data.themes ?? expect.anything(),
+    // Written only by the retention reminder job, never on create or update.
+    retentionReminderSentAt: null,
     updatedAt: expect.anything(),
     createdAt: expect.anything(),
   });
@@ -452,13 +454,255 @@ describe('/api/v1/camps', () => {
         expect(body.data).toHaveLength(2);
       });
 
-      it.todo('should filter by age');
+      it('should filter by age', async () => {
+        const match = await CampFactory.create({
+          ...campListed,
+          minAge: 10,
+          maxAge: 14,
+        });
+        const tooOld = await CampFactory.create({
+          ...campListed,
+          minAge: 15,
+          maxAge: 18,
+        });
+        const tooYoung = await CampFactory.create({
+          ...campListed,
+          minAge: 6,
+          maxAge: 9,
+        });
 
-      it.todo('should filter by country');
+        const { body } = await request()
+          .get('/api/v1/camps/')
+          .query({ age: 12 })
+          .send()
+          .expect(200);
 
-      it.todo('should filter by startAt');
+        const ids = body.data.map((camp: { id: string }) => camp.id);
 
-      it.todo('should filter by endAt');
+        expect(ids).toEqual([match.id]);
+        expect(ids).not.toContain(tooOld.id);
+        expect(ids).not.toContain(tooYoung.id);
+      });
+
+      it('should include camps at the edge of the age range', async () => {
+        const atMinimum = await CampFactory.create({
+          ...campListed,
+          minAge: 12,
+          maxAge: 18,
+        });
+        const atMaximum = await CampFactory.create({
+          ...campListed,
+          minAge: 6,
+          maxAge: 12,
+        });
+
+        const { body } = await request()
+          .get('/api/v1/camps/')
+          .query({ age: 12 })
+          .send()
+          .expect(200);
+
+        const ids = body.data.map((camp: { id: string }) => camp.id);
+
+        expect(ids).toEqual(
+          expect.arrayContaining([atMinimum.id, atMaximum.id]),
+        );
+        expect(body.data).toHaveLength(2);
+      });
+
+      it('should filter by country', async () => {
+        const match = await CampFactory.create({
+          ...campListed,
+          countries: ['de'],
+        });
+        const alsoMatch = await CampFactory.create({
+          ...campListed,
+          countries: ['fr', 'de'],
+        });
+        const nonMatch = await CampFactory.create({
+          ...campListed,
+          countries: ['gb'],
+        });
+
+        const { body } = await request()
+          .get('/api/v1/camps/')
+          .query({ country: 'de' })
+          .send()
+          .expect(200);
+
+        const ids = body.data.map((camp: { id: string }) => camp.id);
+
+        expect(body.data).toHaveLength(2);
+        expect(ids).toEqual(expect.arrayContaining([match.id, alsoMatch.id]));
+        expect(ids).not.toContain(nonMatch.id);
+      });
+
+      it('should match any of several comma-separated countries', async () => {
+        const german = await CampFactory.create({
+          ...campListed,
+          countries: ['de'],
+        });
+        const british = await CampFactory.create({
+          ...campListed,
+          countries: ['gb'],
+        });
+        const polish = await CampFactory.create({
+          ...campListed,
+          countries: ['pl'],
+        });
+
+        const { body } = await request()
+          .get('/api/v1/camps/')
+          .query({ country: 'de,gb' })
+          .send()
+          .expect(200);
+
+        const ids = body.data.map((camp: { id: string }) => camp.id);
+
+        expect(body.data).toHaveLength(2);
+        expect(ids).toEqual(expect.arrayContaining([german.id, british.id]));
+        expect(ids).not.toContain(polish.id);
+      });
+
+      it('should keep the status filter when countries are given', async () => {
+        // Both clauses need their own slot in the query: an earlier version
+        // spread the country condition over the status one and silently
+        // dropped it.
+        const openGerman = await CampFactory.create({
+          ...campListed,
+          countries: ['de'],
+          registrationOpensAt: moment().subtract(1, 'week').toDate(),
+          registrationClosesAt: moment().add(1, 'week').toDate(),
+        });
+        const closedGerman = await CampFactory.create({
+          ...campListed,
+          countries: ['de'],
+          registrationOpensAt: moment().subtract(2, 'week').toDate(),
+          registrationClosesAt: moment().subtract(1, 'week').toDate(),
+        });
+
+        const { body } = await request()
+          .get('/api/v1/camps/')
+          .query({ country: 'de,gb', status: 'open' })
+          .send()
+          .expect(200);
+
+        const ids = body.data.map((camp: { id: string }) => camp.id);
+
+        expect(ids).toEqual([openGerman.id]);
+        expect(ids).not.toContain(closedGerman.id);
+      });
+
+      it('should reject an unknown country code', async () => {
+        await request()
+          .get('/api/v1/camps/')
+          .query({ country: 'germany' })
+          .send()
+          .expect(400);
+      });
+
+      it('should filter by startAt', async () => {
+        const match = await CampFactory.create({
+          ...campListed,
+          startAt: moment('2026-07-10').toDate(),
+          endAt: moment('2026-07-20').toDate(),
+        });
+        const tooEarly = await CampFactory.create({
+          ...campListed,
+          startAt: moment('2026-06-01').toDate(),
+          endAt: moment('2026-06-10').toDate(),
+        });
+
+        const { body } = await request()
+          .get('/api/v1/camps/')
+          .query({ startAt: moment('2026-07-01').toISOString() })
+          .send()
+          .expect(200);
+
+        const ids = body.data.map((camp: { id: string }) => camp.id);
+
+        expect(ids).toEqual([match.id]);
+        expect(ids).not.toContain(tooEarly.id);
+      });
+
+      it('should filter by endAt', async () => {
+        const match = await CampFactory.create({
+          ...campListed,
+          startAt: moment('2026-07-10').toDate(),
+          endAt: moment('2026-07-20').toDate(),
+        });
+        const tooLate = await CampFactory.create({
+          ...campListed,
+          startAt: moment('2026-07-10').toDate(),
+          endAt: moment('2026-08-30').toDate(),
+        });
+
+        const { body } = await request()
+          .get('/api/v1/camps/')
+          .query({ endAt: moment('2026-07-31').toISOString() })
+          .send()
+          .expect(200);
+
+        const ids = body.data.map((camp: { id: string }) => camp.id);
+
+        expect(ids).toEqual([match.id]);
+        expect(ids).not.toContain(tooLate.id);
+      });
+
+      it('should only return camps falling entirely inside a date range', async () => {
+        const inside = await CampFactory.create({
+          ...campListed,
+          startAt: moment('2026-07-10').toDate(),
+          endAt: moment('2026-07-20').toDate(),
+        });
+        const overlapping = await CampFactory.create({
+          ...campListed,
+          startAt: moment('2026-06-25').toDate(),
+          endAt: moment('2026-07-15').toDate(),
+        });
+
+        const { body } = await request()
+          .get('/api/v1/camps/')
+          .query({
+            startAt: moment('2026-07-01').toISOString(),
+            endAt: moment('2026-07-31').toISOString(),
+          })
+          .send()
+          .expect(200);
+
+        const ids = body.data.map((camp: { id: string }) => camp.id);
+
+        expect(ids).toEqual([inside.id]);
+        expect(ids).not.toContain(overlapping.id);
+      });
+
+      it('should sort by an allowed column', async () => {
+        const cheap = await CampFactory.create({ ...campListed, price: 10 });
+        const expensive = await CampFactory.create({
+          ...campListed,
+          price: 500,
+        });
+
+        const { body } = await request()
+          .get('/api/v1/camps/')
+          .query({ sortBy: 'price', sortType: 'desc' })
+          .send()
+          .expect(200);
+
+        const ids = body.data.map((camp: { id: string }) => camp.id);
+
+        expect(ids).toEqual([expensive.id, cheap.id]);
+      });
+
+      it('should reject a sortBy column that is not offered', async () => {
+        // sortBy reaches the Prisma orderBy directly on a route anonymous
+        // users can call, so it has to be an allow-list.
+        await request()
+          .get('/api/v1/camps/')
+          .query({ sortBy: 'organizationId' })
+          .send()
+          .expect(400);
+      });
     });
   });
 

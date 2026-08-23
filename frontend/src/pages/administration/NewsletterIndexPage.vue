@@ -56,6 +56,7 @@ import RowActions, {
   type RowAction,
 } from '@/components/administration/RowActions.vue';
 import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
+import MoveOrganizationDialog from '@/components/organization/MoveOrganizationDialog.vue';
 import { useAPIService } from '@/services/APIService';
 import { useServerTable } from '@/composables/serverTable';
 import { useRouter } from 'vue-router';
@@ -142,11 +143,17 @@ function rowActionsFn(newsletter: Newsletter): RowAction[] {
       handler: () => showNewsletterManagement(newsletter),
     },
     {
+      key: 'move',
+      label: t('action.move'),
+      icon: 'drive_file_move',
+      separatorBefore: true,
+      handler: () => showMoveDialog(newsletter),
+    },
+    {
       key: 'delete',
       label: t('action.delete'),
       icon: 'delete',
       color: 'negative',
-      separatorBefore: true,
       handler: () => showDeleteDialog(newsletter),
     },
   ];
@@ -161,6 +168,27 @@ function showNewsletterManagement(newsletter: Newsletter) {
   });
 
   window.open(routeData.href, '_blank');
+}
+
+/**
+ * Reassigning ownership is administrator-only: it hands the target
+ * organization's admins newsletter permissions, so it is not self-serve.
+ */
+function showMoveDialog(newsletter: Newsletter) {
+  quasar
+    .dialog({
+      component: MoveOrganizationDialog,
+      componentProps: {
+        name: newsletter.name,
+        organizationId: newsletter.organizationId,
+        unverifiedWarning: t('dialog.move.unverifiedWarning'),
+      },
+    })
+    .onOk((organizationId: string) => {
+      void withProgressNotification('move', () =>
+        api.moveNewsletterToOrganization(newsletter.id, organizationId),
+      ).then(() => reload());
+    });
 }
 
 function showDeleteDialog(newsletter: Newsletter) {
@@ -188,6 +216,7 @@ function showDeleteDialog(newsletter: Newsletter) {
 title: 'Newsletters'
 action:
   manage: 'Manage'
+  move: 'Move to organization'
   delete: 'Delete'
 column:
   name: 'Name'
@@ -196,6 +225,8 @@ column:
   createdAt: 'Created'
   action: 'Actions'
 dialog:
+  move:
+    unverifiedWarning: 'This organization is not verified, so the newsletter cannot send any messages until it is. Subscribers and drafts are kept.'
   delete:
     title: 'Delete Newsletter'
     message: 'Are you sure you want to delete this newsletter? All subscribers will be removed.'
@@ -206,6 +237,7 @@ dialog:
 title: 'Newsletter'
 action:
   manage: 'Verwalten'
+  move: 'In Organisation verschieben'
   delete: 'Löschen'
 column:
   name: 'Name'
@@ -214,6 +246,8 @@ column:
   createdAt: 'Erstellt'
   action: 'Aktionen'
 dialog:
+  move:
+    unverifiedWarning: 'Diese Organisation ist nicht verifiziert. Der Newsletter kann bis dahin keine Nachrichten versenden. Abonnenten und Entwürfe bleiben erhalten.'
   delete:
     title: 'Newsletter löschen'
     message: 'Möchten Sie diesen Newsletter wirklich löschen? Alle Abonnenten werden entfernt.'
@@ -224,6 +258,7 @@ dialog:
 title: 'Newsletters'
 action:
   manage: 'Gérer'
+  move: 'Déplacer vers une organisation'
   delete: 'Supprimer'
 column:
   name: 'Nom'
@@ -232,6 +267,8 @@ column:
   createdAt: 'Créé le'
   action: 'Actions'
 dialog:
+  move:
+    unverifiedWarning: "Cette organisation n'est pas vérifiée : la newsletter ne pourra envoyer aucun message jusqu'à sa vérification. Les abonnés et les brouillons sont conservés."
   delete:
     title: 'Supprimer la newsletter'
     message: 'Voulez-vous vraiment supprimer cette newsletter ? Tous les abonnés seront supprimés.'
@@ -242,6 +279,7 @@ dialog:
 title: 'Newslettery'
 action:
   manage: 'Zarządzaj'
+  move: 'Przenieś do organizacji'
   delete: 'Usuń'
 column:
   name: 'Nazwa'
@@ -250,6 +288,8 @@ column:
   createdAt: 'Utworzono'
   action: 'Akcje'
 dialog:
+  move:
+    unverifiedWarning: 'Ta organizacja nie jest zweryfikowana, więc newsletter nie może wysyłać wiadomości do czasu weryfikacji. Subskrybenci i wersje robocze zostają zachowane.'
   delete:
     title: 'Usuń newsletter'
     message: 'Czy na pewno chcesz usunąć ten newsletter? Wszyscy subskrybenci zostaną usunięci.'
@@ -260,6 +300,7 @@ dialog:
 title: 'Newslettery'
 action:
   manage: 'Spravovat'
+  move: 'Přesunout do organizace'
   delete: 'Smazat'
 column:
   name: 'Název'
@@ -268,6 +309,8 @@ column:
   createdAt: 'Vytvořeno'
   action: 'Akce'
 dialog:
+  move:
+    unverifiedWarning: 'Tato organizace není ověřená, takže newsletter nemůže odesílat žádné zprávy, dokud ověřena nebude. Odběratelé a koncepty zůstanou zachovány.'
   delete:
     title: 'Smazat newsletter'
     message: 'Opravdu chcete smazat tento newsletter? Všichni odběratelé budou odstraněni.'

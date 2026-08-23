@@ -18,7 +18,12 @@ type FileCreateData = OptionalByKeys<Prisma.FileCreateManyCampInput, 'id'>[];
 
 // The camp's own fields, as plain values. Relations, generated columns and the
 // query shape are the service's business — a caller never writes Prisma input.
-export type CampCreateData = Omit<Camp, 'id' | 'createdAt' | 'updatedAt'>;
+// `retentionReminderSentAt` sits with the timestamps rather than the payload:
+// it is written once by the retention job and never by an author.
+export type CampCreateData = Omit<
+  Camp,
+  'id' | 'createdAt' | 'updatedAt' | 'retentionReminderSentAt'
+>;
 // Ownership moves through `moveCampToOrganization`, never a field update.
 export type CampUpdateData = Partial<Omit<CampCreateData, 'organizationId'>>;
 
@@ -37,7 +42,7 @@ interface CampQueryArgs {
   age?: number | undefined;
   startAt?: Date | string | undefined;
   endAt?: Date | string | undefined;
-  country?: string | undefined;
+  country?: string | string[] | undefined;
   status?: CampRegistrationStatusFilter | undefined;
   managerUserId?: string | undefined;
   organizationId?: string | undefined;
@@ -177,7 +182,6 @@ export class CampService extends BaseService {
       maxAge: { gte: filter.age },
       startAt: { gte: filter.startAt },
       endAt: { lte: filter.endAt },
-      countries: { array_contains: filter.country },
       ...(filter.managerUserId
         ? {
             campManager: {
@@ -191,12 +195,44 @@ export class CampService extends BaseService {
       ...(filter.status ? this.campStatusWhere(filter.status, new Date()) : {}),
     };
 
+    // Nested under AND rather than spread: `campStatusWhere` already claims the
+    // top-level `OR`/`AND` keys for some statuses, and spreading would drop it.
+    const countries = this.campCountriesWhere(filter.country);
+    if (countries) {
+      const existing = where.AND;
+      where.AND = [
+        ...(Array.isArray(existing) ? existing : existing ? [existing] : []),
+        countries,
+      ];
+    }
+
     const name = filter.name?.trim();
     if (name && name.length >= MIN_NAME_FILTER_LENGTH) {
       where.id = { in: await this.campIdsMatchingName(name) };
     }
 
     return where;
+  }
+
+  /**
+   * `countries` is a JSON array column, so each code needs its own
+   * `array_contains`; several are OR-ed, matching a camp that covers any of them.
+   * Returns `null` when nothing was asked for, so the caller can skip the clause.
+   */
+  private campCountriesWhere(
+    country?: string | string[],
+  ): Prisma.CampWhereInput | null {
+    const codes = (Array.isArray(country) ? country : [country]).filter(
+      (code): code is string => code !== undefined,
+    );
+
+    if (codes.length === 0) {
+      return null;
+    }
+
+    return {
+      OR: codes.map((code) => ({ countries: { array_contains: code } })),
+    };
   }
 
   async queryCamps(
