@@ -42,6 +42,7 @@
             v-model="message.body"
             :label="t('field.body.label')"
             :placeholder="t('field.body.placeholder')"
+            :event
             :rules="[
               (val?: string) => !!val || t('field.body.rule.required'),
               (val: string) =>
@@ -110,9 +111,10 @@ const { t } = useI18n();
 
 defineEmits([...useDialogPluginComponent.emits]);
 
-const { name, subject, body, form, country, attachments, saveFn } =
+const { name, event, subject, body, form, country, attachments, saveFn } =
   defineProps<{
     name: string;
+    event: string;
     subject: string;
     body: string;
     attachments: ServiceFile[] | null;
