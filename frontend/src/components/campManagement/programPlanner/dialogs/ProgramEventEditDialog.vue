@@ -36,6 +36,7 @@
             v-model="data.location"
             :label="t('field.location.label')"
             :locales="props.locales ?? []"
+            hide-bottom-space
             default-untranslated
             clearable
             outlined
@@ -50,6 +51,7 @@
             v-model="data.details"
             :label="t('field.details.label')"
             :locales="props.locales ?? []"
+            hide-bottom-space
             default-untranslated
             autogrow
             clearable
