@@ -3,13 +3,101 @@ import type { Question } from 'survey-core';
 import { setVariables } from '@camp-registration/common/form';
 import type { Camp } from '#generated/prisma/client.js';
 
+/** One field of a form, flattened out of the survey's structure. */
+export interface FormAnswer {
+  /** Dotted path of the field within the form data. */
+  path: string;
+  /** Breadcrumb title in the survey's locale, e.g. `Food > Diet`. */
+  label: string;
+  /** The stored answer, for comparison. */
+  value: unknown;
+  /** The answer as it should be shown to a reader. */
+  displayValue: unknown;
+  /** The answer is a stored file reference, never something to print. */
+  isFile: boolean;
+}
+
+/**
+ * The subset of SurveyJS' plain-data entry this module reads. Declared here
+ * because `survey-core` does not re-export the interface from its entry point.
+ */
+interface PlainDataEntry {
+  name: string | number;
+  title: string;
+  value: unknown;
+  displayValue: unknown;
+  questionType?: string;
+  data?: PlainDataEntry[];
+}
+
+/**
+ * Question types whose plain-data children are distinct sub-questions rather
+ * than one entry per selected choice. Only these are descended into: a checkbox
+ * reads better as a single "Diet: Vegan, Halal" answer than as one per choice.
+ */
+const CONTAINER_TYPES = new Set([
+  'paneldynamic',
+  'matrixdynamic',
+  'matrixdropdown',
+  'matrix',
+  'multipletext',
+]);
+
+const FILE_TYPE = 'file';
+
+const PATH_SEPARATOR = '.';
+const LABEL_SEPARATOR = ' > ';
+
+function flattenAnswers(
+  entries: PlainDataEntry[],
+  trail: { path: string; label: string }[],
+): FormAnswer[] {
+  return entries.flatMap((entry) => {
+    const name = String(entry.name);
+    // The rows and panels a container expands into are titled generically
+    // ("Panel"), so they are numbered instead — "Contacts > #2 > Phone" says
+    // where the answer sits, "Contacts > Panel > Phone" does not.
+    const title =
+      typeof entry.name === 'number'
+        ? `#${String(entry.name + 1)}`
+        : entry.title || name;
+
+    const nested = [...trail, { path: name, label: title }];
+
+    const children = entry.data;
+    const questionType = entry.questionType;
+
+    // A container's own children are distinct sub-questions, and so are the
+    // entries of the structural row/panel nodes it expands into, which carry no
+    // question type of their own. Everything else — a checkbox listing one child
+    // per selected choice, a file listing one per upload — stays a single answer.
+    if (
+      children?.length &&
+      (questionType === undefined || CONTAINER_TYPES.has(questionType))
+    ) {
+      return flattenAnswers(children, nested);
+    }
+
+    return [
+      {
+        path: nested.map((part) => part.path).join(PATH_SEPARATOR),
+        label: nested.map((part) => part.label).join(LABEL_SEPARATOR),
+        value: entry.value,
+        displayValue: entry.displayValue,
+        isFile: questionType === FILE_TYPE,
+      },
+    ];
+  });
+}
+
 export const formUtils = (
   camp: Camp & { freePlaces: number | Record<string, number> },
   data?: unknown,
+  options?: { locale?: string },
 ) => {
   const survey = new SurveyModel(camp.form);
 
-  survey.locale = 'en-US';
+  survey.locale = options?.locale ?? 'en-US';
   setVariables(survey, camp);
   survey.data = typeof data !== 'object' ? {} : data;
 
@@ -129,6 +217,18 @@ export const formUtils = (
       }, {});
   };
 
+  // Every answered field, flattened out of the survey's nesting and labelled in
+  // the survey's locale. `getPlainData` is what resolves question titles and
+  // choice labels, so callers get readable output without a lookup of their own.
+  const answers = (): FormAnswer[] => {
+    const plain = survey.getPlainData({
+      includeEmpty: true,
+      includeQuestionTypes: true,
+    });
+
+    return flattenAnswers(plain, []);
+  };
+
   return {
     data: getData,
     updateData,
@@ -137,6 +237,7 @@ export const formUtils = (
     getDataErrorFields,
     unknownDataFields,
     extractCampData,
+    answers,
   };
 };
 

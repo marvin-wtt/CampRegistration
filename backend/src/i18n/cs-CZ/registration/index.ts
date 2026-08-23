@@ -3,6 +3,10 @@ export default {
     reason:
       '$t(email:footer.cause) protože jste se zaregistrovali na tento tábor.',
     privacyLink: 'Informace o ochraně osobních údajů pro tento tábor',
+    changes: {
+      cleared: 'odstraněno',
+      file: 'soubor aktualizován',
+    },
     managerNotification: {
       subject: 'Nová registrace | {{ camp.name }}',
       preview: 'Nová registrace na tábor: {{ camp.name }}',

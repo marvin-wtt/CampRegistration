@@ -2,6 +2,10 @@ export default {
   email: {
     reason: '$t(email:footer.cause) you registered for this camp.',
     privacyLink: 'Privacy information for this camp',
+    changes: {
+      cleared: 'removed',
+      file: 'file updated',
+    },
     managerNotification: {
       subject: 'New Registration | {{ camp.name }}',
       preview: 'New registration for the camp: {{ camp.name }}',
