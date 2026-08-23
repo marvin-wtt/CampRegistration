@@ -146,6 +146,7 @@ class CampSeeder extends BaseSeeder {
             name: 'first_name',
             type: 'text',
             required: true,
+            campDataType: 'first_name',
           },
           {
             name: 'files',
@@ -324,11 +325,13 @@ class CampSeeder extends BaseSeeder {
             name: 'first_name',
             type: 'text',
             required: true,
+            campDataType: 'first_name',
           },
           {
             name: 'last_name',
             type: 'text',
             required: true,
+            campDataType: 'last_name',
           },
         ],
       },

@@ -1,6 +1,7 @@
 import path from 'node:path';
 import fse from 'fs-extra';
-import type { Camp } from '#generated/prisma/client.js';
+import { faker } from '@faker-js/faker/locale/en';
+import type { Camp, Prisma } from '#generated/prisma/client.js';
 import { appPath } from '#utils/paths';
 import { FileFactory } from '../factories';
 import { campLocales } from './locales';
@@ -176,22 +177,60 @@ export class CampFileSeeder {
     key: string,
     data: { field?: string; locale?: string; accessLevel: string },
   ): Promise<void> {
-    // Deterministic storage names, unlike the ULIDs the upload path generates:
-    // reseeding then overwrites its own PDFs instead of leaving the previous
-    // run's copies behind in the storage directory.
-    const name = `seed_${this.camp.id}_${key}.pdf`;
-    const content = createPdf(document.lines);
-
-    await fse.outputFile(path.join(UPLOAD_DIR, name), content);
-
-    await FileFactory.create({
+    await writeDocument(document, `seed_${this.camp.id}_${key}.pdf`, {
       camp: { connect: { id: this.camp.id } },
-      name,
-      originalName: document.name,
-      type: 'application/pdf',
-      size: content.length,
-      storageLocation: 'disk',
       ...data,
     });
   }
+}
+
+/**
+ * A document a registrant uploaded through a file question of the form. It is
+ * left unattached — a File row may only ever have one owner, so the caller
+ * connects it to the registration it belongs to.
+ */
+export async function seedRegistrationUpload(
+  camp: Camp,
+  index: number,
+  field: string,
+) {
+  return writeDocument(
+    {
+      name: `${field}.pdf`,
+      lines: [
+        'Uploaded document',
+        '',
+        'Attached to the registration through the form.',
+      ],
+    },
+    `seed_${camp.id}_upload_${String(index)}_${field}.pdf`,
+    {
+      // Form uploads are anonymous until the registration claims them, and are
+      // filed under the session that sent them.
+      field: faker.string.uuid(),
+      accessLevel: 'private',
+    },
+  );
+}
+
+async function writeDocument(
+  document: SeedDocument,
+  // Deterministic storage names, unlike the ULIDs the upload path generates:
+  // reseeding then overwrites its own PDFs instead of leaving the previous
+  // run's copies behind in the storage directory.
+  name: string,
+  data: Partial<Prisma.FileCreateInput>,
+) {
+  const content = createPdf(document.lines);
+
+  await fse.outputFile(path.join(UPLOAD_DIR, name), content);
+
+  return FileFactory.create({
+    name,
+    originalName: document.name,
+    type: 'application/pdf',
+    size: content.length,
+    storageLocation: 'disk',
+    ...data,
+  });
 }
