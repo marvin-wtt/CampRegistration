@@ -160,7 +160,7 @@ export class PrivacyRetentionService extends BaseService {
     }
 
     const anchoredAt =
-      retention.anchor === 'camp_end'
+      retention.anchor === 'event_end'
         ? eventEndAt
         : (stamp._max.createdAt ?? eventEndAt);
 

@@ -190,18 +190,18 @@ export const formUtils = (
       includeEmpty: true,
       includeQuestionTypes: true,
       includeValues: true,
-      calculations: [{ propertyName: 'campDataType' }],
+      calculations: [{ propertyName: 'eventDataType' }],
     });
 
     return data
-      .filter((value) => value.campDataType)
+      .filter((value) => value.eventDataType)
       .map((value) => {
         // Undefined is not accepted by prisma and must be replaced with null
         value.value ??= null;
         return value;
       })
       .reduce<Record<string, unknown[]>>((tagData, value) => {
-        const tag: unknown = value.campDataType;
+        const tag: unknown = value.eventDataType;
 
         if (typeof tag !== 'string') {
           return tagData;

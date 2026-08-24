@@ -1,7 +1,7 @@
 export default {
   locale: 'en',
-  title: '{camp.name}',
-  description: '{camp.startAtDate} - {camp.endAtDate}',
+  title: '{event.name}',
+  description: '{event.startAtDate} - {event.endAtDate}',
   logoHeight: '80px',
   logoPosition: 'right',
   pages: [
@@ -27,12 +27,12 @@ export default {
             cs: 'Datum',
           },
           description: {
-            en: '{camp.startAtDate} until {camp.endAtDate}',
-            de: '{camp.startAtDate} bis {camp.endAtDate}',
-            fr: '{camp.startAtDate} au {camp.endAtDate}',
-            pl: '{camp.startAtDate} do {camp.endAtDate}',
-            cs: '{camp.startAtDate} až {camp.endAtDate}',
-            default: '{camp.startAtDate} until {camp.endAtDate}',
+            en: '{event.startAtDate} until {event.endAtDate}',
+            de: '{event.startAtDate} bis {event.endAtDate}',
+            fr: '{event.startAtDate} au {event.endAtDate}',
+            pl: '{event.startAtDate} do {event.endAtDate}',
+            cs: '{event.startAtDate} až {event.endAtDate}',
+            default: '{event.startAtDate} until {event.endAtDate}',
           },
         },
         {
@@ -46,7 +46,7 @@ export default {
             cs: 'Místo',
             default: 'Location',
           },
-          description: '{camp.location}',
+          description: '{event.location}',
         },
         {
           type: 'expression',
@@ -59,7 +59,7 @@ export default {
             cs: 'Cena',
             default: 'Price',
           },
-          description: '{camp.price} €',
+          description: '{event.price} €',
           currency: 'EUR',
         },
         {
@@ -75,7 +75,7 @@ export default {
           },
           defaultValue: 'participant',
           isRequired: true,
-          campDataType: 'role',
+          eventDataType: 'role',
         },
       ],
     },
@@ -102,7 +102,7 @@ export default {
             default: 'First Name',
           },
           isRequired: true,
-          campDataType: 'first_name',
+          eventDataType: 'first_name',
           autocomplete: 'given-name',
         },
         {
@@ -118,7 +118,7 @@ export default {
             default: 'Last Name',
           },
           isRequired: true,
-          campDataType: 'last_name',
+          eventDataType: 'last_name',
           autocomplete: 'family-name',
         },
         {
@@ -156,7 +156,7 @@ export default {
               },
             },
           ],
-          campDataType: 'gender',
+          eventDataType: 'gender',
           autocomplete: 'sex',
         },
         {
@@ -170,7 +170,7 @@ export default {
             cs: 'Datum narození',
             default: 'Date of Birth',
           },
-          campDataType: 'date_of_birth',
+          eventDataType: 'date_of_birth',
           inputType: 'date',
           autocomplete: 'bday',
           placeholder: {
@@ -185,8 +185,8 @@ export default {
         {
           type: 'country',
           name: 'country',
-          visibleIf: 'count({camp.countries}) > 1',
-          requiredIf: 'count({camp.countries}) > 1',
+          visibleIf: 'count({event.countries}) > 1',
+          requiredIf: 'count({event.countries}) > 1',
           title: {
             en: 'Country',
             de: 'Land',
@@ -195,7 +195,7 @@ export default {
             cs: 'Země',
             default: 'Country',
           },
-          campDataType: 'country',
+          eventDataType: 'country',
         },
       ],
     },
@@ -222,7 +222,7 @@ export default {
             default: 'E-Mail',
           },
           isRequired: true,
-          campDataType: 'email',
+          eventDataType: 'email',
           inputType: 'email',
           autocomplete: 'email',
         },
@@ -351,7 +351,7 @@ export default {
   calculatedValues: [
     {
       name: 'waitingList',
-      expression: 'isWaitingList({camp.freePlaces}, {country})',
+      expression: 'isWaitingList({event.freePlaces}, {country})',
     },
   ],
   showProgressBar: true,

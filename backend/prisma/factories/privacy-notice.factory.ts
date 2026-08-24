@@ -16,8 +16,8 @@ export const completePrivacyNoticeContent = (
   ...emptyPrivacyNoticeContent(),
   purposes: [{ key: 'registration_administration', legalBasis: 'contract' }],
   dataCategories: [{ key: 'identity' }, { key: 'contact' }],
-  recipients: [{ key: 'camp_staff' }, { key: 'platform_operator' }],
-  retention: { months: 24, anchor: 'camp_end', exceptions: [] },
+  recipients: [{ key: 'event_staff' }, { key: 'platform_operator' }],
+  retention: { months: 24, anchor: 'event_end', exceptions: [] },
   ...data,
 });
 

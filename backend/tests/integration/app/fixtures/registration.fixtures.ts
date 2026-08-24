@@ -118,8 +118,8 @@ export const eventWithEventVariable = {
       name: 'age',
       type: 'text',
       inputType: 'number',
-      minValueExpression: '{camp.minAge}',
-      maxValueExpression: '{camp.maxAge}',
+      minValueExpression: '{event.minAge}',
+      maxValueExpression: '{event.maxAge}',
       isRequired: true,
     },
   ]),
@@ -166,7 +166,7 @@ export const eventWithMaxParticipantsInternational = {
     {
       name: 'country',
       type: 'text',
-      campDataType: 'country',
+      eventDataType: 'country',
       isRequired: true,
     },
   ]),
@@ -187,7 +187,7 @@ export const eventWithAddress = {
     {
       name: 'address',
       type: 'text',
-      campDataType: 'address',
+      eventDataType: 'address',
       isRequired: true,
     },
   ]),
@@ -204,7 +204,7 @@ export const eventWithMaxParticipantsRolesNational = {
     {
       name: 'role',
       type: 'text',
-      campDataType: 'role',
+      eventDataType: 'role',
       isRequired: true,
     },
   ]),
@@ -225,13 +225,13 @@ export const eventWithMaxParticipantsRolesInternational = {
     {
       name: 'role',
       type: 'text',
-      campDataType: 'role',
+      eventDataType: 'role',
       isRequired: true,
     },
     {
       name: 'country',
       type: 'text',
-      campDataType: 'country',
+      eventDataType: 'country',
       isRequired: true,
     },
   ]),
@@ -242,7 +242,7 @@ export const eventWithAddressEventDataTypes = {
     {
       name: 'address',
       type: 'text',
-      campDataType: 'address',
+      eventDataType: 'address',
     },
   ]),
 };
@@ -252,60 +252,60 @@ export const eventWithAllEventDataTypes = {
     {
       name: 'firstName',
       type: 'text',
-      campDataType: 'first_name',
+      eventDataType: 'first_name',
     },
     {
       name: 'lastName',
       type: 'text',
-      campDataType: 'last_name',
+      eventDataType: 'last_name',
     },
     {
       name: 'dateOfBirth',
       type: 'text',
       inputType: 'date',
-      campDataType: 'date_of_birth',
+      eventDataType: 'date_of_birth',
     },
     {
       name: 'email',
       type: 'text',
       inputType: 'email',
-      campDataType: 'email',
+      eventDataType: 'email',
     },
     {
       name: 'emailSecondary',
       type: 'text',
       inputType: 'email',
-      campDataType: 'email',
+      eventDataType: 'email',
     },
     {
       name: 'role',
       type: 'text',
-      campDataType: 'role',
+      eventDataType: 'role',
     },
     {
       name: 'gender',
       type: 'text',
-      campDataType: 'gender',
+      eventDataType: 'gender',
     },
     {
       name: 'street',
       type: 'text',
-      campDataType: 'street',
+      eventDataType: 'street',
     },
     {
       name: 'city',
       type: 'text',
-      campDataType: 'city',
+      eventDataType: 'city',
     },
     {
       name: 'zipCode',
       type: 'text',
-      campDataType: 'zip_code',
+      eventDataType: 'zip_code',
     },
     {
       name: 'country',
       type: 'text',
-      campDataType: 'country',
+      eventDataType: 'country',
     },
   ]),
 };
@@ -321,7 +321,7 @@ export const eventWithoutCountryData = {
     {
       name: 'country',
       type: 'text',
-      campDataType: 'country',
+      eventDataType: 'country',
       isRequired: false,
     },
   ]),
@@ -334,17 +334,17 @@ export const eventWithEmail = {
     {
       name: 'email',
       type: 'text',
-      campDataType: 'email',
+      eventDataType: 'email',
     },
     {
       name: 'first_name',
       type: 'text',
-      campDataType: 'first_name',
+      eventDataType: 'first_name',
     },
     {
       name: 'last_name',
       type: 'text',
-      campDataType: 'last_name',
+      eventDataType: 'last_name',
     },
   ]),
 };
@@ -356,22 +356,22 @@ export const eventWithEmailAndCountry = {
     {
       name: 'email',
       type: 'text',
-      campDataType: 'email',
+      eventDataType: 'email',
     },
     {
       name: 'first_name',
       type: 'text',
-      campDataType: 'first_name',
+      eventDataType: 'first_name',
     },
     {
       name: 'last_name',
       type: 'text',
-      campDataType: 'last_name',
+      eventDataType: 'last_name',
     },
     {
       name: 'country',
       type: 'text',
-      campDataType: 'country',
+      eventDataType: 'country',
     },
   ]),
 };
@@ -382,17 +382,17 @@ export const eventWithMultipleEmails = {
     {
       name: 'email',
       type: 'text',
-      campDataType: 'email',
+      eventDataType: 'email',
     },
     {
       name: 'emailGuardian',
       type: 'text',
-      campDataType: 'email',
+      eventDataType: 'email',
     },
     {
       name: 'full_name',
       type: 'text',
-      campDataType: 'full_name',
+      eventDataType: 'full_name',
     },
   ]),
 };
@@ -408,7 +408,7 @@ export const eventWithContactEmailInternational = {
     {
       name: 'country',
       type: 'text',
-      campDataType: 'country',
+      eventDataType: 'country',
     },
   ]),
 };
@@ -421,22 +421,22 @@ export const eventWithEmailAndMaxParticipants = {
     {
       name: 'email',
       type: 'text',
-      campDataType: 'email',
+      eventDataType: 'email',
     },
     {
       name: 'first_name',
       type: 'text',
-      campDataType: 'first_name',
+      eventDataType: 'first_name',
     },
     {
       name: 'last_name',
       type: 'text',
-      campDataType: 'last_name',
+      eventDataType: 'last_name',
     },
     {
       name: 'country',
       type: 'text',
-      campDataType: 'country',
+      eventDataType: 'country',
     },
   ]),
 };

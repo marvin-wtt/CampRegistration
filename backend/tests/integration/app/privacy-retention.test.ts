@@ -30,7 +30,7 @@ function eventEndForDeadlineIn(days: number): Date {
 }
 
 const notice: PrivacyNoticeContent = completePrivacyNoticeContent({
-  retention: { months: RETENTION_MONTHS, anchor: 'camp_end', exceptions: [] },
+  retention: { months: RETENTION_MONTHS, anchor: 'event_end', exceptions: [] },
 });
 
 /**
@@ -175,7 +175,7 @@ describe('retention reminders', () => {
           ],
           retention: {
             months: RETENTION_MONTHS,
-            anchor: 'camp_end',
+            anchor: 'event_end',
             exceptions: [
               { scope: 'photo_publication', until: 'consent_withdrawn' },
             ],

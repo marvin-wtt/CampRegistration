@@ -215,7 +215,7 @@ export function emptyPrivacyNoticeContent(): PrivacyNoticeContent {
     // A real value, not just a placeholder in the editor's getter: the field
     // showed 24 while the notice stored nothing, so the author had to retype
     // the number they could already see to clear the completeness gap.
-    retention: { months: 24, anchor: 'camp_end', exceptions: [] },
+    retention: { months: 24, anchor: 'event_end', exceptions: [] },
     thirdCountryTransfers: { enabled: false, countries: [] },
     dpo: null,
     automatedDecisionMaking: false,

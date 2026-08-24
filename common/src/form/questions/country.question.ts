@@ -23,7 +23,7 @@ const country: ICustomQuestionTypeConfiguration = {
           pl: 'Niemcy',
           cs: 'Německo',
         },
-        visibleIf: "{camp.countries} contains 'de'",
+        visibleIf: "{event.countries} contains 'de'",
       },
       {
         value: 'fr',
@@ -34,7 +34,7 @@ const country: ICustomQuestionTypeConfiguration = {
           pl: 'Francja',
           cs: 'Francie',
         },
-        visibleIf: "{camp.countries} contains 'fr'",
+        visibleIf: "{event.countries} contains 'fr'",
       },
       {
         value: 'gb',
@@ -45,7 +45,7 @@ const country: ICustomQuestionTypeConfiguration = {
           pl: 'Wielka Brytania',
           cs: 'Velká Británie',
         },
-        visibleIf: "{camp.countries} contains 'gb'",
+        visibleIf: "{event.countries} contains 'gb'",
       },
       {
         value: 'pl',
@@ -56,7 +56,7 @@ const country: ICustomQuestionTypeConfiguration = {
           pl: 'Polska',
           cs: 'Polsko',
         },
-        visibleIf: "{camp.countries} contains 'pl'",
+        visibleIf: "{event.countries} contains 'pl'",
       },
       {
         value: 'cz',
@@ -67,7 +67,7 @@ const country: ICustomQuestionTypeConfiguration = {
           pl: 'Czechy',
           cs: 'Česká republika',
         },
-        visibleIf: "{camp.countries} contains 'cz'",
+        visibleIf: "{event.countries} contains 'cz'",
       },
     ],
   },

@@ -2,7 +2,7 @@ export default {
   purpose: {
     registration_administration: 'Vyřízení tvé přihlášky',
     participant_communication: 'Informování před akcí a v jejím průběhu',
-    camp_organisation: 'Organizace a průběh akce',
+    event_organisation: 'Organizace a průběh akce',
     catering: 'Stravování',
     medical_care: 'Zdravotní péče v průběhu akce',
     emergency_contact: 'Kontaktování v naléhavém případě',
@@ -37,7 +37,7 @@ export default {
   },
 
   recipient: {
-    camp_staff: 'Tým akce',
+    event_staff: 'Tým akce',
     accommodation_provider: 'Poskytovatel ubytování',
     catering_provider: 'Poskytovatel stravování',
     transport_provider: 'Dopravce',
@@ -84,7 +84,7 @@ export default {
   },
 
   retentionAnchor: {
-    camp_end: 'po skončení akce',
+    event_end: 'po skončení akce',
     submission: 'po odeslání přihlášky',
   },
 

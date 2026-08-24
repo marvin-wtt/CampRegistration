@@ -1222,7 +1222,7 @@ export const eventWithForm = {
     {
       name: 'first_name',
       type: 'text',
-      campDataType: 'first_name',
+      eventDataType: 'first_name',
       isRequired: true,
     },
     {
@@ -1233,7 +1233,7 @@ export const eventWithForm = {
     {
       name: 'role',
       type: 'text',
-      campDataType: 'role',
+      eventDataType: 'role',
       isRequired: true,
     },
   ]),
@@ -1244,13 +1244,13 @@ export const eventUpdateBodyWithForm = {
     {
       name: 'first_name',
       type: 'text',
-      campDataType: 'first_name',
+      eventDataType: 'first_name',
       isRequired: true,
     },
     {
       name: 'email',
       type: 'text',
-      campDataType: 'email',
+      eventDataType: 'email',
       isRequired: true,
     },
     {

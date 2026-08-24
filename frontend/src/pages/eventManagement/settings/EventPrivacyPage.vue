@@ -175,7 +175,7 @@
           </div>
 
           <!-- Derived from the questions the form author tagged with a
-               `campDataType`; a suggestion the manager confirms, never an
+               `eventDataType`; a suggestion the manager confirms, never an
                automatic claim about what the form collects. -->
           <q-banner
             v-if="suggestedCategories.length"
@@ -701,7 +701,7 @@ const visibleRecipientKeys = computed(() =>
 );
 
 /**
- * Maps the `campDataType` tags the form author put on this event's questions
+ * Maps the `eventDataType` tags the form author put on this event's questions
  * onto data categories. Partial by construction — a free-text question can hold
  * anything — so it only ever proposes, and never proposes what the organization
  * already covers.

@@ -9,26 +9,24 @@ const dateOfBirth: ICustomQuestionTypeConfiguration = {
     inputType: 'date',
     autocomplete: 'bday',
     minValueExpression:
-      'iif({_validationEnabled}, htmlDate(subtractYears({camp.endAt}, {camp.maxAge} + 1)), "")',
+      'iif({_validationEnabled}, htmlDate(subtractYears({event.endAt}, {event.maxAge} + 1)), "")',
     maxValueExpression:
-      'iif({_validationEnabled}, htmlDate(subtractYears({camp.startAt}, {camp.minAge})), "")',
-    // NOTE: `{camp.maxAge}`/`{camp.minAge}` are SurveyJS variable references set
-    // by `setVariables()` (common/src/form/variables/variables.ts) — the `camp.`
-    // prefix is a wire-level key baked into saved form JSON and must not be
-    // renamed, even though the surrounding prose now says "event".
+      'iif({_validationEnabled}, htmlDate(subtractYears({event.startAt}, {event.minAge})), "")',
+    // `{event.maxAge}`/`{event.minAge}` are SurveyJS variable references set by
+    // `setVariables()` (common/src/form/variables/variables.ts).
     minErrorText: {
-      de: 'Das maximale Alter für diese Veranstaltung beträgt {camp.maxAge} Jahre',
-      en: 'The maximum age for this event is {camp.maxAge} years',
-      fr: "L'âge maximum pour cet événement est de {camp.maxAge} ans",
-      pl: 'Maksymalny wiek uczestników wydarzenia wynosi {camp.maxAge} lat',
-      cs: 'Maximální věk pro účast na této akci je {camp.maxAge} let',
+      de: 'Das maximale Alter für diese Veranstaltung beträgt {event.maxAge} Jahre',
+      en: 'The maximum age for this event is {event.maxAge} years',
+      fr: "L'âge maximum pour cet événement est de {event.maxAge} ans",
+      pl: 'Maksymalny wiek uczestników wydarzenia wynosi {event.maxAge} lat',
+      cs: 'Maximální věk pro účast na této akci je {event.maxAge} let',
     },
     maxErrorText: {
-      de: 'Das Mindestalter für diese Veranstaltung beträgt {camp.minAge} Jahre',
-      en: 'The minimum age for this event is {camp.minAge} years',
-      fr: "L'âge minimum pour cet événement est de {camp.minAge} ans",
-      pl: 'Minimalny wiek uczestników wydarzenia wynosi {camp.minAge} lat',
-      cs: 'Minimální věk pro účast na této akci je {camp.minAge} let',
+      de: 'Das Mindestalter für diese Veranstaltung beträgt {event.minAge} Jahre',
+      en: 'The minimum age for this event is {event.minAge} years',
+      fr: "L'âge minimum pour cet événement est de {event.minAge} ans",
+      pl: 'Minimalny wiek uczestników wydarzenia wynosi {event.minAge} lat',
+      cs: 'Minimální věk pro účast na této akci je {event.minAge} let',
     },
   },
 };

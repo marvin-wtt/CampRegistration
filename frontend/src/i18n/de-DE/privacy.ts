@@ -2,7 +2,7 @@ export default {
   purpose: {
     registration_administration: 'Abwicklung deiner Anmeldung',
     participant_communication: 'Information vor und während der Veranstaltung',
-    camp_organisation: 'Organisation und Durchführung der Veranstaltung',
+    event_organisation: 'Organisation und Durchführung der Veranstaltung',
     catering: 'Verpflegung',
     medical_care: 'Medizinische Versorgung während der Veranstaltung',
     emergency_contact: 'Kontaktaufnahme im Notfall',
@@ -37,7 +37,7 @@ export default {
   },
 
   recipient: {
-    camp_staff: 'Das Team der Veranstaltung',
+    event_staff: 'Das Team der Veranstaltung',
     accommodation_provider: 'Der Betreiber der Unterkunft',
     catering_provider: 'Der Caterer',
     transport_provider: 'Das Transportunternehmen',
@@ -87,7 +87,7 @@ export default {
   },
 
   retentionAnchor: {
-    camp_end: 'nach Ende der Veranstaltung',
+    event_end: 'nach Ende der Veranstaltung',
     submission: 'nach Absenden der Anmeldung',
   },
 

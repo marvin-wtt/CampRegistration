@@ -111,7 +111,7 @@ export function extractEventDataTypes(form: object): string[] {
   const tags = new Set<string>();
 
   for (const question of survey.getAllQuestions(false, undefined, true)) {
-    const tag: unknown = question.getPropertyValue('campDataType');
+    const tag: unknown = question.getPropertyValue('eventDataType');
     if (typeof tag === 'string') {
       tags.add(tag);
     }

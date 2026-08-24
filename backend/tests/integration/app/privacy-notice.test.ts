@@ -154,7 +154,7 @@ describe('privacy notices', () => {
               { key: 'custom:1', label: { en: '<img src=x onerror=1>Skill' } },
             ],
             recipients: [
-              { key: 'camp_staff' },
+              { key: 'event_staff' },
               { key: 'platform_operator', name: '<i>Acme</i>' },
             ],
           }),
@@ -196,7 +196,7 @@ describe('privacy notices', () => {
 
       expect(versions).toHaveLength(2);
       expect(versions[0]?.content).toMatchObject({
-        retention: { months: 24, anchor: 'camp_end' },
+        retention: { months: 24, anchor: 'event_end' },
       });
       expect(versions[1]?.content).toMatchObject({
         retention: { months: 6, anchor: 'submission' },
@@ -547,12 +547,12 @@ describe('privacy notices', () => {
           privacyNotice: completePrivacyNoticeContent({
             retention: {
               months: 24,
-              anchor: 'camp_end',
+              anchor: 'event_end',
               exceptions: [
                 {
                   scope: 'payment_and_invoicing',
                   months: 120,
-                  anchor: 'camp_end',
+                  anchor: 'event_end',
                 },
               ],
             },
@@ -569,9 +569,9 @@ describe('privacy notices', () => {
           content: {
             retention: {
               months: 24,
-              anchor: 'camp_end',
+              anchor: 'event_end',
               exceptions: [
-                { scope: 'photo_publication', months: 36, anchor: 'camp_end' },
+                { scope: 'photo_publication', months: 36, anchor: 'event_end' },
               ],
             },
           },
@@ -661,7 +661,7 @@ describe('privacy notices', () => {
 
       // The proof of what this person was shown must survive later edits.
       expect(registration.organizationPrivacyNotice?.content).toMatchObject({
-        retention: { months: 24, anchor: 'camp_end' },
+        retention: { months: 24, anchor: 'event_end' },
       });
     });
   });

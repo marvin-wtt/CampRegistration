@@ -5,8 +5,8 @@
  */
 export const summerEventForm = {
   locale: 'en',
-  title: '{camp.name}',
-  description: '{camp.startAtDate} - {camp.endAtDate}',
+  title: '{event.name}',
+  description: '{event.startAtDate} - {event.endAtDate}',
   logoHeight: '80px',
   logoPosition: 'right',
   completedHtml: {
@@ -33,12 +33,12 @@ export const summerEventForm = {
             cs: 'Datum',
           },
           description: {
-            en: '{camp.startAtDate} until {camp.endAtDate}',
-            de: '{camp.startAtDate} bis {camp.endAtDate}',
-            fr: '{camp.startAtDate} au {camp.endAtDate}',
-            pl: '{camp.startAtDate} do {camp.endAtDate}',
-            cs: '{camp.startAtDate} až {camp.endAtDate}',
-            default: '{camp.startAtDate} until {camp.endAtDate}  ',
+            en: '{event.startAtDate} until {event.endAtDate}',
+            de: '{event.startAtDate} bis {event.endAtDate}',
+            fr: '{event.startAtDate} au {event.endAtDate}',
+            pl: '{event.startAtDate} do {event.endAtDate}',
+            cs: '{event.startAtDate} až {event.endAtDate}',
+            default: '{event.startAtDate} until {event.endAtDate}  ',
           },
         },
         {
@@ -53,12 +53,12 @@ export const summerEventForm = {
             default: 'Age',
           },
           description: {
-            en: '{camp.minAge} to {camp.maxAge}',
-            de: '{camp.minAge} bis {camp.maxAge}',
-            fr: '{camp.minAge} à {camp.maxAge}',
-            pl: '{camp.minAge} do {camp.maxAge}',
-            cs: '{camp.minAge} až {camp.maxAge}',
-            default: '{camp.minAge} to {camp.maxAge}',
+            en: '{event.minAge} to {event.maxAge}',
+            de: '{event.minAge} bis {event.maxAge}',
+            fr: '{event.minAge} à {event.maxAge}',
+            pl: '{event.minAge} do {event.maxAge}',
+            cs: '{event.minAge} až {event.maxAge}',
+            default: '{event.minAge} to {event.maxAge}',
           },
         },
         {
@@ -72,7 +72,7 @@ export const summerEventForm = {
             cs: 'Místo',
             default: 'Location',
           },
-          description: '{camp.location}',
+          description: '{event.location}',
         },
         {
           type: 'expression',
@@ -85,7 +85,7 @@ export const summerEventForm = {
             cs: 'Cena',
             default: 'Price',
           },
-          description: '{camp.price} €',
+          description: '{event.price} €',
           currency: 'EUR',
         },
         {
@@ -101,7 +101,7 @@ export const summerEventForm = {
           },
           defaultValue: 'participant',
           isRequired: true,
-          campDataType: 'role',
+          eventDataType: 'role',
         },
       ],
       title: {
@@ -128,7 +128,7 @@ export const summerEventForm = {
             default: 'First Name',
           },
           isRequired: true,
-          campDataType: 'first_name',
+          eventDataType: 'first_name',
           autocomplete: 'given-name',
         },
         {
@@ -144,7 +144,7 @@ export const summerEventForm = {
             default: 'Last Name',
           },
           isRequired: true,
-          campDataType: 'last_name',
+          eventDataType: 'last_name',
           autocomplete: 'family-name',
         },
         {
@@ -158,7 +158,7 @@ export const summerEventForm = {
             cs: 'Pohlaví',
             default: 'Gender',
           },
-          campDataType: 'gender',
+          eventDataType: 'gender',
           isRequired: true,
           choices: [
             {
@@ -210,7 +210,7 @@ export const summerEventForm = {
             default: 'Date of Birth',
           },
           isRequired: true,
-          campDataType: 'date_of_birth',
+          eventDataType: 'date_of_birth',
         },
         {
           type: 'text',
@@ -226,7 +226,7 @@ export const summerEventForm = {
           },
           valueName: 'date_of_birth',
           isRequired: true,
-          campDataType: 'date_of_birth',
+          eventDataType: 'date_of_birth',
           inputType: 'date',
           autocomplete: 'bday',
           placeholder: {
@@ -263,7 +263,7 @@ export const summerEventForm = {
             default: 'Address',
           },
           isRequired: true,
-          campDataType: 'address',
+          eventDataType: 'address',
         },
         {
           type: 'text',
@@ -277,7 +277,7 @@ export const summerEventForm = {
             default: 'E-Mail',
           },
           isRequired: true,
-          campDataType: 'email',
+          eventDataType: 'email',
           inputType: 'email',
           autocomplete: 'email',
         },
@@ -399,7 +399,7 @@ export const summerEventForm = {
             default: 'E-Mail',
           },
           isRequired: true,
-          campDataType: 'email',
+          eventDataType: 'email',
           inputType: 'email',
           autocomplete: 'email',
         },
@@ -891,15 +891,15 @@ export const summerEventForm = {
   calculatedValues: [
     {
       name: 'isadult',
-      expression: 'isAdult({date_of_birth}, {camp.startAt})',
+      expression: 'isAdult({date_of_birth}, {event.startAt})',
     },
     {
       name: 'isminor',
-      expression: 'isMinor({date_of_birth}, {camp.startAt})',
+      expression: 'isMinor({date_of_birth}, {event.startAt})',
     },
     {
       name: 'waitingList',
-      expression: 'isWaitingList({camp.freePlaces}, {country})',
+      expression: 'isWaitingList({event.freePlaces}, {country})',
     },
   ],
   showProgressBar: true,

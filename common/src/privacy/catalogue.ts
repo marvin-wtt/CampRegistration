@@ -33,7 +33,7 @@
 export const PRIVACY_PURPOSE_KEYS = [
   'registration_administration',
   'participant_communication',
-  'camp_organisation',
+  'event_organisation',
   'catering',
   'medical_care',
   'emergency_contact',
@@ -75,7 +75,7 @@ export type PrivacyDataCategoryKey =
 
 /** Who else sees it. Art. 13(1)(e). */
 export const PRIVACY_RECIPIENT_KEYS = [
-  'camp_staff',
+  'event_staff',
   'platform_operator',
   'accommodation_provider',
   'catering_provider',
@@ -100,7 +100,7 @@ export type PrivacyRecipientKey = (typeof PRIVACY_RECIPIENT_KEYS)[number];
  * nowhere, which is untrue of every event on the platform.
  */
 export const ALWAYS_RECIPIENT_KEYS = [
-  'camp_staff',
+  'event_staff',
   'platform_operator',
 ] as const satisfies readonly PrivacyRecipientKey[];
 
@@ -172,7 +172,7 @@ export const ADVANCED_SPECIAL_CATEGORY_BASIS_KEYS = [
 export const DEFAULT_SPECIAL_CATEGORY_BASIS: SpecialCategoryBasisKey =
   'explicit_consent';
 
-export const RETENTION_ANCHORS = ['camp_end', 'submission'] as const;
+export const RETENTION_ANCHORS = ['event_end', 'submission'] as const;
 
 /**
  * What ends a retention entry. The baseline is always a period; an exception
@@ -319,25 +319,25 @@ export const PRIVACY_PURPOSE_PRESETS: Record<
       'guardian_contact',
       'address',
     ],
-    recipients: ['camp_staff', 'platform_operator'],
+    recipients: ['event_staff', 'platform_operator'],
   },
   participant_communication: {
     legalBasis: 'contract',
     dataCategories: ['identity', 'contact', 'guardian_contact'],
-    recipients: ['camp_staff', 'platform_operator'],
+    recipients: ['event_staff', 'platform_operator'],
   },
   // Deliberately broader than "assigning rooms": allocating rooms, groups and
   // activities is one purpose — running the event — and splitting it out invited
   // a notice that read like an operations manual.
-  camp_organisation: {
+  event_organisation: {
     legalBasis: 'contract',
     dataCategories: ['identity', 'date_of_birth', 'gender'],
-    recipients: ['camp_staff', 'accommodation_provider'],
+    recipients: ['event_staff', 'accommodation_provider'],
   },
   catering: {
     legalBasis: 'contract',
     dataCategories: ['dietary', 'allergies'],
-    recipients: ['camp_staff', 'catering_provider'],
+    recipients: ['event_staff', 'catering_provider'],
   },
   medical_care: {
     legalBasis: 'contract',
@@ -348,17 +348,17 @@ export const PRIVACY_PURPOSE_PRESETS: Record<
       'disability_support',
       'insurance_details',
     ],
-    recipients: ['camp_staff', 'medical_provider'],
+    recipients: ['event_staff', 'medical_provider'],
   },
   emergency_contact: {
     legalBasis: 'vital_interests',
     dataCategories: ['emergency_contact', 'guardian_contact'],
-    recipients: ['camp_staff', 'medical_provider'],
+    recipients: ['event_staff', 'medical_provider'],
   },
   transport: {
     legalBasis: 'contract',
     dataCategories: ['identity', 'address'],
-    recipients: ['camp_staff', 'transport_provider'],
+    recipients: ['event_staff', 'transport_provider'],
   },
   insurance: {
     legalBasis: 'contract',
@@ -382,7 +382,7 @@ export const PRIVACY_PURPOSE_PRESETS: Record<
   photo_documentation: {
     legalBasis: 'legitimate_interests',
     dataCategories: ['photos'],
-    recipients: ['camp_staff'],
+    recipients: ['event_staff'],
   },
   photo_publication: {
     legalBasis: 'consent',
@@ -402,11 +402,9 @@ export const PRIVACY_PURPOSE_PRESETS: Record<
 };
 
 /**
- * Maps the `campDataType` a form author already tags questions with
- * (`common/src/form/properties/eventDataType.ts` — the tag name itself is kept
- * stable across the camp->event rename since it's a wire-level key baked into
- * already-saved form JSON) onto a data category, so the wizard can propose what
- * the event's own form appears to collect.
+ * Maps the `eventDataType` a form author already tags questions with
+ * (`common/src/form/properties/eventDataType.ts`) onto a data category, so the
+ * wizard can propose what the event's own form appears to collect.
  *
  * A suggestion only — the mapping is partial by construction, since a free-text
  * question can hold anything.

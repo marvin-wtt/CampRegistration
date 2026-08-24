@@ -97,8 +97,8 @@ describe('getEventPreset', () => {
       // A single remaining locale collapses into a plain string, so assert on
       // the description, which keeps its `default` sibling and stays an object.
       expect(date?.description).toEqual({
-        fr: '{camp.startAtDate} au {camp.endAtDate}',
-        default: '{camp.startAtDate} until {camp.endAtDate}',
+        fr: '{event.startAtDate} au {event.endAtDate}',
+        default: '{event.startAtDate} until {event.endAtDate}',
       });
     });
 

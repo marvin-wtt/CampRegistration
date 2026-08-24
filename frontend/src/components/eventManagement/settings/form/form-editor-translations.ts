@@ -2,8 +2,8 @@ type QtKey = 'address' | 'country' | 'date_of_birth' | 'role';
 
 type LocaleSection = {
   qt: Record<QtKey, string>;
-  p: { campDataType: string };
-  pehelp: { campDataType: string };
+  p: { eventDataType: string };
+  pehelp: { eventDataType: string };
 };
 
 type LocaleKey = 'de' | 'en' | 'fr' | 'pl' | 'cs';
@@ -18,10 +18,10 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
         role: 'Rolle',
       },
       p: {
-        campDataType: 'Daten-Tag',
+        eventDataType: 'Daten-Tag',
       },
       pehelp: {
-        campDataType:
+        eventDataType:
           'Wählen Sie aus, welche Art von Daten der Benutzer eingibt. ' +
           'Die Informationen werden dem Dienst unabhängig vom Feldnamen zur Verfügung gestellt.',
       },
@@ -35,10 +35,10 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
         role: 'Role',
       },
       p: {
-        campDataType: 'Data Tag',
+        eventDataType: 'Data Tag',
       },
       pehelp: {
-        campDataType:
+        eventDataType:
           'Select what type of data the user enters. ' +
           'The information is made available to the service regardless of the field name.',
       },
@@ -51,10 +51,10 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
         role: 'Rôle',
       },
       p: {
-        campDataType: 'Étiquette de données',
+        eventDataType: 'Étiquette de données',
       },
       pehelp: {
-        campDataType:
+        eventDataType:
           'Sélectionnez le type de données que l’utilisateur saisit. ' +
           'Les informations sont mises à la disposition du service indépendamment du nom du champ.',
       },
@@ -68,10 +68,10 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
         role: 'Rola',
       },
       p: {
-        campDataType: 'Tag danych',
+        eventDataType: 'Tag danych',
       },
       pehelp: {
-        campDataType:
+        eventDataType:
           'Wybierz, jaki typ danych wprowadza użytkownik. ' +
           'Informacje są przekazywane do usługi niezależnie od nazwy pola.',
       },
@@ -85,10 +85,10 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
         role: 'Role',
       },
       p: {
-        campDataType: 'Datový štítek',
+        eventDataType: 'Datový štítek',
       },
       pehelp: {
-        campDataType:
+        eventDataType:
           'Vyberte, jaký typ dat uživatel zadává. ' +
           'Informace jsou službě k dispozici nezávisle na názvu pole.',
       },

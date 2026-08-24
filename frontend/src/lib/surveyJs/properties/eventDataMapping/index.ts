@@ -30,9 +30,7 @@ dataTypes.push(waitingList);
 
 const editor: IPropertyGridEditor = {
   fit: (prop) => {
-    // Wire-level SurveyJS property type — kept stable across the camp->event
-    // rename since it's baked into already-saved form JSON.
-    return prop.type === 'campDataMapping';
+    return prop.type === 'eventDataMapping';
   },
   getJSON: (obj, prop, options) => {
     const isExpression = obj.getType() === 'expression';

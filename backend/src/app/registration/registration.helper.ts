@@ -129,7 +129,7 @@ export class RegistrationEventDataHelper {
 
 /**
  * The columns a registration's answers imply, mapped from the values tagged
- * with a `campDataType` in the event's form. The single definition of what the
+ * with a `eventDataType` in the event's form. The single definition of what the
  * computed columns mean — the API derives them on every write, and the seed
  * derives them from the answers it generates.
  */

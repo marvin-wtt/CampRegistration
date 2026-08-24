@@ -22,7 +22,7 @@ export default {
       // Pulled into the sentence above by nesting: the payload carries the
       // catalogue key, not a phrase.
       anchor: {
-        camp_end: 'po skončení akce',
+        event_end: 'po skončení akce',
         submission: 'po odeslání přihlášky',
       },
       footer: {

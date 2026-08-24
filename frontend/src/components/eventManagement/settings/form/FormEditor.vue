@@ -355,7 +355,7 @@ creator.onPropertyGetReadOnly.add((_, options) => {
   }
   // Disallow restricted users to modify the `name` property for questions and matrix columns
   const obj = options.element as SurveyElement;
-  const disallowedProperties = ['name', 'campDataType'];
+  const disallowedProperties = ['name', 'eventDataType'];
   if (disallowedProperties.includes(options.property.name)) {
     options.readOnly = obj.isQuestion || isObjColumn(options.element);
   }
