@@ -7,7 +7,7 @@ import { api } from '@/services/api';
 
 export function useProgramItemService() {
   async function fetchProgramItems(eventId: string): Promise<ProgramItem[]> {
-    const response = await api.get(`events/${eventId}/program-events/`);
+    const response = await api.get(`events/${eventId}/program-items/`);
 
     return response?.data?.data;
   }
@@ -17,7 +17,7 @@ export function useProgramItemService() {
     programItemId: string,
   ): Promise<ProgramItem> {
     const response = await api.get(
-      `events/${eventId}/program-events/${programItemId}/`,
+      `events/${eventId}/program-items/${programItemId}/`,
     );
 
     return response?.data?.data;
@@ -27,7 +27,7 @@ export function useProgramItemService() {
     eventId: string,
     data: ProgramItemCreateData,
   ): Promise<ProgramItem> {
-    const response = await api.post(`events/${eventId}/program-events/`, data);
+    const response = await api.post(`events/${eventId}/program-items/`, data);
 
     return response?.data?.data;
   }
@@ -38,7 +38,7 @@ export function useProgramItemService() {
     data: ProgramItemUpdateData,
   ): Promise<ProgramItem> {
     const response = await api.patch(
-      `events/${eventId}/program-events/${programItemId}/`,
+      `events/${eventId}/program-items/${programItemId}/`,
       data,
     );
 
@@ -49,7 +49,7 @@ export function useProgramItemService() {
     eventId: string,
     programItemId: string,
   ): Promise<void> {
-    await api.delete(`events/${eventId}/program-events/${programItemId}/`);
+    await api.delete(`events/${eventId}/program-items/${programItemId}/`);
   }
 
   return {
