@@ -615,7 +615,8 @@
 <script lang="ts" setup>
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRoute } from 'vue-router';
+import { useQuasar } from 'quasar';
+import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import {
@@ -671,6 +672,8 @@ import { APP_LOCALES as locales } from '@/i18n/locales';
 const { t } = useI18n();
 const { t: gt, locale: uiLocale } = useI18n({ useScope: 'global' });
 const route = useRoute();
+const quasar = useQuasar();
+const router = useRouter();
 const organizationStore = useOrganizationDetailsStore();
 const { data: organization } = storeToRefs(organizationStore);
 const { canAccessOrg } = useOrganizationPermissions();
@@ -1062,6 +1065,27 @@ async function publish() {
     // free-text fields, so the two are not always the same document.
     content.value = { ...emptyPrivacyNoticeContent(), ...notice.content };
     publishedSnapshot.value = JSON.stringify(content.value);
+
+    // Publishing lifts the blocker that refuses verification, but nothing puts
+    // a rejected organization back into the queue on its own.
+    if (organization.value?.verificationStatus === 'REJECTED') {
+      quasar.notify({
+        type: 'info',
+        message: t('notify.rejected'),
+        timeout: 8000,
+        multiLine: true,
+        actions: [
+          {
+            label: t('notify.rejectedAction'),
+            color: 'white',
+            noCaps: true,
+            handler: () => {
+              void router.push({ name: 'management.organization.dashboard' });
+            },
+          },
+        ],
+      });
+    }
   } catch (err) {
     // Notify rather than set `error`: that swaps the whole page for an error
     // state, and since the draft lives only in this browser, it would throw away
@@ -1209,6 +1233,8 @@ action:
   addPurpose: 'Add another purpose'
   remove: 'Remove'
 notify:
+  rejected: 'Published. This organization is still rejected — publishing alone does not request a new review.'
+  rejectedAction: 'Overview'
   publishFailed: 'Publishing failed'
 </i18n>
 
@@ -1289,6 +1315,8 @@ action:
   addPurpose: 'Weiteren Zweck hinzufügen'
   remove: 'Entfernen'
 notify:
+  rejected: 'Veröffentlicht. Diese Organisation ist weiterhin abgelehnt – das Veröffentlichen allein fordert keine neue Prüfung an.'
+  rejectedAction: 'Übersicht'
   publishFailed: 'Veröffentlichen fehlgeschlagen'
 </i18n>
 
@@ -1369,6 +1397,8 @@ action:
   addPurpose: 'Ajouter une finalité'
   remove: 'Supprimer'
 notify:
+  rejected: 'Publié. Cette organisation reste refusée : la publication seule ne demande pas de nouvelle vérification.'
+  rejectedAction: 'Aperçu'
   publishFailed: 'Échec de la publication'
 </i18n>
 
@@ -1449,6 +1479,8 @@ action:
   addPurpose: 'Přidat další účel'
   remove: 'Odebrat'
 notify:
+  rejected: 'Zveřejněno. Tato organizace je stále zamítnutá — samotné zveřejnění o nové ověření nežádá.'
+  rejectedAction: 'Přehled'
   publishFailed: 'Publikování se nezdařilo'
 </i18n>
 
@@ -1529,5 +1561,7 @@ action:
   addPurpose: 'Dodaj kolejny cel'
   remove: 'Usuń'
 notify:
+  rejected: 'Opublikowano. Ta organizacja nadal jest odrzucona — sama publikacja nie zgłasza prośby o ponowną weryfikację.'
+  rejectedAction: 'Przegląd'
   publishFailed: 'Publikacja nie powiodła się'
 </i18n>

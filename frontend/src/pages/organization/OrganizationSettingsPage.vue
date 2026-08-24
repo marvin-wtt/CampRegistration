@@ -218,6 +218,23 @@
                   <q-icon name="language" />
                 </template>
               </q-input>
+              <q-input
+                v-model="form.verificationNote"
+                :label="t('field.verificationNote')"
+                :hint="t('field.verificationNoteHint')"
+                type="textarea"
+                autogrow
+                maxlength="5000"
+                :disable="locked"
+                color="primary"
+                rounded
+                outlined
+                class="col-12"
+              >
+                <template #prepend>
+                  <q-icon name="rate_review" />
+                </template>
+              </q-input>
             </div>
           </q-card-section>
         </q-card>
@@ -365,6 +382,7 @@ function snapshot(value: OrganizationDetails): OrganizationUpdateData {
     addressCity: value.addressCity,
     country: value.country,
     registrationNumber: value.registrationNumber,
+    verificationNote: value.verificationNote ?? '',
   };
 }
 
@@ -408,11 +426,34 @@ function payload(data: OrganizationUpdateData): OrganizationUpdateData {
     phone: data.phone || null,
     website: data.website || null,
     registrationNumber: data.registrationNumber || null,
+    verificationNote: data.verificationNote || null,
   };
 }
 
 async function persist() {
   await store.updateData(payload(form.value));
+
+  // An identity edit demotes a rejected organization back to PENDING on its
+  // own; anything else leaves it rejected, and only an explicit request moves
+  // it. Saying so here is the difference between waiting forever and asking.
+  if (organization.value?.verificationStatus === 'REJECTED') {
+    quasar.notify({
+      type: 'info',
+      message: t('rejected.notice'),
+      timeout: 8000,
+      multiLine: true,
+      actions: [
+        {
+          label: t('rejected.action'),
+          color: 'white',
+          noCaps: true,
+          handler: () => {
+            void router.push({ name: 'management.organization.dashboard' });
+          },
+        },
+      ],
+    });
+  }
 }
 
 function save() {
@@ -498,6 +539,9 @@ onMounted(async () => {
 title: 'Settings'
 subtitle: 'The details administrators verify and the ways people reach this organization.'
 locked: 'You do not have permission to edit this organization.'
+rejected:
+  notice: 'Saved. This organization is still rejected — the change alone does not request a new review.'
+  action: 'Overview'
 rule:
   required: 'Required'
 section:
@@ -518,6 +562,8 @@ field:
   contactEmail: 'Contact email'
   phone: 'Phone'
   website: 'Website'
+  verificationNote: 'Note for the reviewer'
+  verificationNoteHint: 'Explain anything a reviewer needs to know. Editing it does not request a new review.'
   addressStreet: 'Street and number'
   addressZipCode: 'Postal code'
   addressCity: 'City'
@@ -545,6 +591,9 @@ danger:
 title: 'Einstellungen'
 subtitle: 'Die Angaben, die Administratoren prüfen, und die Wege, über die diese Organisation erreichbar ist.'
 locked: 'Du hast keine Berechtigung, diese Organisation zu bearbeiten.'
+rejected:
+  notice: 'Gespeichert. Diese Organisation ist weiterhin abgelehnt – die Änderung allein fordert keine neue Prüfung an.'
+  action: 'Übersicht'
 rule:
   required: 'Pflichtfeld'
 section:
@@ -565,6 +614,8 @@ field:
   contactEmail: 'Kontakt-E-Mail'
   phone: 'Telefon'
   website: 'Website'
+  verificationNote: 'Hinweis für die Prüfung'
+  verificationNoteHint: 'Erkläre alles, was die Prüfung wissen muss. Eine Änderung fordert noch keine neue Prüfung an.'
   addressStreet: 'Straße und Hausnummer'
   addressZipCode: 'Postleitzahl'
   addressCity: 'Stadt'
@@ -592,6 +643,9 @@ danger:
 title: 'Paramètres'
 subtitle: 'Les informations vérifiées par les administrateurs et les moyens de contacter cette organisation.'
 locked: "Tu n'as pas l'autorisation de modifier cette organisation."
+rejected:
+  notice: 'Enregistré. Cette organisation reste refusée : la modification seule ne demande pas de nouvelle vérification.'
+  action: 'Aperçu'
 rule:
   required: 'Obligatoire'
 section:
@@ -612,6 +666,8 @@ field:
   contactEmail: 'E-mail de contact'
   phone: 'Téléphone'
   website: 'Site web'
+  verificationNote: 'Note pour le vérificateur'
+  verificationNoteHint: 'Explique ce que le vérificateur doit savoir. La modifier ne demande pas une nouvelle vérification.'
   addressStreet: 'Rue et numéro'
   addressZipCode: 'Code postal'
   addressCity: 'Ville'
@@ -639,6 +695,9 @@ danger:
 title: 'Ustawienia'
 subtitle: 'Dane weryfikowane przez administratorów oraz sposoby kontaktu z tą organizacją.'
 locked: 'Nie masz uprawnień do edycji tej organizacji.'
+rejected:
+  notice: 'Zapisano. Ta organizacja nadal jest odrzucona — sama zmiana nie zgłasza prośby o ponowną weryfikację.'
+  action: 'Przegląd'
 rule:
   required: 'Pole wymagane'
 section:
@@ -659,6 +718,8 @@ field:
   contactEmail: 'E-mail kontaktowy'
   phone: 'Telefon'
   website: 'Strona internetowa'
+  verificationNote: 'Uwaga dla weryfikatora'
+  verificationNoteHint: 'Wyjaśnij wszystko, co weryfikator powinien wiedzieć. Zmiana nie zgłasza jeszcze prośby o ponowną weryfikację.'
   addressStreet: 'Ulica i numer'
   addressZipCode: 'Kod pocztowy'
   addressCity: 'Miasto'
@@ -686,6 +747,9 @@ danger:
 title: 'Nastavení'
 subtitle: 'Údaje, které ověřují správci, a způsoby, jak tuto organizaci kontaktovat.'
 locked: 'Nemáš oprávnění upravovat tuto organizaci.'
+rejected:
+  notice: 'Uloženo. Tato organizace je stále zamítnutá — samotná změna o nové ověření nežádá.'
+  action: 'Přehled'
 rule:
   required: 'Povinné'
 section:
@@ -706,6 +770,8 @@ field:
   contactEmail: 'Kontaktní e-mail'
   phone: 'Telefon'
   website: 'Web'
+  verificationNote: 'Poznámka pro ověřovatele'
+  verificationNoteHint: 'Vysvětli vše, co ověřovatel potřebuje vědět. Úprava sama o sobě o nové ověření nežádá.'
   addressStreet: 'Ulice a číslo'
   addressZipCode: 'PSČ'
   addressCity: 'Město'

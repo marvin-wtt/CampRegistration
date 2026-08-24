@@ -40,7 +40,7 @@ export default {
         information:
           '{{ organization.name }} nebyla ověřena. ' +
           'Do té doby nemůže zveřejňovat tábory ani posílat newslettery. ' +
-          'Můžeš údaje opravit a odeslat ji znovu.',
+          'Oprava registrovaných údajů ji vrátí zpět k ověření.',
         reasonLabel: 'Důvod',
         button: 'Zkontrolovat údaje',
         greeting: 'S pozdravem,',

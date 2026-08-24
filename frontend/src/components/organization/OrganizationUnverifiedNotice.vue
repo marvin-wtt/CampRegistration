@@ -138,7 +138,7 @@ const message = computed(() =>
 const target = computed<RouteLocationRaw | undefined>(() =>
   canOrgFor(organizationId, 'organization.view')
     ? {
-        name: 'management.organization.verification',
+        name: 'management.organization.dashboard',
         params: { organizationId },
       }
     : undefined,
@@ -171,7 +171,7 @@ newsletter:
     title: 'This newsletter cannot send'
     message: '{organization} was not verified. Correct its details and submit them again.'
     short: 'Sending disabled — organization not verified'
-action: 'View verification'
+action: 'Open organization'
 close: 'Close'
 </i18n>
 
@@ -194,7 +194,7 @@ newsletter:
     title: 'Dieser Newsletter kann nicht senden'
     message: '{organization} wurde nicht verifiziert. Korrigieren Sie die Angaben und reichen Sie sie erneut ein.'
     short: 'Senden deaktiviert — nicht verifiziert'
-action: 'Verifizierung ansehen'
+action: 'Organisation öffnen'
 close: 'Schließen'
 </i18n>
 
@@ -217,7 +217,7 @@ newsletter:
     title: 'Cette newsletter ne peut pas être envoyée'
     message: "{organization} n'a pas été vérifiée. Corrigez ses informations et soumettez-les à nouveau."
     short: 'Envoi désactivé — organisation non vérifiée'
-action: 'Voir la vérification'
+action: "Ouvrir l'organisation"
 close: 'Fermer'
 </i18n>
 
@@ -240,7 +240,7 @@ newsletter:
     title: 'Tego newslettera nie można wysłać'
     message: '{organization} nie została zweryfikowana. Popraw jej dane i zgłoś je ponownie.'
     short: 'Wysyłka wyłączona — brak weryfikacji'
-action: 'Zobacz weryfikację'
+action: 'Otwórz organizację'
 close: 'Zamknij'
 </i18n>
 
@@ -263,6 +263,6 @@ newsletter:
     title: 'Tento newsletter nelze odeslat'
     message: '{organization} nebyla ověřena. Uprav její údaje a odešli je znovu.'
     short: 'Odesílání vypnuto — organizace neověřena'
-action: 'Zobrazit ověření'
+action: 'Otevřít organizaci'
 close: 'Zavřít'
 </i18n>

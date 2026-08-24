@@ -289,12 +289,6 @@ const routes: RouteRecordRaw[] = [
               import('@/pages/organization/OrganizationPrivacyPage.vue'),
           },
           {
-            path: 'verification',
-            name: 'management.organization.verification',
-            component: () =>
-              import('@/pages/organization/OrganizationVerificationPage.vue'),
-          },
-          {
             path: 'settings',
             name: 'management.organization.settings',
             component: () =>
