@@ -66,11 +66,14 @@ ALTER TABLE `messages` RENAME COLUMN `camp_id` TO `event_id`;
 ALTER TABLE `messages` DROP FOREIGN KEY `messages_camp_id_fkey`;
 ALTER TABLE `messages` ADD CONSTRAINT `messages_event_id_fkey` FOREIGN KEY (`event_id`) REFERENCES `events`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
--- message_templates (the `event` column is an unrelated pre-existing concept —
--- the trigger-event type this template fires on — and is left untouched)
+-- message_templates: `camp_id` -> `event_id` as usual, plus the pre-existing
+-- `event` column (the trigger-event type this template fires on, e.g.
+-- "registration_confirmed") is renamed to `trigger` to free up `event` for a
+-- relation to the owning Event.
 ALTER TABLE `message_templates` RENAME COLUMN `camp_id` TO `event_id`;
+ALTER TABLE `message_templates` RENAME COLUMN `event` TO `trigger`;
 ALTER TABLE `message_templates` DROP FOREIGN KEY `message_templates_camp_id_fkey`;
-ALTER TABLE `message_templates` RENAME INDEX `message_templates_country_event_camp_id_unique` TO `message_templates_country_event_event_id_unique`;
+ALTER TABLE `message_templates` RENAME INDEX `message_templates_country_event_camp_id_unique` TO `message_templates_country_trigger_event_id_unique`;
 ALTER TABLE `message_templates` ADD CONSTRAINT `message_templates_event_id_fkey` FOREIGN KEY (`event_id`) REFERENCES `events`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- tasks (tasks_assignee_id_foreign -> camp_managers is updated automatically by

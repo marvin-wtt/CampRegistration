@@ -18,7 +18,8 @@ export default {
     },
     verified: {
       subject: 'Deine Organisation wurde verifiziert',
-      preview: '{{ organization.name }} kann jetzt Veranstaltungen veröffentlichen',
+      preview:
+        '{{ organization.name }} kann jetzt Veranstaltungen veröffentlichen',
       text: {
         title: 'Deine Organisation wurde verifiziert',
         information:
