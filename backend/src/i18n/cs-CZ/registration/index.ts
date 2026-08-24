@@ -8,12 +8,12 @@ export default {
       file: 'soubor aktualizován',
     },
     managerNotification: {
-      subject: 'Nová registrace | {{ camp.name }}',
-      preview: 'Nová registrace na tábor: {{ camp.name }}',
+      subject: 'Nová registrace | {{ event.name }}',
+      preview: 'Nová registrace na tábor: {{ event.name }}',
       text: {
         title: 'Dobrý den,',
         information:
-          '{{ registration.firstName }} {{ registration.lastName }} se přihlásil(a) na tábor {{ camp.name }}.',
+          '{{ registration.firstName }} {{ registration.lastName }} se přihlásil(a) na tábor {{ event.name }}.',
         button: 'Zobrazit registrace',
         greeting: 'S pozdravem,',
         teamName: 'Tým {{ appName }}',

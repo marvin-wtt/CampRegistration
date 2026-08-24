@@ -1,10 +1,10 @@
 import { computed, watch, type ComputedRef } from 'vue';
 import { useProfileStore } from '@/stores/profile-store';
-import { useAssignedCampsStore } from '@/stores/assigned-camps-store';
+import { useAssignedEventsStore } from '@/stores/assigned-events-store';
 import { useNewsletterStore } from '@/stores/newsletter-store';
 import { useOrganizationsStore } from '@/stores/organizations-store';
 
-export type WorkspaceAreaName = 'camps' | 'newsletters' | 'organizations';
+export type WorkspaceAreaName = 'events' | 'newsletters' | 'organizations';
 
 export interface WorkspaceEntry {
   id: string;
@@ -15,7 +15,7 @@ export interface WorkspaceEntry {
 
 /**
  * The management area a route belongs to. Route names are already prefixed per
- * area (`management.camps`, `management.camp.settings.form`, …), so a prefix
+ * area (`management.events`, `management.event.settings.form`, …), so a prefix
  * test is enough and no route meta has to be maintained alongside them.
  */
 export function areaFromRouteName(
@@ -23,8 +23,8 @@ export function areaFromRouteName(
 ): WorkspaceAreaName | undefined {
   const value = typeof name === 'string' ? name : '';
 
-  if (value.startsWith('management.camp')) {
-    return 'camps';
+  if (value.startsWith('management.event')) {
+    return 'events';
   }
   if (value.startsWith('management.newsletter')) {
     return 'newsletters';
@@ -37,8 +37,8 @@ export function areaFromRouteName(
 }
 
 /**
- * Whether the newsletter and organization areas exist for this user. Camps are
- * left out: they are always offered, since the camp index carries the create
+ * Whether the newsletter and organization areas exist for this user. Events are
+ * left out: they are always offered, since the event index carries the create
  * flow for a user with none.
  *
  * The profile is the authority on access, but it is a snapshot taken at login
@@ -80,7 +80,7 @@ export function useWorkspaceAreaAccess(): {
  */
 export function useWorkspacePrefetch(): void {
   const profileStore = useProfileStore();
-  const assignedCampsStore = useAssignedCampsStore();
+  const assignedEventsStore = useAssignedEventsStore();
   const newsletterStore = useNewsletterStore();
   const organizationsStore = useOrganizationsStore();
   const { hasNewsletters, hasOrganizations } = useWorkspaceAreaAccess();
@@ -91,7 +91,7 @@ export function useWorkspacePrefetch(): void {
   watch(
     [() => profileStore.user, hasNewsletters, hasOrganizations],
     ([, newsletters, organizations]) => {
-      void assignedCampsStore.fetchData();
+      void assignedEventsStore.fetchData();
 
       if (newsletters) {
         void newsletterStore.fetchData();

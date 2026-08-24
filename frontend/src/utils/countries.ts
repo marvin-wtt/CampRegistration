@@ -3,7 +3,7 @@
  * the list is localised without carrying ~250 translations per locale.
  *
  * Distinct from `CountrySelect`, which offers only the handful of countries a
- * camp can be run in; an organization may be registered anywhere.
+ * event can be run in; an organization may be registered anywhere.
  */
 const ISO_3166_1_ALPHA_2 = [
   'ad',

@@ -4,12 +4,12 @@ import ApiError from '#utils/ApiError';
 import { encryptPassword } from '#core/encryption';
 import type { UserUpdateData } from '@camp-registration/common/entities';
 import { BaseService } from '#core/base/BaseService';
-import { CampService } from '#app/camp/camp.service';
+import { EventService } from '#app/event/event.service';
 import { inject, injectable } from 'inversify';
 import type { ProfileUser } from '#app/profile/profile.types';
 
 const profileAccessInclude = {
-  campRoles: true,
+  eventRoles: true,
   newsletterManagers: true,
   twoFactor: { select: { confirmedAt: true } },
   organizationMembers: {
@@ -18,10 +18,10 @@ const profileAccessInclude = {
         select: {
           id: true,
           verificationStatus: true,
-          // Needed to project organization-derived camp and newsletter access
-          // into `campAccess`/`newsletterAccess`, so the client gates UI
+          // Needed to project organization-derived event and newsletter access
+          // into `eventAccess`/`newsletterAccess`, so the client gates UI
           // exactly as the server gates requests.
-          camps: { select: { id: true } },
+          events: { select: { id: true } },
           newsletters: { select: { id: true } },
         },
       },
@@ -33,7 +33,9 @@ const profileAccessOmit = { password: true } satisfies Prisma.UserOmit;
 
 @injectable()
 export class UserService extends BaseService {
-  constructor(@inject(CampService) private readonly campService: CampService) {
+  constructor(
+    @inject(EventService) private readonly eventService: EventService,
+  ) {
     super();
   }
 
@@ -191,7 +193,7 @@ export class UserService extends BaseService {
     });
   }
 
-  async updateUserLastSeenByIdWithCamps(userId: string) {
+  async updateUserLastSeenByIdWithEvents(userId: string) {
     const user = await this.prisma.user.update({
       where: { id: userId },
       data: {
@@ -201,11 +203,11 @@ export class UserService extends BaseService {
       include: profileAccessInclude,
     });
 
-    const camps = await this.campService.getCampsByUserId(userId);
+    const events = await this.eventService.getEventsByUserId(userId);
 
     return {
       ...user,
-      camps,
+      events,
     };
   }
 

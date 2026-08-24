@@ -5,11 +5,11 @@ declare global {
     type NumberOrTranslation = Translatable<number>;
     type GenericObject = Record<string, unknown>;
 
-    type RegistrationCampData = Record<string, unknown[]>;
+    type RegistrationEventData = Record<string, unknown[]>;
 
     type PrivacyNoticeContent =
-      import('@camp-registration/common/privacy').PrivacyNoticeContent;
+      import('@event-registration/common/privacy').PrivacyNoticeContent;
     type PrivacyNoticeAddendum =
-      import('@camp-registration/common/privacy').PrivacyNoticeAddendum;
+      import('@event-registration/common/privacy').PrivacyNoticeAddendum;
   }
 }

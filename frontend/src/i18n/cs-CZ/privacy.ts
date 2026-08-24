@@ -118,7 +118,7 @@ export default {
     },
     origin: {
       organization: 'Od organizace',
-      camp: 'Doplněno zde',
+      event: 'Doplněno zde',
     },
     action: {
       publish: 'Zveřejnit',

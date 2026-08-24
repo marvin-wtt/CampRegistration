@@ -6,7 +6,7 @@
       class="owning-organization__icon"
     />
 
-    <!-- Managing a camp or newsletter does not imply membership in the owning
+    <!-- Managing a event or newsletter does not imply membership in the owning
          organization, so the name is only a link when the user may open it. -->
     <router-link
       v-if="target"
@@ -30,7 +30,7 @@
     >
       {{ t('unverified') }}
       <q-tooltip max-width="280px">
-        {{ subject === 'camp' ? t('hint.camp') : t('hint.newsletter') }}
+        {{ subject === 'event' ? t('hint.event') : t('hint.newsletter') }}
       </q-tooltip>
     </q-badge>
   </div>
@@ -47,7 +47,7 @@ const { organizationId, subject } = defineProps<{
   organizationId: string;
   organizationName: string;
   verificationStatus: OrganizationVerificationStatus;
-  subject: 'camp' | 'newsletter';
+  subject: 'event' | 'newsletter';
 }>();
 
 const { t } = useI18n();
@@ -86,34 +86,34 @@ const target = computed<RouteLocationRaw | undefined>(() =>
 <i18n lang="yaml" locale="en">
 unverified: 'Not verified'
 hint:
-  camp: 'This camp stays out of the public directory and refuses registrations until the organization is verified.'
+  event: 'This event stays out of the public directory and refuses registrations until the organization is verified.'
   newsletter: 'This newsletter cannot send messages until the organization is verified.'
 </i18n>
 
 <i18n lang="yaml" locale="de">
 unverified: 'Nicht verifiziert'
 hint:
-  camp: 'Dieses Camp erscheint nicht im öffentlichen Verzeichnis und nimmt keine Anmeldungen an, bis die Organisation verifiziert ist.'
+  event: 'Dieses Event erscheint nicht im öffentlichen Verzeichnis und nimmt keine Anmeldungen an, bis die Organisation verifiziert ist.'
   newsletter: 'Dieser Newsletter kann keine Nachrichten versenden, bis die Organisation verifiziert ist.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 unverified: 'Non vérifiée'
 hint:
-  camp: "Ce camp n'apparaît pas dans l'annuaire public et refuse les inscriptions tant que l'organisation n'est pas vérifiée."
+  event: "Ce event n'apparaît pas dans l'annuaire public et refuse les inscriptions tant que l'organisation n'est pas vérifiée."
   newsletter: "Cette newsletter ne peut pas envoyer de messages tant que l'organisation n'est pas vérifiée."
 </i18n>
 
 <i18n lang="yaml" locale="pl">
 unverified: 'Niezweryfikowana'
 hint:
-  camp: 'Ten obóz nie pojawia się w publicznym katalogu i nie przyjmuje zgłoszeń, dopóki organizacja nie zostanie zweryfikowana.'
+  event: 'Ten obóz nie pojawia się w publicznym katalogu i nie przyjmuje zgłoszeń, dopóki organizacja nie zostanie zweryfikowana.'
   newsletter: 'Ten newsletter nie może wysyłać wiadomości, dopóki organizacja nie zostanie zweryfikowana.'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
 unverified: 'Neověřeno'
 hint:
-  camp: 'Tento tábor se nezobrazuje ve veřejném katalogu a nepřijímá registrace, dokud nebude organizace ověřena.'
+  event: 'Tento tábor se nezobrazuje ve veřejném katalogu a nepřijímá registrace, dokud nebude organizace ověřena.'
   newsletter: 'Tento newsletter nemůže odesílat zprávy, dokud nebude organizace ověřena.'
 </i18n>

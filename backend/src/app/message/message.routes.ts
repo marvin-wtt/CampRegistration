@@ -1,5 +1,5 @@
 import { auth, guard, multipart } from '#middlewares/index';
-import { campManager } from '#app/camp/camp.guard';
+import { hasEventPermission } from '#app/event/event.guard';
 import { MessageController } from './message.controller.js';
 import { controller } from '#utils/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';
@@ -10,11 +10,11 @@ export class MessageRouter extends ModuleRouter {
   protected registerBindings() {
     const messageService = resolve(MessageService);
     this.bindModel('message', (req, id) => {
-      const camp = req.model('camp');
-      if (!camp) {
+      const event = req.model('event');
+      if (!event) {
         return null;
       }
-      return messageService.getMessageById(camp.id, id);
+      return messageService.getMessageById(event.id, id);
     });
   }
 
@@ -25,33 +25,33 @@ export class MessageRouter extends ModuleRouter {
 
     this.router.get(
       '/',
-      guard(campManager('camp.messages.view')),
+      guard(hasEventPermission('event.messages.view')),
       controller(messageController, 'index'),
     );
     this.router.get(
       '/:messageId',
-      guard(campManager('camp.messages.view')),
+      guard(hasEventPermission('event.messages.view')),
       controller(messageController, 'show'),
     );
     this.router.post(
       '/',
-      guard(campManager('camp.messages.create')),
+      guard(hasEventPermission('event.messages.create')),
       multipart({ name: 'attachments' }),
       controller(messageController, 'store'),
     );
     this.router.post(
       '/:messageId/resend',
-      guard(campManager('camp.messages.create')),
+      guard(hasEventPermission('event.messages.create')),
       controller(messageController, 'resend'),
     );
     this.router.delete(
       '/:messageId',
-      guard(campManager('camp.messages.delete')),
+      guard(hasEventPermission('event.messages.delete')),
       controller(messageController, 'destroy'),
     );
     this.router.post(
       '/:messageId/attachments',
-      guard(campManager('camp.messages.create')),
+      guard(hasEventPermission('event.messages.create')),
       controller(messageController, 'duplicateAttachments'),
     );
   }

@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
-  CampFactory,
+  EventFactory,
   UserFactory,
-  CampManagerFactory,
+  EventManagerFactory,
   MessageFactory,
   MessageTemplateFactory,
   FileFactory,
@@ -14,24 +14,24 @@ import { ulid } from 'ulidx';
 import crypto from 'crypto';
 import { uploadFile } from './utils/file.js';
 
-const createCampWithManagerAndToken = async (
-  campData?: Parameters<(typeof CampFactory)['create']>[0],
+const createEventWithManagerAndToken = async (
+  eventData?: Parameters<(typeof EventFactory)['create']>[0],
   role = 'DIRECTOR',
 ) => {
-  const camp = await CampFactory.create(campData);
+  const event = await EventFactory.create(eventData);
   const user = await UserFactory.create();
-  await CampManagerFactory.create({
-    camp: { connect: { id: camp.id } },
+  await EventManagerFactory.create({
+    event: { connect: { id: event.id } },
     user: { connect: { id: user.id } },
     role,
   });
   const accessToken = generateAccessToken(user);
 
-  return { camp, user, accessToken };
+  return { event, user, accessToken };
 };
 
-describe('/api/v1/camps/:campId/message-templates', () => {
-  describe('GET /api/v1/camps/:campId/message-templates/', () => {
+describe('/api/v1/events/:eventId/message-templates', () => {
+  describe('GET /api/v1/events/:eventId/message-templates/', () => {
     it.each([
       { role: 'DIRECTOR', expectedStatus: 200 },
       { role: 'COORDINATOR', expectedStatus: 200 },
@@ -40,7 +40,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
     ])(
       'should respond with $expectedStatus status code when user is $role',
       async ({ role, expectedStatus }) => {
-        const { camp, accessToken } = await createCampWithManagerAndToken(
+        const { event, accessToken } = await createEventWithManagerAndToken(
           { messageTemplates: {} },
           role,
         );
@@ -49,13 +49,13 @@ describe('/api/v1/camps/:campId/message-templates', () => {
           const numTemplates = 3;
           for (let i = 0; i < numTemplates; i++) {
             await MessageTemplateFactory.create({
-              camp: { connect: { id: camp.id } },
+              event: { connect: { id: event.id } },
               event: `test-event-${i}`,
             });
           }
 
           const { body } = await request()
-            .get(`/api/v1/camps/${camp.id}/message-templates/`)
+            .get(`/api/v1/events/${event.id}/message-templates/`)
             .send()
             .auth(accessToken, { type: 'bearer' })
             .expect(expectedStatus);
@@ -65,7 +65,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
           expect(body.data.length).toBe(numTemplates);
         } else {
           await request()
-            .get(`/api/v1/camps/${camp.id}/message-templates/`)
+            .get(`/api/v1/events/${event.id}/message-templates/`)
             .send()
             .auth(accessToken, { type: 'bearer' })
             .expect(expectedStatus);
@@ -74,14 +74,16 @@ describe('/api/v1/camps/:campId/message-templates', () => {
     );
 
     it('should respond with 200 status code with defaults', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
+      const { event, accessToken } = await createEventWithManagerAndToken();
 
       await MessageTemplateFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
       });
 
       const { body } = await request()
-        .get(`/api/v1/camps/${camp.id}/message-templates/?includeDefaults=true`)
+        .get(
+          `/api/v1/events/${event.id}/message-templates/?includeDefaults=true`,
+        )
         .send()
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
@@ -92,27 +94,27 @@ describe('/api/v1/camps/:campId/message-templates', () => {
     });
 
     it('should only return event templates, not ad-hoc sent messages', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken({
+      const { event, accessToken } = await createEventWithManagerAndToken({
         messageTemplates: {},
       });
 
       await MessageTemplateFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
         event: 'test-event-1',
       });
 
       await MessageTemplateFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
         event: 'test-event-2',
       });
 
       // Ad-hoc sent messages live in a different table and must not surface here.
       await MessageFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
       });
 
       const { body } = await request()
-        .get(`/api/v1/camps/${camp.id}/message-templates/`)
+        .get(`/api/v1/events/${event.id}/message-templates/`)
         .send()
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
@@ -128,16 +130,16 @@ describe('/api/v1/camps/:campId/message-templates', () => {
     });
 
     it('should not include recipients for event templates', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken({
+      const { event, accessToken } = await createEventWithManagerAndToken({
         messageTemplates: {},
       });
       await MessageTemplateFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
         event: 'test-event',
       });
 
       const { body } = await request()
-        .get(`/api/v1/camps/${camp.id}/message-templates/`)
+        .get(`/api/v1/events/${event.id}/message-templates/`)
         .send()
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
@@ -145,37 +147,39 @@ describe('/api/v1/camps/:campId/message-templates', () => {
       expect(body.data[0]).not.toHaveProperty('recipients');
     });
 
-    it('should respond with 403 status code when user is not camp manager', async () => {
-      const camp = await CampFactory.create();
+    it('should respond with 403 status code when user is not event manager', async () => {
+      const event = await EventFactory.create();
       const accessToken = generateAccessToken(await UserFactory.create());
 
       await request()
-        .get(`/api/v1/camps/${camp.id}/message-templates/`)
+        .get(`/api/v1/events/${event.id}/message-templates/`)
         .send()
         .auth(accessToken, { type: 'bearer' })
         .expect(403);
     });
 
     it('should respond with 401 status code when unauthenticated', async () => {
-      const camp = await CampFactory.create();
+      const event = await EventFactory.create();
 
       await request()
-        .get(`/api/v1/camps/${camp.id}/message-templates/`)
+        .get(`/api/v1/events/${event.id}/message-templates/`)
         .send()
         .expect(401);
     });
   });
 
-  describe('GET /api/v1/camps/:campId/message-templates/:messageTemplateId', () => {
-    it('should respond with 200 status code when user is camp manager', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
+  describe('GET /api/v1/events/:eventId/message-templates/:messageTemplateId', () => {
+    it('should respond with 200 status code when user is event manager', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
       const messageTemplate = await MessageTemplateFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
         event: 'some-event',
       });
 
       const { body } = await request()
-        .get(`/api/v1/camps/${camp.id}/message-templates/${messageTemplate.id}`)
+        .get(
+          `/api/v1/events/${event.id}/message-templates/${messageTemplate.id}`,
+        )
         .send()
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
@@ -188,46 +192,50 @@ describe('/api/v1/camps/:campId/message-templates', () => {
     });
 
     it('should respond with 404 status code when message template does not exist', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
+      const { event, accessToken } = await createEventWithManagerAndToken();
       const nonExistingId = ulid();
 
       await request()
-        .get(`/api/v1/camps/${camp.id}/message-templates/${nonExistingId}`)
+        .get(`/api/v1/events/${event.id}/message-templates/${nonExistingId}`)
         .send()
         .auth(accessToken, { type: 'bearer' })
         .expect(404);
     });
 
-    it('should respond with 403 status code when user is not camp manager', async () => {
-      const camp = await CampFactory.create();
+    it('should respond with 403 status code when user is not event manager', async () => {
+      const event = await EventFactory.create();
       const messageTemplate = await MessageTemplateFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
         event: 'some-event',
       });
       const accessToken = generateAccessToken(await UserFactory.create());
 
       await request()
-        .get(`/api/v1/camps/${camp.id}/message-templates/${messageTemplate.id}`)
+        .get(
+          `/api/v1/events/${event.id}/message-templates/${messageTemplate.id}`,
+        )
         .send()
         .auth(accessToken, { type: 'bearer' })
         .expect(403);
     });
 
     it('should respond with 401 status code when unauthenticated', async () => {
-      const camp = await CampFactory.create();
+      const event = await EventFactory.create();
       const messageTemplate = await MessageTemplateFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
         event: 'some-event',
       });
 
       await request()
-        .get(`/api/v1/camps/${camp.id}/message-templates/${messageTemplate.id}`)
+        .get(
+          `/api/v1/events/${event.id}/message-templates/${messageTemplate.id}`,
+        )
         .send()
         .expect(401);
     });
   });
 
-  describe('POST /api/v1/camps/:campId/message-templates/', () => {
+  describe('POST /api/v1/events/:eventId/message-templates/', () => {
     it.each([
       { role: 'DIRECTOR', expectedStatus: 201 },
       { role: 'COORDINATOR', expectedStatus: 201 },
@@ -236,7 +244,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
     ])(
       'should respond with $expectedStatus status code when user is $role',
       async ({ role, expectedStatus }) => {
-        const { camp, accessToken } = await createCampWithManagerAndToken(
+        const { event, accessToken } = await createEventWithManagerAndToken(
           undefined,
           role,
         );
@@ -249,7 +257,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
         };
 
         await request()
-          .post(`/api/v1/camps/${camp.id}/message-templates/`)
+          .post(`/api/v1/events/${event.id}/message-templates/`)
           .send(data)
           .auth(accessToken, { type: 'bearer' })
           .expect(expectedStatus);
@@ -406,18 +414,18 @@ describe('/api/v1/camps/:campId/message-templates', () => {
     it.each(messageCreateBody)(
       'should respond with `$expected` status code when $name',
       async ({ data, expected }) => {
-        const { camp, accessToken } = await createCampWithManagerAndToken();
+        const { event, accessToken } = await createEventWithManagerAndToken();
 
         await request()
-          .post(`/api/v1/camps/${camp.id}/message-templates/`)
+          .post(`/api/v1/events/${event.id}/message-templates/`)
           .send(data)
           .auth(accessToken, { type: 'bearer' })
           .expect(expected);
       },
     );
 
-    it('should respond with 403 status code when user is not camp manager', async () => {
-      const camp = await CampFactory.create();
+    it('should respond with 403 status code when user is not event manager', async () => {
+      const event = await EventFactory.create();
       const data = {
         event: 'some-event',
         country: 'gb',
@@ -427,16 +435,16 @@ describe('/api/v1/camps/:campId/message-templates', () => {
       const accessToken = generateAccessToken(await UserFactory.create());
 
       await request()
-        .post(`/api/v1/camps/${camp.id}/message-templates/`)
+        .post(`/api/v1/events/${event.id}/message-templates/`)
         .send(data)
         .auth(accessToken, { type: 'bearer' })
         .expect(403);
     });
 
     it('should respond with 409 status code when event for country already exists', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
+      const { event, accessToken } = await createEventWithManagerAndToken();
       await MessageTemplateFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
         event: 'some-event',
         country: 'gb',
       });
@@ -449,14 +457,14 @@ describe('/api/v1/camps/:campId/message-templates', () => {
       };
 
       await request()
-        .post(`/api/v1/camps/${camp.id}/message-templates/`)
+        .post(`/api/v1/events/${event.id}/message-templates/`)
         .send(data)
         .auth(accessToken, { type: 'bearer' })
         .expect(409);
     });
 
     it('should respond with 401 status code when unauthenticated', async () => {
-      const camp = await CampFactory.create();
+      const event = await EventFactory.create();
       const data = {
         event: 'some-event',
         country: 'gb',
@@ -465,7 +473,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
       };
 
       await request()
-        .post(`/api/v1/camps/${camp.id}/message-templates/`)
+        .post(`/api/v1/events/${event.id}/message-templates/`)
         .send(data)
         .expect(401);
     });
@@ -473,7 +481,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
     describe('files', () => {
       it('should respond with 201 status code when attachments are provided', async () => {
         const sessionId = crypto.randomUUID();
-        const { camp, accessToken } = await createCampWithManagerAndToken();
+        const { event, accessToken } = await createEventWithManagerAndToken();
         const file1 = await FileFactory.create({
           field: sessionId,
         });
@@ -491,7 +499,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
         };
 
         const { body } = await request()
-          .post(`/api/v1/camps/${camp.id}/message-templates/`)
+          .post(`/api/v1/events/${event.id}/message-templates/`)
           .send(data)
           .setSessionId(sessionId)
           .auth(accessToken, { type: 'bearer' })
@@ -508,7 +516,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
       });
 
       it('should respond with 201 status code when attachments are empty', async () => {
-        const { camp, accessToken } = await createCampWithManagerAndToken();
+        const { event, accessToken } = await createEventWithManagerAndToken();
         const data = {
           event: 'some-event',
           country: 'gb',
@@ -519,7 +527,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
         };
 
         await request()
-          .post(`/api/v1/camps/${camp.id}/message-templates/`)
+          .post(`/api/v1/events/${event.id}/message-templates/`)
           .send(data)
           .auth(accessToken, { type: 'bearer' })
           .expect(201);
@@ -527,7 +535,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
 
       it('should respond with 400 status code when attachments are invalid', async () => {
         const sessionId = crypto.randomUUID();
-        const { camp, accessToken } = await createCampWithManagerAndToken();
+        const { event, accessToken } = await createEventWithManagerAndToken();
         await FileFactory.create({
           field: sessionId,
         });
@@ -542,7 +550,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
         };
 
         await request()
-          .post(`/api/v1/camps/${camp.id}/message-templates/`)
+          .post(`/api/v1/events/${event.id}/message-templates/`)
           .send(data)
           .setSessionId(sessionId)
           .auth(accessToken, { type: 'bearer' })
@@ -551,7 +559,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
 
       it('should respond with 400 status code when attachments session id mismatch', async () => {
         const sessionId = crypto.randomUUID();
-        const { camp, accessToken } = await createCampWithManagerAndToken();
+        const { event, accessToken } = await createEventWithManagerAndToken();
         const file1 = await FileFactory.create({
           field: crypto.randomUUID(),
         });
@@ -569,7 +577,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
         };
 
         await request()
-          .post(`/api/v1/camps/${camp.id}/message-templates/`)
+          .post(`/api/v1/events/${event.id}/message-templates/`)
           .send(data)
           .setSessionId(sessionId)
           .auth(accessToken, { type: 'bearer' })
@@ -578,9 +586,9 @@ describe('/api/v1/camps/:campId/message-templates', () => {
 
       it('should respond with 400 status code when attachments are already assigned', async () => {
         const sessionId = crypto.randomUUID();
-        const { camp, accessToken } = await createCampWithManagerAndToken();
+        const { event, accessToken } = await createEventWithManagerAndToken();
         const messageTemplate = await MessageTemplateFactory.create({
-          camp: { connect: { id: camp.id } },
+          event: { connect: { id: event.id } },
           event: 'some-event',
         });
         const file1 = await FileFactory.create({
@@ -601,7 +609,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
         };
 
         await request()
-          .post(`/api/v1/camps/${camp.id}/message-templates/`)
+          .post(`/api/v1/events/${event.id}/message-templates/`)
           .send(data)
           .setSessionId(sessionId)
           .auth(accessToken, { type: 'bearer' })
@@ -610,7 +618,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
     });
   });
 
-  describe('PATCH /api/v1/camps/:campId/message-templates/:messageTemplateId', () => {
+  describe('PATCH /api/v1/events/:eventId/message-templates/:messageTemplateId', () => {
     it.each([
       { role: 'DIRECTOR', expectedStatus: 200 },
       { role: 'COORDINATOR', expectedStatus: 200 },
@@ -619,12 +627,12 @@ describe('/api/v1/camps/:campId/message-templates', () => {
     ])(
       'should respond with $expectedStatus status code when user is $role',
       async ({ role, expectedStatus }) => {
-        const { camp, accessToken } = await createCampWithManagerAndToken(
+        const { event, accessToken } = await createEventWithManagerAndToken(
           undefined,
           role,
         );
         const messageTemplate = await MessageTemplateFactory.create({
-          camp: { connect: { id: camp.id } },
+          event: { connect: { id: event.id } },
           event: 'some-event',
           subject: 'Old subject',
           body: 'Old body',
@@ -640,7 +648,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
         if (expectedStatus === 200) {
           const { body } = await request()
             .patch(
-              `/api/v1/camps/${camp.id}/message-templates/${messageTemplate.id}`,
+              `/api/v1/events/${event.id}/message-templates/${messageTemplate.id}`,
             )
             .send(updateData)
             .auth(accessToken, { type: 'bearer' })
@@ -653,7 +661,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
         } else {
           await request()
             .patch(
-              `/api/v1/camps/${camp.id}/message-templates/${messageTemplate.id}`,
+              `/api/v1/events/${event.id}/message-templates/${messageTemplate.id}`,
             )
             .send(updateData)
             .auth(accessToken, { type: 'bearer' })
@@ -727,16 +735,16 @@ describe('/api/v1/camps/:campId/message-templates', () => {
     it.each(messageCreateBody)(
       'should respond with `$expected` status code when $name',
       async ({ data, expected }) => {
-        const { camp, accessToken } = await createCampWithManagerAndToken();
+        const { event, accessToken } = await createEventWithManagerAndToken();
 
         const messageTemplate = await MessageTemplateFactory.create({
-          camp: { connect: { id: camp.id } },
+          event: { connect: { id: event.id } },
           event: 'some-event',
         });
 
         await request()
           .patch(
-            `/api/v1/camps/${camp.id}/message-templates/${messageTemplate.id}`,
+            `/api/v1/events/${event.id}/message-templates/${messageTemplate.id}`,
           )
           .send(data)
           .auth(accessToken, { type: 'bearer' })
@@ -745,23 +753,23 @@ describe('/api/v1/camps/:campId/message-templates', () => {
     );
 
     it('should respond with 404 status code when message template does not exist', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
+      const { event, accessToken } = await createEventWithManagerAndToken();
       const nonExistingId = ulid();
       const updateData = {
         subject: 'Updated Subject',
       };
 
       await request()
-        .patch(`/api/v1/camps/${camp.id}/message-templates/${nonExistingId}`)
+        .patch(`/api/v1/events/${event.id}/message-templates/${nonExistingId}`)
         .send(updateData)
         .auth(accessToken, { type: 'bearer' })
         .expect(404);
     });
 
-    it('should respond with 403 status code when user is not camp manager', async () => {
-      const camp = await CampFactory.create();
+    it('should respond with 403 status code when user is not event manager', async () => {
+      const event = await EventFactory.create();
       const messageTemplate = await MessageTemplateFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
         event: 'some-event',
       });
       const updateData = {
@@ -771,7 +779,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
 
       await request()
         .patch(
-          `/api/v1/camps/${camp.id}/message-templates/${messageTemplate.id}`,
+          `/api/v1/events/${event.id}/message-templates/${messageTemplate.id}`,
         )
         .send(updateData)
         .auth(accessToken, { type: 'bearer' })
@@ -779,9 +787,9 @@ describe('/api/v1/camps/:campId/message-templates', () => {
     });
 
     it('should respond with 401 status code when unauthenticated', async () => {
-      const camp = await CampFactory.create();
+      const event = await EventFactory.create();
       const messageTemplate = await MessageTemplateFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
         event: 'some-event',
       });
       const updateData = {
@@ -790,7 +798,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
 
       await request()
         .patch(
-          `/api/v1/camps/${camp.id}/message-templates/${messageTemplate.id}`,
+          `/api/v1/events/${event.id}/message-templates/${messageTemplate.id}`,
         )
         .send(updateData)
         .expect(401);
@@ -799,9 +807,9 @@ describe('/api/v1/camps/:campId/message-templates', () => {
     describe('files', () => {
       it('should respond with 200 status code when attachments are added', async () => {
         const sessionId = crypto.randomUUID();
-        const { camp, accessToken } = await createCampWithManagerAndToken();
+        const { event, accessToken } = await createEventWithManagerAndToken();
         const messageTemplate = await MessageTemplateFactory.create({
-          camp: { connect: { id: camp.id } },
+          event: { connect: { id: event.id } },
           event: 'some-event',
         });
 
@@ -819,7 +827,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
 
         const { body } = await request()
           .patch(
-            `/api/v1/camps/${camp.id}/message-templates/${messageTemplate.id}`,
+            `/api/v1/events/${event.id}/message-templates/${messageTemplate.id}`,
           )
           .send(data)
           .setSessionId(sessionId)
@@ -838,9 +846,9 @@ describe('/api/v1/camps/:campId/message-templates', () => {
 
       it('should respond with 200 status code when attachments are removed', async () => {
         const sessionId = crypto.randomUUID();
-        const { camp, accessToken } = await createCampWithManagerAndToken();
+        const { event, accessToken } = await createEventWithManagerAndToken();
         const messageTemplate = await MessageTemplateFactory.create({
-          camp: { connect: { id: camp.id } },
+          event: { connect: { id: event.id } },
           event: 'some-event',
         });
         await FileFactory.create({
@@ -860,7 +868,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
 
         const { body } = await request()
           .patch(
-            `/api/v1/camps/${camp.id}/message-templates/${messageTemplate.id}`,
+            `/api/v1/events/${event.id}/message-templates/${messageTemplate.id}`,
           )
           .send(data)
           .setSessionId(sessionId)
@@ -881,9 +889,9 @@ describe('/api/v1/camps/:campId/message-templates', () => {
 
       it('should respond with 200 status code when attachments are replaced', async () => {
         const sessionId = crypto.randomUUID();
-        const { camp, accessToken } = await createCampWithManagerAndToken();
+        const { event, accessToken } = await createEventWithManagerAndToken();
         const messageTemplate = await MessageTemplateFactory.create({
-          camp: { connect: { id: camp.id } },
+          event: { connect: { id: event.id } },
           event: 'some-event',
         });
 
@@ -893,7 +901,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
 
         const { body } = await request()
           .patch(
-            `/api/v1/camps/${camp.id}/message-templates/${messageTemplate.id}`,
+            `/api/v1/events/${event.id}/message-templates/${messageTemplate.id}`,
           )
           .send(data)
           .setSessionId(sessionId)
@@ -912,9 +920,9 @@ describe('/api/v1/camps/:campId/message-templates', () => {
 
       it('should respond with 400 status code when attachments are invalid', async () => {
         const sessionId = crypto.randomUUID();
-        const { camp, accessToken } = await createCampWithManagerAndToken();
+        const { event, accessToken } = await createEventWithManagerAndToken();
         const messageTemplate = await MessageTemplateFactory.create({
-          camp: { connect: { id: camp.id } },
+          event: { connect: { id: event.id } },
           event: 'some-event',
         });
         await FileFactory.create({
@@ -927,7 +935,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
 
         await request()
           .patch(
-            `/api/v1/camps/${camp.id}/message-templates/${messageTemplate.id}`,
+            `/api/v1/events/${event.id}/message-templates/${messageTemplate.id}`,
           )
           .send(data)
           .setSessionId(sessionId)
@@ -937,9 +945,9 @@ describe('/api/v1/camps/:campId/message-templates', () => {
 
       it('should respond with 400 status code when attachments session id mismatch', async () => {
         const sessionId = crypto.randomUUID();
-        const { camp, accessToken } = await createCampWithManagerAndToken();
+        const { event, accessToken } = await createEventWithManagerAndToken();
         const messageTemplate = await MessageTemplateFactory.create({
-          camp: { connect: { id: camp.id } },
+          event: { connect: { id: event.id } },
           event: 'some-event',
         });
         const file1 = await FileFactory.create({
@@ -955,7 +963,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
 
         await request()
           .patch(
-            `/api/v1/camps/${camp.id}/message-templates/${messageTemplate.id}`,
+            `/api/v1/events/${event.id}/message-templates/${messageTemplate.id}`,
           )
           .send(data)
           .setSessionId(sessionId)
@@ -965,9 +973,9 @@ describe('/api/v1/camps/:campId/message-templates', () => {
 
       it('should respond with 400 status code when attachments are already assigned', async () => {
         const sessionId = crypto.randomUUID();
-        const { camp, accessToken } = await createCampWithManagerAndToken();
+        const { event, accessToken } = await createEventWithManagerAndToken();
         const messageTemplate = await MessageTemplateFactory.create({
-          camp: { connect: { id: camp.id } },
+          event: { connect: { id: event.id } },
           event: 'some-event',
         });
         const file1 = await FileFactory.create({
@@ -976,7 +984,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
         });
         await MessageTemplateFactory.create({
           attachments: { connect: { id: file1.id } },
-          camp: { connect: { id: camp.id } },
+          event: { connect: { id: event.id } },
         });
         const file2 = await FileFactory.create({
           field: sessionId,
@@ -988,7 +996,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
 
         await request()
           .patch(
-            `/api/v1/camps/${camp.id}/message-templates/${messageTemplate.id}`,
+            `/api/v1/events/${event.id}/message-templates/${messageTemplate.id}`,
           )
           .send(data)
           .setSessionId(sessionId)
@@ -998,7 +1006,7 @@ describe('/api/v1/camps/:campId/message-templates', () => {
     });
   });
 
-  describe('DELETE /api/v1/camps/:campId/message-templates/:messageTemplateId', () => {
+  describe('DELETE /api/v1/events/:eventId/message-templates/:messageTemplateId', () => {
     it.each([
       { role: 'DIRECTOR', expectedStatus: 204 },
       { role: 'COORDINATOR', expectedStatus: 204 },
@@ -1007,18 +1015,18 @@ describe('/api/v1/camps/:campId/message-templates', () => {
     ])(
       'should respond with $expectedStatus status code when user is $role',
       async ({ role, expectedStatus }) => {
-        const { camp, accessToken } = await createCampWithManagerAndToken(
+        const { event, accessToken } = await createEventWithManagerAndToken(
           undefined,
           role,
         );
         const messageTemplate = await MessageTemplateFactory.create({
-          camp: { connect: { id: camp.id } },
+          event: { connect: { id: event.id } },
           event: 'some-event',
         });
 
         await request()
           .delete(
-            `/api/v1/camps/${camp.id}/message-templates/${messageTemplate.id}`,
+            `/api/v1/events/${event.id}/message-templates/${messageTemplate.id}`,
           )
           .send()
           .auth(accessToken, { type: 'bearer' })
@@ -1035,27 +1043,27 @@ describe('/api/v1/camps/:campId/message-templates', () => {
     );
 
     it('should respond with 404 status code when message template does not exist', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
+      const { event, accessToken } = await createEventWithManagerAndToken();
       const nonExistingId = ulid();
 
       await request()
-        .delete(`/api/v1/camps/${camp.id}/message-templates/${nonExistingId}`)
+        .delete(`/api/v1/events/${event.id}/message-templates/${nonExistingId}`)
         .send()
         .auth(accessToken, { type: 'bearer' })
         .expect(404);
     });
 
-    it('should respond with 403 status code when user is not camp manager', async () => {
-      const camp = await CampFactory.create();
+    it('should respond with 403 status code when user is not event manager', async () => {
+      const event = await EventFactory.create();
       const messageTemplate = await MessageTemplateFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
         event: 'some-event',
       });
       const accessToken = generateAccessToken(await UserFactory.create());
 
       await request()
         .delete(
-          `/api/v1/camps/${camp.id}/message-templates/${messageTemplate.id}`,
+          `/api/v1/events/${event.id}/message-templates/${messageTemplate.id}`,
         )
         .send()
         .auth(accessToken, { type: 'bearer' })
@@ -1063,15 +1071,15 @@ describe('/api/v1/camps/:campId/message-templates', () => {
     });
 
     it('should respond with 401 status code when unauthenticated', async () => {
-      const camp = await CampFactory.create();
+      const event = await EventFactory.create();
       const messageTemplate = await MessageTemplateFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
         event: 'some-event',
       });
 
       await request()
         .delete(
-          `/api/v1/camps/${camp.id}/message-templates/${messageTemplate.id}`,
+          `/api/v1/events/${event.id}/message-templates/${messageTemplate.id}`,
         )
         .send()
         .expect(401);
@@ -1081,9 +1089,9 @@ describe('/api/v1/camps/:campId/message-templates', () => {
 
 describe('/api/v1/files/', () => {
   const createMessageTemplateWithFile = async () => {
-    const { user, accessToken, camp } = await createCampWithManagerAndToken();
+    const { user, accessToken, event } = await createEventWithManagerAndToken();
     const messageTemplate = await MessageTemplateFactory.create({
-      camp: { connect: { id: camp.id } },
+      event: { connect: { id: event.id } },
     });
 
     const fileName = crypto.randomUUID() + '.pdf';
@@ -1094,11 +1102,11 @@ describe('/api/v1/files/', () => {
       name: fileName,
     });
 
-    return { file, user, accessToken, camp, messageTemplate };
+    return { file, user, accessToken, event, messageTemplate };
   };
 
   describe('GET /api/v1/files/:fileId', () => {
-    it('should respond with `200` status code when user is camp manager', async () => {
+    it('should respond with `200` status code when user is event manager', async () => {
       const { file, accessToken } = await createMessageTemplateWithFile();
 
       await request()
@@ -1108,7 +1116,7 @@ describe('/api/v1/files/', () => {
         .expect(200);
     });
 
-    it('should respond with `403` status code when user is not camp manager', async () => {
+    it('should respond with `403` status code when user is not event manager', async () => {
       const { file } = await createMessageTemplateWithFile();
       const accessToken = generateAccessToken(await UserFactory.create());
 

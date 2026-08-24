@@ -12,7 +12,7 @@
         </div>
       </div>
 
-      <!-- At-a-glance stats, grouped so camp-related metrics sit together -->
+      <!-- At-a-glance stats, grouped so event-related metrics sit together -->
       <div>
         <div class="text-subtitle1 text-weight-medium q-mb-sm">
           {{ t('stat.platformTitle') }}
@@ -32,11 +32,11 @@
 
       <div>
         <div class="text-subtitle1 text-weight-medium q-mb-sm">
-          {{ t('stat.campsTitle') }}
+          {{ t('stat.eventsTitle') }}
         </div>
         <div class="row q-col-gutter-md">
           <administration-stat-card
-            v-for="stat in campStats"
+            v-for="stat in eventStats"
             :key="stat.key"
             :label="stat.label"
             :value="stat.value"
@@ -174,10 +174,10 @@ const platformStats = computed<StatTile[]>(() => {
   ];
 });
 
-// Grouped separately from platform-wide stats so all camp-related metrics
+// Grouped separately from platform-wide stats so all event-related metrics
 // (totals, registrations, and the registration-status breakdown) read as
 // one block instead of being interleaved with unrelated numbers.
-const campStats = computed<StatTile[]>(() => {
+const eventStats = computed<StatTile[]>(() => {
   const data = overview.value;
   if (!data) {
     return [];
@@ -185,36 +185,36 @@ const campStats = computed<StatTile[]>(() => {
 
   return [
     {
-      key: 'camps',
+      key: 'events',
       icon: 'holiday_village',
       color: 'secondary',
-      value: data.camps.total,
-      label: t('stat.camps'),
-      to: { name: 'administration.camps' },
+      value: data.events.total,
+      label: t('stat.events'),
+      to: { name: 'administration.events' },
     },
     {
-      key: 'campsOpen',
+      key: 'eventsOpen',
       icon: 'event_available',
       color: 'positive',
-      value: data.camps.open,
-      label: t('stat.campsOpen'),
-      to: { name: 'administration.camps', query: { status: 'open' } },
+      value: data.events.open,
+      label: t('stat.eventsOpen'),
+      to: { name: 'administration.events', query: { status: 'open' } },
     },
     {
-      key: 'campsUpcoming',
+      key: 'eventsUpcoming',
       icon: 'schedule',
       color: 'info',
-      value: data.camps.upcoming,
-      label: t('stat.campsUpcoming'),
-      to: { name: 'administration.camps', query: { status: 'upcoming' } },
+      value: data.events.upcoming,
+      label: t('stat.eventsUpcoming'),
+      to: { name: 'administration.events', query: { status: 'upcoming' } },
     },
     {
-      key: 'campsClosed',
+      key: 'eventsClosed',
       icon: 'event_busy',
       color: 'grey-7',
-      value: data.camps.closed,
-      label: t('stat.campsClosed'),
-      to: { name: 'administration.camps', query: { status: 'closed' } },
+      value: data.events.closed,
+      label: t('stat.eventsClosed'),
+      to: { name: 'administration.events', query: { status: 'closed' } },
     },
     {
       key: 'registrations',
@@ -299,11 +299,11 @@ const sections = computed(() => [
     to: { name: 'administration.users' },
   },
   {
-    name: 'camps',
-    label: t('camps.label'),
-    description: t('camps.description'),
+    name: 'events',
+    label: t('events.label'),
+    description: t('events.description'),
     icon: 'holiday_village',
-    to: { name: 'administration.camps' },
+    to: { name: 'administration.events' },
   },
   {
     name: 'newsletters',
@@ -343,15 +343,15 @@ subtitle: 'Platform overview and management.'
 
 stat:
   platformTitle: 'Platform'
-  campsTitle: 'Camps'
+  eventsTitle: 'Events'
   users: 'Users'
   organizations: 'Organizations'
   files: 'Files'
-  camps: 'Camps'
+  events: 'Events'
   registrations: 'Registrations'
-  campsOpen: 'Registration open'
-  campsUpcoming: 'Registration upcoming'
-  campsClosed: 'Registration closed'
+  eventsOpen: 'Registration open'
+  eventsUpcoming: 'Registration upcoming'
+  eventsClosed: 'Registration closed'
   failedJobs: 'Failed jobs'
 
 attention:
@@ -367,13 +367,13 @@ sections:
 
 organizations:
   label: 'Organizations'
-  description: 'Review and verify the organizations that run camps and newsletters.'
+  description: 'Review and verify the organizations that run events and newsletters.'
 users:
   label: 'Users'
   description: 'Manage user accounts, roles, and permissions.'
-camps:
-  label: 'Camps'
-  description: 'View and manage all camps across the platform.'
+events:
+  label: 'Events'
+  description: 'View and manage all events across the platform.'
 newsletters:
   label: 'Newsletters'
   description: 'Manage newsletter lists and subscriber imports.'
@@ -391,15 +391,15 @@ subtitle: 'Plattformübersicht und Verwaltung.'
 
 stat:
   platformTitle: 'Plattform'
-  campsTitle: 'Camps'
+  eventsTitle: 'Events'
   users: 'Benutzer'
   organizations: 'Organisationen'
   files: 'Dateien'
-  camps: 'Camps'
+  events: 'Events'
   registrations: 'Anmeldungen'
-  campsOpen: 'Anmeldung offen'
-  campsUpcoming: 'Anmeldung bevorstehend'
-  campsClosed: 'Anmeldung geschlossen'
+  eventsOpen: 'Anmeldung offen'
+  eventsUpcoming: 'Anmeldung bevorstehend'
+  eventsClosed: 'Anmeldung geschlossen'
   failedJobs: 'Fehlgeschlagene Jobs'
 
 attention:
@@ -415,13 +415,13 @@ sections:
 
 organizations:
   label: 'Organisationen'
-  description: 'Organisationen prüfen und verifizieren, die Camps und Newsletter betreiben.'
+  description: 'Organisationen prüfen und verifizieren, die Events und Newsletter betreiben.'
 users:
   label: 'Benutzer'
   description: 'Benutzerkonten, Rollen und Berechtigungen verwalten.'
-camps:
-  label: 'Camps'
-  description: 'Alle Camps der Plattform einsehen und verwalten.'
+events:
+  label: 'Events'
+  description: 'Alle Events der Plattform einsehen und verwalten.'
 newsletters:
   label: 'Newsletter'
   description: 'Newsletter-Listen und Abonnenten-Importe verwalten.'
@@ -439,15 +439,15 @@ subtitle: 'Vue d’ensemble et gestion de la plateforme.'
 
 stat:
   platformTitle: 'Plateforme'
-  campsTitle: 'Camps'
+  eventsTitle: 'Events'
   users: 'Utilisateurs'
   organizations: 'Organisations'
   files: 'Fichiers'
-  camps: 'Camps'
+  events: 'Events'
   registrations: 'Inscriptions'
-  campsOpen: 'Inscriptions ouvertes'
-  campsUpcoming: 'Inscriptions à venir'
-  campsClosed: 'Inscriptions fermées'
+  eventsOpen: 'Inscriptions ouvertes'
+  eventsUpcoming: 'Inscriptions à venir'
+  eventsClosed: 'Inscriptions fermées'
   failedJobs: 'Tâches échouées'
 
 attention:
@@ -463,13 +463,13 @@ sections:
 
 organizations:
   label: 'Organisations'
-  description: 'Contrôler et vérifier les organisations qui gèrent camps et newsletters.'
+  description: 'Contrôler et vérifier les organisations qui gèrent events et newsletters.'
 users:
   label: 'Utilisateurs'
   description: 'Gérer les comptes utilisateurs, les rôles et les permissions.'
-camps:
-  label: 'Camps'
-  description: 'Consulter et gérer tous les camps de la plateforme.'
+events:
+  label: 'Events'
+  description: 'Consulter et gérer tous les events de la plateforme.'
 newsletters:
   label: 'Newsletters'
   description: "Gérer les listes de newsletters et les importations d'abonnés."
@@ -487,15 +487,15 @@ subtitle: 'Przegląd i zarządzanie platformą.'
 
 stat:
   platformTitle: 'Platforma'
-  campsTitle: 'Obozy'
+  eventsTitle: 'Obozy'
   users: 'Użytkownicy'
   organizations: 'Organizacje'
   files: 'Pliki'
-  camps: 'Obozy'
+  events: 'Obozy'
   registrations: 'Rejestracje'
-  campsOpen: 'Rejestracja otwarta'
-  campsUpcoming: 'Rejestracja nadchodząca'
-  campsClosed: 'Rejestracja zamknięta'
+  eventsOpen: 'Rejestracja otwarta'
+  eventsUpcoming: 'Rejestracja nadchodząca'
+  eventsClosed: 'Rejestracja zamknięta'
   failedJobs: 'Nieudane zadania'
 
 attention:
@@ -515,7 +515,7 @@ organizations:
 users:
   label: 'Użytkownicy'
   description: 'Zarządzaj kontami użytkowników, rolami i uprawnieniami.'
-camps:
+events:
   label: 'Obozy'
   description: 'Przeglądaj i zarządzaj wszystkimi obozami na platformie.'
 newsletters:
@@ -535,15 +535,15 @@ subtitle: 'Přehled a správa platformy.'
 
 stat:
   platformTitle: 'Platforma'
-  campsTitle: 'Tábory'
+  eventsTitle: 'Tábory'
   users: 'Uživatelé'
   organizations: 'Organizace'
   files: 'Pliki'
-  camps: 'Tábory'
+  events: 'Tábory'
   registrations: 'Přihlášky'
-  campsOpen: 'Registrace otevřená'
-  campsUpcoming: 'Registrace nadcházející'
-  campsClosed: 'Registrace uzavřená'
+  eventsOpen: 'Registrace otevřená'
+  eventsUpcoming: 'Registrace nadcházející'
+  eventsClosed: 'Registrace uzavřená'
   failedJobs: 'Neúspěšné úlohy'
 
 attention:
@@ -563,7 +563,7 @@ organizations:
 users:
   label: 'Uživatelé'
   description: 'Spravujte uživatelské účty, role a oprávnění.'
-camps:
+events:
   label: 'Tábory'
   description: 'Prohlížejte a spravujte všechny tábory na platformě.'
 newsletters:

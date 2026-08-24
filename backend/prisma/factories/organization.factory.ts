@@ -1,6 +1,6 @@
 import { fakerEN as faker } from '@faker-js/faker';
 import { Prisma } from '#generated/prisma/client.js';
-import type { PrivacyNoticeContent } from '@camp-registration/common/privacy';
+import type { PrivacyNoticeContent } from '@event-registration/common/privacy';
 import {
   PrivacyNoticeFactory,
   completePrivacyNoticeContent,

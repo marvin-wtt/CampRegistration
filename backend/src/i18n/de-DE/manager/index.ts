@@ -1,15 +1,15 @@
 export default {
   email: {
     invitation: {
-      subject: 'Camp-Einladung',
-      preview: 'Du wurdest eingeladen, {{ camp.name }} zu verwalten',
+      subject: 'Event-Einladung',
+      preview: 'Du wurdest eingeladen, {{ event.name }} zu verwalten',
       text: {
         title: 'Hallo,',
         information:
-          'Du wurdest eingeladen, {{ camp.name }} zu verwalten. ' +
-          'Wenn du bereits ein Konto hast, wird das Camp automatisch verfügbar sein. ' +
+          'Du wurdest eingeladen, {{ event.name }} zu verwalten. ' +
+          'Wenn du bereits ein Konto hast, wird das Event automatisch verfügbar sein. ' +
           'Andernfalls erstelle bitte zuerst ein kostenloses Konto.',
-        button: 'Camp verwalten',
+        button: 'Event verwalten',
         greeting: 'Viele Grüße',
         teamName: '{{ appName }} Team',
       },

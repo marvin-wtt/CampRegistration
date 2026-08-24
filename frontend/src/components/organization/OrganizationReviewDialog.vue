@@ -250,10 +250,10 @@ status:
   VERIFIED: 'Verified'
   REJECTED: 'Rejected'
 message:
-  approve: 'It will be able to publish camps and send newsletters.'
-  reject: 'It will not be able to publish camps or send newsletters. Its camps stay private drafts.'
-  reinstate: 'It will be able to publish camps and send newsletters again.'
-  revoke: 'It can no longer publish camps or send newsletters, and any public camps are unpublished immediately.'
+  approve: 'It will be able to publish events and send newsletters.'
+  reject: 'It will not be able to publish events or send newsletters. Its events stay private drafts.'
+  reinstate: 'It will be able to publish events and send newsletters again.'
+  revoke: 'It can no longer publish events or send newsletters, and any public events are unpublished immediately.'
 note:
   optional: 'Note (optional)'
   required: 'Reason for rejection'
@@ -281,10 +281,10 @@ status:
   VERIFIED: 'Verifiziert'
   REJECTED: 'Abgelehnt'
 message:
-  approve: 'Sie kann dann Camps veröffentlichen und Newsletter versenden.'
-  reject: 'Sie kann keine Camps veröffentlichen und keine Newsletter versenden. Ihre Camps bleiben private Entwürfe.'
-  reinstate: 'Sie kann wieder Camps veröffentlichen und Newsletter versenden.'
-  revoke: 'Sie kann keine Camps mehr veröffentlichen oder Newsletter versenden; öffentliche Camps werden sofort zurückgezogen.'
+  approve: 'Sie kann dann Events veröffentlichen und Newsletter versenden.'
+  reject: 'Sie kann keine Events veröffentlichen und keine Newsletter versenden. Ihre Events bleiben private Entwürfe.'
+  reinstate: 'Sie kann wieder Events veröffentlichen und Newsletter versenden.'
+  revoke: 'Sie kann keine Events mehr veröffentlichen oder Newsletter versenden; öffentliche Events werden sofort zurückgezogen.'
 note:
   optional: 'Hinweis (optional)'
   required: 'Grund für die Ablehnung'
@@ -312,10 +312,10 @@ status:
   VERIFIED: 'Vérifiée'
   REJECTED: 'Refusée'
 message:
-  approve: 'Elle pourra publier des camps et envoyer des newsletters.'
-  reject: 'Elle ne pourra pas publier de camps ni envoyer de newsletters. Ses camps restent des brouillons privés.'
-  reinstate: 'Elle pourra à nouveau publier des camps et envoyer des newsletters.'
-  revoke: 'Elle ne peut plus publier de camps ni envoyer de newsletters ; les camps publics sont dépubliés immédiatement.'
+  approve: 'Elle pourra publier des events et envoyer des newsletters.'
+  reject: 'Elle ne pourra pas publier de events ni envoyer de newsletters. Ses events restent des brouillons privés.'
+  reinstate: 'Elle pourra à nouveau publier des events et envoyer des newsletters.'
+  revoke: 'Elle ne peut plus publier de events ni envoyer de newsletters ; les events publics sont dépubliés immédiatement.'
 note:
   optional: 'Note (optionnel)'
   required: 'Motif du refus'

@@ -1,10 +1,10 @@
 import path from 'node:path';
 import fse from 'fs-extra';
 import { faker } from '@faker-js/faker/locale/en';
-import type { Camp, Prisma } from '#generated/prisma/client.js';
+import type { Event, Prisma } from '#generated/prisma/client.js';
 import { appPath } from '#utils/paths';
 import { FileFactory } from '../factories';
-import { campLocales } from './locales';
+import { eventLocales } from './locales';
 import { createPdf } from './pdf';
 
 interface SeedDocument {
@@ -24,9 +24,9 @@ const UPLOAD_DIR = appPath(process.env.UPLOAD_DIR ?? 'storage/uploads');
 const SLOT_DOCUMENTS: Record<string, Record<string, SeedDocument>> = {
   rules: {
     en: {
-      name: 'Camp rules.pdf',
+      name: 'Event rules.pdf',
       lines: [
-        'Camp rules',
+        'Event rules',
         '',
         '1. We treat everyone with respect and look out for each other.',
         '2. Nobody leaves the site without telling a leader.',
@@ -48,9 +48,9 @@ const SLOT_DOCUMENTS: Record<string, Record<string, SeedDocument>> = {
       ],
     },
     fr: {
-      name: 'Règlement du camp.pdf',
+      name: 'Règlement du event.pdf',
       lines: [
-        'Règlement du camp',
+        'Règlement du event',
         '',
         '1. Nous nous respectons et veillons les uns sur les autres.',
         '2. Personne ne quitte le site sans prévenir un responsable.',
@@ -67,10 +67,10 @@ const SLOT_DOCUMENTS: Record<string, Record<string, SeedDocument>> = {
         'General terms and conditions',
         '',
         'Registration is binding once we have confirmed it in writing.',
-        'The participation fee is due four weeks before the camp starts.',
+        'The participation fee is due four weeks before the event starts.',
         'Cancellations up to 30 days before the start are free of charge.',
         'Later cancellations are charged at 50% of the participation fee.',
-        'The organizer may cancel the camp if too few places are booked.',
+        'The organizer may cancel the event if too few places are booked.',
       ],
     },
     de: {
@@ -82,7 +82,7 @@ const SLOT_DOCUMENTS: Record<string, Record<string, SeedDocument>> = {
         'Der Teilnahmebeitrag ist vier Wochen vor Beginn fällig.',
         'Stornierungen bis 30 Tage vor Beginn sind kostenfrei.',
         'Danach werden 50% des Teilnahmebeitrags berechnet.',
-        'Der Veranstalter kann das Camp bei zu wenigen Anmeldungen absagen.',
+        'Der Veranstalter kann das Event bei zu wenigen Anmeldungen absagen.',
       ],
     },
     fr: {
@@ -111,7 +111,7 @@ export const EXTRA_DOCUMENTS: Record<string, SeedDocument> = {
       'Rain jacket and sturdy walking shoes',
       'Swimwear for the lido day',
       'Torch for the night hike',
-      'Any medication, handed to the camp nurse on arrival',
+      'Any medication, handed to the event nurse on arrival',
     ],
   },
   insurance: {
@@ -134,21 +134,21 @@ function declaredSlots(form: Record<string, unknown>): string[] {
 }
 
 /**
- * Camp documents, written to storage as real one-page PDFs so downloading them
+ * Event documents, written to storage as real one-page PDFs so downloading them
  * works like an uploaded file would.
  */
-export class CampFileSeeder {
-  constructor(private camp: Camp) {}
+export class EventFileSeeder {
+  constructor(private event: Event) {}
 
   /**
-   * One public document per {_file.<slot>} the camp's form declares, in every
-   * locale the camp supports — the same thing a manager would upload on the
+   * One public document per {_file.<slot>} the event's form declares, in every
+   * locale the event supports — the same thing a manager would upload on the
    * files page to make the form's document links resolve.
    */
   async seedFormSlots(): Promise<void> {
-    const locales = campLocales(this.camp);
+    const locales = eventLocales(this.event);
 
-    for (const slot of declaredSlots(this.camp.form)) {
+    for (const slot of declaredSlots(this.event.form)) {
       for (const locale of locales) {
         const document = SLOT_DOCUMENTS[slot]?.[locale];
         if (!document) {
@@ -177,8 +177,8 @@ export class CampFileSeeder {
     key: string,
     data: { field?: string; locale?: string; accessLevel: string },
   ): Promise<void> {
-    await writeDocument(document, `seed_${this.camp.id}_${key}.pdf`, {
-      camp: { connect: { id: this.camp.id } },
+    await writeDocument(document, `seed_${this.event.id}_${key}.pdf`, {
+      event: { connect: { id: this.event.id } },
       ...data,
     });
   }
@@ -190,7 +190,7 @@ export class CampFileSeeder {
  * connects it to the registration it belongs to.
  */
 export async function seedRegistrationUpload(
-  camp: Camp,
+  event: Event,
   index: number,
   field: string,
 ) {
@@ -203,7 +203,7 @@ export async function seedRegistrationUpload(
         'Attached to the registration through the form.',
       ],
     },
-    `seed_${camp.id}_upload_${String(index)}_${field}.pdf`,
+    `seed_${event.id}_upload_${String(index)}_${field}.pdf`,
     {
       // Form uploads are anonymous until the registration claims them, and are
       // filed under the session that sent them.

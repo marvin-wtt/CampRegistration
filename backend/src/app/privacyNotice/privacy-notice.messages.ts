@@ -4,8 +4,8 @@ import { MailBase } from '#app/mail/mail.base';
 import { translateObject } from '#utils/translateObject';
 import { generateUrl } from '#utils/url';
 
-export interface CampRetentionDuePayload {
-  camp: { id: string; name: Prisma.JsonValue };
+export interface EventRetentionDuePayload {
+  event: { id: string; name: Prisma.JsonValue };
   recipient: { name: string | null; email: string; locale: string | null };
   /** ISO 8601 — the payload crosses a queue, where a `Date` would not survive. */
   dueAt: string;
@@ -18,15 +18,15 @@ export interface CampRetentionDuePayload {
 }
 
 /**
- * Tells a camp's directors that the retention period its registrants were
+ * Tells a event's directors that the retention period its registrants were
  * shown is running out.
  *
- * Sent once per camp. It asks for a review rather than announcing a deletion:
+ * Sent once per event. It asks for a review rather than announcing a deletion:
  * nothing on the platform erases the data, and the mail must not imply that
  * something already has.
  */
-export class CampRetentionDueMessage extends MailBase<CampRetentionDuePayload> {
-  static readonly type = 'camp:retention-due';
+export class EventRetentionDueMessage extends MailBase<EventRetentionDuePayload> {
+  static readonly type = 'event:retention-due';
 
   protected to() {
     const { name, email } = this.payload.recipient;
@@ -40,32 +40,32 @@ export class CampRetentionDueMessage extends MailBase<CampRetentionDuePayload> {
 
   protected getTranslationOptions() {
     return {
-      namespace: 'camp',
+      namespace: 'event',
       keyPrefix: 'email.retentionDue',
     };
   }
 
   protected subject(): string {
-    return this.getT()('subject', { camp: this.context().camp });
+    return this.getT()('subject', { event: this.context().event });
   }
 
   protected content() {
     return {
-      template: 'camp-retention-due',
+      template: 'event-retention-due',
       context: this.context(),
     };
   }
 
   private context() {
     const locale = this.locale();
-    const { camp, dueAt, months, anchor, hasExceptions, hasConsentBoundData } =
+    const { event, dueAt, months, anchor, hasExceptions, hasConsentBoundData } =
       this.payload;
 
     return {
-      camp: {
-        id: camp.id,
+      event: {
+        id: event.id,
         name: translateObject(
-          camp.name as string | Record<string, string>,
+          event.name as string | Record<string, string>,
           locale,
         ),
       },
@@ -79,7 +79,7 @@ export class CampRetentionDueMessage extends MailBase<CampRetentionDuePayload> {
       anchor,
       hasExceptions,
       hasConsentBoundData,
-      url: generateUrl(['management', 'camps', camp.id, 'participants']),
+      url: generateUrl(['management', 'events', event.id, 'participants']),
     };
   }
 }

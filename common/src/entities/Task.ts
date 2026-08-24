@@ -1,5 +1,5 @@
 import type { Identifiable } from './Identifiable.js';
-import type { CampManagerIdentity } from './CampManager.js';
+import type { EventManagerIdentity } from './EventManager.js';
 
 export interface Task extends Identifiable {
   title: string;
@@ -7,7 +7,7 @@ export interface Task extends Identifiable {
   dueDate: string | null;
   completed: boolean;
   assigneeId: string | null;
-  assignee: CampManagerIdentity | null;
+  assignee: EventManagerIdentity | null;
 }
 
 export type TaskCreateData = Partial<

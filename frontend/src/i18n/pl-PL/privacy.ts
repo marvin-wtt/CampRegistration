@@ -120,7 +120,7 @@ export default {
     },
     origin: {
       organization: 'Od organizacji',
-      camp: 'Dodano tutaj',
+      event: 'Dodano tutaj',
     },
     action: {
       publish: 'Opublikuj',

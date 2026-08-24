@@ -41,7 +41,7 @@
           </div>
 
           <div class="print-header__meta">
-            <span>{{ to(payload.camp.name) }}</span>
+            <span>{{ to(payload.event.name) }}</span>
           </div>
         </header>
 
@@ -49,7 +49,7 @@
           :title="to(template.title)"
           :questions="payload.questions"
           :registrations="payload.registrations"
-          :camp="payload.camp"
+          :event="payload.event"
           :template
         />
 
@@ -67,8 +67,8 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import ResultTablePrint from '@/components/campManagement/table/ResultTablePrint.vue';
-import type { PrintTablesPayload } from '@/components/campManagement/table/PrintTablesPayload';
+import ResultTablePrint from '@/components/eventManagement/table/ResultTablePrint.vue';
+import type { PrintTablesPayload } from '@/components/eventManagement/table/PrintTablesPayload';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { usePrintPage, waitForStableLayout } from '@/composables/printPage';
 import {

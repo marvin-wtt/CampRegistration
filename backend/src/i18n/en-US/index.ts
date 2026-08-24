@@ -1,5 +1,5 @@
 import auth from './auth/index.js';
-import camp from './camp/index.js';
+import event from './event/index.js';
 import email from './email/index.js';
 import feedback from './feedback/index.js';
 import manager from './manager/index.js';
@@ -13,7 +13,7 @@ export default {
     appName: 'Inscriva',
   },
   auth,
-  camp,
+  event,
   email,
   feedback,
   manager,

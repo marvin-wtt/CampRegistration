@@ -25,7 +25,7 @@
       />
     </div>
 
-    <!-- Optional by design: a camp with one period never opens this. -->
+    <!-- Optional by design: a event with one period never opens this. -->
     <div class="q-mt-lg retention-exceptions">
       <div class="text-body2 text-weight-medium">
         {{ t('retention.exceptions.title') }}

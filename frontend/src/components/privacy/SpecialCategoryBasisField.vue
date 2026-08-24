@@ -1,7 +1,7 @@
 <template>
-  <!-- Explicit consent is what a camp relies on in practice, so it is stated
+  <!-- Explicit consent is what a event relies on in practice, so it is stated
        rather than chosen. The four alternatives each need a condition most
-       camps do not meet, so they live behind a disclosure with those
+       events do not meet, so they live behind a disclosure with those
        conditions spelled out — a flat list of five invites picking whichever
        sounds nicest. -->
   <div class="art9">

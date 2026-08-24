@@ -56,7 +56,7 @@
         <q-item
           v-close-popup
           clickable
-          :to="{ name: 'management.camps' }"
+          :to="{ name: 'management.events' }"
           active-class=""
           exact-active-class=""
         >
@@ -64,7 +64,7 @@
             <q-icon name="cabin" />
           </q-item-section>
           <q-item-section>
-            {{ t('camps') }}
+            {{ t('events') }}
           </q-item-section>
         </q-item>
 
@@ -282,7 +282,7 @@ const administrator = computed<boolean>(() => {
   return profile.value?.role === 'ADMIN';
 });
 
-// Camps are always offered — the index carries the create flow for a user with
+// Events are always offered — the index carries the create flow for a user with
 // none. The other two would only lead to an empty page.
 const hasNewsletters = computed<boolean>(() => {
   return (profile.value?.newsletterAccess.length ?? 0) > 0;
@@ -341,7 +341,7 @@ function logout() {
 <i18n lang="yaml" locale="en">
 account: 'Account'
 username: 'Signed in as'
-camps: 'Camps'
+events: 'Events'
 newsletters: 'Newsletters'
 organizations: 'Organizations'
 administration: 'Administration'
@@ -355,7 +355,7 @@ dark_mode: 'Dark Mode'
 <i18n lang="yaml" locale="de">
 account: 'Konto'
 username: 'Angemeldet als'
-camps: 'Camps'
+events: 'Events'
 newsletters: 'Newsletter'
 organizations: 'Organisationen'
 administration: 'Verwaltung'
@@ -369,7 +369,7 @@ dark_mode: 'Dunkelmodus'
 <i18n lang="yaml" locale="fr">
 account: 'Compte'
 username: 'Connecté en tant que'
-camps: 'Camps'
+events: 'Events'
 newsletters: 'Newsletters'
 organizations: 'Organisations'
 administration: 'Administration'
@@ -383,7 +383,7 @@ dark_mode: 'Mode sombre'
 <i18n lang="yaml" locale="pl">
 account: 'Konto'
 username: 'Zalogowany jako'
-camps: 'Obozy'
+events: 'Obozy'
 newsletters: 'Newslettery'
 organizations: 'Organizacje'
 administration: 'Administracja'
@@ -397,7 +397,7 @@ dark_mode: 'Tryb ciemny'
 <i18n lang="yaml" locale="cs">
 account: 'Účet'
 username: 'Přihlášen jako'
-camps: 'Tábory'
+events: 'Tábory'
 newsletters: 'Newslettery'
 organizations: 'Organizace'
 administration: 'Administrace'

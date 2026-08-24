@@ -15,7 +15,7 @@ export type { AppLocale };
 export const APP_LOCALES: AppLocale[] = [...APP_LOCALES_READONLY];
 
 /**
- * A camp declares the countries it runs in (`gb`, `us`, `cz`), while every
+ * A event declares the countries it runs in (`gb`, `us`, `cz`), while every
  * `Translatable` is read back by locale (`en`, `cs`). The two namespaces only
  * look alike: text stored under a country a reader is never looked up by is
  * text nobody is served.
@@ -30,7 +30,7 @@ export const COUNTRY_LOCALES: Record<string, AppLocale> = {
 };
 
 /**
- * The languages a camp writes its own texts in. Every locale when the camp
+ * The languages a event writes its own texts in. Every locale when the event
  * names no country — offering nothing to write in would be worse than offering
  * too much.
  */
@@ -40,7 +40,7 @@ export function localesForCountries(
   const wanted = new Set(
     (countries ?? []).map((country) => COUNTRY_LOCALES[country]),
   );
-  // Ordered by the app's own list rather than by the camp's countries, so the
+  // Ordered by the app's own list rather than by the event's countries, so the
   // tabs do not reshuffle when a country is added.
   const matched = APP_LOCALES.filter((locale) => wanted.has(locale));
 

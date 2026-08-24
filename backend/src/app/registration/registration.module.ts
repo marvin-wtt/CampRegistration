@@ -32,7 +32,7 @@ export class RegistrationModule implements AppModule {
   configure(_options: ModuleOptions): Promise<void> | void {
     // Manual -> Registration
     resolve(MailableRegistry).register(RegistrationTemplateMessage);
-    // Event -> Camp Contact
+    // Event -> Event Contact
     resolve(MailableRegistry).register(RegistrationNotifyMessage);
     // Event -> Registration
     resolve(MailableRegistry).register(RegistrationConfirmedMessage);
@@ -48,32 +48,35 @@ export class RegistrationModule implements AppModule {
     });
 
     router.useRouter(
-      '/camps/:campsId/registrations/:registrationId/files',
+      '/events/:eventsId/registrations/:registrationId/files',
       new RegistrationFilesRouter(),
     );
-    router.useRouter('/camps/:campId/registrations', new RegistrationRouter());
+    router.useRouter(
+      '/events/:eventId/registrations',
+      new RegistrationRouter(),
+    );
   }
 
   registerPermissions(): ScopedPermissions {
-    // The 'camp.registrations.create' permission bypasses the registration
+    // The 'event.registrations.create' permission bypasses the registration
     // open/close checks, allowing managers to create registrations outside
     // the normal registration period.
     return {
-      camp: {
+      event: {
         DIRECTOR: [
-          'camp.registrations.view',
-          'camp.registrations.create',
-          'camp.registrations.edit',
-          'camp.registrations.delete',
+          'event.registrations.view',
+          'event.registrations.create',
+          'event.registrations.edit',
+          'event.registrations.delete',
         ],
         COORDINATOR: [
-          'camp.registrations.view',
-          'camp.registrations.create',
-          'camp.registrations.edit',
-          'camp.registrations.delete',
+          'event.registrations.view',
+          'event.registrations.create',
+          'event.registrations.edit',
+          'event.registrations.delete',
         ],
-        COUNSELOR: ['camp.registrations.view', 'camp.registrations.create'],
-        VIEWER: ['camp.registrations.view'],
+        COUNSELOR: ['event.registrations.view', 'event.registrations.create'],
+        VIEWER: ['event.registrations.view'],
       },
     };
   }

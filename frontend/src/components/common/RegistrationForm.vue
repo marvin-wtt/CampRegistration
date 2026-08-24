@@ -63,16 +63,16 @@
             icon="person_add"
             :label="t('complete.registerAnother')"
             :to="{
-              name: 'camp',
-              params: { campId: props.campDetails.id },
+              name: 'event',
+              params: { eventId: props.eventDetails.id },
             }"
           />
           <m-btn
             outline
             primary
             icon="explore"
-            :label="t('complete.exploreCamps')"
-            :to="{ name: 'camps' }"
+            :label="t('complete.exploreEvents')"
+            :to="{ name: 'events' }"
           />
         </q-card-actions>
 
@@ -108,7 +108,7 @@ import {
   startAutoThemeUpdate,
   addFileSlotResolver,
 } from '@/composables/survey';
-import type { CampDetails } from '@camp-registration/common/entities';
+import type { EventDetails } from '@camp-registration/common/entities';
 import { useAPIService } from '@/services/APIService';
 import { useErrorExtractor } from '@/composables/serviceHandler';
 
@@ -120,7 +120,7 @@ const { extractErrorText } = useErrorExtractor();
 
 interface Props {
   data?: object;
-  campDetails: CampDetails;
+  eventDetails: EventDetails;
   submitFn?: (
     id: string,
     formData: Record<string, unknown>,
@@ -212,10 +212,10 @@ const badgeIcon = computed(() =>
 const moderationLayout = props.moderation || props.readonly;
 
 const model = createModel(
-  props.campDetails.id,
+  props.eventDetails.id,
   moderationLayout
-    ? createModerationForm(props.campDetails.form)
-    : props.campDetails.form,
+    ? createModerationForm(props.eventDetails.form)
+    : props.eventDetails.form,
 );
 model.validationEnabled = !moderationLayout;
 model.mode = props.readonly ? 'display' : 'edit';
@@ -226,7 +226,7 @@ if (props.data) {
 
 const bgColor = ref<string>();
 
-const campData = toRef(props.campDetails);
+const eventData = toRef(props.eventDetails);
 
 watchEffect(() => {
   emit('bgColorUpdate', bgColor.value);
@@ -234,8 +234,8 @@ watchEffect(() => {
 
 onMounted(() => {
   // Auto variables update on locale change
-  startAutoDataUpdate(model, campData);
-  startAutoThemeUpdate(model, campData, bgColor);
+  startAutoDataUpdate(model, eventData);
+  startAutoThemeUpdate(model, eventData, bgColor);
 });
 
 function createModerationForm(form: object) {
@@ -246,7 +246,7 @@ function createModerationForm(form: object) {
   };
 }
 
-function createModel(campId: string, form: object): SurveyModel {
+function createModel(eventId: string, form: object): SurveyModel {
   const survey = new SurveyModel(form);
   survey.locale = locale.value;
 
@@ -326,7 +326,7 @@ function createModel(campId: string, form: object): SurveyModel {
   });
 
   // Resolve {_file.<slot>} placeholders to locale-aware file URLs on demand.
-  addFileSlotResolver(survey, campId, api);
+  addFileSlotResolver(survey, eventId, api);
 
   // Send data to server. The saving/error UI is rendered by the Vue overlay
   // (see submitState), so the survey's own completed page stays hidden until
@@ -343,7 +343,7 @@ function createModel(campId: string, form: object): SurveyModel {
     mapFileQuestionValues(sender);
 
     try {
-      await submitFn(campId, sender.data ?? {}, sender.locale);
+      await submitFn(eventId, sender.data ?? {}, sender.locale);
       submitted.value = true;
       if (sender.showCompletePage && hasFormCompletedHtml) {
         // Reveal the form-defined completed page (survey-core shows it by
@@ -459,9 +459,9 @@ submit:
     retry: 'Try again'
 complete:
   title: 'Registration complete!'
-  text: "Thanks for signing up — we've received your registration and can't wait to see you at camp."
+  text: "Thanks for signing up — we've received your registration and can't wait to see you at event."
   registerAnother: 'Register another person'
-  exploreCamps: 'Explore other camps'
+  exploreEvents: 'Explore other events'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -475,9 +475,9 @@ submit:
     retry: 'Erneut versuchen'
 complete:
   title: 'Anmeldung abgeschlossen!'
-  text: 'Danke für deine Anmeldung — wir haben sie erhalten und freuen uns schon darauf, dich im Camp zu begrüßen.'
+  text: 'Danke für deine Anmeldung — wir haben sie erhalten und freuen uns schon darauf, dich im Event zu begrüßen.'
   registerAnother: 'Weitere Person anmelden'
-  exploreCamps: 'Weitere Camps entdecken'
+  exploreEvents: 'Weitere Events entdecken'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -491,9 +491,9 @@ submit:
     retry: 'Réessayer'
 complete:
   title: 'Inscription terminée !'
-  text: "Merci pour ton inscription — nous l'avons bien reçue et avons hâte de te voir au camp."
+  text: "Merci pour ton inscription — nous l'avons bien reçue et avons hâte de te voir au event."
   registerAnother: 'Inscrire une autre personne'
-  exploreCamps: "Découvrir d'autres camps"
+  exploreEvents: "Découvrir d'autres events"
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -509,7 +509,7 @@ complete:
   title: 'Rejestracja zakończona!'
   text: 'Dziękujemy za rejestrację — otrzymaliśmy Twoje zgłoszenie i nie możemy się doczekać spotkania na obozie.'
   registerAnother: 'Zarejestruj kolejną osobę'
-  exploreCamps: 'Odkryj inne obozy'
+  exploreEvents: 'Odkryj inne obozy'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -525,7 +525,7 @@ complete:
   title: 'Registrace dokončena!'
   text: 'Děkujeme za registraci — tvou přihlášku jsme přijali a těšíme se na tebe na táboře.'
   registerAnother: 'Registrovat další osobu'
-  exploreCamps: 'Prozkoumat další tábory'
+  exploreEvents: 'Prozkoumat další tábory'
 </i18n>
 
 <style lang="scss">

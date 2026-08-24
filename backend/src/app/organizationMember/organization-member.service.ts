@@ -2,14 +2,14 @@ import { BaseService } from '#core/base/BaseService';
 import { injectable } from 'inversify';
 import { permissionRegistry } from '#core/permission-registry';
 import type {
-  CampScopedPermission,
+  EventScopedPermission,
   NewsletterPermission,
   OrganizationPermission,
   OrganizationRole,
 } from '@camp-registration/common/permissions';
 import {
-  ORGANIZATION_CAMP_ACCESS_ROLES,
-  ORGANIZATION_CAMP_PERMISSIONS,
+  ORGANIZATION_EVENT_ACCESS_ROLES,
+  ORGANIZATION_EVENT_PERMISSIONS,
   ORGANIZATION_NEWSLETTER_PERMISSIONS,
 } from '@camp-registration/common/permissions';
 
@@ -87,32 +87,32 @@ export class OrganizationMemberService extends BaseService {
   }
 
   /**
-   * The camp permissions `userId` holds implicitly because they administer the
-   * organization that owns `campId`. Empty for MEMBERs, for non-members, and
-   * for organizations that do not own the camp.
+   * The event permissions `userId` holds implicitly because they administer the
+   * organization that owns `eventId`. Empty for MEMBERs, for non-members, and
+   * for organizations that do not own the event.
    *
    * Deliberately a fixed set rather than a registry lookup: an organization
-   * role must never be able to widen into arbitrary camp permissions, least of
+   * role must never be able to widen into arbitrary event permissions, least of
    * all access to participants' personal data.
    */
-  async getOrganizationCampPermissions(
-    campId: string,
+  async getOrganizationEventPermissions(
+    eventId: string,
     userId: string,
-  ): Promise<readonly CampScopedPermission[]> {
+  ): Promise<readonly EventScopedPermission[]> {
     const membership = await this.prisma.organizationMember.findFirst({
       where: {
         userId,
-        role: { in: [...ORGANIZATION_CAMP_ACCESS_ROLES] },
-        organization: { camps: { some: { id: campId } } },
+        role: { in: [...ORGANIZATION_EVENT_ACCESS_ROLES] },
+        organization: { events: { some: { id: eventId } } },
       },
       select: { id: true },
     });
 
-    return membership === null ? [] : ORGANIZATION_CAMP_PERMISSIONS;
+    return membership === null ? [] : ORGANIZATION_EVENT_PERMISSIONS;
   }
 
   /**
-   * The newsletter counterpart of `getOrganizationCampPermissions`. Empty for
+   * The newsletter counterpart of `getOrganizationEventPermissions`. Empty for
    * MEMBERs, for non-members, and for organizations that do not own the
    * newsletter.
    */
@@ -123,7 +123,7 @@ export class OrganizationMemberService extends BaseService {
     const membership = await this.prisma.organizationMember.findFirst({
       where: {
         userId,
-        role: { in: [...ORGANIZATION_CAMP_ACCESS_ROLES] },
+        role: { in: [...ORGANIZATION_EVENT_ACCESS_ROLES] },
         organization: { newsletters: { some: { id: newsletterId } } },
       },
       select: { id: true },
@@ -163,7 +163,7 @@ export class OrganizationMemberService extends BaseService {
   }
 
   /**
-   * Invites someone who has no account yet. Mirrors the camp-manager flow: the
+   * Invites someone who has no account yet. Mirrors the event-manager flow: the
    * membership row is created with a null `userId` and is bound to the person
    * when they register with that address.
    */
@@ -198,7 +198,7 @@ export class OrganizationMemberService extends BaseService {
 
   /**
    * Binds pending invitations to a freshly registered account. Called from
-   * registration alongside the camp-manager equivalent.
+   * registration alongside the event-manager equivalent.
    */
   async resolveMemberInvitations(email: string, userId: string) {
     await this.prisma.organizationMember.updateMany({

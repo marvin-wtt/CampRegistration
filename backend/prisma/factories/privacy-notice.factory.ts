@@ -2,7 +2,7 @@ import {
   emptyPrivacyNoticeContent,
   type PrivacyNoticeAddendum,
   type PrivacyNoticeContent,
-} from '@camp-registration/common/privacy';
+} from '@event-registration/common/privacy';
 import prisma from '../client.js';
 
 /**
@@ -16,7 +16,7 @@ export const completePrivacyNoticeContent = (
   ...emptyPrivacyNoticeContent(),
   purposes: [{ key: 'registration_administration', legalBasis: 'contract' }],
   dataCategories: [{ key: 'identity' }, { key: 'contact' }],
-  recipients: [{ key: 'camp_staff' }, { key: 'platform_operator' }],
+  recipients: [{ key: 'event_staff' }, { key: 'platform_operator' }],
   retention: { months: 24, anchor: 'camp_end', exceptions: [] },
   ...data,
 });
@@ -37,13 +37,13 @@ export const PrivacyNoticeFactory = {
     });
   },
 
-  createCampAddendum: async (
-    campId: string,
+  createEventAddendum: async (
+    eventId: string,
     content: PrivacyNoticeAddendum,
     version = 1,
   ) => {
     return prisma.privacyNoticeVersion.create({
-      data: { scope: 'CAMP', scopeId: campId, version, content },
+      data: { scope: 'CAMP', scopeId: eventId, version, content },
     });
   },
 };

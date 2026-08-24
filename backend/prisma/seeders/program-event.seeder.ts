@@ -1,6 +1,6 @@
-import { ProgramEventFactory } from '../factories/program-event.factory';
-import type { Camp } from '#generated/prisma/client.js';
-import { campLocales, forLocales } from './locales';
+import { ProgramItemFactory } from '../factories/program-item.factory';
+import type { Event } from '#generated/prisma/client.js';
+import { eventLocales, forLocales } from './locales';
 import moment from 'moment';
 
 type Translated = string | Record<string, string>;
@@ -9,7 +9,7 @@ type EventData = {
   title: Translated;
   details?: Translated;
   location?: Translated;
-  /** Days after the camp start date. */
+  /** Days after the event start date. */
   day: number;
   time?: string | null;
   duration?: number | null;
@@ -25,7 +25,7 @@ const COLOR = {
   social: '#E91E63',
   routine: '#607D8B',
   excursion: '#00BCD4',
-  campfire: '#FF5722',
+  eventfire: '#FF5722',
 };
 
 const TITLE = {
@@ -68,7 +68,7 @@ const LOCATION = {
     de: 'Waldpfad Nord',
     fr: 'Sentier forestier nord',
   },
-  forestCamp: { en: 'Forest camp', de: 'Waldlager', fr: 'Camp forestier' },
+  forestEvent: { en: 'Forest event', de: 'Waldlager', fr: 'Event forestier' },
   firePit: { en: 'Fire pit', de: 'Feuerstelle', fr: 'Foyer' },
   sportsGround: {
     en: 'Sports ground',
@@ -106,7 +106,7 @@ const EVENTS: EventData[] = [
   },
   {
     title: {
-      en: 'House tour and camp rules',
+      en: 'House tour and event rules',
       de: 'Hausführung und Lagerregeln',
       fr: 'Visite du site et règlement',
     },
@@ -218,15 +218,15 @@ const EVENTS: EventData[] = [
   },
   {
     title: {
-      en: 'Campfire with songs',
+      en: 'Eventfire with songs',
       de: 'Lagerfeuer mit Liedern',
-      fr: 'Feu de camp en chansons',
+      fr: 'Feu de event en chansons',
     },
     location: LOCATION.firePit,
     day: 1,
     time: '20:30',
     duration: 90,
-    color: COLOR.campfire,
+    color: COLOR.eventfire,
   },
 
   // Day 2 — one big morning block, workshops in the afternoon.
@@ -246,9 +246,9 @@ const EVENTS: EventData[] = [
   },
   {
     title: {
-      en: 'Camp Olympics',
-      de: 'Camp-Olympiade',
-      fr: 'Olympiades du camp',
+      en: 'Event Olympics',
+      de: 'Event-Olympiade',
+      fr: 'Olympiades du event',
     },
     details: {
       en: 'Mixed teams of eight',
@@ -377,7 +377,7 @@ const EVENTS: EventData[] = [
   },
   {
     title: TITLE.bushcraft,
-    location: LOCATION.forestCamp,
+    location: LOCATION.forestEvent,
     day: 4,
     time: '10:00',
     duration: 120,
@@ -411,7 +411,7 @@ const EVENTS: EventData[] = [
   },
   {
     title: TITLE.bushcraft,
-    location: LOCATION.forestCamp,
+    location: LOCATION.forestEvent,
     day: 4,
     time: '14:00',
     duration: 120,
@@ -492,7 +492,7 @@ const EVENTS: EventData[] = [
   },
   {
     title: {
-      en: 'Preparing the camp show',
+      en: 'Preparing the event show',
       de: 'Vorbereitung der Abschlussshow',
       fr: 'Préparation du spectacle',
     },
@@ -605,7 +605,7 @@ const EVENTS: EventData[] = [
   },
   {
     title: {
-      en: 'Camp show and closing ceremony',
+      en: 'Event show and closing ceremony',
       de: 'Abschlussshow und Abschlussfeier',
       fr: 'Spectacle et cérémonie de clôture',
     },
@@ -645,17 +645,17 @@ const EVENTS: EventData[] = [
   },
 ];
 
-/** A full program, laid out relative to the camp's own start date. */
-export class ProgramEventSeeder {
-  constructor(private camp: Camp) {}
+/** A full program, laid out relative to the event's own start date. */
+export class ProgramItemSeeder {
+  constructor(private event: Event) {}
 
   async seed(): Promise<void> {
-    const start = moment(this.camp.startAt).startOf('day');
-    const locales = campLocales(this.camp);
+    const start = moment(this.event.startAt).startOf('day');
+    const locales = eventLocales(this.event);
 
     for (const { day, title, details, location, ...event } of EVENTS) {
-      await ProgramEventFactory.create({
-        camp: { connect: { id: this.camp.id } },
+      await ProgramItemFactory.create({
+        event: { connect: { id: this.event.id } },
         date: start.clone().add(day, 'days').format('YYYY-MM-DD'),
         title: forLocales(title, locales),
         details: details ? forLocales(details, locales) : undefined,

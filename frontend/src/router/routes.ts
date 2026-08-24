@@ -3,7 +3,7 @@ import { type RouteRecordRaw } from 'vue-router';
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
-    component: () => import('@/layouts/CampLayout.vue'),
+    component: () => import('@/layouts/EventLayout.vue'),
     children: [
       {
         path: '',
@@ -11,25 +11,25 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/pages/LandingPage.vue'),
       },
       {
-        path: 'camps',
+        path: 'events',
         children: [
           {
             path: '',
-            name: 'camps',
-            component: () => import('@/pages/camps/CampsListedPage.vue'),
+            name: 'events',
+            component: () => import('@/pages/events/EventsListedPage.vue'),
           },
           {
-            path: ':campId',
-            name: 'camp',
-            component: () => import('@/pages/camps/CampPage.vue'),
+            path: ':eventId',
+            name: 'event',
+            component: () => import('@/pages/events/EventPage.vue'),
           },
           // A permanent address for the Art. 13 information, so the
           // confirmation mail can link to it and a registrant can come back to
           // it after submitting.
           {
-            path: ':campId/privacy',
-            name: 'camp.privacy',
-            component: () => import('@/pages/camps/CampPrivacyPage.vue'),
+            path: ':eventId/privacy',
+            name: 'event.privacy',
+            component: () => import('@/pages/events/EventPrivacyPage.vue'),
             props: true,
           },
         ],
@@ -127,110 +127,111 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/management',
-    component: () => import('@/layouts/CampManagementLayout.vue'),
+    component: () => import('@/layouts/EventManagementLayout.vue'),
     meta: {
       auth: true,
     },
     children: [
       {
         path: '',
-        redirect: { name: 'management.camps' },
+        redirect: { name: 'management.events' },
       },
       {
-        path: 'camps',
+        path: 'events',
         children: [
           {
             path: '',
             component: () =>
-              import('@/pages/campManagement/CampManagementIndexPage.vue'),
-            name: 'management.camps',
+              import('@/pages/eventManagement/EventManagementIndexPage.vue'),
+            name: 'management.events',
           },
           {
-            path: ':campId',
-            name: 'management.camp',
+            path: ':eventId',
+            name: 'management.event',
             redirect: {
-              name: 'management.camp.participants',
+              name: 'management.event.participants',
             },
             children: [
               {
                 path: 'dashboard',
-                name: 'management.camp.dashboard',
+                name: 'management.event.dashboard',
                 component: () =>
-                  import('@/pages/campManagement/CampDashboardPage.vue'),
+                  import('@/pages/eventManagement/EventDashboardPage.vue'),
               },
               {
                 path: 'participants',
-                name: 'management.camp.participants',
+                name: 'management.event.participants',
                 component: () =>
-                  import('@/pages/campManagement/RegistrationsPage.vue'),
+                  import('@/pages/eventManagement/RegistrationsPage.vue'),
               },
               {
                 path: 'contact',
-                name: 'management.camp.contact',
+                name: 'management.event.contact',
                 component: () =>
-                  import('@/pages/campManagement/ContactPage.vue'),
+                  import('@/pages/eventManagement/ContactPage.vue'),
               },
               {
                 path: 'program-planner',
-                name: 'management.camp.program-planner',
+                name: 'management.event.program-planner',
                 component: () =>
-                  import('@/pages/campManagement/ProgramPlannerPage.vue'),
+                  import('@/pages/eventManagement/ProgramPlannerPage.vue'),
               },
               {
                 path: 'room-planner',
-                name: 'management.camp.room-planner',
+                name: 'management.event.room-planner',
                 component: () =>
-                  import('@/pages/campManagement/RoomPlannerPage.vue'),
+                  import('@/pages/eventManagement/RoomPlannerPage.vue'),
               },
               {
                 path: 'tasks',
-                name: 'management.camp.tasks',
-                component: () => import('@/pages/campManagement/TasksPage.vue'),
+                name: 'management.event.tasks',
+                component: () =>
+                  import('@/pages/eventManagement/TasksPage.vue'),
               },
               {
                 path: 'settings',
                 children: [
                   {
                     path: '',
-                    name: 'management.camp.settings',
+                    name: 'management.event.settings',
                     component: () =>
-                      import('@/pages/campManagement/settings/SettingsPage.vue'),
+                      import('@/pages/eventManagement/settings/SettingsPage.vue'),
                   },
                   {
                     path: 'access',
-                    name: 'management.camp.settings.access',
+                    name: 'management.event.settings.access',
                     component: () =>
-                      import('@/pages/campManagement/settings/AccessPage.vue'),
+                      import('@/pages/eventManagement/settings/AccessPage.vue'),
                   },
                   {
                     path: 'edit',
-                    name: 'management.camp.settings.edit',
+                    name: 'management.event.settings.edit',
                     component: () =>
-                      import('@/pages/campManagement/settings/CampEditPage.vue'),
+                      import('@/pages/eventManagement/settings/EventEditPage.vue'),
                   },
                   {
                     path: 'emails',
-                    name: 'management.camp.settings.emails',
+                    name: 'management.event.settings.emails',
                     component: () =>
-                      import('@/pages/campManagement/settings/MessageTemplateEditPage.vue'),
+                      import('@/pages/eventManagement/settings/MessageTemplateEditPage.vue'),
                   },
                   {
                     path: 'files',
-                    name: 'management.camp.settings.files',
+                    name: 'management.event.settings.files',
                     component: () =>
-                      import('@/pages/campManagement/settings/FileSettingsPage.vue'),
+                      import('@/pages/eventManagement/settings/FileSettingsPage.vue'),
                   },
                   {
                     path: 'form',
-                    name: 'management.camp.settings.form',
+                    name: 'management.event.settings.form',
                     component: () =>
-                      import('@/pages/campManagement/settings/FormEditPage.vue'),
+                      import('@/pages/eventManagement/settings/FormEditPage.vue'),
                   },
                   {
                     path: 'privacy',
-                    name: 'management.camp.settings.privacy',
+                    name: 'management.event.settings.privacy',
                     component: () =>
-                      import('@/pages/campManagement/settings/CampPrivacyPage.vue'),
+                      import('@/pages/eventManagement/settings/EventPrivacyPage.vue'),
                   },
                 ],
               },
@@ -265,10 +266,10 @@ const routes: RouteRecordRaw[] = [
               import('@/pages/organization/OrganizationDashboardPage.vue'),
           },
           {
-            path: 'camps',
-            name: 'management.organization.camps',
+            path: 'events',
+            name: 'management.organization.events',
             component: () =>
-              import('@/pages/organization/OrganizationCampsPage.vue'),
+              import('@/pages/organization/OrganizationEventsPage.vue'),
           },
           {
             path: 'newsletters',
@@ -337,9 +338,9 @@ const routes: RouteRecordRaw[] = [
           import('@/pages/administration/OrganizationAdminPage.vue'),
       },
       {
-        path: 'camps',
-        name: 'administration.camps',
-        component: () => import('@/pages/administration/CampAdminPage.vue'),
+        path: 'events',
+        name: 'administration.events',
+        component: () => import('@/pages/administration/EventAdminPage.vue'),
       },
       {
         path: 'newsletters',

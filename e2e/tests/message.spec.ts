@@ -5,16 +5,16 @@ test.describe("message", () => {
   test("should send a message to a registration and deliver it by email", async ({
     page,
   }) => {
-    const campId = "01JHP0CXJFR4MQS8SF1HQJCY38";
+    const eventId = "01JHP0CXJFR4MQS8SF1HQJCY38";
 
     await page.goto("/login");
     const loginForm = page.getByTestId("login-form");
     await loginForm.getByTestId("email").fill("john@example.com");
     await loginForm.getByTestId("password").fill("password");
     await loginForm.getByTestId("submit").click();
-    await expect(page).toHaveURL(/\/management\/camps$/);
+    await expect(page).toHaveURL(/\/management\/events$/);
 
-    await page.goto(`/management/camps/${campId}/contact`);
+    await page.goto(`/management/events/${eventId}/contact`);
 
     const contactForm = page.getByTestId("contact-form");
 
@@ -45,7 +45,7 @@ test.describe("message", () => {
     await subjectField.click();
     await subjectField
       .locator('[contenteditable="true"]')
-      .pressSequentially("Welcome to camp");
+      .pressSequentially("Welcome to event");
 
     const messageField = contactForm.getByTestId("message");
     await messageField.click();
@@ -55,7 +55,7 @@ test.describe("message", () => {
 
     const createMessageResponse = page.waitForResponse(
       (resp) =>
-        resp.url().includes(`/api/v1/camps/${campId}/messages`) &&
+        resp.url().includes(`/api/v1/events/${eventId}/messages`) &&
         resp.request().method() === "POST",
     );
     await contactForm.getByTestId("send").click();
@@ -64,7 +64,7 @@ test.describe("message", () => {
     expect(response.status()).toBe(201);
 
     const email = await waitForMessageBySentTo("tom.smith@example.com");
-    expect(email.subject).toBe("Welcome to camp");
+    expect(email.subject).toBe("Welcome to event");
     expect(email.text).toContain("See you soon!");
   });
 });

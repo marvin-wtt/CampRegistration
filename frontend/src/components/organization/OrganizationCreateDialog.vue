@@ -240,7 +240,7 @@ async function onSubmit() {
 
 <i18n lang="yaml" locale="en">
 title: 'Create organization'
-description: 'Your organization is reviewed before it can publish camps or send newsletters. You can start building a camp straight away.'
+description: 'Your organization is reviewed before it can publish events or send newsletters. You can start building a event straight away.'
 privacyNote: 'Verification also requires a published privacy notice. You can write it under Privacy as soon as the organization exists.'
 section:
   identity: 'Contact'
@@ -268,7 +268,7 @@ action:
 
 <i18n lang="yaml" locale="de">
 title: 'Organisation erstellen'
-description: 'Deine Organisation wird geprüft, bevor sie Camps veröffentlichen oder Newsletter versenden kann. Ein Camp kannst du sofort anlegen.'
+description: 'Deine Organisation wird geprüft, bevor sie Events veröffentlichen oder Newsletter versenden kann. Ein Event kannst du sofort anlegen.'
 privacyNote: 'Für die Verifizierung wird außerdem eine veröffentlichte Datenschutzerklärung benötigt. Du kannst sie unter Datenschutz verfassen, sobald die Organisation angelegt ist.'
 section:
   identity: 'Kontakt'
@@ -296,7 +296,7 @@ action:
 
 <i18n lang="yaml" locale="fr">
 title: 'Créer une organisation'
-description: 'Ton organisation est vérifiée avant de pouvoir publier des camps ou envoyer des newsletters. Tu peux commencer à préparer un camp immédiatement.'
+description: 'Ton organisation est vérifiée avant de pouvoir publier des events ou envoyer des newsletters. Tu peux commencer à préparer un event immédiatement.'
 privacyNote: 'La vérification exige également une politique de confidentialité publiée. Tu peux la rédiger sous Confidentialité dès que l’organisation existe.'
 section:
   identity: 'Contact'

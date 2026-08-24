@@ -22,9 +22,9 @@ interface LinkItemProps<S extends PermissionScope> extends BaseProps<S> {
 }
 
 /**
- * Navigation items are gated per scope: a camp layout filters with
+ * Navigation items are gated per scope: a event layout filters with
  * `usePermissions().canAccess`, an organization layout with `canAccessOrg`.
- * The scope parameter keeps a camp permission out of an organization menu,
+ * The scope parameter keeps a event permission out of an organization menu,
  * where it could never match.
  */
 export type NavigationItemProps<S extends PermissionScope = PermissionScope> =

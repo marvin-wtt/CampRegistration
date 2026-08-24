@@ -10,7 +10,7 @@ export interface AdminOverview {
     verified: number;
     rejected: number;
   };
-  camps: {
+  events: {
     total: number;
     open: number;
     upcoming: number;

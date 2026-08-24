@@ -17,21 +17,21 @@ export class MessageModule implements AppModule {
       view: messageFileGuard,
     });
 
-    router.useRouter('/camps/:campId/messages', new MessageRouter());
+    router.useRouter('/events/:eventId/messages', new MessageRouter());
   }
 
   registerPermissions(): ScopedPermissions {
     return {
-      camp: {
+      event: {
         DIRECTOR: [
-          'camp.messages.view',
-          'camp.messages.create',
-          'camp.messages.delete',
+          'event.messages.view',
+          'event.messages.create',
+          'event.messages.delete',
         ],
         COORDINATOR: [
-          'camp.messages.view',
-          'camp.messages.create',
-          'camp.messages.delete',
+          'event.messages.view',
+          'event.messages.create',
+          'event.messages.delete',
         ],
         COUNSELOR: [],
         VIEWER: [],

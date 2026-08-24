@@ -29,7 +29,7 @@ export const ENCRYPTION_FORMAT = 'aws-esdk';
 const SUITE_ID =
   AlgorithmSuiteIdentifier.ALG_AES256_GCM_IV12_TAG16_HKDF_SHA512_COMMIT_KEY;
 const ENCRYPTION_CONTEXT = {
-  app: 'camp-registration',
+  app: 'event-registration',
   purpose: 'file-storage',
 };
 

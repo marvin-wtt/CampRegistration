@@ -1,10 +1,10 @@
 import { RegistrationFactory } from '../factories';
-import type { Camp, Prisma } from '#generated/prisma/client.js';
+import type { Event, Prisma } from '#generated/prisma/client.js';
 import { faker } from '@faker-js/faker/locale/en';
 import moment from 'moment';
 import { formUtils } from '#utils/form';
 import { computedRegistrationData } from '#app/registration/registration.helper.js';
-import { localeForCountry } from '#app/camp/presets/locales.js';
+import { localeForCountry } from '#app/event/presets/locales.js';
 import {
   buildRegistrationData,
   freePlacesFor,
@@ -17,18 +17,18 @@ type Data = NonNullable<Parameters<(typeof RegistrationFactory)['create']>[0]>;
 export class RegistrationSeeder {
   private uploads = 0;
 
-  constructor(private camp: Camp) {}
+  constructor(private event: Event) {}
 
   async seed(n: number = 50, overrides: Data = {}): Promise<void> {
     for (let i = 0; i < n; i++) {
       const registrant = this.createRegistrant(overrides);
 
       // The answers are the source of truth: they are generated from the
-      // camp's own form, and the computed columns are then derived from them
+      // event's own form, and the computed columns are then derived from them
       // exactly as the API derives them on submission.
       const waitingList = overrides.status === 'WAITLISTED';
       const { data, fileFields } = buildRegistrationData(
-        this.camp,
+        this.event,
         registrant,
         {
           waitingList,
@@ -38,7 +38,7 @@ export class RegistrationSeeder {
       const files = await this.seedUploads(fileFields, data);
 
       await RegistrationFactory.create({
-        camp: { connect: { id: this.camp.id } },
+        event: { connect: { id: this.event.id } },
         ...this.computedData(data, waitingList),
         locale: localeForCountry(registrant.country),
         data,
@@ -47,10 +47,10 @@ export class RegistrationSeeder {
           : undefined,
         createdAt: faker.date.between({
           from: moment
-            .min(moment(this.camp.startAt).subtract(60, 'days'), moment())
+            .min(moment(this.event.startAt).subtract(60, 'days'), moment())
             .toDate(),
           to: moment
-            .min(moment(this.camp.startAt).subtract(30, 'days'), moment())
+            .min(moment(this.event.startAt).subtract(30, 'days'), moment())
             .toDate(),
         }),
         ...overrides,
@@ -61,13 +61,15 @@ export class RegistrationSeeder {
   private createRegistrant(overrides: Data): Registrant {
     const country =
       (overrides.country as string | undefined) ??
-      faker.helpers.arrayElement(this.camp.countries);
+      faker.helpers.arrayElement(this.event.countries);
     const role = (overrides.role as string | undefined) ?? 'participant';
     const firstName = faker.person.firstName();
     const lastName = faker.person.lastName();
-    // Counselors are grown-ups; the camp's age range applies to participants.
+    // Counselors are grown-ups; the event's age range applies to participants.
     const [youngest, oldest] =
-      role === 'participant' ? [this.camp.minAge, this.camp.maxAge] : [19, 45];
+      role === 'participant'
+        ? [this.event.minAge, this.event.maxAge]
+        : [19, 45];
 
     return {
       role,
@@ -77,8 +79,8 @@ export class RegistrationSeeder {
         (overrides.gender as string | undefined) ??
         faker.helpers.arrayElement(['m', 'f']),
       dateOfBirth: faker.date.between({
-        from: moment(this.camp.startAt).subtract(oldest, 'years').toDate(),
-        to: moment(this.camp.startAt).subtract(youngest, 'years').toDate(),
+        from: moment(this.event.startAt).subtract(oldest, 'years').toDate(),
+        to: moment(this.event.startAt).subtract(youngest, 'years').toDate(),
       }),
       email: faker.internet.email({ firstName, lastName }),
       phoneNumber: faker.phone.number(),
@@ -133,7 +135,7 @@ export class RegistrationSeeder {
 
     for (const field of fileFields) {
       const file = await seedRegistrationUpload(
-        this.camp,
+        this.event,
         this.uploads++,
         field.valueName,
       );
@@ -150,10 +152,10 @@ export class RegistrationSeeder {
     waitingList: boolean,
   ): Partial<Prisma.RegistrationCreateInput> {
     const form = formUtils(
-      { ...this.camp, freePlaces: freePlacesFor(this.camp, waitingList) },
+      { ...this.event, freePlaces: freePlacesFor(this.event, waitingList) },
       data,
     );
 
-    return computedRegistrationData(form.extractCampData());
+    return computedRegistrationData(form.extractEventData());
   }
 }

@@ -7,25 +7,25 @@ import type {
 
 const show = z.object({
   params: z.object({
-    campId: z.ulid(),
+    eventId: z.ulid(),
     messageTemplateId: z.ulid(),
   }),
 });
 
 const index = z.object({
   params: z.object({
-    campId: z.ulid(),
+    eventId: z.ulid(),
   }),
   query: z.object({}).partial() satisfies ZodType<MessageTemplateQuery>,
 });
 
 const store = z.object({
   params: z.object({
-    campId: z.ulid(),
+    eventId: z.ulid(),
   }),
   body: z.object({
     country: z.string().length(2),
-    event: z.string(),
+    trigger: z.string(),
     subject: z.string(),
     body: z.string(),
     priority: z.enum(['low', 'normal', 'high']).optional(),
@@ -35,7 +35,7 @@ const store = z.object({
 
 const update = z.object({
   params: z.object({
-    campId: z.ulid(),
+    eventId: z.ulid(),
     messageTemplateId: z.ulid(),
   }),
   body: z
@@ -50,7 +50,7 @@ const update = z.object({
 
 const destroy = z.object({
   params: z.object({
-    campId: z.ulid(),
+    eventId: z.ulid(),
     messageTemplateId: z.ulid(),
   }),
 });

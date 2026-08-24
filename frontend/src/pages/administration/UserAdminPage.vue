@@ -536,7 +536,7 @@ twoFactor:
 dialog:
   delete:
     title: 'Delete User'
-    message: 'The user will be permanently deleted. All associated data (e.g. camps) will be lost.'
+    message: 'The user will be permanently deleted. All associated data (e.g. events) will be lost.'
     label: 'Email'
   lock:
     title: 'Lock account'
@@ -593,7 +593,7 @@ twoFactor:
 dialog:
   delete:
     title: 'Benutzer löschen'
-    message: 'Der Benutzer wird dauerhaft gelöscht. Alle zugehörigen Daten (z.B. Camps) gehen verloren.'
+    message: 'Der Benutzer wird dauerhaft gelöscht. Alle zugehörigen Daten (z.B. Events) gehen verloren.'
     label: 'E-Mail'
   lock:
     title: 'Konto sperren'
@@ -650,7 +650,7 @@ twoFactor:
 dialog:
   delete:
     title: 'Supprimer l’utilisateur'
-    message: 'L’utilisateur sera définitivement supprimé. Toutes les données associées (par ex. camps) seront perdues.'
+    message: 'L’utilisateur sera définitivement supprimé. Toutes les données associées (par ex. events) seront perdues.'
     label: 'E-mail'
   lock:
     title: 'Verrouiller le compte'

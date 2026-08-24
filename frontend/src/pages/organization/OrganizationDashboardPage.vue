@@ -276,12 +276,12 @@ const stats = computed<Stat[]>(() => {
 
   return [
     {
-      key: 'camps',
+      key: 'events',
       icon: 'holiday_village',
-      label: t('stat.camps'),
-      value: data.ownedCamps,
-      ...(canOrg('organization.camps.view')
-        ? { to: 'management.organization.camps' }
+      label: t('stat.events'),
+      value: data.ownedEvents,
+      ...(canOrg('organization.events.view')
+        ? { to: 'management.organization.events' }
         : {}),
     },
     {
@@ -509,8 +509,8 @@ status:
   VERIFIED: 'Verified'
   REJECTED: 'Not verified'
 note:
-  PENDING: 'Camps stay hidden and newsletters cannot send until this organization is verified.'
-  REJECTED: 'This organization was not verified. Camps stay hidden and newsletters cannot send. Correct the details, then request a new review.'
+  PENDING: 'Events stay hidden and newsletters cannot send until this organization is verified.'
+  REJECTED: 'This organization was not verified. Events stay hidden and newsletters cannot send. Correct the details, then request a new review.'
   reviewNote: 'Reviewer note'
   request: 'Request review'
   settings: 'Check settings'
@@ -520,10 +520,10 @@ request:
   confirm: 'Request review'
 privacy:
   title: 'Privacy notice missing'
-  message: 'This organization cannot be verified until its privacy notice is published. It is the baseline every camp of this organization uses.'
+  message: 'This organization cannot be verified until its privacy notice is published. It is the baseline every event of this organization uses.'
   action: 'Set up'
 stat:
-  camps: 'Camps'
+  events: 'Events'
   newsletters: 'Newsletters'
 link:
   members: 'Members'
@@ -538,8 +538,8 @@ status:
   VERIFIED: 'Verifiziert'
   REJECTED: 'Nicht verifiziert'
 note:
-  PENDING: 'Camps bleiben verborgen und Newsletter können nicht senden, bis diese Organisation verifiziert ist.'
-  REJECTED: 'Diese Organisation wurde nicht verifiziert. Camps bleiben verborgen und Newsletter können nicht senden. Korrigiere die Angaben und fordere anschließend eine neue Prüfung an.'
+  PENDING: 'Events bleiben verborgen und Newsletter können nicht senden, bis diese Organisation verifiziert ist.'
+  REJECTED: 'Diese Organisation wurde nicht verifiziert. Events bleiben verborgen und Newsletter können nicht senden. Korrigiere die Angaben und fordere anschließend eine neue Prüfung an.'
   reviewNote: 'Hinweis der Prüfung'
   request: 'Prüfung anfordern'
   settings: 'Einstellungen prüfen'
@@ -549,10 +549,10 @@ request:
   confirm: 'Prüfung anfordern'
 privacy:
   title: 'Datenschutzerklärung fehlt'
-  message: 'Diese Organisation kann erst verifiziert werden, wenn ihre Datenschutzerklärung veröffentlicht ist. Sie ist die Grundlage für jedes Camp dieser Organisation.'
+  message: 'Diese Organisation kann erst verifiziert werden, wenn ihre Datenschutzerklärung veröffentlicht ist. Sie ist die Grundlage für jedes Event dieser Organisation.'
   action: 'Einrichten'
 stat:
-  camps: 'Camps'
+  events: 'Events'
   newsletters: 'Newsletter'
 link:
   members: 'Mitglieder'
@@ -567,8 +567,8 @@ status:
   VERIFIED: 'Vérifiée'
   REJECTED: 'Non vérifiée'
 note:
-  PENDING: "Les camps restent masqués et les newsletters ne peuvent pas être envoyées tant que cette organisation n'est pas vérifiée."
-  REJECTED: "Cette organisation n'a pas été vérifiée. Les camps restent masqués et les newsletters ne peuvent pas être envoyées. Corrige les informations, puis demande une nouvelle vérification."
+  PENDING: "Les events restent masqués et les newsletters ne peuvent pas être envoyées tant que cette organisation n'est pas vérifiée."
+  REJECTED: "Cette organisation n'a pas été vérifiée. Les events restent masqués et les newsletters ne peuvent pas être envoyées. Corrige les informations, puis demande une nouvelle vérification."
   reviewNote: 'Note du vérificateur'
   request: 'Demander une vérification'
   settings: 'Vérifier les paramètres'
@@ -578,10 +578,10 @@ request:
   confirm: 'Demander'
 privacy:
   title: 'Politique de confidentialité manquante'
-  message: "Cette organisation ne peut pas être vérifiée tant que sa politique de confidentialité n'est pas publiée. Elle sert de base à chacun de ses camps."
+  message: "Cette organisation ne peut pas être vérifiée tant que sa politique de confidentialité n'est pas publiée. Elle sert de base à chacun de ses events."
   action: 'Configurer'
 stat:
-  camps: 'Camps'
+  events: 'Events'
   newsletters: 'Newsletters'
 link:
   members: 'Membres'
@@ -610,7 +610,7 @@ privacy:
   message: 'Tej organizacji nie można zweryfikować, dopóki nie opublikuje informacji o ochronie danych. Stanowi ona podstawę dla każdego obozu tej organizacji.'
   action: 'Skonfiguruj'
 stat:
-  camps: 'Obozy'
+  events: 'Obozy'
   newsletters: 'Newslettery'
 link:
   members: 'Członkowie'
@@ -639,7 +639,7 @@ privacy:
   message: 'Tuto organizaci nelze ověřit, dokud nezveřejní zásady ochrany osobních údajů. Jsou základem pro každý tábor této organizace.'
   action: 'Nastavit'
 stat:
-  camps: 'Tábory'
+  events: 'Tábory'
   newsletters: 'Newslettery'
 link:
   members: 'Členové'

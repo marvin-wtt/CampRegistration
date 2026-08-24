@@ -1,4 +1,4 @@
-export * from './camp.factory';
+export * from './event.factory';
 export * from './user.factory';
 export * from './registration.factory';
 export * from './file.factory';
@@ -14,9 +14,9 @@ export * from './message-template.factory';
 export * from './newsletter.factory';
 export * from './newsletter-subscriber.factory';
 export * from './newsletter-message.factory';
-export * from './program-event.factory';
+export * from './program-item.factory';
 export * from './task.factory';
-export * from './camp-setting.factory';
+export * from './event-setting.factory';
 export * from './organization.factory';
 export * from './privacy-notice.factory';
 export * from './organization-member.factory';

@@ -4,7 +4,7 @@ export async function up(tx: Prisma.TransactionClient): Promise<void> {
   const templates = await tx.messageTemplate.findMany({
     where: { country: null },
     include: {
-      camp: true,
+      event: true,
       messages: {
         include: { registration: true },
       },
@@ -13,7 +13,7 @@ export async function up(tx: Prisma.TransactionClient): Promise<void> {
   });
 
   for (const template of templates) {
-    const countries = template.camp.countries;
+    const countries = template.event.countries;
 
     // Create one template per country
     for (const country of countries) {
@@ -36,7 +36,7 @@ export async function up(tx: Prisma.TransactionClient): Promise<void> {
           event: template.event,
           priority: template.priority,
           replyTo: template.replyTo,
-          camp: { connect: { id: template.campId } },
+          event: { connect: { id: template.eventId } },
           createdAt: template.createdAt,
           updatedAt: template.updatedAt,
         },

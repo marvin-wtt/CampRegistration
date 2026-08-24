@@ -16,10 +16,10 @@ class NewsletterSeeder extends BaseSeeder {
   async run(): Promise<void> {
     // OWNER: everything, including managing managers and deleting.
     await this.seedNewsletter({
-      id: NEWSLETTER_IDS.campUpdates,
+      id: NEWSLETTER_IDS.eventUpdates,
       organizationId: ORGANIZATION_IDS.youthAdventures,
-      name: 'Camp Updates',
-      description: 'General updates and news about upcoming camps.',
+      name: 'Event Updates',
+      description: 'General updates and news about upcoming events.',
       managers: [
         { userId: USER_IDS.john, role: 'OWNER' },
         { userId: USER_IDS.peter, role: 'EDITOR' },
@@ -33,7 +33,7 @@ class NewsletterSeeder extends BaseSeeder {
       id: NEWSLETTER_IDS.registrationReminders,
       organizationId: ORGANIZATION_IDS.youthAdventures,
       name: 'Registration Reminders',
-      description: 'Reminders and deadlines for camp registrations.',
+      description: 'Reminders and deadlines for event registrations.',
       managers: [
         { userId: USER_IDS.erika, role: 'OWNER' },
         { userId: USER_IDS.john, role: 'EDITOR' },

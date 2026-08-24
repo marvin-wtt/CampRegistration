@@ -1,5 +1,5 @@
 import { auth, guard } from '#middlewares/index';
-import { campManager } from '#app/camp/camp.guard';
+import { hasEventPermission } from '#app/event/event.guard';
 import { RoomController } from './room.controller.js';
 import { controller } from '#utils/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';
@@ -17,11 +17,11 @@ export class RoomRouter extends ModuleRouter {
 
   protected registerBindings() {
     this.bindModel('room', (req, id) => {
-      const camp = req.model('camp');
-      if (!camp) {
+      const event = req.model('event');
+      if (!event) {
         return null;
       }
-      return this.roomService.getRoomById(camp.id, id);
+      return this.roomService.getRoomById(event.id, id);
     });
   }
 
@@ -31,37 +31,37 @@ export class RoomRouter extends ModuleRouter {
     this.router.get(
       '/',
       auth(),
-      guard(campManager('camp.rooms.view')),
+      guard(hasEventPermission('event.rooms.view')),
       controller(this.roomController, 'index'),
     );
     this.router.post(
       '/',
       auth(),
-      guard(campManager('camp.rooms.create')),
+      guard(hasEventPermission('event.rooms.create')),
       controller(this.roomController, 'store'),
     );
     this.router.patch(
       '/',
       auth(),
-      guard(campManager('camp.rooms.edit')),
+      guard(hasEventPermission('event.rooms.edit')),
       controller(this.roomController, 'bulkUpdate'),
     );
     this.router.get(
       '/:roomId',
       auth(),
-      guard(campManager('camp.rooms.view')),
+      guard(hasEventPermission('event.rooms.view')),
       controller(this.roomController, 'show'),
     );
     this.router.patch(
       '/:roomId',
       auth(),
-      guard(campManager('camp.rooms.edit')),
+      guard(hasEventPermission('event.rooms.edit')),
       controller(this.roomController, 'update'),
     );
     this.router.delete(
       '/:roomId',
       auth(),
-      guard(campManager('camp.rooms.delete')),
+      guard(hasEventPermission('event.rooms.delete')),
       controller(this.roomController, 'destroy'),
     );
   }

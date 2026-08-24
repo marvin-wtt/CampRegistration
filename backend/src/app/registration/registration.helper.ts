@@ -8,7 +8,7 @@ import type { Prisma } from '#generated/prisma/client.js';
  */
 export const CUSTOM_FILE_FIELD_PREFIX = 'custom:';
 
-export class RegistrationCampDataHelper {
+export class RegistrationEventDataHelper {
   constructor(private readonly dataByTags: Record<string, unknown[]>) {}
 
   private stringValue(name: string): string | undefined {
@@ -129,14 +129,14 @@ export class RegistrationCampDataHelper {
 
 /**
  * The columns a registration's answers imply, mapped from the values tagged
- * with a `campDataType` in the camp's form. The single definition of what the
+ * with a `campDataType` in the event's form. The single definition of what the
  * computed columns mean — the API derives them on every write, and the seed
  * derives them from the answers it generates.
  */
 export function computedRegistrationData(
   dataByTags: Record<string, unknown[]>,
 ): Partial<Prisma.RegistrationCreateInput> {
-  const helper = new RegistrationCampDataHelper(dataByTags);
+  const helper = new RegistrationEventDataHelper(dataByTags);
 
   return {
     firstName: helper.firstName() ?? null,

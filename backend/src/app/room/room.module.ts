@@ -23,32 +23,32 @@ export class RoomModule implements AppModule {
   configure(_options: ModuleOptions): void {
     resolve(SettingsRegistry).register(SETTING_KEYS.ROOM_PLANNER, {
       schema: RoomSettingsValidation,
-      viewPermission: 'camp.rooms.view',
-      editPermission: 'camp.rooms.edit',
+      viewPermission: 'event.rooms.view',
+      editPermission: 'event.rooms.edit',
     });
   }
 
   registerRoutes(router: AppRouter): void {
-    router.useRouter('/camps/:campId/rooms', resolve(RoomRouter));
+    router.useRouter('/events/:eventId/rooms', resolve(RoomRouter));
   }
 
   registerPermissions(): ScopedPermissions {
     return {
-      camp: {
+      event: {
         DIRECTOR: [
-          'camp.rooms.view',
-          'camp.rooms.create',
-          'camp.rooms.edit',
-          'camp.rooms.delete',
+          'event.rooms.view',
+          'event.rooms.create',
+          'event.rooms.edit',
+          'event.rooms.delete',
         ],
         COORDINATOR: [
-          'camp.rooms.view',
-          'camp.rooms.create',
-          'camp.rooms.edit',
-          'camp.rooms.delete',
+          'event.rooms.view',
+          'event.rooms.create',
+          'event.rooms.edit',
+          'event.rooms.delete',
         ],
-        COUNSELOR: ['camp.rooms.view'],
-        VIEWER: ['camp.rooms.view'],
+        COUNSELOR: ['event.rooms.view'],
+        VIEWER: ['event.rooms.view'],
       },
     };
   }

@@ -30,8 +30,8 @@ describe('the assembled permission policy', () => {
         .map(([role, permissions]) => [role, [...permissions].sort()]),
     );
 
-  it('grants camp roles exactly these permissions', () => {
-    expect(normalize(registry.for('camp').getAll())).toMatchSnapshot();
+  it('grants event roles exactly these permissions', () => {
+    expect(normalize(registry.for('event').getAll())).toMatchSnapshot();
   });
 
   it('grants newsletter roles exactly these permissions', () => {
@@ -45,7 +45,7 @@ describe('the assembled permission policy', () => {
   it('registers every scope, so GET /permissions is never partially empty', () => {
     const matrix = registry.toMatrix();
 
-    for (const scope of ['camp', 'newsletter', 'organization'] as const) {
+    for (const scope of ['event', 'newsletter', 'organization'] as const) {
       expect(Object.keys(matrix[scope]).length).toBeGreaterThan(0);
     }
   });

@@ -69,7 +69,7 @@
           <div class="split-card__actions">
             <m-btn
               :label="t('participants.action')"
-              :to="{ name: 'camps' }"
+              :to="{ name: 'events' }"
               tonal
               tertiary
               icon-right="arrow_forward"
@@ -192,7 +192,7 @@
 
           <m-btn
             :label="t('selfhost.action')"
-            href="https://github.com/marvin-wtt/CampRegistration"
+            href="https://github.com/marvin-wtt/EventRegistration"
             target="_blank"
             rel="noopener"
             tonal
@@ -214,7 +214,7 @@
           </div>
           <pre class="selfhost__terminal-body">
             <span class="t-dim"># {{ t('selfhost.terminal_comment') }}</span>
-            <span class="t-prompt">$</span> git clone marvin-wtt/CampRegistration
+            <span class="t-prompt">$</span> git clone marvin-wtt/EventRegistration
             <span class="t-prompt">$</span> docker compose up -d
             <span class="t-ok">✓</span> {{ t('selfhost.terminal_done') }}</pre>
         </div>
@@ -246,7 +246,7 @@
         />
         <p class="cta__hint">
           {{ t('cta.participant_hint') }}
-          <router-link :to="{ name: 'camps' }">
+          <router-link :to="{ name: 'events' }">
             {{ t('cta.participant_link') }}
           </router-link>
         </p>
@@ -282,7 +282,7 @@ const organizerCtaLabel = computed<string>(() =>
 );
 
 const organizerCtaTo = computed(() =>
-  user.value ? { name: 'management.camps' } : { name: 'register' },
+  user.value ? { name: 'management.events' } : { name: 'register' },
 );
 
 const features = [
@@ -294,7 +294,7 @@ const features = [
   { name: 'contacts', icon: 'contact_mail' },
   { name: 'team', icon: 'group_add' },
   { name: 'dashboard', icon: 'dashboard' },
-  { name: 'newsletter', icon: 'campaign' },
+  { name: 'newsletter', icon: 'eventaign' },
 ] as const;
 
 const extraChips = [
@@ -886,27 +886,27 @@ const extraChips = [
 </style>
 
 <i18n lang="yaml" locale="en">
-meta_title: 'Camp management made simple'
-meta_description: '@:app_name is a free, open-source platform for organizing youth camps: online registration forms, participant tables, room and program planning, emails, and newsletters.'
+meta_title: 'Event management made simple'
+meta_description: '@:app_name is a free, open-source platform for organizing youth events: online registration forms, participant tables, room and program planning, emails, and newsletters.'
 hero:
-  eyebrow: 'Free & open-source camp management'
-  title: 'Run your camp,'
+  eyebrow: 'Free & open-source event management'
+  title: 'Run your event,'
   title_highlight: 'not your paperwork'
-  subtitle: '@:app_name brings registrations, participants, rooms, program, and communication together in one place — built by camp organizers, for camp organizers.'
+  subtitle: '@:app_name brings registrations, participants, rooms, program, and communication together in one place — built by event organizers, for event organizers.'
 participants:
-  title: 'Joining a camp?'
-  text: 'Find your camp and register online in a few minutes — no account required.'
-  action: 'Browse open camps'
+  title: 'Joining a event?'
+  text: 'Find your event and register online in a few minutes — no account required.'
+  action: 'Browse open events'
 organizers:
   badge: 'For organizers'
-  title: 'Everything your camp team needs'
-  text: 'From the first registration form to the final room plan — manage the entire camp together with your team.'
+  title: 'Everything your event team needs'
+  text: 'From the first registration form to the final room plan — manage the entire event together with your team.'
   action: 'Get started for free'
   action_authed: 'Open management'
   action_login: 'Sign in'
 feature:
   title: 'Why organize with @:app_name?'
-  subtitle: "Because spreadsheets, paper forms, and email chains don't scale to a whole camp."
+  subtitle: "Because spreadsheets, paper forms, and email chains don't scale to a whole event."
   forms:
     title: 'Dynamic registration forms'
     text: 'Build multi-page forms with conditional logic, dynamic inputs, file uploads, and built-in translations. Families register online in minutes.'
@@ -921,7 +921,7 @@ feature:
     text: 'Assign participants to rooms while keeping beds, ages, and groups in view.'
   program:
     title: 'Program planner'
-    text: 'Plan the camp schedule collaboratively — from arrival day to departure, visible to the whole team.'
+    text: 'Plan the event schedule collaboratively — from arrival day to departure, visible to the whole team.'
   contacts:
     title: 'Email participants directly'
     text: 'Reach a single participant or a whole group with personalized emails — sent to exactly the right people.'
@@ -930,10 +930,10 @@ feature:
     text: 'Keep families in the loop with newsletters sent straight to everyone who signed up.'
   dashboard:
     title: 'Dashboard overview'
-    text: 'See capacity, registrations, and key numbers at a glance — your whole camp on one screen.'
+    text: 'See capacity, registrations, and key numbers at a glance — your whole event on one screen.'
   team:
     title: 'Share access with your team'
-    text: 'Invite counselors and coordinators with fine-grained roles and permissions, and manage the camp together.'
+    text: 'Invite counselors and coordinators with fine-grained roles and permissions, and manage the event together.'
   more_label: 'Also included:'
   chip:
     responsive: 'Works on desktop & mobile'
@@ -946,17 +946,17 @@ feature:
 step:
   title: 'Up and running in an afternoon'
   one:
-    title: 'Create your camp'
+    title: 'Create your event'
     text: 'Set dates and capacity, and build your registration form.'
   two:
     title: 'Share your link'
     text: 'Families register online — every registration appears instantly.'
   three:
-    title: 'Run the camp'
+    title: 'Run the event'
     text: 'Assign rooms, plan the program, and keep everyone informed.'
 selfhost:
   eyebrow: 'Open source · AGPLv3'
-  title: 'Your camp, your data — your server, if you want'
+  title: 'Your event, your data — your server, if you want'
   text: '@:app_name is fully open source. Use it right here, or self-host the entire platform on your own infrastructure — so participant data never leaves your hands.'
   point_1: 'AGPLv3-licensed with no vendor lock-in'
   point_2: 'Deploys in minutes with Docker'
@@ -965,34 +965,34 @@ selfhost:
   terminal_comment: 'on your own server'
   terminal_done: '@:app_name is running'
 cta:
-  title: 'Ready for a calmer camp season?'
-  text: 'Create your first camp in minutes — free of charge.'
-  participant_hint: 'Just want to sign up for a camp?'
-  participant_link: 'Find your camp here'
+  title: 'Ready for a calmer event season?'
+  text: 'Create your first event in minutes — free of charge.'
+  participant_hint: 'Just want to sign up for a event?'
+  participant_link: 'Find your event here'
 </i18n>
 
 <i18n lang="yaml" locale="de">
-meta_title: 'Camp-Verwaltung einfach gemacht'
-meta_description: '@:app_name ist eine kostenlose Open-Source-Plattform für die Organisation von Camps: Online-Anmeldeformulare, Teilnehmendentabellen, Zimmer- und Programmplanung, E-Mails und Newsletter.'
+meta_title: 'Event-Verwaltung einfach gemacht'
+meta_description: '@:app_name ist eine kostenlose Open-Source-Plattform für die Organisation von Events: Online-Anmeldeformulare, Teilnehmendentabellen, Zimmer- und Programmplanung, E-Mails und Newsletter.'
 hero:
-  eyebrow: 'Kostenlose Open-Source-Camp-Verwaltung'
-  title: 'Organisiere dein Camp,'
+  eyebrow: 'Kostenlose Open-Source-Event-Verwaltung'
+  title: 'Organisiere dein Event,'
   title_highlight: 'nicht deinen Papierkram'
-  subtitle: '@:app_name vereint Anmeldungen, Teilnehmende, Zimmer, Programm und Kommunikation an einem Ort — von Camp-Organisatoren für Camp-Organisatoren entwickelt.'
+  subtitle: '@:app_name vereint Anmeldungen, Teilnehmende, Zimmer, Programm und Kommunikation an einem Ort — von Event-Organisatoren für Event-Organisatoren entwickelt.'
 participants:
-  title: 'Du möchtest an einem Camp teilnehmen?'
-  text: 'Finde dein Camp und melde dich in wenigen Minuten online an — ganz ohne Konto.'
-  action: 'Offene Camps ansehen'
+  title: 'Du möchtest an einem Event teilnehmen?'
+  text: 'Finde dein Event und melde dich in wenigen Minuten online an — ganz ohne Konto.'
+  action: 'Offene Events ansehen'
 organizers:
   badge: 'Für Organisatoren'
-  title: 'Alles, was dein Camp-Team braucht'
-  text: 'Vom ersten Anmeldeformular bis zum fertigen Zimmerplan — verwalte das gesamte Camp gemeinsam mit deinem Team.'
+  title: 'Alles, was dein Event-Team braucht'
+  text: 'Vom ersten Anmeldeformular bis zum fertigen Zimmerplan — verwalte das gesamte Event gemeinsam mit deinem Team.'
   action: 'Kostenlos starten'
   action_authed: 'Zur Verwaltung'
   action_login: 'Anmelden'
 feature:
   title: 'Warum mit @:app_name organisieren?'
-  subtitle: 'Weil Tabellen, Papierformulare und E-Mail-Ketten bei einem ganzen Camp an ihre Grenzen kommen.'
+  subtitle: 'Weil Tabellen, Papierformulare und E-Mail-Ketten bei einem ganzen Event an ihre Grenzen kommen.'
   forms:
     title: 'Dynamische Anmeldeformulare'
     text: 'Erstelle mehrseitige Formulare mit bedingter Logik, dynamischen Feldern, Datei-Uploads und integrierten Übersetzungen. Familien melden sich in Minuten online an.'
@@ -1007,7 +1007,7 @@ feature:
     text: 'Weise Teilnehmende Zimmern zu und behalte Betten, Alter und Gruppen im Blick.'
   program:
     title: 'Programmplaner'
-    text: 'Plant den Camp-Ablauf gemeinsam — vom Anreisetag bis zur Abreise, sichtbar für das ganze Team.'
+    text: 'Plant den Event-Ablauf gemeinsam — vom Anreisetag bis zur Abreise, sichtbar für das ganze Team.'
   contacts:
     title: 'Teilnehmende direkt anschreiben'
     text: 'Erreiche eine einzelne Person oder eine ganze Gruppe mit personalisierten E-Mails — gesendet an genau die richtigen Empfänger.'
@@ -1016,10 +1016,10 @@ feature:
     text: 'Halte Familien mit Newslettern auf dem Laufenden, die direkt an alle Angemeldeten gehen.'
   dashboard:
     title: 'Dashboard-Überblick'
-    text: 'Sieh Kapazität, Anmeldungen und wichtige Zahlen auf einen Blick — dein ganzes Camp auf einem Bildschirm.'
+    text: 'Sieh Kapazität, Anmeldungen und wichtige Zahlen auf einen Blick — dein ganzes Event auf einem Bildschirm.'
   team:
     title: 'Zugriff mit deinem Team teilen'
-    text: 'Lade Betreuer und Koordinatoren mit fein abgestuften Rollen und Berechtigungen ein und verwaltet das Camp gemeinsam.'
+    text: 'Lade Betreuer und Koordinatoren mit fein abgestuften Rollen und Berechtigungen ein und verwaltet das Event gemeinsam.'
   more_label: 'Außerdem enthalten:'
   chip:
     responsive: 'Läuft auf Desktop & Smartphone'
@@ -1032,17 +1032,17 @@ feature:
 step:
   title: 'An einem Nachmittag startklar'
   one:
-    title: 'Erstelle dein Camp'
+    title: 'Erstelle dein Event'
     text: 'Lege Termine und Kapazität fest und baue dein Anmeldeformular.'
   two:
     title: 'Teile deinen Link'
     text: 'Familien melden sich online an — jede Anmeldung erscheint sofort.'
   three:
-    title: 'Führe das Camp durch'
+    title: 'Führe das Event durch'
     text: 'Plane Zimmer und Programm und halte alle auf dem Laufenden.'
 selfhost:
   eyebrow: 'Open Source · AGPLv3'
-  title: 'Dein Camp, deine Daten — auf Wunsch dein Server'
+  title: 'Dein Event, deine Daten — auf Wunsch dein Server'
   text: '@:app_name ist vollständig Open Source. Nutze es direkt hier oder hoste die gesamte Plattform auf deiner eigenen Infrastruktur — Teilnehmerdaten bleiben so komplett in deiner Hand.'
   point_1: 'AGPLv3-lizenziert, kein Vendor-Lock-in'
   point_2: 'In Minuten mit Docker installiert'
@@ -1051,34 +1051,34 @@ selfhost:
   terminal_comment: 'auf deinem eigenen Server'
   terminal_done: '@:app_name läuft'
 cta:
-  title: 'Bereit für eine entspanntere Camp-Saison?'
-  text: 'Erstelle dein erstes Camp in wenigen Minuten — völlig kostenlos.'
-  participant_hint: 'Du möchtest dich nur für ein Camp anmelden?'
-  participant_link: 'Hier findest du dein Camp'
+  title: 'Bereit für eine entspanntere Event-Saison?'
+  text: 'Erstelle dein erstes Event in wenigen Minuten — völlig kostenlos.'
+  participant_hint: 'Du möchtest dich nur für ein Event anmelden?'
+  participant_link: 'Hier findest du dein Event'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-meta_title: 'La gestion de camps simplifiée'
-meta_description: '@:app_name est une plateforme gratuite et open source pour organiser des camps : formulaires d’inscription en ligne, tableaux de participants, planification des chambres et du programme, e-mails et newsletters.'
+meta_title: 'La gestion de events simplifiée'
+meta_description: '@:app_name est une plateforme gratuite et open source pour organiser des events : formulaires d’inscription en ligne, tableaux de participants, planification des chambres et du programme, e-mails et newsletters.'
 hero:
-  eyebrow: 'Gestion de camps gratuite et open source'
-  title: 'Organisez votre camp,'
+  eyebrow: 'Gestion de events gratuite et open source'
+  title: 'Organisez votre event,'
   title_highlight: 'pas votre paperasse'
-  subtitle: '@:app_name réunit inscriptions, participants, chambres, programme et communication en un seul endroit — conçu par des organisateurs de camps, pour des organisateurs de camps.'
+  subtitle: '@:app_name réunit inscriptions, participants, chambres, programme et communication en un seul endroit — conçu par des organisateurs de events, pour des organisateurs de events.'
 participants:
-  title: 'Vous participez à un camp ?'
-  text: 'Trouvez votre camp et inscrivez-vous en ligne en quelques minutes — sans créer de compte.'
-  action: 'Voir les camps ouverts'
+  title: 'Vous participez à un event ?'
+  text: 'Trouvez votre event et inscrivez-vous en ligne en quelques minutes — sans créer de compte.'
+  action: 'Voir les events ouverts'
 organizers:
   badge: 'Pour les organisateurs'
   title: 'Tout ce dont votre équipe a besoin'
-  text: "Du premier formulaire d'inscription au plan des chambres final — gérez l'ensemble du camp avec votre équipe."
+  text: "Du premier formulaire d'inscription au plan des chambres final — gérez l'ensemble du event avec votre équipe."
   action: 'Commencer gratuitement'
   action_authed: 'Accéder à la gestion'
   action_login: 'Se connecter'
 feature:
   title: 'Pourquoi organiser avec @:app_name ?'
-  subtitle: "Parce que les tableurs, les formulaires papier et les chaînes d'e-mails ne suffisent plus pour tout un camp."
+  subtitle: "Parce que les tableurs, les formulaires papier et les chaînes d'e-mails ne suffisent plus pour tout un event."
   forms:
     title: "Formulaires d'inscription dynamiques"
     text: "Créez des formulaires multi-pages avec logique conditionnelle, champs dynamiques, téléversement de fichiers et traductions intégrées. Les familles s'inscrivent en quelques minutes."
@@ -1093,7 +1093,7 @@ feature:
     text: 'Affectez les participants aux chambres en gardant lits, âges et groupes sous les yeux.'
   program:
     title: 'Planificateur de programme'
-    text: "Planifiez le déroulement du camp ensemble — du jour d'arrivée au départ, visible par toute l'équipe."
+    text: "Planifiez le déroulement du event ensemble — du jour d'arrivée au départ, visible par toute l'équipe."
   contacts:
     title: 'Écrivez directement aux participants'
     text: 'Contactez un seul participant ou tout un groupe avec des e-mails personnalisés — envoyés exactement aux bonnes personnes.'
@@ -1102,10 +1102,10 @@ feature:
     text: 'Tenez les familles informées avec des infolettres envoyées directement à toutes les personnes inscrites.'
   dashboard:
     title: 'Tableau de bord'
-    text: "Visualisez capacité, inscriptions et chiffres clés en un coup d'œil — tout votre camp sur un seul écran."
+    text: "Visualisez capacité, inscriptions et chiffres clés en un coup d'œil — tout votre event sur un seul écran."
   team:
     title: "Partagez l'accès avec votre équipe"
-    text: 'Invitez animateurs et coordinateurs avec des rôles et permissions précis, et gérez le camp ensemble.'
+    text: 'Invitez animateurs et coordinateurs avec des rôles et permissions précis, et gérez le event ensemble.'
   more_label: 'Également inclus :'
   chip:
     responsive: 'Fonctionne sur ordinateur et mobile'
@@ -1118,17 +1118,17 @@ feature:
 step:
   title: 'Opérationnel en un après-midi'
   one:
-    title: 'Créez votre camp'
+    title: 'Créez votre event'
     text: "Définissez les dates et la capacité, puis créez votre formulaire d'inscription."
   two:
     title: 'Partagez votre lien'
     text: "Les familles s'inscrivent en ligne — chaque inscription apparaît instantanément."
   three:
-    title: 'Gérez le camp'
+    title: 'Gérez le event'
     text: 'Répartissez les chambres, planifiez le programme et tenez tout le monde informé.'
 selfhost:
   eyebrow: 'Open source · AGPLv3'
-  title: 'Votre camp, vos données — votre serveur si vous le souhaitez'
+  title: 'Votre event, vos données — votre serveur si vous le souhaitez'
   text: '@:app_name est entièrement open source. Utilisez-le ici même, ou hébergez la plateforme complète sur votre propre infrastructure — les données des participants restent entre vos mains.'
   point_1: 'Sous licence AGPLv3, sans dépendance à un fournisseur'
   point_2: 'Déployé en quelques minutes avec Docker'
@@ -1137,10 +1137,10 @@ selfhost:
   terminal_comment: 'sur votre propre serveur'
   terminal_done: '@:app_name est en ligne'
 cta:
-  title: 'Prêt pour une saison de camp plus sereine ?'
-  text: 'Créez votre premier camp en quelques minutes — gratuitement.'
-  participant_hint: 'Vous souhaitez simplement vous inscrire à un camp ?'
-  participant_link: 'Trouvez votre camp ici'
+  title: 'Prêt pour une saison de event plus sereine ?'
+  text: 'Créez votre premier event en quelques minutes — gratuitement.'
+  participant_hint: 'Vous souhaitez simplement vous inscrire à un event ?'
+  participant_link: 'Trouvez votre event ici'
 </i18n>
 
 <i18n lang="yaml" locale="pl">

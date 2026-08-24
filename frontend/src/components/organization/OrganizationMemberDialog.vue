@@ -110,10 +110,10 @@ title:
 role:
   ADMIN:
     label: 'Admin'
-    caption: 'Manages the organization, its camps and members'
+    caption: 'Manages the organization, its events and members'
   MEMBER:
     label: 'Member'
-    caption: 'May create camps under the organization'
+    caption: 'May create events under the organization'
 input:
   email:
     label: 'Email address'
@@ -135,10 +135,10 @@ title:
 role:
   ADMIN:
     label: 'Admin'
-    caption: 'Verwaltet Organisation, Camps und Mitglieder'
+    caption: 'Verwaltet Organisation, Events und Mitglieder'
   MEMBER:
     label: 'Mitglied'
-    caption: 'Darf Camps der Organisation anlegen'
+    caption: 'Darf Events der Organisation anlegen'
 input:
   email:
     label: 'E-Mail-Adresse'
@@ -160,10 +160,10 @@ title:
 role:
   ADMIN:
     label: 'Admin'
-    caption: "Gère l'organisation, ses camps et ses membres"
+    caption: "Gère l'organisation, ses events et ses membres"
   MEMBER:
     label: 'Membre'
-    caption: "Peut créer des camps pour l'organisation"
+    caption: "Peut créer des events pour l'organisation"
 input:
   email:
     label: 'Adresse e-mail'

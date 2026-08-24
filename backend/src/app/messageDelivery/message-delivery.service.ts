@@ -73,12 +73,12 @@ export class MessageDeliveryService extends BaseService {
     }
   }
 
-  async getDeliveryWithCampById(id: string) {
+  async getDeliveryWithEventById(id: string) {
     return this.prisma.messageDelivery.findUnique({
       where: { id },
       include: {
-        // `campId` lives on the registration row directly — no camp JOIN needed.
-        registration: { select: { campId: true } },
+        // `eventId` lives on the registration row directly — no event JOIN needed.
+        registration: { select: { eventId: true } },
         attachments: true,
       },
     });

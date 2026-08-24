@@ -106,7 +106,7 @@ export function extractFormFields(form: object, prefix?: string): SelectData[] {
   return survey.getAllQuestions().flatMap((q) => collectSelectData(q, prefix));
 }
 
-export function extractCampDataTypes(form: object): string[] {
+export function extractEventDataTypes(form: object): string[] {
   const survey = new SurveyModel(form);
   const tags = new Set<string>();
 

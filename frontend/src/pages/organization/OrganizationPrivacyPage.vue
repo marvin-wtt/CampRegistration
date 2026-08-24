@@ -13,7 +13,7 @@
         <div class="text-body2 text-on-surface-variant q-mt-xs">
           {{ t('subtitle') }}
         </div>
-        <!-- The camp addendum merges on top of this, so an author needs to know
+        <!-- The event addendum merges on top of this, so an author needs to know
              up front that they are writing the shared part. -->
         <div class="text-caption text-on-surface-variant q-mt-xs">
           {{ t('baselineNote') }}
@@ -21,7 +21,7 @@
       </div>
 
       <!-- The builder is the default because it is the only path that produces
-           a notice in every language a camp runs in. Free text stays available
+           a notice in every language a event runs in. Free text stays available
            for anyone whose processing it cannot express, or who already has
            counsel-drafted wording. -->
       <q-card
@@ -470,7 +470,7 @@
             >
               {{ t('field.recipientAlways') }}
             </div>
-            <!-- No name to ask for: the camp team is the author's own, and the
+            <!-- No name to ask for: the event team is the author's own, and the
                  platform is this one, whose name we already know. -->
             <q-input
               v-if="hasRecipient(key) && !isAlwaysRecipient(key)"
@@ -807,8 +807,8 @@ const controllerRows = computed(() => {
 });
 
 /**
- * The draft as a registrant would read it. Composed against no camp addendum:
- * this is the organization's own notice, and a camp only ever adds to it.
+ * The draft as a registrant would read it. Composed against no event addendum:
+ * this is the organization's own notice, and a event only ever adds to it.
  */
 const previewNotice = computed<PublishedPrivacyNotice | null>(() => {
   const org = organization.value;
@@ -831,7 +831,7 @@ const previewNotice = computed<PublishedPrivacyNotice | null>(() => {
     supervisoryAuthority: supervisoryAuthorityFor(org.country),
     notice: composePrivacyNotice({ ...content.value }),
     organizationVersion: publishedVersion.value,
-    campVersion: null,
+    eventVersion: null,
   };
 });
 
@@ -862,7 +862,7 @@ function addDataCategory(key: PrivacyDataCategoryKey) {
     return;
   }
 
-  // Pre-select the Art. 9 basis nearly every camp actually relies on, rather
+  // Pre-select the Art. 9 basis nearly every event actually relies on, rather
   // than opening with an empty required field.
   content.value.dataCategories.push(
     isSpecialCategory(key)
@@ -923,7 +923,7 @@ function hasPurpose(key: PrivacyPurposeRef) {
 }
 /**
  * Ticking a purpose pulls in its preset categories and recipients — the point
- * of the catalogue is that the common camp is a handful of checkboxes. They
+ * of the catalogue is that the common event is a handful of checkboxes. They
  * stay editable, and unticking never removes them again: they may have been
  * confirmed for a reason the preset does not know.
  */
@@ -997,7 +997,7 @@ function setRecipientName(key: PrivacyRecipientKey, value: string) {
 /* Free text and the builder's own free-text section */
 
 // The rich-text editor edits one locale at a time; the stored value stays a
-// per-locale record so a notice can be read in every language a camp runs in.
+// per-locale record so a notice can be read in every language a event runs in.
 function localeText(value: Translatable | null, loc: string): string {
   if (value === null) {
     return '';

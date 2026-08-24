@@ -114,7 +114,7 @@ export default {
 
   /**
    * The wording the two authoring UIs share — an organization's notice and a
-   * camp's additions to it. Global rather than per-page so the same control
+   * event's additions to it. Global rather than per-page so the same control
    * cannot end up labelled differently in the two of them.
    */
   editor: {
@@ -132,7 +132,7 @@ export default {
     /** Which of the two authors an entry came from. */
     origin: {
       organization: 'From your organisation',
-      camp: 'Added here',
+      event: 'Added here',
     },
     action: {
       publish: 'Publish',

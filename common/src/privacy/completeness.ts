@@ -11,7 +11,7 @@ import {
  * A missing Art. 13 item. One implementation, four callers: the wizard's
  * progress meter, the moderator's review card, the server-side check that
  * refuses to verify an organization whose notice is incomplete, and — through
- * `addendumGaps` — the same check applied to what a camp adds. Splitting it
+ * `addendumGaps` — the same check applied to what an event adds. Splitting it
  * would let the client claim complete where the server disagrees.
  */
 export type PrivacyNoticeGap =
@@ -228,19 +228,19 @@ export function privacyNoticeCompleteness(
 }
 
 /**
- * The Art. 13 gaps a camp's addendum introduces into the notice its registrants
+ * The Art. 13 gaps an event's addendum introduces into the notice its registrants
  * actually read.
  *
  * The addendum is checked against the *composed* notice rather than on its own,
- * because that is the document being published: a camp adding `health` has
+ * because that is the document being published: an event adding `health` has
  * created an Art. 9 obligation whether or not its organization declared one,
- * and a camp restating a purpose as `legitimate_interests` owes the Art. 13(1)(d)
+ * and an event restating a purpose as `legitimate_interests` owes the Art. 13(1)(d)
  * explanation even though the entry it replaced needed none.
  *
  * Gaps the organization's own notice already has are subtracted rather than
  * reported. They are real, but they are not this author's to fix — an
  * organization that has published nothing yet would otherwise hand every one of
- * its camps a list of failures none of them can act on.
+ * its events a list of failures none of them can act on.
  */
 export function addendumGaps(
   organization: PrivacyNoticeContent | null,

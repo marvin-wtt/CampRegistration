@@ -252,7 +252,7 @@ function showDetails(organization: Organization) {
 }
 
 /**
- * Deletion is refused while the organization still owns camps or newsletters —
+ * Deletion is refused while the organization still owns events or newsletters —
  * their foreign keys are `Restrict`, so registrations can never be taken down
  * with it. Only the details response carries those counts, so they are fetched
  * up front: being told what blocks the deletion beats typing the name to
@@ -269,11 +269,11 @@ async function onDelete(organization: Organization) {
     return;
   }
 
-  if (details.ownedCamps > 0 || details.ownedNewsletters > 0) {
+  if (details.ownedEvents > 0 || details.ownedNewsletters > 0) {
     quasar.dialog({
       title: t('dialog.blocked.title'),
       message: t('dialog.blocked.message', {
-        camps: details.ownedCamps,
+        events: details.ownedEvents,
         newsletters: details.ownedNewsletters,
       }),
       ok: {
@@ -361,7 +361,7 @@ dialog:
   blocked:
     title: 'Organization Not Empty'
     message:
-      'This organization still owns { camps } camp(s) and { newsletters } newsletter(s).
+      'This organization still owns { events } event(s) and { newsletters } newsletter(s).
       Move or delete them before deleting the organization.'
     ok: 'Close'
 notify:
@@ -399,7 +399,7 @@ dialog:
   blocked:
     title: 'Organisation ist nicht leer'
     message:
-      'Diese Organisation besitzt noch { camps } Camp(s) und { newsletters } Newsletter.
+      'Diese Organisation besitzt noch { events } Event(s) und { newsletters } Newsletter.
       Verschiebe oder lösche sie, bevor du die Organisation löschst.'
     ok: 'Schließen'
 notify:
@@ -437,7 +437,7 @@ dialog:
   blocked:
     title: "L'organisation n'est pas vide"
     message:
-      "Cette organisation possède encore { camps } camp(s) et { newsletters } newsletter(s).
+      "Cette organisation possède encore { events } event(s) et { newsletters } newsletter(s).
       Déplacez-les ou supprimez-les avant de supprimer l'organisation."
     ok: 'Fermer'
 notify:
@@ -475,7 +475,7 @@ dialog:
   blocked:
     title: 'Organizacja nie jest pusta'
     message:
-      'Ta organizacja nadal posiada obozy ({ camps }) i newslettery ({ newsletters }).
+      'Ta organizacja nadal posiada obozy ({ events }) i newslettery ({ newsletters }).
       Przenieś je lub usuń przed usunięciem organizacji.'
     ok: 'Zamknij'
 notify:
@@ -513,7 +513,7 @@ dialog:
   blocked:
     title: 'Organizace není prázdná'
     message:
-      'Tato organizace stále vlastní tábory ({ camps }) a newslettery ({ newsletters }).
+      'Tato organizace stále vlastní tábory ({ events }) a newslettery ({ newsletters }).
       Než organizaci smažete, přesuňte je nebo smažte.'
     ok: 'Zavřít'
 notify:

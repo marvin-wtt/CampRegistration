@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-CampRegistration is a full-stack web application for managing youth camp registrations — forms, participants, room assignments, email notifications, and multi-language content.
+CampRegistration is a full-stack web application for managing event registrations — camps, seminars, workshops, and similar events — covering forms, participants, room assignments, email notifications, and multi-language content.
 
 ## Repository Structure
 
@@ -136,10 +136,10 @@ destructive commands or edits under `prisma/migrations/`.
 5. **Type imports**: use `import type` for type-only imports (ESLint enforced)
 6. **InversifyJS**: every new service needs `@injectable()` and registration in `bindContainers`
 7. **Permissions**: use RBAC guards, not manual role checks (skill: `add-permission`)
-8. **Organizations**: camps and newsletters need an `organizationId`; an unverified org's camps are hidden and refuse
+8. **Organizations**: events and newsletters need an `organizationId`; an unverified org's events are hidden and refuse
    registrations and its newsletters refuse to send, but that is gated at the outward-facing action — don't add
    write-time publication gates. Org `ADMIN`s hold only
-   `ORGANIZATION_CAMP_PERMISSIONS` on their org's camps and `ORGANIZATION_NEWSLETTER_PERMISSIONS` on its newsletters —
+   `ORGANIZATION_EVENT_PERMISSIONS` on their org's events and `ORGANIZATION_NEWSLETTER_PERMISSIONS` on its newsletters —
    never registrations, never subscribers
 9. **MD3 colors**: style with `var(--md3-*)` tokens (never hardcoded hex/light-dark colors); use `<m-btn>`/`<m-toolbar>`
    and `.rounded-*`/`.elevation-*` utilities. Don't edit the patched `@anoyomoose/q2-fresh-paint-md3e` in `node_modules`

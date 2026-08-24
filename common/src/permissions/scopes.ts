@@ -1,10 +1,10 @@
 import type {
-  CampManagerRole,
+  EventManagerRole,
   NewsletterManagerRole,
   OrganizationRole,
 } from './roles.js';
 import type {
-  CampScopedPermission,
+  EventScopedPermission,
   NewsletterPermission,
   OrganizationPermission,
 } from './permissions.js';
@@ -17,7 +17,7 @@ import type {
  * module hook key, a route guard and a frontend `can()`.
  */
 export interface PermissionScopes {
-  camp: { role: CampManagerRole; permission: CampScopedPermission };
+  event: { role: EventManagerRole; permission: EventScopedPermission };
   newsletter: { role: NewsletterManagerRole; permission: NewsletterPermission };
   organization: { role: OrganizationRole; permission: OrganizationPermission };
 }
@@ -48,7 +48,7 @@ export type PermissionMatrix = Record<
 >;
 
 export const PERMISSION_SCOPES = [
-  'camp',
+  'event',
   'newsletter',
   'organization',
 ] as const satisfies readonly PermissionScope[];

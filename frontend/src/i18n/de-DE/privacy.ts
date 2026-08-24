@@ -121,7 +121,7 @@ export default {
     },
     origin: {
       organization: 'Von der Organisation',
-      camp: 'Hier ergänzt',
+      event: 'Hier ergänzt',
     },
     action: {
       publish: 'Veröffentlichen',

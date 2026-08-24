@@ -12,17 +12,17 @@ export class MemoryRealtimeBus implements RealtimeBus {
   private readonly emitter = new EventEmitter();
 
   constructor() {
-    // Camps with many concurrent subscribers are normal; lift the warning cap.
+    // Events with many concurrent subscribers are normal; lift the warning cap.
     this.emitter.setMaxListeners(0);
   }
 
-  publish(campId: string, event: RealtimeEvent): void {
-    this.emitter.emit(campId, event);
+  publish(eventId: string, event: RealtimeEvent): void {
+    this.emitter.emit(eventId, event);
   }
 
-  subscribe(campId: string, listener: RealtimeListener): () => void {
-    this.emitter.on(campId, listener);
-    return () => this.emitter.off(campId, listener);
+  subscribe(eventId: string, listener: RealtimeListener): () => void {
+    this.emitter.on(eventId, listener);
+    return () => this.emitter.off(eventId, listener);
   }
 
   close(): void {

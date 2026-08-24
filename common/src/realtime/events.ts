@@ -1,4 +1,4 @@
-import type { CampScopedPermission } from '../permissions/permissions.js';
+import type { EventScopedPermission } from '../permissions/permissions.js';
 
 /**
  * Resources that can be broadcast over a realtime stream. Each maps to a single
@@ -6,12 +6,12 @@ import type { CampScopedPermission } from '../permissions/permissions.js';
  *
  * Note: beds are not a resource of their own — bed mutations emit a
  * `{ resource: 'room', id: roomId, operation: 'updated' }` event, since beds
- * are embedded in rooms (`Room.beds`) and covered by `camp.rooms.view`.
+ * are embedded in rooms (`Room.beds`) and covered by `event.rooms.view`.
  */
 export type RealtimeResource =
-  | 'camp'
+  | 'event'
   | 'registration'
-  | 'program_event'
+  | 'program_item'
   | 'room'
   | 'task'
   | 'manager'
@@ -40,10 +40,10 @@ export interface RealtimeEvent {
   operation: RealtimeOperation;
   /**
    * The "view" permission a recipient must hold to be told about this change.
-   * Enforced per event by the SSE stream handler, so a single camp stream can
-   * carry resources that not every camp role may see (e.g. managers, messages).
+   * Enforced per event by the SSE stream handler, so a single event stream can
+   * carry resources that not every event role may see (e.g. managers, messages).
    */
-  requiredPermission?: CampScopedPermission;
+  requiredPermission?: EventScopedPermission;
   /**
    * Id of the client (browser tab / app instance) that triggered the change,
    * taken from the {@link CLIENT_ID_HEADER} request header. Clients ignore
@@ -64,20 +64,20 @@ export const CLIENT_ID_HEADER = 'X-Client-Id';
 
 /**
  * The view permission required to receive events for a given resource. The SSE
- * layer is camp-scoped end to end, so these are always camp permissions.
+ * layer is event-scoped end to end, so these are always event permissions.
  */
 export const RESOURCE_VIEW_PERMISSION: Record<
   RealtimeResource,
-  CampScopedPermission
+  EventScopedPermission
 > = {
-  camp: 'camp.view',
-  registration: 'camp.registrations.view',
-  program_event: 'camp.program_events.view',
-  room: 'camp.rooms.view',
-  task: 'camp.tasks.view',
-  manager: 'camp.managers.view',
-  message: 'camp.messages.view',
-  file: 'camp.files.view',
-  table_template: 'camp.table_templates.view',
-  setting: 'camp.view',
+  event: 'event.view',
+  registration: 'event.registrations.view',
+  program_item: 'event.program_items.view',
+  room: 'event.rooms.view',
+  task: 'event.tasks.view',
+  manager: 'event.managers.view',
+  message: 'event.messages.view',
+  file: 'event.files.view',
+  table_template: 'event.table_templates.view',
+  setting: 'event.view',
 };

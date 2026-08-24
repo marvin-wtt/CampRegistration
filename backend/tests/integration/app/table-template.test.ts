@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CampFactory,
-  CampManagerFactory,
+  EventFactory,
+  EventManagerFactory,
   TableTemplateFactory,
   UserFactory,
 } from '../../../prisma/factories/index.js';
@@ -9,34 +9,34 @@ import { generateAccessToken } from './utils/token.js';
 import { request } from '../utils/request.js';
 import prisma from '../utils/prisma.js';
 import { ulid } from 'ulidx';
-import { Camp } from '#generated/prisma/client.js';
+import { Event } from '#generated/prisma/client.js';
 
-describe('/api/v1/camps/:campId/table-templates', () => {
-  const createCampWithManagerAndToken = async (role = 'DIRECTOR') => {
-    const camp = await CampFactory.create();
+describe('/api/v1/events/:eventId/table-templates', () => {
+  const createEventWithManagerAndToken = async (role = 'DIRECTOR') => {
+    const event = await EventFactory.create();
     const user = await UserFactory.create();
-    const manager = await CampManagerFactory.create({
-      camp: { connect: { id: camp.id } },
+    const manager = await EventManagerFactory.create({
+      event: { connect: { id: event.id } },
       user: { connect: { id: user.id } },
       role,
     });
     const accessToken = generateAccessToken(user);
 
     return {
-      camp,
+      event,
       user,
       manager,
       accessToken,
     };
   };
 
-  const createTemplateWithCamp = async (camp: Camp) => {
+  const createTemplateWithEvent = async (event: Event) => {
     return TableTemplateFactory.create({
-      camp: { connect: { id: camp.id } },
+      event: { connect: { id: event.id } },
     });
   };
 
-  describe('GET /api/v1/camps/:campId/table-templates', () => {
+  describe('GET /api/v1/events/:eventId/table-templates', () => {
     it.each([
       { role: 'DIRECTOR', expectedStatus: 200 },
       { role: 'COORDINATOR', expectedStatus: 200 },
@@ -45,11 +45,12 @@ describe('/api/v1/camps/:campId/table-templates', () => {
     ])(
       'should respond with `$expectedStatus` status code when user is $role',
       async ({ role, expectedStatus }) => {
-        const { camp, accessToken } = await createCampWithManagerAndToken(role);
-        await createTemplateWithCamp(camp);
+        const { event, accessToken } =
+          await createEventWithManagerAndToken(role);
+        await createTemplateWithEvent(event);
 
         const response = await request()
-          .get(`/api/v1/camps/${camp.id}/table-templates`)
+          .get(`/api/v1/events/${event.id}/table-templates`)
           .send()
           .auth(accessToken, { type: 'bearer' })
           .expect(expectedStatus);
@@ -64,28 +65,28 @@ describe('/api/v1/camps/:campId/table-templates', () => {
       },
     );
 
-    it('should respond with `403` status code when user is not camp manager', async () => {
-      const camp = await CampFactory.create();
+    it('should respond with `403` status code when user is not event manager', async () => {
+      const event = await EventFactory.create();
       const accessToken = generateAccessToken(await UserFactory.create());
 
       await request()
-        .get(`/api/v1/camps/${camp.id}/table-templates`)
+        .get(`/api/v1/events/${event.id}/table-templates`)
         .send()
         .auth(accessToken, { type: 'bearer' })
         .expect(403);
     });
 
     it('should respond with `401` status code when unauthenticated', async () => {
-      const camp = await CampFactory.create();
+      const event = await EventFactory.create();
 
       await request()
-        .get(`/api/v1/camps/${camp.id}/table-templates`)
+        .get(`/api/v1/events/${event.id}/table-templates`)
         .send()
         .expect(401);
     });
   });
 
-  describe('GET /api/v1/camps/:campId/table-templates/:templateId', () => {
+  describe('GET /api/v1/events/:eventId/table-templates/:templateId', () => {
     it.each([
       { role: 'DIRECTOR', expectedStatus: 200 },
       { role: 'COORDINATOR', expectedStatus: 200 },
@@ -94,11 +95,12 @@ describe('/api/v1/camps/:campId/table-templates', () => {
     ])(
       'should respond with `$expectedStatus` status code when user is $role',
       async ({ role, expectedStatus }) => {
-        const { camp, accessToken } = await createCampWithManagerAndToken(role);
-        const template = await createTemplateWithCamp(camp);
+        const { event, accessToken } =
+          await createEventWithManagerAndToken(role);
+        const template = await createTemplateWithEvent(event);
 
         const response = await request()
-          .get(`/api/v1/camps/${camp.id}/table-templates/${template.id}`)
+          .get(`/api/v1/events/${event.id}/table-templates/${template.id}`)
           .send()
           .auth(accessToken, { type: 'bearer' })
           .expect(expectedStatus);
@@ -112,41 +114,41 @@ describe('/api/v1/camps/:campId/table-templates', () => {
       },
     );
 
-    it('should respond with `403` status code when user is not camp manager', async () => {
-      const camp = await CampFactory.create();
-      const template = await createTemplateWithCamp(camp);
+    it('should respond with `403` status code when user is not event manager', async () => {
+      const event = await EventFactory.create();
+      const template = await createTemplateWithEvent(event);
       const accessToken = generateAccessToken(await UserFactory.create());
 
       await request()
-        .get(`/api/v1/camps/${camp.id}/table-templates/${template.id}`)
+        .get(`/api/v1/events/${event.id}/table-templates/${template.id}`)
         .send()
         .auth(accessToken, { type: 'bearer' })
         .expect(403);
     });
 
     it('should respond with `401` status code when unauthenticated', async () => {
-      const camp = await CampFactory.create();
-      const template = await createTemplateWithCamp(camp);
+      const event = await EventFactory.create();
+      const template = await createTemplateWithEvent(event);
 
       await request()
-        .get(`/api/v1/camps/${camp.id}/table-templates/${template.id}`)
+        .get(`/api/v1/events/${event.id}/table-templates/${template.id}`)
         .send()
         .expect(401);
     });
 
     it('should respond with `404` status code when template id does not exist', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
+      const { event, accessToken } = await createEventWithManagerAndToken();
       const templateId = ulid();
 
       await request()
-        .get(`/api/v1/camps/${camp.id}/table-templates/${templateId}`)
+        .get(`/api/v1/events/${event.id}/table-templates/${templateId}`)
         .send()
         .auth(accessToken, { type: 'bearer' })
         .expect(404);
     });
   });
 
-  describe('POST /api/v1/camps/:campId/table-templates', () => {
+  describe('POST /api/v1/events/:eventId/table-templates', () => {
     it.each([
       { role: 'DIRECTOR', expectedStatus: 201 },
       { role: 'COORDINATOR', expectedStatus: 201 },
@@ -155,7 +157,8 @@ describe('/api/v1/camps/:campId/table-templates', () => {
     ])(
       'should respond with `$expectedStatus` status code when user is $role',
       async ({ role, expectedStatus }) => {
-        const { camp, accessToken } = await createCampWithManagerAndToken(role);
+        const { event, accessToken } =
+          await createEventWithManagerAndToken(role);
 
         const data = {
           title: 'Test Template',
@@ -167,7 +170,7 @@ describe('/api/v1/camps/:campId/table-templates', () => {
         };
 
         await request()
-          .post(`/api/v1/camps/${camp.id}/table-templates`)
+          .post(`/api/v1/events/${event.id}/table-templates`)
           .send(data)
           .auth(accessToken, { type: 'bearer' })
           .expect(expectedStatus);
@@ -182,8 +185,8 @@ describe('/api/v1/camps/:campId/table-templates', () => {
       },
     );
 
-    it('should respond with `403` status code when user is not camp manager', async () => {
-      const camp = await CampFactory.create();
+    it('should respond with `403` status code when user is not event manager', async () => {
+      const event = await EventFactory.create();
       const accessToken = generateAccessToken(await UserFactory.create());
 
       const data = {
@@ -196,7 +199,7 @@ describe('/api/v1/camps/:campId/table-templates', () => {
       };
 
       await request()
-        .post(`/api/v1/camps/${camp.id}/table-templates`)
+        .post(`/api/v1/events/${event.id}/table-templates`)
         .send(data)
         .auth(accessToken, { type: 'bearer' })
         .expect(403);
@@ -206,7 +209,7 @@ describe('/api/v1/camps/:campId/table-templates', () => {
     });
 
     it('should respond with `401` status code when unauthenticated', async () => {
-      const camp = await CampFactory.create();
+      const event = await EventFactory.create();
 
       const data = {
         title: 'Test Template',
@@ -218,7 +221,7 @@ describe('/api/v1/camps/:campId/table-templates', () => {
       };
 
       await request()
-        .post(`/api/v1/camps/${camp.id}/table-templates`)
+        .post(`/api/v1/events/${event.id}/table-templates`)
         .send(data)
         .expect(401);
 
@@ -227,7 +230,7 @@ describe('/api/v1/camps/:campId/table-templates', () => {
     });
 
     it('should store the print orientation', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
+      const { event, accessToken } = await createEventWithManagerAndToken();
 
       const data = {
         title: 'Test Template',
@@ -237,7 +240,7 @@ describe('/api/v1/camps/:campId/table-templates', () => {
       };
 
       const response = await request()
-        .post(`/api/v1/camps/${camp.id}/table-templates`)
+        .post(`/api/v1/events/${event.id}/table-templates`)
         .send(data)
         .auth(accessToken, { type: 'bearer' })
         .expect(201);
@@ -249,7 +252,7 @@ describe('/api/v1/camps/:campId/table-templates', () => {
 
       const stored = await request()
         .get(
-          `/api/v1/camps/${camp.id}/table-templates/${response.body.data.id}`,
+          `/api/v1/events/${event.id}/table-templates/${response.body.data.id}`,
         )
         .send()
         .auth(accessToken, { type: 'bearer' })
@@ -262,7 +265,7 @@ describe('/api/v1/camps/:campId/table-templates', () => {
     });
   });
 
-  describe('PATCH /api/v1/camps/:campId/table-templates/:templateId', () => {
+  describe('PATCH /api/v1/events/:eventId/table-templates/:templateId', () => {
     it.each([
       { role: 'DIRECTOR', expectedStatus: 200 },
       { role: 'COORDINATOR', expectedStatus: 200 },
@@ -271,8 +274,9 @@ describe('/api/v1/camps/:campId/table-templates', () => {
     ])(
       'should respond with `$expectedStatus` status code when user is $role',
       async ({ role, expectedStatus }) => {
-        const { camp, accessToken } = await createCampWithManagerAndToken(role);
-        const template = await createTemplateWithCamp(camp);
+        const { event, accessToken } =
+          await createEventWithManagerAndToken(role);
+        const template = await createTemplateWithEvent(event);
 
         const data = {
           title: 'Updated Template',
@@ -284,7 +288,7 @@ describe('/api/v1/camps/:campId/table-templates', () => {
         };
 
         const response = await request()
-          .put(`/api/v1/camps/${camp.id}/table-templates/${template.id}`)
+          .put(`/api/v1/events/${event.id}/table-templates/${template.id}`)
           .send(data)
           .auth(accessToken, { type: 'bearer' })
           .expect(expectedStatus);
@@ -307,9 +311,9 @@ describe('/api/v1/camps/:campId/table-templates', () => {
       },
     );
 
-    it('should respond with `403` status code when user is not camp manager', async () => {
-      const camp = await CampFactory.create();
-      const template = await createTemplateWithCamp(camp);
+    it('should respond with `403` status code when user is not event manager', async () => {
+      const event = await EventFactory.create();
+      const template = await createTemplateWithEvent(event);
       const accessToken = generateAccessToken(await UserFactory.create());
 
       const data = {
@@ -323,15 +327,15 @@ describe('/api/v1/camps/:campId/table-templates', () => {
       };
 
       await request()
-        .put(`/api/v1/camps/${camp.id}/table-templates/${template.id}`)
+        .put(`/api/v1/events/${event.id}/table-templates/${template.id}`)
         .send(data)
         .auth(accessToken, { type: 'bearer' })
         .expect(403);
     });
 
     it('should respond with `401` status code when unauthenticated', async () => {
-      const camp = await CampFactory.create();
-      const template = await createTemplateWithCamp(camp);
+      const event = await EventFactory.create();
+      const template = await createTemplateWithEvent(event);
 
       const data = {
         title: 'Updated Template',
@@ -344,13 +348,13 @@ describe('/api/v1/camps/:campId/table-templates', () => {
       };
 
       await request()
-        .put(`/api/v1/camps/${camp.id}/table-templates/${template.id}`)
+        .put(`/api/v1/events/${event.id}/table-templates/${template.id}`)
         .send(data)
         .expect(401);
     });
 
     it('should respond with `404` status code when template id does not exist', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
+      const { event, accessToken } = await createEventWithManagerAndToken();
       const templateId = ulid();
 
       const data = {
@@ -364,16 +368,16 @@ describe('/api/v1/camps/:campId/table-templates', () => {
       };
 
       await request()
-        .patch(`/api/v1/camps/${camp.id}/table-templates/${templateId}`)
+        .patch(`/api/v1/events/${event.id}/table-templates/${templateId}`)
         .send(data)
         .auth(accessToken, { type: 'bearer' })
         .expect(404);
     });
 
     it('should drop the print orientation when it is omitted', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
+      const { event, accessToken } = await createEventWithManagerAndToken();
       const template = await TableTemplateFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
         data: {
           title: 'Test Template',
           columns: [{ name: 'name', label: 'Name', field: 'name' }],
@@ -383,7 +387,7 @@ describe('/api/v1/camps/:campId/table-templates', () => {
       });
 
       const response = await request()
-        .put(`/api/v1/camps/${camp.id}/table-templates/${template.id}`)
+        .put(`/api/v1/events/${event.id}/table-templates/${template.id}`)
         .send({
           title: 'Test Template',
           columns: [{ name: 'name', label: 'Name', field: 'name' }],
@@ -396,7 +400,7 @@ describe('/api/v1/camps/:campId/table-templates', () => {
     });
   });
 
-  describe('DELETE /api/v1/camps/:campId/table-templates/:templateId', () => {
+  describe('DELETE /api/v1/events/:eventId/table-templates/:templateId', () => {
     it.each([
       { role: 'DIRECTOR', expectedStatus: 204 },
       { role: 'COORDINATOR', expectedStatus: 204 },
@@ -405,12 +409,13 @@ describe('/api/v1/camps/:campId/table-templates', () => {
     ])(
       'should respond with `$expectedStatus` status code when user is $role',
       async ({ role, expectedStatus }) => {
-        const { camp, accessToken } = await createCampWithManagerAndToken(role);
-        const template = await createTemplateWithCamp(camp);
-        const otherTemplate = await createTemplateWithCamp(camp);
+        const { event, accessToken } =
+          await createEventWithManagerAndToken(role);
+        const template = await createTemplateWithEvent(event);
+        const otherTemplate = await createTemplateWithEvent(event);
 
         await request()
-          .delete(`/api/v1/camps/${camp.id}/table-templates/${template.id}`)
+          .delete(`/api/v1/events/${event.id}/table-templates/${template.id}`)
           .send()
           .auth(accessToken, { type: 'bearer' })
           .expect(expectedStatus);
@@ -428,13 +433,13 @@ describe('/api/v1/camps/:campId/table-templates', () => {
       },
     );
 
-    it('should respond with `403` status code when user is not camp manager', async () => {
-      const camp = await CampFactory.create();
-      const template = await createTemplateWithCamp(camp);
+    it('should respond with `403` status code when user is not event manager', async () => {
+      const event = await EventFactory.create();
+      const template = await createTemplateWithEvent(event);
       const accessToken = generateAccessToken(await UserFactory.create());
 
       await request()
-        .delete(`/api/v1/camps/${camp.id}/table-templates/${template.id}`)
+        .delete(`/api/v1/events/${event.id}/table-templates/${template.id}`)
         .send()
         .auth(accessToken, { type: 'bearer' })
         .expect(403);
@@ -444,11 +449,11 @@ describe('/api/v1/camps/:campId/table-templates', () => {
     });
 
     it('should respond with `401` status code when unauthenticated', async () => {
-      const camp = await CampFactory.create();
-      const template = await createTemplateWithCamp(camp);
+      const event = await EventFactory.create();
+      const template = await createTemplateWithEvent(event);
 
       await request()
-        .delete(`/api/v1/camps/${camp.id}/table-templates/${template.id}`)
+        .delete(`/api/v1/events/${event.id}/table-templates/${template.id}`)
         .send()
         .expect(401);
 
@@ -457,11 +462,11 @@ describe('/api/v1/camps/:campId/table-templates', () => {
     });
 
     it('should respond with `404` status code when template id does not exist', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
+      const { event, accessToken } = await createEventWithManagerAndToken();
       const templateId = ulid();
 
       await request()
-        .delete(`/api/v1/camps/${camp.id}/table-templates/${templateId}`)
+        .delete(`/api/v1/events/${event.id}/table-templates/${templateId}`)
         .send()
         .auth(accessToken, { type: 'bearer' })
         .expect(404);

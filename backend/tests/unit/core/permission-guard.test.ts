@@ -7,7 +7,7 @@ import {
 } from '#core/permission.guard';
 import { PERMISSION_SCOPES } from '@camp-registration/common/permissions';
 
-const stub = <S extends 'camp' | 'newsletter' | 'organization'>(
+const stub = <S extends 'event' | 'newsletter' | 'organization'>(
   model: ScopeResolver<S>['model'],
 ): ScopeResolver<S> => ({
   model,
@@ -20,17 +20,17 @@ beforeEach(() => {
 
 describe('registerScopeResolver', () => {
   it('rejects a second resolver for the same scope', () => {
-    registerScopeResolver('camp', stub('camp'));
+    registerScopeResolver('event', stub('event'));
 
-    expect(() => registerScopeResolver('camp', stub('camp'))).toThrow(
-      /Duplicate permission resolver for scope 'camp'/,
+    expect(() => registerScopeResolver('event', stub('event'))).toThrow(
+      /Duplicate permission resolver for scope 'event'/,
     );
   });
 });
 
 describe('assertScopeResolversComplete', () => {
   it('names the scopes left unwired', () => {
-    registerScopeResolver('camp', stub('camp'));
+    registerScopeResolver('event', stub('event'));
 
     expect(() => assertScopeResolversComplete()).toThrow(
       /newsletter, organization/,
@@ -38,7 +38,7 @@ describe('assertScopeResolversComplete', () => {
   });
 
   it('passes once every scope is registered', () => {
-    registerScopeResolver('camp', stub('camp'));
+    registerScopeResolver('event', stub('event'));
     registerScopeResolver('newsletter', stub('newsletter'));
     registerScopeResolver('organization', stub('organization'));
 
@@ -49,7 +49,7 @@ describe('assertScopeResolversComplete', () => {
   // above being extended to cover it.
   it('covers every declared scope', () => {
     expect(PERMISSION_SCOPES).toStrictEqual([
-      'camp',
+      'event',
       'newsletter',
       'organization',
     ]);

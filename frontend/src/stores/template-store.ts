@@ -7,14 +7,14 @@ import type {
 import { useRoute } from 'vue-router';
 import { useAPIService } from '@/services/APIService';
 import { useServiceHandler } from '@/composables/serviceHandler';
-import { useAuthBus, useCampBus } from '@/composables/bus';
+import { useAuthBus, useEventBus } from '@/composables/bus';
 import { useRealtimeCollection } from '@/composables/realtimeCollection';
 
 export const useTemplateStore = defineStore('templates', () => {
   const route = useRoute();
   const apiService = useAPIService();
   const authBus = useAuthBus();
-  const campBus = useCampBus();
+  const eventBus = useEventBus();
   const {
     data,
     isLoading,
@@ -33,7 +33,7 @@ export const useTemplateStore = defineStore('templates', () => {
     reset();
   });
 
-  campBus.on('change', () => {
+  eventBus.on('change', () => {
     invalidate();
   });
 
@@ -51,10 +51,10 @@ export const useTemplateStore = defineStore('templates', () => {
     return fetchData(id);
   }
 
-  async function fetchData(campId?: string, opts?: { background?: boolean }) {
-    campId = campId ?? (route.params.campId as string | undefined);
+  async function fetchData(eventId?: string, opts?: { background?: boolean }) {
+    eventId = eventId ?? (route.params.eventId as string | undefined);
 
-    const cid = checkNotNullWithError(campId);
+    const cid = checkNotNullWithError(eventId);
     const fetcher = async () => {
       const data = await apiService.fetchTableTemplates(cid);
       return data.sort((a, b) => {
@@ -67,9 +67,9 @@ export const useTemplateStore = defineStore('templates', () => {
   async function updateCollection(templates: TableTemplate[]) {
     const currentTemplates = data.value;
 
-    const campId = route.params.campId as string | undefined;
+    const eventId = route.params.eventId as string | undefined;
 
-    const cid = checkNotNullWithError(campId);
+    const cid = checkNotNullWithError(eventId);
 
     if (currentTemplates === undefined) {
       // TODO notify
@@ -126,10 +126,10 @@ export const useTemplateStore = defineStore('templates', () => {
 
   async function createEntry(
     template: TableTemplateCreateData,
-    campId?: string,
+    eventId?: string,
   ) {
-    campId = campId ?? (route.params.campId as string | undefined);
-    const cid = checkNotNullWithError(campId);
+    eventId = eventId ?? (route.params.eventId as string | undefined);
+    const cid = checkNotNullWithError(eventId);
 
     return await withProgressNotification('create', async () => {
       const result = await apiService.createTableTemplate(cid, template);
@@ -145,9 +145,9 @@ export const useTemplateStore = defineStore('templates', () => {
     templateId: string,
     template: TableTemplateUpdateData,
   ) {
-    const campId = route.params.campId as string | undefined;
+    const eventId = route.params.eventId as string | undefined;
 
-    const cid = checkNotNullWithError(campId);
+    const cid = checkNotNullWithError(eventId);
     return await withProgressNotification('update', async () => {
       const result = await apiService.updateTableTemplate(
         cid,
@@ -165,9 +165,9 @@ export const useTemplateStore = defineStore('templates', () => {
   }
 
   async function deleteEntry(id: string) {
-    const campId = route.params.campId as string | undefined;
+    const eventId = route.params.eventId as string | undefined;
 
-    const cid = checkNotNullWithError(campId);
+    const cid = checkNotNullWithError(eventId);
     const tid = checkNotNullWithNotification(id);
     return await withProgressNotification('delete', async () => {
       const result = apiService.deleteTableTemplate(cid, tid);

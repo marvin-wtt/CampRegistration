@@ -1,9 +1,9 @@
 import type { Request } from 'express';
-import { campManager } from '#app/camp/camp.guard';
+import { hasEventPermission } from '#app/event/event.guard';
 import { type GuardFn } from '#core/guard';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
-import { CampService } from '#app/camp/camp.service';
+import { EventService } from '#app/event/event.service';
 import { resolve } from '#core/ioc/container';
 import { MessageDeliveryService } from '#app/messageDelivery/message-delivery.service';
 
@@ -21,7 +21,7 @@ export const messageDeliveryFileGuard = async (
 
   // Load models for guard
   const messageService = resolve(MessageDeliveryService);
-  const delivery = await messageService.getDeliveryWithCampById(
+  const delivery = await messageService.getDeliveryWithEventById(
     file.messageDeliveryId,
   );
   if (!delivery) {
@@ -31,9 +31,9 @@ export const messageDeliveryFileGuard = async (
     );
   }
 
-  const campService = resolve(CampService);
-  const camp = await campService.getCampById(delivery.registration.campId);
-  req.setModelOrFail('camp', camp);
+  const eventService = resolve(EventService);
+  const event = await eventService.getEventById(delivery.registration.eventId);
+  req.setModelOrFail('event', event);
 
-  return campManager('camp.messages.view');
+  return hasEventPermission('event.messages.view');
 };

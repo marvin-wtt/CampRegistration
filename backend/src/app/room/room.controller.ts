@@ -24,29 +24,29 @@ export class RoomController extends BaseController {
   }
 
   async index(req: Request, res: Response) {
-    const camp = req.modelOrFail('camp');
+    const event = req.modelOrFail('event');
     await req.validate(validator.index);
 
-    const rooms = await this.roomService.queryRooms(camp.id);
+    const rooms = await this.roomService.queryRooms(event.id);
 
     res.resource(RoomResource.collection(rooms));
   }
 
   async store(req: Request, res: Response) {
-    const camp = req.modelOrFail('camp');
+    const event = req.modelOrFail('event');
     const {
       body: { name, capacity },
     } = await req.validate(validator.store);
 
-    const room = await this.roomService.createRoom(camp.id, name, capacity);
+    const room = await this.roomService.createRoom(event.id, name, capacity);
 
-    void this.realtimeService.emit(camp.id, 'room', room.id, 'created');
+    void this.realtimeService.emit(event.id, 'room', room.id, 'created');
 
     res.status(httpStatus.CREATED).resource(new RoomResource(room));
   }
 
   async update(req: Request, res: Response) {
-    const camp = req.modelOrFail('camp');
+    const event = req.modelOrFail('event');
     const room = req.modelOrFail('room');
     const {
       body: { name, sortOrder },
@@ -58,34 +58,37 @@ export class RoomController extends BaseController {
       sortOrder,
     );
 
-    void this.realtimeService.emit(camp.id, 'room', updatedRoom.id, 'updated');
+    void this.realtimeService.emit(event.id, 'room', updatedRoom.id, 'updated');
 
     res.resource(new RoomResource(updatedRoom));
   }
 
   async bulkUpdate(req: Request, res: Response) {
-    const camp = req.modelOrFail('camp');
+    const event = req.modelOrFail('event');
     const {
       body: { rooms },
     } = await req.validate(validator.bulkUpdate);
 
-    const updatedRooms = await this.roomService.bulkUpdateRooms(camp.id, rooms);
+    const updatedRooms = await this.roomService.bulkUpdateRooms(
+      event.id,
+      rooms,
+    );
 
     // One collection-level event for the whole transaction — per-room events
     // would make every subscriber refetch each room individually.
-    void this.realtimeService.emitInvalidation(camp.id, 'room');
+    void this.realtimeService.emitInvalidation(event.id, 'room');
 
     res.resource(RoomResource.collection(updatedRooms));
   }
 
   async destroy(req: Request, res: Response) {
-    const camp = req.modelOrFail('camp');
+    const event = req.modelOrFail('event');
     const room = req.modelOrFail('room');
     await req.validate(validator.destroy);
 
     await this.roomService.deleteRoomById(room.id);
 
-    void this.realtimeService.emit(camp.id, 'room', room.id, 'deleted');
+    void this.realtimeService.emit(event.id, 'room', room.id, 'deleted');
 
     res.status(httpStatus.NO_CONTENT).send();
   }

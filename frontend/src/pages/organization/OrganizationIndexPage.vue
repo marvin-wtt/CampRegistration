@@ -158,7 +158,7 @@ onMounted(async () => {
 
 <i18n lang="yaml" locale="en">
 title: 'Organizations'
-subtitle: 'Manage the organizations you run camps and newsletters under.'
+subtitle: 'Manage the organizations you run events and newsletters under.'
 action:
   create: 'Create organization'
 status:
@@ -167,12 +167,12 @@ status:
   REJECTED: 'Rejected'
 empty:
   title: 'No organizations yet'
-  description: 'Create an organization to run camps and newsletters.'
+  description: 'Create an organization to run events and newsletters.'
 </i18n>
 
 <i18n lang="yaml" locale="de">
 title: 'Organisationen'
-subtitle: 'Verwalte die Organisationen, unter denen du Camps und Newsletter betreibst.'
+subtitle: 'Verwalte die Organisationen, unter denen du Events und Newsletter betreibst.'
 action:
   create: 'Organisation erstellen'
 status:
@@ -181,12 +181,12 @@ status:
   REJECTED: 'Abgelehnt'
 empty:
   title: 'Noch keine Organisationen'
-  description: 'Erstelle eine Organisation, um Camps und Newsletter zu betreiben.'
+  description: 'Erstelle eine Organisation, um Events und Newsletter zu betreiben.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 title: 'Organisations'
-subtitle: 'Gérez les organisations sous lesquelles vous organisez camps et newsletters.'
+subtitle: 'Gérez les organisations sous lesquelles vous organisez events et newsletters.'
 action:
   create: 'Créer une organisation'
 status:
@@ -195,7 +195,7 @@ status:
   REJECTED: 'Refusée'
 empty:
   title: 'Aucune organisation'
-  description: 'Crée une organisation pour gérer des camps et des newsletters.'
+  description: 'Crée une organisation pour gérer des events et des newsletters.'
 </i18n>
 
 <i18n lang="yaml" locale="pl">

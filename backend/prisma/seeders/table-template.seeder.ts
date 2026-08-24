@@ -1,6 +1,6 @@
 import { BaseSeeder } from './BaseSeeder';
 import { TableTemplateFactory } from '../factories';
-import { CAMP_IDS } from './ids';
+import { EVENT_IDS } from './ids';
 
 class TableTemplateSeeder extends BaseSeeder {
   name(): string {
@@ -35,10 +35,10 @@ class TableTemplateSeeder extends BaseSeeder {
         actions: true,
         sortBy: 'first_name',
       },
-      camp: { connect: { id: CAMP_IDS.simple } },
+      event: { connect: { id: EVENT_IDS.simple } },
     });
 
-    // Summer camp – Participants
+    // Summer event – Participants
     await TableTemplateFactory.create({
       data: {
         title: { en: 'Participants', de: 'Teilnehmer', fr: 'Participants' },
@@ -98,10 +98,10 @@ class TableTemplateSeeder extends BaseSeeder {
         actions: true,
         sortBy: 'first_name',
       },
-      camp: { connect: { id: CAMP_IDS.summer } },
+      event: { connect: { id: EVENT_IDS.summer } },
     });
 
-    // Summer camp – Waiting List
+    // Summer event – Waiting List
     await TableTemplateFactory.create({
       data: {
         title: { en: 'Waiting List', de: 'Warteliste', fr: "Liste d'attente" },
@@ -154,10 +154,10 @@ class TableTemplateSeeder extends BaseSeeder {
         sortBy: 'created_at',
         sortDirection: 'asc',
       },
-      camp: { connect: { id: CAMP_IDS.summer } },
+      event: { connect: { id: EVENT_IDS.summer } },
     });
 
-    // Summer camp – Medical
+    // Summer event – Medical
     await TableTemplateFactory.create({
       data: {
         title: { en: 'Medical', de: 'Medizinisches', fr: 'Médical' },
@@ -208,10 +208,10 @@ class TableTemplateSeeder extends BaseSeeder {
         indexed: true,
         sortBy: 'first_name',
       },
-      camp: { connect: { id: CAMP_IDS.summer } },
+      event: { connect: { id: EVENT_IDS.summer } },
     });
 
-    // Summer camp – Permissions
+    // Summer event – Permissions
     await TableTemplateFactory.create({
       data: {
         title: { en: 'Permissions', de: 'Berechtigungen', fr: 'Autorisations' },
@@ -274,7 +274,7 @@ class TableTemplateSeeder extends BaseSeeder {
         indexed: true,
         sortBy: 'first_name',
       },
-      camp: { connect: { id: CAMP_IDS.summer } },
+      event: { connect: { id: EVENT_IDS.summer } },
     });
   }
 }

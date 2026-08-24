@@ -1,7 +1,7 @@
 import { SurveyModel } from 'survey-core';
 import type { Question } from 'survey-core';
 import { setVariables } from '@camp-registration/common/form';
-import type { Camp } from '#generated/prisma/client.js';
+import type { Event } from '#generated/prisma/client.js';
 
 /** One field of a form, flattened out of the survey's structure. */
 export interface FormAnswer {
@@ -91,14 +91,14 @@ function flattenAnswers(
 }
 
 export const formUtils = (
-  camp: Camp & { freePlaces: number | Record<string, number> },
+  event: Event & { freePlaces: number | Record<string, number> },
   data?: unknown,
   options?: { locale?: string },
 ) => {
-  const survey = new SurveyModel(camp.form);
+  const survey = new SurveyModel(event.form);
 
   survey.locale = options?.locale ?? 'en-US';
-  setVariables(survey, camp);
+  setVariables(survey, event);
   survey.data = typeof data !== 'object' ? {} : data;
 
   const updateData = (data?: unknown) => {
@@ -185,7 +185,7 @@ export const formUtils = (
     });
   };
 
-  const extractCampData = (): Record<string, unknown[]> => {
+  const extractEventData = (): Record<string, unknown[]> => {
     const data = survey.getPlainData({
       includeEmpty: true,
       includeQuestionTypes: true,
@@ -207,7 +207,7 @@ export const formUtils = (
           return tagData;
         }
 
-        // Create a new entry for the camp data type if it does not exist
+        // Create a new entry for the event data type if it does not exist
         if (!(tag in tagData)) {
           tagData[tag] = [];
         }
@@ -236,7 +236,7 @@ export const formUtils = (
     hasDataErrors,
     getDataErrorFields,
     unknownDataFields,
-    extractCampData,
+    extractEventData,
     answers,
   };
 };

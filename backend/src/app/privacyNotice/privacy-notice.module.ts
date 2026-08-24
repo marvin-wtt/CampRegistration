@@ -5,9 +5,9 @@ import { MailableRegistry } from '#app/mail/mail.registry';
 import { PrivacyNoticeService } from './privacy-notice.service.js';
 import { PrivacyNoticeController } from './privacy-notice.controller.js';
 import { PrivacyRetentionService } from './privacy-retention.service.js';
-import { CampRetentionDueMessage } from './privacy-notice.messages.js';
+import { EventRetentionDueMessage } from './privacy-notice.messages.js';
 import {
-  CampPrivacyNoticeRouter,
+  EventPrivacyNoticeRouter,
   OrganizationPrivacyNoticeRouter,
 } from './privacy-notice.routes.js';
 
@@ -19,7 +19,7 @@ export class PrivacyNoticeModule implements AppModule {
   }
 
   configure(): void {
-    resolve(MailableRegistry).register(CampRetentionDueMessage);
+    resolve(MailableRegistry).register(EventRetentionDueMessage);
   }
 
   registerRoutes(router: AppRouter): void {
@@ -28,8 +28,8 @@ export class PrivacyNoticeModule implements AppModule {
       new OrganizationPrivacyNoticeRouter(),
     );
     router.useRouter(
-      '/camps/:campId/privacy-notice',
-      new CampPrivacyNoticeRouter(),
+      '/events/:eventId/privacy-notice',
+      new EventPrivacyNoticeRouter(),
     );
   }
 

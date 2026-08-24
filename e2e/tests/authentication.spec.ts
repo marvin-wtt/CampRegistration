@@ -20,7 +20,7 @@ test.describe("Authentication", () => {
       await loginForm.getByTestId("submit").click();
       expect((await loginResponse).status()).toBe(200);
 
-      await expect(page).toHaveURL(/\/management\/camps$/);
+      await expect(page).toHaveURL(/\/management\/events$/);
     });
 
     test("should show error for invalid credentials", async ({ page }) => {
@@ -76,7 +76,7 @@ test.describe("Authentication", () => {
       await totpForm.getByTestId("submit").click();
       expect((await verifyResponse).status()).toBe(200);
 
-      await expect(page).toHaveURL(/\/management\/camps$/);
+      await expect(page).toHaveURL(/\/management\/events$/);
     });
 
     test("should show error for invalid totp", async ({ page }) => {
@@ -167,7 +167,7 @@ test.describe("Authentication", () => {
       await loginForm.getByTestId("password").fill("Password123#");
       await loginForm.getByTestId("submit").click();
 
-      await expect(page).toHaveURL(/\/management\/camps$/);
+      await expect(page).toHaveURL(/\/management\/events$/);
     });
   });
 
@@ -224,7 +224,7 @@ test.describe("Authentication", () => {
       await loginForm.getByTestId("submit").click();
       expect((await loginResponse).status()).toBe(200);
 
-      await expect(page).toHaveURL(/\/management\/camps$/);
+      await expect(page).toHaveURL(/\/management\/events$/);
     });
   });
 });

@@ -104,7 +104,7 @@ subtitle: 'How your account appears and how we reach you.'
 section:
   details:
     title: 'Personal details'
-    hint: 'Your name is shown to other members of camps you manage.'
+    hint: 'Your name is shown to other members of events you manage.'
   email:
     title: 'E-mail address'
     hint: 'Used to sign in and to receive notifications. Changing it requires your password.'
@@ -117,7 +117,7 @@ subtitle: 'Wie Ihr Konto erscheint und wie wir Sie erreichen.'
 section:
   details:
     title: 'Persönliche Angaben'
-    hint: 'Ihr Name wird anderen Mitgliedern der von Ihnen verwalteten Camps angezeigt.'
+    hint: 'Ihr Name wird anderen Mitgliedern der von Ihnen verwalteten Events angezeigt.'
   email:
     title: 'E-Mail-Adresse'
     hint: 'Wird zur Anmeldung und für Benachrichtigungen verwendet. Für eine Änderung ist Ihr Passwort erforderlich.'
@@ -130,7 +130,7 @@ subtitle: 'L’apparence de votre compte et la manière dont nous vous contacton
 section:
   details:
     title: 'Informations personnelles'
-    hint: 'Votre nom est visible par les autres membres des camps que vous gérez.'
+    hint: 'Votre nom est visible par les autres membres des events que vous gérez.'
   email:
     title: 'Adresse e-mail'
     hint: 'Utilisée pour vous connecter et recevoir des notifications. Sa modification nécessite votre mot de passe.'

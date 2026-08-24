@@ -1,8 +1,8 @@
 import { describe, it } from 'vitest';
 import {
-  CampFactory,
+  EventFactory,
   UserFactory,
-  CampManagerFactory,
+  EventManagerFactory,
   RegistrationFactory,
   MessageDeliveryFactory,
   FileFactory,
@@ -13,30 +13,30 @@ import { ulid } from 'ulidx';
 import crypto from 'crypto';
 import { uploadFile } from './utils/file.js';
 
-const createCampWithManagerAndToken = async (
-  campData?: Parameters<(typeof CampFactory)['create']>[0],
+const createEventWithManagerAndToken = async (
+  eventData?: Parameters<(typeof EventFactory)['create']>[0],
   role = 'DIRECTOR',
 ) => {
-  const camp = await CampFactory.create(campData);
+  const event = await EventFactory.create(eventData);
   const user = await UserFactory.create();
-  await CampManagerFactory.create({
-    camp: { connect: { id: camp.id } },
+  await EventManagerFactory.create({
+    event: { connect: { id: event.id } },
     user: { connect: { id: user.id } },
     role,
   });
   const accessToken = generateAccessToken(user);
 
-  return { camp, user, accessToken };
+  return { event, user, accessToken };
 };
 
 describe('/api/v1/files/', () => {
   const createMessageDeliveryWithFile = async (role = 'DIRECTOR') => {
-    const { user, accessToken, camp } = await createCampWithManagerAndToken(
+    const { user, accessToken, event } = await createEventWithManagerAndToken(
       undefined,
       role,
     );
     const registration = await RegistrationFactory.create({
-      camp: { connect: { id: camp.id } },
+      event: { connect: { id: event.id } },
     });
     const delivery = await MessageDeliveryFactory.create({
       registration: { connect: { id: registration.id } },
@@ -50,7 +50,7 @@ describe('/api/v1/files/', () => {
       name: fileName,
     });
 
-    return { file, user, accessToken, camp, registration, delivery };
+    return { file, user, accessToken, event, registration, delivery };
   };
 
   describe('GET /api/v1/files/:fileId', () => {
@@ -72,7 +72,7 @@ describe('/api/v1/files/', () => {
       },
     );
 
-    it('should respond with `403` status code when user is not camp manager', async () => {
+    it('should respond with `403` status code when user is not event manager', async () => {
       const { file } = await createMessageDeliveryWithFile();
       const accessToken = generateAccessToken(await UserFactory.create());
 

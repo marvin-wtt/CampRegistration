@@ -1,4 +1,4 @@
-import type { Camp } from '#generated/prisma/client.js';
+import type { Event } from '#generated/prisma/client.js';
 import { MessageFactory } from '../factories';
 import prisma from '../client';
 import { USER_IDS } from './ids';
@@ -15,15 +15,15 @@ interface SeededMessage {
 // Ad-hoc messages that were "sent" from the contact page (event === null).
 const MESSAGES: SeededMessage[] = [
   {
-    subject: 'Packing list for the summer camp',
-    body: '<p>Hi there,</p><p>The camp is approaching fast! Please make sure to pack rain gear, sturdy shoes, a refillable water bottle and any personal medication.</p><p>See you soon!</p>',
+    subject: 'Packing list for the summer event',
+    body: '<p>Hi there,</p><p>The event is approaching fast! Please make sure to pack rain gear, sturdy shoes, a refillable water bottle and any personal medication.</p><p>See you soon!</p>',
     count: 12,
     sentByUserId: USER_IDS.john,
     sentDaysAgo: 21,
   },
   {
     subject: 'Departure details & meeting point',
-    body: '<p>Dear parents,</p><p>We will meet on Sunday at <strong>09:00</strong> in front of the main station. The bus leaves at 09:30 sharp.</p><p>Best regards,<br/>The camp team</p>',
+    body: '<p>Dear parents,</p><p>We will meet on Sunday at <strong>09:00</strong> in front of the main station. The bus leaves at 09:30 sharp.</p><p>Best regards,<br/>The event team</p>',
     count: 24,
     sentByUserId: USER_IDS.erika,
     sentDaysAgo: 9,
@@ -38,11 +38,11 @@ const MESSAGES: SeededMessage[] = [
 ];
 
 export class MessageSeeder {
-  constructor(private camp: Camp) {}
+  constructor(private event: Event) {}
 
   async seed(): Promise<void> {
     const registrations = await prisma.registration.findMany({
-      where: { campId: this.camp.id, status: 'ACCEPTED' },
+      where: { eventId: this.event.id, status: 'ACCEPTED' },
       take: 30,
     });
 
@@ -54,7 +54,7 @@ export class MessageSeeder {
       const createdAt = seedDate(-message.sentDaysAgo, '10:00');
 
       const sentMessage = await MessageFactory.create({
-        camp: { connect: { id: this.camp.id } },
+        event: { connect: { id: this.event.id } },
         sentBy: { connect: { id: message.sentByUserId } },
         subject: message.subject,
         body: message.body,

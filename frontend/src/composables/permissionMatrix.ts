@@ -21,8 +21,8 @@ export interface PermissionRow {
 }
 
 /**
- * Splits `camp.rooms.beds.create` into group `rooms.beds` and action `create`.
- * A permission naming the scope itself (`camp.view`) falls into the group named
+ * Splits `event.rooms.beds.create` into group `rooms.beds` and action `create`.
+ * A permission naming the scope itself (`event.view`) falls into the group named
  * after the scope.
  */
 export function splitPermission(

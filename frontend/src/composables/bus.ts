@@ -2,13 +2,13 @@ import { inject } from 'vue';
 import { EventBus } from 'quasar';
 import {
   AUTH_BUS,
-  CAMP_BUS,
+  EVENT_BUS,
   ORGANIZATION_BUS,
   REGISTRATION_BUS,
   TEMPLATE_BUS,
 } from '@/utils/keys';
 import type {
-  Camp,
+  Event,
   Organization,
   Registration,
   Profile,
@@ -21,13 +21,13 @@ export function useAuthBus(): EventBus<{
   return inject(AUTH_BUS, new EventBus());
 }
 
-export function useCampBus(): EventBus<{
-  change: (camp?: Camp, oldCamp?: Camp) => void;
-  create: (camp: Camp) => void;
-  update: (camp: Camp) => void;
-  delete: (campId: string) => void;
+export function useEventBus(): EventBus<{
+  change: (event?: Event, oldEvent?: Event) => void;
+  create: (event: Event) => void;
+  update: (event: Event) => void;
+  delete: (eventId: string) => void;
 }> {
-  return inject(CAMP_BUS, new EventBus());
+  return inject(EVENT_BUS, new EventBus());
 }
 
 export function useRegistrationBus(): EventBus<{

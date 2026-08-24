@@ -111,7 +111,7 @@ const { updateLegalDocument } = useLegalService();
 const { withResultNotification } = useServiceNotifications();
 
 // The app's fixed locale set (see CLAUDE.md) — legal content is instance-wide,
-// unlike camp fields whose locales follow the camp's target countries.
+// unlike event fields whose locales follow the event's target countries.
 const locales = APP_LOCALES;
 
 // The editor works with a per-locale record; a plain string (a value shared

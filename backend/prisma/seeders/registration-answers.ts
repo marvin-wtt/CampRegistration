@@ -9,7 +9,7 @@ import type {
   QuestionTextModel,
 } from 'survey-core';
 import { setVariables } from '@camp-registration/common/form';
-import type { Camp } from '#generated/prisma/client.js';
+import type { Event } from '#generated/prisma/client.js';
 
 /** A registrant as the seeder invents them, before any form is involved. */
 export interface Registrant {
@@ -39,7 +39,7 @@ export interface FileField {
 
 /**
  * The registrant's answers, keyed by the value name a form stores them under.
- * A camp may ask for any subset of these; what is not covered here is invented
+ * A event may ask for any subset of these; what is not covered here is invented
  * from the question itself, so a hand-written form still gets a plausible
  * answer.
  */
@@ -71,7 +71,7 @@ function answerBook(registrant: Registrant): Record<string, unknown> {
     medical_restrictions: registrant.medicalRestrictions,
     food_intolerance: registrant.foodIntolerance,
     additional_information: registrant.additionalInformation,
-    // Only ever visible when the camp is full for the registrant's country
+    // Only ever visible when the event is full for the registrant's country
     waiting_list: true,
   };
 }
@@ -99,20 +99,20 @@ const PANEL_ROWS: Record<
 };
 
 /**
- * Fills the camp's own registration form with the registrant's answers: every
+ * Fills the event's own registration form with the registrant's answers: every
  * question the form shows this registrant gets a value and nothing else does,
  * so the stored blob is what the survey would have submitted.
  */
 export function buildRegistrationData(
-  camp: Camp,
+  event: Event,
   registrant: Registrant,
   options: { waitingList?: boolean } = {},
 ): { data: Record<string, unknown>; fileFields: FileField[] } {
-  const survey = new SurveyModel(camp.form);
+  const survey = new SurveyModel(event.form);
   survey.locale = 'en-US';
   setVariables(survey, {
-    ...camp,
-    freePlaces: freePlacesFor(camp, options.waitingList ?? false),
+    ...event,
+    freePlaces: freePlacesFor(event, options.waitingList ?? false),
   } as Parameters<typeof setVariables>[1]);
 
   const book = answerBook(registrant);
@@ -148,14 +148,14 @@ export function buildRegistrationData(
  * question, which is the only way a waitlisted registration can confirm it.
  */
 export function freePlacesFor(
-  camp: Camp,
+  event: Event,
   waitingList: boolean,
 ): number | Record<string, number> {
   const places = waitingList ? 0 : 5;
 
-  return typeof camp.maxParticipants === 'number'
+  return typeof event.maxParticipants === 'number'
     ? places
-    : Object.fromEntries(camp.countries.map((country) => [country, places]));
+    : Object.fromEntries(event.countries.map((country) => [country, places]));
 }
 
 function answerFor(

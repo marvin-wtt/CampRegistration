@@ -3,8 +3,8 @@ import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 import type { RealtimeEvent } from '@camp-registration/common/realtime';
 import {
-  CampFactory,
-  CampManagerFactory,
+  EventFactory,
+  EventManagerFactory,
   RegistrationFactory,
   RoomFactory,
   UserFactory,
@@ -12,7 +12,7 @@ import {
 import { generateAccessToken } from './utils/token.js';
 import { request } from '../utils/request.js';
 import { app } from '../setup.js';
-import type { Camp } from '#generated/prisma/client.js';
+import type { Event } from '#generated/prisma/client.js';
 
 interface SseClient {
   status: number;
@@ -31,7 +31,7 @@ interface SseClient {
   close(): void;
 }
 
-describe('/api/v1/camps/:campId/events (SSE)', () => {
+describe('/api/v1/events/:eventId/events (SSE)', () => {
   // supertest cannot consume open-ended SSE responses, so the suite runs the
   // booted app on a real ephemeral HTTP server and reads the stream raw.
   async function listen(): Promise<number> {
@@ -51,7 +51,7 @@ describe('/api/v1/camps/:campId/events (SSE)', () => {
 
   function openStream(
     port: number,
-    campId: string,
+    eventId: string,
     accessToken: string,
   ): Promise<SseClient> {
     return new Promise((resolve, reject) => {
@@ -59,7 +59,7 @@ describe('/api/v1/camps/:campId/events (SSE)', () => {
         {
           host: '127.0.0.1',
           port,
-          path: `/api/v1/camps/${campId}/events`,
+          path: `/api/v1/events/${eventId}/events`,
           headers: {
             Accept: 'text/event-stream',
             Authorization: `Bearer ${accessToken}`,
@@ -135,10 +135,10 @@ describe('/api/v1/camps/:campId/events (SSE)', () => {
     });
   }
 
-  const createManagerWithToken = async (camp: Camp, role: string) => {
+  const createManagerWithToken = async (event: Event, role: string) => {
     const user = await UserFactory.create();
-    const manager = await CampManagerFactory.create({
-      camp: { connect: { id: camp.id } },
+    const manager = await EventManagerFactory.create({
+      event: { connect: { id: event.id } },
       user: { connect: { id: user.id } },
       role,
     });
@@ -146,38 +146,38 @@ describe('/api/v1/camps/:campId/events (SSE)', () => {
     return { user, manager, accessToken: generateAccessToken(user) };
   };
 
-  it('rejects users who are not camp members', async () => {
+  it('rejects users who are not event members', async () => {
     const port = await listen();
-    const camp = await CampFactory.create();
+    const event = await EventFactory.create();
     const outsider = await UserFactory.create();
 
     const client = await openStream(
       port,
-      camp.id,
+      event.id,
       generateAccessToken(outsider),
     );
 
     expect(client.status).toBe(403);
   });
 
-  it('admits a system admin who is not a camp manager and delivers permission-gated events', async () => {
+  it('admits a system admin who is not a event manager and delivers permission-gated events', async () => {
     const port = await listen();
-    const camp = await CampFactory.create();
-    const director = await createManagerWithToken(camp, 'DIRECTOR');
+    const event = await EventFactory.create();
+    const director = await createManagerWithToken(event, 'DIRECTOR');
     const admin = await UserFactory.create({ role: 'ADMIN' });
 
-    // The admin is not a manager of this camp, yet the stream opens (connect
+    // The admin is not a manager of this event, yet the stream opens (connect
     // bypass) and carries even the manager resource a VIEWER couldn't see —
     // admins hold every resource view permission.
     const adminStream = await openStream(
       port,
-      camp.id,
+      event.id,
       generateAccessToken(admin),
     );
     expect(adminStream.status).toBe(200);
 
     await request()
-      .post(`/api/v1/camps/${camp.id}/managers`)
+      .post(`/api/v1/events/${event.id}/managers`)
       .send({ email: 'new-manager@example.com', role: 'VIEWER' })
       .auth(director.accessToken, { type: 'bearer' })
       .expect(201);
@@ -189,20 +189,20 @@ describe('/api/v1/camps/:campId/events (SSE)', () => {
 
   it('delivers task events to all roles', async () => {
     const port = await listen();
-    const camp = await CampFactory.create();
-    const director = await createManagerWithToken(camp, 'DIRECTOR');
-    const viewer = await createManagerWithToken(camp, 'VIEWER');
+    const event = await EventFactory.create();
+    const director = await createManagerWithToken(event, 'DIRECTOR');
+    const viewer = await createManagerWithToken(event, 'VIEWER');
 
     const directorStream = await openStream(
       port,
-      camp.id,
+      event.id,
       director.accessToken,
     );
-    const viewerStream = await openStream(port, camp.id, viewer.accessToken);
+    const viewerStream = await openStream(port, event.id, viewer.accessToken);
 
     const { body } = await request()
-      .post(`/api/v1/camps/${camp.id}/tasks`)
-      .send({ title: 'Prepare campfire' })
+      .post(`/api/v1/events/${event.id}/tasks`)
+      .send({ title: 'Prepare eventfire' })
       .auth(director.accessToken, { type: 'bearer' })
       .expect(201);
 
@@ -212,19 +212,19 @@ describe('/api/v1/camps/:campId/events (SSE)', () => {
       event.operation === 'created';
 
     await expect(directorStream.waitForEvent(expected)).resolves.toMatchObject({
-      requiredPermission: 'camp.tasks.view',
+      requiredPermission: 'event.tasks.view',
     });
     await expect(viewerStream.waitForEvent(expected)).resolves.toBeDefined();
   });
 
   it('stamps the originating client id for echo suppression', async () => {
     const port = await listen();
-    const camp = await CampFactory.create();
-    const director = await createManagerWithToken(camp, 'DIRECTOR');
-    const stream = await openStream(port, camp.id, director.accessToken);
+    const event = await EventFactory.create();
+    const director = await createManagerWithToken(event, 'DIRECTOR');
+    const stream = await openStream(port, event.id, director.accessToken);
 
     await request()
-      .post(`/api/v1/camps/${camp.id}/tasks`)
+      .post(`/api/v1/events/${event.id}/tasks`)
       .send({ title: 'Check tents' })
       .set('X-Client-Id', 'tab-1')
       .auth(director.accessToken, { type: 'bearer' })
@@ -236,30 +236,30 @@ describe('/api/v1/camps/:campId/events (SSE)', () => {
 
   it('filters message events by permission, without disconnecting the stream', async () => {
     const port = await listen();
-    const camp = await CampFactory.create();
-    const director = await createManagerWithToken(camp, 'DIRECTOR');
-    const coordinator = await createManagerWithToken(camp, 'COORDINATOR');
-    const counselor = await createManagerWithToken(camp, 'COUNSELOR');
-    const viewer = await createManagerWithToken(camp, 'VIEWER');
+    const event = await EventFactory.create();
+    const director = await createManagerWithToken(event, 'DIRECTOR');
+    const coordinator = await createManagerWithToken(event, 'COORDINATOR');
+    const counselor = await createManagerWithToken(event, 'COUNSELOR');
+    const viewer = await createManagerWithToken(event, 'VIEWER');
     const registration = await RegistrationFactory.create({
-      camp: { connect: { id: camp.id } },
+      event: { connect: { id: event.id } },
       emails: ['recipient@example.com'],
     });
 
     const coordinatorStream = await openStream(
       port,
-      camp.id,
+      event.id,
       coordinator.accessToken,
     );
     const counselorStream = await openStream(
       port,
-      camp.id,
+      event.id,
       counselor.accessToken,
     );
-    const viewerStream = await openStream(port, camp.id, viewer.accessToken);
+    const viewerStream = await openStream(port, event.id, viewer.accessToken);
 
     await request()
-      .post(`/api/v1/camps/${camp.id}/messages`)
+      .post(`/api/v1/events/${event.id}/messages`)
       .send({
         registrationIds: [registration.id],
         subject: 'Welcome',
@@ -278,7 +278,7 @@ describe('/api/v1/camps/:campId/events (SSE)', () => {
 
     // The filtered streams are still connected: a permitted event arrives.
     await request()
-      .post(`/api/v1/camps/${camp.id}/tasks`)
+      .post(`/api/v1/events/${event.id}/tasks`)
       .send({ title: 'After the message' })
       .auth(director.accessToken, { type: 'bearer' })
       .expect(201);
@@ -291,22 +291,22 @@ describe('/api/v1/camps/:campId/events (SSE)', () => {
     ).resolves.toBeDefined();
   });
 
-  it('delivers manager events to every camp role', async () => {
+  it('delivers manager events to every event role', async () => {
     const port = await listen();
-    const camp = await CampFactory.create();
-    const director = await createManagerWithToken(camp, 'DIRECTOR');
-    const counselor = await createManagerWithToken(camp, 'COUNSELOR');
-    const viewer = await createManagerWithToken(camp, 'VIEWER');
+    const event = await EventFactory.create();
+    const director = await createManagerWithToken(event, 'DIRECTOR');
+    const counselor = await createManagerWithToken(event, 'COUNSELOR');
+    const viewer = await createManagerWithToken(event, 'VIEWER');
 
     const counselorStream = await openStream(
       port,
-      camp.id,
+      event.id,
       counselor.accessToken,
     );
-    const viewerStream = await openStream(port, camp.id, viewer.accessToken);
+    const viewerStream = await openStream(port, event.id, viewer.accessToken);
 
     await request()
-      .post(`/api/v1/camps/${camp.id}/managers`)
+      .post(`/api/v1/events/${event.id}/managers`)
       .send({ email: 'new-manager@example.com', role: 'VIEWER' })
       .auth(director.accessToken, { type: 'bearer' })
       .expect(201);
@@ -323,19 +323,19 @@ describe('/api/v1/camps/:campId/events (SSE)', () => {
 
   it('re-evaluates permissions on the open stream after a role change', async () => {
     const port = await listen();
-    const camp = await CampFactory.create();
-    const director = await createManagerWithToken(camp, 'DIRECTOR');
-    const victim = await createManagerWithToken(camp, 'COORDINATOR');
+    const event = await EventFactory.create();
+    const director = await createManagerWithToken(event, 'DIRECTOR');
+    const victim = await createManagerWithToken(event, 'COORDINATOR');
     const registration = await RegistrationFactory.create({
-      camp: { connect: { id: camp.id } },
+      event: { connect: { id: event.id } },
       emails: ['recipient@example.com'],
     });
 
-    const victimStream = await openStream(port, camp.id, victim.accessToken);
+    const victimStream = await openStream(port, event.id, victim.accessToken);
 
     const sendMessage = (subject: string) =>
       request()
-        .post(`/api/v1/camps/${camp.id}/messages`)
+        .post(`/api/v1/events/${event.id}/messages`)
         .send({
           registrationIds: [registration.id],
           subject,
@@ -344,14 +344,14 @@ describe('/api/v1/camps/:campId/events (SSE)', () => {
         .auth(director.accessToken, { type: 'bearer' })
         .expect(201);
 
-    // As COORDINATOR the victim holds `camp.messages.view`.
+    // As COORDINATOR the victim holds `event.messages.view`.
     await sendMessage('Before the downgrade');
     await expect(
       victimStream.waitForEvent((e) => e.resource === 'message'),
     ).resolves.toBeDefined();
 
     await request()
-      .patch(`/api/v1/camps/${camp.id}/managers/${victim.manager.id}`)
+      .patch(`/api/v1/events/${event.id}/managers/${victim.manager.id}`)
       .send({ role: 'VIEWER' })
       .auth(director.accessToken, { type: 'bearer' })
       .expect(200);
@@ -365,13 +365,13 @@ describe('/api/v1/camps/:campId/events (SSE)', () => {
     await new Promise((r) => setTimeout(r, 300));
     victimStream.events.length = 0;
 
-    // A VIEWER no longer holds `camp.messages.view` …
+    // A VIEWER no longer holds `event.messages.view` …
     await sendMessage('After the downgrade');
     await victimStream.expectSilence((e) => e.resource === 'message');
 
     // … while permitted resources keep flowing on the same connection.
     await request()
-      .post(`/api/v1/camps/${camp.id}/tasks`)
+      .post(`/api/v1/events/${event.id}/tasks`)
       .send({ title: 'Still connected' })
       .auth(director.accessToken, { type: 'bearer' })
       .expect(201);
@@ -381,16 +381,16 @@ describe('/api/v1/camps/:campId/events (SSE)', () => {
     ).resolves.toBeDefined();
   });
 
-  it('ends the stream when the subscriber is removed from the camp', async () => {
+  it('ends the stream when the subscriber is removed from the event', async () => {
     const port = await listen();
-    const camp = await CampFactory.create();
-    const director = await createManagerWithToken(camp, 'DIRECTOR');
-    const victim = await createManagerWithToken(camp, 'COORDINATOR');
+    const event = await EventFactory.create();
+    const director = await createManagerWithToken(event, 'DIRECTOR');
+    const victim = await createManagerWithToken(event, 'COORDINATOR');
 
-    const victimStream = await openStream(port, camp.id, victim.accessToken);
+    const victimStream = await openStream(port, event.id, victim.accessToken);
 
     await request()
-      .delete(`/api/v1/camps/${camp.id}/managers/${victim.manager.id}`)
+      .delete(`/api/v1/events/${event.id}/managers/${victim.manager.id}`)
       .auth(director.accessToken, { type: 'bearer' })
       .expect(204);
 
@@ -399,16 +399,16 @@ describe('/api/v1/camps/:campId/events (SSE)', () => {
 
   it('emits a room update when a bed changes', async () => {
     const port = await listen();
-    const camp = await CampFactory.create();
-    const director = await createManagerWithToken(camp, 'DIRECTOR');
+    const event = await EventFactory.create();
+    const director = await createManagerWithToken(event, 'DIRECTOR');
     const room = await RoomFactory.create({
-      camp: { connect: { id: camp.id } },
+      event: { connect: { id: event.id } },
     });
 
-    const stream = await openStream(port, camp.id, director.accessToken);
+    const stream = await openStream(port, event.id, director.accessToken);
 
     await request()
-      .post(`/api/v1/camps/${camp.id}/rooms/${room.id}/beds`)
+      .post(`/api/v1/events/${event.id}/rooms/${room.id}/beds`)
       .send()
       .auth(director.accessToken, { type: 'bearer' })
       .expect(201);
@@ -420,19 +420,19 @@ describe('/api/v1/camps/:campId/events (SSE)', () => {
 
   it('emits a single collection invalidation for a bulk room update', async () => {
     const port = await listen();
-    const camp = await CampFactory.create();
-    const director = await createManagerWithToken(camp, 'DIRECTOR');
+    const event = await EventFactory.create();
+    const director = await createManagerWithToken(event, 'DIRECTOR');
     const roomA = await RoomFactory.create({
-      camp: { connect: { id: camp.id } },
+      event: { connect: { id: event.id } },
     });
     const roomB = await RoomFactory.create({
-      camp: { connect: { id: camp.id } },
+      event: { connect: { id: event.id } },
     });
 
-    const stream = await openStream(port, camp.id, director.accessToken);
+    const stream = await openStream(port, event.id, director.accessToken);
 
     await request()
-      .patch(`/api/v1/camps/${camp.id}/rooms/`)
+      .patch(`/api/v1/events/${event.id}/rooms/`)
       .send({
         rooms: [
           { id: roomA.id, sortOrder: 2 },
@@ -453,16 +453,16 @@ describe('/api/v1/camps/:campId/events (SSE)', () => {
 
   it('emits registration events on the stream', async () => {
     const port = await listen();
-    const camp = await CampFactory.create();
-    const director = await createManagerWithToken(camp, 'DIRECTOR');
+    const event = await EventFactory.create();
+    const director = await createManagerWithToken(event, 'DIRECTOR');
     const registration = await RegistrationFactory.create({
-      camp: { connect: { id: camp.id } },
+      event: { connect: { id: event.id } },
     });
 
-    const stream = await openStream(port, camp.id, director.accessToken);
+    const stream = await openStream(port, event.id, director.accessToken);
 
     await request()
-      .delete(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+      .delete(`/api/v1/events/${event.id}/registrations/${registration.id}`)
       .auth(director.accessToken, { type: 'bearer' })
       .expect(204);
 

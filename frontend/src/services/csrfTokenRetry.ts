@@ -20,7 +20,7 @@ interface RetryOptions {
 }
 
 // Retries a request once after fetching a fresh CSRF token, so a rotated or
-// expired token does not surface as an error (e.g. a lost camp registration).
+// expired token does not surface as an error (e.g. a lost event registration).
 // Mirrors `authRefreshToken`, but replays the request with the new token header
 // instead of relying on a refreshed cookie.
 // Request methods that never carry a CSRF token (and so never need priming).
@@ -56,7 +56,7 @@ export default (axiosClient: AxiosInstance, options: RetryOptions) => {
   // Prime the CSRF token before the first state-changing request. Without this
   // the happy path would always incur a 403 + retry round-trip (and race the
   // token fetch on initial page load), which e2e flows that assert on the first
-  // request — e.g. submitting a camp registration — depend on not happening.
+  // request — e.g. submitting a event registration — depend on not happening.
   axiosClient.interceptors.request.use(async (config) => {
     const method = (config.method ?? 'get').toLowerCase();
     const hasToken =

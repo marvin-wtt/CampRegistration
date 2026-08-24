@@ -2,7 +2,7 @@ import { Prisma } from '#generated/prisma/client.js';
 import prisma from '../client.js';
 import { faker } from '@faker-js/faker/locale/en';
 
-const defaultEvents = [
+const defaultTriggers = [
   'registration_confirmed',
   'registration_waitlisted',
   'registration_waitlist_accepted',
@@ -15,8 +15,7 @@ export const MessageTemplateFactory = {
     data: Partial<Prisma.MessageTemplateCreateInput> = {},
   ): Prisma.MessageTemplateCreateInput => {
     return {
-      camp: data.camp! ?? undefined,
-      event: data.event ?? faker.lorem.slug(2),
+      trigger: data.trigger ?? faker.lorem.slug(2),
       subject: data.subject ?? faker.lorem.sentence(),
       body: data.body ?? faker.lorem.paragraphs(1),
       ...data,
@@ -26,15 +25,15 @@ export const MessageTemplateFactory = {
   buildDefaults: (
     countries: string[],
     builder?: (
-      event: string,
-    ) => Omit<Partial<Prisma.MessageTemplateCreateInput>, 'event'>,
+      trigger: string,
+    ) => Omit<Partial<Prisma.MessageTemplateCreateInput>, 'trigger'>,
   ) => {
     return countries.flatMap((country) =>
-      defaultEvents.map((event) =>
+      defaultTriggers.map((trigger) =>
         MessageTemplateFactory.build({
           country,
-          event,
-          ...builder?.(event),
+          trigger,
+          ...builder?.(trigger),
         }),
       ),
     );
