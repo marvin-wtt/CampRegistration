@@ -961,7 +961,6 @@ request:
     success: 'Chambre supprimée avec succès'
     error: 'Impossible de supprimer la chambre'
     invalid: "ID de la chambre ou de l'événement invalide"
-
 </i18n>
 
 <i18n lang="yaml" locale="pl">

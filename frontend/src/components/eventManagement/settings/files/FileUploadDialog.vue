@@ -636,7 +636,6 @@ access_level:
   private:
     label: 'Privé'
     description: "Visible uniquement par les gestionnaires d'événement"
-
 </i18n>
 
 <i18n lang="yaml" locale="pl">

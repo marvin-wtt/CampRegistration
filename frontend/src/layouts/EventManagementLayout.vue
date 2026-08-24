@@ -198,7 +198,6 @@ settings: 'Paramètres'
 statistics: 'Statistiques'
 tasks: 'Tâches'
 title: "Gestion de l'événement"
-
 </i18n>
 
 <i18n lang="yaml" locale="pl">

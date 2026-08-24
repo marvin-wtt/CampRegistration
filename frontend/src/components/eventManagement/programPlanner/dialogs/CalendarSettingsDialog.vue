@@ -170,7 +170,6 @@ field:
   browseOutsideEventDates:
     label: "Autoriser la navigation en dehors des dates de l'événement"
 
-
 actions:
   save: 'Enregistrer'
   cancel: 'Annuler'
