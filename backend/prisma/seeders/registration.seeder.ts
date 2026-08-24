@@ -27,9 +27,13 @@ export class RegistrationSeeder {
       // camp's own form, and the computed columns are then derived from them
       // exactly as the API derives them on submission.
       const waitingList = overrides.status === 'WAITLISTED';
-      const { data, fileFields } = buildRegistrationData(this.camp, registrant, {
-        waitingList,
-      });
+      const { data, fileFields } = buildRegistrationData(
+        this.camp,
+        registrant,
+        {
+          waitingList,
+        },
+      );
 
       const files = await this.seedUploads(fileFields, data);
 
