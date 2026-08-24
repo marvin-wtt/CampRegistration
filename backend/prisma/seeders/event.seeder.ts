@@ -10,7 +10,7 @@ import {
   EVENT_PRESETS,
   defaultMessageTemplatesForCountries,
 } from '#app/event/presets/index.js';
-import { summerEventForm } from './forms/summer-event.form';
+import { summerCampForm } from './forms/summer-camp.form';
 import { EVENT_IDS, ORGANIZATION_IDS } from './ids';
 import { PHASE, seedDate } from './timeline';
 import type { Prisma } from '#generated/prisma/client.js';
@@ -42,7 +42,7 @@ class EventSeeder extends BaseSeeder {
   }
 
   /**
-   * "Summer Event": the one event with every child model populated — two
+   * "Summer Camp": the one event with every child model populated — two
    * countries, five locales, registrations in every status, rooms and beds,
    * a full program, message history, documents and both event settings.
    */
@@ -53,7 +53,7 @@ class EventSeeder extends BaseSeeder {
       listed: true,
       confirmationMode: 'MANUAL',
       countries: ['gb', 'fr'],
-      name: { gb: 'Summer Event', fr: 'Colonie de vacances' },
+      name: { gb: 'Summer Camp', fr: 'Colonie de vacances' },
       organizer: { gb: 'Youth Adventures UK', fr: 'Aventures Jeunesse' },
       contactEmail: { gb: 'event-gb@example.com', fr: 'event-fr@example.com' },
       maxParticipants: { gb: 24, fr: 25 },
@@ -65,7 +65,7 @@ class EventSeeder extends BaseSeeder {
       registrationClosesAt: seedDate(PHASE.upcoming.start - 14, '23:59'),
       price: 200,
       location: 'Blackthorn Manor, Somerset',
-      form: summerEventForm,
+      form: summerCampForm,
       messageTemplates: {
         createMany: {
           data: defaultMessageTemplatesForCountries(['gb', 'fr']),

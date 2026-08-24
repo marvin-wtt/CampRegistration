@@ -38,7 +38,7 @@ class TableTemplateSeeder extends BaseSeeder {
       event: { connect: { id: EVENT_IDS.simple } },
     });
 
-    // Summer event – Participants
+    // Summer Camp – Participants
     await TableTemplateFactory.create({
       data: {
         title: { en: 'Participants', de: 'Teilnehmer', fr: 'Participants' },
@@ -101,7 +101,7 @@ class TableTemplateSeeder extends BaseSeeder {
       event: { connect: { id: EVENT_IDS.summer } },
     });
 
-    // Summer event – Waiting List
+    // Summer Camp – Waiting List
     await TableTemplateFactory.create({
       data: {
         title: { en: 'Waiting List', de: 'Warteliste', fr: "Liste d'attente" },
@@ -157,7 +157,7 @@ class TableTemplateSeeder extends BaseSeeder {
       event: { connect: { id: EVENT_IDS.summer } },
     });
 
-    // Summer event – Medical
+    // Summer Camp – Medical
     await TableTemplateFactory.create({
       data: {
         title: { en: 'Medical', de: 'Medizinisches', fr: 'Médical' },
@@ -211,7 +211,7 @@ class TableTemplateSeeder extends BaseSeeder {
       event: { connect: { id: EVENT_IDS.summer } },
     });
 
-    // Summer event – Permissions
+    // Summer Camp – Permissions
     await TableTemplateFactory.create({
       data: {
         title: { en: 'Permissions', de: 'Berechtigungen', fr: 'Autorisations' },

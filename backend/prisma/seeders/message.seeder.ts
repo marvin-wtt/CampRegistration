@@ -15,7 +15,7 @@ interface SeededMessage {
 // Ad-hoc messages that were "sent" from the contact page (event === null).
 const MESSAGES: SeededMessage[] = [
   {
-    subject: 'Packing list for the summer event',
+    subject: 'Packing list for the summer camp',
     body: '<p>Hi there,</p><p>The event is approaching fast! Please make sure to pack rain gear, sturdy shoes, a refillable water bottle and any personal medication.</p><p>See you soon!</p>',
     count: 12,
     sentByUserId: USER_IDS.john,

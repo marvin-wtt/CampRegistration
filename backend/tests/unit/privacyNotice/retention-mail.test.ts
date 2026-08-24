@@ -51,7 +51,7 @@ describe('retention reminder translations', () => {
 
     for (const anchor of RETENTION_ANCHORS) {
       const sentence = t('text.information', {
-        event: { name: 'Summer Event' },
+        event: { name: 'Summer Camp' },
         months: 24,
         dueAt: '1 August 2027',
         anchor,
@@ -59,7 +59,7 @@ describe('retention reminder translations', () => {
 
       expect(sentence).not.toContain('$t(');
       expect(sentence).toContain('24');
-      expect(sentence).toContain('Summer Event');
+      expect(sentence).toContain('Summer Camp');
       expect(sentence).toContain('1 August 2027');
       // The phrase itself, not the key it was pulled in by.
       expect(sentence).not.toContain(anchor);
@@ -71,9 +71,9 @@ describe('retention reminder translations', () => {
 
   it.each(locales)('names the subject and preview in %s', (locale) => {
     const t = i18n.getFixedT(locale, 'event', 'email.retentionDue');
-    const event = { name: 'Summer Event' };
+    const event = { name: 'Summer Camp' };
 
-    expect(t('subject', { event })).toContain('Summer Event');
-    expect(t('preview', { event })).toContain('Summer Event');
+    expect(t('subject', { event })).toContain('Summer Camp');
+    expect(t('preview', { event })).toContain('Summer Camp');
   });
 });

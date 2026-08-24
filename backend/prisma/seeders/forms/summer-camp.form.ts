@@ -1,9 +1,9 @@
 /**
- * Registration form of the flagship Summer Event: two countries, five locales,
+ * Registration form of the flagship Summer Camp: two countries, five locales,
  * conditional guardian pages, calculated values and a waiting-list expression.
  * Kept out of the seeder itself only because of its size.
  */
-export const summerEventForm = {
+export const summerCampForm = {
   locale: 'en',
   title: '{event.name}',
   description: '{event.startAtDate} - {event.endAtDate}',
