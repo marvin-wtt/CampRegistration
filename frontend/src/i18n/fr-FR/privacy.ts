@@ -1,15 +1,15 @@
 export default {
   purpose: {
     registration_administration: 'Gestion de votre inscription',
-    participant_communication: 'Information avant et pendant le séjour',
-    camp_organisation: 'Organisation et déroulement du séjour',
+    participant_communication: "Information avant et pendant l'événement",
+    camp_organisation: "Organisation et déroulement de l'événement",
     catering: 'Restauration',
-    medical_care: 'Soins médicaux pendant le séjour',
+    medical_care: "Soins médicaux pendant l'événement",
     emergency_contact: "Prise de contact en cas d'urgence",
     transport: 'Organisation du transport',
     insurance: 'Couverture par une assurance',
     payment_and_invoicing: 'Paiement et facturation',
-    photo_documentation: 'Documentation interne de la vie du séjour',
+    photo_documentation: "Documentation interne de l'événement",
     photo_publication: 'Publication de photographies',
     statutory_reporting: 'Déclarations exigées par la loi',
     newsletter: 'Envoi de notre lettre d’information',
@@ -70,7 +70,7 @@ export default {
 
   specialCategoryCondition: {
     explicit_consent:
-      'Le cas normal pour un séjour. La personne doit consentir séparément et pouvoir retirer son consentement à tout moment.',
+      'Le cas normal pour un événement. La personne doit consentir séparément et pouvoir retirer son consentement à tout moment.',
     nonprofit_body:
       "Uniquement si la personne est membre de votre organisation ou en contact régulier avec elle, et si les données n'en sortent pas.",
     vital_interests:
@@ -82,7 +82,7 @@ export default {
   },
 
   retentionAnchor: {
-    camp_end: 'après la fin du séjour',
+    camp_end: "après la fin de l'événement",
     submission: "après l'envoi de l'inscription",
   },
 

@@ -94,35 +94,35 @@ function goBack() {
 
 <i18n lang="yaml" locale="en">
 title: 'Privacy information'
-intro: 'This describes what the organisation running this camp does with the data you enter. It comes in addition to the privacy policy of this platform:'
+intro: 'This describes what the organisation running this event does with the data you enter. It comes in addition to the privacy policy of this platform:'
 platformPolicy: 'platform privacy policy'
 back: 'Back'
 </i18n>
 
 <i18n lang="yaml" locale="de">
 title: 'Datenschutzinformationen'
-intro: 'Hier steht, was die Organisation dieser Freizeit mit den von dir eingegebenen Daten macht. Sie gelten zusätzlich zur Datenschutzerklärung dieser Plattform:'
+intro: 'Hier steht, was die Organisation dieser Veranstaltung mit den von dir eingegebenen Daten macht. Sie gelten zusätzlich zur Datenschutzerklärung dieser Plattform:'
 platformPolicy: 'Datenschutzerklärung der Plattform'
 back: 'Zurück'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 title: 'Informations sur la protection des données'
-intro: "Vous trouverez ici ce que l'organisation de ce séjour fait des données que vous saisissez. Elles s'ajoutent à la politique de confidentialité de cette plateforme :"
+intro: "Vous trouverez ici ce que l'organisation de cet événement fait des données que vous saisissez. Elles s'ajoutent à la politique de confidentialité de cette plateforme :"
 platformPolicy: 'politique de confidentialité de la plateforme'
 back: 'Retour'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
 title: 'Informace o ochraně osobních údajů'
-intro: 'Zde je popsáno, co organizace pořádající tento tábor dělá s údaji, které zadáš. Platí nad rámec zásad ochrany osobních údajů této platformy:'
+intro: 'Zde je popsáno, co organizace pořádající tuto akci dělá s údaji, které zadáš. Platí nad rámec zásad ochrany osobních údajů této platformy:'
 platformPolicy: 'zásady ochrany osobních údajů platformy'
 back: 'Zpět'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
 title: 'Informacje o ochronie danych'
-intro: 'Poniżej opisano, co organizacja prowadząca ten obóz robi z wprowadzonymi przez Ciebie danymi. Obowiązują one dodatkowo obok polityki prywatności tej platformy:'
+intro: 'Poniżej opisano, co organizacja prowadząca to wydarzenie robi z wprowadzonymi przez Ciebie danymi. Obowiązują one dodatkowo obok polityki prywatności tej platformy:'
 platformPolicy: 'polityka prywatności platformy'
 back: 'Wstecz'
 </i18n>
