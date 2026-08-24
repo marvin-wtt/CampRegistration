@@ -328,39 +328,40 @@ const routes: RouteRecordRaw[] = [
         path: '',
         name: 'administration',
         component: () =>
-          import('@/pages/administration/AdministrationIndexPage.vue'),
+          import('@/pages/administration/AdministrationDashboardPage.vue'),
       },
       {
         path: 'organizations',
         name: 'administration.organizations',
         component: () =>
-          import('@/pages/administration/OrganizationIndexPage.vue'),
+          import('@/pages/administration/OrganizationAdminPage.vue'),
       },
       {
         path: 'camps',
         name: 'administration.camps',
-        component: () => import('@/pages/administration/CampIndexPage.vue'),
+        component: () => import('@/pages/administration/CampAdminPage.vue'),
       },
       {
         path: 'newsletters',
         name: 'administration.newsletters',
         component: () =>
-          import('@/pages/administration/NewsletterIndexPage.vue'),
+          import('@/pages/administration/NewsletterAdminPage.vue'),
       },
       {
         path: 'users',
         name: 'administration.users',
-        component: () => import('@/pages/administration/UserIndexPage.vue'),
+        component: () => import('@/pages/administration/UserAdminPage.vue'),
       },
       {
         path: 'queues',
         name: 'administration.queues',
-        component: () => import('@/pages/administration/QueueIndexPage.vue'),
+        component: () => import('@/pages/administration/QueueAdminPage.vue'),
       },
       {
         path: 'legal',
         name: 'administration.legal',
-        component: () => import('@/pages/administration/LegalSettingsPage.vue'),
+        component: () =>
+          import('@/pages/administration/LegalSettingsAdminPage.vue'),
       },
     ],
   },
