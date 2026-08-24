@@ -1,7 +1,7 @@
 import { describe, it, vi, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
-import TimeAgoTableCell from '@/components/eventManagement/table/tableCells/TimeAgoTableCell.vue';
-import type { TableCellProps } from '@/components/eventManagement/table/tableCells/TableCellProps';
+import TimeAgoTableCell from '@/components/event/table/tableCells/TimeAgoTableCell.vue';
+import type { TableCellProps } from '@/components/event/table/tableCells/TableCellProps';
 import { installQuasarPlugin } from '@/../test/vitest/utils/quasar';
 import type {
   EventDetails,
