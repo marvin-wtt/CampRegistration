@@ -185,7 +185,7 @@ room_planner: 'Raumplaner'
 settings: 'Einstellungen'
 statistics: 'Statistiken'
 tasks: 'Aufgaben'
-title: 'Event-Verwaltung'
+title: 'Veranstaltungsverwaltung'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -197,7 +197,8 @@ room_planner: 'Aménageur'
 settings: 'Paramètres'
 statistics: 'Statistiques'
 tasks: 'Tâches'
-title: 'Gestion du event'
+title: "Gestion de l'événement"
+
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -209,7 +210,7 @@ room_planner: 'Plan pokoi'
 settings: 'Ustawienia'
 statistics: 'Statystyki'
 tasks: 'Zadania'
-title: 'Zarządzanie obozem'
+title: 'Zarządzanie wydarzeniem'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -221,7 +222,7 @@ room_planner: 'Plán pokojů'
 settings: 'Nastavení'
 statistics: 'Statistiky'
 tasks: 'Úkoly'
-title: 'Správa tábora'
+title: 'Správa akce'
 </i18n>
 
 <style>

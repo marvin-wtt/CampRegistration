@@ -970,7 +970,7 @@ history:
 subscribers:
   count: '{count} subscribers'
   empty: 'No subscribers yet'
-  emptyHint: 'Add subscribers manually or import them from a event.'
+  emptyHint: 'Add subscribers manually or import them from an event.'
   noResults: 'No subscribers match your search.'
   search: 'Search subscribers...'
   action:
@@ -1037,12 +1037,12 @@ history:
 subscribers:
   count: '{count} Abonnenten'
   empty: 'Noch keine Abonnenten'
-  emptyHint: 'Abonnenten manuell hinzufügen oder aus einem Event importieren.'
+  emptyHint: 'Abonnenten manuell hinzufügen oder aus einer Veranstaltung importieren.'
   noResults: 'Keine Abonnenten entsprechen Ihrer Suche.'
   search: 'Abonnenten suchen...'
   action:
     add: 'Abonnent hinzufügen'
-    import: 'Aus Event importieren'
+    import: 'Aus Veranstaltung importieren'
   importResult: '{added} neue Abonnenten importiert, {skipped} bereits abonniert.'
   dialog:
     delete:
@@ -1104,12 +1104,12 @@ history:
 subscribers:
   count: '{count} abonnés'
   empty: 'Aucun abonné pour le moment'
-  emptyHint: 'Ajoutez des abonnés manuellement ou importez-les depuis un event.'
+  emptyHint: 'Ajoutez des abonnés manuellement ou importez-les depuis un événement.'
   noResults: 'Aucun abonné ne correspond à votre recherche.'
   search: 'Rechercher des abonnés...'
   action:
     add: 'Ajouter un abonné'
-    import: 'Importer depuis un event'
+    import: 'Importer depuis un événement'
   importResult: '{added} nouveaux abonnés importés, {skipped} déjà abonnés.'
   dialog:
     delete:
@@ -1171,12 +1171,12 @@ history:
 subscribers:
   count: '{count} subskrybentów'
   empty: 'Brak subskrybentów'
-  emptyHint: 'Dodaj subskrybentów ręcznie lub importuj z obozu.'
+  emptyHint: 'Dodaj subskrybentów ręcznie lub importuj z wydarzenia.'
   noResults: 'Brak subskrybentów pasujących do wyszukiwania.'
   search: 'Szukaj subskrybentów...'
   action:
     add: 'Dodaj subskrybenta'
-    import: 'Importuj z obozu'
+    import: 'Importuj z wydarzenia'
   importResult: 'Zaimportowano {added} nowych subskrybentów, {skipped} już zapisanych.'
   dialog:
     delete:
@@ -1238,12 +1238,12 @@ history:
 subscribers:
   count: '{count} odběratelů'
   empty: 'Zatím žádní odběratelé'
-  emptyHint: 'Přidejte odběratele ručně nebo je importujte z tábora.'
+  emptyHint: 'Přidejte odběratele ručně nebo je importujte z akce.'
   noResults: 'Žádní odběratelé neodpovídají vašemu hledání.'
   search: 'Hledat odběratele...'
   action:
     add: 'Přidat odběratele'
-    import: 'Importovat z tábora'
+    import: 'Importovat z akce'
   importResult: 'Importováno {added} nových odběratelů, {skipped} již přihlášených.'
   dialog:
     delete:

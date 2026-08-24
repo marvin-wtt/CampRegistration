@@ -183,13 +183,13 @@ privacy:
 
 <i18n lang="yaml" locale="de">
 title: 'Einstellungen'
-subtitle: 'Konfiguriere dein Event.'
+subtitle: 'Konfiguriere deine Veranstaltung.'
 access:
   label: 'Zugriff'
-  description: 'Verwalte, wer dieses Event ansehen und bearbeiten kann.'
+  description: 'Verwalte, wer diese Veranstaltung ansehen und bearbeiten kann.'
 edit:
   label: 'Bearbeiten'
-  description: 'Bearbeite die allgemeinen Angaben dieses Events.'
+  description: 'Bearbeite die allgemeinen Angaben dieser Veranstaltung.'
 form:
   label: 'Anmeldeformular'
   description: 'Gestalte und passe das Anmeldeformular und das Design an.'
@@ -198,7 +198,7 @@ emails:
   description: 'Verwalte die an Teilnehmende versendeten E-Mail-Vorlagen.'
 files:
   label: 'Dateien'
-  description: 'Lade Dateien für dieses Event hoch und verwalte sie.'
+  description: 'Lade Dateien für diese Veranstaltung hoch und verwalte sie.'
 privacy:
   label: 'Datenschutz'
   description: 'Was diese Freizeit den Datenschutzinformationen ihrer Organisation hinzufügt.'
@@ -206,13 +206,13 @@ privacy:
 
 <i18n lang="yaml" locale="fr">
 title: 'Paramètres'
-subtitle: 'Configurez votre event.'
+subtitle: 'Configurez votre événement.'
 access:
   label: 'Accès'
-  description: 'Gérez qui peut consulter et modifier ce event.'
+  description: 'Gérez qui peut consulter et modifier cet événement.'
 edit:
   label: 'Modifier'
-  description: 'Modifiez les informations générales de ce event.'
+  description: 'Modifiez les informations générales de cet événement.'
 form:
   label: "Formulaire d'inscription"
   description: "Concevez et personnalisez le formulaire d'inscription et le thème."
@@ -221,7 +221,7 @@ emails:
   description: "Gérez les modèles d'e-mails envoyés aux participants."
 files:
   label: 'Fichiers'
-  description: 'Téléchargez et gérez les fichiers de ce event.'
+  description: 'Téléchargez et gérez les fichiers de cet événement.'
 privacy:
   label: 'Confidentialité'
   description: 'Ce que ce séjour ajoute aux informations de son organisation.'
@@ -229,13 +229,13 @@ privacy:
 
 <i18n lang="yaml" locale="pl">
 title: 'Ustawienia'
-subtitle: 'Skonfiguruj swój obóz.'
+subtitle: 'Skonfiguruj swoje wydarzenie.'
 access:
   label: 'Dostęp'
-  description: 'Zarządzaj tym, kto może przeglądać i edytować ten obóz.'
+  description: 'Zarządzaj tym, kto może przeglądać i edytować ten wydarzenie.'
 edit:
   label: 'Edytuj'
-  description: 'Edytuj ogólne dane tego obozu.'
+  description: 'Edytuj ogólne dane tego wydarzenia.'
 form:
   label: 'Formularz rejestracyjny'
   description: 'Zaprojektuj i dostosuj formularz rejestracyjny i motyw.'
@@ -244,21 +244,21 @@ emails:
   description: 'Zarządzaj szablonami e-maili wysyłanymi do uczestników.'
 files:
   label: 'Pliki'
-  description: 'Przesyłaj pliki dla tego obozu i zarządzaj nimi.'
+  description: 'Przesyłaj pliki dla tego wydarzenia i zarządzaj nimi.'
 privacy:
   label: 'Prywatność'
-  description: 'Co ten obóz dodaje do informacji swojej organizacji.'
+  description: 'Co ten wydarzenie dodaje do informacji swojej organizacji.'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
 title: 'Nastavení'
-subtitle: 'Nakonfigurujte svůj tábor.'
+subtitle: 'Nakonfigurujte svou akci.'
 access:
   label: 'Přístup'
-  description: 'Spravujte, kdo může tento tábor zobrazit a upravovat.'
+  description: 'Spravujte, kdo může tuto akci zobrazit a upravovat.'
 edit:
   label: 'Upravit'
-  description: 'Upravte obecné údaje tohoto tábora.'
+  description: 'Upravte obecné údaje této akce.'
 form:
   label: 'Registrační formulář'
   description: 'Navrhněte a přizpůsobte registrační formulář a vzhled.'
@@ -267,8 +267,8 @@ emails:
   description: 'Spravujte e-mailové šablony zasílané účastníkům.'
 files:
   label: 'Soubory'
-  description: 'Nahrávejte a spravujte soubory pro tento tábor.'
+  description: 'Nahrávejte a spravujte soubory pro tuto akci.'
 privacy:
   label: 'Soukromí'
-  description: 'Co tento tábor doplňuje k informacím své organizace.'
+  description: 'Co tato akce doplňuje k informacím své organizace.'
 </i18n>

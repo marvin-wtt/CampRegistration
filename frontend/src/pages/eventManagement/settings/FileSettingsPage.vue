@@ -856,7 +856,7 @@ notification:
 
 <i18n lang="yaml" locale="de">
 title: 'Dateien'
-subtitle: 'Laden Sie Dokumente für dieses Event hoch und verwalten Sie sie.'
+subtitle: 'Laden Sie Dokumente für diese Veranstaltung hoch und verwalten Sie sie.'
 
 action:
   delete: 'Löschen'
@@ -880,11 +880,11 @@ dialog:
 
 empty:
   title: 'Noch keine Dateien'
-  message: 'Laden Sie Dokumente wie Eventregeln oder AGB hoch.'
+  message: 'Laden Sie Dokumente wie Veranstaltungregeln oder AGB hoch.'
 
 virtual:
   upload_hint:
-    rules: 'Eventregeln hochladen'
+    rules: 'Veranstaltungregeln hochladen'
     toc: 'AGB hochladen'
     default: '{field} hochladen'
 
@@ -900,7 +900,7 @@ notification:
 
 <i18n lang="yaml" locale="fr">
 title: 'Fichiers'
-subtitle: 'Téléversez et gérez les documents de ce event.'
+subtitle: 'Téléversez et gérez les documents de cet événement.'
 
 action:
   delete: 'Supprimer'
@@ -944,7 +944,7 @@ notification:
 
 <i18n lang="yaml" locale="pl">
 title: 'Pliki'
-subtitle: 'Przesyłaj i zarządzaj dokumentami tego obozu.'
+subtitle: 'Przesyłaj i zarządzaj dokumentami tego wydarzenia.'
 
 action:
   delete: 'Usuń'
@@ -988,7 +988,7 @@ notification:
 
 <i18n lang="yaml" locale="cs">
 title: 'Soubory'
-subtitle: 'Nahrávejte a spravujte dokumenty tohoto tábora.'
+subtitle: 'Nahrávejte a spravujte dokumenty této akce.'
 
 action:
   delete: 'Smazat'
@@ -1012,11 +1012,11 @@ dialog:
 
 empty:
   title: 'Zatím žádné soubory'
-  message: 'Nahrajte dokumenty, jako jsou táborová pravidla nebo obchodní podmínky.'
+  message: 'Nahrajte dokumenty, jako jsou pravidla akce nebo obchodní podmínky.'
 
 virtual:
   upload_hint:
-    rules: 'Nahrát táborová pravidla'
+    rules: 'Nahrát pravidla akce'
     toc: 'Nahrát obchodní podmínky'
     default: 'Nahrát {field}'
 

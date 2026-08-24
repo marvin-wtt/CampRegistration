@@ -583,7 +583,7 @@ access_level:
     description: 'Für alle sichtbar'
   private:
     label: 'Privat'
-    description: 'Nur für Event-Manager sichtbar'
+    description: 'Nur für Veranstaltungsmanager sichtbar'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -635,7 +635,8 @@ access_level:
     description: 'Visible par tout le monde'
   private:
     label: 'Privé'
-    description: 'Visible uniquement par les gestionnaires de event'
+    description: "Visible uniquement par les gestionnaires d'événement"
+
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -687,7 +688,7 @@ access_level:
     description: 'Widoczny dla wszystkich'
   private:
     label: 'Prywatny'
-    description: 'Widoczny tylko dla menedżerów obozu'
+    description: 'Widoczny tylko dla menedżerów wydarzenia'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -739,7 +740,7 @@ access_level:
     description: 'Viditelné pro všechny'
   private:
     label: 'Soukromý'
-    description: 'Viditelné pouze pro správce tábora'
+    description: 'Viditelné pouze pro správce akce'
 </i18n>
 
 <style lang="scss">

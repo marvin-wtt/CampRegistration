@@ -1,27 +1,27 @@
 export default {
   fetch: {
-    error: 'Fehler beim Abrufen des Events',
+    error: 'Fehler beim Abrufen der Veranstaltung',
   },
   create: {
-    progress: 'Event wird erstellt...',
-    success: 'Event erfolgreich erstellt',
-    error: 'Fehler beim Erstellen des Events',
+    progress: 'Veranstaltung wird erstellt...',
+    success: 'Veranstaltung erfolgreich erstellt',
+    error: 'Fehler beim Erstellen der Veranstaltung',
   },
   update: {
-    progress: 'Event wird aktualisiert...',
-    success: 'Event erfolgreich aktualisiert',
-    error: 'Fehler beim Aktualisieren des Events',
-    invalid: 'Ungültige Events-ID',
+    progress: 'Veranstaltung wird aktualisiert...',
+    success: 'Veranstaltung erfolgreich aktualisiert',
+    error: 'Fehler beim Aktualisieren der Veranstaltung',
+    invalid: 'Ungültige Veranstaltungen-ID',
   },
   move: {
-    progress: 'Event wird verschoben...',
-    success: 'Event erfolgreich verschoben',
-    error: 'Event konnte nicht verschoben werden',
+    progress: 'Veranstaltung wird verschoben...',
+    success: 'Veranstaltung erfolgreich verschoben',
+    error: 'Veranstaltung konnte nicht verschoben werden',
   },
   delete: {
-    progress: 'Event wird gelöscht...',
-    success: 'Event erfolgreich gelöscht',
-    error: 'Fehler beim Löschen des Events',
-    invalid: 'Ungültige Event-ID',
+    progress: 'Veranstaltung wird gelöscht...',
+    success: 'Veranstaltung erfolgreich gelöscht',
+    error: 'Fehler beim Löschen der Veranstaltung',
+    invalid: 'Ungültige Veranstaltungs-ID',
   },
 };

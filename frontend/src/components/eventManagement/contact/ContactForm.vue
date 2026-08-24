@@ -747,7 +747,7 @@ action:
   sendTo: 'Senden ({count})'
 
 error:
-  eventNotLoaded: 'Event-Details konnten nicht geladen werden. Bitte Seite neu laden.'
+  eventNotLoaded: 'Veranstaltungsdetails konnten nicht geladen werden. Bitte Seite neu laden.'
   attachment:
     ongoing: 'Warten auf den Abschluss des Datei-Uploads. Bitte später erneut versuchen.'
     default: 'Datei nicht erlaubt'
@@ -794,7 +794,7 @@ action:
   sendTo: 'Envoyer ({count})'
 
 error:
-  eventNotLoaded: "Les détails du event n'ont pas pu être chargés. Veuillez recharger la page."
+  eventNotLoaded: "Les détails de l'événement n'ont pas pu être chargés. Veuillez recharger la page."
   attachment:
     ongoing: 'En attente de la fin du téléchargement des fichiers. Veuillez réessayer plus tard.'
     default: 'Fichier non autorisé'
@@ -841,7 +841,7 @@ action:
   sendTo: 'Wyślij ({count})'
 
 error:
-  eventNotLoaded: 'Nie udało się załadować danych obozu. Proszę odświeżyć stronę.'
+  eventNotLoaded: 'Nie udało się załadować danych wydarzenia. Proszę odświeżyć stronę.'
   attachment:
     ongoing: 'Oczekiwanie na zakończenie przesyłania plików. Spróbuj ponownie później.'
     default: 'Plik niedozwolony'

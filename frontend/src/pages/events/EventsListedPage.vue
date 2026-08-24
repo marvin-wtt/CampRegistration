@@ -600,76 +600,76 @@ retry: 'Try again'
 end_of_list: 'That is every event open right now.'
 </i18n>
 <i18n lang="yaml" locale="de">
-title: 'Finde dein'
-title_highlight: 'nächstes Event'
-subtitle: 'Alle Events, die gerade zur Anmeldung geöffnet sind.'
+title: 'Finde deine'
+title_highlight: 'nächste Veranstaltung'
+subtitle: 'Alle Veranstaltungen, die gerade zur Anmeldung geöffnet sind.'
 search: 'Nach Name suchen'
-loading: 'Events werden geladen…'
-count: 'Keine Events | 1 Event | {count} Events'
+loading: 'Veranstaltungen werden geladen…'
+count: 'Keine Veranstaltungen | 1 Veranstaltung | {count} Veranstaltungen'
 empty:
-  title: 'Aktuell sind keine Events geöffnet'
-  message: 'Schau bald wieder vorbei – neue Events erscheinen hier, sobald die Anmeldung beginnt.'
+  title: 'Aktuell sind keine Veranstaltungen geöffnet'
+  message: 'Schau bald wieder vorbei – neue Veranstaltungen erscheinen hier, sobald die Anmeldung beginnt.'
 no_results:
-  title: 'Keine Events passen zu deinen Filtern'
+  title: 'Keine Veranstaltungen passen zu deinen Filtern'
   message: 'Probiere einen größeren Zeitraum oder ein anderes Land, oder setze die Filter zurück.'
   action: 'Filter zurücksetzen'
-load_error: 'Weitere Events konnten nicht geladen werden.'
+load_error: 'Weitere Veranstaltungen konnten nicht geladen werden.'
 retry: 'Erneut versuchen'
-end_of_list: 'Das sind alle derzeit geöffneten Events.'
+end_of_list: 'Das sind alle derzeit geöffneten Veranstaltungen.'
 </i18n>
 <i18n lang="yaml" locale="fr">
 title: 'Trouve ton'
-title_highlight: 'prochain event'
-subtitle: 'Tous les events actuellement ouverts aux inscriptions.'
+title_highlight: 'prochain événement'
+subtitle: 'Tous les événements actuellement ouverts aux inscriptions.'
 search: 'Rechercher par nom'
-loading: 'Chargement des events…'
-count: 'Aucun event | 1 event | {count} events'
+loading: 'Chargement des événements…'
+count: 'Aucun événement | 1 événement | {count} événements'
 empty:
-  title: 'Aucun event ouvert pour le moment'
-  message: "Reviens bientôt – les nouveaux events apparaîtront ici dès l'ouverture des inscriptions."
+  title: 'Aucun événement ouvert pour le moment'
+  message: "Reviens bientôt – les nouveaux événements apparaîtront ici dès l'ouverture des inscriptions."
 no_results:
-  title: 'Aucun event ne correspond à tes filtres'
+  title: 'Aucun événement ne correspond à tes filtres'
   message: 'Essaie une période plus large ou un autre pays, ou efface les filtres pour tout voir.'
   action: 'Effacer les filtres'
-load_error: "D'autres events n'ont pas pu être chargés."
+load_error: "D'autres événements n'ont pas pu être chargés."
 retry: 'Réessayer'
-end_of_list: 'Ce sont tous les events actuellement ouverts.'
+end_of_list: 'Ce sont tous les événements actuellement ouverts.'
 </i18n>
 <i18n lang="yaml" locale="pl">
 title: 'Znajdź swój'
-title_highlight: 'następny obóz'
-subtitle: 'Wszystkie obozy, na które trwają obecnie zapisy.'
+title_highlight: 'następny wydarzenie'
+subtitle: 'Wszystkie wydarzenia, na które trwają obecnie zapisy.'
 search: 'Szukaj po nazwie'
-loading: 'Ładowanie obozów…'
+loading: 'Ładowanie wydarzeń…'
 # Count-invariant phrasing — no Polish plural rules are configured
-count: 'Obozy: {count}'
+count: 'Wydarzenia: {count}'
 empty:
-  title: 'Obecnie brak otwartych obozów'
-  message: 'Zajrzyj wkrótce – nowe obozy pojawią się tutaj, gdy tylko rozpoczną się zapisy.'
+  title: 'Obecnie brak otwartych wydarzeń'
+  message: 'Zajrzyj wkrótce – nowe wydarzenia pojawią się tutaj, gdy tylko rozpoczną się zapisy.'
 no_results:
-  title: 'Żaden obóz nie pasuje do filtrów'
+  title: 'Żadne wydarzenie nie pasuje do filtrów'
   message: 'Spróbuj szerszego zakresu dat lub innego kraju, albo wyczyść filtry, aby zobaczyć wszystko.'
   action: 'Wyczyść filtry'
-load_error: 'Nie udało się wczytać kolejnych obozów.'
+load_error: 'Nie udało się wczytać kolejnych wydarzeń.'
 retry: 'Spróbuj ponownie'
-end_of_list: 'To wszystkie obecnie otwarte obozy.'
+end_of_list: 'To wszystkie obecnie otwarte wydarzenia.'
 </i18n>
 <i18n lang="yaml" locale="cs">
 title: 'Najdi svůj'
-title_highlight: 'další tábor'
-subtitle: 'Všechny tábory, které jsou právě otevřené k registraci.'
+title_highlight: 'další akce'
+subtitle: 'Všechny akce, které jsou právě otevřené k registraci.'
 search: 'Hledat podle názvu'
-loading: 'Načítání táborů…'
+loading: 'Načítání akcí…'
 # Count-invariant phrasing — no Czech plural rules are configured
-count: 'Tábory: {count}'
+count: 'Akce: {count}'
 empty:
-  title: 'Momentálně nejsou otevřené žádné tábory'
-  message: 'Zastav se brzy znovu – nové tábory se zde objeví, jakmile se otevře registrace.'
+  title: 'Momentálně nejsou otevřené žádné akce'
+  message: 'Zastav se brzy znovu – nové akce se zde objeví, jakmile se otevře registrace.'
 no_results:
-  title: 'Žádný tábor neodpovídá filtrům'
+  title: 'Žádná akce neodpovídá filtrům'
   message: 'Zkus širší období nebo jinou zemi, případně zruš filtry a zobraz vše.'
   action: 'Zrušit filtry'
-load_error: 'Další tábory se nepodařilo načíst.'
+load_error: 'Další akce se nepodařilo načíst.'
 retry: 'Zkusit znovu'
-end_of_list: 'To jsou všechny právě otevřené tábory.'
+end_of_list: 'To jsou všechny právě otevřené akce.'
 </i18n>

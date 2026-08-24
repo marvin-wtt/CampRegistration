@@ -140,7 +140,7 @@ nav:
 title: 'Organisationen'
 nav:
   dashboard: 'Übersicht'
-  events: 'Events'
+  events: 'Veranstaltungen'
   newsletters: 'Newsletter'
   members: 'Mitglieder'
   privacy: 'Datenschutz'
@@ -151,7 +151,7 @@ nav:
 title: 'Organisations'
 nav:
   dashboard: 'Aperçu'
-  events: 'Events'
+  events: 'Événements'
   newsletters: 'Newsletters'
   members: 'Membres'
   privacy: 'Confidentialité'
@@ -162,7 +162,7 @@ nav:
 title: 'Organizacje'
 nav:
   dashboard: 'Przegląd'
-  events: 'Obozy'
+  events: 'Wydarzenia'
   newsletters: 'Newslettery'
   members: 'Członkowie'
   privacy: 'Prywatność'
@@ -173,7 +173,7 @@ nav:
 title: 'Organizace'
 nav:
   dashboard: 'Přehled'
-  events: 'Tábory'
+  events: 'Akce'
   newsletters: 'Newslettery'
   members: 'Členové'
   privacy: 'Soukromí'

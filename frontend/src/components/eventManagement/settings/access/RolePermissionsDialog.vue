@@ -621,7 +621,7 @@ role:
 
 permissions:
   group:
-    event: 'Event-Einstellungen'
+    event: 'Veranstaltungseinstellungen'
     files: 'Dateien'
     registrations: 'Anmeldungen'
     managers: 'Team-Zugriff'
@@ -640,7 +640,7 @@ permissions:
 
 organization:
   title: 'Organisations-Administratoren haben eingeschränkten Zugriff'
-  description: 'Administratoren der Organisation, der dieses Event gehört, haben immer den folgenden Zugriff, auch ohne als Mitglied aufgeführt zu sein. Er kann hier nicht entzogen werden.'
+  description: 'Administratoren der Organisation, der diese Veranstaltung gehört, haben immer den folgenden Zugriff, auch ohne als Mitglied aufgeführt zu sein. Er kann hier nicht entzogen werden.'
   limit: 'Sie können niemals Anmeldungen, Teilnehmer oder deren personenbezogene Daten einsehen.'
 </i18n>
 
@@ -656,7 +656,8 @@ role:
 
 permissions:
   group:
-    event: 'Paramètres du event'
+    event: "Paramètres de l'événement"
+
     files: 'Fichiers'
     registrations: 'Inscriptions'
     managers: 'Accès équipe'
@@ -675,7 +676,7 @@ permissions:
 
 organization:
   title: "Les administrateurs de l'organisation ont un accès partiel"
-  description: "Les administrateurs de l'organisation propriétaire de ce event disposent toujours des accès suivants, même sans figurer parmi les membres. Ils ne peuvent pas être retirés ici."
+  description: "Les administrateurs de l'organisation propriétaire de cet événement disposent toujours des accès suivants, même sans figurer parmi les membres. Ils ne peuvent pas être retirés ici."
   limit: 'Ils ne peuvent jamais consulter les inscriptions, les participants ni leurs données personnelles.'
 </i18n>
 
@@ -691,7 +692,7 @@ role:
 
 permissions:
   group:
-    event: 'Ustawienia obozu'
+    event: 'Ustawienia wydarzenia'
     files: 'Pliki'
     registrations: 'Rejestracje'
     managers: 'Dostęp zespołu'
@@ -710,7 +711,7 @@ permissions:
 
 organization:
   title: 'Administratorzy organizacji mają częściowy dostęp'
-  description: 'Administratorzy organizacji będącej właścicielem tego obozu zawsze mają poniższy dostęp, nawet jeśli nie są wymienieni jako członkowie. Nie można go tutaj odebrać.'
+  description: 'Administratorzy organizacji będącej właścicielem tego wydarzenia zawsze mają poniższy dostęp, nawet jeśli nie są wymienieni jako członkowie. Nie można go tutaj odebrać.'
   limit: 'Nigdy nie mogą zobaczyć rejestracji, uczestników ani ich danych osobowych.'
 </i18n>
 
@@ -726,7 +727,7 @@ role:
 
 permissions:
   group:
-    event: 'Nastavení tábora'
+    event: 'Nastavení akce'
     files: 'Soubory'
     registrations: 'Registrace'
     managers: 'Přístup týmu'
@@ -745,6 +746,6 @@ permissions:
 
 organization:
   title: 'Správci organizace mají částečný přístup'
-  description: 'Správci organizace, která vlastní tento tábor, mají vždy následující přístup, i když nejsou uvedeni jako členové. Zde jej nelze odebrat.'
+  description: 'Správci organizace, která vlastní tuto akci, mají vždy následující přístup, i když nejsou uvedeni jako členové. Zde jej nelze odebrat.'
   limit: 'Nikdy nemohou vidět registrace, účastníky ani jejich osobní údaje.'
 </i18n>

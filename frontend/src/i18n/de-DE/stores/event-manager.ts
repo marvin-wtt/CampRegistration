@@ -1,6 +1,6 @@
 export default {
   fetch: {
-    error: 'Fehler beim Abrufen der Eventverwalter',
+    error: 'Fehler beim Abrufen der Veranstaltungverwalter',
   },
   create: {
     progress: 'Zugriff wird gewährt...',
@@ -11,12 +11,12 @@ export default {
     progress: 'Zugriff wird aktualisiert...',
     success: 'Zugriff erfolgreich aktualisiert',
     error: 'Fehler beim Aktualisieren des Zugriffs',
-    invalid: 'Ungültige Event-ID',
+    invalid: 'Ungültige Veranstaltungs-ID',
   },
   delete: {
     progress: 'Zugriff wird gelöscht...',
     success: 'Zugriff erfolgreich widerrufen',
     error: 'Fehler beim Widerrufen des Zugriffs',
-    invalid: 'Ungültige Event-ID',
+    invalid: 'Ungültige Veranstaltungs-ID',
   },
 };

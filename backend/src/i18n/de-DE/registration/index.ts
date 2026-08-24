@@ -1,7 +1,7 @@
 export default {
   email: {
     reason:
-      '$t(email:footer.cause) Sie sich für dieses Event angemeldet haben.',
+      '$t(email:footer.cause) Sie sich für diese Veranstaltung angemeldet haben.',
     privacyLink: 'Datenschutzinformationen zu dieser Veranstaltung',
     changes: {
       cleared: 'entfernt',
@@ -9,7 +9,7 @@ export default {
     },
     managerNotification: {
       subject: 'Neue Anmeldung | {{ event.name }}',
-      preview: 'Neue Anmeldung für das Event: {{ event.name }}',
+      preview: 'Neue Anmeldung für die Veranstaltung: {{ event.name }}',
       text: {
         title: 'Hallo,',
         information:
@@ -20,7 +20,7 @@ export default {
       },
       footer: {
         cause:
-          '$t(email:footer.cause) Sie eine Kontaktperson für dieses Events sind.',
+          '$t(email:footer.cause) Sie eine Kontaktperson für diese Veranstaltung sind.',
       },
     },
   },

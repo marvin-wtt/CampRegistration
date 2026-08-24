@@ -475,9 +475,9 @@ submit:
     retry: 'Erneut versuchen'
 complete:
   title: 'Anmeldung abgeschlossen!'
-  text: 'Danke für deine Anmeldung — wir haben sie erhalten und freuen uns schon darauf, dich im Event zu begrüßen.'
+  text: 'Danke für deine Anmeldung — wir haben sie erhalten und freuen uns schon darauf, dich bei der Veranstaltung zu begrüßen.'
   registerAnother: 'Weitere Person anmelden'
-  exploreEvents: 'Weitere Events entdecken'
+  exploreEvents: 'Weitere Veranstaltungen entdecken'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -491,9 +491,9 @@ submit:
     retry: 'Réessayer'
 complete:
   title: 'Inscription terminée !'
-  text: "Merci pour ton inscription — nous l'avons bien reçue et avons hâte de te voir au event."
+  text: "Merci pour ton inscription — nous l'avons bien reçue et avons hâte de te voir au événement."
   registerAnother: 'Inscrire une autre personne'
-  exploreEvents: "Découvrir d'autres events"
+  exploreEvents: "Découvrir d'autres événements"
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -507,9 +507,9 @@ submit:
     retry: 'Spróbuj ponownie'
 complete:
   title: 'Rejestracja zakończona!'
-  text: 'Dziękujemy za rejestrację — otrzymaliśmy Twoje zgłoszenie i nie możemy się doczekać spotkania na obozie.'
+  text: 'Dziękujemy za rejestrację — otrzymaliśmy Twoje zgłoszenie i nie możemy się doczekać spotkania na tym wydarzeniu.'
   registerAnother: 'Zarejestruj kolejną osobę'
-  exploreEvents: 'Odkryj inne obozy'
+  exploreEvents: 'Odkryj inne wydarzenia'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -525,7 +525,7 @@ complete:
   title: 'Registrace dokončena!'
   text: 'Děkujeme za registraci — tvou přihlášku jsme přijali a těšíme se na tebe na táboře.'
   registerAnother: 'Registrovat další osobu'
-  exploreEvents: 'Prozkoumat další tábory'
+  exploreEvents: 'Prozkoumat další akcey'
 </i18n>
 
 <style lang="scss">

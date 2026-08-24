@@ -713,13 +713,13 @@ role:
 
 <i18n lang="yaml" locale="de">
 title: 'Zugriff verwalten'
-subtitle: 'Legen Sie fest, wer auf dieses Event zugreifen kann und welche Rolle die Person hat.'
+subtitle: 'Legen Sie fest, wer auf diese Veranstaltung zugreifen kann und welche Rolle die Person hat.'
 
 action:
   add: 'Hinzufügen'
   delete: 'Entfernen'
   edit: 'Bearbeiten'
-  leave: 'Event verlassen'
+  leave: 'Veranstaltung verlassen'
   menu: 'Aktionen'
   roles: 'Rollenberechtigungen'
 
@@ -729,7 +729,7 @@ section:
 
 organization:
   title: 'Administratoren von {organization} haben ebenfalls eingeschränkten Zugriff'
-  message: 'Administratoren der besitzenden Organisation können die Event-Einstellungen einsehen und bearbeiten sowie diese Liste sehen, ohne hier aufgeführt zu sein. Anmeldungen, Teilnehmer und deren personenbezogene Daten können sie nicht einsehen.'
+  message: 'Administratoren der besitzenden Organisation können die Veranstaltungseinstellungen einsehen und bearbeiten sowie diese Liste sehen, ohne hier aufgeführt zu sein. Anmeldungen, Teilnehmer und deren personenbezogene Daten können sie nicht einsehen.'
 
 dialog:
   delete:
@@ -737,8 +737,8 @@ dialog:
     message: 'Möchten Sie den Zugriff dieses Nutzers wirklich entziehen?'
     label: 'E-Mail'
   leave:
-    title: 'Event verlassen'
-    message: 'Möchten Sie dieses Event wirklich verlassen? Sie verlieren dadurch den Zugriff.'
+    title: 'Veranstaltung verlassen'
+    message: 'Möchten Sie diese Veranstaltung wirklich verlassen? Sie verlieren dadurch den Zugriff.'
     label: 'E-Mail'
 
 expiry:
@@ -747,7 +747,7 @@ expiry:
 
 empty:
   title: 'Noch niemand hat Zugriff'
-  message: 'Laden Sie Teammitglieder ein, um dieses Event gemeinsam zu verwalten.'
+  message: 'Laden Sie Teammitglieder ein, um diese Veranstaltung gemeinsam zu verwalten.'
 
 you: 'Sie'
 
@@ -760,13 +760,14 @@ role:
 
 <i18n lang="yaml" locale="fr">
 title: "Gérer l'accès"
-subtitle: 'Contrôlez qui peut accéder à ce event et quel rôle chaque personne possède.'
+subtitle: 'Contrôlez qui peut accéder à cet événement et quel rôle chaque personne possède.'
 
 action:
   add: 'Ajouter'
   delete: 'Supprimer'
   edit: 'Modifier'
-  leave: 'Quitter le event'
+  leave: "Quitter l'événement"
+
   menu: 'Actions'
   roles: 'Permissions par rôle'
 
@@ -776,7 +777,7 @@ section:
 
 organization:
   title: 'Les administrateurs de {organization} ont également un accès partiel'
-  message: "Les administrateurs de l'organisation propriétaire peuvent consulter et modifier les paramètres du event et voir cette liste, sans y figurer. Ils ne peuvent pas consulter les inscriptions, les participants ni leurs données personnelles."
+  message: "Les administrateurs de l'organisation propriétaire peuvent consulter et modifier les paramètres de l'événement et voir cette liste, sans y figurer. Ils ne peuvent pas consulter les inscriptions, les participants ni leurs données personnelles."
 
 dialog:
   delete:
@@ -784,8 +785,9 @@ dialog:
     message: "Voulez-vous vraiment révoquer l'accès de cet utilisateur ?"
     label: 'E-mail'
   leave:
-    title: 'Quitter le event'
-    message: "Voulez-vous vraiment quitter ce event ? Vous perdrez l'accès."
+    title: "Quitter l'événement"
+
+    message: "Voulez-vous vraiment quitter cet événement ? Vous perdrez l'accès."
     label: 'E-mail'
 
 expiry:
@@ -794,7 +796,7 @@ expiry:
 
 empty:
   title: "Personne n'a encore accès"
-  message: "Invitez des membres de l'équipe pour gérer ce event ensemble."
+  message: "Invitez des membres de l'équipe pour gérer cet événement ensemble."
 
 you: 'Vous'
 
@@ -807,13 +809,13 @@ role:
 
 <i18n lang="yaml" locale="pl">
 title: 'Zarządzaj dostępem'
-subtitle: 'Kontroluj, kto ma dostęp do tego obozu i jaką pełni rolę.'
+subtitle: 'Kontroluj, kto ma dostęp do tego wydarzenia i jaką pełni rolę.'
 
 action:
   add: 'Dodaj'
   delete: 'Usuń'
   edit: 'Edytuj'
-  leave: 'Opuść obóz'
+  leave: 'Opuść wydarzenie'
   menu: 'Akcje'
   roles: 'Uprawnienia ról'
 
@@ -823,7 +825,7 @@ section:
 
 organization:
   title: 'Administratorzy organizacji {organization} również mają częściowy dostęp'
-  message: 'Administratorzy organizacji będącej właścicielem mogą przeglądać i edytować ustawienia obozu oraz widzieć tę listę, nie będąc na niej wymienieni. Nie mogą przeglądać rejestracji, uczestników ani ich danych osobowych.'
+  message: 'Administratorzy organizacji będącej właścicielem mogą przeglądać i edytować ustawienia wydarzenia oraz widzieć tę listę, nie będąc na niej wymienieni. Nie mogą przeglądać rejestracji, uczestników ani ich danych osobowych.'
 
 dialog:
   delete:
@@ -831,8 +833,8 @@ dialog:
     message: 'Czy na pewno chcesz cofnąć dostęp temu użytkownikowi?'
     label: 'E-mail'
   leave:
-    title: 'Opuść obóz'
-    message: 'Czy na pewno chcesz opuścić ten obóz? Stracisz do niego dostęp.'
+    title: 'Opuść wydarzenie'
+    message: 'Czy na pewno chcesz opuścić to wydarzenie? Stracisz do niego dostęp.'
     label: 'E-mail'
 
 expiry:
@@ -841,7 +843,7 @@ expiry:
 
 empty:
   title: 'Nikt nie ma jeszcze dostępu'
-  message: 'Zaproś członków zespołu, aby wspólnie zarządzać tym obozem.'
+  message: 'Zaproś członków zespołu, aby wspólnie zarządzać tym wydarzeniem.'
 
 you: 'Ty'
 
@@ -854,13 +856,13 @@ role:
 
 <i18n lang="yaml" locale="cs">
 title: 'Správa přístupu'
-subtitle: 'Určete, kdo má k tomuto táboru přístup a jakou má roli.'
+subtitle: 'Určete, kdo má k této akci přístup a jakou má roli.'
 
 action:
   add: 'Přidat'
   delete: 'Odstranit'
   edit: 'Upravit'
-  leave: 'Opustit tábor'
+  leave: 'Opustit akci'
   menu: 'Akce'
   roles: 'Oprávnění rolí'
 
@@ -870,7 +872,7 @@ section:
 
 organization:
   title: 'Částečný přístup mají také správci organizace {organization}'
-  message: 'Správci vlastnící organizace mohou zobrazit a upravovat nastavení tábora a vidět tento seznam, aniž by zde byli uvedeni. Nemohou zobrazit registrace, účastníky ani jejich osobní údaje.'
+  message: 'Správci vlastnící organizace mohou zobrazit a upravovat nastavení akce a vidět tento seznam, aniž by zde byli uvedeni. Nemohou zobrazit registrace, účastníky ani jejich osobní údaje.'
 
 dialog:
   delete:
@@ -878,8 +880,8 @@ dialog:
     message: 'Opravdu chcete odebrat přístup tomuto uživateli?'
     label: 'E-mail'
   leave:
-    title: 'Opustit tábor'
-    message: 'Opravdu chcete opustit tento tábor? Ztratíte k němu přístup.'
+    title: 'Opustit akci'
+    message: 'Opravdu chcete opustit tuto akci? Ztratíte k ní přístup.'
     label: 'E-mail'
 
 expiry:
@@ -888,7 +890,7 @@ expiry:
 
 empty:
   title: 'Zatím nikdo nemá přístup'
-  message: 'Pozvěte členy týmu a spravujte tento tábor společně.'
+  message: 'Pozvěte členy týmu a spravujte tuto akci společně.'
 
 you: 'Vy'
 

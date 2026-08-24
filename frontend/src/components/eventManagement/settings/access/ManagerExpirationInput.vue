@@ -192,11 +192,11 @@ custom:
 label: 'Zugriff läuft ab'
 
 option:
-  eventEnd: 'Mit dem Ende des Events'
-  day: '1 Tag nach Event-Ende'
-  week: '1 Woche nach Event-Ende'
-  month: '1 Monat nach Event-Ende'
-  quarter: '3 Monate nach Event-Ende'
+  eventEnd: 'Mit dem Ende der Veranstaltung'
+  day: '1 Tag nach Veranstaltungsende'
+  week: '1 Woche nach Veranstaltungsende'
+  month: '1 Monat nach Veranstaltungsende'
+  quarter: '3 Monate nach Veranstaltungsende'
   never: 'Nie'
   custom: 'Eigenes Datum …'
 
@@ -214,11 +214,16 @@ custom:
 label: 'L’accès expire'
 
 option:
-  eventEnd: 'À la fin du event'
-  day: '1 jour après la fin du event'
-  week: '1 semaine après la fin du event'
-  month: '1 mois après la fin du event'
-  quarter: '3 mois après la fin du event'
+  eventEnd: "À la fin de l'événement"
+
+  day: "1 jour après la fin de l'événement"
+
+  week: "1 semaine après la fin de l'événement"
+
+  month: "1 mois après la fin de l'événement"
+
+  quarter: "3 mois après la fin de l'événement"
+
   never: 'Jamais'
   custom: 'Date personnalisée…'
 
@@ -236,11 +241,11 @@ custom:
 label: 'Dostęp wygasa'
 
 option:
-  eventEnd: 'Wraz z końcem obozu'
-  day: '1 dzień po zakończeniu obozu'
-  week: '1 tydzień po zakończeniu obozu'
-  month: '1 miesiąc po zakończeniu obozu'
-  quarter: '3 miesiące po zakończeniu obozu'
+  eventEnd: 'Wraz z końcem wydarzenia'
+  day: '1 dzień po zakończeniu wydarzenia'
+  week: '1 tydzień po zakończeniu wydarzenia'
+  month: '1 miesiąc po zakończeniu wydarzenia'
+  quarter: '3 miesiące po zakończeniu wydarzenia'
   never: 'Nigdy'
   custom: 'Własna data…'
 
@@ -258,11 +263,11 @@ custom:
 label: 'Přístup vyprší'
 
 option:
-  eventEnd: 'S koncem tábora'
-  day: '1 den po skončení tábora'
-  week: '1 týden po skončení tábora'
-  month: '1 měsíc po skončení tábora'
-  quarter: '3 měsíce po skončení tábora'
+  eventEnd: 'S koncem akce'
+  day: '1 den po skončení akce'
+  week: '1 týden po skončení akce'
+  month: '1 měsíc po skončení akce'
+  quarter: '3 měsíce po skončení akce'
   never: 'Nikdy'
   custom: 'Vlastní datum…'
 

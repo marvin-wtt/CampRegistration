@@ -894,7 +894,7 @@ no_match:
 <i18n lang="yaml" locale="de">
 template: 'Vorlage'
 title: 'Teilnehmende'
-subtitle: 'Durchsuchen, filtern und drucken Sie die Anmeldungen dieses Events.'
+subtitle: 'Durchsuchen, filtern und drucken Sie die Anmeldungen dieser Veranstaltung.'
 
 action:
   print: 'Drucken'
@@ -919,7 +919,7 @@ no_match:
 <i18n lang="yaml" locale="fr">
 template: 'Modèle'
 title: 'Participants'
-subtitle: 'Parcourez, filtrez et imprimez les inscriptions de ce event.'
+subtitle: 'Parcourez, filtrez et imprimez les inscriptions de cet événement.'
 
 action:
   print: 'Imprimer'
@@ -944,7 +944,7 @@ no_match:
 <i18n lang="yaml" locale="pl">
 template: 'Szablon'
 title: 'Uczestnicy'
-subtitle: 'Przeglądaj, filtruj i drukuj zgłoszenia tego obozu.'
+subtitle: 'Przeglądaj, filtruj i drukuj zgłoszenia tego wydarzenia.'
 
 action:
   print: 'Drukuj'
@@ -969,7 +969,7 @@ no_match:
 <i18n lang="yaml" locale="cs">
 template: 'Šablona'
 title: 'Účastníci'
-subtitle: 'Procházejte, filtrujte a tiskněte přihlášky tohoto tábora.'
+subtitle: 'Procházejte, filtrujte a tiskněte přihlášky této akce.'
 
 action:
   print: 'Tisk'

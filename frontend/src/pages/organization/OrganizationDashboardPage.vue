@@ -538,8 +538,8 @@ status:
   VERIFIED: 'Verifiziert'
   REJECTED: 'Nicht verifiziert'
 note:
-  PENDING: 'Events bleiben verborgen und Newsletter können nicht senden, bis diese Organisation verifiziert ist.'
-  REJECTED: 'Diese Organisation wurde nicht verifiziert. Events bleiben verborgen und Newsletter können nicht senden. Korrigiere die Angaben und fordere anschließend eine neue Prüfung an.'
+  PENDING: 'Veranstaltungen bleiben verborgen und Newsletter können nicht senden, bis diese Organisation verifiziert ist.'
+  REJECTED: 'Diese Organisation wurde nicht verifiziert. Veranstaltungen bleiben verborgen und Newsletter können nicht senden. Korrigiere die Angaben und fordere anschließend eine neue Prüfung an.'
   reviewNote: 'Hinweis der Prüfung'
   request: 'Prüfung anfordern'
   settings: 'Einstellungen prüfen'
@@ -549,10 +549,10 @@ request:
   confirm: 'Prüfung anfordern'
 privacy:
   title: 'Datenschutzerklärung fehlt'
-  message: 'Diese Organisation kann erst verifiziert werden, wenn ihre Datenschutzerklärung veröffentlicht ist. Sie ist die Grundlage für jedes Event dieser Organisation.'
+  message: 'Diese Organisation kann erst verifiziert werden, wenn ihre Datenschutzerklärung veröffentlicht ist. Sie ist die Grundlage für jede Veranstaltung dieser Organisation.'
   action: 'Einrichten'
 stat:
-  events: 'Events'
+  events: 'Veranstaltungen'
   newsletters: 'Newsletter'
 link:
   members: 'Mitglieder'
@@ -567,8 +567,8 @@ status:
   VERIFIED: 'Vérifiée'
   REJECTED: 'Non vérifiée'
 note:
-  PENDING: "Les events restent masqués et les newsletters ne peuvent pas être envoyées tant que cette organisation n'est pas vérifiée."
-  REJECTED: "Cette organisation n'a pas été vérifiée. Les events restent masqués et les newsletters ne peuvent pas être envoyées. Corrige les informations, puis demande une nouvelle vérification."
+  PENDING: "Les événements restent masqués et les newsletters ne peuvent pas être envoyées tant que cette organisation n'est pas vérifiée."
+  REJECTED: "Cette organisation n'a pas été vérifiée. Les événements restent masqués et les newsletters ne peuvent pas être envoyées. Corrige les informations, puis demande une nouvelle vérification."
   reviewNote: 'Note du vérificateur'
   request: 'Demander une vérification'
   settings: 'Vérifier les paramètres'
@@ -578,10 +578,10 @@ request:
   confirm: 'Demander'
 privacy:
   title: 'Politique de confidentialité manquante'
-  message: "Cette organisation ne peut pas être vérifiée tant que sa politique de confidentialité n'est pas publiée. Elle sert de base à chacun de ses events."
+  message: "Cette organisation ne peut pas être vérifiée tant que sa politique de confidentialité n'est pas publiée. Elle sert de base à chacun de ses événements."
   action: 'Configurer'
 stat:
-  events: 'Events'
+  events: 'Événements'
   newsletters: 'Newsletters'
 link:
   members: 'Membres'
@@ -596,8 +596,8 @@ status:
   VERIFIED: 'Zweryfikowana'
   REJECTED: 'Niezweryfikowana'
 note:
-  PENDING: 'Obozy pozostają ukryte, a newslettery nie mogą być wysyłane, dopóki ta organizacja nie zostanie zweryfikowana.'
-  REJECTED: 'Ta organizacja nie została zweryfikowana. Obozy pozostają ukryte, a newslettery nie mogą być wysyłane. Popraw dane, a następnie poproś o ponowną weryfikację.'
+  PENDING: 'Wydarzenia pozostają ukryte, a newslettery nie mogą być wysyłane, dopóki ta organizacja nie zostanie zweryfikowana.'
+  REJECTED: 'Ta organizacja nie została zweryfikowana. Wydarzenia pozostają ukryte, a newslettery nie mogą być wysyłane. Popraw dane, a następnie poproś o ponowną weryfikację.'
   reviewNote: 'Uwaga weryfikatora'
   request: 'Poproś o weryfikację'
   settings: 'Sprawdź ustawienia'
@@ -607,10 +607,10 @@ request:
   confirm: 'Poproś o weryfikację'
 privacy:
   title: 'Brak informacji o ochronie danych'
-  message: 'Tej organizacji nie można zweryfikować, dopóki nie opublikuje informacji o ochronie danych. Stanowi ona podstawę dla każdego obozu tej organizacji.'
+  message: 'Tej organizacji nie można zweryfikować, dopóki nie opublikuje informacji o ochronie danych. Stanowi ona podstawę dla każdego wydarzenia tej organizacji.'
   action: 'Skonfiguruj'
 stat:
-  events: 'Obozy'
+  events: 'Wydarzenia'
   newsletters: 'Newslettery'
 link:
   members: 'Członkowie'
@@ -625,8 +625,8 @@ status:
   VERIFIED: 'Ověřená'
   REJECTED: 'Neověřená'
 note:
-  PENDING: 'Tábory zůstávají skryté a newslettery nelze odesílat, dokud nebude tato organizace ověřena.'
-  REJECTED: 'Tato organizace nebyla ověřena. Tábory zůstávají skryté a newslettery nelze odesílat. Oprav údaje a poté požádej o nové ověření.'
+  PENDING: 'Akce zůstávají skryté a newslettery nelze odesílat, dokud nebude tato organizace ověřena.'
+  REJECTED: 'Tato organizace nebyla ověřena. Akce zůstávají skryté a newslettery nelze odesílat. Oprav údaje a poté požádej o nové ověření.'
   reviewNote: 'Poznámka ověřovatele'
   request: 'Požádat o ověření'
   settings: 'Zkontrolovat nastavení'
@@ -636,10 +636,10 @@ request:
   confirm: 'Požádat o ověření'
 privacy:
   title: 'Chybí zásady ochrany osobních údajů'
-  message: 'Tuto organizaci nelze ověřit, dokud nezveřejní zásady ochrany osobních údajů. Jsou základem pro každý tábor této organizace.'
+  message: 'Tuto organizaci nelze ověřit, dokud nezveřejní zásady ochrany osobních údajů. Jsou základem pro každou akci této organizace.'
   action: 'Nastavit'
 stat:
-  events: 'Tábory'
+  events: 'Akce'
   newsletters: 'Newslettery'
 link:
   members: 'Členové'

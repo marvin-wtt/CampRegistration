@@ -423,7 +423,7 @@ area:
 <i18n lang="yaml" locale="de">
 switch: 'Wechseln zu'
 area:
-  events: 'Events'
+  events: 'Veranstaltungen'
   newsletters: 'Newsletter'
   organizations: 'Organisationen'
   administration: 'Verwaltung'
@@ -432,7 +432,7 @@ area:
 <i18n lang="yaml" locale="fr">
 switch: 'Aller à'
 area:
-  events: 'Events'
+  events: 'Événements'
   newsletters: 'Newsletters'
   organizations: 'Organisations'
   administration: 'Administration'
@@ -441,7 +441,7 @@ area:
 <i18n lang="yaml" locale="pl">
 switch: 'Przejdź do'
 area:
-  events: 'Obozy'
+  events: 'Wydarzenia'
   newsletters: 'Newslettery'
   organizations: 'Organizacje'
   administration: 'Administracja'
@@ -450,7 +450,7 @@ area:
 <i18n lang="yaml" locale="cs">
 switch: 'Přejít na'
 area:
-  events: 'Tábory'
+  events: 'Akce'
   newsletters: 'Newslettery'
   organizations: 'Organizace'
   administration: 'Administrace'

@@ -20,25 +20,25 @@ const messageTemplatesObj = {
            <p>vielen Dank für deine Anmeldung zum Event <strong>{{ event.name }}</strong>. Wir haben deine Anmeldung erhalten.</p>
            <p>Wir prüfen deine Anmeldung und melden uns in Kürze mit weiteren Informationen bei dir.</p>
            <p>Wenn du Fragen hast, antworte einfach auf diese E-Mail.</p>
-           <p>Herzliche Grüße<br>Dein Event Team</p>`,
+           <p>Herzliche Grüße<br>Dein Veranstaltungsteam</p>`,
 
       fr: `<p>Salut {{ registration.computedData.firstName }},</p>
            <p>merci pour ton inscription au event <strong>{{ event.name }}</strong>. Nous avons bien reçu ton inscription.</p>
            <p>Nous allons examiner ton inscription et te recontacterons prochainement avec plus d'informations.</p>
            <p>Si tu as des questions, n'hésite pas à répondre directement à cet e-mail.</p>
-           <p>Bien à toi,<br>Ton équipe du event</p>`,
+           <p>Bien à toi,<br>Ton équipe de l'événement</p>`,
 
       pl: `<p>Cześć {{ registration.computedData.firstName }},</p>
-           <p>dziękujemy za zgłoszenie na obóz <strong>{{ event.name }}</strong>. Otrzymaliśmy Twoje zgłoszenie.</p>
+           <p>dziękujemy za zgłoszenie na wydarzenie <strong>{{ event.name }}</strong>. Otrzymaliśmy Twoje zgłoszenie.</p>
            <p>Obecnie je sprawdzamy i wkrótce odezwiemy się z dodatkowymi informacjami.</p>
            <p>W razie pytań możesz po prostu odpowiedzieć na tego maila.</p>
-           <p>Serdecznie pozdrawiamy,<br>Zespół obozu</p>`,
+           <p>Serdecznie pozdrawiamy,<br>Zespół wydarzenia</p>`,
 
       cs: `<p>Ahoj {{ registration.computedData.firstName }},</p>
-           <p>děkujeme za registraci na tábor <strong>{{ event.name }}</strong>. Tvou registraci jsme obdrželi.</p>
+           <p>děkujeme za registraci na akci <strong>{{ event.name }}</strong>. Tvou registraci jsme obdrželi.</p>
            <p>Registraci nyní kontrolujeme a brzy se ti ozveme s dalšími informacemi.</p>
            <p>Pokud máš jakékoli dotazy, neváhej odpovědět na tento e-mail.</p>
-           <p>S pozdravem,<br>Tým tábora</p>`,
+           <p>S pozdravem,<br>Tým akce</p>`,
     },
   },
   registration_confirmed: {
@@ -57,19 +57,19 @@ const messageTemplatesObj = {
       de: `<p>Hallo {{ registration.computedData.firstName }},</p>
            <p>Deine Anmeldung für das Event <strong>{{ event.name }}</strong> wurde bestätigt! Wir freuen uns sehr darauf, dich willkommen zu heißen und gemeinsam eine unvergessliche Zeit zu erleben.</p>
            <p>Wenn du Fragen hast, antworte einfach auf diese E-Mail.</p>
-           <p>Herzliche Grüße<br>Dein Event Team</p>`,
+           <p>Herzliche Grüße<br>Dein Veranstaltungsteam</p>`,
       fr: `<p>Salut {{ registration.computedData.firstName }},</p>
            <p>Ton inscription au event <strong>{{ event.name }}</strong> a été confirmée ! Nous avons hâte de t'accueillir et de vivre ensemble une expérience inoubliable.</p>
            <p>Si tu as des questions, n'hésite pas à répondre directement à cet e-mail.</p>
-           <p>Bien à toi,<br>Ton équipe du event</p>`,
+           <p>Bien à toi,<br>Ton équipe de l'événement</p>`,
       pl: `<p>Cześć {{ registration.computedData.firstName }},</p>
-           <p>Twoje zgłoszenie na obóz <strong>{{ event.name }}</strong> zostało potwierdzone! Nie możemy się doczekać, aby Cię powitać i przeżyć razem niezapomniane chwile.</p>
+           <p>Twoje zgłoszenie na wydarzenie <strong>{{ event.name }}</strong> zostało potwierdzone! Nie możemy się doczekać, aby Cię powitać i przeżyć razem niezapomniane chwile.</p>
            <p>W razie pytań możesz odpowiedzieć na tego maila.</p>
-           <p>Serdecznie pozdrawiamy,<br>Zespół obozu</p>`,
+           <p>Serdecznie pozdrawiamy,<br>Zespół wydarzenia</p>`,
       cs: `<p>Ahoj {{ registration.computedData.firstName }},</p>
-           <p>Tvoje registrace na tábor <strong>{{ event.name }}</strong> byla potvrzena! Už se nemůžeme dočkat, až tě přivítáme a společně zažijeme nezapomenutelné chvíle.</p>
+           <p>Tvoje registrace na akci <strong>{{ event.name }}</strong> byla potvrzena! Už se nemůžeme dočkat, až tě přivítáme a společně zažijeme nezapomenutelné chvíle.</p>
            <p>Pokud máš dotazy, jednoduše odpověz na tento e-mail.</p>
-           <p>S pozdravem,<br>Tým tábora</p>`,
+           <p>S pozdravem,<br>Tým akce</p>`,
     },
   },
   registration_waitlisted: {
@@ -88,19 +88,19 @@ const messageTemplatesObj = {
       de: `<p>Hallo {{ registration.computedData.firstName }},</p>
            <p>Deine Anmeldung für das Event <strong>{{ event.name }}</strong> wurde auf die Warteliste gesetzt, da das Gruppenkontingent erreicht wurde. Wir halten dich auf dem Laufenden und informieren dich, sobald ein Platz frei wird.</p>
            <p>Wenn du Fragen hast, antworte einfach auf diese E-Mail.</p>
-           <p>Herzliche Grüße<br>Dein Event Team</p>`,
+           <p>Herzliche Grüße<br>Dein Veranstaltungsteam</p>`,
       fr: `<p>Salut {{ registration.computedData.firstName }},</p>
            <p>Ton inscription au event <strong>{{ event.name }}</strong> a été placée sur la liste d'attente car la limite pour ton groupe a été atteinte. Nous te tiendrons informé(e) et te contacterons dès qu'une place sera disponible.</p>
            <p>Si tu as des questions, n'hésite pas à répondre directement à cet e-mail.</p>
-           <p>Bien à toi,<br>Ton équipe du event</p>`,
+           <p>Bien à toi,<br>Ton équipe de l'événement</p>`,
       pl: `<p>Cześć {{ registration.computedData.firstName }},</p>
-           <p>Twoje zgłoszenie na obóz <strong>{{ event.name }}</strong> zostało umieszczone na liście oczekujących, ponieważ limit dla Twojej grupy został osiągnięty. Będziemy Cię informować, gdy tylko zwolni się miejsce.</p>
+           <p>Twoje zgłoszenie na wydarzenie <strong>{{ event.name }}</strong> zostało umieszczone na liście oczekujących, ponieważ limit dla Twojej grupy został osiągnięty. Będziemy Cię informować, gdy tylko zwolni się miejsce.</p>
            <p>W razie pytań możesz odpowiedzieć na tego maila.</p>
-           <p>Serdecznie pozdrawiamy,<br>Zespół obozu</p>`,
+           <p>Serdecznie pozdrawiamy,<br>Zespół wydarzenia</p>`,
       cs: `<p>Ahoj {{ registration.computedData.firstName }},</p>
-           <p>Tvoje registrace na tábor <strong>{{ event.name }}</strong> byla zařazena na čekací listinu, protože byl dosažen limit pro tvou skupinu. Dáme ti vědět, jakmile se uvolní místo.</p>
+           <p>Tvoje registrace na akci <strong>{{ event.name }}</strong> byla zařazena na čekací listinu, protože byl dosažen limit pro tvou skupinu. Dáme ti vědět, jakmile se uvolní místo.</p>
            <p>Pokud máš dotazy, neváhej odpovědět na tento e-mail.</p>
-           <p>S pozdravem,<br>Tým tábora</p>`,
+           <p>S pozdravem,<br>Tým akce</p>`,
     },
   },
   registration_waitlist_accepted: {
@@ -119,19 +119,19 @@ const messageTemplatesObj = {
       de: `<p>Hallo {{ registration.computedData.firstName }},</p>
            <p>Gute Nachrichten! Deine Anmeldung von der Warteliste für das Event <strong>{{ event.name }}</strong> wurde nun bestätigt. Wir freuen uns sehr, dass du dabei bist, und erwarten eine fantastische Event-Zeit.</p>
            <p>Wenn du Fragen hast, antworte einfach auf diese E-Mail.</p>
-           <p>Herzliche Grüße<br>Dein Event Team</p>`,
+           <p>Herzliche Grüße<br>Dein Veranstaltungsteam</p>`,
       fr: `<p>Salut {{ registration.computedData.firstName }},</p>
            <p>Excellente nouvelle ! Ton inscription en liste d'attente pour le event <strong>{{ event.name }}</strong> a été confirmée. Nous sommes ravis de t'accueillir et attendons avec impatience une expérience de event formidable ensemble.</p>
            <p>Si tu as des questions, n'hésite pas à répondre directement à cet e-mail.</p>
-           <p>Bien à toi,<br>Ton équipe du event</p>`,
+           <p>Bien à toi,<br>Ton équipe de l'événement</p>`,
       pl: `<p>Cześć {{ registration.computedData.firstName }},</p>
-           <p>Dobre wieści! Twoje zgłoszenie z listy oczekujących na obóz <strong>{{ event.name }}</strong> zostało potwierdzone. Cieszymy się, że będziesz z nami i nie możemy się doczekać wspólnej przygody!</p>
+           <p>Dobre wieści! Twoje zgłoszenie z listy oczekujących na wydarzenie <strong>{{ event.name }}</strong> zostało potwierdzone. Cieszymy się, że będziesz z nami i nie możemy się doczekać wspólnej przygody!</p>
            <p>W razie pytań możesz odpowiedzieć na tego maila.</p>
-           <p>Serdecznie pozdrawiamy,<br>Zespół obozu</p>`,
+           <p>Serdecznie pozdrawiamy,<br>Zespół wydarzenia</p>`,
       cs: `<p>Ahoj {{ registration.computedData.firstName }},</p>
-           <p>Skvělé zprávy! Tvoje registrace z čekací listiny na tábor <strong>{{ event.name }}</strong> byla potvrzena. Jsme rádi, že se k nám připojíš, a těšíme se na skvělou táborovou zkušenost!</p>
+           <p>Skvělé zprávy! Tvoje registrace z čekací listiny na akci <strong>{{ event.name }}</strong> byla potvrzena. Jsme rádi, že se k nám připojíš, a těšíme se na skvělý zážitek z akce!</p>
            <p>Pokud máš dotazy, odpověz na tento e-mail.</p>
-           <p>S pozdravem,<br>Tým tábora</p>`,
+           <p>S pozdravem,<br>Tým akce</p>`,
     },
   },
   registration_updated: {
@@ -152,22 +152,22 @@ const messageTemplatesObj = {
            <p>Deine Anmeldedaten für das Event <strong>{{ event.name }}</strong> wurden aktualisiert. Bitte prüfe die Änderungen und gib uns Bescheid, ob alles passt.</p>
            <p>{{ registration.changes }}</p>
            <p>Wenn du Fragen hast, antworte einfach auf diese E-Mail.</p>
-           <p>Herzliche Grüße<br>Dein Event Team</p>`,
+           <p>Herzliche Grüße<br>Dein Veranstaltungsteam</p>`,
       fr: `<p>Salut {{ registration.computedData.firstName }},</p>
            <p>Les détails de ton inscription au event <strong>{{ event.name }}</strong> ont été mis à jour. Merci de vérifier les modifications et de nous dire si tout est en ordre.</p>
            <p>{{ registration.changes }}</p>
            <p>Si tu as des questions, n'hésite pas à répondre directement à cet e-mail.</p>
-           <p>Bien à toi,<br>Ton équipe du event</p>`,
+           <p>Bien à toi,<br>Ton équipe de l'événement</p>`,
       pl: `<p>Cześć {{ registration.computedData.firstName }},</p>
-           <p>Twoje dane rejestracyjne na obóz <strong>{{ event.name }}</strong> zostały zaktualizowane. Sprawdź proszę zmiany i daj nam znać, czy wszystko się zgadza.</p>
+           <p>Twoje dane rejestracyjne na wydarzenie <strong>{{ event.name }}</strong> zostały zaktualizowane. Sprawdź proszę zmiany i daj nam znać, czy wszystko się zgadza.</p>
            <p>{{ registration.changes }}</p>
            <p>W razie pytań możesz odpowiedzieć na tego maila.</p>
-           <p>Serdecznie pozdrawiamy,<br>Zespół obozu</p>`,
+           <p>Serdecznie pozdrawiamy,<br>Zespół wydarzenia</p>`,
       cs: `<p>Ahoj {{ registration.computedData.firstName }},</p>
-           <p>Tvá registrační data pro tábor <strong>{{ event.name }}</strong> byla aktualizována. Zkontroluj prosím změny a dej nám vědět, zda je vše v pořádku.</p>
+           <p>Tvá registrační data pro akci <strong>{{ event.name }}</strong> byla aktualizována. Zkontroluj prosím změny a dej nám vědět, zda je vše v pořádku.</p>
            <p>{{ registration.changes }}</p>
            <p>Pokud máš dotazy, odpověz na tento e-mail.</p>
-           <p>S pozdravem,<br>Tým tábora</p>`,
+           <p>S pozdravem,<br>Tým akce</p>`,
     },
   },
   registration_canceled: {
@@ -184,16 +184,16 @@ const messageTemplatesObj = {
            <p>Best regards,<br>Your Event Team</p>`,
       de: `<p>Hallo {{ registration.computedData.firstName }},</p>
            <p>Wir bedauern, dir mitteilen zu müssen, dass deine Anmeldung für das Event <strong>{{ event.name }}</strong> storniert wurde. Falls du denkst, dass dies ein Fehler ist oder du Fragen hast, antworte bitte auf diese E-Mail.</p>
-           <p>Herzliche Grüße<br>Dein Event Team</p>`,
+           <p>Herzliche Grüße<br>Dein Veranstaltungsteam</p>`,
       fr: `<p>Salut {{ registration.computedData.firstName }},</p>
            <p>Nous sommes désolés de t'informer que ton inscription au event <strong>{{ event.name }}</strong> a été annulée. Si tu penses qu'il s'agit d'une erreur ou si tu as des questions, réponds à cet e-mail.</p>
-           <p>Bien à toi,<br>Ton équipe du event</p>`,
+           <p>Bien à toi,<br>Ton équipe de l'événement</p>`,
       pl: `<p>Cześć {{ registration.computedData.firstName }},</p>
-           <p>Z przykrością informujemy, że Twoje zgłoszenie na obóz <strong>{{ event.name }}</strong> zostało anulowane. Jeśli uważasz, że to pomyłka lub masz pytania, napisz do nas, odpowiadając na tego maila.</p>
-           <p>Serdecznie pozdrawiamy,<br>Zespół obozu</p>`,
+           <p>Z przykrością informujemy, że Twoje zgłoszenie na wydarzenie <strong>{{ event.name }}</strong> zostało anulowane. Jeśli uważasz, że to pomyłka lub masz pytania, napisz do nas, odpowiadając na tego maila.</p>
+           <p>Serdecznie pozdrawiamy,<br>Zespół wydarzenia</p>`,
       cs: `<p>Ahoj {{ registration.computedData.firstName }},</p>
-           <p>S politováním ti oznamujeme, že tvoje registrace na tábor <strong>{{ event.name }}</strong> byla zrušena. Pokud si myslíš, že jde o omyl, nebo máš dotazy, odpověz na tento e-mail.</p>
-           <p>S pozdravem,<br>Tým tábora</p>`,
+           <p>S politováním ti oznamujeme, že tvoje registrace na akci <strong>{{ event.name }}</strong> byla zrušena. Pokud si myslíš, že jde o omyl, nebo máš dotazy, odpověz na tento e-mail.</p>
+           <p>S pozdravem,<br>Tým akce</p>`,
     },
   },
 };

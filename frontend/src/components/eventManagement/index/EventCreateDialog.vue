@@ -793,9 +793,9 @@ validation:
   countries:
     empty: 'Please select at least one countryQuestion'
   referenceEventId:
-    empty: 'Please select a event to copy from'
+    empty: 'Please select an event to copy from'
   name:
-    empty: 'Please enter a event name'
+    empty: 'Please enter an event name'
     length: 'Event name must not exceed 255 characters'
   organizer:
     empty: 'Please enter the organizer'
@@ -844,22 +844,22 @@ step:
 
 organization_note:
   title: 'Warum eine Organisation?'
-  entity: 'Sie ist der Rechtsträger hinter dem Event und verantwortlich für die Daten, die bei der Anmeldung erhoben werden.'
-  access: 'Ihre Administratoren können das Event ansehen und bearbeiten und sehen, wer es leitet. Anmeldungen sehen sie nie.'
-  organizer: 'Das Event tritt unter dem Veranstalter auf, den du separat festlegst. Die Organisation sehen Teilnehmende trotzdem: neben dem Veranstalter in der Event-Liste und in den Datenschutzinformationen.'
+  entity: 'Sie ist der Rechtsträger hinter der Veranstaltung und verantwortlich für die Daten, die bei der Anmeldung erhoben werden.'
+  access: 'Ihre Administratoren können die Veranstaltung ansehen und bearbeiten und sehen, wer es leitet. Anmeldungen sehen sie nie.'
+  organizer: 'Die Veranstaltung tritt unter dem Veranstalter auf, den du separat festlegst. Die Organisation sehen Teilnehmende trotzdem: neben dem Veranstalter in der Veranstaltungsliste und in den Datenschutzinformationen.'
   create: 'Ist die passende nicht dabei? Leg eine neue Organisation an.'
   create_action: 'Neue Organisation'
 
-unverified_notice: 'Diese Organisation ist nicht verifiziert. Du kannst das Event jetzt einrichten, aber bis zur Verifizierung ist es nicht öffentlich sichtbar und nimmt keine Anmeldungen an.'
+unverified_notice: 'Diese Organisation ist nicht verifiziert. Du kannst die Veranstaltung jetzt einrichten, aber bis zur Verifizierung ist es nicht öffentlich sichtbar und nimmt keine Anmeldungen an.'
 rule:
   organization_required: 'Bitte wähle eine Organisation'
 field:
   organization: 'Organisation'
   countries: 'Länder'
-  countries_hint: 'Kann nach dem Erstellen des Events nicht mehr geändert werden'
-  name: 'Event Name'
+  countries_hint: 'Kann nach dem Erstellen der Veranstaltung nicht mehr geändert werden'
+  name: 'Veranstaltungsname'
   use_template: 'Vorlage'
-  template: 'Event'
+  template: 'Veranstaltung'
   organizer: 'Veranstalter'
   contactEmail: 'Kontakt-Email'
   maxParticipants: 'Maximale Teilnehmeranzahl'
@@ -871,21 +871,21 @@ field:
   confirmation_mode: 'Anmeldungen annehmen'
   location: 'Ort'
   price: 'Preis'
-  listed: 'Event auf Startseite anzeigen'
+  listed: 'Veranstaltung auf Startseite anzeigen'
 
 preset:
   standard: 'Standard'
   minimal: 'Minimal'
-  otherEvent: 'Von einem anderen Event kopieren'
+  otherEvent: 'Von einer anderen Veranstaltung kopieren'
 
 validation:
   countries:
     empty: 'Bitte wählen Sie mindestens ein Land aus'
   referenceEventId:
-    empty: 'Bitte wähle ein Event aus, von dem kopiert werden soll'
+    empty: 'Bitte wähle eine Veranstaltung aus, von dem kopiert werden soll'
   name:
-    empty: 'Bitte geben Sie einen Event-Namen ein'
-    length: 'Der Event-Name darf maximal 255 Zeichen haben'
+    empty: 'Bitte geben Sie einen Veranstaltungsnamen ein'
+    length: 'Der Veranstaltungsname darf maximal 255 Zeichen haben'
   organizer:
     empty: 'Bitte geben Sie ein Veranstalter an'
   contactEmail:
@@ -933,22 +933,22 @@ step:
 
 organization_note:
   title: 'Pourquoi une organisation ?'
-  entity: "C'est l'entité juridique derrière le event. Elle répond du event et des données saisies lors des inscriptions."
-  access: "Ses administrateurs peuvent consulter et modifier le event et voir qui l'encadre. Ils ne voient jamais les inscriptions."
-  organizer: "Le event est présenté sous le nom de l'organisateur, que vous définissez séparément. L'organisation reste visible pour les participants : à côté de l'organisateur dans la liste des events et dans les informations sur la protection des données."
+  entity: "C'est l'entité juridique derrière l'événement. Elle répond de l'événement et des données saisies lors des inscriptions."
+  access: "Ses administrateurs peuvent consulter et modifier l'événement et voir qui l'encadre. Ils ne voient jamais les inscriptions."
+  organizer: "L'événement est présenté sous le nom de l'organisateur, que vous définissez séparément. L'organisation reste visible pour les participants : à côté de l'organisateur dans la liste des événements et dans les informations sur la protection des données."
   create: 'Vous ne trouvez pas la bonne ? Créez une nouvelle organisation.'
   create_action: 'Nouvelle organisation'
 
-unverified_notice: "Cette organisation n'est pas vérifiée. Vous pouvez configurer le event dès maintenant, mais tant qu'elle ne l'est pas, il reste masqué de la liste publique et ne peut pas accepter d'inscriptions."
+unverified_notice: "Cette organisation n'est pas vérifiée. Vous pouvez configurer l'événement dès maintenant, mais tant qu'elle ne l'est pas, il reste masqué de la liste publique et ne peut pas accepter d'inscriptions."
 rule:
   organization_required: 'Choisis une organisation'
 field:
   organization: 'Organisation'
   countries: 'Pays'
-  countries_hint: 'Ne peut plus être modifié après la création du event'
-  name: 'Nom du event'
+  countries_hint: "Ne peut plus être modifié après la création de l'événement"
+  name: "Nom de l'événement"
   use_template: 'Modèle'
-  template: 'Event'
+  template: 'Événement'
   organizer: 'Organisateur'
   contactEmail: 'Email de contact'
   maxParticipants: 'Nombre maximum de participants'
@@ -960,21 +960,21 @@ field:
   confirmation_mode: 'Accepter les inscriptions'
   location: 'Emplacement'
   price: 'Prix'
-  listed: "Afficher le event sur la page d'accueil"
+  listed: "Afficher l'événement sur la page d'accueil"
 
 preset:
   standard: 'Standard'
   minimal: 'Minimal'
-  otherEvent: 'Copier depuis un autre event'
+  otherEvent: 'Copier depuis un autre événement'
 
 validation:
   countries:
     empty: 'Veuillez sélectionner au moins un pays'
   referenceEventId:
-    empty: 'Veuillez sélectionner un event à copier'
+    empty: 'Veuillez sélectionner un événement à copier'
   name:
-    empty: 'Veuillez entrer un nom de event'
-    length: 'Le nom du event ne doit pas dépasser 255 caractères'
+    empty: "Veuillez entrer un nom d'événement"
+    length: "Le nom de l'événement ne doit pas dépasser 255 caractères"
   organizer:
     empty: "Veuillez entrer l'organisateur"
   contactEmail:
@@ -1022,22 +1022,22 @@ step:
 
 organization_note:
   title: 'Dlaczego organizacja?'
-  entity: 'To podmiot prawny stojący za obozem. Odpowiada za obóz i za dane podawane podczas zapisów.'
-  access: 'Jej administratorzy mogą przeglądać i edytować obóz oraz zobaczyć, kto go prowadzi. Nigdy nie widzą zgłoszeń.'
-  organizer: 'Obóz występuje pod nazwą organizatora, którą ustawiasz osobno. Organizacja i tak jest widoczna dla uczestników: obok organizatora na liście obozów oraz w informacjach o ochronie danych.'
+  entity: 'To podmiot prawny stojący za wydarzeniem. Odpowiada za wydarzenie i za dane podawane podczas zapisów.'
+  access: 'Jej administratorzy mogą przeglądać i edytować wydarzenie oraz zobaczyć, kto go prowadzi. Nigdy nie widzą zgłoszeń.'
+  organizer: 'Wydarzenie występuje pod nazwą organizatora, którą ustawiasz osobno. Organizacja i tak jest widoczna dla uczestników: obok organizatora na liście wydarzeń oraz w informacjach o ochronie danych.'
   create: 'Nie ma tu tej właściwej? Utwórz nową organizację.'
   create_action: 'Nowa organizacja'
 
-unverified_notice: 'Ta organizacja nie jest zweryfikowana. Obóz możesz przygotować już teraz, ale do czasu weryfikacji pozostaje ukryty na liście publicznej i nie przyjmuje zapisów.'
+unverified_notice: 'Ta organizacja nie jest zweryfikowana. Wydarzenie możesz przygotować już teraz, ale do czasu weryfikacji pozostaje ukryty na liście publicznej i nie przyjmuje zapisów.'
 rule:
   organization_required: 'Wybierz organizację'
 field:
   organization: 'Organizacja'
   countries: 'Kraje'
-  countries_hint: 'Nie można zmienić po utworzeniu obozu'
-  name: 'Nazwa obozu'
+  countries_hint: 'Nie można zmienić po utworzeniu wydarzenia'
+  name: 'Nazwa wydarzenia'
   use_template: 'Szablon'
-  template: 'Obóz'
+  template: 'Wydarzenie'
   organizer: 'Organizator'
   contactEmail: 'E-mail kontaktowy'
   maxParticipants: 'Maksymalna liczba uczestników'
@@ -1049,21 +1049,21 @@ field:
   confirmation_mode: 'Przyjmowanie zgłoszeń'
   location: 'Miejsce'
   price: 'Cena'
-  listed: 'Pokaż obóz na stronie głównej'
+  listed: 'Pokaż wydarzenie na stronie głównej'
 
 preset:
   standard: 'Standard'
   minimal: 'Minimalny'
-  otherEvent: 'Skopiuj z innego obozu'
+  otherEvent: 'Skopiuj z innego wydarzenia'
 
 validation:
   countries:
     empty: 'Wybierz co najmniej jeden kraj'
   referenceEventId:
-    empty: 'Wybierz obóz, z którego chcesz skopiować'
+    empty: 'Wybierz wydarzenie, z którego chcesz skopiować'
   name:
-    empty: 'Podaj nazwę obozu'
-    length: 'Nazwa obozu może mieć maksymalnie 255 znaków'
+    empty: 'Podaj nazwę wydarzenia'
+    length: 'Nazwa wydarzenia może mieć maksymalnie 255 znaków'
   organizer:
     empty: 'Podaj organizatora'
   contactEmail:
@@ -1111,22 +1111,22 @@ step:
 
 organization_note:
   title: 'Proč organizace?'
-  entity: 'Je to právní subjekt, který za táborem stojí. Odpovídá za tábor i za údaje zadané při přihlašování.'
-  access: 'Její správci mohou tábor zobrazit a upravit a vidí, kdo jej vede. Přihlášky nikdy nevidí.'
-  organizer: 'Tábor vystupuje pod organizátorem, kterého nastavíte zvlášť. Organizaci účastníci přesto uvidí: vedle organizátora v seznamu táborů a v informacích o ochraně osobních údajů.'
+  entity: 'Je to právní subjekt, který za akcí stojí. Odpovídá za akci i za údaje zadané při přihlašování.'
+  access: 'Její správci mohou akci zobrazit a upravit a vidí, kdo ji vede. Přihlášky nikdy nevidí.'
+  organizer: 'Akce vystupuje pod organizátorem, kterého nastavíte zvlášť. Organizaci účastníci přesto uvidí: vedle organizátora v seznamu akcí a v informacích o ochraně osobních údajů.'
   create: 'Není tu ta správná? Vytvořte novou organizaci.'
   create_action: 'Nová organizace'
 
-unverified_notice: 'Tato organizace není ověřená. Tábor můžete připravit už teď, ale do ověření zůstane skrytý ve veřejném seznamu a nebude přijímat registrace.'
+unverified_notice: 'Tato organizace není ověřená. Akci můžete připravit už teď, ale do ověření zůstane skrytá ve veřejném seznamu a nebude přijímat registrace.'
 rule:
   organization_required: 'Vyber organizaci'
 field:
   organization: 'Organizace'
   countries: 'Země'
-  countries_hint: 'Po vytvoření tábora nelze změnit'
-  name: 'Název tábora'
+  countries_hint: 'Po vytvoření akce nelze změnit'
+  name: 'Název akce'
   use_template: 'Šablona'
-  template: 'Tábor'
+  template: 'Akce'
   organizer: 'Organizátor'
   contactEmail: 'Kontaktní e-mail'
   maxParticipants: 'Maximální počet účastníků'
@@ -1138,21 +1138,21 @@ field:
   confirmation_mode: 'Přijímání přihlášek'
   location: 'Místo'
   price: 'Cena'
-  listed: 'Zobrazit tábor na úvodní stránce'
+  listed: 'Zobrazit akci na úvodní stránce'
 
 preset:
   standard: 'Standard'
   minimal: 'Minimální'
-  otherEvent: 'Zkopírovat z jiného tábora'
+  otherEvent: 'Zkopírovat z jiné akce'
 
 validation:
   countries:
     empty: 'Vyberte alespoň jednu zemi'
   referenceEventId:
-    empty: 'Vyberte tábor, ze kterého chcete kopírovat'
+    empty: 'Vyberte akci, ze které chcete kopírovat'
   name:
-    empty: 'Zadejte název tábora'
-    length: 'Název tábora může mít maximálně 255 znaků'
+    empty: 'Zadejte název akce'
+    length: 'Název akce může mít maximálně 255 znaků'
   organizer:
     empty: 'Zadejte organizátora'
   contactEmail:

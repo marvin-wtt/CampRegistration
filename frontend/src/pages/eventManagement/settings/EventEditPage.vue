@@ -627,7 +627,7 @@ field:
 
 validation:
   name:
-    empty: 'Please enter a event name'
+    empty: 'Please enter an event name'
     length: 'Event name must not exceed 255 characters'
   organizer:
     empty: 'Please enter the organizer'
@@ -675,10 +675,10 @@ action:
 
 <i18n lang="yaml" locale="de">
 title:
-  create: 'Neues Event erstellen'
-  edit: 'Event bearbeiten'
+  create: 'Neue Veranstaltung erstellen'
+  edit: 'Veranstaltung bearbeiten'
 
-subtitle: 'Bearbeite die allgemeinen Angaben dieses Events.'
+subtitle: 'Bearbeite die allgemeinen Angaben dieser Veranstaltung.'
 
 section:
   general: 'Allgemein'
@@ -688,7 +688,7 @@ section:
   pricing: 'Preis & Sichtbarkeit'
 
 field:
-  name: 'Event Name'
+  name: 'Veranstaltungsname'
   organizer: 'Veranstalter'
   contactEmail: 'Kontakt-Email'
   maxParticipants: 'Maximale Teilnehmeranzahl'
@@ -702,12 +702,12 @@ field:
   confirmation_mode: 'Anmeldungen annehmen'
   location: 'Ort'
   price: 'Preis'
-  listed: 'Event auf Startseite anzeigen'
+  listed: 'Veranstaltung auf Startseite anzeigen'
 
 validation:
   name:
-    empty: 'Bitte geben Sie einen Event-Namen ein'
-    length: 'Der Event-Name darf maximal 255 Zeichen haben'
+    empty: 'Bitte geben Sie einen Veranstaltungsnamen ein'
+    length: 'Der Veranstaltungsname darf maximal 255 Zeichen haben'
   organizer:
     empty: 'Bitte geben Sie ein Veranstalter an'
   contactEmail:
@@ -754,10 +754,10 @@ action:
 
 <i18n lang="yaml" locale="fr">
 title:
-  create: 'Créer un nouveau event'
-  edit: 'Modifier le event'
+  create: 'Créer un nouvel événement'
+  edit: "Modifier l'événement"
 
-subtitle: 'Modifiez les informations générales de ce event.'
+subtitle: 'Modifiez les informations générales de cet événement.'
 
 section:
   general: 'Général'
@@ -767,7 +767,8 @@ section:
   pricing: 'Prix et visibilité'
 
 field:
-  name: 'Nom du event'
+  name: "Nom de l'événement"
+
   organizer: 'Organisateur'
   contactEmail: 'Email de contact'
   maxParticipants: 'Nombre maximum de participants'
@@ -781,12 +782,14 @@ field:
   confirmation_mode: 'Accepter les inscriptions'
   location: 'Emplacement'
   price: 'Prix'
-  listed: "Afficher le event sur la page d'accueil"
+  listed: "Afficher l'événement sur la page d'accueil"
 
 validation:
   name:
-    empty: 'Veuillez entrer un nom de event'
-    length: 'Le nom du event ne doit pas dépasser 255 caractères'
+    empty: "Veuillez entrer un nom d'événement"
+
+    length: "Le nom de l'événement ne doit pas dépasser 255 caractères"
+
   organizer:
     empty: "Veuillez entrer l'organisateur"
   contactEmail:
@@ -833,10 +836,10 @@ action:
 
 <i18n lang="yaml" locale="pl">
 title:
-  create: 'Utwórz nowy obóz'
-  edit: 'Edytuj obóz'
+  create: 'Utwórz nowe wydarzenie'
+  edit: 'Edytuj wydarzenie'
 
-subtitle: 'Edytuj ogólne dane tego obozu.'
+subtitle: 'Edytuj ogólne dane tego wydarzenia.'
 
 section:
   general: 'Ogólne'
@@ -846,7 +849,7 @@ section:
   pricing: 'Cena i widoczność'
 
 field:
-  name: 'Nazwa obozu'
+  name: 'Nazwa wydarzenia'
   organizer: 'Organizator'
   contactEmail: 'E-mail kontaktowy'
   maxParticipants: 'Maksymalna liczba uczestników'
@@ -860,12 +863,12 @@ field:
   confirmation_mode: 'Przyjmowanie zgłoszeń'
   location: 'Miejsce'
   price: 'Cena'
-  listed: 'Pokaż obóz na stronie głównej'
+  listed: 'Pokaż wydarzenie na stronie głównej'
 
 validation:
   name:
-    empty: 'Podaj nazwę obozu'
-    length: 'Nazwa obozu może mieć maksymalnie 255 znaków'
+    empty: 'Podaj nazwę wydarzenia'
+    length: 'Nazwa wydarzenia może mieć maksymalnie 255 znaków'
   organizer:
     empty: 'Podaj organizatora'
   contactEmail:
@@ -912,10 +915,10 @@ action:
 
 <i18n lang="yaml" locale="cs">
 title:
-  create: 'Vytvořit nový tábor'
-  edit: 'Upravit tábor'
+  create: 'Vytvořit novou akci'
+  edit: 'Upravit akci'
 
-subtitle: 'Upravte obecné údaje tohoto tábora.'
+subtitle: 'Upravte obecné údaje této akce.'
 
 section:
   general: 'Obecné'
@@ -925,7 +928,7 @@ section:
   pricing: 'Cena a viditelnost'
 
 field:
-  name: 'Název tábora'
+  name: 'Název akce'
   organizer: 'Organizátor'
   contactEmail: 'Kontaktní e-mail'
   maxParticipants: 'Maximální počet účastníků'
@@ -939,12 +942,12 @@ field:
   confirmation_mode: 'Přijímání přihlášek'
   location: 'Místo'
   price: 'Cena'
-  listed: 'Zobrazit tábor na úvodní stránce'
+  listed: 'Zobrazit akci na úvodní stránce'
 
 validation:
   name:
-    empty: 'Zadejte název tábora'
-    length: 'Název tábora může mít maximálně 255 znaků'
+    empty: 'Zadejte název akce'
+    length: 'Název akce může mít maximálně 255 znaků'
   organizer:
     empty: 'Zadejte organizátora'
   contactEmail:

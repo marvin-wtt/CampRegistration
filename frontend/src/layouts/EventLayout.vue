@@ -294,8 +294,8 @@ footer:
 </i18n>
 
 <i18n lang="yaml" locale="de">
-events: 'Events'
-back_to_events: 'Zurück zu allen Events'
+events: 'Veranstaltungen'
+back_to_events: 'Zurück zu allen Veranstaltungen'
 footer:
   label: 'Rechtliches'
   imprint: 'Impressum'
@@ -303,8 +303,8 @@ footer:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-events: 'Events'
-back_to_events: 'Retour à tous les events'
+events: 'Événements'
+back_to_events: 'Retour à tous les événements'
 footer:
   label: 'Mentions légales'
   imprint: 'Mentions légales'
@@ -312,8 +312,8 @@ footer:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-events: 'Obozy'
-back_to_events: 'Powrót do wszystkich obozów'
+events: 'Wydarzenia'
+back_to_events: 'Powrót do wszystkich wydarzeń'
 footer:
   label: 'Informacje prawne'
   imprint: 'Nota prawna'
@@ -321,8 +321,8 @@ footer:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-events: 'Tábory'
-back_to_events: 'Zpět na všechny tábory'
+events: 'Akce'
+back_to_events: 'Zpět na všechny akce'
 footer:
   label: 'Právní informace'
   imprint: 'Tiráž'

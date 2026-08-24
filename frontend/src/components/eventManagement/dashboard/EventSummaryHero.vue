@@ -642,7 +642,7 @@ copyLink:
 
 <i18n lang="yaml" locale="de">
 confirmed: 'bestätigt'
-eventOverview: 'Event-Übersicht'
+eventOverview: 'Veranstaltungsübersicht'
 organization: 'Besitzende Organisation'
 ageRange: 'Alter {min}–{max}'
 capacity: 'Teilnehmendenkapazität'
@@ -666,14 +666,15 @@ copyLink:
   success: 'Link in die Zwischenablage kopiert'
   fail: 'Link konnte nicht kopiert werden'
   caveat:
-    closed: 'Die Anmeldung ist geschlossen — Besucher sehen das Event, können sich aber nicht anmelden.'
-    upcoming: 'Die Anmeldung ist noch nicht geöffnet — Besucher sehen das Event, können sich aber noch nicht anmelden.'
-    unverified: 'Solange {organization} nicht verifiziert ist, können nur die Verantwortlichen dieses Events den Link öffnen.'
+    closed: 'Die Anmeldung ist geschlossen — Besucher sehen die Veranstaltung, können sich aber nicht anmelden.'
+    upcoming: 'Die Anmeldung ist noch nicht geöffnet — Besucher sehen die Veranstaltung, können sich aber noch nicht anmelden.'
+    unverified: 'Solange {organization} nicht verifiziert ist, können nur die Verantwortlichen dieser Veranstaltung den Link öffnen.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 confirmed: 'confirmés'
-eventOverview: 'Aperçu du event'
+eventOverview: "Aperçu de l'événement"
+
 organization: 'Organisation propriétaire'
 ageRange: 'De {min} à {max} ans'
 capacity: 'Capacité des participants'
@@ -697,14 +698,16 @@ copyLink:
   success: 'Lien copié dans le presse-papiers'
   fail: 'Échec de la copie du lien'
   caveat:
-    closed: 'Les inscriptions sont fermées — les visiteurs peuvent voir le event mais pas s’inscrire.'
-    upcoming: 'Les inscriptions ne sont pas encore ouvertes — les visiteurs peuvent voir le event mais pas encore s’inscrire.'
-    unverified: 'Tant que {organization} n’est pas vérifiée, seuls les responsables de ce event peuvent ouvrir le lien.'
+    closed: "Les inscriptions sont fermées — les visiteurs peuvent voir l'événement mais pas s’inscrire."
+
+    upcoming: "Les inscriptions ne sont pas encore ouvertes — les visiteurs peuvent voir l'événement mais pas encore s’inscrire."
+
+    unverified: 'Tant que {organization} n’est pas vérifiée, seuls les responsables de cet événement peuvent ouvrir le lien.'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
 confirmed: 'potwierdzonych'
-eventOverview: 'Przegląd obozu'
+eventOverview: 'Przegląd wydarzenia'
 organization: 'Organizacja właścicielska'
 ageRange: 'Wiek {min}–{max}'
 capacity: 'Limit uczestników'
@@ -728,14 +731,14 @@ copyLink:
   success: 'Link skopiowany do schowka'
   fail: 'Nie udało się skopiować linku'
   caveat:
-    closed: 'Rejestracja jest zamknięta — odwiedzający zobaczą obóz, ale nie mogą się zapisać.'
-    upcoming: 'Rejestracja jeszcze się nie rozpoczęła — odwiedzający zobaczą obóz, ale nie mogą się jeszcze zapisać.'
-    unverified: 'Dopóki {organization} nie zostanie zweryfikowana, link mogą otworzyć tylko osoby zarządzające tym obozem.'
+    closed: 'Rejestracja jest zamknięta — odwiedzający zobaczą wydarzenie, ale nie mogą się zapisać.'
+    upcoming: 'Rejestracja jeszcze się nie rozpoczęła — odwiedzający zobaczą wydarzenie, ale nie mogą się jeszcze zapisać.'
+    unverified: 'Dopóki {organization} nie zostanie zweryfikowana, link mogą otworzyć tylko osoby zarządzające tym wydarzeniem.'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
 confirmed: 'potvrzených'
-eventOverview: 'Přehled tábora'
+eventOverview: 'Přehled akce'
 organization: 'Vlastnící organizace'
 ageRange: 'Věk {min}–{max}'
 capacity: 'Kapacita účastníků'
@@ -759,7 +762,7 @@ copyLink:
   success: 'Odkaz zkopírován do schránky'
   fail: 'Odkaz se nepodařilo zkopírovat'
   caveat:
-    closed: 'Registrace je uzavřena — návštěvníci tábor uvidí, ale nemohou se přihlásit.'
-    upcoming: 'Registrace ještě nezačala — návštěvníci tábor uvidí, ale zatím se nemohou přihlásit.'
-    unverified: 'Dokud není {organization} ověřena, může odkaz otevřít pouze správa tohoto tábora.'
+    closed: 'Registrace je uzavřena — návštěvníci akci uvidí, ale nemohou se přihlásit.'
+    upcoming: 'Registrace ještě nezačala — návštěvníci akci uvidí, ale zatím se nemohou přihlásit.'
+    unverified: 'Dokud není {organization} ověřena, může odkaz otevřít pouze správa této akce.'
 </i18n>

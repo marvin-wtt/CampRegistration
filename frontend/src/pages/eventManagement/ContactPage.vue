@@ -255,7 +255,7 @@ header:
   title: 'Nachricht senden'
   caption: 'Verfasse eine E-Mail für eine oder mehrere Anmeldungen.'
   viewTitle: 'Gesendete Nachrichten'
-  viewCaption: 'Sieh dir die für dieses Event gesendeten Nachrichten an.'
+  viewCaption: 'Sieh dir die für diese Veranstaltung gesendeten Nachrichten an.'
 empty:
   title: 'Noch keine Anmeldungen'
   message: 'Sobald sich Personen anmelden, können Sie ihnen von hier aus eine Nachricht senden.'
@@ -269,7 +269,7 @@ header:
   title: 'Envoyer un message'
   caption: 'Rédigez un e-mail pour une ou plusieurs inscriptions.'
   viewTitle: 'Messages envoyés'
-  viewCaption: 'Consultez les messages envoyés pour ce event.'
+  viewCaption: 'Consultez les messages envoyés pour cet événement.'
 empty:
   title: 'Aucune inscription pour le moment'
   message: 'Dès que des personnes s’inscrivent, vous pourrez leur envoyer un message d’ici.'
@@ -283,7 +283,7 @@ header:
   title: 'Wyślij wiadomość'
   caption: 'Napisz wiadomość e-mail do jednego lub kilku zgłoszeń.'
   viewTitle: 'Wysłane wiadomości'
-  viewCaption: 'Przejrzyj wiadomości wysłane dla tego obozu.'
+  viewCaption: 'Przejrzyj wiadomości wysłane dla tego wydarzenia.'
 empty:
   title: 'Brak zgłoszeń'
   message: 'Gdy ktoś się zarejestruje, będziesz mógł stąd wysłać mu wiadomość.'
@@ -297,7 +297,7 @@ header:
   title: 'Odeslat zprávu'
   caption: 'Napište e-mail pro jednu nebo více registrací.'
   viewTitle: 'Odeslané zprávy'
-  viewCaption: 'Prohlédněte si zprávy odeslané pro tento tábor.'
+  viewCaption: 'Prohlédněte si zprávy odeslané pro tuto akci.'
 empty:
   title: 'Zatím žádné registrace'
   message: 'Jakmile se někdo zaregistruje, můžete mu odsud poslat zprávu.'

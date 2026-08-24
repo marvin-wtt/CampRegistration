@@ -391,11 +391,11 @@ subtitle: 'Plattformübersicht und Verwaltung.'
 
 stat:
   platformTitle: 'Plattform'
-  eventsTitle: 'Events'
+  eventsTitle: 'Veranstaltungen'
   users: 'Benutzer'
   organizations: 'Organisationen'
   files: 'Dateien'
-  events: 'Events'
+  events: 'Veranstaltungen'
   registrations: 'Anmeldungen'
   eventsOpen: 'Anmeldung offen'
   eventsUpcoming: 'Anmeldung bevorstehend'
@@ -415,13 +415,13 @@ sections:
 
 organizations:
   label: 'Organisationen'
-  description: 'Organisationen prüfen und verifizieren, die Events und Newsletter betreiben.'
+  description: 'Organisationen prüfen und verifizieren, die Veranstaltungen und Newsletter betreiben.'
 users:
   label: 'Benutzer'
   description: 'Benutzerkonten, Rollen und Berechtigungen verwalten.'
 events:
-  label: 'Events'
-  description: 'Alle Events der Plattform einsehen und verwalten.'
+  label: 'Veranstaltungen'
+  description: 'Alle Veranstaltungen der Plattform einsehen und verwalten.'
 newsletters:
   label: 'Newsletter'
   description: 'Newsletter-Listen und Abonnenten-Importe verwalten.'
@@ -439,11 +439,11 @@ subtitle: 'Vue d’ensemble et gestion de la plateforme.'
 
 stat:
   platformTitle: 'Plateforme'
-  eventsTitle: 'Events'
+  eventsTitle: 'Événements'
   users: 'Utilisateurs'
   organizations: 'Organisations'
   files: 'Fichiers'
-  events: 'Events'
+  events: 'Événements'
   registrations: 'Inscriptions'
   eventsOpen: 'Inscriptions ouvertes'
   eventsUpcoming: 'Inscriptions à venir'
@@ -463,13 +463,13 @@ sections:
 
 organizations:
   label: 'Organisations'
-  description: 'Contrôler et vérifier les organisations qui gèrent events et newsletters.'
+  description: 'Contrôler et vérifier les organisations qui gèrent événements et newsletters.'
 users:
   label: 'Utilisateurs'
   description: 'Gérer les comptes utilisateurs, les rôles et les permissions.'
 events:
-  label: 'Events'
-  description: 'Consulter et gérer tous les events de la plateforme.'
+  label: 'Événements'
+  description: 'Consulter et gérer tous les événements de la plateforme.'
 newsletters:
   label: 'Newsletters'
   description: "Gérer les listes de newsletters et les importations d'abonnés."
@@ -487,11 +487,11 @@ subtitle: 'Przegląd i zarządzanie platformą.'
 
 stat:
   platformTitle: 'Platforma'
-  eventsTitle: 'Obozy'
+  eventsTitle: 'Wydarzenia'
   users: 'Użytkownicy'
   organizations: 'Organizacje'
   files: 'Pliki'
-  events: 'Obozy'
+  events: 'Wydarzenia'
   registrations: 'Rejestracje'
   eventsOpen: 'Rejestracja otwarta'
   eventsUpcoming: 'Rejestracja nadchodząca'
@@ -511,13 +511,13 @@ sections:
 
 organizations:
   label: 'Organizacje'
-  description: 'Sprawdzaj i weryfikuj organizacje prowadzące obozy i newslettery.'
+  description: 'Sprawdzaj i weryfikuj organizacje prowadzące wydarzenia i newslettery.'
 users:
   label: 'Użytkownicy'
   description: 'Zarządzaj kontami użytkowników, rolami i uprawnieniami.'
 events:
-  label: 'Obozy'
-  description: 'Przeglądaj i zarządzaj wszystkimi obozami na platformie.'
+  label: 'Wydarzenia'
+  description: 'Przeglądaj i zarządzaj wszystkimi wydarzeniami na platformie.'
 newsletters:
   label: 'Newslettery'
   description: 'Zarządzaj listami newsletterów i importami subskrybentów.'
@@ -535,11 +535,11 @@ subtitle: 'Přehled a správa platformy.'
 
 stat:
   platformTitle: 'Platforma'
-  eventsTitle: 'Tábory'
+  eventsTitle: 'Akce'
   users: 'Uživatelé'
   organizations: 'Organizace'
   files: 'Pliki'
-  events: 'Tábory'
+  events: 'Akce'
   registrations: 'Přihlášky'
   eventsOpen: 'Registrace otevřená'
   eventsUpcoming: 'Registrace nadcházející'
@@ -559,13 +559,13 @@ sections:
 
 organizations:
   label: 'Organizace'
-  description: 'Kontroluj a ověřuj organizace, které pořádají tábory a newslettery.'
+  description: 'Kontroluj a ověřuj organizace, které pořádají akce a newslettery.'
 users:
   label: 'Uživatelé'
   description: 'Spravujte uživatelské účty, role a oprávnění.'
 events:
-  label: 'Tábory'
-  description: 'Prohlížejte a spravujte všechny tábory na platformě.'
+  label: 'Akce'
+  description: 'Prohlížejte a spravujte všechny akce na platformě.'
 newsletters:
   label: 'Newslettery'
   description: 'Spravujte seznamy newsletterů a importy odběratelů.'

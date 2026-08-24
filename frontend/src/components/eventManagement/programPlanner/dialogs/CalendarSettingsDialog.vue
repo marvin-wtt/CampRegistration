@@ -147,7 +147,7 @@ field:
   showAllTranslations:
     label: 'Alle Übersetzungen anzeigen'
   browseOutsideEventDates:
-    label: 'Navigation außerhalb des Event-Zeitraums erlauben'
+    label: 'Navigation außerhalb des Veranstaltungszeitraums erlauben'
 
 actions:
   save: 'Speichern'
@@ -168,7 +168,8 @@ field:
   showAllTranslations:
     label: 'Afficher toutes les traductions'
   browseOutsideEventDates:
-    label: 'Autoriser la navigation en dehors des dates du event'
+    label: "Autoriser la navigation en dehors des dates de l'événement"
+
 
 actions:
   save: 'Enregistrer'
@@ -189,7 +190,7 @@ field:
   showAllTranslations:
     label: 'Pokaż wszystkie tłumaczenia'
   browseOutsideEventDates:
-    label: 'Zezwól na przeglądanie poza datami obozu'
+    label: 'Zezwól na przeglądanie poza datami wydarzenia'
 
 actions:
   save: 'Zapisz'
@@ -210,7 +211,7 @@ field:
   showAllTranslations:
     label: 'Zobrazit všechny překlady'
   browseOutsideEventDates:
-    label: 'Povolit procházení mimo termíny tábora'
+    label: 'Povolit procházení mimo termíny akce'
 
 actions:
   save: 'Uložit'

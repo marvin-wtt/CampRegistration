@@ -112,14 +112,14 @@ role:
     can:
       - 'Organisation bearbeiten und zur Verifizierung einreichen'
       - 'Mitglieder hinzufügen, ändern und entfernen'
-      - 'Events und Newsletter erstellen'
+      - 'Veranstaltungen und Newsletter erstellen'
       - 'Organisation löschen'
   MEMBER:
     title: 'Mitglied'
     can:
       - 'Organisation und ihre Mitglieder sehen'
-      - 'Events der Organisation anlegen'
-eventAccess: 'Admins sehen jedes Event dieser Organisation und können dessen Anmeldung schließen, aber niemals die Anmeldungen oder Teilnehmerdaten. Dafür ist immer eine separate Event-Einladung nötig.'
+      - 'Veranstaltungen der Organisation anlegen'
+eventAccess: 'Admins sehen jede Veranstaltung dieser Organisation und können dessen Anmeldung schließen, aber niemals die Anmeldungen oder Teilnehmerdaten. Dafür ist immer eine separate Veranstaltungseinladung nötig.'
 action:
   close: 'Schließen'
 </i18n>
@@ -132,14 +132,14 @@ role:
     can:
       - "Modifier l'organisation et la soumettre à vérification"
       - 'Ajouter, modifier et retirer des membres'
-      - 'Créer des events et des newsletters'
+      - 'Créer des événements et des newsletters'
       - "Supprimer l'organisation"
   MEMBER:
     title: 'Membre'
     can:
       - "Voir l'organisation et ses membres"
-      - "Créer des events pour l'organisation"
-eventAccess: 'Les admins voient tous les events de cette organisation et peuvent en fermer les inscriptions, mais jamais les inscriptions ni les données des participants. Cela nécessite toujours une invitation distincte au event.'
+      - "Créer des événements pour l'organisation"
+eventAccess: 'Les admins voient tous les événements de cette organisation et peuvent en fermer les inscriptions, mais jamais les inscriptions ni les données des participants. Cela nécessite toujours une invitation distincte au événement.'
 action:
   close: 'Fermer'
 </i18n>
@@ -152,14 +152,14 @@ role:
     can:
       - 'Edytowanie organizacji i zgłaszanie jej do weryfikacji'
       - 'Dodawanie, zmiana i usuwanie członków'
-      - 'Tworzenie obozów i newsletterów'
+      - 'Tworzenie wydarzeń i newsletterów'
       - 'Usuwanie organizacji'
   MEMBER:
     title: 'Członek'
     can:
       - 'Podgląd organizacji i jej członków'
-      - 'Tworzenie obozów w organizacji'
-eventAccess: 'Administratorzy widzą każdy obóz tej organizacji i mogą zamknąć jego rejestrację, ale nigdy nie widzą zgłoszeń ani danych uczestników. Do tego zawsze potrzebne jest osobne zaproszenie do obozu.'
+      - 'Tworzenie wydarzeń w organizacji'
+eventAccess: 'Administratorzy widzą każde wydarzenie tej organizacji i mogą zamknąć jego rejestrację, ale nigdy nie widzą zgłoszeń ani danych uczestników. Do tego zawsze potrzebne jest osobne zaproszenie do wydarzenia.'
 action:
   close: 'Zamknij'
 </i18n>
@@ -172,14 +172,14 @@ role:
     can:
       - 'Upravovat organizaci a odeslat ji k ověření'
       - 'Přidávat, měnit a odebírat členy'
-      - 'Vytvářet tábory a newslettery'
+      - 'Vytvářet akce a newslettery'
       - 'Smazat organizaci'
   MEMBER:
     title: 'Člen'
     can:
       - 'Vidět organizaci a její členy'
-      - 'Vytvářet tábory organizace'
-eventAccess: 'Správci vidí každý tábor této organizace a mohou uzavřít jeho registraci, nikdy však registrace ani údaje účastníků. K tomu je vždy potřeba samostatné pozvání do tábora.'
+      - 'Vytvářet akce organizace'
+eventAccess: 'Správci vidí každou akci této organizace a mohou uzavřít její registraci, nikdy však registrace ani údaje účastníků. K tomu je vždy potřeba samostatné pozvání do akce.'
 action:
   close: 'Zavřít'
 </i18n>

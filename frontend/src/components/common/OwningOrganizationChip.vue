@@ -93,27 +93,27 @@ hint:
 <i18n lang="yaml" locale="de">
 unverified: 'Nicht verifiziert'
 hint:
-  event: 'Dieses Event erscheint nicht im öffentlichen Verzeichnis und nimmt keine Anmeldungen an, bis die Organisation verifiziert ist.'
+  event: 'Diese Veranstaltung erscheint nicht im öffentlichen Verzeichnis und nimmt keine Anmeldungen an, bis die Organisation verifiziert ist.'
   newsletter: 'Dieser Newsletter kann keine Nachrichten versenden, bis die Organisation verifiziert ist.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 unverified: 'Non vérifiée'
 hint:
-  event: "Ce event n'apparaît pas dans l'annuaire public et refuse les inscriptions tant que l'organisation n'est pas vérifiée."
+  event: "Cet événement n'apparaît pas dans l'annuaire public et refuse les inscriptions tant que l'organisation n'est pas vérifiée."
   newsletter: "Cette newsletter ne peut pas envoyer de messages tant que l'organisation n'est pas vérifiée."
 </i18n>
 
 <i18n lang="yaml" locale="pl">
 unverified: 'Niezweryfikowana'
 hint:
-  event: 'Ten obóz nie pojawia się w publicznym katalogu i nie przyjmuje zgłoszeń, dopóki organizacja nie zostanie zweryfikowana.'
+  event: 'To wydarzenie nie pojawia się w publicznym katalogu i nie przyjmuje zgłoszeń, dopóki organizacja nie zostanie zweryfikowana.'
   newsletter: 'Ten newsletter nie może wysyłać wiadomości, dopóki organizacja nie zostanie zweryfikowana.'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
 unverified: 'Neověřeno'
 hint:
-  event: 'Tento tábor se nezobrazuje ve veřejném katalogu a nepřijímá registrace, dokud nebude organizace ověřena.'
+  event: 'Tato akce se nezobrazuje ve veřejném katalogu a nepřijímá registrace, dokud nebude organizace ověřena.'
   newsletter: 'Tento newsletter nemůže odesílat zprávy, dokud nebude organizace ověřena.'
 </i18n>

@@ -892,20 +892,20 @@ request:
     progress: 'Zimmer wird erstellt...'
     success: 'Zimmer erfolgreich erstellt'
     error: 'Fehler beim Erstellen des Zimmers'
-    invalid: 'Ungültige Event-ID'
+    invalid: 'Ungültige Veranstaltungs-ID'
   update:
     progress: 'Zimmer wird aktualisiert...'
     success: 'Zimmer erfolgreich aktualisiert'
     error: 'Fehler beim Aktualisieren des Zimmers'
-    invalid: 'Ungültige Zimmer-ID oder Event-ID'
+    invalid: 'Ungültige Zimmer-ID oder Veranstaltungs-ID'
   update-bed:
     error: 'Fehler beim Aktualisieren des Betts'
-    invalid: 'Ungültige Bett-ID oder Event-ID'
+    invalid: 'Ungültige Bett-ID oder Veranstaltungs-ID'
   delete:
     progress: 'Zimmer wird gelöscht...'
     success: 'Zimmer erfolgreich gelöscht'
     error: 'Fehler beim Löschen des Zimmers'
-    invalid: 'Ungültige Zimmer-ID oder Event-ID'
+    invalid: 'Ungültige Zimmer-ID oder Veranstaltungs-ID'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -944,20 +944,24 @@ request:
     progress: 'Création de la chambre en cours...'
     success: 'Chambre créée avec succès'
     error: 'Impossible de créer la chambre'
-    invalid: 'ID du event invalide'
+    invalid: "ID de l'événement invalide"
+
   update:
     progress: 'Mise à jour de la chambre en cours...'
     success: 'Chambre mise à jour avec succès'
     error: 'Impossible de mettre à jour la chambre'
-    invalid: 'ID de la chambre ou du event invalide'
+    invalid: "ID de la chambre ou de l'événement invalide"
+
   update-bed:
     error: 'Impossible de mettre à jour le lit'
-    invalid: 'ID du lit ou du event invalide'
+    invalid: "ID du lit ou de l'événement invalide"
+
   delete:
     progress: 'Suppression de la chambre en cours...'
     success: 'Chambre supprimée avec succès'
     error: 'Impossible de supprimer la chambre'
-    invalid: 'ID de la chambre ou du event invalide'
+    invalid: "ID de la chambre ou de l'événement invalide"
+
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -996,20 +1000,20 @@ request:
     progress: 'Tworzenie pokoju...'
     success: 'Pokój został utworzony'
     error: 'Nie udało się utworzyć pokoju'
-    invalid: 'Nieprawidłowy identyfikator obozu'
+    invalid: 'Nieprawidłowy identyfikator wydarzenia'
   update:
     progress: 'Aktualizowanie pokoju...'
     success: 'Pokój został zaktualizowany'
     error: 'Nie udało się zaktualizować pokoju'
-    invalid: 'Nieprawidłowy identyfikator pokoju lub obozu'
+    invalid: 'Nieprawidłowy identyfikator pokoju lub wydarzenia'
   update-bed:
     error: 'Nie udało się zaktualizować łóżka'
-    invalid: 'Nieprawidłowy identyfikator łóżka lub obozu'
+    invalid: 'Nieprawidłowy identyfikator łóżka lub wydarzenia'
   delete:
     progress: 'Usuwanie pokoju...'
     success: 'Pokój został usunięty'
     error: 'Nie udało się usunąć pokoju'
-    invalid: 'Nieprawidłowy identyfikator pokoju lub obozu'
+    invalid: 'Nieprawidłowy identyfikator pokoju lub wydarzenia'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -1048,18 +1052,18 @@ request:
     progress: 'Vytváření pokoje...'
     success: 'Pokoj byl úspěšně vytvořen'
     error: 'Nepodařilo se vytvořit pokoj'
-    invalid: 'Neplatné ID tábora'
+    invalid: 'Neplatné ID akce'
   update:
     progress: 'Aktualizace pokoje...'
     success: 'Pokoj byl úspěšně aktualizován'
     error: 'Nepodařilo se aktualizovat pokoj'
-    invalid: 'Neplatné ID pokoje nebo tábora'
+    invalid: 'Neplatné ID pokoje nebo akce'
   update-bed:
     error: 'Nepodařilo se aktualizovat lůžko'
-    invalid: 'Neplatné ID lůžka nebo tábora'
+    invalid: 'Neplatné ID lůžka nebo akce'
   delete:
     progress: 'Odstraňování pokoje...'
     success: 'Pokoj byl úspěšně odstraněn'
     error: 'Nepodařilo se odstranit pokoj'
-    invalid: 'Neplatné ID pokoje nebo tábora'
+    invalid: 'Neplatné ID pokoje nebo akce'
 </i18n>

@@ -268,81 +268,81 @@ empty:
 </i18n>
 
 <i18n lang="yaml" locale="de">
-title: 'Meine Events'
+title: 'Meine Veranstaltungen'
 organization_required:
   title: 'Organisation erforderlich'
-  message: 'Events werden von einer Organisation betrieben. Erstelle zuerst eine — dein Event kannst du direkt danach anlegen, auch vor der Verifizierung.'
+  message: 'Veranstaltungen werden von einer Organisation betrieben. Erstelle zuerst eine — deine Veranstaltung kannst du direkt danach anlegen, auch vor der Verifizierung.'
   action: 'Zu den Organisationen'
-subtitle: 'Verwalte Anmeldungen, Räume und Programm für die Events, die du leitest.'
+subtitle: 'Verwalte Anmeldungen, Räume und Programm für die Veranstaltungen, die du leitest.'
 group:
   ongoing: 'Aktuell'
   upcoming: 'Anstehend'
   recentlyEnded: 'Kürzlich beendet'
-  past: 'Vergangene Events'
-  pastHint: 'Events landen automatisch hier, wenn sie vor mehr als 6 Wochen endeten und die Anmeldung geschlossen ist.'
+  past: 'Vergangene Veranstaltungen'
+  pastHint: 'Veranstaltungen landen automatisch hier, wenn sie vor mehr als 6 Wochen endeten und die Anmeldung geschlossen ist.'
 action:
-  create: 'Event erstellen'
+  create: 'Veranstaltung erstellen'
 empty:
-  title: 'Noch keine Events'
-  message: 'Erstelle dein erstes Event, um Anmeldungen, Räume und Programm zu verwalten.'
+  title: 'Noch keine Veranstaltungen'
+  message: 'Erstelle deine erste Veranstaltung, um Anmeldungen, Räume und Programm zu verwalten.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-title: 'Mes events'
+title: 'Mes événements'
 organization_required:
   title: 'Organisation requise'
-  message: "Les events sont gérés par une organisation. Crée-en une d'abord — tu pourras préparer ton event juste après, même avant la vérification."
+  message: "Les événements sont gérés par une organisation. Crée-en une d'abord — tu pourras préparer ton événement juste après, même avant la vérification."
   action: 'Aller aux organisations'
-subtitle: 'Gérez les inscriptions, les chambres et le programme des events que vous dirigez.'
+subtitle: 'Gérez les inscriptions, les chambres et le programme des événements que vous dirigez.'
 group:
   ongoing: 'En cours'
   upcoming: 'À venir'
   recentlyEnded: 'Récemment terminés'
-  past: 'Events passés'
-  pastHint: 'Les events arrivent ici automatiquement lorsqu’ils se sont terminés il y a plus de 6 semaines et que les inscriptions sont closes.'
+  past: 'Événements passés'
+  pastHint: 'Les événements arrivent ici automatiquement lorsqu’ils se sont terminés il y a plus de 6 semaines et que les inscriptions sont closes.'
 action:
-  create: 'Créer un event'
+  create: 'Créer un événement'
 empty:
-  title: 'Aucun event pour le moment'
-  message: 'Créez votre premier event pour gérer les inscriptions, les chambres et le programme.'
+  title: 'Aucun événement pour le moment'
+  message: 'Créez votre premier événement pour gérer les inscriptions, les chambres et le programme.'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-title: 'Moje obozy'
+title: 'Moje wydarzenia'
 organization_required:
   title: 'Wymagana organizacja'
-  message: 'Obozy prowadzone są przez organizację. Najpierw utwórz organizację — obóz możesz przygotować zaraz potem, jeszcze przed weryfikacją.'
+  message: 'Wydarzenia prowadzone są przez organizację. Najpierw utwórz organizację — wydarzenie możesz przygotować zaraz potem, jeszcze przed weryfikacją.'
   action: 'Przejdź do organizacji'
-subtitle: 'Zarządzaj zapisami, pokojami i programem obozów, które prowadzisz.'
+subtitle: 'Zarządzaj zapisami, pokojami i programem wydarzeń, które prowadzisz.'
 group:
   ongoing: 'Trwające'
   upcoming: 'Nadchodzące'
   recentlyEnded: 'Niedawno zakończone'
-  past: 'Minione obozy'
-  pastHint: 'Obozy trafiają tutaj automatycznie, gdy zakończyły się ponad 6 tygodni temu, a zapisy są zamknięte.'
+  past: 'Minione wydarzenia'
+  pastHint: 'Wydarzenia trafiają tutaj automatycznie, gdy zakończyły się ponad 6 tygodni temu, a zapisy są zamknięte.'
 action:
-  create: 'Utwórz obóz'
+  create: 'Utwórz wydarzenie'
 empty:
-  title: 'Brak obozów'
-  message: 'Utwórz swój pierwszy obóz, aby zarządzać zapisami, pokojami i programem.'
+  title: 'Brak wydarzeń'
+  message: 'Utwórz swoje pierwsze wydarzenie, aby zarządzać zapisami, pokojami i programem.'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-title: 'Moje tábory'
+title: 'Moje akce'
 organization_required:
   title: 'Vyžadována organizace'
-  message: 'Tábory pořádá organizace. Nejprve nějakou vytvoř — tábor můžeš připravovat hned poté, i před ověřením.'
+  message: 'Akce pořádá organizace. Nejprve nějakou vytvoř — akci můžeš připravovat hned poté, i před ověřením.'
   action: 'Přejít na organizace'
-subtitle: 'Spravujte registrace, pokoje a program táborů, které vedete.'
+subtitle: 'Spravujte registrace, pokoje a program akcí, které vedete.'
 group:
   ongoing: 'Probíhající'
   upcoming: 'Nadcházející'
   recentlyEnded: 'Nedávno ukončené'
-  past: 'Minulé tábory'
-  pastHint: 'Tábory se zde objeví automaticky, jakmile skončily před více než 6 týdny a registrace je uzavřena.'
+  past: 'Minulé akce'
+  pastHint: 'Akce se zde objeví automaticky, jakmile skončily před více než 6 týdny a registrace je uzavřena.'
 action:
-  create: 'Vytvořit tábor'
+  create: 'Vytvořit akci'
 empty:
-  title: 'Zatím žádné tábory'
-  message: 'Vytvořte svůj první tábor a začněte spravovat registrace, pokoje a program.'
+  title: 'Zatím žádné akce'
+  message: 'Vytvořte svou první akci a začněte spravovat registrace, pokoje a program.'
 </i18n>

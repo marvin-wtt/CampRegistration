@@ -180,13 +180,13 @@ action:
 </i18n>
 
 <i18n lang="yaml" locale="de">
-title: 'Abonnenten aus Event importieren'
+title: 'Abonnenten aus einer Veranstaltung importieren'
 input:
   event:
-    label: 'Event'
-    hint: 'Wählen Sie das Event aus, aus dem Abonnenten importiert werden sollen'
+    label: 'Veranstaltung'
+    hint: 'Wählen Sie die Veranstaltung aus, aus dem Abonnenten importiert werden sollen'
     rule:
-      required: 'Event ist erforderlich'
+      required: 'Veranstaltung ist erforderlich'
   country:
     label: 'Nach Land filtern (optional)'
     hint: 'Leer lassen, um alle Länder zu importieren'
@@ -203,13 +203,15 @@ action:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-title: 'Importer des abonnés depuis un event'
+title: 'Importer des abonnés depuis un événement'
 input:
   event:
-    label: 'Event'
-    hint: 'Sélectionnez le event depuis lequel importer les abonnés'
+    label: 'Événement'
+    hint: "Sélectionnez l'événement depuis lequel importer les abonnés"
+
     rule:
-      required: 'Le event est requis'
+      required: "L'événement est requis"
+
   country:
     label: 'Filtrer par pays (optionnel)'
     hint: 'Laisser vide pour importer tous les pays'
@@ -226,13 +228,13 @@ action:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-title: 'Importuj subskrybentów z obozu'
+title: 'Importuj subskrybentów z wydarzenia'
 input:
   event:
-    label: 'Obóz'
-    hint: 'Wybierz obóz, z którego mają być importowani subskrybenci'
+    label: 'Wydarzenie'
+    hint: 'Wybierz wydarzenie, z którego mają być importowani subskrybenci'
     rule:
-      required: 'Obóz jest wymagany'
+      required: 'Wydarzenie jest wymagany'
   country:
     label: 'Filtruj według kraju (opcjonalnie)'
     hint: 'Pozostaw puste, aby importować wszystkie kraje'
@@ -249,13 +251,13 @@ action:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-title: 'Importovat odběratele z tábora'
+title: 'Importovat odběratele z akce'
 input:
   event:
-    label: 'Tábor'
-    hint: 'Vyberte tábor, ze kterého se mají importovat odběratelé'
+    label: 'Akce'
+    hint: 'Vyberte akci, ze které se mají importovat odběratelé'
     rule:
-      required: 'Tábor je povinný'
+      required: 'Akce je povinná'
   country:
     label: 'Filtrovat podle země (volitelné)'
     hint: 'Nechte prázdné pro import všech zemí'

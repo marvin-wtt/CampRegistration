@@ -616,10 +616,10 @@ export default {
           name: 'permission_leave',
           title: {
             en: "{first_name} may leave the event or the event management's supervision area in consultation with the event management",
-            de: '{first_name} darf in Absprache mit der Lagerleitung das Event bzw. den Aufsichtsbereich der Lagerleitung verlassen',
-            fr: '{first_name} est autorisé à quitter le event ou la zone de surveillance de la direction du event en accord avec celle-ci',
-            pl: '{first_name} może, po uzgodnieniu z kadrą, opuścić teren obozu lub strefę nadzoru kadry',
-            cs: '{first_name} může po dohodě s vedením tábora opustit tábor nebo oblast jeho dozoru',
+            de: '{first_name} darf in Absprache mit der Lagerleitung die Veranstaltung bzw. den Aufsichtsbereich der Lagerleitung verlassen',
+            fr: "{first_name} est autorisé à quitter l'événement ou la zone de surveillance de la direction de l'événement en accord avec celle-ci",
+            pl: '{first_name} może, po uzgodnieniu z kadrą, opuścić teren wydarzenia lub strefę nadzoru kadry',
+            cs: '{first_name} může po dohodě s vedením akce opustit akci nebo oblast jejího dozoru',
             default:
               "{first_name} may leave the event or the event management's supervision area in consultation with the event management",
           },
@@ -703,10 +703,10 @@ export default {
           },
           description: {
             en: 'Illnesses, allergies or other restrictions that could be relevant for the event',
-            de: 'Krankheiten, Allergien oder sonstige Einschränkungen, die für das Event relevant sein könnten',
-            fr: 'Maladies, allergies ou autres restrictions qui pourraient être pertinentes pour le event',
-            pl: 'Choroby, alergie lub inne ograniczenia, które mogą być istotne na obozie',
-            cs: 'Nemoci, alergie či jiná omezení, která mohou být pro tábor relevantní',
+            de: 'Krankheiten, Allergien oder sonstige Einschränkungen, die für die Veranstaltung relevant sein könnten',
+            fr: "Maladies, allergies ou autres restrictions qui pourraient être pertinentes pour l'événement",
+            pl: 'Choroby, alergie lub inne ograniczenia, które mogą być istotne na wydarzeniu',
+            cs: 'Nemoci, alergie či jiná omezení, která mohou být pro akci relevantní',
             default:
               'Illnesses, allergies or other restrictions that could be relevant for the event',
           },
@@ -774,10 +774,10 @@ export default {
           name: 'consent_rules',
           title: {
             en: 'I have read the [event rules]({_file.rules}) and agree to them.',
-            de: 'Ich habe die [Eventregeln]({_file.rules}) gelesen und bin damit einverstanden.',
+            de: 'Ich habe die [Veranstaltungsregeln]({_file.rules}) gelesen und bin damit einverstanden.',
             fr: "J'ai lu et j'accepte le [règlement]({_file.rules}) de la colonie de vacances.",
-            pl: 'Przeczytałem/łam [regulamin obozu]({_file.rules}) i akceptuję go.',
-            cs: 'Přečetl/a jsem si [táborová pravidla]({_file.rules}) a souhlasím s nimi.',
+            pl: 'Przeczytałem/łam [regulamin wydarzenia]({_file.rules}) i akceptuję go.',
+            cs: 'Přečetl/a jsem si [pravidla akce]({_file.rules}) a souhlasím s nimi.',
             default:
               'I have read the [event rules]({_file.rules}) and agree to them.',
           },
@@ -785,10 +785,10 @@ export default {
           isRequired: true,
           requiredErrorText: {
             en: 'You must agree to the event rules in order to participate in the event',
-            de: 'Du musst den Eventregeln zustimmen, um am Event teilnehmen zu können',
-            fr: 'Tu dois accepter le règlement du event pour pouvoir y participer.',
-            pl: 'Aby wziąć udział w obozie, musisz zaakceptować regulamin obozu',
-            cs: 'Pro účast na táboře musíš souhlasit s táborovými pravidly',
+            de: 'Du musst den Veranstaltungsregeln zustimmen, um an der Veranstaltung teilnehmen zu können',
+            fr: "Tu dois accepter le règlement de l'événement pour pouvoir y participer.",
+            pl: 'Aby wziąć udział w wydarzeniu, musisz zaakceptować regulamin wydarzenia',
+            cs: 'Pro účast na akci musíš souhlasit s pravidly akce',
             default:
               'You must agree to the event rules in order to participate in the event',
           },
@@ -797,10 +797,10 @@ export default {
               type: 'expression',
               text: {
                 en: 'You must agree to the event rules in order to participate in the event',
-                de: 'Du musst den Eventregeln zustimmen, um am Event teilnehmen zu können',
-                fr: 'Tu dois accepter le règlement du event pour pouvoir y participer.',
-                pl: 'Aby wziąć udział w obozie, musisz zaakceptować regulamin obozu',
-                cs: 'Pro účast na táboře musíš souhlasit s táborovými pravidly',
+                de: 'Du musst den Veranstaltungsregeln zustimmen, um an der Veranstaltung teilnehmen zu können',
+                fr: "Tu dois accepter le règlement de l'événement pour pouvoir y participer.",
+                pl: 'Aby wziąć udział w wydarzeniu, musisz zaakceptować regulamin wydarzenia',
+                cs: 'Pro účast na akci musíš souhlasit s pravidly akce',
                 default:
                   'You must agree to the event rules in order to participate in the event',
               },
@@ -852,10 +852,10 @@ export default {
           name: 'consent_forward_list_participants',
           title: {
             en: 'I agree that my contact details (address, e-mail, telephone) may only be passed on to other event participants in the form of a list of participants for the purpose of carpooling.',
-            de: 'Ich stimme zu, dass meine Kontaktdaten (Anschrift, E-Mail, Telefon) in Form einer Teilnehmerliste zur Bildung von Fahrgemeinschaften ausschließlich an andere Teilnehmer des Events weitergeleitet werden dürfen.',
-            fr: "J'accepte que mes coordonnées (adresse, e-mail, téléphone) soient transmises exclusivement aux autres participants du event de vacances sous la forme d'une liste de participants pour le covoiturage.",
-            pl: 'Wyrażam zgodę na przekazanie moich danych kontaktowych (adres, e-mail, telefon) innym uczestnikom obozu w formie listy uczestników w celu organizacji wspólnych przejazdów.',
-            cs: 'Souhlasím s tím, aby byly mé kontaktní údaje (adresa, e-mail, telefon) předány ostatním účastníkům tábora ve formě seznamu účastníků za účelem spolujízdy.',
+            de: 'Ich stimme zu, dass meine Kontaktdaten (Anschrift, E-Mail, Telefon) in Form einer Teilnehmerliste zur Bildung von Fahrgemeinschaften ausschließlich an andere Teilnehmer der Veranstaltung weitergeleitet werden dürfen.',
+            fr: "J'accepte que mes coordonnées (adresse, e-mail, téléphone) soient transmises exclusivement aux autres participants de l'événement sous la forme d'une liste de participants pour le covoiturage.",
+            pl: 'Wyrażam zgodę na przekazanie moich danych kontaktowych (adres, e-mail, telefon) innym uczestnikom wydarzenia w formie listy uczestników w celu organizacji wspólnych przejazdów.',
+            cs: 'Souhlasím s tím, aby byly mé kontaktní údaje (adresa, e-mail, telefon) předány ostatním účastníkům akce ve formě seznamu účastníků za účelem spolujízdy.',
             default:
               'I agree that my contact details (address, e-mail, telephone) may only be passed on to other event participants in the form of a list of participants for the purpose of carpooling.',
           },
@@ -888,18 +888,18 @@ export default {
           visibleIf: "{role} = 'participant' or {role} empty",
           title: {
             en: 'Updates on future events',
-            de: 'Infos zu zukünftigen Events',
+            de: 'Infos zu zukünftigen Veranstaltungen',
             fr: 'Informations sur les futurs events',
-            pl: 'Informacje o przyszłych obozach',
-            cs: 'Informace o budoucích táborech',
+            pl: 'Informacje o przyszłych wydarzeniach',
+            cs: 'Informace o budoucích akcích',
             default: 'Updates on future events',
           },
           description: {
             en: 'I would like to receive updates by email about future events and similar offers.',
-            de: 'Ich möchte per E-Mail über zukünftige Events und ähnliche Angebote informiert werden.',
+            de: 'Ich möchte per E-Mail über zukünftige Veranstaltungen und ähnliche Angebote informiert werden.',
             fr: 'Je souhaite recevoir des informations par e-mail sur les prochains events.',
-            pl: 'Chcę otrzymywać e-mailem informacje o przyszłych obozach i podobnych ofertach.',
-            cs: 'Chci e-mailem dostávat informace o budoucích táborech a podobných nabídkách.',
+            pl: 'Chcę otrzymywać e-mailem informacje o przyszłych wydarzeniach i podobnych ofertach.',
+            cs: 'Chci e-mailem dostávat informace o budoucích akcích a podobných nabídkách.',
             default:
               'I would like to receive updates by email about future events and similar offers.',
           },
@@ -948,8 +948,14 @@ export default {
     },
   ],
   calculatedValues: [
-    { name: 'isadult', expression: 'isAdult({date_of_birth}, {event.startAt})' },
-    { name: 'isminor', expression: 'isMinor({date_of_birth}, {event.startAt})' },
+    {
+      name: 'isadult',
+      expression: 'isAdult({date_of_birth}, {event.startAt})',
+    },
+    {
+      name: 'isminor',
+      expression: 'isMinor({date_of_birth}, {event.startAt})',
+    },
     {
       name: 'waitingList',
       expression: 'isWaitingList({event.freePlaces}, {country})',

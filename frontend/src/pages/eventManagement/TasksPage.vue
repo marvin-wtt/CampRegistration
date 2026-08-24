@@ -424,7 +424,7 @@ empty:
 
 <i18n lang="yaml" locale="de">
 title: 'Aufgaben'
-subtitle: 'Behalte die Aufgaben für dieses Event im Blick.'
+subtitle: 'Behalte die Aufgaben für diese Veranstaltung im Blick.'
 unassigned: 'Nicht zugewiesen'
 you: 'Du'
 allDone: 'Keine offenen Aufgaben — gut gemacht!'
@@ -448,12 +448,12 @@ dialog:
 
 empty:
   title: 'Noch keine Aufgaben'
-  message: 'Füge eine Aufgabe hinzu, um die To-dos für dieses Event im Blick zu behalten.'
+  message: 'Füge eine Aufgabe hinzu, um die To-dos für diese Veranstaltung im Blick zu behalten.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 title: 'Tâches'
-subtitle: 'Suis les tâches à faire pour ce event.'
+subtitle: 'Suis les tâches à faire pour cet événement.'
 unassigned: 'Non assignée'
 you: 'Toi'
 allDone: 'Aucune tâche en cours — bien joué !'
@@ -477,12 +477,12 @@ dialog:
 
 empty:
   title: 'Aucune tâche pour le moment'
-  message: 'Ajoute une tâche pour suivre les choses à faire pour ce event.'
+  message: 'Ajoute une tâche pour suivre les choses à faire pour cet événement.'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
 title: 'Zadania'
-subtitle: 'Śledź zadania do wykonania dla tego obozu.'
+subtitle: 'Śledź zadania do wykonania dla tego wydarzenia.'
 unassigned: 'Nieprzypisane'
 you: 'Ty'
 allDone: 'Brak otwartych zadań — świetna robota!'
@@ -506,12 +506,12 @@ dialog:
 
 empty:
   title: 'Brak zadań'
-  message: 'Dodaj zadanie, aby śledzić rzeczy do zrobienia dla tego obozu.'
+  message: 'Dodaj zadanie, aby śledzić rzeczy do zrobienia dla tego wydarzenia.'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
 title: 'Úkoly'
-subtitle: 'Sleduj úkoly pro tento tábor.'
+subtitle: 'Sleduj úkoly pro tuto akci.'
 unassigned: 'Nepřiřazeno'
 you: 'Ty'
 allDone: 'Žádné otevřené úkoly — skvělá práce!'
@@ -535,5 +535,5 @@ dialog:
 
 empty:
   title: 'Zatím žádné úkoly'
-  message: 'Přidej úkol a sleduj, co je třeba pro tento tábor udělat.'
+  message: 'Přidej úkol a sleduj, co je třeba pro tuto akci udělat.'
 </i18n>

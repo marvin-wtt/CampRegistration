@@ -1,5 +1,5 @@
 export default {
   fetch: {
-    error: 'Events konnten nicht geladen werden',
+    error: 'Veranstaltungen konnten nicht geladen werden',
   },
 };

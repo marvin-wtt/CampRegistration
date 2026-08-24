@@ -129,10 +129,10 @@ status:
 </i18n>
 
 <i18n lang="yaml" locale="de">
-title: 'Events'
-scope: 'Du siehst jedes Event dieser Organisation und kannst dessen Anmeldung schließen. Für die Teilnehmenden ist eine separate Einladung zum Event nötig.'
+title: 'Veranstaltungen'
+scope: 'Du siehst jede Veranstaltung dieser Organisation und kannst dessen Anmeldung schließen. Für die Teilnehmenden ist eine separate Einladung zur Veranstaltung nötig.'
 listed: 'Nicht gelistet'
-empty: 'Diese Organisation hat noch keine Events'
+empty: 'Diese Organisation hat noch keine Veranstaltungen'
 status:
   open: 'Anmeldung offen'
   upcoming: 'Anmeldung bevorstehend'
@@ -140,10 +140,10 @@ status:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-title: 'Events'
-scope: 'Tu vois chaque event de cette organisation et peux en fermer les inscriptions. Voir les participants nécessite une invitation distincte au event.'
+title: 'Événements'
+scope: 'Tu vois chaque événement de cette organisation et peux en fermer les inscriptions. Voir les participants nécessite une invitation distincte au événement.'
 listed: 'Non répertorié'
-empty: "Cette organisation n'a pas encore de events"
+empty: "Cette organisation n'a pas encore d'événements"
 status:
   open: 'Inscriptions ouvertes'
   upcoming: 'Inscriptions à venir'
@@ -151,10 +151,10 @@ status:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-title: 'Obozy'
-scope: 'Widzisz każdy obóz tej organizacji i możesz zamknąć jego rejestrację. Podgląd uczestników wymaga osobnego zaproszenia do obozu.'
+title: 'Wydarzenia'
+scope: 'Widzisz każde wydarzenie tej organizacji i możesz zamknąć jego rejestrację. Podgląd uczestników wymaga osobnego zaproszenia do wydarzenia.'
 listed: 'Ukryty'
-empty: 'Ta organizacja nie ma jeszcze obozów'
+empty: 'Ta organizacja nie ma jeszcze wydarzeń'
 status:
   open: 'Rejestracja otwarta'
   upcoming: 'Rejestracja wkrótce'
@@ -162,10 +162,10 @@ status:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-title: 'Tábory'
-scope: 'Vidíš každý tábor této organizace a můžeš uzavřít jeho registraci. Zobrazení účastníků vyžaduje samostatné pozvání do tábora.'
+title: 'Akce'
+scope: 'Vidíš každou akci této organizace a můžeš uzavřít její registraci. Zobrazení účastníků vyžaduje samostatné pozvání do akce.'
 listed: 'Skrytý'
-empty: 'Tato organizace zatím nemá žádné tábory'
+empty: 'Tato organizace zatím nemá žádné akce'
 status:
   open: 'Registrace otevřena'
   upcoming: 'Registrace se blíží'

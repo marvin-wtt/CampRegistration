@@ -191,30 +191,30 @@ token:
 <i18n lang="yaml" locale="de">
 token:
   event:
-    label: 'Event'
-    caption: 'Allgemeine Informationen zum Event'
+    label: 'Veranstaltung'
+    caption: 'Allgemeine Informationen zur Veranstaltung'
     item:
       countries:
         label: 'Länder'
         caption: 'Liste aller teilnehmenden Länder'
       name:
         label: 'Name'
-        caption: 'Der Name des Events'
+        caption: 'Der Name der Veranstaltung'
       organizer:
         label: 'Veranstalter'
         caption: 'Der Name des Veranstalters'
       contactEmail:
         label: 'Kontakt-E-Mail'
-        caption: 'Die Kontakt-E-Mail-Adresse des Events'
+        caption: 'Die Kontakt-E-Mail-Adresse der Veranstaltung'
       maxParticipants:
         label: 'Maximale Teilnehmerzahl'
         caption: 'Die maximale Teilnehmerzahl'
       startAt:
         label: 'Startzeit'
-        caption: 'Startdatum und -uhrzeit des Events'
+        caption: 'Startdatum und -uhrzeit der Veranstaltung'
       endAt:
         label: 'Endzeit'
-        caption: 'Enddatum und -uhrzeit des Events'
+        caption: 'Enddatum und -uhrzeit der Veranstaltung'
       minAge:
         label: 'Mindestalter'
         caption: 'Das Mindestalter der Teilnehmer'
@@ -223,7 +223,7 @@ token:
         caption: 'Das Höchstalter der Teilnehmer'
       location:
         label: 'Ort'
-        caption: 'Der Ort des Events'
+        caption: 'Der Ort der Veranstaltung'
       price:
         label: 'Preis'
         caption: 'Der Teilnahmebeitrag'
@@ -257,30 +257,34 @@ token:
 <i18n lang="yaml" locale="fr">
 token:
   event:
-    label: 'Event'
-    caption: 'Informations générales sur le event'
+    label: 'Événement'
+    caption: "Informations générales sur l'événement"
+
     item:
       countries:
         label: 'Pays'
         caption: 'Liste de tous les pays participants'
       name:
         label: 'Nom'
-        caption: 'Le nom du event'
+        caption: "Le nom de l'événement"
+
       organizer:
         label: 'Organisateur'
         caption: "Le nom de l'organisateur"
       contactEmail:
         label: 'Email de contact'
-        caption: "L'adresse email de contact du event"
+        caption: "L'adresse email de contact de l'événement"
       maxParticipants:
         label: 'Nombre maximum de participants'
         caption: 'Le nombre maximum de participants'
       startAt:
         label: 'Heure de début'
-        caption: 'Date et heure de début du event'
+        caption: "Date et heure de début de l'événement"
+
       endAt:
         label: 'Heure de fin'
-        caption: 'Date et heure de fin du event'
+        caption: "Date et heure de fin de l'événement"
+
       minAge:
         label: 'Âge minimum'
         caption: "L'âge minimum des participants"
@@ -289,7 +293,8 @@ token:
         caption: "L'âge maximum des participants"
       location:
         label: 'Lieu'
-        caption: 'Le lieu du event'
+        caption: "Le lieu de l'événement"
+
       price:
         label: 'Prix'
         caption: 'Les frais de participation'
@@ -323,30 +328,30 @@ token:
 <i18n lang="yaml" locale="pl">
 token:
   event:
-    label: 'Obóz'
-    caption: 'Ogólne informacje o obozie'
+    label: 'Wydarzenie'
+    caption: 'Ogólne informacje o wydarzeniu'
     item:
       countries:
         label: 'Kraje'
         caption: 'Lista wszystkich uczestniczących krajów'
       name:
         label: 'Nazwa'
-        caption: 'Nazwa obozu'
+        caption: 'Nazwa wydarzenia'
       organizer:
         label: 'Organizator'
         caption: 'Nazwa organizatora'
       contactEmail:
         label: 'E-mail kontaktowy'
-        caption: 'Kontaktowy adres e-mail obozu'
+        caption: 'Kontaktowy adres e-mail wydarzenia'
       maxParticipants:
         label: 'Maksymalna liczba uczestników'
         caption: 'Maksymalna liczba uczestników'
       startAt:
         label: 'Czas rozpoczęcia'
-        caption: 'Data i godzina rozpoczęcia obozu'
+        caption: 'Data i godzina rozpoczęcia wydarzenia'
       endAt:
         label: 'Czas zakończenia'
-        caption: 'Data i godzina zakończenia obozu'
+        caption: 'Data i godzina zakończenia wydarzenia'
       minAge:
         label: 'Minimalny wiek'
         caption: 'Minimalny wiek uczestników'
@@ -355,7 +360,7 @@ token:
         caption: 'Maksymalny wiek uczestników'
       location:
         label: 'Miejsce'
-        caption: 'Miejsce obozu'
+        caption: 'Miejsce wydarzenia'
       price:
         label: 'Cena'
         caption: 'Opłata za uczestnictwo'
@@ -389,7 +394,7 @@ token:
 <i18n lang="yaml" locale="cs">
 token:
   event:
-    label: 'Tábor'
+    label: 'Akce'
     caption: 'Obecné informace o táboře'
     item:
       countries:
@@ -397,22 +402,22 @@ token:
         caption: 'Seznam všech zúčastněných zemí'
       name:
         label: 'Název'
-        caption: 'Název tábora'
+        caption: 'Název akce'
       organizer:
         label: 'Organizátor'
         caption: 'Název organizátora'
       contactEmail:
         label: 'Kontaktní e-mail'
-        caption: 'Kontaktní e-mailová adresa tábora'
+        caption: 'Kontaktní e-mailová adresa akce'
       maxParticipants:
         label: 'Maximální počet účastníků'
         caption: 'Maximální počet účastníků'
       startAt:
         label: 'Čas začátku'
-        caption: 'Datum a čas začátku tábora'
+        caption: 'Datum a čas začátku akce'
       endAt:
         label: 'Čas konce'
-        caption: 'Datum a čas konce tábora'
+        caption: 'Datum a čas konce akce'
       minAge:
         label: 'Minimální věk'
         caption: 'Minimální věk účastníků'
@@ -421,7 +426,7 @@ token:
         caption: 'Maximální věk účastníků'
       location:
         label: 'Místo'
-        caption: 'Místo konání tábora'
+        caption: 'Místo konání akce'
       price:
         label: 'Cena'
         caption: 'Účastnický poplatek'

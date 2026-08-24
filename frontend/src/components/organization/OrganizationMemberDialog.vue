@@ -135,10 +135,10 @@ title:
 role:
   ADMIN:
     label: 'Admin'
-    caption: 'Verwaltet Organisation, Events und Mitglieder'
+    caption: 'Verwaltet Organisation, Veranstaltungen und Mitglieder'
   MEMBER:
     label: 'Mitglied'
-    caption: 'Darf Events der Organisation anlegen'
+    caption: 'Darf Veranstaltungen der Organisation anlegen'
 input:
   email:
     label: 'E-Mail-Adresse'
@@ -160,10 +160,10 @@ title:
 role:
   ADMIN:
     label: 'Admin'
-    caption: "Gère l'organisation, ses events et ses membres"
+    caption: "Gère l'organisation, ses événements et ses membres"
   MEMBER:
     label: 'Membre'
-    caption: "Peut créer des events pour l'organisation"
+    caption: "Peut créer des événements pour l'organisation"
 input:
   email:
     label: 'Adresse e-mail'
@@ -185,10 +185,10 @@ title:
 role:
   ADMIN:
     label: 'Administrator'
-    caption: 'Zarządza organizacją, obozami i członkami'
+    caption: 'Zarządza organizacją, wydarzeniami i członkami'
   MEMBER:
     label: 'Członek'
-    caption: 'Może tworzyć obozy w organizacji'
+    caption: 'Może tworzyć wydarzenia w organizacji'
 input:
   email:
     label: 'Adres e-mail'
@@ -210,10 +210,10 @@ title:
 role:
   ADMIN:
     label: 'Správce'
-    caption: 'Spravuje organizaci, tábory a členy'
+    caption: 'Spravuje organizaci, akce a členy'
   MEMBER:
     label: 'Člen'
-    caption: 'Může vytvářet tábory organizace'
+    caption: 'Může vytvářet akce organizace'
 input:
   email:
     label: 'E-mailová adresa'

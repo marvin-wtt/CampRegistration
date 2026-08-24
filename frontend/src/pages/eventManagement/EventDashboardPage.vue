@@ -610,7 +610,7 @@ actions:
     caption: 'Nachrichten an Gruppen senden'
   program:
     label: 'Programm'
-    caption: 'Event-Programm planen'
+    caption: 'Veranstaltungsprogramm planen'
   rooms:
     label: 'Zimmer'
     caption: 'Betten und Zimmer zuweisen'
@@ -647,7 +647,8 @@ actions:
     caption: 'Envoyer des nouvelles aux groupes'
   program:
     label: 'Programme'
-    caption: 'Planifier le programme du event'
+    caption: "Planifier le programme de l'événement"
+
   rooms:
     label: 'Chambres'
     caption: 'Attribuer les lits et chambres'
@@ -684,7 +685,7 @@ actions:
     caption: 'Wysyłaj wiadomości do grup'
   program:
     label: 'Program'
-    caption: 'Zaplanuj harmonogram obozu'
+    caption: 'Zaplanuj harmonogram wydarzenia'
   rooms:
     label: 'Pokoje'
     caption: 'Przydziel łóżka i pokoje'
@@ -721,7 +722,7 @@ actions:
     caption: 'Poslat zprávy skupinám'
   program:
     label: 'Program'
-    caption: 'Naplánovat program tábora'
+    caption: 'Naplánovat program akce'
   rooms:
     label: 'Pokoje'
     caption: 'Přiřadit lůžka a pokoje'

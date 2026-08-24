@@ -399,7 +399,7 @@ dialog:
   blocked:
     title: 'Organisation ist nicht leer'
     message:
-      'Diese Organisation besitzt noch { events } Event(s) und { newsletters } Newsletter.
+      'Diese Organisation besitzt noch { events } Veranstaltung(s) und { newsletters } Newsletter.
       Verschiebe oder lösche sie, bevor du die Organisation löschst.'
     ok: 'Schließen'
 notify:
@@ -437,7 +437,7 @@ dialog:
   blocked:
     title: "L'organisation n'est pas vide"
     message:
-      "Cette organisation possède encore { events } event(s) et { newsletters } newsletter(s).
+      "Cette organisation possède encore { events } événement(s) et { newsletters } newsletter(s).
       Déplacez-les ou supprimez-les avant de supprimer l'organisation."
     ok: 'Fermer'
 notify:
@@ -475,7 +475,7 @@ dialog:
   blocked:
     title: 'Organizacja nie jest pusta'
     message:
-      'Ta organizacja nadal posiada obozy ({ events }) i newslettery ({ newsletters }).
+      'Ta organizacja nadal posiada wydarzenia ({ events }) i newslettery ({ newsletters }).
       Przenieś je lub usuń przed usunięciem organizacji.'
     ok: 'Zamknij'
 notify:
@@ -513,7 +513,7 @@ dialog:
   blocked:
     title: 'Organizace není prázdná'
     message:
-      'Tato organizace stále vlastní tábory ({ events }) a newslettery ({ newsletters }).
+      'Tato organizace stále vlastní akce ({ events }) a newslettery ({ newsletters }).
       Než organizaci smažete, přesuňte je nebo smažte.'
     ok: 'Zavřít'
 notify:

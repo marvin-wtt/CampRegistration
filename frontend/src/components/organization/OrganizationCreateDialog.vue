@@ -240,7 +240,7 @@ async function onSubmit() {
 
 <i18n lang="yaml" locale="en">
 title: 'Create organization'
-description: 'Your organization is reviewed before it can publish events or send newsletters. You can start building a event straight away.'
+description: 'Your organization is reviewed before it can publish events or send newsletters. You can start building an event straight away.'
 privacyNote: 'Verification also requires a published privacy notice. You can write it under Privacy as soon as the organization exists.'
 section:
   identity: 'Contact'
@@ -268,7 +268,7 @@ action:
 
 <i18n lang="yaml" locale="de">
 title: 'Organisation erstellen'
-description: 'Deine Organisation wird geprüft, bevor sie Events veröffentlichen oder Newsletter versenden kann. Ein Event kannst du sofort anlegen.'
+description: 'Deine Organisation wird geprüft, bevor sie Veranstaltungen veröffentlichen oder Newsletter versenden kann. Eine Veranstaltung kannst du sofort anlegen.'
 privacyNote: 'Für die Verifizierung wird außerdem eine veröffentlichte Datenschutzerklärung benötigt. Du kannst sie unter Datenschutz verfassen, sobald die Organisation angelegt ist.'
 section:
   identity: 'Kontakt'
@@ -296,7 +296,7 @@ action:
 
 <i18n lang="yaml" locale="fr">
 title: 'Créer une organisation'
-description: 'Ton organisation est vérifiée avant de pouvoir publier des events ou envoyer des newsletters. Tu peux commencer à préparer un event immédiatement.'
+description: 'Ton organisation est vérifiée avant de pouvoir publier des événements ou envoyer des newsletters. Tu peux commencer à préparer un événement immédiatement.'
 privacyNote: 'La vérification exige également une politique de confidentialité publiée. Tu peux la rédiger sous Confidentialité dès que l’organisation existe.'
 section:
   identity: 'Contact'
@@ -324,7 +324,7 @@ action:
 
 <i18n lang="yaml" locale="pl">
 title: 'Utwórz organizację'
-description: 'Twoja organizacja zostanie sprawdzona, zanim będzie mogła publikować obozy lub wysyłać newslettery. Obóz możesz zacząć przygotowywać od razu.'
+description: 'Twoja organizacja zostanie sprawdzona, zanim będzie mogła publikować wydarzenia lub wysyłać newslettery. Wydarzenie możesz zacząć przygotowywać od razu.'
 privacyNote: 'Weryfikacja wymaga też opublikowanej informacji o ochronie danych. Możesz ją przygotować w sekcji Prywatność, gdy tylko organizacja powstanie.'
 section:
   identity: 'Kontakt'
@@ -352,7 +352,7 @@ action:
 
 <i18n lang="yaml" locale="cs">
 title: 'Vytvořit organizaci'
-description: 'Tvoje organizace bude ověřena, než bude moci zveřejňovat tábory nebo posílat newslettery. Tábor můžeš začít připravovat hned.'
+description: 'Tvoje organizace bude ověřena, než bude moci zveřejňovat akce nebo posílat newslettery. Akci můžeš začít připravovat hned.'
 privacyNote: 'Ověření také vyžaduje zveřejněné zásady ochrany osobních údajů. Můžeš je sepsat v sekci Soukromí, jakmile organizace vznikne.'
 section:
   identity: 'Kontakt'

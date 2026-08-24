@@ -172,7 +172,7 @@ empty:
 
 <i18n lang="yaml" locale="de">
 title: 'Organisationen'
-subtitle: 'Verwalte die Organisationen, unter denen du Events und Newsletter betreibst.'
+subtitle: 'Verwalte die Organisationen, unter denen du Veranstaltungen und Newsletter betreibst.'
 action:
   create: 'Organisation erstellen'
 status:
@@ -181,12 +181,12 @@ status:
   REJECTED: 'Abgelehnt'
 empty:
   title: 'Noch keine Organisationen'
-  description: 'Erstelle eine Organisation, um Events und Newsletter zu betreiben.'
+  description: 'Erstelle eine Organisation, um Veranstaltungen und Newsletter zu betreiben.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 title: 'Organisations'
-subtitle: 'Gérez les organisations sous lesquelles vous organisez events et newsletters.'
+subtitle: 'Gérez les organisations sous lesquelles vous organisez événements et newsletters.'
 action:
   create: 'Créer une organisation'
 status:
@@ -195,12 +195,12 @@ status:
   REJECTED: 'Refusée'
 empty:
   title: 'Aucune organisation'
-  description: 'Crée une organisation pour gérer des events et des newsletters.'
+  description: 'Crée une organisation pour gérer des événements et des newsletters.'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
 title: 'Organizacje'
-subtitle: 'Zarządzaj organizacjami, w ramach których prowadzisz obozy i newslettery.'
+subtitle: 'Zarządzaj organizacjami, w ramach których prowadzisz wydarzenia i newslettery.'
 action:
   create: 'Utwórz organizację'
 status:
@@ -209,12 +209,12 @@ status:
   REJECTED: 'Odrzucona'
 empty:
   title: 'Brak organizacji'
-  description: 'Utwórz organizację, aby prowadzić obozy i newslettery.'
+  description: 'Utwórz organizację, aby prowadzić wydarzenia i newslettery.'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
 title: 'Organizace'
-subtitle: 'Spravuj organizace, pod kterými pořádáš tábory a newslettery.'
+subtitle: 'Spravuj organizace, pod kterými pořádáš akce a newslettery.'
 action:
   create: 'Vytvořit organizaci'
 status:
@@ -223,5 +223,5 @@ status:
   REJECTED: 'Zamítnutá'
 empty:
   title: 'Zatím žádné organizace'
-  description: 'Vytvoř organizaci, abys mohl pořádat tábory a newslettery.'
+  description: 'Vytvoř organizaci, abys mohl pořádat akce a newslettery.'
 </i18n>

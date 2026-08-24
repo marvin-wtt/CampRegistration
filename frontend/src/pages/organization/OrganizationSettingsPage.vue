@@ -607,7 +607,7 @@ reverify:
   notice: 'Du hast geprüfte Angaben geändert. Beim Speichern wird die Organisation erneut zur Prüfung eingereicht.'
   title: 'Erneute Prüfung erforderlich'
   message: 'Diese Änderungen müssen erneut geprüft werden. Die Organisation wartet wieder auf die Verifizierung.'
-  messageWithEvents: 'Diese Änderungen müssen erneut geprüft werden. Die Organisation wartet wieder auf die Verifizierung, und ihre veröffentlichten Events verschwinden aus dem öffentlichen Verzeichnis und nehmen keine Anmeldungen mehr an.'
+  messageWithEvents: 'Diese Änderungen müssen erneut geprüft werden. Die Organisation wartet wieder auf die Verifizierung, und ihre veröffentlichten Veranstaltungen verschwinden aus dem öffentlichen Verzeichnis und nehmen keine Anmeldungen mehr an.'
   confirm: 'Speichern und einreichen'
 field:
   name: 'Name'
@@ -629,9 +629,9 @@ action:
   delete: 'Organisation löschen'
 danger:
   title: 'Diese Organisation löschen'
-  description: 'Nur möglich, wenn sie keine Events oder Newsletter besitzt.'
-  blocked: 'Besitzt noch {events} Event(s) und {newsletters} Newsletter. Lösche sie zuerst, oder bitte einen Administrator, sie in eine andere Organisation zu verschieben.'
-  viewEvents: 'Events anzeigen'
+  description: 'Nur möglich, wenn sie keine Veranstaltungen oder Newsletter besitzt.'
+  blocked: 'Besitzt noch {events} Veranstaltung(s) und {newsletters} Newsletter. Lösche sie zuerst, oder bitte einen Administrator, sie in eine andere Organisation zu verschieben.'
+  viewEvents: 'Veranstaltungen anzeigen'
   viewNewsletters: 'Newsletter anzeigen'
   confirm:
     title: 'Organisation löschen'
@@ -659,7 +659,7 @@ reverify:
   notice: "Tu as modifié des informations vérifiées. Enregistrer renvoie l'organisation en vérification."
   title: 'Nouvelle vérification requise'
   message: "Ces modifications doivent être vérifiées à nouveau. L'organisation repasse en attente."
-  messageWithEvents: "Ces modifications doivent être vérifiées à nouveau. L'organisation repasse en attente, et ses events publiés quittent l'annuaire public et cessent d'accepter les inscriptions."
+  messageWithEvents: "Ces modifications doivent être vérifiées à nouveau. L'organisation repasse en attente, et ses événements publiés quittent l'annuaire public et cessent d'accepter les inscriptions."
   confirm: 'Enregistrer et soumettre'
 field:
   name: 'Nom'
@@ -681,9 +681,9 @@ action:
   delete: "Supprimer l'organisation"
 danger:
   title: 'Supprimer cette organisation'
-  description: 'Possible uniquement si elle ne possède aucun event ni newsletter.'
-  blocked: "Possède encore {events} event(s) et {newsletters} newsletter(s). Supprime-les d'abord, ou demande à un administrateur de les déplacer vers une autre organisation."
-  viewEvents: 'Voir les events'
+  description: 'Possible uniquement si elle ne possède aucun événement ni newsletter.'
+  blocked: "Possède encore {events} événement(s) et {newsletters} newsletter(s). Supprime-les d'abord, ou demande à un administrateur de les déplacer vers une autre organisation."
+  viewEvents: 'Voir les événements'
   viewNewsletters: 'Voir les newsletters'
   confirm:
     title: "Supprimer l'organisation"
@@ -711,7 +711,7 @@ reverify:
   notice: 'Zmieniono zweryfikowane dane. Zapisanie ponownie skieruje organizację do weryfikacji.'
   title: 'Wymagana ponowna weryfikacja'
   message: 'Te zmiany muszą zostać ponownie sprawdzone. Organizacja wróci do stanu oczekującego.'
-  messageWithEvents: 'Te zmiany muszą zostać ponownie sprawdzone. Organizacja wróci do stanu oczekującego, a jej opublikowane obozy znikną z publicznego katalogu i przestaną przyjmować zapisy.'
+  messageWithEvents: 'Te zmiany muszą zostać ponownie sprawdzone. Organizacja wróci do stanu oczekującego, a jej opublikowane wydarzenia znikną z publicznego katalogu i przestaną przyjmować zapisy.'
   confirm: 'Zapisz i wyślij'
 field:
   name: 'Nazwa'
@@ -733,9 +733,9 @@ action:
   delete: 'Usuń organizację'
 danger:
   title: 'Usuń tę organizację'
-  description: 'Możliwe tylko, gdy nie posiada obozów ani newsletterów.'
-  blocked: 'Nadal posiada {events} obóz/obozy i {newsletters} newsletter(y). Najpierw je usuń lub poproś administratora o przeniesienie ich do innej organizacji.'
-  viewEvents: 'Zobacz obozy'
+  description: 'Możliwe tylko, gdy nie posiada wydarzeń ani newsletterów.'
+  blocked: 'Nadal posiada {events} wydarzenie/wydarzenia i {newsletters} newsletter(y). Najpierw je usuń lub poproś administratora o przeniesienie ich do innej organizacji.'
+  viewEvents: 'Zobacz wydarzenia'
   viewNewsletters: 'Zobacz newslettery'
   confirm:
     title: 'Usuń organizację'
@@ -763,7 +763,7 @@ reverify:
   notice: 'Změnil jsi ověřené údaje. Uložením se organizace vrátí k ověření.'
   title: 'Vyžadováno nové ověření'
   message: 'Tyto změny musí být znovu zkontrolovány. Organizace se vrátí do stavu čekání.'
-  messageWithEvents: 'Tyto změny musí být znovu zkontrolovány. Organizace se vrátí do stavu čekání a její zveřejněné tábory zmizí z veřejného katalogu a přestanou přijímat registrace.'
+  messageWithEvents: 'Tyto změny musí být znovu zkontrolovány. Organizace se vrátí do stavu čekání a její zveřejněné akce zmizí z veřejného katalogu a přestanou přijímat registrace.'
   confirm: 'Uložit a odeslat'
 field:
   name: 'Název'
@@ -785,9 +785,9 @@ action:
   delete: 'Smazat organizaci'
 danger:
   title: 'Smazat tuto organizaci'
-  description: 'Možné pouze, pokud nevlastní žádné tábory ani newslettery.'
-  blocked: 'Stále vlastní {events} tábor(y) a {newsletters} newsletter(y). Nejprve je smaž, nebo požádej správce o jejich přesun do jiné organizace.'
-  viewEvents: 'Zobrazit tábory'
+  description: 'Možné pouze, pokud nevlastní žádné akce ani newslettery.'
+  blocked: 'Stále vlastní {events} akcí a {newsletters} newsletter(y). Nejprve je smaž, nebo požádej správce o jejich přesun do jiné organizace.'
+  viewEvents: 'Zobrazit akce'
   viewNewsletters: 'Zobrazit newslettery'
   confirm:
     title: 'Smazat organizaci'

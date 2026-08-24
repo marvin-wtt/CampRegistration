@@ -342,16 +342,16 @@ error:
 
 <i18n lang="yaml" locale="de">
 action:
-  open_form_for_manager: 'Als Event-Manager öffnen'
+  open_form_for_manager: 'Als Veranstaltungsmanager öffnen'
 
 date:
   opens: 'Öffnet am {date}'
 
 error:
-  upcoming: 'Die Anmeldung für dieses Event hat noch nicht begonnen.'
-  closed: 'Die Anmeldung für dieses Event ist bereits geschlossen.'
-  unavailable: 'Dieses Event ist nicht verfügbar.'
-  not_found: 'Das gesuchte Event konnte nicht gefunden werden. Bitte überprüfen Sie die URL.'
+  upcoming: 'Die Anmeldung für diese Veranstaltung hat noch nicht begonnen.'
+  closed: 'Die Anmeldung für diese Veranstaltung ist bereits geschlossen.'
+  unavailable: 'Diese Veranstaltung ist nicht verfügbar.'
+  not_found: 'Das gesuchte Veranstaltung konnte nicht gefunden werden. Bitte überprüfen Sie die URL.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -362,10 +362,10 @@ date:
   opens: 'Ouvre le {date}'
 
 error:
-  upcoming: "L'inscription à ce event n'a pas encore commencé."
-  closed: "L'inscription à ce event est déjà terminée."
-  unavailable: "Ce event n'est pas disponible."
-  not_found: "Le event que vous recherchez est introuvable. Veuillez vérifier l'URL."
+  upcoming: "L'inscription à cet événement n'a pas encore commencé."
+  closed: "L'inscription à cet événement est déjà terminée."
+  unavailable: "Cet événement n'est pas disponible."
+  not_found: "L'événement que vous recherchez est introuvable. Veuillez vérifier l'URL."
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -376,10 +376,10 @@ date:
   opens: 'Otwiera się {date}'
 
 error:
-  upcoming: 'Rejestracja na ten obóz jeszcze się nie rozpoczęła.'
-  closed: 'Rejestracja na ten obóz jest już zamknięta.'
-  unavailable: 'Ten obóz jest niedostępny.'
-  not_found: 'Nie znaleziono szukanego obozu. Sprawdź adres URL.'
+  upcoming: 'Rejestracja na ten wydarzenie jeszcze się nie rozpoczęła.'
+  closed: 'Rejestracja na ten wydarzenie jest już zamknięta.'
+  unavailable: 'Ten wydarzenie jest niedostępny.'
+  not_found: 'Nie znaleziono szukanego wydarzenia. Sprawdź adres URL.'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -390,8 +390,8 @@ date:
   opens: 'Otevírá se {date}'
 
 error:
-  upcoming: 'Registrace na tento tábor ještě nezačala.'
-  closed: 'Registrace na tento tábor je již uzavřena.'
-  unavailable: 'Tento tábor není dostupný.'
-  not_found: 'Požadovaný tábor nebyl nalezen. Zkontrolujte prosím URL adresu.'
+  upcoming: 'Registrace na tuto akci ještě nezačala.'
+  closed: 'Registrace na tuto akci je již uzavřena.'
+  unavailable: 'Tato akce není dostupná.'
+  not_found: 'Požadovaná akce nebyla nalezena. Zkontrolujte prosím URL adresu.'
 </i18n>

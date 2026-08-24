@@ -11,12 +11,12 @@ export default {
     progress: 'Vorlage wird aktualisiert...',
     success: 'Vorlage erfolgreich aktualisiert',
     error: 'Fehler beim Aktualisieren der Vorlage',
-    invalid: 'Ungültige Event- oder Vorlagen-ID',
+    invalid: 'Ungültige Veranstaltung- oder Vorlagen-ID',
   },
   delete: {
     progress: 'Vorlage wird gelöscht...',
     success: 'Vorlage erfolgreich gelöscht',
     error: 'Fehler beim Löschen der Vorlage',
-    invalid: 'Ungültige Event- oder Vorlagen-ID',
+    invalid: 'Ungültige Veranstaltung- oder Vorlagen-ID',
   },
 };

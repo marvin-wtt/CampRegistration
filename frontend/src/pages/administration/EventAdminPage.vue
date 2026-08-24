@@ -685,7 +685,7 @@ value:
 </i18n>
 
 <i18n lang="yaml" locale="de">
-title: 'Events'
+title: 'Veranstaltungen'
 
 action:
   activate: 'Aktivieren'
@@ -714,32 +714,32 @@ column:
 
 dialog:
   activate:
-    title: 'Event aktivieren'
+    title: 'Veranstaltung aktivieren'
     message: 'Bist du sicher, dass du die Anmeldung für { name } öffnen möchtest?'
     ok: 'Aktivieren'
     cancel: 'Abbrechen'
   deactivate:
-    title: 'Event deaktivieren'
+    title: 'Veranstaltung deaktivieren'
     message: 'Bist du sicher, dass du die Anmeldung für { name } schließen möchtest?'
     ok: 'Deaktivieren'
     cancel: 'Abbrechen'
   delete:
-    title: 'Event löschen'
+    title: 'Veranstaltung löschen'
     message:
       'Du bist dabei, "{ name }" organisiert von "{ organizer }" zu löschen.
       Alle Anmeldungen und zugehörigen Vorlagen gehen verloren.
       Diese Aktion kann nicht rückgängig gemacht werden.
-      Bist du sicher, dass du dieses Event löschen möchtest?'
+      Bist du sicher, dass du diese Veranstaltung löschen möchtest?'
     label: 'Name'
   move:
-    hiddenWarning: 'Diese Organisation ist nicht verifiziert. Das Event wird bis dahin nicht mehr öffentlich angezeigt und nimmt keine Anmeldungen an. Es bleibt veröffentlicht und erscheint nach der Verifizierung wieder.'
+    hiddenWarning: 'Diese Organisation ist nicht verifiziert. Die Veranstaltung wird bis dahin nicht mehr öffentlich angezeigt und nimmt keine Anmeldungen an. Es bleibt veröffentlicht und erscheint nach der Verifizierung wieder.'
   publish:
-    title: 'Event veröffentlichen'
+    title: 'Veranstaltung veröffentlichen'
     message: 'Bist du sicher, dass du { name } veröffentlichen möchtest?'
     ok: 'Veröffentlichen'
     cancel: 'Abbrechen'
   unpublish:
-    title: 'Event zurückziehen'
+    title: 'Veranstaltung zurückziehen'
     message: 'Bist du sicher, dass du { name } zurückziehen möchtest?'
     ok: 'Zurückziehen'
     cancel: 'Abbrechen'
@@ -756,7 +756,7 @@ value:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-title: 'Events'
+title: 'Événements'
 
 action:
   activate: 'Activer'
@@ -785,32 +785,37 @@ column:
 
 dialog:
   activate:
-    title: 'Activer le event'
+    title: "Activer l'événement"
+
     message: 'Es-tu sûr de vouloir ouvrir les inscriptions pour { name } ?'
     ok: 'Activer'
     cancel: 'Annuler'
   deactivate:
-    title: 'Désactiver le event'
+    title: "Désactiver l'événement"
+
     message: 'Es-tu sûr de vouloir fermer les inscriptions pour { name } ?'
     ok: 'Désactiver'
     cancel: 'Annuler'
   delete:
-    title: 'Supprimer le event'
+    title: "Supprimer l'événement"
+
     message:
       'Tu es sur le point de supprimer "{ name }" organisé par "{ organizer }".
       Toutes les inscriptions et les modèles associés seront perdus.
       Cette action est irréversible.
-      Es-tu sûr de vouloir supprimer ce event ?'
+      Es-tu sûr de vouloir supprimer cet événement ?'
     label: 'Nom'
   move:
-    hiddenWarning: "Cette organisation n'est pas vérifiée : le event sera masqué de l'annuaire public et cessera d'accepter les inscriptions. Il reste publié et réapparaîtra après la vérification."
+    hiddenWarning: "Cette organisation n'est pas vérifiée : l'événement sera masqué de l'annuaire public et cessera d'accepter les inscriptions. Il reste publié et réapparaîtra après la vérification."
   publish:
-    title: 'Publier le event'
+    title: "Publier l'événement"
+
     message: 'Es-tu sûr de vouloir publier { name } ?'
     ok: 'Publier'
     cancel: 'Annuler'
   unpublish:
-    title: 'Dépublier le event'
+    title: "Dépublier l'événement"
+
     message: 'Es-tu sûr de vouloir dépublier { name } ?'
     ok: 'Dépublier'
     cancel: 'Annuler'
@@ -827,7 +832,7 @@ value:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-title: 'Obozy'
+title: 'Wydarzenia'
 
 action:
   activate: 'Aktywuj'
@@ -856,31 +861,31 @@ column:
 
 dialog:
   activate:
-    title: 'Aktywuj obóz'
+    title: 'Aktywuj wydarzenie'
     message: 'Czy na pewno chcesz otworzyć rejestrację dla { name }?'
     ok: 'Aktywuj'
     cancel: 'Anuluj'
   deactivate:
-    title: 'Dezaktywuj obóz'
+    title: 'Dezaktywuj wydarzenie'
     message: 'Czy na pewno chcesz zamknąć rejestrację dla { name }?'
     ok: 'Dezaktywuj'
     cancel: 'Anuluj'
   delete:
-    title: 'Usuń obóz'
+    title: 'Usuń wydarzenie'
     message: 'Zamierzasz usunąć "{ name }" zorganizowany przez "{ organizer }".
       Wszystkie zgłoszenia i powiązane szablony zostaną utracone.
       Ta akcja jest nieodwracalna.
-      Czy na pewno chcesz usunąć ten obóz?'
+      Czy na pewno chcesz usunąć to wydarzenie?'
     label: 'Nazwa'
   move:
-    hiddenWarning: 'Ta organizacja nie jest zweryfikowana, więc obóz zostanie ukryty w publicznym katalogu i przestanie przyjmować zapisy. Pozostaje opublikowany i wróci po weryfikacji.'
+    hiddenWarning: 'Ta organizacja nie jest zweryfikowana, więc wydarzenie zostanie ukryty w publicznym katalogu i przestanie przyjmować zapisy. Pozostaje opublikowany i wróci po weryfikacji.'
   publish:
-    title: 'Opublikuj obóz'
+    title: 'Opublikuj wydarzenie'
     message: 'Czy na pewno chcesz opublikować { name }?'
     ok: 'Opublikuj'
     cancel: 'Anuluj'
   unpublish:
-    title: 'Cofnij publikację obozu'
+    title: 'Cofnij publikację wydarzenia'
     message: 'Czy na pewno chcesz cofnąć publikację { name }?'
     ok: 'Cofnij'
     cancel: 'Anuluj'
@@ -897,7 +902,7 @@ value:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-title: 'Tábory'
+title: 'Akce'
 
 action:
   activate: 'Aktivovat'
@@ -926,31 +931,31 @@ column:
 
 dialog:
   activate:
-    title: 'Aktivovat tábor'
+    title: 'Aktivovat akci'
     message: 'Opravdu chcete otevřít registraci pro { name }?'
     ok: 'Aktivovat'
     cancel: 'Zrušit'
   deactivate:
-    title: 'Deaktivovat tábor'
+    title: 'Deaktivovat akci'
     message: 'Opravdu chcete uzavřít registraci pro { name }?'
     ok: 'Deaktivovat'
     cancel: 'Zrušit'
   delete:
-    title: 'Smazat tábor'
+    title: 'Smazat akci'
     message: 'Chystáte se smazat "{ name }" organizovaný "{ organizer }".
       Všechny přihlášky a přidružené šablony budou ztraceny.
       Tato akce je nevratná.
-      Opravdu chcete tento tábor smazat?'
+      Opravdu chcete tuto akci smazat?'
     label: 'Název'
   move:
-    hiddenWarning: 'Tato organizace není ověřená, takže tábor bude skryt z veřejného katalogu a přestane přijímat registrace. Zůstává zveřejněn a vrátí se po ověření.'
+    hiddenWarning: 'Tato organizace není ověřená, takže akce bude skryta z veřejného katalogu a přestane přijímat registrace. Zůstává zveřejněna a vrátí se po ověření.'
   publish:
-    title: 'Zveřejnit tábor'
+    title: 'Zveřejnit akci'
     message: 'Opravdu chcete zveřejnit { name }?'
     ok: 'Zveřejnit'
     cancel: 'Zrušit'
   unpublish:
-    title: 'Zrušit zveřejnění tábora'
+    title: 'Zrušit zveřejnění akce'
     message: 'Opravdu chcete zrušit zveřejnění { name }?'
     ok: 'Zrušit'
     cancel: 'Zrušit'

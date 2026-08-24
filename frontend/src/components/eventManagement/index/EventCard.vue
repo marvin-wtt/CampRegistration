@@ -908,17 +908,17 @@ status:
   closed: 'Anmeldung geschlossen'
   pendingVerification: 'Verifizierung ausstehend'
   organizationRejected: 'Organisation abgelehnt'
-  pendingVerificationHint: '{organization} wartet noch auf die Verifizierung. Dieses Event ist daher nicht öffentlich sichtbar und lehnt Anmeldungen ab — unabhängig vom Anmeldezeitraum.'
-  organizationRejectedHint: '{organization} wurde nicht verifiziert. Dieses Event ist daher nicht öffentlich sichtbar und lehnt Anmeldungen ab. Korrigiere die Angaben und reiche sie erneut zur Verifizierung ein.'
+  pendingVerificationHint: '{organization} wartet noch auf die Verifizierung. Diese Veranstaltung ist daher nicht öffentlich sichtbar und lehnt Anmeldungen ab — unabhängig vom Anmeldezeitraum.'
+  organizationRejectedHint: '{organization} wurde nicht verifiziert. Diese Veranstaltung ist daher nicht öffentlich sichtbar und lehnt Anmeldungen ab. Korrigiere die Angaben und reiche sie erneut zur Verifizierung ein.'
 share:
-  closed: 'Die Anmeldung ist geschlossen — Besucher sehen das Event, können sich aber nicht anmelden.'
-  upcoming: 'Die Anmeldung ist noch nicht geöffnet — Besucher sehen das Event, können sich aber noch nicht anmelden.'
-  unverified: 'Solange {organization} nicht verifiziert ist, können nur die Verantwortlichen dieses Events den Link öffnen.'
+  closed: 'Die Anmeldung ist geschlossen — Besucher sehen die Veranstaltung, können sich aber nicht anmelden.'
+  upcoming: 'Die Anmeldung ist noch nicht geöffnet — Besucher sehen die Veranstaltung, können sich aber noch nicht anmelden.'
+  unverified: 'Solange {organization} nicht verifiziert ist, können nur die Verantwortlichen dieser Veranstaltung den Link öffnen.'
 dialog:
   delete:
-    title: 'Event löschen'
-    message: 'Sind Sie sicher, dass Sie dieses Event löschen möchten? Alle Anmeldungen gehen verloren. Dieses Event kann nicht als Vorlage für zukünftige Events verwendet werden.'
-    label: 'Event-Name'
+    title: 'Veranstaltung löschen'
+    message: 'Sind Sie sicher, dass Sie diese Veranstaltung löschen möchten? Alle Anmeldungen gehen verloren. Diese Veranstaltung kann nicht als Vorlage für zukünftige Veranstaltungen verwendet werden.'
+    label: 'Veranstaltungsname'
 notification:
   share_success: 'Link in die Zwischenablage kopiert'
   share_fail: 'Fehler beim Kopieren des Links in die Zwischenablage'
@@ -945,17 +945,21 @@ status:
   closed: 'Inscription fermée'
   pendingVerification: 'Vérification en attente'
   organizationRejected: 'Organisation refusée'
-  pendingVerificationHint: "{organization} attend encore sa vérification : ce event est masqué de la liste publique et refuse les inscriptions, quelle que soit sa période d'inscription."
-  organizationRejectedHint: "{organization} n'a pas été vérifiée : ce event est masqué de la liste publique et refuse les inscriptions. Corrige ses informations et soumets-la à nouveau."
+  pendingVerificationHint: "{organization} attend encore sa vérification : cet événement est masqué de la liste publique et refuse les inscriptions, quelle que soit sa période d'inscription."
+  organizationRejectedHint: "{organization} n'a pas été vérifiée : cet événement est masqué de la liste publique et refuse les inscriptions. Corrige ses informations et soumets-la à nouveau."
 share:
-  closed: 'Les inscriptions sont fermées — les visiteurs peuvent voir le event mais pas s’inscrire.'
-  upcoming: 'Les inscriptions ne sont pas encore ouvertes — les visiteurs peuvent voir le event mais pas encore s’inscrire.'
-  unverified: 'Tant que {organization} n’est pas vérifiée, seuls les responsables de ce event peuvent ouvrir le lien.'
+  closed: "Les inscriptions sont fermées — les visiteurs peuvent voir l'événement mais pas s’inscrire."
+
+  upcoming: "Les inscriptions ne sont pas encore ouvertes — les visiteurs peuvent voir l'événement mais pas encore s’inscrire."
+
+  unverified: 'Tant que {organization} n’est pas vérifiée, seuls les responsables de cet événement peuvent ouvrir le lien.'
 dialog:
   delete:
-    title: 'Supprimer le event'
-    message: 'Êtes-vous sûr de vouloir supprimer ce event ? Toutes les inscriptions seront perdues. Ce event ne peut pas être utilisé comme modèle pour les events futurs.'
-    label: 'Nom du event'
+    title: "Supprimer l'événement"
+
+    message: 'Êtes-vous sûr de vouloir supprimer cet événement ? Toutes les inscriptions seront perdues. Cet événement ne peut pas être utilisé comme modèle pour les événements futurs.'
+    label: "Nom de l'événement"
+
 notification:
   share_success: 'Lien copié dans le presse-papiers'
   share_fail: 'Échec de la copie du lien dans le presse-papiers'
@@ -982,17 +986,17 @@ status:
   closed: 'Rejestracja zamknięta'
   pendingVerification: 'Oczekuje na weryfikację'
   organizationRejected: 'Organizacja odrzucona'
-  pendingVerificationHint: '{organization} wciąż oczekuje na weryfikację, więc ten obóz jest ukryty na liście publicznej i odrzuca zapisy — niezależnie od okresu rejestracji.'
-  organizationRejectedHint: '{organization} nie została zweryfikowana, więc ten obóz jest ukryty na liście publicznej i odrzuca zapisy. Popraw dane i zgłoś ją ponownie do weryfikacji.'
+  pendingVerificationHint: '{organization} wciąż oczekuje na weryfikację, więc to wydarzenie jest ukryte na liście publicznej i odrzuca zapisy — niezależnie od okresu rejestracji.'
+  organizationRejectedHint: '{organization} nie została zweryfikowana, więc to wydarzenie jest ukryte na liście publicznej i odrzuca zapisy. Popraw dane i zgłoś ją ponownie do weryfikacji.'
 share:
-  closed: 'Rejestracja jest zamknięta — odwiedzający zobaczą obóz, ale nie mogą się zapisać.'
-  upcoming: 'Rejestracja jeszcze się nie rozpoczęła — odwiedzający zobaczą obóz, ale nie mogą się jeszcze zapisać.'
-  unverified: 'Dopóki {organization} nie zostanie zweryfikowana, link mogą otworzyć tylko osoby zarządzające tym obozem.'
+  closed: 'Rejestracja jest zamknięta — odwiedzający zobaczą wydarzenie, ale nie mogą się zapisać.'
+  upcoming: 'Rejestracja jeszcze się nie rozpoczęła — odwiedzający zobaczą wydarzenie, ale nie mogą się jeszcze zapisać.'
+  unverified: 'Dopóki {organization} nie zostanie zweryfikowana, link mogą otworzyć tylko osoby zarządzające tym wydarzeniem.'
 dialog:
   delete:
-    title: 'Usuń obóz'
-    message: 'Czy na pewno chcesz usunąć ten obóz? Wszystkie zgłoszenia zostaną utracone. Ten obóz nie będzie mógł być użyty jako szablon dla przyszłych obozów.'
-    label: 'Nazwa obozu'
+    title: 'Usuń wydarzenie'
+    message: 'Czy na pewno chcesz usunąć to wydarzenie? Wszystkie zgłoszenia zostaną utracone. To wydarzenie nie będzie mogło być użyte jako szablon dla przyszłych wydarzeń.'
+    label: 'Nazwa wydarzenia'
 notification:
   share_success: 'Link skopiowany do schowka'
   share_fail: 'Błąd podczas kopiowania linku do schowka'
@@ -1019,17 +1023,17 @@ status:
   closed: 'Registrace uzavřena'
   pendingVerification: 'Čeká na ověření'
   organizationRejected: 'Organizace zamítnuta'
-  pendingVerificationHint: '{organization} stále čeká na ověření, takže tento tábor je skrytý ve veřejném seznamu a odmítá registrace — bez ohledu na registrační období.'
-  organizationRejectedHint: '{organization} nebyla ověřena, takže tento tábor je skrytý ve veřejném seznamu a odmítá registrace. Uprav její údaje a odešli ji znovu k ověření.'
+  pendingVerificationHint: '{organization} stále čeká na ověření, takže tato akce je skrytá ve veřejném seznamu a odmítá registrace — bez ohledu na registrační období.'
+  organizationRejectedHint: '{organization} nebyla ověřena, takže tato akce je skrytá ve veřejném seznamu a odmítá registrace. Uprav její údaje a odešli ji znovu k ověření.'
 share:
-  closed: 'Registrace je uzavřena — návštěvníci tábor uvidí, ale nemohou se přihlásit.'
-  upcoming: 'Registrace ještě nezačala — návštěvníci tábor uvidí, ale zatím se nemohou přihlásit.'
-  unverified: 'Dokud není {organization} ověřena, může odkaz otevřít pouze správa tohoto tábora.'
+  closed: 'Registrace je uzavřena — návštěvníci akci uvidí, ale nemohou se přihlásit.'
+  upcoming: 'Registrace ještě nezačala — návštěvníci akci uvidí, ale zatím se nemohou přihlásit.'
+  unverified: 'Dokud není {organization} ověřena, může odkaz otevřít pouze správa této akce.'
 dialog:
   delete:
-    title: 'Smazat tábor'
-    message: 'Opravdu chcete tento tábor smazat? Všechny registrace budou ztraceny. Tento tábor nebude možné použít jako šablonu pro budoucí tábory.'
-    label: 'Název tábora'
+    title: 'Smazat akci'
+    message: 'Opravdu chcete tuto akci smazat? Všechny registrace budou ztraceny. Tuto akci nebude možné použít jako šablonu pro budoucí akce.'
+    label: 'Název akce'
 notification:
   share_success: 'Odkaz zkopírován do schránky'
   share_fail: 'Chyba při kopírování odkazu do schránky'
