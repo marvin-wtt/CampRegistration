@@ -50,7 +50,7 @@
                 size="sm"
                 icon="lock"
               >
-                {{ t('private') }}
+                {{ t('listed') }}
               </q-chip>
               <q-chip
                 :color="statusColor(camp.registrationStatus)"
@@ -120,7 +120,7 @@ onMounted(async () => {
 <i18n lang="yaml" locale="en">
 title: 'Camps'
 scope: 'You can see every camp of this organization and close its registration. Viewing participants requires a separate invitation to the camp.'
-private: 'Private'
+listed: 'Unlisted'
 empty: 'This organization has no camps yet'
 status:
   open: 'Registration open'
@@ -131,7 +131,7 @@ status:
 <i18n lang="yaml" locale="de">
 title: 'Camps'
 scope: 'Du siehst jedes Camp dieser Organisation und kannst dessen Anmeldung schließen. Für die Teilnehmenden ist eine separate Einladung zum Camp nötig.'
-private: 'Privat'
+listed: 'Nicht gelistet'
 empty: 'Diese Organisation hat noch keine Camps'
 status:
   open: 'Anmeldung offen'
@@ -142,7 +142,7 @@ status:
 <i18n lang="yaml" locale="fr">
 title: 'Camps'
 scope: 'Tu vois chaque camp de cette organisation et peux en fermer les inscriptions. Voir les participants nécessite une invitation distincte au camp.'
-private: 'Privé'
+listed: 'Non répertorié'
 empty: "Cette organisation n'a pas encore de camps"
 status:
   open: 'Inscriptions ouvertes'
@@ -153,7 +153,7 @@ status:
 <i18n lang="yaml" locale="pl">
 title: 'Obozy'
 scope: 'Widzisz każdy obóz tej organizacji i możesz zamknąć jego rejestrację. Podgląd uczestników wymaga osobnego zaproszenia do obozu.'
-private: 'Prywatny'
+listed: 'Ukryty'
 empty: 'Ta organizacja nie ma jeszcze obozów'
 status:
   open: 'Rejestracja otwarta'
@@ -164,7 +164,7 @@ status:
 <i18n lang="yaml" locale="cs">
 title: 'Tábory'
 scope: 'Vidíš každý tábor této organizace a můžeš uzavřít jeho registraci. Zobrazení účastníků vyžaduje samostatné pozvání do tábora.'
-private: 'Soukromý'
+listed: 'Skrytý'
 empty: 'Tato organizace zatím nemá žádné tábory'
 status:
   open: 'Registrace otevřena'

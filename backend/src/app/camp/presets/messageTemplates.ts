@@ -145,22 +145,27 @@ const messageTemplatesObj = {
     body: {
       en: `<p>Hi {{ registration.computedData.firstName }},</p>
            <p>Your registration details for camp <strong>{{ camp.name }}</strong> have been updated. Please review the changes and let us know if everything is correct.</p>
+           <p>{{ registration.changes }}</p>
            <p>If you have any questions, feel free to reply to this email.</p>
            <p>Best regards,<br>Your Camp Team</p>`,
       de: `<p>Hallo {{ registration.computedData.firstName }},</p>
            <p>Deine Anmeldedaten für das Camp <strong>{{ camp.name }}</strong> wurden aktualisiert. Bitte prüfe die Änderungen und gib uns Bescheid, ob alles passt.</p>
+           <p>{{ registration.changes }}</p>
            <p>Wenn du Fragen hast, antworte einfach auf diese E-Mail.</p>
            <p>Herzliche Grüße<br>Dein Camp Team</p>`,
       fr: `<p>Salut {{ registration.computedData.firstName }},</p>
            <p>Les détails de ton inscription au camp <strong>{{ camp.name }}</strong> ont été mis à jour. Merci de vérifier les modifications et de nous dire si tout est en ordre.</p>
+           <p>{{ registration.changes }}</p>
            <p>Si tu as des questions, n'hésite pas à répondre directement à cet e-mail.</p>
            <p>Bien à toi,<br>Ton équipe du camp</p>`,
       pl: `<p>Cześć {{ registration.computedData.firstName }},</p>
            <p>Twoje dane rejestracyjne na obóz <strong>{{ camp.name }}</strong> zostały zaktualizowane. Sprawdź proszę zmiany i daj nam znać, czy wszystko się zgadza.</p>
+           <p>{{ registration.changes }}</p>
            <p>W razie pytań możesz odpowiedzieć na tego maila.</p>
            <p>Serdecznie pozdrawiamy,<br>Zespół obozu</p>`,
       cs: `<p>Ahoj {{ registration.computedData.firstName }},</p>
            <p>Tvá registrační data pro tábor <strong>{{ camp.name }}</strong> byla aktualizována. Zkontroluj prosím změny a dej nám vědět, zda je vše v pořádku.</p>
+           <p>{{ registration.changes }}</p>
            <p>Pokud máš dotazy, odpověz na tento e-mail.</p>
            <p>S pozdravem,<br>Tým tábora</p>`,
     },

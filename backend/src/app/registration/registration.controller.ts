@@ -15,6 +15,7 @@ import {
   RegistrationUpdatedMessage,
   RegistrationWaitlistedMessage,
 } from '#app/registration/registration.messages';
+import { changesForRegistration } from '#app/registration/registration.changes';
 import { BaseController } from '#core/base/BaseController';
 import { RealtimeService } from '#core/realtime/RealtimeService';
 import { inject } from 'inversify';
@@ -114,7 +115,11 @@ export class RegistrationController extends BaseController {
         data !== undefined &&
         !isDeepStrictEqual(previousRegistration.data, registration.data)
       ) {
-        await RegistrationUpdatedMessage.enqueueFor(camp, registration);
+        await RegistrationUpdatedMessage.enqueueFor(
+          camp,
+          registration,
+          changesForRegistration(camp, previousRegistration, registration),
+        );
       }
 
       if (

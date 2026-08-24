@@ -1,0 +1,3 @@
+-- This migration exists only to host the co-located data migration in
+-- `migration.ts`, which appends the `registration.changes` token to the
+-- `registration_updated` message templates that predate it.

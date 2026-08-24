@@ -40,7 +40,7 @@ export default {
         information:
           '{{ organization.name }} wurde nicht verifiziert. ' +
           'Bis dahin kann sie keine Camps veröffentlichen und keine Newsletter versenden. ' +
-          'Du kannst die Angaben korrigieren und sie erneut einreichen.',
+          'Wenn du die registrierten Angaben korrigierst, wird sie erneut geprüft.',
         reasonLabel: 'Grund',
         button: 'Angaben prüfen',
         greeting: 'Viele Grüße',

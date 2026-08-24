@@ -40,7 +40,7 @@ export default {
         information:
           '{{ organization.name }} has not been verified. ' +
           'It cannot publish camps or send newsletters until it is. ' +
-          'You can correct the details and submit it again.',
+          'Correcting its registered details puts it back into review.',
         reasonLabel: 'Reason',
         button: 'Review the details',
         greeting: 'Best regards,',

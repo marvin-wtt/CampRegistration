@@ -2,6 +2,10 @@ export default {
   email: {
     reason: '$t(email:footer.cause) vous êtes inscrit à ce camp.',
     privacyLink: 'Informations sur la protection des données pour ce camp',
+    changes: {
+      cleared: 'supprimé',
+      file: 'fichier mis à jour',
+    },
     managerNotification: {
       subject: 'Nouvelle inscription | {{ camp.name }}',
       preview: 'Nouvelle inscription pour le camp : {{ camp.name }}',

@@ -246,22 +246,42 @@
           </div>
         </div>
       </q-scroll-area>
+
+      <q-separator />
+
+      <q-card-actions
+        align="right"
+        class="q-pa-md"
+      >
+        <m-btn
+          outline
+          primary
+          icon="assignment"
+          :disable="!camp"
+          :label="t('action.showFormData')"
+          @click="showFormData"
+        />
+      </q-card-actions>
     </q-card>
   </q-dialog>
 </template>
 
 <script setup lang="ts">
-import { useDialogPluginComponent } from 'quasar';
+import { useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { computed, watch } from 'vue';
 import { storeToRefs } from 'pinia';
+import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { formatPersonName } from '@/utils/formatters';
 import { useRegistrationsStore } from '@/stores/registration-store';
+import { useCampDetailsStore } from '@/stores/camp-details-store';
 import RegistrationDialogHeader from '@/components/campManagement/table/dialogs/RegistrationDialogHeader.vue';
+import RegistrationFormViewDialog from '@/components/campManagement/table/dialogs/RegistrationFormViewDialog.vue';
 
 defineEmits([...useDialogPluginComponent.emits]);
 
+const quasar = useQuasar();
 // eslint-disable-next-line @typescript-eslint/unbound-method
 const { t, te, locale } = useI18n();
 const { to } = useObjectTranslation();
@@ -272,6 +292,7 @@ const { registrationId } = defineProps<{
 }>();
 
 const { data: registrations } = storeToRefs(useRegistrationsStore());
+const { data: camp } = storeToRefs(useCampDetailsStore());
 
 // Reactive lookup instead of a static snapshot, so edits made elsewhere
 // (e.g. the table's inline cell editors) are reflected while the dialog is open.
@@ -385,6 +406,20 @@ const country = computed<string | null>(() => {
 
   return te(`country.${country}`) ? t(`country.${country}`) : country;
 });
+
+function showFormData(): void {
+  if (!camp.value || !registration.value) {
+    return;
+  }
+
+  quasar.dialog({
+    component: RegistrationFormViewDialog,
+    componentProps: {
+      camp: camp.value,
+      data: registration.value.data,
+    },
+  });
+}
 </script>
 
 <i18n lang="yaml" locale="en">
@@ -423,6 +458,7 @@ timeline:
 
 action:
   close: 'Close'
+  showFormData: 'Show form data'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -461,6 +497,7 @@ timeline:
 
 action:
   close: 'Schließen'
+  showFormData: 'Formulardaten anzeigen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -499,6 +536,7 @@ timeline:
 
 action:
   close: 'Fermer'
+  showFormData: 'Afficher les données du formulaire'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -537,6 +575,7 @@ timeline:
 
 action:
   close: 'Zamknij'
+  showFormData: 'Pokaż dane formularza'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -575,6 +614,7 @@ timeline:
 
 action:
   close: 'Zavřít'
+  showFormData: 'Zobrazit data formuláře'
 </i18n>
 
 <style scoped>

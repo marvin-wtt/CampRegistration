@@ -7,6 +7,7 @@ import {
   RegistrationFactory,
   UserFactory,
   CampManagerFactory,
+  MessageDeliveryFactory,
   MessageTemplateFactory,
 } from '../../../prisma/factories/index.js';
 import { Camp, Prisma } from '#generated/prisma/client.js';
@@ -1619,6 +1620,74 @@ describe('/api/v1/camps/:campId/registrations', () => {
         });
       });
 
+      it('should list the changed fields with their new values', async () => {
+        const { camp, accessToken } = await createCampWithManagerAndToken({
+          ...campWithEmail,
+          messageTemplates: {
+            create: MessageTemplateFactory.build({
+              event: 'registration_updated',
+              subject: 'Registration updated',
+              body: '<p>{{ registration.changes }}</p>',
+            }),
+          },
+        });
+        const registration = await createRegistration(camp);
+
+        const data = {
+          email: 'test@example.com',
+          first_name: 'Jhon',
+          last_name: 'Doe',
+        };
+
+        await request()
+          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .send({ data })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        expectEmailWith({
+          html: expect.stringContaining(
+            '<ul class="registration-changes"',
+          ) as string,
+        });
+        expectEmailWith({
+          html: expect.stringContaining('Jhon') as string,
+        });
+
+        // The durable copy names what moved without repeating what it now says.
+        const delivery = await prisma.messageDelivery.findFirst({
+          where: { registrationId: registration.id },
+        });
+        expect(delivery?.body).toContain('first_name');
+        expect(delivery?.body).not.toContain('Jhon');
+      });
+
+      it('should not add a change list when the template has no token', async () => {
+        const { camp, accessToken } = await createCampWithManagerAndToken({
+          ...campWithEmail,
+          messageTemplates: {
+            create: MessageTemplateFactory.build({
+              event: 'registration_updated',
+              subject: 'Registration updated',
+              body: '<p>Your registration was updated.</p>',
+            }),
+          },
+        });
+        const registration = await createRegistration(camp);
+
+        await request()
+          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .send({ data: { email: 'test@example.com', first_name: 'Jhon' } })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        expectEmailWith({
+          html: expect.not.stringContaining(
+            '<ul class="registration-changes"',
+          ) as string,
+        });
+      });
+
       it('should not send update email when suppressed', async () => {
         const { camp, accessToken } = await createCampWithManagerAndToken({
           ...campWithEmail,
@@ -2248,6 +2317,25 @@ describe('/api/v1/camps/:campId/registrations', () => {
         expect(registrationCount).toBe(expectedCount);
       },
     );
+
+    it('should delete the mails rendered for the registration', async () => {
+      const { camp, accessToken } = await createCampWithManagerAndToken();
+      const registration = await createRegistration(camp);
+      await MessageDeliveryFactory.create({
+        registration: { connect: { id: registration.id } },
+      });
+
+      await request()
+        .delete(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+        .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expect(204);
+
+      // Erasing a participant erases what was mailed about them; a delivery row
+      // that outlived its registration used to keep their data indefinitely.
+      const deliveries = await prisma.messageDelivery.count();
+      expect(deliveries).toBe(0);
+    });
 
     it('should respond with `403` status code when user is not camp manager', async () => {
       const camp = await CampFactory.create();

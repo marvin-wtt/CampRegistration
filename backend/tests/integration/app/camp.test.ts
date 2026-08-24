@@ -8,6 +8,7 @@ import {
   RegistrationFactory,
   TableTemplateFactory,
   FileFactory,
+  MessageDeliveryFactory,
   MessageTemplateFactory,
   OrganizationFactory,
 } from '../../../prisma/factories/index.js';
@@ -1520,6 +1521,31 @@ describe('/api/v1/camps', () => {
         de: 5,
         fr: 8,
       });
+    });
+
+    it('should delete the mails rendered for the camp', async () => {
+      const { camp, accessToken } = await createCampWithManagerAndToken(
+        {},
+        'DIRECTOR',
+      );
+      const registration = await RegistrationFactory.create({
+        camp: { connect: { id: camp.id } },
+      });
+      await MessageDeliveryFactory.create({
+        registration: { connect: { id: registration.id } },
+      });
+
+      await request()
+        .delete(`/api/v1/camps/${camp.id}`)
+        .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expect(204);
+
+      // Deleting a camp is the retention action the reminder mail asks for. It
+      // used to leave every rendered body behind, orphaned and unreachable —
+      // the cascade now runs camp → registration → delivery.
+      const deliveries = await prisma.messageDelivery.count();
+      expect(deliveries).toBe(0);
     });
 
     it('should respond with `403` status code when user is not camp manager', async () => {

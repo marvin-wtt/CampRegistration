@@ -26,6 +26,13 @@ import { addressLikeToString } from '#app/mail/mail.utils';
 import { resolve } from '#core/ioc/container';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
+import {
+  type RegistrationChange,
+  redactChangeValues,
+  renderChangesHtml,
+  renderChangesText,
+  unwrapChangesBlock,
+} from './registration.changes.js';
 
 function dateToString(date: Date | string | null): string | null {
   if (date === null) {
@@ -159,14 +166,10 @@ interface RegistrationTemplatePayload {
   camp: Camp;
   message: RenderableMessage;
   email: string;
+  changes?: RegistrationChange[];
 }
 
-export class RegistrationTemplateMessage extends RegistrationMessage<{
-  registration: Registration;
-  camp: Camp;
-  message: RenderableMessage;
-  email: string;
-}> {
+export class RegistrationTemplateMessage extends RegistrationMessage<RegistrationTemplatePayload> {
   static readonly type: string = 'registration:template:simple';
 
   protected from(): Address {
@@ -211,7 +214,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
       },
     });
 
-    return compile(this.context());
+    return compile(this.context('text'));
   }
 
   protected replyTo(): AddressLike | undefined {
@@ -233,7 +236,21 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
     return super.priority();
   }
 
-  private context(): object {
+  /**
+   * What changed about this registration, for the `registration.changes` token.
+   *
+   * Only the "updated" event has a previous version to compare against; for
+   * every other event the token renders to nothing rather than erroring, so a
+   * manager who pastes it into the wrong template gets an empty line, not a
+   * broken mail.
+   */
+  protected renderChanges(
+    _format: 'html' | 'text',
+  ): Handlebars.SafeString | string {
+    return '';
+  }
+
+  private context(format: 'html' | 'text'): object {
     const locale = this.payload.registration.country ?? this.locale();
     const camp = this.payload.camp;
 
@@ -271,6 +288,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
           emails: this.payload.registration.emails,
         },
         customData: this.payload.registration.customData ?? {},
+        changes: this.renderChanges(format),
         locale: this.payload.registration.locale,
         room: null,
         // Use snake case because form keys should be snake case too
@@ -312,7 +330,8 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
         },
         {
           subject: mail.subject,
-          body: mail.html ?? mail.text ?? '',
+          // The mail keeps its values; the durable copy keeps only the labels.
+          body: redactChangeValues(mail.html ?? mail.text ?? ''),
           priority: mail.priority,
           to: mail.to ? addressLikeToString(mail.to) : undefined,
           cc: mail.cc ? addressLikeToString(mail.cc) : undefined,
@@ -350,7 +369,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
     return {
       template: 'registration-message',
       context: {
-        body: compile(this.context()),
+        body: unwrapChangesBlock(compile(this.context('html'))),
         campName: translateObject(this.payload.camp.name, locale),
         reason: this.reason(),
         // Art. 13 information has to stay reachable after submission, and the
@@ -366,6 +385,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
     camp: Camp,
     registration: Registration,
     message: RenderableMessage,
+    changes?: RegistrationChange[],
   ): RegistrationTemplatePayload[] | null {
     const emails = Array.from(new Set(registration.emails));
     if (emails.length === 0) {
@@ -378,21 +398,8 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
       registration,
       message,
       email,
+      changes,
     }));
-  }
-
-  static async enqueueFor(
-    this: typeof RegistrationTemplateMessage,
-    camp: Camp,
-    registration: Registration,
-    message: RenderableMessage,
-  ): Promise<void> {
-    const payloads = this.prepareForRegistration(camp, registration, message);
-    if (!payloads) {
-      return;
-    }
-
-    await this.enqueueMany(payloads);
   }
 
   static async enqueueForAll(
@@ -407,20 +414,6 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
     );
 
     await this.enqueueBulk(payloads);
-  }
-
-  static async sendFor(
-    this: typeof RegistrationTemplateMessage,
-    camp: Camp,
-    registration: Registration,
-    message: RenderableMessage,
-  ): Promise<void> {
-    const payloads = this.prepareForRegistration(camp, registration, message);
-    if (!payloads) {
-      return;
-    }
-
-    await this.sendMany(payloads);
   }
 }
 
@@ -502,6 +495,7 @@ class RegistrationEventMessage extends RegistrationTemplateMessage {
     this: typeof RegistrationEventMessage,
     camp: Camp,
     registration: Registration,
+    changes?: RegistrationChange[],
   ): Promise<void> {
     const messageTemplate = await loadMessageTemplate(
       camp,
@@ -519,6 +513,7 @@ class RegistrationEventMessage extends RegistrationTemplateMessage {
       camp,
       registration,
       templateToRenderable(messageTemplate),
+      changes,
     );
 
     if (!payload) {
@@ -532,6 +527,7 @@ class RegistrationEventMessage extends RegistrationTemplateMessage {
     this: typeof RegistrationEventMessage,
     camp: Camp,
     registration: Registration,
+    changes?: RegistrationChange[],
   ): Promise<void> {
     const messageTemplate = await loadMessageTemplate(
       camp,
@@ -546,6 +542,7 @@ class RegistrationEventMessage extends RegistrationTemplateMessage {
       camp,
       registration,
       templateToRenderable(messageTemplate),
+      changes,
     );
 
     if (!payload) {
@@ -591,6 +588,32 @@ export class RegistrationUpdatedMessage extends RegistrationEventMessage {
     return Promise.resolve([
       // Attach registration data PDF here
     ]);
+  }
+
+  protected renderChanges(
+    format: 'html' | 'text',
+  ): Handlebars.SafeString | string {
+    // Absent for a job enqueued before this field existed, and for any caller
+    // that supplied none. Nothing to list is not an error worth failing a send
+    // over — the participant still learns they were edited.
+    const changes = this.payload.changes;
+    if (!changes?.length) {
+      return '';
+    }
+
+    const t = this.getTg();
+    const labels = {
+      cleared: t('registration:email.changes.cleared'),
+      file: t('registration:email.changes.file'),
+    };
+
+    if (format === 'text') {
+      return renderChangesText(changes, labels);
+    }
+
+    // Values are escaped as the markup is built, so the result is safe to emit
+    // through a double-stash and must not be escaped a second time.
+    return new Handlebars.SafeString(renderChangesHtml(changes, labels));
   }
 }
 

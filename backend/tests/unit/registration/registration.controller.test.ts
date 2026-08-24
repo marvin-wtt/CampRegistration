@@ -35,7 +35,25 @@ const controller = new RegistrationController(
   realtimeService,
 );
 
-const camp = { id: 'camp-1' } as unknown as Camp;
+// A real form and the variables `setVariables` reads, so the update path can
+// actually diff the answers rather than silently falling back to an empty list.
+const camp = {
+  id: 'camp-1',
+  countries: ['de'],
+  name: { en: 'Camp' },
+  organizer: { en: 'Organizer' },
+  contactEmail: { en: 'camp@example.com' },
+  maxParticipants: { en: 10 },
+  startAt: new Date('2026-07-01T00:00:00.000Z'),
+  endAt: new Date('2026-07-14T00:00:00.000Z'),
+  minAge: 10,
+  maxAge: 18,
+  location: null,
+  price: { en: 100 },
+  form: {
+    elements: [{ type: 'text', name: 'first_name', title: 'First name' }],
+  },
+} as unknown as Camp;
 
 // Mirrors the `registrationInclude` used throughout RegistrationService, so
 // the returned shape (bed + files) matches what the controller receives.
@@ -326,9 +344,18 @@ describe('RegistrationController.update', () => {
 
     await controller.update(req, fakeResponse());
 
+    // The diff travels with the mail, not the previous answers themselves.
     expect(RegistrationUpdatedMessage.enqueueFor).toHaveBeenCalledWith(
       camp,
       registration,
+      [
+        {
+          path: 'first_name',
+          label: 'First name',
+          value: 'John',
+          isFile: false,
+        },
+      ],
     );
   });
 });

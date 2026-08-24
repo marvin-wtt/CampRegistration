@@ -7,7 +7,7 @@ import { FileResource } from '#app/file/file.resource';
 import { JsonResource } from '#core/resource/JsonResource';
 
 interface RecipientDelivery {
-  registrationId: string | null;
+  registrationId: string;
   to: string | null;
 }
 
@@ -37,16 +37,10 @@ export class MessageResource extends JsonResource<
     };
   }
 
-  /**
-   * Collapses per-email delivery rows into one recipient per registration,
-   * dropping rows that are no longer linked to a registration.
-   */
+  /** Collapses per-email delivery rows into one recipient per registration. */
   private mapRecipients(deliveries: RecipientDelivery[]): MessageRecipient[] {
     const byRegistration = new Map<string, MessageRecipient>();
     for (const delivery of deliveries) {
-      if (delivery.registrationId === null) {
-        continue;
-      }
       if (!byRegistration.has(delivery.registrationId)) {
         byRegistration.set(delivery.registrationId, {
           registrationId: delivery.registrationId,

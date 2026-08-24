@@ -99,13 +99,6 @@ const navigationItems = computed<NavigationItemProps<'organization'>[]>(() => {
       permission: 'organization.view',
     },
     {
-      name: 'verification',
-      label: t('nav.verification'),
-      icon: 'verified_user',
-      to: { name: 'management.organization.verification' },
-      permission: 'organization.view',
-    },
-    {
       name: 'settings',
       label: t('nav.settings'),
       icon: 'settings',
@@ -140,7 +133,6 @@ nav:
   newsletters: 'Newsletters'
   members: 'Members'
   privacy: 'Privacy'
-  verification: 'Verification'
   settings: 'Settings'
 </i18n>
 
@@ -152,7 +144,6 @@ nav:
   newsletters: 'Newsletter'
   members: 'Mitglieder'
   privacy: 'Datenschutz'
-  verification: 'Verifizierung'
   settings: 'Einstellungen'
 </i18n>
 
@@ -164,7 +155,6 @@ nav:
   newsletters: 'Newsletters'
   members: 'Membres'
   privacy: 'Confidentialité'
-  verification: 'Vérification'
   settings: 'Paramètres'
 </i18n>
 
@@ -176,7 +166,6 @@ nav:
   newsletters: 'Newslettery'
   members: 'Członkowie'
   privacy: 'Prywatność'
-  verification: 'Weryfikacja'
   settings: 'Ustawienia'
 </i18n>
 
@@ -188,6 +177,5 @@ nav:
   newsletters: 'Newslettery'
   members: 'Členové'
   privacy: 'Soukromí'
-  verification: 'Ověření'
   settings: 'Nastavení'
 </i18n>

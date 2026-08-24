@@ -8,8 +8,8 @@ import {
 import { formUtils } from '#utils/form';
 import { BaseService } from '#core/base/BaseService';
 import {
+  computedRegistrationData,
   CUSTOM_FILE_FIELD_PREFIX,
-  RegistrationCampDataHelper,
 } from '#app/registration/registration.helper';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service';
@@ -92,7 +92,7 @@ export class RegistrationService extends BaseService {
     const form = formUtils(camp, data.data);
 
     const formData = form.data();
-    const computedData = this.createComputedData(form.extractCampData());
+    const computedData = computedRegistrationData(form.extractCampData());
 
     if (camp.countries.length > 1 && !computedData.country) {
       throw new ApiError(
@@ -217,7 +217,7 @@ export class RegistrationService extends BaseService {
     if (data.data) {
       const form = formUtils(camp);
       form.updateData(data.data);
-      computedData = this.createComputedData(form.extractCampData());
+      computedData = computedRegistrationData(form.extractCampData());
       formFileIds = form.getFileIds();
     }
 
@@ -278,7 +278,7 @@ export class RegistrationService extends BaseService {
 
     const results = registrations.map((registration) => {
       form.updateData(registration.data);
-      const computedData = this.createComputedData(form.extractCampData());
+      const computedData = computedRegistrationData(form.extractCampData());
 
       return this.prisma.registration.update({
         where: { id: registration.id },
@@ -292,25 +292,5 @@ export class RegistrationService extends BaseService {
     });
 
     await Promise.all(results);
-  }
-
-  private createComputedData(
-    data: Record<string, unknown[]>,
-  ): Partial<Prisma.RegistrationCreateInput> {
-    const helper = new RegistrationCampDataHelper(data);
-
-    return {
-      firstName: helper.firstName() ?? null,
-      lastName: helper.lastName() ?? null,
-      street: helper.street() ?? null,
-      city: helper.city() ?? null,
-      zipCode: helper.zipCode() ?? null,
-      country: helper.country() ?? null,
-      dateOfBirth: helper.dateOfBirth() ?? null,
-      emails: helper.emails() ?? [],
-      role: helper.role() ?? null,
-      gender: helper.gender() ?? null,
-      newsletterConsent: helper.newsletterConsent() ?? null,
-    };
   }
 }

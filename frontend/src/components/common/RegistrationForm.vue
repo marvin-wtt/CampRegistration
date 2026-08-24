@@ -121,17 +121,19 @@ const { extractErrorText } = useErrorExtractor();
 interface Props {
   data?: object;
   campDetails: CampDetails;
-  submitFn: (
+  submitFn?: (
     id: string,
     formData: Record<string, unknown>,
     locale: string,
   ) => Promise<void>;
-  uploadFileFn: (file: File) => Promise<string>;
+  uploadFileFn?: (file: File) => Promise<string>;
   moderation?: boolean;
+  readonly?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   moderation: false,
+  readonly: false,
 });
 
 const emit = defineEmits<{
@@ -205,13 +207,18 @@ const badgeIcon = computed(() =>
   submitState.value === 'success' ? 'check_circle' : 'error',
 );
 
+// A readonly form reuses the moderation layout (TOC, no validation) and puts
+// survey-core into display mode.
+const moderationLayout = props.moderation || props.readonly;
+
 const model = createModel(
   props.campDetails.id,
-  props.moderation
+  moderationLayout
     ? createModerationForm(props.campDetails.form)
     : props.campDetails.form,
 );
-model.validationEnabled = !props.moderation;
+model.validationEnabled = !moderationLayout;
+model.mode = props.readonly ? 'display' : 'edit';
 if (props.data) {
   model.data = props.data;
   mapFileIdToFileContent(model);
@@ -248,7 +255,7 @@ function createModel(campId: string, form: object): SurveyModel {
   // than survey-core's built-in "Thank you" text.
   const hasFormCompletedHtml = hasCustomCompletedHtml(form);
 
-  if (props.moderation) {
+  if (moderationLayout) {
     const hideComplete = () => {
       survey.navigationBar.getActionById('sv-nav-complete')?.setVisible(false);
     };
@@ -258,6 +265,12 @@ function createModel(campId: string, form: object): SurveyModel {
 
   // Handle file uploads
   survey.onUploadFiles.add(async (_, options) => {
+    const uploadFileFn = props.uploadFileFn;
+    if (!uploadFileFn) {
+      options.callback('error');
+      return;
+    }
+
     try {
       interface FileOption {
         file: Pick<File, 'name' | 'type' | 'size'>;
@@ -265,7 +278,7 @@ function createModel(campId: string, form: object): SurveyModel {
       }
 
       const fileUploads = options.files.map(async (file) => {
-        const name = await props.uploadFileFn(file);
+        const name = await uploadFileFn(file);
 
         return new File([file], name, {
           type: file.type,
@@ -319,13 +332,18 @@ function createModel(campId: string, form: object): SurveyModel {
   // (see submitState), so the survey's own completed page stays hidden until
   // the submission actually succeeds.
   survey.onComplete.add(async (sender) => {
+    const submitFn = props.submitFn;
+    if (!submitFn) {
+      return;
+    }
+
     submitError.value = undefined;
     submitState.value = 'saving';
 
     mapFileQuestionValues(sender);
 
     try {
-      await props.submitFn(campId, sender.data ?? {}, sender.locale);
+      await submitFn(campId, sender.data ?? {}, sender.locale);
       submitted.value = true;
       if (sender.showCompletePage && hasFormCompletedHtml) {
         // Reveal the form-defined completed page (survey-core shows it by

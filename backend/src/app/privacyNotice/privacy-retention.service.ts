@@ -1,7 +1,6 @@
 import { BaseService } from '#core/base/BaseService';
 import { injectable } from 'inversify';
 import logger from '#core/logger';
-import { permissionRegistry } from '#core/permission-registry';
 import {
   composePrivacyNotice,
   isConsentBoundException,
@@ -213,7 +212,7 @@ export class PrivacyRetentionService extends BaseService {
       // spend the one notification on an empty room, so it is left for the day
       // a director is appointed.
       logger.warn(
-        `Camp ${camp.id} has no manager who may delete it; retention reminder withheld.`,
+        `Camp ${camp.id} has no director; retention reminder withheld.`,
       );
       return;
     }
@@ -237,28 +236,21 @@ export class PrivacyRetentionService extends BaseService {
   }
 
   /**
-   * The managers who can actually carry the reminder out. Read from the
-   * permission registry rather than matched against `DIRECTOR`, so a role
-   * later granted `camp.delete` starts receiving it without anyone
-   * remembering this file.
+   * The directors of the camp. They are the ones who both may delete it and
+   * answer for the data it holds; a coordinator can edit the camp but is not
+   * the person a retention deadline is addressed to, and mailing the whole
+   * management team turns a decision into a diffusion of responsibility.
    *
-   * Organization administrators are deliberately not included: they hold
-   * `ORGANIZATION_CAMP_PERMISSIONS`, which stops well short of `camp.delete`,
-   * and telling someone to delete data they cannot reach is not a reminder.
+   * Organization administrators are deliberately not included either: they
+   * hold `ORGANIZATION_CAMP_PERMISSIONS`, which stops well short of
+   * `camp.delete`, and telling someone to delete data they cannot reach is not
+   * a reminder.
    */
   private async recipients(campId: string) {
-    const roles = Object.entries(permissionRegistry.for('camp').getAll())
-      .filter(([, permissions]) => permissions.includes('camp.delete'))
-      .map(([role]) => role);
-
-    if (roles.length === 0) {
-      return [];
-    }
-
     const managers = await this.prisma.campManager.findMany({
       where: {
         campId,
-        role: { in: roles },
+        role: 'DIRECTOR',
         // An invitation nobody has accepted has no account behind it and no
         // way to open the camp.
         userId: { not: null },

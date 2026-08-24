@@ -36,25 +36,49 @@
         flat
         bordered
         class="status-note rounded-lg"
+        :class="{ 'status-note--rejected': rejected }"
       >
         <div class="status-note-body">
           <q-icon
-            name="gpp_maybe"
+            :name="rejected ? 'gpp_bad' : 'gpp_maybe'"
             size="22px"
             class="status-note-icon"
           />
-          <p class="col text-body2 q-my-none">
-            {{ t(`note.${organization.verificationStatus}`) }}
-          </p>
-          <q-btn
-            flat
-            no-caps
-            dense
-            color="primary"
-            class="status-note-action"
-            :label="t('note.action')"
-            :to="{ name: 'management.organization.verification' }"
-          />
+          <div class="col">
+            <p class="text-body2 q-my-none">
+              {{ t(`note.${organization.verificationStatus}`) }}
+            </p>
+            <!-- Cleared server-side whenever the status leaves REJECTED, so
+                 a note always belongs to the rejection on screen. -->
+            <template v-if="organization.reviewNote">
+              <div class="text-body2 text-weight-medium q-mt-sm">
+                {{ t('note.reviewNote') }}
+              </div>
+              <p class="text-body2 q-my-none">{{ organization.reviewNote }}</p>
+            </template>
+          </div>
+          <div
+            v-if="canOrg('organization.edit')"
+            class="status-note-actions"
+          >
+            <q-btn
+              flat
+              no-caps
+              dense
+              :color="rejected ? undefined : 'primary'"
+              :label="t('note.settings')"
+              :to="{ name: 'management.organization.settings' }"
+            />
+            <q-btn
+              v-if="rejected"
+              flat
+              no-caps
+              dense
+              class="status-note-request"
+              :label="t('note.request')"
+              @click="requestReview"
+            />
+          </div>
         </div>
       </q-card>
 
@@ -158,6 +182,7 @@
 <script lang="ts" setup>
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useQuasar } from 'quasar';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
@@ -167,6 +192,7 @@ import { usePrivacyNoticeService } from '@/services/PrivacyNoticeService';
 import type { OrganizationPermission } from '@camp-registration/common/permissions';
 
 const { t } = useI18n();
+const quasar = useQuasar();
 const router = useRouter();
 const store = useOrganizationDetailsStore();
 const { data: organization, isLoading, error } = storeToRefs(store);
@@ -204,6 +230,28 @@ watch(
   },
   { immediate: true },
 );
+
+const rejected = computed(
+  () => organization.value?.verificationStatus === 'REJECTED',
+);
+
+function requestReview() {
+  quasar
+    .dialog({
+      title: t('request.title'),
+      message: t('request.message'),
+      cancel: { color: 'primary', flat: true, rounded: true, noCaps: true },
+      ok: {
+        label: t('request.confirm'),
+        color: 'primary',
+        rounded: true,
+        noCaps: true,
+      },
+    })
+    .onOk(() => {
+      void store.submitVerification();
+    });
+}
 
 const statusIcon = computed(() => {
   const status = organization.value?.verificationStatus;
@@ -274,12 +322,6 @@ const links = computed<QuickLink[]>(() =>
         to: 'management.organization.privacy',
         icon: 'privacy_tip',
         label: t('link.privacy'),
-        permission: 'organization.view',
-      },
-      {
-        to: 'management.organization.verification',
-        icon: 'verified_user',
-        label: t('link.verification'),
         permission: 'organization.view',
       },
       {
@@ -364,8 +406,29 @@ const links = computed<QuickLink[]>(() =>
   color: var(--md3-on-surface-variant);
 }
 
-.status-note-action {
+.status-note-actions {
   flex: none;
+  display: flex;
+  gap: 4px;
+}
+
+/* A rejection is the one state the owner has to act on, so it carries the
+   error role rather than the neutral surface a pending review gets. */
+.status-note--rejected {
+  border-left-color: var(--md3-error);
+  background: var(--md3-error-container);
+  color: var(--md3-on-error-container);
+}
+
+.status-note--rejected .status-note-icon,
+.status-note--rejected .status-note-actions .q-btn {
+  color: var(--md3-on-error-container);
+}
+
+/* Only the request carries weight: on an error-container ground both buttons
+   inherit the same color, so nothing else separates the action from the link. */
+.status-note-request {
+  font-weight: 700;
 }
 
 /* Same shape as the status note, primary-accented: it names an action the
@@ -432,7 +495,7 @@ const links = computed<QuickLink[]>(() =>
     flex-wrap: wrap;
   }
 
-  .status-note-action,
+  .status-note-actions,
   .privacy-note-action {
     margin-left: 34px;
   }
@@ -447,8 +510,14 @@ status:
   REJECTED: 'Not verified'
 note:
   PENDING: 'Camps stay hidden and newsletters cannot send until this organization is verified.'
-  REJECTED: 'This organization was not verified. Camps stay hidden and newsletters cannot send.'
-  action: 'Details'
+  REJECTED: 'This organization was not verified. Camps stay hidden and newsletters cannot send. Correct the details, then request a new review.'
+  reviewNote: 'Reviewer note'
+  request: 'Request review'
+  settings: 'Check settings'
+request:
+  title: 'Request a new review?'
+  message: 'Make sure everything the reviewer flagged is corrected first. The organization goes back into the queue and stays hidden until it is verified.'
+  confirm: 'Request review'
 privacy:
   title: 'Privacy notice missing'
   message: 'This organization cannot be verified until its privacy notice is published. It is the baseline every camp of this organization uses.'
@@ -459,7 +528,6 @@ stat:
 link:
   members: 'Members'
   privacy: 'Privacy'
-  verification: 'Verification'
   settings: 'Settings'
 </i18n>
 
@@ -471,8 +539,14 @@ status:
   REJECTED: 'Nicht verifiziert'
 note:
   PENDING: 'Camps bleiben verborgen und Newsletter können nicht senden, bis diese Organisation verifiziert ist.'
-  REJECTED: 'Diese Organisation wurde nicht verifiziert. Camps bleiben verborgen und Newsletter können nicht senden.'
-  action: 'Details'
+  REJECTED: 'Diese Organisation wurde nicht verifiziert. Camps bleiben verborgen und Newsletter können nicht senden. Korrigiere die Angaben und fordere anschließend eine neue Prüfung an.'
+  reviewNote: 'Hinweis der Prüfung'
+  request: 'Prüfung anfordern'
+  settings: 'Einstellungen prüfen'
+request:
+  title: 'Neue Prüfung anfordern?'
+  message: 'Korrigiere zuerst alles, was die Prüfung beanstandet hat. Die Organisation kommt zurück in die Warteschlange und bleibt verborgen, bis sie verifiziert ist.'
+  confirm: 'Prüfung anfordern'
 privacy:
   title: 'Datenschutzerklärung fehlt'
   message: 'Diese Organisation kann erst verifiziert werden, wenn ihre Datenschutzerklärung veröffentlicht ist. Sie ist die Grundlage für jedes Camp dieser Organisation.'
@@ -483,7 +557,6 @@ stat:
 link:
   members: 'Mitglieder'
   privacy: 'Datenschutz'
-  verification: 'Verifizierung'
   settings: 'Einstellungen'
 </i18n>
 
@@ -495,8 +568,14 @@ status:
   REJECTED: 'Non vérifiée'
 note:
   PENDING: "Les camps restent masqués et les newsletters ne peuvent pas être envoyées tant que cette organisation n'est pas vérifiée."
-  REJECTED: "Cette organisation n'a pas été vérifiée. Les camps restent masqués et les newsletters ne peuvent pas être envoyées."
-  action: 'Détails'
+  REJECTED: "Cette organisation n'a pas été vérifiée. Les camps restent masqués et les newsletters ne peuvent pas être envoyées. Corrige les informations, puis demande une nouvelle vérification."
+  reviewNote: 'Note du vérificateur'
+  request: 'Demander une vérification'
+  settings: 'Vérifier les paramètres'
+request:
+  title: 'Demander une nouvelle vérification ?'
+  message: "Corrige d'abord tout ce que le vérificateur a signalé. L'organisation retourne dans la file et reste masquée jusqu'à sa vérification."
+  confirm: 'Demander'
 privacy:
   title: 'Politique de confidentialité manquante'
   message: "Cette organisation ne peut pas être vérifiée tant que sa politique de confidentialité n'est pas publiée. Elle sert de base à chacun de ses camps."
@@ -507,7 +586,6 @@ stat:
 link:
   members: 'Membres'
   privacy: 'Confidentialité'
-  verification: 'Vérification'
   settings: 'Paramètres'
 </i18n>
 
@@ -519,8 +597,14 @@ status:
   REJECTED: 'Niezweryfikowana'
 note:
   PENDING: 'Obozy pozostają ukryte, a newslettery nie mogą być wysyłane, dopóki ta organizacja nie zostanie zweryfikowana.'
-  REJECTED: 'Ta organizacja nie została zweryfikowana. Obozy pozostają ukryte, a newslettery nie mogą być wysyłane.'
-  action: 'Szczegóły'
+  REJECTED: 'Ta organizacja nie została zweryfikowana. Obozy pozostają ukryte, a newslettery nie mogą być wysyłane. Popraw dane, a następnie poproś o ponowną weryfikację.'
+  reviewNote: 'Uwaga weryfikatora'
+  request: 'Poproś o weryfikację'
+  settings: 'Sprawdź ustawienia'
+request:
+  title: 'Poprosić o ponowną weryfikację?'
+  message: 'Najpierw popraw wszystko, co zgłosił weryfikator. Organizacja wraca do kolejki i pozostaje ukryta do czasu weryfikacji.'
+  confirm: 'Poproś o weryfikację'
 privacy:
   title: 'Brak informacji o ochronie danych'
   message: 'Tej organizacji nie można zweryfikować, dopóki nie opublikuje informacji o ochronie danych. Stanowi ona podstawę dla każdego obozu tej organizacji.'
@@ -531,7 +615,6 @@ stat:
 link:
   members: 'Członkowie'
   privacy: 'Prywatność'
-  verification: 'Weryfikacja'
   settings: 'Ustawienia'
 </i18n>
 
@@ -543,8 +626,14 @@ status:
   REJECTED: 'Neověřená'
 note:
   PENDING: 'Tábory zůstávají skryté a newslettery nelze odesílat, dokud nebude tato organizace ověřena.'
-  REJECTED: 'Tato organizace nebyla ověřena. Tábory zůstávají skryté a newslettery nelze odesílat.'
-  action: 'Podrobnosti'
+  REJECTED: 'Tato organizace nebyla ověřena. Tábory zůstávají skryté a newslettery nelze odesílat. Oprav údaje a poté požádej o nové ověření.'
+  reviewNote: 'Poznámka ověřovatele'
+  request: 'Požádat o ověření'
+  settings: 'Zkontrolovat nastavení'
+request:
+  title: 'Požádat o nové ověření?'
+  message: 'Nejdřív oprav vše, co ověřovatel vytkl. Organizace se vrátí do fronty a zůstane skrytá, dokud nebude ověřena.'
+  confirm: 'Požádat o ověření'
 privacy:
   title: 'Chybí zásady ochrany osobních údajů'
   message: 'Tuto organizaci nelze ověřit, dokud nezveřejní zásady ochrany osobních údajů. Jsou základem pro každý tábor této organizace.'
@@ -555,6 +644,5 @@ stat:
 link:
   members: 'Členové'
   privacy: 'Soukromí'
-  verification: 'Ověření'
   settings: 'Nastavení'
 </i18n>

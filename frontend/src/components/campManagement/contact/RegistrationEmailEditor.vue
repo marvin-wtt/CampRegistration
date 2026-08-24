@@ -24,8 +24,9 @@ const model = defineModel<string>({
   required: true,
 });
 
-const { form } = defineProps<{
+const { form, event } = defineProps<{
   form: CampDetails['form'] | undefined;
+  event?: string | undefined;
 }>();
 
 const campTokens: (keyof CampDetails)[] = [
@@ -72,6 +73,15 @@ const tokens = computed<
               }))
             : [],
         },
+        ...(event === 'registration_updated'
+          ? [
+              {
+                value: 'changes',
+                label: t('token.registration.changes.label'),
+                caption: t('token.registration.changes.caption'),
+              },
+            ]
+          : []),
         {
           value: 'computedData',
           label: t('token.registration.computed.label'),
@@ -157,6 +167,9 @@ token:
     data:
       label: 'Form'
       caption: 'Direct access to registration form fields'
+    changes:
+      label: 'Changes'
+      caption: 'The fields this edit changed, with their new values'
     computed:
       label: 'Computed'
       caption: 'Fields computed based on data tag'
@@ -220,6 +233,9 @@ token:
     data:
       label: 'Formular'
       caption: 'Direkter Zugriff auf die Felder des Anmeldeformulars'
+    changes:
+      label: 'Änderungen'
+      caption: 'Die geänderten Felder mit ihren neuen Werten'
     computed:
       label: 'Berechnet'
       caption: 'Felder, die basierend auf dem Daten-Tag berechnet werden'
@@ -283,6 +299,9 @@ token:
     data:
       label: 'Formulaire'
       caption: "Accès direct aux champs du formulaire d'inscription"
+    changes:
+      label: 'Modifications'
+      caption: 'Les champs modifiés, avec leurs nouvelles valeurs'
     computed:
       label: 'Calculé'
       caption: 'Champs calculés en fonction du tag de données'
@@ -346,6 +365,9 @@ token:
     data:
       label: 'Formularz'
       caption: 'Bezpośredni dostęp do pól formularza rejestracyjnego'
+    changes:
+      label: 'Zmiany'
+      caption: 'Zmienione pola wraz z ich nowymi wartościami'
     computed:
       label: 'Obliczone'
       caption: 'Pola obliczane na podstawie danych zgłoszenia'
@@ -409,6 +431,9 @@ token:
     data:
       label: 'Formulář'
       caption: 'Přímý přístup k polím registračního formuláře'
+    changes:
+      label: 'Změny'
+      caption: 'Změněná pole a jejich nové hodnoty'
     computed:
       label: 'Vypočtené'
       caption: 'Pole vypočítaná na základě dat registrace'

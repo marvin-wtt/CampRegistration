@@ -38,6 +38,15 @@
       .body-text a {
         color: inherit;
       }
+
+      .body-text .registration-changes {
+        margin: 0 0 1em 0;
+        padding-left: 1.5em;
+      }
+
+      .body-text .registration-changes li {
+        margin-bottom: 0.25em;
+      }
     </mj-style>
   </mj-head>
   <mj-body background-color="#f3f4f6">

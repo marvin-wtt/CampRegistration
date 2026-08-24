@@ -106,7 +106,7 @@ export class OrganizationRejectedMessage extends OrganizationMessage<Organizatio
           'management',
           'organizations',
           this.payload.organization.id,
-          'verification',
+          'settings',
         ]),
       },
     };

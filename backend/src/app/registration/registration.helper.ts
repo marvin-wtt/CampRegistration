@@ -1,3 +1,5 @@
+import type { Prisma } from '#generated/prisma/client.js';
+
 /**
  * Field namespace on `File` rows for custom registration files
  * (`field = 'custom:<slot>'`). The File row is the single source of truth for
@@ -123,4 +125,30 @@ export class RegistrationCampDataHelper {
 
     return this.dataByTags[key].some((v) => v === true);
   }
+}
+
+/**
+ * The columns a registration's answers imply, mapped from the values tagged
+ * with a `campDataType` in the camp's form. The single definition of what the
+ * computed columns mean — the API derives them on every write, and the seed
+ * derives them from the answers it generates.
+ */
+export function computedRegistrationData(
+  dataByTags: Record<string, unknown[]>,
+): Partial<Prisma.RegistrationCreateInput> {
+  const helper = new RegistrationCampDataHelper(dataByTags);
+
+  return {
+    firstName: helper.firstName() ?? null,
+    lastName: helper.lastName() ?? null,
+    street: helper.street() ?? null,
+    city: helper.city() ?? null,
+    zipCode: helper.zipCode() ?? null,
+    country: helper.country() ?? null,
+    dateOfBirth: helper.dateOfBirth() ?? null,
+    emails: helper.emails() ?? [],
+    role: helper.role() ?? null,
+    gender: helper.gender() ?? null,
+    newsletterConsent: helper.newsletterConsent() ?? null,
+  };
 }

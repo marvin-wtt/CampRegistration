@@ -18,8 +18,8 @@ export interface CampRetentionDuePayload {
 }
 
 /**
- * Tells the managers who may delete a camp that the retention period its
- * registrants were shown is running out.
+ * Tells a camp's directors that the retention period its registrants were
+ * shown is running out.
  *
  * Sent once per camp. It asks for a review rather than announcing a deletion:
  * nothing on the platform erases the data, and the mail must not imply that

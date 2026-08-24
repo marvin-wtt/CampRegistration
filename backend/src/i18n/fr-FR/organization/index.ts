@@ -40,7 +40,7 @@ export default {
         information:
           "{{ organization.name }} n'a pas été vérifiée. " +
           "Elle ne peut ni publier de camps ni envoyer de newsletters tant que ce n'est pas fait. " +
-          'Tu peux corriger les informations et la soumettre à nouveau.',
+          'Corriger ses informations enregistrées la remet en attente de vérification.',
         reasonLabel: 'Motif',
         button: 'Vérifier les informations',
         greeting: 'Cordialement,',

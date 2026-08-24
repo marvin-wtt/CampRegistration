@@ -158,6 +158,7 @@ export const summerCampForm = {
             cs: 'Pohlaví',
             default: 'Gender',
           },
+          campDataType: 'gender',
           isRequired: true,
           choices: [
             {

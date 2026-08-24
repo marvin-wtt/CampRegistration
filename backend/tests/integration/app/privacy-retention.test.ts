@@ -93,7 +93,7 @@ describe('retention reminders', () => {
     await prisma.camp.deleteMany();
   });
 
-  it('should tell a manager who may delete the camp that the period is running out', async () => {
+  it('should tell the camp director that the period is running out', async () => {
     const { camp, user } = await campDue(10);
 
     await run();
@@ -192,8 +192,8 @@ describe('retention reminders', () => {
 
   // Telling someone to delete data they cannot reach is not a reminder, and
   // spending the one notification on them would lose it for good.
-  it('should withhold the reminder when no manager may delete the camp', async () => {
-    const { camp } = await campDue(10, { role: 'COUNSELOR' });
+  it('should withhold the reminder when the camp has no director', async () => {
+    const { camp } = await campDue(10, { role: 'COORDINATOR' });
 
     await run();
 

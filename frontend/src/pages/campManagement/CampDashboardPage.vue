@@ -6,8 +6,10 @@
     class="row justify-center"
   >
     <div class="dashboard-shell col-12 col-md-11 col-xl-10">
+      <camp-summary-hero />
+
       <!-- The most consequential thing a manager can be unaware of: the camp is
-           configured correctly but reaching nobody. -->
+       configured correctly but reaching nobody. -->
       <organization-unverified-notice
         v-if="camp"
         subject="camp"
@@ -15,8 +17,6 @@
         :organization-name="camp.organizationName"
         :verification-status="camp.organizationVerificationStatus"
       />
-
-      <camp-summary-hero />
 
       <section class="dashboard-section">
         <div class="section-heading row items-end justify-between q-mb-sm">
