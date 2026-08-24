@@ -1646,7 +1646,9 @@ describe('/api/v1/camps/:campId/registrations', () => {
           .expect(200);
 
         expectEmailWith({
-          html: expect.stringContaining('registration-changes') as string,
+          html: expect.stringContaining(
+            '<ul class="registration-changes"',
+          ) as string,
         });
         expectEmailWith({
           html: expect.stringContaining('Jhon') as string,
@@ -1680,7 +1682,9 @@ describe('/api/v1/camps/:campId/registrations', () => {
           .expect(200);
 
         expectEmailWith({
-          html: expect.not.stringContaining('registration-changes') as string,
+          html: expect.not.stringContaining(
+            '<ul class="registration-changes"',
+          ) as string,
         });
       });
 
