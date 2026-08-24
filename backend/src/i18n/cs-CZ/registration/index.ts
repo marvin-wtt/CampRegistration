@@ -2,7 +2,7 @@ export default {
   email: {
     reason:
       '$t(email:footer.cause) protože jste se zaregistrovali na tento tábor.',
-    privacyLink: 'Informace o ochraně osobních údajů pro tento tábor',
+    privacyLink: 'Informace o ochraně osobních údajů pro tuto akci',
     changes: {
       cleared: 'odstraněno',
       file: 'soubor aktualizován',

@@ -471,7 +471,7 @@ field:
 retention:
   exceptions:
     title: 'Anything you keep longer?'
-    hint: 'Most camps keep everything for the one period above and can skip this. Add an entry only where the law or a real need says otherwise.'
+    hint: 'Most events keep everything for the one period above and can skip this. Add an entry only where the law or a real need says otherwise.'
     scope: 'What it covers'
     until: 'How long'
     consentScopeError: 'Pick a purpose whose legal basis is consent, or choose a fixed period.'
@@ -500,7 +500,7 @@ field:
 retention:
   exceptions:
     title: 'Wird etwas länger gespeichert?'
-    hint: 'Die meisten Freizeiten speichern alles für die eine Frist oben und können das hier überspringen. Ergänze nur, wo das Gesetz oder ein echter Bedarf etwas anderes verlangt.'
+    hint: 'Die meisten Veranstaltungen speichern alles für die eine Frist oben und können das hier überspringen. Ergänze nur, wo das Gesetz oder ein echter Bedarf etwas anderes verlangt.'
     scope: 'Wofür es gilt'
     until: 'Wie lange'
     consentScopeError: 'Wähle einen Zweck, der auf einer Einwilligung beruht, oder eine feste Dauer.'
@@ -529,7 +529,7 @@ field:
 retention:
   exceptions:
     title: 'Conservez-vous quelque chose plus longtemps ?'
-    hint: "La plupart des séjours conservent tout pendant la durée unique ci-dessus et peuvent passer cette étape. N'ajoutez une entrée que si la loi ou un besoin réel l'impose."
+    hint: "La plupart des événements conservent tout pendant la durée unique ci-dessus et peuvent passer cette étape. N'ajoutez une entrée que si la loi ou un besoin réel l'impose."
     scope: 'Ce que cela couvre'
     until: 'Combien de temps'
     consentScopeError: 'Choisissez une finalité fondée sur le consentement, ou une durée déterminée.'
@@ -558,7 +558,7 @@ field:
 retention:
   exceptions:
     title: 'Uchováváte něco déle?'
-    hint: 'Většina táborů uchovává vše po jednu dobu uvedenou výše a tohle může přeskočit. Přidej záznam jen tam, kde to vyžaduje zákon nebo skutečná potřeba.'
+    hint: 'Většina akcí uchovává vše po jednu dobu uvedenou výše a tohle může přeskočit. Přidej záznam jen tam, kde to vyžaduje zákon nebo skutečná potřeba.'
     scope: 'Čeho se týká'
     until: 'Jak dlouho'
     consentScopeError: 'Vyber účel, který stojí na souhlasu, nebo zvol pevně danou dobu.'
@@ -587,7 +587,7 @@ field:
 retention:
   exceptions:
     title: 'Czy coś przechowujecie dłużej?'
-    hint: 'Większość obozów przechowuje wszystko przez jeden okres podany wyżej i może to pominąć. Dodaj wpis tylko tam, gdzie wymaga tego prawo lub realna potrzeba.'
+    hint: 'Większość wydarzeń przechowuje wszystko przez jeden okres podany wyżej i może to pominąć. Dodaj wpis tylko tam, gdzie wymaga tego prawo lub realna potrzeba.'
     scope: 'Czego dotyczy'
     until: 'Jak długo'
     consentScopeError: 'Wybierz cel oparty na zgodzie albo określony czas.'

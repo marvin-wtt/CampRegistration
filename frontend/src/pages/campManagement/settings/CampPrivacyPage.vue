@@ -937,12 +937,12 @@ $field-max: 32rem;
 
 <i18n lang="yaml" locale="en">
 title: 'Privacy information'
-subtitle: 'What this camp adds to the privacy information of its organisation.'
+subtitle: 'What this event adds to the privacy information of its organisation.'
 baseline:
   title: 'From your organisation'
-  hint: 'Published by the organisation and shown for every one of its camps. This camp can add to it, but never change or replace it.'
+  hint: 'Published by the organisation and shown for every one of its events. This event can add to it, but never change or replace it.'
   version: 'Version {version} · {date}'
-  previewHint: 'The notice as it stands today, without this camp’s additions.'
+  previewHint: 'The notice as it stands today, without this event’s additions.'
   purposes: 'Why data is collected'
   dataCategories: 'What is collected'
   recipients: 'Who else receives it'
@@ -954,40 +954,40 @@ baseline:
   freeText: 'Your organisation wrote its notice as free text, so nothing below can be matched against it. Read its notice before adding anything here.'
   missing:
     title: 'Your organisation has not published any privacy information yet.'
-    detail: 'Until it does, registrants see no notice for this camp — and nothing you add here reaches them.'
+    detail: 'Until it does, registrants see no notice for this event — and nothing you add here reaches them.'
 addendum:
-  title: 'Additions for this camp'
-  hint: 'Only what is specific to this camp — a particular bus company, an insurer, photos published this season. What your organisation already declares is ticked and locked.'
+  title: 'Additions for this event'
+  hint: 'Only what is specific to this event — a particular bus company, an insurer, photos published this season. What your organisation already declares is ticked and locked.'
   hideInherited: 'Hide what the organisation covers'
   dataCategories: 'Data collected'
   recipients: 'Recipients'
   additional: 'Additional information'
-  additionalHint: 'Only for this camp, and not translated for you.'
-  suggested: 'This camp’s form appears to collect: {categories}.'
+  additionalHint: 'Only for this event, and not translated for you.'
+  suggested: 'This event’s form appears to collect: {categories}.'
   applySuggested: 'Add these'
 field:
-  additionalPlaceholder: 'Additional privacy information for this camp…'
+  additionalPlaceholder: 'Additional privacy information for this event…'
 status:
   none:
-    title: 'No additions for this camp'
+    title: 'No additions for this event'
     detail: 'Registrants see your organisation’s notice as it stands.'
   unpublishedDetail: 'Registrants see your organisation’s notice without these additions until you publish.'
   blocked: 'There is nothing to publish these additions on top of yet.'
   incomplete: 'These additions cannot be published yet:'
-  empty: 'Nothing to publish yet — tick what this camp adds, or write an addition below.'
-  withdraw: 'Publishing now withdraws this camp’s additions — registrants then see your organisation’s notice on its own.'
+  empty: 'Nothing to publish yet — tick what this event adds, or write an addition below.'
+  withdraw: 'Publishing now withdraws this event’s additions — registrants then see your organisation’s notice on its own.'
 notify:
   publishFailed: 'Publishing failed'
 </i18n>
 
 <i18n lang="yaml" locale="de">
 title: 'Datenschutzinformationen'
-subtitle: 'Was diese Freizeit den Datenschutzinformationen ihrer Organisation hinzufügt.'
+subtitle: 'Was diese Veranstaltung den Datenschutzinformationen ihrer Organisation hinzufügt.'
 baseline:
   title: 'Von eurer Organisation'
-  hint: 'Von der Organisation veröffentlicht und bei allen ihren Freizeiten angezeigt. Diese Freizeit kann sie ergänzen, aber nicht ändern oder ersetzen.'
+  hint: 'Von der Organisation veröffentlicht und bei allen ihren Veranstaltungen angezeigt. Diese Veranstaltung kann sie ergänzen, aber nicht ändern oder ersetzen.'
   version: 'Version {version} · {date}'
-  previewHint: 'Die Informationen im heutigen Stand, ohne die Ergänzungen dieser Freizeit.'
+  previewHint: 'Die Informationen im heutigen Stand, ohne die Ergänzungen dieser Veranstaltung.'
   purposes: 'Wozu die Daten erhoben werden'
   dataCategories: 'Welche Daten erhoben werden'
   recipients: 'Wer sie außerdem erhält'
@@ -999,40 +999,40 @@ baseline:
   freeText: 'Eure Organisation hat die Informationen als Freitext verfasst; die Angaben unten lassen sich deshalb nicht damit abgleichen. Lies sie durch, bevor du hier etwas ergänzt.'
   missing:
     title: 'Eure Organisation hat noch keine Datenschutzinformationen veröffentlicht.'
-    detail: 'Bis dahin sehen Anmeldende zu dieser Freizeit keine Informationen – und auch nichts, was du hier ergänzt.'
+    detail: 'Bis dahin sehen Anmeldende zu dieser Veranstaltung keine Informationen – und auch nichts, was du hier ergänzt.'
 addendum:
-  title: 'Ergänzungen für diese Freizeit'
-  hint: 'Nur was für diese Freizeit besonders ist — ein bestimmtes Busunternehmen, eine Versicherung, in dieser Saison veröffentlichte Fotos. Was die Organisation bereits angibt, ist angehakt und gesperrt.'
+  title: 'Ergänzungen für diese Veranstaltung'
+  hint: 'Nur was für diese Veranstaltung besonders ist — ein bestimmtes Busunternehmen, eine Versicherung, in dieser Saison veröffentlichte Fotos. Was die Organisation bereits angibt, ist angehakt und gesperrt.'
   hideInherited: 'Angaben der Organisation ausblenden'
   dataCategories: 'Erhobene Daten'
   recipients: 'Empfänger'
   additional: 'Zusätzliche Informationen'
-  additionalHint: 'Gilt nur für diese Freizeit und wird nicht automatisch übersetzt.'
-  suggested: 'Das Formular dieser Freizeit erhebt offenbar: {categories}.'
+  additionalHint: 'Gilt nur für diese Veranstaltung und wird nicht automatisch übersetzt.'
+  suggested: 'Das Formular dieser Veranstaltung erhebt offenbar: {categories}.'
   applySuggested: 'Hinzufügen'
 field:
-  additionalPlaceholder: 'Zusätzliche Datenschutzinformationen zu dieser Freizeit…'
+  additionalPlaceholder: 'Zusätzliche Datenschutzinformationen zu dieser Veranstaltung…'
 status:
   none:
-    title: 'Keine Ergänzungen für diese Freizeit'
+    title: 'Keine Ergänzungen für diese Veranstaltung'
     detail: 'Anmeldende sehen die Informationen eurer Organisation unverändert.'
   unpublishedDetail: 'Anmeldende sehen die Informationen der Organisation ohne diese Ergänzungen, bis du veröffentlichst.'
   blocked: 'Es gibt noch nichts, worauf diese Ergänzungen aufsetzen könnten.'
   incomplete: 'Diese Ergänzungen können noch nicht veröffentlicht werden:'
-  empty: 'Noch nichts zu veröffentlichen – hake an, was diese Freizeit ergänzt, oder schreibe unten eine Ergänzung.'
-  withdraw: 'Beim Veröffentlichen werden die Ergänzungen dieser Freizeit zurückgezogen – Anmeldende sehen dann nur die Informationen eurer Organisation.'
+  empty: 'Noch nichts zu veröffentlichen – hake an, was diese Veranstaltung ergänzt, oder schreibe unten eine Ergänzung.'
+  withdraw: 'Beim Veröffentlichen werden die Ergänzungen dieser Veranstaltung zurückgezogen – Anmeldende sehen dann nur die Informationen eurer Organisation.'
 notify:
   publishFailed: 'Veröffentlichen fehlgeschlagen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 title: 'Informations sur la protection des données'
-subtitle: 'Ce que ce séjour ajoute aux informations de son organisation.'
+subtitle: 'Ce que cet événement ajoute aux informations de son organisation.'
 baseline:
   title: 'De votre organisation'
-  hint: "Publiées par l'organisation et affichées pour tous ses séjours. Ce séjour peut les compléter, jamais les modifier ni les remplacer."
+  hint: "Publiées par l'organisation et affichées pour tous ses événements. Cet événement peut les compléter, jamais les modifier ni les remplacer."
   version: 'Version {version} · {date}'
-  previewHint: "Les informations telles qu'elles sont aujourd'hui, sans les ajouts de ce séjour."
+  previewHint: "Les informations telles qu'elles sont aujourd'hui, sans les ajouts de cet événement."
   purposes: 'Pourquoi les données sont collectées'
   dataCategories: 'Ce qui est collecté'
   recipients: 'Qui les reçoit également'
@@ -1044,40 +1044,40 @@ baseline:
   freeText: "Votre organisation a rédigé ses informations en texte libre ; rien ci-dessous ne peut donc y être comparé. Lisez-les avant d'ajouter quoi que ce soit ici."
   missing:
     title: "Votre organisation n'a pas encore publié d'informations sur la protection des données."
-    detail: "D'ici là, les personnes qui s'inscrivent ne voient aucune information pour ce séjour — ni ce que vous ajoutez ici."
+    detail: "D'ici là, les personnes qui s'inscrivent ne voient aucune information pour cet événement — ni ce que vous ajoutez ici."
 addendum:
-  title: 'Ajouts pour ce séjour'
-  hint: 'Uniquement ce qui est propre à ce séjour — un transporteur précis, un assureur, des photos publiées cette saison. Ce que votre organisation déclare déjà est coché et verrouillé.'
+  title: 'Ajouts pour cet événement'
+  hint: 'Uniquement ce qui est propre à cet événement — un transporteur précis, un assureur, des photos publiées cette saison. Ce que votre organisation déclare déjà est coché et verrouillé.'
   hideInherited: "Masquer ce que couvre l'organisation"
   dataCategories: 'Données collectées'
   recipients: 'Destinataires'
   additional: 'Informations supplémentaires'
-  additionalHint: 'Valables pour ce séjour uniquement, et non traduites automatiquement.'
-  suggested: 'Le formulaire de ce séjour semble collecter : {categories}.'
+  additionalHint: 'Valables pour cet événement uniquement, et non traduites automatiquement.'
+  suggested: 'Le formulaire de cet événement semble collecter : {categories}.'
   applySuggested: 'Ajouter'
 field:
-  additionalPlaceholder: 'Informations complémentaires pour ce séjour…'
+  additionalPlaceholder: 'Informations complémentaires pour cet événement…'
 status:
   none:
-    title: 'Aucun ajout pour ce séjour'
+    title: 'Aucun ajout pour cet événement'
     detail: "Les personnes qui s'inscrivent voient les informations de votre organisation telles quelles."
   unpublishedDetail: "Les personnes qui s'inscrivent voient les informations de votre organisation sans ces ajouts tant que vous n'avez pas publié."
   blocked: "Il n'y a encore rien sur quoi appuyer ces ajouts."
   incomplete: 'Ces ajouts ne peuvent pas encore être publiés :'
-  empty: 'Rien à publier pour le moment — cochez ce que ce séjour ajoute, ou rédigez un ajout ci-dessous.'
-  withdraw: "Publier maintenant retire les ajouts de ce séjour — les personnes qui s'inscrivent ne verront plus que les informations de votre organisation."
+  empty: 'Rien à publier pour le moment — cochez ce que cet événement ajoute, ou rédigez un ajout ci-dessous.'
+  withdraw: "Publier maintenant retire les ajouts de cet événement — les personnes qui s'inscrivent ne verront plus que les informations de votre organisation."
 notify:
   publishFailed: 'Échec de la publication'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
 title: 'Informace o ochraně osobních údajů'
-subtitle: 'Co tento tábor doplňuje k informacím své organizace.'
+subtitle: 'Co tato akce doplňuje k informacím své organizace.'
 baseline:
   title: 'Od vaší organizace'
-  hint: 'Zveřejněno organizací a zobrazeno u všech jejích táborů. Tento tábor je může doplnit, nikoli změnit nebo nahradit.'
+  hint: 'Zveřejněno organizací a zobrazeno u všech jejích akcí. Tato akce je může doplnit, nikoli změnit nebo nahradit.'
   version: 'Verze {version} · {date}'
-  previewHint: 'Informace v dnešní podobě, bez doplnění tohoto tábora.'
+  previewHint: 'Informace v dnešní podobě, bez doplnění této akce.'
   purposes: 'Proč se údaje sbírají'
   dataCategories: 'Co se sbírá'
   recipients: 'Kdo je dále dostává'
@@ -1089,40 +1089,40 @@ baseline:
   freeText: 'Vaše organizace sepsala informace volným textem, položky níže s nimi proto nelze porovnat. Přečti si je, než tu něco doplníš.'
   missing:
     title: 'Vaše organizace zatím nezveřejnila žádné informace o ochraně osobních údajů.'
-    detail: 'Do té doby přihlašující se u tohoto tábora nevidí žádné informace – ani to, co tu doplníš.'
+    detail: 'Do té doby přihlašující se u této akce nevidí žádné informace – ani to, co tu doplníš.'
 addendum:
-  title: 'Doplnění pro tento tábor'
-  hint: 'Jen to, co je specifické pro tento tábor — konkrétní dopravce, pojišťovna, fotografie zveřejněné v této sezóně. Co organizace už uvádí, je zaškrtnuté a uzamčené.'
+  title: 'Doplnění pro tuto akci'
+  hint: 'Jen to, co je specifické pro tuto akci — konkrétní dopravce, pojišťovna, fotografie zveřejněné v této sezóně. Co organizace už uvádí, je zaškrtnuté a uzamčené.'
   hideInherited: 'Skrýt to, co pokrývá organizace'
   dataCategories: 'Sbírané údaje'
   recipients: 'Příjemci'
   additional: 'Další informace'
-  additionalHint: 'Platí jen pro tento tábor a nepřekládá se automaticky.'
-  suggested: 'Formulář tohoto tábora zřejmě sbírá: {categories}.'
+  additionalHint: 'Platí jen pro tuto akci a nepřekládá se automaticky.'
+  suggested: 'Formulář této akce zřejmě sbírá: {categories}.'
   applySuggested: 'Přidat'
 field:
-  additionalPlaceholder: 'Další informace o ochraně osobních údajů pro tento tábor…'
+  additionalPlaceholder: 'Další informace o ochraně osobních údajů pro tuto akci…'
 status:
   none:
-    title: 'Žádná doplnění pro tento tábor'
+    title: 'Žádná doplnění pro tuto akci'
     detail: 'Přihlašující vidí informace vaší organizace beze změn.'
   unpublishedDetail: 'Přihlašující vidí informace vaší organizace bez těchto doplnění, dokud je nezveřejníš.'
   blocked: 'Zatím není na čem tato doplnění postavit.'
   incomplete: 'Tato doplnění zatím nelze zveřejnit:'
-  empty: 'Zatím není co zveřejnit – zaškrtni, co tento tábor doplňuje, nebo níže napiš doplnění.'
-  withdraw: 'Zveřejněním se doplnění tohoto tábora stáhnou – přihlašující pak uvidí jen informace vaší organizace.'
+  empty: 'Zatím není co zveřejnit – zaškrtni, co tato akce doplňuje, nebo níže napiš doplnění.'
+  withdraw: 'Zveřejněním se doplnění této akce stáhnou – přihlašující pak uvidí jen informace vaší organizace.'
 notify:
   publishFailed: 'Publikování se nezdařilo'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
 title: 'Informacje o ochronie danych'
-subtitle: 'Co ten obóz dodaje do informacji swojej organizacji.'
+subtitle: 'Co to wydarzenie dodaje do informacji swojej organizacji.'
 baseline:
   title: 'Od Waszej organizacji'
-  hint: 'Opublikowane przez organizację i pokazywane przy wszystkich jej obozach. Ten obóz może je uzupełnić, ale nie zmienić ani zastąpić.'
+  hint: 'Opublikowane przez organizację i pokazywane przy wszystkich jej wydarzeniach. To wydarzenie może je uzupełnić, ale nie zmienić ani zastąpić.'
   version: 'Wersja {version} · {date}'
-  previewHint: 'Informacje w dzisiejszym kształcie, bez uzupełnień tego obozu.'
+  previewHint: 'Informacje w dzisiejszym kształcie, bez uzupełnień tego wydarzenia.'
   purposes: 'W jakim celu dane są zbierane'
   dataCategories: 'Co jest zbierane'
   recipients: 'Kto jeszcze je otrzymuje'
@@ -1134,28 +1134,28 @@ baseline:
   freeText: 'Wasza organizacja napisała informacje własnym tekstem, więc poniższych pozycji nie da się z nimi zestawić. Przeczytaj je, zanim coś tu dodasz.'
   missing:
     title: 'Wasza organizacja nie opublikowała jeszcze żadnych informacji o ochronie danych.'
-    detail: 'Do tego czasu osoby zgłaszające się nie widzą przy tym obozie żadnych informacji – ani tego, co tu dodasz.'
+    detail: 'Do tego czasu osoby zgłaszające się nie widzą przy tym wydarzeniu żadnych informacji – ani tego, co tu dodasz.'
 addendum:
-  title: 'Uzupełnienia dla tego obozu'
-  hint: 'Tylko to, co jest specyficzne dla tego obozu — konkretny przewoźnik, ubezpieczyciel, zdjęcia publikowane w tym sezonie. To, co organizacja już podaje, jest zaznaczone i zablokowane.'
+  title: 'Uzupełnienia dla tego wydarzenia'
+  hint: 'Tylko to, co jest specyficzne dla tego wydarzenia — konkretny przewoźnik, ubezpieczyciel, zdjęcia publikowane w tym sezonie. To, co organizacja już podaje, jest zaznaczone i zablokowane.'
   hideInherited: 'Ukryj to, co obejmuje organizacja'
   dataCategories: 'Zbierane dane'
   recipients: 'Odbiorcy'
   additional: 'Dodatkowe informacje'
-  additionalHint: 'Dotyczy tylko tego obozu i nie jest tłumaczone automatycznie.'
-  suggested: 'Formularz tego obozu prawdopodobnie zbiera: {categories}.'
+  additionalHint: 'Dotyczy tylko tego wydarzenia i nie jest tłumaczone automatycznie.'
+  suggested: 'Formularz tego wydarzenia prawdopodobnie zbiera: {categories}.'
   applySuggested: 'Dodaj'
 field:
-  additionalPlaceholder: 'Dodatkowe informacje o ochronie danych dla tego obozu…'
+  additionalPlaceholder: 'Dodatkowe informacje o ochronie danych dla tego wydarzenia…'
 status:
   none:
-    title: 'Brak uzupełnień dla tego obozu'
+    title: 'Brak uzupełnień dla tego wydarzenia'
     detail: 'Osoby zgłaszające się widzą informacje Waszej organizacji bez zmian.'
   unpublishedDetail: 'Osoby zgłaszające się widzą informacje Waszej organizacji bez tych uzupełnień, dopóki ich nie opublikujesz.'
   blocked: 'Nie ma jeszcze na czym oprzeć tych uzupełnień.'
   incomplete: 'Tych uzupełnień nie można jeszcze opublikować:'
-  empty: 'Nie ma jeszcze czego publikować – zaznacz, co dodaje ten obóz, albo napisz uzupełnienie poniżej.'
-  withdraw: 'Publikacja wycofa uzupełnienia tego obozu – osoby zgłaszające się zobaczą wtedy same informacje Waszej organizacji.'
+  empty: 'Nie ma jeszcze czego publikować – zaznacz, co dodaje to wydarzenie, albo napisz uzupełnienie poniżej.'
+  withdraw: 'Publikacja wycofa uzupełnienia tego wydarzenia – osoby zgłaszające się zobaczą wtedy same informacje Waszej organizacji.'
 notify:
   publishFailed: 'Publikacja nie powiodła się'
 </i18n>

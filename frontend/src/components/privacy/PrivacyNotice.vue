@@ -450,7 +450,7 @@ section:
   dataProvision: 'Whether you have to provide this data'
   automated: 'Automated decision-making'
   additional: 'Further information'
-  campAdditional: 'Additional information for this camp'
+  campAdditional: 'Additional information for this event'
   rights: 'Your rights'
   complaint: 'Right to complain'
 registrationNumber: 'Registration number'
@@ -465,7 +465,7 @@ transferSentence: 'Your data is transferred to {countries}, on the basis of {saf
 automatedYes: 'We use automated decision-making, including profiling, in the course of this processing.'
 automatedNo: 'We do not use automated decision-making or profiling.'
 dataProvision: 'Fields marked as required have to be filled in before the registration can be submitted; without them we cannot process it. All other fields are voluntary: leaving one blank does not affect whether your registration is accepted, but it does mean we cannot take that information into account — a dietary requirement or a medical condition we do not know about is one we cannot cater for.'
-noticeMissing: 'This organisation has not yet published privacy information for its camps.'
+noticeMissing: 'This organisation has not yet published privacy information for its events.'
 regionalAuthority: 'Depending on where the organisation is established, a regional supervisory authority may be competent instead.'
 complaint: 'You have the right to lodge a complaint with a data protection supervisory authority.'
 rights:
@@ -493,7 +493,7 @@ section:
   dataProvision: 'Ob die Daten bereitgestellt werden müssen'
   automated: 'Automatisierte Entscheidungsfindung'
   additional: 'Weitere Informationen'
-  campAdditional: 'Zusätzliche Informationen zu dieser Freizeit'
+  campAdditional: 'Zusätzliche Informationen zu dieser Veranstaltung'
   rights: 'Deine Rechte'
   complaint: 'Beschwerderecht'
 registrationNumber: 'Registernummer'
@@ -508,7 +508,7 @@ transferSentence: 'Deine Daten werden nach {countries} übermittelt, gestützt a
 automatedYes: 'Im Rahmen dieser Verarbeitung findet eine automatisierte Entscheidungsfindung einschließlich Profiling statt.'
 automatedNo: 'Eine automatisierte Entscheidungsfindung oder ein Profiling findet nicht statt.'
 dataProvision: 'Als Pflichtfeld gekennzeichnete Angaben müssen ausgefüllt werden, bevor die Anmeldung abgeschickt werden kann; ohne sie können wir sie nicht bearbeiten. Alle übrigen Angaben sind freiwillig: Bleiben sie leer, hat das keinen Einfluss darauf, ob deine Anmeldung angenommen wird. Wir können sie dann aber auch nicht berücksichtigen – eine Ernährungsweise oder eine Erkrankung, von der wir nichts wissen, können wir nicht einplanen.'
-noticeMissing: 'Diese Organisation hat noch keine Datenschutzinformationen für ihre Freizeiten veröffentlicht.'
+noticeMissing: 'Diese Organisation hat noch keine Datenschutzinformationen für ihre Veranstaltungen veröffentlicht.'
 regionalAuthority: 'Je nach Sitz der Organisation kann stattdessen eine Landesdatenschutzbehörde zuständig sein.'
 complaint: 'Du hast das Recht, dich bei einer Datenschutzaufsichtsbehörde zu beschweren.'
 rights:
@@ -536,7 +536,7 @@ section:
   dataProvision: 'Êtes-vous tenu de fournir ces données ?'
   automated: 'Décision automatisée'
   additional: 'Informations complémentaires'
-  campAdditional: 'Informations complémentaires pour ce séjour'
+  campAdditional: 'Informations complémentaires pour cet événement'
   rights: 'Vos droits'
   complaint: 'Droit de réclamation'
 registrationNumber: "Numéro d'enregistrement"
@@ -551,7 +551,7 @@ transferSentence: 'Vos données sont transférées vers {countries}, sur la base
 automatedYes: 'Ce traitement comporte une prise de décision automatisée, y compris un profilage.'
 automatedNo: "Nous n'avons recours ni à la décision automatisée ni au profilage."
 dataProvision: "Les champs signalés comme obligatoires doivent être remplis pour que l'inscription puisse être envoyée ; sans eux, nous ne pouvons pas la traiter. Tous les autres champs sont facultatifs : les laisser vides n'a aucune incidence sur l'acceptation de votre inscription, mais nous ne pourrons pas en tenir compte — un régime alimentaire ou un problème de santé que nous ignorons ne peut pas être pris en charge."
-noticeMissing: "Cette organisation n'a pas encore publié d'informations relatives à la protection des données pour ses séjours."
+noticeMissing: "Cette organisation n'a pas encore publié d'informations relatives à la protection des données pour ses événements."
 regionalAuthority: "Selon le lieu d'établissement de l'organisation, une autorité de contrôle régionale peut être compétente."
 complaint: "Vous avez le droit d'introduire une réclamation auprès d'une autorité de contrôle en matière de protection des données."
 rights:
@@ -579,7 +579,7 @@ section:
   dataProvision: 'Zda je nutné údaje poskytnout'
   automated: 'Automatizované rozhodování'
   additional: 'Další informace'
-  campAdditional: 'Doplňující informace k tomuto táboru'
+  campAdditional: 'Doplňující informace k této akci'
   rights: 'Tvoje práva'
   complaint: 'Právo podat stížnost'
 registrationNumber: 'Registrační číslo'
@@ -594,7 +594,7 @@ transferSentence: 'Tvoje údaje jsou předávány do {countries} na základě {s
 automatedYes: 'V rámci tohoto zpracování dochází k automatizovanému rozhodování včetně profilování.'
 automatedNo: 'K automatizovanému rozhodování ani profilování nedochází.'
 dataProvision: 'Pole označená jako povinná je nutné vyplnit, aby šlo přihlášku odeslat; bez nich ji nemůžeme zpracovat. Všechna ostatní pole jsou dobrovolná: pokud je necháš prázdná, nemá to vliv na to, zda přihlášku přijmeme. Nemůžeme k nim ale přihlédnout – na stravovací potřebu nebo zdravotní obtíž, o které nevíme, se nedokážeme připravit.'
-noticeMissing: 'Tato organizace zatím nezveřejnila informace o ochraně osobních údajů pro své tábory.'
+noticeMissing: 'Tato organizace zatím nezveřejnila informace o ochraně osobních údajů pro své akce.'
 regionalAuthority: 'Podle sídla organizace může být příslušný jiný, regionální dozorový úřad.'
 complaint: 'Máš právo podat stížnost u dozorového úřadu pro ochranu osobních údajů.'
 rights:
@@ -622,7 +622,7 @@ section:
   dataProvision: 'Czy trzeba podać te dane'
   automated: 'Zautomatyzowane podejmowanie decyzji'
   additional: 'Dodatkowe informacje'
-  campAdditional: 'Dodatkowe informacje dotyczące tego obozu'
+  campAdditional: 'Dodatkowe informacje dotyczące tego wydarzenia'
   rights: 'Twoje prawa'
   complaint: 'Prawo do skargi'
 registrationNumber: 'Numer rejestrowy'
@@ -637,7 +637,7 @@ transferSentence: 'Twoje dane są przekazywane do {countries} na podstawie {safe
 automatedYes: 'W ramach tego przetwarzania dochodzi do zautomatyzowanego podejmowania decyzji, w tym profilowania.'
 automatedNo: 'Nie stosujemy zautomatyzowanego podejmowania decyzji ani profilowania.'
 dataProvision: 'Pola oznaczone jako obowiązkowe trzeba wypełnić, aby wysłać zgłoszenie; bez nich nie możemy go rozpatrzyć. Wszystkie pozostałe pola są dobrowolne: pozostawienie ich pustymi nie wpływa na to, czy przyjmiemy zgłoszenie, ale nie będziemy mogli tych informacji uwzględnić — nie zadbamy o dietę ani o dolegliwość, o której nie wiemy.'
-noticeMissing: 'Ta organizacja nie opublikowała jeszcze informacji o ochronie danych dla swoich obozów.'
+noticeMissing: 'Ta organizacja nie opublikowała jeszcze informacji o ochronie danych dla swoich wydarzeń.'
 regionalAuthority: 'W zależności od siedziby organizacji właściwy może być regionalny organ nadzorczy.'
 complaint: 'Masz prawo wnieść skargę do organu nadzorczego ds. ochrony danych.'
 rights:

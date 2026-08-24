@@ -180,7 +180,7 @@ watch(() => props.campId, load);
 <i18n lang="yaml" locale="en">
 summary: '{organization} is responsible for the data you enter here. Before you submit, please read what it is used for and how long it is kept.'
 showDetails: 'Privacy information'
-intro: 'This describes what the organisation running this camp does with the data you enter. It comes in addition to the privacy policy of this platform:'
+intro: 'This describes what the organisation running this event does with the data you enter. It comes in addition to the privacy policy of this platform:'
 platformPolicy: 'platform privacy policy'
 permanentLink: 'Open in a new tab'
 close: 'Close'
@@ -189,7 +189,7 @@ close: 'Close'
 <i18n lang="yaml" locale="de">
 summary: '{organization} ist für die hier eingegebenen Daten verantwortlich. Bitte lies vor dem Absenden, wofür sie verwendet und wie lange sie gespeichert werden.'
 showDetails: 'Datenschutzinformationen'
-intro: 'Hier steht, was die Organisation dieser Freizeit mit den von dir eingegebenen Daten macht. Sie gelten zusätzlich zur Datenschutzerklärung dieser Plattform:'
+intro: 'Hier steht, was die Organisation dieser Veranstaltung mit den von dir eingegebenen Daten macht. Sie gelten zusätzlich zur Datenschutzerklärung dieser Plattform:'
 platformPolicy: 'Datenschutzerklärung der Plattform'
 permanentLink: 'In neuem Tab öffnen'
 close: 'Schließen'
@@ -198,7 +198,7 @@ close: 'Schließen'
 <i18n lang="yaml" locale="fr">
 summary: "{organization} est responsable des données que vous saisissez ici. Avant d'envoyer, veuillez lire à quoi elles servent et combien de temps elles sont conservées."
 showDetails: 'Informations sur la protection des données'
-intro: "Vous trouverez ici ce que l'organisation de ce séjour fait des données que vous saisissez. Elles s'ajoutent à la politique de confidentialité de cette plateforme :"
+intro: "Vous trouverez ici ce que l'organisation de cet événement fait des données que vous saisissez. Elles s'ajoutent à la politique de confidentialité de cette plateforme :"
 platformPolicy: 'politique de confidentialité de la plateforme'
 permanentLink: 'Ouvrir dans un nouvel onglet'
 close: 'Fermer'
@@ -207,7 +207,7 @@ close: 'Fermer'
 <i18n lang="yaml" locale="cs">
 summary: 'Za údaje, které zde zadáš, odpovídá {organization}. Před odesláním si prosím přečti, k čemu se používají a jak dlouho se uchovávají.'
 showDetails: 'Informace o ochraně osobních údajů'
-intro: 'Zde je popsáno, co organizace pořádající tento tábor dělá s údaji, které zadáš. Platí nad rámec zásad ochrany osobních údajů této platformy:'
+intro: 'Zde je popsáno, co organizace pořádající tuto akci dělá s údaji, které zadáš. Platí nad rámec zásad ochrany osobních údajů této platformy:'
 platformPolicy: 'zásady ochrany osobních údajů platformy'
 permanentLink: 'Otevřít na nové kartě'
 close: 'Zavřít'
@@ -216,7 +216,7 @@ close: 'Zavřít'
 <i18n lang="yaml" locale="pl">
 summary: 'Za dane, które tu wprowadzasz, odpowiada {organization}. Przed wysłaniem zapoznaj się z tym, do czego są używane i jak długo są przechowywane.'
 showDetails: 'Informacje o ochronie danych'
-intro: 'Poniżej opisano, co organizacja prowadząca ten obóz robi z wprowadzonymi przez Ciebie danymi. Obowiązują one dodatkowo obok polityki prywatności tej platformy:'
+intro: 'Poniżej opisano, co organizacja prowadząca to wydarzenie robi z wprowadzonymi przez Ciebie danymi. Obowiązują one dodatkowo obok polityki prywatności tej platformy:'
 platformPolicy: 'polityka prywatności platformy'
 permanentLink: 'Otwórz w nowej karcie'
 close: 'Zamknij'

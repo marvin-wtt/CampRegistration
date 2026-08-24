@@ -1160,12 +1160,12 @@ $field-max-narrow: 28rem;
 disclaimer: 'These templates help you describe your processing, but they are not legal advice. Your organisation remains the controller and is responsible for the notice being correct.'
 title: 'Privacy information'
 subtitle: 'What happens to the data collected when someone registers.'
-baselineNote: 'This is the baseline for every camp your organisation runs. Individual camps can add to it and adjust it where they differ, but not replace it.'
+baselineNote: 'This is the baseline for every event your organisation runs. Individual events can add to it and adjust it where they differ, but not replace it.'
 mode:
   title: 'How do you want to write this?'
   builder: 'Guided — pick from prepared wording (translated into all languages for you)'
   freeText: 'Free text — write the whole notice yourself'
-  freeTextWarning: 'You write the whole notice yourself, in every language your camps run in. Nothing is translated or filled in for you, and your text is published exactly as you write it.'
+  freeTextWarning: 'You write the whole notice yourself, in every language your events run in. Nothing is translated or filled in for you, and your text is published exactly as you write it.'
 freeText:
   title: 'Your privacy notice'
   hint: 'This replaces the guided sections entirely. The rights, complaint and supervisory authority sections are still added for you.'
@@ -1242,12 +1242,12 @@ notify:
 disclaimer: 'Diese Textbausteine helfen dir, die Verarbeitung zu beschreiben, sind aber keine Rechtsberatung. Die Organisation bleibt verantwortliche Stelle und haftet für die Richtigkeit der Angaben.'
 title: 'Datenschutzinformationen'
 subtitle: 'Was mit den Daten geschieht, die bei einer Anmeldung erhoben werden.'
-baselineNote: 'Diese Angaben gelten für alle Freizeiten der Organisation. Einzelne Freizeiten können sie ergänzen und dort anpassen, wo sie abweichen – ersetzen können sie sie nicht.'
+baselineNote: 'Diese Angaben gelten für alle Veranstaltungen der Organisation. Einzelne Veranstaltungen können sie ergänzen und dort anpassen, wo sie abweichen – ersetzen können sie sie nicht.'
 mode:
   title: 'Wie sollen die Informationen entstehen?'
   builder: 'Geführt – vorformulierte Textbausteine auswählen, automatisch in alle Sprachen übersetzt'
   freeText: 'Freitext – alles selbst formulieren'
-  freeTextWarning: 'Du verfasst die gesamten Informationen selbst – in jeder Sprache, in der die Freizeiten stattfinden. Nichts wird übersetzt oder ergänzt, und der Text wird genau so veröffentlicht, wie du ihn schreibst.'
+  freeTextWarning: 'Du verfasst die gesamten Informationen selbst – in jeder Sprache, in der die Veranstaltungen stattfinden. Nichts wird übersetzt oder ergänzt, und der Text wird genau so veröffentlicht, wie du ihn schreibst.'
 freeText:
   title: 'Datenschutzinformationen'
   hint: 'Ersetzt die geführten Abschnitte vollständig. Betroffenenrechte, Beschwerderecht und Aufsichtsbehörde werden weiterhin automatisch ergänzt.'
@@ -1324,12 +1324,12 @@ notify:
 disclaimer: "Ces modèles vous aident à décrire vos traitements, mais ne constituent pas un conseil juridique. Votre organisation reste responsable de traitement et de l'exactitude de ces informations."
 title: 'Informations sur la protection des données'
 subtitle: "Ce qu'il advient des données recueillies lors d'une inscription."
-baselineNote: "Ces informations valent pour tous les séjours de l'organisation. Chaque séjour peut les compléter et les ajuster là où il diffère, mais pas les remplacer."
+baselineNote: "Ces informations valent pour tous les événements de l'organisation. Chaque événement peut les compléter et les ajuster là où il diffère, mais pas les remplacer."
 mode:
   title: 'Comment souhaitez-vous rédiger ces informations ?'
   builder: 'Guidé – choisir des formulations préétablies, traduites automatiquement dans toutes les langues'
   freeText: 'Texte libre – tout rédiger vous-même'
-  freeTextWarning: "Vous rédigez l'intégralité des informations vous-même, dans chaque langue de vos séjours. Rien n'est traduit ni complété pour vous, et votre texte est publié tel que vous l'écrivez."
+  freeTextWarning: "Vous rédigez l'intégralité des informations vous-même, dans chaque langue de vos événements. Rien n'est traduit ni complété pour vous, et votre texte est publié tel que vous l'écrivez."
 freeText:
   title: 'Vos informations sur la protection des données'
   hint: 'Cela remplace entièrement les sections guidées. Les droits, le droit de réclamation et l’autorité de contrôle restent ajoutés automatiquement.'
@@ -1406,12 +1406,12 @@ notify:
 disclaimer: 'Tyto šablony ti pomohou popsat zpracování, nejsou však právní radou. Vaše organizace zůstává správcem a odpovídá za správnost informací.'
 title: 'Informace o ochraně osobních údajů'
 subtitle: 'Co se děje s údaji, které se získávají při přihlášení.'
-baselineNote: 'Tyto údaje platí pro všechny tábory organizace. Jednotlivé tábory je mohou doplnit a upravit tam, kde se liší, ale nemohou je nahradit.'
+baselineNote: 'Tyto údaje platí pro všechny akce organizace. Jednotlivé akce je mohou doplnit a upravit tam, kde se liší, ale nemohou je nahradit.'
 mode:
   title: 'Jak to chcete sepsat?'
   builder: 'S průvodcem – vybrat z připravených formulací, automaticky přeložených do všech jazyků'
   freeText: 'Volný text – sepsat vše sami'
-  freeTextWarning: 'Veškeré informace sepisuješ ty – v každém jazyce, ve kterém pořádáte tábory. Nic se nepřekládá ani nedoplňuje a text se zveřejní přesně tak, jak ho napíšeš.'
+  freeTextWarning: 'Veškeré informace sepisuješ ty – v každém jazyce, ve kterém pořádáte akce. Nic se nepřekládá ani nedoplňuje a text se zveřejní přesně tak, jak ho napíšeš.'
 freeText:
   title: 'Vaše informace o ochraně osobních údajů'
   hint: 'Zcela nahrazuje sekce průvodce. Práva, právo podat stížnost a dozorový úřad se i nadále doplňují automaticky.'
@@ -1488,12 +1488,12 @@ notify:
 disclaimer: 'Te szablony pomagają opisać przetwarzanie, ale nie stanowią porady prawnej. Twoja organizacja pozostaje administratorem i odpowiada za poprawność informacji.'
 title: 'Informacje o ochronie danych'
 subtitle: 'Co dzieje się z danymi zbieranymi podczas zgłoszenia.'
-baselineNote: 'Te informacje dotyczą wszystkich obozów organizacji. Poszczególne obozy mogą je uzupełnić i dostosować tam, gdzie się różnią, ale nie mogą ich zastąpić.'
+baselineNote: 'Te informacje dotyczą wszystkich wydarzeń organizacji. Poszczególne wydarzenia mogą je uzupełnić i dostosować tam, gdzie się różnią, ale nie mogą ich zastąpić.'
 mode:
   title: 'Jak chcecie to napisać?'
   builder: 'Kreator – wybór z przygotowanych sformułowań, tłumaczonych automatycznie na wszystkie języki'
   freeText: 'Tekst własny – napisanie całości samodzielnie'
-  freeTextWarning: 'Całość informacji piszesz samodzielnie – w każdym języku Waszych obozów. Nic nie jest tłumaczone ani uzupełniane, a tekst zostaje opublikowany dokładnie tak, jak go napiszesz.'
+  freeTextWarning: 'Całość informacji piszesz samodzielnie – w każdym języku Waszych wydarzeń. Nic nie jest tłumaczone ani uzupełniane, a tekst zostaje opublikowany dokładnie tak, jak go napiszesz.'
 freeText:
   title: 'Wasze informacje o ochronie danych'
   hint: 'Zastępuje to w całości sekcje kreatora. Prawa, prawo do skargi i organ nadzorczy są nadal dodawane automatycznie.'

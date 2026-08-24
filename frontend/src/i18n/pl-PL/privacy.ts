@@ -1,15 +1,16 @@
 export default {
   purpose: {
     registration_administration: 'Obsługa Twojego zgłoszenia',
-    participant_communication: 'Informowanie przed obozem i w jego trakcie',
-    camp_organisation: 'Organizacja i przebieg obozu',
+    participant_communication:
+      'Informowanie przed wydarzeniem i w jego trakcie',
+    camp_organisation: 'Organizacja i przebieg wydarzenia',
     catering: 'Wyżywienie',
-    medical_care: 'Opieka medyczna podczas obozu',
+    medical_care: 'Opieka medyczna podczas wydarzenia',
     emergency_contact: 'Kontakt w sytuacji awaryjnej',
     transport: 'Organizacja transportu',
     insurance: 'Ochrona ubezpieczeniowa',
     payment_and_invoicing: 'Płatności i fakturowanie',
-    photo_documentation: 'Wewnętrzna dokumentacja życia obozowego',
+    photo_documentation: 'Wewnętrzna dokumentacja wydarzenia',
     photo_publication: 'Publikowanie zdjęć',
     statutory_reporting: 'Zgłoszenia wymagane przepisami prawa',
     newsletter: 'Wysyłka naszego newslettera',
@@ -37,7 +38,7 @@ export default {
   },
 
   recipient: {
-    camp_staff: 'Zespół obozu',
+    camp_staff: 'Zespół wydarzenia',
     accommodation_provider: 'Podmiot zapewniający zakwaterowanie',
     catering_provider: 'Firma cateringowa',
     transport_provider: 'Przewoźnik',
@@ -72,7 +73,7 @@ export default {
 
   specialCategoryCondition: {
     explicit_consent:
-      'Zwykły przypadek przy obozie. Osoba musi wyrazić zgodę osobno i móc ją w każdej chwili wycofać.',
+      'Zwykły przypadek przy wydarzeniu. Osoba musi wyrazić zgodę osobno i móc ją w każdej chwili wycofać.',
     nonprofit_body:
       'Tylko jeśli osoba jest członkiem Waszej organizacji lub pozostaje z nią w regularnym kontakcie, a dane nie wychodzą poza organizację.',
     vital_interests:
@@ -84,7 +85,7 @@ export default {
   },
 
   retentionAnchor: {
-    camp_end: 'po zakończeniu obozu',
+    camp_end: 'po zakończeniu wydarzenia',
     submission: 'po przesłaniu zgłoszenia',
   },
 

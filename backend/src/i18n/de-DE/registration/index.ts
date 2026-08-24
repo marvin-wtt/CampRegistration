@@ -1,7 +1,7 @@
 export default {
   email: {
     reason: '$t(email:footer.cause) Sie sich für dieses Camp angemeldet haben.',
-    privacyLink: 'Datenschutzinformationen zu diesem Camp',
+    privacyLink: 'Datenschutzinformationen zu dieser Veranstaltung',
     changes: {
       cleared: 'entfernt',
       file: 'Datei aktualisiert',

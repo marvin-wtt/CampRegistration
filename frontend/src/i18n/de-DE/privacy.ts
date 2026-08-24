@@ -1,15 +1,15 @@
 export default {
   purpose: {
     registration_administration: 'Abwicklung deiner Anmeldung',
-    participant_communication: 'Information vor und während der Freizeit',
-    camp_organisation: 'Organisation und Durchführung der Freizeit',
+    participant_communication: 'Information vor und während der Veranstaltung',
+    camp_organisation: 'Organisation und Durchführung der Veranstaltung',
     catering: 'Verpflegung',
-    medical_care: 'Medizinische Versorgung während der Freizeit',
+    medical_care: 'Medizinische Versorgung während der Veranstaltung',
     emergency_contact: 'Kontaktaufnahme im Notfall',
     transport: 'Organisation der An- und Abreise',
     insurance: 'Versicherungsschutz',
     payment_and_invoicing: 'Zahlung und Rechnungsstellung',
-    photo_documentation: 'Interne Dokumentation des Freizeitlebens',
+    photo_documentation: 'Interne Dokumentation der Veranstaltung',
     photo_publication: 'Veröffentlichung von Fotos',
     statutory_reporting: 'Gesetzlich vorgeschriebene Meldungen',
     newsletter: 'Versand unseres Newsletters',
@@ -37,7 +37,7 @@ export default {
   },
 
   recipient: {
-    camp_staff: 'Das Team der Freizeit',
+    camp_staff: 'Das Team der Veranstaltung',
     accommodation_provider: 'Der Betreiber der Unterkunft',
     catering_provider: 'Der Caterer',
     transport_provider: 'Das Transportunternehmen',
@@ -75,7 +75,7 @@ export default {
 
   specialCategoryCondition: {
     explicit_consent:
-      'Der Normalfall für eine Freizeit. Die Person muss gesondert zustimmen und jederzeit widerrufen können.',
+      'Der Normalfall für eine Veranstaltung. Die Person muss gesondert zustimmen und jederzeit widerrufen können.',
     nonprofit_body:
       'Nur wenn die Person Mitglied eurer Organisation ist oder in regelmäßigem Kontakt zu ihr steht und die Daten die Organisation nicht verlassen.',
     vital_interests:
@@ -87,7 +87,7 @@ export default {
   },
 
   retentionAnchor: {
-    camp_end: 'nach Ende der Freizeit',
+    camp_end: 'nach Ende der Veranstaltung',
     submission: 'nach Absenden der Anmeldung',
   },
 

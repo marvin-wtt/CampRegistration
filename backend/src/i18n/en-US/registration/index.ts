@@ -1,7 +1,7 @@
 export default {
   email: {
     reason: '$t(email:footer.cause) you registered for this camp.',
-    privacyLink: 'Privacy information for this camp',
+    privacyLink: 'Privacy information for this event',
     changes: {
       cleared: 'removed',
       file: 'file updated',

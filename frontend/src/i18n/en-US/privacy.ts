@@ -12,15 +12,15 @@ export default {
   purpose: {
     registration_administration: 'Administering your registration',
     participant_communication:
-      'Keeping you informed before and during the camp',
-    camp_organisation: 'Organising and running the camp',
+      'Keeping you informed before and during the event',
+    camp_organisation: 'Organising and running the event',
     catering: 'Catering',
-    medical_care: 'Medical care during the camp',
+    medical_care: 'Medical care during the event',
     emergency_contact: 'Contacting someone in an emergency',
     transport: 'Organising transport',
     insurance: 'Insurance cover',
     payment_and_invoicing: 'Payment and invoicing',
-    photo_documentation: 'Internal documentation of camp life',
+    photo_documentation: 'Internal documentation of the event',
     photo_publication: 'Publishing photographs',
     statutory_reporting: 'Reporting required by law',
     newsletter: 'Sending our newsletter',
@@ -48,7 +48,7 @@ export default {
   },
 
   recipient: {
-    camp_staff: 'The camp team',
+    camp_staff: 'The event team',
     accommodation_provider: 'The accommodation provider',
     catering_provider: 'The catering provider',
     transport_provider: 'The transport provider',
@@ -81,7 +81,7 @@ export default {
 
   specialCategoryCondition: {
     explicit_consent:
-      'The normal basis for a camp. The person must agree separately and be able to withdraw at any time.',
+      'The normal basis for an event. The person must agree separately and be able to withdraw at any time.',
     nonprofit_body:
       'Only if the person is a member of, or in regular contact with, your organisation, and the data stays inside it.',
     vital_interests:
@@ -93,7 +93,7 @@ export default {
   },
 
   retentionAnchor: {
-    camp_end: 'after the camp ends',
+    camp_end: 'after the event ends',
     submission: 'after you submit the registration',
   },
 
