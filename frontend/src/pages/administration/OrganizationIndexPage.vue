@@ -83,7 +83,10 @@ import RowActions, {
   type RowAction,
 } from '@/components/administration/RowActions.vue';
 import OrganizationDetailsDialog from '@/components/organization/OrganizationDetailsDialog.vue';
-import OrganizationReviewDialog from '@/components/organization/OrganizationReviewDialog.vue';
+import OrganizationReviewDialog, {
+  type OrganizationReviewResult,
+} from '@/components/organization/OrganizationReviewDialog.vue';
+import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
 import { useAPIService } from '@/services/APIService';
 import { useServerTable } from '@/composables/serverTable';
 import { useServiceNotifications } from '@/composables/serviceHandler';
@@ -114,6 +117,7 @@ const {
   onVirtualScroll,
   identitySort,
   reload,
+  withProgressNotification,
 } = useServerTable<Organization, OrganizationQuery>({
   storeName: 'organization',
   sortBy: 'submittedAt',
@@ -191,7 +195,7 @@ function statusColor(status: OrganizationVerificationStatus): string {
 }
 
 function actionsFor(organization: Organization): RowAction[] {
-  const actions: RowAction[] = [
+  return [
     {
       key: 'details',
       label: t('action.details'),
@@ -199,42 +203,34 @@ function actionsFor(organization: Organization): RowAction[] {
       handler: () => showDetails(organization),
     },
     {
+      key: 'review',
+      // A decision is never final: the same dialog reopens on a decided
+      // organization to reinstate a rejected one or revoke a verified one.
+      label:
+        organization.verificationStatus === 'PENDING'
+          ? t('action.review')
+          : t('action.changeDecision'),
+      icon: 'rate_review',
+      color: 'primary',
+      handler: () => review(organization),
+    },
+    {
       key: 'open',
       label: t('action.open'),
       icon: 'open_in_new',
       handler: () => openOrganization(organization),
     },
-  ];
-
-  // A decision can be revisited at any time: verify a rejected organization,
-  // or revoke one that should no longer be trusted.
-  if (organization.verificationStatus !== 'VERIFIED') {
-    actions.push({
-      key: 'approve',
-      label:
-        organization.verificationStatus === 'PENDING'
-          ? t('action.approve')
-          : t('action.reinstate'),
-      icon: 'check',
-      color: 'positive',
-      handler: () => review(organization, 'VERIFIED'),
-    });
-  }
-
-  if (organization.verificationStatus !== 'REJECTED') {
-    actions.push({
-      key: 'reject',
-      label:
-        organization.verificationStatus === 'PENDING'
-          ? t('action.reject')
-          : t('action.revoke'),
-      icon: organization.verificationStatus === 'PENDING' ? 'close' : 'block',
+    {
+      key: 'delete',
+      label: t('action.delete'),
+      icon: 'delete',
       color: 'negative',
-      handler: () => review(organization, 'REJECTED'),
-    });
-  }
-
-  return actions;
+      separatorBefore: true,
+      handler: () => {
+        void onDelete(organization);
+      },
+    },
+  ];
 }
 
 function openOrganization(organization: Organization) {
@@ -255,24 +251,75 @@ function showDetails(organization: Organization) {
   });
 }
 
-function review(organization: Organization, decision: 'VERIFIED' | 'REJECTED') {
+/**
+ * Deletion is refused while the organization still owns camps or newsletters —
+ * their foreign keys are `Restrict`, so registrations can never be taken down
+ * with it. Only the details response carries those counts, so they are fetched
+ * up front: being told what blocks the deletion beats typing the name to
+ * confirm and only then being refused.
+ */
+async function onDelete(organization: Organization) {
+  const details = await withErrorNotification(
+    'details',
+    () => api.fetchOrganization(organization.id),
+    { message: t('notify.detailsFailed') },
+  );
+
+  if (details === undefined) {
+    return;
+  }
+
+  if (details.ownedCamps > 0 || details.ownedNewsletters > 0) {
+    quasar.dialog({
+      title: t('dialog.blocked.title'),
+      message: t('dialog.blocked.message', {
+        camps: details.ownedCamps,
+        newsletters: details.ownedNewsletters,
+      }),
+      ok: {
+        label: t('dialog.blocked.ok'),
+        color: 'primary',
+        rounded: true,
+      },
+    });
+    return;
+  }
+
+  quasar
+    .dialog({
+      component: SafeDeleteDialog,
+      componentProps: {
+        title: t('dialog.delete.title'),
+        message: t('dialog.delete.message', { name: organization.name }),
+        label: t('dialog.delete.label'),
+        value: organization.name,
+      },
+    })
+    .onOk(() => {
+      void withProgressNotification('delete', () =>
+        api.deleteOrganization(organization.id),
+      ).then(
+        () => reload(),
+        // Already reported by the progress notification.
+        () => undefined,
+      );
+    });
+}
+
+function review(organization: Organization) {
   quasar
     .dialog({
       component: OrganizationReviewDialog,
-      componentProps: { organization, decision },
+      componentProps: { organization },
     })
-    .onOk((reviewNote: string | null) => {
+    .onOk((decision: OrganizationReviewResult) => {
       void (async () => {
         // The decision can legitimately be refused — an organization cannot be
         // verified before its privacy notice is published, which is the state of
         // every fresh submission. Without this the dialog just closes.
         const result = await withErrorNotification(
           'review',
-          () =>
-            api.reviewOrganization(organization.id, {
-              status: decision,
-              reviewNote,
-            }),
+          () => api.reviewOrganization(organization.id, decision),
           { message: t('notify.reviewFailed') },
         );
 
@@ -301,12 +348,25 @@ column:
 action:
   details: 'Details'
   open: 'Open organization'
-  approve: 'Approve'
-  reject: 'Reject'
-  reinstate: 'Reinstate'
-  revoke: 'Revoke verification'
+  review: 'Review'
+  changeDecision: 'Change decision'
+  delete: 'Delete'
+dialog:
+  delete:
+    title: 'Delete Organization'
+    message: 'You are about to delete "{ name }".
+      Its members and pending invitations are removed with it.
+      This action cannot be undone.'
+    label: 'Organization Name'
+  blocked:
+    title: 'Organization Not Empty'
+    message:
+      'This organization still owns { camps } camp(s) and { newsletters } newsletter(s).
+      Move or delete them before deleting the organization.'
+    ok: 'Close'
 notify:
   reviewFailed: 'The decision could not be saved'
+  detailsFailed: 'The organization could not be loaded'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -326,12 +386,25 @@ column:
 action:
   details: 'Details'
   open: 'Organisation öffnen'
-  approve: 'Genehmigen'
-  reject: 'Ablehnen'
-  reinstate: 'Freigeben'
-  revoke: 'Verifizierung entziehen'
+  review: 'Prüfen'
+  changeDecision: 'Entscheidung ändern'
+  delete: 'Löschen'
+dialog:
+  delete:
+    title: 'Organisation löschen'
+    message: 'Du bist dabei, "{ name }" zu löschen.
+      Mitglieder und offene Einladungen werden mit gelöscht.
+      Diese Aktion kann nicht rückgängig gemacht werden.'
+    label: 'Name der Organisation'
+  blocked:
+    title: 'Organisation ist nicht leer'
+    message:
+      'Diese Organisation besitzt noch { camps } Camp(s) und { newsletters } Newsletter.
+      Verschiebe oder lösche sie, bevor du die Organisation löschst.'
+    ok: 'Schließen'
 notify:
   reviewFailed: 'Die Entscheidung konnte nicht gespeichert werden'
+  detailsFailed: 'Die Organisation konnte nicht geladen werden'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -351,12 +424,25 @@ column:
 action:
   details: 'Détails'
   open: "Ouvrir l'organisation"
-  approve: 'Approuver'
-  reject: 'Refuser'
-  reinstate: 'Réintégrer'
-  revoke: 'Retirer la vérification'
+  review: 'Contrôler'
+  changeDecision: 'Modifier la décision'
+  delete: 'Supprimer'
+dialog:
+  delete:
+    title: "Supprimer l'organisation"
+    message: 'Vous êtes sur le point de supprimer "{ name }".
+      Ses membres et ses invitations en attente seront supprimés avec elle.
+      Cette action est irréversible.'
+    label: "Nom de l'organisation"
+  blocked:
+    title: "L'organisation n'est pas vide"
+    message:
+      "Cette organisation possède encore { camps } camp(s) et { newsletters } newsletter(s).
+      Déplacez-les ou supprimez-les avant de supprimer l'organisation."
+    ok: 'Fermer'
 notify:
   reviewFailed: "La décision n'a pas pu être enregistrée"
+  detailsFailed: "L'organisation n'a pas pu être chargée"
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -376,12 +462,25 @@ column:
 action:
   details: 'Szczegóły'
   open: 'Otwórz organizację'
-  approve: 'Zatwierdź'
-  reject: 'Odrzuć'
-  reinstate: 'Przywróć'
-  revoke: 'Cofnij weryfikację'
+  review: 'Sprawdź'
+  changeDecision: 'Zmień decyzję'
+  delete: 'Usuń'
+dialog:
+  delete:
+    title: 'Usuń organizację'
+    message: 'Zamierzasz usunąć "{ name }".
+      Jej członkowie i oczekujące zaproszenia zostaną usunięci razem z nią.
+      Tej operacji nie można cofnąć.'
+    label: 'Nazwa organizacji'
+  blocked:
+    title: 'Organizacja nie jest pusta'
+    message:
+      'Ta organizacja nadal posiada obozy ({ camps }) i newslettery ({ newsletters }).
+      Przenieś je lub usuń przed usunięciem organizacji.'
+    ok: 'Zamknij'
 notify:
   reviewFailed: 'Nie udało się zapisać decyzji'
+  detailsFailed: 'Nie udało się wczytać organizacji'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -401,10 +500,23 @@ column:
 action:
   details: 'Detaily'
   open: 'Otevřít organizaci'
-  approve: 'Schválit'
-  reject: 'Zamítnout'
-  reinstate: 'Obnovit'
-  revoke: 'Odebrat ověření'
+  review: 'Zkontrolovat'
+  changeDecision: 'Změnit rozhodnutí'
+  delete: 'Smazat'
+dialog:
+  delete:
+    title: 'Smazat organizaci'
+    message: 'Chystáte se smazat "{ name }".
+      Její členové a čekající pozvánky budou smazány spolu s ní.
+      Tuto akci nelze vrátit zpět.'
+    label: 'Název organizace'
+  blocked:
+    title: 'Organizace není prázdná'
+    message:
+      'Tato organizace stále vlastní tábory ({ camps }) a newslettery ({ newsletters }).
+      Než organizaci smažete, přesuňte je nebo smažte.'
+    ok: 'Zavřít'
 notify:
   reviewFailed: 'Rozhodnutí se nepodařilo uložit'
+  detailsFailed: 'Organizaci se nepodařilo načíst'
 </i18n>
