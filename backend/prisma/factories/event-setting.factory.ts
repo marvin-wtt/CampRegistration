@@ -1,5 +1,5 @@
 import { Prisma } from '#generated/prisma/client.js';
-import { SETTING_KEYS } from '@event-registration/common/settings';
+import { SETTING_KEYS } from '@camp-registration/common/settings';
 import prisma from '../client.js';
 
 export const EventSettingFactory = {

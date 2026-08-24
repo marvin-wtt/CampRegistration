@@ -547,7 +547,7 @@ describe('/api/v1/events/:eventId/messages', () => {
       // surface here.
       await MessageTemplateFactory.create({
         event: { connect: { id: event.id } },
-        event: 'registration_confirmed',
+        trigger: 'registration_confirmed',
       });
 
       const { body } = await request()
@@ -718,7 +718,7 @@ describe('/api/v1/events/:eventId/messages', () => {
       const { event, accessToken } = await crateEventWithManager();
       const eventTemplate = await MessageTemplateFactory.create({
         event: { connect: { id: event.id } },
-        event: 'registration_confirmed',
+        trigger: 'registration_confirmed',
       });
 
       await request()
@@ -800,7 +800,7 @@ describe('/api/v1/events/:eventId/messages', () => {
       const { event, accessToken } = await crateEventWithManager();
       const eventTemplate = await MessageTemplateFactory.create({
         event: { connect: { id: event.id } },
-        event: 'registration_confirmed',
+        trigger: 'registration_confirmed',
       });
 
       await request()

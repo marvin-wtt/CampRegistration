@@ -21,7 +21,7 @@ const TOKEN_PATTERN = /\{\{\s*registration\.changes\s*}}/;
 
 export async function up(tx: Prisma.TransactionClient): Promise<void> {
   const templates = await tx.messageTemplate.findMany({
-    where: { event: EVENT },
+    where: { trigger: EVENT },
     select: { id: true, body: true },
   });
 

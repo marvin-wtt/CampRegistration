@@ -25,7 +25,7 @@ describe('/api/v1/events/:eventId/program-items', () => {
     return { event, user, manager, accessToken };
   };
 
-  const createEventForEvent = async (
+  const createProgramItemForEvent = async (
     event: Event,
     data?: Partial<Parameters<typeof ProgramItemFactory.create>[0]>,
   ): Promise<ProgramItem> => {
@@ -46,7 +46,7 @@ describe('/api/v1/events/:eventId/program-items', () => {
       async ({ role, expectedStatus }) => {
         const { event, accessToken } =
           await createEventWithManagerAndToken(role);
-        await createEventForEvent(event);
+        await createProgramItemForEvent(event);
 
         const response = await request()
           .get(`/api/v1/events/${event.id}/program-items`)
@@ -69,9 +69,9 @@ describe('/api/v1/events/:eventId/program-items', () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
       const otherEvent = await EventFactory.create();
 
-      await createEventForEvent(event);
-      await createEventForEvent(event);
-      await createEventForEvent(otherEvent);
+      await createProgramItemForEvent(event);
+      await createProgramItemForEvent(event);
+      await createProgramItemForEvent(otherEvent);
 
       const response = await request()
         .get(`/api/v1/events/${event.id}/program-items`)
@@ -122,14 +122,14 @@ describe('/api/v1/events/:eventId/program-items', () => {
       async ({ role, expectedStatus }) => {
         const { event, accessToken } =
           await createEventWithManagerAndToken(role);
-        const event = await createEventForEvent(event);
+        const programItem = await createProgramItemForEvent(event);
 
         const response = await request()
-          .get(`/api/v1/events/${event.id}/program-items/${event.id}`)
+          .get(`/api/v1/events/${event.id}/program-items/${programItem.id}`)
           .auth(accessToken, { type: 'bearer' })
           .expect(expectedStatus);
 
-        expect(response.body).toHaveProperty('data.id', event.id);
+        expect(response.body).toHaveProperty('data.id', programItem.id);
         expect(response.body).toHaveProperty('data.title');
         expect(response.body).toHaveProperty('data.plan');
       },
@@ -147,31 +147,31 @@ describe('/api/v1/events/:eventId/program-items', () => {
     it('should respond with `404` when the event belongs to a different event', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
       const otherEvent = await EventFactory.create();
-      const event = await createEventForEvent(otherEvent);
+      const programItem = await createProgramItemForEvent(otherEvent);
 
       await request()
-        .get(`/api/v1/events/${event.id}/program-items/${event.id}`)
+        .get(`/api/v1/events/${event.id}/program-items/${programItem.id}`)
         .auth(accessToken, { type: 'bearer' })
         .expect(404);
     });
 
     it('should respond with `403` when user is not a event manager', async () => {
       const event = await EventFactory.create();
-      const event = await createEventForEvent(event);
+      const programItem = await createProgramItemForEvent(event);
       const accessToken = generateAccessToken(await UserFactory.create());
 
       await request()
-        .get(`/api/v1/events/${event.id}/program-items/${event.id}`)
+        .get(`/api/v1/events/${event.id}/program-items/${programItem.id}`)
         .auth(accessToken, { type: 'bearer' })
         .expect(403);
     });
 
     it('should respond with `401` when unauthenticated', async () => {
       const event = await EventFactory.create();
-      const event = await createEventForEvent(event);
+      const programItem = await createProgramItemForEvent(event);
 
       await request()
-        .get(`/api/v1/events/${event.id}/program-items/${event.id}`)
+        .get(`/api/v1/events/${event.id}/program-items/${programItem.id}`)
         .expect(401);
     });
   });
@@ -353,10 +353,10 @@ describe('/api/v1/events/:eventId/program-items', () => {
       async ({ role, expectedStatus }) => {
         const { event, accessToken } =
           await createEventWithManagerAndToken(role);
-        const event = await createEventForEvent(event);
+        const programItem = await createProgramItemForEvent(event);
 
         await request()
-          .patch(`/api/v1/events/${event.id}/program-items/${event.id}`)
+          .patch(`/api/v1/events/${event.id}/program-items/${programItem.id}`)
           .send({ title: 'Updated Title' })
           .auth(accessToken, { type: 'bearer' })
           .expect(expectedStatus);
@@ -365,7 +365,7 @@ describe('/api/v1/events/:eventId/program-items', () => {
 
     it('should update all fields', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
-      const event = await createEventForEvent(event);
+      const programItem = await createProgramItemForEvent(event);
 
       const update = {
         title: 'Updated Title',
@@ -379,12 +379,12 @@ describe('/api/v1/events/:eventId/program-items', () => {
       };
 
       const { body } = await request()
-        .patch(`/api/v1/events/${event.id}/program-items/${event.id}`)
+        .patch(`/api/v1/events/${event.id}/program-items/${programItem.id}`)
         .send(update)
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
-      expect(body).toHaveProperty('data.id', event.id);
+      expect(body).toHaveProperty('data.id', programItem.id);
       expect(body).toHaveProperty('data.title', update.title);
       expect(body).toHaveProperty('data.details', update.details);
       expect(body).toHaveProperty('data.location', update.location);
@@ -397,13 +397,13 @@ describe('/api/v1/events/:eventId/program-items', () => {
 
     it('should update only the provided fields', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
-      const event = await createEventForEvent(event, {
+      const programItem = await createProgramItemForEvent(event, {
         title: 'Original Title',
         plan: 'a',
       });
 
       const { body } = await request()
-        .patch(`/api/v1/events/${event.id}/program-items/${event.id}`)
+        .patch(`/api/v1/events/${event.id}/program-items/${programItem.id}`)
         .send({ plan: 'b' })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
@@ -413,10 +413,10 @@ describe('/api/v1/events/:eventId/program-items', () => {
 
     it('should update title with translated object', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
-      const event = await createEventForEvent(event);
+      const programItem = await createProgramItemForEvent(event);
 
       const { body } = await request()
-        .patch(`/api/v1/events/${event.id}/program-items/${event.id}`)
+        .patch(`/api/v1/events/${event.id}/program-items/${programItem.id}`)
         .send({ title: { de: 'Deutsch', en: 'English' } })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
@@ -427,14 +427,14 @@ describe('/api/v1/events/:eventId/program-items', () => {
 
     it('should clear nullable fields when set to null', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
-      const event = await createEventForEvent(event, {
+      const programItem = await createProgramItemForEvent(event, {
         time: '10:00',
         duration: 60,
         color: '#123456',
       });
 
       const { body } = await request()
-        .patch(`/api/v1/events/${event.id}/program-items/${event.id}`)
+        .patch(`/api/v1/events/${event.id}/program-items/${programItem.id}`)
         .send({ time: null, duration: null, color: null })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
@@ -456,10 +456,10 @@ describe('/api/v1/events/:eventId/program-items', () => {
     it('should respond with `404` when the event belongs to a different event', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
       const otherEvent = await EventFactory.create();
-      const event = await createEventForEvent(otherEvent);
+      const programItem = await createProgramItemForEvent(otherEvent);
 
       await request()
-        .patch(`/api/v1/events/${event.id}/program-items/${event.id}`)
+        .patch(`/api/v1/events/${event.id}/program-items/${programItem.id}`)
         .send({ title: 'Updated' })
         .auth(accessToken, { type: 'bearer' })
         .expect(404);
@@ -471,10 +471,10 @@ describe('/api/v1/events/:eventId/program-items', () => {
       { label: 'plan is invalid', data: { plan: 'c' } },
     ])('should respond with `400` when $label', async ({ data }) => {
       const { event, accessToken } = await createEventWithManagerAndToken();
-      const event = await createEventForEvent(event);
+      const programItem = await createProgramItemForEvent(event);
 
       await request()
-        .patch(`/api/v1/events/${event.id}/program-items/${event.id}`)
+        .patch(`/api/v1/events/${event.id}/program-items/${programItem.id}`)
         .send(data)
         .auth(accessToken, { type: 'bearer' })
         .expect(400);
@@ -482,11 +482,11 @@ describe('/api/v1/events/:eventId/program-items', () => {
 
     it('should respond with `403` when user is not a event manager', async () => {
       const event = await EventFactory.create();
-      const event = await createEventForEvent(event);
+      const programItem = await createProgramItemForEvent(event);
       const accessToken = generateAccessToken(await UserFactory.create());
 
       await request()
-        .patch(`/api/v1/events/${event.id}/program-items/${event.id}`)
+        .patch(`/api/v1/events/${event.id}/program-items/${programItem.id}`)
         .send({ title: 'Updated' })
         .auth(accessToken, { type: 'bearer' })
         .expect(403);
@@ -494,10 +494,10 @@ describe('/api/v1/events/:eventId/program-items', () => {
 
     it('should respond with `401` when unauthenticated', async () => {
       const event = await EventFactory.create();
-      const event = await createEventForEvent(event);
+      const programItem = await createProgramItemForEvent(event);
 
       await request()
-        .patch(`/api/v1/events/${event.id}/program-items/${event.id}`)
+        .patch(`/api/v1/events/${event.id}/program-items/${programItem.id}`)
         .send({ title: 'Updated' })
         .expect(401);
     });
@@ -514,11 +514,11 @@ describe('/api/v1/events/:eventId/program-items', () => {
       async ({ role, expectedStatus }) => {
         const { event, accessToken } =
           await createEventWithManagerAndToken(role);
-        const event = await createEventForEvent(event);
-        const otherEvent = await createEventForEvent(event);
+        const programItem = await createProgramItemForEvent(event);
+        const otherProgramItem = await createProgramItemForEvent(event);
 
         await request()
-          .delete(`/api/v1/events/${event.id}/program-items/${event.id}`)
+          .delete(`/api/v1/events/${event.id}/program-items/${programItem.id}`)
           .auth(accessToken, { type: 'bearer' })
           .expect(expectedStatus);
 
@@ -526,7 +526,7 @@ describe('/api/v1/events/:eventId/program-items', () => {
         if (expectedStatus === 204) {
           expect(count).toBe(1);
           const remaining = await prisma.programItem.findFirst();
-          expect(remaining?.id).toBe(otherEvent.id);
+          expect(remaining?.id).toBe(otherProgramItem.id);
         } else {
           expect(count).toBe(2);
         }
@@ -545,10 +545,10 @@ describe('/api/v1/events/:eventId/program-items', () => {
     it('should respond with `404` when the event belongs to a different event', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
       const otherEvent = await EventFactory.create();
-      const event = await createEventForEvent(otherEvent);
+      const programItem = await createProgramItemForEvent(otherEvent);
 
       await request()
-        .delete(`/api/v1/events/${event.id}/program-items/${event.id}`)
+        .delete(`/api/v1/events/${event.id}/program-items/${programItem.id}`)
         .auth(accessToken, { type: 'bearer' })
         .expect(404);
 
@@ -558,11 +558,11 @@ describe('/api/v1/events/:eventId/program-items', () => {
 
     it('should respond with `403` when user is not a event manager', async () => {
       const event = await EventFactory.create();
-      const event = await createEventForEvent(event);
+      const programItem = await createProgramItemForEvent(event);
       const accessToken = generateAccessToken(await UserFactory.create());
 
       await request()
-        .delete(`/api/v1/events/${event.id}/program-items/${event.id}`)
+        .delete(`/api/v1/events/${event.id}/program-items/${programItem.id}`)
         .auth(accessToken, { type: 'bearer' })
         .expect(403);
 
@@ -572,10 +572,10 @@ describe('/api/v1/events/:eventId/program-items', () => {
 
     it('should respond with `401` when unauthenticated', async () => {
       const event = await EventFactory.create();
-      const event = await createEventForEvent(event);
+      const programItem = await createProgramItemForEvent(event);
 
       await request()
-        .delete(`/api/v1/events/${event.id}/program-items/${event.id}`)
+        .delete(`/api/v1/events/${event.id}/program-items/${programItem.id}`)
         .expect(401);
 
       const count = await prisma.programItem.count();

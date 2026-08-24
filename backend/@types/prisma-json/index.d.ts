@@ -8,8 +8,8 @@ declare global {
     type RegistrationEventData = Record<string, unknown[]>;
 
     type PrivacyNoticeContent =
-      import('@event-registration/common/privacy').PrivacyNoticeContent;
+      import('@camp-registration/common/privacy').PrivacyNoticeContent;
     type PrivacyNoticeAddendum =
-      import('@event-registration/common/privacy').PrivacyNoticeAddendum;
+      import('@camp-registration/common/privacy').PrivacyNoticeAddendum;
   }
 }

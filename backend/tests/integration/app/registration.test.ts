@@ -1097,27 +1097,27 @@ describe('/api/v1/events/:eventId/registrations', () => {
               data: [
                 MessageTemplateFactory.build({
                   country: 'fr',
-                  event: 'registration_submitted',
+                  trigger: 'registration_submitted',
                   subject: 'Registration received',
                 }),
                 MessageTemplateFactory.build({
-                  event: 'registration_confirmed',
+                  trigger: 'registration_confirmed',
                   subject: 'Registration confirmed',
                   country: 'fr',
                 }),
                 MessageTemplateFactory.build({
                   country: 'fr',
-                  event: 'registration_waitlisted',
+                  trigger: 'registration_waitlisted',
                   subject: 'Registration on waiting list',
                 }),
                 MessageTemplateFactory.build({
                   country: 'fr',
-                  event: 'registration_updated',
+                  trigger: 'registration_updated',
                   subject: 'Registration updated',
                 }),
                 MessageTemplateFactory.build({
                   country: 'fr',
-                  event: 'registration_canceled',
+                  trigger: 'registration_canceled',
                   subject: 'Registration canceled',
                 }),
               ],
@@ -1131,7 +1131,7 @@ describe('/api/v1/events/:eventId/registrations', () => {
           ...eventWithEmailAndCountry,
           messageTemplates: {
             create: MessageTemplateFactory.build({
-              event: 'registration_confirmed',
+              trigger: 'registration_confirmed',
               subject: 'Registration confirmed',
               country: 'de',
             }),
@@ -1605,7 +1605,7 @@ describe('/api/v1/events/:eventId/registrations', () => {
           ...eventWithEmail,
           messageTemplates: {
             create: MessageTemplateFactory.build({
-              event: 'registration_updated',
+              trigger: 'registration_updated',
               subject: 'Registration updated',
             }),
           },
@@ -1636,7 +1636,7 @@ describe('/api/v1/events/:eventId/registrations', () => {
           ...eventWithEmail,
           messageTemplates: {
             create: MessageTemplateFactory.build({
-              event: 'registration_updated',
+              trigger: 'registration_updated',
               subject: 'Registration updated',
               body: '<p>{{ registration.changes }}</p>',
             }),
@@ -1678,7 +1678,7 @@ describe('/api/v1/events/:eventId/registrations', () => {
           ...eventWithEmail,
           messageTemplates: {
             create: MessageTemplateFactory.build({
-              event: 'registration_updated',
+              trigger: 'registration_updated',
               subject: 'Registration updated',
               body: '<p>Your registration was updated.</p>',
             }),
@@ -1704,7 +1704,7 @@ describe('/api/v1/events/:eventId/registrations', () => {
           ...eventWithEmail,
           messageTemplates: {
             create: MessageTemplateFactory.build({
-              event: 'registration_updated',
+              trigger: 'registration_updated',
               country: 'fr',
               subject: 'Registration updated',
             }),
@@ -1736,7 +1736,7 @@ describe('/api/v1/events/:eventId/registrations', () => {
           ...eventWithEmailAndCountry,
           messageTemplates: {
             create: MessageTemplateFactory.build({
-              event: 'registration_waitlist_accepted',
+              trigger: 'registration_waitlist_accepted',
               country: 'fr',
               subject: 'Registration accepted',
             }),
@@ -2415,12 +2415,12 @@ describe('/api/v1/events/:eventId/registrations', () => {
             createMany: {
               data: [
                 MessageTemplateFactory.build({
-                  event: 'registration_canceled',
+                  trigger: 'registration_canceled',
                   country: 'us',
                   subject: 'Oops',
                 }),
                 MessageTemplateFactory.build({
-                  event: 'registration_canceled',
+                  trigger: 'registration_canceled',
                   country: 'fr',
                   subject: 'Registration canceled',
                 }),
@@ -2455,12 +2455,12 @@ describe('/api/v1/events/:eventId/registrations', () => {
             createMany: {
               data: [
                 MessageTemplateFactory.build({
-                  event: 'registration_canceled',
+                  trigger: 'registration_canceled',
                   country: 'us',
                   subject: 'Oops',
                 }),
                 MessageTemplateFactory.build({
-                  event: 'registration_canceled',
+                  trigger: 'registration_canceled',
                   country: 'fr',
                   subject: 'Registration canceled',
                 }),
@@ -2495,7 +2495,7 @@ describe('/api/v1/events/:eventId/registrations', () => {
           ...eventWithEmail,
           messageTemplates: {
             create: MessageTemplateFactory.build({
-              event: 'registration_canceled',
+              trigger: 'registration_canceled',
               subject: 'Registration canceled',
               country: 'fr',
             }),

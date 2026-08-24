@@ -154,7 +154,7 @@ describe('privacy notices', () => {
               { key: 'custom:1', label: { en: '<img src=x onerror=1>Skill' } },
             ],
             recipients: [
-              { key: 'event_staff' },
+              { key: 'camp_staff' },
               { key: 'platform_operator', name: '<i>Acme</i>' },
             ],
           }),

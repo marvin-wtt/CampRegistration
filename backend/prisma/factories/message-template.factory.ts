@@ -15,6 +15,7 @@ export const MessageTemplateFactory = {
     data: Partial<Prisma.MessageTemplateCreateInput> = {},
   ): Prisma.MessageTemplateCreateInput => {
     return {
+      event: data.event! ?? undefined,
       trigger: data.trigger ?? faker.lorem.slug(2),
       subject: data.subject ?? faker.lorem.sentence(),
       body: data.body ?? faker.lorem.paragraphs(1),

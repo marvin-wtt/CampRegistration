@@ -50,7 +50,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
           for (let i = 0; i < numTemplates; i++) {
             await MessageTemplateFactory.create({
               event: { connect: { id: event.id } },
-              event: `test-event-${i}`,
+              trigger: `test-event-${i}`,
             });
           }
 
@@ -100,12 +100,12 @@ describe('/api/v1/events/:eventId/message-templates', () => {
 
       await MessageTemplateFactory.create({
         event: { connect: { id: event.id } },
-        event: 'test-event-1',
+        trigger: 'test-event-1',
       });
 
       await MessageTemplateFactory.create({
         event: { connect: { id: event.id } },
-        event: 'test-event-2',
+        trigger: 'test-event-2',
       });
 
       // Ad-hoc sent messages live in a different table and must not surface here.
@@ -123,8 +123,8 @@ describe('/api/v1/events/:eventId/message-templates', () => {
       expect(Array.isArray(body.data)).toBe(true);
       expect(body.data.length).toBe(2);
       expect(
-        body.data.every((template: { event: string | null }) => {
-          return template.event !== null;
+        body.data.every((template: { trigger: string | null }) => {
+          return template.trigger !== null;
         }),
       ).toBe(true);
     });
@@ -135,7 +135,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
       });
       await MessageTemplateFactory.create({
         event: { connect: { id: event.id } },
-        event: 'test-event',
+        trigger: 'test-event',
       });
 
       const { body } = await request()
@@ -173,7 +173,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
       const messageTemplate = await MessageTemplateFactory.create({
         event: { connect: { id: event.id } },
-        event: 'some-event',
+        trigger: 'some-event',
       });
 
       const { body } = await request()
@@ -186,7 +186,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
 
       expect(body).toHaveProperty('data');
       expect(body.data.id).toBe(messageTemplate.id);
-      expect(body.data).toHaveProperty('event', messageTemplate.event);
+      expect(body.data).toHaveProperty('trigger', messageTemplate.trigger);
       expect(body.data).toHaveProperty('subject', messageTemplate.subject);
       expect(body.data).toHaveProperty('body', messageTemplate.body);
     });
@@ -206,7 +206,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
       const event = await EventFactory.create();
       const messageTemplate = await MessageTemplateFactory.create({
         event: { connect: { id: event.id } },
-        event: 'some-event',
+        trigger: 'some-event',
       });
       const accessToken = generateAccessToken(await UserFactory.create());
 
@@ -223,7 +223,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
       const event = await EventFactory.create();
       const messageTemplate = await MessageTemplateFactory.create({
         event: { connect: { id: event.id } },
-        event: 'some-event',
+        trigger: 'some-event',
       });
 
       await request()
@@ -249,7 +249,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
           role,
         );
         const data = {
-          event: 'some-event',
+          trigger: 'some-event',
           country: 'gb',
           subject: 'Test Subject',
           body: 'Test body content',
@@ -268,7 +268,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
       {
         name: 'input is valid',
         data: {
-          event: 'some-event',
+          trigger: 'some-event',
           country: 'gb',
           subject: 'Test Subject',
           body: 'Test body content',
@@ -280,7 +280,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
       {
         name: 'subject is missing',
         data: {
-          event: 'some-event',
+          trigger: 'some-event',
           country: 'gb',
           body: 'Test body content',
         },
@@ -289,7 +289,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
       {
         name: 'subject is number',
         data: {
-          event: 'some-event',
+          trigger: 'some-event',
           country: 'gb',
           subject: 2,
           body: 'Test body content',
@@ -300,7 +300,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
       {
         name: 'body is missing',
         data: {
-          event: 'some-event',
+          trigger: 'some-event',
           country: 'gb',
           subject: 'Test Subject',
         },
@@ -309,16 +309,16 @@ describe('/api/v1/events/:eventId/message-templates', () => {
       {
         name: 'body is number',
         data: {
-          event: 'some-event',
+          trigger: 'some-event',
           country: 'gb',
           subject: 'Test Subject',
           body: 1,
         },
         expected: 400,
       },
-      // Event
+      // Trigger
       {
-        name: 'event is missing',
+        name: 'trigger is missing',
         data: {
           country: 'gb',
           subject: 'Test Subject',
@@ -327,9 +327,9 @@ describe('/api/v1/events/:eventId/message-templates', () => {
         expected: 400,
       },
       {
-        name: 'event is null',
+        name: 'trigger is null',
         data: {
-          event: null,
+          trigger: null,
           country: 'gb',
           subject: 'Test Subject',
           body: 'Test body content',
@@ -337,9 +337,9 @@ describe('/api/v1/events/:eventId/message-templates', () => {
         expected: 400,
       },
       {
-        name: 'event is number',
+        name: 'trigger is number',
         data: {
-          event: 1,
+          trigger: 1,
           country: 'gb',
           subject: 'Test Subject',
           body: 'Test body content',
@@ -350,7 +350,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
       {
         name: 'country is missing',
         data: {
-          event: 'some-event',
+          trigger: 'some-event',
           subject: 'Test Subject',
           body: 'Test body content',
         },
@@ -359,7 +359,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
       {
         name: 'country is null',
         data: {
-          event: 'some-event',
+          trigger: 'some-event',
           country: null,
           subject: 'Test Subject',
           body: 'Test body content',
@@ -369,7 +369,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
       {
         name: 'country is invalid',
         data: {
-          event: 'some-event',
+          trigger: 'some-event',
           country: 'usa',
           subject: 'Test Subject',
           body: 'Test body content',
@@ -380,7 +380,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
       {
         name: 'priority is missing',
         data: {
-          event: 'some-event',
+          trigger: 'some-event',
           country: 'gb',
           subject: 'Test Subject',
           body: 'Test body content',
@@ -390,7 +390,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
       {
         name: 'priority is invalid',
         data: {
-          event: 'some-event',
+          trigger: 'some-event',
           country: 'gb',
           subject: 'Test Subject',
           body: 'Test body content',
@@ -401,7 +401,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
       {
         name: 'priority is null',
         data: {
-          event: 'some-event',
+          trigger: 'some-event',
           country: 'gb',
           subject: 'Test Subject',
           body: 'Test body content',
@@ -427,7 +427,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
     it('should respond with 403 status code when user is not event manager', async () => {
       const event = await EventFactory.create();
       const data = {
-        event: 'some-event',
+        trigger: 'some-event',
         country: 'gb',
         subject: 'Test Subject',
         body: 'Test body content',
@@ -445,12 +445,12 @@ describe('/api/v1/events/:eventId/message-templates', () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
       await MessageTemplateFactory.create({
         event: { connect: { id: event.id } },
-        event: 'some-event',
+        trigger: 'some-event',
         country: 'gb',
       });
 
       const data = {
-        event: 'some-event',
+        trigger: 'some-event',
         country: 'gb',
         subject: 'Test Subject',
         body: 'Test body content',
@@ -466,7 +466,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
     it('should respond with 401 status code when unauthenticated', async () => {
       const event = await EventFactory.create();
       const data = {
-        event: 'some-event',
+        trigger: 'some-event',
         country: 'gb',
         subject: 'Test Subject',
         body: 'Test body content',
@@ -490,7 +490,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
         });
 
         const data = {
-          event: 'some-event',
+          trigger: 'some-event',
           country: 'gb',
           subject: 'Test Subject',
           body: 'Test body content',
@@ -518,7 +518,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
       it('should respond with 201 status code when attachments are empty', async () => {
         const { event, accessToken } = await createEventWithManagerAndToken();
         const data = {
-          event: 'some-event',
+          trigger: 'some-event',
           country: 'gb',
           subject: 'Test Subject',
           body: 'Test body content',
@@ -541,7 +541,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
         });
 
         const data = {
-          event: 'some-event',
+          trigger: 'some-event',
           country: 'gb',
           subject: 'Test Subject',
           body: 'Test body content',
@@ -568,7 +568,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
         });
 
         const data = {
-          event: 'some-event',
+          trigger: 'some-event',
           country: 'gb',
           subject: 'Test Subject',
           body: 'Test body content',
@@ -589,7 +589,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
         const { event, accessToken } = await createEventWithManagerAndToken();
         const messageTemplate = await MessageTemplateFactory.create({
           event: { connect: { id: event.id } },
-          event: 'some-event',
+          trigger: 'some-event',
         });
         const file1 = await FileFactory.create({
           messageTemplate: { connect: { id: messageTemplate.id } },
@@ -600,7 +600,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
         });
 
         const data = {
-          event: 'some-event',
+          trigger: 'some-event',
           country: 'gb',
           subject: 'Test Subject',
           body: 'Test body content',
@@ -633,7 +633,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
         );
         const messageTemplate = await MessageTemplateFactory.create({
           event: { connect: { id: event.id } },
-          event: 'some-event',
+          trigger: 'some-event',
           subject: 'Old subject',
           body: 'Old body',
           priority: 'normal',
@@ -739,7 +739,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
 
         const messageTemplate = await MessageTemplateFactory.create({
           event: { connect: { id: event.id } },
-          event: 'some-event',
+          trigger: 'some-event',
         });
 
         await request()
@@ -770,7 +770,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
       const event = await EventFactory.create();
       const messageTemplate = await MessageTemplateFactory.create({
         event: { connect: { id: event.id } },
-        event: 'some-event',
+        trigger: 'some-event',
       });
       const updateData = {
         subject: 'Updated Subject',
@@ -790,7 +790,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
       const event = await EventFactory.create();
       const messageTemplate = await MessageTemplateFactory.create({
         event: { connect: { id: event.id } },
-        event: 'some-event',
+        trigger: 'some-event',
       });
       const updateData = {
         subject: 'Updated Subject',
@@ -810,7 +810,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
         const { event, accessToken } = await createEventWithManagerAndToken();
         const messageTemplate = await MessageTemplateFactory.create({
           event: { connect: { id: event.id } },
-          event: 'some-event',
+          trigger: 'some-event',
         });
 
         const file1 = await FileFactory.create({
@@ -849,7 +849,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
         const { event, accessToken } = await createEventWithManagerAndToken();
         const messageTemplate = await MessageTemplateFactory.create({
           event: { connect: { id: event.id } },
-          event: 'some-event',
+          trigger: 'some-event',
         });
         await FileFactory.create({
           field: sessionId,
@@ -892,7 +892,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
         const { event, accessToken } = await createEventWithManagerAndToken();
         const messageTemplate = await MessageTemplateFactory.create({
           event: { connect: { id: event.id } },
-          event: 'some-event',
+          trigger: 'some-event',
         });
 
         const data = {
@@ -923,7 +923,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
         const { event, accessToken } = await createEventWithManagerAndToken();
         const messageTemplate = await MessageTemplateFactory.create({
           event: { connect: { id: event.id } },
-          event: 'some-event',
+          trigger: 'some-event',
         });
         await FileFactory.create({
           field: sessionId,
@@ -948,7 +948,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
         const { event, accessToken } = await createEventWithManagerAndToken();
         const messageTemplate = await MessageTemplateFactory.create({
           event: { connect: { id: event.id } },
-          event: 'some-event',
+          trigger: 'some-event',
         });
         const file1 = await FileFactory.create({
           field: crypto.randomUUID(),
@@ -976,7 +976,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
         const { event, accessToken } = await createEventWithManagerAndToken();
         const messageTemplate = await MessageTemplateFactory.create({
           event: { connect: { id: event.id } },
-          event: 'some-event',
+          trigger: 'some-event',
         });
         const file1 = await FileFactory.create({
           messageTemplate: { connect: { id: messageTemplate.id } },
@@ -1021,7 +1021,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
         );
         const messageTemplate = await MessageTemplateFactory.create({
           event: { connect: { id: event.id } },
-          event: 'some-event',
+          trigger: 'some-event',
         });
 
         await request()
@@ -1057,7 +1057,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
       const event = await EventFactory.create();
       const messageTemplate = await MessageTemplateFactory.create({
         event: { connect: { id: event.id } },
-        event: 'some-event',
+        trigger: 'some-event',
       });
       const accessToken = generateAccessToken(await UserFactory.create());
 
@@ -1074,7 +1074,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
       const event = await EventFactory.create();
       const messageTemplate = await MessageTemplateFactory.create({
         event: { connect: { id: event.id } },
-        event: 'some-event',
+        trigger: 'some-event',
       });
 
       await request()

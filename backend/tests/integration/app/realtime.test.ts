@@ -230,8 +230,10 @@ describe('/api/v1/events/:eventId/events (SSE)', () => {
       .auth(director.accessToken, { type: 'bearer' })
       .expect(201);
 
-    const event = await stream.waitForEvent((e) => e.resource === 'task');
-    expect(event.origin).toBe('tab-1');
+    const receivedEvent = await stream.waitForEvent(
+      (e) => e.resource === 'task',
+    );
+    expect(receivedEvent.origin).toBe('tab-1');
   });
 
   it('filters message events by permission, without disconnecting the stream', async () => {

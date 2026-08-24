@@ -1178,11 +1178,11 @@ describe('/api/v1/events', () => {
 
         await MessageTemplateFactory.create({
           event: { connect: { id: referenceEvent.id } },
-          event: 'registration_confirmed',
+          trigger: 'registration_confirmed',
         });
         await MessageTemplateFactory.create({
           event: { connect: { id: referenceEvent.id } },
-          event: 'registration_waitlist_accepted',
+          trigger: 'registration_waitlist_accepted',
         });
 
         const data = {
@@ -1204,11 +1204,11 @@ describe('/api/v1/events', () => {
 
         expect(templates.length).toBe(2);
         expect(
-          templates.some((value) => value.event === 'registration_confirmed'),
+          templates.some((value) => value.trigger === 'registration_confirmed'),
         ).toBeTruthy();
         expect(
           templates.some(
-            (value) => value.event === 'registration_waitlist_accepted',
+            (value) => value.trigger === 'registration_waitlist_accepted',
           ),
         ).toBeTruthy();
       });
