@@ -59,7 +59,7 @@ describe('/api/v1/events/:eventId/events (SSE)', () => {
         {
           host: '127.0.0.1',
           port,
-          path: `/api/v1/events/${eventId}/events`,
+          path: `/api/v1/events/${eventId}/stream`,
           headers: {
             Accept: 'text/event-stream',
             Authorization: `Bearer ${accessToken}`,

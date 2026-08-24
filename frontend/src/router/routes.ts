@@ -16,12 +16,13 @@ const routes: RouteRecordRaw[] = [
           {
             path: '',
             name: 'events',
-            component: () => import('@/pages/events/EventsListedPage.vue'),
+            component: () =>
+              import('@/pages/listedEvents/EventsListedPage.vue'),
           },
           {
             path: ':eventId',
             name: 'event',
-            component: () => import('@/pages/events/EventPage.vue'),
+            component: () => import('@/pages/listedEvents/EventPage.vue'),
           },
           // A permanent address for the Art. 13 information, so the
           // confirmation mail can link to it and a registrant can come back to
@@ -29,7 +30,8 @@ const routes: RouteRecordRaw[] = [
           {
             path: ':eventId/privacy',
             name: 'event.privacy',
-            component: () => import('@/pages/events/EventPrivacyPage.vue'),
+            component: () =>
+              import('@/pages/listedEvents/EventPrivacyPage.vue'),
             props: true,
           },
         ],
@@ -142,7 +144,7 @@ const routes: RouteRecordRaw[] = [
           {
             path: '',
             component: () =>
-              import('@/pages/eventManagement/EventManagementIndexPage.vue'),
+              import('@/pages/event/EventManagementIndexPage.vue'),
             name: 'management.events',
           },
           {
@@ -155,38 +157,32 @@ const routes: RouteRecordRaw[] = [
               {
                 path: 'dashboard',
                 name: 'management.event.dashboard',
-                component: () =>
-                  import('@/pages/eventManagement/EventDashboardPage.vue'),
+                component: () => import('@/pages/event/EventDashboardPage.vue'),
               },
               {
                 path: 'participants',
                 name: 'management.event.participants',
-                component: () =>
-                  import('@/pages/eventManagement/RegistrationsPage.vue'),
+                component: () => import('@/pages/event/RegistrationsPage.vue'),
               },
               {
                 path: 'contact',
                 name: 'management.event.contact',
-                component: () =>
-                  import('@/pages/eventManagement/ContactPage.vue'),
+                component: () => import('@/pages/event/ContactPage.vue'),
               },
               {
                 path: 'program-planner',
                 name: 'management.event.program-planner',
-                component: () =>
-                  import('@/pages/eventManagement/ProgramPlannerPage.vue'),
+                component: () => import('@/pages/event/ProgramPlannerPage.vue'),
               },
               {
                 path: 'room-planner',
                 name: 'management.event.room-planner',
-                component: () =>
-                  import('@/pages/eventManagement/RoomPlannerPage.vue'),
+                component: () => import('@/pages/event/RoomPlannerPage.vue'),
               },
               {
                 path: 'tasks',
                 name: 'management.event.tasks',
-                component: () =>
-                  import('@/pages/eventManagement/TasksPage.vue'),
+                component: () => import('@/pages/event/TasksPage.vue'),
               },
               {
                 path: 'settings',
@@ -195,43 +191,43 @@ const routes: RouteRecordRaw[] = [
                     path: '',
                     name: 'management.event.settings',
                     component: () =>
-                      import('@/pages/eventManagement/settings/SettingsPage.vue'),
+                      import('@/pages/event/settings/SettingsPage.vue'),
                   },
                   {
                     path: 'access',
                     name: 'management.event.settings.access',
                     component: () =>
-                      import('@/pages/eventManagement/settings/AccessPage.vue'),
+                      import('@/pages/event/settings/AccessPage.vue'),
                   },
                   {
                     path: 'edit',
                     name: 'management.event.settings.edit',
                     component: () =>
-                      import('@/pages/eventManagement/settings/EventEditPage.vue'),
+                      import('@/pages/event/settings/EventEditPage.vue'),
                   },
                   {
                     path: 'emails',
                     name: 'management.event.settings.emails',
                     component: () =>
-                      import('@/pages/eventManagement/settings/MessageTemplateEditPage.vue'),
+                      import('@/pages/event/settings/MessageTemplateEditPage.vue'),
                   },
                   {
                     path: 'files',
                     name: 'management.event.settings.files',
                     component: () =>
-                      import('@/pages/eventManagement/settings/FileSettingsPage.vue'),
+                      import('@/pages/event/settings/FileSettingsPage.vue'),
                   },
                   {
                     path: 'form',
                     name: 'management.event.settings.form',
                     component: () =>
-                      import('@/pages/eventManagement/settings/FormEditPage.vue'),
+                      import('@/pages/event/settings/FormEditPage.vue'),
                   },
                   {
                     path: 'privacy',
                     name: 'management.event.settings.privacy',
                     component: () =>
-                      import('@/pages/eventManagement/settings/EventPrivacyPage.vue'),
+                      import('@/pages/event/settings/EventPrivacyPage.vue'),
                   },
                 ],
               },

@@ -612,7 +612,7 @@ import { useNewsletterSubscriberStore } from '@/stores/newsletter-subscriber-sto
 import { useNewsletterMessageStore } from '@/stores/newsletter-message-store';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import OwningOrganizationChip from '@/components/common/OwningOrganizationChip.vue';
-import EmailEditor from '@/components/eventManagement/contact/EmailEditor.vue';
+import EmailEditor from '@/components/event/contact/EmailEditor.vue';
 import FileInput, {
   type FileInputModel,
 } from '@/components/common/inputs/FileInput.vue';

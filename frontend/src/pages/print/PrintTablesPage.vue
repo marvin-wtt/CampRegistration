@@ -67,8 +67,8 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import ResultTablePrint from '@/components/eventManagement/table/ResultTablePrint.vue';
-import type { PrintTablesPayload } from '@/components/eventManagement/table/PrintTablesPayload';
+import ResultTablePrint from '@/components/event/table/ResultTablePrint.vue';
+import type { PrintTablesPayload } from '@/components/event/table/PrintTablesPayload';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { usePrintPage, waitForStableLayout } from '@/composables/printPage';
 import {
