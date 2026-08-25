@@ -178,8 +178,8 @@ class EventSeeder extends BaseSeeder {
       registrationOpensAt: seedDate(-10, '08:00'),
       price: 95,
       location: 'Hollow Brook Retreat',
-      form: EVENT_PRESETS.minimal.form,
-      tableTemplates: presetTableTemplates('minimal'),
+      form: EVENT_PRESETS.seminar.form,
+      tableTemplates: presetTableTemplates('seminar'),
     });
 
     await new RegistrationSeeder(autumn).seed(9, { status: 'ACCEPTED' });
@@ -204,8 +204,8 @@ class EventSeeder extends BaseSeeder {
       registrationClosesAt: seedDate(PHASE.recentlyEnded.start - 7, '23:59'),
       price: 180,
       location: 'Blackthorn Manor, Somerset',
-      form: EVENT_PRESETS.standard.form,
-      tableTemplates: presetTableTemplates('standard'),
+      form: EVENT_PRESETS.camp.form,
+      tableTemplates: presetTableTemplates('camp'),
     });
 
     await new RegistrationSeeder(spring).seed(22, { status: 'ACCEPTED' });
@@ -228,8 +228,8 @@ class EventSeeder extends BaseSeeder {
       registrationClosesAt: seedDate(PHASE.past.start - 14, '23:59'),
       price: 210,
       location: 'Snowfield Chalet',
-      form: EVENT_PRESETS.minimal.form,
-      tableTemplates: presetTableTemplates('minimal'),
+      form: EVENT_PRESETS.seminar.form,
+      tableTemplates: presetTableTemplates('seminar'),
     });
 
     await new RegistrationSeeder(winter).seed(26, { status: 'ACCEPTED' });
@@ -261,8 +261,8 @@ class EventSeeder extends BaseSeeder {
       registrationOpensAt: seedDate(-45, '08:00'),
       price: 320,
       location: 'Garmisch-Partenkirchen',
-      form: EVENT_PRESETS.standard.form,
-      tableTemplates: presetTableTemplates('standard'),
+      form: EVENT_PRESETS.camp.form,
+      tableTemplates: presetTableTemplates('camp'),
     });
 
     await new RegistrationSeeder(mountain).seed(17, { status: 'ACCEPTED' });
@@ -288,8 +288,8 @@ class EventSeeder extends BaseSeeder {
       registrationClosesAt: seedDate(-7, '23:59'),
       price: 120,
       location: 'München',
-      form: EVENT_PRESETS.standard.form,
-      tableTemplates: presetTableTemplates('standard'),
+      form: EVENT_PRESETS.camp.form,
+      tableTemplates: presetTableTemplates('camp'),
     });
 
     await new RegistrationSeeder(city).seed(28, { status: 'ACCEPTED' });
@@ -358,8 +358,8 @@ class EventSeeder extends BaseSeeder {
       registrationOpensAt: seedDate(-20, '08:00'),
       price: 410,
       location: 'Pitztal',
-      form: EVENT_PRESETS.minimal.form,
-      tableTemplates: presetTableTemplates('minimal'),
+      form: EVENT_PRESETS.seminar.form,
+      tableTemplates: presetTableTemplates('seminar'),
     });
 
     await new EventFileSeeder(glacier).seedFormSlots();
@@ -385,8 +385,8 @@ class EventSeeder extends BaseSeeder {
       registrationOpensAt: seedDate(-5, '08:00'),
       price: 260,
       location: 'Ardèche',
-      form: EVENT_PRESETS.standard.form,
-      tableTemplates: presetTableTemplates('standard'),
+      form: EVENT_PRESETS.camp.form,
+      tableTemplates: presetTableTemplates('camp'),
     });
 
     // Registrations that were captured on paper — the guard only blocks the
@@ -411,8 +411,8 @@ class EventSeeder extends BaseSeeder {
       registrationOpensAt: seedDate(-30, '08:00'),
       price: 300,
       location: 'Plymouth Marina',
-      form: EVENT_PRESETS.minimal.form,
-      tableTemplates: presetTableTemplates('minimal'),
+      form: EVENT_PRESETS.seminar.form,
+      tableTemplates: presetTableTemplates('seminar'),
     });
 
     // Taken before the organization was rejected.
@@ -438,8 +438,8 @@ class EventSeeder extends BaseSeeder {
       registrationOpensAt: seedDate(-40, '08:00'),
       price: 175,
       location: 'Brighton Beach House',
-      form: EVENT_PRESETS.standard.form,
-      tableTemplates: presetTableTemplates('standard'),
+      form: EVENT_PRESETS.camp.form,
+      tableTemplates: presetTableTemplates('camp'),
     });
 
     await new RegistrationSeeder(seaside).seed(12, { status: 'ACCEPTED' });

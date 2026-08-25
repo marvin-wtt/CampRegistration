@@ -1,10 +1,10 @@
-import standardForm from './forms/standard.js';
-import minimalForm from './forms/minimal.js';
-import standardTableTemplates from './tableTemplates/standard.js';
-import minimalTableTemplates from './tableTemplates/minimal.js';
+import campForm from './forms/camp.js';
+import seminarForm from './forms/seminar.js';
+import campTableTemplates from './tableTemplates/camp.js';
+import seminarTableTemplates from './tableTemplates/seminar.js';
 import { SurveyModel } from 'survey-core';
 
-export type Preset = 'standard' | 'minimal';
+export type Preset = 'camp' | 'seminar';
 
 interface EventPreset {
   form: Record<string, unknown>;
@@ -13,14 +13,14 @@ interface EventPreset {
 }
 
 export const EVENT_PRESETS: Record<Preset, EventPreset> = {
-  minimal: {
-    form: minimalForm,
-    tableTemplates: minimalTableTemplates,
+  camp: {
+    form: campForm,
+    tableTemplates: campTableTemplates,
     themes: {},
   },
-  standard: {
-    form: standardForm,
-    tableTemplates: standardTableTemplates,
+  seminar: {
+    form: seminarForm,
+    tableTemplates: seminarTableTemplates,
     themes: {},
   },
 };
@@ -71,7 +71,7 @@ export function getEventPreset(
   name: Preset | null | undefined,
   locales?: string[],
 ): EventPreset {
-  const preset = name ? EVENT_PRESETS[name] : EVENT_PRESETS.standard;
+  const preset = name ? EVENT_PRESETS[name] : EVENT_PRESETS.camp;
 
   if (!locales || locales.length === 0) {
     return preset;

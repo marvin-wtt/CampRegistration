@@ -509,7 +509,7 @@ const { dialogRef, onDialogHide, onDialogOK } = useDialogPluginComponent();
 
 const DEFAULT_DATA = {
   confirmationMode: 'AUTOMATIC',
-  preset: 'standard',
+  preset: 'camp',
   // Required by the API; the first step will not advance without it.
   organizationId: '',
 } as EventCreateData;
@@ -632,12 +632,12 @@ const presetOptions = computed<QSelectOption<EventCreateData['preset']>[]>(
   () => {
     return [
       {
-        label: t('preset.standard'),
-        value: 'standard',
+        label: t('preset.camp'),
+        value: 'camp',
       },
       {
-        label: t('preset.minimal'),
-        value: 'minimal',
+        label: t('preset.seminar'),
+        value: 'seminar',
       },
       {
         label: t('preset.otherEvent'),
@@ -785,8 +785,8 @@ field:
   listed: 'Show event on main page'
 
 preset:
-  standard: 'Standard'
-  minimal: 'Minimal'
+  camp: 'Camp'
+  seminar: 'Seminar'
   otherEvent: 'Copy from another event'
 
 validation:
@@ -874,8 +874,8 @@ field:
   listed: 'Veranstaltung auf Startseite anzeigen'
 
 preset:
-  standard: 'Standard'
-  minimal: 'Minimal'
+  camp: 'Freizeit'
+  seminar: 'Seminar'
   otherEvent: 'Von einer anderen Veranstaltung kopieren'
 
 validation:
@@ -963,8 +963,8 @@ field:
   listed: "Afficher l'événement sur la page d'accueil"
 
 preset:
-  standard: 'Standard'
-  minimal: 'Minimal'
+  camp: 'Colonie de vacances'
+  seminar: 'Séminaire'
   otherEvent: 'Copier depuis un autre événement'
 
 validation:
@@ -1052,8 +1052,8 @@ field:
   listed: 'Pokaż wydarzenie na stronie głównej'
 
 preset:
-  standard: 'Standard'
-  minimal: 'Minimalny'
+  camp: 'Obóz'
+  seminar: 'Seminarium'
   otherEvent: 'Skopiuj z innego wydarzenia'
 
 validation:
@@ -1141,8 +1141,8 @@ field:
   listed: 'Zobrazit akci na úvodní stránce'
 
 preset:
-  standard: 'Standard'
-  minimal: 'Minimální'
+  camp: 'Tábor'
+  seminar: 'Seminář'
   otherEvent: 'Zkopírovat z jiné akce'
 
 validation:

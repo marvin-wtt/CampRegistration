@@ -47,7 +47,7 @@ export type EventCreateData = Omit<
   registrationOpensAt?: string | null | undefined;
   registrationClosesAt?: string | null | undefined;
   referenceEventId?: string | undefined;
-  preset?: 'standard' | 'minimal' | undefined | null;
+  preset?: 'camp' | 'seminar' | undefined | null;
 };
 
 export type EventUpdateData = Omit<

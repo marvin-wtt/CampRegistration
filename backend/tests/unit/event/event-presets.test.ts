@@ -5,7 +5,7 @@ import {
   type Preset,
 } from '#app/event/presets/index';
 
-const PRESETS: Preset[] = ['standard', 'minimal'];
+const PRESETS: Preset[] = ['camp', 'seminar'];
 const TRANSLATED_KEYS = ['en', 'de', 'fr', 'pl', 'cs', 'es', 'default'];
 
 /** Every locale key used anywhere in a preset's JSON. */
@@ -60,13 +60,13 @@ function findElement(
 
 describe('getEventPreset', () => {
   it('returns the preset untouched when no locales are requested', () => {
-    expect(getEventPreset('standard')).toEqual(EVENT_PRESETS.standard);
-    expect(getEventPreset('standard', [])).toEqual(EVENT_PRESETS.standard);
+    expect(getEventPreset('camp')).toEqual(EVENT_PRESETS.camp);
+    expect(getEventPreset('camp', [])).toEqual(EVENT_PRESETS.camp);
   });
 
-  it('defaults to the standard preset', () => {
-    expect(getEventPreset(null)).toEqual(EVENT_PRESETS.standard);
-    expect(getEventPreset(undefined)).toEqual(EVENT_PRESETS.standard);
+  it('defaults to the camp preset', () => {
+    expect(getEventPreset(null)).toEqual(EVENT_PRESETS.camp);
+    expect(getEventPreset(undefined)).toEqual(EVENT_PRESETS.camp);
   });
 
   describe('form', () => {
@@ -89,10 +89,7 @@ describe('getEventPreset', () => {
     });
 
     it('keeps the text of the requested locale, not of a dropped one', () => {
-      const date = findElement(
-        getEventPreset('standard', ['fr']).form,
-        'i_date',
-      );
+      const date = findElement(getEventPreset('camp', ['fr']).form, 'i_date');
 
       // A single remaining locale collapses into a plain string, so assert on
       // the description, which keeps its `default` sibling and stays an object.
@@ -103,13 +100,13 @@ describe('getEventPreset', () => {
     });
 
     it('preserves the untranslated default alongside the requested locale', () => {
-      const age = findElement(getEventPreset('standard', ['cs']).form, 'i_age');
+      const age = findElement(getEventPreset('camp', ['cs']).form, 'i_age');
 
       expect(age?.title).toEqual({ cs: 'Věk', default: 'Age' });
     });
 
     it('falls back to the default text for a locale the preset has no translations for', () => {
-      const { form } = getEventPreset('standard', ['es']);
+      const { form } = getEventPreset('camp', ['es']);
 
       // `default` is the only survivor, so SurveyJS serialises it as a plain
       // string. Dropping it as well would leave the question without any text
@@ -127,7 +124,7 @@ describe('getEventPreset', () => {
     });
 
     it('filters titles and column labels alike', () => {
-      const [template] = getEventPreset('standard', ['de']).tableTemplates;
+      const [template] = getEventPreset('camp', ['de']).tableTemplates;
 
       expect(template?.title).toEqual({ de: 'Übersicht' });
       expect(template?.columns).toEqual(
@@ -141,10 +138,10 @@ describe('getEventPreset', () => {
     });
 
     it('keeps every translation when none of the requested locales are present', () => {
-      const [template] = getEventPreset('standard', ['es']).tableTemplates;
+      const [template] = getEventPreset('camp', ['es']).tableTemplates;
 
       expect(template?.title).toEqual(
-        EVENT_PRESETS.standard.tableTemplates[0]?.title,
+        EVENT_PRESETS.camp.tableTemplates[0]?.title,
       );
     });
   });

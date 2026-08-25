@@ -102,7 +102,7 @@ const store = z.object({
       price: z.number().multipleOf(0.01).nonnegative(),
       form: z.record(z.string(), z.unknown()).optional(),
       themes: z.record(z.string(), z.unknown()).optional(),
-      preset: z.enum(['standard', 'minimal']).nullable().optional(),
+      preset: z.enum(['camp', 'seminar']).nullable().optional(),
       referenceEventId: z.ulid().optional(),
     })
     .superRefine((val, ctx) => {

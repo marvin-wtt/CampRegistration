@@ -573,18 +573,18 @@ export const eventCreatedBody: CreateBodyData[] = [
   },
   // Preset
   {
-    name: 'Preset standard',
+    name: 'Preset camp',
     data: {
       ...eventCreateInternational,
-      preset: 'standard',
+      preset: 'camp',
     },
     expected: 201,
   },
   {
-    name: 'Preset minimal',
+    name: 'Preset seminar',
     data: {
       ...eventCreateInternational,
-      preset: 'minimal',
+      preset: 'seminar',
     },
     expected: 201,
   },
