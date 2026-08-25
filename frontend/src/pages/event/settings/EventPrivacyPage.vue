@@ -20,7 +20,7 @@
         flat
         bordered
       >
-        <q-card-section class="row items-start no-wrap q-gutter-sm">
+        <q-card-section class="row items-start no-wrap q-gutter-sm card-header">
           <div class="col">
             <div class="text-subtitle2 text-weight-bold">
               {{ t('baseline.title') }}
@@ -34,7 +34,7 @@
             dense
             square
             icon="check_circle"
-            class="baseline-version"
+            class="baseline-version card-header__badge"
           >
             {{
               t('baseline.version', {
@@ -148,7 +148,7 @@
         flat
         bordered
       >
-        <q-card-section class="row items-start no-wrap q-gutter-sm">
+        <q-card-section class="row items-start no-wrap q-gutter-sm card-header">
           <div class="col">
             <div class="text-subtitle2 text-weight-bold">
               {{ t('addendum.title') }}
@@ -163,7 +163,7 @@
             :label="t('addendum.hideInherited')"
             dense
             size="sm"
-            class="text-caption"
+            class="text-caption card-header__badge"
           />
         </q-card-section>
 
@@ -932,6 +932,18 @@ $field-max: 32rem;
   background-color: var(--md3-surface-container-high);
   color: var(--md3-on-surface-variant);
   border-radius: 12px;
+}
+
+// On phones the chip/toggle drop to a full-width second line under the title
+// rather than squeezing it into an unreadably narrow column.
+@media (max-width: 599px) {
+  .card-header {
+    flex-wrap: wrap;
+  }
+
+  .card-header__badge {
+    flex: 0 0 100%;
+  }
 }
 </style>
 
