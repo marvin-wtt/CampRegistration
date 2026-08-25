@@ -9,9 +9,7 @@ import registration from './registration/index.js';
 
 export default {
   // Translation is the default namespace
-  translation: {
-    appName: 'Registrační služba pro akce',
-  },
+  translation: {},
   auth,
   event,
   email,
