@@ -9,7 +9,7 @@ export function useRealtimeService() {
    * server filters each event against the subscriber's permissions.
    */
   function openEventStream(eventId: string): EventSource {
-    return new EventSource(`${window.origin}/api/v1/events/${eventId}/events`, {
+    return new EventSource(`${window.origin}/api/v1/events/${eventId}/stream`, {
       withCredentials: true,
     });
   }
