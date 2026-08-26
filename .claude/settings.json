@@ -64,5 +64,8 @@
         ]
       }
     ]
+  },
+  "enabledPlugins": {
+    "surveyjs@surveyjs-skills": true
   }
 }

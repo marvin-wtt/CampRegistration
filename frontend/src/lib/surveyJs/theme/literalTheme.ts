@@ -153,3 +153,28 @@ export function buildMd3LiteralTheme(mode: Md3Mode = 'light'): ITheme {
     cssVariables: resolvePalette(mode),
   };
 }
+
+/**
+ * Picks the theme a camp's survey should render with for one palette: the
+ * camp's own saved theme for that mode, its saved light theme as a dark-mode
+ * stand-in, or the resolved MD3 default.
+ *
+ * Shared so every surface that renders a camp's survey — the registration
+ * page, the Survey Creator's designer/preview tabs — agrees on the same
+ * theme for the same event and mode. Picking it independently in more than
+ * one place is how the registration page and the designer preview drifted
+ * apart before: `--sjs2-*` values `applyTheme()` sets land on the survey
+ * root as inline styles, which beat `.sjs-theme-overrides`, so two different
+ * theme objects render two different results even though the adapter
+ * stylesheet is identical in both places.
+ */
+export function resolveMd3Theme(
+  themes: Record<string, ITheme>,
+  mode: Md3Mode,
+): ITheme {
+  return (
+    themes[mode] ??
+    (mode === 'dark' ? themes.light : undefined) ??
+    buildMd3LiteralTheme(mode)
+  );
+}

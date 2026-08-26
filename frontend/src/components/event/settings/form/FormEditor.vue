@@ -54,7 +54,7 @@ import { setVariables } from '@camp-registration/common/form';
 import { addFileSlotResolver } from '@/composables/survey';
 import { useAPIService } from '@/services/APIService';
 import { surveyCreatorCustomLocaleConfig } from '@/components/event/settings/form/form-editor-translations';
-import { createStaticMd3SurveyThemes } from '@/lib/surveyJs/themes/md3';
+import { buildMd3LiteralTheme, resolveMd3Theme } from '@/lib/surveyJs/theme';
 import { md3CreatorThemes } from '@/lib/surveyJs/themes/md3-creator';
 import { AceJsonEditorModel } from 'survey-creator-core';
 
@@ -127,15 +127,17 @@ surveyLocalization.supportedLocales = ['en', ...props.event.locales];
 
 const creator = new SurveyCreatorModel(creatorOptions);
 
-// Frozen, resolve-on-load MD3 snapshot used as the editable default whenever a
-// event has no saved theme. The editor parses color values back into its pickers,
-// so it must be fed literals — not the var()-based runtime themes.
-const md3DefaultThemes = createStaticMd3SurveyThemes();
+// Resolved MD3 snapshot used as the editable default whenever an event has no
+// saved theme. The editor parses color values back into its pickers, so it
+// must be fed literals — not the var()-based runtime themes.
+const md3DefaultThemes = {
+  light: buildMd3LiteralTheme('light'),
+  dark: buildMd3LiteralTheme('dark'),
+};
 creator.themeEditor.addTheme(md3DefaultThemes.light);
 creator.themeEditor.addTheme(md3DefaultThemes.dark);
 
 creator.JSON = props.event.form;
-creator.theme = props.event.themes['light'] ?? md3DefaultThemes.light;
 
 if (props.restrictedAccess) {
   const panelItem = creator.toolbox.getItemByName('panel');
@@ -153,15 +155,32 @@ watchEffect(() => {
   creator.locale = locale.value.split(/[-_]/)[0] ?? 'en';
 });
 
-watch(() => quasar.dark.isActive, applyCreatorTheme);
+watch(
+  () => quasar.dark.isActive,
+  (isDark) => {
+    applyCreatorTheme(isDark);
+    applySurveyTheme(isDark);
+  },
+);
 
-// Creator theme
+// Creator chrome theme and the survey's own theme (design/preview/theme tabs)
 applyCreatorTheme(quasar.dark.isActive);
+applySurveyTheme(quasar.dark.isActive);
 
 function applyCreatorTheme(isDark: boolean) {
   const theme = isDark ? md3CreatorThemes.dark : md3CreatorThemes.light;
 
   creator.applyCreatorTheme(theme);
+}
+
+// Keeps the survey rendered inside the creator on the same theme the
+// registration page would pick for the same event and mode, so the designer
+// and preview tabs stop drifting from what registrants actually see.
+function applySurveyTheme(isDark: boolean) {
+  creator.theme = resolveMd3Theme(
+    props.event.themes,
+    isDark ? 'dark' : 'light',
+  );
 
   // TODO This is a workaround for the issue with the theme not being applied correctly
   // The value is null because the backend middleware
