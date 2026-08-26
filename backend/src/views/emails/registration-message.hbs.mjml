@@ -71,7 +71,7 @@
           color="#ffffff"
           padding="0 24px"
         >
-          {{{ campName }}}
+          {{{ eventName }}}
         </mj-text>
       </mj-column>
     </mj-section>

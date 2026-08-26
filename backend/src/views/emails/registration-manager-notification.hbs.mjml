@@ -20,7 +20,7 @@
           {{ appName }}
         </mj-text>
         <mj-text align="center" font-size="18px" font-weight="700" color="#ffffff" padding="0 24px">
-          {{ camp.name }}
+          {{ event.name }}
         </mj-text>
       </mj-column>
     </mj-section>
