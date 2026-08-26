@@ -56,7 +56,7 @@ export default (axiosClient: AxiosInstance, options: RetryOptions) => {
   // Prime the CSRF token before the first state-changing request. Without this
   // the happy path would always incur a 403 + retry round-trip (and race the
   // token fetch on initial page load), which e2e flows that assert on the first
-  // request — e.g. submitting a event registration — depend on not happening.
+  // request — e.g. submitting an event registration — depend on not happening.
   axiosClient.interceptors.request.use(async (config) => {
     const method = (config.method ?? 'get').toLowerCase();
     const hasToken =

@@ -1,22 +1,22 @@
 export default {
   fetch: {
-    error: 'Failed to templates',
+    error: 'Échec de récupération des modèles',
   },
   create: {
-    progress: 'Creating template...',
-    success: 'Template created successfully',
-    error: 'Failed to create template',
+    progress: 'Création du modèle en cours...',
+    success: 'Modèle créé avec succès',
+    error: 'Échec de création du modèle',
   },
   update: {
-    progress: 'Updating template...',
-    success: 'Template updated successfully',
-    error: 'Failed to update template',
-    invalid: 'Invalid event or template id',
+    progress: 'Mise à jour du modèle en cours...',
+    success: 'Modèle mis à jour avec succès',
+    error: 'Échec de mise à jour du modèle',
+    invalid: "ID d'événement ou de modèle invalide",
   },
   delete: {
-    progress: 'Deleting template...',
-    success: 'Template deleted successfully',
-    error: 'Failed to delete template',
-    invalid: 'Invalid event or template id',
+    progress: 'Suppression du modèle en cours...',
+    success: 'Modèle supprimé avec succès',
+    error: 'Échec de suppression du modèle',
+    invalid: "ID d'événement ou de modèle invalide",
   },
 };

@@ -1,6 +1,6 @@
 export default {
   fetch: {
-    error: 'Fehler beim Abrufen der Veranstaltungverwalter',
+    error: 'Fehler beim Abrufen der Veranstaltungsverwalter',
   },
   create: {
     progress: 'Zugriff wird gewährt...',

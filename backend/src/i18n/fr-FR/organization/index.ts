@@ -7,7 +7,7 @@ export default {
         title: 'Une nouvelle organisation doit être contrôlée',
         information:
           '{{ organization.name }} a été soumise à vérification. ' +
-          "Tant qu'elle n'est pas vérifiée, elle ne peut ni publier de events ni envoyer de newsletters.",
+          "Tant qu'elle n'est pas vérifiée, elle ne peut ni publier d'événements ni envoyer de newsletters.",
         button: 'Contrôler les organisations',
         greeting: 'Cordialement,',
         teamName: "L'équipe {{ appName }}",
@@ -18,12 +18,12 @@ export default {
     },
     verified: {
       subject: 'Ton organisation a été vérifiée',
-      preview: '{{ organization.name }} peut désormais publier des events',
+      preview: '{{ organization.name }} peut désormais publier des événements',
       text: {
         title: 'Ton organisation a été vérifiée',
         information:
           '{{ organization.name }} a été vérifiée. ' +
-          'Tu peux maintenant publier ses events et envoyer des newsletters.',
+          'Tu peux maintenant publier ses événements et envoyer des newsletters.',
         button: "Ouvrir l'organisation",
         greeting: 'Cordialement,',
         teamName: "L'équipe {{ appName }}",
@@ -39,7 +39,7 @@ export default {
         title: "Ton organisation n'a pas pu être vérifiée",
         information:
           "{{ organization.name }} n'a pas été vérifiée. " +
-          "Elle ne peut ni publier de events ni envoyer de newsletters tant que ce n'est pas fait. " +
+          "Elle ne peut ni publier d'événements ni envoyer de newsletters tant que ce n'est pas fait. " +
           'Corriger ses informations enregistrées la remet en attente de vérification.',
         reasonLabel: 'Motif',
         button: 'Vérifier les informations',
