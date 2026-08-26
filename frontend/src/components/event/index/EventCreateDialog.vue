@@ -156,7 +156,11 @@
             v-model="data.countries"
             :disable="loading"
             :label="t('field.countries')"
-            :hint="t('field.countries_hint')"
+            :hint="
+              data.referenceEventId != null
+                ? t('field.countries_hint_reference')
+                : t('field.countries_hint')
+            "
             :countries="['de', 'fr', 'gb', 'pl', 'cz']"
             :rules="[
               (val?: string[]) =>
@@ -768,6 +772,7 @@ field:
   organization: 'Organization'
   countries: 'Countries'
   countries_hint: 'Cannot be changed after the event is created'
+  countries_hint_reference: 'Taken from the copied event and cannot be changed'
   name: 'Event name'
   use_template: 'Preset'
   template: 'Event'
@@ -857,6 +862,7 @@ field:
   organization: 'Organisation'
   countries: 'Länder'
   countries_hint: 'Kann nach dem Erstellen der Veranstaltung nicht mehr geändert werden'
+  countries_hint_reference: 'Wird von der kopierten Veranstaltung übernommen und kann nicht geändert werden'
   name: 'Veranstaltungsname'
   use_template: 'Vorlage'
   template: 'Veranstaltung'
@@ -946,6 +952,7 @@ field:
   organization: 'Organisation'
   countries: 'Pays'
   countries_hint: "Ne peut plus être modifié après la création de l'événement"
+  countries_hint_reference: "Repris de l'événement copié et ne peut pas être modifié"
   name: "Nom de l'événement"
   use_template: 'Modèle'
   template: 'Événement'
@@ -1035,6 +1042,7 @@ field:
   organization: 'Organizacja'
   countries: 'Kraje'
   countries_hint: 'Nie można zmienić po utworzeniu wydarzenia'
+  countries_hint_reference: 'Przejęte ze skopiowanego wydarzenia i nie można tego tutaj zmienić'
   name: 'Nazwa wydarzenia'
   use_template: 'Szablon'
   template: 'Wydarzenie'
@@ -1124,6 +1132,7 @@ field:
   organization: 'Organizace'
   countries: 'Země'
   countries_hint: 'Po vytvoření akce nelze změnit'
+  countries_hint_reference: 'Převzato z kopírované akce a zde je nelze změnit'
   name: 'Název akce'
   use_template: 'Šablona'
   template: 'Akce'
