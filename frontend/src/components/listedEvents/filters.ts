@@ -51,15 +51,10 @@ export function sortOptionOf(
 }
 
 /**
- * Ready-made date windows. Visitors think in seasons rather than in exact days,
- * and the backend filter is "the event falls entirely inside the window", which
- * these map onto directly.
+ * Ready-made date windows, rolling forward from today. The backend filter is
+ * "the event falls entirely inside the window", which these map onto directly.
  */
-export const EVENT_DATE_PRESETS = [
-  'this_month',
-  'next_3_months',
-  'summer',
-] as const;
+export const EVENT_DATE_PRESETS = ['this_month', 'next_3_months'] as const;
 
 export type EventDatePreset = (typeof EVENT_DATE_PRESETS)[number];
 
@@ -119,16 +114,6 @@ export function datePresetRange(
       return { startAt: from, endAt: endOfDay(year, month + 1, 0) };
     case 'next_3_months':
       return { startAt: from, endAt: endOfDay(year, month + 3, day) };
-    case 'summer': {
-      // June–August, rolling over to next year once this summer has passed.
-      const summerYear = month > 7 ? year + 1 : year;
-      const summerStart = startOfDay(summerYear, 5, 1);
-
-      return {
-        startAt: summerStart > from ? summerStart : from,
-        endAt: endOfDay(summerYear, 7, 31),
-      };
-    }
   }
 }
 

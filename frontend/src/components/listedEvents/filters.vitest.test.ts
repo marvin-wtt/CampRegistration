@@ -37,27 +37,6 @@ describe('datePresetRange', () => {
       '2026-06-15',
     );
   });
-
-  it('spans June to August for summer', () => {
-    const range = datePresetRange('summer', march15);
-
-    expect(day(range.startAt)).toBe('2026-06-01');
-    expect(day(range.endAt)).toBe('2026-08-31');
-  });
-
-  it('starts summer today once it has already begun', () => {
-    const july = new Date(2026, 6, 4, 10, 30);
-
-    expect(day(datePresetRange('summer', july).startAt)).toBe('2026-07-04');
-  });
-
-  it('rolls summer over to next year once this one has passed', () => {
-    const september = new Date(2026, 8, 1, 10, 30);
-    const range = datePresetRange('summer', september);
-
-    expect(day(range.startAt)).toBe('2027-06-01');
-    expect(day(range.endAt)).toBe('2027-08-31');
-  });
 });
 
 describe('matchingDatePreset', () => {
@@ -72,13 +51,13 @@ describe('matchingDatePreset', () => {
   });
 
   it('matches on the day, not on the time of day', () => {
-    const range = datePresetRange('summer', march15);
+    const range = datePresetRange('this_month', march15);
     const noonStart = new Date(range.startAt);
     noonStart.setHours(12, 0);
 
     expect(
       matchingDatePreset(noonStart.toISOString(), range.endAt, march15),
-    ).toBe('summer');
+    ).toBe('this_month');
   });
 
   it('reports no preset for a hand-picked range', () => {

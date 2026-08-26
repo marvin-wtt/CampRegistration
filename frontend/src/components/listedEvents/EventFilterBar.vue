@@ -1075,7 +1075,6 @@ sort:
 preset:
   this_month: 'This month'
   next_3_months: 'Next 3 months'
-  summer: 'Summer'
 clear: 'Clear all'
 clear_one: 'Clear {filter}'
 search: 'Search'
@@ -1103,7 +1102,6 @@ sort:
 preset:
   this_month: 'Diesen Monat'
   next_3_months: 'Nächste 3 Monate'
-  summer: 'Sommer'
 clear: 'Zurücksetzen'
 clear_one: '{filter} zurücksetzen'
 search: 'Suche'
@@ -1131,7 +1129,6 @@ sort:
 preset:
   this_month: 'Ce mois-ci'
   next_3_months: 'Les 3 prochains mois'
-  summer: 'Été'
 clear: 'Tout effacer'
 clear_one: 'Effacer : {filter}'
 search: 'Recherche'
@@ -1159,7 +1156,6 @@ sort:
 preset:
   this_month: 'W tym miesiącu'
   next_3_months: 'Najbliższe 3 miesiące'
-  summer: 'Lato'
 clear: 'Wyczyść'
 clear_one: 'Wyczyść: {filter}'
 search: 'Wyszukiwanie'
@@ -1187,7 +1183,6 @@ sort:
 preset:
   this_month: 'Tento měsíc'
   next_3_months: 'Příští 3 měsíce'
-  summer: 'Léto'
 clear: 'Vymazat'
 clear_one: 'Zrušit: {filter}'
 search: 'Hledání'
