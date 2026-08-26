@@ -127,7 +127,7 @@
 import 'survey-core/survey-core.min.css';
 
 import { useI18n } from 'vue-i18n';
-import { createMarkdownConverter } from '@camp-registration/common/utils';
+import { createMarkdownConverter } from '@/utils/markdown';
 import {
   computed,
   onMounted,

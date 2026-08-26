@@ -33,8 +33,7 @@
     "./permissions": "./dist/permissions/index.js",
     "./privacy": "./dist/privacy/index.js",
     "./realtime": "./dist/realtime/index.js",
-    "./settings": "./dist/settings/index.js",
-    "./utils": "./dist/utils/index.js"
+    "./settings": "./dist/settings/index.js"
   },
   "imports": {
     "#enteties": "./src/enteties/index.js",
@@ -42,7 +41,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@types/markdown-it": "^14.1.2",
     "@types/node": "^24.13.2",
     "@vitest/coverage-v8": "^4.1.8",
     "@vitest/ui": "^4.1.8",
@@ -57,8 +55,5 @@
   },
   "engines": {
     "node": ">=22 <25"
-  },
-  "dependencies": {
-    "markdown-it": "^14.2.0"
   }
 }

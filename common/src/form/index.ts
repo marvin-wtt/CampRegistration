@@ -24,4 +24,3 @@ Serializer.getProperty('file', 'storeDataAsText').defaultValue = false;
 
 export { setVariables };
 export { selectFileByLocale } from './files.js';
-export { fileDynamicTextProcessor } from './utils.js';

@@ -3,8 +3,6 @@ import type { Question } from 'survey-core';
 import { setVariables } from '@camp-registration/common/form';
 import type { Event } from '#generated/prisma/client.js';
 
-import 'survey-core/i18n';
-
 /** One field of a form, flattened out of the survey's structure. */
 export interface FormAnswer {
   /** Dotted path of the field within the form data. */

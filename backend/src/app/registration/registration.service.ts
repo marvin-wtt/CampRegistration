@@ -19,6 +19,7 @@ import { PrivacyNoticeService } from '#app/privacyNotice/privacy-notice.service'
 function connectVersion(id: string | null) {
   return id ? { connect: { id } } : undefined;
 }
+
 @injectable()
 export class RegistrationService extends BaseService {
   /**

@@ -13,15 +13,11 @@
 import { SurveyPDF } from 'survey-pdf';
 import { Spacious } from 'survey-pdf/layouts';
 import { buildMd3LiteralTheme } from '@/lib/surveyJs/theme';
-import {
-  createMarkdownConverter,
-  safeFileName,
-} from '@camp-registration/common/utils';
-import {
-  setVariables,
-  fileDynamicTextProcessor,
-} from '@camp-registration/common/form';
+import { createMarkdownConverter } from '@/utils/markdown';
+import { safeFileName } from '@/utils/safeFileName';
+import { setVariables } from '@camp-registration/common/form';
 import type { EventDetails } from '@camp-registration/common/entities';
+import type { SurveyModel } from 'survey-core';
 
 interface RegistrationPdfOptions {
   event: EventDetails;
@@ -29,6 +25,25 @@ interface RegistrationPdfOptions {
   locale: string;
   /** Resolves an event file slot to a URL, for `{_file.<slot>}` placeholders. */
   fileUrl: (slot: string) => string;
+}
+
+type DynamicTextHandler = Parameters<
+  SurveyModel['onProcessDynamicText']['add']
+>[0];
+
+function fileDynamicTextProcessor(
+  resolver: (slot: string) => string,
+): DynamicTextHandler {
+  return (_sender, options) => {
+    if (options.isExists) {
+      return;
+    }
+    if (!options.name.startsWith('_file.')) {
+      return;
+    }
+    const slot = options.name.slice('_file.'.length);
+    options.value = resolver(slot);
+  };
 }
 
 function buildSurveyPdf(options: RegistrationPdfOptions): SurveyPDF {
