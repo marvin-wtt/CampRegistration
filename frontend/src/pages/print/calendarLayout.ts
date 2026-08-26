@@ -1,4 +1,4 @@
-import type { ProgramEvent } from '@camp-registration/common/entities';
+import type { ProgramItem } from '@camp-registration/common/entities';
 import { parseTimeToMinutes } from '@/utils/date';
 
 /** Smallest box that still holds a line of text. */
@@ -29,7 +29,7 @@ export interface DayLayoutOptions {
 
 /** An event placed in a day column. Horizontal span is a 0…1 fraction. */
 export interface EventBox {
-  event: ProgramEvent;
+  event: ProgramItem;
   startMinutes: number;
   endMinutes: number;
   top: number;
@@ -42,7 +42,7 @@ export interface EventBox {
 
 /** Working representation while a column layout is being computed. */
 interface Placement {
-  event: ProgramEvent;
+  event: ProgramItem;
   start: number;
   end: number;
   x0: number;
@@ -56,7 +56,7 @@ interface Placement {
  * clicked apart, on paper a covered event is simply lost.
  */
 export function layoutDayEvents(
-  events: ProgramEvent[],
+  events: ProgramItem[],
   options: DayLayoutOptions,
 ): EventBox[] {
   const placements = events
@@ -74,7 +74,7 @@ export function layoutDayEvents(
 }
 
 function toPlacement(
-  event: ProgramEvent,
+  event: ProgramItem,
   splitPlans: boolean,
 ): Placement | null {
   if (!event.time || !event.duration) {

@@ -26,7 +26,7 @@ export interface Organization extends Identifiable {
 }
 
 export interface OrganizationDetails extends Organization {
-  ownedCamps: number;
+  ownedEvents: number;
   ownedNewsletters: number;
 }
 

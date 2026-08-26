@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CampFactory,
-  CampManagerFactory,
+  EventFactory,
+  EventManagerFactory,
   NewsletterFactory,
   NewsletterSubscriberFactory,
   RegistrationFactory,
@@ -34,14 +34,14 @@ const createNewsletterWithRole = async (role: NewsletterManagerRole) => {
   return { accessToken, newsletter };
 };
 
-const createNewsletterAndCampWithManager = async () => {
+const createNewsletterAndEventWithManager = async () => {
   const { user, accessToken, newsletter } = await createNewsletterWithManager();
-  const camp = await CampFactory.create();
-  await CampManagerFactory.create({
-    camp: { connect: { id: camp.id } },
+  const event = await EventFactory.create();
+  await EventManagerFactory.create({
+    event: { connect: { id: event.id } },
     user: { connect: { id: user.id } },
   });
-  return { user, accessToken, newsletter, camp };
+  return { user, accessToken, newsletter, event };
 };
 
 describe(`${BASE}/:newsletterId/subscribers`, () => {
@@ -348,20 +348,20 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
 
   describe(`POST ${BASE}/:newsletterId/subscribers/import`, () => {
     it('should respond with `200` and import registrations with emails', async () => {
-      const { accessToken, newsletter, camp } =
-        await createNewsletterAndCampWithManager();
+      const { accessToken, newsletter, event } =
+        await createNewsletterAndEventWithManager();
       await RegistrationFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
         emails: ['import1@example.com'],
       });
       await RegistrationFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
         emails: ['import2@example.com'],
       });
 
       const { body } = await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ campId: camp.id, consentConfirmed: true })
+        .send({ eventId: event.id, consentConfirmed: true })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -374,16 +374,16 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
     });
 
     it('should skip registrations without an email (empty array)', async () => {
-      const { accessToken, newsletter, camp } =
-        await createNewsletterAndCampWithManager();
+      const { accessToken, newsletter, event } =
+        await createNewsletterAndEventWithManager();
       await RegistrationFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
         emails: [],
       });
 
       const { body } = await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ campId: camp.id, consentConfirmed: true })
+        .send({ eventId: event.id, consentConfirmed: true })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -391,16 +391,16 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
     });
 
     it('should skip registrations where emails field is null', async () => {
-      const { accessToken, newsletter, camp } =
-        await createNewsletterAndCampWithManager();
+      const { accessToken, newsletter, event } =
+        await createNewsletterAndEventWithManager();
       await RegistrationFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
         emails: Prisma.DbNull,
       });
 
       const { body } = await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ campId: camp.id, consentConfirmed: true })
+        .send({ eventId: event.id, consentConfirmed: true })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -408,17 +408,17 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
     });
 
     it('should skip null/empty individual emails within an emails array', async () => {
-      const { accessToken, newsletter, camp } =
-        await createNewsletterAndCampWithManager();
+      const { accessToken, newsletter, event } =
+        await createNewsletterAndEventWithManager();
       // emails array contains a falsy value
       await RegistrationFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
         emails: ['', 'valid@example.com'],
       });
 
       const { body } = await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ campId: camp.id, consentConfirmed: true })
+        .send({ eventId: event.id, consentConfirmed: true })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -427,20 +427,20 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
     });
 
     it('should deduplicate emails that appear in multiple registrations', async () => {
-      const { accessToken, newsletter, camp } =
-        await createNewsletterAndCampWithManager();
+      const { accessToken, newsletter, event } =
+        await createNewsletterAndEventWithManager();
       await RegistrationFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
         emails: ['shared@example.com'],
       });
       await RegistrationFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
         emails: ['shared@example.com'],
       });
 
       const { body } = await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ campId: camp.id, consentConfirmed: true })
+        .send({ eventId: event.id, consentConfirmed: true })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -454,10 +454,10 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
     });
 
     it('should skip already-subscribed emails and report them as skipped', async () => {
-      const { accessToken, newsletter, camp } =
-        await createNewsletterAndCampWithManager();
+      const { accessToken, newsletter, event } =
+        await createNewsletterAndEventWithManager();
       await RegistrationFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
         emails: ['existing@example.com'],
       });
       await NewsletterSubscriberFactory.create({
@@ -467,7 +467,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
 
       const { body } = await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ campId: camp.id, consentConfirmed: true })
+        .send({ eventId: event.id, consentConfirmed: true })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -475,22 +475,22 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
     });
 
     it('should filter by country when provided', async () => {
-      const { accessToken, newsletter, camp } =
-        await createNewsletterAndCampWithManager();
+      const { accessToken, newsletter, event } =
+        await createNewsletterAndEventWithManager();
       await RegistrationFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
         emails: ['de@example.com'],
         country: 'de',
       });
       await RegistrationFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
         emails: ['fr@example.com'],
         country: 'fr',
       });
 
       const { body } = await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ campId: camp.id, country: 'de', consentConfirmed: true })
+        .send({ eventId: event.id, country: 'de', consentConfirmed: true })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -503,15 +503,15 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
     });
 
     it('should import all registrations regardless of consent when requireConsent is false', async () => {
-      const { accessToken, newsletter, camp } =
-        await createNewsletterAndCampWithManager();
+      const { accessToken, newsletter, event } =
+        await createNewsletterAndEventWithManager();
       await RegistrationFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
         emails: ['consent-true@example.com'],
         newsletterConsent: true,
       });
       await RegistrationFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
         emails: ['consent-null@example.com'],
         newsletterConsent: null,
       });
@@ -519,7 +519,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
       const { body } = await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
         .send({
-          campId: camp.id,
+          eventId: event.id,
           requireConsent: false,
           consentConfirmed: true,
         })
@@ -531,27 +531,27 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
     });
 
     it('should only import registrations with explicit consent when requireConsent is true', async () => {
-      const { accessToken, newsletter, camp } =
-        await createNewsletterAndCampWithManager();
+      const { accessToken, newsletter, event } =
+        await createNewsletterAndEventWithManager();
       await RegistrationFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
         emails: ['consent-true@example.com'],
         newsletterConsent: true,
       });
       await RegistrationFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
         emails: ['consent-false@example.com'],
         newsletterConsent: false,
       });
       await RegistrationFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
         emails: ['consent-null@example.com'],
         newsletterConsent: null,
       });
 
       const { body } = await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ campId: camp.id, requireConsent: true })
+        .send({ eventId: event.id, requireConsent: true })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -565,21 +565,21 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
     });
 
     it('should respond with `400` when consent is neither required nor confirmed', async () => {
-      const { accessToken, newsletter, camp } =
-        await createNewsletterAndCampWithManager();
+      const { accessToken, newsletter, event } =
+        await createNewsletterAndEventWithManager();
 
       await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ campId: camp.id, requireConsent: false })
+        .send({ eventId: event.id, requireConsent: false })
         .auth(accessToken, { type: 'bearer' })
         .expect(400);
     });
 
     it('should set subscriber name from firstName and lastName', async () => {
-      const { accessToken, newsletter, camp } =
-        await createNewsletterAndCampWithManager();
+      const { accessToken, newsletter, event } =
+        await createNewsletterAndEventWithManager();
       await RegistrationFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
         emails: ['named@example.com'],
         firstName: 'Alice',
         lastName: 'Smith',
@@ -587,7 +587,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
 
       await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ campId: camp.id, consentConfirmed: true })
+        .send({ eventId: event.id, consentConfirmed: true })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -598,10 +598,10 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
     });
 
     it('should set subscriber name from firstName only when lastName is missing', async () => {
-      const { accessToken, newsletter, camp } =
-        await createNewsletterAndCampWithManager();
+      const { accessToken, newsletter, event } =
+        await createNewsletterAndEventWithManager();
       await RegistrationFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
         emails: ['firstonly@example.com'],
         firstName: 'Bob',
         lastName: null,
@@ -609,7 +609,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
 
       await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ campId: camp.id, consentConfirmed: true })
+        .send({ eventId: event.id, consentConfirmed: true })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -620,10 +620,10 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
     });
 
     it('should set subscriber name from lastName only when firstName is missing', async () => {
-      const { accessToken, newsletter, camp } =
-        await createNewsletterAndCampWithManager();
+      const { accessToken, newsletter, event } =
+        await createNewsletterAndEventWithManager();
       await RegistrationFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
         emails: ['lastonly@example.com'],
         firstName: null,
         lastName: 'Jones',
@@ -631,7 +631,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
 
       await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ campId: camp.id, consentConfirmed: true })
+        .send({ eventId: event.id, consentConfirmed: true })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -642,10 +642,10 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
     });
 
     it('should set subscriber name to null when both firstName and lastName are missing', async () => {
-      const { accessToken, newsletter, camp } =
-        await createNewsletterAndCampWithManager();
+      const { accessToken, newsletter, event } =
+        await createNewsletterAndEventWithManager();
       await RegistrationFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
         emails: ['noname@example.com'],
         firstName: null,
         lastName: null,
@@ -653,7 +653,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
 
       await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ campId: camp.id, consentConfirmed: true })
+        .send({ eventId: event.id, consentConfirmed: true })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -663,7 +663,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
       expect(subscriber?.name).toBeNull();
     });
 
-    it('should respond with `400` when campId is missing', async () => {
+    it('should respond with `400` when eventId is missing', async () => {
       const { accessToken, newsletter } = await createNewsletterWithManager();
 
       await request()
@@ -678,7 +678,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
 
       await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ campId: ulid() })
+        .send({ eventId: ulid() })
         .expect(401);
     });
 
@@ -689,18 +689,18 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
 
       await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ campId: ulid() })
+        .send({ eventId: ulid() })
         .auth(accessToken, { type: 'bearer' })
         .expect(403);
     });
 
-    it('should respond with `403` when user is a newsletter manager but not a camp manager', async () => {
+    it('should respond with `403` when user is a newsletter manager but not a event manager', async () => {
       const { accessToken, newsletter } = await createNewsletterWithManager();
-      const camp = await CampFactory.create();
+      const event = await EventFactory.create();
 
       await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ campId: camp.id, consentConfirmed: true })
+        .send({ eventId: event.id, consentConfirmed: true })
         .auth(accessToken, { type: 'bearer' })
         .expect(403);
     });

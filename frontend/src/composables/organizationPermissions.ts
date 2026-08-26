@@ -27,18 +27,18 @@ export function useOrganizationPermissions() {
     });
 
   /**
-   * Organizations the user may create a camp under. Drives the create-camp
+   * Organizations the user may create a event under. Drives the create-event
    * gate, so it deliberately includes unverified ones — those produce drafts.
    */
-  const campCreationOrganizationIds = computed<string[]>(() =>
+  const eventCreationOrganizationIds = computed<string[]>(() =>
     (user.value?.organizationAccess ?? [])
       .filter((access) =>
-        access.permissions.includes('organization.camps.create'),
+        access.permissions.includes('organization.events.create'),
       )
       .map((access) => access.organizationId),
   );
 
-  /** Newsletters, unlike camps, require a verified organization. */
+  /** Newsletters, unlike events, require a verified organization. */
   const newsletterCreationOrganizationIds = computed<string[]>(() =>
     (user.value?.organizationAccess ?? [])
       .filter(
@@ -55,7 +55,7 @@ export function useOrganizationPermissions() {
     canAnyOrg: canAny,
     cannotOrg: cannot,
     canAccessOrg: canAccess,
-    campCreationOrganizationIds,
+    eventCreationOrganizationIds,
     newsletterCreationOrganizationIds,
   };
 }

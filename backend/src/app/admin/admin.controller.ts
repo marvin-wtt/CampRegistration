@@ -2,7 +2,7 @@ import { inject, injectable } from 'inversify';
 import type { Request, Response } from 'express';
 import { BaseController } from '#core/base/BaseController';
 import { UserService } from '#app/user/user.service';
-import { CampService } from '#app/camp/camp.service';
+import { EventService } from '#app/event/event.service';
 import { QueueService } from '#app/queue/queue.service';
 import { LegalService } from '#app/legal/legal.service';
 import { RegistrationService } from '#app/registration/registration.service';
@@ -16,7 +16,7 @@ export class AdminController extends BaseController {
     @inject(UserService) private readonly userService: UserService,
     @inject(OrganizationService)
     private readonly organizationService: OrganizationService,
-    @inject(CampService) private readonly campService: CampService,
+    @inject(EventService) private readonly eventService: EventService,
     @inject(QueueService) private readonly queueService: QueueService,
     @inject(LegalService) private readonly legalService: LegalService,
     @inject(FileService) private readonly fileService: FileService,
@@ -30,7 +30,7 @@ export class AdminController extends BaseController {
     const [
       users,
       organizations,
-      camps,
+      events,
       failedJobs,
       legal,
       files,
@@ -38,7 +38,7 @@ export class AdminController extends BaseController {
     ] = await Promise.all([
       this.userService.getOverviewCounts(),
       this.organizationService.getOverviewCounts(),
-      this.campService.getOverviewCounts(),
+      this.eventService.getOverviewCounts(),
       this.queueService.countFailedJobs(),
       this.legalService.getOverviewCounts(),
       this.fileService.getOverviewCounts(),
@@ -49,7 +49,7 @@ export class AdminController extends BaseController {
       new AdminOverviewResource({
         users,
         organizations,
-        camps,
+        events,
         queues: { failedJobs },
         legal,
         files,

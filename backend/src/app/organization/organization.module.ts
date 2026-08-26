@@ -41,12 +41,12 @@ export class OrganizationModule implements AppModule {
           'organization.view',
           'organization.edit',
           'organization.delete',
-          'organization.camps.view',
-          'organization.camps.create',
+          'organization.events.view',
+          'organization.events.create',
           'organization.newsletters.view',
           'organization.newsletters.create',
         ],
-        MEMBER: ['organization.view', 'organization.camps.create'],
+        MEMBER: ['organization.view', 'organization.events.create'],
       },
     };
   }

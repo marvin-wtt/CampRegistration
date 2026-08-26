@@ -199,19 +199,19 @@
       </section>
     </template>
 
-    <!-- Outside the mode branch: a camp's addition applies whether its
+    <!-- Outside the mode branch: a event's addition applies whether its
          organization used the builder or wrote its own prose. -->
-    <section v-if="campAdditionalHtml">
-      <h2>{{ t('section.campAdditional') }}</h2>
+    <section v-if="eventAdditionalHtml">
+      <h2>{{ t('section.eventAdditional') }}</h2>
       <!-- eslint-disable-next-line vue/no-v-html -- sanitized above and on write -->
       <div
         class="privacy-notice__prose"
-        v-html="campAdditionalHtml"
+        v-html="eventAdditionalHtml"
       />
     </section>
 
     <!-- Unconditional: it describes how the registration form behaves, which is
-         the same for every organization and every camp, so nothing about it is
+         the same for every organization and every event, so nothing about it is
          the controller's to configure. -->
     <section>
       <h2>{{ t('section.dataProvision') }}</h2>
@@ -310,9 +310,9 @@ const additionalHtml = computed<string | null>(() =>
     : null,
 );
 
-const campAdditionalHtml = computed<string | null>(() =>
+const eventAdditionalHtml = computed<string | null>(() =>
   props.notice.notice
-    ? demoteHeadings(sanitized(props.notice.notice.campAdditional))
+    ? demoteHeadings(sanitized(props.notice.notice.eventAdditional))
     : null,
 );
 
@@ -450,7 +450,7 @@ section:
   dataProvision: 'Whether you have to provide this data'
   automated: 'Automated decision-making'
   additional: 'Further information'
-  campAdditional: 'Additional information for this event'
+  eventAdditional: 'Additional information for this event'
   rights: 'Your rights'
   complaint: 'Right to complain'
 registrationNumber: 'Registration number'
@@ -493,7 +493,7 @@ section:
   dataProvision: 'Ob die Daten bereitgestellt werden müssen'
   automated: 'Automatisierte Entscheidungsfindung'
   additional: 'Weitere Informationen'
-  campAdditional: 'Zusätzliche Informationen zu dieser Veranstaltung'
+  eventAdditional: 'Zusätzliche Informationen zu dieser Veranstaltung'
   rights: 'Deine Rechte'
   complaint: 'Beschwerderecht'
 registrationNumber: 'Registernummer'
@@ -536,7 +536,7 @@ section:
   dataProvision: 'Êtes-vous tenu de fournir ces données ?'
   automated: 'Décision automatisée'
   additional: 'Informations complémentaires'
-  campAdditional: 'Informations complémentaires pour cet événement'
+  eventAdditional: 'Informations complémentaires pour cet événement'
   rights: 'Vos droits'
   complaint: 'Droit de réclamation'
 registrationNumber: "Numéro d'enregistrement"
@@ -579,7 +579,7 @@ section:
   dataProvision: 'Zda je nutné údaje poskytnout'
   automated: 'Automatizované rozhodování'
   additional: 'Další informace'
-  campAdditional: 'Doplňující informace k této akci'
+  eventAdditional: 'Doplňující informace k této akci'
   rights: 'Tvoje práva'
   complaint: 'Právo podat stížnost'
 registrationNumber: 'Registrační číslo'
@@ -622,7 +622,7 @@ section:
   dataProvision: 'Czy trzeba podać te dane'
   automated: 'Zautomatyzowane podejmowanie decyzji'
   additional: 'Dodatkowe informacje'
-  campAdditional: 'Dodatkowe informacje dotyczące tego wydarzenia'
+  eventAdditional: 'Dodatkowe informacje dotyczące tego wydarzenia'
   rights: 'Twoje prawa'
   complaint: 'Prawo do skargi'
 registrationNumber: 'Numer rejestrowy'

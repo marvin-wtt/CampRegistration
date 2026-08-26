@@ -151,7 +151,7 @@ onMounted(() => {
 
 /**
  * Assembled here rather than fetched: the moderator reviews the organization's
- * own notice, which has no camp to compose it against, and the controller
+ * own notice, which has no event to compose it against, and the controller
  * identity and supervisory authority are already derivable from the
  * organization on screen.
  */
@@ -184,7 +184,7 @@ async function loadNotice() {
       supervisoryAuthority: supervisoryAuthorityFor(props.organization.country),
       notice: composePrivacyNotice(stored.content),
       organizationVersion: stored.publishedVersion,
-      campVersion: null,
+      eventVersion: null,
     };
     noticeState.value = 'ready';
   } catch {

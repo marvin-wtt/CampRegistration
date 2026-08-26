@@ -3,7 +3,7 @@
     Layered presentation: a short statement always visible at the point of
     collection, the full Art. 13 text one click away, and a permanent link for
     afterwards. Deliberately *not* a consent checkbox — the legal basis for a
-    camp registration is the contract, and a blanket "I accept the privacy
+    event registration is the contract, and a blanket "I accept the privacy
     policy" tick would be meaningless.
   -->
   <div
@@ -53,7 +53,7 @@
         <q-separator />
 
         <q-card-section class="scroll privacy-disclosure__body">
-          <!-- The camp notice only covers the organisation as controller; the
+          <!-- The event notice only covers the organisation as controller; the
                platform is a controller of its own, so its policy has to be
                reachable from here too. Opened in a new tab so leaving the
                dialog never discards a half-filled registration form. -->
@@ -79,7 +79,7 @@
             no-caps
             icon="open_in_new"
             :label="t('permanentLink')"
-            :to="{ name: 'camp.privacy', params: { campId } }"
+            :to="{ name: 'event.privacy', params: { eventId } }"
             target="_blank"
           />
           <m-btn
@@ -104,18 +104,18 @@ import PrivacyNotice from '@/components/privacy/PrivacyNotice.vue';
 import { usePrivacyNoticeService } from '@/services/PrivacyNoticeService';
 
 const props = defineProps<{
-  campId: string;
+  eventId: string;
 }>();
 
 const { t } = useI18n();
-const { fetchCampNotice } = usePrivacyNoticeService();
+const { fetchEventNotice } = usePrivacyNoticeService();
 
 const notice = ref<PublishedPrivacyNotice | null>(null);
 const dialogOpen = ref<boolean>(false);
 
 async function load() {
   try {
-    notice.value = await fetchCampNotice(props.campId);
+    notice.value = await fetchEventNotice(props.eventId);
   } catch {
     // A failed fetch must never block the registration form; the permanent
     // link below still reaches the notice.
@@ -124,7 +124,7 @@ async function load() {
 }
 
 onMounted(load);
-watch(() => props.campId, load);
+watch(() => props.eventId, load);
 </script>
 
 <style lang="scss" scoped>

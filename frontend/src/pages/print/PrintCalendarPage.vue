@@ -186,11 +186,11 @@ import {
   type EventBox,
 } from '@/pages/print/calendarLayout';
 import type {
-  ProgramEvent,
+  ProgramItem,
   Translatable,
 } from '@camp-registration/common/entities';
 
-interface PrintCamp {
+interface PrintEvent {
   name: Translatable;
   startAt: string;
   endAt: string;
@@ -199,8 +199,8 @@ interface PrintCamp {
 
 interface PrintData {
   locale?: string;
-  camp: PrintCamp;
-  events: ProgramEvent[];
+  event: PrintEvent;
+  events: ProgramItem[];
   date: string;
   days: number;
   plan: 'a' | 'b' | 'both';
@@ -242,16 +242,16 @@ const { payload: data, error } = usePrintPage<PrintData>({
   },
 });
 
-const campLocales = computed<string[]>(
-  () => data.value?.camp.locales ?? [locale.value],
+const eventLocales = computed<string[]>(
+  () => data.value?.event.locales ?? [locale.value],
 );
 const primaryLocale = computed<string>(
-  () => campLocales.value[0] ?? locale.value,
+  () => eventLocales.value[0] ?? locale.value,
 );
 
-// "All day" label shown in every camp locale, deduplicated
+// "All day" label shown in every event locale, deduplicated
 const allDayLabel = computed<string>(() => {
-  const labels = campLocales.value.map((l) => t('allDay', {}, { locale: l }));
+  const labels = eventLocales.value.map((l) => t('allDay', {}, { locale: l }));
 
   return [...new Set(labels)].join(' / ');
 });
@@ -396,7 +396,7 @@ function updateSlotHeight() {
     return;
   }
   const pageH = isPortrait.value ? PORTRAIT_H_PX : LANDSCAPE_H_PX;
-  // Measure what is actually rendered — multi-line camp titles, wrapped all-day
+  // Measure what is actually rendered — multi-line event titles, wrapped all-day
   // chips and the A/B day header all change these heights.
   const headerH = (calPhRef.value?.offsetHeight ?? 55) + HEADER_GAP_PX;
   const gridOverhead =
@@ -411,7 +411,7 @@ function updateSlotHeight() {
   );
 }
 
-const eventsMap = computed<Record<string, ProgramEvent[]>>(() => {
+const eventsMap = computed<Record<string, ProgramItem[]>>(() => {
   if (!data.value) {
     return {};
   }
@@ -426,18 +426,18 @@ const eventsMap = computed<Record<string, ProgramEvent[]>>(() => {
       }
       return e.plan === plan || e.plan === 'both';
     })
-    .reduce<Record<string, ProgramEvent[]>>((map, event) => {
+    .reduce<Record<string, ProgramItem[]>>((map, event) => {
       const key = event.date!;
       (map[key] ??= []).push(event);
       return map;
     }, {});
 });
 
-function getFullDayEvents(date: string): ProgramEvent[] {
+function getFullDayEvents(date: string): ProgramItem[] {
   return (eventsMap.value[date] ?? []).filter((e) => !e.time);
 }
 
-function getTimedEvents(date: string): ProgramEvent[] {
+function getTimedEvents(date: string): ProgramItem[] {
   return (eventsMap.value[date] ?? []).filter(
     (e) => !!e.time && !!e.duration && parseTimeToMinutes(e.time) !== null,
   );
@@ -487,7 +487,7 @@ function toPlacedEvent(box: EventBox): PlacedEvent {
   };
 }
 
-function chipStyle(event: ProgramEvent): Record<string, string> {
+function chipStyle(event: ProgramItem): Record<string, string> {
   const color = event.color ?? DEFAULT_EVENT_COLOR;
 
   return {
@@ -508,9 +508,9 @@ function toAll(value: Translatable | null | undefined): string {
   return [...new Set(Object.values(value).filter(Boolean))].join(' / ');
 }
 
-// Camp name per language, deduplicated, the camp's primary locale first.
+// Event name per language, deduplicated, the event's primary locale first.
 const titleLines = computed<string[]>(() => {
-  const name = data.value?.camp.name;
+  const name = data.value?.event.name;
   if (!name) {
     return [];
   }
@@ -518,7 +518,7 @@ const titleLines = computed<string[]>(() => {
     return [name];
   }
   const ordered = [
-    ...campLocales.value.map((l) => name[l]),
+    ...eventLocales.value.map((l) => name[l]),
     ...Object.values(name),
   ].filter((line): line is string => !!line);
 
@@ -536,7 +536,7 @@ const planLabel = computed<string>(() => {
   }
 
   const key = plan === 'a' ? 'planA' : 'planB';
-  const labels = campLocales.value.map((l) => t(key, {}, { locale: l }));
+  const labels = eventLocales.value.map((l) => t(key, {}, { locale: l }));
 
   return [...new Set(labels)].join(' / ');
 });
@@ -561,7 +561,7 @@ const headerDateRange = computed<string>(() => {
 
 function formatWeekday(dateStr: string): string {
   const date = parseLocalDate(dateStr);
-  const labels = campLocales.value.map((l) =>
+  const labels = eventLocales.value.map((l) =>
     date.toLocaleDateString(l, { weekday: 'short' }),
   );
 
@@ -617,7 +617,7 @@ $rule-hair: #f0f0f0;
   &__titles {
     margin: 0;
     min-width: 0;
-    // Every camp locale gets the name at the same weight — neither language is
+    // Every event locale gets the name at the same weight — neither language is
     // a subtitle of the other.
     font-size: 17px;
     font-weight: 700;

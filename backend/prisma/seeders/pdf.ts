@@ -8,7 +8,7 @@ function escapeText(value: string): string {
 }
 
 /**
- * Writes a one-page PDF from a few lines of text. The seeded camp documents
+ * Writes a one-page PDF from a few lines of text. The seeded event documents
  * have to exist as real files on disk — the file API streams them from storage
  * — but a single Helvetica text object is all they need, so this stays a
  * handful of lines instead of a dependency.

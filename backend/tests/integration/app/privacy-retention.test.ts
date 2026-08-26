@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
-  CampFactory,
+  EventFactory,
   OrganizationFactory,
   PrivacyNoticeFactory,
   RegistrationFactory,
@@ -18,10 +18,10 @@ const mailer = NoOpMailer.prototype;
 const RETENTION_MONTHS = 24;
 
 /**
- * A camp end date whose promised period lapses `days` from now. Negative values
+ * A event end date whose promised period lapses `days` from now. Negative values
  * put the deadline in the past, which is the catch-up case.
  */
-function campEndForDeadlineIn(days: number): Date {
+function eventEndForDeadlineIn(days: number): Date {
   const deadline = new Date();
   deadline.setDate(deadline.getDate() + days);
   deadline.setMonth(deadline.getMonth() - RETENTION_MONTHS);
@@ -30,15 +30,15 @@ function campEndForDeadlineIn(days: number): Date {
 }
 
 const notice: PrivacyNoticeContent = completePrivacyNoticeContent({
-  retention: { months: RETENTION_MONTHS, anchor: 'camp_end', exceptions: [] },
+  retention: { months: RETENTION_MONTHS, anchor: 'event_end', exceptions: [] },
 });
 
 /**
- * A camp whose registrants were shown a notice — the only kind the reminder
- * speaks about. `stamped: false` builds the legacy shape instead: a camp whose
+ * A event whose registrants were shown a notice — the only kind the reminder
+ * speaks about. `stamped: false` builds the legacy shape instead: a event whose
  * registrations predate the notice and were promised nothing.
  */
-async function campDue(
+async function eventDue(
   days: number,
   {
     stamped = true,
@@ -58,47 +58,47 @@ async function campDue(
     organization.id,
     content,
   );
-  const camp = await CampFactory.create({
+  const event = await EventFactory.create({
     organization: { connect: { id: organization.id } },
-    endAt: campEndForDeadlineIn(days),
+    endAt: eventEndForDeadlineIn(days),
   });
 
   await RegistrationFactory.create({
-    camp: { connect: { id: camp.id } },
+    event: { connect: { id: event.id } },
     ...(stamped
       ? { organizationPrivacyNotice: { connect: { id: version.id } } }
       : {}),
   });
 
   const user = await UserFactory.create();
-  await prisma.campManager.create({
-    data: { campId: camp.id, userId: user.id, role },
+  await prisma.eventManager.create({
+    data: { eventId: event.id, userId: user.id, role },
   });
 
-  return { camp, user };
+  return { event, user };
 }
 
 const run = () => resolve(PrivacyRetentionService).sendDueRetentionReminders();
 
-const reminderSentAt = async (campId: string) =>
-  prisma.camp
+const reminderSentAt = async (eventId: string) =>
+  prisma.event
     .findUniqueOrThrow({
-      where: { id: campId },
+      where: { id: eventId },
       select: { retentionReminderSentAt: true },
     })
-    .then((camp) => camp.retentionReminderSentAt);
+    .then((event) => event.retentionReminderSentAt);
 
 describe('retention reminders', () => {
   beforeEach(async () => {
-    await prisma.camp.deleteMany();
+    await prisma.event.deleteMany();
   });
 
-  it('should tell the camp director that the period is running out', async () => {
-    const { camp, user } = await campDue(10);
+  it('should tell the event director that the period is running out', async () => {
+    const { event, user } = await eventDue(10);
 
     await run();
 
-    expect(await reminderSentAt(camp.id)).not.toBeNull();
+    expect(await reminderSentAt(event.id)).not.toBeNull();
     expect(mailer.sendMail).toHaveBeenCalledTimes(1);
     expect(mailer.sendMail).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -108,40 +108,40 @@ describe('retention reminders', () => {
   });
 
   it('should still send once the deadline has already passed', async () => {
-    const { camp } = await campDue(-40);
+    const { event } = await eventDue(-40);
 
     await run();
 
-    expect(await reminderSentAt(camp.id)).not.toBeNull();
+    expect(await reminderSentAt(event.id)).not.toBeNull();
     expect(mailer.sendMail).toHaveBeenCalledTimes(1);
   });
 
   it('should stay quiet while the deadline is beyond the lead window', async () => {
-    const { camp } = await campDue(90);
+    const { event } = await eventDue(90);
 
     await run();
 
-    expect(await reminderSentAt(camp.id)).toBeNull();
+    expect(await reminderSentAt(event.id)).toBeNull();
     expect(mailer.sendMail).not.toHaveBeenCalled();
   });
 
-  it('should never send a second time for the same camp', async () => {
-    const { camp } = await campDue(10);
+  it('should never send a second time for the same event', async () => {
+    const { event } = await eventDue(10);
 
     await run();
     await run();
 
     expect(mailer.sendMail).toHaveBeenCalledTimes(1);
-    expect(await reminderSentAt(camp.id)).not.toBeNull();
+    expect(await reminderSentAt(event.id)).not.toBeNull();
   });
 
   // Nobody was promised anything, so there is no date to remind anyone of.
-  it('should skip a camp whose registrations were never shown a notice', async () => {
-    const { camp } = await campDue(10, { stamped: false });
+  it('should skip a event whose registrations were never shown a notice', async () => {
+    const { event } = await eventDue(10, { stamped: false });
 
     await run();
 
-    expect(await reminderSentAt(camp.id)).toBeNull();
+    expect(await reminderSentAt(event.id)).toBeNull();
     expect(mailer.sendMail).not.toHaveBeenCalled();
   });
 
@@ -149,7 +149,7 @@ describe('retention reminders', () => {
    * MJML drops handlebars block helpers that sit between its own elements, so
    * a `{{#if}}` outside `<mj-raw>` compiles away and its body renders
    * unconditionally. That failed silently once already: the mail told every
-   * camp not to delete what its exceptions cover, including the camps that
+   * event not to delete what its exceptions cover, including the events that
    * have none.
    */
   describe('the conditional paragraphs', () => {
@@ -157,8 +157,8 @@ describe('retention reminders', () => {
       (mailer.sendMail as unknown as { mock: { calls: [{ html: string }][] } })
         .mock.calls[0]![0].html;
 
-    it('should stay silent about exceptions a camp does not have', async () => {
-      await campDue(10);
+    it('should stay silent about exceptions a event does not have', async () => {
+      await eventDue(10);
 
       await run();
 
@@ -166,8 +166,8 @@ describe('retention reminders', () => {
       expect(sentBody()).not.toContain('withdraws that consent');
     });
 
-    it('should warn about exceptions a camp does have', async () => {
-      await campDue(10, {
+    it('should warn about exceptions a event does have', async () => {
+      await eventDue(10, {
         content: completePrivacyNoticeContent({
           purposes: [
             { key: 'registration_administration', legalBasis: 'contract' },
@@ -175,7 +175,7 @@ describe('retention reminders', () => {
           ],
           retention: {
             months: RETENTION_MONTHS,
-            anchor: 'camp_end',
+            anchor: 'event_end',
             exceptions: [
               { scope: 'photo_publication', until: 'consent_withdrawn' },
             ],
@@ -192,12 +192,12 @@ describe('retention reminders', () => {
 
   // Telling someone to delete data they cannot reach is not a reminder, and
   // spending the one notification on them would lose it for good.
-  it('should withhold the reminder when the camp has no director', async () => {
-    const { camp } = await campDue(10, { role: 'COORDINATOR' });
+  it('should withhold the reminder when the event has no director', async () => {
+    const { event } = await eventDue(10, { role: 'COORDINATOR' });
 
     await run();
 
-    expect(await reminderSentAt(camp.id)).toBeNull();
+    expect(await reminderSentAt(event.id)).toBeNull();
     expect(mailer.sendMail).not.toHaveBeenCalled();
   });
 });

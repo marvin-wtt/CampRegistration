@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CampFactory,
+  EventFactory,
   OrganizationFactory,
   PrivacyNoticeFactory,
   UserFactory,
@@ -10,7 +10,7 @@ import { generateAccessToken } from './utils/token.js';
 import { request } from '../utils/request.js';
 import prisma from '../utils/prisma.js';
 import { emptyPrivacyNoticeContent } from '@camp-registration/common/privacy';
-import { campListed } from './fixtures/registration.fixtures.js';
+import { eventListed } from './fixtures/registration.fixtures.js';
 
 /** An organization whose notice was never published — the blocked state. */
 const organizationWithoutNotice = async (
@@ -33,10 +33,10 @@ const organizationAdmin = async (organizationId: string) => {
   return generateAccessToken(user);
 };
 
-const campManagerToken = async (campId: string) => {
+const eventManagerToken = async (eventId: string) => {
   const user = await UserFactory.create();
-  await prisma.campManager.create({
-    data: { campId, userId: user.id, role: 'DIRECTOR' },
+  await prisma.eventManager.create({
+    data: { eventId, userId: user.id, role: 'DIRECTOR' },
   });
 
   return generateAccessToken(user);
@@ -154,7 +154,7 @@ describe('privacy notices', () => {
               { key: 'custom:1', label: { en: '<img src=x onerror=1>Skill' } },
             ],
             recipients: [
-              { key: 'camp_staff' },
+              { key: 'event_staff' },
               { key: 'platform_operator', name: '<i>Acme</i>' },
             ],
           }),
@@ -196,7 +196,7 @@ describe('privacy notices', () => {
 
       expect(versions).toHaveLength(2);
       expect(versions[0]?.content).toMatchObject({
-        retention: { months: 24, anchor: 'camp_end' },
+        retention: { months: 24, anchor: 'event_end' },
       });
       expect(versions[1]?.content).toMatchObject({
         retention: { months: 6, anchor: 'submission' },
@@ -243,7 +243,7 @@ describe('privacy notices', () => {
         where: { id: organization.id },
       });
 
-      // Editing the notice must not pull the organization's live camps into a
+      // Editing the notice must not pull the organization's live events into a
       // pending state — that would teach everyone never to touch it again.
       expect(updated?.verificationStatus).toBe('VERIFIED');
     });
@@ -296,25 +296,25 @@ describe('privacy notices', () => {
     });
   });
 
-  describe('GET /api/v1/camps/:campId/privacy-notice/addendum', () => {
+  describe('GET /api/v1/events/:eventId/privacy-notice/addendum', () => {
     it('should return the published addendum with the organization baseline', async () => {
       const organization = await OrganizationFactory.create();
-      const camp = await CampFactory.create({
+      const event = await EventFactory.create({
         organization: { connect: { id: organization.id } },
       });
-      await PrivacyNoticeFactory.createCampAddendum(camp.id, {
+      await PrivacyNoticeFactory.createEventAddendum(event.id, {
         recipients: [{ key: 'transport_provider', name: 'Bus Co' }],
       });
 
       const { body } = await request()
-        .get(`/api/v1/camps/${camp.id}/privacy-notice/addendum`)
-        .auth(await campManagerToken(camp.id), { type: 'bearer' })
+        .get(`/api/v1/events/${event.id}/privacy-notice/addendum`)
+        .auth(await eventManagerToken(event.id), { type: 'bearer' })
         .expect(200);
 
       expect(body.data.content.recipients).toEqual([
         { key: 'transport_provider', name: 'Bus Co' },
       ]);
-      // The baseline is what a camp adds to, so the editor can mark the
+      // The baseline is what a event adds to, so the editor can mark the
       // entries the organization has already declared.
       expect(
         body.data.organizationContent.dataCategories.map(
@@ -325,15 +325,15 @@ describe('privacy notices', () => {
       expect(body.data.publishedVersion).toBe(1);
     });
 
-    it('should return an empty addendum for a camp that added nothing', async () => {
+    it('should return an empty addendum for a event that added nothing', async () => {
       const organization = await OrganizationFactory.create();
-      const camp = await CampFactory.create({
+      const event = await EventFactory.create({
         organization: { connect: { id: organization.id } },
       });
 
       const { body } = await request()
-        .get(`/api/v1/camps/${camp.id}/privacy-notice/addendum`)
-        .auth(await campManagerToken(camp.id), { type: 'bearer' })
+        .get(`/api/v1/events/${event.id}/privacy-notice/addendum`)
+        .auth(await eventManagerToken(event.id), { type: 'bearer' })
         .expect(200);
 
       expect(body.data.content).toEqual({});
@@ -343,13 +343,13 @@ describe('privacy notices', () => {
 
     it('should report a null baseline when the organization published none', async () => {
       const organization = await organizationWithoutNotice('VERIFIED');
-      const camp = await CampFactory.create({
+      const event = await EventFactory.create({
         organization: { connect: { id: organization.id } },
       });
 
       const { body } = await request()
-        .get(`/api/v1/camps/${camp.id}/privacy-notice/addendum`)
-        .auth(await campManagerToken(camp.id), { type: 'bearer' })
+        .get(`/api/v1/events/${event.id}/privacy-notice/addendum`)
+        .auth(await eventManagerToken(event.id), { type: 'bearer' })
         .expect(200);
 
       expect(body.data.organizationContent).toBeNull();
@@ -358,57 +358,57 @@ describe('privacy notices', () => {
 
     it('should respond with `403` for a stranger', async () => {
       const organization = await OrganizationFactory.create();
-      const camp = await CampFactory.create({
+      const event = await EventFactory.create({
         organization: { connect: { id: organization.id } },
       });
       const stranger = await UserFactory.create();
 
       await request()
-        .get(`/api/v1/camps/${camp.id}/privacy-notice/addendum`)
+        .get(`/api/v1/events/${event.id}/privacy-notice/addendum`)
         .auth(generateAccessToken(stranger), { type: 'bearer' })
         .expect(403);
     });
   });
 
-  describe('PUT /api/v1/camps/:campId/privacy-notice/addendum', () => {
+  describe('PUT /api/v1/events/:eventId/privacy-notice/addendum', () => {
     it('should refuse an empty addendum', async () => {
       const organization = await OrganizationFactory.create();
-      const camp = await CampFactory.create({
+      const event = await EventFactory.create({
         organization: { connect: { id: organization.id } },
       });
 
       await request()
-        .put(`/api/v1/camps/${camp.id}/privacy-notice/addendum`)
+        .put(`/api/v1/events/${event.id}/privacy-notice/addendum`)
         .send({ content: {} })
-        .auth(await campManagerToken(camp.id), { type: 'bearer' })
+        .auth(await eventManagerToken(event.id), { type: 'bearer' })
         .expect(422);
     });
 
     it('should accept an empty addendum that withdraws published additions', async () => {
       const organization = await OrganizationFactory.create();
-      const camp = await CampFactory.create({
+      const event = await EventFactory.create({
         organization: { connect: { id: organization.id } },
       });
-      await PrivacyNoticeFactory.createCampAddendum(camp.id, {
+      await PrivacyNoticeFactory.createEventAddendum(event.id, {
         recipients: [{ key: 'transport_provider', name: 'Bus Co' }],
       });
 
       const { body } = await request()
-        .put(`/api/v1/camps/${camp.id}/privacy-notice/addendum`)
+        .put(`/api/v1/events/${event.id}/privacy-notice/addendum`)
         .send({ content: {} })
-        .auth(await campManagerToken(camp.id), { type: 'bearer' })
+        .auth(await eventManagerToken(event.id), { type: 'bearer' })
         .expect(200);
 
       expect(body.data.publishedVersion).toBe(2);
       expect(body.data.content.recipients ?? []).toStrictEqual([]);
 
       // The withdrawal is a version of its own, so registrations stamped with
-      // the old one still resolve — but the camp adds nothing any more.
+      // the old one still resolve — but the event adds nothing any more.
       const published = await request()
-        .get(`/api/v1/camps/${camp.id}/privacy-notice`)
+        .get(`/api/v1/events/${event.id}/privacy-notice`)
         .expect(200);
 
-      expect(published.body.data.campVersion).toBe(2);
+      expect(published.body.data.eventVersion).toBe(2);
       expect(
         published.body.data.notice.recipients.map(
           (recipient: { key: string }) => recipient.key,
@@ -416,27 +416,27 @@ describe('privacy notices', () => {
       ).not.toContain('transport_provider');
     });
 
-    it('should refuse a special category the camp adds with no Art. 9 basis', async () => {
+    it('should refuse a special category the event adds with no Art. 9 basis', async () => {
       const organization = await OrganizationFactory.create();
-      const camp = await CampFactory.create({
+      const event = await EventFactory.create({
         organization: { connect: { id: organization.id } },
       });
 
       await request()
-        .put(`/api/v1/camps/${camp.id}/privacy-notice/addendum`)
+        .put(`/api/v1/events/${event.id}/privacy-notice/addendum`)
         .send({ content: { dataCategories: [{ key: 'health' }] } })
-        .auth(await campManagerToken(camp.id), { type: 'bearer' })
+        .auth(await eventManagerToken(event.id), { type: 'bearer' })
         .expect(422);
     });
 
-    it('should accept the same category once the camp names its basis', async () => {
+    it('should accept the same category once the event names its basis', async () => {
       const organization = await OrganizationFactory.create();
-      const camp = await CampFactory.create({
+      const event = await EventFactory.create({
         organization: { connect: { id: organization.id } },
       });
 
       await request()
-        .put(`/api/v1/camps/${camp.id}/privacy-notice/addendum`)
+        .put(`/api/v1/events/${event.id}/privacy-notice/addendum`)
         .send({
           content: {
             dataCategories: [
@@ -444,18 +444,18 @@ describe('privacy notices', () => {
             ],
           },
         })
-        .auth(await campManagerToken(camp.id), { type: 'bearer' })
+        .auth(await eventManagerToken(event.id), { type: 'bearer' })
         .expect(200);
     });
 
-    it('should refuse a legitimate interest the camp relies on but does not name', async () => {
+    it('should refuse a legitimate interest the event relies on but does not name', async () => {
       const organization = await OrganizationFactory.create();
-      const camp = await CampFactory.create({
+      const event = await EventFactory.create({
         organization: { connect: { id: organization.id } },
       });
 
       await request()
-        .put(`/api/v1/camps/${camp.id}/privacy-notice/addendum`)
+        .put(`/api/v1/events/${event.id}/privacy-notice/addendum`)
         .send({
           content: {
             purposes: [
@@ -466,52 +466,52 @@ describe('privacy notices', () => {
             ],
           },
         })
-        .auth(await campManagerToken(camp.id), { type: 'bearer' })
+        .auth(await eventManagerToken(event.id), { type: 'bearer' })
         .expect(422);
     });
 
-    it('should not hold a camp to gaps its organization never closed', async () => {
+    it('should not hold a event to gaps its organization never closed', async () => {
       const organization = await organizationWithoutNotice();
-      const camp = await CampFactory.create({
+      const event = await EventFactory.create({
         organization: { connect: { id: organization.id } },
       });
 
       await request()
-        .put(`/api/v1/camps/${camp.id}/privacy-notice/addendum`)
+        .put(`/api/v1/events/${event.id}/privacy-notice/addendum`)
         .send({ content: { recipients: [{ key: 'transport_provider' }] } })
-        .auth(await campManagerToken(camp.id), { type: 'bearer' })
+        .auth(await eventManagerToken(event.id), { type: 'bearer' })
         .expect(200);
     });
 
     it('should sanitize the addendum free text', async () => {
       const organization = await OrganizationFactory.create();
-      const camp = await CampFactory.create({
+      const event = await EventFactory.create({
         organization: { connect: { id: organization.id } },
       });
 
       const { body } = await request()
-        .put(`/api/v1/camps/${camp.id}/privacy-notice/addendum`)
+        .put(`/api/v1/events/${event.id}/privacy-notice/addendum`)
         .send({
           content: { additional: { en: '<p>Ok</p><script>alert(1)</script>' } },
         })
-        .auth(await campManagerToken(camp.id), { type: 'bearer' })
+        .auth(await eventManagerToken(event.id), { type: 'bearer' })
         .expect(200);
 
       expect(body.data.content.additional.en).toBe('<p>Ok</p>');
     });
   });
 
-  describe('GET /api/v1/camps/:campId/privacy-notice', () => {
-    it('should compose the organization notice with the camp addendum', async () => {
+  describe('GET /api/v1/events/:eventId/privacy-notice', () => {
+    it('should compose the organization notice with the event addendum', async () => {
       const organization = await OrganizationFactory.create();
-      const camp = await CampFactory.create({
+      const event = await EventFactory.create({
         organization: { connect: { id: organization.id } },
       });
 
       const beforePublish = await request()
-        .get(`/api/v1/camps/${camp.id}/privacy-notice`)
+        .get(`/api/v1/events/${event.id}/privacy-notice`)
         .expect(200);
-      expect(beforePublish.body.data.campVersion).toBeNull();
+      expect(beforePublish.body.data.eventVersion).toBeNull();
       expect(
         beforePublish.body.data.notice.recipients.map(
           (r: { key: string }) => r.key,
@@ -519,71 +519,71 @@ describe('privacy notices', () => {
       ).not.toContain('transport_provider');
 
       await request()
-        .put(`/api/v1/camps/${camp.id}/privacy-notice/addendum`)
+        .put(`/api/v1/events/${event.id}/privacy-notice/addendum`)
         .send({
           content: {
             recipients: [{ key: 'transport_provider', name: 'Bus Co' }],
           },
         })
-        .auth(await campManagerToken(camp.id), { type: 'bearer' })
+        .auth(await eventManagerToken(event.id), { type: 'bearer' })
         .expect(200);
 
       const { body } = await request()
-        .get(`/api/v1/camps/${camp.id}/privacy-notice`)
+        .get(`/api/v1/events/${event.id}/privacy-notice`)
         .expect(200);
 
       expect(body.data.controller.name).toBe(organization.name);
       expect(body.data.supervisoryAuthority).not.toBeNull();
-      expect(body.data.campVersion).toBe(1);
+      expect(body.data.eventVersion).toBe(1);
       expect(
         body.data.notice.recipients.map((r: { key: string }) => r.key),
       ).toContain('transport_provider');
     });
 
-    it('should keep the organization retention exceptions a camp adds to', async () => {
+    it('should keep the organization retention exceptions a event adds to', async () => {
       const organization = await OrganizationFactory.create(
         {},
         {
           privacyNotice: completePrivacyNoticeContent({
             retention: {
               months: 24,
-              anchor: 'camp_end',
+              anchor: 'event_end',
               exceptions: [
                 {
                   scope: 'payment_and_invoicing',
                   months: 120,
-                  anchor: 'camp_end',
+                  anchor: 'event_end',
                 },
               ],
             },
           }),
         },
       );
-      const camp = await CampFactory.create({
+      const event = await EventFactory.create({
         organization: { connect: { id: organization.id } },
       });
 
       await request()
-        .put(`/api/v1/camps/${camp.id}/privacy-notice/addendum`)
+        .put(`/api/v1/events/${event.id}/privacy-notice/addendum`)
         .send({
           content: {
             retention: {
               months: 24,
-              anchor: 'camp_end',
+              anchor: 'event_end',
               exceptions: [
-                { scope: 'photo_publication', months: 36, anchor: 'camp_end' },
+                { scope: 'photo_publication', months: 36, anchor: 'event_end' },
               ],
             },
           },
         })
-        .auth(await campManagerToken(camp.id), { type: 'bearer' })
+        .auth(await eventManagerToken(event.id), { type: 'bearer' })
         .expect(200);
 
       const { body } = await request()
-        .get(`/api/v1/camps/${camp.id}/privacy-notice`)
+        .get(`/api/v1/events/${event.id}/privacy-notice`)
         .expect(200);
 
-      // A camp naming one exception must not silently drop the statutory one
+      // A event naming one exception must not silently drop the statutory one
       // its organization declared.
       expect(
         body.data.notice.retention.exceptions.map(
@@ -594,12 +594,12 @@ describe('privacy notices', () => {
 
     it('should report a null notice when the organization published none', async () => {
       const organization = await organizationWithoutNotice('VERIFIED');
-      const camp = await CampFactory.create({
+      const event = await EventFactory.create({
         organization: { connect: { id: organization.id } },
       });
 
       const { body } = await request()
-        .get(`/api/v1/camps/${camp.id}/privacy-notice`)
+        .get(`/api/v1/events/${event.id}/privacy-notice`)
         .expect(200);
 
       expect(body.data.notice).toBeNull();
@@ -611,13 +611,13 @@ describe('privacy notices', () => {
   describe('registration stamping', () => {
     it('should record the notice versions the registrant was shown', async () => {
       const organization = await OrganizationFactory.create();
-      const camp = await CampFactory.create({
-        ...campListed,
+      const event = await EventFactory.create({
+        ...eventListed,
         organization: { connect: { id: organization.id } },
       });
 
       const { body } = await request()
-        .post(`/api/v1/camps/${camp.id}/registrations`)
+        .post(`/api/v1/events/${event.id}/registrations`)
         .send({ data: { first_name: 'Ada', last_name: 'Lovelace' } })
         .expect(201);
 
@@ -628,19 +628,19 @@ describe('privacy notices', () => {
 
       expect(registration.organizationPrivacyNoticeVersionId).not.toBeNull();
       expect(registration.organizationPrivacyNotice?.version).toBe(1);
-      expect(registration.campPrivacyNoticeVersionId).toBeNull();
+      expect(registration.eventPrivacyNoticeVersionId).toBeNull();
     });
 
     it('should keep the stamped version unchanged when the notice is published again', async () => {
       const organization = await OrganizationFactory.create();
-      const camp = await CampFactory.create({
-        ...campListed,
+      const event = await EventFactory.create({
+        ...eventListed,
         organization: { connect: { id: organization.id } },
       });
       const accessToken = await organizationAdmin(organization.id);
 
       const { body } = await request()
-        .post(`/api/v1/camps/${camp.id}/registrations`)
+        .post(`/api/v1/events/${event.id}/registrations`)
         .send({ data: { first_name: 'Ada', last_name: 'Lovelace' } })
         .expect(201);
 
@@ -661,7 +661,7 @@ describe('privacy notices', () => {
 
       // The proof of what this person was shown must survive later edits.
       expect(registration.organizationPrivacyNotice?.content).toMatchObject({
-        retention: { months: 24, anchor: 'camp_end' },
+        retention: { months: 24, anchor: 'event_end' },
       });
     });
   });

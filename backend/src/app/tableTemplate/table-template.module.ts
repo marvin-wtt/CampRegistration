@@ -14,28 +14,28 @@ export class TableTemplateModule implements AppModule {
 
   registerRoutes(router: AppRouter): void {
     router.useRouter(
-      '/camps/:campId/table-templates',
+      '/events/:eventId/table-templates',
       resolve(TableTemplateRouter),
     );
   }
 
   registerPermissions(): ScopedPermissions {
     return {
-      camp: {
+      event: {
         DIRECTOR: [
-          'camp.table_templates.view',
-          'camp.table_templates.create',
-          'camp.table_templates.edit',
-          'camp.table_templates.delete',
+          'event.table_templates.view',
+          'event.table_templates.create',
+          'event.table_templates.edit',
+          'event.table_templates.delete',
         ],
         COORDINATOR: [
-          'camp.table_templates.view',
-          'camp.table_templates.create',
-          'camp.table_templates.edit',
-          'camp.table_templates.delete',
+          'event.table_templates.view',
+          'event.table_templates.create',
+          'event.table_templates.edit',
+          'event.table_templates.delete',
         ],
-        COUNSELOR: ['camp.table_templates.view'],
-        VIEWER: ['camp.table_templates.view'],
+        COUNSELOR: ['event.table_templates.view'],
+        VIEWER: ['event.table_templates.view'],
       },
     };
   }

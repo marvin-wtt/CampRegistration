@@ -90,7 +90,7 @@ export class OrganizationMemberController extends BaseController {
 
   /**
    * An organization must never lose its last administrator — there would be
-   * nobody able to manage its members, camps or verification, and no way back
+   * nobody able to manage its members, events or verification, and no way back
    * in short of a system administrator.
    */
   private async checkAdminConstraints(

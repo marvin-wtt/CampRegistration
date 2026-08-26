@@ -14,11 +14,11 @@
 
         <q-card-section class="q-pt-none q-gutter-md">
           <q-select
-            v-model="campId"
-            :label="t('input.camp.label')"
-            :hint="t('input.camp.hint')"
-            :options="campOptions"
-            :rules="[(val?: string) => !!val || t('input.camp.rule.required')]"
+            v-model="eventId"
+            :label="t('input.event.label')"
+            :hint="t('input.event.hint')"
+            :options="eventOptions"
+            :rules="[(val?: string) => !!val || t('input.event.rule.required')]"
             emit-value
             map-options
             hide-bottom-space
@@ -31,11 +31,11 @@
             </template>
           </q-select>
           <q-select
-            v-if="selectedCampCountries.length > 0"
+            v-if="selectedEventCountries.length > 0"
             v-model="country"
             :label="t('input.country.label')"
             :hint="t('input.country.hint')"
-            :options="selectedCampCountries"
+            :options="selectedEventCountries"
             clearable
             rounded
             outlined
@@ -98,44 +98,45 @@ import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { computed, onMounted, ref, watch } from 'vue';
 import type { NewsletterSubscriberImportData } from '@camp-registration/common/entities';
-import { useAssignedCampsStore } from '@/stores/assigned-camps-store';
+import { useAssignedEventsStore } from '@/stores/assigned-events-store';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
 const { t } = useI18n();
 const { to } = useObjectTranslation();
-const assignedCampsStore = useAssignedCampsStore();
+const assignedEventsStore = useAssignedEventsStore();
 
 defineEmits([...useDialogPluginComponent.emits]);
 
 onMounted(async () => {
-  await assignedCampsStore.fetchData();
+  await assignedEventsStore.fetchData();
 });
 
-const campId = ref<string>('');
+const eventId = ref<string>('');
 const country = ref<string | null>(null);
 const requireConsent = ref(true);
 const consentConfirmed = ref(false);
 
-const campOptions = computed(() => {
-  return (assignedCampsStore.data ?? []).map((camp) => ({
-    label: to(camp.name),
-    value: camp.id,
+const eventOptions = computed(() => {
+  return (assignedEventsStore.data ?? []).map((event) => ({
+    label: to(event.name),
+    value: event.id,
   }));
 });
 
-const selectedCampCountries = computed<string[]>(() => {
-  if (!campId.value) {
+const selectedEventCountries = computed<string[]>(() => {
+  if (!eventId.value) {
     return [];
   }
 
   return (
-    assignedCampsStore.data?.find((c) => c.id === campId.value)?.countries ?? []
+    assignedEventsStore.data?.find((c) => c.id === eventId.value)?.countries ??
+    []
   );
 });
 
-watch(campId, () => {
+watch(eventId, () => {
   country.value = null;
   requireConsent.value = true;
 });
@@ -146,7 +147,7 @@ watch(requireConsent, () => {
 
 function onSubmit() {
   const data: NewsletterSubscriberImportData = {
-    campId: campId.value,
+    eventId: eventId.value,
     country: country.value ?? null,
     requireConsent: requireConsent.value,
     consentConfirmed: consentConfirmed.value,
@@ -156,13 +157,13 @@ function onSubmit() {
 </script>
 
 <i18n lang="yaml" locale="en">
-title: 'Import Subscribers from Camp'
+title: 'Import Subscribers from Event'
 input:
-  camp:
-    label: 'Camp'
-    hint: 'Select the camp to import subscribers from'
+  event:
+    label: 'Event'
+    hint: 'Select the event to import subscribers from'
     rule:
-      required: 'Camp is required'
+      required: 'Event is required'
   country:
     label: 'Filter by Country (optional)'
     hint: 'Leave empty to import all countries'
@@ -179,13 +180,13 @@ action:
 </i18n>
 
 <i18n lang="yaml" locale="de">
-title: 'Abonnenten aus Camp importieren'
+title: 'Abonnenten aus einer Veranstaltung importieren'
 input:
-  camp:
-    label: 'Camp'
-    hint: 'Wählen Sie das Camp aus, aus dem Abonnenten importiert werden sollen'
+  event:
+    label: 'Veranstaltung'
+    hint: 'Wählen Sie die Veranstaltung aus, aus dem Abonnenten importiert werden sollen'
     rule:
-      required: 'Camp ist erforderlich'
+      required: 'Veranstaltung ist erforderlich'
   country:
     label: 'Nach Land filtern (optional)'
     hint: 'Leer lassen, um alle Länder zu importieren'
@@ -202,13 +203,15 @@ action:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-title: 'Importer des abonnés depuis un camp'
+title: 'Importer des abonnés depuis un événement'
 input:
-  camp:
-    label: 'Camp'
-    hint: 'Sélectionnez le camp depuis lequel importer les abonnés'
+  event:
+    label: 'Événement'
+    hint: "Sélectionnez l'événement depuis lequel importer les abonnés"
+
     rule:
-      required: 'Le camp est requis'
+      required: "L'événement est requis"
+
   country:
     label: 'Filtrer par pays (optionnel)'
     hint: 'Laisser vide pour importer tous les pays'
@@ -225,13 +228,13 @@ action:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-title: 'Importuj subskrybentów z obozu'
+title: 'Importuj subskrybentów z wydarzenia'
 input:
-  camp:
-    label: 'Obóz'
-    hint: 'Wybierz obóz, z którego mają być importowani subskrybenci'
+  event:
+    label: 'Wydarzenie'
+    hint: 'Wybierz wydarzenie, z którego mają być importowani subskrybenci'
     rule:
-      required: 'Obóz jest wymagany'
+      required: 'Wydarzenie jest wymagany'
   country:
     label: 'Filtruj według kraju (opcjonalnie)'
     hint: 'Pozostaw puste, aby importować wszystkie kraje'
@@ -248,13 +251,13 @@ action:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-title: 'Importovat odběratele z tábora'
+title: 'Importovat odběratele z akce'
 input:
-  camp:
-    label: 'Tábor'
-    hint: 'Vyberte tábor, ze kterého se mají importovat odběratelé'
+  event:
+    label: 'Akce'
+    hint: 'Vyberte akci, ze které se mají importovat odběratelé'
     rule:
-      required: 'Tábor je povinný'
+      required: 'Akce je povinná'
   country:
     label: 'Filtrovat podle země (volitelné)'
     hint: 'Nechte prázdné pro import všech zemí'

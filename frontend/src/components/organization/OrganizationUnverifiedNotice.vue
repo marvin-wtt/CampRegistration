@@ -102,13 +102,13 @@ const { organizationId, organizationName, verificationStatus, subject } =
     organizationId: string;
     organizationName: string;
     verificationStatus: OrganizationVerificationStatus;
-    subject: 'camp' | 'newsletter';
+    subject: 'event' | 'newsletter';
   }>();
 
 const { t } = useI18n();
 const quasar = useQuasar();
 
-// Managing a camp or newsletter does not imply membership in the owning
+// Managing a event or newsletter does not imply membership in the owning
 // organization, so only its members are sent to the verification page.
 const { canOrgFor } = useOrganizationPermissions();
 
@@ -153,14 +153,14 @@ const target = computed<RouteLocationRaw | undefined>(() =>
 </style>
 
 <i18n lang="yaml" locale="en">
-camp:
+event:
   pending:
-    title: 'This camp is not reaching anyone yet'
-    message: '{organization} is still awaiting verification, so this camp is hidden from the public listing and cannot accept registrations — regardless of its registration window.'
+    title: 'This event is not reaching anyone yet'
+    message: '{organization} is still awaiting verification, so this event is hidden from the public listing and cannot accept registrations — regardless of its registration window.'
     short: 'Hidden until the organization is verified'
   rejected:
-    title: 'This camp cannot go live'
-    message: '{organization} was not verified, so this camp stays hidden from the public listing and cannot accept registrations. Correct the organization details and submit them for verification again.'
+    title: 'This event cannot go live'
+    message: '{organization} was not verified, so this event stays hidden from the public listing and cannot accept registrations. Correct the organization details and submit them for verification again.'
     short: 'Cannot go live — organization not verified'
 newsletter:
   pending:
@@ -176,14 +176,14 @@ close: 'Close'
 </i18n>
 
 <i18n lang="yaml" locale="de">
-camp:
+event:
   pending:
-    title: 'Dieses Camp erreicht noch niemanden'
-    message: '{organization} wartet noch auf die Verifizierung. Dieses Camp ist daher nicht öffentlich sichtbar und nimmt keine Anmeldungen an — unabhängig vom Anmeldezeitraum.'
+    title: 'Diese Veranstaltung erreicht noch niemanden'
+    message: '{organization} wartet noch auf die Verifizierung. Diese Veranstaltung ist daher nicht öffentlich sichtbar und nimmt keine Anmeldungen an — unabhängig vom Anmeldezeitraum.'
     short: 'Ausgeblendet bis zur Verifizierung'
   rejected:
-    title: 'Dieses Camp kann nicht live gehen'
-    message: '{organization} wurde nicht verifiziert. Dieses Camp bleibt daher nicht öffentlich sichtbar und nimmt keine Anmeldungen an. Korrigiere die Angaben der Organisation und reiche sie erneut zur Verifizierung ein.'
+    title: 'Diese Veranstaltung kann nicht live gehen'
+    message: '{organization} wurde nicht verifiziert. Diese Veranstaltung bleibt daher nicht öffentlich sichtbar und nimmt keine Anmeldungen an. Korrigiere die Angaben der Organisation und reiche sie erneut zur Verifizierung ein.'
     short: 'Nicht live — Organisation nicht verifiziert'
 newsletter:
   pending:
@@ -199,14 +199,14 @@ close: 'Schließen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-camp:
+event:
   pending:
-    title: "Ce camp n'atteint encore personne"
-    message: "{organization} attend encore sa vérification : ce camp est masqué de la liste publique et ne peut pas accepter d'inscriptions, quelle que soit la période d'inscription."
+    title: "Cet événement n'atteint encore personne"
+    message: "{organization} attend encore sa vérification : cet événement est masqué de la liste publique et ne peut pas accepter d'inscriptions, quelle que soit la période d'inscription."
     short: "Masqué jusqu'à la vérification"
   rejected:
-    title: 'Ce camp ne peut pas être mis en ligne'
-    message: "{organization} n'a pas été vérifiée : ce camp reste masqué de la liste publique et ne peut pas accepter d'inscriptions. Corrige les informations de l'organisation et soumets-les à nouveau."
+    title: 'Cet événement ne peut pas être mis en ligne'
+    message: "{organization} n'a pas été vérifiée : cet événement reste masqué de la liste publique et ne peut pas accepter d'inscriptions. Corrige les informations de l'organisation et soumets-les à nouveau."
     short: 'Non publiable — organisation non vérifiée'
 newsletter:
   pending:
@@ -222,14 +222,14 @@ close: 'Fermer'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-camp:
+event:
   pending:
-    title: 'Ten obóz nie dociera jeszcze do nikogo'
-    message: '{organization} wciąż oczekuje na weryfikację, więc ten obóz jest ukryty na liście publicznej i nie przyjmuje zapisów — niezależnie od okresu rejestracji.'
+    title: 'To wydarzenie nie dociera jeszcze do nikogo'
+    message: '{organization} wciąż oczekuje na weryfikację, więc to wydarzenie jest ukryte na liście publicznej i nie przyjmuje zapisów — niezależnie od okresu rejestracji.'
     short: 'Ukryty do czasu weryfikacji'
   rejected:
-    title: 'Ten obóz nie może zostać opublikowany'
-    message: '{organization} nie została zweryfikowana, więc ten obóz pozostaje ukryty na liście publicznej i nie przyjmuje zapisów. Popraw dane organizacji i zgłoś je ponownie do weryfikacji.'
+    title: 'To wydarzenie nie może zostać opublikowane'
+    message: '{organization} nie została zweryfikowana, więc to wydarzenie pozostaje ukryte na liście publicznej i nie przyjmuje zapisów. Popraw dane organizacji i zgłoś je ponownie do weryfikacji.'
     short: 'Brak publikacji — organizacja niezweryfikowana'
 newsletter:
   pending:
@@ -245,14 +245,14 @@ close: 'Zamknij'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-camp:
+event:
   pending:
-    title: 'Tento tábor zatím nikoho neoslovuje'
-    message: '{organization} stále čeká na ověření, takže tento tábor je skrytý ve veřejném seznamu a nepřijímá registrace — bez ohledu na registrační období.'
+    title: 'Tato akce zatím nikoho neoslovuje'
+    message: '{organization} stále čeká na ověření, takže tato akce je skrytá ve veřejném seznamu a nepřijímá registrace — bez ohledu na registrační období.'
     short: 'Skrytý do ověření'
   rejected:
-    title: 'Tento tábor nelze zveřejnit'
-    message: '{organization} nebyla ověřena, takže tento tábor zůstává skrytý ve veřejném seznamu a nepřijímá registrace. Uprav údaje organizace a odešli je znovu k ověření.'
+    title: 'Tuto akci nelze zveřejnit'
+    message: '{organization} nebyla ověřena, takže tato akce zůstává skrytá ve veřejném seznamu a nepřijímá registrace. Uprav údaje organizace a odešli je znovu k ověření.'
     short: 'Nelze zveřejnit — organizace neověřena'
 newsletter:
   pending:

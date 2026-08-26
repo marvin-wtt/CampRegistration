@@ -10,9 +10,9 @@ export class MessageService extends BaseService {
     super();
   }
 
-  async queryMessages(campId: string): Promise<MessageWithFiles[]> {
+  async queryMessages(eventId: string): Promise<MessageWithFiles[]> {
     return this.prisma.message.findMany({
-      where: { campId },
+      where: { eventId },
       orderBy: { createdAt: 'desc' },
       include: {
         attachments: true,
@@ -22,11 +22,11 @@ export class MessageService extends BaseService {
     });
   }
 
-  async getMessageById(campId: string, id: string) {
+  async getMessageById(eventId: string, id: string) {
     return this.prisma.message.findFirst({
       where: {
         id,
-        campId,
+        eventId,
       },
       include: {
         attachments: true,
@@ -35,8 +35,8 @@ export class MessageService extends BaseService {
     });
   }
 
-  // Resolves a message by id alone (no camp scope) so the file guard can
-  // derive the owning camp from the returned `campId`.
+  // Resolves a message by id alone (no event scope) so the file guard can
+  // derive the owning event from the returned `eventId`.
   async findMessageById(id: string) {
     return this.prisma.message.findUnique({
       where: { id },
@@ -47,7 +47,7 @@ export class MessageService extends BaseService {
   }
 
   async createMessage(
-    campId: string,
+    eventId: string,
     userId: string,
     data: {
       subject: string;
@@ -64,7 +64,7 @@ export class MessageService extends BaseService {
         body: sanitizeHtmlContent(data.body),
         priority: data.priority,
         replyTo: data.replyTo,
-        campId,
+        eventId,
         sentByUserId: userId,
         attachments: data.attachmentIds
           ? this.fileService.getFileConnectInput(
@@ -80,11 +80,11 @@ export class MessageService extends BaseService {
     });
   }
 
-  async deleteMessageById(id: string, campId: string) {
+  async deleteMessageById(id: string, eventId: string) {
     return this.prisma.message.delete({
       where: {
         id,
-        campId,
+        eventId,
       },
     });
   }

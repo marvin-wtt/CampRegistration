@@ -11,23 +11,23 @@ export class BedModule implements AppModule {
   }
 
   registerRoutes(router: AppRouter): void {
-    router.useRouter('/camps/:campId/rooms/:roomId/beds', new BedRouter());
+    router.useRouter('/events/:eventId/rooms/:roomId/beds', new BedRouter());
   }
 
   registerPermissions(): ScopedPermissions {
     return {
-      camp: {
+      event: {
         DIRECTOR: [
-          'camp.rooms.beds.create',
-          'camp.rooms.beds.edit',
-          'camp.rooms.beds.delete',
+          'event.rooms.beds.create',
+          'event.rooms.beds.edit',
+          'event.rooms.beds.delete',
         ],
         COORDINATOR: [
-          'camp.rooms.beds.create',
-          'camp.rooms.beds.edit',
-          'camp.rooms.beds.delete',
+          'event.rooms.beds.create',
+          'event.rooms.beds.edit',
+          'event.rooms.beds.delete',
         ],
-        COUNSELOR: ['camp.rooms.beds.edit'],
+        COUNSELOR: ['event.rooms.beds.edit'],
         VIEWER: [],
       },
     };

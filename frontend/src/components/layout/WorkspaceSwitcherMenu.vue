@@ -127,12 +127,12 @@
 
     <q-separator spaced />
 
-    <!-- Management has no other way back to the public site, so the camp
+    <!-- Management has no other way back to the public site, so the event
          overview is offered here rather than only from the landing page. -->
     <q-item
       v-close-popup
       clickable
-      :to="{ name: 'camps' }"
+      :to="{ name: 'events' }"
       active-class=""
       exact-active-class=""
     >
@@ -140,7 +140,7 @@
         <q-icon name="public" />
       </q-item-section>
       <q-item-section>
-        {{ t('listed_camps') }}
+        {{ t('listed_events') }}
       </q-item-section>
     </q-item>
 
@@ -169,11 +169,11 @@ import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter, type RouteLocationRaw } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useProfileStore } from '@/stores/profile-store';
-import { useAssignedCampsStore } from '@/stores/assigned-camps-store';
+import { useAssignedEventsStore } from '@/stores/assigned-events-store';
 import { useNewsletterStore } from '@/stores/newsletter-store';
 import { useOrganizationsStore } from '@/stores/organizations-store';
 import { useObjectTranslation } from '@/composables/objectTranslation';
-import { isCampPast } from '@/utils/campPhase';
+import { isEventPast } from '@/utils/eventPhase';
 import WorkspaceSwitcherEntries from '@/components/layout/WorkspaceSwitcherEntries.vue';
 import {
   areaFromRouteName,
@@ -183,7 +183,7 @@ import {
 } from '@/components/layout/workspaceArea';
 
 // Beyond this the "all …" row carries the rest, so the menu cannot grow past
-// roughly a screen no matter how many camps a user manages.
+// roughly a screen no matter how many events a user manages.
 const MAX_ENTRIES = 8;
 
 interface WorkspaceArea {
@@ -205,7 +205,7 @@ const { t } = useI18n();
 const { to } = useObjectTranslation();
 
 const profileStore = useProfileStore();
-const assignedCampsStore = useAssignedCampsStore();
+const assignedEventsStore = useAssignedEventsStore();
 const newsletterStore = useNewsletterStore();
 const organizationsStore = useOrganizationsStore();
 
@@ -227,10 +227,10 @@ function currentParam(key: string): string | undefined {
   return Array.isArray(value) ? value[0] : value;
 }
 
-const campArea = computed<WorkspaceArea>(() => {
-  const currentId = currentParam('campId');
-  const camps = (assignedCampsStore.data ?? [])
-    .filter((camp) => camp.id !== currentId)
+const eventArea = computed<WorkspaceArea>(() => {
+  const currentId = currentParam('eventId');
+  const events = (assignedEventsStore.data ?? [])
+    .filter((event) => event.id !== currentId)
     .sort((a, b) => b.startAt.localeCompare(a.startAt));
 
   const toEntry = (id: string, label: string): WorkspaceEntry => ({
@@ -240,21 +240,21 @@ const campArea = computed<WorkspaceArea>(() => {
   });
 
   return {
-    name: 'camps',
-    label: t('area.camps'),
+    name: 'events',
+    label: t('area.events'),
     icon: 'cabin',
-    indexTo: { name: 'management.camps' },
-    allLabel: t('all_camps'),
-    entries: camps
-      .filter((camp) => !isCampPast(camp))
+    indexTo: { name: 'management.events' },
+    allLabel: t('all_events'),
+    entries: events
+      .filter((event) => !isEventPast(event))
       .slice(0, MAX_ENTRIES)
-      .map((camp) => toEntry(camp.id, to(camp.name))),
-    past: camps
-      .filter((camp) => isCampPast(camp))
+      .map((event) => toEntry(event.id, to(event.name))),
+    past: events
+      .filter((event) => isEventPast(event))
       .slice(0, MAX_ENTRIES)
-      .map((camp) => toEntry(camp.id, to(camp.name))),
-    count: assignedCampsStore.data?.length ?? 0,
-    loading: assignedCampsStore.isLoading,
+      .map((event) => toEntry(event.id, to(event.name))),
+    count: assignedEventsStore.data?.length ?? 0,
+    loading: assignedEventsStore.isLoading,
   };
 });
 
@@ -310,11 +310,11 @@ const organizationArea = computed<WorkspaceArea>(() => {
   };
 });
 
-// Camps are always offered: they are the core of the app, and the area's
+// Events are always offered: they are the core of the app, and the area's
 // index is how a user with none reaches the create flow. The other two appear
 // only once the user actually holds access somewhere.
 const availableAreas = computed<WorkspaceArea[]>(() => {
-  const areas = [campArea.value];
+  const areas = [eventArea.value];
 
   if (hasNewsletters.value) {
     areas.push(newsletterArea.value);
@@ -350,8 +350,8 @@ function goToIndex(area: WorkspaceArea) {
 
 function select(area: WorkspaceAreaName, id: string) {
   switch (area) {
-    case 'camps':
-      goTo('management.camp', 'campId', id);
+    case 'events':
+      goTo('management.event', 'eventId', id);
       break;
     case 'newsletters':
       goTo('management.newsletter', 'newsletterId', id);
@@ -364,7 +364,7 @@ function select(area: WorkspaceAreaName, id: string) {
 
 /**
  * Switching within the area the user is already in keeps the current sub-page,
- * so moving from one camp's room planner lands on the next camp's room planner.
+ * so moving from one event's room planner lands on the next event's room planner.
  */
 function goTo(rootName: string, param: string, id: string) {
   const name = typeof route.name === 'string' ? route.name : '';
@@ -396,14 +396,14 @@ switch: 'Switch to'
 open: 'Open {area}'
 past: 'Past'
 area:
-  camps: 'Camps'
+  events: 'Events'
   newsletters: 'Newsletters'
   organizations: 'Organizations'
   administration: 'Administration'
-all_camps: 'All camps'
+all_events: 'All events'
 all_newsletters: 'All newsletters'
 all_organizations: 'All organizations'
-listed_camps: 'Camp overview'
+listed_events: 'Event overview'
 verification:
   PENDING: 'Awaiting review'
   REJECTED: 'Rejected'
@@ -414,14 +414,14 @@ switch: 'Wechseln zu'
 open: '{area} öffnen'
 past: 'Vergangen'
 area:
-  camps: 'Camps'
+  events: 'Veranstaltungen'
   newsletters: 'Newsletter'
   organizations: 'Organisationen'
   administration: 'Verwaltung'
-all_camps: 'Alle Camps'
+all_events: 'Alle Veranstaltungen'
 all_newsletters: 'Alle Newsletter'
 all_organizations: 'Alle Organisationen'
-listed_camps: 'Camp-Übersicht'
+listed_events: 'Veranstaltungsübersicht'
 verification:
   PENDING: 'Wird geprüft'
   REJECTED: 'Abgelehnt'
@@ -432,14 +432,14 @@ switch: 'Aller à'
 open: 'Ouvrir {area}'
 past: 'Passés'
 area:
-  camps: 'Camps'
+  events: 'Événements'
   newsletters: 'Newsletters'
   organizations: 'Organisations'
   administration: 'Administration'
-all_camps: 'Tous les camps'
+all_events: 'Tous les événements'
 all_newsletters: 'Toutes les newsletters'
 all_organizations: 'Toutes les organisations'
-listed_camps: 'Aperçu des camps'
+listed_events: 'Aperçu des événements'
 verification:
   PENDING: 'En attente de vérification'
   REJECTED: 'Refusée'
@@ -450,14 +450,14 @@ switch: 'Przejdź do'
 open: 'Otwórz {area}'
 past: 'Minione'
 area:
-  camps: 'Obozy'
+  events: 'Wydarzenia'
   newsletters: 'Newslettery'
   organizations: 'Organizacje'
   administration: 'Administracja'
-all_camps: 'Wszystkie obozy'
+all_events: 'Wszystkie wydarzenia'
 all_newsletters: 'Wszystkie newslettery'
 all_organizations: 'Wszystkie organizacje'
-listed_camps: 'Przegląd obozów'
+listed_events: 'Przegląd wydarzeń'
 verification:
   PENDING: 'Oczekuje na weryfikację'
   REJECTED: 'Odrzucona'
@@ -468,14 +468,14 @@ switch: 'Přejít na'
 open: 'Otevřít {area}'
 past: 'Minulé'
 area:
-  camps: 'Tábory'
+  events: 'Akce'
   newsletters: 'Newslettery'
   organizations: 'Organizace'
   administration: 'Administrace'
-all_camps: 'Všechny tábory'
+all_events: 'Všechny akce'
 all_newsletters: 'Všechny newslettery'
 all_organizations: 'Všechny organizace'
-listed_camps: 'Přehled táborů'
+listed_events: 'Přehled akcí'
 verification:
   PENDING: 'Čeká na ověření'
   REJECTED: 'Zamítnuto'

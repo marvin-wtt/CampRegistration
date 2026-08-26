@@ -19,7 +19,7 @@ class ExampleModule implements AppModule {
   }
 
   registerPermissions(): ScopedPermissions {
-    /* RBAC, keyed by scope: { camp?, newsletter?, organization? } */
+    /* RBAC, keyed by scope: { event?, newsletter?, organization? } */
   }
 
   registerScopeResolvers(): ScopeResolvers {
@@ -48,8 +48,8 @@ Request → Router → Controller → Service (business logic) → Prisma → Re
 ```
 
 - Use `Zod` for complex data shapes (JSON columns, form definitions)
-- Extend `ModuleRouter` for all routers; use model binding for route params (`:campId` → `Camp` entity)
-- In controllers, prefer the bound model's `.id` (e.g. `req.modelOrFail('camp').id`) over the raw route param (`req.params.campId`) for service calls and realtime emits — the binding already fetched and validated the entity, so there's no cost to using it, and it's the only option for guard-derived bindings that have no route param at all
+- Extend `ModuleRouter` for all routers; use model binding for route params (`:eventId` → `Event` entity)
+- In controllers, prefer the bound model's `.id` (e.g. `req.modelOrFail('event').id`) over the raw route param (`req.params.eventId`) for service calls and realtime emits — the binding already fetched and validated the entity, so there's no cost to using it, and it's the only option for guard-derived bindings that have no route param at all
 - Throw `ApiError` from services; centralized error middleware handles the response
 - Use RBAC permission guards — never write ad-hoc role comparisons
 
@@ -69,19 +69,19 @@ Request → Router → Controller → Service (business logic) → Prisma → Re
 
 - JWT bearer tokens; TOTP 2FA support
 - System roles: `USER`, `ADMIN`
-- Camp-scoped roles: `DIRECTOR`, `COORDINATOR`, `COUNSELOR`, `VIEWER`
+- Event-scoped roles: `DIRECTOR`, `COORDINATOR`, `COUNSELOR`, `VIEWER`
 - Newsletter-scoped roles: `OWNER`, `EDITOR`, `VIEWER`
 - Organization-scoped roles: `ADMIN`, `MEMBER` (a permission scope of its own, unrelated to the system role)
 
 ## Permission scopes
 
-Permissions are scoped RBAC. All three scopes — `camp`, `newsletter`,
+Permissions are scoped RBAC. All three scopes — `event`, `newsletter`,
 `organization` — run through **one** generic mechanism, declared in
 `common/src/permissions/scopes.ts`:
 
 ```ts
 export interface PermissionScopes {
-  camp: { role: CampManagerRole; permission: CampScopedPermission };
+  event: { role: EventManagerRole; permission: EventScopedPermission };
   newsletter: { role: NewsletterManagerRole; permission: NewsletterPermission };
   organization: { role: OrganizationRole; permission: OrganizationPermission };
 }
@@ -89,24 +89,24 @@ export interface PermissionScopes {
 
 - **Declare**: a module returns its grants from `registerPermissions()`, keyed by scope. `boot.ts` merges them into the
   single `permissionRegistry`
-  (`permissionRegistry.for('camp').getPermissions(role)`). Registration is additive, so no one file holds the whole
+  (`permissionRegistry.for('event').getPermissions(role)`). Registration is additive, so no one file holds the whole
   policy — `tests/unit/core/permission-registry.test.ts`
   snapshots the assembled result.
 - **Guard**: `scoped(scope, permission)` (`#core/permission.guard`) reads the bound model named by the scope's
-  `ScopeResolver` and asks it for the user's permission set. `campManager(p)`, `newsletterManager(p)` and
+  `ScopeResolver` and asks it for the user's permission set. `hasEventPermission(p)`, `newsletterManager(p)` and
   `organizationMember(p)` are one-line aliases of it. The owning module declares its resolver by returning it from
   `registerScopeResolvers()`; `boot.ts` registers each one and then calls `assertScopeResolversComplete()`, so a scope
   left unwired fails the boot instead of 500-ing on the first guarded request. Exactly one module owns a scope —
   registering a second resolver for it throws. Both the resolver and its alias live in the **subject** module's guard
-  file, named after the scope's bound model (`camp/camp.guard.ts`, `newsletter/newsletter.guard.ts`,
+  file, named after the scope's bound model (`event/event.guard.ts`, `newsletter/newsletter.guard.ts`,
   `organization/organization.guard.ts`) — not in the membership module whose service they call. Guards over a membership
-  _record_ (`campManagerSelf`, `campManagerSubscriber`) stay with that record's module.
-- **Resolve once per scope**: `CampManagerService.getManagerAuthorization`,
+  _record_ (`eventManagerSelf`, `eventManagerSubscriber`) stay with that record's module.
+- **Resolve once per scope**: `EventManagerService.getManagerAuthorization`,
   `NewsletterManagerService.getManagerPermissions` and
   `OrganizationMemberService.getMemberPermissions` are the only places their scope's permissions are computed; the
-  guard, the profile resource and (for camps) the SSE subscriber all go through them.
-- **Type safety**: use `ScopePermission<'camp'>` (or `CampScopedPermission`) for camp-only APIs. `Permission` is the
-  union of all three scopes — passing an organization string to a camp API must be a compile error, not a silent
+  guard, the profile resource and (for events) the SSE subscriber all go through them.
+- **Type safety**: use `ScopePermission<'event'>` (or `EventScopedPermission`) for event-only APIs. `Permission` is the
+  union of all three scopes — passing an organization string to a event API must be a compile error, not a silent
   `false`.
 - **Adding a permission**: add the string to its union in
   `common/src/permissions/permissions.ts`, rebuild `common`, return it from the owning module's `registerPermissions()`,
@@ -115,8 +115,8 @@ export interface PermissionScopes {
 - **Never hardcode the matrix in the frontend.** `GET /permissions` serves
   `permissionRegistry.toMatrix()`; `usePermissionMatrix(scope)` consumes it.
 
-State and ownership rules (`registrationOpen`, `campOrganizationVerified`,
-`campManagerSelf`, `organizationMemberSelf`, `buildCampWhere`, `file.guard.ts`)
+State and ownership rules (`registrationOpen`, `eventOrganizationVerified`,
+`eventManagerSelf`, `organizationMemberSelf`, `buildEventWhere`, `file.guard.ts`)
 are deliberately **not** permissions — they stay plain `GuardFn`s composed with
 `or`/`and`.
 
@@ -153,37 +153,37 @@ recurring tasks (e.g. token cleanup, pruning old job records).
 
 ## Organizations
 
-Camps and newsletters are owned by an `Organization`, moderated by system administrators — full design in
+Events and newsletters are owned by an `Organization`, moderated by system administrators — full design in
 `docs/organizations.md`. Roles are `ADMIN`/`MEMBER`, resolved through the
 `organization` permission scope (see [Permission scopes](#permission-scopes)).
 
-- `organizationId` is **required** on `POST /camps` and `POST /newsletters`; there is no server-side default. The id
+- `organizationId` is **required** on `POST /events` and `POST /newsletters`; there is no server-side default. The id
   arrives in the body and guards run before validation, so
   `organizationFromBody()` binds it as the `organization` model ahead of
   `guard(organizationMember(…))`.
-- An unverified organization may build camps and newsletters freely, publication settings included — reach is **gated at
+- An unverified organization may build events and newsletters freely, publication settings included — reach is **gated at
   the outward-facing action**, never at write time. The gates are
-  `buildCampWhere` (public listing), the camp `show` route guard, `registrationOpen`
-  combined with `campOrganizationVerified` (registrations), and
+  `buildEventWhere` (public listing), the event `show` route guard, `registrationOpen`
+  combined with `eventOrganizationVerified` (registrations), and
   `newsletterOrganizationVerified` (sending newsletter messages). Management UI reads
-  `Camp.organizationVerificationStatus` / `Newsletter.organizationVerificationStatus` to explain why a camp isn't
+  `Event.organizationVerificationStatus` / `Newsletter.organizationVerificationStatus` to explain why a event isn't
   reaching anyone or why sending is disabled.
-- Organization `ADMIN`s hold exactly `ORGANIZATION_CAMP_PERMISSIONS`
-  (`camp.view`, `camp.edit`, `camp.managers.view`) on every camp their organization owns, merged in
-  `CampManagerService.getManagerAuthorization()`, and exactly `ORGANIZATION_NEWSLETTER_PERMISSIONS`
+- Organization `ADMIN`s hold exactly `ORGANIZATION_EVENT_PERMISSIONS`
+  (`event.view`, `event.edit`, `event.managers.view`) on every event their organization owns, merged in
+  `EventManagerService.getManagerAuthorization()`, and exactly `ORGANIZATION_NEWSLETTER_PERMISSIONS`
   (`newsletter.view`, `newsletter.managers.view`) on every newsletter it owns, merged in
   `NewsletterManagerService.getManagerPermissions()`. **Never extend either constant to personal data** — registrations
-  for camps, subscribers for newsletters — nor to `newsletter.messages.*`; tests assert both sets' exact contents.
+  for events, subscribers for newsletters — nor to `newsletter.messages.*`; tests assert both sets' exact contents.
 - Those implicit grants carry no manager record, so the owning entities never appear under
-  `GET /camps?view=assigned` or `GET /newsletters`. `GET /organizations/:id/camps` and
+  `GET /events?view=assigned` or `GET /newsletters`. `GET /organizations/:id/events` and
   `GET /organizations/:id/newsletters` exist to make them reachable — add the matching listing whenever a new implicit
   grant is introduced, or the permission is unreachable outside a direct link.
 
 ## Realtime (SSE live updates)
 
 Permission-filtered, invalidation-only SSE — full design in
-`docs/live-updates-plan.md`. One stream per camp
-(`GET /camps/:campId/events`); events carry `{resource, id, operation}` plus a
+`docs/live-updates-plan.md`. One stream per event
+(`GET /events/:eventId/stream`); events carry `{resource, id, operation}` plus a
 `requiredPermission` that the stream handler enforces per subscriber; clients
 refetch via REST (single auth path). Echo suppression: the `X-Client-Id` header
 is stored in the ambient request context (`core/context/requestContext.ts`,
@@ -194,12 +194,12 @@ Adding realtime to a module (no routing/stream changes needed):
 1. `common/src/realtime/events.ts`: add the resource to `RealtimeResource` +
    `RESOURCE_VIEW_PERMISSION`; rebuild `common`.
 2. Backend: inject `RealtimeService` into the **controller** and call
-   `void realtimeService.emit(campId, '<resource>', id, op)` after each write
-   (`emitInvalidation(campId, '<resource>')` for bulk operations) — fire-and-forget
+   `void realtimeService.emit(eventId, '<resource>', id, op)` after each write
+   (`emitInvalidation(eventId, '<resource>')` for bulk operations) — fire-and-forget
    (`void`, not `await`): errors are swallowed internally, so awaiting would only
    add latency. Emits live exclusively in controllers — never inject
-   `RealtimeService` into services. Source `campId`/`id` from the bound model
-   (`req.modelOrFail('camp').id`, the service's returned entity) rather than
+   `RealtimeService` into services. Source `eventId`/`id` from the bound model
+   (`req.modelOrFail('event').id`, the service's returned entity) rather than
    the raw route param — see the model binding note above.
 3. Frontend: call `useRealtimeCollection('<resource>', { data, invalidate, reload, fetchOne? })`
    (`src/composables/realtimeCollection.ts`) in the feature store or page —

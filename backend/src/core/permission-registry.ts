@@ -64,7 +64,7 @@ export class ScopeRegistry<S extends PermissionScope> {
  */
 export class PermissionRegistry {
   private scopes: { [S in PermissionScope]: ScopeRegistry<S> } = {
-    camp: new ScopeRegistry<'camp'>(),
+    event: new ScopeRegistry<'event'>(),
     newsletter: new ScopeRegistry<'newsletter'>(),
     organization: new ScopeRegistry<'organization'>(),
   };
@@ -89,7 +89,7 @@ export class PermissionRegistry {
   /** Serializable snapshot of the whole policy, served by `GET /permissions`. */
   toMatrix(): PermissionMatrix {
     return {
-      camp: this.scopes.camp.getAll(),
+      event: this.scopes.event.getAll(),
       newsletter: this.scopes.newsletter.getAll(),
       organization: this.scopes.organization.getAll(),
     };

@@ -25,7 +25,7 @@
       />
     </div>
 
-    <!-- Optional by design: a camp with one period never opens this. -->
+    <!-- Optional by design: a event with one period never opens this. -->
     <div class="q-mt-lg retention-exceptions">
       <div class="text-body2 text-weight-medium">
         {{ t('retention.exceptions.title') }}
@@ -320,14 +320,14 @@ const retentionMonths = computed({
   set: (months: number) => {
     content.value.retention = {
       months,
-      anchor: content.value.retention?.anchor ?? 'camp_end',
+      anchor: content.value.retention?.anchor ?? 'event_end',
       exceptions: retentionExceptions(content.value.retention),
     };
   },
 });
 
 const retentionAnchor = computed({
-  get: () => content.value.retention?.anchor ?? 'camp_end',
+  get: () => content.value.retention?.anchor ?? 'event_end',
   set: (anchor: RetentionAnchor) => {
     content.value.retention = {
       months: content.value.retention?.months ?? 24,
@@ -361,7 +361,7 @@ const exceptionScopeOptions = computed(() => [
 function ensureRetention() {
   content.value.retention ??= {
     months: 24,
-    anchor: 'camp_end',
+    anchor: 'event_end',
     exceptions: [],
   };
   content.value.retention.exceptions = retentionExceptions(

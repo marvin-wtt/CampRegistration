@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { request } from '../utils/request.js';
 import prisma from '../utils/prisma.js';
 import {
-  CampFactory,
-  CampManagerFactory,
+  EventFactory,
+  EventManagerFactory,
   FileFactory,
   RegistrationFactory,
   UserFactory,
@@ -20,36 +20,36 @@ import fse from 'fs-extra';
 import path from 'path';
 import moment from 'moment';
 
-const createCampWithManagerAndToken = async (
-  campData: Partial<Prisma.CampCreateInput> = {},
+const createEventWithManagerAndToken = async (
+  eventData: Partial<Prisma.EventCreateInput> = {},
   role = 'DIRECTOR',
 ) => {
-  const camp = await CampFactory.create(campData);
+  const event = await EventFactory.create(eventData);
   const user = await UserFactory.create();
-  const manager = await CampManagerFactory.create({
-    camp: { connect: { id: camp.id } },
+  const manager = await EventManagerFactory.create({
+    event: { connect: { id: event.id } },
     user: { connect: { id: user.id } },
     role,
   });
   const accessToken = generateAccessToken(user);
 
-  return { camp, user, manager, accessToken };
+  return { event, user, manager, accessToken };
 };
 
-const createCampWithFileAndToken = async (accessLevel: string = 'private') => {
-  const { camp, user, manager, accessToken } =
-    await createCampWithManagerAndToken();
+const createEventWithFileAndToken = async (accessLevel: string = 'private') => {
+  const { event, user, manager, accessToken } =
+    await createEventWithManagerAndToken();
   const fileName = crypto.randomUUID() + '.pdf';
 
   const file = await FileFactory.create({
-    camp: { connect: { id: camp.id } },
+    event: { connect: { id: event.id } },
     name: fileName,
     accessLevel,
   });
 
   await uploadFile('blank.pdf', fileName);
 
-  return { camp, user, manager, file, accessToken };
+  return { event, user, manager, file, accessToken };
 };
 
 describe('/api/v1/files/', () => {
@@ -70,7 +70,7 @@ describe('/api/v1/files/', () => {
       });
 
       expect(file).not.toBeNull();
-      expect(file?.campId).toBeNull();
+      expect(file?.eventId).toBeNull();
       expect(file?.registrationId).toBeNull();
     });
 
@@ -154,8 +154,8 @@ describe('/api/v1/files/', () => {
       await request().get(`/api/v1/files/${file.id}`).send().expect(423);
     });
 
-    it('should respond with `200` status code when user is camp manager', async () => {
-      const { file, accessToken } = await createCampWithFileAndToken();
+    it('should respond with `200` status code when user is event manager', async () => {
+      const { file, accessToken } = await createEventWithFileAndToken();
 
       await request()
         .get(`/api/v1/files/${file.id}`)
@@ -165,19 +165,19 @@ describe('/api/v1/files/', () => {
     });
 
     it('should respond with `200` status code when file is public', async () => {
-      const { file } = await createCampWithFileAndToken('public');
+      const { file } = await createEventWithFileAndToken('public');
 
       await request().get(`/api/v1/files/${file.id}`).send().expect(200);
     });
 
     it('should respond with `401` status code when file is not public', async () => {
-      const { file } = await createCampWithFileAndToken('private');
+      const { file } = await createEventWithFileAndToken('private');
 
       await request().get(`/api/v1/files/${file.id}`).send().expect(401);
     });
 
-    it('should respond with `403` status code when user is not camp manager', async () => {
-      const { file } = await createCampWithFileAndToken();
+    it('should respond with `403` status code when user is not event manager', async () => {
+      const { file } = await createEventWithFileAndToken();
       const accessToken = generateAccessToken(await UserFactory.create());
 
       await request()
@@ -188,7 +188,7 @@ describe('/api/v1/files/', () => {
     });
 
     it('should respond with `401` status code when unauthenticated', async () => {
-      const { file } = await createCampWithFileAndToken();
+      const { file } = await createEventWithFileAndToken();
 
       await request().get(`/api/v1/files/${file.id}`).send().expect(401);
     });
@@ -199,8 +199,8 @@ describe('/api/v1/files/', () => {
   });
 
   describe('PATCH /api/v1/files/:fileId', () => {
-    it('should update file metadata when user can edit camp files', async () => {
-      const { file, accessToken } = await createCampWithFileAndToken();
+    it('should update file metadata when user can edit event files', async () => {
+      const { file, accessToken } = await createEventWithFileAndToken();
       const originalStorageName = file.name;
 
       const { body } = await request()
@@ -234,7 +234,7 @@ describe('/api/v1/files/', () => {
     });
 
     it('should respond with `401` when not authenticated', async () => {
-      const { file } = await createCampWithFileAndToken();
+      const { file } = await createEventWithFileAndToken();
 
       await request()
         .patch(`/api/v1/files/${file.id}`)
@@ -243,13 +243,13 @@ describe('/api/v1/files/', () => {
     });
 
     it('should respond with `403` when user lacks edit permission', async () => {
-      const { file } = await createCampWithFileAndToken();
-      if (!file.campId) {
-        throw new Error('Camp file expected');
+      const { file } = await createEventWithFileAndToken();
+      if (!file.eventId) {
+        throw new Error('Event file expected');
       }
       const counselor = await UserFactory.create();
-      await CampManagerFactory.create({
-        camp: { connect: { id: file.campId } },
+      await EventManagerFactory.create({
+        event: { connect: { id: file.eventId } },
         user: { connect: { id: counselor.id } },
         role: 'COUNSELOR',
       });
@@ -264,13 +264,13 @@ describe('/api/v1/files/', () => {
 
   describe('DELETE /api/v1/files/:fileId', () => {
     it('should respond with `204` and remove the file record', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
+      const { event, accessToken } = await createEventWithManagerAndToken();
 
       const fileName = crypto.randomUUID() + '.pdf';
       await uploadFile('blank.pdf', fileName);
 
       const file = await FileFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
         name: fileName,
       });
 
@@ -284,13 +284,13 @@ describe('/api/v1/files/', () => {
     });
 
     it('should delete the physical file from storage when no other references exist', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
+      const { event, accessToken } = await createEventWithManagerAndToken();
 
       const fileName = crypto.randomUUID() + '.pdf';
       await uploadFile('blank.pdf', fileName);
 
       const file = await FileFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
         name: fileName,
       });
 
@@ -305,13 +305,13 @@ describe('/api/v1/files/', () => {
     });
 
     it('should retain physical file when another record references the same name', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
+      const { event, accessToken } = await createEventWithManagerAndToken();
 
       const fileName = crypto.randomUUID() + '.pdf';
       await uploadFile('blank.pdf', fileName);
 
       const file1 = await FileFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
         name: fileName,
       });
       // Second record referencing the same physical file name
@@ -327,22 +327,22 @@ describe('/api/v1/files/', () => {
     });
 
     it('should respond with `401` when not authenticated', async () => {
-      const camp = await CampFactory.create();
+      const event = await EventFactory.create();
       const file = await FileFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
       });
 
       await request().delete(`/api/v1/files/${file.id}`).expect(401);
     });
 
     it('should respond with `403` when user lacks delete permission', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken(
+      const { event, accessToken } = await createEventWithManagerAndToken(
         {},
         'COUNSELOR',
       );
 
       const file = await FileFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
       });
 
       await request()
@@ -352,15 +352,15 @@ describe('/api/v1/files/', () => {
     });
   });
 
-  describe('GET /api/v1/camps/:campId/files', () => {
-    it('should respond with `200` and return camp files', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
+  describe('GET /api/v1/events/:eventId/files', () => {
+    it('should respond with `200` and return event files', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
 
-      await FileFactory.create({ camp: { connect: { id: camp.id } } });
-      await FileFactory.create({ camp: { connect: { id: camp.id } } });
+      await FileFactory.create({ event: { connect: { id: event.id } } });
+      await FileFactory.create({ event: { connect: { id: event.id } } });
 
       const { body } = await request()
-        .get(`/api/v1/camps/${camp.id}/files`)
+        .get(`/api/v1/events/${event.id}/files`)
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -369,16 +369,16 @@ describe('/api/v1/files/', () => {
       expect(body.data).toHaveLength(2);
     });
 
-    it('should only return files belonging to the camp', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
+    it('should only return files belonging to the event', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
       const file = await FileFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
       });
       // Unrelated file that must not be returned
       await FileFactory.create();
 
       const { body } = await request()
-        .get(`/api/v1/camps/${camp.id}/files`)
+        .get(`/api/v1/events/${event.id}/files`)
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -387,62 +387,62 @@ describe('/api/v1/files/', () => {
     });
 
     it('should respond with `401` when not authenticated', async () => {
-      const camp = await CampFactory.create();
+      const event = await EventFactory.create();
 
-      await request().get(`/api/v1/camps/${camp.id}/files`).expect(401);
+      await request().get(`/api/v1/events/${event.id}/files`).expect(401);
     });
 
     it('should respond with `403` when user lacks view permission', async () => {
-      const camp = await CampFactory.create();
+      const event = await EventFactory.create();
       const user = await UserFactory.create();
-      // User with no camp manager role
+      // User with no event manager role
       const accessToken = generateAccessToken(user);
 
       await request()
-        .get(`/api/v1/camps/${camp.id}/files`)
+        .get(`/api/v1/events/${event.id}/files`)
         .auth(accessToken, { type: 'bearer' })
         .expect(403);
     });
   });
 
-  describe('GET /api/v1/camps/:campId/files/:fileId redirect', () => {
+  describe('GET /api/v1/events/:eventId/files/:fileId redirect', () => {
     it('should redirect to the file API endpoint', async () => {
-      const camp = await CampFactory.create();
+      const event = await EventFactory.create();
       const file = await FileFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
       });
 
       await request()
-        .get(`/api/v1/camps/${camp.id}/files/${file.id}`)
+        .get(`/api/v1/events/${event.id}/files/${file.id}`)
         .expect(302)
         .expect('Location', `/api/v1/files/${file.id}`);
     });
   });
 
-  describe('GET /api/v1/camps/:campId/files/slots/:slot', () => {
+  describe('GET /api/v1/events/:eventId/files/slots/:slot', () => {
     it('should stream the public file matching the slot without authentication', async () => {
-      const camp = await CampFactory.create({ listed: true });
+      const event = await EventFactory.create({ listed: true });
       const fileName = crypto.randomUUID() + '.pdf';
       await uploadFile('blank.pdf', fileName);
       await FileFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
         field: 'rules',
         accessLevel: 'public',
         name: fileName,
       });
 
       await request()
-        .get(`/api/v1/camps/${camp.id}/files/slots/rules`)
+        .get(`/api/v1/events/${event.id}/files/slots/rules`)
         .expect(200);
     });
 
     it('should select the locale-specific file when a locale is requested', async () => {
-      const camp = await CampFactory.create({ listed: true });
+      const event = await EventFactory.create({ listed: true });
 
       const defaultName = crypto.randomUUID() + '.pdf';
       await uploadFile('blank.pdf', defaultName);
       await FileFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
         field: 'rules',
         locale: null,
         accessLevel: 'public',
@@ -453,7 +453,7 @@ describe('/api/v1/files/', () => {
       const localizedName = crypto.randomUUID() + '.pdf';
       await uploadFile('blank.pdf', localizedName);
       await FileFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
         field: 'rules',
         locale: 'de',
         accessLevel: 'public',
@@ -462,7 +462,7 @@ describe('/api/v1/files/', () => {
       });
 
       const response = await request()
-        .get(`/api/v1/camps/${camp.id}/files/slots/rules?locale=de`)
+        .get(`/api/v1/events/${event.id}/files/slots/rules?locale=de`)
         .expect(200);
 
       expect(response.headers['content-disposition']).toContain(
@@ -471,37 +471,37 @@ describe('/api/v1/files/', () => {
     });
 
     it('should respond with `401` when the matching file is private and the user is anonymous', async () => {
-      const camp = await CampFactory.create({ listed: true });
+      const event = await EventFactory.create({ listed: true });
       await FileFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
         field: 'rules',
         accessLevel: 'private',
       });
 
       await request()
-        .get(`/api/v1/camps/${camp.id}/files/slots/rules`)
+        .get(`/api/v1/events/${event.id}/files/slots/rules`)
         .expect(401);
     });
 
     it('should respond with `409` when the matching file is not ready', async () => {
-      const camp = await CampFactory.create({ listed: true });
+      const event = await EventFactory.create({ listed: true });
       await FileFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
         field: 'rules',
         accessLevel: 'public',
         uploadStatus: 'PENDING',
       });
 
       await request()
-        .get(`/api/v1/camps/${camp.id}/files/slots/rules`)
+        .get(`/api/v1/events/${event.id}/files/slots/rules`)
         .expect(409);
     });
 
     it('should respond with `404` when no file matches the slot', async () => {
-      const camp = await CampFactory.create({ listed: true });
+      const event = await EventFactory.create({ listed: true });
 
       await request()
-        .get(`/api/v1/camps/${camp.id}/files/slots/unknown`)
+        .get(`/api/v1/events/${event.id}/files/slots/unknown`)
         .expect(404);
     });
   });
@@ -550,19 +550,19 @@ describe('file cleanup', () => {
 
       const date = moment().subtract(25, 'h').toDate();
 
-      const campFileName = ulid() + '.pdf';
-      await copyResource(uploadDir, campFileName);
-      const camp = await CampFactory.create();
+      const eventFileName = ulid() + '.pdf';
+      await copyResource(uploadDir, eventFileName);
+      const event = await EventFactory.create();
       await FileFactory.create({
-        name: campFileName,
-        camp: { connect: { id: camp.id } },
+        name: eventFileName,
+        event: { connect: { id: event.id } },
         createdAt: date,
       });
 
       const registrationFileName = ulid() + '.pdf';
       await copyResource(uploadDir, registrationFileName);
       const registration = await RegistrationFactory.create({
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
       });
       await FileFactory.create({
         name: registrationFileName,
@@ -584,7 +584,7 @@ describe('file cleanup', () => {
 
       expect(
         // eslint-disable-next-line security/detect-non-literal-fs-filename
-        fse.existsSync(path.join(uploadDir, campFileName)),
+        fse.existsSync(path.join(uploadDir, eventFileName)),
       ).toBeTruthy();
       expect(
         // eslint-disable-next-line security/detect-non-literal-fs-filename
@@ -623,10 +623,10 @@ describe('file cleanup', () => {
 
       const fileName = ulid() + '.pdf';
       await copyResource(uploadDir, fileName);
-      const camp = await CampFactory.create();
+      const event = await EventFactory.create();
       await FileFactory.create({
         name: fileName,
-        camp: { connect: { id: camp.id } },
+        event: { connect: { id: event.id } },
         createdAt,
       });
 

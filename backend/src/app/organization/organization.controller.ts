@@ -10,8 +10,8 @@ import {
 } from './organization.resource.js';
 import type { Organization } from '#generated/prisma/client.js';
 import validator from './organization.validation.js';
-import { CampService } from '#app/camp/camp.service';
-import { CampResource } from '#app/camp/camp.resource';
+import { EventService } from '#app/event/event.service';
+import { EventResource } from '#app/event/event.resource';
 import { NewsletterService } from '#app/newsletter/newsletter.service';
 import { NewsletterResource } from '#app/newsletter/newsletter.resource';
 import { UserService } from '#app/user/user.service';
@@ -27,7 +27,7 @@ export class OrganizationController extends BaseController {
   constructor(
     @inject(OrganizationService)
     private readonly organizationService: OrganizationService,
-    @inject(CampService) private readonly campService: CampService,
+    @inject(EventService) private readonly eventService: EventService,
     @inject(NewsletterService)
     private readonly newsletterService: NewsletterService,
     @inject(UserService) private readonly userService: UserService,
@@ -38,20 +38,20 @@ export class OrganizationController extends BaseController {
   }
 
   /**
-   * The organization's own camps.
+   * The organization's own events.
    *
-   * Organization administrators hold `camp.view` on every camp their
-   * organization owns, but those camps carry no camp-manager record, so they
-   * never appear under `GET /camps?view=assigned`. Without this listing the
-   * permission would be unreachable — an administrator could open a camp only
+   * Organization administrators hold `event.view` on every event their
+   * organization owns, but those events carry no event-manager record, so they
+   * never appear under `GET /events?view=assigned`. Without this listing the
+   * permission would be unreachable — an administrator could open a event only
    * via a direct link.
    */
-  async camps(req: Request, res: Response) {
+  async events(req: Request, res: Response) {
     const organization = req.modelOrFail('organization');
-    const { query } = await req.validate(validator.camps);
+    const { query } = await req.validate(validator.events);
 
-    const { camps, nextCursor, limit, total } =
-      await this.campService.queryCamps(
+    const { events, nextCursor, limit, total } =
+      await this.eventService.queryEvents(
         { organizationId: organization.id },
         {
           cursor: query.cursor,
@@ -62,12 +62,12 @@ export class OrganizationController extends BaseController {
       );
 
     res.resource(
-      CampResource.collection(camps).withCursor(nextCursor, limit, total),
+      EventResource.collection(events).withCursor(nextCursor, limit, total),
     );
   }
 
   /**
-   * The organization's own newsletters — the counterpart of `camps`, and
+   * The organization's own newsletters — the counterpart of `events`, and
    * unreachable without it for the same reason: an administrator holds
    * `newsletter.view` on them but has no newsletter-manager record, so they
    * never appear under `GET /newsletters`.
@@ -156,12 +156,12 @@ export class OrganizationController extends BaseController {
    * the rejected request. Kept off the list response — it is a query per row.
    */
   private async toDetailsResource(organization: Organization) {
-    const { camps, newsletters } =
+    const { events, newsletters } =
       await this.organizationService.countOwnedResources(organization.id);
 
     return new OrganizationDetailsResource({
       ...organization,
-      ownedCamps: camps,
+      ownedEvents: events,
       ownedNewsletters: newsletters,
     });
   }
@@ -206,14 +206,14 @@ export class OrganizationController extends BaseController {
     const organization = req.modelOrFail('organization');
     await req.validate(validator.destroy);
 
-    const { camps, newsletters } =
+    const { events, newsletters } =
       await this.organizationService.countOwnedResources(organization.id);
-    if (camps > 0 || newsletters > 0) {
+    if (events > 0 || newsletters > 0) {
       // Carries a stable code so the client can explain what is blocking
       // rather than parsing this sentence.
       throw new ApiError(
         httpStatus.CONFLICT,
-        `The organization still owns ${camps.toString()} camp(s) and ${newsletters.toString()} newsletter(s). Move or delete them first.`,
+        `The organization still owns ${events.toString()} event(s) and ${newsletters.toString()} newsletter(s). Move or delete them first.`,
         { code: 'ORGANIZATION_NOT_EMPTY' },
       );
     }

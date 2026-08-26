@@ -3,7 +3,7 @@ import { BaseController } from '#core/base/BaseController';
 import { inject, injectable } from 'inversify';
 import { PrivacyNoticeService } from './privacy-notice.service.js';
 import {
-  CampPrivacyNoticeResource,
+  EventPrivacyNoticeResource,
   OrganizationPrivacyNoticeResource,
   PublishedPrivacyNoticeResource,
 } from './privacy-notice.resource.js';
@@ -42,39 +42,39 @@ export class PrivacyNoticeController extends BaseController {
     res.resource(new OrganizationPrivacyNoticeResource(notice));
   }
 
-  /** The camp's published addendum and the organization baseline it adds to. */
+  /** The event's published addendum and the organization baseline it adds to. */
   async showAddendum(req: Request, res: Response) {
-    const camp = req.modelOrFail('camp');
+    const event = req.modelOrFail('event');
 
-    const notice = await this.privacyNoticeService.getCampAddendum(
-      camp.id,
-      camp.organizationId,
+    const notice = await this.privacyNoticeService.getEventAddendum(
+      event.id,
+      event.organizationId,
     );
 
-    res.resource(new CampPrivacyNoticeResource(notice));
+    res.resource(new EventPrivacyNoticeResource(notice));
   }
 
   async updateAddendum(req: Request, res: Response) {
-    const camp = req.modelOrFail('camp');
+    const event = req.modelOrFail('event');
     const {
       body: { content },
     } = await req.validate(validator.updateAddendum);
 
-    const notice = await this.privacyNoticeService.publishCampAddendum(
-      camp.id,
-      camp.organizationId,
+    const notice = await this.privacyNoticeService.publishEventAddendum(
+      event.id,
+      event.organizationId,
       content,
     );
 
-    res.resource(new CampPrivacyNoticeResource(notice));
+    res.resource(new EventPrivacyNoticeResource(notice));
   }
 
   async showPublished(req: Request, res: Response) {
-    const camp = req.modelOrFail('camp');
+    const event = req.modelOrFail('event');
 
     const notice = await this.privacyNoticeService.getPublishedNotice(
-      camp.id,
-      camp.organizationId,
+      event.id,
+      event.organizationId,
     );
 
     res.resource(new PublishedPrivacyNoticeResource(notice));

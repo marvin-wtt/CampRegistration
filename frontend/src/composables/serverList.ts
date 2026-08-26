@@ -46,7 +46,7 @@ export interface UseServerListOptions<TRow, TQuery> {
  * Cursor keyset paging keeps results stable even while rows are inserted or
  * removed underneath.
  *
- * View-agnostic — `useServerTable` adapts it to QTable, and `CampGrid` drives it
+ * View-agnostic — `useServerTable` adapts it to QTable, and `EventGrid` drives it
  * from a QVirtualScroll of card rows.
  */
 export function useServerList<TRow, TQuery>(

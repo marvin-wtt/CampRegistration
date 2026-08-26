@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Camp, Registration } from '#generated/prisma/client.js';
+import type { Event, Registration } from '#generated/prisma/client.js';
 import {
   changesForRegistration,
   diffRegistrationData,
@@ -11,16 +11,16 @@ import {
 
 const labels = { cleared: 'removed', file: 'file updated' };
 
-// `setVariables` reads these off the camp to expose them as survey variables,
-// so a stub without them is not a camp any form can be rendered against.
-function campWith(form: object): Camp {
+// `setVariables` reads these off the event to expose them as survey variables,
+// so a stub without them is not a event any form can be rendered against.
+function eventWith(form: object): Event {
   return {
-    id: 'camp-1',
+    id: 'event-1',
     form,
     countries: ['de'],
-    name: { de: 'Camp', en: 'Camp' },
+    name: { de: 'Event', en: 'Event' },
     organizer: { de: 'Organizer', en: 'Organizer' },
-    contactEmail: { de: 'camp@example.com', en: 'camp@example.com' },
+    contactEmail: { de: 'event@example.com', en: 'event@example.com' },
     maxParticipants: { de: 10, en: 10 },
     startAt: new Date('2026-07-01T00:00:00.000Z'),
     endAt: new Date('2026-07-14T00:00:00.000Z'),
@@ -28,10 +28,10 @@ function campWith(form: object): Camp {
     maxAge: 18,
     location: null,
     price: { de: 100, en: 100 },
-  } as unknown as Camp;
+  } as unknown as Event;
 }
 
-const simpleCamp = campWith({
+const simpleEvent = eventWith({
   pages: [
     {
       name: 'page1',
@@ -60,12 +60,12 @@ describe('diffRegistrationData', () => {
   it('returns nothing when the data is identical', () => {
     const data = { first_name: 'Jane', diet: 'vegan' };
 
-    expect(diffRegistrationData(simpleCamp, data, data, 'en')).toEqual([]);
+    expect(diffRegistrationData(simpleEvent, data, data, 'en')).toEqual([]);
   });
 
   it('reports a changed answer with its new value', () => {
     const changes = diffRegistrationData(
-      simpleCamp,
+      simpleEvent,
       { first_name: 'Jane' },
       { first_name: 'John' },
       'en',
@@ -78,7 +78,7 @@ describe('diffRegistrationData', () => {
 
   it('reports a newly filled field', () => {
     const changes = diffRegistrationData(
-      simpleCamp,
+      simpleEvent,
       { first_name: 'Jane' },
       { first_name: 'Jane', phone: '+49 170 1234' },
       'en',
@@ -91,7 +91,7 @@ describe('diffRegistrationData', () => {
 
   it('reports a cleared field with a null value', () => {
     const changes = diffRegistrationData(
-      simpleCamp,
+      simpleEvent,
       { first_name: 'Jane', phone: '+49 170 1234' },
       { first_name: 'Jane' },
       'en',
@@ -104,7 +104,7 @@ describe('diffRegistrationData', () => {
 
   it('uses the localized question title and choice label', () => {
     const [change] = diffRegistrationData(
-      simpleCamp,
+      simpleEvent,
       { diet: 'vegan' },
       { diet: 'vegetarian' },
       'de',
@@ -117,7 +117,7 @@ describe('diffRegistrationData', () => {
   });
 
   it('joins multi-choice answers into one entry rather than one per choice', () => {
-    const camp = campWith({
+    const event = eventWith({
       elements: [
         {
           type: 'checkbox',
@@ -129,7 +129,7 @@ describe('diffRegistrationData', () => {
     });
 
     const changes = diffRegistrationData(
-      camp,
+      event,
       { allergies: ['Nuts'] },
       { allergies: ['Nuts', 'Milk'] },
       'en',
@@ -146,7 +146,7 @@ describe('diffRegistrationData', () => {
   });
 
   it('descends into dynamic panels and labels the nested question', () => {
-    const camp = campWith({
+    const event = eventWith({
       elements: [
         {
           type: 'paneldynamic',
@@ -158,7 +158,7 @@ describe('diffRegistrationData', () => {
     });
 
     const changes = diffRegistrationData(
-      camp,
+      event,
       { contacts: [{ phone: '111' }] },
       { contacts: [{ phone: '222' }] },
       'en',
@@ -170,12 +170,12 @@ describe('diffRegistrationData', () => {
   });
 
   it('flags file answers instead of printing the stored id', () => {
-    const camp = campWith({
+    const event = eventWith({
       elements: [{ type: 'file', name: 'passport', title: 'Passport' }],
     });
 
     const changes = diffRegistrationData(
-      camp,
+      event,
       { passport: '01ARZ3NDEKTSV4RRFFQ69G5FAV' },
       { passport: '01ARZ3NDEKTSV4RRFFQ69G5FBW' },
       'en',
@@ -188,13 +188,13 @@ describe('diffRegistrationData', () => {
   });
 
   it('truncates long free text rather than reproducing it whole', () => {
-    const camp = campWith({
+    const event = eventWith({
       elements: [{ type: 'comment', name: 'notes', title: 'Notes' }],
     });
     const long = 'a'.repeat(500);
 
     const [change] = diffRegistrationData(
-      camp,
+      event,
       { notes: 'short' },
       { notes: long },
       'en',
@@ -220,7 +220,7 @@ describe('changesForRegistration', () => {
 
   it('labels the changes in the language the mail will be sent in', () => {
     const changes = changesForRegistration(
-      simpleCamp,
+      simpleEvent,
       registrationWith({ diet: 'vegan' }),
       registrationWith({ diet: 'vegetarian' }, { country: 'de' }),
     );
@@ -232,7 +232,7 @@ describe('changesForRegistration', () => {
 
   it('falls back to the registration locale when there is no country', () => {
     const changes = changesForRegistration(
-      simpleCamp,
+      simpleEvent,
       registrationWith({ diet: 'vegan' }),
       registrationWith({ diet: 'vegetarian' }, { locale: 'en-US' }),
     );
@@ -241,11 +241,11 @@ describe('changesForRegistration', () => {
   });
 
   it('returns no changes rather than throwing when the form cannot be read', () => {
-    const brokenCamp = { id: 'camp-1' } as unknown as Camp;
+    const brokenEvent = { id: 'event-1' } as unknown as Event;
 
     expect(() =>
       changesForRegistration(
-        brokenCamp,
+        brokenEvent,
         registrationWith({ diet: 'vegan' }),
         registrationWith({ diet: 'vegetarian' }),
       ),

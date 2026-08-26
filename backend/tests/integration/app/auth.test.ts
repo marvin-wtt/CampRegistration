@@ -3,10 +3,10 @@ import argon2 from 'argon2';
 import prisma from '../utils/prisma.js';
 import { TokenType, User } from '#generated/prisma/client.js';
 import {
-  CampFactory,
+  EventFactory,
   UserFactory,
   TokenFactory,
-  CampManagerFactory,
+  EventManagerFactory,
   InvitationFactory,
 } from '../../../prisma/factories/index.js';
 import {
@@ -61,9 +61,9 @@ describe('/api/v1/auth', async () => {
       });
     });
 
-    it('should make the user camp manager if the user has pending invitations', async () => {
-      await CampManagerFactory.create({
-        camp: { create: CampFactory.build() },
+    it('should make the user event manager if the user has pending invitations', async () => {
+      await EventManagerFactory.create({
+        event: { create: EventFactory.build() },
         invitation: {
           create: InvitationFactory.build({
             email: 'test@email.net',
@@ -80,7 +80,7 @@ describe('/api/v1/auth', async () => {
         })
         .expect(201);
 
-      const manager = await prisma.campManager.findFirst({
+      const manager = await prisma.eventManager.findFirst({
         where: {
           user: {
             email: 'test@email.net',

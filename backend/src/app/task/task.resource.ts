@@ -1,6 +1,6 @@
 import type { Task as TaskResourceData } from '@camp-registration/common/entities';
 import { JsonResource } from '#core/resource/JsonResource';
-import { CampManagerIdentityResource } from '#app/campManager/camp-manager.resource';
+import { EventManagerIdentityResource } from '#app/eventManager/event-manager.resource';
 import type { TaskWithAssignee } from '#app/task/task.types';
 
 export class TaskResource extends JsonResource<
@@ -16,7 +16,7 @@ export class TaskResource extends JsonResource<
       completed: this.data.completed,
       assigneeId: this.data.assigneeId ?? null,
       assignee: this.data.assignee
-        ? new CampManagerIdentityResource(this.data.assignee).transform()
+        ? new EventManagerIdentityResource(this.data.assignee).transform()
         : null,
     };
   }

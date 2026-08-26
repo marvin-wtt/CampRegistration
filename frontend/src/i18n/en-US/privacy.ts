@@ -13,7 +13,7 @@ export default {
     registration_administration: 'Administering your registration',
     participant_communication:
       'Keeping you informed before and during the event',
-    camp_organisation: 'Organising and running the event',
+    event_organisation: 'Organising and running the event',
     catering: 'Catering',
     medical_care: 'Medical care during the event',
     emergency_contact: 'Contacting someone in an emergency',
@@ -48,7 +48,7 @@ export default {
   },
 
   recipient: {
-    camp_staff: 'The event team',
+    event_staff: 'The event team',
     accommodation_provider: 'The accommodation provider',
     catering_provider: 'The catering provider',
     transport_provider: 'The transport provider',
@@ -93,7 +93,7 @@ export default {
   },
 
   retentionAnchor: {
-    camp_end: 'after the event ends',
+    event_end: 'after the event ends',
     submission: 'after you submit the registration',
   },
 
@@ -114,7 +114,7 @@ export default {
 
   /**
    * The wording the two authoring UIs share — an organization's notice and a
-   * camp's additions to it. Global rather than per-page so the same control
+   * event's additions to it. Global rather than per-page so the same control
    * cannot end up labelled differently in the two of them.
    */
   editor: {
@@ -132,7 +132,7 @@ export default {
     /** Which of the two authors an entry came from. */
     origin: {
       organization: 'From your organisation',
-      camp: 'Added here',
+      event: 'Added here',
     },
     action: {
       publish: 'Publish',

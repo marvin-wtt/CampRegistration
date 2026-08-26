@@ -3,19 +3,19 @@ import type {
   OrganizationRole,
 } from '@camp-registration/common/entities';
 import type {
-  CampScopedPermission,
+  EventScopedPermission,
   NewsletterPermission,
 } from '@camp-registration/common/permissions';
 import {
-  ORGANIZATION_CAMP_ACCESS_ROLES,
-  ORGANIZATION_CAMP_PERMISSIONS,
+  ORGANIZATION_EVENT_ACCESS_ROLES,
+  ORGANIZATION_EVENT_PERMISSIONS,
   ORGANIZATION_NEWSLETTER_PERMISSIONS,
 } from '@camp-registration/common/permissions';
 import type { ProfileUser } from './profile.types.js';
 import { JsonResource } from '#core/resource/JsonResource';
 import { permissionRegistry } from '#core/permission-registry';
 
-/** Marks camp access that comes from administering the owning organization. */
+/** Marks event access that comes from administering the owning organization. */
 const ORGANIZATION_DERIVED_ROLE = 'ORGANIZATION';
 
 export class ProfileResource extends JsonResource<
@@ -29,7 +29,7 @@ export class ProfileResource extends JsonResource<
       role: this.data.role,
       twoFactorEnabled: this.data.twoFactor?.confirmedAt != null,
       locale: this.data.locale,
-      campAccess: this.buildCampAccess(),
+      eventAccess: this.buildEventAccess(),
       newsletterAccess: this.buildNewsletterAccess(),
       organizationAccess: this.data.organizationMembers.map((membership) => ({
         organizationId: membership.organizationId,
@@ -43,50 +43,50 @@ export class ProfileResource extends JsonResource<
   }
 
   /**
-   * Camp-manager grants merged with the fixed set an organization
-   * administrator holds over every camp their organization owns. Mirrors
-   * {@link CampManagerService.getManagerAuthorization} — the two must agree, or
+   * Event-manager grants merged with the fixed set an organization
+   * administrator holds over every event their organization owns. Mirrors
+   * {@link EventManagerService.getManagerAuthorization} — the two must agree, or
    * the UI would offer actions the API rejects (or hide ones it allows).
    *
-   * Note this does not model camp-manager expiry, which `campAccess` has never
+   * Note this does not model event-manager expiry, which `eventAccess` has never
    * done; the server-side guard remains authoritative.
    */
-  private buildCampAccess(): ProfileResourceData['campAccess'] {
+  private buildEventAccess(): ProfileResourceData['eventAccess'] {
     const access = new Map<
       string,
       {
         role: string;
-        permissions: CampScopedPermission[];
+        permissions: EventScopedPermission[];
         managerId: string | null;
       }
     >();
 
-    for (const manager of this.data.campRoles) {
-      access.set(manager.campId, {
+    for (const manager of this.data.eventRoles) {
+      access.set(manager.eventId, {
         role: manager.role,
         permissions: permissionRegistry
-          .for('camp')
+          .for('event')
           .getPermissions(manager.role),
         managerId: manager.id,
       });
     }
 
     for (const membership of this.data.organizationMembers) {
-      const grantsCampAccess = (
-        ORGANIZATION_CAMP_ACCESS_ROLES as readonly string[]
+      const grantsEventAccess = (
+        ORGANIZATION_EVENT_ACCESS_ROLES as readonly string[]
       ).includes(membership.role);
-      if (!grantsCampAccess) {
+      if (!grantsEventAccess) {
         continue;
       }
 
-      for (const camp of membership.organization.camps) {
-        const existing = access.get(camp.id);
-        access.set(camp.id, {
+      for (const event of membership.organization.events) {
+        const existing = access.get(event.id);
+        access.set(event.id, {
           role: existing?.role ?? ORGANIZATION_DERIVED_ROLE,
           permissions: [
             ...new Set([
               ...(existing?.permissions ?? []),
-              ...ORGANIZATION_CAMP_PERMISSIONS,
+              ...ORGANIZATION_EVENT_PERMISSIONS,
             ]),
           ],
           managerId: existing?.managerId ?? null,
@@ -94,16 +94,16 @@ export class ProfileResource extends JsonResource<
       }
     }
 
-    return [...access.entries()].map(([campId, entry]) => ({
-      campId,
+    return [...access.entries()].map(([eventId, entry]) => ({
+      eventId,
       ...entry,
     }));
   }
 
   /**
-   * The newsletter counterpart of {@link buildCampAccess}, mirroring
+   * The newsletter counterpart of {@link buildEventAccess}, mirroring
    * {@link NewsletterManagerService.getManagerPermissions}. Kept separate rather
-   * than generalized so each scope keeps its own permission type — a camp
+   * than generalized so each scope keeps its own permission type — a event
    * permission leaking into `newsletterAccess` must not compile.
    */
   private buildNewsletterAccess(): ProfileResourceData['newsletterAccess'] {
@@ -123,7 +123,7 @@ export class ProfileResource extends JsonResource<
 
     for (const membership of this.data.organizationMembers) {
       const grantsAccess = (
-        ORGANIZATION_CAMP_ACCESS_ROLES as readonly string[]
+        ORGANIZATION_EVENT_ACCESS_ROLES as readonly string[]
       ).includes(membership.role);
       if (!grantsAccess) {
         continue;

@@ -1,6 +1,6 @@
 <template>
   <!-- Guidance that follows from the category alone, kept in one place: an
-       organization and one of its camps must never be told different things
+       organization and one of its events must never be told different things
        about the same key, and the second author is the one who would silently
        miss a note added for the first. -->
   <div v-if="showAdvisory || showConsent">
@@ -34,7 +34,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 // Both notes are shown regardless of who declared the category. Whether a form
 // offers halal or kosher, and whether it asks for consent, is answered by the
-// camp that built it — an organization ticking `dietary` for all its camps
+// event that built it — an organization ticking `dietary` for all its events
 // cannot have answered it on their behalf.
 const showAdvisory = computed(() =>
   isAdvisorySpecialCategory(props.categoryKey),

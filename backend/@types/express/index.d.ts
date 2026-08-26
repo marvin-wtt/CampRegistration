@@ -6,7 +6,7 @@ import type {
   Message,
   MessageDelivery,
   MessageTemplate,
-  CampManager,
+  EventManager,
   Invitation,
   Bed,
   Room,
@@ -17,11 +17,11 @@ import type {
   Organization,
   OrganizationMember,
   OrganizationInvitation,
-  ProgramEvent,
+  ProgramItem,
 } from '../../src/generated/prisma/client.js';
 import type { ZodObject, z } from 'zod';
 import type { JsonResource } from '#core/resource/JsonResource';
-import type { CampWithFreePlaces } from '#app/camp/camp.types';
+import type { EventWithFreePlaces } from '#app/event/event.types';
 import type { NewsletterWithOrganization } from '#app/newsletter/newsletter.types';
 import type { TaskWithAssignee } from '#app/task/task.types';
 
@@ -31,13 +31,13 @@ declare global {
       user?: UserModel & {
         twoFactor: { confirmedAt: Date | null } | null;
       };
-      camp?: CampWithFreePlaces;
+      event?: EventWithFreePlaces;
       registration?: Registration;
       tableTemplate?: TableTemplate;
       message?: Message & { attachments: File[] };
       messageDelivery?: MessageDelivery & { attachments: File[] };
       messageTemplate?: MessageTemplate & { attachments: File[] };
-      campManager?: CampManager & {
+      eventManager?: EventManager & {
         user: UserModel | null;
         invitation: Invitation | null;
       };
@@ -53,7 +53,7 @@ declare global {
       newsletterManager?: NewsletterManager;
       newsletterMessage?: NewsletterMessage;
       newsletterSubscriber?: NewsletterSubscriber;
-      programEvent?: ProgramEvent;
+      programItem?: ProgramItem;
       task?: TaskWithAssignee;
     }
 

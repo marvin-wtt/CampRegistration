@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ProgramEvent } from '@camp-registration/common/entities';
+import type { ProgramItem } from '@camp-registration/common/entities';
 import {
   COMPACT_EVENT_H_PX,
   fillColor,
@@ -21,8 +21,8 @@ function event(
   id: string,
   time: string | null,
   duration: number | null,
-  plan: ProgramEvent['plan'] = 'both',
-): ProgramEvent {
+  plan: ProgramItem['plan'] = 'both',
+): ProgramItem {
   return {
     id,
     title: id,

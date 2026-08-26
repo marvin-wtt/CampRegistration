@@ -23,18 +23,18 @@ const store = z.object({
   }) satisfies ZodType<NewsletterSubscriberCreateData>,
 });
 
-const importFromCampBody = z.object({
-  campId: z.ulid(),
+const importFromEventBody = z.object({
+  eventId: z.ulid(),
   country: z.string().max(5).nullable().optional(),
   requireConsent: z.boolean().optional(),
   consentConfirmed: z.boolean().optional(),
 }) satisfies ZodType<NewsletterSubscriberImportData>;
 
-const importFromCamp = z.object({
+const importFromEvent = z.object({
   params: z.object({
     newsletterId: z.ulid(),
   }),
-  body: importFromCampBody.refine(
+  body: importFromEventBody.refine(
     (body) => body.requireConsent === true || body.consentConfirmed === true,
     {
       path: ['consentConfirmed'],
@@ -60,7 +60,7 @@ const unsubscribe = z.object({
 export default {
   index,
   store,
-  importFromCamp,
+  importFromEvent,
   destroy,
   unsubscribe,
 };

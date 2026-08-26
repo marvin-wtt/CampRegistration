@@ -224,7 +224,7 @@ describe('functions', () => {
   });
 
   describe('isWaitingList', () => {
-    describe('free places per camp', () => {
+    describe('free places per event', () => {
       it('should return false when free places are positive', () => {
         const model = new SurveyModel({
           calculatedValues: [

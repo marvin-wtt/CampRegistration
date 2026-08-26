@@ -17,7 +17,7 @@ import { useI18n } from 'vue-i18n';
 
 defineProps<{
   /** `null` renders nothing, so a caller can pass a row's state straight in. */
-  origin: 'organization' | 'camp' | null;
+  origin: 'organization' | 'event' | null;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -32,7 +32,7 @@ const { t } = useI18n({ useScope: 'global' });
     color: var(--md3-on-surface-variant);
   }
 
-  &--camp {
+  &--event {
     background-color: var(--md3-primary-container);
     color: var(--md3-on-primary-container);
   }

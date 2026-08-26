@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { NoOpMailer } from '#app/mail/noop.mailer';
 import {
-  CampFactory,
+  EventFactory,
   OrganizationFactory,
   UserFactory,
 } from '../../../prisma/factories/index.js';
@@ -109,7 +109,7 @@ describe(BASE, () => {
 
       expect(body.data.verificationStatus).toBe('PENDING');
       // Same shape as every other single-organization response.
-      expect(body.data.ownedCamps).toBe(0);
+      expect(body.data.ownedEvents).toBe(0);
       expect(body.data.ownedNewsletters).toBe(0);
 
       const member = await prisma.organizationMember.findFirst({
@@ -164,7 +164,7 @@ describe(BASE, () => {
           .expect(200);
 
         expect(body.data.id).toBe(organization.id);
-        expect(body.data.ownedCamps).toBe(0);
+        expect(body.data.ownedEvents).toBe(0);
         expect(body.data.ownedNewsletters).toBe(0);
       },
     );
@@ -172,10 +172,10 @@ describe(BASE, () => {
     it('should report what the organization owns', async () => {
       const { accessToken, organization } =
         await createOrganizationWithRole('ADMIN');
-      await CampFactory.create({
+      await EventFactory.create({
         organization: { connect: { id: organization.id } },
       });
-      await CampFactory.create({
+      await EventFactory.create({
         organization: { connect: { id: organization.id } },
       });
 
@@ -184,7 +184,7 @@ describe(BASE, () => {
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
-      expect(body.data.ownedCamps).toBe(2);
+      expect(body.data.ownedEvents).toBe(2);
       expect(body.data.ownedNewsletters).toBe(0);
     });
 
@@ -276,7 +276,7 @@ describe(BASE, () => {
       'should keep the organization verified when only %s changes',
       async (field, value) => {
         // Contact details were not what was vetted; changing them must not pull
-        // the organization's camps out of the public directory.
+        // the organization's events out of the public directory.
         const { accessToken, organization } = await createOrganizationWithRole(
           'ADMIN',
           'VERIFIED',
@@ -307,15 +307,15 @@ describe(BASE, () => {
       expect(body.data.verificationStatus).toBe('VERIFIED');
     });
 
-    it('should leave camps published when demoting', async () => {
+    it('should leave events published when demoting', async () => {
       // A demotion is not a rejection: the registration guard and public
-      // listing already exclude unverified organizations, so the camps simply
+      // listing already exclude unverified organizations, so the events simply
       // reappear once it is verified again.
       const { accessToken, organization } = await createOrganizationWithRole(
         'ADMIN',
         'VERIFIED',
       );
-      const camp = await CampFactory.create({
+      const event = await EventFactory.create({
         listed: true,
         organization: { connect: { id: organization.id } },
       });
@@ -326,7 +326,9 @@ describe(BASE, () => {
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
-      const updated = await prisma.camp.findUnique({ where: { id: camp.id } });
+      const updated = await prisma.event.findUnique({
+        where: { id: event.id },
+      });
       expect(updated?.listed).toBe(true);
     });
   });
@@ -346,10 +348,10 @@ describe(BASE, () => {
       ).resolves.toBeNull();
     });
 
-    it('should respond with `409` while it still owns a camp', async () => {
+    it('should respond with `409` while it still owns a event', async () => {
       const { accessToken, organization } =
         await createOrganizationWithRole('ADMIN');
-      await CampFactory.create({
+      await EventFactory.create({
         organization: { connect: { id: organization.id } },
       });
 
@@ -466,35 +468,35 @@ describe(BASE, () => {
     });
   });
 
-  describe(`GET ${BASE}/:organizationId/camps`, () => {
-    it('should respond with `200` and only the organizations own camps', async () => {
+  describe(`GET ${BASE}/:organizationId/events`, () => {
+    it('should respond with `200` and only the organizations own events', async () => {
       const { accessToken, organization } =
         await createOrganizationWithRole('ADMIN');
-      const camp = await CampFactory.create({
+      const event = await EventFactory.create({
         organization: { connect: { id: organization.id } },
       });
       // Belongs to a different organization created by the factory.
-      await CampFactory.create();
+      await EventFactory.create();
 
       const { body } = await request()
-        .get(`${BASE}/${organization.id}/camps`)
+        .get(`${BASE}/${organization.id}/events`)
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
       expect(body.data).toHaveLength(1);
-      expect(body.data[0].id).toBe(camp.id);
+      expect(body.data[0].id).toBe(event.id);
     });
 
-    it('should include private camps of the organization', async () => {
+    it('should include private events of the organization', async () => {
       const { accessToken, organization } =
         await createOrganizationWithRole('ADMIN');
-      await CampFactory.create({
+      await EventFactory.create({
         listed: false,
         organization: { connect: { id: organization.id } },
       });
 
       const { body } = await request()
-        .get(`${BASE}/${organization.id}/camps`)
+        .get(`${BASE}/${organization.id}/events`)
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -502,12 +504,12 @@ describe(BASE, () => {
     });
 
     it('should respond with `403` for a member', async () => {
-      // MEMBER may create camps but not survey the organization's portfolio.
+      // MEMBER may create events but not survey the organization's portfolio.
       const { accessToken, organization } =
         await createOrganizationWithRole('MEMBER');
 
       await request()
-        .get(`${BASE}/${organization.id}/camps`)
+        .get(`${BASE}/${organization.id}/events`)
         .auth(accessToken, { type: 'bearer' })
         .expect(403);
     });
@@ -518,7 +520,7 @@ describe(BASE, () => {
       const organization = await OrganizationFactory.create();
 
       await request()
-        .get(`${BASE}/${organization.id}/camps`)
+        .get(`${BASE}/${organization.id}/events`)
         .auth(accessToken, { type: 'bearer' })
         .expect(403);
     });
@@ -526,7 +528,7 @@ describe(BASE, () => {
     it('should respond with `401` when unauthenticated', async () => {
       const organization = await OrganizationFactory.create();
 
-      await request().get(`${BASE}/${organization.id}/camps`).expect(401);
+      await request().get(`${BASE}/${organization.id}/events`).expect(401);
     });
   });
 
@@ -548,13 +550,13 @@ describe(BASE, () => {
       expect(body.data.reviewedAt).not.toBeNull();
     });
 
-    it('should hide a rejected organizations camps from the public listing', async () => {
+    it('should hide a rejected organizations events from the public listing', async () => {
       const admin = await UserFactory.create({ role: 'ADMIN' });
       const accessToken = generateAccessToken(admin);
       const organization = await OrganizationFactory.create({
         verificationStatus: 'VERIFIED',
       });
-      const camp = await CampFactory.create({
+      const event = await EventFactory.create({
         listed: true,
         organization: { connect: { id: organization.id } },
       });
@@ -565,9 +567,11 @@ describe(BASE, () => {
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
-      const { body } = await request().get('/api/v1/camps/').expect(200);
+      const { body } = await request().get('/api/v1/events/').expect(200);
 
-      expect(body.data.map((c: { id: string }) => c.id)).not.toContain(camp.id);
+      expect(body.data.map((c: { id: string }) => c.id)).not.toContain(
+        event.id,
+      );
     });
 
     it('should respond with `403` for the organizations own admin', async () => {
@@ -591,7 +595,7 @@ describe(BASE, () => {
       const organization = await OrganizationFactory.create({
         verificationStatus: 'VERIFIED',
       });
-      const camp = await CampFactory.create({
+      const event = await EventFactory.create({
         listed: true,
         organization: { connect: { id: organization.id } },
       });
@@ -605,8 +609,10 @@ describe(BASE, () => {
       expect(body.data.verificationStatus).toBe('REJECTED');
 
       // Revoking leaves `listed` alone just as a first-time rejection does; the
-      // camp stops reaching the public through the read-time gates instead.
-      const updated = await prisma.camp.findUnique({ where: { id: camp.id } });
+      // event stops reaching the public through the read-time gates instead.
+      const updated = await prisma.event.findUnique({
+        where: { id: event.id },
+      });
       expect(updated?.listed).toBe(true);
     });
 
@@ -628,7 +634,7 @@ describe(BASE, () => {
       expect(body.data.reviewNote).toBeNull();
     });
 
-    it('should not republish camps when reinstating', async () => {
+    it('should not republish events when reinstating', async () => {
       // Reviewing never writes `listed` in either direction — publishing is the
       // organization's decision to make, not the reviewer's.
       const admin = await UserFactory.create({ role: 'ADMIN' });
@@ -636,7 +642,7 @@ describe(BASE, () => {
       const organization = await OrganizationFactory.create({
         verificationStatus: 'REJECTED',
       });
-      const camp = await CampFactory.create({
+      const event = await EventFactory.create({
         listed: false,
         organization: { connect: { id: organization.id } },
       });
@@ -647,7 +653,9 @@ describe(BASE, () => {
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
-      const updated = await prisma.camp.findUnique({ where: { id: camp.id } });
+      const updated = await prisma.event.findUnique({
+        where: { id: event.id },
+      });
       expect(updated?.listed).toBe(false);
     });
   });

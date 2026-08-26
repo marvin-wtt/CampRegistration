@@ -2,7 +2,7 @@ export default {
   purpose: {
     registration_administration: 'Gestion de votre inscription',
     participant_communication: "Information avant et pendant l'événement",
-    camp_organisation: "Organisation et déroulement de l'événement",
+    event_organisation: "Organisation et déroulement de l'événement",
     catering: 'Restauration',
     medical_care: "Soins médicaux pendant l'événement",
     emergency_contact: "Prise de contact en cas d'urgence",
@@ -37,7 +37,7 @@ export default {
   },
 
   recipient: {
-    camp_staff: "L'équipe d'encadrement",
+    event_staff: "L'équipe d'encadrement",
     accommodation_provider: "Le prestataire d'hébergement",
     catering_provider: 'Le prestataire de restauration',
     transport_provider: 'Le transporteur',
@@ -82,7 +82,7 @@ export default {
   },
 
   retentionAnchor: {
-    camp_end: "après la fin de l'événement",
+    event_end: "après la fin de l'événement",
     submission: "après l'envoi de l'inscription",
   },
 
@@ -117,7 +117,7 @@ export default {
     },
     origin: {
       organization: "De l'organisation",
-      camp: 'Ajouté ici',
+      event: 'Ajouté ici',
     },
     action: {
       publish: 'Publier',

@@ -1,6 +1,6 @@
 import { api } from '@/services/api';
 import type {
-  CampPrivacyNotice,
+  EventPrivacyNotice,
   OrganizationPrivacyNoticeDetails,
   PrivacyNoticeAddendum,
   PrivacyNoticeContent,
@@ -38,32 +38,37 @@ export function usePrivacyNoticeService() {
    * The composed notice a registrant reads. Published content only — an
    * in-progress edit must not change what the public page says.
    */
-  async function fetchCampNotice(
-    campId: string,
+  async function fetchEventNotice(
+    eventId: string,
   ): Promise<PublishedPrivacyNotice> {
-    const response = await api.get(`camps/${campId}/privacy-notice/`);
+    const response = await api.get(`events/${eventId}/privacy-notice/`);
 
     return response?.data?.data;
   }
 
   /**
-   * The camp's own published additions plus the organization baseline they are
+   * The event's own published additions plus the organization baseline they are
    * added to — the public endpoint above returns the two already merged, which
    * cannot tell an author which half is theirs.
    */
-  async function fetchCampAddendum(campId: string): Promise<CampPrivacyNotice> {
-    const response = await api.get(`camps/${campId}/privacy-notice/addendum`);
+  async function fetchEventAddendum(
+    eventId: string,
+  ): Promise<EventPrivacyNotice> {
+    const response = await api.get(`events/${eventId}/privacy-notice/addendum`);
 
     return response?.data?.data;
   }
 
-  async function publishCampAddendum(
-    campId: string,
+  async function publishEventAddendum(
+    eventId: string,
     content: PrivacyNoticeAddendum,
-  ): Promise<CampPrivacyNotice> {
-    const response = await api.put(`camps/${campId}/privacy-notice/addendum`, {
-      content,
-    });
+  ): Promise<EventPrivacyNotice> {
+    const response = await api.put(
+      `events/${eventId}/privacy-notice/addendum`,
+      {
+        content,
+      },
+    );
 
     return response?.data?.data;
   }
@@ -71,8 +76,8 @@ export function usePrivacyNoticeService() {
   return {
     fetchOrganizationNotice,
     publishOrganizationNotice,
-    fetchCampNotice,
-    fetchCampAddendum,
-    publishCampAddendum,
+    fetchEventNotice,
+    fetchEventAddendum,
+    publishEventAddendum,
   };
 }

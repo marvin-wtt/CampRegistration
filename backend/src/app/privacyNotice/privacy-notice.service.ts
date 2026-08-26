@@ -11,7 +11,7 @@ import {
   privacyNoticeCompleteness,
   retentionExceptions,
   supervisoryAuthorityFor,
-  type CampPrivacyNotice,
+  type EventPrivacyNotice,
   type OrganizationPrivacyNotice,
   type PrivacyDataCategoryEntry,
   type PrivacyNoticeAddendum,
@@ -41,7 +41,7 @@ type PrivacyNoticeClient = Pick<
  */
 export interface PrivacyNoticeStamp {
   organizationPrivacyNoticeVersionId: string | null;
-  campPrivacyNoticeVersionId: string | null;
+  eventPrivacyNoticeVersionId: string | null;
   platformPrivacyPolicyUpdatedAt: Date | null;
 }
 
@@ -67,7 +67,7 @@ export class PrivacyNoticeService extends BaseService {
 
   /**
    * The only write. Publishing deliberately leaves `verificationStatus` alone:
-   * demoting the organization would pull its live camps into a pending state
+   * demoting the organization would pull its live events into a pending state
    * and teach everyone not to touch the notice again.
    */
   async publishOrganizationNotice(
@@ -107,24 +107,24 @@ export class PrivacyNoticeService extends BaseService {
   }
 
   /**
-   * The camp's published addendum together with the organization notice it is
+   * The event's published addendum together with the organization notice it is
    * added to — the editor has to show an author what their organization already
-   * says before it can show what the camp adds to it.
+   * says before it can show what the event adds to it.
    */
-  async getCampAddendum(
-    campId: string,
+  async getEventAddendum(
+    eventId: string,
     organizationId: string,
-  ): Promise<CampPrivacyNotice> {
-    const [organizationVersion, campVersion] = await Promise.all([
+  ): Promise<EventPrivacyNotice> {
+    const [organizationVersion, eventVersion] = await Promise.all([
       this.latestVersion('ORGANIZATION', organizationId),
-      this.latestVersion('CAMP', campId),
+      this.latestVersion('EVENT', eventId),
     ]);
 
-    return this.toCampNotice(organizationVersion, campVersion);
+    return this.toEventNotice(organizationVersion, eventVersion);
   }
 
   /**
-   * Saying nothing stays free: an addendum is optional by nature, and a camp
+   * Saying nothing stays free: an addendum is optional by nature, and a event
    * that has nothing to add says so by adding nothing. An empty addendum is
    * refused as a first version — it would say the same as no version at all —
    * but accepted once a version exists, because withdrawing every addition is
@@ -134,16 +134,16 @@ export class PrivacyNoticeService extends BaseService {
    *
    * Saying something, however, is checked exactly as the organization's notice
    * is. The gate runs on the composed document rather than the addendum alone,
-   * because the composed document is what a registrant reads: a camp adding
+   * because the composed document is what a registrant reads: a event adding
    * `health` owes an Art. 9 basis for it no matter what its organization
    * declared. Only the gaps the addendum itself opens are refused — see
    * `addendumGaps`.
    */
-  async publishCampAddendum(
-    campId: string,
+  async publishEventAddendum(
+    eventId: string,
     organizationId: string,
     content: PrivacyNoticeAddendum,
-  ): Promise<CampPrivacyNotice> {
+  ): Promise<EventPrivacyNotice> {
     const sanitized = this.sanitizeAddendum(content);
     const organizationVersion = await this.latestVersion(
       'ORGANIZATION',
@@ -151,7 +151,7 @@ export class PrivacyNoticeService extends BaseService {
     );
 
     if (isEmptyAddendum(sanitized)) {
-      if (!(await this.latestVersion('CAMP', campId))) {
+      if (!(await this.latestVersion('EVENT', eventId))) {
         throw new ApiError(
           httpStatus.UNPROCESSABLE_ENTITY,
           'Privacy notice addendum is empty.',
@@ -172,9 +172,9 @@ export class PrivacyNoticeService extends BaseService {
       }
     }
 
-    const campVersion = await this.appendVersion('CAMP', campId, sanitized);
+    const eventVersion = await this.appendVersion('EVENT', eventId, sanitized);
 
-    return this.toCampNotice(organizationVersion, campVersion);
+    return this.toEventNotice(organizationVersion, eventVersion);
   }
 
   /**
@@ -182,16 +182,18 @@ export class PrivacyNoticeService extends BaseService {
    * open in an author's browser cannot change what the public page says.
    */
   async getPublishedNotice(
-    campId: string,
+    eventId: string,
     organizationId: string,
   ): Promise<PublishedPrivacyNotice> {
-    const [organization, organizationVersion, campVersion] = await Promise.all([
-      this.prisma.organization.findUniqueOrThrow({
-        where: { id: organizationId },
-      }),
-      this.latestVersion('ORGANIZATION', organizationId),
-      this.latestVersion('CAMP', campId),
-    ]);
+    const [organization, organizationVersion, eventVersion] = await Promise.all(
+      [
+        this.prisma.organization.findUniqueOrThrow({
+          where: { id: organizationId },
+        }),
+        this.latestVersion('ORGANIZATION', organizationId),
+        this.latestVersion('EVENT', eventId),
+      ],
+    );
 
     return {
       controller: {
@@ -209,29 +211,29 @@ export class PrivacyNoticeService extends BaseService {
       notice: organizationVersion
         ? composePrivacyNotice(
             organizationVersion.content as PrivacyNoticeContent,
-            campVersion?.content as PrivacyNoticeAddendum | undefined,
+            eventVersion?.content as PrivacyNoticeAddendum | undefined,
           )
         : null,
       organizationVersion: organizationVersion?.version ?? null,
-      campVersion: campVersion?.version ?? null,
+      eventVersion: eventVersion?.version ?? null,
     };
   }
 
   /** Resolved once per registration, at submission, and then never recomputed. */
-  async getStampForCamp(
-    campId: string,
+  async getStampForEvent(
+    eventId: string,
     organizationId: string,
   ): Promise<PrivacyNoticeStamp> {
-    const [organizationVersion, campVersion, platformPolicy] =
+    const [organizationVersion, eventVersion, platformPolicy] =
       await Promise.all([
         this.latestVersion('ORGANIZATION', organizationId),
-        this.latestVersion('CAMP', campId),
+        this.latestVersion('EVENT', eventId),
         this.legalService.getDocument('PRIVACY_POLICY'),
       ]);
 
     return {
       organizationPrivacyNoticeVersionId: organizationVersion?.id ?? null,
-      campPrivacyNoticeVersionId: campVersion?.id ?? null,
+      eventPrivacyNoticeVersionId: eventVersion?.id ?? null,
       platformPrivacyPolicyUpdatedAt: platformPolicy.updatedAt ?? null,
     };
   }
@@ -302,21 +304,21 @@ export class PrivacyNoticeService extends BaseService {
     };
   }
 
-  private toCampNotice(
+  private toEventNotice(
     organizationVersion: PrivacyNoticeVersion | null,
-    campVersion: PrivacyNoticeVersion | null,
-  ): CampPrivacyNotice {
+    eventVersion: PrivacyNoticeVersion | null,
+  ): EventPrivacyNotice {
     return {
       content:
-        (campVersion?.content as PrivacyNoticeAddendum | undefined) ?? {},
+        (eventVersion?.content as PrivacyNoticeAddendum | undefined) ?? {},
       organizationContent:
         (organizationVersion?.content as PrivacyNoticeContent | undefined) ??
         null,
       organizationPublishedVersion: organizationVersion?.version ?? null,
       organizationPublishedAt:
         organizationVersion?.publishedAt.toISOString() ?? null,
-      publishedVersion: campVersion?.version ?? null,
-      publishedAt: campVersion?.publishedAt.toISOString() ?? null,
+      publishedVersion: eventVersion?.version ?? null,
+      publishedAt: eventVersion?.publishedAt.toISOString() ?? null,
     };
   }
 
@@ -345,7 +347,7 @@ export class PrivacyNoticeService extends BaseService {
   }
 
   /**
-   * The addendum's subset of the same fields, authored by a camp manager. It
+   * The addendum's subset of the same fields, authored by a event manager. It
    * runs through the very same per-field helpers as the organization notice:
    * an author-written field that only one of the two sanitized would be a field
    * the other publishes raw.

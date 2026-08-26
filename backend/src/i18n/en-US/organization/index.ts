@@ -7,7 +7,7 @@ export default {
         title: 'A new organization needs review',
         information:
           '{{ organization.name }} has been submitted for verification. ' +
-          'Until it is verified it cannot publish camps or send newsletters.',
+          'Until it is verified it cannot publish events or send newsletters.',
         button: 'Review organizations',
         greeting: 'Best regards,',
         teamName: '{{ appName }} team',
@@ -18,12 +18,12 @@ export default {
     },
     verified: {
       subject: 'Your organization has been verified',
-      preview: '{{ organization.name }} can now publish camps',
+      preview: '{{ organization.name }} can now publish events',
       text: {
         title: 'Your organization has been verified',
         information:
           '{{ organization.name }} has been verified. ' +
-          'You can now publish its camps and send newsletters.',
+          'You can now publish its events and send newsletters.',
         button: 'Open organization',
         greeting: 'Best regards,',
         teamName: '{{ appName }} team',
@@ -39,7 +39,7 @@ export default {
         title: 'Your organization could not be verified',
         information:
           '{{ organization.name }} has not been verified. ' +
-          'It cannot publish camps or send newsletters until it is. ' +
+          'It cannot publish events or send newsletters until it is. ' +
           'Correcting its registered details puts it back into review.',
         reasonLabel: 'Reason',
         button: 'Review the details',

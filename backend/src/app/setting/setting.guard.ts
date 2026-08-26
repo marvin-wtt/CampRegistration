@@ -1,7 +1,7 @@
 import type { Request } from 'express';
 import type { GuardFn } from '#core/guard';
 import { resolve } from '#core/ioc/container';
-import { campManager } from '#app/camp/camp.guard';
+import { hasEventPermission } from '#app/event/event.guard';
 import { SettingsRegistry } from '#app/setting/setting.registry';
 
 /**
@@ -17,6 +17,6 @@ export const settingGuard = (action: 'view' | 'edit'): GuardFn => {
     const permission =
       action === 'view' ? definition.viewPermission : definition.editPermission;
 
-    return campManager(permission)(req);
+    return hasEventPermission(permission)(req);
   };
 };

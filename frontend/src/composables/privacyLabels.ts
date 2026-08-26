@@ -10,7 +10,7 @@ import { useObjectTranslation } from '@/composables/objectTranslation';
 
 /**
  * How a catalogue entry is named. Shared by everything that displays notice
- * content — the notice a registrant reads, the authoring wizard and a camp's
+ * content — the notice a registrant reads, the authoring wizard and a event's
  * baseline summary — because an entry that reads differently in the editor
  * than in the published notice is a bug the author cannot see.
  *

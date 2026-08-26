@@ -279,12 +279,12 @@
         >
           <router-link
             v-if="
-              organization.ownedCamps > 0 && canOrg('organization.camps.view')
+              organization.ownedEvents > 0 && canOrg('organization.events.view')
             "
             class="text-primary text-body2"
-            :to="{ name: 'management.organization.camps' }"
+            :to="{ name: 'management.organization.events' }"
           >
-            {{ t('danger.viewCamps') }}
+            {{ t('danger.viewEvents') }}
           </router-link>
           <router-link
             v-if="
@@ -343,7 +343,7 @@ const locked = computed(() => !canOrg('organization.edit'));
 
 /**
  * Changing the vetted identity sends the organization back for re-review, which
- * takes any published camp out of the public directory until it is verified
+ * takes any published event out of the public directory until it is verified
  * again. Warn before that happens rather than after.
  */
 const reverificationRequired = computed(
@@ -360,13 +360,13 @@ const reverificationRequired = computed(
  */
 const blocking = computed(
   () =>
-    (organization.value?.ownedCamps ?? 0) > 0 ||
+    (organization.value?.ownedEvents ?? 0) > 0 ||
     (organization.value?.ownedNewsletters ?? 0) > 0,
 );
 
 const blockingText = computed(() =>
   t('danger.blocked', {
-    camps: organization.value?.ownedCamps ?? 0,
+    events: organization.value?.ownedEvents ?? 0,
     newsletters: organization.value?.ownedNewsletters ?? 0,
   }),
 );
@@ -466,8 +466,8 @@ function save() {
     .dialog({
       title: t('reverify.title'),
       message:
-        (organization.value?.ownedCamps ?? 0) > 0
-          ? t('reverify.messageWithCamps')
+        (organization.value?.ownedEvents ?? 0) > 0
+          ? t('reverify.messageWithEvents')
           : t('reverify.message'),
       cancel: { color: 'primary', flat: true, rounded: true, noCaps: true },
       ok: {
@@ -555,7 +555,7 @@ reverify:
   notice: 'You changed details that were verified. Saving sends the organization back for review.'
   title: 'Re-verification required'
   message: 'These changes must be reviewed again. The organization returns to pending until an administrator verifies it.'
-  messageWithCamps: 'These changes must be reviewed again. The organization returns to pending, and its published camps leave the public directory and stop accepting registrations until it is verified.'
+  messageWithEvents: 'These changes must be reviewed again. The organization returns to pending, and its published events leave the public directory and stop accepting registrations until it is verified.'
   confirm: 'Save and resubmit'
 field:
   name: 'Name'
@@ -577,9 +577,9 @@ action:
   delete: 'Delete organization'
 danger:
   title: 'Delete this organization'
-  description: 'Only possible once it owns no camps or newsletters.'
-  blocked: 'Still owns {camps} camp(s) and {newsletters} newsletter(s). Delete them first, or ask an administrator to move them to another organization.'
-  viewCamps: 'View camps'
+  description: 'Only possible once it owns no events or newsletters.'
+  blocked: 'Still owns {events} event(s) and {newsletters} newsletter(s). Delete them first, or ask an administrator to move them to another organization.'
+  viewEvents: 'View events'
   viewNewsletters: 'View newsletters'
   confirm:
     title: 'Delete organization'
@@ -607,7 +607,7 @@ reverify:
   notice: 'Du hast geprüfte Angaben geändert. Beim Speichern wird die Organisation erneut zur Prüfung eingereicht.'
   title: 'Erneute Prüfung erforderlich'
   message: 'Diese Änderungen müssen erneut geprüft werden. Die Organisation wartet wieder auf die Verifizierung.'
-  messageWithCamps: 'Diese Änderungen müssen erneut geprüft werden. Die Organisation wartet wieder auf die Verifizierung, und ihre veröffentlichten Camps verschwinden aus dem öffentlichen Verzeichnis und nehmen keine Anmeldungen mehr an.'
+  messageWithEvents: 'Diese Änderungen müssen erneut geprüft werden. Die Organisation wartet wieder auf die Verifizierung, und ihre veröffentlichten Veranstaltungen verschwinden aus dem öffentlichen Verzeichnis und nehmen keine Anmeldungen mehr an.'
   confirm: 'Speichern und einreichen'
 field:
   name: 'Name'
@@ -629,9 +629,9 @@ action:
   delete: 'Organisation löschen'
 danger:
   title: 'Diese Organisation löschen'
-  description: 'Nur möglich, wenn sie keine Camps oder Newsletter besitzt.'
-  blocked: 'Besitzt noch {camps} Camp(s) und {newsletters} Newsletter. Lösche sie zuerst, oder bitte einen Administrator, sie in eine andere Organisation zu verschieben.'
-  viewCamps: 'Camps anzeigen'
+  description: 'Nur möglich, wenn sie keine Veranstaltungen oder Newsletter besitzt.'
+  blocked: 'Besitzt noch {events} Veranstaltung(s) und {newsletters} Newsletter. Lösche sie zuerst, oder bitte einen Administrator, sie in eine andere Organisation zu verschieben.'
+  viewEvents: 'Veranstaltungen anzeigen'
   viewNewsletters: 'Newsletter anzeigen'
   confirm:
     title: 'Organisation löschen'
@@ -659,7 +659,7 @@ reverify:
   notice: "Tu as modifié des informations vérifiées. Enregistrer renvoie l'organisation en vérification."
   title: 'Nouvelle vérification requise'
   message: "Ces modifications doivent être vérifiées à nouveau. L'organisation repasse en attente."
-  messageWithCamps: "Ces modifications doivent être vérifiées à nouveau. L'organisation repasse en attente, et ses camps publiés quittent l'annuaire public et cessent d'accepter les inscriptions."
+  messageWithEvents: "Ces modifications doivent être vérifiées à nouveau. L'organisation repasse en attente, et ses événements publiés quittent l'annuaire public et cessent d'accepter les inscriptions."
   confirm: 'Enregistrer et soumettre'
 field:
   name: 'Nom'
@@ -681,9 +681,9 @@ action:
   delete: "Supprimer l'organisation"
 danger:
   title: 'Supprimer cette organisation'
-  description: 'Possible uniquement si elle ne possède aucun camp ni newsletter.'
-  blocked: "Possède encore {camps} camp(s) et {newsletters} newsletter(s). Supprime-les d'abord, ou demande à un administrateur de les déplacer vers une autre organisation."
-  viewCamps: 'Voir les camps'
+  description: 'Possible uniquement si elle ne possède aucun événement ni newsletter.'
+  blocked: "Possède encore {events} événement(s) et {newsletters} newsletter(s). Supprime-les d'abord, ou demande à un administrateur de les déplacer vers une autre organisation."
+  viewEvents: 'Voir les événements'
   viewNewsletters: 'Voir les newsletters'
   confirm:
     title: "Supprimer l'organisation"
@@ -711,7 +711,7 @@ reverify:
   notice: 'Zmieniono zweryfikowane dane. Zapisanie ponownie skieruje organizację do weryfikacji.'
   title: 'Wymagana ponowna weryfikacja'
   message: 'Te zmiany muszą zostać ponownie sprawdzone. Organizacja wróci do stanu oczekującego.'
-  messageWithCamps: 'Te zmiany muszą zostać ponownie sprawdzone. Organizacja wróci do stanu oczekującego, a jej opublikowane obozy znikną z publicznego katalogu i przestaną przyjmować zapisy.'
+  messageWithEvents: 'Te zmiany muszą zostać ponownie sprawdzone. Organizacja wróci do stanu oczekującego, a jej opublikowane wydarzenia znikną z publicznego katalogu i przestaną przyjmować zapisy.'
   confirm: 'Zapisz i wyślij'
 field:
   name: 'Nazwa'
@@ -733,9 +733,9 @@ action:
   delete: 'Usuń organizację'
 danger:
   title: 'Usuń tę organizację'
-  description: 'Możliwe tylko, gdy nie posiada obozów ani newsletterów.'
-  blocked: 'Nadal posiada {camps} obóz/obozy i {newsletters} newsletter(y). Najpierw je usuń lub poproś administratora o przeniesienie ich do innej organizacji.'
-  viewCamps: 'Zobacz obozy'
+  description: 'Możliwe tylko, gdy nie posiada wydarzeń ani newsletterów.'
+  blocked: 'Nadal posiada {events} wydarzenie/wydarzenia i {newsletters} newsletter(y). Najpierw je usuń lub poproś administratora o przeniesienie ich do innej organizacji.'
+  viewEvents: 'Zobacz wydarzenia'
   viewNewsletters: 'Zobacz newslettery'
   confirm:
     title: 'Usuń organizację'
@@ -763,7 +763,7 @@ reverify:
   notice: 'Změnil jsi ověřené údaje. Uložením se organizace vrátí k ověření.'
   title: 'Vyžadováno nové ověření'
   message: 'Tyto změny musí být znovu zkontrolovány. Organizace se vrátí do stavu čekání.'
-  messageWithCamps: 'Tyto změny musí být znovu zkontrolovány. Organizace se vrátí do stavu čekání a její zveřejněné tábory zmizí z veřejného katalogu a přestanou přijímat registrace.'
+  messageWithEvents: 'Tyto změny musí být znovu zkontrolovány. Organizace se vrátí do stavu čekání a její zveřejněné akce zmizí z veřejného katalogu a přestanou přijímat registrace.'
   confirm: 'Uložit a odeslat'
 field:
   name: 'Název'
@@ -785,9 +785,9 @@ action:
   delete: 'Smazat organizaci'
 danger:
   title: 'Smazat tuto organizaci'
-  description: 'Možné pouze, pokud nevlastní žádné tábory ani newslettery.'
-  blocked: 'Stále vlastní {camps} tábor(y) a {newsletters} newsletter(y). Nejprve je smaž, nebo požádej správce o jejich přesun do jiné organizace.'
-  viewCamps: 'Zobrazit tábory'
+  description: 'Možné pouze, pokud nevlastní žádné akce ani newslettery.'
+  blocked: 'Stále vlastní {events} akcí a {newsletters} newsletter(y). Nejprve je smaž, nebo požádej správce o jejich přesun do jiné organizace.'
+  viewEvents: 'Zobrazit akce'
   viewNewsletters: 'Zobrazit newslettery'
   confirm:
     title: 'Smazat organizaci'

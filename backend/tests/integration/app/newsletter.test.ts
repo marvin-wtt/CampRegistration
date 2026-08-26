@@ -227,7 +227,7 @@ describe(BASE, () => {
     });
 
     it('should let an unverified organization create one', async () => {
-      // Like a camp, a newsletter may be set up before moderation — only
+      // Like a event, a newsletter may be set up before moderation — only
       // sending is gated, by `newsletterOrganizationVerified`.
       const { accessToken } = await createOrganizationAdmin('PENDING');
 

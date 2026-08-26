@@ -94,7 +94,7 @@ export class OrganizationService extends BaseService {
    * changes the legal identity that was vetted (see
    * {@link requiresReverification}).
    *
-   * Camps are deliberately left published: a demotion is not a rejection, and
+   * Events are deliberately left published: a demotion is not a rejection, and
    * the registration guard and public listing already exclude unverified
    * organizations. Leaving the flag alone means they simply reappear once the
    * organization is verified again, instead of every edit silently costing the
@@ -132,12 +132,12 @@ export class OrganizationService extends BaseService {
   }
 
   async countOwnedResources(id: string) {
-    const [camps, newsletters] = await this.prisma.$transaction([
-      this.prisma.camp.count({ where: { organizationId: id } }),
+    const [events, newsletters] = await this.prisma.$transaction([
+      this.prisma.event.count({ where: { organizationId: id } }),
       this.prisma.newsletter.count({ where: { organizationId: id } }),
     ]);
 
-    return { camps, newsletters };
+    return { events, newsletters };
   }
 
   /** Puts a previously rejected organization back into the moderation queue. */
@@ -157,10 +157,10 @@ export class OrganizationService extends BaseService {
   /**
    * Records a moderation decision.
    *
-   * Rejection does not touch the camps' `listed` flag. Reach is gated on the
+   * Rejection does not touch the events' `listed` flag. Reach is gated on the
    * organization's live status at every outward-facing action — the public
-   * listing, the camp `show` route and registration creation — so a rejected
-   * organization's camps stop reaching anyone the moment the status flips,
+   * listing, the event `show` route and registration creation — so a rejected
+   * organization's events stop reaching anyone the moment the status flips,
    * without overwriting a publication choice that is the owner's to make.
    */
   async applyVerificationDecision(
@@ -169,7 +169,7 @@ export class OrganizationService extends BaseService {
     status: Extract<OrganizationVerificationStatus, 'VERIFIED' | 'REJECTED'>,
     reviewNote?: string | null,
   ) {
-    // Verifying an organization is the moment its camps become able to reach
+    // Verifying an organization is the moment its events become able to reach
     // the public, so it is also the moment its privacy notice has to hold up.
     // Rejection is never blocked — a notice-less organization must stay
     // rejectable.

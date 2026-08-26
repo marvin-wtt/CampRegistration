@@ -3,21 +3,21 @@ import type { MessageCreateData } from '@camp-registration/common/entities';
 
 const show = z.object({
   params: z.object({
-    campId: z.ulid(),
+    eventId: z.ulid(),
     messageId: z.ulid(),
   }),
 });
 
 const index = z.object({
   params: z.object({
-    campId: z.ulid(),
+    eventId: z.ulid(),
   }),
   query: z.object({}).partial(),
 });
 
 const store = z.object({
   params: z.object({
-    campId: z.ulid(),
+    eventId: z.ulid(),
   }),
   body: z.object({
     registrationIds: z.array(z.ulid()).min(1),
@@ -31,21 +31,21 @@ const store = z.object({
 
 const resend = z.object({
   params: z.object({
-    campId: z.ulid(),
+    eventId: z.ulid(),
     messageId: z.ulid(),
   }),
 });
 
 const destroy = z.object({
   params: z.object({
-    campId: z.ulid(),
+    eventId: z.ulid(),
     messageId: z.ulid(),
   }),
 });
 
 const duplicateAttachments = z.object({
   params: z.object({
-    campId: z.ulid(),
+    eventId: z.ulid(),
     messageId: z.ulid(),
   }),
 });

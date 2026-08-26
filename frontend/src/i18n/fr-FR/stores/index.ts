@@ -1,8 +1,8 @@
-import camp from './camp';
+import event from './event';
 import registration from './registration';
 import template from './template';
-import campManager from './camp-manager';
-import campFiles from './camp-files';
+import eventManager from './event-manager';
+import eventFiles from './event-files';
 import auth from './auth';
 import profile from './profile';
 import programPlanner from './program-planner';
@@ -14,15 +14,15 @@ import newsletterManager from './newsletter-manager';
 import task from './task';
 import organization from './organization';
 import organizationMember from './organization-member';
-import organizationCamps from './organization-camps';
+import organizationEvents from './organization-events';
 import organizationNewsletters from './organization-newsletters';
 
 export default {
-  camp,
+  event,
   registration,
   template,
-  campManager,
-  campFiles,
+  eventManager,
+  eventFiles,
   auth,
   profile,
   programPlanner,
@@ -34,6 +34,6 @@ export default {
   task,
   organization,
   organizationMember,
-  organizationCamps,
+  organizationEvents,
   organizationNewsletters,
 };

@@ -48,13 +48,13 @@ export class OrganizationRouter extends ModuleRouter {
       controller(organizationController, 'destroy'),
     );
 
-    // The organization's camps and newsletters. Its administrators hold
+    // The organization's events and newsletters. Its administrators hold
     // permissions on both that no other listing would surface — see the
     // controller.
     this.router.get(
-      '/:organizationId/camps',
-      guard(organizationMember('organization.camps.view')),
-      controller(organizationController, 'camps'),
+      '/:organizationId/events',
+      guard(organizationMember('organization.events.view')),
+      controller(organizationController, 'events'),
     );
     this.router.get(
       '/:organizationId/newsletters',

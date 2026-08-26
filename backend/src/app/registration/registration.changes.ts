@@ -1,5 +1,5 @@
 import Handlebars from 'handlebars';
-import type { Camp, Registration } from '#generated/prisma/client.js';
+import type { Event, Registration } from '#generated/prisma/client.js';
 import { formUtils, type FormAnswer } from '#utils/form';
 import logger from '#core/logger';
 
@@ -77,13 +77,13 @@ function formatValue(value: unknown): string | null {
 }
 
 function answersFor(
-  camp: Camp,
+  event: Event,
   data: unknown,
   locale: string,
 ): Map<string, FormAnswer> {
   // `freePlaces` only feeds `visibleIf` expressions, which do not affect how an
   // answer is labelled or displayed — a mail payload carries no place count.
-  const form = formUtils({ ...camp, freePlaces: 0 }, data, { locale });
+  const form = formUtils({ ...event, freePlaces: 0 }, data, { locale });
 
   return new Map(form.answers().map((answer) => [answer.path, answer]));
 }
@@ -100,18 +100,18 @@ function deepEqual(a: unknown, b: unknown): boolean {
  * The form fields whose answers differ between two versions of a registration,
  * labelled and formatted in `locale`.
  *
- * Both sides are read through the camp's form rather than walked as raw JSON:
+ * Both sides are read through the event's form rather than walked as raw JSON:
  * the form resolves each field's title and its answer's display text in the
  * given locale, which is what makes the result readable to its recipient.
  */
 export function diffRegistrationData(
-  camp: Camp,
+  event: Event,
   before: unknown,
   after: unknown,
   locale: string,
 ): RegistrationChange[] {
-  const previous = answersFor(camp, before, locale);
-  const current = answersFor(camp, after, locale);
+  const previous = answersFor(event, before, locale);
+  const current = answersFor(event, after, locale);
 
   const changes: RegistrationChange[] = [];
 
@@ -166,16 +166,16 @@ export function diffRegistrationData(
  * a change list, never a reason to fail the edit that triggered it.
  */
 export function changesForRegistration(
-  camp: Camp,
+  event: Event,
   previous: Registration,
   current: Registration,
 ): RegistrationChange[] {
-  // Country picks the group's language where a camp has several; `locale` is
+  // Country picks the group's language where a event has several; `locale` is
   // the fallback, and only its language part is a form locale.
   const locale = (current.country ?? current.locale).split('-')[0];
 
   try {
-    return diffRegistrationData(camp, previous.data, current.data, locale);
+    return diffRegistrationData(event, previous.data, current.data, locale);
   } catch (err) {
     logger.warn(
       `Failed to build the change list for registration ${current.id}: ${err instanceof Error ? err.message : String(err)}`,
@@ -248,7 +248,7 @@ const WRAPPED_BLOCK_RE =
  *
  * The mail itself goes to the address the registrant gave for this
  * correspondence, but `MessageDelivery.body` is a durable copy readable by
- * every manager of the camp — that copy names what moved without repeating what
+ * every manager of the event — that copy names what moved without repeating what
  * it now says.
  */
 export function redactChangeValues(html: string): string {

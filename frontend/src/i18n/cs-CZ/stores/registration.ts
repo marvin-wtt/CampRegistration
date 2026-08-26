@@ -6,19 +6,19 @@ export default {
     progress: 'Vytváření přihlášky...',
     success: 'Přihláška úspěšně vytvořena',
     error: 'Chyba při vytváření přihlášky',
-    invalid: 'Neplatné ID tábora',
+    invalid: 'Neplatné ID akce',
   },
   update: {
     progress: 'Aktualizace přihlášky...',
     success: 'Přihláška úspěšně aktualizována',
     error: 'Chyba při aktualizaci přihlášky',
-    invalid: 'Neplatné ID přihlášky nebo tábora',
+    invalid: 'Neplatné ID přihlášky nebo akce',
   },
   delete: {
     progress: 'Odstraňování přihlášky...',
     success: 'Přihláška úspěšně odstraněna',
     error: 'Chyba při odstraňování přihlášky',
-    invalid: 'Neplatné ID přihlášky nebo tábora',
+    invalid: 'Neplatné ID přihlášky nebo akce',
   },
   realtimeCreate: {
     message: 'Přijata nová přihláška',

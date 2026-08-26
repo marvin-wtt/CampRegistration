@@ -250,10 +250,10 @@ status:
   VERIFIED: 'Verified'
   REJECTED: 'Rejected'
 message:
-  approve: 'It will be able to publish camps and send newsletters.'
-  reject: 'It will not be able to publish camps or send newsletters. Its camps stay private drafts.'
-  reinstate: 'It will be able to publish camps and send newsletters again.'
-  revoke: 'It can no longer publish camps or send newsletters, and any public camps are unpublished immediately.'
+  approve: 'It will be able to publish events and send newsletters.'
+  reject: 'It will not be able to publish events or send newsletters. Its events stay private drafts.'
+  reinstate: 'It will be able to publish events and send newsletters again.'
+  revoke: 'It can no longer publish events or send newsletters, and any public events are unpublished immediately.'
 note:
   optional: 'Note (optional)'
   required: 'Reason for rejection'
@@ -281,10 +281,10 @@ status:
   VERIFIED: 'Verifiziert'
   REJECTED: 'Abgelehnt'
 message:
-  approve: 'Sie kann dann Camps veröffentlichen und Newsletter versenden.'
-  reject: 'Sie kann keine Camps veröffentlichen und keine Newsletter versenden. Ihre Camps bleiben private Entwürfe.'
-  reinstate: 'Sie kann wieder Camps veröffentlichen und Newsletter versenden.'
-  revoke: 'Sie kann keine Camps mehr veröffentlichen oder Newsletter versenden; öffentliche Camps werden sofort zurückgezogen.'
+  approve: 'Sie kann dann Veranstaltungen veröffentlichen und Newsletter versenden.'
+  reject: 'Sie kann keine Veranstaltungen veröffentlichen und keine Newsletter versenden. Ihre Veranstaltungen bleiben private Entwürfe.'
+  reinstate: 'Sie kann wieder Veranstaltungen veröffentlichen und Newsletter versenden.'
+  revoke: 'Sie kann keine Veranstaltungen mehr veröffentlichen oder Newsletter versenden; öffentliche Veranstaltungen werden sofort zurückgezogen.'
 note:
   optional: 'Hinweis (optional)'
   required: 'Grund für die Ablehnung'
@@ -312,10 +312,12 @@ status:
   VERIFIED: 'Vérifiée'
   REJECTED: 'Refusée'
 message:
-  approve: 'Elle pourra publier des camps et envoyer des newsletters.'
-  reject: 'Elle ne pourra pas publier de camps ni envoyer de newsletters. Ses camps restent des brouillons privés.'
-  reinstate: 'Elle pourra à nouveau publier des camps et envoyer des newsletters.'
-  revoke: 'Elle ne peut plus publier de camps ni envoyer de newsletters ; les camps publics sont dépubliés immédiatement.'
+  approve: 'Elle pourra publier des événements et envoyer des newsletters.'
+  reject: "Elle ne pourra pas publier d'événements ni envoyer de newsletters. Ses événements restent des brouillons privés."
+
+  reinstate: 'Elle pourra à nouveau publier des événements et envoyer des newsletters.'
+  revoke: "Elle ne peut plus publier d'événements ni envoyer de newsletters ; les événements publics sont dépubliés immédiatement."
+
 note:
   optional: 'Note (optionnel)'
   required: 'Motif du refus'
@@ -343,10 +345,10 @@ status:
   VERIFIED: 'Zweryfikowana'
   REJECTED: 'Odrzucona'
 message:
-  approve: 'Będzie mogła publikować obozy i wysyłać newslettery.'
-  reject: 'Nie będzie mogła publikować obozów ani wysyłać newsletterów. Jej obozy pozostaną prywatnymi wersjami roboczymi.'
-  reinstate: 'Będzie mogła ponownie publikować obozy i wysyłać newslettery.'
-  revoke: 'Nie będzie mogła publikować obozów ani wysyłać newsletterów, a publiczne obozy zostaną natychmiast wycofane.'
+  approve: 'Będzie mogła publikować wydarzenia i wysyłać newslettery.'
+  reject: 'Nie będzie mogła publikować wydarzeń ani wysyłać newsletterów. Jej wydarzenia pozostaną prywatnymi wersjami roboczymi.'
+  reinstate: 'Będzie mogła ponownie publikować wydarzenia i wysyłać newslettery.'
+  revoke: 'Nie będzie mogła publikować wydarzeń ani wysyłać newsletterów, a publiczne wydarzenia zostaną natychmiast wycofane.'
 note:
   optional: 'Uwaga (opcjonalnie)'
   required: 'Powód odrzucenia'
@@ -374,10 +376,10 @@ status:
   VERIFIED: 'Ověřená'
   REJECTED: 'Zamítnutá'
 message:
-  approve: 'Bude moci zveřejňovat tábory a posílat newslettery.'
-  reject: 'Nebude moci zveřejňovat tábory ani posílat newslettery. Její tábory zůstanou soukromými koncepty.'
-  reinstate: 'Bude moci znovu zveřejňovat tábory a posílat newslettery.'
-  revoke: 'Nebude moci zveřejňovat tábory ani posílat newslettery a veřejné tábory budou okamžitě staženy.'
+  approve: 'Bude moci zveřejňovat akce a posílat newslettery.'
+  reject: 'Nebude moci zveřejňovat akce ani posílat newslettery. Její akce zůstanou soukromými koncepty.'
+  reinstate: 'Bude moci znovu zveřejňovat akce a posílat newslettery.'
+  revoke: 'Nebude moci zveřejňovat akce ani posílat newslettery a veřejné akce budou okamžitě staženy.'
 note:
   optional: 'Poznámka (volitelné)'
   required: 'Důvod zamítnutí'

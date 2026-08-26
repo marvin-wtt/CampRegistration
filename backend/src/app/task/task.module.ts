@@ -13,31 +13,31 @@ export class TaskModule implements AppModule {
   }
 
   registerRoutes(router: AppRouter): void {
-    router.useRouter('/camps/:campId/tasks', resolve(TaskRouter));
+    router.useRouter('/events/:eventId/tasks', resolve(TaskRouter));
   }
 
   registerPermissions(): ScopedPermissions {
     return {
-      camp: {
+      event: {
         DIRECTOR: [
-          'camp.tasks.view',
-          'camp.tasks.create',
-          'camp.tasks.update',
-          'camp.tasks.delete',
+          'event.tasks.view',
+          'event.tasks.create',
+          'event.tasks.update',
+          'event.tasks.delete',
         ],
         COORDINATOR: [
-          'camp.tasks.view',
-          'camp.tasks.create',
-          'camp.tasks.update',
-          'camp.tasks.delete',
+          'event.tasks.view',
+          'event.tasks.create',
+          'event.tasks.update',
+          'event.tasks.delete',
         ],
         COUNSELOR: [
-          'camp.tasks.view',
-          'camp.tasks.create',
-          'camp.tasks.update',
-          'camp.tasks.delete',
+          'event.tasks.view',
+          'event.tasks.create',
+          'event.tasks.update',
+          'event.tasks.delete',
         ],
-        VIEWER: ['camp.tasks.view'],
+        VIEWER: ['event.tasks.view'],
       },
     };
   }

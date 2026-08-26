@@ -1,7 +1,7 @@
 import { JsonResource } from '#core/resource/JsonResource';
 import {
   privacyNoticeCompleteness,
-  type CampPrivacyNotice,
+  type EventPrivacyNotice,
   type OrganizationPrivacyNotice,
   type OrganizationPrivacyNoticeDetails,
   type PublishedPrivacyNotice,
@@ -24,15 +24,15 @@ export class OrganizationPrivacyNoticeResource extends JsonResource<
 }
 
 /**
- * The camp's authoring view. Everything on it is already serialisable — the
+ * The event's authoring view. Everything on it is already serialisable — the
  * service resolves the version timestamps — so this is an identity transform
  * kept only so the route returns a resource like every other.
  */
-export class CampPrivacyNoticeResource extends JsonResource<
-  CampPrivacyNotice,
-  CampPrivacyNotice
+export class EventPrivacyNoticeResource extends JsonResource<
+  EventPrivacyNotice,
+  EventPrivacyNotice
 > {
-  transform(): CampPrivacyNotice {
+  transform(): EventPrivacyNotice {
     return this.data;
   }
 }

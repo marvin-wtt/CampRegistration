@@ -14,19 +14,19 @@ type EventHandler = (event: RealtimeEvent) => void;
 type ReconnectHandler = () => void;
 
 /**
- * Owns the live SSE stream for the active camp and acts as a registry: feature
+ * Owns the live SSE stream for the active event and acts as a registry: feature
  * stores subscribe to the resources they care about via `on(resource, handler)`.
  * The realtime layer never imports feature stores, so adding a reactive resource
  * only touches that resource's own store (mirrors the existing
- * `authBus.on(...)`/`campBus.on(...)` self-subscription idiom).
+ * `authBus.on(...)`/`eventBus.on(...)` self-subscription idiom).
  *
- * `connect()` opens the single camp stream (all resources; the server filters
- * events by permission) and is called once from the camp management layout.
+ * `connect()` opens the single event stream (all resources; the server filters
+ * events by permission) and is called once from the event management layout.
  */
 export const useRealtimeStore = defineStore('realtime', () => {
   const route = useRoute();
   const authBus = useAuthBus();
-  const { openCampStream } = useRealtimeService();
+  const { openEventStream } = useRealtimeService();
 
   const handlers = new Map<RealtimeResource, Set<EventHandler>>();
   const reconnectHandlers = new Map<RealtimeResource, Set<ReconnectHandler>>();
@@ -37,10 +37,10 @@ export const useRealtimeStore = defineStore('realtime', () => {
   let hasConnected = false;
   let started = false;
 
-  // The camp whose stream should currently be open (`undefined` when closed).
-  // Manual reconnects re-open this camp; a camp switch that lands here mid-flight
+  // The event whose stream should currently be open (`undefined` when closed).
+  // Manual reconnects re-open this event; a event switch that lands here mid-flight
   // is detected by comparing against it.
-  let currentCampId: string | undefined;
+  let currentEventId: string | undefined;
   // Manual-reconnect backoff. Native EventSource recovers transport drops on its
   // own; these only drive the CLOSED (permanent) recovery path — see onerror.
   let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
@@ -87,9 +87,9 @@ export const useRealtimeStore = defineStore('realtime', () => {
     }
   }
 
-  /** Create the EventSource for `campId` and wire its handlers. */
-  function createSource(campId: string) {
-    source = openCampStream(campId);
+  /** Create the EventSource for `eventId` and wire its handlers. */
+  function createSource(eventId: string) {
+    source = openEventStream(eventId);
 
     source.onopen = () => {
       reconnectAttempts = 0;
@@ -120,24 +120,24 @@ export const useRealtimeStore = defineStore('realtime', () => {
     };
   }
 
-  function openStream(campId: string) {
+  function openStream(eventId: string) {
     closeStream();
-    currentCampId = campId;
-    createSource(campId);
+    currentEventId = eventId;
+    createSource(eventId);
   }
 
   function closeStream() {
     clearTimeout(reconnectTimer);
     reconnectTimer = undefined;
     reconnectAttempts = 0;
-    currentCampId = undefined;
+    currentEventId = undefined;
     source?.close();
     source = undefined;
     hasConnected = false;
   }
 
   function scheduleReconnect() {
-    if (reconnectTimer !== undefined || currentCampId === undefined) {
+    if (reconnectTimer !== undefined || currentEventId === undefined) {
       return;
     }
     const delay = Math.min(
@@ -152,8 +152,8 @@ export const useRealtimeStore = defineStore('realtime', () => {
   }
 
   async function reconnect() {
-    const campId = currentCampId;
-    if (campId === undefined) {
+    const eventId = currentEventId;
+    if (eventId === undefined) {
       return;
     }
     // A permanent close is almost always an expired access-token cookie. Renew
@@ -161,12 +161,12 @@ export const useRealtimeStore = defineStore('realtime', () => {
     // the connect guard rejects us again and EventSource gives up for good.
     // (If the session is truly gone, the API layer redirects to login.)
     await useAuthStore().refreshTokens();
-    // A camp switch or close may have happened while the refresh was in flight.
-    if (currentCampId !== campId) {
+    // A event switch or close may have happened while the refresh was in flight.
+    if (currentEventId !== eventId) {
       return;
     }
     source?.close();
-    createSource(campId);
+    createSource(eventId);
   }
 
   /**
@@ -177,7 +177,7 @@ export const useRealtimeStore = defineStore('realtime', () => {
    */
   function handleResume() {
     if (
-      currentCampId !== undefined &&
+      currentEventId !== undefined &&
       source?.readyState === EventSource.CLOSED
     ) {
       clearTimeout(reconnectTimer);
@@ -193,12 +193,12 @@ export const useRealtimeStore = defineStore('realtime', () => {
     }
   }
 
-  const activeCampId = (): string | undefined => {
-    const value = route.params.campId;
+  const activeEventId = (): string | undefined => {
+    const value = route.params.eventId;
     return Array.isArray(value) ? value[0] : value;
   };
 
-  /** Open and maintain the stream for the active camp. Idempotent. */
+  /** Open and maintain the stream for the active event. Idempotent. */
   function connect() {
     if (started) {
       return;
@@ -206,11 +206,11 @@ export const useRealtimeStore = defineStore('realtime', () => {
     started = true;
 
     watch(
-      () => route.params.campId,
+      () => route.params.eventId,
       () => {
-        const campId = activeCampId();
-        if (campId) {
-          openStream(campId);
+        const eventId = activeEventId();
+        if (eventId) {
+          openStream(eventId);
         } else {
           closeStream();
         }

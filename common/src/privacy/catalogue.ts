@@ -1,10 +1,10 @@
 /**
  * The preset catalogue a privacy notice is assembled from.
  *
- * Registration forms are authored per camp and fully dynamic, so the platform
- * cannot infer what a camp processes. Rather than asking an organization to
+ * Registration forms are authored per event and fully dynamic, so the platform
+ * cannot infer what an event processes. Rather than asking an organization to
  * write Art. 13 prose — which it would then have to translate into every
- * language its camps are offered in — it ticks entries from this catalogue and
+ * language its events are offered in — it ticks entries from this catalogue and
  * the application renders the legal text, pre-translated, from the keys.
  *
  * Adding a key here means adding its label to all five locales. A key that has
@@ -14,7 +14,7 @@
  * The catalogue is deliberately kept at the altitude of *categories*, not form
  * fields. Anything narrower than a category an organization would recognise in
  * its own record of processing belongs in a custom entry (`custom:<id>`), not
- * here — otherwise the list grows into a form inventory that no two camps fill
+ * here — otherwise the list grows into a form inventory that no two events fill
  * in the same way.
  */
 
@@ -24,7 +24,7 @@
  * backend validation schema is built from the same values, so a key can never
  * exist for one and not the other.
  *
- * **Order is meaning here.** Each list runs from what a camp almost always
+ * **Order is meaning here.** Each list runs from what an event almost always
  * needs to what it rarely does, so the author reads down and stops. Re-sorting
  * alphabetically would bury `identity` under `allergies`.
  */
@@ -33,7 +33,7 @@
 export const PRIVACY_PURPOSE_KEYS = [
   'registration_administration',
   'participant_communication',
-  'camp_organisation',
+  'event_organisation',
   'catering',
   'medical_care',
   'emergency_contact',
@@ -75,7 +75,7 @@ export type PrivacyDataCategoryKey =
 
 /** Who else sees it. Art. 13(1)(e). */
 export const PRIVACY_RECIPIENT_KEYS = [
-  'camp_staff',
+  'event_staff',
   'platform_operator',
   'accommodation_provider',
   'catering_provider',
@@ -93,14 +93,14 @@ export type PrivacyRecipientKey = (typeof PRIVACY_RECIPIENT_KEYS)[number];
  * Recipients that exist by construction, so the author confirms them rather
  * than choosing them.
  *
- * The camp team necessarily sees the registration — that is what running a camp
+ * The event team necessarily sees the registration — that is what running an event
  * is — and the platform operator processes every submission as a processor,
  * which Art. 4(9) still counts as a recipient. Offering these as free
  * checkboxes let an organization publish a notice claiming the data goes
- * nowhere, which is untrue of every camp on the platform.
+ * nowhere, which is untrue of every event on the platform.
  */
 export const ALWAYS_RECIPIENT_KEYS = [
-  'camp_staff',
+  'event_staff',
   'platform_operator',
 ] as const satisfies readonly PrivacyRecipientKey[];
 
@@ -109,10 +109,10 @@ export function isAlwaysRecipient(key: PrivacyRecipientKey): boolean {
 }
 
 /**
- * Art. 6(1), every point that a camp organization can actually rely on.
+ * Art. 6(1), every point that an event organization can actually rely on.
  *
  * `public_task` (Art. 6(1)(e)) is in the list because municipal youth offices
- * run camps under official authority rather than under a contract. All six
+ * run events under official authority rather than under a contract. All six
  * points of Art. 6(1) are therefore represented.
  */
 export const LEGAL_BASIS_KEYS = [
@@ -130,7 +130,7 @@ export type LegalBasisKey = (typeof LEGAL_BASIS_KEYS)[number];
  * Art. 9(2). Processing special categories needs a basis of its own on top of
  * the Art. 6 one — a contract never suffices for health data.
  *
- * Only the points a camp can genuinely rely on are offered. Deliberately absent:
+ * Only the points an event can genuinely rely on are offered. Deliberately absent:
  * (b) employment and social security law, which governs staff rather than
  * registrants; (e) data the subject manifestly made public; (g) substantial
  * public interest, which needs a Member State law to rest on; (i) public
@@ -151,7 +151,7 @@ export type SpecialCategoryBasisKey =
 
 /**
  * The four alternatives to explicit consent, each of which only applies under a
- * condition most camps do not meet. Kept out of the way in the authoring UI: a
+ * condition most events do not meet. Kept out of the way in the authoring UI: a
  * flat list of five invites picking whichever sounds nicest, when in practice
  * one is right and four are traps.
  */
@@ -163,16 +163,16 @@ export const ADVANCED_SPECIAL_CATEGORY_BASIS_KEYS = [
 ] as const satisfies readonly SpecialCategoryBasisKey[];
 
 /**
- * A camp is not a health-care provider, so Art. 9(2)(h) rarely fits, and
+ * An event is not a health-care provider, so Art. 9(2)(h) rarely fits, and
  * (c) vital interests only covers an emergency in which the subject cannot
  * consent — a fallback during an incident, not a basis for collecting the data
- * at registration. Explicit consent is what almost every camp actually relies
+ * at registration. Explicit consent is what almost every event actually relies
  * on, so it is pre-selected the moment a special category is ticked.
  */
 export const DEFAULT_SPECIAL_CATEGORY_BASIS: SpecialCategoryBasisKey =
   'explicit_consent';
 
-export const RETENTION_ANCHORS = ['camp_end', 'submission'] as const;
+export const RETENTION_ANCHORS = ['event_end', 'submission'] as const;
 
 /**
  * What ends a retention entry. The baseline is always a period; an exception
@@ -242,13 +242,13 @@ export const SPECIAL_CATEGORY_DATA_KEYS = [
 ] as const satisfies readonly PrivacyDataCategoryKey[];
 
 /**
- * Categories that are special only depending on what the camp's form actually
+ * Categories that are special only depending on what the event's form actually
  * captures, so the author is prompted rather than forced.
  *
  * `dietary` used to sit in the list above on the theory that a dietary
  * requirement reveals religious belief. That over-applies: "vegetarian",
  * "no mushrooms" and "lactose intolerant" reveal nothing under Art. 9, and
- * treating every camp's dietary field as sensitive dragged the whole platform
+ * treating every event's dietary field as sensitive dragged the whole platform
  * into an Art. 9 basis it usually does not need. Art. 9(1) bites where data
  * *reveals* a listed characteristic — so a form that offers halal or kosher, or
  * a free-text box that collects allergies, does need one, and the author is the
@@ -278,7 +278,7 @@ export type SpecialCategoryDataKey =
  *
  * The same is true of any purpose whose Art. 6 basis is `consent`; that one is
  * read off the entry rather than listed here. This list is for the categories
- * such a purpose collects, which reach a camp's addendum on their own — a camp
+ * such a purpose collects, which reach an event's addendum on their own — an event
  * ticks `photos` without ever seeing the purpose its organization tied to it.
  */
 export const CONSENT_DATA_CATEGORY_KEYS = [
@@ -298,7 +298,7 @@ export function isSpecialCategory(
 /**
  * What ticking a purpose suggests for the remaining steps. The suggestions are
  * pre-selected in the wizard and stay editable — they exist to make the common
- * camp a handful of clicks, not to decide for the controller.
+ * event a handful of clicks, not to decide for the controller.
  */
 export interface PrivacyPurposePreset {
   legalBasis: LegalBasisKey;
@@ -319,25 +319,25 @@ export const PRIVACY_PURPOSE_PRESETS: Record<
       'guardian_contact',
       'address',
     ],
-    recipients: ['camp_staff', 'platform_operator'],
+    recipients: ['event_staff', 'platform_operator'],
   },
   participant_communication: {
     legalBasis: 'contract',
     dataCategories: ['identity', 'contact', 'guardian_contact'],
-    recipients: ['camp_staff', 'platform_operator'],
+    recipients: ['event_staff', 'platform_operator'],
   },
   // Deliberately broader than "assigning rooms": allocating rooms, groups and
-  // activities is one purpose — running the camp — and splitting it out invited
+  // activities is one purpose — running the event — and splitting it out invited
   // a notice that read like an operations manual.
-  camp_organisation: {
+  event_organisation: {
     legalBasis: 'contract',
     dataCategories: ['identity', 'date_of_birth', 'gender'],
-    recipients: ['camp_staff', 'accommodation_provider'],
+    recipients: ['event_staff', 'accommodation_provider'],
   },
   catering: {
     legalBasis: 'contract',
     dataCategories: ['dietary', 'allergies'],
-    recipients: ['camp_staff', 'catering_provider'],
+    recipients: ['event_staff', 'catering_provider'],
   },
   medical_care: {
     legalBasis: 'contract',
@@ -348,17 +348,17 @@ export const PRIVACY_PURPOSE_PRESETS: Record<
       'disability_support',
       'insurance_details',
     ],
-    recipients: ['camp_staff', 'medical_provider'],
+    recipients: ['event_staff', 'medical_provider'],
   },
   emergency_contact: {
     legalBasis: 'vital_interests',
     dataCategories: ['emergency_contact', 'guardian_contact'],
-    recipients: ['camp_staff', 'medical_provider'],
+    recipients: ['event_staff', 'medical_provider'],
   },
   transport: {
     legalBasis: 'contract',
     dataCategories: ['identity', 'address'],
-    recipients: ['camp_staff', 'transport_provider'],
+    recipients: ['event_staff', 'transport_provider'],
   },
   insurance: {
     legalBasis: 'contract',
@@ -375,14 +375,14 @@ export const PRIVACY_PURPOSE_PRESETS: Record<
     dataCategories: ['identity', 'address', 'payment'],
     recipients: ['payment_provider'],
   },
-  // The split between documenting camp life and publishing the result is the
+  // The split between documenting event life and publishing the result is the
   // legally important one in this list: the first can rest on a legitimate
   // interest, the second needs consent that must be as easy to withdraw as to
   // give. Do not merge them.
   photo_documentation: {
     legalBasis: 'legitimate_interests',
     dataCategories: ['photos'],
-    recipients: ['camp_staff'],
+    recipients: ['event_staff'],
   },
   photo_publication: {
     legalBasis: 'consent',
@@ -402,14 +402,14 @@ export const PRIVACY_PURPOSE_PRESETS: Record<
 };
 
 /**
- * Maps the `campDataType` a form author already tags questions with
- * (`common/src/form/properties/campDataType.ts`) onto a data category, so the
- * wizard can propose what the camp's own form appears to collect.
+ * Maps the `eventDataType` a form author already tags questions with
+ * (`common/src/form/properties/eventDataType.ts`) onto a data category, so the
+ * wizard can propose what the event's own form appears to collect.
  *
  * A suggestion only — the mapping is partial by construction, since a free-text
  * question can hold anything.
  */
-export const CAMP_DATA_TYPE_DATA_CATEGORIES: Record<
+export const EVENT_DATA_TYPE_DATA_CATEGORIES: Record<
   string,
   PrivacyDataCategoryKey
 > = {

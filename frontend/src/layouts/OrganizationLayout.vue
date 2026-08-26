@@ -71,11 +71,11 @@ const navigationItems = computed<NavigationItemProps<'organization'>[]>(() => {
       permission: 'organization.view',
     },
     {
-      name: 'camps',
-      label: t('nav.camps'),
+      name: 'events',
+      label: t('nav.events'),
       icon: 'holiday_village',
-      to: { name: 'management.organization.camps' },
-      permission: 'organization.camps.view',
+      to: { name: 'management.organization.events' },
+      permission: 'organization.events.view',
     },
     {
       name: 'newsletters',
@@ -129,7 +129,7 @@ onMounted(async () => {
 title: 'Organizations'
 nav:
   dashboard: 'Overview'
-  camps: 'Camps'
+  events: 'Events'
   newsletters: 'Newsletters'
   members: 'Members'
   privacy: 'Privacy'
@@ -140,7 +140,7 @@ nav:
 title: 'Organisationen'
 nav:
   dashboard: 'Übersicht'
-  camps: 'Camps'
+  events: 'Veranstaltungen'
   newsletters: 'Newsletter'
   members: 'Mitglieder'
   privacy: 'Datenschutz'
@@ -151,7 +151,7 @@ nav:
 title: 'Organisations'
 nav:
   dashboard: 'Aperçu'
-  camps: 'Camps'
+  events: 'Événements'
   newsletters: 'Newsletters'
   members: 'Membres'
   privacy: 'Confidentialité'
@@ -162,7 +162,7 @@ nav:
 title: 'Organizacje'
 nav:
   dashboard: 'Przegląd'
-  camps: 'Obozy'
+  events: 'Wydarzenia'
   newsletters: 'Newslettery'
   members: 'Członkowie'
   privacy: 'Prywatność'
@@ -173,7 +173,7 @@ nav:
 title: 'Organizace'
 nav:
   dashboard: 'Přehled'
-  camps: 'Tábory'
+  events: 'Akce'
   newsletters: 'Newslettery'
   members: 'Členové'
   privacy: 'Soukromí'
