@@ -33,7 +33,7 @@ export async function up(tx: Prisma.TransactionClient): Promise<void> {
           country,
           subject,
           body,
-          event: template.event,
+          trigger: template.trigger,
           priority: template.priority,
           replyTo: template.replyTo,
           event: { connect: { id: template.eventId } },
