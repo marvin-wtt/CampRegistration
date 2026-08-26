@@ -11,7 +11,7 @@ export default {
     progress: 'Veranstaltung wird aktualisiert...',
     success: 'Veranstaltung erfolgreich aktualisiert',
     error: 'Fehler beim Aktualisieren der Veranstaltung',
-    invalid: 'Ungültige Veranstaltungen-ID',
+    invalid: 'Ungültige Veranstaltungs-ID',
   },
   move: {
     progress: 'Veranstaltung wird verschoben...',
