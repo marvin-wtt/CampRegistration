@@ -139,7 +139,7 @@ function resolvePalette(mode: Md3Mode): Record<string, string> {
  */
 export function buildMd3LiteralTheme(mode: Md3Mode = 'light'): ITheme {
   return {
-    themeName: 'md3',
+    themeName: 'Standard',
     colorPalette: mode,
     // `isPanelless` is not a CSS variable — it drives `SurveyModel.isCompact`,
     // so the adapter stylesheet cannot express it and an unthemed survey falls
