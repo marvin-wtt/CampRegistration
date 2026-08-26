@@ -17,7 +17,7 @@ import {
  * How the notice was written.
  *
  * `builder` assembles it from the catalogue, which is what makes it renderable
- * in every language a camp runs in. `free_text` hands the whole thing to the
+ * in every language an event runs in. `free_text` hands the whole thing to the
  * organization — necessary for anyone whose processing the catalogue cannot
  * express, or who already has counsel-drafted wording, but it forfeits the
  * automatic translation and the structural completeness check.
@@ -69,21 +69,62 @@ export type RetentionAnchor = (typeof RETENTION_ANCHORS)[number];
  * and `custom:<id>` covers anything the catalogue does not have. Nothing here
  * is a fixed list the author has to squeeze an exception into.
  */
-export interface PrivacyRetentionException {
+interface PrivacyRetentionExceptionBase {
   scope: PrivacyPurposeRef;
   /** What to call it. Set only on `custom:` scopes. */
   label?: Translatable | null;
-  months: number;
-  anchor: RetentionAnchor;
   /** Why it outlives the baseline, e.g. the statutory duty behind it. */
   reason?: Translatable | null;
+}
+
+/**
+ * An exception that still ends on a date — a longer period, possibly counted
+ * from somewhere else.
+ *
+ * `until` is optional rather than required because exceptions existed before
+ * there was anything to distinguish: a version published back then has no
+ * discriminator, and rewriting stored notices to add one is not an option when
+ * a registration points at the exact bytes it was shown.
+ */
+export interface PrivacyRetentionPeriodException extends PrivacyRetentionExceptionBase {
+  until?: 'period';
+  months: number;
+  anchor: RetentionAnchor;
+}
+
+/**
+ * Data kept for as long as the consent behind it stands — a published photo,
+ * a newsletter subscription — and erased once it is withdrawn.
+ *
+ * There is deliberately no period here. Naming one would be a promise the
+ * controller cannot keep in either direction: it may not delete on schedule
+ * what the person still consents to appearing, and it may not keep to the
+ * schedule once the person withdraws. What bounds this is the withdrawal, so
+ * that is what the notice says.
+ *
+ * Only lawful where the purpose it scopes to actually rests on consent —
+ * otherwise it is indefinite storage with nothing to end it, which is the
+ * storage-limitation breach this looks like. `privacyNoticeCompleteness`
+ * enforces that link.
+ */
+export interface PrivacyRetentionConsentException extends PrivacyRetentionExceptionBase {
+  until: 'consent_withdrawn';
+}
+
+export type PrivacyRetentionException =
+  PrivacyRetentionPeriodException | PrivacyRetentionConsentException;
+
+export function isConsentBoundException(
+  exception: PrivacyRetentionException,
+): exception is PrivacyRetentionConsentException {
+  return exception.until === 'consent_withdrawn';
 }
 
 export interface PrivacyRetention {
   months: number;
   anchor: RetentionAnchor;
   /**
-   * Empty for the great majority of camps: one baseline period is the whole
+   * Empty for the great majority of events: one baseline period is the whole
    * answer, and the author never has to categorise anything.
    */
   exceptions: PrivacyRetentionException[];
@@ -122,7 +163,7 @@ export interface PrivacyNoticeContent {
   retention: PrivacyRetention | null;
   thirdCountryTransfers: PrivacyThirdCountryTransfers;
   dpo: PrivacyDataProtectionOfficer | null;
-  /** Art. 13(2)(f). Rare for a camp, but silence is not an answer. */
+  /** Art. 13(2)(f). Rare for an event, but silence is not an answer. */
   automatedDecisionMaking: boolean;
   /**
    * Art. 13(2)(f) again: once automated decision-making exists, the notice owes
@@ -141,8 +182,8 @@ export interface PrivacyNoticeContent {
 }
 
 /**
- * A camp's additions to its organization's notice. Every field is optional:
- * the camp says only what differs, and `composePrivacyNotice` merges the rest.
+ * A event's additions to its organization's notice. Every field is optional:
+ * the event says only what differs, and `composePrivacyNotice` merges the rest.
  */
 export interface PrivacyNoticeAddendum {
   purposes?: PrivacyPurposeEntry[];
@@ -153,7 +194,7 @@ export interface PrivacyNoticeAddendum {
   additional?: Translatable | null;
 }
 
-/** Whether the camp says anything of its own yet. */
+/** Whether the event says anything of its own yet. */
 export function isEmptyAddendum(addendum: PrivacyNoticeAddendum): boolean {
   return (
     !addendum.purposes?.length &&
@@ -174,7 +215,7 @@ export function emptyPrivacyNoticeContent(): PrivacyNoticeContent {
     // A real value, not just a placeholder in the editor's getter: the field
     // showed 24 while the notice stored nothing, so the author had to retype
     // the number they could already see to clear the completeness gap.
-    retention: { months: 24, anchor: 'camp_end', exceptions: [] },
+    retention: { months: 24, anchor: 'event_end', exceptions: [] },
     thirdCountryTransfers: { enabled: false, countries: [] },
     dpo: null,
     automatedDecisionMaking: false,
@@ -210,16 +251,16 @@ export type PrivacyNoticeUpdateData = Pick<
 >;
 
 /**
- * What a camp manager authors against: the camp's own additions plus the
+ * What an event manager authors against: the event's own additions plus the
  * organization notice they are added to.
  *
  * The baseline is the published organization content — that is what registrants
- * read, so it is what the camp is actually adding to. Without it the editor
+ * read, so it is what the event is actually adding to. Without it the editor
  * cannot tell an author which entries the organization has already declared,
- * and a camp's list looks the same whether it repeats the organization or adds
+ * and an event's list looks the same whether it repeats the organization or adds
  * to it.
  */
-export interface CampPrivacyNotice {
+export interface EventPrivacyNotice {
   content: PrivacyNoticeAddendum;
   /** Null while the organization has published nothing at all. */
   organizationContent: PrivacyNoticeContent | null;
@@ -229,4 +270,4 @@ export interface CampPrivacyNotice {
   publishedAt: string | null;
 }
 
-export type CampPrivacyNoticeUpdateData = Pick<CampPrivacyNotice, 'content'>;
+export type EventPrivacyNoticeUpdateData = Pick<EventPrivacyNotice, 'content'>;

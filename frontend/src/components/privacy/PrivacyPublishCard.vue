@@ -71,14 +71,14 @@ const props = defineProps<{
   canEdit: boolean;
   /**
    * What "never published" means here — the consequence differs between an
-   * organization's notice and a camp's additions to it, and it is the only
+   * organization's notice and a event's additions to it, and it is the only
    * part of the state line that does.
    */
   unpublishedDetail: string;
   /**
    * What to say when nothing is published and nothing has been edited. Absent
    * means that state is a draft worth warning about — true of an organization's
-   * own notice, but not of a camp's optional additions to it.
+   * own notice, but not of a event's optional additions to it.
    */
   emptyStatus?: { title: string; detail: string };
   /** A reason of the page's own why publishing cannot go ahead yet. */

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { SurveyModel } from 'survey-core';
-import { fakeCampData } from '../../util/faker.js';
+import { fakeEventData } from '../../util/faker.js';
 import { setVariables } from '../../../src/form/index.js';
 import '../../../src/form/index.js';
 
@@ -20,7 +20,7 @@ describe('questions', () => {
         ],
       });
 
-      const data = fakeCampData({
+      const data = fakeEventData({
         minAge: 10,
         maxAge: 11,
         startAt: new Date('2020-01-01'),

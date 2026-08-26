@@ -69,7 +69,7 @@ export function clearScopeResolvers(): void {
 
 /**
  * Guards a route on `permission` within `scope`. The three scope-specific
- * guards (`campManager`, `newsletterManager`, `organizationMember`) are aliases
+ * guards (`eventManager`, `newsletterManager`, `organizationMember`) are aliases
  * of this, so a new scope needs no new guard plumbing.
  */
 export const scoped = <S extends PermissionScope>(

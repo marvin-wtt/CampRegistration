@@ -1,4 +1,4 @@
-import type { CampScopedPermission } from '@camp-registration/common/permissions';
+import type { EventScopedPermission } from '@camp-registration/common/permissions';
 import type { SettingKey } from '@camp-registration/common/settings';
 import type { ZodType } from 'zod';
 import { injectable } from 'inversify';
@@ -7,12 +7,12 @@ import httpStatus from 'http-status';
 
 export interface SettingDefinition<T = unknown> {
   schema: ZodType<T>;
-  viewPermission: CampScopedPermission;
-  editPermission: CampScopedPermission;
+  viewPermission: EventScopedPermission;
+  editPermission: EventScopedPermission;
 }
 
 /**
- * Lets the module that owns a settings shape (e.g. Room, ProgramEvent) declare
+ * Lets the module that owns a settings shape (e.g. Room, ProgramItem) declare
  * its validation schema and required permissions without the generic Setting
  * module knowing about it — mirrors `MailableRegistry`.
  */

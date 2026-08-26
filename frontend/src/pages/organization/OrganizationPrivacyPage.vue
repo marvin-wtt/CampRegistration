@@ -13,7 +13,7 @@
         <div class="text-body2 text-on-surface-variant q-mt-xs">
           {{ t('subtitle') }}
         </div>
-        <!-- The camp addendum merges on top of this, so an author needs to know
+        <!-- The event addendum merges on top of this, so an author needs to know
              up front that they are writing the shared part. -->
         <div class="text-caption text-on-surface-variant q-mt-xs">
           {{ t('baselineNote') }}
@@ -21,7 +21,7 @@
       </div>
 
       <!-- The builder is the default because it is the only path that produces
-           a notice in every language a camp runs in. Free text stays available
+           a notice in every language a event runs in. Free text stays available
            for anyone whose processing it cannot express, or who already has
            counsel-drafted wording. -->
       <q-card
@@ -470,7 +470,7 @@
             >
               {{ t('field.recipientAlways') }}
             </div>
-            <!-- No name to ask for: the camp team is the author's own, and the
+            <!-- No name to ask for: the event team is the author's own, and the
                  platform is this one, whose name we already know. -->
             <q-input
               v-if="hasRecipient(key) && !isAlwaysRecipient(key)"
@@ -615,7 +615,8 @@
 <script lang="ts" setup>
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRoute } from 'vue-router';
+import { useQuasar } from 'quasar';
+import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import {
@@ -671,6 +672,8 @@ import { APP_LOCALES as locales } from '@/i18n/locales';
 const { t } = useI18n();
 const { t: gt, locale: uiLocale } = useI18n({ useScope: 'global' });
 const route = useRoute();
+const quasar = useQuasar();
+const router = useRouter();
 const organizationStore = useOrganizationDetailsStore();
 const { data: organization } = storeToRefs(organizationStore);
 const { canAccessOrg } = useOrganizationPermissions();
@@ -804,8 +807,8 @@ const controllerRows = computed(() => {
 });
 
 /**
- * The draft as a registrant would read it. Composed against no camp addendum:
- * this is the organization's own notice, and a camp only ever adds to it.
+ * The draft as a registrant would read it. Composed against no event addendum:
+ * this is the organization's own notice, and a event only ever adds to it.
  */
 const previewNotice = computed<PublishedPrivacyNotice | null>(() => {
   const org = organization.value;
@@ -828,7 +831,7 @@ const previewNotice = computed<PublishedPrivacyNotice | null>(() => {
     supervisoryAuthority: supervisoryAuthorityFor(org.country),
     notice: composePrivacyNotice({ ...content.value }),
     organizationVersion: publishedVersion.value,
-    campVersion: null,
+    eventVersion: null,
   };
 });
 
@@ -859,7 +862,7 @@ function addDataCategory(key: PrivacyDataCategoryKey) {
     return;
   }
 
-  // Pre-select the Art. 9 basis nearly every camp actually relies on, rather
+  // Pre-select the Art. 9 basis nearly every event actually relies on, rather
   // than opening with an empty required field.
   content.value.dataCategories.push(
     isSpecialCategory(key)
@@ -920,7 +923,7 @@ function hasPurpose(key: PrivacyPurposeRef) {
 }
 /**
  * Ticking a purpose pulls in its preset categories and recipients — the point
- * of the catalogue is that the common camp is a handful of checkboxes. They
+ * of the catalogue is that the common event is a handful of checkboxes. They
  * stay editable, and unticking never removes them again: they may have been
  * confirmed for a reason the preset does not know.
  */
@@ -994,7 +997,7 @@ function setRecipientName(key: PrivacyRecipientKey, value: string) {
 /* Free text and the builder's own free-text section */
 
 // The rich-text editor edits one locale at a time; the stored value stays a
-// per-locale record so a notice can be read in every language a camp runs in.
+// per-locale record so a notice can be read in every language a event runs in.
 function localeText(value: Translatable | null, loc: string): string {
   if (value === null) {
     return '';
@@ -1062,6 +1065,27 @@ async function publish() {
     // free-text fields, so the two are not always the same document.
     content.value = { ...emptyPrivacyNoticeContent(), ...notice.content };
     publishedSnapshot.value = JSON.stringify(content.value);
+
+    // Publishing lifts the blocker that refuses verification, but nothing puts
+    // a rejected organization back into the queue on its own.
+    if (organization.value?.verificationStatus === 'REJECTED') {
+      quasar.notify({
+        type: 'info',
+        message: t('notify.rejected'),
+        timeout: 8000,
+        multiLine: true,
+        actions: [
+          {
+            label: t('notify.rejectedAction'),
+            color: 'white',
+            noCaps: true,
+            handler: () => {
+              void router.push({ name: 'management.organization.dashboard' });
+            },
+          },
+        ],
+      });
+    }
   } catch (err) {
     // Notify rather than set `error`: that swaps the whole page for an error
     // state, and since the draft lives only in this browser, it would throw away
@@ -1136,12 +1160,12 @@ $field-max-narrow: 28rem;
 disclaimer: 'These templates help you describe your processing, but they are not legal advice. Your organisation remains the controller and is responsible for the notice being correct.'
 title: 'Privacy information'
 subtitle: 'What happens to the data collected when someone registers.'
-baselineNote: 'This is the baseline for every camp your organisation runs. Individual camps can add to it and adjust it where they differ, but not replace it.'
+baselineNote: 'This is the baseline for every event your organisation runs. Individual events can add to it and adjust it where they differ, but not replace it.'
 mode:
   title: 'How do you want to write this?'
   builder: 'Guided — pick from prepared wording (translated into all languages for you)'
   freeText: 'Free text — write the whole notice yourself'
-  freeTextWarning: 'You write the whole notice yourself, in every language your camps run in. Nothing is translated or filled in for you, and your text is published exactly as you write it.'
+  freeTextWarning: 'You write the whole notice yourself, in every language your events run in. Nothing is translated or filled in for you, and your text is published exactly as you write it.'
 freeText:
   title: 'Your privacy notice'
   hint: 'This replaces the guided sections entirely. The rights, complaint and supervisory authority sections are still added for you.'
@@ -1209,6 +1233,8 @@ action:
   addPurpose: 'Add another purpose'
   remove: 'Remove'
 notify:
+  rejected: 'Published. This organization is still rejected — publishing alone does not request a new review.'
+  rejectedAction: 'Overview'
   publishFailed: 'Publishing failed'
 </i18n>
 
@@ -1216,12 +1242,12 @@ notify:
 disclaimer: 'Diese Textbausteine helfen dir, die Verarbeitung zu beschreiben, sind aber keine Rechtsberatung. Die Organisation bleibt verantwortliche Stelle und haftet für die Richtigkeit der Angaben.'
 title: 'Datenschutzinformationen'
 subtitle: 'Was mit den Daten geschieht, die bei einer Anmeldung erhoben werden.'
-baselineNote: 'Diese Angaben gelten für alle Freizeiten der Organisation. Einzelne Freizeiten können sie ergänzen und dort anpassen, wo sie abweichen – ersetzen können sie sie nicht.'
+baselineNote: 'Diese Angaben gelten für alle Veranstaltungen der Organisation. Einzelne Veranstaltungen können sie ergänzen und dort anpassen, wo sie abweichen – ersetzen können sie sie nicht.'
 mode:
   title: 'Wie sollen die Informationen entstehen?'
   builder: 'Geführt – vorformulierte Textbausteine auswählen, automatisch in alle Sprachen übersetzt'
   freeText: 'Freitext – alles selbst formulieren'
-  freeTextWarning: 'Du verfasst die gesamten Informationen selbst – in jeder Sprache, in der die Freizeiten stattfinden. Nichts wird übersetzt oder ergänzt, und der Text wird genau so veröffentlicht, wie du ihn schreibst.'
+  freeTextWarning: 'Du verfasst die gesamten Informationen selbst – in jeder Sprache, in der die Veranstaltungen stattfinden. Nichts wird übersetzt oder ergänzt, und der Text wird genau so veröffentlicht, wie du ihn schreibst.'
 freeText:
   title: 'Datenschutzinformationen'
   hint: 'Ersetzt die geführten Abschnitte vollständig. Betroffenenrechte, Beschwerderecht und Aufsichtsbehörde werden weiterhin automatisch ergänzt.'
@@ -1289,6 +1315,8 @@ action:
   addPurpose: 'Weiteren Zweck hinzufügen'
   remove: 'Entfernen'
 notify:
+  rejected: 'Veröffentlicht. Diese Organisation ist weiterhin abgelehnt – das Veröffentlichen allein fordert keine neue Prüfung an.'
+  rejectedAction: 'Übersicht'
   publishFailed: 'Veröffentlichen fehlgeschlagen'
 </i18n>
 
@@ -1296,12 +1324,12 @@ notify:
 disclaimer: "Ces modèles vous aident à décrire vos traitements, mais ne constituent pas un conseil juridique. Votre organisation reste responsable de traitement et de l'exactitude de ces informations."
 title: 'Informations sur la protection des données'
 subtitle: "Ce qu'il advient des données recueillies lors d'une inscription."
-baselineNote: "Ces informations valent pour tous les séjours de l'organisation. Chaque séjour peut les compléter et les ajuster là où il diffère, mais pas les remplacer."
+baselineNote: "Ces informations valent pour tous les événements de l'organisation. Chaque événement peut les compléter et les ajuster là où il diffère, mais pas les remplacer."
 mode:
   title: 'Comment souhaitez-vous rédiger ces informations ?'
   builder: 'Guidé – choisir des formulations préétablies, traduites automatiquement dans toutes les langues'
   freeText: 'Texte libre – tout rédiger vous-même'
-  freeTextWarning: "Vous rédigez l'intégralité des informations vous-même, dans chaque langue de vos séjours. Rien n'est traduit ni complété pour vous, et votre texte est publié tel que vous l'écrivez."
+  freeTextWarning: "Vous rédigez l'intégralité des informations vous-même, dans chaque langue de vos événements. Rien n'est traduit ni complété pour vous, et votre texte est publié tel que vous l'écrivez."
 freeText:
   title: 'Vos informations sur la protection des données'
   hint: 'Cela remplace entièrement les sections guidées. Les droits, le droit de réclamation et l’autorité de contrôle restent ajoutés automatiquement.'
@@ -1369,6 +1397,8 @@ action:
   addPurpose: 'Ajouter une finalité'
   remove: 'Supprimer'
 notify:
+  rejected: 'Publié. Cette organisation reste refusée : la publication seule ne demande pas de nouvelle vérification.'
+  rejectedAction: 'Aperçu'
   publishFailed: 'Échec de la publication'
 </i18n>
 
@@ -1376,12 +1406,12 @@ notify:
 disclaimer: 'Tyto šablony ti pomohou popsat zpracování, nejsou však právní radou. Vaše organizace zůstává správcem a odpovídá za správnost informací.'
 title: 'Informace o ochraně osobních údajů'
 subtitle: 'Co se děje s údaji, které se získávají při přihlášení.'
-baselineNote: 'Tyto údaje platí pro všechny tábory organizace. Jednotlivé tábory je mohou doplnit a upravit tam, kde se liší, ale nemohou je nahradit.'
+baselineNote: 'Tyto údaje platí pro všechny akce organizace. Jednotlivé akce je mohou doplnit a upravit tam, kde se liší, ale nemohou je nahradit.'
 mode:
   title: 'Jak to chcete sepsat?'
   builder: 'S průvodcem – vybrat z připravených formulací, automaticky přeložených do všech jazyků'
   freeText: 'Volný text – sepsat vše sami'
-  freeTextWarning: 'Veškeré informace sepisuješ ty – v každém jazyce, ve kterém pořádáte tábory. Nic se nepřekládá ani nedoplňuje a text se zveřejní přesně tak, jak ho napíšeš.'
+  freeTextWarning: 'Veškeré informace sepisuješ ty – v každém jazyce, ve kterém pořádáte akce. Nic se nepřekládá ani nedoplňuje a text se zveřejní přesně tak, jak ho napíšeš.'
 freeText:
   title: 'Vaše informace o ochraně osobních údajů'
   hint: 'Zcela nahrazuje sekce průvodce. Práva, právo podat stížnost a dozorový úřad se i nadále doplňují automaticky.'
@@ -1449,6 +1479,8 @@ action:
   addPurpose: 'Přidat další účel'
   remove: 'Odebrat'
 notify:
+  rejected: 'Zveřejněno. Tato organizace je stále zamítnutá — samotné zveřejnění o nové ověření nežádá.'
+  rejectedAction: 'Přehled'
   publishFailed: 'Publikování se nezdařilo'
 </i18n>
 
@@ -1456,12 +1488,12 @@ notify:
 disclaimer: 'Te szablony pomagają opisać przetwarzanie, ale nie stanowią porady prawnej. Twoja organizacja pozostaje administratorem i odpowiada za poprawność informacji.'
 title: 'Informacje o ochronie danych'
 subtitle: 'Co dzieje się z danymi zbieranymi podczas zgłoszenia.'
-baselineNote: 'Te informacje dotyczą wszystkich obozów organizacji. Poszczególne obozy mogą je uzupełnić i dostosować tam, gdzie się różnią, ale nie mogą ich zastąpić.'
+baselineNote: 'Te informacje dotyczą wszystkich wydarzeń organizacji. Poszczególne wydarzenia mogą je uzupełnić i dostosować tam, gdzie się różnią, ale nie mogą ich zastąpić.'
 mode:
   title: 'Jak chcecie to napisać?'
   builder: 'Kreator – wybór z przygotowanych sformułowań, tłumaczonych automatycznie na wszystkie języki'
   freeText: 'Tekst własny – napisanie całości samodzielnie'
-  freeTextWarning: 'Całość informacji piszesz samodzielnie – w każdym języku Waszych obozów. Nic nie jest tłumaczone ani uzupełniane, a tekst zostaje opublikowany dokładnie tak, jak go napiszesz.'
+  freeTextWarning: 'Całość informacji piszesz samodzielnie – w każdym języku Waszych wydarzeń. Nic nie jest tłumaczone ani uzupełniane, a tekst zostaje opublikowany dokładnie tak, jak go napiszesz.'
 freeText:
   title: 'Wasze informacje o ochronie danych'
   hint: 'Zastępuje to w całości sekcje kreatora. Prawa, prawo do skargi i organ nadzorczy są nadal dodawane automatycznie.'
@@ -1529,5 +1561,7 @@ action:
   addPurpose: 'Dodaj kolejny cel'
   remove: 'Usuń'
 notify:
+  rejected: 'Opublikowano. Ta organizacja nadal jest odrzucona — sama publikacja nie zgłasza prośby o ponowną weryfikację.'
+  rejectedAction: 'Przegląd'
   publishFailed: 'Publikacja nie powiodła się'
 </i18n>

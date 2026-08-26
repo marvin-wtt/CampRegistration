@@ -80,6 +80,15 @@ Explorers**, where John is only a MEMBER.
 - stored room planner and program planner settings
 - five managers, one of them expiring, plus one invited by email
 
+### Registrations
+
+Every registration is filled out against **its own camp's form**, question by question: only what the form shows this
+registrant is answered, under the value names that form stores answers under, and the computed columns
+(`first_name`, `country`, `emails`, …) are then derived from those answers exactly as the API derives them on
+submission. A camp whose form asks for nothing but a name therefore has registrations that carry nothing but a name.
+Files a form asks for are seeded as real uploads, and a waitlisted registration confirms the waiting-list question the
+form only shows once the camp is full.
+
 ### Camp documents
 
 Every camp whose form links a document through a `{_file.<slot>}` placeholder gets that document seeded as a real

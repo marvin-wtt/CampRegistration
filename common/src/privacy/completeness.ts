@@ -1,12 +1,17 @@
 import type { Translatable } from '../entities/Translatable.js';
 import { isCustomKey, isSpecialCategory } from './catalogue.js';
-import { retentionExceptions } from './compose.js';
-import type { PrivacyNoticeContent } from './content.js';
+import { composePrivacyNotice, retentionExceptions } from './compose.js';
+import {
+  isConsentBoundException,
+  type PrivacyNoticeAddendum,
+  type PrivacyNoticeContent,
+} from './content.js';
 
 /**
- * A missing Art. 13 item. One implementation, three callers: the wizard's
- * progress meter, the moderator's review card, and the server-side check that
- * refuses to verify an organization whose notice is incomplete. Splitting it
+ * A missing Art. 13 item. One implementation, four callers: the wizard's
+ * progress meter, the moderator's review card, the server-side check that
+ * refuses to verify an organization whose notice is incomplete, and — through
+ * `addendumGaps` — the same check applied to what an event adds. Splitting it
  * would let the client claim complete where the server disagrees.
  */
 export type PrivacyNoticeGap =
@@ -19,6 +24,7 @@ export type PrivacyNoticeGap =
   | 'recipients'
   | 'retention'
   | 'retention_exception'
+  | 'retention_exception_consent_basis'
   | 'transfer_countries'
   | 'transfer_safeguard'
   | 'dpo_details'
@@ -47,6 +53,7 @@ export const PRIVACY_NOTICE_GAP_SECTIONS: Record<
   recipients: 'recipients',
   retention: 'retention',
   retention_exception: 'retention',
+  retention_exception_consent_basis: 'retention',
   transfer_countries: 'retention',
   transfer_safeguard: 'retention',
   dpo_details: 'retention',
@@ -155,16 +162,39 @@ export function privacyNoticeCompleteness(
     gaps.push('retention');
   }
 
+  const exceptions = retentionExceptions(content.retention);
+
   // An exception with no period says nothing, and one the author named himself
-  // needs that name — the catalogue cannot supply it.
+  // needs that name — the catalogue cannot supply it. A consent-bound exception
+  // is exempt from the first: what ends it is the withdrawal, not a number.
   if (
-    retentionExceptions(content.retention).some(
+    exceptions.some(
       (exception) =>
-        exception.months <= 0 ||
+        (!isConsentBoundException(exception) && exception.months <= 0) ||
         (isCustomKey(exception.scope) && isBlank(exception.label)),
     )
   ) {
     gaps.push('retention_exception');
+  }
+
+  // "Kept until you withdraw your consent" is only an answer where there is a
+  // consent to withdraw. Scoped to a purpose resting on any other basis it is
+  // indefinite storage with nothing that ends it — Art. 5(1)(e) — so the link
+  // to an Art. 6(1)(a) purpose is checked rather than assumed.
+  const consentPurposes = new Set(
+    content.purposes
+      .filter((purpose) => purpose.legalBasis === 'consent')
+      .map((purpose) => purpose.key),
+  );
+
+  if (
+    exceptions.some(
+      (exception) =>
+        isConsentBoundException(exception) &&
+        !consentPurposes.has(exception.scope),
+    )
+  ) {
+    gaps.push('retention_exception_consent_basis');
   }
 
   if (content.thirdCountryTransfers.enabled) {
@@ -195,4 +225,30 @@ export function privacyNoticeCompleteness(
   }
 
   return { complete: gaps.length === 0, gaps };
+}
+
+/**
+ * The Art. 13 gaps an event's addendum introduces into the notice its registrants
+ * actually read.
+ *
+ * The addendum is checked against the *composed* notice rather than on its own,
+ * because that is the document being published: an event adding `health` has
+ * created an Art. 9 obligation whether or not its organization declared one,
+ * and an event restating a purpose as `legitimate_interests` owes the Art. 13(1)(d)
+ * explanation even though the entry it replaced needed none.
+ *
+ * Gaps the organization's own notice already has are subtracted rather than
+ * reported. They are real, but they are not this author's to fix — an
+ * organization that has published nothing yet would otherwise hand every one of
+ * its events a list of failures none of them can act on.
+ */
+export function addendumGaps(
+  organization: PrivacyNoticeContent | null,
+  addendum: PrivacyNoticeAddendum,
+): PrivacyNoticeGap[] {
+  const inherited = new Set(privacyNoticeCompleteness(organization).gaps);
+
+  return privacyNoticeCompleteness(
+    composePrivacyNotice(organization, addendum),
+  ).gaps.filter((gap) => !inherited.has(gap));
 }

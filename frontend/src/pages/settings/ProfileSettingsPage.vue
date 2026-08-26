@@ -104,7 +104,7 @@ subtitle: 'How your account appears and how we reach you.'
 section:
   details:
     title: 'Personal details'
-    hint: 'Your name is shown to other members of camps you manage.'
+    hint: 'Your name is shown to other members of events you manage.'
   email:
     title: 'E-mail address'
     hint: 'Used to sign in and to receive notifications. Changing it requires your password.'
@@ -117,7 +117,7 @@ subtitle: 'Wie Ihr Konto erscheint und wie wir Sie erreichen.'
 section:
   details:
     title: 'Persönliche Angaben'
-    hint: 'Ihr Name wird anderen Mitgliedern der von Ihnen verwalteten Camps angezeigt.'
+    hint: 'Ihr Name wird anderen Mitgliedern der von Ihnen verwalteten Veranstaltungen angezeigt.'
   email:
     title: 'E-Mail-Adresse'
     hint: 'Wird zur Anmeldung und für Benachrichtigungen verwendet. Für eine Änderung ist Ihr Passwort erforderlich.'
@@ -130,7 +130,7 @@ subtitle: 'L’apparence de votre compte et la manière dont nous vous contacton
 section:
   details:
     title: 'Informations personnelles'
-    hint: 'Votre nom est visible par les autres membres des camps que vous gérez.'
+    hint: 'Votre nom est visible par les autres membres des événements que vous gérez.'
   email:
     title: 'Adresse e-mail'
     hint: 'Utilisée pour vous connecter et recevoir des notifications. Sa modification nécessite votre mot de passe.'
@@ -143,7 +143,7 @@ subtitle: 'Jak wygląda Twoje konto i jak możemy się z Tobą skontaktować.'
 section:
   details:
     title: 'Dane osobowe'
-    hint: 'Twoja nazwa jest widoczna dla innych członków obozów, którymi zarządzasz.'
+    hint: 'Twoja nazwa jest widoczna dla innych członków wydarzeń, którymi zarządzasz.'
   email:
     title: 'Adres e-mail'
     hint: 'Służy do logowania i otrzymywania powiadomień. Zmiana wymaga podania hasła.'
@@ -156,7 +156,7 @@ subtitle: 'Jak vypadá váš účet a jak vás můžeme kontaktovat.'
 section:
   details:
     title: 'Osobní údaje'
-    hint: 'Vaše jméno se zobrazuje ostatním členům táborů, které spravujete.'
+    hint: 'Vaše jméno se zobrazuje ostatním členům akcí, které spravujete.'
   email:
     title: 'E-mailová adresa'
     hint: 'Slouží k přihlášení a k zasílání oznámení. Změna vyžaduje vaše heslo.'

@@ -1,7 +1,7 @@
 /**
  * Shapes of the values stored under each setting key in
  * {@link SETTING_KEYS}. Shared so the backend validation schema
- * (`SettingsRegistry.register`) and the frontend `useCampSettings` call site
+ * (`SettingsRegistry.register`) and the frontend `useEventSettings` call site
  * are checked against the same contract.
  */
 
@@ -27,18 +27,18 @@ export interface ProgramPlannerSettings {
   timeInterval: number;
   /**
    * When `true`, the program planner shows all translations of a
-   * program event, even if they are not the default language. When `false` only
+   * program item, even if they are not the default language. When `false` only
    * the default language is shown.
    *
    * @default true
    */
   showAllTranslations: boolean;
   /**
-   * Allow navigating the calendar to dates before the camp start / after the
-   * camp end. When `false` the visible window is clamped to the camp
+   * Allow navigating the calendar to dates before the event start / after the
+   * event end. When `false` the visible window is clamped to the event
    * period.
    *
    * @default false
    */
-  browseOutsideCampDates: boolean;
+  browseOutsideEventDates: boolean;
 }

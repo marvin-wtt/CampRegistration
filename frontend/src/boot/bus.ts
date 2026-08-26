@@ -2,7 +2,7 @@ import { EventBus } from 'quasar';
 import { defineBoot } from '#q-app';
 import {
   AUTH_BUS,
-  CAMP_BUS,
+  EVENT_BUS,
   ORGANIZATION_BUS,
   REGISTRATION_BUS,
   TEMPLATE_BUS,
@@ -11,7 +11,7 @@ import {
 export default defineBoot(({ app }) => {
   const busses = [
     AUTH_BUS,
-    CAMP_BUS,
+    EVENT_BUS,
     ORGANIZATION_BUS,
     REGISTRATION_BUS,
     TEMPLATE_BUS,

@@ -8,7 +8,7 @@ import {
   RETENTION_ANCHORS,
   SPECIAL_CATEGORY_BASIS_KEYS,
   TRANSFER_SAFEGUARDS,
-  type CampPrivacyNoticeUpdateData,
+  type EventPrivacyNoticeUpdateData,
   type CustomKey,
   type PrivacyNoticeAddendum,
   type PrivacyNoticeContent,
@@ -51,18 +51,41 @@ const RecipientSchema = z.object({
   country: z.string().length(2).nullish(),
 });
 
-const RetentionExceptionSchema = z.object({
+const RetentionExceptionBase = {
   scope: refSchema(PRIVACY_PURPOSE_KEYS),
   label: TranslatableSchema.nullish(),
+  reason: TranslatableSchema.nullish(),
+};
+
+const RetentionPeriodExceptionSchema = z.object({
+  ...RetentionExceptionBase,
+  // Absent on everything published before consent-bound exceptions existed, so
+  // it cannot be required — see `PrivacyRetentionPeriodException`.
+  until: z.literal('period').optional(),
   // Statutory retention is what exceptions exist for, and tax law reaches ten
   // years — so the ceiling here is higher than the baseline's.
   months: z.int().min(1).max(600),
   anchor: z.enum(RETENTION_ANCHORS),
-  reason: TranslatableSchema.nullish(),
 });
 
+/**
+ * No period, by design. `months`/`anchor` are refused rather than ignored: a
+ * stored number nothing reads is a number the next author will believe.
+ */
+const RetentionConsentExceptionSchema = z.strictObject({
+  ...RetentionExceptionBase,
+  until: z.literal('consent_withdrawn'),
+});
+
+// Consent first: the period branch accepts a missing `until`, so it would
+// otherwise swallow the consent-bound shape and report a missing `months`.
+const RetentionExceptionSchema = z.union([
+  RetentionConsentExceptionSchema,
+  RetentionPeriodExceptionSchema,
+]);
+
 const RetentionSchema = z.object({
-  // A camp that keeps every registration for a decade has a storage-limitation
+  // A event that keeps every registration for a decade has a storage-limitation
   // problem, not a configuration need; anything longer belongs in an exception.
   months: z.int().min(1).max(240),
   anchor: z.enum(RETENTION_ANCHORS),
@@ -103,7 +126,7 @@ const ContentSchema = z.object({
   freeText: TranslatableSchema.nullable(),
 }) satisfies ZodType<PrivacyNoticeContent>;
 
-/** The camp addendum states only what differs, so every field is optional. */
+/** The event addendum states only what differs, so every field is optional. */
 const AddendumSchema = z.object({
   purposes: z
     .array(PurposeSchema)
@@ -131,7 +154,7 @@ const updateOrganization = z.object({
 const updateAddendum = z.object({
   body: z.object({
     content: AddendumSchema,
-  }) satisfies ZodType<CampPrivacyNoticeUpdateData>,
+  }) satisfies ZodType<EventPrivacyNoticeUpdateData>,
 });
 
 export default {

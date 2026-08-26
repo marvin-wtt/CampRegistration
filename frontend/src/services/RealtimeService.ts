@@ -5,16 +5,16 @@
  */
 export function useRealtimeService() {
   /**
-   * The camp's single live-updates stream. Carries all camp resources; the
+   * The event's single live-updates stream. Carries all event resources; the
    * server filters each event against the subscriber's permissions.
    */
-  function openCampStream(campId: string): EventSource {
-    return new EventSource(`${window.origin}/api/v1/camps/${campId}/events`, {
+  function openEventStream(eventId: string): EventSource {
+    return new EventSource(`${window.origin}/api/v1/events/${eventId}/stream`, {
       withCredentials: true,
     });
   }
 
   return {
-    openCampStream,
+    openEventStream,
   };
 }

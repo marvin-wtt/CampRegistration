@@ -33,7 +33,7 @@ class UserSeeder extends BaseSeeder {
     });
 
     // Colleagues, so no manager or member list is ever a single row. Same
-    // password as John — log in as one to see the same camp from another role.
+    // password as John — log in as one to see the same event from another role.
     await UserFactory.create({
       id: USER_IDS.erika,
       name: 'Erika Mustermann',

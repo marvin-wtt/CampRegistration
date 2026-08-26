@@ -20,27 +20,27 @@ export class MessageTemplateModule implements AppModule {
     });
 
     router.useRouter(
-      '/camps/:campId/message-templates',
+      '/events/:eventId/message-templates',
       resolve(MessageTemplateRouter),
     );
   }
 
   registerPermissions(): ScopedPermissions {
     return {
-      camp: {
+      event: {
         DIRECTOR: [
-          'camp.message_templates.view',
-          'camp.message_templates.create',
-          'camp.message_templates.edit',
-          'camp.message_templates.delete',
+          'event.message_templates.view',
+          'event.message_templates.create',
+          'event.message_templates.edit',
+          'event.message_templates.delete',
         ],
         COORDINATOR: [
-          'camp.message_templates.view',
-          'camp.message_templates.create',
-          'camp.message_templates.edit',
-          'camp.message_templates.delete',
+          'event.message_templates.view',
+          'event.message_templates.create',
+          'event.message_templates.edit',
+          'event.message_templates.delete',
         ],
-        COUNSELOR: ['camp.message_templates.view'],
+        COUNSELOR: ['event.message_templates.view'],
         VIEWER: [],
       },
     };

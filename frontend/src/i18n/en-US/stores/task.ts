@@ -11,12 +11,12 @@ export default {
     progress: 'Updating task...',
     success: 'Task updated successfully',
     error: 'Failed to update task',
-    invalid: 'Invalid camp id',
+    invalid: 'Invalid event id',
   },
   delete: {
     progress: 'Deleting task...',
     success: 'Task deleted successfully',
     error: 'Failed to delete task',
-    invalid: 'Invalid camp id',
+    invalid: 'Invalid event id',
   },
 };

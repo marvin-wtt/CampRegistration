@@ -1,5 +1,5 @@
 import auth from './auth/index.js';
-import camp from './/camp/index.js';
+import event from './event/index.js';
 import email from './email/index.js';
 import feedback from './feedback/index.js';
 import manager from './manager/index.js';
@@ -9,11 +9,9 @@ import registration from './registration/index.js';
 
 export default {
   // Translation is the default namespace
-  translation: {
-    appName: "Service d'inscription aux camps",
-  },
+  translation: {},
   auth,
-  camp,
+  event,
   email,
   feedback,
   manager,

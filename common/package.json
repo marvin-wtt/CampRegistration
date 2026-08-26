@@ -29,6 +29,7 @@
   "exports": {
     "./form": "./dist/form/index.js",
     "./entities": "./dist/entities/index.js",
+    "./locales": "./dist/locales.js",
     "./permissions": "./dist/permissions/index.js",
     "./privacy": "./dist/privacy/index.js",
     "./realtime": "./dist/realtime/index.js",

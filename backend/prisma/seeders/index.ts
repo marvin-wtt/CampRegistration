@@ -1,7 +1,7 @@
 import prisma from '../client';
 import userSeeder from './user.seeder';
-import campSeeder from './camp.seeder';
-import campManagerSeeder from './camp-manager.seeder';
+import eventSeeder from './event.seeder';
+import eventManagerSeeder from './event-manager.seeder';
 import tableTemplateSeeder from './table-template.seeder';
 import taskSeeder from './task.seeder';
 import newsletterSeeder from './newsletter.seeder';
@@ -9,14 +9,14 @@ import organizationSeeder from './organization.seeder';
 import { BaseSeeder } from './BaseSeeder';
 
 async function main() {
-  // Order is a dependency order: camps need their organization, managers need
+  // Order is a dependency order: events need their organization, managers need
   // both, and tasks are assigned to manager records.
   const seeders: BaseSeeder[] = [
     userSeeder,
     organizationSeeder,
-    campSeeder,
+    eventSeeder,
     tableTemplateSeeder,
-    campManagerSeeder,
+    eventManagerSeeder,
     taskSeeder,
     newsletterSeeder,
   ];
@@ -27,7 +27,7 @@ async function main() {
     await seeder.run(prisma);
   }
   console.log(`Seeding finished. See prisma/seeders/README.md for the`);
-  console.log(`accounts and the scenario each seeded camp covers.`);
+  console.log(`accounts and the scenario each seeded event covers.`);
 }
 
 main()

@@ -29,14 +29,14 @@
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
-import type { CampDetails } from '@camp-registration/common/entities';
+import type { EventDetails } from '@camp-registration/common/entities';
 import { useAPIService } from '@/services/APIService';
 
 const { t } = useI18n();
 const api = useAPIService();
 
 interface Props {
-  campDetails: CampDetails;
+  eventDetails: EventDetails;
   data: Record<string, unknown>;
   locale: string;
 }
@@ -56,11 +56,11 @@ async function download() {
       await import('@/lib/surveyJs/registrationPdf');
 
     await downloadRegistrationPdf({
-      camp: props.campDetails,
+      event: props.eventDetails,
       data: props.data,
       locale: props.locale,
       fileUrl: (slot) =>
-        api.getCampFileSlotUrl(props.campDetails.id, slot, props.locale),
+        api.getEventFileSlotUrl(props.eventDetails.id, slot, props.locale),
     });
     state.value = 'idle';
   } catch {

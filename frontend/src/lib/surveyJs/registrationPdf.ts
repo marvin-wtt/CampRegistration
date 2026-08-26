@@ -21,20 +21,20 @@ import {
   setVariables,
   fileDynamicTextProcessor,
 } from '@camp-registration/common/form';
-import type { CampDetails } from '@camp-registration/common/entities';
+import type { EventDetails } from '@camp-registration/common/entities';
 
 interface RegistrationPdfOptions {
-  camp: CampDetails;
+  event: EventDetails;
   data: Record<string, unknown>;
   locale: string;
-  /** Resolves a camp file slot to a URL, for `{_file.<slot>}` placeholders. */
+  /** Resolves an event file slot to a URL, for `{_file.<slot>}` placeholders. */
   fileUrl: (slot: string) => string;
 }
 
 function buildSurveyPdf(options: RegistrationPdfOptions): SurveyPDF {
-  const { camp, data, locale, fileUrl } = options;
+  const { event, data, locale, fileUrl } = options;
 
-  const surveyPDF = new SurveyPDF(camp.form);
+  const surveyPDF = new SurveyPDF(event.form);
   surveyPDF.data = data;
   surveyPDF.locale = locale;
   // survey-pdf resolves CSS on a detached div that never carries the
@@ -52,21 +52,21 @@ function buildSurveyPdf(options: RegistrationPdfOptions): SurveyPDF {
   });
   surveyPDF.onProcessDynamicText.add(fileDynamicTextProcessor(fileUrl));
 
-  setVariables(surveyPDF, camp);
+  setVariables(surveyPDF, event);
 
   return surveyPDF;
 }
 
 /**
- * Reads the participant's name off the questions the camp tagged with
- * `campDataType`, so the saved file is distinguishable when a parent registers
+ * Reads the participant's name off the questions the event tagged with
+ * `eventDataType`, so the saved file is distinguishable when a parent registers
  * several children. The tags are optional, hence the fallback.
  */
 function registrationFileName(surveyPDF: SurveyPDF): string {
   const byTag = (tag: string): string | undefined => {
     const question = surveyPDF
       .getAllQuestions(false, undefined, true)
-      .find((q) => q.getPropertyValue('campDataType') === tag);
+      .find((q) => q.getPropertyValue('eventDataType') === tag);
 
     return typeof question?.value === 'string' ? question.value : undefined;
   };

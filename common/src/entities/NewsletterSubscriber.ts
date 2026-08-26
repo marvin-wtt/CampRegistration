@@ -13,7 +13,7 @@ export interface NewsletterSubscriberCreateData {
 }
 
 export interface NewsletterSubscriberImportData {
-  campId: string;
+  eventId: string;
   country?: string | null;
   requireConsent?: boolean;
   consentConfirmed?: boolean;

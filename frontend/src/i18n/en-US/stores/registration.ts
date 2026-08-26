@@ -6,19 +6,19 @@ export default {
     progress: 'Creating registration...',
     success: 'Registration created successfully',
     error: 'Failed to create registration',
-    invalid: 'Invalid camp id',
+    invalid: 'Invalid event id',
   },
   update: {
     progress: 'Updating registration...',
     success: 'Registration updated successfully',
     error: 'Failed to update registration',
-    invalid: 'Invalid registration id or camp id',
+    invalid: 'Invalid registration id or event id',
   },
   delete: {
     progress: 'Deleting registration...',
     success: 'Registration deleted successfully',
     error: 'Failed to delete registration',
-    invalid: 'Invalid registration id or camp id',
+    invalid: 'Invalid registration id or event id',
   },
   realtimeCreate: {
     message: 'New registration received',

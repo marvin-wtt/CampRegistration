@@ -101,6 +101,7 @@
               :label="t('field.country')"
               :rules="[required]"
               class="col-12 col-sm-6"
+              rounded
             />
             <q-input
               v-model="data.registrationNumber"
@@ -123,6 +124,18 @@
             rounded
             outlined
           />
+
+          <!-- The review cannot pass without a published privacy notice, and
+               that notice can only be written once the organization exists —
+               so the requirement is stated here rather than discovered on a
+               rejection. -->
+          <div class="privacy-note rounded-md">
+            <q-icon
+              name="privacy_tip"
+              size="20px"
+            />
+            <span class="text-body2">{{ t('privacyNote') }}</span>
+          </div>
         </q-card-section>
 
         <q-card-actions align="right">
@@ -207,6 +220,15 @@ async function onSubmit() {
   max-width: 90vw;
 }
 
+.privacy-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--md3-secondary-container);
+  color: var(--md3-on-secondary-container);
+}
+
 .section-label {
   color: var(--md3-on-surface-variant);
   font-size: 0.75rem;
@@ -218,7 +240,8 @@ async function onSubmit() {
 
 <i18n lang="yaml" locale="en">
 title: 'Create organization'
-description: 'Your organization is reviewed before it can publish camps or send newsletters. You can start building a camp straight away.'
+description: 'Your organization is reviewed before it can publish events or send newsletters. You can start building an event straight away.'
+privacyNote: 'Verification also requires a published privacy notice. You can write it under Privacy as soon as the organization exists.'
 section:
   identity: 'Contact'
   registration: 'Registered address'
@@ -245,7 +268,8 @@ action:
 
 <i18n lang="yaml" locale="de">
 title: 'Organisation erstellen'
-description: 'Deine Organisation wird geprüft, bevor sie Camps veröffentlichen oder Newsletter versenden kann. Ein Camp kannst du sofort anlegen.'
+description: 'Deine Organisation wird geprüft, bevor sie Veranstaltungen veröffentlichen oder Newsletter versenden kann. Eine Veranstaltung kannst du sofort anlegen.'
+privacyNote: 'Für die Verifizierung wird außerdem eine veröffentlichte Datenschutzerklärung benötigt. Du kannst sie unter Datenschutz verfassen, sobald die Organisation angelegt ist.'
 section:
   identity: 'Kontakt'
   registration: 'Eingetragene Adresse'
@@ -272,7 +296,8 @@ action:
 
 <i18n lang="yaml" locale="fr">
 title: 'Créer une organisation'
-description: 'Ton organisation est vérifiée avant de pouvoir publier des camps ou envoyer des newsletters. Tu peux commencer à préparer un camp immédiatement.'
+description: 'Ton organisation est vérifiée avant de pouvoir publier des événements ou envoyer des newsletters. Tu peux commencer à préparer un événement immédiatement.'
+privacyNote: 'La vérification exige également une politique de confidentialité publiée. Tu peux la rédiger sous Confidentialité dès que l’organisation existe.'
 section:
   identity: 'Contact'
   registration: 'Adresse enregistrée'
@@ -299,7 +324,8 @@ action:
 
 <i18n lang="yaml" locale="pl">
 title: 'Utwórz organizację'
-description: 'Twoja organizacja zostanie sprawdzona, zanim będzie mogła publikować obozy lub wysyłać newslettery. Obóz możesz zacząć przygotowywać od razu.'
+description: 'Twoja organizacja zostanie sprawdzona, zanim będzie mogła publikować wydarzenia lub wysyłać newslettery. Wydarzenie możesz zacząć przygotowywać od razu.'
+privacyNote: 'Weryfikacja wymaga też opublikowanej informacji o ochronie danych. Możesz ją przygotować w sekcji Prywatność, gdy tylko organizacja powstanie.'
 section:
   identity: 'Kontakt'
   registration: 'Adres rejestrowy'
@@ -326,7 +352,8 @@ action:
 
 <i18n lang="yaml" locale="cs">
 title: 'Vytvořit organizaci'
-description: 'Tvoje organizace bude ověřena, než bude moci zveřejňovat tábory nebo posílat newslettery. Tábor můžeš začít připravovat hned.'
+description: 'Tvoje organizace bude ověřena, než bude moci zveřejňovat akce nebo posílat newslettery. Akci můžeš začít připravovat hned.'
+privacyNote: 'Ověření také vyžaduje zveřejněné zásady ochrany osobních údajů. Můžeš je sepsat v sekci Soukromí, jakmile organizace vznikne.'
 section:
   identity: 'Kontakt'
   registration: 'Registrovaná adresa'

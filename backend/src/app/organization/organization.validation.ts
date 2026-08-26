@@ -74,7 +74,7 @@ const submitVerification = z.object({
   }),
 });
 
-const camps = z.object({
+const events = z.object({
   params: z.object({
     organizationId: z.ulid(),
   }),
@@ -120,6 +120,6 @@ export default {
   destroy,
   submitVerification,
   review,
-  camps,
+  events,
   newsletters,
 };

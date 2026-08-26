@@ -173,7 +173,7 @@ export const useAuthStore = defineStore('auth', () => {
     const destination =
       'origin' in route.query && typeof route.query.origin === 'string'
         ? decodeURIComponent(route.query.origin)
-        : { name: 'management.camps' };
+        : { name: 'management.events' };
 
     await router.push(destination);
 

@@ -6,12 +6,12 @@ import WorkspaceSwitcher from '@/components/layout/WorkspaceSwitcher.vue';
 import { installQuasarPlugin } from '@/../test/vitest/utils/quasar';
 import type * as WorkspaceArea from '@/components/layout/workspaceArea';
 
-const CAMP_NAME = 'Sommerlager Bad Segeberg 2026';
+const EVENT_NAME = 'Sommerlager Bad Segeberg 2026';
 
 vi.mock('vue-router', () => ({
   useRoute: () => ({
-    name: 'management.camp.dashboard',
-    params: { campId: '01J0000000000000000000000A' },
+    name: 'management.event.dashboard',
+    params: { eventId: '01J0000000000000000000000A' },
   }),
 }));
 
@@ -26,8 +26,11 @@ vi.mock('vue-i18n', () => ({
   }),
 }));
 
-vi.mock('@/stores/camp-details-store', () => ({
-  useCampDetailsStore: () => ({ data: { name: CAMP_NAME }, isLoading: false }),
+vi.mock('@/stores/event-details-store', () => ({
+  useEventDetailsStore: () => ({
+    data: { name: EVENT_NAME },
+    isLoading: false,
+  }),
 }));
 
 vi.mock('@/stores/organization-details-store', () => ({
@@ -83,11 +86,11 @@ describe('WorkspaceSwitcher', () => {
     await nextTick();
 
     // The trigger truncates, so the sheet is the only place the whole name of
-    // the current camp is readable on a phone.
+    // the current event is readable on a phone.
     expect(
       document.body.querySelector('.workspace-switcher-sheet__name')
         ?.textContent,
-    ).toContain(CAMP_NAME);
+    ).toContain(EVENT_NAME);
   });
 
   it('keeps the anchored menu on a desktop screen', async () => {

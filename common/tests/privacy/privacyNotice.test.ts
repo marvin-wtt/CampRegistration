@@ -5,6 +5,7 @@ import {
   PRIVACY_PURPOSE_PRESETS,
   PRIVACY_RECIPIENT_KEYS,
   SPECIAL_CATEGORY_DATA_KEYS,
+  addendumGaps,
   composePrivacyNotice,
   customKey,
   emptyPrivacyNoticeContent,
@@ -21,7 +22,7 @@ function completeContent(): PrivacyNoticeContent {
     purposes: [{ key: 'registration_administration', legalBasis: 'contract' }],
     dataCategories: [{ key: 'identity' }],
     recipients: [{ key: 'platform_operator' }],
-    retention: { months: 24, anchor: 'camp_end', exceptions: [] },
+    retention: { months: 24, anchor: 'event_end', exceptions: [] },
   };
 }
 
@@ -92,7 +93,7 @@ describe('privacyNoticeCompleteness', () => {
       'legitimate_interest_explanation',
     );
 
-    content.purposes[0]!.legitimateInterest = { en: 'Documenting camp life' };
+    content.purposes[0]!.legitimateInterest = { en: 'Documenting event life' };
 
     expect(privacyNoticeCompleteness(content).complete).toBe(true);
   });
@@ -123,20 +124,20 @@ describe('privacyNoticeCompleteness', () => {
 
   it('rejects a non-positive retention period', () => {
     const content = completeContent();
-    content.retention = { months: 0, anchor: 'camp_end', exceptions: [] };
+    content.retention = { months: 0, anchor: 'event_end', exceptions: [] };
 
     expect(privacyNoticeCompleteness(content).gaps).toContain('retention');
   });
 
   it('accepts a baseline with no exceptions at all', () => {
-    // The common camp never categorises anything.
+    // The common event never categorises anything.
     expect(privacyNoticeCompleteness(completeContent()).complete).toBe(true);
   });
 
   it('accepts an exception scoped to a purpose from the catalogue', () => {
     const content = completeContent();
     content.retention!.exceptions = [
-      { scope: 'payment_and_invoicing', months: 120, anchor: 'camp_end' },
+      { scope: 'payment_and_invoicing', months: 120, anchor: 'event_end' },
     ];
 
     expect(privacyNoticeCompleteness(content).complete).toBe(true);
@@ -145,7 +146,7 @@ describe('privacyNoticeCompleteness', () => {
   it('requires a name for an exception the author invented', () => {
     const content = completeContent();
     content.retention!.exceptions = [
-      { scope: customKey('1'), months: 36, anchor: 'camp_end' },
+      { scope: customKey('1'), months: 36, anchor: 'event_end' },
     ];
 
     expect(privacyNoticeCompleteness(content).gaps).toContain(
@@ -159,7 +160,7 @@ describe('privacyNoticeCompleteness', () => {
   it('rejects an exception with no period', () => {
     const content = completeContent();
     content.retention!.exceptions = [
-      { scope: 'insurance', months: 0, anchor: 'camp_end' },
+      { scope: 'insurance', months: 0, anchor: 'event_end' },
     ];
 
     expect(privacyNoticeCompleteness(content).gaps).toContain(
@@ -171,7 +172,7 @@ describe('privacyNoticeCompleteness', () => {
     const content = completeContent();
     content.retention = {
       months: 24,
-      anchor: 'camp_end',
+      anchor: 'event_end',
       // @ts-expect-error legacy shape: exceptions used to be free text
       exceptions: { en: 'Tax records' },
     };
@@ -319,7 +320,7 @@ describe('isEmptyAddendum', () => {
     ).toBe(true);
   });
 
-  it('should see any single statement of the camp', () => {
+  it('should see any single statement of the event', () => {
     expect(isEmptyAddendum({ dataCategories: [{ key: 'photos' }] })).toBe(
       false,
     );
@@ -329,14 +330,14 @@ describe('isEmptyAddendum', () => {
     );
     expect(
       isEmptyAddendum({
-        retention: { months: 12, anchor: 'camp_end', exceptions: [] },
+        retention: { months: 12, anchor: 'event_end', exceptions: [] },
       }),
     ).toBe(false);
   });
 });
 
 describe('composePrivacyNotice', () => {
-  it('merges the camp addendum into the organization notice', () => {
+  it('merges the event addendum into the organization notice', () => {
     const composed = composePrivacyNotice(completeContent(), {
       purposes: [{ key: 'photo_publication', legalBasis: 'consent' }],
       recipients: [{ key: 'transport_provider', name: 'Bus Co' }],
@@ -348,12 +349,12 @@ describe('composePrivacyNotice', () => {
       'photo_publication',
     ]);
     expect(composed.recipients).toHaveLength(2);
-    expect(composed.campAdditional).toEqual({
+    expect(composed.eventAdditional).toEqual({
       en: 'Photos are published in the parent newsletter.',
     });
   });
 
-  it('lets the camp restate an organization entry', () => {
+  it('lets the event restate an organization entry', () => {
     const composed = composePrivacyNotice(completeContent(), {
       purposes: [
         { key: 'registration_administration', legalBasis: 'legal_obligation' },
@@ -371,17 +372,17 @@ describe('composePrivacyNotice', () => {
     });
   });
 
-  it('adds the camp exceptions to the organization ones', () => {
+  it('adds the event exceptions to the organization ones', () => {
     const organization: PrivacyNoticeContent = {
       ...completeContent(),
       retention: {
         months: 24,
-        anchor: 'camp_end',
+        anchor: 'event_end',
         exceptions: [
           {
             scope: 'payment_and_invoicing',
             months: 120,
-            anchor: 'camp_end',
+            anchor: 'event_end',
           },
         ],
       },
@@ -392,12 +393,12 @@ describe('composePrivacyNotice', () => {
         months: 6,
         anchor: 'submission',
         exceptions: [
-          { scope: 'photo_publication', months: 36, anchor: 'camp_end' },
+          { scope: 'photo_publication', months: 36, anchor: 'event_end' },
         ],
       },
     });
 
-    // The camp names one exception; the statutory one its organization declared
+    // The event names one exception; the statutory one its organization declared
     // must survive, or the notice quietly understates how long data is kept.
     expect(composed.retention?.exceptions.map((e) => e.scope)).toEqual([
       'payment_and_invoicing',
@@ -406,17 +407,17 @@ describe('composePrivacyNotice', () => {
     expect(composed.retention?.months).toBe(6);
   });
 
-  it('lets the camp restate an exception the organization already made', () => {
+  it('lets the event restate an exception the organization already made', () => {
     const organization: PrivacyNoticeContent = {
       ...completeContent(),
       retention: {
         months: 24,
-        anchor: 'camp_end',
+        anchor: 'event_end',
         exceptions: [
           {
             scope: 'payment_and_invoicing',
             months: 120,
-            anchor: 'camp_end',
+            anchor: 'event_end',
           },
         ],
       },
@@ -425,15 +426,15 @@ describe('composePrivacyNotice', () => {
     const composed = composePrivacyNotice(organization, {
       retention: {
         months: 24,
-        anchor: 'camp_end',
+        anchor: 'event_end',
         exceptions: [
-          { scope: 'payment_and_invoicing', months: 84, anchor: 'camp_end' },
+          { scope: 'payment_and_invoicing', months: 84, anchor: 'event_end' },
         ],
       },
     });
 
     expect(composed.retention?.exceptions).toEqual([
-      { scope: 'payment_and_invoicing', months: 84, anchor: 'camp_end' },
+      { scope: 'payment_and_invoicing', months: 84, anchor: 'event_end' },
     ]);
   });
 
@@ -452,17 +453,17 @@ describe('composePrivacyNotice', () => {
       thirdCountryTransfers: { enabled: true, countries: ['CH'] },
     });
 
-    // A camp cannot un-declare a transfer its organization makes.
+    // A event cannot un-declare a transfer its organization makes.
     expect(composed.thirdCountryTransfers.countries).toEqual(['US', 'CH']);
     expect(composed.thirdCountryTransfers.safeguard).toBe('adequacy');
   });
 
-  it('keeps the organization values when the camp adds nothing', () => {
+  it('keeps the organization values when the event adds nothing', () => {
     const organization = completeContent();
     const composed = composePrivacyNotice(organization, null);
 
     expect(composed.retention).toEqual(organization.retention);
-    expect(composed.campAdditional).toBeNull();
+    expect(composed.eventAdditional).toBeNull();
   });
 
   it('degrades to an empty notice when the organization has none', () => {
@@ -493,14 +494,14 @@ describe('composePrivacyNotice — free text mode', () => {
     expect(composed.thirdCountryTransfers.enabled).toBe(false);
   });
 
-  it('drops a camp structured addition but keeps its prose', () => {
+  it('drops a event structured addition but keeps its prose', () => {
     const composed = composePrivacyNotice(freeTextContent(), {
       recipients: [{ key: 'transport_provider', name: 'Bus Co' }],
       additional: { en: 'We also use a coach company.' },
     });
 
     expect(composed.recipients).toEqual([]);
-    expect(composed.campAdditional).toEqual({
+    expect(composed.eventAdditional).toEqual({
       en: 'We also use a coach company.',
     });
   });
@@ -519,5 +520,110 @@ describe('supervisoryAuthorityFor', () => {
 
   it('returns null outside the covered countries', () => {
     expect(supervisoryAuthorityFor('US')).toBeNull();
+  });
+});
+
+describe('privacyNoticeCompleteness — consent-bound retention', () => {
+  it('accepts an exception with no period when it runs until withdrawal', () => {
+    const content = completeContent();
+    content.purposes.push({ key: 'photo_publication', legalBasis: 'consent' });
+    content.retention!.exceptions.push({
+      scope: 'photo_publication',
+      until: 'consent_withdrawn',
+    });
+
+    expect(privacyNoticeCompleteness(content)).toEqual({
+      complete: true,
+      gaps: [],
+    });
+  });
+
+  it('refuses indefinite retention hung on a purpose that is not consent', () => {
+    const content = completeContent();
+    content.retention!.exceptions.push({
+      scope: 'registration_administration',
+      until: 'consent_withdrawn',
+    });
+
+    expect(privacyNoticeCompleteness(content).gaps).toContain(
+      'retention_exception_consent_basis',
+    );
+  });
+
+  it('still requires a name for a consent-bound exception the author invented', () => {
+    const content = completeContent();
+    content.purposes.push({ key: customKey('1'), legalBasis: 'consent' });
+    content.retention!.exceptions.push({
+      scope: customKey('1'),
+      until: 'consent_withdrawn',
+    });
+
+    expect(privacyNoticeCompleteness(content).gaps).toContain(
+      'retention_exception',
+    );
+  });
+
+  it('routes the new gap to the retention step', () => {
+    expect(
+      gapsInSection(['retention_exception_consent_basis'], 'retention'),
+    ).toEqual(['retention_exception_consent_basis']);
+  });
+});
+
+describe('addendumGaps', () => {
+  it('reports nothing for an addendum that adds nothing of its own', () => {
+    expect(addendumGaps(completeContent(), {})).toEqual([]);
+  });
+
+  it('reports the Art. 9 basis a event owes for a category it adds', () => {
+    expect(
+      addendumGaps(completeContent(), { dataCategories: [{ key: 'health' }] }),
+    ).toEqual(['special_category_basis']);
+  });
+
+  it('accepts the same category once the event names its basis', () => {
+    expect(
+      addendumGaps(completeContent(), {
+        dataCategories: [
+          { key: 'health', specialCategoryBasis: 'explicit_consent' },
+        ],
+      }),
+    ).toEqual([]);
+  });
+
+  it('reports the explanation a event owes for restating a purpose', () => {
+    expect(
+      addendumGaps(completeContent(), {
+        purposes: [
+          {
+            key: 'registration_administration',
+            legalBasis: 'legitimate_interests',
+          },
+        ],
+      }),
+    ).toEqual(['legitimate_interest_explanation']);
+  });
+
+  it('does not blame a event for what its organization never published', () => {
+    expect(
+      addendumGaps(null, { dataCategories: [{ key: 'identity' }] }),
+    ).toEqual([]);
+  });
+
+  it('reports a consent-bound exception the event hangs on the wrong purpose', () => {
+    expect(
+      addendumGaps(completeContent(), {
+        retention: {
+          months: 24,
+          anchor: 'event_end',
+          exceptions: [
+            {
+              scope: 'registration_administration',
+              until: 'consent_withdrawn',
+            },
+          ],
+        },
+      }),
+    ).toEqual(['retention_exception_consent_basis']);
   });
 });

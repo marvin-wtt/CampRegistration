@@ -1,15 +1,15 @@
 export default {
   purpose: {
     registration_administration: 'Abwicklung deiner Anmeldung',
-    participant_communication: 'Information vor und während der Freizeit',
-    camp_organisation: 'Organisation und Durchführung der Freizeit',
+    participant_communication: 'Information vor und während der Veranstaltung',
+    event_organisation: 'Organisation und Durchführung der Veranstaltung',
     catering: 'Verpflegung',
-    medical_care: 'Medizinische Versorgung während der Freizeit',
+    medical_care: 'Medizinische Versorgung während der Veranstaltung',
     emergency_contact: 'Kontaktaufnahme im Notfall',
     transport: 'Organisation der An- und Abreise',
     insurance: 'Versicherungsschutz',
     payment_and_invoicing: 'Zahlung und Rechnungsstellung',
-    photo_documentation: 'Interne Dokumentation des Freizeitlebens',
+    photo_documentation: 'Interne Dokumentation der Veranstaltung',
     photo_publication: 'Veröffentlichung von Fotos',
     statutory_reporting: 'Gesetzlich vorgeschriebene Meldungen',
     newsletter: 'Versand unseres Newsletters',
@@ -37,7 +37,7 @@ export default {
   },
 
   recipient: {
-    camp_staff: 'Das Team der Freizeit',
+    event_staff: 'Das Team der Veranstaltung',
     accommodation_provider: 'Der Betreiber der Unterkunft',
     catering_provider: 'Der Caterer',
     transport_provider: 'Das Transportunternehmen',
@@ -75,7 +75,7 @@ export default {
 
   specialCategoryCondition: {
     explicit_consent:
-      'Der Normalfall für eine Freizeit. Die Person muss gesondert zustimmen und jederzeit widerrufen können.',
+      'Der Normalfall für eine Veranstaltung. Die Person muss gesondert zustimmen und jederzeit widerrufen können.',
     nonprofit_body:
       'Nur wenn die Person Mitglied eurer Organisation ist oder in regelmäßigem Kontakt zu ihr steht und die Daten die Organisation nicht verlassen.',
     vital_interests:
@@ -87,9 +87,17 @@ export default {
   },
 
   retentionAnchor: {
-    camp_end: 'nach Ende der Freizeit',
+    event_end: 'nach Ende der Veranstaltung',
     submission: 'nach Absenden der Anmeldung',
   },
+
+  retentionUntil: {
+    period: 'für eine feste Dauer',
+    consent_withdrawn: 'bis die zugrunde liegende Einwilligung widerrufen wird',
+  },
+
+  retentionConsentSentence:
+    'Wird so lange gespeichert, wie du einwilligst, und nach deinem Widerruf gelöscht.',
 
   transferSafeguard: {
     adequacy: 'einen Angemessenheitsbeschluss der Europäischen Kommission',
@@ -113,7 +121,7 @@ export default {
     },
     origin: {
       organization: 'Von der Organisation',
-      camp: 'Hier ergänzt',
+      event: 'Hier ergänzt',
     },
     action: {
       publish: 'Veröffentlichen',
@@ -155,6 +163,8 @@ export default {
     retention: 'Es wurde keine Speicherdauer festgelegt',
     retention_exception:
       'Einer Ausnahme fehlt die Frist oder die Angabe, wofür sie gilt',
+    retention_exception_consent_basis:
+      'Daten, die bis zum Widerruf gespeichert werden, gehören zu einem Zweck, der nicht auf einer Einwilligung beruht',
     transfer_countries:
       'Für Übermittlungen außerhalb des EWR fehlt das Zielland',
     transfer_safeguard:

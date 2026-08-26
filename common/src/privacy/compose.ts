@@ -10,14 +10,14 @@ import {
 import type { SupervisoryAuthority } from './supervisoryAuthorities.js';
 
 /**
- * An organization's notice with its camp's additions folded in.
+ * An organization's notice with its event's additions folded in.
  *
- * The camp's free text stays a field of its own rather than being concatenated
+ * The event's free text stays a field of its own rather than being concatenated
  * into `additional`: the two are authored by different people, and a reader
- * needs to see which statements come from the camp.
+ * needs to see which statements come from the event.
  */
 export interface ComposedPrivacyNotice extends PrivacyNoticeContent {
-  campAdditional: Translatable | null;
+  eventAdditional: Translatable | null;
 }
 
 /**
@@ -42,7 +42,7 @@ export interface PublishedPrivacyNotice {
   supervisoryAuthority: SupervisoryAuthority | null;
   notice: ComposedPrivacyNotice | null;
   organizationVersion: number | null;
-  campVersion: number | null;
+  eventVersion: number | null;
 }
 
 /**
@@ -55,7 +55,7 @@ export function retentionExceptions(
   return Array.isArray(retention?.exceptions) ? retention.exceptions : [];
 }
 
-/** Later entries win, so a camp may restate an org entry with a different basis. */
+/** Later entries win, so an event may restate an org entry with a different basis. */
 function mergeByKey<T extends { key: string }>(base: T[], extra: T[]): T[] {
   const merged = new Map(base.map((entry) => [entry.key, entry]));
   for (const entry of extra) {
@@ -65,64 +65,64 @@ function mergeByKey<T extends { key: string }>(base: T[], extra: T[]): T[] {
 }
 
 /**
- * The camp's period replaces the baseline, but its exceptions are added to the
- * organization's rather than replacing them: a camp naming one statutory
+ * The event's period replaces the baseline, but its exceptions are added to the
+ * organization's rather than replacing them: an event naming one statutory
  * exception must not silently drop everything its organization declared, and
- * the organization's later edits have to keep reaching camps that added one.
+ * the organization's later edits have to keep reaching events that added one.
  */
 function mergeRetention(
   base: PrivacyRetention | null,
-  camp: PrivacyRetention | null | undefined,
+  event: PrivacyRetention | null | undefined,
 ): PrivacyRetention | null {
-  if (!camp) {
+  if (!event) {
     return base;
   }
 
   const exceptions = new Map(
     retentionExceptions(base).map((exception) => [exception.scope, exception]),
   );
-  for (const exception of retentionExceptions(camp)) {
+  for (const exception of retentionExceptions(event)) {
     exceptions.set(exception.scope, exception);
   }
 
   return {
-    months: camp.months,
-    anchor: camp.anchor,
+    months: event.months,
+    anchor: event.anchor,
     exceptions: [...exceptions.values()],
   };
 }
 
 /**
- * A camp cannot undo a transfer its organization declared, so the countries are
- * a union and `enabled` is either side's; the camp's safeguard and note win
+ * A event cannot undo a transfer its organization declared, so the countries are
+ * a union and `enabled` is either side's; the event's safeguard and note win
  * only where it actually set them.
  */
 function mergeTransfers(
   base: PrivacyThirdCountryTransfers,
-  camp: PrivacyThirdCountryTransfers | null | undefined,
+  event: PrivacyThirdCountryTransfers | null | undefined,
 ): PrivacyThirdCountryTransfers {
-  if (!camp) {
+  if (!event) {
     return base;
   }
 
   return {
-    enabled: base.enabled || camp.enabled,
-    countries: [...new Set([...base.countries, ...camp.countries])],
-    safeguard: camp.safeguard ?? base.safeguard ?? null,
-    note: camp.note ?? base.note ?? null,
+    enabled: base.enabled || event.enabled,
+    countries: [...new Set([...base.countries, ...event.countries])],
+    safeguard: event.safeguard ?? base.safeguard ?? null,
+    note: event.note ?? base.note ?? null,
   };
 }
 
 export function composePrivacyNotice(
   organization: PrivacyNoticeContent | null,
-  camp?: PrivacyNoticeAddendum | null,
+  event?: PrivacyNoticeAddendum | null,
 ): ComposedPrivacyNotice {
   const base = organization ?? emptyPrivacyNoticeContent();
 
-  // The organization wrote its own prose, so there is no structure for a camp's
+  // The organization wrote its own prose, so there is no structure for an event's
   // structured entries to join, and the builder fields carry defaults nobody
   // authored. Emitting them would contradict the renderer, which shows the
-  // prose alone. The camp's own text still reaches the reader below.
+  // prose alone. The event's own text still reaches the reader below.
   if (base.mode === 'free_text') {
     return {
       ...base,
@@ -131,20 +131,23 @@ export function composePrivacyNotice(
       recipients: [],
       retention: null,
       thirdCountryTransfers: { enabled: false, countries: [] },
-      campAdditional: camp?.additional ?? null,
+      eventAdditional: event?.additional ?? null,
     };
   }
 
   return {
     ...base,
-    purposes: mergeByKey(base.purposes, camp?.purposes ?? []),
-    dataCategories: mergeByKey(base.dataCategories, camp?.dataCategories ?? []),
-    recipients: mergeByKey(base.recipients, camp?.recipients ?? []),
-    retention: mergeRetention(base.retention, camp?.retention),
+    purposes: mergeByKey(base.purposes, event?.purposes ?? []),
+    dataCategories: mergeByKey(
+      base.dataCategories,
+      event?.dataCategories ?? [],
+    ),
+    recipients: mergeByKey(base.recipients, event?.recipients ?? []),
+    retention: mergeRetention(base.retention, event?.retention),
     thirdCountryTransfers: mergeTransfers(
       base.thirdCountryTransfers,
-      camp?.thirdCountryTransfers,
+      event?.thirdCountryTransfers,
     ),
-    campAdditional: camp?.additional ?? null,
+    eventAdditional: event?.additional ?? null,
   };
 }

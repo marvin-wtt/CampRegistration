@@ -1,7 +1,7 @@
-import type { Camp, Registration } from '#generated/prisma/client.js';
+import type { Event, Registration } from '#generated/prisma/client.js';
 import prisma from '../client';
 import { RoomFactory } from '../factories';
-import { campLocales, forLocales } from './locales';
+import { eventLocales, forLocales } from './locales';
 import { ulid } from '#utils/ulid';
 
 interface RoomData {
@@ -39,7 +39,7 @@ const ROOMS: RoomData[] = [
 ];
 
 /**
- * Round-robins the countries against each other, so an international camp gets
+ * Round-robins the countries against each other, so an international event gets
  * rooms whose occupants come from both of them instead of the rooms filling up
  * country by country in the order the registrations were seeded.
  */
@@ -74,14 +74,14 @@ function mixCountries(registrations: Registration[]): Registration[] {
  * room is occupied from the top down, leaving its free beds at the bottom.
  */
 export class RoomSeeder {
-  constructor(private camp: Camp) {}
+  constructor(private event: Event) {}
 
   async seed(): Promise<void> {
     const registrations = await prisma.registration.findMany({
-      where: { campId: this.camp.id, status: 'ACCEPTED' },
+      where: { eventId: this.event.id, status: 'ACCEPTED' },
       orderBy: { createdAt: 'asc' },
     });
-    const locales = campLocales(this.camp);
+    const locales = eventLocales(this.event);
 
     const queues: Record<RoomData['occupants'], Registration[]> = {
       f: mixCountries(
@@ -104,7 +104,7 @@ export class RoomSeeder {
       const occupied = Math.round(room.beds * room.occupancy);
 
       const beds = Array.from({ length: room.beds }, (_, bed) => {
-        // `shift` runs the queue dry silently on a camp with few participants.
+        // `shift` runs the queue dry silently on a event with few participants.
         const registration = bed < occupied ? queue.shift() : undefined;
 
         // Beds are read back in primary key order, so the ids have to be
@@ -119,7 +119,7 @@ export class RoomSeeder {
       });
 
       await RoomFactory.create({
-        camp: { connect: { id: this.camp.id } },
+        event: { connect: { id: this.event.id } },
         name: forLocales(room.name, locales),
         sortOrder: index,
         beds: { create: beds },

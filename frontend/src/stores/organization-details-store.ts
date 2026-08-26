@@ -10,7 +10,7 @@ import type {
 } from '@camp-registration/common/entities';
 
 /**
- * The organization named by the current route. Mirrors `camp-details-store`:
+ * The organization named by the current route. Mirrors `event-details-store`:
  * navigation drives the fetch, so pages can read it without wiring their own.
  */
 export const useOrganizationDetailsStore = defineStore(

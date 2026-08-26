@@ -4,20 +4,20 @@ import { injectable } from 'inversify';
 
 @injectable()
 export class SettingService extends BaseService {
-  async getSetting(campId: string, key: SettingKey) {
-    return this.prisma.campSetting.findUnique({
-      where: { campId_key: { campId, key } },
+  async getSetting(eventId: string, key: SettingKey) {
+    return this.prisma.eventSetting.findUnique({
+      where: { eventId_key: { eventId, key } },
     });
   }
 
   async upsertSetting(
-    campId: string,
+    eventId: string,
     key: SettingKey,
     data: Record<string, unknown>,
   ) {
-    return this.prisma.campSetting.upsert({
-      where: { campId_key: { campId, key } },
-      create: { campId, key, data },
+    return this.prisma.eventSetting.upsert({
+      where: { eventId_key: { eventId, key } },
+      create: { eventId, key, data },
       update: { data },
     });
   }

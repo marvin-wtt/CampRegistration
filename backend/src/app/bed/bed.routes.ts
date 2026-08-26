@@ -1,5 +1,5 @@
 import { auth, guard } from '#middlewares/index';
-import { campManager } from '#app/camp/camp.guard';
+import { hasEventPermission } from '#app/event/event.guard';
 import { BedController } from './bed.controller.js';
 import { ModuleRouter } from '#core/router/ModuleRouter';
 import { BedService } from '#app/bed/bed.service';
@@ -24,19 +24,19 @@ export class BedRouter extends ModuleRouter {
     this.router.post(
       '/',
       auth(),
-      guard(campManager('camp.rooms.beds.create')),
+      guard(hasEventPermission('event.rooms.beds.create')),
       controller(bedController, 'store'),
     );
     this.router.patch(
       '/:bedId',
       auth(),
-      guard(campManager('camp.rooms.beds.edit')),
+      guard(hasEventPermission('event.rooms.beds.edit')),
       controller(bedController, 'update'),
     );
     this.router.delete(
       '/:bedId',
       auth(),
-      guard(campManager('camp.rooms.beds.delete')),
+      guard(hasEventPermission('event.rooms.beds.delete')),
       controller(bedController, 'destroy'),
     );
   }

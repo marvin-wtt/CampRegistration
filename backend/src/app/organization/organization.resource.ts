@@ -6,7 +6,7 @@ import type {
 import { JsonResource } from '#core/resource/JsonResource';
 
 export interface OrganizationWithCounts extends Organization {
-  ownedCamps: number;
+  ownedEvents: number;
   ownedNewsletters: number;
 }
 
@@ -44,7 +44,7 @@ export class OrganizationDetailsResource extends JsonResource<
   transform(): OrganizationDetailsData {
     return {
       ...new OrganizationResource(this.data).transform(),
-      ownedCamps: this.data.ownedCamps,
+      ownedEvents: this.data.ownedEvents,
       ownedNewsletters: this.data.ownedNewsletters,
     };
   }

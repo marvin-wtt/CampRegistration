@@ -22,21 +22,21 @@ export const USER_IDS = {
 } as const;
 
 export const ORGANIZATION_IDS = {
-  /** VERIFIED, John is ADMIN. Owns most of the seeded camps and newsletters. */
+  /** VERIFIED, John is ADMIN. Owns most of the seeded events and newsletters. */
   youthAdventures: seedId('RGZ'),
-  /** VERIFIED, John is MEMBER only — no implicit access to its camps. */
+  /** VERIFIED, John is MEMBER only — no implicit access to its events. */
   alpineExplorers: seedId('MBR'),
-  /** PENDING, John is ADMIN. Its camps stay hidden and refuse registrations. */
+  /** PENDING, John is ADMIN. Its events stay hidden and refuse registrations. */
   nouvelleAssociation: seedId('PND'),
-  /** REJECTED, John is ADMIN. Its camps were unpublished by the rejection. */
+  /** REJECTED, John is ADMIN. Its events were unpublished by the rejection. */
   harbourTrust: seedId('RJC'),
   /** VERIFIED, John is not a member at all. */
-  coastalCamps: seedId('FRN'),
+  coastalEvents: seedId('FRN'),
   /** PENDING, John is not a member — second entry for the moderation queue. */
   bergfreunde: seedId('PN2'),
 } as const;
 
-export const CAMP_IDS = {
+export const EVENT_IDS = {
   /** The flagship: every child model is seeded for this one. */
   summer: seedId('RWR'),
   files: '01JKEMXG5C62NBMA6V0QQDJ7JD',
@@ -53,7 +53,7 @@ export const CAMP_IDS = {
 } as const;
 
 export const NEWSLETTER_IDS = {
-  campUpdates: seedId('NW1'),
+  eventUpdates: seedId('NW1'),
   registrationReminders: seedId('NW2'),
   alumniDigest: seedId('NW3'),
   boardAnnouncements: seedId('NW4'),

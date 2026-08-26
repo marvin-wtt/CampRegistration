@@ -154,7 +154,7 @@ import { computed, ref } from 'vue';
 import { TouchPan, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
-import { useCampDetailsStore } from '@/stores/camp-details-store';
+import { useEventDetailsStore } from '@/stores/event-details-store';
 import { useOrganizationDetailsStore } from '@/stores/organization-details-store';
 import { useNewsletterStore } from '@/stores/newsletter-store';
 import { useObjectTranslation } from '@/composables/objectTranslation';
@@ -177,7 +177,7 @@ const route = useRoute();
 const { t } = useI18n();
 const { to } = useObjectTranslation();
 
-const campDetailsStore = useCampDetailsStore();
+const eventDetailsStore = useEventDetailsStore();
 const organizationDetailsStore = useOrganizationDetailsStore();
 const newsletterStore = useNewsletterStore();
 
@@ -219,7 +219,7 @@ function param(key: string): string | undefined {
 
 const icon = computed<string>(() => {
   switch (area.value) {
-    case 'camps':
+    case 'events':
       return 'cabin';
     case 'newsletters':
       return 'mail';
@@ -233,8 +233,8 @@ const icon = computed<string>(() => {
 /** The name of the entity being managed, once it is known. */
 const entityName = computed<string | undefined>(() => {
   switch (area.value) {
-    case 'camps':
-      return param('campId') ? to(campDetailsStore.data?.name) : undefined;
+    case 'events':
+      return param('eventId') ? to(eventDetailsStore.data?.name) : undefined;
     case 'newsletters':
       return newsletterStore.data?.find((n) => n.id === param('newsletterId'))
         ?.name;
@@ -250,8 +250,8 @@ const entityName = computed<string | undefined>(() => {
 /** Falls back to the area name, which is what index pages show. */
 const areaName = computed<string>(() => {
   switch (area.value) {
-    case 'camps':
-      return t('area.camps');
+    case 'events':
+      return t('area.events');
     case 'newsletters':
       return t('area.newsletters');
     case 'organizations':
@@ -271,8 +271,8 @@ const sheetCaption = computed<string | undefined>(() =>
 
 const loading = computed<boolean>(() => {
   switch (area.value) {
-    case 'camps':
-      return !!param('campId') && campDetailsStore.isLoading;
+    case 'events':
+      return !!param('eventId') && eventDetailsStore.isLoading;
     case 'organizations':
       return !!param('organizationId') && organizationDetailsStore.isLoading;
     default:
@@ -414,7 +414,7 @@ const loading = computed<boolean>(() => {
 <i18n lang="yaml" locale="en">
 switch: 'Switch to'
 area:
-  camps: 'Camps'
+  events: 'Events'
   newsletters: 'Newsletters'
   organizations: 'Organizations'
   administration: 'Administration'
@@ -423,7 +423,7 @@ area:
 <i18n lang="yaml" locale="de">
 switch: 'Wechseln zu'
 area:
-  camps: 'Camps'
+  events: 'Veranstaltungen'
   newsletters: 'Newsletter'
   organizations: 'Organisationen'
   administration: 'Verwaltung'
@@ -432,7 +432,7 @@ area:
 <i18n lang="yaml" locale="fr">
 switch: 'Aller à'
 area:
-  camps: 'Camps'
+  events: 'Événements'
   newsletters: 'Newsletters'
   organizations: 'Organisations'
   administration: 'Administration'
@@ -441,7 +441,7 @@ area:
 <i18n lang="yaml" locale="pl">
 switch: 'Przejdź do'
 area:
-  camps: 'Obozy'
+  events: 'Wydarzenia'
   newsletters: 'Newslettery'
   organizations: 'Organizacje'
   administration: 'Administracja'
@@ -450,7 +450,7 @@ area:
 <i18n lang="yaml" locale="cs">
 switch: 'Přejít na'
 area:
-  camps: 'Tábory'
+  events: 'Akce'
   newsletters: 'Newslettery'
   organizations: 'Organizace'
   administration: 'Administrace'

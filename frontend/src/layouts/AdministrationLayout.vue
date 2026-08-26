@@ -43,10 +43,10 @@ const items = computed<NavigationItemProps[]>(() => [
     to: { name: 'administration.organizations' },
   },
   {
-    name: 'camps',
-    label: t('camps'),
+    name: 'events',
+    label: t('events'),
     icon: 'home',
-    to: { name: 'administration.camps' },
+    to: { name: 'administration.events' },
   },
   {
     name: 'newsletters',
@@ -73,7 +73,7 @@ const items = computed<NavigationItemProps[]>(() => [
 title: 'Administration'
 
 organizations: 'Organizations'
-camps: 'Camps'
+events: 'Events'
 newsletters: 'Newsletters'
 queues: 'Jobs'
 users: 'Users'
@@ -85,7 +85,7 @@ legal: 'Legal Content'
 title: 'Verwaltung'
 
 organizations: 'Organisationen'
-camps: 'Camps'
+events: 'Veranstaltungen'
 newsletters: 'Newsletter'
 queues: 'Aufgaben'
 users: 'Benutzer'
@@ -97,7 +97,7 @@ legal: 'Rechtliches'
 title: 'Administration'
 
 organizations: 'Organisations'
-camps: 'Camps'
+events: 'Événements'
 newsletters: 'Newsletters'
 queues: 'Tâches'
 users: 'Utilisateurs'
@@ -109,7 +109,7 @@ legal: 'Contenu légal'
 title: 'Administracja'
 
 organizations: 'Organizacje'
-camps: 'Obozy'
+events: 'Wydarzenia'
 newsletters: 'Newslettery'
 queues: 'Zadania'
 users: 'Użytkownicy'
@@ -121,7 +121,7 @@ legal: 'Treści prawne'
 title: 'Administrace'
 
 organizations: 'Organizace'
-camps: 'Tábory'
+events: 'Akce'
 newsletters: 'Newslettery'
 queues: 'Úlohy'
 users: 'Uživatelé'

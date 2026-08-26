@@ -1,13 +1,15 @@
-import type { SurveyModel } from 'survey-core';
-import type { CampDetails } from '@camp-registration/common/entities';
+import type { ITheme, SurveyModel } from 'survey-core';
+import type { EventDetails } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
 import { nextTick, type Ref, watch, watchEffect } from 'vue';
 import { setVariables } from '@camp-registration/common/form';
 import { useQuasar } from 'quasar';
+import type { useAPIService } from '@/services/APIService';
+import { md3SurveyThemes } from '@/lib/surveyJs/themes/md3';
 
 export function startAutoDataUpdate(
   model: SurveyModel,
-  data: Ref<CampDetails | undefined>,
+  data: Ref<EventDetails | undefined>,
 ) {
   const { locale } = useI18n();
 
@@ -21,7 +23,7 @@ export function startAutoDataUpdate(
 
   const updateVariables = (
     model: SurveyModel | undefined,
-    data: CampDetails | undefined,
+    data: EventDetails | undefined,
     locale: string,
   ) => {
     if (!model) {
@@ -36,33 +38,73 @@ export function startAutoDataUpdate(
 }
 
 /**
- * Reports the survey's resolved background colour so the page behind it can
- * match.
- *
- * No theme is applied here. Every form renders in the one corporate MD3 look
- * that `md3-adapter.scss` supplies through the `.sjs-theme-overrides` class,
- * which is what keeps the Survey Creator's designer and preview identical to
- * the public camp page. A camp's stored `themes` are left untouched in the
- * database, but nothing reads them while the Themes tab is disabled.
- *
- * The colour still has to be re-measured when the viewer toggles dark mode,
- * since the adapter resolves it live from `--md3-*`.
+ * Resolves {_file.<slot>} placeholders to a deterministic, locale-aware URL that
+ * the backend redirects to the matching file. No file list is fetched up front;
+ * the browser only requests a file when a link/image actually renders.
  */
-export const startAutoBackgroundUpdate = (bgColor: Ref<string | undefined>) => {
+export function addFileSlotResolver(
+  model: SurveyModel,
+  eventId: string,
+  api: ReturnType<typeof useAPIService>,
+) {
+  model.onProcessDynamicText.add((sender, options) => {
+    if (options.isExists) {
+      return;
+    }
+    if (!options.name.startsWith('_file.')) {
+      return;
+    }
+    const slot = options.name.slice('_file.'.length);
+    options.value = api.getEventFileSlotUrl(eventId, slot, sender.locale);
+  });
+}
+
+export const startAutoThemeUpdate = (
+  model: SurveyModel,
+  data: Ref<EventDetails | undefined>,
+  bgColor?: Ref<string | undefined>,
+) => {
   const quasar = useQuasar();
 
-  const measure = async () => {
-    // Let the survey paint before reading back the resolved colour.
-    await nextTick();
-
-    const element = document.getElementById('survey');
-    if (element) {
-      bgColor.value = window.getComputedStyle(element).backgroundColor;
+  const applyTheme = async (
+    model: SurveyModel | undefined,
+    data: EventDetails | undefined,
+    dark: boolean,
+  ) => {
+    if (!model || !data) {
+      return;
     }
+
+    const themes = data.themes;
+    const colorPlatte = dark ? 'dark' : 'light';
+
+    let theme: ITheme;
+    if (colorPlatte in themes) {
+      theme = themes[colorPlatte]!;
+    } else if (colorPlatte === 'dark' && 'light' in themes) {
+      // Try light mode first
+      theme = themes.light;
+    } else {
+      // Apply default theme
+      theme = md3SurveyThemes[colorPlatte];
+    }
+
+    model.applyTheme(theme);
+
+    // Update background color of entire page if reference is provided
+    if (!bgColor) {
+      return;
+    }
+
+    await nextTick(() => {
+      const element = document.getElementById('survey');
+      if (element) {
+        bgColor.value = window.getComputedStyle(element).backgroundColor;
+      }
+    });
   };
 
   watchEffect(() => {
-    void quasar.dark.isActive;
-    void measure();
+    void applyTheme(model, data.value, quasar.dark.isActive);
   });
 };

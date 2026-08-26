@@ -1,15 +1,15 @@
 export default {
   purpose: {
     registration_administration: 'Vyřízení tvé přihlášky',
-    participant_communication: 'Informování před táborem a v jeho průběhu',
-    camp_organisation: 'Organizace a průběh tábora',
+    participant_communication: 'Informování před akcí a v jejím průběhu',
+    event_organisation: 'Organizace a průběh akce',
     catering: 'Stravování',
-    medical_care: 'Zdravotní péče v průběhu tábora',
+    medical_care: 'Zdravotní péče v průběhu akce',
     emergency_contact: 'Kontaktování v naléhavém případě',
     transport: 'Zajištění dopravy',
     insurance: 'Pojištění',
     payment_and_invoicing: 'Platby a fakturace',
-    photo_documentation: 'Interní dokumentace života na táboře',
+    photo_documentation: 'Interní dokumentace akce',
     photo_publication: 'Zveřejňování fotografií',
     statutory_reporting: 'Hlášení vyžadovaná zákonem',
     newsletter: 'Zasílání našeho newsletteru',
@@ -37,7 +37,7 @@ export default {
   },
 
   recipient: {
-    camp_staff: 'Tým tábora',
+    event_staff: 'Tým akce',
     accommodation_provider: 'Poskytovatel ubytování',
     catering_provider: 'Poskytovatel stravování',
     transport_provider: 'Dopravce',
@@ -72,7 +72,7 @@ export default {
 
   specialCategoryCondition: {
     explicit_consent:
-      'Běžný případ u tábora. Osoba musí souhlasit zvlášť a musí mít možnost souhlas kdykoli odvolat.',
+      'Běžný případ u akce. Osoba musí souhlasit zvlášť a musí mít možnost souhlas kdykoli odvolat.',
     nonprofit_body:
       'Jen pokud je osoba členem vaší organizace nebo je s ní v pravidelném kontaktu a údaje organizaci neopustí.',
     vital_interests:
@@ -84,9 +84,17 @@ export default {
   },
 
   retentionAnchor: {
-    camp_end: 'po skončení tábora',
+    event_end: 'po skončení akce',
     submission: 'po odeslání přihlášky',
   },
+
+  retentionUntil: {
+    period: 'po pevně danou dobu',
+    consent_withdrawn: 'dokud není odvolán souhlas, na kterém stojí',
+  },
+
+  retentionConsentSentence:
+    'Uchováváme je tak dlouho, dokud s tím souhlasíš, a po odvolání souhlasu je smažeme.',
 
   transferSafeguard: {
     adequacy: 'rozhodnutí Evropské komise o odpovídající ochraně',
@@ -110,7 +118,7 @@ export default {
     },
     origin: {
       organization: 'Od organizace',
-      camp: 'Doplněno zde',
+      event: 'Doplněno zde',
     },
     action: {
       publish: 'Zveřejnit',
@@ -150,6 +158,8 @@ export default {
     recipients: 'Nebyli uvedeni žádní příjemci',
     retention: 'Nebyla stanovena doba uchování',
     retention_exception: 'U výjimky chybí doba nebo údaj, čeho se týká',
+    retention_exception_consent_basis:
+      'Údaje uchovávané do odvolání souhlasu patří k účelu, který na souhlasu nestojí',
     transfer_countries: 'U předávání mimo EHP není uvedena cílová země',
     transfer_safeguard: 'U předávání mimo EHP nejsou uvedeny záruky',
     dpo_details:

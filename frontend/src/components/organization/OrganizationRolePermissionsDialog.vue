@@ -36,12 +36,12 @@
 
         <q-banner
           dense
-          class="camp-access-note rounded-md"
+          class="event-access-note rounded-md"
         >
           <template #avatar>
             <q-icon name="info" />
           </template>
-          {{ t('campAccess') }}
+          {{ t('eventAccess') }}
         </q-banner>
       </q-card-section>
 
@@ -78,7 +78,7 @@ const roles: OrganizationRole[] = ['ADMIN', 'MEMBER'];
 </script>
 
 <style lang="scss" scoped>
-.camp-access-note {
+.event-access-note {
   background: var(--md3-surface-container-high);
   color: var(--md3-on-surface-variant);
 }
@@ -92,14 +92,14 @@ role:
     can:
       - 'Edit the organization and submit it for verification'
       - 'Add, change and remove members'
-      - 'Create camps and newsletters'
+      - 'Create events and newsletters'
       - 'Delete the organization'
   MEMBER:
     title: 'Member'
     can:
       - 'See the organization and its members'
-      - 'Create camps under the organization'
-campAccess: 'Admins can see every camp of this organization and close its registration, but never its registrations or participant data. Access to participant data always requires a separate camp invitation.'
+      - 'Create events under the organization'
+eventAccess: 'Admins can see every event of this organization and close its registration, but never its registrations or participant data. Access to participant data always requires a separate event invitation.'
 action:
   close: 'Close'
 </i18n>
@@ -112,14 +112,14 @@ role:
     can:
       - 'Organisation bearbeiten und zur Verifizierung einreichen'
       - 'Mitglieder hinzufügen, ändern und entfernen'
-      - 'Camps und Newsletter erstellen'
+      - 'Veranstaltungen und Newsletter erstellen'
       - 'Organisation löschen'
   MEMBER:
     title: 'Mitglied'
     can:
       - 'Organisation und ihre Mitglieder sehen'
-      - 'Camps der Organisation anlegen'
-campAccess: 'Admins sehen jedes Camp dieser Organisation und können dessen Anmeldung schließen, aber niemals die Anmeldungen oder Teilnehmerdaten. Dafür ist immer eine separate Camp-Einladung nötig.'
+      - 'Veranstaltungen der Organisation anlegen'
+eventAccess: 'Admins sehen jede Veranstaltung dieser Organisation und können dessen Anmeldung schließen, aber niemals die Anmeldungen oder Teilnehmerdaten. Dafür ist immer eine separate Veranstaltungseinladung nötig.'
 action:
   close: 'Schließen'
 </i18n>
@@ -132,14 +132,14 @@ role:
     can:
       - "Modifier l'organisation et la soumettre à vérification"
       - 'Ajouter, modifier et retirer des membres'
-      - 'Créer des camps et des newsletters'
+      - 'Créer des événements et des newsletters'
       - "Supprimer l'organisation"
   MEMBER:
     title: 'Membre'
     can:
       - "Voir l'organisation et ses membres"
-      - "Créer des camps pour l'organisation"
-campAccess: 'Les admins voient tous les camps de cette organisation et peuvent en fermer les inscriptions, mais jamais les inscriptions ni les données des participants. Cela nécessite toujours une invitation distincte au camp.'
+      - "Créer des événements pour l'organisation"
+eventAccess: 'Les admins voient tous les événements de cette organisation et peuvent en fermer les inscriptions, mais jamais les inscriptions ni les données des participants. Cela nécessite toujours une invitation distincte au événement.'
 action:
   close: 'Fermer'
 </i18n>
@@ -152,14 +152,14 @@ role:
     can:
       - 'Edytowanie organizacji i zgłaszanie jej do weryfikacji'
       - 'Dodawanie, zmiana i usuwanie członków'
-      - 'Tworzenie obozów i newsletterów'
+      - 'Tworzenie wydarzeń i newsletterów'
       - 'Usuwanie organizacji'
   MEMBER:
     title: 'Członek'
     can:
       - 'Podgląd organizacji i jej członków'
-      - 'Tworzenie obozów w organizacji'
-campAccess: 'Administratorzy widzą każdy obóz tej organizacji i mogą zamknąć jego rejestrację, ale nigdy nie widzą zgłoszeń ani danych uczestników. Do tego zawsze potrzebne jest osobne zaproszenie do obozu.'
+      - 'Tworzenie wydarzeń w organizacji'
+eventAccess: 'Administratorzy widzą każde wydarzenie tej organizacji i mogą zamknąć jego rejestrację, ale nigdy nie widzą zgłoszeń ani danych uczestników. Do tego zawsze potrzebne jest osobne zaproszenie do wydarzenia.'
 action:
   close: 'Zamknij'
 </i18n>
@@ -172,14 +172,14 @@ role:
     can:
       - 'Upravovat organizaci a odeslat ji k ověření'
       - 'Přidávat, měnit a odebírat členy'
-      - 'Vytvářet tábory a newslettery'
+      - 'Vytvářet akce a newslettery'
       - 'Smazat organizaci'
   MEMBER:
     title: 'Člen'
     can:
       - 'Vidět organizaci a její členy'
-      - 'Vytvářet tábory organizace'
-campAccess: 'Správci vidí každý tábor této organizace a mohou uzavřít jeho registraci, nikdy však registrace ani údaje účastníků. K tomu je vždy potřeba samostatné pozvání do tábora.'
+      - 'Vytvářet akce organizace'
+eventAccess: 'Správci vidí každou akci této organizace a mohou uzavřít její registraci, nikdy však registrace ani údaje účastníků. K tomu je vždy potřeba samostatné pozvání do akce.'
 action:
   close: 'Zavřít'
 </i18n>

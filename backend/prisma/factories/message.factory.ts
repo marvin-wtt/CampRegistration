@@ -7,7 +7,7 @@ export const MessageFactory = {
     data: Partial<Prisma.MessageCreateInput> = {},
   ): Prisma.MessageCreateInput => {
     return {
-      camp: data.camp! ?? undefined,
+      event: data.event! ?? undefined,
       subject: faker.lorem.sentence(),
       body: faker.lorem.paragraphs(1),
       ...data,

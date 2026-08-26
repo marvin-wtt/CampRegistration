@@ -11,10 +11,10 @@ class OrganizationSeeder extends BaseSeeder {
 
   async run(): Promise<void> {
     // No legacy organization here: the migration only creates one for databases
-    // that already had camps, and a seeded database creates its own.
+    // that already had events, and a seeded database creates its own.
 
-    // John administers this one — implicit ORGANIZATION_CAMP_PERMISSIONS on
-    // every camp it owns, even the ones he does not manage.
+    // John administers this one — implicit ORGANIZATION_EVENT_PERMISSIONS on
+    // every event it owns, even the ones he does not manage.
     await OrganizationFactory.create({
       id: ORGANIZATION_IDS.youthAdventures,
       name: 'Youth Adventures',
@@ -51,8 +51,8 @@ class OrganizationSeeder extends BaseSeeder {
       },
     });
 
-    // John is a plain MEMBER here: he may create camps for the organization but
-    // holds nothing implicit on the camps it already owns.
+    // John is a plain MEMBER here: he may create events for the organization but
+    // holds nothing implicit on the events it already owns.
     await OrganizationFactory.create({
       id: ORGANIZATION_IDS.alpineExplorers,
       name: 'Alpine Explorers',
@@ -70,7 +70,7 @@ class OrganizationSeeder extends BaseSeeder {
       },
     });
 
-    // Awaiting moderation: its camps stay out of the public directory and
+    // Awaiting moderation: its events stay out of the public directory and
     // refuse registrations, its newsletter refuses to send.
     await OrganizationFactory.create({
       id: ORGANIZATION_IDS.nouvelleAssociation,
@@ -86,7 +86,7 @@ class OrganizationSeeder extends BaseSeeder {
       },
     });
 
-    // Rejected after review — the rejection unpublished its camps.
+    // Rejected after review — the rejection unpublished its events.
     await OrganizationFactory.create({
       id: ORGANIZATION_IDS.harbourTrust,
       name: 'Harbour Youth Trust',
@@ -102,13 +102,13 @@ class OrganizationSeeder extends BaseSeeder {
       },
     });
 
-    // John is not a member: its camp shows up in the public directory but every
+    // John is not a member: its event shows up in the public directory but every
     // management route must refuse him.
     await OrganizationFactory.create({
-      id: ORGANIZATION_IDS.coastalCamps,
-      name: 'Coastal Camps',
+      id: ORGANIZATION_IDS.coastalEvents,
+      name: 'Coastal Events',
       verificationStatus: 'VERIFIED',
-      contactEmail: 'hello@coastal-camps.example.com',
+      contactEmail: 'hello@coastal-events.example.com',
       country: 'gb',
       addressCity: 'Brighton',
       reviewedAt: seedDate(-90),

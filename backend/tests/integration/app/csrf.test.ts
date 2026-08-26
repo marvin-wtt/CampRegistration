@@ -44,11 +44,11 @@ describe('CSRF protection', () => {
   });
 
   it('should protect public, unauthenticated web routes', async () => {
-    // Camp registration is a public route and must still require a CSRF token.
+    // Event registration is a public route and must still require a CSRF token.
     // The request is rejected by the middleware before any handler runs, so a
-    // placeholder camp id is sufficient.
+    // placeholder event id is sufficient.
     await request()
-      .post('/api/v1/camps/placeholder-camp-id/registrations')
+      .post('/api/v1/events/placeholder-event-id/registrations')
       .set('X-Client-Type', 'web')
       .send({ data: {} })
       .expect(403);

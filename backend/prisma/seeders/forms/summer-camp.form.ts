@@ -5,8 +5,8 @@
  */
 export const summerCampForm = {
   locale: 'en',
-  title: '{camp.name}',
-  description: '{camp.startAtDate} - {camp.endAtDate}',
+  title: '{event.name}',
+  description: '{event.startAtDate} - {event.endAtDate}',
   logoHeight: '80px',
   logoPosition: 'right',
   completedHtml: {
@@ -33,12 +33,12 @@ export const summerCampForm = {
             cs: 'Datum',
           },
           description: {
-            en: '{camp.startAtDate} until {camp.endAtDate}',
-            de: '{camp.startAtDate} bis {camp.endAtDate}',
-            fr: '{camp.startAtDate} au {camp.endAtDate}',
-            pl: '{camp.startAtDate} do {camp.endAtDate}',
-            cs: '{camp.startAtDate} až {camp.endAtDate}',
-            default: '{camp.startAtDate} until {camp.endAtDate}  ',
+            en: '{event.startAtDate} until {event.endAtDate}',
+            de: '{event.startAtDate} bis {event.endAtDate}',
+            fr: '{event.startAtDate} au {event.endAtDate}',
+            pl: '{event.startAtDate} do {event.endAtDate}',
+            cs: '{event.startAtDate} až {event.endAtDate}',
+            default: '{event.startAtDate} until {event.endAtDate}  ',
           },
         },
         {
@@ -53,12 +53,12 @@ export const summerCampForm = {
             default: 'Age',
           },
           description: {
-            en: '{camp.minAge} to {camp.maxAge}',
-            de: '{camp.minAge} bis {camp.maxAge}',
-            fr: '{camp.minAge} à {camp.maxAge}',
-            pl: '{camp.minAge} do {camp.maxAge}',
-            cs: '{camp.minAge} až {camp.maxAge}',
-            default: '{camp.minAge} to {camp.maxAge}',
+            en: '{event.minAge} to {event.maxAge}',
+            de: '{event.minAge} bis {event.maxAge}',
+            fr: '{event.minAge} à {event.maxAge}',
+            pl: '{event.minAge} do {event.maxAge}',
+            cs: '{event.minAge} až {event.maxAge}',
+            default: '{event.minAge} to {event.maxAge}',
           },
         },
         {
@@ -72,7 +72,7 @@ export const summerCampForm = {
             cs: 'Místo',
             default: 'Location',
           },
-          description: '{camp.location}',
+          description: '{event.location}',
         },
         {
           type: 'expression',
@@ -85,7 +85,7 @@ export const summerCampForm = {
             cs: 'Cena',
             default: 'Price',
           },
-          description: '{camp.price} €',
+          description: '{event.price} €',
           currency: 'EUR',
         },
         {
@@ -101,7 +101,7 @@ export const summerCampForm = {
           },
           defaultValue: 'participant',
           isRequired: true,
-          campDataType: 'role',
+          eventDataType: 'role',
         },
       ],
       title: {
@@ -128,7 +128,7 @@ export const summerCampForm = {
             default: 'First Name',
           },
           isRequired: true,
-          campDataType: 'first_name',
+          eventDataType: 'first_name',
           autocomplete: 'given-name',
         },
         {
@@ -144,7 +144,7 @@ export const summerCampForm = {
             default: 'Last Name',
           },
           isRequired: true,
-          campDataType: 'last_name',
+          eventDataType: 'last_name',
           autocomplete: 'family-name',
         },
         {
@@ -158,6 +158,7 @@ export const summerCampForm = {
             cs: 'Pohlaví',
             default: 'Gender',
           },
+          eventDataType: 'gender',
           isRequired: true,
           choices: [
             {
@@ -209,7 +210,7 @@ export const summerCampForm = {
             default: 'Date of Birth',
           },
           isRequired: true,
-          campDataType: 'date_of_birth',
+          eventDataType: 'date_of_birth',
         },
         {
           type: 'text',
@@ -225,7 +226,7 @@ export const summerCampForm = {
           },
           valueName: 'date_of_birth',
           isRequired: true,
-          campDataType: 'date_of_birth',
+          eventDataType: 'date_of_birth',
           inputType: 'date',
           autocomplete: 'bday',
           placeholder: {
@@ -262,7 +263,7 @@ export const summerCampForm = {
             default: 'Address',
           },
           isRequired: true,
-          campDataType: 'address',
+          eventDataType: 'address',
         },
         {
           type: 'text',
@@ -276,7 +277,7 @@ export const summerCampForm = {
             default: 'E-Mail',
           },
           isRequired: true,
-          campDataType: 'email',
+          eventDataType: 'email',
           inputType: 'email',
           autocomplete: 'email',
         },
@@ -398,7 +399,7 @@ export const summerCampForm = {
             default: 'E-Mail',
           },
           isRequired: true,
-          campDataType: 'email',
+          eventDataType: 'email',
           inputType: 'email',
           autocomplete: 'email',
         },
@@ -592,13 +593,13 @@ export const summerCampForm = {
           type: 'dropdown',
           name: 'permission_leave',
           title: {
-            en: "{first_name} may leave the camp or the camp management's supervision area in consultation with the camp management",
-            de: '{first_name} darf in Absprache mit der Lagerleitung das Camp bzw. den Aufsichtsbereich der Lagerleitung verlassen',
-            fr: '{first_name} est autorisé à quitter le camp ou la zone de surveillance de la direction du camp en accord avec celle-ci',
+            en: "{first_name} may leave the event or the event management's supervision area in consultation with the event management",
+            de: '{first_name} darf in Absprache mit der Lagerleitung das Event bzw. den Aufsichtsbereich der Lagerleitung verlassen',
+            fr: '{first_name} est autorisé à quitter le event ou la zone de surveillance de la direction du event en accord avec celle-ci',
             pl: '{first_name} może, po uzgodnieniu z kadrą, opuścić teren obozu lub strefę nadzoru kadry',
             cs: '{first_name} může po dohodě s vedením tábora opustit tábor nebo oblast jeho dozoru',
             default:
-              "{first_name} may leave the camp or the camp management's supervision area in consultation with the camp management",
+              "{first_name} may leave the event or the event management's supervision area in consultation with the event management",
           },
           isRequired: true,
           choices: [
@@ -671,13 +672,13 @@ export const summerCampForm = {
             default: 'Medical Restrictions',
           },
           description: {
-            en: 'Illnesses, allergies or other restrictions that could be relevant for the camp',
-            de: 'Krankheiten, Allergien oder sonstige Einschränkungen, die für das Camp relevant sein könnten',
-            fr: 'Maladies, allergies ou autres restrictions qui pourraient être pertinentes pour le camp',
+            en: 'Illnesses, allergies or other restrictions that could be relevant for the event',
+            de: 'Krankheiten, Allergien oder sonstige Einschränkungen, die für das Event relevant sein könnten',
+            fr: 'Maladies, allergies ou autres restrictions qui pourraient être pertinentes pour le event',
             pl: 'Choroby, alergie lub inne ograniczenia, które mogą być istotne na obozie',
             cs: 'Nemoci, alergie či jiná omezení, která mohou být pro tábor relevantní',
             default:
-              'Illnesses, allergies or other restrictions that could be relevant for the camp',
+              'Illnesses, allergies or other restrictions that could be relevant for the event',
           },
         },
         {
@@ -737,36 +738,36 @@ export const summerCampForm = {
           type: 'boolean',
           name: 'consent_rules',
           title: {
-            en: 'I have read the [camp rules]({_file.rules}) and agree to them.',
-            de: 'Ich habe die [Campregeln]({_file.rules}) gelesen und bin damit einverstanden.',
+            en: 'I have read the [event rules]({_file.rules}) and agree to them.',
+            de: 'Ich habe die [Eventregeln]({_file.rules}) gelesen und bin damit einverstanden.',
             fr: "J'ai lu et j'accepte le [règlement]({_file.rules}) de la colonie de vacances.",
             pl: 'Przeczytałem/łam [regulamin obozu]({_file.rules}) i akceptuję go.',
             cs: 'Přečetl/a jsem si [táborová pravidla]({_file.rules}) a souhlasím s nimi.',
             default:
-              'I have read the [camp rules]({_file.rules}) and agree to them.',
+              'I have read the [event rules]({_file.rules}) and agree to them.',
           },
           correctAnswer: true,
           isRequired: true,
           requiredErrorText: {
-            en: 'You must agree to the camp rules in order to participate in the camp',
-            de: 'Du musst den Campregeln zustimmen, um am Camp teilnehmen zu können',
-            fr: 'Tu dois accepter le règlement du camp pour pouvoir y participer.',
+            en: 'You must agree to the event rules in order to participate in the event',
+            de: 'Du musst den Eventregeln zustimmen, um am Event teilnehmen zu können',
+            fr: 'Tu dois accepter le règlement du event pour pouvoir y participer.',
             pl: 'Aby wziąć udział w obozie, musisz zaakceptować regulamin obozu',
             cs: 'Pro účast na táboře musíš souhlasit s táborovými pravidly',
             default:
-              'You must agree to the camp rules in order to participate in the camp',
+              'You must agree to the event rules in order to participate in the event',
           },
           validators: [
             {
               type: 'expression',
               text: {
-                en: 'You must agree to the camp rules in order to participate in the camp',
-                de: 'Du musst den Campregeln zustimmen, um am Camp teilnehmen zu können',
-                fr: 'Tu dois accepter le règlement du camp pour pouvoir y participer.',
+                en: 'You must agree to the event rules in order to participate in the event',
+                de: 'Du musst den Eventregeln zustimmen, um am Event teilnehmen zu können',
+                fr: 'Tu dois accepter le règlement du event pour pouvoir y participer.',
                 pl: 'Aby wziąć udział w obozie, musisz zaakceptować regulamin obozu',
                 cs: 'Pro účast na táboře musíš souhlasit s táborovými pravidly',
                 default:
-                  'You must agree to the camp rules in order to participate in the camp',
+                  'You must agree to the event rules in order to participate in the event',
               },
               expression: '{consent_rules} = true',
             },
@@ -815,13 +816,13 @@ export const summerCampForm = {
           type: 'boolean',
           name: 'consent_forward_list_participants',
           title: {
-            en: 'I agree that my contact details (address, e-mail, telephone) may only be passed on to other camp participants in the form of a list of participants for the purpose of carpooling.',
-            de: 'Ich stimme zu, dass meine Kontaktdaten (Anschrift, E-Mail, Telefon) in Form einer Teilnehmerliste zur Bildung von Fahrgemeinschaften ausschließlich an andere Teilnehmer des Camps weitergeleitet werden dürfen.',
-            fr: "J'accepte que mes coordonnées (adresse, e-mail, téléphone) soient transmises exclusivement aux autres participants du camp de vacances sous la forme d'une liste de participants pour le covoiturage.",
+            en: 'I agree that my contact details (address, e-mail, telephone) may only be passed on to other event participants in the form of a list of participants for the purpose of carpooling.',
+            de: 'Ich stimme zu, dass meine Kontaktdaten (Anschrift, E-Mail, Telefon) in Form einer Teilnehmerliste zur Bildung von Fahrgemeinschaften ausschließlich an andere Teilnehmer des Events weitergeleitet werden dürfen.',
+            fr: "J'accepte que mes coordonnées (adresse, e-mail, téléphone) soient transmises exclusivement aux autres participants du event de vacances sous la forme d'une liste de participants pour le covoiturage.",
             pl: 'Wyrażam zgodę na przekazanie moich danych kontaktowych (adres, e-mail, telefon) innym uczestnikom obozu w formie listy uczestników w celu organizacji wspólnych przejazdów.',
             cs: 'Souhlasím s tím, aby byly mé kontaktní údaje (adresa, e-mail, telefon) předány ostatním účastníkům tábora ve formě seznamu účastníků za účelem spolujízdy.',
             default:
-              'I agree that my contact details (address, e-mail, telephone) may only be passed on to other camp participants in the form of a list of participants for the purpose of carpooling.',
+              'I agree that my contact details (address, e-mail, telephone) may only be passed on to other event participants in the form of a list of participants for the purpose of carpooling.',
           },
         },
         {
@@ -890,15 +891,15 @@ export const summerCampForm = {
   calculatedValues: [
     {
       name: 'isadult',
-      expression: 'isAdult({date_of_birth}, {camp.startAt})',
+      expression: 'isAdult({date_of_birth}, {event.startAt})',
     },
     {
       name: 'isminor',
-      expression: 'isMinor({date_of_birth}, {camp.startAt})',
+      expression: 'isMinor({date_of_birth}, {event.startAt})',
     },
     {
       name: 'waitingList',
-      expression: 'isWaitingList({camp.freePlaces}, {country})',
+      expression: 'isWaitingList({event.freePlaces}, {country})',
     },
   ],
   showProgressBar: true,

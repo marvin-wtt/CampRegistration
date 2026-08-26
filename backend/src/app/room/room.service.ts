@@ -3,29 +3,29 @@ import { injectable } from 'inversify';
 
 @injectable()
 export class RoomService extends BaseService {
-  async getRoomById(campId: string, id: string) {
+  async getRoomById(eventId: string, id: string) {
     return this.prisma.room.findFirst({
-      where: { id, campId },
+      where: { id, eventId },
       include: { beds: true },
     });
   }
 
-  async queryRooms(campId: string) {
+  async queryRooms(eventId: string) {
     return this.prisma.room.findMany({
-      where: { campId },
+      where: { eventId },
       include: { beds: true },
     });
   }
 
   async createRoom(
-    campId: string,
+    eventId: string,
     name: string | Record<string, string>,
     capacity: number,
   ) {
     return this.prisma.room.create({
       data: {
         name,
-        campId,
+        eventId,
         beds: {
           createMany: {
             data: Array.from({ length: capacity }).map(() => ({})),
@@ -52,7 +52,7 @@ export class RoomService extends BaseService {
   }
 
   async bulkUpdateRooms(
-    campId: string,
+    eventId: string,
     rooms: {
       id: string;
       name?: string | Record<string, string>;
@@ -62,7 +62,7 @@ export class RoomService extends BaseService {
     return this.prisma.$transaction(
       rooms.map((room) =>
         this.prisma.room.update({
-          where: { id: room.id, campId },
+          where: { id: room.id, eventId },
           data: {
             name: room.name,
             sortOrder: room.sortOrder,

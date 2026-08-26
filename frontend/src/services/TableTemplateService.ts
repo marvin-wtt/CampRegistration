@@ -6,39 +6,41 @@ import type {
 import { api } from '@/services/api';
 
 export function useTableTemplateService() {
-  async function fetchTableTemplates(campId: string): Promise<TableTemplate[]> {
-    const response = await api.get(`camps/${campId}/table-templates/`);
+  async function fetchTableTemplates(
+    eventId: string,
+  ): Promise<TableTemplate[]> {
+    const response = await api.get(`events/${eventId}/table-templates/`);
 
     return response?.data?.data;
   }
 
   async function fetchTableTemplate(
-    campId: string,
+    eventId: string,
     templateId: string,
   ): Promise<TableTemplate> {
     const response = await api.get(
-      `camps/${campId}/table-templates/${templateId}/`,
+      `events/${eventId}/table-templates/${templateId}/`,
     );
 
     return response?.data?.data;
   }
 
   async function createTableTemplate(
-    campId: string,
+    eventId: string,
     data: TableTemplateCreateData,
   ): Promise<TableTemplate> {
-    const response = await api.post(`camps/${campId}/table-templates/`, data);
+    const response = await api.post(`events/${eventId}/table-templates/`, data);
 
     return response?.data?.data;
   }
 
   async function updateTableTemplate(
-    campId: string,
+    eventId: string,
     templateId: string,
     data: TableTemplateUpdateData,
   ): Promise<TableTemplate> {
     const response = await api.put(
-      `camps/${campId}/table-templates/${templateId}/`,
+      `events/${eventId}/table-templates/${templateId}/`,
       data,
     );
 
@@ -46,10 +48,10 @@ export function useTableTemplateService() {
   }
 
   async function deleteTableTemplate(
-    campId: string,
+    eventId: string,
     templateId: string,
   ): Promise<void> {
-    await api.delete(`camps/${campId}/table-templates/${templateId}/`);
+    await api.delete(`events/${eventId}/table-templates/${templateId}/`);
   }
 
   return {

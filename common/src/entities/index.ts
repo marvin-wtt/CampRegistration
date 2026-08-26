@@ -6,13 +6,13 @@ export * from './Translatable.js';
 
 // Models
 export * from './Bed.js';
-export * from './Camp.js';
-export * from './CampManager.js';
-export * from './CampSetting.js';
+export * from './Event.js';
+export * from './EventManager.js';
+export * from './EventSetting.js';
 export * from './Expense.js';
 export * from './LegalDocument.js';
 export * from './Profile.js';
-export * from './ProgramEvent.js';
+export * from './ProgramItem.js';
 export * from './Registration.js';
 export * from './Room.js';
 export * from './ServiceFile.js';
@@ -38,4 +38,4 @@ export * from './AuthTokens.js';
 export * from './Authentication.js';
 export * from './Queue.js';
 export * from './Totp.js';
-export * from './SurveyJSCampData.js';
+export * from './SurveyJSEventData.js';

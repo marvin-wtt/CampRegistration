@@ -1,0 +1,927 @@
+<template>
+  <q-form
+    ref="formRef"
+    class="contact-form"
+    :class="{ 'contact-form--standalone': standalone }"
+    data-test="contact-form"
+    @submit="send()"
+    @reset="reset()"
+  >
+    <div class="composer">
+      <div class="composer-fields">
+        <div data-test="to">
+          <contact-select
+            v-model="to"
+            :label="t('input.to.label')"
+            :registrations
+            :rules="[
+              (val?: Contact[]) =>
+                (!!val && val.length > 0) || t('input.to.rule.required'),
+            ]"
+            hide-bottom-space
+            :disable="sendInProgress"
+            outlined
+            rounded
+            dense
+            @blur="onToBlur"
+          />
+        </div>
+
+        <div class="composer-meta">
+          <div data-test="reply-to">
+            <q-input
+              v-model="replyTo"
+              type="email"
+              :label="t('input.replyTo.label')"
+              :rules="[
+                (val?: string) => !!val || t('input.replyTo.required'),
+                (val?: string) =>
+                  !val ||
+                  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) ||
+                  t('input.replyTo.rule.invalid'),
+              ]"
+              hide-bottom-space
+              :disable="sendInProgress"
+              outlined
+              rounded
+              dense
+            >
+              <template
+                v-if="
+                  suggestedReplyTo &&
+                  suggestedReplyTo !== replyTo &&
+                  to.length > 0
+                "
+                #append
+              >
+                <q-btn
+                  icon="autorenew"
+                  size="xs"
+                  flat
+                  round
+                  :disable="sendInProgress"
+                  @click.stop="replyTo = suggestedReplyTo"
+                >
+                  <q-tooltip>
+                    {{
+                      t('input.replyTo.suggestion', { email: suggestedReplyTo })
+                    }}
+                  </q-tooltip>
+                </q-btn>
+              </template>
+            </q-input>
+          </div>
+
+          <q-btn
+            v-if="quasar.screen.lt.sm"
+            :icon="priorityIcon"
+            :color="priorityColor"
+            :aria-label="priorityMenuLabel"
+            :disable="sendInProgress"
+            size="sm"
+            round
+            outline
+            class="priority-menu-button"
+          >
+            <q-tooltip>
+              {{ priorityMenuLabel }}
+            </q-tooltip>
+
+            <q-menu
+              anchor="bottom right"
+              self="top right"
+              auto-close
+            >
+              <q-list
+                dense
+                class="priority-menu"
+              >
+                <q-item
+                  v-for="option in priorityOptions"
+                  :key="option.value"
+                  clickable
+                  :active="option.value === priority"
+                  @click="setPriority(option.value)"
+                >
+                  <q-item-section avatar>
+                    <q-icon
+                      :name="priorityOptionIcon(option.value)"
+                      :color="priorityOptionColor(option.value)"
+                    />
+                  </q-item-section>
+                  <q-item-section>
+                    {{ option.label }}
+                  </q-item-section>
+                  <q-item-section
+                    v-if="option.value === priority"
+                    side
+                  >
+                    <q-icon
+                      name="check"
+                      size="xs"
+                    />
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-menu>
+          </q-btn>
+
+          <q-select
+            v-if="!quasar.screen.lt.sm"
+            v-model="priority"
+            :label="t('input.priority')"
+            :options="priorityOptions"
+            :disable="sendInProgress"
+            outlined
+            rounded
+            dense
+            emit-value
+            map-options
+            class="priority-select"
+          >
+            <template #prepend>
+              <q-icon
+                :name="priorityIcon"
+                :color="priorityColor"
+                size="xs"
+              />
+            </template>
+          </q-select>
+        </div>
+
+        <registration-email-editor
+          v-model="subject"
+          :label="t('input.subject.label')"
+          :form="eventDetailsStore.data?.form"
+          :rules="[
+            (val?: string) =>
+              (!!val && val.length > 0) || t('input.subject.rule.required'),
+          ]"
+          hide-bottom-space
+          :disable="sendInProgress"
+          data-test="subject"
+          rounded
+          outlined
+          single-line
+          plain-text
+        />
+      </div>
+
+      <q-separator />
+
+      <div class="composer-message">
+        <registration-email-editor
+          v-model="text"
+          :label="t('input.message.label')"
+          :form="eventDetailsStore.data?.form"
+          :rules="[
+            (val?: string) =>
+              (!!val && val.length > 0) || t('input.message.required'),
+          ]"
+          hide-bottom-space
+          :disable="sendInProgress"
+          data-test="message"
+          class="message-editor"
+          rounded
+          outlined
+        />
+      </div>
+
+      <div class="composer-actions">
+        <file-input
+          v-model="attachments"
+          :label="t('input.attachments')"
+          :disable="sendInProgress"
+          max-file-size="20000000"
+          max-total-size="20000000"
+          multiple
+          append
+          use-chips
+          outlined
+          rounded
+          dense
+          class="attachment-input"
+          @rejected="onAttachmentRejected"
+        >
+          <template #prepend>
+            <q-icon name="attach_file" />
+          </template>
+        </file-input>
+
+        <q-btn
+          :label="sendLabel"
+          :loading="sendInProgress"
+          :disable="!can('event.messages.create')"
+          type="submit"
+          icon-right="send"
+          color="primary"
+          data-test="send"
+          rounded
+          unelevated
+          no-caps
+          class="send-button"
+        />
+      </div>
+    </div>
+  </q-form>
+</template>
+
+<script lang="ts" setup>
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+import ContactSelect from '@/components/event/contact/ContactSelect.vue';
+import type { Message, Registration } from '@camp-registration/common/entities';
+import type { Contact, ContactDraft } from '@/components/event/contact/Contact';
+import { QForm, type QSelectOption, useQuasar } from 'quasar';
+import { type QRejectedEntry } from 'quasar';
+import { useEventDetailsStore } from '@/stores/event-details-store';
+import RegistrationEmailEditor from '@/components/event/contact/RegistrationEmailEditor.vue';
+import { useServiceNotifications } from '@/composables/serviceHandler';
+import { useAPIService } from '@/services/APIService';
+import FileInput, {
+  type FileInputModel,
+} from '@/components/common/inputs/FileInput.vue';
+import { usePermissions } from '@/composables/permissions';
+
+const {
+  registrations,
+  initialContacts,
+  draft = null,
+  standalone = false,
+} = defineProps<{
+  registrations: Registration[];
+  initialContacts?: Contact[];
+  draft?: ContactDraft | null;
+  standalone?: boolean;
+}>();
+
+const emit = defineEmits<{
+  (e: 'sent', message: Message): void;
+}>();
+
+const quasar = useQuasar();
+const { t } = useI18n();
+const apiService = useAPIService();
+const eventDetailsStore = useEventDetailsStore();
+const { withResultNotification } = useServiceNotifications();
+const { can } = usePermissions();
+
+onMounted(async () => {
+  if (initialContacts?.length) {
+    to.value = [...initialContacts];
+  }
+  // Ensure event details (contact email, form) are available before deriving
+  // the default reply-to address.
+  await eventDetailsStore.fetchData();
+  // Only pre-fill when recipients are already known (e.g. opened from a
+  // registration). Otherwise the reply-to is derived once the user has picked
+  // recipients and the "To" field loses focus (see onToBlur).
+  if (to.value.length > 0) {
+    applyDefaultReplyTo();
+  }
+});
+
+const formRef = ref<QForm>();
+const to = ref<Contact[]>([]);
+const replyTo = ref<string>('');
+const suggestedReplyTo = computed(() => defaultReplyTo());
+
+const recipientCountries = computed(() => {
+  const extractRegistrationCountry = (r: Registration) => {
+    return r.computedData.address.country;
+  };
+
+  return to.value
+    .flatMap((contact) =>
+      contact.type === 'group'
+        ? contact.registrations.map(extractRegistrationCountry)
+        : [extractRegistrationCountry(contact.registration)],
+    )
+    .filter((c): c is string => c != null);
+});
+
+function defaultReplyTo(): string {
+  const contactEmail = eventDetailsStore.data?.contactEmail;
+  if (!contactEmail) {
+    return '';
+  }
+  if (typeof contactEmail === 'string') {
+    return contactEmail;
+  }
+
+  const countries = recipientCountries.value;
+  if (countries.length > 0) {
+    const freq = new Map<string, number>();
+    for (const c of countries) {
+      freq.set(c, (freq.get(c) ?? 0) + 1);
+    }
+    const dominant = [...freq.entries()].sort((a, b) => b[1] - a[1])[0]![0];
+    if (contactEmail[dominant]) {
+      return contactEmail[dominant];
+    }
+  }
+
+  return Object.values(contactEmail)[0] ?? '';
+}
+
+// Fill the reply-to with the derived default, but never overwrite a value the
+// user has already entered (or one carried over from a draft).
+function applyDefaultReplyTo() {
+  if (!replyTo.value) {
+    replyTo.value = defaultReplyTo();
+  }
+}
+
+// Once the user finishes choosing recipients, derive the reply-to from the
+// selected recipients' countries — but only when the field is still empty so a
+// manually entered address is preserved.
+function onToBlur() {
+  applyDefaultReplyTo();
+}
+
+const subject = ref<string>('');
+const attachments = ref<FileInputModel[]>([]);
+type MessagePriority = 'high' | 'normal' | 'low';
+const priority = ref<MessagePriority>('normal');
+const text = ref<string>('');
+const sendInProgress = ref<boolean>(false);
+
+const priorityOptions = computed<QSelectOption[]>(() => [
+  {
+    label: t('priority.low'),
+    value: 'low',
+  },
+  {
+    label: t('priority.normal'),
+    value: 'normal',
+  },
+  {
+    label: t('priority.high'),
+    value: 'high',
+  },
+]);
+
+function isMessagePriority(value: unknown): value is MessagePriority {
+  return value === 'high' || value === 'normal' || value === 'low';
+}
+
+function setPriority(value: unknown) {
+  if (isMessagePriority(value)) {
+    priority.value = value;
+  }
+}
+
+function recipientIds(contacts: Contact[]): Set<string> {
+  const ids = new Set<string>();
+  contacts.forEach((contact) => {
+    if (contact.type === 'group') {
+      contact.registrations.forEach((r: Registration) => ids.add(r.id));
+    } else {
+      ids.add(contact.registration.id);
+    }
+  });
+  return ids;
+}
+
+const recipientCount = computed<number>(() => recipientIds(to.value).size);
+
+function priorityOptionIcon(value: unknown): string {
+  switch (value) {
+    case 'high':
+      return 'keyboard_double_arrow_up';
+    case 'low':
+      return 'keyboard_double_arrow_down';
+    default:
+      return 'remove';
+  }
+}
+
+function priorityOptionColor(value: unknown): string | undefined {
+  switch (value) {
+    case 'high':
+      return 'negative';
+    case 'low':
+      return 'grey';
+    default:
+      return undefined;
+  }
+}
+
+const priorityIcon = computed<string>(() => priorityOptionIcon(priority.value));
+
+const priorityColor = computed<string | undefined>(() => {
+  return priorityOptionColor(priority.value);
+});
+
+const priorityMenuLabel = computed<string>(() => {
+  const option = priorityOptions.value.find(
+    (item) => item.value === priority.value,
+  );
+
+  const label =
+    typeof option?.label === 'string' ? option.label : t('priority.normal');
+
+  return `${t('input.priority')}: ${label}`;
+});
+
+const sendLabel = computed<string>(() => {
+  if (recipientCount.value > 1) {
+    return t('action.sendTo', { count: recipientCount.value });
+  }
+
+  return t('action.send');
+});
+
+function onAttachmentRejected(entities: QRejectedEntry[]) {
+  entities.forEach((entity: QRejectedEntry) => {
+    quasar.notify({
+      type: 'negative',
+      group: 'error.attachment',
+      message: getAttachmentErrorTranslated(entity),
+      caption: entity.file.name,
+    });
+  });
+}
+
+function getAttachmentErrorTranslated(entity: QRejectedEntry): string {
+  switch (entity.failedPropValidation) {
+    case 'duplicate':
+      return t('error.attachment.duplicate');
+    case 'max-file-size':
+    case 'max-total-size':
+      return t('error.attachment.maxFileSize');
+    case 'filter':
+      return t('error.attachment.filter');
+    case 'max-files':
+      return t('error.attachment.maxFiles');
+    default:
+      return t('error.attachment.default');
+  }
+}
+
+async function send() {
+  const eventId = eventDetailsStore.data?.id;
+  if (!eventId) {
+    quasar.notify({
+      type: 'negative',
+      message: t('error.eventNotLoaded'),
+    });
+    return;
+  }
+
+  if (attachments.value?.find((value) => value.id === undefined)) {
+    quasar.notify({
+      type: 'warning',
+      message: t('error.attachment.ongoing'),
+    });
+    return;
+  }
+
+  sendInProgress.value = true;
+  try {
+    const message = await withResultNotification('send', async () => {
+      return apiService.createMessage(eventId, {
+        registrationIds: to.value.flatMap((contact) => {
+          return contact.type === 'group'
+            ? contact.registrations.map((r: Registration) => r.id)
+            : contact.registration.id;
+        }),
+        replyTo: replyTo.value,
+        subject: subject.value,
+        body: text.value,
+        priority: priority.value,
+        attachmentIds: attachments.value
+          ?.filter((v) => v.id !== undefined)
+          .map((file) => file.id),
+      });
+    });
+
+    // Reset all fields on success
+    reset();
+    emit('sent', message);
+  } finally {
+    sendInProgress.value = false;
+  }
+}
+
+// Loading a draft (e.g. resending a sent message) replaces the message content
+// but intentionally starts with an empty recipient list so the user chooses who
+// to send to. Attachments arrive pre-duplicated as fresh session files.
+watch(
+  () => draft,
+  (value) => {
+    if (!value) {
+      return;
+    }
+
+    to.value = initialContacts?.length ? [...initialContacts] : [];
+    subject.value = value.subject;
+    text.value = value.body;
+    priority.value = value.priority;
+    // Keep the draft's reply-to if set; otherwise derive it only when we already
+    // have recipients, leaving it empty to be filled on "To" blur if not.
+    replyTo.value = value.replyTo ?? '';
+    if (to.value.length > 0) {
+      applyDefaultReplyTo();
+    }
+    attachments.value = [...value.attachments];
+
+    void nextTick(() => formRef.value?.resetValidation());
+  },
+);
+
+function reset() {
+  to.value = initialContacts?.length ? [...initialContacts] : [];
+  subject.value = '';
+  text.value = '';
+  priority.value = 'normal';
+  // Derive only when recipients are pre-filled; otherwise wait for "To" blur.
+  replyTo.value = '';
+  if (to.value.length > 0) {
+    applyDefaultReplyTo();
+  }
+  attachments.value = [];
+
+  void nextTick(() => formRef.value?.resetValidation());
+}
+
+function sameIds(a: Set<string>, b: Set<string>): boolean {
+  return a.size === b.size && [...a].every((id) => b.has(id));
+}
+
+function attachmentsChanged(): boolean {
+  const baseline = draft?.attachments ?? [];
+  if (attachments.value.length !== baseline.length) {
+    return true;
+  }
+  const baselineIds = new Set(baseline.map((file) => file.id));
+  // An attachment still uploading (no id) is always a change.
+  return attachments.value.some(
+    (file) => file.id === undefined || !baselineIds.has(file.id),
+  );
+}
+
+// Whether the user has changed anything relative to the pristine state the form
+// was initialised with: recipients from `initialContacts` and message content
+// from `draft` (all empty when composing a new message). The reply-to is
+// excluded because it is derived automatically rather than authored.
+const dirty = computed<boolean>(() => {
+  return (
+    !sameIds(recipientIds(to.value), recipientIds(initialContacts ?? [])) ||
+    subject.value !== (draft?.subject ?? '') ||
+    text.value !== (draft?.body ?? '') ||
+    priority.value !== (draft?.priority ?? 'normal') ||
+    attachmentsChanged()
+  );
+});
+
+defineExpose({ dirty });
+</script>
+
+<style scoped>
+.contact-form {
+  display: flex;
+  box-sizing: border-box;
+  min-height: 0;
+  overflow: hidden;
+  flex-direction: column;
+}
+
+.contact-form--standalone {
+  width: min(100%, 1040px);
+  margin-inline: auto;
+  padding: 24px;
+}
+
+.composer {
+  display: flex;
+  width: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--md3-surface);
+  flex: 1 1 0;
+  flex-direction: column;
+}
+
+.composer-fields {
+  display: flex;
+  padding: 16px 20px;
+  gap: 10px;
+  flex-direction: column;
+}
+
+.composer-meta {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 170px;
+  gap: 10px;
+}
+
+.priority-select {
+  min-width: 0;
+}
+
+.priority-menu-button {
+  width: 40px;
+  height: 40px;
+  align-self: start;
+}
+
+.priority-menu {
+  min-width: 160px;
+}
+
+.composer-message {
+  display: flex;
+  min-height: 0;
+  padding: 16px 20px;
+  flex: 1 1 auto;
+}
+
+.message-editor {
+  min-height: 160px;
+  flex: 1 1 auto;
+}
+
+.composer-actions {
+  display: flex;
+  align-items: center;
+  padding: 12px 20px 16px;
+  gap: 12px;
+}
+
+.attachment-input {
+  min-width: 0;
+  max-width: 100%;
+  flex: 1 1 auto;
+}
+
+.send-button {
+  min-width: 128px;
+  min-height: 40px;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 599px) {
+  .contact-form--standalone {
+    padding: 0 16px 16px;
+  }
+
+  .composer-fields {
+    padding: 12px 16px;
+  }
+
+  .composer-meta {
+    grid-template-columns: minmax(0, 1fr) 40px;
+    align-items: start;
+  }
+
+  .composer-message {
+    padding: 12px 16px;
+  }
+
+  .composer-actions {
+    align-items: stretch;
+    padding: 10px 16px 16px;
+    flex-direction: column;
+  }
+
+  .send-button {
+    width: 100%;
+  }
+}
+</style>
+
+<i18n lang="yaml" locale="en">
+action:
+  send: 'Send'
+  sendTo: 'Send ({count})'
+
+error:
+  eventNotLoaded: 'Event details could not be loaded. Please reload the page.'
+  attachment:
+    ongoing: 'Waiting for file uploads to finish. Please try again later.'
+    default: 'File not allowed'
+    duplicate: 'File already exists'
+    filter: 'File type not allowed'
+    maxFiles: 'Too many files'
+    maxFileSize: 'File(s) too large. Maximum file size is 20 MB'
+
+input:
+  attachments: 'Attachments'
+  message:
+    label: 'Message'
+    required: 'A message is required'
+  priority: 'Priority'
+  replyTo:
+    label: 'Reply To'
+    required: 'A reply-to address is required'
+    suggestion: 'Use suggested address: {email}'
+    rule:
+      invalid: 'Please enter a valid email address'
+  subject:
+    label: 'Subject'
+    rule:
+      required: 'A subject is required'
+  to:
+    label: 'To'
+    rule:
+      required: 'At least one contact is required'
+
+priority:
+  high: 'High'
+  low: 'Low'
+  normal: 'Normal'
+
+request:
+  send:
+    error: 'Failed to send message'
+    success: 'Message sent successfully'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+action:
+  send: 'Senden'
+  sendTo: 'Senden ({count})'
+
+error:
+  eventNotLoaded: 'Veranstaltungsdetails konnten nicht geladen werden. Bitte Seite neu laden.'
+  attachment:
+    ongoing: 'Warten auf den Abschluss des Datei-Uploads. Bitte später erneut versuchen.'
+    default: 'Datei nicht erlaubt'
+    duplicate: 'Datei existiert bereits'
+    filter: 'Dateityp nicht erlaubt'
+    maxFiles: 'Zu viele Dateien'
+    maxFileSize: 'Datei(en) zu groß. Maximale Dateigröße beträgt 20 MB'
+
+input:
+  attachments: 'Anhänge'
+  message:
+    label: 'Nachricht'
+    required: 'Eine Nachricht ist erforderlich'
+  priority: 'Priorität'
+  replyTo:
+    label: 'Antwort an'
+    required: 'Eine Antwortadresse ist erforderlich'
+    suggestion: 'Vorschlag verwenden: {email}'
+    rule:
+      invalid: 'Bitte gib eine gültige E-Mail-Adresse ein'
+  subject:
+    label: 'Betreff'
+    rule:
+      required: 'Ein Betreff ist erforderlich'
+  to:
+    label: 'An'
+    rule:
+      required: 'Mindestens ein Kontakt ist erforderlich'
+
+priority:
+  high: 'Hoch'
+  low: 'Niedrig'
+  normal: 'Normal'
+
+request:
+  send:
+    error: 'Nachricht konnte nicht gesendet werden'
+    success: 'Nachricht erfolgreich gesendet'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+action:
+  send: 'Envoyer'
+  sendTo: 'Envoyer ({count})'
+
+error:
+  eventNotLoaded: "Les détails de l'événement n'ont pas pu être chargés. Veuillez recharger la page."
+  attachment:
+    ongoing: 'En attente de la fin du téléchargement des fichiers. Veuillez réessayer plus tard.'
+    default: 'Fichier non autorisé'
+    duplicate: 'Fichier déjà existant'
+    filter: 'Type de fichier non autorisé'
+    maxFiles: 'Trop de fichiers'
+    maxFileSize: 'Fichier(s) trop volumineux. La taille maximale est de 20 Mo'
+
+input:
+  attachments: 'Pièces jointes'
+  message:
+    label: 'Message'
+    required: 'Un message est requis'
+  priority: 'Priorité'
+  replyTo:
+    label: 'Répondre à'
+    required: 'Une adresse de réponse est requise'
+    suggestion: "Utiliser l'adresse suggérée : {email}"
+    rule:
+      invalid: 'Veuillez entrer une adresse e-mail valide'
+  subject:
+    label: 'Objet'
+    rule:
+      required: 'Un objet est requis'
+  to:
+    label: 'À'
+    rule:
+      required: 'Au moins un contact est requis'
+
+priority:
+  high: 'Élevée'
+  low: 'Basse'
+  normal: 'Normale'
+
+request:
+  send:
+    error: "Échec de l'envoi du message"
+    success: 'Message envoyé avec succès'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+action:
+  send: 'Wyślij'
+  sendTo: 'Wyślij ({count})'
+
+error:
+  eventNotLoaded: 'Nie udało się załadować danych wydarzenia. Proszę odświeżyć stronę.'
+  attachment:
+    ongoing: 'Oczekiwanie na zakończenie przesyłania plików. Spróbuj ponownie później.'
+    default: 'Plik niedozwolony'
+    duplicate: 'Plik już istnieje'
+    filter: 'Niedozwolony typ pliku'
+    maxFiles: 'Zbyt wiele plików'
+    maxFileSize: 'Plik(i) są zbyt duże. Maksymalny rozmiar pliku to 20 MB'
+
+input:
+  attachments: 'Załączniki'
+  message:
+    label: 'Wiadomość'
+    required: 'Wiadomość jest wymagana'
+  priority: 'Priorytet'
+  replyTo:
+    label: 'Odpowiedź do'
+    required: 'Adres do odpowiedzi jest wymagany'
+    suggestion: 'Użyj sugerowanego adresu: {email}'
+    rule:
+      invalid: 'Proszę wprowadzić poprawny adres e-mail'
+  subject:
+    label: 'Temat'
+    rule:
+      required: 'Temat jest wymagany'
+  to:
+    label: 'Do'
+    rule:
+      required: 'Wymagany jest co najmniej jeden kontakt'
+
+priority:
+  high: 'Wysoki'
+  low: 'Niski'
+  normal: 'Normalny'
+
+request:
+  send:
+    error: 'Nie udało się wysłać wiadomości'
+    success: 'Wiadomość została wysłana pomyślnie'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+action:
+  send: 'Odeslat'
+  sendTo: 'Odeslat ({count})'
+
+error:
+  eventNotLoaded: 'Nepodařilo se načíst údaje o táboře. Prosím obnovte stránku.'
+  attachment:
+    ongoing: 'Čeká se na dokončení nahrávání souborů. Zkuste to prosím později.'
+    default: 'Soubor není povolen'
+    duplicate: 'Soubor již existuje'
+    filter: 'Nepovolený typ souboru'
+    maxFiles: 'Příliš mnoho souborů'
+    maxFileSize: 'Soubor(y) jsou příliš velké. Maximální velikost souboru je 20 MB'
+
+input:
+  attachments: 'Přílohy'
+  message:
+    label: 'Zpráva'
+    required: 'Zpráva je povinná'
+  priority: 'Priorita'
+  replyTo:
+    label: 'Odpovědět na'
+    required: 'Adresa pro odpověď je povinná'
+    suggestion: 'Použít navrhovanou adresu: {email}'
+    rule:
+      invalid: 'Prosím zadejte platnou e-mailovou adresu'
+  subject:
+    label: 'Předmět'
+    rule:
+      required: 'Předmět je povinný'
+  to:
+    label: 'Komu'
+    rule:
+      required: 'Je vyžadován alespoň jeden kontakt'
+
+priority:
+  high: 'Vysoká'
+  low: 'Nízká'
+  normal: 'Normální'
+
+request:
+  send:
+    error: 'Odeslání zprávy se nezdařilo'
+    success: 'Zpráva byla úspěšně odeslána'
+</i18n>

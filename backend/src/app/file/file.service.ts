@@ -49,7 +49,7 @@ type FileOwnerKey = keyof PickIds<Prisma.FileWhereInput>;
 
 // Relational fields for where input fields
 const fileRelationIdFieldsNull: RequireIdKeys<Prisma.FileWhereInput, null> = {
-  campId: null,
+  eventId: null,
   registrationId: null,
   messageId: null,
   messageDeliveryId: null,

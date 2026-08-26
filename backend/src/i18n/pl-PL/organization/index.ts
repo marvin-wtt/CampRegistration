@@ -40,7 +40,7 @@ export default {
         information:
           '{{ organization.name }} nie została zweryfikowana. ' +
           'Do tego czasu nie może publikować obozów ani wysyłać newsletterów. ' +
-          'Możesz poprawić dane i zgłosić ją ponownie.',
+          'Poprawienie zarejestrowanych danych ponownie kieruje ją do weryfikacji.',
         reasonLabel: 'Powód',
         button: 'Sprawdź dane',
         greeting: 'Pozdrawiamy,',

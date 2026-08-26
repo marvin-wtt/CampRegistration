@@ -45,7 +45,7 @@ export const SUPERVISORY_AUTHORITIES: Record<string, SupervisoryAuthority> = {
     name: 'Commission Nationale de l’Informatique et des Libertés (CNIL)',
     website: 'https://www.cnil.fr',
   },
-  // Camps in Germany answer to the authority of their Land, not the federal
+  // Events in Germany answer to the authority of their Land, not the federal
   // one; the notice must point at the state body, so this is flagged regional.
   DE: {
     name: 'Der Bundesbeauftragte für den Datenschutz und die Informationsfreiheit',

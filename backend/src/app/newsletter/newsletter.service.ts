@@ -4,7 +4,7 @@ import { injectable } from 'inversify';
 
 // `NewsletterResource` shows the owning organization, so every read loads it.
 // `satisfies` rather than an annotation, so callers keep the two selected
-// fields instead of inferring the full Organization — see `camp.service`.
+// fields instead of inferring the full Organization — see `event.service`.
 const includeOrganization = {
   organization: {
     select: { id: true, name: true, verificationStatus: true },
@@ -107,6 +107,16 @@ export class NewsletterService extends BaseService {
         name: data.name,
         description: data.description,
         replyTo: data.replyTo,
+      },
+      include: includeOrganization,
+    });
+  }
+
+  async moveNewsletterToOrganization(id: string, organizationId: string) {
+    return this.prisma.newsletter.update({
+      where: { id },
+      data: {
+        organization: { connect: { id: organizationId } },
       },
       include: includeOrganization,
     });

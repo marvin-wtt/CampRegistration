@@ -21,7 +21,7 @@ interface ScopePermissionOptions<S extends PermissionScope> {
   isAdmin: () => boolean;
   /** The permissions granted on `subjectId`, from the profile's access list. */
   granted: (subjectId: string | undefined) => ScopePermission<S>[];
-  /** The subject `can()` defaults to — the camp/organization currently open. */
+  /** The subject `can()` defaults to — the event/organization currently open. */
   currentSubjectId: () => string | undefined;
 }
 

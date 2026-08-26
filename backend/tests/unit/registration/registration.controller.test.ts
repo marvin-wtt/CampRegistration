@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Request, Response } from 'express';
 import { mock } from 'vitest-mock-extended';
 import httpStatus from 'http-status';
-import type { Camp, Prisma } from '#generated/prisma/client.js';
+import type { Event, Prisma } from '#generated/prisma/client.js';
 import { RegistrationService } from '#app/registration/registration.service';
 import { RealtimeService } from '#core/realtime/RealtimeService';
 import { RegistrationController } from '#app/registration/registration.controller';
@@ -35,7 +35,25 @@ const controller = new RegistrationController(
   realtimeService,
 );
 
-const camp = { id: 'camp-1' } as unknown as Camp;
+// A real form and the variables `setVariables` reads, so the update path can
+// actually diff the answers rather than silently falling back to an empty list.
+const event = {
+  id: 'event-1',
+  countries: ['de'],
+  name: { en: 'Event' },
+  organizer: { en: 'Organizer' },
+  contactEmail: { en: 'event@example.com' },
+  maxParticipants: { en: 10 },
+  startAt: new Date('2026-07-01T00:00:00.000Z'),
+  endAt: new Date('2026-07-14T00:00:00.000Z'),
+  minAge: 10,
+  maxAge: 18,
+  location: null,
+  price: { en: 100 },
+  form: {
+    elements: [{ type: 'text', name: 'first_name', title: 'First name' }],
+  },
+} as unknown as Event;
 
 // Mirrors the `registrationInclude` used throughout RegistrationService, so
 // the returned shape (bed + files) matches what the controller receives.
@@ -51,7 +69,7 @@ const buildRegistration = (
 ): RegistrationEntity =>
   ({
     id: 'registration-1',
-    campId: camp.id,
+    eventId: event.id,
     status: 'PENDING',
     data: {},
     customData: null,
@@ -132,16 +150,16 @@ describe('RegistrationController.show', () => {
 });
 
 describe('RegistrationController.index', () => {
-  it('lists the camp’s registrations as a resource collection', async () => {
+  it('lists the event’s registrations as a resource collection', async () => {
     const registrations = [buildRegistration(), buildRegistration()];
     registrationService.queryRegistrations.mockResolvedValue(registrations);
-    const req = fakeRequest({ models: { camp } });
+    const req = fakeRequest({ models: { event } });
     const res = fakeResponse();
 
     await controller.index(req, res);
 
     expect(registrationService.queryRegistrations).toHaveBeenCalledWith(
-      camp.id,
+      event.id,
     );
     expect(res.resource).toHaveBeenCalledTimes(1);
   });
@@ -152,7 +170,7 @@ describe('RegistrationController.store', () => {
     const registration = buildRegistration({ status: 'ACCEPTED' });
     registrationService.createRegistration.mockResolvedValue(registration);
     const req = fakeRequest({
-      models: { camp },
+      models: { event },
       validateResult: { body: { data: {}, locale: null } },
     });
     const res = fakeResponse();
@@ -160,17 +178,17 @@ describe('RegistrationController.store', () => {
     await controller.store(req, res);
 
     expect(RegistrationConfirmedMessage.enqueueFor).toHaveBeenCalledWith(
-      camp,
+      event,
       registration,
     );
     expect(RegistrationWaitlistedMessage.enqueueFor).not.toHaveBeenCalled();
     expect(RegistrationSubmittedMessage.enqueueFor).not.toHaveBeenCalled();
     expect(RegistrationNotifyMessage.enqueue).toHaveBeenCalledWith({
-      camp,
+      event,
       registration,
     });
     expect(realtimeService.emit).toHaveBeenCalledWith(
-      camp.id,
+      event.id,
       'registration',
       registration.id,
       'created',
@@ -183,14 +201,14 @@ describe('RegistrationController.store', () => {
     const registration = buildRegistration({ status: 'WAITLISTED' });
     registrationService.createRegistration.mockResolvedValue(registration);
     const req = fakeRequest({
-      models: { camp },
+      models: { event },
       validateResult: { body: { data: {}, locale: null } },
     });
 
     await controller.store(req, fakeResponse());
 
     expect(RegistrationWaitlistedMessage.enqueueFor).toHaveBeenCalledWith(
-      camp,
+      event,
       registration,
     );
     expect(RegistrationConfirmedMessage.enqueueFor).not.toHaveBeenCalled();
@@ -201,14 +219,14 @@ describe('RegistrationController.store', () => {
     const registration = buildRegistration({ status: 'PENDING' });
     registrationService.createRegistration.mockResolvedValue(registration);
     const req = fakeRequest({
-      models: { camp },
+      models: { event },
       validateResult: { body: { data: {}, locale: null } },
     });
 
     await controller.store(req, fakeResponse());
 
     expect(RegistrationSubmittedMessage.enqueueFor).toHaveBeenCalledWith(
-      camp,
+      event,
       registration,
     );
     expect(RegistrationConfirmedMessage.enqueueFor).not.toHaveBeenCalled();
@@ -222,7 +240,7 @@ describe('RegistrationController.update', () => {
     const registration = buildRegistration({ status: 'ACCEPTED' });
     registrationService.updateRegistrationById.mockResolvedValue(registration);
     const req = fakeRequest({
-      models: { camp, registration: previousRegistration },
+      models: { event, registration: previousRegistration },
       validateResult: {
         body: { status: 'ACCEPTED' },
         query: { suppressMessage: false },
@@ -232,12 +250,12 @@ describe('RegistrationController.update', () => {
     await controller.update(req, fakeResponse());
 
     expect(RegistrationAcceptedMessage.enqueueFor).toHaveBeenCalledWith(
-      camp,
+      event,
       registration,
     );
     expect(RegistrationConfirmedMessage.enqueueFor).not.toHaveBeenCalled();
     expect(realtimeService.emit).toHaveBeenCalledWith(
-      camp.id,
+      event.id,
       'registration',
       registration.id,
       'updated',
@@ -249,7 +267,7 @@ describe('RegistrationController.update', () => {
     const registration = buildRegistration({ status: 'ACCEPTED' });
     registrationService.updateRegistrationById.mockResolvedValue(registration);
     const req = fakeRequest({
-      models: { camp, registration: previousRegistration },
+      models: { event, registration: previousRegistration },
       validateResult: {
         body: { status: 'ACCEPTED' },
         query: { suppressMessage: false },
@@ -259,7 +277,7 @@ describe('RegistrationController.update', () => {
     await controller.update(req, fakeResponse());
 
     expect(RegistrationConfirmedMessage.enqueueFor).toHaveBeenCalledWith(
-      camp,
+      event,
       registration,
     );
     expect(RegistrationAcceptedMessage.enqueueFor).not.toHaveBeenCalled();
@@ -270,7 +288,7 @@ describe('RegistrationController.update', () => {
     const registration = buildRegistration({ status: 'ACCEPTED' });
     registrationService.updateRegistrationById.mockResolvedValue(registration);
     const req = fakeRequest({
-      models: { camp, registration: previousRegistration },
+      models: { event, registration: previousRegistration },
       validateResult: {
         body: { status: 'ACCEPTED' },
         query: { suppressMessage: true },
@@ -282,7 +300,7 @@ describe('RegistrationController.update', () => {
     expect(RegistrationAcceptedMessage.enqueueFor).not.toHaveBeenCalled();
     // Realtime updates still fire even when the notification email is suppressed.
     expect(realtimeService.emit).toHaveBeenCalledWith(
-      camp.id,
+      event.id,
       'registration',
       registration.id,
       'updated',
@@ -294,7 +312,7 @@ describe('RegistrationController.update', () => {
     const registration = buildRegistration({ status: 'WAITLISTED' });
     registrationService.updateRegistrationById.mockResolvedValue(registration);
     const req = fakeRequest({
-      models: { camp, registration: previousRegistration },
+      models: { event, registration: previousRegistration },
       validateResult: {
         body: {},
         query: { suppressMessage: false },
@@ -317,7 +335,7 @@ describe('RegistrationController.update', () => {
     });
     registrationService.updateRegistrationById.mockResolvedValue(registration);
     const req = fakeRequest({
-      models: { camp, registration: previousRegistration },
+      models: { event, registration: previousRegistration },
       validateResult: {
         body: { data: { first_name: 'John' } },
         query: { suppressMessage: false },
@@ -326,9 +344,18 @@ describe('RegistrationController.update', () => {
 
     await controller.update(req, fakeResponse());
 
+    // The diff travels with the mail, not the previous answers themselves.
     expect(RegistrationUpdatedMessage.enqueueFor).toHaveBeenCalledWith(
-      camp,
+      event,
       registration,
+      [
+        {
+          path: 'first_name',
+          label: 'First name',
+          value: 'John',
+          isFile: false,
+        },
+      ],
     );
   });
 });
@@ -337,7 +364,7 @@ describe('RegistrationController.destroy', () => {
   it('enqueues the deleted message and emits a realtime delete event', async () => {
     const registration = buildRegistration();
     const req = fakeRequest({
-      models: { camp, registration },
+      models: { event, registration },
       validateResult: { query: { suppressMessage: false } },
     });
     const res = fakeResponse();
@@ -348,11 +375,11 @@ describe('RegistrationController.destroy', () => {
       registration,
     );
     expect(RegistrationDeletedMessage.enqueueFor).toHaveBeenCalledWith(
-      camp,
+      event,
       registration,
     );
     expect(realtimeService.emit).toHaveBeenCalledWith(
-      camp.id,
+      event.id,
       'registration',
       registration.id,
       'deleted',
@@ -363,7 +390,7 @@ describe('RegistrationController.destroy', () => {
   it('does not enqueue the deleted message when suppressMessage is set', async () => {
     const registration = buildRegistration();
     const req = fakeRequest({
-      models: { camp, registration },
+      models: { event, registration },
       validateResult: { query: { suppressMessage: true } },
     });
 

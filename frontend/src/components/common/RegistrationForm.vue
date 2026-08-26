@@ -55,7 +55,7 @@
 
         <q-card-section v-if="submitState === 'success' && submittedData">
           <registration-copy-download
-            :camp-details="props.campDetails"
+            :event-details="props.eventDetails"
             :data="submittedData"
             :locale="submittedLocale || locale"
           />
@@ -72,16 +72,16 @@
             icon="person_add"
             :label="t('complete.registerAnother')"
             :to="{
-              name: 'camp',
-              params: { campId: props.campDetails.id },
+              name: 'event',
+              params: { eventId: props.eventDetails.id },
             }"
           />
           <m-btn
             outline
             primary
             icon="explore"
-            :label="t('complete.exploreCamps')"
-            :to="{ name: 'camps' }"
+            :label="t('complete.exploreEvents')"
+            :to="{ name: 'events' }"
           />
         </q-card-actions>
 
@@ -113,7 +113,7 @@
       >
         <q-card-section>
           <registration-copy-download
-            :camp-details="props.campDetails"
+            :event-details="props.eventDetails"
             :data="submittedData"
             :locale="submittedLocale || locale"
           />
@@ -143,13 +143,12 @@ import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import RegistrationCopyDownload from '@/components/common/RegistrationCopyDownload.vue';
 import {
   startAutoDataUpdate,
-  startAutoBackgroundUpdate,
+  startAutoThemeUpdate,
+  addFileSlotResolver,
 } from '@/composables/survey';
-import { corporateTheme } from '@/lib/surveyJs/theme';
-import type { CampDetails } from '@camp-registration/common/entities';
+import type { EventDetails } from '@camp-registration/common/entities';
 import { useAPIService } from '@/services/APIService';
 import { useErrorExtractor } from '@/composables/serviceHandler';
-import { fileDynamicTextProcessor } from '@camp-registration/common/form';
 
 const mdConverter = createMarkdownConverter();
 
@@ -159,18 +158,20 @@ const { extractErrorText } = useErrorExtractor();
 
 interface Props {
   data?: object;
-  campDetails: CampDetails;
-  submitFn: (
+  eventDetails: EventDetails;
+  submitFn?: (
     id: string,
     formData: Record<string, unknown>,
     locale: string,
   ) => Promise<void>;
-  uploadFileFn: (file: File) => Promise<string>;
+  uploadFileFn?: (file: File) => Promise<string>;
   moderation?: boolean;
+  readonly?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   moderation: false,
+  readonly: false,
 });
 
 const emit = defineEmits<{
@@ -248,14 +249,18 @@ const badgeIcon = computed(() =>
   submitState.value === 'success' ? 'check_circle' : 'error',
 );
 
+// A readonly form reuses the moderation layout (TOC, no validation) and puts
+// survey-core into display mode.
+const moderationLayout = props.moderation || props.readonly;
+
 const model = createModel(
-  props.campDetails.id,
-  props.moderation
-    ? createModerationForm(props.campDetails.form)
-    : props.campDetails.form,
+  props.eventDetails.id,
+  moderationLayout
+    ? createModerationForm(props.eventDetails.form)
+    : props.eventDetails.form,
 );
-model.applyTheme(corporateTheme);
-model.validationEnabled = !props.moderation;
+model.validationEnabled = !moderationLayout;
+model.mode = props.readonly ? 'display' : 'edit';
 if (props.data) {
   model.data = props.data;
   mapFileIdToFileContent(model);
@@ -263,7 +268,7 @@ if (props.data) {
 
 const bgColor = ref<string>();
 
-const campData = toRef(props.campDetails);
+const eventData = toRef(props.eventDetails);
 
 watchEffect(() => {
   emit('bgColorUpdate', bgColor.value);
@@ -271,8 +276,8 @@ watchEffect(() => {
 
 onMounted(() => {
   // Auto variables update on locale change
-  startAutoDataUpdate(model, campData);
-  startAutoBackgroundUpdate(bgColor);
+  startAutoDataUpdate(model, eventData);
+  startAutoThemeUpdate(model, eventData, bgColor);
 });
 
 function createModerationForm(form: object) {
@@ -283,7 +288,7 @@ function createModerationForm(form: object) {
   };
 }
 
-function createModel(campId: string, form: object): SurveyModel {
+function createModel(eventId: string, form: object): SurveyModel {
   const survey = new SurveyModel(form);
   survey.locale = locale.value;
 
@@ -292,7 +297,7 @@ function createModel(campId: string, form: object): SurveyModel {
   // than survey-core's built-in "Thank you" text.
   const hasFormCompletedHtml = hasCustomCompletedHtml(form);
 
-  if (props.moderation) {
+  if (moderationLayout) {
     const hideComplete = () => {
       survey.navigationBar.getActionById('sv-nav-complete')?.setVisible(false);
     };
@@ -302,6 +307,12 @@ function createModel(campId: string, form: object): SurveyModel {
 
   // Handle file uploads
   survey.onUploadFiles.add(async (_, options) => {
+    const uploadFileFn = props.uploadFileFn;
+    if (!uploadFileFn) {
+      options.callback('error');
+      return;
+    }
+
     try {
       interface FileOption {
         file: Pick<File, 'name' | 'type' | 'size'>;
@@ -309,7 +320,7 @@ function createModel(campId: string, form: object): SurveyModel {
       }
 
       const fileUploads = options.files.map(async (file) => {
-        const name = await props.uploadFileFn(file);
+        const name = await uploadFileFn(file);
 
         return new File([file], name, {
           type: file.type,
@@ -357,23 +368,24 @@ function createModel(campId: string, form: object): SurveyModel {
   });
 
   // Resolve {_file.<slot>} placeholders to locale-aware file URLs on demand.
-  survey.onProcessDynamicText.add(
-    fileDynamicTextProcessor((slot) =>
-      api.getCampFileSlotUrl(campId, slot, survey.locale),
-    ),
-  );
+  addFileSlotResolver(survey, eventId, api);
 
   // Send data to server. The saving/error UI is rendered by the Vue overlay
   // (see submitState), so the survey's own completed page stays hidden until
   // the submission actually succeeds.
   survey.onComplete.add(async (sender) => {
+    const submitFn = props.submitFn;
+    if (!submitFn) {
+      return;
+    }
+
     submitError.value = undefined;
     submitState.value = 'saving';
 
     mapFileQuestionValues(sender);
 
     try {
-      await props.submitFn(campId, sender.data ?? {}, sender.locale);
+      await submitFn(eventId, sender.data ?? {}, sender.locale);
       submittedData.value = structuredClone(toRaw(sender.data ?? {}));
       submittedLocale.value = sender.locale;
       submitted.value = true;
@@ -491,9 +503,9 @@ submit:
     retry: 'Try again'
 complete:
   title: 'Registration complete!'
-  text: "Thanks for signing up — we've received your registration and can't wait to see you at camp."
+  text: "Thanks for signing up — we've received your registration and can't wait to see you at event."
   registerAnother: 'Register another person'
-  exploreCamps: 'Explore other camps'
+  exploreEvents: 'Explore other events'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -507,9 +519,9 @@ submit:
     retry: 'Erneut versuchen'
 complete:
   title: 'Anmeldung abgeschlossen!'
-  text: 'Danke für deine Anmeldung — wir haben sie erhalten und freuen uns schon darauf, dich im Camp zu begrüßen.'
+  text: 'Danke für deine Anmeldung — wir haben sie erhalten und freuen uns schon darauf, dich bei der Veranstaltung zu begrüßen.'
   registerAnother: 'Weitere Person anmelden'
-  exploreCamps: 'Weitere Camps entdecken'
+  exploreEvents: 'Weitere Veranstaltungen entdecken'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -523,9 +535,9 @@ submit:
     retry: 'Réessayer'
 complete:
   title: 'Inscription terminée !'
-  text: "Merci pour ton inscription — nous l'avons bien reçue et avons hâte de te voir au camp."
+  text: "Merci pour ton inscription — nous l'avons bien reçue et avons hâte de te voir au événement."
   registerAnother: 'Inscrire une autre personne'
-  exploreCamps: "Découvrir d'autres camps"
+  exploreEvents: "Découvrir d'autres événements"
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -539,9 +551,9 @@ submit:
     retry: 'Spróbuj ponownie'
 complete:
   title: 'Rejestracja zakończona!'
-  text: 'Dziękujemy za rejestrację — otrzymaliśmy Twoje zgłoszenie i nie możemy się doczekać spotkania na obozie.'
+  text: 'Dziękujemy za rejestrację — otrzymaliśmy Twoje zgłoszenie i nie możemy się doczekać spotkania na tym wydarzeniu.'
   registerAnother: 'Zarejestruj kolejną osobę'
-  exploreCamps: 'Odkryj inne obozy'
+  exploreEvents: 'Odkryj inne wydarzenia'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -557,7 +569,7 @@ complete:
   title: 'Registrace dokončena!'
   text: 'Děkujeme za registraci — tvou přihlášku jsme přijali a těšíme se na tebe na táboře.'
   registerAnother: 'Registrovat další osobu'
-  exploreCamps: 'Prozkoumat další tábory'
+  exploreEvents: 'Prozkoumat další akcey'
 </i18n>
 
 <style lang="scss">

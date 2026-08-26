@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import moment from 'moment';
 import {
   UserFactory,
-  CampFactory,
+  EventFactory,
   RegistrationFactory,
   FileFactory,
 } from '../../../prisma/factories/index.js';
@@ -59,7 +59,7 @@ describe('/api/v1/admin/overview', () => {
           verified: expect.any(Number),
           rejected: expect.any(Number),
         },
-        camps: {
+        events: {
           total: expect.any(Number),
           open: expect.any(Number),
           upcoming: expect.any(Number),
@@ -98,27 +98,27 @@ describe('/api/v1/admin/overview', () => {
       expect(body.data.users.locked).toBe(1);
     });
 
-    it('should count camps by registration status', async () => {
+    it('should count events by registration status', async () => {
       const { accessToken } = await createAdminWithToken();
       const now = new Date();
 
       // No registration window at all: counts as closed.
-      await CampFactory.create({
+      await EventFactory.create({
         registrationOpensAt: null,
         registrationClosesAt: null,
       });
       // Window currently spans `now`: open.
-      await CampFactory.create({
+      await EventFactory.create({
         registrationOpensAt: moment(now).subtract(1, 'day').toDate(),
         registrationClosesAt: moment(now).add(1, 'day').toDate(),
       });
       // Window already closed: closed.
-      await CampFactory.create({
+      await EventFactory.create({
         registrationOpensAt: moment(now).subtract(2, 'days').toDate(),
         registrationClosesAt: moment(now).subtract(1, 'day').toDate(),
       });
       // Opens in the future: upcoming.
-      await CampFactory.create({
+      await EventFactory.create({
         registrationOpensAt: moment(now).add(1, 'day').toDate(),
         registrationClosesAt: moment(now).add(2, 'days').toDate(),
       });
@@ -130,19 +130,23 @@ describe('/api/v1/admin/overview', () => {
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
-      expect(body.data.camps.total).toBe(4);
-      expect(body.data.camps.open).toBe(1);
-      expect(body.data.camps.upcoming).toBe(1);
-      expect(body.data.camps.closed).toBe(2);
+      expect(body.data.events.total).toBe(4);
+      expect(body.data.events.open).toBe(1);
+      expect(body.data.events.upcoming).toBe(1);
+      expect(body.data.events.closed).toBe(2);
       expect(body.data.files.total).toBe(1);
     });
 
     it('should count total registrations', async () => {
       const { accessToken } = await createAdminWithToken();
-      const camp = await CampFactory.create();
+      const event = await EventFactory.create();
 
-      await RegistrationFactory.create({ camp: { connect: { id: camp.id } } });
-      await RegistrationFactory.create({ camp: { connect: { id: camp.id } } });
+      await RegistrationFactory.create({
+        event: { connect: { id: event.id } },
+      });
+      await RegistrationFactory.create({
+        event: { connect: { id: event.id } },
+      });
 
       const { body } = await request()
         .get('/api/v1/admin/overview')

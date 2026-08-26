@@ -1,7 +1,7 @@
 import { createForm } from '../utils/form.js';
 import { Prisma } from '#generated/prisma/client';
 
-export const campPrivate = {
+export const eventPrivate = {
   listed: false,
   form: createForm([
     {
@@ -12,7 +12,7 @@ export const campPrivate = {
   ]),
 };
 
-export const campListed: Partial<Prisma.CampCreateInput> = {
+export const eventListed: Partial<Prisma.EventCreateInput> = {
   listed: false,
   confirmationMode: 'AUTOMATIC',
   form: createForm([
@@ -28,7 +28,7 @@ export const campListed: Partial<Prisma.CampCreateInput> = {
   ]),
 };
 
-export const campWithAdditionalFields = {
+export const eventWithAdditionalFields = {
   form: createForm([
     {
       name: 'first_name',
@@ -44,7 +44,7 @@ export const campWithAdditionalFields = {
   ]),
 };
 
-export const campWithRequiredField = {
+export const eventWithRequiredField = {
   form: createForm([
     {
       name: 'first_name',
@@ -59,7 +59,7 @@ export const campWithRequiredField = {
   ]),
 };
 
-export const campWithFileRequired = {
+export const eventWithFileRequired = {
   form: createForm([
     {
       name: 'some_field',
@@ -74,7 +74,7 @@ export const campWithFileRequired = {
   ]),
 };
 
-export const campWithMultipleFilesRequired = {
+export const eventWithMultipleFilesRequired = {
   form: createForm([
     {
       name: 'some_field',
@@ -90,7 +90,7 @@ export const campWithMultipleFilesRequired = {
   ]),
 };
 
-export const campWithCustomFields = {
+export const eventWithCustomFields = {
   form: createForm([
     {
       name: 'first_name',
@@ -105,7 +105,7 @@ export const campWithCustomFields = {
   ]),
 };
 
-export const campWithCampVariable = {
+export const eventWithEventVariable = {
   minAge: 10,
   maxAge: 15,
   form: createForm([
@@ -118,14 +118,14 @@ export const campWithCampVariable = {
       name: 'age',
       type: 'text',
       inputType: 'number',
-      minValueExpression: '{camp.minAge}',
-      maxValueExpression: '{camp.maxAge}',
+      minValueExpression: '{event.minAge}',
+      maxValueExpression: '{event.maxAge}',
       isRequired: true,
     },
   ]),
 };
 
-export const campWithFileOptional = {
+export const eventWithFileOptional = {
   form: createForm([
     {
       name: 'some_field',
@@ -140,7 +140,7 @@ export const campWithFileOptional = {
   ]),
 };
 
-export const campWithMaxParticipantsNational = {
+export const eventWithMaxParticipantsNational = {
   maxParticipants: 5,
   form: createForm([
     {
@@ -151,7 +151,7 @@ export const campWithMaxParticipantsNational = {
   ]),
 };
 
-export const campWithMaxParticipantsInternational = {
+export const eventWithMaxParticipantsInternational = {
   countries: ['de', 'fr'],
   maxParticipants: {
     de: 5,
@@ -166,13 +166,13 @@ export const campWithMaxParticipantsInternational = {
     {
       name: 'country',
       type: 'text',
-      campDataType: 'country',
+      eventDataType: 'country',
       isRequired: true,
     },
   ]),
 };
 
-export const campWithAddress = {
+export const eventWithAddress = {
   countries: ['de', 'fr'],
   maxParticipants: {
     de: 5,
@@ -187,13 +187,13 @@ export const campWithAddress = {
     {
       name: 'address',
       type: 'text',
-      campDataType: 'address',
+      eventDataType: 'address',
       isRequired: true,
     },
   ]),
 };
 
-export const campWithMaxParticipantsRolesNational = {
+export const eventWithMaxParticipantsRolesNational = {
   maxParticipants: 5,
   form: createForm([
     {
@@ -204,13 +204,13 @@ export const campWithMaxParticipantsRolesNational = {
     {
       name: 'role',
       type: 'text',
-      campDataType: 'role',
+      eventDataType: 'role',
       isRequired: true,
     },
   ]),
 };
 
-export const campWithMaxParticipantsRolesInternational = {
+export const eventWithMaxParticipantsRolesInternational = {
   countries: ['de', 'fr'],
   maxParticipants: {
     de: 5,
@@ -225,93 +225,93 @@ export const campWithMaxParticipantsRolesInternational = {
     {
       name: 'role',
       type: 'text',
-      campDataType: 'role',
+      eventDataType: 'role',
       isRequired: true,
     },
     {
       name: 'country',
       type: 'text',
-      campDataType: 'country',
+      eventDataType: 'country',
       isRequired: true,
     },
   ]),
 };
 
-export const campWithAddressCampDataTypes = {
+export const eventWithAddressEventDataTypes = {
   form: createForm([
     {
       name: 'address',
       type: 'text',
-      campDataType: 'address',
+      eventDataType: 'address',
     },
   ]),
 };
 
-export const campWithAllCampDataTypes = {
+export const eventWithAllEventDataTypes = {
   form: createForm([
     {
       name: 'firstName',
       type: 'text',
-      campDataType: 'first_name',
+      eventDataType: 'first_name',
     },
     {
       name: 'lastName',
       type: 'text',
-      campDataType: 'last_name',
+      eventDataType: 'last_name',
     },
     {
       name: 'dateOfBirth',
       type: 'text',
       inputType: 'date',
-      campDataType: 'date_of_birth',
+      eventDataType: 'date_of_birth',
     },
     {
       name: 'email',
       type: 'text',
       inputType: 'email',
-      campDataType: 'email',
+      eventDataType: 'email',
     },
     {
       name: 'emailSecondary',
       type: 'text',
       inputType: 'email',
-      campDataType: 'email',
+      eventDataType: 'email',
     },
     {
       name: 'role',
       type: 'text',
-      campDataType: 'role',
+      eventDataType: 'role',
     },
     {
       name: 'gender',
       type: 'text',
-      campDataType: 'gender',
+      eventDataType: 'gender',
     },
     {
       name: 'street',
       type: 'text',
-      campDataType: 'street',
+      eventDataType: 'street',
     },
     {
       name: 'city',
       type: 'text',
-      campDataType: 'city',
+      eventDataType: 'city',
     },
     {
       name: 'zipCode',
       type: 'text',
-      campDataType: 'zip_code',
+      eventDataType: 'zip_code',
     },
     {
       name: 'country',
       type: 'text',
-      campDataType: 'country',
+      eventDataType: 'country',
     },
   ]),
 };
 
-export const campWithoutCountryData = {
-  ...campWithMaxParticipantsInternational,
+export const eventWithoutCountryData = {
+  ...eventWithMaxParticipantsInternational,
   form: createForm([
     {
       name: 'first_name',
@@ -321,84 +321,84 @@ export const campWithoutCountryData = {
     {
       name: 'country',
       type: 'text',
-      campDataType: 'country',
+      eventDataType: 'country',
       isRequired: false,
     },
   ]),
 };
 
-export const campWithEmail = {
-  ...campPrivate,
+export const eventWithEmail = {
+  ...eventPrivate,
   countries: ['de', 'fr'],
   form: createForm([
     {
       name: 'email',
       type: 'text',
-      campDataType: 'email',
+      eventDataType: 'email',
     },
     {
       name: 'first_name',
       type: 'text',
-      campDataType: 'first_name',
+      eventDataType: 'first_name',
     },
     {
       name: 'last_name',
       type: 'text',
-      campDataType: 'last_name',
+      eventDataType: 'last_name',
     },
   ]),
 };
 
-export const campWithEmailAndCountry = {
-  ...campPrivate,
+export const eventWithEmailAndCountry = {
+  ...eventPrivate,
   countries: ['de', 'fr'],
   form: createForm([
     {
       name: 'email',
       type: 'text',
-      campDataType: 'email',
+      eventDataType: 'email',
     },
     {
       name: 'first_name',
       type: 'text',
-      campDataType: 'first_name',
+      eventDataType: 'first_name',
     },
     {
       name: 'last_name',
       type: 'text',
-      campDataType: 'last_name',
+      eventDataType: 'last_name',
     },
     {
       name: 'country',
       type: 'text',
-      campDataType: 'country',
+      eventDataType: 'country',
     },
   ]),
 };
 
-export const campWithMultipleEmails = {
-  ...campListed,
+export const eventWithMultipleEmails = {
+  ...eventListed,
   form: createForm([
     {
       name: 'email',
       type: 'text',
-      campDataType: 'email',
+      eventDataType: 'email',
     },
     {
       name: 'emailGuardian',
       type: 'text',
-      campDataType: 'email',
+      eventDataType: 'email',
     },
     {
       name: 'full_name',
       type: 'text',
-      campDataType: 'full_name',
+      eventDataType: 'full_name',
     },
   ]),
 };
 
-export const campWithContactEmailInternational = {
-  ...campListed,
+export const eventWithContactEmailInternational = {
+  ...eventListed,
   countries: ['de', 'fr'],
   contactEmail: {
     de: 'de@email.net',
@@ -408,41 +408,41 @@ export const campWithContactEmailInternational = {
     {
       name: 'country',
       type: 'text',
-      campDataType: 'country',
+      eventDataType: 'country',
     },
   ]),
 };
 
-export const campWithEmailAndMaxParticipants = {
-  ...campListed,
+export const eventWithEmailAndMaxParticipants = {
+  ...eventListed,
   maxParticipants: 0,
   countries: ['de', 'fr'],
   form: createForm([
     {
       name: 'email',
       type: 'text',
-      campDataType: 'email',
+      eventDataType: 'email',
     },
     {
       name: 'first_name',
       type: 'text',
-      campDataType: 'first_name',
+      eventDataType: 'first_name',
     },
     {
       name: 'last_name',
       type: 'text',
-      campDataType: 'last_name',
+      eventDataType: 'last_name',
     },
     {
       name: 'country',
       type: 'text',
-      campDataType: 'country',
+      eventDataType: 'country',
     },
   ]),
 };
 
-export const campWithFormFunctions = {
-  ...campListed,
+export const eventWithFormFunctions = {
+  ...eventListed,
   form: createForm([
     {
       name: 'date',

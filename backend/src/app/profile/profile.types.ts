@@ -1,5 +1,5 @@
 import type {
-  CampManager,
+  EventManager,
   NewsletterManager,
   OrganizationMember,
   OrganizationVerificationStatus,
@@ -10,13 +10,13 @@ export interface ProfileOrganizationMembership extends OrganizationMember {
   organization: {
     id: string;
     verificationStatus: OrganizationVerificationStatus;
-    camps: { id: string }[];
+    events: { id: string }[];
     newsletters: { id: string }[];
   };
 }
 
 export interface ProfileUser extends Omit<User, 'password'> {
-  campRoles: CampManager[];
+  eventRoles: EventManager[];
   newsletterManagers: NewsletterManager[];
   organizationMembers: ProfileOrganizationMembership[];
   twoFactor?: { confirmedAt: Date | null } | null;

@@ -7,10 +7,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const fixture = (name: string) => path.join(__dirname, "..", "fixtures", name);
 
 test.describe("registration page", () => {
-  test("should register a user for a camp", async ({ page }) => {
-    const campId = "01JHP0CXJFR4MQS8SF1HQJCY38";
+  test("should register a user for a event", async ({ page }) => {
+    const eventId = "01JHP0CXJFR4MQS8SF1HQJCY38";
 
-    await page.goto(`/camps/${campId}/`);
+    await page.goto(`/events/${eventId}/`);
 
     const registrationForm = page.getByTestId("registration-form");
     await registrationForm
@@ -24,7 +24,7 @@ test.describe("registration page", () => {
 
     const createRegistrationResponse = page.waitForResponse(
       (resp) =>
-        resp.url().includes(`/api/v1/camps/${campId}/registrations`) &&
+        resp.url().includes(`/api/v1/events/${eventId}/registrations`) &&
         resp.request().method() === "POST",
     );
     await registrationForm.locator(".sd-navigation__complete-btn").click();
@@ -49,14 +49,14 @@ test.describe("registration page", () => {
   });
 
   test("should show an error if the registration fails", async ({ page }) => {
-    const campId = "01JHP0CXJFR4MQS8SF1HQJCY38";
+    const eventId = "01JHP0CXJFR4MQS8SF1HQJCY38";
 
-    await page.goto(`/camps/${campId}/`);
+    await page.goto(`/events/${eventId}/`);
 
     // Force the registration request to fail on the server side.
     await page.route(
       (url) =>
-        url.pathname.includes(`/api/v1/camps/${campId}/registrations`) &&
+        url.pathname.includes(`/api/v1/events/${eventId}/registrations`) &&
         !url.pathname.includes("/files"),
       async (route) => {
         if (route.request().method() !== "POST") {
@@ -87,7 +87,7 @@ test.describe("registration page", () => {
 
     const createRegistrationResponse = page.waitForResponse(
       (resp) =>
-        resp.url().includes(`/api/v1/camps/${campId}/registrations`) &&
+        resp.url().includes(`/api/v1/events/${eventId}/registrations`) &&
         resp.request().method() === "POST",
     );
     await registrationForm.locator(".sd-navigation__complete-btn").click();
@@ -105,15 +105,15 @@ test.describe("registration page", () => {
   });
 
   test("should retry a failed registration submission", async ({ page }) => {
-    const campId = "01JHP0CXJFR4MQS8SF1HQJCY38";
+    const eventId = "01JHP0CXJFR4MQS8SF1HQJCY38";
 
-    await page.goto(`/camps/${campId}/`);
+    await page.goto(`/events/${eventId}/`);
 
     // Fail the first submission attempt only; let the retry go through.
     let attempts = 0;
     await page.route(
       (url) =>
-        url.pathname.includes(`/api/v1/camps/${campId}/registrations`) &&
+        url.pathname.includes(`/api/v1/events/${eventId}/registrations`) &&
         !url.pathname.includes("/files"),
       async (route) => {
         if (route.request().method() !== "POST") {
@@ -150,7 +150,7 @@ test.describe("registration page", () => {
 
     const failedResponse = page.waitForResponse(
       (resp) =>
-        resp.url().includes(`/api/v1/camps/${campId}/registrations`) &&
+        resp.url().includes(`/api/v1/events/${eventId}/registrations`) &&
         resp.request().method() === "POST",
     );
     await registrationForm.locator(".sd-navigation__complete-btn").click();
@@ -162,7 +162,7 @@ test.describe("registration page", () => {
 
     const retryResponse = page.waitForResponse(
       (resp) =>
-        resp.url().includes(`/api/v1/camps/${campId}/registrations`) &&
+        resp.url().includes(`/api/v1/events/${eventId}/registrations`) &&
         resp.request().method() === "POST",
     );
     await page.getByTestId("registration-submit-retry").click();
@@ -178,10 +178,10 @@ test.describe("registration page", () => {
     ).toBeVisible();
   });
 
-  test("should register a user for a camp with files", async ({ page }) => {
-    const campId = "01JKEMXG5C62NBMA6V0QQDJ7JD";
+  test("should register a user for a event with files", async ({ page }) => {
+    const eventId = "01JKEMXG5C62NBMA6V0QQDJ7JD";
 
-    await page.goto(`/camps/${campId}/`);
+    await page.goto(`/events/${eventId}/`);
 
     const registrationForm = page.getByTestId("registration-form");
     await registrationForm
@@ -199,7 +199,7 @@ test.describe("registration page", () => {
 
     const createRegistrationResponse = page.waitForResponse(
       (resp) =>
-        resp.url().includes(`/api/v1/camps/${campId}/registrations`) &&
+        resp.url().includes(`/api/v1/events/${eventId}/registrations`) &&
         resp.request().method() === "POST",
     );
     await registrationForm.locator(".sd-navigation__complete-btn").click();

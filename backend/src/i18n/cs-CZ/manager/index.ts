@@ -1,15 +1,15 @@
 export default {
   email: {
     invitation: {
-      subject: 'Pozvánka do tábora',
-      preview: 'Byli jste pozváni ke správě tábora {{ camp.name }}',
+      subject: 'Pozvánka na akci',
+      preview: 'Byli jste pozváni ke správě akce {{ event.name }}',
       text: {
         title: 'Dobrý den,',
         information:
-          'Byli jste pozváni ke správě tábora {{ camp.name }}. ' +
-          'Pokud již máte účet, tábor bude automaticky zpřístupněn. ' +
+          'Byli jste pozváni ke správě akce {{ event.name }}. ' +
+          'Pokud již máte účet, akce bude automaticky zpřístupněna. ' +
           'V opačném případě si nejprve vytvořte bezplatný účet.',
-        button: 'Spravovat tábor',
+        button: 'Spravovat akci',
         greeting: 'S pozdravem,',
         teamName: 'Tým {{ appName }}',
       },

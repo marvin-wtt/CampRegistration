@@ -65,7 +65,7 @@ const publishFromOtherInstance = (
   const [, subscriber] = redisInstances;
   const message =
     typeof payload === 'string' ? payload : JSON.stringify(payload);
-  subscriber.emit('pmessage', 'camp:*:events', channel, message);
+  subscriber.emit('pmessage', 'event:*:events', channel, message);
 };
 
 beforeEach(() => {
@@ -84,43 +84,43 @@ describe('RedisRealtimeBus', () => {
     expect(bus.type).toBe('redis');
   });
 
-  it('pattern-subscribes to all camp channels on construction', () => {
+  it('pattern-subscribes to all event channels on construction', () => {
     new RedisRealtimeBus();
 
     const [, subscriber] = redisInstances;
-    expect(subscriber.psubscribe).toHaveBeenCalledWith('camp:*:events');
+    expect(subscriber.psubscribe).toHaveBeenCalledWith('event:*:events');
   });
 
-  it('publishes a serialized event to the camp-scoped channel', async () => {
+  it('publishes a serialized event to the event-scoped channel', async () => {
     const bus = new RedisRealtimeBus();
     const e = event();
 
-    await bus.publish('camp-1', e);
+    await bus.publish('event-1', e);
 
     const [publisher] = redisInstances;
     expect(publisher.publish).toHaveBeenCalledWith(
-      'camp:camp-1:events',
+      'event:event-1:events',
       JSON.stringify(e),
     );
   });
 
-  it('delivers incoming pub/sub messages to local subscribers of the matching camp', () => {
+  it('delivers incoming pub/sub messages to local subscribers of the matching event', () => {
     const bus = new RedisRealtimeBus();
     const received: RealtimeEvent[] = [];
-    bus.subscribe('camp-a', (e) => received.push(e));
+    bus.subscribe('event-a', (e) => received.push(e));
 
     const e = event({ id: 'reg-1' });
-    publishFromOtherInstance('camp:camp-a:events', e);
+    publishFromOtherInstance('event:event-a:events', e);
 
     expect(received).toEqual([e]);
   });
 
-  it('does not deliver messages published for a different camp', () => {
+  it('does not deliver messages published for a different event', () => {
     const bus = new RedisRealtimeBus();
     const listener = vi.fn();
-    bus.subscribe('camp-a', listener);
+    bus.subscribe('event-a', listener);
 
-    publishFromOtherInstance('camp:camp-b:events', event());
+    publishFromOtherInstance('event:event-b:events', event());
 
     expect(listener).not.toHaveBeenCalled();
   });
@@ -129,9 +129,9 @@ describe('RedisRealtimeBus', () => {
     const bus = new RedisRealtimeBus();
     const listener = vi.fn();
 
-    const unsubscribe = bus.subscribe('camp-a', listener);
+    const unsubscribe = bus.subscribe('event-a', listener);
     unsubscribe();
-    publishFromOtherInstance('camp:camp-a:events', event());
+    publishFromOtherInstance('event:event-a:events', event());
 
     expect(listener).not.toHaveBeenCalled();
   });
@@ -139,10 +139,10 @@ describe('RedisRealtimeBus', () => {
   it('logs and swallows malformed pub/sub messages instead of throwing', () => {
     const bus = new RedisRealtimeBus();
     const listener = vi.fn();
-    bus.subscribe('camp-a', listener);
+    bus.subscribe('event-a', listener);
 
     expect(() =>
-      publishFromOtherInstance('camp:camp-a:events', '{not-json'),
+      publishFromOtherInstance('event:event-a:events', '{not-json'),
     ).not.toThrow();
 
     expect(listener).not.toHaveBeenCalled();
@@ -188,7 +188,7 @@ describe('RedisRealtimeBus', () => {
   it('close() removes local listeners and disconnects both clients', async () => {
     const bus = new RedisRealtimeBus();
     const listener = vi.fn();
-    bus.subscribe('camp-a', listener);
+    bus.subscribe('event-a', listener);
 
     await bus.close();
 
@@ -196,7 +196,7 @@ describe('RedisRealtimeBus', () => {
     expect(publisher.disconnect).toHaveBeenCalled();
     expect(subscriber.disconnect).toHaveBeenCalled();
 
-    publishFromOtherInstance('camp:camp-a:events', event());
+    publishFromOtherInstance('event:event-a:events', event());
     expect(listener).not.toHaveBeenCalled();
   });
 });

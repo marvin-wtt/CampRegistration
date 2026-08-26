@@ -1,15 +1,15 @@
 export default {
   purpose: {
     registration_administration: 'Gestion de votre inscription',
-    participant_communication: 'Information avant et pendant le séjour',
-    camp_organisation: 'Organisation et déroulement du séjour',
+    participant_communication: "Information avant et pendant l'événement",
+    event_organisation: "Organisation et déroulement de l'événement",
     catering: 'Restauration',
-    medical_care: 'Soins médicaux pendant le séjour',
+    medical_care: "Soins médicaux pendant l'événement",
     emergency_contact: "Prise de contact en cas d'urgence",
     transport: 'Organisation du transport',
     insurance: 'Couverture par une assurance',
     payment_and_invoicing: 'Paiement et facturation',
-    photo_documentation: 'Documentation interne de la vie du séjour',
+    photo_documentation: "Documentation interne de l'événement",
     photo_publication: 'Publication de photographies',
     statutory_reporting: 'Déclarations exigées par la loi',
     newsletter: 'Envoi de notre lettre d’information',
@@ -37,7 +37,7 @@ export default {
   },
 
   recipient: {
-    camp_staff: "L'équipe d'encadrement",
+    event_staff: "L'équipe d'encadrement",
     accommodation_provider: "Le prestataire d'hébergement",
     catering_provider: 'Le prestataire de restauration',
     transport_provider: 'Le transporteur',
@@ -70,7 +70,7 @@ export default {
 
   specialCategoryCondition: {
     explicit_consent:
-      'Le cas normal pour un séjour. La personne doit consentir séparément et pouvoir retirer son consentement à tout moment.',
+      'Le cas normal pour un événement. La personne doit consentir séparément et pouvoir retirer son consentement à tout moment.',
     nonprofit_body:
       "Uniquement si la personne est membre de votre organisation ou en contact régulier avec elle, et si les données n'en sortent pas.",
     vital_interests:
@@ -82,9 +82,18 @@ export default {
   },
 
   retentionAnchor: {
-    camp_end: 'après la fin du séjour',
+    event_end: "après la fin de l'événement",
     submission: "après l'envoi de l'inscription",
   },
+
+  retentionUntil: {
+    period: 'pour une durée déterminée',
+    consent_withdrawn:
+      "jusqu'au retrait du consentement sur lequel elles reposent",
+  },
+
+  retentionConsentSentence:
+    'Conservées aussi longtemps que vous y consentez, et effacées dès que vous retirez ce consentement.',
 
   transferSafeguard: {
     adequacy: "une décision d'adéquation de la Commission européenne",
@@ -108,7 +117,7 @@ export default {
     },
     origin: {
       organization: "De l'organisation",
-      camp: 'Ajouté ici',
+      event: 'Ajouté ici',
     },
     action: {
       publish: 'Publier',
@@ -149,6 +158,8 @@ export default {
     retention: "Aucune durée de conservation n'a été définie",
     retention_exception:
       "Une exception n'a pas de durée, ou pas d'objet indiqué",
+    retention_exception_consent_basis:
+      "Des données conservées jusqu'au retrait du consentement sont rattachées à une finalité qui ne repose pas sur le consentement",
     transfer_countries:
       "Les transferts hors EEE n'indiquent aucun pays de destination",
     transfer_safeguard: "Les transferts hors EEE n'indiquent aucune garantie",

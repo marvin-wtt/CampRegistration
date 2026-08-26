@@ -2,7 +2,7 @@ import moment from 'moment';
 
 /**
  * Every seeded date is relative to the moment the seeder runs, so the flagship
- * camp is still upcoming and its registration still open however long after the
+ * event is still upcoming and its registration still open however long after the
  * seed the database is used.
  */
 const anchor = moment().startOf('day');
@@ -23,7 +23,7 @@ export function seedDay(days: number): string {
   return anchor.clone().add(days, 'days').format('YYYY-MM-DD');
 }
 
-/** Day offsets that put each camp into a distinct lifecycle phase. */
+/** Day offsets that put each event into a distinct lifecycle phase. */
 export const PHASE = {
   /** Flagship: three months out, registration open. */
   upcoming: { start: 94, end: 101 },

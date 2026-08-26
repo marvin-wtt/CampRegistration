@@ -1,6 +1,6 @@
 import { api } from '@/services/api';
 import type {
-  Camp,
+  Event,
   Newsletter,
   Organization,
   OrganizationCreateData,
@@ -78,19 +78,19 @@ export function useOrganizationService() {
   }
 
   /**
-   * The organization's own camps. A dedicated endpoint rather than
-   * `camps?organizationId=…`, because that listing's `view=all` is restricted to
+   * The organization's own events. A dedicated endpoint rather than
+   * `events?organizationId=…`, because that listing's `view=all` is restricted to
    * system administrators.
    */
-  async function fetchOrganizationCamps(id: string): Promise<Camp[]> {
-    const response = await api.get(`organizations/${id}/camps/`);
+  async function fetchOrganizationEvents(id: string): Promise<Event[]> {
+    const response = await api.get(`organizations/${id}/events/`);
 
     return response?.data?.data;
   }
 
   /**
    * The organization's own newsletters. A dedicated endpoint for the same
-   * reason as the camps one: `GET /newsletters` only returns newsletters the
+   * reason as the events one: `GET /newsletters` only returns newsletters the
    * user manages directly.
    */
   async function fetchOrganizationNewsletters(
@@ -101,13 +101,25 @@ export function useOrganizationService() {
     return response?.data?.data;
   }
 
-  async function moveCampToOrganization(
-    campId: string,
+  async function moveEventToOrganization(
+    eventId: string,
     organizationId: string,
-  ): Promise<Camp> {
-    const response = await api.patch(`camps/${campId}/organization/`, {
+  ): Promise<Event> {
+    const response = await api.patch(`events/${eventId}/organization/`, {
       organizationId,
     });
+
+    return response?.data?.data;
+  }
+
+  async function moveNewsletterToOrganization(
+    newsletterId: string,
+    organizationId: string,
+  ): Promise<Newsletter> {
+    const response = await api.patch(
+      `newsletters/${newsletterId}/organization/`,
+      { organizationId },
+    );
 
     return response?.data?.data;
   }
@@ -121,8 +133,9 @@ export function useOrganizationService() {
     deleteOrganization,
     submitOrganizationVerification,
     reviewOrganization,
-    fetchOrganizationCamps,
+    fetchOrganizationEvents,
     fetchOrganizationNewsletters,
-    moveCampToOrganization,
+    moveEventToOrganization,
+    moveNewsletterToOrganization,
   };
 }

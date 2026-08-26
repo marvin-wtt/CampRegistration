@@ -252,9 +252,9 @@ const backRoute = computed<RouteLocationRaw>(() => {
     return backTo;
   }
 
-  // Use the camp list as first fallback layer
+  // Use the event list as first fallback layer
   const fallback = {
-    name: 'management.camps',
+    name: 'management.events',
   };
 
   if (!isCurrentRoute(fallback)) {
@@ -305,7 +305,7 @@ back: 'Zpět'
   padding-left: 56px;
 }
 
-/* Lets the switcher take the width the toolbar has left, so a long camp name
+/* Lets the switcher take the width the toolbar has left, so a long event name
    gets room and ellipsises there instead of pushing the avatar off-screen. */
 .app-top-bar__lead {
   min-width: 0;

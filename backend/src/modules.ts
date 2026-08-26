@@ -1,11 +1,11 @@
 import type { AppModule } from '#core/base/AppModule';
 import { AuthModule } from '#app/auth/auth.module';
-import { CampModule } from '#app/camp/camp.module';
+import { EventModule } from '#app/event/event.module';
 import { OrganizationModule } from '#app/organization/organization.module';
 import { OrganizationMemberModule } from '#app/organizationMember/organization-member.module';
 import { RegistrationModule } from '#app/registration/registration.module';
 import { TableTemplateModule } from '#app/tableTemplate/table-template.module';
-import { CampManagerModule } from '#app/campManager/camp-manager.module.js';
+import { EventManagerModule } from '#app/eventManager/event-manager.module.js';
 import { MessageDeliveryModule } from '#app/messageDelivery/message-delivery.module';
 import { MessageTemplateModule } from '#app/messageTemplate/message-template.module';
 import { MessageModule } from '#app/message/message.module';
@@ -22,7 +22,7 @@ import { HealthModule } from '#app/health/health.module';
 import { LegalModule } from '#app/legal/legal.module';
 import { PrivacyNoticeModule } from '#app/privacyNotice/privacy-notice.module';
 import { QueueModule } from '#app/queue/queue.module';
-import { ProgramEventModule } from '#app/programEvent/program-event.module';
+import { ProgramItemModule } from '#app/programItem/program-item.module';
 import { TaskModule } from '#app/task/task.module';
 import { MailModule } from '#app/mail/mail.module';
 import { SettingModule } from '#app/setting/setting.module';
@@ -48,20 +48,20 @@ export const createModules = (): AppModule[] => [
   new FileModule(),
   new OrganizationModule(),
   new OrganizationMemberModule(),
-  new CampModule(),
+  new EventModule(),
   new UserModule(),
   new AdminModule(),
   new LegalModule(),
   new PrivacyNoticeModule(),
   new RegistrationModule(),
   new TableTemplateModule(),
-  new CampManagerModule(),
+  new EventManagerModule(),
   new MessageDeliveryModule(),
   new MessageModule(),
   new MessageTemplateModule(),
   new RoomModule(),
   new BedModule(),
-  new ProgramEventModule(),
+  new ProgramItemModule(),
   new TaskModule(),
   new FeedbackModule(),
   new NewsletterModule(),

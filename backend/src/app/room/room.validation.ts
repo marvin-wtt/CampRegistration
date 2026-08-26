@@ -8,20 +8,20 @@ import type {
 
 const show = z.object({
   params: z.object({
-    campId: z.ulid(),
+    eventId: z.ulid(),
     roomId: z.ulid(),
   }),
 });
 
 const index = z.object({
   params: z.object({
-    campId: z.ulid(),
+    eventId: z.ulid(),
   }),
 });
 
 const store = z.object({
   params: z.object({
-    campId: z.ulid(),
+    eventId: z.ulid(),
   }),
   body: z.object({
     name: translatedValue(z.string()),
@@ -31,7 +31,7 @@ const store = z.object({
 
 const update = z.object({
   params: z.object({
-    campId: z.ulid(),
+    eventId: z.ulid(),
     roomId: z.ulid(),
   }),
   body: z
@@ -44,7 +44,7 @@ const update = z.object({
 
 const bulkUpdate = z.object({
   params: z.object({
-    campId: z.ulid(),
+    eventId: z.ulid(),
   }),
   body: z.object({
     rooms: z
@@ -61,7 +61,7 @@ const bulkUpdate = z.object({
 
 const destroy = z.object({
   params: z.object({
-    campId: z.ulid(),
+    eventId: z.ulid(),
     roomId: z.ulid(),
   }),
 });
