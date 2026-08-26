@@ -29,19 +29,19 @@
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
-import type { EventDetails } from '@camp-registration/common/entities';
+import type {
+  EventDetails,
+  Registration,
+} from '@camp-registration/common/entities';
 import { useAPIService } from '@/services/APIService';
 
 const { t } = useI18n();
 const api = useAPIService();
 
-interface Props {
+const { eventDetails, registration } = defineProps<{
   eventDetails: EventDetails;
-  data: Record<string, unknown>;
-  locale: string;
-}
-
-const props = defineProps<Props>();
+  registration: Registration;
+}>();
 
 const state = ref<'idle' | 'working' | 'error'>('idle');
 
@@ -56,11 +56,10 @@ async function download() {
       await import('@/lib/surveyJs/registrationPdf');
 
     await downloadRegistrationPdf({
-      event: props.eventDetails,
-      data: props.data,
-      locale: props.locale,
+      event: eventDetails,
+      registration,
       fileUrl: (slot) =>
-        api.getEventFileSlotUrl(props.eventDetails.id, slot, props.locale),
+        api.getEventFileSlotUrl(eventDetails.id, slot, registration.locale),
     });
     state.value = 'idle';
   } catch {

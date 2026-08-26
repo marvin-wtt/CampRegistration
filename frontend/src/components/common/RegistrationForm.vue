@@ -53,11 +53,12 @@
           </q-banner>
         </q-card-section>
 
-        <q-card-section v-if="submitState === 'success' && submittedData">
+        <q-card-section
+          v-if="submitState === 'success' && submittedRegistration"
+        >
           <registration-copy-download
             :event-details="props.eventDetails"
-            :data="submittedData"
-            :locale="submittedLocale || locale"
+            :registration="submittedRegistration"
           />
         </q-card-section>
 
@@ -104,7 +105,7 @@
     <!-- A form-defined completed page replaces the panel above, so the copy
          offer is rendered alongside it rather than inside it. -->
     <div
-      v-if="submitState === null && submitted && submittedData"
+      v-if="submitState === null && submitted && submittedRegistration"
       class="row justify-center q-pa-md"
     >
       <q-card
@@ -114,8 +115,7 @@
         <q-card-section>
           <registration-copy-download
             :event-details="props.eventDetails"
-            :data="submittedData"
-            :locale="submittedLocale || locale"
+            :registration="submittedRegistration"
           />
         </q-card-section>
       </q-card>
@@ -128,15 +128,7 @@ import 'survey-core/survey-core.min.css';
 
 import { useI18n } from 'vue-i18n';
 import { createMarkdownConverter } from '@/utils/markdown';
-import {
-  computed,
-  onMounted,
-  ref,
-  toRaw,
-  toRef,
-  watch,
-  watchEffect,
-} from 'vue';
+import { computed, onMounted, ref, toRef, watch, watchEffect } from 'vue';
 import { SurveyModel } from 'survey-core';
 import { SurveyComponent } from 'survey-vue3-ui';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
@@ -146,7 +138,10 @@ import {
   startAutoThemeUpdate,
   addFileSlotResolver,
 } from '@/composables/survey';
-import type { EventDetails } from '@camp-registration/common/entities';
+import type {
+  EventDetails,
+  Registration,
+} from '@camp-registration/common/entities';
 import { useAPIService } from '@/services/APIService';
 import { useErrorExtractor } from '@/composables/serviceHandler';
 
@@ -163,7 +158,7 @@ interface Props {
     id: string,
     formData: Record<string, unknown>,
     locale: string,
-  ) => Promise<void>;
+  ) => Promise<Registration | void>;
   uploadFileFn?: (file: File) => Promise<string>;
   moderation?: boolean;
   readonly?: boolean;
@@ -186,10 +181,10 @@ const submitError = ref<string>();
 // Stays true once the submission succeeded, including when survey-core takes
 // the screen back over to show the form's own completed page.
 const submitted = ref<boolean>(false);
-// Snapshot of what was actually submitted. The registrant's copy is generated
-// from this rather than from the live model, which `retrySubmit` may clear.
-const submittedData = ref<Record<string, unknown>>();
-const submittedLocale = ref<string>();
+// What the server echoed back for the submission, used to render the
+// registrant's copy. Kept separate from the live model, which `retrySubmit`
+// may clear.
+const submittedRegistration = ref<Registration>();
 
 // Lets the page hide anything that only applies while the form is being
 // filled in — the privacy disclosure above all.
@@ -385,9 +380,12 @@ function createModel(eventId: string, form: object): SurveyModel {
     mapFileQuestionValues(sender);
 
     try {
-      await submitFn(eventId, sender.data ?? {}, sender.locale);
-      submittedData.value = structuredClone(toRaw(sender.data ?? {}));
-      submittedLocale.value = sender.locale;
+      const registration = await submitFn(
+        eventId,
+        sender.data ?? {},
+        sender.locale,
+      );
+      submittedRegistration.value = registration || undefined;
       submitted.value = true;
       if (sender.showCompletePage && hasFormCompletedHtml) {
         // Reveal the form-defined completed page (survey-core shows it by
