@@ -182,8 +182,11 @@ $status-roles: (
   --sjs2-color-border-static-2-primary: var(--md3-on-surface--light);
 
   /* ---- Component: survey header ---------------------------------------- */
-  // The corporate header: a `primary` band, switched on by setting
-  // `headerView = "advanced"`, which every survey gets from `corporateTheme`.
+  // The corporate header: a `primary` band, shown by setting
+  // `headerView = "advanced"` (`corporateTheme` carries this but nothing
+  // applies it yet, so every survey renders on `"basic"` today — see the
+  // Designer-tab note further down for where these tokens leak through
+  // regardless).
   //
   // `-bg` reaches only `.sv-header`, the advanced band. The two foreground
   // tokens are *not* so contained — they also colour `.sd-header__text`, the
@@ -268,6 +271,32 @@ $status-roles: (
   .sd-description {
     color: var(--md3-on-surface-variant);
   }
+}
+
+/**
+ * Neutralises the Designer tab's title/description card.
+ *
+ * `SurveyCreatorModel.getSurfaceCss()` appends `svc-surface-header` to the
+ * design-time survey's header class unconditionally — regardless of
+ * `headerView` — so this card reads the same
+ * `--sjs2-color-component-survey-header-default-*` tokens as the branded
+ * band above (`survey-creator-core.css`: `.svc-designer-header
+ * .svc-surface-header { background-color: var(--sjs2-color-component-survey-header-default-bg …) }`).
+ * `headerView` never reaches `"advanced"` in this app (see above), so
+ * respondents never see that band; left alone, the Designer tab still paints
+ * it — a `primary`-coloured box, `on-primary` text, capped to the survey
+ * body's reading width (`.sd-container-modern--static`, 672px) rather than
+ * spanning the card, so the white text spills onto the plain canvas outside
+ * it. Resetting the tokens *on the card* overrides the inherited value for
+ * everything that reads them inside it — the background rule above included
+ * — without duplicating which literal CSS properties consume each token.
+ */
+.svc-surface-header {
+  --sjs2-color-component-survey-header-default-bg: transparent;
+  --sjs2-color-component-survey-header-default-title: var(--md3-on-surface);
+  --sjs2-color-component-survey-header-default-description: var(
+    --md3-on-surface-variant
+  );
 }
 
 /**
