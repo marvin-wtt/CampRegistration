@@ -55,7 +55,6 @@ import { addFileSlotResolver } from '@/composables/survey';
 import { useAPIService } from '@/services/APIService';
 import { surveyCreatorCustomLocaleConfig } from '@/components/event/settings/form/form-editor-translations';
 import { buildMd3LiteralTheme, resolveMd3Theme } from '@/lib/surveyJs/theme';
-import { md3CreatorThemes } from '@/lib/surveyJs/themes/md3-creator';
 import { AceJsonEditorModel } from 'survey-creator-core';
 
 AceJsonEditorModel.aceBasePath =
@@ -158,20 +157,15 @@ watchEffect(() => {
 watch(
   () => quasar.dark.isActive,
   (isDark) => {
-    applyCreatorTheme(isDark);
     applySurveyTheme(isDark);
   },
 );
 
-// Creator chrome theme and the survey's own theme (design/preview/theme tabs)
-applyCreatorTheme(quasar.dark.isActive);
+// Creator chrome is themed by `.sjs-theme-overrides` (md3-adapter.scss),
+// which survey-creator-core stamps on the creator root itself — no JS theme
+// object needed. Only the survey's own theme (design/preview/theme tabs)
+// still has to be applied explicitly.
 applySurveyTheme(quasar.dark.isActive);
-
-function applyCreatorTheme(isDark: boolean) {
-  const theme = isDark ? md3CreatorThemes.dark : md3CreatorThemes.light;
-
-  creator.applyCreatorTheme(theme);
-}
 
 // Keeps the survey rendered inside the creator on the same theme the
 // registration page would pick for the same event and mode, so the designer

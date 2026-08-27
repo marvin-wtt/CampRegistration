@@ -183,11 +183,10 @@ $status-roles: (
 
   /* ---- Component: survey header ---------------------------------------- */
   // The corporate header: a `primary` band, shown by setting
-  // `headerView = "advanced"`. `corporateTheme` carries this but nothing
-  // applies it yet, so the app never sets it by default — a camp's saved
-  // theme can still have it on regardless, since it's a normal, exposed
-  // property in the SurveyJS Theme Editor. See the Designer-tab note further
-  // down for where these tokens leak through even on `"basic"`.
+  // `headerView = "advanced"`. Nothing in the app sets that by default — a
+  // camp's saved theme can still have it on regardless, since it's a normal,
+  // exposed property in the SurveyJS Theme Editor. See the Designer-tab note
+  // further down for where these tokens leak through even on `"basic"`.
   //
   // `-bg` reaches only `.sv-header`, the advanced band. The two foreground
   // tokens are *not* so contained — they also colour `.sd-header__text`, the

@@ -145,7 +145,7 @@ export function buildMd3LiteralTheme(mode: Md3Mode = 'light'): ITheme {
     // so the adapter stylesheet cannot express it and an unthemed survey falls
     // back to SurveyJS's panelled default. Matching that here keeps the Theme
     // Editor preview honest about what a camp without a saved theme renders as.
-    isPanelless: false,
+    isPanelless: true,
     // No `header` key: `SurveyModel._applyTheme` reads `"header" in theme` as an
     // opt-in and forces `headerView: "advanced"` on every survey it is applied
     // to. The header's *colours* come through `cssVariables` like any other

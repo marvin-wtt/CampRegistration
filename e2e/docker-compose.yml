@@ -36,7 +36,7 @@ services:
     profiles: [ "snapshots" ]
     # Must match the installed @playwright/test version; a mismatch fails
     # loudly with "Executable doesn't exist".
-    image: mcr.microsoft.com/playwright:v1.61.1-noble
+    image: mcr.microsoft.com/playwright:v1.62.1-noble
     init: true
     # Chromium needs more shared memory than the container default
     ipc: host
