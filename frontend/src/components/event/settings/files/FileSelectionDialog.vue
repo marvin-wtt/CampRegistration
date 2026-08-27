@@ -60,6 +60,12 @@
                 <q-item-label>
                   {{ to(file.name) }}
                 </q-item-label>
+                <q-item-label caption>
+                  {{ versionLabel(file) }}
+                  <template v-if="file.locale">
+                    · {{ file.locale.toUpperCase() }}</template
+                  >
+                </q-item-label>
               </q-item-section>
             </q-item>
             <q-item
@@ -106,7 +112,11 @@
 <script lang="ts" setup>
 import { useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { useEventFilesStore } from '@/stores/event-files-store';
+import {
+  isFieldVersion,
+  splitFieldVersion,
+  useEventFilesStore,
+} from '@/stores/event-files-store';
 import { storeToRefs } from 'pinia';
 import { computed, onMounted, ref } from 'vue';
 import type { ServiceFile } from '@camp-registration/common/entities';
@@ -172,7 +182,21 @@ function filterAccessLevel(file: ServiceFile): boolean {
 }
 
 function filterField(file: ServiceFile): boolean {
-  return !field || file.field === field;
+  return !field || (!!file.field && isFieldVersion(file.field, field));
+}
+
+// The bare field is the original upload; every numbered variant is a
+// version that replaced it without deleting it.
+function versionLabel(file: ServiceFile): string {
+  if (!file.field) {
+    return file.name;
+  }
+
+  const { version } = splitFieldVersion(file.field);
+
+  return version === undefined
+    ? t('version.original')
+    : t('version.replacement', { n: version });
 }
 
 function filterFileType(file: ServiceFile): boolean {
@@ -217,16 +241,23 @@ function upload() {
     .dialog({
       component: FileUploadDialog,
       componentProps: {
-        initialField: field,
+        // A fresh field per upload, so replacing an image keeps the
+        // previous version addressable instead of overwriting it.
+        initialField: field && eventFileStore.nextAvailableField(field),
         accessLevel,
       },
     })
     .onOk((file: ServiceFile) => {
       if (multiple) {
         selected.value.push(file);
-      } else {
-        selected.value = [file];
+        return;
       }
+
+      // A single-select picker has nothing left to choose once a file was
+      // just uploaded for it, so confirm immediately instead of making the
+      // user click "Select" again.
+      selected.value = [file];
+      onDialogOK(selected.value);
     });
 }
 </script>
@@ -236,6 +267,10 @@ title: 'Select File'
 
 column:
   name: 'Name'
+
+version:
+  original: 'Original'
+  replacement: 'Replacement {n}'
 
 action:
   cancel: 'Cancel'
@@ -249,6 +284,10 @@ title: 'Datei Auswählen'
 column:
   name: 'Name'
 
+version:
+  original: 'Original'
+  replacement: 'Ersatz {n}'
+
 action:
   cancel: 'Abbrechen'
   upload: 'Hochladen'
@@ -260,6 +299,10 @@ title: 'Sélectionner un fichier'
 
 column:
   name: 'Nom'
+
+version:
+  original: 'Original'
+  replacement: 'Remplacement {n}'
 
 action:
   ok: 'Sélectionner'
@@ -273,6 +316,10 @@ title: 'Wybierz plik'
 column:
   name: 'Nazwa'
 
+version:
+  original: 'Oryginał'
+  replacement: 'Zamiennik {n}'
+
 action:
   cancel: 'Anuluj'
   upload: 'Prześlij'
@@ -284,6 +331,10 @@ title: 'Vyberte soubor'
 
 column:
   name: 'Název'
+
+version:
+  original: 'Originál'
+  replacement: 'Náhrada {n}'
 
 action:
   cancel: 'Zrušit'

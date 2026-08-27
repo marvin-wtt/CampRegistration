@@ -341,6 +341,12 @@ export class FileService extends BaseService {
    * Resolves the best-matching file for a form slot ({_file.<slot>}) on a model
    * and locale. The slot maps to the file's `field` column. Readiness and access
    * are not checked here — that is the caller's (guard/stream) responsibility.
+   *
+   * More than one file can end up sharing a (field, locale) pair — e.g. a
+   * replacement upload that was submitted without deleting the original.
+   * `selectFileByLocale` keeps the first file it sees on a tied score, so
+   * ordering newest-first here makes the most recently uploaded file win
+   * instead of whichever one happens to sort first in storage.
    */
   async getModelFileForSlot(
     model: ModelData,
@@ -352,6 +358,7 @@ export class FileService extends BaseService {
         [`${model.name}Id`]: model.id,
         field: slot,
       },
+      orderBy: { createdAt: 'desc' },
     });
 
     if (files.length === 0) {

@@ -15,6 +15,33 @@ import { computed } from 'vue';
 // Matches {_file.slotName} placeholders used in SurveyJS form definitions.
 const FILE_SLOT_REGEX = /\{\s?_file\.([a-z0-9_-]+)\s?}/g;
 
+/**
+ * Whether `field` is `baseField` itself or one of its numbered versions
+ * (`baseField-1`, `baseField-2`, …) — the scheme the Form Editor's file
+ * picker uses so swapping an image keeps the previous one addressable
+ * instead of deleting it.
+ */
+export function isFieldVersion(field: string, baseField: string): boolean {
+  const escaped = baseField.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`^${escaped}(-\\d+)?$`).test(field);
+}
+
+/**
+ * Splits a field into its base name and version number, e.g. `"logo-2"` ->
+ * `{ baseField: "logo", version: 2 }`. `version` is `undefined` for the
+ * original (unsuffixed) field.
+ */
+export function splitFieldVersion(field: string): {
+  baseField: string;
+  version: number | undefined;
+} {
+  const match = /^(.*)-(\d+)$/.exec(field);
+
+  return match
+    ? { baseField: match[1]!, version: Number(match[2]) }
+    : { baseField: field, version: undefined };
+}
+
 export const useEventFilesStore = defineStore('eventFiles', () => {
   const apiService = useAPIService();
   const eventStore = useEventDetailsStore();
@@ -203,6 +230,29 @@ export const useEventFilesStore = defineStore('eventFiles', () => {
     return apiService.getFileUrl(id);
   }
 
+  /**
+   * The next free field for uploading a new version under `baseField`:
+   * the base field itself if it's never been used, otherwise the lowest
+   * unused `baseField-N`. Uploading through it never overwrites an earlier
+   * version — swapping an image just points the form at a new field.
+   */
+  function nextAvailableField(baseField: string): string {
+    const used = new Set(
+      (data.value ?? []).map((f) => f.field).filter((f): f is string => !!f),
+    );
+
+    if (!used.has(baseField)) {
+      return baseField;
+    }
+
+    let n = 1;
+    while (used.has(`${baseField}-${n}`)) {
+      n++;
+    }
+
+    return `${baseField}-${n}`;
+  }
+
   return {
     reset,
     data,
@@ -213,6 +263,7 @@ export const useEventFilesStore = defineStore('eventFiles', () => {
     missingFilesCount,
     downloadFile,
     getUrl,
+    nextAvailableField,
     fetchData,
     createEntry,
     replaceFile,

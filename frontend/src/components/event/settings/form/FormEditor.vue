@@ -318,9 +318,24 @@ creator.onUploadFile.add((_, options) => {
     .catch(() => options.callback('error', ''));
 });
 
+// Named survey elements (pages, panels, questions) share their type with
+// every other instance of it, so `elementType` alone would give every page's
+// backgroundImage the same field. Theme/header targets have no `name` and
+// stay one field per survey, which is what's wanted there anyway.
+function elementInstanceName(element: Base | ITheme): string | undefined {
+  return 'name' in element && typeof element.name === 'string'
+    ? element.name
+    : undefined;
+}
+
 creator.onOpenFileChooser.add((_, options) => {
-  const field =
-    options.elementType.toString() + '_' + options.propertyName.toString();
+  const baseField = [
+    options.elementType.toString(),
+    elementInstanceName(options.element),
+    options.propertyName.toString(),
+  ]
+    .filter(Boolean)
+    .join('_');
 
   quasar
     .dialog({
@@ -328,7 +343,7 @@ creator.onOpenFileChooser.add((_, options) => {
       componentProps: {
         accept: 'image/*',
         accessLevel: 'public',
-        field,
+        field: baseField,
       },
     })
     .onOk((files: ServiceFile[]) => {

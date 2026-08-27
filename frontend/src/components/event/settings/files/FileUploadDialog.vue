@@ -262,22 +262,29 @@ const isAccessLevelLocked = computed(
 
 const activeFileId = computed(() => fileToEdit?.id ?? fileToReplace?.id);
 
-const hasDuplicateFieldLocale = computed<boolean>(() => {
+// The file already occupying the (field, locale) pair this upload targets, if
+// any. Submitting over it replaces that file instead of leaving a duplicate
+// behind — one that could otherwise win or lose slot resolution arbitrarily.
+const duplicateFile = computed<ServiceFile | undefined>(() => {
   const field = fileData.field?.trim();
-  if (!field) {
-    return false;
+  if (!field || isEditMode.value) {
+    return undefined;
   }
 
   const locale = fileData.locale ?? null;
   const files = eventFileStore.data ?? [];
 
-  return files.some(
+  return files.find(
     (file) =>
       file.id !== activeFileId.value &&
       file.field === field &&
       file.locale === locale,
   );
 });
+
+const hasDuplicateFieldLocale = computed<boolean>(
+  () => duplicateFile.value !== undefined,
+);
 
 const dialogTitle = computed<string>(() => t(`title.${mode.value}`));
 
@@ -420,6 +427,11 @@ async function onOKClick(): Promise<void> {
         fileToReplace,
         createData(metadata),
       );
+    } else if (duplicateFile.value) {
+      file = await eventFileStore.replaceFile(
+        duplicateFile.value,
+        createData(metadata),
+      );
     } else {
       file = await eventFileStore.createEntry(createData(metadata));
     }
@@ -501,7 +513,7 @@ fields:
       max_length: 'Use {max} characters or fewer'
       format: 'Use lowercase letters, numbers, hyphens or underscores'
   field_locale:
-    warning: 'Another file already uses this identifier and language. The newer file may hide the older one in forms.'
+    warning: 'Another file already uses this identifier and language. Uploading will replace it.'
   file:
     label: 'File'
     rules:
@@ -553,7 +565,7 @@ fields:
       max_length: 'Verwenden Sie höchstens {max} Zeichen'
       format: 'Verwenden Sie Kleinbuchstaben, Zahlen, Bindestriche oder Unterstriche'
   field_locale:
-    warning: 'Eine andere Datei verwendet bereits diese Kennung und Sprache. Die neuere Datei kann die ältere im Formular überdecken.'
+    warning: 'Eine andere Datei verwendet bereits diese Kennung und Sprache. Beim Hochladen wird sie ersetzt.'
   file:
     label: 'Datei'
     rules:
@@ -605,7 +617,7 @@ fields:
       max_length: 'Utilisez {max} caractères au maximum'
       format: 'Utilisez des minuscules, des chiffres, des tirets ou des traits de soulignement'
   field_locale:
-    warning: "Un autre fichier utilise déjà cet identifiant et cette langue. Le fichier le plus récent peut masquer l'ancien dans les formulaires."
+    warning: 'Un autre fichier utilise déjà cet identifiant et cette langue. Le téléversement le remplacera.'
   file:
     label: 'Fichier'
     rules:
@@ -657,7 +669,7 @@ fields:
       max_length: 'Użyj maksymalnie {max} znaków'
       format: 'Użyj małych liter, cyfr, łączników lub podkreśleń'
   field_locale:
-    warning: 'Inny plik używa już tego identyfikatora i języka. Nowszy plik może ukryć starszy w formularzach.'
+    warning: 'Inny plik używa już tego identyfikatora i języka. Przesłanie go zastąpi.'
   file:
     label: 'Plik'
     rules:
@@ -709,7 +721,7 @@ fields:
       max_length: 'Použijte nejvýše {max} znaků'
       format: 'Použijte malá písmena, číslice, pomlčky nebo podtržítka'
   field_locale:
-    warning: 'Jiný soubor již používá tento identifikátor a jazyk. Novější soubor může ve formulářích skrýt starší.'
+    warning: 'Jiný soubor již používá tento identifikátor a jazyk. Nahráním jej nahradíte.'
   file:
     label: 'Soubor'
     rules:
