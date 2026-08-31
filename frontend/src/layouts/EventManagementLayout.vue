@@ -118,6 +118,13 @@ const items = computed<NavigationItemProps<'event'>[]>(() => [
     to: { name: 'management.event.tasks' },
   },
   {
+    name: 'duty_planner',
+    label: t('duty_planner'),
+    icon: 'checklist',
+    permission: 'event.duty_assignments.view',
+    to: { name: 'management.event.duty-planner' },
+  },
+  {
     name: 'settings',
     label: t('settings'),
     icon: 'settings',
@@ -173,6 +180,7 @@ room_planner: 'Room Planner'
 settings: 'Settings'
 statistics: 'Statistics'
 tasks: 'Tasks'
+duty_planner: 'Duty Roster'
 title: 'Event Management'
 </i18n>
 
@@ -185,6 +193,7 @@ room_planner: 'Raumplaner'
 settings: 'Einstellungen'
 statistics: 'Statistiken'
 tasks: 'Aufgaben'
+duty_planner: 'Dienstplan'
 title: 'Veranstaltungsverwaltung'
 </i18n>
 
@@ -197,6 +206,7 @@ room_planner: 'Aménageur'
 settings: 'Paramètres'
 statistics: 'Statistiques'
 tasks: 'Tâches'
+duty_planner: 'Plan des corvées'
 title: "Gestion de l'événement"
 </i18n>
 
@@ -209,6 +219,7 @@ room_planner: 'Plan pokoi'
 settings: 'Ustawienia'
 statistics: 'Statystyki'
 tasks: 'Zadania'
+duty_planner: 'Grafik dyżurów'
 title: 'Zarządzanie wydarzeniem'
 </i18n>
 
@@ -221,6 +232,7 @@ room_planner: 'Plán pokojů'
 settings: 'Nastavení'
 statistics: 'Statistiky'
 tasks: 'Úkoly'
+duty_planner: 'Rozpis služeb'
 title: 'Správa akce'
 </i18n>
 

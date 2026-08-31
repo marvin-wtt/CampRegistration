@@ -16,6 +16,8 @@ export * from './newsletter-subscriber.factory';
 export * from './newsletter-message.factory';
 export * from './program-item.factory';
 export * from './task.factory';
+export * from './duty.factory';
+export * from './duty-assignment.factory';
 export * from './event-setting.factory';
 export * from './organization.factory';
 export * from './privacy-notice.factory';

@@ -6,6 +6,8 @@ export * from './Translatable.js';
 
 // Models
 export * from './Bed.js';
+export * from './Duty.js';
+export * from './DutyAssignment.js';
 export * from './Event.js';
 export * from './EventManager.js';
 export * from './EventSetting.js';

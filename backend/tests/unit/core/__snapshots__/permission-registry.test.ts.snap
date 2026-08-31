@@ -3,6 +3,14 @@
 exports[`the assembled permission policy > grants event roles exactly these permissions 1`] = `
 {
   "COORDINATOR": [
+    "event.duties.create",
+    "event.duties.delete",
+    "event.duties.edit",
+    "event.duties.view",
+    "event.duty_assignments.create",
+    "event.duty_assignments.delete",
+    "event.duty_assignments.edit",
+    "event.duty_assignments.view",
     "event.edit",
     "event.files.create",
     "event.files.delete",
@@ -42,6 +50,14 @@ exports[`the assembled permission policy > grants event roles exactly these perm
     "event.view",
   ],
   "COUNSELOR": [
+    "event.duties.create",
+    "event.duties.delete",
+    "event.duties.edit",
+    "event.duties.view",
+    "event.duty_assignments.create",
+    "event.duty_assignments.delete",
+    "event.duty_assignments.edit",
+    "event.duty_assignments.view",
     "event.files.view",
     "event.managers.view",
     "event.message_templates.view",
@@ -62,6 +78,14 @@ exports[`the assembled permission policy > grants event roles exactly these perm
   ],
   "DIRECTOR": [
     "event.delete",
+    "event.duties.create",
+    "event.duties.delete",
+    "event.duties.edit",
+    "event.duties.view",
+    "event.duty_assignments.create",
+    "event.duty_assignments.delete",
+    "event.duty_assignments.edit",
+    "event.duty_assignments.view",
     "event.edit",
     "event.files.create",
     "event.files.delete",
@@ -104,6 +128,8 @@ exports[`the assembled permission policy > grants event roles exactly these perm
     "event.view",
   ],
   "VIEWER": [
+    "event.duties.view",
+    "event.duty_assignments.view",
     "event.files.view",
     "event.managers.view",
     "event.program_items.view",

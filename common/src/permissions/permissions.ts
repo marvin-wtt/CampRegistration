@@ -56,6 +56,18 @@ export type TaskPermission =
   | 'event.tasks.update'
   | 'event.tasks.delete';
 
+export type DutyPermission =
+  | 'event.duties.view'
+  | 'event.duties.create'
+  | 'event.duties.edit'
+  | 'event.duties.delete';
+
+export type DutyAssignmentPermission =
+  | 'event.duty_assignments.view'
+  | 'event.duty_assignments.create'
+  | 'event.duty_assignments.edit'
+  | 'event.duty_assignments.delete';
+
 export type NewsletterPermission =
   | 'newsletter.view'
   | 'newsletter.edit'
@@ -99,7 +111,9 @@ export type EventScopedPermission =
   | RoomPermission
   | BedPermission
   | ProgramItemPermission
-  | TaskPermission;
+  | TaskPermission
+  | DutyPermission
+  | DutyAssignmentPermission;
 
 export type Permission =
   EventScopedPermission | NewsletterPermission | OrganizationPermission;

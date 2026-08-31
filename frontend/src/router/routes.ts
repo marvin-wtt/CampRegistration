@@ -185,6 +185,11 @@ const routes: RouteRecordRaw[] = [
                 component: () => import('@/pages/event/TasksPage.vue'),
               },
               {
+                path: 'duty-planner',
+                name: 'management.event.duty-planner',
+                component: () => import('@/pages/event/DutyPlannerPage.vue'),
+              },
+              {
                 path: 'settings',
                 children: [
                   {

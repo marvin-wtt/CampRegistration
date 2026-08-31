@@ -191,6 +191,8 @@ model Event {
   files            File[]
   programItems     ProgramItem[]
   tasks            Task[]
+  duties           Duty[]
+  dutyAssignments  DutyAssignment[]
   eventSettings    EventSetting[]
 
   @@index([organizationId], map: "events_organization_id_index")
@@ -267,6 +269,7 @@ model Registration {
   bed                       Bed?
   files                     File[]
   deliveries                MessageDelivery[]
+  dutyAssignmentMembers     DutyAssignmentMember[]
 
   @@index([organizationPrivacyNoticeVersionId], map: "registrations_organization_privacy_notice_version_id_index")
   @@index([eventPrivacyNoticeVersionId], map: "registrations_event_privacy_notice_version_id_index")
@@ -582,6 +585,60 @@ model Task {
   @@index([eventId], map: "tasks_event_id_foreign")
   @@index([assigneeId], map: "tasks_assignee_id_foreign")
   @@map("tasks")
+}
+
+enum DutyRotationUnit {
+  PARTICIPANT
+  ROOM
+}
+
+model Duty {
+  id           String           @id @unique(map: "duties_id_unique") @default(ulid()) @db.Char(26)
+  eventId      String           @map("event_id") @db.Char(26)
+  /// ![string | Record<string, string>]
+  name         Json             @db.Json
+  sortOrder    Int              @default(999) @map("sort_order")
+  rotationUnit DutyRotationUnit @default(PARTICIPANT) @map("rotation_unit")
+  /// Suggested party size for PARTICIPANT-rotation duties. Not enforced —
+  /// staff can add or remove members freely; it only seeds the suggestion.
+  defaultCount Int?             @map("default_count") @db.UnsignedInt
+
+  event       Event            @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "duties_event_id_foreign")
+  assignments DutyAssignment[]
+
+  @@index([eventId], map: "duties_event_id_foreign")
+  @@map("duties")
+}
+
+model DutyAssignment {
+  id        String   @id @unique(map: "duty_assignments_id_unique") @default(ulid()) @db.Char(26)
+  eventId   String   @map("event_id") @db.Char(26)
+  dutyId    String   @map("duty_id") @db.Char(26)
+  /// YYYY-MM-DD
+  date      String   @db.VarChar(10)
+  slot      String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  event   Event                  @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "duty_assignments_event_id_foreign")
+  duty    Duty                   @relation(fields: [dutyId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "duty_assignments_duty_id_foreign")
+  members DutyAssignmentMember[]
+
+  @@index([eventId], map: "duty_assignments_event_id_foreign")
+  @@index([dutyId], map: "duty_assignments_duty_id_foreign")
+  @@map("duty_assignments")
+}
+
+model DutyAssignmentMember {
+  id               String @id @unique(map: "duty_assignment_members_id_unique") @default(ulid()) @db.Char(26)
+  dutyAssignmentId String @map("duty_assignment_id") @db.Char(26)
+  registrationId   String @map("registration_id") @db.Char(26)
+
+  dutyAssignment DutyAssignment @relation(fields: [dutyAssignmentId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "duty_assignment_members_duty_assignment_id_foreign")
+  registration   Registration   @relation(fields: [registrationId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "duty_assignment_members_registration_id_foreign")
+
+  @@unique([dutyAssignmentId, registrationId], map: "duty_assignment_members_unique")
+  @@index([registrationId], map: "duty_assignment_members_registration_id_foreign")
+  @@map("duty_assignment_members")
 }
 
 enum LegalDocumentType {

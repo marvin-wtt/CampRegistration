@@ -18,12 +18,14 @@ import type {
   OrganizationMember,
   OrganizationInvitation,
   ProgramItem,
+  Duty,
 } from '../../src/generated/prisma/client.js';
 import type { ZodObject, z } from 'zod';
 import type { JsonResource } from '#core/resource/JsonResource';
 import type { EventWithFreePlaces } from '#app/event/event.types';
 import type { NewsletterWithOrganization } from '#app/newsletter/newsletter.types';
 import type { TaskWithAssignee } from '#app/task/task.types';
+import type { DutyAssignmentWithRelations } from '#app/dutyAssignment/dutyAssignment.types';
 
 declare global {
   namespace Express {
@@ -55,6 +57,8 @@ declare global {
       newsletterSubscriber?: NewsletterSubscriber;
       programItem?: ProgramItem;
       task?: TaskWithAssignee;
+      duty?: Duty;
+      dutyAssignment?: DutyAssignmentWithRelations;
     }
 
     interface AuthUser {
