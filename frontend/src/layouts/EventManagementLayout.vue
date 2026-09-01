@@ -118,11 +118,11 @@ const items = computed<NavigationItemProps<'event'>[]>(() => [
     to: { name: 'management.event.tasks' },
   },
   {
-    name: 'duty_planner',
-    label: t('duty_planner'),
+    name: 'chore_planner',
+    label: t('chore_planner'),
     icon: 'checklist',
-    permission: 'event.duty_assignments.view',
-    to: { name: 'management.event.duty-planner' },
+    permission: 'event.chore_assignments.view',
+    to: { name: 'management.event.chore-planner' },
   },
   {
     name: 'settings',
@@ -180,7 +180,7 @@ room_planner: 'Room Planner'
 settings: 'Settings'
 statistics: 'Statistics'
 tasks: 'Tasks'
-duty_planner: 'Duty Roster'
+chore_planner: 'Duty Roster'
 title: 'Event Management'
 </i18n>
 
@@ -193,7 +193,7 @@ room_planner: 'Raumplaner'
 settings: 'Einstellungen'
 statistics: 'Statistiken'
 tasks: 'Aufgaben'
-duty_planner: 'Dienstplan'
+chore_planner: 'Dienstplan'
 title: 'Veranstaltungsverwaltung'
 </i18n>
 
@@ -206,7 +206,7 @@ room_planner: 'Aménageur'
 settings: 'Paramètres'
 statistics: 'Statistiques'
 tasks: 'Tâches'
-duty_planner: 'Plan des corvées'
+chore_planner: 'Plan des corvées'
 title: "Gestion de l'événement"
 </i18n>
 
@@ -219,7 +219,7 @@ room_planner: 'Plan pokoi'
 settings: 'Ustawienia'
 statistics: 'Statystyki'
 tasks: 'Zadania'
-duty_planner: 'Grafik dyżurów'
+chore_planner: 'Grafik dyżurów'
 title: 'Zarządzanie wydarzeniem'
 </i18n>
 
@@ -232,7 +232,7 @@ room_planner: 'Plán pokojů'
 settings: 'Nastavení'
 statistics: 'Statistiky'
 tasks: 'Úkoly'
-duty_planner: 'Rozpis služeb'
+chore_planner: 'Rozpis služeb'
 title: 'Správa akce'
 </i18n>
 

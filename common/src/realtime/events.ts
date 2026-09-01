@@ -7,8 +7,8 @@ import type { EventScopedPermission } from '../permissions/permissions.js';
  * Note: beds are not a resource of their own — bed mutations emit a
  * `{ resource: 'room', id: roomId, operation: 'updated' }` event, since beds
  * are embedded in rooms (`Room.beds`) and covered by `event.rooms.view`.
- * Duty assignment members follow the same pattern: they are not a resource of
- * their own — membership changes are just a `dutyAssignment` update.
+ * Chore assignment members follow the same pattern: they are not a resource of
+ * their own — membership changes are just a `choreAssignment` update.
  */
 export type RealtimeResource =
   | 'event'
@@ -16,8 +16,8 @@ export type RealtimeResource =
   | 'program_item'
   | 'room'
   | 'task'
-  | 'duty'
-  | 'dutyAssignment'
+  | 'chore'
+  | 'choreAssignment'
   | 'manager'
   | 'message'
   | 'file'
@@ -79,8 +79,8 @@ export const RESOURCE_VIEW_PERMISSION: Record<
   program_item: 'event.program_items.view',
   room: 'event.rooms.view',
   task: 'event.tasks.view',
-  duty: 'event.duties.view',
-  dutyAssignment: 'event.duty_assignments.view',
+  chore: 'event.chores.view',
+  choreAssignment: 'event.chore_assignments.view',
   manager: 'event.managers.view',
   message: 'event.messages.view',
   file: 'event.files.view',

@@ -20,7 +20,7 @@ import { useNewsletterMessageService } from '@/services/NewsletterMessageService
 import { useProgramItemService } from '@/services/ProgramItemService';
 import { useQueueService } from '@/services/QueueService';
 import { useTaskService } from '@/services/TaskService';
-import { useDutyService } from '@/services/DutyService';
+import { useChoreService } from '@/services/ChoreService';
 import { useAdminService } from '@/services/AdminService';
 import { useOrganizationService } from '@/services/OrganizationService';
 import { useOrganizationMemberService } from '@/services/OrganizationMemberService';
@@ -51,7 +51,7 @@ export function useAPIService() {
     ...useProgramItemService(),
     ...useQueueService(),
     ...useTaskService(),
-    ...useDutyService(),
+    ...useChoreService(),
   };
 }
 
