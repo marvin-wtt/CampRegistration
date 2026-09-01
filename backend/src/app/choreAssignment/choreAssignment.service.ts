@@ -47,7 +47,7 @@ export class ChoreAssignmentService extends BaseService {
         eventId,
         choreId: data.choreId,
         rotationUnit: data.rotationUnit,
-        date: data.date,
+        date: new Date(data.date),
         slot: data.slot,
         members: {
           createMany: {
@@ -65,7 +65,7 @@ export class ChoreAssignmentService extends BaseService {
     id: string,
     data: Partial<ChoreAssignmentDto>,
   ) {
-    const { registrationIds, ...rest } = data;
+    const { registrationIds, date, ...rest } = data;
 
     return this.prisma.$transaction(async (tx) => {
       if (registrationIds !== undefined) {
@@ -78,6 +78,7 @@ export class ChoreAssignmentService extends BaseService {
         where: { id },
         data: {
           ...rest,
+          ...(date !== undefined ? { date: new Date(date) } : {}),
           ...(registrationIds !== undefined
             ? {
                 members: {
@@ -149,7 +150,7 @@ export class ChoreAssignmentService extends BaseService {
           continue;
         }
         const entry = roomsByAssignment.get(member.choreAssignmentId) ?? {
-          date: member.choreAssignment.date,
+          date: toDateString(member.choreAssignment.date),
           roomIds: new Set<string>(),
         };
         entry.roomIds.add(roomId);
@@ -185,7 +186,11 @@ export class ChoreAssignmentService extends BaseService {
 
     const stats = new Map<string, Stat>();
     for (const member of members) {
-      record(stats, member.registrationId, member.choreAssignment.date);
+      record(
+        stats,
+        member.registrationId,
+        toDateString(member.choreAssignment.date),
+      );
     }
 
     const registrations = await this.prisma.registration.findMany({
@@ -205,6 +210,10 @@ export class ChoreAssignmentService extends BaseService {
 
     return { unit: 'PARTICIPANT', candidates };
   }
+}
+
+function toDateString(date: Date): string {
+  return date.toISOString().split('T')[0];
 }
 
 function record(stats: Map<string, Stat>, key: string, date: string) {

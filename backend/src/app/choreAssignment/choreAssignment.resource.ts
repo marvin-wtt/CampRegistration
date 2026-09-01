@@ -15,7 +15,7 @@ export class ChoreAssignmentResource extends JsonResource<
         name: this.data.chore.name,
       },
       rotationUnit: this.data.rotationUnit,
-      date: this.data.date,
+      date: this.data.date.toISOString().split('T')[0],
       slot: this.data.slot ?? null,
       registrationIds: this.data.members.map((member) => member.registrationId),
     };

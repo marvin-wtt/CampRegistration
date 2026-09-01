@@ -6,12 +6,20 @@ export const ChoreAssignmentFactory = {
   build: (
     data: Partial<Prisma.ChoreAssignmentCreateInput> = {},
   ): Prisma.ChoreAssignmentCreateInput => {
-    return {
+    const built: Prisma.ChoreAssignmentCreateInput = {
       rotationUnit: 'PARTICIPANT',
-      date: faker.date.future().toISOString().split('T')[0]!,
+      date: faker.date.future(),
       event: {},
       chore: {},
       ...data,
+    };
+
+    // A bare `YYYY-MM-DD` string is a valid `date` override for callers, but
+    // Prisma's client-side validation only accepts a full ISO-8601 datetime
+    // string (or a Date) — normalize so tests/seeders can pass either.
+    return {
+      ...built,
+      date: typeof built.date === 'string' ? new Date(built.date) : built.date,
     };
   },
 
