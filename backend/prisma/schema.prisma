@@ -263,9 +263,9 @@ model Registration {
   createdAt                          DateTime           @default(now()) @map("created_at")
   updatedAt                          DateTime?          @updatedAt @map("updated_at")
 
-  event                     Event                 @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "registrations_event_id_foreign")
-  organizationPrivacyNotice PrivacyNoticeVersion? @relation("RegistrationOrganizationPrivacyNotice", fields: [organizationPrivacyNoticeVersionId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "registrations_organization_privacy_notice_version_id_foreign")
-  eventPrivacyNotice        PrivacyNoticeVersion? @relation("RegistrationEventPrivacyNotice", fields: [eventPrivacyNoticeVersionId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "registrations_event_privacy_notice_version_id_foreign")
+  event                     Event                   @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "registrations_event_id_foreign")
+  organizationPrivacyNotice PrivacyNoticeVersion?   @relation("RegistrationOrganizationPrivacyNotice", fields: [organizationPrivacyNoticeVersionId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "registrations_organization_privacy_notice_version_id_foreign")
+  eventPrivacyNotice        PrivacyNoticeVersion?   @relation("RegistrationEventPrivacyNotice", fields: [eventPrivacyNoticeVersionId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "registrations_event_privacy_notice_version_id_foreign")
   bed                       Bed?
   files                     File[]
   deliveries                MessageDelivery[]
@@ -593,20 +593,13 @@ enum ChoreRotationUnit {
 }
 
 model Chore {
-  id      String @id @unique(map: "chores_id_unique") @default(ulid()) @db.Char(26)
-  eventId String @map("event_id") @db.Char(26)
+  id               String  @id @unique(map: "chores_id_unique") @default(ulid()) @db.Char(26)
+  eventId          String  @map("event_id") @db.Char(26)
   /// ![string | Record<string, string>]
-  name      Json @db.Json
-  sortOrder Int  @default(999) @map("sort_order")
-  /// Usual number of units (participants or rooms, whichever the occurrence
-  /// is assigned by) this chore needs. Not enforced — staff can add or remove
-  /// members freely; it only sizes the suggestion.
+  name             Json    @db.Json
+  sortOrder        Int     @default(999) @map("sort_order")
   defaultCount     Int?    @map("default_count") @db.UnsignedInt
-  /// Exclude staff (and rooms with no participant occupants) from suggestions.
   excludeStaff     Boolean @default(false) @map("exclude_staff")
-  /// Nice-to-have: try to spread suggested participants across countries.
-  /// Only ever a secondary tiebreak — fairness (least/oldest assigned) always
-  /// wins first.
   balanceCountries Boolean @default(false) @map("balance_countries")
 
   event       Event             @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "chores_event_id_foreign")
@@ -617,16 +610,13 @@ model Chore {
 }
 
 model ChoreAssignment {
-  id      String @id @unique(map: "chore_assignments_id_unique") @default(ulid()) @db.Char(26)
-  eventId String @map("event_id") @db.Char(26)
-  choreId String @map("chore_id") @db.Char(26)
-  /// Chosen per occurrence, not fixed on the chore — the same chore can be
-  /// covered by individuals one day and by a whole room the next.
+  id           String            @id @unique(map: "chore_assignments_id_unique") @default(ulid()) @db.Char(26)
+  eventId      String            @map("event_id") @db.Char(26)
+  choreId      String            @map("chore_id") @db.Char(26)
   rotationUnit ChoreRotationUnit @map("rotation_unit")
-  /// YYYY-MM-DD
-  date      String   @db.VarChar(10)
-  slot      String?
-  createdAt DateTime @default(now()) @map("created_at")
+  date         DateTime          @db.Date
+  slot         String?
+  createdAt    DateTime          @default(now()) @map("created_at")
 
   event   Event                   @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "chore_assignments_event_id_foreign")
   chore   Chore                   @relation(fields: [choreId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "chore_assignments_chore_id_foreign")

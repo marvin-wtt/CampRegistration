@@ -19,7 +19,7 @@ CREATE TABLE `chore_assignments` (
     `event_id` CHAR(26) NOT NULL,
     `chore_id` CHAR(26) NOT NULL,
     `rotation_unit` ENUM('PARTICIPANT', 'ROOM') NOT NULL,
-    `date` VARCHAR(10) NOT NULL,
+    `date` DATE NOT NULL,
     `slot` VARCHAR(191) NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 

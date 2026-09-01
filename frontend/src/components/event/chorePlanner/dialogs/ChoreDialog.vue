@@ -61,7 +61,10 @@
             </q-item-section>
           </q-item>
 
-          <q-item tag="label">
+          <q-item
+            v-if="hasMultipleCountries"
+            tag="label"
+          >
             <q-item-section>
               <q-item-label>
                 {{ t('field.balanceCountries.label') }}
@@ -115,11 +118,15 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 const props = defineProps<{
   chore?: Chore;
   locales?: string[];
+  countries?: string[];
 }>();
 
 defineEmits([...useDialogPluginComponent.emits]);
 
 const isEdit = computed<boolean>(() => props.chore !== undefined);
+const hasMultipleCountries = computed<boolean>(
+  () => (props.countries?.length ?? 0) > 1,
+);
 
 const data = reactive<ChoreCreateData>({
   name: props.chore?.name ?? '',
@@ -170,8 +177,8 @@ action:
 
 <i18n lang="yaml" locale="de">
 title:
-  create: 'Pflicht hinzufügen'
-  edit: 'Pflicht bearbeiten'
+  create: 'Diensttyp hinzufügen'
+  edit: 'Diensttyp bearbeiten'
 
 field:
   name:
@@ -183,10 +190,10 @@ field:
     hint: 'Optional — ein Vorschlag, kein Limit.'
   excludeStaff:
     label: 'Betreuende ausschließen'
-    hint: 'Betreuende (und reine Betreuer-Zimmer) bei Vorschlägen für diese Pflicht weglassen.'
+    hint: 'Betreuende (und Zimmer nur für Betreuende) bei Vorschlägen für diesen Diensttyp weglassen.'
   balanceCountries:
     label: 'Länder ausgleichen'
-    hint: 'Nice-to-have — versucht, vorgeschlagene Teilnehmende über Länder zu streuen. Fairness hat immer Vorrang.'
+    hint: 'Optional — versucht, vorgeschlagene Teilnehmende über Länder zu streuen. Fairness hat immer Vorrang.'
 
 action:
   cancel: 'Abbrechen'

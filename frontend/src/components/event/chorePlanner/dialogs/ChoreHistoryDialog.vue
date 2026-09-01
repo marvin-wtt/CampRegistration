@@ -298,8 +298,8 @@ action:
 
 <i18n lang="yaml" locale="de">
 title: 'Einsatzverlauf'
-dutyLabel: 'Pflicht'
-empty: 'Noch keine Historie für diese Pflicht.'
+dutyLabel: 'Diensttyp'
+empty: 'Noch keine Historie für diesen Diensttyp.'
 count: '{count} Mal'
 participants: 'Teilnehmende'
 rooms: 'Zimmer'

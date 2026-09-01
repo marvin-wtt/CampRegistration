@@ -148,16 +148,19 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
         query: { unit: 'GROUP' },
         withChore: true,
       },
-    ])('should respond with `400` when $label', async ({ query, withChore }) => {
-      const { event, accessToken } = await createEventWithManagerAndToken();
-      const choreId = withChore ? (await createChore(event)).id : undefined;
+    ])(
+      'should respond with `400` when $label',
+      async ({ query, withChore }) => {
+        const { event, accessToken } = await createEventWithManagerAndToken();
+        const choreId = withChore ? (await createChore(event)).id : undefined;
 
-      await request()
-        .get(`/api/v1/events/${event.id}/chore-assignments/suggestions`)
-        .query({ ...query, ...(choreId ? { choreId } : {}) })
-        .auth(accessToken, { type: 'bearer' })
-        .expect(400);
-    });
+        await request()
+          .get(`/api/v1/events/${event.id}/chore-assignments/suggestions`)
+          .query({ ...query, ...(choreId ? { choreId } : {}) })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(400);
+      },
+    );
 
     it('ranks PARTICIPANT candidates least-assigned-first, never-assigned before assigned', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
@@ -478,7 +481,9 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
         const assignment = await createAssignment(event, chore.id);
 
         await request()
-          .patch(`/api/v1/events/${event.id}/chore-assignments/${assignment.id}`)
+          .patch(
+            `/api/v1/events/${event.id}/chore-assignments/${assignment.id}`,
+          )
           .send({ slot: 'Dinner' })
           .auth(accessToken, { type: 'bearer' })
           .expect(expectedStatus);

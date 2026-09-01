@@ -386,6 +386,10 @@ const locales = computed<string[] | undefined>(() => {
   return eventDetailsStore.data?.locales;
 });
 
+const countries = computed<string[] | undefined>(() => {
+  return eventDetailsStore.data?.countries;
+});
+
 const {
   data: roomsData,
   isLoading: roomsLoading,
@@ -568,7 +572,7 @@ function openChoreManager() {
   }
   quasar.dialog({
     component: ChoreManagerDialog,
-    componentProps: { locales: locales.value },
+    componentProps: { locales: locales.value, countries: countries.value },
   });
 }
 
@@ -576,7 +580,7 @@ function addChore() {
   quasar
     .dialog({
       component: ChoreDialog,
-      componentProps: { locales: locales.value },
+      componentProps: { locales: locales.value, countries: countries.value },
     })
     .onOk((payload: ChoreCreateData) => {
       void choreStore.createData(payload);
@@ -592,6 +596,7 @@ function addAssignment() {
         registrations: registrations.value,
         rooms: rooms.value,
         locales: locales.value,
+        countries: countries.value,
       },
     })
     .onOk((payload) => {
@@ -609,6 +614,7 @@ function editAssignment(assignment: ChoreAssignment) {
         registrations: registrations.value,
         rooms: rooms.value,
         locales: locales.value,
+        countries: countries.value,
       },
     })
     .onOk((payload) => {
@@ -728,23 +734,23 @@ dialog:
 
 <i18n lang="yaml" locale="de">
 title: 'Dienstplan'
-subtitle: 'Plane Küchendienst und andere rotierende Pflichten.'
+subtitle: 'Plane Küchendienst und weitere wiederkehrende Dienste.'
 noMembers: 'Noch niemand zugewiesen'
 unknownParticipant: 'Unbekannter Teilnehmer'
 
 action:
   add: 'Neuer Einsatz'
-  addDutyType: 'Pflichten'
+  addDutyType: 'Diensttypen'
   history: 'Einsatzverlauf'
   edit: 'Bearbeiten'
   delete: 'Löschen'
 
 hint:
-  needDutyType: 'Erstelle zuerst eine Pflicht'
+  needDutyType: 'Erstelle zuerst einen Diensttyp'
 
 empty:
-  title: 'Noch keine Pflichten'
-  message: 'Erstelle eine Pflicht — z. B. Küche oder Abwasch — um mit der Planung zu beginnen.'
+  title: 'Noch keine Diensttypen'
+  message: 'Erstelle einen Diensttyp — z. B. Küche oder Abwasch — um mit der Planung zu beginnen.'
 
 emptyAssignments:
   title: 'Noch keine Einsätze'
@@ -761,12 +767,12 @@ past:
 dialog:
   deleteAssignment:
     title: 'Diensteinsatz löschen'
-    message: 'Möchtest du „{name}" wirklich löschen?'
+    message: 'Möchtest du „{name}“ wirklich löschen?'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 title: 'Plan des corvées'
-subtitle: "Planifie le service de cuisine et d'autres corvées tournantes."
+subtitle: "Planifie le service de cuisine et d'autres corvées récurrentes."
 noMembers: 'Personne assigné pour le moment'
 unknownParticipant: 'Participant inconnu'
 
@@ -804,7 +810,7 @@ dialog:
 
 <i18n lang="yaml" locale="pl">
 title: 'Grafik dyżurów'
-subtitle: 'Zaplanuj dyżur kuchenny i inne rotacyjne obowiązki.'
+subtitle: 'Zaplanuj dyżur kuchenny i inne cykliczne obowiązki.'
 noMembers: 'Nikt jeszcze nie przypisany'
 unknownParticipant: 'Nieznany uczestnik'
 
@@ -837,12 +843,12 @@ past:
 dialog:
   deleteAssignment:
     title: 'Usuń przypisanie dyżuru'
-    message: 'Czy na pewno chcesz usunąć „{name}"?'
+    message: 'Czy na pewno chcesz usunąć „{name}”?'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
 title: 'Rozpis služeb'
-subtitle: 'Naplánuj kuchyňskou službu a další rotující povinnosti.'
+subtitle: 'Naplánuj kuchyňskou službu a další opakující se povinnosti.'
 noMembers: 'Zatím nikdo přiřazen'
 unknownParticipant: 'Neznámý účastník'
 
@@ -875,5 +881,5 @@ past:
 dialog:
   deleteAssignment:
     title: 'Smazat přiřazení služby'
-    message: 'Opravdu chceš smazat „{name}"?'
+    message: 'Opravdu chceš smazat „{name}“?'
 </i18n>

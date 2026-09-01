@@ -144,6 +144,7 @@ const { can } = usePermissions();
 
 const props = defineProps<{
   locales?: string[];
+  countries?: string[];
 }>();
 
 defineEmits([...useDialogPluginComponent.emits]);
@@ -158,7 +159,7 @@ function addChore() {
   quasar
     .dialog({
       component: ChoreDialog,
-      componentProps: { locales: props.locales },
+      componentProps: { locales: props.locales, countries: props.countries },
     })
     .onOk((payload: ChoreCreateData) => {
       void choreStore.createData(payload);
@@ -169,7 +170,11 @@ function editChore(chore: Chore) {
   quasar
     .dialog({
       component: ChoreDialog,
-      componentProps: { chore, locales: props.locales },
+      componentProps: {
+        chore,
+        locales: props.locales,
+        countries: props.countries,
+      },
     })
     .onOk((payload: ChoreUpdateData) => {
       void choreStore.updateData(chore.id, payload);
@@ -245,7 +250,7 @@ dialog:
 </i18n>
 
 <i18n lang="yaml" locale="de">
-title: 'Pflichten'
+title: 'Diensttypen'
 
 action:
   add: 'Hinzufügen'
@@ -254,8 +259,8 @@ action:
   close: 'Schließen'
 
 empty:
-  title: 'Noch keine Pflichten'
-  message: 'Erstelle eine Pflicht — z. B. Küche oder Abwasch — um mit der Planung zu beginnen.'
+  title: 'Noch keine Diensttypen'
+  message: 'Erstelle einen Diensttyp — z. B. Küche oder Abwasch — um mit der Planung zu beginnen.'
 
 dutyType:
   defaultCount: 'Normalerweise {count} Personen'
@@ -264,8 +269,8 @@ dutyType:
 
 dialog:
   deleteDuty:
-    title: 'Pflicht löschen'
-    message: 'Möchtest du „{name}" wirklich löschen? Alle zugehörigen Einsätze werden ebenfalls gelöscht.'
+    title: 'Diensttyp löschen'
+    message: 'Möchtest du „{name}“ wirklich löschen? Alle zugehörigen Einsätze werden ebenfalls gelöscht.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -313,7 +318,7 @@ dutyType:
 dialog:
   deleteDuty:
     title: 'Usuń obowiązek'
-    message: 'Czy na pewno chcesz usunąć „{name}"? Wszystkie jego przypisania również zostaną usunięte.'
+    message: 'Czy na pewno chcesz usunąć „{name}”? Wszystkie jego przypisania również zostaną usunięte.'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -337,5 +342,5 @@ dutyType:
 dialog:
   deleteDuty:
     title: 'Smazat povinnost'
-    message: 'Opravdu chceš smazat „{name}"? Všechna jeho přiřazení budou také smazána.'
+    message: 'Opravdu chceš smazat „{name}“? Všechna jeho přiřazení budou také smazána.'
 </i18n>

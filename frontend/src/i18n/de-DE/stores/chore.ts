@@ -1,22 +1,22 @@
 export default {
   fetch: {
-    error: 'Fehler beim Abrufen der Pflichten',
+    error: 'Fehler beim Abrufen der Diensttypen',
   },
   create: {
-    progress: 'Pflicht wird erstellt...',
-    success: 'Pflicht erfolgreich erstellt',
-    error: 'Fehler beim Erstellen der Pflicht',
+    progress: 'Diensttyp wird erstellt...',
+    success: 'Diensttyp erfolgreich erstellt',
+    error: 'Fehler beim Erstellen des Diensttyps',
   },
   update: {
-    progress: 'Pflicht wird aktualisiert...',
-    success: 'Pflicht erfolgreich aktualisiert',
-    error: 'Fehler beim Aktualisieren der Pflicht',
+    progress: 'Diensttyp wird aktualisiert...',
+    success: 'Diensttyp erfolgreich aktualisiert',
+    error: 'Fehler beim Aktualisieren des Diensttyps',
     invalid: 'Ungültige Veranstaltungs-ID',
   },
   delete: {
-    progress: 'Pflicht wird gelöscht...',
-    success: 'Pflicht erfolgreich gelöscht',
-    error: 'Fehler beim Löschen der Pflicht',
+    progress: 'Diensttyp wird gelöscht...',
+    success: 'Diensttyp erfolgreich gelöscht',
+    error: 'Fehler beim Löschen des Diensttyps',
     invalid: 'Ungültige Veranstaltungs-ID',
   },
 };

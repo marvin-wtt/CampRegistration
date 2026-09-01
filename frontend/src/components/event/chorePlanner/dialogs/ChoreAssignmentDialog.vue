@@ -268,6 +268,7 @@ const props = defineProps<{
   rooms: Room[];
   initialChoreId?: string;
   locales?: string[];
+  countries?: string[];
 }>();
 
 defineEmits([...useDialogPluginComponent.emits]);
@@ -615,6 +616,7 @@ function addChore() {
       component: ChoreDialog,
       componentProps: {
         locales: props.locales,
+        countries: props.countries,
       },
     })
     .onOk((payload: ChoreCreateData) => {
@@ -697,9 +699,9 @@ title:
 
 field:
   duty:
-    label: 'Pflicht'
+    label: 'Diensttyp'
     rule:
-      required: 'Bitte eine Pflicht wählen'
+      required: 'Bitte einen Diensttyp wählen'
   rotationUnit:
     label: 'Zuweisen nach'
     option:
@@ -726,7 +728,7 @@ action:
   close: 'Schließen'
   create: 'Erstellen'
   save: 'Speichern'
-  addDutyType: 'Neue Pflicht'
+  addDutyType: 'Neuer Diensttyp'
   addRoom: 'Hinzufügen'
 </i18n>
 
