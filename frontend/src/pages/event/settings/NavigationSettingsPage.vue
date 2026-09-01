@@ -85,7 +85,7 @@ function setVisible(name: string, visible: boolean) {
 
 <i18n lang="yaml" locale="en">
 title: 'Navigation'
-subtitle: "Choose which features appear in this camp's navigation."
+subtitle: "Choose which features appear in this event's navigation."
 contact:
   label: 'Contact'
   description: 'Show or hide the contact page.'
@@ -105,7 +105,7 @@ chore_planner:
 
 <i18n lang="yaml" locale="de">
 title: 'Navigation'
-subtitle: 'Wähle aus, welche Funktionen in der Navigation dieser Freizeit angezeigt werden.'
+subtitle: 'Wähle aus, welche Funktionen in der Navigation dieser Veranstaltung angezeigt werden.'
 contact:
   label: 'Kontaktieren'
   description: 'Kontaktseite ein- oder ausblenden.'
@@ -125,7 +125,7 @@ chore_planner:
 
 <i18n lang="yaml" locale="fr">
 title: 'Navigation'
-subtitle: 'Choisissez les fonctionnalités affichées dans la navigation de ce séjour.'
+subtitle: 'Choisissez les fonctionnalités affichées dans la navigation de cet événement.'
 contact:
   label: 'Contacter'
   description: 'Afficher ou masquer la page de contact.'

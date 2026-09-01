@@ -181,7 +181,7 @@ form:
   description: 'Design and customize the registration form and theme.'
 navigation:
   label: 'Navigation'
-  description: "Choose which features appear in this camp's navigation."
+  description: "Choose which features appear in this event's navigation."
 emails:
   label: 'Email templates'
   description: 'Manage the email templates sent to participants.'
@@ -207,7 +207,7 @@ form:
   description: 'Gestalte und passe das Anmeldeformular und das Design an.'
 navigation:
   label: 'Navigation'
-  description: 'Wähle aus, welche Funktionen in der Navigation dieser Freizeit angezeigt werden.'
+  description: 'Wähle aus, welche Funktionen in der Navigation dieser Veranstaltung angezeigt werden.'
 emails:
   label: 'E-Mail-Vorlagen'
   description: 'Verwalte die an Teilnehmende versendeten E-Mail-Vorlagen.'
@@ -233,7 +233,7 @@ form:
   description: "Concevez et personnalisez le formulaire d'inscription et le thème."
 navigation:
   label: 'Navigation'
-  description: 'Choisissez les fonctionnalités affichées dans la navigation de ce séjour.'
+  description: 'Choisissez les fonctionnalités affichées dans la navigation de cet événement.'
 emails:
   label: "Modèles d'e-mails"
   description: "Gérez les modèles d'e-mails envoyés aux participants."

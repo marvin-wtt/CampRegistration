@@ -6,12 +6,11 @@ export interface EventNavigationItemDef {
   routeName: string;
   permission?: PermissionRequirement<'event'>;
   separated?: boolean;
-  // Can a camp hide this item from its own rail via the navigation setting?
   hideable?: boolean;
 }
 
 /**
- * The camp management nav rail, and the source of which of its items a camp
+ * The event management nav rail, and the source of which of its items an event
  * can hide (`hideable: true`) via `SETTING_KEYS.NAVIGATION`. Kept as a single
  * list so a new rail item and its hideability are one edit, not two lists to
  * keep in sync — `EventManagementLayout.vue` and `NavigationSettingsPage.vue`

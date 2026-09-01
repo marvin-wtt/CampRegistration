@@ -9,6 +9,8 @@ interface BaseProps<S extends PermissionScope> {
   insertLevel?: number | undefined;
   // A single permission, or `{ any: [...] }` / `{ all: [...] }`.
   permission?: PermissionRequirement<S> | undefined;
+  // Can this item be hidden from its rail by a per-event nav setting?
+  hideable?: boolean | undefined;
 }
 
 interface HeaderItemProps<S extends PermissionScope> extends BaseProps<S> {
@@ -19,7 +21,6 @@ interface LinkItemProps<S extends PermissionScope> extends BaseProps<S> {
   icon?: string | undefined;
   to?: string | object | undefined;
   children?: LinkItemProps<S>[] | undefined;
-  hideable?: boolean | undefined;
 }
 
 /**
