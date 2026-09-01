@@ -60,6 +60,10 @@
                       {{ localeName(locale) }}
                     </q-tooltip>
                   </div>
+                  <slot
+                    v-if="slots.prepend"
+                    name="prepend"
+                  />
                 </template>
 
                 <!-- Parent slots (locale flag replaces the field icon here) -->
@@ -88,6 +92,10 @@
                     <span class="locale-code">{{ locale.toUpperCase() }}</span>
                     <q-tooltip>{{ localeName(locale) }}</q-tooltip>
                   </div>
+                  <slot
+                    v-if="slots.prepend"
+                    name="prepend"
+                  />
                 </template>
 
                 <!-- Parent slots (locale flag replaces the field icon here) -->
@@ -167,9 +175,12 @@ const enabled = computed<boolean>(() => {
 
 // In translated mode the per-locale flag stands in for the field icon, so the
 // parent's `before` slot is dropped to avoid doubling up glyphs on every row.
+// `prepend` is dropped too — it's composed alongside the locale marker in the
+// template instead of being forwarded verbatim, so it can't clobber the marker.
 const translatedSlots = computed<Partial<ForwardedFieldSlots>>(() => {
   const rest: Partial<ForwardedFieldSlots> = { ...slots };
   delete rest.before;
+  delete rest.prepend;
   return rest;
 });
 
