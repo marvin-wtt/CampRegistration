@@ -57,7 +57,9 @@ describe('/api/v1/events/:eventId/duties', () => {
         expect(response.body.data[0]).toHaveProperty('id');
         expect(response.body.data[0]).toHaveProperty('name');
         expect(response.body.data[0]).toHaveProperty('sortOrder');
-        expect(response.body.data[0]).toHaveProperty('rotationUnit');
+        expect(response.body.data[0]).toHaveProperty('defaultCount');
+        expect(response.body.data[0]).toHaveProperty('excludeStaff');
+        expect(response.body.data[0]).toHaveProperty('balanceCountries');
       },
     );
 
@@ -116,7 +118,7 @@ describe('/api/v1/events/:eventId/duties', () => {
       },
     );
 
-    it('should default rotationUnit to PARTICIPANT', async () => {
+    it('should default excludeStaff and balanceCountries to false', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
 
       const { body } = await request()
@@ -125,19 +127,21 @@ describe('/api/v1/events/:eventId/duties', () => {
         .auth(accessToken, { type: 'bearer' })
         .expect(201);
 
-      expect(body).toHaveProperty('data.rotationUnit', 'PARTICIPANT');
+      expect(body).toHaveProperty('data.excludeStaff', false);
+      expect(body).toHaveProperty('data.balanceCountries', false);
     });
 
-    it('should create a duty with an explicit rotationUnit', async () => {
+    it('should create a duty with explicit excludeStaff and balanceCountries', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
 
       const { body } = await request()
         .post(`/api/v1/events/${event.id}/duties`)
-        .send({ name: 'Kitchen', rotationUnit: 'ROOM' })
+        .send({ name: 'Kitchen', excludeStaff: true, balanceCountries: true })
         .auth(accessToken, { type: 'bearer' })
         .expect(201);
 
-      expect(body).toHaveProperty('data.rotationUnit', 'ROOM');
+      expect(body).toHaveProperty('data.excludeStaff', true);
+      expect(body).toHaveProperty('data.balanceCountries', true);
     });
 
     it('should accept a translated name', async () => {
@@ -180,10 +184,6 @@ describe('/api/v1/events/:eventId/duties', () => {
     it.each([
       { label: 'name is missing', data: {} },
       { label: 'name is empty', data: { name: '' } },
-      {
-        label: 'rotationUnit is invalid',
-        data: { name: 'Kitchen', rotationUnit: 'GROUP' },
-      },
       {
         label: 'defaultCount is zero',
         data: { name: 'Kitchen', defaultCount: 0 },
@@ -233,21 +233,28 @@ describe('/api/v1/events/:eventId/duties', () => {
       },
     );
 
-    it('should update the name, sortOrder and rotationUnit', async () => {
+    it('should update the name, sortOrder, excludeStaff and balanceCountries', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
       const duty = await createDutyForEvent(event, {
-        rotationUnit: 'PARTICIPANT',
+        excludeStaff: false,
+        balanceCountries: false,
       });
 
       const { body } = await request()
         .patch(`/api/v1/events/${event.id}/duties/${duty.id}`)
-        .send({ name: 'Dishwashing', sortOrder: 2, rotationUnit: 'ROOM' })
+        .send({
+          name: 'Dishwashing',
+          sortOrder: 2,
+          excludeStaff: true,
+          balanceCountries: true,
+        })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
       expect(body).toHaveProperty('data.name', 'Dishwashing');
       expect(body).toHaveProperty('data.sortOrder', 2);
-      expect(body).toHaveProperty('data.rotationUnit', 'ROOM');
+      expect(body).toHaveProperty('data.excludeStaff', true);
+      expect(body).toHaveProperty('data.balanceCountries', true);
     });
 
     it('should update the defaultCount', async () => {
@@ -326,7 +333,12 @@ describe('/api/v1/events/:eventId/duties', () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
       const duty = await createDutyForEvent(event);
       await prisma.dutyAssignment.create({
-        data: { eventId: event.id, dutyId: duty.id, date: '2026-08-31' },
+        data: {
+          eventId: event.id,
+          dutyId: duty.id,
+          rotationUnit: 'PARTICIPANT',
+          date: '2026-08-31',
+        },
       });
 
       await request()

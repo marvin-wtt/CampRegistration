@@ -1,27 +1,30 @@
 import type { Identifiable } from './Identifiable.js';
 import type { Translatable } from './Translatable.js';
 
-/**
- * What a duty rotates by when suggesting who's next — an individual
- * participant, or everyone currently sharing a room. See
- * `DutyAssignmentSuggestions`.
- */
-export type DutyRotationUnit = 'PARTICIPANT' | 'ROOM';
-
 export interface Duty extends Identifiable {
   name: Translatable;
   sortOrder: number;
-  rotationUnit: DutyRotationUnit;
   /**
-   * Suggested party size for PARTICIPANT-rotation duties — not enforced, just
-   * seeds the next assignment's suggestion. Meaningless for ROOM rotation.
+   * Usual number of units (participants or rooms, whichever a given
+   * occurrence is assigned by) this duty needs — not enforced, just sizes
+   * the suggestion. Meaningless until an occurrence picks a rotation unit.
    */
   defaultCount: number | null;
+  /** Exclude staff, and rooms with no participant occupants, from suggestions. */
+  excludeStaff: boolean;
+  /**
+   * Nice-to-have: try to spread suggested participants across countries.
+   * Only ever a secondary tiebreak — fairness always wins first.
+   */
+  balanceCountries: boolean;
 }
 
 export type DutyCreateData = Pick<Duty, 'name'> &
-  Partial<Pick<Duty, 'rotationUnit' | 'defaultCount'>>;
+  Partial<Pick<Duty, 'defaultCount' | 'excludeStaff' | 'balanceCountries'>>;
 
 export type DutyUpdateData = Partial<
-  Pick<Duty, 'name' | 'sortOrder' | 'rotationUnit' | 'defaultCount'>
+  Pick<
+    Duty,
+    'name' | 'sortOrder' | 'defaultCount' | 'excludeStaff' | 'balanceCountries'
+  >
 >;

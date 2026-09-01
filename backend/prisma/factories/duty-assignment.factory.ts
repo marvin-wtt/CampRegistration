@@ -7,6 +7,7 @@ export const DutyAssignmentFactory = {
     data: Partial<Prisma.DutyAssignmentCreateInput> = {},
   ): Prisma.DutyAssignmentCreateInput => {
     return {
+      rotationUnit: 'PARTICIPANT',
       date: faker.date.future().toISOString().split('T')[0]!,
       event: {},
       duty: {},

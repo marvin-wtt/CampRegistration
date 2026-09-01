@@ -5,7 +5,6 @@ import type {
   DutyUpdateData,
 } from '@camp-registration/common/entities';
 
-const ROTATION_UNIT = z.enum(['PARTICIPANT', 'ROOM']);
 const DEFAULT_COUNT = z.number().int().positive().nullable();
 
 const show = z.object({
@@ -27,8 +26,9 @@ const store = z.object({
   }),
   body: z.object({
     name: translatedValue(z.string().min(1)),
-    rotationUnit: ROTATION_UNIT.optional(),
     defaultCount: DEFAULT_COUNT.optional(),
+    excludeStaff: z.boolean().optional(),
+    balanceCountries: z.boolean().optional(),
   }) satisfies ZodType<DutyCreateData>,
 });
 
@@ -41,8 +41,9 @@ const update = z.object({
     .object({
       name: translatedValue(z.string().min(1)),
       sortOrder: z.number().int(),
-      rotationUnit: ROTATION_UNIT,
       defaultCount: DEFAULT_COUNT,
+      excludeStaff: z.boolean(),
+      balanceCountries: z.boolean(),
     })
     .partial() satisfies ZodType<DutyUpdateData>,
 });

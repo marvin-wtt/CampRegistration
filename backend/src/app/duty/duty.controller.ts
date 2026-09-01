@@ -35,13 +35,14 @@ export class DutyController extends BaseController {
   async store(req: Request, res: Response) {
     const event = req.modelOrFail('event');
     const {
-      body: { name, rotationUnit, defaultCount },
+      body: { name, defaultCount, excludeStaff, balanceCountries },
     } = await req.validate(validator.store);
 
     const duty = await this.dutyService.createDuty(event.id, {
       name,
-      rotationUnit,
       defaultCount,
+      excludeStaff,
+      balanceCountries,
     });
 
     void this.realtimeService.emit(event.id, 'duty', duty.id, 'created');
@@ -53,14 +54,15 @@ export class DutyController extends BaseController {
     const event = req.modelOrFail('event');
     const duty = req.modelOrFail('duty');
     const {
-      body: { name, sortOrder, rotationUnit, defaultCount },
+      body: { name, sortOrder, defaultCount, excludeStaff, balanceCountries },
     } = await req.validate(validator.update);
 
     const updatedDuty = await this.dutyService.updateDutyById(duty.id, {
       name,
       sortOrder,
-      rotationUnit,
       defaultCount,
+      excludeStaff,
+      balanceCountries,
     });
 
     void this.realtimeService.emit(event.id, 'duty', updatedDuty.id, 'updated');

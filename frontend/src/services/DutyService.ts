@@ -7,6 +7,7 @@ import type {
   DutyAssignmentCreateData,
   DutyAssignmentUpdateData,
   DutyAssignmentSuggestions,
+  DutyRotationUnit,
 } from '@camp-registration/common/entities';
 
 export function useDutyService() {
@@ -64,10 +65,11 @@ export function useDutyService() {
   async function fetchDutyAssignmentSuggestions(
     eventId: string,
     dutyId: string,
+    unit: DutyRotationUnit,
   ): Promise<DutyAssignmentSuggestions> {
     const response = await api.get(
       `events/${eventId}/duty-assignments/suggestions/`,
-      { params: { dutyId } },
+      { params: { dutyId, unit } },
     );
 
     return response?.data?.data;

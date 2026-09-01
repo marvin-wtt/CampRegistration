@@ -20,16 +20,18 @@ export class DutyService extends BaseService {
     eventId: string,
     data: {
       name: string | Record<string, string>;
-      rotationUnit?: 'PARTICIPANT' | 'ROOM';
       defaultCount?: number | null;
+      excludeStaff?: boolean;
+      balanceCountries?: boolean;
     },
   ) {
     return this.prisma.duty.create({
       data: {
         eventId,
         name: data.name,
-        rotationUnit: data.rotationUnit,
         defaultCount: data.defaultCount,
+        excludeStaff: data.excludeStaff,
+        balanceCountries: data.balanceCountries,
       },
     });
   }
@@ -39,8 +41,9 @@ export class DutyService extends BaseService {
     data: {
       name?: string | Record<string, string>;
       sortOrder?: number;
-      rotationUnit?: 'PARTICIPANT' | 'ROOM';
       defaultCount?: number | null;
+      excludeStaff?: boolean;
+      balanceCountries?: boolean;
     },
   ) {
     return this.prisma.duty.update({

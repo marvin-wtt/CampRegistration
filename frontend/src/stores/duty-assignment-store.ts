@@ -9,6 +9,7 @@ import type {
   DutyAssignmentCreateData,
   DutyAssignmentUpdateData,
   DutyAssignmentSuggestions,
+  DutyRotationUnit,
 } from '@camp-registration/common/entities';
 
 export const useDutyAssignmentStore = defineStore('dutyAssignment', () => {
@@ -55,11 +56,12 @@ export const useDutyAssignmentStore = defineStore('dutyAssignment', () => {
 
   async function fetchSuggestions(
     dutyId: string,
+    unit: DutyRotationUnit,
   ): Promise<DutyAssignmentSuggestions | undefined> {
     const eventId = route.params.eventId as string;
 
     const cid = checkNotNullWithError(eventId);
-    return api.fetchDutyAssignmentSuggestions(cid, dutyId);
+    return api.fetchDutyAssignmentSuggestions(cid, dutyId, unit);
   }
 
   async function createData(newData: DutyAssignmentCreateData) {

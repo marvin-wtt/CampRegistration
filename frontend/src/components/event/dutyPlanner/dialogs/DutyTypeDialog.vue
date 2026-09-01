@@ -33,22 +33,7 @@
             </template>
           </translated-input>
 
-          <div>
-            <div class="text-caption text-grey-7 q-mb-xs">
-              {{ t('field.rotationUnit.label') }}
-            </div>
-            <q-option-group
-              v-model="data.rotationUnit"
-              :options="rotationUnitOptions"
-              color="primary"
-            />
-            <div class="text-caption text-grey-6">
-              {{ t(`field.rotationUnit.hint.${data.rotationUnit}`) }}
-            </div>
-          </div>
-
           <q-input
-            v-if="data.rotationUnit === 'PARTICIPANT'"
             v-model.number="data.defaultCount"
             type="number"
             min="1"
@@ -63,6 +48,32 @@
               <q-icon name="groups" />
             </template>
           </q-input>
+
+          <q-item tag="label">
+            <q-item-section>
+              <q-item-label>{{ t('field.excludeStaff.label') }}</q-item-label>
+              <q-item-label caption>
+                {{ t('field.excludeStaff.hint') }}
+              </q-item-label>
+            </q-item-section>
+            <q-item-section side>
+              <q-toggle v-model="data.excludeStaff" />
+            </q-item-section>
+          </q-item>
+
+          <q-item tag="label">
+            <q-item-section>
+              <q-item-label>
+                {{ t('field.balanceCountries.label') }}
+              </q-item-label>
+              <q-item-label caption>
+                {{ t('field.balanceCountries.hint') }}
+              </q-item-label>
+            </q-item-section>
+            <q-item-section side>
+              <q-toggle v-model="data.balanceCountries" />
+            </q-item-section>
+          </q-item>
         </q-card-section>
 
         <!-- action buttons -->
@@ -89,11 +100,10 @@
 <script lang="ts" setup>
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { computed, reactive, watch } from 'vue';
+import { computed, reactive } from 'vue';
 import type {
   Duty,
   DutyCreateData,
-  DutyRotationUnit,
   DutyUpdateData,
 } from '@camp-registration/common/entities';
 import TranslatedInput from '@/components/common/inputs/TranslatedInput.vue';
@@ -113,32 +123,15 @@ const isEdit = computed<boolean>(() => props.duty !== undefined);
 
 const data = reactive<DutyCreateData>({
   name: props.duty?.name ?? '',
-  rotationUnit: props.duty?.rotationUnit ?? 'PARTICIPANT',
   defaultCount: props.duty?.defaultCount ?? null,
+  excludeStaff: props.duty?.excludeStaff ?? false,
+  balanceCountries: props.duty?.balanceCountries ?? false,
 });
-
-// defaultCount only applies to PARTICIPANT rotation — drop a stale value when
-// switching away so it can't be submitted for a ROOM duty.
-watch(
-  () => data.rotationUnit,
-  (unit) => {
-    if (unit === 'ROOM') {
-      data.defaultCount = null;
-    }
-  },
-);
 
 function normalizeDefaultCount(value: string | number | null) {
   const num = typeof value === 'string' ? Number(value) : value;
   data.defaultCount = num && num > 0 ? Math.floor(num) : null;
 }
-
-const rotationUnitOptions = computed<
-  { label: string; value: DutyRotationUnit }[]
->(() => [
-  { label: t('field.rotationUnit.option.PARTICIPANT'), value: 'PARTICIPANT' },
-  { label: t('field.rotationUnit.option.ROOM'), value: 'ROOM' },
-]);
 
 function onOKClick(): void {
   const payload: DutyCreateData | DutyUpdateData = { ...data };
@@ -159,17 +152,15 @@ field:
     label: 'Name'
     rule:
       required: 'The name is required'
-  rotationUnit:
-    label: 'Rotates by'
-    option:
-      PARTICIPANT: 'Participant'
-      ROOM: 'Room'
-    hint:
-      PARTICIPANT: 'Suggestions pick individual participants who are next in line.'
-      ROOM: 'Suggestions pick whole rooms who are next in line.'
   defaultCount:
-    label: 'Usual party size'
-    hint: "Optional — how many people this duty usually needs. It's a starting suggestion, not a limit."
+    label: 'Usual number of people'
+    hint: 'Optional — a starting suggestion, not a limit.'
+  excludeStaff:
+    label: 'Exclude staff'
+    hint: 'Leave staff (and staff-only rooms) out of suggestions for this duty.'
+  balanceCountries:
+    label: 'Balance countries'
+    hint: 'Nice to have — try to spread suggested participants across countries. Fairness always comes first.'
 
 action:
   cancel: 'Cancel'
@@ -187,17 +178,15 @@ field:
     label: 'Name'
     rule:
       required: 'Der Name ist erforderlich'
-  rotationUnit:
-    label: 'Rotiert nach'
-    option:
-      PARTICIPANT: 'Teilnehmenden'
-      ROOM: 'Zimmern'
-    hint:
-      PARTICIPANT: 'Vorschläge wählen einzelne Teilnehmende aus, die als Nächstes an der Reihe sind.'
-      ROOM: 'Vorschläge wählen ganze Zimmer aus, die als Nächstes an der Reihe sind.'
   defaultCount:
-    label: 'Übliche Gruppengröße'
-    hint: 'Optional — wie viele Personen dieser Dienst normalerweise braucht. Das ist ein Vorschlag, kein Limit.'
+    label: 'Übliche Personenzahl'
+    hint: 'Optional — ein Vorschlag, kein Limit.'
+  excludeStaff:
+    label: 'Betreuende ausschließen'
+    hint: 'Betreuende (und reine Betreuer-Zimmer) bei Vorschlägen für diesen Dienst weglassen.'
+  balanceCountries:
+    label: 'Länder ausgleichen'
+    hint: 'Nice-to-have — versucht, vorgeschlagene Teilnehmende über Länder zu streuen. Fairness hat immer Vorrang.'
 
 action:
   cancel: 'Abbrechen'
@@ -215,17 +204,15 @@ field:
     label: 'Nom'
     rule:
       required: 'Le nom est requis'
-  rotationUnit:
-    label: 'Rotation par'
-    option:
-      PARTICIPANT: 'Participant'
-      ROOM: 'Chambre'
-    hint:
-      PARTICIPANT: 'Les suggestions proposent des participants individuels dont c’est le tour.'
-      ROOM: 'Les suggestions proposent des chambres entières dont c’est le tour.'
   defaultCount:
-    label: 'Taille habituelle du groupe'
-    hint: "Facultatif — combien de personnes cette corvée nécessite habituellement. C'est une suggestion de départ, pas une limite."
+    label: 'Nombre de personnes habituel'
+    hint: 'Facultatif — une suggestion de départ, pas une limite.'
+  excludeStaff:
+    label: "Exclure l'encadrement"
+    hint: "Ne pas proposer l'encadrement (ni les chambres réservées à l'encadrement) pour cette corvée."
+  balanceCountries:
+    label: 'Équilibrer les pays'
+    hint: "Bonus — essaie de répartir les participants suggérés entre les pays. L'équité reste toujours prioritaire."
 
 action:
   cancel: 'Annuler'
@@ -243,17 +230,15 @@ field:
     label: 'Nazwa'
     rule:
       required: 'Nazwa jest wymagana'
-  rotationUnit:
-    label: 'Rotacja według'
-    option:
-      PARTICIPANT: 'Uczestnika'
-      ROOM: 'Pokoju'
-    hint:
-      PARTICIPANT: 'Sugestie wskazują pojedynczych uczestników, których kolej nadeszła.'
-      ROOM: 'Sugestie wskazują całe pokoje, których kolej nadeszła.'
   defaultCount:
-    label: 'Zwykła liczebność grupy'
-    hint: 'Opcjonalne — ile osób zwykle potrzeba do tego dyżuru. To tylko sugestia początkowa, nie limit.'
+    label: 'Zwykła liczba osób'
+    hint: 'Opcjonalne — sugestia początkowa, nie limit.'
+  excludeStaff:
+    label: 'Wyklucz kadrę'
+    hint: 'Pomiń kadrę (i pokoje przeznaczone wyłącznie dla kadry) w sugestiach dla tego dyżuru.'
+  balanceCountries:
+    label: 'Równoważ kraje'
+    hint: 'Miło mieć — spróbuj rozłożyć sugerowanych uczestników pomiędzy kraje. Sprawiedliwość zawsze ma pierwszeństwo.'
 
 action:
   cancel: 'Anuluj'
@@ -271,17 +256,15 @@ field:
     label: 'Název'
     rule:
       required: 'Název je povinný'
-  rotationUnit:
-    label: 'Rotace podle'
-    option:
-      PARTICIPANT: 'Účastníka'
-      ROOM: 'Pokoje'
-    hint:
-      PARTICIPANT: 'Návrhy vybírají jednotlivé účastníky, kteří jsou na řadě.'
-      ROOM: 'Návrhy vybírají celé pokoje, které jsou na řadě.'
   defaultCount:
-    label: 'Obvyklá velikost skupiny'
-    hint: 'Volitelné — kolik lidí tato služba obvykle potřebuje. Jde jen o výchozí návrh, ne o limit.'
+    label: 'Obvyklý počet lidí'
+    hint: 'Volitelné — výchozí návrh, ne limit.'
+  excludeStaff:
+    label: 'Vyloučit vedoucí'
+    hint: 'Nenavrhovat vedoucí (ani pokoje určené jen pro vedoucí) pro tuto službu.'
+  balanceCountries:
+    label: 'Vyvážit země'
+    hint: 'Bonus — zkusí rozložit navrhované účastníky mezi země. Spravedlnost má vždy přednost.'
 
 action:
   cancel: 'Zrušit'

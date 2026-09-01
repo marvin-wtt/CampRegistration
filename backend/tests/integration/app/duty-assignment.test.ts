@@ -39,8 +39,27 @@ describe('/api/v1/events/:eventId/duty-assignments', () => {
     });
   };
 
-  const createRegistration = async (event: Event) => {
-    return RegistrationFactory.create({ event: { connect: { id: event.id } } });
+  const createRegistration = async (
+    event: Event,
+    data?: Partial<Parameters<typeof RegistrationFactory.create>[0]>,
+  ) => {
+    return RegistrationFactory.create({
+      event: { connect: { id: event.id } },
+      ...data,
+    });
+  };
+
+  const createAssignment = async (
+    event: Event,
+    dutyId: string,
+    data?: Partial<Parameters<typeof DutyAssignmentFactory.create>[0]>,
+  ) => {
+    return DutyAssignmentFactory.create({
+      event: { connect: { id: event.id } },
+      duty: { connect: { id: dutyId } },
+      rotationUnit: 'PARTICIPANT',
+      ...data,
+    });
   };
 
   describe('GET /api/v1/events/:eventId/duty-assignments', () => {
@@ -56,9 +75,7 @@ describe('/api/v1/events/:eventId/duty-assignments', () => {
           await createEventWithManagerAndToken(role);
         const duty = await createDuty(event);
         const registration = await createRegistration(event);
-        await DutyAssignmentFactory.create({
-          event: { connect: { id: event.id } },
-          duty: { connect: { id: duty.id } },
+        await createAssignment(event, duty.id, {
           date: '2026-09-01',
           slot: 'Lunch',
           members: { create: [{ registrationId: registration.id }] },
@@ -75,6 +92,7 @@ describe('/api/v1/events/:eventId/duty-assignments', () => {
         expect(item).toHaveProperty('dutyId', duty.id);
         expect(item).toHaveProperty('duty.id', duty.id);
         expect(item).toHaveProperty('duty.name', duty.name);
+        expect(item).toHaveProperty('rotationUnit', 'PARTICIPANT');
         expect(item).toHaveProperty('date', '2026-09-01');
         expect(item).toHaveProperty('slot', 'Lunch');
         expect(item.registrationIds).toEqual([registration.id]);
@@ -107,7 +125,7 @@ describe('/api/v1/events/:eventId/duty-assignments', () => {
 
       await request()
         .get(`/api/v1/events/${event.id}/duty-assignments/suggestions`)
-        .query({ dutyId: duty.id })
+        .query({ dutyId: duty.id, unit: 'PARTICIPANT' })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
     });
@@ -117,30 +135,38 @@ describe('/api/v1/events/:eventId/duty-assignments', () => {
 
       await request()
         .get(`/api/v1/events/${event.id}/duty-assignments/suggestions`)
-        .query({ dutyId: ulid() })
+        .query({ dutyId: ulid(), unit: 'PARTICIPANT' })
         .auth(accessToken, { type: 'bearer' })
         .expect(404);
     });
 
-    it('should respond with `400` when dutyId is missing', async () => {
+    it.each([
+      { label: 'dutyId is missing', query: { unit: 'PARTICIPANT' } },
+      { label: 'unit is missing', query: {} },
+      {
+        label: 'unit is invalid',
+        query: { unit: 'GROUP' },
+        withDuty: true,
+      },
+    ])('should respond with `400` when $label', async ({ query, withDuty }) => {
       const { event, accessToken } = await createEventWithManagerAndToken();
+      const dutyId = withDuty ? (await createDuty(event)).id : undefined;
 
       await request()
         .get(`/api/v1/events/${event.id}/duty-assignments/suggestions`)
+        .query({ ...query, ...(dutyId ? { dutyId } : {}) })
         .auth(accessToken, { type: 'bearer' })
         .expect(400);
     });
 
     it('ranks PARTICIPANT candidates least-assigned-first, never-assigned before assigned', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
-      const duty = await createDuty(event, { rotationUnit: 'PARTICIPANT' });
+      const duty = await createDuty(event);
       const assignedTwice = await createRegistration(event);
       const assignedOnce = await createRegistration(event);
       const neverAssigned = await createRegistration(event);
 
-      await DutyAssignmentFactory.create({
-        event: { connect: { id: event.id } },
-        duty: { connect: { id: duty.id } },
+      await createAssignment(event, duty.id, {
         date: '2026-08-01',
         members: {
           create: [
@@ -149,16 +175,14 @@ describe('/api/v1/events/:eventId/duty-assignments', () => {
           ],
         },
       });
-      await DutyAssignmentFactory.create({
-        event: { connect: { id: event.id } },
-        duty: { connect: { id: duty.id } },
+      await createAssignment(event, duty.id, {
         date: '2026-08-10',
         members: { create: [{ registrationId: assignedTwice.id }] },
       });
 
       const { body } = await request()
         .get(`/api/v1/events/${event.id}/duty-assignments/suggestions`)
-        .query({ dutyId: duty.id })
+        .query({ dutyId: duty.id, unit: 'PARTICIPANT' })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -174,9 +198,28 @@ describe('/api/v1/events/:eventId/duty-assignments', () => {
       );
     });
 
+    it('excludes staff from PARTICIPANT candidates when excludeStaff is set', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const duty = await createDuty(event, { excludeStaff: true });
+      const participant = await createRegistration(event, {
+        role: 'participant',
+      });
+      const staff = await createRegistration(event, { role: 'counselor' });
+
+      const { body } = await request()
+        .get(`/api/v1/events/${event.id}/duty-assignments/suggestions`)
+        .query({ dutyId: duty.id, unit: 'PARTICIPANT' })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      const ids = body.data.candidates.map((c: { id: string }) => c.id);
+      expect(ids).toContain(participant.id);
+      expect(ids).not.toContain(staff.id);
+    });
+
     it('ranks ROOM candidates by the current room of historically assigned participants', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
-      const duty = await createDuty(event, { rotationUnit: 'ROOM' });
+      const duty = await createDuty(event);
 
       const usedRoom = await RoomFactory.create({
         event: { connect: { id: event.id } },
@@ -189,17 +232,23 @@ describe('/api/v1/events/:eventId/duty-assignments', () => {
         room: { connect: { id: usedRoom.id } },
         registration: { connect: { id: registration.id } },
       });
+      // Occupied but never assigned this duty — must still be a candidate,
+      // as opposed to a genuinely empty room (see the "excludes empty rooms"
+      // test below).
+      await BedFactory.create({
+        room: { connect: { id: unusedRoom.id } },
+        registration: { connect: { id: (await createRegistration(event)).id } },
+      });
 
-      await DutyAssignmentFactory.create({
-        event: { connect: { id: event.id } },
-        duty: { connect: { id: duty.id } },
+      await createAssignment(event, duty.id, {
+        rotationUnit: 'ROOM',
         date: '2026-08-01',
         members: { create: [{ registrationId: registration.id }] },
       });
 
       const { body } = await request()
         .get(`/api/v1/events/${event.id}/duty-assignments/suggestions`)
-        .query({ dutyId: duty.id })
+        .query({ dutyId: duty.id, unit: 'ROOM' })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -211,6 +260,74 @@ describe('/api/v1/events/:eventId/duty-assignments', () => {
       expect(order.indexOf(unusedRoom.id)).toBeLessThan(
         order.indexOf(usedRoom.id),
       );
+    });
+
+    it('excludes rooms with no occupants from ROOM candidates', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const duty = await createDuty(event);
+
+      const occupiedRoom = await RoomFactory.create({
+        event: { connect: { id: event.id } },
+      });
+      const emptyRoom = await RoomFactory.create({
+        event: { connect: { id: event.id } },
+      });
+      await BedFactory.create({
+        room: { connect: { id: occupiedRoom.id } },
+        registration: { connect: { id: (await createRegistration(event)).id } },
+      });
+
+      const { body } = await request()
+        .get(`/api/v1/events/${event.id}/duty-assignments/suggestions`)
+        .query({ dutyId: duty.id, unit: 'ROOM' })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      const ids = body.data.candidates.map((c: { id: string }) => c.id);
+      expect(ids).toContain(occupiedRoom.id);
+      expect(ids).not.toContain(emptyRoom.id);
+    });
+
+    it('counts a room once per occurrence, not once per occupant listed as a member', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const duty = await createDuty(event);
+
+      const room = await RoomFactory.create({
+        event: { connect: { id: event.id } },
+      });
+      const roommateA = await createRegistration(event);
+      const roommateB = await createRegistration(event);
+      await BedFactory.create({
+        room: { connect: { id: room.id } },
+        registration: { connect: { id: roommateA.id } },
+      });
+      await BedFactory.create({
+        room: { connect: { id: room.id } },
+        registration: { connect: { id: roommateB.id } },
+      });
+
+      // A single occurrence with both roommates as members.
+      await createAssignment(event, duty.id, {
+        rotationUnit: 'ROOM',
+        date: '2026-08-01',
+        members: {
+          create: [
+            { registrationId: roommateA.id },
+            { registrationId: roommateB.id },
+          ],
+        },
+      });
+
+      const { body } = await request()
+        .get(`/api/v1/events/${event.id}/duty-assignments/suggestions`)
+        .query({ dutyId: duty.id, unit: 'ROOM' })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      const candidate = body.data.candidates.find(
+        (c: { id: string }) => c.id === room.id,
+      );
+      expect(candidate).toHaveProperty('assignmentCount', 1);
     });
   });
 
@@ -229,7 +346,11 @@ describe('/api/v1/events/:eventId/duty-assignments', () => {
 
         await request()
           .post(`/api/v1/events/${event.id}/duty-assignments`)
-          .send({ dutyId: duty.id, date: '2026-09-01' })
+          .send({
+            dutyId: duty.id,
+            rotationUnit: 'PARTICIPANT',
+            date: '2026-09-01',
+          })
           .auth(accessToken, { type: 'bearer' })
           .expect(expectedStatus);
 
@@ -238,7 +359,7 @@ describe('/api/v1/events/:eventId/duty-assignments', () => {
       },
     );
 
-    it('should create an assignment with members', async () => {
+    it('should create an assignment with a rotationUnit and members', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
       const duty = await createDuty(event);
       const registration = await createRegistration(event);
@@ -247,6 +368,7 @@ describe('/api/v1/events/:eventId/duty-assignments', () => {
         .post(`/api/v1/events/${event.id}/duty-assignments`)
         .send({
           dutyId: duty.id,
+          rotationUnit: 'ROOM',
           date: '2026-09-01',
           slot: 'Breakfast',
           registrationIds: [registration.id],
@@ -254,6 +376,7 @@ describe('/api/v1/events/:eventId/duty-assignments', () => {
         .auth(accessToken, { type: 'bearer' })
         .expect(201);
 
+      expect(body).toHaveProperty('data.rotationUnit', 'ROOM');
       expect(body).toHaveProperty('data.slot', 'Breakfast');
       expect(body.data.registrationIds).toEqual([registration.id]);
     });
@@ -265,7 +388,11 @@ describe('/api/v1/events/:eventId/duty-assignments', () => {
 
       await request()
         .post(`/api/v1/events/${event.id}/duty-assignments`)
-        .send({ dutyId: otherDuty.id, date: '2026-09-01' })
+        .send({
+          dutyId: otherDuty.id,
+          rotationUnit: 'PARTICIPANT',
+          date: '2026-09-01',
+        })
         .auth(accessToken, { type: 'bearer' })
         .expect(400);
 
@@ -282,6 +409,7 @@ describe('/api/v1/events/:eventId/duty-assignments', () => {
         .post(`/api/v1/events/${event.id}/duty-assignments`)
         .send({
           dutyId: duty.id,
+          rotationUnit: 'PARTICIPANT',
           date: '2026-09-01',
           registrationIds: [otherRegistration.id],
         })
@@ -292,11 +420,22 @@ describe('/api/v1/events/:eventId/duty-assignments', () => {
     });
 
     it.each([
-      { label: 'dutyId is missing', data: { date: '2026-09-01' } },
-      { label: 'date is missing', data: {} },
+      {
+        label: 'dutyId is missing',
+        data: { rotationUnit: 'PARTICIPANT', date: '2026-09-01' },
+      },
+      {
+        label: 'rotationUnit is missing',
+        data: { date: '2026-09-01' },
+      },
+      {
+        label: 'rotationUnit is invalid',
+        data: { rotationUnit: 'GROUP', date: '2026-09-01' },
+      },
+      { label: 'date is missing', data: { rotationUnit: 'PARTICIPANT' } },
       {
         label: 'date format is invalid',
-        data: { date: '01-09-2026' },
+        data: { rotationUnit: 'PARTICIPANT', date: '01-09-2026' },
       },
     ])('should respond with `400` when $label', async ({ data }) => {
       const { event, accessToken } = await createEventWithManagerAndToken();
@@ -315,7 +454,11 @@ describe('/api/v1/events/:eventId/duty-assignments', () => {
 
       await request()
         .post(`/api/v1/events/${event.id}/duty-assignments`)
-        .send({ dutyId: duty.id, date: '2026-09-01' })
+        .send({
+          dutyId: duty.id,
+          rotationUnit: 'PARTICIPANT',
+          date: '2026-09-01',
+        })
         .expect(401);
     });
   });
@@ -332,10 +475,7 @@ describe('/api/v1/events/:eventId/duty-assignments', () => {
         const { event, accessToken } =
           await createEventWithManagerAndToken(role);
         const duty = await createDuty(event);
-        const assignment = await DutyAssignmentFactory.create({
-          event: { connect: { id: event.id } },
-          duty: { connect: { id: duty.id } },
-        });
+        const assignment = await createAssignment(event, duty.id);
 
         await request()
           .patch(`/api/v1/events/${event.id}/duty-assignments/${assignment.id}`)
@@ -345,14 +485,28 @@ describe('/api/v1/events/:eventId/duty-assignments', () => {
       },
     );
 
+    it('should update the rotationUnit', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const duty = await createDuty(event);
+      const assignment = await createAssignment(event, duty.id, {
+        rotationUnit: 'PARTICIPANT',
+      });
+
+      const { body } = await request()
+        .patch(`/api/v1/events/${event.id}/duty-assignments/${assignment.id}`)
+        .send({ rotationUnit: 'ROOM' })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body).toHaveProperty('data.rotationUnit', 'ROOM');
+    });
+
     it('should fully replace the member list', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
       const duty = await createDuty(event);
       const oldMember = await createRegistration(event);
       const newMember = await createRegistration(event);
-      const assignment = await DutyAssignmentFactory.create({
-        event: { connect: { id: event.id } },
-        duty: { connect: { id: duty.id } },
+      const assignment = await createAssignment(event, duty.id, {
         members: { create: [{ registrationId: oldMember.id }] },
       });
 
@@ -369,9 +523,7 @@ describe('/api/v1/events/:eventId/duty-assignments', () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
       const duty = await createDuty(event);
       const member = await createRegistration(event);
-      const assignment = await DutyAssignmentFactory.create({
-        event: { connect: { id: event.id } },
-        duty: { connect: { id: duty.id } },
+      const assignment = await createAssignment(event, duty.id, {
         members: { create: [{ registrationId: member.id }] },
       });
 
@@ -407,10 +559,7 @@ describe('/api/v1/events/:eventId/duty-assignments', () => {
         const { event, accessToken } =
           await createEventWithManagerAndToken(role);
         const duty = await createDuty(event);
-        const assignment = await DutyAssignmentFactory.create({
-          event: { connect: { id: event.id } },
-          duty: { connect: { id: duty.id } },
-        });
+        const assignment = await createAssignment(event, duty.id);
 
         await request()
           .delete(
@@ -428,9 +577,7 @@ describe('/api/v1/events/:eventId/duty-assignments', () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
       const duty = await createDuty(event);
       const member = await createRegistration(event);
-      const assignment = await DutyAssignmentFactory.create({
-        event: { connect: { id: event.id } },
-        duty: { connect: { id: duty.id } },
+      const assignment = await createAssignment(event, duty.id, {
         members: { create: [{ registrationId: member.id }] },
       });
 

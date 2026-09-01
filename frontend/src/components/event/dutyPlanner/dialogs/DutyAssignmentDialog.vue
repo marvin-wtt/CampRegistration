@@ -87,17 +87,51 @@
             </template>
           </q-input>
 
-          <q-input
+          <q-select
             v-model="slot"
             :label="t('field.slot.label')"
             :hint="t('field.slot.hint')"
+            :options="filteredSlotOptions"
+            use-input
+            fill-input
+            hide-selected
+            input-debounce="0"
+            clearable
             outlined
             rounded
+            @filter="filterSlotOptions"
+            @input-value="(val: string) => (slot = val)"
           >
             <template #prepend>
               <q-icon name="schedule" />
             </template>
-          </q-input>
+          </q-select>
+
+          <div>
+            <div class="text-caption text-grey-7 q-mb-xs">
+              {{ t('field.rotationUnit.label') }}
+            </div>
+            <q-btn-toggle
+              v-model="rotationUnit"
+              no-caps
+              rounded
+              toggle-color="primary"
+              color="white"
+              text-color="primary"
+              :options="[
+                {
+                  label: t('field.rotationUnit.option.PARTICIPANT'),
+                  value: 'PARTICIPANT',
+                  icon: 'person',
+                },
+                {
+                  label: t('field.rotationUnit.option.ROOM'),
+                  value: 'ROOM',
+                  icon: 'meeting_room',
+                },
+              ]"
+            />
+          </div>
 
           <div
             v-if="suggestedCandidates.length > 0"
@@ -121,24 +155,8 @@
             </div>
           </div>
 
-          <q-select
-            v-model="registrationIds"
-            :label="t('field.members.label')"
-            :options="participantOptions"
-            map-options
-            emit-value
-            multiple
-            use-chips
-            outlined
-            rounded
-          >
-            <template #prepend>
-              <q-icon name="groups" />
-            </template>
-          </q-select>
-
           <div
-            v-if="selectedDuty?.rotationUnit === 'ROOM'"
+            v-if="rotationUnit === 'ROOM'"
             class="row items-end q-gutter-x-xs no-wrap"
           >
             <q-select
@@ -166,6 +184,22 @@
               @click="addRoomMembers"
             />
           </div>
+
+          <q-select
+            v-model="registrationIds"
+            :label="t('field.members.label')"
+            :options="participantOptions"
+            map-options
+            emit-value
+            multiple
+            use-chips
+            outlined
+            rounded
+          >
+            <template #prepend>
+              <q-icon name="groups" />
+            </template>
+          </q-select>
         </q-card-section>
 
         <!-- action buttons -->
@@ -204,6 +238,7 @@ import type {
   DutyAssignmentSuggestionCandidate,
   DutyAssignmentUpdateData,
   DutyCreateData,
+  DutyRotationUnit,
   Registration,
   Room,
 } from '@camp-registration/common/entities';
@@ -214,6 +249,8 @@ import { useObjectTranslation } from '@/composables/objectTranslation';
 import { formatPersonName } from '@/utils/formatters';
 import { formatLocalDate } from '@/utils/date';
 import DutyTypeDialog from '@/components/event/dutyPlanner/dialogs/DutyTypeDialog.vue';
+
+const DEFAULT_SUGGESTION_COUNT = 5;
 
 const { t } = useI18n();
 const quasar = useQuasar();
@@ -243,95 +280,251 @@ const dutyId = ref<string | null>(
     props.duties[0]?.id ??
     null,
 );
+const rotationUnit = ref<DutyRotationUnit>(
+  props.assignment?.rotationUnit ?? defaultRotationUnit(),
+);
 const date = ref<string>(props.assignment?.date ?? formatLocalDate(new Date()));
 const slot = ref<string | null>(props.assignment?.slot ?? null);
 const registrationIds = ref<string[]>([
   ...(props.assignment?.registrationIds ?? []),
 ]);
 const roomToAdd = ref<string | null>(null);
-const suggestions = ref<DutyAssignmentSuggestionCandidate[]>([]);
+
+// Both units' suggestion lists are fetched once per selected duty (not per
+// toggle flip) — the PARTICIPANT list is always needed to annotate the
+// participant dropdown with "how often already", regardless of which unit is
+// currently toggled, and keeping both cached means flipping the toggle never
+// triggers a fetch (so there's nothing async left to race).
+const participantSuggestions = ref<DutyAssignmentSuggestionCandidate[]>([]);
+const roomSuggestions = ref<DutyAssignmentSuggestionCandidate[]>([]);
 
 const selectedDuty = computed<Duty | undefined>(() => {
   return props.duties.find((duty) => duty.id === dutyId.value);
-});
-
-// Derived synchronously from the selected duty rather than the async
-// suggestions response — the response can arrive out of order (a slower
-// ROOM query started earlier resolving after a faster PARTICIPANT one),
-// which would otherwise show the wrong kind of suggestion.
-const suggestionUnit = computed<'PARTICIPANT' | 'ROOM'>(() => {
-  return selectedDuty.value?.rotationUnit ?? 'PARTICIPANT';
 });
 
 const dutyOptions = computed<QSelectOption[]>(() => {
   return props.duties.map((duty) => ({ label: to(duty.name), value: duty.id }));
 });
 
+function defaultRotationUnit() {
+  return props.rooms.length > 0 ? 'ROOM' : 'PARTICIPANT';
+}
+
+function participantStat(
+  id: string,
+): DutyAssignmentSuggestionCandidate | undefined {
+  return participantSuggestions.value.find((candidate) => candidate.id === id);
+}
+
+function roomStat(id: string): DutyAssignmentSuggestionCandidate | undefined {
+  return roomSuggestions.value.find((candidate) => candidate.id === id);
+}
+
+function hasOccupants(room: Room): boolean {
+  return room.beds.some((bed) => bed.registrationId !== null);
+}
+
+// A room dedicated to staff: it has occupants, and none of them is a
+// participant. Mirrors the backend's suggestion filter — see
+// dutyAssignment.service.ts.
+function isStaffOnlyRoom(room: Room): boolean {
+  const occupants = room.beds
+    .map((bed) => bed.registrationId)
+    .filter((id): id is string => id !== null)
+    .map((id) =>
+      props.registrations.find((registration) => registration.id === id),
+    )
+    .filter((registration): registration is Registration => !!registration);
+
+  return (
+    occupants.length > 0 &&
+    occupants.every(
+      (registration) => !registrationHelper.participant(registration),
+    )
+  );
+}
+
 const participantOptions = computed<QSelectOption[]>(() => {
+  const excludeStaff = selectedDuty.value?.excludeStaff ?? false;
+
   return props.registrations
     .filter((registration) => registration.status === 'ACCEPTED')
-    .map((registration) => ({
-      label: memberLabel(registration),
-      value: registration.id,
-    }));
+    .filter(
+      (registration) =>
+        !excludeStaff ||
+        registrationHelper.participant(registration) ||
+        registrationIds.value.includes(registration.id),
+    )
+    .map((registration) => {
+      const stat = participantStat(registration.id);
+      return {
+        label: stat
+          ? t('suggestions.candidate', {
+              name: memberLabel(registration),
+              count: stat.assignmentCount,
+            })
+          : memberLabel(registration),
+        value: registration.id,
+      };
+    })
+    .sort((a, b) => a.label.localeCompare(b.label));
 });
 
 const roomOptions = computed<QSelectOption[]>(() => {
-  return props.rooms.map((room) => ({ label: to(room.name), value: room.id }));
+  const excludeStaff = selectedDuty.value?.excludeStaff ?? false;
+
+  return props.rooms
+    .filter((room) => hasOccupants(room))
+    .filter((room) => !excludeStaff || !isStaffOnlyRoom(room))
+    .map((room) => {
+      const stat = roomStat(room.id);
+      return {
+        label: stat
+          ? t('suggestions.candidate', {
+              name: to(room.name),
+              count: stat.assignmentCount,
+            })
+          : to(room.name),
+        value: room.id,
+        sortOrder: room.sortOrder,
+      };
+    })
+    .sort(
+      (a, b) => a.sortOrder - b.sortOrder || a.label.localeCompare(b.label),
+    );
+});
+
+// Distinct current rooms already represented among the selected members —
+// how "many rooms worth" of people are already in, for ROOM sizing.
+const selectedRoomIds = computed<Set<string>>(() => {
+  const ids = new Set<string>();
+  for (const registrationId of registrationIds.value) {
+    const room = currentRoom(registrationId);
+    if (room) {
+      ids.add(room.id);
+    }
+  }
+  return ids;
+});
+
+// How many more people the duty's usual size still calls for, given who's
+// already selected — tracks the input live. Null means no usual size is set
+// (falls back to a flat suggestion count instead of sizing). The target is
+// always a headcount, for both units — see `suggestedCandidates` for how
+// that's turned into a number of *rooms* when assigning by room.
+const remainingHeadcount = computed<number | null>(() => {
+  const target = selectedDuty.value?.defaultCount;
+  if (target == null) {
+    return null;
+  }
+
+  return Math.max(target - registrationIds.value.length, 0);
 });
 
 const suggestedCandidates = computed<DutyAssignmentSuggestionCandidate[]>(
   () => {
-    if (suggestionUnit.value === 'PARTICIPANT') {
-      return suggestions.value
-        .filter((candidate) => !registrationIds.value.includes(candidate.id))
-        .slice(0, 5);
+    if (rotationUnit.value === 'ROOM') {
+      const available = roomSuggestions.value.filter(
+        (candidate) => !selectedRoomIds.value.has(candidate.id),
+      );
+
+      if (remainingHeadcount.value === null) {
+        return available.slice(0, DEFAULT_SUGGESTION_COUNT);
+      }
+
+      // Basic bin-covering, not exact bin-packing: walk the fairness-ranked
+      // list in order (never reordered by size — fairness stays primary) and
+      // keep adding rooms, using each one's *current* occupancy, until
+      // enough rooms have been suggested to plausibly cover what's still
+      // needed. A duty needing 4 people suggests one room of 4, or two of 2,
+      // rather than a fixed chip count that ignores how big rooms actually are.
+      const picked: DutyAssignmentSuggestionCandidate[] = [];
+      let covered = 0;
+      for (const candidate of available) {
+        if (covered >= remainingHeadcount.value) {
+          break;
+        }
+        picked.push(candidate);
+        covered += Math.max(roomMemberIds(candidate.id).length, 1);
+      }
+      return picked;
     }
 
-    return suggestions.value.slice(0, 5);
+    const available = participantSuggestions.value.filter(
+      (candidate) => !registrationIds.value.includes(candidate.id),
+    );
+
+    return available.slice(
+      0,
+      remainingHeadcount.value ?? DEFAULT_SUGGESTION_COUNT,
+    );
   },
 );
 
-// Guards against out-of-order responses: only the latest request's result is
-// ever applied, and only fills the members list when it's still empty (so it
-// never clobbers a manual selection).
+// Only the latest request's result is ever applied — switching duty again
+// before a slower response lands must not let it clobber the newer one.
 let suggestionRequestId = 0;
 watch(
   dutyId,
   async (id) => {
     const requestId = ++suggestionRequestId;
-    suggestions.value = [];
+    participantSuggestions.value = [];
+    roomSuggestions.value = [];
     if (!id) {
       return;
     }
 
-    const result = await dutyAssignmentStore.fetchSuggestions(id);
-    if (requestId !== suggestionRequestId || !result) {
+    const [participantResult, roomResult] = await Promise.all([
+      dutyAssignmentStore.fetchSuggestions(id, 'PARTICIPANT'),
+      dutyAssignmentStore.fetchSuggestions(id, 'ROOM'),
+    ]);
+    if (requestId !== suggestionRequestId) {
       return;
     }
 
-    suggestions.value = result.candidates;
-
-    const duty = props.duties.find((value) => value.id === id);
-    if (
-      result.unit === 'PARTICIPANT' &&
-      duty?.defaultCount &&
-      registrationIds.value.length === 0
-    ) {
-      registrationIds.value = result.candidates
-        .slice(0, duty.defaultCount)
-        .map((candidate) => candidate.id);
-    }
+    participantSuggestions.value = participantResult?.candidates ?? [];
+    roomSuggestions.value = roomResult?.candidates ?? [];
   },
   { immediate: true },
 );
+
+// Past slot labels used for this duty — e.g. Kitchen's recurring
+// "Breakfast"/"Lunch"/"Dinner" — so creating the next occurrence is a pick,
+// not a retype. Free text is still allowed.
+const pastSlots = computed<string[]>(() => {
+  const counts = new Map<string, number>();
+  for (const existing of dutyAssignmentStore.data ?? []) {
+    if (existing.dutyId !== dutyId.value || !existing.slot) {
+      continue;
+    }
+    counts.set(existing.slot, (counts.get(existing.slot) ?? 0) + 1);
+  }
+
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .map(([value]) => value);
+});
+
+const filteredSlotOptions = ref<string[]>([]);
+
+function filterSlotOptions(
+  inputValue: string,
+  update: (callback: () => void) => void,
+) {
+  update(() => {
+    const needle = inputValue.trim().toLowerCase();
+    filteredSlotOptions.value = needle
+      ? pastSlots.value.filter((value) => value.toLowerCase().includes(needle))
+      : pastSlots.value;
+  });
+}
 
 function memberLabel(registration: Registration): string {
   return formatPersonName(registrationHelper.uniqueName(registration));
 }
 
 function candidateLabel(id: string): string {
-  if (suggestionUnit.value === 'ROOM') {
+  if (rotationUnit.value === 'ROOM') {
     const room = props.rooms.find((value) => value.id === id);
     return room ? to(room.name) : id;
   }
@@ -349,20 +542,38 @@ function candidateChipLabel(
   });
 }
 
+function currentRoom(registrationId: string): Room | undefined {
+  return props.rooms.find((room) =>
+    room.beds.some((bed) => bed.registrationId === registrationId),
+  );
+}
+
+// A room isn't excluded from selection unless *every* occupant is staff (see
+// isStaffOnlyRoom), so a mixed room can still be picked — but bulk-adding it
+// must not silently pull its staff occupants in when this duty excludes staff.
 function roomMemberIds(roomId: string): string[] {
   const room = props.rooms.find((value) => value.id === roomId);
   if (!room) {
     return [];
   }
 
+  const excludeStaff = selectedDuty.value?.excludeStaff ?? false;
+
   return room.beds
     .map((bed) => bed.registrationId)
-    .filter((id): id is string => id !== null);
+    .filter((id): id is string => id !== null)
+    .filter((id) => {
+      if (!excludeStaff) {
+        return true;
+      }
+      const registration = props.registrations.find((value) => value.id === id);
+      return registration ? registrationHelper.participant(registration) : true;
+    });
 }
 
 function applySuggestion(candidate: DutyAssignmentSuggestionCandidate) {
   const ids =
-    suggestionUnit.value === 'ROOM'
+    rotationUnit.value === 'ROOM'
       ? roomMemberIds(candidate.id)
       : [candidate.id];
 
@@ -408,6 +619,7 @@ function onOKClick(): void {
 
   const payload: DutyAssignmentCreateData | DutyAssignmentUpdateData = {
     dutyId: dutyId.value,
+    rotationUnit: rotationUnit.value,
     date: date.value,
     slot: slot.value?.trim() ? slot.value.trim() : null,
     registrationIds: registrationIds.value,
@@ -437,6 +649,11 @@ field:
     label: 'Duty'
     rule:
       required: 'Pick a duty'
+  rotationUnit:
+    label: 'Assign by'
+    option:
+      PARTICIPANT: 'Participants'
+      ROOM: 'Room'
   date:
     label: 'Date'
     rule:
@@ -472,6 +689,11 @@ field:
     label: 'Dienst'
     rule:
       required: 'Bitte einen Dienst wählen'
+  rotationUnit:
+    label: 'Zuweisen nach'
+    option:
+      PARTICIPANT: 'Teilnehmenden'
+      ROOM: 'Zimmer'
   date:
     label: 'Datum'
     rule:
@@ -507,6 +729,11 @@ field:
     label: 'Corvée'
     rule:
       required: 'Choisis une corvée'
+  rotationUnit:
+    label: 'Affecter par'
+    option:
+      PARTICIPANT: 'Participants'
+      ROOM: 'Chambre'
   date:
     label: 'Date'
     rule:
@@ -542,6 +769,11 @@ field:
     label: 'Dyżur'
     rule:
       required: 'Wybierz dyżur'
+  rotationUnit:
+    label: 'Przypisz według'
+    option:
+      PARTICIPANT: 'Uczestników'
+      ROOM: 'Pokoju'
   date:
     label: 'Data'
     rule:
@@ -577,6 +809,11 @@ field:
     label: 'Služba'
     rule:
       required: 'Vyber službu'
+  rotationUnit:
+    label: 'Přiřadit podle'
+    option:
+      PARTICIPANT: 'Účastníků'
+      ROOM: 'Pokoje'
   date:
     label: 'Datum'
     rule:

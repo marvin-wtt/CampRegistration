@@ -56,17 +56,29 @@
           >
             <q-item-section avatar>
               <q-icon
-                :name="duty.rotationUnit === 'ROOM' ? 'meeting_room' : 'person'"
+                name="checklist"
                 color="primary"
               />
             </q-item-section>
             <q-item-section>
               <q-item-label>{{ to(duty.name) }}</q-item-label>
               <q-item-label
-                v-if="duty.rotationUnit === 'PARTICIPANT' && duty.defaultCount"
+                v-if="
+                  duty.defaultCount ||
+                  duty.excludeStaff ||
+                  duty.balanceCountries
+                "
                 caption
               >
-                {{ t('dutyType.defaultCount', { count: duty.defaultCount }) }}
+                <span v-if="duty.defaultCount">
+                  {{ t('dutyType.defaultCount', { count: duty.defaultCount }) }}
+                </span>
+                <span v-if="duty.excludeStaff">
+                  · {{ t('dutyType.excludeStaff') }}
+                </span>
+                <span v-if="duty.balanceCountries">
+                  · {{ t('dutyType.balanceCountries') }}
+                </span>
               </q-item-label>
             </q-item-section>
             <q-item-section
@@ -151,13 +163,20 @@
                     assignment.registrationIds.length === 0,
                 }"
               >
-                <q-item-section
-                  v-if="assignment.registrationIds.length === 0"
-                  avatar
-                >
+                <q-item-section avatar>
                   <q-icon
+                    v-if="assignment.registrationIds.length === 0"
                     name="warning_amber"
                     color="warning"
+                  />
+                  <q-icon
+                    v-else
+                    :name="
+                      assignment.rotationUnit === 'ROOM'
+                        ? 'meeting_room'
+                        : 'person'
+                    "
+                    color="grey-6"
                   />
                 </q-item-section>
                 <q-item-section>
@@ -235,7 +254,7 @@
       </div>
 
       <!-- History -->
-      <div v-if="participantHistoryRows.length > 0">
+      <div v-if="duties.length > 0">
         <q-item
           clickable
           class="history-toggle"
@@ -256,55 +275,79 @@
           v-if="showHistory"
           class="column q-gutter-y-md q-mt-sm"
         >
-          <div v-if="roomHistoryRows.length > 0">
-            <div class="text-caption text-grey-7 q-mb-xs">
-              {{ t('history.rooms') }}
-            </div>
-            <q-card
-              flat
-              bordered
-              class="section-card"
-            >
-              <q-list separator>
-                <q-item
-                  v-for="row in roomHistoryRows"
-                  :key="row.id"
-                >
-                  <q-item-section>
-                    {{ row.name }}
-                  </q-item-section>
-                  <q-item-section side>
-                    {{ t('history.count', { count: row.count }) }}
-                  </q-item-section>
-                </q-item>
-              </q-list>
-            </q-card>
+          <q-select
+            v-model="historyDutyId"
+            :label="t('history.dutyLabel')"
+            :options="dutyOptions"
+            map-options
+            emit-value
+            outlined
+            rounded
+            dense
+            style="max-width: 320px"
+          />
+
+          <div
+            v-if="
+              participantHistoryRows.length === 0 &&
+              roomHistoryRows.length === 0
+            "
+            class="text-body2 text-grey-6"
+          >
+            {{ t('history.empty') }}
           </div>
 
-          <div>
-            <div class="text-caption text-grey-7 q-mb-xs">
-              {{ t('history.participants') }}
+          <template v-else>
+            <div v-if="roomHistoryRows.length > 0">
+              <div class="text-caption text-grey-7 q-mb-xs">
+                {{ t('history.rooms') }}
+              </div>
+              <q-card
+                flat
+                bordered
+                class="section-card"
+              >
+                <q-list separator>
+                  <q-item
+                    v-for="row in roomHistoryRows"
+                    :key="row.id"
+                  >
+                    <q-item-section>
+                      {{ row.name }}
+                    </q-item-section>
+                    <q-item-section side>
+                      {{ t('history.count', { count: row.count }) }}
+                    </q-item-section>
+                  </q-item>
+                </q-list>
+              </q-card>
             </div>
-            <q-card
-              flat
-              bordered
-              class="section-card"
-            >
-              <q-list separator>
-                <q-item
-                  v-for="row in participantHistoryRows"
-                  :key="row.id"
-                >
-                  <q-item-section>
-                    {{ row.name }}
-                  </q-item-section>
-                  <q-item-section side>
-                    {{ t('history.count', { count: row.count }) }}
-                  </q-item-section>
-                </q-item>
-              </q-list>
-            </q-card>
-          </div>
+
+            <div v-if="participantHistoryRows.length > 0">
+              <div class="text-caption text-grey-7 q-mb-xs">
+                {{ t('history.participants') }}
+              </div>
+              <q-card
+                flat
+                bordered
+                class="section-card"
+              >
+                <q-list separator>
+                  <q-item
+                    v-for="row in participantHistoryRows"
+                    :key="row.id"
+                  >
+                    <q-item-section>
+                      {{ row.name }}
+                    </q-item-section>
+                    <q-item-section side>
+                      {{ t('history.count', { count: row.count }) }}
+                    </q-item-section>
+                  </q-item>
+                </q-list>
+              </q-card>
+            </div>
+          </template>
         </div>
       </div>
     </div>
@@ -312,7 +355,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { useDutyStore } from '@/stores/duty-store';
@@ -408,6 +451,23 @@ const registrations = computed<Registration[]>(
 );
 const rooms = computed<Room[]>(() => roomsData.value ?? []);
 
+const dutyOptions = computed<{ label: string; value: string }[]>(() => {
+  return duties.value.map((duty) => ({ label: to(duty.name), value: duty.id }));
+});
+
+// Defaults to the first duty once duties load, but only until the user picks
+// one themselves.
+const historyDutyId = ref<string | null>(null);
+watch(
+  duties,
+  (list) => {
+    if (historyDutyId.value === null && list.length > 0) {
+      historyDutyId.value = list[0]!.id;
+    }
+  },
+  { immediate: true },
+);
+
 const canManageAssignments = computed<boolean>(() => {
   return (
     can('event.duty_assignments.edit') || can('event.duty_assignments.delete')
@@ -484,47 +544,64 @@ interface HistoryRow {
   count: number;
 }
 
+// Scoped to one duty at a time — mixing counts across unrelated duty types
+// (Kitchen and Trash, say) into one total isn't actionable.
+const historyAssignments = computed<DutyAssignment[]>(() => {
+  return assignments.value.filter(
+    (assignment) => assignment.dutyId === historyDutyId.value,
+  );
+});
+
+// Only actual history (count > 0), ranked most-active first — this is a
+// record of who has done the duty, not a full roster; "who hasn't yet" is
+// already what the suggestion ranking surfaces when planning the next one.
 const participantHistoryRows = computed<HistoryRow[]>(() => {
   const counts = new Map<string, number>();
 
-  for (const assignment of assignments.value) {
+  for (const assignment of historyAssignments.value) {
     for (const registrationId of assignment.registrationIds) {
       counts.set(registrationId, (counts.get(registrationId) ?? 0) + 1);
     }
   }
 
   return registrations.value
-    .filter((registration) => registration.status === 'ACCEPTED')
+    .filter((registration) => counts.has(registration.id))
     .map((registration) => ({
       id: registration.id,
       name: formatPersonName(registrationHelper.uniqueName(registration)),
-      count: counts.get(registration.id) ?? 0,
+      count: counts.get(registration.id)!,
     }))
-    .sort((a, b) => a.count - b.count || a.name.localeCompare(b.name));
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
 });
 
 // Mirrors the backend's ROOM suggestion ranking: a historical member's
 // *current* room is what counts, so this stays correct as room assignments
-// change over the camp.
+// change over the camp. Each room counts at most once per occurrence,
+// regardless of how many of its occupants were members that day.
 const roomHistoryRows = computed<HistoryRow[]>(() => {
   const counts = new Map<string, number>();
 
-  for (const assignment of assignments.value) {
+  for (const assignment of historyAssignments.value) {
+    const roomIds = new Set<string>();
     for (const registrationId of assignment.registrationIds) {
       const room = currentRoom(registrationId);
       if (room) {
-        counts.set(room.id, (counts.get(room.id) ?? 0) + 1);
+        roomIds.add(room.id);
       }
+    }
+    for (const roomId of roomIds) {
+      counts.set(roomId, (counts.get(roomId) ?? 0) + 1);
     }
   }
 
   return rooms.value
+    .filter((room) => counts.has(room.id))
     .map((room) => ({
       id: room.id,
       name: to(room.name),
-      count: counts.get(room.id) ?? 0,
+      count: counts.get(room.id)!,
     }))
-    .sort((a, b) => a.count - b.count || a.name.localeCompare(b.name));
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
 });
 
 function assignmentLabel(assignment: DutyAssignment): string {
@@ -687,9 +764,13 @@ emptyAssignments:
 
 dutyType:
   defaultCount: 'Usually {count} people'
+  excludeStaff: 'Staff excluded'
+  balanceCountries: 'Country-balanced'
 
 history:
   toggle: 'Assignment history'
+  dutyLabel: 'Duty'
+  empty: 'No history yet for this duty.'
   count: '{count} time(s)'
   participants: 'Participants'
   rooms: 'Rooms'
@@ -728,9 +809,13 @@ emptyAssignments:
 
 dutyType:
   defaultCount: 'Normalerweise {count} Personen'
+  excludeStaff: 'Betreuende ausgeschlossen'
+  balanceCountries: 'Länderausgleich'
 
 history:
   toggle: 'Einsatzverlauf'
+  dutyLabel: 'Dienst'
+  empty: 'Noch keine Historie für diesen Dienst.'
   count: '{count} Mal'
   participants: 'Teilnehmende'
   rooms: 'Zimmer'
@@ -769,9 +854,13 @@ emptyAssignments:
 
 dutyType:
   defaultCount: 'Généralement {count} personnes'
+  excludeStaff: 'Encadrement exclu'
+  balanceCountries: 'Équilibre des pays'
 
 history:
   toggle: 'Historique des affectations'
+  dutyLabel: 'Corvée'
+  empty: "Pas encore d'historique pour cette corvée."
   count: '{count} fois'
   participants: 'Participants'
   rooms: 'Chambres'
@@ -810,9 +899,13 @@ emptyAssignments:
 
 dutyType:
   defaultCount: 'Zwykle {count} osób'
+  excludeStaff: 'Kadra wykluczona'
+  balanceCountries: 'Równoważenie krajów'
 
 history:
   toggle: 'Historia przypisań'
+  dutyLabel: 'Dyżur'
+  empty: 'Brak historii dla tego dyżuru.'
   count: '{count} razy'
   participants: 'Uczestnicy'
   rooms: 'Pokoje'
@@ -851,9 +944,13 @@ emptyAssignments:
 
 dutyType:
   defaultCount: 'Obvykle {count} lidí'
+  excludeStaff: 'Vedoucí vyloučeni'
+  balanceCountries: 'Vyvážení zemí'
 
 history:
   toggle: 'Historie přiřazení'
+  dutyLabel: 'Služba'
+  empty: 'Zatím žádná historie pro tuto službu.'
   count: '{count}×'
   participants: 'Účastníci'
   rooms: 'Pokoje'

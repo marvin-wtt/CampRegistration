@@ -44,12 +44,13 @@ export class DutyAssignmentController extends BaseController {
   async suggestions(req: Request, res: Response) {
     const event = req.modelOrFail('event');
     const {
-      query: { dutyId },
+      query: { dutyId, unit },
     } = await req.validate(validator.suggestions);
 
     const suggestions = await this.dutyAssignmentService.getSuggestions(
       event.id,
       dutyId,
+      unit,
     );
 
     if (!suggestions) {
@@ -62,7 +63,7 @@ export class DutyAssignmentController extends BaseController {
   async store(req: Request, res: Response) {
     const event = req.modelOrFail('event');
     const {
-      body: { dutyId, date, slot, registrationIds },
+      body: { dutyId, rotationUnit, date, slot, registrationIds },
     } = await req.validate(validator.store);
 
     await this.assertDutyBelongsToEvent(event.id, dutyId);
@@ -72,7 +73,7 @@ export class DutyAssignmentController extends BaseController {
 
     const assignment = await this.dutyAssignmentService.createDutyAssignment(
       event.id,
-      { dutyId, date, slot, registrationIds },
+      { dutyId, rotationUnit, date, slot, registrationIds },
     );
 
     void this.realtimeService.emit(
@@ -91,7 +92,7 @@ export class DutyAssignmentController extends BaseController {
     const event = req.modelOrFail('event');
     const existingAssignment = req.modelOrFail('dutyAssignment');
     const {
-      body: { dutyId, date, slot, registrationIds },
+      body: { dutyId, rotationUnit, date, slot, registrationIds },
     } = await req.validate(validator.update);
 
     if (dutyId !== undefined) {
@@ -104,7 +105,7 @@ export class DutyAssignmentController extends BaseController {
     const assignment =
       await this.dutyAssignmentService.updateDutyAssignmentById(
         existingAssignment.id,
-        { dutyId, date, slot, registrationIds },
+        { dutyId, rotationUnit, date, slot, registrationIds },
       );
 
     void this.realtimeService.emit(

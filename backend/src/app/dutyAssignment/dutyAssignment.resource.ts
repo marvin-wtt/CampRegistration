@@ -13,8 +13,8 @@ export class DutyAssignmentResource extends JsonResource<
       duty: {
         id: this.data.duty.id,
         name: this.data.duty.name,
-        rotationUnit: this.data.duty.rotationUnit,
       },
+      rotationUnit: this.data.rotationUnit,
       date: this.data.date,
       slot: this.data.slot ?? null,
       registrationIds: this.data.members.map((member) => member.registrationId),

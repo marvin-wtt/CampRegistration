@@ -18,12 +18,15 @@ const index = z.object({
   }),
 });
 
+const ROTATION_UNIT = z.enum(['PARTICIPANT', 'ROOM']);
+
 const suggestions = z.object({
   params: z.object({
     eventId: z.ulid(),
   }),
   query: z.object({
     dutyId: z.ulid(),
+    unit: ROTATION_UNIT,
   }),
 });
 
@@ -33,6 +36,7 @@ const store = z.object({
   }),
   body: z.object({
     dutyId: z.ulid(),
+    rotationUnit: ROTATION_UNIT,
     date: DateSchema,
     slot: z.string().min(1).optional().nullable(),
     registrationIds: z.array(z.ulid()).optional(),
@@ -47,6 +51,7 @@ const update = z.object({
   body: z
     .object({
       dutyId: z.ulid(),
+      rotationUnit: ROTATION_UNIT,
       date: DateSchema,
       slot: z.string().min(1).nullable(),
       registrationIds: z.array(z.ulid()),

@@ -4,8 +4,9 @@ CREATE TABLE `duties` (
     `event_id` CHAR(26) NOT NULL,
     `name` JSON NOT NULL,
     `sort_order` INTEGER NOT NULL DEFAULT 999,
-    `rotation_unit` ENUM('PARTICIPANT', 'ROOM') NOT NULL DEFAULT 'PARTICIPANT',
     `default_count` INTEGER UNSIGNED NULL,
+    `exclude_staff` BOOLEAN NOT NULL DEFAULT false,
+    `balance_countries` BOOLEAN NOT NULL DEFAULT false,
 
     UNIQUE INDEX `duties_id_unique`(`id`),
     INDEX `duties_event_id_foreign`(`event_id`),
@@ -17,6 +18,7 @@ CREATE TABLE `duty_assignments` (
     `id` CHAR(26) NOT NULL,
     `event_id` CHAR(26) NOT NULL,
     `duty_id` CHAR(26) NOT NULL,
+    `rotation_unit` ENUM('PARTICIPANT', 'ROOM') NOT NULL,
     `date` VARCHAR(10) NOT NULL,
     `slot` VARCHAR(191) NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),

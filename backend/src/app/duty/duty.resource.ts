@@ -8,8 +8,9 @@ export class DutyResource extends JsonResource<Duty, DutyData> {
       id: this.data.id,
       name: this.data.name,
       sortOrder: this.data.sortOrder,
-      rotationUnit: this.data.rotationUnit,
       defaultCount: this.data.defaultCount ?? null,
+      excludeStaff: this.data.excludeStaff,
+      balanceCountries: this.data.balanceCountries,
     };
   }
 }
