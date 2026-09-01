@@ -102,12 +102,12 @@ describe('/api/v1/users/', () => {
       await request().get(`/api/v1/users/${user.id}`).send().expect(401);
     });
 
-    it('should respond with `404` status code when camp id does not exists', async () => {
+    it('should respond with `404` status code when event id does not exists', async () => {
       const { accessToken } = await createAdminWithToken();
-      const campId = ulid();
+      const eventId = ulid();
 
       await request()
-        .delete(`/api/v1/users/${campId}`)
+        .delete(`/api/v1/users/${eventId}`)
         .send()
         .auth(accessToken, { type: 'bearer' })
         .expect(404);
@@ -297,12 +297,12 @@ describe('/api/v1/users/', () => {
         .expect(401);
     });
 
-    it('should respond with `404` status code when camp id does not exists', async () => {
+    it('should respond with `404` status code when event id does not exists', async () => {
       const { accessToken } = await createAdminWithToken();
-      const campId = ulid();
+      const eventId = ulid();
 
       await request()
-        .patch(`/api/v1/users/${campId}`)
+        .patch(`/api/v1/users/${eventId}`)
         .send({
           name: 'NewName',
         })
@@ -348,16 +348,16 @@ describe('/api/v1/users/', () => {
 
       await request().delete(`/api/v1/users/${user.id}`).send().expect(401);
 
-      const campCount = await prisma.user.count();
-      expect(campCount).toBe(1);
+      const eventCount = await prisma.user.count();
+      expect(eventCount).toBe(1);
     });
 
-    it('should respond with `404` status code when camp id does not exists', async () => {
+    it('should respond with `404` status code when event id does not exists', async () => {
       const { accessToken } = await createAdminWithToken();
-      const campId = ulid();
+      const eventId = ulid();
 
       await request()
-        .delete(`/api/v1/users/${campId}`)
+        .delete(`/api/v1/users/${eventId}`)
         .send()
         .auth(accessToken, { type: 'bearer' })
         .expect(404);

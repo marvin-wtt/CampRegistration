@@ -25,25 +25,25 @@ export class TableTemplateController extends BaseController {
   }
 
   async index(req: Request, res: Response) {
-    const camp = req.modelOrFail('camp');
+    const event = req.modelOrFail('event');
     await req.validate(validator.index);
 
-    const templates = await this.tableTemplateService.queryTemplates(camp.id);
+    const templates = await this.tableTemplateService.queryTemplates(event.id);
 
     res.resource(TableTemplateResource.collection(templates));
   }
 
   async store(req: Request, res: Response) {
-    const camp = req.modelOrFail('camp');
+    const event = req.modelOrFail('event');
     const { body } = await req.validate(validator.store);
 
     const template = await this.tableTemplateService.createTemplate(
-      camp.id,
+      event.id,
       body,
     );
 
     void this.realtimeService.emit(
-      camp.id,
+      event.id,
       'table_template',
       template.id,
       'created',
@@ -55,7 +55,7 @@ export class TableTemplateController extends BaseController {
   }
 
   async update(req: Request, res: Response) {
-    const camp = req.modelOrFail('camp');
+    const event = req.modelOrFail('event');
     const tableTemplate = req.modelOrFail('tableTemplate');
     const { body } = await req.validate(validator.update);
 
@@ -65,7 +65,7 @@ export class TableTemplateController extends BaseController {
     );
 
     void this.realtimeService.emit(
-      camp.id,
+      event.id,
       'table_template',
       template.id,
       'updated',
@@ -75,14 +75,14 @@ export class TableTemplateController extends BaseController {
   }
 
   async destroy(req: Request, res: Response) {
-    const camp = req.modelOrFail('camp');
+    const event = req.modelOrFail('event');
     const tableTemplate = req.modelOrFail('tableTemplate');
     await req.validate(validator.destroy);
 
     await this.tableTemplateService.deleteTemplateById(tableTemplate.id);
 
     void this.realtimeService.emit(
-      camp.id,
+      event.id,
       'table_template',
       tableTemplate.id,
       'deleted',

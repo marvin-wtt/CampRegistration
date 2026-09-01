@@ -14,9 +14,9 @@
         @click="goBack"
       />
 
-      <div class="text-h4 q-mb-lg">
+      <h1 class="text-h4 q-mt-none q-mb-lg">
         {{ title }}
-      </div>
+      </h1>
 
       <legal-placeholder v-if="html === null" />
 
@@ -102,10 +102,34 @@ function goBack() {
 
 <style lang="scss" scoped>
 .legal-content {
+  /* The document title above is the page's h1, so the editor's own top level
+     (h2) has to read as a section heading under it — the browser's default
+     scale sizes it as a title in its own right. An h1 from older content is
+     sized the same, rather than as a second page title. */
   :deep(h1),
   :deep(h2),
   :deep(h3) {
     color: var(--md3-on-surface);
+    font-weight: 500;
+    line-height: 1.4;
+  }
+
+  :deep(h1),
+  :deep(h2) {
+    font-size: 1.5rem;
+    margin: 2rem 0 0.5rem;
+  }
+
+  :deep(h3) {
+    font-size: 1.25rem;
+    margin: 1.5rem 0 0.5rem;
+  }
+
+  /* The first heading opens the document; the title already provides the gap. */
+  :deep(h1:first-child),
+  :deep(h2:first-child),
+  :deep(h3:first-child) {
+    margin-top: 0;
   }
 
   :deep(a) {

@@ -92,7 +92,7 @@ const emit = defineEmits<{
   refresh: [];
 }>();
 
-const search = defineModel<string>('search', { default: '' });
+const search = defineModel<string | null>('search', { default: '' });
 
 const { t } = useI18n();
 const quasar = useQuasar();

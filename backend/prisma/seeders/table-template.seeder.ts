@@ -1,5 +1,6 @@
 import { BaseSeeder } from './BaseSeeder';
 import { TableTemplateFactory } from '../factories';
+import { EVENT_IDS } from './ids';
 
 class TableTemplateSeeder extends BaseSeeder {
   name(): string {
@@ -34,10 +35,10 @@ class TableTemplateSeeder extends BaseSeeder {
         actions: true,
         sortBy: 'first_name',
       },
-      camp: { connect: { id: '01JHP0CXJFR4MQS8SF1HQJCY38' } },
+      event: { connect: { id: EVENT_IDS.simple } },
     });
 
-    // Summer camp – Participants
+    // Summer Camp – Participants
     await TableTemplateFactory.create({
       data: {
         title: { en: 'Participants', de: 'Teilnehmer', fr: 'Participants' },
@@ -60,7 +61,7 @@ class TableTemplateSeeder extends BaseSeeder {
           },
           {
             name: 'country',
-            field: 'country',
+            field: 'computedData.address.country',
             label: { en: 'Country', de: 'Land', fr: 'Pays' },
             align: 'left',
             sortable: true,
@@ -97,10 +98,10 @@ class TableTemplateSeeder extends BaseSeeder {
         actions: true,
         sortBy: 'first_name',
       },
-      camp: { connect: { id: '01K9ATF1H9KD1K6H12F3YK8RWR' } },
+      event: { connect: { id: EVENT_IDS.summer } },
     });
 
-    // Summer camp – Waiting List
+    // Summer Camp – Waiting List
     await TableTemplateFactory.create({
       data: {
         title: { en: 'Waiting List', de: 'Warteliste', fr: "Liste d'attente" },
@@ -153,10 +154,10 @@ class TableTemplateSeeder extends BaseSeeder {
         sortBy: 'created_at',
         sortDirection: 'asc',
       },
-      camp: { connect: { id: '01K9ATF1H9KD1K6H12F3YK8RWR' } },
+      event: { connect: { id: EVENT_IDS.summer } },
     });
 
-    // Summer camp – Medical
+    // Summer Camp – Medical
     await TableTemplateFactory.create({
       data: {
         title: { en: 'Medical', de: 'Medizinisches', fr: 'Médical' },
@@ -207,10 +208,10 @@ class TableTemplateSeeder extends BaseSeeder {
         indexed: true,
         sortBy: 'first_name',
       },
-      camp: { connect: { id: '01K9ATF1H9KD1K6H12F3YK8RWR' } },
+      event: { connect: { id: EVENT_IDS.summer } },
     });
 
-    // Summer camp – Permissions
+    // Summer Camp – Permissions
     await TableTemplateFactory.create({
       data: {
         title: { en: 'Permissions', de: 'Berechtigungen', fr: 'Autorisations' },
@@ -273,7 +274,7 @@ class TableTemplateSeeder extends BaseSeeder {
         indexed: true,
         sortBy: 'first_name',
       },
-      camp: { connect: { id: '01K9ATF1H9KD1K6H12F3YK8RWR' } },
+      event: { connect: { id: EVENT_IDS.summer } },
     });
   }
 }

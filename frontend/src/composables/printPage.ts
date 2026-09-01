@@ -7,6 +7,7 @@ import {
   type Ref,
 } from 'vue';
 import { useRoute } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { Platform } from 'quasar';
 
 export interface UsePrintPageOptions<T> {
@@ -47,6 +48,7 @@ export function usePrintPage<T>(
 ): UsePrintPageResult<T> {
   const { messagePrefix, defaultStorageKey, prepare, beforePrint } = options;
   const route = useRoute();
+  const { locale } = useI18n({ useScope: 'global' });
 
   const payload = ref<T | null>(null) as Ref<T | null>;
   const error = ref<string | null>(null);
@@ -128,6 +130,17 @@ export function usePrintPage<T>(
     }
   }
 
+  // Print pages load in a fresh iframe/window, whose i18n instance boots to
+  // the browser locale (see boot/i18n.ts) rather than the user's selected
+  // in-app locale. Payloads carry that locale explicitly so it can be applied
+  // here before anything renders.
+  function applyPayloadLocale(p: T): void {
+    const payloadLocale = (p as { locale?: unknown }).locale;
+    if (typeof payloadLocale === 'string' && payloadLocale.length > 0) {
+      locale.value = payloadLocale;
+    }
+  }
+
   onMounted(async () => {
     window.addEventListener('afterprint', onAfterPrint);
     window.addEventListener('focus', onFocus);
@@ -143,6 +156,7 @@ export function usePrintPage<T>(
       return;
     }
 
+    applyPayloadLocale(p);
     payload.value = p;
     postToParent({ type: `${messagePrefix}:LOADED` });
 

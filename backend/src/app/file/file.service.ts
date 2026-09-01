@@ -8,6 +8,7 @@ import { DiskStorage } from '#core/storage/disk.storage';
 import { StorageRegistry } from '#core/storage/storage.registry';
 import { BaseService } from '#core/base/BaseService';
 import { fileNameExtension } from '#utils/file';
+import { isClientDisconnect } from '#utils/stream';
 import { inject, injectable } from 'inversify';
 import { Config } from '#core/ioc/decorators';
 import type { AppConfig } from '#config';
@@ -48,7 +49,7 @@ type FileOwnerKey = keyof PickIds<Prisma.FileWhereInput>;
 
 // Relational fields for where input fields
 const fileRelationIdFieldsNull: RequireIdKeys<Prisma.FileWhereInput, null> = {
-  campId: null,
+  eventId: null,
   registrationId: null,
   messageId: null,
   messageDeliveryId: null,
@@ -60,6 +61,9 @@ const fileRelationIdFieldsNull: RequireIdKeys<Prisma.FileWhereInput, null> = {
 const fileRelationIdFieldsUndefined = Object.keys(
   fileRelationIdFieldsNull,
 ).reduce((acc, key) => ({ ...acc, [key]: undefined }), {});
+
+// Storage removals issued at once by `deleteUnassignedFiles`.
+const STORAGE_DELETE_CONCURRENCY = 25;
 
 @injectable()
 export class FileService extends BaseService {
@@ -398,6 +402,13 @@ export class FileService extends BaseService {
     // consumer (HTTP response, mail transport) attaches its own 'error'
     // listener — without one here, such an error crashes the process.
     stream.on('error', (error: Error) => {
+      // Says nothing about the file, and every cancelled preview emits one —
+      // reporting it is the consumer's call, not ours.
+      if (isClientDisconnect(error)) {
+        logger.debug(`Stream for file "${file.id}" closed by consumer`);
+        return;
+      }
+
       logger.error(`Error while streaming file "${file.id}"`, error);
     });
 
@@ -533,7 +544,7 @@ export class FileService extends BaseService {
   }
 
   async deleteUnassignedFiles(): Promise<void> {
-    const minAge = moment().subtract('1', 'd').toDate();
+    const minAge = moment().subtract(1, 'day').toDate();
 
     const files = await this.prisma.file.findMany({
       where: {
@@ -550,8 +561,16 @@ export class FileService extends BaseService {
     // Delete files from database first so that the files can no longer be accessed.
     const fileIds = files.map((file) => file.id);
     const result = await this.prisma.file.deleteMany({
-      where: { id: { in: fileIds } },
+      where: {
+        id: { in: fileIds },
+        // Just verify that it is really unassigned to avoid race conditions
+        ...fileRelationIdFieldsNull,
+      },
     });
+
+    logger.info(
+      `Deleted ${result.count.toString()} unassigned file record(s) from database`,
+    );
 
     // Check if any file is still referenced by another model
     const fileNames = files.map((file) => file.name);
@@ -560,18 +579,40 @@ export class FileService extends BaseService {
       select: { name: true },
     });
 
-    logger.info(`Deleting ${result.count.toString()} unreferenced file(s)`);
+    // Delete files from storage that are no longer in use. Batched because a
+    // bulk unassignment can orphan thousands of files at once, and settled
+    // rather than all-or-nothing so one failure cannot hide the rest — a blob
+    // left behind is swept by `deleteUnreferencedFiles`.
+    const orphans = files.filter(
+      (file) => !usedFiles.some((value) => value.name === file.name),
+    );
 
-    // Delete files from storage that are no longer in use
-    const fileDeletions = files
-      .filter((file) => !usedFiles.some((value) => value.name === file.name))
-      .map((file) =>
-        this.storageRegistry
-          .getStorage(file.storageLocation)
-          .removeFile(file.name),
+    let deletedCount = 0;
+    for (let i = 0; i < orphans.length; i += STORAGE_DELETE_CONCURRENCY) {
+      const batch = orphans.slice(i, i + STORAGE_DELETE_CONCURRENCY);
+
+      const results = await Promise.allSettled(
+        batch.map((file) =>
+          this.storageRegistry
+            .getStorage(file.storageLocation)
+            .removeFile(file.name),
+        ),
       );
 
-    await Promise.all(fileDeletions);
+      results.forEach((settled, index) => {
+        if (settled.status === 'rejected') {
+          logger.error(
+            `Failed to remove file ${batch[index]?.name ?? '??'} from storage. ${String(settled.reason)}`,
+          );
+        } else {
+          deletedCount++;
+        }
+      });
+    }
+
+    logger.info(
+      `Deleted ${deletedCount.toString()} unreferenced file(s) from storage`,
+    );
   }
 
   async deleteTempFiles() {

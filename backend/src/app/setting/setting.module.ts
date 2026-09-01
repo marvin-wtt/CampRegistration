@@ -14,6 +14,6 @@ export class SettingModule implements AppModule {
   }
 
   registerRoutes(router: AppRouter): void {
-    router.useRouter('/camps/:campId/settings', resolve(SettingRouter));
+    router.useRouter('/events/:eventId/settings', resolve(SettingRouter));
   }
 }

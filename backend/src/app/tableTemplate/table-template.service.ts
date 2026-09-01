@@ -3,23 +3,23 @@ import { injectable } from 'inversify';
 
 @injectable()
 export class TableTemplateService extends BaseService {
-  async getTemplateById(campId: string, id: string) {
+  async getTemplateById(eventId: string, id: string) {
     return this.prisma.tableTemplate.findFirst({
-      where: { id, campId },
+      where: { id, eventId },
     });
   }
 
-  async queryTemplates(campId: string) {
+  async queryTemplates(eventId: string) {
     return this.prisma.tableTemplate.findMany({
-      where: { campId },
+      where: { eventId },
     });
   }
 
-  async createTemplate(campId: string, data: Record<string, unknown>) {
+  async createTemplate(eventId: string, data: Record<string, unknown>) {
     return this.prisma.tableTemplate.create({
       data: {
         data,
-        campId,
+        eventId,
       },
     });
   }

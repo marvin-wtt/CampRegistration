@@ -1,14 +1,6 @@
-import type {
-  AppModule,
-  AppRouter,
-  RoleToPermissions,
-  BindOptions,
-} from '#core/base/AppModule';
+import type { AppModule, AppRouter, BindOptions } from '#core/base/AppModule';
 import { TaskRouter } from '#app/task/task.routes';
-import type {
-  CampManagerRole,
-  TaskPermission,
-} from '@camp-registration/common/permissions';
+import type { ScopedPermissions } from '@camp-registration/common/permissions';
 import { TaskService } from '#app/task/task.service';
 import { TaskController } from '#app/task/task.controller';
 import { resolve } from '#core/ioc/container';
@@ -21,30 +13,32 @@ export class TaskModule implements AppModule {
   }
 
   registerRoutes(router: AppRouter): void {
-    router.useRouter('/camps/:campId/tasks', resolve(TaskRouter));
+    router.useRouter('/events/:eventId/tasks', resolve(TaskRouter));
   }
 
-  registerPermissions(): RoleToPermissions<CampManagerRole, TaskPermission> {
+  registerPermissions(): ScopedPermissions {
     return {
-      DIRECTOR: [
-        'camp.tasks.view',
-        'camp.tasks.create',
-        'camp.tasks.update',
-        'camp.tasks.delete',
-      ],
-      COORDINATOR: [
-        'camp.tasks.view',
-        'camp.tasks.create',
-        'camp.tasks.update',
-        'camp.tasks.delete',
-      ],
-      COUNSELOR: [
-        'camp.tasks.view',
-        'camp.tasks.create',
-        'camp.tasks.update',
-        'camp.tasks.delete',
-      ],
-      VIEWER: ['camp.tasks.view'],
+      event: {
+        DIRECTOR: [
+          'event.tasks.view',
+          'event.tasks.create',
+          'event.tasks.update',
+          'event.tasks.delete',
+        ],
+        COORDINATOR: [
+          'event.tasks.view',
+          'event.tasks.create',
+          'event.tasks.update',
+          'event.tasks.delete',
+        ],
+        COUNSELOR: [
+          'event.tasks.view',
+          'event.tasks.create',
+          'event.tasks.update',
+          'event.tasks.delete',
+        ],
+        VIEWER: ['event.tasks.view'],
+      },
     };
   }
 }

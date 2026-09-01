@@ -6,10 +6,6 @@ export interface MessageRecipient {
   to: string | null;
 }
 
-/**
- * An ad-hoc message composed on the contact page and sent to a set of
- * registrations. Its per-recipient rendered emails are {@link MessageDelivery}s.
- */
 export interface Message extends Identifiable {
   subject: string;
   body: string;

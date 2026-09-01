@@ -18,8 +18,16 @@ interface UserWithPassword extends User {
 
 export type UserCreateData = Omit<
   UserWithPassword,
-  'id' | 'emailVerified' | 'twoFactorEnabled' | 'lastSeen' | 'createdAt'
->;
+  | 'id'
+  | 'emailVerified'
+  | 'twoFactorEnabled'
+  | 'lastSeen'
+  | 'createdAt'
+  | 'role'
+  | 'locale'
+  | 'locked'
+> &
+  Partial<Pick<UserWithPassword, 'role' | 'locale' | 'locked'>>;
 
 export type UserUpdateData = Partial<
   Omit<UserWithPassword, 'id' | 'twoFactorEnabled' | 'createdAt'>
@@ -32,8 +40,6 @@ export interface UserQuery {
   limit?: number;
   sortBy?: keyof User;
   sortType?: 'asc' | 'desc';
-
-  /** Free-text search across name and email. */
   search?: string;
   name?: string;
   email?: string;

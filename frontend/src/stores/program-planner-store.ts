@@ -1,13 +1,13 @@
 import { defineStore } from 'pinia';
 import type {
-  ProgramEvent,
-  ProgramEventCreateData,
-  ProgramEventUpdateData,
+  ProgramItem,
+  ProgramItemCreateData,
+  ProgramItemUpdateData,
 } from '@camp-registration/common/entities';
 import { useRoute } from 'vue-router';
 import { useAPIService } from '@/services/APIService';
 import { useServiceHandler } from '@/composables/serviceHandler';
-import { useAuthBus, useCampBus } from '@/composables/bus';
+import { useAuthBus, useEventBus } from '@/composables/bus';
 import { useRealtimeCollection } from '@/composables/realtimeCollection';
 import { createUuid } from '@/utils/uuid';
 
@@ -15,7 +15,7 @@ export const useProgramPlannerStore = defineStore('program-planner', () => {
   const route = useRoute();
   const apiService = useAPIService();
   const authBus = useAuthBus();
-  const campBus = useCampBus();
+  const eventBus = useEventBus();
   const {
     data,
     isLoading,
@@ -26,26 +26,26 @@ export const useProgramPlannerStore = defineStore('program-planner', () => {
     lazyFetch,
     backgroundFetch,
     checkNotNullWithError,
-  } = useServiceHandler<ProgramEvent[]>('programPlanner');
+  } = useServiceHandler<ProgramItem[]>('programPlanner');
 
   authBus.on('logout', () => {
     reset();
   });
 
-  campBus.on('change', () => {
+  eventBus.on('change', () => {
     invalidate();
   });
 
   // React to live changes pushed from other clients.
-  useRealtimeCollection<ProgramEvent>('program_event', {
+  useRealtimeCollection<ProgramItem>('program_item', {
     data,
     invalidate,
     reload: () => fetchData(undefined, { background: true }),
-    fetchOne: (campId, id) => apiService.fetchProgramEvent(campId, id),
+    fetchOne: (eventId, id) => apiService.fetchProgramItem(eventId, id),
   });
 
   // Replace the event with this id, or append it if not present.
-  function upsertEntry(event: ProgramEvent) {
+  function upsertEntry(event: ProgramItem) {
     const list = data.value ?? [];
     data.value = list.some((e) => e.id === event.id)
       ? list.map((e) => (e.id === event.id ? event : e))
@@ -53,24 +53,24 @@ export const useProgramPlannerStore = defineStore('program-planner', () => {
   }
 
   async function fetchData(
-    campId?: string,
+    eventId?: string,
     opts?: { background?: boolean },
   ): Promise<void> {
     const cid = checkNotNullWithError(
-      campId ?? (route.params.campId as string),
+      eventId ?? (route.params.eventId as string),
     );
-    const fetcher = () => apiService.fetchProgramEvents(cid);
+    const fetcher = () => apiService.fetchProgramItems(cid);
     await (opts?.background ? backgroundFetch(fetcher) : lazyFetch(fetcher));
   }
 
-  async function createEntry(event: ProgramEventCreateData) {
-    const campId = route.params.campId as string;
-    checkNotNullWithError(campId);
+  async function createEntry(event: ProgramItemCreateData) {
+    const eventId = route.params.eventId as string;
+    checkNotNullWithError(eventId);
 
     const tmpId = `#${createUuid()}`;
 
     // Optimistic update: add event immediately so it appears in the calendar
-    const tmpEvent: ProgramEvent = {
+    const tmpEvent: ProgramItem = {
       id: tmpId,
       title: event.title,
       details: event.details ?? null,
@@ -84,7 +84,7 @@ export const useProgramPlannerStore = defineStore('program-planner', () => {
     data.value = [...(data.value ?? []), tmpEvent];
 
     const result = await withErrorNotification('create', () =>
-      apiService.createProgramEvent(campId, event),
+      apiService.createProgramItem(eventId, event),
     );
 
     if (result) {
@@ -105,9 +105,9 @@ export const useProgramPlannerStore = defineStore('program-planner', () => {
     return id.startsWith('#');
   }
 
-  async function updateEntry(id: string, event: ProgramEventUpdateData) {
-    const campId = route.params.campId as string;
-    checkNotNullWithError(campId);
+  async function updateEntry(id: string, event: ProgramItemUpdateData) {
+    const eventId = route.params.eventId as string;
+    checkNotNullWithError(eventId);
 
     if (isIdOptimistic(id)) {
       return withErrorNotification('update', () => {
@@ -126,7 +126,7 @@ export const useProgramPlannerStore = defineStore('program-planner', () => {
     }
 
     const result = await withErrorNotification('update', () =>
-      apiService.updateProgramEvent(campId, id, event),
+      apiService.updateProgramItem(eventId, id, event),
     );
 
     if (result) {
@@ -141,8 +141,8 @@ export const useProgramPlannerStore = defineStore('program-planner', () => {
   }
 
   async function deleteEntry(id: string) {
-    const campId = route.params.campId as string;
-    checkNotNullWithError(campId);
+    const eventId = route.params.eventId as string;
+    checkNotNullWithError(eventId);
 
     if (isIdOptimistic(id)) {
       return withErrorNotification('delete', () => {
@@ -152,7 +152,7 @@ export const useProgramPlannerStore = defineStore('program-planner', () => {
 
     let deleted = false;
     await withErrorNotification('delete', async () => {
-      await apiService.deleteProgramEvent(campId, id);
+      await apiService.deleteProgramItem(eventId, id);
       deleted = true;
     });
 

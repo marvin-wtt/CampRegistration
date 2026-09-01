@@ -1,15 +1,18 @@
-import { z } from 'zod';
+import { z, type ZodType } from 'zod';
+import type { EventSettingUpdateData } from '@camp-registration/common/entities';
 
 const paramsSchema = z.object({
   params: z.object({
-    campId: z.ulid(),
+    eventId: z.ulid(),
     key: z.string(),
   }),
 });
 
-export function validateBody(schema: z.ZodType) {
+export function validateBody<T>(schema: ZodType<T>) {
   return paramsSchema.extend({
-    body: z.object({ data: schema }),
+    body: z.object({ data: schema }) satisfies ZodType<
+      EventSettingUpdateData<T>
+    >,
   });
 }
 

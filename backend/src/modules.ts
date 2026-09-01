@@ -1,9 +1,11 @@
 import type { AppModule } from '#core/base/AppModule';
 import { AuthModule } from '#app/auth/auth.module';
-import { CampModule } from '#app/camp/camp.module';
+import { EventModule } from '#app/event/event.module';
+import { OrganizationModule } from '#app/organization/organization.module';
+import { OrganizationMemberModule } from '#app/organizationMember/organization-member.module';
 import { RegistrationModule } from '#app/registration/registration.module';
 import { TableTemplateModule } from '#app/tableTemplate/table-template.module';
-import { CampManagerModule } from '#app/campManager/camp-manager.module.js';
+import { EventManagerModule } from '#app/eventManager/event-manager.module.js';
 import { MessageDeliveryModule } from '#app/messageDelivery/message-delivery.module';
 import { MessageTemplateModule } from '#app/messageTemplate/message-template.module';
 import { MessageModule } from '#app/message/message.module';
@@ -19,9 +21,12 @@ import { FileModule } from '#app/file/file.module';
 import { TokenModule } from '#app/token/token.module';
 import { HealthModule } from '#app/health/health.module';
 import { LegalModule } from '#app/legal/legal.module';
+import { PrivacyNoticeModule } from '#app/privacyNotice/privacy-notice.module';
 import { QueueModule } from '#app/queue/queue.module';
-import { ProgramEventModule } from '#app/programEvent/program-event.module';
+import { ProgramItemModule } from '#app/programItem/program-item.module';
 import { TaskModule } from '#app/task/task.module';
+import { ChoreModule } from '#app/chore/chore.module';
+import { ChoreAssignmentModule } from '#app/choreAssignment/choreAssignment.module';
 import { MailModule } from '#app/mail/mail.module';
 import { SettingModule } from '#app/setting/setting.module';
 import { NewsletterModule } from '#app/newsletter/newsletter.module';
@@ -30,6 +35,7 @@ import { NewsletterManagerModule } from '#app/newsletterManager/newsletter-manag
 import { NewsletterMessageModule } from '#app/newsletterMessage/newsletter-message.module';
 import { RealtimeModule } from '#app/realtime/realtime.module';
 import { AdminModule } from '#app/admin/admin.module';
+import { PermissionModule } from '#app/permission/permission.module';
 
 // Order matters: earlier modules boot first and shut down last.
 export const createModules = (): AppModule[] => [
@@ -43,20 +49,25 @@ export const createModules = (): AppModule[] => [
   new TotpModule(),
   new ProfileModule(),
   new FileModule(),
-  new CampModule(),
+  new OrganizationModule(),
+  new OrganizationMemberModule(),
+  new EventModule(),
   new UserModule(),
   new AdminModule(),
   new LegalModule(),
+  new PrivacyNoticeModule(),
   new RegistrationModule(),
   new TableTemplateModule(),
-  new CampManagerModule(),
+  new EventManagerModule(),
   new MessageDeliveryModule(),
   new MessageModule(),
   new MessageTemplateModule(),
   new RoomModule(),
   new BedModule(),
-  new ProgramEventModule(),
+  new ProgramItemModule(),
   new TaskModule(),
+  new ChoreModule(),
+  new ChoreAssignmentModule(),
   new FeedbackModule(),
   new NewsletterModule(),
   new NewsletterSubscriberModule(),
@@ -64,4 +75,6 @@ export const createModules = (): AppModule[] => [
   new NewsletterMessageModule(),
   new RealtimeModule(),
   new TranslationModule(),
+  // Last: serves the policy every other module has contributed to.
+  new PermissionModule(),
 ];

@@ -12,6 +12,7 @@ import os from 'node:os';
 import fse from 'fs-extra';
 import httpStatus from 'http-status';
 import ApiError from '#utils/ApiError';
+import type { StorageFile } from '#core/storage/storage';
 
 const { sendMock } = vi.hoisted(() => ({
   sendMock: vi.fn(),
@@ -41,7 +42,7 @@ const baseOptions = {
   tmpDir: os.tmpdir(),
 };
 
-function storageFile(name: string) {
+function storageFile(name: string): StorageFile {
   return {
     id: 'id',
     originalName: 'original.txt',
@@ -51,6 +52,7 @@ function storageFile(name: string) {
     type: 'text/plain',
     accessLevel: null,
     storageLocation: 's3',
+    encryption: null,
   };
 }
 
@@ -198,7 +200,7 @@ describe('S3Storage', () => {
       ).rejects.toMatchObject({ statusCode: expected });
     });
 
-    it('maps auth errors to a non-operational configuration error', async () => {
+    it('maps auth errors to a configuration fault', async () => {
       sendMock.mockRejectedValue(serviceError('AccessDenied', 403));
       const storage = new S3Storage(baseOptions);
 
@@ -209,7 +211,7 @@ describe('S3Storage', () => {
       expect(error).toBeInstanceOf(ApiError);
       expect(error).toMatchObject({
         statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-        isOperational: false,
+        isFault: true,
         code: 'S3_AUTH_CONFIGURATION_ERROR',
       });
     });
@@ -224,7 +226,7 @@ describe('S3Storage', () => {
 
       expect(error).toMatchObject({
         statusCode: httpStatus.SERVICE_UNAVAILABLE,
-        isOperational: true,
+        isFault: false,
         code: 'S3_TEMPORARY_PROVIDER_ERROR',
       });
     });
@@ -243,7 +245,7 @@ describe('S3Storage', () => {
 
       expect(error).toMatchObject({
         statusCode: httpStatus.SERVICE_UNAVAILABLE,
-        isOperational: true,
+        isFault: false,
         code: 'S3_TEMPORARY_NETWORK_ERROR',
       });
     });
@@ -258,7 +260,7 @@ describe('S3Storage', () => {
 
       expect(error).toMatchObject({
         statusCode: httpStatus.BAD_GATEWAY,
-        isOperational: false,
+        isFault: true,
         code: 'S3_PROVIDER_ERROR',
       });
     });

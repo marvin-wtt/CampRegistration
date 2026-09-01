@@ -27,19 +27,19 @@ class FakeRealtimeService {
   private readonly emitter = new EventEmitter();
 
   subscribe(
-    campId: string,
+    eventId: string,
     listener: (event: RealtimeEvent) => void,
   ): () => void {
-    this.emitter.on(campId, listener);
-    return () => this.emitter.off(campId, listener);
+    this.emitter.on(eventId, listener);
+    return () => this.emitter.off(eventId, listener);
   }
 
-  listenerCount(campId: string): number {
-    return this.emitter.listenerCount(campId);
+  listenerCount(eventId: string): number {
+    return this.emitter.listenerCount(eventId);
   }
 
-  publish(campId: string, event: RealtimeEvent): void {
-    this.emitter.emit(campId, event);
+  publish(eventId: string, event: RealtimeEvent): void {
+    this.emitter.emit(eventId, event);
   }
 }
 
@@ -59,15 +59,15 @@ const subscriber = (
   overrides: Partial<RealtimeSubscriber> = {},
 ): RealtimeSubscriber => ({
   managerId: 'manager-1',
-  permissions: new Set<Permission>(['camp.view']),
+  permissions: new Set<Permission>(['event.view']),
   expiresAt: null,
   ...overrides,
 });
 
-const buildReq = (campId = 'camp-1') => {
+const buildReq = (eventId = 'event-1') => {
   const handlers: Partial<Record<string, () => void>> = {};
   const req = {
-    modelOrFail: () => ({ id: campId }),
+    modelOrFail: () => ({ id: eventId }),
     on: (eventName: string, cb: () => void) => {
       handlers[eventName] = cb;
     },
@@ -160,15 +160,15 @@ describe('realtimeStream — delivery', () => {
     const resolveSubscriber = vi
       .fn()
       .mockResolvedValue(
-        subscriber({ permissions: new Set(['camp.tasks.view']) }),
+        subscriber({ permissions: new Set(['event.tasks.view']) }),
       );
     const handler = realtimeStream(resolveSubscriber);
-    const { req } = buildReq('camp-1');
+    const { req } = buildReq('event-1');
     const { res, writes } = buildRes();
     await handler(req, res, vi.fn());
 
-    const e = event({ requiredPermission: 'camp.tasks.view' });
-    bus.publish('camp-1', e);
+    const e = event({ requiredPermission: 'event.tasks.view' });
+    bus.publish('event-1', e);
 
     expect(writes).toContain(`data: ${JSON.stringify(e)}\n\n`);
   });
@@ -176,31 +176,31 @@ describe('realtimeStream — delivery', () => {
   it('does not deliver events the subscriber lacks the required permission for', async () => {
     const resolveSubscriber = vi
       .fn()
-      .mockResolvedValue(subscriber({ permissions: new Set(['camp.view']) }));
+      .mockResolvedValue(subscriber({ permissions: new Set(['event.view']) }));
     const handler = realtimeStream(resolveSubscriber);
-    const { req } = buildReq('camp-1');
+    const { req } = buildReq('event-1');
     const { res, writes } = buildRes();
     await handler(req, res, vi.fn());
 
     bus.publish(
-      'camp-1',
-      event({ resource: 'message', requiredPermission: 'camp.messages.view' }),
+      'event-1',
+      event({ resource: 'message', requiredPermission: 'event.messages.view' }),
     );
 
     // Only the initial retry preamble — the event itself was withheld.
     expect(writes).toHaveLength(1);
   });
 
-  it('ignores events published for a different camp', async () => {
+  it('ignores events published for a different event', async () => {
     const resolveSubscriber = vi.fn().mockResolvedValue(subscriber());
     const handler = realtimeStream(resolveSubscriber);
-    const { req } = buildReq('camp-1');
+    const { req } = buildReq('event-1');
     const { res, writes } = buildRes();
     await handler(req, res, vi.fn());
 
-    bus.publish('camp-2', event({}));
+    bus.publish('event-2', event({}));
 
-    // Only the initial retry preamble — nothing for the other camp.
+    // Only the initial retry preamble — nothing for the other event.
     expect(writes).toHaveLength(1);
   });
 
@@ -212,13 +212,13 @@ describe('realtimeStream — delivery', () => {
         .fn()
         .mockResolvedValue(subscriber({ expiresAt }));
       const handler = realtimeStream(resolveSubscriber);
-      const { req } = buildReq('camp-1');
+      const { req } = buildReq('event-1');
       const { res, raw, writes } = buildRes();
       await handler(req, res, vi.fn());
 
       vi.advanceTimersByTime(2_000);
 
-      bus.publish('camp-1', event({}));
+      bus.publish('event-1', event({}));
 
       expect(raw.end).toHaveBeenCalledTimes(1);
       // The expired-check short-circuits before the event is serialized.
@@ -239,27 +239,27 @@ describe('realtimeStream — permission refresh', () => {
       .mockResolvedValueOnce(
         subscriber({
           managerId: 'manager-1',
-          permissions: new Set(['camp.tasks.view']),
+          permissions: new Set(['event.tasks.view']),
         }),
       );
     const handler = realtimeStream(resolveSubscriber);
-    const { req } = buildReq('camp-1');
+    const { req } = buildReq('event-1');
     const { res, writes } = buildRes();
     await handler(req, res, vi.fn());
 
     bus.publish(
-      'camp-1',
+      'event-1',
       event({
         resource: 'manager',
         id: 'manager-1',
-        requiredPermission: 'camp.managers.view',
+        requiredPermission: 'event.managers.view',
       }),
     );
     await flushPromises();
     expect(resolveSubscriber).toHaveBeenCalledTimes(2);
 
-    const e = event({ requiredPermission: 'camp.tasks.view' });
-    bus.publish('camp-1', e);
+    const e = event({ requiredPermission: 'event.tasks.view' });
+    bus.publish('event-1', e);
 
     expect(writes).toContain(`data: ${JSON.stringify(e)}\n\n`);
   });
@@ -269,12 +269,12 @@ describe('realtimeStream — permission refresh', () => {
       .fn()
       .mockResolvedValue(subscriber({ managerId: 'manager-1' }));
     const handler = realtimeStream(resolveSubscriber);
-    const { req } = buildReq('camp-1');
+    const { req } = buildReq('event-1');
     const { res } = buildRes();
     await handler(req, res, vi.fn());
 
     bus.publish(
-      'camp-1',
+      'event-1',
       event({ resource: 'manager', id: 'manager-someone-else' }),
     );
     await flushPromises();
@@ -294,16 +294,16 @@ describe('realtimeStream — permission refresh', () => {
       .mockReturnValueOnce(firstRefresh) // first refresh: held open
       .mockResolvedValueOnce(subscriber({ managerId: 'manager-1' })); // rerun refresh
     const handler = realtimeStream(resolveSubscriber);
-    const { req } = buildReq('camp-1');
+    const { req } = buildReq('event-1');
     const { res } = buildRes();
     await handler(req, res, vi.fn());
 
     const managerEvent = () => event({ resource: 'manager', id: 'manager-1' });
 
-    bus.publish('camp-1', managerEvent());
+    bus.publish('event-1', managerEvent());
     // A second manager event while the first refresh is still pending must
     // queue exactly one rerun, not call the resolver again immediately.
-    bus.publish('camp-1', managerEvent());
+    bus.publish('event-1', managerEvent());
     await flushPromises();
     expect(resolveSubscriber).toHaveBeenCalledTimes(2);
 
@@ -320,11 +320,11 @@ describe('realtimeStream — permission refresh', () => {
       .mockResolvedValueOnce(subscriber({ managerId: 'manager-1' }))
       .mockResolvedValueOnce(null);
     const handler = realtimeStream(resolveSubscriber);
-    const { req } = buildReq('camp-1');
+    const { req } = buildReq('event-1');
     const { res, raw } = buildRes();
     await handler(req, res, vi.fn());
 
-    bus.publish('camp-1', event({ resource: 'manager', id: 'manager-1' }));
+    bus.publish('event-1', event({ resource: 'manager', id: 'manager-1' }));
     await flushPromises();
 
     expect(raw.end).toHaveBeenCalledTimes(1);
@@ -337,11 +337,11 @@ describe('realtimeStream — permission refresh', () => {
       .mockResolvedValueOnce(subscriber({ managerId: 'manager-1' }))
       .mockRejectedValueOnce(failure);
     const handler = realtimeStream(resolveSubscriber);
-    const { req } = buildReq('camp-1');
+    const { req } = buildReq('event-1');
     const { res, raw } = buildRes();
     await handler(req, res, vi.fn());
 
-    bus.publish('camp-1', event({ resource: 'manager', id: 'manager-1' }));
+    bus.publish('event-1', event({ resource: 'manager', id: 'manager-1' }));
     await flushPromises();
 
     expect(raw.end).toHaveBeenCalledTimes(1);
@@ -362,14 +362,14 @@ describe('realtimeStream — permission refresh', () => {
       .mockResolvedValueOnce(subscriber({ managerId: 'manager-1' })) // connect
       .mockReturnValueOnce(firstRefresh); // first refresh: held open
     const handler = realtimeStream(resolveSubscriber);
-    const { req } = buildReq('camp-1');
+    const { req } = buildReq('event-1');
     const { res, raw } = buildRes();
     await handler(req, res, vi.fn());
 
     const managerEvent = () => event({ resource: 'manager', id: 'manager-1' });
-    bus.publish('camp-1', managerEvent());
+    bus.publish('event-1', managerEvent());
     // Queue a rerun while the first refresh is still in flight.
-    bus.publish('camp-1', managerEvent());
+    bus.publish('event-1', managerEvent());
     await flushPromises();
 
     // The manager is removed mid-refresh — the stream closes...
@@ -388,26 +388,26 @@ describe('realtimeStream — connection lifecycle', () => {
   it('closes the stream when the underlying request closes', async () => {
     const resolveSubscriber = vi.fn().mockResolvedValue(subscriber());
     const handler = realtimeStream(resolveSubscriber);
-    const { req, trigger } = buildReq('camp-1');
+    const { req, trigger } = buildReq('event-1');
     const { res, raw, writes } = buildRes();
     await handler(req, res, vi.fn());
 
-    expect(bus.listenerCount('camp-1')).toBe(1);
+    expect(bus.listenerCount('event-1')).toBe(1);
 
     trigger('close');
 
     expect(raw.end).toHaveBeenCalledTimes(1);
-    expect(bus.listenerCount('camp-1')).toBe(0);
+    expect(bus.listenerCount('event-1')).toBe(0);
 
     // A closed connection must not receive (or write) further events.
-    bus.publish('camp-1', event({}));
+    bus.publish('event-1', event({}));
     expect(writes).toHaveLength(1); // only the initial retry preamble
   });
 
   it('is idempotent when closed more than once', async () => {
     const resolveSubscriber = vi.fn().mockResolvedValue(subscriber());
     const handler = realtimeStream(resolveSubscriber);
-    const { req, trigger } = buildReq('camp-1');
+    const { req, trigger } = buildReq('event-1');
     const { res, raw } = buildRes();
     await handler(req, res, vi.fn());
 
@@ -430,7 +430,7 @@ describe('realtimeStream — heartbeat', () => {
   it('sends a periodic heartbeat comment', async () => {
     const resolveSubscriber = vi.fn().mockResolvedValue(subscriber());
     const handler = realtimeStream(resolveSubscriber);
-    const { req } = buildReq('camp-1');
+    const { req } = buildReq('event-1');
     const { res, writes } = buildRes();
     await handler(req, res, vi.fn());
 
@@ -445,7 +445,7 @@ describe('realtimeStream — heartbeat', () => {
       .fn()
       .mockResolvedValue(subscriber({ expiresAt }));
     const handler = realtimeStream(resolveSubscriber);
-    const { req } = buildReq('camp-1');
+    const { req } = buildReq('event-1');
     const { res, raw, writes } = buildRes();
     await handler(req, res, vi.fn());
 

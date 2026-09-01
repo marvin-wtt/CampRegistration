@@ -41,7 +41,7 @@ npm run build --workspace common
 
 Environment variables are defined in `.env`:
 
-- `SURVEYJS_LICENCE_KEY` — SurveyJS developer license key (used by the form editor)
+- `SURVEYJS_LICENSE_KEY` — SurveyJS developer license key (used by the form editor)
 
 ## Development
 

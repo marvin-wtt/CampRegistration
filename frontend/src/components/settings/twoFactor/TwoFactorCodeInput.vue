@@ -1,36 +1,41 @@
 <template>
-  <q-input
-    v-model="model"
-    v-bind="attrs"
-    :key="String(useRecovery)"
-    :label="useRecovery ? t('field.recoveryCode.label') : t('field.otp.label')"
-    :rules="rules"
-    :mask="useRecovery ? undefined : '######'"
-  >
-    <template #before>
-      <q-icon :name="useRecovery ? 'vpn_key' : 'pin'" />
-    </template>
-  </q-input>
+  <!-- Single root so a layout class from the caller applies to the field and
+       its toggle together, rather than only to the input. -->
+  <div :class="attrs.class">
+    <q-input
+      v-model="model"
+      v-bind="inputAttrs"
+      :key="String(useRecovery)"
+      :label="
+        useRecovery ? t('field.recoveryCode.label') : t('field.otp.label')
+      "
+      :rules="rules"
+      :mask="useRecovery ? undefined : '######'"
+    >
+      <template #prepend>
+        <q-icon :name="useRecovery ? 'vpn_key' : 'pin'" />
+      </template>
+    </q-input>
 
-  <div>
-    <q-btn
-      :label="useRecovery ? t('recovery.useApp') : t('recovery.useCode')"
-      :icon="useRecovery ? 'smartphone' : 'vpn_key'"
-      color="primary"
-      flat
-      dense
-      no-caps
-      rounded
-      size="md"
-      class="q-px-sm"
-      @click="onToggle"
-    />
+    <div>
+      <m-btn
+        :label="useRecovery ? t('recovery.useApp') : t('recovery.useCode')"
+        :icon="useRecovery ? 'smartphone' : 'vpn_key'"
+        color="primary"
+        flat
+        dense
+        size="md"
+        class="q-px-sm"
+        @click="onToggle"
+      />
+    </div>
   </div>
 </template>
 
 <script lang="ts" setup>
 import { computed, ref, useAttrs } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import type { ValidationRule } from 'quasar';
 
 defineOptions({
@@ -39,6 +44,12 @@ defineOptions({
 
 const { t } = useI18n();
 const attrs = useAttrs();
+
+const inputAttrs = computed(() => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { class: _class, ...rest } = attrs;
+  return rest;
+});
 
 const model = defineModel<string>({ required: true });
 

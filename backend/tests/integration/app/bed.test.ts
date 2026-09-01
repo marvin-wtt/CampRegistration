@@ -1,46 +1,46 @@
 import { describe, expect, it } from 'vitest';
 import {
   BedFactory,
-  CampFactory,
-  CampManagerFactory,
+  EventFactory,
+  EventManagerFactory,
   RegistrationFactory,
   RoomFactory,
   UserFactory,
 } from '../../../prisma/factories/index.js';
 import { generateAccessToken } from './utils/token.js';
-import { Camp, Room } from '#generated/prisma/client.js';
+import { Event, Room } from '#generated/prisma/client.js';
 import { request } from '../utils/request.js';
 import prisma from '../utils/prisma.js';
 import { ulid } from 'ulidx';
 
-describe('/api/v1/camps/:campId/rooms/:roomId/beds', () => {
-  const createCampWithManagerAndToken = async (role = 'DIRECTOR') => {
-    const camp = await CampFactory.create();
+describe('/api/v1/events/:eventId/rooms/:roomId/beds', () => {
+  const createEventWithManagerAndToken = async (role = 'DIRECTOR') => {
+    const event = await EventFactory.create();
     const user = await UserFactory.create();
-    const manager = await CampManagerFactory.create({
-      camp: { connect: { id: camp.id } },
+    const manager = await EventManagerFactory.create({
+      event: { connect: { id: event.id } },
       user: { connect: { id: user.id } },
       role,
     });
     const accessToken = generateAccessToken(user);
 
     return {
-      camp,
+      event,
       user,
       manager,
       accessToken,
     };
   };
 
-  const createRegistration = async (camp: Camp) => {
+  const createRegistration = async (event: Event) => {
     return RegistrationFactory.create({
-      camp: { connect: { id: camp.id } },
+      event: { connect: { id: event.id } },
     });
   };
 
-  const createRoomWithCamp = async (camp: Camp) => {
+  const createRoomWithEvent = async (event: Event) => {
     return await RoomFactory.create({
-      camp: { connect: { id: camp.id } },
+      event: { connect: { id: event.id } },
     });
   };
 
@@ -50,7 +50,7 @@ describe('/api/v1/camps/:campId/rooms/:roomId/beds', () => {
     });
   };
 
-  describe('POST /api/v1/camps/:campId/rooms/:roomId/beds', () => {
+  describe('POST /api/v1/events/:eventId/rooms/:roomId/beds', () => {
     it.each([
       { role: 'DIRECTOR', expectedStatus: 201 },
       { role: 'COORDINATOR', expectedStatus: 201 },
@@ -59,11 +59,12 @@ describe('/api/v1/camps/:campId/rooms/:roomId/beds', () => {
     ])(
       'should respond with `$expectedStatus` status code when user is $role',
       async ({ role, expectedStatus }) => {
-        const { camp, accessToken } = await createCampWithManagerAndToken(role);
-        const room = await createRoomWithCamp(camp);
+        const { event, accessToken } =
+          await createEventWithManagerAndToken(role);
+        const room = await createRoomWithEvent(event);
 
         const response = await request()
-          .post(`/api/v1/camps/${camp.id}/rooms/${room.id}/beds`)
+          .post(`/api/v1/events/${event.id}/rooms/${room.id}/beds`)
           .send()
           .auth(accessToken, { type: 'bearer' })
           .expect(expectedStatus);
@@ -79,16 +80,16 @@ describe('/api/v1/camps/:campId/rooms/:roomId/beds', () => {
     );
 
     it('should respond with `201` status code when provided with registration id', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
-      const room = await createRoomWithCamp(camp);
-      const registration = await createRegistration(camp);
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const room = await createRoomWithEvent(event);
+      const registration = await createRegistration(event);
 
       const data = {
         registrationId: registration.id,
       };
 
       const { body } = await request()
-        .post(`/api/v1/camps/${camp.id}/rooms/${room.id}/beds`)
+        .post(`/api/v1/events/${event.id}/rooms/${room.id}/beds`)
         .send(data)
         .auth(accessToken, { type: 'bearer' })
         .expect(201);
@@ -101,23 +102,23 @@ describe('/api/v1/camps/:campId/rooms/:roomId/beds', () => {
     });
 
     it('should respond with `100` status code when provided with invalid registration id', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
-      const room = await createRoomWithCamp(camp);
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const room = await createRoomWithEvent(event);
 
       const data = {
         registrationId: ulid(),
       };
 
       await request()
-        .post(`/api/v1/camps/${camp.id}/rooms/${room.id}/beds`)
+        .post(`/api/v1/events/${event.id}/rooms/${room.id}/beds`)
         .send(data)
         .auth(accessToken, { type: 'bearer' })
         .expect(400);
     });
 
-    it('should respond with `403` status code when user is not camp manager', async () => {
-      const camp = await CampFactory.create();
-      const room = await createRoomWithCamp(camp);
+    it('should respond with `403` status code when user is not event manager', async () => {
+      const event = await EventFactory.create();
+      const room = await createRoomWithEvent(event);
       const accessToken = generateAccessToken(await UserFactory.create());
 
       const data = {
@@ -126,7 +127,7 @@ describe('/api/v1/camps/:campId/rooms/:roomId/beds', () => {
       };
 
       await request()
-        .post(`/api/v1/camps/${camp.id}/rooms/${room.id}/beds`)
+        .post(`/api/v1/events/${event.id}/rooms/${room.id}/beds`)
         .send(data)
         .auth(accessToken, { type: 'bearer' })
         .expect(403);
@@ -136,8 +137,8 @@ describe('/api/v1/camps/:campId/rooms/:roomId/beds', () => {
     });
 
     it('should respond with `401` status code when unauthenticated', async () => {
-      const camp = await CampFactory.create();
-      const room = await createRoomWithCamp(camp);
+      const event = await EventFactory.create();
+      const room = await createRoomWithEvent(event);
 
       const data = {
         name: 'Room 1',
@@ -145,7 +146,7 @@ describe('/api/v1/camps/:campId/rooms/:roomId/beds', () => {
       };
 
       await request()
-        .post(`/api/v1/camps/${camp.id}/rooms/${room.id}/beds`)
+        .post(`/api/v1/events/${event.id}/rooms/${room.id}/beds`)
         .send(data)
         .expect(401);
 
@@ -154,7 +155,7 @@ describe('/api/v1/camps/:campId/rooms/:roomId/beds', () => {
     });
   });
 
-  describe('PATCH /api/v1/camps/:campId/rooms/:roomId/beds/:bedId', () => {
+  describe('PATCH /api/v1/events/:eventId/rooms/:roomId/beds/:bedId', () => {
     it.each([
       { role: 'DIRECTOR', expectedStatus: 200 },
       { role: 'COORDINATOR', expectedStatus: 200 },
@@ -163,17 +164,18 @@ describe('/api/v1/camps/:campId/rooms/:roomId/beds', () => {
     ])(
       'should respond with `$expectedStatus` status code when user is $role',
       async ({ role, expectedStatus }) => {
-        const { camp, accessToken } = await createCampWithManagerAndToken(role);
-        const room = await createRoomWithCamp(camp);
+        const { event, accessToken } =
+          await createEventWithManagerAndToken(role);
+        const room = await createRoomWithEvent(event);
         const bed = await createBedWithRoom(room);
-        const registration = await createRegistration(camp);
+        const registration = await createRegistration(event);
 
         const data = {
           registrationId: registration.id,
         };
 
         const response = await request()
-          .patch(`/api/v1/camps/${camp.id}/rooms/${room.id}/beds/${bed.id}`)
+          .patch(`/api/v1/events/${event.id}/rooms/${room.id}/beds/${bed.id}`)
           .send(data)
           .auth(accessToken, { type: 'bearer' })
           .expect(expectedStatus);
@@ -192,8 +194,8 @@ describe('/api/v1/camps/:campId/rooms/:roomId/beds', () => {
     );
 
     it('should respond with `200` status code when registrationId is null', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
-      const room = await createRoomWithCamp(camp);
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const room = await createRoomWithEvent(event);
       const bed = await createBedWithRoom(room);
 
       const data = {
@@ -201,7 +203,7 @@ describe('/api/v1/camps/:campId/rooms/:roomId/beds', () => {
       };
 
       const response = await request()
-        .patch(`/api/v1/camps/${camp.id}/rooms/${room.id}/beds/${bed.id}`)
+        .patch(`/api/v1/events/${event.id}/rooms/${room.id}/beds/${bed.id}`)
         .send(data)
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
@@ -214,8 +216,8 @@ describe('/api/v1/camps/:campId/rooms/:roomId/beds', () => {
     });
 
     it('should respond with `400` status code when registration id is invalid', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
-      const room = await createRoomWithCamp(camp);
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const room = await createRoomWithEvent(event);
       const bed = await createBedWithRoom(room);
 
       const data = {
@@ -223,15 +225,15 @@ describe('/api/v1/camps/:campId/rooms/:roomId/beds', () => {
       };
 
       await request()
-        .patch(`/api/v1/camps/${camp.id}/rooms/${room.id}/beds/${bed.id}`)
+        .patch(`/api/v1/events/${event.id}/rooms/${room.id}/beds/${bed.id}`)
         .send(data)
         .auth(accessToken, { type: 'bearer' })
         .expect(400);
     });
 
-    it('should respond with `403` status code when user is not camp manager', async () => {
-      const camp = await CampFactory.create();
-      const room = await createRoomWithCamp(camp);
+    it('should respond with `403` status code when user is not event manager', async () => {
+      const event = await EventFactory.create();
+      const room = await createRoomWithEvent(event);
       const bed = await createBedWithRoom(room);
       const accessToken = generateAccessToken(await UserFactory.create());
 
@@ -240,14 +242,14 @@ describe('/api/v1/camps/:campId/rooms/:roomId/beds', () => {
       };
 
       await request()
-        .patch(`/api/v1/camps/${camp.id}/rooms/${room.id}/beds/${bed.id}`)
+        .patch(`/api/v1/events/${event.id}/rooms/${room.id}/beds/${bed.id}`)
         .send(data)
         .auth(accessToken, { type: 'bearer' })
         .expect(403);
     });
 
-    it('should respond with `403` status code when user is not camp manager an resource does not exist', async () => {
-      const camp = await CampFactory.create();
+    it('should respond with `403` status code when user is not event manager an resource does not exist', async () => {
+      const event = await EventFactory.create();
       const accessToken = generateAccessToken(await UserFactory.create());
 
       const roomId = ulid();
@@ -258,19 +260,19 @@ describe('/api/v1/camps/:campId/rooms/:roomId/beds', () => {
       };
 
       await request()
-        .patch(`/api/v1/camps/${camp.id}/rooms/${roomId}/beds/${bedId}`)
+        .patch(`/api/v1/events/${event.id}/rooms/${roomId}/beds/${bedId}`)
         .send(data)
         .auth(accessToken, { type: 'bearer' })
         .expect(403);
     });
 
     it('should respond with `401` status code when unauthenticated', async () => {
-      const camp = await CampFactory.create();
-      const room = await createRoomWithCamp(camp);
+      const event = await EventFactory.create();
+      const room = await createRoomWithEvent(event);
       const bed = await createBedWithRoom(room);
 
       await request()
-        .patch(`/api/v1/camps/${camp.id}/rooms/${room.id}/beds/${bed.id}`)
+        .patch(`/api/v1/events/${event.id}/rooms/${room.id}/beds/${bed.id}`)
         .send()
         .expect(401);
 
@@ -279,7 +281,7 @@ describe('/api/v1/camps/:campId/rooms/:roomId/beds', () => {
     });
   });
 
-  describe('DELETE /api/v1/camps/:campId/rooms/:roomId/beds/:bedId', () => {
+  describe('DELETE /api/v1/events/:eventId/rooms/:roomId/beds/:bedId', () => {
     it.each([
       { role: 'DIRECTOR', expectedStatus: 204 },
       { role: 'COORDINATOR', expectedStatus: 204 },
@@ -288,13 +290,14 @@ describe('/api/v1/camps/:campId/rooms/:roomId/beds', () => {
     ])(
       'should respond with `$expectedStatus` status code when user is $role',
       async ({ role, expectedStatus }) => {
-        const { camp, accessToken } = await createCampWithManagerAndToken(role);
-        const room = await createRoomWithCamp(camp);
+        const { event, accessToken } =
+          await createEventWithManagerAndToken(role);
+        const room = await createRoomWithEvent(event);
         const bed = await createBedWithRoom(room);
         const otherBed = await createBedWithRoom(room);
 
         await request()
-          .delete(`/api/v1/camps/${camp.id}/rooms/${room.id}/beds/${bed.id}`)
+          .delete(`/api/v1/events/${event.id}/rooms/${room.id}/beds/${bed.id}`)
           .send()
           .auth(accessToken, { type: 'bearer' })
           .expect(expectedStatus);
@@ -312,14 +315,14 @@ describe('/api/v1/camps/:campId/rooms/:roomId/beds', () => {
       },
     );
 
-    it('should respond with `403` status code when user is not camp manager', async () => {
-      const camp = await CampFactory.create();
-      const room = await createRoomWithCamp(camp);
+    it('should respond with `403` status code when user is not event manager', async () => {
+      const event = await EventFactory.create();
+      const room = await createRoomWithEvent(event);
       const bed = await createBedWithRoom(room);
       const accessToken = generateAccessToken(await UserFactory.create());
 
       await request()
-        .delete(`/api/v1/camps/${camp.id}/rooms/${room.id}/beds/${bed.id}`)
+        .delete(`/api/v1/events/${event.id}/rooms/${room.id}/beds/${bed.id}`)
         .send()
         .auth(accessToken, { type: 'bearer' })
         .expect(403);
@@ -329,12 +332,12 @@ describe('/api/v1/camps/:campId/rooms/:roomId/beds', () => {
     });
 
     it('should respond with `401` status code when unauthenticated', async () => {
-      const camp = await CampFactory.create();
-      const room = await createRoomWithCamp(camp);
+      const event = await EventFactory.create();
+      const room = await createRoomWithEvent(event);
       const bed = await createBedWithRoom(room);
 
       await request()
-        .delete(`/api/v1/camps/${camp.id}/rooms/${room.id}/beds/${bed.id}`)
+        .delete(`/api/v1/events/${event.id}/rooms/${room.id}/beds/${bed.id}`)
         .send()
         .expect(401);
 

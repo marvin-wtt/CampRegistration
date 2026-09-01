@@ -1,32 +1,37 @@
-import { z } from 'zod';
+import { z, type ZodType } from 'zod';
 import { LocaleSchema } from '#core/validation/helper';
 import { formUtils } from '#utils/form';
-
-type CampWithFreePlaces = Parameters<typeof formUtils>[0];
+import type {
+  RegistrationCreateData,
+  RegistrationUpdateData,
+  RegistrationUpdateQuery,
+  RegistrationDeleteQuery,
+} from '@camp-registration/common/entities';
+import type { EventWithFreePlaces } from '#app/event/event.types';
 
 const RegistrationDataSchema = z.record(z.string(), z.unknown());
 
 const index = z.object({
   params: z.object({
-    campId: z.ulid(),
+    eventId: z.ulid(),
   }),
 });
 
 const show = z.object({
   params: z.object({
-    campId: z.ulid(),
+    eventId: z.ulid(),
     registrationId: z.ulid(),
   }),
 });
 
-const store = (camp: CampWithFreePlaces) =>
+const store = (event: EventWithFreePlaces) =>
   z.object({
     params: z.object({
-      campId: z.ulid(),
+      eventId: z.ulid(),
     }),
     body: z.object({
       data: RegistrationDataSchema.superRefine((data, ctx) => {
-        const form = formUtils(camp, data);
+        const form = formUtils(event, data);
 
         if (form.hasDataErrors()) {
           ctx.addIssue({
@@ -45,12 +50,12 @@ const store = (camp: CampWithFreePlaces) =>
         }
       }),
       locale: LocaleSchema.nullable().optional(),
-    }),
+    }) satisfies ZodType<RegistrationCreateData>,
   });
 
 const update = z.object({
   params: z.object({
-    campId: z.ulid(),
+    eventId: z.ulid(),
     registrationId: z.ulid(),
   }),
   body: z
@@ -60,24 +65,24 @@ const update = z.object({
       customFiles: z.record(z.string().regex(/^[^\s.]+$/), z.ulid().nullable()),
       status: z.enum(['PENDING', 'WAITLISTED', 'ACCEPTED']).optional(),
     })
-    .partial(),
+    .partial() satisfies ZodType<RegistrationUpdateData>,
   query: z
     .object({
       suppressMessage: z.stringbool(),
     })
-    .partial(),
+    .partial() satisfies ZodType<RegistrationUpdateQuery>,
 });
 
 const destroy = z.object({
   params: z.object({
-    campId: z.ulid(),
+    eventId: z.ulid(),
     registrationId: z.ulid(),
   }),
   query: z
     .object({
       suppressMessage: z.stringbool(),
     })
-    .partial(),
+    .partial() satisfies ZodType<RegistrationDeleteQuery>,
 });
 
 export default {

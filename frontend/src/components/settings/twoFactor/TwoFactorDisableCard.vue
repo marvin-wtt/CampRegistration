@@ -1,21 +1,11 @@
 <template>
-  <q-card
-    flat
-    bordered
-  >
-    <q-form @submit="onDisable">
-      <q-card-section class="text-h6">
-        {{ t('title') }}
-      </q-card-section>
-
-      <q-card-section class="text-subtitle-2 q-pt-none">
+  <q-form @submit="onDisable">
+    <q-card-section>
+      <div class="text-body2 text-on-surface-variant q-mb-md">
         {{ t('description') }}
-      </q-card-section>
+      </div>
 
-      <q-card-section
-        class="q-gutter-sm"
-        style="max-width: 500px"
-      >
+      <div class="row q-col-gutter-md">
         <q-input
           v-model="password"
           :label="t('field.password.label')"
@@ -27,9 +17,10 @@
           hide-bottom-space
           outlined
           rounded
-          class="settings-input"
+          color="primary"
+          class="col-12 col-md-6"
         >
-          <template #before>
+          <template #prepend>
             <q-icon name="password" />
           </template>
         </q-input>
@@ -39,37 +30,38 @@
           hide-bottom-space
           outlined
           rounded
-          class="settings-input"
+          color="primary"
+          class="col-12 col-md-6"
         />
-      </q-card-section>
-
-      <div
-        v-if="error"
-        class="q-px-md q-pb-sm text-negative text-body2"
-      >
-        <q-icon
-          name="warning"
-          size="xs"
-          class="q-mr-xs"
-        />{{ error }}
       </div>
 
-      <q-card-actions>
-        <q-btn
-          :label="t('action.disable')"
-          type="submit"
-          color="primary"
-          :loading
-          rounded
-        />
-      </q-card-actions>
-    </q-form>
-  </q-card>
+      <q-banner
+        v-if="error"
+        dense
+        class="error-banner rounded-md q-mt-md"
+      >
+        <template #avatar>
+          <q-icon name="warning" />
+        </template>
+        {{ error }}
+      </q-banner>
+    </q-card-section>
+
+    <q-card-actions>
+      <m-btn
+        :label="t('action.disable')"
+        type="submit"
+        color="primary"
+        :loading
+      />
+    </q-card-actions>
+  </q-form>
 </template>
 
 <script lang="ts" setup>
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import TwoFactorCodeInput from '@/components/settings/twoFactor/TwoFactorCodeInput.vue';
 
 const { t } = useI18n();
@@ -91,9 +83,14 @@ function onDisable() {
 }
 </script>
 
-<i18n lang="yaml" locale="en">
-title: 'Two-Factor Authentication'
+<style lang="scss" scoped>
+.error-banner {
+  background: var(--md3-error-container);
+  color: var(--md3-on-error-container);
+}
+</style>
 
+<i18n lang="yaml" locale="en">
 description: 'Two-factor authentication is currently active. You can disable it
   by entering your password and the OTP.'
 
@@ -108,8 +105,6 @@ action:
 </i18n>
 
 <i18n lang="yaml" locale="de">
-title: 'Zwei-Faktor-Authentifizierung'
-
 description:
   'Die Zwei-Faktor-Authentifizierung ist derzeit aktiv. Sie können sie
   deaktivieren, indem Sie Ihr Passwort und das OTP eingeben.'
@@ -125,9 +120,9 @@ action:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-title: 'Authentification à deux facteurs'
-description: "L'authentification à deux facteurs est actuellement activée. Vous
+description: "L'authentification à deux facteurs est actuellement active. Vous
   pouvez la désactiver en saisissant votre mot de passe et l'OTP."
+
 field:
   password:
     label: 'Mot de passe'
@@ -139,8 +134,6 @@ action:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-title: 'Uwierzytelnianie dwuskładnikowe'
-
 description: 'Uwierzytelnianie dwuskładnikowe jest obecnie aktywne. Możesz je wyłączyć, wprowadzając swoje hasło i kod OTP.'
 
 field:
@@ -154,8 +147,6 @@ action:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-title: 'Dvoufázové ověřování'
-
 description: 'Dvoufázové ověřování je momentálně aktivní. Můžete jej vypnout zadáním hesla a kódu OTP.'
 
 field:

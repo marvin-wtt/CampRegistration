@@ -1,9 +1,9 @@
 import type { Registration } from '@camp-registration/common/entities';
-import { useCampDetailsStore } from '@/stores/camp-details-store';
+import { useEventDetailsStore } from '@/stores/event-details-store';
 import { useRegistrationsStore } from '@/stores/registration-store';
 
 export function useRegistrationHelper() {
-  const campDetailsStore = useCampDetailsStore();
+  const eventDetailsStore = useEventDetailsStore();
   const registrationStore = useRegistrationsStore();
 
   function firstName(registration: Registration): string | undefined {
@@ -78,8 +78,8 @@ export function useRegistrationHelper() {
       return undefined;
     }
 
-    const campStart = campDetailsStore.data?.startAt;
-    const currentDate = campStart ? new Date(campStart) : new Date();
+    const eventStart = eventDetailsStore.data?.startAt;
+    const currentDate = eventStart ? new Date(eventStart) : new Date();
     const ageInMilliseconds = currentDate.getTime() - birthDate.getTime();
     const ageInYears = ageInMilliseconds / (1000 * 60 * 60 * 24 * 365.25);
 

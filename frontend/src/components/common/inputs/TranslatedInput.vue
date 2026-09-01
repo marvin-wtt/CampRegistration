@@ -12,19 +12,16 @@
         >
           <q-input
             v-model="value"
-            :label="label"
             :model-modifiers="modifiers"
-            v-bind="attrs"
+            v-bind="inputProps"
           >
+            <!-- Parent slots -->
             <template
-              v-for="(data, name, index) in slots"
-              :key="index"
+              v-for="(_, name) in slots"
+              :key="name"
               #[name]
             >
-              <slot
-                :name="name"
-                v-bind="data"
-              />
+              <slot :name />
             </template>
           </q-input>
         </div>
@@ -36,7 +33,7 @@
         >
           <!-- Field icon rendered once for the whole locale group -->
           <div
-            v-if="$slots.before"
+            v-if="slots.before"
             class="column justify-center translation-before"
           >
             <slot name="before" />
@@ -46,12 +43,11 @@
             <template v-if="modifiers.number">
               <!-- Numeric inputs -->
               <q-input
-                v-for="(locale, index) in locales"
+                v-for="(locale, index) in props.locales"
                 :key="index"
                 v-model.number="translations[locale]"
-                :label="label"
+                v-bind="inputProps"
                 clearable
-                v-bind="attrs"
                 @clear="clearTranslation(locale)"
               >
                 <template #prepend>
@@ -89,26 +85,22 @@
 
                 <!-- Parent slots (locale flag replaces the field icon here) -->
                 <template
-                  v-for="(data, name, slotIndex) in translatedSlots"
-                  :key="slotIndex"
+                  v-for="(_, name) in translatedSlots"
+                  :key="name"
                   #[name]
                 >
-                  <slot
-                    :name="name"
-                    v-bind="data"
-                  />
+                  <slot :name />
                 </template>
               </q-input>
             </template>
             <!-- Other inputs -->
             <template v-else>
               <q-input
-                v-for="(locale, index) in locales"
+                v-for="(locale, index) in props.locales"
                 :key="index"
                 v-model="translations[locale]"
-                :label="label"
+                v-bind="inputProps"
                 clearable
-                v-bind="attrs"
                 @clear="clearTranslation(locale)"
               >
                 <template #prepend>
@@ -140,14 +132,11 @@
 
                 <!-- Parent slots (locale flag replaces the field icon here) -->
                 <template
-                  v-for="(data, name, slotIndex) in translatedSlots"
-                  :key="slotIndex"
+                  v-for="(_, name) in translatedSlots"
+                  :key="name"
                   #[name]
                 >
-                  <slot
-                    :name="name"
-                    v-bind="data"
-                  />
+                  <slot :name />
                 </template>
               </q-input>
             </template>
@@ -158,7 +147,7 @@
 
     <!-- Actions -->
     <div
-      v-if="enabled && !always"
+      v-if="enabled && !props.always"
       class="col-shrink column actions q-pl-sm"
     >
       <translation-toggle-btn v-model="useTranslations" />
@@ -168,14 +157,28 @@
 
 <script lang="ts" setup>
 import CountryIcon from '@/components/common/localization/CountryIcon.vue';
-import { computed, ref, useAttrs, watch } from 'vue';
-import { type QInputSlots } from 'quasar';
+import { computed, ref, watch } from 'vue';
+import { type QInputProps } from 'quasar';
 import TranslationToggleBtn from '@/components/common/inputs/TranslationToggleBtn.vue';
 import { useI18n } from 'vue-i18n';
+import {
+  type ForwardedFieldSlots,
+  usePassthroughProps,
+} from '@/composables/passthroughProps';
 import { useTranslationStore } from '@/stores/translation-store';
 
 type Translations = Record<string, string | number>;
 type ModelValueType = undefined | null | string | number | Translations;
+
+interface Props extends Omit<
+  QInputProps,
+  'modelValue' | 'onUpdate:modelValue'
+> {
+  locales?: string[] | undefined;
+  // Keep the translated inputs on, without the toggle to leave them
+  always?: boolean | undefined;
+  defaultUntranslated?: boolean | undefined;
+}
 
 // Global scope for the `country.*` lookup in localeName() below — explicit
 // because this component also has its own local <i18n> block (for the
@@ -183,7 +186,6 @@ type ModelValueType = undefined | null | string | number | Translations;
 // eslint-disable-next-line @typescript-eslint/unbound-method
 const { locale, t: tGlobal, te } = useI18n({ useScope: 'global' });
 const { t } = useI18n();
-const attrs = useAttrs();
 
 // Availability is checked once by the store itself; see translation-store.ts.
 const translationStore = useTranslationStore();
@@ -192,32 +194,32 @@ const translationAvailable = computed<boolean>(
 );
 
 const [model, modifiers] = defineModel<ModelValueType>();
-const slots = defineSlots<QInputSlots>();
+const slots = defineSlots<ForwardedFieldSlots>();
 
-const {
-  label = '',
-  locales = [],
-  always = false,
-  defaultUntranslated = false,
-} = defineProps<{
-  label?: string | undefined;
-  locales?: string[] | undefined;
-  always?: boolean | undefined;
-  defaultUntranslated?: boolean | undefined;
-}>();
+const props = withDefaults(defineProps<Props>(), {
+  locales: () => [],
+  always: false,
+  defaultUntranslated: false,
+});
+
+const inputProps = usePassthroughProps(props, [
+  'locales',
+  'always',
+  'defaultUntranslated',
+]);
 
 const useTranslations = ref(defaultUseTranslations());
 const value = ref<string | number>(defaultValue());
 const translations = ref<Translations>(defaultTranslations());
 
 const enabled = computed<boolean>(() => {
-  return locales.length > 1;
+  return props.locales.length > 1;
 });
 
 // In translated mode the per-locale flag stands in for the field icon, so the
 // parent's `before` slot is dropped to avoid doubling up glyphs on every row.
-const translatedSlots = computed<Partial<QInputSlots>>(() => {
-  const rest: Partial<QInputSlots> = { ...slots };
+const translatedSlots = computed<Partial<ForwardedFieldSlots>>(() => {
+  const rest: Partial<ForwardedFieldSlots> = { ...slots };
   delete rest.before;
   return rest;
 });
@@ -231,7 +233,7 @@ function localeName(value: string): string {
 
 function defaultUseTranslations(): boolean {
   if (model.value == null) {
-    return !defaultUntranslated;
+    return !props.defaultUntranslated;
   }
 
   return typeof model.value === 'object';
@@ -241,11 +243,11 @@ function defaultValue(): string | number {
   // If the model value if an object and there is only one locale, we assume that the object is a translation and
   //  contains a translation for the given locale
   if (
-    locales.length === 1 &&
+    props.locales.length === 1 &&
     model.value !== null &&
     typeof model.value === 'object'
   ) {
-    const locale = locales[0]!;
+    const locale = props.locales[0]!;
 
     if (!(locale in model.value)) {
       return Object.values(model.value)[0] ?? '';
@@ -330,7 +332,7 @@ watch(useTranslations, (enabled, wasEnabled) => {
   }
 
   const userLocale = locale.value.split('-')[0]!;
-  const matchedLocale = locales.find((l) => l === userLocale);
+  const matchedLocale = props.locales.find((l) => l === userLocale);
   if (matchedLocale && !(matchedLocale in translations.value)) {
     translations.value[matchedLocale] = value.value;
   }

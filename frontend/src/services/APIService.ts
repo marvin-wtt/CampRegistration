@@ -1,11 +1,11 @@
 import { useAuthService } from '@/services/AuthService';
-import { useCampService } from '@/services/CampService';
+import { useEventService } from '@/services/EventService';
 import { useRegistrationService } from '@/services/RegistrationService';
 import { useTableTemplateService } from '@/services/TableTemplateService';
-import { useCampSettingService } from '@/services/CampSettingService';
+import { useEventSettingService } from '@/services/EventSettingService';
 import { useUserService } from '@/services/UserService';
 import { useRoomService } from '@/services/RoomService';
-import { useCampManagerService } from '@/services/CampManagerService';
+import { useEventManagerService } from '@/services/EventManagerService';
 import axios, { type AxiosError } from 'axios';
 import { useFileService } from '@/services/FileService';
 import { useFeedbackService } from '@/services/FeedbackService';
@@ -17,10 +17,13 @@ import { useNewsletterService } from '@/services/NewsletterService';
 import { useNewsletterManagerService } from '@/services/NewsletterManagerService';
 import { useNewsletterSubscriberService } from '@/services/NewsletterSubscriberService';
 import { useNewsletterMessageService } from '@/services/NewsletterMessageService';
-import { useProgramEventService } from '@/services/ProgramEventService';
+import { useProgramItemService } from '@/services/ProgramItemService';
 import { useQueueService } from '@/services/QueueService';
 import { useTaskService } from '@/services/TaskService';
+import { useChoreService } from '@/services/ChoreService';
 import { useAdminService } from '@/services/AdminService';
+import { useOrganizationService } from '@/services/OrganizationService';
+import { useOrganizationMemberService } from '@/services/OrganizationMemberService';
 import { useTranslationService } from '@/services/TranslationService';
 
 export function useAPIService() {
@@ -29,11 +32,13 @@ export function useAPIService() {
     ...useAdminService(),
     ...useProfileService(),
     ...useUserService(),
-    ...useCampService(),
-    ...useCampManagerService(),
+    ...useOrganizationService(),
+    ...useOrganizationMemberService(),
+    ...useEventService(),
+    ...useEventManagerService(),
     ...useRegistrationService(),
     ...useTableTemplateService(),
-    ...useCampSettingService(),
+    ...useEventSettingService(),
     ...useRoomService(),
     ...useFileService(),
     ...useFeedbackService(),
@@ -44,9 +49,10 @@ export function useAPIService() {
     ...useNewsletterManagerService(),
     ...useNewsletterSubscriberService(),
     ...useNewsletterMessageService(),
-    ...useProgramEventService(),
+    ...useProgramItemService(),
     ...useQueueService(),
     ...useTaskService(),
+    ...useChoreService(),
     ...useTranslationService(),
   };
 }

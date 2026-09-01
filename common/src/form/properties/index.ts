@@ -1,8 +1,8 @@
-import campDataType from './campDataType.js';
+import eventDataType from './eventDataType.js';
 import { PropertyDefinition } from './ProptertyDefinition.js';
 
-const properties: PropertyDefinition[] = [campDataType];
+const properties: PropertyDefinition[] = [eventDataType];
 
-export { campDataType, properties };
+export { eventDataType, properties };
 
 export default properties;

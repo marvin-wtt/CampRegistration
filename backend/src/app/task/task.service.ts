@@ -1,8 +1,13 @@
 import { BaseService } from '#core/base/BaseService';
-import { CampManagerService } from '#app/campManager/camp-manager.service';
+import { EventManagerService } from '#app/eventManager/event-manager.service';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 import { inject, injectable } from 'inversify';
+
+/** The assignee is embedded in every task response — see `TaskResource`. */
+const TASK_INCLUDE = {
+  assignee: { include: { user: true, invitation: true } },
+} as const;
 
 interface TaskCreateDto {
   title: string;
@@ -22,49 +27,53 @@ interface TaskUpdateDto {
 @injectable()
 export class TaskService extends BaseService {
   constructor(
-    @inject(CampManagerService)
-    private readonly campManagerService: CampManagerService,
+    @inject(EventManagerService)
+    private readonly eventManagerService: EventManagerService,
   ) {
     super();
   }
 
-  async getTaskById(campId: string, id: string) {
+  async getTaskById(eventId: string, id: string) {
     return this.prisma.task.findFirst({
-      where: { id, campId },
+      where: { id, eventId },
+      include: TASK_INCLUDE,
     });
   }
 
-  async queryTasks(campId: string) {
+  async queryTasks(eventId: string) {
     return this.prisma.task.findMany({
-      where: { campId },
+      where: { eventId },
       orderBy: [{ completed: 'asc' }, { dueDate: 'asc' }],
+      include: TASK_INCLUDE,
     });
   }
 
-  async createTask(campId: string, data: TaskCreateDto) {
+  async createTask(eventId: string, data: TaskCreateDto) {
     if (data.assigneeId) {
-      await this.assertAssigneeBelongsToCamp(campId, data.assigneeId);
+      await this.assertAssigneeBelongsToEvent(eventId, data.assigneeId);
     }
 
     return this.prisma.task.create({
       data: {
-        campId,
+        eventId,
         title: data.title,
         notes: data.notes,
         dueDate: data.dueDate,
         assigneeId: data.assigneeId,
       },
+      include: TASK_INCLUDE,
     });
   }
 
-  async updateTaskById(campId: string, id: string, data: TaskUpdateDto) {
+  async updateTaskById(eventId: string, id: string, data: TaskUpdateDto) {
     if (data.assigneeId) {
-      await this.assertAssigneeBelongsToCamp(campId, data.assigneeId);
+      await this.assertAssigneeBelongsToEvent(eventId, data.assigneeId);
     }
 
     return this.prisma.task.update({
       where: { id },
       data,
+      include: TASK_INCLUDE,
     });
   }
 
@@ -72,12 +81,12 @@ export class TaskService extends BaseService {
     await this.prisma.task.delete({ where: { id } });
   }
 
-  private async assertAssigneeBelongsToCamp(
-    campId: string,
+  private async assertAssigneeBelongsToEvent(
+    eventId: string,
     assigneeId: string,
   ) {
-    const manager = await this.campManagerService.getManagerById(
-      campId,
+    const manager = await this.eventManagerService.getManagerById(
+      eventId,
       assigneeId,
     );
 

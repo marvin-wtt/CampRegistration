@@ -1,12 +1,13 @@
 // This is just an example,
 // so you can safely delete all default props below
 import stores from './stores';
+import privacy from './privacy';
 
 export default {
   //app_name: '',
 
   stores,
-
+  privacy,
   service: {
     internal: 'Interner Fehler',
     invalidParams: 'Ungültige(r) Parameter.',

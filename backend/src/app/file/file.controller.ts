@@ -10,18 +10,12 @@ import { BaseController } from '#core/base/BaseController';
 import { RealtimeService } from '#core/realtime/RealtimeService';
 import { inject, injectable } from 'inversify';
 import contentDisposition from 'content-disposition';
+import { isClientDisconnect } from '#utils/stream';
 
 interface ModelData {
   id: string;
   name: string;
 }
-
-// pipeline reports a client that disconnected mid-download as a premature
-// close of the destination; that is routine, not a server error.
-const isClientDisconnect = (error: unknown): boolean =>
-  error instanceof Error &&
-  'code' in error &&
-  error.code === 'ERR_STREAM_PREMATURE_CLOSE';
 
 @injectable()
 export class FileController extends BaseController {
@@ -134,8 +128,8 @@ export class FileController extends BaseController {
       accessLevel ?? 'private',
     );
 
-    // Files are polymorphic; only camp-owned files are a realtime resource.
-    if (model?.name === 'camp') {
+    // Files are polymorphic; only event-owned files are a realtime resource.
+    if (model?.name === 'event') {
       void this.realtimeService.emit(model.id, 'file', data.id, 'created');
     }
 
@@ -155,9 +149,9 @@ export class FileController extends BaseController {
       name,
     });
 
-    if (updatedFile.campId) {
+    if (updatedFile.eventId) {
       void this.realtimeService.emit(
-        updatedFile.campId,
+        updatedFile.eventId,
         'file',
         updatedFile.id,
         'updated',
@@ -173,8 +167,8 @@ export class FileController extends BaseController {
 
     await this.fileService.deleteFile(file.id);
 
-    if (file.campId) {
-      void this.realtimeService.emit(file.campId, 'file', file.id, 'deleted');
+    if (file.eventId) {
+      void this.realtimeService.emit(file.eventId, 'file', file.id, 'deleted');
     }
 
     res.sendStatus(httpStatus.NO_CONTENT);
@@ -201,11 +195,11 @@ export class FileController extends BaseController {
         name: 'registration',
       };
     }
-    const camp = req.model('camp');
-    if (camp) {
+    const event = req.model('event');
+    if (event) {
       return {
-        id: camp.id,
-        name: 'camp',
+        id: event.id,
+        name: 'event',
       };
     }
 

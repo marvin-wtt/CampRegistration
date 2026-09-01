@@ -1,34 +1,38 @@
-import { z } from 'zod';
+import { z, type ZodType } from 'zod';
 import { DateSchema } from '#core/validation/helper';
+import type {
+  TaskCreateData,
+  TaskUpdateData,
+} from '@camp-registration/common/entities';
 
 const show = z.object({
   params: z.object({
-    campId: z.ulid(),
+    eventId: z.ulid(),
     taskId: z.ulid(),
   }),
 });
 
 const index = z.object({
   params: z.object({
-    campId: z.ulid(),
+    eventId: z.ulid(),
   }),
 });
 
 const store = z.object({
   params: z.object({
-    campId: z.ulid(),
+    eventId: z.ulid(),
   }),
   body: z.object({
     title: z.string().min(1),
     notes: z.string().optional().nullable(),
     dueDate: DateSchema.optional().nullable(),
     assigneeId: z.ulid().optional().nullable(),
-  }),
+  }) satisfies ZodType<TaskCreateData>,
 });
 
 const update = z.object({
   params: z.object({
-    campId: z.ulid(),
+    eventId: z.ulid(),
     taskId: z.ulid(),
   }),
   body: z
@@ -39,12 +43,12 @@ const update = z.object({
       completed: z.boolean(),
       assigneeId: z.ulid().nullable(),
     })
-    .partial(),
+    .partial() satisfies ZodType<TaskUpdateData>,
 });
 
 const destroy = z.object({
   params: z.object({
-    campId: z.ulid(),
+    eventId: z.ulid(),
     taskId: z.ulid(),
   }),
 });

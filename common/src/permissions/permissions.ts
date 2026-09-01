@@ -1,58 +1,72 @@
-export type CampPermission = 'camp.view' | 'camp.edit' | 'camp.delete';
+export type EventPermission = 'event.view' | 'event.edit' | 'event.delete';
 
 export type FilePermission =
-  | 'camp.files.view'
-  | 'camp.files.create'
-  | 'camp.files.edit'
-  | 'camp.files.delete';
+  | 'event.files.view'
+  | 'event.files.create'
+  | 'event.files.edit'
+  | 'event.files.delete';
 
 export type RegistrationPermission =
-  | 'camp.registrations.view'
-  | 'camp.registrations.create'
-  | 'camp.registrations.edit'
-  | 'camp.registrations.delete';
+  | 'event.registrations.view'
+  | 'event.registrations.create'
+  | 'event.registrations.edit'
+  | 'event.registrations.delete';
 
 export type ManagerPermission =
-  | 'camp.managers.view'
-  | 'camp.managers.create'
-  | 'camp.managers.edit'
-  | 'camp.managers.delete';
+  | 'event.managers.view'
+  | 'event.managers.create'
+  | 'event.managers.edit'
+  | 'event.managers.delete';
 
 export type MessagePermission =
-  'camp.messages.view' | 'camp.messages.create' | 'camp.messages.delete';
+  'event.messages.view' | 'event.messages.create' | 'event.messages.delete';
 
 export type MessageTemplatePermission =
-  | 'camp.message_templates.view'
-  | 'camp.message_templates.create'
-  | 'camp.message_templates.edit'
-  | 'camp.message_templates.delete';
+  | 'event.message_templates.view'
+  | 'event.message_templates.create'
+  | 'event.message_templates.edit'
+  | 'event.message_templates.delete';
 
 export type TableTemplatePermission =
-  | 'camp.table_templates.view'
-  | 'camp.table_templates.create'
-  | 'camp.table_templates.edit'
-  | 'camp.table_templates.delete';
+  | 'event.table_templates.view'
+  | 'event.table_templates.create'
+  | 'event.table_templates.edit'
+  | 'event.table_templates.delete';
 
 export type RoomPermission =
-  | 'camp.rooms.view'
-  | 'camp.rooms.create'
-  | 'camp.rooms.edit'
-  | 'camp.rooms.delete';
+  | 'event.rooms.view'
+  | 'event.rooms.create'
+  | 'event.rooms.edit'
+  | 'event.rooms.delete';
 
 export type BedPermission =
-  'camp.rooms.beds.create' | 'camp.rooms.beds.edit' | 'camp.rooms.beds.delete';
+  | 'event.rooms.beds.create'
+  | 'event.rooms.beds.edit'
+  | 'event.rooms.beds.delete';
 
-export type ProgramEventPermission =
-  | 'camp.program_events.view'
-  | 'camp.program_events.create'
-  | 'camp.program_events.update'
-  | 'camp.program_events.delete';
+export type ProgramItemPermission =
+  | 'event.program_items.view'
+  | 'event.program_items.create'
+  | 'event.program_items.update'
+  | 'event.program_items.delete';
 
 export type TaskPermission =
-  | 'camp.tasks.view'
-  | 'camp.tasks.create'
-  | 'camp.tasks.update'
-  | 'camp.tasks.delete';
+  | 'event.tasks.view'
+  | 'event.tasks.create'
+  | 'event.tasks.update'
+  | 'event.tasks.delete';
+
+export type ChorePermission =
+  | 'event.chores.view'
+  | 'event.chores.create'
+  | 'event.chores.edit'
+  | 'event.chores.delete';
+
+export type ChoreAssignmentPermission =
+  | 'event.chore_assignments.view'
+  | 'event.chore_assignments.create'
+  | 'event.chore_assignments.edit'
+  | 'event.chore_assignments.delete';
 
 export type NewsletterPermission =
   | 'newsletter.view'
@@ -68,8 +82,26 @@ export type NewsletterPermission =
   | 'newsletter.messages.create'
   | 'newsletter.messages.delete';
 
-export type Permission =
-  | CampPermission
+export type OrganizationPermission =
+  | 'organization.view'
+  | 'organization.edit'
+  | 'organization.delete'
+  | 'organization.members.view'
+  | 'organization.members.create'
+  | 'organization.members.edit'
+  | 'organization.members.delete'
+  | 'organization.events.view'
+  | 'organization.events.create'
+  | 'organization.newsletters.view'
+  | 'organization.newsletters.create';
+
+/**
+ * Everything resolvable against an event-manager role. Named separately from
+ * {@link Permission} so event-scoped APIs can refuse a newsletter or
+ * organization string at compile time instead of silently never matching.
+ */
+export type EventScopedPermission =
+  | EventPermission
   | FilePermission
   | RegistrationPermission
   | ManagerPermission
@@ -78,8 +110,55 @@ export type Permission =
   | TableTemplatePermission
   | RoomPermission
   | BedPermission
-  | ProgramEventPermission
+  | ProgramItemPermission
   | TaskPermission
-  | NewsletterPermission;
+  | ChorePermission
+  | ChoreAssignmentPermission;
+
+export type Permission =
+  EventScopedPermission | NewsletterPermission | OrganizationPermission;
 
 export type Permissions = Permission[];
+
+/**
+ * Organization roles that carry implicit access to the organization's events and
+ * newsletters. MEMBERs get nothing implicit — they must be invited as event or
+ * newsletter managers.
+ */
+export const ORGANIZATION_EVENT_ACCESS_ROLES = ['ADMIN'] as const;
+
+/**
+ * The complete, fixed event permission set an organization OWNER/ADMIN holds on
+ * every event their organization owns, without any event-manager record.
+ *
+ * Deliberately minimal: see that the event exists, stop it accepting
+ * registrations (`event.edit`), and see who manages it. It must NEVER include
+ * `event.registrations.view` or any other event permission — an organization role
+ * is an ownership and accountability relationship, not a grant of access to
+ * participants' personal data.
+ *
+ * A fixed constant rather than a registry lookup, so an organization role can
+ * never widen into arbitrary event permissions.
+ */
+export const ORGANIZATION_EVENT_PERMISSIONS = [
+  'event.view',
+  'event.edit',
+  'event.managers.view',
+] as const satisfies readonly EventScopedPermission[];
+
+/**
+ * The newsletter counterpart of `ORGANIZATION_EVENT_PERMISSIONS`: what an
+ * organization ADMIN holds on every newsletter their organization owns, without
+ * any newsletter-manager record.
+ *
+ * Deliberately minimal, and narrower than the event set: see that the newsletter
+ * exists and see who runs it. It must NEVER include
+ * `newsletter.subscribers.view` — the subscriber list is personal data, the
+ * newsletter equivalent of an event's registrations — nor
+ * `newsletter.messages.*`, which would let an owner read or send the
+ * organization's mail without ever being made a manager.
+ */
+export const ORGANIZATION_NEWSLETTER_PERMISSIONS = [
+  'newsletter.view',
+  'newsletter.managers.view',
+] as const satisfies readonly NewsletterPermission[];

@@ -1,10 +1,12 @@
 import type { AppModule } from '#core/base/AppModule';
 import apiRouter from '#routes/api';
 import { createModules } from './modules.js';
+import { permissionRegistry } from '#core/permission-registry';
 import {
-  campPermissionRegistry,
-  newsletterPermissionRegistry,
-} from '#core/permission-registry';
+  assertScopeResolversComplete,
+  registerScopeResolver,
+} from '#core/permission.guard';
+import { PERMISSION_SCOPES } from '@camp-registration/common/permissions';
 import { initI18n } from '#core/i18n';
 import { JobScheduler } from '#core/scheduler/JobScheduler';
 import { verifyDatabaseConnection, disconnectDatabase } from '#core/database';
@@ -24,6 +26,7 @@ export async function boot() {
   bindModuleContainers(modules);
   await configureModules(modules);
   registerModulePermissions(modules);
+  registerModuleScopeResolvers(modules);
   registerModuleRoutes(modules);
   registerModuleJobs(modules);
 }
@@ -55,15 +58,29 @@ async function configureModules(modules: AppModule[]) {
 
 function registerModulePermissions(modules: AppModule[]) {
   for (const module of modules) {
-    if (module.registerPermissions) {
-      campPermissionRegistry.registerAll(module.registerPermissions());
-    }
-    if (module.registerNewsletterPermissions) {
-      newsletterPermissionRegistry.registerAll(
-        module.registerNewsletterPermissions(),
-      );
+    const scoped = module.registerPermissions?.();
+    if (scoped) {
+      permissionRegistry.registerAll(scoped);
     }
   }
+}
+
+function registerModuleScopeResolvers(modules: AppModule[]) {
+  for (const module of modules) {
+    const declared = module.registerScopeResolvers?.();
+    if (!declared) {
+      continue;
+    }
+
+    for (const scope of PERMISSION_SCOPES) {
+      const resolver = declared[scope];
+      if (resolver) {
+        registerScopeResolver(scope, resolver);
+      }
+    }
+  }
+
+  assertScopeResolversComplete();
 }
 
 function registerModuleRoutes(modules: AppModule[]) {

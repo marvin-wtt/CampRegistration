@@ -18,11 +18,14 @@ vi.mock('vue-router', () => ({
 installQuasarPlugin();
 
 describe('RegistrationForm', () => {
-  const simpleCampDetails = {
+  const simpleEventDetails = {
     id: '',
+    organizationId: '',
+    organizationName: '',
+    organizationVerificationStatus: 'VERIFIED' as const,
     name: 'Test',
     confirmationMode: 'AUTOMATIC' as const,
-    public: true,
+    listed: true,
     registrationOpensAt: null,
     registrationClosesAt: null,
     countries: [],
@@ -49,8 +52,8 @@ describe('RegistrationForm', () => {
   it('should mount', () => {
     const wrapper = mount(RegistrationForm, {
       props: {
-        campDetails: {
-          ...simpleCampDetails,
+        eventDetails: {
+          ...simpleEventDetails,
         },
         submitFn: () => Promise.reject(new Error()),
         uploadFileFn: () => Promise.reject(new Error()),
@@ -64,8 +67,8 @@ describe('RegistrationForm', () => {
 
     const wrapper = mount(RegistrationForm, {
       props: {
-        // simpleCampDetails.form has no completedHtml
-        campDetails: { ...simpleCampDetails, id: 'camp-1' },
+        // simpleEventDetails.form has no completedHtml
+        eventDetails: { ...simpleEventDetails, id: 'event-1' },
         submitFn,
         uploadFileFn: () => Promise.reject(new Error()),
       },
@@ -101,11 +104,11 @@ describe('RegistrationForm', () => {
 
     const wrapper = mount(RegistrationForm, {
       props: {
-        campDetails: {
-          ...simpleCampDetails,
-          id: 'camp-1',
+        eventDetails: {
+          ...simpleEventDetails,
+          id: 'event-1',
           form: {
-            ...simpleCampDetails.form,
+            ...simpleEventDetails.form,
             completedHtml: 'Registration successful',
           },
         },
@@ -145,11 +148,11 @@ describe('RegistrationForm', () => {
 
     const wrapper = mount(RegistrationForm, {
       props: {
-        campDetails: {
-          ...simpleCampDetails,
-          id: 'camp-1',
+        eventDetails: {
+          ...simpleEventDetails,
+          id: 'event-1',
           form: {
-            ...simpleCampDetails.form,
+            ...simpleEventDetails.form,
             completedHtml: 'Registration successful',
           },
         },

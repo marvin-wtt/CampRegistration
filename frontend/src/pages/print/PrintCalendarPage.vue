@@ -28,25 +28,31 @@
     <div
       v-else
       class="print-sheet"
-      :class="isPortrait ? 'print-sheet--upright' : 'print-sheet--left'"
+      :class="isPortrait ? 'print-sheet--portrait' : 'print-sheet--landscape'"
     >
       <!-- Page header -->
-      <div
+      <header
         ref="calPhRef"
         class="cal-ph"
       >
-        <div class="cal-ph__title">
-          <div
+        <h1 class="cal-ph__titles">
+          <span
             v-for="line in titleLines"
             :key="line"
           >
             {{ line }}
+          </span>
+        </h1>
+        <div class="cal-ph__meta">
+          <div class="cal-ph__range">{{ headerDateRange }}</div>
+          <div
+            v-if="planLabel"
+            class="cal-ph__plan"
+          >
+            {{ planLabel }}
           </div>
         </div>
-        <div class="cal-ph__meta">
-          {{ headerDateRange }}{{ planLabel ? ` · ${planLabel}` : '' }}
-        </div>
-      </div>
+      </header>
 
       <!-- Calendar grid -->
       <div
@@ -54,7 +60,10 @@
         :style="{ '--slot-h': `${slotHeight}px` }"
       >
         <!-- Day header row -->
-        <div class="cal-print__head-row">
+        <div
+          ref="headRowRef"
+          class="cal-print__head-row"
+        >
           <div class="cal-print__gutter" />
           <div
             v-for="day in visibleDays"
@@ -64,7 +73,7 @@
             <div class="cal-print__day-head__wd">{{ formatWeekday(day) }}</div>
             <div class="cal-print__day-head__d">{{ formatDay(day) }}</div>
             <div
-              v-if="data.plan === 'both'"
+              v-if="showPlanSplit"
               class="cal-print__day-head__ab"
             >
               <span>A</span>
@@ -73,8 +82,12 @@
           </div>
         </div>
 
-        <!-- All-day events row -->
-        <div class="cal-print__allday-row">
+        <!-- All-day events, only rendered when there is something to show -->
+        <div
+          v-if="hasAllDayEvents"
+          ref="allDayRowRef"
+          class="cal-print__allday-row"
+        >
           <div class="cal-print__gutter cal-print__gutter--allday">
             {{ allDayLabel }}
           </div>
@@ -86,8 +99,8 @@
             <div
               v-for="event in getFullDayEvents(day)"
               :key="event.id"
-              class="cal-print__allday-event"
-              :style="{ backgroundColor: event.color ?? '#2196F3' }"
+              class="cal-print__chip"
+              :style="chipStyle(event)"
             >
               {{ toAll(event.title) }}
             </div>
@@ -102,6 +115,7 @@
               v-for="slot in timeSlots"
               :key="slot.minutes"
               class="cal-print__time-label"
+              :class="{ 'cal-print__time-label--hour': slot.isHour }"
             >
               <span v-if="slot.isHour">{{ slot.text }}</span>
             </div>
@@ -113,21 +127,38 @@
               v-for="day in visibleDays"
               :key="day"
               class="cal-print__day-col"
+              :class="{ 'cal-print__day-col--split': showPlanSplit }"
             >
               <div
                 v-for="slot in timeSlots"
                 :key="slot.minutes"
                 class="cal-print__slot"
+                :class="{
+                  'cal-print__slot--hour': slot.isHour,
+                  'cal-print__slot--band': slot.band,
+                }"
               />
               <div
-                v-for="event in getTimedEvents(day)"
-                :key="event.id"
+                v-for="item in layoutFor(day)"
+                :key="item.id"
                 class="cal-print__event"
-                :style="eventStyle(event)"
+                :class="{ 'cal-print__event--compact': item.compact }"
+                :style="item.style"
               >
-                <div class="cal-print__event__title">
-                  <span class="cal-print__event__time">{{ event.time }} · </span
-                  >{{ toAll(event.title) }}
+                <div class="cal-print__event__body">
+                  <div class="cal-print__event__title">
+                    <span
+                      v-if="item.compact"
+                      class="cal-print__event__time"
+                      >{{ item.time }}</span
+                    >{{ item.title }}
+                  </div>
+                  <div
+                    v-if="!item.compact"
+                    class="cal-print__event__meta"
+                  >
+                    {{ item.meta }}
+                  </div>
                 </div>
               </div>
             </div>
@@ -142,12 +173,24 @@
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { usePrintPage, waitForStableLayout } from '@/composables/printPage';
+import {
+  formatLocalDate,
+  parseLocalDate,
+  parseTimeToMinutes,
+} from '@/utils/date';
+import {
+  DEFAULT_EVENT_COLOR,
+  fillColor,
+  formatMinutesAsTime,
+  layoutDayEvents,
+  type EventBox,
+} from '@/pages/print/calendarLayout';
 import type {
-  ProgramEvent,
+  ProgramItem,
   Translatable,
 } from '@camp-registration/common/entities';
 
-interface PrintCamp {
+interface PrintEvent {
   name: Translatable;
   startAt: string;
   endAt: string;
@@ -155,8 +198,9 @@ interface PrintCamp {
 }
 
 interface PrintData {
-  camp: PrintCamp;
-  events: ProgramEvent[];
+  locale?: string;
+  event: PrintEvent;
+  events: ProgramItem[];
   date: string;
   days: number;
   plan: 'a' | 'b' | 'both';
@@ -169,6 +213,17 @@ interface TimeSlot {
   minutes: number;
   text: string;
   isHour: boolean;
+  band: boolean;
+}
+
+/** An event placed in a day column: geometry plus the strings to render. */
+interface PlacedEvent {
+  id: string;
+  title: string;
+  time: string;
+  meta: string;
+  compact: boolean;
+  style: Record<string, string>;
 }
 
 const { locale, t } = useI18n();
@@ -178,7 +233,7 @@ const { payload: data, error } = usePrintPage<PrintData>({
   defaultStorageKey: 'print:calendar:payload',
   beforePrint: fitEventText,
   prepare: async () => {
-    // First pass: template renders with data, calPhRef becomes available
+    // First pass: template renders with data, the measured refs become available
     await waitForStableLayout();
     updateSlotHeight();
     // Second pass: --slot-h applied, slots have correct heights
@@ -187,16 +242,16 @@ const { payload: data, error } = usePrintPage<PrintData>({
   },
 });
 
-const campLocales = computed<string[]>(
-  () => data.value?.camp.locales ?? [locale.value],
+const eventLocales = computed<string[]>(
+  () => data.value?.event.locales ?? [locale.value],
 );
 const primaryLocale = computed<string>(
-  () => campLocales.value[0] ?? locale.value,
+  () => eventLocales.value[0] ?? locale.value,
 );
 
-// "All day" label shown in every camp locale, deduplicated
+// "All day" label shown in every event locale, deduplicated
 const allDayLabel = computed<string>(() => {
-  const labels = campLocales.value.map((l) => t('allDay', {}, { locale: l }));
+  const labels = eventLocales.value.map((l) => t('allDay', {}, { locale: l }));
 
   return [...new Set(labels)].join(' / ');
 });
@@ -204,48 +259,45 @@ const allDayLabel = computed<string>(() => {
 // A4 usable height in px (96px/in, 25.4mm/in), minus 24mm margins (12mm * 2)
 const PORTRAIT_H_PX = ((297 - 24) / 25.4) * 96; // ~1032px
 const LANDSCAPE_H_PX = ((210 - 24) / 25.4) * 96; // ~703px
-// Overhead within cal-print that is NOT the body: head-row + allday-row + borders
-const CAL_GRID_OVERHEAD_PX = 85;
+// Header margin-bottom (see .cal-ph) plus slack against rounding.
+const HEADER_GAP_PX = 10;
+const SAFETY_PX = 4;
+// Floor for the text of an event that does not fit its box even at the size the
+// layout picked for it.
+const MIN_FONT_PX = 6;
 
 const calPhRef = ref<HTMLElement | null>(null);
+const headRowRef = ref<HTMLElement | null>(null);
+const allDayRowRef = ref<HTMLElement | null>(null);
 
 const isPortrait = computed<boolean>(
   () => !data.value || data.value.days === 1,
 );
 
+const showPlanSplit = computed<boolean>(() => data.value?.plan === 'both');
+
 const visibleDays = computed<string[]>(() => {
   if (!data.value) {
     return [];
   }
-  const [y, m, d] = data.value.date.split('-').map(Number);
-  const start = new Date(y!, m! - 1, d);
-  return Array.from({ length: data.value.days }, (_, i) => {
-    const day = new Date(start.getTime() + i * 86400000);
-    return toDateStr(day);
-  });
+  const start = parseLocalDate(data.value.date);
+
+  // Stepping the day-of-month keeps this correct across a DST change, which
+  // adding 24h worth of milliseconds would not.
+  return Array.from({ length: data.value.days }, (_, i) =>
+    formatLocalDate(
+      new Date(start.getFullYear(), start.getMonth(), start.getDate() + i),
+    ),
+  );
 });
 
-function toDateStr(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
+const settingsDayStartMinutes = computed<number>(
+  () => (data.value && parseTimeToMinutes(data.value.dayStart)) || 0,
+);
 
-const settingsDayStartMinutes = computed<number>(() => {
-  if (!data.value) {
-    return 0;
-  }
-  const [h, m] = data.value.dayStart.split(':').map(Number);
-
-  return (h ?? 0) * 60 + (m ?? 0);
-});
-
-const settingsDayEndMinutes = computed<number>(() => {
-  if (!data.value) {
-    return 0;
-  }
-  const [h, m] = data.value.dayEnd.split(':').map(Number);
-
-  return (h ?? 0) * 60 + (m ?? 0);
-});
+const settingsDayEndMinutes = computed<number>(
+  () => (data.value && parseTimeToMinutes(data.value.dayEnd)) || 0,
+);
 
 // Expand the time range to ensure every timed event in the visible days is included.
 const dayStartMinutes = computed<number>(() => {
@@ -253,21 +305,12 @@ const dayStartMinutes = computed<number>(() => {
     return 0;
   }
   const interval = data.value.interval;
-  const plan = data.value.plan;
-  const daySet = new Set(visibleDays.value);
-  const min = data.value.events
-    .filter(
-      (e) =>
-        e.time &&
-        e.date &&
-        daySet.has(e.date) &&
-        (plan === 'both' || e.plan === plan || e.plan === 'both'),
-    )
-    .reduce((acc, e) => {
-      const [h, m] = (e.time as string).split(':').map(Number);
-
-      return Math.min(acc, (h ?? 0) * 60 + (m ?? 0));
-    }, settingsDayStartMinutes.value);
+  const min = visibleDays.value
+    .flatMap((day) => getTimedEvents(day))
+    .reduce(
+      (acc, e) => Math.min(acc, parseTimeToMinutes(e.time!) ?? acc),
+      settingsDayStartMinutes.value,
+    );
 
   return Math.floor(min / interval) * interval;
 });
@@ -276,24 +319,14 @@ const dayEndMinutes = computed<number>(() => {
   if (!data.value) {
     return 0;
   }
-
   const interval = data.value.interval;
-  const plan = data.value.plan;
-  const daySet = new Set(visibleDays.value);
-  const max = data.value.events
-    .filter(
-      (e) =>
-        e.time &&
-        e.duration &&
-        e.date &&
-        daySet.has(e.date) &&
-        (plan === 'both' || e.plan === plan || e.plan === 'both'),
-    )
-    .reduce((acc, e) => {
-      const [h, m] = (e.time as string).split(':').map(Number);
-
-      return Math.max(acc, (h ?? 0) * 60 + (m ?? 0) + (e.duration as number));
-    }, settingsDayEndMinutes.value);
+  const max = visibleDays.value
+    .flatMap((day) => getTimedEvents(day))
+    .reduce(
+      (acc, e) =>
+        Math.max(acc, (parseTimeToMinutes(e.time!) ?? 0) + e.duration!),
+      settingsDayEndMinutes.value,
+    );
 
   return Math.ceil(max / interval) * interval;
 });
@@ -314,6 +347,9 @@ const timeSlots = computed<TimeSlot[]>(() => {
       minutes: m,
       text: `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`,
       isHour: min === 0,
+      // Every other hour gets a faint wash, so a row can be tracked across a
+      // seven-column sheet without a ruler.
+      band: h % 2 === 1,
     });
   }
 
@@ -322,24 +358,35 @@ const timeSlots = computed<TimeSlot[]>(() => {
 
 const slotHeight = ref<number>(28);
 
+/**
+ * Shrinks event text that does not fit its box: the meta line goes first, then
+ * the font steps down. The starting size comes from the box height (set as
+ * `--evt-fs` when the event is placed), so tall events keep readable type.
+ */
 function fitEventText() {
   const eventEls = document.querySelectorAll<HTMLElement>('.cal-print__event');
   eventEls.forEach((el) => {
-    const title = el.querySelector<HTMLElement>('.cal-print__event__title');
-    if (!title) {
+    const body = el.querySelector<HTMLElement>('.cal-print__event__body');
+    if (!body) {
       return;
     }
+    // Undo what an earlier pass applied before measuring again.
+    el.classList.remove('cal-print__event--clipped');
+    body.style.fontSize = '';
+
     // subtract 1px top + 1px bottom padding from el
-    const availableHeight = el.clientHeight - 2;
-    // start proportional to available space so tall events get larger text
-    let fontSize = Math.min(
-      13,
-      Math.max(6, Math.floor(availableHeight * 0.45)),
-    );
-    title.style.fontSize = `${fontSize}px`;
-    while (title.scrollHeight > availableHeight && fontSize > 6) {
+    const available = el.clientHeight - 2;
+    let fontSize = parseFloat(getComputedStyle(body).fontSize);
+
+    // The time and location line is the first thing to give: the position in
+    // the grid already carries the time.
+    if (body.scrollHeight > available) {
+      el.classList.add('cal-print__event--clipped');
+    }
+
+    while (body.scrollHeight > available && fontSize > MIN_FONT_PX) {
       fontSize -= 0.5;
-      title.style.fontSize = `${fontSize}px`;
+      body.style.fontSize = `${fontSize}px`;
     }
   });
 }
@@ -349,16 +396,22 @@ function updateSlotHeight() {
     return;
   }
   const pageH = isPortrait.value ? PORTRAIT_H_PX : LANDSCAPE_H_PX;
-  // Measure the actual rendered header height so multi-line titles are handled correctly.
-  const phHeight = (calPhRef.value?.offsetHeight ?? 55) + 10; // +10 for margin-bottom
-  const available = pageH - phHeight - CAL_GRID_OVERHEAD_PX;
+  // Measure what is actually rendered — multi-line event titles, wrapped all-day
+  // chips and the A/B day header all change these heights.
+  const headerH = (calPhRef.value?.offsetHeight ?? 55) + HEADER_GAP_PX;
+  const gridOverhead =
+    (headRowRef.value?.offsetHeight ?? 34) +
+    (allDayRowRef.value?.offsetHeight ?? 0) +
+    2; // grid border, top + bottom
+  const available = pageH - headerH - gridOverhead - SAFETY_PX;
+
   slotHeight.value = Math.max(
     14,
-    Math.min(50, Math.floor(available / timeSlots.value.length)),
+    Math.min(52, Math.floor(available / timeSlots.value.length)),
   );
 }
 
-const eventsMap = computed<Record<string, ProgramEvent[]>>(() => {
+const eventsMap = computed<Record<string, ProgramItem[]>>(() => {
   if (!data.value) {
     return {};
   }
@@ -373,49 +426,73 @@ const eventsMap = computed<Record<string, ProgramEvent[]>>(() => {
       }
       return e.plan === plan || e.plan === 'both';
     })
-    .reduce<Record<string, ProgramEvent[]>>((map, event) => {
+    .reduce<Record<string, ProgramItem[]>>((map, event) => {
       const key = event.date!;
-      if (!map[key]) {
-        map[key] = [];
-      }
-      map[key].push(event);
+      (map[key] ??= []).push(event);
       return map;
     }, {});
 });
 
-function getFullDayEvents(date: string): ProgramEvent[] {
+function getFullDayEvents(date: string): ProgramItem[] {
   return (eventsMap.value[date] ?? []).filter((e) => !e.time);
 }
 
-function getTimedEvents(date: string): ProgramEvent[] {
-  return (eventsMap.value[date] ?? []).filter((e) => !!e.time && !!e.duration);
+function getTimedEvents(date: string): ProgramItem[] {
+  return (eventsMap.value[date] ?? []).filter(
+    (e) => !!e.time && !!e.duration && parseTimeToMinutes(e.time) !== null,
+  );
 }
 
-function eventStyle(event: ProgramEvent) {
-  if (!data.value || !event.time || !event.duration) {
-    return {};
-  }
-  const [h, m] = event.time.split(':').map(Number);
-  const startMins = (h ?? 0) * 60 + (m ?? 0);
-  const offset = startMins - dayStartMinutes.value;
-  const sh = slotHeight.value;
-  const intervalMin = data.value.interval;
-  const top = (offset / intervalMin) * sh;
-  const height = (event.duration / intervalMin) * sh;
+const hasAllDayEvents = computed<boolean>(() =>
+  visibleDays.value.some((day) => getFullDayEvents(day).length > 0),
+);
 
-  let left = '1px';
-  let width = 'calc(100% - 5px)';
-  if (data.value.plan === 'both' && event.plan !== 'both') {
-    width = 'calc(50% - 5px)';
-    if (event.plan === 'b') left = '50%';
+/** Places the timed events of one day and turns them into rendered boxes. */
+function layoutFor(date: string): PlacedEvent[] {
+  if (!data.value) {
+    return [];
   }
+
+  return layoutDayEvents(getTimedEvents(date), {
+    dayStartMinutes: dayStartMinutes.value,
+    interval: data.value.interval,
+    slotHeight: slotHeight.value,
+    splitPlans: showPlanSplit.value,
+  }).map(toPlacedEvent);
+}
+
+function toPlacedEvent(box: EventBox): PlacedEvent {
+  const { event, x0, x1 } = box;
+  const time = formatMinutesAsTime(box.startMinutes);
+  const location = toAll(event.location);
+  const color = event.color ?? DEFAULT_EVENT_COLOR;
 
   return {
-    top: `${top}px`,
-    height: `${height}px`,
-    left,
-    width,
-    backgroundColor: event.color ?? '#2196F3',
+    id: event.id,
+    title: toAll(event.title),
+    time,
+    meta: [`${time}–${formatMinutesAsTime(box.endMinutes)}`, location]
+      .filter(Boolean)
+      .join(' · '),
+    compact: box.compact,
+    style: {
+      top: `${box.top}px`,
+      height: `${box.height}px`,
+      left: `calc(${x0 * 100}% + 1px)`,
+      width: `calc(${(x1 - x0) * 100}% - 2px)`,
+      backgroundColor: fillColor(color),
+      borderLeftColor: color,
+      '--evt-fs': `${box.fontSize}px`,
+    },
+  };
+}
+
+function chipStyle(event: ProgramItem): Record<string, string> {
+  const color = event.color ?? DEFAULT_EVENT_COLOR;
+
+  return {
+    backgroundColor: fillColor(color),
+    borderLeftColor: color,
   };
 }
 
@@ -431,17 +508,21 @@ function toAll(value: Translatable | null | undefined): string {
   return [...new Set(Object.values(value).filter(Boolean))].join(' / ');
 }
 
-// Camp name as one line per language (deduplicated)
+// Event name per language, deduplicated, the event's primary locale first.
 const titleLines = computed<string[]>(() => {
-  const name = data.value?.camp.name;
+  const name = data.value?.event.name;
   if (!name) {
     return [];
   }
   if (typeof name === 'string') {
     return [name];
   }
+  const ordered = [
+    ...eventLocales.value.map((l) => name[l]),
+    ...Object.values(name),
+  ].filter((line): line is string => !!line);
 
-  return [...new Set(Object.values(name).filter(Boolean))];
+  return [...new Set(ordered)];
 });
 
 const planLabel = computed<string>(() => {
@@ -455,41 +536,40 @@ const planLabel = computed<string>(() => {
   }
 
   const key = plan === 'a' ? 'planA' : 'planB';
-  const labels = campLocales.value.map((l) => t(key, l));
+  const labels = eventLocales.value.map((l) => t(key, {}, { locale: l }));
+
   return [...new Set(labels)].join(' / ');
 });
 
-const headerDateRange = computed(() => {
+const headerDateRange = computed<string>(() => {
   const days = visibleDays.value;
   if (!days.length) {
     return '';
   }
 
-  const fmt = (s: string) => {
-    const [y, m, d] = s.split('-').map(Number);
-    return new Date(y!, m! - 1, d).toLocaleDateString(primaryLocale.value, {
+  const fmt = (s: string) =>
+    parseLocalDate(s).toLocaleDateString(primaryLocale.value, {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
     });
-  };
+
   return days.length === 1
     ? fmt(days[0]!)
     : `${fmt(days[0]!)} – ${fmt(days[days.length - 1]!)}`;
 });
 
 function formatWeekday(dateStr: string): string {
-  const [y, m, d] = dateStr.split('-').map(Number);
-  const date = new Date(y!, m! - 1, d);
-  const labels = campLocales.value.map((l) =>
+  const date = parseLocalDate(dateStr);
+  const labels = eventLocales.value.map((l) =>
     date.toLocaleDateString(l, { weekday: 'short' }),
   );
+
   return [...new Set(labels)].join(' / ');
 }
 
 function formatDay(dateStr: string): string {
-  const [y, m, d] = dateStr.split('-').map(Number);
-  return new Date(y!, m! - 1, d).toLocaleDateString(primaryLocale.value, {
+  return parseLocalDate(dateStr).toLocaleDateString(primaryLocale.value, {
     day: 'numeric',
     month: 'short',
   });
@@ -497,46 +577,85 @@ function formatDay(dateStr: string): string {
 </script>
 
 <style lang="scss" scoped>
+// Print sheets always render light (PrintLayout forces it) and have to survive
+// a black-and-white printer, so these greys are fixed rather than themed.
+$ink: #1a1a1a;
+$ink-soft: #5c5c5c;
+$ink-faint: #8a8a8a;
+$rule: #c9c9c9;
+$rule-soft: #e6e6e6;
+$rule-hair: #f0f0f0;
+
 .print-page {
   background: white;
 }
 
 // A4 usable widths: (paper_mm - 2*12mm margin) * 96px/25.4mm
 .print-sheet {
-  &--upright {
+  &--portrait {
     // portrait: 210mm - 24mm = 186mm ≈ 703px
     max-width: 703px;
     margin: 0 auto;
   }
 
-  &--left {
+  &--landscape {
     // landscape: 297mm - 24mm = 273mm ≈ 1032px
     max-width: 1032px;
     margin: 0 auto;
   }
 }
 
+// The sheet title sits above the grid on white — the grid's own top border is
+// the horizontal line the eye needs, so the header carries none of its own.
 .cal-ph {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
   margin-bottom: 10px;
 
-  &__title {
-    font-size: 16px;
-    font-weight: 800;
-    color: #212121;
-    line-height: 1.15;
-    letter-spacing: -0.5px;
-    margin-bottom: 4px;
+  &__titles {
+    margin: 0;
+    min-width: 0;
+    // Every event locale gets the name at the same weight — neither language is
+    // a subtitle of the other.
+    font-size: 17px;
+    font-weight: 700;
+    color: $ink;
+    line-height: 1.2;
+    letter-spacing: -0.3px;
+
+    span {
+      display: block;
+    }
   }
 
   &__meta {
+    flex-shrink: 0;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  &__range {
     font-size: 11px;
-    color: #757575;
+    font-weight: 600;
+    color: $ink-soft;
+    letter-spacing: 0.2px;
+  }
+
+  &__plan {
+    margin-top: 1px;
+    font-size: 8.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: $ink-faint;
   }
 }
 
 .cal-print {
-  border: 1px solid #e0e0e0;
-  border-radius: 3px;
+  border: 1px solid $rule;
+  border-radius: 4px;
   overflow: hidden;
   break-inside: avoid;
   page-break-inside: avoid;
@@ -545,30 +664,44 @@ function formatDay(dateStr: string): string {
   &__head-row,
   &__allday-row {
     display: flex;
-    border-bottom: 1px solid #e0e0e0;
+  }
+
+  // White, with one firm rule under it: a grey band this close to the sheet
+  // title only adds weight, the typography already reads as a header.
+  &__head-row {
+    border-bottom: 1.25px solid $ink-soft;
+  }
+
+  &__allday-row {
+    background: #fafafa;
+    border-bottom: 1px solid $rule;
   }
 
   &__gutter {
-    width: 46px;
+    width: 40px;
     flex-shrink: 0;
-    border-right: 1px solid #e0e0e0;
+    border-right: 1px solid $rule;
 
     &--allday {
-      font-size: 8px;
-      color: #9e9e9e;
       display: flex;
       align-items: center;
       justify-content: flex-end;
-      padding-right: 4px;
+      padding: 2px 4px;
+      font-size: 7.5px;
+      font-weight: 600;
+      color: $ink-faint;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      text-align: right;
     }
   }
 
   &__day-head {
     flex: 1;
+    min-width: 0;
     text-align: center;
-    padding: 5px 2px;
-    border-right: 1px solid #e0e0e0;
-    background: #f5f5f5;
+    padding: 5px 3px 4px;
+    border-right: 1px solid $rule-soft;
 
     &:last-child {
       border-right: none;
@@ -576,56 +709,69 @@ function formatDay(dateStr: string): string {
 
     &__wd {
       font-weight: 700;
-      font-size: 10px;
-      color: #424242;
+      font-size: 8.5px;
+      color: $ink-faint;
       text-transform: uppercase;
-      letter-spacing: 0.3px;
+      letter-spacing: 1.1px;
     }
 
     &__d {
-      font-size: 9px;
-      color: #757575;
+      font-size: 12px;
+      font-weight: 700;
+      color: $ink;
+      line-height: 1.2;
+      letter-spacing: -0.2px;
     }
 
     &__ab {
       display: flex;
       margin-top: 3px;
-      padding-top: 2px;
-      border-top: 1px solid #d0d0d0;
 
       span {
         flex: 1;
         text-align: center;
-        font-size: 8px;
+        font-size: 7px;
         font-weight: 700;
-        color: #9e9e9e;
-        letter-spacing: 0.5px;
+        color: $ink-faint;
+        letter-spacing: 1px;
+      }
+
+      // Picks up the dashed A/B divider that runs down the day column.
+      span:first-child {
+        border-right: 1px dashed $rule-soft;
       }
     }
   }
 
   &__allday-cell {
     flex: 1;
-    min-height: 20px;
+    min-width: 0;
     padding: 2px;
-    border-right: 1px solid #e0e0e0;
+    border-right: 1px solid $rule-soft;
 
     &:last-child {
       border-right: none;
     }
   }
 
-  &__allday-event {
+  &__chip {
     border-radius: 2px;
-    border-left: 3px solid rgba(0, 0, 0, 0.2);
+    border-left: 3px solid;
     padding: 1px 4px;
+    margin-bottom: 2px;
     font-size: 8px;
-    font-weight: 600;
-    color: white;
-    margin-bottom: 1px;
-    white-space: nowrap;
+    font-weight: 700;
+    color: $ink;
+    line-height: 1.25;
     overflow: hidden;
-    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
   }
 
   &__body {
@@ -637,57 +783,112 @@ function formatDay(dateStr: string): string {
     display: flex;
     align-items: flex-start;
     justify-content: flex-end;
-    padding-right: 4px;
-    padding-top: 2px;
+    padding: 1px 4px 0 0;
     font-size: 8px;
-    color: #9e9e9e;
+    color: $ink-faint;
     box-sizing: border-box;
+    border-top: 1px solid transparent;
+
+    &--hour {
+      color: $ink-soft;
+      font-weight: 600;
+      border-top-color: $rule-soft;
+    }
   }
 
   &__day-cols {
     flex: 1;
+    min-width: 0;
     display: flex;
   }
 
   &__day-col {
     flex: 1;
+    min-width: 0;
     position: relative;
-    border-right: 1px solid #e0e0e0;
+    border-right: 1px solid $rule-soft;
 
     &:last-child {
       border-right: none;
+    }
+
+    // Splits the column into the A (left) and B (right) halves.
+    &--split::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      border-left: 1px dashed $rule-soft;
     }
   }
 
   &__slot {
     height: var(--slot-h, 28px);
-    border-bottom: 1px solid #f0f0f0;
     box-sizing: border-box;
+    // Full hours carry the line, sub-divisions stay hairlines, so the eye reads
+    // hours first. Driven by the slot data, so any interval works.
+    border-top: 1px solid $rule-hair;
 
-    &:nth-child(2n) {
-      border-bottom-color: #e0e0e0;
+    &--hour {
+      border-top-color: $rule;
+    }
+
+    &:first-child {
+      border-top-color: transparent;
+    }
+
+    &--band {
+      background: #fafafa;
     }
   }
 
   &__event {
     position: absolute;
+    z-index: 1;
     border-radius: 2px;
-    border-left: 3px solid rgba(0, 0, 0, 0.2);
+    border-left: 3px solid;
     padding: 1px 3px;
     overflow: hidden;
     box-sizing: border-box;
 
-    &__time {
-      font-size: 0.8em;
-      font-weight: 400;
-      color: rgba(255, 255, 255, 0.8);
+    &__body {
+      font-size: var(--evt-fs, 9px);
+      line-height: 1.2;
     }
 
     &__title {
-      font-size: 11px;
       font-weight: 700;
-      color: white;
-      line-height: 1.2;
+      color: $ink;
+      overflow-wrap: anywhere;
+    }
+
+    &__meta {
+      font-size: 0.85em;
+      color: $ink-soft;
+      overflow-wrap: anywhere;
+    }
+
+    &__time {
+      font-weight: 600;
+      color: $ink-soft;
+
+      // Non-breaking, so the gap to the title survives white-space collapsing.
+      &::after {
+        content: '\00a0';
+      }
+    }
+
+    // Boxes too small for the time and location line — the grid position
+    // carries the time instead.
+    &--clipped &__meta {
+      display: none;
+    }
+
+    &--compact &__title {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
   }
 }

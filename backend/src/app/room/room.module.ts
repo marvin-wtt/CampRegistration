@@ -1,15 +1,11 @@
 import type {
   AppModule,
   AppRouter,
-  RoleToPermissions,
   BindOptions,
   ModuleOptions,
 } from '#core/base/AppModule';
 import { RoomRouter } from '#app/room/room.routes';
-import type {
-  CampManagerRole,
-  RoomPermission,
-} from '@camp-registration/common/permissions';
+import type { ScopedPermissions } from '@camp-registration/common/permissions';
 import { SETTING_KEYS } from '@camp-registration/common/settings';
 import { resolve } from '#core/ioc/container';
 import { RoomController } from '#app/room/room.controller.js';
@@ -27,31 +23,33 @@ export class RoomModule implements AppModule {
   configure(_options: ModuleOptions): void {
     resolve(SettingsRegistry).register(SETTING_KEYS.ROOM_PLANNER, {
       schema: RoomSettingsValidation,
-      viewPermission: 'camp.rooms.view',
-      editPermission: 'camp.rooms.edit',
+      viewPermission: 'event.rooms.view',
+      editPermission: 'event.rooms.edit',
     });
   }
 
   registerRoutes(router: AppRouter): void {
-    router.useRouter('/camps/:campId/rooms', resolve(RoomRouter));
+    router.useRouter('/events/:eventId/rooms', resolve(RoomRouter));
   }
 
-  registerPermissions(): RoleToPermissions<CampManagerRole, RoomPermission> {
+  registerPermissions(): ScopedPermissions {
     return {
-      DIRECTOR: [
-        'camp.rooms.view',
-        'camp.rooms.create',
-        'camp.rooms.edit',
-        'camp.rooms.delete',
-      ],
-      COORDINATOR: [
-        'camp.rooms.view',
-        'camp.rooms.create',
-        'camp.rooms.edit',
-        'camp.rooms.delete',
-      ],
-      COUNSELOR: ['camp.rooms.view'],
-      VIEWER: ['camp.rooms.view'],
+      event: {
+        DIRECTOR: [
+          'event.rooms.view',
+          'event.rooms.create',
+          'event.rooms.edit',
+          'event.rooms.delete',
+        ],
+        COORDINATOR: [
+          'event.rooms.view',
+          'event.rooms.create',
+          'event.rooms.edit',
+          'event.rooms.delete',
+        ],
+        COUNSELOR: ['event.rooms.view'],
+        VIEWER: ['event.rooms.view'],
+      },
     };
   }
 }

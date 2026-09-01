@@ -15,6 +15,7 @@ import {
   RegistrationUpdatedMessage,
   RegistrationWaitlistedMessage,
 } from '#app/registration/registration.messages';
+import { changesForRegistration } from '#app/registration/registration.changes';
 import { BaseController } from '#core/base/BaseController';
 import { RealtimeService } from '#core/realtime/RealtimeService';
 import { inject } from 'inversify';
@@ -37,25 +38,25 @@ export class RegistrationController extends BaseController {
   }
 
   async index(req: Request, res: Response) {
-    const camp = req.modelOrFail('camp');
+    const event = req.modelOrFail('event');
     await req.validate(validator.index);
 
     const registrations: RegistrationWithBed[] =
-      await this.registrationService.queryRegistrations(camp.id);
+      await this.registrationService.queryRegistrations(event.id);
 
     res.resource(RegistrationResource.collection(registrations));
   }
 
   async store(req: Request, res: Response) {
-    const camp = req.modelOrFail('camp');
+    const event = req.modelOrFail('event');
     const {
       body: { data, locale: bodyLocale },
-    } = await req.validate(validator.store(camp));
+    } = await req.validate(validator.store(event));
 
     const locale = bodyLocale ?? req.preferredLocale();
 
     const registration = await this.registrationService.createRegistration(
-      camp,
+      event,
       {
         data,
         locale,
@@ -65,18 +66,18 @@ export class RegistrationController extends BaseController {
 
     // Notify participant
     if (registration.status === 'ACCEPTED') {
-      await RegistrationConfirmedMessage.enqueueFor(camp, registration);
+      await RegistrationConfirmedMessage.enqueueFor(event, registration);
     } else if (registration.status === 'WAITLISTED') {
-      await RegistrationWaitlistedMessage.enqueueFor(camp, registration);
+      await RegistrationWaitlistedMessage.enqueueFor(event, registration);
     } else {
-      await RegistrationSubmittedMessage.enqueueFor(camp, registration);
+      await RegistrationSubmittedMessage.enqueueFor(event, registration);
     }
 
     // Notify contact email
-    await RegistrationNotifyMessage.enqueue({ camp, registration });
+    await RegistrationNotifyMessage.enqueue({ event, registration });
 
     void this.realtimeService.emit(
-      camp.id,
+      event.id,
       'registration',
       registration.id,
       'created',
@@ -92,7 +93,7 @@ export class RegistrationController extends BaseController {
       body: { data, customData, customFiles, status },
       query: { suppressMessage },
     } = await req.validate(validator.update);
-    const camp = req.modelOrFail('camp');
+    const event = req.modelOrFail('event');
     const previousRegistration = req.modelOrFail('registration');
 
     const updateData = {
@@ -103,7 +104,7 @@ export class RegistrationController extends BaseController {
     };
 
     const registration = await this.registrationService.updateRegistrationById(
-      camp,
+      event,
       previousRegistration.id,
       updateData,
       req.sessionId,
@@ -114,26 +115,30 @@ export class RegistrationController extends BaseController {
         data !== undefined &&
         !isDeepStrictEqual(previousRegistration.data, registration.data)
       ) {
-        await RegistrationUpdatedMessage.enqueueFor(camp, registration);
+        await RegistrationUpdatedMessage.enqueueFor(
+          event,
+          registration,
+          changesForRegistration(event, previousRegistration, registration),
+        );
       }
 
       if (
         previousRegistration.status === 'PENDING' &&
         registration.status === 'ACCEPTED'
       ) {
-        await RegistrationConfirmedMessage.enqueueFor(camp, registration);
+        await RegistrationConfirmedMessage.enqueueFor(event, registration);
       }
 
       if (
         previousRegistration.status === 'WAITLISTED' &&
         registration.status === 'ACCEPTED'
       ) {
-        await RegistrationAcceptedMessage.enqueueFor(camp, registration);
+        await RegistrationAcceptedMessage.enqueueFor(event, registration);
       }
     }
 
     void this.realtimeService.emit(
-      camp.id,
+      event.id,
       'registration',
       registration.id,
       'updated',
@@ -146,17 +151,17 @@ export class RegistrationController extends BaseController {
     const {
       query: { suppressMessage },
     } = await req.validate(validator.destroy);
-    const camp = req.modelOrFail('camp');
+    const event = req.modelOrFail('event');
     const registration = req.modelOrFail('registration');
 
     await this.registrationService.deleteRegistration(registration);
 
     if (!suppressMessage) {
-      await RegistrationDeletedMessage.enqueueFor(camp, registration);
+      await RegistrationDeletedMessage.enqueueFor(event, registration);
     }
 
     void this.realtimeService.emit(
-      camp.id,
+      event.id,
       'registration',
       registration.id,
       'deleted',

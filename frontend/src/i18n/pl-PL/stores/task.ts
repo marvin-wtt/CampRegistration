@@ -11,12 +11,12 @@ export default {
     progress: 'Aktualizowanie zadania...',
     success: 'Zadanie pomyślnie zaktualizowane',
     error: 'Błąd podczas aktualizowania zadania',
-    invalid: 'Nieprawidłowy identyfikator obozu',
+    invalid: 'Nieprawidłowy identyfikator wydarzenia',
   },
   delete: {
     progress: 'Usuwanie zadania...',
     success: 'Zadanie pomyślnie usunięte',
     error: 'Błąd podczas usuwania zadania',
-    invalid: 'Nieprawidłowy identyfikator obozu',
+    invalid: 'Nieprawidłowy identyfikator wydarzenia',
   },
 };

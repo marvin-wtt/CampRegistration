@@ -2,40 +2,41 @@ import { describe, expect, it } from 'vitest';
 import prisma from '../utils/prisma.js';
 import { generateAccessToken } from './utils/token.js';
 import {
-  CampFactory,
+  EventFactory,
   FileFactory,
   RegistrationFactory,
   UserFactory,
-  CampManagerFactory,
+  EventManagerFactory,
+  MessageDeliveryFactory,
   MessageTemplateFactory,
 } from '../../../prisma/factories/index.js';
-import { Camp, Prisma } from '#generated/prisma/client.js';
+import { Event, Prisma } from '#generated/prisma/client.js';
 import { ulid } from 'ulidx';
 import crypto from 'crypto';
 import {
-  campPrivate,
-  campPublic,
-  campWithAdditionalFields,
-  campWithCampVariable,
-  campWithCustomFields,
-  campWithFileOptional,
-  campWithFileRequired,
-  campWithMaxParticipantsInternational,
-  campWithMaxParticipantsNational,
-  campWithMaxParticipantsRolesInternational,
-  campWithMaxParticipantsRolesNational,
-  campWithAllCampDataTypes,
-  campWithRequiredField,
-  campWithoutCountryData,
-  campWithEmail,
-  campWithMultipleEmails,
-  campWithContactEmailInternational,
-  campWithEmailAndMaxParticipants,
-  campWithFormFunctions,
-  campWithAddress,
-  campWithMultipleFilesRequired,
-  campWithAddressCampDataTypes,
-  campWithEmailAndCountry,
+  eventPrivate,
+  eventListed,
+  eventWithAdditionalFields,
+  eventWithEventVariable,
+  eventWithCustomFields,
+  eventWithFileOptional,
+  eventWithFileRequired,
+  eventWithMaxParticipantsInternational,
+  eventWithMaxParticipantsNational,
+  eventWithMaxParticipantsRolesInternational,
+  eventWithMaxParticipantsRolesNational,
+  eventWithAllEventDataTypes,
+  eventWithRequiredField,
+  eventWithoutCountryData,
+  eventWithEmail,
+  eventWithMultipleEmails,
+  eventWithContactEmailInternational,
+  eventWithEmailAndMaxParticipants,
+  eventWithFormFunctions,
+  eventWithAddress,
+  eventWithMultipleFilesRequired,
+  eventWithAddressEventDataTypes,
+  eventWithEmailAndCountry,
 } from './fixtures/registration.fixtures.js';
 import { request } from '../utils/request.js';
 import { NoOpMailer } from '#app/mail/noop.mailer.js';
@@ -46,9 +47,9 @@ import moment from 'moment';
 const mailer = NoOpMailer.prototype;
 
 const createRegistrationWithFile = async () => {
-  const camp = await CampFactory.create();
+  const event = await EventFactory.create();
   const registration = await RegistrationFactory.create({
-    camp: { connect: { id: camp.id } },
+    event: { connect: { id: event.id } },
   });
 
   const fileName = crypto.randomUUID() + '.pdf';
@@ -60,34 +61,34 @@ const createRegistrationWithFile = async () => {
   });
 
   const user = await UserFactory.create({
-    campRoles: {
-      create: CampManagerFactory.build({
-        camp: { connect: { id: camp.id } },
+    eventRoles: {
+      create: EventManagerFactory.build({
+        event: { connect: { id: event.id } },
       }),
     },
   });
 
   const accessToken = generateAccessToken(user);
 
-  return { registration, camp, file, user, accessToken };
+  return { registration, event, file, user, accessToken };
 };
 
-describe('/api/v1/camps/:campId/registrations', () => {
-  const createCampWithManagerAndToken = async (
-    campData: Partial<Prisma.CampCreateInput> = {},
+describe('/api/v1/events/:eventId/registrations', () => {
+  const createEventWithManagerAndToken = async (
+    eventData: Partial<Prisma.EventCreateInput> = {},
     role = 'DIRECTOR',
   ) => {
-    const camp = await CampFactory.create(campData);
+    const event = await EventFactory.create(eventData);
     const user = await UserFactory.create();
-    const manager = await CampManagerFactory.create({
-      camp: { connect: { id: camp.id } },
+    const manager = await EventManagerFactory.create({
+      event: { connect: { id: event.id } },
       user: { connect: { id: user.id } },
       role,
     });
     const accessToken = generateAccessToken(user);
 
     return {
-      camp,
+      event,
       user,
       manager,
       accessToken,
@@ -95,24 +96,24 @@ describe('/api/v1/camps/:campId/registrations', () => {
   };
 
   const createRegistration = async (
-    camp: Camp,
+    event: Event,
     data?: Partial<Prisma.RegistrationCreateInput>,
   ) => {
     return RegistrationFactory.create({
       ...data,
-      camp: { connect: { id: camp.id } },
+      event: { connect: { id: event.id } },
     });
   };
 
-  const countRegistrations = async (camp: Camp) => {
+  const countRegistrations = async (event: Event) => {
     return prisma.registration.count({
       where: {
-        campId: camp.id,
+        eventId: event.id,
       },
     });
   };
 
-  describe('GET /api/v1/camps/:campId/registrations/', () => {
+  describe('GET /api/v1/events/:eventId/registrations/', () => {
     it.each([
       { role: 'DIRECTOR', expectedStatus: 200 },
       { role: 'COORDINATOR', expectedStatus: 200 },
@@ -121,14 +122,14 @@ describe('/api/v1/camps/:campId/registrations', () => {
     ])(
       'should respond with `$expectedStatus` status code when user is $role',
       async ({ role, expectedStatus }) => {
-        const { camp, accessToken } = await createCampWithManagerAndToken(
+        const { event, accessToken } = await createEventWithManagerAndToken(
           undefined,
           role,
         );
-        await createRegistration(camp);
+        await createRegistration(event);
 
         const { body } = await request()
-          .get(`/api/v1/camps/${camp.id}/registrations`)
+          .get(`/api/v1/events/${event.id}/registrations`)
           .send()
           .auth(accessToken, { type: 'bearer' })
           .expect(expectedStatus);
@@ -144,40 +145,22 @@ describe('/api/v1/camps/:campId/registrations', () => {
       },
     );
 
-    it('should not include deleted registrations', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
-      await createRegistration(camp);
-      await RegistrationFactory.create({
-        camp: { connect: { id: camp.id } },
-        deletedAt: new Date(),
-      });
-
-      const { body } = await request()
-        .get(`/api/v1/camps/${camp.id}/registrations`)
-        .send()
-        .auth(accessToken, { type: 'bearer' })
-        .expect(200);
-
-      expect(body).toHaveProperty('data');
-      expect(body.data).toHaveLength(1);
-    });
-
-    it('should respond with `403` status code when user is not camp manager', async () => {
-      const camp = await CampFactory.create();
+    it('should respond with `403` status code when user is not event manager', async () => {
+      const event = await EventFactory.create();
       const accessToken = generateAccessToken(await UserFactory.create());
 
       await request()
-        .get(`/api/v1/camps/${camp.id}/registrations`)
+        .get(`/api/v1/events/${event.id}/registrations`)
         .send()
         .auth(accessToken, { type: 'bearer' })
         .expect(403);
     });
 
     it('should respond with `401` status code when unauthenticated', async () => {
-      const camp = await CampFactory.create();
+      const event = await EventFactory.create();
 
       await request()
-        .get(`/api/v1/camps/${camp.id}/registrations`)
+        .get(`/api/v1/events/${event.id}/registrations`)
         .send()
         .expect(401);
     });
@@ -187,16 +170,16 @@ describe('/api/v1/camps/:campId/registrations', () => {
     );
   });
 
-  describe('GET /api/v1/camps/:campId/registrations/:registrationId', () => {
+  describe('GET /api/v1/events/:eventId/registrations/:registrationId', () => {
     it('should respond with `200` status code', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken(
+      const { event, accessToken } = await createEventWithManagerAndToken(
         undefined,
         'DIRECTOR',
       );
-      const registration = await createRegistration(camp);
+      const registration = await createRegistration(event);
 
       const { body } = await request()
-        .get(`/api/v1/camps/${camp.id}/registrations/${registration.id}/`)
+        .get(`/api/v1/events/${event.id}/registrations/${registration.id}/`)
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -230,14 +213,14 @@ describe('/api/v1/camps/:campId/registrations', () => {
     ])(
       'should respond with `$expectedStatus` status code when user is $role',
       async ({ role, expectedStatus }) => {
-        const { camp, accessToken } = await createCampWithManagerAndToken(
+        const { event, accessToken } = await createEventWithManagerAndToken(
           undefined,
           role,
         );
-        const registration = await createRegistration(camp);
+        const registration = await createRegistration(event);
 
         const { body } = await request()
-          .get(`/api/v1/camps/${camp.id}/registrations/${registration.id}/`)
+          .get(`/api/v1/events/${event.id}/registrations/${registration.id}/`)
           .auth(accessToken, { type: 'bearer' })
           .expect(expectedStatus);
 
@@ -245,78 +228,65 @@ describe('/api/v1/camps/:campId/registrations', () => {
       },
     );
 
-    it('should respond with `403` status code when user is not camp manager', async () => {
-      const camp = await CampFactory.create();
+    it('should respond with `403` status code when user is not event manager', async () => {
+      const event = await EventFactory.create();
       const accessToken = generateAccessToken(await UserFactory.create());
-      const registration = await createRegistration(camp);
+      const registration = await createRegistration(event);
 
       await request()
-        .get(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+        .get(`/api/v1/events/${event.id}/registrations/${registration.id}`)
         .send()
         .auth(accessToken, { type: 'bearer' })
         .expect(403);
     });
 
-    it('should respond with `403` status code when user is not camp manager and registration does not exist', async () => {
-      const camp = await CampFactory.create();
+    it('should respond with `403` status code when user is not event manager and registration does not exist', async () => {
+      const event = await EventFactory.create();
       const accessToken = generateAccessToken(await UserFactory.create());
       const registrationId = ulid();
 
       await request()
-        .get(`/api/v1/camps/${camp.id}/registrations/${registrationId}`)
+        .get(`/api/v1/events/${event.id}/registrations/${registrationId}`)
         .send()
         .auth(accessToken, { type: 'bearer' })
         .expect(403);
     });
 
     it('should respond with `401` status code when unauthenticated', async () => {
-      const camp = await CampFactory.create();
-      const registration = await createRegistration(camp);
+      const event = await EventFactory.create();
+      const registration = await createRegistration(event);
 
       await request()
-        .get(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+        .get(`/api/v1/events/${event.id}/registrations/${registration.id}`)
         .send()
         .expect(401);
     });
 
     it('should respond with `401` status code when unauthenticated and registration does not exist', async () => {
-      const camp = await CampFactory.create();
+      const event = await EventFactory.create();
       const registrationId = ulid();
 
       await request()
-        .get(`/api/v1/camps/${camp.id}/registrations/${registrationId}`)
+        .get(`/api/v1/events/${event.id}/registrations/${registrationId}`)
         .send()
         .expect(401);
     });
 
-    it('should respond with `404` status code when camp id does not exists', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
+    it('should respond with `404` status code when event id does not exists', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
       const registrationId = ulid();
 
       await request()
-        .get(`/api/v1/camps/${camp.id}/registrations/${registrationId}`)
+        .get(`/api/v1/events/${event.id}/registrations/${registrationId}`)
         .send()
-        .auth(accessToken, { type: 'bearer' })
-        .expect(404);
-    });
-
-    it('should respond with `404` status code when user is camp manager', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
-      const registration = await RegistrationFactory.create({
-        camp: { connect: { id: camp.id } },
-        deletedAt: new Date(),
-      });
-
-      await request()
-        .get(`/api/v1/camps/${camp.id}/registrations/${registration.id}/`)
         .auth(accessToken, { type: 'bearer' })
         .expect(404);
     });
   });
 
-  describe('POST /api/v1/camps/:campId/registrations/', () => {
+  describe('POST /api/v1/events/:eventId/registrations/', () => {
     it('should respond with `201` status code', async () => {
-      const camp = await CampFactory.create(campPublic);
+      const event = await EventFactory.create(eventListed);
 
       const data = {
         data: {
@@ -326,7 +296,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
       };
 
       const { body } = await request()
-        .post(`/api/v1/camps/${camp.id}/registrations`)
+        .post(`/api/v1/events/${event.id}/registrations`)
         .send(data)
         .expect(201);
 
@@ -352,9 +322,9 @@ describe('/api/v1/camps/:campId/registrations', () => {
     ])(
       'should respond with `$expectedStatus` status code for manager override when user is $role',
       async ({ role, expectedStatus }) => {
-        const { camp, accessToken } = await createCampWithManagerAndToken(
+        const { event, accessToken } = await createEventWithManagerAndToken(
           {
-            ...campPublic,
+            ...eventListed,
             registrationClosesAt: moment().subtract(1, 'day').toDate(),
           },
           role,
@@ -368,7 +338,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         };
 
         await request()
-          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .post(`/api/v1/events/${event.id}/registrations`)
           .send(data)
           .auth(accessToken, { type: 'bearer' })
           .expect(expectedStatus);
@@ -376,8 +346,8 @@ describe('/api/v1/camps/:campId/registrations', () => {
     );
 
     it('set the registration status to pending without auto-accept', async () => {
-      const camp = await CampFactory.create({
-        ...campPublic,
+      const event = await EventFactory.create({
+        ...eventListed,
         confirmationMode: 'MANUAL',
       });
 
@@ -389,48 +359,48 @@ describe('/api/v1/camps/:campId/registrations', () => {
       };
 
       const { body } = await request()
-        .post(`/api/v1/camps/${camp.id}/registrations`)
+        .post(`/api/v1/events/${event.id}/registrations`)
         .send(data)
         .expect(201);
 
       expect(body).toHaveProperty('data.status', 'PENDING');
     });
 
-    it('should respond with `201` status code for private camps', async () => {
-      const camp = await CampFactory.create(campPrivate);
+    it('should respond with `201` status code for private events', async () => {
+      const event = await EventFactory.create(eventPrivate);
 
       const data = {
         first_name: 'Jhon',
       };
 
       await request()
-        .post(`/api/v1/camps/${camp.id}/registrations`)
+        .post(`/api/v1/events/${event.id}/registrations`)
         .send({ data })
         .expect(201);
     });
 
-    it('should respond with `401` status code when camp is not active', async () => {
-      const camp1 = await CampFactory.create({
+    it('should respond with `401` status code when event is not active', async () => {
+      const event1 = await EventFactory.create({
         registrationClosesAt: moment().subtract(1, 'day').toDate(),
       });
 
       await request()
-        .post(`/api/v1/camps/${camp1.id}/registrations`)
+        .post(`/api/v1/events/${event1.id}/registrations`)
         .send()
         .expect(401);
 
-      const camp2 = await CampFactory.create({
+      const event2 = await EventFactory.create({
         registrationOpensAt: moment().add(1, 'day').toDate(),
       });
 
       await request()
-        .post(`/api/v1/camps/${camp2.id}/registrations`)
+        .post(`/api/v1/events/${event2.id}/registrations`)
         .send()
         .expect(401);
     });
 
     it('should respond with `400` status code when additional fields are provided', async () => {
-      const camp = await CampFactory.create(campWithAdditionalFields);
+      const event = await EventFactory.create(eventWithAdditionalFields);
 
       const data = {
         data: {
@@ -441,13 +411,13 @@ describe('/api/v1/camps/:campId/registrations', () => {
       };
 
       await request()
-        .post(`/api/v1/camps/${camp.id}/registrations`)
+        .post(`/api/v1/events/${event.id}/registrations`)
         .send(data)
         .expect(400);
     });
 
     it('should respond with `400` status code when a required field is missing', async () => {
-      const camp = await CampFactory.create(campWithRequiredField);
+      const event = await EventFactory.create(eventWithRequiredField);
 
       const data = {
         data: {
@@ -456,14 +426,14 @@ describe('/api/v1/camps/:campId/registrations', () => {
       };
 
       await request()
-        .post(`/api/v1/camps/${camp.id}/registrations`)
+        .post(`/api/v1/events/${event.id}/registrations`)
         .send(data)
         .expect(400);
     });
 
     describe('form', () => {
       it('should respond with `201` status code when form has custom questions', async () => {
-        const camp = await CampFactory.create(campWithCustomFields);
+        const event = await EventFactory.create(eventWithCustomFields);
 
         const data = {
           first_name: 'Jhon',
@@ -471,15 +441,15 @@ describe('/api/v1/camps/:campId/registrations', () => {
         };
 
         const { body } = await request()
-          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .post(`/api/v1/events/${event.id}/registrations`)
           .send({ data })
           .expect(201);
 
         expect(body).toHaveProperty('data.data.role', data.role);
       });
 
-      it('should respond with `201` status code when form has camp variables', async () => {
-        const camp = await CampFactory.create(campWithCampVariable);
+      it('should respond with `201` status code when form has event variables', async () => {
+        const event = await EventFactory.create(eventWithEventVariable);
 
         const validData = {
           first_name: 'Jhon',
@@ -487,7 +457,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         };
 
         await request()
-          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .post(`/api/v1/events/${event.id}/registrations`)
           .send({ data: validData })
           .expect(201);
 
@@ -497,20 +467,20 @@ describe('/api/v1/camps/:campId/registrations', () => {
         };
 
         await request()
-          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .post(`/api/v1/events/${event.id}/registrations`)
           .send({ data: invalidData })
           .expect(400);
       });
 
       it('should respond with `201` status code when form has custom functions', async () => {
-        const camp = await CampFactory.create(campWithFormFunctions);
+        const event = await EventFactory.create(eventWithFormFunctions);
 
         const validData = {
           date: '2000-01-01',
         };
 
         await request()
-          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .post(`/api/v1/events/${event.id}/registrations`)
           .send({ data: validData })
           .expect(201);
 
@@ -519,7 +489,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         };
 
         await request()
-          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .post(`/api/v1/events/${event.id}/registrations`)
           .send({ data: invalidData })
           .expect(400);
       });
@@ -527,7 +497,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
     describe('locale', () => {
       it('should set the users preferred locale', async () => {
-        const camp = await CampFactory.create(campPublic);
+        const event = await EventFactory.create(eventListed);
 
         const data = {
           data: {
@@ -536,7 +506,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         };
 
         const { body } = await request()
-          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .post(`/api/v1/events/${event.id}/registrations`)
           .set(
             'Accept-Language',
             'fr-CH, fr;q=0.9, en;q=0.8, de;q=0.7, *;q=0.5',
@@ -549,7 +519,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should use given locale over users preferred locale', async () => {
-        const camp = await CampFactory.create(campPublic);
+        const event = await EventFactory.create(eventListed);
 
         const data = {
           data: {
@@ -559,7 +529,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         };
 
         const { body } = await request()
-          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .post(`/api/v1/events/${event.id}/registrations`)
           .set(
             'Accept-Language',
             'fr-CH, fr;q=0.9, en;q=0.8, de;q=0.7, *;q=0.5',
@@ -575,7 +545,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
     describe('files', () => {
       it('should respond with `201` status code when form has file', async () => {
         const sessionId = crypto.randomUUID();
-        const camp = await CampFactory.create(campWithFileRequired);
+        const event = await EventFactory.create(eventWithFileRequired);
         const file = await FileFactory.create({
           field: sessionId,
           accessLevel: 'private',
@@ -587,7 +557,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         };
 
         const { body } = await request()
-          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .post(`/api/v1/events/${event.id}/registrations`)
           .set('Cookie', [
             'session=' + sessionId,
             '__Host-session=' + sessionId,
@@ -609,7 +579,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
       it('should respond with `201` status code when form has multiple files', async () => {
         const sessionId = crypto.randomUUID();
-        const camp = await CampFactory.create(campWithMultipleFilesRequired);
+        const event = await EventFactory.create(eventWithMultipleFilesRequired);
         const file1 = await FileFactory.create({
           field: sessionId,
           accessLevel: 'private',
@@ -625,7 +595,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         };
 
         const { body } = await request()
-          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .post(`/api/v1/events/${event.id}/registrations`)
           .set('Cookie', [
             'session=' + sessionId,
             '__Host-session=' + sessionId,
@@ -648,20 +618,20 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should respond with `201` status code when file is optional', async () => {
-        const camp = await CampFactory.create(campWithFileOptional);
+        const event = await EventFactory.create(eventWithFileOptional);
 
         const data = {
           some_field: 'Some value',
         };
 
         await request()
-          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .post(`/api/v1/events/${event.id}/registrations`)
           .send({ data })
           .expect(201);
       });
 
       it('should respond with `400` status code when file is missing', async () => {
-        const camp = await CampFactory.create(campWithFileRequired);
+        const event = await EventFactory.create(eventWithFileRequired);
         const fileId = ulid();
 
         const data = {
@@ -670,7 +640,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         };
 
         await request()
-          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .post(`/api/v1/events/${event.id}/registrations`)
           .send({ data })
           .expect(400);
       });
@@ -678,7 +648,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
       it('should respond with `400` status code when file field is invalid', async () => {
         const sessionId = crypto.randomUUID();
 
-        const camp = await CampFactory.create(campWithFileRequired);
+        const event = await EventFactory.create(eventWithFileRequired);
         const file = await FileFactory.create({
           field: crypto.randomUUID(), // Does not match sessionId
           accessLevel: 'private',
@@ -690,7 +660,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         };
 
         await request()
-          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .post(`/api/v1/events/${event.id}/registrations`)
           .set('Cookie', [
             'session=' + sessionId,
             '__Host-session=' + sessionId,
@@ -700,7 +670,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should respond with `400` status code when file data is invalid', async () => {
-        const camp = await CampFactory.create(campWithFileRequired);
+        const event = await EventFactory.create(eventWithFileRequired);
 
         const data = {
           some_field: 'Some value',
@@ -711,16 +681,16 @@ describe('/api/v1/camps/:campId/registrations', () => {
         };
 
         await request()
-          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .post(`/api/v1/events/${event.id}/registrations`)
           .send({ data })
           .expect(400);
       });
 
       it('should respond with `400` status code when file is already assigned to a registration', async () => {
         const sessionId = crypto.randomUUID();
-        const camp = await CampFactory.create(campWithFileRequired);
+        const event = await EventFactory.create(eventWithFileRequired);
         const registration = await RegistrationFactory.create({
-          camp: { connect: { id: camp.id } },
+          event: { connect: { id: event.id } },
         });
         const file = await FileFactory.create({
           field: sessionId,
@@ -734,7 +704,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         };
 
         await request()
-          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .post(`/api/v1/events/${event.id}/registrations`)
           .set('Cookie', [
             'session=' + sessionId,
             '__Host-session=' + sessionId,
@@ -746,7 +716,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
     describe('computed data', () => {
       it('should generate computed data for all fields', async () => {
-        const camp = await CampFactory.create(campWithAllCampDataTypes);
+        const event = await EventFactory.create(eventWithAllEventDataTypes);
 
         const data = {
           firstName: 'Jhon',
@@ -763,7 +733,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         };
 
         const { body } = await request()
-          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .post(`/api/v1/events/${event.id}/registrations`)
           .send({ data })
           .expect(201);
 
@@ -785,7 +755,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should generate computed data with address', async () => {
-        const camp = await CampFactory.create(campWithAddressCampDataTypes);
+        const event = await EventFactory.create(eventWithAddressEventDataTypes);
 
         const data = {
           address: {
@@ -797,7 +767,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         };
 
         const { body } = await request()
-          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .post(`/api/v1/events/${event.id}/registrations`)
           .send({ data })
           .expect(201);
 
@@ -813,25 +783,27 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
     describe('waiting list', () => {
       const assertRegistration = async (
-        campId: string,
+        eventId: string,
         data: unknown,
         expected: string,
       ) => {
         const { body } = await request()
-          .post(`/api/v1/camps/${campId}/registrations`)
+          .post(`/api/v1/events/${eventId}/registrations`)
           .send({ data })
           .expect(201);
 
         expect(body).toHaveProperty('data.status', expected);
       };
 
-      it('should set waiting list for national camps', async () => {
-        const camp = await CampFactory.create(campWithMaxParticipantsNational);
+      it('should set waiting list for national events', async () => {
+        const event = await EventFactory.create(
+          eventWithMaxParticipantsNational,
+        );
 
-        // Fill camp
+        // Fill event
         for (let i = 0; i < 5; i++) {
           await assertRegistration(
-            camp.id,
+            event.id,
             {
               first_name: `Jhon ${i}`,
             },
@@ -841,7 +813,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
         // Assert waiting list
         await assertRegistration(
-          camp.id,
+          event.id,
           {
             first_name: `Jhon`,
           },
@@ -849,15 +821,15 @@ describe('/api/v1/camps/:campId/registrations', () => {
         );
       });
 
-      it('should set waiting list for international camps', async () => {
-        const camp = await CampFactory.create(
-          campWithMaxParticipantsInternational,
+      it('should set waiting list for international events', async () => {
+        const event = await EventFactory.create(
+          eventWithMaxParticipantsInternational,
         );
 
-        // Fill camp
+        // Fill event
         for (let i = 0; i < 5; i++) {
           await assertRegistration(
-            camp.id,
+            event.id,
             {
               first_name: `Jhon ${i}`,
               country: 'de',
@@ -868,7 +840,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
         // Assert waiting list
         await assertRegistration(
-          camp.id,
+          event.id,
           {
             first_name: `Jhon`,
             country: 'de',
@@ -878,7 +850,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
         // Other nation should not be on waiting list
         await assertRegistration(
-          camp.id,
+          event.id,
           {
             first_name: `Jhon`,
             country: 'fr',
@@ -887,14 +859,14 @@ describe('/api/v1/camps/:campId/registrations', () => {
         );
       });
 
-      it('should set waiting list for participants in national camps with roles', async () => {
-        const camp = await CampFactory.create(
-          campWithMaxParticipantsRolesNational,
+      it('should set waiting list for participants in national events with roles', async () => {
+        const event = await EventFactory.create(
+          eventWithMaxParticipantsRolesNational,
         );
 
         // Add a counselor
         await assertRegistration(
-          camp.id,
+          event.id,
           {
             first_name: `Tom`,
             role: 'counselor',
@@ -902,10 +874,10 @@ describe('/api/v1/camps/:campId/registrations', () => {
           'ACCEPTED',
         );
 
-        // Fill camp
+        // Fill event
         for (let i = 0; i < 5; i++) {
           await assertRegistration(
-            camp.id,
+            event.id,
             {
               first_name: `Jhon ${i}`,
               role: 'participant',
@@ -916,7 +888,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
         // Assert waiting list
         await assertRegistration(
-          camp.id,
+          event.id,
           {
             first_name: `Jhon`,
             role: 'participant',
@@ -926,7 +898,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
         // Check another counselor
         await assertRegistration(
-          camp.id,
+          event.id,
           {
             first_name: `Mary`,
             role: 'counselor',
@@ -935,14 +907,14 @@ describe('/api/v1/camps/:campId/registrations', () => {
         );
       });
 
-      it('should set waiting list for participants in international camps with roles', async () => {
-        const camp = await CampFactory.create(
-          campWithMaxParticipantsRolesInternational,
+      it('should set waiting list for participants in international events with roles', async () => {
+        const event = await EventFactory.create(
+          eventWithMaxParticipantsRolesInternational,
         );
 
         // Add a counselor
         await assertRegistration(
-          camp.id,
+          event.id,
           {
             first_name: `Tom`,
             role: 'counselor',
@@ -951,10 +923,10 @@ describe('/api/v1/camps/:campId/registrations', () => {
           'ACCEPTED',
         );
 
-        // Fill camp
+        // Fill event
         for (let i = 0; i < 5; i++) {
           await assertRegistration(
-            camp.id,
+            event.id,
             {
               first_name: `Jhon ${i}`,
               role: 'participant',
@@ -966,7 +938,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
         // Assert waiting list
         await assertRegistration(
-          camp.id,
+          event.id,
           {
             first_name: `Jhon`,
             role: 'participant',
@@ -977,7 +949,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
         // Check another counselor
         await assertRegistration(
-          camp.id,
+          event.id,
           {
             first_name: `Mary`,
             role: 'counselor',
@@ -988,7 +960,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
         // Check participant from other nation
         await assertRegistration(
-          camp.id,
+          event.id,
           {
             first_name: `Larry`,
             role: 'participant',
@@ -999,12 +971,12 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should set waiting list when country is provided via address', async () => {
-        const camp = await CampFactory.create(campWithAddress);
+        const event = await EventFactory.create(eventWithAddress);
 
-        // Fill camp
+        // Fill event
         for (let i = 0; i < 5; i++) {
           await assertRegistration(
-            camp.id,
+            event.id,
             {
               first_name: `Jhon ${i}`,
               address: {
@@ -1017,7 +989,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
         // Assert waiting list
         await assertRegistration(
-          camp.id,
+          event.id,
           {
             first_name: `Jhon`,
             address: {
@@ -1029,7 +1001,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
         // Other nation should not be on waiting list
         await assertRegistration(
-          camp.id,
+          event.id,
           {
             first_name: `Jhon`,
             address: {
@@ -1041,12 +1013,14 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should ignore the waiting list field when set', async () => {
-        const camp = await CampFactory.create(campWithMaxParticipantsNational);
+        const event = await EventFactory.create(
+          eventWithMaxParticipantsNational,
+        );
 
-        // Fill camp
+        // Fill event
         for (let i = 0; i < 5; i++) {
           await request()
-            .post(`/api/v1/camps/${camp.id}/registrations`)
+            .post(`/api/v1/events/${event.id}/registrations`)
             .send({
               data: { first_name: `Jhon ${i}` },
               status: 'ACCEPTED',
@@ -1056,7 +1030,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
         // Assert waiting list
         await assertRegistration(
-          camp.id,
+          event.id,
           {
             first_name: `Jhon`,
           },
@@ -1064,8 +1038,8 @@ describe('/api/v1/camps/:campId/registrations', () => {
         );
       });
 
-      it('should respond with `400` status code when camp country data is missing for international camp', async () => {
-        const camp = await CampFactory.create(campWithoutCountryData);
+      it('should respond with `400` status code when event country data is missing for international event', async () => {
+        const event = await EventFactory.create(eventWithoutCountryData);
 
         const data = {
           data: {
@@ -1074,13 +1048,13 @@ describe('/api/v1/camps/:campId/registrations', () => {
         };
 
         await request()
-          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .post(`/api/v1/events/${event.id}/registrations`)
           .send(data)
           .expect(400);
       });
 
-      it('should respond with `400` status code when camp country data is invalid for international camp', async () => {
-        const camp = await CampFactory.create(campWithoutCountryData);
+      it('should respond with `400` status code when event country data is invalid for international event', async () => {
+        const event = await EventFactory.create(eventWithoutCountryData);
 
         const data = {
           data: {
@@ -1090,13 +1064,13 @@ describe('/api/v1/camps/:campId/registrations', () => {
         };
 
         await request()
-          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .post(`/api/v1/events/${event.id}/registrations`)
           .send(data)
           .expect(400);
       });
 
-      it('should respond with `400` status code when camp country data is not matching for international camp', async () => {
-        const camp = await CampFactory.create(campWithoutCountryData);
+      it('should respond with `400` status code when event country data is not matching for international event', async () => {
+        const event = await EventFactory.create(eventWithoutCountryData);
 
         const data = {
           data: {
@@ -1106,44 +1080,44 @@ describe('/api/v1/camps/:campId/registrations', () => {
         };
 
         await request()
-          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .post(`/api/v1/events/${event.id}/registrations`)
           .send(data)
           .expect(400);
       });
     });
 
     describe('sends messages', () => {
-      const createCampWithTemplates = async (
-        data: Partial<Prisma.CampCreateInput>,
+      const createEventWithTemplates = async (
+        data: Partial<Prisma.EventCreateInput>,
       ) => {
-        return CampFactory.create({
+        return EventFactory.create({
           ...data,
           messageTemplates: {
             createMany: {
               data: [
                 MessageTemplateFactory.build({
                   country: 'fr',
-                  event: 'registration_submitted',
+                  trigger: 'registration_submitted',
                   subject: 'Registration received',
                 }),
                 MessageTemplateFactory.build({
-                  event: 'registration_confirmed',
+                  trigger: 'registration_confirmed',
                   subject: 'Registration confirmed',
                   country: 'fr',
                 }),
                 MessageTemplateFactory.build({
                   country: 'fr',
-                  event: 'registration_waitlisted',
+                  trigger: 'registration_waitlisted',
                   subject: 'Registration on waiting list',
                 }),
                 MessageTemplateFactory.build({
                   country: 'fr',
-                  event: 'registration_updated',
+                  trigger: 'registration_updated',
                   subject: 'Registration updated',
                 }),
                 MessageTemplateFactory.build({
                   country: 'fr',
-                  event: 'registration_canceled',
+                  trigger: 'registration_canceled',
                   subject: 'Registration canceled',
                 }),
               ],
@@ -1153,11 +1127,11 @@ describe('/api/v1/camps/:campId/registrations', () => {
       };
 
       it('should not send a message when message template for group is missing', async () => {
-        const camp = await CampFactory.create({
-          ...campWithEmailAndCountry,
+        const event = await EventFactory.create({
+          ...eventWithEmailAndCountry,
           messageTemplates: {
             create: MessageTemplateFactory.build({
-              event: 'registration_confirmed',
+              trigger: 'registration_confirmed',
               subject: 'Registration confirmed',
               country: 'de',
             }),
@@ -1172,13 +1146,13 @@ describe('/api/v1/camps/:campId/registrations', () => {
         };
 
         await request()
-          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .post(`/api/v1/events/${event.id}/registrations`)
           .send({ data })
           .expect(201);
       });
 
       it('should send a confirmation email to the user with country', async () => {
-        const camp = await createCampWithTemplates(campWithEmailAndCountry);
+        const event = await createEventWithTemplates(eventWithEmailAndCountry);
 
         const data = {
           email: 'test@example.com',
@@ -1188,19 +1162,19 @@ describe('/api/v1/camps/:campId/registrations', () => {
         };
 
         await request()
-          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .post(`/api/v1/events/${event.id}/registrations`)
           .send({ data })
           .expect(201);
 
         expectEmailWith({
           to: data.email,
-          replyTo: camp.contactEmail as string,
+          replyTo: event.contactEmail as string,
           subject: 'Registration confirmed',
         });
       });
 
-      it('should send a confirmation email to the user without country in national camp', async () => {
-        const camp = await createCampWithTemplates(campWithEmailAndCountry);
+      it('should send a confirmation email to the user without country in national event', async () => {
+        const event = await createEventWithTemplates(eventWithEmailAndCountry);
 
         const data = {
           email: 'test@example.com',
@@ -1210,19 +1184,19 @@ describe('/api/v1/camps/:campId/registrations', () => {
         };
 
         await request()
-          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .post(`/api/v1/events/${event.id}/registrations`)
           .send({ data })
           .expect(201);
 
         expectEmailWith({
           to: data.email,
-          replyTo: camp.contactEmail as string,
+          replyTo: event.contactEmail as string,
           subject: 'Registration confirmed',
         });
       });
 
       it('should send a confirmation email to multiple emails', async () => {
-        const camp = await CampFactory.create(campWithMultipleEmails);
+        const event = await EventFactory.create(eventWithMultipleEmails);
 
         const data = {
           email: 'test@example.com',
@@ -1231,23 +1205,23 @@ describe('/api/v1/camps/:campId/registrations', () => {
         };
 
         await request()
-          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .post(`/api/v1/events/${event.id}/registrations`)
           .send({ data })
           .expect(201);
 
         expectEmailWith({
           to: data.email,
-          replyTo: camp.contactEmail as string,
+          replyTo: event.contactEmail as string,
         });
 
         expectEmailWith({
           to: data.emailGuardian,
-          replyTo: camp.contactEmail as string,
+          replyTo: event.contactEmail as string,
         });
       });
 
-      it('should send a notification to the contact email for national camp', async () => {
-        const camp = await CampFactory.create(campWithEmailAndCountry);
+      it('should send a notification to the contact email for national event', async () => {
+        const event = await EventFactory.create(eventWithEmailAndCountry);
 
         const data = {
           email: 'test@example.com',
@@ -1256,20 +1230,20 @@ describe('/api/v1/camps/:campId/registrations', () => {
         };
 
         await request()
-          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .post(`/api/v1/events/${event.id}/registrations`)
           .send({ data })
           .expect(201);
 
         // TODO Assert correct language
         expectEmailWith({
-          to: camp.contactEmail as string,
+          to: event.contactEmail as string,
           replyTo: expect.arrayContaining([data.email]),
         });
       });
 
-      it('should send a copy to the contact emails for international camp', async () => {
-        const camp = await CampFactory.create(
-          campWithContactEmailInternational,
+      it('should send a copy to the contact emails for international event', async () => {
+        const event = await EventFactory.create(
+          eventWithContactEmailInternational,
         );
 
         const data = {
@@ -1277,11 +1251,12 @@ describe('/api/v1/camps/:campId/registrations', () => {
         };
 
         await request()
-          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .post(`/api/v1/events/${event.id}/registrations`)
           .send({ data })
           .expect(201);
 
-        const expectedEmail = campWithContactEmailInternational.contactEmail.de;
+        const expectedEmail =
+          eventWithContactEmailInternational.contactEmail.de;
         // TODO Assert correct language
         expectEmailWith({
           to: expectedEmail,
@@ -1289,8 +1264,8 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should send a waiting list information to the user', async () => {
-        const camp = await createCampWithTemplates(
-          campWithEmailAndMaxParticipants,
+        const event = await createEventWithTemplates(
+          eventWithEmailAndMaxParticipants,
         );
 
         const data = {
@@ -1299,7 +1274,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         };
 
         await request()
-          .post(`/api/v1/camps/${camp.id}/registrations`)
+          .post(`/api/v1/events/${event.id}/registrations`)
           .send({ data })
           .expect(201);
 
@@ -1311,7 +1286,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
     });
   });
 
-  describe('PATCH /api/v1/camps/:campId/registrations/:registrationId', () => {
+  describe('PATCH /api/v1/events/:eventId/registrations/:registrationId', () => {
     it.each([
       { role: 'DIRECTOR', expectedStatus: 200 },
       { role: 'COORDINATOR', expectedStatus: 200 },
@@ -1320,14 +1295,14 @@ describe('/api/v1/camps/:campId/registrations', () => {
     ])(
       'should respond with `$expectedStatus` status code when user is $role',
       async ({ role, expectedStatus }) => {
-        const { camp, accessToken } = await createCampWithManagerAndToken(
+        const { event, accessToken } = await createEventWithManagerAndToken(
           undefined,
           role,
         );
-        const registration = await createRegistration(camp);
+        const registration = await createRegistration(event);
 
         await request()
-          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .patch(`/api/v1/events/${event.id}/registrations/${registration.id}`)
           .send({
             status: 'ACCEPTED',
           })
@@ -1336,13 +1311,13 @@ describe('/api/v1/camps/:campId/registrations', () => {
       },
     );
 
-    it('should respond with `403` status code when user is not camp manager', async () => {
+    it('should respond with `403` status code when user is not event manager', async () => {
       const accessToken = generateAccessToken(await UserFactory.create());
-      const camp = await CampFactory.create();
-      const registration = await createRegistration(camp);
+      const event = await EventFactory.create();
+      const registration = await createRegistration(event);
 
       await request()
-        .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+        .patch(`/api/v1/events/${event.id}/registrations/${registration.id}`)
         .send({
           data: {},
         })
@@ -1351,11 +1326,11 @@ describe('/api/v1/camps/:campId/registrations', () => {
     });
 
     it('should respond with `401` status code when unauthenticated', async () => {
-      const camp = await CampFactory.create();
-      const registration = await createRegistration(camp);
+      const event = await EventFactory.create();
+      const registration = await createRegistration(event);
 
       await request()
-        .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+        .patch(`/api/v1/events/${event.id}/registrations/${registration.id}`)
         .send({})
         .expect(401);
     });
@@ -1363,25 +1338,11 @@ describe('/api/v1/camps/:campId/registrations', () => {
     it.todo('should respond with `400` status code when request body is empty');
 
     it('should respond with `404` status code when registration id does not exists', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
+      const { event, accessToken } = await createEventWithManagerAndToken();
       const id = ulid();
 
       await request()
-        .patch(`/api/v1/camps/${camp.id}/registrations/${id}`)
-        .send({})
-        .auth(accessToken, { type: 'bearer' })
-        .expect(404);
-    });
-
-    it('should respond with `404` status code when user is camp manager', async () => {
-      const { camp, accessToken } = await createCampWithManagerAndToken();
-      const registration = await RegistrationFactory.create({
-        camp: { connect: { id: camp.id } },
-        deletedAt: new Date(),
-      });
-
-      await request()
-        .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+        .patch(`/api/v1/events/${event.id}/registrations/${id}`)
         .send({})
         .auth(accessToken, { type: 'bearer' })
         .expect(404);
@@ -1389,13 +1350,14 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
     describe('files', () => {
       it('should respond with `200` status code when previous form has file', async () => {
-        const { camp, accessToken } =
-          await createCampWithManagerAndToken(campWithFileRequired);
+        const { event, accessToken } = await createEventWithManagerAndToken(
+          eventWithFileRequired,
+        );
         const file = await FileFactory.create({
           field: crypto.randomUUID(),
           accessLevel: 'private',
         });
-        const registration = await createRegistration(camp, {
+        const registration = await createRegistration(event, {
           data: {
             some_field: 'Test',
             some_file: file.id,
@@ -1404,7 +1366,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         });
 
         const { body } = await request()
-          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .patch(`/api/v1/events/${event.id}/registrations/${registration.id}`)
           .send({
             data: {
               some_field: 'Test',
@@ -1429,9 +1391,10 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
       it('should respond with `200` status code when new file is provided', async () => {
         const sessionId = crypto.randomUUID();
-        const { camp, accessToken } =
-          await createCampWithManagerAndToken(campWithFileOptional);
-        const registration = await createRegistration(camp, {
+        const { event, accessToken } = await createEventWithManagerAndToken(
+          eventWithFileOptional,
+        );
+        const registration = await createRegistration(event, {
           data: {
             some_field: 'Test',
           },
@@ -1443,7 +1406,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         });
 
         const { body } = await request()
-          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .patch(`/api/v1/events/${event.id}/registrations/${registration.id}`)
           .set('Cookie', [
             'session=' + sessionId,
             '__Host-session=' + sessionId,
@@ -1472,13 +1435,14 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
       it('should respond with `200` status code when new file is replaced', async () => {
         const sessionId = crypto.randomUUID();
-        const { camp, accessToken } =
-          await createCampWithManagerAndToken(campWithFileRequired);
+        const { event, accessToken } = await createEventWithManagerAndToken(
+          eventWithFileRequired,
+        );
         const oldFile = await FileFactory.create({
           field: crypto.randomUUID(),
           accessLevel: 'private',
         });
-        const registration = await createRegistration(camp, {
+        const registration = await createRegistration(event, {
           data: {
             some_field: 'Test',
             some_file: oldFile.id,
@@ -1491,7 +1455,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         });
 
         const { body } = await request()
-          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .patch(`/api/v1/events/${event.id}/registrations/${registration.id}`)
           .set('Cookie', [
             'session=' + sessionId,
             '__Host-session=' + sessionId,
@@ -1520,16 +1484,17 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
       it('should respond with `400` status code when file does not exist', async () => {
         const sessionId = crypto.randomUUID();
-        const { camp, accessToken } =
-          await createCampWithManagerAndToken(campWithFileOptional);
-        const registration = await createRegistration(camp, {
+        const { event, accessToken } = await createEventWithManagerAndToken(
+          eventWithFileOptional,
+        );
+        const registration = await createRegistration(event, {
           data: {
             some_field: 'Test',
           },
         });
 
         await request()
-          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .patch(`/api/v1/events/${event.id}/registrations/${registration.id}`)
           .set('Cookie', [
             'session=' + sessionId,
             '__Host-session=' + sessionId,
@@ -1546,9 +1511,10 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
       it('should respond with `400` status code when session id does not match', async () => {
         const sessionId = crypto.randomUUID();
-        const { camp, accessToken } =
-          await createCampWithManagerAndToken(campWithFileOptional);
-        const registration = await createRegistration(camp, {
+        const { event, accessToken } = await createEventWithManagerAndToken(
+          eventWithFileOptional,
+        );
+        const registration = await createRegistration(event, {
           data: {
             some_field: 'Test',
           },
@@ -1560,7 +1526,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         });
 
         await request()
-          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .patch(`/api/v1/events/${event.id}/registrations/${registration.id}`)
           .set('Cookie', [
             'session=' + sessionId,
             '__Host-session=' + sessionId,
@@ -1577,9 +1543,10 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
       it('should respond with `400` status code when file is already assigned', async () => {
         const sessionId = crypto.randomUUID();
-        const { camp, accessToken } =
-          await createCampWithManagerAndToken(campWithFileOptional);
-        const registration = await createRegistration(camp, {
+        const { event, accessToken } = await createEventWithManagerAndToken(
+          eventWithFileOptional,
+        );
+        const registration = await createRegistration(event, {
           data: {
             some_field: 'Test',
           },
@@ -1590,13 +1557,13 @@ describe('/api/v1/camps/:campId/registrations', () => {
           accessLevel: 'private',
           registration: {
             create: RegistrationFactory.build({
-              camp: { create: CampFactory.build() },
+              event: { create: EventFactory.build() },
             }),
           },
         });
 
         await request()
-          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .patch(`/api/v1/events/${event.id}/registrations/${registration.id}`)
           .set('Cookie', [
             'session=' + sessionId,
             '__Host-session=' + sessionId,
@@ -1614,11 +1581,11 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
     describe('sends messages', () => {
       it('should respond with `200` status code when message template is missing', async () => {
-        const { camp, accessToken } = await createCampWithManagerAndToken({
-          ...campWithEmail,
+        const { event, accessToken } = await createEventWithManagerAndToken({
+          ...eventWithEmail,
           messageTemplates: {},
         });
-        const registration = await createRegistration(camp);
+        const registration = await createRegistration(event);
 
         const data = {
           email: 'test@example.com',
@@ -1627,23 +1594,23 @@ describe('/api/v1/camps/:campId/registrations', () => {
         };
 
         await request()
-          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .patch(`/api/v1/events/${event.id}/registrations/${registration.id}`)
           .send({ data })
           .auth(accessToken, { type: 'bearer' })
           .expect(200);
       });
 
       it('should send update email', async () => {
-        const { camp, accessToken } = await createCampWithManagerAndToken({
-          ...campWithEmail,
+        const { event, accessToken } = await createEventWithManagerAndToken({
+          ...eventWithEmail,
           messageTemplates: {
             create: MessageTemplateFactory.build({
-              event: 'registration_updated',
+              trigger: 'registration_updated',
               subject: 'Registration updated',
             }),
           },
         });
-        const registration = await createRegistration(camp);
+        const registration = await createRegistration(event);
 
         const data = {
           email: 'test@example.com',
@@ -1652,30 +1619,98 @@ describe('/api/v1/camps/:campId/registrations', () => {
         };
 
         await request()
-          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .patch(`/api/v1/events/${event.id}/registrations/${registration.id}`)
           .send({ data })
           .auth(accessToken, { type: 'bearer' })
           .expect(200);
 
         expectEmailWith({
           to: data.email,
-          replyTo: camp.contactEmail as string,
+          replyTo: event.contactEmail as string,
           subject: 'Registration updated',
         });
       });
 
-      it('should not send update email when suppressed', async () => {
-        const { camp, accessToken } = await createCampWithManagerAndToken({
-          ...campWithEmail,
+      it('should list the changed fields with their new values', async () => {
+        const { event, accessToken } = await createEventWithManagerAndToken({
+          ...eventWithEmail,
           messageTemplates: {
             create: MessageTemplateFactory.build({
-              event: 'registration_updated',
+              trigger: 'registration_updated',
+              subject: 'Registration updated',
+              body: '<p>{{ registration.changes }}</p>',
+            }),
+          },
+        });
+        const registration = await createRegistration(event);
+
+        const data = {
+          email: 'test@example.com',
+          first_name: 'Jhon',
+          last_name: 'Doe',
+        };
+
+        await request()
+          .patch(`/api/v1/events/${event.id}/registrations/${registration.id}`)
+          .send({ data })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        expectEmailWith({
+          html: expect.stringContaining(
+            '<ul class="registration-changes"',
+          ) as string,
+        });
+        expectEmailWith({
+          html: expect.stringContaining('Jhon') as string,
+        });
+
+        // The durable copy names what moved without repeating what it now says.
+        const delivery = await prisma.messageDelivery.findFirst({
+          where: { registrationId: registration.id },
+        });
+        expect(delivery?.body).toContain('first_name');
+        expect(delivery?.body).not.toContain('Jhon');
+      });
+
+      it('should not add a change list when the template has no token', async () => {
+        const { event, accessToken } = await createEventWithManagerAndToken({
+          ...eventWithEmail,
+          messageTemplates: {
+            create: MessageTemplateFactory.build({
+              trigger: 'registration_updated',
+              subject: 'Registration updated',
+              body: '<p>Your registration was updated.</p>',
+            }),
+          },
+        });
+        const registration = await createRegistration(event);
+
+        await request()
+          .patch(`/api/v1/events/${event.id}/registrations/${registration.id}`)
+          .send({ data: { email: 'test@example.com', first_name: 'Jhon' } })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        expectEmailWith({
+          html: expect.not.stringContaining(
+            '<ul class="registration-changes"',
+          ) as string,
+        });
+      });
+
+      it('should not send update email when suppressed', async () => {
+        const { event, accessToken } = await createEventWithManagerAndToken({
+          ...eventWithEmail,
+          messageTemplates: {
+            create: MessageTemplateFactory.build({
+              trigger: 'registration_updated',
               country: 'fr',
               subject: 'Registration updated',
             }),
           },
         });
-        const registration = await createRegistration(camp, {
+        const registration = await createRegistration(event, {
           country: 'bg',
         });
 
@@ -1687,7 +1722,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
         await request()
           .patch(
-            `/api/v1/camps/${camp.id}/registrations/${registration.id}?suppressMessage=true`,
+            `/api/v1/events/${event.id}/registrations/${registration.id}?suppressMessage=true`,
           )
           .send({ data })
           .auth(accessToken, { type: 'bearer' })
@@ -1697,17 +1732,17 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should send waiting list confirmation', async () => {
-        const { camp, accessToken } = await createCampWithManagerAndToken({
-          ...campWithEmailAndCountry,
+        const { event, accessToken } = await createEventWithManagerAndToken({
+          ...eventWithEmailAndCountry,
           messageTemplates: {
             create: MessageTemplateFactory.build({
-              event: 'registration_waitlist_accepted',
+              trigger: 'registration_waitlist_accepted',
               country: 'fr',
               subject: 'Registration accepted',
             }),
           },
         });
-        const registration = await createRegistration(camp, {
+        const registration = await createRegistration(event, {
           status: 'WAITLISTED',
           country: 'fr',
         });
@@ -1720,7 +1755,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         };
 
         await request()
-          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .patch(`/api/v1/events/${event.id}/registrations/${registration.id}`)
           .send({
             status: 'ACCEPTED',
             data,
@@ -1731,7 +1766,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         expectEmailCount(1);
         expectEmailWith({
           to: data.email,
-          replyTo: camp.contactEmail as string,
+          replyTo: event.contactEmail as string,
           subject: 'Registration accepted',
         });
       });
@@ -1739,10 +1774,10 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
     describe('computed data', () => {
       it('should generate computed data for all fields', async () => {
-        const { camp, accessToken } = await createCampWithManagerAndToken(
-          campWithAllCampDataTypes,
+        const { event, accessToken } = await createEventWithManagerAndToken(
+          eventWithAllEventDataTypes,
         );
-        const registration = await createRegistration(camp);
+        const registration = await createRegistration(event);
 
         const data = {
           firstName: 'Jhon',
@@ -1759,7 +1794,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         };
 
         const { body } = await request()
-          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .patch(`/api/v1/events/${event.id}/registrations/${registration.id}`)
           .send({ data })
           .auth(accessToken, { type: 'bearer' })
           .expect(200);
@@ -1782,10 +1817,10 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should generate computed data with address', async () => {
-        const { camp, accessToken } = await createCampWithManagerAndToken(
-          campWithAddressCampDataTypes,
+        const { event, accessToken } = await createEventWithManagerAndToken(
+          eventWithAddressEventDataTypes,
         );
-        const registration = await createRegistration(camp);
+        const registration = await createRegistration(event);
 
         const data = {
           address: {
@@ -1797,7 +1832,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         };
 
         const { body } = await request()
-          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .patch(`/api/v1/events/${event.id}/registrations/${registration.id}`)
           .send({ data })
           .auth(accessToken, { type: 'bearer' })
           .expect(200);
@@ -1814,11 +1849,11 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
     describe('custom data', () => {
       it('should respond with `200` status code when custom data is present', async () => {
-        const { camp, accessToken } = await createCampWithManagerAndToken(
+        const { event, accessToken } = await createEventWithManagerAndToken(
           undefined,
           'DIRECTOR',
         );
-        const registration = await createRegistration(camp);
+        const registration = await createRegistration(event);
 
         const customData = {
           someKey: 'someValue',
@@ -1826,7 +1861,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         };
 
         const { body } = await request()
-          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .patch(`/api/v1/events/${event.id}/registrations/${registration.id}`)
           .send({
             customData,
           })
@@ -1840,11 +1875,11 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should respond with `200` status code when custom data is overwritten', async () => {
-        const { camp, accessToken } = await createCampWithManagerAndToken(
+        const { event, accessToken } = await createEventWithManagerAndToken(
           undefined,
           'DIRECTOR',
         );
-        const registration = await createRegistration(camp);
+        const registration = await createRegistration(event);
 
         const customData = {
           someKey: 'someValue',
@@ -1852,7 +1887,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         };
 
         await request()
-          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .patch(`/api/v1/events/${event.id}/registrations/${registration.id}`)
           .send({
             customData,
           })
@@ -1864,7 +1899,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         };
 
         const { body } = await request()
-          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .patch(`/api/v1/events/${event.id}/registrations/${registration.id}`)
           .send({
             customData: updatedCustomData,
           })
@@ -1877,16 +1912,16 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should respond with `400` status code when custom data is invalid', async () => {
-        const { camp, accessToken } = await createCampWithManagerAndToken(
+        const { event, accessToken } = await createEventWithManagerAndToken(
           undefined,
           'DIRECTOR',
         );
-        const registration = await createRegistration(camp);
+        const registration = await createRegistration(event);
 
         const customData = 'Invalid custom data';
 
         await request()
-          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .patch(`/api/v1/events/${event.id}/registrations/${registration.id}`)
           .send({
             customData,
           })
@@ -1903,8 +1938,8 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
       it('should attach a temp file of the same session to a slot', async () => {
         const sessionId = crypto.randomUUID();
-        const { camp, accessToken } = await createCampWithManagerAndToken();
-        const registration = await createRegistration(camp);
+        const { event, accessToken } = await createEventWithManagerAndToken();
+        const registration = await createRegistration(event);
 
         const file = await FileFactory.create({
           field: sessionId,
@@ -1912,7 +1947,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         });
 
         const { body } = await request()
-          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .patch(`/api/v1/events/${event.id}/registrations/${registration.id}`)
           .set('Cookie', sessionCookies(sessionId))
           .send({
             customFiles: {
@@ -1935,8 +1970,8 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
       it('should detach the previous file when the slot is replaced', async () => {
         const sessionId = crypto.randomUUID();
-        const { camp, accessToken } = await createCampWithManagerAndToken();
-        const registration = await createRegistration(camp);
+        const { event, accessToken } = await createEventWithManagerAndToken();
+        const registration = await createRegistration(event);
 
         const oldFile = await FileFactory.create({
           field: 'custom:consent_form',
@@ -1949,7 +1984,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         });
 
         const { body } = await request()
-          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .patch(`/api/v1/events/${event.id}/registrations/${registration.id}`)
           .set('Cookie', sessionCookies(sessionId))
           .send({
             customFiles: {
@@ -1977,8 +2012,8 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should detach the file when the slot is cleared', async () => {
-        const { camp, accessToken } = await createCampWithManagerAndToken();
-        const registration = await createRegistration(camp);
+        const { event, accessToken } = await createEventWithManagerAndToken();
+        const registration = await createRegistration(event);
 
         const file = await FileFactory.create({
           field: 'custom:consent_form',
@@ -1987,7 +2022,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         });
 
         const { body } = await request()
-          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .patch(`/api/v1/events/${event.id}/registrations/${registration.id}`)
           .send({
             customFiles: {
               consent_form: null,
@@ -2006,8 +2041,8 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should keep the file when the slot is re-assigned to it', async () => {
-        const { camp, accessToken } = await createCampWithManagerAndToken();
-        const registration = await createRegistration(camp);
+        const { event, accessToken } = await createEventWithManagerAndToken();
+        const registration = await createRegistration(event);
 
         const file = await FileFactory.create({
           field: 'custom:consent_form',
@@ -2016,7 +2051,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         });
 
         const { body } = await request()
-          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .patch(`/api/v1/events/${event.id}/registrations/${registration.id}`)
           .send({
             customFiles: {
               consent_form: file.id,
@@ -2037,8 +2072,8 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should only change the mentioned slots', async () => {
-        const { camp, accessToken } = await createCampWithManagerAndToken();
-        const registration = await createRegistration(camp);
+        const { event, accessToken } = await createEventWithManagerAndToken();
+        const registration = await createRegistration(event);
 
         const otherFile = await FileFactory.create({
           field: 'custom:payment_receipt',
@@ -2052,7 +2087,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         });
 
         const { body } = await request()
-          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .patch(`/api/v1/events/${event.id}/registrations/${registration.id}`)
           .send({
             customFiles: {
               consent_form: null,
@@ -2079,8 +2114,8 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
       it('should respond with `400` status code when the session id does not match', async () => {
         const sessionId = crypto.randomUUID();
-        const { camp, accessToken } = await createCampWithManagerAndToken();
-        const registration = await createRegistration(camp);
+        const { event, accessToken } = await createEventWithManagerAndToken();
+        const registration = await createRegistration(event);
 
         const file = await FileFactory.create({
           field: crypto.randomUUID(),
@@ -2088,7 +2123,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         });
 
         await request()
-          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .patch(`/api/v1/events/${event.id}/registrations/${registration.id}`)
           .set('Cookie', sessionCookies(sessionId))
           .send({
             customFiles: {
@@ -2105,11 +2140,11 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should respond with `400` status code when the file does not exist', async () => {
-        const { camp, accessToken } = await createCampWithManagerAndToken();
-        const registration = await createRegistration(camp);
+        const { event, accessToken } = await createEventWithManagerAndToken();
+        const registration = await createRegistration(event);
 
         await request()
-          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .patch(`/api/v1/events/${event.id}/registrations/${registration.id}`)
           .send({
             customFiles: {
               consent_form: ulid(),
@@ -2120,13 +2155,14 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should respond with `400` status code when a form file is referenced', async () => {
-        const { camp, accessToken } =
-          await createCampWithManagerAndToken(campWithFileOptional);
+        const { event, accessToken } = await createEventWithManagerAndToken(
+          eventWithFileOptional,
+        );
         const formFile = await FileFactory.create({
           field: crypto.randomUUID(),
           accessLevel: 'private',
         });
-        const registration = await createRegistration(camp, {
+        const registration = await createRegistration(event, {
           data: {
             some_field: 'Test',
             some_file: formFile.id,
@@ -2135,7 +2171,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         });
 
         await request()
-          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .patch(`/api/v1/events/${event.id}/registrations/${registration.id}`)
           .send({
             customFiles: {
               consent_form: formFile.id,
@@ -2159,11 +2195,13 @@ describe('/api/v1/camps/:campId/registrations', () => {
       ])(
         'should respond with `400` status code for %s',
         async (_name, customFiles) => {
-          const { camp, accessToken } = await createCampWithManagerAndToken();
-          const registration = await createRegistration(camp);
+          const { event, accessToken } = await createEventWithManagerAndToken();
+          const registration = await createRegistration(event);
 
           await request()
-            .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+            .patch(
+              `/api/v1/events/${event.id}/registrations/${registration.id}`,
+            )
             .send({ customFiles })
             .auth(accessToken, { type: 'bearer' })
             .expect(400);
@@ -2172,9 +2210,10 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
       it('should keep custom files when form data is updated', async () => {
         const sessionId = crypto.randomUUID();
-        const { camp, accessToken } =
-          await createCampWithManagerAndToken(campWithFileOptional);
-        const registration = await createRegistration(camp, {
+        const { event, accessToken } = await createEventWithManagerAndToken(
+          eventWithFileOptional,
+        );
+        const registration = await createRegistration(event, {
           data: {
             some_field: 'Test',
           },
@@ -2187,7 +2226,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         });
 
         await request()
-          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .patch(`/api/v1/events/${event.id}/registrations/${registration.id}`)
           .set('Cookie', sessionCookies(sessionId))
           .send({
             data: {
@@ -2206,13 +2245,14 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
       it('should keep form files when custom files are updated', async () => {
         const sessionId = crypto.randomUUID();
-        const { camp, accessToken } =
-          await createCampWithManagerAndToken(campWithFileOptional);
+        const { event, accessToken } = await createEventWithManagerAndToken(
+          eventWithFileOptional,
+        );
         const formFile = await FileFactory.create({
           field: crypto.randomUUID(),
           accessLevel: 'private',
         });
-        const registration = await createRegistration(camp, {
+        const registration = await createRegistration(event, {
           data: {
             some_field: 'Test',
             some_file: formFile.id,
@@ -2225,7 +2265,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         });
 
         await request()
-          .patch(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .patch(`/api/v1/events/${event.id}/registrations/${registration.id}`)
           .set('Cookie', sessionCookies(sessionId))
           .send({
             customFiles: {
@@ -2242,8 +2282,8 @@ describe('/api/v1/camps/:campId/registrations', () => {
       });
 
       it('should include the file slots in the show response', async () => {
-        const { camp, accessToken } = await createCampWithManagerAndToken();
-        const registration = await createRegistration(camp);
+        const { event, accessToken } = await createEventWithManagerAndToken();
+        const registration = await createRegistration(event);
 
         const file = await FileFactory.create({
           field: 'custom:consent_form',
@@ -2252,7 +2292,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         });
 
         const { body } = await request()
-          .get(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .get(`/api/v1/events/${event.id}/registrations/${registration.id}`)
           .auth(accessToken, { type: 'bearer' })
           .expect(200);
 
@@ -2263,7 +2303,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
     });
   });
 
-  describe('DELETE /api/v1/camps/:campId/registrations/:registrationId', () => {
+  describe('DELETE /api/v1/events/:eventId/registrations/:registrationId', () => {
     it.each([
       { role: 'DIRECTOR', expectedStatus: 204, expectedCount: 1 },
       { role: 'COORDINATOR', expectedStatus: 204, expectedCount: 1 },
@@ -2272,97 +2312,115 @@ describe('/api/v1/camps/:campId/registrations', () => {
     ])(
       'should respond with `$expectedStatus` status code when user is $role',
       async ({ role, expectedStatus, expectedCount }) => {
-        const { camp, accessToken } = await createCampWithManagerAndToken(
+        const { event, accessToken } = await createEventWithManagerAndToken(
           undefined,
           role,
         );
-        await createRegistration(camp);
-        const registration = await createRegistration(camp);
+        await createRegistration(event);
+        const registration = await createRegistration(event);
 
         await request()
-          .delete(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .delete(`/api/v1/events/${event.id}/registrations/${registration.id}`)
           .send()
           .auth(accessToken, { type: 'bearer' })
           .expect(expectedStatus);
 
         const registrationCount = await prisma.registration.count({
           where: {
-            campId: camp.id,
-            deletedAt: null,
+            eventId: event.id,
           },
         });
         expect(registrationCount).toBe(expectedCount);
       },
     );
 
-    it('should respond with `403` status code when user is not camp manager', async () => {
-      const camp = await CampFactory.create();
-      const registration = await createRegistration(camp);
+    it('should delete the mails rendered for the registration', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const registration = await createRegistration(event);
+      await MessageDeliveryFactory.create({
+        registration: { connect: { id: registration.id } },
+      });
+
+      await request()
+        .delete(`/api/v1/events/${event.id}/registrations/${registration.id}`)
+        .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expect(204);
+
+      // Erasing a participant erases what was mailed about them; a delivery row
+      // that outlived its registration used to keep their data indefinitely.
+      const deliveries = await prisma.messageDelivery.count();
+      expect(deliveries).toBe(0);
+    });
+
+    it('should respond with `403` status code when user is not event manager', async () => {
+      const event = await EventFactory.create();
+      const registration = await createRegistration(event);
       const accessToken = generateAccessToken(await UserFactory.create());
 
       await request()
-        .delete(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+        .delete(`/api/v1/events/${event.id}/registrations/${registration.id}`)
         .send()
         .auth(accessToken, { type: 'bearer' })
         .expect(403);
 
-      const registrationCount = await countRegistrations(camp);
+      const registrationCount = await countRegistrations(event);
       expect(registrationCount).toBe(1);
     });
 
     it('should respond with `401` status code when unauthenticated', async () => {
-      const camp = await CampFactory.create();
-      const registration = await createRegistration(camp);
+      const event = await EventFactory.create();
+      const registration = await createRegistration(event);
 
       await request()
-        .delete(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+        .delete(`/api/v1/events/${event.id}/registrations/${registration.id}`)
         .send()
         .expect(401);
 
-      const registrationCount = await countRegistrations(camp);
+      const registrationCount = await countRegistrations(event);
       expect(registrationCount).toBe(1);
     });
 
     it('should respond with `401` status code when unauthenticated and registration does not exist', async () => {
-      const camp = await CampFactory.create();
+      const event = await EventFactory.create();
       const registrationId = ulid();
 
       await request()
-        .delete(`/api/v1/camps/${camp.id}/registrations/${registrationId}`)
+        .delete(`/api/v1/events/${event.id}/registrations/${registrationId}`)
         .send()
         .expect(401);
     });
 
     describe('sends messages', () => {
       it('should respond with `204` status code when message template is missing', async () => {
-        const { camp, accessToken } = await createCampWithManagerAndToken({
+        const { event, accessToken } = await createEventWithManagerAndToken({
           messageTemplates: {},
         });
         const registration = await RegistrationFactory.create({
-          camp: { connect: { id: camp.id } },
+          event: { connect: { id: event.id } },
           emails: ['test@email.com'],
         });
 
         await request()
-          .delete(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .delete(`/api/v1/events/${event.id}/registrations/${registration.id}`)
           .send()
           .auth(accessToken, { type: 'bearer' })
           .expect(204);
       });
 
       it('should send update email', async () => {
-        const { camp, accessToken } = await createCampWithManagerAndToken({
-          ...campWithEmail,
+        const { event, accessToken } = await createEventWithManagerAndToken({
+          ...eventWithEmail,
           messageTemplates: {
             createMany: {
               data: [
                 MessageTemplateFactory.build({
-                  event: 'registration_canceled',
+                  trigger: 'registration_canceled',
                   country: 'us',
                   subject: 'Oops',
                 }),
                 MessageTemplateFactory.build({
-                  event: 'registration_canceled',
+                  trigger: 'registration_canceled',
                   country: 'fr',
                   subject: 'Registration canceled',
                 }),
@@ -2371,12 +2429,12 @@ describe('/api/v1/camps/:campId/registrations', () => {
           },
         });
         const registration = await RegistrationFactory.create({
-          camp: { connect: { id: camp.id } },
+          event: { connect: { id: event.id } },
           emails: ['test@email.com'],
           country: 'fr',
         });
         await request()
-          .delete(`/api/v1/camps/${camp.id}/registrations/${registration.id}`)
+          .delete(`/api/v1/events/${event.id}/registrations/${registration.id}`)
           .send()
           .auth(accessToken, { type: 'bearer' })
           .expect(204);
@@ -2384,25 +2442,25 @@ describe('/api/v1/camps/:campId/registrations', () => {
         expect(mailer.sendMail).toHaveBeenCalledWith(
           expect.objectContaining({
             to: 'test@email.com',
-            replyTo: camp.contactEmail,
+            replyTo: event.contactEmail,
             subject: 'Registration canceled',
           }),
         );
       });
 
       it('should send update email when not suppressed', async () => {
-        const { camp, accessToken } = await createCampWithManagerAndToken({
-          ...campWithEmail,
+        const { event, accessToken } = await createEventWithManagerAndToken({
+          ...eventWithEmail,
           messageTemplates: {
             createMany: {
               data: [
                 MessageTemplateFactory.build({
-                  event: 'registration_canceled',
+                  trigger: 'registration_canceled',
                   country: 'us',
                   subject: 'Oops',
                 }),
                 MessageTemplateFactory.build({
-                  event: 'registration_canceled',
+                  trigger: 'registration_canceled',
                   country: 'fr',
                   subject: 'Registration canceled',
                 }),
@@ -2411,13 +2469,13 @@ describe('/api/v1/camps/:campId/registrations', () => {
           },
         });
         const registration = await RegistrationFactory.create({
-          camp: { connect: { id: camp.id } },
+          event: { connect: { id: event.id } },
           emails: ['test@email.com'],
           country: 'fr',
         });
         await request()
           .delete(
-            `/api/v1/camps/${camp.id}/registrations/${registration.id}?suppressMessage=false`,
+            `/api/v1/events/${event.id}/registrations/${registration.id}?suppressMessage=false`,
           )
           .send()
           .auth(accessToken, { type: 'bearer' })
@@ -2426,31 +2484,31 @@ describe('/api/v1/camps/:campId/registrations', () => {
         expect(mailer.sendMail).toHaveBeenCalledWith(
           expect.objectContaining({
             to: 'test@email.com',
-            replyTo: camp.contactEmail,
+            replyTo: event.contactEmail,
             subject: 'Registration canceled',
           }),
         );
       });
 
       it('should not send email when suppressed', async () => {
-        const { camp, accessToken } = await createCampWithManagerAndToken({
-          ...campWithEmail,
+        const { event, accessToken } = await createEventWithManagerAndToken({
+          ...eventWithEmail,
           messageTemplates: {
             create: MessageTemplateFactory.build({
-              event: 'registration_canceled',
+              trigger: 'registration_canceled',
               subject: 'Registration canceled',
               country: 'fr',
             }),
           },
         });
         const registration = await RegistrationFactory.create({
-          camp: { connect: { id: camp.id } },
+          event: { connect: { id: event.id } },
           emails: ['test@email.com'],
           country: 'fr',
         });
         await request()
           .delete(
-            `/api/v1/camps/${camp.id}/registrations/${registration.id}?suppressMessage=true`,
+            `/api/v1/events/${event.id}/registrations/${registration.id}?suppressMessage=true`,
           )
           .send()
           .auth(accessToken, { type: 'bearer' })
@@ -2459,7 +2517,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
         expect(mailer.sendMail).not.toHaveBeenCalledWith(
           expect.objectContaining({
             to: 'test@email.com',
-            replyTo: camp.contactEmail,
+            replyTo: event.contactEmail,
             subject: 'Registration canceled',
           }),
         );
@@ -2470,7 +2528,7 @@ describe('/api/v1/camps/:campId/registrations', () => {
 
 describe('/api/v1/files/', () => {
   describe('GET /api/v1/files/:fileId', () => {
-    it('should respond with `200` status code when user is camp manager', async () => {
+    it('should respond with `200` status code when user is event manager', async () => {
       const { file, accessToken } = await createRegistrationWithFile();
 
       await request()
@@ -2480,7 +2538,7 @@ describe('/api/v1/files/', () => {
         .expect(200);
     });
 
-    it('should respond with `403` status code when user is not camp manager', async () => {
+    it('should respond with `403` status code when user is not event manager', async () => {
       const { file } = await createRegistrationWithFile();
       const accessToken = generateAccessToken(await UserFactory.create());
 

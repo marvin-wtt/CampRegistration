@@ -32,9 +32,9 @@ export class MessageController extends BaseController {
 
   async index(req: Request, res: Response) {
     await req.validate(validator.index);
-    const camp = req.modelOrFail('camp');
+    const event = req.modelOrFail('event');
 
-    const messages = await this.messageService.queryMessages(camp.id);
+    const messages = await this.messageService.queryMessages(event.id);
 
     res.status(httpStatus.OK).resource(MessageResource.collection(messages));
   }
@@ -57,11 +57,11 @@ export class MessageController extends BaseController {
         attachmentIds,
       },
     } = await req.validate(validator.store);
-    const camp = req.modelOrFail('camp');
+    const event = req.modelOrFail('event');
     const userId = req.authUserId();
 
     const registrations = await this.registrationService.getRegistrationsByIds(
-      camp.id,
+      event.id,
       registrationIds,
     );
 
@@ -78,7 +78,7 @@ export class MessageController extends BaseController {
     }
 
     const message = await this.messageService.createMessage(
-      camp.id,
+      event.id,
       userId,
       {
         subject,
@@ -91,12 +91,12 @@ export class MessageController extends BaseController {
     );
 
     await RegistrationTemplateMessage.enqueueForAll(
-      camp,
+      event,
       registrations,
       messageToRenderable(message),
     );
 
-    void this.realtimeService.emit(camp.id, 'message', message.id, 'created');
+    void this.realtimeService.emit(event.id, 'message', message.id, 'created');
 
     // The per-recipient deliveries are processed asynchronously, so expose the
     // targeted registrations directly on the response.
@@ -123,10 +123,10 @@ export class MessageController extends BaseController {
     await req.validate(validator.destroy);
     const message = req.modelOrFail('message');
 
-    await this.messageService.deleteMessageById(message.id, message.campId);
+    await this.messageService.deleteMessageById(message.id, message.eventId);
 
     void this.realtimeService.emit(
-      message.campId,
+      message.eventId,
       'message',
       message.id,
       'deleted',

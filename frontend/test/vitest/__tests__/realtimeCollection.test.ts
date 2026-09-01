@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Mock } from 'vitest';
 import { effectScope, ref } from 'vue';
 import type { EffectScope, Ref } from 'vue';
 import type {
@@ -32,9 +33,9 @@ vi.mock('@/stores/realtime-store', () => ({
 }));
 
 // A shared, mutable object (not a fresh literal per call) so tests can change
-// the active campId mid-test and have the composable observe it — it captures
-// `useRoute()`'s return value once and reads `.params.campId` off it later.
-const routeState = vi.hoisted(() => ({ params: { campId: 'camp-1' } }));
+// the active eventId mid-test and have the composable observe it — it captures
+// `useRoute()`'s return value once and reads `.params.eventId` off it later.
+const routeState = vi.hoisted(() => ({ params: { eventId: 'event-1' } }));
 
 vi.mock('vue-router', () => ({
   useRoute: () => routeState,
@@ -73,11 +74,11 @@ const notFound = () => ({
 describe('useRealtimeCollection', () => {
   let scope: EffectScope;
   let data: Ref<Item[] | undefined>;
-  let invalidate: ReturnType<typeof vi.fn>;
-  let reload: ReturnType<typeof vi.fn>;
+  let invalidate: Mock<() => void>;
+  let reload: Mock<() => Promise<void> | void>;
 
   function mount(options?: {
-    fetchOne?: (campId: string, id: string) => Promise<Item>;
+    fetchOne?: (eventId: string, id: string) => Promise<Item>;
     debounceMs?: number;
   }) {
     scope = effectScope();
@@ -95,7 +96,7 @@ describe('useRealtimeCollection', () => {
     vi.useFakeTimers();
     registry.handlers.clear();
     registry.reconnectHandlers.clear();
-    routeState.params.campId = 'camp-1';
+    routeState.params.eventId = 'event-1';
     data = ref<Item[]>();
     invalidate = vi.fn();
     reload = vi.fn().mockResolvedValue(undefined);
@@ -146,8 +147,8 @@ describe('useRealtimeCollection', () => {
     emit({ resource: 'task', operation: 'updated', id: 'item-1' });
     await vi.runAllTimersAsync();
 
-    expect(fetchOne).toHaveBeenCalledWith('camp-1', 'item-2');
-    expect(fetchOne).toHaveBeenCalledWith('camp-1', 'item-1');
+    expect(fetchOne).toHaveBeenCalledWith('event-1', 'item-2');
+    expect(fetchOne).toHaveBeenCalledWith('event-1', 'item-1');
     expect(data.value).toEqual([
       { id: 'item-1', value: 'changed' },
       { id: 'item-2', value: 'new' },
@@ -249,7 +250,7 @@ describe('useRealtimeCollection', () => {
     expect(data.value).toEqual([{ id: 'item-1', value: 'a' }]);
   });
 
-  it('drops an item-fetch result if the active camp changed before it resolved', async () => {
+  it('drops an item-fetch result if the active event changed before it resolved', async () => {
     const pending = deferred<Item>();
     const fetchOne = vi.fn().mockReturnValueOnce(pending.promise);
     data.value = [{ id: 'item-1', value: 'a' }];
@@ -257,16 +258,16 @@ describe('useRealtimeCollection', () => {
 
     emit({ resource: 'task', operation: 'updated', id: 'item-1' });
 
-    // Simulate navigating to a different camp while the fetch is in flight:
-    // a store's own campBus invalidation swaps `data.value` for the new camp
+    // Simulate navigating to a different event while the fetch is in flight:
+    // a store's own eventBus invalidation swaps `data.value` for the new event
     // without going through this composable's reload/generation mechanism.
-    routeState.params.campId = 'camp-2';
-    data.value = [{ id: 'item-9', value: 'other camp' }];
+    routeState.params.eventId = 'event-2';
+    data.value = [{ id: 'item-9', value: 'other event' }];
 
-    pending.resolve({ id: 'item-1', value: 'from old camp' });
+    pending.resolve({ id: 'item-1', value: 'from old event' });
     await vi.runAllTimersAsync();
 
-    expect(data.value).toEqual([{ id: 'item-9', value: 'other camp' }]);
+    expect(data.value).toEqual([{ id: 'item-9', value: 'other event' }]);
   });
 
   it('reloads on reconnect only when the list is loaded', async () => {

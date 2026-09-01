@@ -11,12 +11,12 @@ export default {
     progress: 'Aufgabe wird aktualisiert...',
     success: 'Aufgabe erfolgreich aktualisiert',
     error: 'Fehler beim Aktualisieren der Aufgabe',
-    invalid: 'Ungültige Camp-ID',
+    invalid: 'Ungültige Veranstaltungs-ID',
   },
   delete: {
     progress: 'Aufgabe wird gelöscht...',
     success: 'Aufgabe erfolgreich gelöscht',
     error: 'Fehler beim Löschen der Aufgabe',
-    invalid: 'Ungültige Camp-ID',
+    invalid: 'Ungültige Veranstaltungs-ID',
   },
 };

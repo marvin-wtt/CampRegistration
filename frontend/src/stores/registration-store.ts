@@ -10,7 +10,7 @@ import type {
 } from '@camp-registration/common/entities';
 import { useServiceHandler } from '@/composables/serviceHandler';
 import { useRealtimeCollection } from '@/composables/realtimeCollection';
-import { useAuthBus, useCampBus, useRegistrationBus } from '@/composables/bus';
+import { useAuthBus, useEventBus, useRegistrationBus } from '@/composables/bus';
 import { useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { formatPersonName } from '@/utils/formatters';
@@ -24,7 +24,7 @@ export const useRegistrationsStore = defineStore('registrations', () => {
   });
   const authBus = useAuthBus();
   const bus = useRegistrationBus();
-  const campBus = useCampBus();
+  const eventBus = useEventBus();
   const {
     data,
     isLoading,
@@ -42,7 +42,7 @@ export const useRegistrationsStore = defineStore('registrations', () => {
     reset();
   });
 
-  campBus.on('change', () => {
+  eventBus.on('change', () => {
     invalidate();
   });
 
@@ -53,7 +53,7 @@ export const useRegistrationsStore = defineStore('registrations', () => {
     data,
     invalidate,
     reload: () => fetchData(undefined, { background: true }),
-    fetchOne: (campId, id) => apiService.fetchRegistration(campId, id),
+    fetchOne: (eventId, id) => apiService.fetchRegistration(eventId, id),
     onCreate: (registration) => {
       bus.emit('create', registration);
       showRealtimeCreateNotification(registration);
@@ -88,8 +88,8 @@ export const useRegistrationsStore = defineStore('registrations', () => {
       : t('stores.registration.realtimeCreate.fallbackName');
   }
 
-  async function fetchData(campId?: string, opts?: { background?: boolean }) {
-    const cid: string = campId ?? (route.params.campId as string);
+  async function fetchData(eventId?: string, opts?: { background?: boolean }) {
+    const cid: string = eventId ?? (route.params.eventId as string);
     checkNotNullWithError(cid);
 
     const fetcher = () => apiService.fetchRegistrations(cid);
@@ -97,12 +97,12 @@ export const useRegistrationsStore = defineStore('registrations', () => {
   }
 
   async function storeData(
-    campId: string,
+    eventId: string,
     registration: RegistrationCreateData,
   ) {
-    checkNotNullWithError(campId);
+    checkNotNullWithError(eventId);
 
-    await apiService.createRegistration(campId, registration);
+    await apiService.createRegistration(eventId, registration);
   }
 
   async function updateData(
@@ -110,9 +110,9 @@ export const useRegistrationsStore = defineStore('registrations', () => {
     updateData: RegistrationUpdateData,
     params?: RegistrationUpdateQuery,
   ) {
-    const campId = route.params.campId as string;
+    const eventId = route.params.eventId as string;
 
-    const cid = checkNotNullWithError(campId);
+    const cid = checkNotNullWithError(eventId);
     const rid = checkNotNullWithNotification(registrationId);
     await withProgressNotification('update', async () => {
       const updatedRegistration = await apiService.updateRegistration(
@@ -135,9 +135,9 @@ export const useRegistrationsStore = defineStore('registrations', () => {
     registrationId?: string,
     params?: RegistrationDeleteQuery,
   ) {
-    const campId = route.params.campId as string;
+    const eventId = route.params.eventId as string;
 
-    const cid = checkNotNullWithError(campId);
+    const cid = checkNotNullWithError(eventId);
     const rid = checkNotNullWithNotification(registrationId);
     await withProgressNotification('delete', async () => {
       await apiService.deleteRegistration(cid, rid, params);

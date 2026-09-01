@@ -9,6 +9,11 @@ export default {
     success: 'Newsletter erfolgreich aktualisiert',
     error: 'Newsletter konnte nicht aktualisiert werden',
   },
+  move: {
+    progress: 'Newsletter wird verschoben...',
+    success: 'Newsletter erfolgreich verschoben',
+    error: 'Newsletter konnte nicht verschoben werden',
+  },
   delete: {
     progress: 'Newsletter wird gelöscht...',
     success: 'Newsletter erfolgreich gelöscht',

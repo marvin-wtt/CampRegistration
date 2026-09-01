@@ -29,9 +29,18 @@ export default defineConfig({
 
   use: {
     baseURL: "http://localhost:3001",
-    trace: "on-first-retry",
+    // Not `on-first-retry`: retries are 0, so that setting never captures
+    // anything. Retrying would also turn flakes green and hide them.
+    trace: "retain-on-failure",
     screenshot: "only-on-failure",
     testIdAttribute: "data-test",
+  },
+
+  expect: {
+    toHaveScreenshot: {
+      animations: "disabled",
+      maxDiffPixels: 100,
+    },
   },
 
   projects: [

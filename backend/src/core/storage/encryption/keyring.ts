@@ -8,7 +8,9 @@ import {
 const KEY_LENGTH = 32;
 const MAX_KEY_ID_LENGTH = 255;
 
-// Baked into every encrypted message; changing it breaks decryption.
+// Baked into every encrypted message; changing it breaks decryption of
+// already-encrypted files. NOT tied to the product name — do not update this
+// during a rename, only via a deliberate re-encryption migration.
 const KEY_NAMESPACE = 'camp-registration/file-storage';
 
 /**

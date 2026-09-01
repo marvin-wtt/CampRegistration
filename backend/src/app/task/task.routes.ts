@@ -1,5 +1,5 @@
 import { auth, guard } from '#middlewares/index';
-import { campManager } from '#app/campManager/camp-manager.guard';
+import { hasEventPermission } from '#app/event/event.guard';
 import { TaskService } from './task.service.js';
 import { TaskController } from './task.controller.js';
 import { ModuleRouter } from '#core/router/ModuleRouter';
@@ -19,8 +19,8 @@ export class TaskRouter extends ModuleRouter {
 
   protected registerBindings() {
     this.bindModel('task', (req, id) => {
-      const camp = req.modelOrFail('camp');
-      return this.taskService.getTaskById(camp.id, id);
+      const event = req.modelOrFail('event');
+      return this.taskService.getTaskById(event.id, id);
     });
   }
 
@@ -29,27 +29,27 @@ export class TaskRouter extends ModuleRouter {
 
     this.router.get(
       '/',
-      guard(campManager('camp.tasks.view')),
+      guard(hasEventPermission('event.tasks.view')),
       controller(this.taskController, 'index'),
     );
     this.router.get(
       '/:taskId',
-      guard(campManager('camp.tasks.view')),
+      guard(hasEventPermission('event.tasks.view')),
       controller(this.taskController, 'show'),
     );
     this.router.post(
       '/',
-      guard(campManager('camp.tasks.create')),
+      guard(hasEventPermission('event.tasks.create')),
       controller(this.taskController, 'store'),
     );
     this.router.patch(
       '/:taskId',
-      guard(campManager('camp.tasks.update')),
+      guard(hasEventPermission('event.tasks.update')),
       controller(this.taskController, 'update'),
     );
     this.router.delete(
       '/:taskId',
-      guard(campManager('camp.tasks.delete')),
+      guard(hasEventPermission('event.tasks.delete')),
       controller(this.taskController, 'destroy'),
     );
   }
