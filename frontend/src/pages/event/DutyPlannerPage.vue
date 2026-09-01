@@ -21,6 +21,17 @@
 
         <div class="col-12 col-sm-auto row q-gutter-x-xs justify-end">
           <m-btn
+            v-if="duties.length > 0"
+            icon="history"
+            square
+            round
+            text
+            :aria-label="t('action.history')"
+            @click="openHistoryDialog"
+          >
+            <q-tooltip>{{ t('action.history') }}</q-tooltip>
+          </m-btn>
+          <m-btn
             v-if="can('event.duties.create')"
             :label="t('action.addDutyType')"
             icon="tune"
@@ -136,13 +147,37 @@
         />
       </div>
 
-      <!-- Assignment groups -->
+      <!-- Duty filter -->
       <div
-        v-else-if="groupedAssignments.length > 0"
+        v-if="duties.length > 1 && assignments.length > 0"
+        class="row items-center filter-row"
+      >
+        <span class="text-caption text-grey-7">{{ t('filter.label') }}</span>
+        <q-chip
+          v-for="duty in duties"
+          :key="duty.id"
+          clickable
+          class="filter-chip"
+          :class="{ 'filter-chip--active': filterDutyIds.includes(duty.id) }"
+          @click="toggleDutyFilter(duty.id)"
+        >
+          {{ to(duty.name) }}
+          <q-icon
+            v-if="filterDutyIds.includes(duty.id)"
+            name="check"
+            size="16px"
+            class="q-ml-xs"
+          />
+        </q-chip>
+      </div>
+
+      <!-- Assignment groups: next duty always first, past ones tucked away -->
+      <div
+        v-if="upcomingGroups.length > 0"
         class="column q-gutter-y-md"
       >
         <div
-          v-for="group in groupedAssignments"
+          v-for="group in upcomingGroups"
           :key="group.date"
         >
           <div class="text-subtitle2 text-weight-medium q-mb-xs">
@@ -237,7 +272,7 @@
       </div>
 
       <div
-        v-else-if="duties.length > 0"
+        v-else-if="duties.length > 0 && assignments.length === 0"
         class="empty-state col column items-center justify-center"
       >
         <q-icon
@@ -253,101 +288,118 @@
         </div>
       </div>
 
-      <!-- History -->
-      <div v-if="duties.length > 0">
+      <div
+        v-else-if="duties.length > 0"
+        class="text-body2 text-grey-6"
+      >
+        {{ t('noUpcoming') }}
+      </div>
+
+      <!-- Past assignments: tucked away, most recent first -->
+      <div v-if="pastGroups.length > 0">
         <q-item
           clickable
           class="history-toggle"
-          @click="showHistory = !showHistory"
+          @click="showPast = !showPast"
         >
           <q-item-section class="text-grey-7 text-weight-medium">
-            {{ t('history.toggle') }}
+            {{ t('past.toggle', { count: pastAssignmentCount }) }}
           </q-item-section>
           <q-item-section side>
             <q-icon
-              :name="showHistory ? 'expand_less' : 'expand_more'"
+              :name="showPast ? 'expand_less' : 'expand_more'"
               color="grey-7"
             />
           </q-item-section>
         </q-item>
 
         <div
-          v-if="showHistory"
+          v-if="showPast"
           class="column q-gutter-y-md q-mt-sm"
         >
-          <q-select
-            v-model="historyDutyId"
-            :label="t('history.dutyLabel')"
-            :options="dutyOptions"
-            map-options
-            emit-value
-            outlined
-            rounded
-            dense
-            style="max-width: 320px"
-          />
-
           <div
-            v-if="
-              participantHistoryRows.length === 0 &&
-              roomHistoryRows.length === 0
-            "
-            class="text-body2 text-grey-6"
+            v-for="group in pastGroups"
+            :key="group.date"
           >
-            {{ t('history.empty') }}
+            <div class="text-subtitle2 text-weight-medium q-mb-xs">
+              {{ d(parseLocalDate(group.date), 'date') }}
+            </div>
+
+            <q-card
+              flat
+              bordered
+              class="section-card"
+            >
+              <q-list separator>
+                <q-item
+                  v-for="assignment in group.items"
+                  :key="assignment.id"
+                >
+                  <q-item-section avatar>
+                    <q-icon
+                      :name="
+                        assignment.rotationUnit === 'ROOM'
+                          ? 'meeting_room'
+                          : 'person'
+                      "
+                      color="grey-6"
+                    />
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label>
+                      {{ to(assignment.duty.name) }}
+                      <span
+                        v-if="assignment.slot"
+                        class="text-grey-6"
+                      >
+                        — {{ assignment.slot }}
+                      </span>
+                    </q-item-label>
+                    <q-item-label
+                      caption
+                      class="q-mt-xs"
+                    >
+                      <span v-if="assignment.registrationIds.length > 0">
+                        {{ memberNames(assignment) }}
+                      </span>
+                      <span
+                        v-else
+                        class="text-grey-6"
+                      >
+                        {{ t('noMembers') }}
+                      </span>
+                    </q-item-label>
+                  </q-item-section>
+
+                  <q-item-section
+                    v-if="canManageAssignments"
+                    side
+                  >
+                    <div class="row q-gutter-x-xs">
+                      <q-btn
+                        v-if="can('event.duty_assignments.edit')"
+                        icon="edit"
+                        flat
+                        round
+                        dense
+                        :aria-label="t('action.edit')"
+                        @click="editAssignment(assignment)"
+                      />
+                      <q-btn
+                        v-if="can('event.duty_assignments.delete')"
+                        icon="delete"
+                        flat
+                        round
+                        dense
+                        :aria-label="t('action.delete')"
+                        @click="deleteAssignment(assignment)"
+                      />
+                    </div>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-card>
           </div>
-
-          <template v-else>
-            <div v-if="roomHistoryRows.length > 0">
-              <div class="text-caption text-grey-7 q-mb-xs">
-                {{ t('history.rooms') }}
-              </div>
-              <q-card
-                flat
-                bordered
-                class="section-card"
-              >
-                <q-list separator>
-                  <q-item
-                    v-for="row in roomHistoryRows"
-                    :key="row.id"
-                  >
-                    <q-item-section>
-                      {{ row.name }}
-                    </q-item-section>
-                    <q-item-section side>
-                      {{ t('history.count', { count: row.count }) }}
-                    </q-item-section>
-                  </q-item>
-                </q-list>
-              </q-card>
-            </div>
-
-            <div v-if="participantHistoryRows.length > 0">
-              <div class="text-caption text-grey-7 q-mb-xs">
-                {{ t('history.participants') }}
-              </div>
-              <q-card
-                flat
-                bordered
-                class="section-card"
-              >
-                <q-list separator>
-                  <q-item
-                    v-for="row in participantHistoryRows"
-                    :key="row.id"
-                  >
-                    <q-item-section>
-                      {{ row.name }}
-                    </q-item-section>
-                    <q-item-section side>
-                      {{ t('history.count', { count: row.count }) }}
-                    </q-item-section>
-                  </q-item>
-                </q-list>
-              </q-card>
-            </div>
-          </template>
         </div>
       </div>
     </div>
@@ -355,7 +407,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { useDutyStore } from '@/stores/duty-store';
@@ -368,11 +420,12 @@ import { usePermissions } from '@/composables/permissions';
 import { useRegistrationHelper } from '@/composables/registrationHelper';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { formatPersonName } from '@/utils/formatters';
-import { parseLocalDate } from '@/utils/date';
+import { formatLocalDate, parseLocalDate } from '@/utils/date';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import ConfirmDialog from '@/components/common/dialogs/ConfirmDialog.vue';
 import DutyTypeDialog from '@/components/event/dutyPlanner/dialogs/DutyTypeDialog.vue';
 import DutyAssignmentDialog from '@/components/event/dutyPlanner/dialogs/DutyAssignmentDialog.vue';
+import DutyHistoryDialog from '@/components/event/dutyPlanner/dialogs/DutyHistoryDialog.vue';
 import type {
   Duty,
   DutyAssignment,
@@ -394,7 +447,8 @@ const registrationHelper = useRegistrationHelper();
 const { to } = useObjectTranslation();
 const { can } = usePermissions();
 
-const showHistory = ref(false);
+const showPast = ref(false);
+const filterDutyIds = ref<string[]>([]);
 
 const locales = computed<string[] | undefined>(() => {
   return eventDetailsStore.data?.locales;
@@ -451,22 +505,11 @@ const registrations = computed<Registration[]>(
 );
 const rooms = computed<Room[]>(() => roomsData.value ?? []);
 
-const dutyOptions = computed<{ label: string; value: string }[]>(() => {
-  return duties.value.map((duty) => ({ label: to(duty.name), value: duty.id }));
-});
-
-// Defaults to the first duty once duties load, but only until the user picks
-// one themselves.
-const historyDutyId = ref<string | null>(null);
-watch(
-  duties,
-  (list) => {
-    if (historyDutyId.value === null && list.length > 0) {
-      historyDutyId.value = list[0]!.id;
-    }
-  },
-  { immediate: true },
-);
+function toggleDutyFilter(dutyId: string) {
+  filterDutyIds.value = filterDutyIds.value.includes(dutyId)
+    ? filterDutyIds.value.filter((id) => id !== dutyId)
+    : [...filterDutyIds.value, dutyId];
+}
 
 const canManageAssignments = computed<boolean>(() => {
   return (
@@ -478,12 +521,21 @@ const canManageDutyTypes = computed<boolean>(() => {
   return can('event.duties.edit') || can('event.duties.delete');
 });
 
-const groupedAssignments = computed<
-  { date: string; items: DutyAssignment[] }[]
->(() => {
+const filteredAssignments = computed<DutyAssignment[]>(() => {
+  if (filterDutyIds.value.length === 0) {
+    return assignments.value;
+  }
+  return assignments.value.filter((assignment) =>
+    filterDutyIds.value.includes(assignment.dutyId),
+  );
+});
+
+function groupByDate(
+  list: DutyAssignment[],
+): { date: string; items: DutyAssignment[] }[] {
   const groups: { date: string; items: DutyAssignment[] }[] = [];
 
-  for (const assignment of assignments.value) {
+  for (const assignment of list) {
     const last = groups[groups.length - 1];
     if (last && last.date === assignment.date) {
       last.items.push(assignment);
@@ -493,7 +545,28 @@ const groupedAssignments = computed<
   }
 
   return groups;
-});
+}
+
+const today = computed<string>(() => formatLocalDate(new Date()));
+
+// The store already returns assignments sorted by date ascending, so the
+// next upcoming occurrence is naturally first once past ones are dropped.
+const upcomingGroups = computed<{ date: string; items: DutyAssignment[] }[]>(
+  () =>
+    groupByDate(filteredAssignments.value.filter((a) => a.date >= today.value)),
+);
+
+// Tucked behind a toggle, most-recent-first — this is a record of what
+// already happened, not something that needs to compete with what's next.
+const pastGroups = computed<{ date: string; items: DutyAssignment[] }[]>(() =>
+  groupByDate(
+    filteredAssignments.value.filter((a) => a.date < today.value),
+  ).reverse(),
+);
+
+const pastAssignmentCount = computed<number>(() =>
+  pastGroups.value.reduce((sum, group) => sum + group.items.length, 0),
+);
 
 function registrationName(id: string): string | undefined {
   const registration = registrations.value.find((value) => value.id === id);
@@ -538,71 +611,17 @@ function memberNames(assignment: DutyAssignment): string {
   return roomName ? `${roomName}: ${names}` : names;
 }
 
-interface HistoryRow {
-  id: string;
-  name: string;
-  count: number;
+function openHistoryDialog() {
+  quasar.dialog({
+    component: DutyHistoryDialog,
+    componentProps: {
+      duties: duties.value,
+      assignments: assignments.value,
+      registrations: registrations.value,
+      rooms: rooms.value,
+    },
+  });
 }
-
-// Scoped to one duty at a time — mixing counts across unrelated duty types
-// (Kitchen and Trash, say) into one total isn't actionable.
-const historyAssignments = computed<DutyAssignment[]>(() => {
-  return assignments.value.filter(
-    (assignment) => assignment.dutyId === historyDutyId.value,
-  );
-});
-
-// Only actual history (count > 0), ranked most-active first — this is a
-// record of who has done the duty, not a full roster; "who hasn't yet" is
-// already what the suggestion ranking surfaces when planning the next one.
-const participantHistoryRows = computed<HistoryRow[]>(() => {
-  const counts = new Map<string, number>();
-
-  for (const assignment of historyAssignments.value) {
-    for (const registrationId of assignment.registrationIds) {
-      counts.set(registrationId, (counts.get(registrationId) ?? 0) + 1);
-    }
-  }
-
-  return registrations.value
-    .filter((registration) => counts.has(registration.id))
-    .map((registration) => ({
-      id: registration.id,
-      name: formatPersonName(registrationHelper.uniqueName(registration)),
-      count: counts.get(registration.id)!,
-    }))
-    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
-});
-
-// Mirrors the backend's ROOM suggestion ranking: a historical member's
-// *current* room is what counts, so this stays correct as room assignments
-// change over the camp. Each room counts at most once per occurrence,
-// regardless of how many of its occupants were members that day.
-const roomHistoryRows = computed<HistoryRow[]>(() => {
-  const counts = new Map<string, number>();
-
-  for (const assignment of historyAssignments.value) {
-    const roomIds = new Set<string>();
-    for (const registrationId of assignment.registrationIds) {
-      const room = currentRoom(registrationId);
-      if (room) {
-        roomIds.add(room.id);
-      }
-    }
-    for (const roomId of roomIds) {
-      counts.set(roomId, (counts.get(roomId) ?? 0) + 1);
-    }
-  }
-
-  return rooms.value
-    .filter((room) => counts.has(room.id))
-    .map((room) => ({
-      id: room.id,
-      name: to(room.name),
-      count: counts.get(room.id)!,
-    }))
-    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
-});
 
 function assignmentLabel(assignment: DutyAssignment): string {
   const datePart = d(parseLocalDate(assignment.date), 'date');
@@ -737,6 +756,30 @@ function deleteAssignment(assignment: DutyAssignment) {
   border-left: 3px solid var(--md3-warning);
   background: var(--md3-warning-container);
 }
+
+.filter-row {
+  gap: 8px;
+}
+
+.filter-chip {
+  height: 32px;
+  margin: 0;
+  padding: 0 12px;
+  border: 1px solid var(--md3-outline-variant);
+  border-radius: 8px;
+
+  background: transparent;
+  color: var(--md3-on-surface-variant);
+
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.filter-chip--active {
+  border-color: transparent;
+  background: var(--md3-secondary-container);
+  color: var(--md3-on-secondary-container);
+}
 </style>
 
 <i18n lang="yaml" locale="en">
@@ -748,6 +791,7 @@ unknownParticipant: 'Unknown participant'
 action:
   add: 'New assignment'
   addDutyType: 'Duty types'
+  history: 'Assignment history'
   edit: 'Edit'
   delete: 'Delete'
 
@@ -762,18 +806,18 @@ emptyAssignments:
   title: 'No assignments yet'
   message: 'Plan the next duty to get started.'
 
+noUpcoming: 'No upcoming duties.'
+
+filter:
+  label: 'Filter:'
+
+past:
+  toggle: 'Past duties ({count})'
+
 dutyType:
   defaultCount: 'Usually {count} people'
   excludeStaff: 'Staff excluded'
   balanceCountries: 'Country-balanced'
-
-history:
-  toggle: 'Assignment history'
-  dutyLabel: 'Duty'
-  empty: 'No history yet for this duty.'
-  count: '{count} time(s)'
-  participants: 'Participants'
-  rooms: 'Rooms'
 
 dialog:
   deleteDuty:
@@ -793,6 +837,7 @@ unknownParticipant: 'Unbekannter Teilnehmer'
 action:
   add: 'Neuer Einsatz'
   addDutyType: 'Diensttypen'
+  history: 'Einsatzverlauf'
   edit: 'Bearbeiten'
   delete: 'Löschen'
 
@@ -807,18 +852,18 @@ emptyAssignments:
   title: 'Noch keine Einsätze'
   message: 'Plane den nächsten Dienst, um loszulegen.'
 
+noUpcoming: 'Keine bevorstehenden Dienste.'
+
+filter:
+  label: 'Filter:'
+
+past:
+  toggle: 'Vergangene Dienste ({count})'
+
 dutyType:
   defaultCount: 'Normalerweise {count} Personen'
   excludeStaff: 'Betreuende ausgeschlossen'
   balanceCountries: 'Länderausgleich'
-
-history:
-  toggle: 'Einsatzverlauf'
-  dutyLabel: 'Dienst'
-  empty: 'Noch keine Historie für diesen Dienst.'
-  count: '{count} Mal'
-  participants: 'Teilnehmende'
-  rooms: 'Zimmer'
 
 dialog:
   deleteDuty:
@@ -838,6 +883,7 @@ unknownParticipant: 'Participant inconnu'
 action:
   add: 'Nouvelle affectation'
   addDutyType: 'Types de corvée'
+  history: 'Historique des affectations'
   edit: 'Modifier'
   delete: 'Supprimer'
 
@@ -852,18 +898,18 @@ emptyAssignments:
   title: 'Aucune affectation pour le moment'
   message: 'Planifie la prochaine corvée pour commencer.'
 
+noUpcoming: 'Aucune corvée à venir.'
+
+filter:
+  label: 'Filtrer :'
+
+past:
+  toggle: 'Corvées passées ({count})'
+
 dutyType:
   defaultCount: 'Généralement {count} personnes'
   excludeStaff: 'Encadrement exclu'
   balanceCountries: 'Équilibre des pays'
-
-history:
-  toggle: 'Historique des affectations'
-  dutyLabel: 'Corvée'
-  empty: "Pas encore d'historique pour cette corvée."
-  count: '{count} fois'
-  participants: 'Participants'
-  rooms: 'Chambres'
 
 dialog:
   deleteDuty:
@@ -883,6 +929,7 @@ unknownParticipant: 'Nieznany uczestnik'
 action:
   add: 'Nowe przypisanie'
   addDutyType: 'Rodzaje dyżurów'
+  history: 'Historia przypisań'
   edit: 'Edytuj'
   delete: 'Usuń'
 
@@ -897,18 +944,18 @@ emptyAssignments:
   title: 'Brak przypisań'
   message: 'Zaplanuj kolejny dyżur, aby zacząć.'
 
+noUpcoming: 'Brak nadchodzących dyżurów.'
+
+filter:
+  label: 'Filtruj:'
+
+past:
+  toggle: 'Minione dyżury ({count})'
+
 dutyType:
   defaultCount: 'Zwykle {count} osób'
   excludeStaff: 'Kadra wykluczona'
   balanceCountries: 'Równoważenie krajów'
-
-history:
-  toggle: 'Historia przypisań'
-  dutyLabel: 'Dyżur'
-  empty: 'Brak historii dla tego dyżuru.'
-  count: '{count} razy'
-  participants: 'Uczestnicy'
-  rooms: 'Pokoje'
 
 dialog:
   deleteDuty:
@@ -928,6 +975,7 @@ unknownParticipant: 'Neznámý účastník'
 action:
   add: 'Nové přiřazení'
   addDutyType: 'Typy služeb'
+  history: 'Historie přiřazení'
   edit: 'Upravit'
   delete: 'Smazat'
 
@@ -942,18 +990,18 @@ emptyAssignments:
   title: 'Zatím žádná přiřazení'
   message: 'Naplánuj další službu a začni.'
 
+noUpcoming: 'Žádné nadcházející služby.'
+
+filter:
+  label: 'Filtr:'
+
+past:
+  toggle: 'Minulé služby ({count})'
+
 dutyType:
   defaultCount: 'Obvykle {count} lidí'
   excludeStaff: 'Vedoucí vyloučeni'
   balanceCountries: 'Vyvážení zemí'
-
-history:
-  toggle: 'Historie přiřazení'
-  dutyLabel: 'Služba'
-  empty: 'Zatím žádná historie pro tuto službu.'
-  count: '{count}×'
-  participants: 'Účastníci'
-  rooms: 'Pokoje'
 
 dialog:
   deleteDuty:
