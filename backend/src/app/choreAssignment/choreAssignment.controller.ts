@@ -62,18 +62,18 @@ export class ChoreAssignmentController extends BaseController {
 
   async store(req: Request, res: Response) {
     const event = req.modelOrFail('event');
+    const chore = req.modelOrFail('chore');
     const {
-      body: { choreId, rotationUnit, date, slot, registrationIds },
+      body: { rotationUnit, date, slot, registrationIds },
     } = await req.validate(validator.store);
 
-    await this.assertChoreBelongsToEvent(event.id, choreId);
     if (registrationIds !== undefined) {
       await this.assertRegistrationsBelongToEvent(event.id, registrationIds);
     }
 
     const assignment = await this.choreAssignmentService.createChoreAssignment(
       event.id,
-      { choreId, rotationUnit, date, slot, registrationIds },
+      { choreId: chore.id, rotationUnit, date, slot, registrationIds },
     );
 
     void this.realtimeService.emit(

@@ -384,7 +384,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
       expect(body.data.registrationIds).toEqual([registration.id]);
     });
 
-    it('should respond with `400` when choreId belongs to another event', async () => {
+    it('should respond with `404` when choreId belongs to another event', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
       const otherEvent = await EventFactory.create();
       const otherChore = await createChore(otherEvent);
@@ -397,7 +397,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
           date: '2026-09-01',
         })
         .auth(accessToken, { type: 'bearer' })
-        .expect(400);
+        .expect(404);
 
       expect(await prisma.choreAssignment.count()).toBe(0);
     });

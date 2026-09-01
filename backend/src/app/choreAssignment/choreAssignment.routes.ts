@@ -1,5 +1,6 @@
 import { auth, guard } from '#middlewares/index';
 import { hasEventPermission } from '#app/event/event.guard';
+import { choreFromBody } from './choreAssignment.middleware.js';
 import { ChoreAssignmentController } from './choreAssignment.controller.js';
 import { controller } from '#utils/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';
@@ -44,6 +45,7 @@ export class ChoreAssignmentRouter extends ModuleRouter {
     );
     this.router.post(
       '/',
+      choreFromBody(),
       guard(hasEventPermission('event.chore_assignments.create')),
       controller(this.choreAssignmentController, 'store'),
     );
