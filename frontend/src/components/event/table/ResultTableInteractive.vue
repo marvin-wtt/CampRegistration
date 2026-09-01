@@ -186,7 +186,7 @@
         v-if="countries.length > 1 && !quasar.screen.xs"
         class="col-12 col-sm-auto"
       >
-        <div class="row items-center q-gutter-xs">
+        <div class="row items-center filter-row">
           <q-chip
             v-for="country in countries"
             :key="country"
@@ -750,6 +750,10 @@ function onRowClick(evt: MouseEvent, row: Registration): void {
 
 .search-field {
   max-width: 360px;
+}
+
+.filter-row {
+  gap: 8px;
 }
 
 .filter-chip {

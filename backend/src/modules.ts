@@ -24,6 +24,8 @@ import { PrivacyNoticeModule } from '#app/privacyNotice/privacy-notice.module';
 import { QueueModule } from '#app/queue/queue.module';
 import { ProgramItemModule } from '#app/programItem/program-item.module';
 import { TaskModule } from '#app/task/task.module';
+import { ChoreModule } from '#app/chore/chore.module';
+import { ChoreAssignmentModule } from '#app/choreAssignment/choreAssignment.module';
 import { MailModule } from '#app/mail/mail.module';
 import { SettingModule } from '#app/setting/setting.module';
 import { NewsletterModule } from '#app/newsletter/newsletter.module';
@@ -63,6 +65,8 @@ export const createModules = (): AppModule[] => [
   new BedModule(),
   new ProgramItemModule(),
   new TaskModule(),
+  new ChoreModule(),
+  new ChoreAssignmentModule(),
   new FeedbackModule(),
   new NewsletterModule(),
   new NewsletterSubscriberModule(),

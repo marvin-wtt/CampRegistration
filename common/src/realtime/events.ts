@@ -14,6 +14,8 @@ export type RealtimeResource =
   | 'program_item'
   | 'room'
   | 'task'
+  | 'chore'
+  | 'choreAssignment'
   | 'manager'
   | 'message'
   | 'file'
@@ -75,6 +77,8 @@ export const RESOURCE_VIEW_PERMISSION: Record<
   program_item: 'event.program_items.view',
   room: 'event.rooms.view',
   task: 'event.tasks.view',
+  chore: 'event.chores.view',
+  choreAssignment: 'event.chore_assignments.view',
   manager: 'event.managers.view',
   message: 'event.messages.view',
   file: 'event.files.view',
