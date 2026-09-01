@@ -42,3 +42,13 @@ export interface ProgramPlannerSettings {
    */
   browseOutsideEventDates: boolean;
 }
+
+/**
+ * Stored under `SETTING_KEYS.NAVIGATION`. Names are frontend-only nav-rail
+ * item identifiers (see `EVENT_NAVIGATION_ITEMS` in the frontend) — this is a
+ * purely cosmetic setting, so the backend validates it as opaque strings
+ * rather than mirroring the frontend's list of item names.
+ */
+export interface NavigationSettings {
+  hiddenItems: string[];
+}

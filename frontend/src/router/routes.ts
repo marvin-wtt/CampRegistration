@@ -229,6 +229,12 @@ const routes: RouteRecordRaw[] = [
                       import('@/pages/event/settings/FormEditPage.vue'),
                   },
                   {
+                    path: 'navigation',
+                    name: 'management.event.settings.navigation',
+                    component: () =>
+                      import('@/pages/event/settings/NavigationSettingsPage.vue'),
+                  },
+                  {
                     path: 'privacy',
                     name: 'management.event.settings.privacy',
                     component: () =>

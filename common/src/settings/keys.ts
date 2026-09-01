@@ -6,6 +6,7 @@
 export const SETTING_KEYS = {
   ROOM_PLANNER: 'room-planner',
   PROGRAM_PLANNER: 'program-planner',
+  NAVIGATION: 'navigation',
 } as const;
 
 /** Union of all known setting keys, e.g. `'room-planner' | 'program-planner'`. */

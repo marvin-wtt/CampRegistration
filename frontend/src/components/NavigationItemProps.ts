@@ -19,6 +19,7 @@ interface LinkItemProps<S extends PermissionScope> extends BaseProps<S> {
   icon?: string | undefined;
   to?: string | object | undefined;
   children?: LinkItemProps<S>[] | undefined;
+  hideable?: boolean | undefined;
 }
 
 /**
