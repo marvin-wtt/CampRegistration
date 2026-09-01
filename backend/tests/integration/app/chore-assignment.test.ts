@@ -118,6 +118,30 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
     });
   });
 
+  describe('GET /api/v1/events/:eventId/chore-assignments/:choreAssignmentId', () => {
+    it('should return the assignment', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const chore = await createChore(event);
+      const assignment = await createAssignment(event, chore.id);
+
+      const { body } = await request()
+        .get(`/api/v1/events/${event.id}/chore-assignments/${assignment.id}`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body).toHaveProperty('data.id', assignment.id);
+    });
+
+    it('should respond with `404` when the assignment does not exist', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+
+      await request()
+        .get(`/api/v1/events/${event.id}/chore-assignments/${ulid()}`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(404);
+    });
+  });
+
   describe('GET /api/v1/events/:eventId/chore-assignments/suggestions', () => {
     it('respects route ordering — "suggestions" is not treated as an id', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
@@ -167,7 +191,10 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
       const chore = await createChore(event);
       const assignedTwice = await createRegistration(event);
       const assignedOnce = await createRegistration(event);
+      // A second never-assigned registration ties with `neverAssigned` on
+      // both count and lastAssignedAt, exercising the tied-run shuffle.
       const neverAssigned = await createRegistration(event);
+      const alsoNeverAssigned = await createRegistration(event);
 
       await createAssignment(event, chore.id, {
         date: '2026-08-01',
@@ -193,7 +220,13 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
       const order = body.data.candidates.map(
         (c: { id: string }) => c.id,
       ) as string[];
+      // Both never-assigned registrations must rank ahead of the assigned
+      // ones — their relative order between each other is randomized by the
+      // tie-shuffle, so it isn't asserted on.
       expect(order.indexOf(neverAssigned.id)).toBeLessThan(
+        order.indexOf(assignedOnce.id),
+      );
+      expect(order.indexOf(alsoNeverAssigned.id)).toBeLessThan(
         order.indexOf(assignedOnce.id),
       );
       expect(order.indexOf(assignedOnce.id)).toBeLessThan(
@@ -332,6 +365,155 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
       );
       expect(candidate).toHaveProperty('assignmentCount', 1);
     });
+
+    it('ignores history from a member who no longer occupies any room', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const chore = await createChore(event);
+
+      // Never given a bed — the historical assignment still references them.
+      const roomless = await createRegistration(event);
+      await createAssignment(event, chore.id, {
+        rotationUnit: 'ROOM',
+        date: '2026-08-01',
+        members: { create: [{ registrationId: roomless.id }] },
+      });
+
+      const room = await RoomFactory.create({
+        event: { connect: { id: event.id } },
+      });
+      await BedFactory.create({
+        room: { connect: { id: room.id } },
+        registration: { connect: { id: (await createRegistration(event)).id } },
+      });
+
+      const { body } = await request()
+        .get(`/api/v1/events/${event.id}/chore-assignments/suggestions`)
+        .query({ choreId: chore.id, unit: 'ROOM' })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      const candidate = body.data.candidates.find(
+        (c: { id: string }) => c.id === room.id,
+      );
+      expect(candidate).toHaveProperty('assignmentCount', 0);
+    });
+
+    it('excludes staff-only rooms from ROOM candidates when excludeStaff is set', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const chore = await createChore(event, { excludeStaff: true });
+
+      const participantRoom = await RoomFactory.create({
+        event: { connect: { id: event.id } },
+      });
+      await BedFactory.create({
+        room: { connect: { id: participantRoom.id } },
+        registration: {
+          connect: {
+            id: (await createRegistration(event, { role: 'participant' })).id,
+          },
+        },
+      });
+
+      const staffRoom = await RoomFactory.create({
+        event: { connect: { id: event.id } },
+      });
+      await BedFactory.create({
+        room: { connect: { id: staffRoom.id } },
+        registration: {
+          connect: {
+            id: (await createRegistration(event, { role: 'counselor' })).id,
+          },
+        },
+      });
+
+      const { body } = await request()
+        .get(`/api/v1/events/${event.id}/chore-assignments/suggestions`)
+        .query({ choreId: chore.id, unit: 'ROOM' })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      const ids = body.data.candidates.map((c: { id: string }) => c.id);
+      expect(ids).toContain(participantRoom.id);
+      expect(ids).not.toContain(staffRoom.id);
+    });
+
+    it('ranks the longest-unassigned candidate first when assignment counts are tied', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const chore = await createChore(event);
+      const assignedLongAgo = await createRegistration(event);
+      const assignedRecently = await createRegistration(event);
+
+      await createAssignment(event, chore.id, {
+        date: '2026-01-01',
+        members: { create: [{ registrationId: assignedLongAgo.id }] },
+      });
+      await createAssignment(event, chore.id, {
+        date: '2026-08-01',
+        members: { create: [{ registrationId: assignedRecently.id }] },
+      });
+
+      const { body } = await request()
+        .get(`/api/v1/events/${event.id}/chore-assignments/suggestions`)
+        .query({ choreId: chore.id, unit: 'PARTICIPANT' })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      const order = body.data.candidates.map(
+        (c: { id: string }) => c.id,
+      ) as string[];
+      expect(order.indexOf(assignedLongAgo.id)).toBeLessThan(
+        order.indexOf(assignedRecently.id),
+      );
+    });
+
+    it('interleaves PARTICIPANT candidates by country when balanceCountries is set', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const chore = await createChore(event, { balanceCountries: true });
+
+      // Distinct assignment counts, so fairness ranking alone (no tie) would
+      // list both `gb` candidates before the `fr` one.
+      const gbNeverAssigned = await createRegistration(event, {
+        country: 'gb',
+      });
+      const gbAssignedOnce = await createRegistration(event, {
+        country: 'gb',
+      });
+      const frAssignedTwice = await createRegistration(event, {
+        country: 'fr',
+      });
+
+      await createAssignment(event, chore.id, {
+        date: '2026-08-01',
+        members: {
+          create: [
+            { registrationId: gbAssignedOnce.id },
+            { registrationId: frAssignedTwice.id },
+          ],
+        },
+      });
+      await createAssignment(event, chore.id, {
+        date: '2026-08-05',
+        members: { create: [{ registrationId: frAssignedTwice.id }] },
+      });
+
+      const { body } = await request()
+        .get(`/api/v1/events/${event.id}/chore-assignments/suggestions`)
+        .query({ choreId: chore.id, unit: 'PARTICIPANT' })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      const order = body.data.candidates.map(
+        (c: { id: string }) => c.id,
+      ) as string[];
+      // Fairness alone would rank [gbNeverAssigned, gbAssignedOnce,
+      // frAssignedTwice] — balancing interleaves the `fr` candidate between
+      // the two `gb` ones instead of leaving it last.
+      expect(order).toEqual([
+        gbNeverAssigned.id,
+        frAssignedTwice.id,
+        gbAssignedOnce.id,
+      ]);
+    });
   });
 
   describe('POST /api/v1/events/:eventId/chore-assignments', () => {
@@ -422,11 +604,17 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
       expect(await prisma.choreAssignment.count()).toBe(0);
     });
 
+    it('should respond with `400` when choreId is missing', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+
+      await request()
+        .post(`/api/v1/events/${event.id}/chore-assignments`)
+        .send({ rotationUnit: 'PARTICIPANT', date: '2026-09-01' })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(400);
+    });
+
     it.each([
-      {
-        label: 'choreId is missing',
-        data: { rotationUnit: 'PARTICIPANT', date: '2026-09-01' },
-      },
       {
         label: 'rotationUnit is missing',
         data: { date: '2026-09-01' },
@@ -504,6 +692,35 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
         .expect(200);
 
       expect(body).toHaveProperty('data.rotationUnit', 'ROOM');
+    });
+
+    it('should update the choreId, moving the assignment to a different chore', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const chore = await createChore(event);
+      const otherChore = await createChore(event);
+      const assignment = await createAssignment(event, chore.id);
+
+      const { body } = await request()
+        .patch(`/api/v1/events/${event.id}/chore-assignments/${assignment.id}`)
+        .send({ choreId: otherChore.id })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body).toHaveProperty('data.choreId', otherChore.id);
+    });
+
+    it('should respond with `400` when choreId belongs to another event', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const chore = await createChore(event);
+      const otherEvent = await EventFactory.create();
+      const otherChore = await createChore(otherEvent);
+      const assignment = await createAssignment(event, chore.id);
+
+      await request()
+        .patch(`/api/v1/events/${event.id}/chore-assignments/${assignment.id}`)
+        .send({ choreId: otherChore.id })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(400);
     });
 
     it('should fully replace the member list', async () => {

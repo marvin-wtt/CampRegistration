@@ -95,6 +95,40 @@ describe('/api/v1/events/:eventId/chores', () => {
     });
   });
 
+  describe('GET /api/v1/events/:eventId/chores/:choreId', () => {
+    it('should return the chore', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const chore = await createChoreForEvent(event);
+
+      const { body } = await request()
+        .get(`/api/v1/events/${event.id}/chores/${chore.id}`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body).toHaveProperty('data.id', chore.id);
+    });
+
+    it('should respond with `404` when the chore does not exist', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+
+      await request()
+        .get(`/api/v1/events/${event.id}/chores/${ulid()}`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(404);
+    });
+
+    it('should respond with `404` when the chore belongs to a different event', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const otherEvent = await EventFactory.create();
+      const chore = await createChoreForEvent(otherEvent);
+
+      await request()
+        .get(`/api/v1/events/${event.id}/chores/${chore.id}`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(404);
+    });
+  });
+
   describe('POST /api/v1/events/:eventId/chores', () => {
     it.each([
       { role: 'DIRECTOR', expectedStatus: 201 },
@@ -337,7 +371,7 @@ describe('/api/v1/events/:eventId/chores', () => {
           eventId: event.id,
           choreId: chore.id,
           rotationUnit: 'PARTICIPANT',
-          date: '2026-08-31',
+          date: new Date('2026-08-31'),
         },
       });
 
