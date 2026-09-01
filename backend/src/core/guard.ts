@@ -1,10 +1,6 @@
 import type { Request } from 'express';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
-export {
-  registrationOpen,
-  campManager,
-} from '#app/campManager/camp-manager.guard';
 
 export type GuardFn = (
   req: Request,

@@ -31,6 +31,16 @@
           />
         </q-card-section>
 
+        <q-card-section class="q-pt-none">
+          <q-checkbox
+            v-model="consentConfirmed"
+            :label="t('input.consent.label')"
+          />
+          <div class="text-caption text-on-surface-variant q-ml-sm">
+            {{ t('input.consent.hint') }}
+          </div>
+        </q-card-section>
+
         <q-card-actions
           align="right"
           class="text-primary"
@@ -46,6 +56,7 @@
             :label="t('action.add')"
             type="submit"
             color="primary"
+            :disable="!consentConfirmed"
             rounded
           />
         </q-card-actions>
@@ -67,11 +78,13 @@ defineEmits([...useDialogPluginComponent.emits]);
 
 const email = ref('');
 const name = ref('');
+const consentConfirmed = ref(false);
 
 function onSubmit() {
   const data: NewsletterSubscriberCreateData = {
     email: email.value,
     name: name.value || null,
+    consentConfirmed: consentConfirmed.value,
   };
   onDialogOK(data);
 }
@@ -86,6 +99,9 @@ input:
       required: 'Email is required'
   name:
     label: 'Name (optional)'
+  consent:
+    label: 'This person agreed to receive this newsletter'
+    hint: 'Only add people who gave you their consent.'
 action:
   add: 'Add'
   cancel: 'Cancel'
@@ -100,6 +116,9 @@ input:
       required: 'E-Mail ist erforderlich'
   name:
     label: 'Name (optional)'
+  consent:
+    label: 'Diese Person hat dem Erhalt dieses Newsletters zugestimmt'
+    hint: 'Fügen Sie nur Personen hinzu, die Ihnen ihre Einwilligung gegeben haben.'
 action:
   add: 'Hinzufügen'
   cancel: 'Abbrechen'
@@ -114,6 +133,9 @@ input:
       required: "L'e-mail est requis"
   name:
     label: 'Nom (optionnel)'
+  consent:
+    label: 'Cette personne a accepté de recevoir cette newsletter'
+    hint: "N'ajoutez que des personnes qui vous ont donné leur consentement."
 action:
   add: 'Ajouter'
   cancel: 'Annuler'
@@ -128,6 +150,9 @@ input:
       required: 'E-mail jest wymagany'
   name:
     label: 'Imię i nazwisko (opcjonalne)'
+  consent:
+    label: 'Ta osoba wyraziła zgodę na otrzymywanie tego newslettera'
+    hint: 'Dodawaj tylko osoby, które wyraziły zgodę.'
 action:
   add: 'Dodaj'
   cancel: 'Anuluj'
@@ -142,6 +167,9 @@ input:
       required: 'E-mail je povinný'
   name:
     label: 'Jméno (volitelné)'
+  consent:
+    label: 'Tato osoba souhlasila se zasíláním tohoto newsletteru'
+    hint: 'Přidávejte pouze osoby, které vám daly souhlas.'
 action:
   add: 'Přidat'
   cancel: 'Zrušit'

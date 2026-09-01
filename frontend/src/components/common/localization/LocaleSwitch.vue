@@ -29,7 +29,7 @@
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
-import CountryIcon from 'components/common/localization/CountryIcon.vue';
+import CountryIcon from '@/components/common/localization/CountryIcon.vue';
 
 const { locale } = useI18n({ useScope: 'global' });
 

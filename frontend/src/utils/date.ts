@@ -1,3 +1,23 @@
+// Parse a plain `YYYY-MM-DD` value into a Date at local midnight. Using
+// `new Date('YYYY-MM-DD')` would parse as UTC midnight and drift to the
+// previous day for users in negative-UTC timezones, so build it explicitly.
+export function parseLocalDate(date: string): Date {
+  const [year, month, day] = date.split('-').map(Number);
+  return new Date(year ?? 1970, (month ?? 1) - 1, day ?? 1);
+}
+
+export function formatLocalDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+}
+
+export function isoToLocalDate(isoDateTime: string): string {
+  return formatLocalDate(new Date(isoDateTime));
+}
+
 export function daysBetweenDates(start: Date, end: Date): number {
   const utcStart = Date.UTC(
     start.getFullYear(),

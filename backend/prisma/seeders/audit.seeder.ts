@@ -2,17 +2,18 @@ import { BaseSeeder } from './BaseSeeder';
 import type { PrismaClient } from '#generated/prisma/client.js';
 import { faker } from '@faker-js/faker/locale/en';
 import moment from 'moment';
+import { USER_IDS } from './ids';
 
 // The seed factories write rows directly (bypassing the services that normally
-// record audit entries), so this seeder back-fills the trail: a "created" event
-// for every seeded entity, plus a handful of dummy manager edits so the
+// record audit entries), so this seeder back-fills the trail: a "created"
+// event for every seeded entity, plus a handful of dummy manager edits so the
 // registration timeline has some history to show.
 
-// The user the camp-manager seeder makes a manager of every seeded camp.
-const MANAGER_USER_ID = '01H4BK7J4WV75DZNAQBHMM99MA';
+// The user the event-manager seeder makes a manager of every seeded event.
+const MANAGER_USER_ID = USER_IDS.john;
 const MANAGER_IP = '203.0.113.10';
 
-// Form-answer paths (matching the example camp's questions) used for dummy edits.
+// Form-answer paths (matching the example event's questions) used for dummy edits.
 const DATA_FIELDS = [
   'data.medical_restrictions',
   'data.food_intolerance',
@@ -25,47 +26,47 @@ class AuditSeeder extends BaseSeeder {
   }
 
   async run(prisma: PrismaClient): Promise<void> {
-    const camps = await prisma.camp.findMany({
+    const events = await prisma.event.findMany({
       select: { id: true, createdAt: true },
     });
-    const campCreatedAt = new Map(
-      camps.map((camp) => [camp.id, camp.createdAt ?? new Date()]),
+    const eventCreatedAt = new Map(
+      events.map((event) => [event.id, event.createdAt ?? new Date()]),
     );
 
-    // Initial "created" events for camps and managers (manager-attributed).
-    for (const camp of camps) {
+    // Initial "created" events for events and managers (manager-attributed).
+    for (const event of events) {
       await prisma.auditLog.create({
         data: {
           action: 'created',
-          entityType: 'camp',
-          entityId: camp.id,
-          campId: camp.id,
+          entityType: 'event',
+          entityId: event.id,
+          eventId: event.id,
           actorId: MANAGER_USER_ID,
           actorIp: MANAGER_IP,
-          createdAt: campCreatedAt.get(camp.id),
+          createdAt: eventCreatedAt.get(event.id),
         },
       });
     }
 
-    const managers = await prisma.campManager.findMany({
-      select: { id: true, campId: true },
+    const managers = await prisma.eventManager.findMany({
+      select: { id: true, eventId: true },
     });
     for (const manager of managers) {
       await prisma.auditLog.create({
         data: {
           action: 'created',
-          entityType: 'campManager',
+          entityType: 'eventManager',
           entityId: manager.id,
-          campId: manager.campId,
+          eventId: manager.eventId,
           actorId: MANAGER_USER_ID,
           actorIp: MANAGER_IP,
-          createdAt: campCreatedAt.get(manager.campId),
+          createdAt: eventCreatedAt.get(manager.eventId),
         },
       });
     }
 
     const registrations = await prisma.registration.findMany({
-      select: { id: true, campId: true, status: true, createdAt: true },
+      select: { id: true, eventId: true, status: true, createdAt: true },
       orderBy: { createdAt: 'asc' },
     });
 
@@ -76,7 +77,7 @@ class AuditSeeder extends BaseSeeder {
           action: 'created',
           entityType: 'registration',
           entityId: registration.id,
-          campId: registration.campId,
+          eventId: registration.eventId,
           actorId: null,
           actorIp: null,
           createdAt: registration.createdAt,
@@ -104,7 +105,7 @@ class AuditSeeder extends BaseSeeder {
           action: 'updated',
           entityType: 'registration',
           entityId: registration.id,
-          campId: registration.campId,
+          eventId: registration.eventId,
           actorId: MANAGER_USER_ID,
           actorIp: MANAGER_IP,
           changes: {
@@ -123,7 +124,7 @@ class AuditSeeder extends BaseSeeder {
             action: 'updated',
             entityType: 'registration',
             entityId: registration.id,
-            campId: registration.campId,
+            eventId: registration.eventId,
             actorId: MANAGER_USER_ID,
             actorIp: MANAGER_IP,
             changes: { changedValues: { status: registration.status } },

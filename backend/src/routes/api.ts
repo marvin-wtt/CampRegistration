@@ -1,12 +1,13 @@
 import { generalLimiter, maintenance } from '#middlewares/index';
 import passport from 'passport';
 import { successHandler, clientErrorHandler } from '#core/morgan';
+import context from '#middlewares/context.middleware';
 import extensions from '#middlewares/extension.middleware';
 import { createRouter } from '#core/router/router';
 import { csrfProtection } from '#middlewares/csrf.middleware';
 import { sessionId } from '#middlewares/session.middleware';
 import convertEmptyStringsToNull from '#middlewares/string.middleware';
-import { requestContext } from '#middlewares/request-context.middleware';
+import { actorContext } from '#middlewares/actor-context.middleware';
 import { initializePassport } from '#core/passport';
 
 // authentication
@@ -24,14 +25,17 @@ const router = createRouter()
   // session management
   .use(sessionId)
 
+  // ambient request context (AsyncLocalStorage) for the rest of the chain
+  .use(context)
+
   // custom request‐extensions
   .use(extensions)
 
   // authentication
   .use(passport.authenticate(['jwt', 'anonymous'], { session: false }))
 
-  // request-scoped context (needs req.user from passport + req.sessionId)
-  .use(requestContext)
+  // request-scoped actor context (needs req.user from passport + req.sessionId)
+  .use(actorContext)
 
   // csrf protection
   .use(csrfProtection)

@@ -123,7 +123,7 @@
 <script lang="ts" setup>
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useAuthStore } from 'stores/auth-store';
+import { useAuthStore } from '@/stores/auth-store';
 import { storeToRefs } from 'pinia';
 import { useRoute } from 'vue-router';
 import { useQuasar } from 'quasar';

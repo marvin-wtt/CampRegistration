@@ -1,26 +1,26 @@
 import type { AuditLogEntry } from '@camp-registration/common/entities';
-import { api } from 'src/services/api';
+import { api } from '@/services/api';
 
 export function useAuditService() {
   async function fetchRegistrationAuditLog(
-    campId: string,
+    eventId: string,
     registrationId: string,
   ): Promise<AuditLogEntry[]> {
     const response = await api.get(
-      `camps/${campId}/registrations/${registrationId}/audit/`,
+      `events/${eventId}/registrations/${registrationId}/audit/`,
     );
 
     return response?.data?.data;
   }
 
-  async function fetchCampAuditLog(campId: string): Promise<AuditLogEntry[]> {
-    const response = await api.get(`camps/${campId}/audit/`);
+  async function fetchEventAuditLog(eventId: string): Promise<AuditLogEntry[]> {
+    const response = await api.get(`events/${eventId}/audit/`);
 
     return response?.data?.data;
   }
 
   return {
     fetchRegistrationAuditLog,
-    fetchCampAuditLog,
+    fetchEventAuditLog,
   };
 }

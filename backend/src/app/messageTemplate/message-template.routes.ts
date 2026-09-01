@@ -1,5 +1,5 @@
 import { auth, guard, multipart } from '#middlewares/index';
-import { campManager } from '#app/campManager/camp-manager.guard';
+import { hasEventPermission } from '#app/event/event.guard';
 import { MessageTemplateController } from './message-template.controller.js';
 import { controller } from '#utils/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';
@@ -19,11 +19,11 @@ export class MessageTemplateRouter extends ModuleRouter {
 
   protected registerBindings() {
     this.bindModel('messageTemplate', (req, id) => {
-      const camp = req.model('camp');
-      if (!camp) {
+      const event = req.model('event');
+      if (!event) {
         return null;
       }
-      return this.messageTemplateService.getMessageTemplateById(camp.id, id);
+      return this.messageTemplateService.getMessageTemplateById(event.id, id);
     });
   }
 
@@ -32,28 +32,28 @@ export class MessageTemplateRouter extends ModuleRouter {
 
     this.router.get(
       '/',
-      guard(campManager('camp.message_templates.view')),
+      guard(hasEventPermission('event.message_templates.view')),
       controller(this.messageTemplateController, 'index'),
     );
     this.router.get(
       '/:messageTemplateId',
-      guard(campManager('camp.message_templates.view')),
+      guard(hasEventPermission('event.message_templates.view')),
       controller(this.messageTemplateController, 'show'),
     );
     this.router.post(
       '/',
-      guard(campManager('camp.message_templates.create')),
+      guard(hasEventPermission('event.message_templates.create')),
       multipart({ name: 'attachments' }),
       controller(this.messageTemplateController, 'store'),
     );
     this.router.patch(
       '/:messageTemplateId',
-      guard(campManager('camp.message_templates.edit')),
+      guard(hasEventPermission('event.message_templates.edit')),
       controller(this.messageTemplateController, 'update'),
     );
     this.router.delete(
       '/:messageTemplateId',
-      guard(campManager('camp.message_templates.delete')),
+      guard(hasEventPermission('event.message_templates.delete')),
       controller(this.messageTemplateController, 'destroy'),
     );
   }

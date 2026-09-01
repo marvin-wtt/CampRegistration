@@ -48,7 +48,7 @@ export function useAuditFieldLabels() {
     if (value === null) {
       return '—';
     }
-    if (entityType === 'campManager' && key === 'role') {
+    if (entityType === 'eventManager' && key === 'role') {
       return roleLabel(String(value));
     }
     return String(value);
@@ -60,7 +60,7 @@ export function useAuditFieldLabels() {
 
   /**
    * A `changedFields` entry, which may be a dotted dynamic path (`data.allergies`,
-   * `form.allergies`) — resolved against the camp's current form questions where
+   * `form.allergies`) — resolved against the event's current form questions where
    * possible (`formFieldLabels` keyed by the path after the prefix), falling back
    * to the raw path when there's no match (e.g. a since-removed question).
    */

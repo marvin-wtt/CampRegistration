@@ -1,82 +1,106 @@
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 import {
-  type Camp,
+  type Event,
   Prisma,
   type Registration,
 } from '#generated/prisma/client.js';
 import { formUtils } from '#utils/form';
 import { BaseService } from '#core/base/BaseService';
-import { RegistrationCampDataHelper } from '#app/registration/registration.helper';
+import {
+  computedRegistrationData,
+  CUSTOM_FILE_FIELD_PREFIX,
+} from '#app/registration/registration.helper';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service';
 import { AuditService } from '#app/audit/audit.service';
 import { registrationAuditPolicy } from '#app/registration/registration.audit';
+import { PrivacyNoticeService } from '#app/privacyNotice/privacy-notice.service';
+
+/** The create uses relation connects throughout, so the stamp must too. */
+function connectVersion(id: string | null) {
+  return id ? { connect: { id } } : undefined;
+}
 
 @injectable()
 export class RegistrationService extends BaseService {
+  /**
+   * `files` is the read model for custom file slots: the slot assignments
+   * live solely on the File rows (`field = 'custom:<slot>'`) and are projected
+   * into the resource's `files` record on read.
+   */
+  private readonly registrationInclude = {
+    bed: { include: { room: true } },
+    files: {
+      select: { id: true, field: true },
+      where: { field: { startsWith: CUSTOM_FILE_FIELD_PREFIX } },
+    },
+  } satisfies Prisma.RegistrationInclude;
+
   constructor(
     @inject(FileService) private readonly fileService: FileService,
+    @inject(PrivacyNoticeService)
+    private readonly privacyNoticeService: PrivacyNoticeService,
     @inject(AuditService) private readonly audit: AuditService,
   ) {
     super();
   }
 
-  async getRegistrationById(campId: string, id: string) {
+  async getRegistrationById(eventId: string, id: string) {
     return this.prisma.registration.findFirst({
-      where: { id, campId },
-      include: {
-        bed: { include: { room: true } },
-      },
+      where: { id, eventId },
+      include: this.registrationInclude,
     });
   }
 
-  async getRegistrationsByIds(campId: string, ids: string[]) {
+  async getRegistrationsByIds(eventId: string, ids: string[]) {
     return this.prisma.registration.findMany({
       where: {
         id: { in: ids },
-        campId,
+        eventId,
         status: { not: 'PENDING' },
       },
-      include: {
-        bed: { include: { room: true } },
-      },
+      include: this.registrationInclude,
     });
   }
 
-  async getRegistrationWithCampById(id: string) {
+  async getRegistrationWithEventById(id: string) {
     return this.prisma.registration.findUnique({
       where: { id },
       include: {
-        camp: { select: { id: true } },
-        bed: { include: { room: true } },
+        ...this.registrationInclude,
+        event: { select: { id: true } },
       },
     });
   }
 
-  async queryRegistrations(campId: string) {
+  async queryRegistrations(eventId: string) {
     return this.prisma.registration.findMany({
-      where: { campId },
-      include: {
-        bed: { include: { room: true } },
-      },
+      where: { eventId },
+      include: this.registrationInclude,
     });
+  }
+
+  async getOverviewCounts() {
+    const total = await this.prisma.registration.count();
+
+    return { total };
   }
 
   async createRegistration(
-    camp: Camp & { freePlaces: number | Record<string, number> },
+    event: Event & { freePlaces: number | Record<string, number> },
     data: Pick<Registration, 'data' | 'locale'>,
     fileField: string,
   ) {
-    const form = formUtils(camp, data.data);
+    const form = formUtils(event, data.data);
 
     const formData = form.data();
-    const computedData = this.createComputedData(form.extractCampData());
+    const computedData = computedRegistrationData(form.extractEventData());
 
-    if (camp.countries.length > 1 && !computedData.country) {
+    if (event.countries.length > 1 && !computedData.country) {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
-        'Country data is required for camps with multiple countries. This is likely due to an invalid registration form',
+        'Country data is required for events with multiple countries. This is likely due to an invalid registration form',
       );
     }
 
@@ -91,21 +115,21 @@ export class RegistrationService extends BaseService {
       }
 
       // Single max participants for all participants
-      if (typeof camp.maxParticipants === 'number') {
+      if (typeof event.maxParticipants === 'number') {
         const registrationCount = await transaction.registration.count({
           where: {
-            campId: camp.id,
+            eventId: event.id,
             OR: [{ role: 'participant' }, { role: null }],
           },
         });
-        return registrationCount >= camp.maxParticipants;
+        return registrationCount >= event.maxParticipants;
       }
 
       // Max participants per country
       // Throw error when country is missing
       if (
         !computedData.country ||
-        !(computedData.country in camp.maxParticipants)
+        !(computedData.country in event.maxParticipants)
       ) {
         throw new ApiError(
           httpStatus.BAD_REQUEST,
@@ -115,14 +139,22 @@ export class RegistrationService extends BaseService {
 
       const registrationCount = await transaction.registration.count({
         where: {
-          campId: camp.id,
+          eventId: event.id,
           OR: [{ role: 'participant' }, { role: null }],
           country: computedData.country,
         },
       });
 
-      return registrationCount >= camp.maxParticipants[computedData.country];
+      return registrationCount >= event.maxParticipants[computedData.country];
     };
+
+    // Which privacy information this person was shown, resolved before the
+    // transaction: it is a read of published state, and the create runs
+    // Serializable.
+    const privacyStamp = await this.privacyNoticeService.getStampForEvent(
+      event.id,
+      event.organizationId,
+    );
 
     return this.prisma.$transaction(
       async (transaction) => {
@@ -130,7 +162,7 @@ export class RegistrationService extends BaseService {
 
         const status = waitingList
           ? 'WAITLISTED'
-          : camp.confirmationMode === 'AUTOMATIC'
+          : event.confirmationMode === 'AUTOMATIC'
             ? 'ACCEPTED'
             : 'PENDING';
 
@@ -141,7 +173,15 @@ export class RegistrationService extends BaseService {
             id: undefined, // Force new ID generation
             data: formData,
             status,
-            camp: { connect: { id: camp.id } },
+            platformPrivacyPolicyUpdatedAt:
+              privacyStamp.platformPrivacyPolicyUpdatedAt,
+            organizationPrivacyNotice: connectVersion(
+              privacyStamp.organizationPrivacyNoticeVersionId,
+            ),
+            eventPrivacyNotice: connectVersion(
+              privacyStamp.eventPrivacyNoticeVersionId,
+            ),
+            event: { connect: { id: event.id } },
             files: this.fileService.getFileConnectInput(fileIds, fileField),
           },
         });
@@ -150,7 +190,7 @@ export class RegistrationService extends BaseService {
           action: 'created',
           entityType: registrationAuditPolicy.entityType,
           entityId: registration.id,
-          campId: camp.id,
+          eventId: event.id,
           // A registration is created by an external party via the public
           // form — always system-attributed, never the logged-in manager who
           // may happen to share the session.
@@ -164,60 +204,110 @@ export class RegistrationService extends BaseService {
   }
 
   async updateRegistrationById(
-    camp: Camp & { freePlaces: number | Record<string, number> },
+    event: Event & { freePlaces: number | Record<string, number> },
     registrationId: string,
     data: Pick<
       Prisma.RegistrationUpdateInput,
       'status' | 'data' | 'customData'
-    >,
+    > & {
+      customFiles?: Record<string, string | null>;
+    },
     sessionId: string,
   ) {
+    // Status and custom data are plain field writes; only form data and
+    // custom file slots require a transactional file sync.
+    if (!data.data && !data.customFiles) {
+      return this.prisma.$transaction(async (tx) => {
+        // Read the authoritative "before" inside the transaction so the audit
+        // diff is race-free and atomic with the write.
+        const before = await tx.registration.findUniqueOrThrow({
+          where: { id: registrationId },
+        });
+
+        const after = await tx.registration.update({
+          where: { id: registrationId },
+          data: {
+            customData: data.customData,
+            status: data.status,
+          },
+          include: this.registrationInclude,
+        });
+
+        await this.audit.recordChange(tx, 'updated', registrationAuditPolicy, {
+          before,
+          after,
+          entityId: registrationId,
+          eventId: event.id,
+        });
+
+        return after;
+      });
+    }
+
+    let computedData: Partial<Prisma.RegistrationCreateInput> = {};
+    let formFileIds: string[] | undefined;
+
+    if (data.data) {
+      const form = formUtils(event);
+      form.updateData(data.data);
+      computedData = computedRegistrationData(form.extractEventData());
+      formFileIds = form.getFileIds();
+    }
+
     return this.prisma.$transaction(async (tx) => {
-      // Read the authoritative "before" inside the transaction so the audit diff
-      // is race-free and atomic with the write.
+      // Read the authoritative "before" inside the transaction so the audit
+      // diff is race-free and atomic with the write.
       const before = await tx.registration.findUniqueOrThrow({
         where: { id: registrationId },
       });
 
-      let updateData: Prisma.RegistrationUpdateInput = {
-        customData: data.customData,
-        status: data.status,
-      };
-
-      if (data.data) {
-        const form = formUtils(camp);
-        form.updateData(data.data);
-        const computedData = this.createComputedData(form.extractCampData());
-        const fileIds = form.getFileIds();
-        const files = await this.fileService.syncFilesForOwner(
+      if (data.customFiles) {
+        const invalidSlots = await this.fileService.syncFileSlots(
           tx,
           'registrationId',
           registrationId,
-          fileIds,
+          CUSTOM_FILE_FIELD_PREFIX,
+          data.customFiles,
           sessionId,
         );
 
-        updateData = {
-          ...updateData,
-          ...computedData,
-          data: data.data,
-          files,
-        };
+        if (invalidSlots.length > 0) {
+          throw new ApiError(
+            httpStatus.BAD_REQUEST,
+            `Invalid file for custom file field(s): ${invalidSlots.join(', ')}`,
+          );
+        }
       }
+
+      const files = formFileIds
+        ? await this.fileService.syncFilesForOwner(
+            tx,
+            'registrationId',
+            registrationId,
+            formFileIds,
+            sessionId,
+            // Custom file slots are managed above and must survive form syncs
+            { excludeFieldPrefix: CUSTOM_FILE_FIELD_PREFIX },
+          )
+        : undefined;
 
       const after = await tx.registration.update({
         where: { id: registrationId },
-        data: updateData,
-        include: {
-          bed: { include: { room: true } },
+        data: {
+          ...computedData,
+          data: data.data,
+          customData: data.customData,
+          status: data.status,
+          files,
         },
+        include: this.registrationInclude,
       });
 
       await this.audit.recordChange(tx, 'updated', registrationAuditPolicy, {
         before,
         after,
         entityId: registrationId,
-        campId: camp.id,
+        eventId: event.id,
       });
 
       return after;
@@ -234,20 +324,20 @@ export class RegistrationService extends BaseService {
         action: 'deleted',
         entityType: registrationAuditPolicy.entityType,
         entityId: registration.id,
-        campId: registration.campId,
+        eventId: registration.eventId,
       });
     });
   }
 
-  async updateRegistrationsComputedDataByCamp(
-    camp: Camp & { freePlaces: number | Record<string, number> },
+  async updateRegistrationsComputedDataByEvent(
+    event: Event & { freePlaces: number | Record<string, number> },
   ) {
-    const form = formUtils(camp);
-    const registrations = await this.queryRegistrations(camp.id);
+    const form = formUtils(event);
+    const registrations = await this.queryRegistrations(event.id);
 
     const results = registrations.map((registration) => {
       form.updateData(registration.data);
-      const computedData = this.createComputedData(form.extractCampData());
+      const computedData = computedRegistrationData(form.extractEventData());
 
       return this.prisma.registration.update({
         where: { id: registration.id },
@@ -261,25 +351,5 @@ export class RegistrationService extends BaseService {
     });
 
     await Promise.all(results);
-  }
-
-  private createComputedData(
-    data: Record<string, unknown[]>,
-  ): Partial<Prisma.RegistrationCreateInput> {
-    const helper = new RegistrationCampDataHelper(data);
-
-    return {
-      firstName: helper.firstName() ?? null,
-      lastName: helper.lastName() ?? null,
-      street: helper.street() ?? null,
-      city: helper.city() ?? null,
-      zipCode: helper.zipCode() ?? null,
-      country: helper.country() ?? null,
-      dateOfBirth: helper.dateOfBirth() ?? null,
-      emails: helper.emails() ?? [],
-      role: helper.role() ?? null,
-      gender: helper.gender() ?? null,
-      newsletterConsent: helper.newsletterConsent() ?? null,
-    };
   }
 }

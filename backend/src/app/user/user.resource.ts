@@ -13,7 +13,9 @@ type PartialUser = Pick<
   | 'locked'
   | 'lastSeen'
   | 'createdAt'
->;
+> & {
+  twoFactor: { confirmedAt: Date | null } | null;
+};
 
 export class UserResource extends JsonResource<PartialUser, UserResourceData> {
   transform(): UserResourceData {
@@ -24,6 +26,7 @@ export class UserResource extends JsonResource<PartialUser, UserResourceData> {
       locale: this.data.locale,
       role: convertRole(this.data.role),
       emailVerified: this.data.emailVerified,
+      twoFactorEnabled: this.data.twoFactor?.confirmedAt != null,
       locked: this.data.locked,
       lastSeen: this.data.lastSeen?.toISOString() ?? null,
       createdAt: this.data.createdAt.toISOString(),

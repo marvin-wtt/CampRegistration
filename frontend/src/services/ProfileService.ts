@@ -2,7 +2,7 @@ import type {
   Profile,
   ProfileUpdateData,
 } from '@camp-registration/common/entities';
-import { api } from 'src/services/api';
+import { api } from '@/services/api';
 
 export function useProfileService() {
   async function fetchProfile(): Promise<Profile> {

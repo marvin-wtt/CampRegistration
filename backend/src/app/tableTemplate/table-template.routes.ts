@@ -1,5 +1,5 @@
 import { auth, guard } from '#middlewares/index';
-import { campManager } from '#app/campManager/camp-manager.guard';
+import { hasEventPermission } from '#app/event/event.guard';
 import { TableTemplateController } from './table-template.controller.js';
 import { controller } from '#utils/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';
@@ -19,11 +19,11 @@ export class TableTemplateRouter extends ModuleRouter {
 
   protected registerBindings() {
     this.bindModel('tableTemplate', (req, id) => {
-      const camp = req.model('camp');
-      if (!camp) {
+      const event = req.model('event');
+      if (!event) {
         return null;
       }
-      return this.tableTemplateService.getTemplateById(camp.id, id);
+      return this.tableTemplateService.getTemplateById(event.id, id);
     });
   }
 
@@ -33,31 +33,31 @@ export class TableTemplateRouter extends ModuleRouter {
     this.router.get(
       '/',
       auth(),
-      guard(campManager('camp.table_templates.view')),
+      guard(hasEventPermission('event.table_templates.view')),
       controller(this.templateController, 'index'),
     );
     this.router.get(
       '/:tableTemplateId',
       auth(),
-      guard(campManager('camp.table_templates.view')),
+      guard(hasEventPermission('event.table_templates.view')),
       controller(this.templateController, 'show'),
     );
     this.router.post(
       '/',
       auth(),
-      guard(campManager('camp.table_templates.create')),
+      guard(hasEventPermission('event.table_templates.create')),
       controller(this.templateController, 'store'),
     );
     this.router.put(
       '/:tableTemplateId',
       auth(),
-      guard(campManager('camp.table_templates.edit')),
+      guard(hasEventPermission('event.table_templates.edit')),
       controller(this.templateController, 'update'),
     );
     this.router.delete(
       '/:tableTemplateId',
       auth(),
-      guard(campManager('camp.table_templates.delete')),
+      guard(hasEventPermission('event.table_templates.delete')),
       controller(this.templateController, 'destroy'),
     );
   }

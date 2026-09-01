@@ -1,33 +1,29 @@
 <template>
-  <q-card
-    flat
-    bordered
-  >
-    <q-form @submit="onSave">
-      <q-card-section class="text-h6">
-        {{ t('title') }}
-      </q-card-section>
-
-      <q-card-section>
+  <q-form @submit="onSave">
+    <q-card-section>
+      <div class="text-body2 text-on-surface-variant">
         {{ t('description') }}
-      </q-card-section>
+      </div>
+    </q-card-section>
 
-      <q-card-actions>
-        <q-btn
-          :label="t('action.export')"
-          type="submit"
-          color="primary"
-          outlined
-          rounded
-          disable
-        />
-      </q-card-actions>
-    </q-form>
-  </q-card>
+    <q-card-actions class="items-center q-gutter-sm">
+      <m-btn
+        :label="t('action.export')"
+        type="submit"
+        color="primary"
+        flat
+        disable
+      />
+      <div class="text-body2 text-on-surface-variant">
+        {{ t('comingSoon') }}
+      </div>
+    </q-card-actions>
+  </q-form>
 </template>
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
+import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
 const { t } = useI18n();
 
@@ -43,45 +39,40 @@ function onSave() {
 <style scoped></style>
 
 <i18n lang="yaml" locale="en">
-title: 'Export data'
-
 description: 'Export all data related to this account.'
+comingSoon: 'Not available yet.'
 
 action:
   export: 'Request data export'
 </i18n>
 
 <i18n lang="yaml" locale="de">
-title: 'Daten exportieren'
-
 description: 'Exportieren Sie alle Daten, die mit diesem Konto verbunden sind.'
+comingSoon: 'Noch nicht verfügbar.'
 
 action:
   export: 'Datenexport anfordern'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-title: 'Exporter les données'
-
 description: 'Exportez toutes les données liées à ce compte.'
+comingSoon: 'Pas encore disponible.'
 
 action:
   export: 'Demander l’exportation des données'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-title: 'Eksport danych'
-
 description: 'Wyeksportuj wszystkie dane powiązane z tym kontem.'
+comingSoon: 'Jeszcze niedostępne.'
 
 action:
   export: 'Zażądaj eksportu danych'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-title: 'Export dat'
-
 description: 'Exportujte všechna data spojená s tímto účtem.'
+comingSoon: 'Zatím není k dispozici.'
 
 action:
   export: 'Požádat o export dat'

@@ -1,0 +1,68 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run lint:*)",
+      "Bash(npm run typecheck:*)",
+      "Bash(npm run format:check:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run test:*)",
+      "Bash(npm run i18n:check:*)",
+      "Bash(npx tsc --noEmit:*)",
+      "Bash(npx vue-tsc --noEmit:*)",
+      "Bash(npx vitest run:*)",
+      "Bash(npx eslint:*)",
+      "Bash(npx prettier --check:*)",
+      "Bash(npx prisma migrate diff:*)"
+    ],
+    "deny": [
+      "Read(./backend/.env)",
+      "Read(./backend/.env.dev)",
+      "Read(./backend/.env.e2e)",
+      "Read(./backend/.env.test)",
+      "Read(./frontend/.env)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/prettier.mjs\"",
+            "timeout": 30,
+            "statusMessage": "Running Prettier"
+          },
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/i18n-check.mjs\"",
+            "timeout": 60,
+            "statusMessage": "Checking locales"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/guard-destructive.mjs\"",
+            "timeout": 15
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/guard-migrations.mjs\"",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}

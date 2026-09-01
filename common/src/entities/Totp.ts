@@ -15,3 +15,12 @@ export interface TotpDisableData {
   otp: string;
   password: string;
 }
+
+export interface TotpRecoveryCodesData {
+  codes: string[];
+}
+
+export interface TotpRecoveryCodesGenerateData {
+  password: string;
+  otp: string;
+}

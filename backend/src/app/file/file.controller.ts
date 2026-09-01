@@ -1,12 +1,16 @@
+import { pipeline } from 'stream/promises';
 import { FileService } from './file.service.js';
 import httpStatus from 'http-status';
 import ApiError from '#utils/ApiError';
+import logger from '#core/logger';
 import type { Request, Response } from 'express';
 import { FileResource } from './file.resource.js';
 import validator from './file.validation.js';
 import { BaseController } from '#core/base/BaseController';
+import { RealtimeService } from '#core/realtime/RealtimeService';
 import { inject, injectable } from 'inversify';
 import contentDisposition from 'content-disposition';
+import { isClientDisconnect } from '#utils/stream';
 
 interface ModelData {
   id: string;
@@ -15,7 +19,11 @@ interface ModelData {
 
 @injectable()
 export class FileController extends BaseController {
-  constructor(@inject(FileService) private readonly fileService: FileService) {
+  constructor(
+    @inject(FileService) private readonly fileService: FileService,
+    @inject(RealtimeService)
+    private readonly realtimeService: RealtimeService,
+  ) {
     super();
   }
 
@@ -33,7 +41,7 @@ export class FileController extends BaseController {
       );
     }
 
-    const fileStream = this.fileService.getFileStream(file);
+    const fileStream = await this.fileService.getFileStream(file);
 
     // Set response headers for image display
     res.contentType(file.type);
@@ -43,7 +51,27 @@ export class FileController extends BaseController {
       this.buildContentDisposition(file.originalName, download),
     );
 
-    fileStream.pipe(res); // Pipe the file stream to the response
+    // pipeline (unlike pipe) propagates stream errors and tears the whole
+    // chain down when either side fails or the client disconnects.
+    try {
+      await pipeline(fileStream, res);
+    } catch (error) {
+      if (isClientDisconnect(error)) {
+        return;
+      }
+
+      if (!res.headersSent) {
+        throw new ApiError(
+          httpStatus.INTERNAL_SERVER_ERROR,
+          'Failed to read file',
+        );
+      }
+
+      // Mid-stream failure: the status is already out, so destroying the
+      // socket is the only way to signal a truncated response.
+      logger.error(`Failed to stream file "${file.id}"`, error);
+      res.destroy();
+    }
   }
 
   show(req: Request, res: Response) {
@@ -100,6 +128,11 @@ export class FileController extends BaseController {
       accessLevel ?? 'private',
     );
 
+    // Files are polymorphic; only event-owned files are a realtime resource.
+    if (model?.name === 'event') {
+      void this.realtimeService.emit(model.id, 'file', data.id, 'created');
+    }
+
     res.status(httpStatus.CREATED).resource(new FileResource(data));
   }
 
@@ -116,6 +149,15 @@ export class FileController extends BaseController {
       name,
     });
 
+    if (updatedFile.eventId) {
+      void this.realtimeService.emit(
+        updatedFile.eventId,
+        'file',
+        updatedFile.id,
+        'updated',
+      );
+    }
+
     res.resource(new FileResource(updatedFile));
   }
 
@@ -124,6 +166,10 @@ export class FileController extends BaseController {
     const file = req.modelOrFail('file');
 
     await this.fileService.deleteFile(file.id);
+
+    if (file.eventId) {
+      void this.realtimeService.emit(file.eventId, 'file', file.id, 'deleted');
+    }
 
     res.sendStatus(httpStatus.NO_CONTENT);
   }
@@ -149,11 +195,11 @@ export class FileController extends BaseController {
         name: 'registration',
       };
     }
-    const camp = req.model('camp');
-    if (camp) {
+    const event = req.model('event');
+    if (event) {
       return {
-        id: camp.id,
-        name: 'camp',
+        id: event.id,
+        name: 'event',
       };
     }
 

@@ -1,24 +1,26 @@
 <template>
   <!-- Floating controls for layouts without a navigation rail. Keeps the
-       profile menu in the same bottom-left spot as the rail layouts, and adds
-       an optional back affordance top-left. Fixed-positioned so they don't
-       depend on a QPage being present. -->
+       switcher and profile menu in the same spots as the rail layouts, so an
+       index page reads as the same shell without an empty rail beside it.
+       Fixed-positioned so they don't depend on a QPage being present. -->
   <div class="layout-floating layout-floating--top">
-    <m-btn
-      icon="arrow_back"
-      :disable="!backTo"
-      round
-      elevated
-      :aria-label="t('back')"
-      :to="backTo"
-    >
-      <q-tooltip
-        anchor="center right"
-        self="center left"
+    <slot name="navigation">
+      <m-btn
+        icon="arrow_back"
+        :disable="!backTo"
+        round
+        elevated
+        :aria-label="t('back')"
+        :to="backTo"
       >
-        {{ t('back') }}
-      </q-tooltip>
-    </m-btn>
+        <q-tooltip
+          anchor="center right"
+          self="center left"
+        >
+          {{ t('back') }}
+        </q-tooltip>
+      </m-btn>
+    </slot>
   </div>
 
   <div class="layout-floating layout-floating--bottom">
@@ -29,7 +31,7 @@
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
 import type { RouteLocationRaw } from 'vue-router';
-import ProfileMenu from 'components/common/ProfileMenu.vue';
+import ProfileMenu from '@/components/common/ProfileMenu.vue';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
 const { backTo } = defineProps<{
@@ -53,6 +55,13 @@ const { t } = useI18n();
 
 .layout-floating--bottom {
   bottom: 16px;
+}
+
+/* Floating, the switcher sits directly above a page header that already names
+   the area or entity, so the pill's own caption is redundant — and dropping it
+   is what keeps the reserved gutter narrow. In the rail it stays. */
+.layout-floating--top :deep(.workspace-switcher-rail__name) {
+  display: none;
 }
 </style>
 

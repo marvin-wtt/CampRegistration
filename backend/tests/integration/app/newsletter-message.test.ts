@@ -3,6 +3,7 @@ import {
   NewsletterFactory,
   NewsletterMessageFactory,
   NewsletterSubscriberFactory,
+  OrganizationFactory,
   UserFactory,
 } from '../../../prisma/factories/index.js';
 import { generateAccessToken } from './utils/token.js';
@@ -183,6 +184,27 @@ describe(`${BASE}/:newsletterId/messages`, () => {
         sentAt: expect.any(String),
         sentBy: { id: user.id, name: user.name },
       });
+    });
+
+    it('should respond with `403` when the organization is not verified', async () => {
+      // Set-up is allowed before moderation; sending is the gated action.
+      const user = await UserFactory.create();
+      const accessToken = generateAccessToken(user);
+      const newsletter = await NewsletterFactory.create({
+        organization: {
+          create: OrganizationFactory.build({ verificationStatus: 'PENDING' }),
+        },
+        managers: { create: { userId: user.id, role: 'OWNER' } },
+      });
+      await NewsletterSubscriberFactory.create({
+        newsletter: { connect: { id: newsletter.id } },
+      });
+
+      await request()
+        .post(`${BASE}/${newsletter.id}/messages`)
+        .send({ subject: 'Hello', body: '<p>World</p>' })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(403);
     });
 
     it('should record a message in the newsletter history', async () => {

@@ -72,7 +72,7 @@ export class NewsletterMessageMail extends MailBase<NewsletterMailPayload> {
     };
   }
 
-  protected attachments(): MailAttachment[] | Promise<MailAttachment[]> {
+  protected async attachments(): Promise<MailAttachment[]> {
     const files = this.payload.attachments ?? [];
     if (!files.length) {
       return [];
@@ -80,11 +80,13 @@ export class NewsletterMessageMail extends MailBase<NewsletterMailPayload> {
 
     const fileService = resolve(FileService);
 
-    return files.map((file) => ({
-      filename: file.originalName,
-      content: fileService.getFileStream(file),
-      contentType: file.type,
-    }));
+    return Promise.all(
+      files.map(async (file) => ({
+        filename: file.originalName,
+        content: await fileService.getFileStream(file),
+        contentType: file.type,
+      })),
+    );
   }
 
   protected content() {

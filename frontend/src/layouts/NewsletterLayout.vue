@@ -1,116 +1,70 @@
 <template>
-  <q-layout
-    view="hHh Lpr lff"
-    @scroll="onScroll"
-  >
-    <q-ajax-bar color="accent" />
+  <general-layout :title="title">
+    <template #toolbar>
+      <workspace-switcher />
+    </template>
 
-    <!-- Top bar: only on mobile, where the rail is hidden. -->
-    <q-header
-      v-if="quasar.screen.lt.sm"
-      class="app-top-bar"
-      :class="{ 'app-top-bar--scrolled': scrolled }"
-    >
-      <m-toolbar>
-        <m-btn
-          icon="arrow_back"
-          square
-          round
-          text
-          :aria-label="t('back')"
-          @click="navigateHome"
-        />
-        <q-toolbar-title>
-          {{ t('title') }}
-        </q-toolbar-title>
-
-        <profile-menu />
-      </m-toolbar>
-    </q-header>
-
-    <!-- Newsletters has no sub-navigation, so on large screens it uses floating
-         controls (back + profile) instead of a rail, keeping the profile in the
-         same bottom-left spot as every other layout. -->
-    <layout-floating-controls
-      v-if="quasar.screen.gt.xs"
-      :back-to="{ name: 'management' }"
-    />
-
-    <q-page-container>
-      <router-view v-slot="{ Component }">
-        <transition name="fade">
-          <component :is="Component" />
-        </transition>
-      </router-view>
-    </q-page-container>
-  </q-layout>
+    <template #navigation>
+      <workspace-switcher rail />
+    </template>
+  </general-layout>
 </template>
 
 <script lang="ts" setup>
-import { onMounted, ref } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
-import ProfileMenu from 'components/common/ProfileMenu.vue';
-import LayoutFloatingControls from 'components/layout/LayoutFloatingControls.vue';
-import { useMeta, useQuasar } from 'quasar';
-import { useRouter } from 'vue-router';
-import { useAuthStore } from 'stores/auth-store';
-import { MToolbar } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eToolbar';
-import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
+import GeneralLayout from '@/components/layout/GeneralLayout.vue';
+import WorkspaceSwitcher from '@/components/layout/WorkspaceSwitcher.vue';
+import { useAuthStore } from '@/stores/auth-store';
+import { useNewsletterStore } from '@/stores/newsletter-store';
+import { useRoute } from 'vue-router';
 
-const quasar = useQuasar();
-const router = useRouter();
 const { t } = useI18n();
-
 const authStore = useAuthStore();
+const route = useRoute();
+const newsletterStore = useNewsletterStore();
+
+const newsletterId = computed<string | undefined>(() => {
+  const value = route.params.newsletterId;
+  return Array.isArray(value) ? value[0] : value;
+});
+
+const title = computed<string>(() => {
+  const id = newsletterId.value;
+  if (!id) {
+    return t('title');
+  }
+
+  return (
+    newsletterStore.data?.find((newsletter) => newsletter.id === id)?.name ??
+    t('title')
+  );
+});
 
 onMounted(async () => {
   await authStore.init();
+  await newsletterStore.fetchData();
 });
-
-useMeta(() => {
-  return {
-    title: t('title'),
-    titleTemplate: (title) => `${title} | ${t('app_name')}`,
-  };
-});
-
-function navigateHome() {
-  void router.push({ name: 'management' });
-}
-
-// Top app bar elevates once content scrolls beneath it (MD3 small top app bar).
-const scrolled = ref<boolean>(false);
-
-function onScroll(info: { position: { top: number } | number }) {
-  const top =
-    typeof info.position === 'number' ? info.position : info.position.top;
-  scrolled.value = top > 0;
-}
 </script>
 
 <i18n lang="yaml" locale="en">
 title: 'Newsletters'
-back: 'Back'
 </i18n>
 
 <i18n lang="yaml" locale="de">
 title: 'Newsletter'
-back: 'Zurück'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 title: 'Newsletters'
-back: 'Retour'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
 title: 'Newslettery'
-back: 'Wstecz'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
 title: 'Newslettery'
-back: 'Zpět'
 </i18n>
 
 <style>

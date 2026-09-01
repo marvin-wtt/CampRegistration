@@ -1,20 +1,10 @@
 <template>
-  <q-card
-    flat
-    bordered
+  <q-form
+    @submit="onSave"
+    @reset="onReset"
   >
-    <q-form
-      @submit="onSave"
-      @reset="onReset"
-    >
-      <q-card-section class="text-h6">
-        {{ t('title') }}
-      </q-card-section>
-
-      <q-card-section
-        class="q-gutter-sm"
-        style="max-width: 500px"
-      >
+    <q-card-section>
+      <div class="row q-col-gutter-md">
         <q-input
           v-model="data.name"
           :label="t('field.name.label')"
@@ -26,9 +16,10 @@
           hide-bottom-space
           outlined
           rounded
-          class="settings-input"
+          color="primary"
+          class="col-12 col-md-7"
         >
-          <template #before>
+          <template #prepend>
             <q-icon name="person" />
           </template>
         </q-input>
@@ -41,41 +32,41 @@
             (val: string) =>
               val.length === 2 ||
               val.length === 5 ||
-              t('field.name.rule.invalid'),
+              t('field.locale.rule.invalid'),
           ]"
           hide-bottom-space
           outlined
           rounded
-          class="settings-input"
-          style="max-width: 200px"
+          color="primary"
+          class="col-12 col-md-5"
         >
-          <template #before>
+          <template #prepend>
             <q-icon name="language" />
           </template>
         </locale-input>
-      </q-card-section>
+      </div>
+    </q-card-section>
 
-      <q-card-actions>
-        <q-btn
-          :label="t('action.save')"
-          type="submit"
-          color="primary"
-          rounded
-        />
-        <q-btn
-          :label="t('action.reset')"
-          type="reset"
-          :disable="!isModified"
-          outline
-          rounded
-        />
-      </q-card-actions>
-    </q-form>
-  </q-card>
+    <q-card-actions>
+      <m-btn
+        :label="t('action.save')"
+        type="submit"
+        color="primary"
+      />
+      <m-btn
+        :label="t('action.reset')"
+        type="reset"
+        :disable="!isModified"
+        flat
+        color="primary"
+      />
+    </q-card-actions>
+  </q-form>
 </template>
 
 <script lang="ts" setup>
-import LocaleInput from 'components/common/inputs/LocaleInput.vue';
+import LocaleInput from '@/components/common/inputs/LocaleInput.vue';
+import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import { useI18n } from 'vue-i18n';
 import type {
   Profile,
@@ -119,8 +110,6 @@ function onReset() {
 <style scoped></style>
 
 <i18n lang="yaml" locale="en">
-title: 'Profile'
-
 field:
   name:
     label: 'Name'
@@ -140,8 +129,6 @@ action:
 </i18n>
 
 <i18n lang="yaml" locale="de">
-title: 'Profil'
-
 field:
   name:
     label: 'Name'
@@ -161,8 +148,6 @@ action:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-title: 'Profil'
-
 field:
   name:
     label: 'Nom'
@@ -182,8 +167,6 @@ action:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-title: 'Profil'
-
 field:
   name:
     label: 'Imię i nazwisko'
@@ -203,8 +186,6 @@ action:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-title: 'Profil'
-
 field:
   name:
     label: 'Jméno'

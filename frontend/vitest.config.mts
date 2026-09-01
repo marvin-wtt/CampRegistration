@@ -2,7 +2,7 @@ import { defineConfig } from 'vitest/config';
 import vue from '@vitejs/plugin-vue';
 import { quasar, transformAssetUrls } from '@quasar/vite-plugin';
 import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite';
-import { getTestingConfig } from '@quasar/app-vite/lib/testing.js';
+import { getTestingConfig } from '@quasar/app-vite/testing';
 
 // https://vitejs.dev/config/
 export default defineConfig({

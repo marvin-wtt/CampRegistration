@@ -8,7 +8,7 @@ export const FileFactory = {
   ): Prisma.FileCreateInput => {
     return {
       accessLevel: 'public',
-      storageLocation: 'local',
+      storageLocation: 'disk',
       name: faker.string.uuid() + 'pdf',
       type: 'application/pdf',
       size: faker.number.int({ min: 0, max: 1e6 }),

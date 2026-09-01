@@ -5,15 +5,16 @@ import type {
   TableTemplateUpdateData,
 } from '@camp-registration/common/entities';
 import { useRoute } from 'vue-router';
-import { useAPIService } from 'src/services/APIService';
-import { useServiceHandler } from 'src/composables/serviceHandler';
-import { useAuthBus, useCampBus } from 'src/composables/bus';
+import { useAPIService } from '@/services/APIService';
+import { useServiceHandler } from '@/composables/serviceHandler';
+import { useAuthBus, useEventBus } from '@/composables/bus';
+import { useRealtimeCollection } from '@/composables/realtimeCollection';
 
 export const useTemplateStore = defineStore('templates', () => {
   const route = useRoute();
   const apiService = useAPIService();
   const authBus = useAuthBus();
-  const campBus = useCampBus();
+  const eventBus = useEventBus();
   const {
     data,
     isLoading,
@@ -23,6 +24,7 @@ export const useTemplateStore = defineStore('templates', () => {
     withProgressNotification,
     withMultiProgressNotification,
     lazyFetch,
+    backgroundFetch,
     checkNotNullWithError,
     checkNotNullWithNotification,
   } = useServiceHandler<TableTemplate[]>('template');
@@ -31,8 +33,17 @@ export const useTemplateStore = defineStore('templates', () => {
     reset();
   });
 
-  campBus.on('change', () => {
+  eventBus.on('change', () => {
     invalidate();
+  });
+
+  // React to live changes pushed from other clients. List mode: a template
+  // sync fans out many create/update/delete calls, so remote clients coalesce
+  // the resulting event burst into one debounced list refetch.
+  useRealtimeCollection<TableTemplate>('table_template', {
+    data,
+    invalidate,
+    reload: () => fetchData(undefined, { background: true }),
   });
 
   async function forceFetchData(id?: string) {
@@ -40,24 +51,25 @@ export const useTemplateStore = defineStore('templates', () => {
     return fetchData(id);
   }
 
-  async function fetchData(campId?: string) {
-    campId = campId ?? (route.params.campId as string | undefined);
+  async function fetchData(eventId?: string, opts?: { background?: boolean }) {
+    eventId = eventId ?? (route.params.eventId as string | undefined);
 
-    const cid = checkNotNullWithError(campId);
-    await lazyFetch(async () => {
+    const cid = checkNotNullWithError(eventId);
+    const fetcher = async () => {
       const data = await apiService.fetchTableTemplates(cid);
       return data.sort((a, b) => {
         return a.order - b.order;
       });
-    });
+    };
+    await (opts?.background ? backgroundFetch(fetcher) : lazyFetch(fetcher));
   }
 
   async function updateCollection(templates: TableTemplate[]) {
     const currentTemplates = data.value;
 
-    const campId = route.params.campId as string | undefined;
+    const eventId = route.params.eventId as string | undefined;
 
-    const cid = checkNotNullWithError(campId);
+    const cid = checkNotNullWithError(eventId);
 
     if (currentTemplates === undefined) {
       // TODO notify
@@ -114,10 +126,10 @@ export const useTemplateStore = defineStore('templates', () => {
 
   async function createEntry(
     template: TableTemplateCreateData,
-    campId?: string,
+    eventId?: string,
   ) {
-    campId = campId ?? (route.params.campId as string | undefined);
-    const cid = checkNotNullWithError(campId);
+    eventId = eventId ?? (route.params.eventId as string | undefined);
+    const cid = checkNotNullWithError(eventId);
 
     return await withProgressNotification('create', async () => {
       const result = await apiService.createTableTemplate(cid, template);
@@ -133,9 +145,9 @@ export const useTemplateStore = defineStore('templates', () => {
     templateId: string,
     template: TableTemplateUpdateData,
   ) {
-    const campId = route.params.campId as string | undefined;
+    const eventId = route.params.eventId as string | undefined;
 
-    const cid = checkNotNullWithError(campId);
+    const cid = checkNotNullWithError(eventId);
     return await withProgressNotification('update', async () => {
       const result = await apiService.updateTableTemplate(
         cid,
@@ -153,9 +165,9 @@ export const useTemplateStore = defineStore('templates', () => {
   }
 
   async function deleteEntry(id: string) {
-    const campId = route.params.campId as string | undefined;
+    const eventId = route.params.eventId as string | undefined;
 
-    const cid = checkNotNullWithError(campId);
+    const cid = checkNotNullWithError(eventId);
     const tid = checkNotNullWithNotification(id);
     return await withProgressNotification('delete', async () => {
       const result = apiService.deleteTableTemplate(cid, tid);

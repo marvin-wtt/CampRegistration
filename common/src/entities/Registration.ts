@@ -22,15 +22,18 @@ export interface Registration extends Identifiable, Timestamps {
   status: 'PENDING' | 'WAITLISTED' | 'ACCEPTED';
   locale: string;
   room?: Translatable | null;
-  files?: Record<string, string>;
+  customFiles?: Record<string, string>;
 }
 
-export type RegistrationCreateData = Pick<Registration, 'data'> &
-  Pick<Partial<Registration>, 'locale'>;
+export type RegistrationCreateData = Pick<Registration, 'data'> & {
+  locale?: string | null;
+};
 
 export type RegistrationUpdateData = Partial<
   Pick<Registration, 'data' | 'customData' | 'status'>
->;
+> & {
+  customFiles?: Record<string, string | null>;
+};
 
 export interface RegistrationUpdateQuery {
   suppressMessage?: boolean | undefined;

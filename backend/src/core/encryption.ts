@@ -1,12 +1,25 @@
 import bcrypt from 'bcryptjs';
+import argon2 from 'argon2';
 
 export const encryptPassword = async (password: string) => {
-  return await bcrypt.hash(password, 12);
+  return await argon2.hash(password);
 };
 
 export const isPasswordMatch = async (
   password: string,
   userPassword: string,
-) => {
-  return bcrypt.compare(password, userPassword);
+): Promise<boolean> => {
+  if (isPasswordBcrypt(userPassword)) {
+    return bcrypt.compare(password, userPassword);
+  }
+
+  return argon2.verify(userPassword, password);
 };
+
+export function passwordNeedsRehash(userPassword: string): boolean {
+  return isPasswordBcrypt(userPassword);
+}
+
+function isPasswordBcrypt(password: string): boolean {
+  return password.startsWith('$2');
+}

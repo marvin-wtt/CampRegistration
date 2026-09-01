@@ -37,5 +37,11 @@ export class UserRouter extends ModuleRouter {
       guard(),
       controller(userController, 'destroy'),
     );
+    this.router.post(
+      '/:userId/reset-two-factor',
+      auth(),
+      guard(),
+      controller(userController, 'resetTwoFactor'),
+    );
   }
 }

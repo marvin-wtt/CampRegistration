@@ -64,7 +64,20 @@ const ALLOWED_STYLES: sanitizeHtml.IOptions['allowedStyles'] = {
 
 const ALLOWED_SCHEMES = ['http', 'https', 'mailto', 'tel'];
 
-export function sanitizeEmailHtml(html: string): string {
+/**
+ * For fields the client renders as text rather than markup. Tags are discarded
+ * all the same, but entities are left as typed — running plain text through the
+ * HTML sanitizer would store an author's `&` as `&amp;` and publish it that way.
+ */
+export function sanitizePlainText(text: string): string {
+  return sanitizeHtml(text, {
+    allowedTags: [],
+    allowedAttributes: {},
+    parser: { decodeEntities: false },
+  });
+}
+
+export function sanitizeHtmlContent(html: string): string {
   return sanitizeHtml(html, {
     allowedTags: ALLOWED_TAGS,
     allowedAttributes: ALLOWED_ATTRIBUTES,

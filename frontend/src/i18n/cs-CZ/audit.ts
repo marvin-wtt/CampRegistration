@@ -1,8 +1,8 @@
 export default {
   entity: {
-    camp: 'Tábor',
+    event: 'Akce',
     registration: 'Registrace',
-    campManager: 'Správce',
+    eventManager: 'Správce',
     message: 'Zpráva',
     messageTemplate: 'E-mailová šablona',
   },
@@ -18,8 +18,9 @@ export default {
     viewer: 'Pozorovatel',
   },
   fields: {
-    camp: {
-      public: 'Veřejný',
+    event: {
+      organizationId: 'Organizace',
+      listed: 'Zobrazit akci na úvodní stránce',
       registrationOpensAt: 'Registrace se otevírá',
       registrationClosesAt: 'Registrace se zavírá',
       confirmationMode: 'Režim potvrzení',
@@ -35,6 +36,7 @@ export default {
       price: 'Cena',
       location: 'Místo',
       form: 'Registrační formulář',
+      retentionReminderSentAt: 'Připomenutí uchovávání odesláno',
     },
     registration: {
       data: 'Odpověď z formuláře',
@@ -42,13 +44,13 @@ export default {
       status: 'Stav',
       country: 'Země',
     },
-    campManager: {
+    eventManager: {
       role: 'Role',
       expiresAt: 'Vyprší',
     },
     message: {},
     messageTemplate: {
-      event: 'Událost',
+      trigger: 'Událost',
       country: 'Země',
       subject: 'Předmět',
       body: 'Obsah',

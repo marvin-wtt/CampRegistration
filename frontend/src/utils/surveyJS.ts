@@ -106,6 +106,20 @@ export function extractFormFields(form: object, prefix?: string): SelectData[] {
   return survey.getAllQuestions().flatMap((q) => collectSelectData(q, prefix));
 }
 
+export function extractEventDataTypes(form: object): string[] {
+  const survey = new SurveyModel(form);
+  const tags = new Set<string>();
+
+  for (const question of survey.getAllQuestions(false, undefined, true)) {
+    const tag: unknown = question.getPropertyValue('eventDataType');
+    if (typeof tag === 'string') {
+      tags.add(tag);
+    }
+  }
+
+  return [...tags];
+}
+
 function getNestedQuestion(
   question: Question | null | undefined,
   path: string[],

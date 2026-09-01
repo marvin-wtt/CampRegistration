@@ -2,7 +2,7 @@ import { isDeepStrictEqual } from 'node:util';
 import { SurveyModel } from 'survey-core';
 
 // Generic SurveyJS form diffing, shared by any entity that embeds a SurveyJS
-// form definition (currently only `Camp.form`).
+// form definition (currently only `Event.form`).
 
 /**
  * Snapshots every question in a SurveyJS form by name, keyed to its full

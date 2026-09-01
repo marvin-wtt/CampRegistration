@@ -1,8 +1,8 @@
 export default {
   entity: {
-    camp: 'Camp',
+    event: 'Event',
     registration: 'Registration',
-    campManager: 'Manager',
+    eventManager: 'Manager',
     message: 'Message',
     messageTemplate: 'Email template',
   },
@@ -18,8 +18,9 @@ export default {
     viewer: 'Viewer',
   },
   fields: {
-    camp: {
-      public: 'Public',
+    event: {
+      organizationId: 'Organization',
+      listed: 'Show event on main page',
       registrationOpensAt: 'Registration opens at',
       registrationClosesAt: 'Registration closes at',
       confirmationMode: 'Confirmation mode',
@@ -35,6 +36,7 @@ export default {
       price: 'Price',
       location: 'Location',
       form: 'Registration form',
+      retentionReminderSentAt: 'Retention reminder sent at',
     },
     registration: {
       data: 'Form answer',
@@ -42,13 +44,13 @@ export default {
       status: 'Status',
       country: 'Country',
     },
-    campManager: {
+    eventManager: {
       role: 'Role',
       expiresAt: 'Expires at',
     },
     message: {},
     messageTemplate: {
-      event: 'Event',
+      trigger: 'Event',
       country: 'Country',
       subject: 'Subject',
       body: 'Body',

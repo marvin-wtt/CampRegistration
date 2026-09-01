@@ -1,8 +1,8 @@
 export default {
   entity: {
-    camp: 'Obóz',
+    event: 'Wydarzenie',
     registration: 'Zgłoszenie',
-    campManager: 'Menedżer',
+    eventManager: 'Menedżer',
     message: 'Wiadomość',
     messageTemplate: 'Szablon e-maila',
   },
@@ -18,8 +18,9 @@ export default {
     viewer: 'Podglądający',
   },
   fields: {
-    camp: {
-      public: 'Publiczny',
+    event: {
+      organizationId: 'Organizacja',
+      listed: 'Pokaż wydarzenie na stronie głównej',
       registrationOpensAt: 'Rejestracja otwiera się',
       registrationClosesAt: 'Rejestracja zamyka się',
       confirmationMode: 'Tryb potwierdzenia',
@@ -35,6 +36,7 @@ export default {
       price: 'Cena',
       location: 'Lokalizacja',
       form: 'Formularz rejestracyjny',
+      retentionReminderSentAt: 'Przypomnienie o retencji wysłane',
     },
     registration: {
       data: 'Odpowiedź z formularza',
@@ -42,13 +44,13 @@ export default {
       status: 'Status',
       country: 'Kraj',
     },
-    campManager: {
+    eventManager: {
       role: 'Rola',
       expiresAt: 'Wygasa',
     },
     message: {},
     messageTemplate: {
-      event: 'Zdarzenie',
+      trigger: 'Zdarzenie',
       country: 'Kraj',
       subject: 'Temat',
       body: 'Treść',

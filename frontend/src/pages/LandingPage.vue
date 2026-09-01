@@ -1,8 +1,14 @@
 <template>
   <q-page class="landing">
     <!-- ====================================================== HERO -->
-    <section class="landing__section hero">
-      <div class="hero__glow" />
+    <section
+      class="landing__section hero"
+      aria-labelledby="landing-hero-title"
+    >
+      <div
+        class="hero__glow"
+        aria-hidden="true"
+      />
 
       <div class="hero__eyebrow anim anim--1">
         <q-icon
@@ -12,7 +18,10 @@
         <span>{{ t('hero.eyebrow') }}</span>
       </div>
 
-      <h1 class="hero__title anim anim--2">
+      <h1
+        id="landing-hero-title"
+        class="hero__title anim anim--2"
+      >
         {{ t('hero.title') }}
         <br />
         <span class="hero__highlight">{{ t('hero.title_highlight') }}</span>
@@ -35,7 +44,7 @@
               icon-right="arrow_forward"
               size="16px"
               no-caps
-              data-cy="landing-organizer-cta"
+              data-test="landing-organizer-cta"
             />
             <m-btn
               v-if="!user"
@@ -44,7 +53,7 @@
               text
               size="16px"
               no-caps
-              data-cy="landing-login"
+              data-test="landing-login"
             />
           </div>
         </article>
@@ -60,12 +69,12 @@
           <div class="split-card__actions">
             <m-btn
               :label="t('participants.action')"
-              :to="{ name: 'camps' }"
+              :to="{ name: 'events' }"
               tonal
               tertiary
               icon-right="arrow_forward"
               no-caps
-              data-cy="landing-participant-cta"
+              data-test="landing-participant-cta"
             />
           </div>
         </article>
@@ -73,8 +82,16 @@
     </section>
 
     <!-- ================================================== FEATURES -->
-    <section class="landing__section features">
-      <h2 class="section-title">{{ t('feature.title') }}</h2>
+    <section
+      class="landing__section features"
+      aria-labelledby="landing-features-title"
+    >
+      <h2
+        id="landing-features-title"
+        class="section-title"
+      >
+        {{ t('feature.title') }}
+      </h2>
       <p class="section-subtitle">{{ t('feature.subtitle') }}</p>
 
       <div class="features__grid">
@@ -115,8 +132,16 @@
     </section>
 
     <!-- ===================================================== STEPS -->
-    <section class="landing__section steps">
-      <h2 class="section-title">{{ t('step.title') }}</h2>
+    <section
+      class="landing__section steps"
+      aria-labelledby="landing-steps-title"
+    >
+      <h2
+        id="landing-steps-title"
+        class="section-title"
+      >
+        {{ t('step.title') }}
+      </h2>
 
       <ol class="steps__list">
         <li
@@ -137,11 +162,19 @@
     </section>
 
     <!-- ================================================= SELF-HOST -->
-    <section class="landing__section selfhost">
+    <section
+      class="landing__section selfhost"
+      aria-labelledby="landing-selfhost-title"
+    >
       <div class="selfhost__card">
         <div class="selfhost__content">
           <span class="selfhost__eyebrow">{{ t('selfhost.eyebrow') }}</span>
-          <h2 class="selfhost__title">{{ t('selfhost.title') }}</h2>
+          <h2
+            id="landing-selfhost-title"
+            class="selfhost__title"
+          >
+            {{ t('selfhost.title') }}
+          </h2>
           <p class="selfhost__text">{{ t('selfhost.text') }}</p>
 
           <ul class="selfhost__points">
@@ -159,14 +192,14 @@
 
           <m-btn
             :label="t('selfhost.action')"
-            href="https://github.com/marvin-wtt/CampRegistration"
+            href="https://github.com/marvin-wtt/EventRegistration"
             target="_blank"
             rel="noopener"
             tonal
             icon="code"
             icon-right="open_in_new"
             no-caps
-            data-cy="landing-github"
+            data-test="landing-github"
           />
         </div>
 
@@ -181,17 +214,25 @@
           </div>
           <pre class="selfhost__terminal-body">
             <span class="t-dim"># {{ t('selfhost.terminal_comment') }}</span>
-<span class="t-prompt">$</span> git clone marvin-wtt/CampRegistration
-<span class="t-prompt">$</span> docker compose up -d
-<span class="t-ok">✓</span> {{ t('selfhost.terminal_done') }}</pre>
+            <span class="t-prompt">$</span> git clone marvin-wtt/EventRegistration
+            <span class="t-prompt">$</span> docker compose up -d
+            <span class="t-ok">✓</span> {{ t('selfhost.terminal_done') }}</pre>
         </div>
       </div>
     </section>
 
     <!-- ======================================================= CTA -->
-    <section class="landing__section cta">
+    <section
+      class="landing__section cta"
+      aria-labelledby="landing-cta-title"
+    >
       <div class="cta__card">
-        <h2 class="cta__title">{{ t('cta.title') }}</h2>
+        <h2
+          id="landing-cta-title"
+          class="cta__title"
+        >
+          {{ t('cta.title') }}
+        </h2>
         <p class="cta__text">{{ t('cta.text') }}</p>
         <m-btn
           :label="organizerCtaLabel"
@@ -201,11 +242,11 @@
           size="16px"
           class="cta__btn"
           no-caps
-          data-cy="landing-bottom-cta"
+          data-test="landing-bottom-cta"
         />
         <p class="cta__hint">
           {{ t('cta.participant_hint') }}
-          <router-link :to="{ name: 'camps' }">
+          <router-link :to="{ name: 'events' }">
             {{ t('cta.participant_link') }}
           </router-link>
         </p>
@@ -219,7 +260,7 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useMeta } from 'quasar';
 import { storeToRefs } from 'pinia';
-import { useProfileStore } from 'stores/profile-store';
+import { useProfileStore } from '@/stores/profile-store';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
 const { t } = useI18n();
@@ -228,6 +269,12 @@ const { user } = storeToRefs(profileStore);
 
 useMeta(() => ({
   title: t('meta_title'),
+  meta: {
+    description: {
+      name: 'description',
+      content: t('meta_description'),
+    },
+  },
 }));
 
 const organizerCtaLabel = computed<string>(() =>
@@ -235,7 +282,7 @@ const organizerCtaLabel = computed<string>(() =>
 );
 
 const organizerCtaTo = computed(() =>
-  user.value ? { name: 'management' } : { name: 'register' },
+  user.value ? { name: 'management.events' } : { name: 'register' },
 );
 
 const features = [
@@ -247,7 +294,7 @@ const features = [
   { name: 'contacts', icon: 'contact_mail' },
   { name: 'team', icon: 'group_add' },
   { name: 'dashboard', icon: 'dashboard' },
-  { name: 'newsletter', icon: 'campaign' },
+  { name: 'newsletter', icon: 'eventaign' },
 ] as const;
 
 const extraChips = [
@@ -268,6 +315,14 @@ const extraChips = [
  * without manual overrides.
  */
 .landing {
+  /* The theme ships shape and motion as Sass variables only, so mirror the
+   * ones used here as custom properties. Values from its variables.scss. */
+  --md3-corner-large: 16px;
+  --md3-corner-extra-large: 28px;
+  --md3-corner-full: 9999px;
+  --md3-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
+  --md3-easing-emphasized-decel: cubic-bezier(0.05, 0.7, 0.1, 1);
+
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -468,7 +523,12 @@ const extraChips = [
   border-radius: var(--md3-corner-extra-large) 48px
     var(--md3-corner-extra-large) 48px;
   background: var(--md3-surface-container-high);
-  transform: translateY(-3px);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .feature-card:hover {
+    transform: translateY(-3px);
+  }
 }
 
 .feature-card__icon {
@@ -826,26 +886,27 @@ const extraChips = [
 </style>
 
 <i18n lang="yaml" locale="en">
-meta_title: 'Camp management made simple'
+meta_title: 'Event management made simple'
+meta_description: '@:app_name is a free, open-source platform for organizing youth events: online registration forms, participant tables, room and program planning, emails, and newsletters.'
 hero:
-  eyebrow: 'Free & open-source camp management'
-  title: 'Run your camp,'
+  eyebrow: 'Free & open-source event management'
+  title: 'Run your event,'
   title_highlight: 'not your paperwork'
-  subtitle: '@:app_name brings registrations, participants, rooms, program, and communication together in one place — built by camp organizers, for camp organizers.'
+  subtitle: '@:app_name brings registrations, participants, rooms, program, and communication together in one place — built by event organizers, for event organizers.'
 participants:
-  title: 'Joining a camp?'
-  text: 'Find your camp and register online in a few minutes — no account required.'
-  action: 'Browse open camps'
+  title: 'Joining an event?'
+  text: 'Find your event and register online in a few minutes — no account required.'
+  action: 'Browse open events'
 organizers:
   badge: 'For organizers'
-  title: 'Everything your camp team needs'
-  text: 'From the first registration form to the final room plan — manage the entire camp together with your team.'
+  title: 'Everything your event team needs'
+  text: 'From the first registration form to the final room plan — manage the entire event together with your team.'
   action: 'Get started for free'
   action_authed: 'Open management'
   action_login: 'Sign in'
 feature:
   title: 'Why organize with @:app_name?'
-  subtitle: "Because spreadsheets, paper forms, and email chains don't scale to a whole camp."
+  subtitle: "Because spreadsheets, paper forms, and email chains don't scale to a whole event."
   forms:
     title: 'Dynamic registration forms'
     text: 'Build multi-page forms with conditional logic, dynamic inputs, file uploads, and built-in translations. Families register online in minutes.'
@@ -860,7 +921,7 @@ feature:
     text: 'Assign participants to rooms while keeping beds, ages, and groups in view.'
   program:
     title: 'Program planner'
-    text: 'Plan the camp schedule collaboratively — from arrival day to departure, visible to the whole team.'
+    text: 'Plan the event schedule collaboratively — from arrival day to departure, visible to the whole team.'
   contacts:
     title: 'Email participants directly'
     text: 'Reach a single participant or a whole group with personalized emails — sent to exactly the right people.'
@@ -869,10 +930,10 @@ feature:
     text: 'Keep families in the loop with newsletters sent straight to everyone who signed up.'
   dashboard:
     title: 'Dashboard overview'
-    text: 'See capacity, registrations, and key numbers at a glance — your whole camp on one screen.'
+    text: 'See capacity, registrations, and key numbers at a glance — your whole event on one screen.'
   team:
     title: 'Share access with your team'
-    text: 'Invite counselors and coordinators with fine-grained roles and permissions, and manage the camp together.'
+    text: 'Invite counselors and coordinators with fine-grained roles and permissions, and manage the event together.'
   more_label: 'Also included:'
   chip:
     responsive: 'Works on desktop & mobile'
@@ -885,17 +946,17 @@ feature:
 step:
   title: 'Up and running in an afternoon'
   one:
-    title: 'Create your camp'
+    title: 'Create your event'
     text: 'Set dates and capacity, and build your registration form.'
   two:
     title: 'Share your link'
     text: 'Families register online — every registration appears instantly.'
   three:
-    title: 'Run the camp'
+    title: 'Run the event'
     text: 'Assign rooms, plan the program, and keep everyone informed.'
 selfhost:
   eyebrow: 'Open source · AGPLv3'
-  title: 'Your camp, your data — your server, if you want'
+  title: 'Your event, your data — your server, if you want'
   text: '@:app_name is fully open source. Use it right here, or self-host the entire platform on your own infrastructure — so participant data never leaves your hands.'
   point_1: 'AGPLv3-licensed with no vendor lock-in'
   point_2: 'Deploys in minutes with Docker'
@@ -904,33 +965,34 @@ selfhost:
   terminal_comment: 'on your own server'
   terminal_done: '@:app_name is running'
 cta:
-  title: 'Ready for a calmer camp season?'
-  text: 'Create your first camp in minutes — free of charge.'
-  participant_hint: 'Just want to sign up for a camp?'
-  participant_link: 'Find your camp here'
+  title: 'Ready for a calmer event season?'
+  text: 'Create your first event in minutes — free of charge.'
+  participant_hint: 'Just want to sign up for an event?'
+  participant_link: 'Find your event here'
 </i18n>
 
 <i18n lang="yaml" locale="de">
-meta_title: 'Camp-Verwaltung einfach gemacht'
+meta_title: 'Veranstaltungsverwaltung einfach gemacht'
+meta_description: '@:app_name ist eine kostenlose Open-Source-Plattform für die Organisation von Veranstaltungen: Online-Anmeldeformulare, Teilnehmendentabellen, Zimmer- und Programmplanung, E-Mails und Newsletter.'
 hero:
-  eyebrow: 'Kostenlose Open-Source-Camp-Verwaltung'
-  title: 'Organisiere dein Camp,'
+  eyebrow: 'Kostenlose Open-Source-Veranstaltungsverwaltung'
+  title: 'Organisiere deine Veranstaltung,'
   title_highlight: 'nicht deinen Papierkram'
-  subtitle: '@:app_name vereint Anmeldungen, Teilnehmende, Zimmer, Programm und Kommunikation an einem Ort — von Camp-Organisatoren für Camp-Organisatoren entwickelt.'
+  subtitle: '@:app_name vereint Anmeldungen, Teilnehmende, Zimmer, Programm und Kommunikation an einem Ort — von Veranstaltungsorganisatoren für Veranstaltungsorganisatoren entwickelt.'
 participants:
-  title: 'Du möchtest an einem Camp teilnehmen?'
-  text: 'Finde dein Camp und melde dich in wenigen Minuten online an — ganz ohne Konto.'
-  action: 'Offene Camps ansehen'
+  title: 'Du möchtest an einer Veranstaltung teilnehmen?'
+  text: 'Finde deine Veranstaltung und melde dich in wenigen Minuten online an — ganz ohne Konto.'
+  action: 'Offene Veranstaltungen ansehen'
 organizers:
   badge: 'Für Organisatoren'
-  title: 'Alles, was dein Camp-Team braucht'
-  text: 'Vom ersten Anmeldeformular bis zum fertigen Zimmerplan — verwalte das gesamte Camp gemeinsam mit deinem Team.'
+  title: 'Alles, was deine Veranstaltung-Team braucht'
+  text: 'Vom ersten Anmeldeformular bis zum fertigen Zimmerplan — verwalte das gesamte Veranstaltung gemeinsam mit deinem Team.'
   action: 'Kostenlos starten'
   action_authed: 'Zur Verwaltung'
   action_login: 'Anmelden'
 feature:
   title: 'Warum mit @:app_name organisieren?'
-  subtitle: 'Weil Tabellen, Papierformulare und E-Mail-Ketten bei einem ganzen Camp an ihre Grenzen kommen.'
+  subtitle: 'Weil Tabellen, Papierformulare und E-Mail-Ketten bei einem ganzen Veranstaltung an ihre Grenzen kommen.'
   forms:
     title: 'Dynamische Anmeldeformulare'
     text: 'Erstelle mehrseitige Formulare mit bedingter Logik, dynamischen Feldern, Datei-Uploads und integrierten Übersetzungen. Familien melden sich in Minuten online an.'
@@ -945,7 +1007,7 @@ feature:
     text: 'Weise Teilnehmende Zimmern zu und behalte Betten, Alter und Gruppen im Blick.'
   program:
     title: 'Programmplaner'
-    text: 'Plant den Camp-Ablauf gemeinsam — vom Anreisetag bis zur Abreise, sichtbar für das ganze Team.'
+    text: 'Plant den Veranstaltungsablauf gemeinsam — vom Anreisetag bis zur Abreise, sichtbar für das ganze Team.'
   contacts:
     title: 'Teilnehmende direkt anschreiben'
     text: 'Erreiche eine einzelne Person oder eine ganze Gruppe mit personalisierten E-Mails — gesendet an genau die richtigen Empfänger.'
@@ -954,10 +1016,10 @@ feature:
     text: 'Halte Familien mit Newslettern auf dem Laufenden, die direkt an alle Angemeldeten gehen.'
   dashboard:
     title: 'Dashboard-Überblick'
-    text: 'Sieh Kapazität, Anmeldungen und wichtige Zahlen auf einen Blick — dein ganzes Camp auf einem Bildschirm.'
+    text: 'Sieh Kapazität, Anmeldungen und wichtige Zahlen auf einen Blick — deine ganze Veranstaltung auf einem Bildschirm.'
   team:
     title: 'Zugriff mit deinem Team teilen'
-    text: 'Lade Betreuer und Koordinatoren mit fein abgestuften Rollen und Berechtigungen ein und verwaltet das Camp gemeinsam.'
+    text: 'Lade Betreuer und Koordinatoren mit fein abgestuften Rollen und Berechtigungen ein und verwaltet die Veranstaltung gemeinsam.'
   more_label: 'Außerdem enthalten:'
   chip:
     responsive: 'Läuft auf Desktop & Smartphone'
@@ -970,17 +1032,17 @@ feature:
 step:
   title: 'An einem Nachmittag startklar'
   one:
-    title: 'Erstelle dein Camp'
+    title: 'Erstelle deine Veranstaltung'
     text: 'Lege Termine und Kapazität fest und baue dein Anmeldeformular.'
   two:
     title: 'Teile deinen Link'
     text: 'Familien melden sich online an — jede Anmeldung erscheint sofort.'
   three:
-    title: 'Führe das Camp durch'
+    title: 'Führe die Veranstaltung durch'
     text: 'Plane Zimmer und Programm und halte alle auf dem Laufenden.'
 selfhost:
   eyebrow: 'Open Source · AGPLv3'
-  title: 'Dein Camp, deine Daten — auf Wunsch dein Server'
+  title: 'Deine Veranstaltung, deine Daten — auf Wunsch dein Server'
   text: '@:app_name ist vollständig Open Source. Nutze es direkt hier oder hoste die gesamte Plattform auf deiner eigenen Infrastruktur — Teilnehmerdaten bleiben so komplett in deiner Hand.'
   point_1: 'AGPLv3-lizenziert, kein Vendor-Lock-in'
   point_2: 'In Minuten mit Docker installiert'
@@ -989,33 +1051,37 @@ selfhost:
   terminal_comment: 'auf deinem eigenen Server'
   terminal_done: '@:app_name läuft'
 cta:
-  title: 'Bereit für eine entspanntere Camp-Saison?'
-  text: 'Erstelle dein erstes Camp in wenigen Minuten — völlig kostenlos.'
-  participant_hint: 'Du möchtest dich nur für ein Camp anmelden?'
-  participant_link: 'Hier findest du dein Camp'
+  title: 'Bereit für eine entspanntere Veranstaltungssaison?'
+  text: 'Erstelle deine erste Veranstaltung in wenigen Minuten — völlig kostenlos.'
+  participant_hint: 'Du möchtest dich nur für eine Veranstaltung anmelden?'
+  participant_link: 'Hier findest du deine Veranstaltung'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-meta_title: 'La gestion de camps simplifiée'
+meta_title: "La gestion d'événements simplifiée"
+
+meta_description: '@:app_name est une plateforme gratuite et open source pour organiser des événements : formulaires d’inscription en ligne, tableaux de participants, planification des chambres et du programme, e-mails et newsletters.'
 hero:
-  eyebrow: 'Gestion de camps gratuite et open source'
-  title: 'Organisez votre camp,'
+  eyebrow: "Gestion d'événements gratuite et open source"
+
+  title: 'Organisez votre événement,'
   title_highlight: 'pas votre paperasse'
-  subtitle: '@:app_name réunit inscriptions, participants, chambres, programme et communication en un seul endroit — conçu par des organisateurs de camps, pour des organisateurs de camps.'
+  subtitle: "@:app_name réunit inscriptions, participants, chambres, programme et communication en un seul endroit — conçu par des organisateurs d'événements, pour des organisateurs d'événements."
+
 participants:
-  title: 'Vous participez à un camp ?'
-  text: 'Trouvez votre camp et inscrivez-vous en ligne en quelques minutes — sans créer de compte.'
-  action: 'Voir les camps ouverts'
+  title: 'Vous participez à un événement ?'
+  text: 'Trouvez votre événement et inscrivez-vous en ligne en quelques minutes — sans créer de compte.'
+  action: 'Voir les événements ouverts'
 organizers:
   badge: 'Pour les organisateurs'
   title: 'Tout ce dont votre équipe a besoin'
-  text: "Du premier formulaire d'inscription au plan des chambres final — gérez l'ensemble du camp avec votre équipe."
+  text: "Du premier formulaire d'inscription au plan des chambres final — gérez l'ensemble de l'événement avec votre équipe."
   action: 'Commencer gratuitement'
   action_authed: 'Accéder à la gestion'
   action_login: 'Se connecter'
 feature:
   title: 'Pourquoi organiser avec @:app_name ?'
-  subtitle: "Parce que les tableurs, les formulaires papier et les chaînes d'e-mails ne suffisent plus pour tout un camp."
+  subtitle: "Parce que les tableurs, les formulaires papier et les chaînes d'e-mails ne suffisent plus pour tout un événement."
   forms:
     title: "Formulaires d'inscription dynamiques"
     text: "Créez des formulaires multi-pages avec logique conditionnelle, champs dynamiques, téléversement de fichiers et traductions intégrées. Les familles s'inscrivent en quelques minutes."
@@ -1030,7 +1096,7 @@ feature:
     text: 'Affectez les participants aux chambres en gardant lits, âges et groupes sous les yeux.'
   program:
     title: 'Planificateur de programme'
-    text: "Planifiez le déroulement du camp ensemble — du jour d'arrivée au départ, visible par toute l'équipe."
+    text: "Planifiez le déroulement de l'événement ensemble — du jour d'arrivée au départ, visible par toute l'équipe."
   contacts:
     title: 'Écrivez directement aux participants'
     text: 'Contactez un seul participant ou tout un groupe avec des e-mails personnalisés — envoyés exactement aux bonnes personnes.'
@@ -1039,10 +1105,11 @@ feature:
     text: 'Tenez les familles informées avec des infolettres envoyées directement à toutes les personnes inscrites.'
   dashboard:
     title: 'Tableau de bord'
-    text: "Visualisez capacité, inscriptions et chiffres clés en un coup d'œil — tout votre camp sur un seul écran."
+    text: "Visualisez capacité, inscriptions et chiffres clés en un coup d'œil — tout votre événement sur un seul écran."
   team:
     title: "Partagez l'accès avec votre équipe"
-    text: 'Invitez animateurs et coordinateurs avec des rôles et permissions précis, et gérez le camp ensemble.'
+    text: "Invitez animateurs et coordinateurs avec des rôles et permissions précis, et gérez l'événement ensemble."
+
   more_label: 'Également inclus :'
   chip:
     responsive: 'Fonctionne sur ordinateur et mobile'
@@ -1055,17 +1122,18 @@ feature:
 step:
   title: 'Opérationnel en un après-midi'
   one:
-    title: 'Créez votre camp'
+    title: 'Créez votre événement'
     text: "Définissez les dates et la capacité, puis créez votre formulaire d'inscription."
   two:
     title: 'Partagez votre lien'
     text: "Les familles s'inscrivent en ligne — chaque inscription apparaît instantanément."
   three:
-    title: 'Gérez le camp'
+    title: "Gérez l'événement"
+
     text: 'Répartissez les chambres, planifiez le programme et tenez tout le monde informé.'
 selfhost:
   eyebrow: 'Open source · AGPLv3'
-  title: 'Votre camp, vos données — votre serveur si vous le souhaitez'
+  title: 'Votre événement, vos données — votre serveur si vous le souhaitez'
   text: '@:app_name est entièrement open source. Utilisez-le ici même, ou hébergez la plateforme complète sur votre propre infrastructure — les données des participants restent entre vos mains.'
   point_1: 'Sous licence AGPLv3, sans dépendance à un fournisseur'
   point_2: 'Déployé en quelques minutes avec Docker'
@@ -1074,33 +1142,35 @@ selfhost:
   terminal_comment: 'sur votre propre serveur'
   terminal_done: '@:app_name est en ligne'
 cta:
-  title: 'Prêt pour une saison de camp plus sereine ?'
-  text: 'Créez votre premier camp en quelques minutes — gratuitement.'
-  participant_hint: 'Vous souhaitez simplement vous inscrire à un camp ?'
-  participant_link: 'Trouvez votre camp ici'
+  title: "Prêt pour une saison d'événement plus sereine ?"
+
+  text: 'Créez votre premier événement en quelques minutes — gratuitement.'
+  participant_hint: 'Vous souhaitez simplement vous inscrire à un événement ?'
+  participant_link: 'Trouvez votre événement ici'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-meta_title: 'Proste zarządzanie obozami'
+meta_title: 'Proste zarządzanie wydarzeniami'
+meta_description: '@:app_name to darmowa platforma open source do organizacji wydarzeń: internetowe formularze zapisów, tabele uczestników, planowanie pokoi i programu, e-maile i newslettery.'
 hero:
-  eyebrow: 'Darmowe zarządzanie obozami, open source'
-  title: 'Organizuj obóz,'
+  eyebrow: 'Darmowe zarządzanie wydarzeniami, open source'
+  title: 'Organizuj wydarzenie,'
   title_highlight: 'nie papierkową robotę'
-  subtitle: '@:app_name łączy rejestracje, uczestników, pokoje, program i komunikację w jednym miejscu — stworzona przez organizatorów obozów dla organizatorów obozów.'
+  subtitle: '@:app_name łączy rejestracje, uczestników, pokoje, program i komunikację w jednym miejscu — stworzona przez organizatorów wydarzeń dla organizatorów wydarzeń.'
 participants:
-  title: 'Chcesz pojechać na obóz?'
-  text: 'Znajdź swój obóz i zapisz się online w kilka minut — bez zakładania konta.'
-  action: 'Przeglądaj otwarte obozy'
+  title: 'Chcesz wziąć udział w wydarzeniu?'
+  text: 'Znajdź swoje wydarzenie i zapisz się online w kilka minut — bez zakładania konta.'
+  action: 'Przeglądaj otwarte wydarzenia'
 organizers:
   badge: 'Dla organizatorów'
   title: 'Wszystko, czego potrzebuje Twój zespół'
-  text: 'Od pierwszego formularza rejestracyjnego po gotowy plan pokoi — zarządzaj całym obozem razem ze swoim zespołem.'
+  text: 'Od pierwszego formularza rejestracyjnego po gotowy plan pokoi — zarządzaj całym wydarzeniem razem ze swoim zespołem.'
   action: 'Zacznij za darmo'
   action_authed: 'Przejdź do zarządzania'
   action_login: 'Zaloguj się'
 feature:
   title: 'Dlaczego @:app_name?'
-  subtitle: 'Bo arkusze kalkulacyjne, papierowe formularze i łańcuszki e-maili nie wystarczają na cały obóz.'
+  subtitle: 'Bo arkusze kalkulacyjne, papierowe formularze i łańcuszki e-maili nie wystarczają na całe wydarzenie.'
   forms:
     title: 'Dynamiczne formularze rejestracyjne'
     text: 'Twórz wielostronicowe formularze z logiką warunkową, dynamicznymi polami, przesyłaniem plików i wbudowanymi tłumaczeniami. Rodziny zapisują się w kilka minut.'
@@ -1115,7 +1185,7 @@ feature:
     text: 'Przypisuj uczestników do pokoi, mając na oku łóżka, wiek i grupy.'
   program:
     title: 'Planer programu'
-    text: 'Planujcie przebieg obozu wspólnie — od dnia przyjazdu do wyjazdu, widoczny dla całego zespołu.'
+    text: 'Planujcie przebieg wydarzenia wspólnie — od dnia przyjazdu do wyjazdu, widoczny dla całego zespołu.'
   contacts:
     title: 'Pisz bezpośrednio do uczestników'
     text: 'Dotrzyj do pojedynczego uczestnika lub całej grupy spersonalizowanymi e-mailami — wysłanymi dokładnie do właściwych osób.'
@@ -1124,10 +1194,10 @@ feature:
     text: 'Informuj rodziny dzięki newsletterom wysyłanym prosto do wszystkich zapisanych.'
   dashboard:
     title: 'Panel główny'
-    text: 'Sprawdzaj liczbę miejsc, rejestracje i kluczowe dane jednym spojrzeniem — cały obóz na jednym ekranie.'
+    text: 'Sprawdzaj liczbę miejsc, rejestracje i kluczowe dane jednym spojrzeniem — całe wydarzenie na jednym ekranie.'
   team:
     title: 'Udostępnij dostęp zespołowi'
-    text: 'Zapraszaj opiekunów i koordynatorów z precyzyjnymi rolami i uprawnieniami i zarządzajcie obozem wspólnie.'
+    text: 'Zapraszaj opiekunów i koordynatorów z precyzyjnymi rolami i uprawnieniami i zarządzajcie wydarzeniem wspólnie.'
   more_label: 'A do tego:'
   chip:
     responsive: 'Działa na komputerze i telefonie'
@@ -1140,17 +1210,17 @@ feature:
 step:
   title: 'Gotowe w jedno popołudnie'
   one:
-    title: 'Utwórz obóz'
+    title: 'Utwórz wydarzenie'
     text: 'Ustal terminy i liczbę miejsc oraz zbuduj formularz rejestracyjny.'
   two:
     title: 'Udostępnij link'
     text: 'Rodziny zapisują się online — każda rejestracja pojawia się natychmiast.'
   three:
-    title: 'Prowadź obóz'
+    title: 'Prowadź wydarzenie'
     text: 'Przydzielaj pokoje, planuj program i informuj wszystkich na bieżąco.'
 selfhost:
   eyebrow: 'Open source · AGPLv3'
-  title: 'Twój obóz, Twoje dane — i Twój serwer, jeśli chcesz'
+  title: 'Twoje wydarzenie, Twoje dane — i Twój serwer, jeśli chcesz'
   text: '@:app_name jest w pełni otwartym oprogramowaniem. Korzystaj z niej tutaj albo hostuj całą platformę na własnej infrastrukturze — dane uczestników pozostają w Twoich rękach.'
   point_1: 'Licencja AGPLv3, bez uzależnienia od dostawcy'
   point_2: 'Wdrożenie w kilka minut dzięki Dockerowi'
@@ -1159,33 +1229,34 @@ selfhost:
   terminal_comment: 'na Twoim własnym serwerze'
   terminal_done: '@:app_name działa'
 cta:
-  title: 'Gotowi na spokojniejszy sezon obozowy?'
-  text: 'Utwórz swój pierwszy obóz w kilka minut — zupełnie za darmo.'
-  participant_hint: 'Chcesz tylko zapisać się na obóz?'
-  participant_link: 'Znajdź swój obóz tutaj'
+  title: 'Gotowi na spokojniejszy sezon wydarzeń?'
+  text: 'Utwórz swoje pierwsze wydarzenie w kilka minut — zupełnie za darmo.'
+  participant_hint: 'Chcesz tylko zapisać się na wydarzenie?'
+  participant_link: 'Znajdź swoje wydarzenie tutaj'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-meta_title: 'Jednoduchá správa táborů'
+meta_title: 'Jednoduchá správa akcí'
+meta_description: '@:app_name je bezplatná open-source platforma pro organizaci akcí: online registrační formuláře, tabulky účastníků, plánování pokojů a programu, e-maily a newslettery.'
 hero:
-  eyebrow: 'Bezplatná open-source správa táborů'
-  title: 'Organizujte tábor,'
+  eyebrow: 'Bezplatná open-source správa akcí'
+  title: 'Organizujte akci,'
   title_highlight: 'ne papírování'
-  subtitle: '@:app_name spojuje registrace, účastníky, pokoje, program a komunikaci na jednom místě — vytvořena organizátory táborů pro organizátory táborů.'
+  subtitle: '@:app_name spojuje registrace, účastníky, pokoje, program a komunikaci na jednom místě — vytvořena organizátory akcí pro organizátory akcí.'
 participants:
-  title: 'Chcete jet na tábor?'
-  text: 'Najděte svůj tábor a přihlaste se online během několika minut — bez nutnosti účtu.'
-  action: 'Procházet otevřené tábory'
+  title: 'Chcete se zúčastnit akce?'
+  text: 'Najděte svou akci a přihlaste se online během několika minut — bez nutnosti účtu.'
+  action: 'Procházet otevřené akce'
 organizers:
   badge: 'Pro organizátory'
-  title: 'Vše, co váš táborový tým potřebuje'
-  text: 'Od prvního registračního formuláře po hotový plán pokojů — spravujte celý tábor společně se svým týmem.'
+  title: 'Vše, co potřebuje tým vaší akce'
+  text: 'Od prvního registračního formuláře po hotový plán pokojů — spravujte celou akci společně se svým týmem.'
   action: 'Začít zdarma'
   action_authed: 'Přejít do správy'
   action_login: 'Přihlásit se'
 feature:
   title: 'Proč @:app_name?'
-  subtitle: 'Protože tabulky, papírové formuláře a e-mailové řetězce na celý tábor nestačí.'
+  subtitle: 'Protože tabulky, papírové formuláře a e-mailové řetězce na celou akci nestačí.'
   forms:
     title: 'Dynamické registrační formuláře'
     text: 'Vytvářejte vícestránkové formuláře s podmíněnou logikou, dynamickými poli, nahráváním souborů a vestavěnými překlady. Rodiny se přihlásí během několika minut.'
@@ -1200,7 +1271,7 @@ feature:
     text: 'Přiřazujte účastníky do pokojů a mějte přehled o lůžkách, věku a skupinách.'
   program:
     title: 'Plánovač programu'
-    text: 'Plánujte průběh tábora společně — ode dne příjezdu až po odjezd, viditelné pro celý tým.'
+    text: 'Plánujte průběh akce společně — ode dne příjezdu až po odjezd, viditelné pro celý tým.'
   contacts:
     title: 'Pište účastníkům přímo'
     text: 'Oslovte jednotlivého účastníka nebo celou skupinu personalizovanými e-maily — odeslanými přesně těm správným lidem.'
@@ -1209,10 +1280,10 @@ feature:
     text: 'Udržujte rodiny v obraze pomocí newsletterů odeslaných přímo všem přihlášeným.'
   dashboard:
     title: 'Přehledový panel'
-    text: 'Sledujte kapacitu, registrace a klíčová čísla na jeden pohled — celý tábor na jedné obrazovce.'
+    text: 'Sledujte kapacitu, registrace a klíčová čísla na jeden pohled — celou akci na jedné obrazovce.'
   team:
     title: 'Sdílejte přístup se svým týmem'
-    text: 'Zvěte vedoucí a koordinátory s jemně odstupňovanými rolemi a oprávněními a spravujte tábor společně.'
+    text: 'Zvěte vedoucí a koordinátory s jemně odstupňovanými rolemi a oprávněními a spravujte akci společně.'
   more_label: 'A navíc:'
   chip:
     responsive: 'Funguje na počítači i mobilu'
@@ -1225,17 +1296,17 @@ feature:
 step:
   title: 'Připraveno za jedno odpoledne'
   one:
-    title: 'Vytvořte tábor'
+    title: 'Vytvořte akci'
     text: 'Nastavte termíny a kapacitu a sestavte registrační formulář.'
   two:
     title: 'Sdílejte odkaz'
     text: 'Rodiny se přihlašují online — každá registrace se objeví okamžitě.'
   three:
-    title: 'Veďte tábor'
+    title: 'Veďte akci'
     text: 'Přidělujte pokoje, plánujte program a udržujte všechny v obraze.'
 selfhost:
   eyebrow: 'Open source · AGPLv3'
-  title: 'Váš tábor, vaše data — a klidně i váš server'
+  title: 'Vaše akce, vaše data — a klidně i váš server'
   text: '@:app_name je plně open source. Používejte ji přímo zde, nebo si celou platformu provozujte na vlastní infrastruktuře — data účastníků zůstanou ve vašich rukou.'
   point_1: 'Licence AGPLv3 bez závislosti na dodavateli'
   point_2: 'Nasazení během několika minut s Dockerem'
@@ -1244,8 +1315,8 @@ selfhost:
   terminal_comment: 'na vašem vlastním serveru'
   terminal_done: '@:app_name běží'
 cta:
-  title: 'Připraveni na klidnější táborovou sezónu?'
-  text: 'Vytvořte svůj první tábor během několika minut — zcela zdarma.'
-  participant_hint: 'Chcete se jen přihlásit na tábor?'
-  participant_link: 'Svůj tábor najdete tady'
+  title: 'Připraveni na klidnější sezónu akcí?'
+  text: 'Vytvořte svou první akci během několika minut — zcela zdarma.'
+  participant_hint: 'Chcete se jen přihlásit na akci?'
+  participant_link: 'Svou akci najdete tady'
 </i18n>

@@ -1,21 +1,11 @@
 <template>
-  <q-card
-    flat
-    bordered
-  >
-    <q-form @submit="onDisable">
-      <q-card-section class="text-h6">
-        {{ t('title') }}
-      </q-card-section>
-
-      <q-card-section class="text-subtitle-2 q-pt-none">
+  <q-form @submit="onDisable">
+    <q-card-section>
+      <div class="text-body2 text-on-surface-variant q-mb-md">
         {{ t('description') }}
-      </q-card-section>
+      </div>
 
-      <q-card-section
-        class="q-gutter-sm"
-        style="max-width: 500px"
-      >
+      <div class="row q-col-gutter-md">
         <q-input
           v-model="password"
           :label="t('field.password.label')"
@@ -27,60 +17,52 @@
           hide-bottom-space
           outlined
           rounded
-          class="settings-input"
+          color="primary"
+          class="col-12 col-md-6"
         >
-          <template #before>
+          <template #prepend>
             <q-icon name="password" />
           </template>
         </q-input>
 
-        <q-input
-          v-model="otp"
-          :label="t('field.otp.label')"
-          :rules="[
-            (val?: string) => !!val || t('field.otp.rule.required'),
-            (val: string) => val.length === 6 || t('field.otp.rule.required'),
-          ]"
+        <two-factor-code-input
+          v-model="code"
           hide-bottom-space
-          mask="######"
           outlined
           rounded
-          class="settings-input"
-        >
-          <template #before>
-            <q-icon name="pin" />
-          </template>
-        </q-input>
-      </q-card-section>
-
-      <div
-        v-if="error"
-        class="q-px-md q-pb-sm text-negative text-body2"
-      >
-        <q-icon
-          name="warning"
-          size="xs"
-          class="q-mr-xs"
-        />{{ error }}
+          color="primary"
+          class="col-12 col-md-6"
+        />
       </div>
 
-      <q-card-actions>
-        <q-btn
-          :label="t('action.disable')"
-          type="submit"
-          color="primary"
-          :loading
-          outline
-          rounded
-        />
-      </q-card-actions>
-    </q-form>
-  </q-card>
+      <q-banner
+        v-if="error"
+        dense
+        class="error-banner rounded-md q-mt-md"
+      >
+        <template #avatar>
+          <q-icon name="warning" />
+        </template>
+        {{ error }}
+      </q-banner>
+    </q-card-section>
+
+    <q-card-actions>
+      <m-btn
+        :label="t('action.disable')"
+        type="submit"
+        color="primary"
+        :loading
+      />
+    </q-card-actions>
+  </q-form>
 </template>
 
 <script lang="ts" setup>
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
+import TwoFactorCodeInput from '@/components/settings/twoFactor/TwoFactorCodeInput.vue';
 
 const { t } = useI18n();
 
@@ -94,18 +76,21 @@ const emit = defineEmits<{
 }>();
 
 const password = ref<string>('');
-const otp = ref<string>('');
+const code = ref<string>('');
 
 function onDisable() {
-  emit('disable', password.value, otp.value);
+  emit('disable', password.value, code.value.trim());
 }
 </script>
 
-<style scoped></style>
+<style lang="scss" scoped>
+.error-banner {
+  background: var(--md3-error-container);
+  color: var(--md3-on-error-container);
+}
+</style>
 
 <i18n lang="yaml" locale="en">
-title: 'Two-Factor Authentication'
-
 description: 'Two-factor authentication is currently active. You can disable it
   by entering your password and the OTP.'
 
@@ -114,19 +99,12 @@ field:
     label: 'Password'
     rule:
       required: 'Password is required.'
-  otp:
-    label: 'OTP'
-    rule:
-      required: 'OTP is required.'
-      invalid: 'OTP must be 6 digits.'
 
 action:
   disable: 'Disable 2FA'
 </i18n>
 
 <i18n lang="yaml" locale="de">
-title: 'Zwei-Faktor-Authentifizierung'
-
 description:
   'Die Zwei-Faktor-Authentifizierung ist derzeit aktiv. Sie können sie
   deaktivieren, indem Sie Ihr Passwort und das OTP eingeben.'
@@ -136,38 +114,26 @@ field:
     label: 'Passwort'
     rule:
       required: 'Passwort ist erforderlich.'
-  otp:
-    label: 'OTP'
-    rule:
-      required: 'OTP ist erforderlich.'
-      invalid: 'OTP muss 6 Ziffern haben.'
 
 action:
   disable: '2FA deaktivieren'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-title: 'Authentification à deux facteurs'
-description: "L'authentification à deux facteurs est actuellement activée. Vous
+description: "L'authentification à deux facteurs est actuellement active. Vous
   pouvez la désactiver en saisissant votre mot de passe et l'OTP."
+
 field:
   password:
     label: 'Mot de passe'
     rule:
       required: 'Le mot de passe est requis.'
-  otp:
-    label: 'OTP'
-    rule:
-      required: "L'OTP est requis."
-      invalid: "L'OTP doit contenir 6 chiffres."
 
 action:
   disable: 'Désactiver 2FA'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-title: 'Uwierzytelnianie dwuskładnikowe'
-
 description: 'Uwierzytelnianie dwuskładnikowe jest obecnie aktywne. Możesz je wyłączyć, wprowadzając swoje hasło i kod OTP.'
 
 field:
@@ -175,19 +141,12 @@ field:
     label: 'Hasło'
     rule:
       required: 'Hasło jest wymagane.'
-  otp:
-    label: 'OTP'
-    rule:
-      required: 'Kod OTP jest wymagany.'
-      invalid: 'Kod OTP musi składać się z 6 cyfr.'
 
 action:
   disable: 'Wyłącz 2FA'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-title: 'Dvoufázové ověřování'
-
 description: 'Dvoufázové ověřování je momentálně aktivní. Můžete jej vypnout zadáním hesla a kódu OTP.'
 
 field:
@@ -195,11 +154,6 @@ field:
     label: 'Heslo'
     rule:
       required: 'Heslo je povinné.'
-  otp:
-    label: 'OTP'
-    rule:
-      required: 'OTP kód je povinný.'
-      invalid: 'OTP kód musí mít 6 číslic.'
 
 action:
   disable: 'Deaktivovat 2FA'

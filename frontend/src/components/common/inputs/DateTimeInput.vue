@@ -2,10 +2,7 @@
   <!-- TODO Mask and validate correctly  -->
   <q-input
     v-model="modelValue"
-    hide-bottom-space
-    outlined
-    rounded
-    v-bind="attrs"
+    v-bind="inputProps"
   >
     <template #append>
       <q-icon
@@ -13,7 +10,7 @@
         name="event"
       >
         <q-popup-proxy
-          ref="datePopupRef"
+          ref="datePopup"
           cover
           transition-hide="scale"
           transition-show="scale"
@@ -32,7 +29,7 @@
         name="schedule"
       >
         <q-popup-proxy
-          ref="timePopupRef"
+          ref="timePopup"
           cover
           transition-hide="scale"
           transition-show="scale"
@@ -47,7 +44,7 @@
                 v-close-popup
                 color="primary"
                 flat
-                :label="t('action.ok')"
+                :label="t('close')"
               />
             </div>
           </q-time>
@@ -57,33 +54,27 @@
 
     <!-- Parent slots -->
     <template
-      v-for="(data, name, index) in $slots as unknown as QInputSlots"
-      :key="index"
+      v-for="(_, name) in slots"
+      :key="name"
       #[name]
     >
-      <slot
-        :name="name"
-        v-bind="data"
-      />
+      <slot :name />
     </template>
   </q-input>
 </template>
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
-import { type QInputSlots, type QPopupProxy } from 'quasar';
-import { nextTick, ref, useAttrs } from 'vue';
+import { type QInputProps, type QPopupProxy } from 'quasar';
+import { nextTick, useTemplateRef } from 'vue';
+import {
+  type ForwardedFieldSlots,
+  usePassthroughProps,
+} from '@/composables/passthroughProps';
 
-const attrs = useAttrs();
 const { t } = useI18n();
 
-const datePopupRef = ref<QPopupProxy>();
-const timePopupRef = ref<QPopupProxy>();
-
-function onDateSelected() {
-  datePopupRef.value?.hide();
-  void nextTick(() => timePopupRef.value?.show());
-}
+type Props = Omit<QInputProps, 'modelValue' | 'onUpdate:modelValue'>;
 
 type ModelValue = string | null | undefined;
 
@@ -91,6 +82,18 @@ const modelValue = defineModel<ModelValue>({
   get: isoToDateTime,
   set: dateTimeToIso,
 });
+const props = defineProps<Props>();
+const slots = defineSlots<ForwardedFieldSlots>();
+
+const inputProps = usePassthroughProps(props);
+
+const datePopup = useTemplateRef<QPopupProxy>('datePopup');
+const timePopup = useTemplateRef<QPopupProxy>('timePopup');
+
+function onDateSelected() {
+  datePopup.value?.hide();
+  void nextTick(() => timePopup.value?.show());
+}
 
 function isoToDateTime(isoDate: ModelValue): ModelValue {
   if (!isoDate) {
@@ -139,26 +142,21 @@ function dateTimeToIso(dateTime: ModelValue): ModelValue {
 <style scoped></style>
 
 <i18n lang="yaml" locale="en">
-action:
-  ok: 'Ok'
+close: 'Close'
 </i18n>
 
 <i18n lang="yaml" locale="de">
-action:
-  ok: 'Ok'
+close: 'Schließen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-action:
-  ok: 'Ok'
+close: 'Fermer'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-action:
-  ok: 'Ok'
+close: 'Zamknij'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-action:
-  ok: 'Ok'
+close: 'Zavřít'
 </i18n>

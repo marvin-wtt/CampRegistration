@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    // critical: tests are not under ./src
+    "rootDir": "."
+  },
+  "include": ["src/**/*", "tests/**/*"]
+}

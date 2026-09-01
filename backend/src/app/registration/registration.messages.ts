@@ -1,5 +1,5 @@
 import type {
-  Camp,
+  Event,
   File,
   Message,
   MessageTemplate,
@@ -26,6 +26,13 @@ import { addressLikeToString } from '#app/mail/mail.utils';
 import { resolve } from '#core/ioc/container';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
+import {
+  type RegistrationChange,
+  redactChangeValues,
+  renderChangesHtml,
+  renderChangesText,
+  unwrapChangesBlock,
+} from './registration.changes.js';
 
 function dateToString(date: Date | string | null): string | null {
   if (date === null) {
@@ -80,7 +87,7 @@ abstract class RegistrationMessage<
 }
 
 export class RegistrationNotifyMessage extends MailBase<{
-  camp: Camp;
+  event: Event;
   registration: Registration;
 }> {
   static readonly type = 'registration:notify';
@@ -94,9 +101,9 @@ export class RegistrationNotifyMessage extends MailBase<{
 
   protected to(): AddressLike {
     const country = this.payload.registration.country;
-    const camp = this.payload.camp;
+    const event = this.payload.event;
 
-    return objectValueOrAll(camp.contactEmail, country ?? 'unknown');
+    return objectValueOrAll(event.contactEmail, country ?? 'unknown');
   }
 
   protected locale(): string {
@@ -113,21 +120,26 @@ export class RegistrationNotifyMessage extends MailBase<{
 
   protected subject(): string {
     const t = this.getT();
-    const camp = this.createCampContext();
+    const event = this.createEventContext();
 
-    return t('subject', { camp });
+    return t('subject', { event });
   }
 
   protected content(): Content {
-    const camp = this.payload.camp;
+    const event = this.payload.event;
     const registration = this.payload.registration;
 
-    const url = generateUrl(['management', 'camps', camp.id]);
+    const url = generateUrl(
+      ['management', 'events', event.id, 'participants'],
+      {
+        registrationId: registration.id,
+      },
+    );
 
     return {
       template: 'registration-manager-notification',
       context: {
-        camp: this.createCampContext(),
+        event: this.createEventContext(),
         registration: {
           ...registration,
           url,
@@ -136,45 +148,31 @@ export class RegistrationNotifyMessage extends MailBase<{
     };
   }
 
-  private createCampContext() {
+  private createEventContext() {
     const locale = this.payload.registration.country ?? this.locale();
-    const camp = this.payload.camp;
+    const event = this.payload.event;
 
     return {
-      ...camp,
+      ...event,
       // Translate values
-      name: translateObject(camp.name, locale),
-      organizer: translateObject(camp.organizer, locale),
-      contactEmail: translateObject(camp.contactEmail, locale),
-      maxParticipants: translateObject(camp.maxParticipants, locale),
-      location: translateObject(camp.location, locale),
+      name: translateObject(event.name, locale),
+      organizer: translateObject(event.organizer, locale),
+      contactEmail: translateObject(event.contactEmail, locale),
+      maxParticipants: translateObject(event.maxParticipants, locale),
+      location: translateObject(event.location, locale),
     };
-  }
-
-  protected attachments(): MailAttachment[] {
-    return [
-      {
-        filename: 'data.json',
-        contentType: 'application/json',
-        content: JSON.stringify(this.payload.registration),
-      },
-    ];
   }
 }
 
 interface RegistrationTemplatePayload {
   registration: Registration;
-  camp: Camp;
+  event: Event;
   message: RenderableMessage;
   email: string;
+  changes?: RegistrationChange[];
 }
 
-export class RegistrationTemplateMessage extends RegistrationMessage<{
-  registration: Registration;
-  camp: Camp;
-  message: RenderableMessage;
-  email: string;
-}> {
+export class RegistrationTemplateMessage extends RegistrationMessage<RegistrationTemplatePayload> {
   static readonly type: string = 'registration:template:simple';
 
   protected from(): Address {
@@ -188,10 +186,10 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
       );
     }
     const senderName = typeof from === 'string' ? undefined : from?.name;
-    const campName = translateObject(this.payload.camp.name, this.locale());
+    const eventName = translateObject(this.payload.event.name, this.locale());
 
     return {
-      name: senderName ? `${campName} | ${senderName}` : campName,
+      name: senderName ? `${eventName} | ${senderName}` : eventName,
       address,
     };
   }
@@ -219,7 +217,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
       },
     });
 
-    return compile(this.context());
+    return compile(this.context('text'));
   }
 
   protected replyTo(): AddressLike | undefined {
@@ -227,7 +225,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
       return this.payload.message.replyTo;
     }
     return translateObject(
-      this.payload.camp.contactEmail,
+      this.payload.event.contactEmail,
       this.payload.registration.country ?? '',
     );
   }
@@ -241,22 +239,36 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
     return super.priority();
   }
 
-  private context(): object {
+  /**
+   * What changed about this registration, for the `registration.changes` token.
+   *
+   * Only the "updated" event has a previous version to compare against; for
+   * every other event the token renders to nothing rather than erroring, so a
+   * manager who pastes it into the wrong template gets an empty line, not a
+   * broken mail.
+   */
+  protected renderChanges(
+    _format: 'html' | 'text',
+  ): Handlebars.SafeString | string {
+    return '';
+  }
+
+  private context(format: 'html' | 'text'): object {
     const locale = this.payload.registration.country ?? this.locale();
-    const camp = this.payload.camp;
+    const event = this.payload.event;
 
     return {
-      camp: {
-        ...camp,
+      event: {
+        ...event,
         // Translate values
-        name: translateObject(camp.name, locale),
-        organizer: translateObject(camp.organizer, locale),
-        contactEmail: translateObject(camp.contactEmail, locale),
-        maxParticipants: translateObject(camp.maxParticipants, locale),
-        location: translateObject(camp.location, locale),
+        name: translateObject(event.name, locale),
+        organizer: translateObject(event.organizer, locale),
+        contactEmail: translateObject(event.contactEmail, locale),
+        maxParticipants: translateObject(event.maxParticipants, locale),
+        location: translateObject(event.location, locale),
         // Format dates using the registration's full locale
-        startAt: formatDate(camp.startAt, this.locale()),
-        endAt: formatDate(camp.endAt, this.locale()),
+        startAt: formatDate(event.startAt, this.locale()),
+        endAt: formatDate(event.endAt, this.locale()),
       },
       registration: {
         id: this.payload.registration.id,
@@ -279,6 +291,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
           emails: this.payload.registration.emails,
         },
         customData: this.payload.registration.customData ?? {},
+        changes: this.renderChanges(format),
         locale: this.payload.registration.locale,
         room: null,
         // Use snake case because form keys should be snake case too
@@ -288,7 +301,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
     };
   }
 
-  protected attachments(): MailAttachment[] | Promise<MailAttachment[]> {
+  protected async attachments(): Promise<MailAttachment[]> {
     const files = this.payload.message.attachments;
     if (!files.length) {
       return [];
@@ -296,11 +309,13 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
 
     const fileService = resolve(FileService);
 
-    return files.map((file) => ({
-      filename: file.originalName,
-      content: fileService.getFileStream(file),
-      contentType: file.type,
-    }));
+    return Promise.all(
+      files.map(async (file) => ({
+        filename: file.originalName,
+        content: await fileService.getFileStream(file),
+        contentType: file.type,
+      })),
+    );
   }
 
   async build(): Promise<BuiltMail> {
@@ -308,19 +323,33 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
 
     const message = this.payload.message;
     const messageDeliveryService = resolve(MessageDeliveryService);
-    await messageDeliveryService.createDelivery(
-      this.payload.registration,
-      { kind: message.kind, id: message.id, attachments: message.attachments },
-      {
-        subject: mail.subject,
-        body: mail.html ?? mail.text ?? '',
-        priority: mail.priority,
-        to: mail.to ? addressLikeToString(mail.to) : undefined,
-        cc: mail.cc ? addressLikeToString(mail.cc) : undefined,
-        bcc: mail.bcc ? addressLikeToString(mail.bcc) : undefined,
-        replyTo: mail.replyTo ? addressLikeToString(mail.replyTo) : undefined,
-      },
-    );
+    try {
+      await messageDeliveryService.createDelivery(
+        this.payload.registration,
+        {
+          kind: message.kind,
+          id: message.id,
+          attachments: message.attachments,
+        },
+        {
+          subject: mail.subject,
+          // The mail keeps its values; the durable copy keeps only the labels.
+          body: redactChangeValues(mail.html ?? mail.text ?? ''),
+          priority: mail.priority,
+          to: mail.to ? addressLikeToString(mail.to) : undefined,
+          cc: mail.cc ? addressLikeToString(mail.cc) : undefined,
+          bcc: mail.bcc ? addressLikeToString(mail.bcc) : undefined,
+          replyTo: mail.replyTo ? addressLikeToString(mail.replyTo) : undefined,
+        },
+      );
+    } catch (err) {
+      // Recording the delivery is bookkeeping, not a precondition for
+      // sending. Never let a failure here (e.g. the Message was deleted
+      // in the meantime) block the actual mail send.
+      logger.warn(
+        `Failed to record message delivery for registration ${this.payload.registration.id} (message ${message.id}): ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
 
     return mail;
   }
@@ -343,17 +372,23 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
     return {
       template: 'registration-message',
       context: {
-        body: compile(this.context()),
-        campName: translateObject(this.payload.camp.name, locale),
+        body: unwrapChangesBlock(compile(this.context('html'))),
+        eventName: translateObject(this.payload.event.name, locale),
         reason: this.reason(),
+        // Art. 13 information has to stay reachable after submission, and the
+        // message body is manager-authored — so the link belongs in the footer
+        // we control, not in a template they may delete.
+        privacyUrl: generateUrl(['events', this.payload.event.id, 'privacy']),
+        privacyLabel: this.getTg()('registration:email.privacyLink'),
       },
     };
   }
 
   protected static prepareForRegistration(
-    camp: Camp,
+    event: Event,
     registration: Registration,
     message: RenderableMessage,
+    changes?: RegistrationChange[],
   ): RegistrationTemplatePayload[] | null {
     const emails = Array.from(new Set(registration.emails));
     if (emails.length === 0) {
@@ -362,53 +397,26 @@ export class RegistrationTemplateMessage extends RegistrationMessage<{
     }
 
     return emails.map((email) => ({
-      camp,
+      event,
       registration,
       message,
       email,
+      changes,
     }));
-  }
-
-  static async enqueueFor(
-    this: typeof RegistrationTemplateMessage,
-    camp: Camp,
-    registration: Registration,
-    message: RenderableMessage,
-  ): Promise<void> {
-    const payloads = this.prepareForRegistration(camp, registration, message);
-    if (!payloads) {
-      return;
-    }
-
-    await this.enqueueMany(payloads);
   }
 
   static async enqueueForAll(
     this: typeof RegistrationTemplateMessage,
-    camp: Camp,
+    event: Event,
     registrations: Registration[],
     message: RenderableMessage,
   ): Promise<void> {
     const payloads = registrations.flatMap(
       (registration) =>
-        this.prepareForRegistration(camp, registration, message) ?? [],
+        this.prepareForRegistration(event, registration, message) ?? [],
     );
 
     await this.enqueueBulk(payloads);
-  }
-
-  static async sendFor(
-    this: typeof RegistrationTemplateMessage,
-    camp: Camp,
-    registration: Registration,
-    message: RenderableMessage,
-  ): Promise<void> {
-    const payloads = this.prepareForRegistration(camp, registration, message);
-    if (!payloads) {
-      return;
-    }
-
-    await this.sendMany(payloads);
   }
 }
 
@@ -459,21 +467,21 @@ export function messageToRenderable(
 }
 
 async function loadMessageTemplate(
-  camp: Camp,
-  event: string,
+  event: Event,
+  trigger: string,
   country: string | null | undefined,
 ): Promise<MessageTemplateWithFiles | null> {
   try {
     const messageTemplateService = resolve(MessageTemplateService);
 
-    // When the camp has only one group, we can assume the person is in that group
-    if (country === null && camp.countries.length === 1) {
-      country = camp.countries[0];
+    // When the event has only one group, we can assume the person is in that group
+    if (country === null && event.countries.length === 1) {
+      country = event.countries[0];
     }
 
     return await messageTemplateService.getMessageTemplateByName(
-      camp.id,
-      event,
+      event.id,
+      trigger,
       country,
     );
   } catch (error) {
@@ -483,30 +491,32 @@ async function loadMessageTemplate(
 }
 
 class RegistrationEventMessage extends RegistrationTemplateMessage {
-  static readonly event: string;
+  static readonly trigger: string;
   static readonly type: string;
 
   static async enqueueFor(
     this: typeof RegistrationEventMessage,
-    camp: Camp,
+    event: Event,
     registration: Registration,
+    changes?: RegistrationChange[],
   ): Promise<void> {
     const messageTemplate = await loadMessageTemplate(
-      camp,
-      this.event,
+      event,
+      this.trigger,
       registration.country,
     );
     if (!messageTemplate) {
       logger.debug(
-        `No message template for event ${this.event} and camp ${camp.id}`,
+        `No message template for event type ${this.trigger} and event ${event.id}`,
       );
       return;
     }
 
     const payload = this.prepareForRegistration(
-      camp,
+      event,
       registration,
       templateToRenderable(messageTemplate),
+      changes,
     );
 
     if (!payload) {
@@ -518,12 +528,13 @@ class RegistrationEventMessage extends RegistrationTemplateMessage {
 
   static async sendFor(
     this: typeof RegistrationEventMessage,
-    camp: Camp,
+    event: Event,
     registration: Registration,
+    changes?: RegistrationChange[],
   ): Promise<void> {
     const messageTemplate = await loadMessageTemplate(
-      camp,
-      this.event,
+      event,
+      this.trigger,
       registration.country,
     );
     if (!messageTemplate) {
@@ -531,9 +542,10 @@ class RegistrationEventMessage extends RegistrationTemplateMessage {
     }
 
     const payload = this.prepareForRegistration(
-      camp,
+      event,
       registration,
       templateToRenderable(messageTemplate),
+      changes,
     );
 
     if (!payload) {
@@ -545,49 +557,75 @@ class RegistrationEventMessage extends RegistrationTemplateMessage {
 }
 
 export class RegistrationSubmittedMessage extends RegistrationEventMessage {
-  static readonly event = 'registration_submitted';
+  static readonly trigger = 'registration_submitted';
   static readonly type = 'registration:template:submitted';
 
-  protected attachments(): MailAttachment[] | Promise<MailAttachment[]> {
-    return [
+  protected attachments(): Promise<MailAttachment[]> {
+    return Promise.resolve([
       // Attach registration data PDF here
-    ];
+    ]);
   }
 }
 
 export class RegistrationConfirmedMessage extends RegistrationEventMessage {
-  static readonly event = 'registration_confirmed';
+  static readonly trigger = 'registration_confirmed';
   static readonly type = 'registration:template:confirmed';
 
-  protected attachments(): MailAttachment[] | Promise<MailAttachment[]> {
-    return [
+  protected attachments(): Promise<MailAttachment[]> {
+    return Promise.resolve([
       // Attach registration data PDF here
-    ];
+    ]);
   }
 }
 
 export class RegistrationWaitlistedMessage extends RegistrationEventMessage {
-  static readonly event = 'registration_waitlisted';
+  static readonly trigger = 'registration_waitlisted';
   static readonly type = 'registration:template:waitlisted';
 }
 
 export class RegistrationUpdatedMessage extends RegistrationEventMessage {
-  static readonly event = 'registration_updated';
+  static readonly trigger = 'registration_updated';
   static readonly type = 'registration:template:updated';
 
-  protected attachments(): MailAttachment[] | Promise<MailAttachment[]> {
-    return [
+  protected attachments(): Promise<MailAttachment[]> {
+    return Promise.resolve([
       // Attach registration data PDF here
-    ];
+    ]);
+  }
+
+  protected renderChanges(
+    format: 'html' | 'text',
+  ): Handlebars.SafeString | string {
+    // Absent for a job enqueued before this field existed, and for any caller
+    // that supplied none. Nothing to list is not an error worth failing a send
+    // over — the participant still learns they were edited.
+    const changes = this.payload.changes;
+    if (!changes?.length) {
+      return '';
+    }
+
+    const t = this.getTg();
+    const labels = {
+      cleared: t('registration:email.changes.cleared'),
+      file: t('registration:email.changes.file'),
+    };
+
+    if (format === 'text') {
+      return renderChangesText(changes, labels);
+    }
+
+    // Values are escaped as the markup is built, so the result is safe to emit
+    // through a double-stash and must not be escaped a second time.
+    return new Handlebars.SafeString(renderChangesHtml(changes, labels));
   }
 }
 
 export class RegistrationDeletedMessage extends RegistrationEventMessage {
-  static readonly event = 'registration_canceled';
+  static readonly trigger = 'registration_canceled';
   static readonly type = 'registration:template:canceled';
 }
 
 export class RegistrationAcceptedMessage extends RegistrationEventMessage {
-  static readonly event = 'registration_waitlist_accepted';
+  static readonly trigger = 'registration_waitlist_accepted';
   static readonly type = 'registration:template:accepted';
 }

@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { useRoute } from 'vue-router';
-import { useAPIService } from 'src/services/APIService';
+import { useAPIService } from '@/services/APIService';
 import type {
   Registration,
   RegistrationCreateData,
@@ -8,19 +8,23 @@ import type {
   RegistrationUpdateData,
   RegistrationUpdateQuery,
 } from '@camp-registration/common/entities';
-import { useServiceHandler } from 'src/composables/serviceHandler';
-import {
-  useAuthBus,
-  useCampBus,
-  useRegistrationBus,
-} from 'src/composables/bus';
+import { useServiceHandler } from '@/composables/serviceHandler';
+import { useRealtimeCollection } from '@/composables/realtimeCollection';
+import { useAuthBus, useEventBus, useRegistrationBus } from '@/composables/bus';
+import { useQuasar } from 'quasar';
+import { useI18n } from 'vue-i18n';
+import { formatPersonName } from '@/utils/formatters';
 
 export const useRegistrationsStore = defineStore('registrations', () => {
   const route = useRoute();
   const apiService = useAPIService();
+  const quasar = useQuasar();
+  const { t } = useI18n({
+    useScope: 'global',
+  });
   const authBus = useAuthBus();
   const bus = useRegistrationBus();
-  const campBus = useCampBus();
+  const eventBus = useEventBus();
   const {
     data,
     isLoading,
@@ -29,6 +33,7 @@ export const useRegistrationsStore = defineStore('registrations', () => {
     invalidate,
     withProgressNotification,
     lazyFetch,
+    backgroundFetch,
     checkNotNullWithError,
     checkNotNullWithNotification,
   } = useServiceHandler<Registration[]>('registration');
@@ -37,26 +42,67 @@ export const useRegistrationsStore = defineStore('registrations', () => {
     reset();
   });
 
-  campBus.on('change', () => {
+  eventBus.on('change', () => {
     invalidate();
   });
 
-  async function fetchData(campId?: string) {
-    const cid: string = campId ?? (route.params.campId as string);
-    checkNotNullWithError(cid);
+  // React to live changes pushed from other clients: refetch the affected
+  // registration through the REST API (where full permissions apply) and
+  // reconcile it into the local list.
+  useRealtimeCollection<Registration>('registration', {
+    data,
+    invalidate,
+    reload: () => fetchData(undefined, { background: true }),
+    fetchOne: (eventId, id) => apiService.fetchRegistration(eventId, id),
+    onCreate: (registration) => {
+      bus.emit('create', registration);
+      showRealtimeCreateNotification(registration);
+    },
+    onUpdate: (registration) => bus.emit('update', registration),
+    onDelete: (id) => bus.emit('delete', id),
+  });
 
-    await lazyFetch(async () => {
-      return await apiService.fetchRegistrations(cid);
+  function showRealtimeCreateNotification(registration: Registration) {
+    const name = registrationName(registration);
+
+    quasar.notify({
+      type: 'positive',
+      icon: 'person_add',
+      message: t('stores.registration.realtimeCreate.message'),
+      caption: t('stores.registration.realtimeCreate.caption', { name }),
+      timeout: 5000,
     });
   }
 
+  function registrationName(registration: Registration): string {
+    const name = [
+      registration.computedData.firstName,
+      registration.computedData.lastName,
+    ]
+      .map((part) => part?.trim())
+      .filter((part): part is string => Boolean(part))
+      .join(' ');
+
+    return name.length > 0
+      ? formatPersonName(name)
+      : t('stores.registration.realtimeCreate.fallbackName');
+  }
+
+  async function fetchData(eventId?: string, opts?: { background?: boolean }) {
+    const cid: string = eventId ?? (route.params.eventId as string);
+    checkNotNullWithError(cid);
+
+    const fetcher = () => apiService.fetchRegistrations(cid);
+    await (opts?.background ? backgroundFetch(fetcher) : lazyFetch(fetcher));
+  }
+
   async function storeData(
-    campId: string,
+    eventId: string,
     registration: RegistrationCreateData,
   ) {
-    checkNotNullWithError(campId);
+    checkNotNullWithError(eventId);
 
-    await apiService.createRegistration(campId, registration);
+    await apiService.createRegistration(eventId, registration);
   }
 
   async function updateData(
@@ -64,9 +110,9 @@ export const useRegistrationsStore = defineStore('registrations', () => {
     updateData: RegistrationUpdateData,
     params?: RegistrationUpdateQuery,
   ) {
-    const campId = route.params.campId as string;
+    const eventId = route.params.eventId as string;
 
-    const cid = checkNotNullWithError(campId);
+    const cid = checkNotNullWithError(eventId);
     const rid = checkNotNullWithNotification(registrationId);
     await withProgressNotification('update', async () => {
       const updatedRegistration = await apiService.updateRegistration(
@@ -89,9 +135,9 @@ export const useRegistrationsStore = defineStore('registrations', () => {
     registrationId?: string,
     params?: RegistrationDeleteQuery,
   ) {
-    const campId = route.params.campId as string;
+    const eventId = route.params.eventId as string;
 
-    const cid = checkNotNullWithError(campId);
+    const cid = checkNotNullWithError(eventId);
     const rid = checkNotNullWithNotification(registrationId);
     await withProgressNotification('delete', async () => {
       await apiService.deleteRegistration(cid, rid, params);

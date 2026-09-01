@@ -1,34 +1,44 @@
-import { useAuthService } from 'src/services/AuthService';
-import { useCampService } from 'src/services/CampService';
-import { useRegistrationService } from 'src/services/RegistrationService';
-import { useTableTemplateService } from 'src/services/TableTemplateService';
-import { useUserService } from 'src/services/UserService';
-import { useRoomService } from 'src/services/RoomService';
-import { useCampManagerService } from 'src/services/CampManagerService';
+import { useAuthService } from '@/services/AuthService';
+import { useEventService } from '@/services/EventService';
+import { useRegistrationService } from '@/services/RegistrationService';
+import { useTableTemplateService } from '@/services/TableTemplateService';
+import { useEventSettingService } from '@/services/EventSettingService';
+import { useUserService } from '@/services/UserService';
+import { useRoomService } from '@/services/RoomService';
+import { useEventManagerService } from '@/services/EventManagerService';
 import axios, { type AxiosError } from 'axios';
-import { useFileService } from 'src/services/FileService';
-import { useFeedbackService } from 'src/services/FeedbackService';
-import { useProfileService } from 'src/services/ProfileService';
-import { useTotpService } from 'src/services/TotpService';
-import { useMessageTemplateService } from 'src/services/MessageTemplateService';
-import { useMessageService } from 'src/services/MessageService';
-import { useNewsletterService } from 'src/services/NewsletterService';
-import { useNewsletterManagerService } from 'src/services/NewsletterManagerService';
-import { useNewsletterSubscriberService } from 'src/services/NewsletterSubscriberService';
-import { useNewsletterMessageService } from 'src/services/NewsletterMessageService';
-import { useProgramEventService } from 'src/services/ProgramEventService';
-import { useQueueService } from 'src/services/QueueService';
-import { useAuditService } from 'src/services/AuditService';
+import { useFileService } from '@/services/FileService';
+import { useFeedbackService } from '@/services/FeedbackService';
+import { useProfileService } from '@/services/ProfileService';
+import { useTotpService } from '@/services/TotpService';
+import { useMessageTemplateService } from '@/services/MessageTemplateService';
+import { useMessageService } from '@/services/MessageService';
+import { useNewsletterService } from '@/services/NewsletterService';
+import { useNewsletterManagerService } from '@/services/NewsletterManagerService';
+import { useNewsletterSubscriberService } from '@/services/NewsletterSubscriberService';
+import { useNewsletterMessageService } from '@/services/NewsletterMessageService';
+import { useProgramItemService } from '@/services/ProgramItemService';
+import { useQueueService } from '@/services/QueueService';
+import { useTaskService } from '@/services/TaskService';
+import { useChoreService } from '@/services/ChoreService';
+import { useAdminService } from '@/services/AdminService';
+import { useOrganizationService } from '@/services/OrganizationService';
+import { useOrganizationMemberService } from '@/services/OrganizationMemberService';
+import { useAuditService } from '@/services/AuditService';
 
 export function useAPIService() {
   return {
     ...useAuthService(),
+    ...useAdminService(),
     ...useProfileService(),
     ...useUserService(),
-    ...useCampService(),
-    ...useCampManagerService(),
+    ...useOrganizationService(),
+    ...useOrganizationMemberService(),
+    ...useEventService(),
+    ...useEventManagerService(),
     ...useRegistrationService(),
     ...useTableTemplateService(),
+    ...useEventSettingService(),
     ...useRoomService(),
     ...useFileService(),
     ...useFeedbackService(),
@@ -39,8 +49,10 @@ export function useAPIService() {
     ...useNewsletterManagerService(),
     ...useNewsletterSubscriberService(),
     ...useNewsletterMessageService(),
-    ...useProgramEventService(),
+    ...useProgramItemService(),
     ...useQueueService(),
+    ...useTaskService(),
+    ...useChoreService(),
     ...useAuditService(),
   };
 }

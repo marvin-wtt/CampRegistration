@@ -1,9 +1,9 @@
 <template>
   <q-file
     :model-value="files"
+    v-bind="inputProps"
     multiple
     append
-    v-bind="attrs"
     @update:model-value="updateFiles"
   >
     <template #file="{ index, file }">
@@ -22,33 +22,45 @@
       </q-chip>
     </template>
 
+    <!-- Parent slots -->
     <template
-      v-for="(data, name, index) in slots"
-      :key="index"
+      v-for="(_, name) in slots"
+      :key="name"
       #[name]
     >
-      <slot
-        :name
-        v-bind="data"
-      />
+      <slot :name />
     </template>
   </q-file>
 </template>
 
 <script lang="ts" setup>
-import { ref, useAttrs, watch } from 'vue';
-import type { QInputSlots } from 'quasar';
+import { ref, watch } from 'vue';
+import type { QFileProps } from 'quasar';
 import { useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { useAPIService } from 'src/services/APIService';
+import { useAPIService } from '@/services/APIService';
 import type { ServiceFile } from '@camp-registration/common/entities';
+import { createUuid } from '@/utils/uuid';
+import {
+  type ForwardedFieldSlots,
+  usePassthroughProps,
+} from '@/composables/passthroughProps';
 
 const api = useAPIService();
 const quasar = useQuasar();
 const { t } = useI18n();
 
-const attrs = useAttrs();
-const slots = defineSlots<QInputSlots>();
+// The uploads this input manages are always a growing list of files.
+type Props = Omit<
+  QFileProps,
+  'modelValue' | 'onUpdate:modelValue' | 'multiple' | 'append'
+>;
+
+const slots = defineSlots<ForwardedFieldSlots>();
+
+const props = defineProps<Props>();
+
+const inputProps = usePassthroughProps(props);
 
 export type FileInputModel =
   | ServiceFile
@@ -98,7 +110,7 @@ function updateFiles(updatedFiles: File[]) {
 
   model.value.push(
     ...updatedFiles.slice(model.value.length).map((file) => {
-      const progressId = crypto.randomUUID();
+      const progressId = createUuid();
 
       api
         .createTemporaryFile({ file })

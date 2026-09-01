@@ -1,55 +1,27 @@
-import { useProfileStore } from 'stores/profile-store';
-import { useCampDetailsStore } from 'stores/camp-details-store';
-import type { Permission } from '@camp-registration/common/permissions';
+import { useProfileStore } from '@/stores/profile-store';
+import { useEventDetailsStore } from '@/stores/event-details-store';
 import { storeToRefs } from 'pinia';
+import { createScopePermissions } from '@/composables/scopePermissions';
 
+/**
+ * Event-scoped permissions, resolved against `profile.eventAccess`.
+ *
+ * `ScopePermission<'event'>` excludes the newsletter and organization strings,
+ * so passing one is a compile error rather than a check that silently never
+ * matches — those scopes have their own resolvers.
+ */
 export function usePermissions() {
   const profileStore = useProfileStore();
-  const campDetailsStore = useCampDetailsStore();
+  const eventDetailsStore = useEventDetailsStore();
 
   const { user } = storeToRefs(profileStore);
-  const { data: camp } = storeToRefs(campDetailsStore);
+  const { data: event } = storeToRefs(eventDetailsStore);
 
-  function canFor(
-    campId: string | undefined,
-    ...permissions: Permission[]
-  ): boolean {
-    if (user.value?.role === 'ADMIN') {
-      return true;
-    }
-
-    const userPermissions = user.value?.campAccess ?? [];
-    const campPermissions =
-      userPermissions.find((value) => value.campId === campId)?.permissions ??
-      [];
-
-    return permissions.every((value) => campPermissions.includes(value));
-  }
-
-  function can(...permissions: Permission[]): boolean {
-    return canFor(camp.value?.id, ...permissions);
-  }
-
-  function canAny(...permissions: Permission[]): boolean {
-    return permissions.some((value) => can(value));
-  }
-
-  function cannot(...permissions: Permission[]): boolean {
-    return !can(...permissions);
-  }
-
-  function canAccessAny(permission?: Permission | Permission[]): boolean {
-    if (!permission) {
-      return true;
-    }
-    return Array.isArray(permission) ? canAny(...permission) : can(permission);
-  }
-
-  return {
-    can,
-    canAny,
-    canFor,
-    cannot,
-    canAccessAny,
-  };
+  return createScopePermissions<'event'>({
+    isAdmin: () => user.value?.role === 'ADMIN',
+    granted: (eventId) =>
+      (user.value?.eventAccess ?? []).find((value) => value.eventId === eventId)
+        ?.permissions ?? [],
+    currentSubjectId: () => event.value?.id,
+  });
 }

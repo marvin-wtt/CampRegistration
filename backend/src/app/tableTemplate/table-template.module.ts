@@ -1,14 +1,6 @@
-import type {
-  AppModule,
-  AppRouter,
-  BindOptions,
-  RoleToPermissions,
-} from '#core/base/AppModule';
+import type { AppModule, AppRouter, BindOptions } from '#core/base/AppModule';
 import { TableTemplateRouter } from '#app/tableTemplate/table-template.routes';
-import type {
-  ManagerRole,
-  TableTemplatePermission,
-} from '@camp-registration/common/permissions';
+import type { ScopedPermissions } from '@camp-registration/common/permissions';
 import { resolve } from '#core/ioc/container';
 import { TableTemplateService } from '#app/tableTemplate/table-template.service';
 import { TableTemplateController } from '#app/tableTemplate/table-template.controller';
@@ -22,30 +14,29 @@ export class TableTemplateModule implements AppModule {
 
   registerRoutes(router: AppRouter): void {
     router.useRouter(
-      '/camps/:campId/table-templates',
+      '/events/:eventId/table-templates',
       resolve(TableTemplateRouter),
     );
   }
 
-  registerPermissions(): RoleToPermissions<
-    ManagerRole,
-    TableTemplatePermission
-  > {
+  registerPermissions(): ScopedPermissions {
     return {
-      DIRECTOR: [
-        'camp.table_templates.view',
-        'camp.table_templates.create',
-        'camp.table_templates.edit',
-        'camp.table_templates.delete',
-      ],
-      COORDINATOR: [
-        'camp.table_templates.view',
-        'camp.table_templates.create',
-        'camp.table_templates.edit',
-        'camp.table_templates.delete',
-      ],
-      COUNSELOR: ['camp.table_templates.view'],
-      VIEWER: ['camp.table_templates.view'],
+      event: {
+        DIRECTOR: [
+          'event.table_templates.view',
+          'event.table_templates.create',
+          'event.table_templates.edit',
+          'event.table_templates.delete',
+        ],
+        COORDINATOR: [
+          'event.table_templates.view',
+          'event.table_templates.create',
+          'event.table_templates.edit',
+          'event.table_templates.delete',
+        ],
+        COUNSELOR: ['event.table_templates.view'],
+        VIEWER: ['event.table_templates.view'],
+      },
     };
   }
 }

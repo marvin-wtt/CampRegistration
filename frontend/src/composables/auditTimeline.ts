@@ -1,7 +1,7 @@
 import type { AuditActor } from '@camp-registration/common/entities';
 
 // Entity-agnostic audit-timeline display helpers, shared by the per-registration
-// timeline and the camp-wide audit log page. Translated labels stay with the
+// timeline and the event-wide audit log page. Translated labels stay with the
 // calling component (its own `<i18n>` block) — this composable only shapes
 // dates/colors/icons.
 export function useAuditTimeline() {
@@ -56,11 +56,11 @@ export function useAuditTimeline() {
   // marker reads as "a message template" (icon) "was deleted" (color) at a glance.
   function entityIcon(entityType: string): string {
     switch (entityType) {
-      case 'camp':
+      case 'event':
         return 'cabin';
       case 'registration':
         return 'person';
-      case 'campManager':
+      case 'eventManager':
         return 'admin_panel_settings';
       case 'message':
         return 'mail';

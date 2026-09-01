@@ -1,11 +1,7 @@
 import { Identifiable } from './Identifiable.js';
 
 export type AuditEntityType =
-  | 'registration'
-  | 'campManager'
-  | 'camp'
-  | 'message'
-  | 'messageTemplate';
+  'registration' | 'eventManager' | 'event' | 'message' | 'messageTemplate';
 
 // Scalars only — a deliberate constraint so values stay bounded and non-PII
 // (you can't accidentally dump a whole object or free-text answer in here).
@@ -17,7 +13,7 @@ export interface AuditChangeSet {
   // Values live on the record and are erased with it, so this carries no PII.
   changedFields?: string[];
   // New values of changed fields a policy has marked safe to record: bounded,
-  // non-identifying scalars only (e.g. a registration's `status`, or a camp's
+  // non-identifying scalars only (e.g. a registration's `status`, or an event's
   // `active` flag). Lets the timeline show the outcome ("Accepted") without
   // storing personal data. Keyed by field name.
   changedValues?: Record<string, AuditValue>;
@@ -33,10 +29,10 @@ export interface AuditLogEntry extends Identifiable {
   action: string;
   entityType: AuditEntityType;
   entityId: string;
-  campId: string | null;
+  eventId: string | null;
   actor: AuditActor | null;
   // The entity's "subject" user, when it has one distinct from the actor
-  // (e.g. the manager a campManager entry is about) — resolved the same way
+  // (e.g. the manager an eventManager entry is about) — resolved the same way
   // as `actor`, never stored as a name.
   subject: AuditActor | null;
   changes: AuditChangeSet | null;

@@ -1,8 +1,8 @@
 export default {
   entity: {
-    camp: 'Camp',
+    event: 'Veranstaltung',
     registration: 'Anmeldung',
-    campManager: 'Verwalter',
+    eventManager: 'Verwalter',
     message: 'Nachricht',
     messageTemplate: 'E-Mail-Vorlage',
   },
@@ -18,8 +18,9 @@ export default {
     viewer: 'Betrachter',
   },
   fields: {
-    camp: {
-      public: 'Öffentlich',
+    event: {
+      organizationId: 'Organisation',
+      listed: 'Veranstaltung auf Startseite anzeigen',
       registrationOpensAt: 'Anmeldung öffnet am',
       registrationClosesAt: 'Anmeldung schließt am',
       confirmationMode: 'Bestätigungsmodus',
@@ -35,6 +36,7 @@ export default {
       price: 'Preis',
       location: 'Ort',
       form: 'Anmeldeformular',
+      retentionReminderSentAt: 'Aufbewahrungserinnerung gesendet am',
     },
     registration: {
       data: 'Formularantwort',
@@ -42,13 +44,13 @@ export default {
       status: 'Status',
       country: 'Land',
     },
-    campManager: {
+    eventManager: {
       role: 'Rolle',
       expiresAt: 'Läuft ab am',
     },
     message: {},
     messageTemplate: {
-      event: 'Ereignis',
+      trigger: 'Ereignis',
       country: 'Land',
       subject: 'Betreff',
       body: 'Inhalt',

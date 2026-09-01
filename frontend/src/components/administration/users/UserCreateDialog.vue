@@ -115,7 +115,7 @@ import { QForm, type QSelectOption, useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { ref } from 'vue';
 import { type UserCreateData } from '@camp-registration/common/entities';
-import { generateRandomPassword } from 'src/utils/passwordGenerator';
+import { generateRandomPassword } from '@/utils/passwordGenerator';
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();

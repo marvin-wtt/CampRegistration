@@ -1,4 +1,4 @@
-import { api } from 'src/services/api';
+import { api } from '@/services/api';
 import type {
   ServiceFileCreateData,
   ServiceFileUpdateData,
@@ -6,17 +6,17 @@ import type {
 } from '@camp-registration/common/entities';
 
 export function useFileService() {
-  async function fetchCampFiles(campId: string): Promise<ServiceFile[]> {
-    const response = await api.get(`camps/${campId}/files/`);
+  async function fetchEventFiles(eventId: string): Promise<ServiceFile[]> {
+    const response = await api.get(`events/${eventId}/files/`);
 
     return response?.data?.data;
   }
 
-  async function createCampFile(
-    campId: string,
+  async function createEventFile(
+    eventId: string,
     data: ServiceFileCreateData,
   ): Promise<ServiceFile> {
-    const response = await api.post(`camps/${campId}/files/`, data, {
+    const response = await api.post(`events/${eventId}/files/`, data, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -62,25 +62,25 @@ export function useFileService() {
     });
   }
 
-  function getCampFileSlotUrl(
-    campId: string,
+  function getEventFileSlotUrl(
+    eventId: string,
     slot: string,
     locale: string,
   ): string {
     return api.getUri({
-      url: `camps/${campId}/files/slots/${slot}/`,
+      url: `events/${eventId}/files/slots/${slot}/`,
       params: { locale },
     });
   }
 
   return {
-    fetchCampFiles,
-    createCampFile,
+    fetchEventFiles,
+    createEventFile,
     createTemporaryFile,
     updateFile,
     deleteFile,
     downloadFile,
     getFileUrl,
-    getCampFileSlotUrl,
+    getEventFileSlotUrl,
   };
 }

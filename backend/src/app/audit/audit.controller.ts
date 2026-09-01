@@ -13,26 +13,26 @@ export class AuditController extends BaseController {
   }
 
   async indexForRegistration(req: Request, res: Response) {
-    const camp = req.modelOrFail('camp');
+    const event = req.modelOrFail('event');
     const registration = req.modelOrFail('registration');
 
     const logs = await this.auditService.listForRegistration(
-      camp.id,
+      event.id,
       registration.id,
     );
 
     res.resource(AuditResource.collection(await this.withActors(logs)));
   }
 
-  async indexForCamp(req: Request, res: Response) {
-    const camp = req.modelOrFail('camp');
+  async indexForEvent(req: Request, res: Response) {
+    const event = req.modelOrFail('event');
 
-    const logs = await this.auditService.listForCamp(camp.id);
+    const logs = await this.auditService.listForEvent(event.id);
 
     res.resource(AuditResource.collection(await this.withActors(logs)));
   }
 
-  // `changedValues.userId` is the campManager policy's way of naming the
+  // `changedValues.userId` is the eventManager policy's way of naming the
   // manager an entry is about (see `managerIdentity`) — resolved into a
   // `subject` here, the same way `actorId` is resolved into `actor`.
   private subjectUserId(log: AuditLog): string | null {

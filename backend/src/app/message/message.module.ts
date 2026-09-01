@@ -1,14 +1,6 @@
-import type {
-  AppModule,
-  AppRouter,
-  RoleToPermissions,
-  BindOptions,
-} from '#core/base/AppModule';
+import type { AppModule, AppRouter, BindOptions } from '#core/base/AppModule';
 import { MessageRouter } from '#app/message/message.routes';
-import type {
-  ManagerRole,
-  MessagePermission,
-} from '@camp-registration/common/permissions';
+import type { ScopedPermissions } from '@camp-registration/common/permissions';
 import { registerFileGuard } from '#app/file/file.guard';
 import { messageFileGuard } from '#app/message/message.guard';
 import { MessageService } from '#app/message/message.service';
@@ -25,23 +17,25 @@ export class MessageModule implements AppModule {
       view: messageFileGuard,
     });
 
-    router.useRouter('/camps/:campId/messages', new MessageRouter());
+    router.useRouter('/events/:eventId/messages', new MessageRouter());
   }
 
-  registerPermissions(): RoleToPermissions<ManagerRole, MessagePermission> {
+  registerPermissions(): ScopedPermissions {
     return {
-      DIRECTOR: [
-        'camp.messages.view',
-        'camp.messages.create',
-        'camp.messages.delete',
-      ],
-      COORDINATOR: [
-        'camp.messages.view',
-        'camp.messages.create',
-        'camp.messages.delete',
-      ],
-      COUNSELOR: [],
-      VIEWER: [],
+      event: {
+        DIRECTOR: [
+          'event.messages.view',
+          'event.messages.create',
+          'event.messages.delete',
+        ],
+        COORDINATOR: [
+          'event.messages.view',
+          'event.messages.create',
+          'event.messages.delete',
+        ],
+        COUNSELOR: [],
+        VIEWER: [],
+      },
     };
   }
 }

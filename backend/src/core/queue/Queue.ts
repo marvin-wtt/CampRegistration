@@ -24,11 +24,7 @@ export interface JobOptions {
 }
 
 export type JobStatus =
-  | 'DELAYED'
-  | 'PENDING'
-  | 'RUNNING'
-  | 'COMPLETED'
-  | 'FAILED';
+  'DELAYED' | 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED';
 
 export interface SimpleJob<T> {
   name: string;

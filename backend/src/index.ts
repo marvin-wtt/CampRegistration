@@ -13,7 +13,7 @@ async function main() {
       sendDefaultPii: false,
       beforeSend(event, hint) {
         const err = hint.originalException;
-        if (err instanceof ApiError && err.isOperational) {
+        if (err instanceof ApiError && !err.isFault) {
           return null;
         }
         return event;
@@ -61,6 +61,6 @@ async function main() {
 }
 
 main().catch((err: unknown) => {
-  logger.error('Failed to start', err);
+  logger.error('Failed to start:', err);
   process.exit(1);
 });

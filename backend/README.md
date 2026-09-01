@@ -61,7 +61,8 @@ include:
 - `APP_PORT`, `APP_URL`, `APP_NAME` — application host configuration
 - `DATABASE_URL` — MySQL / MariaDB connection string
 - `SHADOW_DATABASE_URL` — shadow database used by Prisma migrations
-- `JWT_SECRET`, `CSRF_SECRET` — security secrets
+- `JWT_SECRET`, `CSRF_SECRET`, `TOTP_RECOVERY_CODE_SECRET` — security secrets
+  (generate fresh values with `npm run secrets:generate`)
 - `QUEUE_DRIVER` — queue backend (`database` or `redis`)
 - `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USERNAME`, `SMTP_PASSWORD` —
   email server configuration

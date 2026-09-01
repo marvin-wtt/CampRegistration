@@ -19,10 +19,30 @@ export class NewsletterController extends BaseController {
     const { query } = await req.validate(validator.index);
     const userId = req.authUserId();
 
+    if (query?.view === 'all') {
+      const { newsletters, nextCursor, limit, total } =
+        await this.newsletterService.queryNewsletters(
+          { name: query.name },
+          {
+            cursor: query.cursor,
+            limit: query.limit,
+            sortBy: query.sortBy,
+            sortType: query.sortType,
+          },
+        );
+
+      res.resource(
+        NewsletterResource.collection(newsletters).withCursor(
+          nextCursor,
+          limit,
+          total,
+        ),
+      );
+      return;
+    }
+
     const newsletters =
-      query?.view === 'all'
-        ? await this.newsletterService.getAllNewsletters()
-        : await this.newsletterService.getNewslettersByUserId(userId);
+      await this.newsletterService.getNewslettersByUserId(userId);
 
     res.resource(NewsletterResource.collection(newsletters));
   }
@@ -38,7 +58,12 @@ export class NewsletterController extends BaseController {
     const { body } = await req.validate(validator.store);
     const userId = req.authUserId();
 
+    // Bound and authorized by the route: the id arrives in the body, so
+    // `organizationFromBody()` resolves it before the guard runs.
+    const organization = req.modelOrFail('organization');
+
     const newsletter = await this.newsletterService.createNewsletter(userId, {
+      organizationId: organization.id,
       name: body.name,
       description: body.description,
       replyTo: body.replyTo,
@@ -58,6 +83,19 @@ export class NewsletterController extends BaseController {
         description: body.description,
         replyTo: body.replyTo,
       },
+    );
+
+    res.resource(new NewsletterResource(updated));
+  }
+
+  async updateOrganization(req: Request, res: Response) {
+    const newsletter = req.modelOrFail('newsletter');
+    const organization = req.modelOrFail('organization');
+    await req.validate(validator.updateOrganization);
+
+    const updated = await this.newsletterService.moveNewsletterToOrganization(
+      newsletter.id,
+      organization.id,
     );
 
     res.resource(new NewsletterResource(updated));

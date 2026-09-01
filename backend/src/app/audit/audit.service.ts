@@ -1,5 +1,5 @@
 import { BaseService } from '#core/base/BaseService';
-import { RequestContext } from '#core/context/RequestContext';
+import { ActorContext } from '#core/context/ActorContext';
 import { inject, injectable } from 'inversify';
 import {
   type AuditLog,
@@ -22,7 +22,7 @@ export type PrismaTransaction = Parameters<
 const AUDIT_RETENTION_DAYS = 365 * 2;
 // The actor IP only serves short-lived security/abuse investigation, so it is
 // scrubbed well before the audit row itself expires — data minimization for the
-// one piece of free-floating PII the log retains for a camp's whole lifetime.
+// one piece of free-floating PII the log retains for an event's whole lifetime.
 const AUDIT_IP_RETENTION_DAYS = 30;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -30,7 +30,7 @@ export interface AuditRecordInput {
   action: string;
   entityType: AuditEntityType;
   entityId: string;
-  campId?: string | null;
+  eventId?: string | null;
   // The change set; omit for create/delete events (no diff).
   changes?: AuditChangeSet | null;
   // Override the actor. Omit to use the request context; pass `null` to force a
@@ -46,9 +46,7 @@ export interface AuditLogWithActor {
 
 @injectable()
 export class AuditService extends BaseService {
-  constructor(
-    @inject(RequestContext) private readonly context: RequestContext,
-  ) {
+  constructor(@inject(ActorContext) private readonly context: ActorContext) {
     super();
   }
 
@@ -68,7 +66,7 @@ export class AuditService extends BaseService {
         action: input.action,
         entityType: input.entityType,
         entityId: input.entityId,
-        campId: input.campId ?? null,
+        eventId: input.eventId ?? null,
         actorId,
         actorIp: this.context.ip ?? null,
         changes: input.changes ?? Prisma.JsonNull,
@@ -89,7 +87,7 @@ export class AuditService extends BaseService {
       before: T | null | undefined;
       after: T | null | undefined;
       entityId: string;
-      campId?: string | null;
+      eventId?: string | null;
     },
   ): Promise<void> {
     const changes = policy.changeSet(args.before, args.after);
@@ -100,18 +98,18 @@ export class AuditService extends BaseService {
       action,
       entityType: policy.entityType,
       entityId: args.entityId,
-      campId: args.campId,
+      eventId: args.eventId,
       changes,
     });
   }
 
   async listForRegistration(
-    campId: string,
+    eventId: string,
     registrationId: string,
   ): Promise<AuditLog[]> {
     return this.prisma.auditLog.findMany({
       where: {
-        campId,
+        eventId,
         entityType: 'registration',
         entityId: registrationId,
       },
@@ -119,10 +117,10 @@ export class AuditService extends BaseService {
     });
   }
 
-  /** All audit rows for a camp, across every entity type. */
-  async listForCamp(campId: string): Promise<AuditLog[]> {
+  /** All audit rows for an event, across every entity type. */
+  async listForEvent(eventId: string): Promise<AuditLog[]> {
     return this.prisma.auditLog.findMany({
-      where: { campId },
+      where: { eventId },
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -149,25 +147,25 @@ export class AuditService extends BaseService {
     return new Map(users.map((user) => [user.id, user]));
   }
 
-  /** Removes all audit rows scoped to a camp — for GDPR erasure only. */
-  async purgeForCamp(campId: string, tx?: PrismaTransaction): Promise<void> {
+  /** Removes all audit rows scoped to an event — for GDPR erasure only. */
+  async purgeForEvent(eventId: string, tx?: PrismaTransaction): Promise<void> {
     const client = tx ?? this.prisma;
-    await client.auditLog.deleteMany({ where: { campId } });
+    await client.auditLog.deleteMany({ where: { eventId } });
   }
 
   /**
    * Enforces the audit-log retention policy. Only purges *orphaned* entries —
-   * rows whose camp is already gone (`campId` is null, either because the camp
-   * was deleted — the FK sets it null — or because the action was
-   * system/public to begin with). Rows still tied to an existing camp are left
-   * untouched, so a live camp always keeps its full audit trail.
+   * rows whose event is already gone (`eventId` is null, either because the
+   * event was deleted — the FK sets it null — or because the action was
+   * system/public to begin with). Rows still tied to an existing event are left
+   * untouched, so a live event always keeps its full audit trail.
    */
   async purgeExpiredAuditLogs(): Promise<number> {
     const cutoff = new Date(Date.now() - AUDIT_RETENTION_DAYS * DAY_MS);
 
     const { count } = await this.prisma.auditLog.deleteMany({
       where: {
-        campId: null,
+        eventId: null,
         createdAt: { lt: cutoff },
       },
     });

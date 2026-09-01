@@ -1,11 +1,23 @@
-import { z } from 'zod';
+import { z, type ZodType } from 'zod';
+import type {
+  NewsletterCreateData,
+  NewsletterUpdateData,
+  NewsletterOrganizationUpdateData,
+  NewsletterQuery,
+} from '@camp-registration/common/entities';
 
 const index = z.object({
   query: z
     .object({
-      view: z.enum(['all', 'assigned']).optional(),
+      view: z.enum(['all', 'assigned']),
+      name: z.string(),
+      cursor: z.ulid(),
+      limit: z.coerce.number().int().positive().max(100),
+      sortBy: z.enum(['name', 'createdAt', 'updatedAt']),
+      sortType: z.enum(['asc', 'desc']),
     })
-    .optional(),
+    .partial()
+    .optional() satisfies ZodType<NewsletterQuery | undefined>,
 });
 
 const show = z.object({
@@ -16,10 +28,11 @@ const show = z.object({
 
 const store = z.object({
   body: z.object({
+    organizationId: z.ulid(),
     name: z.string().min(1).max(255),
     description: z.string().max(5000).nullable().optional(),
     replyTo: z.email().max(255).nullable().optional(),
-  }),
+  }) satisfies ZodType<NewsletterCreateData>,
 });
 
 const update = z.object({
@@ -32,7 +45,16 @@ const update = z.object({
       description: z.string().max(5000).nullable(),
       replyTo: z.email().max(255).nullable(),
     })
-    .partial(),
+    .partial() satisfies ZodType<NewsletterUpdateData>,
+});
+
+const updateOrganization = z.object({
+  params: z.object({
+    newsletterId: z.ulid(),
+  }),
+  body: z.object({
+    organizationId: z.ulid(),
+  }) satisfies ZodType<NewsletterOrganizationUpdateData>,
 });
 
 const destroy = z.object({
@@ -46,5 +68,6 @@ export default {
   show,
   store,
   update,
+  updateOrganization,
   destroy,
 };

@@ -7,7 +7,7 @@ import {
   messageTemplateAuditPolicy,
   templateIdentity,
 } from '#app/messageTemplate/message-template.audit';
-import { sanitizeEmailHtml } from '#utils/sanitize';
+import { sanitizeHtmlContent } from '#utils/sanitize';
 import type { MessageTemplateWithFiles } from '#app/messageTemplate/message-template.resource';
 
 @injectable()
@@ -19,11 +19,11 @@ export class MessageTemplateService extends BaseService {
     super();
   }
 
-  async getMessageTemplateById(campId: string, id: string) {
+  async getMessageTemplateById(eventId: string, id: string) {
     return this.prisma.messageTemplate.findFirst({
       where: {
         id,
-        campId,
+        eventId,
       },
       include: {
         attachments: true,
@@ -31,23 +31,23 @@ export class MessageTemplateService extends BaseService {
     });
   }
 
-  async getMessageTemplateWithCamp(id: string) {
+  async getMessageTemplateWithEvent(id: string) {
     return this.prisma.messageTemplate.findFirst({
       where: {
         id,
       },
       include: {
-        camp: { select: { id: true } },
+        event: { select: { id: true } },
         attachments: true,
       },
     });
   }
 
   async queryMessageTemplates(
-    campId: string,
+    eventId: string,
   ): Promise<MessageTemplateWithFiles[]> {
     return this.prisma.messageTemplate.findMany({
-      where: { campId },
+      where: { eventId },
       include: {
         attachments: true,
       },
@@ -55,14 +55,14 @@ export class MessageTemplateService extends BaseService {
   }
 
   async getMessageTemplateByName(
-    campId: string,
-    event: string,
+    eventId: string,
+    trigger: string,
     country?: string | null,
   ) {
     return this.prisma.messageTemplate.findFirst({
       where: {
-        campId,
-        event,
+        eventId,
+        trigger,
         country,
       },
       include: {
@@ -72,8 +72,8 @@ export class MessageTemplateService extends BaseService {
   }
 
   async createTemplate(
-    campId: string,
-    data: Omit<Prisma.MessageTemplateCreateInput, 'camp'> & {
+    eventId: string,
+    data: Omit<Prisma.MessageTemplateCreateInput, 'event'> & {
       attachmentIds?: string[] | undefined;
     },
     fileFieldId: string,
@@ -81,13 +81,13 @@ export class MessageTemplateService extends BaseService {
     return this.prisma.$transaction(async (tx) => {
       const template = await tx.messageTemplate.create({
         data: {
-          event: data.event,
+          trigger: data.trigger,
           country: data.country,
           subject: data.subject,
-          body: sanitizeEmailHtml(data.body),
+          body: sanitizeHtmlContent(data.body),
           priority: data.priority,
           replyTo: data.replyTo,
-          campId,
+          eventId,
           attachments: data.attachmentIds
             ? this.fileService.getFileConnectInput(
                 data.attachmentIds,
@@ -104,7 +104,7 @@ export class MessageTemplateService extends BaseService {
         action: 'created',
         entityType: messageTemplateAuditPolicy.entityType,
         entityId: template.id,
-        campId,
+        eventId,
         changes: { changedValues: templateIdentity(template) },
       });
 
@@ -114,7 +114,7 @@ export class MessageTemplateService extends BaseService {
 
   async updateMessageTemplate(
     id: string,
-    campId: string,
+    eventId: string,
     data: Prisma.MessageTemplateUpdateInput & {
       attachmentIds?: string[] | undefined;
       body?: string | undefined;
@@ -139,12 +139,14 @@ export class MessageTemplateService extends BaseService {
       const after = await tx.messageTemplate.update({
         where: {
           id,
-          campId,
+          eventId,
         },
         data: {
           subject: data.subject,
           body:
-            data.body !== undefined ? sanitizeEmailHtml(data.body) : undefined,
+            data.body !== undefined
+              ? sanitizeHtmlContent(data.body)
+              : undefined,
           priority: data.priority,
           attachments,
         },
@@ -157,19 +159,19 @@ export class MessageTemplateService extends BaseService {
         before,
         after,
         entityId: id,
-        campId,
+        eventId,
       });
 
       return after;
     });
   }
 
-  async deleteMessageTemplateById(id: string, campId: string) {
+  async deleteMessageTemplateById(id: string, eventId: string) {
     return this.prisma.$transaction(async (tx) => {
       const deleted = await tx.messageTemplate.delete({
         where: {
           id,
-          campId,
+          eventId,
         },
       });
 
@@ -177,7 +179,7 @@ export class MessageTemplateService extends BaseService {
         action: 'deleted',
         entityType: messageTemplateAuditPolicy.entityType,
         entityId: id,
-        campId,
+        eventId,
         changes: { changedValues: templateIdentity(deleted) },
       });
 

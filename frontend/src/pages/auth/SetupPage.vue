@@ -65,9 +65,9 @@
 import { onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
-import { useAuthStore } from 'stores/auth-store';
+import { useAuthStore } from '@/stores/auth-store';
 import { storeToRefs } from 'pinia';
-import { isSetupRequired } from 'src/services/SetupService';
+import { isSetupRequired } from '@/services/SetupService';
 import UserRegistrationForm, {
   type RegistrationCredentials,
 } from '../../components/auth/UserRegistrationForm.vue';

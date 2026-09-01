@@ -1,18 +1,18 @@
 import { defineStore } from 'pinia';
-import { useAPIService } from 'src/services/APIService';
+import { useAPIService } from '@/services/APIService';
 import type {
   Profile,
   ProfileUpdateData,
 } from '@camp-registration/common/entities';
 import { useRouter } from 'vue-router';
-import { useAuthBus, useCampBus } from 'src/composables/bus';
-import { useServiceHandler } from 'src/composables/serviceHandler';
+import { useAuthBus, useEventBus } from '@/composables/bus';
+import { useServiceHandler } from '@/composables/serviceHandler';
 
 export const useProfileStore = defineStore('profile', () => {
   const apiService = useAPIService();
   const router = useRouter();
   const authBus = useAuthBus();
-  const campBus = useCampBus();
+  const eventBus = useEventBus();
   const {
     data,
     isLoading,
@@ -28,7 +28,7 @@ export const useProfileStore = defineStore('profile', () => {
 
   authBus.on('logout', reset);
 
-  campBus.on('create', () => {
+  eventBus.on('create', () => {
     void fetchProfile();
   });
 

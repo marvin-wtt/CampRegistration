@@ -1,9 +1,9 @@
-import { installQuasarPlugin } from 'app/test/vitest/utils/quasar';
+import { installQuasarPlugin } from '@/../test/vitest/utils/quasar';
 import { describe, expect, it } from 'vitest';
 import { Dialog, QDialog } from 'quasar';
 import { DOMWrapper, mount, type VueWrapper } from '@vue/test-utils';
-import SafeDeleteDialog from 'components/common/dialogs/SafeDeleteDialog.vue';
-import { selector } from 'app/test/vitest/utils/element-selector';
+import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
+import { selector } from '@/../test/vitest/utils/element-selector';
 import { nextTick } from 'vue';
 
 installQuasarPlugin({

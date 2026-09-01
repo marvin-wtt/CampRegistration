@@ -8,15 +8,25 @@ import { DiskStorage } from '#core/storage/disk.storage';
 import { StorageRegistry } from '#core/storage/storage.registry';
 import { BaseService } from '#core/base/BaseService';
 import { fileNameExtension } from '#utils/file';
+import { isClientDisconnect } from '#utils/stream';
 import { inject, injectable } from 'inversify';
 import { Config } from '#core/ioc/decorators';
 import type { AppConfig } from '#config';
 import { Queue } from '#core/queue/Queue';
 import { QueueManager } from '#core/queue/QueueManager';
-import { StorageFile } from '#core/storage/storage';
+import type { StorageFile } from '#core/storage/storage';
 import { selectFileByLocale } from '@camp-registration/common/form';
 
 type RequestFile = Express.Multer.File;
+
+interface FileUploadJobPayload {
+  id: string;
+  name: string;
+  originalName: string;
+  type: string;
+  tmpFileName: string;
+  storageLocation: string;
+}
 
 interface ModelData {
   id: string;
@@ -39,7 +49,7 @@ type FileOwnerKey = keyof PickIds<Prisma.FileWhereInput>;
 
 // Relational fields for where input fields
 const fileRelationIdFieldsNull: RequireIdKeys<Prisma.FileWhereInput, null> = {
-  campId: null,
+  eventId: null,
   registrationId: null,
   messageId: null,
   messageDeliveryId: null,
@@ -52,11 +62,14 @@ const fileRelationIdFieldsUndefined = Object.keys(
   fileRelationIdFieldsNull,
 ).reduce((acc, key) => ({ ...acc, [key]: undefined }), {});
 
+// Storage removals issued at once by `deleteUnassignedFiles`.
+const STORAGE_DELETE_CONCURRENCY = 25;
+
 @injectable()
 export class FileService extends BaseService {
   private tmpStorage: DiskStorage;
   private storageRegistry: StorageRegistry;
-  private queue: Queue<string>;
+  private queue: Queue<FileUploadJobPayload>;
 
   constructor(
     @Config() private readonly config: AppConfig,
@@ -67,7 +80,7 @@ export class FileService extends BaseService {
     this.tmpStorage = new DiskStorage(config.storage.tmpDir);
     this.storageRegistry = new StorageRegistry(config.storage);
 
-    this.queue = queueManager.create<string>('file', {
+    this.queue = queueManager.create<FileUploadJobPayload>('file', {
       retryDelay: 1000 * 10,
     });
 
@@ -106,11 +119,17 @@ export class FileService extends BaseService {
     });
   }
 
-  private async uploadFile(filename: string) {
-    await this.storageRegistry.getStorage().moveToStorage(filename);
+  private async uploadFile(payload: FileUploadJobPayload) {
+    await this.storageRegistry
+      .getStorage(payload.storageLocation)
+      .moveToStorage(payload);
+
     await this.prisma.file.updateMany({
-      where: { name: filename },
-      data: { uploadStatus: 'READY' },
+      where: { name: payload.name },
+      data: {
+        uploadStatus: 'READY',
+        encryption: this.storageRegistry.getEncryptionFormat(),
+      },
     });
   }
 
@@ -155,12 +174,18 @@ export class FileService extends BaseService {
     ownerId: string,
     fileIds: string[],
     sessionId: string,
+    options?: { excludeFieldPrefix?: string },
   ) {
     // 1) Detach removed ones
     await tx.file.updateMany({
       where: {
         [ownerKey]: ownerId,
         id: { notIn: fileIds.length ? fileIds : ['__none__'] }, // avoid `notIn: []` edge cases
+        // Files in an excluded field namespace are managed by a different
+        // sync (e.g. custom-data files during a form-data sync).
+        ...(options?.excludeFieldPrefix
+          ? { NOT: { field: { startsWith: options.excludeFieldPrefix } } }
+          : {}),
       },
       data: {
         [ownerKey]: null,
@@ -179,6 +204,87 @@ export class FileService extends BaseService {
     }));
 
     return { connect };
+  }
+
+  /**
+   * Synchronizes a set of named file slots (`field = prefix + name`) for an
+   * owner in one pass: each slot is pointed at its given file id, or cleared
+   * when the id is `null`. The previous occupant of a changed slot is
+   * detached and picked up by the unassigned-file cleanup job.
+   *
+   * A file is only attachable when it already occupies a slot of the same
+   * namespace on this owner or is an unreferenced temp file of the given
+   * session. Slots whose id could not be resolved are left untouched and
+   * their names are returned so the caller can decide how to fail.
+   */
+  async syncFileSlots(
+    tx: PrismaTransaction,
+    ownerKey: FileOwnerKey,
+    ownerId: string,
+    prefix: string,
+    slots: Record<string, string | null>,
+    sessionId: string,
+  ): Promise<string[]> {
+    const entries = Object.entries(slots);
+    const requestedIds = entries
+      .map(([, fileId]) => fileId)
+      .filter((id) => id !== null);
+
+    // One query validates every requested id at once.
+    const validIds = new Set(
+      requestedIds.length
+        ? await tx.file
+            .findMany({
+              where: {
+                id: { in: requestedIds },
+                OR: [
+                  { [ownerKey]: ownerId, field: { startsWith: prefix } },
+                  { ...this.getUnreferencedModelArgs(), field: sessionId },
+                ],
+              },
+              select: { id: true },
+            })
+            .then((files) => files.map((file) => file.id))
+        : [],
+    );
+
+    const invalidNames: string[] = [];
+    const toAttach: { name: string; fileId: string }[] = [];
+    const toDetach: Prisma.FileWhereInput[] = [];
+
+    for (const [name, fileId] of entries) {
+      if (fileId !== null && !validIds.has(fileId)) {
+        invalidNames.push(name);
+        continue;
+      }
+
+      if (fileId !== null) {
+        toAttach.push({ name, fileId });
+      }
+
+      toDetach.push({
+        field: prefix + name,
+        ...(fileId !== null ? { id: { not: fileId } } : {}),
+      });
+    }
+
+    await Promise.all(
+      toAttach.map(({ name, fileId }) =>
+        tx.file.update({
+          where: { id: fileId },
+          data: { [ownerKey]: ownerId, field: prefix + name },
+        }),
+      ),
+    );
+
+    if (toDetach.length > 0) {
+      await tx.file.updateMany({
+        where: { [ownerKey]: ownerId, OR: toDetach },
+        data: { [ownerKey]: null, field: null },
+      });
+    }
+
+    return invalidNames;
   }
 
   async saveModelFile(
@@ -210,7 +316,14 @@ export class FileService extends BaseService {
       },
     });
 
-    await this.queue.add('upload', file.filename);
+    await this.queue.add('upload', {
+      id: created.id,
+      name: created.name,
+      originalName: created.originalName,
+      type: created.type,
+      storageLocation: created.storageLocation,
+      tmpFileName: file.filename,
+    });
 
     return created;
   }
@@ -280,8 +393,26 @@ export class FileService extends BaseService {
     });
   }
 
-  getFileStream(file: StorageFile) {
-    return this.storageRegistry.getStorage(file.storageLocation).stream(file);
+  async getFileStream(file: StorageFile) {
+    const stream = await this.storageRegistry
+      .getStorage(file.storageLocation)
+      .openReadStream(file);
+
+    // Decryption/storage errors surface asynchronously, possibly before the
+    // consumer (HTTP response, mail transport) attaches its own 'error'
+    // listener — without one here, such an error crashes the process.
+    stream.on('error', (error: Error) => {
+      // Says nothing about the file, and every cancelled preview emits one —
+      // reporting it is the consumer's call, not ours.
+      if (isClientDisconnect(error)) {
+        logger.debug(`Stream for file "${file.id}" closed by consumer`);
+        return;
+      }
+
+      logger.error(`Error while streaming file "${file.id}"`, error);
+    });
+
+    return stream;
   }
 
   async updateFile(
@@ -361,6 +492,9 @@ export class FileService extends BaseService {
             accessLevel: file.accessLevel,
             storageLocation: file.storageLocation,
             uploadStatus: file.uploadStatus,
+            // The duplicate points at the same stored blob, so it must
+            // record the same encryption format.
+            encryption: file.encryption,
             field: sessionId,
           },
         }),
@@ -373,7 +507,9 @@ export class FileService extends BaseService {
   > {
     const fileModels = await this.prisma.file.findMany({
       where: {
-        storageLocation: 'local',
+        storageLocation: {
+          in: ['disk', 's3'],
+        },
       },
       select: {
         name: true,
@@ -411,8 +547,8 @@ export class FileService extends BaseService {
     return deletions;
   }
 
-  async deleteUnassignedFiles(): Promise<number> {
-    const minAge = moment().subtract('1', 'd').toDate();
+  async deleteUnassignedFiles(): Promise<void> {
+    const minAge = moment().subtract(1, 'day').toDate();
 
     const files = await this.prisma.file.findMany({
       where: {
@@ -429,8 +565,16 @@ export class FileService extends BaseService {
     // Delete files from database first so that the files can no longer be accessed.
     const fileIds = files.map((file) => file.id);
     const result = await this.prisma.file.deleteMany({
-      where: { id: { in: fileIds } },
+      where: {
+        id: { in: fileIds },
+        // Just verify that it is really unassigned to avoid race conditions
+        ...fileRelationIdFieldsNull,
+      },
     });
+
+    logger.info(
+      `Deleted ${result.count.toString()} unassigned file record(s) from database`,
+    );
 
     // Check if any file is still referenced by another model
     const fileNames = files.map((file) => file.name);
@@ -439,23 +583,58 @@ export class FileService extends BaseService {
       select: { name: true },
     });
 
-    // Delete files from storage that are no longer in use
-    const fileDeletions = files
-      .filter((file) => !usedFiles.some((value) => value.name === file.name))
-      .map((file) =>
-        this.storageRegistry
-          .getStorage(file.storageLocation)
-          .removeFile(file.name),
+    // Delete files from storage that are no longer in use. Batched because a
+    // bulk unassignment can orphan thousands of files at once, and settled
+    // rather than all-or-nothing so one failure cannot hide the rest — a blob
+    // left behind is swept by `deleteUnreferencedFiles`.
+    const orphans = files.filter(
+      (file) => !usedFiles.some((value) => value.name === file.name),
+    );
+
+    let deletedCount = 0;
+    for (let i = 0; i < orphans.length; i += STORAGE_DELETE_CONCURRENCY) {
+      const batch = orphans.slice(i, i + STORAGE_DELETE_CONCURRENCY);
+
+      const results = await Promise.allSettled(
+        batch.map((file) =>
+          this.storageRegistry
+            .getStorage(file.storageLocation)
+            .removeFile(file.name),
+        ),
       );
 
-    await Promise.all(fileDeletions);
+      results.forEach((settled, index) => {
+        if (settled.status === 'rejected') {
+          logger.error(
+            `Failed to remove file ${batch[index]?.name ?? '??'} from storage. ${String(settled.reason)}`,
+          );
+        } else {
+          deletedCount++;
+        }
+      });
+    }
 
-    return result.count;
+    logger.info(
+      `Deleted ${deletedCount.toString()} unreferenced file(s) from storage`,
+    );
   }
 
   async deleteTempFiles(): Promise<number> {
     const fileNames = await this.tmpStorage.getFileNames();
     const currentTime = Date.now();
+
+    // Tmp files that are still the only copy of an upload which has not yet
+    // reached storage — e.g. the storage provider is temporarily unavailable
+    // and the upload job is still being retried (or awaiting an admin retry).
+    // Their tmp name matches the File row's `name`, so preserving them lets
+    // the upload recover once storage is reachable again instead of the file
+    // being lost to cleanup. Encryption staging files (`<name>.<uuid>.enc`)
+    // never match a File name, so orphaned ones are still pruned.
+    const pendingUploads = await this.prisma.file.findMany({
+      where: { uploadStatus: 'PENDING' },
+      select: { name: true },
+    });
+    const pendingNames = new Set(pendingUploads.map((file) => file.name));
 
     const getFileCreationTime = (fileName: string) => {
       const id = fileName.split('.')[0];
@@ -471,13 +650,22 @@ export class FileService extends BaseService {
       return timeDifference > oneHourInMilliseconds;
     };
 
+    const isExpired = (fileName: string): boolean =>
+      isOlderThanOneHour(fileName) && !pendingNames.has(fileName);
+
     const results = await Promise.all(
       fileNames
-        .filter(isOlderThanOneHour)
+        .filter(isExpired)
         .map((fileName) => this.tmpStorage.removeFile(fileName)),
     );
 
     return results.length;
+  }
+
+  public async getOverviewCounts() {
+    const total = await this.prisma.file.count();
+
+    return { total };
   }
 
   public async close() {

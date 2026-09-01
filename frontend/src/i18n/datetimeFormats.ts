@@ -4,6 +4,17 @@ const format = {
     month: '2-digit',
     day: '2-digit',
   },
+  date: {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  },
+  dateFull: {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  },
   long: {
     weekday: 'long',
     year: 'numeric',

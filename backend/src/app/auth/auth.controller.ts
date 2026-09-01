@@ -6,7 +6,8 @@ import { type Request, type Response } from 'express';
 import type { AuthTokensResponse } from '#types/response';
 import type { AppConfig } from '#config';
 import ApiError from '#utils/ApiError';
-import { CampManagerService } from '#app/campManager/camp-manager.service.js';
+import { EventManagerService } from '#app/eventManager/event-manager.service.js';
+import { OrganizationMemberService } from '#app/organizationMember/organization-member.service.js';
 import authResource from './auth.resource.js';
 import validator from './auth.validation.js';
 import { TotpService } from '#app/totp/totp.service';
@@ -29,8 +30,10 @@ export class AuthController extends BaseController {
     @Config() private readonly config: AppConfig,
     @inject(AuthService) private readonly authService: AuthService,
     @inject(UserService) private readonly userService: UserService,
-    @inject(CampManagerService)
-    private readonly managerService: CampManagerService,
+    @inject(EventManagerService)
+    private readonly managerService: EventManagerService,
+    @inject(OrganizationMemberService)
+    private readonly organizationMemberService: OrganizationMemberService,
     @inject(TokenService) private readonly tokenService: TokenService,
     @inject(TotpService) private readonly totpService: TotpService,
   ) {
@@ -51,6 +54,10 @@ export class AuthController extends BaseController {
     });
 
     await this.managerService.resolveManagerInvitations(user.email, user.id);
+    await this.organizationMemberService.resolveMemberInvitations(
+      user.email,
+      user.id,
+    );
 
     const verifyEmailToken =
       await this.tokenService.generateVerifyEmailToken(user);
@@ -74,7 +81,7 @@ export class AuthController extends BaseController {
     const user = await this.authService.loginWithEmailPassword(email, password);
 
     // Check if totp is required
-    if (user.twoFactorEnabled) {
+    if (await this.totpService.isTwoFactorEnabled(user.id)) {
       const token = this.tokenService.generateTotpToken(user);
       // Set auth header
       res.setHeader(
@@ -103,8 +110,8 @@ export class AuthController extends BaseController {
     } = await req.validate(validator.verifyOTP);
 
     const { userId } = this.tokenService.verifyTotpToken(token);
-    const user = await this.userService.getUserByIdOrFail(userId);
-    this.totpService.verifyTOTP(user, otp);
+    await this.userService.getUserByIdOrFail(userId);
+    await this.totpService.verifyTwoFactor(userId, otp);
 
     await this.sendAuthResponse(req, res, userId, remember);
   }
@@ -115,7 +122,8 @@ export class AuthController extends BaseController {
     userId: string,
     remember: boolean,
   ) {
-    const user = await this.userService.updateUserLastSeenByIdWithCamps(userId);
+    const user =
+      await this.userService.updateUserLastSeenByIdWithEvents(userId);
 
     const tokens = await this.tokenService.generateAuthTokens(user, remember);
 

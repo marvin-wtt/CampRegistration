@@ -1,15 +1,15 @@
 import type { ITheme, SurveyModel } from 'survey-core';
-import type { CampDetails } from '@camp-registration/common/entities';
+import type { EventDetails } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
 import { nextTick, type Ref, watch, watchEffect } from 'vue';
 import { setVariables } from '@camp-registration/common/form';
 import { useQuasar } from 'quasar';
-import type { useAPIService } from 'src/services/APIService';
-import { md3SurveyThemes } from 'src/lib/surveyJs/themes/md3';
+import type { useAPIService } from '@/services/APIService';
+import { md3SurveyThemes } from '@/lib/surveyJs/themes/md3';
 
 export function startAutoDataUpdate(
   model: SurveyModel,
-  data: Ref<CampDetails | undefined>,
+  data: Ref<EventDetails | undefined>,
 ) {
   const { locale } = useI18n();
 
@@ -23,7 +23,7 @@ export function startAutoDataUpdate(
 
   const updateVariables = (
     model: SurveyModel | undefined,
-    data: CampDetails | undefined,
+    data: EventDetails | undefined,
     locale: string,
   ) => {
     if (!model) {
@@ -44,7 +44,7 @@ export function startAutoDataUpdate(
  */
 export function addFileSlotResolver(
   model: SurveyModel,
-  campId: string,
+  eventId: string,
   api: ReturnType<typeof useAPIService>,
 ) {
   model.onProcessDynamicText.add((sender, options) => {
@@ -55,20 +55,20 @@ export function addFileSlotResolver(
       return;
     }
     const slot = options.name.slice('_file.'.length);
-    options.value = api.getCampFileSlotUrl(campId, slot, sender.locale);
+    options.value = api.getEventFileSlotUrl(eventId, slot, sender.locale);
   });
 }
 
 export const startAutoThemeUpdate = (
   model: SurveyModel,
-  data: Ref<CampDetails | undefined>,
+  data: Ref<EventDetails | undefined>,
   bgColor?: Ref<string | undefined>,
 ) => {
   const quasar = useQuasar();
 
   const applyTheme = async (
     model: SurveyModel | undefined,
-    data: CampDetails | undefined,
+    data: EventDetails | undefined,
     dark: boolean,
   ) => {
     if (!model || !data) {

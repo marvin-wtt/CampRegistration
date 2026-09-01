@@ -1,16 +1,13 @@
 import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
-
-const countryLangMap: Record<string, string> = {
-  cz: 'cs',
-};
+import { COUNTRY_LOCALES } from '@/i18n/locales';
 
 function normalizeLocale(locale: string): string {
   if (locale.length === 5 && locale.charAt(2) === '-') {
     return locale.slice(0, 2);
   }
 
-  return countryLangMap[locale] ?? locale;
+  return COUNTRY_LOCALES[locale] ?? locale;
 }
 
 function pickTranslation(
@@ -34,7 +31,9 @@ export function useObjectTranslation() {
     useScope: 'global',
   });
 
-  function to(value: string | Record<string, string> | undefined): string {
+  function to(
+    value: string | Record<string, string> | undefined | null,
+  ): string {
     if (value == null) {
       return '';
     }

@@ -1,5 +1,10 @@
-import { z } from 'zod';
+import { z, type ZodType } from 'zod';
 import { LocaleSchema, PasswordSchema } from '#core/validation/helper';
+import type {
+  UserCreateData,
+  UserUpdateData,
+  UserQuery,
+} from '@camp-registration/common/entities';
 
 const RoleSchema = z.enum(['USER', 'ADMIN']);
 
@@ -9,17 +14,30 @@ const show = z.object({
   }),
 });
 
+const UserSortBySchema = z.enum([
+  'name',
+  'email',
+  'role',
+  'lastSeen',
+  'createdAt',
+  'emailVerified',
+  'locked',
+]);
+
 const index = z.object({
   query: z
     .object({
+      search: z.string(),
       name: z.string(),
-      email: z.email(),
-      role: z.string(),
-      sortBy: z.string(),
-      limit: z.number().int().positive(),
-      page: z.number().int().positive(),
+      email: z.string(),
+      role: RoleSchema,
+      status: z.enum(['active', 'locked', 'unverified']),
+      sortBy: UserSortBySchema,
+      sortType: z.enum(['asc', 'desc']),
+      limit: z.coerce.number().int().positive().max(100),
+      cursor: z.ulid(),
     })
-    .partial(),
+    .partial() satisfies ZodType<UserQuery>,
 });
 
 const store = z.object({
@@ -30,7 +48,7 @@ const store = z.object({
     role: RoleSchema.optional(),
     locale: LocaleSchema.optional(),
     locked: z.boolean().optional(),
-  }),
+  }) satisfies ZodType<UserCreateData>,
 });
 
 const update = z.object({
@@ -47,10 +65,16 @@ const update = z.object({
       locked: z.boolean(),
       emailVerified: z.boolean(),
     })
-    .partial(),
+    .partial() satisfies ZodType<UserUpdateData>,
 });
 
 const destroy = z.object({
+  params: z.object({
+    userId: z.ulid(),
+  }),
+});
+
+const resetTwoFactor = z.object({
   params: z.object({
     userId: z.ulid(),
   }),
@@ -62,4 +86,5 @@ export default {
   store,
   update,
   destroy,
+  resetTwoFactor,
 };

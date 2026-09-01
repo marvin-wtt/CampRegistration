@@ -16,10 +16,29 @@ export class UserController extends BaseController {
     super();
   }
 
-  async index(_req: Request, res: Response) {
-    const users = await this.userService.queryUsers();
+  async index(req: Request, res: Response) {
+    const { query } = await req.validate(validator.index);
 
-    res.resource(UserResource.collection(users));
+    const { users, nextCursor, limit, total } =
+      await this.userService.queryUsers(
+        {
+          search: query.search,
+          name: query.name,
+          email: query.email,
+          role: query.role,
+          status: query.status,
+        },
+        {
+          cursor: query.cursor,
+          limit: query.limit,
+          sortBy: query.sortBy,
+          sortType: query.sortType,
+        },
+      );
+
+    res.resource(
+      UserResource.collection(users).withCursor(nextCursor, limit, total),
+    );
   }
 
   show(req: Request, res: Response) {
@@ -76,5 +95,15 @@ export class UserController extends BaseController {
     await this.userService.deleteUserById(userId);
 
     res.sendStatus(httpStatus.NO_CONTENT);
+  }
+
+  async resetTwoFactor(req: Request, res: Response) {
+    const {
+      params: { userId },
+    } = await req.validate(validator.resetTwoFactor);
+
+    const user = await this.userService.resetTwoFactorById(userId);
+
+    res.resource(new UserResource(user));
   }
 }

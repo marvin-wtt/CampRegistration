@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const RedisSchema = z.object({
+export const RedisEnvSchema = z.object({
   REDIS_HOST: z.string().optional().describe('Host of the Redis server'),
   REDIS_USERNAME: z
     .string()
@@ -20,3 +20,5 @@ export const RedisSchema = z.object({
     .describe('Database number to use in Redis')
     .default(0),
 });
+
+export type RedisEnv = z.output<typeof RedisEnvSchema>;

@@ -19,23 +19,26 @@ export class FileModule implements AppModule {
   }
 
   registerJobs(scheduler: JobScheduler): void {
-    scheduler.schedule('tmp-file-cleanup', '0 4 * * *', async () => {
+    scheduler.schedule('tmp-file-cleanup', '0 * * * *', async () => {
       const count = await resolve(FileService).deleteTempFiles();
       logger.info(
         `Deleted ${count.toString()} unused temporary file(s) from disk`,
       );
     });
-    scheduler.schedule('unused-file-cleanup', '15 4 * * *', async () => {
+    // Order matters: `deleteUnassignedFiles` drops the File rows before
+    // removing their blobs, so a failed removal leaves a blob no row points at
+    // any more. `deleteUnreferencedFiles` is the sweeper for exactly that, and
+    // only sees the leftovers once the rows are gone — it has to run second.
+    scheduler.schedule('unassigned-file-cleanup', '15 4 * * *', () =>
+      resolve(FileService).deleteUnassignedFiles(),
+    );
+    scheduler.schedule('unused-file-cleanup', '15 5 * * *', async () => {
       const results = await resolve(FileService).deleteUnreferencedFiles();
       for (const { location, count } of results) {
         logger.info(
           `Deleted ${count.toString()} file(s) from ${location} storage`,
         );
       }
-    });
-    scheduler.schedule('unassigned-file-cleanup', '30 4 * * *', async () => {
-      const count = await resolve(FileService).deleteUnassignedFiles();
-      logger.info(`Deleted ${count.toString()} unreferenced file(s)`);
     });
   }
 

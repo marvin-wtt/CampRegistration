@@ -1,4 +1,5 @@
-import { z } from 'zod';
+import { z, type ZodType } from 'zod';
+import type { ServiceFileUpdateData } from '@camp-registration/common/entities';
 
 const stream = z.object({
   params: z.object({
@@ -44,7 +45,7 @@ const store = z.object({
     field: z.string().optional(),
     locale: z.string().nullable().optional(),
     accessLevel: z.enum(['private', 'public']).optional(),
-  }),
+  }) satisfies ZodType<ServiceFileUpdateData>,
   file: z.custom<Express.Multer.File>((file) => {
     return file !== undefined;
   }),
@@ -59,7 +60,7 @@ const update = z.object({
     field: z.string().optional(),
     locale: z.string().nullable().optional(),
     accessLevel: z.enum(['private', 'public']).optional(),
-  }),
+  }) satisfies ZodType<ServiceFileUpdateData>,
 });
 
 const destroy = z.object({

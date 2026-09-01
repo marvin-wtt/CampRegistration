@@ -1,11 +1,10 @@
 <template>
   <q-select
-    v-bind="props"
     v-model="model"
+    v-bind="selectProps"
     :options
     emit-value
     map-options
-    rounded
   >
     <template #option="scope">
       <q-item v-bind="scope.itemProps">
@@ -22,36 +21,41 @@
 
     <!-- Parent slots -->
     <template
-      v-for="(data, name, index) in slots"
-      :key="index"
+      v-for="(_, name) in slots"
+      :key="name"
       #[name]
     >
-      <!-- TODO This should be a issue with vue tsc -->
-      <!-- @vue-ignore -->
-      <slot
-        :name="name"
-        v-bind="data"
-      />
+      <slot :name />
     </template>
   </q-select>
 </template>
 
 <script lang="ts" setup>
 import { computed } from 'vue';
-import CountryIcon from 'components/common/localization/CountryIcon.vue';
+import CountryIcon from '@/components/common/localization/CountryIcon.vue';
 import { useI18n } from 'vue-i18n';
-import { type QSelectOption, type QSelectSlots } from 'quasar';
+import { type QSelectOption, type QSelectProps } from 'quasar';
+import {
+  type ForwardedFieldSlots,
+  usePassthroughProps,
+} from '@/composables/passthroughProps';
 
 const { t } = useI18n();
 
 type ModelValue = undefined | string | string[];
 
-const model = defineModel<ModelValue>();
-const slots = defineSlots<QSelectSlots>();
-
-const props = defineProps<{
+interface Props extends Omit<
+  QSelectProps,
+  'modelValue' | 'onUpdate:modelValue' | 'options' | 'emitValue' | 'mapOptions'
+> {
   countries: string[];
-}>();
+}
+
+const model = defineModel<ModelValue>();
+const slots = defineSlots<ForwardedFieldSlots>();
+const props = defineProps<Props>();
+
+const selectProps = usePassthroughProps(props, ['countries']);
 
 const options = computed(() => {
   const countries = props.countries;

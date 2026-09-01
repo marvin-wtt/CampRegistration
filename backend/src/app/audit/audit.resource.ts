@@ -16,7 +16,7 @@ export class AuditResource extends JsonResource<
       action: log.action,
       entityType: log.entityType as AuditEntityType,
       entityId: log.entityId,
-      campId: log.campId,
+      eventId: log.eventId,
       actor,
       subject,
       changes: log.changes ?? null,

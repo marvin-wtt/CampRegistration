@@ -4,15 +4,15 @@ export interface TableTemplate extends Identifiable {
   title: string | Record<string, string>;
   columns: TableColumnTemplate[];
   order: number;
-  filter?: string | undefined;
+  filter?: string | null | undefined;
   filterStatus?: ('PENDING' | 'WAITLISTED' | 'ACCEPTED')[];
   filterRoles?: string[] | undefined;
   printOptions?: {
-    orientation?: 'portrait' | 'landscape';
+    orientation?: 'portrait' | 'landscape' | undefined;
   };
   indexed?: boolean | undefined;
   actions?: boolean | undefined;
-  sortBy?: string | undefined;
+  sortBy?: string | null | undefined;
   sortDirection?: 'asc' | 'desc' | undefined;
   generated?: boolean | undefined;
 }
@@ -35,8 +35,8 @@ export interface TableColumnTemplate {
   isArray?: boolean | undefined;
   headerVertical?: boolean | undefined;
   shrink?: boolean | undefined;
-  hideIf?: string | undefined;
-  showIf?: string | undefined;
+  hideIf?: string | null | undefined;
+  showIf?: string | null | undefined;
 
   // Style
   style?: string | undefined;

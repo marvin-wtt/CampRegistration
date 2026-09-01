@@ -25,10 +25,10 @@ export class MessageTemplateController extends BaseController {
 
   async index(req: Request, res: Response) {
     await req.validate(validator.index);
-    const camp = req.modelOrFail('camp');
+    const event = req.modelOrFail('event');
 
     const templates = await this.messageTemplateService.queryMessageTemplates(
-      camp.id,
+      event.id,
     );
 
     res
@@ -38,14 +38,14 @@ export class MessageTemplateController extends BaseController {
 
   async store(req: Request, res: Response) {
     const {
-      body: { country, event, subject, body, priority, attachmentIds },
+      body: { country, trigger, subject, body, priority, attachmentIds },
     } = await req.validate(validator.store);
-    const camp = req.modelOrFail('camp');
+    const event = req.modelOrFail('event');
 
-    // Duplicate events for the same camp are not allowed
+    // Duplicate templates for the same trigger are not allowed
     const existing = await this.messageTemplateService.getMessageTemplateByName(
-      camp.id,
-      event,
+      event.id,
+      trigger,
       country,
     );
 
@@ -57,8 +57,8 @@ export class MessageTemplateController extends BaseController {
     }
 
     const template = await this.messageTemplateService.createTemplate(
-      camp.id,
-      { event, country, subject, body, priority, attachmentIds },
+      event.id,
+      { trigger, country, subject, body, priority, attachmentIds },
       req.sessionId,
     );
 
@@ -75,7 +75,7 @@ export class MessageTemplateController extends BaseController {
 
     const template = await this.messageTemplateService.updateMessageTemplate(
       messageTemplate.id,
-      messageTemplate.campId,
+      messageTemplate.eventId,
       { subject, body, priority, attachmentIds },
       req.sessionId,
     );
@@ -89,7 +89,7 @@ export class MessageTemplateController extends BaseController {
 
     await this.messageTemplateService.deleteMessageTemplateById(
       messageTemplate.id,
-      messageTemplate.campId,
+      messageTemplate.eventId,
     );
 
     res.sendStatus(httpStatus.NO_CONTENT);

@@ -4,11 +4,16 @@ import { RoomResource } from './room.resource.js';
 import validator from './room.validation.js';
 import { type Request, type Response } from 'express';
 import { BaseController } from '#core/base/BaseController';
+import { RealtimeService } from '#core/realtime/RealtimeService';
 import { inject, injectable } from 'inversify';
 
 @injectable()
 export class RoomController extends BaseController {
-  constructor(@inject(RoomService) private readonly roomService: RoomService) {
+  constructor(
+    @inject(RoomService) private readonly roomService: RoomService,
+    @inject(RealtimeService)
+    private readonly realtimeService: RealtimeService,
+  ) {
     super();
   }
 
@@ -19,54 +24,71 @@ export class RoomController extends BaseController {
   }
 
   async index(req: Request, res: Response) {
-    const {
-      params: { campId },
-    } = await req.validate(validator.index);
+    const event = req.modelOrFail('event');
+    await req.validate(validator.index);
 
-    const rooms = await this.roomService.queryRooms(campId);
+    const rooms = await this.roomService.queryRooms(event.id);
 
     res.resource(RoomResource.collection(rooms));
   }
 
   async store(req: Request, res: Response) {
+    const event = req.modelOrFail('event');
     const {
-      params: { campId },
       body: { name, capacity },
     } = await req.validate(validator.store);
 
-    const room = await this.roomService.createRoom(campId, name, capacity);
+    const room = await this.roomService.createRoom(event.id, name, capacity);
+
+    void this.realtimeService.emit(event.id, 'room', room.id, 'created');
 
     res.status(httpStatus.CREATED).resource(new RoomResource(room));
   }
 
   async update(req: Request, res: Response) {
+    const event = req.modelOrFail('event');
+    const room = req.modelOrFail('room');
     const {
-      params: { roomId },
       body: { name, sortOrder },
     } = await req.validate(validator.update);
 
-    const room = await this.roomService.updateRoomById(roomId, name, sortOrder);
+    const updatedRoom = await this.roomService.updateRoomById(
+      room.id,
+      name,
+      sortOrder,
+    );
 
-    res.resource(new RoomResource(room));
+    void this.realtimeService.emit(event.id, 'room', updatedRoom.id, 'updated');
+
+    res.resource(new RoomResource(updatedRoom));
   }
 
   async bulkUpdate(req: Request, res: Response) {
+    const event = req.modelOrFail('event');
     const {
-      params: { campId },
       body: { rooms },
     } = await req.validate(validator.bulkUpdate);
 
-    const updatedRooms = await this.roomService.bulkUpdateRooms(campId, rooms);
+    const updatedRooms = await this.roomService.bulkUpdateRooms(
+      event.id,
+      rooms,
+    );
+
+    // One collection-level event for the whole transaction — per-room events
+    // would make every subscriber refetch each room individually.
+    void this.realtimeService.emitInvalidation(event.id, 'room');
 
     res.resource(RoomResource.collection(updatedRooms));
   }
 
   async destroy(req: Request, res: Response) {
-    const {
-      params: { roomId },
-    } = await req.validate(validator.destroy);
+    const event = req.modelOrFail('event');
+    const room = req.modelOrFail('room');
+    await req.validate(validator.destroy);
 
-    await this.roomService.deleteRoomById(roomId);
+    await this.roomService.deleteRoomById(room.id);
+
+    void this.realtimeService.emit(event.id, 'room', room.id, 'deleted');
 
     res.status(httpStatus.NO_CONTENT).send();
   }

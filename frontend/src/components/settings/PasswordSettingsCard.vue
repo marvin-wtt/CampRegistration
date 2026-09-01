@@ -1,17 +1,7 @@
 <template>
-  <q-card
-    flat
-    bordered
-  >
-    <q-form @submit="onSave">
-      <q-card-section class="text-h6">
-        {{ t('title') }}
-      </q-card-section>
-
-      <q-card-section
-        class="q-gutter-sm"
-        style="max-width: 500px"
-      >
+  <q-form @submit="onSave">
+    <q-card-section>
+      <div class="row q-col-gutter-md">
         <q-input
           v-model="data.currentPassword"
           :label="t('field.currentPassword.label')"
@@ -23,9 +13,10 @@
           hide-bottom-space
           outlined
           rounded
-          class="settings-input"
+          color="primary"
+          class="col-12"
         >
-          <template #before>
+          <template #prepend>
             <q-icon name="password" />
           </template>
         </q-input>
@@ -44,9 +35,10 @@
           hide-bottom-space
           outlined
           rounded
-          class="settings-input"
+          color="primary"
+          class="col-12 col-md-6"
         >
-          <template #before>
+          <template #prepend>
             <q-icon name="password" />
           </template>
         </q-input>
@@ -65,28 +57,29 @@
           hide-bottom-space
           outlined
           rounded
-          class="settings-input"
+          color="primary"
+          class="col-12 col-md-6"
         >
-          <template #before>
+          <template #prepend>
             <q-icon name="password" />
           </template>
         </q-input>
-      </q-card-section>
+      </div>
+    </q-card-section>
 
-      <q-card-actions>
-        <q-btn
-          :label="t('action.save')"
-          type="submit"
-          color="primary"
-          rounded
-        />
-      </q-card-actions>
-    </q-form>
-  </q-card>
+    <q-card-actions>
+      <m-btn
+        :label="t('action.save')"
+        type="submit"
+        color="primary"
+      />
+    </q-card-actions>
+  </q-form>
 </template>
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
+import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import type { ProfileUpdateData } from '@camp-registration/common/entities';
 import { ref } from 'vue';
 
@@ -111,8 +104,6 @@ function onSave() {
 <style scoped></style>
 
 <i18n lang="yaml" locale="en">
-title: 'Password'
-
 field:
   currentPassword:
     label: 'Old Password'
@@ -134,8 +125,6 @@ action:
 </i18n>
 
 <i18n lang="yaml" locale="de">
-title: 'Passwort'
-
 field:
   currentPassword:
     label: 'Altes Passwort'
@@ -157,8 +146,6 @@ action:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-title: 'Mot de passe'
-
 field:
   currentPassword:
     label: 'Ancien mot de passe'
@@ -180,8 +167,6 @@ action:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-title: 'Hasło'
-
 field:
   currentPassword:
     label: 'Stare hasło'
@@ -203,8 +188,6 @@ action:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-title: 'Heslo'
-
 field:
   currentPassword:
     label: 'Staré heslo'

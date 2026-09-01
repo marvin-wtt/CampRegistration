@@ -3,8 +3,10 @@ import type {
   TotpSetupData,
   TotpDisableData,
   TotpEnableData,
+  TotpRecoveryCodesData,
+  TotpRecoveryCodesGenerateData,
 } from '@camp-registration/common/entities';
-import { api } from 'src/services/api';
+import { api } from '@/services/api';
 
 export function useTotpService() {
   async function setupTotp(data: TotpSetupData): Promise<TotpData> {
@@ -25,9 +27,18 @@ export function useTotpService() {
     return response.data?.data;
   }
 
+  async function generateTotpRecoveryCodes(
+    data: TotpRecoveryCodesGenerateData,
+  ): Promise<TotpRecoveryCodesData> {
+    const response = await api.post('totp/recovery-codes', data);
+
+    return response?.data?.data;
+  }
+
   return {
     setupTotp,
     enableTotp,
     disableTotp,
+    generateTotpRecoveryCodes,
   };
 }

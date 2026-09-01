@@ -2,13 +2,14 @@
 // so you can safely delete all default props below
 import stores from './stores';
 import audit from './audit';
+import privacy from './privacy';
 
 export default {
   app_name: 'Inscriva',
 
   stores,
   audit,
-
+  privacy,
   service: {
     internal: 'Internal error',
     invalidParams: 'Invalid parameter(s).',

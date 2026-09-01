@@ -4,12 +4,38 @@ import ApiError from '#utils/ApiError';
 import { encryptPassword } from '#core/encryption';
 import type { UserUpdateData } from '@camp-registration/common/entities';
 import { BaseService } from '#core/base/BaseService';
-import { CampService } from '#app/camp/camp.service';
+import { EventService } from '#app/event/event.service';
 import { inject, injectable } from 'inversify';
+import type { ProfileUser } from '#app/profile/profile.types';
+
+const profileAccessInclude = {
+  eventRoles: true,
+  newsletterManagers: true,
+  twoFactor: { select: { confirmedAt: true } },
+  organizationMembers: {
+    include: {
+      organization: {
+        select: {
+          id: true,
+          verificationStatus: true,
+          // Needed to project organization-derived event and newsletter access
+          // into `eventAccess`/`newsletterAccess`, so the client gates UI
+          // exactly as the server gates requests.
+          events: { select: { id: true } },
+          newsletters: { select: { id: true } },
+        },
+      },
+    },
+  },
+} satisfies Prisma.UserInclude;
+
+const profileAccessOmit = { password: true } satisfies Prisma.UserOmit;
 
 @injectable()
 export class UserService extends BaseService {
-  constructor(@inject(CampService) private readonly campService: CampService) {
+  constructor(
+    @inject(EventService) private readonly eventService: EventService,
+  ) {
     super();
   }
 
@@ -31,35 +57,124 @@ export class UserService extends BaseService {
         role: data.role,
         locale: data.locale,
       },
+      include: { twoFactor: { select: { confirmedAt: true } } },
     });
   }
 
-  async queryUsers() {
-    return this.prisma.user.findMany({
+  private userWhere(
+    filter: {
+      search?: string;
+      name?: string;
+      email?: string;
+      role?: Prisma.UserWhereInput['role'];
+      status?: 'active' | 'locked' | 'unverified';
+    } = {},
+  ): Prisma.UserWhereInput {
+    const status: Prisma.UserWhereInput =
+      filter.status === 'locked'
+        ? { locked: true }
+        : filter.status === 'unverified'
+          ? { emailVerified: false }
+          : filter.status === 'active'
+            ? { locked: false, emailVerified: true }
+            : {};
+
+    return {
+      ...(filter.search
+        ? {
+            OR: [
+              { name: { contains: filter.search } },
+              { email: { contains: filter.search } },
+            ],
+          }
+        : {}),
+      name: filter.name ? { contains: filter.name } : undefined,
+      email: filter.email ? { contains: filter.email } : undefined,
+      role: filter.role,
+      ...status,
+    };
+  }
+
+  async queryUsers(
+    filter: {
+      search?: string;
+      name?: string;
+      email?: string;
+      role?: Prisma.UserWhereInput['role'];
+      status?: 'active' | 'locked' | 'unverified';
+    } = {},
+    options: {
+      limit?: number;
+      cursor?: string;
+      sortBy?: string;
+      sortType?: 'asc' | 'desc';
+    } = {},
+  ) {
+    const limit = options.limit ?? 25;
+    const sortBy = options.sortBy ?? 'lastSeen';
+    const sortType = options.sortType ?? 'desc';
+
+    const where = this.userWhere(filter);
+
+    const items = await this.prisma.user.findMany({
+      where,
+      take: limit + 1,
+      ...(options.cursor ? { cursor: { id: options.cursor }, skip: 1 } : {}),
+      orderBy: [{ [sortBy]: sortType }, { id: sortType }],
       select: {
         id: true,
         name: true,
         email: true,
         locale: true,
         emailVerified: true,
+        twoFactor: { select: { confirmedAt: true } },
         role: true,
         locked: true,
         lastSeen: true,
         createdAt: true,
       },
     });
+
+    const hasMore = items.length > limit;
+    const users = hasMore ? items.slice(0, limit) : items;
+    const nextCursor = hasMore ? (users[users.length - 1]?.id ?? null) : null;
+    const total = options.cursor
+      ? undefined
+      : await this.prisma.user.count({ where });
+
+    return { users, nextCursor, limit, total };
   }
 
-  async getUserByIdWithCampRoles(id: string) {
+  async getOverviewCounts() {
+    const [total, unverified, locked] = await this.prisma.$transaction([
+      this.prisma.user.count(),
+      this.prisma.user.count({ where: { emailVerified: false } }),
+      this.prisma.user.count({ where: { locked: true } }),
+    ]);
+
+    return { total, unverified, locked };
+  }
+
+  async getProfileUserById(id: string): Promise<ProfileUser> {
     return this.prisma.user.findUniqueOrThrow({
       where: { id },
-      include: { campRoles: true },
+      omit: profileAccessOmit,
+      include: profileAccessInclude,
     });
   }
 
-  async getUserById(id: string): Promise<User | null> {
+  /** System administrators, for notifications that need a human moderator. */
+  async getAdministrators() {
+    return this.prisma.user.findMany({
+      where: { role: 'ADMIN', locked: false },
+      select: { name: true, email: true, locale: true },
+    });
+  }
+
+  async getUserById(id: string) {
     return this.prisma.user.findUnique({
       where: { id },
+      include: { twoFactor: { select: { confirmedAt: true } } },
     });
   }
 
@@ -78,20 +193,21 @@ export class UserService extends BaseService {
     });
   }
 
-  async updateUserLastSeenByIdWithCamps(userId: string) {
+  async updateUserLastSeenByIdWithEvents(userId: string) {
     const user = await this.prisma.user.update({
       where: { id: userId },
       data: {
         lastSeen: new Date(),
       },
-      include: { campRoles: true },
+      omit: profileAccessOmit,
+      include: profileAccessInclude,
     });
 
-    const camps = await this.campService.getCampsByUserId(userId);
+    const events = await this.eventService.getEventsByUserId(userId);
 
     return {
       ...user,
-      camps,
+      events,
     };
   }
 
@@ -124,11 +240,21 @@ export class UserService extends BaseService {
         locale: data.locale,
         locked: data.locked,
       },
-      include: { campRoles: true },
+      include: profileAccessInclude,
     });
   }
 
   async deleteUserById(userId: string) {
     await this.prisma.user.delete({ where: { id: userId } });
+  }
+
+  async resetTwoFactorById(userId: string) {
+    // Recovery codes are removed by the cascade
+    await this.prisma.userTwoFactor.deleteMany({ where: { userId } });
+
+    return this.prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+      include: { twoFactor: { select: { confirmedAt: true } } },
+    });
   }
 }

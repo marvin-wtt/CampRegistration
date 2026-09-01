@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { request } from '../utils/request.js';
 import {
-  CampFactory,
-  CampManagerFactory,
+  EventFactory,
+  EventManagerFactory,
   TokenFactory,
   UserFactory,
 } from '../../../prisma/factories/index.js';
 import { generateAccessToken } from './utils/token.js';
 import prisma from '../utils/prisma.js';
 import { TokenType } from '#generated/prisma/client.js';
-import bcrypt from 'bcryptjs';
+import argon2 from 'argon2';
 import { profileUpdateBody } from './fixtures/profile.fixtures.js';
 
 describe('/api/v1/profile', () => {
@@ -30,7 +30,9 @@ describe('/api/v1/profile', () => {
         locale: user.locale,
         role: 'USER',
         twoFactorEnabled: false,
-        campAccess: [],
+        eventAccess: [],
+        newsletterAccess: [],
+        organizationAccess: [],
       });
     });
 
@@ -38,75 +40,82 @@ describe('/api/v1/profile', () => {
       {
         role: 'DIRECTOR',
         expectedPermissions: [
-          'camp.view',
-          'camp.edit',
-          'camp.delete',
-          'camp.registrations.view',
-          'camp.registrations.edit',
-          'camp.registrations.delete',
-          'camp.managers.view',
-          'camp.managers.create',
-          'camp.managers.edit',
-          'camp.managers.delete',
+          'event.view',
+          'event.edit',
+          'event.delete',
+          'event.registrations.view',
+          'event.registrations.create',
+          'event.registrations.edit',
+          'event.registrations.delete',
+          'event.managers.view',
+          'event.managers.create',
+          'event.managers.edit',
+          'event.managers.delete',
         ],
         unexpectedPermissions: [],
       },
       {
         role: 'COORDINATOR',
         expectedPermissions: [
-          'camp.view',
-          'camp.edit',
-          'camp.registrations.view',
-          'camp.registrations.edit',
-          'camp.registrations.delete',
-          'camp.managers.view',
+          'event.view',
+          'event.edit',
+          'event.registrations.view',
+          'event.registrations.create',
+          'event.registrations.edit',
+          'event.registrations.delete',
+          'event.managers.view',
         ],
         unexpectedPermissions: [
-          'camp.managers.create',
-          'camp.managers.edit',
-          'camp.managers.delete',
+          'event.managers.create',
+          'event.managers.edit',
+          'event.managers.delete',
         ],
       },
       {
         role: 'COUNSELOR',
         expectedPermissions: [
-          'camp.view',
-          'camp.registrations.view',
-          'camp.managers.view',
+          'event.view',
+          'event.registrations.view',
+          'event.registrations.create',
+          'event.managers.view',
         ],
         unexpectedPermissions: [
-          'camp.edit',
-          'camp.delete',
-          'camp.registrations.edit',
-          'camp.registrations.delete',
-          'camp.managers.create',
-          'camp.managers.edit',
-          'camp.managers.delete',
+          'event.edit',
+          'event.delete',
+          'event.registrations.edit',
+          'event.registrations.delete',
+          'event.managers.create',
+          'event.managers.edit',
+          'event.managers.delete',
         ],
       },
       {
         role: 'VIEWER',
-        expectedPermissions: ['camp.view', 'camp.registrations.view'],
+        expectedPermissions: [
+          'event.view',
+          'event.registrations.view',
+          'event.managers.view',
+        ],
         unexpectedPermissions: [
-          'camp.edit',
-          'camp.delete',
-          'camp.registrations.edit',
-          'camp.registrations.delete',
-          'camp.managers.view',
-          'camp.managers.create',
-          'camp.managers.edit',
-          'camp.managers.delete',
+          'event.edit',
+          'event.delete',
+          'event.registrations.create',
+          'event.registrations.edit',
+          'event.registrations.delete',
+          'event.managers.create',
+          'event.managers.edit',
+          'event.managers.delete',
         ],
       },
     ])(
-      'should respond with camp access and permissions for $role role',
+      'should respond with event access and permissions for $role role',
       async ({ role, expectedPermissions, unexpectedPermissions }) => {
         const user = await UserFactory.create();
         const accessToken = generateAccessToken(user);
 
-        const camp = await CampFactory.create();
-        await CampManagerFactory.create({
-          camp: { connect: { id: camp.id } },
+        const event = await EventFactory.create();
+        const manager = await EventManagerFactory.create({
+          event: { connect: { id: event.id } },
           user: { connect: { id: user.id } },
           role,
         });
@@ -117,14 +126,18 @@ describe('/api/v1/profile', () => {
           .send()
           .expect(200);
 
-        expect(body.data).toHaveProperty('campAccess');
-        expect(body.data.campAccess).toHaveLength(1);
-        expect(body.data.campAccess[0]).toHaveProperty('campId', camp.id);
-        expect(body.data.campAccess[0]).toHaveProperty('role', role);
-        expect(body.data.campAccess[0]).toHaveProperty('permissions');
+        expect(body.data).toHaveProperty('eventAccess');
+        expect(body.data.eventAccess).toHaveLength(1);
+        expect(body.data.eventAccess[0]).toHaveProperty('eventId', event.id);
+        expect(body.data.eventAccess[0]).toHaveProperty('role', role);
+        expect(body.data.eventAccess[0]).toHaveProperty('permissions');
+        expect(body.data.eventAccess[0]).toHaveProperty(
+          'managerId',
+          manager.id,
+        );
 
         // Verify expected permissions
-        const permissions = body.data.campAccess[0].permissions;
+        const permissions = body.data.eventAccess[0].permissions;
         for (const permission of expectedPermissions) {
           expect(permissions).toContain(permission);
         }
@@ -163,7 +176,9 @@ describe('/api/v1/profile', () => {
         locale: data.locale,
         role: 'USER',
         twoFactorEnabled: false,
-        campAccess: [],
+        eventAccess: [],
+        newsletterAccess: [],
+        organizationAccess: [],
       });
     });
 
@@ -310,7 +325,7 @@ describe('/api/v1/profile', () => {
 
       expect(updatedUser).toBeDefined();
       expect(
-        bcrypt.compareSync(data.password, updatedUser.password),
+        await argon2.verify(updatedUser.password, data.password),
       ).toBeTruthy();
     });
 

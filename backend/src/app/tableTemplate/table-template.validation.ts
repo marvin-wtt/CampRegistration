@@ -1,5 +1,6 @@
-import { z } from 'zod';
+import { z, type ZodType } from 'zod';
 import { translatedValue } from '#core/validation/helper';
+import type { TableTemplateCreateData } from '@camp-registration/common/entities';
 
 const TableTemplateBodySchema = z.object({
   title: translatedValue(z.string()),
@@ -18,7 +19,7 @@ const TableTemplateBodySchema = z.object({
       headerStyle: z.string().optional(),
       headerClasses: z.string().optional(),
       renderAs: z.string().optional(),
-      renderOptions: z.unknown().nullable().optional(),
+      renderOptions: z.record(z.string(), z.unknown()).optional(),
       isArray: z.boolean().optional(),
       headerVertical: z.boolean().optional(),
       shrink: z.boolean().optional(),
@@ -42,31 +43,31 @@ const TableTemplateBodySchema = z.object({
   sortBy: z.string().nullable().optional(),
   sortDirection: z.enum(['asc', 'desc']).optional(),
   generated: z.boolean().optional(),
-});
+}) satisfies ZodType<TableTemplateCreateData>;
 
 const show = z.object({
   params: z.object({
-    campId: z.ulid(),
+    eventId: z.ulid(),
     tableTemplateId: z.ulid(),
   }),
 });
 
 const index = z.object({
   params: z.object({
-    campId: z.ulid(),
+    eventId: z.ulid(),
   }),
 });
 
 const store = z.object({
   params: z.object({
-    campId: z.ulid(),
+    eventId: z.ulid(),
   }),
   body: TableTemplateBodySchema,
 });
 
 const update = z.object({
   params: z.object({
-    campId: z.ulid(),
+    eventId: z.ulid(),
     tableTemplateId: z.ulid(),
   }),
   body: TableTemplateBodySchema,
@@ -74,7 +75,7 @@ const update = z.object({
 
 const destroy = z.object({
   params: z.object({
-    campId: z.ulid(),
+    eventId: z.ulid(),
     tableTemplateId: z.ulid(),
   }),
 });

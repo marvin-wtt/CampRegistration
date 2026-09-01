@@ -29,3 +29,5 @@ export const EmailEnvSchema = z.object({
   SMTP_USERNAME: z.string().optional().describe('Username for email server'),
   SMTP_PASSWORD: z.string().optional().describe('Password for email server'),
 });
+
+export type EmailEnv = z.output<typeof EmailEnvSchema>;

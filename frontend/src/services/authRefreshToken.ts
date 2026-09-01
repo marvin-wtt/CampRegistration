@@ -3,7 +3,7 @@ import {
   type AxiosInstance,
   type InternalAxiosRequestConfig,
 } from 'axios';
-import refreshRequestRetry from 'src/services/refreshRequestRetry';
+import refreshRequestRetry from '@/services/refreshRequestRetry';
 
 type CustomAxiosError = AxiosError & {
   config: InternalAxiosRequestConfig & {
