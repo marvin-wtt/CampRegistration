@@ -32,11 +32,11 @@
             <q-tooltip>{{ t('action.history') }}</q-tooltip>
           </m-btn>
           <m-btn
-            v-if="can('event.duties.create')"
+            v-if="duties.length > 0 || can('event.duties.create')"
             :label="t('action.addDutyType')"
             icon="tune"
             outline
-            @click="addDutyType"
+            @click="openDutyTypeManager"
           />
           <m-btn
             v-if="can('event.duty_assignments.create')"
@@ -52,74 +52,6 @@
           </m-btn>
         </div>
       </div>
-
-      <!-- Duty types -->
-      <q-card
-        v-if="duties.length > 0"
-        flat
-        bordered
-        class="section-card"
-      >
-        <q-list separator>
-          <q-item
-            v-for="duty in duties"
-            :key="duty.id"
-          >
-            <q-item-section avatar>
-              <q-icon
-                name="checklist"
-                color="primary"
-              />
-            </q-item-section>
-            <q-item-section>
-              <q-item-label>{{ to(duty.name) }}</q-item-label>
-              <q-item-label
-                v-if="
-                  duty.defaultCount ||
-                  duty.excludeStaff ||
-                  duty.balanceCountries
-                "
-                caption
-              >
-                <span v-if="duty.defaultCount">
-                  {{ t('dutyType.defaultCount', { count: duty.defaultCount }) }}
-                </span>
-                <span v-if="duty.excludeStaff">
-                  · {{ t('dutyType.excludeStaff') }}
-                </span>
-                <span v-if="duty.balanceCountries">
-                  · {{ t('dutyType.balanceCountries') }}
-                </span>
-              </q-item-label>
-            </q-item-section>
-            <q-item-section
-              v-if="canManageDutyTypes"
-              side
-            >
-              <div class="row q-gutter-x-xs">
-                <q-btn
-                  v-if="can('event.duties.edit')"
-                  icon="edit"
-                  flat
-                  round
-                  dense
-                  :aria-label="t('action.edit')"
-                  @click="editDutyType(duty)"
-                />
-                <q-btn
-                  v-if="can('event.duties.delete')"
-                  icon="delete"
-                  flat
-                  round
-                  dense
-                  :aria-label="t('action.delete')"
-                  @click="deleteDutyType(duty)"
-                />
-              </div>
-            </q-item-section>
-          </q-item>
-        </q-list>
-      </q-card>
 
       <!-- Empty state -->
       <div
@@ -143,7 +75,7 @@
           :label="t('action.addDutyType')"
           color="primary"
           icon="add"
-          @click="addDutyType"
+          @click="openDutyTypeManager"
         />
       </div>
 
@@ -423,14 +355,14 @@ import { formatPersonName } from '@/utils/formatters';
 import { formatLocalDate, parseLocalDate } from '@/utils/date';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import ConfirmDialog from '@/components/common/dialogs/ConfirmDialog.vue';
-import DutyTypeDialog from '@/components/event/dutyPlanner/dialogs/DutyTypeDialog.vue';
 import DutyAssignmentDialog from '@/components/event/dutyPlanner/dialogs/DutyAssignmentDialog.vue';
 import DutyHistoryDialog from '@/components/event/dutyPlanner/dialogs/DutyHistoryDialog.vue';
+import DutyTypeManagerDialog from '@/components/event/dutyPlanner/dialogs/DutyTypeManagerDialog.vue';
+import DutyTypeDialog from '@/components/event/dutyPlanner/dialogs/DutyTypeDialog.vue';
 import type {
   Duty,
   DutyAssignment,
   DutyCreateData,
-  DutyUpdateData,
   Registration,
   Room,
 } from '@camp-registration/common/entities';
@@ -515,10 +447,6 @@ const canManageAssignments = computed<boolean>(() => {
   return (
     can('event.duty_assignments.edit') || can('event.duty_assignments.delete')
   );
-});
-
-const canManageDutyTypes = computed<boolean>(() => {
-  return can('event.duties.edit') || can('event.duties.delete');
 });
 
 const filteredAssignments = computed<DutyAssignment[]>(() => {
@@ -631,6 +559,19 @@ function assignmentLabel(assignment: DutyAssignment): string {
     : `${dutyName} (${datePart})`;
 }
 
+function openDutyTypeManager() {
+  // Nothing to manage yet — skip straight to creating the first duty type
+  // instead of opening a manager dialog that's just going to be empty.
+  if (duties.value.length === 0) {
+    addDutyType();
+    return;
+  }
+  quasar.dialog({
+    component: DutyTypeManagerDialog,
+    componentProps: { locales: locales.value },
+  });
+}
+
 function addDutyType() {
   quasar
     .dialog({
@@ -639,41 +580,6 @@ function addDutyType() {
     })
     .onOk((payload: DutyCreateData) => {
       void dutyStore.createData(payload);
-    });
-}
-
-function editDutyType(duty: Duty) {
-  quasar
-    .dialog({
-      component: DutyTypeDialog,
-      componentProps: { duty, locales: locales.value },
-    })
-    .onOk((payload: DutyUpdateData) => {
-      void dutyStore.updateData(duty.id, payload);
-    });
-}
-
-async function performDutyTypeDelete(duty: Duty) {
-  await dutyStore.deleteData(duty.id);
-  // Deleting a duty type cascades its assignments server-side; no
-  // per-assignment realtime event fires for that, so refetch explicitly.
-  dutyAssignmentStore.reset();
-  await dutyAssignmentStore.fetchData();
-}
-
-function deleteDutyType(duty: Duty) {
-  quasar
-    .dialog({
-      component: ConfirmDialog,
-      componentProps: {
-        title: t('dialog.deleteDuty.title'),
-        message: t('dialog.deleteDuty.message', { name: to(duty.name) }),
-        okLabel: t('action.delete'),
-        color: 'negative',
-      },
-    })
-    .onOk(() => {
-      void performDutyTypeDelete(duty);
     });
 }
 
@@ -814,15 +720,7 @@ filter:
 past:
   toggle: 'Past duties ({count})'
 
-dutyType:
-  defaultCount: 'Usually {count} people'
-  excludeStaff: 'Staff excluded'
-  balanceCountries: 'Country-balanced'
-
 dialog:
-  deleteDuty:
-    title: 'Delete duty type'
-    message: 'Do you really want to delete "{name}"? All of its assignments will be deleted too.'
   deleteAssignment:
     title: 'Delete duty assignment'
     message: 'Do you really want to delete "{name}"?'
@@ -860,15 +758,7 @@ filter:
 past:
   toggle: 'Vergangene Dienste ({count})'
 
-dutyType:
-  defaultCount: 'Normalerweise {count} Personen'
-  excludeStaff: 'Betreuende ausgeschlossen'
-  balanceCountries: 'Länderausgleich'
-
 dialog:
-  deleteDuty:
-    title: 'Diensttyp löschen'
-    message: 'Möchtest du „{name}" wirklich löschen? Alle zugehörigen Einsätze werden ebenfalls gelöscht.'
   deleteAssignment:
     title: 'Diensteinsatz löschen'
     message: 'Möchtest du „{name}" wirklich löschen?'
@@ -906,15 +796,7 @@ filter:
 past:
   toggle: 'Corvées passées ({count})'
 
-dutyType:
-  defaultCount: 'Généralement {count} personnes'
-  excludeStaff: 'Encadrement exclu'
-  balanceCountries: 'Équilibre des pays'
-
 dialog:
-  deleteDuty:
-    title: 'Supprimer le type de corvée'
-    message: 'Veux-tu vraiment supprimer « {name} » ? Toutes ses affectations seront également supprimées.'
   deleteAssignment:
     title: "Supprimer l'affectation de corvée"
     message: 'Veux-tu vraiment supprimer « {name} » ?'
@@ -952,15 +834,7 @@ filter:
 past:
   toggle: 'Minione dyżury ({count})'
 
-dutyType:
-  defaultCount: 'Zwykle {count} osób'
-  excludeStaff: 'Kadra wykluczona'
-  balanceCountries: 'Równoważenie krajów'
-
 dialog:
-  deleteDuty:
-    title: 'Usuń rodzaj dyżuru'
-    message: 'Czy na pewno chcesz usunąć „{name}"? Wszystkie jego przypisania również zostaną usunięte.'
   deleteAssignment:
     title: 'Usuń przypisanie dyżuru'
     message: 'Czy na pewno chcesz usunąć „{name}"?'
@@ -998,15 +872,7 @@ filter:
 past:
   toggle: 'Minulé služby ({count})'
 
-dutyType:
-  defaultCount: 'Obvykle {count} lidí'
-  excludeStaff: 'Vedoucí vyloučeni'
-  balanceCountries: 'Vyvážení zemí'
-
 dialog:
-  deleteDuty:
-    title: 'Smazat typ služby'
-    message: 'Opravdu chceš smazat „{name}"? Všechna jeho přiřazení budou také smazána.'
   deleteAssignment:
     title: 'Smazat přiřazení služby'
     message: 'Opravdu chceš smazat „{name}"?'

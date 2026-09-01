@@ -107,7 +107,7 @@
             </template>
           </q-select>
 
-          <div>
+          <div v-if="roomOptions.length > 0 || rotationUnit == 'ROOM'">
             <div class="text-caption text-grey-7 q-mb-xs">
               {{ t('field.rotationUnit.label') }}
             </div>
@@ -306,8 +306,16 @@ const dutyOptions = computed<QSelectOption[]>(() => {
   return props.duties.map((duty) => ({ label: to(duty.name), value: duty.id }));
 });
 
-function defaultRotationUnit() {
-  return props.rooms.length > 0 ? 'ROOM' : 'PARTICIPANT';
+function defaultRotationUnit(): DutyRotationUnit {
+  // Mirrors roomOptions' filtering (occupied, not staff-only per the selected
+  // duty) rather than reading that computed directly — it isn't declared yet
+  // at this point in setup, since its value seeds this ref's initializer.
+  const duty = props.duties.find((d) => d.id === dutyId.value);
+  const excludeStaff = duty?.excludeStaff ?? false;
+  const hasAssignableRoom = props.rooms
+    .filter(hasOccupants)
+    .some((room) => !excludeStaff || !isStaffOnlyRoom(room));
+  return hasAssignableRoom ? 'ROOM' : 'PARTICIPANT';
 }
 
 function participantStat(
