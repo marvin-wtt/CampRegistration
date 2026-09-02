@@ -47,6 +47,8 @@
                 :key="index"
                 v-model.number="translations[locale]"
                 v-bind="inputProps"
+                :lang="locale"
+                :aria-label="fieldAriaLabel(locale)"
                 clearable
                 @clear="clearTranslation(locale)"
               >
@@ -60,6 +62,10 @@
                       {{ localeName(locale) }}
                     </q-tooltip>
                   </div>
+                  <slot
+                    v-if="slots.prepend"
+                    name="prepend"
+                  />
                 </template>
 
                 <!-- Parent slots (locale flag replaces the field icon here) -->
@@ -79,6 +85,8 @@
                 :key="index"
                 v-model="translations[locale]"
                 v-bind="inputProps"
+                :lang="locale"
+                :aria-label="fieldAriaLabel(locale)"
                 clearable
                 @clear="clearTranslation(locale)"
               >
@@ -88,6 +96,10 @@
                     <span class="locale-code">{{ locale.toUpperCase() }}</span>
                     <q-tooltip>{{ localeName(locale) }}</q-tooltip>
                   </div>
+                  <slot
+                    v-if="slots.prepend"
+                    name="prepend"
+                  />
                 </template>
 
                 <!-- Parent slots (locale flag replaces the field icon here) -->
@@ -167,9 +179,12 @@ const enabled = computed<boolean>(() => {
 
 // In translated mode the per-locale flag stands in for the field icon, so the
 // parent's `before` slot is dropped to avoid doubling up glyphs on every row.
+// `prepend` is dropped too — it's composed alongside the locale marker in the
+// template instead of being forwarded verbatim, so it can't clobber the marker.
 const translatedSlots = computed<Partial<ForwardedFieldSlots>>(() => {
   const rest: Partial<ForwardedFieldSlots> = { ...slots };
   delete rest.before;
+  delete rest.prepend;
   return rest;
 });
 
@@ -178,6 +193,14 @@ const translatedSlots = computed<Partial<ForwardedFieldSlots>>(() => {
 function localeName(value: string): string {
   const key = `country.${value.toLowerCase()}`;
   return te(key) ? t(key) : value.toUpperCase();
+}
+
+// The flag + code prepend is visual only, so screen readers can't tell one
+// locale's field from another via the visible `label` alone — override the
+// accessible name per input instead of cluttering the visible label.
+function fieldAriaLabel(locale: string): string {
+  const name = localeName(locale);
+  return props.label ? `${props.label} (${name})` : name;
 }
 
 function defaultUseTranslations(): boolean {
@@ -236,17 +259,48 @@ function clearTranslation(locale: string) {
   }
 }
 
-watch(useTranslations, (enabled, wasEnabled) => {
-  if (!enabled || wasEnabled || value.value === '' || value.value === 0) {
-    return;
-  }
+// Runs synchronously (rather than on Vue's default deferred flush) so the
+// seeded/preserved value below lands before the emit watcher above reads
+// `value`/`translations` for this same tick — otherwise it emits the
+// pre-switch (stale, often empty) data first, and the `model.value` mirror
+// watch further down then re-derives internal state from that stale emit,
+// clobbering what this watcher just set.
+watch(
+  useTranslations,
+  (isEnabled, wasEnabled) => {
+    if (isEnabled === wasEnabled) {
+      return;
+    }
 
-  const userLocale = locale.value.split('-')[0]!;
-  const matchedLocale = props.locales.find((l) => l === userLocale);
-  if (matchedLocale && !(matchedLocale in translations.value)) {
-    translations.value[matchedLocale] = value.value;
-  }
-});
+    const userLocale = locale.value.split('-')[0]!;
+    const matchedLocale = props.locales.find((l) => l === userLocale);
+
+    if (isEnabled) {
+      // Turning translations on: seed the user's own locale from the single value.
+      if (value.value === '' || value.value === 0) {
+        return;
+      }
+
+      if (matchedLocale && !(matchedLocale in translations.value)) {
+        translations.value[matchedLocale] = value.value;
+      }
+
+      return;
+    }
+
+    // Turning translations off: without this, the group's data would be
+    // silently discarded in favor of the (likely still empty) single value.
+    const sourceLocale =
+      matchedLocale && matchedLocale in translations.value
+        ? matchedLocale
+        : props.locales.find((l) => l in translations.value);
+
+    if (sourceLocale) {
+      value.value = translations.value[sourceLocale]!;
+    }
+  },
+  { flush: 'sync' },
+);
 
 watch(
   () => model.value,
