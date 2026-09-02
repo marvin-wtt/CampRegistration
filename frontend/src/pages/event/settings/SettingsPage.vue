@@ -151,6 +151,15 @@ const items = computed<SettingsItem[]>(() => [
     to: { name: 'management.event.settings.audit' },
     permission: 'event.audit.view',
   },
+  {
+    name: 'navigation',
+    label: t('navigation.label'),
+    description: t('navigation.description'),
+    icon: 'visibility',
+    color: 'secondary',
+    to: { name: 'management.event.settings.navigation' },
+    permission: 'event.edit',
+  },
 ]);
 
 const filteredItems = computed<SettingsItem[]>(() => {
@@ -179,6 +188,9 @@ edit:
 form:
   label: 'Registration Form'
   description: 'Design and customize the registration form and theme.'
+navigation:
+  label: 'Navigation'
+  description: "Choose which features appear in this event's navigation."
 emails:
   label: 'Email templates'
   description: 'Manage the email templates sent to participants.'
@@ -205,6 +217,9 @@ edit:
 form:
   label: 'Anmeldeformular'
   description: 'Gestalte und passe das Anmeldeformular und das Design an.'
+navigation:
+  label: 'Navigation'
+  description: 'Wähle aus, welche Funktionen in der Navigation dieser Veranstaltung angezeigt werden.'
 emails:
   label: 'E-Mail-Vorlagen'
   description: 'Verwalte die an Teilnehmende versendeten E-Mail-Vorlagen.'
@@ -231,6 +246,9 @@ edit:
 form:
   label: "Formulaire d'inscription"
   description: "Concevez et personnalisez le formulaire d'inscription et le thème."
+navigation:
+  label: 'Navigation'
+  description: 'Choisissez les fonctionnalités affichées dans la navigation de cet événement.'
 emails:
   label: "Modèles d'e-mails"
   description: "Gérez les modèles d'e-mails envoyés aux participants."
@@ -257,6 +275,9 @@ edit:
 form:
   label: 'Formularz rejestracyjny'
   description: 'Zaprojektuj i dostosuj formularz rejestracyjny i motyw.'
+navigation:
+  label: 'Nawigacja'
+  description: 'Wybierz funkcje widoczne w nawigacji tego wydarzenia.'
 emails:
   label: 'Szablony e-maili'
   description: 'Zarządzaj szablonami e-maili wysyłanymi do uczestników.'
@@ -283,6 +304,9 @@ edit:
 form:
   label: 'Registrační formulář'
   description: 'Navrhněte a přizpůsobte registrační formulář a vzhled.'
+navigation:
+  label: 'Navigace'
+  description: 'Vyberte, které funkce se zobrazí v navigaci této akce.'
 emails:
   label: 'E-mailové šablony'
   description: 'Spravujte e-mailové šablony zasílané účastníkům.'
