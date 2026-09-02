@@ -143,4 +143,10 @@ describe('composeChangeSet / isEmptyChangeSet', () => {
       false,
     );
   });
+
+  it('attaches subjectId when given, and omits it when null/undefined', () => {
+    expect(composeChangeSet([], {}, 'u1')).toEqual({ subjectId: 'u1' });
+    expect(composeChangeSet([], {}, null)).toEqual({});
+    expect(composeChangeSet([], {})).toEqual({});
+  });
 });

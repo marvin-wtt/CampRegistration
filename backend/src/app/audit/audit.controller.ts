@@ -52,12 +52,12 @@ export class AuditController extends BaseController {
     );
   }
 
-  // `changedValues.userId` is the eventManager policy's way of naming the
-  // manager an entry is about (see `managerIdentity`) — resolved into a
-  // `subject` here, the same way `actorId` is resolved into `actor`.
+  // `changes.subjectId` is a policy's way of naming the user an entry is
+  // about, when that differs from the actor (see `managerIdentity`) —
+  // resolved into a `subject` here, the same way `actorId` is resolved into
+  // `actor`.
   private subjectUserId(log: AuditLog): string | null {
-    const userId = log.changes?.changedValues?.userId;
-    return typeof userId === 'string' ? userId : null;
+    return log.changes?.subjectId ?? null;
   }
 
   private async withActors(logs: AuditLog[]): Promise<AuditLogWithActor[]> {

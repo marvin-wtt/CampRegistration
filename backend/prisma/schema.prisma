@@ -689,7 +689,7 @@ model AuditLog {
   eventId    String?  @map("event_id") @db.Char(26)
   actorId    String?  @map("actor_id") @db.Char(26)
   actorIp    String?  @map("actor_ip") @db.VarChar(45)
-  /// ![{ changedFields?: Array<string>; changedValues?: Record<string, string | number | boolean | null> }]
+  /// ![{ changedFields?: Array<string>; changedValues?: Record<string, string | number | boolean | null>; subjectId?: string | null }]
   changes    Json?    @db.Json
   createdAt  DateTime @default(now()) @map("created_at")
 

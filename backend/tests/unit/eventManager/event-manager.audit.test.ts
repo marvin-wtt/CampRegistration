@@ -27,7 +27,8 @@ describe('eventManagerAuditPolicy.changeSet', () => {
 
     expect(policy.changeSet(before, after)).toEqual({
       changedFields: ['role'],
-      changedValues: { userId: 'u1', role: 'COORDINATOR' },
+      changedValues: { role: 'COORDINATOR' },
+      subjectId: 'u1',
     });
   });
 
@@ -45,10 +46,31 @@ describe('eventManagerAuditPolicy.changeSet', () => {
       eventId: 'e2',
     };
 
-    // userId/role are still attached — they identify the manager even when
+    // subjectId/role are still attached — they identify the manager even when
     // nothing else changed.
     expect(policy.changeSet(before, after)).toEqual({
-      changedValues: { userId: 'u1', role: 'COUNSELOR' },
+      changedValues: { role: 'COUNSELOR' },
+      subjectId: 'u1',
+    });
+  });
+
+  it('omits subjectId for a pending invitation (no linked user yet)', () => {
+    const before = {
+      userId: null,
+      role: 'COUNSELOR',
+      expiresAt: null,
+      eventId: 'e1',
+    };
+    const after = {
+      userId: null,
+      role: 'COORDINATOR',
+      expiresAt: null,
+      eventId: 'e1',
+    };
+
+    expect(policy.changeSet(before, after)).toEqual({
+      changedFields: ['role'],
+      changedValues: { role: 'COORDINATOR' },
     });
   });
 });

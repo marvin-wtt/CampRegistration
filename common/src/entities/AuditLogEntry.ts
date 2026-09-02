@@ -17,6 +17,12 @@ export interface AuditChangeSet {
   // `active` flag). Lets the timeline show the outcome ("Accepted") without
   // storing personal data. Keyed by field name.
   changedValues?: Record<string, AuditValue>;
+  // The id of the user this entry is *about*, when that differs from both the
+  // actor and the entity itself (e.g. an eventManager entry's `entityId` is the
+  // grant record, not the person — this is the person). Resolved into
+  // `AuditLogEntry.subject` at read time, the same way `actorId` is resolved
+  // into `actor` — never stored as a name here.
+  subjectId?: string | null;
 }
 
 export interface AuditActor {

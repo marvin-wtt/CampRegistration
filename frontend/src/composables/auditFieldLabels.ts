@@ -4,10 +4,6 @@ import type {
   AuditValue,
 } from '@camp-registration/common/entities';
 
-// Value keys resolved elsewhere (e.g. into `subject`) and never shown as a
-// raw changed-value chip themselves.
-const HIDDEN_VALUE_KEYS = new Set(['userId']);
-
 // Keys a backend policy always attaches to `changedValues` for identification
 // (e.g. eventManager's `role`, messageTemplate's `trigger`/`country` — see
 // `managerIdentity`/`templateIdentity`), not only when they actually changed —
@@ -68,10 +64,6 @@ export function useAuditFieldLabels() {
     return String(value);
   }
 
-  function isHiddenValueKey(key: string): boolean {
-    return HIDDEN_VALUE_KEYS.has(key);
-  }
-
   /**
    * Whether a `changedValues` entry should be suppressed for this entry's
    * action — true only for an `updated` entry whose "always attached" key
@@ -120,7 +112,6 @@ export function useAuditFieldLabels() {
     valueLabel,
     fieldLabel,
     valueDisplay,
-    isHiddenValueKey,
     isContextualValueKey,
   };
 }

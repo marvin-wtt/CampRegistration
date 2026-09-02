@@ -173,6 +173,7 @@ function toScalar(value: unknown): AuditValue {
 export function composeChangeSet(
   changedFields: string[],
   changedValues: Record<string, AuditValue> = {},
+  subjectId?: string | null,
 ): AuditChangeSet {
   const changes: AuditChangeSet = {};
   if (changedFields.length > 0) {
@@ -180,6 +181,9 @@ export function composeChangeSet(
   }
   if (Object.keys(changedValues).length > 0) {
     changes.changedValues = changedValues;
+  }
+  if (subjectId) {
+    changes.subjectId = subjectId;
   }
   return changes;
 }

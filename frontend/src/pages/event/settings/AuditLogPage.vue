@@ -300,7 +300,6 @@ const {
   valueLabel,
   fieldLabel,
   valueDisplay,
-  isHiddenValueKey,
   isContextualValueKey,
 } = useAuditFieldLabels();
 
@@ -534,13 +533,12 @@ interface ValueDetail {
   value: string;
 }
 
-// Keys from `changedValues` worth a "Field: value" chip — excludes hidden
-// keys (resolved elsewhere) and contextual ones (identity info that wasn't
-// actually part of this change). A field with a value chip also appears in
-// `changedFields` (e.g. eventManager's `role`, which is both allow-list
-// diffed *and* always attached for identity) — `fieldLabels` below excludes
-// these too, so the same field doesn't get a redundant plain "Role" chip
-// next to the more informative "Role: Viewer" one.
+// Keys from `changedValues` worth a "Field: value" chip — excludes contextual
+// ones (identity info that wasn't actually part of this change). A field with
+// a value chip also appears in `changedFields` (e.g. eventManager's `role`,
+// which is both allow-list diffed *and* always attached for identity) —
+// `fieldLabels` below excludes these too, so the same field doesn't get a
+// redundant plain "Role" chip next to the more informative "Role: Viewer" one.
 function shownValueKeys(
   entityType: AuditEntityType,
   action: string,
@@ -549,9 +547,7 @@ function shownValueKeys(
 ): Set<string> {
   return new Set(
     Object.keys(changedValues ?? {}).filter(
-      (key) =>
-        !isHiddenValueKey(key) &&
-        !isContextualValueKey(entityType, key, action, changedFields),
+      (key) => !isContextualValueKey(entityType, key, action, changedFields),
     ),
   );
 }
