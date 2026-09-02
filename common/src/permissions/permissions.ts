@@ -56,6 +56,18 @@ export type TaskPermission =
   | 'event.tasks.update'
   | 'event.tasks.delete';
 
+export type ChorePermission =
+  | 'event.chores.view'
+  | 'event.chores.create'
+  | 'event.chores.edit'
+  | 'event.chores.delete';
+
+export type ChoreAssignmentPermission =
+  | 'event.chore_assignments.view'
+  | 'event.chore_assignments.create'
+  | 'event.chore_assignments.edit'
+  | 'event.chore_assignments.delete';
+
 export type NewsletterPermission =
   | 'newsletter.view'
   | 'newsletter.edit'
@@ -99,7 +111,9 @@ export type EventScopedPermission =
   | RoomPermission
   | BedPermission
   | ProgramItemPermission
-  | TaskPermission;
+  | TaskPermission
+  | ChorePermission
+  | ChoreAssignmentPermission;
 
 export type Permission =
   EventScopedPermission | NewsletterPermission | OrganizationPermission;

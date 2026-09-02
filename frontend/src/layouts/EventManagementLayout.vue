@@ -35,6 +35,8 @@ import type { NavigationItemProps } from '@/components/NavigationItemProps.ts';
 import { usePermissions } from '@/composables/permissions';
 import { useRealtimeStore } from '@/stores/realtime-store';
 import GeneralLayout from '@/components/layout/GeneralLayout.vue';
+import { EVENT_NAVIGATION_ITEMS } from '@/config/eventNavigationItems';
+import { provideNavigationSettings } from '@/composables/eventNavigationSettings';
 
 const route = useRoute();
 const { t } = useI18n();
@@ -74,57 +76,19 @@ const eventName = computed<string | undefined>(() => {
   return name ? to(name) : undefined;
 });
 
-const items = computed<NavigationItemProps<'event'>[]>(() => [
-  {
-    name: 'dashboard',
-    label: t('dashboard'),
-    icon: 'dashboard',
-    permission: 'event.registrations.view',
-    to: { name: 'management.event.dashboard' },
-  },
-  {
-    name: 'participants',
-    label: t('participants'),
-    icon: 'groups',
-    permission: 'event.registrations.view',
-    to: { name: 'management.event.participants' },
-  },
-  {
-    name: 'contact',
-    label: t('contact'),
-    icon: 'send',
-    permission: { any: ['event.messages.create', 'event.messages.view'] },
-    to: { name: 'management.event.contact' },
-  },
-  {
-    name: 'program_planner',
-    label: t('program_planner'),
-    icon: 'event',
-    permission: 'event.program_items.view',
-    to: { name: 'management.event.program-planner' },
-  },
-  {
-    name: 'room_planner',
-    label: t('room_planner'),
-    icon: 'single_bed',
-    permission: 'event.rooms.view',
-    to: { name: 'management.event.room-planner' },
-  },
-  {
-    name: 'tasks',
-    label: t('tasks'),
-    icon: 'task_alt',
-    permission: 'event.tasks.view',
-    to: { name: 'management.event.tasks' },
-  },
-  {
-    name: 'settings',
-    label: t('settings'),
-    icon: 'settings',
-    to: { name: 'management.event.settings' },
-    separated: true,
-  },
-]);
+const items = computed<NavigationItemProps<'event'>[]>(() =>
+  EVENT_NAVIGATION_ITEMS.map((def) => ({
+    name: def.name,
+    label: t(def.name),
+    icon: def.icon,
+    permission: def.permission,
+    to: { name: def.routeName },
+    separated: def.separated,
+    hideable: def.hideable,
+  })),
+);
+
+const { settings: navigationSettings } = provideNavigationSettings();
 
 // Permission checks key off the loaded profile (eventAccess) and the active
 // event id. Until both have resolved, `can()` returns false for everything, so
@@ -144,7 +108,14 @@ const navigationItems = computed<NavigationItemProps<'event'>[]>(() => {
     return [];
   }
 
-  return permissionsLoading.value ? items.value : filterItems(items.value);
+  const visible = permissionsLoading.value
+    ? items.value
+    : filterItems(items.value);
+
+  return visible.filter(
+    (item) =>
+      !item.hideable || !navigationSettings.hiddenItems.includes(item.name),
+  );
 });
 
 function filterItems(
@@ -173,6 +144,7 @@ room_planner: 'Room Planner'
 settings: 'Settings'
 statistics: 'Statistics'
 tasks: 'Tasks'
+chore_planner: 'Duty Roster'
 title: 'Event Management'
 </i18n>
 
@@ -185,6 +157,7 @@ room_planner: 'Raumplaner'
 settings: 'Einstellungen'
 statistics: 'Statistiken'
 tasks: 'Aufgaben'
+chore_planner: 'Dienstplan'
 title: 'Veranstaltungsverwaltung'
 </i18n>
 
@@ -197,6 +170,7 @@ room_planner: 'Aménageur'
 settings: 'Paramètres'
 statistics: 'Statistiques'
 tasks: 'Tâches'
+chore_planner: 'Plan des corvées'
 title: "Gestion de l'événement"
 </i18n>
 
@@ -209,6 +183,7 @@ room_planner: 'Plan pokoi'
 settings: 'Ustawienia'
 statistics: 'Statystyki'
 tasks: 'Zadania'
+chore_planner: 'Grafik dyżurów'
 title: 'Zarządzanie wydarzeniem'
 </i18n>
 
@@ -221,6 +196,7 @@ room_planner: 'Plán pokojů'
 settings: 'Nastavení'
 statistics: 'Statistiky'
 tasks: 'Úkoly'
+chore_planner: 'Rozpis služeb'
 title: 'Správa akce'
 </i18n>
 

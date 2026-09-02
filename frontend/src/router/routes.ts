@@ -185,6 +185,11 @@ const routes: RouteRecordRaw[] = [
                 component: () => import('@/pages/event/TasksPage.vue'),
               },
               {
+                path: 'chore-planner',
+                name: 'management.event.chore-planner',
+                component: () => import('@/pages/event/ChorePlannerPage.vue'),
+              },
+              {
                 path: 'settings',
                 children: [
                   {
@@ -222,6 +227,12 @@ const routes: RouteRecordRaw[] = [
                     name: 'management.event.settings.form',
                     component: () =>
                       import('@/pages/event/settings/FormEditPage.vue'),
+                  },
+                  {
+                    path: 'navigation',
+                    name: 'management.event.settings.navigation',
+                    component: () =>
+                      import('@/pages/event/settings/NavigationSettingsPage.vue'),
                   },
                   {
                     path: 'privacy',

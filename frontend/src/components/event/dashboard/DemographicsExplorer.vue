@@ -206,8 +206,8 @@ const groupDimension = ref<Dimension | 'none'>(
   stats.hasMultipleCountries.value ? 'country' : 'gender',
 );
 const stacked = ref<boolean>(false);
-const genderFilter = ref<string[]>([]);
-const countryFilter = ref<string[]>([]);
+const genderFilter = ref<string[] | null>([]);
+const countryFilter = ref<string[] | null>([]);
 
 const countryAvailable = computed(() => stats.hasMultipleCountries.value);
 
@@ -299,13 +299,13 @@ function labelFor(dimension: Dimension, value: string): string {
 
 const filteredPeople = computed<Registration[]>(() => {
   return people.filter((registration) => {
-    if (genderFilter.value.length > 0) {
+    if (genderFilter.value !== null && genderFilter.value.length > 0) {
       const value = helper.gender(registration) ?? stats.UNKNOWN;
       if (!genderFilter.value.includes(value)) {
         return false;
       }
     }
-    if (countryFilter.value.length > 0) {
+    if (countryFilter.value !== null && countryFilter.value.length > 0) {
       const value = helper.country(registration) ?? stats.UNKNOWN;
       if (!countryFilter.value.includes(value)) {
         return false;

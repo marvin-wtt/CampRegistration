@@ -12,6 +12,8 @@ import newsletterSubscriber from './newsletter-subscriber';
 import newsletterMessage from './newsletter-message';
 import newsletterManager from './newsletter-manager';
 import task from './task';
+import chore from './chore';
+import choreAssignment from './chore-assignment';
 import organization from './organization';
 import organizationMember from './organization-member';
 import organizationEvents from './organization-events';
@@ -32,6 +34,8 @@ export default {
   newsletterMessage,
   newsletterManager,
   task,
+  chore,
+  choreAssignment,
   organization,
   organizationMember,
   organizationEvents,
