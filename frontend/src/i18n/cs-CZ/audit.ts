@@ -2,7 +2,7 @@ export default {
   entity: {
     event: 'Akce',
     registration: 'Registrace',
-    eventManager: 'Správce',
+    eventManager: 'Přístup',
     message: 'Zpráva',
     messageTemplate: 'E-mailová šablona',
   },

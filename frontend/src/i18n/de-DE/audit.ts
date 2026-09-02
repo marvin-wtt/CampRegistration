@@ -2,7 +2,7 @@ export default {
   entity: {
     event: 'Veranstaltung',
     registration: 'Anmeldung',
-    eventManager: 'Verwalter',
+    eventManager: 'Zugriff',
     message: 'Nachricht',
     messageTemplate: 'E-Mail-Vorlage',
   },
