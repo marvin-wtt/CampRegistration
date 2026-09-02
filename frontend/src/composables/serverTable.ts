@@ -68,7 +68,12 @@ export function useServerTable<TRow, TQuery>(
   );
 
   function onVirtualScroll(details: VirtualScrollDetails): void {
-    if (details.to < list.rows.value.length - 1) {
+    // For a list that fits entirely within one virtual-scroll slice (i.e. most
+    // admin tables), `to` sits at `rows.length - 1` on every scroll tick, not
+    // just the first one. Without the `hasMore` guard, `refresh()` below would
+    // run — and its internal `scrollTo(prevToIndex)` fights the user's actual
+    // scroll position, snapping the table back toward the top.
+    if (!list.hasMore.value || details.to < list.rows.value.length - 1) {
       return;
     }
 
