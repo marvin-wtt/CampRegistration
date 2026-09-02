@@ -5,7 +5,7 @@
       :key="i"
       v-model="fieldValues[i - 1]"
       v-bind="attrs"
-      :ref="(el: QInput) => updateFieldRef(el, i - 1)"
+      :ref="(el) => updateFieldRef(el as QInput | null, i - 1)"
       :rules="[
         (val?: string) => !required || (!!val && val.trim().length === 1),
       ]"
@@ -45,7 +45,7 @@ onBeforeUpdate(() => {
   fields.value = [];
 });
 
-const updateFieldRef = (element: QInput, index: number) => {
+const updateFieldRef = (element: QInput | null, index: number) => {
   if (element) {
     fields.value[index] = element;
   }
