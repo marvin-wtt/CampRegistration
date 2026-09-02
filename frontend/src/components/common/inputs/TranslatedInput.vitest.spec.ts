@@ -90,4 +90,22 @@ describe('SafeDeleteDialog', () => {
     expect(wrapper.props().modelValue).toHaveProperty('de', 42);
     expect(wrapper.props().modelValue).toHaveProperty('fr', 0);
   });
+
+  it('should preserve data when translations are disabled', async () => {
+    const wrapper = mount(TranslatedInput, {
+      props: {
+        modelValue: undefined,
+        locales: ['de', 'fr'],
+        'onUpdate:modelValue': (e) => wrapper.setProps({ modelValue: e }),
+      },
+    });
+
+    const inputs = wrapper.findAll('input');
+    await inputs[0]!.setValue('Test Value de');
+    await inputs[1]!.setValue('Test Value fr');
+
+    await wrapper.find('button[aria-label="action.disable"]').trigger('click');
+
+    expect(wrapper.props().modelValue).toBe('Test Value de');
+  });
 });
