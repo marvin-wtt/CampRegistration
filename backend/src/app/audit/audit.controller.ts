@@ -3,6 +3,7 @@ import { BaseController } from '#core/base/BaseController';
 import { inject } from 'inversify';
 import { AuditService, type AuditLogWithActor } from '#app/audit/audit.service';
 import { AuditResource } from '#app/audit/audit.resource';
+import validator from '#app/audit/audit.validation';
 import type { AuditLog } from '#generated/prisma/client.js';
 
 export class AuditController extends BaseController {
@@ -26,10 +27,29 @@ export class AuditController extends BaseController {
 
   async indexForEvent(req: Request, res: Response) {
     const event = req.modelOrFail('event');
+    const { query } = await req.validate(validator.index);
 
-    const logs = await this.auditService.listForEvent(event.id);
+    const { logs, nextCursor, limit, total } =
+      await this.auditService.listForEvent(
+        event.id,
+        {
+          entityType: query?.entityType,
+          entityId: query?.entityId,
+          actorId: query?.actorId,
+          hideSystem: query?.hideSystem,
+          from: query?.from,
+          to: query?.to,
+        },
+        { cursor: query?.cursor, limit: query?.limit },
+      );
 
-    res.resource(AuditResource.collection(await this.withActors(logs)));
+    res.resource(
+      AuditResource.collection(await this.withActors(logs)).withCursor(
+        nextCursor,
+        limit,
+        total,
+      ),
+    );
   }
 
   // `changedValues.userId` is the eventManager policy's way of naming the

@@ -117,12 +117,63 @@ export class AuditService extends BaseService {
     });
   }
 
-  /** All audit rows for an event, across every entity type. */
-  async listForEvent(eventId: string): Promise<AuditLog[]> {
-    return this.prisma.auditLog.findMany({
-      where: { eventId },
-      orderBy: { createdAt: 'desc' },
+  /**
+   * Cursor-paginated audit rows for an event, across every entity type unless
+   * narrowed by `filter`. Mirrors `NewsletterService.queryNewsletters`'s
+   * take-one-extra cursor pattern; `total` is only computed on the first
+   * (uncursored) page, matching every other cursor-paginated list in the app.
+   */
+  async listForEvent(
+    eventId: string,
+    filter: {
+      entityType?: AuditEntityType[];
+      entityId?: string;
+      actorId?: string[];
+      hideSystem?: boolean;
+      from?: string;
+      to?: string;
+    } = {},
+    options: { cursor?: string; limit?: number } = {},
+  ): Promise<{
+    logs: AuditLog[];
+    nextCursor: string | null;
+    limit: number;
+    total?: number;
+  }> {
+    const limit = options.limit ?? 50;
+
+    const where: Prisma.AuditLogWhereInput = {
+      eventId,
+      entityType: filter.entityType ? { in: filter.entityType } : undefined,
+      entityId: filter.entityId,
+      // An explicit actor list already excludes system entries; `hideSystem`
+      // only does anything when no actor list is given.
+      actorId: filter.actorId
+        ? { in: filter.actorId }
+        : filter.hideSystem
+          ? { not: null }
+          : undefined,
+      createdAt:
+        filter.from || filter.to
+          ? { gte: filter.from, lte: filter.to }
+          : undefined,
+    };
+
+    const items = await this.prisma.auditLog.findMany({
+      where,
+      take: limit + 1,
+      ...(options.cursor ? { cursor: { id: options.cursor }, skip: 1 } : {}),
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     });
+
+    const hasMore = items.length > limit;
+    const logs = hasMore ? items.slice(0, limit) : items;
+    const nextCursor = hasMore ? (logs.at(-1)?.id ?? null) : null;
+    const total = options.cursor
+      ? undefined
+      : await this.prisma.auditLog.count({ where });
+
+    return { logs, nextCursor, limit, total };
   }
 
   /**

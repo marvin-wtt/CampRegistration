@@ -217,6 +217,160 @@ describe('/api/v1/events/:eventId/registrations/:registrationId/audit', () => {
     });
   });
 
+  describe('/api/v1/events/:eventId/audit', () => {
+    const fetchEventAudit = (
+      eventId: string,
+      token: string,
+      query: Record<string, string> = {},
+    ) =>
+      request()
+        .get(`/api/v1/events/${eventId}/audit`)
+        .query(query)
+        .auth(token, { type: 'bearer' });
+
+    const createLog = (
+      eventId: string,
+      data: Partial<Prisma.AuditLogUncheckedCreateInput> = {},
+    ) =>
+      prisma.auditLog.create({
+        data: {
+          action: 'updated',
+          entityType: 'registration',
+          entityId: ulid(),
+          eventId,
+          createdAt: new Date(),
+          ...data,
+        },
+      });
+
+    it('paginates newest-first with a cursor and a total on the first page', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const now = Date.now();
+      const logs = await Promise.all(
+        [0, 1, 2].map((i) =>
+          createLog(event.id, { createdAt: new Date(now + i * 1000) }),
+        ),
+      );
+
+      const first = await fetchEventAudit(event.id, accessToken, {
+        limit: '2',
+      }).expect(200);
+
+      expect(first.body.data).toHaveLength(2);
+      expect(first.body.data[0].id).toBe(logs[2].id);
+      expect(first.body.data[1].id).toBe(logs[1].id);
+      expect(first.body.meta.total).toBe(3);
+      expect(first.body.meta.nextCursor).toBe(logs[1].id);
+
+      const second = await fetchEventAudit(event.id, accessToken, {
+        limit: '2',
+        cursor: first.body.meta.nextCursor,
+      }).expect(200);
+
+      expect(second.body.data).toHaveLength(1);
+      expect(second.body.data[0].id).toBe(logs[0].id);
+      expect(second.body.meta.nextCursor).toBeNull();
+      expect(second.body.meta.total).toBeUndefined();
+    });
+
+    it('narrows by entityType', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const registrationLog = await createLog(event.id, {
+        entityType: 'registration',
+      });
+      await createLog(event.id, { entityType: 'message' });
+
+      const response = await fetchEventAudit(event.id, accessToken, {
+        entityType: 'registration',
+      }).expect(200);
+
+      expect(response.body.data).toHaveLength(1);
+      expect(response.body.data[0].id).toBe(registrationLog.id);
+    });
+
+    it('narrows by entityId', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const entityId = ulid();
+      const targetLog = await createLog(event.id, { entityId });
+      await createLog(event.id, {});
+
+      const response = await fetchEventAudit(event.id, accessToken, {
+        entityId,
+      }).expect(200);
+
+      expect(response.body.data).toHaveLength(1);
+      expect(response.body.data[0].id).toBe(targetLog.id);
+    });
+
+    it('narrows by actorId', async () => {
+      const { event, accessToken, user } =
+        await createEventWithManagerAndToken();
+      const actorLog = await createLog(event.id, { actorId: user.id });
+      await createLog(event.id, { actorId: null });
+
+      const response = await fetchEventAudit(event.id, accessToken, {
+        actorId: user.id,
+      }).expect(200);
+
+      expect(response.body.data).toHaveLength(1);
+      expect(response.body.data[0].id).toBe(actorLog.id);
+    });
+
+    it('excludes system (actor-less) entries when hideSystem is set', async () => {
+      const { event, accessToken, user } =
+        await createEventWithManagerAndToken();
+      const actorLog = await createLog(event.id, { actorId: user.id });
+      await createLog(event.id, { actorId: null });
+
+      const response = await fetchEventAudit(event.id, accessToken, {
+        hideSystem: 'true',
+      }).expect(200);
+
+      expect(response.body.data).toHaveLength(1);
+      expect(response.body.data[0].id).toBe(actorLog.id);
+    });
+
+    it('narrows by a from/to date range', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const inRange = await createLog(event.id, {
+        createdAt: moment('2024-06-15').toDate(),
+      });
+      await createLog(event.id, { createdAt: moment('2024-01-01').toDate() });
+      await createLog(event.id, { createdAt: moment('2024-12-31').toDate() });
+
+      const response = await fetchEventAudit(event.id, accessToken, {
+        from: moment('2024-06-01').toISOString(),
+        to: moment('2024-06-30').toISOString(),
+      }).expect(200);
+
+      expect(response.body.data).toHaveLength(1);
+      expect(response.body.data[0].id).toBe(inRange.id);
+    });
+
+    it.each([
+      { role: 'DIRECTOR', expectedStatus: 200 },
+      { role: 'COORDINATOR', expectedStatus: 200 },
+      { role: 'VIEWER', expectedStatus: 403 },
+      { role: 'COUNSELOR', expectedStatus: 403 },
+    ])(
+      '$role gets $expectedStatus for the event-wide audit log',
+      async ({ role, expectedStatus }) => {
+        const { event, accessToken } = await createEventWithManagerAndToken(
+          undefined,
+          role,
+        );
+
+        await fetchEventAudit(event.id, accessToken).expect(expectedStatus);
+      },
+    );
+
+    it('responds with 401 when unauthenticated', async () => {
+      const event = await EventFactory.create();
+
+      await request().get(`/api/v1/events/${event.id}/audit`).expect(401);
+    });
+  });
+
   describe('retention jobs', () => {
     const createAuditLog = (
       data: Partial<Prisma.AuditLogUncheckedCreateInput> = {},

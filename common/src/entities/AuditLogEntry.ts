@@ -38,3 +38,14 @@ export interface AuditLogEntry extends Identifiable {
   changes: AuditChangeSet | null;
   createdAt: string;
 }
+
+export interface AuditLogQuery {
+  entityType?: AuditEntityType | AuditEntityType[];
+  entityId?: string;
+  actorId?: string | string[];
+  hideSystem?: boolean; // exclude actor === null entries
+  from?: string; // ISO datetime, inclusive
+  to?: string; // ISO datetime, inclusive
+  cursor?: string;
+  limit?: number;
+}
