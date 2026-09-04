@@ -9,6 +9,7 @@
 export interface RoomPlannerSettings {
   skipGenderFilter: boolean;
   skipRoleFilter: boolean;
+  sortBy: 'age' | 'name';
 }
 
 /** Stored under `SETTING_KEYS.PROGRAM_PLANNER`. */

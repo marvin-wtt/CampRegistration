@@ -11,6 +11,7 @@ import { EventSettingFactory } from '../factories';
 const roomPlanner = {
   skipGenderFilter: false,
   skipRoleFilter: false,
+  sortBy: 'age',
 } satisfies RoomPlannerSettings;
 
 const programPlanner = {

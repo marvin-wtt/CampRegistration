@@ -60,6 +60,12 @@
           <q-item-label class="ellipsis">
             {{ person.name }}
           </q-item-label>
+          <q-item-label
+            v-if="!person.participant && person.role"
+            caption
+          >
+            {{ roleLabel(person.role) }}
+          </q-item-label>
         </q-item-section>
         <q-item-section
           v-if="person.age !== undefined"
@@ -112,6 +118,13 @@ const filteredOptions = computed<Roommate[]>(() => {
 
   return options.filter((person) => person.name.toLowerCase().includes(needle));
 });
+
+function roleLabel(role: string): string {
+  const key = `role.${role}`;
+  const translated = t(key);
+
+  return translated === key ? role : translated;
+}
 </script>
 
 <style scoped>
@@ -147,28 +160,38 @@ const filteredOptions = computed<Roommate[]>(() => {
 search: 'Search people'
 remove: 'Remove from bed'
 noMatch: 'No matching people'
+role:
+  counselor: 'Counselor'
 </i18n>
 
 <i18n lang="yaml" locale="de">
 search: 'Personen suchen'
 remove: 'Aus dem Bett entfernen'
 noMatch: 'Keine passenden Personen'
+role:
+  counselor: 'Betreuer'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 search: 'Rechercher des personnes'
 remove: 'Retirer du lit'
 noMatch: 'Aucune personne correspondante'
+role:
+  counselor: 'Conseiller'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
 search: 'Szukaj osób'
 remove: 'Usuń z łóżka'
 noMatch: 'Brak pasujących osób'
+role:
+  counselor: 'Opiekun'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
 search: 'Hledat osoby'
 remove: 'Odebrat z lůžka'
 noMatch: 'Žádné odpovídající osoby'
+role:
+  counselor: 'Vedoucí'
 </i18n>
