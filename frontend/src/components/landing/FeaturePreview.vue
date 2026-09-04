@@ -329,8 +329,9 @@
           rx="11"
           fill="var(--md3-primary)"
         />
+        <!-- Centred on the pill: x 207–219 around cx 213, y 156–166 around cy 161. -->
         <path
-          d="M206 161l8-4-8-4v3l4 1-4 1z"
+          d="M207 156l12 5-12 5v-4l6-1-6-1z"
           fill="var(--md3-on-primary)"
         />
       </g>
