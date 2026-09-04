@@ -37,6 +37,7 @@ describe('/api/v1/events/:eventId/settings', () => {
       data: {
         skipGenderFilter: true,
         skipRoleFilter: false,
+        sortBy: 'age',
       },
     });
   };
@@ -71,6 +72,7 @@ describe('/api/v1/events/:eventId/settings', () => {
           expect(response.body.data.data).toEqual({
             skipGenderFilter: true,
             skipRoleFilter: false,
+            sortBy: 'age',
           });
         }
       },
@@ -124,6 +126,7 @@ describe('/api/v1/events/:eventId/settings', () => {
       data: {
         skipGenderFilter: true,
         skipRoleFilter: true,
+        sortBy: 'name',
       },
     };
 
