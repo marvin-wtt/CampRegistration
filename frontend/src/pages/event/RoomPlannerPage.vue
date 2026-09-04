@@ -43,6 +43,23 @@
             >
               <q-list class="settings-list">
                 <q-item-label header>
+                  {{ t('settings.sortBy.label') }}
+                </q-item-label>
+
+                <q-item>
+                  <q-item-section>
+                    <q-select
+                      v-model="settings.sortBy"
+                      dense
+                      outlined
+                      emit-value
+                      map-options
+                      :options="sortByOptions"
+                    />
+                  </q-item-section>
+                </q-item>
+
+                <q-item-label header>
                   {{ t('settings.title') }}
                 </q-item-label>
 
@@ -312,8 +329,16 @@ const { settings } = useEventSettings<RoomPlannerSettings>(
   {
     skipGenderFilter: false,
     skipRoleFilter: false,
+    sortBy: 'age',
   },
 );
+
+const sortByOptions = computed<
+  { label: string; value: RoomPlannerSettings['sortBy'] }[]
+>(() => [
+  { label: t('settings.sortBy.option.age'), value: 'age' },
+  { label: t('settings.sortBy.option.name'), value: 'name' },
+]);
 
 const {
   data,
@@ -407,12 +432,15 @@ const availablePeople = computed<Roommate[]>(() => {
     });
   };
 
-  // Map to roommate type and sort by age
+  const sortByAge = (a: Roommate, b: Roommate) =>
+    (a.age ?? 999) - (b.age ?? 999);
+  const sortByName = (a: Roommate, b: Roommate) => a.name.localeCompare(b.name);
+
   return registrations
     .filter(filterStatusAccepted)
     .filter(filterUnassigned)
     .map(mapRegistrationRoommate)
-    .sort((a, b) => (a.age ?? 999) - (b.age ?? 999));
+    .sort(settings.sortBy === 'name' ? sortByName : sortByAge);
 });
 
 async function fetchRooms(opts?: { background?: boolean }) {
@@ -618,6 +646,7 @@ function mapRegistrationRoommate(registration: Registration): Roommate {
   const gender = registrationHelper.gender(registration);
   const country = registrationHelper.country(registration);
   const participant = registrationHelper.participant(registration);
+  const role = registrationHelper.role(registration);
 
   return {
     id: registration.id,
@@ -626,6 +655,7 @@ function mapRegistrationRoommate(registration: Registration): Roommate {
     gender,
     country,
     participant,
+    role,
   };
 }
 
@@ -820,6 +850,11 @@ stats:
   allAssigned: 'Everyone has a bed'
 
 settings:
+  sortBy:
+    label: 'Sort unassigned people by'
+    option:
+      age: 'Age'
+      name: 'Name'
   title: 'Assignment filters'
   skipGenderFilter:
     label: 'Skip gender filter'
@@ -872,6 +907,11 @@ stats:
   allAssigned: 'Alle haben ein Bett'
 
 settings:
+  sortBy:
+    label: 'Nicht zugewiesene Personen sortieren nach'
+    option:
+      age: 'Alter'
+      name: 'Name'
   title: 'Zuweisungsfilter'
   skipGenderFilter:
     label: 'Geschlechterfilter überspringen'
@@ -924,6 +964,11 @@ stats:
   allAssigned: 'Tout le monde a un lit'
 
 settings:
+  sortBy:
+    label: 'Trier les personnes non affectées par'
+    option:
+      age: 'Âge'
+      name: 'Nom'
   title: "Filtres d'attribution"
   skipGenderFilter:
     label: 'Ignorer le filtre de genre'
@@ -979,6 +1024,11 @@ stats:
   allAssigned: 'Wszyscy mają łóżko'
 
 settings:
+  sortBy:
+    label: 'Sortuj nieprzydzielone osoby według'
+    option:
+      age: 'Wiek'
+      name: 'Imię'
   title: 'Filtry przydzielania'
   skipGenderFilter:
     label: 'Pomiń filtr płci'
@@ -1031,6 +1081,11 @@ stats:
   allAssigned: 'Všichni mají lůžko'
 
 settings:
+  sortBy:
+    label: 'Řadit nepřiřazené osoby podle'
+    option:
+      age: 'Věk'
+      name: 'Jméno'
   title: 'Filtry přiřazování'
   skipGenderFilter:
     label: 'Přeskočit filtr pohlaví'
