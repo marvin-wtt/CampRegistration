@@ -459,27 +459,24 @@ const tracks = [
   margin-top: clamp(32px, 6vh, 56px);
   padding: clamp(20px, 3vw, 28px) clamp(20px, 3vw, 32px);
   text-decoration: none;
-  border-radius: var(--md3-corner-extra-large) var(--md3-corner-extra-large)
-    64px var(--md3-corner-extra-large);
+  border-radius: var(--md3-corner-extra-large);
   color: var(--md3-on-tertiary-container);
   background: var(--md3-tertiary-container);
+  /* The shape stays put on hover — only the lift and the arrow move. */
   transition:
-    transform 0.35s var(--md3-easing-emphasized),
-    border-radius 0.35s var(--md3-easing-emphasized),
-    box-shadow 0.35s var(--md3-easing-emphasized);
+    transform 0.3s var(--md3-easing-emphasized),
+    box-shadow 0.3s var(--md3-easing-emphasized);
 }
 
 .fasttrack:hover,
 .fasttrack:focus-visible {
-  border-radius: var(--md3-corner-extra-large) 64px
-    var(--md3-corner-extra-large) 64px;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.16);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.14);
 }
 
 @media (prefers-reduced-motion: no-preference) {
   .fasttrack:hover,
   .fasttrack:focus-visible {
-    transform: translateY(-3px);
+    transform: translateY(-2px);
   }
 }
 
@@ -768,7 +765,7 @@ const tracks = [
   flex-direction: column;
   align-items: center;
   padding: clamp(40px, 6vw, 72px) clamp(24px, 5vw, 64px);
-  border-radius: 48px 48px 48px 96px;
+  border-radius: 48px;
   text-align: center;
   color: var(--md3-on-primary);
   background: var(--md3-primary);
@@ -876,8 +873,6 @@ const tracks = [
   /* Stack the lane: the action becomes a full-width button under the copy. */
   .fasttrack {
     flex-wrap: wrap;
-    border-radius: var(--md3-corner-extra-large) var(--md3-corner-extra-large)
-      48px var(--md3-corner-extra-large);
   }
 
   .fasttrack__copy {
@@ -898,7 +893,7 @@ fasttrack:
   title: 'Here to sign up for an event?'
   text: 'Every event currently open for registration, in one list.'
   point_1: 'No account, no password'
-  point_2: 'A few minutes on your phone'
+  point_2: 'A few minutes on any device'
   point_3: 'In your own language'
   action: 'Find your event'
 hero:
@@ -965,7 +960,7 @@ fasttrack:
   title: 'Du willst dich für eine Veranstaltung anmelden?'
   text: 'Alle Veranstaltungen, für die die Anmeldung offen ist, in einer Liste.'
   point_1: 'Kein Konto, kein Passwort'
-  point_2: 'Ein paar Minuten am Handy'
+  point_2: 'Ein paar Minuten, auf jedem Gerät'
   point_3: 'In deiner eigenen Sprache'
   action: 'Veranstaltung finden'
 hero:
@@ -1032,7 +1027,7 @@ fasttrack:
   title: 'Vous venez vous inscrire à un événement ?'
   text: 'Tous les événements actuellement ouverts aux inscriptions, en une liste.'
   point_1: 'Ni compte, ni mot de passe'
-  point_2: 'Quelques minutes sur votre téléphone'
+  point_2: 'Quelques minutes, sur n’importe quel appareil'
   point_3: 'Dans votre propre langue'
   action: 'Trouver votre événement'
 hero:
@@ -1099,7 +1094,7 @@ fasttrack:
   title: 'Chcesz zapisać się na wydarzenie?'
   text: 'Wszystkie wydarzenia z otwartymi zapisami na jednej liście.'
   point_1: 'Bez konta i bez hasła'
-  point_2: 'Kilka minut na telefonie'
+  point_2: 'Kilka minut na dowolnym urządzeniu'
   point_3: 'W Twoim własnym języku'
   action: 'Znajdź wydarzenie'
 hero:
@@ -1166,7 +1161,7 @@ fasttrack:
   title: 'Chcete se přihlásit na akci?'
   text: 'Všechny akce s otevřenou registrací v jednom seznamu.'
   point_1: 'Bez účtu a bez hesla'
-  point_2: 'Pár minut na mobilu'
+  point_2: 'Pár minut na jakémkoli zařízení'
   point_3: 'Ve vašem vlastním jazyce'
   action: 'Najít akci'
 hero:

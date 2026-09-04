@@ -11,9 +11,7 @@
       >
         {{ t('title') }}
       </h2>
-      <p class="features__subtitle">
-        {{ t('subtitle', { count: LANDING_FEATURES.length }) }}
-      </p>
+      <p class="features__subtitle">{{ t('subtitle') }}</p>
     </header>
 
     <div
@@ -453,7 +451,7 @@ function step(delta: number): void {
 <i18n lang="yaml" locale="en">
 eyebrow: 'For organizers'
 title: 'Everything an event needs, in one place'
-subtitle: '{count} tools that replace the spreadsheet, the paper forms and the endless email chain. Open any card to see how it works.'
+subtitle: 'Everything that replaces the spreadsheet, the paper forms and the endless email chain. Open any card to see how it works.'
 filter_label: 'Filter features by area'
 card_action: 'Details'
 extras_label: 'Also included:'
@@ -478,25 +476,27 @@ extra:
   self_host: 'Self-hosting with Docker'
 feature:
   forms:
-    title: 'Registration forms that ask the right questions'
-    text: 'Build multi-page forms with conditional questions, repeating sections and file uploads — in every language you offer.'
-    detail: 'The form builder is a full drag-and-drop designer, not a fixed template. Questions appear only when they apply, an answer that comes in several — a second guardian, a third emergency contact — gets a repeating section instead of three fixed copies of the same fields, and every label carries its own translations so a single form serves all your registrants.'
+    title: 'Ask exactly the questions you need'
+    text: 'Build your own registration form — your questions, your wording, in every language you offer.'
+    detail: 'Drag in the questions you need and leave out the ones you don’t. A question can stay hidden until an earlier answer calls for it, so nobody wades through fields that don’t apply to them. Set a date for the form to open and one for it to close, and it takes care of itself from there.'
     point:
-      1: 'Multi-page forms with conditional questions and built-in validation'
-      2: 'Repeating sections for answers that come in several — guardians, emergency contacts'
-      3: 'File uploads, date and country pickers, calculated values'
-      4: 'Translate every label and theme the form to match your colours'
+      1: 'Your questions, your wording, across as many pages as you like'
+      2: 'Questions that show up only when an earlier answer calls for them'
+      3: 'Repeating sections for answers that come in several — guardians, emergency contacts'
+      4: 'File uploads, date and country pickers, and checks that catch typos'
+      5: 'Give the form an opening and a closing date — it opens and shuts on its own'
+      6: 'Translate every label and match the form to your colours'
   registrations:
     title: 'Registration lists you shape yourself'
-    text: 'Every submission lands in a table you define — filter it, print it, and accept or waitlist people in a single click.'
-    detail: 'A registration is not one row of fixed columns. You decide which answers become columns and how each one is rendered, save that arrangement as a template, and switch between an arrival list, an allergy list and a payment overview without touching the data. Columns of your own sit next to the form answers, so the team can note who has paid or who still needs a bus seat straight in the table.'
+    text: 'Everyone who signs up appears in one list, showing the columns you picked — ready to filter, print and work through.'
+    detail: 'Decide up front whether places are handed out automatically or only once you have read each sign-up. From there it is one list: you choose which answers become columns and how each is shown, save that as a template, and switch between an arrival list, an allergy list and a payment overview without touching the data. Columns of your own sit next to the form answers, so the team can note who has paid or who still needs a bus seat straight in the table.'
     point:
-      1: 'Custom table templates — one for each list you actually need'
-      2: 'Columns that render properly: country flags, dates, ages, files, statuses'
-      3: 'Add columns of your own and write notes straight into a cell'
-      4: 'Search, sort and filter by status, group or any answer'
-      5: 'Accept every registration automatically, or review each one by hand'
-      6: 'Open any registration to read it in full, correct an answer, or take someone off the waiting list'
+      1: 'Hand out places automatically, or check each sign-up yourself first'
+      2: 'Save a table template for every list you actually need'
+      3: 'Columns that show properly: country flags, dates, ages, files, statuses'
+      4: 'Add columns of your own and write notes straight into a cell'
+      5: 'Search, sort and filter by status, group or any answer'
+      6: 'Open a sign-up to read it in full, fix an answer, or move someone off the waiting list'
       7: 'Print-ready layouts for the folder you take on site'
   emails:
     title: 'Emails that send themselves'
@@ -543,15 +543,15 @@ feature:
       1: 'A day-by-day grid from arrival to departure, filled by drag and drop'
       2: 'An A and a B plan side by side — good weather and bad, or a group that splits'
       3: 'A backlog for ideas you want to park now and place later'
-      4: 'Titles, details and locations translatable, so every group reads its own'
+      4: 'Titles, details and locations translatable, so an international team reads the plan in its own language'
       5: 'The whole team plans in the same shared view'
       6: 'A printable calendar for the notice board'
   messages:
     title: 'Write to exactly the right people'
-    text: 'Message one registrant or a whole group — chosen by status, role or country — with personalised text and attachments.'
-    detail: 'Recipients come out of the registration list you have already filtered: everyone accepted, everyone still waiting, the leaders, one country. The text uses the same placeholders as the templates, attachments come along, and every message stays in the history so you can reuse it next season.'
+    text: 'Pick the group, not the addresses. Nobody gets copied over by hand, nobody gets missed.'
+    detail: 'You choose recipients by who they are — everyone accepted, everyone still waiting, the leaders, one country — and the addresses come along by themselves. Nothing to copy out of a spreadsheet, no address pasted into the wrong line, nobody quietly left off. Attachments come with it, and every message stays in the history.'
     point:
-      1: 'Recipients picked from the list you already filtered'
+      1: 'Pick a group, not a list of addresses'
       2: 'Personalised placeholders and file attachments'
       3: 'A full send history — reuse any message as a template'
   newsletters:
@@ -618,7 +618,7 @@ feature:
 <i18n lang="yaml" locale="de">
 eyebrow: 'Für Organisatoren'
 title: 'Alles, was eine Veranstaltung braucht — an einem Ort'
-subtitle: '{count} Werkzeuge, die Tabelle, Papierformular und endlose E-Mail-Kette ersetzen. Öffne eine Karte, um zu sehen, wie es funktioniert.'
+subtitle: 'Alles, was Tabelle, Papierformular und endlose E-Mail-Kette ersetzt. Öffne eine Karte, um zu sehen, wie es funktioniert.'
 filter_label: 'Funktionen nach Bereich filtern'
 card_action: 'Details'
 extras_label: 'Außerdem enthalten:'
@@ -643,25 +643,27 @@ extra:
   self_host: 'Selbst hosten mit Docker'
 feature:
   forms:
-    title: 'Anmeldeformulare, die die richtigen Fragen stellen'
-    text: 'Baue mehrseitige Formulare mit bedingten Fragen, wiederholbaren Abschnitten und Datei-Uploads — in jeder Sprache, die du anbietest.'
-    detail: 'Der Formular-Editor ist ein vollwertiger Drag-and-drop-Designer, keine feste Vorlage. Fragen erscheinen nur, wenn sie zutreffen; für Angaben, die mehrfach vorkommen — ein zweiter Sorgeberechtigter, ein dritter Notfallkontakt — gibt es einen wiederholbaren Abschnitt statt dreier fester Kopien derselben Felder. Und jede Beschriftung trägt ihre eigenen Übersetzungen, sodass ein Formular für alle Anmeldenden genügt.'
+    title: 'Frag genau das, was du wissen musst'
+    text: 'Bau dein eigenes Anmeldeformular — deine Fragen, deine Formulierungen, in jeder Sprache, die du anbietest.'
+    detail: 'Zieh die Fragen hinein, die du brauchst, und lass die anderen weg. Eine Frage kann verborgen bleiben, bis eine frühere Antwort sie nötig macht — so kämpft sich niemand durch Felder, die ihn nichts angehen. Leg ein Datum fürs Öffnen und eines fürs Schließen fest, danach läuft es von allein.'
     point:
-      1: 'Mehrseitige Formulare mit bedingten Fragen und Validierung'
-      2: 'Wiederholbare Abschnitte für mehrfache Angaben — Sorgeberechtigte, Notfallkontakte'
-      3: 'Datei-Uploads, Datums- und Länderauswahl, berechnete Werte'
-      4: 'Jede Beschriftung übersetzen und das Formular an deine Farben anpassen'
+      1: 'Deine Fragen, deine Formulierungen, auf so vielen Seiten wie du magst'
+      2: 'Fragen, die erst auftauchen, wenn eine frühere Antwort sie nötig macht'
+      3: 'Wiederholbare Abschnitte für mehrfache Angaben — Sorgeberechtigte, Notfallkontakte'
+      4: 'Datei-Uploads, Datums- und Länderauswahl und Prüfungen, die Tippfehler abfangen'
+      5: 'Gib dem Formular ein Start- und ein Enddatum — es öffnet und schließt von selbst'
+      6: 'Jede Beschriftung übersetzen und das Formular an deine Farben anpassen'
   registrations:
     title: 'Anmeldelisten, die du selbst gestaltest'
-    text: 'Jede Anmeldung landet in einer Tabelle, die du definierst — filtern, drucken, annehmen oder auf die Warteliste setzen mit einem Klick.'
-    detail: 'Eine Anmeldung ist keine Zeile mit festen Spalten. Du entscheidest, welche Antworten zu Spalten werden und wie sie dargestellt werden, speicherst diese Anordnung als Vorlage und wechselst zwischen Anreiseliste, Allergieliste und Zahlungsübersicht, ohne die Daten anzufassen. Eigene Spalten stehen neben den Formularantworten — so notiert das Team direkt in der Tabelle, wer bezahlt hat oder wer noch einen Busplatz braucht.'
+    text: 'Alle, die sich anmelden, stehen in einer Liste mit den Spalten, die du ausgewählt hast — bereit zum Filtern, Drucken und Abarbeiten.'
+    detail: 'Entscheide vorab, ob Plätze automatisch vergeben werden oder erst, wenn du jede Anmeldung gelesen hast. Danach ist es eine Liste: Du wählst, welche Antworten zu Spalten werden und wie sie aussehen, speicherst das als Vorlage und wechselst zwischen Anreiseliste, Allergieliste und Zahlungsübersicht, ohne die Daten anzufassen. Eigene Spalten stehen neben den Formularantworten — so notiert das Team direkt in der Tabelle, wer bezahlt hat oder wer noch einen Busplatz braucht.'
     point:
-      1: 'Eigene Tabellenvorlagen — eine für jede Liste, die du wirklich brauchst'
-      2: 'Spalten, die richtig aussehen: Länderflaggen, Daten, Alter, Dateien, Status'
-      3: 'Eigene Spalten anlegen und Notizen direkt in die Zelle schreiben'
-      4: 'Suchen, sortieren und filtern nach Status, Gruppe oder jeder Antwort'
-      5: 'Jede Anmeldung automatisch annehmen oder einzeln von Hand prüfen'
-      6: 'Jede Anmeldung öffnen, vollständig lesen, eine Antwort korrigieren oder jemanden von der Warteliste nachrücken lassen'
+      1: 'Plätze automatisch vergeben oder jede Anmeldung erst selbst prüfen'
+      2: 'Eine Tabellenvorlage für jede Liste, die du wirklich brauchst'
+      3: 'Spalten, die richtig aussehen: Länderflaggen, Daten, Alter, Dateien, Status'
+      4: 'Eigene Spalten anlegen und Notizen direkt in die Zelle schreiben'
+      5: 'Suchen, sortieren und filtern nach Status, Gruppe oder jeder Antwort'
+      6: 'Eine Anmeldung öffnen, vollständig lesen, eine Antwort korrigieren oder jemanden von der Warteliste nachrücken lassen'
       7: 'Druckfertige Layouts für den Ordner, den du mitnimmst'
   emails:
     title: 'E-Mails, die sich selbst versenden'
@@ -708,15 +710,15 @@ feature:
       1: 'Ein Tagesraster von der Anreise bis zur Abreise, per Drag-and-drop gefüllt'
       2: 'A- und B-Plan nebeneinander — gutes und schlechtes Wetter oder eine geteilte Gruppe'
       3: 'Ein Backlog für Ideen, die du jetzt parken und später einplanen willst'
-      4: 'Titel, Details und Orte übersetzbar — jede Gruppe liest ihre eigene Fassung'
+      4: 'Titel, Details und Orte übersetzbar — ein internationales Team liest den Plan in seiner eigenen Sprache'
       5: 'Das ganze Team plant in derselben Ansicht'
       6: 'Ein druckbarer Kalender für das schwarze Brett'
   messages:
     title: 'Schreib genau den richtigen Leuten'
-    text: 'Schreibe einer einzelnen Person oder einer ganzen Gruppe — ausgewählt nach Status, Rolle oder Land — mit persönlichem Text und Anhängen.'
-    detail: 'Die Empfänger kommen aus der Liste, die du ohnehin schon gefiltert hast: alle Zusagen, alle Wartenden, die Betreuenden, ein Land. Der Text nutzt dieselben Platzhalter wie die Vorlagen, Anhänge gehen mit, und jede Nachricht bleibt im Verlauf — nächste Saison einfach wiederverwenden.'
+    text: 'Wähl die Gruppe, nicht die Adressen. Niemand wird von Hand kopiert, niemand vergessen.'
+    detail: 'Du wählst die Empfänger danach aus, wer sie sind — alle Zusagen, alle Wartenden, die Betreuenden, ein Land — und die Adressen kommen von selbst mit. Nichts aus einer Tabelle herauskopieren, keine Adresse in der falschen Zeile, niemand still übersehen. Anhänge gehen mit, und jede Nachricht bleibt im Verlauf.'
     point:
-      1: 'Empfänger aus der bereits gefilterten Liste'
+      1: 'Eine Gruppe wählen statt einer Adressliste'
       2: 'Persönliche Platzhalter und Datei-Anhänge'
       3: 'Vollständiger Verlauf — jede Nachricht als Vorlage wiederverwendbar'
   newsletters:
@@ -783,7 +785,7 @@ feature:
 <i18n lang="yaml" locale="fr">
 eyebrow: 'Pour les organisateurs'
 title: 'Tout ce qu’un événement demande, au même endroit'
-subtitle: '{count} outils qui remplacent le tableur, les formulaires papier et l’interminable chaîne d’e-mails. Ouvrez une carte pour voir comment cela fonctionne.'
+subtitle: 'Tout ce qui remplace le tableur, les formulaires papier et l’interminable chaîne d’e-mails. Ouvrez une carte pour voir comment cela fonctionne.'
 filter_label: 'Filtrer les fonctionnalités par domaine'
 card_action: 'Détails'
 extras_label: 'Également inclus :'
@@ -808,24 +810,26 @@ extra:
   self_host: 'Auto-hébergement avec Docker'
 feature:
   forms:
-    title: 'Des formulaires qui posent les bonnes questions'
-    text: 'Créez des formulaires multi-pages avec questions conditionnelles, sections répétables et téléversement de fichiers — dans chaque langue que vous proposez.'
-    detail: 'L’éditeur de formulaires est un véritable concepteur en glisser-déposer, pas un gabarit figé. Les questions n’apparaissent que si elles s’appliquent ; une réponse qui revient plusieurs fois — un second responsable légal, un troisième contact d’urgence — prend une section répétable plutôt que trois copies figées des mêmes champs. Et chaque libellé porte ses propres traductions : un seul formulaire suffit pour tous.'
+    title: 'Posez exactement les questions qu’il vous faut'
+    text: 'Composez votre propre formulaire d’inscription — vos questions, vos formulations, dans chaque langue que vous proposez.'
+    detail: 'Glissez les questions dont vous avez besoin et laissez de côté les autres. Une question peut rester masquée jusqu’à ce qu’une réponse précédente l’appelle : personne ne se débat avec des champs qui ne le concernent pas. Fixez une date d’ouverture et une date de fermeture, et le reste se fait tout seul.'
     point:
-      1: 'Formulaires multi-pages avec questions conditionnelles et validation'
-      2: 'Sections répétables pour les réponses multiples — responsables, contacts d’urgence'
-      3: 'Téléversements, sélecteurs de date et de pays, valeurs calculées'
-      4: 'Traduisez chaque libellé et adaptez le formulaire à vos couleurs'
+      1: 'Vos questions, vos formulations, sur autant de pages que vous voulez'
+      2: 'Des questions qui n’apparaissent que si une réponse précédente les appelle'
+      3: 'Sections répétables pour les réponses multiples — responsables, contacts d’urgence'
+      4: 'Téléversements, sélecteurs de date et de pays, et contrôles qui attrapent les fautes de frappe'
+      5: 'Donnez au formulaire une date d’ouverture et de fermeture — il s’ouvre et se ferme seul'
+      6: 'Traduisez chaque libellé et adaptez le formulaire à vos couleurs'
   registrations:
     title: 'Des listes d’inscrits que vous façonnez'
-    text: 'Chaque inscription arrive dans un tableau que vous définissez — filtrez, imprimez, acceptez ou mettez en liste d’attente en un clic.'
-    detail: 'Une inscription n’est pas une ligne à colonnes figées. Vous choisissez quelles réponses deviennent des colonnes et comment chacune s’affiche, enregistrez cette disposition comme modèle et passez de la liste d’arrivée à la liste des allergies ou au suivi des paiements sans toucher aux données. Vos propres colonnes se placent à côté des réponses du formulaire : l’équipe note qui a payé ou qui attend encore une place dans le bus directement dans le tableau.'
+    text: 'Toutes les personnes inscrites figurent dans une seule liste, avec les colonnes que vous avez choisies — prête à filtrer, imprimer et traiter.'
+    detail: 'Décidez d’emblée si les places sont attribuées automatiquement ou seulement après avoir lu chaque inscription. Ensuite, c’est une seule liste : vous choisissez quelles réponses deviennent des colonnes et comment chacune s’affiche, enregistrez cela comme modèle et passez de la liste d’arrivée à la liste des allergies ou au suivi des paiements sans toucher aux données. Vos propres colonnes se placent à côté des réponses du formulaire : l’équipe note qui a payé ou qui attend encore une place dans le bus directement dans le tableau.'
     point:
-      1: 'Des modèles de tableau sur mesure — un par liste réellement utile'
-      2: 'Des colonnes bien rendues : drapeaux, dates, âges, fichiers, statuts'
-      3: 'Ajoutez vos propres colonnes et écrivez vos notes dans la cellule'
-      4: 'Recherche, tri et filtres par statut, groupe ou n’importe quelle réponse'
-      5: 'Accepter chaque inscription automatiquement, ou les examiner une à une'
+      1: 'Attribuer les places automatiquement, ou examiner chaque inscription d’abord'
+      2: 'Un modèle de tableau enregistré pour chaque liste réellement utile'
+      3: 'Des colonnes bien rendues : drapeaux, dates, âges, fichiers, statuts'
+      4: 'Ajoutez vos propres colonnes et écrivez vos notes dans la cellule'
+      5: 'Recherche, tri et filtres par statut, groupe ou n’importe quelle réponse'
       6: 'Ouvrir une inscription pour la lire en entier, corriger une réponse ou repêcher quelqu’un de la liste d’attente'
       7: 'Des mises en page prêtes à imprimer pour le classeur emporté sur place'
   emails:
@@ -873,15 +877,15 @@ feature:
       1: 'Une grille jour par jour, de l’arrivée au départ, remplie par glisser-déposer'
       2: 'Un plan A et un plan B côte à côte — beau temps ou pluie, ou un groupe qui se sépare'
       3: 'Un backlog pour les idées à garder de côté et placer plus tard'
-      4: 'Titres, détails et lieux traduisibles — chaque groupe lit les siens'
+      4: 'Titres, détails et lieux traduisibles — une équipe internationale lit le plan dans sa propre langue'
       5: 'Toute l’équipe planifie dans la même vue partagée'
       6: 'Un calendrier imprimable pour le panneau d’affichage'
   messages:
     title: 'Écrivez exactement aux bonnes personnes'
-    text: 'Écrivez à une personne ou à tout un groupe — choisi par statut, rôle ou pays — avec un texte personnalisé et des pièces jointes.'
-    detail: 'Les destinataires sortent de la liste que vous avez déjà filtrée : tous les acceptés, ceux qui attendent, les animateurs, un pays. Le texte utilise les mêmes variables que les modèles, les pièces jointes suivent, et chaque message reste dans l’historique pour être réutilisé la saison suivante.'
+    text: 'Choisissez le groupe, pas les adresses. Personne n’est recopié à la main, personne n’est oublié.'
+    detail: 'Vous choisissez les destinataires selon ce qu’ils sont — tous les acceptés, ceux qui attendent, les animateurs, un pays — et les adresses suivent d’elles-mêmes. Rien à recopier d’un tableur, aucune adresse collée dans la mauvaise ligne, personne laissé de côté sans qu’on le voie. Les pièces jointes suivent, et chaque message reste dans l’historique.'
     point:
-      1: 'Des destinataires issus de la liste déjà filtrée'
+      1: 'Choisir un groupe, pas une liste d’adresses'
       2: 'Variables personnalisées et pièces jointes'
       3: 'Un historique complet — réutilisez n’importe quel message comme modèle'
   newsletters:
@@ -948,7 +952,7 @@ feature:
 <i18n lang="yaml" locale="pl">
 eyebrow: 'Dla organizatorów'
 title: 'Wszystko, czego wymaga wydarzenie, w jednym miejscu'
-subtitle: 'Narzędzia ({count}), które zastępują arkusz, papierowe formularze i niekończący się łańcuszek e-maili. Otwórz dowolną kartę, aby zobaczyć, jak to działa.'
+subtitle: 'Wszystko, co zastępuje arkusz, papierowe formularze i niekończący się łańcuszek e-maili. Otwórz dowolną kartę, aby zobaczyć, jak to działa.'
 filter_label: 'Filtruj funkcje według obszaru'
 card_action: 'Szczegóły'
 extras_label: 'A do tego:'
@@ -973,24 +977,26 @@ extra:
   self_host: 'Własny hosting z Dockerem'
 feature:
   forms:
-    title: 'Formularze, które zadają właściwe pytania'
-    text: 'Twórz wielostronicowe formularze z pytaniami warunkowymi, powtarzalnymi sekcjami i przesyłaniem plików — w każdym oferowanym języku.'
-    detail: 'Kreator formularzy to pełnoprawny edytor „przeciągnij i upuść”, a nie sztywny szablon. Pytania pojawiają się tylko wtedy, gdy mają zastosowanie; odpowiedź, która występuje wielokrotnie — drugi opiekun, trzeci kontakt awaryjny — dostaje powtarzalną sekcję zamiast trzech sztywnych kopii tych samych pól. A każda etykieta ma własne tłumaczenia, więc jeden formularz wystarczy dla wszystkich.'
+    title: 'Pytaj dokładnie o to, co musisz wiedzieć'
+    text: 'Zbuduj własny formularz zapisów — Twoje pytania, Twoje sformułowania, w każdym oferowanym języku.'
+    detail: 'Przeciągnij pytania, których potrzebujesz, a resztę pomiń. Pytanie może pozostać ukryte, dopóki wcześniejsza odpowiedź go nie wywoła — nikt nie przedziera się przez pola, które go nie dotyczą. Ustaw datę otwarcia i datę zamknięcia, a dalej dzieje się to samo z siebie.'
     point:
-      1: 'Wielostronicowe formularze z pytaniami warunkowymi i walidacją'
-      2: 'Powtarzalne sekcje dla odpowiedzi wielokrotnych — opiekunowie, kontakty awaryjne'
-      3: 'Przesyłanie plików, wybór daty i kraju, wartości wyliczane'
-      4: 'Przetłumacz każdą etykietę i dopasuj formularz do swoich kolorów'
+      1: 'Twoje pytania, Twoje sformułowania, na dowolnej liczbie stron'
+      2: 'Pytania, które pojawiają się dopiero, gdy wywoła je wcześniejsza odpowiedź'
+      3: 'Powtarzalne sekcje dla odpowiedzi wielokrotnych — opiekunowie, kontakty awaryjne'
+      4: 'Przesyłanie plików, wybór daty i kraju oraz kontrole wyłapujące literówki'
+      5: 'Nadaj formularzowi datę otwarcia i zamknięcia — otworzy się i zamknie sam'
+      6: 'Przetłumacz każdą etykietę i dopasuj formularz do swoich kolorów'
   registrations:
     title: 'Listy zgłoszeń, które układasz sam'
-    text: 'Każde zgłoszenie trafia do tabeli, którą sam definiujesz — filtruj, drukuj, akceptuj lub wpisuj na listę oczekujących jednym kliknięciem.'
-    detail: 'Zgłoszenie to nie wiersz o sztywnych kolumnach. To Ty decydujesz, które odpowiedzi stają się kolumnami i jak każda z nich wygląda, zapisujesz ten układ jako szablon i przełączasz się między listą przyjazdów, listą alergii a przeglądem płatności bez ruszania danych. Twoje własne kolumny stoją obok odpowiedzi z formularza — zespół notuje wprost w tabeli, kto zapłacił i kto wciąż czeka na miejsce w autokarze.'
+    text: 'Wszyscy zapisani trafiają na jedną listę z wybranymi przez Ciebie kolumnami — gotową do filtrowania, druku i pracy.'
+    detail: 'Ustal z góry, czy miejsca przyznają się automatycznie, czy dopiero po przeczytaniu każdego zgłoszenia. Dalej to już jedna lista: wybierasz, które odpowiedzi stają się kolumnami i jak wyglądają, zapisujesz to jako szablon i przełączasz się między listą przyjazdów, listą alergii a przeglądem płatności bez ruszania danych. Twoje własne kolumny stoją obok odpowiedzi z formularza — zespół notuje wprost w tabeli, kto zapłacił i kto wciąż czeka na miejsce w autokarze.'
     point:
-      1: 'Własne szablony tabel — po jednym na każdą naprawdę potrzebną listę'
-      2: 'Kolumny, które dobrze wyglądają: flagi krajów, daty, wiek, pliki, statusy'
-      3: 'Dodawaj własne kolumny i wpisuj notatki prosto do komórki'
-      4: 'Szukanie, sortowanie i filtrowanie po statusie, grupie lub dowolnej odpowiedzi'
-      5: 'Przyjmuj każde zgłoszenie automatycznie albo sprawdzaj je pojedynczo'
+      1: 'Przyznawaj miejsca automatycznie albo najpierw sprawdź każde zgłoszenie'
+      2: 'Zapisany szablon tabeli dla każdej naprawdę potrzebnej listy'
+      3: 'Kolumny, które dobrze wyglądają: flagi krajów, daty, wiek, pliki, statusy'
+      4: 'Dodawaj własne kolumny i wpisuj notatki prosto do komórki'
+      5: 'Szukanie, sortowanie i filtrowanie po statusie, grupie lub dowolnej odpowiedzi'
       6: 'Otwórz zgłoszenie, aby przeczytać je w całości, poprawić odpowiedź lub wpuścić kogoś z listy oczekujących'
       7: 'Gotowe do druku układy do segregatora zabieranego na miejsce'
   emails:
@@ -1038,15 +1044,15 @@ feature:
       1: 'Siatka dzień po dniu, od przyjazdu do wyjazdu, wypełniana przeciąganiem'
       2: 'Plan A i plan B obok siebie — dobra i zła pogoda albo podzielona grupa'
       3: 'Backlog na pomysły, które chcesz odłożyć teraz i wstawić później'
-      4: 'Tytuły, opisy i miejsca do przetłumaczenia — każda grupa czyta swoje'
+      4: 'Tytuły, opisy i miejsca do przetłumaczenia — międzynarodowy zespół czyta plan we własnym języku'
       5: 'Cały zespół planuje w tym samym widoku'
       6: 'Kalendarz do wydruku na tablicę ogłoszeń'
   messages:
     title: 'Pisz dokładnie do właściwych osób'
-    text: 'Napisz do jednej osoby albo do całej grupy — wybranej po statusie, roli lub kraju — z osobistym tekstem i załącznikami.'
-    detail: 'Odbiorcy biorą się z listy, którą i tak już przefiltrowałeś: wszyscy przyjęci, wszyscy oczekujący, opiekunowie, jeden kraj. Tekst korzysta z tych samych znaczników co szablony, załączniki idą razem z nim, a każda wiadomość zostaje w historii — w przyszłym sezonie po prostu jej użyjesz ponownie.'
+    text: 'Wybierz grupę, nie adresy. Nikogo nie kopiujesz ręcznie i nikogo nie pomijasz.'
+    detail: 'Odbiorców wybierasz po tym, kim są — wszyscy przyjęci, wszyscy oczekujący, opiekunowie, jeden kraj — a adresy dołączają same. Nic do przepisywania z arkusza, żadnego adresu wklejonego w złe miejsce, nikogo po cichu pominiętego. Załączniki idą razem z wiadomością, a każda zostaje w historii.'
     point:
-      1: 'Odbiorcy z listy, którą już przefiltrowałeś'
+      1: 'Wybierz grupę, a nie listę adresów'
       2: 'Osobiste znaczniki i załączniki plikowe'
       3: 'Pełna historia wysyłek — każdą wiadomość użyjesz jako szablonu'
   newsletters:
@@ -1113,7 +1119,7 @@ feature:
 <i18n lang="yaml" locale="cs">
 eyebrow: 'Pro organizátory'
 title: 'Vše, co akce potřebuje, na jednom místě'
-subtitle: 'Nástrojů: {count}. Nahradí tabulku, papírové formuláře i nekonečný e-mailový řetěz. Otevřete kteroukoli kartu a uvidíte, jak to funguje.'
+subtitle: 'Všechno, co nahradí tabulku, papírové formuláře i nekonečný e-mailový řetěz. Otevřete kteroukoli kartu a uvidíte, jak to funguje.'
 filter_label: 'Filtrovat funkce podle oblasti'
 card_action: 'Detaily'
 extras_label: 'A navíc:'
@@ -1138,25 +1144,27 @@ extra:
   self_host: 'Vlastní hosting s Dockerem'
 feature:
   forms:
-    title: 'Registrační formuláře, které se ptají na to podstatné'
-    text: 'Sestavte vícestránkové formuláře s podmíněnými otázkami, opakovatelnými sekcemi a nahráváním souborů — v každém jazyce, který nabízíte.'
-    detail: 'Editor formulářů je plnohodnotný návrhář „táhni a pusť“, ne pevná šablona. Otázky se objeví, jen když dávají smysl; odpověď, která se opakuje — druhý zákonný zástupce, třetí nouzový kontakt — dostane opakovatelnou sekci místo tří pevných kopií týchž polí. A každý popisek nese vlastní překlady, takže jeden formulář stačí všem.'
+    title: 'Ptejte se přesně na to, co potřebujete vědět'
+    text: 'Sestavte si vlastní registrační formulář — vaše otázky, vaše formulace, v každém jazyce, který nabízíte.'
+    detail: 'Přetáhněte dovnitř otázky, které potřebujete, a ostatní vynechte. Otázka může zůstat skrytá, dokud si ji dřívější odpověď nevyžádá — nikdo se tak neprobírá poli, která se ho netýkají. Nastavte datum otevření a datum uzavření a dál to běží samo.'
     point:
-      1: 'Vícestránkové formuláře s podmíněnými otázkami a validací'
-      2: 'Opakovatelné sekce pro vícenásobné údaje — zástupci, nouzové kontakty'
-      3: 'Nahrávání souborů, výběr data a země, počítané hodnoty'
-      4: 'Přeložte každý popisek a slaďte formulář se svými barvami'
+      1: 'Vaše otázky, vaše formulace, na tolika stránkách, kolik chcete'
+      2: 'Otázky, které se objeví, teprve když si je vyžádá dřívější odpověď'
+      3: 'Opakovatelné sekce pro vícenásobné údaje — zástupci, nouzové kontakty'
+      4: 'Nahrávání souborů, výběr data a země a kontroly, které zachytí překlepy'
+      5: 'Dejte formuláři datum otevření a uzavření — otevře se i zavře sám'
+      6: 'Přeložte každý popisek a slaďte formulář se svými barvami'
   registrations:
     title: 'Seznamy registrací, které si utvoříte sami'
-    text: 'Každá registrace přistane v tabulce, kterou si sami nadefinujete — filtrujte, tiskněte, přijímejte nebo zařazujte na čekací listinu jedním kliknutím.'
-    detail: 'Registrace není řádek s pevnými sloupci. Vy určujete, které odpovědi se stanou sloupci a jak se každý z nich vykreslí, uložíte si uspořádání jako šablonu a přepínáte mezi seznamem příjezdů, seznamem alergií a přehledem plateb, aniž byste se dotkli dat. Vaše vlastní sloupce stojí vedle odpovědí z formuláře — tým si přímo v tabulce poznamená, kdo zaplatil nebo kdo ještě čeká na místo v autobuse.'
+    text: 'Všichni přihlášení jsou v jednom seznamu se sloupci, které jste si vybrali — připraveném k filtrování, tisku a odbavení.'
+    detail: 'Rozhodněte předem, zda se místa přidělují automaticky, nebo až když si každou přihlášku přečtete. Dál je to jeden seznam: vyberete, které odpovědi se stanou sloupci a jak budou vypadat, uložíte si to jako šablonu a přepínáte mezi seznamem příjezdů, seznamem alergií a přehledem plateb, aniž byste se dotkli dat. Vaše vlastní sloupce stojí vedle odpovědí z formuláře — tým si přímo v tabulce poznamená, kdo zaplatil nebo kdo ještě čeká na místo v autobuse.'
     point:
-      1: 'Vlastní šablony tabulek — jedna pro každý seznam, který opravdu potřebujete'
-      2: 'Sloupce, které vypadají správně: vlajky zemí, data, věk, soubory, stavy'
-      3: 'Přidejte si vlastní sloupce a pište poznámky přímo do buňky'
-      4: 'Hledání, řazení a filtrování podle stavu, skupiny nebo libovolné odpovědi'
-      5: 'Přijímejte každou registraci automaticky, nebo je posuzujte jednu po druhé'
-      6: 'Otevřete registraci, přečtěte ji celou, opravte odpověď nebo někoho posuňte z čekací listiny'
+      1: 'Přidělujte místa automaticky, nebo si každou přihlášku nejdřív projděte'
+      2: 'Uložená šablona tabulky pro každý seznam, který opravdu potřebujete'
+      3: 'Sloupce, které vypadají správně: vlajky zemí, data, věk, soubory, stavy'
+      4: 'Přidejte si vlastní sloupce a pište poznámky přímo do buňky'
+      5: 'Hledání, řazení a filtrování podle stavu, skupiny nebo libovolné odpovědi'
+      6: 'Otevřete přihlášku, přečtěte ji celou, opravte odpověď nebo někoho posuňte z čekací listiny'
       7: 'Sestavy připravené k tisku do složky, kterou berete s sebou'
   emails:
     title: 'E-maily, které se odešlou samy'
@@ -1203,15 +1211,15 @@ feature:
       1: 'Denní mřížka od příjezdu po odjezd, plněná přetahováním'
       2: 'Plán A a plán B vedle sebe — hezky i deštivo, nebo rozdělená skupina'
       3: 'Backlog na nápady, které chcete odložit teď a zařadit později'
-      4: 'Názvy, popisy a místa přeložitelné — každá skupina čte ty své'
+      4: 'Názvy, popisy a místa přeložitelné — mezinárodní tým čte plán ve svém jazyce'
       5: 'Celý tým plánuje ve stejném sdíleném pohledu'
       6: 'Tisknutelný kalendář na nástěnku'
   messages:
     title: 'Pište přesně těm správným lidem'
-    text: 'Napište jednomu přihlášenému nebo celé skupině — vybrané podle stavu, role či země — s osobním textem a přílohami.'
-    detail: 'Příjemci vycházejí ze seznamu, který jste už stejně vyfiltrovali: všichni přijatí, všichni čekající, vedoucí, jedna země. Text používá stejné zástupné symboly jako šablony, přílohy jdou s ním a každá zpráva zůstane v historii — příští sezónu ji jen znovu použijete.'
+    text: 'Vyberte skupinu, ne adresy. Nikoho nepřepisujete ručně a na nikoho nezapomenete.'
+    detail: 'Příjemce vybíráte podle toho, kdo jsou — všichni přijatí, všichni čekající, vedoucí, jedna země — a adresy se přidají samy. Nic se nepřepisuje z tabulky, žádná adresa nespadne na špatný řádek, nikdo tiše nevypadne. Přílohy jdou se zprávou a každá zůstane v historii.'
     point:
-      1: 'Příjemci ze seznamu, který jste už vyfiltrovali'
+      1: 'Vyberte skupinu, ne seznam adres'
       2: 'Osobní zástupné symboly a přílohy'
       3: 'Úplná historie odeslaného — každou zprávu použijete jako šablonu'
   newsletters:

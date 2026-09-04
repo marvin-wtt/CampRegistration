@@ -60,7 +60,7 @@ export const LANDING_FEATURES: LandingFeature[] = [
     icon: 'dynamic_form',
     category: 'registration',
     preview: 'form',
-    points: 4,
+    points: 6,
     featured: true,
   },
   {
