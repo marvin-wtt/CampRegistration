@@ -501,7 +501,7 @@ submit:
     retry: 'Try again'
 complete:
   title: 'Registration complete!'
-  text: "Thanks for signing up — we've received your registration and can't wait to see you at event."
+  text: "Thanks for signing up — we've received your registration and can't wait to see you at the event."
   registerAnother: 'Register another person'
   exploreEvents: 'Explore other events'
 </i18n>
