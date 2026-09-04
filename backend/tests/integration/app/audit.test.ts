@@ -424,34 +424,5 @@ describe('/api/v1/events/:eventId/registrations/:registrationId/audit', () => {
         ).not.toBeNull();
       });
     });
-
-    describe('purgeExpiredActorIps', () => {
-      it('scrubs the actor IP past the IP window but keeps the row', async () => {
-        const old = await createAuditLog({
-          actorIp: '203.0.113.7',
-          createdAt: moment().subtract(60, 'days').toDate(),
-        });
-
-        await resolve(AuditService).purgeExpiredActorIps();
-
-        const row = await prisma.auditLog.findUnique({ where: { id: old.id } });
-        expect(row).not.toBeNull();
-        expect(row?.actorIp).toBeNull();
-      });
-
-      it('keeps the actor IP for recent entries', async () => {
-        const recent = await createAuditLog({
-          actorIp: '203.0.113.7',
-          createdAt: moment().subtract(1, 'day').toDate(),
-        });
-
-        await resolve(AuditService).purgeExpiredActorIps();
-
-        const row = await prisma.auditLog.findUnique({
-          where: { id: recent.id },
-        });
-        expect(row?.actorIp).toBe('203.0.113.7');
-      });
-    });
   });
 });

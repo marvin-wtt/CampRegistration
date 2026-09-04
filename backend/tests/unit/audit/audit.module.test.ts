@@ -18,12 +18,4 @@ describe('AuditModule.registerJobs', () => {
 
     expect(job?.isRunning()).toBeTruthy();
   });
-
-  it('schedules a running audit-log-ip-scrub job', () => {
-    scheduler = new JobScheduler();
-
-    new AuditModule().registerJobs(scheduler);
-
-    expect(scheduler.findJob('audit-log-ip-scrub')?.isRunning()).toBeTruthy();
-  });
 });

@@ -11,7 +11,6 @@ import { USER_IDS } from './ids';
 
 // The user the event-manager seeder makes a manager of every seeded event.
 const MANAGER_USER_ID = USER_IDS.john;
-const MANAGER_IP = '203.0.113.10';
 
 // Form-answer paths (matching the example event's questions) used for dummy edits.
 const DATA_FIELDS = [
@@ -42,7 +41,6 @@ class AuditSeeder extends BaseSeeder {
           entityId: event.id,
           eventId: event.id,
           actorId: MANAGER_USER_ID,
-          actorIp: MANAGER_IP,
           createdAt: eventCreatedAt.get(event.id),
         },
       });
@@ -59,7 +57,6 @@ class AuditSeeder extends BaseSeeder {
           entityId: manager.id,
           eventId: manager.eventId,
           actorId: MANAGER_USER_ID,
-          actorIp: MANAGER_IP,
           createdAt: eventCreatedAt.get(manager.eventId),
         },
       });
@@ -79,7 +76,6 @@ class AuditSeeder extends BaseSeeder {
           entityId: registration.id,
           eventId: registration.eventId,
           actorId: null,
-          actorIp: null,
           createdAt: registration.createdAt,
         },
       });
@@ -107,7 +103,6 @@ class AuditSeeder extends BaseSeeder {
           entityId: registration.id,
           eventId: registration.eventId,
           actorId: MANAGER_USER_ID,
-          actorIp: MANAGER_IP,
           changes: {
             changedFields: faker.helpers
               .arrayElements(DATA_FIELDS, { min: 1, max: 2 })
@@ -126,7 +121,6 @@ class AuditSeeder extends BaseSeeder {
             entityId: registration.id,
             eventId: registration.eventId,
             actorId: MANAGER_USER_ID,
-            actorIp: MANAGER_IP,
             changes: { changedValues: { status: registration.status } },
             createdAt: moment
               .min(

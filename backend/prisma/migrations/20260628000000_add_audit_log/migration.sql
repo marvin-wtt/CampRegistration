@@ -6,7 +6,6 @@ CREATE TABLE `audit_logs` (
     `entity_id` CHAR(26) NOT NULL,
     `event_id` CHAR(26) NULL,
     `actor_id` CHAR(26) NULL,
-    `actor_ip` VARCHAR(45) NULL,
     `changes` JSON NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 

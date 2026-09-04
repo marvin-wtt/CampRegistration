@@ -20,10 +20,6 @@ export type PrismaTransaction = Parameters<
 
 // Audit rows are purged after this long — defense-in-depth against unbounded PII retention.
 const AUDIT_RETENTION_DAYS = 365 * 2;
-// The actor IP only serves short-lived security/abuse investigation, so it is
-// scrubbed well before the audit row itself expires — data minimization for the
-// one piece of free-floating PII the log retains for an event's whole lifetime.
-const AUDIT_IP_RETENTION_DAYS = 30;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export interface AuditRecordInput {
@@ -68,7 +64,6 @@ export class AuditService extends BaseService {
         entityId: input.entityId,
         eventId: input.eventId ?? null,
         actorId,
-        actorIp: this.context.ip ?? null,
         changes: input.changes ?? Prisma.JsonNull,
       },
     });
@@ -198,12 +193,6 @@ export class AuditService extends BaseService {
     return new Map(users.map((user) => [user.id, user]));
   }
 
-  /** Removes all audit rows scoped to an event — for GDPR erasure only. */
-  async purgeForEvent(eventId: string, tx?: PrismaTransaction): Promise<void> {
-    const client = tx ?? this.prisma;
-    await client.auditLog.deleteMany({ where: { eventId } });
-  }
-
   /**
    * Enforces the audit-log retention policy. Only purges *orphaned* entries —
    * rows whose event is already gone (`eventId` is null, either because the
@@ -219,26 +208,6 @@ export class AuditService extends BaseService {
         eventId: null,
         createdAt: { lt: cutoff },
       },
-    });
-    return count;
-  }
-
-  /**
-   * Scrubs the actor IP from audit rows older than the short IP-retention
-   * window, while keeping the accountability record (actor, action, time). The
-   * IP outlives its investigative purpose quickly, so it is nulled independently
-   * of the row's own lifetime — this also clears the IPs of any user who has
-   * since been erased.
-   */
-  async purgeExpiredActorIps(): Promise<number> {
-    const cutoff = new Date(Date.now() - AUDIT_IP_RETENTION_DAYS * DAY_MS);
-
-    const { count } = await this.prisma.auditLog.updateMany({
-      where: {
-        actorIp: { not: null },
-        createdAt: { lt: cutoff },
-      },
-      data: { actorIp: null },
     });
     return count;
   }
