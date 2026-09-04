@@ -12,7 +12,7 @@
 
       <div class="hero__eyebrow anim anim--1">
         <q-icon
-          name="cabin"
+          name="code"
           size="16px"
         />
         <span>{{ t('hero.eyebrow') }}</span>
@@ -31,105 +31,89 @@
         {{ t('hero.subtitle') }}
       </p>
 
-      <!-- Audience split: organizers dominant, participants get a fast exit -->
-      <div class="hero__split anim anim--4">
-        <article class="split-card split-card--organizers">
-          <span class="split-card__badge">{{ t('organizers.badge') }}</span>
-          <h2 class="split-card__title">{{ t('organizers.title') }}</h2>
-          <p class="split-card__text">{{ t('organizers.text') }}</p>
-          <div class="split-card__actions">
-            <m-btn
-              :label="organizerCtaLabel"
-              :to="organizerCtaTo"
-              icon-right="arrow_forward"
-              size="16px"
-              no-caps
-              data-test="landing-organizer-cta"
-            />
-            <m-btn
-              v-if="!user"
-              :label="t('organizers.action_login')"
-              :to="{ name: 'login' }"
-              text
-              size="16px"
-              no-caps
-              data-test="landing-login"
-            />
-          </div>
-        </article>
-
-        <article class="split-card split-card--participants">
+      <ul
+        class="hero__proof anim anim--3"
+        :aria-label="t('hero.proof_label')"
+      >
+        <li
+          v-for="proof in proofPoints"
+          :key="proof.name"
+        >
           <q-icon
-            class="split-card__icon"
-            name="hiking"
-            size="32px"
+            :name="proof.icon"
+            size="16px"
           />
-          <h2 class="split-card__title">{{ t('participants.title') }}</h2>
-          <p class="split-card__text">{{ t('participants.text') }}</p>
-          <div class="split-card__actions">
-            <m-btn
-              :label="t('participants.action')"
-              :to="{ name: 'events' }"
-              tonal
-              tertiary
-              icon-right="arrow_forward"
-              no-caps
-              data-test="landing-participant-cta"
-            />
-          </div>
-        </article>
+          {{ t(`hero.proof.${proof.name}`) }}
+        </li>
+      </ul>
+
+      <div class="hero__actions anim anim--4">
+        <m-btn
+          :label="organizerCtaLabel"
+          :to="organizerCtaTo"
+          primary
+          icon-right="arrow_forward"
+          size="17px"
+          padding="14px 28px"
+          no-caps
+          data-test="landing-organizer-cta"
+        />
+        <m-btn
+          v-if="!user"
+          :label="t('organizers.action_login')"
+          :to="{ name: 'login' }"
+          text
+          size="16px"
+          no-caps
+          data-test="landing-login"
+        />
       </div>
+
+      <!-- The participant's exit from an otherwise organizer-facing hero: one
+           lane straight to the open event list, no pitch to read first. -->
+      <router-link
+        class="fasttrack anim anim--5"
+        :to="{ name: 'events' }"
+        data-test="landing-participant-cta"
+      >
+        <span class="fasttrack__icon">
+          <q-icon
+            name="how_to_reg"
+            size="26px"
+          />
+        </span>
+
+        <span class="fasttrack__copy">
+          <strong class="fasttrack__title">{{ t('fasttrack.title') }}</strong>
+          <span class="fasttrack__text">{{ t('fasttrack.text') }}</span>
+          <span class="fasttrack__points">
+            <span
+              v-for="point in ['point_1', 'point_2', 'point_3']"
+              :key="point"
+            >
+              <q-icon
+                name="check"
+                size="15px"
+              />
+              {{ t(`fasttrack.${point}`) }}
+            </span>
+          </span>
+        </span>
+
+        <span class="fasttrack__action">
+          <span class="fasttrack__action-label">
+            {{ t('fasttrack.action') }}
+          </span>
+          <q-icon
+            name="arrow_forward"
+            size="20px"
+          />
+        </span>
+      </router-link>
     </section>
 
     <!-- ================================================== FEATURES -->
-    <section
-      class="landing__section features"
-      aria-labelledby="landing-features-title"
-    >
-      <h2
-        id="landing-features-title"
-        class="section-title"
-      >
-        {{ t('feature.title') }}
-      </h2>
-      <p class="section-subtitle">{{ t('feature.subtitle') }}</p>
-
-      <div class="features__grid">
-        <article
-          v-for="feature in features"
-          :key="feature.name"
-          class="feature-card"
-        >
-          <div class="feature-card__icon">
-            <q-icon
-              :name="feature.icon"
-              size="26px"
-            />
-          </div>
-          <h3 class="feature-card__title">
-            {{ t(`feature.${feature.name}.title`) }}
-          </h3>
-          <p class="feature-card__text">
-            {{ t(`feature.${feature.name}.text`) }}
-          </p>
-        </article>
-      </div>
-
-      <div class="features__more">
-        <span class="features__more-label">{{ t('feature.more_label') }}</span>
-        <span
-          v-for="chip in extraChips"
-          :key="chip.name"
-          class="features__chip"
-        >
-          <q-icon
-            :name="chip.icon"
-            size="16px"
-          />
-          {{ t(`feature.chip.${chip.name}`) }}
-        </span>
-      </div>
-    </section>
+    <landing-features class="landing__section" />
 
     <!-- ===================================================== STEPS -->
     <section
@@ -142,23 +126,47 @@
       >
         {{ t('step.title') }}
       </h2>
+      <p class="section-subtitle">{{ t('step.subtitle') }}</p>
 
-      <ol class="steps__list">
-        <li
-          v-for="(step, index) in ['one', 'two', 'three']"
-          :key="step"
-          class="step"
+      <div class="steps__tracks">
+        <div
+          v-for="track in tracks"
+          :key="track.name"
+          class="track"
+          :class="`track--${track.name}`"
         >
-          <span
-            class="step__number"
-            aria-hidden="true"
-          >
-            {{ index + 1 }}
-          </span>
-          <h3 class="step__title">{{ t(`step.${step}.title`) }}</h3>
-          <p class="step__text">{{ t(`step.${step}.text`) }}</p>
-        </li>
-      </ol>
+          <div class="track__head">
+            <q-icon
+              :name="track.icon"
+              size="20px"
+            />
+            <h3 class="track__title">{{ t(`step.${track.name}.title`) }}</h3>
+          </div>
+
+          <ol class="track__list">
+            <li
+              v-for="(step, index) in ['one', 'two', 'three']"
+              :key="step"
+              class="track__step"
+            >
+              <span
+                class="track__number"
+                aria-hidden="true"
+              >
+                {{ index + 1 }}
+              </span>
+              <div>
+                <p class="track__step-title">
+                  {{ t(`step.${track.name}.${step}.title`) }}
+                </p>
+                <p class="track__step-text">
+                  {{ t(`step.${track.name}.${step}.text`) }}
+                </p>
+              </div>
+            </li>
+          </ol>
+        </div>
+      </div>
     </section>
 
     <!-- ================================================= SELF-HOST -->
@@ -212,11 +220,13 @@
             <span />
             <span />
           </div>
-          <pre class="selfhost__terminal-body">
-            <span class="t-dim"># {{ t('selfhost.terminal_comment') }}</span>
-            <span class="t-prompt">$</span> git clone marvin-wtt/EventRegistration
-            <span class="t-prompt">$</span> docker compose up -d
-            <span class="t-ok">✓</span> {{ t('selfhost.terminal_done') }}</pre>
+          <!-- No indentation inside <pre>: it would be rendered verbatim. -->
+          <pre
+            class="selfhost__terminal-body"
+          ><span class="t-dim"># {{ t('selfhost.terminal_comment') }}</span>
+<span class="t-prompt">$</span> git clone marvin-wtt/EventRegistration
+<span class="t-prompt">$</span> docker compose up -d
+<span class="t-ok">✓</span> {{ t('selfhost.terminal_done') }}</pre>
         </div>
       </div>
     </section>
@@ -262,6 +272,7 @@ import { useMeta } from 'quasar';
 import { storeToRefs } from 'pinia';
 import { useProfileStore } from '@/stores/profile-store';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
+import LandingFeatures from '@/components/landing/LandingFeatures.vue';
 
 const { t } = useI18n();
 const profileStore = useProfileStore();
@@ -285,26 +296,16 @@ const organizerCtaTo = computed(() =>
   user.value ? { name: 'management.events' } : { name: 'register' },
 );
 
-const features = [
-  { name: 'forms', icon: 'dynamic_form' },
-  { name: 'participants', icon: 'table_view' },
-  { name: 'messaging', icon: 'forward_to_inbox' },
-  { name: 'program', icon: 'calendar_month' },
-  { name: 'rooms', icon: 'bed' },
-  { name: 'contacts', icon: 'contact_mail' },
-  { name: 'team', icon: 'group_add' },
-  { name: 'dashboard', icon: 'dashboard' },
-  { name: 'newsletter', icon: 'eventaign' },
+const proofPoints = [
+  { name: 'open_source', icon: 'code' },
+  { name: 'self_host', icon: 'dns' },
+  { name: 'languages', icon: 'translate' },
+  { name: 'no_account', icon: 'person_off' },
 ] as const;
 
-const extraChips = [
-  { name: 'responsive', icon: 'devices' },
-  { name: 'languages', icon: 'translate' },
-  { name: 'multilingual_forms', icon: 'language' },
-  { name: 'files', icon: 'attach_file' },
-  { name: 'templates', icon: 'drafts' },
-  { name: 'two_factor', icon: 'phonelink_lock' },
-  { name: 'dark_mode', icon: 'dark_mode' },
+const tracks = [
+  { name: 'organizer', icon: 'admin_panel_settings' },
+  { name: 'participant', icon: 'hiking' },
 ] as const;
 </script>
 
@@ -418,178 +419,140 @@ const extraChips = [
   color: var(--md3-on-surface-variant);
 }
 
-/* Audience split cards */
-.hero__split {
-  display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
-  gap: 20px;
-  margin-top: clamp(32px, 6vh, 56px);
-}
-
-.split-card {
+.hero__proof {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 12px;
-  padding: clamp(24px, 3.5vw, 40px);
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
 }
 
-.split-card__title {
-  margin: 0;
-  font-size: clamp(1.35rem, 2.4vw, 1.8rem);
+.hero__proof li {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--md3-on-surface-variant);
+}
+
+.hero__proof .q-icon {
+  color: var(--md3-tertiary);
+}
+
+.hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 32px;
+}
+
+/* ================================================== PARTICIPANTS */
+/* One wide lane to the event list — the counterpart to the organizer
+ * buttons above it, in tertiary so the two never compete. */
+.fasttrack {
+  display: flex;
+  align-items: center;
+  gap: clamp(16px, 2.5vw, 24px);
+  margin-top: clamp(32px, 6vh, 56px);
+  padding: clamp(20px, 3vw, 28px) clamp(20px, 3vw, 32px);
+  text-decoration: none;
+  border-radius: var(--md3-corner-extra-large) var(--md3-corner-extra-large)
+    64px var(--md3-corner-extra-large);
+  color: var(--md3-on-tertiary-container);
+  background: var(--md3-tertiary-container);
+  transition:
+    transform 0.35s var(--md3-easing-emphasized),
+    border-radius 0.35s var(--md3-easing-emphasized),
+    box-shadow 0.35s var(--md3-easing-emphasized);
+}
+
+.fasttrack:hover,
+.fasttrack:focus-visible {
+  border-radius: var(--md3-corner-extra-large) 64px
+    var(--md3-corner-extra-large) 64px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.16);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .fasttrack:hover,
+  .fasttrack:focus-visible {
+    transform: translateY(-3px);
+  }
+}
+
+.fasttrack__icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  padding: 14px;
+  border-radius: var(--md3-corner-large);
+  color: var(--md3-tertiary-container);
+  background: var(--md3-on-tertiary-container);
+}
+
+.fasttrack__copy {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.fasttrack__title {
+  font-size: clamp(1.15rem, 2vw, 1.5rem);
   font-weight: 700;
   letter-spacing: -0.015em;
   line-height: 1.2;
 }
 
-.split-card__text {
-  margin: 0;
+.fasttrack__text {
   font-size: 1rem;
-  line-height: 1.55;
+  line-height: 1.5;
+  opacity: 0.85;
 }
 
-.split-card__actions {
+.fasttrack__points {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  margin-top: auto;
-  padding-top: 12px;
-}
-
-/* Organizers: the dominant card — MD3 expressive asymmetric corners */
-.split-card--organizers {
-  border-radius: var(--md3-corner-extra-large) var(--md3-corner-extra-large)
-    var(--md3-corner-extra-large) 72px;
-  color: var(--md3-on-primary-container);
-  background: var(--md3-primary-container);
-}
-
-.split-card__badge {
-  padding: 4px 12px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  border-radius: var(--md3-corner-full);
-  color: var(--md3-primary-container);
-  background: var(--md3-on-primary-container);
-}
-
-/* Participants: lighter, clearly secondary but impossible to miss */
-.split-card--participants {
-  border: 1px solid var(--md3-outline-variant);
-  border-radius: var(--md3-corner-extra-large) var(--md3-corner-extra-large)
-    72px var(--md3-corner-extra-large);
-  color: var(--md3-on-surface);
-  background: var(--md3-surface-container-low);
-}
-
-.split-card--participants .split-card__text {
-  color: var(--md3-on-surface-variant);
-}
-
-.split-card__icon {
-  padding: 10px;
-  border-radius: var(--md3-corner-large);
-  color: var(--md3-on-tertiary-container);
-  background: var(--md3-tertiary-container);
-  box-sizing: content-box;
-}
-
-/* ====================================================== FEATURES */
-.features {
-  padding-top: clamp(56px, 10vh, 104px);
-}
-
-.features__grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
-  margin-top: 32px;
-}
-
-.feature-card {
-  padding: 24px;
-  border-radius: var(--md3-corner-extra-large);
-  background: var(--md3-surface-container);
-  transition:
-    border-radius 0.35s var(--md3-easing-emphasized),
-    background-color 0.35s var(--md3-easing-emphasized),
-    transform 0.35s var(--md3-easing-emphasized);
-}
-
-.feature-card:hover {
-  border-radius: var(--md3-corner-extra-large) 48px
-    var(--md3-corner-extra-large) 48px;
-  background: var(--md3-surface-container-high);
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .feature-card:hover {
-    transform: translateY(-3px);
-  }
-}
-
-.feature-card__icon {
-  display: inline-flex;
-  padding: 12px;
-  border-radius: var(--md3-corner-large);
-  color: var(--md3-on-secondary-container);
-  background: var(--md3-secondary-container);
-}
-
-/* Alternate icon tints so the grid doesn't look stamped out */
-.feature-card:nth-child(3n + 2) .feature-card__icon {
-  color: var(--md3-on-primary-container);
-  background: var(--md3-primary-container);
-}
-
-.feature-card:nth-child(3n) .feature-card__icon {
-  color: var(--md3-on-tertiary-container);
-  background: var(--md3-tertiary-container);
-}
-
-.feature-card__title {
-  margin: 16px 0 0;
-  font-size: 1.1rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  line-height: 1.3;
-  color: var(--md3-on-surface);
-}
-
-.feature-card__text {
-  margin: 8px 0 0;
-  font-size: 0.92rem;
-  line-height: 1.55;
-  color: var(--md3-on-surface-variant);
-}
-
-.features__more {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  margin-top: 24px;
-}
-
-.features__more-label {
+  gap: 4px 16px;
+  margin-top: 6px;
   font-size: 0.85rem;
   font-weight: 600;
-  color: var(--md3-on-surface-variant);
 }
 
-.features__chip {
+.fasttrack__points > span {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 12px;
-  font-size: 0.82rem;
-  font-weight: 500;
-  border: 1px solid var(--md3-outline-variant);
+}
+
+.fasttrack__points .q-icon {
+  opacity: 0.7;
+}
+
+.fasttrack__action {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  white-space: nowrap;
   border-radius: var(--md3-corner-full);
-  color: var(--md3-on-surface-variant);
+  color: var(--md3-tertiary-container);
+  background: var(--md3-on-tertiary-container);
+}
+
+.fasttrack__action .q-icon {
+  transition: transform 0.25s var(--md3-easing-emphasized);
+}
+
+.fasttrack:hover .fasttrack__action .q-icon,
+.fasttrack:focus-visible .fasttrack__action .q-icon {
+  transform: translateX(4px);
 }
 
 /* ========================================================= STEPS */
@@ -597,50 +560,93 @@ const extraChips = [
   padding-top: clamp(56px, 10vh, 104px);
 }
 
-.steps__list {
+.steps__tracks {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
-  margin: 32px 0 0;
-  padding: 0;
-  list-style: none;
+  margin-top: 32px;
 }
 
-.step {
-  position: relative;
-  padding: 88px 20px 24px 24px;
-  border-radius: var(--md3-corner-extra-large);
+.track {
+  padding: clamp(24px, 3vw, 32px);
+  border-radius: 32px;
   background: var(--md3-surface-container-low);
-  overflow: hidden;
 }
 
-.step__number {
-  position: absolute;
-  top: -28px;
-  left: 4px;
-  font-size: 7rem;
-  font-weight: 900;
-  line-height: 1;
-  letter-spacing: -0.05em;
-  color: rgba(var(--md3-primary-rgb), 0.14);
-  user-select: none;
+.track--organizer {
+  border: 1px solid var(--md3-outline-variant);
 }
 
-.step__title {
-  position: relative;
+.track--participant {
+  color: var(--md3-on-tertiary-container);
+  background: var(--md3-tertiary-container);
+}
+
+.track__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.track__title {
   margin: 0;
   font-size: 1.15rem;
   font-weight: 700;
   letter-spacing: -0.01em;
-  color: var(--md3-on-surface);
 }
 
-.step__text {
-  position: relative;
-  margin: 8px 0 0;
+.track__list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin: 24px 0 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: track;
+}
+
+.track__step {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.track__number {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  border-radius: 50%;
+  color: var(--md3-on-primary);
+  background: var(--md3-primary);
+}
+
+.track--participant .track__number {
+  color: var(--md3-on-tertiary);
+  background: var(--md3-tertiary);
+}
+
+.track__step-title {
+  margin: 4px 0 0;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.track__step-text {
+  margin: 6px 0 0;
   font-size: 0.92rem;
-  line-height: 1.55;
+  line-height: 1.5;
+  opacity: 0.85;
+}
+
+.track--organizer .track__step-text {
   color: var(--md3-on-surface-variant);
+  opacity: 1;
 }
 
 /* ===================================================== SELF-HOST */
@@ -821,7 +827,11 @@ const extraChips = [
   }
 
   .anim--4 {
-    animation-delay: 0.4s;
+    animation-delay: 0.35s;
+  }
+
+  .anim--5 {
+    animation-delay: 0.5s;
   }
 }
 
@@ -839,11 +849,6 @@ const extraChips = [
 
 /* ==================================================== RESPONSIVE */
 @media (max-width: 900px) {
-  .features__grid,
-  .steps__list {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .selfhost__card {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -864,96 +869,78 @@ const extraChips = [
     margin-top: 16px;
   }
 
-  .hero__split {
+  .steps__tracks {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .features__grid,
-  .steps__list {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .split-card--organizers {
-    border-radius: var(--md3-corner-extra-large) var(--md3-corner-extra-large)
-      var(--md3-corner-extra-large) 48px;
-  }
-
-  .split-card--participants {
+  /* Stack the lane: the action becomes a full-width button under the copy. */
+  .fasttrack {
+    flex-wrap: wrap;
     border-radius: var(--md3-corner-extra-large) var(--md3-corner-extra-large)
       48px var(--md3-corner-extra-large);
+  }
+
+  .fasttrack__copy {
+    flex-basis: 0;
+  }
+
+  .fasttrack__action {
+    flex: 1 1 100%;
+    justify-content: center;
   }
 }
 </style>
 
 <i18n lang="yaml" locale="en">
 meta_title: 'Event management made simple'
-meta_description: '@:app_name is a free, open-source platform for organizing youth events: online registration forms, participant tables, room and program planning, emails, and newsletters.'
+meta_description: '@:app_name is an open-source platform for organizing events: online registration forms, participant lists, room and program planning, automatic emails, and newsletters.'
+fasttrack:
+  title: 'Here to sign up for an event?'
+  text: 'Every event currently open for registration, in one list.'
+  point_1: 'No account, no password'
+  point_2: 'A few minutes on your phone'
+  point_3: 'In your own language'
+  action: 'Find your event'
 hero:
-  eyebrow: 'Free & open-source event management'
+  eyebrow: 'Open-source event management'
   title: 'Run your event,'
   title_highlight: 'not your paperwork'
-  subtitle: '@:app_name brings registrations, participants, rooms, program, and communication together in one place — built by event organizers, for event organizers.'
-participants:
-  title: 'Joining an event?'
-  text: 'Find your event and register online in a few minutes — no account required.'
-  action: 'Browse open events'
+  subtitle: '@:app_name brings registrations, participants, rooms, program and communication together in one place — built by event organizers, for event organizers.'
+  proof_label: 'What @:app_name gives you'
+  proof:
+    open_source: 'Open source, AGPLv3'
+    self_host: 'Self-hostable'
+    languages: 'Five languages'
+    no_account: 'No account needed to register'
 organizers:
-  badge: 'For organizers'
-  title: 'Everything your event team needs'
-  text: 'From the first registration form to the final room plan — manage the entire event together with your team.'
-  action: 'Get started for free'
+  action: 'Get started'
   action_authed: 'Open management'
   action_login: 'Sign in'
-feature:
-  title: 'Why organize with @:app_name?'
-  subtitle: "Because spreadsheets, paper forms, and email chains don't scale to a whole event."
-  forms:
-    title: 'Dynamic registration forms'
-    text: 'Build multi-page forms with conditional logic, dynamic inputs, file uploads, and built-in translations. Families register online in minutes.'
-  participants:
-    title: 'Tables built around your data'
-    text: 'Arrange registrations into custom tables that show exactly what you need — then filter, export, or print them.'
-  messaging:
-    title: 'Emails that send themselves'
-    text: 'Send personalized, fully customizable confirmation, acceptance, and cancellation emails automatically — no manual work required.'
-  rooms:
-    title: 'Room planner'
-    text: 'Assign participants to rooms while keeping beds, ages, and groups in view.'
-  program:
-    title: 'Program planner'
-    text: 'Plan the event schedule collaboratively — from arrival day to departure, visible to the whole team.'
-  contacts:
-    title: 'Email participants directly'
-    text: 'Reach a single participant or a whole group with personalized emails — sent to exactly the right people.'
-  newsletter:
-    title: 'Newsletters'
-    text: 'Keep families in the loop with newsletters sent straight to everyone who signed up.'
-  dashboard:
-    title: 'Dashboard overview'
-    text: 'See capacity, registrations, and key numbers at a glance — your whole event on one screen.'
-  team:
-    title: 'Share access with your team'
-    text: 'Invite counselors and coordinators with fine-grained roles and permissions, and manage the event together.'
-  more_label: 'Also included:'
-  chip:
-    responsive: 'Works on desktop & mobile'
-    languages: 'Five languages'
-    multilingual_forms: 'Multilingual forms'
-    files: 'File management'
-    templates: 'Email templates'
-    two_factor: 'Two-factor authentication'
-    dark_mode: 'Dark mode'
 step:
-  title: 'Up and running in an afternoon'
-  one:
-    title: 'Create your event'
-    text: 'Set dates and capacity, and build your registration form.'
-  two:
-    title: 'Share your link'
-    text: 'Families register online — every registration appears instantly.'
-  three:
-    title: 'Run the event'
-    text: 'Assign rooms, plan the program, and keep everyone informed.'
+  title: 'How it works'
+  subtitle: 'Two short paths — one for the people running the event, one for the people joining it.'
+  organizer:
+    title: 'If you organize'
+    one:
+      title: 'Create your event'
+      text: 'Set dates, capacity and age range, then build your registration form.'
+    two:
+      title: 'Share your link'
+      text: 'Registrations arrive in your list, and the confirmation email goes out by itself.'
+    three:
+      title: 'Run the event'
+      text: 'Assign rooms, plan the program and duties, and keep everyone informed.'
+  participant:
+    title: 'If you sign up'
+    one:
+      title: 'Find your event'
+      text: 'Browse the open events, or open the link the organizer sent you.'
+    two:
+      title: 'Fill in the form'
+      text: 'A few minutes on any device, in your language — no account required.'
+    three:
+      title: 'Get your confirmation'
+      text: 'An email confirms your spot, with the details and the privacy information.'
 selfhost:
   eyebrow: 'Open source · AGPLv3'
   title: 'Your event, your data — your server, if you want'
@@ -966,80 +953,61 @@ selfhost:
   terminal_done: '@:app_name is running'
 cta:
   title: 'Ready for a calmer event season?'
-  text: 'Create your first event in minutes — free of charge.'
+  text: 'Set up your first event in minutes and share the link the same day.'
   participant_hint: 'Just want to sign up for an event?'
   participant_link: 'Find your event here'
 </i18n>
 
 <i18n lang="yaml" locale="de">
 meta_title: 'Veranstaltungsverwaltung einfach gemacht'
-meta_description: '@:app_name ist eine kostenlose Open-Source-Plattform für die Organisation von Veranstaltungen: Online-Anmeldeformulare, Teilnehmendentabellen, Zimmer- und Programmplanung, E-Mails und Newsletter.'
+meta_description: '@:app_name ist eine Open-Source-Plattform für die Organisation von Veranstaltungen: Online-Anmeldeformulare, Teilnehmendenlisten, Zimmer- und Programmplanung, automatische E-Mails und Newsletter.'
+fasttrack:
+  title: 'Du willst dich für eine Veranstaltung anmelden?'
+  text: 'Alle Veranstaltungen, für die die Anmeldung offen ist, in einer Liste.'
+  point_1: 'Kein Konto, kein Passwort'
+  point_2: 'Ein paar Minuten am Handy'
+  point_3: 'In deiner eigenen Sprache'
+  action: 'Veranstaltung finden'
 hero:
-  eyebrow: 'Kostenlose Open-Source-Veranstaltungsverwaltung'
+  eyebrow: 'Open-Source-Veranstaltungsverwaltung'
   title: 'Organisiere deine Veranstaltung,'
   title_highlight: 'nicht deinen Papierkram'
   subtitle: '@:app_name vereint Anmeldungen, Teilnehmende, Zimmer, Programm und Kommunikation an einem Ort — von Veranstaltungsorganisatoren für Veranstaltungsorganisatoren entwickelt.'
-participants:
-  title: 'Du möchtest an einer Veranstaltung teilnehmen?'
-  text: 'Finde deine Veranstaltung und melde dich in wenigen Minuten online an — ganz ohne Konto.'
-  action: 'Offene Veranstaltungen ansehen'
+  proof_label: 'Was dir @:app_name bietet'
+  proof:
+    open_source: 'Open Source, AGPLv3'
+    self_host: 'Selbst hostbar'
+    languages: 'Fünf Sprachen'
+    no_account: 'Anmeldung ohne Konto'
 organizers:
-  badge: 'Für Organisatoren'
-  title: 'Alles, was deine Veranstaltung-Team braucht'
-  text: 'Vom ersten Anmeldeformular bis zum fertigen Zimmerplan — verwalte das gesamte Veranstaltung gemeinsam mit deinem Team.'
-  action: 'Kostenlos starten'
+  action: 'Jetzt starten'
   action_authed: 'Zur Verwaltung'
   action_login: 'Anmelden'
-feature:
-  title: 'Warum mit @:app_name organisieren?'
-  subtitle: 'Weil Tabellen, Papierformulare und E-Mail-Ketten bei einem ganzen Veranstaltung an ihre Grenzen kommen.'
-  forms:
-    title: 'Dynamische Anmeldeformulare'
-    text: 'Erstelle mehrseitige Formulare mit bedingter Logik, dynamischen Feldern, Datei-Uploads und integrierten Übersetzungen. Familien melden sich in Minuten online an.'
-  participants:
-    title: 'Tabellen nach deinen Daten'
-    text: 'Ordne Anmeldungen in individuellen Tabellen, die genau das zeigen, was du brauchst — filtere, exportiere oder drucke sie.'
-  messaging:
-    title: 'E-Mails, die sich selbst versenden'
-    text: 'Versende personalisierte, frei anpassbare Bestätigungs-, Zusage- und Stornierungs-E-Mails automatisch — ganz ohne manuellen Aufwand.'
-  rooms:
-    title: 'Zimmerplaner'
-    text: 'Weise Teilnehmende Zimmern zu und behalte Betten, Alter und Gruppen im Blick.'
-  program:
-    title: 'Programmplaner'
-    text: 'Plant den Veranstaltungsablauf gemeinsam — vom Anreisetag bis zur Abreise, sichtbar für das ganze Team.'
-  contacts:
-    title: 'Teilnehmende direkt anschreiben'
-    text: 'Erreiche eine einzelne Person oder eine ganze Gruppe mit personalisierten E-Mails — gesendet an genau die richtigen Empfänger.'
-  newsletter:
-    title: 'Newsletter'
-    text: 'Halte Familien mit Newslettern auf dem Laufenden, die direkt an alle Angemeldeten gehen.'
-  dashboard:
-    title: 'Dashboard-Überblick'
-    text: 'Sieh Kapazität, Anmeldungen und wichtige Zahlen auf einen Blick — deine ganze Veranstaltung auf einem Bildschirm.'
-  team:
-    title: 'Zugriff mit deinem Team teilen'
-    text: 'Lade Betreuer und Koordinatoren mit fein abgestuften Rollen und Berechtigungen ein und verwaltet die Veranstaltung gemeinsam.'
-  more_label: 'Außerdem enthalten:'
-  chip:
-    responsive: 'Läuft auf Desktop & Smartphone'
-    languages: 'Fünf Sprachen'
-    multilingual_forms: 'Mehrsprachige Formulare'
-    files: 'Dateiverwaltung'
-    templates: 'E-Mail-Vorlagen'
-    two_factor: 'Zwei-Faktor-Authentifizierung'
-    dark_mode: 'Dark Mode'
 step:
-  title: 'An einem Nachmittag startklar'
-  one:
-    title: 'Erstelle deine Veranstaltung'
-    text: 'Lege Termine und Kapazität fest und baue dein Anmeldeformular.'
-  two:
-    title: 'Teile deinen Link'
-    text: 'Familien melden sich online an — jede Anmeldung erscheint sofort.'
-  three:
-    title: 'Führe die Veranstaltung durch'
-    text: 'Plane Zimmer und Programm und halte alle auf dem Laufenden.'
+  title: 'So funktioniert es'
+  subtitle: 'Zwei kurze Wege — einer für die, die die Veranstaltung machen, einer für die, die mitfahren.'
+  organizer:
+    title: 'Wenn du organisierst'
+    one:
+      title: 'Veranstaltung anlegen'
+      text: 'Termine, Kapazität und Altersspanne festlegen, dann das Anmeldeformular bauen.'
+    two:
+      title: 'Link teilen'
+      text: 'Die Anmeldungen landen in deiner Liste, und die Bestätigungsmail geht von selbst raus.'
+    three:
+      title: 'Veranstaltung durchführen'
+      text: 'Zimmer verteilen, Programm und Dienste planen und alle auf dem Laufenden halten.'
+  participant:
+    title: 'Wenn du dich anmeldest'
+    one:
+      title: 'Veranstaltung finden'
+      text: 'Sieh dir die offenen Veranstaltungen an oder öffne den Link der Organisatoren.'
+    two:
+      title: 'Formular ausfüllen'
+      text: 'Ein paar Minuten auf jedem Gerät, in deiner Sprache — ganz ohne Konto.'
+    three:
+      title: 'Bestätigung erhalten'
+      text: 'Eine E-Mail bestätigt deinen Platz, mit allen Details und den Datenschutzhinweisen.'
 selfhost:
   eyebrow: 'Open Source · AGPLv3'
   title: 'Deine Veranstaltung, deine Daten — auf Wunsch dein Server'
@@ -1052,85 +1020,61 @@ selfhost:
   terminal_done: '@:app_name läuft'
 cta:
   title: 'Bereit für eine entspanntere Veranstaltungssaison?'
-  text: 'Erstelle deine erste Veranstaltung in wenigen Minuten — völlig kostenlos.'
+  text: 'Richte deine erste Veranstaltung in wenigen Minuten ein und teile den Link noch am selben Tag.'
   participant_hint: 'Du möchtest dich nur für eine Veranstaltung anmelden?'
   participant_link: 'Hier findest du deine Veranstaltung'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 meta_title: "La gestion d'événements simplifiée"
-
-meta_description: '@:app_name est une plateforme gratuite et open source pour organiser des événements : formulaires d’inscription en ligne, tableaux de participants, planification des chambres et du programme, e-mails et newsletters.'
+meta_description: '@:app_name est une plateforme open source pour organiser des événements : formulaires d’inscription en ligne, listes de participants, planification des chambres et du programme, e-mails automatiques et infolettres.'
+fasttrack:
+  title: 'Vous venez vous inscrire à un événement ?'
+  text: 'Tous les événements actuellement ouverts aux inscriptions, en une liste.'
+  point_1: 'Ni compte, ni mot de passe'
+  point_2: 'Quelques minutes sur votre téléphone'
+  point_3: 'Dans votre propre langue'
+  action: 'Trouver votre événement'
 hero:
-  eyebrow: "Gestion d'événements gratuite et open source"
-
+  eyebrow: "Gestion d'événements open source"
   title: 'Organisez votre événement,'
   title_highlight: 'pas votre paperasse'
   subtitle: "@:app_name réunit inscriptions, participants, chambres, programme et communication en un seul endroit — conçu par des organisateurs d'événements, pour des organisateurs d'événements."
-
-participants:
-  title: 'Vous participez à un événement ?'
-  text: 'Trouvez votre événement et inscrivez-vous en ligne en quelques minutes — sans créer de compte.'
-  action: 'Voir les événements ouverts'
+  proof_label: 'Ce que vous apporte @:app_name'
+  proof:
+    open_source: 'Open source, AGPLv3'
+    self_host: 'Auto-hébergeable'
+    languages: 'Cinq langues'
+    no_account: 'Inscription sans compte'
 organizers:
-  badge: 'Pour les organisateurs'
-  title: 'Tout ce dont votre équipe a besoin'
-  text: "Du premier formulaire d'inscription au plan des chambres final — gérez l'ensemble de l'événement avec votre équipe."
-  action: 'Commencer gratuitement'
+  action: 'Commencer'
   action_authed: 'Accéder à la gestion'
   action_login: 'Se connecter'
-feature:
-  title: 'Pourquoi organiser avec @:app_name ?'
-  subtitle: "Parce que les tableurs, les formulaires papier et les chaînes d'e-mails ne suffisent plus pour tout un événement."
-  forms:
-    title: "Formulaires d'inscription dynamiques"
-    text: "Créez des formulaires multi-pages avec logique conditionnelle, champs dynamiques, téléversement de fichiers et traductions intégrées. Les familles s'inscrivent en quelques minutes."
-  participants:
-    title: 'Des tableaux pensés pour vos données'
-    text: 'Organisez les inscriptions dans des tableaux personnalisés qui montrent exactement ce dont vous avez besoin — filtrez, exportez ou imprimez.'
-  messaging:
-    title: 'Des e-mails qui partent tout seuls'
-    text: "Envoyez automatiquement des e-mails de confirmation, d'acceptation et d'annulation personnalisés et entièrement personnalisables — sans aucune action manuelle."
-  rooms:
-    title: 'Planificateur de chambres'
-    text: 'Affectez les participants aux chambres en gardant lits, âges et groupes sous les yeux.'
-  program:
-    title: 'Planificateur de programme'
-    text: "Planifiez le déroulement de l'événement ensemble — du jour d'arrivée au départ, visible par toute l'équipe."
-  contacts:
-    title: 'Écrivez directement aux participants'
-    text: 'Contactez un seul participant ou tout un groupe avec des e-mails personnalisés — envoyés exactement aux bonnes personnes.'
-  newsletter:
-    title: 'Infolettres'
-    text: 'Tenez les familles informées avec des infolettres envoyées directement à toutes les personnes inscrites.'
-  dashboard:
-    title: 'Tableau de bord'
-    text: "Visualisez capacité, inscriptions et chiffres clés en un coup d'œil — tout votre événement sur un seul écran."
-  team:
-    title: "Partagez l'accès avec votre équipe"
-    text: "Invitez animateurs et coordinateurs avec des rôles et permissions précis, et gérez l'événement ensemble."
-
-  more_label: 'Également inclus :'
-  chip:
-    responsive: 'Fonctionne sur ordinateur et mobile'
-    languages: 'Cinq langues'
-    multilingual_forms: 'Formulaires multilingues'
-    files: 'Gestion des fichiers'
-    templates: "Modèles d'e-mails"
-    two_factor: 'Authentification à deux facteurs'
-    dark_mode: 'Mode sombre'
 step:
-  title: 'Opérationnel en un après-midi'
-  one:
-    title: 'Créez votre événement'
-    text: "Définissez les dates et la capacité, puis créez votre formulaire d'inscription."
-  two:
-    title: 'Partagez votre lien'
-    text: "Les familles s'inscrivent en ligne — chaque inscription apparaît instantanément."
-  three:
-    title: "Gérez l'événement"
-
-    text: 'Répartissez les chambres, planifiez le programme et tenez tout le monde informé.'
+  title: 'Comment ça marche'
+  subtitle: "Deux parcours courts — un pour celles et ceux qui organisent, un pour celles et ceux qui s'inscrivent."
+  organizer:
+    title: 'Si vous organisez'
+    one:
+      title: 'Créez votre événement'
+      text: "Fixez les dates, la capacité et la tranche d'âge, puis créez votre formulaire."
+    two:
+      title: 'Partagez votre lien'
+      text: "Les inscriptions arrivent dans votre liste et l'e-mail de confirmation part tout seul."
+    three:
+      title: "Menez l'événement"
+      text: 'Répartissez les chambres, planifiez le programme et les services, informez tout le monde.'
+  participant:
+    title: 'Si vous vous inscrivez'
+    one:
+      title: 'Trouvez votre événement'
+      text: "Parcourez les événements ouverts, ou ouvrez le lien envoyé par l'organisateur."
+    two:
+      title: 'Remplissez le formulaire'
+      text: 'Quelques minutes sur tout appareil, dans votre langue — sans créer de compte.'
+    three:
+      title: 'Recevez votre confirmation'
+      text: 'Un e-mail confirme votre place, avec les détails et les informations de confidentialité.'
 selfhost:
   eyebrow: 'Open source · AGPLv3'
   title: 'Votre événement, vos données — votre serveur si vous le souhaitez'
@@ -1143,81 +1087,61 @@ selfhost:
   terminal_done: '@:app_name est en ligne'
 cta:
   title: "Prêt pour une saison d'événement plus sereine ?"
-
-  text: 'Créez votre premier événement en quelques minutes — gratuitement.'
+  text: 'Créez votre premier événement en quelques minutes et partagez le lien le jour même.'
   participant_hint: 'Vous souhaitez simplement vous inscrire à un événement ?'
   participant_link: 'Trouvez votre événement ici'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
 meta_title: 'Proste zarządzanie wydarzeniami'
-meta_description: '@:app_name to darmowa platforma open source do organizacji wydarzeń: internetowe formularze zapisów, tabele uczestników, planowanie pokoi i programu, e-maile i newslettery.'
+meta_description: '@:app_name to platforma open source do organizacji wydarzeń: internetowe formularze zapisów, listy uczestników, planowanie pokoi i programu, automatyczne e-maile i newslettery.'
+fasttrack:
+  title: 'Chcesz zapisać się na wydarzenie?'
+  text: 'Wszystkie wydarzenia z otwartymi zapisami na jednej liście.'
+  point_1: 'Bez konta i bez hasła'
+  point_2: 'Kilka minut na telefonie'
+  point_3: 'W Twoim własnym języku'
+  action: 'Znajdź wydarzenie'
 hero:
-  eyebrow: 'Darmowe zarządzanie wydarzeniami, open source'
+  eyebrow: 'Zarządzanie wydarzeniami open source'
   title: 'Organizuj wydarzenie,'
   title_highlight: 'nie papierkową robotę'
   subtitle: '@:app_name łączy rejestracje, uczestników, pokoje, program i komunikację w jednym miejscu — stworzona przez organizatorów wydarzeń dla organizatorów wydarzeń.'
-participants:
-  title: 'Chcesz wziąć udział w wydarzeniu?'
-  text: 'Znajdź swoje wydarzenie i zapisz się online w kilka minut — bez zakładania konta.'
-  action: 'Przeglądaj otwarte wydarzenia'
+  proof_label: 'Co daje Ci @:app_name'
+  proof:
+    open_source: 'Open source, AGPLv3'
+    self_host: 'Własny hosting'
+    languages: 'Pięć języków'
+    no_account: 'Zapisy bez konta'
 organizers:
-  badge: 'Dla organizatorów'
-  title: 'Wszystko, czego potrzebuje Twój zespół'
-  text: 'Od pierwszego formularza rejestracyjnego po gotowy plan pokoi — zarządzaj całym wydarzeniem razem ze swoim zespołem.'
-  action: 'Zacznij za darmo'
+  action: 'Zacznij teraz'
   action_authed: 'Przejdź do zarządzania'
   action_login: 'Zaloguj się'
-feature:
-  title: 'Dlaczego @:app_name?'
-  subtitle: 'Bo arkusze kalkulacyjne, papierowe formularze i łańcuszki e-maili nie wystarczają na całe wydarzenie.'
-  forms:
-    title: 'Dynamiczne formularze rejestracyjne'
-    text: 'Twórz wielostronicowe formularze z logiką warunkową, dynamicznymi polami, przesyłaniem plików i wbudowanymi tłumaczeniami. Rodziny zapisują się w kilka minut.'
-  participants:
-    title: 'Tabele dopasowane do Twoich danych'
-    text: 'Układaj rejestracje w niestandardowych tabelach pokazujących dokładnie to, czego potrzebujesz — filtruj, eksportuj lub drukuj.'
-  messaging:
-    title: 'E-maile, które wysyłają się same'
-    text: 'Wysyłaj spersonalizowane, w pełni konfigurowalne e-maile z potwierdzeniem, akceptacją i anulowaniem automatycznie — bez ręcznej pracy.'
-  rooms:
-    title: 'Planer pokoi'
-    text: 'Przypisuj uczestników do pokoi, mając na oku łóżka, wiek i grupy.'
-  program:
-    title: 'Planer programu'
-    text: 'Planujcie przebieg wydarzenia wspólnie — od dnia przyjazdu do wyjazdu, widoczny dla całego zespołu.'
-  contacts:
-    title: 'Pisz bezpośrednio do uczestników'
-    text: 'Dotrzyj do pojedynczego uczestnika lub całej grupy spersonalizowanymi e-mailami — wysłanymi dokładnie do właściwych osób.'
-  newsletter:
-    title: 'Newsletter'
-    text: 'Informuj rodziny dzięki newsletterom wysyłanym prosto do wszystkich zapisanych.'
-  dashboard:
-    title: 'Panel główny'
-    text: 'Sprawdzaj liczbę miejsc, rejestracje i kluczowe dane jednym spojrzeniem — całe wydarzenie na jednym ekranie.'
-  team:
-    title: 'Udostępnij dostęp zespołowi'
-    text: 'Zapraszaj opiekunów i koordynatorów z precyzyjnymi rolami i uprawnieniami i zarządzajcie wydarzeniem wspólnie.'
-  more_label: 'A do tego:'
-  chip:
-    responsive: 'Działa na komputerze i telefonie'
-    languages: 'Pięć języków'
-    multilingual_forms: 'Wielojęzyczne formularze'
-    files: 'Zarządzanie plikami'
-    templates: 'Szablony e-maili'
-    two_factor: 'Uwierzytelnianie dwuskładnikowe'
-    dark_mode: 'Tryb ciemny'
 step:
-  title: 'Gotowe w jedno popołudnie'
-  one:
-    title: 'Utwórz wydarzenie'
-    text: 'Ustal terminy i liczbę miejsc oraz zbuduj formularz rejestracyjny.'
-  two:
-    title: 'Udostępnij link'
-    text: 'Rodziny zapisują się online — każda rejestracja pojawia się natychmiast.'
-  three:
-    title: 'Prowadź wydarzenie'
-    text: 'Przydzielaj pokoje, planuj program i informuj wszystkich na bieżąco.'
+  title: 'Jak to działa'
+  subtitle: 'Dwie krótkie ścieżki — jedna dla organizujących, druga dla zapisujących się.'
+  organizer:
+    title: 'Jeśli organizujesz'
+    one:
+      title: 'Utwórz wydarzenie'
+      text: 'Ustal terminy, liczbę miejsc i przedział wieku, a potem zbuduj formularz zapisów.'
+    two:
+      title: 'Udostępnij link'
+      text: 'Zgłoszenia trafiają na Twoją listę, a e-mail z potwierdzeniem wychodzi sam.'
+    three:
+      title: 'Poprowadź wydarzenie'
+      text: 'Przydziel pokoje, zaplanuj program i dyżury, informuj wszystkich na bieżąco.'
+  participant:
+    title: 'Jeśli się zapisujesz'
+    one:
+      title: 'Znajdź wydarzenie'
+      text: 'Przejrzyj otwarte wydarzenia albo otwórz link od organizatora.'
+    two:
+      title: 'Wypełnij formularz'
+      text: 'Kilka minut na dowolnym urządzeniu, w Twoim języku — bez zakładania konta.'
+    three:
+      title: 'Odbierz potwierdzenie'
+      text: 'E-mail potwierdza Twoje miejsce, ze szczegółami i informacją o prywatności.'
 selfhost:
   eyebrow: 'Open source · AGPLv3'
   title: 'Twoje wydarzenie, Twoje dane — i Twój serwer, jeśli chcesz'
@@ -1230,80 +1154,61 @@ selfhost:
   terminal_done: '@:app_name działa'
 cta:
   title: 'Gotowi na spokojniejszy sezon wydarzeń?'
-  text: 'Utwórz swoje pierwsze wydarzenie w kilka minut — zupełnie za darmo.'
+  text: 'Przygotuj pierwsze wydarzenie w kilka minut i udostępnij link jeszcze tego samego dnia.'
   participant_hint: 'Chcesz tylko zapisać się na wydarzenie?'
   participant_link: 'Znajdź swoje wydarzenie tutaj'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
 meta_title: 'Jednoduchá správa akcí'
-meta_description: '@:app_name je bezplatná open-source platforma pro organizaci akcí: online registrační formuláře, tabulky účastníků, plánování pokojů a programu, e-maily a newslettery.'
+meta_description: '@:app_name je open-source platforma pro organizaci akcí: online registrační formuláře, seznamy účastníků, plánování pokojů a programu, automatické e-maily a newslettery.'
+fasttrack:
+  title: 'Chcete se přihlásit na akci?'
+  text: 'Všechny akce s otevřenou registrací v jednom seznamu.'
+  point_1: 'Bez účtu a bez hesla'
+  point_2: 'Pár minut na mobilu'
+  point_3: 'Ve vašem vlastním jazyce'
+  action: 'Najít akci'
 hero:
-  eyebrow: 'Bezplatná open-source správa akcí'
+  eyebrow: 'Open-source správa akcí'
   title: 'Organizujte akci,'
   title_highlight: 'ne papírování'
   subtitle: '@:app_name spojuje registrace, účastníky, pokoje, program a komunikaci na jednom místě — vytvořena organizátory akcí pro organizátory akcí.'
-participants:
-  title: 'Chcete se zúčastnit akce?'
-  text: 'Najděte svou akci a přihlaste se online během několika minut — bez nutnosti účtu.'
-  action: 'Procházet otevřené akce'
+  proof_label: 'Co vám @:app_name přináší'
+  proof:
+    open_source: 'Open source, AGPLv3'
+    self_host: 'Vlastní hosting'
+    languages: 'Pět jazyků'
+    no_account: 'Registrace bez účtu'
 organizers:
-  badge: 'Pro organizátory'
-  title: 'Vše, co potřebuje tým vaší akce'
-  text: 'Od prvního registračního formuláře po hotový plán pokojů — spravujte celou akci společně se svým týmem.'
-  action: 'Začít zdarma'
+  action: 'Začít'
   action_authed: 'Přejít do správy'
   action_login: 'Přihlásit se'
-feature:
-  title: 'Proč @:app_name?'
-  subtitle: 'Protože tabulky, papírové formuláře a e-mailové řetězce na celou akci nestačí.'
-  forms:
-    title: 'Dynamické registrační formuláře'
-    text: 'Vytvářejte vícestránkové formuláře s podmíněnou logikou, dynamickými poli, nahráváním souborů a vestavěnými překlady. Rodiny se přihlásí během několika minut.'
-  participants:
-    title: 'Tabulky podle vašich dat'
-    text: 'Uspořádejte registrace do vlastních tabulek, které ukazují přesně to, co potřebujete — filtrujte, exportujte nebo tiskněte.'
-  messaging:
-    title: 'E-maily, které se odešlou samy'
-    text: 'Posílejte personalizované a plně přizpůsobitelné potvrzovací, schvalovací a stornovací e-maily automaticky — bez ruční práce.'
-  rooms:
-    title: 'Plánovač pokojů'
-    text: 'Přiřazujte účastníky do pokojů a mějte přehled o lůžkách, věku a skupinách.'
-  program:
-    title: 'Plánovač programu'
-    text: 'Plánujte průběh akce společně — ode dne příjezdu až po odjezd, viditelné pro celý tým.'
-  contacts:
-    title: 'Pište účastníkům přímo'
-    text: 'Oslovte jednotlivého účastníka nebo celou skupinu personalizovanými e-maily — odeslanými přesně těm správným lidem.'
-  newsletter:
-    title: 'Newsletter'
-    text: 'Udržujte rodiny v obraze pomocí newsletterů odeslaných přímo všem přihlášeným.'
-  dashboard:
-    title: 'Přehledový panel'
-    text: 'Sledujte kapacitu, registrace a klíčová čísla na jeden pohled — celou akci na jedné obrazovce.'
-  team:
-    title: 'Sdílejte přístup se svým týmem'
-    text: 'Zvěte vedoucí a koordinátory s jemně odstupňovanými rolemi a oprávněními a spravujte akci společně.'
-  more_label: 'A navíc:'
-  chip:
-    responsive: 'Funguje na počítači i mobilu'
-    languages: 'Pět jazyků'
-    multilingual_forms: 'Vícejazyčné formuláře'
-    files: 'Správa souborů'
-    templates: 'Šablony e-mailů'
-    two_factor: 'Dvoufaktorové ověření'
-    dark_mode: 'Tmavý režim'
 step:
-  title: 'Připraveno za jedno odpoledne'
-  one:
-    title: 'Vytvořte akci'
-    text: 'Nastavte termíny a kapacitu a sestavte registrační formulář.'
-  two:
-    title: 'Sdílejte odkaz'
-    text: 'Rodiny se přihlašují online — každá registrace se objeví okamžitě.'
-  three:
-    title: 'Veďte akci'
-    text: 'Přidělujte pokoje, plánujte program a udržujte všechny v obraze.'
+  title: 'Jak to funguje'
+  subtitle: 'Dvě krátké cesty — jedna pro ty, kdo akci pořádají, druhá pro ty, kdo se na ni hlásí.'
+  organizer:
+    title: 'Když pořádáte'
+    one:
+      title: 'Založte akci'
+      text: 'Nastavte termíny, kapacitu a věkové rozmezí a pak sestavte registrační formulář.'
+    two:
+      title: 'Sdílejte odkaz'
+      text: 'Registrace přistávají ve vašem seznamu a potvrzovací e-mail odejde sám.'
+    three:
+      title: 'Veďte akci'
+      text: 'Rozdělte pokoje, naplánujte program i služby a udržujte všechny v obraze.'
+  participant:
+    title: 'Když se hlásíte'
+    one:
+      title: 'Najděte svou akci'
+      text: 'Projděte otevřené akce, nebo otevřete odkaz od organizátorů.'
+    two:
+      title: 'Vyplňte formulář'
+      text: 'Pár minut na jakémkoli zařízení a ve vašem jazyce — bez zakládání účtu.'
+    three:
+      title: 'Dostanete potvrzení'
+      text: 'E-mail potvrdí vaše místo, i s podrobnostmi a informacemi o soukromí.'
 selfhost:
   eyebrow: 'Open source · AGPLv3'
   title: 'Vaše akce, vaše data — a klidně i váš server'
@@ -1316,7 +1221,7 @@ selfhost:
   terminal_done: '@:app_name běží'
 cta:
   title: 'Připraveni na klidnější sezónu akcí?'
-  text: 'Vytvořte svou první akci během několika minut — zcela zdarma.'
+  text: 'Připravte svou první akci během několika minut a sdílejte odkaz ještě týž den.'
   participant_hint: 'Chcete se jen přihlásit na akci?'
   participant_link: 'Svou akci najdete tady'
 </i18n>
