@@ -150,7 +150,16 @@ export function buildMd3LiteralTheme(mode: Md3Mode = 'light'): ITheme {
     // opt-in and forces `headerView: "advanced"` on every survey it is applied
     // to. The header's *colours* come through `cssVariables` like any other
     // token; its geometry stays the director's choice.
-    cssVariables: resolvePalette(mode),
+    cssVariables: {
+      ...resolvePalette(mode),
+      // FIXME https://github.com/surveyjs/survey-library/pull/11804
+      '--sjs2-layout-component-panel-header-padding-left':
+        'var(--sjs2-spacing-x000)',
+      '--sjs2-layout-component-panel-header-padding-right':
+        'var(--sjs2-spacing-x000)',
+      '--sjs2-layout-component-panel-content-area-padding-horizontal':
+        'var(--sjs2-spacing-x000)',
+    },
   };
 }
 
