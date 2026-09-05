@@ -68,6 +68,27 @@
                   />
                 </template>
 
+                <template
+                  v-if="translationAvailable"
+                  #append
+                >
+                  <q-btn
+                    icon="auto_awesome"
+                    round
+                    flat
+                    dense
+                    size="sm"
+                    class="translate-action"
+                    :disable="!translations[locale] || autoTranslating"
+                    :loading="autoTranslatingFrom === locale"
+                    @click.stop="autoTranslateFrom(locale)"
+                  >
+                    <q-tooltip>
+                      {{ t('autoTranslate') }}
+                    </q-tooltip>
+                  </q-btn>
+                </template>
+
                 <!-- Parent slots (locale flag replaces the field icon here) -->
                 <template
                   v-for="(_, name) in translatedSlots"
@@ -100,6 +121,25 @@
                     v-if="slots.prepend"
                     name="prepend"
                   />
+                </template>
+
+                <template
+                  v-if="translationAvailable"
+                  #append
+                >
+                  <q-btn
+                    icon="auto_awesome"
+                    round
+                    flat
+                    dense
+                    size="sm"
+                    class="translate-action"
+                    :disable="!translations[locale] || autoTranslating"
+                    :loading="autoTranslatingFrom === locale"
+                    @click.stop="autoTranslateFrom(locale)"
+                  >
+                    <q-tooltip>{{ t('autoTranslate') }}</q-tooltip>
+                  </q-btn>
                 </template>
 
                 <!-- Parent slots (locale flag replaces the field icon here) -->
@@ -137,6 +177,7 @@ import {
   type ForwardedFieldSlots,
   usePassthroughProps,
 } from '@/composables/passthroughProps';
+import { useTranslationStore } from '@/stores/translation-store';
 
 type Translations = Record<string, string | number>;
 type ModelValueType = undefined | null | string | number | Translations;
@@ -151,8 +192,18 @@ interface Props extends Omit<
   defaultUntranslated?: boolean | undefined;
 }
 
+// Global scope for the `country.*` lookup in localeName() below — explicit
+// because this component also has its own local <i18n> block (for the
+// auto-translate tooltip), which flips useI18n()'s default scope to 'local'.
 // eslint-disable-next-line @typescript-eslint/unbound-method
-const { locale, t, te } = useI18n();
+const { locale, t: tGlobal, te } = useI18n({ useScope: 'global' });
+const { t } = useI18n();
+
+// Availability is checked once by the store itself; see translation-store.ts.
+const translationStore = useTranslationStore();
+const translationAvailable = computed<boolean>(
+  () => translationStore.available === true,
+);
 
 const [model, modifiers] = defineModel<ModelValueType>();
 const slots = defineSlots<ForwardedFieldSlots>();
@@ -192,7 +243,7 @@ const translatedSlots = computed<Partial<ForwardedFieldSlots>>(() => {
 // the uppercased code when no global `country.*` key exists for the value.
 function localeName(value: string): string {
   const key = `country.${value.toLowerCase()}`;
-  return te(key) ? t(key) : value.toUpperCase();
+  return te(key) ? tGlobal(key) : value.toUpperCase();
 }
 
 // The flag + code prepend is visual only, so screen readers can't tell one
@@ -259,6 +310,45 @@ function clearTranslation(locale: string) {
   }
 }
 
+const autoTranslatingFrom = ref<string | null>(null);
+const autoTranslating = computed<boolean>(
+  () => autoTranslatingFrom.value !== null,
+);
+
+async function autoTranslateFrom(sourceLocale: string) {
+  const sourceValue = translations.value[sourceLocale];
+  if (sourceValue == null || sourceValue === '' || autoTranslating.value) {
+    return;
+  }
+
+  autoTranslatingFrom.value = sourceLocale;
+  try {
+    const targetLocales = props.locales.filter((l) => l !== sourceLocale);
+    const results = await Promise.all(
+      targetLocales.map((targetLocale) =>
+        translationStore.translate(
+          String(sourceValue),
+          targetLocale,
+          sourceLocale,
+        ),
+      ),
+    );
+
+    // A per-locale `undefined` means that translation failed (the store
+    // already surfaced an error notification); leave that field untouched.
+    targetLocales.forEach((targetLocale, index) => {
+      const translated = results[index];
+      if (translated != null) {
+        translations.value[targetLocale] = modifiers.number
+          ? Number(translated)
+          : translated;
+      }
+    });
+  } finally {
+    autoTranslatingFrom.value = null;
+  }
+}
+
 // Runs synchronously (rather than on Vue's default deferred flush) so the
 // seeded/preserved value below lands before the emit watcher above reads
 // `value`/`translations` for this same tick — otherwise it emits the
@@ -319,6 +409,26 @@ watch(
 );
 </script>
 
+<i18n lang="yaml" locale="en">
+autoTranslate: 'Auto-translate other languages'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+autoTranslate: 'Andere Sprachen automatisch übersetzen'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+autoTranslate: 'Traduire automatiquement les autres langues'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+autoTranslate: 'Automatycznie przetłumacz pozostałe języki'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+autoTranslate: 'Automaticky přeložit ostatní jazyky'
+</i18n>
+
 <style scoped>
 .layer1,
 .layer2 {
@@ -352,6 +462,11 @@ watch(
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.04em;
+  color: var(--md3-on-surface-variant);
+}
+
+/* Per-locale auto-translate trigger, styled like a marginal field icon. */
+.translate-action {
   color: var(--md3-on-surface-variant);
 }
 

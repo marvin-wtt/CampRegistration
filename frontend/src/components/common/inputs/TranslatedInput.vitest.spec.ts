@@ -1,9 +1,14 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { mount } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
 import TranslatedInput from '@/components/common/inputs/TranslatedInput.vue';
 import { installQuasarPlugin } from '@/../test/vitest/utils/quasar';
 
 installQuasarPlugin();
+
+beforeEach(() => {
+  setActivePinia(createPinia());
+});
 
 describe('SafeDeleteDialog', () => {
   it('should mount', () => {

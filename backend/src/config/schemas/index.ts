@@ -8,6 +8,7 @@ import { DatabaseEnvSchema } from './database.schema.js';
 import { RedisEnvSchema } from './redis.schema.js';
 import { QueueEnvSchema } from './queue.schema.js';
 import { RealtimeEnvSchema } from './realtime.schema.js';
+import { TranslationEnvSchema } from './translation.schema.js';
 
 export const EnvSchema = z
   .object({})
@@ -20,6 +21,7 @@ export const EnvSchema = z
   .and(RedisEnvSchema)
   .and(QueueEnvSchema)
   .and(RealtimeEnvSchema)
+  .and(TranslationEnvSchema)
   .readonly();
 
 export type Env = z.output<typeof EnvSchema>;
