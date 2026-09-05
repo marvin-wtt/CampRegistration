@@ -47,9 +47,9 @@ export class TableCellRenderer {
     }
 
     return this._hideEvaluator
-      ? this._hideEvaluator.evaluate(data) === false
+      ? !this._hideEvaluator.evaluate(data)
       : this._showEvaluator
-        ? this._showEvaluator.evaluate(data) === true
+        ? this._showEvaluator.evaluate(data)
         : true;
   }
 }
