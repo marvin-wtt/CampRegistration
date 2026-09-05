@@ -52,8 +52,11 @@ import { useI18n } from 'vue-i18n';
 import { computed, ref } from 'vue';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 
-const { templates } = defineProps<{
-  templates: Pick<TableTemplate, 'title' | 'id' | 'order'>[];
+type SimpleTableTemplate = Pick<TableTemplate, 'title' | 'id' | 'order'>;
+
+const { templates, defaultTemplateId } = defineProps<{
+  templates: SimpleTableTemplate[];
+  defaultTemplateId?: string | undefined;
 }>();
 
 defineEmits([...useDialogPluginComponent.emits]);
@@ -64,7 +67,7 @@ const { to } = useObjectTranslation();
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
 
-const model = ref<string[]>([]);
+const model = ref<string[]>(defaultTemplateId ? [defaultTemplateId] : []);
 
 const options = computed(() =>
   templates.map((template) => ({

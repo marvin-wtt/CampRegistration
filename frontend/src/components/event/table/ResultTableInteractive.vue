@@ -75,6 +75,21 @@
                   </q-item-section>
                 </q-item>
                 <q-item
+                  v-close-popup
+                  clickable
+                  @click="onExportCsv"
+                >
+                  <q-item-section avatar>
+                    <q-icon
+                      name="download"
+                      size="sm"
+                    />
+                  </q-item-section>
+                  <q-item-section>
+                    {{ t('action.export_csv') }}
+                  </q-item-section>
+                </q-item>
+                <q-item
                   v-if="canEditTemplates"
                   v-close-popup
                   clickable
@@ -107,6 +122,14 @@
           >
             <q-tooltip>{{ t('action.edit_templates') }}</q-tooltip>
           </q-btn>
+
+          <m-btn
+            :label="t('action.export_csv')"
+            color="primary"
+            icon="download"
+            text
+            @click="onExportCsv"
+          />
 
           <m-btn
             :label="t('action.print')"
@@ -408,6 +431,7 @@ import BottomSheet from '@/components/BottomSheet.vue';
 import type { QTableBodyCellProps } from '@/types/quasar/QTableBodyCellProps';
 import type { CTableColumnTemplate } from '@/types/CTableTemplate';
 import { useResultTableModel } from './useResultTableModel';
+import { useCsvExport } from './useCsvExport';
 import PrintTableDialog from '@/components/event/table/dialogs/PrintTableDialog.vue';
 import RegistrationActionList from '@/components/event/table/RegistrationActionList.vue';
 import RegistrationRowCardDialog from '@/components/event/table/dialogs/RegistrationRowCardDialog.vue';
@@ -433,6 +457,7 @@ const { to } = useObjectTranslation();
 const { can } = usePermissions();
 
 const templateStore = useTemplateStore();
+const { exportRegistrationsToCsv } = useCsvExport();
 
 const {
   pagination,
@@ -556,11 +581,27 @@ function openPrintDialog() {
       component: PrintTableDialog,
       componentProps: {
         templates,
+        defaultTemplateId: template.value?.id,
       },
     })
     .onOk((data: string[]) => {
       emit('export', data);
     });
+}
+
+function onExportCsv() {
+  if (rows.value.length === 0) {
+    quasar.notify({ type: 'warning', message: t('error.no_rows') });
+    return;
+  }
+
+  exportRegistrationsToCsv({
+    event,
+    templateTitle: template.value.title,
+    columns: template.value.columns,
+    renderers: renderers.value,
+    rows: rows.value,
+  });
 }
 
 function editTemplates() {
@@ -624,14 +665,14 @@ function eventPoint(evt: Event): { x: number; y: number } {
 function bodyCellProps(
   bodyProps: BodyScope,
   col: BodyCol,
-): QTableBodyCellProps {
+): QTableBodyCellProps<unknown, Registration> {
   return {
     row: bodyProps.row,
     rowIndex: bodyProps.rowIndex,
     col,
     value: col.value,
     key: col.name,
-  } as unknown as QTableBodyCellProps;
+  } as unknown as QTableBodyCellProps<unknown, Registration>;
 }
 
 function openRowMenu(evt: Event, row: Registration): void {
@@ -877,6 +918,7 @@ subtitle: 'Browse, filter, and print the registrations of this event.'
 
 action:
   print: 'Print'
+  export_csv: 'Export CSV'
   edit_templates: 'Edit templates'
   clear_filters: 'Clear filters'
   menu: 'Actions'
@@ -893,6 +935,9 @@ empty:
 no_match:
   title: 'No matching participants'
   message: 'Try adjusting the search or filters.'
+
+error:
+  no_rows: 'There is nothing to export for the current filters.'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -902,6 +947,7 @@ subtitle: 'Durchsuchen, filtern und drucken Sie die Anmeldungen dieser Veranstal
 
 action:
   print: 'Drucken'
+  export_csv: 'CSV exportieren'
   edit_templates: 'Vorlagen bearbeiten'
   clear_filters: 'Filter zurücksetzen'
   menu: 'Aktionen'
@@ -918,6 +964,9 @@ empty:
 no_match:
   title: 'Keine passenden Teilnehmenden'
   message: 'Passen Sie die Suche oder die Filter an.'
+
+error:
+  no_rows: 'Für die aktuellen Filter gibt es nichts zu exportieren.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -927,6 +976,7 @@ subtitle: 'Parcourez, filtrez et imprimez les inscriptions de cet événement.'
 
 action:
   print: 'Imprimer'
+  export_csv: 'Exporter en CSV'
   edit_templates: 'Modifier les modèles'
   clear_filters: 'Effacer les filtres'
   menu: 'Actions'
@@ -943,6 +993,9 @@ empty:
 no_match:
   title: 'Aucun participant correspondant'
   message: 'Essayez d’ajuster la recherche ou les filtres.'
+
+error:
+  no_rows: 'Il n’y a rien à exporter pour les filtres actuels.'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -952,6 +1005,7 @@ subtitle: 'Przeglądaj, filtruj i drukuj zgłoszenia tego wydarzenia.'
 
 action:
   print: 'Drukuj'
+  export_csv: 'Eksportuj CSV'
   edit_templates: 'Edytuj szablony'
   clear_filters: 'Wyczyść filtry'
   menu: 'Akcje'
@@ -968,6 +1022,9 @@ empty:
 no_match:
   title: 'Brak pasujących uczestników'
   message: 'Spróbuj zmienić wyszukiwanie lub filtry.'
+
+error:
+  no_rows: 'Brak danych do wyeksportowania dla bieżących filtrów.'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -977,6 +1034,7 @@ subtitle: 'Procházejte, filtrujte a tiskněte přihlášky této akce.'
 
 action:
   print: 'Tisk'
+  export_csv: 'Exportovat CSV'
   edit_templates: 'Upravit šablony'
   clear_filters: 'Zrušit filtry'
   menu: 'Akce'
@@ -993,4 +1051,7 @@ empty:
 no_match:
   title: 'Žádní odpovídající účastníci'
   message: 'Zkuste upravit vyhledávání nebo filtry.'
+
+error:
+  no_rows: 'Pro aktuální filtry není nic k exportu.'
 </i18n>
