@@ -3,6 +3,7 @@
 exports[`the assembled permission policy > grants event roles exactly these permissions 1`] = `
 {
   "COORDINATOR": [
+    "event.audit.view",
     "event.chore_assignments.create",
     "event.chore_assignments.delete",
     "event.chore_assignments.edit",
@@ -77,6 +78,7 @@ exports[`the assembled permission policy > grants event roles exactly these perm
     "event.view",
   ],
   "DIRECTOR": [
+    "event.audit.view",
     "event.chore_assignments.create",
     "event.chore_assignments.delete",
     "event.chore_assignments.edit",

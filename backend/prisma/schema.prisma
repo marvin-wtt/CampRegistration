@@ -194,6 +194,7 @@ model Event {
   chores           Chore[]
   choreAssignments ChoreAssignment[]
   eventSettings    EventSetting[]
+  auditLogs        AuditLog[]
 
   @@index([organizationId], map: "events_organization_id_index")
   @@map("events")
@@ -678,4 +679,23 @@ model PrivacyNoticeVersion {
   @@unique([scope, scopeId, version], map: "privacy_notice_versions_scope_scope_id_version_unique")
   @@index([scope, scopeId], map: "privacy_notice_versions_scope_scope_id_index")
   @@map("privacy_notice_versions")
+}
+
+model AuditLog {
+  id         String   @id @unique(map: "audit_logs_id_unique") @default(ulid()) @db.Char(26)
+  action     String   @db.VarChar(64)
+  entityType String   @map("entity_type") @db.VarChar(64)
+  entityId   String   @map("entity_id") @db.Char(26)
+  eventId    String?  @map("event_id") @db.Char(26)
+  actorId    String?  @map("actor_id") @db.Char(26)
+  /// ![{ changedFields?: Array<string>; changedValues?: Record<string, string | number | boolean | null>; subjectId?: string | null }]
+  changes    Json?    @db.Json
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  event Event? @relation(fields: [eventId], references: [id], onDelete: SetNull, map: "audit_logs_event_id_foreign")
+
+  @@index([entityType, entityId], map: "audit_logs_entity_index")
+  @@index([eventId, createdAt], map: "audit_logs_event_id_created_at_index")
+  @@index([actorId], map: "audit_logs_actor_id_index")
+  @@map("audit_logs")
 }

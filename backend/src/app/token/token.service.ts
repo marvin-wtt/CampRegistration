@@ -6,7 +6,6 @@ import ApiError from '#utils/ApiError';
 import { type Token, TokenType, type User } from '#generated/prisma/client.js';
 import type { AuthTokensResponse } from '#types/response';
 import { BaseService } from '#core/base/BaseService';
-import logger from '#core/logger';
 import { injectable } from 'inversify';
 import { Config } from '#core/ioc/decorators';
 
@@ -260,9 +259,10 @@ export class TokenService extends BaseService {
     });
   }
 
-  async purgeExpiredTokens(): Promise<void> {
+  async purgeExpiredTokens(): Promise<number> {
     const result = await this.deleteExpiredTokens();
-    logger.info(`Removed ${result.count.toString()} token(s).`);
+
+    return result.count;
   }
 
   deleteTokenById = async (id: number) => {

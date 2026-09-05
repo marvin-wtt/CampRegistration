@@ -1,12 +1,14 @@
 // This is just an example,
 // so you can safely delete all default props below
 import stores from './stores';
+import audit from './audit';
 import privacy from './privacy';
 
 export default {
   //app_name: '',
 
   stores,
+  audit,
   privacy,
   service: {
     internal: 'Interní chyba',

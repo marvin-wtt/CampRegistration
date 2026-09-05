@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 import { EventManagerService } from '#app/eventManager/event-manager.service';
 import { OrganizationMemberService } from '#app/organizationMember/organization-member.service';
+import { AuditService } from '#app/audit/audit.service';
 import { permissionRegistry } from '#core/permission-registry';
 import {
   ORGANIZATION_EVENT_PERMISSIONS,
@@ -14,9 +15,10 @@ const EVENT_ID = 'event-1';
 const USER_ID = 'user-1';
 
 const organizationMembers = mock<OrganizationMemberService>();
+const audit = mock<AuditService>();
 
 const buildService = () => {
-  const service = new EventManagerService(organizationMembers);
+  const service = new EventManagerService(organizationMembers, audit);
   // `getManagerByUserId` reaches for Prisma; the merge logic under test only
   // cares about the record it returns.
   return service;

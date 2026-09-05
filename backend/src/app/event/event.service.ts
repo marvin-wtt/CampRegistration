@@ -5,6 +5,8 @@ import type { OptionalByKeys } from '#types/utils';
 import { BaseService } from '#core/base/BaseService';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service.js';
+import { AuditService } from '#app/audit/audit.service';
+import { eventAuditPolicy } from '#app/event/event.audit';
 
 type TableTemplateCreateData = OptionalByKeys<
   Prisma.TableTemplateCreateManyEventInput,
@@ -50,7 +52,10 @@ interface EventQueryArgs {
 
 @injectable()
 export class EventService extends BaseService {
-  constructor(@inject(FileService) private readonly fileService: FileService) {
+  constructor(
+    @inject(FileService) private readonly fileService: FileService,
+    @inject(AuditService) private readonly audit: AuditService,
+  ) {
     super();
   }
 
@@ -316,26 +321,37 @@ export class EventService extends BaseService {
           : undefined,
     }));
 
-    const event = await this.prisma.event.create({
-      data: {
-        ...data,
-        location: dbNullable(data.location),
-        form,
-        eventManager: {
-          create: {
-            userId,
-            role: 'DIRECTOR',
+    const event = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.event.create({
+        data: {
+          ...data,
+          location: dbNullable(data.location),
+          form,
+          eventManager: {
+            create: {
+              userId,
+              role: 'DIRECTOR',
+            },
           },
+          tableTemplates: {
+            createMany: { data: this.stripIds(tableTemplates) },
+          },
+          messageTemplates: {
+            createMany: { data: this.stripIds(messageTemplateData) },
+          },
+          files: { createMany: { data: fileData } },
         },
-        tableTemplates: {
-          createMany: { data: this.stripIds(tableTemplates) },
-        },
-        messageTemplates: {
-          createMany: { data: this.stripIds(messageTemplateData) },
-        },
-        files: { createMany: { data: fileData } },
-      },
-      include: { ...this.eventRegistrationInclude() },
+        include: { ...this.eventRegistrationInclude() },
+      });
+
+      await this.audit.record(tx, {
+        action: 'created',
+        entityType: eventAuditPolicy.entityType,
+        entityId: created.id,
+        eventId: created.id,
+      });
+
+      return created;
     });
 
     return {
@@ -384,32 +400,75 @@ export class EventService extends BaseService {
   }
 
   async moveEventToOrganization(eventId: string, organizationId: string) {
-    const updatedEvent = await this.prisma.event.update({
-      where: { id: eventId },
-      data: {
-        organization: { connect: { id: organizationId } },
-      },
-      include: { ...this.eventRegistrationInclude() },
-    });
+    return this.prisma.$transaction(async (tx) => {
+      // Read the "before" inside the transaction so the audit diff is race-free
+      // (the request-model `event` may be stale relative to the actual write).
+      const before = await tx.event.findUniqueOrThrow({
+        where: { id: eventId },
+      });
 
-    return enrichFreePlaces(updatedEvent);
+      const updatedEvent = await tx.event.update({
+        where: { id: eventId },
+        data: {
+          organization: { connect: { id: organizationId } },
+        },
+        include: { ...this.eventRegistrationInclude() },
+      });
+
+      await this.audit.recordChange(tx, 'updated', eventAuditPolicy, {
+        before,
+        after: updatedEvent,
+        entityId: eventId,
+        eventId,
+      });
+
+      return enrichFreePlaces(updatedEvent);
+    });
   }
 
   async updateEvent(event: Event, data: EventUpdateData) {
-    const updatedEvent = await this.prisma.event.update({
-      where: { id: event.id },
-      data: {
-        ...data,
-        location: dbNullable(data.location),
-      },
-      include: { ...this.eventRegistrationInclude() },
-    });
+    return this.prisma.$transaction(async (tx) => {
+      // Read the "before" inside the transaction so the audit diff is race-free
+      // (the request-model `event` may be stale relative to the actual write).
+      const before = await tx.event.findUniqueOrThrow({
+        where: { id: event.id },
+      });
 
-    return enrichFreePlaces(updatedEvent);
+      const updatedEvent = await tx.event.update({
+        where: { id: event.id },
+        data: {
+          ...data,
+          location: dbNullable(data.location),
+        },
+        include: { ...this.eventRegistrationInclude() },
+      });
+
+      await this.audit.recordChange(tx, 'updated', eventAuditPolicy, {
+        before,
+        after: updatedEvent,
+        entityId: event.id,
+        eventId: event.id,
+      });
+
+      return enrichFreePlaces(updatedEvent);
+    });
   }
 
   async deleteEventById(id: string) {
-    await this.prisma.event.delete({ where: { id } });
+    await this.prisma.$transaction(async (tx) => {
+      // The FK's `onDelete: SetNull` orphans the event's existing audit rows
+      // (eventId -> null) instead of deleting them, so they age out through the
+      // normal retention window rather than vanishing with the event.
+      await tx.event.delete({ where: { id } });
+
+      // Keep one standalone record of who deleted the event — its most
+      // destructive action. `eventId` is null (the event no longer exists).
+      await this.audit.record(tx, {
+        action: 'deleted',
+        entityType: eventAuditPolicy.entityType,
+        entityId: id,
+      });
+    });
   }
 }
 

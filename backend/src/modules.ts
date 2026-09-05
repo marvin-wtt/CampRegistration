@@ -32,6 +32,7 @@ import { NewsletterModule } from '#app/newsletter/newsletter.module';
 import { NewsletterSubscriberModule } from '#app/newsletterSubscriber/newsletter-subscriber.module';
 import { NewsletterManagerModule } from '#app/newsletterManager/newsletter-manager.module';
 import { NewsletterMessageModule } from '#app/newsletterMessage/newsletter-message.module';
+import { AuditModule } from '#app/audit/audit.module';
 import { RealtimeModule } from '#app/realtime/realtime.module';
 import { AdminModule } from '#app/admin/admin.module';
 import { PermissionModule } from '#app/permission/permission.module';
@@ -42,6 +43,7 @@ export const createModules = (): AppModule[] => [
   new SettingModule(),
   new HealthModule(),
   new QueueModule(),
+  new AuditModule(),
   new TokenModule(),
   new AuthModule(),
   new SetupModule(),

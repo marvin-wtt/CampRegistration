@@ -36,6 +36,7 @@ export * from './OrganizationMember.js';
 
 // Types
 export * from './AdminOverview.js';
+export * from './AuditLogEntry.js';
 export * from './AuthTokens.js';
 export * from './Authentication.js';
 export * from './Queue.js';
