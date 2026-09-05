@@ -581,6 +581,7 @@ function openPrintDialog() {
       component: PrintTableDialog,
       componentProps: {
         templates,
+        defaultTemplateId: template.value?.id,
       },
     })
     .onOk((data: string[]) => {
