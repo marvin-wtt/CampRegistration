@@ -53,7 +53,6 @@
     "flag-icons": "^7.5.0",
     "html-to-image": "^1.11.13",
     "http-status": "^2.1.0",
-    "jsep": "^1.4.0",
     "libphonenumber-js": "^1.13.6",
     "markdown-it": "^14.2.0",
     "pinia": "^3.0.4",

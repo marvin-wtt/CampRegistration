@@ -114,6 +114,7 @@ import { storeToRefs } from 'pinia';
 import type {
   EventDetails,
   Translatable,
+  Registration,
 } from '@camp-registration/common/entities';
 import type { CTableColumnTemplate } from '@/types/CTableTemplate';
 import type { TableCellRenderer } from '@/components/event/table/TableCellRenderer';
@@ -157,7 +158,7 @@ interface Field {
   name: string;
   label: Translatable;
   renderer: TableCellRenderer;
-  props: QTableBodyCellProps;
+  props: QTableBodyCellProps<unknown, Registration>;
 }
 
 // Skip synthetic columns (row index, action menu) — only show actual data.
@@ -189,7 +190,7 @@ const fields = computed<Field[]>(() => {
           col: column,
           value,
           key: column.name,
-        } as unknown as QTableBodyCellProps,
+        } as unknown as QTableBodyCellProps<unknown, Registration>,
       };
     });
 });

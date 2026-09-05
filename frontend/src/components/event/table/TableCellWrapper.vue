@@ -43,7 +43,10 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import type { TableCellRenderer } from '@/components/event/table/TableCellRenderer';
-import type { EventDetails } from '@camp-registration/common/entities';
+import type {
+  EventDetails,
+  Registration,
+} from '@camp-registration/common/entities';
 import type { QTableBodyCellProps } from '@/types/quasar/QTableBodyCellProps';
 
 const {
@@ -57,7 +60,7 @@ const {
   event: EventDetails;
   printing?: boolean;
   gridMode?: boolean;
-  props: QTableBodyCellProps;
+  props: QTableBodyCellProps<unknown, Registration>;
 }>();
 
 const asArray = computed<boolean>(() => {

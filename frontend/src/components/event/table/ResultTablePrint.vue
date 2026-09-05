@@ -47,7 +47,7 @@
         <table-cell-wrapper
           :renderer
           :event
-          :props="rendererProps as QTableBodyCellProps"
+          :props="rendererProps as QTableBodyCellProps<unknown, Registration>"
           printing
         />
       </q-td>

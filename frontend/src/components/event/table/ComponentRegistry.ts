@@ -3,6 +3,7 @@ import DefaultTableCell from '@/components/event/table/tableCells/DefaultTableCe
 import components from '@/components/event/table/tableCells';
 import type { TableCellProps } from '@/components/event/table/tableCells/TableCellProps';
 import type { TableCellOptionsProps } from '@/components/event/table/tableCells/TableCellOptionsProps';
+import type { CsvFormatContext } from '@/utils/csvValueFormatter';
 
 type Options = object | undefined;
 
@@ -17,6 +18,11 @@ interface ComponentOptions<T extends Options> {
   editable?: false | object;
   internal?: boolean;
   optionsComponent?: Component<TableCellOptionsComponentProps<NoInfer<T>>>;
+  toCsv?: (
+    value: unknown,
+    ctx: CsvFormatContext,
+    column: { fieldName: string },
+  ) => string;
 }
 
 interface ComponentEntry<T extends Options = undefined> {
@@ -26,12 +32,14 @@ interface ComponentEntry<T extends Options = undefined> {
 
 /**
  * Entries stored in the registry have different generic types, so the
- * concrete generic has to be erased after registration.
+ * concrete generic has to be erased after registration. Exported so
+ * consumers that hold on to a resolved entry (e.g. TableCellRenderer) can
+ * type against it instead of re-deriving their own shape.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type StoredComponentEntry = ComponentEntry<any>;
+export type ComponentRegistryEntry = ComponentEntry<any>;
 
-const componentMap = new Map<string, StoredComponentEntry>();
+const componentMap = new Map<string, ComponentRegistryEntry>();
 
 const TableComponentRegistry = {
   register<T extends Options = undefined>(
@@ -45,11 +53,11 @@ const TableComponentRegistry = {
     });
   },
 
-  get(name: string): StoredComponentEntry | undefined {
+  get(name: string): ComponentRegistryEntry | undefined {
     return componentMap.get(name);
   },
 
-  load(name: string): StoredComponentEntry {
+  load(name: string): ComponentRegistryEntry {
     return (
       componentMap.get(name) ?? {
         component: DefaultTableCell,
@@ -58,7 +66,7 @@ const TableComponentRegistry = {
     );
   },
 
-  all(): ReadonlyMap<string, StoredComponentEntry> {
+  all(): ReadonlyMap<string, ComponentRegistryEntry> {
     return componentMap;
   },
 
