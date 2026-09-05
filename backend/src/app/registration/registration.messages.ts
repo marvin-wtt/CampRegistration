@@ -559,23 +559,11 @@ class RegistrationEventMessage extends RegistrationTemplateMessage {
 export class RegistrationSubmittedMessage extends RegistrationEventMessage {
   static readonly trigger = 'registration_submitted';
   static readonly type = 'registration:template:submitted';
-
-  protected attachments(): Promise<MailAttachment[]> {
-    return Promise.resolve([
-      // Attach registration data PDF here
-    ]);
-  }
 }
 
 export class RegistrationConfirmedMessage extends RegistrationEventMessage {
   static readonly trigger = 'registration_confirmed';
   static readonly type = 'registration:template:confirmed';
-
-  protected attachments(): Promise<MailAttachment[]> {
-    return Promise.resolve([
-      // Attach registration data PDF here
-    ]);
-  }
 }
 
 export class RegistrationWaitlistedMessage extends RegistrationEventMessage {
@@ -586,12 +574,6 @@ export class RegistrationWaitlistedMessage extends RegistrationEventMessage {
 export class RegistrationUpdatedMessage extends RegistrationEventMessage {
   static readonly trigger = 'registration_updated';
   static readonly type = 'registration:template:updated';
-
-  protected attachments(): Promise<MailAttachment[]> {
-    return Promise.resolve([
-      // Attach registration data PDF here
-    ]);
-  }
 
   protected renderChanges(
     format: 'html' | 'text',

@@ -1,11 +1,11 @@
-import type { ITheme, SurveyModel } from 'survey-core';
+import type { SurveyModel } from 'survey-core';
 import type { EventDetails } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
 import { nextTick, type Ref, watch, watchEffect } from 'vue';
 import { setVariables } from '@camp-registration/common/form';
 import { useQuasar } from 'quasar';
 import type { useAPIService } from '@/services/APIService';
-import { md3SurveyThemes } from '@/lib/surveyJs/themes/md3';
+import { resolveMd3Theme } from '@/lib/surveyJs/theme';
 
 export function startAutoDataUpdate(
   model: SurveyModel,
@@ -75,19 +75,8 @@ export const startAutoThemeUpdate = (
       return;
     }
 
-    const themes = data.themes;
     const colorPlatte = dark ? 'dark' : 'light';
-
-    let theme: ITheme;
-    if (colorPlatte in themes) {
-      theme = themes[colorPlatte]!;
-    } else if (colorPlatte === 'dark' && 'light' in themes) {
-      // Try light mode first
-      theme = themes.light;
-    } else {
-      // Apply default theme
-      theme = md3SurveyThemes[colorPlatte];
-    }
+    const theme = resolveMd3Theme(data.themes, colorPlatte);
 
     model.applyTheme(theme);
 

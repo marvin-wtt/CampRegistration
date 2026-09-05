@@ -69,7 +69,11 @@ import { MToolbar } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eToolbar
 - Icons use standard `material-icons` names (`icon="add"`, `icon="more_vert"`),
   **not** the `sym_r_*` names shown in the package's own JSDoc examples.
 
-**SurveyJS theming**: `frontend/src/lib/surveyJs/themes/md3.ts` maps the same MD3
-tokens onto SurveyJS. `varResolver` emits live `var(--md3-*)` references for
-rendered surveys; `createStaticResolver()` (in `md3-creator.ts`) bakes computed
-literals for the SurveyJS theme editor, which can't parse `var()`/`color-mix()`.
+**SurveyJS theming**: `frontend/src/lib/surveyJs/theme/md3-adapter.scss` maps
+the same MD3 tokens onto SurveyJS's `--sjs2-*` design tokens via the
+`.sjs-theme-overrides` class, which SurveyJS stamps on every survey root and on
+the Survey Creator root — importing the stylesheet re-skins both with live
+`var(--md3-*)` references. `buildMd3LiteralTheme()` (in `literalTheme.ts`)
+bakes those into computed `rgba()` literals for consumers that can't apply the
+class or parse `var()`/`color-mix()`: PDF generation and the Survey Creator's
+registered default theme.

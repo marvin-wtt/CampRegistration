@@ -341,6 +341,12 @@ export class FileService extends BaseService {
    * Resolves the best-matching file for a form slot ({_file.<slot>}) on a model
    * and locale. The slot maps to the file's `field` column. Readiness and access
    * are not checked here — that is the caller's (guard/stream) responsibility.
+   *
+   * More than one file can end up sharing a (field, locale) pair — e.g. a
+   * replacement upload that was submitted without deleting the original.
+   * `selectFileByLocale` keeps the first file it sees on a tied score, so
+   * ordering newest-first here makes the most recently uploaded file win
+   * instead of whichever one happens to sort first in storage.
    */
   async getModelFileForSlot(
     model: ModelData,
@@ -352,6 +358,7 @@ export class FileService extends BaseService {
         [`${model.name}Id`]: model.id,
         field: slot,
       },
+      orderBy: { createdAt: 'desc' },
     });
 
     if (files.length === 0) {
@@ -376,10 +383,14 @@ export class FileService extends BaseService {
       sortType?: 'asc' | 'desc';
     } = {},
   ) {
-    const page = options.page ?? 1;
-    const limit = options.limit ?? 10;
     const sortBy = options.sortBy ?? 'name';
     const sortType = options.sortType ?? 'desc';
+
+    const skip =
+      options.page && options.limit
+        ? (options.page - 1) * options.limit
+        : undefined;
+    const take = options.limit;
 
     return this.prisma.file.findMany({
       where: {
@@ -387,8 +398,8 @@ export class FileService extends BaseService {
         type: filter.type,
         [`${model.name}Id`]: model.id,
       },
-      skip: (page - 1) * limit,
-      take: limit,
+      skip,
+      take,
       orderBy: sortBy ? { [sortBy]: sortType } : undefined,
     });
   }

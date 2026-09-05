@@ -53,12 +53,22 @@
           </q-banner>
         </q-card-section>
 
+        <q-card-section
+          v-if="submitState === 'success' && submittedRegistration"
+        >
+          <registration-copy-download
+            :event-details="props.eventDetails"
+            :registration="submittedRegistration"
+          />
+        </q-card-section>
+
         <q-card-actions
           v-if="submitState === 'success'"
           align="center"
           class="q-gutter-sm q-pb-md"
         >
           <m-btn
+            outline
             primary
             icon="person_add"
             :label="t('complete.registerAnother')"
@@ -91,6 +101,25 @@
         </q-card-actions>
       </q-card>
     </div>
+
+    <!-- A form-defined completed page replaces the panel above, so the copy
+         offer is rendered alongside it rather than inside it. -->
+    <div
+      v-if="submitState === null && submitted && submittedRegistration"
+      class="row justify-center q-pa-md"
+    >
+      <q-card
+        flat
+        class="registration-copy-card rounded-xl elevation-1"
+      >
+        <q-card-section>
+          <registration-copy-download
+            :event-details="props.eventDetails"
+            :registration="submittedRegistration"
+          />
+        </q-card-section>
+      </q-card>
+    </div>
   </div>
 </template>
 
@@ -103,12 +132,16 @@ import { computed, onMounted, ref, toRef, watch, watchEffect } from 'vue';
 import { SurveyModel } from 'survey-core';
 import { SurveyComponent } from 'survey-vue3-ui';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
+import RegistrationCopyDownload from '@/components/common/RegistrationCopyDownload.vue';
 import {
   startAutoDataUpdate,
   startAutoThemeUpdate,
   addFileSlotResolver,
 } from '@/composables/survey';
-import type { EventDetails } from '@camp-registration/common/entities';
+import type {
+  EventDetails,
+  Registration,
+} from '@camp-registration/common/entities';
 import { useAPIService } from '@/services/APIService';
 import { useErrorExtractor } from '@/composables/serviceHandler';
 
@@ -125,7 +158,7 @@ interface Props {
     id: string,
     formData: Record<string, unknown>,
     locale: string,
-  ) => Promise<void>;
+  ) => Promise<Registration | void>;
   uploadFileFn?: (file: File) => Promise<string>;
   moderation?: boolean;
   readonly?: boolean;
@@ -148,6 +181,10 @@ const submitError = ref<string>();
 // Stays true once the submission succeeded, including when survey-core takes
 // the screen back over to show the form's own completed page.
 const submitted = ref<boolean>(false);
+// What the server echoed back for the submission, used to render the
+// registrant's copy. Kept separate from the live model, which `retrySubmit`
+// may clear.
+const submittedRegistration = ref<Registration>();
 
 // Lets the page hide anything that only applies while the form is being
 // filled in — the privacy disclosure above all.
@@ -343,7 +380,12 @@ function createModel(eventId: string, form: object): SurveyModel {
     mapFileQuestionValues(sender);
 
     try {
-      await submitFn(eventId, sender.data ?? {}, sender.locale);
+      const registration = await submitFn(
+        eventId,
+        sender.data ?? {},
+        sender.locale,
+      );
+      submittedRegistration.value = registration || undefined;
       submitted.value = true;
       if (sender.showCompletePage && hasFormCompletedHtml) {
         // Reveal the form-defined completed page (survey-core shows it by
@@ -459,7 +501,7 @@ submit:
     retry: 'Try again'
 complete:
   title: 'Registration complete!'
-  text: "Thanks for signing up — we've received your registration and can't wait to see you at event."
+  text: "Thanks for signing up — we've received your registration and can't wait to see you at the event."
   registerAnother: 'Register another person'
   exploreEvents: 'Explore other events'
 </i18n>
@@ -558,6 +600,16 @@ complete:
   color: var(--md3-on-surface);
 
   animation: registration-submit-rise 0.35s cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+// The form's own completed page already fills the screen, so the copy panel
+// shown alongside it takes the card's shape without the full-height centering.
+.registration-copy-card {
+  width: 100%;
+  max-width: 600px;
+
+  background-color: var(--md3-surface-container-low);
+  color: var(--md3-on-surface);
 }
 
 .registration-submit-status__badge {

@@ -1,0 +1,319 @@
+/**
+ * Maps Material Design 3 onto the SurveyJS v3 design tokens (`--sjs2-*`).
+ *
+ * `sjs-theme-overrides` is the class SurveyJS puts on every survey root *and*
+ * on the Survey Creator root, specifically so host apps can bridge their design
+ * system in — the same hook its own adapters use
+ * (`survey-core/themes/adapters/mui.css`, `shadcn-*.css`).
+ *
+ * Only the *semantic* layer is targeted. SurveyJS derives its ~490 component
+ * tokens from these, so overriding here re-skins the whole system — the form,
+ * the Survey Creator chrome, and the PDF — without restating every component.
+ * The palette primitives (`--sjs2-palette-*`) and the generated scales
+ * (`--sjs2-size-*`, `--sjs2-radius-x*`, …) are deliberately left alone; the
+ * SurveyJS docs call those out as not-to-be-overridden.
+ *
+ * Precedence, lowest to highest:
+ *   1. `:where(.sd-theme-root)`  — SurveyJS base theme, injected at specificity 0
+ *   2. `.sjs-theme-overrides`    — this file
+ *   3. inline style on the root  — `applyTheme()`, i.e. a camp's saved theme
+ *
+ * So a camp that customises its form in the Themes tab still wins, and
+ * everything it does not set falls through to MD3.
+ *
+ * The `--md3-*` custom properties are live references, so the survey tracks the
+ * app's palette and follows the light/dark switch (Quasar's `body--dark` class)
+ * for free — one stylesheet covers both schemes.
+ */
+
+@use 'sass:list';
+
+/// A role rendered at `$percent` opacity over a transparent base.
+@function alpha($role, $percent) {
+  @return #{'color-mix(in srgb, var(--md3-#{$role}) #{$percent}%, transparent)'};
+}
+
+/// SurveyJS status role -> (MD3 colour role, MD3 "on" role).
+$status-roles: (
+  'note': (
+    'info',
+    'on-info',
+  ),
+  'positive': (
+    'positive',
+    'on-positive',
+  ),
+  'warning': (
+    'warning',
+    'on-warning',
+  ),
+  'alert': (
+    'error',
+    'on-error',
+  ),
+);
+
+.sjs-theme-overrides {
+  /* ---- Shape -------------------------------------------------------- */
+  // MD3's corner scale against SurveyJS's radius ramp: inputs land on
+  // `radius-form` (12px), panels and pages on `radius-x150` (18px).
+  --sjs2-base-unit-radius: 12px;
+  // MD3 buttons are fully rounded; the base theme ties them to `radius-form`.
+  --sjs2-radius-component-action: var(--sjs2-radius-round);
+
+  /* ---- Typography --------------------------------------------------- */
+  --sjs2-typography-font-family-text:
+    Roboto, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --sjs2-typography-font-family-code:
+    ui-monospace, SFMono-Regular, 'Cascadia Mono', Menlo, monospace;
+
+  /* ---- Brand ramp ---------------------------------------------------- */
+  // The base theme derives 400/700/800 from 600 with lightness math, which
+  // drifts off MD3's tonal steps. Pin each one to its MD3 counterpart.
+  --sjs2-color-project-brand-400: var(--md3-primary-container);
+  --sjs2-color-project-brand-600: var(--md3-primary);
+  --sjs2-color-project-brand-700: var(--md3-primary-dim);
+  --sjs2-color-project-brand-800: var(--md3-on-primary-container);
+
+  /* ---- Backgrounds: basic (form surfaces) ---------------------------- */
+  // Questions and panels sit one step above the page, so the ladder starts at
+  // `surface-container-low` rather than `-lowest`. MD3's tonal scheme puts
+  // `-lowest` at pure #000000 in dark mode, which would render cards *darker*
+  // than the page they sit on and collapse the elevation cue.
+  --sjs2-color-bg-basic-primary: var(--md3-surface-container-low);
+  --sjs2-color-bg-basic-secondary: var(--md3-surface-container);
+  --sjs2-color-bg-basic-tertiary: var(--md3-surface-container-high);
+  --sjs2-color-bg-basic-primary-dim: var(--md3-surface-container);
+  --sjs2-color-bg-basic-secondary-dim: var(--md3-surface-container-high);
+  --sjs2-color-bg-basic-tertiary-dim: var(--md3-surface-container-highest);
+  --sjs2-color-bg-basic-primary-disabled: #{alpha('on-surface', 12)};
+
+  /* ---- Backgrounds: neutral (high-contrast actions) ------------------ */
+  --sjs2-color-bg-neutral-primary: var(--md3-inverse-surface);
+  --sjs2-color-bg-neutral-secondary: #{alpha('on-surface', 8)};
+  --sjs2-color-bg-neutral-tertiary: #{alpha('on-surface', 0)};
+  --sjs2-color-bg-neutral-primary-dim: var(--md3-inverse-surface);
+  --sjs2-color-bg-neutral-secondary-dim: #{alpha('on-surface', 12)};
+  --sjs2-color-bg-neutral-tertiary-dim: #{alpha('on-surface', 8)};
+  --sjs2-color-bg-neutral-primary-disabled: #{alpha('on-surface', 12)};
+
+  /* ---- Backgrounds: brand -------------------------------------------- */
+  --sjs2-color-bg-brand-primary: var(--md3-primary);
+  --sjs2-color-bg-brand-secondary: var(--md3-primary-container);
+  --sjs2-color-bg-brand-tertiary: #{alpha('primary', 0)};
+  --sjs2-color-bg-brand-primary-dim: var(--md3-primary-dim);
+  --sjs2-color-bg-brand-secondary-dim: #{alpha('primary', 16)};
+  --sjs2-color-bg-brand-tertiary-dim: #{alpha('primary', 8)};
+  --sjs2-color-bg-brand-primary-disabled: #{alpha('on-surface', 12)};
+
+  /* ---- Backgrounds & foregrounds: status ------------------------------ */
+  @each $status, $roles in $status-roles {
+    $color: list.nth($roles, 1);
+    $on: list.nth($roles, 2);
+
+    --sjs2-color-bg-#{$status}-primary: var(--md3-#{$color});
+    --sjs2-color-bg-#{$status}-secondary: #{alpha($color, 12)};
+    --sjs2-color-bg-#{$status}-tertiary: #{alpha($color, 0)};
+    --sjs2-color-bg-#{$status}-primary-dim: #{alpha($color, 85)};
+    --sjs2-color-bg-#{$status}-secondary-dim: #{alpha($color, 18)};
+    --sjs2-color-bg-#{$status}-tertiary-dim: #{alpha($color, 8)};
+    --sjs2-color-bg-#{$status}-primary-disabled: #{alpha('on-surface', 12)};
+
+    --sjs2-color-fg-#{$status}-primary: var(--md3-#{$color});
+    --sjs2-color-fg-#{$status}-on-primary: var(--md3-#{$on});
+    --sjs2-color-fg-#{$status}-primary-disabled: #{alpha('on-surface', 38)};
+
+    --sjs2-color-border-#{$status}-primary: var(--md3-#{$color});
+    --sjs2-color-border-#{$status}-on-primary: var(--md3-#{$on});
+  }
+
+  /* ---- Backgrounds: static (must not flip with the mode) -------------- */
+  // Contrast pairs that stay put while the rest of the palette flips, so every
+  // role here is pinned with `--light` — the washes included, or a `-secondary`
+  // tint would follow the mode away from the `-primary` slab it sits on.
+  --sjs2-color-bg-static-1-primary: var(--md3-on-surface--light);
+  --sjs2-color-bg-static-1-secondary: #{alpha('on-surface--light', 10)};
+  --sjs2-color-bg-static-1-primary-dim: var(--md3-on-surface--light);
+  --sjs2-color-bg-static-1-secondary-dim: #{alpha('on-surface--light', 15)};
+  --sjs2-color-bg-static-2-primary: var(--md3-surface-container-lowest--light);
+  --sjs2-color-bg-static-2-secondary: #{alpha('surface--light', 10)};
+  --sjs2-color-bg-static-2-primary-dim: var(--md3-surface-container-low--light);
+  --sjs2-color-bg-static-2-secondary-dim: #{alpha('surface--light', 15)};
+
+  /* ---- Foregrounds ---------------------------------------------------- */
+  --sjs2-color-fg-basic-primary: var(--md3-on-surface);
+  --sjs2-color-fg-basic-primary-muted: var(--md3-on-surface-variant);
+  --sjs2-color-fg-basic-primary-dim: var(--md3-on-surface-variant);
+  --sjs2-color-fg-basic-secondary: var(--md3-on-surface-variant);
+  // Not `outline`: that is MD3's *border* role and lands at 3.9:1 on the form
+  // surface, which is what description placeholders and input icons render
+  // with. A tinted `on-surface` keeps the third emphasis tier above 4.5:1.
+  --sjs2-color-fg-basic-tertiary: #{alpha('on-surface', 72)};
+  --sjs2-color-fg-basic-primary-disabled: #{alpha('on-surface', 38)};
+  --sjs2-color-fg-basic-secondary-disabled: #{alpha('on-surface', 38)};
+  --sjs2-color-fg-basic-tertiary-disabled: #{alpha('on-surface', 38)};
+
+  --sjs2-color-fg-neutral-primary: var(--md3-on-surface);
+  --sjs2-color-fg-neutral-primary-muted: var(--md3-on-surface-variant);
+  --sjs2-color-fg-neutral-primary-dim: var(--md3-on-surface-variant);
+  --sjs2-color-fg-neutral-on-primary: var(--md3-inverse-on-surface);
+  --sjs2-color-fg-neutral-primary-disabled: #{alpha('on-surface', 38)};
+
+  --sjs2-color-fg-brand-primary: var(--md3-primary);
+  --sjs2-color-fg-brand-primary-dim: var(--md3-primary-dim);
+  --sjs2-color-fg-brand-on-primary: var(--md3-on-primary);
+  --sjs2-color-fg-brand-primary-disabled: #{alpha('on-surface', 38)};
+
+  --sjs2-color-fg-static-1-primary: var(--md3-surface-container-lowest--light);
+  --sjs2-color-fg-static-2-primary: var(--md3-on-surface--light);
+
+  /* ---- Borders --------------------------------------------------------- */
+  --sjs2-color-border-basic-primary: var(--md3-on-surface);
+  --sjs2-color-border-basic-secondary: var(--md3-outline-variant);
+  --sjs2-color-border-basic-secondary-overlay: var(--md3-outline);
+  --sjs2-color-border-basic-secondary-disabled: #{alpha('on-surface', 12)};
+  --sjs2-color-border-neutral-primary: var(--md3-outline);
+  --sjs2-color-border-neutral-on-primary: var(--md3-inverse-on-surface);
+  --sjs2-color-border-brand-primary: var(--md3-primary);
+  --sjs2-color-border-brand-on-primary: var(--md3-on-primary);
+  --sjs2-color-border-static-1-primary: var(
+    --md3-surface-container-lowest--light
+  );
+  --sjs2-color-border-static-2-primary: var(--md3-on-surface--light);
+
+  /* ---- Component: survey header ---------------------------------------- */
+  // The corporate header: a `primary` band, shown by setting
+  // `headerView = "advanced"`. Nothing in the app sets that by default — a
+  // camp's saved theme can still have it on regardless, since it's a normal,
+  // exposed property in the SurveyJS Theme Editor. See the Designer-tab note
+  // further down for where these tokens leak through even on `"basic"`.
+  //
+  // `-bg` reaches only `.sv-header`, the advanced band. The two foreground
+  // tokens are *not* so contained — they also colour `.sd-header__text`, the
+  // plain title SurveyJS falls back to — so that case is pinned back below.
+  //
+  // `-description` is a wash rather than a second role because MD3 has no
+  // "on-primary-variant"; 90% is the lowest step clearing 4.5:1 on `primary` in
+  // both palettes (80% measures 3.99:1 in dark).
+  --sjs2-color-component-survey-header-default-bg: var(--md3-primary);
+  --sjs2-color-component-survey-header-default-title: var(--md3-on-primary);
+  --sjs2-color-component-survey-header-default-description: #{alpha(
+      'on-primary',
+      90
+    )};
+
+  /* ---- Component: tonal buttons ---------------------------------------- */
+  // The "secondary" action is MD3's tonal button. SurveyJS labels it with
+  // `fg-brand-primary`, which is right for links on the form surface but is
+  // `primary`-on-`primary-container` here — 3.9:1. MD3 pairs the container
+  // with its own `on-` role, so override at the component layer rather than
+  // weakening the brand foreground everywhere.
+  --sjs2-color-component-action-brand-secondary-default-label: var(
+    --md3-on-primary-container
+  );
+  --sjs2-color-component-action-brand-secondary-default-icon: var(
+    --md3-on-primary-container
+  );
+  --sjs2-color-component-action-brand-secondary-hovered-label: var(
+    --md3-on-primary-container
+  );
+  --sjs2-color-component-action-brand-secondary-hovered-icon: var(
+    --md3-on-primary-container
+  );
+
+  /* ---- Utility: app chrome --------------------------------------------- */
+  // These are what the Survey Creator paints its shell with. The v2-era
+  // `--sjs-layer-*` variables that used to do this no longer exist.
+  --sjs2-color-utility-body: var(--md3-background);
+  --sjs2-color-utility-sheet: var(--md3-surface-container-low);
+  --sjs2-color-utility-toolbox: var(--md3-surface-container-low);
+  --sjs2-color-utility-property-grid: var(--md3-surface-container-low);
+  --sjs2-color-utility-tabs: var(--md3-surface-container-low);
+  // The designer canvas sits *below* the survey sheet, so it takes the page
+  // tone rather than a container tone.
+  --sjs2-color-utility-surface-survey: var(--md3-surface);
+  --sjs2-color-utility-surface-designer: var(--md3-surface);
+  --sjs2-color-utility-surface-presets-manager: var(--md3-surface);
+  --sjs2-color-utility-surface-json-editor: var(--md3-surface-container-low);
+  --sjs2-color-utility-a11y: #{alpha('primary', 40)};
+  --sjs2-color-utility-scrollbar: #{alpha('on-surface', 20)};
+  --sjs2-color-utility-overlay: #{alpha('scrim', 60)};
+
+  /* ---- Utility: elevation ---------------------------------------------- */
+  // Only the shadow *colors* are set; SurveyJS composes offset/blur/spread
+  // from separate tokens, so the geometry stays as designed.
+  --sjs2-color-utility-shadow-surface-default: #{alpha('shadow', 15)};
+  --sjs2-color-utility-shadow-surface-disabled: #{alpha('shadow', 8)};
+  --sjs2-color-utility-shadow-surface-hovered: #{alpha('primary', 40)};
+  --sjs2-color-utility-shadow-surface-pressed: var(--md3-primary);
+  --sjs2-color-utility-shadow-surface-focused: var(--md3-primary);
+  --sjs2-color-utility-shadow-surface-dragging: #{alpha('primary', 15)};
+  --sjs2-color-utility-shadow-floating-default: #{alpha('shadow', 30)};
+}
+
+/**
+ * Holds the *basic* header on the surface palette.
+ *
+ * `--sjs2-color-component-survey-header-default-title` and `-description` are
+ * shared between `.sv-header` (the branded band) and `.sd-header__text` (the
+ * plain title, which sits on the form surface). One token cannot serve both
+ * backdrops, so the token carries the branded value and the plain header — the
+ * fallback whenever a survey is left on `headerView: "basic"` — is pinned here.
+ *
+ * Prefixed with the override class for specificity: `survey-core.css` is
+ * imported per-component and so loads after this file.
+ */
+.sjs-theme-overrides .sd-header__text {
+  .sd-title {
+    color: var(--md3-on-surface);
+  }
+
+  .sd-description {
+    color: var(--md3-on-surface-variant);
+  }
+}
+
+/**
+ * Neutralises the Designer tab's title/description card.
+ *
+ * `SurveyCreatorModel.getSurfaceCss()` appends `svc-surface-header` to the
+ * design-time survey's header class unconditionally — regardless of
+ * `headerView` — so this card reads the same
+ * `--sjs2-color-component-survey-header-default-*` tokens as the branded
+ * band above (`survey-creator-core.css`: `.svc-designer-header
+ * .svc-surface-header { background-color: var(--sjs2-color-component-survey-header-default-bg …) }`).
+ * `headerView` never reaches `"advanced"` in this app (see above), so
+ * respondents never see that band; left alone, the Designer tab still paints
+ * it — a `primary`-coloured box, `on-primary` text, capped to the survey
+ * body's reading width (`.sd-container-modern--static`, 672px) rather than
+ * spanning the card, so the white text spills onto the plain canvas outside
+ * it. Resetting the tokens *on the card* overrides the inherited value for
+ * everything that reads them inside it — the background rule above included
+ * — without duplicating which literal CSS properties consume each token.
+ */
+.svc-surface-header {
+  --sjs2-color-component-survey-header-default-bg: transparent;
+  --sjs2-color-component-survey-header-default-title: var(--md3-on-surface);
+  --sjs2-color-component-survey-header-default-description: var(
+    --md3-on-surface-variant
+  );
+}
+
+/**
+ * Tightens the branded band.
+ *
+ * SurveyJS sizes `.sv-header__content` as a cover area for a background image:
+ * 40px above and below (`spacing-large-vertical` plus a hardcoded
+ * `spacing-x500`). That reads as generous whitespace behind a photo but as a
+ * slab behind a flat `primary` fill. 24px is the form's own
+ * `--sd-page-vertical-padding`, so the band shares the rhythm of the pages
+ * under it. Horizontal padding is left alone — it already resolves to the
+ * `spacing-large-horizontal` the body uses, which is what keeps the header
+ * title aligned with the questions.
+ *
+ * Three classes deep to clear `.sd-body .sv-header__content`.
+ */
+.sjs-theme-overrides .sv-header .sv-header__content {
+  padding-top: var(--sjs2-spacing-x300);
+  padding-bottom: var(--sjs2-spacing-x300);
+}

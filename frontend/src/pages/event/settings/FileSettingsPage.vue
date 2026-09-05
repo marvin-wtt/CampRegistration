@@ -351,7 +351,10 @@ import FileUploadDialog from '@/components/event/settings/files/FileUploadDialog
 import type { ServiceFile } from '@camp-registration/common/entities';
 import { formatBytes } from '@/utils/formatters/formatBytes';
 import { formatUtcDateTime } from '@/utils/formatters/formatUtcDateTime';
-import { useEventFilesStore } from '@/stores/event-files-store';
+import {
+  splitFieldVersion,
+  useEventFilesStore,
+} from '@/stores/event-files-store';
 import { usePermissions } from '@/composables/permissions';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
@@ -488,10 +491,19 @@ function uploadFile() {
 }
 
 function getUploadHint(field: string, locale?: string | null): string {
-  const key = `virtual.upload_hint.${field}`;
-  const label = te(key) ? t(key) : t('virtual.upload_hint.default', { field });
+  const { baseField, version } = splitFieldVersion(field);
 
-  return locale ? `${label} (${locale})` : label;
+  const key = `virtual.upload_hint.${baseField}`;
+  const label = te(key)
+    ? t(key)
+    : t('virtual.upload_hint.default', { field: baseField });
+
+  const versioned =
+    version === undefined
+      ? label
+      : `${label} (${t('virtual.version.replacement', { n: version })})`;
+
+  return locale ? `${versioned} (${locale})` : versioned;
 }
 
 function uploadForSlot(slot: string, locale?: string | null) {
@@ -843,6 +855,8 @@ virtual:
     rules: 'Upload Event Rules'
     toc: 'Upload Terms & Conditions'
     default: 'Upload {field}'
+  version:
+    replacement: 'Replacement {n}'
 
 access_level:
   public: 'Public'
@@ -887,6 +901,8 @@ virtual:
     rules: 'Veranstaltungregeln hochladen'
     toc: 'AGB hochladen'
     default: '{field} hochladen'
+  version:
+    replacement: 'Ersatz {n}'
 
 access_level:
   public: 'Öffentlich'
@@ -931,6 +947,8 @@ virtual:
     rules: 'Téléverser le règlement'
     toc: 'Téléverser les conditions générales'
     default: 'Téléverser {field}'
+  version:
+    replacement: 'Remplacement {n}'
 
 access_level:
   public: 'Public'
@@ -975,6 +993,8 @@ virtual:
     rules: 'Prześlij regulamin'
     toc: 'Prześlij warunki uczestnictwa'
     default: 'Prześlij {field}'
+  version:
+    replacement: 'Zamiennik {n}'
 
 access_level:
   public: 'Publiczny'
@@ -1019,6 +1039,8 @@ virtual:
     rules: 'Nahrát pravidla akce'
     toc: 'Nahrát obchodní podmínky'
     default: 'Nahrát {field}'
+  version:
+    replacement: 'Náhrada {n}'
 
 access_level:
   public: 'Veřejný'
