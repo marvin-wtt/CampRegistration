@@ -323,7 +323,7 @@ async function autoTranslateFrom(sourceLocale: string) {
 
   autoTranslatingFrom.value = sourceLocale;
   try {
-    const targetLocales = locales.filter((l) => l !== sourceLocale);
+    const targetLocales = props.locales.filter((l) => l !== sourceLocale);
     const results = await Promise.all(
       targetLocales.map((targetLocale) =>
         translationStore.translate(

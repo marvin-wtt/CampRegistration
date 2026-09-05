@@ -34,4 +34,4 @@ export const useTranslationStore = defineStore('translation', () => {
     available,
     translate,
   };
-};);
+});
