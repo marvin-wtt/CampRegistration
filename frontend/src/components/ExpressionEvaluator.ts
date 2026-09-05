@@ -3,7 +3,7 @@ import { ConditionRunner } from 'survey-core';
 // Filter/showIf/hideIf expressions authored before the ConditionRunner
 // migration reference variables as `$name` instead of the native `{name}`
 // syntax. Rewrite them so those expressions keep working unchanged.
-const LEGACY_VARIABLE = /(?<![\w{])\$([A-Za-z]\w*)/g;
+const LEGACY_VARIABLE = /(?<![\w{])\$([A-Za-z]\w*(?:\.\w+)*)/g;
 
 export class ExpressionEvaluator {
   private readonly runner: ConditionRunner;

@@ -77,4 +77,10 @@ describe('ExpressionEvaluator', () => {
     const evaluator = new ExpressionEvaluator('$age > 5 and {name} = "Bob"');
     expect(evaluator.evaluate({ age: 10, name: 'Bob' })).toBe(true);
   });
+
+  it('resolves nested member access on legacy $-prefixed variables', () => {
+    const evaluator = new ExpressionEvaluator('$data.waiting_list = true');
+    expect(evaluator.evaluate({ data: { waiting_list: true } })).toBe(true);
+    expect(evaluator.evaluate({ data: { waiting_list: false } })).toBe(false);
+  });
 });

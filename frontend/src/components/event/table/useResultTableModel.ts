@@ -21,7 +21,7 @@ import {
   type LocalTableTemplate,
 } from '@/components/event/table/localTableTemplates';
 
-type Pagination = Exclude<QTable['pagination'], undefined>;
+export type Pagination = Exclude<QTable['pagination'], undefined>;
 
 export interface ResultTableModelInput {
   questions: Ref<TableColumnTemplate[]>;
@@ -52,6 +52,73 @@ function matchesSearch(value: unknown, search: string): boolean {
   }
 
   return false;
+}
+
+// Mirrors Quasar QTable's own default sort comparator (see
+// node_modules/quasar/src/components/table/table-sort.js) so rows consumed
+// outside the table itself (CSV export) land in the same order as what
+// QTable renders on screen, instead of QTable's sort staying purely a
+// display-time reshuffle that this composable's `rows` never reflected.
+function compareSortValues(a: unknown, b: unknown): number {
+  if (a == null) {
+    return -1;
+  }
+  if (b == null) {
+    return 1;
+  }
+  if (
+    typeof a === 'number' &&
+    typeof b === 'number' &&
+    Number.isFinite(a) &&
+    Number.isFinite(b)
+  ) {
+    return a - b;
+  }
+  if (a instanceof Date && b instanceof Date) {
+    return a.getTime() - b.getTime();
+  }
+  if (typeof a === 'boolean' && typeof b === 'boolean') {
+    return Number(a) - Number(b);
+  }
+
+  // Matches QTable's own fallback exactly, including its blind spot: an
+  // object-valued column (e.g. address) stringifies to a useless
+  // "[object Object]" here, same as it would on screen.
+  // eslint-disable-next-line @typescript-eslint/no-base-to-string
+  const strA = String(a).toLocaleString().toLowerCase();
+  // eslint-disable-next-line @typescript-eslint/no-base-to-string
+  const strB = String(b).toLocaleString().toLowerCase();
+
+  return strA < strB ? -1 : strA === strB ? 0 : 1;
+}
+
+function fieldValue(column: CTableColumnTemplate, row: unknown): unknown {
+  return typeof column.field === 'function'
+    ? column.field(row)
+    : objectValueByPath(column.field, row);
+}
+
+// Exported (only) for direct unit testing — sortRows has no Vue/Pinia
+// dependency of its own, unlike the rest of this composable.
+export function sortRows(
+  rows: Registration[],
+  columns: CTableColumnTemplate[],
+  pagination: Pagination,
+): Registration[] {
+  const column = pagination.sortBy
+    ? columns.find((c) => c.name === pagination.sortBy)
+    : undefined;
+
+  if (!column) {
+    return rows;
+  }
+
+  const dir = pagination.descending ? -1 : 1;
+
+  return [...rows].sort(
+    (a, b) =>
+      dir * compareSortValues(fieldValue(column, a), fieldValue(column, b)),
+  );
 }
 
 export function useResultTableModel(
@@ -218,7 +285,7 @@ export function useResultTableModel(
       );
     }
 
-    return r;
+    return sortRows(r, template.value.columns, pagination.value);
   });
 
   const columns = computed<CTableColumnTemplate[]>(() => {
@@ -263,12 +330,11 @@ export function useResultTableModel(
       // than the generic read-only default cell.
       column.renderAs ??= column.source === 'custom' ? 'editor' : 'default';
       const componentEntry = TableComponentRegistry.load(column.renderAs);
-      const renderComponent = componentEntry.component;
 
-      if (renderComponent) {
+      if (componentEntry.component) {
         rendererMap.set(
           column.name,
-          new TableCellRenderer(renderComponent, column),
+          new TableCellRenderer(componentEntry, column),
         );
       }
     });
