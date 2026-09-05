@@ -484,8 +484,7 @@ function parseCountries(value: string | null): string[] | undefined {
   align-items: center;
 
   padding: clamp(40px, 6vw, 72px) clamp(24px, 5vw, 56px);
-  border-radius: var(--md3-corner-extra-large) var(--md3-corner-extra-large)
-    var(--md3-corner-extra-large) 72px;
+  border-radius: var(--md3-corner-extra-large);
 
   background: var(--md3-surface-container-low);
   text-align: center;
@@ -572,11 +571,6 @@ function parseCountries(value: string | null): string[] | undefined {
   .events-hero__search :deep(.q-field__control),
   .events-hero__search :deep(input) {
     height: 48px;
-  }
-
-  .events-empty {
-    border-radius: var(--md3-corner-extra-large) var(--md3-corner-extra-large)
-      var(--md3-corner-extra-large) 48px;
   }
 }
 </style>

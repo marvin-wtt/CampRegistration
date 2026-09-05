@@ -1,30 +1,98 @@
+import { defineAsyncComponent } from 'vue';
 import TableComponentRegistry from '@/components/event/table/ComponentRegistry';
-import ActionTableCell from '@/components/event/table/tableCells/ActionTableCell.vue';
-import AddressTableCell from '@/components/event/table/tableCells/AddressTableCell.vue';
-import AgeTableCell from '@/components/event/table/tableCells/AgeTableCell.vue';
-import CountryFlagTableCell from '@/components/event/table/tableCells/CountryFlagTableCell.vue';
-import DateTableCell from '@/components/event/table/tableCells/DateTableCell.vue';
 import DefaultTableCell from '@/components/event/table/tableCells/DefaultTableCell.vue';
-import EmailTableCell from '@/components/event/table/tableCells/EmailTableCell.vue';
-import FileTableCell from '@/components/event/table/tableCells/FileTableCell.vue';
-import GenderTableCell from '@/components/event/table/tableCells/GenderTableCell.vue';
-import HiddenTextTableCell from '@/components/event/table/tableCells/HiddenTextTableCell.vue';
-import IconTableCell from '@/components/event/table/tableCells/IconTableCell.vue';
-import IconMappingTableCell from '@/components/event/table/tableCells/IconMappingTableCell.vue';
-import IconMappingOptionsEditor from '@/components/event/table/tableCells/IconMappingOptionsEditor.vue';
-import IndexTableCell from '@/components/event/table/tableCells/IndexTableCell.vue';
-import LanguageSkillsTableCell from '@/components/event/table/tableCells/LanguageSkillsTableCell.vue';
-import NameTableCell from '@/components/event/table/tableCells/NameTableCell.vue';
-import PhoneNumberTableCell from '@/components/event/table/tableCells/PhoneNumberTableCell.vue';
-import TextTableCell from '@/components/event/table/tableCells/TextTableCell.vue';
-import TimeAgoTableCell from '@/components/event/table/tableCells/TimeAgoTableCell.vue';
-import TranslatedValueTableCell from '@/components/event/table/tableCells/TranslatedValueTableCell.vue';
-import EditorTableCell from '@/components/event/table/tableCells/EditorTableCell.vue';
-import FileEditorTableCell from '@/components/event/table/tableCells/FileEditorTableCell.vue';
-import FormSelectTableCell from '@/components/event/table/tableCells/FormSelectTableCell.vue';
-import StatusTableCell from '@/components/event/table/tableCells/StatusTableCell.vue';
-import AgeOptionsEditor from '@/components/event/table/tableCells/AgeOptionsEditor.vue';
-import TextOptionsEditor from '@/components/event/table/tableCells/TextOptionsEditor.vue';
+import { formatAddress } from '@/utils/formatAddress';
+import {
+  formatFormSelectCsvValue,
+  formatIsoDateCsvValue,
+  isTranslatableCsvValue,
+  stringifyCsvValue,
+} from '@/utils/csvValueFormatter';
+
+// Every cell renderer (and its options editor, if any) is only needed once a
+// template actually uses that `renderAs` type, so they are loaded lazily
+// instead of bundled eagerly with every other cell type. `DefaultTableCell`
+// is the one exception: ComponentRegistry.ts already imports it eagerly as
+// the `.load()` fallback, so wrapping it here would add async overhead for
+// zero bundle-size benefit.
+const ActionTableCell = defineAsyncComponent(
+  () => import('@/components/event/table/tableCells/ActionTableCell.vue'),
+);
+const AddressTableCell = defineAsyncComponent(
+  () => import('@/components/event/table/tableCells/AddressTableCell.vue'),
+);
+const AgeTableCell = defineAsyncComponent(
+  () => import('@/components/event/table/tableCells/AgeTableCell.vue'),
+);
+const AgeOptionsEditor = defineAsyncComponent(
+  () => import('@/components/event/table/tableCells/AgeOptionsEditor.vue'),
+);
+const CountryFlagTableCell = defineAsyncComponent(
+  () => import('@/components/event/table/tableCells/CountryFlagTableCell.vue'),
+);
+const DateTableCell = defineAsyncComponent(
+  () => import('@/components/event/table/tableCells/DateTableCell.vue'),
+);
+const EditorTableCell = defineAsyncComponent(
+  () => import('@/components/event/table/tableCells/EditorTableCell.vue'),
+);
+const EmailTableCell = defineAsyncComponent(
+  () => import('@/components/event/table/tableCells/EmailTableCell.vue'),
+);
+const FileTableCell = defineAsyncComponent(
+  () => import('@/components/event/table/tableCells/FileTableCell.vue'),
+);
+const FileEditorTableCell = defineAsyncComponent(
+  () => import('@/components/event/table/tableCells/FileEditorTableCell.vue'),
+);
+const FormSelectTableCell = defineAsyncComponent(
+  () => import('@/components/event/table/tableCells/FormSelectTableCell.vue'),
+);
+const GenderTableCell = defineAsyncComponent(
+  () => import('@/components/event/table/tableCells/GenderTableCell.vue'),
+);
+const HiddenTextTableCell = defineAsyncComponent(
+  () => import('@/components/event/table/tableCells/HiddenTextTableCell.vue'),
+);
+const IconTableCell = defineAsyncComponent(
+  () => import('@/components/event/table/tableCells/IconTableCell.vue'),
+);
+const IconMappingTableCell = defineAsyncComponent(
+  () => import('@/components/event/table/tableCells/IconMappingTableCell.vue'),
+);
+const IconMappingOptionsEditor = defineAsyncComponent(
+  () =>
+    import('@/components/event/table/tableCells/IconMappingOptionsEditor.vue'),
+);
+const IndexTableCell = defineAsyncComponent(
+  () => import('@/components/event/table/tableCells/IndexTableCell.vue'),
+);
+const LanguageSkillsTableCell = defineAsyncComponent(
+  () =>
+    import('@/components/event/table/tableCells/LanguageSkillsTableCell.vue'),
+);
+const NameTableCell = defineAsyncComponent(
+  () => import('@/components/event/table/tableCells/NameTableCell.vue'),
+);
+const PhoneNumberTableCell = defineAsyncComponent(
+  () => import('@/components/event/table/tableCells/PhoneNumberTableCell.vue'),
+);
+const TextTableCell = defineAsyncComponent(
+  () => import('@/components/event/table/tableCells/TextTableCell.vue'),
+);
+const TextOptionsEditor = defineAsyncComponent(
+  () => import('@/components/event/table/tableCells/TextOptionsEditor.vue'),
+);
+const TimeAgoTableCell = defineAsyncComponent(
+  () => import('@/components/event/table/tableCells/TimeAgoTableCell.vue'),
+);
+const TranslatedValueTableCell = defineAsyncComponent(
+  () =>
+    import('@/components/event/table/tableCells/TranslatedValueTableCell.vue'),
+);
+const StatusTableCell = defineAsyncComponent(
+  () => import('@/components/event/table/tableCells/StatusTableCell.vue'),
+);
 
 // Labels for the (non-internal) cell types live in the i18n blocks of
 // TableTemplateColumnEditDialog.vue, keyed by the registry name (`cellType.<name>`).
@@ -32,12 +100,17 @@ const components = () => {
   TableComponentRegistry.register('action', ActionTableCell, {
     internal: true,
   });
-  TableComponentRegistry.register('address', AddressTableCell);
+  TableComponentRegistry.register('address', AddressTableCell, {
+    toCsv: (value, ctx) => formatAddress(value, ctx.translateCountry),
+  });
   TableComponentRegistry.register('age', AgeTableCell, {
     optionsComponent: AgeOptionsEditor,
+    toCsv: formatIsoDateCsvValue,
   });
   TableComponentRegistry.register('country_flag', CountryFlagTableCell);
-  TableComponentRegistry.register('date', DateTableCell);
+  TableComponentRegistry.register('date', DateTableCell, {
+    toCsv: formatIsoDateCsvValue,
+  });
   TableComponentRegistry.register('default', DefaultTableCell);
   TableComponentRegistry.register('editor', EditorTableCell, {
     internal: true,
@@ -47,7 +120,10 @@ const components = () => {
   TableComponentRegistry.register('file_editor', FileEditorTableCell, {
     internal: true,
   });
-  TableComponentRegistry.register('form_select', FormSelectTableCell);
+  TableComponentRegistry.register('form_select', FormSelectTableCell, {
+    toCsv: (value, ctx, column) =>
+      formatFormSelectCsvValue(column.fieldName, value, ctx),
+  });
   TableComponentRegistry.register('gender', GenderTableCell);
   TableComponentRegistry.register('hidden_text', HiddenTextTableCell);
   TableComponentRegistry.register('icon', IconTableCell, {
@@ -66,8 +142,19 @@ const components = () => {
   TableComponentRegistry.register('text', TextTableCell, {
     optionsComponent: TextOptionsEditor,
   });
-  TableComponentRegistry.register('time_ago', TimeAgoTableCell);
-  TableComponentRegistry.register('translated_value', TranslatedValueTableCell);
+  TableComponentRegistry.register('time_ago', TimeAgoTableCell, {
+    toCsv: formatIsoDateCsvValue,
+  });
+  TableComponentRegistry.register(
+    'translated_value',
+    TranslatedValueTableCell,
+    {
+      toCsv: (value, ctx) =>
+        isTranslatableCsvValue(value)
+          ? ctx.translate(value)
+          : stringifyCsvValue(value),
+    },
+  );
 };
 
 export default components;
