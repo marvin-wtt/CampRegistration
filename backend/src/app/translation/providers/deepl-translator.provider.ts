@@ -38,9 +38,11 @@ export class DeepLTranslatorProvider extends TranslationProvider {
       throw new ApiError(
         httpStatus.SERVICE_UNAVAILABLE,
         'Translation provider is temporarily unavailable.',
-        true,
-        error instanceof Error ? error.stack : undefined,
-        'TRANSLATION_PROVIDER_NETWORK_ERROR',
+        {
+          cause: error,
+          code: 'TRANSLATION_PROVIDER_NETWORK_ERROR',
+          fault: false,
+        },
       );
     }
 
@@ -48,9 +50,9 @@ export class DeepLTranslatorProvider extends TranslationProvider {
       throw new ApiError(
         httpStatus.BAD_GATEWAY,
         'Translation provider request failed.',
-        false,
-        undefined,
-        'TRANSLATION_PROVIDER_ERROR',
+        {
+          code: 'TRANSLATION_PROVIDER_ERROR',
+        },
       );
     }
 
@@ -61,9 +63,7 @@ export class DeepLTranslatorProvider extends TranslationProvider {
       throw new ApiError(
         httpStatus.BAD_GATEWAY,
         'Translation provider returned an empty result.',
-        false,
-        undefined,
-        'TRANSLATION_PROVIDER_ERROR',
+        { code: 'TRANSLATION_PROVIDER_ERROR' },
       );
     }
 
