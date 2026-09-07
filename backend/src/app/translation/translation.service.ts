@@ -44,18 +44,33 @@ export class TranslationService {
     );
 
     const translations: Record<string, string | null> = {};
+    const reasons: unknown[] = [];
     results.forEach((result, index) => {
       const targetLocale = targetLocales[index];
 
       if (result.status === 'fulfilled') {
         translations[targetLocale] = result.value;
       } else {
+        reasons.push(result.reason);
         logger.warn(
           `Translation to "${targetLocale}" failed: ${String(result.reason)}`,
         );
         translations[targetLocale] = null;
       }
     });
+
+    // A partial failure still returns the locales that did work. A total one
+    // has nothing to show for it, so the provider's error is raised rather than
+    // an all-`null` 200 the client renders as a spinner that resolves to
+    // nothing.
+    if (reasons.length === results.length) {
+      throw reasons[0] instanceof ApiError
+        ? reasons[0]
+        : new ApiError(httpStatus.BAD_GATEWAY, 'Translation failed.', {
+            cause: reasons[0],
+            code: 'TRANSLATION_PROVIDER_ERROR',
+          });
+    }
 
     return translations;
   }

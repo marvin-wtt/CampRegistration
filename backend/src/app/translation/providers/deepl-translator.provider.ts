@@ -20,6 +20,12 @@ export class DeepLTranslatorProvider extends TranslationProvider {
       throw new Error('Translation provider is not configured.');
     }
 
+    // DeepL wants uppercase codes separated by `-`. `target_lang` accepts a
+    // region (`EN-US`, `PT-BR`); `source_lang` rejects one, so it is reduced to
+    // the bare language.
+    const targetLang = targetLocale.replace('_', '-').toUpperCase();
+    const sourceLang = sourceLocale?.split(/[_-]/)[0]?.toUpperCase();
+
     let response: Response;
     try {
       response = await fetch(`${deepl.url}/v2/translate`, {
@@ -30,8 +36,8 @@ export class DeepLTranslatorProvider extends TranslationProvider {
         },
         body: JSON.stringify({
           text: [text],
-          target_lang: targetLocale.toUpperCase(),
-          source_lang: sourceLocale?.toUpperCase(),
+          target_lang: targetLang,
+          source_lang: sourceLang,
         }),
       });
     } catch (error) {

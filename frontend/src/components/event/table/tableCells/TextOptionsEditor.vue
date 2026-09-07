@@ -18,12 +18,6 @@
       v-model="showRemaining"
       :label="t('showRemaining.label')"
     />
-
-    <q-toggle
-      v-model="showTranslate"
-      :label="t('showTranslate.label')"
-      disable
-    />
   </div>
 </template>
 
@@ -41,15 +35,13 @@ defineProps<TableCellOptionsProps>();
 
 const maxLength = ref<number | undefined>(model.value?.maxLength);
 const showRemaining = ref<boolean>(model.value?.showRemaining ?? true);
-const showTranslate = ref<boolean>(model.value?.showTranslate ?? true);
 
 watch(
-  [maxLength, showRemaining, showTranslate],
+  [maxLength, showRemaining],
   () => {
     model.value = {
       maxLength: maxLength.value,
       showRemaining: showRemaining.value,
-      showTranslate: showTranslate.value,
     };
   },
   { deep: true },
@@ -66,8 +58,6 @@ maxLength:
     positiveNumber: 'Must be a positive number'
 showRemaining:
   label: 'Show remaining text length'
-showTranslate:
-  label: 'Show translate action'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -78,8 +68,6 @@ maxLength:
     positiveNumber: 'Muss eine positive Zahl sein'
 showRemaining:
   label: 'Verbleibende Textlänge anzeigen'
-showTranslate:
-  label: 'Übersetzen-Aktion anzeigen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -90,8 +78,6 @@ maxLength:
     positiveNumber: 'Doit être un nombre positif'
 showRemaining:
   label: 'Afficher la longueur de texte restante'
-showTranslate:
-  label: "Afficher l'action de traduction"
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -102,8 +88,6 @@ maxLength:
     positiveNumber: 'Musi być liczbą dodatnią'
 showRemaining:
   label: 'Pokaż pozostałą długość tekstu'
-showTranslate:
-  label: 'Pokaż akcję tłumaczenia'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -114,6 +98,4 @@ maxLength:
     positiveNumber: 'Musí být kladné číslo'
 showRemaining:
   label: 'Zobrazit zbývající délku textu'
-showTranslate:
-  label: 'Zobrazit akci překladu'
 </i18n>

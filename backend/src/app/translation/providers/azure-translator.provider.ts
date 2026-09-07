@@ -20,7 +20,13 @@ export class AzureTranslatorProvider extends TranslationProvider {
       throw new Error('Translation provider is not configured.');
     }
 
-    const url = new URL('/translate', azure.endpoint);
+    // Resolved against the configured endpoint *including* its path, so a
+    // gateway base such as `https://host/translator` keeps its prefix — a
+    // root-relative `/translate` would discard it.
+    const base = azure.endpoint.endsWith('/')
+      ? azure.endpoint
+      : `${azure.endpoint}/`;
+    const url = new URL('translate', base);
     url.searchParams.set('api-version', '3.0');
     url.searchParams.set('to', targetLocale);
     if (sourceLocale) {

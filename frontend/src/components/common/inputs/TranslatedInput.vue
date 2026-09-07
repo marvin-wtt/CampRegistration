@@ -55,6 +55,10 @@
                 @clear="clearTranslation(locale)"
               >
                 <template #prepend>
+                  <slot
+                    v-if="slots.prepend"
+                    name="prepend"
+                  />
                   <div class="locale-marker row items-center no-wrap">
                     <country-icon :locale="locale" />
                     <span class="locale-code">
@@ -64,17 +68,14 @@
                       {{ localeName(locale) }}
                     </q-tooltip>
                   </div>
-                  <slot
-                    v-if="slots.prepend"
-                    name="prepend"
-                  />
                 </template>
 
                 <template
-                  v-if="canAutoTranslate(locale)"
+                  v-if="canAutoTranslate(locale) || slots.append"
                   #append
                 >
                   <q-btn
+                    v-if="canAutoTranslate(locale)"
                     icon="auto_awesome"
                     round
                     flat
@@ -89,6 +90,10 @@
                       {{ t('autoTranslate') }}
                     </q-tooltip>
                   </q-btn>
+                  <slot
+                    v-if="slots.append"
+                    name="append"
+                  />
                 </template>
 
                 <!-- Parent slots (locale flag replaces the field icon here) -->
@@ -116,22 +121,23 @@
                 @clear="clearTranslation(locale)"
               >
                 <template #prepend>
+                  <slot
+                    v-if="slots.prepend"
+                    name="prepend"
+                  />
                   <div class="locale-marker row items-center no-wrap">
                     <country-icon :locale="locale" />
                     <span class="locale-code">{{ locale.toUpperCase() }}</span>
                     <q-tooltip>{{ localeName(locale) }}</q-tooltip>
                   </div>
-                  <slot
-                    v-if="slots.prepend"
-                    name="prepend"
-                  />
                 </template>
 
                 <template
-                  v-if="canAutoTranslate(locale)"
+                  v-if="canAutoTranslate(locale) || slots.append"
                   #append
                 >
                   <q-btn
+                    v-if="canAutoTranslate(locale)"
                     icon="auto_awesome"
                     round
                     flat
@@ -144,6 +150,10 @@
                   >
                     <q-tooltip>{{ t('autoTranslate') }}</q-tooltip>
                   </q-btn>
+                  <slot
+                    v-if="slots.append"
+                    name="append"
+                  />
                 </template>
 
                 <!-- Parent slots (locale flag replaces the field icon here) -->
@@ -244,12 +254,14 @@ const enabled = computed<boolean>(() => {
 
 // In translated mode the per-locale flag stands in for the field icon, so the
 // parent's `before` slot is dropped to avoid doubling up glyphs on every row.
-// `prepend` is dropped too — it's composed alongside the locale marker in the
-// template instead of being forwarded verbatim, so it can't clobber the marker.
+// `prepend` and `append` are dropped too — they're composed alongside the locale
+// marker and the auto-translate button in the template instead of being
+// forwarded verbatim, so they can't clobber either.
 const translatedSlots = computed<Partial<ForwardedFieldSlots>>(() => {
   const rest: Partial<ForwardedFieldSlots> = { ...slots };
   delete rest.before;
   delete rest.prepend;
+  delete rest.append;
   return rest;
 });
 
@@ -324,6 +336,9 @@ function clearTranslation(locale: string) {
   }
 }
 
+// Bumped on every run, so a superseded one can neither write its stale result
+// into fields the newer run now owns nor clear its loading state.
+let fillToken = 0;
 const autoTranslatingTo = ref<string[]>([]);
 const autoTranslating = computed<boolean>(
   () => autoTranslatingTo.value.length > 0,
@@ -381,6 +396,7 @@ async function fillTranslations(
   // provider detects it instead of being told a wrong one.
   sourceLocale?: string,
 ) {
+  const token = ++fillToken;
   autoTranslatingTo.value = targetLocales;
   try {
     const results = await translationStore.translate(
@@ -389,20 +405,35 @@ async function fillTranslations(
       sourceLocale,
     );
 
+    if (token !== fillToken) {
+      return;
+    }
+
     // A missing/null entry means that locale's translation failed — either
     // the whole request failed (store already surfaced an error
     // notification) or just that locale did within an otherwise-successful
     // batch; either way, leave that field untouched.
     targetLocales.forEach((targetLocale) => {
       const translated = results?.[targetLocale];
-      if (translated != null) {
-        translations.value[targetLocale] = modifiers.number
-          ? Number(translated)
-          : translated;
+      if (translated == null) {
+        return;
+      }
+
+      if (!modifiers.number) {
+        translations.value[targetLocale] = translated;
+        return;
+      }
+
+      // Translated text is rarely a number, and a NaN would wipe the field.
+      const parsed = Number(translated);
+      if (!Number.isNaN(parsed)) {
+        translations.value[targetLocale] = parsed;
       }
     });
   } finally {
-    autoTranslatingTo.value = [];
+    if (token === fillToken) {
+      autoTranslatingTo.value = [];
+    }
   }
 }
 
@@ -432,20 +463,27 @@ watch(
       // Park the typed text in the user's own locale first, so it stays
       // visible if translation is unavailable or the request fails.
       const seedLocale = matchedLocale ?? props.locales[0];
-      if (seedLocale && !hasContent(translations.value[seedLocale])) {
+      const seedLocaleWasEmpty =
+        !!seedLocale && !hasContent(translations.value[seedLocale]);
+      if (seedLocale && seedLocaleWasEmpty) {
         translations.value[seedLocale] = value.value;
       }
 
       if (translationAvailable.value) {
         // The text isn't necessarily written in the user's own locale, so the
-        // seeded field is translated too and the source language is detected
-        // rather than assumed. Locales the user already filled are left alone.
-        void fillTranslations(
-          String(value.value),
-          props.locales.filter(
-            (l) => l === seedLocale || !hasContent(translations.value[l]),
-          ),
+        // freshly seeded field is translated too and the source language is
+        // detected rather than assumed. Locales the user already filled are
+        // left alone — including the seed locale, whose own wording would
+        // otherwise be round-tripped through the provider and overwritten.
+        const targetLocales = props.locales.filter((l) =>
+          l === seedLocale
+            ? seedLocaleWasEmpty
+            : !hasContent(translations.value[l]),
         );
+
+        if (targetLocales.length > 0) {
+          void fillTranslations(String(value.value), targetLocales);
+        }
       }
 
       return;

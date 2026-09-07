@@ -10,7 +10,7 @@ export const useTranslationStore = defineStore('translation', () => {
   // `null` means "not checked yet". Checked once, the moment the store is
   // first created (Pinia stores are singletons), so consumers can just read
   // `available` instead of each having to trigger the check themselves.
-  const available = ref<boolean | null>(true);
+  const available = ref<boolean | null>(null);
   void apiService
     .fetchTranslationStatus()
     .then((status) => {
