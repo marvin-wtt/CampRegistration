@@ -18,6 +18,7 @@ import organization from './organization';
 import organizationMember from './organization-member';
 import organizationEvents from './organization-events';
 import organizationNewsletters from './organization-newsletters';
+import translation from './translation';
 
 export default {
   event,
@@ -40,4 +41,5 @@ export default {
   organizationMember,
   organizationEvents,
   organizationNewsletters,
+  translation,
 };
