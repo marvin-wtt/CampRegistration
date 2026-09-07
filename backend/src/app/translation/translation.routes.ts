@@ -1,4 +1,5 @@
 import { auth } from '#middlewares/auth.middleware';
+import { translationLimiter } from '#app/translation/translation.middleware';
 import { TranslationController } from '#app/translation/translation.controller';
 import { controller } from '#utils/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';
@@ -15,6 +16,10 @@ export class TranslationRouter extends ModuleRouter {
     this.router.use(auth());
 
     this.router.get('/status', controller(translationController, 'status'));
-    this.router.post('/', controller(translationController, 'translate'));
+    this.router.post(
+      '/',
+      translationLimiter,
+      controller(translationController, 'translate'),
+    );
   }
 }
