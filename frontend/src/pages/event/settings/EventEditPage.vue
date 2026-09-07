@@ -79,6 +79,7 @@
                     val.length <= 255 || t('validation.organizer.length'),
                 ]"
                 hide-bottom-space
+                no-translation
                 outlined
                 rounded
               >
@@ -98,6 +99,7 @@
                 ]"
                 type="email"
                 hide-bottom-space
+                no-translation
                 outlined
                 rounded
               >
@@ -162,6 +164,7 @@
                 ]"
                 always
                 hide-bottom-space
+                no-translation
                 outlined
                 rounded
                 type="number"

@@ -22,11 +22,11 @@ export const useTranslationStore = defineStore('translation', () => {
 
   async function translate(
     text: string,
-    targetLocale: string,
+    targetLocales: string[],
     sourceLocale?: string,
-  ): Promise<string | undefined> {
+  ): Promise<Record<string, string | null> | undefined> {
     return withErrorNotification('autoTranslate', () =>
-      apiService.translateText(text, targetLocale, sourceLocale),
+      apiService.translateText(text, targetLocales, sourceLocale),
     );
   }
 

@@ -12,17 +12,17 @@ export function useTranslationService() {
 
   async function translateText(
     text: string,
-    targetLocale: string,
+    targetLocales: string[],
     sourceLocale?: string,
-  ): Promise<string> {
+  ): Promise<Record<string, string | null>> {
     const response = await api.post('translation', {
       text,
-      targetLocale,
+      targetLocales,
       sourceLocale,
     });
     const result: TranslationResult | undefined = response?.data?.data;
 
-    return result?.text ?? text;
+    return result?.translations ?? {};
   }
 
   return { fetchTranslationStatus, translateText };

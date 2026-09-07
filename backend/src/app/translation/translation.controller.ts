@@ -25,15 +25,15 @@ export class TranslationController extends BaseController {
 
   async translate(req: Request, res: Response) {
     const {
-      body: { text, targetLocale, sourceLocale },
+      body: { text, targetLocales, sourceLocale },
     } = await req.validate(validator.translate);
 
-    const translatedText = await this.translationService.translate(
+    const translations = await this.translationService.translate(
       text,
-      targetLocale,
+      targetLocales,
       sourceLocale,
     );
 
-    res.resource(new TranslationResultResource({ text: translatedText }));
+    res.resource(new TranslationResultResource({ translations }));
   }
 }

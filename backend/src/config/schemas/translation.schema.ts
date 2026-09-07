@@ -39,8 +39,9 @@ export const TranslationEnvSchema = z
       .url()
       .optional()
       .describe(
-        'DeepL API base URL. Defaults to the free or pro endpoint based on ' +
-          'the API key suffix (free keys end with ":fx").',
+        'DeepL API base URL (host only). Defaults to the free or ' +
+          'pro endpoint based on the API key suffix (free keys end with ' +
+          '":fx").',
       ),
 
     GOOGLE_TRANSLATE_API_KEY: z

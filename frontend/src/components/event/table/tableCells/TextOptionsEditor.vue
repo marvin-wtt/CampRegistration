@@ -22,6 +22,7 @@
     <q-toggle
       v-model="showTranslate"
       :label="t('showTranslate.label')"
+      disable
     />
   </div>
 </template>

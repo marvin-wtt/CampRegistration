@@ -49,6 +49,8 @@
                 v-bind="inputProps"
                 :lang="locale"
                 :aria-label="fieldAriaLabel(locale)"
+                :disable="Boolean(props.disable) || isAutoTranslating(locale)"
+                :loading="Boolean(props.loading) || isAutoTranslating(locale)"
                 clearable
                 @clear="clearTranslation(locale)"
               >
@@ -69,7 +71,7 @@
                 </template>
 
                 <template
-                  v-if="translationAvailable"
+                  v-if="canAutoTranslate(locale)"
                   #append
                 >
                   <q-btn
@@ -79,9 +81,9 @@
                     dense
                     size="sm"
                     class="translate-action"
-                    :disable="!translations[locale] || autoTranslating"
-                    :loading="autoTranslatingFrom === locale"
-                    @click.stop="autoTranslateFrom(locale)"
+                    :disable="autoTranslating"
+                    :loading="isAutoTranslating(locale)"
+                    @click.stop="autoTranslateInto(locale)"
                   >
                     <q-tooltip>
                       {{ t('autoTranslate') }}
@@ -108,6 +110,8 @@
                 v-bind="inputProps"
                 :lang="locale"
                 :aria-label="fieldAriaLabel(locale)"
+                :disable="Boolean(props.disable) || isAutoTranslating(locale)"
+                :loading="Boolean(props.loading) || isAutoTranslating(locale)"
                 clearable
                 @clear="clearTranslation(locale)"
               >
@@ -124,7 +128,7 @@
                 </template>
 
                 <template
-                  v-if="translationAvailable"
+                  v-if="canAutoTranslate(locale)"
                   #append
                 >
                   <q-btn
@@ -134,9 +138,9 @@
                     dense
                     size="sm"
                     class="translate-action"
-                    :disable="!translations[locale] || autoTranslating"
-                    :loading="autoTranslatingFrom === locale"
-                    @click.stop="autoTranslateFrom(locale)"
+                    :disable="autoTranslating"
+                    :loading="isAutoTranslating(locale)"
+                    @click.stop="autoTranslateInto(locale)"
                   >
                     <q-tooltip>{{ t('autoTranslate') }}</q-tooltip>
                   </q-btn>
@@ -190,19 +194,27 @@ interface Props extends Omit<
   // Keep the translated inputs on, without the toggle to leave them
   always?: boolean | undefined;
   defaultUntranslated?: boolean | undefined;
+  // Suppress the auto-translate action (and its automatic run when
+  // switching to per-locale input) without affecting per-locale editing
+  // itself — for values that can differ per locale but aren't language text,
+  // e.g. a number.
+  noTranslation?: boolean | undefined;
 }
 
 // Global scope for the `country.*` lookup in localeName() below — explicit
-// because this component also has its own local <i18n> block (for the
+// because this component also has its own local i18n messages (for the
 // auto-translate tooltip), which flips useI18n()'s default scope to 'local'.
 // eslint-disable-next-line @typescript-eslint/unbound-method
 const { locale, t: tGlobal, te } = useI18n({ useScope: 'global' });
 const { t } = useI18n();
 
 // Availability is checked once by the store itself; see translation-store.ts.
+// `noTranslation` opts a field out on top of that — e.g. a number field can
+// still carry a different value per locale, but running it through a
+// language-translation API makes no sense.
 const translationStore = useTranslationStore();
 const translationAvailable = computed<boolean>(
-  () => translationStore.available === true,
+  () => !props.noTranslation && translationStore.available === true,
 );
 
 const [model, modifiers] = defineModel<ModelValueType>();
@@ -212,12 +224,14 @@ const props = withDefaults(defineProps<Props>(), {
   locales: () => [],
   always: false,
   defaultUntranslated: false,
+  noTranslation: false,
 });
 
 const inputProps = usePassthroughProps(props, [
   'locales',
   'always',
   'defaultUntranslated',
+  'noTranslation',
 ]);
 
 const useTranslations = ref(defaultUseTranslations());
@@ -310,34 +324,77 @@ function clearTranslation(locale: string) {
   }
 }
 
-const autoTranslatingFrom = ref<string | null>(null);
+const autoTranslatingTo = ref<string[]>([]);
 const autoTranslating = computed<boolean>(
-  () => autoTranslatingFrom.value !== null,
+  () => autoTranslatingTo.value.length > 0,
 );
 
-async function autoTranslateFrom(sourceLocale: string) {
-  const sourceValue = translations.value[sourceLocale];
-  if (sourceValue == null || sourceValue === '' || autoTranslating.value) {
+const userLocale = computed<string>(() => locale.value.split('-')[0]!);
+
+function hasContent(value: string | number | undefined): boolean {
+  return value != null && value !== '';
+}
+
+// True while this locale's field is being filled by an in-flight request — it
+// is about to be overwritten, so it's locked (and shown as loading).
+function isAutoTranslating(locale: string): boolean {
+  return autoTranslatingTo.value.includes(locale);
+}
+
+// The field an empty locale pulls its text from: the user's own locale when it
+// carries content, otherwise the first filled locale in prop order.
+function translationSource(targetLocale: string): string | undefined {
+  const candidates = props.locales.filter(
+    (l) => l !== targetLocale && hasContent(translations.value[l]),
+  );
+
+  return candidates.find((l) => l === userLocale.value) ?? candidates[0];
+}
+
+// The action fills its own field, so it only makes sense on an empty one that
+// has some other locale to translate from.
+function canAutoTranslate(locale: string): boolean {
+  return (
+    translationAvailable.value &&
+    !hasContent(translations.value[locale]) &&
+    translationSource(locale) !== undefined
+  );
+}
+
+async function autoTranslateInto(targetLocale: string) {
+  const sourceLocale = translationSource(targetLocale);
+  if (!sourceLocale || autoTranslating.value) {
     return;
   }
 
-  autoTranslatingFrom.value = sourceLocale;
+  await fillTranslations(
+    String(translations.value[sourceLocale]),
+    [targetLocale],
+    sourceLocale,
+  );
+}
+
+async function fillTranslations(
+  text: string,
+  targetLocales: string[],
+  // Omitted when the language the text is written in isn't known — the
+  // provider detects it instead of being told a wrong one.
+  sourceLocale?: string,
+) {
+  autoTranslatingTo.value = targetLocales;
   try {
-    const targetLocales = props.locales.filter((l) => l !== sourceLocale);
-    const results = await Promise.all(
-      targetLocales.map((targetLocale) =>
-        translationStore.translate(
-          String(sourceValue),
-          targetLocale,
-          sourceLocale,
-        ),
-      ),
+    const results = await translationStore.translate(
+      text,
+      targetLocales,
+      sourceLocale,
     );
 
-    // A per-locale `undefined` means that translation failed (the store
-    // already surfaced an error notification); leave that field untouched.
-    targetLocales.forEach((targetLocale, index) => {
-      const translated = results[index];
+    // A missing/null entry means that locale's translation failed — either
+    // the whole request failed (store already surfaced an error
+    // notification) or just that locale did within an otherwise-successful
+    // batch; either way, leave that field untouched.
+    targetLocales.forEach((targetLocale) => {
+      const translated = results?.[targetLocale];
       if (translated != null) {
         translations.value[targetLocale] = modifiers.number
           ? Number(translated)
@@ -345,7 +402,7 @@ async function autoTranslateFrom(sourceLocale: string) {
       }
     });
   } finally {
-    autoTranslatingFrom.value = null;
+    autoTranslatingTo.value = [];
   }
 }
 
@@ -362,17 +419,33 @@ watch(
       return;
     }
 
-    const userLocale = locale.value.split('-')[0]!;
-    const matchedLocale = props.locales.find((l) => l === userLocale);
+    const matchedLocale = props.locales.find((l) => l === userLocale.value);
 
     if (isEnabled) {
-      // Turning translations on: seed the user's own locale from the single value.
-      if (value.value === '' || value.value === 0) {
+      // Turning translations on: fan the single value out over every locale
+      // instead of waiting for the user to fill them one by one — the common
+      // case is "I typed one value, now flip the toggle".
+      if (!hasContent(value.value)) {
         return;
       }
 
-      if (matchedLocale && !(matchedLocale in translations.value)) {
-        translations.value[matchedLocale] = value.value;
+      // Park the typed text in the user's own locale first, so it stays
+      // visible if translation is unavailable or the request fails.
+      const seedLocale = matchedLocale ?? props.locales[0];
+      if (seedLocale && !hasContent(translations.value[seedLocale])) {
+        translations.value[seedLocale] = value.value;
+      }
+
+      if (translationAvailable.value) {
+        // The text isn't necessarily written in the user's own locale, so the
+        // seeded field is translated too and the source language is detected
+        // rather than assumed. Locales the user already filled are left alone.
+        void fillTranslations(
+          String(value.value),
+          props.locales.filter(
+            (l) => l === seedLocale || !hasContent(translations.value[l]),
+          ),
+        );
       }
 
       return;
@@ -410,23 +483,23 @@ watch(
 </script>
 
 <i18n lang="yaml" locale="en">
-autoTranslate: 'Auto-translate other languages'
+autoTranslate: 'Translate from another language'
 </i18n>
 
 <i18n lang="yaml" locale="de">
-autoTranslate: 'Andere Sprachen automatisch übersetzen'
+autoTranslate: 'Aus einer anderen Sprache übersetzen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-autoTranslate: 'Traduire automatiquement les autres langues'
+autoTranslate: 'Traduire depuis une autre langue'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-autoTranslate: 'Automatycznie przetłumacz pozostałe języki'
+autoTranslate: 'Przetłumacz z innego języka'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-autoTranslate: 'Automaticky přeložit ostatní jazyky'
+autoTranslate: 'Přeložit z jiného jazyka'
 </i18n>
 
 <style scoped>

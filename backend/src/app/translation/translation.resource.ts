@@ -21,7 +21,7 @@ export class TranslationResultResource extends JsonResource<
 > {
   transform(): TranslationResult {
     return {
-      text: this.data.text,
+      translations: this.data.translations,
     };
   }
 }

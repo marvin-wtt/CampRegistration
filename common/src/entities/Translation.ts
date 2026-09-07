@@ -3,5 +3,5 @@ export interface TranslationStatus {
 }
 
 export interface TranslationResult {
-  text: string;
+  translations: Record<string, string | null>;
 }

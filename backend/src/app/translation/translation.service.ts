@@ -25,19 +25,38 @@ export class TranslationService {
 
   async translate(
     text: string,
-    targetLocale: string,
+    targetLocales: string[],
     sourceLocale?: string,
-  ): Promise<string> {
+  ): Promise<Record<string, string | null>> {
     if (!this.provider) {
       throw new ApiError(
         httpStatus.SERVICE_UNAVAILABLE,
         'Translation is not configured.',
-        true,
-        undefined,
-        'TRANSLATION_NOT_CONFIGURED',
+        { code: 'TRANSLATION_NOT_CONFIGURED', fault: false },
       );
     }
 
-    return this.provider.translate(text, targetLocale, sourceLocale);
+    const provider = this.provider;
+    const results = await Promise.allSettled(
+      targetLocales.map((targetLocale) =>
+        provider.translate(text, targetLocale, sourceLocale),
+      ),
+    );
+
+    const translations: Record<string, string | null> = {};
+    results.forEach((result, index) => {
+      const targetLocale = targetLocales[index];
+
+      if (result.status === 'fulfilled') {
+        translations[targetLocale] = result.value;
+      } else {
+        logger.warn(
+          `Translation to "${targetLocale}" failed: ${String(result.reason)}`,
+        );
+        translations[targetLocale] = null;
+      }
+    });
+
+    return translations;
   }
 }
