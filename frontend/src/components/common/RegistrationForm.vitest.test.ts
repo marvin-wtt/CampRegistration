@@ -41,6 +41,7 @@ describe('RegistrationForm', () => {
     location: '',
     freePlaces: 0,
     registrationStatus: 'closed' as const,
+    logo: null,
     form: {
       title: '',
       description: '',

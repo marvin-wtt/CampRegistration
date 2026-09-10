@@ -37,6 +37,14 @@ export const eventOrganizationVerified = (req: Request): boolean => {
   );
 };
 
+// Common guard for aoi and meta route
+export const eventPubliclyVisible: GuardFn = eventOrganizationVerified;
+
+export const eventViewGuard: GuardFn = or(
+  eventPubliclyVisible,
+  hasEventPermission('event.view'),
+);
+
 async function prepareRequestModels(req: Request) {
   const file = req.modelOrFail('file');
 

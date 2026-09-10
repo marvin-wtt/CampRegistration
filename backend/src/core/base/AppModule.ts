@@ -20,6 +20,8 @@ export interface AppModule {
 
   registerRoutes?(router: AppRouter): void;
 
+  registerWebRoutes?(router: AppRouter): void;
+
   registerPermissions?(): ScopedPermissions;
 
   /**

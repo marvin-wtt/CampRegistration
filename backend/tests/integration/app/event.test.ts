@@ -113,6 +113,7 @@ const assertEventResponseBody = (
     location: data.location,
     freePlaces: data.maxParticipants,
     registrationStatus: eventRegistrationStatus(data as Event),
+    logo: null,
     form: data.form ?? expect.anything(),
     themes: data.themes ?? expect.anything(),
   });

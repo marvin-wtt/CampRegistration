@@ -1,5 +1,6 @@
 import type { AppModule } from '#core/base/AppModule';
 import apiRouter from '#routes/api';
+import webRouter from '#routes/web';
 import { createModules } from './modules.js';
 import { permissionRegistry } from '#core/permission-registry';
 import {
@@ -28,6 +29,7 @@ export async function boot() {
   registerModulePermissions(modules);
   registerModuleScopeResolvers(modules);
   registerModuleRoutes(modules);
+  registerModuleWebRoutes(modules);
   registerModuleJobs(modules);
 }
 
@@ -86,6 +88,12 @@ function registerModuleScopeResolvers(modules: AppModule[]) {
 function registerModuleRoutes(modules: AppModule[]) {
   for (const module of modules) {
     module.registerRoutes?.(apiRouter);
+  }
+}
+
+function registerModuleWebRoutes(modules: AppModule[]) {
+  for (const module of modules) {
+    module.registerWebRoutes?.(webRouter);
   }
 }
 
