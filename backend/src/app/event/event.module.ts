@@ -11,6 +11,7 @@ import { EventRouter } from '#app/event/event.routes';
 import { registerFileGuard } from '#app/file/file.guard';
 import { eventFileGuards, eventScopeResolver } from '#app/event/event.guard';
 import { EventFilesRouter } from '#app/event/event-files.routes';
+import { createEventMetaRouter } from '#app/event/event-meta.routes';
 import { EventService } from '#app/event/event.service';
 import { EventController } from '#app/event/event.controller';
 import { SettingsRegistry } from '#app/setting/setting.registry';
@@ -40,6 +41,10 @@ export class EventModule implements AppModule {
 
     router.useRouter('/events/:eventId/files', new EventFilesRouter());
     router.useRouter('/events', new EventRouter());
+  }
+
+  registerWebRoutes(router: AppRouter): void {
+    router.use('/events', createEventMetaRouter());
   }
 
   registerPermissions(): ScopedPermissions {

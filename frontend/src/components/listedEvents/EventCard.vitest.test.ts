@@ -46,6 +46,7 @@ const createEvent = (overrides: Partial<Event> = {}): Event => ({
   location: 'Bad Segeberg',
   freePlaces: null,
   registrationStatus: 'open',
+  logo: null,
   ...overrides,
 });
 
