@@ -36,6 +36,8 @@ export class EventResource extends JsonResource<
       location: this.data.location ?? null,
       freePlaces: this.data.freePlaces,
       registrationStatus: eventRegistrationStatus(this.data),
+      // TODO Extract the logo URL
+      logo: null,
     };
   }
 }

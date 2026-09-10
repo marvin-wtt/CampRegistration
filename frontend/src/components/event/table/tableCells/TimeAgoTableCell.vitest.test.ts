@@ -73,6 +73,7 @@ const createEvent = (
   location: 'Test Location',
   freePlaces: 10,
   registrationStatus: 'closed' as const,
+  logo: null,
   form: {} as EventDetails['form'],
   themes: {},
   ...overrides,

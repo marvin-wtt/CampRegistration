@@ -145,6 +145,7 @@ const routes: RouteRecordRaw[] = [
         path: '',
         redirect: { name: 'management.events' },
       },
+      // CAUTION: This route needs to stay in sync with the backend metadata injector for SEO and link previews
       {
         path: 'events',
         children: [
