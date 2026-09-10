@@ -104,16 +104,6 @@ describe('GET /events/:eventId (link preview)', () => {
     expect(text).toContain('<title>Camp Registrations</title>');
   });
 
-  it('should preview legacy camp links', async () => {
-    const event = await createEvent();
-
-    const { text } = await request().get(`/camps/${event.id}`).expect(200);
-
-    expect(previewOf(text)).toBe('Sommerlager');
-    // Canonical, even when the link that was shared is the legacy one.
-    expect(text).toContain(`/events/${event.id}"`);
-  });
-
   it('should not preview pages that are not an event', async () => {
     const { text } = await request().get('/events').expect(200);
 

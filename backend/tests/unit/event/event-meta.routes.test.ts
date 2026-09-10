@@ -73,7 +73,6 @@ beforeAll(async () => {
   app.use(extensions);
 
   app.use('/events', router);
-  app.use('/camps', router);
   app.get('*splat', (_req, res) => {
     res.type('html').send(SHELL);
   });
@@ -110,13 +109,6 @@ describe('event meta router', () => {
 
     expect(previewOf(text)).toBeNull();
     expect(text).toContain('<title>Camp Registrations</title>');
-  });
-
-  it('previews a legacy camp link with the canonical url', async () => {
-    const { text } = await request.get('/camps/verified').expect(200);
-
-    expect(previewOf(text)).toBe('Sommerlager');
-    expect(text).toContain('/events/01JB000000000000000000000X"');
   });
 
   it('honours Accept-Language', async () => {

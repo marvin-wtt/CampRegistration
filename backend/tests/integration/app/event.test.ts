@@ -751,6 +751,7 @@ describe('/api/v1/events', () => {
         themes: event.themes,
         freePlaces: expect.anything(),
         registrationStatus: eventRegistrationStatus(event),
+        logo: null,
       });
     });
 

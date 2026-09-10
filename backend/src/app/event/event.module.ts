@@ -44,9 +44,7 @@ export class EventModule implements AppModule {
   }
 
   registerWebRoutes(router: AppRouter): void {
-    const metaRouter = createEventMetaRouter();
-
-    router.use('/events', metaRouter);
+    router.use('/events', createEventMetaRouter());
   }
 
   registerPermissions(): ScopedPermissions {
