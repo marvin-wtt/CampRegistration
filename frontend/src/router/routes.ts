@@ -11,6 +11,13 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/pages/LandingPage.vue'),
       },
       {
+        // Maintain support for legacy links
+        path: 'camps/:pathMatch(.*)*',
+        redirect: (to) => ({
+          path: ['/events', ...(to.params.pathMatch ?? [])].join('/'),
+        }),
+      },
+      {
         path: 'events',
         children: [
           {
