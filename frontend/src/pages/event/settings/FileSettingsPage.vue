@@ -31,6 +31,84 @@
         </div>
       </div>
 
+      <!-- Logo -->
+      <q-card
+        flat
+        bordered
+        class="section-card"
+      >
+        <q-card-section class="q-pb-none">
+          <div class="row items-center no-wrap q-gutter-sm">
+            <q-icon
+              name="image"
+              color="primary"
+              size="20px"
+            />
+            <div class="text-subtitle2 text-weight-bold">
+              {{ t('section.logo') }}
+            </div>
+          </div>
+        </q-card-section>
+
+        <q-card-section class="row items-center no-wrap q-gutter-md">
+          <q-avatar
+            size="64px"
+            rounded
+            class="file-tile"
+            :class="logoFile ? fileTileClass(logoFile.type) : 'tile--other'"
+          >
+            <img
+              v-if="logoFile?.type.startsWith('image/')"
+              :src="eventFileStore.getUrl(logoFile.id)"
+              :alt="t('section.logo')"
+            />
+            <q-icon
+              v-else
+              :name="logoFile ? fileIcon(logoFile.type) : 'hide_image'"
+              size="24px"
+            />
+          </q-avatar>
+
+          <div class="col">
+            <div class="text-body2">
+              {{ t('logo.description') }}
+            </div>
+            <div
+              v-if="!logoFile"
+              class="text-caption text-grey-6 q-mt-xs"
+            >
+              {{ t('logo.empty') }}
+            </div>
+            <div
+              v-else-if="logoFile.accessLevel !== 'public'"
+              class="text-caption text-negative q-mt-xs"
+            >
+              {{ t('logo.not_public') }}
+            </div>
+          </div>
+
+          <q-btn
+            v-if="logoFile && can('event.files.delete')"
+            :aria-label="t('action.delete')"
+            icon="delete"
+            class="file-action-btn"
+            flat
+            round
+            @click="showDeleteDialog(logoFile)"
+          />
+
+          <m-btn
+            v-if="can('event.files.create')"
+            :label="logoFile ? t('action.change_logo') : t('action.add_logo')"
+            :loading="uploadOngoing"
+            color="primary"
+            outline
+            icon="add_photo_alternate"
+            @click="uploadLogo"
+          />
+        </q-card-section>
+      </q-card>
+
       <!-- Missing documents -->
       <q-card
         v-if="missingDocuments.length > 0"
@@ -356,6 +434,7 @@ import {
   useEventFilesStore,
 } from '@/stores/event-files-store';
 import { usePermissions } from '@/composables/permissions';
+import { EVENT_LOGO_SLOT } from '@camp-registration/common/form';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
 // eslint-disable-next-line @typescript-eslint/unbound-method
@@ -374,8 +453,17 @@ onMounted(async () => {
 
 const uploadOngoing = ref(false);
 
+// The logo has its own section above — excluded here so it isn't listed twice.
 const files = computed<ServiceFile[]>(() =>
-  sortFiles(eventFileStore.data ?? []),
+  sortFiles(
+    (eventFileStore.data ?? []).filter(
+      (file) => file.field !== EVENT_LOGO_SLOT,
+    ),
+  ),
+);
+
+const logoFile = computed<ServiceFile | undefined>(
+  () => eventFileStore.logoFile,
 );
 
 /**
@@ -508,6 +596,12 @@ function getUploadHint(field: string, locale?: string | null): string {
 
 function uploadForSlot(slot: string, locale?: string | null) {
   openDialog({ initialField: slot, initialLocale: locale });
+}
+
+// The logo isn't localized — the dialog locks the locale to null for this
+// slot, so re-submitting always replaces the one existing logo file.
+function uploadLogo() {
+  uploadForSlot(EVENT_LOGO_SLOT, null);
 }
 
 function openReplaceDialog(file: ServiceFile) {
@@ -832,12 +926,20 @@ action:
   edit: 'Edit'
   upload: 'Upload'
   replace: 'Replace'
+  add_logo: 'Add logo'
+  change_logo: 'Change logo'
   copy_link: 'Copy link'
   menu: 'Actions'
 
 section:
   files: 'Files'
+  logo: 'Logo'
   missing: 'Missing documents'
+
+logo:
+  description: 'Shown on the event card, in the registration form header and in link previews.'
+  empty: 'No logo uploaded yet.'
+  not_public: 'The logo is private. Only public files are shown to participants.'
 
 dialog:
   delete:
@@ -854,6 +956,7 @@ virtual:
   upload_hint:
     rules: 'Upload Event Rules'
     toc: 'Upload Terms & Conditions'
+    logo: 'Upload Logo'
     default: 'Upload {field}'
   version:
     replacement: 'Replacement {n}'
@@ -878,12 +981,20 @@ action:
   edit: 'Bearbeiten'
   upload: 'Hochladen'
   replace: 'Ersetzen'
+  add_logo: 'Logo hinzufügen'
+  change_logo: 'Logo ändern'
   copy_link: 'Link kopieren'
   menu: 'Aktionen'
 
 section:
   files: 'Dateien'
+  logo: 'Logo'
   missing: 'Fehlende Dokumente'
+
+logo:
+  description: 'Wird auf der Veranstaltungskarte, im Kopfbereich des Anmeldeformulars und in Linkvorschauen angezeigt.'
+  empty: 'Noch kein Logo hochgeladen.'
+  not_public: 'Das Logo ist privat. Teilnehmenden werden nur öffentliche Dateien angezeigt.'
 
 dialog:
   delete:
@@ -900,6 +1011,7 @@ virtual:
   upload_hint:
     rules: 'Veranstaltungregeln hochladen'
     toc: 'AGB hochladen'
+    logo: 'Logo hochladen'
     default: '{field} hochladen'
   version:
     replacement: 'Ersatz {n}'
@@ -924,12 +1036,20 @@ action:
   edit: 'Modifier'
   upload: 'Téléverser'
   replace: 'Remplacer'
+  add_logo: 'Ajouter un logo'
+  change_logo: 'Changer le logo'
   copy_link: 'Copier le lien'
   menu: 'Actions'
 
 section:
   files: 'Fichiers'
+  logo: 'Logo'
   missing: 'Documents manquants'
+
+logo:
+  description: "Affiché sur la carte de l'événement, dans l'en-tête du formulaire d'inscription et dans les aperçus de lien."
+  empty: 'Aucun logo téléversé pour le moment.'
+  not_public: 'Le logo est privé. Seuls les fichiers publics sont affichés aux participants.'
 
 dialog:
   delete:
@@ -946,6 +1066,7 @@ virtual:
   upload_hint:
     rules: 'Téléverser le règlement'
     toc: 'Téléverser les conditions générales'
+    logo: 'Téléverser le logo'
     default: 'Téléverser {field}'
   version:
     replacement: 'Remplacement {n}'
@@ -970,12 +1091,20 @@ action:
   edit: 'Edytuj'
   upload: 'Prześlij'
   replace: 'Zastąp'
+  add_logo: 'Dodaj logo'
+  change_logo: 'Zmień logo'
   copy_link: 'Kopiuj link'
   menu: 'Akcje'
 
 section:
   files: 'Pliki'
+  logo: 'Logo'
   missing: 'Brakujące dokumenty'
+
+logo:
+  description: 'Wyświetlane na karcie wydarzenia, w nagłówku formularza rejestracyjnego i w podglądach linków.'
+  empty: 'Nie przesłano jeszcze logo.'
+  not_public: 'Logo jest prywatne. Uczestnikom pokazywane są tylko pliki publiczne.'
 
 dialog:
   delete:
@@ -992,6 +1121,7 @@ virtual:
   upload_hint:
     rules: 'Prześlij regulamin'
     toc: 'Prześlij warunki uczestnictwa'
+    logo: 'Prześlij logo'
     default: 'Prześlij {field}'
   version:
     replacement: 'Zamiennik {n}'
@@ -1016,12 +1146,20 @@ action:
   edit: 'Upravit'
   upload: 'Nahrát'
   replace: 'Nahradit'
+  add_logo: 'Přidat logo'
+  change_logo: 'Změnit logo'
   copy_link: 'Kopírovat odkaz'
   menu: 'Akce'
 
 section:
   files: 'Soubory'
+  logo: 'Logo'
   missing: 'Chybějící dokumenty'
+
+logo:
+  description: 'Zobrazuje se na kartě akce, v záhlaví registračního formuláře a v náhledech odkazů.'
+  empty: 'Zatím nebylo nahráno žádné logo.'
+  not_public: 'Logo je soukromé. Účastníkům se zobrazují pouze veřejné soubory.'
 
 dialog:
   delete:
@@ -1038,6 +1176,7 @@ virtual:
   upload_hint:
     rules: 'Nahrát pravidla akce'
     toc: 'Nahrát obchodní podmínky'
+    logo: 'Nahrát logo'
     default: 'Nahrát {field}'
   version:
     replacement: 'Náhrada {n}'

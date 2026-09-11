@@ -470,6 +470,43 @@ describe('/api/v1/files/', () => {
       );
     });
 
+    it('should fall back to the language the client accepts', async () => {
+      const event = await EventFactory.create({ listed: true });
+
+      const defaultName = crypto.randomUUID() + '.pdf';
+      await uploadFile('blank.pdf', defaultName);
+      await FileFactory.create({
+        event: { connect: { id: event.id } },
+        field: 'rules',
+        locale: 'en',
+        accessLevel: 'public',
+        originalName: 'default.pdf',
+        name: defaultName,
+      });
+
+      const localizedName = crypto.randomUUID() + '.pdf';
+      await uploadFile('blank.pdf', localizedName);
+      await FileFactory.create({
+        event: { connect: { id: event.id } },
+        field: 'rules',
+        locale: 'de',
+        accessLevel: 'public',
+        originalName: 'localized.pdf',
+        name: localizedName,
+      });
+
+      // No `locale` query: a plain <img> or a crawler cannot add one, and
+      // Accept-Language is the only thing it says about its language.
+      const response = await request()
+        .get(`/api/v1/events/${event.id}/files/slots/rules`)
+        .set('Accept-Language', 'de-DE,de;q=0.9')
+        .expect(200);
+
+      expect(response.headers['content-disposition']).toContain(
+        'localized.pdf',
+      );
+    });
+
     it('should respond with `401` when the matching file is private and the user is anonymous', async () => {
       const event = await EventFactory.create({ listed: true });
       await FileFactory.create({

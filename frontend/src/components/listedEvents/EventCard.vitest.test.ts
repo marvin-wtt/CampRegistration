@@ -50,11 +50,14 @@ const createEvent = (overrides: Partial<Event> = {}): Event => ({
   ...overrides,
 });
 
-const ownerLine = (event: Event) =>
+const mountCard = (event: Event) =>
   mount(EventCard, {
     props: { event },
     global: { stubs: { CountryIcon: true } },
-  }).find('.event-card__owner');
+  });
+
+const ownerLine = (event: Event) =>
+  mountCard(event).find('.event-card__owner');
 
 describe('EventCard', () => {
   it('names the owning organization when it differs from the organizer', () => {
@@ -95,5 +98,36 @@ describe('EventCard', () => {
     expect(ownerLine(event).exists()).toBe(true);
 
     locale.value = 'en';
+  });
+
+  describe('banner', () => {
+    it('falls back to the monogram without a logo', () => {
+      const card = mountCard(createEvent());
+
+      expect(card.find('.event-card__logo').exists()).toBe(false);
+      expect(card.find('.event-card__monogram').text()).toBe('S');
+    });
+
+    it('renders the logo the API published', () => {
+      const card = mountCard(
+        createEvent({ logo: 'https://api.test/events/1/files/slots/logo' }),
+      );
+
+      expect(card.find('.event-card__logo').attributes('src')).toBe(
+        'https://api.test/events/1/files/slots/logo',
+      );
+      expect(card.find('.event-card__monogram').exists()).toBe(false);
+    });
+
+    it('falls back to the monogram when the logo fails to load', async () => {
+      const card = mountCard(
+        createEvent({ logo: 'https://api.test/events/1/files/slots/logo' }),
+      );
+
+      await card.find('.event-card__logo').trigger('error');
+
+      expect(card.find('.event-card__logo').exists()).toBe(false);
+      expect(card.find('.event-card__monogram').exists()).toBe(true);
+    });
   });
 });

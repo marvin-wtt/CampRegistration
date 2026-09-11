@@ -4,6 +4,55 @@ import { fakeEventData } from '../../util/faker.js';
 import { setVariables } from '../../../src/form/index.js';
 
 describe('variables', () => {
+  describe('logo', () => {
+    it('should show the event logo in the header', () => {
+      const model = new SurveyModel();
+      const logo = 'https://api.test/api/v1/events/1/files/slots/logo';
+
+      setVariables(model, fakeEventData({ logo }));
+
+      expect(model.logo).toBe(logo);
+      expect(model.hasLogo).toBe(true);
+    });
+
+    it('should leave no header for an event without a logo', () => {
+      const model = new SurveyModel();
+
+      setVariables(model, fakeEventData({ logo: null }));
+
+      expect(model.hasLogo).toBe(false);
+    });
+
+    // `hasLogo` reads the raw property, so a placeholder would render an empty
+    // <img> for every event without a logo. The property is assigned instead.
+    it('should replace a logo placeholder rather than resolve it', () => {
+      const model = new SurveyModel({ logo: '{event.logo}' });
+
+      setVariables(model, fakeEventData({ logo: null }));
+
+      expect(model.hasLogo).toBe(false);
+    });
+
+    it('should keep a logo the form carries itself', () => {
+      const ownLogo = 'https://example.org/own-logo.png';
+      const model = new SurveyModel({ logo: ownLogo });
+
+      setVariables(model, fakeEventData({ logo: 'https://api.test/logo' }));
+
+      expect(model.logo).toBe(ownLogo);
+    });
+
+    it('should drop the header when the event logo is removed', () => {
+      const logo = 'https://api.test/logo';
+      const model = new SurveyModel();
+
+      setVariables(model, fakeEventData({ logo }));
+      setVariables(model, fakeEventData({ logo: null }));
+
+      expect(model.hasLogo).toBe(false);
+    });
+  });
+
   describe('translations', () => {
     it('should translate to the given locale', () => {
       const model = new SurveyModel();

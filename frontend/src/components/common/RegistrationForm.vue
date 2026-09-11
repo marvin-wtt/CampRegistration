@@ -128,7 +128,7 @@ import 'survey-core/survey-core.min.css';
 
 import { useI18n } from 'vue-i18n';
 import { createMarkdownConverter } from '@/utils/markdown';
-import { computed, onMounted, ref, toRef, watch, watchEffect } from 'vue';
+import { computed, onBeforeMount, ref, toRef, watch, watchEffect } from 'vue';
 import { SurveyModel } from 'survey-core';
 import { SurveyComponent } from 'survey-vue3-ui';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
@@ -269,7 +269,10 @@ watchEffect(() => {
   emit('bgColorUpdate', bgColor.value);
 });
 
-onMounted(() => {
+// Before the first render, not `onMounted`: this is also what puts the event's
+// logo on the model, and applying it afterwards renders the header twice — once
+// without a logo, once with.
+onBeforeMount(() => {
   // Auto variables update on locale change
   startAutoDataUpdate(model, eventData);
   startAutoThemeUpdate(model, eventData, bgColor);

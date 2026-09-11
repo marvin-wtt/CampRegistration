@@ -370,6 +370,24 @@ export class FileService extends BaseService {
     return selectFileByLocale(files, locale ?? 'en') ?? files[0];
   }
 
+  /**
+   * Prisma `files` include fragment for "does this model have a publicly
+   * servable file in `slot`" — for a caller that only needs presence, not the
+   * file itself (e.g. `EventResource`, which addresses the file by slot), so
+   * it can ask within its own query instead of a separate lookup per row.
+   */
+  publicSlotFileInclude(slot: string) {
+    return {
+      where: {
+        field: slot,
+        uploadStatus: 'READY' as const,
+        accessLevel: 'public' as const,
+      },
+      select: { id: true },
+      take: 1,
+    };
+  }
+
   async queryModelFiles(
     model: ModelData,
     filter: {

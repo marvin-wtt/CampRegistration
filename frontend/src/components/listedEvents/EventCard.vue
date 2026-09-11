@@ -13,7 +13,6 @@
     <span class="q-focus-helper" />
 
     <!-- Banner -->
-    <!-- TODO Replace monogram banner with the actual event logo once available -->
     <div class="event-card__banner">
       <span
         class="event-card__banner-shape event-card__banner-shape--top"
@@ -23,7 +22,17 @@
         class="event-card__banner-shape event-card__banner-shape--bottom"
         aria-hidden="true"
       />
+      <img
+        v-if="props.event.logo && !logoFailed"
+        class="event-card__logo"
+        :src="props.event.logo"
+        alt=""
+        aria-hidden="true"
+        loading="lazy"
+        @error="logoFailed = true"
+      />
       <span
+        v-else
         class="event-card__monogram"
         aria-hidden="true"
       >
@@ -157,7 +166,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import type { Event } from '@camp-registration/common/entities';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { useRouter } from 'vue-router';
@@ -184,6 +193,18 @@ const tone = computed<(typeof tones)[number]>(() => {
 
   return tones[hash % tones.length] ?? 'primary';
 });
+
+// The URL points at a slot, not at a file id: the file behind it can be gone
+// (deleted, or turned private) while this list is still on screen. Falling back
+// to the monogram beats a broken-image icon.
+const logoFailed = ref(false);
+
+watch(
+  () => props.event.logo,
+  () => {
+    logoFailed.value = false;
+  },
+);
 
 const monogram = computed<string>(() => {
   return to(props.event.name).trim().charAt(0).toUpperCase() || '•';
@@ -397,6 +418,19 @@ function navigateToRegistration() {
 .event-card--tertiary .event-card__banner {
   background: var(--md3-tertiary-container);
   color: var(--md3-on-tertiary-container);
+}
+
+.event-card__logo {
+  max-width: 70%;
+  max-height: 76px;
+
+  object-fit: contain;
+
+  transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.event-card:hover .event-card__logo {
+  transform: scale(1.05);
 }
 
 .event-card__monogram {
@@ -648,6 +682,7 @@ function navigateToRegistration() {
 
 @media (prefers-reduced-motion: reduce) {
   .event-card,
+  .event-card__logo,
   .event-card__monogram,
   .event-card__capacity-fill {
     transition: none;
@@ -657,6 +692,7 @@ function navigateToRegistration() {
     transform: none;
   }
 
+  .event-card:hover .event-card__logo,
   .event-card:hover .event-card__monogram {
     transform: none;
   }

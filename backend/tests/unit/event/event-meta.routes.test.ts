@@ -4,7 +4,7 @@ import supertest from 'supertest';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import type { EventWithFreePlaces } from '#app/event/event.types';
+import type { EventWithRelations } from '#app/event/event.types';
 import { registerRouteModelBinding } from '#core/router/router';
 import extensions from '#middlewares/extension.middleware';
 
@@ -16,7 +16,7 @@ const SHELL =
 
 const buildEvent = (
   verificationStatus: 'VERIFIED' | 'PENDING',
-): EventWithFreePlaces =>
+): EventWithRelations =>
   ({
     id: '01JB000000000000000000000X',
     organizationId: '01JB0000000000000000000ORG',
@@ -43,9 +43,10 @@ const buildEvent = (
     location: 'Berlin',
     freePlaces: 5,
     registrations: [],
-  }) as unknown as EventWithFreePlaces;
+    hasLogo: false,
+  }) as unknown as EventWithRelations;
 
-const events = new Map<string, EventWithFreePlaces>([
+const events = new Map<string, EventWithRelations>([
   ['verified', buildEvent('VERIFIED')],
   ['pending', buildEvent('PENDING')],
 ]);

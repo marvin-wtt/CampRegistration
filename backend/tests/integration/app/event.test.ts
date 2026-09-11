@@ -30,6 +30,7 @@ import {
   eventInputNational,
 } from './fixtures/event.fixtures.js';
 import { request } from '../utils/request.js';
+import config from '#config/index';
 import { eventWithMaxParticipantsRolesInternational } from './fixtures/registration.fixtures.js';
 
 type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
@@ -761,6 +762,67 @@ describe('/api/v1/events', () => {
       });
 
       await request().get(`/api/v1/events/${event.id}`).send().expect(200);
+    });
+
+    describe('logo', () => {
+      const logoOf = async (eventId: string): Promise<unknown> => {
+        const { body } = await request()
+          .get(`/api/v1/events/${eventId}`)
+          .send()
+          .expect(200);
+
+        return body.data.logo;
+      };
+
+      it('should respond with the slot URL when a logo was uploaded', async () => {
+        const event = await EventFactory.create();
+        await FileFactory.create({
+          event: { connect: { id: event.id } },
+          field: 'logo',
+          locale: 'de',
+          type: 'image/png',
+        });
+
+        // Locale-free: the URL serves whichever file matches the `locale` query
+        // its consumer appends.
+        expect(await logoOf(event.id)).toBe(
+          `${config.origin}/api/v1/events/${event.id}/files/slots/logo`,
+        );
+      });
+
+      it('should ignore a logo that is not public', async () => {
+        const event = await EventFactory.create();
+        await FileFactory.create({
+          event: { connect: { id: event.id } },
+          field: 'logo',
+          accessLevel: 'private',
+          type: 'image/png',
+        });
+
+        expect(await logoOf(event.id)).toBeNull();
+      });
+
+      it('should ignore a logo whose upload has not finished', async () => {
+        const event = await EventFactory.create();
+        await FileFactory.create({
+          event: { connect: { id: event.id } },
+          field: 'logo',
+          uploadStatus: 'PENDING',
+          type: 'image/png',
+        });
+
+        expect(await logoOf(event.id)).toBeNull();
+      });
+
+      it('should ignore a file in another slot', async () => {
+        const event = await EventFactory.create();
+        await FileFactory.create({
+          event: { connect: { id: event.id } },
+          field: 'toc',
+        });
+
+        expect(await logoOf(event.id)).toBeNull();
+      });
     });
 
     describe('unverified organization', () => {

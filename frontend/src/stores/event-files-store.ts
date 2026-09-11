@@ -11,6 +11,7 @@ import type {
 } from '@camp-registration/common/entities';
 import { exportFile } from 'quasar';
 import { computed } from 'vue';
+import { EVENT_LOGO_SLOT } from '@camp-registration/common/form';
 
 // Matches {_file.slotName} placeholders used in SurveyJS form definitions.
 const FILE_SLOT_REGEX = /\{\s?_file\.([a-z0-9_-]+)\s?}/g;
@@ -78,6 +79,13 @@ export const useEventFilesStore = defineStore('eventFiles', () => {
     invalidate,
     reload: () => fetchData({ background: true }),
   });
+
+  // The file behind the reserved logo slot, if any — a single file, not
+  // localized. Unlike a form slot this one is never declared by the form; see
+  // EVENT_LOGO_SLOT.
+  const logoFile = computed<ServiceFile | undefined>(() =>
+    (data.value ?? []).find((file) => file.field === EVENT_LOGO_SLOT),
+  );
 
   // Slots declared in the form via {_file.slotName} that have no uploaded file yet.
   const pendingSlots = computed<string[]>(() => {
@@ -167,6 +175,7 @@ export const useEventFilesStore = defineStore('eventFiles', () => {
       const file = await apiService.createEventFile(eventId, createData);
 
       data.value?.push(file);
+      refreshEventLogo(file.field);
 
       return file;
     };
@@ -188,6 +197,7 @@ export const useEventFilesStore = defineStore('eventFiles', () => {
 
       await apiService.deleteFile(oldFile.id);
       data.value = data.value?.filter((f) => f.id !== oldFile.id);
+      refreshEventLogo(oldFile.field, newFile.field);
 
       return newFile;
     });
@@ -197,21 +207,42 @@ export const useEventFilesStore = defineStore('eventFiles', () => {
     id: string,
     updateData: ServiceFileUpdateData,
   ): Promise<ServiceFile> {
+    const previousField = data.value?.find((entry) => entry.id === id)?.field;
+
     return withProgressNotification('update', async () => {
       const file = await apiService.updateFile(id, updateData);
 
       data.value = data.value?.map((entry) => (entry.id === id ? file : entry));
+      refreshEventLogo(previousField, file.field);
 
       return file;
     });
   }
 
   async function deleteEntry(id: string) {
+    const field = data.value?.find((file) => file.id === id)?.field;
+
     await withProgressNotification('delete', async () => {
       await apiService.deleteFile(id);
 
       data.value = data.value?.filter((file) => file.id !== id);
+      refreshEventLogo(field);
     });
+  }
+
+  /**
+   * `EventDetails.logo` is derived from the `logo` slot on the server, so a
+   * write to that slot — upload, replace, access-level change, delete — changes
+   * the event resource as well. Refresh it instead of leaving event cards and
+   * the form header pointing at a logo that is no longer there (or missing one
+   * that now is).
+   */
+  function refreshEventLogo(...fields: (string | null | undefined)[]) {
+    if (!fields.includes(EVENT_LOGO_SLOT)) {
+      return;
+    }
+
+    void eventStore.fetchData(undefined, { background: true });
   }
 
   async function downloadFile(file: ServiceFile) {
@@ -258,6 +289,7 @@ export const useEventFilesStore = defineStore('eventFiles', () => {
     data,
     isLoading,
     error,
+    logoFile,
     pendingSlots,
     slotsWithMissingLocales,
     missingFilesCount,

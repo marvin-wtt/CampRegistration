@@ -172,6 +172,7 @@ import type {
 } from '@camp-registration/common/entities';
 import { useEventFilesStore } from '@/stores/event-files-store';
 import { useEventDetailsStore } from '@/stores/event-details-store';
+import { EVENT_LOGO_SLOT } from '@camp-registration/common/form';
 
 const MAX_FIELD_LENGTH = 40;
 const FALLBACK_FIELD_NAME = 'file';
@@ -250,10 +251,14 @@ const isFieldLocked = computed(
 );
 
 const isLocaleLocked = computed(
-  // Lock only when a concrete locale was supplied (e.g. replace, or a slot that
-  // targets a specific language). A locale-less slot (initialLocale === null)
-  // stays editable so the user can choose one.
-  () => isReplaceMode.value || initialLocale != null,
+  // Lock when a concrete locale was supplied (e.g. replace, or a slot that
+  // targets a specific language) — a locale-less slot (initialLocale === null)
+  // otherwise stays editable so the user can choose one. The logo is the one
+  // exception: it isn't localized at all, so its locale always stays fixed.
+  () =>
+    isReplaceMode.value ||
+    initialLocale != null ||
+    initialField === EVENT_LOGO_SLOT,
 );
 
 const isAccessLevelLocked = computed(

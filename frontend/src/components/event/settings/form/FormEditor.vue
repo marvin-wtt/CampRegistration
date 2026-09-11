@@ -87,6 +87,8 @@ function hideProperty(className: string, propertyName: string) {
   property.visible = false;
 }
 
+// Hide the logo as it should be managed by the files settings page only
+hideProperty('survey', 'logo');
 hideProperty('survey', 'cookieName');
 hideProperty('survey', 'widthMode');
 hideProperty('survey', 'completedBeforeHtml');
