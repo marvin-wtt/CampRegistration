@@ -24,7 +24,7 @@ nobody, silently.
    by scope and role. Registration is additive; the module that owns the _subject_
    owns the grant.
 4. **Guard the route.** Use `scoped(scope, permission)` from
-   `#core/permission.guard`, or its aliases `campManager(p)`,
+   `#core/permission/permission.guard`, or its aliases `campManager(p)`,
    `newsletterManager(p)`, `organizationMember(p)`. Never write a role comparison.
 5. **Update the snapshot.** `backend/tests/unit/core/permission-registry.test.ts`
    snapshots the assembled registry — it must be updated deliberately, since the

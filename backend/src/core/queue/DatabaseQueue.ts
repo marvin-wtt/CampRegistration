@@ -1,4 +1,4 @@
-import prisma from '#core/database';
+import prisma from '#core/database/database.client';
 import {
   type JobOptions,
   Queue,

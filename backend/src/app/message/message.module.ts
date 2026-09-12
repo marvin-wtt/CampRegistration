@@ -12,7 +12,7 @@ export class MessageModule implements AppModule {
     options.bind(MessageController).toSelf().inSingletonScope();
   }
 
-  registerRoutes(router: AppRouter): void {
+  registerApiRoutes(router: AppRouter): void {
     registerFileGuard('message', {
       view: messageFileGuard,
     });

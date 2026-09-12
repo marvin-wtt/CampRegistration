@@ -1,5 +1,5 @@
 import { BaseService } from '#core/base/BaseService';
-import { permissionRegistry } from '#core/permission-registry';
+import { permissionRegistry } from '#core/permission/permission.registry';
 import type { Prisma } from '#generated/prisma/client.js';
 import type { EventScopedPermission } from '@camp-registration/common/permissions';
 import { RESOURCE_VIEW_PERMISSION } from '@camp-registration/common/realtime';

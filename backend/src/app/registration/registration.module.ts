@@ -11,16 +11,14 @@ import { registrationFileGuard } from '#app/registration/registration.guard';
 import { RegistrationFilesRouter } from '#app/registration/registration-files.routes';
 import { RegistrationService } from '#app/registration/registration.service';
 import { RegistrationController } from '#app/registration/registration.controller';
-import {
-  RegistrationAcceptedMessage,
-  RegistrationConfirmedMessage,
-  RegistrationDeletedMessage,
-  RegistrationNotifyMessage,
-  RegistrationTemplateMessage,
-  RegistrationUpdatedMessage,
-  RegistrationWaitlistedMessage,
-} from '#app/registration/registration.messages';
-import { MailableRegistry } from '#app/mail/mail.registry';
+import { RegistrationNotifyMessage } from '#app/registration/messages/notify.mail';
+import { RegistrationTemplateMessage } from '#app/registration/messages/template.mail';
+import { RegistrationAcceptedMessage } from '#app/registration/messages/accepted.mail';
+import { RegistrationConfirmedMessage } from '#app/registration/messages/confirmed.mail';
+import { RegistrationDeletedMessage } from '#app/registration/messages/deleted.mail';
+import { RegistrationUpdatedMessage } from '#app/registration/messages/updated.mail';
+import { RegistrationWaitlistedMessage } from '#app/registration/messages/waitlisted.mail';
+import { MailableRegistry } from '#core/mail/mail.registry';
 import { resolve } from '#core/ioc/container';
 
 export class RegistrationModule implements AppModule {
@@ -30,19 +28,20 @@ export class RegistrationModule implements AppModule {
   }
 
   configure(_options: ModuleOptions): Promise<void> | void {
+    const mailRegistry = resolve(MailableRegistry);
     // Manual -> Registration
-    resolve(MailableRegistry).register(RegistrationTemplateMessage);
+    mailRegistry.register(RegistrationTemplateMessage);
     // Event -> Event Contact
-    resolve(MailableRegistry).register(RegistrationNotifyMessage);
+    mailRegistry.register(RegistrationNotifyMessage);
     // Event -> Registration
-    resolve(MailableRegistry).register(RegistrationConfirmedMessage);
-    resolve(MailableRegistry).register(RegistrationWaitlistedMessage);
-    resolve(MailableRegistry).register(RegistrationUpdatedMessage);
-    resolve(MailableRegistry).register(RegistrationDeletedMessage);
-    resolve(MailableRegistry).register(RegistrationAcceptedMessage);
+    mailRegistry.register(RegistrationConfirmedMessage);
+    mailRegistry.register(RegistrationWaitlistedMessage);
+    mailRegistry.register(RegistrationUpdatedMessage);
+    mailRegistry.register(RegistrationDeletedMessage);
+    mailRegistry.register(RegistrationAcceptedMessage);
   }
 
-  registerRoutes(router: AppRouter): void {
+  registerApiRoutes(router: AppRouter): void {
     registerFileGuard('registration', {
       view: registrationFileGuard,
     });

@@ -2,6 +2,7 @@ import { Cron, type CronOptions } from 'croner';
 import { injectable } from 'inversify';
 import moment from 'moment';
 import logger from '#core/logger';
+import { describeError } from '#utils/errors';
 
 export type JobHandler = () => void | Promise<void>;
 
@@ -75,7 +76,7 @@ export class JobScheduler {
   }
 
   private onError(error: unknown, job: Cron): void {
-    logger.error(`Job ${job.name ?? '??'} failed. ${JSON.stringify(error)}`);
+    logger.error(`Job ${job.name ?? '??'} failed. ${describeError(error)}`);
   }
 
   private onProtected(job: Cron): void {

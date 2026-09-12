@@ -6,15 +6,13 @@ import {
 } from './registration.resource.js';
 import validator from './registration.validation.js';
 import { type Request, type Response } from 'express';
-import {
-  RegistrationAcceptedMessage,
-  RegistrationConfirmedMessage,
-  RegistrationDeletedMessage,
-  RegistrationNotifyMessage,
-  RegistrationSubmittedMessage,
-  RegistrationUpdatedMessage,
-  RegistrationWaitlistedMessage,
-} from '#app/registration/registration.messages';
+import { RegistrationNotifyMessage } from '#app/registration/messages/notify.mail';
+import { RegistrationAcceptedMessage } from '#app/registration/messages/accepted.mail';
+import { RegistrationConfirmedMessage } from '#app/registration/messages/confirmed.mail';
+import { RegistrationDeletedMessage } from '#app/registration/messages/deleted.mail';
+import { RegistrationSubmittedMessage } from '#app/registration/messages/submitted.mail';
+import { RegistrationUpdatedMessage } from '#app/registration/messages/updated.mail';
+import { RegistrationWaitlistedMessage } from '#app/registration/messages/waitlisted.mail';
 import { changesForRegistration } from '#app/registration/registration.changes';
 import { BaseController } from '#core/base/BaseController';
 import { RealtimeService } from '#core/realtime/RealtimeService';

@@ -1,5 +1,5 @@
 import type { Organization, User } from '#generated/prisma/client.js';
-import { MailBase } from '#app/mail/mail.base';
+import { MailBase } from '#core/mail/mail.base';
 import { generateUrl } from '#utils/url';
 
 interface OrganizationRecipientPayload {

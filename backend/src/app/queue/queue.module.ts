@@ -3,7 +3,6 @@ import type { JobScheduler } from '#core/scheduler/JobScheduler';
 import { QueueService } from '#app/queue/queue.service';
 import { QueueController } from '#app/queue/queue.controller';
 import { QueueRouter } from '#app/queue/queue.routes';
-import { QueueManager } from '#core/queue/QueueManager';
 import { resolve } from '#core/ioc/container';
 
 export class QueueModule implements AppModule {
@@ -12,7 +11,7 @@ export class QueueModule implements AppModule {
     options.bind(QueueController).toSelf().inSingletonScope();
   }
 
-  registerRoutes(router: AppRouter): void {
+  registerApiRoutes(router: AppRouter): void {
     router.useRouter('/admin/queues', new QueueRouter());
   }
 
@@ -20,9 +19,5 @@ export class QueueModule implements AppModule {
     scheduler.schedule('queue-job-cleanup', '45 4 * * *', () =>
       resolve(QueueService).deleteOldJobs(),
     );
-  }
-
-  async shutdown(): Promise<void> {
-    await resolve(QueueManager).close();
   }
 }

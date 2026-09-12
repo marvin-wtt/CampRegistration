@@ -7,7 +7,7 @@ export class AdminModule implements AppModule {
     options.bind(AdminController).toSelf().inSingletonScope();
   }
 
-  registerRoutes(router: AppRouter): void {
+  registerApiRoutes(router: AppRouter): void {
     router.useRouter('/admin', new AdminRouter());
   }
 }

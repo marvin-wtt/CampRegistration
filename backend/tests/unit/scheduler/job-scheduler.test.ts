@@ -1,8 +1,22 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { JobScheduler } from '#core/scheduler/JobScheduler';
+
+const { loggerErrorMock } = vi.hoisted(() => ({
+  loggerErrorMock: vi.fn(),
+}));
+
+vi.mock('#core/logger', () => ({
+  default: {
+    warn: vi.fn(),
+    error: loggerErrorMock,
+    info: vi.fn(),
+    debug: vi.fn(),
+  },
+}));
+
+const { JobScheduler } = await import('#core/scheduler/JobScheduler');
 
 describe('JobScheduler', () => {
-  let scheduler: JobScheduler;
+  let scheduler: InstanceType<typeof JobScheduler>;
 
   afterEach(() => {
     scheduler.stop();
@@ -42,5 +56,20 @@ describe('JobScheduler', () => {
 
     expect(scheduler.findJob('a')).toBeUndefined();
     expect(scheduler.findJob('b')).toBeUndefined();
+  });
+
+  it('logs the actual error message when a job throws, not an empty JSON-stringified object', async () => {
+    scheduler = new JobScheduler();
+    loggerErrorMock.mockClear();
+
+    scheduler.schedule('bounce-poll', '0 0 * * *', () => {
+      throw new Error('bad password');
+    });
+
+    await scheduler.findJob('bounce-poll')?.trigger();
+
+    expect(loggerErrorMock).toHaveBeenCalledWith(
+      'Job bounce-poll failed. bad password',
+    );
   });
 });

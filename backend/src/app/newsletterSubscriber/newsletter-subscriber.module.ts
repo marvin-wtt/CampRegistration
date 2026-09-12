@@ -11,7 +11,7 @@ export class NewsletterSubscriberModule implements AppModule {
     options.bind(NewsletterSubscriberController).toSelf().inSingletonScope();
   }
 
-  registerRoutes(router: AppRouter): void {
+  registerApiRoutes(router: AppRouter): void {
     router.useRouter(
       '/newsletters/unsubscribe',
       new NewsletterUnsubscribeRouter(),

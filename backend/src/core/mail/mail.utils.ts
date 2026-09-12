@@ -1,4 +1,4 @@
-import type { AddressLike } from '#app/mail/mail.types';
+import type { AddressLike } from '#core/mail/mail.types';
 
 export function addressLikeToString(to: AddressLike): string {
   const items = Array.isArray(to) ? to : [to];

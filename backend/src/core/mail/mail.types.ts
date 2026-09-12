@@ -22,6 +22,8 @@ export interface Envelope {
   bcc?: AddressLike | undefined;
   priority?: MailPriority | undefined;
   headers?: Record<string, string> | undefined;
+  messageId?: string | undefined;
+  dsn?: boolean | undefined;
 }
 
 export interface TextContent {

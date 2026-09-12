@@ -1,6 +1,6 @@
 import type { User } from '#generated/prisma/client';
-import { MailBase } from '#app/mail/mail.base';
-import type { Content } from '#app/mail/mail.types';
+import { MailBase } from '#core/mail/mail.base';
+import type { Content } from '#core/mail/mail.types';
 import { generateUrl } from '#utils/url';
 
 abstract class UserMessage<T extends { user: User }> extends MailBase<T> {

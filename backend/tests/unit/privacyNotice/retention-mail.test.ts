@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import i18n, { initI18n } from '#core/i18n';
+import i18n, { initI18n } from '#core/i18n/i18n.client';
 import { RETENTION_ANCHORS } from '@camp-registration/common/privacy';
 
 /**

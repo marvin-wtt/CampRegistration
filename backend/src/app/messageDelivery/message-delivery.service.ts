@@ -1,5 +1,9 @@
 import { Prisma } from '#generated/prisma/client.js';
-import type { Registration, File } from '#generated/prisma/client.js';
+import type {
+  Registration,
+  File,
+  MessageDelivery,
+} from '#generated/prisma/client.js';
 import { BaseService } from '#core/base/BaseService';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service';
@@ -82,5 +86,40 @@ export class MessageDeliveryService extends BaseService {
         attachments: true,
       },
     });
+  }
+
+  /**
+   * Idempotent: an already-bounced delivery is left alone so a duplicate
+   * report never re-fires bounce handling. Returns `null` when there was
+   * nothing to do — unknown id, or already bounced.
+   */
+  async markBounced(
+    id: string,
+    reason: string,
+  ): Promise<MessageDelivery | null> {
+    const { count } = await this.prisma.messageDelivery.updateMany({
+      where: { id, bouncedAt: null },
+      data: { bouncedAt: new Date(), bounceReason: reason },
+    });
+
+    if (count === 0) {
+      return null;
+    }
+
+    return this.prisma.messageDelivery.findUniqueOrThrow({ where: { id } });
+  }
+
+  async markBouncedByCorrelationId(
+    bounceCorrelationId: string,
+    reason: string,
+  ): Promise<MessageDelivery | null> {
+    const delivery = await this.prisma.messageDelivery.findUnique({
+      where: { bounceCorrelationId },
+    });
+    if (!delivery) {
+      return null;
+    }
+
+    return this.markBounced(delivery.id, reason);
   }
 }

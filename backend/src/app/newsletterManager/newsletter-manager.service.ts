@@ -4,7 +4,7 @@ import type {
   NewsletterManagerRole,
   NewsletterPermission,
 } from '@camp-registration/common/permissions';
-import { permissionRegistry } from '#core/permission-registry';
+import { permissionRegistry } from '#core/permission/permission.registry';
 import { OrganizationMemberService } from '#app/organizationMember/organization-member.service';
 
 @injectable()

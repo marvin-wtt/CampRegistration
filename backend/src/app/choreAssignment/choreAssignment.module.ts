@@ -12,7 +12,7 @@ export class ChoreAssignmentModule implements AppModule {
     options.bind(ChoreAssignmentRouter).toSelf().inSingletonScope();
   }
 
-  registerRoutes(router: AppRouter): void {
+  registerApiRoutes(router: AppRouter): void {
     router.useRouter(
       '/events/:eventId/chore-assignments',
       resolve(ChoreAssignmentRouter),

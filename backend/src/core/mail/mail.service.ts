@@ -1,10 +1,10 @@
-import { MailFactory } from '#app/mail/mail.factory';
+import { MailFactory } from '#core/mail/mail.factory';
 import logger from '#core/logger';
-import type { IMailer } from '#app/mail/mailer.types';
-import type { MailableCtor, MailBase } from '#app/mail/mail.base';
+import type { IMailer, SendMailResult } from '#core/mail/mailer.types';
+import type { MailableCtor, MailBase } from '#core/mail/mail.base';
 import type { Queue } from '#core/queue/Queue';
 import { QueueManager } from '#core/queue/QueueManager';
-import { MailableRegistry } from '#app/mail/mail.registry';
+import { MailableRegistry } from '#core/mail/mail.registry';
 import { inject, injectable } from 'inversify';
 import config from '#config/index';
 
@@ -14,7 +14,8 @@ export class MailService {
   private queue: Queue<unknown>;
 
   constructor(
-    @inject(MailableRegistry) mailableRegistry: MailableRegistry,
+    @inject(MailableRegistry)
+    private readonly mailableRegistry: MailableRegistry,
     @inject(QueueManager) queueManager: QueueManager,
   ) {
     // Create mailer based on configured driver (defaults to 'smtp' per config schema)
@@ -29,9 +30,11 @@ export class MailService {
         duration: 1000 * 60 * 30, // 30 minutes
       },
     });
+  }
 
+  startWorker() {
     this.queue.process(async (job) => {
-      await this.sendMail(mailableRegistry.createFromJob(job));
+      await this.sendMail(this.mailableRegistry.createFromJob(job));
     });
   }
 
@@ -51,10 +54,18 @@ export class MailService {
     await this.mailer.close();
   }
 
-  public async sendMail(mailable: MailBase<unknown>): Promise<void> {
+  public async sendMail(mailable: MailBase<unknown>): Promise<SendMailResult> {
     const data = await mailable.build();
+    const result = await this.mailer.sendMail(data);
 
-    await this.mailer.sendMail(data);
+    try {
+      await mailable.afterSend(result);
+    } catch (error) {
+      // The mail already went out; never let bookkeeping trigger a job retry.
+      logger.error('Mail afterSend hook failed:', error);
+    }
+
+    return result;
   }
 
   public async dispatchMail<P>(

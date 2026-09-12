@@ -15,6 +15,9 @@ function createService() {
   const prismaMock = {
     messageDelivery: {
       create: vi.fn(),
+      updateMany: vi.fn(),
+      findUnique: vi.fn(),
+      findUniqueOrThrow: vi.fn(),
     },
   };
   const fileServiceMock = {
@@ -114,5 +117,75 @@ describe('MessageDeliveryService.createDelivery', () => {
       ),
     ).rejects.toThrow(otherError);
     expect(prismaMock.messageDelivery.create).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('MessageDeliveryService.markBounced', () => {
+  it('marks the delivery bounced when it exists and is not already bounced', async () => {
+    const { service, prismaMock } = createService();
+    prismaMock.messageDelivery.updateMany.mockResolvedValueOnce({ count: 1 });
+    prismaMock.messageDelivery.findUniqueOrThrow.mockResolvedValueOnce({
+      id: 'delivery-1',
+      bouncedAt: new Date(),
+    });
+
+    const result = await service.markBounced('delivery-1', 'rejected');
+
+    expect(prismaMock.messageDelivery.updateMany).toHaveBeenCalledWith({
+      where: { id: 'delivery-1', bouncedAt: null },
+      data: expect.objectContaining({ bounceReason: 'rejected' }),
+    });
+    expect(result).toEqual({ id: 'delivery-1', bouncedAt: expect.any(Date) });
+  });
+
+  it('is idempotent: returns null without a second write when already bounced', async () => {
+    const { service, prismaMock } = createService();
+    prismaMock.messageDelivery.updateMany.mockResolvedValueOnce({ count: 0 });
+
+    const result = await service.markBounced('delivery-1', 'rejected');
+
+    expect(result).toBeNull();
+    expect(prismaMock.messageDelivery.findUniqueOrThrow).not.toHaveBeenCalled();
+  });
+});
+
+describe('MessageDeliveryService.markBouncedByCorrelationId', () => {
+  it('returns null when no delivery matches the correlation id', async () => {
+    const { service, prismaMock } = createService();
+    prismaMock.messageDelivery.findUnique.mockResolvedValueOnce(null);
+
+    const result = await service.markBouncedByCorrelationId(
+      'unknown@example.com',
+      'DSN report: failed',
+    );
+
+    expect(result).toBeNull();
+    expect(prismaMock.messageDelivery.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('marks the matching delivery bounced', async () => {
+    const { service, prismaMock } = createService();
+    prismaMock.messageDelivery.findUnique.mockResolvedValueOnce({
+      id: 'delivery-1',
+    });
+    prismaMock.messageDelivery.updateMany.mockResolvedValueOnce({ count: 1 });
+    prismaMock.messageDelivery.findUniqueOrThrow.mockResolvedValueOnce({
+      id: 'delivery-1',
+      bouncedAt: new Date(),
+    });
+
+    const result = await service.markBouncedByCorrelationId(
+      'abc123@example.com',
+      'DSN report: failed',
+    );
+
+    expect(prismaMock.messageDelivery.findUnique).toHaveBeenCalledWith({
+      where: { bounceCorrelationId: 'abc123@example.com' },
+    });
+    expect(prismaMock.messageDelivery.updateMany).toHaveBeenCalledWith({
+      where: { id: 'delivery-1', bouncedAt: null },
+      data: expect.objectContaining({ bounceReason: 'DSN report: failed' }),
+    });
+    expect(result).toEqual({ id: 'delivery-1', bouncedAt: expect.any(Date) });
   });
 });

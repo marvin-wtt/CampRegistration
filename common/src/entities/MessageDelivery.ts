@@ -11,4 +11,6 @@ export interface MessageDelivery extends Identifiable {
   priority: string;
   createdAt: string;
   attachments: ServiceFile[] | null;
+  bouncedAt: string | null;
+  bounceReason: string | null;
 }

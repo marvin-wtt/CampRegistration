@@ -1,7 +1,7 @@
 import type { AppModule, AppRouter, BindOptions } from '#core/base/AppModule';
 import type { JobScheduler } from '#core/scheduler/JobScheduler';
 import { resolve } from '#core/ioc/container';
-import { MailableRegistry } from '#app/mail/mail.registry';
+import { MailableRegistry } from '#core/mail/mail.registry';
 import { PrivacyNoticeService } from './privacy-notice.service.js';
 import { PrivacyNoticeController } from './privacy-notice.controller.js';
 import { PrivacyRetentionService } from './privacy-retention.service.js';
@@ -22,7 +22,7 @@ export class PrivacyNoticeModule implements AppModule {
     resolve(MailableRegistry).register(EventRetentionDueMessage);
   }
 
-  registerRoutes(router: AppRouter): void {
+  registerApiRoutes(router: AppRouter): void {
     router.useRouter(
       '/organizations/:organizationId/privacy-notice',
       new OrganizationPrivacyNoticeRouter(),

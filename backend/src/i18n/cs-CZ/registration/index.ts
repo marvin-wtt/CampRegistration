@@ -22,5 +22,21 @@ export default {
         cause: '$t(email:footer.cause) jste kontaktní osobou pro tuto akci.',
       },
     },
+    messageBounced: {
+      subject: 'Zpráva nedoručena | {{ event.name }}',
+      preview:
+        'Zprávu pro {{ recipient }} se nepodařilo doručit pro akci {{ event.name }}',
+      text: {
+        title: 'Dobrý den,',
+        information:
+          'Vaši zprávu „{{ messageSubject }}“ pro {{ recipient }} týkající se akce {{ event.name }} se nepodařilo doručit.',
+        button: 'Zobrazit registrace',
+        greeting: 'S pozdravem,',
+        teamName: 'Tým {{ appName }}',
+      },
+      footer: {
+        cause: '$t(email:footer.cause) jste kontaktní osobou pro tuto akci.',
+      },
+    },
   },
 };
