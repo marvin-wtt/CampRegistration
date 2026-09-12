@@ -584,10 +584,7 @@ function navigateToRegistration() {
   aspect-ratio: 1;
   min-width: 60px;
   max-width: 88px;
-  /* Fixed, not a percentage: percentage padding resolves against the
-     *containing block's* width (the badge's, not the plate's own ~60-88px),
-     so a percentage here would consume the entire badge before its content. */
-  padding: 6px;
+  overflow: hidden;
   border: 1px solid var(--md3-outline-variant);
   border-radius: var(--md3-corner-large, 16px);
 
@@ -616,6 +613,7 @@ function navigateToRegistration() {
  * not there's a banner behind it.
  */
 .event-card__badge--plain {
+  padding: 6px;
   border-color: transparent;
 }
 

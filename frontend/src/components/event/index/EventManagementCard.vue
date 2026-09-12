@@ -614,6 +614,7 @@ async function withLoading(flag: Ref<boolean>, fn: () => Promise<void>) {
 
   width: 44px;
   height: 44px;
+  overflow: hidden;
   border-radius: 12px;
 
   font-size: 22px;
@@ -643,15 +644,14 @@ async function withLoading(flag: Ref<boolean>, fn: () => Promise<void>) {
  * regardless of which tone the card was dealt.
  */
 .mgmt-card__avatar--logo {
-  padding: 6px;
   border: 1px solid var(--md3-outline-variant);
 
   background: var(--md3-surface-container-highest);
 }
 
 .mgmt-card__logo {
-  max-width: 100%;
-  max-height: 100%;
+  width: 100%;
+  height: 100%;
 
   object-fit: contain;
 }
