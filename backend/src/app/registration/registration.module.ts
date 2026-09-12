@@ -41,7 +41,7 @@ export class RegistrationModule implements AppModule {
     mailRegistry.register(RegistrationAcceptedMessage);
   }
 
-  registerRoutes(router: AppRouter): void {
+  registerApiRoutes(router: AppRouter): void {
     registerFileGuard('registration', {
       view: registrationFileGuard,
     });

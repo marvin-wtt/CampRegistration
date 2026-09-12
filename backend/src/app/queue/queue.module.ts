@@ -11,7 +11,7 @@ export class QueueModule implements AppModule {
     options.bind(QueueController).toSelf().inSingletonScope();
   }
 
-  registerRoutes(router: AppRouter): void {
+  registerApiRoutes(router: AppRouter): void {
     router.useRouter('/admin/queues', new QueueRouter());
   }
 

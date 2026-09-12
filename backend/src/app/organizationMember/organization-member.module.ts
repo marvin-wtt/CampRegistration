@@ -10,7 +10,7 @@ export class OrganizationMemberModule implements AppModule {
     options.bind(OrganizationMemberController).toSelf().inSingletonScope();
   }
 
-  registerRoutes(router: AppRouter): void {
+  registerApiRoutes(router: AppRouter): void {
     router.useRouter(
       '/organizations/:organizationId/members',
       new OrganizationMemberRouter(),

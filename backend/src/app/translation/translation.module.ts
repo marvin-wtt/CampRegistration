@@ -9,7 +9,7 @@ export class TranslationModule implements AppModule {
     options.bind(TranslationController).toSelf().inSingletonScope();
   }
 
-  registerRoutes(router: AppRouter): void {
+  registerApiRoutes(router: AppRouter): void {
     router.useRouter('/translation', new TranslationRouter());
   }
 }

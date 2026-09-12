@@ -7,7 +7,7 @@ export class PermissionModule implements AppModule {
     options.bind(PermissionController).toSelf().inSingletonScope();
   }
 
-  registerRoutes(router: AppRouter): void {
+  registerApiRoutes(router: AppRouter): void {
     router.useRouter('/permissions', new PermissionRouter());
   }
 }

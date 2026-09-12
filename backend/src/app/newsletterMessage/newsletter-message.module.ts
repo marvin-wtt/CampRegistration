@@ -18,7 +18,7 @@ export class NewsletterMessageModule implements AppModule {
     mailableRegistry.register(NewsletterMessageMail);
   }
 
-  registerRoutes(router: AppRouter): void {
+  registerApiRoutes(router: AppRouter): void {
     router.useRouter(
       '/newsletters/:newsletterId/messages',
       new NewsletterMessageRouter(),

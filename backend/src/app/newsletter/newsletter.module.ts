@@ -16,7 +16,7 @@ export class NewsletterModule implements AppModule {
     return { newsletter: newsletterScopeResolver };
   }
 
-  registerRoutes(router: AppRouter): void {
+  registerApiRoutes(router: AppRouter): void {
     router.useRouter('/newsletters', new NewsletterRouter());
   }
 

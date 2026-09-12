@@ -13,7 +13,7 @@ export class SettingModule implements AppModule {
     options.bind(SettingRouter).toSelf().inSingletonScope();
   }
 
-  registerRoutes(router: AppRouter): void {
+  registerApiRoutes(router: AppRouter): void {
     router.useRouter('/events/:eventId/settings', resolve(SettingRouter));
   }
 }

@@ -25,7 +25,7 @@ export class AuthModule implements AppModule {
     resolve(MailableRegistry).register(ResetPasswordMessage);
   }
 
-  registerRoutes(router: AppRouter): void {
+  registerApiRoutes(router: AppRouter): void {
     router.useRouter('/auth', new AuthRouter());
   }
 }

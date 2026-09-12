@@ -13,7 +13,7 @@ export class MessageDeliveryModule implements AppModule {
     options.bind(MessageDeliveryService).toSelf().inSingletonScope();
   }
 
-  registerRoutes() {
+  registerApiRoutes() {
     registerFileGuard('messageDelivery', {
       view: messageDeliveryFileGuard,
     });

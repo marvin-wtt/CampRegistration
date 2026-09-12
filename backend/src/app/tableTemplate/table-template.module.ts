@@ -12,7 +12,7 @@ export class TableTemplateModule implements AppModule {
     options.bind(TableTemplateRouter).toSelf().inSingletonScope();
   }
 
-  registerRoutes(router: AppRouter): void {
+  registerApiRoutes(router: AppRouter): void {
     router.useRouter(
       '/events/:eventId/table-templates',
       resolve(TableTemplateRouter),

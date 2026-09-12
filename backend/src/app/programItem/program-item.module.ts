@@ -28,7 +28,7 @@ export class ProgramItemModule implements AppModule {
     });
   }
 
-  registerRoutes(router: AppRouter): void {
+  registerApiRoutes(router: AppRouter): void {
     router.useRouter(
       '/events/:eventId/program-items',
       resolve(ProgramItemRouter),

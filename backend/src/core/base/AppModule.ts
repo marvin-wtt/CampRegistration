@@ -16,7 +16,7 @@ export type AppRouter = Router & {
 };
 
 export interface AppModule extends CoreModule {
-  registerRoutes?(router: AppRouter): void;
+  registerApiRoutes?(router: AppRouter): void;
 
   registerWebRoutes?(router: AppRouter): void;
 

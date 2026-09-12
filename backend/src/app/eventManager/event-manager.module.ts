@@ -22,7 +22,7 @@ export class EventManagerModule implements AppModule {
     resolve(MailableRegistry).register(EventManagerInvitationMessage);
   }
 
-  registerRoutes(router: AppRouter): void {
+  registerApiRoutes(router: AppRouter): void {
     router.useRouter('/events/:eventId/managers', new EventManagerRouter());
   }
 

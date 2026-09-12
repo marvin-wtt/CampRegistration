@@ -22,7 +22,7 @@ export class PrivacyNoticeModule implements AppModule {
     resolve(MailableRegistry).register(EventRetentionDueMessage);
   }
 
-  registerRoutes(router: AppRouter): void {
+  registerApiRoutes(router: AppRouter): void {
     router.useRouter(
       '/organizations/:organizationId/privacy-notice',
       new OrganizationPrivacyNoticeRouter(),

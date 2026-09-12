@@ -36,7 +36,7 @@ export class EventModule implements AppModule {
     return { event: eventScopeResolver };
   }
 
-  registerRoutes(router: AppRouter): void {
+  registerApiRoutes(router: AppRouter): void {
     registerFileGuard('event', eventFileGuards);
 
     router.useRouter('/events/:eventId/files', new EventFilesRouter());

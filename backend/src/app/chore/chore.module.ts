@@ -12,7 +12,7 @@ export class ChoreModule implements AppModule {
     options.bind(ChoreRouter).toSelf().inSingletonScope();
   }
 
-  registerRoutes(router: AppRouter): void {
+  registerApiRoutes(router: AppRouter): void {
     router.useRouter('/events/:eventId/chores', resolve(ChoreRouter));
   }
 

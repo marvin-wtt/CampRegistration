@@ -20,7 +20,7 @@ export class FeedbackModule implements AppModule {
     resolve(MailableRegistry).register(FeedbackMessage);
   }
 
-  registerRoutes(router: AppRouter): void {
+  registerApiRoutes(router: AppRouter): void {
     router.useRouter('/feedback', resolve(FeedbackRouter));
   }
 }

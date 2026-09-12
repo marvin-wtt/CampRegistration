@@ -30,7 +30,7 @@ export class OrganizationModule implements AppModule {
     registry.register(OrganizationRejectedMessage);
   }
 
-  registerRoutes(router: AppRouter): void {
+  registerApiRoutes(router: AppRouter): void {
     router.useRouter('/organizations', new OrganizationRouter());
   }
 

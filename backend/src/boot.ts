@@ -107,7 +107,7 @@ function registerModuleScopeResolvers(modules: AppModule[]) {
 
 function registerModuleRoutes(modules: AppModule[]) {
   for (const module of modules) {
-    module.registerRoutes?.(apiRouter);
+    module.registerApiRoutes?.(apiRouter);
   }
 }
 
