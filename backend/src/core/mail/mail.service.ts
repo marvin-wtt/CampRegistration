@@ -1,6 +1,6 @@
 import { MailFactory } from '#core/mail/mail.factory';
 import logger from '#core/logger';
-import type { IMailer } from '#core/mail/mailer.types';
+import type { IMailer, SendMailResult } from '#core/mail/mailer.types';
 import type { MailableCtor, MailBase } from '#core/mail/mail.base';
 import type { Queue } from '#core/queue/Queue';
 import { QueueManager } from '#core/queue/QueueManager';
@@ -51,10 +51,20 @@ export class MailService {
     await this.mailer.close();
   }
 
-  public async sendMail(mailable: MailBase<unknown>): Promise<void> {
+  public async sendMail(mailable: MailBase<unknown>): Promise<SendMailResult> {
     const data = await mailable.build();
+    const result = await this.mailer.sendMail(data);
 
-    await this.mailer.sendMail(data);
+    try {
+      await mailable.afterSend(result);
+    } catch (error) {
+      // The mail already sent successfully — a bookkeeping failure here must
+      // never make the caller (or a queued job's retry) think the send
+      // itself failed.
+      logger.error('Mail afterSend hook failed:', error);
+    }
+
+    return result;
   }
 
   public async dispatchMail<P>(

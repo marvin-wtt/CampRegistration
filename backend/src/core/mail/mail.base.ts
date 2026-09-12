@@ -1,6 +1,7 @@
 import type {
   BuiltMail,
   Content,
+  DsnOptions,
   Envelope,
   MailAttachment,
   AddressLike,
@@ -10,6 +11,7 @@ import type {
   Address,
 } from './mail.types.js';
 import type { JobOptions } from '#core/queue/Queue';
+import type { SendMailResult } from '#core/mail/mailer.types';
 import type { AppConfig } from '#config';
 import { config } from '#core/ioc/facades';
 import i18n from '#core/i18n/i18n.client';
@@ -99,18 +101,52 @@ export abstract class MailBase<P> {
     return 'normal';
   }
 
+  /**
+   * Override point for mailables that want a stable Message-ID: return a
+   * bare local-part token (e.g. a ulid) and `messageId()` below composes the
+   * full RFC 5322 value. Keeps `config.origin` a base-class concern rather
+   * than something every such mailable has to know about.
+   */
+  protected messageIdToken(): string | undefined {
+    return undefined;
+  }
+
+  protected messageId(): string | undefined {
+    const token = this.messageIdToken();
+
+    return token
+      ? `${token}@${new URL(this.config.origin).hostname}`
+      : undefined;
+  }
+
+  protected dsn(): DsnOptions | undefined {
+    return undefined;
+  }
+
   protected async envelope(): Promise<Envelope> {
-    const [to, from, replyTo, cc, bcc, subject, priority, headers] =
-      await Promise.all([
-        Promise.resolve(this.to()),
-        Promise.resolve(this.from()),
-        Promise.resolve(this.replyTo()),
-        Promise.resolve(this.cc()),
-        Promise.resolve(this.bcc()),
-        Promise.resolve(this.subject()),
-        Promise.resolve(this.priority()),
-        Promise.resolve(this.headers()),
-      ]);
+    const [
+      to,
+      from,
+      replyTo,
+      cc,
+      bcc,
+      subject,
+      priority,
+      headers,
+      messageId,
+      dsn,
+    ] = await Promise.all([
+      Promise.resolve(this.to()),
+      Promise.resolve(this.from()),
+      Promise.resolve(this.replyTo()),
+      Promise.resolve(this.cc()),
+      Promise.resolve(this.bcc()),
+      Promise.resolve(this.subject()),
+      Promise.resolve(this.priority()),
+      Promise.resolve(this.headers()),
+      Promise.resolve(this.messageId()),
+      Promise.resolve(this.dsn()),
+    ]);
 
     return {
       to,
@@ -121,6 +157,8 @@ export abstract class MailBase<P> {
       bcc,
       priority,
       headers,
+      messageId,
+      dsn,
     };
   }
 
@@ -175,6 +213,18 @@ export abstract class MailBase<P> {
       text,
       attachments: attachments.length ? attachments : undefined,
     };
+  }
+
+  /**
+   * Called by {@link MailService.sendMail} once the mail has actually been
+   * sent. A no-op by default; mailables that track per-recipient delivery
+   * (e.g. `RegistrationTemplateMessage`) override this to record a
+   * synchronous rejection immediately, without waiting on an async bounce
+   * report. Must never throw — a bookkeeping failure here must not look like
+   * the send itself failed, since the mail already went out.
+   */
+  public afterSend(_result: SendMailResult): Promise<void> | void {
+    return;
   }
 
   static jobOptions(): JobOptions | undefined {

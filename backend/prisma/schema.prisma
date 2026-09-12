@@ -405,18 +405,24 @@ model Message {
 // A single per-recipient rendered email produced from a Message (ad-hoc send)
 // or a MessageTemplate (automated event template).
 model MessageDelivery {
-  id             String   @id @unique(map: "message_delivery_id_unique") @default(ulid()) @db.Char(26)
-  templateId     String?  @map("message_template_id") @db.Char(26)
-  messageId      String?  @map("message_id") @db.Char(26)
-  registrationId String   @map("registration_id") @db.Char(26)
-  to             String?  @db.TinyText
-  cc             String?  @db.TinyText
-  bcc            String?  @db.TinyText
-  replyTo        String?  @map("reply_to")
-  subject        String   @db.MediumText
-  body           String   @db.MediumText
-  priority       String   @default("normal")
-  createdAt      DateTime @default(now()) @map("created_at")
+  id                  String    @id @unique(map: "message_delivery_id_unique") @default(ulid()) @db.Char(26)
+  templateId          String?   @map("message_template_id") @db.Char(26)
+  messageId           String?   @map("message_id") @db.Char(26)
+  registrationId      String    @map("registration_id") @db.Char(26)
+  to                  String?   @db.TinyText
+  cc                  String?   @db.TinyText
+  bcc                 String?   @db.TinyText
+  replyTo             String?   @map("reply_to")
+  subject             String    @db.MediumText
+  body                String    @db.MediumText
+  priority            String    @default("normal")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  // The RFC 5322 Message-ID of the rendered email, generated up front so it
+  // can double as the DSN ENVID and correlate an async bounce report back to
+  // this row — not to be confused with `messageId` (the Message FK above).
+  bounceCorrelationId String?   @unique @map("bounce_correlation_id")
+  bouncedAt           DateTime? @map("bounced_at")
+  bounceReason        String?   @map("bounce_reason") @db.Text
 
   template     MessageTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
   message      Message?         @relation(fields: [messageId], references: [id], onDelete: SetNull)

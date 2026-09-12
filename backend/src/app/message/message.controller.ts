@@ -5,10 +5,8 @@ import type { Request, Response } from 'express';
 import validator from '#app/message/message.validation';
 import { MessageService } from '#app/message/message.service';
 import ApiError from '#utils/ApiError';
-import {
-  messageToRenderable,
-  RegistrationTemplateMessage,
-} from '#app/registration/registration.messages';
+import { messageToRenderable } from '#app/registration/messages/renderable-message';
+import { RegistrationTemplateMessage } from '#app/registration/messages/template.mail';
 import { MessageResource } from '#app/message/message.resource';
 import { FileResource } from '#app/file/file.resource';
 import { inject, injectable } from 'inversify';

@@ -23,5 +23,22 @@ export default {
           '$t(email:footer.cause) Sie eine Kontaktperson für diese Veranstaltung sind.',
       },
     },
+    messageBounced: {
+      subject: 'Nachricht nicht zugestellt | {{ event.name }}',
+      preview:
+        'Eine Nachricht an {{ recipient }} konnte für {{ event.name }} nicht zugestellt werden',
+      text: {
+        title: 'Hallo,',
+        information:
+          'Ihre Nachricht "{{ messageSubject }}" an {{ recipient }} für {{ event.name }} konnte nicht zugestellt werden.',
+        button: 'Anmeldungen anzeigen',
+        greeting: 'Viele Grüße',
+        teamName: '{{ appName }} Team',
+      },
+      footer: {
+        cause:
+          '$t(email:footer.cause) Sie eine Kontaktperson für diese Veranstaltung sind.',
+      },
+    },
   },
 };

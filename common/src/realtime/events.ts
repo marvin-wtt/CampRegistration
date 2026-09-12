@@ -18,6 +18,7 @@ export type RealtimeResource =
   | 'choreAssignment'
   | 'manager'
   | 'message'
+  | 'message_delivery'
   | 'file'
   | 'table_template'
   | 'setting';
@@ -81,6 +82,7 @@ export const RESOURCE_VIEW_PERMISSION: Record<
   choreAssignment: 'event.chore_assignments.view',
   manager: 'event.managers.view',
   message: 'event.messages.view',
+  message_delivery: 'event.messages.view',
   file: 'event.files.view',
   table_template: 'event.table_templates.view',
   setting: 'event.view',

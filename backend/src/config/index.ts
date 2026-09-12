@@ -43,6 +43,32 @@ function s3Config(): S3Config | undefined {
   };
 }
 
+interface BounceImapConfig {
+  host: string;
+  port: number;
+  secure: boolean;
+  auth: {
+    user?: string;
+    pass?: string;
+  };
+}
+
+function bounceImapConfig(): BounceImapConfig | undefined {
+  if (!env.EMAIL_BOUNCE_IMAP_HOST) {
+    return undefined;
+  }
+
+  return {
+    host: env.EMAIL_BOUNCE_IMAP_HOST,
+    port: env.EMAIL_BOUNCE_IMAP_PORT,
+    secure: env.EMAIL_BOUNCE_IMAP_SECURE,
+    auth: {
+      user: env.EMAIL_BOUNCE_IMAP_USERNAME,
+      pass: env.EMAIL_BOUNCE_IMAP_PASSWORD,
+    },
+  };
+}
+
 interface AzureTranslationConfig {
   key: string;
   region: string;
@@ -126,6 +152,7 @@ const config = {
         pass: env.SMTP_PASSWORD,
       },
     },
+    bounce: bounceImapConfig(),
   },
   storage: {
     location: env.STORAGE_LOCATION,

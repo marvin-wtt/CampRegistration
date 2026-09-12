@@ -34,6 +34,31 @@ export const EmailEnvSchema = z.object({
     .default(true),
   SMTP_USERNAME: z.string().optional().describe('Username for email server'),
   SMTP_PASSWORD: z.string().optional().describe('Password for email server'),
+  EMAIL_BOUNCE_IMAP_HOST: z
+    .string()
+    .optional()
+    .describe(
+      'IMAP server the app reads bounce (DSN) reports from. Unset disables bounce ' +
+        'detection entirely — no DSN is requested on outgoing mail and no mailbox is polled.',
+    ),
+  EMAIL_BOUNCE_IMAP_PORT: z.coerce
+    .number()
+    .min(0)
+    .max(65535)
+    .describe('Port to connect to the bounce IMAP server')
+    .default(993),
+  EMAIL_BOUNCE_IMAP_SECURE: z
+    .stringbool()
+    .describe('Encrypt the connection to the bounce IMAP server')
+    .default(true),
+  EMAIL_BOUNCE_IMAP_USERNAME: z
+    .string()
+    .optional()
+    .describe('Username for the bounce IMAP mailbox'),
+  EMAIL_BOUNCE_IMAP_PASSWORD: z
+    .string()
+    .optional()
+    .describe('Password for the bounce IMAP mailbox'),
 });
 
 export type EmailEnv = z.output<typeof EmailEnvSchema>;

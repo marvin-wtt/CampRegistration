@@ -1,5 +1,9 @@
 import { Prisma } from '#generated/prisma/client.js';
-import type { Registration, File } from '#generated/prisma/client.js';
+import type {
+  Registration,
+  File,
+  MessageDelivery,
+} from '#generated/prisma/client.js';
 import { BaseService } from '#core/base/BaseService';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service';
@@ -82,5 +86,42 @@ export class MessageDeliveryService extends BaseService {
         attachments: true,
       },
     });
+  }
+
+  /**
+   * Marks a delivery bounced, idempotently: a delivery already marked
+   * bounced is left alone, so a retried async DSN report arriving after a
+   * synchronous rejection (or a duplicate/redelivered bounce email) never
+   * re-fires bounce handling. Returns `null` when there's nothing to do —
+   * either the id doesn't exist, or it was already bounced.
+   */
+  async markBounced(
+    id: string,
+    reason: string,
+  ): Promise<MessageDelivery | null> {
+    const { count } = await this.prisma.messageDelivery.updateMany({
+      where: { id, bouncedAt: null },
+      data: { bouncedAt: new Date(), bounceReason: reason },
+    });
+
+    if (count === 0) {
+      return null;
+    }
+
+    return this.prisma.messageDelivery.findUniqueOrThrow({ where: { id } });
+  }
+
+  async markBouncedByCorrelationId(
+    bounceCorrelationId: string,
+    reason: string,
+  ): Promise<MessageDelivery | null> {
+    const delivery = await this.prisma.messageDelivery.findUnique({
+      where: { bounceCorrelationId },
+    });
+    if (!delivery) {
+      return null;
+    }
+
+    return this.markBounced(delivery.id, reason);
   }
 }
