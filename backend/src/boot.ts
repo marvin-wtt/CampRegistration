@@ -18,13 +18,19 @@ type Module = CoreModule | AppModule;
 
 let allModules: Module[] = [];
 
-export async function boot() {
+export interface BootOptions {
+  overrideBindings?: () => void;
+}
+
+export async function boot(options: BootOptions = {}) {
   const coreModules = createCoreModules();
   const appModules = createAppModules();
 
   // Core modules boot first and shut down last.
   allModules = [...coreModules, ...appModules];
   bindModuleContainers(allModules);
+  options.overrideBindings?.();
+
   await configureModules(allModules);
 
   registerModulePermissions(appModules);

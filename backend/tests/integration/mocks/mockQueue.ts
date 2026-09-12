@@ -10,6 +10,9 @@ import {
 import { container } from '#core/ioc/container';
 import { QueueManager } from '#core/queue/QueueManager';
 
+// Must run from boot()'s overrideBindings hook: QueueManagerModule binds
+// QueueManager during boot, so rebinding any earlier just adds a second
+// binding rather than replacing one.
 export function mockQueue() {
   container.rebind(QueueManager).to(TestQueueManager);
 }
