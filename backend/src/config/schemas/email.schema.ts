@@ -9,6 +9,12 @@ export const EmailEnvSchema = z.object({
     .email()
     .optional()
     .describe('The replyTo field in the emails sent by the app.'),
+  EMAIL_ENVELOPE_FROM: z
+    .email()
+    .optional()
+    .describe(
+      'The envelope sender (return-path) address used for bounce handling. Defaults to EMAIL_FROM.',
+    ),
   EMAIL_ADMIN: z
     .email()
     .describe('The email to send operational notifications to.'),

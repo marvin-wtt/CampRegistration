@@ -115,6 +115,7 @@ const config = {
     driver: env.EMAIL_DRIVER,
     from: env.EMAIL_FROM,
     replyTo: env.EMAIL_REPLY_TO,
+    envelopeFrom: env.EMAIL_ENVELOPE_FROM ?? env.EMAIL_FROM,
     admin: env.EMAIL_ADMIN,
     smtp: {
       host: env.SMTP_HOST,

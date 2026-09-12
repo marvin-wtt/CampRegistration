@@ -7,33 +7,22 @@ export class SmtpMailer implements IMailer {
   private transport: Transporter;
 
   constructor() {
-    const transportConfig = this.getConfig();
-
-    // Create transport
-    this.transport = nodemailer.createTransport(transportConfig);
+    this.transport = this.createTransport();
   }
 
-  private getConfig() {
-    const mailOptions: SendMailOptions = {
-      from: config.email.from,
-      replyTo: config.email.replyTo,
-    };
+  private createTransport(): Transporter {
+    const { email } = config;
 
     // SMTP
-    if (config.email.smtp.host) {
-      return {
-        ...config.email.smtp,
-        ...mailOptions,
-      };
+    if (email.smtp.host) {
+      return nodemailer.createTransport(email.smtp);
     }
 
     // Sendmail
-    return {
+    return nodemailer.createTransport({
       sendmail: true,
       newline: 'unix',
-      ...mailOptions,
-      smtp: undefined,
-    };
+    });
   }
 
   name(): string {
@@ -41,7 +30,7 @@ export class SmtpMailer implements IMailer {
   }
 
   async sendMail(payload: BuiltMail): Promise<void> {
-    await this.transport.sendMail({
+    const mailOptions: SendMailOptions = {
       to: payload.to,
       cc: payload.cc,
       bcc: payload.bcc,
@@ -53,7 +42,17 @@ export class SmtpMailer implements IMailer {
       attachments: payload.attachments,
       priority: payload.priority,
       headers: payload.headers,
-    });
+      // Recipients must be repeated here: providing an envelope replaces the
+      // auto-generated one entirely, it does not just override `from`.
+      envelope: {
+        from: config.email.envelopeFrom,
+        to: payload.to,
+        cc: payload.cc,
+        bcc: payload.bcc,
+      },
+    };
+
+    await this.transport.sendMail(mailOptions);
   }
 
   async verify(): Promise<void> {
