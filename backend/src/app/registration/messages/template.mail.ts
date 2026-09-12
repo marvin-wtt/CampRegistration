@@ -6,7 +6,6 @@ import type {
   AddressLike,
   BuiltMail,
   Content,
-  DsnOptions,
   MailAttachment,
   MailPriority,
 } from '#core/mail/mail.types';
@@ -64,7 +63,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
   /**
    * Generated up front (not left to the mailer) so the identical value can be
    * persisted on the MessageDelivery row before sending, and reused as the
-   * DSN ENVID — see `dsn()` and `build()` below.
+   * DSN ENVID — see `requestDsn()` and `build()` below.
    */
   protected messageIdToken(): string {
     this.generatedMessageIdToken ??= ulid();
@@ -72,8 +71,8 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
     return this.generatedMessageIdToken;
   }
 
-  protected dsn(): DsnOptions {
-    return { notify: ['FAILURE', 'DELAY'] };
+  protected requestDsn(): boolean {
+    return true;
   }
 
   protected from(): Address {

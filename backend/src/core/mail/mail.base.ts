@@ -1,7 +1,6 @@
 import type {
   BuiltMail,
   Content,
-  DsnOptions,
   Envelope,
   MailAttachment,
   AddressLike,
@@ -119,8 +118,13 @@ export abstract class MailBase<P> {
       : undefined;
   }
 
-  protected dsn(): DsnOptions | undefined {
-    return undefined;
+  /**
+   * Override point for mailables that want an RFC 3461 delivery status
+   * notification on a hard failure (see `Envelope.dsn`), keyed to `false` so
+   * requesting one is opt-in per mailable.
+   */
+  protected requestDsn(): boolean {
+    return false;
   }
 
   protected async envelope(): Promise<Envelope> {
@@ -145,7 +149,7 @@ export abstract class MailBase<P> {
       Promise.resolve(this.priority()),
       Promise.resolve(this.headers()),
       Promise.resolve(this.messageId()),
-      Promise.resolve(this.dsn()),
+      Promise.resolve(this.requestDsn()),
     ]);
 
     return {

@@ -235,8 +235,8 @@
                     {{ entry.name }}
                     <q-tooltip v-if="entry.emails.length > 0">
                       <div
-                        v-for="email in entry.emails"
-                        :key="email.address"
+                        v-for="(email, index) in entry.emails"
+                        :key="`${email.address}-${index}`"
                       >
                         {{ email.address }}
                         <template v-if="email.bounced">
@@ -421,44 +421,38 @@ function recipientEntries(template: Message): RecipientEntry[] {
       ? formatPersonName(fullName(registration))
       : undefined;
 
-    // Keyed by address so an email the registration still has on file lines
-    // up with the delivery that was actually sent (and may have bounced) to it.
-    const bounceByAddress = new Map(
-      recipient.deliveries
-        .filter((delivery) => delivery.to)
-        .map((delivery) => [
-          delivery.to as string,
-          {
-            bounced: Boolean(delivery.bouncedAt),
-            reason: delivery.bounceReason,
-          },
-        ]),
-    );
+    // The delivery rows are what was actually sent, and the only thing a
+    // bounce can be attributed to, so they decide which addresses are shown:
+    // an address the registration has since changed or dropped still belongs
+    // here, carrying its failure. The registration's current addresses only
+    // stand in where no delivery has a `to` — a message just sent (the create
+    // response names the targeted registrations before the per-email rows
+    // exist) or a row written before `to` was persisted.
+    const deliveredEntries: RecipientEmailEntry[] =
+      recipient.deliveries.flatMap((delivery) =>
+        delivery.to
+          ? [
+              {
+                address: delivery.to,
+                bounced: Boolean(delivery.bouncedAt),
+                bounceReason: delivery.bounceReason,
+              },
+            ]
+          : [],
+      );
 
-    // Prefer the registration's known addresses; fall back to the addresses
-    // the message was actually delivered to.
-    const registrationAddresses = registration ? emails(registration) : [];
-    const addresses =
-      registrationAddresses.length > 0
-        ? registrationAddresses
-        : recipient.deliveries
-            .map((delivery) => delivery.to)
-            .filter((to): to is string => Boolean(to));
-
-    const emailEntries: RecipientEmailEntry[] = addresses.map((address) => {
-      const bounce = bounceByAddress.get(address);
-      return {
-        address,
-        bounced: bounce?.bounced ?? false,
-        bounceReason: bounce?.reason ?? null,
-      };
-    });
-
-    const primaryTo = recipient.deliveries[0]?.to ?? null;
+    const emailEntries: RecipientEmailEntry[] =
+      deliveredEntries.length > 0
+        ? deliveredEntries
+        : (registration ? emails(registration) : []).map((address) => ({
+            address,
+            bounced: false,
+            bounceReason: null,
+          }));
 
     return {
       key: `${recipient.registrationId}-${index}`,
-      name: name ?? primaryTo ?? recipient.registrationId,
+      name: name ?? emailEntries[0]?.address ?? recipient.registrationId,
       emails: emailEntries,
       bounced: emailEntries.some((entry) => entry.bounced),
     };

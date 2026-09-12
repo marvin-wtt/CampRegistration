@@ -17,6 +17,14 @@ export interface BounceResult {
   action: BounceAction;
 }
 
+/**
+ * Consumes one polled batch. Must resolve only once the batch is durably
+ * dealt with: {@link BounceReader.pollOnce} acknowledges the underlying IMAP
+ * messages afterwards, and a rejection leaves them unacknowledged for the
+ * next poll.
+ */
+export type BounceHandler = (results: BounceResult[]) => Promise<void>;
+
 // The per-message DSN fields are a flat RFC 822-style block (Action:,
 // Original-Envelope-Id:, ...), read straight out of the `message/delivery-
 // status` part postal-mime exposes as its own attachment (verified
@@ -33,7 +41,7 @@ export function extractBounce(text: string): BounceResult | undefined {
   }
 
   const action = actionMatch[1].toLowerCase();
-  if (action !== 'failed' && action !== 'delayed') {
+  if (action !== 'failed') {
     return undefined;
   }
 
@@ -59,7 +67,8 @@ function attachmentText(content: Attachment['content']): string {
  * complement to the synchronous rejection already available from
  * `SmtpMailer.sendMail`'s own return value. Generic and Prisma-free: it
  * knows nothing about `MessageDelivery`, only how to get a batch of
- * `{correlationId, action}` pairs out of an IMAP mailbox.
+ * `{correlationId, action}` pairs out of an IMAP mailbox and hand it to a
+ * {@link BounceHandler}.
  */
 @injectable()
 export class BounceReader {
@@ -69,15 +78,19 @@ export class BounceReader {
   // that isn't going to change between polls.
   private trashFolderPath: string | null | undefined;
 
-  async pollOnce(): Promise<BounceResult[]> {
+  /**
+   * Reads the mailbox, passes every bounce found to `handle`, and only then
+   * acknowledges the messages it read. Rejects if `handle` does.
+   */
+  async pollOnce(handle: BounceHandler): Promise<void> {
     const bounceConfig = config.email.bounce;
     if (!bounceConfig) {
-      return [];
+      return;
     }
 
     const client = await this.connect(bounceConfig);
     try {
-      return await this.readBounces(client);
+      await this.readBounces(client, handle);
     } finally {
       await this.logout(client);
     }
@@ -135,14 +148,15 @@ export class BounceReader {
     }
   }
 
-  private async readBounces(client: ImapFlow): Promise<BounceResult[]> {
+  private async readBounces(
+    client: ImapFlow,
+    handle: BounceHandler,
+  ): Promise<void> {
     const lock = await client.getMailboxLock('INBOX');
     try {
-      return await this.fetchBounces(client);
+      await this.fetchBounces(client, handle);
     } catch (error) {
-      logger.error(
-        `Bounce mailbox poll failed while reading INBOX: ${describeError(error)}`,
-      );
+      logger.error(`Bounce mailbox poll failed: ${describeError(error)}`);
       throw error;
     } finally {
       // A cleanup failure here must never mask a real error from the try
@@ -161,10 +175,13 @@ export class BounceReader {
     }
   }
 
-  private async fetchBounces(client: ImapFlow): Promise<BounceResult[]> {
+  private async fetchBounces(
+    client: ImapFlow,
+    handle: BounceHandler,
+  ): Promise<void> {
     const uids = await client.search({ seen: false }, { uid: true });
     if (!uids || uids.length === 0) {
-      return [];
+      return;
     }
 
     const results: BounceResult[] = [];
@@ -179,16 +196,29 @@ export class BounceReader {
       }
     }
 
-    // Mark every fetched message seen regardless of outcome (matched,
-    // unmatched, or unparseable) so nothing here is ever reprocessed —
-    // reuses IMAP's own state instead of a separate cursor. This is the
-    // authoritative "processed" marker; moving to Trash below is best-effort
-    // tidiness on top of it, not a substitute for it.
+    // Hand the batch over *before* acknowledging it: the IMAP flags are the
+    // only record of what has been processed, so acknowledging first would
+    // lose the whole batch if `handle` then failed, whereas failing first
+    // just leaves the messages unseen for the next poll. Redelivering a
+    // batch is safe because acting on a bounce is idempotent (see
+    // `MessageDeliveryService.markBounced`), which also covers a `handle`
+    // that failed part-way through.
+    await handle(results);
+
+    await this.acknowledge(client, uids);
+  }
+
+  /**
+   * Marks every fetched message seen regardless of outcome (matched,
+   * unmatched, or unparseable) so nothing here is ever reprocessed —
+   * reuses IMAP's own state instead of a separate cursor. This is the
+   * authoritative "processed" marker; moving to Trash is best-effort
+   * tidiness on top of it, not a substitute for it.
+   */
+  private async acknowledge(client: ImapFlow, uids: number[]): Promise<void> {
     await client.messageFlagsAdd(uids, ['\\Seen'], { uid: true });
 
     await this.moveToTrash(client, uids);
-
-    return results;
   }
 
   private async moveToTrash(client: ImapFlow, uids: number[]): Promise<void> {
@@ -245,6 +275,14 @@ export class BounceReader {
         (attachment) => attachment.mimeType === 'message/delivery-status',
       );
       if (!deliveryStatus) {
+        // This mailbox is dedicated to DSN reports, so anything without one
+        // is unexpected (e.g. a misdirected reply or a bounce the sending
+        // server rendered as plain text). It still gets marked seen and
+        // moved to Trash like any other processed message — this is purely
+        // so it shows up somewhere rather than vanishing silently.
+        logger.warn(
+          `Bounce mailbox message uid=${String(message.uid)} has no delivery-status part; skipping.`,
+        );
         return undefined;
       }
 

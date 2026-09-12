@@ -115,13 +115,13 @@ describe('SmtpMailer', () => {
     );
   });
 
-  it('requests a DSN with ENVID set to the messageId, only when both are provided', async () => {
+  it('requests a DSN on FAILURE with the id set to the messageId, only when both are provided', async () => {
     const mailer = new SmtpMailer();
 
     await mailer.sendMail(
       builtMail({
         messageId: 'abc123@example.com',
-        dsn: { notify: ['FAILURE', 'DELAY'] },
+        dsn: true,
       }),
     );
 
@@ -129,7 +129,7 @@ describe('SmtpMailer', () => {
       expect.objectContaining({
         messageId: 'abc123@example.com',
         envelope: expect.objectContaining({
-          dsn: { notify: 'FAILURE,DELAY', envid: 'abc123@example.com' },
+          dsn: { id: 'abc123@example.com', notify: ['FAILURE'] },
         }),
       }),
     );
@@ -138,7 +138,7 @@ describe('SmtpMailer', () => {
   it('omits the DSN envelope block when no messageId is set, even if dsn is requested', async () => {
     const mailer = new SmtpMailer();
 
-    await mailer.sendMail(builtMail({ dsn: { notify: ['FAILURE'] } }));
+    await mailer.sendMail(builtMail({ dsn: true }));
 
     const call = sendMailMock.mock.calls[0]?.[0];
     expect(call.envelope.dsn).toBeUndefined();
@@ -156,7 +156,7 @@ describe('SmtpMailer', () => {
     await mailer.sendMail(
       builtMail({
         messageId: 'abc123@example.com',
-        dsn: { notify: ['FAILURE'] },
+        dsn: true,
       }),
     );
 

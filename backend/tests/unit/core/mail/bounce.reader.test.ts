@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { BounceResult } from '#core/mail/bounce.reader';
 
 const {
   connectMock,
@@ -80,6 +81,18 @@ vi.mock('#core/logger', () => ({
 const { BounceReader, extractBounce } =
   await import('#core/mail/bounce.reader');
 
+// The reader hands its batch to a handler rather than returning it, so that
+// acknowledgement can wait for the handler; this collects the batch so the
+// tests can still assert on "what the poll found".
+async function poll(reader = new BounceReader()) {
+  const handled: BounceResult[] = [];
+  await reader.pollOnce(async (results) => {
+    handled.push(...results);
+  });
+
+  return handled;
+}
+
 describe('extractBounce', () => {
   it('extracts the action and Original-Envelope-Id from a delivery-status block', () => {
     const text = [
@@ -141,7 +154,7 @@ describe('BounceReader.pollOnce', () => {
     const config = (await import('#config/index')).default;
     config.email.bounce = undefined;
 
-    const results = await new BounceReader().pollOnce();
+    const results = await poll();
 
     expect(results).toEqual([]);
     expect(connectMock).not.toHaveBeenCalled();
@@ -171,7 +184,7 @@ describe('BounceReader.pollOnce', () => {
       })
       .mockResolvedValueOnce({ attachments: [] });
 
-    const results = await new BounceReader().pollOnce();
+    const results = await poll();
 
     expect(results).toEqual([
       { action: 'failed', correlationId: 'abc123@ourapp.example.com' },
@@ -195,7 +208,7 @@ describe('BounceReader.pollOnce', () => {
       { path: 'INBOX.Archive', specialUse: '\\Archive' },
     ]);
 
-    await new BounceReader().pollOnce();
+    await poll();
 
     expect(messageMoveMock).toHaveBeenCalledWith([1], 'INBOX.Trash', {
       uid: true,
@@ -207,7 +220,7 @@ describe('BounceReader.pollOnce', () => {
     fetchMessages = [{ uid: 1, source: Buffer.from('bounce report') }];
     listMock.mockResolvedValue([{ path: 'Archive', specialUse: '\\Archive' }]);
 
-    const results = await new BounceReader().pollOnce();
+    const results = await poll();
 
     expect(results).toEqual([]);
     expect(messageMoveMock).not.toHaveBeenCalled();
@@ -225,7 +238,7 @@ describe('BounceReader.pollOnce', () => {
     fetchMessages = [{ uid: 1, source: Buffer.from('bounce report') }];
     messageMoveMock.mockRejectedValueOnce(new Error('server hung up'));
 
-    const results = await new BounceReader().pollOnce();
+    const results = await poll();
 
     expect(results).toEqual([]);
     expect(loggerWarnMock).toHaveBeenCalledWith(
@@ -240,8 +253,8 @@ describe('BounceReader.pollOnce', () => {
     fetchMessages = [{ uid: 1, source: Buffer.from('bounce report') }];
     const reader = new BounceReader();
 
-    await reader.pollOnce();
-    await reader.pollOnce();
+    await poll(reader);
+    await poll(reader);
 
     expect(listMock).toHaveBeenCalledTimes(1);
     expect(messageMoveMock).toHaveBeenCalledTimes(2);
@@ -253,8 +266,8 @@ describe('BounceReader.pollOnce', () => {
     listMock.mockResolvedValue([{ path: 'Archive', specialUse: '\\Archive' }]);
     const reader = new BounceReader();
 
-    await reader.pollOnce();
-    await reader.pollOnce();
+    await poll(reader);
+    await poll(reader);
 
     expect(listMock).toHaveBeenCalledTimes(1);
     const trashWarnings = loggerWarnMock.mock.calls.filter((call) =>
@@ -277,7 +290,7 @@ describe('BounceReader.pollOnce', () => {
       ],
     });
 
-    const results = await new BounceReader().pollOnce();
+    const results = await poll();
 
     expect(results).toEqual([
       { action: 'delayed', correlationId: 'abc123@ourapp.example.com' },
@@ -289,9 +302,28 @@ describe('BounceReader.pollOnce', () => {
     fetchMessages = [{ uid: 1, source: Buffer.from('broken') }];
     postalMimeParseMock.mockRejectedValueOnce(new Error('bad mime'));
 
-    const results = await new BounceReader().pollOnce();
+    const results = await poll();
 
     expect(results).toEqual([]);
+    expect(messageFlagsAddMock).toHaveBeenCalledWith([1], ['\\Seen'], {
+      uid: true,
+    });
+  });
+
+  it('warns when a fetched message has no delivery-status part', async () => {
+    searchMock.mockResolvedValue([1]);
+    fetchMessages = [{ uid: 1, source: Buffer.from('unrelated mail') }];
+    postalMimeParseMock.mockResolvedValueOnce({ attachments: [] });
+
+    const results = await poll();
+
+    expect(results).toEqual([]);
+    expect(loggerWarnMock).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'Bounce mailbox message uid=1 has no delivery-status part',
+      ),
+    );
+    // Still processed like any other message: seen and moved on.
     expect(messageFlagsAddMock).toHaveBeenCalledWith([1], ['\\Seen'], {
       uid: true,
     });
@@ -300,7 +332,7 @@ describe('BounceReader.pollOnce', () => {
   it('skips messages with no fetched source', async () => {
     fetchMessages = [{ uid: 1 }];
 
-    const results = await new BounceReader().pollOnce();
+    const results = await poll();
 
     expect(results).toEqual([]);
     expect(postalMimeParseMock).not.toHaveBeenCalled();
@@ -309,7 +341,7 @@ describe('BounceReader.pollOnce', () => {
   it('does nothing further when the mailbox has no unseen messages', async () => {
     searchMock.mockResolvedValue([]);
 
-    const results = await new BounceReader().pollOnce();
+    const results = await poll();
 
     expect(results).toEqual([]);
     expect(messageFlagsAddMock).not.toHaveBeenCalled();
@@ -320,7 +352,7 @@ describe('BounceReader.pollOnce', () => {
     const connectError = new Error('ECONNREFUSED');
     connectMock.mockRejectedValueOnce(connectError);
 
-    await expect(new BounceReader().pollOnce()).rejects.toThrow(connectError);
+    await expect(poll()).rejects.toThrow(connectError);
 
     expect(loggerErrorMock).toHaveBeenCalledWith(
       expect.stringContaining(
@@ -335,10 +367,10 @@ describe('BounceReader.pollOnce', () => {
     const searchError = new Error('server hung up');
     searchMock.mockRejectedValueOnce(searchError);
 
-    await expect(new BounceReader().pollOnce()).rejects.toThrow(searchError);
+    await expect(poll()).rejects.toThrow(searchError);
 
     expect(loggerErrorMock).toHaveBeenCalledWith(
-      expect.stringContaining('Bounce mailbox poll failed while reading INBOX'),
+      expect.stringContaining('Bounce mailbox poll failed'),
     );
     expect(releaseLockMock).toHaveBeenCalled();
     expect(logoutMock).toHaveBeenCalled();
@@ -352,7 +384,7 @@ describe('BounceReader.pollOnce', () => {
     });
     logoutMock.mockRejectedValueOnce(new Error('socket already closed'));
 
-    await expect(new BounceReader().pollOnce()).rejects.toThrow(searchError);
+    await expect(poll()).rejects.toThrow(searchError);
 
     expect(loggerWarnMock).toHaveBeenCalledWith(
       expect.stringContaining('Failed to release bounce mailbox lock'),
@@ -362,10 +394,54 @@ describe('BounceReader.pollOnce', () => {
     );
   });
 
+  it('acknowledges the batch only after the handler has resolved', async () => {
+    searchMock.mockResolvedValue([1]);
+    fetchMessages = [{ uid: 1, source: Buffer.from('bounce report') }];
+    postalMimeParseMock.mockResolvedValueOnce({
+      attachments: [
+        {
+          mimeType: 'message/delivery-status',
+          content:
+            'Original-Envelope-Id: abc123@ourapp.example.com\nAction: failed\n',
+        },
+      ],
+    });
+    const order: string[] = [];
+    messageFlagsAddMock.mockImplementationOnce(() => {
+      order.push('acknowledge');
+      return Promise.resolve(true);
+    });
+
+    // eslint-disable-next-line @typescript-eslint/require-await -- the handler is async by contract
+    await new BounceReader().pollOnce(async (results) => {
+      order.push(`handle:${String(results.length)}`);
+    });
+
+    expect(order).toEqual(['handle:1', 'acknowledge']);
+  });
+
+  it('leaves the messages unacknowledged when the handler fails, so the next poll sees them again', async () => {
+    searchMock.mockResolvedValue([1]);
+    fetchMessages = [{ uid: 1, source: Buffer.from('bounce report') }];
+    const handlerError = new Error('database unavailable');
+
+    await expect(
+      new BounceReader().pollOnce(() => Promise.reject(handlerError)),
+    ).rejects.toThrow(handlerError);
+
+    expect(messageFlagsAddMock).not.toHaveBeenCalled();
+    expect(messageMoveMock).not.toHaveBeenCalled();
+    expect(loggerErrorMock).toHaveBeenCalledWith(
+      expect.stringContaining('Bounce mailbox poll failed'),
+    );
+    expect(releaseLockMock).toHaveBeenCalled();
+    expect(logoutMock).toHaveBeenCalled();
+  });
+
   it('logs but does not fail the poll when logout fails after a successful run', async () => {
     logoutMock.mockRejectedValueOnce(new Error('socket already closed'));
 
-    const results = await new BounceReader().pollOnce();
+    const results = await poll();
 
     expect(results).toEqual([]);
     expect(loggerWarnMock).toHaveBeenCalledWith(

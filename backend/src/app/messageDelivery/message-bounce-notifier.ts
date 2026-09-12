@@ -5,14 +5,11 @@ import { EventService } from '#app/event/event.service';
 import { RealtimeService } from '#core/realtime/RealtimeService';
 import { MessageBouncedNotification } from '#app/messageDelivery/message-bounced.mail';
 import { MessageDeliveryService } from '#app/messageDelivery/message-delivery.service';
-import type { BounceAction, BounceResult } from '#core/mail/bounce.reader';
+import type { BounceResult } from '#core/mail/bounce.reader';
 import logger from '#core/logger';
 import { describeError } from '#utils/errors';
 
-const REASON_BY_ACTION: Record<BounceAction, string> = {
-  failed: 'Rejected by the recipient server',
-  delayed: 'Delivery delayed by the recipient server',
-};
+const FAILED_REASON = 'Rejected by the recipient server';
 
 /**
  * Marks and reacts to a batch of bounces, one shared path for both detection
@@ -23,14 +20,25 @@ const REASON_BY_ACTION: Record<BounceAction, string> = {
  * `markBouncedByCorrelationId` makes finding a delivery idempotent, so
  * processing the same correlation id twice (e.g. a synchronous rejection
  * later echoed by a DSN report anyway) is harmless.
+ *
+ * A `delayed` action is a transient DSN report (the message is still queued
+ * at the recipient server), not a bounce — it's skipped entirely. Marking it
+ * bounced anyway would trip `markBounced`'s idempotency guard, so a genuine
+ * `failed` report arriving afterwards for the same delivery would be a
+ * silent no-op, leaving the record (and its notification) permanently
+ * describing a transient delay as a hard bounce.
  */
 export async function processBounceResults(
   results: BounceResult[],
 ): Promise<void> {
   for (const { correlationId, action } of results) {
+    if (action !== 'failed') {
+      continue;
+    }
+
     const delivery = await resolve(
       MessageDeliveryService,
-    ).markBouncedByCorrelationId(correlationId, REASON_BY_ACTION[action]);
+    ).markBouncedByCorrelationId(correlationId, FAILED_REASON);
 
     if (delivery) {
       await notifyMessageBounced(delivery);

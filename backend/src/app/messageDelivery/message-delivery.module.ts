@@ -25,14 +25,17 @@ export class MessageDeliveryModule implements AppModule {
 
   registerJobs(scheduler: JobScheduler): void {
     // Requesting DSN on outgoing mail is pointless without something to read
-    // the reports back — see RegistrationTemplateMessage.dsn().
+    // the reports back — see RegistrationTemplateMessage.requestDsn().
     if (!config.email.bounce) {
       return;
     }
 
     const bounceReader = resolve(BounceReader);
+    // The reader only acknowledges the mailbox once `processBounceResults`
+    // has resolved, so a failure here leaves the reports for the next poll
+    // instead of dropping them.
     scheduler.schedule('bounce-mailbox-poll', '*/5 * * * *', async () => {
-      await processBounceResults(await bounceReader.pollOnce());
+      await bounceReader.pollOnce(processBounceResults);
     });
   }
 }

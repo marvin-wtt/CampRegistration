@@ -40,7 +40,7 @@ export class SmtpMailer implements IMailer {
       payload.dsn && payload.messageId && config.email.bounce
         ? {
             id: payload.messageId,
-            notify: payload.dsn.notify,
+            notify: ['FAILURE'],
           }
         : undefined;
 
