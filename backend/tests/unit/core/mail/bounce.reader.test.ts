@@ -6,8 +6,10 @@ const {
   releaseLockMock,
   searchMock,
   messageFlagsAddMock,
+  listMock,
+  messageMoveMock,
   logoutMock,
-  simpleParserMock,
+  postalMimeParseMock,
   loggerErrorMock,
   loggerWarnMock,
 } = vi.hoisted(() => ({
@@ -16,8 +18,10 @@ const {
   releaseLockMock: vi.fn(),
   searchMock: vi.fn(),
   messageFlagsAddMock: vi.fn(),
+  listMock: vi.fn(),
+  messageMoveMock: vi.fn(),
   logoutMock: vi.fn(),
-  simpleParserMock: vi.fn(),
+  postalMimeParseMock: vi.fn(),
   loggerErrorMock: vi.fn(),
   loggerWarnMock: vi.fn(),
 }));
@@ -31,6 +35,8 @@ vi.mock('imapflow', () => ({
     logout = logoutMock;
     search = searchMock;
     messageFlagsAdd = messageFlagsAddMock;
+    list = listMock;
+    messageMove = messageMoveMock;
 
     async getMailboxLock(...args: unknown[]) {
       return getMailboxLockMock(...args);
@@ -45,8 +51,8 @@ vi.mock('imapflow', () => ({
   },
 }));
 
-vi.mock('mailparser', () => ({
-  simpleParser: simpleParserMock,
+vi.mock('postal-mime', () => ({
+  default: { parse: postalMimeParseMock },
 }));
 
 vi.mock('#config/index', () => ({
@@ -124,6 +130,11 @@ describe('BounceReader.pollOnce', () => {
     });
     searchMock.mockResolvedValue([1, 2]);
     messageFlagsAddMock.mockResolvedValue(true);
+    listMock.mockResolvedValue([
+      { path: 'Sent', specialUse: '\\Sent' },
+      { path: 'Trash', specialUse: '\\Trash' },
+    ]);
+    messageMoveMock.mockResolvedValue(true);
   });
 
   it('returns nothing and never connects when bounce reading is not configured', async () => {
@@ -148,11 +159,17 @@ describe('BounceReader.pollOnce', () => {
       { uid: 1, source: Buffer.from('bounce report') },
       { uid: 2, source: Buffer.from('unrelated mail') },
     ];
-    simpleParserMock
+    postalMimeParseMock
       .mockResolvedValueOnce({
-        text: 'Original-Envelope-Id: abc123@ourapp.example.com\nAction: failed\n',
+        attachments: [
+          {
+            mimeType: 'message/delivery-status',
+            content:
+              'Original-Envelope-Id: abc123@ourapp.example.com\nAction: failed\n',
+          },
+        ],
       })
-      .mockResolvedValueOnce({ text: 'just a normal reply, nothing to see' });
+      .mockResolvedValueOnce({ attachments: [] });
 
     const results = await new BounceReader().pollOnce();
 
@@ -162,14 +179,115 @@ describe('BounceReader.pollOnce', () => {
     expect(messageFlagsAddMock).toHaveBeenCalledWith([1, 2], ['\\Seen'], {
       uid: true,
     });
+    expect(messageMoveMock).toHaveBeenCalledWith([1, 2], 'Trash', {
+      uid: true,
+    });
     expect(releaseLockMock).toHaveBeenCalled();
     expect(logoutMock).toHaveBeenCalled();
+  });
+
+  it('finds the Trash folder regardless of its position in the mailbox list', async () => {
+    searchMock.mockResolvedValue([1]);
+    fetchMessages = [{ uid: 1, source: Buffer.from('bounce report') }];
+    listMock.mockResolvedValue([
+      { path: 'INBOX.Junk', specialUse: '\\Junk' },
+      { path: 'INBOX.Trash', specialUse: '\\Trash' },
+      { path: 'INBOX.Archive', specialUse: '\\Archive' },
+    ]);
+
+    await new BounceReader().pollOnce();
+
+    expect(messageMoveMock).toHaveBeenCalledWith([1], 'INBOX.Trash', {
+      uid: true,
+    });
+  });
+
+  it('warns and leaves messages in INBOX when no Trash folder can be found', async () => {
+    searchMock.mockResolvedValue([1]);
+    fetchMessages = [{ uid: 1, source: Buffer.from('bounce report') }];
+    listMock.mockResolvedValue([{ path: 'Archive', specialUse: '\\Archive' }]);
+
+    const results = await new BounceReader().pollOnce();
+
+    expect(results).toEqual([]);
+    expect(messageMoveMock).not.toHaveBeenCalled();
+    expect(loggerWarnMock).toHaveBeenCalledWith(
+      expect.stringContaining('No Trash folder found'),
+    );
+    // The authoritative \Seen marker still happened either way.
+    expect(messageFlagsAddMock).toHaveBeenCalledWith([1], ['\\Seen'], {
+      uid: true,
+    });
+  });
+
+  it('logs but does not fail the poll when moving to Trash fails', async () => {
+    searchMock.mockResolvedValue([1]);
+    fetchMessages = [{ uid: 1, source: Buffer.from('bounce report') }];
+    messageMoveMock.mockRejectedValueOnce(new Error('server hung up'));
+
+    const results = await new BounceReader().pollOnce();
+
+    expect(results).toEqual([]);
+    expect(loggerWarnMock).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'Failed to move processed bounce messages to Trash',
+      ),
+    );
+  });
+
+  it('resolves the Trash folder once per instance, not on every poll', async () => {
+    searchMock.mockResolvedValue([1]);
+    fetchMessages = [{ uid: 1, source: Buffer.from('bounce report') }];
+    const reader = new BounceReader();
+
+    await reader.pollOnce();
+    await reader.pollOnce();
+
+    expect(listMock).toHaveBeenCalledTimes(1);
+    expect(messageMoveMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not re-warn on every poll when no Trash folder is found', async () => {
+    searchMock.mockResolvedValue([1]);
+    fetchMessages = [{ uid: 1, source: Buffer.from('bounce report') }];
+    listMock.mockResolvedValue([{ path: 'Archive', specialUse: '\\Archive' }]);
+    const reader = new BounceReader();
+
+    await reader.pollOnce();
+    await reader.pollOnce();
+
+    expect(listMock).toHaveBeenCalledTimes(1);
+    const trashWarnings = loggerWarnMock.mock.calls.filter((call) =>
+      String(call[0]).includes('No Trash folder found'),
+    );
+    expect(trashWarnings).toHaveLength(1);
+  });
+
+  it('decodes a delivery-status attachment given as raw bytes, not just a string', async () => {
+    searchMock.mockResolvedValue([1]);
+    fetchMessages = [{ uid: 1, source: Buffer.from('bounce report') }];
+    postalMimeParseMock.mockResolvedValueOnce({
+      attachments: [
+        {
+          mimeType: 'message/delivery-status',
+          content: new TextEncoder().encode(
+            'Original-Envelope-Id: abc123@ourapp.example.com\nAction: delayed\n',
+          ),
+        },
+      ],
+    });
+
+    const results = await new BounceReader().pollOnce();
+
+    expect(results).toEqual([
+      { action: 'delayed', correlationId: 'abc123@ourapp.example.com' },
+    ]);
   });
 
   it('logs and continues when a single message fails to parse', async () => {
     searchMock.mockResolvedValue([1]);
     fetchMessages = [{ uid: 1, source: Buffer.from('broken') }];
-    simpleParserMock.mockRejectedValueOnce(new Error('bad mime'));
+    postalMimeParseMock.mockRejectedValueOnce(new Error('bad mime'));
 
     const results = await new BounceReader().pollOnce();
 
@@ -185,7 +303,7 @@ describe('BounceReader.pollOnce', () => {
     const results = await new BounceReader().pollOnce();
 
     expect(results).toEqual([]);
-    expect(simpleParserMock).not.toHaveBeenCalled();
+    expect(postalMimeParseMock).not.toHaveBeenCalled();
   });
 
   it('does nothing further when the mailbox has no unseen messages', async () => {
@@ -252,6 +370,48 @@ describe('BounceReader.pollOnce', () => {
     expect(results).toEqual([]);
     expect(loggerWarnMock).toHaveBeenCalledWith(
       expect.stringContaining('Failed to log out of bounce mailbox'),
+    );
+  });
+});
+
+describe('BounceReader.verify', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('does nothing when bounce reading is not configured', async () => {
+    const config = (await import('#config/index')).default;
+    config.email.bounce = undefined;
+
+    await new BounceReader().verify();
+
+    expect(connectMock).not.toHaveBeenCalled();
+
+    config.email.bounce = {
+      host: 'imap.example.com',
+      port: 993,
+      secure: true,
+      auth: { user: 'bounce-user@example.com', pass: 'secret' },
+    };
+  });
+
+  it('connects and immediately logs out, without touching the mailbox', async () => {
+    await new BounceReader().verify();
+
+    expect(connectMock).toHaveBeenCalled();
+    expect(logoutMock).toHaveBeenCalled();
+    expect(getMailboxLockMock).not.toHaveBeenCalled();
+  });
+
+  it('never throws, since connect() already logged the specific reason', async () => {
+    connectMock.mockRejectedValueOnce(new Error('bad password'));
+
+    await expect(new BounceReader().verify()).resolves.toBeUndefined();
+
+    expect(loggerErrorMock).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'Failed to connect to bounce mailbox imap.example.com:993',
+      ),
     );
   });
 });

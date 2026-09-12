@@ -17,7 +17,14 @@ export class MessageService extends BaseService {
       include: {
         attachments: true,
         sentBy: { select: { id: true, name: true } },
-        deliveries: { select: { registrationId: true, to: true } },
+        deliveries: {
+          select: {
+            registrationId: true,
+            to: true,
+            bouncedAt: true,
+            bounceReason: true,
+          },
+        },
       },
     });
   }

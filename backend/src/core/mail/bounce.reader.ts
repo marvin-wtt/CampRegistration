@@ -4,9 +4,10 @@ import {
   type FetchMessageObject,
   type MailboxLockObject,
 } from 'imapflow';
-import { simpleParser } from 'mailparser';
+import PostalMime, { type Attachment } from 'postal-mime';
 import config from '#config/index';
 import logger from '#core/logger';
+import { describeError } from '#utils/errors';
 
 export type BounceAction = 'failed' | 'delayed';
 
@@ -16,11 +17,11 @@ export interface BounceResult {
   action: BounceAction;
 }
 
-// mailparser has no structural support for `message/delivery-status` parts
-// (verified empirically: it folds their raw content into `.text` alongside
-// any human-readable part, rather than exposing them via `.attachments` the
-// way it does `message/rfc822`). The per-message DSN fields are otherwise a
-// flat RFC 822-style block, so read them straight out of `.text`.
+// The per-message DSN fields are a flat RFC 822-style block (Action:,
+// Original-Envelope-Id:, ...), read straight out of the `message/delivery-
+// status` part postal-mime exposes as its own attachment (verified
+// empirically — unlike mailparser, which folds that part into `.text`
+// alongside any human-readable part instead of keeping it separate).
 const ACTION_PATTERN = /^Action:\s*(\S+)/im;
 const ORIGINAL_ENVELOPE_ID_PATTERN = /^Original-Envelope-Id:\s*(.+)$/im;
 
@@ -42,8 +43,15 @@ export function extractBounce(text: string): BounceResult | undefined {
   };
 }
 
-function describeError(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
+function attachmentText(content: Attachment['content']): string {
+  if (typeof content === 'string') {
+    return content;
+  }
+
+  const bytes =
+    content instanceof ArrayBuffer ? new Uint8Array(content) : content;
+
+  return Buffer.from(bytes).toString('utf8');
 }
 
 /**
@@ -55,12 +63,46 @@ function describeError(error: unknown): string {
  */
 @injectable()
 export class BounceReader {
+  // Resolved once and reused for the life of the process: the mailbox either
+  // has a Trash folder or it doesn't, so re-listing folders (and re-warning
+  // on every 5-minute poll if it doesn't) would just spam the log for a fact
+  // that isn't going to change between polls.
+  private trashFolderPath: string | null | undefined;
+
   async pollOnce(): Promise<BounceResult[]> {
     const bounceConfig = config.email.bounce;
     if (!bounceConfig) {
       return [];
     }
 
+    const client = await this.connect(bounceConfig);
+    try {
+      return await this.readBounces(client);
+    } finally {
+      await this.logout(client);
+    }
+  }
+
+  /**
+   * Confirms the bounce mailbox is reachable, without reading it.
+   */
+  async verify(): Promise<void> {
+    const bounceConfig = config.email.bounce;
+    if (!bounceConfig) {
+      return;
+    }
+
+    try {
+      const client = await this.connect(bounceConfig);
+      await this.logout(client);
+    } catch {
+      // Already logged with full context by connect().
+    }
+  }
+
+  private async connect(
+    bounceConfig: NonNullable<typeof config.email.bounce>,
+  ): Promise<ImapFlow> {
     const client = new ImapFlow({
       host: bounceConfig.host,
       port: bounceConfig.port,
@@ -80,11 +122,7 @@ export class BounceReader {
       throw error;
     }
 
-    try {
-      return await this.readBounces(client);
-    } finally {
-      await this.logout(client);
-    }
+    return client;
   }
 
   private async logout(client: ImapFlow): Promise<void> {
@@ -143,10 +181,55 @@ export class BounceReader {
 
     // Mark every fetched message seen regardless of outcome (matched,
     // unmatched, or unparseable) so nothing here is ever reprocessed —
-    // reuses IMAP's own state instead of a separate cursor.
+    // reuses IMAP's own state instead of a separate cursor. This is the
+    // authoritative "processed" marker; moving to Trash below is best-effort
+    // tidiness on top of it, not a substitute for it.
     await client.messageFlagsAdd(uids, ['\\Seen'], { uid: true });
 
+    await this.moveToTrash(client, uids);
+
     return results;
+  }
+
+  private async moveToTrash(client: ImapFlow, uids: number[]): Promise<void> {
+    try {
+      const trash = await this.resolveTrashFolder(client);
+      if (!trash) {
+        return;
+      }
+
+      await client.messageMove(uids, trash, { uid: true });
+    } catch (error) {
+      logger.warn(
+        `Failed to move processed bounce messages to Trash: ${describeError(error)}`,
+      );
+    }
+  }
+
+  /**
+   * Resolves the mailbox's Trash folder regardless of naming convention
+   * (e.g. Gmail's `[Gmail]/Trash` vs. a plain `Trash`) — imapflow detects it
+   * via the SPECIAL-USE extension, XLIST, or known localized names. Cached
+   * for the life of the process (see `trashFolderPath`).
+   */
+  private async resolveTrashFolder(
+    client: ImapFlow,
+  ): Promise<string | undefined> {
+    if (this.trashFolderPath !== undefined) {
+      return this.trashFolderPath ?? undefined;
+    }
+
+    const folders = await client.list();
+    const trash = folders.find((folder) => folder.specialUse === '\\Trash');
+    this.trashFolderPath = trash?.path ?? null;
+
+    if (!this.trashFolderPath) {
+      logger.warn(
+        'No Trash folder found in the bounce mailbox; processed messages stay in INBOX marked \\Seen.',
+      );
+    }
+
+    return this.trashFolderPath ?? undefined;
   }
 
   private async parseMessage(
@@ -157,8 +240,15 @@ export class BounceReader {
     }
 
     try {
-      const mail = await simpleParser(message.source);
-      return extractBounce(mail.text ?? '');
+      const mail = await PostalMime.parse(message.source);
+      const deliveryStatus = mail.attachments.find(
+        (attachment) => attachment.mimeType === 'message/delivery-status',
+      );
+      if (!deliveryStatus) {
+        return undefined;
+      }
+
+      return extractBounce(attachmentText(deliveryStatus.content));
     } catch (error) {
       logger.warn(
         `Failed to parse bounce mailbox message uid=${String(message.uid)}: ${describeError(error)}`,

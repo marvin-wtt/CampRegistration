@@ -7,6 +7,7 @@ import { MessageBouncedNotification } from '#app/messageDelivery/message-bounced
 import { MessageDeliveryService } from '#app/messageDelivery/message-delivery.service';
 import type { BounceAction, BounceResult } from '#core/mail/bounce.reader';
 import logger from '#core/logger';
+import { describeError } from '#utils/errors';
 
 const REASON_BY_ACTION: Record<BounceAction, string> = {
   failed: 'Rejected by the recipient server',
@@ -67,17 +68,25 @@ async function notifyMessageBounced(delivery: MessageDelivery): Promise<void> {
       return;
     }
 
-    void resolve(RealtimeService).emit(
-      event.id,
-      'message_delivery',
-      delivery.id,
-      'updated',
-    );
+    // Reuses the existing `message` realtime resource (rather than a
+    // dedicated `message_delivery` one) so the already-wired frontend
+    // subscription in the sent-message history just refetches and picks up
+    // the new bounce flag. Only ad-hoc Messages appear in that history —
+    // `messageId` is null for automated MessageTemplate-triggered
+    // deliveries, which have no message-list entry to refresh anyway.
+    if (delivery.messageId) {
+      void resolve(RealtimeService).emit(
+        event.id,
+        'message',
+        delivery.messageId,
+        'updated',
+      );
+    }
 
     await MessageBouncedNotification.send({ event, registration, delivery });
   } catch (error) {
     logger.warn(
-      `Failed to notify about bounced message delivery ${delivery.id}: ${error instanceof Error ? error.message : String(error)}`,
+      `Failed to notify about bounced message delivery ${delivery.id}: ${describeError(error)}`,
     );
   }
 }

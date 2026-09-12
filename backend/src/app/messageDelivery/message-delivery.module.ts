@@ -19,6 +19,10 @@ export class MessageDeliveryModule implements AppModule {
     });
   }
 
+  async configure(): Promise<void> {
+    await resolve(BounceReader).verify();
+  }
+
   registerJobs(scheduler: JobScheduler): void {
     // Requesting DSN on outgoing mail is pointless without something to read
     // the reports back — see RegistrationTemplateMessage.dsn().

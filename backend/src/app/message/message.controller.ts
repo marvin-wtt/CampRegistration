@@ -104,6 +104,8 @@ export class MessageController extends BaseController {
         deliveries: registrations.map((registration) => ({
           registrationId: registration.id,
           to: null,
+          bouncedAt: null,
+          bounceReason: null,
         })),
       }),
     );

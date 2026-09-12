@@ -128,14 +128,24 @@
                   </q-item-label>
                 </q-item-section>
                 <q-item-section side>
-                  <q-chip
-                    dense
-                    outline
-                    icon="group"
-                    :label="String(recipientCount(item))"
-                    color="grey-7"
-                    class="q-mr-none"
-                  />
+                  <div class="row items-center q-gutter-xs">
+                    <q-icon
+                      v-if="hasBounce(item)"
+                      name="error_outline"
+                      color="negative"
+                      size="18px"
+                    >
+                      <q-tooltip>{{ t('someBounced') }}</q-tooltip>
+                    </q-icon>
+                    <q-chip
+                      dense
+                      outline
+                      icon="group"
+                      :label="String(recipientCount(item))"
+                      color="grey-7"
+                      class="q-mr-none"
+                    />
+                  </div>
                 </q-item-section>
               </q-item>
             </template>
@@ -218,16 +228,24 @@
                     :key="entry.key"
                     dense
                     square
-                    color="grey-3"
-                    text-color="grey-9"
+                    :icon="entry.bounced ? 'error_outline' : undefined"
+                    :color="entry.bounced ? 'negative' : 'grey-3'"
+                    :text-color="entry.bounced ? 'white' : 'grey-9'"
                   >
                     {{ entry.name }}
                     <q-tooltip v-if="entry.emails.length > 0">
                       <div
                         v-for="email in entry.emails"
-                        :key="email"
+                        :key="email.address"
                       >
-                        {{ email }}
+                        {{ email.address }}
+                        <template v-if="email.bounced">
+                          —
+                          <span class="text-negative">{{ t('bounced') }}</span>
+                          <template v-if="email.bounceReason">
+                            ({{ email.bounceReason }})
+                          </template>
+                        </template>
                       </div>
                     </q-tooltip>
                   </q-chip>
@@ -377,10 +395,23 @@ function recipientCount(template: Message): number {
   return template.recipients?.length ?? 0;
 }
 
+function hasBounce(template: Message): boolean {
+  return (template.recipients ?? []).some((r) =>
+    r.deliveries.some((d) => d.bouncedAt),
+  );
+}
+
+interface RecipientEmailEntry {
+  address: string;
+  bounced: boolean;
+  bounceReason: string | null;
+}
+
 interface RecipientEntry {
   key: string;
   name: string;
-  emails: string[];
+  emails: RecipientEmailEntry[];
+  bounced: boolean;
 }
 
 function recipientEntries(template: Message): RecipientEntry[] {
@@ -389,16 +420,47 @@ function recipientEntries(template: Message): RecipientEntry[] {
     const name = registration
       ? formatPersonName(fullName(registration))
       : undefined;
-    // Prefer the registration's known addresses; fall back to the address the
-    // message was actually delivered to.
-    const addresses = registration ? emails(registration) : [];
-    const resolvedEmails =
-      addresses.length > 0 ? addresses : recipient.to ? [recipient.to] : [];
+
+    // Keyed by address so an email the registration still has on file lines
+    // up with the delivery that was actually sent (and may have bounced) to it.
+    const bounceByAddress = new Map(
+      recipient.deliveries
+        .filter((delivery) => delivery.to)
+        .map((delivery) => [
+          delivery.to as string,
+          {
+            bounced: Boolean(delivery.bouncedAt),
+            reason: delivery.bounceReason,
+          },
+        ]),
+    );
+
+    // Prefer the registration's known addresses; fall back to the addresses
+    // the message was actually delivered to.
+    const registrationAddresses = registration ? emails(registration) : [];
+    const addresses =
+      registrationAddresses.length > 0
+        ? registrationAddresses
+        : recipient.deliveries
+            .map((delivery) => delivery.to)
+            .filter((to): to is string => Boolean(to));
+
+    const emailEntries: RecipientEmailEntry[] = addresses.map((address) => {
+      const bounce = bounceByAddress.get(address);
+      return {
+        address,
+        bounced: bounce?.bounced ?? false,
+        bounceReason: bounce?.reason ?? null,
+      };
+    });
+
+    const primaryTo = recipient.deliveries[0]?.to ?? null;
 
     return {
       key: `${recipient.registrationId}-${index}`,
-      name: name ?? recipient.to ?? recipient.registrationId,
-      emails: resolvedEmails,
+      name: name ?? primaryTo ?? recipient.registrationId,
+      emails: emailEntries,
+      bounced: emailEntries.some((entry) => entry.bounced),
     };
   });
 }
@@ -547,6 +609,8 @@ selectHint: 'Select a message to view it.'
 sentBy: 'Sent by {name}'
 replyTo: 'Reply-to'
 recipients: '{count} recipient | {count} recipient | {count} recipients'
+bounced: 'Bounced'
+someBounced: 'One or more recipients could not be reached'
 action:
   reuse: 'Use as template'
   view: 'Open'
@@ -568,6 +632,8 @@ selectHint: 'Wähle eine Nachricht aus, um sie anzuzeigen.'
 sentBy: 'Gesendet von {name}'
 replyTo: 'Antwort an'
 recipients: '{count} Empfänger | {count} Empfänger | {count} Empfänger'
+bounced: 'Unzustellbar'
+someBounced: 'Ein oder mehrere Empfänger konnten nicht erreicht werden'
 action:
   reuse: 'Als Vorlage verwenden'
   view: 'Öffnen'
@@ -589,6 +655,8 @@ selectHint: 'Sélectionnez un message pour l’afficher.'
 sentBy: 'Envoyé par {name}'
 replyTo: 'Répondre à'
 recipients: '{count} destinataire | {count} destinataire | {count} destinataires'
+bounced: 'Non distribué'
+someBounced: "Un ou plusieurs destinataires n'ont pas pu être joints"
 action:
   reuse: 'Utiliser comme modèle'
   view: 'Ouvrir'
@@ -610,6 +678,8 @@ selectHint: 'Wybierz wiadomość, aby ją wyświetlić.'
 sentBy: 'Wysłane przez {name}'
 replyTo: 'Odpowiedź do'
 recipients: '{count} odbiorca | {count} odbiorca | {count} odbiorców'
+bounced: 'Niedostarczono'
+someBounced: 'Co najmniej jeden odbiorca nie mógł zostać osiągnięty'
 action:
   reuse: 'Użyj jako szablon'
   view: 'Otwórz'
@@ -631,6 +701,8 @@ selectHint: 'Vyber zprávu pro zobrazení.'
 sentBy: 'Odeslal {name}'
 replyTo: 'Odpovědět na'
 recipients: '{count} příjemce | {count} příjemce | {count} příjemců'
+bounced: 'Nedoručeno'
+someBounced: 'Jednoho nebo více příjemců se nepodařilo zastihnout'
 action:
   reuse: 'Použít jako šablonu'
   view: 'Otevřít'

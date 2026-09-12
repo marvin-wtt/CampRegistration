@@ -9,6 +9,8 @@ import { JsonResource } from '#core/resource/JsonResource';
 interface RecipientDelivery {
   registrationId: string;
   to: string | null;
+  bouncedAt: Date | null;
+  bounceReason: string | null;
 }
 
 export interface MessageWithFiles extends Message {
@@ -37,17 +39,28 @@ export class MessageResource extends JsonResource<
     };
   }
 
-  /** Collapses per-email delivery rows into one recipient per registration. */
+  /**
+   * Groups per-email delivery rows by registration. A registration with
+   * multiple emails gets one delivery row each, kept separate (not
+   * collapsed) so the UI can show exactly which address bounced rather than
+   * just "something for this registration bounced".
+   */
   private mapRecipients(deliveries: RecipientDelivery[]): MessageRecipient[] {
-    const byRegistration = new Map<string, MessageRecipient>();
+    const byRegistration = new Map<string, MessageRecipient['deliveries']>();
     for (const delivery of deliveries) {
-      if (!byRegistration.has(delivery.registrationId)) {
-        byRegistration.set(delivery.registrationId, {
-          registrationId: delivery.registrationId,
-          to: delivery.to,
-        });
-      }
+      const list = byRegistration.get(delivery.registrationId) ?? [];
+      list.push({
+        to: delivery.to,
+        bouncedAt: delivery.bouncedAt?.toISOString() ?? null,
+        bounceReason: delivery.bounceReason,
+      });
+      byRegistration.set(delivery.registrationId, list);
     }
-    return [...byRegistration.values()];
+    return [...byRegistration.entries()].map(
+      ([registrationId, registrationDeliveries]) => ({
+        registrationId,
+        deliveries: registrationDeliveries,
+      }),
+    );
   }
 }
