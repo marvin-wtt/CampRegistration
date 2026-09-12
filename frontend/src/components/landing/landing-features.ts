@@ -84,7 +84,7 @@ export const LANDING_FEATURES: LandingFeature[] = [
     icon: 'mark_email_read',
     category: 'communication',
     preview: 'email',
-    points: 4,
+    points: 5,
     featured: true,
   },
   {

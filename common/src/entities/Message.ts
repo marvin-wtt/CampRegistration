@@ -1,8 +1,7 @@
 import type { Identifiable } from './Identifiable.js';
 import { ServiceFile } from './ServiceFile.js';
 
-// One per email the message was actually sent to. A registration can have
-// several emails, and each is delivered (and can bounce) independently.
+// One per email actually sent to; a registration's emails bounce independently.
 export interface MessageRecipientDelivery {
   to: string | null;
   bouncedAt: string | null;

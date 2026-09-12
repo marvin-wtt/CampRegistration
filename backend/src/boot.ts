@@ -22,7 +22,7 @@ export async function boot() {
   const coreModules = createCoreModules();
   const appModules = createAppModules();
 
-  // Core modules always boot before app modules and shutdown after them.
+  // Core modules boot first and shut down last.
   allModules = [...coreModules, ...appModules];
   bindModuleContainers(allModules);
   await configureModules(allModules);
@@ -42,7 +42,7 @@ export async function shutdown() {
   await shutdownModules(allModules);
 }
 
-// Runs before any module's shutdown() — see CoreModule's quiesce() doc.
+// Runs before any module's shutdown() — see CoreModule.quiesce().
 function quiesceModules(modules: Module[]) {
   for (const module of modules) {
     module.quiesce?.();
@@ -118,13 +118,8 @@ function registerModuleJobs(modules: AppModule[]) {
   }
 }
 
-// Modules are shut down in reverse boot order so that later modules can rely
-// on earlier ones during teardown. Since `allModules` lists core modules
-// before app modules (see boot()), reversing it shuts every AppModule down
-// first and every core module (mail, realtime, the queue and scheduler
-// backplanes) after — so a cross-cutting mechanism stays up through every
-// AppModule's own shutdown. A failing module must not prevent the remaining
-// cleanup.
+// Reverse boot order, so every AppModule shuts down while the core mechanisms
+// it may still use are up. A failing module must not skip the rest.
 async function shutdownModules(modules: Module[]) {
   for (const module of modules.toReversed()) {
     try {

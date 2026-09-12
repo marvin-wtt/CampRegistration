@@ -61,9 +61,7 @@ export class MailService {
     try {
       await mailable.afterSend(result);
     } catch (error) {
-      // The mail already sent successfully — a bookkeeping failure here must
-      // never make the caller (or a queued job's retry) think the send
-      // itself failed.
+      // The mail already went out; never let bookkeeping trigger a job retry.
       logger.error('Mail afterSend hook failed:', error);
     }
 

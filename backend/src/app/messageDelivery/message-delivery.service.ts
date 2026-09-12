@@ -89,11 +89,9 @@ export class MessageDeliveryService extends BaseService {
   }
 
   /**
-   * Marks a delivery bounced, idempotently: a delivery already marked
-   * bounced is left alone, so a retried async DSN report arriving after a
-   * synchronous rejection (or a duplicate/redelivered bounce email) never
-   * re-fires bounce handling. Returns `null` when there's nothing to do —
-   * either the id doesn't exist, or it was already bounced.
+   * Idempotent: an already-bounced delivery is left alone so a duplicate
+   * report never re-fires bounce handling. Returns `null` when there was
+   * nothing to do — unknown id, or already bounced.
    */
   async markBounced(
     id: string,

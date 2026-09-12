@@ -16,9 +16,8 @@ export interface MessageBouncedNotificationPayload {
 }
 
 /**
- * Notifies the event's contact email that a camp message bounced — mirrors
- * `RegistrationNotifyMessage` (registration/messages/notify.mail.ts): same
- * to()/locale() targeting, different content.
+ * Tells the event's contact address that a message bounced. Mirrors
+ * `RegistrationNotifyMessage`'s to()/locale() targeting.
  */
 export class MessageBouncedNotification extends MailBase<MessageBouncedNotificationPayload> {
   static readonly type = 'message-delivery:bounced';

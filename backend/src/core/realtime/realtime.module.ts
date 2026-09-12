@@ -4,10 +4,8 @@ import { RealtimeService } from '#core/realtime/RealtimeService';
 import { resolve } from '#core/ioc/container';
 
 /**
- * Provides the realtime mechanism (the {@link RealtimeService} backplane and the
- * `realtimeStream` handler factory). It registers no routes and has no knowledge
- * of feature resources — each feature module mounts its own stream with its own
- * guard, so dependencies point feature → realtime only.
+ * Provides the realtime backplane only: feature modules mount their own
+ * stream with their own guard, so dependencies point feature → realtime.
  */
 export class RealtimeModule implements CoreModule {
   bindContainers(options: BindOptions) {

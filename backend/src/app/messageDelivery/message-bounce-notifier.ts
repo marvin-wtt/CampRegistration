@@ -12,30 +12,15 @@ import { describeError } from '#utils/errors';
 const FAILED_REASON = 'Rejected by the recipient server';
 
 /**
- * Marks and reacts to a batch of bounces, one shared path for both detection
- * mechanisms: a synchronous SMTP rejection is just as much a `BounceResult`
- * as an async DSN report, it's simply produced locally (by
- * `RegistrationTemplateMessage.afterSend`, from `SendMailResult.rejected`)
- * instead of by `BounceReader.pollOnce()` — same shape, same handling.
- * `markBouncedByCorrelationId` makes finding a delivery idempotent, so
- * processing the same correlation id twice (e.g. a synchronous rejection
- * later echoed by a DSN report anyway) is harmless.
- *
- * A `delayed` action is a transient DSN report (the message is still queued
- * at the recipient server), not a bounce — it's skipped entirely. Marking it
- * bounced anyway would trip `markBounced`'s idempotency guard, so a genuine
- * `failed` report arriving afterwards for the same delivery would be a
- * silent no-op, leaving the record (and its notification) permanently
- * describing a transient delay as a hard bounce.
+ * The single path both bounce sources feed: an async DSN report from
+ * `BounceReader.pollOnce()` and a synchronous SMTP rejection from
+ * `RegistrationTemplateMessage.afterSend()`. `markBouncedByCorrelationId` is
+ * idempotent, so seeing the same correlation id twice is harmless.
  */
 export async function processBounceResults(
   results: BounceResult[],
 ): Promise<void> {
-  for (const { correlationId, action } of results) {
-    if (action !== 'failed') {
-      continue;
-    }
-
+  for (const { correlationId } of results) {
     const delivery = await resolve(
       MessageDeliveryService,
     ).markBouncedByCorrelationId(correlationId, FAILED_REASON);
@@ -47,18 +32,12 @@ export async function processBounceResults(
 }
 
 /**
- * Reacts to a newly-bounced delivery: pushes the realtime update the
- * messaging UI live-refreshes on, and emails the event's contact address.
- *
- * Called only from `processBounceResults` above, which isn't a controller
- * but is triggered by an external event (a send completing, a timer firing)
- * rather than being a plain domain service invoked from arbitrary call
- * sites — the same "edge" role a controller plays for a request, which is
- * why this reaches `RealtimeService` directly instead of routing through
- * `MessageDeliveryService` (which stays realtime-free per convention).
- *
- * Best-effort: swallows and logs its own errors so a notification failure
- * never surfaces as if marking the bounce itself had failed.
+ * Pushes the realtime update the messaging UI refreshes on, and emails the
+ * event's contact address. This is the edge of a bounce the way a controller
+ * is the edge of a request, so it emits realtime itself rather than pushing
+ * that into `MessageDeliveryService` (which stays realtime-free by
+ * convention). Best-effort: a notification failure must not look like
+ * marking the bounce failed.
  */
 async function notifyMessageBounced(delivery: MessageDelivery): Promise<void> {
   try {
@@ -76,12 +55,9 @@ async function notifyMessageBounced(delivery: MessageDelivery): Promise<void> {
       return;
     }
 
-    // Reuses the existing `message` realtime resource (rather than a
-    // dedicated `message_delivery` one) so the already-wired frontend
-    // subscription in the sent-message history just refetches and picks up
-    // the new bounce flag. Only ad-hoc Messages appear in that history —
-    // `messageId` is null for automated MessageTemplate-triggered
-    // deliveries, which have no message-list entry to refresh anyway.
+    // Reuses the `message` resource so the sent-message history refetches.
+    // `messageId` is null for template-triggered deliveries, which have no
+    // entry in that history anyway.
     if (delivery.messageId) {
       void resolve(RealtimeService).emit(
         event.id,

@@ -40,10 +40,8 @@ export class MessageResource extends JsonResource<
   }
 
   /**
-   * Groups per-email delivery rows by registration. A registration with
-   * multiple emails gets one delivery row each, kept separate (not
-   * collapsed) so the UI can show exactly which address bounced rather than
-   * just "something for this registration bounced".
+   * Groups the per-email delivery rows by registration, keeping them
+   * separate so the UI can show exactly which address bounced.
    */
   private mapRecipients(deliveries: RecipientDelivery[]): MessageRecipient[] {
     const byRegistration = new Map<string, MessageRecipient['deliveries']>();

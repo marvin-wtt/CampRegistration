@@ -111,19 +111,21 @@ describe('extractBounce', () => {
 
   it('trims angle brackets some servers wrap the envelope id in', () => {
     const text =
-      'Original-Envelope-Id: <abc123@ourapp.example.com>\nAction: delayed\n';
+      'Original-Envelope-Id: <abc123@ourapp.example.com>\nAction: failed\n';
 
     expect(extractBounce(text)?.correlationId).toBe(
       'abc123@ourapp.example.com',
     );
   });
 
-  it('returns undefined when the action is not failed/delayed', () => {
-    const text =
-      'Original-Envelope-Id: abc123@ourapp.example.com\nAction: delivered\n';
+  it.each(['delivered', 'delayed', 'relayed'])(
+    'returns undefined for a non-failure action (%s)',
+    (action) => {
+      const text = `Original-Envelope-Id: abc123@ourapp.example.com\nAction: ${action}\n`;
 
-    expect(extractBounce(text)).toBeUndefined();
-  });
+      expect(extractBounce(text)).toBeUndefined();
+    },
+  );
 
   it('returns undefined when either field is missing', () => {
     expect(extractBounce('Action: failed\n')).toBeUndefined();
@@ -284,7 +286,7 @@ describe('BounceReader.pollOnce', () => {
         {
           mimeType: 'message/delivery-status',
           content: new TextEncoder().encode(
-            'Original-Envelope-Id: abc123@ourapp.example.com\nAction: delayed\n',
+            'Original-Envelope-Id: abc123@ourapp.example.com\nAction: failed\n',
           ),
         },
       ],
@@ -293,7 +295,7 @@ describe('BounceReader.pollOnce', () => {
     const results = await poll();
 
     expect(results).toEqual([
-      { action: 'delayed', correlationId: 'abc123@ourapp.example.com' },
+      { action: 'failed', correlationId: 'abc123@ourapp.example.com' },
     ]);
   });
 

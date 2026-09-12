@@ -2,10 +2,7 @@ import type { EventRegistrationStatus } from '@camp-registration/common/entities
 import type { Event } from '#generated/prisma/client';
 import { translateObject } from '#utils/translateObject';
 
-/**
- * The event's translatable fields resolved to a single locale, for
- * templates (email, etc.) that can't render the raw multilingual JSON.
- */
+/** The event's translatable fields resolved to one locale, for templates. */
 export function translateEventContext(event: Event, locale: string) {
   return {
     ...event,

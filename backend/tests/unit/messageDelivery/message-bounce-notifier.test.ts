@@ -38,14 +38,6 @@ beforeEach(() => {
 });
 
 describe('processBounceResults', () => {
-  it('ignores a "delayed" DSN report instead of marking the delivery bounced', async () => {
-    await processBounceResults([
-      { correlationId: 'abc@example.com', action: 'delayed' },
-    ]);
-
-    expect(markBouncedByCorrelationId).not.toHaveBeenCalled();
-  });
-
   it('marks the delivery bounced for a "failed" DSN report', async () => {
     markBouncedByCorrelationId.mockResolvedValueOnce(null);
 
@@ -59,18 +51,14 @@ describe('processBounceResults', () => {
     );
   });
 
-  it('does not let an earlier "delayed" report suppress a later "failed" report for the same delivery', async () => {
-    markBouncedByCorrelationId.mockResolvedValueOnce(null);
+  it('processes every result in the batch', async () => {
+    markBouncedByCorrelationId.mockResolvedValue(null);
 
     await processBounceResults([
-      { correlationId: 'abc@example.com', action: 'delayed' },
       { correlationId: 'abc@example.com', action: 'failed' },
+      { correlationId: 'def@example.com', action: 'failed' },
     ]);
 
-    expect(markBouncedByCorrelationId).toHaveBeenCalledTimes(1);
-    expect(markBouncedByCorrelationId).toHaveBeenCalledWith(
-      'abc@example.com',
-      expect.any(String),
-    );
+    expect(markBouncedByCorrelationId).toHaveBeenCalledTimes(2);
   });
 });

@@ -421,13 +421,11 @@ function recipientEntries(template: Message): RecipientEntry[] {
       ? formatPersonName(fullName(registration))
       : undefined;
 
-    // The delivery rows are what was actually sent, and the only thing a
-    // bounce can be attributed to, so they decide which addresses are shown:
-    // an address the registration has since changed or dropped still belongs
-    // here, carrying its failure. The registration's current addresses only
-    // stand in where no delivery has a `to` — a message just sent (the create
-    // response names the targeted registrations before the per-email rows
-    // exist) or a row written before `to` was persisted.
+    // Delivery rows record what was actually sent, so they decide which
+    // addresses are shown — an address since changed on the registration
+    // still belongs here, carrying its failure. The registration's current
+    // addresses only stand in when no delivery has a `to`, as right after a
+    // send, before the per-email rows exist.
     const deliveredEntries: RecipientEmailEntry[] =
       recipient.deliveries.flatMap((delivery) =>
         delivery.to

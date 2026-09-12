@@ -417,9 +417,8 @@ model MessageDelivery {
   body                String    @db.MediumText
   priority            String    @default("normal")
   createdAt           DateTime  @default(now()) @map("created_at")
-  // The RFC 5322 Message-ID of the rendered email, generated up front so it
-  // can double as the DSN ENVID and correlate an async bounce report back to
-  // this row — not to be confused with `messageId` (the Message FK above).
+  // The rendered email's Message-ID, doubling as the DSN ENVID a bounce
+  // report is matched on. Not to be confused with `messageId` (the FK above).
   bounceCorrelationId String?   @unique @map("bounce_correlation_id")
   bouncedAt           DateTime? @map("bounced_at")
   bounceReason        String?   @map("bounce_reason") @db.Text

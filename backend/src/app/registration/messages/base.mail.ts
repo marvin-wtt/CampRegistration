@@ -3,12 +3,9 @@ import { type MailableCtor, MailBase } from '#core/mail/mail.base';
 import type { AddressLike } from '#core/mail/mail.types';
 
 /**
- * Shared by every mailable sent about a single registration to one of its
- * emails (`RegistrationTemplateMessage` in template.mail.ts and its
- * trigger-based subclasses, one file per trigger, extending
- * `RegistrationEventMessage` in event.mail.ts). `RegistrationNotifyMessage`
- * (notify.mail.ts) targets the event's contact address instead, so it
- * extends `MailBase` directly rather than this class.
+ * Base for mailables addressed to one of a registration's own emails.
+ * `RegistrationNotifyMessage` targets the event contact instead, so it
+ * extends `MailBase` directly.
  */
 export abstract class RegistrationMessage<
   T extends {

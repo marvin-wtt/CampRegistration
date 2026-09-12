@@ -30,12 +30,9 @@ export class SmtpMailer implements IMailer {
   }
 
   async sendMail(payload: BuiltMail): Promise<SendMailResult> {
-    // A mailable requesting DSN only reaches the wire when bounce reading is
-    // actually configured — requesting a report nobody polls for is
-    // pointless. ENVID doubles as the correlation key: the receiving server
-    // must echo it back verbatim as Original-Envelope-Id in the bounce
-    // report (RFC 3464 §2.3.1), so reuse the same Message-ID rather than a
-    // separate id.
+    // Only request a report when something polls for it. ENVID doubles as the
+    // correlation key: the server echoes it back verbatim as
+    // Original-Envelope-Id (RFC 3464 §2.3.1), so reuse the Message-ID.
     const dsn: SendMailOptions['dsn'] =
       payload.dsn && payload.messageId && config.email.bounce
         ? {
@@ -57,8 +54,8 @@ export class SmtpMailer implements IMailer {
       priority: payload.priority,
       headers: payload.headers,
       messageId: payload.messageId,
-      // Recipients must be repeated here: providing an envelope replaces the
-      // auto-generated one entirely, it does not just override `from`.
+      // An explicit envelope replaces the auto-generated one wholesale, so
+      // the recipients have to be repeated here.
       envelope: {
         from: config.email.envelopeFrom,
         to: payload.to,
@@ -70,8 +67,7 @@ export class SmtpMailer implements IMailer {
 
     const info = await this.transport.sendMail(mailOptions);
 
-    // The sendmail-binary fallback doesn't report rejections at all (it's a
-    // local process handoff, not a live SMTP negotiation).
+    // The sendmail fallback is a local handoff, so it reports no rejections.
     return { rejected: info.rejected ?? [] };
   }
 

@@ -11,6 +11,7 @@ import type {
 } from '#core/mail/mail.types';
 import { generateUrl } from '#utils/url';
 import { ulid } from '#utils/ulid';
+import { describeError } from '#utils/errors';
 import Handlebars from 'handlebars';
 import logger from '#core/logger';
 import { MessageDeliveryService } from '#app/messageDelivery/message-delivery.service';
@@ -60,11 +61,8 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
 
   private generatedMessageIdToken?: string;
 
-  /**
-   * Generated up front (not left to the mailer) so the identical value can be
-   * persisted on the MessageDelivery row before sending, and reused as the
-   * DSN ENVID — see `requestDsn()` and `build()` below.
-   */
+  // Generated here, not by the mailer, so `build()` can persist the same
+  // value on the MessageDelivery row and reuse it as the DSN ENVID.
   protected messageIdToken(): string {
     this.generatedMessageIdToken ??= ulid();
 
@@ -140,12 +138,9 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
   }
 
   /**
-   * What changed about this registration, for the `registration.changes` token.
-   *
-   * Only the "updated" event has a previous version to compare against; for
-   * every other event the token renders to nothing rather than erroring, so a
-   * manager who pastes it into the wrong template gets an empty line, not a
-   * broken mail.
+   * The `registration.changes` token. Only the "updated" trigger has a
+   * previous version to diff, so elsewhere the token renders to nothing
+   * rather than breaking the mail.
    */
   protected renderChanges(
     _format: 'html' | 'text',
@@ -238,11 +233,9 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
         },
       );
     } catch (err) {
-      // Recording the delivery is bookkeeping, not a precondition for
-      // sending. Never let a failure here (e.g. the Message was deleted
-      // in the meantime) block the actual mail send.
+      // Bookkeeping, not a precondition for sending.
       logger.warn(
-        `Failed to record message delivery for registration ${this.payload.registration.id} (message ${message.id}): ${err instanceof Error ? err.message : String(err)}`,
+        `Failed to record message delivery for registration ${this.payload.registration.id} (message ${message.id}): ${describeError(err)}`,
       );
     }
 
@@ -254,17 +247,14 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
       return;
     }
 
-    // This is purely defensive since messageIdToken() never returns
-    // undefined, so messageId() can't either.
+    // Defensive: messageIdToken() always returns a value here.
     const messageId = this.messageId();
     if (!messageId) {
       return;
     }
 
-    // A synchronous rejection is just as much a bounce as an async DSN
-    // report — same shape, same shared handling (mark + notify), so hand it
-    // to the exact function the bounce-mailbox job uses. No local try/catch
-    // needed: MailService.sendMail already wraps afterSend() for this.
+    // Same shape and handling as an async DSN report, so reuse the exact
+    // function the bounce-mailbox job feeds.
     await processBounceResults([
       { correlationId: messageId, action: 'failed' },
     ]);

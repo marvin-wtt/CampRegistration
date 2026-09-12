@@ -6,12 +6,9 @@ import { MailableRegistry } from '#core/mail/mail.registry';
 import { BounceReader } from '#core/mail/bounce.reader';
 
 /**
- * Provides the mail mechanism (the {@link MailService} sender/queue, the
- * {@link MailableRegistry}, and the {@link BounceReader} for async bounce
- * detection). It registers no routes and has no knowledge of feature
- * mailables or how a bounce should be handled — each feature module defines
- * its own `MailBase` subclasses and, if it cares about bounces, its own
- * scheduled job that polls `BounceReader` and reacts, so dependencies point
+ * Provides the mail mechanism and nothing domain-specific: feature modules
+ * define their own `MailBase` subclasses and, if they care about bounces,
+ * their own job polling {@link BounceReader}, so dependencies point
  * feature → mail only.
  */
 export class MailModule implements CoreModule {

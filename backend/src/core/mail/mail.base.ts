@@ -101,10 +101,8 @@ export abstract class MailBase<P> {
   }
 
   /**
-   * Override point for mailables that want a stable Message-ID: return a
-   * bare local-part token (e.g. a ulid) and `messageId()` below composes the
-   * full RFC 5322 value. Keeps `config.origin` a base-class concern rather
-   * than something every such mailable has to know about.
+   * Return a bare local-part token (e.g. a ulid) to give the mail a stable
+   * Message-ID; `messageId()` composes the full RFC 5322 value from it.
    */
   protected messageIdToken(): string | undefined {
     return undefined;
@@ -118,11 +116,7 @@ export abstract class MailBase<P> {
       : undefined;
   }
 
-  /**
-   * Override point for mailables that want an RFC 3461 delivery status
-   * notification on a hard failure (see `Envelope.dsn`), keyed to `false` so
-   * requesting one is opt-in per mailable.
-   */
+  /** Opt in to an RFC 3461 delivery status notification on a hard failure. */
   protected requestDsn(): boolean {
     return false;
   }
@@ -220,12 +214,9 @@ export abstract class MailBase<P> {
   }
 
   /**
-   * Called by {@link MailService.sendMail} once the mail has actually been
-   * sent. A no-op by default; mailables that track per-recipient delivery
-   * (e.g. `RegistrationTemplateMessage`) override this to record a
-   * synchronous rejection immediately, without waiting on an async bounce
-   * report. Must never throw — a bookkeeping failure here must not look like
-   * the send itself failed, since the mail already went out.
+   * Called by {@link MailService.sendMail} once the mail has gone out — for
+   * bookkeeping such as recording a synchronous rejection. Errors are
+   * swallowed by the caller; the send itself already succeeded.
    */
   public afterSend(_result: SendMailResult): Promise<void> | void {
     return;

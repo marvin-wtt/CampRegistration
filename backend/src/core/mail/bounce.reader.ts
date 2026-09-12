@@ -9,27 +9,22 @@ import config from '#config/index';
 import logger from '#core/logger';
 import { describeError } from '#utils/errors';
 
-export type BounceAction = 'failed' | 'delayed';
-
 export interface BounceResult {
   /** The DSN ENVID, echoed back as Original-Envelope-Id — see mail.base.ts. */
   correlationId: string;
-  action: BounceAction;
+  action: 'failed';
 }
 
 /**
  * Consumes one polled batch. Must resolve only once the batch is durably
- * dealt with: {@link BounceReader.pollOnce} acknowledges the underlying IMAP
- * messages afterwards, and a rejection leaves them unacknowledged for the
- * next poll.
+ * dealt with: `pollOnce` acknowledges the IMAP messages afterwards, and a
+ * rejection leaves them unacknowledged for the next poll.
  */
 export type BounceHandler = (results: BounceResult[]) => Promise<void>;
 
-// The per-message DSN fields are a flat RFC 822-style block (Action:,
-// Original-Envelope-Id:, ...), read straight out of the `message/delivery-
-// status` part postal-mime exposes as its own attachment (verified
-// empirically — unlike mailparser, which folds that part into `.text`
-// alongside any human-readable part instead of keeping it separate).
+// Flat RFC 822-style fields inside the `message/delivery-status` part, which
+// postal-mime exposes as its own attachment (mailparser instead folds it into
+// `.text` alongside the human-readable part).
 const ACTION_PATTERN = /^Action:\s*(\S+)/im;
 const ORIGINAL_ENVELOPE_ID_PATTERN = /^Original-Envelope-Id:\s*(.+)$/im;
 
@@ -63,19 +58,15 @@ function attachmentText(content: Attachment['content']): string {
 }
 
 /**
- * Polls the configured bounce mailbox for async DSN reports (RFC 3464) — the
- * complement to the synchronous rejection already available from
- * `SmtpMailer.sendMail`'s own return value. Generic and Prisma-free: it
- * knows nothing about `MessageDelivery`, only how to get a batch of
- * `{correlationId, action}` pairs out of an IMAP mailbox and hand it to a
- * {@link BounceHandler}.
+ * Polls the configured bounce mailbox for async DSN reports (RFC 3464), the
+ * complement to the synchronous rejection `SmtpMailer.sendMail` returns.
+ * Prisma-free: it only turns an IMAP mailbox into `BounceResult`s and hands
+ * them to a {@link BounceHandler}.
  */
 @injectable()
 export class BounceReader {
-  // Resolved once and reused for the life of the process: the mailbox either
-  // has a Trash folder or it doesn't, so re-listing folders (and re-warning
-  // on every 5-minute poll if it doesn't) would just spam the log for a fact
-  // that isn't going to change between polls.
+  // Cached for the process: whether the mailbox has a Trash folder won't
+  // change between polls, and re-warning every 5 minutes would spam the log.
   private trashFolderPath: string | null | undefined;
 
   /**
@@ -96,9 +87,7 @@ export class BounceReader {
     }
   }
 
-  /**
-   * Confirms the bounce mailbox is reachable, without reading it.
-   */
+  /** Confirms the bounce mailbox is reachable, without reading it. */
   async verify(): Promise<void> {
     const bounceConfig = config.email.bounce;
     if (!bounceConfig) {
@@ -159,8 +148,8 @@ export class BounceReader {
       logger.error(`Bounce mailbox poll failed: ${describeError(error)}`);
       throw error;
     } finally {
-      // A cleanup failure here must never mask a real error from the try
-      // block above (a throw from finally replaces the in-flight one).
+      // Swallows its own error: a throw from finally would replace the
+      // in-flight one.
       this.releaseLock(lock);
     }
   }
@@ -196,24 +185,18 @@ export class BounceReader {
       }
     }
 
-    // Hand the batch over *before* acknowledging it: the IMAP flags are the
-    // only record of what has been processed, so acknowledging first would
-    // lose the whole batch if `handle` then failed, whereas failing first
-    // just leaves the messages unseen for the next poll. Redelivering a
-    // batch is safe because acting on a bounce is idempotent (see
-    // `MessageDeliveryService.markBounced`), which also covers a `handle`
-    // that failed part-way through.
+    // Handle before acknowledging: the IMAP flags are the only record of what
+    // was processed, so a failing `handle` must leave the batch unseen for the
+    // next poll. Redelivery is safe — `markBounced` is idempotent.
     await handle(results);
 
     await this.acknowledge(client, uids);
   }
 
   /**
-   * Marks every fetched message seen regardless of outcome (matched,
-   * unmatched, or unparseable) so nothing here is ever reprocessed —
-   * reuses IMAP's own state instead of a separate cursor. This is the
-   * authoritative "processed" marker; moving to Trash is best-effort
-   * tidiness on top of it, not a substitute for it.
+   * Marks every fetched message seen regardless of outcome, so nothing is
+   * reprocessed. The \Seen flag is the authoritative marker; the Trash move
+   * is best-effort tidiness on top of it.
    */
   private async acknowledge(client: ImapFlow, uids: number[]): Promise<void> {
     await client.messageFlagsAdd(uids, ['\\Seen'], { uid: true });
@@ -237,10 +220,8 @@ export class BounceReader {
   }
 
   /**
-   * Resolves the mailbox's Trash folder regardless of naming convention
-   * (e.g. Gmail's `[Gmail]/Trash` vs. a plain `Trash`) — imapflow detects it
-   * via the SPECIAL-USE extension, XLIST, or known localized names. Cached
-   * for the life of the process (see `trashFolderPath`).
+   * Resolves the Trash folder by SPECIAL-USE rather than by name, so Gmail's
+   * `[Gmail]/Trash` and localized names work too.
    */
   private async resolveTrashFolder(
     client: ImapFlow,
@@ -275,11 +256,8 @@ export class BounceReader {
         (attachment) => attachment.mimeType === 'message/delivery-status',
       );
       if (!deliveryStatus) {
-        // This mailbox is dedicated to DSN reports, so anything without one
-        // is unexpected (e.g. a misdirected reply or a bounce the sending
-        // server rendered as plain text). It still gets marked seen and
-        // moved to Trash like any other processed message — this is purely
-        // so it shows up somewhere rather than vanishing silently.
+        // The mailbox is dedicated to DSN reports, so anything else here is
+        // unexpected — warn, but still acknowledge it like any other message.
         logger.warn(
           `Bounce mailbox message uid=${String(message.uid)} has no delivery-status part; skipping.`,
         );
