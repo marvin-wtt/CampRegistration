@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
 import { BaseController } from '#core/base/BaseController';
 import { injectable } from 'inversify';
-import { permissionRegistry } from '#core/permission-registry';
+import { permissionRegistry } from '#core/permission/permission.registry';
 
 @injectable()
 export class PermissionController extends BaseController {

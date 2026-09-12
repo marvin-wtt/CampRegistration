@@ -57,6 +57,7 @@
     "#guards/*": "./src/guards/*.js",
     "#i18n/*": "./src/i18n/*.js",
     "#middlewares/*": "./src/middlewares/*.js",
+    "#modules": "./src/modules.js",
     "#routes/*": "./src/routes/*.js",
     "#utils/*": "./src/utils/*.js",
     "#views/*": "./src/views/*.js",

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { PermissionRegistry } from '#core/permission-registry';
+import { PermissionRegistry } from '#core/permission/permission.registry';
 import { createAppModules } from '#modules';
 
 /**

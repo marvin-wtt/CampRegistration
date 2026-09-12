@@ -3,7 +3,7 @@ import { OrganizationRouter } from './organization.routes.js';
 import { organizationScopeResolver } from './organization.guard.js';
 import { OrganizationService } from './organization.service.js';
 import { OrganizationController } from './organization.controller.js';
-import type { ScopeResolvers } from '#core/permission.guard';
+import type { ScopeResolvers } from '#core/permission/permission.guard';
 import type { ScopedPermissions } from '@camp-registration/common/permissions';
 import { resolve } from '#core/ioc/container';
 import { MailableRegistry } from '#core/mail/mail.registry';

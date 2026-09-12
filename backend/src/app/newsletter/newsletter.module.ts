@@ -3,7 +3,7 @@ import { NewsletterRouter } from './newsletter.routes.js';
 import { newsletterScopeResolver } from './newsletter.guard.js';
 import { NewsletterService } from './newsletter.service.js';
 import { NewsletterController } from './newsletter.controller.js';
-import type { ScopeResolvers } from '#core/permission.guard';
+import type { ScopeResolvers } from '#core/permission/permission.guard';
 import type { ScopedPermissions } from '@camp-registration/common/permissions';
 
 export class NewsletterModule implements AppModule {

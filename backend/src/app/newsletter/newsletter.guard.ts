@@ -3,7 +3,7 @@ import { NewsletterManagerService } from '#app/newsletterManager/newsletter-mana
 import type { ScopePermission } from '@camp-registration/common/permissions';
 import { resolve } from '#core/ioc/container';
 import type { GuardFn } from '#core/guard';
-import { scoped, type ScopeResolver } from '#core/permission.guard';
+import { scoped, type ScopeResolver } from '#core/permission/permission.guard';
 
 export const newsletterScopeResolver: ScopeResolver<'newsletter'> = {
   model: 'newsletter',

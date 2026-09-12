@@ -3,13 +3,12 @@ import type { CoreModule } from '#core/base/CoreModule';
 import apiRouter from '#routes/api';
 import webRouter from '#routes/web';
 import { createAppModules, createCoreModules } from '#modules';
-import { permissionRegistry } from '#core/permission-registry';
+import { permissionRegistry } from '#core/permission/permission.registry';
 import {
   assertScopeResolversComplete,
   registerScopeResolver,
-} from '#core/permission.guard';
+} from '#core/permission/permission.guard';
 import { PERMISSION_SCOPES } from '@camp-registration/common/permissions';
-import { initI18n } from '#core/i18n';
 import { JobScheduler } from '#core/scheduler/JobScheduler';
 import { ContainerModule } from 'inversify';
 import { container, resolve } from '#core/ioc/container';
@@ -20,16 +19,10 @@ type Module = CoreModule | AppModule;
 let allModules: Module[] = [];
 
 export async function boot() {
-  await initI18n();
-
   const coreModules = createCoreModules();
   const appModules = createAppModules();
 
-  // Core modules are listed first so every one of them finishes configuring
-  // before any AppModule's configure() runs — see CoreModule's doc comment.
-  // Bind order itself is irrelevant: container.load() only registers, it
-  // never resolves. Reversing this same order at shutdown then naturally
-  // shuts every AppModule down before any core module — see shutdownModules.
+  // Core modules always boot before app modules and shutdown after them.
   allModules = [...coreModules, ...appModules];
   bindModuleContainers(allModules);
   await configureModules(allModules);
@@ -42,9 +35,16 @@ export async function boot() {
 }
 
 export async function shutdown() {
-  resolve(JobScheduler).stop();
+  quiesceModules(allModules);
 
   await shutdownModules(allModules);
+}
+
+// Runs before any module's shutdown() — see CoreModule's quiesce() doc.
+function quiesceModules(modules: Module[]) {
+  for (const module of modules) {
+    module.quiesce?.();
+  }
 }
 
 function bindModuleContainers(modules: Module[]) {

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 import { EventManagerService } from '#app/eventManager/event-manager.service';
 import { OrganizationMemberService } from '#app/organizationMember/organization-member.service';
-import { permissionRegistry } from '#core/permission-registry';
+import { permissionRegistry } from '#core/permission/permission.registry';
 import {
   ORGANIZATION_EVENT_PERMISSIONS,
   ORGANIZATION_NEWSLETTER_PERMISSIONS,

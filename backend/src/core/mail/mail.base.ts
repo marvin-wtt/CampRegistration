@@ -12,7 +12,7 @@ import type {
 import type { JobOptions } from '#core/queue/Queue';
 import type { AppConfig } from '#config';
 import { config } from '#core/ioc/facades';
-import i18n from '#core/i18n';
+import i18n from '#core/i18n/i18n.client';
 import { MailRenderer } from '#core/mail/mail.renderer';
 import { MailService } from '#core/mail/mail.service';
 import { htmlToText } from 'html-to-text';

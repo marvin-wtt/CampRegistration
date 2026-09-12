@@ -36,6 +36,7 @@ import { AdminModule } from '#app/admin/admin.module';
 import { PermissionModule } from '#app/permission/permission.module';
 import type { CoreModule } from '#core/base/CoreModule';
 import { DatabaseModule } from '#core/database/database.module';
+import { I18nModule } from '#core/i18n/i18n.module';
 import { QueueManagerModule } from '#core/queue/queue-manager.module';
 import { SchedulerModule } from '#core/scheduler/scheduler.module';
 import { MailModule } from '#core/mail/mail.module';
@@ -44,6 +45,7 @@ import { RealtimeModule } from '#core/realtime/realtime.module';
 // Order matters: earlier modules boot first and shut down last.
 export const createCoreModules = (): CoreModule[] => [
   new DatabaseModule(),
+  new I18nModule(),
   new QueueManagerModule(),
   new SchedulerModule(),
   new MailModule(),

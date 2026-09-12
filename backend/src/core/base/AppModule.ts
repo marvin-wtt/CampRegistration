@@ -2,7 +2,7 @@ import type { Router } from 'express';
 import type { ScopedPermissions } from '@camp-registration/common/permissions';
 import type { ModuleRouter } from '#core/router/ModuleRouter';
 import type { JobScheduler } from '#core/scheduler/JobScheduler';
-import type { ScopeResolvers } from '#core/permission.guard';
+import type { ScopeResolvers } from '#core/permission/permission.guard';
 import type {
   BindOptions,
   ModuleOptions,
