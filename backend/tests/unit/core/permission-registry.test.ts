@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { PermissionRegistry } from '#core/permission-registry';
-import { createModules } from '../../../src/modules.js';
+import { createAppModules } from '#modules';
 
 /**
  * The policy has no single readable definition — every module contributes a
@@ -14,7 +14,7 @@ describe('the assembled permission policy', () => {
 
   beforeEach(() => {
     registry = new PermissionRegistry();
-    for (const module of createModules()) {
+    for (const module of createAppModules()) {
       const scoped = module.registerPermissions?.();
       if (scoped) {
         registry.registerAll(scoped);

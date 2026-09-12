@@ -1,4 +1,5 @@
-import type { AppModule, BindOptions } from '#core/base/AppModule';
+import type { BindOptions } from '#core/base/AppModule';
+import type { CoreModule } from '#core/base/CoreModule';
 import { RealtimeService } from '#core/realtime/RealtimeService';
 import { resolve } from '#core/ioc/container';
 
@@ -8,7 +9,7 @@ import { resolve } from '#core/ioc/container';
  * of feature resources — each feature module mounts its own stream with its own
  * guard, so dependencies point feature → realtime only.
  */
-export class RealtimeModule implements AppModule {
+export class RealtimeModule implements CoreModule {
   bindContainers(options: BindOptions) {
     options.bind(RealtimeService).toSelf().inSingletonScope();
   }

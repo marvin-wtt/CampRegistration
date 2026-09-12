@@ -1,7 +1,8 @@
 import type { AppModule } from '#core/base/AppModule';
+import type { CoreModule } from '#core/base/CoreModule';
 import apiRouter from '#routes/api';
 import webRouter from '#routes/web';
-import { createModules } from '#modules';
+import { createAppModules, createCoreModules } from '#modules';
 import { permissionRegistry } from '#core/permission-registry';
 import {
   assertScopeResolversComplete,
@@ -10,38 +11,43 @@ import {
 import { PERMISSION_SCOPES } from '@camp-registration/common/permissions';
 import { initI18n } from '#core/i18n';
 import { JobScheduler } from '#core/scheduler/JobScheduler';
-import { verifyDatabaseConnection, disconnectDatabase } from '#core/database';
 import { ContainerModule } from 'inversify';
 import { container, resolve } from '#core/ioc/container';
 import logger from '#core/logger';
 
-let modules: AppModule[] = [];
+type Module = CoreModule | AppModule;
+
+let allModules: Module[] = [];
 
 export async function boot() {
-  await verifyDatabaseConnection();
-
   await initI18n();
 
-  modules = createModules();
+  const coreModules = createCoreModules();
+  const appModules = createAppModules();
 
-  bindModuleContainers(modules);
-  await configureModules(modules);
-  registerModulePermissions(modules);
-  registerModuleScopeResolvers(modules);
-  registerModuleRoutes(modules);
-  registerModuleWebRoutes(modules);
-  registerModuleJobs(modules);
+  // Core modules are listed first so every one of them finishes configuring
+  // before any AppModule's configure() runs — see CoreModule's doc comment.
+  // Bind order itself is irrelevant: container.load() only registers, it
+  // never resolves. Reversing this same order at shutdown then naturally
+  // shuts every AppModule down before any core module — see shutdownModules.
+  allModules = [...coreModules, ...appModules];
+  bindModuleContainers(allModules);
+  await configureModules(allModules);
+
+  registerModulePermissions(appModules);
+  registerModuleScopeResolvers(appModules);
+  registerModuleRoutes(appModules);
+  registerModuleWebRoutes(appModules);
+  registerModuleJobs(appModules);
 }
 
 export async function shutdown() {
   resolve(JobScheduler).stop();
 
-  await shutdownModules(modules);
-
-  await disconnectDatabase();
+  await shutdownModules(allModules);
 }
 
-function bindModuleContainers(modules: AppModule[]) {
+function bindModuleContainers(modules: Module[]) {
   container.load(
     ...modules.map(
       (module) =>
@@ -52,7 +58,7 @@ function bindModuleContainers(modules: AppModule[]) {
   );
 }
 
-async function configureModules(modules: AppModule[]) {
+async function configureModules(modules: Module[]) {
   for (const module of modules) {
     await module.configure?.({});
   }
@@ -105,9 +111,13 @@ function registerModuleJobs(modules: AppModule[]) {
 }
 
 // Modules are shut down in reverse boot order so that later modules can rely
-// on earlier ones during teardown (e.g. queue handlers still need the mail
-// transport). A failing module must not prevent the remaining cleanup.
-async function shutdownModules(modules: AppModule[]) {
+// on earlier ones during teardown. Since `allModules` lists core modules
+// before app modules (see boot()), reversing it shuts every AppModule down
+// first and every core module (mail, realtime, the queue and scheduler
+// backplanes) after — so a cross-cutting mechanism stays up through every
+// AppModule's own shutdown. A failing module must not prevent the remaining
+// cleanup.
+async function shutdownModules(modules: Module[]) {
   for (const module of modules.toReversed()) {
     try {
       await module.shutdown?.();

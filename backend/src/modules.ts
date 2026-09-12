@@ -27,19 +27,31 @@ import { ProgramItemModule } from '#app/programItem/program-item.module';
 import { TaskModule } from '#app/task/task.module';
 import { ChoreModule } from '#app/chore/chore.module';
 import { ChoreAssignmentModule } from '#app/choreAssignment/choreAssignment.module';
-import { MailModule } from '#app/mail/mail.module';
 import { SettingModule } from '#app/setting/setting.module';
 import { NewsletterModule } from '#app/newsletter/newsletter.module';
 import { NewsletterSubscriberModule } from '#app/newsletterSubscriber/newsletter-subscriber.module';
 import { NewsletterManagerModule } from '#app/newsletterManager/newsletter-manager.module';
 import { NewsletterMessageModule } from '#app/newsletterMessage/newsletter-message.module';
-import { RealtimeModule } from '#app/realtime/realtime.module';
 import { AdminModule } from '#app/admin/admin.module';
 import { PermissionModule } from '#app/permission/permission.module';
+import type { CoreModule } from '#core/base/CoreModule';
+import { DatabaseModule } from '#core/database/database.module';
+import { QueueManagerModule } from '#core/queue/queue-manager.module';
+import { SchedulerModule } from '#core/scheduler/scheduler.module';
+import { MailModule } from '#core/mail/mail.module';
+import { RealtimeModule } from '#core/realtime/realtime.module';
 
 // Order matters: earlier modules boot first and shut down last.
-export const createModules = (): AppModule[] => [
+export const createCoreModules = (): CoreModule[] => [
+  new DatabaseModule(),
+  new QueueManagerModule(),
+  new SchedulerModule(),
   new MailModule(),
+  new RealtimeModule(),
+];
+
+// Order matters: earlier modules boot first and shut down last.
+export const createAppModules = (): AppModule[] => [
   new SettingModule(),
   new HealthModule(),
   new QueueModule(),
@@ -73,7 +85,6 @@ export const createModules = (): AppModule[] => [
   new NewsletterSubscriberModule(),
   new NewsletterManagerModule(),
   new NewsletterMessageModule(),
-  new RealtimeModule(),
   new TranslationModule(),
   // Last: serves the policy every other module has contributed to.
   new PermissionModule(),
