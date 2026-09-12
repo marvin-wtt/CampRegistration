@@ -39,8 +39,8 @@ export class SmtpMailer implements IMailer {
     const dsn: SendMailOptions['dsn'] =
       payload.dsn && payload.messageId && config.email.bounce
         ? {
-            notify: payload.dsn.notify.join(','),
-            envid: payload.messageId,
+            id: payload.messageId,
+            notify: payload.dsn.notify,
           }
         : undefined;
 

@@ -33,6 +33,10 @@ export class FileModule implements AppModule {
     );
   }
 
+  ready() {
+    resolve(FileService).startWorker();
+  }
+
   async shutdown() {
     await resolve(FileService).close();
 

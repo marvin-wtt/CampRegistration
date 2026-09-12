@@ -25,6 +25,10 @@ export class MailModule implements CoreModule {
     await resolve(MailService).connect();
   }
 
+  ready() {
+    resolve(MailService).startWorker();
+  }
+
   async shutdown(): Promise<void> {
     await resolve(MailService).close();
   }

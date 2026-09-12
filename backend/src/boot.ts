@@ -32,6 +32,8 @@ export async function boot() {
   registerModuleRoutes(appModules);
   registerModuleWebRoutes(appModules);
   registerModuleJobs(appModules);
+
+  await startModules(allModules);
 }
 
 export async function shutdown() {
@@ -61,6 +63,12 @@ function bindModuleContainers(modules: Module[]) {
 async function configureModules(modules: Module[]) {
   for (const module of modules) {
     await module.configure?.({});
+  }
+}
+
+async function startModules(modules: Module[]) {
+  for (const module of modules) {
+    await module.ready?.();
   }
 }
 

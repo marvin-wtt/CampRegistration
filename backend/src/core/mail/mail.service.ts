@@ -14,7 +14,8 @@ export class MailService {
   private queue: Queue<unknown>;
 
   constructor(
-    @inject(MailableRegistry) mailableRegistry: MailableRegistry,
+    @inject(MailableRegistry)
+    private readonly mailableRegistry: MailableRegistry,
     @inject(QueueManager) queueManager: QueueManager,
   ) {
     // Create mailer based on configured driver (defaults to 'smtp' per config schema)
@@ -29,9 +30,11 @@ export class MailService {
         duration: 1000 * 60 * 30, // 30 minutes
       },
     });
+  }
 
+  startWorker() {
     this.queue.process(async (job) => {
-      await this.sendMail(mailableRegistry.createFromJob(job));
+      await this.sendMail(this.mailableRegistry.createFromJob(job));
     });
   }
 
