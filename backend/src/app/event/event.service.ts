@@ -5,7 +5,10 @@ import type { OptionalByKeys } from '#types/utils';
 import { BaseService } from '#core/base/BaseService';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service.js';
-import { EVENT_LOGO_SLOT } from '@camp-registration/common/form';
+import {
+  EVENT_LOGO_SLOT,
+  EVENT_BANNER_SLOT,
+} from '@camp-registration/common/form';
 
 type TableTemplateCreateData = OptionalByKeys<
   Prisma.TableTemplateCreateManyEventInput,
@@ -61,7 +64,7 @@ export class EventService extends BaseService {
       include: { ...this.eventResourceInclude() },
     });
 
-    return event === null ? null : withLogoFlag(enrichFreePlaces(event));
+    return event === null ? null : withMediaFlags(enrichFreePlaces(event));
   }
 
   async getEventsByUserId(userId: string) {
@@ -74,7 +77,7 @@ export class EventService extends BaseService {
       include: { ...this.eventResourceInclude() },
     });
 
-    return events.map((event) => withLogoFlag(enrichFreePlaces(event)));
+    return events.map((event) => withMediaFlags(enrichFreePlaces(event)));
   }
 
   private eventResourceInclude() {
@@ -88,7 +91,10 @@ export class EventService extends BaseService {
       organization: {
         select: { id: true, name: true, verificationStatus: true },
       },
-      files: this.fileService.publicSlotFileInclude(EVENT_LOGO_SLOT),
+      files: this.fileService.publicSlotFileInclude([
+        EVENT_LOGO_SLOT,
+        EVENT_BANNER_SLOT,
+      ]),
     } satisfies Prisma.EventInclude;
   }
 
@@ -270,7 +276,7 @@ export class EventService extends BaseService {
       : await this.prisma.event.count({ where });
 
     return {
-      events: page.map((event) => withLogoFlag(enrichFreePlaces(event))),
+      events: page.map((event) => withMediaFlags(enrichFreePlaces(event))),
       nextCursor,
       limit,
       total,
@@ -342,7 +348,7 @@ export class EventService extends BaseService {
       include: { ...this.eventResourceInclude() },
     });
 
-    return withLogoFlag({
+    return withMediaFlags({
       ...event,
       freePlaces: data.maxParticipants,
     });
@@ -396,7 +402,7 @@ export class EventService extends BaseService {
       include: { ...this.eventResourceInclude() },
     });
 
-    return withLogoFlag(enrichFreePlaces(updatedEvent));
+    return withMediaFlags(enrichFreePlaces(updatedEvent));
   }
 
   async updateEvent(event: Event, data: EventUpdateData) {
@@ -409,7 +415,7 @@ export class EventService extends BaseService {
       include: { ...this.eventResourceInclude() },
     });
 
-    return withLogoFlag(enrichFreePlaces(updatedEvent));
+    return withMediaFlags(enrichFreePlaces(updatedEvent));
   }
 
   async deleteEventById(id: string) {
@@ -451,13 +457,20 @@ const enrichFreePlaces = <
   };
 };
 
-// `files` (from `publicSlotFileInclude`) only ever tells us whether the logo
-// exists — collapse it to that boolean here, right where the query's intent
-// is known, instead of forwarding the array for every caller to reinterpret.
-const withLogoFlag = <T extends { files: { id: string }[] }>(
+// `files` (from `publicSlotFileInclude`) only ever tells us which of the
+// reserved slots have a ready, public file — collapse it to booleans here,
+// right where the query's intent is known, instead of forwarding the array
+// for every caller to reinterpret.
+const withMediaFlags = <
+  T extends { files: { id: string; field: string | null }[] },
+>(
   event: T,
-): Omit<T, 'files'> & { hasLogo: boolean } => {
+): Omit<T, 'files'> & { hasLogo: boolean; hasBanner: boolean } => {
   const { files, ...rest } = event;
 
-  return { ...rest, hasLogo: files.length > 0 };
+  return {
+    ...rest,
+    hasLogo: files.some((file) => file.field === EVENT_LOGO_SLOT),
+    hasBanner: files.some((file) => file.field === EVENT_BANNER_SLOT),
+  };
 };

@@ -27,6 +27,7 @@ export interface Event extends Identifiable {
   freePlaces: Translatable<number> | null;
   registrationStatus: EventRegistrationStatus;
   logo: string | null;
+  banner: string | null;
 }
 
 export interface EventDetails extends Event {
@@ -40,6 +41,7 @@ export type EventCreateData = Omit<
   | 'freePlaces'
   | 'registrationStatus'
   | 'logo'
+  | 'banner'
   | 'organizationName'
   | 'organizationVerificationStatus'
   | 'locales'

@@ -11,7 +11,10 @@ import type {
 } from '@camp-registration/common/entities';
 import { exportFile } from 'quasar';
 import { computed } from 'vue';
-import { EVENT_LOGO_SLOT } from '@camp-registration/common/form';
+import {
+  EVENT_LOGO_SLOT,
+  EVENT_BANNER_SLOT,
+} from '@camp-registration/common/form';
 
 // Matches {_file.slotName} placeholders used in SurveyJS form definitions.
 const FILE_SLOT_REGEX = /\{\s?_file\.([a-z0-9_-]+)\s?}/g;
@@ -85,6 +88,12 @@ export const useEventFilesStore = defineStore('eventFiles', () => {
   // EVENT_LOGO_SLOT.
   const logoFile = computed<ServiceFile | undefined>(() =>
     (data.value ?? []).find((file) => file.field === EVENT_LOGO_SLOT),
+  );
+
+  // The file behind the reserved banner slot, if any — same reserved-slot
+  // mechanism as the logo, see EVENT_BANNER_SLOT.
+  const bannerFile = computed<ServiceFile | undefined>(() =>
+    (data.value ?? []).find((file) => file.field === EVENT_BANNER_SLOT),
   );
 
   // Slots declared in the form via {_file.slotName} that have no uploaded file yet.
@@ -175,7 +184,7 @@ export const useEventFilesStore = defineStore('eventFiles', () => {
       const file = await apiService.createEventFile(eventId, createData);
 
       data.value?.push(file);
-      refreshEventLogo(file.field);
+      refreshEventMedia(file.field);
 
       return file;
     };
@@ -197,7 +206,7 @@ export const useEventFilesStore = defineStore('eventFiles', () => {
 
       await apiService.deleteFile(oldFile.id);
       data.value = data.value?.filter((f) => f.id !== oldFile.id);
-      refreshEventLogo(oldFile.field, newFile.field);
+      refreshEventMedia(oldFile.field, newFile.field);
 
       return newFile;
     });
@@ -213,7 +222,7 @@ export const useEventFilesStore = defineStore('eventFiles', () => {
       const file = await apiService.updateFile(id, updateData);
 
       data.value = data.value?.map((entry) => (entry.id === id ? file : entry));
-      refreshEventLogo(previousField, file.field);
+      refreshEventMedia(previousField, file.field);
 
       return file;
     });
@@ -226,19 +235,22 @@ export const useEventFilesStore = defineStore('eventFiles', () => {
       await apiService.deleteFile(id);
 
       data.value = data.value?.filter((file) => file.id !== id);
-      refreshEventLogo(field);
+      refreshEventMedia(field);
     });
   }
 
   /**
-   * `EventDetails.logo` is derived from the `logo` slot on the server, so a
-   * write to that slot — upload, replace, access-level change, delete — changes
-   * the event resource as well. Refresh it instead of leaving event cards and
-   * the form header pointing at a logo that is no longer there (or missing one
-   * that now is).
+   * `EventDetails.logo`/`banner` are derived from their reserved slots on the
+   * server, so a write to either slot — upload, replace, access-level change,
+   * delete — changes the event resource as well. Refresh it instead of
+   * leaving event cards and the form header pointing at a logo or banner that
+   * is no longer there (or missing one that now is).
    */
-  function refreshEventLogo(...fields: (string | null | undefined)[]) {
-    if (!fields.includes(EVENT_LOGO_SLOT)) {
+  function refreshEventMedia(...fields: (string | null | undefined)[]) {
+    if (
+      !fields.includes(EVENT_LOGO_SLOT) &&
+      !fields.includes(EVENT_BANNER_SLOT)
+    ) {
       return;
     }
 
@@ -290,6 +302,7 @@ export const useEventFilesStore = defineStore('eventFiles', () => {
     isLoading,
     error,
     logoFile,
+    bannerFile,
     pendingSlots,
     slotsWithMissingLocales,
     missingFilesCount,

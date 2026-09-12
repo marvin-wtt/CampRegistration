@@ -12,7 +12,9 @@ export interface EventWithRelations extends Event {
     name: string;
     verificationStatus: OrganizationVerificationStatus;
   };
-  // See `EVENT_LOGO_SLOT` — whether a public, ready logo file exists.
-  // `EventResource` addresses it by slot, not by id.
+  // See `EVENT_LOGO_SLOT`/`EVENT_BANNER_SLOT` — whether a public, ready file
+  // exists for each reserved slot. `EventResource` addresses it by slot, not
+  // by id.
   hasLogo: boolean;
+  hasBanner: boolean;
 }

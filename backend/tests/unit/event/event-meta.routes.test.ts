@@ -44,6 +44,7 @@ const buildEvent = (
     freePlaces: 5,
     registrations: [],
     hasLogo: false,
+    hasBanner: false,
   }) as unknown as EventWithRelations;
 
 const events = new Map<string, EventWithRelations>([

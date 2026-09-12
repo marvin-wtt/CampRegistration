@@ -372,19 +372,20 @@ export class FileService extends BaseService {
 
   /**
    * Prisma `files` include fragment for "does this model have a publicly
-   * servable file in `slot`" — for a caller that only needs presence, not the
-   * file itself (e.g. `EventResource`, which addresses the file by slot), so
-   * it can ask within its own query instead of a separate lookup per row.
+   * servable file in each of `slots`" — for a caller that only needs presence,
+   * not the file itself (e.g. `EventResource`, which addresses the file by
+   * slot), so it can ask within its own query instead of a separate lookup per
+   * row. `field` is selected alongside `id` so a caller checking several slots
+   * at once can tell which slot each matched row belongs to.
    */
-  publicSlotFileInclude(slot: string) {
+  publicSlotFileInclude(slots: string | string[]) {
     return {
       where: {
-        field: slot,
+        field: { in: Array.isArray(slots) ? slots : [slots] },
         uploadStatus: 'READY' as const,
         accessLevel: 'public' as const,
       },
-      select: { id: true },
-      take: 1,
+      select: { id: true, field: true },
     };
   }
 
