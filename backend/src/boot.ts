@@ -35,7 +35,7 @@ export async function boot(options: BootOptions = {}) {
 
   registerModulePermissions(appModules);
   registerModuleScopeResolvers(appModules);
-  registerModuleRoutes(appModules);
+  registerModuleApiRoutes(appModules);
   registerModuleWebRoutes(appModules);
   registerModuleJobs(appModules);
 
@@ -105,7 +105,7 @@ function registerModuleScopeResolvers(modules: AppModule[]) {
   assertScopeResolversComplete();
 }
 
-function registerModuleRoutes(modules: AppModule[]) {
+function registerModuleApiRoutes(modules: AppModule[]) {
   for (const module of modules) {
     module.registerApiRoutes?.(apiRouter);
   }
