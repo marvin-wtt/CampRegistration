@@ -1,10 +1,10 @@
-import { MailFactory } from '#app/mail/mail.factory';
+import { MailFactory } from '#core/mail/mail.factory';
 import logger from '#core/logger';
-import type { IMailer } from '#app/mail/mailer.types';
-import type { MailableCtor, MailBase } from '#app/mail/mail.base';
+import type { IMailer } from '#core/mail/mailer.types';
+import type { MailableCtor, MailBase } from '#core/mail/mail.base';
 import type { Queue } from '#core/queue/Queue';
 import { QueueManager } from '#core/queue/QueueManager';
-import { MailableRegistry } from '#app/mail/mail.registry';
+import { MailableRegistry } from '#core/mail/mail.registry';
 import { inject, injectable } from 'inversify';
 import config from '#config/index';
 

@@ -1,6 +1,6 @@
-import type { IMailer } from '#app/mail/mailer.types';
+import type { IMailer } from '#core/mail/mailer.types';
 import logger from '#core/logger';
-import type { Address, BuiltMail } from '#app/mail/mail.types';
+import type { Address, BuiltMail } from '#core/mail/mail.types';
 
 export class NoOpMailer implements IMailer {
   public sendMail(payload: BuiltMail): void {

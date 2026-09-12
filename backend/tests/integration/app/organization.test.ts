@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { NoOpMailer } from '#app/mail/noop.mailer';
+import { NoOpMailer } from '#core/mail/noop.mailer';
 import {
   EventFactory,
   OrganizationFactory,

@@ -6,7 +6,7 @@ import type {
   Registration,
 } from '#generated/prisma/client.js';
 import { objectValueOrAll, translateObject } from '#utils/translateObject';
-import { type MailableCtor, MailBase } from '#app/mail/mail.base';
+import { type MailableCtor, MailBase } from '#core/mail/mail.base';
 import type {
   Address,
   AddressLike,
@@ -14,7 +14,7 @@ import type {
   Content,
   MailAttachment,
   MailPriority,
-} from '#app/mail/mail.types';
+} from '#core/mail/mail.types';
 import { generateUrl } from '#utils/url';
 import { uniqueLowerCase } from '#utils/string';
 import Handlebars from 'handlebars';
@@ -22,7 +22,7 @@ import { MessageTemplateService } from '#app/messageTemplate/message-template.se
 import logger from '#core/logger';
 import { MessageDeliveryService } from '#app/messageDelivery/message-delivery.service';
 import { FileService } from '#app/file/file.service';
-import { addressLikeToString } from '#app/mail/mail.utils';
+import { addressLikeToString } from '#core/mail/mail.utils';
 import { resolve } from '#core/ioc/container';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';

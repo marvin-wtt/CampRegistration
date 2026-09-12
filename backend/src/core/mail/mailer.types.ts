@@ -1,4 +1,4 @@
-import type { BuiltMail } from '#app/mail/mail.types';
+import type { BuiltMail } from '#core/mail/mail.types';
 
 export interface IMailer {
   sendMail(payload: BuiltMail): Promise<void> | void;

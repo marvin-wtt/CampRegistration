@@ -1,7 +1,7 @@
 import type { AppModule } from '#core/base/AppModule';
 import apiRouter from '#routes/api';
 import webRouter from '#routes/web';
-import { createModules } from './modules.js';
+import { createModules } from '#modules';
 import { permissionRegistry } from '#core/permission-registry';
 import {
   assertScopeResolversComplete,

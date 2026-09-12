@@ -10,14 +10,14 @@ import type {
   Address,
 } from './mail.types.js';
 import type { JobOptions } from '#core/queue/Queue';
-import type { AppConfig } from '#config/index';
+import type { AppConfig } from '#config';
 import { config } from '#core/ioc/facades';
 import i18n from '#core/i18n';
-import { MailRenderer } from '#app/mail/mail.renderer';
-import { MailService } from '#app/mail/mail.service';
+import { MailRenderer } from '#core/mail/mail.renderer';
+import { MailService } from '#core/mail/mail.service';
 import { htmlToText } from 'html-to-text';
 import logger from '#core/logger';
-import { MailableRegistry } from '#app/mail/mail.registry';
+import { MailableRegistry } from '#core/mail/mail.registry';
 import { resolve } from '#core/ioc/container';
 
 export interface MailableCtor<P> {

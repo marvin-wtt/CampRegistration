@@ -20,7 +20,7 @@ import {
   RegistrationUpdatedMessage,
   RegistrationWaitlistedMessage,
 } from '#app/registration/registration.messages';
-import { MailableRegistry } from '#app/mail/mail.registry';
+import { MailableRegistry } from '#core/mail/mail.registry';
 import { resolve } from '#core/ioc/container';
 
 export class RegistrationModule implements AppModule {

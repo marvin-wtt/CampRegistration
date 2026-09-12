@@ -7,7 +7,7 @@ import type {
 import { FeedbackRouter } from '#app/feedback/feedback.routes';
 import { resolve } from '#core/ioc/container';
 import { FeedbackController } from '#app/feedback/feedback.controller';
-import { MailableRegistry } from '#app/mail/mail.registry';
+import { MailableRegistry } from '#core/mail/mail.registry';
 import { FeedbackMessage } from '#app/feedback/feedback.messages';
 
 export class FeedbackModule implements AppModule {

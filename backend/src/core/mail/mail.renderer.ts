@@ -2,8 +2,8 @@ import { create, type ExpressHandlebars } from 'express-handlebars';
 import path from 'path';
 import config from '#config/index';
 import { appBuildPath } from '#utils/paths';
-import type { Envelope, Translator } from '#app/mail/mail.types';
-import { addressLikeToString } from '#app/mail/mail.utils.js';
+import type { Envelope, Translator } from '#core/mail/mail.types';
+import { addressLikeToString } from '#core/mail/mail.utils.js';
 
 interface RenderContentOptions {
   envelope: Pick<Envelope, 'to' | 'subject'>;

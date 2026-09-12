@@ -39,7 +39,7 @@ import {
   eventWithEmailAndCountry,
 } from './fixtures/registration.fixtures.js';
 import { request } from '../utils/request.js';
-import { NoOpMailer } from '#app/mail/noop.mailer.js';
+import { NoOpMailer } from '#core/mail/noop.mailer.js';
 import { uploadFile } from './utils/file.js';
 import { expectEmailCount, expectEmailWith } from '../utils/mail.js';
 import moment from 'moment';

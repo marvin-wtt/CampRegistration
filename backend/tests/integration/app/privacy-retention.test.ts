@@ -9,7 +9,7 @@ import {
 } from '../../../prisma/factories/index.js';
 import prisma from '../utils/prisma.js';
 import { resolve } from '#core/ioc/container';
-import { NoOpMailer } from '#app/mail/noop.mailer';
+import { NoOpMailer } from '#core/mail/noop.mailer';
 import { PrivacyRetentionService } from '#app/privacyNotice/privacy-retention.service';
 import type { PrivacyNoticeContent } from '@camp-registration/common/privacy';
 

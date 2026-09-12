@@ -1,11 +1,11 @@
-import { NodeMailer } from '#app/mail/node.mailer';
-import type { IMailer } from '#app/mail/mailer.types';
-import { NoOpMailer } from '#app/mail/noop.mailer';
+import { SmtpMailer } from '#core/mail/smtp.mailer';
+import type { IMailer } from '#core/mail/mailer.types';
+import { NoOpMailer } from '#core/mail/noop.mailer';
 
 export class MailFactory {
   // Available mailer drivers
   private mailers: Record<string, new () => IMailer> = {
-    smtp: NodeMailer,
+    smtp: SmtpMailer,
     noop: NoOpMailer,
   };
 

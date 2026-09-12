@@ -6,7 +6,7 @@ import { OrganizationController } from './organization.controller.js';
 import type { ScopeResolvers } from '#core/permission.guard';
 import type { ScopedPermissions } from '@camp-registration/common/permissions';
 import { resolve } from '#core/ioc/container';
-import { MailableRegistry } from '#app/mail/mail.registry';
+import { MailableRegistry } from '#core/mail/mail.registry';
 import {
   OrganizationReviewPendingMessage,
   OrganizationVerifiedMessage,

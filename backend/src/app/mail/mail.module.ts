@@ -1,8 +1,14 @@
 import type { AppModule, BindOptions } from '#core/base/AppModule';
-import { MailService } from '#app/mail/mail.service';
+import { MailService } from '#core/mail/mail.service';
 import { resolve } from '#core/ioc/container';
-import { MailableRegistry } from '#app/mail/mail.registry';
+import { MailableRegistry } from '#core/mail/mail.registry';
 
+/**
+ * Provides the mail mechanism (the {@link MailService} sender/queue and the
+ * {@link MailableRegistry}). It registers no routes and has no knowledge of
+ * feature mailables — each feature module defines and registers its own
+ * `MailBase` subclasses, so dependencies point feature → mail only.
+ */
 export class MailModule implements AppModule {
   bindContainers(options: BindOptions) {
     options.bind(MailableRegistry).toSelf().inSingletonScope();

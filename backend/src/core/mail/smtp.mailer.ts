@@ -1,9 +1,9 @@
-import type { IMailer } from '#app/mail/mailer.types';
-import type { BuiltMail } from '#app/mail/mail.types';
+import type { IMailer } from '#core/mail/mailer.types';
+import type { BuiltMail } from '#core/mail/mail.types';
 import nodemailer, { type SendMailOptions, type Transporter } from 'nodemailer';
 import config from '#config/index';
 
-export class NodeMailer implements IMailer {
+export class SmtpMailer implements IMailer {
   private transport: Transporter;
 
   constructor() {
