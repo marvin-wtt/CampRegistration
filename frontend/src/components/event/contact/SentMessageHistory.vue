@@ -279,6 +279,12 @@ function recipientCount(template: Message): number {
   return template.recipients?.length ?? 0;
 }
 
+function hasBounce(template: Message): boolean {
+  return (template.recipients ?? []).some((r) =>
+    r.deliveries.some((d) => d.bouncedAt),
+  );
+}
+
 function selectMessage(template: Message) {
   selectedId.value = template.id;
   if (quasar.screen.lt.sm) {
@@ -393,6 +399,7 @@ empty: 'Messages you send appear here.'
 search: 'Search messages'
 noResults: 'No messages match your search.'
 selectHint: 'Select a message to view it.'
+someBounced: 'One or more recipients could not be reached'
 action:
   reuse: 'Use as template'
   delete: 'Delete'
@@ -410,6 +417,7 @@ empty: 'Von dir gesendete Nachrichten erscheinen hier.'
 search: 'Nachrichten suchen'
 noResults: 'Keine Nachrichten entsprechen deiner Suche.'
 selectHint: 'Wähle eine Nachricht aus, um sie anzuzeigen.'
+someBounced: 'Ein oder mehrere Empfänger konnten nicht erreicht werden'
 action:
   reuse: 'Als Vorlage verwenden'
   delete: 'Löschen'
@@ -427,6 +435,7 @@ empty: 'Les messages que vous envoyez apparaissent ici.'
 search: 'Rechercher des messages'
 noResults: 'Aucun message ne correspond à votre recherche.'
 selectHint: 'Sélectionnez un message pour l’afficher.'
+someBounced: "Un ou plusieurs destinataires n'ont pas pu être joints"
 action:
   reuse: 'Utiliser comme modèle'
   delete: 'Supprimer'
@@ -444,6 +453,7 @@ empty: 'Wysłane przez Ciebie wiadomości pojawią się tutaj.'
 search: 'Szukaj wiadomości'
 noResults: 'Brak wiadomości pasujących do wyszukiwania.'
 selectHint: 'Wybierz wiadomość, aby ją wyświetlić.'
+someBounced: 'Co najmniej jeden odbiorca nie mógł zostać osiągnięty'
 action:
   reuse: 'Użyj jako szablon'
   delete: 'Usuń'
@@ -461,6 +471,7 @@ empty: 'Zprávy, které odešlete, se zobrazí zde.'
 search: 'Hledat zprávy'
 noResults: 'Žádné zprávy neodpovídají hledání.'
 selectHint: 'Vyber zprávu pro zobrazení.'
+someBounced: 'Jednoho nebo více příjemců se nepodařilo zastihnout'
 action:
   reuse: 'Použít jako šablonu'
   delete: 'Smazat'

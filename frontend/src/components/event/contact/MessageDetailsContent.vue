@@ -48,16 +48,24 @@
           :key="entry.key"
           dense
           square
-          color="grey-3"
-          text-color="grey-9"
+          :icon="entry.bounced ? 'error_outline' : undefined"
+          :color="entry.bounced ? 'negative' : 'grey-3'"
+          :text-color="entry.bounced ? 'white' : 'grey-9'"
         >
           {{ entry.name }}
           <q-tooltip v-if="entry.emails.length > 0">
             <div
-              v-for="email in entry.emails"
-              :key="email"
+              v-for="(email, index) in entry.emails"
+              :key="`${email.address}-${index}`"
             >
-              {{ email }}
+              {{ email.address }}
+              <template v-if="email.bounced">
+                —
+                <span class="text-negative">{{ t('bounced') }}</span>
+                <template v-if="email.bounceReason">
+                  ({{ email.bounceReason }})
+                </template>
+              </template>
             </div>
           </q-tooltip>
         </q-chip>
@@ -127,31 +135,62 @@ const bodyHtml = computed<string>(() => DOMPurify.sanitize(message.body));
 
 const recipientCount = computed<number>(() => message.recipients?.length ?? 0);
 
+interface RecipientEmailEntry {
+  address: string;
+  bounced: boolean;
+  bounceReason: string | null;
+}
+
 interface RecipientEntry {
   key: string;
   name: string;
-  emails: string[];
+  emails: RecipientEmailEntry[];
+  bounced: boolean;
 }
 
-const recipientEntries = computed<RecipientEntry[]>(() =>
-  (message.recipients ?? []).map((recipient, index) => {
+const recipientEntries = computed<RecipientEntry[]>(() => {
+  return (message.recipients ?? []).map((recipient, index) => {
     const registration = registrationsById.value.get(recipient.registrationId);
     const name = registration
       ? formatPersonName(fullName(registration))
       : undefined;
-    // Prefer the registration's known addresses; fall back to the address the
-    // message was actually delivered to.
-    const addresses = registration ? emails(registration) : [];
-    const resolvedEmails =
-      addresses.length > 0 ? addresses : recipient.to ? [recipient.to] : [];
+
+    // Delivery rows record what was actually sent, so they decide which
+    // addresses are shown — an address since changed on the registration
+    // still belongs here, carrying its failure. The registration's current
+    // addresses only stand in when no delivery has a `to`, as right after a
+    // send, before the per-email rows exist.
+    const deliveredEntries: RecipientEmailEntry[] =
+      recipient.deliveries.flatMap((delivery) => {
+        if (delivery.to) {
+          return [
+            {
+              address: delivery.to,
+              bounced: Boolean(delivery.bouncedAt),
+              bounceReason: delivery.bounceReason,
+            },
+          ];
+        }
+        return [];
+      });
+
+    const emailEntries: RecipientEmailEntry[] =
+      deliveredEntries.length > 0
+        ? deliveredEntries
+        : (registration ? emails(registration) : []).map((address) => ({
+            address,
+            bounced: false,
+            bounceReason: null,
+          }));
 
     return {
       key: `${recipient.registrationId}-${index}`,
-      name: name ?? recipient.to ?? recipient.registrationId,
-      emails: resolvedEmails,
+      name: name ?? emailEntries[0]?.address ?? recipient.registrationId,
+      emails: emailEntries,
+      bounced: emailEntries.some((entry) => entry.bounced),
     };
-  }),
-);
+  });
+});
 
 function openAttachment(file: ServiceFile) {
   window.open(apiService.getFileUrl(file.id), '_blank', 'noopener');
@@ -187,6 +226,7 @@ function openAttachment(file: ServiceFile) {
 sentBy: 'Sent by {name}'
 replyTo: 'Reply-to'
 recipients: '{count} recipient | {count} recipient | {count} recipients'
+bounced: 'Bounced'
 action:
   view: 'Open'
 </i18n>
@@ -195,6 +235,7 @@ action:
 sentBy: 'Gesendet von {name}'
 replyTo: 'Antwort an'
 recipients: '{count} Empfänger | {count} Empfänger | {count} Empfänger'
+bounced: 'Unzustellbar'
 action:
   view: 'Öffnen'
 </i18n>
@@ -203,6 +244,7 @@ action:
 sentBy: 'Envoyé par {name}'
 replyTo: 'Répondre à'
 recipients: '{count} destinataire | {count} destinataire | {count} destinataires'
+bounced: 'Non distribué'
 action:
   view: 'Ouvrir'
 </i18n>
@@ -211,6 +253,7 @@ action:
 sentBy: 'Wysłane przez {name}'
 replyTo: 'Odpowiedź do'
 recipients: '{count} odbiorca | {count} odbiorca | {count} odbiorców'
+bounced: 'Niedostarczono'
 action:
   view: 'Otwórz'
 </i18n>
@@ -219,6 +262,7 @@ action:
 sentBy: 'Odeslal {name}'
 replyTo: 'Odpovědět na'
 recipients: '{count} příjemce | {count} příjemce | {count} příjemců'
+bounced: 'Nedoručeno'
 action:
   view: 'Otevřít'
 </i18n>
