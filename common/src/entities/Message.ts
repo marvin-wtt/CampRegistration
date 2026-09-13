@@ -1,9 +1,16 @@
 import type { Identifiable } from './Identifiable.js';
 import { ServiceFile } from './ServiceFile.js';
 
+// One per email actually sent to; a registration's emails bounce independently.
+export interface MessageRecipientDelivery {
+  to: string | null;
+  bouncedAt: string | null;
+  bounceReason: string | null;
+}
+
 export interface MessageRecipient {
   registrationId: string;
-  to: string | null;
+  deliveries: MessageRecipientDelivery[];
 }
 
 export interface Message extends Identifiable {

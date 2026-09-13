@@ -8,7 +8,7 @@ import { EventManagerRouter } from '#app/eventManager/event-manager.routes';
 import type { ScopedPermissions } from '@camp-registration/common/permissions';
 import { EventManagerController } from '#app/eventManager/event-manager.controller';
 import { EventManagerService } from '#app/eventManager/event-manager.service';
-import { MailableRegistry } from '#app/mail/mail.registry';
+import { MailableRegistry } from '#core/mail/mail.registry';
 import { EventManagerInvitationMessage } from '#app/eventManager/event-manager.messages';
 import { resolve } from '#core/ioc/container';
 
@@ -22,7 +22,7 @@ export class EventManagerModule implements AppModule {
     resolve(MailableRegistry).register(EventManagerInvitationMessage);
   }
 
-  registerRoutes(router: AppRouter): void {
+  registerApiRoutes(router: AppRouter): void {
     router.useRouter('/events/:eventId/managers', new EventManagerRouter());
   }
 

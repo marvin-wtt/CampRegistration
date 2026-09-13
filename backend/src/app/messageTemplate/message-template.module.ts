@@ -14,7 +14,7 @@ export class MessageTemplateModule implements AppModule {
     options.bind(MessageTemplateRouter).toSelf().inSingletonScope();
   }
 
-  registerRoutes(router: AppRouter): void {
+  registerApiRoutes(router: AppRouter): void {
     registerFileGuard('messageTemplate', {
       view: messageTemplateFileGuard,
     });

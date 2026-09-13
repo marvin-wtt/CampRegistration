@@ -23,6 +23,8 @@ export class MessageDeliveryResource extends JsonResource<
       priority: this.data.priority,
       createdAt: this.data.createdAt.toISOString(),
       attachments: FileResource.collection(this.data.attachments).transform(),
+      bouncedAt: this.data.bouncedAt?.toISOString() ?? null,
+      bounceReason: this.data.bounceReason,
     };
   }
 }

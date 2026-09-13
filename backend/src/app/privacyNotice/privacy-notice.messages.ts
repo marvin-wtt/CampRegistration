@@ -1,6 +1,6 @@
 import type { Prisma } from '#generated/prisma/client.js';
 import type { RetentionAnchor } from '@camp-registration/common/privacy';
-import { MailBase } from '#app/mail/mail.base';
+import { MailBase } from '#core/mail/mail.base';
 import { translateObject } from '#utils/translateObject';
 import { generateUrl } from '#utils/url';
 

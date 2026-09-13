@@ -83,7 +83,9 @@ export class FileService extends BaseService {
     this.queue = queueManager.create<FileUploadJobPayload>('file', {
       retryDelay: 1000 * 10,
     });
+  }
 
+  startWorker() {
     this.queue.process(async (job) => {
       if (job.name === 'upload') {
         await this.uploadFile(job.payload);

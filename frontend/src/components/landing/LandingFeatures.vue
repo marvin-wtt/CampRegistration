@@ -507,6 +507,7 @@ feature:
       2: 'Placeholders pull in names, dates and any answer from the form'
       3: 'One version per language — every registrant reads their own'
       4: 'Queued and retried in the background, with delivery status'
+      5: 'Undelivered emails are detected automatically and flagged, so nothing goes unnoticed'
   dashboard:
     title: 'The whole event on one screen'
     text: 'Capacity, pending registrations, waiting list and team at a glance — plus the demographics you get asked about.'
@@ -674,6 +675,7 @@ feature:
       2: 'Platzhalter für Namen, Termine und jede Antwort aus dem Formular'
       3: 'Eine Fassung pro Sprache — alle lesen ihre eigene'
       4: 'Im Hintergrund versendet und wiederholt, mit Zustellstatus'
+      5: 'Nicht zugestellte E-Mails werden automatisch erkannt und markiert, damit nichts unbemerkt bleibt'
   dashboard:
     title: 'Die ganze Veranstaltung auf einem Bildschirm'
     text: 'Kapazität, offene Anmeldungen, Warteliste und Team auf einen Blick — dazu die Zahlen, nach denen immer gefragt wird.'
@@ -841,6 +843,7 @@ feature:
       2: 'Des variables qui reprennent noms, dates et n’importe quelle réponse'
       3: 'Une version par langue — chacun lit la sienne'
       4: 'Envoyés et réessayés en arrière-plan, avec l’état de distribution'
+      5: 'Les e-mails non distribués sont détectés automatiquement et signalés, pour que rien ne passe inaperçu'
   dashboard:
     title: 'Tout l’événement sur un seul écran'
     text: 'Capacité, inscriptions en attente, liste d’attente et équipe d’un coup d’œil — plus les chiffres qu’on vous réclame toujours.'
@@ -1008,6 +1011,7 @@ feature:
       2: 'Znaczniki podstawiają imiona, daty i dowolną odpowiedź z formularza'
       3: 'Jedna wersja na język — każdy czyta swoją'
       4: 'Wysyłane i ponawiane w tle, ze statusem doręczenia'
+      5: 'Niedostarczone wiadomości są wykrywane automatycznie i oznaczane, więc nic nie umknie uwadze'
   dashboard:
     title: 'Całe wydarzenie na jednym ekranie'
     text: 'Liczba miejsc, zgłoszenia oczekujące, lista rezerwowa i zespół na pierwszy rzut oka — plus dane, o które zawsze pytają.'
@@ -1175,6 +1179,7 @@ feature:
       2: 'Zástupné symboly doplní jména, termíny a jakoukoli odpověď z formuláře'
       3: 'Jedna verze na jazyk — každý čte tu svou'
       4: 'Odesílání a opakování na pozadí, se stavem doručení'
+      5: 'Nedoručené e-maily jsou automaticky rozpoznány a označeny, takže nic neunikne pozornosti'
   dashboard:
     title: 'Celá akce na jedné obrazovce'
     text: 'Kapacita, čekající registrace, náhradníci a tým na první pohled — a k tomu čísla, na která se vás pořád ptají.'

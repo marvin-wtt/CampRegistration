@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { MailBase } from '#app/mail/mail.base.js';
-import { NoOpMailer } from '#app/mail/noop.mailer.js';
-import { MailFactory } from '#app/mail/mail.factory.js';
+import { MailBase } from '#core/mail/mail.base.js';
+import { NoOpMailer } from '#core/mail/noop.mailer.js';
+import { MailFactory } from '#core/mail/mail.factory.js';
 import { resolve } from '#core/ioc/container.js';
-import { MailService } from '#app/mail/mail.service.js';
-import { MailableRegistry } from '#app/mail/mail.registry.js';
+import { MailService } from '#core/mail/mail.service.js';
+import { MailableRegistry } from '#core/mail/mail.registry.js';
 
 const mailer = NoOpMailer.prototype;
 

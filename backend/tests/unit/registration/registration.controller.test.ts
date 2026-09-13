@@ -7,23 +7,33 @@ import { RegistrationService } from '#app/registration/registration.service';
 import { RealtimeService } from '#core/realtime/RealtimeService';
 import { RegistrationController } from '#app/registration/registration.controller';
 import { RegistrationResource } from '#app/registration/registration.resource';
-import {
-  RegistrationAcceptedMessage,
-  RegistrationConfirmedMessage,
-  RegistrationDeletedMessage,
-  RegistrationNotifyMessage,
-  RegistrationSubmittedMessage,
-  RegistrationUpdatedMessage,
-  RegistrationWaitlistedMessage,
-} from '#app/registration/registration.messages';
+import { RegistrationNotifyMessage } from '#app/registration/messages/notify.mail';
+import { RegistrationAcceptedMessage } from '#app/registration/messages/accepted.mail';
+import { RegistrationConfirmedMessage } from '#app/registration/messages/confirmed.mail';
+import { RegistrationDeletedMessage } from '#app/registration/messages/deleted.mail';
+import { RegistrationSubmittedMessage } from '#app/registration/messages/submitted.mail';
+import { RegistrationUpdatedMessage } from '#app/registration/messages/updated.mail';
+import { RegistrationWaitlistedMessage } from '#app/registration/messages/waitlisted.mail';
 
-vi.mock('#app/registration/registration.messages', () => ({
-  RegistrationAcceptedMessage: { enqueueFor: vi.fn() },
-  RegistrationConfirmedMessage: { enqueueFor: vi.fn() },
-  RegistrationDeletedMessage: { enqueueFor: vi.fn() },
+vi.mock('#app/registration/messages/notify.mail', () => ({
   RegistrationNotifyMessage: { enqueue: vi.fn() },
+}));
+vi.mock('#app/registration/messages/accepted.mail', () => ({
+  RegistrationAcceptedMessage: { enqueueFor: vi.fn() },
+}));
+vi.mock('#app/registration/messages/confirmed.mail', () => ({
+  RegistrationConfirmedMessage: { enqueueFor: vi.fn() },
+}));
+vi.mock('#app/registration/messages/deleted.mail', () => ({
+  RegistrationDeletedMessage: { enqueueFor: vi.fn() },
+}));
+vi.mock('#app/registration/messages/submitted.mail', () => ({
   RegistrationSubmittedMessage: { enqueueFor: vi.fn() },
+}));
+vi.mock('#app/registration/messages/updated.mail', () => ({
   RegistrationUpdatedMessage: { enqueueFor: vi.fn() },
+}));
+vi.mock('#app/registration/messages/waitlisted.mail', () => ({
   RegistrationWaitlistedMessage: { enqueueFor: vi.fn() },
 }));
 

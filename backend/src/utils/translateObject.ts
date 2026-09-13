@@ -19,9 +19,17 @@ export const objectValueOrAll = <T>(
     return Object.values(value) as T[];
   }
 
-  const key = locale.split('-')[0];
-  if (key in value) {
-    return value[key as keyof typeof value] as T;
+  const [language, country] = locale.split('-');
+  if (language in value) {
+    return value[language as keyof typeof value] as T;
+  }
+
+  // Use country for fields mapped to country codes
+  if (country) {
+    const c = country.toLowerCase();
+    if (c in value) {
+      return value[c as keyof typeof value] as T;
+    }
   }
 
   return Object.values(value) as T[];

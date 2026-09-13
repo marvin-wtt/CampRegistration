@@ -12,7 +12,7 @@ export class TaskModule implements AppModule {
     options.bind(TaskRouter).toSelf().inSingletonScope();
   }
 
-  registerRoutes(router: AppRouter): void {
+  registerApiRoutes(router: AppRouter): void {
     router.useRouter('/events/:eventId/tasks', resolve(TaskRouter));
   }
 

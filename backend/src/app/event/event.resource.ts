@@ -5,6 +5,7 @@ import {
 import { JsonResource } from '#core/resource/JsonResource';
 import { countriesToLocales } from '#utils/countriesToLocales';
 import { eventRegistrationStatus } from '#app/event/event.util';
+import { utcCarrierToNaiveDateTime } from '@camp-registration/common/utils';
 import type { EventWithRelations } from '#app/event/event.types';
 import {
   EVENT_LOGO_SLOT,
@@ -47,8 +48,9 @@ export class EventResource extends JsonResource<
       maxParticipants: this.data.maxParticipants,
       minAge: this.data.minAge,
       maxAge: this.data.maxAge,
-      startAt: this.data.startAt.toISOString(),
-      endAt: this.data.endAt.toISOString(),
+      startAt: utcCarrierToNaiveDateTime(this.data.startAt),
+      endAt: utcCarrierToNaiveDateTime(this.data.endAt),
+      timezone: this.data.timezone,
       price: this.data.price,
       location: this.data.location ?? null,
       freePlaces: this.data.freePlaces,

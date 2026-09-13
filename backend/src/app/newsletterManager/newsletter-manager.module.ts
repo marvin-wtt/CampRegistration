@@ -10,7 +10,7 @@ export class NewsletterManagerModule implements AppModule {
     options.bind(NewsletterManagerController).toSelf().inSingletonScope();
   }
 
-  registerRoutes(router: AppRouter): void {
+  registerApiRoutes(router: AppRouter): void {
     router.useRouter(
       '/newsletters/:newsletterId/managers',
       new NewsletterManagerRouter(),

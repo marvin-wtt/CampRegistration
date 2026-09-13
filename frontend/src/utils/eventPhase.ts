@@ -1,4 +1,5 @@
 import type { Event } from '@camp-registration/common/entities';
+import { zonedInstant } from '@camp-registration/common/utils';
 
 export type EventPhase = 'ongoing' | 'upcoming' | 'recentlyEnded' | 'past';
 
@@ -18,8 +19,8 @@ function isRegistrationOpen(event: Event): boolean {
 
 export function phaseOf(event: Event): EventPhase {
   const now = Date.now();
-  const start = new Date(event.startAt).getTime();
-  const end = new Date(event.endAt).getTime();
+  const start = zonedInstant(event.startAt, event.timezone).getTime();
+  const end = zonedInstant(event.endAt, event.timezone).getTime();
   if (now < start) {
     return 'upcoming';
   }

@@ -35,6 +35,7 @@ describe('RegistrationForm', () => {
     maxParticipants: 0,
     startAt: '',
     endAt: '',
+    timezone: 'UTC',
     minAge: 0,
     maxAge: 0,
     price: 0,

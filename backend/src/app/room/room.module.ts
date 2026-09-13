@@ -28,7 +28,7 @@ export class RoomModule implements AppModule {
     });
   }
 
-  registerRoutes(router: AppRouter): void {
+  registerApiRoutes(router: AppRouter): void {
     router.useRouter('/events/:eventId/rooms', resolve(RoomRouter));
   }
 

@@ -1,6 +1,6 @@
-import { MailBase } from '#app/mail/mail.base';
+import { MailBase } from '#core/mail/mail.base';
 import type { JobOptions } from '#core/queue/Queue';
-import type { MailAttachment, MailPriority } from '#app/mail/mail.types';
+import type { MailAttachment, MailPriority } from '#core/mail/mail.types';
 import { generateApiUrl, generateUrl } from '#utils/url';
 import { resolve } from '#core/ioc/container';
 import { FileService } from '#app/file/file.service';

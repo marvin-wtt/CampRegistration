@@ -31,11 +31,23 @@ class ExampleModule implements AppModule {
   registerJobs(scheduler: JobScheduler): void {
     /* recurring cron jobs */
   }
+  ready(): Promise<void> | void {
+    /* start consuming what other modules registered, e.g. a queue worker */
+  }
+  quiesce(): void {
+    /* stop producing new work, before any shutdown() runs */
+  }
   shutdown(): Promise<void> | void {
     /* cleanup on shutdown */
   }
 }
 ```
+
+Cross-cutting mechanisms (`src/core/`: database, i18n, queue, scheduler, mail,
+realtime) implement `CoreModule` instead — the same lifecycle minus the
+routing/permission hooks. `modules.ts` lists them separately: core modules boot
+before every `AppModule` and shut down after them, so a feature can rely on
+them throughout its own teardown.
 
 ## Dependency Injection (InversifyJS)
 
@@ -95,7 +107,7 @@ export interface PermissionScopes {
   (`permissionRegistry.for('event').getPermissions(role)`). Registration is additive, so no one file holds the whole
   policy — `tests/unit/core/permission-registry.test.ts`
   snapshots the assembled result.
-- **Guard**: `scoped(scope, permission)` (`#core/permission.guard`) reads the bound model named by the scope's
+- **Guard**: `scoped(scope, permission)` (`#core/permission/permission.guard`) reads the bound model named by the scope's
   `ScopeResolver` and asks it for the user's permission set. `hasEventPermission(p)`, `newsletterManager(p)` and
   `organizationMember(p)` are one-line aliases of it. The owning module declares its resolver by returning it from
   `registerScopeResolvers()`; `boot.ts` registers each one and then calls `assertScopeResolversComplete()`, so a scope

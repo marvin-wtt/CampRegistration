@@ -1,4 +1,4 @@
-import defaultPrisma from '#core/database';
+import defaultPrisma from '#core/database/database.client';
 import { type PrismaClient } from '#generated/prisma/client.js';
 
 export abstract class BaseService {

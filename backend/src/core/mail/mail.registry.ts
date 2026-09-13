@@ -1,4 +1,4 @@
-import type { MailableCtor, MailBase } from '#app/mail/mail.base';
+import type { MailableCtor, MailBase } from '#core/mail/mail.base';
 import type { SimpleJob } from '#core/queue/Queue';
 import { injectable } from 'inversify';
 

@@ -5,7 +5,7 @@ import type {
   ModuleOptions,
 } from '#core/base/AppModule';
 import type { ScopedPermissions } from '@camp-registration/common/permissions';
-import type { ScopeResolvers } from '#core/permission.guard';
+import type { ScopeResolvers } from '#core/permission/permission.guard';
 import { SETTING_KEYS } from '@camp-registration/common/settings';
 import { EventRouter } from '#app/event/event.routes';
 import { registerFileGuard } from '#app/file/file.guard';
@@ -36,7 +36,7 @@ export class EventModule implements AppModule {
     return { event: eventScopeResolver };
   }
 
-  registerRoutes(router: AppRouter): void {
+  registerApiRoutes(router: AppRouter): void {
     registerFileGuard('event', eventFileGuards);
 
     router.useRouter('/events/:eventId/files', new EventFilesRouter());

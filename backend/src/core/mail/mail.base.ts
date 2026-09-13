@@ -10,14 +10,15 @@ import type {
   Address,
 } from './mail.types.js';
 import type { JobOptions } from '#core/queue/Queue';
-import type { AppConfig } from '#config/index';
+import type { SendMailResult } from '#core/mail/mailer.types';
+import type { AppConfig } from '#config';
 import { config } from '#core/ioc/facades';
-import i18n from '#core/i18n';
-import { MailRenderer } from '#app/mail/mail.renderer';
-import { MailService } from '#app/mail/mail.service';
+import i18n from '#core/i18n/i18n.client';
+import { MailRenderer } from '#core/mail/mail.renderer';
+import { MailService } from '#core/mail/mail.service';
 import { htmlToText } from 'html-to-text';
 import logger from '#core/logger';
-import { MailableRegistry } from '#app/mail/mail.registry';
+import { MailableRegistry } from '#core/mail/mail.registry';
 import { resolve } from '#core/ioc/container';
 
 export interface MailableCtor<P> {
@@ -99,18 +100,51 @@ export abstract class MailBase<P> {
     return 'normal';
   }
 
+  /**
+   * Return a bare local-part token (e.g. a ulid) to give the mail a stable
+   * Message-ID; `messageId()` composes the full RFC 5322 value from it.
+   */
+  protected messageIdToken(): string | undefined {
+    return undefined;
+  }
+
+  protected messageId(): string | undefined {
+    const token = this.messageIdToken();
+
+    return token
+      ? `${token}@${new URL(this.config.origin).hostname}`
+      : undefined;
+  }
+
+  /** Opt in to an RFC 3461 delivery status notification on a hard failure. */
+  protected requestDsn(): boolean {
+    return false;
+  }
+
   protected async envelope(): Promise<Envelope> {
-    const [to, from, replyTo, cc, bcc, subject, priority, headers] =
-      await Promise.all([
-        Promise.resolve(this.to()),
-        Promise.resolve(this.from()),
-        Promise.resolve(this.replyTo()),
-        Promise.resolve(this.cc()),
-        Promise.resolve(this.bcc()),
-        Promise.resolve(this.subject()),
-        Promise.resolve(this.priority()),
-        Promise.resolve(this.headers()),
-      ]);
+    const [
+      to,
+      from,
+      replyTo,
+      cc,
+      bcc,
+      subject,
+      priority,
+      headers,
+      messageId,
+      dsn,
+    ] = await Promise.all([
+      Promise.resolve(this.to()),
+      Promise.resolve(this.from()),
+      Promise.resolve(this.replyTo()),
+      Promise.resolve(this.cc()),
+      Promise.resolve(this.bcc()),
+      Promise.resolve(this.subject()),
+      Promise.resolve(this.priority()),
+      Promise.resolve(this.headers()),
+      Promise.resolve(this.messageId()),
+      Promise.resolve(this.requestDsn()),
+    ]);
 
     return {
       to,
@@ -121,6 +155,8 @@ export abstract class MailBase<P> {
       bcc,
       priority,
       headers,
+      messageId,
+      dsn,
     };
   }
 
@@ -175,6 +211,15 @@ export abstract class MailBase<P> {
       text,
       attachments: attachments.length ? attachments : undefined,
     };
+  }
+
+  /**
+   * Called by {@link MailService.sendMail} once the mail has gone out — for
+   * bookkeeping such as recording a synchronous rejection. Errors are
+   * swallowed by the caller; the send itself already succeeded.
+   */
+  public afterSend(_result: SendMailResult): Promise<void> | void {
+    return;
   }
 
   static jobOptions(): JobOptions | undefined {
