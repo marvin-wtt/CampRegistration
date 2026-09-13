@@ -2,6 +2,7 @@ import winston from 'winston';
 import 'winston-daily-rotate-file';
 import config from '#config/index';
 import { appPath } from '#utils/paths';
+import { ErrorTrackingTransport } from '#core/errorTracking/errorTracking.transport';
 
 const enumerateErrorFormat = winston.format((info) => {
   if (info instanceof Error) {
@@ -53,10 +54,19 @@ const consoleTransport = new winston.transports.Console({
   stderrLevels: ['error'],
 });
 
+// Inert until ErrorTrackingModule configures a tracker (see #modules) — safe
+// to always attach.
+const errorTrackingTransport = new ErrorTrackingTransport({ level: 'error' });
+
 const logger = winston.createLogger({
   level: config.log.level ?? (isDevEnv ? 'debug' : 'info'),
   format: isDevEnv ? devFormat : prodFormat,
-  transports: [consoleTransport, fileTransport, fileErrorTransport],
+  transports: [
+    consoleTransport,
+    fileTransport,
+    fileErrorTransport,
+    errorTrackingTransport,
+  ],
 });
 
 export default logger;

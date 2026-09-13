@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
-import * as Sentry from '@sentry/node';
 import config from '#config/index';
 import { serverErrorHandler } from '#core/morgan';
 import { errorConverter, errorHandler } from '#middlewares/error.middleware';
@@ -56,11 +55,6 @@ export function createApp() {
   });
 
   app.use(staticRoutes);
-
-  // capture unhandled errors in Sentry before our custom error handlers
-  if (config.sentry.dsn) {
-    Sentry.setupExpressErrorHandler(app);
-  }
 
   // convert error to ApiError, if needed
   app.use(errorConverter);
