@@ -5,6 +5,11 @@ import type { EventScopedPermission } from '@camp-registration/common/permission
 import { RESOURCE_VIEW_PERMISSION } from '@camp-registration/common/realtime';
 import { inject, injectable } from 'inversify';
 import { OrganizationMemberService } from '#app/organizationMember/organization-member.service';
+import { AuditService } from '#app/audit/audit.service';
+import {
+  eventManagerAuditPolicy,
+  managerIdentity,
+} from '#app/eventManager/event-manager.audit';
 
 type ManagerCreateData = Pick<
   Prisma.EventManagerCreateInput,
@@ -28,6 +33,7 @@ export class EventManagerService extends BaseService {
   constructor(
     @inject(OrganizationMemberService)
     private readonly organizationMembers: OrganizationMemberService,
+    @inject(AuditService) private readonly audit: AuditService,
   ) {
     super();
   }
@@ -192,58 +198,110 @@ export class EventManagerService extends BaseService {
   }
 
   async addManager(eventId: string, userId: string, data: ManagerCreateData) {
-    return this.prisma.eventManager.create({
-      data: {
+    return this.prisma.$transaction(async (tx) => {
+      const manager = await tx.eventManager.create({
+        data: {
+          eventId,
+          userId,
+          role: data.role,
+          expiresAt: data.expiresAt,
+        },
+        include: {
+          user: true,
+          invitation: true,
+        },
+      });
+
+      await this.audit.record(tx, {
+        action: 'created',
+        entityType: eventManagerAuditPolicy.entityType,
+        entityId: manager.id,
         eventId,
-        userId,
-        role: data.role,
-        expiresAt: data.expiresAt,
-      },
-      include: {
-        user: true,
-        invitation: true,
-      },
+        changes: managerIdentity(manager),
+      });
+
+      return manager;
     });
   }
 
   async inviteManager(eventId: string, email: string, data: ManagerCreateData) {
-    return this.prisma.eventManager.create({
-      data: {
-        event: { connect: { id: eventId } },
-        role: data.role,
-        expiresAt: data.expiresAt,
-        invitation: {
-          create: {
-            email,
+    return this.prisma.$transaction(async (tx) => {
+      const manager = await tx.eventManager.create({
+        data: {
+          event: { connect: { id: eventId } },
+          role: data.role,
+          expiresAt: data.expiresAt,
+          invitation: {
+            create: {
+              email,
+            },
           },
         },
-      },
-      include: {
-        invitation: true,
-        user: true,
-      },
+        include: {
+          invitation: true,
+          user: true,
+        },
+      });
+
+      // Same action as addManager — an invite is just a manager created for a
+      // not-yet-registered user.
+      await this.audit.record(tx, {
+        action: 'created',
+        entityType: eventManagerAuditPolicy.entityType,
+        entityId: manager.id,
+        eventId,
+        changes: managerIdentity(manager),
+      });
+
+      return manager;
     });
   }
 
   async updateManagerById(id: string, data: ManagerUpdateData) {
-    return this.prisma.eventManager.update({
-      where: {
-        id,
-      },
-      data: {
-        role: data.role,
-        expiresAt: data.expiresAt,
-      },
-      include: {
-        invitation: true,
-        user: true,
-      },
+    return this.prisma.$transaction(async (tx) => {
+      // Read the "before" inside the transaction so the audit diff is race-free.
+      const before = await tx.eventManager.findUniqueOrThrow({ where: { id } });
+
+      const after = await tx.eventManager.update({
+        where: {
+          id,
+        },
+        data: {
+          role: data.role,
+          expiresAt: data.expiresAt,
+        },
+        include: {
+          invitation: true,
+          user: true,
+        },
+      });
+
+      await this.audit.recordChange(tx, 'updated', eventManagerAuditPolicy, {
+        before,
+        after,
+        entityId: id,
+        eventId: before.eventId,
+      });
+
+      return after;
     });
   }
 
   async removeManager(id: string) {
-    return this.prisma.eventManager.delete({
-      where: { id },
+    return this.prisma.$transaction(async (tx) => {
+      const deleted = await tx.eventManager.delete({
+        where: { id },
+      });
+
+      await this.audit.record(tx, {
+        action: 'deleted',
+        entityType: eventManagerAuditPolicy.entityType,
+        entityId: id,
+        eventId: deleted.eventId,
+        changes: managerIdentity(deleted),
+      });
+
+      return deleted;
     });
   }
 }

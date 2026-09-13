@@ -143,6 +143,15 @@ const items = computed<SettingsItem[]>(() => [
     permission: 'event.edit',
   },
   {
+    name: 'audit',
+    label: t('audit.label'),
+    description: t('audit.description'),
+    icon: 'history',
+    color: 'tertiary',
+    to: { name: 'management.event.settings.audit' },
+    permission: 'event.audit.view',
+  },
+  {
     name: 'navigation',
     label: t('navigation.label'),
     description: t('navigation.description'),
@@ -191,6 +200,9 @@ files:
 privacy:
   label: 'Privacy'
   description: 'What this event adds to the privacy information of its organisation.'
+audit:
+  label: 'Audit Log'
+  description: 'Review the history of changes made to this event.'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -217,6 +229,9 @@ files:
 privacy:
   label: 'Datenschutz'
   description: 'Was diese Freizeit den Datenschutzinformationen ihrer Organisation hinzufügt.'
+audit:
+  label: 'Aktivitätsprotokoll'
+  description: 'Sieh dir den Änderungsverlauf dieser Veranstaltung an.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -243,6 +258,9 @@ files:
 privacy:
   label: 'Confidentialité'
   description: 'Ce que ce séjour ajoute aux informations de son organisation.'
+audit:
+  label: 'Journal d’activité'
+  description: 'Consultez l’historique des modifications apportées à cet événement.'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -269,6 +287,9 @@ files:
 privacy:
   label: 'Prywatność'
   description: 'Co ten wydarzenie dodaje do informacji swojej organizacji.'
+audit:
+  label: 'Dziennik aktywności'
+  description: 'Przejrzyj historię zmian wprowadzonych w tym wydarzeniu.'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -295,4 +316,7 @@ files:
 privacy:
   label: 'Soukromí'
   description: 'Co tato akce doplňuje k informacím své organizace.'
+audit:
+  label: 'Deník aktivit'
+  description: 'Prohlédněte si historii změn této akce.'
 </i18n>

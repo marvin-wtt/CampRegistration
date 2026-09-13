@@ -177,108 +177,10 @@
           :class="{ 'pane--hidden': quasar.screen.lt.sm && !mobileDetail }"
         >
           <template v-if="selected">
-            <div class="col scroll q-pa-md q-gutter-y-md">
-              <div>
-                <div class="text-subtitle1 text-weight-medium">
-                  {{ selected.subject }}
-                </div>
-                <div class="text-caption text-grey-6">
-                  {{
-                    selected.createdAt ? d(selected.createdAt, 'dateTime') : ''
-                  }}
-                </div>
-                <div
-                  v-if="selected.sentBy"
-                  class="text-caption text-grey-6 row items-center q-gutter-xs no-wrap"
-                >
-                  <q-icon
-                    name="person"
-                    size="14px"
-                  />
-                  <span>
-                    {{ t('sentBy', { name: selected.sentBy.name ?? '' }) }}
-                  </span>
-                </div>
-              </div>
-
-              <!-- Reply-to -->
-              <div v-if="selected.replyTo">
-                <div class="text-caption text-grey-7 q-mb-xs">
-                  {{ t('replyTo') }}
-                </div>
-                <q-chip
-                  dense
-                  square
-                  icon="reply"
-                  color="grey-3"
-                  text-color="grey-9"
-                >
-                  {{ selected.replyTo }}
-                </q-chip>
-              </div>
-
-              <!-- Recipients -->
-              <div>
-                <div class="text-caption text-grey-7 q-mb-xs">
-                  {{ t('recipients', { count: recipientCount(selected) }) }}
-                </div>
-                <div class="recipient-chips row q-gutter-xs">
-                  <q-chip
-                    v-for="entry in recipientEntries(selected)"
-                    :key="entry.key"
-                    dense
-                    square
-                    :icon="entry.bounced ? 'error_outline' : undefined"
-                    :color="entry.bounced ? 'negative' : 'grey-3'"
-                    :text-color="entry.bounced ? 'white' : 'grey-9'"
-                  >
-                    {{ entry.name }}
-                    <q-tooltip v-if="entry.emails.length > 0">
-                      <div
-                        v-for="(email, index) in entry.emails"
-                        :key="`${email.address}-${index}`"
-                      >
-                        {{ email.address }}
-                        <template v-if="email.bounced">
-                          —
-                          <span class="text-negative">{{ t('bounced') }}</span>
-                          <template v-if="email.bounceReason">
-                            ({{ email.bounceReason }})
-                          </template>
-                        </template>
-                      </div>
-                    </q-tooltip>
-                  </q-chip>
-                </div>
-              </div>
-
-              <!-- Attachments -->
-              <div
-                v-if="selected.attachments?.length"
-                class="row items-center q-gutter-xs"
-              >
-                <q-chip
-                  v-for="file in selected.attachments"
-                  :key="file.id"
-                  clickable
-                  dense
-                  icon="attach_file"
-                  icon-right="open_in_new"
-                  color="grey-3"
-                  text-color="grey-9"
-                  @click="openAttachment(file)"
-                >
-                  {{ file.name }}
-                  <q-tooltip>{{ t('action.view') }}</q-tooltip>
-                </q-chip>
-              </div>
-
-              <q-separator />
-
-              <!-- Body -->
-              <div
-                class="message-preview"
-                v-html="selectedBody"
+            <div class="col scroll q-pa-md">
+              <message-details-content
+                :message="selected"
+                :registrations
               />
             </div>
 
@@ -331,15 +233,8 @@
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
-import DOMPurify from 'dompurify';
-import type {
-  Message,
-  Registration,
-  ServiceFile,
-} from '@camp-registration/common/entities';
-import { useRegistrationHelper } from '@/composables/registrationHelper';
-import { formatPersonName } from '@/utils/formatters';
-import { useAPIService } from '@/services/APIService';
+import type { Message, Registration } from '@camp-registration/common/entities';
+import MessageDetailsContent from '@/components/event/contact/MessageDetailsContent.vue';
 
 const {
   messages,
@@ -360,17 +255,11 @@ const emit = defineEmits<{
 
 const { t, d } = useI18n();
 const quasar = useQuasar();
-const apiService = useAPIService();
-const { fullName, emails } = useRegistrationHelper();
 
 const open = ref<boolean>(false);
 const search = ref<string>('');
 const selectedId = ref<string | null>(null);
 const mobileDetail = ref<boolean>(false);
-
-const registrationsById = computed(
-  () => new Map(registrations.map((r) => [r.id, r])),
-);
 
 const filtered = computed<Message[]>(() => {
   const query = search.value.trim().toLowerCase();
@@ -386,11 +275,6 @@ const selected = computed<Message | null>(
   () => messages.find((message) => message.id === selectedId.value) ?? null,
 );
 
-// Only the open message is sanitized, so the list scales without parsing every body.
-const selectedBody = computed<string>(() =>
-  selected.value ? DOMPurify.sanitize(selected.value.body) : '',
-);
-
 function recipientCount(template: Message): number {
   return template.recipients?.length ?? 0;
 }
@@ -401,71 +285,11 @@ function hasBounce(template: Message): boolean {
   );
 }
 
-interface RecipientEmailEntry {
-  address: string;
-  bounced: boolean;
-  bounceReason: string | null;
-}
-
-interface RecipientEntry {
-  key: string;
-  name: string;
-  emails: RecipientEmailEntry[];
-  bounced: boolean;
-}
-
-function recipientEntries(template: Message): RecipientEntry[] {
-  return (template.recipients ?? []).map((recipient, index) => {
-    const registration = registrationsById.value.get(recipient.registrationId);
-    const name = registration
-      ? formatPersonName(fullName(registration))
-      : undefined;
-
-    // Delivery rows record what was actually sent, so they decide which
-    // addresses are shown — an address since changed on the registration
-    // still belongs here, carrying its failure. The registration's current
-    // addresses only stand in when no delivery has a `to`, as right after a
-    // send, before the per-email rows exist.
-    const deliveredEntries: RecipientEmailEntry[] =
-      recipient.deliveries.flatMap((delivery) =>
-        delivery.to
-          ? [
-              {
-                address: delivery.to,
-                bounced: Boolean(delivery.bouncedAt),
-                bounceReason: delivery.bounceReason,
-              },
-            ]
-          : [],
-      );
-
-    const emailEntries: RecipientEmailEntry[] =
-      deliveredEntries.length > 0
-        ? deliveredEntries
-        : (registration ? emails(registration) : []).map((address) => ({
-            address,
-            bounced: false,
-            bounceReason: null,
-          }));
-
-    return {
-      key: `${recipient.registrationId}-${index}`,
-      name: name ?? emailEntries[0]?.address ?? recipient.registrationId,
-      emails: emailEntries,
-      bounced: emailEntries.some((entry) => entry.bounced),
-    };
-  });
-}
-
 function selectMessage(template: Message) {
   selectedId.value = template.id;
   if (quasar.screen.lt.sm) {
     mobileDetail.value = true;
   }
-}
-
-function openAttachment(file: ServiceFile) {
-  window.open(apiService.getFileUrl(file.id), '_blank', 'noopener');
 }
 
 function onResend(template: Message) {
@@ -550,29 +374,6 @@ watch(
   color: var(--md3-on-secondary-container);
 }
 
-.recipient-chips {
-  max-height: 140px;
-  overflow-y: auto;
-}
-
-.message-preview {
-  line-height: 1.6;
-}
-
-.message-preview :deep(p) {
-  margin: 0 0 0.75em;
-}
-
-.message-preview :deep(ul),
-.message-preview :deep(ol) {
-  padding-left: 1.5em;
-  margin: 0 0 0.75em;
-}
-
-.message-preview :deep(a) {
-  color: var(--md3-primary);
-}
-
 @media (min-width: 600px) {
   .history-list {
     flex: 0 0 320px;
@@ -598,14 +399,9 @@ empty: 'Messages you send appear here.'
 search: 'Search messages'
 noResults: 'No messages match your search.'
 selectHint: 'Select a message to view it.'
-sentBy: 'Sent by {name}'
-replyTo: 'Reply-to'
-recipients: '{count} recipient | {count} recipient | {count} recipients'
-bounced: 'Bounced'
 someBounced: 'One or more recipients could not be reached'
 action:
   reuse: 'Use as template'
-  view: 'Open'
   delete: 'Delete'
   close: 'Close'
   back: 'Back'
@@ -621,14 +417,9 @@ empty: 'Von dir gesendete Nachrichten erscheinen hier.'
 search: 'Nachrichten suchen'
 noResults: 'Keine Nachrichten entsprechen deiner Suche.'
 selectHint: 'Wähle eine Nachricht aus, um sie anzuzeigen.'
-sentBy: 'Gesendet von {name}'
-replyTo: 'Antwort an'
-recipients: '{count} Empfänger | {count} Empfänger | {count} Empfänger'
-bounced: 'Unzustellbar'
 someBounced: 'Ein oder mehrere Empfänger konnten nicht erreicht werden'
 action:
   reuse: 'Als Vorlage verwenden'
-  view: 'Öffnen'
   delete: 'Löschen'
   close: 'Schließen'
   back: 'Zurück'
@@ -644,14 +435,9 @@ empty: 'Les messages que vous envoyez apparaissent ici.'
 search: 'Rechercher des messages'
 noResults: 'Aucun message ne correspond à votre recherche.'
 selectHint: 'Sélectionnez un message pour l’afficher.'
-sentBy: 'Envoyé par {name}'
-replyTo: 'Répondre à'
-recipients: '{count} destinataire | {count} destinataire | {count} destinataires'
-bounced: 'Non distribué'
 someBounced: "Un ou plusieurs destinataires n'ont pas pu être joints"
 action:
   reuse: 'Utiliser comme modèle'
-  view: 'Ouvrir'
   delete: 'Supprimer'
   close: 'Fermer'
   back: 'Retour'
@@ -667,14 +453,9 @@ empty: 'Wysłane przez Ciebie wiadomości pojawią się tutaj.'
 search: 'Szukaj wiadomości'
 noResults: 'Brak wiadomości pasujących do wyszukiwania.'
 selectHint: 'Wybierz wiadomość, aby ją wyświetlić.'
-sentBy: 'Wysłane przez {name}'
-replyTo: 'Odpowiedź do'
-recipients: '{count} odbiorca | {count} odbiorca | {count} odbiorców'
-bounced: 'Niedostarczono'
 someBounced: 'Co najmniej jeden odbiorca nie mógł zostać osiągnięty'
 action:
   reuse: 'Użyj jako szablon'
-  view: 'Otwórz'
   delete: 'Usuń'
   close: 'Zamknij'
   back: 'Wstecz'
@@ -690,14 +471,9 @@ empty: 'Zprávy, které odešlete, se zobrazí zde.'
 search: 'Hledat zprávy'
 noResults: 'Žádné zprávy neodpovídají hledání.'
 selectHint: 'Vyber zprávu pro zobrazení.'
-sentBy: 'Odeslal {name}'
-replyTo: 'Odpovědět na'
-recipients: '{count} příjemce | {count} příjemce | {count} příjemců'
-bounced: 'Nedoručeno'
 someBounced: 'Jednoho nebo více příjemců se nepodařilo zastihnout'
 action:
   reuse: 'Použít jako šablonu'
-  view: 'Otevřít'
   delete: 'Smazat'
   close: 'Zavřít'
   back: 'Zpět'

@@ -1,10 +1,12 @@
 import stores from './stores';
+import audit from './audit';
 import privacy from './privacy';
 
 export default {
   //app_name: '',
 
   stores,
+  audit,
   privacy,
   service: {
     internal: 'Błąd wewnętrzny',

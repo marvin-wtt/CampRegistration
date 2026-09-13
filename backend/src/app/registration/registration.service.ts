@@ -13,6 +13,8 @@ import {
 } from '#app/registration/registration.helper';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service';
+import { AuditService } from '#app/audit/audit.service';
+import { registrationAuditPolicy } from '#app/registration/registration.audit';
 import { PrivacyNoticeService } from '#app/privacyNotice/privacy-notice.service';
 
 /** The create uses relation connects throughout, so the stamp must too. */
@@ -39,6 +41,7 @@ export class RegistrationService extends BaseService {
     @inject(FileService) private readonly fileService: FileService,
     @inject(PrivacyNoticeService)
     private readonly privacyNoticeService: PrivacyNoticeService,
+    @inject(AuditService) private readonly audit: AuditService,
   ) {
     super();
   }
@@ -163,7 +166,7 @@ export class RegistrationService extends BaseService {
             ? 'ACCEPTED'
             : 'PENDING';
 
-        return transaction.registration.create({
+        const registration = await transaction.registration.create({
           data: {
             ...data,
             ...computedData,
@@ -182,6 +185,19 @@ export class RegistrationService extends BaseService {
             files: this.fileService.getFileConnectInput(fileIds, fileField),
           },
         });
+
+        await this.audit.record(transaction, {
+          action: 'created',
+          entityType: registrationAuditPolicy.entityType,
+          entityId: registration.id,
+          eventId: event.id,
+          // A registration is created by an external party via the public
+          // form — always system-attributed, never the logged-in manager who
+          // may happen to share the session.
+          actorId: null,
+        });
+
+        return registration;
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     );
@@ -201,13 +217,30 @@ export class RegistrationService extends BaseService {
     // Status and custom data are plain field writes; only form data and
     // custom file slots require a transactional file sync.
     if (!data.data && !data.customFiles) {
-      return this.prisma.registration.update({
-        where: { id: registrationId },
-        data: {
-          customData: data.customData,
-          status: data.status,
-        },
-        include: this.registrationInclude,
+      return this.prisma.$transaction(async (tx) => {
+        // Read the authoritative "before" inside the transaction so the audit
+        // diff is race-free and atomic with the write.
+        const before = await tx.registration.findUniqueOrThrow({
+          where: { id: registrationId },
+        });
+
+        const after = await tx.registration.update({
+          where: { id: registrationId },
+          data: {
+            customData: data.customData,
+            status: data.status,
+          },
+          include: this.registrationInclude,
+        });
+
+        await this.audit.recordChange(tx, 'updated', registrationAuditPolicy, {
+          before,
+          after,
+          entityId: registrationId,
+          eventId: event.id,
+        });
+
+        return after;
       });
     }
 
@@ -222,6 +255,12 @@ export class RegistrationService extends BaseService {
     }
 
     return this.prisma.$transaction(async (tx) => {
+      // Read the authoritative "before" inside the transaction so the audit
+      // diff is race-free and atomic with the write.
+      const before = await tx.registration.findUniqueOrThrow({
+        where: { id: registrationId },
+      });
+
       if (data.customFiles) {
         const invalidSlots = await this.fileService.syncFileSlots(
           tx,
@@ -252,7 +291,7 @@ export class RegistrationService extends BaseService {
           )
         : undefined;
 
-      return tx.registration.update({
+      const after = await tx.registration.update({
         where: { id: registrationId },
         data: {
           ...computedData,
@@ -263,11 +302,31 @@ export class RegistrationService extends BaseService {
         },
         include: this.registrationInclude,
       });
+
+      await this.audit.recordChange(tx, 'updated', registrationAuditPolicy, {
+        before,
+        after,
+        entityId: registrationId,
+        eventId: event.id,
+      });
+
+      return after;
     });
   }
 
   async deleteRegistration(registration: Registration) {
-    await this.prisma.registration.delete({ where: { id: registration.id } });
+    await this.prisma.$transaction(async (tx) => {
+      await tx.registration.delete({
+        where: { id: registration.id },
+      });
+
+      await this.audit.record(tx, {
+        action: 'deleted',
+        entityType: registrationAuditPolicy.entityType,
+        entityId: registration.id,
+        eventId: registration.eventId,
+      });
+    });
   }
 
   async updateRegistrationsComputedDataByEvent(

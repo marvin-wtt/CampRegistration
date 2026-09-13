@@ -32,6 +32,7 @@ import { NewsletterModule } from '#app/newsletter/newsletter.module';
 import { NewsletterSubscriberModule } from '#app/newsletterSubscriber/newsletter-subscriber.module';
 import { NewsletterManagerModule } from '#app/newsletterManager/newsletter-manager.module';
 import { NewsletterMessageModule } from '#app/newsletterMessage/newsletter-message.module';
+import { AuditModule } from '#app/audit/audit.module';
 import { AdminModule } from '#app/admin/admin.module';
 import { PermissionModule } from '#app/permission/permission.module';
 import type { CoreModule } from '#core/base/CoreModule';
@@ -41,6 +42,7 @@ import { QueueManagerModule } from '#core/queue/queue-manager.module';
 import { SchedulerModule } from '#core/scheduler/scheduler.module';
 import { MailModule } from '#core/mail/mail.module';
 import { RealtimeModule } from '#core/realtime/realtime.module';
+import { ContextModule } from '#core/context/context.module';
 
 // Order matters: earlier modules boot first and shut down last.
 export const createCoreModules = (): CoreModule[] => [
@@ -49,6 +51,7 @@ export const createCoreModules = (): CoreModule[] => [
   new QueueManagerModule(),
   new SchedulerModule(),
   new MailModule(),
+  new ContextModule(),
   new RealtimeModule(),
 ];
 
@@ -57,6 +60,7 @@ export const createAppModules = (): AppModule[] => [
   new SettingModule(),
   new HealthModule(),
   new QueueModule(),
+  new AuditModule(),
   new TokenModule(),
   new AuthModule(),
   new SetupModule(),
