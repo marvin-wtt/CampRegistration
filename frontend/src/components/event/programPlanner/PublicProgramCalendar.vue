@@ -50,9 +50,18 @@
           :key="slot.key"
           class="public-program__slot"
         >
-          <!-- Only shown for a slot with genuine side-by-side overlap — a
-               single lane needs no label, and labeling every slot would bury
-               the one piece of information that actually matters here. -->
+          <!-- Plan 'both' items always span the full width, regardless of
+               what else is in this slot. -->
+          <public-program-item-card
+            v-for="item in slot.full"
+            :key="item.id"
+            :item="item"
+            class="public-program__full-item"
+          />
+
+          <!-- Only shown for a genuine left/right (or generic-overlap) split
+               — a single lane needs no label, and labeling every slot would
+               bury the one piece of information that actually matters here. -->
           <div
             v-if="slot.lanes.length > 1"
             class="public-program__slot-label"
@@ -64,50 +73,25 @@
             {{ t('alternatives', { count: slot.lanes.length }) }}
           </div>
 
-          <div class="public-program__slot-lanes">
+          <div
+            v-if="slot.lanes.length > 0"
+            class="public-program__slot-lanes"
+          >
             <!-- Each lane never has two overlapping items — they're free to
                  stack sequentially. Only items in *different* lanes actually
-                 overlap each other. -->
+                 overlap each other (or, with a genuine a/b pair, the left
+                 lane is always plan 'a' and the right always plan 'b'). -->
             <div
               v-for="(lane, laneIndex) in slot.lanes"
               :key="laneIndex"
               class="public-program__lane"
             >
-              <div
+              <public-program-item-card
                 v-for="item in lane"
                 :key="item.id"
-                class="public-program__item"
-                :style="{ borderLeftColor: item.color ?? '#2196F3' }"
-              >
-                <div
-                  v-if="item.time"
-                  class="public-program__time"
-                >
-                  {{ item.time }}
-                </div>
-                <div
-                  class="public-program__title row items-center q-gutter-x-xs"
-                >
-                  <plan-letter-icon
-                    v-if="showPlanIcon(item)"
-                    :plan="item.plan === 'a' ? 'a' : 'b'"
-                    size="16px"
-                  />
-                  <span>{{ to(item.title) }}</span>
-                </div>
-                <div
-                  v-if="item.location"
-                  class="text-caption text-grey-7"
-                >
-                  {{ to(item.location) }}
-                </div>
-                <div
-                  v-if="item.details"
-                  class="text-caption text-grey-7"
-                >
-                  {{ to(item.details) }}
-                </div>
-              </div>
+                :item="item"
+                :show-plan-icon="showPlanIcon(item)"
+              />
             </div>
           </div>
         </div>
@@ -122,8 +106,7 @@ import { useI18n } from 'vue-i18n';
 import type { ProgramItem } from '@camp-registration/common/entities';
 import { currentDateInTimeZone } from '@camp-registration/common/utils';
 import { addDays, parseTimeToMinutes } from '@/utils/date';
-import { useObjectTranslation } from '@/composables/objectTranslation';
-import PlanLetterIcon from '@/components/event/programPlanner/PlanLetterIcon.vue';
+import PublicProgramItemCard from '@/components/event/programPlanner/PublicProgramItemCard.vue';
 
 const { date, minDate, maxDate, published, plan, items, timezone } =
   defineProps<{
@@ -147,7 +130,6 @@ const emit = defineEmits<{
 }>();
 
 const { t, locale } = useI18n();
-const { to } = useObjectTranslation();
 
 const dateLabel = computed<string>(() => {
   const today = currentDateInTimeZone(timezone);
@@ -177,10 +159,16 @@ interface TimedEntry {
 interface Slot {
   /** Key for `v-for` — the id of the slot's first item is stable enough. */
   key: string;
+  /** Plan `'both'` items — always full width, regardless of what else is in the slot. */
+  full: ProgramItem[];
   /**
-   * Items that never overlap each other and so can stack sequentially.
-   * Two items land in *different* lanes only when they actually overlap —
-   * lanes are the unit that's actually simultaneous, not the whole slot.
+   * The non-`'both'` items, laid out side by side. When the slot has at
+   * least one plan `'a'` item and at least one plan `'b'` item, this is
+   * *exactly* `[aItems, bItems]` — a left/right pair — mirroring
+   * `ProgramCalendar.vue`'s own `viewBoth` plan split, since a's and b's are
+   * weather-contingency alternatives by construction, not incidentally
+   * overlapping activities. Otherwise (no genuine a/b pair here) it falls
+   * back to generic time-overlap lanes for whichever single plan is present.
    */
   lanes: ProgramItem[][];
 }
@@ -256,10 +244,17 @@ function assignLanes(entries: TimedEntry[]): ProgramItem[][] {
 /**
  * Slots render so overlapping items are visually distinct from merely
  * sequential ones — a plain list sorted by start time reads two items
- * happening at the same time (two parallel activities, or something
- * alongside "free time") as sequential, which is actively misleading on a
- * page participants use to plan their day. Items without a time can't
- * meaningfully overlap anything and are never lane-split.
+ * happening at the same time as sequential, which is actively misleading on
+ * a page participants use to plan their day. Items without a time can't
+ * meaningfully overlap anything and are never split.
+ *
+ * The split itself follows the plan a/b/both convention, not a generic
+ * overlap heuristic: within a time-overlapping cluster, an 'a' item always
+ * belongs on the left and a 'b' item always on the right whenever both are
+ * present — that's what the plan field means — while 'both' items are
+ * always full width. Only when a cluster has no genuine a/b pair (e.g. two
+ * unrelated plan-'a'-only items that happen to overlap) does it fall back to
+ * generic time-overlap lanes for those remaining items.
  */
 const slots = computed<Slot[]>(() => {
   const untimed = items.filter((item) => !item.time);
@@ -267,14 +262,27 @@ const slots = computed<Slot[]>(() => {
 
   const result: Slot[] = untimed.map((item) => ({
     key: item.id,
+    full: [],
     lanes: [[item]],
   }));
 
   for (const cluster of clusters) {
-    result.push({
-      key: cluster[0]!.item.id,
-      lanes: assignLanes(cluster),
-    });
+    const full = cluster
+      .filter((entry) => entry.item.plan === 'both')
+      .map((entry) => entry.item);
+    const aItems = cluster
+      .filter((entry) => entry.item.plan === 'a')
+      .map((entry) => entry.item);
+    const bItems = cluster
+      .filter((entry) => entry.item.plan === 'b')
+      .map((entry) => entry.item);
+
+    const lanes: ProgramItem[][] =
+      aItems.length > 0 && bItems.length > 0
+        ? [aItems, bItems]
+        : assignLanes(cluster.filter((entry) => entry.item.plan !== 'both'));
+
+    result.push({ key: cluster[0]!.item.id, full, lanes });
   }
 
   return result;
@@ -322,22 +330,10 @@ function showPlanIcon(item: ProgramItem): boolean {
   gap: 8px;
 }
 
-.public-program__item {
-  min-width: 0;
-  border-left: 4px solid;
-  border-radius: 8px;
-  padding: 8px 12px;
-  background-color: var(--md3-surface-container-low);
-}
-
-.public-program__time {
-  font-variant-numeric: tabular-nums;
-  font-weight: 600;
-  font-size: 13px;
-}
-
-.public-program__title {
-  font-weight: 500;
+.public-program__full-item + .public-program__full-item,
+.public-program__full-item + .public-program__slot-label,
+.public-program__full-item + .public-program__slot-lanes {
+  margin-top: 8px;
 }
 </style>
 
