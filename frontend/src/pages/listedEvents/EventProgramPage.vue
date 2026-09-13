@@ -52,15 +52,16 @@
       </div>
 
       <public-program-calendar
-        :date="view.date"
+        :date="displayDate ?? view.date"
         :min-date="view.minDate"
         :max-date="view.maxDate"
         :published="view.published"
         :plan="view.published ? view.plan : null"
         :items="view.published ? view.items : []"
         :timezone="event?.timezone ?? 'UTC'"
-        @previous="jumpToDate(addDays(view.date, -1))"
-        @next="jumpToDate(addDays(view.date, 1))"
+        :loading="switching"
+        @previous="jumpToDate(addDays(displayDate ?? view.date, -1))"
+        @next="jumpToDate(addDays(displayDate ?? view.date, 1))"
       />
     </div>
   </page-state-handler>
@@ -82,11 +83,13 @@ import { isAPIServiceError, useAPIService } from '@/services/APIService';
 import { useErrorExtractor } from '@/composables/serviceHandler';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { useProgramPublicStream } from '@/composables/programPublicStream';
+import { useRouteQueryParams } from '@/composables/useRouteQueryParams';
 
 const { t } = useI18n();
 const { to } = useObjectTranslation();
 const api = useAPIService();
 const { extractErrorText } = useErrorExtractor();
+const { getStringQueryParam, setQueryParams } = useRouteQueryParams();
 
 const { eventId } = defineProps<{
   eventId: string;
@@ -97,12 +100,20 @@ const error = ref<string | null>(null);
 const knownError = ref<'unavailable' | 'not_found' | null>(null);
 const event = ref<EventDetails | undefined>();
 const view = ref<ProgramPublicView | undefined>();
+// Only set around a user-initiated day switch (`jumpToDate`) — a realtime
+// refetch of the same day shouldn't blank the page out with skeletons.
+const switching = ref<boolean>(false);
+// Set optimistically in `jumpToDate`, ahead of `view.date`, so the header
+// reflects the day the viewer asked for immediately instead of waiting for
+// the fetch to resolve — only the item list underneath waits, via `switching`.
+const displayDate = ref<string | undefined>();
 
-// `undefined` on the very first request — the backend then defaults to today
-// if the event is running, otherwise its first day. Once a view comes back,
-// every further fetch (browsing, or a realtime refetch) asks for the same
-// day again, so a live update never yanks the viewer back to today.
-let selectedDate: string | undefined;
+// Seeded once from the `?date=` query param, so a shared link opens on the
+// day it was shared for. `undefined` when absent — the backend then defaults
+// to today if the event is running, otherwise its first day. Once a view
+// comes back, every further fetch (browsing, or a realtime refetch) asks for
+// the same day again, so a live update never yanks the viewer back to today.
+let selectedDate: string | undefined = getStringQueryParam('date') ?? undefined;
 
 useMeta(() => ({
   title: event.value ? to(event.value.name) : '',
@@ -159,6 +170,8 @@ async function fetchView() {
     view.value = fetched;
     if (fetched.enabled) {
       selectedDate = fetched.date;
+      displayDate.value = fetched.date;
+      setQueryParams({ date: fetched.date });
     }
   } catch {
     // Transient refetch failures keep the last known view rather than
@@ -166,13 +179,20 @@ async function fetchView() {
   }
 }
 
-function jumpToDate(date: string) {
+async function jumpToDate(date: string) {
   if (!view.value?.enabled) {
     return;
   }
 
   selectedDate = clampDate(date, view.value.minDate, view.value.maxDate);
-  void fetchView();
+  displayDate.value = selectedDate;
+
+  switching.value = true;
+  try {
+    await fetchView();
+  } finally {
+    switching.value = false;
+  }
 }
 </script>
 

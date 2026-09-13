@@ -8,7 +8,7 @@
         flat
         round
         dense
-        :disable="date <= minDate"
+        :disable="loading || date <= minDate"
         @click="emit('previous')"
       >
         <q-tooltip>{{ t('previous') }}</q-tooltip>
@@ -19,23 +19,45 @@
         flat
         round
         dense
-        :disable="date >= maxDate"
+        :disable="loading || date >= maxDate"
         @click="emit('next')"
       >
         <q-tooltip>{{ t('next') }}</q-tooltip>
       </q-btn>
     </div>
 
-    <div
-      v-if="!published"
-      class="text-body2 text-grey-7 text-center q-pa-md"
+    <!-- A day switch is a fresh fetch for a different day's data, not a
+         partial update of what's on screen — so it crossfades to skeletons
+         entirely rather than dimming stale items that are about to be thrown
+         away. Each branch gets its own `key` so the transition always sees a
+         genuinely new node to fade in, not an existing `div` being patched. -->
+    <transition
+      name="public-program-fade"
+      mode="out-in"
     >
-      {{ t('notPublished') }}
-    </div>
-
-    <template v-else>
       <div
-        v-if="items.length === 0"
+        v-if="loading"
+        key="loading"
+        class="public-program__list"
+      >
+        <public-program-item-card-skeleton
+          v-for="(width, index) in skeletonWidths"
+          :key="index"
+          :title-width="width"
+        />
+      </div>
+
+      <div
+        v-else-if="!published"
+        key="unpublished"
+        class="text-body2 text-grey-7 text-center q-pa-md"
+      >
+        {{ t('notPublished') }}
+      </div>
+
+      <div
+        v-else-if="items.length === 0"
+        key="empty"
         class="text-body2 text-grey-7 text-center q-pa-md"
       >
         {{ t('empty') }}
@@ -43,6 +65,7 @@
 
       <div
         v-else
+        key="list"
         class="public-program__list"
       >
         <div
@@ -96,7 +119,7 @@
           </div>
         </div>
       </div>
-    </template>
+    </transition>
   </div>
 </template>
 
@@ -107,22 +130,37 @@ import type { ProgramItem } from '@camp-registration/common/entities';
 import { currentDateInTimeZone } from '@camp-registration/common/utils';
 import { addDays, parseTimeToMinutes } from '@/utils/date';
 import PublicProgramItemCard from '@/components/event/programPlanner/PublicProgramItemCard.vue';
+import PublicProgramItemCardSkeleton from '@/components/event/programPlanner/PublicProgramItemCardSkeleton.vue';
 
-const { date, minDate, maxDate, published, plan, items, timezone } =
-  defineProps<{
-    /** The day being shown, `YYYY-MM-DD`. */
-    date: string;
-    /** Inclusive navigation bounds — the event's own dates. */
-    minDate: string;
-    maxDate: string;
-    /** Whether `date` specifically has a plan published for it. */
-    published: boolean;
-    /** The plan published for `date`; `null` when `published` is `false`. */
-    plan: 'a' | 'b' | 'both' | null;
-    items: ProgramItem[];
-    /** The event's own IANA timezone — what "today"/"tomorrow" are relative to. */
-    timezone: string;
-  }>();
+const {
+  date,
+  minDate,
+  maxDate,
+  published,
+  plan,
+  items,
+  timezone,
+  loading = false,
+} = defineProps<{
+  /** The day being shown, `YYYY-MM-DD`. */
+  date: string;
+  /** Inclusive navigation bounds — the event's own dates. */
+  minDate: string;
+  maxDate: string;
+  /** Whether `date` specifically has a plan published for it. */
+  published: boolean;
+  /** The plan published for `date`; `null` when `published` is `false`. */
+  plan: 'a' | 'b' | 'both' | null;
+  items: ProgramItem[];
+  /** The event's own IANA timezone — what "today"/"tomorrow" are relative to. */
+  timezone: string;
+  /** Whether a different day is currently being fetched to replace this one. */
+  loading?: boolean;
+}>();
+
+// Varied widths so the placeholder list doesn't look like a row of identical
+// bars — the exact values are arbitrary, just visually distinct.
+const skeletonWidths = ['85%', '60%', '70%'];
 
 const emit = defineEmits<{
   (e: 'previous'): void;
@@ -334,6 +372,16 @@ function showPlanIcon(item: ProgramItem): boolean {
 .public-program__full-item + .public-program__slot-label,
 .public-program__full-item + .public-program__slot-lanes {
   margin-top: 8px;
+}
+
+.public-program-fade-enter-active,
+.public-program-fade-leave-active {
+  transition: opacity 0.15s ease;
+}
+
+.public-program-fade-enter-from,
+.public-program-fade-leave-to {
+  opacity: 0;
 }
 </style>
 
