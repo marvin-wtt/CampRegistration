@@ -18,6 +18,10 @@ import { countriesToLocales } from '#utils/countriesToLocales';
 import moment from 'moment';
 import { ulid } from 'ulidx';
 import {
+  naiveDateTimeToUtcCarrier,
+  utcCarrierToNaiveDateTime,
+} from '@camp-registration/common/utils';
+import {
   eventListed,
   eventUnlisted,
   eventCreateInternational,
@@ -68,8 +72,9 @@ const assertEventModel = async (id: string, data: EventCreateData) => {
     maxParticipants: data.maxParticipants,
     minAge: data.minAge,
     maxAge: data.maxAge,
-    startAt: new Date(data.startAt),
-    endAt: new Date(data.endAt),
+    startAt: naiveDateTimeToUtcCarrier(data.startAt as string),
+    endAt: naiveDateTimeToUtcCarrier(data.endAt as string),
+    timezone: data.timezone ?? 'Europe/Berlin',
     price: data.price,
     location: data.location,
     form: data.form ?? expect.anything(),
@@ -109,10 +114,12 @@ const assertEventResponseBody = (
     maxAge: data.maxAge,
     startAt: data.startAt,
     endAt: data.endAt,
+    timezone: data.timezone ?? 'Europe/Berlin',
     price: data.price,
     location: data.location,
     freePlaces: data.maxParticipants,
     registrationStatus: eventRegistrationStatus(data as Event),
+    logo: null,
     form: data.form ?? expect.anything(),
     themes: data.themes ?? expect.anything(),
   });
@@ -742,14 +749,16 @@ describe('/api/v1/events', () => {
         maxParticipants: event.maxParticipants,
         minAge: event.minAge,
         maxAge: event.maxAge,
-        startAt: event.startAt.toISOString(),
-        endAt: event.endAt.toISOString(),
+        startAt: utcCarrierToNaiveDateTime(event.startAt),
+        endAt: utcCarrierToNaiveDateTime(event.endAt),
+        timezone: event.timezone,
         price: event.price,
         location: event.location,
         form: event.form,
         themes: event.themes,
         freePlaces: expect.anything(),
         registrationStatus: eventRegistrationStatus(event),
+        logo: null,
       });
     });
 
@@ -1392,12 +1401,12 @@ describe('/api/v1/events', () => {
           maxParticipants: 10,
           minAge: 10,
           maxAge: 15,
-          startAt: moment()
-            .add('20 days')
-            .startOf('hour')
-            .toDate()
-            .toISOString(),
-          endAt: moment().add('22 days').startOf('hour').toDate().toISOString(),
+          startAt: utcCarrierToNaiveDateTime(
+            moment().add('20 days').startOf('hour').toDate(),
+          ),
+          endAt: utcCarrierToNaiveDateTime(
+            moment().add('22 days').startOf('hour').toDate(),
+          ),
           price: 100.0,
           location: 'Somewhere',
           form: {},

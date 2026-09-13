@@ -23,5 +23,22 @@ export default {
           '$t(email:footer.cause) jesteś osobą kontaktową dla tego wydarzenia.',
       },
     },
+    messageBounced: {
+      subject: 'Wiadomość niedostarczona | {{ event.name }}',
+      preview:
+        'Wiadomość do {{ recipient }} nie mogła zostać dostarczona dla {{ event.name }}',
+      text: {
+        title: 'Dzień dobry,',
+        information:
+          'Twoja wiadomość „{{ messageSubject }}” do {{ recipient }} dotycząca {{ event.name }} nie mogła zostać dostarczona.',
+        button: 'Zobacz zgłoszenia',
+        greeting: 'Pozdrawiamy,',
+        teamName: 'Zespół {{ appName }}',
+      },
+      footer: {
+        cause:
+          '$t(email:footer.cause) jesteś osobą kontaktową dla tego wydarzenia.',
+      },
+    },
   },
 };

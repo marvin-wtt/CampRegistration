@@ -7,11 +7,7 @@ import type { EventQuery } from '@camp-registration/common/entities';
 import { controller } from '#utils/bindController';
 import { realtimeStream } from '#app/realtime/realtime.stream';
 import { resolve } from '#core/ioc/container';
-import {
-  hasEventPermission,
-  eventOrganizationVerified,
-} from '#app/event/event.guard';
-import { or } from '#core/guard';
+import { hasEventPermission, eventViewGuard } from '#app/event/event.guard';
 import { organizationFromBody } from '#app/organization/organization.middleware';
 import { organizationMember } from '#app/organization/organization.guard';
 
@@ -33,9 +29,12 @@ export class EventRouter extends ModuleRouter {
       controller(eventController, 'index'),
     );
 
+    // `eventViewGuard` is shared with the link-preview route in
+    // `event-meta.routes.ts`. Read the warning on `eventPubliclyVisible` before
+    // changing who may see an event.
     this.router.get(
       '/:eventId',
-      guard(or(eventOrganizationVerified, hasEventPermission('event.view'))),
+      guard(eventViewGuard),
       controller(eventController, 'show'),
     );
 

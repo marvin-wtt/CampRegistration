@@ -1,6 +1,6 @@
 import { BaseService } from '#core/base/BaseService';
 import { injectable } from 'inversify';
-import { permissionRegistry } from '#core/permission-registry';
+import { permissionRegistry } from '#core/permission/permission.registry';
 import type {
   EventScopedPermission,
   NewsletterPermission,

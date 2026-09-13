@@ -24,6 +24,7 @@ import { useChoreService } from '@/services/ChoreService';
 import { useAdminService } from '@/services/AdminService';
 import { useOrganizationService } from '@/services/OrganizationService';
 import { useOrganizationMemberService } from '@/services/OrganizationMemberService';
+import { useTranslationService } from '@/services/TranslationService';
 import { useAuditService } from '@/services/AuditService';
 
 export function useAPIService() {
@@ -53,6 +54,7 @@ export function useAPIService() {
     ...useQueueService(),
     ...useTaskService(),
     ...useChoreService(),
+    ...useTranslationService(),
     ...useAuditService(),
   };
 }

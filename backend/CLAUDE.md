@@ -15,7 +15,10 @@ class ExampleModule implements AppModule {
     /* middleware */
   }
   registerRoutes(router: AppRouter): void {
-    /* mount router */
+    /* mount router under /api/v1 */
+  }
+  registerWebRoutes(router: AppRouter): void {
+    /* browser-facing HTML, at the app root and ahead of the SPA shell */
   }
 
   registerPermissions(): ScopedPermissions {
@@ -28,11 +31,23 @@ class ExampleModule implements AppModule {
   registerJobs(scheduler: JobScheduler): void {
     /* recurring cron jobs */
   }
+  ready(): Promise<void> | void {
+    /* start consuming what other modules registered, e.g. a queue worker */
+  }
+  quiesce(): void {
+    /* stop producing new work, before any shutdown() runs */
+  }
   shutdown(): Promise<void> | void {
     /* cleanup on shutdown */
   }
 }
 ```
+
+Cross-cutting mechanisms (`src/core/`: database, i18n, queue, scheduler, mail,
+realtime) implement `CoreModule` instead — the same lifecycle minus the
+routing/permission hooks. `modules.ts` lists them separately: core modules boot
+before every `AppModule` and shut down after them, so a feature can rely on
+them throughout its own teardown.
 
 ## Dependency Injection (InversifyJS)
 
@@ -92,7 +107,7 @@ export interface PermissionScopes {
   (`permissionRegistry.for('event').getPermissions(role)`). Registration is additive, so no one file holds the whole
   policy — `tests/unit/core/permission-registry.test.ts`
   snapshots the assembled result.
-- **Guard**: `scoped(scope, permission)` (`#core/permission.guard`) reads the bound model named by the scope's
+- **Guard**: `scoped(scope, permission)` (`#core/permission/permission.guard`) reads the bound model named by the scope's
   `ScopeResolver` and asks it for the user's permission set. `hasEventPermission(p)`, `newsletterManager(p)` and
   `organizationMember(p)` are one-line aliases of it. The owning module declares its resolver by returning it from
   `registerScopeResolvers()`; `boot.ts` registers each one and then calls `assertScopeResolversComplete()`, so a scope
@@ -163,7 +178,8 @@ Events and newsletters are owned by an `Organization`, moderated by system admin
   `guard(organizationMember(…))`.
 - An unverified organization may build events and newsletters freely, publication settings included — reach is **gated at
   the outward-facing action**, never at write time. The gates are
-  `buildEventWhere` (public listing), the event `show` route guard, `registrationOpen`
+  `buildEventWhere` (public listing), the event `show` route guard,
+  `eventPubliclyVisible` (link previews — see below), `registrationOpen`
   combined with `eventOrganizationVerified` (registrations), and
   `newsletterOrganizationVerified` (sending newsletter messages). Management UI reads
   `Event.organizationVerificationStatus` / `Newsletter.organizationVerificationStatus` to explain why a event isn't
@@ -208,6 +224,34 @@ Adding realtime to a module (no routing/stream changes needed):
 Driver: `REALTIME_DRIVER` env (`redis`/`memory`); defaults to `redis` only when
 `QUEUE_DRIVER=redis`. Multi-instance deploys on other queue drivers must set
 `REALTIME_DRIVER=redis`.
+
+## Link previews (Open Graph)
+
+Crawlers never run the SPA, so `/events/:eventId` (and the legacy `/camps/:eventId`)
+is served with the shell's `<head>` rewritten. Three layers:
+
+- **`#core/meta/metaRoute`** — `metaRoute(resolver)` owns the mechanism: load the
+  built shell (cached per path by mtime), inject, set cache headers. A resolver
+  returns `PageMeta` or `null`, and _every_ way of not producing a page — declined,
+  no build, unrecognised shell, a throw — continues to the next handler, which
+  serves the shell unchanged. A preview is never wrong, only ever absent.
+- **`#utils/pageMeta`** — the pure rendering: escape, replace the shell's own
+  `<title>`/`description`/`og:*`, emit Open Graph plus `twitter:card` and a canonical link.
+- **the module** — `EventModule.registerWebRoutes()` declares the route beside its
+  JSON routes; `buildEventPageMeta` turns the event into values. `#routes/web`
+  collects every module's web routes and `#routes/static` mounts them ahead of the shell.
+
+A resolver **must not depend on who is asking** — rendered pages are publicly
+cacheable and shared between viewers.
+
+**It publishes event data anonymously, so it must agree with
+`GET /api/v1/events/:eventId`.** Visibility comes from `eventPubliclyVisible`,
+the anonymous half of that route's `eventViewGuard` — narrow the anonymous rule
+there and both narrow together; never inline a condition in the meta route. The
+response must stay a pure function of the event (no permission branch, no
+`guard()` wrapper, whose `admin` OR would make it viewer-dependent and unsafe to
+cache), and its data must come from `EventResource`.
+`tests/integration/app/event-meta.test.ts` asserts both properties.
 
 ## Backend Path Alias
 

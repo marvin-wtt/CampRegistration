@@ -3,10 +3,10 @@ import { OrganizationRouter } from './organization.routes.js';
 import { organizationScopeResolver } from './organization.guard.js';
 import { OrganizationService } from './organization.service.js';
 import { OrganizationController } from './organization.controller.js';
-import type { ScopeResolvers } from '#core/permission.guard';
+import type { ScopeResolvers } from '#core/permission/permission.guard';
 import type { ScopedPermissions } from '@camp-registration/common/permissions';
 import { resolve } from '#core/ioc/container';
-import { MailableRegistry } from '#app/mail/mail.registry';
+import { MailableRegistry } from '#core/mail/mail.registry';
 import {
   OrganizationReviewPendingMessage,
   OrganizationVerifiedMessage,
@@ -30,7 +30,7 @@ export class OrganizationModule implements AppModule {
     registry.register(OrganizationRejectedMessage);
   }
 
-  registerRoutes(router: AppRouter): void {
+  registerApiRoutes(router: AppRouter): void {
     router.useRouter('/organizations', new OrganizationRouter());
   }
 

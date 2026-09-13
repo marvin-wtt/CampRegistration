@@ -11,7 +11,7 @@ import { request } from '../utils/request.js';
 import prisma from '../utils/prisma.js';
 import { ulid } from 'ulidx';
 import { randomBytes } from 'node:crypto';
-import { NoOpMailer } from '../../../src/app/mail/noop.mailer.js';
+import { NoOpMailer } from '#/core/mail/noop.mailer.js';
 import { expectEmailCount, expectEmailWith } from '../utils/mail';
 import type { NewsletterManagerRole } from '@camp-registration/common/permissions';
 

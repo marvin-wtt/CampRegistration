@@ -13,7 +13,7 @@ import {
 } from '@camp-registration/common/permissions';
 import type { ProfileUser } from './profile.types.js';
 import { JsonResource } from '#core/resource/JsonResource';
-import { permissionRegistry } from '#core/permission-registry';
+import { permissionRegistry } from '#core/permission/permission.registry';
 
 /** Marks event access that comes from administering the owning organization. */
 const ORGANIZATION_DERIVED_ROLE = 'ORGANIZATION';

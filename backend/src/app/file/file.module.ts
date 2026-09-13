@@ -14,7 +14,7 @@ export class FileModule implements AppModule {
     options.bind(FileRouter).toSelf().inSingletonScope();
   }
 
-  registerRoutes(router: AppRouter) {
+  registerApiRoutes(router: AppRouter) {
     router.useRouter('/files', resolve(FileRouter));
   }
 
@@ -40,6 +40,10 @@ export class FileModule implements AppModule {
         );
       }
     });
+  }
+
+  ready() {
+    resolve(FileService).startWorker();
   }
 
   async shutdown() {

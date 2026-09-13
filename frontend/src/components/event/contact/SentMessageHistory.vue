@@ -128,14 +128,24 @@
                   </q-item-label>
                 </q-item-section>
                 <q-item-section side>
-                  <q-chip
-                    dense
-                    outline
-                    icon="group"
-                    :label="String(recipientCount(item))"
-                    color="grey-7"
-                    class="q-mr-none"
-                  />
+                  <div class="row items-center q-gutter-xs">
+                    <q-icon
+                      v-if="hasBounce(item)"
+                      name="error_outline"
+                      color="negative"
+                      size="18px"
+                    >
+                      <q-tooltip>{{ t('someBounced') }}</q-tooltip>
+                    </q-icon>
+                    <q-chip
+                      dense
+                      outline
+                      icon="group"
+                      :label="String(recipientCount(item))"
+                      color="grey-7"
+                      class="q-mr-none"
+                    />
+                  </div>
                 </q-item-section>
               </q-item>
             </template>

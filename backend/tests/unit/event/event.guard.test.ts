@@ -11,7 +11,7 @@ import {
   eventScopeResolver,
   registrationOpen,
 } from '#app/event/event.guard';
-import { registerScopeResolver } from '#core/permission.guard';
+import { registerScopeResolver } from '#core/permission/permission.guard';
 
 // `hasEventPermission()` is an alias of the generic `scoped('event', …)` guard, which
 // looks the event resolver up in the boot-time registry. `boot()` does not run

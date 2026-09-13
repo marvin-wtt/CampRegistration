@@ -1,5 +1,5 @@
-import { MailBase } from '#app/mail/mail.base';
-import type { AddressLike, Content } from '#app/mail/mail.types';
+import { MailBase } from '#core/mail/mail.base';
+import type { AddressLike, Content } from '#core/mail/mail.types';
 import config from '#config/index';
 
 export interface FeedbackData {

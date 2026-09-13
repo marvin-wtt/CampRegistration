@@ -10,7 +10,7 @@ export class BedModule implements AppModule {
     options.bind(BedController).toSelf().inSingletonScope();
   }
 
-  registerRoutes(router: AppRouter): void {
+  registerApiRoutes(router: AppRouter): void {
     router.useRouter('/events/:eventId/rooms/:roomId/beds', new BedRouter());
   }
 

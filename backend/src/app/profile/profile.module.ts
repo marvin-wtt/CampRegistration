@@ -7,7 +7,7 @@ export class ProfileModule implements AppModule {
     options.bind(ProfileController).toSelf().inSingletonScope();
   }
 
-  registerRoutes(router: AppRouter): void {
+  registerApiRoutes(router: AppRouter): void {
     router.useRouter('/profile', new ProfileRouter());
   }
 }

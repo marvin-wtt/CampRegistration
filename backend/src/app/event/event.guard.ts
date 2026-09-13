@@ -1,7 +1,7 @@
 import type { Request } from 'express';
 import type { ScopePermission } from '@camp-registration/common/permissions';
 import { type GuardFn, or } from '#core/guard';
-import { scoped, type ScopeResolver } from '#core/permission.guard';
+import { scoped, type ScopeResolver } from '#core/permission/permission.guard';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 import { EventService } from '#app/event/event.service';
@@ -36,6 +36,14 @@ export const eventOrganizationVerified = (req: Request): boolean => {
     req.modelOrFail('event').organization.verificationStatus === 'VERIFIED'
   );
 };
+
+// Common guard for aoi and meta route
+export const eventPubliclyVisible: GuardFn = eventOrganizationVerified;
+
+export const eventViewGuard: GuardFn = or(
+  eventPubliclyVisible,
+  hasEventPermission('event.view'),
+);
 
 async function prepareRequestModels(req: Request) {
   const file = req.modelOrFail('file');

@@ -40,12 +40,14 @@ const createEvent = (overrides: Partial<Event> = {}): Event => ({
   maxParticipants: 100,
   startAt: '2026-07-12T00:00:00Z',
   endAt: '2026-07-19T00:00:00Z',
+  timezone: 'UTC',
   minAge: 8,
   maxAge: 14,
   price: 180,
   location: 'Bad Segeberg',
   freePlaces: null,
   registrationStatus: 'open',
+  logo: null,
   ...overrides,
 });
 

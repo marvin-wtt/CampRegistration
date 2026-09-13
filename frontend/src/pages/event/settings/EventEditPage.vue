@@ -79,6 +79,7 @@
                     val.length <= 255 || t('validation.organizer.length'),
                 ]"
                 hide-bottom-space
+                no-translation
                 outlined
                 rounded
               >
@@ -98,6 +99,7 @@
                 ]"
                 type="email"
                 hide-bottom-space
+                no-translation
                 outlined
                 rounded
               >
@@ -162,6 +164,7 @@
                 ]"
                 always
                 hide-bottom-space
+                no-translation
                 outlined
                 rounded
                 type="number"
@@ -300,6 +303,16 @@
                   </template>
                 </time-input>
               </div>
+
+              <!-- Timezone -->
+              <timezone-select
+                v-model="event.timezone"
+                :disable="loading"
+                :label="t('field.timezone')"
+                :rules="[
+                  (val?: string) => !!val || t('validation.timezone.empty'),
+                ]"
+              />
             </q-card-section>
           </q-card>
 
@@ -471,6 +484,7 @@ import TimeInput from '@/components/common/inputs/TimeInput.vue';
 import TranslatedInput from '@/components/common/inputs/TranslatedInput.vue';
 import DateRangeInput from '@/components/common/inputs/DateRangeInput.vue';
 import DateTimeInput from '@/components/common/inputs/DateTimeInput.vue';
+import TimezoneSelect from '@/components/common/inputs/TimezoneSelect.vue';
 import { useI18n } from 'vue-i18n';
 import type { QSelectOption } from 'quasar';
 import { deepToRaw } from '@/utils/deepToRaw';
@@ -616,6 +630,7 @@ field:
   dateRange: 'Start and end date'
   startTime: 'Start time'
   endTime: 'End time'
+  timezone: 'Timezone'
   registrationOpensAt: 'Registration opens (optional)'
   registrationClosesAt: 'Registration closes (optional)'
   minAge: 'Minimum age'
@@ -643,6 +658,8 @@ validation:
   endAt:
     empty: 'Please select an end time'
     min: 'End time must be after the start time'
+  timezone:
+    empty: 'Please select a timezone'
   minAge:
     empty: 'Please enter a minimum age'
     positive: 'Minimum age must be a positive number'
@@ -695,6 +712,7 @@ field:
   dateRange: 'Start- und Enddatum'
   startTime: 'Startzeit'
   endTime: 'Endzeit'
+  timezone: 'Zeitzone'
   registrationOpensAt: 'Anmeldung öffnet (optional)'
   registrationClosesAt: 'Anmeldung schließt (optional)'
   minAge: 'Mindestalter'
@@ -722,6 +740,8 @@ validation:
   endAt:
     empty: 'Bitte wählen Sie eine Endzeit aus'
     min: 'Die Endzeit muss nach der Startzeit liegen'
+  timezone:
+    empty: 'Bitte wählen Sie eine Zeitzone aus'
   minAge:
     empty: 'Bitte geben Sie ein Mindestalter ein'
     positive: 'Das Mindestalter muss eine positive Zahl sein'
@@ -775,6 +795,7 @@ field:
   dateRange: 'Date de début et de fin'
   startTime: 'Heure de début'
   endTime: 'Heure de fin'
+  timezone: 'Fuseau horaire'
   registrationOpensAt: 'Ouverture des inscriptions (optionnel)'
   registrationClosesAt: 'Clôture des inscriptions (optionnel)'
   minAge: 'Âge minimum'
@@ -804,6 +825,8 @@ validation:
   endAt:
     empty: 'Veuillez sélectionner une heure de fin'
     min: "L'heure de fin doit être postérieure à l'heure de début"
+  timezone:
+    empty: 'Veuillez sélectionner un fuseau horaire'
   minAge:
     empty: 'Veuillez entrer un âge minimum'
     positive: "L'âge minimum doit être un nombre positif"
@@ -856,6 +879,7 @@ field:
   dateRange: 'Data rozpoczęcia i zakończenia'
   startTime: 'Czas rozpoczęcia'
   endTime: 'Czas zakończenia'
+  timezone: 'Strefa czasowa'
   registrationOpensAt: 'Rejestracja otwierana (opcjonalnie)'
   registrationClosesAt: 'Rejestracja zamykana (opcjonalnie)'
   minAge: 'Minimalny wiek'
@@ -883,6 +907,8 @@ validation:
   endAt:
     empty: 'Wybierz godzinę zakończenia'
     min: 'Godzina zakończenia musi być późniejsza niż godzina rozpoczęcia'
+  timezone:
+    empty: 'Wybierz strefę czasową'
   minAge:
     empty: 'Podaj minimalny wiek'
     positive: 'Minimalny wiek musi być liczbą dodatnią'
@@ -935,6 +961,7 @@ field:
   dateRange: 'Datum začátku a konce'
   startTime: 'Čas začátku'
   endTime: 'Čas konce'
+  timezone: 'Časové pásmo'
   registrationOpensAt: 'Otevření registrace (volitelné)'
   registrationClosesAt: 'Uzavření registrace (volitelné)'
   minAge: 'Minimální věk'
@@ -962,6 +989,8 @@ validation:
   endAt:
     empty: 'Vyberte čas konce'
     min: 'Čas konce musí být pozdější než čas začátku'
+  timezone:
+    empty: 'Vyberte časové pásmo'
   minAge:
     empty: 'Zadejte minimální věk'
     positive: 'Minimální věk musí být kladné číslo'

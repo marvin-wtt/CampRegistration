@@ -9,7 +9,7 @@ export class UserModule implements AppModule {
     options.bind(UserController).toSelf().inSingletonScope();
   }
 
-  registerRoutes(router: AppRouter): void {
+  registerApiRoutes(router: AppRouter): void {
     router.useRouter('/users', new UserRouter());
   }
 }

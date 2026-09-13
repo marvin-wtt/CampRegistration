@@ -215,6 +215,7 @@
                 val.length <= 255 || t('validation.organizer.length'),
             ]"
             hide-bottom-space
+            no-translation
             outlined
             rounded
           >
@@ -234,6 +235,7 @@
             ]"
             type="email"
             hide-bottom-space
+            no-translation
             outlined
             rounded
           >
@@ -334,6 +336,7 @@
             ]"
             always
             hide-bottom-space
+            no-translation
             outlined
             rounded
             type="number"
@@ -505,6 +508,7 @@ import { useOrganizationPermissions } from '@/composables/organizationPermission
 import OrganizationCreateDialog from '@/components/organization/OrganizationCreateDialog.vue';
 import { storeToRefs } from 'pinia';
 import { useQuasar } from 'quasar';
+import { browserTimezone } from '@/utils/timezones';
 
 const assignedEventsStore = useAssignedEventsStore();
 const eventStore = useEventsStore();
@@ -516,6 +520,9 @@ const DEFAULT_DATA = {
   preset: 'camp',
   // Required by the API; the first step will not advance without it.
   organizationId: '',
+  // Not shown to the organizer — the browser's own zone is right for the
+  // overwhelming majority of events; correcting it is a settings-page edit.
+  timezone: browserTimezone(),
 } as EventCreateData;
 
 const step = ref<number>(0);

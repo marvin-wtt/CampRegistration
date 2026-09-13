@@ -18,14 +18,19 @@ export interface Event extends Identifiable {
   organizer: Translatable;
   contactEmail: Translatable;
   maxParticipants: Translatable<number>;
+  /** Naive local datetime (`YYYY-MM-DDTHH:mm:ss`, no offset), local to `timezone` — never a UTC instant. */
   startAt: string;
+  /** Naive local datetime (`YYYY-MM-DDTHH:mm:ss`, no offset), local to `timezone` — never a UTC instant. */
   endAt: string;
+  /** IANA zone `startAt`/`endAt` are local to. */
+  timezone: string;
   minAge: number;
   maxAge: number;
   location: Translatable | null;
   price: number;
   freePlaces: Translatable<number> | null;
   registrationStatus: EventRegistrationStatus;
+  logo: string | null;
 }
 
 export interface EventDetails extends Event {
@@ -38,6 +43,7 @@ export type EventCreateData = Omit<
   | 'id'
   | 'freePlaces'
   | 'registrationStatus'
+  | 'logo'
   | 'organizationName'
   | 'organizationVerificationStatus'
   | 'locales'

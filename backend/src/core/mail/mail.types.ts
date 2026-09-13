@@ -1,0 +1,59 @@
+import type { Readable } from 'stream';
+
+export type Address = string | { name: string; address: string };
+
+export type AddressLike = Address | Address[];
+
+export interface MailAttachment {
+  filename: string;
+  content: Buffer | Readable | string;
+  contentType?: string;
+  contentDisposition?: 'attachment' | 'inline';
+}
+
+export type MailPriority = 'low' | 'normal' | 'high';
+
+export interface Envelope {
+  subject: string;
+  to: AddressLike;
+  from?: Address | undefined;
+  replyTo?: AddressLike | undefined;
+  cc?: AddressLike | undefined;
+  bcc?: AddressLike | undefined;
+  priority?: MailPriority | undefined;
+  headers?: Record<string, string> | undefined;
+  messageId?: string | undefined;
+  dsn?: boolean | undefined;
+}
+
+export interface TextContent {
+  text: string;
+}
+
+export interface ViewContent {
+  template: string;
+  context: Record<string, unknown>;
+  text?: string;
+}
+
+export interface HtmlContent extends Partial<TextContent> {
+  html: string;
+}
+
+export type Content = ViewContent | HtmlContent | TextContent;
+
+export interface BuiltMail extends Envelope {
+  text?: string;
+  html?: string;
+  attachments?: MailAttachment[];
+}
+
+export type Translator = (
+  key: string,
+  context?: Record<string, unknown>,
+) => string;
+
+export interface TranslationOptions {
+  namespace?: string | undefined;
+  keyPrefix?: string | undefined;
+}

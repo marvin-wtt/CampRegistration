@@ -4,7 +4,7 @@ import {
   clearScopeResolvers,
   registerScopeResolver,
   type ScopeResolver,
-} from '#core/permission.guard';
+} from '#core/permission/permission.guard';
 import { PERMISSION_SCOPES } from '@camp-registration/common/permissions';
 
 const stub = <S extends 'event' | 'newsletter' | 'organization'>(

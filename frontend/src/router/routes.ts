@@ -11,6 +11,13 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/pages/LandingPage.vue'),
       },
       {
+        // Maintain support for legacy links
+        path: 'camps/:pathMatch(.*)*',
+        redirect: (to) => ({
+          path: ['/events', ...(to.params.pathMatch ?? [])].join('/'),
+        }),
+      },
+      {
         path: 'events',
         children: [
           {
@@ -138,6 +145,7 @@ const routes: RouteRecordRaw[] = [
         path: '',
         redirect: { name: 'management.events' },
       },
+      // CAUTION: This route needs to stay in sync with the backend metadata injector for SEO and link previews
       {
         path: 'events',
         children: [

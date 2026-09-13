@@ -22,5 +22,21 @@ export default {
         cause: '$t(email:footer.cause) tu es un contact de cet événement.',
       },
     },
+    messageBounced: {
+      subject: 'Message non distribué | {{ event.name }}',
+      preview:
+        "Un message à {{ recipient }} n'a pas pu être distribué pour {{ event.name }}",
+      text: {
+        title: 'Salut,',
+        information:
+          "Votre message « {{ messageSubject }} » à {{ recipient }} pour {{ event.name }} n'a pas pu être distribué.",
+        button: 'Voir les inscriptions',
+        greeting: 'Cordialement,',
+        teamName: 'Équipe {{ appName }}',
+      },
+      footer: {
+        cause: '$t(email:footer.cause) tu es un contact de cet événement.',
+      },
+    },
   },
 };

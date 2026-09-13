@@ -9,7 +9,7 @@ export class TotpModule implements AppModule {
     options.bind(TotPController).toSelf().inSingletonScope();
   }
 
-  registerRoutes(router: AppRouter): void {
+  registerApiRoutes(router: AppRouter): void {
     router.useRouter('/totp', new TotpRouter());
   }
 }

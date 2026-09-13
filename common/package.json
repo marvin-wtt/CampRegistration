@@ -33,7 +33,8 @@
     "./permissions": "./dist/permissions/index.js",
     "./privacy": "./dist/privacy/index.js",
     "./realtime": "./dist/realtime/index.js",
-    "./settings": "./dist/settings/index.js"
+    "./settings": "./dist/settings/index.js",
+    "./utils": "./dist/utils/index.js"
   },
   "imports": {
     "#enteties": "./src/enteties/index.js",
