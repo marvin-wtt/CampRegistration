@@ -31,7 +31,8 @@
         </div>
       </div>
 
-      <!-- Missing documents -->
+      <!-- Missing documents — surfaced above Logo/Banner since it's a
+           required action item, not an optional branding tweak. -->
       <q-card
         v-if="missingDocuments.length > 0"
         flat
@@ -110,6 +111,44 @@
           </q-list>
         </q-card-section>
       </q-card>
+
+      <!-- Logo -->
+      <file-slot-card
+        icon="image"
+        :title="t('section.logo')"
+        :file="logoFile"
+        :file-url="logoFile ? eventFileStore.getUrl(logoFile.id) : undefined"
+        :description="t('logo.description')"
+        :empty-text="t('logo.empty')"
+        :not-public-text="t('logo.not_public')"
+        :add-label="t('action.add_logo')"
+        :change-label="t('action.change_logo')"
+        :can-upload="can('event.files.create')"
+        :can-delete="can('event.files.delete')"
+        :upload-loading="uploadOngoing"
+        @upload="uploadLogo"
+        @delete="showDeleteDialog(logoFile!)"
+      />
+
+      <!-- Banner -->
+      <file-slot-card
+        icon="panorama"
+        :title="t('section.banner')"
+        :file="bannerFile"
+        :file-url="
+          bannerFile ? eventFileStore.getUrl(bannerFile.id) : undefined
+        "
+        :description="t('banner.description')"
+        :empty-text="t('banner.empty')"
+        :not-public-text="t('banner.not_public')"
+        :add-label="t('action.add_banner')"
+        :change-label="t('action.change_banner')"
+        :can-upload="can('event.files.create')"
+        :can-delete="can('event.files.delete')"
+        :upload-loading="uploadOngoing"
+        @upload="uploadBanner"
+        @delete="showDeleteDialog(bannerFile!)"
+      />
 
       <!-- Files -->
       <q-card
@@ -348,11 +387,20 @@ import { useI18n } from 'vue-i18n';
 import { computed, onMounted, ref } from 'vue';
 import { copyToClipboard, useQuasar } from 'quasar';
 import FileUploadDialog from '@/components/event/settings/files/FileUploadDialog.vue';
+import FileSlotCard from '@/components/event/settings/files/FileSlotCard.vue';
 import type { ServiceFile } from '@camp-registration/common/entities';
 import { formatBytes } from '@/utils/formatters/formatBytes';
 import { formatUtcDateTime } from '@/utils/formatters/formatUtcDateTime';
-import { useEventFilesStore } from '@/stores/event-files-store';
+import { fileIcon, fileTileClass } from '@/utils/fileTypeIcon';
+import {
+  splitFieldVersion,
+  useEventFilesStore,
+} from '@/stores/event-files-store';
 import { usePermissions } from '@/composables/permissions';
+import {
+  EVENT_LOGO_SLOT,
+  EVENT_BANNER_SLOT,
+} from '@camp-registration/common/form';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
 // eslint-disable-next-line @typescript-eslint/unbound-method
@@ -371,8 +419,23 @@ onMounted(async () => {
 
 const uploadOngoing = ref(false);
 
+// The logo and banner have their own sections above — excluded here so they
+// aren't listed twice.
 const files = computed<ServiceFile[]>(() =>
-  sortFiles(eventFileStore.data ?? []),
+  sortFiles(
+    (eventFileStore.data ?? []).filter(
+      (file) =>
+        file.field !== EVENT_LOGO_SLOT && file.field !== EVENT_BANNER_SLOT,
+    ),
+  ),
+);
+
+const logoFile = computed<ServiceFile | undefined>(
+  () => eventFileStore.logoFile,
+);
+
+const bannerFile = computed<ServiceFile | undefined>(
+  () => eventFileStore.bannerFile,
 );
 
 /**
@@ -446,34 +509,6 @@ const error = computed<string | null>(
   () => eventStore.error || eventFileStore.error,
 );
 
-function fileIcon(type: string): string {
-  if (type.startsWith('image/')) {
-    return 'image';
-  }
-  if (type === 'application/pdf') {
-    return 'picture_as_pdf';
-  }
-  if (type.startsWith('video/')) {
-    return 'movie';
-  }
-  if (type.startsWith('audio/')) {
-    return 'audiotrack';
-  }
-
-  return 'description';
-}
-
-function fileTileClass(type: string): string {
-  if (type.startsWith('image/') || type.startsWith('video/')) {
-    return 'tile--media';
-  }
-  if (type === 'application/pdf') {
-    return 'tile--document';
-  }
-
-  return 'tile--other';
-}
-
 function openDialog(componentProps?: Record<string, unknown>) {
   uploadOngoing.value = true;
   quasar
@@ -488,14 +523,34 @@ function uploadFile() {
 }
 
 function getUploadHint(field: string, locale?: string | null): string {
-  const key = `virtual.upload_hint.${field}`;
-  const label = te(key) ? t(key) : t('virtual.upload_hint.default', { field });
+  const { baseField, version } = splitFieldVersion(field);
 
-  return locale ? `${label} (${locale})` : label;
+  const key = `virtual.upload_hint.${baseField}`;
+  const label = te(key)
+    ? t(key)
+    : t('virtual.upload_hint.default', { field: baseField });
+
+  const versioned =
+    version === undefined
+      ? label
+      : `${label} (${t('virtual.version.replacement', { n: version })})`;
+
+  return locale ? `${versioned} (${locale})` : versioned;
 }
 
 function uploadForSlot(slot: string, locale?: string | null) {
   openDialog({ initialField: slot, initialLocale: locale });
+}
+
+// The logo isn't localized — the dialog locks the locale to null for this
+// slot, so re-submitting always replaces the one existing logo file.
+function uploadLogo() {
+  uploadForSlot(EVENT_LOGO_SLOT, null);
+}
+
+// Same reasoning as the logo: a single, non-localized banner file.
+function uploadBanner() {
+  uploadForSlot(EVENT_BANNER_SLOT, null);
 }
 
 function openReplaceDialog(file: ServiceFile) {
@@ -820,12 +875,28 @@ action:
   edit: 'Edit'
   upload: 'Upload'
   replace: 'Replace'
+  add_logo: 'Add logo'
+  change_logo: 'Change logo'
+  add_banner: 'Add banner'
+  change_banner: 'Change banner'
   copy_link: 'Copy link'
   menu: 'Actions'
 
 section:
   files: 'Files'
+  logo: 'Logo'
+  banner: 'Banner'
   missing: 'Missing documents'
+
+logo:
+  description: 'Shown on the event card, in the registration form header and in link previews.'
+  empty: 'No logo uploaded yet.'
+  not_public: 'The logo is private. Only public files are shown to participants.'
+
+banner:
+  description: 'Shown as a wide cover image on the event card, when set.'
+  empty: 'No banner uploaded yet.'
+  not_public: 'The banner is private. Only public files are shown to participants.'
 
 dialog:
   delete:
@@ -842,7 +913,11 @@ virtual:
   upload_hint:
     rules: 'Upload Event Rules'
     toc: 'Upload Terms & Conditions'
+    logo: 'Upload Logo'
+    banner: 'Upload Banner'
     default: 'Upload {field}'
+  version:
+    replacement: 'Replacement {n}'
 
 access_level:
   public: 'Public'
@@ -864,12 +939,28 @@ action:
   edit: 'Bearbeiten'
   upload: 'Hochladen'
   replace: 'Ersetzen'
+  add_logo: 'Logo hinzufügen'
+  change_logo: 'Logo ändern'
+  add_banner: 'Banner hinzufügen'
+  change_banner: 'Banner ändern'
   copy_link: 'Link kopieren'
   menu: 'Aktionen'
 
 section:
   files: 'Dateien'
+  logo: 'Logo'
+  banner: 'Banner'
   missing: 'Fehlende Dokumente'
+
+logo:
+  description: 'Wird auf der Veranstaltungskarte, im Kopfbereich des Anmeldeformulars und in Linkvorschauen angezeigt.'
+  empty: 'Noch kein Logo hochgeladen.'
+  not_public: 'Das Logo ist privat. Teilnehmenden werden nur öffentliche Dateien angezeigt.'
+
+banner:
+  description: 'Wird, falls vorhanden, als breites Titelbild auf der Veranstaltungskarte angezeigt.'
+  empty: 'Noch kein Banner hochgeladen.'
+  not_public: 'Das Banner ist privat. Teilnehmenden werden nur öffentliche Dateien angezeigt.'
 
 dialog:
   delete:
@@ -886,7 +977,11 @@ virtual:
   upload_hint:
     rules: 'Veranstaltungregeln hochladen'
     toc: 'AGB hochladen'
+    logo: 'Logo hochladen'
+    banner: 'Banner hochladen'
     default: '{field} hochladen'
+  version:
+    replacement: 'Ersatz {n}'
 
 access_level:
   public: 'Öffentlich'
@@ -908,12 +1003,28 @@ action:
   edit: 'Modifier'
   upload: 'Téléverser'
   replace: 'Remplacer'
+  add_logo: 'Ajouter un logo'
+  change_logo: 'Changer le logo'
+  add_banner: 'Ajouter une bannière'
+  change_banner: 'Changer la bannière'
   copy_link: 'Copier le lien'
   menu: 'Actions'
 
 section:
   files: 'Fichiers'
+  logo: 'Logo'
+  banner: 'Bannière'
   missing: 'Documents manquants'
+
+logo:
+  description: "Affiché sur la carte de l'événement, dans l'en-tête du formulaire d'inscription et dans les aperçus de lien."
+  empty: 'Aucun logo téléversé pour le moment.'
+  not_public: 'Le logo est privé. Seuls les fichiers publics sont affichés aux participants.'
+
+banner:
+  description: "Affichée, si définie, comme grande image de couverture sur la carte de l'événement."
+  empty: 'Aucune bannière téléversée pour le moment.'
+  not_public: 'La bannière est privée. Seuls les fichiers publics sont affichés aux participants.'
 
 dialog:
   delete:
@@ -930,7 +1041,11 @@ virtual:
   upload_hint:
     rules: 'Téléverser le règlement'
     toc: 'Téléverser les conditions générales'
+    logo: 'Téléverser le logo'
+    banner: 'Téléverser la bannière'
     default: 'Téléverser {field}'
+  version:
+    replacement: 'Remplacement {n}'
 
 access_level:
   public: 'Public'
@@ -952,12 +1067,28 @@ action:
   edit: 'Edytuj'
   upload: 'Prześlij'
   replace: 'Zastąp'
+  add_logo: 'Dodaj logo'
+  change_logo: 'Zmień logo'
+  add_banner: 'Dodaj baner'
+  change_banner: 'Zmień baner'
   copy_link: 'Kopiuj link'
   menu: 'Akcje'
 
 section:
   files: 'Pliki'
+  logo: 'Logo'
+  banner: 'Baner'
   missing: 'Brakujące dokumenty'
+
+logo:
+  description: 'Wyświetlane na karcie wydarzenia, w nagłówku formularza rejestracyjnego i w podglądach linków.'
+  empty: 'Nie przesłano jeszcze logo.'
+  not_public: 'Logo jest prywatne. Uczestnikom pokazywane są tylko pliki publiczne.'
+
+banner:
+  description: 'Wyświetlany, jeśli ustawiony, jako szeroki obraz tytułowy na karcie wydarzenia.'
+  empty: 'Nie przesłano jeszcze banera.'
+  not_public: 'Baner jest prywatny. Uczestnikom pokazywane są tylko pliki publiczne.'
 
 dialog:
   delete:
@@ -974,7 +1105,11 @@ virtual:
   upload_hint:
     rules: 'Prześlij regulamin'
     toc: 'Prześlij warunki uczestnictwa'
+    logo: 'Prześlij logo'
+    banner: 'Prześlij baner'
     default: 'Prześlij {field}'
+  version:
+    replacement: 'Zamiennik {n}'
 
 access_level:
   public: 'Publiczny'
@@ -996,12 +1131,28 @@ action:
   edit: 'Upravit'
   upload: 'Nahrát'
   replace: 'Nahradit'
+  add_logo: 'Přidat logo'
+  change_logo: 'Změnit logo'
+  add_banner: 'Přidat banner'
+  change_banner: 'Změnit banner'
   copy_link: 'Kopírovat odkaz'
   menu: 'Akce'
 
 section:
   files: 'Soubory'
+  logo: 'Logo'
+  banner: 'Banner'
   missing: 'Chybějící dokumenty'
+
+logo:
+  description: 'Zobrazuje se na kartě akce, v záhlaví registračního formuláře a v náhledech odkazů.'
+  empty: 'Zatím nebylo nahráno žádné logo.'
+  not_public: 'Logo je soukromé. Účastníkům se zobrazují pouze veřejné soubory.'
+
+banner:
+  description: 'Pokud je nastaven, zobrazuje se jako široký titulní obrázek na kartě akce.'
+  empty: 'Zatím nebyl nahrán žádný banner.'
+  not_public: 'Banner je soukromý. Účastníkům se zobrazují pouze veřejné soubory.'
 
 dialog:
   delete:
@@ -1018,7 +1169,11 @@ virtual:
   upload_hint:
     rules: 'Nahrát pravidla akce'
     toc: 'Nahrát obchodní podmínky'
+    logo: 'Nahrát logo'
+    banner: 'Nahrát banner'
     default: 'Nahrát {field}'
+  version:
+    replacement: 'Náhrada {n}'
 
 access_level:
   public: 'Veřejný'

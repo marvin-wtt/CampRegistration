@@ -22,7 +22,7 @@ import type {
 } from '../../src/generated/prisma/client.js';
 import type { ZodObject, z } from 'zod';
 import type { JsonResource } from '#core/resource/JsonResource';
-import type { EventWithFreePlaces } from '#app/event/event.types';
+import type { EventWithRelations } from '#app/event/event.types';
 import type { NewsletterWithOrganization } from '#app/newsletter/newsletter.types';
 import type { TaskWithAssignee } from '#app/task/task.types';
 import type { ChoreAssignmentWithRelations } from '#app/choreAssignment/choreAssignment.types';
@@ -33,7 +33,7 @@ declare global {
       user?: UserModel & {
         twoFactor: { confirmedAt: Date | null } | null;
       };
-      event?: EventWithFreePlaces;
+      event?: EventWithRelations;
       registration?: Registration;
       tableTemplate?: TableTemplate;
       message?: Message & { attachments: File[] };

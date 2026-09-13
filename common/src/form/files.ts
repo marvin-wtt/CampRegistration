@@ -38,3 +38,18 @@ function localeScore(fileLocale: string | null, targetLocale: string): number {
   }
   return -1;
 }
+
+/**
+ * Reserved slot for an event's logo. Unlike the slots a form declares through
+ * {_file.<slot>}, this one exists whether or not the form mentions it: it is
+ * the event's brand image, surfaced by the API as `Event.logo` and rendered on
+ * event cards, in the event layout and in link previews.
+ */
+export const EVENT_LOGO_SLOT = 'logo';
+
+/**
+ * Reserved slot for an event's banner: an optional, wide cover image shown
+ * above the compact card header on event listing cards. Like `EVENT_LOGO_SLOT`
+ * it exists independently of the form, surfaced by the API as `Event.banner`.
+ */
+export const EVENT_BANNER_SLOT = 'banner';

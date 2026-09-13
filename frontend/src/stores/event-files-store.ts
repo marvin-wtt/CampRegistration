@@ -11,9 +11,40 @@ import type {
 } from '@camp-registration/common/entities';
 import { exportFile } from 'quasar';
 import { computed } from 'vue';
+import {
+  EVENT_LOGO_SLOT,
+  EVENT_BANNER_SLOT,
+} from '@camp-registration/common/form';
 
 // Matches {_file.slotName} placeholders used in SurveyJS form definitions.
 const FILE_SLOT_REGEX = /\{\s?_file\.([a-z0-9_-]+)\s?}/g;
+
+/**
+ * Whether `field` is `baseField` itself or one of its numbered versions
+ * (`baseField-1`, `baseField-2`, …) — the scheme the Form Editor's file
+ * picker uses so swapping an image keeps the previous one addressable
+ * instead of deleting it.
+ */
+export function isFieldVersion(field: string, baseField: string): boolean {
+  const escaped = baseField.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`^${escaped}(-\\d+)?$`).test(field);
+}
+
+/**
+ * Splits a field into its base name and version number, e.g. `"logo-2"` ->
+ * `{ baseField: "logo", version: 2 }`. `version` is `undefined` for the
+ * original (unsuffixed) field.
+ */
+export function splitFieldVersion(field: string): {
+  baseField: string;
+  version: number | undefined;
+} {
+  const match = /^(.*)-(\d+)$/.exec(field);
+
+  return match
+    ? { baseField: match[1]!, version: Number(match[2]) }
+    : { baseField: field, version: undefined };
+}
 
 export const useEventFilesStore = defineStore('eventFiles', () => {
   const apiService = useAPIService();
@@ -51,6 +82,19 @@ export const useEventFilesStore = defineStore('eventFiles', () => {
     invalidate,
     reload: () => fetchData({ background: true }),
   });
+
+  // The file behind the reserved logo slot, if any — a single file, not
+  // localized. Unlike a form slot this one is never declared by the form; see
+  // EVENT_LOGO_SLOT.
+  const logoFile = computed<ServiceFile | undefined>(() =>
+    (data.value ?? []).find((file) => file.field === EVENT_LOGO_SLOT),
+  );
+
+  // The file behind the reserved banner slot, if any — same reserved-slot
+  // mechanism as the logo, see EVENT_BANNER_SLOT.
+  const bannerFile = computed<ServiceFile | undefined>(() =>
+    (data.value ?? []).find((file) => file.field === EVENT_BANNER_SLOT),
+  );
 
   // Slots declared in the form via {_file.slotName} that have no uploaded file yet.
   const pendingSlots = computed<string[]>(() => {
@@ -140,6 +184,7 @@ export const useEventFilesStore = defineStore('eventFiles', () => {
       const file = await apiService.createEventFile(eventId, createData);
 
       data.value?.push(file);
+      refreshEventMedia(file.field);
 
       return file;
     };
@@ -161,6 +206,7 @@ export const useEventFilesStore = defineStore('eventFiles', () => {
 
       await apiService.deleteFile(oldFile.id);
       data.value = data.value?.filter((f) => f.id !== oldFile.id);
+      refreshEventMedia(oldFile.field, newFile.field);
 
       return newFile;
     });
@@ -170,21 +216,45 @@ export const useEventFilesStore = defineStore('eventFiles', () => {
     id: string,
     updateData: ServiceFileUpdateData,
   ): Promise<ServiceFile> {
+    const previousField = data.value?.find((entry) => entry.id === id)?.field;
+
     return withProgressNotification('update', async () => {
       const file = await apiService.updateFile(id, updateData);
 
       data.value = data.value?.map((entry) => (entry.id === id ? file : entry));
+      refreshEventMedia(previousField, file.field);
 
       return file;
     });
   }
 
   async function deleteEntry(id: string) {
+    const field = data.value?.find((file) => file.id === id)?.field;
+
     await withProgressNotification('delete', async () => {
       await apiService.deleteFile(id);
 
       data.value = data.value?.filter((file) => file.id !== id);
+      refreshEventMedia(field);
     });
+  }
+
+  /**
+   * `EventDetails.logo`/`banner` are derived from their reserved slots on the
+   * server, so a write to either slot — upload, replace, access-level change,
+   * delete — changes the event resource as well. Refresh it instead of
+   * leaving event cards and the form header pointing at a logo or banner that
+   * is no longer there (or missing one that now is).
+   */
+  function refreshEventMedia(...fields: (string | null | undefined)[]) {
+    if (
+      !fields.includes(EVENT_LOGO_SLOT) &&
+      !fields.includes(EVENT_BANNER_SLOT)
+    ) {
+      return;
+    }
+
+    void eventStore.fetchData(undefined, { background: true });
   }
 
   async function downloadFile(file: ServiceFile) {
@@ -203,16 +273,42 @@ export const useEventFilesStore = defineStore('eventFiles', () => {
     return apiService.getFileUrl(id);
   }
 
+  /**
+   * The next free field for uploading a new version under `baseField`:
+   * the base field itself if it's never been used, otherwise the lowest
+   * unused `baseField-N`. Uploading through it never overwrites an earlier
+   * version — swapping an image just points the form at a new field.
+   */
+  function nextAvailableField(baseField: string): string {
+    const used = new Set(
+      (data.value ?? []).map((f) => f.field).filter((f): f is string => !!f),
+    );
+
+    if (!used.has(baseField)) {
+      return baseField;
+    }
+
+    let n = 1;
+    while (used.has(`${baseField}-${n}`)) {
+      n++;
+    }
+
+    return `${baseField}-${n}`;
+  }
+
   return {
     reset,
     data,
     isLoading,
     error,
+    logoFile,
+    bannerFile,
     pendingSlots,
     slotsWithMissingLocales,
     missingFilesCount,
     downloadFile,
     getUrl,
+    nextAvailableField,
     fetchData,
     createEntry,
     replaceFile,

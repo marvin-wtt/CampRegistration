@@ -12,12 +12,26 @@
       @click="openEvent"
       @keyup.enter="openEvent"
     >
-      <span
+      <div
+        v-if="event.logo && !logoFailed"
+        class="mgmt-card__avatar mgmt-card__avatar--logo"
+      >
+        <img
+          class="mgmt-card__logo"
+          :src="event.logo"
+          alt=""
+          aria-hidden="true"
+          loading="lazy"
+          @error="logoFailed = true"
+        />
+      </div>
+      <div
+        v-else
         class="mgmt-card__avatar"
         aria-hidden="true"
       >
         {{ monogram }}
-      </span>
+      </div>
 
       <div class="mgmt-card__heading">
         <div
@@ -187,7 +201,7 @@ import { copyToClipboard, useQuasar } from 'quasar';
 import type { Event } from '@camp-registration/common/entities';
 import type { ScopePermission } from '@camp-registration/common/permissions';
 import { zonedInstant } from '@camp-registration/common/utils';
-import { computed, type Ref, ref } from 'vue';
+import { computed, type Ref, ref, watch } from 'vue';
 import { useProfileStore } from '@/stores/profile-store';
 import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
 import RegistrationScheduleDialog from '@/components/event/index/RegistrationScheduleDialog.vue';
@@ -225,6 +239,18 @@ const tone = computed<(typeof tones)[number]>(() => {
 const monogram = computed<string>(() => {
   return to(event.name).trim().charAt(0).toUpperCase() || '•';
 });
+
+// The URL points at a slot, not at a file id: the file behind it can be gone
+// (deleted, or turned private) while this card is still on screen. Falling
+// back to the monogram beats a broken-image icon.
+const logoFailed = ref(false);
+
+watch(
+  () => event.logo,
+  () => {
+    logoFailed.value = false;
+  },
+);
 
 const dateRange = computed<string>(() => {
   const formatter = new Intl.DateTimeFormat(locale.value, {
@@ -589,6 +615,7 @@ async function withLoading(flag: Ref<boolean>, fn: () => Promise<void>) {
 
   width: 44px;
   height: 44px;
+  overflow: hidden;
   border-radius: 12px;
 
   font-size: 22px;
@@ -610,6 +637,24 @@ async function withLoading(flag: Ref<boolean>, fn: () => Promise<void>) {
 .mgmt-card--tertiary .mgmt-card__avatar {
   background: var(--md3-tertiary-container);
   color: var(--md3-on-tertiary-container);
+}
+
+/*
+ * A real logo brings its own background color, which can clash with the
+ * tone container above — so logos always sit on a neutral plate instead,
+ * regardless of which tone the card was dealt.
+ */
+.mgmt-card__avatar--logo {
+  border: 1px solid var(--md3-outline-variant);
+
+  background: var(--md3-surface-container-highest);
+}
+
+.mgmt-card__logo {
+  width: 100%;
+  height: 100%;
+
+  object-fit: contain;
 }
 
 .mgmt-card__heading {

@@ -3,6 +3,8 @@ import { createI18n } from 'vue-i18n';
 import { Quasar } from 'quasar';
 
 import { messages, datetimeFormats, numberFormats } from '@/i18n';
+import { setApiLocale } from '@/services/api';
+import { watch } from 'vue';
 
 export default defineBoot(({ app }) => {
   const i18n = createI18n({
@@ -19,6 +21,9 @@ export default defineBoot(({ app }) => {
 
   // Set i18n instance on app
   app.use(i18n);
+
+  setApiLocale(i18n.global.locale.value);
+  watch(i18n.global.locale, setApiLocale);
 });
 
 function getLocale(): string {

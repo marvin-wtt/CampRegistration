@@ -5,6 +5,10 @@ import type { OptionalByKeys } from '#types/utils';
 import { BaseService } from '#core/base/BaseService';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service.js';
+import {
+  EVENT_LOGO_SLOT,
+  EVENT_BANNER_SLOT,
+} from '@camp-registration/common/form';
 
 type TableTemplateCreateData = OptionalByKeys<
   Prisma.TableTemplateCreateManyEventInput,
@@ -57,10 +61,10 @@ export class EventService extends BaseService {
   async getEventById(id: string) {
     const event = await this.prisma.event.findFirst({
       where: { id },
-      include: { ...this.eventRegistrationInclude() },
+      include: { ...this.eventResourceInclude() },
     });
 
-    return event === null ? null : enrichFreePlaces(event);
+    return event === null ? null : withMediaFlags(enrichFreePlaces(event));
   }
 
   async getEventsByUserId(userId: string) {
@@ -70,16 +74,13 @@ export class EventService extends BaseService {
           some: { userId },
         },
       },
-      include: { ...this.eventRegistrationInclude() },
+      include: { ...this.eventResourceInclude() },
     });
 
-    return events.map(enrichFreePlaces);
+    return events.map((event) => withMediaFlags(enrichFreePlaces(event)));
   }
 
-  // `satisfies` rather than a return-type annotation: annotating this as
-  // `Prisma.EventInclude` erases the literal `select` shapes, and every caller
-  // would infer the full Organization instead of the two fields it asks for.
-  private eventRegistrationInclude() {
+  private eventResourceInclude() {
     return {
       registrations: {
         where: {
@@ -90,6 +91,10 @@ export class EventService extends BaseService {
       organization: {
         select: { id: true, name: true, verificationStatus: true },
       },
+      files: this.fileService.publicSlotFileInclude([
+        EVENT_LOGO_SLOT,
+        EVENT_BANNER_SLOT,
+      ]),
     } satisfies Prisma.EventInclude;
   }
 
@@ -259,7 +264,7 @@ export class EventService extends BaseService {
       take: limit + 1,
       ...(options.cursor ? { cursor: { id: options.cursor }, skip: 1 } : {}),
       orderBy: [{ [sortBy]: sortType }, { id: sortType }],
-      include: { ...this.eventRegistrationInclude() },
+      include: { ...this.eventResourceInclude() },
     });
 
     const hasMore = items.length > limit;
@@ -270,7 +275,12 @@ export class EventService extends BaseService {
       ? undefined
       : await this.prisma.event.count({ where });
 
-    return { events: page.map(enrichFreePlaces), nextCursor, limit, total };
+    return {
+      events: page.map((event) => withMediaFlags(enrichFreePlaces(event))),
+      nextCursor,
+      limit,
+      total,
+    };
   }
 
   async getOverviewCounts() {
@@ -335,13 +345,13 @@ export class EventService extends BaseService {
         },
         files: { createMany: { data: fileData } },
       },
-      include: { ...this.eventRegistrationInclude() },
+      include: { ...this.eventResourceInclude() },
     });
 
-    return {
+    return withMediaFlags({
       ...event,
       freePlaces: data.maxParticipants,
-    };
+    });
   }
 
   /**
@@ -389,10 +399,10 @@ export class EventService extends BaseService {
       data: {
         organization: { connect: { id: organizationId } },
       },
-      include: { ...this.eventRegistrationInclude() },
+      include: { ...this.eventResourceInclude() },
     });
 
-    return enrichFreePlaces(updatedEvent);
+    return withMediaFlags(enrichFreePlaces(updatedEvent));
   }
 
   async updateEvent(event: Event, data: EventUpdateData) {
@@ -402,10 +412,10 @@ export class EventService extends BaseService {
         ...data,
         location: dbNullable(data.location),
       },
-      include: { ...this.eventRegistrationInclude() },
+      include: { ...this.eventResourceInclude() },
     });
 
-    return enrichFreePlaces(updatedEvent);
+    return withMediaFlags(enrichFreePlaces(updatedEvent));
   }
 
   async deleteEventById(id: string) {
@@ -444,5 +454,23 @@ const enrichFreePlaces = <
       },
       { ...event.maxParticipants },
     ),
+  };
+};
+
+// `files` (from `publicSlotFileInclude`) only ever tells us which of the
+// reserved slots have a ready, public file — collapse it to booleans here,
+// right where the query's intent is known, instead of forwarding the array
+// for every caller to reinterpret.
+const withMediaFlags = <
+  T extends { files: { id: string; field: string | null }[] },
+>(
+  event: T,
+): Omit<T, 'files'> & { hasLogo: boolean; hasBanner: boolean } => {
+  const { files, ...rest } = event;
+
+  return {
+    ...rest,
+    hasLogo: files.some((file) => file.field === EVENT_LOGO_SLOT),
+    hasBanner: files.some((file) => file.field === EVENT_BANNER_SLOT),
   };
 };

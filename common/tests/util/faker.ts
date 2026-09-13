@@ -14,6 +14,7 @@ export const fakeEventData = (data: Partial<Data> = {}): Data => {
     price: 0,
     location: '',
     freePlaces: null,
+    logo: null,
     ...data,
   };
 };

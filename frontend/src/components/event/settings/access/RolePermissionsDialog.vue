@@ -212,6 +212,8 @@ const GROUP_ORDER = [
   'rooms.beds',
   'program_items',
   'tasks',
+  'chores',
+  'chore_assignments',
 ];
 
 const GROUP_ICONS: Record<string, string> = {
@@ -226,6 +228,8 @@ const GROUP_ICONS: Record<string, string> = {
   'rooms.beds': 'bed',
   program_items: 'event_note',
   tasks: 'task_alt',
+  chores: 'cleaning_services',
+  chore_assignments: 'checklist',
 };
 
 /** Group keys whose translation predates the derived name. */
@@ -597,6 +601,8 @@ permissions:
     beds: 'Beds'
     program: 'Program'
     tasks: 'Tasks'
+    chores: 'Chores'
+    chore_assignments: 'Duty roster'
   action:
     view: 'View'
     create: 'Create'
@@ -632,6 +638,8 @@ permissions:
     beds: 'Betten'
     program: 'Programm'
     tasks: 'Aufgaben'
+    chores: 'Diensttypen'
+    chore_assignments: 'Dienstplan'
   action:
     view: 'Anzeigen'
     create: 'Erstellen'
@@ -668,6 +676,8 @@ permissions:
     beds: 'Lits'
     program: 'Programme'
     tasks: 'Tâches'
+    chores: 'Corvées'
+    chore_assignments: 'Plan des corvées'
   action:
     view: 'Voir'
     create: 'Créer'
@@ -703,6 +713,8 @@ permissions:
     beds: 'Łóżka'
     program: 'Program'
     tasks: 'Zadania'
+    chores: 'Obowiązki'
+    chore_assignments: 'Grafik dyżurów'
   action:
     view: 'Podgląd'
     create: 'Tworzenie'
@@ -738,6 +750,8 @@ permissions:
     beds: 'Lůžka'
     program: 'Program'
     tasks: 'Úkoly'
+    chores: 'Povinnosti'
+    chore_assignments: 'Rozpis služeb'
   action:
     view: 'Zobrazit'
     create: 'Vytvořit'
