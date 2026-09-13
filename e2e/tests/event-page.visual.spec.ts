@@ -1,5 +1,5 @@
-import { test, expect } from "../support/fixtures";
-import type { Page } from "@playwright/test";
+import { test, expect } from '../support/fixtures';
+import type { Page } from '@playwright/test';
 
 // Visual regression coverage for the public event page. It guards the layout of
 // every registration status the page can render — including the width of the
@@ -11,81 +11,81 @@ import type { Page } from "@playwright/test";
 // still covers both the desktop and the responsive/mobile layout.
 
 // Events from the e2e seed, each in a fixed registration status.
-const OPEN_EVENT = "01JHP0CXJFR4MQS8SF1HQJCY38"; // no window -> open
-const UPCOMING_EVENT = "01JHP0CXJFR4MQS8SF1HQJCA10"; // opens in 2999 -> upcoming
-const CLOSED_EVENT = "01JHP0CXJFR4MQS8SF1HQJCA20"; // closed in 2020 -> closed
+const OPEN_EVENT = '01JHP0CXJFR4MQS8SF1HQJCY38'; // no window -> open
+const UPCOMING_EVENT = '01JHP0CXJFR4MQS8SF1HQJCA10'; // opens in 2999 -> upcoming
+const CLOSED_EVENT = '01JHP0CXJFR4MQS8SF1HQJCA20'; // closed in 2020 -> closed
 // A well-formed but unseeded id -> 404 -> "not found".
-const MISSING_EVENT = "01JHP0CXJFR4MQS8SF1HQJCY30";
+const MISSING_EVENT = '01JHP0CXJFR4MQS8SF1HQJCY30';
 
 /** Wait for the page to reach a stable state before capturing a screenshot. */
 async function settle(page: Page): Promise<void> {
-  await page.waitForLoadState("networkidle");
+  await page.waitForLoadState('networkidle');
   await page.evaluate(() => document.fonts.ready);
 }
 
-test.describe("event page — visual", () => {
+test.describe('event page — visual', () => {
   // Snapshots are captured on Chromium engines only; skip the WebKit/Firefox
   // projects to avoid cross-engine rendering noise in the baselines.
   test.beforeEach(({ browserName }) => {
     test.skip(
-      browserName !== "chromium",
-      "visual snapshots are captured on Chromium-based projects only",
+      browserName !== 'chromium',
+      'visual snapshots are captured on Chromium-based projects only',
     );
   });
 
-  test("registration open — survey spans the full container width", async ({
+  test('registration open — survey spans the full container width', async ({
     page,
   }) => {
     await page.goto(`/events/${OPEN_EVENT}/`);
 
-    const form = page.getByTestId("registration-form");
+    const form = page.getByTestId('registration-form');
     await expect(
-      form.locator("[data-name=first_name]").locator("input"),
+      form.locator('[data-name=first_name]').locator('input'),
     ).toBeVisible();
     await expect(
-      form.locator("[data-name=last_name]").locator("input"),
+      form.locator('[data-name=last_name]').locator('input'),
     ).toBeVisible();
     await settle(page);
 
-    await expect(page).toHaveScreenshot("event-page-open.png", {
+    await expect(page).toHaveScreenshot('event-page-open.png', {
       fullPage: true,
     });
   });
 
-  test("registration upcoming", async ({ page }) => {
+  test('registration upcoming', async ({ page }) => {
     await page.goto(`/events/${UPCOMING_EVENT}/`);
 
     await expect(
-      page.getByTestId("event-registration-status-upcoming"),
+      page.getByTestId('event-registration-status-upcoming'),
     ).toBeVisible();
     await settle(page);
 
-    await expect(page).toHaveScreenshot("event-page-upcoming.png");
+    await expect(page).toHaveScreenshot('event-page-upcoming.png');
   });
 
-  test("registration closed", async ({ page }) => {
+  test('registration closed', async ({ page }) => {
     await page.goto(`/events/${CLOSED_EVENT}/`);
 
     await expect(
-      page.getByTestId("event-registration-status-closed"),
+      page.getByTestId('event-registration-status-closed'),
     ).toBeVisible();
     await settle(page);
 
-    await expect(page).toHaveScreenshot("event-page-closed.png");
+    await expect(page).toHaveScreenshot('event-page-closed.png');
   });
 
-  test("registration not found", async ({ page }) => {
+  test('registration not found', async ({ page }) => {
     await page.goto(`/events/${MISSING_EVENT}/`);
 
     await expect(
-      page.getByTestId("event-registration-status-not_found"),
+      page.getByTestId('event-registration-status-not_found'),
     ).toBeVisible();
     await settle(page);
 
-    await expect(page).toHaveScreenshot("event-page-not-found.png");
+    await expect(page).toHaveScreenshot('event-page-not-found.png');
   });
 
-  test("submit — saving overlay", async ({ page }) => {
+  test('submit — saving overlay', async ({ page }) => {
     // Hold the create-registration request open so the transient "saving"
     // overlay stays on screen long enough to capture.
     let releaseSubmit: () => void = () => {};
@@ -96,9 +96,9 @@ test.describe("event page — visual", () => {
     await page.route(
       (url) =>
         url.pathname.includes(`/events/${OPEN_EVENT}/registrations`) &&
-        !url.pathname.includes("/files"),
+        !url.pathname.includes('/files'),
       async (route) => {
-        if (route.request().method() !== "POST") {
+        if (route.request().method() !== 'POST') {
           await route.fallback();
           return;
         }
@@ -112,48 +112,76 @@ test.describe("event page — visual", () => {
     await fillAndSubmit(page);
 
     await expect(
-      page.getByTestId("registration-submit-status-saving"),
+      page.getByTestId('registration-submit-status-saving'),
     ).toBeVisible();
     // Do not wait for network idle here: the create request is intentionally
     // held open, so the network never goes idle. Fonts are already loaded from
     // the initial page render.
     await page.evaluate(() => document.fonts.ready);
 
-    await expect(page).toHaveScreenshot("event-page-submit-saving.png");
+    await expect(page).toHaveScreenshot('event-page-submit-saving.png');
 
     // Let the request complete so the test tears down cleanly.
     releaseSubmit();
   });
 
-  test("submit — success overlay", async ({ page }) => {
+  test('submit — success overlay', async ({ page }) => {
     await page.goto(`/events/${OPEN_EVENT}/`);
     await fillAndSubmit(page);
 
     await expect(
-      page.getByTestId("registration-submit-status-success"),
+      page.getByTestId('registration-submit-status-success'),
     ).toBeVisible();
     await settle(page);
 
-    await expect(page).toHaveScreenshot("event-page-submit-success.png");
+    await expect(page).toHaveScreenshot('event-page-submit-success.png');
   });
 
-  test("submit — error overlay", async ({ page }) => {
+  test('submit — pending overlay', async ({ page }) => {
+    await mockRegistrationResponse(page, 'PENDING');
+
+    await page.goto(`/events/${OPEN_EVENT}/`);
+    await fillAndSubmit(page);
+
+    await expect(
+      page.getByTestId('registration-submit-status-success'),
+    ).toBeVisible();
+    await settle(page);
+
+    await expect(page).toHaveScreenshot('event-page-submit-pending.png');
+  });
+
+  test('submit — waitlisted overlay', async ({ page }) => {
+    await mockRegistrationResponse(page, 'WAITLISTED');
+
+    await page.goto(`/events/${OPEN_EVENT}/`);
+    await fillAndSubmit(page);
+
+    await expect(
+      page.getByTestId('registration-submit-status-success'),
+    ).toBeVisible();
+    await settle(page);
+
+    await expect(page).toHaveScreenshot('event-page-submit-waitlisted.png');
+  });
+
+  test('submit — error overlay', async ({ page }) => {
     await page.route(
       (url) =>
         url.pathname.includes(`/events/${OPEN_EVENT}/registrations`) &&
-        !url.pathname.includes("/files"),
+        !url.pathname.includes('/files'),
       async (route) => {
-        if (route.request().method() !== "POST") {
+        if (route.request().method() !== 'POST') {
           await route.fallback();
           return;
         }
 
         await route.fulfill({
           status: 500,
-          contentType: "application/json",
+          contentType: 'application/json',
           body: JSON.stringify({
             statusCode: 500,
-            message: "Internal Server Error",
+            message: 'Internal Server Error',
           }),
         });
       },
@@ -163,18 +191,73 @@ test.describe("event page — visual", () => {
     await fillAndSubmit(page);
 
     await expect(
-      page.getByTestId("registration-submit-status-error"),
+      page.getByTestId('registration-submit-status-error'),
     ).toBeVisible();
     await settle(page);
 
-    await expect(page).toHaveScreenshot("event-page-submit-error.png");
+    await expect(page).toHaveScreenshot('event-page-submit-error.png');
   });
 });
 
 /** Fill the required fields of the "Simple Event" form and submit it. */
 async function fillAndSubmit(page: Page): Promise<void> {
-  const form = page.getByTestId("registration-form");
-  await form.locator("[data-name=first_name]").locator("input").fill("Tom");
-  await form.locator("[data-name=last_name]").locator("input").fill("Smith");
-  await form.locator(".sd-navigation__complete-btn").click();
+  const form = page.getByTestId('registration-form');
+  await form.locator('[data-name=first_name]').locator('input').fill('Tom');
+  await form.locator('[data-name=last_name]').locator('input').fill('Smith');
+  await form.locator('.sd-navigation__complete-btn').click();
+}
+
+/**
+ * Stub the create-registration response so it succeeds with a fixed status,
+ * instead of relying on OPEN_EVENT's real (AUTOMATIC) confirmation mode —
+ * PENDING/WAITLISTED only differ in what status the backend assigns, not in
+ * anything about the request itself.
+ */
+async function mockRegistrationResponse(
+  page: Page,
+  status: 'PENDING' | 'WAITLISTED',
+): Promise<void> {
+  await page.route(
+    (url) =>
+      url.pathname.includes(`/events/${OPEN_EVENT}/registrations`) &&
+      !url.pathname.includes('/files'),
+    async (route) => {
+      if (route.request().method() !== 'POST') {
+        await route.fallback();
+        return;
+      }
+
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: {
+            id: '01JHP0CXJFR4MQS8SF1HQJCZ99',
+            status,
+            data: { first_name: 'Tom', last_name: 'Smith' },
+            computedData: {
+              firstName: 'Tom',
+              lastName: 'Smith',
+              dateOfBirth: null,
+              emails: null,
+              role: null,
+              gender: null,
+              address: {
+                street: null,
+                city: null,
+                zipCode: null,
+                country: null,
+              },
+            },
+            customData: {},
+            customFiles: {},
+            locale: 'en',
+            room: null,
+            createdAt: new Date().toISOString(),
+            updatedAt: null,
+          },
+        }),
+      });
+    },
+  );
 }
