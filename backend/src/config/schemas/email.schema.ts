@@ -1,7 +1,10 @@
 import { z } from 'zod';
 
 export const EmailEnvSchema = z.object({
-  EMAIL_DRIVER: z.enum(['smtp', 'noop']).default('smtp'),
+  EMAIL_DRIVER: z
+    .enum(['smtp', 'noop'])
+    .default('smtp')
+    .describe('"smtp" or "noop" (skip sending, e.g. for tests)'),
   EMAIL_FROM: z
     .email()
     .describe('The from field in the emails sent by the app.'),

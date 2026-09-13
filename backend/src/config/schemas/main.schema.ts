@@ -20,10 +20,11 @@ export const MainEnvSchema = z.object({
     .string()
     .optional()
     .describe(
-      'Comma-separated list of error tracker drivers to report faults to.' +
+      'Comma-separated list of error tracker drivers to report faults to. ' +
         'Every listed driver receives every reported fault. ' +
         'Unset disables error reporting entirely.',
-    ),
+    )
+    .meta({ examples: ['sentry'] }),
   LOG_LEVEL: z
     .enum(['error', 'warn', 'info', 'http', 'debug'])
     .optional()
