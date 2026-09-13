@@ -16,6 +16,14 @@ export const MainEnvSchema = z.object({
     .default('#338d8e')
     .describe('Primary color used in email templates.'),
   SENTRY_DSN: z.url().optional().describe('Sentry DSN for error tracking.'),
+  ERROR_TRACKING_DRIVERS: z
+    .string()
+    .optional()
+    .describe(
+      'Comma-separated list of error tracker drivers to report faults to.' +
+        'Every listed driver receives every reported fault. ' +
+        'Unset disables error reporting entirely.',
+    ),
   LOG_LEVEL: z
     .enum(['error', 'warn', 'info', 'http', 'debug'])
     .optional()

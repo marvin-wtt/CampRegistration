@@ -4,7 +4,7 @@ export interface ApiErrorOptions {
   // human-readable message.
   code?: string;
   // The error this one wraps. Its stack is appended to the log output and
-  // picked up by Sentry's linked-errors integration.
+  // picked up by error trackers' linked-errors integrations.
   cause?: unknown;
   // Overrides the classification derived from the status code. Set `false` on a
   // 5xx that is anticipated rather than a bug — an upstream outage, say — to
