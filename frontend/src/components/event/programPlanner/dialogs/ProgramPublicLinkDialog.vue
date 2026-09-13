@@ -14,7 +14,7 @@
           </div>
         </q-card-section>
 
-        <q-card-section class="q-pt-none q-gutter-y-sm column">
+        <q-card-section class="q-pt-none q-gutter-y-md column">
           <q-toggle
             v-model="enabled"
             :label="t('field.enabled.label')"

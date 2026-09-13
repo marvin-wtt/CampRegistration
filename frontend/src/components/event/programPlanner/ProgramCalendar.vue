@@ -60,121 +60,120 @@
           >
             <template #head-day-event="{ scope: { timestamp } }">
               <div class="column">
-                <!-- Publishing per day, set right here — always rendered
-                     (never v-if) with the same content for every day (an
-                     icon, colored by state) so every column reserves
-                     identical header height; only the color/icon differ. -->
+                <!-- One row: the publish badge and the zoom/print actions
+                     used to be two stacked rows — merged to reclaim a full
+                     row of height per day column, which adds up with many
+                     day columns. The badge is always rendered (never v-if)
+                     with the same content for every day (an icon, colored by
+                     state) so every column reserves identical header height;
+                     only the color/icon differ. -->
                 <div
-                  v-if="publicSettings.enabled"
-                  class="cal-day-public-badge"
-                  :class="[
-                    `cal-day-public-badge--${dayPublicBadgeColor(timestamp.date)}`,
-                    { 'cal-day-public-badge--clickable': canUpdate },
-                  ]"
-                  :style="{ width: dayBadgeSize, height: dayBadgeSize }"
+                  class="cal-day-header-row"
                   @click.stop
                 >
-                  <plan-letter-icon
-                    v-if="isLetterPlan(publishedPlanFor(timestamp.date))"
-                    :plan="letterPlanFor(timestamp.date)"
-                    :size="compactDayHeaderActions ? '12px' : '16px'"
-                  />
-                  <q-icon
-                    v-else
-                    :name="dayPublicBadgeIcon(timestamp.date)"
-                    :size="compactDayHeaderActions ? '12px' : '16px'"
-                  />
-                  <q-tooltip>
-                    {{ dayPublicBadgeTooltip(timestamp.date) }}
-                  </q-tooltip>
-                  <q-menu v-if="canUpdate">
-                    <q-list style="min-width: 180px">
-                      <q-item
-                        v-close-popup
-                        clickable
-                        :active="publishedPlanFor(timestamp.date) === null"
-                        @click="setDayPublish(timestamp.date, null)"
-                      >
-                        <q-item-section avatar>
-                          <q-icon name="public_off" />
-                        </q-item-section>
-                        <q-item-section>
-                          {{ t('public.day.unpublished') }}
-                        </q-item-section>
-                      </q-item>
-                      <q-item
-                        v-close-popup
-                        clickable
-                        :active="publishedPlanFor(timestamp.date) === 'a'"
-                        @click="setDayPublish(timestamp.date, 'a')"
-                      >
-                        <q-item-section avatar>
-                          <plan-letter-icon
-                            plan="a"
-                            size="1.5em"
-                          />
-                        </q-item-section>
-                        <q-item-section>
-                          {{ t('public.day.planA') }}
-                        </q-item-section>
-                      </q-item>
-                      <q-item
-                        v-close-popup
-                        clickable
-                        :active="publishedPlanFor(timestamp.date) === 'b'"
-                        @click="setDayPublish(timestamp.date, 'b')"
-                      >
-                        <q-item-section avatar>
-                          <plan-letter-icon
-                            plan="b"
-                            size="1.5em"
-                          />
-                        </q-item-section>
-                        <q-item-section>
-                          {{ t('public.day.planB') }}
-                        </q-item-section>
-                      </q-item>
-                      <q-item
-                        v-close-popup
-                        clickable
-                        :active="publishedPlanFor(timestamp.date) === 'both'"
-                        @click="setDayPublish(timestamp.date, 'both')"
-                      >
-                        <q-item-section avatar>
-                          <q-icon name="repeat" />
-                        </q-item-section>
-                        <q-item-section>
-                          {{ t('public.day.planBoth') }}
-                        </q-item-section>
-                      </q-item>
-                    </q-list>
-                  </q-menu>
-                </div>
-                <div
-                  class="cal-day-actions"
-                  @click.stop
-                >
-                  <q-btn
-                    v-if="range > 1"
-                    icon="zoom_in"
-                    flat
-                    round
-                    :dense="compactDayHeaderActions"
-                    :size="compactDayHeaderActions ? 'xs' : 'sm'"
-                    @click.stop="onZoomToDay(timestamp.date)"
+                  <div
+                    v-if="publicSettings.enabled"
+                    class="cal-day-public-badge"
+                    :class="[
+                      `cal-day-public-badge--${dayPublicBadgeColor(timestamp.date)}`,
+                      { 'cal-day-public-badge--clickable': canUpdate },
+                    ]"
                   >
-                    <q-tooltip>{{ t('actions.focusDay') }}</q-tooltip>
-                  </q-btn>
-                  <q-btn
-                    icon="print"
-                    flat
-                    round
-                    :dense="compactDayHeaderActions"
-                    :size="compactDayHeaderActions ? 'xs' : 'sm'"
-                    @click.stop="onPrintDay(timestamp.date)"
-                  >
-                    <q-tooltip>{{ t('actions.printDay') }}</q-tooltip>
-                  </q-btn>
+                    <plan-letter-icon
+                      v-if="isLetterPlan(publishedPlanFor(timestamp.date))"
+                      :plan="letterPlanFor(timestamp.date)"
+                      :size="dayBadgeIconSize"
+                    />
+                    <q-icon
+                      v-else
+                      :name="dayPublicBadgeIcon(timestamp.date)"
+                      :size="dayBadgeIconSize"
+                    />
+                    <span
+                      v-if="showDayBadgeLabel"
+                      class="cal-day-public-badge__label"
+                    >
+                      {{ dayPublicBadgeLabel(timestamp.date) }}
+                    </span>
+                    <q-tooltip>
+                      {{ dayPublicBadgeTooltip(timestamp.date) }}
+                    </q-tooltip>
+                    <q-menu v-if="canUpdate">
+                      <q-list style="min-width: 180px">
+                        <q-item
+                          v-close-popup
+                          clickable
+                          :active="publishedPlanFor(timestamp.date) === null"
+                          @click="setDayPublish(timestamp.date, null)"
+                        >
+                          <q-item-section avatar>
+                            <q-icon name="public_off" />
+                          </q-item-section>
+                          <q-item-section>
+                            {{ t('public.day.unpublished') }}
+                          </q-item-section>
+                        </q-item>
+                        <q-item
+                          v-close-popup
+                          clickable
+                          :active="publishedPlanFor(timestamp.date) === 'a'"
+                          @click="setDayPublish(timestamp.date, 'a')"
+                        >
+                          <q-item-section avatar>
+                            <plan-letter-icon
+                              plan="a"
+                              size="1.5em"
+                            />
+                          </q-item-section>
+                          <q-item-section>
+                            {{ t('public.day.planA') }}
+                          </q-item-section>
+                        </q-item>
+                        <q-item
+                          v-close-popup
+                          clickable
+                          :active="publishedPlanFor(timestamp.date) === 'b'"
+                          @click="setDayPublish(timestamp.date, 'b')"
+                        >
+                          <q-item-section avatar>
+                            <plan-letter-icon
+                              plan="b"
+                              size="1.5em"
+                            />
+                          </q-item-section>
+                          <q-item-section>
+                            {{ t('public.day.planB') }}
+                          </q-item-section>
+                        </q-item>
+                        <q-item
+                          v-close-popup
+                          clickable
+                          :active="publishedPlanFor(timestamp.date) === 'both'"
+                          @click="setDayPublish(timestamp.date, 'both')"
+                        >
+                          <q-item-section avatar>
+                            <q-icon name="repeat" />
+                          </q-item-section>
+                          <q-item-section>
+                            {{ t('public.day.planBoth') }}
+                          </q-item-section>
+                        </q-item>
+                      </q-list>
+                    </q-menu>
+                  </div>
+
+                  <div class="cal-day-actions">
+                    <q-btn
+                      icon="print"
+                      flat
+                      round
+                      :dense="compactDayHeaderActions"
+                      :size="compactDayHeaderActions ? 'xs' : 'sm'"
+                      @click.stop="onPrintDay(timestamp.date)"
+                    >
+                      <q-tooltip>{{ t('actions.printDay') }}</q-tooltip>
+                    </q-btn>
+                  </div>
                 </div>
                 <calendar-day-item
                   v-for="event in getFullDayEvents(timestamp.date)"
@@ -366,14 +365,18 @@ const canDelete = computed<boolean>(() => can('event.program_items.delete'));
 // Moving an event is an update; copy-dragging (Ctrl/⌘) is a create.
 const canDrag = computed<boolean>(() => canUpdate.value || canCreate.value);
 
-// The day header packs a lot into a small strip — the publish badge and the
-// zoom/print actions all need a real touch target on a phone, not just the
-// small precise hit area a mouse pointer affords, so they grow on narrow
-// screens (mirrors `CalendarNavigationBar.vue`'s own `gt.xs` convention).
+// The day header packs a lot into a small strip. `compactDayHeaderActions`
+// only ever answers "is this a touch screen", never "how wide is one day
+// column" — a wide desktop window showing 8 days at once has just as little
+// room per column as a phone does. A text label next to the icon is only
+// safe in the one case with real width to spare: a single day filling the
+// whole view. Everywhere else, icon + tooltip + menu carry the same
+// information without competing with print/zoom for space.
 const compactDayHeaderActions = computed<boolean>(() => quasar.screen.gt.xs);
-const dayBadgeSize = computed<string>(() =>
-  compactDayHeaderActions.value ? '20px' : '28px',
+const dayBadgeIconSize = computed<string>(() =>
+  compactDayHeaderActions.value ? '16px' : '20px',
 );
+const showDayBadgeLabel = computed<boolean>(() => range.value === 1);
 
 const { event, events } = defineProps<{
   event: EventDetails;
@@ -451,6 +454,11 @@ const planLabel = (plan: 'a' | 'b' | 'both'): string => {
   }
   return t('public.day.planBoth');
 };
+
+function dayPublicBadgeLabel(date: string): string {
+  const plan = publishedPlanFor(date);
+  return plan === null ? t('public.day.unpublished') : planLabel(plan);
+}
 
 function dayPublicBadgeTooltip(date: string): string {
   const plan = publishedPlanFor(date);
@@ -1188,11 +1196,6 @@ function printCalendar(date: string, days: number) {
 
 function onPrint() {
   printCalendar(selectedDate.value, range.value);
-}
-
-function onZoomToDay(date: string) {
-  selectedDate.value = date;
-  range.value = 1;
 }
 
 function onPrintDay(date: string) {
@@ -2349,47 +2352,58 @@ function onPreviousNavigation() {
   transition: opacity 0.1s ease;
 }
 
+// The publish badge and the zoom/print actions share one toolbar-like strip —
+// a subtle surface tint and rounded corners give the row its own visual
+// identity, instead of reading as loose icons floating on the bare calendar
+// background. `.cal-day-actions`' auto left margin pushes it to the far end,
+// which works whether or not the badge is even rendered (it's the row's only
+// child when the public link is off).
+.cal-day-header-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 2px 2px 0;
+  padding: 3px 4px;
+  border-radius: 8px;
+  background-color: var(--md3-surface-container-low);
+}
+
 .cal-day-actions {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
   gap: 0;
-  opacity: 0.4;
-  transition: opacity 0.15s;
-
-  &:hover {
-    opacity: 1;
-  }
-
-  @media (hover: none) {
-    opacity: 1;
-  }
+  margin-left: auto;
 }
 
-// Unlike `.cal-day-actions`, always shown at full opacity, with the same icon
-// slot rendered for every day (only its color/icon change) — whether a day is
-// published, and for which plan, must be obvious at a glance and every day
-// column must reserve identical header height, published or not.
+// Unlike `.cal-day-actions`, always shown at full opacity, with the same
+// content rendered for every day (only its color/icon/label change) — whether
+// a day is published, and for which plan, must be obvious at a glance, and
+// every day column must reserve identical header height, published or not.
+// A labeled pill rather than a bare color dot: size and color alone made this
+// too easy to miss and too small a target — text makes the state legible
+// without relying on color perception at all.
 .cal-day-public-badge {
   position: relative;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+  gap: 4px;
+  flex-shrink: 1;
+  min-width: 0;
   box-sizing: border-box;
-  margin: 2px auto 0;
-  border-radius: 50%;
+  padding: 4px 10px;
+  border-radius: 999px;
 
   &--clickable {
     cursor: pointer;
 
-    // The visible badge stays small so the header doesn't get crowded, but
-    // the actual tap target is grown well past it on touch devices — a
-    // transparent hit area, not a bigger badge.
+    // The pill itself is already a real touch target, but touch devices get
+    // a little extra reach past its edges at no visual cost.
     @media (hover: none) {
       &::before {
         content: '';
         position: absolute;
-        inset: -10px;
+        inset: -6px;
       }
     }
   }
@@ -2406,6 +2420,15 @@ function onPreviousNavigation() {
     background-color: transparent;
     border: 2px solid var(--md3-outline-variant);
     color: var(--md3-on-surface-variant);
+  }
+
+  &__label {
+    overflow: hidden;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.2;
+    white-space: nowrap;
+    text-overflow: ellipsis;
   }
 }
 
@@ -2452,7 +2475,6 @@ dialog:
     title: 'Delete Event'
     message: 'Are you sure you want to delete this event?'
 actions:
-  focusDay: 'Show this day only'
   printDay: 'Print this day'
 public:
   day:
@@ -2471,7 +2493,6 @@ dialog:
     title: 'Ereignis löschen'
     message: 'Sind Sie sicher, dass Sie dieses Ereignis löschen möchten?'
 actions:
-  focusDay: 'Nur diesen Tag anzeigen'
   printDay: 'Diesen Tag drucken'
 public:
   day:
@@ -2490,7 +2511,6 @@ dialog:
     title: "Supprimer l'événement"
     message: 'Êtes-vous sûr de vouloir supprimer cet événement ?'
 actions:
-  focusDay: 'Afficher ce jour uniquement'
   printDay: 'Imprimer ce jour'
 public:
   day:
@@ -2509,7 +2529,6 @@ dialog:
     title: 'Usuń wydarzenie'
     message: 'Czy na pewno chcesz usunąć to wydarzenie?'
 actions:
-  focusDay: 'Pokaż tylko ten dzień'
   printDay: 'Drukuj ten dzień'
 public:
   day:
@@ -2528,7 +2547,6 @@ dialog:
     title: 'Smazat událost'
     message: 'Opravdu chcete smazat tuto událost?'
 actions:
-  focusDay: 'Zobrazit pouze tento den'
   printDay: 'Vytisknout tento den'
 public:
   day:
