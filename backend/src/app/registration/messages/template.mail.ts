@@ -37,7 +37,17 @@ function dateToString(date: Date | string | null): string | null {
   return typeof date === 'string' ? date : date.toISOString();
 }
 
-function formatDate(date: Date | string | null, locale: string): string | null {
+/**
+ * Only ever called with `event.startAt`/`endAt` — a UTC-carrier `Date`
+ * (see `@camp-registration/common/utils`), never a real instant. Rendered
+ * server-side with no viewer to cancel out a conversion, so `timeZone: 'UTC'`
+ * is required to reproduce the organizer's literal digits regardless of the
+ * server's own configured timezone.
+ */
+function formatEventDate(
+  date: Date | string | null,
+  locale: string,
+): string | null {
   if (date === null) {
     return null;
   }
@@ -45,6 +55,7 @@ function formatDate(date: Date | string | null, locale: string): string | null {
   return new Intl.DateTimeFormat(locale, {
     dateStyle: 'long',
     timeStyle: 'short',
+    timeZone: 'UTC',
   }).format(d);
 }
 
@@ -156,8 +167,8 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
       event: {
         ...translateEventContext(event, locale),
         // Format dates using the registration's full locale
-        startAt: formatDate(event.startAt, this.locale()),
-        endAt: formatDate(event.endAt, this.locale()),
+        startAt: formatEventDate(event.startAt, this.locale()),
+        endAt: formatEventDate(event.endAt, this.locale()),
       },
       registration: {
         id: this.payload.registration.id,

@@ -18,8 +18,12 @@ export interface Event extends Identifiable {
   organizer: Translatable;
   contactEmail: Translatable;
   maxParticipants: Translatable<number>;
+  /** Naive local datetime (`YYYY-MM-DDTHH:mm:ss`, no offset), local to `timezone` — never a UTC instant. */
   startAt: string;
+  /** Naive local datetime (`YYYY-MM-DDTHH:mm:ss`, no offset), local to `timezone` — never a UTC instant. */
   endAt: string;
+  /** IANA zone `startAt`/`endAt` are local to. */
+  timezone: string;
   minAge: number;
   maxAge: number;
   location: Translatable | null;

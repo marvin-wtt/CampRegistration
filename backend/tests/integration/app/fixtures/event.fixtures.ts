@@ -2,6 +2,7 @@ import moment from 'moment';
 import { Prisma } from '#generated/prisma/client.js';
 import { createForm } from '../utils/form.js';
 import type { EventCreateData } from '@camp-registration/common/entities';
+import { utcCarrierToNaiveDateTime } from '@camp-registration/common/utils';
 
 export const eventListed = {
   listed: true,
@@ -29,8 +30,13 @@ export const eventCreateNational = {
   maxParticipants: 10,
   minAge: 10,
   maxAge: 15,
-  startAt: moment().add(20, 'days').startOf('hour').toDate().toISOString(),
-  endAt: moment().add(22, 'days').startOf('hour').toDate().toISOString(),
+  startAt: utcCarrierToNaiveDateTime(
+    moment().add(20, 'days').startOf('hour').toDate(),
+  ),
+  endAt: utcCarrierToNaiveDateTime(
+    moment().add(22, 'days').startOf('hour').toDate(),
+  ),
+  timezone: 'Europe/Berlin',
   price: 100.0,
   location: 'Somewhere',
 } satisfies EventCreateData;
@@ -481,8 +487,8 @@ export const eventCreatedBody: CreateBodyData[] = [
     name: 'End At before Start At',
     data: {
       ...eventCreateInternational,
-      startAt: '2100-01-02T00:00:00.000Z',
-      endAt: '2100-01-01T00:00:00.000Z',
+      startAt: '2100-01-02T00:00:00',
+      endAt: '2100-01-01T00:00:00',
     },
     expected: 400,
   },
@@ -1035,7 +1041,7 @@ export const eventUpdateBody: UpdateBodyData[] = [
       endAt: '2024-01-02T01:00:00.000Z',
     },
     data: {
-      startAt: '2024-01-01T01:00:00.000Z',
+      startAt: '2024-01-01T01:00:00',
     },
     expected: 200,
   },
@@ -1066,7 +1072,7 @@ export const eventUpdateBody: UpdateBodyData[] = [
       endAt: '2024-01-01T01:00:00.000Z',
     },
     data: {
-      startAt: '2024-01-02T01:00:00.000Z',
+      startAt: '2024-01-02T01:00:00',
     },
     expected: 400,
   },
@@ -1077,7 +1083,7 @@ export const eventUpdateBody: UpdateBodyData[] = [
       startAt: '2024-01-01T01:00:00.000Z',
     },
     data: {
-      endAt: '2024-01-02T01:00:00.000Z',
+      endAt: '2024-01-02T01:00:00',
     },
     expected: 200,
   },
@@ -1105,8 +1111,8 @@ export const eventUpdateBody: UpdateBodyData[] = [
   {
     name: 'End At before Start At',
     data: {
-      startAt: '2100-01-02T00:00:00.000Z',
-      endAt: '2100-01-01T00:00:00.000Z',
+      startAt: '2100-01-02T00:00:00',
+      endAt: '2100-01-01T00:00:00',
     },
     expected: 400,
   },
@@ -1116,7 +1122,7 @@ export const eventUpdateBody: UpdateBodyData[] = [
       startAt: '2024-01-02T01:00:00.000Z',
     },
     data: {
-      endAt: '2024-01-01T01:00:00.000Z',
+      endAt: '2024-01-01T01:00:00',
     },
     expected: 400,
   },

@@ -173,6 +173,7 @@ import { storeToRefs } from 'pinia';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import { useEventStatistics } from '@/composables/eventStatistics';
 import { useObjectTranslation } from '@/composables/objectTranslation';
+import { zonedInstant } from '@camp-registration/common/utils';
 
 const { t, d, locale } = useI18n();
 const { to } = useObjectTranslation();
@@ -214,8 +215,11 @@ const countdown = computed<string | undefined>(() => {
     return undefined;
   }
   const now = Date.now();
-  const startAt = new Date(event.value.startAt).getTime();
-  const endAt = new Date(event.value.endAt).getTime();
+  const startAt = zonedInstant(
+    event.value.startAt,
+    event.value.timezone,
+  ).getTime();
+  const endAt = zonedInstant(event.value.endAt, event.value.timezone).getTime();
 
   // The event has already started: it is either in progress or over.
   if (now >= startAt) {

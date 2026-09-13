@@ -53,6 +53,7 @@ import {
   type ForwardedFieldSlots,
   usePassthroughProps,
 } from '@/composables/passthroughProps';
+import { localDateToNaiveDateTime } from '@camp-registration/common/utils';
 
 type Props = Omit<
   QInputProps,
@@ -139,7 +140,9 @@ function timeToIso(inputTime: string): string | undefined {
   const date = model.value ? new Date(model.value) : new Date();
   date.setHours(hours ?? 0, minutes ?? 0, 0, 0);
 
-  return date.toISOString();
+  // Naive local datetime — no timezone conversion, so the typed digits are
+  // exactly what gets stored and later displayed everywhere.
+  return localDateToNaiveDateTime(date);
 }
 </script>
 
