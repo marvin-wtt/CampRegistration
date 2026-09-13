@@ -14,6 +14,8 @@ import type { Request, Response } from 'express';
 import { BaseController } from '#core/base/BaseController';
 import { MessageTemplateService } from '#app/messageTemplate/message-template.service';
 import { EventManagerService } from '#app/eventManager/event-manager.service.js';
+import { SettingService } from '#app/setting/setting.service';
+import { PrivacyNoticeService } from '#app/privacyNotice/privacy-notice.service';
 import { RealtimeService } from '#core/realtime/RealtimeService';
 import ApiError from '#utils/ApiError';
 import { inject, injectable } from 'inversify';
@@ -31,6 +33,10 @@ export class EventController extends BaseController {
     private readonly tableTemplateService: TableTemplateService,
     @inject(MessageTemplateService)
     private readonly messageTemplateService: MessageTemplateService,
+    @inject(SettingService)
+    private readonly settingService: SettingService,
+    @inject(PrivacyNoticeService)
+    private readonly privacyNoticeService: PrivacyNoticeService,
     @inject(RealtimeService)
     private readonly realtimeService: RealtimeService,
   ) {
@@ -79,70 +85,33 @@ export class EventController extends BaseController {
     const userId = req.authUserId();
     const organization = req.modelOrFail('organization');
 
-    // Check if the user is allowed to create a event based on the reference event
-    // This must happen here because the body needs to be validated first
-    if (body.referenceEventId) {
-      const isManager =
-        await this.managerService.eventManagerExistsWithUserIdAndEventId(
+    const referenceEvent = body.referenceEventId
+      ? await this.loadReferenceEvent(
           body.referenceEventId,
           userId,
-        );
-
-      if (!isManager) {
-        throw new ApiError(
-          httpStatus.FORBIDDEN,
-          'You are not allowed to create a event based on this reference event.',
-        );
-      }
-    }
-
-    const referenceEvent = body.referenceEventId
-      ? await this.eventService.getEventById(body.referenceEventId)
+          body.countries,
+        )
       : undefined;
-
-    // Verify that the countries of the new event match the countries of the reference event
-    // This is important to ensure that the translations are present
-    if (referenceEvent) {
-      const countriesMatch =
-        referenceEvent.countries.length === body.countries.length &&
-        referenceEvent.countries.every((country) =>
-          body.countries.includes(country),
-        );
-
-      if (!countriesMatch) {
-        throw new ApiError(
-          httpStatus.BAD_REQUEST,
-          'The countries of the new event must match the countries of the reference event.',
-        );
-      }
-    }
 
     const preset = getEventPreset(
       body.preset,
       localesForCountries(body.countries),
     );
 
+    const cloned = body.referenceEventId
+      ? await this.cloneReferenceEventResources(body.referenceEventId)
+      : undefined;
+
     const form = body.form ?? referenceEvent?.form ?? preset.form;
     const themes = body.themes ?? referenceEvent?.themes ?? preset.themes;
-
-    // Copy files from reference event when cloning; no default files otherwise
-    const files = body.referenceEventId
-      ? await this.fileService.queryModelFiles({
-          name: 'event',
-          id: body.referenceEventId,
-        })
-      : [];
-
-    // Copy table templates from reference event when cloning; otherwise use preset
-    const tableTemplates = body.referenceEventId
-      ? await this.tableTemplateService.queryTemplates(body.referenceEventId)
-      : preset.tableTemplates.map((value) => ({ data: value }));
-
-    const messageTemplates = body.referenceEventId
-      ? await this.messageTemplateService.queryMessageTemplates(
-          body.referenceEventId,
-        )
-      : defaultMessageTemplatesForCountries(body.countries);
+    const files = cloned?.files ?? [];
+    const tableTemplates =
+      cloned?.tableTemplates ??
+      preset.tableTemplates.map((value) => ({ data: value }));
+    const messageTemplates =
+      cloned?.messageTemplates ??
+      defaultMessageTemplatesForCountries(body.countries);
+    const settings = cloned?.settings ?? [];
 
     const event = await this.eventService.createEvent(
       userId,
@@ -170,9 +139,82 @@ export class EventController extends BaseController {
       tableTemplates,
       messageTemplates,
       files,
+      settings,
     );
 
+    // Privacy notice versions aren't part of the event's own row, so they
+    // can't ride along in `createEvent`'s single insert — copy them over in
+    // a step of their own now that the new event exists.
+    if (body.referenceEventId) {
+      await this.privacyNoticeService.copyEventAddendum(
+        body.referenceEventId,
+        event.id,
+        organization.id,
+      );
+    }
+
     res.status(httpStatus.CREATED).resource(new EventDetailsResource(event));
+  }
+
+  /**
+   * Confirms the caller may clone the reference event and that its countries
+   * match the new event's, then returns it for its form/themes fallback.
+   */
+  private async loadReferenceEvent(
+    referenceEventId: string,
+    userId: string,
+    countries: string[],
+  ) {
+    const isManager =
+      await this.managerService.eventManagerExistsWithUserIdAndEventId(
+        referenceEventId,
+        userId,
+      );
+
+    if (!isManager) {
+      throw new ApiError(
+        httpStatus.FORBIDDEN,
+        'You are not allowed to create a event based on this reference event.',
+      );
+    }
+
+    const referenceEvent =
+      await this.eventService.getEventById(referenceEventId);
+
+    // Verify that the countries of the new event match the countries of the reference event
+    // This is important to ensure that the translations are present
+    if (referenceEvent) {
+      const countriesMatch =
+        referenceEvent.countries.length === countries.length &&
+        referenceEvent.countries.every((country) =>
+          countries.includes(country),
+        );
+
+      if (!countriesMatch) {
+        throw new ApiError(
+          httpStatus.BAD_REQUEST,
+          'The countries of the new event must match the countries of the reference event.',
+        );
+      }
+    }
+
+    return referenceEvent;
+  }
+
+  /** Everything cloned off a reference event that isn't the event row itself. */
+  private async cloneReferenceEventResources(referenceEventId: string) {
+    const [files, tableTemplates, messageTemplates, settings] =
+      await Promise.all([
+        this.fileService.queryModelFiles({
+          name: 'event',
+          id: referenceEventId,
+        }),
+        this.tableTemplateService.queryTemplates(referenceEventId),
+        this.messageTemplateService.queryMessageTemplates(referenceEventId),
+        this.settingService.querySettings(referenceEventId),
+      ]);
+
+    return { files, tableTemplates, messageTemplates, settings };
   }
 
   async updateOrganization(req: Request, res: Response) {

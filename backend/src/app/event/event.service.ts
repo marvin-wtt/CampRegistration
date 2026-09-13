@@ -15,6 +15,10 @@ type MessageTemplateCreateData = (OptionalByKeys<
   'id'
 > & { attachments?: File[] })[];
 type FileCreateData = OptionalByKeys<Prisma.FileCreateManyEventInput, 'id'>[];
+type EventSettingCreateData = OptionalByKeys<
+  Prisma.EventSettingCreateManyEventInput,
+  'id'
+>[];
 
 // The event's own fields, as plain values. Relations, generated columns and the
 // query shape are the service's business — a caller never writes Prisma input.
@@ -293,6 +297,7 @@ export class EventService extends BaseService {
     tableTemplates: TableTemplateCreateData = [],
     messageTemplates: MessageTemplateCreateData = [],
     files: FileCreateData = [],
+    settings: EventSettingCreateData = [],
   ) {
     const fileIds = files.map((f) => f.id).filter((f) => f != null);
     const fileIdMap = new Map<string, string>();
@@ -334,6 +339,9 @@ export class EventService extends BaseService {
           createMany: { data: this.stripIds(messageTemplateData) },
         },
         files: { createMany: { data: fileData } },
+        eventSettings: {
+          createMany: { data: this.stripIds(settings) },
+        },
       },
       include: { ...this.eventRegistrationInclude() },
     });

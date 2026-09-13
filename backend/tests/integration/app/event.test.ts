@@ -11,6 +11,8 @@ import {
   MessageDeliveryFactory,
   MessageTemplateFactory,
   OrganizationFactory,
+  EventSettingFactory,
+  PrivacyNoticeFactory,
 } from '../../../prisma/factories/index.js';
 import { Event, Prisma } from '#generated/prisma/client.js';
 import { eventRegistrationStatus } from '#app/event/event.util';
@@ -1258,6 +1260,103 @@ describe('/api/v1/events', () => {
         expect(
           files.some((value) => value.originalName === 'File 2'),
         ).toBeTruthy();
+      });
+
+      it('should copy all event settings from the referenced event', async () => {
+        const { event: referenceEvent, accessToken } =
+          await createEventWithManagerAndToken();
+        await EventSettingFactory.create({
+          event: { connect: { id: referenceEvent.id } },
+          key: 'room-planner',
+          data: { skipGenderFilter: true, skipRoleFilter: false },
+        });
+        await EventSettingFactory.create({
+          event: { connect: { id: referenceEvent.id } },
+          key: 'navigation',
+          data: { order: ['participants', 'rooms'] },
+        });
+
+        const data = {
+          ...eventCreateNational,
+          referenceEventId: referenceEvent.id,
+        };
+
+        const { body } = await request()
+          .post(`/api/v1/events/`)
+          .send(data)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(201);
+
+        const settings = await prisma.eventSetting.findMany({
+          where: { eventId: body.data.id },
+        });
+
+        expect(settings.length).toBe(2);
+        expect(
+          settings.find((value) => value.key === 'room-planner')?.data,
+        ).toStrictEqual({ skipGenderFilter: true, skipRoleFilter: false });
+        expect(
+          settings.find((value) => value.key === 'navigation')?.data,
+        ).toStrictEqual({ order: ['participants', 'rooms'] });
+      });
+
+      it('should copy the published privacy notice addendum from the referenced event', async () => {
+        const { event: referenceEvent, accessToken } =
+          await createEventWithManagerAndToken();
+        await PrivacyNoticeFactory.createEventAddendum(referenceEvent.id, {
+          recipients: [{ key: 'transport_provider', name: 'Bus Co' }],
+        });
+
+        const data = {
+          ...eventCreateNational,
+          referenceEventId: referenceEvent.id,
+        };
+
+        const { body } = await request()
+          .post(`/api/v1/events/`)
+          .send(data)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(201);
+
+        const addendum = await prisma.privacyNoticeVersion.findFirst({
+          where: { scope: 'EVENT', scopeId: body.data.id },
+        });
+
+        expect(addendum?.content).toMatchObject({
+          recipients: [{ key: 'transport_provider', name: 'Bus Co' }],
+        });
+      });
+
+      it('should not copy a withdrawn (empty) privacy notice addendum', async () => {
+        const { event: referenceEvent, accessToken } =
+          await createEventWithManagerAndToken();
+        await PrivacyNoticeFactory.createEventAddendum(
+          referenceEvent.id,
+          { recipients: [{ key: 'transport_provider', name: 'Bus Co' }] },
+          1,
+        );
+        await PrivacyNoticeFactory.createEventAddendum(
+          referenceEvent.id,
+          {},
+          2,
+        );
+
+        const data = {
+          ...eventCreateNational,
+          referenceEventId: referenceEvent.id,
+        };
+
+        const { body } = await request()
+          .post(`/api/v1/events/`)
+          .send(data)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(201);
+
+        const addendum = await prisma.privacyNoticeVersion.findFirst({
+          where: { scope: 'EVENT', scopeId: body.data.id },
+        });
+
+        expect(addendum).toBeNull();
       });
 
       it('should replace file URLs in the form', async () => {

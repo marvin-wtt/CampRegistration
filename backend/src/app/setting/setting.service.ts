@@ -10,6 +10,12 @@ export class SettingService extends BaseService {
     });
   }
 
+  async querySettings(eventId: string) {
+    return this.prisma.eventSetting.findMany({
+      where: { eventId },
+    });
+  }
+
   async upsertSetting(
     eventId: string,
     key: SettingKey,
