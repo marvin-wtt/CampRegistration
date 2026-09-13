@@ -186,6 +186,7 @@ import { useObjectTranslation } from '@/composables/objectTranslation';
 import { copyToClipboard, useQuasar } from 'quasar';
 import type { Event } from '@camp-registration/common/entities';
 import type { ScopePermission } from '@camp-registration/common/permissions';
+import { zonedInstant } from '@camp-registration/common/utils';
 import { computed, type Ref, ref } from 'vue';
 import { useProfileStore } from '@/stores/profile-store';
 import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
@@ -247,8 +248,8 @@ type Phase = 'ongoing' | 'upcoming' | 'past';
 
 const phase = computed<Phase>(() => {
   const now = Date.now();
-  const start = new Date(event.startAt).getTime();
-  const end = new Date(event.endAt).getTime();
+  const start = zonedInstant(event.startAt, event.timezone).getTime();
+  const end = zonedInstant(event.endAt, event.timezone).getTime();
   if (now < start) {
     return 'upcoming';
   }
@@ -277,8 +278,8 @@ const relLabel = computed<string>(() => {
   }
   const target =
     phase.value === 'upcoming'
-      ? new Date(event.startAt)
-      : new Date(event.endAt);
+      ? zonedInstant(event.startAt, event.timezone)
+      : zonedInstant(event.endAt, event.timezone);
   return relativeTime(target);
 });
 

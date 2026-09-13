@@ -1,6 +1,7 @@
 import type { Registration } from '@camp-registration/common/entities';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import { useRegistrationsStore } from '@/stores/registration-store';
+import { zonedInstant } from '@camp-registration/common/utils';
 
 export function useRegistrationHelper() {
   const eventDetailsStore = useEventDetailsStore();
@@ -78,8 +79,10 @@ export function useRegistrationHelper() {
       return undefined;
     }
 
-    const eventStart = eventDetailsStore.data?.startAt;
-    const currentDate = eventStart ? new Date(eventStart) : new Date();
+    const event = eventDetailsStore.data;
+    const currentDate = event
+      ? zonedInstant(event.startAt, event.timezone)
+      : new Date();
     const ageInMilliseconds = currentDate.getTime() - birthDate.getTime();
     const ageInYears = ageInMilliseconds / (1000 * 60 * 60 * 24 * 365.25);
 

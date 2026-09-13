@@ -3,36 +3,29 @@ import type { PageMeta } from '#utils/pageMeta';
 import { translateObject } from '#utils/translateObject';
 import { generateUrl } from '#utils/url';
 import config from '#config/index';
+import { naiveDateTimeToUtcCarrier } from '@camp-registration/common/utils';
 
 /** Translatable fields are JSON columns — not guaranteed to hold a string. */
 const text = (value: unknown): string =>
   typeof value === 'string' ? value : '';
 
 /**
- * Formatted without an explicit timezone, matching what the page itself does
- * (`EventCard.vue`) — the runtime's zone, which for the server is the
- * container's (UTC) and for a browser is the viewer's.
- *
- * Neither is reliably the day the organizer typed: they enter a local time that
- * the browser converts to an instant (`TimeInput.timeToIso`), and no timezone
- * is stored alongside the event, so an event starting just after local midnight
- * can render as the day before. Deliberately left as-is here so the preview and
- * the page agree; fixing it properly means storing the event's timezone.
+ * Rendered server-side, with no viewer whose own offset could cancel out a
+ * conversion — so this reads `startAt`/`endAt` via the UTC-carrier and formats
+ * with an explicit `timeZone: 'UTC'`, reproducing the organizer's literal
+ * digits regardless of the server's own configured timezone.
  */
 function formatDateRange(
   startAt: string,
   endAt: string,
   locale: string,
 ): string {
-  const start = new Date(startAt);
-  const end = new Date(endAt);
-
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-    return '';
-  }
+  const start = naiveDateTimeToUtcCarrier(startAt);
+  const end = naiveDateTimeToUtcCarrier(endAt);
 
   const format = new Intl.DateTimeFormat(locale, {
     dateStyle: 'medium',
+    timeZone: 'UTC',
   });
 
   return start.getTime() === end.getTime()

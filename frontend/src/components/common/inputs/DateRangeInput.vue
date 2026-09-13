@@ -66,6 +66,10 @@ import { computed, ref, useTemplateRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { date as dateUtil, type QInputProps, type QPopupProxy } from 'quasar';
 import {
+  formatNaiveDateTime,
+  localDateToNaiveDateTime,
+} from '@camp-registration/common/utils';
+import {
   type ForwardedFieldSlots,
   usePassthroughProps,
 } from '@/composables/passthroughProps';
@@ -271,15 +275,23 @@ function toIso(
   const [year = 0, month = 1, dayOfMonth = 1] = day.split('-').map(Number);
 
   // Keep the existing time of day; fall back to the default time when the
-  // date is set for the first time.
+  // date is set for the first time. Naive local datetime throughout — no
+  // timezone conversion, so the typed digits are exactly what gets stored.
   if (currentIso) {
     const result = new Date(currentIso);
     result.setFullYear(year, month - 1, dayOfMonth);
-    return result.toISOString();
+    return localDateToNaiveDateTime(result);
   }
 
   const [hours = 0, minutes = 0] = defaultTime.split(':').map(Number);
-  return new Date(year, month - 1, dayOfMonth, hours, minutes).toISOString();
+  return formatNaiveDateTime({
+    year,
+    month,
+    day: dayOfMonth,
+    hour: hours,
+    minute: minutes,
+    second: 0,
+  });
 }
 </script>
 

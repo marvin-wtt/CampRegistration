@@ -61,7 +61,7 @@ describe('TimeInput', () => {
 
     await wrapper.find('input').setValue('08:00');
 
-    expect(wrapper.props('modelValue')).toBe('2025-12-24T07:00:00.000Z');
+    expect(wrapper.props('modelValue')).toBe('2025-12-24T08:00:00');
   });
 
   it('keeps the date across midnight', async () => {
@@ -69,8 +69,8 @@ describe('TimeInput', () => {
 
     await wrapper.find('input').setValue('00:00');
 
-    // 00:00 local on Dec 24 is 23:00Z on Dec 23 in Berlin
-    expect(wrapper.props('modelValue')).toBe('2025-12-23T23:00:00.000Z');
+    // Naive local datetime: no timezone conversion, so the date sticks.
+    expect(wrapper.props('modelValue')).toBe('2025-12-24T00:00:00');
   });
 
   it('ignores incomplete input instead of dropping the value', async () => {
@@ -111,7 +111,7 @@ describe('TimeInput', () => {
 
     await wrapper.find('input').setValue('16:30');
 
-    expect(wrapper.props('modelValue')).toBe('2025-12-24T15:30:00.000Z');
+    expect(wrapper.props('modelValue')).toBe('2025-12-24T16:30:00');
     vi.useRealTimers();
   });
 });

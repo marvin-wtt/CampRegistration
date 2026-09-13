@@ -5,6 +5,22 @@ import type {
   EventQuery,
   EventOrganizationUpdateData,
 } from '@camp-registration/common/entities';
+import { naiveDateTimeToUtcCarrier } from '@camp-registration/common/utils';
+
+// `z.iso.datetime()` accepts a `Z` suffix regardless of `local`/`offset`, so a
+// real instant must be rejected explicitly — startAt/endAt are the organizer's
+// local wall-clock digits, never a UTC instant.
+const naiveDateTime = z.iso
+  .datetime({ local: true, offset: false, precision: 0 })
+  .refine((val) => !val.endsWith('Z'), 'Must not carry a timezone offset')
+  .transform(naiveDateTimeToUtcCarrier);
+
+const timezone = z
+  .string()
+  .refine(
+    (val) => Intl.supportedValuesOf('timeZone').includes(val),
+    'Must be a valid IANA timezone identifier',
+  );
 
 const show = z.object({
   params: z.object({
@@ -94,8 +110,9 @@ const store = z.object({
       contactEmail: translatedValue(z.email()),
       maxParticipants: translatedValue(z.number().int().nonnegative()),
       confirmationMode: z.enum(['AUTOMATIC', 'MANUAL']).optional(),
-      startAt: z.iso.datetime().transform((val) => new Date(val)),
-      endAt: z.iso.datetime().transform((val) => new Date(val)),
+      startAt: naiveDateTime,
+      endAt: naiveDateTime,
+      timezone,
       minAge: z.number().int().nonnegative(),
       maxAge: z.number().int().max(99),
       location: translatedValue(z.string()),
@@ -184,8 +201,9 @@ const update = (event: Event) =>
         contactEmail: translatedValue(z.email()),
         maxParticipants: translatedValue(z.number().int().nonnegative()),
         confirmationMode: z.enum(['AUTOMATIC', 'MANUAL']),
-        startAt: z.iso.datetime().transform((val) => new Date(val)),
-        endAt: z.iso.datetime().transform((val) => new Date(val)),
+        startAt: naiveDateTime,
+        endAt: naiveDateTime,
+        timezone,
         minAge: z.number().int().nonnegative(),
         maxAge: z.number().int().max(99),
         location: translatedValue(z.string()),

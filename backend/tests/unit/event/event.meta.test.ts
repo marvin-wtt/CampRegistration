@@ -8,10 +8,8 @@ const event = (data: Partial<Event> = {}): Event =>
     name: 'Sommerlager',
     organizer: 'Beispiel e.V.',
     location: 'Berlin',
-    // Midday, so the rendered day is the same in every plausible machine
-    // timezone — dates are formatted in the runtime's zone, like the frontend.
-    startAt: '2026-07-12T12:00:00.000Z',
-    endAt: '2026-07-26T12:00:00.000Z',
+    startAt: '2026-07-12T12:00:00',
+    endAt: '2026-07-26T12:00:00',
     ...data,
   }) as Event;
 

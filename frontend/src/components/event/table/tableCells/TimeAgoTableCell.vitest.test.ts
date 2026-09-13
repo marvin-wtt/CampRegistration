@@ -67,6 +67,7 @@ const createEvent = (
   maxParticipants: 100,
   startAt: '2023-01-01T00:00:00Z',
   endAt: '2023-01-10T00:00:00Z',
+  timezone: 'UTC',
   minAge: 18,
   maxAge: 30,
   price: 50,
