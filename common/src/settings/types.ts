@@ -53,3 +53,31 @@ export interface ProgramPlannerSettings {
 export interface NavigationSettings {
   hiddenItems: string[];
 }
+
+/**
+ * Stored under `SETTING_KEYS.PROGRAM_PUBLIC`. Configures the public, read-only
+ * program-calendar link at `/events/:eventId/program`.
+ *
+ * Publishing is per day, set from that day's own header in the planner —
+ * there is no global "which plan"/"how many days" setting anymore. `enabled`
+ * is a separate master switch so a manager can hide the whole link instantly
+ * without losing which days were published, and restore them by turning it
+ * back on.
+ */
+export interface ProgramPublicSettings {
+  /**
+   * Whether the link is publicly reachable at all.
+   *
+   * @default false
+   */
+  enabled: boolean;
+  /**
+   * Which plan variant is published for a given day, keyed by `YYYY-MM-DD`.
+   * A date absent from this map has not been published. Participants may
+   * browse to any day within the event's dates (including ones in the
+   * future); only the plan recorded here — if any — is shown for that day.
+   *
+   * @default {}
+   */
+  publishedDays: Record<string, 'a' | 'b' | 'both'>;
+}

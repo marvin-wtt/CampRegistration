@@ -16,11 +16,13 @@
       :editable="canUpdate"
       :deletable="canDelete"
       :creatable="canCreate"
+      :public-link-active="publicSettings.enabled"
       @next="onNextNavigation"
       @previous="onPreviousNavigation"
       @jump="(date) => (anchorDate = date)"
       @print="onPrint"
       @settings="onSettingsOpen"
+      @public-link="onPublicLinkOpen"
     />
     <div
       class="col row no-wrap"
@@ -58,6 +60,96 @@
           >
             <template #head-day-event="{ scope: { timestamp } }">
               <div class="column">
+                <!-- Publishing per day, set right here — always rendered
+                     (never v-if) with the same content for every day (an
+                     icon, colored by state) so every column reserves
+                     identical header height; only the color/icon differ. -->
+                <div
+                  v-if="publicSettings.enabled"
+                  class="cal-day-public-badge"
+                  :class="[
+                    `cal-day-public-badge--${dayPublicBadgeColor(timestamp.date)}`,
+                    { 'cal-day-public-badge--clickable': canUpdate },
+                  ]"
+                  :style="{ width: dayBadgeSize, height: dayBadgeSize }"
+                  @click.stop
+                >
+                  <plan-letter-icon
+                    v-if="isLetterPlan(publishedPlanFor(timestamp.date))"
+                    :plan="letterPlanFor(timestamp.date)"
+                    :size="compactDayHeaderActions ? '12px' : '16px'"
+                  />
+                  <q-icon
+                    v-else
+                    :name="dayPublicBadgeIcon(timestamp.date)"
+                    :size="compactDayHeaderActions ? '12px' : '16px'"
+                  />
+                  <q-tooltip>
+                    {{ dayPublicBadgeTooltip(timestamp.date) }}
+                  </q-tooltip>
+                  <q-menu v-if="canUpdate">
+                    <q-list style="min-width: 180px">
+                      <q-item
+                        v-close-popup
+                        clickable
+                        :active="publishedPlanFor(timestamp.date) === null"
+                        @click="setDayPublish(timestamp.date, null)"
+                      >
+                        <q-item-section avatar>
+                          <q-icon name="public_off" />
+                        </q-item-section>
+                        <q-item-section>
+                          {{ t('public.day.unpublished') }}
+                        </q-item-section>
+                      </q-item>
+                      <q-item
+                        v-close-popup
+                        clickable
+                        :active="publishedPlanFor(timestamp.date) === 'a'"
+                        @click="setDayPublish(timestamp.date, 'a')"
+                      >
+                        <q-item-section avatar>
+                          <plan-letter-icon
+                            plan="a"
+                            size="1.5em"
+                          />
+                        </q-item-section>
+                        <q-item-section>
+                          {{ t('public.day.planA') }}
+                        </q-item-section>
+                      </q-item>
+                      <q-item
+                        v-close-popup
+                        clickable
+                        :active="publishedPlanFor(timestamp.date) === 'b'"
+                        @click="setDayPublish(timestamp.date, 'b')"
+                      >
+                        <q-item-section avatar>
+                          <plan-letter-icon
+                            plan="b"
+                            size="1.5em"
+                          />
+                        </q-item-section>
+                        <q-item-section>
+                          {{ t('public.day.planB') }}
+                        </q-item-section>
+                      </q-item>
+                      <q-item
+                        v-close-popup
+                        clickable
+                        :active="publishedPlanFor(timestamp.date) === 'both'"
+                        @click="setDayPublish(timestamp.date, 'both')"
+                      >
+                        <q-item-section avatar>
+                          <q-icon name="repeat" />
+                        </q-item-section>
+                        <q-item-section>
+                          {{ t('public.day.planBoth') }}
+                        </q-item-section>
+                      </q-item>
+                    </q-list>
+                  </q-menu>
+                </div>
                 <div
                   class="cal-day-actions"
                   @click.stop
@@ -67,8 +159,8 @@
                     icon="zoom_in"
                     flat
                     round
-                    dense
-                    size="xs"
+                    :dense="compactDayHeaderActions"
+                    :size="compactDayHeaderActions ? 'xs' : 'sm'"
                     @click.stop="onZoomToDay(timestamp.date)"
                   >
                     <q-tooltip>{{ t('actions.focusDay') }}</q-tooltip>
@@ -77,8 +169,8 @@
                     icon="print"
                     flat
                     round
-                    dense
-                    size="xs"
+                    :dense="compactDayHeaderActions"
+                    :size="compactDayHeaderActions ? 'xs' : 'sm'"
                     @click.stop="onPrintDay(timestamp.date)"
                   >
                     <q-tooltip>{{ t('actions.printDay') }}</q-tooltip>
@@ -242,11 +334,16 @@ import CalendarNavigationBar from '@/components/event/programPlanner/CalendarNav
 import CalendarItem from '@/components/event/programPlanner/CalendarItem.vue';
 import CalendarDayItem from '@/components/event/programPlanner/CalendarDayItem.vue';
 import type { DragAndDropScope } from '@/components/event/programPlanner/DragAndDropScope';
-import type { ProgramPlannerSettings } from '@camp-registration/common/settings';
+import type {
+  ProgramPlannerSettings,
+  ProgramPublicSettings,
+} from '@camp-registration/common/settings';
 import ProgramItemAddDialog from '@/components/event/programPlanner/dialogs/ProgramItemAddDialog.vue';
 import ProgramItemEditDialog from '@/components/event/programPlanner/dialogs/ProgramItemEditDialog.vue';
 import CalendarSettingsDialog from '@/components/event/programPlanner/dialogs/CalendarSettingsDialog.vue';
+import ProgramPublicLinkDialog from '@/components/event/programPlanner/dialogs/ProgramPublicLinkDialog.vue';
 import CalendarBacklogPanel from '@/components/event/programPlanner/CalendarBacklogPanel.vue';
+import PlanLetterIcon from '@/components/event/programPlanner/PlanLetterIcon.vue';
 import {
   daysBetweenDates,
   formatLocalDate,
@@ -269,6 +366,15 @@ const canDelete = computed<boolean>(() => can('event.program_items.delete'));
 // Moving an event is an update; copy-dragging (Ctrl/⌘) is a create.
 const canDrag = computed<boolean>(() => canUpdate.value || canCreate.value);
 
+// The day header packs a lot into a small strip — the publish badge and the
+// zoom/print actions all need a real touch target on a phone, not just the
+// small precise hit area a mouse pointer affords, so they grow on narrow
+// screens (mirrors `CalendarNavigationBar.vue`'s own `gt.xs` convention).
+const compactDayHeaderActions = computed<boolean>(() => quasar.screen.gt.xs);
+const dayBadgeSize = computed<string>(() =>
+  compactDayHeaderActions.value ? '20px' : '28px',
+);
+
 const { event, events } = defineProps<{
   event: EventDetails;
   events: ProgramItem[];
@@ -290,6 +396,75 @@ const { settings } = useEventSettings<ProgramPlannerSettings>(
     browseOutsideEventDates: false,
   },
 );
+
+const { settings: publicSettings } = useEventSettings<ProgramPublicSettings>(
+  SETTING_KEYS.PROGRAM_PUBLIC,
+  {
+    enabled: false,
+    publishedDays: {},
+  },
+);
+
+/** The plan published for `date` on the public link, or `null` if none. */
+function publishedPlanFor(date: string): 'a' | 'b' | 'both' | null {
+  return publicSettings.publishedDays[date] ?? null;
+}
+
+/** Publishes `date` under `plan`, or un-publishes it when `plan` is `null`. */
+function setDayPublish(date: string, plan: 'a' | 'b' | 'both' | null) {
+  if (plan === null) {
+    delete publicSettings.publishedDays[date];
+  } else {
+    publicSettings.publishedDays[date] = plan;
+  }
+}
+
+/** Plan a/b render as a letter (`PlanLetterIcon`) instead — this only covers the rest. */
+function isLetterPlan(plan: 'a' | 'b' | 'both' | null): plan is 'a' | 'b' {
+  return plan === 'a' || plan === 'b';
+}
+
+// A plain function (not an inline template cast) — `as 'a' | 'b'` in a
+// template expression trips ESLint's deprecated-filter check, which
+// misreads the union's `|` as Vue 2 filter syntax.
+function letterPlanFor(date: string): 'a' | 'b' {
+  return publishedPlanFor(date) === 'a' ? 'a' : 'b';
+}
+
+const dayPublicBadgeIcon = (date: string): string => {
+  return publishedPlanFor(date) === 'both' ? 'repeat' : 'public_off';
+};
+
+// Filled green vs. a hollow outline — on/off must read at a glance, not just
+// as "some other color", so published and unpublished are different shapes,
+// not just different colors of the same filled circle.
+const dayPublicBadgeColor = (date: string): 'positive' | 'unpublished' => {
+  return publishedPlanFor(date) !== null ? 'positive' : 'unpublished';
+};
+
+const planLabel = (plan: 'a' | 'b' | 'both'): string => {
+  if (plan === 'a') {
+    return t('public.day.planA');
+  }
+  if (plan === 'b') {
+    return t('public.day.planB');
+  }
+  return t('public.day.planBoth');
+};
+
+function dayPublicBadgeTooltip(date: string): string {
+  const plan = publishedPlanFor(date);
+
+  if (plan === null) {
+    return canUpdate.value
+      ? t('public.day.tooltipUnpublished')
+      : t('public.day.tooltipUnpublishedReadonly');
+  }
+
+  // The badge only renders at all while `publicSettings.enabled` is true (see
+  // the template), so a published day is always actually live here.
+  return t('public.day.tooltipLive', { plan: planLabel(plan) });
+}
 
 const calendarRef = ref<QCalendarDay | null>(null);
 const range = ref<number>(initialRange());
@@ -1034,6 +1209,20 @@ function onSettingsOpen() {
     })
     .onOk((newSettings: ProgramPlannerSettings) => {
       Object.assign(settings, newSettings);
+    });
+}
+
+function onPublicLinkOpen() {
+  quasar
+    .dialog({
+      component: ProgramPublicLinkDialog,
+      componentProps: {
+        enabled: publicSettings.enabled,
+        eventId: event.id,
+      },
+    })
+    .onOk(({ enabled }: { enabled: boolean }) => {
+      publicSettings.enabled = enabled;
     });
 }
 
@@ -2176,6 +2365,50 @@ function onPreviousNavigation() {
   }
 }
 
+// Unlike `.cal-day-actions`, always shown at full opacity, with the same icon
+// slot rendered for every day (only its color/icon change) — whether a day is
+// published, and for which plan, must be obvious at a glance and every day
+// column must reserve identical header height, published or not.
+.cal-day-public-badge {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  margin: 2px auto 0;
+  border-radius: 50%;
+
+  &--clickable {
+    cursor: pointer;
+
+    // The visible badge stays small so the header doesn't get crowded, but
+    // the actual tap target is grown well past it on touch devices — a
+    // transparent hit area, not a bigger badge.
+    @media (hover: none) {
+      &::before {
+        content: '';
+        position: absolute;
+        inset: -10px;
+      }
+    }
+  }
+
+  // Published: filled and unmistakably "on".
+  &--positive {
+    background-color: var(--md3-positive);
+    color: var(--md3-on-positive);
+  }
+
+  // Not published: hollow, so it reads as "off" rather than just a
+  // differently-colored badge.
+  &--unpublished {
+    background-color: transparent;
+    border: 2px solid var(--md3-outline-variant);
+    color: var(--md3-on-surface-variant);
+  }
+}
+
 // Both sit above the whole event cascade (see `--cal-depth` in CalendarItem,
 // and the hover raise at z-index 10), so a gesture's feedback is never buried
 // under the events it is about to rearrange.
@@ -2221,6 +2454,15 @@ dialog:
 actions:
   focusDay: 'Show this day only'
   printDay: 'Print this day'
+public:
+  day:
+    unpublished: 'Not published'
+    planA: 'Plan A'
+    planBoth: 'Both plans'
+    planB: 'Plan B'
+    tooltipUnpublished: 'Not published — click to publish this day'
+    tooltipUnpublishedReadonly: 'Not published on the public program link'
+    tooltipLive: 'Published on the public link ({plan})'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -2231,6 +2473,15 @@ dialog:
 actions:
   focusDay: 'Nur diesen Tag anzeigen'
   printDay: 'Diesen Tag drucken'
+public:
+  day:
+    unpublished: 'Nicht veröffentlicht'
+    planA: 'Plan A'
+    planBoth: 'Beide Pläne'
+    planB: 'Plan B'
+    tooltipUnpublished: 'Nicht veröffentlicht — klicken, um diesen Tag zu veröffentlichen'
+    tooltipUnpublishedReadonly: 'Nicht über den öffentlichen Programmlink veröffentlicht'
+    tooltipLive: 'Über den öffentlichen Link veröffentlicht ({plan})'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -2241,6 +2492,15 @@ dialog:
 actions:
   focusDay: 'Afficher ce jour uniquement'
   printDay: 'Imprimer ce jour'
+public:
+  day:
+    unpublished: 'Non publié'
+    planA: 'Plan A'
+    planBoth: 'Les deux plans'
+    planB: 'Plan B'
+    tooltipUnpublished: 'Non publié — cliquez pour publier ce jour'
+    tooltipUnpublishedReadonly: 'Non publié sur le lien public du programme'
+    tooltipLive: 'Publié sur le lien public ({plan})'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -2251,6 +2511,15 @@ dialog:
 actions:
   focusDay: 'Pokaż tylko ten dzień'
   printDay: 'Drukuj ten dzień'
+public:
+  day:
+    unpublished: 'Nieopublikowany'
+    planA: 'Plan A'
+    planBoth: 'Oba plany'
+    planB: 'Plan B'
+    tooltipUnpublished: 'Nieopublikowany — kliknij, aby opublikować ten dzień'
+    tooltipUnpublishedReadonly: 'Nieopublikowany w publicznym linku do programu'
+    tooltipLive: 'Opublikowany w publicznym linku ({plan})'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -2261,4 +2530,13 @@ dialog:
 actions:
   focusDay: 'Zobrazit pouze tento den'
   printDay: 'Vytisknout tento den'
+public:
+  day:
+    unpublished: 'Nezveřejněno'
+    planA: 'Plán A'
+    planBoth: 'Oba plány'
+    planB: 'Plán B'
+    tooltipUnpublished: 'Nezveřejněno — kliknutím tento den zveřejníte'
+    tooltipUnpublishedReadonly: 'Nezveřejněno na veřejném odkazu na program'
+    tooltipLive: 'Zveřejněno na veřejném odkazu ({plan})'
 </i18n>

@@ -101,7 +101,10 @@
           <!-- plan (only shown when not 'both') -->
           <q-item v-if="event.plan !== 'both'">
             <q-item-section avatar>
-              <q-icon :name="event.plan === 'a' ? 'wb_sunny' : 'water_drop'" />
+              <plan-letter-icon
+                :plan="event.plan === 'a' ? 'a' : 'b'"
+                size="1.5em"
+              />
             </q-item-section>
             <q-item-section>
               <q-item-label>
@@ -141,6 +144,7 @@ import { useObjectTranslation } from '@/composables/objectTranslation';
 import { computed, useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { QPopupProxy } from 'quasar';
+import PlanLetterIcon from '@/components/event/programPlanner/PlanLetterIcon.vue';
 
 const { locale, t } = useI18n();
 const { to } = useObjectTranslation();

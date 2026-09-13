@@ -26,6 +26,28 @@ export class ProgramItemService extends BaseService {
     });
   }
 
+  /**
+   * Items scheduled within `[from, to]` (inclusive `YYYY-MM-DD` bounds) and
+   * matching `plan` — used by the public program endpoint, which (unlike
+   * `queryProgramItem`) must never hand back items outside the released
+   * window or an unreleased plan. Backlog items (`date: null`) are excluded by
+   * the range filter, which is correct: they must never be publicly visible.
+   */
+  async queryProgramItemsInRange(
+    eventId: string,
+    range: { from: string; to: string; plan: 'a' | 'b' | 'both' },
+  ) {
+    return this.prisma.programItem.findMany({
+      where: {
+        eventId,
+        date: { gte: range.from, lte: range.to },
+        ...(range.plan !== 'both'
+          ? { OR: [{ plan: range.plan }, { plan: 'both' }] }
+          : {}),
+      },
+    });
+  }
+
   async createProgramItem(
     eventId: string,
     data: Omit<Prisma.ProgramItemCreateInput, 'id' | 'event'>,

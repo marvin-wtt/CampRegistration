@@ -7,9 +7,9 @@
     @dragstart="onDragStart"
     @dragend="isDragging = false"
   >
-    <q-icon
+    <plan-letter-icon
       v-if="viewBoth && event.plan !== 'both'"
-      :name="event.plan === 'a' ? 'wb_sunny' : 'water_drop'"
+      :plan="event.plan === 'a' ? 'a' : 'b'"
       size="10px"
       class="q-mr-xs"
     />
@@ -37,6 +37,7 @@ import type { ProgramItem } from '@camp-registration/common/entities';
 import { computed, ref, type StyleValue } from 'vue';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import CalendarItemPopup from '@/components/event/programPlanner/CalendarItemPopup.vue';
+import PlanLetterIcon from '@/components/event/programPlanner/PlanLetterIcon.vue';
 
 const {
   event,

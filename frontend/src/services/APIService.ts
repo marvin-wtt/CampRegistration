@@ -18,6 +18,7 @@ import { useNewsletterManagerService } from '@/services/NewsletterManagerService
 import { useNewsletterSubscriberService } from '@/services/NewsletterSubscriberService';
 import { useNewsletterMessageService } from '@/services/NewsletterMessageService';
 import { useProgramItemService } from '@/services/ProgramItemService';
+import { useProgramPublicService } from '@/services/ProgramPublicService';
 import { useQueueService } from '@/services/QueueService';
 import { useTaskService } from '@/services/TaskService';
 import { useChoreService } from '@/services/ChoreService';
@@ -50,6 +51,7 @@ export function useAPIService() {
     ...useNewsletterSubscriberService(),
     ...useNewsletterMessageService(),
     ...useProgramItemService(),
+    ...useProgramPublicService(),
     ...useQueueService(),
     ...useTaskService(),
     ...useChoreService(),
