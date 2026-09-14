@@ -24,8 +24,18 @@ export const destroy = z.object({
   }),
 });
 
+export const bulkPublish = z.object({
+  params: z.object({
+    eventId: z.ulid(),
+  }),
+  body: z.object({
+    plan: z.enum(['a', 'b', 'both']),
+  }),
+});
+
 export default {
   index,
   update,
   destroy,
+  bulkPublish,
 };

@@ -1239,12 +1239,18 @@ function onPublicLinkOpen() {
       ({
         enabled,
         allowPastDates,
+        publishAllPlan,
       }: {
         enabled: boolean;
         allowPastDates: boolean;
+        publishAllPlan: 'unpublished' | 'a' | 'b' | 'both';
       }) => {
         publicSettings.enabled = enabled;
         publicSettings.allowPastDates = allowPastDates;
+
+        if (publishAllPlan !== 'unpublished') {
+          void programPublishedDayStore.publishAllDays(publishAllPlan);
+        }
       },
     );
 }

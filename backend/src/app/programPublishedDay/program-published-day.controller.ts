@@ -1,10 +1,12 @@
 import httpStatus from 'http-status';
 import { inject, injectable } from 'inversify';
 import type { Request, Response } from 'express';
+import { utcCarrierToNaiveDateTime } from '@camp-registration/common/utils';
 import { BaseController } from '#core/base/BaseController';
 import { RealtimeService } from '#core/realtime/RealtimeService';
 import { ProgramPublishedDayService } from './program-published-day.service.js';
 import { ProgramPublishedDayResource } from './program-published-day.resource.js';
+import { enumerateDates } from './program-published-day.util.js';
 import validator from './program-published-day.validation.js';
 
 @injectable()
@@ -47,6 +49,32 @@ export class ProgramPublishedDayController extends BaseController {
     );
 
     res.resource(new ProgramPublishedDayResource(day));
+  }
+
+  async bulkPublish(req: Request, res: Response) {
+    const { body } = await req.validate(validator.bulkPublish);
+    const event = req.modelOrFail('event');
+
+    const dates = enumerateDates(
+      utcCarrierToNaiveDateTime(event.startAt).slice(0, 10),
+      utcCarrierToNaiveDateTime(event.endAt).slice(0, 10),
+    );
+
+    const days = await this.programPublishedDayService.publishAllDays(
+      event.id,
+      dates,
+      body.plan,
+    );
+
+    // Bulk operation — a per-day event for every date would trigger a
+    // refetch stampede on every connected client; one invalidation lets
+    // them each pull the fresh list once.
+    void this.realtimeService.emitInvalidation(
+      event.id,
+      'program_published_day',
+    );
+
+    res.resource(ProgramPublishedDayResource.collection(days));
   }
 
   async destroy(req: Request, res: Response) {

@@ -30,9 +30,21 @@ export function useProgramPublishedDayService() {
     await api.delete(`events/${eventId}/program-public/days/${date}/`);
   }
 
+  async function publishAllProgramDays(
+    eventId: string,
+    plan: 'a' | 'b' | 'both',
+  ): Promise<ProgramPublishedDay[]> {
+    const response = await api.patch(`events/${eventId}/program-public/days/`, {
+      plan,
+    });
+
+    return response?.data?.data;
+  }
+
   return {
     fetchProgramPublishedDays,
     publishProgramDay,
     unpublishProgramDay,
+    publishAllProgramDays,
   };
 }

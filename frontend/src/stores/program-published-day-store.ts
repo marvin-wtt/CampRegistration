@@ -26,6 +26,7 @@ export const useProgramPublishedDayStore = defineStore(
       reset,
       invalidate,
       withErrorNotification,
+      withProgressNotification,
       lazyFetch,
       backgroundFetch,
       checkNotNullWithError,
@@ -96,6 +97,21 @@ export const useProgramPublishedDayStore = defineStore(
       }
     }
 
+    async function publishAllDays(plan: 'a' | 'b' | 'both') {
+      const eventId = route.params.eventId as string;
+      checkNotNullWithError(eventId);
+
+      const days = await withProgressNotification('publishAll', () =>
+        apiService.publishAllProgramDays(eventId, plan),
+      );
+
+      // Every day in the event just got published — the response is the
+      // event's complete new set, not a partial update to merge in.
+      data.value = days;
+
+      return days;
+    }
+
     return {
       reset,
       data,
@@ -104,6 +120,7 @@ export const useProgramPublishedDayStore = defineStore(
       fetchData,
       publishDay,
       unpublishDay,
+      publishAllDays,
     };
   },
 );

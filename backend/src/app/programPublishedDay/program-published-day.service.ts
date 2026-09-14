@@ -23,6 +23,23 @@ export class ProgramPublishedDayService extends BaseService {
     });
   }
 
+  /** Publishes every date in `dates` under the same `plan`, atomically. */
+  async publishAllDays(
+    eventId: string,
+    dates: string[],
+    plan: 'a' | 'b' | 'both',
+  ) {
+    return this.prisma.$transaction(
+      dates.map((date) =>
+        this.prisma.programPublishedDay.upsert({
+          where: { eventId_date: { eventId, date } },
+          create: { eventId, date, plan },
+          update: { plan },
+        }),
+      ),
+    );
+  }
+
   /**
    * Idempotent: unpublishing an already-unpublished day is a no-op, returning
    * `null` rather than throwing — the caller only needs the deleted row's id

@@ -27,6 +27,11 @@ export class ProgramPublishedDayRouter extends ModuleRouter {
       guard(hasEventPermission('event.program_items.view')),
       controller(this.programPublishedDayController, 'index'),
     );
+    this.router.patch(
+      '/',
+      guard(hasEventPermission('event.program_items.update')),
+      controller(this.programPublishedDayController, 'bulkPublish'),
+    );
     this.router.put(
       '/:date',
       guard(hasEventPermission('event.program_items.update')),
