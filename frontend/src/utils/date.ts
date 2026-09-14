@@ -30,6 +30,14 @@ export function daysBetweenDates(start: Date, end: Date): number {
   return Math.round((utcEnd - utcStart) / (1000 * 60 * 60 * 24));
 }
 
+/** Adds (or subtracts, for a negative `days`) whole calendar days to a plain `YYYY-MM-DD` date. */
+export function addDays(date: string, days: number): string {
+  const result = parseLocalDate(date);
+  result.setDate(result.getDate() + days);
+
+  return formatLocalDate(result);
+}
+
 export function isValidTimeRange(startTime: string, endTime: string): boolean {
   const start = parseTimeToMinutes(startTime);
   const end = parseTimeToMinutes(endTime);

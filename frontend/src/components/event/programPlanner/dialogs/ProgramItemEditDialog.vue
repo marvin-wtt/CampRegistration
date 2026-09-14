@@ -261,13 +261,15 @@ watch([() => data.time, timeEnd], ([time, end]) => {
   data.duration = timeDifference(time, end);
 });
 
+// Plan A/B are single letters on mobile rather than an icon — that keeps
+// them meaningful for any use of the a/b split, not just a fair/bad-weather
+// contingency. "Both" has no letter of its own, so it stays icon-only there.
 const planOptions = computed(() => {
   const showLabel = $q.screen.gt.xs;
   return [
     {
-      ...(showLabel && { label: t('field.plan.a') }),
+      label: showLabel ? t('field.plan.a') : t('field.plan.aShort'),
       value: 'a',
-      icon: 'wb_sunny',
     },
     {
       ...(showLabel && { label: t('field.plan.both') }),
@@ -275,9 +277,8 @@ const planOptions = computed(() => {
       icon: 'repeat',
     },
     {
-      ...(showLabel && { label: t('field.plan.b') }),
+      label: showLabel ? t('field.plan.b') : t('field.plan.bShort'),
       value: 'b',
-      icon: 'water_drop',
     },
   ];
 });
@@ -334,7 +335,9 @@ field:
     label: 'Location'
   plan:
     a: 'Plan A'
+    aShort: 'A'
     b: 'Plan B'
+    bShort: 'B'
     both: 'Both'
   start:
     label: 'Start time'
@@ -369,7 +372,9 @@ field:
     label: 'Ort'
   plan:
     a: 'Plan A'
+    aShort: 'A'
     b: 'Plan B'
+    bShort: 'B'
     both: 'Beide'
   start:
     label: 'Startzeit'
@@ -404,7 +409,9 @@ field:
     label: 'Lieu'
   plan:
     a: 'Plan A'
+    aShort: 'A'
     b: 'Plan B'
+    bShort: 'B'
     both: 'Les deux'
   start:
     label: 'Heure de début'
@@ -439,7 +446,9 @@ field:
     label: 'Lokalizacja'
   plan:
     a: 'Plan A'
+    aShort: 'A'
     b: 'Plan B'
+    bShort: 'B'
     both: 'Oba'
   start:
     label: 'Czas rozpoczęcia'
@@ -474,7 +483,9 @@ field:
     label: 'Místo'
   plan:
     a: 'Plán A'
+    aShort: 'A'
     b: 'Plán B'
+    bShort: 'B'
     both: 'Oba'
   start:
     label: 'Čas začátku'

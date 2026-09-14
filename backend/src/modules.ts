@@ -24,6 +24,8 @@ import { LegalModule } from '#app/legal/legal.module';
 import { PrivacyNoticeModule } from '#app/privacyNotice/privacy-notice.module';
 import { QueueModule } from '#app/queue/queue.module';
 import { ProgramItemModule } from '#app/programItem/program-item.module';
+import { ProgramPublicModule } from '#app/programPublic/program-public.module';
+import { ProgramPublishedDayModule } from '#app/programPublishedDay/program-published-day.module';
 import { TaskModule } from '#app/task/task.module';
 import { ChoreModule } from '#app/chore/chore.module';
 import { ChoreAssignmentModule } from '#app/choreAssignment/choreAssignment.module';
@@ -82,6 +84,8 @@ export const createAppModules = (): AppModule[] => [
   new RoomModule(),
   new BedModule(),
   new ProgramItemModule(),
+  new ProgramPublicModule(),
+  new ProgramPublishedDayModule(),
   new TaskModule(),
   new ChoreModule(),
   new ChoreAssignmentModule(),
