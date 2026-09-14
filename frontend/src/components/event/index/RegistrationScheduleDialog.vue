@@ -23,76 +23,84 @@
         />
       </q-card-section>
 
-      <!-- Quick actions -->
+      <!-- Live status -->
       <q-card-section class="q-pt-none">
-        <div class="registration-dialog__quick row q-gutter-sm no-wrap">
-          <q-btn
+        <div
+          class="registration-dialog__status"
+          :class="`registration-dialog__status--${preview.kind}`"
+        >
+          <q-icon
+            :name="preview.icon"
+            size="18px"
+          />
+          <span>{{ preview.label }}</span>
+        </div>
+      </q-card-section>
+
+      <!-- Opens / closes boundaries -->
+      <q-card-section class="column q-gutter-y-sm">
+        <div class="row items-center q-gutter-x-sm no-wrap">
+          <date-time-input
+            v-model="opensAt"
             class="col"
-            icon="lock_open"
-            :label="t('quick.open_now')"
+            :label="t('field.opens')"
+            clearable
+            hide-bottom-space
+            outlined
+            rounded
+          >
+            <template #before>
+              <q-icon
+                name="lock_open"
+                color="primary"
+              />
+            </template>
+          </date-time-input>
+          <q-btn
+            v-if="canOpenNow"
+            :label="t('quick.now')"
+            :aria-label="t('quick.open_now')"
             color="primary"
-            :unelevated="!currentlyOpen"
-            :outline="currentlyOpen"
+            glossy
             no-caps
             rounded
             @click="openNow"
           />
-          <q-btn
+        </div>
+
+        <div class="row items-center q-gutter-x-sm no-wrap">
+          <date-time-input
+            v-model="closesAt"
             class="col"
-            icon="lock"
-            :label="t('quick.close_now')"
+            :label="t('field.closes')"
+            :error="hasOrderError"
+            :error-message="t('validation.order')"
+            clearable
+            hide-bottom-space
+            outlined
+            rounded
+          >
+            <template #before>
+              <q-icon
+                name="lock"
+                color="warning"
+              />
+            </template>
+          </date-time-input>
+          <q-btn
+            v-if="canCloseNow"
+            :label="t('quick.now')"
+            :aria-label="t('quick.close_now')"
             color="warning"
-            :unelevated="currentlyOpen"
-            :outline="!currentlyOpen"
+            glossy
             no-caps
             rounded
             @click="closeNow"
           />
         </div>
-      </q-card-section>
 
-      <q-separator inset />
-
-      <!-- Schedule -->
-      <q-card-section class="column q-gutter-y-md">
-        <div class="registration-dialog__section-label">
-          {{ t('schedule.label') }}
-        </div>
-
-        <date-time-input
-          v-model="opensAt"
-          :label="t('field.opens')"
-          clearable
-          hide-bottom-space
-          outlined
-          rounded
-        >
-          <template #before>
-            <q-icon name="lock_open" />
-          </template>
-        </date-time-input>
-
-        <date-time-input
-          v-model="closesAt"
-          :label="t('field.closes')"
-          :error="hasOrderError"
-          :error-message="t('validation.order')"
-          clearable
-          hide-bottom-space
-          outlined
-          rounded
-        >
-          <template #before>
-            <q-icon name="lock" />
-          </template>
-        </date-time-input>
-
-        <div class="registration-dialog__preview">
-          <q-icon
-            :name="preview.icon"
-            size="16px"
-          />
-          <span>{{ preview.label }}</span>
+        <div class="registration-dialog__section-hint">
+          {{ t('schedule.hint') }}
         </div>
       </q-card-section>
 
@@ -172,7 +180,7 @@ const currentlyOpen = computed<boolean>(() => {
 function openNow() {
   const now = new Date();
   opensAt.value = now.toISOString();
-  // Drop a closing date that is in the past or now so the event reads as open
+  // Drop a closing date that would otherwise conflict with opening now
   if (closesAt.value && new Date(closesAt.value) <= now) {
     closesAt.value = null;
   }
@@ -180,12 +188,8 @@ function openNow() {
 
 function closeNow() {
   const now = new Date();
-  // Drop an opening date that is in the future or now so the event reads as closed
-  const ONE_MINUTE = 60 * 1000;
-  if (
-    opensAt.value &&
-    new Date(opensAt.value).getTime() >= now.getTime() - ONE_MINUTE
-  ) {
+  // Drop an opening date that would otherwise conflict with closing now
+  if (opensAt.value && new Date(opensAt.value) >= now) {
     opensAt.value = null;
   }
 
@@ -193,6 +197,7 @@ function closeNow() {
 }
 
 interface Preview {
+  kind: 'open' | 'closes' | 'opens' | 'closed';
   icon: string;
   label: string;
 }
@@ -205,19 +210,27 @@ const preview = computed<Preview>(() => {
   if (currentlyOpen.value) {
     return closes
       ? {
-          icon: 'check_circle',
+          kind: 'closes',
+          icon: 'schedule',
           label: t('preview.open_until', { date: d(closes, 'dateTime') }),
         }
-      : { icon: 'check_circle', label: t('preview.open') };
+      : { kind: 'open', icon: 'check_circle', label: t('preview.open') };
   }
   if (opens && now < opens) {
     return {
+      kind: 'opens',
       icon: 'upcoming',
       label: t('preview.opens', { date: d(opens, 'dateTime') }),
     };
   }
-  return { icon: 'lock', label: t('preview.closed') };
+  return { kind: 'closed', icon: 'lock', label: t('preview.closed') };
 });
+
+// "Open now" is a no-op once registration is already open; "Close now" is a
+// no-op once it's already closed with nothing scheduled — hide whichever
+// action wouldn't change anything.
+const canOpenNow = computed<boolean>(() => !currentlyOpen.value);
+const canCloseNow = computed<boolean>(() => preview.value.kind !== 'closed');
 
 function onSave() {
   if (hasOrderError.value) {
@@ -241,38 +254,49 @@ function onSave() {
   color: var(--md3-on-surface-variant);
 }
 
-.registration-dialog__section-label {
+.registration-dialog__section-hint {
+  margin-top: 2px;
   color: var(--md3-on-surface-variant);
-
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: 12px;
 }
 
-.registration-dialog__preview {
+.registration-dialog__status {
   display: flex;
   align-items: center;
   gap: 8px;
 
-  padding: 10px 12px;
+  padding: 10px 14px;
   border-radius: 12px;
-
-  background: var(--md3-surface-container-high);
-  color: var(--md3-on-surface-variant);
 
   font-size: 13px;
   font-weight: 500;
+}
+
+.registration-dialog__status--open {
+  background: var(--md3-primary);
+  color: var(--md3-on-primary);
+}
+
+.registration-dialog__status--closes {
+  background: var(--md3-warning-container);
+  color: var(--md3-on-warning-container);
+}
+
+.registration-dialog__status--opens,
+.registration-dialog__status--closed {
+  background: var(--md3-surface-container-highest);
+  color: var(--md3-on-surface-variant);
 }
 </style>
 
 <i18n lang="yaml" locale="en">
 title: 'Registration'
 quick:
+  now: 'Now'
   open_now: 'Open now'
   close_now: 'Close now'
 schedule:
-  label: 'Or schedule'
+  hint: 'Leave a field empty to leave that side open-ended.'
 field:
   opens: 'Opens at'
   closes: 'Closes at'
@@ -291,10 +315,11 @@ action:
 <i18n lang="yaml" locale="de">
 title: 'Anmeldung'
 quick:
+  now: 'Jetzt'
   open_now: 'Jetzt öffnen'
   close_now: 'Jetzt schließen'
 schedule:
-  label: 'Oder planen'
+  hint: 'Feld leer lassen, um diese Seite offen zu lassen.'
 field:
   opens: 'Öffnet am'
   closes: 'Schließt am'
@@ -313,10 +338,11 @@ action:
 <i18n lang="yaml" locale="fr">
 title: 'Inscription'
 quick:
+  now: 'Maintenant'
   open_now: 'Ouvrir maintenant'
   close_now: 'Fermer maintenant'
 schedule:
-  label: 'Ou planifier'
+  hint: "Laissez un champ vide pour ne pas limiter ce côté."
 field:
   opens: 'Ouvre le'
   closes: 'Ferme le'
@@ -335,10 +361,11 @@ action:
 <i18n lang="yaml" locale="pl">
 title: 'Rejestracja'
 quick:
+  now: 'Teraz'
   open_now: 'Otwórz teraz'
   close_now: 'Zamknij teraz'
 schedule:
-  label: 'Lub zaplanuj'
+  hint: 'Pozostaw pole puste, aby nie ograniczać tej strony.'
 field:
   opens: 'Otwiera się'
   closes: 'Zamyka się'
@@ -357,10 +384,11 @@ action:
 <i18n lang="yaml" locale="cs">
 title: 'Registrace'
 quick:
+  now: 'Nyní'
   open_now: 'Otevřít nyní'
   close_now: 'Zavřít nyní'
 schedule:
-  label: 'Nebo naplánovat'
+  hint: 'Ponechte pole prázdné, pokud tuto stranu nechcete omezit.'
 field:
   opens: 'Otevírá se'
   closes: 'Uzavírá se'
