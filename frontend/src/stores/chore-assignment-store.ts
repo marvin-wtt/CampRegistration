@@ -64,6 +64,25 @@ export const useChoreAssignmentStore = defineStore('choreAssignment', () => {
     return api.fetchChoreAssignmentSuggestions(cid, choreId, unit);
   }
 
+  // The page groups assignments by date assuming the list is sorted
+  // ascending (matching the backend's `orderBy: [{ date }, { createdAt }]`),
+  // so a locally-added/updated assignment must be placed by date rather than
+  // appended or left at its old index — otherwise same-date groups split.
+  function insertSorted(assignment: ChoreAssignment) {
+    const list = (data.value ?? []).filter(
+      (value) => value.id !== assignment.id,
+    );
+    const index = list.findIndex((value) => value.date > assignment.date);
+
+    if (index === -1) {
+      list.push(assignment);
+    } else {
+      list.splice(index, 0, assignment);
+    }
+
+    data.value = list;
+  }
+
   async function createData(newData: ChoreAssignmentCreateData) {
     const eventId = route.params.eventId as string;
 
@@ -72,7 +91,7 @@ export const useChoreAssignmentStore = defineStore('choreAssignment', () => {
     return withProgressNotification('create', async () => {
       const assignment = await api.createChoreAssignment(eventId, newData);
 
-      data.value?.push(assignment);
+      insertSorted(assignment);
 
       return assignment;
     });
@@ -94,9 +113,7 @@ export const useChoreAssignmentStore = defineStore('choreAssignment', () => {
         updateData,
       );
 
-      data.value = data.value?.map((value) =>
-        value.id === assignment.id ? assignment : value,
-      );
+      insertSorted(assignment);
     });
   }
 

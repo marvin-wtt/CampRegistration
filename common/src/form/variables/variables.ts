@@ -15,6 +15,7 @@ export interface Data {
   location: Translatable | null;
   price: Translatable<number>;
   freePlaces: Translatable<number> | null;
+  logo?: string | null;
 }
 
 export const setVariables = (model: SurveyModel, data: Data | undefined) => {
@@ -39,6 +40,7 @@ export const setVariables = (model: SurveyModel, data: Data | undefined) => {
   model.setVariable('event.location', data.location ? t(data.location) : null);
   model.setVariable('event.price', t(data.price));
   model.setVariable('event.freePlaces', data.freePlaces);
+  model.setVariable('event.logo', null);
 
   model.setVariable('_validationEnabled', model.validationEnabled);
 };

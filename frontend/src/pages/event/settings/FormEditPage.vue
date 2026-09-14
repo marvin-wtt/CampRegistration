@@ -27,7 +27,6 @@ import FormEditor from '@/components/event/settings/form/FormEditor.vue';
 import type { SurveyJSEventData } from '@camp-registration/common/entities';
 import type { ITheme } from 'survey-core';
 import EditorRestrictedAccessDialog from '@/components/event/settings/form/EditorRestrictedAccessDialog.vue';
-import { toRelativeUrl } from '@/utils/url';
 import { createUuid } from '@/utils/uuid';
 
 const quasar = useQuasar();
@@ -113,9 +112,11 @@ async function saveFile(file: File): Promise<string> {
     throw new Error('Event not defined');
   }
 
-  // When file is selected via custom picker, then the file is already present on the server
-  if ('id' in file && typeof file.id === 'string') {
-    return toRelativeUrl(eventFileStore.getUrl(file.id));
+  // When file is selected via custom picker, then the file is already present
+  // on the server. Referencing it by slot rather than a fixed URL keeps the
+  // reference locale-aware and lets it survive the file being replaced.
+  if ('id' in file && 'field' in file && typeof file.field === 'string') {
+    return `{_file.${file.field}}`;
   }
 
   const newFile = await eventFileStore.createEntry({
@@ -125,7 +126,7 @@ async function saveFile(file: File): Promise<string> {
     accessLevel: 'public',
   });
 
-  return eventFileStore.getUrl(newFile.id);
+  return `{_file.${newFile.field}}`;
 }
 </script>
 

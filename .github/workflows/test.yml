@@ -429,7 +429,7 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
 
     container:
-      image: mcr.microsoft.com/playwright:v1.61.1-noble
+      image: mcr.microsoft.com/playwright:v1.62.1-noble
       # Chromium needs more shared memory than the container default
       options: --ipc=host
 

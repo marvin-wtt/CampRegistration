@@ -343,6 +343,12 @@ export class FileService extends BaseService {
    * Resolves the best-matching file for a form slot ({_file.<slot>}) on a model
    * and locale. The slot maps to the file's `field` column. Readiness and access
    * are not checked here — that is the caller's (guard/stream) responsibility.
+   *
+   * More than one file can end up sharing a (field, locale) pair — e.g. a
+   * replacement upload that was submitted without deleting the original.
+   * `selectFileByLocale` keeps the first file it sees on a tied score, so
+   * ordering newest-first here makes the most recently uploaded file win
+   * instead of whichever one happens to sort first in storage.
    */
   async getModelFileForSlot(
     model: ModelData,
@@ -354,6 +360,7 @@ export class FileService extends BaseService {
         [`${model.name}Id`]: model.id,
         field: slot,
       },
+      orderBy: { createdAt: 'desc' },
     });
 
     if (files.length === 0) {
@@ -363,6 +370,25 @@ export class FileService extends BaseService {
     // Select the best matching file for the locale.
     // If no locale is given, default to English or fallback to the first file.
     return selectFileByLocale(files, locale ?? 'en') ?? files[0];
+  }
+
+  /**
+   * Prisma `files` include fragment for "does this model have a publicly
+   * servable file in each of `slots`" — for a caller that only needs presence,
+   * not the file itself (e.g. `EventResource`, which addresses the file by
+   * slot), so it can ask within its own query instead of a separate lookup per
+   * row. `field` is selected alongside `id` so a caller checking several slots
+   * at once can tell which slot each matched row belongs to.
+   */
+  publicSlotFileInclude(slots: string | string[]) {
+    return {
+      where: {
+        field: { in: Array.isArray(slots) ? slots : [slots] },
+        uploadStatus: 'READY' as const,
+        accessLevel: 'public' as const,
+      },
+      select: { id: true, field: true },
+    };
   }
 
   async queryModelFiles(
@@ -378,10 +404,14 @@ export class FileService extends BaseService {
       sortType?: 'asc' | 'desc';
     } = {},
   ) {
-    const page = options.page ?? 1;
-    const limit = options.limit ?? 10;
     const sortBy = options.sortBy ?? 'name';
     const sortType = options.sortType ?? 'desc';
+
+    const skip =
+      options.page && options.limit
+        ? (options.page - 1) * options.limit
+        : undefined;
+    const take = options.limit;
 
     return this.prisma.file.findMany({
       where: {
@@ -389,8 +419,8 @@ export class FileService extends BaseService {
         type: filter.type,
         [`${model.name}Id`]: model.id,
       },
-      skip: (page - 1) * limit,
-      take: limit,
+      skip,
+      take,
       orderBy: sortBy ? { [sortBy]: sortType } : undefined,
     });
   }

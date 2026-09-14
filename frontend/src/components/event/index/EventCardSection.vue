@@ -53,7 +53,7 @@
         v-show="open"
         class="results-grid"
       >
-        <event-card
+        <event-management-card
           v-for="event in events"
           :key="event.id"
           :event
@@ -64,7 +64,7 @@
 </template>
 
 <script lang="ts" setup>
-import EventCard from '@/components/event/index/EventCard.vue';
+import EventManagementCard from '@/components/event/index/EventManagementCard.vue';
 import type { Event } from '@camp-registration/common/entities';
 import { ref } from 'vue';
 
