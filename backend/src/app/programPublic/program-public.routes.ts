@@ -29,7 +29,9 @@ export class ProgramPublicRouter extends ModuleRouter {
     // (organization verification), exactly like the event page itself; the
     // `program-public.enabled` setting is enforced inside the controller, not
     // here — see `program-public.guard.ts` for why the stream and the data
-    // route are gated differently.
+    // route are gated differently. Day-publishing management lives in the
+    // sibling `programPublishedDay` module (`/program-public/days`) — see
+    // its module docblock for why it isn't here too.
     this.router.get(
       '/',
       guard(programPublicViewGuard),

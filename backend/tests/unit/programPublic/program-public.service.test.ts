@@ -9,9 +9,14 @@ const programItemServiceMock = {
   queryProgramItemsInRange: vi.fn(),
 };
 
+const programPublishedDayServiceMock = {
+  getPublishedDay: vi.fn(),
+};
+
 const service = new ProgramPublicService(
   settingServiceMock as never,
   programItemServiceMock as never,
+  programPublishedDayServiceMock as never,
 );
 
 const event = {
@@ -24,6 +29,7 @@ describe('ProgramPublicService.getPublicView', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-01-15T12:00:00Z'));
+    programPublishedDayServiceMock.getPublishedDay.mockResolvedValue(null);
   });
 
   afterEach(() => {
@@ -44,7 +50,7 @@ describe('ProgramPublicService.getPublicView', () => {
 
   it('is disabled when the setting is stored but the master switch is off', async () => {
     settingServiceMock.getSetting.mockResolvedValue({
-      data: { enabled: false, publishedDays: { '2026-01-15': 'both' } },
+      data: { enabled: false, allowPastDates: true },
     });
 
     const view = await service.getPublicView('event-1', event);
@@ -54,7 +60,7 @@ describe('ProgramPublicService.getPublicView', () => {
 
   it('defaults to today, unpublished, when today has no published plan', async () => {
     settingServiceMock.getSetting.mockResolvedValue({
-      data: { enabled: true, publishedDays: {} },
+      data: { enabled: true, allowPastDates: true },
     });
 
     const view = await service.getPublicView('event-1', event);
@@ -73,7 +79,13 @@ describe('ProgramPublicService.getPublicView', () => {
 
   it('serves the published plan for the requested day', async () => {
     settingServiceMock.getSetting.mockResolvedValue({
-      data: { enabled: true, publishedDays: { '2026-01-20': 'a' } },
+      data: { enabled: true, allowPastDates: true },
+    });
+    programPublishedDayServiceMock.getPublishedDay.mockResolvedValue({
+      id: 'day-1',
+      eventId: 'event-1',
+      date: '2026-01-20',
+      plan: 'a',
     });
     programItemServiceMock.queryProgramItemsInRange.mockResolvedValue([]);
 
@@ -95,7 +107,7 @@ describe('ProgramPublicService.getPublicView', () => {
 
   it('clamps a requested date outside the event to its nearest bound', async () => {
     settingServiceMock.getSetting.mockResolvedValue({
-      data: { enabled: true, publishedDays: {} },
+      data: { enabled: true, allowPastDates: true },
     });
 
     const before = await service.getPublicView('event-1', event, '2020-01-01');
@@ -107,7 +119,7 @@ describe('ProgramPublicService.getPublicView', () => {
 
   it('allows browsing to a future day within the event, still unpublished', async () => {
     settingServiceMock.getSetting.mockResolvedValue({
-      data: { enabled: true, publishedDays: { '2026-01-15': 'both' } },
+      data: { enabled: true, allowPastDates: true },
     });
 
     const view = await service.getPublicView('event-1', event, '2026-01-25');
@@ -118,6 +130,56 @@ describe('ProgramPublicService.getPublicView', () => {
       minDate: '2026-01-01',
       maxDate: '2026-01-31',
       published: false,
+    });
+  });
+
+  it('treats a setting row stored before allowPastDates existed as allowing past dates', async () => {
+    settingServiceMock.getSetting.mockResolvedValue({
+      data: { enabled: true },
+    });
+
+    const view = await service.getPublicView('event-1', event, '2026-01-02');
+
+    expect(view).toMatchObject({ minDate: '2026-01-01', date: '2026-01-02' });
+  });
+
+  it('clamps browsing to today when allowPastDates is false', async () => {
+    settingServiceMock.getSetting.mockResolvedValue({
+      data: { enabled: true, allowPastDates: false },
+    });
+
+    const view = await service.getPublicView('event-1', event, '2026-01-02');
+
+    expect(view).toMatchObject({ minDate: '2026-01-15', date: '2026-01-15' });
+  });
+
+  it('does not raise the min bound when the event has not started yet', async () => {
+    vi.setSystemTime(new Date('2025-12-01T12:00:00Z'));
+    settingServiceMock.getSetting.mockResolvedValue({
+      data: { enabled: true, allowPastDates: false },
+    });
+
+    const view = await service.getPublicView('event-1', event);
+
+    expect(view).toMatchObject({ minDate: '2026-01-01' });
+  });
+
+  it('does not push the min bound past maxDate when the event has already fully ended', async () => {
+    // Real "today" is long after the event's own last day.
+    vi.setSystemTime(new Date('2026-06-01T12:00:00Z'));
+    settingServiceMock.getSetting.mockResolvedValue({
+      data: { enabled: true, allowPastDates: false },
+    });
+
+    const view = await service.getPublicView('event-1', event, '2026-01-15');
+
+    // Without clamping `today` into the event's range first, `minDate` would
+    // be "today" (2026-06-01) — past `maxDate` (2026-01-31) — making the
+    // bounds invalid and pushing `date` outside the event entirely.
+    expect(view).toMatchObject({
+      minDate: '2026-01-31',
+      maxDate: '2026-01-31',
+      date: '2026-01-31',
     });
   });
 });

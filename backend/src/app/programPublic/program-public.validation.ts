@@ -4,7 +4,7 @@ import { DateSchema } from '#core/validation/helper';
 
 export const ProgramPublicSettingsValidation = z.object({
   enabled: z.boolean(),
-  publishedDays: z.record(DateSchema, z.enum(['a', 'b', 'both'])),
+  allowPastDates: z.boolean(),
 }) satisfies z.ZodType<ProgramPublicSettings>;
 
 export const show = z.object({

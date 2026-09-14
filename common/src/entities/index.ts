@@ -16,6 +16,7 @@ export * from './LegalDocument.js';
 export * from './Profile.js';
 export * from './ProgramItem.js';
 export * from './ProgramPublic.js';
+export * from './ProgramPublishedDay.js';
 export * from './Registration.js';
 export * from './Room.js';
 export * from './ServiceFile.js';

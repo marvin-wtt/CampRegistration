@@ -12,6 +12,7 @@ export type RealtimeResource =
   | 'event'
   | 'registration'
   | 'program_item'
+  | 'program_published_day'
   | 'room'
   | 'task'
   | 'chore'
@@ -67,6 +68,10 @@ export const CLIENT_ID_HEADER = 'X-Client-Id';
 /**
  * The view permission required to receive events for a given resource. The SSE
  * layer is event-scoped end to end, so these are always event permissions.
+ *
+ * `program_published_day` deliberately shares `program_item`'s permission —
+ * a published day is meaningless without the items it publishes, so anyone
+ * who can see program items can see which days are published.
  */
 export const RESOURCE_VIEW_PERMISSION: Record<
   RealtimeResource,
@@ -75,6 +80,7 @@ export const RESOURCE_VIEW_PERMISSION: Record<
   event: 'event.view',
   registration: 'event.registrations.view',
   program_item: 'event.program_items.view',
+  program_published_day: 'event.program_items.view',
   room: 'event.rooms.view',
   task: 'event.tasks.view',
   chore: 'event.chores.view',

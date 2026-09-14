@@ -45,6 +45,14 @@
             <div class="text-caption text-grey-7">
               {{ t('field.perDayHint') }}
             </div>
+
+            <q-toggle
+              v-model="allowPastDates"
+              :label="t('field.allowPastDates.label')"
+            />
+            <div class="text-caption text-grey-7">
+              {{ t('field.allowPastDates.caption') }}
+            </div>
           </template>
         </q-card-section>
 
@@ -75,13 +83,9 @@ import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { computed, ref } from 'vue';
 
-// Only `enabled` — the master switch — is edited here; `publishedDays` is a
-// nested reactive object, and this dialog only ever needs one primitive
-// field, so there's no reactive state to clone (`structuredClone` chokes on
-// a Vue reactive Proxy, which a naive `{ ...settings }` snapshot would still
-// contain via `publishedDays`).
 const props = defineProps<{
   enabled: boolean;
+  allowPastDates: boolean;
   eventId: string;
 }>();
 
@@ -92,6 +96,7 @@ const quasar = useQuasar();
 const router = useRouter();
 
 const enabled = ref(props.enabled);
+const allowPastDates = ref(props.allowPastDates);
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
@@ -123,7 +128,10 @@ async function copyLink() {
 }
 
 function onOKClick() {
-  onDialogOK({ enabled: enabled.value });
+  onDialogOK({
+    enabled: enabled.value,
+    allowPastDates: allowPastDates.value,
+  });
 }
 
 function onCancelClick() {
@@ -144,6 +152,9 @@ field:
     copySuccess: 'Link copied to clipboard'
     copyFail: 'Failed to copy link to clipboard'
   perDayHint: 'Publish or unpublish individual days, and choose which plan they show, from that day’s own header in the calendar.'
+  allowPastDates:
+    label: 'Show past days'
+    caption: 'When off, the public link only shows days from today onward, even if the event started earlier.'
 actions:
   save: 'Save'
   cancel: 'Cancel'
@@ -160,6 +171,9 @@ field:
     copySuccess: 'Link in die Zwischenablage kopiert'
     copyFail: 'Link konnte nicht kopiert werden'
   perDayHint: 'Einzelne Tage werden über die Kopfzeile des jeweiligen Tages im Kalender veröffentlicht oder zurückgezogen — dort wird auch der sichtbare Plan festgelegt.'
+  allowPastDates:
+    label: 'Vergangene Tage anzeigen'
+    caption: 'Wenn deaktiviert, zeigt der öffentliche Link nur Tage ab heute, auch wenn die Veranstaltung früher begonnen hat.'
 actions:
   save: 'Speichern'
   cancel: 'Abbrechen'
@@ -176,6 +190,9 @@ field:
     copySuccess: 'Lien copié dans le presse-papiers'
     copyFail: 'Échec de la copie du lien'
   perDayHint: "Publiez ou dépubliez chaque jour individuellement, et choisissez le plan affiché, depuis l'en-tête de ce jour dans le calendrier."
+  allowPastDates:
+    label: 'Afficher les jours passés'
+    caption: "Si désactivé, le lien public n'affiche les jours qu'à partir d'aujourd'hui, même si l'événement a commencé plus tôt."
 actions:
   save: 'Enregistrer'
   cancel: 'Annuler'
@@ -192,6 +209,9 @@ field:
     copySuccess: 'Link skopiowany do schowka'
     copyFail: 'Nie udało się skopiować linku'
   perDayHint: 'Publikuj lub cofaj publikację poszczególnych dni oraz wybieraj widoczny plan bezpośrednio w nagłówku danego dnia w kalendarzu.'
+  allowPastDates:
+    label: 'Pokazuj minione dni'
+    caption: 'Gdy wyłączone, publiczny link pokazuje program tylko od dzisiaj, nawet jeśli wydarzenie rozpoczęło się wcześniej.'
 actions:
   save: 'Zapisz'
   cancel: 'Anuluj'
@@ -208,6 +228,9 @@ field:
     copySuccess: 'Odkaz zkopírován do schránky'
     copyFail: 'Odkaz se nepodařilo zkopírovat'
   perDayHint: 'Jednotlivé dny zveřejňujte nebo skrývejte a vybírejte zobrazený plán přímo v záhlaví daného dne v kalendáři.'
+  allowPastDates:
+    label: 'Zobrazovat minulé dny'
+    caption: 'Když je vypnuto, veřejný odkaz zobrazuje program jen od dneška, i když akce začala dříve.'
 actions:
   save: 'Uložit'
   cancel: 'Zrušit'

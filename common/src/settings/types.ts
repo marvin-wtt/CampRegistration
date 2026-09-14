@@ -58,11 +58,13 @@ export interface NavigationSettings {
  * Stored under `SETTING_KEYS.PROGRAM_PUBLIC`. Configures the public, read-only
  * program-calendar link at `/events/:eventId/program`.
  *
- * Publishing is per day, set from that day's own header in the planner —
- * there is no global "which plan"/"how many days" setting anymore. `enabled`
- * is a separate master switch so a manager can hide the whole link instantly
- * without losing which days were published, and restore them by turning it
- * back on.
+ * Publishing is per day, set from that day's own header in the planner via
+ * the dedicated `program-public/days` endpoints — each published day is its
+ * own row (`ProgramPublishedDay`), not part of this settings object, so two
+ * managers publishing different days at once can't clobber each other the
+ * way a single shared JSON map would. `enabled` is a separate master switch
+ * so a manager can hide the whole link instantly without losing which days
+ * were published, and restore them by turning it back on.
  */
 export interface ProgramPublicSettings {
   /**
@@ -72,12 +74,11 @@ export interface ProgramPublicSettings {
    */
   enabled: boolean;
   /**
-   * Which plan variant is published for a given day, keyed by `YYYY-MM-DD`.
-   * A date absent from this map has not been published. Participants may
-   * browse to any day within the event's dates (including ones in the
-   * future); only the plan recorded here — if any — is shown for that day.
+   * Whether a viewer may browse to a day before today (in the event's own
+   * timezone). When `false`, the public link's navigation is clamped to
+   * today at the earliest, even if the event started earlier.
    *
-   * @default {}
+   * @default true
    */
-  publishedDays: Record<string, 'a' | 'b' | 'both'>;
+  allowPastDates: boolean;
 }

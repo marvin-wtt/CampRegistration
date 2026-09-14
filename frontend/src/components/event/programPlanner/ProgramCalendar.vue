@@ -355,6 +355,8 @@ import { programItemMinutesRange } from '@/utils/programItem';
 import { useEventSettings } from '@/composables/eventSettings';
 import { SETTING_KEYS } from '@camp-registration/common/settings';
 import { usePermissions } from '@/composables/permissions';
+import { storeToRefs } from 'pinia';
+import { useProgramPublishedDayStore } from '@/stores/program-published-day-store';
 
 const { t, locale } = useI18n();
 const quasar = useQuasar();
@@ -405,21 +407,30 @@ const { settings: publicSettings } = useEventSettings<ProgramPublicSettings>(
   SETTING_KEYS.PROGRAM_PUBLIC,
   {
     enabled: false,
-    publishedDays: {},
+    allowPastDates: true,
   },
 );
 
+// Each published day is its own row (see `program-published-day-store`), not
+// part of `publicSettings` — publishing/unpublishing one day is then an
+// independent request, so two managers touching different days at once
+// can't clobber each other the way a single shared settings map could.
+const programPublishedDayStore = useProgramPublishedDayStore();
+const { data: publishedDaysList } = storeToRefs(programPublishedDayStore);
+
 /** The plan published for `date` on the public link, or `null` if none. */
 function publishedPlanFor(date: string): 'a' | 'b' | 'both' | null {
-  return publicSettings.publishedDays[date] ?? null;
+  return (
+    publishedDaysList.value?.find((day) => day.date === date)?.plan ?? null
+  );
 }
 
 /** Publishes `date` under `plan`, or un-publishes it when `plan` is `null`. */
 function setDayPublish(date: string, plan: 'a' | 'b' | 'both' | null) {
   if (plan === null) {
-    delete publicSettings.publishedDays[date];
+    void programPublishedDayStore.unpublishDay(date);
   } else {
-    publicSettings.publishedDays[date] = plan;
+    void programPublishedDayStore.publishDay(date, plan);
   }
 }
 
@@ -492,6 +503,7 @@ onMounted(() => {
   observeCalendarBody();
   window.addEventListener('keydown', onKeydown);
   window.addEventListener('click', onGlobalClick);
+  void programPublishedDayStore.fetchData(event.id);
 });
 
 onUnmounted(() => {
@@ -1219,12 +1231,22 @@ function onPublicLinkOpen() {
       component: ProgramPublicLinkDialog,
       componentProps: {
         enabled: publicSettings.enabled,
+        allowPastDates: publicSettings.allowPastDates,
         eventId: event.id,
       },
     })
-    .onOk(({ enabled }: { enabled: boolean }) => {
-      publicSettings.enabled = enabled;
-    });
+    .onOk(
+      ({
+        enabled,
+        allowPastDates,
+      }: {
+        enabled: boolean;
+        allowPastDates: boolean;
+      }) => {
+        publicSettings.enabled = enabled;
+        publicSettings.allowPastDates = allowPastDates;
+      },
+    );
 }
 
 let dragHighlightEl: Element | null = null;
