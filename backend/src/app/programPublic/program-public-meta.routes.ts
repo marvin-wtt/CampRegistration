@@ -1,11 +1,7 @@
 import { createRouter } from '#core/router/router';
 import type { AppRouter } from '#core/base/AppModule';
 import { metaRoute } from '#core/meta/metaRoute';
-import { resolve } from '#core/ioc/container';
 import { eventPubliclyVisible } from '#app/event/event.guard';
-import { SettingService } from '#app/setting/setting.service';
-import { SETTING_KEYS } from '@camp-registration/common/settings';
-import type { ProgramPublicSettings } from '@camp-registration/common/settings';
 import { EventResource } from '#app/event/event.resource';
 import { buildProgramPublicPageMeta } from './program-public.meta.js';
 
@@ -33,16 +29,8 @@ export function createProgramPublicMetaRouter(indexPath?: string): AppRouter {
         return null;
       }
 
-      const setting = await resolve(SettingService).getSetting(
-        event.id,
-        SETTING_KEYS.PROGRAM_PUBLIC,
-      );
-      const enabled =
-        (setting?.data as ProgramPublicSettings | undefined)?.enabled ?? false;
-
       return buildProgramPublicPageMeta(
         new EventResource(event).transform(),
-        enabled,
         req.preferredLocale(),
       );
     }, indexPath),
