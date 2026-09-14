@@ -1,5 +1,7 @@
 export type EventPermission = 'event.view' | 'event.edit' | 'event.delete';
 
+export type AuditPermission = 'event.audit.view';
+
 export type FilePermission =
   | 'event.files.view'
   | 'event.files.create'
@@ -102,6 +104,7 @@ export type OrganizationPermission =
  */
 export type EventScopedPermission =
   | EventPermission
+  | AuditPermission
   | FilePermission
   | RegistrationPermission
   | ManagerPermission

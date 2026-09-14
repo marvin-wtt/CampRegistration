@@ -6,6 +6,7 @@ import tableTemplateSeeder from './table-template.seeder';
 import taskSeeder from './task.seeder';
 import choreSeeder from './chore.seeder';
 import newsletterSeeder from './newsletter.seeder';
+import auditSeeder from './audit.seeder';
 import organizationSeeder from './organization.seeder';
 import { BaseSeeder } from './BaseSeeder';
 
@@ -22,6 +23,7 @@ async function main() {
     taskSeeder,
     choreSeeder,
     newsletterSeeder,
+    auditSeeder,
   ];
 
   console.log(`Start seeding ...`);
