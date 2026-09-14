@@ -6,6 +6,7 @@ import eventFiles from './event-files';
 import auth from './auth';
 import profile from './profile';
 import programPlanner from './program-planner';
+import programPublishedDay from './program-published-day';
 import queue from './queue';
 import newsletter from './newsletter';
 import newsletterSubscriber from './newsletter-subscriber';
@@ -29,6 +30,7 @@ export default {
   auth,
   profile,
   programPlanner,
+  programPublishedDay,
   queue,
   newsletter,
   newsletterSubscriber,

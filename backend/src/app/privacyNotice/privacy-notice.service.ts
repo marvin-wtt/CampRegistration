@@ -219,6 +219,48 @@ export class PrivacyNoticeService extends BaseService {
     };
   }
 
+  /**
+   * Copies a reference event's addendum onto a freshly created event, for
+   * event cloning. Best-effort: a source with nothing published, or only a
+   * withdrawn (empty) version, leaves the new event without one — same as if
+   * it had never been asked to clone one. A source whose content the new
+   * event's organization notice doesn't fully cover is skipped rather than
+   * failing the event creation it's part of; the author can always author
+   * their own addendum afterwards.
+   */
+  async copyEventAddendum(
+    fromEventId: string,
+    toEventId: string,
+    toOrganizationId: string,
+  ): Promise<void> {
+    const eventVersion = await this.latestVersion('EVENT', fromEventId);
+    const content = eventVersion?.content as PrivacyNoticeAddendum | undefined;
+
+    if (!content || isEmptyAddendum(content)) {
+      return;
+    }
+
+    const organizationVersion = await this.latestVersion(
+      'ORGANIZATION',
+      toOrganizationId,
+    );
+    const gaps = addendumGaps(
+      (organizationVersion?.content as PrivacyNoticeContent | undefined) ??
+        null,
+      content,
+    );
+
+    if (gaps.length > 0) {
+      return;
+    }
+
+    await this.appendVersion(
+      'EVENT',
+      toEventId,
+      this.sanitizeAddendum(content),
+    );
+  }
+
   /** Resolved once per registration, at submission, and then never recomputed. */
   async getStampForEvent(
     eventId: string,

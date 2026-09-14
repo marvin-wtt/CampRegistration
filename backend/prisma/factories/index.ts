@@ -15,6 +15,7 @@ export * from './newsletter.factory';
 export * from './newsletter-subscriber.factory';
 export * from './newsletter-message.factory';
 export * from './program-item.factory';
+export * from './program-published-day.factory';
 export * from './task.factory';
 export * from './chore.factory';
 export * from './chore-assignment.factory';

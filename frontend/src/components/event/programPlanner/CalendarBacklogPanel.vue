@@ -54,9 +54,9 @@
           <div class="backlog-card__title text-body2">
             {{ showAllTranslations ? toAll(event.title) : to(event.title) }}
           </div>
-          <q-icon
+          <plan-letter-icon
             v-if="event.plan !== 'both'"
-            :name="event.plan === 'a' ? 'wb_sunny' : 'water_drop'"
+            :plan="event.plan === 'a' ? 'a' : 'b'"
             size="14px"
             class="backlog-card__plan-icon q-mt-xs"
           />
@@ -160,9 +160,9 @@
         <div class="backlog-card__title text-caption">
           {{ showAllTranslations ? toAll(event.title) : to(event.title) }}
         </div>
-        <q-icon
+        <plan-letter-icon
           v-if="event.plan !== 'both'"
-          :name="event.plan === 'a' ? 'wb_sunny' : 'water_drop'"
+          :plan="event.plan === 'a' ? 'a' : 'b'"
           size="10px"
           class="backlog-card__plan-icon q-mt-xs"
         />
@@ -188,6 +188,7 @@ import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import CalendarItemPopup from '@/components/event/programPlanner/CalendarItemPopup.vue';
+import PlanLetterIcon from '@/components/event/programPlanner/PlanLetterIcon.vue';
 import BottomSheet from '@/components/BottomSheet.vue';
 
 const { t } = useI18n();

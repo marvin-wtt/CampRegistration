@@ -182,19 +182,20 @@ model Event {
   createdAt               DateTime?        @default(now()) @map("created_at")
   updatedAt               DateTime?        @updatedAt @map("updated_at")
 
-  organization     Organization      @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "events_organization_id_foreign")
-  eventManager     EventManager[]
-  registrations    Registration[]
-  rooms            Room[]
-  tableTemplates   TableTemplate[]
-  messageTemplates MessageTemplate[]
-  messages         Message[]
-  files            File[]
-  programItems     ProgramItem[]
-  tasks            Task[]
-  chores           Chore[]
-  choreAssignments ChoreAssignment[]
-  eventSettings    EventSetting[]
+  organization         Organization          @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "events_organization_id_foreign")
+  eventManager         EventManager[]
+  registrations        Registration[]
+  rooms                Room[]
+  tableTemplates       TableTemplate[]
+  messageTemplates     MessageTemplate[]
+  messages             Message[]
+  files                File[]
+  programItems         ProgramItem[]
+  programPublishedDays ProgramPublishedDay[]
+  tasks                Task[]
+  chores               Chore[]
+  choreAssignments     ChoreAssignment[]
+  eventSettings        EventSetting[]
 
   @@index([organizationId], map: "events_organization_id_index")
   @@map("events")
@@ -574,6 +575,18 @@ model ProgramItem {
   event    Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@map("program_items")
+}
+
+model ProgramPublishedDay {
+  id      String @id @unique(map: "program_published_days_id_unique") @default(ulid()) @db.Char(26)
+  eventId String @map("event_id") @db.Char(26)
+  date    String @db.Char(10)
+  plan    String @default("both")
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "program_published_days_event_id_foreign")
+
+  @@unique([eventId, date], map: "program_published_days_event_id_date_unique")
+  @@map("program_published_days")
 }
 
 model Task {

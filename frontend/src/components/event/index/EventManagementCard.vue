@@ -376,6 +376,8 @@ function shortDate(value: string): string {
   }).format(new Date(value));
 }
 
+const CLOSING_SOON_WINDOW = 3 * 24 * 60 * 60 * 1000;
+
 interface Status {
   kind: 'open' | 'closes' | 'opens' | 'closed' | 'blocked';
   icon: string;
@@ -404,10 +406,22 @@ const status = computed<Status>(() => {
 
   if (event.registrationStatus === 'open') {
     if (event.registrationClosesAt) {
+      const closesAt = new Date(event.registrationClosesAt);
+      // A closing date that is still far off is just informational — only a
+      // close within the next few days is worth flagging as urgent.
+      if (closesAt.getTime() - Date.now() <= CLOSING_SOON_WINDOW) {
+        return {
+          kind: 'closes',
+          icon: 'schedule',
+          label: t('status.closes', {
+            date: shortDate(event.registrationClosesAt),
+          }),
+        };
+      }
       return {
-        kind: 'closes',
-        icon: 'schedule',
-        label: t('status.closes', {
+        kind: 'open',
+        icon: 'check_circle',
+        label: t('status.openUntil', {
           date: shortDate(event.registrationClosesAt),
         }),
       };
@@ -912,6 +926,7 @@ action:
   more: 'More actions'
 status:
   open: 'Registration open'
+  openUntil: 'Open until {date}'
   closes: 'Closes {date}'
   opens: 'Opens {date}'
   closed: 'Registration closed'
@@ -949,6 +964,7 @@ action:
   more: 'Weitere Aktionen'
 status:
   open: 'Anmeldung offen'
+  openUntil: 'Offen bis {date}'
   closes: 'Schließt {date}'
   opens: 'Öffnet {date}'
   closed: 'Anmeldung geschlossen'
@@ -986,6 +1002,7 @@ action:
   more: "Plus d'actions"
 status:
   open: 'Inscription ouverte'
+  openUntil: "Ouvert jusqu'au {date}"
   closes: 'Ferme le {date}'
   opens: 'Ouvre le {date}'
   closed: 'Inscription fermée'
@@ -1027,6 +1044,7 @@ action:
   more: 'Więcej akcji'
 status:
   open: 'Rejestracja otwarta'
+  openUntil: 'Otwarte do {date}'
   closes: 'Zamyka się {date}'
   opens: 'Otwiera się {date}'
   closed: 'Rejestracja zamknięta'
@@ -1064,6 +1082,7 @@ action:
   more: 'Další akce'
 status:
   open: 'Registrace otevřena'
+  openUntil: 'Otevřeno do {date}'
   closes: 'Uzavírá se {date}'
   opens: 'Otevírá se {date}'
   closed: 'Registrace uzavřena'

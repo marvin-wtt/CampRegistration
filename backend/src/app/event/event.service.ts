@@ -19,6 +19,10 @@ type MessageTemplateCreateData = (OptionalByKeys<
   'id'
 > & { attachments?: File[] })[];
 type FileCreateData = OptionalByKeys<Prisma.FileCreateManyEventInput, 'id'>[];
+type EventSettingCreateData = OptionalByKeys<
+  Prisma.EventSettingCreateManyEventInput,
+  'id'
+>[];
 
 // The event's own fields, as plain values. Relations, generated columns and the
 // query shape are the service's business — a caller never writes Prisma input.
@@ -65,6 +69,22 @@ export class EventService extends BaseService {
     });
 
     return event === null ? null : withMediaFlags(enrichFreePlaces(event));
+  }
+
+  /**
+   * Live organization-verification check by id, for callers that must
+   * re-query the database rather than trust a model bound earlier on a
+   * long-lived request (e.g. a realtime subscriber's heartbeat refresh) —
+   * unlike `eventOrganizationVerified`, which reads the cached
+   * `req.modelOrFail('event')`.
+   */
+  async isOrganizationVerified(eventId: string): Promise<boolean> {
+    const event = await this.prisma.event.findUnique({
+      where: { id: eventId },
+      select: { organization: { select: { verificationStatus: true } } },
+    });
+
+    return event?.organization.verificationStatus === 'VERIFIED';
   }
 
   async getEventsByUserId(userId: string) {
@@ -303,6 +323,7 @@ export class EventService extends BaseService {
     tableTemplates: TableTemplateCreateData = [],
     messageTemplates: MessageTemplateCreateData = [],
     files: FileCreateData = [],
+    settings: EventSettingCreateData = [],
   ) {
     const fileIds = files.map((f) => f.id).filter((f) => f != null);
     const fileIdMap = new Map<string, string>();
@@ -344,6 +365,9 @@ export class EventService extends BaseService {
           createMany: { data: this.stripIds(messageTemplateData) },
         },
         files: { createMany: { data: fileData } },
+        eventSettings: {
+          createMany: { data: this.stripIds(settings) },
+        },
       },
       include: { ...this.eventResourceInclude() },
     });
