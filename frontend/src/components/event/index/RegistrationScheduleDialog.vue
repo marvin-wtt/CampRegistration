@@ -342,7 +342,7 @@ quick:
   open_now: 'Ouvrir maintenant'
   close_now: 'Fermer maintenant'
 schedule:
-  hint: "Laissez un champ vide pour ne pas limiter ce côté."
+  hint: 'Laissez un champ vide pour ne pas limiter ce côté.'
 field:
   opens: 'Ouvre le'
   closes: 'Ferme le'
