@@ -547,6 +547,7 @@ feature:
       4: 'Titles, details and locations translatable, so an international team reads the plan in its own language'
       5: 'The whole team plans in the same shared view'
       6: 'A printable calendar for the notice board'
+      7: 'Turn on an optional public link to show participants each released day, no account needed'
   messages:
     title: 'Write to exactly the right people'
     text: 'Pick the group, not the addresses. Nobody gets copied over by hand, nobody gets missed.'
@@ -715,6 +716,7 @@ feature:
       4: 'Titel, Details und Orte übersetzbar — ein internationales Team liest den Plan in seiner eigenen Sprache'
       5: 'Das ganze Team plant in derselben Ansicht'
       6: 'Ein druckbarer Kalender für das schwarze Brett'
+      7: 'Optionaler öffentlicher Link zeigt Teilnehmenden jeden freigegebenen Tag — ganz ohne Konto'
   messages:
     title: 'Schreib genau den richtigen Leuten'
     text: 'Wähl die Gruppe, nicht die Adressen. Niemand wird von Hand kopiert, niemand vergessen.'
@@ -883,6 +885,7 @@ feature:
       4: 'Titres, détails et lieux traduisibles — une équipe internationale lit le plan dans sa propre langue'
       5: 'Toute l’équipe planifie dans la même vue partagée'
       6: 'Un calendrier imprimable pour le panneau d’affichage'
+      7: 'Lien public optionnel montrant aux participants chaque jour publié, sans compte'
   messages:
     title: 'Écrivez exactement aux bonnes personnes'
     text: 'Choisissez le groupe, pas les adresses. Personne n’est recopié à la main, personne n’est oublié.'
@@ -1051,6 +1054,7 @@ feature:
       4: 'Tytuły, opisy i miejsca do przetłumaczenia — międzynarodowy zespół czyta plan we własnym języku'
       5: 'Cały zespół planuje w tym samym widoku'
       6: 'Kalendarz do wydruku na tablicę ogłoszeń'
+      7: 'Opcjonalny publiczny link pokazuje uczestnikom każdy udostępniony dzień — bez konta'
   messages:
     title: 'Pisz dokładnie do właściwych osób'
     text: 'Wybierz grupę, nie adresy. Nikogo nie kopiujesz ręcznie i nikogo nie pomijasz.'
@@ -1219,6 +1223,7 @@ feature:
       4: 'Názvy, popisy a místa přeložitelné — mezinárodní tým čte plán ve svém jazyce'
       5: 'Celý tým plánuje ve stejném sdíleném pohledu'
       6: 'Tisknutelný kalendář na nástěnku'
+      7: 'Volitelný veřejný odkaz ukáže účastníkům každý zveřejněný den — bez účtu'
   messages:
     title: 'Pište přesně těm správným lidem'
     text: 'Vyberte skupinu, ne adresy. Nikoho nepřepisujete ručně a na nikoho nezapomenete.'

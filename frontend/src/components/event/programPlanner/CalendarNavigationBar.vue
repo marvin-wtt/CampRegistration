@@ -130,24 +130,72 @@
         </q-menu>
       </q-btn>
 
+      <!-- Print/public-link/settings collapse into one overflow menu —
+           as three separate always-visible buttons, this was one icon too
+           many alongside the plan toggle and range stepper on a narrow row. -->
       <q-btn
-        icon="print"
+        icon="more_vert"
         flat
         round
         :dense="quasar.screen.gt.xs"
-        @click="emit('print')"
       >
-        <q-tooltip>{{ t('options.print') }}</q-tooltip>
-      </q-btn>
+        <q-badge
+          v-if="publicLinkActive"
+          color="positive"
+          floating
+          rounded
+        />
+        <q-tooltip>{{ t('options.more') }}</q-tooltip>
+        <q-menu
+          anchor="bottom right"
+          self="top right"
+        >
+          <q-list style="min-width: 220px">
+            <q-item
+              v-close-popup
+              clickable
+              @click="emit('print')"
+            >
+              <q-item-section avatar>
+                <q-icon name="print" />
+              </q-item-section>
+              <q-item-section>{{ t('options.print') }}</q-item-section>
+            </q-item>
 
-      <q-btn
-        icon="settings"
-        flat
-        round
-        :dense="quasar.screen.gt.xs"
-        @click="emit('settings')"
-      >
-        <q-tooltip>{{ t('options.settings') }}</q-tooltip>
+            <q-item
+              v-close-popup
+              clickable
+              @click="emit('public-link')"
+            >
+              <q-item-section avatar>
+                <q-icon name="link" />
+              </q-item-section>
+              <q-item-section>{{ t('options.publicLink') }}</q-item-section>
+              <q-item-section
+                v-if="publicLinkActive"
+                side
+              >
+                <q-badge
+                  color="positive"
+                  rounded
+                >
+                  {{ t('options.publicLinkActive') }}
+                </q-badge>
+              </q-item-section>
+            </q-item>
+
+            <q-item
+              v-close-popup
+              clickable
+              @click="emit('settings')"
+            >
+              <q-item-section avatar>
+                <q-icon name="settings" />
+              </q-item-section>
+              <q-item-section>{{ t('options.settings') }}</q-item-section>
+            </q-item>
+          </q-list>
+        </q-menu>
       </q-btn>
     </div>
   </div>
@@ -183,6 +231,7 @@ const {
   editable = false,
   deletable = false,
   creatable = false,
+  publicLinkActive = false,
 } = defineProps<{
   start: string;
   end: string;
@@ -191,6 +240,8 @@ const {
   editable?: boolean;
   deletable?: boolean;
   creatable?: boolean;
+  /** Whether the public program link is currently enabled — surfaced as a badge so it's obvious at a glance. */
+  publicLinkActive?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -199,6 +250,7 @@ const emit = defineEmits<{
   (e: 'jump', date: string): void;
   (e: 'print'): void;
   (e: 'settings'): void;
+  (e: 'public-link'): void;
 }>();
 
 onMounted(() => {
@@ -207,21 +259,19 @@ onMounted(() => {
   }
 });
 
-// Icon-only on mobile to save horizontal space; omit label entirely (not undefined)
+// Plan A/B are single letters on mobile rather than an icon — that keeps
+// them meaningful for any use of the a/b split, not just a fair/bad-weather
+// contingency. "Both" has no letter of its own, so it stays icon-only there.
 const planOptions = computed(() => {
   const showLabel = quasar.screen.gt.xs;
   return [
-    { ...(showLabel && { label: t('plan.a') }), value: 'a', icon: 'wb_sunny' },
+    { label: showLabel ? t('plan.a') : t('plan.aShort'), value: 'a' },
     {
       ...(showLabel && { label: t('plan.both') }),
       value: 'both',
       icon: 'repeat',
     },
-    {
-      ...(showLabel && { label: t('plan.b') }),
-      value: 'b',
-      icon: 'water_drop',
-    },
+    { label: showLabel ? t('plan.b') : t('plan.bShort'), value: 'b' },
   ];
 });
 
@@ -516,11 +566,16 @@ function previous() {
 <i18n lang="yaml" locale="en">
 plan:
   a: 'Plan A'
+  aShort: 'A'
   b: 'Plan B'
+  bShort: 'B'
   both: 'Both'
 options:
+  more: 'More options'
   print: 'Print calendar'
   settings: 'Calendar settings'
+  publicLink: 'Public program link'
+  publicLinkActive: 'On'
 help:
   tooltip: 'Shortcuts & tips'
   title: 'Shortcuts & tips'
@@ -546,11 +601,16 @@ help:
 <i18n lang="yaml" locale="de">
 plan:
   a: 'Plan A'
+  aShort: 'A'
   b: 'Plan B'
+  bShort: 'B'
   both: 'Beide'
 options:
+  more: 'Weitere Optionen'
   print: 'Kalender drucken'
   settings: 'Kalendereinstellungen'
+  publicLink: 'Öffentlicher Programmlink'
+  publicLinkActive: 'Ein'
 help:
   tooltip: 'Tastenkürzel & Tipps'
   title: 'Tastenkürzel & Tipps'
@@ -576,11 +636,16 @@ help:
 <i18n lang="yaml" locale="fr">
 plan:
   a: 'Plan A'
+  aShort: 'A'
   b: 'Plan B'
+  bShort: 'B'
   both: 'Les deux'
 options:
+  more: "Plus d'options"
   print: 'Imprimer le calendrier'
   settings: 'Paramètres du calendrier'
+  publicLink: 'Lien public du programme'
+  publicLinkActive: 'Activé'
 help:
   tooltip: 'Raccourcis et astuces'
   title: 'Raccourcis et astuces'
@@ -606,11 +671,16 @@ help:
 <i18n lang="yaml" locale="pl">
 plan:
   a: 'Plan A'
+  aShort: 'A'
   b: 'Plan B'
+  bShort: 'B'
   both: 'Oba'
 options:
+  more: 'Więcej opcji'
   print: 'Drukuj kalendarz'
   settings: 'Ustawienia kalendarza'
+  publicLink: 'Publiczny link do programu'
+  publicLinkActive: 'Włączony'
 help:
   tooltip: 'Skróty i wskazówki'
   title: 'Skróty i wskazówki'
@@ -636,11 +706,16 @@ help:
 <i18n lang="yaml" locale="cs">
 plan:
   a: 'Plán A'
+  aShort: 'A'
   b: 'Plán B'
+  bShort: 'B'
   both: 'Oba'
 options:
+  more: 'Další možnosti'
   print: 'Vytisknout kalendář'
   settings: 'Nastavení kalendáře'
+  publicLink: 'Veřejný odkaz na program'
+  publicLinkActive: 'Zapnuto'
 help:
   tooltip: 'Zkratky a tipy'
   title: 'Zkratky a tipy'

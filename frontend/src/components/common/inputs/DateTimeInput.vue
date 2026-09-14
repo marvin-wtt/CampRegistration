@@ -3,6 +3,7 @@
   <q-input
     v-model="modelValue"
     v-bind="inputProps"
+    @focus="onFocus"
   >
     <template #append>
       <q-icon
@@ -65,7 +66,7 @@
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
-import { type QInputProps, type QPopupProxy } from 'quasar';
+import { type QInputProps, type QPopupProxy, useQuasar } from 'quasar';
 import { nextTick, useTemplateRef } from 'vue';
 import {
   type ForwardedFieldSlots,
@@ -73,8 +74,12 @@ import {
 } from '@/composables/passthroughProps';
 
 const { t } = useI18n();
+const quasar = useQuasar();
 
-type Props = Omit<QInputProps, 'modelValue' | 'onUpdate:modelValue'>;
+type Props = Omit<
+  QInputProps,
+  'modelValue' | 'onUpdate:modelValue' | 'onFocus'
+>;
 
 type ModelValue = string | null | undefined;
 
@@ -93,6 +98,17 @@ const timePopup = useTemplateRef<QPopupProxy>('timePopup');
 function onDateSelected() {
   datePopup.value?.hide();
   void nextTick(() => timePopup.value?.show());
+}
+
+// On desktop, focus fires on Tab too — auto-opening there would pop the
+// picker over every field a keyboard user tabs past. Touch devices get no
+// such drive-by focus, and typing into a masked field is awkward, so only
+// they open on focus; everyone else uses the icons. Picking a date chains
+// into the time popup via onDateSelected, same as clicking the icons does.
+function onFocus() {
+  if (quasar.platform.has.touch) {
+    datePopup.value?.show();
+  }
 }
 
 function isoToDateTime(isoDate: ModelValue): ModelValue {

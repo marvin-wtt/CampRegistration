@@ -197,6 +197,7 @@
           multiple
           append
           use-chips
+          hide-bottom-space
           outlined
           rounded
           dense

@@ -41,6 +41,13 @@ const routes: RouteRecordRaw[] = [
               import('@/pages/listedEvents/EventPrivacyPage.vue'),
             props: true,
           },
+          {
+            path: ':eventId/program',
+            name: 'event.program',
+            component: () =>
+              import('@/pages/listedEvents/EventProgramPage.vue'),
+            props: true,
+          },
         ],
       },
       {

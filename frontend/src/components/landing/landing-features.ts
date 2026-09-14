@@ -92,7 +92,7 @@ export const LANDING_FEATURES: LandingFeature[] = [
     icon: 'calendar_month',
     category: 'planning',
     preview: 'calendar',
-    points: 6,
+    points: 7,
   },
   {
     id: 'tasks',

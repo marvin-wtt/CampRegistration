@@ -6,6 +6,7 @@
 export const SETTING_KEYS = {
   ROOM_PLANNER: 'room-planner',
   PROGRAM_PLANNER: 'program-planner',
+  PROGRAM_PUBLIC: 'program-public',
   NAVIGATION: 'navigation',
 } as const;
 

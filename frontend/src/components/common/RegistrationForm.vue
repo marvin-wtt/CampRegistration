@@ -108,7 +108,10 @@ import {
   startAutoThemeUpdate,
   addFileSlotResolver,
 } from '@/composables/survey';
-import type { EventDetails } from '@camp-registration/common/entities';
+import type {
+  EventDetails,
+  Registration,
+} from '@camp-registration/common/entities';
 import { useAPIService } from '@/services/APIService';
 import { useErrorExtractor } from '@/composables/serviceHandler';
 
@@ -125,7 +128,7 @@ interface Props {
     id: string,
     formData: Record<string, unknown>,
     locale: string,
-  ) => Promise<void>;
+  ) => Promise<Registration | void>;
   uploadFileFn?: (file: File) => Promise<string>;
   moderation?: boolean;
   readonly?: boolean;
@@ -145,6 +148,10 @@ const emit = defineEmits<{
 // survey (including its own completed page) is hidden and this UI takes over.
 const submitState = ref<'saving' | 'success' | 'error' | null>(null);
 const submitError = ref<string>();
+// The actual status of the registration just created, so the success panel
+// can reflect whether it was accepted outright, waitlisted, or left pending
+// (moderated events / registrations placed on a waiting list).
+const registrationStatus = ref<Registration['status']>();
 // Stays true once the submission succeeded, including when survey-core takes
 // the screen back over to show the form's own completed page.
 const submitted = ref<boolean>(false);
@@ -160,7 +167,14 @@ const statusTitle = computed(() => {
     case 'saving':
       return t('submit.saving.title');
     case 'success':
-      return t('complete.title');
+      switch (registrationStatus.value) {
+        case 'PENDING':
+          return t('complete.pending.title');
+        case 'WAITLISTED':
+          return t('complete.waitlisted.title');
+        default:
+          return t('complete.title');
+      }
     case 'error':
       return t('submit.error.title');
     default:
@@ -173,7 +187,14 @@ const statusText = computed(() => {
     case 'saving':
       return t('submit.saving.text');
     case 'success':
-      return t('complete.text');
+      switch (registrationStatus.value) {
+        case 'PENDING':
+          return t('complete.pending.text');
+        case 'WAITLISTED':
+          return t('complete.waitlisted.text');
+        default:
+          return t('complete.text');
+      }
     case 'error':
       return t('submit.error.text');
     default:
@@ -184,7 +205,14 @@ const statusText = computed(() => {
 const badgeColor = computed(() => {
   switch (submitState.value) {
     case 'success':
-      return 'positive-container';
+      switch (registrationStatus.value) {
+        case 'PENDING':
+          return 'info-container';
+        case 'WAITLISTED':
+          return 'warning-container';
+        default:
+          return 'positive-container';
+      }
     case 'error':
       return 'error-container';
     default:
@@ -195,7 +223,14 @@ const badgeColor = computed(() => {
 const badgeTextColor = computed(() => {
   switch (submitState.value) {
     case 'success':
-      return 'on-positive-container';
+      switch (registrationStatus.value) {
+        case 'PENDING':
+          return 'on-info-container';
+        case 'WAITLISTED':
+          return 'on-warning-container';
+        default:
+          return 'on-positive-container';
+      }
     case 'error':
       return 'on-error-container';
     default:
@@ -203,9 +238,20 @@ const badgeTextColor = computed(() => {
   }
 });
 
-const badgeIcon = computed(() =>
-  submitState.value === 'success' ? 'check_circle' : 'error',
-);
+const badgeIcon = computed(() => {
+  if (submitState.value !== 'success') {
+    return 'error';
+  }
+
+  switch (registrationStatus.value) {
+    case 'PENDING':
+      return 'schedule';
+    case 'WAITLISTED':
+      return 'hourglass_top';
+    default:
+      return 'check_circle';
+  }
+});
 
 // A readonly form reuses the moderation layout (TOC, no validation) and puts
 // survey-core into display mode.
@@ -339,11 +385,17 @@ function createModel(eventId: string, form: object): SurveyModel {
 
     submitError.value = undefined;
     submitState.value = 'saving';
+    registrationStatus.value = undefined;
 
     mapFileQuestionValues(sender);
 
     try {
-      await submitFn(eventId, sender.data ?? {}, sender.locale);
+      const registration = await submitFn(
+        eventId,
+        sender.data ?? {},
+        sender.locale,
+      );
+      registrationStatus.value = registration?.status;
       submitted.value = true;
       if (sender.showCompletePage && hasFormCompletedHtml) {
         // Reveal the form-defined completed page (survey-core shows it by
@@ -460,6 +512,12 @@ submit:
 complete:
   title: 'Registration complete!'
   text: "Thanks for signing up — we've received your registration and can't wait to see you at event."
+  pending:
+    title: 'Registration received!'
+    text: 'Your registration is now pending review. We will let you know as soon as it has been processed.'
+  waitlisted:
+    title: "You're on the waitlist"
+    text: 'This event is currently full, so your registration has been placed on the waiting list. We will notify you if a spot opens up.'
   registerAnother: 'Register another person'
   exploreEvents: 'Explore other events'
 </i18n>
@@ -476,6 +534,12 @@ submit:
 complete:
   title: 'Anmeldung abgeschlossen!'
   text: 'Danke für deine Anmeldung — wir haben sie erhalten und freuen uns schon darauf, dich bei der Veranstaltung zu begrüßen.'
+  pending:
+    title: 'Anmeldung eingegangen!'
+    text: 'Deine Anmeldung wird nun geprüft. Wir informieren dich, sobald sie bearbeitet wurde.'
+  waitlisted:
+    title: 'Du stehst auf der Warteliste'
+    text: 'Diese Veranstaltung ist derzeit ausgebucht, daher wurde deine Anmeldung auf die Warteliste gesetzt. Wir benachrichtigen dich, sobald ein Platz frei wird.'
   registerAnother: 'Weitere Person anmelden'
   exploreEvents: 'Weitere Veranstaltungen entdecken'
 </i18n>
@@ -492,6 +556,12 @@ submit:
 complete:
   title: 'Inscription terminée !'
   text: "Merci pour ton inscription — nous l'avons bien reçue et avons hâte de te voir au événement."
+  pending:
+    title: 'Inscription reçue !'
+    text: "Ton inscription est en cours d'examen. Nous te tiendrons informé dès qu'elle aura été traitée."
+  waitlisted:
+    title: "Tu es sur liste d'attente"
+    text: "Cet événement est actuellement complet, ton inscription a donc été placée sur liste d'attente. Nous te préviendrons si une place se libère."
   registerAnother: 'Inscrire une autre personne'
   exploreEvents: "Découvrir d'autres événements"
 </i18n>
@@ -508,6 +578,12 @@ submit:
 complete:
   title: 'Rejestracja zakończona!'
   text: 'Dziękujemy za rejestrację — otrzymaliśmy Twoje zgłoszenie i nie możemy się doczekać spotkania na tym wydarzeniu.'
+  pending:
+    title: 'Zgłoszenie otrzymane!'
+    text: 'Twoje zgłoszenie oczekuje teraz na weryfikację. Poinformujemy Cię, gdy tylko zostanie rozpatrzone.'
+  waitlisted:
+    title: 'Jesteś na liście oczekujących'
+    text: 'To wydarzenie jest obecnie pełne, więc Twoje zgłoszenie zostało umieszczone na liście oczekujących. Powiadomimy Cię, gdy zwolni się miejsce.'
   registerAnother: 'Zarejestruj kolejną osobę'
   exploreEvents: 'Odkryj inne wydarzenia'
 </i18n>
@@ -524,6 +600,12 @@ submit:
 complete:
   title: 'Registrace dokončena!'
   text: 'Děkujeme za registraci — tvou přihlášku jsme přijali a těšíme se na tebe na táboře.'
+  pending:
+    title: 'Registrace přijata!'
+    text: 'Tvoje registrace nyní čeká na schválení. Jakmile bude zpracována, dáme ti vědět.'
+  waitlisted:
+    title: 'Jsi na čekací listině'
+    text: 'Tato akce je momentálně plně obsazená, proto byla tvoje registrace zařazena na čekací listinu. Jakmile se uvolní místo, dáme ti vědět.'
   registerAnother: 'Registrovat další osobu'
   exploreEvents: 'Prozkoumat další akcey'
 </i18n>

@@ -188,7 +188,19 @@
 
             <div class="row justify-end q-gutter-sm q-pa-md">
               <q-btn
-                v-if="canDelete"
+                v-if="canDelete && quasar.screen.lt.sm"
+                flat
+                round
+                dense
+                color="negative"
+                icon="delete_outline"
+                :aria-label="t('action.delete')"
+                @click="confirmDelete(selected)"
+              >
+                <q-tooltip>{{ t('action.delete') }}</q-tooltip>
+              </q-btn>
+              <q-btn
+                v-else-if="canDelete"
                 flat
                 no-caps
                 rounded

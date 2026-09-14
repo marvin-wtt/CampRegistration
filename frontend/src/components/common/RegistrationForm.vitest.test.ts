@@ -188,6 +188,52 @@ describe('RegistrationForm', () => {
     ).toBe(false);
   });
 
+  it('shows a pending-specific message when the registration is left pending', async () => {
+    const submitFn = vi
+      .fn()
+      .mockResolvedValue({ id: 'reg-1', status: 'PENDING' });
+
+    const wrapper = mount(RegistrationForm, {
+      props: {
+        eventDetails: { ...simpleEventDetails, id: 'event-1' },
+        submitFn,
+        uploadFileFn: () => Promise.reject(new Error()),
+      },
+    });
+    const survey = wrapper
+      .getComponent(SurveyComponent)
+      .props('model') as SurveyModel;
+
+    survey.doComplete();
+    await flushPromises();
+
+    const status = wrapper.find('[data-test="registration-submit-status"]');
+    expect(status.text()).toContain('complete.pending.title');
+  });
+
+  it('shows a waitlist-specific message when the registration is waitlisted', async () => {
+    const submitFn = vi
+      .fn()
+      .mockResolvedValue({ id: 'reg-1', status: 'WAITLISTED' });
+
+    const wrapper = mount(RegistrationForm, {
+      props: {
+        eventDetails: { ...simpleEventDetails, id: 'event-1' },
+        submitFn,
+        uploadFileFn: () => Promise.reject(new Error()),
+      },
+    });
+    const survey = wrapper
+      .getComponent(SurveyComponent)
+      .props('model') as SurveyModel;
+
+    survey.doComplete();
+    await flushPromises();
+
+    const status = wrapper.find('[data-test="registration-submit-status"]');
+    expect(status.text()).toContain('complete.waitlisted.title');
+  });
+
   it.todo('should set variables');
 
   it.todo('should render markdown');

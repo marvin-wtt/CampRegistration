@@ -24,6 +24,8 @@ import { LegalModule } from '#app/legal/legal.module';
 import { PrivacyNoticeModule } from '#app/privacyNotice/privacy-notice.module';
 import { QueueModule } from '#app/queue/queue.module';
 import { ProgramItemModule } from '#app/programItem/program-item.module';
+import { ProgramPublicModule } from '#app/programPublic/program-public.module';
+import { ProgramPublishedDayModule } from '#app/programPublishedDay/program-published-day.module';
 import { TaskModule } from '#app/task/task.module';
 import { ChoreModule } from '#app/chore/chore.module';
 import { ChoreAssignmentModule } from '#app/choreAssignment/choreAssignment.module';
@@ -36,6 +38,7 @@ import { AuditModule } from '#app/audit/audit.module';
 import { AdminModule } from '#app/admin/admin.module';
 import { PermissionModule } from '#app/permission/permission.module';
 import type { CoreModule } from '#core/base/CoreModule';
+import { ErrorTrackingModule } from '#core/errorTracking/errorTracking.module';
 import { DatabaseModule } from '#core/database/database.module';
 import { I18nModule } from '#core/i18n/i18n.module';
 import { QueueManagerModule } from '#core/queue/queue-manager.module';
@@ -46,6 +49,8 @@ import { ContextModule } from '#core/context/context.module';
 
 // Order matters: earlier modules boot first and shut down last.
 export const createCoreModules = (): CoreModule[] => [
+  // First, so every other module's configure() can be captured if it fails.
+  new ErrorTrackingModule(),
   new DatabaseModule(),
   new I18nModule(),
   new QueueManagerModule(),
@@ -83,6 +88,8 @@ export const createAppModules = (): AppModule[] => [
   new RoomModule(),
   new BedModule(),
   new ProgramItemModule(),
+  new ProgramPublicModule(),
+  new ProgramPublishedDayModule(),
   new TaskModule(),
   new ChoreModule(),
   new ChoreAssignmentModule(),

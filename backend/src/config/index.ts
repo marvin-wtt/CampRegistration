@@ -192,8 +192,14 @@ const config = {
     deepl: deeplTranslationConfig(),
     google: googleTranslationConfig(),
   },
-  sentry: {
-    dsn: env.SENTRY_DSN,
+  errorTracking: {
+    drivers:
+      env.ERROR_TRACKING_DRIVERS?.split(',')
+        .map((driver) => driver.trim())
+        .filter(Boolean) ?? [],
+    sentry: {
+      dsn: env.SENTRY_DSN,
+    },
   },
   log: {
     level: env.LOG_LEVEL,
