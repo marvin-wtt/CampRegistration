@@ -67,6 +67,22 @@ export class EventService extends BaseService {
     return event === null ? null : enrichFreePlaces(event);
   }
 
+  /**
+   * Live organization-verification check by id, for callers that must
+   * re-query the database rather than trust a model bound earlier on a
+   * long-lived request (e.g. a realtime subscriber's heartbeat refresh) —
+   * unlike `eventOrganizationVerified`, which reads the cached
+   * `req.modelOrFail('event')`.
+   */
+  async isOrganizationVerified(eventId: string): Promise<boolean> {
+    const event = await this.prisma.event.findUnique({
+      where: { id: eventId },
+      select: { organization: { select: { verificationStatus: true } } },
+    });
+
+    return event?.organization.verificationStatus === 'VERIFIED';
+  }
+
   async getEventsByUserId(userId: string) {
     const events = await this.prisma.event.findMany({
       where: {

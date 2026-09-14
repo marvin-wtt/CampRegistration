@@ -1,7 +1,7 @@
 <template>
   <div
     class="public-program-item"
-    :style="{ borderLeftColor: item.color ?? '#2196F3' }"
+    :style="{ borderLeftColor: item.color ?? DEFAULT_PROGRAM_ITEM_COLOR }"
   >
     <div
       v-if="item.time"
@@ -36,6 +36,7 @@
 import type { ProgramItem } from '@camp-registration/common/entities';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import PlanLetterIcon from '@/components/event/programPlanner/PlanLetterIcon.vue';
+import { DEFAULT_PROGRAM_ITEM_COLOR } from '@/utils/programItem';
 
 const { item, showPlanIcon = false } = defineProps<{
   item: ProgramItem;

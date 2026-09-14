@@ -119,6 +119,16 @@ useMeta(() => ({
   title: event.value ? to(event.value.name) : '',
 }));
 
+// Registered synchronously during setup — not from inside the async
+// `onMounted` below — so Vue's effect scope is still active and
+// `onScopeDispose` inside the composable actually closes the connection
+// on unmount. Called after an `await`, it would silently no-op and leak
+// the EventSource. The stream stays open regardless of `enabled`, so a
+// viewer on the "not published yet" state learns the instant it changes.
+useProgramPublicStream(eventId, () => {
+  void fetchView();
+});
+
 onMounted(async () => {
   try {
     loading.value = true;
@@ -127,15 +137,6 @@ onMounted(async () => {
       skipAuthenticationHandler: true,
     });
     await fetchView();
-
-    // Reactive: refetch the public view on every relevant change (item edits,
-    // and the `program-public` setting itself — the master switch, or which
-    // days/plans are published). The stream stays open regardless of
-    // `enabled`, so a viewer on the "not published yet" state learns the
-    // instant it changes.
-    useProgramPublicStream(eventId, () => {
-      void fetchView();
-    });
   } catch (err) {
     event.value = undefined;
 
@@ -160,12 +161,23 @@ onMounted(async () => {
   }
 });
 
+// Guards against out-of-order responses: the stream, `jumpToDate` and the
+// initial mount can all have a fetch in flight at once, and only the
+// response to the most recently started request may still apply its result.
+let fetchToken = 0;
+
 async function fetchView() {
+  const token = ++fetchToken;
+
   try {
     const fetched = await api.fetchProgramPublicView(eventId, {
       date: selectedDate,
       skipAuthenticationHandler: true,
     });
+
+    if (token !== fetchToken) {
+      return;
+    }
 
     view.value = fetched;
     if (fetched.enabled) {
@@ -173,9 +185,20 @@ async function fetchView() {
       displayDate.value = fetched.date;
       setQueryParams({ date: fetched.date });
     }
-  } catch {
+  } catch (err) {
+    if (token !== fetchToken) {
+      return;
+    }
+
     // Transient refetch failures keep the last known view rather than
-    // replacing it with an error state.
+    // replacing it with an error state — but there is nothing to keep on
+    // the very first load, so that one propagates to the caller instead of
+    // leaving the page permanently blank.
+    if (view.value) {
+      return;
+    }
+
+    throw err;
   }
 }
 

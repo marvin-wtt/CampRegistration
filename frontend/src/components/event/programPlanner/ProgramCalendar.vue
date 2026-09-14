@@ -351,6 +351,7 @@ import {
   parseTimeToMinutes,
 } from '@/utils/date';
 import { openPrintIframe } from '@/utils/printIframe';
+import { programItemMinutesRange } from '@/utils/programItem';
 import { useEventSettings } from '@/composables/eventSettings';
 import { SETTING_KEYS } from '@camp-registration/common/settings';
 import { usePermissions } from '@/composables/permissions';
@@ -777,14 +778,11 @@ const eventDepths = computed<Record<string, number>>(() => {
     // `eventsMap` is already in layout order, so everything an event can be
     // stacked on has been placed by the time it is reached.
     for (const event of dayEvents) {
-      if (!event.time) {
+      const range = programItemMinutesRange(event);
+      if (range === null) {
         continue;
       }
-      const start = parseTimeToMinutes(event.time);
-      if (start === null) {
-        continue;
-      }
-      const end = start + (event.duration ?? 60);
+      const { start, end } = range;
 
       // One level deeper than the deepest event it covers. Counting the covered
       // events instead would let two events that overlap each other, but sit on

@@ -128,7 +128,8 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { ProgramItem } from '@camp-registration/common/entities';
 import { currentDateInTimeZone } from '@camp-registration/common/utils';
-import { addDays, parseTimeToMinutes } from '@/utils/date';
+import { addDays } from '@/utils/date';
+import { programItemMinutesRange } from '@/utils/programItem';
 import PublicProgramItemCard from '@/components/event/programPlanner/PublicProgramItemCard.vue';
 import PublicProgramItemCardSkeleton from '@/components/event/programPlanner/PublicProgramItemCardSkeleton.vue';
 
@@ -201,25 +202,30 @@ interface Slot {
   full: ProgramItem[];
   /**
    * The non-`'both'` items, laid out side by side. When the slot has at
-   * least one plan `'a'` item and at least one plan `'b'` item, this is
-   * *exactly* `[aItems, bItems]` — a left/right pair — mirroring
+   * least one plan `'a'` item and at least one plan `'b'` item, the 'a'
+   * lanes always precede the 'b' lanes — a left/right split — mirroring
    * `ProgramCalendar.vue`'s own `viewBoth` plan split, since a's and b's are
    * weather-contingency alternatives by construction, not incidentally
-   * overlapping activities. Otherwise (no genuine a/b pair here) it falls
-   * back to generic time-overlap lanes for whichever single plan is present.
+   * overlapping activities. Each side still runs through `assignLanes` on
+   * its own, so two same-plan items that overlap each other land in
+   * separate lanes rather than being flattened into one. Otherwise (no
+   * genuine a/b pair here) it falls back to generic time-overlap lanes for
+   * whichever single plan is present.
    */
   lanes: ProgramItem[][];
 }
 
-/** Missing duration defaults to 60 minutes, matching `ProgramCalendar.vue`'s own `eventDepths` overlap computation. */
 function toTimedEntries(source: ProgramItem[]): TimedEntry[] {
-  return source
-    .filter((item): item is ProgramItem & { time: string } => !!item.time)
-    .map((item) => {
-      const start = parseTimeToMinutes(item.time) ?? 0;
-      return { item, start, end: start + (item.duration ?? 60) };
-    })
-    .sort((a, b) => a.start - b.start || a.end - b.end);
+  const entries: TimedEntry[] = [];
+
+  for (const item of source) {
+    const range = programItemMinutesRange(item);
+    if (range) {
+      entries.push({ item, start: range.start, end: range.end });
+    }
+  }
+
+  return entries.sort((a, b) => a.start - b.start || a.end - b.end);
 }
 
 /**
@@ -308,16 +314,16 @@ const slots = computed<Slot[]>(() => {
     const full = cluster
       .filter((entry) => entry.item.plan === 'both')
       .map((entry) => entry.item);
-    const aItems = cluster
-      .filter((entry) => entry.item.plan === 'a')
-      .map((entry) => entry.item);
-    const bItems = cluster
-      .filter((entry) => entry.item.plan === 'b')
-      .map((entry) => entry.item);
+    const aEntries = cluster.filter((entry) => entry.item.plan === 'a');
+    const bEntries = cluster.filter((entry) => entry.item.plan === 'b');
 
+    // A genuine a/b pair still keeps 'a' on the left and 'b' on the right,
+    // but each side runs through the same lane assignment as the fallback
+    // below — two overlapping items sharing a plan compete for space just
+    // like two unrelated overlapping items would.
     const lanes: ProgramItem[][] =
-      aItems.length > 0 && bItems.length > 0
-        ? [aItems, bItems]
+      aEntries.length > 0 && bEntries.length > 0
+        ? [...assignLanes(aEntries), ...assignLanes(bEntries)]
         : assignLanes(cluster.filter((entry) => entry.item.plan !== 'both'));
 
     result.push({ key: cluster[0]!.item.id, full, lanes });

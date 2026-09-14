@@ -1,37 +1,52 @@
+import { RESOURCE_VIEW_PERMISSION } from '@camp-registration/common/realtime';
+import { admin } from '#core/guard';
+import { resolve } from '#core/ioc/container';
+import { EventService } from '#app/event/event.service';
 import { eventPubliclyVisible } from '#app/event/event.guard';
 import type { SubscriberResolver } from '#app/realtime/realtime.stream';
 
 export { eventPubliclyVisible as programPublicViewGuard };
 
+// Tied to the shared resource->permission map rather than hand-typed, so a
+// rename there cannot silently desync this subscriber's permission set.
+const PROGRAM_PUBLIC_PERMISSIONS = new Set([
+  RESOURCE_VIEW_PERMISSION.program_item,
+  RESOURCE_VIEW_PERMISSION.setting,
+]);
+
 /**
- * Resolves the realtime-stream subscriber for the anonymous public program
- * stream. Gated on {@link eventPubliclyVisible} only — the same anonymous rule
- * as the event page and its link preview — and deliberately NOT on the
- * `program-public` setting's `enabled` flag: the stream carries no model data
- * (see `docs/live-updates-plan.md`), only `{resource,id,op}` invalidation
- * signals, so there is nothing to leak by keeping it open while disabled. That
- * lets a viewer looking at the "not published yet" state learn the instant a
- * manager turns the link on, instead of needing to refresh manually. The
- * `enabled` check belongs solely on the data endpoint
- * (`ProgramPublicService.getPublicView`), which is the only place that can
- * actually expose the schedule.
+ * Realtime-stream subscriber for the anonymous public program stream. Gated
+ * on organization verification only, not the `program-public.enabled` flag —
+ * the stream carries no model data, so there's nothing to leak by keeping it
+ * open while disabled (lets a viewer learn the instant a manager publishes).
  *
- * `revalidate: true` because organization-verification can be revoked with no
- * realtime event to react to (mirrors the same reasoning documented on
- * `RealtimeSubscriber.revalidate` for organization-derived permissions
- * elsewhere) — without it, a stream opened while the org was verified would
- * stay open indefinitely after verification is revoked.
+ * Mirrors `eventManagerSubscriber`'s `admin` bypass so an admin's stream
+ * doesn't 403 when the REST endpoints already let them through. Verification
+ * is re-checked via a live query rather than the request's bound `event`
+ * model, which is fetched once at connect and never refetched — reading it
+ * again on each `revalidate` heartbeat would just repeat the same answer.
  */
 export const programPublicSubscriber: SubscriberResolver = async (req) => {
-  const visible = await eventPubliclyVisible(req);
+  const eventId = req.modelOrFail('event').id;
 
-  if (visible !== true) {
+  if (admin(req)) {
+    return {
+      managerId: '',
+      permissions: PROGRAM_PUBLIC_PERMISSIONS,
+      expiresAt: null,
+    };
+  }
+
+  const eventService = resolve(EventService);
+  const verified = await eventService.isOrganizationVerified(eventId);
+
+  if (!verified) {
     return null;
   }
 
   return {
     managerId: '',
-    permissions: new Set(['event.program_items.view', 'event.view']),
+    permissions: PROGRAM_PUBLIC_PERMISSIONS,
     expiresAt: null,
     revalidate: true,
   };
