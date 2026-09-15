@@ -378,7 +378,10 @@ function toggleHighLightColor() {
 
 const editor = useEditor({
   extensions: [
-    StarterKit,
+    StarterKit.configure({
+      // Handled separately below so it can be disabled for singleLine.
+      hardBreak: false,
+    }),
     Document.extend({
       content: singleLine ? 'block' : 'block+',
     }),
@@ -391,7 +394,8 @@ const editor = useEditor({
       multicolor: true,
     }),
     TextStyleKit,
-    HardBreak,
+    // A single-line field must never contain a line break.
+    ...(singleLine ? [] : [HardBreak]),
     Variable.configure({
       variables: variables.value,
     }),
