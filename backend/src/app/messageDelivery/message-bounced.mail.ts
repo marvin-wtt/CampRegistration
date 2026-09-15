@@ -8,6 +8,8 @@ import type { AddressLike, Content } from '#core/mail/mail.types';
 import { objectValueOrAll } from '#utils/translateObject';
 import { translateEventContext } from '#app/event/event.util';
 import { generateUrl } from '#utils/url';
+import { resolveActionCardText } from '#core/mail/actionCardText';
+import type { MessageBouncedProps, LocalContext } from '#views/emails/types';
 
 export interface MessageBouncedNotificationPayload {
   event: Event;
@@ -47,21 +49,28 @@ export class MessageBouncedNotification extends MailBase<MessageBouncedNotificat
   }
 
   protected content(): Content {
+    const t = this.getT();
     const { delivery, registration, event } = this.payload;
+    const eventContext = this.createEventContext();
 
     const url = generateUrl(
       ['management', 'events', event.id, 'participants'],
       { registrationId: registration.id },
     );
 
+    const vars = {
+      event: eventContext,
+      recipient: delivery.to,
+      messageSubject: delivery.subject,
+    };
+
     return {
       template: 'message-bounced',
       context: {
-        event: this.createEventContext(),
-        recipient: delivery.to,
-        messageSubject: delivery.subject,
+        eventName: eventContext.name,
+        ...resolveActionCardText(t, vars),
         url,
-      },
+      } satisfies LocalContext<MessageBouncedProps>,
     };
   }
 

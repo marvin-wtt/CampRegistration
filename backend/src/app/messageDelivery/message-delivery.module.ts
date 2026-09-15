@@ -1,12 +1,10 @@
 import type { AppModule, BindOptions } from '#core/base/AppModule';
-import type { JobScheduler } from '#core/scheduler/JobScheduler';
 import { registerFileGuard } from '#app/file/file.guard';
 import { messageDeliveryFileGuard } from '#app/messageDelivery/message-delivery.guard';
 import { MessageDeliveryService } from '#app/messageDelivery/message-delivery.service';
 import { processBounceResults } from '#app/messageDelivery/message-bounce-notifier';
-import { BounceReader } from '#core/mail/bounce.reader';
+import { MailService } from '#core/mail/mail.service';
 import { resolve } from '#core/ioc/container';
-import config from '#config/index';
 
 export class MessageDeliveryModule implements AppModule {
   bindContainers(options: BindOptions) {
@@ -19,19 +17,9 @@ export class MessageDeliveryModule implements AppModule {
     });
   }
 
-  async configure(): Promise<void> {
-    await resolve(BounceReader).verify();
-  }
-
-  registerJobs(scheduler: JobScheduler): void {
-    if (!config.email.bounce) {
-      return;
-    }
-
-    const bounceReader = resolve(BounceReader);
-    // A failure here leaves the reports unacknowledged for the next poll.
-    scheduler.schedule('bounce-mailbox-poll', '*/5 * * * *', async () => {
-      await bounceReader.pollOnce(processBounceResults);
-    });
+  configure(): void {
+    // MailModule decides how the active driver detects bounces (poll vs.
+    // webhook); this module only supplies what happens once one is found.
+    resolve(MailService).onBounce(processBounceResults);
   }
 }

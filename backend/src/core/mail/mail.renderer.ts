@@ -1,9 +1,16 @@
-import { create, type ExpressHandlebars } from 'express-handlebars';
 import path from 'path';
+import { pathToFileURL } from 'node:url';
+import type { Component } from 'vue';
+import { createSSRApp } from 'vue';
+import { renderToString } from '@vue/server-renderer';
+import mjml2html from 'mjml';
 import config from '#config/index';
 import { appBuildPath } from '#utils/paths';
 import type { Envelope, Translator } from '#core/mail/mail.types';
 import { addressLikeToString } from '#core/mail/mail.utils.js';
+import logger from '#core/logger';
+import type { DefaultEmailProps, LocalContext } from '#views/emails/types';
+import { htmlToPreviewText } from '#utils/emailPreview';
 
 interface RenderContentOptions {
   envelope: Pick<Envelope, 'to' | 'subject'>;
@@ -18,28 +25,14 @@ interface RenderFileOptions {
 }
 
 export class MailRenderer {
-  private static readonly EXTENSION = '.hbs';
-
-  private readonly viewEngine: ExpressHandlebars;
   private readonly viewsPath: string;
 
-  constructor(t: Translator, tg: Translator) {
+  constructor(private readonly tg: Translator) {
     this.viewsPath = appBuildPath('views', 'emails');
-
-    this.viewEngine = create({
-      partialsDir: this.getViewDirectory('partials'),
-      layoutsDir: this.getViewDirectory('layouts'),
-      defaultLayout: undefined,
-      helpers: { t, tg },
-    });
   }
 
-  private getViewDirectory(subDir: string) {
-    return path.join(this.viewsPath, subDir);
-  }
-
-  private getView(name: string) {
-    return path.join(this.viewsPath, name + MailRenderer.EXTENSION);
+  private getViewUrl(name: string): string {
+    return pathToFileURL(path.join(this.viewsPath, `${name}.mjs`)).href;
   }
 
   async renderContent(options: RenderContentOptions): Promise<string> {
@@ -47,28 +40,47 @@ export class MailRenderer {
       template: 'default',
       envelope: options.envelope,
       context: {
+        preview: htmlToPreviewText(options.body),
         body: options.body,
-        footer: options.reason,
         reason: options.reason,
-      },
+      } satisfies LocalContext<DefaultEmailProps>,
     });
   }
 
   async renderFile(options: RenderFileOptions): Promise<string> {
-    const globalContext = {
-      appName: config.appName,
-      style: {
-        primaryColor: config.primaryColor,
-      },
-    };
-    const filepath = this.getView(options.template);
+    const envelope = simplifyEnvelope(options.envelope);
 
-    return this.viewEngine.render(filepath, {
+    const props = {
       subject: options.envelope.subject,
+      appName: config.appName,
+      primaryColor: config.primaryColor,
+      sentTo: this.tg('email:footer.sentTo', { envelope }),
       ...options.context,
-      ...globalContext,
-      envelope: simplifyEnvelope(options.envelope),
-    });
+    };
+
+    const mod = (await import(this.getViewUrl(options.template))) as {
+      default: Component;
+    };
+
+    const app = createSSRApp(mod.default, props);
+    const markup = await renderToString(app);
+
+    // `validationLevel: 'strict'` throws on any structural error instead of
+    // returning it in `errors` — caught here only to attach which template
+    // failed before the caller's own error handling (queue retry, etc.) takes
+    // over; never silently degrades to unvalidated markup.
+    try {
+      const { html } = await mjml2html(markup, { validationLevel: 'strict' });
+      return html;
+    } catch (error) {
+      logger.error(
+        `MJML compile failed while rendering "${options.template}"`,
+        {
+          error,
+        },
+      );
+      throw error;
+    }
   }
 }
 

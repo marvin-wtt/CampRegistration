@@ -8,6 +8,8 @@ import { translateObject } from '#utils/translateObject';
 import { MailBase } from '#core/mail/mail.base';
 import { generateUrl } from '#utils/url';
 import { countriesToLocales } from '#utils/countriesToLocales.js';
+import { resolveActionCardText } from '#core/mail/actionCardText';
+import type { ActionCardProps, LocalContext } from '#views/emails/types';
 
 type EventManagerWithUserOrInvitation = EventManager & { user: User | null } & {
   invitation: Invitation | null;
@@ -74,20 +76,18 @@ export class EventManagerInvitationMessage extends EventManagerMessage<{
   }
 
   protected content() {
+    const t = this.getT();
     const event = this.payload.event;
     const eventName = translateObject(event.name, this.locale());
     const url = generateUrl(['management', 'events', event.id]);
+    const vars = { event: { name: eventName } };
 
     return {
       template: 'manager-invitation',
       context: {
-        event: {
-          ...event,
-          name: eventName,
-        },
-        user: this.payload.manager.user,
+        ...resolveActionCardText(t, vars),
         url,
-      },
+      } satisfies LocalContext<ActionCardProps>,
     };
   }
 }
