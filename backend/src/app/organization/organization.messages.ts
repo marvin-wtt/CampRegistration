@@ -1,6 +1,12 @@
 import type { Organization, User } from '#generated/prisma/client.js';
 import { MailBase } from '#core/mail/mail.base';
 import { generateUrl } from '#utils/url';
+import { resolveActionCardText } from '#core/mail/actionCardText';
+import type {
+  ActionCardProps,
+  OrganizationRejectedProps,
+  LocalContext,
+} from '#views/emails/types';
 
 interface OrganizationRecipientPayload {
   organization: Organization;
@@ -43,12 +49,15 @@ export class OrganizationReviewPendingMessage extends OrganizationMessage<Organi
   }
 
   protected content() {
+    const t = this.getT();
+    const vars = { organization: this.payload.organization };
+
     return {
       template: 'organization-review-pending',
       context: {
-        organization: this.payload.organization,
+        ...resolveActionCardText(t, vars),
         url: generateUrl(['administration', 'organizations']),
-      },
+      } satisfies LocalContext<ActionCardProps>,
     };
   }
 }
@@ -68,16 +77,19 @@ export class OrganizationVerifiedMessage extends OrganizationMessage<Organizatio
   }
 
   protected content() {
+    const t = this.getT();
+    const vars = { organization: this.payload.organization };
+
     return {
       template: 'organization-verified',
       context: {
-        organization: this.payload.organization,
+        ...resolveActionCardText(t, vars),
         url: generateUrl([
           'management',
           'organizations',
           this.payload.organization.id,
         ]),
-      },
+      } satisfies LocalContext<ActionCardProps>,
     };
   }
 }
@@ -98,17 +110,22 @@ export class OrganizationRejectedMessage extends OrganizationMessage<Organizatio
   }
 
   protected content() {
+    const t = this.getT();
+    const vars = { organization: this.payload.organization };
+
     return {
       template: 'organization-rejected',
       context: {
-        organization: this.payload.organization,
+        ...resolveActionCardText(t, vars),
+        reasonLabel: t('text.reasonLabel'),
+        reviewNote: this.payload.organization.reviewNote ?? undefined,
         url: generateUrl([
           'management',
           'organizations',
           this.payload.organization.id,
           'settings',
         ]),
-      },
+      } satisfies LocalContext<OrganizationRejectedProps>,
     };
   }
 }

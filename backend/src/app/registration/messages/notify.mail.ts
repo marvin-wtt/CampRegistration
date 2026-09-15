@@ -5,6 +5,11 @@ import { MailBase } from '#core/mail/mail.base';
 import type { AddressLike, Content } from '#core/mail/mail.types';
 import { generateUrl } from '#utils/url';
 import { uniqueLowerCase } from '#utils/string';
+import { resolveActionCardText } from '#core/mail/actionCardText';
+import type {
+  RegistrationManagerNotificationProps,
+  LocalContext,
+} from '#views/emails/types';
 
 export class RegistrationNotifyMessage extends MailBase<{
   event: Event;
@@ -46,8 +51,10 @@ export class RegistrationNotifyMessage extends MailBase<{
   }
 
   protected content(): Content {
+    const t = this.getT();
     const event = this.payload.event;
     const registration = this.payload.registration;
+    const eventContext = this.createEventContext();
 
     const url = generateUrl(
       ['management', 'events', event.id, 'participants'],
@@ -56,15 +63,15 @@ export class RegistrationNotifyMessage extends MailBase<{
       },
     );
 
+    const vars = { event: eventContext, registration };
+
     return {
       template: 'registration-manager-notification',
       context: {
-        event: this.createEventContext(),
-        registration: {
-          ...registration,
-          url,
-        },
-      },
+        eventName: eventContext.name,
+        ...resolveActionCardText(t, vars),
+        url,
+      } satisfies LocalContext<RegistrationManagerNotificationProps>,
     };
   }
 
