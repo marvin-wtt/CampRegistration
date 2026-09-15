@@ -35,9 +35,9 @@ export async function boot(options: BootOptions = {}) {
 
   registerModulePermissions(appModules);
   registerModuleScopeResolvers(appModules);
-  registerModuleApiRoutes(appModules);
+  registerModuleApiRoutes(allModules);
   registerModuleWebRoutes(appModules);
-  registerModuleJobs(appModules);
+  registerModuleJobs(allModules);
 
   await startModules(allModules);
 }
@@ -105,7 +105,7 @@ function registerModuleScopeResolvers(modules: AppModule[]) {
   assertScopeResolversComplete();
 }
 
-function registerModuleApiRoutes(modules: AppModule[]) {
+function registerModuleApiRoutes(modules: Module[]) {
   for (const module of modules) {
     module.registerApiRoutes?.(apiRouter);
   }
@@ -117,7 +117,7 @@ function registerModuleWebRoutes(modules: AppModule[]) {
   }
 }
 
-function registerModuleJobs(modules: AppModule[]) {
+function registerModuleJobs(modules: Module[]) {
   const scheduler = resolve(JobScheduler);
   for (const module of modules) {
     module.registerJobs?.(scheduler);

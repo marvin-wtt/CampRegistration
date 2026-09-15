@@ -1,6 +1,7 @@
 import { MailBase } from '#core/mail/mail.base';
 import type { AddressLike, Content } from '#core/mail/mail.types';
 import config from '#config/index';
+import type { FeedbackProps, LocalContext } from '#views/emails/types';
 
 export interface FeedbackData {
   message: string;
@@ -32,14 +33,22 @@ export class FeedbackMessage extends MailBase<FeedbackData> {
   }
 
   protected content(): Content {
+    const t = this.getT();
+
     return {
       template: 'feedback',
       context: {
+        preview: t('preview', { message: this.payload.message }),
+        title: t('text.title'),
+        replyNote: t('text.replyNote'),
+        messageLabel: t('text.messageLabel'),
+        locationLabel: t('text.locationLabel'),
+        userAgentLabel: t('text.userAgentLabel'),
         message: this.payload.message,
         location: this.payload.location,
         userAgent: this.payload.userAgent,
-        email: this.payload.email,
-      },
+        reason: t('footer.cause'),
+      } satisfies LocalContext<FeedbackProps>,
     };
   }
 }

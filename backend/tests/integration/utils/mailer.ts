@@ -1,3 +1,3 @@
-import { NoOpMailer } from '#core/mail/noop.mailer';
+import { NoOpMailer } from '#core/mail/drivers/noop.mailer';
 
 export const mailer = NoOpMailer.prototype;

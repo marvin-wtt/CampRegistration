@@ -2,9 +2,9 @@ import { z } from 'zod';
 
 export const EmailEnvSchema = z.object({
   EMAIL_DRIVER: z
-    .enum(['smtp', 'noop'])
+    .enum(['smtp', 'mailjet', 'noop'])
     .default('smtp')
-    .describe('"smtp" or "noop" (skip sending, e.g. for tests)'),
+    .describe('"smtp", "mailjet" or "noop" (skip sending, e.g. for tests)'),
   EMAIL_FROM: z
     .email()
     .describe('The from field in the emails sent by the app.'),
@@ -62,6 +62,22 @@ export const EmailEnvSchema = z.object({
     .string()
     .optional()
     .describe('Password for the bounce IMAP mailbox'),
+  MAILJET_API_KEY: z
+    .string()
+    .optional()
+    .describe('Mailjet API key. Required when EMAIL_DRIVER is "mailjet".'),
+  MAILJET_API_SECRET: z
+    .string()
+    .optional()
+    .describe('Mailjet API secret. Required when EMAIL_DRIVER is "mailjet".'),
+  MAILJET_WEBHOOK_SECRET: z
+    .string()
+    .optional()
+    .describe(
+      'Secret path segment for the Mailjet bounce webhook ' +
+        '(/webhooks/mailjet/:secret). Unset disables the webhook route — ' +
+        'bounces go undetected when EMAIL_DRIVER is "mailjet".',
+    ),
 });
 
 export type EmailEnv = z.output<typeof EmailEnvSchema>;

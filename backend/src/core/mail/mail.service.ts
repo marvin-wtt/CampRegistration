@@ -5,6 +5,7 @@ import type { MailableCtor, MailBase } from '#core/mail/mail.base';
 import type { Queue } from '#core/queue/Queue';
 import { QueueManager } from '#core/queue/QueueManager';
 import { MailableRegistry } from '#core/mail/mail.registry';
+import type { BounceHandler } from '#core/mail/bounce.types';
 import { inject, injectable } from 'inversify';
 import config from '#config/index';
 
@@ -47,6 +48,24 @@ export class MailService {
       );
       logger.error(error);
     }
+
+    await this.mailer.verifyBounceSource?.();
+  }
+
+  /**
+   * Registers what happens on a detected bounce. How bounces are actually
+   * detected — and whether that mechanism is even worth mounting — is
+   * entirely up to the active mailer (`getMailer()`, used by `MailModule`);
+   * this just forwards the handler into it (`IMailer.setBounceHandler`).
+   * This service owns and constructs the mailer, so state flows one way,
+   * down into it — nothing here holds its own copy.
+   */
+  onBounce(handler: BounceHandler): void {
+    this.mailer.setBounceHandler?.(handler);
+  }
+
+  getMailer(): IMailer {
+    return this.mailer;
   }
 
   async close() {

@@ -29,6 +29,11 @@ import {
 } from '../registration.changes.js';
 import { RegistrationMessage } from './base.mail.js';
 import type { RenderableMessage } from './renderable-message.js';
+import type {
+  RegistrationMessageProps,
+  LocalContext,
+} from '#views/emails/types';
+import { htmlToPreviewText } from '#utils/emailPreview';
 
 function dateToString(date: Date | string | null): string | null {
   if (date === null) {
@@ -286,10 +291,18 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
       },
     });
 
+    const body = unwrapChangesBlock(compile(this.context('html')));
+    // The hidden preheader is flattened to plain text here, before `build()`
+    // redacts the mail's HTML for the durable copy — by then there is no
+    // `change-value` span left for that redaction to strip. Redact first so a
+    // changed value can never survive into the preview text either.
+    const preview = htmlToPreviewText(redactChangeValues(body));
+
     return {
       template: 'registration-message',
       context: {
-        body: unwrapChangesBlock(compile(this.context('html'))),
+        preview,
+        body,
         eventName: translateObject(this.payload.event.name, locale),
         reason: this.reason(),
         // Art. 13 information has to stay reachable after submission, and the
@@ -297,7 +310,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
         // we control, not in a template they may delete.
         privacyUrl: generateUrl(['events', this.payload.event.id, 'privacy']),
         privacyLabel: this.getTg()('registration:email.privacyLink'),
-      },
+      } satisfies LocalContext<RegistrationMessageProps>,
     };
   }
 

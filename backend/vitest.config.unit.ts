@@ -11,6 +11,7 @@ export default defineConfig({
     coverage: {
       enabled: true,
       include: ['src/**'],
+      exclude: ['src/views/emails/**'],
       provider: 'v8',
       reporter: ['html', 'text', 'json', 'clover'],
       reportsDirectory: './tests/unit/coverage',

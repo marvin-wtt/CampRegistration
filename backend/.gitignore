@@ -3,6 +3,11 @@ build/
 logs/
 tests/tmp/
 tests/**/coverage/
+test-results/
+tests/visual/playwright-report/
+# CI only compares against -linux baselines; local platform runs shouldn't add others
+tests/visual/__screenshots__/**/*-win32.png
+tests/visual/__screenshots__/**/*-darwin.png
 # Keep environment variables out of version control
 .env
 

@@ -199,6 +199,56 @@ jobs:
           comment-on: pr
           file-coverage-mode: changes
 
+  # Renders every email template (backend/tests/visual/fixtures.ts) through the
+  # real MailRenderer and screenshot-diffs it. Also the only thing that runs
+  # `mjml2html` in strict validation mode before a merge — the build step
+  # compiles the Vue views but never renders them, so this is what would have
+  # caught a structural MJML error the old build-time `mjml` CLI used to.
+  test-backend-email-visual:
+    runs-on: ubuntu-24.04
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+
+    container:
+      image: mcr.microsoft.com/playwright:v1.61.1-noble
+      # Chromium needs more shared memory than the container default
+      options: --ipc=host
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      # No setup-node and no `playwright install` here: the image already
+      # provides both Node and the matching browser binary. Adding either
+      # would reintroduce the environment drift this image exists to avoid.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build common
+        run: npm run build --workspace common
+
+      - name: Build backend
+        run: npm run build --workspace backend
+
+      - name: Compare email visual snapshots
+        working-directory: backend
+        run: npm run test:visual
+
+      - name: Explain how to update the baselines
+        if: failure()
+        run: |
+          echo "::notice::Email visual baselines differ. Download the 'playwright-email-visual' artifact to review the diffs. If the change is intended, regenerate with: npm run test:visual:update --workspace backend"
+
+      - name: Upload Playwright results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-email-visual-${{ github.sha }}
+          path: |
+            backend/playwright-report/
+            backend/test-results/
+          if-no-files-found: ignore
+          retention-days: 14
+
   test-frontend:
     runs-on: ubuntu-24.04
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
