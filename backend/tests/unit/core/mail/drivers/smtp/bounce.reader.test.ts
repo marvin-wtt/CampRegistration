@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { BounceResult } from '#core/mail/bounce.reader';
+import type { BounceResult } from '#core/mail/bounce.types';
 
 const {
   connectMock,
@@ -79,7 +79,7 @@ vi.mock('#core/logger', () => ({
 }));
 
 const { BounceReader, extractBounce } =
-  await import('#core/mail/bounce.reader');
+  await import('#core/mail/drivers/smtp/bounce.reader');
 
 // The reader hands its batch to a handler rather than returning it, so that
 // acknowledgement can wait for the handler; this collects the batch so the

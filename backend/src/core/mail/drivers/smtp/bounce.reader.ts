@@ -8,19 +8,7 @@ import PostalMime, { type Attachment } from 'postal-mime';
 import config from '#config/index';
 import logger from '#core/logger';
 import { describeError } from '#utils/errors';
-
-export interface BounceResult {
-  /** The DSN ENVID, echoed back as Original-Envelope-Id — see mail.base.ts. */
-  correlationId: string;
-  action: 'failed';
-}
-
-/**
- * Consumes one polled batch. Must resolve only once the batch is durably
- * dealt with: `pollOnce` acknowledges the IMAP messages afterwards, and a
- * rejection leaves them unacknowledged for the next poll.
- */
-export type BounceHandler = (results: BounceResult[]) => Promise<void>;
+import type { BounceResult, BounceHandler } from '#core/mail/bounce.types';
 
 // Flat RFC 822-style fields inside the `message/delivery-status` part, which
 // postal-mime exposes as its own attachment (mailparser instead folds it into

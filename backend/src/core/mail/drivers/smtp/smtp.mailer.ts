@@ -1,10 +1,14 @@
 import type { IMailer, SendMailResult } from '#core/mail/mailer.types';
 import type { BuiltMail } from '#core/mail/mail.types';
+import type { BounceHandler } from '#core/mail/bounce.types';
 import nodemailer, { type SendMailOptions, type Transporter } from 'nodemailer';
 import config from '#config/index';
+import { BounceReader } from '#core/mail/drivers/smtp/bounce.reader';
+import { resolve } from '#core/ioc/container';
 
 export class SmtpMailer implements IMailer {
   private transport: Transporter;
+  private bounceHandler: BounceHandler | undefined;
 
   constructor() {
     this.transport = this.createTransport();
@@ -73,6 +77,34 @@ export class SmtpMailer implements IMailer {
 
   async verify(): Promise<void> {
     await this.transport.verify();
+  }
+
+  async verifyBounceSource(): Promise<void> {
+    if (!config.email.bounce) {
+      return;
+    }
+
+    await resolve(BounceReader).verify();
+  }
+
+  setBounceHandler(handler: BounceHandler): void {
+    this.bounceHandler = handler;
+  }
+
+  getBouncePollJob(): (() => Promise<void>) | undefined {
+    if (!config.email.bounce) {
+      return undefined;
+    }
+
+    const bounceReader = resolve(BounceReader);
+    return () =>
+      bounceReader.pollOnce(async (results) => {
+        // Reads `this.bounceHandler` fresh on every run rather than closing
+        // over a snapshot, so a handler swapped via `MailService.onBounce()`
+        // later is picked up immediately. A failure here leaves the reports
+        // unacknowledged for the next poll.
+        await this.bounceHandler?.(results);
+      });
   }
 
   close() {
