@@ -292,11 +292,16 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
     });
 
     const body = unwrapChangesBlock(compile(this.context('html')));
+    // The hidden preheader is flattened to plain text here, before `build()`
+    // redacts the mail's HTML for the durable copy — by then there is no
+    // `change-value` span left for that redaction to strip. Redact first so a
+    // changed value can never survive into the preview text either.
+    const preview = htmlToPreviewText(redactChangeValues(body));
 
     return {
       template: 'registration-message',
       context: {
-        preview: htmlToPreviewText(body),
+        preview,
         body,
         eventName: translateObject(this.payload.event.name, locale),
         reason: this.reason(),
