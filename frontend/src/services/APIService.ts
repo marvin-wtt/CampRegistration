@@ -27,6 +27,7 @@ import { useAdminService } from '@/services/AdminService';
 import { useOrganizationService } from '@/services/OrganizationService';
 import { useOrganizationMemberService } from '@/services/OrganizationMemberService';
 import { useTranslationService } from '@/services/TranslationService';
+import { useAuditService } from '@/services/AuditService';
 
 export function useAPIService() {
   return {
@@ -58,6 +59,7 @@ export function useAPIService() {
     ...useTaskService(),
     ...useChoreService(),
     ...useTranslationService(),
+    ...useAuditService(),
   };
 }
 
