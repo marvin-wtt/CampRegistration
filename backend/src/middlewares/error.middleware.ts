@@ -63,10 +63,15 @@ const toApiError = (err: unknown): ApiError => {
     });
   }
 
+  // Express/Node conventionally use `status` (e.g. the router's malformed-URI
+  // `URIError`, body-parser's JSON `SyntaxError`); some libraries use
+  // `statusCode` instead. Accept either.
   const statusCode =
     typeof err.statusCode === 'number'
       ? err.statusCode
-      : httpStatus.INTERNAL_SERVER_ERROR;
+      : typeof err.status === 'number'
+        ? err.status
+        : httpStatus.INTERNAL_SERVER_ERROR;
   const message =
     typeof err.message === 'string' ? err.message : statusToString(statusCode);
 
