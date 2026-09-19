@@ -95,7 +95,7 @@ describe('TimeAgoTableCell', () => {
     });
   });
 
-  it('correctly shows seconds ago', () => {
+  it('correctly shows less than a minute ago', () => {
     // 3 seconds ago
     const threeSecAgo = new Date(new Date().getTime() - 3000).toISOString();
 
@@ -107,7 +107,7 @@ describe('TimeAgoTableCell', () => {
       },
     });
 
-    expect(wrapper.text().startsWith('3 second')).toBe(true);
+    expect(wrapper.text()).toContain('lessThanMinute');
   });
 
   it('correctly shows minutes ago', () => {

@@ -334,7 +334,6 @@
               (val: number) =>
                 val >= 0 || t('validation.maxParticipants.positive'),
             ]"
-            always
             hide-bottom-space
             no-translation
             outlined

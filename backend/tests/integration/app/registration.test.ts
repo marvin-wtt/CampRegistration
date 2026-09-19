@@ -22,6 +22,7 @@ import {
   eventWithFileOptional,
   eventWithFileRequired,
   eventWithMaxParticipantsInternational,
+  eventWithMaxParticipantsSharedInternational,
   eventWithMaxParticipantsNational,
   eventWithMaxParticipantsRolesInternational,
   eventWithMaxParticipantsRolesNational,
@@ -856,6 +857,51 @@ describe('/api/v1/events/:eventId/registrations', () => {
             country: 'fr',
           },
           'ACCEPTED',
+        );
+      });
+
+      it('should set waiting list for international events sharing a single max participants number', async () => {
+        const event = await EventFactory.create(
+          eventWithMaxParticipantsSharedInternational,
+        );
+
+        // Fill event across both nations
+        await assertRegistration(
+          event.id,
+          {
+            first_name: `Jhon 0`,
+            country: 'de',
+          },
+          'ACCEPTED',
+        );
+        await assertRegistration(
+          event.id,
+          {
+            first_name: `Jhon 1`,
+            country: 'fr',
+          },
+          'ACCEPTED',
+        );
+        for (let i = 2; i < 5; i++) {
+          await assertRegistration(
+            event.id,
+            {
+              first_name: `Jhon ${i}`,
+              country: 'de',
+            },
+            'ACCEPTED',
+          );
+        }
+
+        // Assert waiting list - the pool is shared, so a nation with unused
+        // capacity is still full once the combined total is reached
+        await assertRegistration(
+          event.id,
+          {
+            first_name: `Jhon`,
+            country: 'fr',
+          },
+          'WAITLISTED',
         );
       });
 
