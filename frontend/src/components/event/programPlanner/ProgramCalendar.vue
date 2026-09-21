@@ -2378,12 +2378,12 @@ function onPreviousNavigation() {
   transition: opacity 0.1s ease;
 }
 
-// The publish badge and the zoom/print actions share one toolbar-like strip —
-// a subtle surface tint and rounded corners give the row its own visual
-// identity, instead of reading as loose icons floating on the bare calendar
-// background. `.cal-day-actions`' auto left margin pushes it to the far end,
-// which works whether or not the badge is even rendered (it's the row's only
-// child when the public link is off).
+// The publish badge (when rendered) already carries its own fill or outline,
+// and the print icon is a self-contained round button, so this row needs no
+// background of its own — just the shared layout and spacing.
+// `.cal-day-actions`' auto left margin pushes it to the far end, which works
+// whether or not the badge is even rendered (it's the row's only child when
+// the public link is off).
 .cal-day-header-row {
   display: flex;
   align-items: center;
@@ -2391,7 +2391,6 @@ function onPreviousNavigation() {
   margin: 2px 2px 0;
   padding: 3px 4px;
   border-radius: 8px;
-  background-color: var(--md3-surface-container-low);
 }
 
 .cal-day-actions {
