@@ -92,19 +92,11 @@
             {{ t('capacity.label') }}
           </span>
           <span class="mgmt-card__capacity-count">
-            <template v-if="capacity.free !== null">
-              {{ capacity.used
-              }}<span class="mgmt-card__capacity-max">/{{ capacity.max }}</span>
-            </template>
-            <template v-else>
-              {{ t('capacity.max', { count: capacity.max }) }}
-            </template>
+            {{ capacity.used }}
+            <span class="mgmt-card__capacity-max">/{{ capacity.max }}</span>
           </span>
         </div>
-        <div
-          v-if="capacity.free !== null"
-          class="mgmt-card__capacity-track"
-        >
+        <div class="mgmt-card__capacity-track">
           <div
             class="mgmt-card__capacity-fill"
             :style="{ width: `${capacity.percent}%` }"
@@ -297,8 +289,8 @@ function sumTranslatable(
 
 interface Capacity {
   max: number;
-  free: number | null;
-  used: number | null;
+  free: number;
+  used: number;
   percent: number;
   low: boolean;
 }
@@ -309,11 +301,7 @@ const capacity = computed<Capacity | null>(() => {
     return null;
   }
 
-  const free = sumTranslatable(event.freePlaces);
-  if (free == null) {
-    return { max, free: null, used: null, percent: 0, low: false };
-  }
-
+  const free = event.freePlacesTotal;
   const used = Math.max(0, max - free);
   return {
     max,
@@ -871,7 +859,6 @@ nav:
   participants: 'Participants'
 capacity:
   label: 'Participants'
-  max: 'Max {count}'
 registration:
   manage: 'Manage registration'
 phase:
@@ -909,7 +896,6 @@ nav:
   participants: 'Teilnehmende'
 capacity:
   label: 'Teilnehmende'
-  max: 'Max. {count}'
 registration:
   manage: 'Anmeldung verwalten'
 phase:
@@ -947,7 +933,6 @@ nav:
   participants: 'Participants'
 capacity:
   label: 'Participants'
-  max: 'Max {count}'
 registration:
   manage: "Gérer l'inscription"
 phase:
@@ -989,7 +974,6 @@ nav:
   participants: 'Uczestnicy'
 capacity:
   label: 'Uczestnicy'
-  max: 'Maks. {count}'
 registration:
   manage: 'Zarządzaj rejestracją'
 phase:
@@ -1027,7 +1011,6 @@ nav:
   participants: 'Účastníci'
 capacity:
   label: 'Účastníci'
-  max: 'Max {count}'
 registration:
   manage: 'Spravovat registraci'
 phase:

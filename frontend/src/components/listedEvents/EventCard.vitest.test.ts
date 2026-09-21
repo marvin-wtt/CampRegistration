@@ -46,6 +46,7 @@ const createEvent = (overrides: Partial<Event> = {}): Event => ({
   price: 180,
   location: 'Bad Segeberg',
   freePlaces: null,
+  freePlacesTotal: 100,
   registrationStatus: 'open',
   logo: null,
   ...overrides,

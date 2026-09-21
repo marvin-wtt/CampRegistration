@@ -40,6 +40,11 @@ import { eventWithMaxParticipantsRolesInternational } from './fixtures/registrat
 
 type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 
+const sumParticipants = (value: number | Record<string, number>): number =>
+  typeof value === 'number'
+    ? value
+    : Object.values(value).reduce((sum, v) => sum + (v ?? 0), 0);
+
 // The unchecked variant: these assertions describe a request body and the row
 // it produces, both of which carry a scalar `organizationId` rather than the
 // nested `organization` relation of `EventCreateInput`.
@@ -120,6 +125,7 @@ const assertEventResponseBody = (
     price: data.price,
     location: data.location,
     freePlaces: data.maxParticipants,
+    freePlacesTotal: sumParticipants(data.maxParticipants),
     registrationStatus: eventRegistrationStatus(data as Event),
     logo: null,
     form: data.form ?? expect.anything(),
@@ -759,6 +765,7 @@ describe('/api/v1/events', () => {
         form: event.form,
         themes: event.themes,
         freePlaces: expect.anything(),
+        freePlacesTotal: expect.anything(),
         registrationStatus: eventRegistrationStatus(event),
         logo: null,
       });
