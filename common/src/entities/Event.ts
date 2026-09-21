@@ -39,18 +39,20 @@ export interface EventDetails extends Event {
   themes: Record<string, ITheme>;
 }
 
-export type EventCreateData = Omit<
-  Partial<EventDetails> & Event,
+// Fields the server derives or assigns — never accepted in a write payload.
+type EventServerFields =
   | 'id'
-  | 'freePlaces'
-  | 'registrationStatus'
-  | 'logo'
   | 'organizationName'
   | 'organizationVerificationStatus'
   | 'locales'
-  | 'registrationOpensAt'
-  | 'registrationClosesAt'
-> & {
+  | 'freePlaces'
+  | 'freePlacesTotal'
+  | 'registrationStatus'
+  | 'logo';
+
+export type EventCreateData = Omit<EventDetails, EventServerFields> & {
+  form?: SurveyJSEventData | undefined;
+  themes?: Record<string, ITheme> | undefined;
   registrationOpensAt?: string | null | undefined;
   registrationClosesAt?: string | null | undefined;
   referenceEventId?: string | undefined;
