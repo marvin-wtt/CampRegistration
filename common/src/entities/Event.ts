@@ -50,7 +50,14 @@ type EventServerFields =
   | 'registrationStatus'
   | 'logo';
 
-export type EventCreateData = Omit<EventDetails, EventServerFields> & {
+// Fields redeclared below with different optionality — must not stay required via Omit<EventDetails, ...>.
+type EventOverriddenFields =
+  'form' | 'themes' | 'registrationOpensAt' | 'registrationClosesAt';
+
+export type EventCreateData = Omit<
+  EventDetails,
+  EventServerFields | EventOverriddenFields
+> & {
   form?: SurveyJSEventData | undefined;
   themes?: Record<string, ITheme> | undefined;
   registrationOpensAt?: string | null | undefined;
