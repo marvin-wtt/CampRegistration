@@ -29,6 +29,7 @@ export interface Event extends Identifiable {
   location: Translatable | null;
   price: number;
   freePlaces: Translatable<number> | null;
+  freePlacesTotal: number;
   registrationStatus: EventRegistrationStatus;
   logo: string | null;
 }

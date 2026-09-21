@@ -73,6 +73,7 @@ const createEvent = (
   price: 50,
   location: 'Test Location',
   freePlaces: 10,
+  freePlacesTotal: 10,
   registrationStatus: 'closed' as const,
   logo: null,
   form: {} as EventDetails['form'],
