@@ -443,7 +443,7 @@ export class EventService extends BaseService {
 const sumParticipants = (value: number | Record<string, number>): number =>
   typeof value === 'number'
     ? value
-    : Object.values(value).reduce((sum, v) => sum + (v ?? 0), 0);
+    : Object.values(value).reduce((sum, v) => sum + v, 0);
 
 // Generic so whatever relations the caller included (the owning organization,
 // in particular) survive into the returned type.
