@@ -175,6 +175,17 @@ const store = z.object({
           });
         }
       }
+
+      // An opening date with no closing date leaves registration open forever.
+      if (val.registrationOpensAt && !val.registrationClosesAt) {
+        const key = 'registrationClosesAt';
+        ctx.addIssue({
+          code: 'custom',
+          message: 'Closing date is required once an opening date is set',
+          path: [key],
+          input: val[key],
+        });
+      }
     }),
 });
 
@@ -255,6 +266,28 @@ const update = (event: Event) =>
               input: val[keyMin],
             });
           }
+        }
+
+        // An opening date with no closing date leaves registration open
+        // forever. A field left out of the body keeps the event's current
+        // value, so fall back to it before comparing.
+        const effectiveOpensAt =
+          'registrationOpensAt' in val
+            ? val.registrationOpensAt
+            : event.registrationOpensAt;
+        const effectiveClosesAt =
+          'registrationClosesAt' in val
+            ? val.registrationClosesAt
+            : event.registrationClosesAt;
+
+        if (effectiveOpensAt && !effectiveClosesAt) {
+          const key = 'registrationClosesAt';
+          ctx.addIssue({
+            code: 'custom',
+            message: 'Closing date is required once an opening date is set',
+            path: [key],
+            input: val[key],
+          });
         }
       }),
   });

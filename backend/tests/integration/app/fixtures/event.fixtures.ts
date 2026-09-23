@@ -96,8 +96,17 @@ export const eventCreatedBody: CreateBodyData[] = [
     data: {
       ...eventCreateInternational,
       registrationOpensAt: '2100-01-01T00:00:00.000Z',
+      registrationClosesAt: '2100-02-01T00:00:00.000Z',
     },
     expected: 201,
+  },
+  {
+    name: 'Registration open at without close at',
+    data: {
+      ...eventCreateInternational,
+      registrationOpensAt: '2100-01-01T00:00:00.000Z',
+    },
+    expected: 400,
   },
   {
     name: 'Registration open at null',
@@ -625,8 +634,16 @@ export const eventUpdateBody: UpdateBodyData[] = [
     name: 'Registration open at',
     data: {
       registrationOpensAt: '2100-01-01T00:00:00.000Z',
+      registrationClosesAt: '2100-02-01T00:00:00.000Z',
     },
     expected: 200,
+  },
+  {
+    name: 'Registration open at without close at',
+    data: {
+      registrationOpensAt: '2100-01-01T00:00:00.000Z',
+    },
+    expected: 400,
   },
   {
     name: 'Registration open at null',
