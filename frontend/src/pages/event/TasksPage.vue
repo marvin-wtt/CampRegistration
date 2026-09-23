@@ -3,11 +3,11 @@
     padding
     :error
     :loading
-    class="tasks-page row justify-center"
+    class="row justify-center"
   >
     <div class="tasks-content col-12 col-md-11 col-lg-10 column q-gutter-y-lg">
       <!-- Header -->
-      <div class="row items-end justify-between q-col-gutter-y-sm">
+      <div class="row items-start justify-between q-col-gutter-y-sm">
         <div class="col-12 col-sm page-title">
           <div class="text-h5 text-weight-medium">
             {{ t('title') }}
@@ -31,57 +31,82 @@
         </div>
       </div>
 
-      <!-- Task list -->
-      <q-card
-        v-if="tasks.length > 0"
-        flat
-        bordered
-        class="section-card"
+      <!-- Empty state -->
+      <div
+        v-if="tasks.length === 0"
+        class="empty-state col column items-center justify-center"
       >
-        <div class="filter-bar">
-          <q-btn-toggle
-            v-model="filter"
-            :options="filterOptions"
-            no-caps
-            dense
-            class="task-filter"
-          />
+        <q-icon
+          name="task_alt"
+          size="64px"
+          class="empty-icon"
+        />
+        <div class="text-h6 q-mt-md">
+          {{ t('empty.title') }}
         </div>
-        <q-separator />
+        <div class="text-body2 text-grey-6 q-mt-xs text-center">
+          {{ t('empty.message') }}
+        </div>
+        <m-btn
+          v-if="can('event.tasks.create')"
+          class="q-mt-lg"
+          :label="t('action.add')"
+          color="primary"
+          icon="add_task"
+          @click="showAddDialog"
+        />
+      </div>
 
-        <q-card-section class="q-px-none q-pb-xs">
-          <q-list v-if="openTasks.length > 0">
-            <task-row
-              v-for="task in openTasks"
-              :key="task.id"
-              :task="task"
-              :mine="isMine(task)"
-              :can-update="can('event.tasks.update')"
-              :can-delete="can('event.tasks.delete')"
-              :assignee-label="assigneeLabel(task)"
-              @toggle="taskStore.toggleCompleted(task)"
-              @open="showDetailsDialog(task)"
-              @edit="showEditDialog(task)"
-              @delete="showDeleteDialog(task)"
-            />
-          </q-list>
-          <div
-            v-else
-            class="all-done column items-center text-center q-py-lg"
+      <template v-else>
+        <!-- Filter -->
+        <div class="row items-center filter-row">
+          <q-chip
+            v-for="option in filterOptions"
+            :key="option.value"
+            :icon="option.icon"
+            clickable
+            class="filter-chip"
+            :class="{ 'filter-chip--active': filter === option.value }"
+            @click="filter = option.value"
           >
-            <q-icon
-              :name="filteredTasks.length > 0 ? 'task_alt' : 'filter_alt_off'"
-              size="32px"
-              class="empty-icon"
-            />
-            <div class="text-body2 text-grey-6 q-mt-sm">
-              {{ filteredTasks.length > 0 ? t('allDone') : t('noMatch') }}
-            </div>
-          </div>
-        </q-card-section>
+            {{ option.label }}
+          </q-chip>
+        </div>
 
-        <template v-if="completedTasks.length > 0">
-          <q-separator />
+        <!-- Open tasks -->
+        <q-list
+          v-if="openTasks.length > 0"
+          separator
+        >
+          <task-row
+            v-for="task in openTasks"
+            :key="task.id"
+            :task="task"
+            :mine="isMine(task)"
+            :can-update="can('event.tasks.update')"
+            :can-delete="can('event.tasks.delete')"
+            :assignee-label="assigneeLabel(task)"
+            @toggle="taskStore.toggleCompleted(task)"
+            @open="showDetailsDialog(task)"
+            @edit="showEditDialog(task)"
+            @delete="showDeleteDialog(task)"
+          />
+        </q-list>
+        <div
+          v-else
+          class="row items-center q-gutter-x-sm text-body2 text-grey-6"
+        >
+          <q-icon
+            :name="filteredTasks.length > 0 ? 'task_alt' : 'filter_alt_off'"
+            size="20px"
+          />
+          <span>
+            {{ filteredTasks.length > 0 ? t('allDone') : t('noMatch') }}
+          </span>
+        </div>
+
+        <!-- Completed tasks: tucked away -->
+        <div v-if="completedTasks.length > 0">
           <q-item
             clickable
             class="completed-toggle"
@@ -105,7 +130,8 @@
           </q-item>
           <q-list
             v-if="showCompleted"
-            class="q-pb-xs"
+            separator
+            class="q-mt-sm"
           >
             <task-row
               v-for="task in completedTasks"
@@ -121,38 +147,8 @@
               @delete="showDeleteDialog(task)"
             />
           </q-list>
-        </template>
-      </q-card>
-
-      <!-- Empty state -->
-      <q-card
-        v-else
-        flat
-        bordered
-        class="section-card"
-      >
-        <q-card-section class="column items-center text-center q-pa-xl">
-          <q-icon
-            name="task_alt"
-            size="56px"
-            class="empty-icon"
-          />
-          <div class="text-subtitle1 text-weight-medium q-mt-md">
-            {{ t('empty.title') }}
-          </div>
-          <div class="text-body2 text-grey-6 q-mt-xs">
-            {{ t('empty.message') }}
-          </div>
-          <m-btn
-            v-if="can('event.tasks.create')"
-            :label="t('action.add')"
-            color="primary"
-            icon="add_task"
-            class="q-mt-md"
-            @click="showAddDialog"
-          />
-        </q-card-section>
-      </q-card>
+        </div>
+      </template>
     </div>
   </page-state-handler>
 </template>
@@ -185,23 +181,12 @@ const showCompleted = ref<boolean>(false);
 type TaskFilter = 'all' | 'mine' | 'unassigned';
 const filter = ref<TaskFilter>('all');
 
-// Icon-only on phones — labels would force the segmented control to wrap
-// onto a second line (equal-width columns can't shrink below the widest
-// label), which eats vertical space. The icons stay self-explanatory and
-// keep an aria-label for screen readers.
-function filterOption(value: TaskFilter, icon: string, label: string) {
-  return {
-    value,
-    icon,
-    ...(quasar.screen.lt.sm ? {} : { label }),
-    attrs: { 'aria-label': label },
-  };
-}
-
-const filterOptions = computed(() => [
-  filterOption('all', 'checklist', t('filter.all')),
-  filterOption('mine', 'person', t('filter.mine')),
-  filterOption('unassigned', 'person_off', t('filter.unassigned')),
+const filterOptions = computed<
+  { value: TaskFilter; icon: string; label: string }[]
+>(() => [
+  { value: 'all', icon: 'checklist', label: t('filter.all') },
+  { value: 'mine', icon: 'person', label: t('filter.mine') },
+  { value: 'unassigned', icon: 'person_off', label: t('filter.unassigned') },
 ]);
 
 // The roster is only needed to populate the assignee picker; every role that can
@@ -368,24 +353,37 @@ function showDeleteDialog(task: Task) {
   padding-bottom: 24px;
 }
 
-@media (max-width: 599px) {
-  .tasks-page {
-    padding-top: 24px;
-  }
-}
-
-.section-card {
-  border-radius: 16px;
-}
-
-.filter-bar {
-  display: flex;
-  padding: 12px 16px;
+.empty-state {
+  padding: 48px 16px;
 }
 
 .empty-icon {
   color: var(--md3-on-surface-variant);
   opacity: 0.6;
+}
+
+.filter-row {
+  gap: 8px;
+}
+
+.filter-chip {
+  height: 32px;
+  margin: 0;
+  padding: 0 12px;
+  border: 1px solid var(--md3-outline-variant);
+  border-radius: 8px;
+
+  background: transparent;
+  color: var(--md3-on-surface-variant);
+
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.filter-chip--active {
+  border-color: transparent;
+  background: var(--md3-secondary-container);
+  color: var(--md3-on-secondary-container);
 }
 
 .completed-toggle {
