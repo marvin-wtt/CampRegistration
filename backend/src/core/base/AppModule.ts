@@ -1,23 +1,15 @@
-import type { Router } from 'express';
 import type { ScopedPermissions } from '@camp-registration/common/permissions';
-import type { ModuleRouter } from '#core/router/ModuleRouter';
-import type { JobScheduler } from '#core/scheduler/JobScheduler';
 import type { ScopeResolvers } from '#core/permission/permission.guard';
 import type {
+  AppRouter,
   BindOptions,
   ModuleOptions,
   CoreModule,
 } from '#core/base/CoreModule';
 
-export type { BindOptions, ModuleOptions };
-
-export type AppRouter = Router & {
-  useRouter: (path: string, router: ModuleRouter) => void;
-};
+export type { AppRouter, BindOptions, ModuleOptions };
 
 export interface AppModule extends CoreModule {
-  registerApiRoutes?(router: AppRouter): void;
-
   registerWebRoutes?(router: AppRouter): void;
 
   registerPermissions?(): ScopedPermissions;
@@ -29,6 +21,4 @@ export interface AppModule extends CoreModule {
    * module owning the scope's membership table.
    */
   registerScopeResolvers?(): ScopeResolvers;
-
-  registerJobs?(scheduler: JobScheduler): void;
 }

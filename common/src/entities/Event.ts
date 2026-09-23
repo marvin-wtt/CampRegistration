@@ -29,6 +29,7 @@ export interface Event extends Identifiable {
   location: Translatable | null;
   price: number;
   freePlaces: Translatable<number> | null;
+  freePlacesTotal: number;
   registrationStatus: EventRegistrationStatus;
   logo: string | null;
   banner: string | null;
@@ -39,19 +40,28 @@ export interface EventDetails extends Event {
   themes: Record<string, ITheme>;
 }
 
-export type EventCreateData = Omit<
-  Partial<EventDetails> & Event,
+// Fields the server derives or assigns — never accepted in a write payload.
+type EventServerFields =
   | 'id'
-  | 'freePlaces'
-  | 'registrationStatus'
-  | 'logo'
-  | 'banner'
   | 'organizationName'
   | 'organizationVerificationStatus'
   | 'locales'
-  | 'registrationOpensAt'
-  | 'registrationClosesAt'
+  | 'freePlaces'
+  | 'freePlacesTotal'
+  | 'registrationStatus'
+  | 'logo'
+  | 'bammer';
+
+// Fields redeclared below with different optionality — must not stay required via Omit<EventDetails, ...>.
+type EventOverriddenFields =
+  'form' | 'themes' | 'registrationOpensAt' | 'registrationClosesAt';
+
+export type EventCreateData = Omit<
+  EventDetails,
+  EventServerFields | EventOverriddenFields
 > & {
+  form?: SurveyJSEventData | undefined;
+  themes?: Record<string, ITheme> | undefined;
   registrationOpensAt?: string | null | undefined;
   registrationClosesAt?: string | null | undefined;
   referenceEventId?: string | undefined;

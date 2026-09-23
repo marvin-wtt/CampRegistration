@@ -5,7 +5,7 @@ import { EventService } from '#app/event/event.service';
 import { RealtimeService } from '#core/realtime/RealtimeService';
 import { MessageBouncedNotification } from '#app/messageDelivery/message-bounced.mail';
 import { MessageDeliveryService } from '#app/messageDelivery/message-delivery.service';
-import type { BounceResult } from '#core/mail/bounce.reader';
+import type { BounceResult } from '#core/mail/bounce.types';
 import logger from '#core/logger';
 import { describeError } from '#utils/errors';
 

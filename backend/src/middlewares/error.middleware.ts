@@ -19,17 +19,29 @@ const statusToString = (statusCode: number): string => {
 const getCode = (err: unknown): string | undefined =>
   isObject(err) && typeof err.code === 'string' ? err.code : undefined;
 
+// Known-request codes for a missing table/column — a missing migration or a
+// schema drift, never anything the client did.
+const SCHEMA_MISMATCH_CODES = new Set(['P2021', 'P2022']);
+
 // Prisma failures that indicate a bug or infrastructure problem rather than a
 // faulty request. Their details must not leak to the client.
 const isInternalPrismaError = (err: unknown): boolean =>
   err instanceof Prisma.PrismaClientUnknownRequestError ||
   err instanceof Prisma.PrismaClientValidationError ||
   err instanceof Prisma.PrismaClientRustPanicError ||
-  err instanceof Prisma.PrismaClientInitializationError;
+  err instanceof Prisma.PrismaClientInitializationError ||
+  (err instanceof Prisma.PrismaClientKnownRequestError &&
+    SCHEMA_MISMATCH_CODES.has(err.code));
 
 const toApiError = (err: unknown): ApiError => {
   if (err instanceof ApiError) {
     return err;
+  }
+
+  if (isInternalPrismaError(err)) {
+    return new ApiError(httpStatus.INTERNAL_SERVER_ERROR, undefined, {
+      cause: err,
+    });
   }
 
   // `findUniqueOrThrow` and friends throw a known request error (e.g. P2025)
@@ -43,12 +55,6 @@ const toApiError = (err: unknown): ApiError => {
     );
   }
 
-  if (isInternalPrismaError(err)) {
-    return new ApiError(httpStatus.INTERNAL_SERVER_ERROR, undefined, {
-      cause: err,
-    });
-  }
-
   if (!isObject(err)) {
     const message = typeof err === 'string' ? err : undefined;
 
@@ -57,10 +63,15 @@ const toApiError = (err: unknown): ApiError => {
     });
   }
 
+  // Express/Node conventionally use `status` (e.g. the router's malformed-URI
+  // `URIError`, body-parser's JSON `SyntaxError`); some libraries use
+  // `statusCode` instead. Accept either.
   const statusCode =
     typeof err.statusCode === 'number'
       ? err.statusCode
-      : httpStatus.INTERNAL_SERVER_ERROR;
+      : typeof err.status === 'number'
+        ? err.status
+        : httpStatus.INTERNAL_SERVER_ERROR;
   const message =
     typeof err.message === 'string' ? err.message : statusToString(statusCode);
 

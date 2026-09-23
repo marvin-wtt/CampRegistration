@@ -3,6 +3,8 @@ import type { RetentionAnchor } from '@camp-registration/common/privacy';
 import { MailBase } from '#core/mail/mail.base';
 import { translateObject } from '#utils/translateObject';
 import { generateUrl } from '#utils/url';
+import { resolveActionCardText } from '#core/mail/actionCardText';
+import type { EventRetentionDueProps, LocalContext } from '#views/emails/types';
 
 export interface EventRetentionDuePayload {
   event: { id: string; name: Prisma.JsonValue };
@@ -50,9 +52,21 @@ export class EventRetentionDueMessage extends MailBase<EventRetentionDuePayload>
   }
 
   protected content() {
+    const t = this.getT();
+    const vars = this.context();
+
     return {
       template: 'event-retention-due',
-      context: this.context(),
+      context: {
+        ...resolveActionCardText(t, vars),
+        action: t('text.action'),
+        hasExceptions: vars.hasExceptions,
+        exceptions: t('text.exceptions'),
+        hasConsentBoundData: vars.hasConsentBoundData,
+        consentBound: t('text.consentBound'),
+        noAutomaticDeletion: t('text.noAutomaticDeletion'),
+        url: vars.url,
+      } satisfies LocalContext<EventRetentionDueProps>,
     };
   }
 

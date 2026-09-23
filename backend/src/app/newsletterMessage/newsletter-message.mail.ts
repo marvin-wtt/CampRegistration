@@ -5,6 +5,8 @@ import { generateApiUrl, generateUrl } from '#utils/url';
 import { resolve } from '#core/ioc/container';
 import { FileService } from '#app/file/file.service';
 import type { StorageFile } from '#core/storage/storage';
+import type { NewsletterProps, LocalContext } from '#views/emails/types';
+import { htmlToPreviewText } from '#utils/emailPreview';
 
 export interface NewsletterMailPayload {
   to: string;
@@ -90,12 +92,17 @@ export class NewsletterMessageMail extends MailBase<NewsletterMailPayload> {
   }
 
   protected content() {
+    const t = this.getT();
+
     return {
       template: 'newsletter',
       context: {
+        preview: htmlToPreviewText(this.payload.body),
         body: this.payload.body,
+        reason: t('reason'),
         unsubscribeUrl: this.getUnsubscribeUrl(),
-      },
+        unsubscribeLabel: t('unsubscribe'),
+      } satisfies LocalContext<NewsletterProps>,
     };
   }
 }

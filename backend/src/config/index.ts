@@ -69,6 +69,24 @@ function bounceImapConfig(): BounceImapConfig | undefined {
   };
 }
 
+interface MailjetConfig {
+  apiKey: string;
+  apiSecret: string;
+  webhookSecret?: string;
+}
+
+function mailjetConfig(): MailjetConfig | undefined {
+  if (!env.MAILJET_API_KEY || !env.MAILJET_API_SECRET) {
+    return undefined;
+  }
+
+  return {
+    apiKey: env.MAILJET_API_KEY,
+    apiSecret: env.MAILJET_API_SECRET,
+    webhookSecret: env.MAILJET_WEBHOOK_SECRET,
+  };
+}
+
 interface AzureTranslationConfig {
   key: string;
   region: string;
@@ -153,6 +171,7 @@ const config = {
       },
     },
     bounce: bounceImapConfig(),
+    mailjet: mailjetConfig(),
   },
   storage: {
     location: env.STORAGE_LOCATION,
