@@ -30,12 +30,13 @@ export class SentryTracker implements ErrorTracker {
   // Sentry has no ping endpoint, so this only confirms the ingest host is
   // reachable (DNS + TCP/TLS) rather than that the DSN itself is valid.
   async isAvailable(): Promise<boolean> {
-    if (!config.errorTracking.sentry.dsn) {
+    const { dsn } = config.errorTracking.sentry;
+    if (!dsn || dsn.trim().length === 0) {
       return false;
     }
 
     try {
-      const { origin } = new URL(config.errorTracking.sentry.dsn);
+      const { origin } = new URL(dsn);
       const response = await fetch(origin, {
         method: 'HEAD',
         signal: AbortSignal.timeout(3000),
