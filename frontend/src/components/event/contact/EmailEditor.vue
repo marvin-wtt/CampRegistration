@@ -670,6 +670,10 @@ function onAddToken() {
   border-radius: 20px;
   background: var(--md3-surface-container);
   z-index: 1;
+  /* The format buttons outgrow a phone; scroll them rather than overflow the
+     viewport and push the whole page sideways. */
+  max-width: calc(100vw - 24px);
+  overflow-x: auto;
 }
 
 /* Transitions */

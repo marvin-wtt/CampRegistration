@@ -1,22 +1,21 @@
 <template>
-  <page-state-handler
-    :error
-    style="height: 1px"
-  >
-    <div class="absolute fit row no-wrap justify-center q-pa-md">
-      <div class="column no-wrap col-sm-11 col-md-10 col-lg-9 col-12">
+  <page-state-handler :error>
+    <div class="newsletter-page">
+      <div class="newsletter-page__inner">
         <!-- Header -->
-        <div class="row items-start justify-between no-wrap q-mb-lg">
-          <div class="col">
+        <div class="newsletter-header">
+          <div class="newsletter-header__main">
             <div
               class="text-overline text-grey-6 text-uppercase letter-spacing-1"
             >
               {{ t('header.label') }}
             </div>
-            <div class="text-h5 text-weight-medium">{{ newsletter?.name }}</div>
+            <div class="newsletter-header__title text-weight-medium">
+              {{ newsletter?.name }}
+            </div>
             <div
               v-if="newsletter?.description"
-              class="text-body2 text-grey-6 q-mt-xs"
+              class="newsletter-header__description text-body2 text-grey-6 q-mt-xs"
             >
               {{ newsletter.description }}
             </div>
@@ -73,10 +72,11 @@
         </div>
 
         <!-- Tabs -->
-        <div class="column no-wrap col newsletter-tabs">
+        <div class="newsletter-tabs">
           <q-tabs
             v-model="tab"
-            align="left"
+            :align="compact ? 'justify' : 'left'"
+            :dense="compact"
             no-caps
             indicator-color="primary"
             class="q-mb-none"
@@ -111,16 +111,15 @@
           <q-tab-panels
             v-model="tab"
             animated
-            class="col bg-transparent newsletter-panels"
+            class="bg-transparent newsletter-panels"
           >
             <!-- Compose Tab -->
             <q-tab-panel
               v-if="visibleTabs.includes('compose')"
               name="compose"
-              class="q-pa-none q-pt-lg"
-              style="overflow-y: auto"
+              class="newsletter-panel"
             >
-              <div class="column no-wrap q-gutter-y-md full-height">
+              <div class="composer">
                 <!-- Set-up is allowed before verification, sending is not — so
                      say so where the send button is, not on every tab. -->
                 <organization-unverified-notice
@@ -136,65 +135,69 @@
                 <q-input
                   v-model="sendSubject"
                   :label="t('compose.subject')"
+                  :dense="compact"
+                  :disable="sending"
                   outlined
                   rounded
                   clearable
                 >
-                  <template #before>
+                  <template #prepend>
                     <q-icon name="subject" />
                   </template>
                 </q-input>
 
-                <div class="compose-body">
+                <div class="composer__body">
                   <email-editor
                     v-model="sendBody"
                     :label="t('compose.body')"
                     :placeholder="t('compose.bodyPlaceholder')"
+                    :disable="sending"
                     outlined
                     rounded
-                    class="compose-body__editor"
+                    class="composer__editor"
                   />
                 </div>
 
                 <file-input
                   v-model="sendAttachments"
                   :label="t('compose.attachments')"
+                  :dense="compact"
+                  :disable="sending"
+                  use-chips
                   outlined
                   rounded
                 >
-                  <template #before>
+                  <template #prepend>
                     <q-icon name="attach_file" />
                   </template>
                 </file-input>
 
-                <div class="row justify-between items-center q-pt-sm">
+                <div class="composer__actions">
                   <div
-                    class="text-body2"
+                    class="composer__hint text-body2"
                     :class="blockedReason ? 'text-negative' : 'text-grey-6'"
                   >
                     <q-icon
                       :name="blockedReason ? 'block' : 'info_outline'"
                       size="xs"
-                      class="q-mr-xs"
                     />
-                    {{
-                      blockedReason
-                        ? t('compose.blocked')
-                        : t('compose.recipientInfo', {
-                            count: subscribers.length,
-                          })
-                    }}
+                    <span>
+                      {{
+                        blockedReason
+                          ? t('compose.blocked')
+                          : t('compose.recipientInfo', {
+                              count: subscribers.length,
+                            })
+                      }}
+                    </span>
                   </div>
                   <q-btn
+                    class="composer__send"
                     color="primary"
                     icon="send"
                     :label="t('compose.send')"
-                    :disable="
-                      !sendSubject ||
-                      !sendBody ||
-                      subscribers.length === 0 ||
-                      blockedReason !== null
-                    "
+                    :loading="sending"
+                    :disable="!canSend"
                     rounded
                     unelevated
                     no-caps
@@ -208,8 +211,7 @@
             <q-tab-panel
               v-if="visibleTabs.includes('history')"
               name="history"
-              class="q-pa-none q-pt-lg"
-              style="overflow-y: auto"
+              class="newsletter-panel"
             >
               <div
                 v-if="messageStore.isLoading"
@@ -244,7 +246,7 @@
                 v-else
                 bordered
                 separator
-                class="rounded-borders list-scroll"
+                class="rounded-borders"
               >
                 <q-expansion-item
                   v-for="message in messages"
@@ -260,11 +262,17 @@
                         icon="email"
                       />
                     </q-item-section>
-                    <q-item-section>
-                      <q-item-label class="text-weight-medium">
+                    <q-item-section class="newsletter-message__text">
+                      <q-item-label
+                        lines="1"
+                        class="text-weight-medium"
+                      >
                         {{ message.subject }}
                       </q-item-label>
-                      <q-item-label caption>
+                      <q-item-label
+                        lines="1"
+                        caption
+                      >
                         {{ d(message.sentAt, 'dateTime') }}
                         <span v-if="message.sentBy">
                           &middot; {{ message.sentBy.name }}
@@ -274,6 +282,7 @@
                     <q-item-section side>
                       <div class="row items-center q-gutter-xs no-wrap">
                         <q-chip
+                          v-if="!compact"
                           dense
                           outline
                           icon="people"
@@ -322,11 +331,10 @@
             <q-tab-panel
               v-if="visibleTabs.includes('subscribers')"
               name="subscribers"
-              class="q-pa-none column no-wrap"
-              style="overflow: hidden"
+              class="newsletter-panel newsletter-panel--contained"
             >
               <!-- Toolbar + Search -->
-              <div class="row items-center q-gutter-sm q-mb-md q-mt-lg">
+              <div class="row items-center no-wrap q-gutter-sm q-mb-md">
                 <q-input
                   v-model="subscriberFilter"
                   :placeholder="t('subscribers.search')"
@@ -440,7 +448,7 @@
                 v-else
                 bordered
                 separator
-                class="col rounded-borders list-scroll"
+                class="rounded-borders list-scroll"
               >
                 <q-item
                   v-for="subscriber in filteredSubscribers"
@@ -505,25 +513,25 @@
             <q-tab-panel
               v-if="visibleTabs.includes('managers')"
               name="managers"
-              class="q-pa-none q-pt-lg"
-              style="overflow-y: auto"
+              class="newsletter-panel"
             >
               <div
                 v-if="canNewsletter('newsletter.managers.create')"
-                class="row items-center justify-between q-gutter-sm q-mb-md"
+                class="managers-toolbar"
               >
                 <!-- Organization admins hold this list without appearing on it. -->
-                <div class="col row items-center no-wrap q-gutter-xs">
+                <div class="managers-toolbar__info">
                   <q-icon
                     name="info_outline"
                     size="xs"
                     color="grey-6"
                   />
-                  <div class="col text-body2 text-grey-6">
+                  <div class="text-body2 text-grey-6">
                     {{ t('managers.organizationInfo') }}
                   </div>
                 </div>
                 <q-btn
+                  class="managers-toolbar__action"
                   :label="t('managers.action.add')"
                   color="primary"
                   icon="person_add"
@@ -537,7 +545,7 @@
               <q-list
                 bordered
                 separator
-                class="rounded-borders list-scroll"
+                class="rounded-borders"
               >
                 <q-item
                   v-for="manager in managers"
@@ -680,7 +688,10 @@ const tab = useRouteTab(visibleTabs);
 const sendSubject = ref('');
 const sendBody = ref('');
 const sendAttachments = ref<FileInputModel[]>([]);
+const sending = ref(false);
 const subscriberFilter = ref('');
+
+const compact = computed<boolean>(() => quasar.screen.lt.sm);
 
 const newsletterId = computed(() => route.params.newsletterId as string);
 
@@ -738,6 +749,14 @@ const subscribers = computed<NewsletterSubscriber[]>(
   () => subscriberStore.data ?? [],
 );
 const messages = computed<NewsletterMessage[]>(() => messageStore.data ?? []);
+
+const canSend = computed<boolean>(
+  () =>
+    !!sendSubject.value &&
+    !!sendBody.value &&
+    subscribers.value.length > 0 &&
+    blockedReason.value === null,
+);
 
 /**
  * Only the newsletter itself can fail the whole page. The per-tab stores are
@@ -901,6 +920,7 @@ function confirmSend() {
     })
     .onOk(() => {
       void (async () => {
+        sending.value = true;
         try {
           const result = await api.sendNewsletterMessage(newsletterId.value, {
             subject: sendSubject.value,
@@ -924,6 +944,8 @@ function confirmSend() {
             type: 'negative',
             message: t('compose.error'),
           });
+        } finally {
+          sending.value = false;
         }
       })();
     });
@@ -1266,36 +1288,125 @@ managers:
 </i18n>
 
 <style scoped>
-.newsletter-tabs {
+/*
+ * Two layouts. By default the page flows and the window scrolls, which is the
+ * only thing that works on a phone or a landscape handset: the send button
+ * stays reachable no matter how much room the on-screen keyboard takes. Only a
+ * viewport with room to spare switches to the self-contained variant at the
+ * bottom of this file, where the frame fills the page and the panels scroll.
+ */
+.newsletter-page {
+  display: flex;
+  justify-content: center;
+  padding: 16px;
+}
+
+.newsletter-page__inner {
+  display: flex;
+  width: 100%;
+  max-width: 1100px;
   min-height: 0;
+  flex-direction: column;
+}
+
+.newsletter-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  gap: 8px;
+}
+
+.newsletter-header__main {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.newsletter-header__title {
+  font-size: 1.5rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.newsletter-header__description {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.newsletter-tabs {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  flex-wrap: nowrap;
 }
 
 .newsletter-panels {
   display: flex;
+  min-height: 0;
   flex-direction: column;
-  overflow: hidden;
-  min-height: 0;
 }
 
-.newsletter-panels :deep(.q-tab-panel) {
-  flex: 1;
-  min-height: 0;
+.newsletter-panel {
+  padding: 24px 0 0;
 }
 
-.compose-body {
+.composer {
   display: flex;
-  flex: 1 1 auto;
   min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.compose-body__editor {
+.composer__body {
+  display: flex;
+  min-height: 0;
   flex: 1 1 auto;
+}
+
+.composer__editor {
   min-height: 200px;
+  flex: 1 1 auto;
 }
 
-.list-scroll {
-  overflow-y: auto;
-  min-height: 0;
+.composer__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.composer__hint {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 4px;
+}
+
+.composer__send {
+  min-width: 140px;
+  flex: 0 0 auto;
+}
+
+.newsletter-message__text {
+  min-width: 0;
+}
+
+.managers-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  gap: 12px;
+}
+
+.managers-toolbar__info {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 4px;
 }
 
 .subscriber-item {
@@ -1331,5 +1442,100 @@ managers:
 
 .newsletter-preview :deep(a) {
   color: var(--q-primary);
+}
+
+/* Phones: tighter spacing, stacked actions, and four tabs that still fit. */
+@media (max-width: 599px) {
+  .newsletter-page {
+    padding: 12px;
+  }
+
+  .newsletter-header {
+    margin-bottom: 12px;
+  }
+
+  .newsletter-header__title {
+    font-size: 1.25rem;
+  }
+
+  .newsletter-panel {
+    padding-top: 16px;
+  }
+
+  .newsletter-tabs :deep(.q-tab) {
+    min-width: 0;
+    padding: 0 4px;
+  }
+
+  .newsletter-tabs :deep(.q-tab__label) {
+    font-size: 0.6875rem;
+  }
+
+  .composer {
+    gap: 12px;
+  }
+
+  .composer__editor {
+    min-height: 180px;
+  }
+
+  .composer__actions,
+  .managers-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .composer__send,
+  .managers-toolbar__action {
+    width: 100%;
+  }
+
+  /* A scroller inside a scrolling page is a trap on touch. */
+  .newsletter-preview {
+    max-height: none;
+  }
+}
+
+/* Roomy viewports: fill the page once, then scroll inside the active panel. */
+@media (min-width: 600px) and (min-height: 600px) {
+  .newsletter-page {
+    position: absolute;
+    inset: 0;
+  }
+
+  .newsletter-page__inner {
+    height: 100%;
+  }
+
+  .newsletter-tabs {
+    flex: 1 1 auto;
+  }
+
+  .newsletter-panels {
+    overflow: hidden;
+    flex: 1 1 auto;
+  }
+
+  .newsletter-panels :deep(.q-tab-panel) {
+    display: flex;
+    min-height: 0;
+    flex: 1 1 auto;
+    flex-direction: column;
+  }
+
+  .newsletter-panel {
+    overflow-y: auto;
+  }
+
+  /* The subscriber list is its own scroller, so the panel must not be one. */
+  .newsletter-panel--contained {
+    overflow: hidden;
+  }
+
+  .list-scroll {
+    min-height: 0;
+    overflow-y: auto;
+    flex: 1 1 auto;
+  }
 }
 </style>
