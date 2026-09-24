@@ -484,8 +484,9 @@ describe('/api/v1/events/:eventId/registrations/:registrationId/audit', () => {
       });
 
       it('keeps entries still tied to an event regardless of age', async () => {
+        const event = await EventFactory.create();
         const old = await createAuditLog({
-          eventId: ulid(),
+          eventId: event.id,
           createdAt: moment().subtract(3, 'years').toDate(),
         });
 
