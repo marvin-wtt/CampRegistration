@@ -12,14 +12,12 @@ import { useProfileStore } from '@/stores/profile-store';
 import { createInitialAdmin } from '@/services/SetupService';
 import { isCustomAxiosError } from '@/services/AuthService';
 import { isRefreshFailureAuthoritative } from '@/services/authRefreshToken';
-import { retryAfterMs } from '@/utils/retryAfter';
+import { createRetryScheduler } from '@/utils/retryScheduler';
 import { computed, ref } from 'vue';
 import { Dialog } from 'quasar';
 import TwoFactorSuggestionDialog from '@/components/settings/twoFactor/TwoFactorSuggestionDialog.vue';
 
 const TWO_FACTOR_SUGGESTION_DISMISSED_KEY = 'two-factor-suggestion-dismissed';
-const BASE_RETRY_DELAY_MS = 5_000;
-const MAX_RETRY_DELAY_MS = 60_000;
 
 // 'unknown' until the first refresh settles, or while the server can't answer.
 export type AuthStatus = 'unknown' | 'authenticated' | 'unauthenticated';
@@ -52,8 +50,10 @@ export const useAuthStore = defineStore('auth', () => {
   let partialAuthToken: string | undefined = undefined;
 
   let accessTokenTimer: ReturnType<typeof setTimeout> | undefined;
-  let retryTimer: ReturnType<typeof setTimeout> | undefined;
-  let retryAttempt = 0;
+  // Independent loops: a cold-start session restoration failure must not
+  // cancel a pending proactive-refresh retry, or vice versa.
+  const initRetry = createRetryScheduler();
+  const backgroundRefreshRetry = createRetryScheduler();
 
   // Only a confirmed logout blocks navigation; while 'unknown', the layout's
   // init() decides once the session state is known.
@@ -111,9 +111,8 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   function stopRetry() {
-    clearTimeout(retryTimer);
-    retryTimer = undefined;
-    retryAttempt = 0;
+    initRetry.stop();
+    backgroundRefreshRetry.stop();
   }
 
   function stopProactiveRefresh() {
@@ -128,11 +127,17 @@ export const useAuthStore = defineStore('auth', () => {
 
     const result = await tryRefresh();
     if (result.outcome === 'unavailable') {
-      retryLater(() => init(), result.error);
+      initRetry.schedule(
+        () => init(forceRefresh),
+        result.error,
+        () => showErrorNotification('refresh'),
+      );
       return;
     }
 
-    if (result.outcome === 'authenticated') {
+    // tryRefresh() already loaded the profile if it was missing; this forces
+    // a fresh copy even when one was already cached.
+    if (result.outcome === 'authenticated' && forceRefresh) {
       await profileStore.fetchProfile();
     }
   }
@@ -252,8 +257,13 @@ export const useAuthStore = defineStore('auth', () => {
       // Deduped in AuthService, so concurrent callers share one request
       await apiService.refreshTokens();
       status.value = 'authenticated';
-      // A pending init() retry still has to load the profile, so keep its timer
-      retryAttempt = 0;
+      stopRetry();
+
+      // Whichever path restored the session, load the profile right away
+      // rather than leaving it to whatever timer happens to fire next.
+      if (!profileStore.user) {
+        await profileStore.fetchProfile();
+      }
 
       return { outcome: 'authenticated' };
     } catch (error) {
@@ -273,27 +283,12 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  function retryLater(task: () => Promise<unknown>, error: unknown) {
-    if (retryAttempt === 0) {
-      showErrorNotification('refresh');
-    }
-
-    const delay =
-      retryAfterMs(error) ??
-      Math.min(BASE_RETRY_DELAY_MS * 2 ** retryAttempt, MAX_RETRY_DELAY_MS);
-    retryAttempt++;
-
-    clearTimeout(retryTimer);
-    retryTimer = setTimeout(() => {
-      retryTimer = undefined;
-      void task();
-    }, delay);
-  }
-
   async function refreshInBackground() {
     const result = await tryRefresh();
     if (result.outcome === 'unavailable') {
-      retryLater(refreshInBackground, result.error);
+      backgroundRefreshRetry.schedule(refreshInBackground, result.error, () =>
+        showErrorNotification('refresh'),
+      );
     }
   }
 
@@ -314,13 +309,19 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function logout(): Promise<void> {
-    await withErrorNotification('logout', async () => {
+    const succeeded = await withErrorNotification('logout', async () => {
       await apiService.logout();
 
       bus.emit('logout');
+
+      return true;
     });
 
-    await router.push('/');
+    // A failed request leaves the session (cookies, status, timers) as-is —
+    // don't navigate away as if it had actually logged out.
+    if (succeeded) {
+      await router.push('/');
+    }
   }
 
   async function register(name: string, email: string, password: string) {
