@@ -33,8 +33,15 @@ export interface StorageKeyring {
  * remaining keys can only decrypt files written while they were first.
  * Keys must decode to exactly 32 bytes, e.g. generated with
  * `openssl rand -base64 32`.
+ *
+ * `keyNamespace` defaults to the (frozen) file-storage namespace; other uses
+ * of the same master keys, e.g. field-level secrets, pass their own so a
+ * ciphertext of one kind can never be decrypted as the other.
  */
-export function parseStorageKeyring(spec: string): StorageKeyring {
+export function parseStorageKeyring(
+  spec: string,
+  keyNamespace: string = KEY_NAMESPACE,
+): StorageKeyring {
   const entries = spec
     .split(',')
     .map((entry) => entry.trim())
@@ -75,7 +82,7 @@ export function parseStorageKeyring(spec: string): StorageKeyring {
 
     return new RawAesKeyringNode({
       keyName: id,
-      keyNamespace: KEY_NAMESPACE,
+      keyNamespace,
       // The ESDK rejects views into Node's shared buffer pool; copy the key
       // into a buffer that owns its whole allocation.
       unencryptedMasterKey: new Uint8Array(key),

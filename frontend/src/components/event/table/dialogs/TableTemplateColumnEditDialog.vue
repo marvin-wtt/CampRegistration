@@ -307,6 +307,7 @@ const CUSTOM_FILES_FIELD_PREFIX = 'customFiles';
 const META_FIELDS = [
   'status',
   'group',
+  'payment',
   'room',
   'createdAt',
 ] as const satisfies readonly (keyof Omit<
@@ -385,6 +386,7 @@ watch(
       applyRenderer(field, {
         status: 'status',
         group: 'country_flag',
+        payment: 'payment',
         room: 'room',
       });
       return;
@@ -634,6 +636,7 @@ field:
     options:
       createdAt: 'Creation date'
       group: 'Group'
+      payment: 'Payment'
       room: 'Room'
       status: 'Status'
     computed:
@@ -681,6 +684,7 @@ field:
     hint: 'Expression when to show the cell'
 
 cellType:
+  payment: 'Payment'
   status: 'Status'
   address: 'Address'
   age: 'Age'
@@ -747,6 +751,7 @@ field:
     options:
       createdAt: 'Erstellungsdatum'
       group: 'Gruppe'
+      payment: 'Zahlung'
       room: 'Raum'
       status: 'Status'
     computed:
@@ -794,6 +799,7 @@ field:
     hint: 'Ausdruck, wenn die Zelle angezeigt werden soll'
 
 cellType:
+  payment: 'Zahlung'
   status: 'Status'
   address: 'Adresse'
   age: 'Alter'
@@ -860,6 +866,7 @@ field:
     options:
       createdAt: 'Date de création'
       group: 'Groupe'
+      payment: 'Paiement'
       room: 'Salle'
       status: 'Statut'
     computed:
@@ -907,6 +914,7 @@ field:
     hint: "Expression lorsqu'il faut"
 
 cellType:
+  payment: 'Paiement'
   status: 'Statut'
   address: 'Adresse'
   age: 'Âge'
@@ -973,6 +981,7 @@ field:
     options:
       createdAt: 'Data utworzenia'
       group: 'Grupa'
+      payment: 'Płatność'
       room: 'Pokój'
       status: 'Status'
     computed:
@@ -1020,6 +1029,7 @@ field:
     hint: 'Wyrażenie określające, kiedy komórka ma być pokazana'
 
 cellType:
+  payment: 'Płatność'
   status: 'Status'
   address: 'Adres'
   age: 'Wiek'
@@ -1086,6 +1096,7 @@ field:
     options:
       createdAt: 'Datum vytvoření'
       group: 'Skupina'
+      payment: 'Platba'
       room: 'Pokoj'
       status: 'Stav'
     computed:
@@ -1133,6 +1144,7 @@ field:
     hint: 'Výraz určující, kdy se buňka má zobrazit'
 
 cellType:
+  payment: 'Platba'
   status: 'Stav'
   address: 'Adresa'
   age: 'Věk'

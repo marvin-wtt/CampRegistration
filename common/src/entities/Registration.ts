@@ -1,6 +1,7 @@
 import { Identifiable } from './Identifiable.js';
 import { Timestamps } from './Timestamps.js';
 import { Translatable } from './Translatable.js';
+import type { RegistrationPayment } from './Payment.js';
 
 export interface Registration extends Identifiable, Timestamps {
   data: Record<string, unknown>;
@@ -25,6 +26,7 @@ export interface Registration extends Identifiable, Timestamps {
   group: string | null;
   status: 'PENDING' | 'WAITLISTED' | 'ACCEPTED';
   locale: string;
+  payment: RegistrationPayment;
   room?: Translatable | null;
   customFiles?: Record<string, string>;
 }

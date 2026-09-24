@@ -1,3 +1,8 @@
+import type { RegistrationPayment } from '@camp-registration/common/entities';
+import {
+  currencyFractionDigits,
+  fromMinorUnits,
+} from '@camp-registration/common/utils';
 import { isoToLocalDate } from '@/utils/date';
 
 export interface CsvFormatContext {
@@ -67,4 +72,32 @@ export function formatFormSelectCsvValue(
   }
 
   return ctx.translate(options[key]);
+}
+
+// `status amountPaid/amountDue CUR` in major units, e.g. `PARTIAL 50.00/150.00 EUR`
+// — plain enough to sort and filter in a spreadsheet.
+export function formatPaymentCsvValue(value: unknown): string {
+  if (
+    !value ||
+    typeof value !== 'object' ||
+    !('status' in value) ||
+    !('currency' in value) ||
+    !('amountPaid' in value) ||
+    !('amountDue' in value)
+  ) {
+    return '';
+  }
+
+  const { status, currency, amountPaid, amountDue } =
+    value as RegistrationPayment;
+  if (status === 'NOT_REQUIRED') {
+    return '';
+  }
+
+  const digits = currencyFractionDigits(currency);
+  const major = (minor: number) =>
+    fromMinorUnits(minor, currency).toFixed(digits);
+  const due = amountDue === null ? '' : `/${major(amountDue)}`;
+
+  return `${status} ${major(amountPaid)}${due} ${currency}`;
 }

@@ -481,7 +481,7 @@ async function submit(
   formData: Record<string, unknown>,
   locale: string,
 ) {
-  return api.createRegistration(eventId, {
+  return api.submitRegistration(eventId, {
     data: formData,
     locale,
     group: group.value ?? null,

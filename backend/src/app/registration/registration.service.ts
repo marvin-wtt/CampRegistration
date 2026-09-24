@@ -19,6 +19,7 @@ import {
 } from '#app/registration/registration.audit';
 import type { PrismaTransaction } from '#core/database/transaction';
 import { PrivacyNoticeService } from '#app/privacyNotice/privacy-notice.service';
+import { PaymentService } from '#app/payment/payment.service';
 
 /** The create uses relation connects throughout, so the stamp must too. */
 function connectVersion(id: string | null) {
@@ -38,6 +39,15 @@ export class RegistrationService extends BaseService {
       select: { id: true, field: true },
       where: { field: { startsWith: CUSTOM_FILE_FIELD_PREFIX } },
     },
+    // The ledger summary (`Registration.payment`) is derived on read.
+    payments: {
+      select: {
+        status: true,
+        amount: true,
+        refunds: { select: { status: true, amount: true } },
+      },
+    },
+    event: { select: { id: true, currency: true } },
   } satisfies Prisma.RegistrationInclude;
 
   constructor(
@@ -45,6 +55,8 @@ export class RegistrationService extends BaseService {
     @inject(PrivacyNoticeService)
     private readonly privacyNoticeService: PrivacyNoticeService,
     @inject(AuditService) private readonly audit: AuditService,
+    @inject(PaymentService)
+    private readonly paymentService: PaymentService,
   ) {
     super();
   }
@@ -70,10 +82,7 @@ export class RegistrationService extends BaseService {
   async getRegistrationWithEventById(id: string) {
     return this.prisma.registration.findUnique({
       where: { id },
-      include: {
-        ...this.registrationInclude,
-        event: { select: { id: true } },
-      },
+      include: this.registrationInclude,
     });
   }
 
@@ -109,6 +118,7 @@ export class RegistrationService extends BaseService {
     const formData = form.data;
     const eventData = form.extractEventData();
     const computedData = computedRegistrationData(eventData);
+    const amountDue = await this.paymentService.amountDueFor(event, eventData);
 
     const fileIds = form.getFileIds();
 
@@ -174,6 +184,7 @@ export class RegistrationService extends BaseService {
             id: undefined, // Force new ID generation
             data: formData,
             status,
+            amountDue,
             platformPrivacyPolicyUpdatedAt:
               privacyStamp.platformPrivacyPolicyUpdatedAt,
             organizationPrivacyNotice: connectVersion(
@@ -185,6 +196,7 @@ export class RegistrationService extends BaseService {
             event: { connect: { id: event.id } },
             files: this.fileService.getFileConnectInput(fileIds, fileField),
           },
+          include: this.registrationInclude,
         });
 
         // A registration is created by an external party via the public
@@ -252,8 +264,20 @@ export class RegistrationService extends BaseService {
           locale: before.locale,
           group: data.group ?? before.group,
         }).load(data.data);
-        computedData = computedRegistrationData(form.extractEventData());
+        const eventData = form.extractEventData();
+        computedData = computedRegistrationData(eventData);
         formFileIds = form.getFileIds();
+
+        // Edited answers may change what is owed. With payments turned off
+        // the existing snapshot stays — switching the setting off must not
+        // silently wipe what people already owe.
+        const amountDue = await this.paymentService.amountDueFor(
+          event,
+          eventData,
+        );
+        if (amountDue !== null) {
+          computedData.amountDue = amountDue;
+        }
       }
       if (data.customFiles) {
         before.customFiles = await this.customFileSlots(tx, registrationId);
