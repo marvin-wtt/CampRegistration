@@ -121,7 +121,7 @@ describe('/api/v1/auth', async () => {
       });
 
       expect(entry?.actorId).toBe(user.id);
-      expect(entry?.changes).toEqual({
+      expect(entry?.details).toEqual({
         context: { role: 'VIEWER' },
         subjectId: user.id,
       });
