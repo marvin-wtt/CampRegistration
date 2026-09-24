@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { type AxiosError, AxiosHeaders } from 'axios';
+import { AxiosError, AxiosHeaders } from 'axios';
 import { retryAfterMs } from '@/utils/retryAfter';
 
 function errorWithRetryAfter(value?: string): AxiosError {
