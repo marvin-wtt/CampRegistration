@@ -261,9 +261,10 @@ export class RegistrationService extends BaseService {
     }
 
     return this.prisma.$transaction(async (tx) => {
-      const before: AuditedRegistration = await tx.registration.findUniqueOrThrow({
-        where: { id: registrationId },
-      });
+      const before: AuditedRegistration =
+        await tx.registration.findUniqueOrThrow({
+          where: { id: registrationId },
+        });
       if (data.customFiles) {
         before.customFiles = await this.customFileSlots(tx, registrationId);
       }

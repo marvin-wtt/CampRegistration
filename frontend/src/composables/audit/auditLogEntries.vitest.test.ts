@@ -51,7 +51,7 @@ function entry(
   return {
     id,
     action: 'updated',
-    entityType: 'registration' as AuditEntityType,
+    entityType: 'registration',
     entityId: id,
     eventId: 'event',
     actor: { id: 'user', name: 'Jane' },
