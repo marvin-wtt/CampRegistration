@@ -89,6 +89,26 @@ const updateOrganization = z.object({
   }) satisfies ZodType<EventOrganizationUpdateData>,
 });
 
+// An opening date needs a later closing date, or registration never closes.
+function checkRegistrationWindow(
+  ctx: z.RefinementCtx,
+  opensAt: Date | null | undefined,
+  closesAt: Date | null | undefined,
+) {
+  if (!opensAt || (closesAt && opensAt < closesAt)) {
+    return;
+  }
+
+  ctx.addIssue({
+    code: 'custom',
+    message: closesAt
+      ? 'Closing date must be after opening date'
+      : 'Closing date is required once an opening date is set',
+    path: ['registrationClosesAt'],
+    input: closesAt,
+  });
+}
+
 const store = z.object({
   body: z
     .object({
@@ -176,30 +196,11 @@ const store = z.object({
         }
       }
 
-      // An opening date with no closing date leaves registration open forever.
-      if (val.registrationOpensAt && !val.registrationClosesAt) {
-        const key = 'registrationClosesAt';
-        ctx.addIssue({
-          code: 'custom',
-          message: 'Closing date is required once an opening date is set',
-          path: [key],
-          input: val[key],
-        });
-      }
-
-      if (
-        val.registrationOpensAt &&
-        val.registrationClosesAt &&
-        val.registrationOpensAt >= val.registrationClosesAt
-      ) {
-        const key = 'registrationClosesAt';
-        ctx.addIssue({
-          code: 'custom',
-          message: 'Closing date must be after opening date',
-          path: [key],
-          input: val[key],
-        });
-      }
+      checkRegistrationWindow(
+        ctx,
+        val.registrationOpensAt,
+        val.registrationClosesAt,
+      );
     }),
 });
 
@@ -282,51 +283,21 @@ const update = (event: Event) =>
           }
         }
 
-        // An opening date with no closing date leaves registration open
-        // forever, and a closing date before the opening date is an
-        // inverted window either way — both fall back to the event's
-        // current value for whichever side this request doesn't touch, so
-        // a request that touches only one side is still checked against
-        // the other's real, already-configured value.
-        const touchesOpensAt = 'registrationOpensAt' in val;
-        const touchesClosesAt = 'registrationClosesAt' in val;
-        const effectiveOpensAt = touchesOpensAt
-          ? val.registrationOpensAt
-          : event.registrationOpensAt;
-        const effectiveClosesAt = touchesClosesAt
-          ? val.registrationClosesAt
-          : event.registrationClosesAt;
-
-        // Only triggered by a request that actually sets an opening date —
-        // a partial update that never touches it isn't the one creating the
-        // open-ended state, so it can't be blamed for a closing date the
-        // event was already missing.
-        if (touchesOpensAt && val.registrationOpensAt && !effectiveClosesAt) {
-          const key = 'registrationClosesAt';
-          ctx.addIssue({
-            code: 'custom',
-            message: 'Closing date is required once an opening date is set',
-            path: [key],
-            input: val[key],
-          });
-        }
-
-        // Only checked when this request touches at least one side of the
-        // window — an unrelated update isn't responsible for an ordering
-        // problem in data it never touched.
+        // Skipped when neither date is sent, so an unrelated update isn't
+        // rejected over dates the event already had.
         if (
-          (touchesOpensAt || touchesClosesAt) &&
-          effectiveOpensAt &&
-          effectiveClosesAt &&
-          effectiveOpensAt >= effectiveClosesAt
+          val.registrationOpensAt !== undefined ||
+          val.registrationClosesAt !== undefined
         ) {
-          const key = 'registrationClosesAt';
-          ctx.addIssue({
-            code: 'custom',
-            message: 'Closing date must be after opening date',
-            path: [key],
-            input: val[key],
-          });
+          checkRegistrationWindow(
+            ctx,
+            val.registrationOpensAt === undefined
+              ? event.registrationOpensAt
+              : val.registrationOpensAt,
+            val.registrationClosesAt === undefined
+              ? event.registrationClosesAt
+              : val.registrationClosesAt,
+          );
         }
       }),
   });

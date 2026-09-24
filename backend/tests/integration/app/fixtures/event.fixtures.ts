@@ -741,6 +741,17 @@ export const eventUpdateBody: UpdateBodyData[] = [
     expected: 200,
   },
   {
+    name: 'Registration close at cleared with open at already set',
+    event: {
+      registrationOpensAt: '2100-01-01T00:00:00.000Z',
+      registrationClosesAt: '2100-02-01T00:00:00.000Z',
+    },
+    data: {
+      registrationClosesAt: null,
+    },
+    expected: 400,
+  },
+  {
     name: 'Registration close at invalid',
     data: {
       registrationClosesAt: 'not-a-date',
