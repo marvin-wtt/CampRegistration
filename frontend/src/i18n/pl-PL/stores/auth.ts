@@ -1,4 +1,7 @@
 export default {
+  refresh: {
+    error: 'Nie udało się przywrócić sesji. Ponawianie…',
+  },
   logout: {
     error: 'Wylogowanie nie powiodło się',
   },
