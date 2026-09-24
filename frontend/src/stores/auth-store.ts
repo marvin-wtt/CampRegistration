@@ -23,7 +23,8 @@ const MAX_RETRY_DELAY_MS = 60_000;
 
 // 'unknown' until the first refresh settles, or while the server can't answer.
 export type AuthStatus = 'unknown' | 'authenticated' | 'unauthenticated';
-export type RefreshOutcome = 'authenticated' | 'unauthenticated' | 'unavailable';
+export type RefreshOutcome =
+  'authenticated' | 'unauthenticated' | 'unavailable';
 
 type RefreshResult =
   | { outcome: 'authenticated' | 'unauthenticated' }
