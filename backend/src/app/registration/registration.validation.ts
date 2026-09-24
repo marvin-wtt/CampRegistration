@@ -1,11 +1,12 @@
 import { z, type ZodType } from 'zod';
 import { LocaleSchema } from '#core/validation/helper';
 import { formUtils } from '#utils/form';
-import type {
-  RegistrationCreateData,
-  RegistrationUpdateData,
-  RegistrationUpdateQuery,
-  RegistrationDeleteQuery,
+import {
+  REGISTRATION_DELETE_REASONS,
+  type RegistrationCreateData,
+  type RegistrationUpdateData,
+  type RegistrationUpdateQuery,
+  type RegistrationDeleteQuery,
 } from '@camp-registration/common/entities';
 import type { EventWithFreePlaces } from '#app/event/event.types';
 
@@ -81,6 +82,7 @@ const destroy = z.object({
   query: z
     .object({
       suppressMessage: z.stringbool(),
+      reason: z.enum(REGISTRATION_DELETE_REASONS),
     })
     .partial() satisfies ZodType<RegistrationDeleteQuery>,
 });

@@ -1,22 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import { eventAuditPolicy } from '#app/event/event.audit';
 import type {
-  AuditChangeSet,
+  AuditDetails,
   AuditEntityType,
 } from '@camp-registration/common/entities';
 
 const policy = eventAuditPolicy as unknown as {
   entityType: AuditEntityType;
-  changeSet(before: unknown, after: unknown): AuditChangeSet;
+  details(before: unknown, after: unknown): AuditDetails;
 };
 
-describe('eventAuditPolicy.changeSet', () => {
+describe('eventAuditPolicy.details', () => {
   it('records any config column that changed by default (deny-list)', () => {
     const before = { price: 100, minAge: 8, confirmationMode: 'AUTOMATIC' };
     const after = { price: 120, minAge: 10, confirmationMode: 'MANUAL' };
 
     // Fields are reported in the entity's key order, not sorted.
-    expect(policy.changeSet(before, after)).toEqual({
+    expect(policy.details(before, after)).toEqual({
       changedFields: ['price', 'minAge', 'confirmationMode'],
     });
   });
@@ -38,7 +38,7 @@ describe('eventAuditPolicy.changeSet', () => {
       },
     };
 
-    expect(policy.changeSet(before, after)).toEqual({
+    expect(policy.details(before, after)).toEqual({
       changedFields: ['form.allergies'],
     });
   });
@@ -75,7 +75,7 @@ describe('eventAuditPolicy.changeSet', () => {
       },
     };
 
-    expect(policy.changeSet(before, after)).toEqual({
+    expect(policy.details(before, after)).toEqual({
       changedFields: ['form.allergies'],
     });
   });
@@ -92,6 +92,6 @@ describe('eventAuditPolicy.changeSet', () => {
       updatedAt: '2026-06-28',
     };
 
-    expect(policy.changeSet(before, after)).toEqual({});
+    expect(policy.details(before, after)).toEqual({});
   });
 });

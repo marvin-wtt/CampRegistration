@@ -8,10 +8,10 @@ import {
 } from '#generated/prisma/client.js';
 import type {
   AuditActor,
-  AuditChangeSet,
+  AuditDetails,
   AuditEntityType,
 } from '@camp-registration/common/entities';
-import { isEmptyChangeSet, mergeChangeSets } from '#app/audit/audit.diff';
+import { hasNoChanges, mergeDetails } from '#app/audit/audit.diff';
 import type { AuditChangePolicy } from '#app/audit/audit.policy';
 
 export type PrismaTransaction = Parameters<
@@ -27,8 +27,8 @@ export interface AuditRecordInput {
   entityType: AuditEntityType;
   entityId: string;
   eventId?: string | null;
-  // The change set; omit for create/delete events (no diff).
-  changes?: AuditChangeSet | null;
+  // What the entry records beyond the action; see `AuditDetails`.
+  details?: AuditDetails | null;
   // Override the actor. Omit to use the request context; pass `null` to force a
   // system-attributed entry (e.g. a public self-registration).
   actorId?: string | null;
@@ -59,7 +59,7 @@ export class AuditService extends BaseService {
         entityId: input.entityId,
         eventId: input.eventId ?? null,
         actorId: this.resolveActorId(input.actorId),
-        changes: input.changes ?? Prisma.JsonNull,
+        details: input.details ?? Prisma.JsonNull,
       },
     });
   }
@@ -70,7 +70,7 @@ export class AuditService extends BaseService {
 
   /**
    * Diffs `before`/`after` through the entity's policy and records the resulting
-   * change set — skipping no-op edits. Keeps audit shaping in the entity's
+   * details — skipping no-op edits. Keeps audit shaping in the entity's
    * module. Only field names (and the bounded status value) are recorded.
    *
    * With `coalesceWithinMs`, an edit by the same actor is merged into the
@@ -90,8 +90,8 @@ export class AuditService extends BaseService {
       coalesceWithinMs?: number;
     },
   ): Promise<void> {
-    const changes = policy.changeSet(args.before, args.after);
-    if (isEmptyChangeSet(changes)) {
+    const details = policy.details(args.before, args.after);
+    if (hasNoChanges(details)) {
       return;
     }
     const input = {
@@ -99,11 +99,11 @@ export class AuditService extends BaseService {
       entityType: policy.entityType,
       entityId: args.entityId,
       eventId: args.eventId,
-      changes,
+      details,
     };
     if (
       args.coalesceWithinMs !== undefined &&
-      (await this.mergeIntoLatest(tx, input, changes, args.coalesceWithinMs))
+      (await this.mergeIntoLatest(tx, input, details, args.coalesceWithinMs))
     ) {
       return;
     }
@@ -113,7 +113,7 @@ export class AuditService extends BaseService {
   private async mergeIntoLatest(
     tx: PrismaTransaction,
     input: AuditRecordInput,
-    changes: AuditChangeSet,
+    details: AuditDetails,
     windowMs: number,
   ): Promise<boolean> {
     const actorId = this.resolveActorId(input.actorId);
@@ -133,10 +133,10 @@ export class AuditService extends BaseService {
       return false;
     }
 
-    const previous = (latest.changes ?? {}) as AuditChangeSet;
+    const previous = latest.details ?? {};
     await tx.auditLog.update({
       where: { id: latest.id },
-      data: { changes: mergeChangeSets(previous, changes) },
+      data: { details: mergeDetails(previous, details) },
     });
     return true;
   }

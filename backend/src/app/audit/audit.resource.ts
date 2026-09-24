@@ -19,7 +19,7 @@ export class AuditResource extends JsonResource<
       eventId: log.eventId,
       actor,
       subject,
-      changes: log.changes ?? null,
+      details: log.details ?? null,
       createdAt: log.createdAt.toISOString(),
     };
   }

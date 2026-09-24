@@ -4,6 +4,7 @@ export default {
     updated: 'Aktualisiert',
     deleted: 'Gelöscht',
   },
+  reason: 'Grund',
   viewInSettings: 'In den Einstellungen ansehen',
   entities: {
     event: {
@@ -43,6 +44,13 @@ export default {
           PENDING: 'Ausstehend',
           WAITLISTED: 'Warteliste',
         },
+      },
+      reasons: {
+        canceled: 'Storniert',
+        declined: 'Abgelehnt',
+        duplicate: 'Duplikat',
+        test_entry: 'Testeintrag',
+        other: 'Sonstiges',
       },
       deleted: 'Gelöschte Anmeldung',
       view: 'Anmeldung ansehen',

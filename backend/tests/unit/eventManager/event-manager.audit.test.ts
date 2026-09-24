@@ -4,23 +4,23 @@ import {
   managerGrant,
 } from '#app/eventManager/event-manager.audit';
 import type {
-  AuditChangeSet,
+  AuditDetails,
   AuditEntityType,
 } from '@camp-registration/common/entities';
 
 const policy = eventManagerAuditPolicy as unknown as {
   entityType: AuditEntityType;
-  changeSet(before: unknown, after: unknown): AuditChangeSet;
+  details(before: unknown, after: unknown): AuditDetails;
 };
 
-describe('eventManagerAuditPolicy.changeSet', () => {
+describe('eventManagerAuditPolicy.details', () => {
   it('records changed allow-listed values plus the identity', () => {
     const before = { userId: 'u1', role: 'COUNSELOR', expiresAt: null };
     const after = { userId: 'u1', role: 'COORDINATOR', expiresAt: null };
 
-    expect(policy.changeSet(before, after)).toEqual({
+    expect(policy.details(before, after)).toEqual({
       changedFields: ['role'],
-      changedValues: { role: 'COORDINATOR' },
+      values: { role: 'COORDINATOR' },
       context: { role: 'COORDINATOR' },
       subjectId: 'u1',
     });
@@ -30,7 +30,7 @@ describe('eventManagerAuditPolicy.changeSet', () => {
     const before = { userId: 'u1', role: 'COUNSELOR', eventId: 'e1' };
     const after = { userId: 'u1', role: 'COUNSELOR', eventId: 'e2' };
 
-    expect(policy.changeSet(before, after)).toEqual({});
+    expect(policy.details(before, after)).toEqual({});
   });
 
   it('records the new expiry as an ISO string', () => {
@@ -41,14 +41,14 @@ describe('eventManagerAuditPolicy.changeSet', () => {
       expiresAt: new Date('2026-10-01T00:00:00.000Z'),
     };
 
-    expect(policy.changeSet(before, after)).toEqual({
+    expect(policy.details(before, after)).toEqual({
       changedFields: ['expiresAt'],
-      changedValues: { expiresAt: '2026-10-01T00:00:00.000Z' },
+      values: { expiresAt: '2026-10-01T00:00:00.000Z' },
       context: { role: 'COUNSELOR' },
       subjectId: 'u1',
     });
-    expect(policy.changeSet(after, before)).toMatchObject({
-      changedValues: { expiresAt: null },
+    expect(policy.details(after, before)).toMatchObject({
+      values: { expiresAt: null },
     });
   });
 
@@ -57,9 +57,9 @@ describe('eventManagerAuditPolicy.changeSet', () => {
     const before = { userId: null, role: 'COUNSELOR', invitation };
     const after = { userId: null, role: 'COORDINATOR', invitation };
 
-    expect(policy.changeSet(before, after)).toEqual({
+    expect(policy.details(before, after)).toEqual({
       changedFields: ['role'],
-      changedValues: { role: 'COORDINATOR' },
+      values: { role: 'COORDINATOR' },
       context: { role: 'COORDINATOR' },
       subjectHint: 'j***@example.com',
     });
@@ -71,7 +71,7 @@ describe('managerGrant', () => {
     expect(
       managerGrant({ userId: 'u1', role: 'VIEWER', expiresAt: null }),
     ).toEqual({
-      changedValues: { role: 'VIEWER' },
+      values: { role: 'VIEWER' },
       context: { role: 'VIEWER' },
       subjectId: 'u1',
     });
@@ -82,7 +82,7 @@ describe('managerGrant', () => {
         expiresAt: new Date('2026-10-01T00:00:00.000Z'),
       }),
     ).toEqual({
-      changedValues: { role: 'VIEWER', expiresAt: '2026-10-01T00:00:00.000Z' },
+      values: { role: 'VIEWER', expiresAt: '2026-10-01T00:00:00.000Z' },
       context: { role: 'VIEWER' },
       subjectId: 'u1',
     });

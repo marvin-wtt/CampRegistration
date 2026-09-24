@@ -105,7 +105,7 @@ export class MessageTemplateService extends BaseService {
         entityType: messageTemplateAuditPolicy.entityType,
         entityId: template.id,
         eventId,
-        changes: templateIdentity(template),
+        details: templateIdentity(template),
       });
 
       return template;
@@ -180,7 +180,7 @@ export class MessageTemplateService extends BaseService {
         entityType: messageTemplateAuditPolicy.entityType,
         entityId: id,
         eventId,
-        changes: templateIdentity(deleted),
+        details: templateIdentity(deleted),
       });
 
       return deleted;

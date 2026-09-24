@@ -4,6 +4,7 @@ export default {
     updated: 'Aktualizováno',
     deleted: 'Smazáno',
   },
+  reason: 'Důvod',
   viewInSettings: 'Zobrazit v nastavení',
   entities: {
     event: {
@@ -43,6 +44,13 @@ export default {
           PENDING: 'Čeká na schválení',
           WAITLISTED: 'Na čekací listině',
         },
+      },
+      reasons: {
+        canceled: 'Zrušeno',
+        declined: 'Zamítnuto',
+        duplicate: 'Duplikát',
+        test_entry: 'Testovací záznam',
+        other: 'Jiné',
       },
       deleted: 'Smazaná registrace',
       view: 'Zobrazit registraci',

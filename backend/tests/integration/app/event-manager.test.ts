@@ -786,7 +786,7 @@ describe('/api/v1/events/:eventId/managers', () => {
       });
 
       expect(invitation).toBeNull();
-      expect(entry?.changes).toEqual({
+      expect(entry?.details).toEqual({
         context: { role: 'VIEWER' },
         subjectHint: 'j***@example.com',
       });

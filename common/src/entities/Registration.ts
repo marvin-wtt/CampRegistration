@@ -38,6 +38,20 @@ export type RegistrationUpdateData = Partial<
 export interface RegistrationUpdateQuery {
   suppressMessage?: boolean | undefined;
 }
+// Why a registration was deleted — recorded on its audit entry. A fixed set of
+// codes rather than free text, so the audit log stays free of personal data.
+export const REGISTRATION_DELETE_REASONS = [
+  'canceled',
+  'declined',
+  'duplicate',
+  'test_entry',
+  'other',
+] as const;
+
+export type RegistrationDeleteReason =
+  (typeof REGISTRATION_DELETE_REASONS)[number];
+
 export interface RegistrationDeleteQuery {
   suppressMessage?: boolean | undefined;
+  reason?: RegistrationDeleteReason | undefined;
 }

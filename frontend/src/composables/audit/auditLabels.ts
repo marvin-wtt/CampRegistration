@@ -77,5 +77,13 @@ export function useAuditLabels() {
     );
   }
 
-  return { entityLabel, actionLabel, fieldLabel, valueLabel };
+  // Why an action happened — a code the entity translates under `reasons`.
+  function reasonLabel(entityType: AuditEntityType, reason: string): string {
+    return translate(
+      [`audit.entities.${entityType}.reasons.${reason}`],
+      reason,
+    );
+  }
+
+  return { entityLabel, actionLabel, fieldLabel, valueLabel, reasonLabel };
 }

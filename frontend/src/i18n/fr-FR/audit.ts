@@ -4,6 +4,7 @@ export default {
     updated: 'Modifié',
     deleted: 'Supprimé',
   },
+  reason: 'Motif',
   viewInSettings: 'Voir dans les paramètres',
   entities: {
     event: {
@@ -43,6 +44,13 @@ export default {
           PENDING: 'En attente',
           WAITLISTED: "Liste d'attente",
         },
+      },
+      reasons: {
+        canceled: 'Annulée',
+        declined: 'Refusée',
+        duplicate: 'Doublon',
+        test_entry: 'Entrée de test',
+        other: 'Autre',
       },
       deleted: 'Inscription supprimée',
       view: 'Voir l’inscription',

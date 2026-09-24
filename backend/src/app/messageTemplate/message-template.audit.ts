@@ -1,10 +1,7 @@
-import {
-  changedKeysByAllowList,
-  composeChangeSet,
-} from '#app/audit/audit.diff';
+import { changedKeysByAllowList, composeDetails } from '#app/audit/audit.diff';
 import type { AuditChangePolicy } from '#app/audit/audit.policy';
 import type { MessageTemplate } from '#generated/prisma/client';
-import type { AuditChangeSet } from '@camp-registration/common/entities';
+import type { AuditDetails } from '@camp-registration/common/entities';
 
 // Editable template content. `trigger`/`country` identify the template (which
 // automated email + country variant); `subject`/`body`/`priority`/`replyTo` are
@@ -22,8 +19,8 @@ const FIELD_ALLOWLIST: (keyof MessageTemplate)[] = [
 export const messageTemplateAuditPolicy: AuditChangePolicy<MessageTemplate> = {
   entityType: 'messageTemplate',
 
-  changeSet(before, after) {
-    return composeChangeSet({
+  details(before, after) {
+    return composeDetails({
       changedFields: changedKeysByAllowList(before, after, FIELD_ALLOWLIST),
       ...templateIdentity(after ?? before),
     });
@@ -34,7 +31,7 @@ export const messageTemplateAuditPolicy: AuditChangePolicy<MessageTemplate> = {
 // email, which country variant); they never change after creation.
 export function templateIdentity(
   template: Pick<MessageTemplate, 'trigger' | 'country'> | null | undefined,
-): AuditChangeSet {
+): AuditDetails {
   if (!template) {
     return {};
   }

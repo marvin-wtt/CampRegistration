@@ -3,6 +3,8 @@ import type { PrismaClient } from '#generated/prisma/client.js';
 import { faker } from '@faker-js/faker/locale/en';
 import moment from 'moment';
 import { USER_IDS } from './ids';
+import { managerGrant } from '#app/eventManager/event-manager.audit.js';
+import { registrationIdentity } from '#app/registration/registration.audit.js';
 
 // The seed factories write rows directly (bypassing the services that normally
 // record audit entries), so this seeder back-fills the trail: a "created"
@@ -47,7 +49,7 @@ class AuditSeeder extends BaseSeeder {
     }
 
     const managers = await prisma.eventManager.findMany({
-      select: { id: true, eventId: true },
+      include: { invitation: true },
     });
     for (const manager of managers) {
       await prisma.auditLog.create({
@@ -57,6 +59,7 @@ class AuditSeeder extends BaseSeeder {
           entityId: manager.id,
           eventId: manager.eventId,
           actorId: MANAGER_USER_ID,
+          details: managerGrant(manager),
           createdAt: eventCreatedAt.get(manager.eventId),
         },
       });
@@ -68,6 +71,11 @@ class AuditSeeder extends BaseSeeder {
     });
 
     for (const [index, registration] of registrations.entries()) {
+      // Only the first dozen get manager-edit history.
+      const edited = index < 12;
+      // A status decision below means the registration started out pending.
+      const decided = edited && registration.status !== 'PENDING';
+
       // The registration itself is created via the public form — system-attributed.
       await prisma.auditLog.create({
         data: {
@@ -76,12 +84,14 @@ class AuditSeeder extends BaseSeeder {
           entityId: registration.id,
           eventId: registration.eventId,
           actorId: null,
+          details: registrationIdentity(
+            decided ? { status: 'PENDING' } : registration,
+          ),
           createdAt: registration.createdAt,
         },
       });
 
-      // Only give the first dozen some manager-edit history.
-      if (index >= 12) {
+      if (!edited) {
         continue;
       }
 
@@ -103,7 +113,7 @@ class AuditSeeder extends BaseSeeder {
           entityId: registration.id,
           eventId: registration.eventId,
           actorId: MANAGER_USER_ID,
-          changes: {
+          details: {
             changedFields: faker.helpers
               .arrayElements(DATA_FIELDS, { min: 1, max: 2 })
               .sort(),
@@ -113,7 +123,7 @@ class AuditSeeder extends BaseSeeder {
       });
 
       // A manager records a status decision (the new status value is kept).
-      if (registration.status !== 'PENDING') {
+      if (decided) {
         await prisma.auditLog.create({
           data: {
             action: 'updated',
@@ -121,7 +131,10 @@ class AuditSeeder extends BaseSeeder {
             entityId: registration.id,
             eventId: registration.eventId,
             actorId: MANAGER_USER_ID,
-            changes: { changedValues: { status: registration.status } },
+            details: {
+              changedFields: ['status'],
+              values: { status: registration.status },
+            },
             createdAt: moment
               .min(
                 moment(editedAt).add(

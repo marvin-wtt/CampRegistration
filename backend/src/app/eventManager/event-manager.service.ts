@@ -198,7 +198,7 @@ export class EventManagerService extends BaseService {
           entityId: manager.id,
           eventId: manager.eventId,
           actorId: userId,
-          changes: managerIdentity({ ...manager, userId }),
+          details: managerIdentity({ ...manager, userId }),
         });
       }
 
@@ -226,7 +226,7 @@ export class EventManagerService extends BaseService {
         entityType: eventManagerAuditPolicy.entityType,
         entityId: manager.id,
         eventId,
-        changes: managerGrant(manager),
+        details: managerGrant(manager),
       });
 
       return manager;
@@ -259,7 +259,7 @@ export class EventManagerService extends BaseService {
         entityType: eventManagerAuditPolicy.entityType,
         entityId: manager.id,
         eventId,
-        changes: managerGrant(manager),
+        details: managerGrant(manager),
       });
 
       return manager;
@@ -318,7 +318,7 @@ export class EventManagerService extends BaseService {
         entityType: eventManagerAuditPolicy.entityType,
         entityId: id,
         eventId: deleted.eventId,
-        changes: managerIdentity(deleted),
+        details: managerIdentity(deleted),
       });
 
       return deleted;

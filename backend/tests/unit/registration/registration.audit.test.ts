@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { registrationAuditPolicy } from '#app/registration/registration.audit';
 import type {
-  AuditChangeSet,
+  AuditDetails,
   AuditEntityType,
 } from '@camp-registration/common/entities';
 
@@ -9,10 +9,10 @@ import type {
 // with plain fixtures, so view it through a loose structural type.
 const policy = registrationAuditPolicy as unknown as {
   entityType: AuditEntityType;
-  changeSet(before: unknown, after: unknown): AuditChangeSet;
+  details(before: unknown, after: unknown): AuditDetails;
 };
 
-describe('registrationAuditPolicy.changeSet', () => {
+describe('registrationAuditPolicy.details', () => {
   it('records data leaf paths and the new status value', () => {
     const before = {
       status: 'PENDING',
@@ -30,9 +30,9 @@ describe('registrationAuditPolicy.changeSet', () => {
       data: { firstName: 'Bob', notes: 'x' },
     };
 
-    expect(policy.changeSet(before, after)).toEqual({
+    expect(policy.details(before, after)).toEqual({
       changedFields: ['data.firstName'],
-      changedValues: { status: 'ACCEPTED' },
+      values: { status: 'ACCEPTED' },
     });
   });
 
@@ -40,8 +40,8 @@ describe('registrationAuditPolicy.changeSet', () => {
     const before = { status: 'PENDING', customData: {}, data: {} };
     const after = { status: 'WAITLISTED', customData: {}, data: {} };
 
-    expect(policy.changeSet(before, after)).toEqual({
-      changedValues: { status: 'WAITLISTED' },
+    expect(policy.details(before, after)).toEqual({
+      values: { status: 'WAITLISTED' },
     });
   });
 
@@ -49,13 +49,13 @@ describe('registrationAuditPolicy.changeSet', () => {
     const before = { status: 'PENDING', customData: { flag: false }, data: {} };
     const after = { status: 'PENDING', customData: { flag: true }, data: {} };
 
-    expect(policy.changeSet(before, after)).toEqual({
+    expect(policy.details(before, after)).toEqual({
       changedFields: ['customData.flag'],
     });
   });
 
   it('reports nothing when nothing relevant changed', () => {
     const reg = { status: 'PENDING', customData: {}, data: { a: 1 } };
-    expect(policy.changeSet(reg, { ...reg })).toEqual({});
+    expect(policy.details(reg, { ...reg })).toEqual({});
   });
 });

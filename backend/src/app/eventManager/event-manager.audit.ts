@@ -1,11 +1,11 @@
 import {
   changedKeysByAllowList,
   changedValues,
-  composeChangeSet,
+  composeDetails,
 } from '#app/audit/audit.diff';
 import type { AuditChangePolicy } from '#app/audit/audit.policy';
 import type { EventManager, Invitation } from '#generated/prisma/client';
-import type { AuditChangeSet } from '@camp-registration/common/entities';
+import type { AuditDetails } from '@camp-registration/common/entities';
 import { maskEmail } from '#utils/maskEmail';
 
 const FIELD_ALLOWLIST = ['role', 'expiresAt'] as const;
@@ -17,14 +17,14 @@ type AuditedManager = Pick<EventManager, 'userId' | 'role' | 'expiresAt'> & {
 export const eventManagerAuditPolicy: AuditChangePolicy<AuditedManager> = {
   entityType: 'eventManager',
 
-  changeSet(before, after) {
+  details(before, after) {
     const fields = changedKeysByAllowList(before, after, FIELD_ALLOWLIST);
     if (fields.length === 0) {
       return {};
     }
-    return composeChangeSet({
+    return composeDetails({
       changedFields: fields,
-      changedValues: changedValues(before, after, FIELD_ALLOWLIST),
+      values: changedValues(before, after, FIELD_ALLOWLIST),
       ...managerIdentity(after ?? before),
     });
   },
@@ -37,11 +37,11 @@ export const eventManagerAuditPolicy: AuditChangePolicy<AuditedManager> = {
  */
 export function managerIdentity(
   manager: AuditedManager | null | undefined,
-): AuditChangeSet {
+): AuditDetails {
   if (!manager) {
     return {};
   }
-  return composeChangeSet({
+  return composeDetails({
     context: { role: manager.role },
     subjectId: manager.userId,
     subjectHint:
@@ -52,9 +52,9 @@ export function managerIdentity(
 }
 
 /** `managerIdentity` plus the initial values the access was granted with. */
-export function managerGrant(manager: AuditedManager): AuditChangeSet {
-  return composeChangeSet({
+export function managerGrant(manager: AuditedManager): AuditDetails {
+  return composeDetails({
     ...managerIdentity(manager),
-    changedValues: changedValues(null, manager, FIELD_ALLOWLIST),
+    values: changedValues(null, manager, FIELD_ALLOWLIST),
   });
 }

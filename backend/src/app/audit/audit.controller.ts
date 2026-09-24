@@ -52,12 +52,12 @@ export class AuditController extends BaseController {
     );
   }
 
-  // `changes.subjectId` is a policy's way of naming the user an entry is
+  // `details.subjectId` is a policy's way of naming the user an entry is
   // about, when that differs from the actor (see `managerIdentity`) —
   // resolved into a `subject` here, the same way `actorId` is resolved into
   // `actor`.
   private subjectUserId(log: AuditLog): string | null {
-    return log.changes?.subjectId ?? null;
+    return log.details?.subjectId ?? null;
   }
 
   private async withActors(logs: AuditLog[]): Promise<AuditLogWithActor[]> {

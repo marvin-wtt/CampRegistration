@@ -18,11 +18,7 @@ const index = z.object({
             v.trim(),
           ),
         )
-        .pipe(
-          z
-            .array(z.enum(AUDIT_ENTITY_TYPES))
-            .nonempty(),
-        ),
+        .pipe(z.array(z.enum(AUDIT_ENTITY_TYPES)).nonempty()),
       entityId: z.ulid(),
       actorId: z
         .union([z.string(), z.array(z.string())])

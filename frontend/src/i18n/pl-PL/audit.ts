@@ -4,6 +4,7 @@ export default {
     updated: 'Zaktualizowano',
     deleted: 'Usunięto',
   },
+  reason: 'Powód',
   viewInSettings: 'Zobacz w ustawieniach',
   entities: {
     event: {
@@ -43,6 +44,13 @@ export default {
           PENDING: 'Oczekuje',
           WAITLISTED: 'Lista oczekujących',
         },
+      },
+      reasons: {
+        canceled: 'Anulowane',
+        declined: 'Odrzucone',
+        duplicate: 'Duplikat',
+        test_entry: 'Wpis testowy',
+        other: 'Inne',
       },
       deleted: 'Usunięte zgłoszenie',
       view: 'Zobacz zgłoszenie',

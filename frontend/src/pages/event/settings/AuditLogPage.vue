@@ -17,6 +17,18 @@
             {{ t('subtitle') }}
           </div>
         </div>
+        <div class="col-auto">
+          <q-btn
+            :label="t('refresh')"
+            :loading="refreshing"
+            icon="refresh"
+            color="primary"
+            rounded
+            outline
+            no-caps
+            @click="refresh"
+          />
+        </div>
       </div>
 
       <!-- Filters -->
@@ -259,6 +271,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
+import { useQuasar } from 'quasar';
 import { storeToRefs } from 'pinia';
 import {
   AUDIT_ENTITY_TYPES,
@@ -277,9 +290,11 @@ import PageStateHandler from '@/components/common/PageStateHandler.vue';
 
 const { t, locale } = useI18n();
 const route = useRoute();
+const quasar = useQuasar();
 const apiService = useAPIService();
 const { formatTime, formatDay, actorLabel, actionColor } = useAuditTimeline();
-const { entityLabel, actionLabel, fieldLabel, valueLabel } = useAuditLabels();
+const { entityLabel, actionLabel, fieldLabel, valueLabel, reasonLabel } =
+  useAuditLabels();
 const entityViews = useAuditEntities();
 
 const eventId = computed(() => {
@@ -305,6 +320,13 @@ const auditEntries = ref<AuditLogEntry[]>([]);
 const loading = ref(true);
 const error = ref<string | null>(null);
 
+// Best-effort — without it, entries only lose their live names and links.
+function loadEntityViews(id: string): void {
+  for (const view of Object.values(entityViews)) {
+    view.load?.(id).catch(() => undefined);
+  }
+}
+
 onMounted(async () => {
   if (!eventId.value) {
     loading.value = false;
@@ -319,11 +341,28 @@ onMounted(async () => {
     loading.value = false;
   }
 
-  // Best-effort — without it, entries only lose their live names and links.
-  for (const view of Object.values(entityViews)) {
-    view.load?.(eventId.value).catch(() => undefined);
-  }
+  loadEntityViews(eventId.value);
 });
+
+// There's no live update yet, so new entries need an explicit reload. A
+// failure keeps the current entries on screen rather than the error state.
+const refreshing = ref(false);
+
+async function refresh(): Promise<void> {
+  if (!eventId.value || refreshing.value) {
+    return;
+  }
+  refreshing.value = true;
+  try {
+    auditEntries.value = await apiService.fetchEventAuditLog(eventId.value);
+    error.value = null;
+    loadEntityViews(eventId.value);
+  } catch {
+    quasar.notify({ type: 'negative', message: t('error.load') });
+  } finally {
+    refreshing.value = false;
+  }
+}
 
 // The random tail of the ULID — its head is a timestamp, shared by records
 // created around the same time.
@@ -352,7 +391,7 @@ function subjectOf(entry: AuditLogEntry): string | null {
   if (subject) {
     return actorLabel(subject, t('deletedUser'));
   }
-  return entry.changes?.subjectHint ?? null;
+  return entry.details?.subjectHint ?? null;
 }
 
 function displayValue(
@@ -369,9 +408,9 @@ function displayValue(
 // The subject plus the identifying context, e.g. "Jane Doe · Viewer" — a
 // context value that changed is shown as a value chip instead.
 function subjectLine(entry: AuditLogEntry): string | null {
-  const changedValues = entry.changes?.changedValues ?? {};
-  const context = Object.entries(entry.changes?.context ?? {})
-    .filter(([key]) => !(key in changedValues))
+  const values = entry.details?.values ?? {};
+  const context = Object.entries(entry.details?.context ?? {})
+    .filter(([key]) => !(key in values))
     .map(([key, value]) => displayValue(entry.entityType, key, value));
   const parts = [subjectOf(entry), ...context].filter(
     (part): part is string => !!part,
@@ -490,7 +529,8 @@ interface TimelineDisplayEntry {
 function buildEntry(entry: AuditLogEntry): TimelineDisplayEntry {
   const { entityType } = entry;
   const view = entityViews[entityType];
-  const changedValues = entry.changes?.changedValues ?? {};
+  const details = entry.details;
+  const values = details?.values ?? {};
   const exists = view.exists?.(entry.entityId) ?? true;
 
   return {
@@ -504,13 +544,23 @@ function buildEntry(entry: AuditLogEntry): TimelineDisplayEntry {
     dayLabel: dayLabel(entry.createdAt),
     color: actionColor(entry.action),
     icon: view.icon,
-    valueDetails: Object.entries(changedValues).map(([key, value]) => ({
-      label: fieldLabel(entityType, key),
-      value: displayValue(entityType, key, value),
-    })),
+    valueDetails: [
+      ...(details?.reason
+        ? [
+            {
+              label: t('audit.reason'),
+              value: reasonLabel(entityType, details.reason),
+            },
+          ]
+        : []),
+      ...Object.entries(values).map(([key, value]) => ({
+        label: fieldLabel(entityType, key),
+        value: displayValue(entityType, key, value),
+      })),
+    ],
     // A field already shown as "label: value" doesn't also need a bare chip.
-    fieldLabels: (entry.changes?.changedFields ?? [])
-      .filter((path) => !(path in changedValues))
+    fieldLabels: (details?.changedFields ?? [])
+      .filter((path) => !(path in values))
       .map((path) => fieldLabel(entityType, path, formFieldLabels.value)),
     actor: actorLabel(entry.actor, t('deletedUser')),
     openLabel: exists === true && view.open ? view.open.label() : null,
@@ -657,6 +707,7 @@ const groupedEntries = computed<EntryGroup[]>(() => {
 <i18n lang="yaml" locale="en">
 title: 'Audit Log'
 subtitle: 'A history of changes made to this event, its registrations, and its team.'
+refresh: 'Refresh'
 by: 'by {actor}'
 bySystem: 'System event'
 showHistory: 'Show full history of {id}'
@@ -680,6 +731,7 @@ error:
 <i18n lang="yaml" locale="de">
 title: 'Aktivitätsprotokoll'
 subtitle: 'Ein Verlauf der Änderungen an dieser Veranstaltung, ihren Anmeldungen und ihrem Team.'
+refresh: 'Aktualisieren'
 by: 'von {actor}'
 bySystem: 'Systemereignis'
 showHistory: 'Gesamten Verlauf von {id} anzeigen'
@@ -703,6 +755,7 @@ error:
 <i18n lang="yaml" locale="fr">
 title: 'Journal d’activité'
 subtitle: 'Un historique des modifications apportées à cet événement, ses inscriptions et son équipe.'
+refresh: 'Actualiser'
 by: 'par {actor}'
 bySystem: 'Événement système'
 showHistory: 'Afficher tout l’historique de {id}'
@@ -726,6 +779,7 @@ error:
 <i18n lang="yaml" locale="pl">
 title: 'Dziennik aktywności'
 subtitle: 'Historia zmian w tym wydarzeniu, jego zgłoszeniach i zespole.'
+refresh: 'Odśwież'
 by: 'przez {actor}'
 bySystem: 'Zdarzenie systemowe'
 showHistory: 'Pokaż pełną historię {id}'
@@ -749,6 +803,7 @@ error:
 <i18n lang="yaml" locale="cs">
 title: 'Deník aktivit'
 subtitle: 'Historie změn této akce, jejích registrací a týmu.'
+refresh: 'Obnovit'
 by: 'od {actor}'
 bySystem: 'Systémová událost'
 showHistory: 'Zobrazit celou historii {id}'

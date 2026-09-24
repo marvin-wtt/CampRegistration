@@ -1,6 +1,6 @@
 import { isDeepStrictEqual } from 'node:util';
 import type {
-  AuditChangeSet,
+  AuditDetails,
   AuditValue,
 } from '@camp-registration/common/entities';
 
@@ -172,48 +172,51 @@ function toScalar(value: unknown): AuditValue {
   return null;
 }
 
-/** Assembles a change set, omitting empty parts. */
-export function composeChangeSet(parts: AuditChangeSet): AuditChangeSet {
-  const changes: AuditChangeSet = {};
+/** Assembles audit details, omitting empty parts. */
+export function composeDetails(parts: AuditDetails): AuditDetails {
+  const details: AuditDetails = {};
   if (parts.changedFields?.length) {
-    changes.changedFields = parts.changedFields;
+    details.changedFields = parts.changedFields;
   }
-  if (Object.keys(parts.changedValues ?? {}).length > 0) {
-    changes.changedValues = parts.changedValues;
+  if (Object.keys(parts.values ?? {}).length > 0) {
+    details.values = parts.values;
   }
   if (Object.keys(parts.context ?? {}).length > 0) {
-    changes.context = parts.context;
+    details.context = parts.context;
+  }
+  if (parts.reason) {
+    details.reason = parts.reason;
   }
   if (parts.subjectId) {
-    changes.subjectId = parts.subjectId;
+    details.subjectId = parts.subjectId;
   }
   if (parts.subjectHint) {
-    changes.subjectHint = parts.subjectHint;
+    details.subjectHint = parts.subjectHint;
   }
-  return changes;
+  return details;
 }
 
 /** Folds `next` into `previous`: field names unioned, newer values win. */
-export function mergeChangeSets(
-  previous: AuditChangeSet,
-  next: AuditChangeSet,
-): AuditChangeSet {
-  return composeChangeSet({
+export function mergeDetails(
+  previous: AuditDetails,
+  next: AuditDetails,
+): AuditDetails {
+  return composeDetails({
     changedFields: composeChangedFields(
       previous.changedFields ?? [],
       next.changedFields ?? [],
     ),
-    changedValues: { ...previous.changedValues, ...next.changedValues },
+    values: { ...previous.values, ...next.values },
     context: { ...previous.context, ...next.context },
+    reason: next.reason ?? previous.reason,
     subjectId: next.subjectId ?? previous.subjectId,
     subjectHint: next.subjectHint ?? previous.subjectHint,
   });
 }
 
-/** True when a change set carries no recordable change. */
-export function isEmptyChangeSet(changes: AuditChangeSet): boolean {
+/** True when the details carry no recordable change. */
+export function hasNoChanges(details: AuditDetails): boolean {
   return (
-    !changes.changedFields?.length &&
-    !Object.keys(changes.changedValues ?? {}).length
+    !details.changedFields?.length && !Object.keys(details.values ?? {}).length
   );
 }

@@ -14,7 +14,12 @@ import {
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service';
 import { AuditService } from '#app/audit/audit.service';
-import { registrationAuditPolicy } from '#app/registration/registration.audit';
+import { composeDetails } from '#app/audit/audit.diff';
+import type { RegistrationDeleteReason } from '@camp-registration/common/entities';
+import {
+  registrationAuditPolicy,
+  registrationIdentity,
+} from '#app/registration/registration.audit';
 import { PrivacyNoticeService } from '#app/privacyNotice/privacy-notice.service';
 
 /** The create uses relation connects throughout, so the stamp must too. */
@@ -195,6 +200,7 @@ export class RegistrationService extends BaseService {
           // form — always system-attributed, never the logged-in manager who
           // may happen to share the session.
           actorId: null,
+          details: registrationIdentity(registration),
         });
 
         return registration;
@@ -314,17 +320,21 @@ export class RegistrationService extends BaseService {
     });
   }
 
-  async deleteRegistration(registration: Registration) {
+  async deleteRegistration(
+    registration: Registration,
+    reason?: RegistrationDeleteReason,
+  ) {
     await this.prisma.$transaction(async (tx) => {
-      await tx.registration.delete({
+      const deleted = await tx.registration.delete({
         where: { id: registration.id },
       });
 
       await this.audit.record(tx, {
         action: 'deleted',
         entityType: registrationAuditPolicy.entityType,
-        entityId: registration.id,
-        eventId: registration.eventId,
+        entityId: deleted.id,
+        eventId: deleted.eventId,
+        details: composeDetails({ ...registrationIdentity(deleted), reason }),
       });
     });
   }

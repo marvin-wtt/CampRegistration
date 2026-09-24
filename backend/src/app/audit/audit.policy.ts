@@ -1,5 +1,5 @@
 import type {
-  AuditChangeSet,
+  AuditDetails,
   AuditEntityType,
 } from '@camp-registration/common/entities';
 
@@ -9,11 +9,10 @@ import type {
 
 export interface AuditChangePolicy<T = unknown> {
   entityType: AuditEntityType;
-  // Builds the change set: the NAMES of the fields that changed (never their
-  // values), plus the new `status` value for the one bounded, non-identifying
-  // field whose outcome is worth surfacing.
-  changeSet(
+  // Builds an update entry's details: the names of the changed fields, the
+  // values safe to record, and whatever identifies the entity.
+  details(
     before: T | null | undefined,
     after: T | null | undefined,
-  ): AuditChangeSet;
+  ): AuditDetails;
 }

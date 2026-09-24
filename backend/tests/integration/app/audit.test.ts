@@ -77,8 +77,8 @@ describe('/api/v1/events/:eventId/registrations/:registrationId/audit', () => {
       });
       // Status is a bounded, non-PII field — its new value is recorded so the
       // timeline can show the outcome.
-      expect(entries[0].changes.changedValues).toEqual({ status: 'ACCEPTED' });
-      expect(entries[0].changes.changedFields).toBeUndefined();
+      expect(entries[0].details.values).toEqual({ status: 'ACCEPTED' });
+      expect(entries[0].details.changedFields).toBeUndefined();
     });
 
     it('records a data edit by changed leaf path only', async () => {
@@ -101,10 +101,10 @@ describe('/api/v1/events/:eventId/registrations/:registrationId/audit', () => {
 
       const entry = response.body.data[0];
       expect(entry.action).toBe('updated');
-      expect(entry.changes.changedFields).toContain('data.first_name');
-      expect(entry.changes.changedFields).not.toContain('data.notes');
+      expect(entry.details.changedFields).toContain('data.first_name');
+      expect(entry.details.changedFields).not.toContain('data.notes');
       // The new value must not leak into the log.
-      expect(JSON.stringify(entry.changes)).not.toContain('Bob');
+      expect(JSON.stringify(entry.details)).not.toContain('Bob');
     });
 
     it('attributes concurrent edits to the respective actors', async () => {
@@ -163,13 +163,15 @@ describe('/api/v1/events/:eventId/registrations/:registrationId/audit', () => {
         .expect(204);
 
       // Registration row is gone, but the audit event survives (no FK) — and it
-      // carries no snapshot, so no personal data lingers in the log.
+      // carries no snapshot (only the status), so no personal data lingers.
       const logs = await prisma.auditLog.findMany({
         where: { entityType: 'registration', entityId: registration.id },
       });
       const deleteLog = logs.find((log) => log.action === 'deleted');
       expect(deleteLog).toBeDefined();
-      expect(deleteLog?.changes).toBeNull();
+      expect(deleteLog?.details).toEqual({
+        context: { status: registration.status },
+      });
       expect(JSON.stringify(logs)).not.toContain('Ann');
     });
 

@@ -4,6 +4,7 @@ export default {
     updated: 'Updated',
     deleted: 'Deleted',
   },
+  reason: 'Reason',
   viewInSettings: 'View in settings',
   entities: {
     event: {
@@ -43,6 +44,13 @@ export default {
           PENDING: 'Pending',
           WAITLISTED: 'Waitlisted',
         },
+      },
+      reasons: {
+        canceled: 'Canceled',
+        declined: 'Declined',
+        duplicate: 'Duplicate',
+        test_entry: 'Test entry',
+        other: 'Other',
       },
       deleted: 'Deleted registration',
       view: 'View registration',

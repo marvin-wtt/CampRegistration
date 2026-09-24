@@ -494,7 +494,7 @@ const buildEntries = (entry: AuditLogEntry): TimelineDisplayEntry[] => {
 
   // A status change is the most salient edit — surface it as its own entry,
   // titled with the new status and coloured by it (e.g. "Accepted").
-  const status = entry.changes?.changedValues?.status;
+  const status = entry.details?.values?.status;
   if (typeof status === 'string') {
     entries.push({
       ...shared,
@@ -506,7 +506,7 @@ const buildEntries = (entry: AuditLogEntry): TimelineDisplayEntry[] => {
     });
   }
 
-  const fields = entry.changes?.changedFields ?? [];
+  const fields = entry.details?.changedFields ?? [];
   if (fields.length > 0) {
     entries.push({
       ...shared,

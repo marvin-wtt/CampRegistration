@@ -1,16 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { messageTemplateAuditPolicy } from '#app/messageTemplate/message-template.audit';
 import type {
-  AuditChangeSet,
+  AuditDetails,
   AuditEntityType,
 } from '@camp-registration/common/entities';
 
 const policy = messageTemplateAuditPolicy as unknown as {
   entityType: AuditEntityType;
-  changeSet(before: unknown, after: unknown): AuditChangeSet;
+  details(before: unknown, after: unknown): AuditDetails;
 };
 
-describe('messageTemplateAuditPolicy.changeSet', () => {
+describe('messageTemplateAuditPolicy.details', () => {
   it('reports editable content fields that changed', () => {
     const before = {
       trigger: 'registration_confirmation',
@@ -28,7 +28,7 @@ describe('messageTemplateAuditPolicy.changeSet', () => {
     };
 
     // Fields are reported in allow-list order, not sorted.
-    expect(policy.changeSet(before, after)).toEqual({
+    expect(policy.details(before, after)).toEqual({
       changedFields: ['subject', 'body', 'priority'],
       context: { trigger: 'registration_confirmation', country: 'de' },
     });
@@ -52,7 +52,7 @@ describe('messageTemplateAuditPolicy.changeSet', () => {
 
     // trigger/country are still attached — they identify the template even
     // when nothing else changed.
-    expect(policy.changeSet(before, after)).toEqual({
+    expect(policy.details(before, after)).toEqual({
       context: { trigger: 'registration_confirmation', country: 'de' },
     });
   });

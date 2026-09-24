@@ -1,4 +1,4 @@
-import { changedKeysExcept, composeChangeSet } from '#app/audit/audit.diff';
+import { changedKeysExcept, composeDetails } from '#app/audit/audit.diff';
 import { formFieldChanges } from '#app/audit/audit.surveyForm';
 import type { AuditChangePolicy } from '#app/audit/audit.policy';
 import type { Event } from '#generated/prisma/client';
@@ -19,13 +19,13 @@ const DENY_KEYS: (keyof Event)[] = [
 export const eventAuditPolicy: AuditChangePolicy<Event> = {
   entityType: 'event',
 
-  changeSet(before, after) {
+  details(before, after) {
     const fields = changedKeysExcept(before, after, DENY_KEYS);
 
     if (before != null && after != null) {
       fields.push(...formFieldChanges(before.form, after.form));
     }
 
-    return composeChangeSet({ changedFields: fields });
+    return composeDetails({ changedFields: fields });
   },
 };
