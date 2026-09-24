@@ -68,6 +68,8 @@ export const useAuthStore = defineStore('auth', () => {
   // An API request failed with 401 and the refresh confirmed the session is gone
   apiService.setOnUnauthenticated(() => {
     status.value = 'unauthenticated';
+    stopRetry();
+    stopProactiveRefresh();
 
     if (route.name === 'login' || route.fullPath.startsWith('/login')) {
       return;
