@@ -75,7 +75,7 @@
           class="q-pa-none"
         >
           <div
-            v-if="hasDetails"
+            v-if="hasDetails || showPayments"
             class="details-panel scroll"
           >
             <section v-if="personalRows.length">
@@ -225,6 +225,13 @@
                 </q-item>
               </q-list>
             </section>
+
+            <section v-if="showPayments && event">
+              <registration-payments-section
+                :event-id="event.id"
+                :registration
+              />
+            </section>
           </div>
 
           <div
@@ -294,6 +301,7 @@ import RegistrationFormViewDialog from '@/components/event/table/dialogs/Registr
 import RegistrationTimeline from '@/components/event/table/dialogs/RegistrationTimeline.vue';
 import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
 import CountryIcon from '@/components/common/localization/CountryIcon.vue';
+import RegistrationPaymentsSection from '@/components/event/payment/RegistrationPaymentsSection.vue';
 
 defineEmits([...useDialogPluginComponent.emits]);
 
@@ -325,6 +333,14 @@ const canViewTimeline = computed(
 // The timeline panel is `lazy-render`, so switching to it is what mounts
 // RegistrationTimeline and fires its fetch — not every dialog open.
 const activeTab = ref<'details' | 'timeline'>('details');
+
+// Only once the registration owes (or has paid) anything — events that
+// don't collect payments keep the dialog as it was.
+const showPayments = computed<boolean>(
+  () =>
+    can('event.payments.view') &&
+    registration.value?.payment.status !== 'NOT_REQUIRED',
+);
 
 // Reactive lookup instead of a static snapshot, so edits made elsewhere
 // (e.g. the table's inline cell editors) are reflected while the dialog is open.

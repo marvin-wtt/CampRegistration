@@ -5,6 +5,7 @@ import { formatAddress } from '@/utils/formatAddress';
 import {
   formatFormSelectCsvValue,
   formatIsoDateCsvValue,
+  formatPaymentCsvValue,
   isTranslatableCsvValue,
   stringifyCsvValue,
 } from '@/utils/csvValueFormatter';
@@ -15,6 +16,9 @@ import {
 // is the one exception: ComponentRegistry.ts already imports it eagerly as
 // the `.load()` fallback, so wrapping it here would add async overhead for
 // zero bundle-size benefit.
+const PaymentTableCell = defineAsyncComponent(
+  () => import('@/components/event/table/tableCells/PaymentTableCell.vue'),
+);
 const ActionTableCell = defineAsyncComponent(
   () => import('@/components/event/table/tableCells/ActionTableCell.vue'),
 );
@@ -138,6 +142,9 @@ const components = () => {
   TableComponentRegistry.register('language_skills', LanguageSkillsTableCell);
   TableComponentRegistry.register('name', NameTableCell);
   TableComponentRegistry.register('phone_number', PhoneNumberTableCell);
+  TableComponentRegistry.register('payment', PaymentTableCell, {
+    toCsv: formatPaymentCsvValue,
+  });
   TableComponentRegistry.register('status', StatusTableCell);
   TableComponentRegistry.register('text', TextTableCell, {
     optionsComponent: TextOptionsEditor,

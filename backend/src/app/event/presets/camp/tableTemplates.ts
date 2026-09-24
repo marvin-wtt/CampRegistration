@@ -1193,8 +1193,9 @@ export default [
         shrink: true,
       },
       {
-        name: 'participation_fee_paid',
-        field: 'customData.participation_fee_paid',
+        name: 'payment',
+        field: 'payment',
+        source: 'meta',
         label: {
           en: 'Participation fee',
           de: 'Teilnahmebeitrag',
@@ -1203,9 +1204,8 @@ export default [
           cs: 'Účastnický poplatek',
         },
         align: 'center',
-        renderAs: 'editor',
-        sortable: true,
-        source: 'custom',
+        renderAs: 'payment',
+        sortable: false,
       },
       {
         name: 'payment_note',
