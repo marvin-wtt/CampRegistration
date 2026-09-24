@@ -3,11 +3,8 @@
     ref="dialogRef"
     @hide="onDialogHide"
   >
-    <q-card
-      class="details-card rounded-xl"
-      style="width: min(700px, 95vw); max-width: min(900px, 95vw)"
-    >
-      <q-toolbar class="q-px-sm">
+    <q-card class="details-card rounded-xl column no-wrap">
+      <q-toolbar class="details-toolbar q-px-sm">
         <q-icon
           name="mail"
           size="sm"
@@ -29,16 +26,13 @@
         </q-btn>
       </q-toolbar>
 
-      <q-separator />
-
-      <q-scroll-area style="height: min(520px, 65vh)">
-        <div class="q-pa-md">
-          <message-details-content
-            :message
-            :registrations
-          />
-        </div>
-      </q-scroll-area>
+      <!-- Sized to the email, scrolling only once it outgrows the viewport. -->
+      <div class="details-content">
+        <message-details-content
+          :message
+          :registrations
+        />
+      </div>
     </q-card>
   </q-dialog>
 </template>
@@ -65,8 +59,22 @@ defineProps<{
 
 <style scoped>
 .details-card {
+  width: min(720px, 95vw);
+  max-width: min(900px, 95vw);
+  max-height: 88vh;
   background: var(--md3-surface-container-low);
   overflow: hidden;
+}
+
+.details-toolbar {
+  background: transparent;
+}
+
+.details-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 4px 24px 24px;
+  overflow-y: auto;
 }
 
 .header-btn {

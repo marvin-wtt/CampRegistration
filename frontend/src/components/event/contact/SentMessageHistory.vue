@@ -22,7 +22,7 @@
     :maximized="quasar.screen.lt.sm"
   >
     <q-card class="history-dialog column no-wrap">
-      <q-toolbar class="q-px-sm">
+      <q-toolbar class="history-toolbar q-px-sm">
         <q-btn
           v-if="quasar.screen.lt.sm && mobileDetail"
           flat
@@ -40,7 +40,12 @@
         />
         <q-toolbar-title class="text-subtitle1 text-weight-medium">
           {{ t('title') }}
-          <span class="text-grey-6">({{ messages.length }})</span>
+          <span
+            v-if="messages.length > 0"
+            class="history-count"
+          >
+            {{ messages.length }}
+          </span>
         </q-toolbar-title>
         <q-btn
           v-close-popup
@@ -52,21 +57,16 @@
         />
       </q-toolbar>
 
-      <q-separator />
-
       <!-- Empty -->
       <div
         v-if="messages.length === 0"
-        class="col column items-center justify-center text-grey-6 q-pa-xl"
+        class="history-empty col"
       >
         <q-icon
           name="mark_email_read"
           size="3rem"
-          color="grey-4"
         />
-        <div class="text-body2 q-mt-sm text-center">
-          {{ t('empty') }}
-        </div>
+        <div class="text-body2">{{ t('empty') }}</div>
       </div>
 
       <div
@@ -78,13 +78,13 @@
           class="history-list column no-wrap"
           :class="{ 'pane--hidden': quasar.screen.lt.sm && mobileDetail }"
         >
-          <div class="q-pa-sm">
+          <div class="history-search">
             <q-input
               v-model="search"
               dense
-              outlined
-              rounded
+              borderless
               clearable
+              class="history-search__input rounded-full"
               :placeholder="t('search')"
             >
               <template #prepend>
@@ -92,12 +92,11 @@
               </template>
             </q-input>
           </div>
-          <q-separator />
 
           <q-virtual-scroll
             v-if="filtered.length > 0"
             :items="filtered"
-            class="col scroll"
+            class="history-items col scroll"
           >
             <template #default="{ item }">
               <q-item
@@ -106,46 +105,37 @@
                 clickable
                 :active="item.id === selectedId"
                 active-class="history-item--active"
+                class="history-item rounded-xl"
                 @click="selectMessage(item)"
               >
-                <q-item-section avatar>
-                  <q-avatar
-                    color="primary"
-                    text-color="white"
-                    size="32px"
-                    icon="mail"
-                  />
-                </q-item-section>
                 <q-item-section>
                   <q-item-label
                     lines="1"
-                    class="text-weight-medium"
+                    class="history-item__subject"
                   >
                     {{ item.subject }}
                   </q-item-label>
-                  <q-item-label caption>
-                    {{ item.createdAt ? d(item.createdAt, 'dateTime') : '' }}
-                  </q-item-label>
-                </q-item-section>
-                <q-item-section side>
-                  <div class="row items-center q-gutter-xs">
+                  <q-item-label class="history-item__meta">
+                    <span>
+                      {{ item.createdAt ? d(item.createdAt, 'dateTime') : '' }}
+                    </span>
+                    <span aria-hidden="true">·</span>
+                    <span class="history-item__recipients">
+                      <q-icon
+                        name="group"
+                        size="14px"
+                      />
+                      {{ recipientCount(item) }}
+                    </span>
                     <q-icon
                       v-if="hasBounce(item)"
                       name="error_outline"
-                      color="negative"
-                      size="18px"
+                      size="16px"
+                      class="history-item__bounce"
                     >
                       <q-tooltip>{{ t('someBounced') }}</q-tooltip>
                     </q-icon>
-                    <q-chip
-                      dense
-                      outline
-                      icon="group"
-                      :label="String(recipientCount(item))"
-                      color="grey-7"
-                      class="q-mr-none"
-                    />
-                  </div>
+                  </q-item-label>
                 </q-item-section>
               </q-item>
             </template>
@@ -153,68 +143,47 @@
 
           <div
             v-else
-            class="col column items-center justify-center text-grey-6 q-pa-lg"
+            class="history-empty col"
           >
             <q-icon
               name="search_off"
               size="2.5rem"
-              color="grey-4"
             />
-            <div class="text-body2 q-mt-sm text-center">
-              {{ t('noResults') }}
-            </div>
+            <div class="text-body2">{{ t('noResults') }}</div>
           </div>
         </div>
 
-        <q-separator
-          v-if="quasar.screen.gt.xs"
-          vertical
-        />
-
         <!-- Detail pane -->
         <div
-          class="history-detail column no-wrap col"
+          class="history-detail column no-wrap col rounded-xl"
           :class="{ 'pane--hidden': quasar.screen.lt.sm && !mobileDetail }"
         >
           <template v-if="selected">
-            <div class="col scroll q-pa-md">
+            <div class="history-detail__content col scroll">
               <message-details-content
                 :message="selected"
                 :registrations
               />
             </div>
 
-            <q-separator />
-
-            <div class="row justify-end q-gutter-sm q-pa-md">
-              <q-btn
-                v-if="canDelete && quasar.screen.lt.sm"
-                flat
-                round
-                dense
-                color="negative"
+            <div
+              v-if="canDelete || canReuse"
+              class="history-detail__actions"
+            >
+              <m-btn
+                v-if="canDelete"
+                text
+                error
+                no-caps
                 icon="delete_outline"
+                :label="quasar.screen.lt.sm ? undefined : t('action.delete')"
                 :aria-label="t('action.delete')"
                 @click="confirmDelete(selected)"
-              >
-                <q-tooltip>{{ t('action.delete') }}</q-tooltip>
-              </q-btn>
-              <q-btn
-                v-else-if="canDelete"
-                flat
-                no-caps
-                rounded
-                color="negative"
-                icon="delete_outline"
-                :label="t('action.delete')"
-                @click="confirmDelete(selected)"
               />
-              <q-btn
+              <m-btn
                 v-if="canReuse"
-                unelevated
+                primary
                 no-caps
-                rounded
-                color="primary"
                 icon="edit_note"
                 :label="t('action.reuse')"
                 @click="onResend(selected)"
@@ -224,16 +193,13 @@
 
           <div
             v-else
-            class="col column items-center justify-center text-grey-6 q-pa-xl"
+            class="history-empty col"
           >
             <q-icon
               name="drafts"
               size="2.5rem"
-              color="grey-4"
             />
-            <div class="text-body2 q-mt-sm text-center">
-              {{ t('selectHint') }}
-            </div>
+            <div class="text-body2">{{ t('selectHint') }}</div>
           </div>
         </div>
       </div>
@@ -246,6 +212,7 @@ import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
 import type { Message, Registration } from '@camp-registration/common/entities';
+import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import MessageDetailsContent from '@/components/event/contact/MessageDetailsContent.vue';
 
 const {
@@ -358,15 +325,27 @@ watch(
 
 <style scoped>
 .history-dialog {
-  width: 900px;
+  width: 960px;
   max-width: 95vw;
   height: 80vh;
   max-height: 85vh;
-  background: var(--md3-surface);
+  background: var(--md3-surface-container-low);
+}
+
+.history-toolbar {
+  background: transparent;
+}
+
+.history-count {
+  margin-left: 6px;
+  color: var(--md3-on-surface-variant);
+  font-weight: 400;
 }
 
 .history-body {
   min-height: 0;
+  gap: 8px;
+  padding: 0 12px 12px;
 }
 
 .history-list,
@@ -377,13 +356,84 @@ watch(
   flex-direction: column;
 }
 
-.history-detail {
-  flex: 1 1 0;
+.history-search {
+  padding: 0 4px 8px;
+}
+
+/* MD3 search bar: filled and fully rounded, no outline. */
+.history-search__input {
+  padding: 0 12px;
+  background: var(--md3-surface-container-high);
+}
+
+.history-items {
+  padding: 0 4px;
+}
+
+.history-item {
+  min-height: 56px;
+  margin-bottom: 2px;
+  color: var(--md3-on-surface);
 }
 
 .history-item--active {
   background: var(--md3-secondary-container);
   color: var(--md3-on-secondary-container);
+}
+
+.history-item__subject {
+  font-weight: 500;
+}
+
+.history-item__meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+  color: var(--md3-on-surface-variant);
+  font-size: 12px;
+}
+
+.history-item--active .history-item__meta {
+  color: inherit;
+}
+
+.history-item__recipients {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.history-item__bounce {
+  color: var(--md3-error);
+}
+
+/* The reading pane sits on its own raised surface. */
+.history-detail {
+  flex: 1 1 0;
+  background: var(--md3-surface);
+}
+
+.history-detail__content {
+  padding: 20px 24px;
+}
+
+.history-detail__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px;
+}
+
+.history-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 32px;
+  color: var(--md3-on-surface-variant);
+  text-align: center;
 }
 
 @media (min-width: 600px) {

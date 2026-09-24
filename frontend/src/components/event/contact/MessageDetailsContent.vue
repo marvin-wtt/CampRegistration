@@ -1,106 +1,90 @@
 <template>
-  <div class="q-gutter-y-md">
-    <div>
-      <div class="text-subtitle1 text-weight-medium">
-        {{ message.subject }}
-      </div>
-      <div class="text-caption text-grey-6">
-        {{ message.createdAt ? d(message.createdAt, 'dateTime') : '' }}
-      </div>
-      <div
-        v-if="message.sentBy"
-        class="text-caption text-grey-6 row items-center q-gutter-xs no-wrap"
-      >
-        <q-icon
-          name="person"
-          size="14px"
-        />
-        <span>
-          {{ t('sentBy', { name: message.sentBy.name ?? '' }) }}
-        </span>
-      </div>
-    </div>
+  <article class="message-details">
+    <header class="message-header">
+      <div class="message-subject">{{ message.subject }}</div>
 
-    <!-- Reply-to -->
-    <div v-if="message.replyTo">
-      <div class="text-caption text-grey-7 q-mb-xs">
-        {{ t('replyTo') }}
-      </div>
-      <q-chip
-        dense
-        square
-        icon="reply"
-        color="grey-3"
-        text-color="grey-9"
-      >
-        {{ message.replyTo }}
-      </q-chip>
-    </div>
-
-    <!-- Recipients -->
-    <div>
-      <div class="text-caption text-grey-7 q-mb-xs">
-        {{ t('recipients', { count: recipientCount }) }}
-      </div>
-      <div class="recipient-chips row q-gutter-xs">
-        <q-chip
-          v-for="entry in recipientEntries"
-          :key="entry.key"
-          dense
-          square
-          :icon="entry.bounced ? 'error_outline' : undefined"
-          :color="entry.bounced ? 'negative' : 'grey-3'"
-          :text-color="entry.bounced ? 'white' : 'grey-9'"
-        >
-          {{ entry.name }}
-          <q-tooltip v-if="entry.emails.length > 0">
-            <div
-              v-for="(email, index) in entry.emails"
-              :key="`${email.address}-${index}`"
+      <dl class="message-meta">
+        <template v-if="message.sentBy">
+          <dt>{{ t('from') }}</dt>
+          <dd class="message-meta__row">
+            <span class="message-meta__text">
+              {{ message.sentBy.name ?? '—' }}
+            </span>
+            <span
+              v-if="message.createdAt"
+              class="message-meta__date"
             >
-              {{ email.address }}
-              <template v-if="email.bounced">
-                —
-                <span class="text-negative">{{ t('bounced') }}</span>
-                <template v-if="email.bounceReason">
-                  ({{ email.bounceReason }})
-                </template>
-              </template>
-            </div>
-          </q-tooltip>
-        </q-chip>
-      </div>
-    </div>
+              {{ d(message.createdAt, 'dateTime') }}
+            </span>
+          </dd>
+        </template>
 
-    <!-- Attachments -->
+        <dt>{{ t('to') }}</dt>
+        <dd class="message-meta__row">
+          <div class="message-chips message-chips--recipients">
+            <q-chip
+              v-for="entry in recipientEntries"
+              :key="entry.key"
+              dense
+              :icon="entry.bounced ? 'error_outline' : undefined"
+              class="message-chip"
+              :class="{ 'message-chip--bounced': entry.bounced }"
+            >
+              {{ entry.name }}
+              <q-tooltip v-if="entry.emails.length > 0">
+                <div
+                  v-for="(email, index) in entry.emails"
+                  :key="`${email.address}-${index}`"
+                >
+                  {{ email.address }}
+                  <template v-if="email.bounced">
+                    — {{ t('bounced') }}
+                    <template v-if="email.bounceReason">
+                      ({{ email.bounceReason }})
+                    </template>
+                  </template>
+                </div>
+              </q-tooltip>
+            </q-chip>
+          </div>
+          <span
+            v-if="!message.sentBy && message.createdAt"
+            class="message-meta__date"
+          >
+            {{ d(message.createdAt, 'dateTime') }}
+          </span>
+        </dd>
+
+        <template v-if="message.replyTo">
+          <dt>{{ t('replyTo') }}</dt>
+          <dd class="message-meta__text">{{ message.replyTo }}</dd>
+        </template>
+
+        <template v-if="message.attachments?.length">
+          <dt>{{ t('attachments') }}</dt>
+          <dd class="message-chips">
+            <q-chip
+              v-for="file in message.attachments"
+              :key="file.id"
+              clickable
+              dense
+              icon="attach_file"
+              class="message-chip message-chip--file"
+              @click="openAttachment(file)"
+            >
+              {{ file.name }}
+              <q-tooltip>{{ t('action.view') }}</q-tooltip>
+            </q-chip>
+          </dd>
+        </template>
+      </dl>
+    </header>
+
     <div
-      v-if="message.attachments?.length"
-      class="row items-center q-gutter-xs"
-    >
-      <q-chip
-        v-for="file in message.attachments"
-        :key="file.id"
-        clickable
-        dense
-        icon="attach_file"
-        icon-right="open_in_new"
-        color="grey-3"
-        text-color="grey-9"
-        @click="openAttachment(file)"
-      >
-        {{ file.name }}
-        <q-tooltip>{{ t('action.view') }}</q-tooltip>
-      </q-chip>
-    </div>
-
-    <q-separator />
-
-    <!-- Body -->
-    <div
-      class="message-preview"
+      class="message-body rounded-lg"
       v-html="bodyHtml"
     />
-  </div>
+  </article>
 </template>
 
 <script lang="ts" setup>
@@ -132,8 +116,6 @@ const registrationsById = computed(
 // Only the open message is sanitized, so a list of messages scales without
 // parsing every body up front.
 const bodyHtml = computed<string>(() => DOMPurify.sanitize(message.body));
-
-const recipientCount = computed<number>(() => message.recipients?.length ?? 0);
 
 interface RecipientEmailEntry {
   address: string;
@@ -198,70 +180,164 @@ function openAttachment(file: ServiceFile) {
 </script>
 
 <style scoped>
-.recipient-chips {
-  max-height: 140px;
+.message-details {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.message-subject {
+  margin-bottom: 12px;
+  color: var(--md3-on-surface);
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+/* Label column sized to the longest label, values filling the rest. */
+.message-meta {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  column-gap: 16px;
+  row-gap: 8px;
+  /* Labels line up with the first row of a wrapping chip list. */
+  align-items: start;
+  margin: 0;
+  font-size: 14px;
+  line-height: 24px;
+}
+
+.message-meta dt {
+  color: var(--md3-on-surface-variant);
+}
+
+.message-meta dd {
+  margin: 0;
+  min-width: 0;
+}
+
+.message-meta__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.message-meta__text {
+  color: var(--md3-on-surface);
+  overflow-wrap: anywhere;
+}
+
+.message-meta__date {
+  flex-shrink: 0;
+  color: var(--md3-on-surface-variant);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.message-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-width: 0;
+}
+
+.message-chips--recipients {
+  max-height: 112px;
   overflow-y: auto;
 }
 
-.message-preview {
-  line-height: 1.6;
+.message-chip {
+  margin: 0;
+  border-radius: 8px;
+  background: var(--md3-secondary-container);
+  color: var(--md3-on-secondary-container);
 }
 
-.message-preview :deep(p) {
+.message-chip--bounced {
+  background: var(--md3-error-container);
+  color: var(--md3-on-error-container);
+}
+
+.message-chip--file {
+  border: 1px solid var(--md3-outline-variant);
+  background: transparent;
+  color: var(--md3-on-surface);
+}
+
+.message-body {
+  padding: 20px 24px;
+  background: var(--md3-surface-container-highest);
+  color: var(--md3-on-surface);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.message-body :deep(p) {
   margin: 0 0 0.75em;
 }
 
-.message-preview :deep(ul),
-.message-preview :deep(ol) {
+.message-body :deep(p:last-child) {
+  margin-bottom: 0;
+}
+
+.message-body :deep(ul),
+.message-body :deep(ol) {
   padding-left: 1.5em;
   margin: 0 0 0.75em;
 }
 
-.message-preview :deep(a) {
+.message-body :deep(a) {
   color: var(--md3-primary);
 }
 </style>
 
 <i18n lang="yaml" locale="en">
-sentBy: 'Sent by {name}'
-replyTo: 'Reply-to'
-recipients: '{count} recipient | {count} recipient | {count} recipients'
+from: 'From'
+to: 'To'
+replyTo: 'Reply to'
+attachments: 'Attachments'
 bounced: 'Bounced'
 action:
   view: 'Open'
 </i18n>
 
 <i18n lang="yaml" locale="de">
-sentBy: 'Gesendet von {name}'
+from: 'Von'
+to: 'An'
 replyTo: 'Antwort an'
-recipients: '{count} Empfänger | {count} Empfänger | {count} Empfänger'
+attachments: 'Anhänge'
 bounced: 'Unzustellbar'
 action:
   view: 'Öffnen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-sentBy: 'Envoyé par {name}'
+from: 'De'
+to: 'À'
 replyTo: 'Répondre à'
-recipients: '{count} destinataire | {count} destinataire | {count} destinataires'
+attachments: 'Pièces jointes'
 bounced: 'Non distribué'
 action:
   view: 'Ouvrir'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-sentBy: 'Wysłane przez {name}'
+from: 'Od'
+to: 'Do'
 replyTo: 'Odpowiedź do'
-recipients: '{count} odbiorca | {count} odbiorca | {count} odbiorców'
+attachments: 'Załączniki'
 bounced: 'Niedostarczono'
 action:
   view: 'Otwórz'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-sentBy: 'Odeslal {name}'
+from: 'Od'
+to: 'Komu'
 replyTo: 'Odpovědět na'
-recipients: '{count} příjemce | {count} příjemce | {count} příjemců'
+attachments: 'Přílohy'
 bounced: 'Nedoručeno'
 action:
   view: 'Otevřít'
