@@ -5,6 +5,7 @@ import { seedE2eOrganizations } from './organization.seeder.js';
 import { seedE2eEvents } from './event.seeder.js';
 import { seedE2eEventManagers } from './event-manager.seeder.js';
 import { seedE2eRegistrations } from './registration.seeder.js';
+import { seedE2ePayments } from './payment.seeder.js';
 
 async function main() {
   await truncateAll();
@@ -13,6 +14,7 @@ async function main() {
   await seedE2eEvents();
   await seedE2eEventManagers();
   await seedE2eRegistrations();
+  await seedE2ePayments();
 }
 
 main()

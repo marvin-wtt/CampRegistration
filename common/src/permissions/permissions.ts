@@ -70,6 +70,9 @@ export type ChoreAssignmentPermission =
   | 'event.chore_assignments.edit'
   | 'event.chore_assignments.delete';
 
+export type PaymentPermission =
+  'event.payments.view' | 'event.payments.create' | 'event.payments.refund';
+
 export type NewsletterPermission =
   | 'newsletter.view'
   | 'newsletter.edit'
@@ -95,7 +98,9 @@ export type OrganizationPermission =
   | 'organization.events.view'
   | 'organization.events.create'
   | 'organization.newsletters.view'
-  | 'organization.newsletters.create';
+  | 'organization.newsletters.create'
+  | 'organization.payments.view'
+  | 'organization.payments.edit';
 
 /**
  * Everything resolvable against an event-manager role. Named separately from
@@ -116,7 +121,8 @@ export type EventScopedPermission =
   | ProgramItemPermission
   | TaskPermission
   | ChorePermission
-  | ChoreAssignmentPermission;
+  | ChoreAssignmentPermission
+  | PaymentPermission;
 
 export type Permission =
   EventScopedPermission | NewsletterPermission | OrganizationPermission;

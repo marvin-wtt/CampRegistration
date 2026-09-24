@@ -67,6 +67,12 @@ function registration(firstName: string): Registration {
     computedData: { firstName } as Registration['computedData'],
     customData: {},
     status: 'ACCEPTED',
+    payment: {
+      status: 'NOT_REQUIRED',
+      currency: 'EUR',
+      amountDue: null,
+      amountPaid: 0,
+    },
     createdAt: '2026-01-01T00:00:00Z',
   };
 }

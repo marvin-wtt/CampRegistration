@@ -31,6 +31,8 @@ export interface Event extends Identifiable {
   maxAge: number;
   location: Translatable | null;
   price: number;
+  /** ISO 4217 code `price` and every payment amount of this event is in. */
+  currency: string;
   freePlaces: Translatable<number> | null;
   freePlacesTotal: number;
   registrationStatus: EventRegistrationStatus;
@@ -57,7 +59,11 @@ type EventServerFields =
 
 // Fields redeclared below with different optionality — must not stay required via Omit<EventDetails, ...>.
 type EventOverriddenFields =
-  'form' | 'themes' | 'registrationOpensAt' | 'registrationClosesAt';
+  | 'form'
+  | 'themes'
+  | 'registrationOpensAt'
+  | 'registrationClosesAt'
+  | 'currency';
 
 export type EventCreateData = Omit<
   EventDetails,
@@ -67,6 +73,8 @@ export type EventCreateData = Omit<
   themes?: Record<string, ITheme> | undefined;
   registrationOpensAt?: string | null | undefined;
   registrationClosesAt?: string | null | undefined;
+  /** ISO 4217; defaults to EUR. */
+  currency?: string | undefined;
   referenceEventId?: string | undefined;
   preset?: EventPresetName | undefined | null;
 };

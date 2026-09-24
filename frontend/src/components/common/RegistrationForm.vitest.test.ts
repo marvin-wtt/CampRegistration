@@ -39,6 +39,7 @@ describe('RegistrationForm', () => {
     minAge: 0,
     maxAge: 0,
     price: 0,
+    currency: 'EUR',
     location: '',
     freePlaces: 0,
     freePlacesTotal: 0,
