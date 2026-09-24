@@ -23,17 +23,23 @@ function formFieldSnapshot(form: unknown): Map<string, unknown> {
 
 /**
  * Names (as `form.<name>` paths) of questions added, removed, or changed
- * between two SurveyJS form definitions.
+ * between two SurveyJS form definitions — or just `form` when the change is
+ * outside any question (page/panel titles, survey settings, logic).
  */
 export function formFieldChanges(before: unknown, after: unknown): string[] {
   const beforeFields = formFieldSnapshot(before);
   const afterFields = formFieldSnapshot(after);
   const names = new Set([...beforeFields.keys(), ...afterFields.keys()]);
 
-  return [...names]
+  const changed = [...names]
     .filter(
       (name) =>
         !isDeepStrictEqual(beforeFields.get(name), afterFields.get(name)),
     )
     .map((name) => `form.${name}`);
+
+  if (changed.length === 0 && !isDeepStrictEqual(before, after)) {
+    return ['form'];
+  }
+  return changed;
 }

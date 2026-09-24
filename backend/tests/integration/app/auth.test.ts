@@ -95,6 +95,38 @@ describe('/api/v1/auth', async () => {
       expect(manager?.invitation).toBeNull();
     });
 
+    it('should record an accepted audit entry for a resolved invitation', async () => {
+      const pending = await EventManagerFactory.create({
+        event: { create: EventFactory.build() },
+        role: 'VIEWER',
+        invitation: {
+          create: InvitationFactory.build({ email: 'test@email.net' }),
+        },
+      });
+
+      await request()
+        .post('/api/v1/auth/register')
+        .send({
+          name: 'testuser',
+          email: 'test@email.net',
+          password: 'Password1',
+        })
+        .expect(201);
+
+      const user = await prisma.user.findFirstOrThrow({
+        where: { email: 'test@email.net' },
+      });
+      const entry = await prisma.auditLog.findFirst({
+        where: { entityId: pending.id, action: 'accepted' },
+      });
+
+      expect(entry?.actorId).toBe(user.id);
+      expect(entry?.changes).toEqual({
+        context: { role: 'VIEWER' },
+        subjectId: user.id,
+      });
+    });
+
     it('should set the role to "USER"', async () => {
       await request()
         .post('/api/v1/auth/register')

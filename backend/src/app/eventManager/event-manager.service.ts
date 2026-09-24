@@ -8,6 +8,7 @@ import { OrganizationMemberService } from '#app/organizationMember/organization-
 import { AuditService } from '#app/audit/audit.service';
 import {
   eventManagerAuditPolicy,
+  managerGrant,
   managerIdentity,
 } from '#app/eventManager/event-manager.audit';
 
@@ -179,21 +180,29 @@ export class EventManagerService extends BaseService {
   }
 
   async resolveManagerInvitations(email: string, userId: string) {
-    await this.prisma.eventManager.updateMany({
-      where: {
-        invitation: {
-          email,
-        },
-      },
-      data: {
-        userId,
-      },
-    });
+    await this.prisma.$transaction(async (tx) => {
+      const pending = await tx.eventManager.findMany({
+        where: { invitation: { email } },
+      });
 
-    await this.prisma.invitation.deleteMany({
-      where: {
-        email,
-      },
+      await tx.eventManager.updateMany({
+        where: { id: { in: pending.map((manager) => manager.id) } },
+        data: { userId },
+      });
+
+      // Links the invitation's earlier (masked) entries to the account.
+      for (const manager of pending) {
+        await this.audit.record(tx, {
+          action: 'accepted',
+          entityType: eventManagerAuditPolicy.entityType,
+          entityId: manager.id,
+          eventId: manager.eventId,
+          actorId: userId,
+          changes: managerIdentity({ ...manager, userId }),
+        });
+      }
+
+      await tx.invitation.deleteMany({ where: { email } });
     });
   }
 
@@ -217,7 +226,7 @@ export class EventManagerService extends BaseService {
         entityType: eventManagerAuditPolicy.entityType,
         entityId: manager.id,
         eventId,
-        changes: managerIdentity(manager),
+        changes: managerGrant(manager),
       });
 
       return manager;
@@ -250,7 +259,7 @@ export class EventManagerService extends BaseService {
         entityType: eventManagerAuditPolicy.entityType,
         entityId: manager.id,
         eventId,
-        changes: managerIdentity(manager),
+        changes: managerGrant(manager),
       });
 
       return manager;
@@ -260,7 +269,10 @@ export class EventManagerService extends BaseService {
   async updateManagerById(id: string, data: ManagerUpdateData) {
     return this.prisma.$transaction(async (tx) => {
       // Read the "before" inside the transaction so the audit diff is race-free.
-      const before = await tx.eventManager.findUniqueOrThrow({ where: { id } });
+      const before = await tx.eventManager.findUniqueOrThrow({
+        where: { id },
+        include: { invitation: true },
+      });
 
       const after = await tx.eventManager.update({
         where: {
@@ -291,7 +303,15 @@ export class EventManagerService extends BaseService {
     return this.prisma.$transaction(async (tx) => {
       const deleted = await tx.eventManager.delete({
         where: { id },
+        include: { invitation: true },
       });
+
+      // A revoked invitation would otherwise keep the invitee's email forever.
+      if (deleted.invitationId) {
+        await tx.invitation.deleteMany({
+          where: { id: deleted.invitationId, eventManager: { none: {} } },
+        });
+      }
 
       await this.audit.record(tx, {
         action: 'deleted',

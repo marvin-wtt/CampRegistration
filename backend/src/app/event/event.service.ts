@@ -41,6 +41,8 @@ type EventRegistrationStatusFilter = 'open' | 'upcoming' | 'closed';
 // large as the table itself. Below this length, skip the name filter
 // entirely rather than pay that cost for a query that isn't selective yet.
 const MIN_NAME_FILTER_LENGTH = 2;
+// The form editor autosaves; edits closer together than this form one entry.
+const AUDIT_COALESCE_MS = 5 * 60 * 1000;
 
 interface EventQueryArgs {
   listed?: boolean | undefined;
@@ -472,6 +474,7 @@ export class EventService extends BaseService {
         after: updatedEvent,
         entityId: event.id,
         eventId: event.id,
+        coalesceWithinMs: AUDIT_COALESCE_MS,
       });
 
       return enrichFreePlaces(updatedEvent);

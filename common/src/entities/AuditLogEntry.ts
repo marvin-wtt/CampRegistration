@@ -1,7 +1,14 @@
 import { Identifiable } from './Identifiable.js';
 
-export type AuditEntityType =
-  'registration' | 'eventManager' | 'event' | 'message' | 'messageTemplate';
+export const AUDIT_ENTITY_TYPES = [
+  'event',
+  'registration',
+  'eventManager',
+  'message',
+  'messageTemplate',
+] as const;
+
+export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];
 
 // Scalars only — a deliberate constraint so values stay bounded and non-PII
 // (you can't accidentally dump a whole object or free-text answer in here).
@@ -17,12 +24,19 @@ export interface AuditChangeSet {
   // `active` flag). Lets the timeline show the outcome ("Accepted") without
   // storing personal data. Keyed by field name.
   changedValues?: Record<string, AuditValue>;
+  // Values that identify the entity (e.g. a manager's `role`, a template's
+  // `trigger`), attached to every entry whether or not they changed — so
+  // create/delete entries, which have no diff, are still identifiable.
+  context?: Record<string, AuditValue>;
   // The id of the user this entry is *about*, when that differs from both the
   // actor and the entity itself (e.g. an eventManager entry's `entityId` is the
   // grant record, not the person — this is the person). Resolved into
   // `AuditLogEntry.subject` at read time, the same way `actorId` is resolved
   // into `actor` — never stored as a name here.
   subjectId?: string | null;
+  // A masked identifier (e.g. `j***@example.com`) for a subject with no user
+  // account to resolve — a pending invitation. Only set when `subjectId` isn't.
+  subjectHint?: string;
 }
 
 export interface AuditActor {

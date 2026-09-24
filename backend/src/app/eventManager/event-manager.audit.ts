@@ -1,42 +1,60 @@
 import {
   changedKeysByAllowList,
+  changedValues,
   composeChangeSet,
 } from '#app/audit/audit.diff';
 import type { AuditChangePolicy } from '#app/audit/audit.policy';
-import type { EventManager } from '#generated/prisma/client';
+import type { EventManager, Invitation } from '#generated/prisma/client';
 import type { AuditChangeSet } from '@camp-registration/common/entities';
+import { maskEmail } from '#utils/maskEmail';
 
 const FIELD_ALLOWLIST = ['role', 'expiresAt'] as const;
 
-export const eventManagerAuditPolicy: AuditChangePolicy<EventManager> = {
+type AuditedManager = Pick<EventManager, 'userId' | 'role' | 'expiresAt'> & {
+  invitation?: Pick<Invitation, 'email'> | null;
+};
+
+export const eventManagerAuditPolicy: AuditChangePolicy<AuditedManager> = {
   entityType: 'eventManager',
 
   changeSet(before, after) {
     const fields = changedKeysByAllowList(before, after, FIELD_ALLOWLIST);
-    const identity = managerIdentity(after ?? before);
-    return {
-      ...(fields.length > 0 ? { changedFields: fields } : {}),
-      ...identity,
-    };
+    if (fields.length === 0) {
+      return {};
+    }
+    return composeChangeSet({
+      changedFields: fields,
+      changedValues: changedValues(before, after, FIELD_ALLOWLIST),
+      ...managerIdentity(after ?? before),
+    });
   },
 };
 
 /**
- * `role` (as a value) and `subjectId` identify *what* access the entry's
- * manager was given and *who* they are — without them an entry only says "a
- * manager changed", not to what or for whom. Always attached (not just on
- * change) so create/update/delete entries are all identifiable on their own.
- * `subjectId` is resolved to a name at read time
- * ({@link AuditService.resolveActors}), the same way `actorId` is — never
- * stored as a name here. A pending invitation has no `userId` yet, so
- * `subjectId` is omitted until it's accepted.
+ * `role` and the subject identify *what* access was given and *to whom*. The
+ * subject is the user id (resolved to a name at read time) or, for a pending
+ * invitation, a masked email.
  */
 export function managerIdentity(
-  manager: Pick<EventManager, 'userId' | 'role'> | null | undefined,
+  manager: AuditedManager | null | undefined,
 ): AuditChangeSet {
-  return composeChangeSet(
-    [],
-    manager ? { role: manager.role } : {},
-    manager?.userId,
-  );
+  if (!manager) {
+    return {};
+  }
+  return composeChangeSet({
+    context: { role: manager.role },
+    subjectId: manager.userId,
+    subjectHint:
+      !manager.userId && manager.invitation
+        ? maskEmail(manager.invitation.email)
+        : undefined,
+  });
+}
+
+/** `managerIdentity` plus the initial values the access was granted with. */
+export function managerGrant(manager: AuditedManager): AuditChangeSet {
+  return composeChangeSet({
+    ...managerIdentity(manager),
+    changedValues: changedValues(null, manager, FIELD_ALLOWLIST),
+  });
 }

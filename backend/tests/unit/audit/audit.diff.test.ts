@@ -7,6 +7,7 @@ import {
   composeChangedFields,
   composeChangeSet,
   isEmptyChangeSet,
+  mergeChangeSets,
 } from '#app/audit/audit.diff';
 
 describe('changedKeysByAllowList', () => {
@@ -119,6 +120,9 @@ describe('changedValues', () => {
 
   it('ignores unchanged fields and coerces non-scalars to null', () => {
     expect(changedValues({ a: 'x' }, { a: 'x' }, ['a'])).toEqual({});
+    expect(
+      changedValues({ a: null }, { a: new Date('2026-10-01T00:00:00Z') }, ['a']),
+    ).toEqual({ a: '2026-10-01T00:00:00.000Z' });
     expect(changedValues({ a: 1 }, { a: { nested: true } }, ['a'])).toEqual({
       a: null,
     });
@@ -127,10 +131,15 @@ describe('changedValues', () => {
 
 describe('composeChangeSet / isEmptyChangeSet', () => {
   it('omits empty sections and detects an empty change set', () => {
-    expect(composeChangeSet([], {})).toEqual({});
-    expect(isEmptyChangeSet(composeChangeSet([], {}))).toBe(true);
+    expect(composeChangeSet({ changedFields: [], changedValues: {} })).toEqual(
+      {},
+    );
+    expect(isEmptyChangeSet(composeChangeSet({}))).toBe(true);
 
-    const changes = composeChangeSet(['data.a'], { status: 'ACCEPTED' });
+    const changes = composeChangeSet({
+      changedFields: ['data.a'],
+      changedValues: { status: 'ACCEPTED' },
+    });
     expect(changes).toEqual({
       changedFields: ['data.a'],
       changedValues: { status: 'ACCEPTED' },
@@ -139,14 +148,46 @@ describe('composeChangeSet / isEmptyChangeSet', () => {
   });
 
   it('is non-empty when only values changed', () => {
-    expect(isEmptyChangeSet(composeChangeSet([], { status: 'ACCEPTED' }))).toBe(
-      false,
-    );
+    expect(
+      isEmptyChangeSet(
+        composeChangeSet({ changedValues: { status: 'ACCEPTED' } }),
+      ),
+    ).toBe(false);
+  });
+
+  it('is empty when it carries only identity', () => {
+    expect(
+      isEmptyChangeSet(
+        composeChangeSet({ context: { role: 'VIEWER' }, subjectId: 'u1' }),
+      ),
+    ).toBe(true);
   });
 
   it('attaches subjectId when given, and omits it when null/undefined', () => {
-    expect(composeChangeSet([], {}, 'u1')).toEqual({ subjectId: 'u1' });
-    expect(composeChangeSet([], {}, null)).toEqual({});
-    expect(composeChangeSet([], {})).toEqual({});
+    expect(composeChangeSet({ subjectId: 'u1' })).toEqual({ subjectId: 'u1' });
+    expect(composeChangeSet({ subjectId: null })).toEqual({});
+  });
+});
+
+describe('mergeChangeSets', () => {
+  it('unions field names and lets newer values win', () => {
+    expect(
+      mergeChangeSets(
+        { changedFields: ['form.b', 'name'], changedValues: { active: true } },
+        { changedFields: ['form.a', 'name'], changedValues: { active: false } },
+      ),
+    ).toEqual({
+      changedFields: ['form.a', 'form.b', 'name'],
+      changedValues: { active: false },
+    });
+  });
+
+  it('keeps the subject of either side', () => {
+    expect(mergeChangeSets({ subjectHint: 'j***@x.org' }, {})).toEqual({
+      subjectHint: 'j***@x.org',
+    });
+    expect(mergeChangeSets({ subjectId: 'u1' }, { subjectId: 'u2' })).toEqual({
+      subjectId: 'u2',
+    });
   });
 });

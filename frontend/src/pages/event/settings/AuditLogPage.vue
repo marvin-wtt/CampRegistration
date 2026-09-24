@@ -84,14 +84,23 @@
         </q-chip>
 
         <q-chip
+          v-if="historyEntityId"
+          removable
+          class="filter-chip filter-chip--active"
+          @remove="historyEntityId = null"
+        >
+          {{ t('filter.history', { id: shortId(historyEntityId) }) }}
+        </q-chip>
+
+        <q-chip
           clickable
           class="filter-chip"
-          :class="{ 'filter-chip--active': hideSystemEvents }"
-          @click="hideSystemEvents = !hideSystemEvents"
+          :class="{ 'filter-chip--active': showSystemEvents }"
+          @click="showSystemEvents = !showSystemEvents"
         >
-          {{ t('filter.hideSystemEvents') }}
+          {{ t('filter.showSystemEvents') }}
           <q-icon
-            v-if="hideSystemEvents"
+            v-if="showSystemEvents"
             name="check"
             size="16px"
             class="q-ml-xs"
@@ -161,9 +170,6 @@
                       :name="entry.icon"
                       size="20px"
                     />
-                    <q-tooltip>
-                      {{ t('entityId', { id: entry.entityId }) }}
-                    </q-tooltip>
                   </q-avatar>
                 </q-item-section>
 
@@ -214,43 +220,30 @@
                 >
                   <span class="audit-entry__time">{{ entry.time }}</span>
                   <q-btn
-                    v-if="entry.entityType === 'registration'"
                     flat
-                    round
                     dense
+                    no-caps
+                    rounded
                     size="sm"
-                    icon="open_in_new"
-                    color="primary"
-                    @click="viewRegistration(entry.entityId)"
+                    class="audit-entry__id"
+                    :label="`#${shortId(entry.entityId)}`"
+                    @click="historyEntityId = entry.entityId"
                   >
-                    <q-tooltip>{{ t('viewRegistration') }}</q-tooltip>
+                    <q-tooltip>
+                      {{ t('showHistory', { id: entry.entityId }) }}
+                    </q-tooltip>
                   </q-btn>
                   <q-btn
-                    v-else-if="
-                      entry.entityType === 'message' &&
-                      entry.action !== 'deleted'
-                    "
+                    v-if="entry.openLabel"
                     flat
                     round
                     dense
                     size="sm"
                     icon="open_in_new"
                     color="primary"
-                    @click="viewMessage(entry.entityId)"
+                    @click="openEntry(entry)"
                   >
-                    <q-tooltip>{{ t('viewMessage') }}</q-tooltip>
-                  </q-btn>
-                  <q-btn
-                    v-else-if="entitySettingsRoute(entry.entityType)"
-                    flat
-                    round
-                    dense
-                    size="sm"
-                    icon="open_in_new"
-                    color="primary"
-                    @click="viewInSettings(entry.entityType)"
-                  >
-                    <q-tooltip>{{ t('viewSettings') }}</q-tooltip>
+                    <q-tooltip>{{ entry.openLabel }}</q-tooltip>
                   </q-btn>
                 </q-item-section>
               </q-item>
@@ -265,43 +258,29 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRoute, useRouter } from 'vue-router';
-import { useQuasar } from 'quasar';
+import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
-import type {
-  AuditEntityType,
-  AuditLogEntry,
-  AuditValue,
-  Message,
+import {
+  AUDIT_ENTITY_TYPES,
+  type AuditActor,
+  type AuditEntityType,
+  type AuditLogEntry,
+  type AuditValue,
 } from '@camp-registration/common/entities';
 import { useAPIService } from '@/services/APIService';
-import { useAuditTimeline } from '@/composables/auditTimeline';
-import { useAuditFieldLabels } from '@/composables/auditFieldLabels';
+import { useAuditTimeline } from '@/composables/audit/auditTimeline';
+import { useAuditLabels } from '@/composables/audit/auditLabels';
+import { useAuditEntities } from '@/composables/audit/auditEntities';
 import { useEventDetailsStore } from '@/stores/event-details-store';
-import { useRegistrationsStore } from '@/stores/registration-store';
-import { useEventManagerStore } from '@/stores/event-manager-store';
-import { useRegistrationHelper } from '@/composables/registrationHelper';
-import { formatPersonName } from '@/utils/formatters';
 import { extractFormFields } from '@/utils/surveyJS';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
-import RegistrationDetailsDialog from '@/components/event/table/dialogs/RegistrationDetailsDialog.vue';
-import MessageDetailsDialog from '@/components/event/contact/MessageDetailsDialog.vue';
 
 const { t, locale } = useI18n();
 const route = useRoute();
-const router = useRouter();
-const quasar = useQuasar();
 const apiService = useAPIService();
-const { formatTime, formatDay, actorLabel, actionColor, entityIcon } =
-  useAuditTimeline();
-const {
-  entityLabel,
-  actionLabel,
-  valueLabel,
-  fieldLabel,
-  valueDisplay,
-  isContextualValueKey,
-} = useAuditFieldLabels();
+const { formatTime, formatDay, actorLabel, actionColor } = useAuditTimeline();
+const { entityLabel, actionLabel, fieldLabel, valueLabel } = useAuditLabels();
+const entityViews = useAuditEntities();
 
 const eventId = computed(() => {
   const value = route.params.eventId;
@@ -311,17 +290,6 @@ const eventId = computed(() => {
 // Question labels for `data.*`/`form.*` audit paths, from the event's current
 // form (already kept up to date by the app-wide event-details store).
 const { data: event } = storeToRefs(useEventDetailsStore());
-
-// Live registration data, so a registration entry can show *which*
-// registration it's about — the audit log itself never stores participant
-// names, only field names (see `registrationSubject` below).
-const registrationsStore = useRegistrationsStore();
-const { fullName } = useRegistrationHelper();
-
-// Live access-list data, so an access entry can show *who* it's about even
-// for a pending invitation, which has no linked user account (and so no
-// resolvable `subject`) until it's accepted — see `managerSubject` below.
-const eventManagerStore = useEventManagerStore();
 
 const formFieldLabels = computed<Map<string, string>>(() => {
   const form = event.value?.form;
@@ -351,127 +319,74 @@ onMounted(async () => {
     loading.value = false;
   }
 
-  // Best-effort — a failure here only means registration/access entries fall
-  // back to their existing-user-only labels instead of naming who they're
-  // about; the page itself still works.
-  void registrationsStore.fetchData(eventId.value);
-  void eventManagerStore.fetchData(eventId.value);
+  // Best-effort — without it, entries only lose their live names and links.
+  for (const view of Object.values(entityViews)) {
+    view.load?.(eventId.value).catch(() => undefined);
+  }
 });
 
-// Resolves a registration entry's live (current) name — the audit log itself
-// never stores participant data, so this is the only way to say *which*
-// registration an entry is about.
-function registrationSubject(entityId: string): string {
-  const registration = registrationsStore.data?.find((r) => r.id === entityId);
-  if (!registration) {
-    return t('deletedRegistration');
-  }
-  return formatPersonName(fullName(registration));
+// The random tail of the ULID — its head is a timestamp, shared by records
+// created around the same time.
+function shortId(id: string): string {
+  return id.slice(-8);
 }
 
-// Resolves an access entry's live (current) name or email — a pending
-// invitation has no linked user account yet, so `entry.subject` (resolved
-// server-side from the `User` table) can't name it; falls back to the
-// existing subject resolution once the access itself is revoked/removed.
-function managerSubject(entry: AuditLogEntry): string | null {
-  const manager = eventManagerStore.data?.find((m) => m.id === entry.entityId);
-  return manager
-    ? (manager.name ?? manager.email)
-    : actorLabel(entry.subject, t('deletedUser'));
+// Users resolved for any entry of a record, so an older entry recorded before
+// the user was known (e.g. a pending invitation) can still name them.
+const knownSubjects = computed(() => {
+  const subjects = new Map<string, AuditActor>();
+  for (const entry of auditEntries.value) {
+    if (entry.subject) {
+      subjects.set(entry.entityId, entry.subject);
+    }
+  }
+  return subjects;
+});
+
+function subjectOf(entry: AuditLogEntry): string | null {
+  const custom = entityViews[entry.entityType].subject?.(entry);
+  if (custom !== undefined) {
+    return custom;
+  }
+  const subject = entry.subject ?? knownSubjects.value.get(entry.entityId);
+  if (subject) {
+    return actorLabel(subject, t('deletedUser'));
+  }
+  return entry.changes?.subjectHint ?? null;
 }
 
-// Opens the registration's existing detail dialog with its current (live) data
-// — the audit log itself never stores registration content, only field names.
-// `RegistrationDetailsDialog` reads the registration reactively from the
-// store rather than a passed-in snapshot, so it must be loaded first.
-async function viewRegistration(registrationId: string): Promise<void> {
-  if (!eventId.value) {
-    return;
-  }
-
-  try {
-    await registrationsStore.fetchData(eventId.value);
-  } catch {
-    // fetchData already records the error on the store; fall through to the
-    // not-found check below, which will report it.
-  }
-
-  const exists = registrationsStore.data?.some((r) => r.id === registrationId);
-  if (!exists) {
-    quasar.notify({ type: 'negative', message: t('error.registrationGone') });
-    return;
-  }
-
-  quasar.dialog({
-    component: RegistrationDetailsDialog,
-    componentProps: { registrationId },
-  });
+function displayValue(
+  entityType: AuditEntityType,
+  key: string,
+  value: AuditValue,
+): string {
+  return (
+    entityViews[entityType].formatValue?.(key, value) ??
+    valueLabel(entityType, key, value)
+  );
 }
 
-// Opens the message in a details dialog — same pattern as `viewRegistration`
-// above. Messages aren't edited in place elsewhere, so (unlike a
-// registration) a fetched snapshot is passed straight through rather than
-// looked up reactively from a store.
-async function viewMessage(messageId: string): Promise<void> {
-  if (!eventId.value) {
-    return;
-  }
-
-  let messages: Message[] = [];
-  try {
-    messages = await apiService.fetchMessages(eventId.value);
-  } catch {
-    // fall through to the not-found check below, which will report it.
-  }
-
-  const message = messages.find((m) => m.id === messageId);
-  if (!message) {
-    quasar.notify({ type: 'negative', message: t('error.messageGone') });
-    return;
-  }
-
-  quasar.dialog({
-    component: MessageDetailsDialog,
-    componentProps: {
-      message,
-      registrations: registrationsStore.data ?? [],
-    },
-  });
+// The subject plus the identifying context, e.g. "Jane Doe · Viewer" — a
+// context value that changed is shown as a value chip instead.
+function subjectLine(entry: AuditLogEntry): string | null {
+  const changedValues = entry.changes?.changedValues ?? {};
+  const context = Object.entries(entry.changes?.context ?? {})
+    .filter(([key]) => !(key in changedValues))
+    .map(([key, value]) => displayValue(entry.entityType, key, value));
+  const parts = [subjectOf(entry), ...context].filter(
+    (part): part is string => !!part,
+  );
+  return parts.length > 0 ? parts.join(' · ') : null;
 }
 
-// Entity types with no per-record view (unlike registration/message above)
-// still link to the settings page that manages them.
-const ENTITY_SETTINGS_ROUTES: Partial<Record<AuditEntityType, string>> = {
-  event: 'management.event.settings.edit',
-  eventManager: 'management.event.settings.access',
-  messageTemplate: 'management.event.settings.emails',
-};
-
-function entitySettingsRoute(entityType: AuditEntityType): string | undefined {
-  return ENTITY_SETTINGS_ROUTES[entityType];
-}
-
-function viewInSettings(entityType: AuditEntityType): void {
-  const name = entitySettingsRoute(entityType);
-  if (!eventId.value || !name) {
-    return;
+function openEntry(entry: TimelineDisplayEntry): void {
+  if (eventId.value) {
+    void entityViews[entry.entityType].open?.run(eventId.value, entry.entityId);
   }
-
-  void router.push({ name, params: { eventId: eventId.value } });
 }
-
-// All possible entity types, not just the ones present in the current data —
-// otherwise a type disappears from the filter once nothing of it remains.
-const ENTITY_TYPES: AuditEntityType[] = [
-  'event',
-  'registration',
-  'eventManager',
-  'message',
-  'messageTemplate',
-];
 
 const entityTypeOptions = computed(() =>
-  ENTITY_TYPES.map((entityType) => ({
+  AUDIT_ENTITY_TYPES.map((entityType) => ({
     label: entityLabel(entityType),
     value: entityType,
   })),
@@ -495,7 +410,9 @@ const selectedEntityTypes = ref<AuditEntityType[]>([]);
 const selectedActorIds = ref<string[]>([]);
 // Public/self-service actions (no actor) tend to dominate the trail — default
 // to hiding them so manager/director activity isn't buried underneath.
-const hideSystemEvents = ref(true);
+const showSystemEvents = ref(false);
+// Narrows the log to one record's full history, overriding the other filters.
+const historyEntityId = ref<string | null>(null);
 
 function toggleEntityType(entityType: AuditEntityType): void {
   selectedEntityTypes.value = selectedEntityTypes.value.includes(entityType)
@@ -511,6 +428,9 @@ function toggleActor(actorId: string): void {
 
 const filteredAuditEntries = computed<AuditLogEntry[]>(() =>
   auditEntries.value.filter((entry) => {
+    if (historyEntityId.value) {
+      return entry.entityId === historyEntityId.value;
+    }
     if (
       selectedEntityTypes.value.length > 0 &&
       !selectedEntityTypes.value.includes(entry.entityType)
@@ -518,7 +438,7 @@ const filteredAuditEntries = computed<AuditLogEntry[]>(() =>
       return false;
     }
     if (entry.actor === null) {
-      return !hideSystemEvents.value && selectedActorIds.value.length === 0;
+      return showSystemEvents.value && selectedActorIds.value.length === 0;
     }
 
     return !(
@@ -531,38 +451,6 @@ const filteredAuditEntries = computed<AuditLogEntry[]>(() =>
 interface ValueDetail {
   label: string;
   value: string;
-}
-
-// Keys from `changedValues` worth a "Field: value" chip — excludes contextual
-// ones (identity info that wasn't actually part of this change). A field with
-// a value chip also appears in `changedFields` (e.g. eventManager's `role`,
-// which is both allow-list diffed *and* always attached for identity) —
-// `fieldLabels` below excludes these too, so the same field doesn't get a
-// redundant plain "Role" chip next to the more informative "Role: Viewer" one.
-function shownValueKeys(
-  entityType: AuditEntityType,
-  action: string,
-  changedValues: Record<string, AuditValue> | undefined,
-  changedFields: string[] | undefined,
-): Set<string> {
-  return new Set(
-    Object.keys(changedValues ?? {}).filter(
-      (key) => !isContextualValueKey(entityType, key, action, changedFields),
-    ),
-  );
-}
-
-function buildValueDetails(
-  entityType: AuditEntityType,
-  changedValues: Record<string, AuditValue> | undefined,
-  shownKeys: Set<string>,
-): ValueDetail[] {
-  return Object.entries(changedValues ?? {})
-    .filter(([key]) => shownKeys.has(key))
-    .map(([key, value]) => ({
-      label: valueLabel(entityType, key),
-      value: valueDisplay(entityType, key, value),
-    }));
 }
 
 // "Today" / "Yesterday" read faster than a full date for the entries managers
@@ -586,7 +474,6 @@ interface TimelineDisplayEntry {
   id: string;
   entityId: string;
   entityType: AuditEntityType;
-  action: string;
   title: string;
   subject: string | null;
   time: string;
@@ -597,44 +484,36 @@ interface TimelineDisplayEntry {
   fieldLabels: string[];
   valueDetails: ValueDetail[];
   actor: string | null;
+  openLabel: string | null;
 }
 
 function buildEntry(entry: AuditLogEntry): TimelineDisplayEntry {
-  const shownKeys = shownValueKeys(
-    entry.entityType,
-    entry.action,
-    entry.changes?.changedValues,
-    entry.changes?.changedFields,
-  );
+  const { entityType } = entry;
+  const view = entityViews[entityType];
+  const changedValues = entry.changes?.changedValues ?? {};
+  const exists = view.exists?.(entry.entityId) ?? true;
 
   return {
     id: entry.id,
     entityId: entry.entityId,
-    entityType: entry.entityType,
-    action: entry.action,
-    title: `${entityLabel(entry.entityType)} — ${actionLabel(entry.action)}`,
-    subject:
-      entry.entityType === 'registration'
-        ? registrationSubject(entry.entityId)
-        : entry.entityType === 'eventManager'
-          ? managerSubject(entry)
-          : actorLabel(entry.subject, t('deletedUser')),
+    entityType,
+    title: `${entityLabel(entityType)} — ${actionLabel(entityType, entry.action)}`,
+    subject: subjectLine(entry),
     time: formatTime(entry.createdAt, locale.value),
     dayKey: new Date(entry.createdAt).toDateString(),
     dayLabel: dayLabel(entry.createdAt),
     color: actionColor(entry.action),
-    icon: entityIcon(entry.entityType),
-    // A field already shown as "label: value" (see `shownValueKeys`) doesn't
-    // also need a bare field-name chip.
+    icon: view.icon,
+    valueDetails: Object.entries(changedValues).map(([key, value]) => ({
+      label: fieldLabel(entityType, key),
+      value: displayValue(entityType, key, value),
+    })),
+    // A field already shown as "label: value" doesn't also need a bare chip.
     fieldLabels: (entry.changes?.changedFields ?? [])
-      .filter((path) => !shownKeys.has(path))
-      .map((path) => fieldLabel(entry.entityType, path, formFieldLabels.value)),
-    valueDetails: buildValueDetails(
-      entry.entityType,
-      entry.changes?.changedValues,
-      shownKeys,
-    ),
+      .filter((path) => !(path in changedValues))
+      .map((path) => fieldLabel(entityType, path, formFieldLabels.value)),
     actor: actorLabel(entry.actor, t('deletedUser')),
+    openLabel: exists === true && view.open ? view.open.label() : null,
   };
 }
 
@@ -720,6 +599,11 @@ const groupedEntries = computed<EntryGroup[]>(() => {
   gap: 4px;
 }
 
+.audit-entry__id {
+  color: var(--md3-on-surface-variant);
+  font-family: monospace;
+}
+
 .audit-entry__time {
   color: var(--md3-on-surface-variant);
   font-size: 12px;
@@ -775,18 +659,15 @@ title: 'Audit Log'
 subtitle: 'A history of changes made to this event, its registrations, and its team.'
 by: 'by {actor}'
 bySystem: 'System event'
-entityId: 'ID: {id}'
-viewRegistration: 'View registration'
-viewMessage: 'View message'
-viewSettings: 'View in settings'
+showHistory: 'Show full history of {id}'
 deletedUser: 'Deleted user'
-deletedRegistration: 'Deleted registration'
 today: 'Today'
 yesterday: 'Yesterday'
 filter:
   label: 'Filter:'
   actor: 'Actor'
-  hideSystemEvents: 'Hide system events'
+  showSystemEvents: 'Show system events'
+  history: 'History of #{id}'
 empty:
   title: 'No activity yet'
   message: 'Changes to this event will show up here.'
@@ -794,8 +675,6 @@ empty:
   filteredMessage: 'Try adjusting the filters above.'
 error:
   load: 'Failed to load the audit log'
-  registrationGone: 'This registration no longer exists'
-  messageGone: 'This message no longer exists'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -803,18 +682,15 @@ title: 'Aktivitätsprotokoll'
 subtitle: 'Ein Verlauf der Änderungen an dieser Veranstaltung, ihren Anmeldungen und ihrem Team.'
 by: 'von {actor}'
 bySystem: 'Systemereignis'
-entityId: 'ID: {id}'
-viewRegistration: 'Anmeldung ansehen'
-viewMessage: 'Nachricht ansehen'
-viewSettings: 'In den Einstellungen ansehen'
+showHistory: 'Gesamten Verlauf von {id} anzeigen'
 deletedUser: 'Gelöschter Benutzer'
-deletedRegistration: 'Gelöschte Anmeldung'
 today: 'Heute'
 yesterday: 'Gestern'
 filter:
   label: 'Filter:'
   actor: 'Ausgeführt von'
-  hideSystemEvents: 'Systemereignisse ausblenden'
+  showSystemEvents: 'Systemereignisse anzeigen'
+  history: 'Verlauf von #{id}'
 empty:
   title: 'Noch keine Aktivität'
   message: 'Änderungen an dieser Veranstaltung erscheinen hier.'
@@ -822,8 +698,6 @@ empty:
   filteredMessage: 'Passe die Filter oben an.'
 error:
   load: 'Aktivitätsprotokoll konnte nicht geladen werden'
-  registrationGone: 'Diese Anmeldung existiert nicht mehr'
-  messageGone: 'Diese Nachricht existiert nicht mehr'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -831,18 +705,15 @@ title: 'Journal d’activité'
 subtitle: 'Un historique des modifications apportées à cet événement, ses inscriptions et son équipe.'
 by: 'par {actor}'
 bySystem: 'Événement système'
-entityId: 'ID : {id}'
-viewRegistration: 'Voir l’inscription'
-viewMessage: 'Voir le message'
-viewSettings: 'Voir dans les paramètres'
+showHistory: 'Afficher tout l’historique de {id}'
 deletedUser: 'Utilisateur supprimé'
-deletedRegistration: 'Inscription supprimée'
 today: 'Aujourd’hui'
 yesterday: 'Hier'
 filter:
   label: 'Filtrer :'
   actor: 'Auteur'
-  hideSystemEvents: 'Masquer les événements système'
+  showSystemEvents: 'Afficher les événements système'
+  history: 'Historique de #{id}'
 empty:
   title: 'Aucune activité pour le moment'
   message: 'Les modifications apportées à cet événement apparaîtront ici.'
@@ -850,8 +721,6 @@ empty:
   filteredMessage: 'Essayez d’ajuster les filtres ci-dessus.'
 error:
   load: 'Échec du chargement du journal d’activité'
-  registrationGone: 'Cette inscription n’existe plus'
-  messageGone: 'Ce message n’existe plus'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -859,18 +728,15 @@ title: 'Dziennik aktywności'
 subtitle: 'Historia zmian w tym wydarzeniu, jego zgłoszeniach i zespole.'
 by: 'przez {actor}'
 bySystem: 'Zdarzenie systemowe'
-entityId: 'ID: {id}'
-viewRegistration: 'Zobacz zgłoszenie'
-viewMessage: 'Zobacz wiadomość'
-viewSettings: 'Zobacz w ustawieniach'
+showHistory: 'Pokaż pełną historię {id}'
 deletedUser: 'Usunięty użytkownik'
-deletedRegistration: 'Usunięte zgłoszenie'
 today: 'Dzisiaj'
 yesterday: 'Wczoraj'
 filter:
   label: 'Filtruj:'
   actor: 'Wykonawca'
-  hideSystemEvents: 'Ukryj zdarzenia systemowe'
+  showSystemEvents: 'Pokaż zdarzenia systemowe'
+  history: 'Historia #{id}'
 empty:
   title: 'Brak aktywności'
   message: 'Zmiany w tym wydarzeniu będą się tutaj pojawiać.'
@@ -878,8 +744,6 @@ empty:
   filteredMessage: 'Spróbuj dostosować powyższe filtry.'
 error:
   load: 'Nie udało się załadować dziennika aktywności'
-  registrationGone: 'To zgłoszenie już nie istnieje'
-  messageGone: 'Ta wiadomość już nie istnieje'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -887,18 +751,15 @@ title: 'Deník aktivit'
 subtitle: 'Historie změn této akce, jejích registrací a týmu.'
 by: 'od {actor}'
 bySystem: 'Systémová událost'
-entityId: 'ID: {id}'
-viewRegistration: 'Zobrazit registraci'
-viewMessage: 'Zobrazit zprávu'
-viewSettings: 'Zobrazit v nastavení'
+showHistory: 'Zobrazit celou historii {id}'
 deletedUser: 'Smazaný uživatel'
-deletedRegistration: 'Smazaná registrace'
 today: 'Dnes'
 yesterday: 'Včera'
 filter:
   label: 'Filtr:'
   actor: 'Provedl'
-  hideSystemEvents: 'Skrýt systémové události'
+  showSystemEvents: 'Zobrazit systémové události'
+  history: 'Historie #{id}'
 empty:
   title: 'Zatím žádná aktivita'
   message: 'Změny této akce se zobrazí zde.'
@@ -906,6 +767,4 @@ empty:
   filteredMessage: 'Zkuste upravit filtry výše.'
 error:
   load: 'Nepodařilo se načíst deník aktivit'
-  registrationGone: 'Tato registrace již neexistuje'
-  messageGone: 'Tato zpráva již neexistuje'
 </i18n>

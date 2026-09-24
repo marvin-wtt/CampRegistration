@@ -18,12 +18,12 @@ export const registrationAuditPolicy: AuditChangePolicy<Registration> = {
   // `customData.foo`) so the trail shows exactly which answers changed — but
   // only the path, never the value.
   changeSet(before, after) {
-    return composeChangeSet(
-      composeChangedFields(
+    return composeChangeSet({
+      changedFields: composeChangedFields(
         changedLeafPaths(before?.data, after?.data, 'data'),
         changedLeafPaths(before?.customData, after?.customData, 'customData'),
       ),
-      changedValues(before, after, VALUE_FIELDS),
-    );
+      changedValues: changedValues(before, after, VALUE_FIELDS),
+    });
   },
 };

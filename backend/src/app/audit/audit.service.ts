@@ -11,7 +11,7 @@ import type {
   AuditChangeSet,
   AuditEntityType,
 } from '@camp-registration/common/entities';
-import { isEmptyChangeSet } from '#app/audit/audit.diff';
+import { isEmptyChangeSet, mergeChangeSets } from '#app/audit/audit.diff';
 import type { AuditChangePolicy } from '#app/audit/audit.policy';
 
 export type PrismaTransaction = Parameters<
@@ -52,27 +52,31 @@ export class AuditService extends BaseService {
    * request context — `null` for anonymous/system.
    */
   async record(tx: PrismaTransaction, input: AuditRecordInput): Promise<void> {
-    const actorId =
-      input.actorId !== undefined
-        ? input.actorId
-        : (this.context.userId ?? null);
-
     await tx.auditLog.create({
       data: {
         action: input.action,
         entityType: input.entityType,
         entityId: input.entityId,
         eventId: input.eventId ?? null,
-        actorId,
+        actorId: this.resolveActorId(input.actorId),
         changes: input.changes ?? Prisma.JsonNull,
       },
     });
+  }
+
+  private resolveActorId(actorId: string | null | undefined): string | null {
+    return actorId !== undefined ? actorId : (this.context.userId ?? null);
   }
 
   /**
    * Diffs `before`/`after` through the entity's policy and records the resulting
    * change set — skipping no-op edits. Keeps audit shaping in the entity's
    * module. Only field names (and the bounded status value) are recorded.
+   *
+   * With `coalesceWithinMs`, an edit by the same actor is merged into the
+   * entity's latest entry if that was created within the window — so an
+   * autosaving editor yields one entry per window, not one per save. The
+   * window is fixed, so a long session still produces an entry every window.
    */
   async recordChange<T>(
     tx: PrismaTransaction,
@@ -83,19 +87,58 @@ export class AuditService extends BaseService {
       after: T | null | undefined;
       entityId: string;
       eventId?: string | null;
+      coalesceWithinMs?: number;
     },
   ): Promise<void> {
     const changes = policy.changeSet(args.before, args.after);
     if (isEmptyChangeSet(changes)) {
       return;
     }
-    await this.record(tx, {
+    const input = {
       action,
       entityType: policy.entityType,
       entityId: args.entityId,
       eventId: args.eventId,
       changes,
+    };
+    if (
+      args.coalesceWithinMs !== undefined &&
+      (await this.mergeIntoLatest(tx, input, changes, args.coalesceWithinMs))
+    ) {
+      return;
+    }
+    await this.record(tx, input);
+  }
+
+  private async mergeIntoLatest(
+    tx: PrismaTransaction,
+    input: AuditRecordInput,
+    changes: AuditChangeSet,
+    windowMs: number,
+  ): Promise<boolean> {
+    const actorId = this.resolveActorId(input.actorId);
+    if (actorId === null) {
+      return false;
+    }
+
+    const latest = await tx.auditLog.findFirst({
+      where: { entityType: input.entityType, entityId: input.entityId },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     });
+    if (
+      latest?.action !== input.action ||
+      latest.actorId !== actorId ||
+      latest.createdAt.getTime() < Date.now() - windowMs
+    ) {
+      return false;
+    }
+
+    const previous = (latest.changes ?? {}) as AuditChangeSet;
+    await tx.auditLog.update({
+      where: { id: latest.id },
+      data: { changes: mergeChangeSets(previous, changes) },
+    });
+    return true;
   }
 
   async listForRegistration(

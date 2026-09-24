@@ -30,7 +30,7 @@ describe('messageTemplateAuditPolicy.changeSet', () => {
     // Fields are reported in allow-list order, not sorted.
     expect(policy.changeSet(before, after)).toEqual({
       changedFields: ['subject', 'body', 'priority'],
-      changedValues: { trigger: 'registration_confirmation', country: 'de' },
+      context: { trigger: 'registration_confirmation', country: 'de' },
     });
   });
 
@@ -53,7 +53,7 @@ describe('messageTemplateAuditPolicy.changeSet', () => {
     // trigger/country are still attached — they identify the template even
     // when nothing else changed.
     expect(policy.changeSet(before, after)).toEqual({
-      changedValues: { trigger: 'registration_confirmation', country: 'de' },
+      context: { trigger: 'registration_confirmation', country: 'de' },
     });
   });
 });

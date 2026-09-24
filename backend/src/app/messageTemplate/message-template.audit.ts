@@ -4,6 +4,7 @@ import {
 } from '#app/audit/audit.diff';
 import type { AuditChangePolicy } from '#app/audit/audit.policy';
 import type { MessageTemplate } from '#generated/prisma/client';
+import type { AuditChangeSet } from '@camp-registration/common/entities';
 
 // Editable template content. `trigger`/`country` identify the template (which
 // automated email + country variant); `subject`/`body`/`priority`/`replyTo` are
@@ -22,24 +23,22 @@ export const messageTemplateAuditPolicy: AuditChangePolicy<MessageTemplate> = {
   entityType: 'messageTemplate',
 
   changeSet(before, after) {
-    return composeChangeSet(
-      changedKeysByAllowList(before, after, FIELD_ALLOWLIST),
-      templateIdentity(after ?? before),
-    );
+    return composeChangeSet({
+      changedFields: changedKeysByAllowList(before, after, FIELD_ALLOWLIST),
+      ...templateIdentity(after ?? before),
+    });
   },
 };
 
-/**
- * `trigger`/`country` never change after creation, so a plain diff never
- * records them — but without them an entry can't say *which* template it's
- * about. Always attach the current values (not just when they change) so
- * create, update, and delete entries are all identifiable on their own.
- */
+// `trigger`/`country` say *which* template an entry is about (which automated
+// email, which country variant); they never change after creation.
 export function templateIdentity(
   template: Pick<MessageTemplate, 'trigger' | 'country'> | null | undefined,
-): Record<string, string | null> {
+): AuditChangeSet {
   if (!template) {
     return {};
   }
-  return { trigger: template.trigger, country: template.country };
+  return {
+    context: { trigger: template.trigger, country: template.country },
+  };
 }

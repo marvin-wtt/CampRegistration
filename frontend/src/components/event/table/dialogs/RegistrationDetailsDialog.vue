@@ -325,7 +325,7 @@ import type {
   AuditLogEntry,
 } from '@camp-registration/common/entities';
 import { useObjectTranslation } from '@/composables/objectTranslation';
-import { useAuditTimeline } from '@/composables/auditTimeline';
+import { useAuditTimeline } from '@/composables/audit/auditTimeline';
 import { useAPIService } from '@/services/APIService';
 import { formatPersonName } from '@/utils/formatters';
 import { extractFormFields } from '@/utils/surveyJS';

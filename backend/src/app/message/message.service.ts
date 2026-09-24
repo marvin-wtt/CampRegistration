@@ -93,7 +93,7 @@ export class MessageService extends BaseService {
       });
 
       await this.audit.record(tx, {
-        action: 'created',
+        action: 'sent',
         entityType: messageAuditPolicy.entityType,
         entityId: message.id,
         eventId,

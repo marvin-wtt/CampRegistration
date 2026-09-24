@@ -166,26 +166,48 @@ function toScalar(value: unknown): AuditValue {
   ) {
     return value;
   }
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
   return null;
 }
 
-/** Assembles a change set from changed field names and values, omitting empties. */
-export function composeChangeSet(
-  changedFields: string[],
-  changedValues: Record<string, AuditValue> = {},
-  subjectId?: string | null,
-): AuditChangeSet {
+/** Assembles a change set, omitting empty parts. */
+export function composeChangeSet(parts: AuditChangeSet): AuditChangeSet {
   const changes: AuditChangeSet = {};
-  if (changedFields.length > 0) {
-    changes.changedFields = changedFields;
+  if (parts.changedFields?.length) {
+    changes.changedFields = parts.changedFields;
   }
-  if (Object.keys(changedValues).length > 0) {
-    changes.changedValues = changedValues;
+  if (Object.keys(parts.changedValues ?? {}).length > 0) {
+    changes.changedValues = parts.changedValues;
   }
-  if (subjectId) {
-    changes.subjectId = subjectId;
+  if (Object.keys(parts.context ?? {}).length > 0) {
+    changes.context = parts.context;
+  }
+  if (parts.subjectId) {
+    changes.subjectId = parts.subjectId;
+  }
+  if (parts.subjectHint) {
+    changes.subjectHint = parts.subjectHint;
   }
   return changes;
+}
+
+/** Folds `next` into `previous`: field names unioned, newer values win. */
+export function mergeChangeSets(
+  previous: AuditChangeSet,
+  next: AuditChangeSet,
+): AuditChangeSet {
+  return composeChangeSet({
+    changedFields: composeChangedFields(
+      previous.changedFields ?? [],
+      next.changedFields ?? [],
+    ),
+    changedValues: { ...previous.changedValues, ...next.changedValues },
+    context: { ...previous.context, ...next.context },
+    subjectId: next.subjectId ?? previous.subjectId,
+    subjectHint: next.subjectHint ?? previous.subjectHint,
+  });
 }
 
 /** True when a change set carries no recordable change. */

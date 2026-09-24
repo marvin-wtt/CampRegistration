@@ -1,5 +1,8 @@
 import { z, type ZodType } from 'zod';
-import type { AuditLogQuery } from '@camp-registration/common/entities';
+import {
+  AUDIT_ENTITY_TYPES,
+  type AuditLogQuery,
+} from '@camp-registration/common/entities';
 
 // `?entityType=event,message` / `?actorId=id1,id2`. A repeated parameter is
 // accepted too, but comma form is the documented one: Express 5's default
@@ -17,15 +20,7 @@ const index = z.object({
         )
         .pipe(
           z
-            .array(
-              z.enum([
-                'registration',
-                'eventManager',
-                'event',
-                'message',
-                'messageTemplate',
-              ]),
-            )
+            .array(z.enum(AUDIT_ENTITY_TYPES))
             .nonempty(),
         ),
       entityId: z.ulid(),

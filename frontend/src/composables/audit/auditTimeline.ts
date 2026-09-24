@@ -1,9 +1,12 @@
 import type { AuditActor } from '@camp-registration/common/entities';
 
-// Entity-agnostic audit-timeline display helpers, shared by the per-registration
-// timeline and the event-wide audit log page. Translated labels stay with the
-// calling component (its own `<i18n>` block) — this composable only shapes
-// dates/colors/icons.
+const ACTION_COLORS: Record<string, string> = {
+  created: 'positive',
+  deleted: 'negative',
+};
+
+// Entity-agnostic audit-timeline display helpers (dates, actors, colors),
+// shared by the per-registration timeline and the event-wide audit log page.
 export function useAuditTimeline() {
   function formatDateTime(timestamp: string, locale: string): string {
     return new Date(timestamp).toLocaleString(locale, {
@@ -41,34 +44,10 @@ export function useAuditTimeline() {
     return actor.name ?? deletedUserLabel;
   }
 
+  // Only the generic lifecycle has a color of its own; entity-specific actions
+  // (a message being sent, an invitation accepted) read as a plain change.
   function actionColor(action: string): string {
-    switch (action) {
-      case 'created':
-        return 'positive';
-      case 'deleted':
-        return 'negative';
-      default:
-        return 'primary';
-    }
-  }
-
-  // What kind of record the entry is about — paired with `actionColor` so a
-  // marker reads as "a message template" (icon) "was deleted" (color) at a glance.
-  function entityIcon(entityType: string): string {
-    switch (entityType) {
-      case 'event':
-        return 'cabin';
-      case 'registration':
-        return 'person';
-      case 'eventManager':
-        return 'admin_panel_settings';
-      case 'message':
-        return 'mail';
-      case 'messageTemplate':
-        return 'drafts';
-      default:
-        return 'history';
-    }
+    return ACTION_COLORS[action] ?? 'primary';
   }
 
   return {
@@ -77,6 +56,5 @@ export function useAuditTimeline() {
     formatDay,
     actorLabel,
     actionColor,
-    entityIcon,
   };
 }

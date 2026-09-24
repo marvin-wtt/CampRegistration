@@ -26,6 +26,6 @@ export const eventAuditPolicy: AuditChangePolicy<Event> = {
       fields.push(...formFieldChanges(before.form, after.form));
     }
 
-    return composeChangeSet(fields);
+    return composeChangeSet({ changedFields: fields });
   },
 };

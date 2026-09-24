@@ -762,6 +762,36 @@ describe('/api/v1/events/:eventId/managers', () => {
       expect(count).toBe(1);
     });
 
+    it('should delete the invitation and audit a masked email when removing a pending invitation', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const manager = await EventManagerFactory.create({
+        event: { connect: { id: event.id } },
+        role: 'VIEWER',
+        invitation: {
+          create: InvitationFactory.build({ email: 'jane.doe@example.com' }),
+        },
+      });
+
+      await request()
+        .delete(`/api/v1/events/${event.id}/managers/${manager.id}`)
+        .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expect(204);
+
+      const invitation = await prisma.invitation.findUnique({
+        where: { id: manager.invitationId ?? '' },
+      });
+      const entry = await prisma.auditLog.findFirst({
+        where: { entityId: manager.id, action: 'deleted' },
+      });
+
+      expect(invitation).toBeNull();
+      expect(entry?.changes).toEqual({
+        context: { role: 'VIEWER' },
+        subjectHint: 'j***@example.com',
+      });
+    });
+
     it('should respond with `400` status code when user is the last manager of a event', async () => {
       const { event, accessToken, manager } =
         await createEventWithManagerAndToken();
