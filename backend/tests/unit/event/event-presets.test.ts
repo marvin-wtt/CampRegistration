@@ -7,6 +7,7 @@ import {
   getEventPreset,
 } from '#app/event/presets/index';
 import tableTemplateValidation from '#app/tableTemplate/table-template.validation';
+import paymentMessageTemplates from '#app/event/presets/paymentMessageTemplates';
 
 const PRESETS = EVENT_PRESET_NAMES;
 const TRANSLATED_KEYS = ['en', 'de', 'fr', 'pl', 'cs', 'es', 'default'];
@@ -177,7 +178,10 @@ describe('getEventPreset', () => {
 });
 
 describe('defaultMessageTemplatesForCountries', () => {
-  const TRIGGERS = Object.keys(EVENT_PRESETS.general.messageTemplates);
+  const TRIGGERS = [
+    ...Object.keys(EVENT_PRESETS.general.messageTemplates),
+    ...Object.keys(paymentMessageTemplates),
+  ];
 
   it.each(PRESETS)('creates every trigger for every country (%s)', (preset) => {
     const templates = defaultMessageTemplatesForCountries(['de', 'fr'], preset);

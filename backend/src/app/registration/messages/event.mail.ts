@@ -41,7 +41,7 @@ export class RegistrationEventMessage extends RegistrationTemplateMessage {
     await this.sendMany(payloads);
   }
 
-  private static async payloadsFor(
+  protected static async payloadsFor(
     this: typeof RegistrationEventMessage,
     event: Event,
     registration: Registration,

@@ -29,6 +29,8 @@ import { useOrganizationService } from '@/services/OrganizationService';
 import { useOrganizationMemberService } from '@/services/OrganizationMemberService';
 import { useTranslationService } from '@/services/TranslationService';
 import { useAuditService } from '@/services/AuditService';
+import { usePaymentService } from '@/services/PaymentService';
+import { usePaymentAccountService } from '@/services/PaymentAccountService';
 
 export function useAPIService() {
   return {
@@ -62,6 +64,8 @@ export function useAPIService() {
     ...useChoreService(),
     ...useTranslationService(),
     ...useAuditService(),
+    ...usePaymentService(),
+    ...usePaymentAccountService(),
   };
 }
 
