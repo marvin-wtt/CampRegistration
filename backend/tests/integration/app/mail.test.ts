@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { MailBase } from '#core/mail/mail.base.js';
-import { NoOpMailer } from '#core/mail/noop.mailer.js';
+import { NoOpMailer } from '#core/mail/drivers/noop.mailer.js';
 import { MailFactory } from '#core/mail/mail.factory.js';
 import { resolve } from '#core/ioc/container.js';
 import { MailService } from '#core/mail/mail.service.js';

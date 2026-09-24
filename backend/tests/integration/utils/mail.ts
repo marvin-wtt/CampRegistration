@@ -1,6 +1,6 @@
 import type { BuiltMail } from '#core/mail/mail.types';
 import { expect } from 'vitest';
-import { NoOpMailer } from '#core/mail/noop.mailer';
+import { NoOpMailer } from '#core/mail/drivers/noop.mailer';
 
 export const mailer = NoOpMailer.prototype;
 

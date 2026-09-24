@@ -172,6 +172,24 @@ export const eventWithMaxParticipantsInternational = {
   ]),
 };
 
+export const eventWithMaxParticipantsSharedInternational = {
+  countries: ['de', 'fr'],
+  maxParticipants: 5,
+  form: createForm([
+    {
+      name: 'first_name',
+      type: 'text',
+      isRequired: true,
+    },
+    {
+      name: 'country',
+      type: 'text',
+      eventDataType: 'country',
+      isRequired: true,
+    },
+  ]),
+};
+
 export const eventWithAddress = {
   countries: ['de', 'fr'],
   maxParticipants: {

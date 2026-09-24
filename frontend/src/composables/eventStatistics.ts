@@ -112,7 +112,7 @@ export function useEventStatistics() {
 
   const capacity = computed(() => ({
     max: sumTranslatableNumber(eventDetailsStore.data?.maxParticipants),
-    free: sumTranslatableNumber(eventDetailsStore.data?.freePlaces),
+    free: eventDetailsStore.data?.freePlacesTotal,
   }));
 
   /**

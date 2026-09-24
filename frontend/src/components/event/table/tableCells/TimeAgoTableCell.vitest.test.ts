@@ -12,8 +12,9 @@ installQuasarPlugin();
 
 vi.mock('vue-i18n', () => ({
   useI18n: () => ({
-    t: (key: string, n: number) => `${n} ${key}`,
+    t: (key: string) => key,
     d: (val: string) => `${val}`,
+    locale: { value: 'en' },
   }),
 }));
 
@@ -73,6 +74,7 @@ const createEvent = (
   price: 50,
   location: 'Test Location',
   freePlaces: 10,
+  freePlacesTotal: 10,
   registrationStatus: 'closed' as const,
   logo: null,
   form: {} as EventDetails['form'],
@@ -95,7 +97,7 @@ describe('TimeAgoTableCell', () => {
     });
   });
 
-  it('correctly shows seconds ago', () => {
+  it('correctly shows less than a minute ago', () => {
     // 3 seconds ago
     const threeSecAgo = new Date(new Date().getTime() - 3000).toISOString();
 
@@ -107,7 +109,7 @@ describe('TimeAgoTableCell', () => {
       },
     });
 
-    expect(wrapper.text().startsWith('3 second')).toBe(true);
+    expect(wrapper.text()).toContain('lessThanMinute');
   });
 
   it('correctly shows minutes ago', () => {
@@ -123,7 +125,7 @@ describe('TimeAgoTableCell', () => {
         props: createCellProps({ value: fiveMinAgo }),
       },
     });
-    expect(wrapper.text().startsWith('5 minute')).toBe(true);
+    expect(wrapper.text()).toBe('5 minutes ago');
   });
 
   it('correctly shows weeks ago', () => {
@@ -140,7 +142,7 @@ describe('TimeAgoTableCell', () => {
       },
     });
 
-    expect(wrapper.text().startsWith('2 week')).toBe(true);
+    expect(wrapper.text()).toBe('2 weeks ago');
   });
 
   it('correctly shows months ago', () => {
@@ -156,7 +158,7 @@ describe('TimeAgoTableCell', () => {
       },
     });
 
-    expect(wrapper.text()).toBe('4 month');
+    expect(wrapper.text()).toBe('4 months ago');
   });
 
   it('correctly shows years ago', () => {
@@ -172,7 +174,56 @@ describe('TimeAgoTableCell', () => {
       },
     });
 
-    expect(wrapper.text()).toBe('8 year');
+    expect(wrapper.text()).toBe('8 years ago');
+  });
+
+  it('correctly shows less than a minute for near-future dates', () => {
+    // 3 seconds in the future
+    const threeSecFromNow = new Date(new Date().getTime() + 3000).toISOString();
+
+    const wrapper = mount(TimeAgoTableCell, {
+      props: {
+        event: createEvent(),
+        printing: false,
+        props: createCellProps({ value: threeSecFromNow }),
+      },
+    });
+
+    expect(wrapper.text()).toContain('inLessThanMinute');
+  });
+
+  it('correctly shows minutes for near-future dates instead of "less than a minute"', () => {
+    // 5 minutes in the future
+    const fiveMinFromNow = new Date(
+      new Date().getTime() + 5 * 60 * 1000,
+    ).toISOString();
+
+    const wrapper = mount(TimeAgoTableCell, {
+      props: {
+        event: createEvent(),
+        printing: false,
+        props: createCellProps({ value: fiveMinFromNow }),
+      },
+    });
+
+    expect(wrapper.text()).toBe('in 5 minutes');
+  });
+
+  it('correctly shows years for far-future dates instead of "less than a minute"', () => {
+    // 8 years in the future
+    const eightYearsFromNow = new Date(
+      new Date().getTime() + 8 * 365 * 24 * 60 * 60 * 1000,
+    ).toISOString();
+
+    const wrapper = mount(TimeAgoTableCell, {
+      props: {
+        event: createEvent(),
+        printing: false,
+        props: createCellProps({ value: eightYearsFromNow }),
+      },
+    });
+
+    expect(wrapper.text()).toBe('in 8 years');
   });
 
   it('renders plain date in tooltip', () => {

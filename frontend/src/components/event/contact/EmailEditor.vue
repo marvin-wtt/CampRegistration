@@ -378,7 +378,10 @@ function toggleHighLightColor() {
 
 const editor = useEditor({
   extensions: [
-    StarterKit,
+    StarterKit.configure({
+      // Handled separately below so it can be disabled for singleLine.
+      hardBreak: false,
+    }),
     Document.extend({
       content: singleLine ? 'block' : 'block+',
     }),
@@ -391,7 +394,8 @@ const editor = useEditor({
       multicolor: true,
     }),
     TextStyleKit,
-    HardBreak,
+    // A single-line field must never contain a line break.
+    ...(singleLine ? [] : [HardBreak]),
     Variable.configure({
       variables: variables.value,
     }),
@@ -666,6 +670,10 @@ function onAddToken() {
   border-radius: 20px;
   background: var(--md3-surface-container);
   z-index: 1;
+  /* The format buttons outgrow a phone; scroll them rather than overflow the
+     viewport and push the whole page sideways. */
+  max-width: calc(100vw - 24px);
+  overflow-x: auto;
 }
 
 /* Transitions */
