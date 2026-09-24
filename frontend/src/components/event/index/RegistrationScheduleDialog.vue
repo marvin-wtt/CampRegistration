@@ -73,8 +73,10 @@
             v-model="closesAt"
             class="col"
             :label="t('field.closes')"
-            :error="hasOrderError"
-            :error-message="t('validation.order')"
+            :error="hasOrderError || hasMissingCloseError"
+            :error-message="
+              hasOrderError ? t('validation.order') : t('validation.required')
+            "
             clearable
             hide-bottom-space
             outlined
@@ -100,7 +102,9 @@
         </div>
 
         <div class="registration-dialog__section-hint">
-          {{ t('schedule.hint') }}
+          {{
+            hasMissingCloseError ? t('schedule.closeHint') : t('schedule.hint')
+          }}
         </div>
       </q-card-section>
 
@@ -121,7 +125,7 @@
           unelevated
           rounded
           no-caps
-          :disable="hasOrderError"
+          :disable="hasOrderError || hasMissingCloseError"
           @click="onSave"
         />
       </q-card-actions>
@@ -162,6 +166,10 @@ const hasOrderError = computed<boolean>(() => {
     return false;
   }
   return new Date(opensAt.value) >= new Date(closesAt.value);
+});
+
+const hasMissingCloseError = computed<boolean>(() => {
+  return !!opensAt.value && !closesAt.value;
 });
 
 const currentlyOpen = computed<boolean>(() => {
@@ -233,7 +241,7 @@ const canOpenNow = computed<boolean>(() => !currentlyOpen.value);
 const canCloseNow = computed<boolean>(() => preview.value.kind !== 'closed');
 
 function onSave() {
-  if (hasOrderError.value) {
+  if (hasOrderError.value || hasMissingCloseError.value) {
     return;
   }
   onDialogOK({
@@ -297,11 +305,13 @@ quick:
   close_now: 'Close now'
 schedule:
   hint: 'Leave a field empty to leave that side open-ended.'
+  closeHint: 'Set a closing date, or registration will stay open indefinitely.'
 field:
   opens: 'Opens at'
   closes: 'Closes at'
 validation:
   order: 'Closing time must be after opening time'
+  required: 'A closing date is required once an opening date is set'
 preview:
   open: 'Registration is open'
   open_until: 'Open until {date}'
@@ -320,11 +330,13 @@ quick:
   close_now: 'Jetzt schließen'
 schedule:
   hint: 'Feld leer lassen, um diese Seite offen zu lassen.'
+  closeHint: 'Lege einen Schließzeitpunkt fest, sonst bleibt die Anmeldung unbegrenzt offen.'
 field:
   opens: 'Öffnet am'
   closes: 'Schließt am'
 validation:
   order: 'Der Schließzeitpunkt muss nach dem Öffnungszeitpunkt liegen'
+  required: 'Sobald ein Öffnungszeitpunkt gesetzt ist, ist auch ein Schließzeitpunkt erforderlich'
 preview:
   open: 'Anmeldung ist offen'
   open_until: 'Offen bis {date}'
@@ -343,11 +355,13 @@ quick:
   close_now: 'Fermer maintenant'
 schedule:
   hint: 'Laissez un champ vide pour ne pas limiter ce côté.'
+  closeHint: "Définissez une date de fermeture, sinon l'inscription restera ouverte indéfiniment."
 field:
   opens: 'Ouvre le'
   closes: 'Ferme le'
 validation:
   order: "L'heure de fermeture doit être postérieure à l'heure d'ouverture"
+  required: "Une date de fermeture est requise dès qu'une date d'ouverture est définie"
 preview:
   open: 'Les inscriptions sont ouvertes'
   open_until: "Ouvert jusqu'au {date}"
@@ -366,11 +380,13 @@ quick:
   close_now: 'Zamknij teraz'
 schedule:
   hint: 'Pozostaw pole puste, aby nie ograniczać tej strony.'
+  closeHint: 'Ustaw datę zamknięcia, inaczej rejestracja pozostanie otwarta bezterminowo.'
 field:
   opens: 'Otwiera się'
   closes: 'Zamyka się'
 validation:
   order: 'Czas zamknięcia musi być późniejszy niż czas otwarcia'
+  required: 'Po ustawieniu daty otwarcia wymagana jest również data zamknięcia'
 preview:
   open: 'Rejestracja jest otwarta'
   open_until: 'Otwarte do {date}'
@@ -389,11 +405,13 @@ quick:
   close_now: 'Zavřít nyní'
 schedule:
   hint: 'Ponechte pole prázdné, pokud tuto stranu nechcete omezit.'
+  closeHint: 'Nastavte datum uzavření, jinak zůstane registrace otevřená navždy.'
 field:
   opens: 'Otevírá se'
   closes: 'Uzavírá se'
 validation:
   order: 'Čas uzavření musí být po čase otevření'
+  required: 'Jakmile je nastaveno datum otevření, je vyžadováno i datum uzavření'
 preview:
   open: 'Registrace je otevřená'
   open_until: 'Otevřeno do {date}'
