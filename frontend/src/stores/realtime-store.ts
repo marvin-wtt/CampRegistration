@@ -159,10 +159,15 @@ export const useRealtimeStore = defineStore('realtime', () => {
     // A permanent close is almost always an expired access-token cookie. Renew
     // it through the same refresh path axios uses before reopening; otherwise
     // the connect guard rejects us again and EventSource gives up for good.
-    // (If the session is truly gone, the API layer redirects to login.)
-    await useAuthStore().refreshTokens();
+    // (If the session is truly gone, the auth store redirects to login.)
+    const outcome = await useAuthStore().refreshTokens();
     // A event switch or close may have happened while the refresh was in flight.
-    if (currentEventId !== eventId) {
+    if (currentEventId !== eventId || outcome === 'unauthenticated') {
+      return;
+    }
+    // The server can't answer yet; a new stream would only be rejected again
+    if (outcome === 'unavailable') {
+      scheduleReconnect();
       return;
     }
     source?.close();

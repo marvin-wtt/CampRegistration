@@ -11,10 +11,23 @@ import { useServiceHandler } from '@/composables/serviceHandler';
 import { useProfileStore } from '@/stores/profile-store';
 import { createInitialAdmin } from '@/services/SetupService';
 import { isCustomAxiosError } from '@/services/AuthService';
+import { isRefreshFailureAuthoritative } from '@/services/authRefreshToken';
+import { retryAfterMs } from '@/utils/retryAfter';
+import { computed, ref } from 'vue';
 import { Dialog } from 'quasar';
 import TwoFactorSuggestionDialog from '@/components/settings/twoFactor/TwoFactorSuggestionDialog.vue';
 
 const TWO_FACTOR_SUGGESTION_DISMISSED_KEY = 'two-factor-suggestion-dismissed';
+const BASE_RETRY_DELAY_MS = 5_000;
+const MAX_RETRY_DELAY_MS = 60_000;
+
+// 'unknown' until the first refresh settles, or while the server can't answer.
+export type AuthStatus = 'unknown' | 'authenticated' | 'unauthenticated';
+export type RefreshOutcome = 'authenticated' | 'unauthenticated' | 'unavailable';
+
+type RefreshResult =
+  | { outcome: 'authenticated' | 'unauthenticated' }
+  | { outcome: 'unavailable'; error: unknown };
 
 export const useAuthStore = defineStore('auth', () => {
   const apiService = useAPIService();
@@ -30,27 +43,31 @@ export const useAuthStore = defineStore('auth', () => {
     withResultNotification,
     errorOnFailure,
     checkNotNullWithError,
+    showErrorNotification,
   } = useServiceHandler<void>('auth');
+
+  const status = ref<AuthStatus>('unknown');
 
   let partialAuthToken: string | undefined = undefined;
 
-  let accessTokenTimer: NodeJS.Timeout | null = null;
+  let accessTokenTimer: ReturnType<typeof setTimeout> | undefined;
+  let retryTimer: ReturnType<typeof setTimeout> | undefined;
+  let retryAttempt = 0;
 
+  // Only a confirmed logout blocks navigation; while 'unknown', the layout's
+  // init() decides once the session state is known.
   router.beforeEach((to) => {
-    if (
-      !to.meta.auth ||
-      isLoading.value ||
-      profileStore.loading ||
-      profileStore.user
-    ) {
+    if (!to.meta.auth || status.value !== 'unauthenticated') {
       return;
     }
 
-    return buildLoginRoute();
+    return buildLoginRoute(to.fullPath);
   });
 
-  // Redirect to the login page on unauthorized error
+  // An API request failed with 401 and the refresh confirmed the session is gone
   apiService.setOnUnauthenticated(() => {
+    status.value = 'unauthenticated';
+
     if (route.name === 'login' || route.fullPath.startsWith('/login')) {
       return;
     }
@@ -58,29 +75,47 @@ export const useAuthStore = defineStore('auth', () => {
     return redirectToLogin();
   });
 
-  apiService.setOnTokenRefresh(handleTokenRefresh);
+  apiService.setOnTokenRefresh(scheduleProactiveRefresh);
+
+  bus.on('login', () => {
+    status.value = 'authenticated';
+    stopRetry();
+  });
+
+  bus.on('logout', () => {
+    status.value = 'unauthenticated';
+    stopRetry();
+    stopProactiveRefresh();
+  });
 
   async function redirectToLogin() {
-    return router.push(buildLoginRoute());
+    return router.push(buildLoginRoute(route.fullPath));
   }
 
-  function buildLoginRoute() {
+  function buildLoginRoute(origin: string) {
     return {
       name: 'login',
       query: {
-        origin: encodeURIComponent(route.fullPath),
+        origin: encodeURIComponent(origin),
       },
       replace: false,
     };
   }
 
+  // Clears form state only; the session timers outlive the auth pages
   function reset() {
-    if (accessTokenTimer != null) {
-      clearTimeout(accessTokenTimer);
-      accessTokenTimer = null;
-    }
-
     resetDefault();
+  }
+
+  function stopRetry() {
+    clearTimeout(retryTimer);
+    retryTimer = undefined;
+    retryAttempt = 0;
+  }
+
+  function stopProactiveRefresh() {
+    clearTimeout(accessTokenTimer);
+    accessTokenTimer = undefined;
   }
 
   async function init(forceRefresh = false) {
@@ -88,16 +123,15 @@ export const useAuthStore = defineStore('auth', () => {
       return;
     }
 
-    const authenticated = await refreshTokens();
-    if (!authenticated) {
-      // Redirect, in case the user is not authenticated
-      if (route.meta.auth) {
-        await redirectToLogin();
-      }
+    const result = await tryRefresh();
+    if (result.outcome === 'unavailable') {
+      retryLater(() => init(), result.error);
       return;
     }
 
-    await profileStore.fetchProfile();
+    if (result.outcome === 'authenticated') {
+      await profileStore.fetchProfile();
+    }
   }
 
   async function login(
@@ -167,7 +201,7 @@ export const useAuthStore = defineStore('auth', () => {
   async function handleAuthentication(auth: Authentication) {
     bus.emit('login', auth.profile);
 
-    handleTokenRefresh(auth.tokens);
+    scheduleProactiveRefresh(auth.tokens);
 
     // Redirect to origin or home route
     const destination =
@@ -202,40 +236,83 @@ export const useAuthStore = defineStore('auth', () => {
     });
   }
 
-  async function refreshTokens(): Promise<boolean> {
-    isLoading.value = true;
-
-    // The underlying network call is deduped in AuthService itself, so
-    // concurrent callers (proactive timer, SSE-resume, 401 retry) always
-    // share a single in-flight request.
-    return apiService
-      .refreshTokens()
-      .then(() => true)
-      .catch(() => false)
-      .finally(() => {
-        isLoading.value = false;
-      });
+  async function refreshTokens(): Promise<RefreshOutcome> {
+    return (await tryRefresh()).outcome;
   }
 
-  function handleTokenRefresh(tokens: AuthTokens) {
+  // Only a 400/401 from the refresh endpoint proves the session is gone; a
+  // 429, 5xx or network error leaves the status untouched.
+  async function tryRefresh(): Promise<RefreshResult> {
+    isLoading.value = true;
+
+    try {
+      // Deduped in AuthService, so concurrent callers share one request
+      await apiService.refreshTokens();
+      status.value = 'authenticated';
+      // A pending init() retry still has to load the profile, so keep its timer
+      retryAttempt = 0;
+
+      return { outcome: 'authenticated' };
+    } catch (error) {
+      if (!isRefreshFailureAuthoritative(error)) {
+        return { outcome: 'unavailable', error };
+      }
+
+      status.value = 'unauthenticated';
+      stopRetry();
+      if (route.meta.auth) {
+        await redirectToLogin();
+      }
+
+      return { outcome: 'unauthenticated' };
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  function retryLater(task: () => Promise<unknown>, error: unknown) {
+    if (retryAttempt === 0) {
+      showErrorNotification('refresh');
+    }
+
+    const delay =
+      retryAfterMs(error) ??
+      Math.min(BASE_RETRY_DELAY_MS * 2 ** retryAttempt, MAX_RETRY_DELAY_MS);
+    retryAttempt++;
+
+    clearTimeout(retryTimer);
+    retryTimer = setTimeout(() => {
+      retryTimer = undefined;
+      void task();
+    }, delay);
+  }
+
+  async function refreshInBackground() {
+    const result = await tryRefresh();
+    if (result.outcome === 'unavailable') {
+      retryLater(refreshInBackground, result.error);
+    }
+  }
+
+  function scheduleProactiveRefresh(tokens: AuthTokens) {
     if (tokens.refresh === undefined) {
       return;
     }
 
+    // Every refresh path lands here, so replace the pending timer
+    stopProactiveRefresh();
+
     const expires = new Date(tokens.access.expires);
-    const now = Date.now();
-    const refreshTime = expires.getTime() - now - 1000 * 60;
+    const refreshTime = expires.getTime() - Date.now() - 1000 * 60;
     accessTokenTimer = setTimeout(() => {
-      // eslint-disable-next-line no-console
-      refreshTokens().catch(console.error);
+      accessTokenTimer = undefined;
+      void refreshInBackground();
     }, refreshTime);
   }
 
   async function logout(): Promise<void> {
     await withErrorNotification('logout', async () => {
       await apiService.logout();
-
-      reset();
 
       bus.emit('logout');
     });
@@ -330,6 +407,7 @@ export const useAuthStore = defineStore('auth', () => {
   return {
     error,
     loading: isLoading,
+    status: computed(() => status.value),
     init,
     reset,
     refreshTokens,

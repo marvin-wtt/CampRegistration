@@ -1,4 +1,7 @@
 export default {
+  refresh: {
+    error: 'Relaci se nepodařilo obnovit. Zkouším znovu…',
+  },
   logout: {
     error: 'Odhlášení se nezdařilo',
   },

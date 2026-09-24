@@ -28,7 +28,7 @@ interface RetryOptions {
 // auth failure. Anything else (network error, timeout, 5xx from the dev proxy
 // while the backend is restarting, ...) is a transport/server hiccup that
 // says nothing about auth state.
-function isRefreshFailureAuthoritative(error: unknown): boolean {
+export function isRefreshFailureAuthoritative(error: unknown): boolean {
   return (
     isAxiosError(error) &&
     (error.response?.status === 400 || error.response?.status === 401)

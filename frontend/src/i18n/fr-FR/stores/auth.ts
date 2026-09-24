@@ -1,4 +1,7 @@
 export default {
+  refresh: {
+    error: 'Impossible de restaurer votre session. Nouvelle tentative…',
+  },
   logout: {
     error: 'Échec de la déconnexion',
   },
