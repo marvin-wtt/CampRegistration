@@ -175,6 +175,31 @@ const store = z.object({
           });
         }
       }
+
+      // An opening date with no closing date leaves registration open forever.
+      if (val.registrationOpensAt && !val.registrationClosesAt) {
+        const key = 'registrationClosesAt';
+        ctx.addIssue({
+          code: 'custom',
+          message: 'Closing date is required once an opening date is set',
+          path: [key],
+          input: val[key],
+        });
+      }
+
+      if (
+        val.registrationOpensAt &&
+        val.registrationClosesAt &&
+        val.registrationOpensAt >= val.registrationClosesAt
+      ) {
+        const key = 'registrationClosesAt';
+        ctx.addIssue({
+          code: 'custom',
+          message: 'Closing date must be after opening date',
+          path: [key],
+          input: val[key],
+        });
+      }
     }),
 });
 
@@ -255,6 +280,53 @@ const update = (event: Event) =>
               input: val[keyMin],
             });
           }
+        }
+
+        // An opening date with no closing date leaves registration open
+        // forever, and a closing date before the opening date is an
+        // inverted window either way — both fall back to the event's
+        // current value for whichever side this request doesn't touch, so
+        // a request that touches only one side is still checked against
+        // the other's real, already-configured value.
+        const touchesOpensAt = 'registrationOpensAt' in val;
+        const touchesClosesAt = 'registrationClosesAt' in val;
+        const effectiveOpensAt = touchesOpensAt
+          ? val.registrationOpensAt
+          : event.registrationOpensAt;
+        const effectiveClosesAt = touchesClosesAt
+          ? val.registrationClosesAt
+          : event.registrationClosesAt;
+
+        // Only triggered by a request that actually sets an opening date —
+        // a partial update that never touches it isn't the one creating the
+        // open-ended state, so it can't be blamed for a closing date the
+        // event was already missing.
+        if (touchesOpensAt && val.registrationOpensAt && !effectiveClosesAt) {
+          const key = 'registrationClosesAt';
+          ctx.addIssue({
+            code: 'custom',
+            message: 'Closing date is required once an opening date is set',
+            path: [key],
+            input: val[key],
+          });
+        }
+
+        // Only checked when this request touches at least one side of the
+        // window — an unrelated update isn't responsible for an ordering
+        // problem in data it never touched.
+        if (
+          (touchesOpensAt || touchesClosesAt) &&
+          effectiveOpensAt &&
+          effectiveClosesAt &&
+          effectiveOpensAt >= effectiveClosesAt
+        ) {
+          const key = 'registrationClosesAt';
+          ctx.addIssue({
+            code: 'custom',
+            message: 'Closing date must be after opening date',
+            path: [key],
+            input: val[key],
+          });
         }
       }),
   });

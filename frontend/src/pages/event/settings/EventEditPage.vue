@@ -364,6 +364,10 @@
                 :label="t('field.registrationClosesAt')"
                 :rules="[
                   (val?: string | null) =>
+                    !!val ||
+                    !event?.registrationOpensAt ||
+                    t('validation.registrationClosesAt.required'),
+                  (val?: string | null) =>
                     !val ||
                     !event?.registrationOpensAt ||
                     new Date(val) > new Date(event.registrationOpensAt) ||
@@ -677,6 +681,7 @@ validation:
     before_close: 'Opening time must be before closing time'
   registrationClosesAt:
     after_open: 'Closing time must be after opening time'
+    required: 'A closing time is required once an opening time is set'
 
 confirmation_mode:
   automatic: 'Automatic'
@@ -759,6 +764,7 @@ validation:
     before_close: 'Der Öffnungszeitpunkt muss vor dem Schließzeitpunkt liegen'
   registrationClosesAt:
     after_open: 'Der Schließzeitpunkt muss nach dem Öffnungszeitpunkt liegen'
+    required: 'Sobald ein Öffnungszeitpunkt gesetzt ist, ist auch ein Schließzeitpunkt erforderlich'
 
 confirmation_mode:
   automatic: 'Automatisch'
@@ -844,6 +850,7 @@ validation:
     before_close: "L'heure d'ouverture doit être antérieure à l'heure de fermeture"
   registrationClosesAt:
     after_open: "L'heure de fermeture doit être postérieure à l'heure d'ouverture"
+    required: "Une heure de fermeture est requise dès qu'une heure d'ouverture est définie"
 
 confirmation_mode:
   automatic: 'Automatique'
@@ -926,6 +933,7 @@ validation:
     before_close: 'Czas otwarcia musi być wcześniejszy niż czas zamknięcia'
   registrationClosesAt:
     after_open: 'Czas zamknięcia musi być późniejszy niż czas otwarcia'
+    required: 'Po ustawieniu czasu otwarcia wymagany jest również czas zamknięcia'
 
 confirmation_mode:
   automatic: 'Automatyczny'
@@ -1008,6 +1016,7 @@ validation:
     before_close: 'Čas otevření musí být před časem zavření'
   registrationClosesAt:
     after_open: 'Čas zavření musí být po čase otevření'
+    required: 'Jakmile je nastaven čas otevření, je vyžadován i čas zavření'
 
 confirmation_mode:
   automatic: 'Automatický'
