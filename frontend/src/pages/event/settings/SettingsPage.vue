@@ -134,6 +134,15 @@ const items = computed<SettingsItem[]>(() => [
     permission: 'event.files.view',
   },
   {
+    name: 'payments',
+    label: t('payments.label'),
+    description: t('payments.description'),
+    icon: 'payments',
+    color: 'secondary',
+    to: { name: 'management.event.settings.payments' },
+    permission: 'event.edit',
+  },
+  {
     name: 'privacy',
     label: t('privacy.label'),
     description: t('privacy.description'),
@@ -168,6 +177,9 @@ const filteredItems = computed<SettingsItem[]>(() => {
 </style>
 
 <i18n lang="yaml" locale="en">
+payments:
+  label: 'Payments'
+  description: 'Collect participation fees online and send payment reminders.'
 title: 'Settings'
 subtitle: 'Configure your event.'
 access:
@@ -194,6 +206,9 @@ privacy:
 </i18n>
 
 <i18n lang="yaml" locale="de">
+payments:
+  label: 'Zahlungen'
+  description: 'Teilnahmebeiträge online einziehen und Zahlungserinnerungen senden.'
 title: 'Einstellungen'
 subtitle: 'Konfiguriere deine Veranstaltung.'
 access:
@@ -220,6 +235,9 @@ privacy:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
+payments:
+  label: 'Paiements'
+  description: 'Encaisser les frais de participation en ligne et envoyer des rappels de paiement.'
 title: 'Paramètres'
 subtitle: 'Configurez votre événement.'
 access:
@@ -246,6 +264,9 @@ privacy:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
+payments:
+  label: 'Płatności'
+  description: 'Pobieraj opłaty za udział online i wysyłaj przypomnienia o płatności.'
 title: 'Ustawienia'
 subtitle: 'Skonfiguruj swoje wydarzenie.'
 access:
@@ -272,6 +293,9 @@ privacy:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
+payments:
+  label: 'Platby'
+  description: 'Vybírejte účastnické poplatky online a posílejte připomínky plateb.'
 title: 'Nastavení'
 subtitle: 'Nakonfigurujte svou akci.'
 access:

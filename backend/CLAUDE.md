@@ -225,6 +225,15 @@ Driver: `REALTIME_DRIVER` env (`redis`/`memory`); defaults to `redis` only when
 `QUEUE_DRIVER=redis`. Multi-instance deploys on other queue drivers must set
 `REALTIME_DRIVER=redis`.
 
+## Payments
+
+Organizations connect Mollie/Stripe; events opt in through the `payment`
+setting — full design in `docs/payments.md`. Money is integer minor units +
+`Event.currency`, never `Float`. Provider state only enters the ledger through
+`PaymentService.applySnapshot` after a re-fetch — never from a webhook body.
+Payment data is `event.payments.*` only (refunds: DIRECTOR); never add it to
+`ORGANIZATION_EVENT_PERMISSIONS`.
+
 ## Link previews (Open Graph)
 
 Crawlers never run the SPA, so `/events/:eventId` (and the legacy `/camps/:eventId`)

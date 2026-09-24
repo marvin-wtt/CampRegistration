@@ -35,6 +35,7 @@ export * from './NewsletterSubscriber.js';
 export * from './NewsletterMessage.js';
 
 export * from './Organization.js';
+export * from './Payment.js';
 export * from './OrganizationMember.js';
 
 // Types

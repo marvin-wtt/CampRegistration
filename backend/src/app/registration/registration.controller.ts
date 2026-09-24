@@ -18,6 +18,14 @@ import { BaseController } from '#core/base/BaseController';
 import { RealtimeService } from '#core/realtime/RealtimeService';
 import { inject } from 'inversify';
 import { isDeepStrictEqual } from 'node:util';
+import type { Event, Registration } from '#generated/prisma/client.js';
+import type { RegistrationCreatePaymentMeta } from '@camp-registration/common/entities';
+import logger from '#core/logger';
+import { describeError } from '#utils/errors';
+import { PaymentService } from '#app/payment/payment.service';
+import { PaymentRequestedMessage } from '#app/payment/messages/requested.mail';
+import { paymentPageUrl } from '#app/payment/payment-link';
+import type { EventWithFreePlaces } from '#app/event/event.types';
 
 export class RegistrationController extends BaseController {
   constructor(
@@ -25,8 +33,79 @@ export class RegistrationController extends BaseController {
     private readonly registrationService: RegistrationService,
     @inject(RealtimeService)
     private readonly realtimeService: RealtimeService,
+    @inject(PaymentService)
+    private readonly paymentService: PaymentService,
   ) {
     super();
+  }
+
+  /**
+   * Emails the payment link once a registration that owes money is accepted,
+   * for events that charge after acceptance — or charge at registration but
+   * placed this person on the waitlist, where nothing was charged up front.
+   */
+  private async requestPaymentOnAcceptance(
+    event: Event,
+    registration: Registration,
+  ): Promise<void> {
+    if (!registration.amountDue || registration.paymentRequestedAt) {
+      return;
+    }
+
+    const settings = await this.paymentService.getSettings(event.id);
+    if (!settings.enabled) {
+      return;
+    }
+
+    await PaymentRequestedMessage.enqueueFor(event, registration);
+    await this.paymentService.markRequested(registration.id);
+  }
+
+  /**
+   * For events that charge at registration: open a checkout right away so
+   * the submitter can be redirected. Never fails the registration itself —
+   * the participant can still pay later through the payment page.
+   */
+  private async paymentMetaForNewRegistration(
+    event: EventWithFreePlaces,
+    registration: Registration,
+  ): Promise<RegistrationCreatePaymentMeta | null> {
+    if (!registration.amountDue) {
+      return null;
+    }
+
+    const settings = await this.paymentService.getSettings(event.id);
+    if (!settings.enabled) {
+      return null;
+    }
+
+    const pageUrl = paymentPageUrl(event.id, registration.id);
+
+    if (settings.timing === 'ACCEPTANCE') {
+      if (registration.status === 'ACCEPTED') {
+        await this.requestPaymentOnAcceptance(event, registration);
+      }
+      return { checkoutUrl: null, pageUrl };
+    }
+
+    if (registration.status === 'WAITLISTED') {
+      return { checkoutUrl: null, pageUrl };
+    }
+
+    await this.paymentService.markRequested(registration.id);
+
+    try {
+      const { checkoutUrl } = await this.paymentService.startCheckout(
+        event,
+        registration,
+      );
+      return { checkoutUrl, pageUrl };
+    } catch (error) {
+      logger.warn(
+        `Could not open a checkout for registration ${registration.id}: ${describeError(error)}`,
+      );
+      return { checkoutUrl: null, pageUrl };
+    }
   }
 
   show(req: Request, res: Response) {
@@ -74,6 +153,11 @@ export class RegistrationController extends BaseController {
     // Notify contact email
     await RegistrationNotifyMessage.enqueue({ event, registration });
 
+    const payment = await this.paymentMetaForNewRegistration(
+      event,
+      registration,
+    );
+
     void this.realtimeService.emit(
       event.id,
       'registration',
@@ -81,9 +165,12 @@ export class RegistrationController extends BaseController {
       'created',
     );
 
-    res
-      .status(httpStatus.CREATED)
-      .resource(new RegistrationResource(registration));
+    const resource = new RegistrationResource(registration);
+    if (payment) {
+      resource.withMeta({ payment });
+    }
+
+    res.status(httpStatus.CREATED).resource(resource);
   }
 
   async update(req: Request, res: Response) {
@@ -132,6 +219,13 @@ export class RegistrationController extends BaseController {
         registration.status === 'ACCEPTED'
       ) {
         await RegistrationAcceptedMessage.enqueueFor(event, registration);
+      }
+
+      if (
+        previousRegistration.status !== 'ACCEPTED' &&
+        registration.status === 'ACCEPTED'
+      ) {
+        await this.requestPaymentOnAcceptance(event, registration);
       }
     }
 

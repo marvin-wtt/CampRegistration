@@ -444,7 +444,7 @@
             input-class="text-right"
             outlined
             rounded
-            suffix="€"
+            :suffix="currencySymbol(data.currency ?? 'EUR', locale)"
             type="number"
           >
             <template #before>
@@ -481,6 +481,7 @@
 </template>
 
 <script setup lang="ts">
+import { currencySymbol } from '@camp-registration/common/utils';
 import {
   date as dateUtil,
   type QSelectOption,
@@ -529,7 +530,7 @@ const loading = ref<boolean>(false);
 const data = ref<EventCreateData>({
   ...DEFAULT_DATA,
 });
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const { to } = useObjectTranslation();
 
 const organizationsStore = useOrganizationsStore();

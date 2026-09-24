@@ -24,11 +24,11 @@
             font-size="44px"
             :color="badgeColor"
             :text-color="badgeTextColor"
-            :icon="submitState !== 'saving' ? badgeIcon : undefined"
+            :icon="!isBusy ? badgeIcon : undefined"
             class="registration-submit-status__badge"
           >
             <q-spinner
-              v-if="submitState === 'saving'"
+              v-if="isBusy"
               size="40px"
               :thickness="4"
             />
@@ -54,10 +54,32 @@
         </q-card-section>
 
         <q-card-actions
+          v-if="submitState === 'redirecting' && payment?.checkoutUrl"
+          align="center"
+          class="q-pb-md"
+        >
+          <m-btn
+            primary
+            icon="payments"
+            :label="t('payment.continue')"
+            :href="payment.checkoutUrl"
+            data-test="registration-payment-continue"
+          />
+        </q-card-actions>
+
+        <q-card-actions
           v-if="submitState === 'success'"
           align="center"
           class="q-gutter-sm q-pb-md"
         >
+          <m-btn
+            v-if="payment && registrationStatus !== 'WAITLISTED'"
+            primary
+            icon="payments"
+            :label="t('payment.pay')"
+            :href="payment.pageUrl"
+            data-test="registration-payment-page"
+          />
           <m-btn
             primary
             icon="person_add"
@@ -111,6 +133,7 @@ import {
 import type {
   EventDetails,
   Registration,
+  RegistrationCreatePaymentMeta,
 } from '@camp-registration/common/entities';
 import { useAPIService } from '@/services/APIService';
 import { useErrorExtractor } from '@/composables/serviceHandler';
@@ -121,6 +144,12 @@ const { locale, t } = useI18n();
 const api = useAPIService();
 const { extractErrorText } = useErrorExtractor();
 
+/** A submit that also reports the payment step for the submitter. */
+export interface RegistrationSubmitResult {
+  registration: Registration;
+  payment: RegistrationCreatePaymentMeta | null;
+}
+
 interface Props {
   data?: object;
   eventDetails: EventDetails;
@@ -128,7 +157,7 @@ interface Props {
     id: string,
     formData: Record<string, unknown>,
     locale: string,
-  ) => Promise<Registration | void>;
+  ) => Promise<Registration | RegistrationSubmitResult | void>;
   uploadFileFn?: (file: File) => Promise<string>;
   moderation?: boolean;
   readonly?: boolean;
@@ -146,7 +175,12 @@ const emit = defineEmits<{
 
 // Submit lifecycle shown by the custom overlay. While it is non-null the
 // survey (including its own completed page) is hidden and this UI takes over.
-const submitState = ref<'saving' | 'success' | 'error' | null>(null);
+const submitState = ref<'saving' | 'redirecting' | 'success' | 'error' | null>(
+  null,
+);
+// Set when the new registration owes money: where to pay, and whether a
+// checkout is already waiting (then we redirect straight to it).
+const payment = ref<RegistrationCreatePaymentMeta | null>(null);
 const submitError = ref<string>();
 // The actual status of the registration just created, so the success panel
 // can reflect whether it was accepted outright, waitlisted, or left pending
@@ -166,6 +200,8 @@ const statusTitle = computed(() => {
   switch (submitState.value) {
     case 'saving':
       return t('submit.saving.title');
+    case 'redirecting':
+      return t('payment.redirecting.title');
     case 'success':
       switch (registrationStatus.value) {
         case 'PENDING':
@@ -186,6 +222,8 @@ const statusText = computed(() => {
   switch (submitState.value) {
     case 'saving':
       return t('submit.saving.text');
+    case 'redirecting':
+      return t('payment.redirecting.text');
     case 'success':
       switch (registrationStatus.value) {
         case 'PENDING':
@@ -237,6 +275,10 @@ const badgeTextColor = computed(() => {
       return 'on-primary-container';
   }
 });
+
+const isBusy = computed<boolean>(
+  () => submitState.value === 'saving' || submitState.value === 'redirecting',
+);
 
 const badgeIcon = computed(() => {
   if (submitState.value !== 'success') {
@@ -386,17 +428,28 @@ function createModel(eventId: string, form: object): SurveyModel {
     submitError.value = undefined;
     submitState.value = 'saving';
     registrationStatus.value = undefined;
+    payment.value = null;
 
     mapFileQuestionValues(sender);
 
     try {
-      const registration = await submitFn(
-        eventId,
-        sender.data ?? {},
-        sender.locale,
-      );
+      const result = await submitFn(eventId, sender.data ?? {}, sender.locale);
+      const registration =
+        result && 'registration' in result ? result.registration : result;
+      payment.value =
+        result && 'registration' in result ? result.payment : null;
       registrationStatus.value = registration?.status;
       submitted.value = true;
+
+      // The event charges at registration and a checkout is ready: go there
+      // directly. The card stays up with a manual link in case the browser
+      // blocks or delays the navigation.
+      if (payment.value?.checkoutUrl) {
+        submitState.value = 'redirecting';
+        window.location.assign(payment.value.checkoutUrl);
+        return;
+      }
+
       if (sender.showCompletePage && hasFormCompletedHtml) {
         // Reveal the form-defined completed page (survey-core shows it by
         // default; the survey element is unhidden as submitState clears).
@@ -501,6 +554,12 @@ defineExpose({
 </script>
 
 <i18n lang="yaml" locale="en">
+payment:
+  pay: 'Pay now'
+  continue: 'Continue to payment'
+  redirecting:
+    title: 'Registration saved'
+    text: 'Taking you to the payment page…'
 submit:
   saving:
     title: 'Submitting registration'
@@ -523,6 +582,12 @@ complete:
 </i18n>
 
 <i18n lang="yaml" locale="de">
+payment:
+  pay: 'Jetzt bezahlen'
+  continue: 'Weiter zur Zahlung'
+  redirecting:
+    title: 'Anmeldung gespeichert'
+    text: 'Du wirst zur Zahlungsseite weitergeleitet…'
 submit:
   saving:
     title: 'Anmeldung wird gesendet'
@@ -545,6 +610,12 @@ complete:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
+payment:
+  pay: 'Payer maintenant'
+  continue: 'Continuer vers le paiement'
+  redirecting:
+    title: 'Inscription enregistrée'
+    text: 'Redirection vers la page de paiement…'
 submit:
   saving:
     title: "Envoi de l'inscription"
@@ -567,6 +638,12 @@ complete:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
+payment:
+  pay: 'Zapłać teraz'
+  continue: 'Przejdź do płatności'
+  redirecting:
+    title: 'Zgłoszenie zapisane'
+    text: 'Przekierowujemy Cię na stronę płatności…'
 submit:
   saving:
     title: 'Wysyłanie rejestracji'
@@ -589,6 +666,12 @@ complete:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
+payment:
+  pay: 'Zaplatit nyní'
+  continue: 'Pokračovat k platbě'
+  redirecting:
+    title: 'Registrace uložena'
+    text: 'Přesměrováváme tě na platební stránku…'
 submit:
   saving:
     title: 'Odesílání registrace'

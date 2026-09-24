@@ -14,6 +14,7 @@ export interface Data {
   maxAge: number;
   location: Translatable | null;
   price: Translatable<number>;
+  currency?: string;
   freePlaces: Translatable<number> | null;
 }
 
@@ -38,6 +39,7 @@ export const setVariables = (model: SurveyModel, data: Data | undefined) => {
   model.setVariable('event.maxAge', data.maxAge);
   model.setVariable('event.location', data.location ? t(data.location) : null);
   model.setVariable('event.price', t(data.price));
+  model.setVariable('event.currency', data.currency ?? 'EUR');
   model.setVariable('event.freePlaces', data.freePlaces);
 
   model.setVariable('_validationEnabled', model.validationEnabled);

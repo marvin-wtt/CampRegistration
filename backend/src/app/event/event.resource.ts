@@ -35,6 +35,7 @@ export class EventResource extends JsonResource<
       endAt: utcCarrierToNaiveDateTime(this.data.endAt),
       timezone: this.data.timezone,
       price: this.data.price,
+      currency: this.data.currency,
       location: this.data.location ?? null,
       freePlaces: this.data.freePlaces,
       freePlacesTotal: this.data.freePlacesTotal,

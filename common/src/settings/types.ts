@@ -82,3 +82,32 @@ export interface ProgramPublicSettings {
    */
   allowPastDates: boolean;
 }
+
+/**
+ * Stored under `SETTING_KEYS.PAYMENT`. Whether and when participants pay
+ * online. Money lands in the owning organization's connected provider
+ * account; enabling this without one is allowed — checkout is what refuses.
+ */
+export interface PaymentSettings {
+  /**
+   * Whether new registrations owe a payment at all.
+   *
+   * @default false
+   */
+  enabled: boolean;
+  /**
+   * `REGISTRATION` redirects to checkout right after the form is submitted;
+   * `ACCEPTANCE` emails a payment link once the registration is accepted.
+   * Waitlisted registrations are never charged up front either way.
+   *
+   * @default 'ACCEPTANCE'
+   */
+  timing: 'REGISTRATION' | 'ACCEPTANCE';
+  /**
+   * Days after the payment request until a reminder is sent for an
+   * outstanding balance, repeating at that interval. `null` disables reminders.
+   *
+   * @default null
+   */
+  reminderAfterDays: number | null;
+}

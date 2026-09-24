@@ -26,8 +26,17 @@ export function createApp() {
   // parse urlencoded request body
   app.use(express.urlencoded({ extended: true }));
 
-  // Parse json body as json
-  app.use(express.json());
+  // Parse json body as json, keeping the raw bytes too: a provider signature
+  // (Stripe) is computed over the exact body received. Captured
+  // unconditionally rather than gated on the payment webhook path, so this
+  // stays agnostic of which module ends up wanting it.
+  app.use(
+    express.json({
+      verify: (req, _res, buf) => {
+        (req as { rawBody?: Buffer }).rawBody = buf;
+      },
+    }),
+  );
 
   // Use cookies
   app.use(cookieParser());

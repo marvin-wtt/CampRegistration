@@ -214,12 +214,20 @@
             </template>
           </div>
 
-          <!-- Right column: room + timeline -->
+          <!-- Right column: payments + timeline -->
           <div class="col-12 col-sm-6 timeline-column">
             <q-separator
               class="lt-sm"
               inset
             />
+
+            <template v-if="showPayments && event">
+              <registration-payments-section
+                :event-id="event.id"
+                :registration
+              />
+              <q-separator inset />
+            </template>
 
             <!-- Timeline -->
             <q-list>
@@ -278,6 +286,8 @@ import { useRegistrationsStore } from '@/stores/registration-store';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import RegistrationDialogHeader from '@/components/event/table/dialogs/RegistrationDialogHeader.vue';
 import RegistrationFormViewDialog from '@/components/event/table/dialogs/RegistrationFormViewDialog.vue';
+import RegistrationPaymentsSection from '@/components/event/payment/RegistrationPaymentsSection.vue';
+import { usePermissions } from '@/composables/permissions';
 
 defineEmits([...useDialogPluginComponent.emits]);
 
@@ -293,6 +303,15 @@ const { registrationId } = defineProps<{
 
 const { data: registrations } = storeToRefs(useRegistrationsStore());
 const { data: event } = storeToRefs(useEventDetailsStore());
+const { can } = usePermissions();
+
+// Only once the registration owes (or has paid) anything — events that
+// don't collect payments keep the dialog as it was.
+const showPayments = computed<boolean>(
+  () =>
+    can('event.payments.view') &&
+    registration.value?.payment.status !== 'NOT_REQUIRED',
+);
 
 // Reactive lookup instead of a static snapshot, so edits made elsewhere
 // (e.g. the table's inline cell editors) are reflected while the dialog is open.

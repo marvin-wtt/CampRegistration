@@ -306,6 +306,7 @@ const CUSTOM_FILES_FIELD_PREFIX = 'customFiles';
 // of an existing column.
 const META_FIELDS = [
   'status',
+  'payment',
   'room',
   'createdAt',
 ] as const satisfies readonly (keyof Omit<
@@ -383,6 +384,7 @@ watch(
     if (data.source === 'meta') {
       applyRenderer(field, {
         status: 'status',
+        payment: 'payment',
         room: 'room',
       });
       return;
@@ -631,6 +633,7 @@ field:
       no_dots: 'File field names must not contain dots'
     options:
       createdAt: 'Creation date'
+      payment: 'Payment'
       room: 'Room'
       status: 'Status'
     computed:
@@ -678,6 +681,7 @@ field:
     hint: 'Expression when to show the cell'
 
 cellType:
+  payment: 'Payment'
   status: 'Status'
   address: 'Address'
   age: 'Age'
@@ -743,6 +747,7 @@ field:
       no_dots: 'Dateifeld-Namen dürfen keine Punkte enthalten'
     options:
       createdAt: 'Erstellungsdatum'
+      payment: 'Zahlung'
       room: 'Raum'
       status: 'Status'
     computed:
@@ -790,6 +795,7 @@ field:
     hint: 'Ausdruck, wenn die Zelle angezeigt werden soll'
 
 cellType:
+  payment: 'Zahlung'
   status: 'Status'
   address: 'Adresse'
   age: 'Alter'
@@ -855,6 +861,7 @@ field:
       no_dots: 'Les noms de champs de fichier ne doivent pas contenir de points'
     options:
       createdAt: 'Date de création'
+      payment: 'Paiement'
       room: 'Salle'
       status: 'Statut'
     computed:
@@ -902,6 +909,7 @@ field:
     hint: "Expression lorsqu'il faut"
 
 cellType:
+  payment: 'Paiement'
   status: 'Statut'
   address: 'Adresse'
   age: 'Âge'
@@ -967,6 +975,7 @@ field:
       no_dots: 'Nazwy pól plików nie mogą zawierać kropek'
     options:
       createdAt: 'Data utworzenia'
+      payment: 'Płatność'
       room: 'Pokój'
       status: 'Status'
     computed:
@@ -1014,6 +1023,7 @@ field:
     hint: 'Wyrażenie określające, kiedy komórka ma być pokazana'
 
 cellType:
+  payment: 'Płatność'
   status: 'Status'
   address: 'Adres'
   age: 'Wiek'
@@ -1079,6 +1089,7 @@ field:
       no_dots: 'Názvy souborových polí nesmí obsahovat tečky'
     options:
       createdAt: 'Datum vytvoření'
+      payment: 'Platba'
       room: 'Pokoj'
       status: 'Stav'
     computed:
@@ -1126,6 +1137,7 @@ field:
     hint: 'Výraz určující, kdy se buňka má zobrazit'
 
 cellType:
+  payment: 'Platba'
   status: 'Stav'
   address: 'Adresa'
   age: 'Věk'

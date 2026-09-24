@@ -71,8 +71,7 @@ export default {
             cs: 'Cena',
             default: 'Price',
           },
-          description: '{event.price} €',
-          currency: 'EUR',
+          description: '{event.price} {event.currency}',
         },
         {
           type: 'role',

@@ -34,6 +34,8 @@ import type {
   LocalContext,
 } from '#views/emails/types';
 import { htmlToPreviewText } from '#utils/emailPreview';
+import { formatMoney } from '@camp-registration/common/utils';
+import { paymentPageUrl } from '#app/payment/payment-link';
 
 function dateToString(date: Date | string | null): string | null {
   if (date === null) {
@@ -70,6 +72,8 @@ export interface RegistrationTemplatePayload {
   message: RenderableMessage;
   email: string;
   changes?: RegistrationChange[];
+  /** Set for the `payment_refunded` trigger; minor units of the event currency. */
+  refund?: { amount: number; reason: string | null };
 }
 
 export class RegistrationTemplateMessage extends RegistrationMessage<RegistrationTemplatePayload> {
@@ -164,6 +168,40 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
     return '';
   }
 
+  /**
+   * The `payment.*` tokens, available in every registration template so a
+   * manager can put the payment link into e.g. the confirmation mail too.
+   * `null` when the registration owes nothing.
+   */
+  private paymentContext(): object | null {
+    const { registration, event } = this.payload;
+    if (registration.amountDue === null || registration.amountDue === 0) {
+      return null;
+    }
+
+    return {
+      amount: formatMoney(
+        registration.amountDue,
+        event.currency,
+        this.locale(),
+      ),
+      url: paymentPageUrl(event.id, registration.id),
+    };
+  }
+
+  /** The `refund.*` tokens of the `payment_refunded` trigger. */
+  private refundContext(): object | null {
+    const { refund, event } = this.payload;
+    if (!refund) {
+      return null;
+    }
+
+    return {
+      amount: formatMoney(refund.amount, event.currency, this.locale()),
+      reason: refund.reason,
+    };
+  }
+
   private context(format: 'html' | 'text'): object {
     const locale = this.payload.registration.country ?? this.locale();
     const event = this.payload.event;
@@ -203,6 +241,8 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
         updatedAt: dateToString(this.payload.registration.updatedAt),
         createdAt: dateToString(this.payload.registration.createdAt),
       },
+      payment: this.paymentContext(),
+      refund: this.refundContext(),
     };
   }
 

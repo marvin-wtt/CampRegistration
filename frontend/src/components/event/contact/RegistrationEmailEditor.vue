@@ -29,6 +29,17 @@ const { form, trigger } = defineProps<{
   trigger?: string | undefined;
 }>();
 
+// Payment tokens are only meaningful on messages that are actually about a
+// payment — showing them elsewhere would suggest they populate emails
+// (e.g. registration confirmation) that never reference a payment at all.
+const PAYMENT_TRIGGERS = [
+  'payment_requested',
+  'payment_received',
+  'payment_failed',
+  'payment_refunded',
+  'payment_reminder',
+];
+
 const eventTokens: (keyof EventDetails)[] = [
   'name',
   'organizer',
@@ -111,6 +122,48 @@ const tokens = computed<
         },
       ],
     },
+    ...(trigger && PAYMENT_TRIGGERS.includes(trigger)
+      ? [
+          {
+            value: 'payment',
+            label: t('token.payment.label'),
+            caption: t('token.payment.caption'),
+            items: [
+              {
+                value: 'amount',
+                label: t('token.payment.amount.label'),
+                caption: t('token.payment.amount.caption'),
+              },
+              {
+                value: 'url',
+                label: t('token.payment.url.label'),
+                caption: t('token.payment.url.caption'),
+              },
+            ],
+          },
+        ]
+      : []),
+    ...(trigger === 'payment_refunded'
+      ? [
+          {
+            value: 'refund',
+            label: t('token.refund.label'),
+            caption: t('token.refund.caption'),
+            items: [
+              {
+                value: 'amount',
+                label: t('token.refund.amount.label'),
+                caption: t('token.refund.amount.caption'),
+              },
+              {
+                value: 'reason',
+                label: t('token.refund.reason.label'),
+                caption: t('token.refund.reason.caption'),
+              },
+            ],
+          },
+        ]
+      : []),
   ];
 });
 
@@ -124,6 +177,24 @@ function replaceWildcard(v: string): string {
 
 <i18n lang="yaml" locale="en">
 token:
+  payment:
+    label: 'Payment'
+    caption: 'What the participant owes and where to pay (empty when no payment is due)'
+    amount:
+      label: 'Amount'
+      caption: 'The amount due, formatted in the event currency'
+    url:
+      label: 'Payment link'
+      caption: "Link to the participant's personal payment page"
+  refund:
+    label: 'Refund'
+    caption: 'The refund this email is about'
+    amount:
+      label: 'Amount'
+      caption: 'The refunded amount'
+    reason:
+      label: 'Reason'
+      caption: 'The reason entered for the refund'
   event:
     label: 'Event'
     caption: 'General information about the event'
@@ -190,6 +261,24 @@ token:
 
 <i18n lang="yaml" locale="de">
 token:
+  payment:
+    label: 'Zahlung'
+    caption: 'Was die teilnehmende Person schuldet und wo sie bezahlt (leer, wenn nichts fällig ist)'
+    amount:
+      label: 'Betrag'
+      caption: 'Der fällige Betrag in der Währung der Veranstaltung'
+    url:
+      label: 'Zahlungslink'
+      caption: 'Link zur persönlichen Zahlungsseite der teilnehmenden Person'
+  refund:
+    label: 'Erstattung'
+    caption: 'Die Erstattung, um die es in dieser E-Mail geht'
+    amount:
+      label: 'Betrag'
+      caption: 'Der erstattete Betrag'
+    reason:
+      label: 'Grund'
+      caption: 'Der für die Erstattung angegebene Grund'
   event:
     label: 'Veranstaltung'
     caption: 'Allgemeine Informationen zur Veranstaltung'
@@ -256,6 +345,24 @@ token:
 
 <i18n lang="yaml" locale="fr">
 token:
+  payment:
+    label: 'Paiement'
+    caption: "Ce que le participant doit et où payer (vide s'il n'y a rien à payer)"
+    amount:
+      label: 'Montant'
+      caption: "Le montant dû, dans la devise de l'événement"
+    url:
+      label: 'Lien de paiement'
+      caption: 'Lien vers la page de paiement personnelle du participant'
+  refund:
+    label: 'Remboursement'
+    caption: 'Le remboursement dont traite cet e-mail'
+    amount:
+      label: 'Montant'
+      caption: 'Le montant remboursé'
+    reason:
+      label: 'Motif'
+      caption: 'Le motif saisi pour le remboursement'
   event:
     label: 'Événement'
     caption: "Informations générales sur l'événement"
@@ -327,6 +434,24 @@ token:
 
 <i18n lang="yaml" locale="pl">
 token:
+  payment:
+    label: 'Płatność'
+    caption: 'Ile uczestnik jest winien i gdzie zapłacić (puste, gdy nic nie jest należne)'
+    amount:
+      label: 'Kwota'
+      caption: 'Należna kwota w walucie wydarzenia'
+    url:
+      label: 'Link do płatności'
+      caption: 'Link do osobistej strony płatności uczestnika'
+  refund:
+    label: 'Zwrot'
+    caption: 'Zwrot, którego dotyczy ten e-mail'
+    amount:
+      label: 'Kwota'
+      caption: 'Zwrócona kwota'
+    reason:
+      label: 'Powód'
+      caption: 'Powód podany przy zwrocie'
   event:
     label: 'Wydarzenie'
     caption: 'Ogólne informacje o wydarzeniu'
@@ -393,6 +518,24 @@ token:
 
 <i18n lang="yaml" locale="cs">
 token:
+  payment:
+    label: 'Platba'
+    caption: 'Kolik účastník dluží a kde zaplatit (prázdné, pokud nic není splatné)'
+    amount:
+      label: 'Částka'
+      caption: 'Splatná částka v měně akce'
+    url:
+      label: 'Odkaz na platbu'
+      caption: 'Odkaz na osobní platební stránku účastníka'
+  refund:
+    label: 'Vrácení'
+    caption: 'Vrácení, kterého se tento e-mail týká'
+    amount:
+      label: 'Částka'
+      caption: 'Vrácená částka'
+    reason:
+      label: 'Důvod'
+      caption: 'Důvod zadaný u vrácení'
   event:
     label: 'Akce'
     caption: 'Obecné informace o táboře'

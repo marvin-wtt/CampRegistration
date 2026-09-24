@@ -253,7 +253,7 @@ async function submit(
   formData: Record<string, unknown>,
   locale: string,
 ) {
-  return api.createRegistration(eventId, { data: formData, locale });
+  return api.submitRegistration(eventId, { data: formData, locale });
 }
 
 async function uploadFile(file: File): Promise<string> {

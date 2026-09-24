@@ -26,3 +26,16 @@ export const TimeSchema = z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/);
 export const translatedValue = <T extends ZodType>(valueSchema: T) => {
   return z.union([z.record(z.string(), valueSchema), valueSchema]);
 };
+
+/** An ISO 4217 currency code the runtime knows, e.g. `EUR`. */
+export const CurrencySchema = z
+  .string()
+  .regex(/^[A-Z]{3}$/)
+  .refine((code) => {
+    try {
+      new Intl.NumberFormat('en', { style: 'currency', currency: code });
+      return Intl.supportedValuesOf('currency').includes(code);
+    } catch {
+      return false;
+    }
+  }, 'Unknown currency');

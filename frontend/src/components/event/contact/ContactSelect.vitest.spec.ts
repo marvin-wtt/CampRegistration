@@ -46,6 +46,12 @@ function createRegistration(
     computedData: baseComputedData(),
     customData: {},
     status: 'ACCEPTED',
+    payment: {
+      status: 'NOT_REQUIRED',
+      currency: 'EUR',
+      amountDue: null,
+      amountPaid: 0,
+    },
     createdAt: '2024-01-01T00:00:00Z',
     ...overrides,
   };

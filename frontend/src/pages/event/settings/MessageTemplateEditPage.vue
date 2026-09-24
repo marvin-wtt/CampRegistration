@@ -158,6 +158,11 @@ import { useServiceHandler } from '@/composables/serviceHandler';
 import { usePermissions } from '@/composables/permissions';
 import { storeToRefs } from 'pinia';
 import CountryIcon from '@/components/common/localization/CountryIcon.vue';
+import { useEventSettings } from '@/composables/eventSettings';
+import {
+  SETTING_KEYS,
+  type PaymentSettings,
+} from '@camp-registration/common/settings';
 
 const {
   queryParam,
@@ -174,6 +179,10 @@ const { t } = useI18n();
 const eventDetailsStore = useEventDetailsStore();
 const { data: event } = storeToRefs(eventDetailsStore);
 const { can } = usePermissions();
+const { settings: paymentSettings } = useEventSettings<PaymentSettings>(
+  SETTING_KEYS.PAYMENT,
+  { enabled: false, timing: 'ACCEPTANCE', reminderAfterDays: null },
+);
 
 onMounted(async () => {
   await Promise.allSettled([eventDetailsStore.fetchData(), loadData()]);
@@ -186,6 +195,11 @@ const TEMPLATE_ICONS: Record<string, string> = {
   registration_waitlist_accepted: 'verified_user',
   registration_updated: 'edit',
   registration_canceled: 'cancel',
+  payment_requested: 'request_quote',
+  payment_received: 'paid',
+  payment_failed: 'money_off',
+  payment_refunded: 'undo',
+  payment_reminder: 'notifications',
 };
 
 const TEMPLATE_ORDER = [
@@ -195,6 +209,15 @@ const TEMPLATE_ORDER = [
   'registration_waitlist_accepted',
   'registration_updated',
   'registration_canceled',
+] as const;
+
+// Only listed while the event collects payments.
+const PAYMENT_TEMPLATE_ORDER = [
+  'payment_requested',
+  'payment_received',
+  'payment_failed',
+  'payment_refunded',
+  'payment_reminder',
 ] as const;
 
 const loading = computed<boolean>(() => {
@@ -227,10 +250,13 @@ const templates = computed<MappedTemplate[]>(() => {
     return [];
   }
 
-  return TEMPLATE_ORDER.filter(
-    (trigger) =>
-      confirmationMode === 'MANUAL' || trigger !== 'registration_submitted',
-  ).map((trigger) => ({
+  return [
+    ...TEMPLATE_ORDER.filter(
+      (trigger) =>
+        confirmationMode === 'MANUAL' || trigger !== 'registration_submitted',
+    ),
+    ...(paymentSettings.enabled ? PAYMENT_TEMPLATE_ORDER : []),
+  ].map((trigger) => ({
     trigger,
     templates: countries.map((country) => {
       return {
@@ -405,6 +431,21 @@ template:
   registration_canceled:
     label: 'Registration Canceled'
     description: 'Triggered when a registration is canceled.'
+  payment_requested:
+    label: 'Payment Requested'
+    description: 'Sent with the payment link when a registration that owes money is accepted.'
+  payment_received:
+    label: 'Payment Received'
+    description: 'Sent when an online payment has been completed.'
+  payment_failed:
+    label: 'Payment Failed'
+    description: 'Sent when an online payment did not go through.'
+  payment_refunded:
+    label: 'Payment Refunded'
+    description: 'Sent when a refund has been completed.'
+  payment_reminder:
+    label: 'Payment Reminder'
+    description: 'Sent periodically while a balance is outstanding, if reminders are enabled.'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -448,6 +489,21 @@ template:
   registration_canceled:
     label: 'Anmeldung Storniert'
     description: 'Wird ausgelöst, wenn eine Anmeldung storniert wird.'
+  payment_requested:
+    label: 'Zahlung angefordert'
+    description: 'Wird mit dem Zahlungslink versendet, wenn eine zahlungspflichtige Anmeldung angenommen wird.'
+  payment_received:
+    label: 'Zahlung eingegangen'
+    description: 'Wird versendet, wenn eine Online-Zahlung abgeschlossen wurde.'
+  payment_failed:
+    label: 'Zahlung fehlgeschlagen'
+    description: 'Wird versendet, wenn eine Online-Zahlung nicht durchgegangen ist.'
+  payment_refunded:
+    label: 'Zahlung erstattet'
+    description: 'Wird versendet, wenn eine Erstattung abgeschlossen wurde.'
+  payment_reminder:
+    label: 'Zahlungserinnerung'
+    description: 'Wird regelmäßig versendet, solange ein Betrag offen ist, wenn Erinnerungen aktiviert sind.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -491,6 +547,21 @@ template:
   registration_canceled:
     label: 'Inscription Annulée'
     description: "Déclenché lorsque l'inscription est annulée."
+  payment_requested:
+    label: 'Paiement demandé'
+    description: "Envoyé avec le lien de paiement lorsqu'une inscription payante est acceptée."
+  payment_received:
+    label: 'Paiement reçu'
+    description: "Envoyé lorsqu'un paiement en ligne a été effectué."
+  payment_failed:
+    label: 'Paiement échoué'
+    description: "Envoyé lorsqu'un paiement en ligne n'a pas abouti."
+  payment_refunded:
+    label: 'Paiement remboursé'
+    description: "Envoyé lorsqu'un remboursement a été effectué."
+  payment_reminder:
+    label: 'Rappel de paiement'
+    description: 'Envoyé régulièrement tant qu’un solde reste dû, si les rappels sont activés.'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -534,6 +605,21 @@ template:
   registration_canceled:
     label: 'Rejestracja anulowana'
     description: 'Wyzwalane, gdy rejestracja zostaje anulowana.'
+  payment_requested:
+    label: 'Prośba o płatność'
+    description: 'Wysyłana z linkiem do płatności, gdy zostanie zaakceptowane płatne zgłoszenie.'
+  payment_received:
+    label: 'Płatność otrzymana'
+    description: 'Wysyłana po zakończeniu płatności online.'
+  payment_failed:
+    label: 'Płatność nieudana'
+    description: 'Wysyłana, gdy płatność online nie powiodła się.'
+  payment_refunded:
+    label: 'Płatność zwrócona'
+    description: 'Wysyłana po zakończeniu zwrotu.'
+  payment_reminder:
+    label: 'Przypomnienie o płatności'
+    description: 'Wysyłane cyklicznie, dopóki kwota pozostaje nieuregulowana, jeśli przypomnienia są włączone.'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -577,4 +663,19 @@ template:
   registration_canceled:
     label: 'Registrace zrušena'
     description: 'Spouští se, když je registrace zrušena.'
+  payment_requested:
+    label: 'Výzva k platbě'
+    description: 'Odesílá se s odkazem na platbu, když je přijata placená registrace.'
+  payment_received:
+    label: 'Platba přijata'
+    description: 'Odesílá se po dokončení online platby.'
+  payment_failed:
+    label: 'Platba se nezdařila'
+    description: 'Odesílá se, když online platba neprošla.'
+  payment_refunded:
+    label: 'Platba vrácena'
+    description: 'Odesílá se po dokončení vrácení peněz.'
+  payment_reminder:
+    label: 'Připomínka platby'
+    description: 'Odesílá se pravidelně, dokud je částka neuhrazená, pokud jsou připomínky zapnuté.'
 </i18n>

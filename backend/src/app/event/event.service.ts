@@ -1,3 +1,5 @@
+import ApiError from '#utils/ApiError';
+import httpStatus from 'http-status';
 import type { Event, File, Prisma } from '#generated/prisma/client.js';
 import { ulid } from '#utils/ulid';
 import { dbNullable } from '#utils/db';
@@ -433,8 +435,27 @@ export class EventService extends BaseService {
     return enrichFreePlaces(updatedEvent);
   }
 
+  /**
+   * Money that changed hands keeps its record: an event with paid payments
+   * can't be deleted (the ledger's event reference is `Restrict`). Attempts
+   * that never settled carry no money and go with the event.
+   */
   async deleteEventById(id: string) {
-    await this.prisma.event.delete({ where: { id } });
+    await this.prisma.$transaction(async (tx) => {
+      const paid = await tx.payment.count({
+        where: { eventId: id, status: 'PAID' },
+      });
+      if (paid > 0) {
+        throw new ApiError(
+          httpStatus.CONFLICT,
+          'This event has received payments and cannot be deleted',
+          { code: 'EVENT_HAS_PAYMENTS' },
+        );
+      }
+
+      await tx.payment.deleteMany({ where: { eventId: id } });
+      await tx.event.delete({ where: { id } });
+    });
   }
 }
 

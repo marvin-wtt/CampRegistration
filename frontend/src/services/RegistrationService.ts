@@ -1,6 +1,7 @@
 import type {
   Registration,
   RegistrationCreateData,
+  RegistrationCreatePaymentMeta,
   RegistrationDeleteQuery,
   RegistrationUpdateData,
   RegistrationUpdateQuery,
@@ -34,6 +35,22 @@ export function useRegistrationService() {
     return response?.data?.data;
   }
 
+  /** Like `createRegistration`, plus the payment step for the submitter, if any. */
+  async function submitRegistration(
+    eventId: string,
+    data: RegistrationCreateData,
+  ): Promise<{
+    registration: Registration;
+    payment: RegistrationCreatePaymentMeta | null;
+  }> {
+    const response = await api.post(`events/${eventId}/registrations/`, data);
+
+    return {
+      registration: response?.data?.data,
+      payment: response?.data?.meta?.payment ?? null,
+    };
+  }
+
   async function updateRegistration(
     eventId: string,
     registrationId: string,
@@ -63,6 +80,7 @@ export function useRegistrationService() {
     fetchRegistrations,
     fetchRegistration,
     createRegistration,
+    submitRegistration,
     updateRegistration,
     deleteRegistration,
   };

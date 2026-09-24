@@ -1,5 +1,5 @@
 import { z, type ZodType } from 'zod';
-import { translatedValue } from '#core/validation/helper';
+import { CurrencySchema, translatedValue } from '#core/validation/helper';
 import type { Event } from '#generated/prisma/client.js';
 import type {
   EventQuery,
@@ -117,6 +117,7 @@ const store = z.object({
       maxAge: z.number().int().max(99),
       location: translatedValue(z.string()),
       price: z.number().multipleOf(0.01).nonnegative(),
+      currency: CurrencySchema.optional(),
       form: z.record(z.string(), z.unknown()).optional(),
       themes: z.record(z.string(), z.unknown()).optional(),
       preset: z.enum(['camp', 'seminar']).nullable().optional(),
@@ -208,6 +209,7 @@ const update = (event: Event) =>
         maxAge: z.number().int().max(99),
         location: translatedValue(z.string()),
         price: z.number().nonnegative().multipleOf(0.01),
+        currency: CurrencySchema,
         form: z.record(z.string(), z.unknown()),
         themes: z.record(z.string(), z.unknown()),
       })

@@ -430,7 +430,7 @@
                 input-class="text-right"
                 outlined
                 rounded
-                suffix="€"
+                :suffix="currencySymbol(event.currency, locale)"
                 type="number"
               >
                 <template #before>
@@ -473,6 +473,7 @@
 </template>
 
 <script lang="ts" setup>
+import { currencySymbol } from '@camp-registration/common/utils';
 import { computed, onMounted, ref, watch } from 'vue';
 import type { Event, EventDetails } from '@camp-registration/common/entities';
 import { useRoute, useRouter } from 'vue-router';
@@ -493,7 +494,7 @@ import { usePermissions } from '@/composables/permissions';
 
 const route = useRoute();
 const router = useRouter();
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const { can } = usePermissions();
 
 const eventStore = useEventDetailsStore();

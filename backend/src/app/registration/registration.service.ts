@@ -14,6 +14,7 @@ import {
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service';
 import { PrivacyNoticeService } from '#app/privacyNotice/privacy-notice.service';
+import { PaymentService } from '#app/payment/payment.service';
 
 /** The create uses relation connects throughout, so the stamp must too. */
 function connectVersion(id: string | null) {
@@ -33,12 +34,23 @@ export class RegistrationService extends BaseService {
       select: { id: true, field: true },
       where: { field: { startsWith: CUSTOM_FILE_FIELD_PREFIX } },
     },
+    // The ledger summary (`Registration.payment`) is derived on read.
+    payments: {
+      select: {
+        status: true,
+        amount: true,
+        refunds: { select: { status: true, amount: true } },
+      },
+    },
+    event: { select: { id: true, currency: true } },
   } satisfies Prisma.RegistrationInclude;
 
   constructor(
     @inject(FileService) private readonly fileService: FileService,
     @inject(PrivacyNoticeService)
     private readonly privacyNoticeService: PrivacyNoticeService,
+    @inject(PaymentService)
+    private readonly paymentService: PaymentService,
   ) {
     super();
   }
@@ -64,10 +76,7 @@ export class RegistrationService extends BaseService {
   async getRegistrationWithEventById(id: string) {
     return this.prisma.registration.findUnique({
       where: { id },
-      include: {
-        ...this.registrationInclude,
-        event: { select: { id: true } },
-      },
+      include: this.registrationInclude,
     });
   }
 
@@ -92,7 +101,9 @@ export class RegistrationService extends BaseService {
     const form = formUtils(event, data.data);
 
     const formData = form.data();
-    const computedData = computedRegistrationData(form.extractEventData());
+    const dataByTags = form.extractEventData();
+    const computedData = computedRegistrationData(dataByTags);
+    const amountDue = await this.paymentService.amountDueFor(event, dataByTags);
 
     if (event.countries.length > 1 && !computedData.country) {
       throw new ApiError(
@@ -170,6 +181,7 @@ export class RegistrationService extends BaseService {
             id: undefined, // Force new ID generation
             data: formData,
             status,
+            amountDue,
             platformPrivacyPolicyUpdatedAt:
               privacyStamp.platformPrivacyPolicyUpdatedAt,
             organizationPrivacyNotice: connectVersion(
@@ -181,6 +193,7 @@ export class RegistrationService extends BaseService {
             event: { connect: { id: event.id } },
             files: this.fileService.getFileConnectInput(fileIds, fileField),
           },
+          include: this.registrationInclude,
         });
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
@@ -217,8 +230,20 @@ export class RegistrationService extends BaseService {
     if (data.data) {
       const form = formUtils(event);
       form.updateData(data.data);
-      computedData = computedRegistrationData(form.extractEventData());
+      const dataByTags = form.extractEventData();
+      computedData = computedRegistrationData(dataByTags);
       formFileIds = form.getFileIds();
+
+      // Edited answers may change what is owed. With payments turned off
+      // the existing snapshot stays — switching the setting off must not
+      // silently wipe what people already owe.
+      const amountDue = await this.paymentService.amountDueFor(
+        event,
+        dataByTags,
+      );
+      if (amountDue !== null) {
+        computedData.amountDue = amountDue;
+      }
     }
 
     return this.prisma.$transaction(async (tx) => {
