@@ -1,9 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';
-import type {
-  AuditLogEntry,
-  AuditEntityType,
-} from '@camp-registration/common/entities';
+import type { AuditLogEntry } from '@camp-registration/common/entities';
 import { useAuditLogEntries } from '@/composables/audit/auditLogEntries';
 
 vi.mock('vue-i18n', async () => {
