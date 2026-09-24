@@ -372,8 +372,8 @@ action:
   menu: 'Actions'
 
 page:
-  title: 'Registration Events'
-  description: 'Manage and edit the email templates for each registration event.'
+  title: 'Automated emails'
+  description: 'Customize the email sent to participants each time their registration changes.'
 
 request:
   create:
@@ -415,8 +415,8 @@ action:
   menu: 'Aktionen'
 
 page:
-  title: 'Anmeldeereignisse'
-  description: 'Verwalten und bearbeiten Sie die E-Mail-Vorlagen für jedes Anmeldeereignis.'
+  title: 'Automatische E-Mails'
+  description: 'Passe die E-Mails an, die Teilnehmende bei jeder Änderung ihrer Anmeldung erhalten.'
 
 request:
   create:
@@ -458,8 +458,8 @@ action:
   menu: 'Actions'
 
 page:
-  title: "Événements d'Inscription"
-  description: "Gérez et modifiez les modèles d'e-mails pour chaque événement d'inscription."
+  title: 'E-mails automatiques'
+  description: "Personnalisez l'e-mail envoyé aux participants à chaque changement de leur inscription."
 
 request:
   create:
@@ -501,8 +501,8 @@ action:
   menu: 'Akcje'
 
 page:
-  title: 'Zdarzenia rejestracji'
-  description: 'Zarządzaj i edytuj szablony e-maili dla każdego zdarzenia rejestracyjnego.'
+  title: 'Automatyczne e-maile'
+  description: 'Dostosuj e-maile wysyłane uczestnikom przy każdej zmianie ich rejestracji.'
 
 request:
   create:
@@ -544,8 +544,8 @@ action:
   menu: 'Akce'
 
 page:
-  title: 'Události registrace'
-  description: 'Spravujte a upravujte e-mailové šablony pro jednotlivé registrační události.'
+  title: 'Automatické e-maily'
+  description: 'Upravte e-maily zasílané účastníkům při každé změně jejich registrace.'
 
 request:
   create:
