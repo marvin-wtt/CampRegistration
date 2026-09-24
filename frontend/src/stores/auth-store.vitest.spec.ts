@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
-import { AxiosError, AxiosHeaders } from 'axios';
-import { EventBus } from 'quasar';
+import { type AxiosError, AxiosHeaders } from 'axios';
+import { type EventBus } from 'quasar';
 import { useAuthStore } from '@/stores/auth-store';
 
 const mocks = vi.hoisted(() => ({
