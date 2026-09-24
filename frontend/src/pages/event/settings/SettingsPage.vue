@@ -192,8 +192,8 @@ navigation:
   label: 'Navigation'
   description: "Choose which features appear in this event's navigation."
 emails:
-  label: 'Email templates'
-  description: 'Manage the email templates sent to participants.'
+  label: 'Automated emails'
+  description: 'Emails sent automatically to participants when their registration changes.'
 files:
   label: 'Files'
   description: 'Upload and manage files for this event.'
@@ -221,8 +221,8 @@ navigation:
   label: 'Navigation'
   description: 'Wähle aus, welche Funktionen in der Navigation dieser Veranstaltung angezeigt werden.'
 emails:
-  label: 'E-Mail-Vorlagen'
-  description: 'Verwalte die an Teilnehmende versendeten E-Mail-Vorlagen.'
+  label: 'Automatische E-Mails'
+  description: 'E-Mails, die Teilnehmenden bei Änderungen ihrer Anmeldung automatisch gesendet werden.'
 files:
   label: 'Dateien'
   description: 'Lade Dateien für diese Veranstaltung hoch und verwalte sie.'
@@ -250,8 +250,8 @@ navigation:
   label: 'Navigation'
   description: 'Choisissez les fonctionnalités affichées dans la navigation de cet événement.'
 emails:
-  label: "Modèles d'e-mails"
-  description: "Gérez les modèles d'e-mails envoyés aux participants."
+  label: 'E-mails automatiques'
+  description: 'E-mails envoyés automatiquement aux participants lorsque leur inscription change.'
 files:
   label: 'Fichiers'
   description: 'Téléchargez et gérez les fichiers de cet événement.'
@@ -279,8 +279,8 @@ navigation:
   label: 'Nawigacja'
   description: 'Wybierz funkcje widoczne w nawigacji tego wydarzenia.'
 emails:
-  label: 'Szablony e-maili'
-  description: 'Zarządzaj szablonami e-maili wysyłanymi do uczestników.'
+  label: 'Automatyczne e-maile'
+  description: 'E-maile wysyłane automatycznie uczestnikom przy zmianie ich rejestracji.'
 files:
   label: 'Pliki'
   description: 'Przesyłaj pliki dla tego wydarzenia i zarządzaj nimi.'
@@ -308,8 +308,8 @@ navigation:
   label: 'Navigace'
   description: 'Vyberte, které funkce se zobrazí v navigaci této akce.'
 emails:
-  label: 'E-mailové šablony'
-  description: 'Spravujte e-mailové šablony zasílané účastníkům.'
+  label: 'Automatické e-maily'
+  description: 'E-maily automaticky odesílané účastníkům při změně jejich registrace.'
 files:
   label: 'Soubory'
   description: 'Nahrávejte a spravujte soubory pro tuto akci.'
