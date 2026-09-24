@@ -168,6 +168,9 @@
               <q-item
                 v-for="entry in group.entries"
                 :key="entry.id"
+                :clickable="!!entry.openLabel"
+                class="audit-entry"
+                @click="openEntry(entry)"
               >
                 <q-item-section
                   avatar
@@ -186,21 +189,23 @@
                 </q-item-section>
 
                 <q-item-section class="audit-entry__content">
-                  <q-item-label>{{ entry.title }}</q-item-label>
-                  <q-item-label
-                    v-if="entry.subject"
-                    caption
-                    class="audit-entry__subject"
-                  >
-                    {{ entry.subject }}
-                  </q-item-label>
-                  <q-item-label caption>
-                    {{
-                      entry.actor
-                        ? t('by', { actor: entry.actor })
-                        : t('bySystem')
-                    }}
-                  </q-item-label>
+                  <div class="audit-entry__title">{{ entry.title }}</div>
+
+                  <div class="audit-entry__meta">
+                    <template v-if="entry.subject">
+                      <span class="audit-entry__subject">
+                        {{ entry.subject }}
+                      </span>
+                      <span aria-hidden="true">·</span>
+                    </template>
+                    <span>
+                      {{
+                        entry.actor
+                          ? t('by', { actor: entry.actor })
+                          : t('bySystem')
+                      }}
+                    </span>
+                  </div>
 
                   <div
                     v-if="entry.valueDetails.length || entry.fieldLabels.length"
@@ -228,35 +233,66 @@
                 <q-item-section
                   side
                   top
-                  class="audit-entry__meta-side"
+                  class="audit-entry__side"
                 >
                   <span class="audit-entry__time">{{ entry.time }}</span>
                   <q-btn
                     flat
-                    dense
-                    no-caps
-                    rounded
-                    size="sm"
-                    class="audit-entry__id"
-                    :label="`#${shortId(entry.entityId)}`"
-                    @click="historyEntityId = entry.entityId"
-                  >
-                    <q-tooltip>
-                      {{ t('showHistory', { id: entry.entityId }) }}
-                    </q-tooltip>
-                  </q-btn>
-                  <q-btn
-                    v-if="entry.openLabel"
-                    flat
                     round
                     dense
                     size="sm"
-                    icon="open_in_new"
-                    color="primary"
-                    @click="openEntry(entry)"
+                    icon="more_vert"
+                    :aria-label="t('menu.label')"
+                    class="audit-entry__menu"
+                    @click.stop
                   >
-                    <q-tooltip>{{ entry.openLabel }}</q-tooltip>
+                    <q-menu>
+                      <q-list style="min-width: 200px">
+                        <q-item
+                          v-close-popup
+                          clickable
+                          @click="historyEntityId = entry.entityId"
+                        >
+                          <q-item-section avatar>
+                            <q-icon name="history" />
+                          </q-item-section>
+                          <q-item-section>
+                            <q-item-label>{{ t('menu.history') }}</q-item-label>
+                            <q-item-label
+                              caption
+                              class="audit-entry__id"
+                            >
+                              #{{ shortId(entry.entityId) }}
+                            </q-item-label>
+                          </q-item-section>
+                        </q-item>
+                        <q-item
+                          v-close-popup
+                          clickable
+                          @click="copyId(entry.entityId)"
+                        >
+                          <q-item-section avatar>
+                            <q-icon name="content_copy" />
+                          </q-item-section>
+                          <q-item-section>{{
+                            t('menu.copyId')
+                          }}</q-item-section>
+                        </q-item>
+                      </q-list>
+                    </q-menu>
                   </q-btn>
+                </q-item-section>
+
+                <!-- Kept on every row (hidden when there's nothing to open) so the time
+                     and menu line up across entries. -->
+                <q-item-section
+                  side
+                  :class="{ invisible: !entry.openLabel }"
+                >
+                  <q-icon name="chevron_right" />
+                  <q-tooltip v-if="entry.openLabel">{{
+                    entry.openLabel
+                  }}</q-tooltip>
                 </q-item-section>
               </q-item>
             </q-list>
@@ -271,7 +307,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
-import { useQuasar } from 'quasar';
+import { copyToClipboard, useQuasar } from 'quasar';
 import { storeToRefs } from 'pinia';
 import {
   AUDIT_ENTITY_TYPES,
@@ -418,8 +454,13 @@ function subjectLine(entry: AuditLogEntry): string | null {
   return parts.length > 0 ? parts.join(' · ') : null;
 }
 
+async function copyId(id: string): Promise<void> {
+  await copyToClipboard(id);
+  quasar.notify({ type: 'positive', message: t('menu.idCopied') });
+}
+
 function openEntry(entry: TimelineDisplayEntry): void {
-  if (eventId.value) {
+  if (eventId.value && entry.openLabel) {
     void entityViews[entry.entityType].open?.run(eventId.value, entry.entityId);
   }
 }
@@ -640,24 +681,47 @@ const groupedEntries = computed<EntryGroup[]>(() => {
   color: var(--md3-on-secondary-container);
 }
 
+.audit-entry {
+  padding-block: 12px;
+}
+
+.audit-entry__title {
+  color: var(--md3-on-surface);
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.audit-entry__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+  color: var(--md3-on-surface-variant);
+  font-size: 13px;
+}
+
 .audit-entry__subject {
   color: var(--md3-primary);
+  font-weight: 500;
 }
 
-.audit-entry__meta-side {
+.audit-entry__side {
   align-items: flex-end;
-  gap: 4px;
-}
-
-.audit-entry__id {
-  color: var(--md3-on-surface-variant);
-  font-family: monospace;
+  gap: 2px;
 }
 
 .audit-entry__time {
   color: var(--md3-on-surface-variant);
   font-size: 12px;
   white-space: nowrap;
+}
+
+.audit-entry__menu {
+  color: var(--md3-on-surface-variant);
+}
+
+.audit-entry__id {
+  font-family: monospace;
 }
 
 .audit-entry__content {
@@ -710,10 +774,14 @@ subtitle: 'A history of changes made to this event, its registrations, and its t
 refresh: 'Refresh'
 by: 'by {actor}'
 bySystem: 'System event'
-showHistory: 'Show full history of {id}'
 deletedUser: 'Deleted user'
 today: 'Today'
 yesterday: 'Yesterday'
+menu:
+  label: 'More actions'
+  history: 'Show history'
+  copyId: 'Copy ID'
+  idCopied: 'ID copied'
 filter:
   label: 'Filter:'
   actor: 'Actor'
@@ -734,10 +802,14 @@ subtitle: 'Ein Verlauf der Änderungen an dieser Veranstaltung, ihren Anmeldunge
 refresh: 'Aktualisieren'
 by: 'von {actor}'
 bySystem: 'Systemereignis'
-showHistory: 'Gesamten Verlauf von {id} anzeigen'
 deletedUser: 'Gelöschter Benutzer'
 today: 'Heute'
 yesterday: 'Gestern'
+menu:
+  label: 'Weitere Aktionen'
+  history: 'Verlauf anzeigen'
+  copyId: 'ID kopieren'
+  idCopied: 'ID kopiert'
 filter:
   label: 'Filter:'
   actor: 'Ausgeführt von'
@@ -758,10 +830,14 @@ subtitle: 'Un historique des modifications apportées à cet événement, ses in
 refresh: 'Actualiser'
 by: 'par {actor}'
 bySystem: 'Événement système'
-showHistory: 'Afficher tout l’historique de {id}'
 deletedUser: 'Utilisateur supprimé'
 today: 'Aujourd’hui'
 yesterday: 'Hier'
+menu:
+  label: 'Plus d’actions'
+  history: 'Afficher l’historique'
+  copyId: 'Copier l’ID'
+  idCopied: 'ID copié'
 filter:
   label: 'Filtrer :'
   actor: 'Auteur'
@@ -782,10 +858,14 @@ subtitle: 'Historia zmian w tym wydarzeniu, jego zgłoszeniach i zespole.'
 refresh: 'Odśwież'
 by: 'przez {actor}'
 bySystem: 'Zdarzenie systemowe'
-showHistory: 'Pokaż pełną historię {id}'
 deletedUser: 'Usunięty użytkownik'
 today: 'Dzisiaj'
 yesterday: 'Wczoraj'
+menu:
+  label: 'Więcej akcji'
+  history: 'Pokaż historię'
+  copyId: 'Kopiuj ID'
+  idCopied: 'Skopiowano ID'
 filter:
   label: 'Filtruj:'
   actor: 'Wykonawca'
@@ -806,10 +886,14 @@ subtitle: 'Historie změn této akce, jejích registrací a týmu.'
 refresh: 'Obnovit'
 by: 'od {actor}'
 bySystem: 'Systémová událost'
-showHistory: 'Zobrazit celou historii {id}'
 deletedUser: 'Smazaný uživatel'
 today: 'Dnes'
 yesterday: 'Včera'
+menu:
+  label: 'Další akce'
+  history: 'Zobrazit historii'
+  copyId: 'Kopírovat ID'
+  idCopied: 'ID zkopírováno'
 filter:
   label: 'Filtr:'
   actor: 'Provedl'

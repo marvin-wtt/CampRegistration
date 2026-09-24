@@ -243,47 +243,75 @@
               class="q-px-lg"
               color="primary"
             >
-              <template v-if="timelineEntries.length">
-                <q-timeline-entry
-                  v-for="entry in timelineEntries"
-                  :key="entry.id"
-                  :color="entry.color"
-                  :icon="entry.icon"
-                  :subtitle="entry.subtitle"
-                  :title="entry.title"
+              <q-timeline-entry
+                v-for="entry in timelineEntries"
+                :key="entry.id"
+                :color="entry.color"
+                :icon="entry.icon"
+                :subtitle="entry.subtitle"
+                :title="entry.title"
+              >
+                <div
+                  v-if="entry.caption"
+                  class="text-caption audit-fields-label"
                 >
-                  <div
-                    v-if="entry.fields.length"
-                    class="q-mb-xs"
-                  >
-                    <div class="text-caption audit-fields-label q-mb-xs">
-                      {{ t('timeline.changedFields') }}
-                    </div>
-                    <div class="audit-field-chips">
-                      <q-chip
-                        v-for="field in entry.fields"
-                        :key="field.path"
-                        dense
-                        size="sm"
-                        class="audit-field-chip"
-                      >
-                        {{ field.label }}
-                        <q-tooltip>{{ field.path }}</q-tooltip>
-                      </q-chip>
-                    </div>
+                  {{ entry.caption }}
+                </div>
+                <div
+                  v-if="entry.note"
+                  class="text-body2 q-mb-xs"
+                >
+                  {{ entry.note }}
+                </div>
+                <div
+                  v-for="warning in entry.warnings"
+                  :key="warning"
+                  class="text-caption audit-warning q-mb-xs"
+                >
+                  {{ warning }}
+                </div>
+                <div
+                  v-if="entry.fields.length"
+                  class="q-mb-xs"
+                >
+                  <div class="text-caption audit-fields-label q-mb-xs">
+                    {{ t('timeline.changedFields') }}
                   </div>
-                  <div
-                    v-if="entry.actor"
-                    class="text-caption audit-fields-label"
-                  >
-                    {{ t('timeline.by', { actor: entry.actor }) }}
+                  <div class="audit-field-chips">
+                    <q-chip
+                      v-for="field in entry.fields"
+                      :key="field.path"
+                      dense
+                      size="sm"
+                      class="audit-field-chip"
+                    >
+                      {{ field.label }}
+                      <q-tooltip>{{ field.path }}</q-tooltip>
+                    </q-chip>
                   </div>
-                </q-timeline-entry>
-              </template>
+                </div>
+                <div
+                  v-if="entry.actor"
+                  class="text-caption audit-fields-label"
+                >
+                  {{ t('timeline.by', { actor: entry.actor }) }}
+                </div>
+                <m-btn
+                  v-if="entry.message"
+                  text
+                  primary
+                  dense
+                  no-caps
+                  size="sm"
+                  class="q-mt-xs"
+                  :label="t('timeline.viewMessage')"
+                  @click="openMessage(entry.message)"
+                />
+              </q-timeline-entry>
 
               <!-- Fallback for registrations created before audit logging -->
               <q-timeline-entry
-                v-else
+                v-if="!auditEntries.length"
                 :subtitle="formattedCreatedAt"
                 :title="t('timeline.registered')"
                 color="positive"
@@ -323,6 +351,8 @@ import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import type {
   AuditActor,
   AuditLogEntry,
+  Message,
+  MessageDelivery,
 } from '@camp-registration/common/entities';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { useAuditTimeline } from '@/composables/audit/auditTimeline';
@@ -333,6 +363,7 @@ import { useRegistrationsStore } from '@/stores/registration-store';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import RegistrationDialogHeader from '@/components/event/table/dialogs/RegistrationDialogHeader.vue';
 import RegistrationFormViewDialog from '@/components/event/table/dialogs/RegistrationFormViewDialog.vue';
+import MessageDetailsDialog from '@/components/event/contact/MessageDetailsDialog.vue';
 
 defineEmits([...useDialogPluginComponent.emits]);
 
@@ -340,6 +371,9 @@ const quasar = useQuasar();
 // eslint-disable-next-line @typescript-eslint/unbound-method
 const { t, te, locale } = useI18n();
 const { to } = useObjectTranslation();
+// Trigger names are shared with the audit log.
+// eslint-disable-next-line @typescript-eslint/unbound-method
+const { t: tGlobal, te: teGlobal } = useI18n({ useScope: 'global' });
 const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent();
 const route = useRoute();
 const apiService = useAPIService();
@@ -373,12 +407,18 @@ interface ChangedField {
 
 interface TimelineDisplayEntry {
   id: string;
+  // ISO timestamp, for merging audit entries and messages into one timeline.
+  at: string;
   title: string;
   subtitle: string;
   color: string;
   icon: string;
   fields: ChangedField[];
   actor: string | null;
+  caption?: string;
+  note?: string;
+  warnings?: string[];
+  message?: Message;
 }
 
 // Maps a registration `data` leaf path to its form question label (e.g.
@@ -418,19 +458,110 @@ onMounted(async () => {
     return;
   }
 
-  try {
-    auditEntries.value = await apiService.fetchRegistrationAuditLog(
-      eventId,
-      registrationId,
-    );
-  } catch {
-    // Endpoint unavailable (e.g. not yet migrated) — fall back to the legacy
-    // single "registered" entry rather than breaking the dialog.
-    auditEntries.value = [];
-  } finally {
-    auditLoading.value = false;
-  }
+  // Either may fail on its own (e.g. no permission to view messages) — the
+  // timeline then just shows what it could load.
+  const [audit, received] = await Promise.allSettled([
+    apiService.fetchRegistrationAuditLog(eventId, registrationId),
+    apiService.fetchRegistrationMessages(eventId, registrationId),
+  ]);
+  auditEntries.value = audit.status === 'fulfilled' ? audit.value : [];
+  deliveries.value = received.status === 'fulfilled' ? received.value : [];
+  auditLoading.value = false;
 });
+
+// The emails this registration received — one delivery per address.
+const deliveries = ref<MessageDelivery[]>([]);
+
+interface ReceivedEmail {
+  // Shaped as a message for MessageDetailsDialog: the rendered email, with
+  // this registration's addresses as its only recipient.
+  message: Message;
+  trigger: string | null;
+}
+
+// Groups the per-address deliveries of one send into a single email.
+const receivedEmails = computed<ReceivedEmail[]>(() => {
+  const groups = new Map<string, MessageDelivery[]>();
+  for (const delivery of deliveries.value) {
+    const key =
+      delivery.messageId ??
+      `${delivery.trigger ?? ''}|${delivery.createdAt.slice(0, 16)}`;
+    groups.set(key, [...(groups.get(key) ?? []), delivery]);
+  }
+
+  return [...groups.values()].flatMap(([first, ...rest]) => {
+    if (!first) {
+      return [];
+    }
+    return [
+      {
+        trigger: first.trigger,
+        message: {
+          id: first.id,
+          subject: first.subject,
+          body: first.body,
+          replyTo: first.replyTo,
+          priority: first.priority,
+          attachments: first.attachments,
+          recipients: [
+            {
+              registrationId,
+              deliveries: [first, ...rest].map(
+                ({ to, bouncedAt, bounceReason }) => ({
+                  to,
+                  bouncedAt,
+                  bounceReason,
+                }),
+              ),
+            },
+          ],
+          sentBy: first.sentBy,
+          createdAt: first.createdAt,
+        },
+      },
+    ];
+  });
+});
+
+function openMessage(message: Message): void {
+  quasar.dialog({
+    component: MessageDetailsDialog,
+    componentProps: {
+      message,
+      registrations: registrations.value ?? [],
+    },
+  });
+}
+
+const triggerLabel = (trigger: string): string => {
+  const key = `audit.entities.messageTemplate.values.trigger.${trigger}`;
+  return teGlobal(key) ? tGlobal(key) : trigger;
+};
+
+function buildEmailEntry({
+  message,
+  trigger,
+}: ReceivedEmail): TimelineDisplayEntry {
+  const warnings = (message.recipients?.[0]?.deliveries ?? [])
+    .filter((delivery) => delivery.bouncedAt)
+    .map((delivery) => t('timeline.bounced', { to: delivery.to ?? '—' }));
+  const at = message.createdAt ?? '';
+
+  return {
+    id: `email-${message.id}`,
+    at,
+    title: trigger ? t('timeline.automatedEmail') : t('timeline.messageSent'),
+    subtitle: at ? formatDateTime(at) : '',
+    color: warnings.length > 0 ? 'negative' : 'info',
+    icon: trigger ? 'mail_asterisk' : 'mail',
+    fields: [],
+    actor: message.sentBy?.name ?? null,
+    ...(trigger ? { caption: triggerLabel(trigger) } : {}),
+    note: message.subject,
+    warnings,
+    message,
+  };
+}
 
 const { formatDateTime: formatAuditDateTime, actorLabel: resolveActorLabel } =
   useAuditTimeline();
@@ -460,6 +591,7 @@ const statusColor = (status: string): string => {
 
 const buildEntries = (entry: AuditLogEntry): TimelineDisplayEntry[] => {
   const shared = {
+    at: entry.createdAt,
     subtitle: formatDateTime(entry.createdAt),
     actor: actorLabel(entry.actor),
   };
@@ -521,8 +653,12 @@ const buildEntries = (entry: AuditLogEntry): TimelineDisplayEntry[] => {
   return entries;
 };
 
+// Newest first, audit entries and messages interleaved.
 const timelineEntries = computed<TimelineDisplayEntry[]>(() =>
-  auditEntries.value.flatMap(buildEntries),
+  [
+    ...auditEntries.value.flatMap(buildEntries),
+    ...receivedEmails.value.map(buildEmailEntry),
+  ].sort((a, b) => b.at.localeCompare(a.at)),
 );
 
 const personName = computed<string>(() => {
@@ -678,6 +814,10 @@ timeline:
   by: 'by {actor}'
   changedFields: 'Changed:'
   deletedUser: 'Deleted user'
+  messageSent: 'Message sent'
+  automatedEmail: 'Automated email sent'
+  viewMessage: 'View message'
+  bounced: 'Not delivered to {to}'
 
 action:
   close: 'Close'
@@ -722,6 +862,10 @@ timeline:
   by: 'von {actor}'
   changedFields: 'Geändert:'
   deletedUser: 'Gelöschter Benutzer'
+  messageSent: 'Nachricht gesendet'
+  automatedEmail: 'Automatische E-Mail gesendet'
+  viewMessage: 'Nachricht ansehen'
+  bounced: 'Nicht zugestellt an {to}'
 
 action:
   close: 'Schließen'
@@ -766,6 +910,10 @@ timeline:
   by: 'par {actor}'
   changedFields: 'Modifié :'
   deletedUser: 'Utilisateur supprimé'
+  messageSent: 'Message envoyé'
+  automatedEmail: 'E-mail automatique envoyé'
+  viewMessage: 'Voir le message'
+  bounced: 'Non distribué à {to}'
 
 action:
   close: 'Fermer'
@@ -810,6 +958,10 @@ timeline:
   by: 'przez {actor}'
   changedFields: 'Zmieniono:'
   deletedUser: 'Usunięty użytkownik'
+  messageSent: 'Wysłano wiadomość'
+  automatedEmail: 'Wysłano automatyczny e-mail'
+  viewMessage: 'Zobacz wiadomość'
+  bounced: 'Nie dostarczono do {to}'
 
 action:
   close: 'Zamknij'
@@ -854,6 +1006,10 @@ timeline:
   by: 'uživatelem {actor}'
   changedFields: 'Změněno:'
   deletedUser: 'Smazaný uživatel'
+  messageSent: 'Zpráva odeslána'
+  automatedEmail: 'Automatický e-mail odeslán'
+  viewMessage: 'Zobrazit zprávu'
+  bounced: 'Nedoručeno na {to}'
 
 action:
   close: 'Zavřít'
@@ -893,6 +1049,10 @@ action:
   overflow-wrap: anywhere;
   line-height: 1.25;
   padding-block: 3px;
+}
+
+.audit-warning {
+  color: var(--md3-error);
 }
 
 @media (min-width: 600px) {

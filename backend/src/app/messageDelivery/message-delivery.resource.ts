@@ -1,10 +1,12 @@
 import { JsonResource } from '#core/resource/JsonResource';
 import type { MessageDelivery as MessageDeliveryData } from '@camp-registration/common/entities';
 import { FileResource } from '#app/file/file.resource';
-import type { MessageDelivery, File } from '#generated/prisma/client.js';
+import type { MessageDelivery, File, User } from '#generated/prisma/client.js';
 
 export interface MessageDeliveryWithFiles extends MessageDelivery {
   attachments: File[];
+  template: { trigger: string } | null;
+  message: { sentBy: Pick<User, 'id' | 'name'> | null } | null;
 }
 
 export class MessageDeliveryResource extends JsonResource<
@@ -25,6 +27,9 @@ export class MessageDeliveryResource extends JsonResource<
       attachments: FileResource.collection(this.data.attachments).transform(),
       bouncedAt: this.data.bouncedAt?.toISOString() ?? null,
       bounceReason: this.data.bounceReason,
+      messageId: this.data.messageId,
+      trigger: this.data.template?.trigger ?? null,
+      sentBy: this.data.message?.sentBy ?? null,
     };
   }
 }
