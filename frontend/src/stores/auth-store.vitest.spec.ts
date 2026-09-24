@@ -6,6 +6,7 @@ import { useAuthStore } from '@/stores/auth-store';
 
 const mocks = vi.hoisted(() => ({
   refreshTokens: vi.fn(),
+  logout: vi.fn(),
   fetchProfile: vi.fn(),
   showErrorNotification: vi.fn(),
   push: vi.fn(),
@@ -21,6 +22,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/services/APIService', () => ({
   useAPIService: () => ({
     refreshTokens: mocks.refreshTokens,
+    logout: mocks.logout,
     setOnUnauthenticated: vi.fn(),
     setOnTokenRefresh: vi.fn(),
   }),
@@ -43,7 +45,15 @@ vi.mock('@/composables/serviceHandler', async () => {
       isLoading: ref(false),
       error: ref(),
       reset: vi.fn(),
-      withErrorNotification: vi.fn(),
+      // Mirrors the real implementation's contract: swallow the error and
+      // resolve to undefined, since callers (e.g. logout()) branch on that.
+      withErrorNotification: vi.fn(async (_op: string, fn: () => unknown) => {
+        try {
+          return await fn();
+        } catch {
+          return undefined;
+        }
+      }),
       withResultNotification: vi.fn(),
       errorOnFailure: vi.fn(),
       checkNotNullWithError: vi.fn(),
@@ -166,5 +176,42 @@ describe('auth store refresh', () => {
 
     expect(mocks.refreshTokens).toHaveBeenCalledOnce();
     expect(store.status).toBe('unauthenticated');
+  });
+
+  it('loads the profile on a successful refresh regardless of caller', async () => {
+    mocks.refreshTokens.mockResolvedValue({});
+    const store = useAuthStore();
+
+    // Bypasses init() entirely, mimicking a proactive/background refresh
+    // succeeding — the profile must still get loaded, not depend on init().
+    await store.refreshTokens();
+
+    expect(mocks.fetchProfile).toHaveBeenCalledOnce();
+  });
+});
+
+describe('auth store logout', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.bus = new EventBus();
+    setActivePinia(createPinia());
+  });
+
+  it('redirects home once the API confirms the logout', async () => {
+    mocks.logout.mockResolvedValue(undefined);
+    const store = useAuthStore();
+
+    await store.logout();
+
+    expect(mocks.push).toHaveBeenCalledWith('/');
+  });
+
+  it('does not redirect when the logout request fails', async () => {
+    mocks.logout.mockRejectedValue(httpError(500));
+    const store = useAuthStore();
+
+    await store.logout();
+
+    expect(mocks.push).not.toHaveBeenCalled();
   });
 });
