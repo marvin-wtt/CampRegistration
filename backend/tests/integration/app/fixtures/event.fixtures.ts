@@ -96,8 +96,35 @@ export const eventCreatedBody: CreateBodyData[] = [
     data: {
       ...eventCreateInternational,
       registrationOpensAt: '2100-01-01T00:00:00.000Z',
+      registrationClosesAt: '2100-02-01T00:00:00.000Z',
     },
     expected: 201,
+  },
+  {
+    name: 'Registration open at without close at',
+    data: {
+      ...eventCreateInternational,
+      registrationOpensAt: '2100-01-01T00:00:00.000Z',
+    },
+    expected: 400,
+  },
+  {
+    name: 'Registration close at before open at',
+    data: {
+      ...eventCreateInternational,
+      registrationOpensAt: '2100-02-01T00:00:00.000Z',
+      registrationClosesAt: '2100-01-01T00:00:00.000Z',
+    },
+    expected: 400,
+  },
+  {
+    name: 'Registration close at equal to open at',
+    data: {
+      ...eventCreateInternational,
+      registrationOpensAt: '2100-01-01T00:00:00.000Z',
+      registrationClosesAt: '2100-01-01T00:00:00.000Z',
+    },
+    expected: 400,
   },
   {
     name: 'Registration open at null',
@@ -625,8 +652,65 @@ export const eventUpdateBody: UpdateBodyData[] = [
     name: 'Registration open at',
     data: {
       registrationOpensAt: '2100-01-01T00:00:00.000Z',
+      registrationClosesAt: '2100-02-01T00:00:00.000Z',
     },
     expected: 200,
+  },
+  {
+    name: 'Registration open at with close at cleared',
+    data: {
+      registrationOpensAt: '2100-01-01T00:00:00.000Z',
+      registrationClosesAt: null,
+    },
+    expected: 400,
+  },
+  {
+    // Close date left untouched, and the base event has none configured
+    // either — setting the opening date here is what would leave
+    // registration open forever, so it's still rejected.
+    name: 'Registration open at without touching close at',
+    data: {
+      registrationOpensAt: '2100-01-01T00:00:00.000Z',
+    },
+    expected: 400,
+  },
+  {
+    name: 'Registration open at reaffirmed with close at already set',
+    event: {
+      registrationClosesAt: '2100-02-01T00:00:00.000Z',
+    },
+    data: {
+      registrationOpensAt: '2100-01-01T00:00:00.000Z',
+    },
+    expected: 200,
+  },
+  {
+    name: 'Registration close at before open at',
+    data: {
+      registrationOpensAt: '2100-02-01T00:00:00.000Z',
+      registrationClosesAt: '2100-01-01T00:00:00.000Z',
+    },
+    expected: 400,
+  },
+  {
+    name: 'Registration close at equal to open at',
+    data: {
+      registrationOpensAt: '2100-01-01T00:00:00.000Z',
+      registrationClosesAt: '2100-01-01T00:00:00.000Z',
+    },
+    expected: 400,
+  },
+  {
+    // Only the closing date is touched, but it lands before the event's
+    // already-configured opening date — still an inverted window.
+    name: 'Registration close at before already-set open at',
+    event: {
+      registrationOpensAt: '2100-03-01T00:00:00.000Z',
+    },
+    data: {
+      registrationClosesAt: '2100-01-01T00:00:00.000Z',
+    },
+    expected: 400,
   },
   {
     name: 'Registration open at null',
