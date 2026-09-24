@@ -78,7 +78,7 @@ describe('/api/v1/events/:eventId/registrations/:registrationId/audit', () => {
       // Status is a bounded, non-PII field — its new value is recorded so the
       // timeline can show the outcome.
       expect(entries[0].details.values).toEqual({ status: 'ACCEPTED' });
-      expect(entries[0].details.changedFields).toBeUndefined();
+      expect(entries[0].details.changedFields).toEqual(['status']);
     });
 
     it('records a data edit by changed leaf path only', async () => {
@@ -348,6 +348,76 @@ describe('/api/v1/events/:eventId/registrations/:registrationId/audit', () => {
       expect(response.body.data).toHaveLength(1);
       expect(response.body.data[0].id).toBe(inRange.id);
     });
+
+    it('names registrations while they exist', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const registration = await createRegistration(event, {
+        firstName: 'Jane',
+        lastName: 'Doe',
+      });
+      await createLog(event.id, { entityId: registration.id });
+      const goneLog = await createLog(event.id, { entityId: ulid() });
+      await createLog(event.id, { entityType: 'event', entityId: event.id });
+
+      const response = await fetchEventAudit(event.id, accessToken).expect(200);
+
+      const byEntity = new Map(
+        response.body.data.map((entry: { entityId: string }) => [
+          entry.entityId,
+          entry,
+        ]),
+      );
+      expect(byEntity.get(registration.id)).toMatchObject({
+        entityName: 'Jane Doe',
+      });
+      expect(byEntity.get(goneLog.entityId)).toMatchObject({
+        entityName: null,
+      });
+      expect(byEntity.get(event.id)).not.toHaveProperty('entityName');
+    });
+
+    it('lists each actor once, including deleted users, but not the system', async () => {
+      const { event, accessToken, user } =
+        await createEventWithManagerAndToken();
+      const deletedUserId = ulid();
+      await createLog(event.id, { actorId: user.id });
+      await createLog(event.id, { actorId: user.id });
+      await createLog(event.id, { actorId: deletedUserId });
+      await createLog(event.id, { actorId: null });
+
+      const response = await request()
+        .get(`/api/v1/events/${event.id}/audit/actors`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(response.body.data).toHaveLength(2);
+      expect(response.body.data).toEqual(
+        expect.arrayContaining([
+          { id: user.id, name: user.name },
+          { id: deletedUserId, name: null },
+        ]),
+      );
+    });
+
+    it.each([
+      { role: 'DIRECTOR', expectedStatus: 200 },
+      { role: 'COORDINATOR', expectedStatus: 200 },
+      { role: 'VIEWER', expectedStatus: 403 },
+      { role: 'COUNSELOR', expectedStatus: 403 },
+    ])(
+      '$role gets $expectedStatus for the actor list',
+      async ({ role, expectedStatus }) => {
+        const { event, accessToken } = await createEventWithManagerAndToken(
+          undefined,
+          role,
+        );
+
+        await request()
+          .get(`/api/v1/events/${event.id}/audit/actors`)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(expectedStatus);
+      },
+    );
 
     it.each([
       { role: 'DIRECTOR', expectedStatus: 200 },

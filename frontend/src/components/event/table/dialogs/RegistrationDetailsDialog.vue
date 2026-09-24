@@ -228,96 +228,11 @@
               </q-item-label>
             </q-list>
 
-            <div
-              v-if="auditLoading"
-              class="row justify-center q-py-lg"
-            >
-              <q-spinner
-                color="primary"
-                size="2em"
-              />
-            </div>
-
-            <q-timeline
-              v-else
-              class="q-px-lg"
-              color="primary"
-            >
-              <q-timeline-entry
-                v-for="entry in timelineEntries"
-                :key="entry.id"
-                :color="entry.color"
-                :icon="entry.icon"
-                :subtitle="entry.subtitle"
-                :title="entry.title"
-              >
-                <div
-                  v-if="entry.caption"
-                  class="text-caption audit-fields-label"
-                >
-                  {{ entry.caption }}
-                </div>
-                <div
-                  v-if="entry.note"
-                  class="text-body2 q-mb-xs"
-                >
-                  {{ entry.note }}
-                </div>
-                <div
-                  v-for="warning in entry.warnings"
-                  :key="warning"
-                  class="text-caption audit-warning q-mb-xs"
-                >
-                  {{ warning }}
-                </div>
-                <div
-                  v-if="entry.fields.length"
-                  class="q-mb-xs"
-                >
-                  <div class="text-caption audit-fields-label q-mb-xs">
-                    {{ t('timeline.changedFields') }}
-                  </div>
-                  <div class="audit-field-chips">
-                    <q-chip
-                      v-for="field in entry.fields"
-                      :key="field.path"
-                      dense
-                      size="sm"
-                      class="audit-field-chip"
-                    >
-                      {{ field.label }}
-                      <q-tooltip>{{ field.path }}</q-tooltip>
-                    </q-chip>
-                  </div>
-                </div>
-                <div
-                  v-if="entry.actor"
-                  class="text-caption audit-fields-label"
-                >
-                  {{ t('timeline.by', { actor: entry.actor }) }}
-                </div>
-                <m-btn
-                  v-if="entry.message"
-                  text
-                  primary
-                  dense
-                  no-caps
-                  size="sm"
-                  class="q-mt-xs"
-                  :label="t('timeline.viewMessage')"
-                  @click="openMessage(entry.message)"
-                />
-              </q-timeline-entry>
-
-              <!-- Fallback for registrations created before audit logging -->
-              <q-timeline-entry
-                v-if="!auditEntries.length"
-                :subtitle="formattedCreatedAt"
-                :title="t('timeline.registered')"
-                color="positive"
-                icon="how_to_reg"
-              />
-            </q-timeline>
+            <registration-timeline
+              :event-id
+              :registration-id
+              :created-at="registration.createdAt"
+            />
           </div>
         </div>
       </q-scroll-area>
@@ -344,26 +259,17 @@
 <script setup lang="ts">
 import { useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
-import type {
-  AuditActor,
-  AuditLogEntry,
-  Message,
-  MessageDelivery,
-} from '@camp-registration/common/entities';
 import { useObjectTranslation } from '@/composables/objectTranslation';
-import { useAuditTimeline } from '@/composables/audit/auditTimeline';
-import { useAPIService } from '@/services/APIService';
 import { formatPersonName } from '@/utils/formatters';
-import { extractFormFields } from '@/utils/surveyJS';
 import { useRegistrationsStore } from '@/stores/registration-store';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import RegistrationDialogHeader from '@/components/event/table/dialogs/RegistrationDialogHeader.vue';
 import RegistrationFormViewDialog from '@/components/event/table/dialogs/RegistrationFormViewDialog.vue';
-import MessageDetailsDialog from '@/components/event/contact/MessageDetailsDialog.vue';
+import RegistrationTimeline from '@/components/event/table/dialogs/RegistrationTimeline.vue';
 
 defineEmits([...useDialogPluginComponent.emits]);
 
@@ -371,12 +277,8 @@ const quasar = useQuasar();
 // eslint-disable-next-line @typescript-eslint/unbound-method
 const { t, te, locale } = useI18n();
 const { to } = useObjectTranslation();
-// Trigger names are shared with the audit log.
-// eslint-disable-next-line @typescript-eslint/unbound-method
-const { t: tGlobal, te: teGlobal } = useI18n({ useScope: 'global' });
 const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent();
 const route = useRoute();
-const apiService = useAPIService();
 
 const { registrationId } = defineProps<{
   registrationId: string;
@@ -384,6 +286,7 @@ const { registrationId } = defineProps<{
 
 const { data: registrations } = storeToRefs(useRegistrationsStore());
 const { data: event } = storeToRefs(useEventDetailsStore());
+const eventId = String(route.params.eventId);
 
 // Reactive lookup instead of a static snapshot, so edits made elsewhere
 // (e.g. the table's inline cell editors) are reflected while the dialog is open.
@@ -397,269 +300,6 @@ watch(registration, (value) => {
     dialogRef.value?.hide();
   }
 });
-
-interface ChangedField {
-  // Human-readable question name, or the raw path when it can't be resolved.
-  label: string;
-  // The raw audit path — always shown as the tooltip / fallback.
-  path: string;
-}
-
-interface TimelineDisplayEntry {
-  id: string;
-  // ISO timestamp, for merging audit entries and messages into one timeline.
-  at: string;
-  title: string;
-  subtitle: string;
-  color: string;
-  icon: string;
-  fields: ChangedField[];
-  actor: string | null;
-  caption?: string;
-  note?: string;
-  warnings?: string[];
-  message?: Message;
-}
-
-// Maps a registration `data` leaf path to its form question label (e.g.
-// `emergency_contacts.*.name` → "Contacts > * > Name"), the same mapping the
-// table-column and email editors use. Rebuilt when the event's form changes.
-const DATA_PREFIX = 'data.';
-
-const fieldLabels = computed<Map<string, string>>(() => {
-  const form = event.value?.form;
-  if (!form) {
-    return new Map();
-  }
-  return new Map(
-    extractFormFields(form).map(({ value, label }) => [value, label]),
-  );
-});
-
-const resolveField = (path: string): ChangedField => {
-  // Only form answers (`data.*`) have question labels; `customData.*` and any
-  // top-level column fall back to the raw path.
-  if (path.startsWith(DATA_PREFIX)) {
-    const label = fieldLabels.value.get(path.slice(DATA_PREFIX.length));
-    if (label) {
-      return { label, path };
-    }
-  }
-  return { label: path, path };
-};
-
-const auditEntries = ref<AuditLogEntry[]>([]);
-const auditLoading = ref(true);
-
-onMounted(async () => {
-  const eventId = route.params.eventId;
-  if (typeof eventId !== 'string') {
-    auditLoading.value = false;
-    return;
-  }
-
-  // Either may fail on its own (e.g. no permission to view messages) — the
-  // timeline then just shows what it could load.
-  const [audit, received] = await Promise.allSettled([
-    apiService.fetchRegistrationAuditLog(eventId, registrationId),
-    apiService.fetchRegistrationMessages(eventId, registrationId),
-  ]);
-  auditEntries.value = audit.status === 'fulfilled' ? audit.value : [];
-  deliveries.value = received.status === 'fulfilled' ? received.value : [];
-  auditLoading.value = false;
-});
-
-// The emails this registration received — one delivery per address.
-const deliveries = ref<MessageDelivery[]>([]);
-
-interface ReceivedEmail {
-  // Shaped as a message for MessageDetailsDialog: the rendered email, with
-  // this registration's addresses as its only recipient.
-  message: Message;
-  trigger: string | null;
-}
-
-// Groups the per-address deliveries of one send into a single email.
-const receivedEmails = computed<ReceivedEmail[]>(() => {
-  const groups = new Map<string, MessageDelivery[]>();
-  for (const delivery of deliveries.value) {
-    const key =
-      delivery.messageId ??
-      `${delivery.trigger ?? ''}|${delivery.createdAt.slice(0, 16)}`;
-    groups.set(key, [...(groups.get(key) ?? []), delivery]);
-  }
-
-  return [...groups.values()].flatMap(([first, ...rest]) => {
-    if (!first) {
-      return [];
-    }
-    return [
-      {
-        trigger: first.trigger,
-        message: {
-          id: first.id,
-          subject: first.subject,
-          body: first.body,
-          replyTo: first.replyTo,
-          priority: first.priority,
-          attachments: first.attachments,
-          recipients: [
-            {
-              registrationId,
-              deliveries: [first, ...rest].map(
-                ({ to, bouncedAt, bounceReason }) => ({
-                  to,
-                  bouncedAt,
-                  bounceReason,
-                }),
-              ),
-            },
-          ],
-          sentBy: first.sentBy,
-          createdAt: first.createdAt,
-        },
-      },
-    ];
-  });
-});
-
-function openMessage(message: Message): void {
-  quasar.dialog({
-    component: MessageDetailsDialog,
-    componentProps: {
-      message,
-      registrations: registrations.value ?? [],
-    },
-  });
-}
-
-const triggerLabel = (trigger: string): string => {
-  const key = `audit.entities.messageTemplate.values.trigger.${trigger}`;
-  return teGlobal(key) ? tGlobal(key) : trigger;
-};
-
-function buildEmailEntry({
-  message,
-  trigger,
-}: ReceivedEmail): TimelineDisplayEntry {
-  const warnings = (message.recipients?.[0]?.deliveries ?? [])
-    .filter((delivery) => delivery.bouncedAt)
-    .map((delivery) => t('timeline.bounced', { to: delivery.to ?? '—' }));
-  const at = message.createdAt ?? '';
-
-  return {
-    id: `email-${message.id}`,
-    at,
-    title: trigger ? t('timeline.automatedEmail') : t('timeline.messageSent'),
-    subtitle: at ? formatDateTime(at) : '',
-    color: warnings.length > 0 ? 'negative' : 'info',
-    icon: trigger ? 'mail_asterisk' : 'mail',
-    fields: [],
-    actor: message.sentBy?.name ?? null,
-    ...(trigger ? { caption: triggerLabel(trigger) } : {}),
-    note: message.subject,
-    warnings,
-    message,
-  };
-}
-
-const { formatDateTime: formatAuditDateTime, actorLabel: resolveActorLabel } =
-  useAuditTimeline();
-
-const formatDateTime = (timestamp: string): string =>
-  formatAuditDateTime(timestamp, locale.value);
-
-const actorLabel = (actor: AuditActor | null): string | null =>
-  resolveActorLabel(actor, t('timeline.deletedUser'));
-
-const statusLabel = (status: string): string => {
-  const key = `status.${status.toLowerCase()}`;
-  return te(key) ? t(key) : status;
-};
-
-// Mirrors the status colors used in the dialog header / table cells.
-const statusColor = (status: string): string => {
-  switch (status) {
-    case 'ACCEPTED':
-      return 'positive';
-    case 'PENDING':
-      return 'info';
-    default:
-      return 'warning';
-  }
-};
-
-const buildEntries = (entry: AuditLogEntry): TimelineDisplayEntry[] => {
-  const shared = {
-    at: entry.createdAt,
-    subtitle: formatDateTime(entry.createdAt),
-    actor: actorLabel(entry.actor),
-  };
-
-  if (entry.action === 'created') {
-    return [
-      {
-        ...shared,
-        id: entry.id,
-        title: t('timeline.created'),
-        color: 'positive',
-        icon: 'how_to_reg',
-        fields: [],
-      },
-    ];
-  }
-
-  if (entry.action === 'deleted') {
-    return [
-      {
-        ...shared,
-        id: entry.id,
-        title: t('timeline.deleted'),
-        color: 'negative',
-        icon: 'delete',
-        fields: [],
-      },
-    ];
-  }
-
-  const entries: TimelineDisplayEntry[] = [];
-
-  // A status change is the most salient edit — surface it as its own entry,
-  // titled with the new status and coloured by it (e.g. "Accepted").
-  const status = entry.details?.values?.status;
-  if (typeof status === 'string') {
-    entries.push({
-      ...shared,
-      id: `${entry.id}-status`,
-      title: statusLabel(status),
-      color: statusColor(status),
-      icon: 'swap_horiz',
-      fields: [],
-    });
-  }
-
-  const fields = entry.details?.changedFields ?? [];
-  if (fields.length > 0) {
-    entries.push({
-      ...shared,
-      id: `${entry.id}-fields`,
-      title: t('timeline.updated'),
-      color: 'primary',
-      icon: 'edit',
-      fields: fields.map(resolveField),
-    });
-  }
-
-  return entries;
-};
-
-// Newest first, audit entries and messages interleaved.
-const timelineEntries = computed<TimelineDisplayEntry[]>(() =>
-  [
-    ...auditEntries.value.flatMap(buildEntries),
-    ...receivedEmails.value.map(buildEmailEntry),
-  ].sort((a, b) => b.at.localeCompare(a.at)),
-);
 
 const personName = computed<string>(() => {
   const firstName = registration.value?.computedData.firstName?.trim() ?? '';
@@ -722,21 +362,6 @@ const formattedDateOfBirth = computed<string>(() => {
   });
 });
 
-const formattedCreatedAt = computed<string>(() => {
-  const createdAt = registration.value?.createdAt;
-  if (!createdAt) {
-    return '';
-  }
-  const date = new Date(createdAt);
-  return date.toLocaleString(locale.value, {
-    year: 'numeric',
-    month: '2-digit',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-});
-
 const street = computed<string | null>(
   () => registration.value?.computedData.address.street ?? null,
 );
@@ -784,11 +409,6 @@ section:
   registration: 'Registration'
   timeline: 'Timeline'
 
-status:
-  pending: 'Pending'
-  waitlisted: 'Waitlisted'
-  accepted: 'Accepted'
-
 field:
   name: 'Name'
   dateOfBirth: 'Date of Birth'
@@ -806,19 +426,6 @@ role:
   participant: 'Participant'
   counselor: 'Counselor'
 
-timeline:
-  registered: 'Registered'
-  created: 'Registered'
-  updated: 'Updated'
-  deleted: 'Deleted'
-  by: 'by {actor}'
-  changedFields: 'Changed:'
-  deletedUser: 'Deleted user'
-  messageSent: 'Message sent'
-  automatedEmail: 'Automated email sent'
-  viewMessage: 'View message'
-  bounced: 'Not delivered to {to}'
-
 action:
   close: 'Close'
   showFormData: 'Show form data'
@@ -831,11 +438,6 @@ section:
   address: 'Adresse'
   registration: 'Anmeldung'
   timeline: 'Verlauf'
-
-status:
-  pending: 'Ausstehend'
-  waitlisted: 'Warteliste'
-  accepted: 'Akzeptiert'
 
 field:
   name: 'Name'
@@ -854,19 +456,6 @@ role:
   participant: 'Teilnehmer'
   counselor: 'Betreuer'
 
-timeline:
-  registered: 'Angemeldet'
-  created: 'Angemeldet'
-  updated: 'Aktualisiert'
-  deleted: 'Gelöscht'
-  by: 'von {actor}'
-  changedFields: 'Geändert:'
-  deletedUser: 'Gelöschter Benutzer'
-  messageSent: 'Nachricht gesendet'
-  automatedEmail: 'Automatische E-Mail gesendet'
-  viewMessage: 'Nachricht ansehen'
-  bounced: 'Nicht zugestellt an {to}'
-
 action:
   close: 'Schließen'
   showFormData: 'Formulardaten anzeigen'
@@ -879,11 +468,6 @@ section:
   address: 'Adresse'
   registration: 'Inscription'
   timeline: 'Historique'
-
-status:
-  pending: 'En attente'
-  waitlisted: "Liste d'attente"
-  accepted: 'Accepté'
 
 field:
   name: 'Nom'
@@ -902,19 +486,6 @@ role:
   participant: 'Participant'
   counselor: 'Conseiller'
 
-timeline:
-  registered: 'Inscrit'
-  created: 'Inscrit'
-  updated: 'Mis à jour'
-  deleted: 'Supprimé'
-  by: 'par {actor}'
-  changedFields: 'Modifié :'
-  deletedUser: 'Utilisateur supprimé'
-  messageSent: 'Message envoyé'
-  automatedEmail: 'E-mail automatique envoyé'
-  viewMessage: 'Voir le message'
-  bounced: 'Non distribué à {to}'
-
 action:
   close: 'Fermer'
   showFormData: 'Afficher les données du formulaire'
@@ -927,11 +498,6 @@ section:
   address: 'Adres'
   registration: 'Rejestracja'
   timeline: 'Historia'
-
-status:
-  pending: 'Oczekuje'
-  waitlisted: 'Lista oczekujących'
-  accepted: 'Zaakceptowano'
 
 field:
   name: 'Imię i nazwisko'
@@ -950,19 +516,6 @@ role:
   participant: 'Uczestnik'
   counselor: 'Opiekun'
 
-timeline:
-  registered: 'Zarejestrowano'
-  created: 'Zarejestrowano'
-  updated: 'Zaktualizowano'
-  deleted: 'Usunięto'
-  by: 'przez {actor}'
-  changedFields: 'Zmieniono:'
-  deletedUser: 'Usunięty użytkownik'
-  messageSent: 'Wysłano wiadomość'
-  automatedEmail: 'Wysłano automatyczny e-mail'
-  viewMessage: 'Zobacz wiadomość'
-  bounced: 'Nie dostarczono do {to}'
-
 action:
   close: 'Zamknij'
   showFormData: 'Pokaż dane formularza'
@@ -975,11 +528,6 @@ section:
   address: 'Adresa'
   registration: 'Registrace'
   timeline: 'Časová osa'
-
-status:
-  pending: 'Čeká na schválení'
-  waitlisted: 'Na čekací listině'
-  accepted: 'Přijato'
 
 field:
   name: 'Jméno'
@@ -998,19 +546,6 @@ role:
   participant: 'Účastník'
   counselor: 'Pečovatel'
 
-timeline:
-  registered: 'Zaregistrováno'
-  created: 'Zaregistrováno'
-  updated: 'Aktualizováno'
-  deleted: 'Smazáno'
-  by: 'uživatelem {actor}'
-  changedFields: 'Změněno:'
-  deletedUser: 'Smazaný uživatel'
-  messageSent: 'Zpráva odeslána'
-  automatedEmail: 'Automatický e-mail odeslán'
-  viewMessage: 'Zobrazit zprávu'
-  bounced: 'Nedoručeno na {to}'
-
 action:
   close: 'Zavřít'
   showFormData: 'Zobrazit data formuláře'
@@ -1024,35 +559,6 @@ action:
 
 .header-btn {
   color: var(--md3-on-surface-variant);
-}
-
-.audit-fields-label {
-  color: var(--md3-on-surface-variant);
-}
-
-/* Chips flow and wrap; long question labels stay fully visible by wrapping
-   their text rather than truncating. The raw path remains in the tooltip. */
-.audit-field-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-.audit-field-chip {
-  max-width: 100%;
-  height: auto;
-  margin: 0;
-}
-
-.audit-field-chip :deep(.q-chip__content) {
-  white-space: normal;
-  overflow-wrap: anywhere;
-  line-height: 1.25;
-  padding-block: 3px;
-}
-
-.audit-warning {
-  color: var(--md3-error);
 }
 
 @media (min-width: 600px) {

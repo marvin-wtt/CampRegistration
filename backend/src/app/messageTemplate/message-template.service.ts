@@ -126,6 +126,7 @@ export class MessageTemplateService extends BaseService {
     return this.prisma.$transaction(async (tx) => {
       const before = await tx.messageTemplate.findUniqueOrThrow({
         where: { id },
+        include: { attachments: { select: { id: true } } },
       });
 
       const attachments = await this.fileService.syncFilesForOwner(

@@ -70,6 +70,8 @@ export interface RegistrationTemplatePayload {
   message: RenderableMessage;
   email: string;
   changes?: RegistrationChange[];
+  // Groups this send's per-address deliveries; absent on jobs queued before it.
+  batchId?: string;
 }
 
 export class RegistrationTemplateMessage extends RegistrationMessage<RegistrationTemplatePayload> {
@@ -246,6 +248,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
           bcc: mail.bcc ? addressLikeToString(mail.bcc) : undefined,
           replyTo: mail.replyTo ? addressLikeToString(mail.replyTo) : undefined,
           bounceCorrelationId: mail.messageId,
+          batchId: this.payload.batchId,
         },
       );
     } catch (err) {
@@ -326,12 +329,15 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
       return null;
     }
 
+    const batchId = ulid();
+
     return emails.map((email) => ({
       event,
       registration,
       message,
       email,
       changes,
+      batchId,
     }));
   }
 

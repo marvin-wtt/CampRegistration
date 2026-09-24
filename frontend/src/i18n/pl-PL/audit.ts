@@ -5,6 +5,9 @@ export default {
     deleted: 'Usunięto',
   },
   reason: 'Powód',
+  deletedUser: 'Usunięty użytkownik',
+  today: 'Dzisiaj',
+  yesterday: 'Wczoraj',
   viewInSettings: 'Zobacz w ustawieniach',
   entities: {
     event: {
@@ -26,8 +29,8 @@ export default {
         endAt: 'Data zakończenia',
         price: 'Cena',
         location: 'Lokalizacja',
+        timezone: 'Strefa czasowa',
         form: 'Formularz rejestracyjny',
-        retentionReminderSentAt: 'Przypomnienie o retencji wysłane',
       },
     },
     registration: {
@@ -35,6 +38,7 @@ export default {
       fields: {
         data: 'Odpowiedź z formularza',
         customData: 'Pole niestandardowe',
+        customFiles: 'Plik niestandardowy',
         status: 'Status',
         country: 'Kraj',
       },
@@ -76,6 +80,9 @@ export default {
     },
     message: {
       label: 'Wiadomość',
+      fields: {
+        recipients: 'Odbiorcy',
+      },
       actions: {
         sent: 'Wysłano',
       },
@@ -91,6 +98,7 @@ export default {
         body: 'Treść',
         priority: 'Priorytet',
         replyTo: 'Adres odpowiedzi',
+        attachments: 'Załączniki',
       },
       values: {
         trigger: {

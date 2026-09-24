@@ -3,14 +3,11 @@ import type {
   AuditEntityType,
   AuditLogEntry,
 } from '@camp-registration/common/entities';
-import type { AuditLogWithActor } from '#app/audit/audit.service';
+import type { AuditLogView } from '#app/audit/audit.service';
 
-export class AuditResource extends JsonResource<
-  AuditLogWithActor,
-  AuditLogEntry
-> {
+export class AuditResource extends JsonResource<AuditLogView, AuditLogEntry> {
   transform(): AuditLogEntry {
-    const { log, actor, subject } = this.data;
+    const { log, actor, subject, entityName } = this.data;
     return {
       id: log.id,
       action: log.action,
@@ -19,6 +16,7 @@ export class AuditResource extends JsonResource<
       eventId: log.eventId,
       actor,
       subject,
+      ...(entityName !== undefined ? { entityName } : {}),
       details: log.details ?? null,
       createdAt: log.createdAt.toISOString(),
     };

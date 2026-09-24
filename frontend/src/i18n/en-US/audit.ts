@@ -5,6 +5,9 @@ export default {
     deleted: 'Deleted',
   },
   reason: 'Reason',
+  deletedUser: 'Deleted user',
+  today: 'Today',
+  yesterday: 'Yesterday',
   viewInSettings: 'View in settings',
   entities: {
     event: {
@@ -26,8 +29,8 @@ export default {
         endAt: 'End date',
         price: 'Price',
         location: 'Location',
+        timezone: 'Time zone',
         form: 'Registration form',
-        retentionReminderSentAt: 'Retention reminder sent at',
       },
     },
     registration: {
@@ -35,6 +38,7 @@ export default {
       fields: {
         data: 'Form answer',
         customData: 'Custom field',
+        customFiles: 'Custom file',
         status: 'Status',
         country: 'Country',
       },
@@ -76,6 +80,9 @@ export default {
     },
     message: {
       label: 'Message',
+      fields: {
+        recipients: 'Recipients',
+      },
       actions: {
         sent: 'Sent',
       },
@@ -91,6 +98,7 @@ export default {
         body: 'Body',
         priority: 'Priority',
         replyTo: 'Reply-to',
+        attachments: 'Attachments',
       },
       values: {
         trigger: {

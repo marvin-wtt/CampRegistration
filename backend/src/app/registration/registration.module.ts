@@ -20,6 +20,7 @@ import { RegistrationUpdatedMessage } from '#app/registration/messages/updated.m
 import { RegistrationWaitlistedMessage } from '#app/registration/messages/waitlisted.mail';
 import { MailableRegistry } from '#core/mail/mail.registry';
 import { resolve } from '#core/ioc/container';
+import { registerAuditNameResolver } from '#app/audit/audit.names';
 
 export class RegistrationModule implements AppModule {
   bindContainers(options: BindOptions) {
@@ -45,6 +46,9 @@ export class RegistrationModule implements AppModule {
     registerFileGuard('registration', {
       view: registrationFileGuard,
     });
+    registerAuditNameResolver('registration', (eventId, ids) =>
+      resolve(RegistrationService).getNamesByIds(eventId, ids),
+    );
 
     router.useRouter(
       '/events/:eventsId/registrations/:registrationId/files',

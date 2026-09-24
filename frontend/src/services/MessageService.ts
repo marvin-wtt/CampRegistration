@@ -16,7 +16,7 @@ export function useMessageService() {
   async function fetchMessage(
     eventId: string,
     messageId: string,
-  ): Promise<MessageDelivery> {
+  ): Promise<Message> {
     const response = await api.get(`events/${eventId}/messages/${messageId}/`);
 
     return response?.data?.data;

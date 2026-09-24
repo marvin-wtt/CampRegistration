@@ -5,6 +5,9 @@ export default {
     deleted: 'Supprimé',
   },
   reason: 'Motif',
+  deletedUser: 'Utilisateur supprimé',
+  today: 'Aujourd’hui',
+  yesterday: 'Hier',
   viewInSettings: 'Voir dans les paramètres',
   entities: {
     event: {
@@ -26,8 +29,8 @@ export default {
         endAt: 'Date de fin',
         price: 'Prix',
         location: 'Lieu',
+        timezone: 'Fuseau horaire',
         form: 'Formulaire d’inscription',
-        retentionReminderSentAt: 'Rappel de conservation envoyé le',
       },
     },
     registration: {
@@ -35,6 +38,7 @@ export default {
       fields: {
         data: 'Réponse du formulaire',
         customData: 'Champ personnalisé',
+        customFiles: 'Fichier personnalisé',
         status: 'Statut',
         country: 'Pays',
       },
@@ -76,6 +80,9 @@ export default {
     },
     message: {
       label: 'Message',
+      fields: {
+        recipients: 'Destinataires',
+      },
       actions: {
         sent: 'Envoyé',
       },
@@ -91,6 +98,7 @@ export default {
         body: 'Contenu',
         priority: 'Priorité',
         replyTo: 'Adresse de réponse',
+        attachments: 'Pièces jointes',
       },
       values: {
         trigger: {

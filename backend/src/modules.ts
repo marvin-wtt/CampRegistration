@@ -45,7 +45,6 @@ import { QueueManagerModule } from '#core/queue/queue-manager.module';
 import { SchedulerModule } from '#core/scheduler/scheduler.module';
 import { MailModule } from '#core/mail/mail.module';
 import { RealtimeModule } from '#core/realtime/realtime.module';
-import { ContextModule } from '#core/context/context.module';
 
 // Order matters: earlier modules boot first and shut down last.
 export const createCoreModules = (): CoreModule[] => [
@@ -56,7 +55,6 @@ export const createCoreModules = (): CoreModule[] => [
   new QueueManagerModule(),
   new SchedulerModule(),
   new MailModule(),
-  new ContextModule(),
   new RealtimeModule(),
 ];
 

@@ -1,7 +1,5 @@
-import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
-import type { Message } from '@camp-registration/common/entities';
 import type { AuditEntityView } from '@/composables/audit/auditEntityView';
 import { useAPIService } from '@/services/APIService';
 import { useRegistrationsStore } from '@/stores/registration-store';
@@ -13,23 +11,15 @@ export function useMessageAuditView(): AuditEntityView {
   const apiService = useAPIService();
   const registrationsStore = useRegistrationsStore();
 
-  const messages = ref<Message[] | null>(null);
-  const find = (id: string) => messages.value?.find((m) => m.id === id);
-
-  async function load(eventId: string): Promise<void> {
-    messages.value = await apiService.fetchMessages(eventId);
-  }
-
   return {
     icon: 'mail',
-    load,
-    exists: (id) => (messages.value ? !!find(id) : null),
 
     open: {
       label: () => t('audit.entities.message.view'),
       async run(eventId, messageId) {
-        await load(eventId).catch(() => undefined);
-        const message = find(messageId);
+        const message = await apiService
+          .fetchMessage(eventId, messageId)
+          .catch(() => null);
         if (!message) {
           quasar.notify({
             type: 'negative',
@@ -37,6 +27,8 @@ export function useMessageAuditView(): AuditEntityView {
           });
           return;
         }
+        // Recipient names come from the store; the dialog falls back without it.
+        await registrationsStore.fetchData(eventId).catch(() => undefined);
         quasar.dialog({
           component: MessageDetailsDialog,
           componentProps: {

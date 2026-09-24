@@ -15,3 +15,6 @@ CREATE TABLE `audit_logs` (
     INDEX `audit_logs_actor_id_index`(`actor_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- AddForeignKey
+ALTER TABLE `audit_logs` ADD CONSTRAINT `audit_logs_event_id_foreign` FOREIGN KEY (`event_id`) REFERENCES `events`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;

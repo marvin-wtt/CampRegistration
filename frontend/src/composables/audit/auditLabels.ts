@@ -1,11 +1,30 @@
+import { computed, type ComputedRef } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { storeToRefs } from 'pinia';
 import type {
   AuditEntityType,
   AuditValue,
 } from '@camp-registration/common/entities';
+import { useEventDetailsStore } from '@/stores/event-details-store';
+import { extractFormFields } from '@/utils/surveyJS';
 
 // How the backend records a `Date` value.
 const ISO_DATE_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
+
+// Question labels for `data.*`/`form.*` audit paths, from the event's current form.
+export function useFormFieldLabels(): ComputedRef<Map<string, string>> {
+  const { data: event } = storeToRefs(useEventDetailsStore());
+
+  return computed(() => {
+    const form = event.value?.form;
+    if (!form) {
+      return new Map();
+    }
+    return new Map(
+      extractFormFields(form).map(({ value, label }) => [value, label]),
+    );
+  });
+}
 
 // Resolves audit labels from the global `audit` i18n namespace, where each
 // entity owns its label, field names, action wording, and value labels
@@ -35,9 +54,8 @@ export function useAuditLabels() {
   }
 
   /**
-   * A changed field, which may be a dotted dynamic path (`data.allergies`,
-   * `form.allergies`) — resolved against the event's form questions where
-   * possible, falling back to the raw path (e.g. a since-removed question).
+   * A changed field; a dotted path (`data.allergies`) reads as "Form answer:
+   * <question label>", keeping the raw name for a since-removed question.
    */
   function fieldLabel(
     entityType: AuditEntityType,
@@ -45,12 +63,10 @@ export function useAuditLabels() {
     formFieldLabels?: Map<string, string>,
   ): string {
     const separatorIndex = path.indexOf('.');
-    if (separatorIndex !== -1 && formFieldLabels) {
-      const prefix = path.slice(0, separatorIndex);
-      const resolved = formFieldLabels.get(path.slice(separatorIndex + 1));
-      if (resolved) {
-        return `${fieldLabel(entityType, prefix)}: ${resolved}`;
-      }
+    const prefixKey = `audit.entities.${entityType}.fields.${path.slice(0, separatorIndex)}`;
+    if (separatorIndex !== -1 && te(prefixKey)) {
+      const rest = path.slice(separatorIndex + 1);
+      return `${t(prefixKey)}: ${formFieldLabels?.get(rest) ?? rest}`;
     }
     return translate([`audit.entities.${entityType}.fields.${path}`], path);
   }

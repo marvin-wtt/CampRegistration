@@ -5,15 +5,10 @@ import { ModuleRouter } from '#core/router/ModuleRouter';
 import { MessageDeliveryController } from '#app/messageDelivery/message-delivery.controller';
 import { resolve } from '#core/ioc/container';
 
-/**
- * Mounted at `/events/:eventId/registrations/:registrationId/messages` — the
- * emails a registration received, manual and automated. Reuses the global
- * `event` / `registration` bindings. The rendered bodies are message content,
- * so this sits behind the same permission as the messages themselves.
- */
+// The emails a registration received, behind the messages' own permission.
 export class RegistrationMessageRouter extends ModuleRouter {
   protected registerBindings() {
-    // Reuses the global `event` / `registration` bindings.
+    // `event` and `registration` are bound globally.
   }
 
   protected defineRoutes() {

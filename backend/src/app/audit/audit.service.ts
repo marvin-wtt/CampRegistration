@@ -1,6 +1,6 @@
 import { BaseService } from '#core/base/BaseService';
-import { ActorContext } from '#core/context/ActorContext';
-import { inject, injectable } from 'inversify';
+import { getRequestContext } from '#core/context/requestContext';
+import { injectable } from 'inversify';
 import {
   type AuditLog,
   Prisma,
@@ -13,12 +13,12 @@ import type {
 } from '@camp-registration/common/entities';
 import { hasNoChanges, mergeDetails } from '#app/audit/audit.diff';
 import type { AuditChangePolicy } from '#app/audit/audit.policy';
+import { getAuditNameResolver } from '#app/audit/audit.names';
 
 export type PrismaTransaction = Parameters<
   Parameters<PrismaClient['$transaction']>[0]
 >[0];
 
-// Audit rows are purged after this long — defense-in-depth against unbounded PII retention.
 const AUDIT_RETENTION_DAYS = 365 * 2;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -27,30 +27,22 @@ export interface AuditRecordInput {
   entityType: AuditEntityType;
   entityId: string;
   eventId?: string | null;
-  // What the entry records beyond the action; see `AuditDetails`.
   details?: AuditDetails | null;
-  // Override the actor. Omit to use the request context; pass `null` to force a
-  // system-attributed entry (e.g. a public self-registration).
+  // Omit to use the request's user; `null` forces a system-attributed entry.
   actorId?: string | null;
 }
 
-export interface AuditLogWithActor {
+export interface AuditLogView {
   log: AuditLog;
   actor: AuditActor | null;
   subject: AuditActor | null;
+  // `undefined` when the entity type resolves no names; `null` once deleted.
+  entityName?: string | null;
 }
 
 @injectable()
 export class AuditService extends BaseService {
-  constructor(@inject(ActorContext) private readonly context: ActorContext) {
-    super();
-  }
-
-  /**
-   * Writes one audit entry, enrolled in the caller's transaction so the audit
-   * row is atomic with the mutation it records. The actor is read from the
-   * request context — `null` for anonymous/system.
-   */
+  // Runs in the caller's transaction, so the entry is atomic with the change.
   async record(tx: PrismaTransaction, input: AuditRecordInput): Promise<void> {
     await tx.auditLog.create({
       data: {
@@ -65,18 +57,19 @@ export class AuditService extends BaseService {
   }
 
   private resolveActorId(actorId: string | null | undefined): string | null {
-    return actorId !== undefined ? actorId : (this.context.userId ?? null);
+    return actorId !== undefined
+      ? actorId
+      : (getRequestContext()?.userId ?? null);
   }
 
   /**
-   * Diffs `before`/`after` through the entity's policy and records the resulting
-   * details — skipping no-op edits. Keeps audit shaping in the entity's
-   * module. Only field names (and the bounded status value) are recorded.
+   * Records an update as diffed by the entity's policy, skipping no-op edits.
+   * Read `before` inside the same transaction as the write, so the diff can't
+   * race another request.
    *
    * With `coalesceWithinMs`, an edit by the same actor is merged into the
-   * entity's latest entry if that was created within the window — so an
-   * autosaving editor yields one entry per window, not one per save. The
-   * window is fixed, so a long session still produces an entry every window.
+   * entity's latest entry if that is younger than the window — an autosaving
+   * editor then yields one entry per window instead of one per save.
    */
   async recordChange<T>(
     tx: PrismaTransaction,
@@ -133,10 +126,9 @@ export class AuditService extends BaseService {
       return false;
     }
 
-    const previous = latest.details ?? {};
     await tx.auditLog.update({
       where: { id: latest.id },
-      data: { details: mergeDetails(previous, details) },
+      data: { details: mergeDetails(latest.details ?? {}, details) },
     });
     return true;
   }
@@ -155,12 +147,7 @@ export class AuditService extends BaseService {
     });
   }
 
-  /**
-   * Cursor-paginated audit rows for an event, across every entity type unless
-   * narrowed by `filter`. Mirrors `NewsletterService.queryNewsletters`'s
-   * take-one-extra cursor pattern; `total` is only computed on the first
-   * (uncursored) page, matching every other cursor-paginated list in the app.
-   */
+  // Newest first, cursor-paginated; `total` only on the first page.
   async listForEvent(
     eventId: string,
     filter: {
@@ -184,8 +171,7 @@ export class AuditService extends BaseService {
       eventId,
       entityType: filter.entityType ? { in: filter.entityType } : undefined,
       entityId: filter.entityId,
-      // An explicit actor list already excludes system entries; `hideSystem`
-      // only does anything when no actor list is given.
+      // An actor list already excludes system entries.
       actorId: filter.actorId
         ? { in: filter.actorId }
         : filter.hideSystem
@@ -214,34 +200,104 @@ export class AuditService extends BaseService {
     return { logs, nextCursor, limit, total };
   }
 
+  async listActorsForEvent(eventId: string): Promise<AuditActor[]> {
+    const rows = await this.prisma.auditLog.findMany({
+      where: { eventId, actorId: { not: null } },
+      distinct: ['actorId'],
+      select: { actorId: true },
+    });
+    const ids = rows.flatMap((row) => (row.actorId ? [row.actorId] : []));
+    const users = await this.resolveUsers(ids);
+
+    return ids.map((id) => this.userOrDeleted(users, id));
+  }
+
   /**
-   * Resolves actor ids to `{ id, name }`. Ids with no matching user (deleted or
-   * GDPR-erased) are omitted from the returned map — callers should fall back to
-   * `{ id, name: null }` (not a bare `null`) so the id survives for display as
-   * "deleted user", distinct from a genuinely absent (system/anonymous) actor.
+   * Resolves the users an entry names — its actor and, for entries about a
+   * person other than the entity (`details.subjectId`), its subject — and,
+   * with `withEntityNames`, the entity's display name while it still exists.
    */
-  async resolveActors(
-    actorIds: (string | null)[],
-  ): Promise<Map<string, AuditActor>> {
-    const ids = [
-      ...new Set(actorIds.filter((id): id is string => id !== null)),
-    ];
-    if (ids.length === 0) {
+  async present(
+    eventId: string,
+    logs: AuditLog[],
+    { withEntityNames = false } = {},
+  ): Promise<AuditLogView[]> {
+    const userIds = logs.flatMap((log) =>
+      [log.actorId, log.details?.subjectId].filter((id): id is string => !!id),
+    );
+    const [users, names] = await Promise.all([
+      this.resolveUsers(userIds),
+      withEntityNames
+        ? this.resolveEntityNames(eventId, logs)
+        : Promise.resolve(null),
+    ]);
+
+    return logs.map((log) => {
+      const subjectId = log.details?.subjectId;
+      const typeNames = names?.get(log.entityType as AuditEntityType);
+      return {
+        log,
+        actor: log.actorId ? this.userOrDeleted(users, log.actorId) : null,
+        subject: subjectId ? this.userOrDeleted(users, subjectId) : null,
+        ...(typeNames
+          ? { entityName: typeNames.get(log.entityId) ?? null }
+          : {}),
+      };
+    });
+  }
+
+  private async resolveEntityNames(
+    eventId: string,
+    logs: AuditLog[],
+  ): Promise<Map<AuditEntityType, Map<string, string>>> {
+    const idsByType = new Map<AuditEntityType, Set<string>>();
+    for (const log of logs) {
+      const type = log.entityType as AuditEntityType;
+      if (getAuditNameResolver(type)) {
+        idsByType.set(
+          type,
+          (idsByType.get(type) ?? new Set()).add(log.entityId),
+        );
+      }
+    }
+
+    const entries = await Promise.all(
+      [...idsByType].map(async ([type, ids]) => {
+        const resolver = getAuditNameResolver(type);
+        const names = resolver
+          ? await resolver(eventId, [...ids])
+          : new Map<string, string>();
+        return [type, names] as const;
+      }),
+    );
+    return new Map(entries);
+  }
+
+  private async resolveUsers(ids: string[]): Promise<Map<string, AuditActor>> {
+    const unique = [...new Set(ids)];
+    if (unique.length === 0) {
       return new Map();
     }
     const users = await this.prisma.user.findMany({
-      where: { id: { in: ids } },
+      where: { id: { in: unique } },
       select: { id: true, name: true },
     });
     return new Map(users.map((user) => [user.id, user]));
   }
 
+  // A user no longer found (deleted or erased) keeps its id with no name, so
+  // it reads as "deleted user" rather than as the system.
+  private userOrDeleted(
+    users: Map<string, AuditActor>,
+    id: string,
+  ): AuditActor {
+    return users.get(id) ?? { id, name: null };
+  }
+
   /**
-   * Enforces the audit-log retention policy. Only purges *orphaned* entries —
-   * rows whose event is already gone (`eventId` is null, either because the
-   * event was deleted — the FK sets it null — or because the action was
-   * system/public to begin with). Rows still tied to an existing event are left
-   * untouched, so a live event always keeps its full audit trail.
+   * Deletes entries older than the retention window whose event is gone
+   * (the FK nulls `eventId` when an event is deleted). Entries of an existing
+   * event are kept for as long as the event exists.
    */
   async purgeExpiredAuditLogs(): Promise<number> {
     const cutoff = new Date(Date.now() - AUDIT_RETENTION_DAYS * DAY_MS);

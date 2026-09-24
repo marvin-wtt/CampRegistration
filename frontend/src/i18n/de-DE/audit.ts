@@ -5,6 +5,9 @@ export default {
     deleted: 'Gelöscht',
   },
   reason: 'Grund',
+  deletedUser: 'Gelöschter Benutzer',
+  today: 'Heute',
+  yesterday: 'Gestern',
   viewInSettings: 'In den Einstellungen ansehen',
   entities: {
     event: {
@@ -26,8 +29,8 @@ export default {
         endAt: 'Enddatum',
         price: 'Preis',
         location: 'Ort',
+        timezone: 'Zeitzone',
         form: 'Anmeldeformular',
-        retentionReminderSentAt: 'Aufbewahrungserinnerung gesendet am',
       },
     },
     registration: {
@@ -35,6 +38,7 @@ export default {
       fields: {
         data: 'Formularantwort',
         customData: 'Benutzerdefiniertes Feld',
+        customFiles: 'Benutzerdefinierte Datei',
         status: 'Status',
         country: 'Land',
       },
@@ -76,6 +80,9 @@ export default {
     },
     message: {
       label: 'Nachricht',
+      fields: {
+        recipients: 'Empfänger',
+      },
       actions: {
         sent: 'Gesendet',
       },
@@ -91,6 +98,7 @@ export default {
         body: 'Inhalt',
         priority: 'Priorität',
         replyTo: 'Antwortadresse',
+        attachments: 'Anhänge',
       },
       values: {
         trigger: {

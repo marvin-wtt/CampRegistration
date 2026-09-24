@@ -1,13 +1,14 @@
 import { generalLimiter, maintenance } from '#middlewares/index';
 import passport from 'passport';
 import { successHandler, clientErrorHandler } from '#core/morgan';
-import context from '#middlewares/context.middleware';
+import context, {
+  authenticatedUserContext,
+} from '#middlewares/context.middleware';
 import extensions from '#middlewares/extension.middleware';
 import { createRouter } from '#core/router/router';
 import { csrfProtection } from '#middlewares/csrf.middleware';
 import { sessionId } from '#middlewares/session.middleware';
 import convertEmptyStringsToNull from '#middlewares/string.middleware';
-import { actorContext } from '#middlewares/actor-context.middleware';
 import { initializePassport } from '#core/passport';
 
 // authentication
@@ -34,8 +35,8 @@ const router = createRouter()
   // authentication
   .use(passport.authenticate(['jwt', 'anonymous'], { session: false }))
 
-  // request-scoped actor context (needs req.user from passport + req.sessionId)
-  .use(actorContext)
+  // the authenticated user, for the audit log
+  .use(authenticatedUserContext)
 
   // csrf protection
   .use(csrfProtection)

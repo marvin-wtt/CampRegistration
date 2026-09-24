@@ -10,40 +10,28 @@ export const AUDIT_ENTITY_TYPES = [
 
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];
 
-// Scalars only — a deliberate constraint so values stay bounded and non-PII
-// (you can't accidentally dump a whole object or free-text answer in here).
+// Scalars only, so a value can never carry a whole object or free-text answer.
 export type AuditValue = string | number | boolean | null;
 
-// Everything an entry records beyond who did what to which entity: what
-// changed, what identifies the entity, who it's about, and why.
 export interface AuditDetails {
-  // Names of the fields that changed — never their values. Top-level columns by
-  // name; the `data`/`customData` blobs by leaf dot-path (`data.allergies`).
+  // Changed field names, never values; `data`/`customData` by leaf path.
   changedFields?: string[];
-  // Field values a policy has marked safe to record — bounded, non-identifying
-  // scalars (e.g. a registration's `status`): the new value on update, the
-  // initial one on create. Keyed by field name.
+  // Values a policy marks safe to record (e.g. a registration's `status`).
   values?: Record<string, AuditValue>;
-  // Values that identify the entity (e.g. a manager's `role`, a template's
-  // `trigger`), attached to every entry whether or not they changed — so
-  // create/delete entries, which have no diff, are still identifiable.
+  // Identifies the entity on every entry, changed or not (e.g. a manager's role).
   context?: Record<string, AuditValue>;
-  // Why the action happened, as a fixed code (e.g. a registration's delete
-  // reason) — never free text, so no personal data can end up here.
+  // A fixed code, never free text (e.g. a registration's delete reason).
   reason?: string;
-  // The id of the user this entry is *about*, when that differs from both the
-  // actor and the entity itself (e.g. an eventManager entry's `entityId` is the
-  // grant record, not the person — this is the person). Resolved into
-  // `AuditLogEntry.subject` at read time — never stored as a name here.
+  // The user the entry is about, when that isn't the entity itself (the person
+  // behind a manager grant). Resolved into `AuditLogEntry.subject` at read time.
   subjectId?: string | null;
-  // A masked identifier (e.g. `j***@example.com`) for a subject with no user
-  // account to resolve — a pending invitation. Only set when `subjectId` isn't.
+  // Masked identifier for a subject without an account (a pending invitation).
   subjectHint?: string;
 }
 
 export interface AuditActor {
   id: string;
-  // Resolved at read-time; null when the user was deleted/erased
+  // Null when the user has been deleted.
   name: string | null;
 }
 
@@ -53,21 +41,21 @@ export interface AuditLogEntry extends Identifiable {
   entityId: string;
   eventId: string | null;
   actor: AuditActor | null;
-  // The entity's "subject" user, when it has one distinct from the actor
-  // (e.g. the manager an eventManager entry is about) — resolved the same way
-  // as `actor`, never stored as a name.
   subject: AuditActor | null;
+  // The entity's current display name, `null` once it's deleted. Absent for
+  // entity types that don't resolve names, and on per-registration lists.
+  entityName?: string | null;
   details: AuditDetails | null;
   createdAt: string;
 }
 
 export interface AuditLogQuery {
-  entityType?: AuditEntityType | AuditEntityType[];
-  entityId?: string;
-  actorId?: string | string[];
-  hideSystem?: boolean; // exclude actor === null entries
-  from?: string; // ISO datetime, inclusive
-  to?: string; // ISO datetime, inclusive
-  cursor?: string;
-  limit?: number;
+  entityType?: AuditEntityType | AuditEntityType[] | undefined;
+  entityId?: string | undefined;
+  actorId?: string | string[] | undefined;
+  hideSystem?: boolean | undefined; // exclude actor === null entries
+  from?: string | undefined; // ISO datetime, inclusive
+  to?: string | undefined; // ISO datetime, inclusive
+  cursor?: string | undefined;
+  limit?: number | undefined;
 }

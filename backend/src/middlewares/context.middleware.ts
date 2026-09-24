@@ -1,6 +1,9 @@
 import type { NextFunction, Request, Response } from 'express';
 import { CLIENT_ID_HEADER } from '@camp-registration/common/realtime';
-import { runWithRequestContext } from '#core/context/requestContext';
+import {
+  extendRequestContext,
+  runWithRequestContext,
+} from '#core/context/requestContext';
 
 // Originating client id (X-Client-Id header) used for realtime echo suppression.
 const clientId = (req: Request): string | undefined => {
@@ -16,4 +19,15 @@ const clientId = (req: Request): string | undefined => {
  */
 export default (req: Request, _res: Response, next: NextFunction) => {
   runWithRequestContext({ clientId: clientId(req) }, next);
+};
+
+// Must run after `passport.authenticate`, which populates `req.user`.
+export const authenticatedUserContext = (
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+) => {
+  const user: { id?: string } | undefined = req.user;
+  extendRequestContext({ userId: user?.id });
+  next();
 };

@@ -34,6 +34,23 @@ describe('messageTemplateAuditPolicy.details', () => {
     });
   });
 
+  it('reports a changed attachment set, ignoring order', () => {
+    const base = { trigger: 'registration_confirmation', country: 'de' };
+
+    expect(
+      policy.details(
+        { ...base, attachments: [{ id: 'a' }, { id: 'b' }] },
+        { ...base, attachments: [{ id: 'b' }, { id: 'a' }] },
+      ).changedFields,
+    ).toBeUndefined();
+    expect(
+      policy.details(
+        { ...base, attachments: [{ id: 'a' }] },
+        { ...base, attachments: [{ id: 'a' }, { id: 'c' }] },
+      ).changedFields,
+    ).toEqual(['attachments']);
+  });
+
   it('ignores fields outside the allow-list (id, eventId, updatedAt)', () => {
     const before = {
       trigger: 'registration_confirmation',

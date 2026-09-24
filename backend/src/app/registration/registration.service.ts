@@ -17,9 +17,11 @@ import { AuditService } from '#app/audit/audit.service';
 import { composeDetails } from '#app/audit/audit.diff';
 import type { RegistrationDeleteReason } from '@camp-registration/common/entities';
 import {
+  type AuditedRegistration,
   registrationAuditPolicy,
   registrationIdentity,
 } from '#app/registration/registration.audit';
+import type { PrismaTransaction } from '#app/audit/audit.service';
 import { PrivacyNoticeService } from '#app/privacyNotice/privacy-notice.service';
 
 /** The create uses relation connects throughout, so the stamp must too. */
@@ -224,8 +226,6 @@ export class RegistrationService extends BaseService {
     // custom file slots require a transactional file sync.
     if (!data.data && !data.customFiles) {
       return this.prisma.$transaction(async (tx) => {
-        // Read the authoritative "before" inside the transaction so the audit
-        // diff is race-free and atomic with the write.
         const before = await tx.registration.findUniqueOrThrow({
           where: { id: registrationId },
         });
@@ -261,11 +261,12 @@ export class RegistrationService extends BaseService {
     }
 
     return this.prisma.$transaction(async (tx) => {
-      // Read the authoritative "before" inside the transaction so the audit
-      // diff is race-free and atomic with the write.
-      const before = await tx.registration.findUniqueOrThrow({
+      const before: AuditedRegistration = await tx.registration.findUniqueOrThrow({
         where: { id: registrationId },
       });
+      if (data.customFiles) {
+        before.customFiles = await this.customFileSlots(tx, registrationId);
+      }
 
       if (data.customFiles) {
         const invalidSlots = await this.fileService.syncFileSlots(
@@ -311,13 +312,56 @@ export class RegistrationService extends BaseService {
 
       await this.audit.recordChange(tx, 'updated', registrationAuditPolicy, {
         before,
-        after,
+        after: data.customFiles
+          ? {
+              ...after,
+              customFiles: { ...before.customFiles, ...data.customFiles },
+            }
+          : after,
         entityId: registrationId,
         eventId: event.id,
       });
 
       return after;
     });
+  }
+
+  // Custom file slot name → attached file id.
+  private async customFileSlots(
+    tx: PrismaTransaction,
+    registrationId: string,
+  ): Promise<Record<string, string>> {
+    const files = await tx.file.findMany({
+      where: {
+        registrationId,
+        field: { startsWith: CUSTOM_FILE_FIELD_PREFIX },
+      },
+      select: { id: true, field: true },
+    });
+
+    return Object.fromEntries(
+      files.map((file) => [
+        (file.field ?? '').slice(CUSTOM_FILE_FIELD_PREFIX.length),
+        file.id,
+      ]),
+    );
+  }
+
+  async getNamesByIds(
+    eventId: string,
+    ids: string[],
+  ): Promise<Map<string, string>> {
+    const registrations = await this.prisma.registration.findMany({
+      where: { eventId, id: { in: ids } },
+      select: { id: true, firstName: true, lastName: true },
+    });
+
+    return new Map(
+      registrations.map(({ id, firstName, lastName }) => [
+        id,
+        [firstName, lastName].filter(Boolean).join(' '),
+      ]),
+    );
   }
 
   async deleteRegistration(

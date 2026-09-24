@@ -363,9 +363,10 @@ export class EventService extends BaseService {
             createMany: { data: this.stripIds(messageTemplateData) },
           },
           files: { createMany: { data: fileData } },
-        eventSettings: {
-          createMany: { data: this.stripIds(settings) },
-        },},
+          eventSettings: {
+            createMany: { data: this.stripIds(settings) },
+          },
+        },
         include: { ...this.eventRegistrationInclude() },
       });
 
@@ -427,8 +428,6 @@ export class EventService extends BaseService {
 
   async moveEventToOrganization(eventId: string, organizationId: string) {
     return this.prisma.$transaction(async (tx) => {
-      // Read the "before" inside the transaction so the audit diff is race-free
-      // (the request-model `event` may be stale relative to the actual write).
       const before = await tx.event.findUniqueOrThrow({
         where: { id: eventId },
       });
@@ -454,8 +453,6 @@ export class EventService extends BaseService {
 
   async updateEvent(event: Event, data: EventUpdateData) {
     return this.prisma.$transaction(async (tx) => {
-      // Read the "before" inside the transaction so the audit diff is race-free
-      // (the request-model `event` may be stale relative to the actual write).
       const before = await tx.event.findUniqueOrThrow({
         where: { id: event.id },
       });
@@ -483,13 +480,9 @@ export class EventService extends BaseService {
 
   async deleteEventById(id: string) {
     await this.prisma.$transaction(async (tx) => {
-      // The FK's `onDelete: SetNull` orphans the event's existing audit rows
-      // (eventId -> null) instead of deleting them, so they age out through the
-      // normal retention window rather than vanishing with the event.
+      // The FK nulls `eventId` on the event's audit rows; retention purges them later.
       await tx.event.delete({ where: { id } });
 
-      // Keep one standalone record of who deleted the event — its most
-      // destructive action. `eventId` is null (the event no longer exists).
       await this.audit.record(tx, {
         action: 'deleted',
         entityType: eventAuditPolicy.entityType,

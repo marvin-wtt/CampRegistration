@@ -4,10 +4,8 @@ import {
   type AuditLogQuery,
 } from '@camp-registration/common/entities';
 
-// `?entityType=event,message` / `?actorId=id1,id2`. A repeated parameter is
-// accepted too, but comma form is the documented one: Express 5's default
-// query parser does not decode the `entityType[]=` shape an array serializer
-// would produce (see `event.validation.ts`).
+// Lists come comma-separated (`?entityType=event,message`); Express 5's query
+// parser doesn't decode the `entityType[]=` form.
 const index = z.object({
   query: z
     .object({

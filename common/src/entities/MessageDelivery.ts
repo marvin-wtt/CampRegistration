@@ -17,6 +17,8 @@ export interface MessageDelivery extends Identifiable {
   // `sentBy`) or an automated template (`trigger`). Null once that source is
   // deleted — the delivery itself outlives it.
   messageId: string | null;
+  // Shared by the per-address deliveries of one send; null on older rows.
+  batchId: string | null;
   trigger: string | null;
   sentBy: { id: string; name: string | null } | null;
 }

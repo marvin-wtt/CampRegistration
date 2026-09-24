@@ -412,6 +412,8 @@ model MessageDelivery {
   templateId          String?   @map("message_template_id") @db.Char(26)
   messageId           String?   @map("message_id") @db.Char(26)
   registrationId      String    @map("registration_id") @db.Char(26)
+  // Shared by the per-address deliveries of one send to a registration.
+  batchId             String?   @map("batch_id") @db.Char(26)
   to                  String?   @db.TinyText
   cc                  String?   @db.TinyText
   bcc                 String?   @db.TinyText

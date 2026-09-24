@@ -28,6 +28,7 @@ export class MessageDeliveryResource extends JsonResource<
       bouncedAt: this.data.bouncedAt?.toISOString() ?? null,
       bounceReason: this.data.bounceReason,
       messageId: this.data.messageId,
+      batchId: this.data.batchId,
       trigger: this.data.template?.trigger ?? null,
       sentBy: this.data.message?.sentBy ?? null,
     };

@@ -31,18 +31,30 @@ describe('registrationAuditPolicy.details', () => {
     };
 
     expect(policy.details(before, after)).toEqual({
-      changedFields: ['data.firstName'],
+      changedFields: ['data.firstName', 'status'],
       values: { status: 'ACCEPTED' },
     });
   });
 
-  it('records a status-only change as the new value, no field names', () => {
+  it('records a status-only change with its new value', () => {
     const before = { status: 'PENDING', customData: {}, data: {} };
     const after = { status: 'WAITLISTED', customData: {}, data: {} };
 
     expect(policy.details(before, after)).toEqual({
+      changedFields: ['status'],
       values: { status: 'WAITLISTED' },
     });
+  });
+
+  it('reports custom file slots that changed', () => {
+    const base = { status: 'PENDING', customData: {}, data: {} };
+
+    expect(
+      policy.details(
+        { ...base, customFiles: { consent: 'f1', photo: 'f2' } },
+        { ...base, customFiles: { consent: 'f3', photo: 'f2', id: null } },
+      ),
+    ).toEqual({ changedFields: ['customFiles.consent'] });
   });
 
   it('reports customData changes by full leaf path', () => {

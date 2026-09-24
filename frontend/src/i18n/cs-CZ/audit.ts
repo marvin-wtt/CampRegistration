@@ -5,6 +5,9 @@ export default {
     deleted: 'Smazáno',
   },
   reason: 'Důvod',
+  deletedUser: 'Smazaný uživatel',
+  today: 'Dnes',
+  yesterday: 'Včera',
   viewInSettings: 'Zobrazit v nastavení',
   entities: {
     event: {
@@ -26,8 +29,8 @@ export default {
         endAt: 'Datum ukončení',
         price: 'Cena',
         location: 'Místo',
+        timezone: 'Časové pásmo',
         form: 'Registrační formulář',
-        retentionReminderSentAt: 'Připomenutí uchovávání odesláno',
       },
     },
     registration: {
@@ -35,6 +38,7 @@ export default {
       fields: {
         data: 'Odpověď z formuláře',
         customData: 'Vlastní pole',
+        customFiles: 'Vlastní soubor',
         status: 'Stav',
         country: 'Země',
       },
@@ -76,6 +80,9 @@ export default {
     },
     message: {
       label: 'Zpráva',
+      fields: {
+        recipients: 'Příjemci',
+      },
       actions: {
         sent: 'Odesláno',
       },
@@ -91,6 +98,7 @@ export default {
         body: 'Obsah',
         priority: 'Priorita',
         replyTo: 'Adresa pro odpověď',
+        attachments: 'Přílohy',
       },
       values: {
         trigger: {

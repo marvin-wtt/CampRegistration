@@ -6,6 +6,7 @@ import { AuditController } from '#app/audit/audit.controller';
 import { AuditRouter, EventAuditRouter } from '#app/audit/audit.routes';
 import { resolve } from '#core/ioc/container';
 import logger from '#core/logger';
+import { unregisterAllAuditNameResolvers } from '#app/audit/audit.names';
 
 export class AuditModule implements AppModule {
   bindContainers(options: BindOptions) {
@@ -35,5 +36,9 @@ export class AuditModule implements AppModule {
       const count = await resolve(AuditService).purgeExpiredAuditLogs();
       logger.info(`Removed ${count.toString()} audit log entry(ies)`);
     });
+  }
+
+  shutdown(): void {
+    unregisterAllAuditNameResolvers();
   }
 }

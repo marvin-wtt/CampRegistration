@@ -252,8 +252,6 @@ export class EventManagerService extends BaseService {
         },
       });
 
-      // Same action as addManager — an invite is just a manager created for a
-      // not-yet-registered user.
       await this.audit.record(tx, {
         action: 'created',
         entityType: eventManagerAuditPolicy.entityType,
@@ -268,7 +266,6 @@ export class EventManagerService extends BaseService {
 
   async updateManagerById(id: string, data: ManagerUpdateData) {
     return this.prisma.$transaction(async (tx) => {
-      // Read the "before" inside the transaction so the audit diff is race-free.
       const before = await tx.eventManager.findUniqueOrThrow({
         where: { id },
         include: { invitation: true },

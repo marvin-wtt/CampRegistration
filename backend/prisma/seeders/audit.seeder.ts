@@ -6,15 +6,13 @@ import { USER_IDS } from './ids';
 import { managerGrant } from '#app/eventManager/event-manager.audit.js';
 import { registrationIdentity } from '#app/registration/registration.audit.js';
 
-// The seed factories write rows directly (bypassing the services that normally
-// record audit entries), so this seeder back-fills the trail: a "created"
-// event for every seeded entity, plus a handful of dummy manager edits so the
-// registration timeline has some history to show.
+// Factories bypass the services that record audit entries, so this back-fills
+// a "created" entry per entity plus some manager edits for the timeline.
 
-// The user the event-manager seeder makes a manager of every seeded event.
+// Manager of every seeded event (see the event-manager seeder).
 const MANAGER_USER_ID = USER_IDS.john;
 
-// Form-answer paths (matching the example event's questions) used for dummy edits.
+// Question paths of the example event's form.
 const DATA_FIELDS = [
   'data.medical_restrictions',
   'data.food_intolerance',
@@ -34,7 +32,6 @@ class AuditSeeder extends BaseSeeder {
       events.map((event) => [event.id, event.createdAt ?? new Date()]),
     );
 
-    // Initial "created" events for events and managers (manager-attributed).
     for (const event of events) {
       await prisma.auditLog.create({
         data: {
@@ -71,12 +68,10 @@ class AuditSeeder extends BaseSeeder {
     });
 
     for (const [index, registration] of registrations.entries()) {
-      // Only the first dozen get manager-edit history.
+      // The first dozen get edits; a decided one started out pending.
       const edited = index < 12;
-      // A status decision below means the registration started out pending.
       const decided = edited && registration.status !== 'PENDING';
 
-      // The registration itself is created via the public form — system-attributed.
       await prisma.auditLog.create({
         data: {
           action: 'created',
@@ -105,7 +100,6 @@ class AuditSeeder extends BaseSeeder {
         )
         .toDate();
 
-      // A manager edits some answers (field names only — never the values).
       await prisma.auditLog.create({
         data: {
           action: 'updated',
@@ -122,7 +116,6 @@ class AuditSeeder extends BaseSeeder {
         },
       });
 
-      // A manager records a status decision (the new status value is kept).
       if (decided) {
         await prisma.auditLog.create({
           data: {

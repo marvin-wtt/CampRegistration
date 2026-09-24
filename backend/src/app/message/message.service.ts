@@ -2,9 +2,21 @@ import { BaseService } from '#core/base/BaseService';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service.js';
 import { AuditService } from '#app/audit/audit.service';
-import { messageAuditPolicy } from '#app/message/message.audit';
 import { sanitizeHtmlContent } from '#utils/sanitize';
 import type { MessageWithFiles } from '#app/message/message.resource';
+
+const MESSAGE_INCLUDE = {
+  attachments: true,
+  sentBy: { select: { id: true, name: true } },
+  deliveries: {
+    select: {
+      registrationId: true,
+      to: true,
+      bouncedAt: true,
+      bounceReason: true,
+    },
+  },
+} as const;
 
 @injectable()
 export class MessageService extends BaseService {
@@ -19,31 +31,20 @@ export class MessageService extends BaseService {
     return this.prisma.message.findMany({
       where: { eventId },
       orderBy: { createdAt: 'desc' },
-      include: {
-        attachments: true,
-        sentBy: { select: { id: true, name: true } },
-        deliveries: {
-          select: {
-            registrationId: true,
-            to: true,
-            bouncedAt: true,
-            bounceReason: true,
-          },
-        },
-      },
+      include: MESSAGE_INCLUDE,
     });
   }
 
-  async getMessageById(eventId: string, id: string) {
+  async getMessageById(
+    eventId: string,
+    id: string,
+  ): Promise<MessageWithFiles | null> {
     return this.prisma.message.findFirst({
       where: {
         id,
         eventId,
       },
-      include: {
-        attachments: true,
-        sentBy: { select: { id: true, name: true } },
-      },
+      include: MESSAGE_INCLUDE,
     });
   }
 
@@ -67,6 +68,7 @@ export class MessageService extends BaseService {
       priority?: string | undefined;
       replyTo?: string | undefined;
       attachmentIds?: string[] | undefined;
+      recipientCount: number;
     },
     fileFieldId: string,
   ) {
@@ -94,13 +96,26 @@ export class MessageService extends BaseService {
 
       await this.audit.record(tx, {
         action: 'sent',
-        entityType: messageAuditPolicy.entityType,
+        entityType: 'message',
         entityId: message.id,
         eventId,
+        details: { values: { recipients: data.recipientCount } },
       });
 
       return message;
     });
+  }
+
+  async getSubjectsByIds(
+    eventId: string,
+    ids: string[],
+  ): Promise<Map<string, string>> {
+    const messages = await this.prisma.message.findMany({
+      where: { eventId, id: { in: ids } },
+      select: { id: true, subject: true },
+    });
+
+    return new Map(messages.map(({ id, subject }) => [id, subject]));
   }
 
   async deleteMessageById(id: string, eventId: string) {
@@ -114,7 +129,7 @@ export class MessageService extends BaseService {
 
       await this.audit.record(tx, {
         action: 'deleted',
-        entityType: messageAuditPolicy.entityType,
+        entityType: 'message',
         entityId: id,
         eventId,
       });

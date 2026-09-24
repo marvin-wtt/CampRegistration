@@ -1,10 +1,9 @@
 import { type Request, type Response } from 'express';
 import { BaseController } from '#core/base/BaseController';
 import { inject } from 'inversify';
-import { AuditService, type AuditLogWithActor } from '#app/audit/audit.service';
+import { AuditService } from '#app/audit/audit.service';
 import { AuditResource } from '#app/audit/audit.resource';
 import validator from '#app/audit/audit.validation';
-import type { AuditLog } from '#generated/prisma/client.js';
 
 export class AuditController extends BaseController {
   constructor(
@@ -22,7 +21,9 @@ export class AuditController extends BaseController {
       registration.id,
     );
 
-    res.resource(AuditResource.collection(await this.withActors(logs)));
+    res.resource(
+      AuditResource.collection(await this.auditService.present(event.id, logs)),
+    );
   }
 
   async indexForEvent(req: Request, res: Response) {
@@ -43,41 +44,20 @@ export class AuditController extends BaseController {
         { cursor: query?.cursor, limit: query?.limit },
       );
 
+    const views = await this.auditService.present(event.id, logs, {
+      withEntityNames: true,
+    });
+
     res.resource(
-      AuditResource.collection(await this.withActors(logs)).withCursor(
-        nextCursor,
-        limit,
-        total,
-      ),
+      AuditResource.collection(views).withCursor(nextCursor, limit, total),
     );
   }
 
-  // `details.subjectId` is a policy's way of naming the user an entry is
-  // about, when that differs from the actor (see `managerIdentity`) —
-  // resolved into a `subject` here, the same way `actorId` is resolved into
-  // `actor`.
-  private subjectUserId(log: AuditLog): string | null {
-    return log.details?.subjectId ?? null;
-  }
+  async actorsForEvent(req: Request, res: Response) {
+    const event = req.modelOrFail('event');
 
-  private async withActors(logs: AuditLog[]): Promise<AuditLogWithActor[]> {
-    const ids = logs.flatMap((log) => {
-      const subjectId = this.subjectUserId(log);
-      return [log.actorId, subjectId].filter((id): id is string => id !== null);
-    });
-    const users = await this.auditService.resolveActors(ids);
+    const actors = await this.auditService.listActorsForEvent(event.id);
 
-    return logs.map((log) => {
-      const subjectId = this.subjectUserId(log);
-      return {
-        log,
-        actor: log.actorId
-          ? (users.get(log.actorId) ?? { id: log.actorId, name: null })
-          : null,
-        subject: subjectId
-          ? (users.get(subjectId) ?? { id: subjectId, name: null })
-          : null,
-      };
-    });
+    res.json({ data: actors });
   }
 }

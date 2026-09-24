@@ -10,17 +10,16 @@ export interface AuditEntityOpener {
   run(eventId: string, entityId: string): Promise<void> | void;
 }
 
-// What the audit log needs to know about one entity type — everything that
-// can't be derived from the entry or its translations. Each entity implements
-// it in `entities/<type>.ts`; `useAuditEntities` collects them.
+// What the audit log needs to know about one entity type beyond the entry and
+// its translations. Each entity implements it in `entities/<type>.ts`.
 export interface AuditEntityView {
   icon: string;
   // Loads the live data `subject`/`exists` read. Best-effort.
   load?(eventId: string): Promise<unknown>;
-  // Who or what an entry is about. `undefined` defers to the generic subject
-  // (the resolved user, or the recorded hint).
+  // Who or what an entry is about; `undefined` defers to the generic subject.
   subject?(entry: AuditLogEntry): string | null | undefined;
-  // Whether the record still exists; `null` while unknown. Defaults to true.
+  // Whether the record still exists, `null` while unknown. Only needed for
+  // types whose entries carry no server-resolved `entityName`.
   exists?(entityId: string): boolean | null;
   // Opens the record — offered only while it exists.
   open?: AuditEntityOpener;

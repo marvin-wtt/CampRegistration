@@ -3,32 +3,44 @@ import type { AuditChangePolicy } from '#app/audit/audit.policy';
 import type { MessageTemplate } from '#generated/prisma/client';
 import type { AuditDetails } from '@camp-registration/common/entities';
 
-// Editable template content. `trigger`/`country` identify the template (which
-// automated email + country variant); `subject`/`body`/`priority`/`replyTo` are
-// the editable content. Template content is configuration, not participant PII —
-// only the changed field names are recorded, never their values.
+// Editable content — only the names of changed fields are recorded.
 const FIELD_ALLOWLIST: (keyof MessageTemplate)[] = [
-  'trigger',
-  'country',
   'subject',
   'body',
   'priority',
   'replyTo',
 ];
 
-export const messageTemplateAuditPolicy: AuditChangePolicy<MessageTemplate> = {
+type AuditedTemplate = MessageTemplate & { attachments?: { id: string }[] };
+
+export const messageTemplateAuditPolicy: AuditChangePolicy<AuditedTemplate> = {
   entityType: 'messageTemplate',
 
   details(before, after) {
+    const fields = changedKeysByAllowList(before, after, FIELD_ALLOWLIST);
+    if (attachmentsChanged(before, after)) {
+      fields.push('attachments');
+    }
     return composeDetails({
-      changedFields: changedKeysByAllowList(before, after, FIELD_ALLOWLIST),
+      changedFields: fields,
       ...templateIdentity(after ?? before),
     });
   },
 };
 
-// `trigger`/`country` say *which* template an entry is about (which automated
-// email, which country variant); they never change after creation.
+function attachmentsChanged(
+  before: AuditedTemplate | null | undefined,
+  after: AuditedTemplate | null | undefined,
+): boolean {
+  const ids = (template: AuditedTemplate | null | undefined) =>
+    (template?.attachments ?? [])
+      .map((file) => file.id)
+      .sort()
+      .join();
+  return ids(before) !== ids(after);
+}
+
+// Which automated email (and country variant) an entry is about.
 export function templateIdentity(
   template: Pick<MessageTemplate, 'trigger' | 'country'> | null | undefined,
 ): AuditDetails {
