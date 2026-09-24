@@ -13,7 +13,7 @@ export class AuditModule implements AppModule {
     options.bind(AuditController).toSelf().inSingletonScope();
   }
 
-  registerRoutes(router: AppRouter): void {
+  registerApiRoutes(router: AppRouter): void {
     router.useRouter(
       '/events/:eventId/registrations/:registrationId/audit',
       new AuditRouter(),
