@@ -269,18 +269,16 @@ const update = (event: Event) =>
         }
 
         // An opening date with no closing date leaves registration open
-        // forever. A field left out of the body keeps the event's current
-        // value, so fall back to it before comparing.
-        const effectiveOpensAt =
-          'registrationOpensAt' in val
-            ? val.registrationOpensAt
-            : event.registrationOpensAt;
-        const effectiveClosesAt =
-          'registrationClosesAt' in val
-            ? val.registrationClosesAt
-            : event.registrationClosesAt;
-
-        if (effectiveOpensAt && !effectiveClosesAt) {
+        // forever. Only enforced when the request sets both fields together
+        // (as the schedule dialog and settings form always do) — a partial
+        // update touching just one of the two can't tell a deliberate change
+        // from an already-open-ended row predating this constraint.
+        if (
+          'registrationOpensAt' in val &&
+          'registrationClosesAt' in val &&
+          val.registrationOpensAt &&
+          !val.registrationClosesAt
+        ) {
           const key = 'registrationClosesAt';
           ctx.addIssue({
             code: 'custom',

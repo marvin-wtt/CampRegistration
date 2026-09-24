@@ -639,11 +639,21 @@ export const eventUpdateBody: UpdateBodyData[] = [
     expected: 200,
   },
   {
-    name: 'Registration open at without close at',
+    name: 'Registration open at with close at cleared',
+    data: {
+      registrationOpensAt: '2100-01-01T00:00:00.000Z',
+      registrationClosesAt: null,
+    },
+    expected: 400,
+  },
+  {
+    // Close date left untouched — the request can't tell whether the event
+    // already has one configured, so this is not rejected.
+    name: 'Registration open at without touching close at',
     data: {
       registrationOpensAt: '2100-01-01T00:00:00.000Z',
     },
-    expected: 400,
+    expected: 200,
   },
   {
     name: 'Registration open at null',
