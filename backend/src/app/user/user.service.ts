@@ -248,14 +248,14 @@ export class UserService extends BaseService {
       const emailChanged =
         data.email !== undefined && data.email !== before.email;
 
-      // A new address starts unverified; verifying happens below.
+      // Callers reset verification for self-service changes; an admin changing
+      // a verified address keeps it verified. Verifying happens below.
       const user = await tx.user.update({
         where: { id: userId },
         data: {
           name: data.name,
           email: data.email,
-          emailVerified:
-            emailChanged || data.emailVerified === false ? false : undefined,
+          emailVerified: data.emailVerified === false ? false : undefined,
           password,
           role: data.role,
           locale: data.locale,
@@ -264,21 +264,23 @@ export class UserService extends BaseService {
         include: { twoFactor: { select: { confirmedAt: true } } },
       });
 
-      if (data.emailVerified !== true) {
-        return user;
+      let newlyVerified = emailChanged && user.emailVerified;
+      if (data.emailVerified === true && !user.emailVerified) {
+        // Conditional, so of concurrent verifications only the first fires.
+        const { count } = await tx.user.updateMany({
+          where: { id: userId, emailVerified: false },
+          data: { emailVerified: true },
+        });
+        newlyVerified = count > 0;
       }
 
-      // Conditional, so of concurrent verifications only the first fires.
-      const { count } = await tx.user.updateMany({
-        where: { id: userId, emailVerified: false },
-        data: { emailVerified: true },
-      });
-      const verified = { ...user, emailVerified: true };
-      if (count > 0) {
-        await this.accountLifecycle.emailVerified(tx, verified);
+      const result =
+        data.emailVerified === true ? { ...user, emailVerified: true } : user;
+      if (newlyVerified) {
+        await this.accountLifecycle.emailVerified(tx, result);
       }
 
-      return verified;
+      return result;
     });
   }
 
