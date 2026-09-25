@@ -1,9 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
   OrganizationFactory,
+  TokenFactory,
   UserFactory,
 } from '../../../prisma/factories/index.js';
-import { generateAccessToken } from './utils/token.js';
+import {
+  generateAccessToken,
+  generateVerifyEmailToken,
+} from './utils/token.js';
+import { TokenType } from '#generated/prisma/client.js';
 import { request } from '../utils/request.js';
 import prisma from '../utils/prisma.js';
 import type { OrganizationRole } from '@camp-registration/common/permissions';
@@ -271,7 +276,7 @@ describe('organization members', () => {
   });
 
   describe('invitation resolution', () => {
-    it('should bind a pending invitation when the invitee registers', async () => {
+    it('should bind a pending invitation when the invitee verifies their email', async () => {
       const { accessToken, organization } =
         await createOrganizationWithRole('ADMIN');
 
@@ -281,19 +286,26 @@ describe('organization members', () => {
         .auth(accessToken, { type: 'bearer' })
         .expect(201);
 
+      const newcomer = await UserFactory.create({
+        email: 'newcomer@example.com',
+        emailVerified: false,
+      });
+      const token = generateVerifyEmailToken(newcomer);
+      await TokenFactory.create({
+        user: { connect: { id: newcomer.id } },
+        type: TokenType.VERIFY_EMAIL,
+        token,
+      });
+
       await request()
-        .post('/api/v1/auth/register')
-        .send({
-          name: 'Newcomer',
-          email: 'newcomer@example.com',
-          password: 'Password1!',
-        })
-        .expect(201);
+        .post('/api/v1/auth/verify-email')
+        .send({ token })
+        .expect(204);
 
       const member = await prisma.organizationMember.findUniqueOrThrow({
         where: { id: body.data.id },
       });
-      expect(member.userId).not.toBeNull();
+      expect(member.userId).toBe(newcomer.id);
 
       await expect(
         prisma.organizationInvitation.findFirst({

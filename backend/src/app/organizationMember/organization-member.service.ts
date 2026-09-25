@@ -1,5 +1,6 @@
 import { BaseService } from '#core/base/BaseService';
 import { injectable } from 'inversify';
+import type { VerifiedAccount } from '#app/user/account.lifecycle';
 import { permissionRegistry } from '#core/permission/permission.registry';
 import type {
   EventScopedPermission,
@@ -196,16 +197,13 @@ export class OrganizationMemberService extends BaseService {
     await this.prisma.organizationMember.delete({ where: { id } });
   }
 
-  /**
-   * Binds pending invitations to a freshly registered account. Called from
-   * registration alongside the event-manager equivalent.
-   */
-  async resolveMemberInvitations(email: string, userId: string) {
-    await this.prisma.organizationMember.updateMany({
-      where: { invitation: { email } },
-      data: { userId },
-    });
-
-    await this.prisma.organizationInvitation.deleteMany({ where: { email } });
+  async resolveMemberInvitations({ id: userId, email }: VerifiedAccount) {
+    await this.prisma.$transaction([
+      this.prisma.organizationMember.updateMany({
+        where: { invitation: { email } },
+        data: { userId },
+      }),
+      this.prisma.organizationInvitation.deleteMany({ where: { email } }),
+    ]);
   }
 }

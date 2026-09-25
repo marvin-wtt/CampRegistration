@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { UserFactory } from '../../../prisma/factories/index.js';
+import {
+  EventFactory,
+  EventManagerFactory,
+  InvitationFactory,
+  UserFactory,
+} from '../../../prisma/factories/index.js';
 import { request } from '../utils/request.js';
 import prisma from '../utils/prisma.js';
 import { generateAccessToken } from './utils/token.js';
@@ -180,6 +185,68 @@ describe('/api/v1/users/', () => {
   });
 
   describe('PATCH /api/v1/users/:userId', () => {
+    describe('invitation resolution', () => {
+      const createInvitation = (email: string) =>
+        EventManagerFactory.create({
+          event: { create: EventFactory.build() },
+          invitation: { create: InvitationFactory.build({ email }) },
+        });
+
+      it('should bind pending invitations when an admin verifies the email', async () => {
+        const { accessToken } = await createAdminWithToken();
+        const user = await UserFactory.create({
+          email: 'invited@example.com',
+          emailVerified: false,
+        });
+        const pending = await createInvitation('invited@example.com');
+
+        await request()
+          .patch(`/api/v1/users/${user.id}`)
+          .send({ emailVerified: true })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        const manager = await prisma.eventManager.findUniqueOrThrow({
+          where: { id: pending.id },
+        });
+        expect(manager.userId).toBe(user.id);
+      });
+
+      it('should bind pending invitations when an admin changes a verified email', async () => {
+        const { accessToken } = await createAdminWithToken();
+        const user = await UserFactory.create();
+        const pending = await createInvitation('invited@example.com');
+
+        await request()
+          .patch(`/api/v1/users/${user.id}`)
+          .send({ email: 'invited@example.com' })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        const manager = await prisma.eventManager.findUniqueOrThrow({
+          where: { id: pending.id },
+        });
+        expect(manager.userId).toBe(user.id);
+      });
+
+      it('should not bind pending invitations to an unverified email', async () => {
+        const { accessToken } = await createAdminWithToken();
+        const user = await UserFactory.create({ emailVerified: false });
+        const pending = await createInvitation('invited@example.com');
+
+        await request()
+          .patch(`/api/v1/users/${user.id}`)
+          .send({ email: 'invited@example.com' })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        const manager = await prisma.eventManager.findUniqueOrThrow({
+          where: { id: pending.id },
+        });
+        expect(manager.userId).toBeNull();
+      });
+    });
+
     describe('should respond with `200` status code when updating properties', () => {
       it('should update the name', async () => {
         const { accessToken } = await createAdminWithToken();

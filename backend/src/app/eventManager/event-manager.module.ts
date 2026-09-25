@@ -11,6 +11,7 @@ import { EventManagerService } from '#app/eventManager/event-manager.service';
 import { MailableRegistry } from '#core/mail/mail.registry';
 import { EventManagerInvitationMessage } from '#app/eventManager/event-manager.messages';
 import { resolve } from '#core/ioc/container';
+import { AccountLifecycle } from '#app/user/account.lifecycle';
 
 export class EventManagerModule implements AppModule {
   bindContainers(options: BindOptions) {
@@ -20,6 +21,9 @@ export class EventManagerModule implements AppModule {
 
   configure(_options: ModuleOptions): Promise<void> | void {
     resolve(MailableRegistry).register(EventManagerInvitationMessage);
+    resolve(AccountLifecycle).onEmailVerified((account) =>
+      resolve(EventManagerService).resolveManagerInvitations(account),
+    );
   }
 
   registerApiRoutes(router: AppRouter): void {

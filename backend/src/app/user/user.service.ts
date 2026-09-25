@@ -4,7 +4,6 @@ import ApiError from '#utils/ApiError';
 import { encryptPassword } from '#core/encryption';
 import type {
   AccountDeletionBlockers,
-  Translatable,
   UserUpdateData,
 } from '@camp-registration/common/entities';
 import { BaseService } from '#core/base/BaseService';
@@ -13,6 +12,7 @@ import { inject, injectable } from 'inversify';
 import type { ProfileUser } from '#app/profile/profile.types';
 import { AuditService, type PrismaTransaction } from '#app/audit/audit.service';
 import { eventManagerAuditPolicy } from '#app/eventManager/event-manager.audit';
+import { AccountLifecycle } from '#app/user/account.lifecycle';
 
 const profileAccessInclude = {
   eventRoles: true,
@@ -42,6 +42,8 @@ export class UserService extends BaseService {
   constructor(
     @inject(EventService) private readonly eventService: EventService,
     @inject(AuditService) private readonly audit: AuditService,
+    @inject(AccountLifecycle)
+    private readonly accountLifecycle: AccountLifecycle,
   ) {
     super();
   }
@@ -234,7 +236,12 @@ export class UserService extends BaseService {
       }
     }
 
-    return this.prisma.user.update({
+    const before = await this.prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+      select: { email: true, emailVerified: true },
+    });
+
+    const user = await this.prisma.user.update({
       where: { id: userId },
       data: {
         name: data.name,
@@ -247,6 +254,21 @@ export class UserService extends BaseService {
         locale: data.locale,
         locked: data.locked,
       },
+      include: profileAccessInclude,
+    });
+
+    const newlyVerified =
+      user.emailVerified &&
+      (!before.emailVerified || before.email !== user.email);
+    if (!newlyVerified) {
+      return user;
+    }
+
+    await this.accountLifecycle.emailVerified(user);
+
+    // Listeners may have granted access, which the included relations miss.
+    return this.prisma.user.findUniqueOrThrow({
+      where: { id: userId },
       include: profileAccessInclude,
     });
   }
@@ -315,7 +337,7 @@ export class UserService extends BaseService {
     return {
       events: events.map((event) => ({
         id: event.id,
-        name: event.name as Translatable,
+        name: event.name,
       })),
       newsletters,
     };

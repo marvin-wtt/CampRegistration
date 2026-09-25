@@ -6,6 +6,7 @@ import { RESOURCE_VIEW_PERMISSION } from '@camp-registration/common/realtime';
 import { inject, injectable } from 'inversify';
 import { OrganizationMemberService } from '#app/organizationMember/organization-member.service';
 import { AuditService } from '#app/audit/audit.service';
+import type { VerifiedAccount } from '#app/user/account.lifecycle';
 import {
   eventManagerAuditPolicy,
   managerGrant,
@@ -178,7 +179,7 @@ export class EventManagerService extends BaseService {
       .then((value) => value !== null);
   }
 
-  async resolveManagerInvitations(email: string, userId: string) {
+  async resolveManagerInvitations({ id: userId, email }: VerifiedAccount) {
     await this.prisma.$transaction(async (tx) => {
       const pending = await tx.eventManager.findMany({
         where: { invitation: { email } },
