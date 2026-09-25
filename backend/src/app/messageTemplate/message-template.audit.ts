@@ -16,6 +16,9 @@ type AuditedTemplate = MessageTemplate & { attachments?: { id: string }[] };
 export const messageTemplateAuditPolicy: AuditChangePolicy<AuditedTemplate> = {
   entityType: 'messageTemplate',
 
+  locate: (template) => ({ entityId: template.id, eventId: template.eventId }),
+  identity: templateIdentity,
+
   details(before, after) {
     const fields = changedKeysByAllowList(before, after, FIELD_ALLOWLIST);
     if (attachmentsChanged(before, after)) {

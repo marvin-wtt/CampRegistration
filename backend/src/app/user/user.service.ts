@@ -12,11 +12,7 @@ import { EventService } from '#app/event/event.service';
 import { inject, injectable } from 'inversify';
 import type { ProfileUser } from '#app/profile/profile.types';
 import { AuditService, type PrismaTransaction } from '#app/audit/audit.service';
-import { composeDetails } from '#app/audit/audit.diff';
-import {
-  eventManagerAuditPolicy,
-  managerIdentity,
-} from '#app/eventManager/event-manager.audit';
+import { eventManagerAuditPolicy } from '#app/eventManager/event-manager.audit';
 
 const profileAccessInclude = {
   eventRoles: true,
@@ -272,15 +268,8 @@ export class UserService extends BaseService {
       await this.audit.rememberDeletedUser(tx, user);
       // The cascade below bypasses `removeManager`, so record it here.
       for (const manager of user.eventRoles) {
-        await this.audit.record(tx, {
-          action: 'deleted',
-          entityType: eventManagerAuditPolicy.entityType,
-          entityId: manager.id,
-          eventId: manager.eventId,
-          details: composeDetails({
-            ...managerIdentity(manager),
-            reason: 'account_deleted',
-          }),
+        await this.audit.deleted(tx, eventManagerAuditPolicy, manager, {
+          details: { reason: 'account_deleted' },
         });
       }
 

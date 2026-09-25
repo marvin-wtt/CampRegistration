@@ -21,6 +21,12 @@ export type AuditedRegistration = Registration & {
 export const registrationAuditPolicy: AuditChangePolicy<AuditedRegistration> = {
   entityType: 'registration',
 
+  locate: (registration) => ({
+    entityId: registration.id,
+    eventId: registration.eventId,
+  }),
+  identity: registrationIdentity,
+
   // Answers and custom fields by leaf path (`data.allergies`), never values.
   details(before, after) {
     return composeDetails({

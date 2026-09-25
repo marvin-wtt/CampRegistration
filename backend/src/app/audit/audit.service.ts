@@ -11,8 +11,12 @@ import type {
   AuditDetails,
   AuditEntityType,
 } from '@camp-registration/common/entities';
-import { hasNoChanges, mergeDetails } from '#app/audit/audit.diff';
-import type { AuditChangePolicy } from '#app/audit/audit.policy';
+import {
+  composeDetails,
+  hasNoChanges,
+  mergeDetails,
+} from '#app/audit/audit.diff';
+import type { AuditChangePolicy, AuditSubject } from '#app/audit/audit.policy';
 import { getAuditNameResolver } from '#app/audit/audit.names';
 
 export type PrismaTransaction = Parameters<
@@ -29,6 +33,12 @@ export interface AuditRecordInput {
   eventId?: string | null;
   details?: AuditDetails | null;
   // Omit to use the request's user; `null` forces a system-attributed entry.
+  actorId?: string | null;
+}
+
+export interface AuditEntryOptions {
+  details?: AuditDetails;
+  // As in `AuditRecordInput`.
   actorId?: string | null;
 }
 
@@ -63,6 +73,48 @@ export class AuditService extends BaseService {
   }
 
   /**
+   * Records `action` on `entity`, filed and identified by its subject.
+   * `details` are merged over the subject's identity.
+   */
+  async recordFor<T>(
+    tx: PrismaTransaction,
+    subject: AuditSubject<T>,
+    action: string,
+    entity: T,
+    options: AuditEntryOptions = {},
+  ): Promise<void> {
+    const details = composeDetails({
+      ...subject.identity?.(entity),
+      ...options.details,
+    });
+    await this.record(tx, {
+      action,
+      entityType: subject.entityType,
+      ...subject.locate(entity),
+      actorId: options.actorId,
+      details: Object.keys(details).length > 0 ? details : null,
+    });
+  }
+
+  async created<T>(
+    tx: PrismaTransaction,
+    subject: AuditSubject<T>,
+    entity: T,
+    options?: AuditEntryOptions,
+  ): Promise<void> {
+    await this.recordFor(tx, subject, 'created', entity, options);
+  }
+
+  async deleted<T>(
+    tx: PrismaTransaction,
+    subject: AuditSubject<T>,
+    entity: T,
+    options?: AuditEntryOptions,
+  ): Promise<void> {
+    await this.recordFor(tx, subject, 'deleted', entity, options);
+  }
+
+  /**
    * Records an update as diffed by the entity's policy, skipping no-op edits.
    * Read `before` inside the same transaction as the write. That keeps the
    * diff and the write atomic, but a plain read takes no lock under REPEATABLE
@@ -72,32 +124,26 @@ export class AuditService extends BaseService {
    * entity's latest entry if that is younger than the window — an autosaving
    * editor then yields one entry per window instead of one per save.
    */
-  async recordChange<T>(
+  async updated<T>(
     tx: PrismaTransaction,
-    action: string,
     policy: AuditChangePolicy<T>,
-    args: {
-      before: T | null | undefined;
-      after: T | null | undefined;
-      entityId: string;
-      eventId?: string | null;
-      coalesceWithinMs?: number;
-    },
+    before: T,
+    after: T,
+    options: { coalesceWithinMs?: number } = {},
   ): Promise<void> {
-    const details = policy.details(args.before, args.after);
+    const details = policy.details(before, after);
     if (hasNoChanges(details)) {
       return;
     }
     const input = {
-      action,
+      action: 'updated',
       entityType: policy.entityType,
-      entityId: args.entityId,
-      eventId: args.eventId,
+      ...policy.locate(after),
       details,
     };
     if (
-      args.coalesceWithinMs !== undefined &&
-      (await this.mergeIntoLatest(tx, input, details, args.coalesceWithinMs))
+      options.coalesceWithinMs !== undefined &&
+      (await this.mergeIntoLatest(tx, input, details, options.coalesceWithinMs))
     ) {
       return;
     }

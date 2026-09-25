@@ -9,7 +9,6 @@ import { AuditService } from '#app/audit/audit.service';
 import {
   eventManagerAuditPolicy,
   managerGrant,
-  managerIdentity,
 } from '#app/eventManager/event-manager.audit';
 
 type ManagerCreateData = Pick<
@@ -192,14 +191,13 @@ export class EventManagerService extends BaseService {
 
       // Links the invitation's earlier (masked) entries to the account.
       for (const manager of pending) {
-        await this.audit.record(tx, {
-          action: 'accepted',
-          entityType: eventManagerAuditPolicy.entityType,
-          entityId: manager.id,
-          eventId: manager.eventId,
-          actorId: userId,
-          details: managerIdentity({ ...manager, userId }),
-        });
+        await this.audit.recordFor(
+          tx,
+          eventManagerAuditPolicy,
+          'accepted',
+          { ...manager, userId },
+          { actorId: userId },
+        );
       }
 
       await tx.invitation.deleteMany({ where: { email } });
@@ -221,11 +219,7 @@ export class EventManagerService extends BaseService {
         },
       });
 
-      await this.audit.record(tx, {
-        action: 'created',
-        entityType: eventManagerAuditPolicy.entityType,
-        entityId: manager.id,
-        eventId,
+      await this.audit.created(tx, eventManagerAuditPolicy, manager, {
         details: managerGrant(manager),
       });
 
@@ -252,11 +246,7 @@ export class EventManagerService extends BaseService {
         },
       });
 
-      await this.audit.record(tx, {
-        action: 'created',
-        entityType: eventManagerAuditPolicy.entityType,
-        entityId: manager.id,
-        eventId,
+      await this.audit.created(tx, eventManagerAuditPolicy, manager, {
         details: managerGrant(manager),
       });
 
@@ -285,12 +275,7 @@ export class EventManagerService extends BaseService {
         },
       });
 
-      await this.audit.recordChange(tx, 'updated', eventManagerAuditPolicy, {
-        before,
-        after,
-        entityId: id,
-        eventId: before.eventId,
-      });
+      await this.audit.updated(tx, eventManagerAuditPolicy, before, after);
 
       return after;
     });
@@ -310,13 +295,7 @@ export class EventManagerService extends BaseService {
         });
       }
 
-      await this.audit.record(tx, {
-        action: 'deleted',
-        entityType: eventManagerAuditPolicy.entityType,
-        entityId: id,
-        eventId: deleted.eventId,
-        details: managerIdentity(deleted),
-      });
+      await this.audit.deleted(tx, eventManagerAuditPolicy, deleted);
 
       return deleted;
     });

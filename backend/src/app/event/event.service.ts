@@ -370,12 +370,7 @@ export class EventService extends BaseService {
         include: { ...this.eventRegistrationInclude() },
       });
 
-      await this.audit.record(tx, {
-        action: 'created',
-        entityType: eventAuditPolicy.entityType,
-        entityId: created.id,
-        eventId: created.id,
-      });
+      await this.audit.created(tx, eventAuditPolicy, created);
 
       return created;
     });
@@ -440,12 +435,7 @@ export class EventService extends BaseService {
         include: { ...this.eventRegistrationInclude() },
       });
 
-      await this.audit.recordChange(tx, 'updated', eventAuditPolicy, {
-        before,
-        after: updatedEvent,
-        entityId: eventId,
-        eventId,
-      });
+      await this.audit.updated(tx, eventAuditPolicy, before, updatedEvent);
 
       return enrichFreePlaces(updatedEvent);
     });
@@ -466,11 +456,7 @@ export class EventService extends BaseService {
         include: { ...this.eventRegistrationInclude() },
       });
 
-      await this.audit.recordChange(tx, 'updated', eventAuditPolicy, {
-        before,
-        after: updatedEvent,
-        entityId: event.id,
-        eventId: event.id,
+      await this.audit.updated(tx, eventAuditPolicy, before, updatedEvent, {
         coalesceWithinMs: AUDIT_COALESCE_MS,
       });
 
@@ -480,14 +466,12 @@ export class EventService extends BaseService {
 
   async deleteEventById(id: string) {
     await this.prisma.$transaction(async (tx) => {
-      // The FK nulls `eventId` on the event's audit rows; retention purges them later.
-      await tx.event.delete({ where: { id } });
+      // Recorded first, as the entry names the event: the FK then nulls its
+      // `eventId` like on the event's other rows, and retention purges them.
+      const event = await tx.event.findUniqueOrThrow({ where: { id } });
+      await this.audit.deleted(tx, eventAuditPolicy, event);
 
-      await this.audit.record(tx, {
-        action: 'deleted',
-        entityType: eventAuditPolicy.entityType,
-        entityId: id,
-      });
+      await tx.event.delete({ where: { id } });
     });
   }
 }

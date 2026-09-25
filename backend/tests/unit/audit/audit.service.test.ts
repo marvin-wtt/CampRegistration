@@ -1,15 +1,16 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mockDeep, type DeepMockProxy } from 'vitest-mock-extended';
 import type { AuditLog, PrismaClient } from '#generated/prisma/client.js';
 import type { AuditDetails } from '@camp-registration/common/entities';
 import { AuditService, type PrismaTransaction } from '#app/audit/audit.service';
-import type { AuditChangePolicy } from '#app/audit/audit.policy';
+import type { AuditChangePolicy, AuditSubject } from '#app/audit/audit.policy';
 import { runWithRequestContext } from '#core/context/requestContext';
 
 const WINDOW_MS = 5 * 60 * 1000;
 
 const policy = (details: AuditDetails): AuditChangePolicy<unknown> => ({
   entityType: 'event',
+  locate: () => ({ entityId: 'event-1', eventId: 'event-1' }),
   details: () => details,
 });
 
@@ -36,7 +37,7 @@ function asUser<T>(userId: string | undefined, fn: () => Promise<T>) {
   });
 }
 
-describe('AuditService.recordChange', () => {
+describe('AuditService.updated', () => {
   let tx: DeepMockProxy<PrismaTransaction>;
   let service: AuditService;
 
@@ -46,13 +47,13 @@ describe('AuditService.recordChange', () => {
   });
 
   const change = (details: AuditDetails, coalesce = true) =>
-    service.recordChange(tx, 'updated', policy(details), {
-      before: {},
-      after: {},
-      entityId: 'event-1',
-      eventId: 'event-1',
-      ...(coalesce ? { coalesceWithinMs: WINDOW_MS } : {}),
-    });
+    service.updated(
+      tx,
+      policy(details),
+      {},
+      {},
+      coalesce ? { coalesceWithinMs: WINDOW_MS } : {},
+    );
 
   it('skips an edit that changed nothing', async () => {
     await asUser('user-1', () => change({}));
@@ -113,5 +114,58 @@ describe('AuditService.recordChange', () => {
     expect(tx.auditLog.create).toHaveBeenCalledWith({
       data: expect.objectContaining({ actorId: 'user-1' }),
     });
+  });
+});
+
+describe('AuditService.recordFor', () => {
+  let tx: DeepMockProxy<PrismaTransaction>;
+  let service: AuditService;
+
+  const subject = (
+    identity?: AuditSubject<{ id: string }>['identity'],
+  ): AuditSubject<{ id: string }> => ({
+    entityType: 'registration',
+    locate: (entity) => ({ entityId: entity.id, eventId: 'event-1' }),
+    identity,
+  });
+
+  beforeEach(() => {
+    tx = mockDeep<PrismaTransaction>();
+    service = new AuditService(mockDeep<PrismaClient>());
+  });
+
+  it('files the entry where the subject locates it, with its identity', async () => {
+    await asUser('user-1', () =>
+      service.deleted(
+        tx,
+        subject(() => ({ context: { status: 'PENDING' } })),
+        { id: 'reg-1' },
+        { details: { reason: 'duplicate' } },
+      ),
+    );
+
+    expect(tx.auditLog.create).toHaveBeenCalledWith({
+      data: {
+        action: 'deleted',
+        entityType: 'registration',
+        entityId: 'reg-1',
+        eventId: 'event-1',
+        actorId: 'user-1',
+        details: { context: { status: 'PENDING' }, reason: 'duplicate' },
+      },
+    });
+  });
+
+  it('stores no details when there are none, and honours an actor override', async () => {
+    const record = vi.spyOn(service, 'record');
+
+    await asUser('user-1', () =>
+      service.created(tx, subject(), { id: 'reg-1' }, { actorId: null }),
+    );
+
+    expect(record).toHaveBeenCalledWith(
+      tx,
+      expect.objectContaining({ actorId: null, details: null }),
+    );
   });
 });

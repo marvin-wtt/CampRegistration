@@ -18,6 +18,8 @@ const DENY_KEYS: (keyof Event)[] = [
 export const eventAuditPolicy: AuditChangePolicy<Event> = {
   entityType: 'event',
 
+  locate: (event) => ({ entityId: event.id, eventId: event.id }),
+
   details(before, after) {
     const fields = changedKeysExcept(before, after, DENY_KEYS);
 

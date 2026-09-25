@@ -3,10 +3,7 @@ import { BaseService } from '#core/base/BaseService';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service';
 import { AuditService } from '#app/audit/audit.service';
-import {
-  messageTemplateAuditPolicy,
-  templateIdentity,
-} from '#app/messageTemplate/message-template.audit';
+import { messageTemplateAuditPolicy } from '#app/messageTemplate/message-template.audit';
 import { sanitizeHtmlContent } from '#utils/sanitize';
 import type { MessageTemplateWithFiles } from '#app/messageTemplate/message-template.resource';
 
@@ -100,13 +97,7 @@ export class MessageTemplateService extends BaseService {
         },
       });
 
-      await this.audit.record(tx, {
-        action: 'created',
-        entityType: messageTemplateAuditPolicy.entityType,
-        entityId: template.id,
-        eventId,
-        details: templateIdentity(template),
-      });
+      await this.audit.created(tx, messageTemplateAuditPolicy, template);
 
       return template;
     });
@@ -156,12 +147,7 @@ export class MessageTemplateService extends BaseService {
         },
       });
 
-      await this.audit.recordChange(tx, 'updated', messageTemplateAuditPolicy, {
-        before,
-        after,
-        entityId: id,
-        eventId,
-      });
+      await this.audit.updated(tx, messageTemplateAuditPolicy, before, after);
 
       return after;
     });
@@ -176,13 +162,7 @@ export class MessageTemplateService extends BaseService {
         },
       });
 
-      await this.audit.record(tx, {
-        action: 'deleted',
-        entityType: messageTemplateAuditPolicy.entityType,
-        entityId: id,
-        eventId,
-        details: templateIdentity(deleted),
-      });
+      await this.audit.deleted(tx, messageTemplateAuditPolicy, deleted);
 
       return deleted;
     });

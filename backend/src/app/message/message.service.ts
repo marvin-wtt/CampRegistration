@@ -2,6 +2,7 @@ import { BaseService } from '#core/base/BaseService';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service.js';
 import { AuditService } from '#app/audit/audit.service';
+import { messageAuditSubject } from '#app/message/message.audit';
 import { sanitizeHtmlContent } from '#utils/sanitize';
 import type { MessageWithFiles } from '#app/message/message.resource';
 
@@ -94,11 +95,7 @@ export class MessageService extends BaseService {
         },
       });
 
-      await this.audit.record(tx, {
-        action: 'sent',
-        entityType: 'message',
-        entityId: message.id,
-        eventId,
+      await this.audit.recordFor(tx, messageAuditSubject, 'sent', message, {
         details: { values: { recipients: data.recipientCount } },
       });
 
@@ -127,12 +124,7 @@ export class MessageService extends BaseService {
         },
       });
 
-      await this.audit.record(tx, {
-        action: 'deleted',
-        entityType: 'message',
-        entityId: id,
-        eventId,
-      });
+      await this.audit.deleted(tx, messageAuditSubject, deleted);
 
       return deleted;
     });

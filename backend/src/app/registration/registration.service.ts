@@ -14,12 +14,10 @@ import {
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service';
 import { AuditService } from '#app/audit/audit.service';
-import { composeDetails } from '#app/audit/audit.diff';
 import type { RegistrationDeleteReason } from '@camp-registration/common/entities';
 import {
   type AuditedRegistration,
   registrationAuditPolicy,
-  registrationIdentity,
 } from '#app/registration/registration.audit';
 import type { PrismaTransaction } from '#app/audit/audit.service';
 import { PrivacyNoticeService } from '#app/privacyNotice/privacy-notice.service';
@@ -193,17 +191,15 @@ export class RegistrationService extends BaseService {
           },
         });
 
-        await this.audit.record(transaction, {
-          action: 'created',
-          entityType: registrationAuditPolicy.entityType,
-          entityId: registration.id,
-          eventId: event.id,
-          // A registration is created by an external party via the public
-          // form — always system-attributed, never the logged-in manager who
-          // may happen to share the session.
-          actorId: null,
-          details: registrationIdentity(registration),
-        });
+        // A registration is created by an external party via the public
+        // form — always system-attributed, never the logged-in manager who
+        // may happen to share the session.
+        await this.audit.created(
+          transaction,
+          registrationAuditPolicy,
+          registration,
+          { actorId: null },
+        );
 
         return registration;
       },
@@ -239,12 +235,7 @@ export class RegistrationService extends BaseService {
           include: this.registrationInclude,
         });
 
-        await this.audit.recordChange(tx, 'updated', registrationAuditPolicy, {
-          before,
-          after,
-          entityId: registrationId,
-          eventId: event.id,
-        });
+        await this.audit.updated(tx, registrationAuditPolicy, before, after);
 
         return after;
       });
@@ -311,17 +302,17 @@ export class RegistrationService extends BaseService {
         include: this.registrationInclude,
       });
 
-      await this.audit.recordChange(tx, 'updated', registrationAuditPolicy, {
+      await this.audit.updated(
+        tx,
+        registrationAuditPolicy,
         before,
-        after: data.customFiles
+        data.customFiles
           ? {
               ...after,
               customFiles: { ...before.customFiles, ...data.customFiles },
             }
           : after,
-        entityId: registrationId,
-        eventId: event.id,
-      });
+      );
 
       return after;
     });
@@ -374,12 +365,8 @@ export class RegistrationService extends BaseService {
         where: { id: registration.id },
       });
 
-      await this.audit.record(tx, {
-        action: 'deleted',
-        entityType: registrationAuditPolicy.entityType,
-        entityId: deleted.id,
-        eventId: deleted.eventId,
-        details: composeDetails({ ...registrationIdentity(deleted), reason }),
+      await this.audit.deleted(tx, registrationAuditPolicy, deleted, {
+        details: { reason },
       });
     });
   }

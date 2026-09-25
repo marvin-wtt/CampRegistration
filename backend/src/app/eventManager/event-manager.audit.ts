@@ -14,8 +14,13 @@ type AuditedManager = Pick<EventManager, 'userId' | 'role' | 'expiresAt'> & {
   invitation?: Pick<Invitation, 'email'> | null;
 };
 
-export const eventManagerAuditPolicy: AuditChangePolicy<AuditedManager> = {
+export const eventManagerAuditPolicy: AuditChangePolicy<
+  AuditedManager & Pick<EventManager, 'id' | 'eventId'>
+> = {
   entityType: 'eventManager',
+
+  locate: (manager) => ({ entityId: manager.id, eventId: manager.eventId }),
+  identity: managerIdentity,
 
   details(before, after) {
     const fields = changedKeysByAllowList(before, after, FIELD_ALLOWLIST);
