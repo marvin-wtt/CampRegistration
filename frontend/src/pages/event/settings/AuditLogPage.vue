@@ -371,6 +371,7 @@ import { zonedInstant } from '@camp-registration/common/utils';
 import { useAPIService } from '@/services/APIService';
 import { useServerList } from '@/composables/serverList';
 import { useAuditLabels } from '@/composables/audit/auditLabels';
+import { useAuditTimeline } from '@/composables/audit/auditTimeline';
 import {
   type AuditLogDisplayEntry,
   type AuditLogItem,
@@ -395,6 +396,7 @@ const route = useRoute();
 const quasar = useQuasar();
 const apiService = useAPIService();
 const { entityLabel } = useAuditLabels();
+const { actorLabel } = useAuditTimeline();
 const { data: event } = storeToRefs(useEventDetailsStore());
 
 const eventId = computed(() => String(route.params.eventId));
@@ -529,7 +531,7 @@ const entityTypeOptions = computed(() =>
 const actorOptions = computed(() =>
   actors.value
     .map((actor) => ({
-      label: actor.name ?? t('audit.deletedUser'),
+      label: actorLabel(actor, t('audit.deletedUser')) ?? '',
       value: actor.id,
     }))
     .sort((a, b) => a.label.localeCompare(b.label)),

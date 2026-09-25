@@ -15,6 +15,10 @@ export class ProfileRouter extends ModuleRouter {
     this.router.use(auth());
 
     this.router.get('/', controller(profileController, 'show'));
+    this.router.get(
+      '/deletion-blockers',
+      controller(profileController, 'deletionBlockers'),
+    );
     this.router.patch('/', controller(profileController, 'update'));
     this.router.delete('/', controller(profileController, 'destroy'));
   }

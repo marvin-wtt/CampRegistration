@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useAuditTimeline } from '@/composables/audit/auditTimeline';
 
 describe('useAuditTimeline', () => {
-  const { dayKey, relativeDay } = useAuditTimeline();
+  const { dayKey, relativeDay, actorLabel } = useAuditTimeline();
 
   afterEach(() => {
     vi.useRealTimers();
@@ -32,6 +32,19 @@ describe('useAuditTimeline', () => {
       );
       expect(relativeDay('2026-06-01T12:00:00.000Z', 'UTC')).toBe('today');
       expect(relativeDay('2026-05-30T12:00:00.000Z', 'UTC')).toBeNull();
+    });
+  });
+
+  describe('actorLabel', () => {
+    it('marks a deleted user whose name is still kept', () => {
+      expect(actorLabel({ id: 'a', name: 'Jane' }, 'Deleted')).toBe('Jane');
+      expect(
+        actorLabel({ id: 'a', name: 'Jane', deleted: true }, 'Deleted'),
+      ).toBe('Jane (Deleted)');
+      expect(
+        actorLabel({ id: 'a', name: null, deleted: true }, 'Deleted'),
+      ).toBe('Deleted');
+      expect(actorLabel(null, 'Deleted')).toBeNull();
     });
   });
 });

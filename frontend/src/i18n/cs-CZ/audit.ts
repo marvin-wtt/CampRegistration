@@ -65,6 +65,9 @@ export default {
       actions: {
         accepted: 'Přijato',
       },
+      reasons: {
+        account_deleted: 'Účet smazán',
+      },
       fields: {
         role: 'Role',
         expiresAt: 'Vyprší',

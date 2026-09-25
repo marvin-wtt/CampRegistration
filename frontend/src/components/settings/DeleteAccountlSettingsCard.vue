@@ -6,6 +6,55 @@
     </div>
 
     <template #body>
+      <div
+        v-if="blocked"
+        class="blockers rounded-md q-pa-md q-mb-md"
+        data-test="account-deletion-blockers"
+      >
+        <div class="row items-center no-wrap q-gutter-xs">
+          <q-icon
+            name="block"
+            size="18px"
+          />
+          <span class="text-body2 text-weight-medium">
+            {{ t('blockers.title') }}
+          </span>
+        </div>
+        <div class="text-body2 q-mt-xs">
+          {{ t('blockers.description') }}
+        </div>
+        <ul class="blockers__list text-body2 q-mt-sm">
+          <li
+            v-for="event in blockers?.events"
+            :key="event.id"
+          >
+            <router-link
+              :to="{
+                name: 'management.event.settings.access',
+                params: { eventId: event.id },
+              }"
+            >
+              {{ to(event.name) }}
+            </router-link>
+            <span class="blockers__kind">· {{ t('blockers.event') }}</span>
+          </li>
+          <li
+            v-for="newsletter in blockers?.newsletters"
+            :key="newsletter.id"
+          >
+            <router-link
+              :to="{
+                name: 'management.newsletter',
+                params: { newsletterId: newsletter.id },
+              }"
+            >
+              {{ newsletter.name }}
+            </router-link>
+            <span class="blockers__kind">· {{ t('blockers.newsletter') }}</span>
+          </li>
+        </ul>
+      </div>
+
       <ul class="consequences text-body2 text-on-surface-variant">
         <li
           v-for="key in consequences"
@@ -37,6 +86,8 @@
         icon="delete_forever"
         tonal
         error
+        :disable="blocked"
+        data-test="account-delete"
         @click="emit('delete')"
       />
     </template>
@@ -44,21 +95,36 @@
 </template>
 
 <script lang="ts" setup>
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import type { AccountDeletionBlockers } from '@camp-registration/common/entities';
 import DangerCard from '@/components/common/DangerCard.vue';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
+import { useObjectTranslation } from '@/composables/objectTranslation';
 
 const { t } = useI18n();
+const { to } = useObjectTranslation();
+
+// `null` while unknown; the server refuses a blocked deletion either way.
+const { blockers } = defineProps<{
+  blockers: AccountDeletionBlockers | null;
+}>();
 
 const emit = defineEmits<{
   (e: 'delete'): void;
 }>();
 
+const blocked = computed(
+  () =>
+    !!blockers &&
+    (blockers.events.length > 0 || blockers.newsletters.length > 0),
+);
+
 const consequences = [
   'dataRemoval',
   'accessLoss',
   'collaborationImpact',
-  'eventDeletion',
+  'auditRetention',
 ] as const;
 </script>
 
@@ -85,6 +151,25 @@ const consequences = [
   }
 }
 
+.blockers {
+  background: var(--md3-warning-container);
+  color: var(--md3-on-warning-container);
+
+  &__list {
+    margin: 0;
+    padding-left: 20px;
+  }
+
+  &__kind {
+    opacity: 0.7;
+  }
+
+  a {
+    color: inherit;
+    font-weight: 500;
+  }
+}
+
 .irreversible {
   margin-top: 12px;
   color: var(--md3-error);
@@ -100,8 +185,14 @@ disclaimer:
   dataRemoval: 'All your personal information, settings, and associated data will be permanently deleted.'
   accessLoss: 'You will lose access to all events, tools, and services associated with your account.'
   collaborationImpact: 'Collaborators may no longer see your contributions.'
-  eventDeletion: 'Events that you created may be permanently deleted if no other users are associated with them.'
+  auditRetention: 'Changes you made to events stay in their audit log, with your name, for up to two years.'
   irreversible: 'This action is irreversible.'
+
+blockers:
+  title: 'Your account cannot be deleted yet'
+  description: 'You are the only director or owner of the following. Give another person that role or delete them first.'
+  event: 'Event'
+  newsletter: 'Newsletter'
 
 action:
   delete: 'Delete account'
@@ -116,8 +207,14 @@ disclaimer:
   dataRemoval: 'Alle Ihre persönlichen Informationen, Einstellungen und zugehörigen Daten werden dauerhaft gelöscht.'
   accessLoss: 'Sie verlieren den Zugriff auf alle Veranstaltungen, Tools und Dienste, die mit Ihrem Konto verbunden sind.'
   collaborationImpact: 'Mitarbeiter können Ihre Beiträge möglicherweise nicht mehr sehen.'
-  eventDeletion: 'Von Ihnen erstellte Veranstaltungen könnten dauerhaft gelöscht werden, wenn keine anderen Benutzer damit verbunden sind.'
+  auditRetention: 'Ihre Änderungen an Veranstaltungen bleiben mit Ihrem Namen bis zu zwei Jahre im Änderungsprotokoll erhalten.'
   irreversible: 'Diese Aktion ist endgültig.'
+
+blockers:
+  title: 'Ihr Konto kann noch nicht gelöscht werden'
+  description: 'Sie sind die einzige Person mit Leitungs- bzw. Inhaberrolle für die folgenden Einträge. Übertragen Sie diese Rolle an eine andere Person oder löschen Sie die Einträge zuerst.'
+  event: 'Veranstaltung'
+  newsletter: 'Newsletter'
 
 action:
   delete: 'Konto löschen'
@@ -132,8 +229,14 @@ disclaimer:
   dataRemoval: 'Toutes vos informations personnelles, paramètres et données associées seront définitivement supprimés.'
   accessLoss: 'Vous perdrez l’accès à tous les événements, outils et services associés à votre compte.'
   collaborationImpact: 'Les collaborateurs pourraient ne plus voir vos contributions.'
-  eventDeletion: 'Les événements que vous avez créés pourraient être supprimés définitivement s’ils ne sont associés à aucun autre utilisateur.'
+  auditRetention: 'Les modifications que vous avez apportées aux événements restent dans leur journal d’audit, avec votre nom, pendant deux ans au maximum.'
   irreversible: 'Cette action est irréversible.'
+
+blockers:
+  title: 'Votre compte ne peut pas encore être supprimé'
+  description: 'Vous êtes le seul directeur ou propriétaire des éléments suivants. Attribuez ce rôle à une autre personne ou supprimez-les d’abord.'
+  event: 'Événement'
+  newsletter: 'Newsletter'
 
 action:
   delete: 'Supprimer le compte'
@@ -148,8 +251,14 @@ disclaimer:
   dataRemoval: 'Wszystkie Twoje dane osobowe, ustawienia i powiązane informacje zostaną trwale usunięte.'
   accessLoss: 'Utracisz dostęp do wszystkich wydarzeń, narzędzi i usług powiązanych z Twoim kontem.'
   collaborationImpact: 'Inni współpracownicy mogą nie mieć już dostępu do Twoich treści.'
-  eventDeletion: 'Wydarzenia utworzone przez Ciebie mogą zostać trwale usunięte, jeśli nie są powiązane z innymi użytkownikami.'
+  auditRetention: 'Zmiany wprowadzone przez Ciebie w wydarzeniach pozostaną w ich dzienniku zmian wraz z Twoim imieniem i nazwiskiem przez maksymalnie dwa lata.'
   irreversible: 'Ta operacja jest ostateczna.'
+
+blockers:
+  title: 'Nie można jeszcze usunąć Twojego konta'
+  description: 'Jesteś jedynym kierownikiem lub właścicielem poniższych pozycji. Przekaż tę rolę innej osobie lub najpierw je usuń.'
+  event: 'Wydarzenie'
+  newsletter: 'Newsletter'
 
 action:
   delete: 'Usuń konto'
@@ -164,8 +273,14 @@ disclaimer:
   dataRemoval: 'Všechny vaše osobní údaje, nastavení a související data budou trvale odstraněny.'
   accessLoss: 'Ztratíte přístup ke všem akcím, nástrojům a službám spojeným s vaším účtem.'
   collaborationImpact: 'Spolupracovníci již nemusí mít přístup k vašim příspěvkům.'
-  eventDeletion: 'Akce, které jste vytvořili, mohou být trvale smazány, pokud nejsou spojeny s jinými uživateli.'
+  auditRetention: 'Změny, které jste provedli v akcích, zůstanou v jejich protokolu změn s vaším jménem až dva roky.'
   irreversible: 'Tato akce je nevratná.'
+
+blockers:
+  title: 'Váš účet zatím nelze smazat'
+  description: 'Jste jediným vedoucím nebo vlastníkem následujících položek. Předejte tuto roli jiné osobě nebo je nejprve smažte.'
+  event: 'Akce'
+  newsletter: 'Newsletter'
 
 action:
   delete: 'Smazat účet'

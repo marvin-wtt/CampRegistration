@@ -80,7 +80,10 @@ export function useAuditTimeline() {
     if (actor === null) {
       return null;
     }
-    return actor.name ?? deletedUserLabel;
+    if (actor.name === null) {
+      return deletedUserLabel;
+    }
+    return actor.deleted ? `${actor.name} (${deletedUserLabel})` : actor.name;
   }
 
   // Only the generic lifecycle has a color of its own; entity-specific actions

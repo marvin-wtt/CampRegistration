@@ -35,7 +35,10 @@
           <export-data-settings-card @export="exportData" />
         </q-card>
 
-        <delete-account-settings-card @delete="deleteProfile" />
+        <delete-account-settings-card
+          :blockers
+          @delete="deleteProfile"
+        />
       </template>
     </div>
   </page-state-handler>
@@ -50,11 +53,23 @@ import DeleteAccountSettingsCard from '@/components/settings/DeleteAccountlSetti
 import ExportDataSettingsCard from '@/components/settings/ExportDataSettingsCard.vue';
 import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
 import { useI18n } from 'vue-i18n';
+import { onMounted, ref } from 'vue';
+import type { AccountDeletionBlockers } from '@camp-registration/common/entities';
+import { useAPIService } from '@/services/APIService';
 
 const { t } = useI18n();
 const quasar = useQuasar();
+const apiService = useAPIService();
 const profileStore = useProfileStore();
 const { user, loading, error } = storeToRefs(profileStore);
+
+const blockers = ref<AccountDeletionBlockers | null>(null);
+
+async function loadBlockers() {
+  blockers.value = await apiService.fetchDeletionBlockers().catch(() => null);
+}
+
+onMounted(loadBlockers);
 
 function deleteProfile() {
   quasar
@@ -68,7 +83,8 @@ function deleteProfile() {
       },
     })
     .onOk(() => {
-      void profileStore.deleteProfile();
+      // A refusal is already shown; refresh in case ownership changed meanwhile.
+      void profileStore.deleteProfile().catch(loadBlockers);
     });
 }
 

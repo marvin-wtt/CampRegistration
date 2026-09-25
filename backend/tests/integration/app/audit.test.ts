@@ -394,9 +394,26 @@ describe('/api/v1/events/:eventId/registrations/:registrationId/audit', () => {
       expect(response.body.data).toEqual(
         expect.arrayContaining([
           { id: user.id, name: user.name },
-          { id: deletedUserId, name: null },
+          { id: deletedUserId, name: null, deleted: true },
         ]),
       );
+    });
+
+    it('names deleted users from the kept name until it is purged', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const deletedUserId = ulid();
+      await prisma.auditDeletedUser.create({
+        data: { id: deletedUserId, name: 'Jane Doe' },
+      });
+      await createLog(event.id, { actorId: deletedUserId });
+
+      const response = await fetchEventAudit(event.id, accessToken).expect(200);
+
+      expect(response.body.data[0].actor).toEqual({
+        id: deletedUserId,
+        name: 'Jane Doe',
+        deleted: true,
+      });
     });
 
     it.each([
@@ -494,6 +511,34 @@ describe('/api/v1/events/:eventId/registrations/:registrationId/audit', () => {
 
         expect(
           await prisma.auditLog.findUnique({ where: { id: old.id } }),
+        ).not.toBeNull();
+      });
+    });
+
+    describe('purgeExpiredDeletedUsers', () => {
+      it('deletes names kept past the retention window only', async () => {
+        const expired = await prisma.auditDeletedUser.create({
+          data: {
+            id: ulid(),
+            name: 'Expired',
+            deletedAt: moment().subtract(3, 'years').toDate(),
+          },
+        });
+        const recent = await prisma.auditDeletedUser.create({
+          data: { id: ulid(), name: 'Recent' },
+        });
+
+        await resolve(AuditService).purgeExpiredDeletedUsers();
+
+        expect(
+          await prisma.auditDeletedUser.findUnique({
+            where: { id: expired.id },
+          }),
+        ).toBeNull();
+        expect(
+          await prisma.auditDeletedUser.findUnique({
+            where: { id: recent.id },
+          }),
         ).not.toBeNull();
       });
     });

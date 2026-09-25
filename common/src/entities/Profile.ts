@@ -5,6 +5,7 @@ import type {
 } from '#permissions';
 import type { OrganizationRole } from './OrganizationMember.js';
 import type { OrganizationVerificationStatus } from './Organization.js';
+import type { Translatable } from './Translatable.js';
 
 interface EventAccess {
   eventId: string;
@@ -58,3 +59,10 @@ export type ProfileUpdateData = Partial<Omit<Profile, 'role'>> & {
   password?: string;
   currentPassword?: string;
 };
+
+// What the account is the last director or owner of; deletion is refused
+// until these are handed over or deleted.
+export interface AccountDeletionBlockers {
+  events: { id: string; name: Translatable }[];
+  newsletters: { id: string; name: string }[];
+}

@@ -283,16 +283,45 @@ export class AuditService extends BaseService {
       where: { id: { in: unique } },
       select: { id: true, name: true },
     });
-    return new Map(users.map((user) => [user.id, user]));
+    const resolved = new Map<string, AuditActor>(
+      users.map((user) => [user.id, user]),
+    );
+
+    const missing = unique.filter((id) => !resolved.has(id));
+    if (missing.length > 0) {
+      const deleted = await this.prisma.auditDeletedUser.findMany({
+        where: { id: { in: missing } },
+        select: { id: true, name: true },
+      });
+      for (const user of deleted) {
+        resolved.set(user.id, { ...user, deleted: true });
+      }
+    }
+    return resolved;
   }
 
-  // A user no longer found (deleted or erased) keeps its id with no name, so
-  // it reads as "deleted user" rather than as the system.
+  /**
+   * Keeps a deleted account's name so its entries stay attributable. Call in
+   * the deleting transaction; the name is purged after the retention window.
+   */
+  async rememberDeletedUser(
+    tx: PrismaTransaction,
+    user: { id: string; name: string },
+  ): Promise<void> {
+    await tx.auditDeletedUser.upsert({
+      where: { id: user.id },
+      create: { id: user.id, name: user.name },
+      update: { name: user.name, deletedAt: new Date() },
+    });
+  }
+
+  // A user no longer found, or whose name was purged, keeps its id with no
+  // name, so it reads as "deleted user" rather than as the system.
   private userOrDeleted(
     users: Map<string, AuditActor>,
     id: string,
   ): AuditActor {
-    return users.get(id) ?? { id, name: null };
+    return users.get(id) ?? { id, name: null, deleted: true };
   }
 
   /**
@@ -308,6 +337,15 @@ export class AuditService extends BaseService {
         eventId: null,
         createdAt: { lt: cutoff },
       },
+    });
+    return count;
+  }
+
+  async purgeExpiredDeletedUsers(): Promise<number> {
+    const cutoff = new Date(Date.now() - AUDIT_RETENTION_DAYS * DAY_MS);
+
+    const { count } = await this.prisma.auditDeletedUser.deleteMany({
+      where: { deletedAt: { lt: cutoff } },
     });
     return count;
   }

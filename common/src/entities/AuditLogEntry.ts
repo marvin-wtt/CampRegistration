@@ -31,8 +31,9 @@ export interface AuditDetails {
 
 export interface AuditActor {
   id: string;
-  // Null when the user has been deleted.
+  // Kept for a while after the account is deleted, then null.
   name: string | null;
+  deleted?: boolean;
 }
 
 export interface AuditLogEntry extends Identifiable {

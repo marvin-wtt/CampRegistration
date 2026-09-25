@@ -720,3 +720,14 @@ model AuditLog {
   @@index([actorId], map: "audit_logs_actor_id_index")
   @@map("audit_logs")
 }
+
+/// Name of a deleted account, so the audit log keeps naming who acted.
+/// Purged after the audit retention window.
+model AuditDeletedUser {
+  id        String   @id @db.Char(26)
+  name      String   @db.VarChar(255)
+  deletedAt DateTime @default(now()) @map("deleted_at")
+
+  @@index([deletedAt], map: "audit_deleted_users_deleted_at_index")
+  @@map("audit_deleted_users")
+}

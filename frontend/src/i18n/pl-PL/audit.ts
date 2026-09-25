@@ -65,6 +65,9 @@ export default {
       actions: {
         accepted: 'Zaakceptowano',
       },
+      reasons: {
+        account_deleted: 'Konto usunięte',
+      },
       fields: {
         role: 'Rola',
         expiresAt: 'Wygasa',

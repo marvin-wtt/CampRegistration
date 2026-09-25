@@ -2,11 +2,21 @@ import type { Prisma, User } from '#generated/prisma/client.js';
 import httpStatus from 'http-status';
 import ApiError from '#utils/ApiError';
 import { encryptPassword } from '#core/encryption';
-import type { UserUpdateData } from '@camp-registration/common/entities';
+import type {
+  AccountDeletionBlockers,
+  Translatable,
+  UserUpdateData,
+} from '@camp-registration/common/entities';
 import { BaseService } from '#core/base/BaseService';
 import { EventService } from '#app/event/event.service';
 import { inject, injectable } from 'inversify';
 import type { ProfileUser } from '#app/profile/profile.types';
+import { AuditService, type PrismaTransaction } from '#app/audit/audit.service';
+import { composeDetails } from '#app/audit/audit.diff';
+import {
+  eventManagerAuditPolicy,
+  managerIdentity,
+} from '#app/eventManager/event-manager.audit';
 
 const profileAccessInclude = {
   eventRoles: true,
@@ -35,6 +45,7 @@ const profileAccessOmit = { password: true } satisfies Prisma.UserOmit;
 export class UserService extends BaseService {
   constructor(
     @inject(EventService) private readonly eventService: EventService,
+    @inject(AuditService) private readonly audit: AuditService,
   ) {
     super();
   }
@@ -245,7 +256,80 @@ export class UserService extends BaseService {
   }
 
   async deleteUserById(userId: string) {
-    await this.prisma.user.delete({ where: { id: userId } });
+    await this.prisma.$transaction(async (tx) => {
+      const user = await tx.user.findUniqueOrThrow({
+        where: { id: userId },
+        include: { eventRoles: true },
+      });
+      const blockers = await this.getDeletionBlockers(userId, tx);
+      if (blockers.events.length > 0 || blockers.newsletters.length > 0) {
+        throw new ApiError(
+          httpStatus.CONFLICT,
+          'The account is the only director or owner of an event or newsletter. Hand it over or delete it first.',
+        );
+      }
+
+      await this.audit.rememberDeletedUser(tx, user);
+      // The cascade below bypasses `removeManager`, so record it here.
+      for (const manager of user.eventRoles) {
+        await this.audit.record(tx, {
+          action: 'deleted',
+          entityType: eventManagerAuditPolicy.entityType,
+          entityId: manager.id,
+          eventId: manager.eventId,
+          details: composeDetails({
+            ...managerIdentity(manager),
+            reason: 'account_deleted',
+          }),
+        });
+      }
+
+      await tx.user.delete({ where: { id: userId } });
+    });
+  }
+
+  // Mirrors the manager removal rules: an event keeps a non-expiring director
+  // (a pending invitation counts), a newsletter keeps an owner.
+  async getDeletionBlockers(
+    userId: string,
+    db: PrismaTransaction = this.prisma,
+  ): Promise<AccountDeletionBlockers> {
+    const [events, newsletters] = await Promise.all([
+      db.event.findMany({
+        select: { id: true, name: true },
+        where: {
+          eventManager: {
+            some: { userId, role: 'DIRECTOR', expiresAt: null },
+          },
+          NOT: {
+            eventManager: {
+              some: {
+                role: 'DIRECTOR',
+                expiresAt: null,
+                OR: [{ userId: null }, { userId: { not: userId } }],
+              },
+            },
+          },
+        },
+      }),
+      db.newsletter.findMany({
+        select: { id: true, name: true },
+        where: {
+          managers: { some: { userId, role: 'OWNER' } },
+          NOT: {
+            managers: { some: { role: 'OWNER', userId: { not: userId } } },
+          },
+        },
+      }),
+    ]);
+
+    return {
+      events: events.map((event) => ({
+        id: event.id,
+        name: event.name as Translatable,
+      })),
+      newsletters,
+    };
   }
 
   async resetTwoFactorById(userId: string) {
