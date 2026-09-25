@@ -125,6 +125,7 @@ export const useAuthStore = defineStore('auth', () => {
       return;
     }
 
+    const hadProfile = !!profileStore.user;
     const result = await tryRefresh();
     if (result.outcome === 'unavailable') {
       initRetry.schedule(
@@ -135,9 +136,9 @@ export const useAuthStore = defineStore('auth', () => {
       return;
     }
 
-    // tryRefresh() already loaded the profile if it was missing; this forces
-    // a fresh copy even when one was already cached.
-    if (result.outcome === 'authenticated' && forceRefresh) {
+    // tryRefresh() already loaded the profile if it was missing; only a
+    // cached copy needs refetching.
+    if (result.outcome === 'authenticated' && forceRefresh && hadProfile) {
       await profileStore.fetchProfile();
     }
   }

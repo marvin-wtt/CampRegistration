@@ -64,8 +64,9 @@ export class AuditService extends BaseService {
 
   /**
    * Records an update as diffed by the entity's policy, skipping no-op edits.
-   * Read `before` inside the same transaction as the write, so the diff can't
-   * race another request.
+   * Read `before` inside the same transaction as the write. That keeps the
+   * diff and the write atomic, but a plain read takes no lock under REPEATABLE
+   * READ: two concurrent saves can both diff against the same `before`.
    *
    * With `coalesceWithinMs`, an edit by the same actor is merged into the
    * entity's latest entry if that is younger than the window — an autosaving
@@ -183,28 +184,28 @@ export class AuditService extends BaseService {
           : undefined,
     };
 
-    const items = await this.prisma.auditLog.findMany({
-      where,
-      take: limit + 1,
-      ...(options.cursor ? { cursor: { id: options.cursor }, skip: 1 } : {}),
-      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-    });
+    const [items, total] = await Promise.all([
+      this.prisma.auditLog.findMany({
+        where,
+        take: limit + 1,
+        ...(options.cursor ? { cursor: { id: options.cursor }, skip: 1 } : {}),
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      }),
+      options.cursor ? undefined : this.prisma.auditLog.count({ where }),
+    ]);
 
     const hasMore = items.length > limit;
     const logs = hasMore ? items.slice(0, limit) : items;
     const nextCursor = hasMore ? (logs.at(-1)?.id ?? null) : null;
-    const total = options.cursor
-      ? undefined
-      : await this.prisma.auditLog.count({ where });
 
     return { logs, nextCursor, limit, total };
   }
 
   async listActorsForEvent(eventId: string): Promise<AuditActor[]> {
-    const rows = await this.prisma.auditLog.findMany({
+    // Not `distinct`: Prisma applies it in memory on MySQL, reading every row.
+    const rows = await this.prisma.auditLog.groupBy({
+      by: ['actorId'],
       where: { eventId, actorId: { not: null } },
-      distinct: ['actorId'],
-      select: { actorId: true },
     });
     const ids = rows.flatMap((row) => (row.actorId ? [row.actorId] : []));
     const users = await this.resolveUsers(ids);
