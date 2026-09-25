@@ -182,23 +182,28 @@ export class EventManagerService extends BaseService {
 
   async resolveManagerInvitations({ id: userId, email }: VerifiedAccount) {
     await this.transaction(async (tx) => {
-      // Update any pending invitations to this email to point to the new user.
-      await tx.eventManager.updateMany({
+      // Selected first: MySQL rejects an UPDATE whose filter subqueries the
+      // same table (error 1093), which the `event` relation filter would do.
+      // Only the oldest invitation per event is claimed, to respect the
+      // (eventId, userId) unique constraint.
+      const claimable = await tx.eventManager.groupBy({
+        by: ['eventId'],
         where: {
           userId: null,
-          invitation: {
-            email,
-          },
-          event: {
-            eventManager: {
-              none: { userId },
-            },
-          },
+          invitation: { email },
+          event: { eventManager: { none: { userId } } },
         },
-        data: {
-          userId,
-        },
+        _min: { id: true },
       });
+
+      // Point the pending invitations to this email at the new user.
+      if (claimable.length > 0) {
+        const ids = claimable.flatMap((m) => m._min.id ?? []);
+        await tx.eventManager.updateMany({
+          where: { id: { in: ids } },
+          data: { userId },
+        });
+      }
 
       // Remove any pending invitations to this email that are now redundant.
       await tx.eventManager.deleteMany({
@@ -209,7 +214,7 @@ export class EventManagerService extends BaseService {
       });
 
       // Delete all claimed invalidations
-      await tx.invitation.deleteMany({ where: { email } });
+      await tx.eventInvitation.deleteMany({ where: { email } });
     });
   }
 
@@ -334,7 +339,7 @@ export class EventManagerService extends BaseService {
 
       // A revoked invitation would otherwise keep the invitee's email forever.
       if (deleted.invitationId) {
-        await tx.invitation.deleteMany({
+        await tx.eventInvitation.deleteMany({
           where: { id: deleted.invitationId, eventManager: { none: {} } },
         });
       }

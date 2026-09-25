@@ -210,9 +210,9 @@ model EventManager {
   invitationId String?   @map("invitation_id") @db.Char(26)
   expiresAt    DateTime? @map("expires_at") @db.DateTime(0)
 
-  event         Event       @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "event_managers_event_id_foreign")
-  user          User?       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "event_managers_user_id_foreign")
-  invitation    Invitation? @relation(fields: [invitationId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "event_managers_invitation_id_foreign")
+  event         Event            @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "event_managers_event_id_foreign")
+  user          User?            @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "event_managers_user_id_foreign")
+  invitation    EventInvitation? @relation(fields: [invitationId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "event_managers_invitation_id_foreign")
   assignedTasks Task[]
 
   @@unique([eventId, userId], map: "event_managers_event_id_user_id_unique")
@@ -222,7 +222,7 @@ model EventManager {
   @@map("event_managers")
 }
 
-model Invitation {
+model EventInvitation {
   id           String         @id @unique(map: "invitations_id_unique") @default(ulid()) @db.Char(26)
   email        String         @db.VarChar(255)
   eventManager EventManager[]

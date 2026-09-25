@@ -4,14 +4,14 @@ import {
   composeDetails,
 } from '#app/audit/audit.diff';
 import type { AuditChangePolicy } from '#app/audit/audit.policy';
-import type { EventManager, Invitation } from '#generated/prisma/client';
+import type { EventManager, EventInvitation } from '#generated/prisma/client';
 import type { AuditDetails } from '@camp-registration/common/entities';
 import { maskEmail } from '#utils/maskEmail';
 
 const FIELD_ALLOWLIST = ['role', 'expiresAt'] as const;
 
 type AuditedManager = Pick<EventManager, 'userId' | 'role' | 'expiresAt'> & {
-  invitation?: Pick<Invitation, 'email'> | null;
+  invitation?: Pick<EventInvitation, 'email'> | null;
 };
 
 export const eventManagerAuditPolicy: AuditChangePolicy<

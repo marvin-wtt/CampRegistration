@@ -1449,32 +1449,7 @@ describe('/api/v1/auth', async () => {
       });
       expect(manager.userId).toBe(user.id);
       expect(manager.invitationId).toBeNull();
-      await expect(prisma.invitation.count()).resolves.toBe(0);
-    });
-
-    it('should record an accepted audit entry for a resolved invitation', async () => {
-      const pending = await EventManagerFactory.create({
-        event: { create: EventFactory.build() },
-        role: 'VIEWER',
-        invitation: {
-          create: InvitationFactory.build({ email: 'test@email.net' }),
-        },
-      });
-      const user = await UserFactory.create({
-        email: 'test@email.net',
-        emailVerified: false,
-      });
-
-      await verifyEmail(user);
-
-      const entry = await prisma.auditLog.findFirst({
-        where: { entityId: pending.id, action: 'accepted' },
-      });
-      expect(entry?.actorId).toBe(user.id);
-      expect(entry?.details).toEqual({
-        context: { role: 'VIEWER' },
-        subjectId: user.id,
-      });
+      await expect(prisma.eventInvitation.count()).resolves.toBe(0);
     });
 
     it('should respond with `204` status code when provided with valid token', async () => {

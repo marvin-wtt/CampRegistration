@@ -778,7 +778,7 @@ describe('/api/v1/events/:eventId/managers', () => {
         .auth(accessToken, { type: 'bearer' })
         .expect(204);
 
-      const invitation = await prisma.invitation.findUnique({
+      const invitation = await prisma.eventInvitation.findUnique({
         where: { id: manager.invitationId ?? '' },
       });
       const entry = await prisma.auditLog.findFirst({

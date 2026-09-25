@@ -200,48 +200,35 @@ export class OrganizationMemberService extends BaseService {
 
   async resolveMemberInvitations({ id: userId, email }: VerifiedAccount) {
     await this.transaction(async (tx) => {
-      const pending = await tx.organizationMember.findMany({
-        where: { invitation: { email } },
-        select: { id: true, organizationId: true },
-      });
-
-      const memberships = await tx.organizationMember.findMany({
+      // Selected first: MySQL rejects an UPDATE whose filter subqueries the
+      // same table (error 1093), which the `organization` relation filter
+      // would do. Only the oldest invitation per organization is claimed, to
+      // respect the (organizationId, userId) unique constraint.
+      const claimable = await tx.organizationMember.groupBy({
+        by: ['organizationId'],
         where: {
-          userId,
-          organizationId: { in: pending.map((m) => m.organizationId) },
+          userId: null,
+          invitation: { email },
+          organization: { members: { none: { userId } } },
         },
-        select: { organizationId: true },
+        _min: { id: true },
       });
 
-      // A pending invitation loses to an organization the user already
-      // belongs to — through an existing membership, or another pending
-      // invitation claimed just above. Both only happen via a rare
-      // concurrent-request race (see organization-member.controller#store);
-      // the loser is silently discarded rather than reconciled.
-      const unavailable = new Set(memberships.map((m) => m.organizationId));
-      const toClaim: string[] = [];
-      const toDiscard: string[] = [];
-      for (const member of pending) {
-        if (unavailable.has(member.organizationId)) {
-          toDiscard.push(member.id);
-          continue;
-        }
-        unavailable.add(member.organizationId);
-        toClaim.push(member.id);
-      }
-
-      if (toDiscard.length > 0) {
-        await tx.organizationMember.deleteMany({
-          where: { id: { in: toDiscard } },
-        });
-      }
-
-      if (toClaim.length > 0) {
+      if (claimable.length > 0) {
+        const ids = claimable.flatMap((m) => m._min.id ?? []);
         await tx.organizationMember.updateMany({
-          where: { id: { in: toClaim } },
+          where: { id: { in: ids } },
           data: { userId },
         });
       }
+
+      // Invitations losing to an existing membership or a claimed sibling
+      // only arise via a rare concurrent-request race (see
+      // organization-member.controller#store); they are discarded rather
+      // than reconciled.
+      await tx.organizationMember.deleteMany({
+        where: { userId: null, invitation: { email } },
+      });
 
       await tx.organizationInvitation.deleteMany({ where: { email } });
     });

@@ -1,6 +1,6 @@
 import type {
   EventManager,
-  Invitation,
+  EventInvitation,
   User,
 } from '#generated/prisma/client.js';
 import type {
@@ -11,7 +11,7 @@ import { JsonResource } from '#core/resource/JsonResource';
 
 export interface ManagerWithRelationships extends EventManager {
   user: User | null;
-  invitation: Invitation | null;
+  invitation: EventInvitation | null;
 }
 
 export class EventManagerIdentityResource extends JsonResource<
