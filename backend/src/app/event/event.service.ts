@@ -344,7 +344,7 @@ export class EventService extends BaseService {
           : undefined,
     }));
 
-    const event = await this.prisma.$transaction(async (tx) => {
+    const event = await this.transaction(async (tx) => {
       const created = await tx.event.create({
         data: {
           ...data,
@@ -370,7 +370,7 @@ export class EventService extends BaseService {
         include: { ...this.eventRegistrationInclude() },
       });
 
-      await this.audit.created(tx, eventAuditPolicy, created);
+      await this.audit.created(eventAuditPolicy, created);
 
       return created;
     });
@@ -422,7 +422,7 @@ export class EventService extends BaseService {
   }
 
   async moveEventToOrganization(eventId: string, organizationId: string) {
-    return this.prisma.$transaction(async (tx) => {
+    return this.transaction(async (tx) => {
       const before = await tx.event.findUniqueOrThrow({
         where: { id: eventId },
       });
@@ -435,14 +435,14 @@ export class EventService extends BaseService {
         include: { ...this.eventRegistrationInclude() },
       });
 
-      await this.audit.updated(tx, eventAuditPolicy, before, updatedEvent);
+      await this.audit.updated(eventAuditPolicy, before, updatedEvent);
 
       return enrichFreePlaces(updatedEvent);
     });
   }
 
   async updateEvent(event: Event, data: EventUpdateData) {
-    return this.prisma.$transaction(async (tx) => {
+    return this.transaction(async (tx) => {
       const before = await tx.event.findUniqueOrThrow({
         where: { id: event.id },
       });
@@ -456,7 +456,7 @@ export class EventService extends BaseService {
         include: { ...this.eventRegistrationInclude() },
       });
 
-      await this.audit.updated(tx, eventAuditPolicy, before, updatedEvent, {
+      await this.audit.updated(eventAuditPolicy, before, updatedEvent, {
         coalesceWithinMs: AUDIT_COALESCE_MS,
       });
 
@@ -465,11 +465,11 @@ export class EventService extends BaseService {
   }
 
   async deleteEventById(id: string) {
-    await this.prisma.$transaction(async (tx) => {
+    await this.transaction(async (tx) => {
       // The FK nulls `eventId` on the event's audit rows; retention purges them later.
       await tx.event.delete({ where: { id } });
 
-      await this.audit.record(tx, {
+      await this.audit.record({
         action: 'deleted',
         entityType: eventAuditPolicy.entityType,
         entityId: id,

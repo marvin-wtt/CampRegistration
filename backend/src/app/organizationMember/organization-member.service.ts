@@ -1,7 +1,7 @@
 import { BaseService } from '#core/base/BaseService';
 import { injectable } from 'inversify';
 import type { VerifiedAccount } from '#app/user/account.lifecycle';
-import type { PrismaTransaction } from '#core/database/transaction';
+import type { AccountDeletionBlocker } from '@camp-registration/common/entities';
 import { permissionRegistry } from '#core/permission/permission.registry';
 import type {
   EventScopedPermission,
@@ -198,42 +198,61 @@ export class OrganizationMemberService extends BaseService {
     await this.prisma.organizationMember.delete({ where: { id } });
   }
 
-  async resolveMemberInvitations(
-    tx: PrismaTransaction,
-    { id: userId, email }: VerifiedAccount,
-  ) {
-    // An existing membership (under a previous address) absorbs the
-    // invitation, taking its role if that is stronger.
-    const memberships = await tx.organizationMember.findMany({
-      where: { userId },
-      select: { id: true, organizationId: true, role: true },
-    });
-    const duplicates = await tx.organizationMember.findMany({
-      where: {
-        invitation: { email },
-        organizationId: { in: memberships.map((m) => m.organizationId) },
-      },
-      select: { id: true, organizationId: true, role: true },
-    });
-    for (const invited of duplicates) {
-      const existing = memberships.find(
-        (m) => m.organizationId === invited.organizationId,
-      );
-      if (existing?.role === 'MEMBER' && invited.role === 'ADMIN') {
-        await tx.organizationMember.update({
-          where: { id: existing.id },
-          data: { role: 'ADMIN' },
-        });
+  async resolveMemberInvitations({ id: userId, email }: VerifiedAccount) {
+    await this.transaction(async (tx) => {
+      // An existing membership (under a previous address) absorbs the
+      // invitation, taking its role if that is stronger.
+      const memberships = await tx.organizationMember.findMany({
+        where: { userId },
+        select: { id: true, organizationId: true, role: true },
+      });
+      const duplicates = await tx.organizationMember.findMany({
+        where: {
+          invitation: { email },
+          organizationId: { in: memberships.map((m) => m.organizationId) },
+        },
+        select: { id: true, organizationId: true, role: true },
+      });
+      for (const invited of duplicates) {
+        const existing = memberships.find(
+          (m) => m.organizationId === invited.organizationId,
+        );
+        if (existing?.role === 'MEMBER' && invited.role === 'ADMIN') {
+          await tx.organizationMember.update({
+            where: { id: existing.id },
+            data: { role: 'ADMIN' },
+          });
+        }
       }
-    }
-    await tx.organizationMember.deleteMany({
-      where: { id: { in: duplicates.map((m) => m.id) } },
-    });
+      await tx.organizationMember.deleteMany({
+        where: { id: { in: duplicates.map((m) => m.id) } },
+      });
 
-    await tx.organizationMember.updateMany({
-      where: { invitation: { email } },
-      data: { userId },
+      await tx.organizationMember.updateMany({
+        where: { invitation: { email } },
+        data: { userId },
+      });
+      await tx.organizationInvitation.deleteMany({ where: { email } });
     });
-    await tx.organizationInvitation.deleteMany({ where: { email } });
+  }
+
+  // Organizations the user is the last administrator of; a pending
+  // invitation does not count.
+  async getSoleAdminOrganizations(
+    userId: string,
+  ): Promise<AccountDeletionBlocker[]> {
+    const organizations = await this.db.organization.findMany({
+      select: { id: true, name: true },
+      where: {
+        members: { some: { userId, role: 'ADMIN' } },
+        NOT: {
+          members: { some: { role: 'ADMIN', userId: { not: userId } } },
+        },
+      },
+    });
+    return organizations.map((organization) => ({
+      type: 'organization',
+      ...organization,
+    }));
   }
 }

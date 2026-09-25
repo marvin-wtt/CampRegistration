@@ -21,9 +21,13 @@ export class EventManagerModule implements AppModule {
 
   configure(_options: ModuleOptions): Promise<void> | void {
     resolve(MailableRegistry).register(EventManagerInvitationMessage);
-    resolve(AccountLifecycle).onEmailVerified((tx, account) =>
-      resolve(EventManagerService).resolveManagerInvitations(tx, account),
+    const lifecycle = resolve(AccountLifecycle);
+    const managers = () => resolve(EventManagerService);
+    lifecycle.onEmailVerified((account) =>
+      managers().resolveManagerInvitations(account),
     );
+    lifecycle.onDeleting((account) => managers().auditAccountDeletion(account.id));
+    lifecycle.blockDeletion((userId) => managers().getSoleDirectorEvents(userId));
   }
 
   registerApiRoutes(router: AppRouter): void {

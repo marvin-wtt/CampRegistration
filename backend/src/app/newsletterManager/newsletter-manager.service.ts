@@ -6,6 +6,7 @@ import type {
 } from '@camp-registration/common/permissions';
 import { permissionRegistry } from '#core/permission/permission.registry';
 import { OrganizationMemberService } from '#app/organizationMember/organization-member.service';
+import type { AccountDeletionBlocker } from '@camp-registration/common/entities';
 
 @injectable()
 export class NewsletterManagerService extends BaseService {
@@ -87,5 +88,23 @@ export class NewsletterManagerService extends BaseService {
     return this.prisma.newsletterManager.count({
       where: { newsletterId, role: 'OWNER' },
     });
+  }
+
+  async getSoleOwnerNewsletters(
+    userId: string,
+  ): Promise<AccountDeletionBlocker[]> {
+    const newsletters = await this.db.newsletter.findMany({
+      select: { id: true, name: true },
+      where: {
+        managers: { some: { userId, role: 'OWNER' } },
+        NOT: {
+          managers: { some: { role: 'OWNER', userId: { not: userId } } },
+        },
+      },
+    });
+    return newsletters.map((newsletter) => ({
+      type: 'newsletter',
+      ...newsletter,
+    }));
   }
 }

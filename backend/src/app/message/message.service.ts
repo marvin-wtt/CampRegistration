@@ -73,7 +73,7 @@ export class MessageService extends BaseService {
     },
     fileFieldId: string,
   ) {
-    return this.prisma.$transaction(async (tx) => {
+    return this.transaction(async (tx) => {
       const message = await tx.message.create({
         data: {
           subject: data.subject,
@@ -95,7 +95,7 @@ export class MessageService extends BaseService {
         },
       });
 
-      await this.audit.recordFor(tx, messageAuditSubject, 'sent', message, {
+      await this.audit.recordFor(messageAuditSubject, 'sent', message, {
         details: { values: { recipients: data.recipientCount } },
       });
 
@@ -116,7 +116,7 @@ export class MessageService extends BaseService {
   }
 
   async deleteMessageById(id: string, eventId: string) {
-    return this.prisma.$transaction(async (tx) => {
+    return this.transaction(async (tx) => {
       const deleted = await tx.message.delete({
         where: {
           id,
@@ -124,7 +124,7 @@ export class MessageService extends BaseService {
         },
       });
 
-      await this.audit.deleted(tx, messageAuditSubject, deleted);
+      await this.audit.deleted(messageAuditSubject, deleted);
 
       return deleted;
     });

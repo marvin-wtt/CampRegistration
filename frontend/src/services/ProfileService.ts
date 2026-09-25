@@ -1,5 +1,5 @@
 import type {
-  AccountDeletionBlockers,
+  AccountDeletionBlocker,
   Profile,
   ProfileUpdateData,
 } from '@camp-registration/common/entities';
@@ -18,7 +18,7 @@ export function useProfileService() {
     return response?.data?.data;
   }
 
-  async function fetchDeletionBlockers(): Promise<AccountDeletionBlockers> {
+  async function fetchDeletionBlockers(): Promise<AccountDeletionBlocker[]> {
     const response = await api.get('profile/deletion-blockers');
 
     return response?.data?.data;

@@ -538,11 +538,18 @@ describe('/api/v1/profile', () => {
         .auth(generateAccessToken(user), { type: 'bearer' })
         .expect(200);
 
-      expect(body.data).toEqual({
-        events: [{ id: soleEvent.id, name: soleEvent.name }],
-        newsletters: [{ id: newsletter.id, name: newsletter.name }],
-        organizations: [{ id: organization.id, name: organization.name }],
-      });
+      expect(body.data).toEqual(
+        expect.arrayContaining([
+          { type: 'event', id: soleEvent.id, name: soleEvent.name },
+          { type: 'newsletter', id: newsletter.id, name: newsletter.name },
+          {
+            type: 'organization',
+            id: organization.id,
+            name: organization.name,
+          },
+        ]),
+      );
+      expect(body.data).toHaveLength(3);
     });
 
     it('should respond with `401` status code when user is unauthenticated', async () => {

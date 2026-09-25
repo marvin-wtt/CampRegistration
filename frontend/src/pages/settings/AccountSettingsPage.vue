@@ -54,7 +54,7 @@ import ExportDataSettingsCard from '@/components/settings/ExportDataSettingsCard
 import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
 import { useI18n } from 'vue-i18n';
 import { onMounted, ref } from 'vue';
-import type { AccountDeletionBlockers } from '@camp-registration/common/entities';
+import type { AccountDeletionBlocker } from '@camp-registration/common/entities';
 import { useAPIService } from '@/services/APIService';
 
 const { t } = useI18n();
@@ -63,7 +63,7 @@ const apiService = useAPIService();
 const profileStore = useProfileStore();
 const { user, loading, error } = storeToRefs(profileStore);
 
-const blockers = ref<AccountDeletionBlockers | null>(null);
+const blockers = ref<AccountDeletionBlocker[] | null>(null);
 
 async function loadBlockers() {
   blockers.value = await apiService.fetchDeletionBlockers().catch(() => null);

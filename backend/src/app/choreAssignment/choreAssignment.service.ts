@@ -67,7 +67,7 @@ export class ChoreAssignmentService extends BaseService {
   ) {
     const { registrationIds, date, ...rest } = data;
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.transaction(async (tx) => {
       if (registrationIds !== undefined) {
         await tx.choreAssignmentMember.deleteMany({
           where: { choreAssignmentId: id },

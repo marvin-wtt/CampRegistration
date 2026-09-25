@@ -162,7 +162,7 @@ export class RegistrationService extends BaseService {
       event.organizationId,
     );
 
-    return this.prisma.$transaction(
+    return this.transaction(
       async (transaction) => {
         const waitingList = await isWaitingList(transaction);
 
@@ -196,7 +196,6 @@ export class RegistrationService extends BaseService {
         // form — always system-attributed, never the logged-in manager who
         // may happen to share the session.
         await this.audit.created(
-          transaction,
           registrationAuditPolicy,
           registration,
           { actorId: null },
@@ -222,7 +221,7 @@ export class RegistrationService extends BaseService {
     // Status and custom data are plain field writes; only form data and
     // custom file slots require a transactional file sync.
     if (!data.data && !data.customFiles) {
-      return this.prisma.$transaction(async (tx) => {
+      return this.transaction(async (tx) => {
         const before = await tx.registration.findUniqueOrThrow({
           where: { id: registrationId },
         });
@@ -236,7 +235,7 @@ export class RegistrationService extends BaseService {
           include: this.registrationInclude,
         });
 
-        await this.audit.updated(tx, registrationAuditPolicy, before, after);
+        await this.audit.updated(registrationAuditPolicy, before, after);
 
         return after;
       });
@@ -252,7 +251,7 @@ export class RegistrationService extends BaseService {
       formFileIds = form.getFileIds();
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.transaction(async (tx) => {
       const before: AuditedRegistration =
         await tx.registration.findUniqueOrThrow({
           where: { id: registrationId },
@@ -304,7 +303,6 @@ export class RegistrationService extends BaseService {
       });
 
       await this.audit.updated(
-        tx,
         registrationAuditPolicy,
         before,
         data.customFiles
@@ -355,12 +353,12 @@ export class RegistrationService extends BaseService {
     registration: Registration,
     reason?: RegistrationDeleteReason,
   ) {
-    await this.prisma.$transaction(async (tx) => {
+    await this.transaction(async (tx) => {
       const deleted = await tx.registration.delete({
         where: { id: registration.id },
       });
 
-      await this.audit.deleted(tx, registrationAuditPolicy, deleted, {
+      await this.audit.deleted(registrationAuditPolicy, deleted, {
         details: { reason },
       });
     });

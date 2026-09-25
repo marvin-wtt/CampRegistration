@@ -29,7 +29,7 @@ export class SetupService extends BaseService {
 
     // Guard inside a transaction so a concurrent request can't create a second
     // bootstrap admin through this open endpoint.
-    return this.prisma.$transaction(async (tx) => {
+    return this.transaction(async (tx) => {
       const adminCount = await tx.user.count({ where: { role: 'ADMIN' } });
       if (adminCount > 0) {
         throw new ApiError(httpStatus.FORBIDDEN, 'Setup already completed');

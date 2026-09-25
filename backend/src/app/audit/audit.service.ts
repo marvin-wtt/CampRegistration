@@ -2,7 +2,6 @@ import { BaseService } from '#core/base/BaseService';
 import { getRequestContext } from '#core/context/requestContext';
 import { injectable } from 'inversify';
 import { type AuditLog, Prisma } from '#generated/prisma/client.js';
-import type { PrismaTransaction } from '#core/database/transaction';
 import type {
   AuditActor,
   AuditDetails,
@@ -46,8 +45,8 @@ export interface AuditLogView {
 @injectable()
 export class AuditService extends BaseService {
   // Runs in the caller's transaction, so the entry is atomic with the change.
-  async record(tx: PrismaTransaction, input: AuditRecordInput): Promise<void> {
-    await tx.auditLog.create({
+  async record(input: AuditRecordInput): Promise<void> {
+    await this.db.auditLog.create({
       data: {
         action: input.action,
         entityType: input.entityType,
@@ -70,7 +69,6 @@ export class AuditService extends BaseService {
    * `details` are merged over the subject's identity.
    */
   async recordFor<T>(
-    tx: PrismaTransaction,
     subject: AuditSubject<T>,
     action: string,
     entity: T,
@@ -80,7 +78,7 @@ export class AuditService extends BaseService {
       ...subject.identity?.(entity),
       ...options.details,
     });
-    await this.record(tx, {
+    await this.record({
       action,
       entityType: subject.entityType,
       ...subject.locate(entity),
@@ -90,21 +88,19 @@ export class AuditService extends BaseService {
   }
 
   async created<T>(
-    tx: PrismaTransaction,
     subject: AuditSubject<T>,
     entity: T,
     options?: AuditEntryOptions,
   ): Promise<void> {
-    await this.recordFor(tx, subject, 'created', entity, options);
+    await this.recordFor(subject, 'created', entity, options);
   }
 
   async deleted<T>(
-    tx: PrismaTransaction,
     subject: AuditSubject<T>,
     entity: T,
     options?: AuditEntryOptions,
   ): Promise<void> {
-    await this.recordFor(tx, subject, 'deleted', entity, options);
+    await this.recordFor(subject, 'deleted', entity, options);
   }
 
   /**
@@ -118,7 +114,6 @@ export class AuditService extends BaseService {
    * editor then yields one entry per window instead of one per save.
    */
   async updated<T>(
-    tx: PrismaTransaction,
     policy: AuditChangePolicy<T>,
     before: T,
     after: T,
@@ -137,15 +132,14 @@ export class AuditService extends BaseService {
     };
     if (
       options.coalesceWithinMs !== undefined &&
-      (await this.mergeIntoLatest(tx, input, details, options.coalesceWithinMs))
+      (await this.mergeIntoLatest(input, details, options.coalesceWithinMs))
     ) {
       return;
     }
-    await this.record(tx, input);
+    await this.record(input);
   }
 
   private async mergeIntoLatest(
-    tx: PrismaTransaction,
     input: AuditRecordInput,
     details: AuditDetails,
     windowMs: number,
@@ -155,7 +149,7 @@ export class AuditService extends BaseService {
       return false;
     }
 
-    const latest = await tx.auditLog.findFirst({
+    const latest = await this.db.auditLog.findFirst({
       where: { entityType: input.entityType, entityId: input.entityId },
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     });
@@ -167,7 +161,7 @@ export class AuditService extends BaseService {
       return false;
     }
 
-    await tx.auditLog.update({
+    await this.db.auditLog.update({
       where: { id: latest.id },
       data: { details: mergeDetails(latest.details ?? {}, details) },
     });
@@ -346,10 +340,9 @@ export class AuditService extends BaseService {
    * names keeps nothing. The name is purged after the retention window.
    */
   async rememberDeletedUser(
-    tx: PrismaTransaction,
     user: { id: string; name: string },
   ): Promise<void> {
-    const referenced = await tx.auditLog.findFirst({
+    const referenced = await this.db.auditLog.findFirst({
       where: {
         OR: [
           { actorId: user.id },
@@ -362,7 +355,7 @@ export class AuditService extends BaseService {
       return;
     }
 
-    await tx.auditDeletedUser.upsert({
+    await this.db.auditDeletedUser.upsert({
       where: { id: user.id },
       create: { id: user.id, name: user.name },
       update: { name: user.name, deletedAt: new Date() },

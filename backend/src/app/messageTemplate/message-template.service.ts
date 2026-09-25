@@ -75,7 +75,7 @@ export class MessageTemplateService extends BaseService {
     },
     fileFieldId: string,
   ) {
-    return this.prisma.$transaction(async (tx) => {
+    return this.transaction(async (tx) => {
       const template = await tx.messageTemplate.create({
         data: {
           trigger: data.trigger,
@@ -97,7 +97,7 @@ export class MessageTemplateService extends BaseService {
         },
       });
 
-      await this.audit.created(tx, messageTemplateAuditPolicy, template);
+      await this.audit.created(messageTemplateAuditPolicy, template);
 
       return template;
     });
@@ -114,7 +114,7 @@ export class MessageTemplateService extends BaseService {
   ) {
     const fileIds = data.attachmentIds ?? [];
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.transaction(async (tx) => {
       const before = await tx.messageTemplate.findUniqueOrThrow({
         where: { id },
         include: { attachments: { select: { id: true } } },
@@ -147,14 +147,14 @@ export class MessageTemplateService extends BaseService {
         },
       });
 
-      await this.audit.updated(tx, messageTemplateAuditPolicy, before, after);
+      await this.audit.updated(messageTemplateAuditPolicy, before, after);
 
       return after;
     });
   }
 
   async deleteMessageTemplateById(id: string, eventId: string) {
-    return this.prisma.$transaction(async (tx) => {
+    return this.transaction(async (tx) => {
       const deleted = await tx.messageTemplate.delete({
         where: {
           id,
@@ -162,7 +162,7 @@ export class MessageTemplateService extends BaseService {
         },
       });
 
-      await this.audit.deleted(tx, messageTemplateAuditPolicy, deleted);
+      await this.audit.deleted(messageTemplateAuditPolicy, deleted);
 
       return deleted;
     });

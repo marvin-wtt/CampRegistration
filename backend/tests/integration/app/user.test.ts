@@ -268,7 +268,7 @@ describe('/api/v1/users/', () => {
             where: { organizationId: organization.id },
           }),
         ).resolves.toEqual([
-          expect.objectContaining({ userId: user.id, role: 'MEMBER' }),
+          expect.objectContaining({ userId: user.id, role: 'ADMIN' }),
         ]);
       });
 

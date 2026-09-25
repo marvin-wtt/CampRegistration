@@ -25,48 +25,13 @@
         </div>
         <ul class="blockers__list text-body2 q-mt-sm">
           <li
-            v-for="event in blockers?.events"
-            :key="event.id"
+            v-for="blocker in blockers"
+            :key="`${blocker.type}-${blocker.id}`"
           >
-            <router-link
-              :to="{
-                name: 'management.event.settings.access',
-                params: { eventId: event.id },
-              }"
-            >
-              {{ to(event.name) }}
+            <router-link :to="blockerRoute(blocker)">
+              {{ blocker.type === 'event' ? to(blocker.name) : blocker.name }}
             </router-link>
-            <span class="blockers__kind">· {{ t('blockers.event') }}</span>
-          </li>
-          <li
-            v-for="newsletter in blockers?.newsletters"
-            :key="newsletter.id"
-          >
-            <router-link
-              :to="{
-                name: 'management.newsletter',
-                params: { newsletterId: newsletter.id },
-              }"
-            >
-              {{ newsletter.name }}
-            </router-link>
-            <span class="blockers__kind">· {{ t('blockers.newsletter') }}</span>
-          </li>
-          <li
-            v-for="organization in blockers?.organizations"
-            :key="organization.id"
-          >
-            <router-link
-              :to="{
-                name: 'management.organization.members',
-                params: { organizationId: organization.id },
-              }"
-            >
-              {{ organization.name }}
-            </router-link>
-            <span class="blockers__kind">
-              · {{ t('blockers.organization') }}
-            </span>
+            <span class="blockers__kind">· {{ t(`blockers.${blocker.type}`) }}</span>
           </li>
         </ul>
       </div>
@@ -113,7 +78,8 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import type { AccountDeletionBlockers } from '@camp-registration/common/entities';
+import type { AccountDeletionBlocker } from '@camp-registration/common/entities';
+import type { RouteLocationRaw } from 'vue-router';
 import DangerCard from '@/components/common/DangerCard.vue';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import { useObjectTranslation } from '@/composables/objectTranslation';
@@ -123,20 +89,34 @@ const { to } = useObjectTranslation();
 
 // `null` while unknown; the server refuses a blocked deletion either way.
 const { blockers } = defineProps<{
-  blockers: AccountDeletionBlockers | null;
+  blockers: AccountDeletionBlocker[] | null;
 }>();
 
 const emit = defineEmits<{
   (e: 'delete'): void;
 }>();
 
-const blocked = computed(
-  () =>
-    !!blockers &&
-    (blockers.events.length > 0 ||
-      blockers.newsletters.length > 0 ||
-      blockers.organizations.length > 0),
-);
+const blocked = computed(() => !!blockers && blockers.length > 0);
+
+function blockerRoute(blocker: AccountDeletionBlocker): RouteLocationRaw {
+  switch (blocker.type) {
+    case 'event':
+      return {
+        name: 'management.event.settings.access',
+        params: { eventId: blocker.id },
+      };
+    case 'newsletter':
+      return {
+        name: 'management.newsletter',
+        params: { newsletterId: blocker.id },
+      };
+    case 'organization':
+      return {
+        name: 'management.organization.members',
+        params: { organizationId: blocker.id },
+      };
+  }
+}
 
 const consequences = [
   'dataRemoval',

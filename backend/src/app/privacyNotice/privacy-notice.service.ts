@@ -299,7 +299,7 @@ export class PrivacyNoticeService extends BaseService {
     // `@@unique([scope, scopeId, version])` turns two concurrent publishes into
     // a P2002 the author sees as a 500 — with no draft on the server to retry
     // from.
-    return this.prisma.$transaction(
+    return this.transaction(
       async (tx) => {
         const latest = await this.latestVersion(scope, scopeId, tx);
 
