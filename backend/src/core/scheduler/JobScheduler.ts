@@ -81,7 +81,10 @@ export class JobScheduler {
   // croner invokes `protect`/`catch` outside the run's async chain, so the
   // context is set explicitly for those too.
   private withContext<T>(job: Cron, fn: () => T): T {
-    return runWithJobContext({ source: 'scheduler', name: job.name ?? '??' }, fn);
+    return runWithJobContext(
+      { source: 'scheduler', name: job.name ?? '??' },
+      fn,
+    );
   }
 
   private onError(error: unknown, job: Cron): void {

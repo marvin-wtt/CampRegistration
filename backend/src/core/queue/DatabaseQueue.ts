@@ -412,7 +412,12 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
         }
 
         const rows = await tx.$queryRaw<
-          { id: string; name: string; payload: string | object; attempts: number }[]
+          {
+            id: string;
+            name: string;
+            payload: string | object;
+            attempts: number;
+          }[]
         >`
           SELECT id, name, payload, attempts
           FROM jobs
