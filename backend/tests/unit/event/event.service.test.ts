@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { EventService } from '#app/event/event.service';
 
 function createService(findUnique: ReturnType<typeof vi.fn>): EventService {
-  const service = new EventService({} as never);
+  const service = new EventService({} as never, {} as never);
   (service as unknown as { prisma: unknown }).prisma = {
     event: { findUnique },
   };

@@ -3,9 +3,10 @@ import type { QueueOptions } from '#core/queue/Queue';
 import { QueueManager } from '#core/queue/QueueManager';
 import { config } from '#core/ioc/facades';
 import { waitUntil, wait } from '../utils/wait.js';
-import { AppConfig } from '#config/index';
+import { AppConfig } from '#config';
 import { Container } from 'inversify';
 import { TYPES } from '#core/ioc/types';
+import { type JobContext, getJobContext } from '#core/context/jobContext';
 
 const DEFAULTS = {
   retryDelay: 100,
@@ -185,6 +186,40 @@ describe('Queue', () => {
         });
         const all = await q.all();
         expect(all.some((j) => j.status === 'FAILED')).toBe(false);
+
+        await q.close();
+      });
+
+      it('runs the handler inside the job context', async () => {
+        const queueName = uniqueName(`q-context-${name}`);
+        const q = createQueue<{}, void, 'test'>(queueName, {
+          ...DEFAULTS,
+          maxAttempts: 3,
+          retryDelay: 50,
+        });
+
+        const contexts: (JobContext | undefined)[] = [];
+        q.process(async () => {
+          await Promise.resolve();
+          contexts.push(getJobContext());
+          if (contexts.length === 1) throw new Error('boom');
+        });
+
+        await q.add('test', {});
+
+        await waitUntil(async () => (await q.all('COMPLETED')).length === 1, {
+          timeout: 8_000,
+        });
+
+        expect(contexts).toHaveLength(2);
+        expect(contexts[0]).toMatchObject({
+          source: 'queue',
+          queue: queueName,
+          name: 'test',
+          attempt: 1,
+        });
+        expect(contexts[0]?.id).toEqual(expect.any(String));
+        expect(contexts[1]).toMatchObject({ attempt: 2, id: contexts[0]?.id });
 
         await q.close();
       });

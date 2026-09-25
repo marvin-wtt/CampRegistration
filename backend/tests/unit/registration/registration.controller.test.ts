@@ -383,6 +383,7 @@ describe('RegistrationController.destroy', () => {
 
     expect(registrationService.deleteRegistration).toHaveBeenCalledWith(
       registration,
+      undefined,
     );
     expect(RegistrationDeletedMessage.enqueueFor).toHaveBeenCalledWith(
       event,

@@ -1,4 +1,5 @@
-import { type File, Prisma, PrismaClient } from '#generated/prisma/client.js';
+import { type File, Prisma } from '#generated/prisma/client.js';
+import type { PrismaTransaction } from '#core/database/transaction';
 import { ulid } from '#utils/ulid';
 import { extractKeyFromFieldName } from '#utils/form';
 import { decodeTime, isValid } from 'ulidx';
@@ -32,10 +33,6 @@ interface ModelData {
   id: string;
   name: string;
 }
-
-type PrismaTransaction = Parameters<
-  Parameters<PrismaClient['$transaction']>[0]
->[0];
 
 type PickIds<T> = {
   [K in keyof T as K extends `${string}Id` ? K : never]: T[K];
@@ -504,7 +501,9 @@ export class FileService extends BaseService {
     );
   }
 
-  async deleteUnreferencedFiles(): Promise<void> {
+  async deleteUnreferencedFiles(): Promise<
+    { location: string; count: number }[]
+  > {
     const fileModels = await this.prisma.file.findMany({
       where: {
         storageLocation: {
@@ -522,6 +521,8 @@ export class FileService extends BaseService {
       (fileModel) => fileModel.storageLocation,
     );
 
+    const deletions: { location: string; count: number }[] = [];
+
     for (const [location, models] of Object.entries(fileModesByLocation)) {
       if (!models) {
         continue;
@@ -535,14 +536,14 @@ export class FileService extends BaseService {
         (fileName) => !fileModelNames.includes(fileName),
       );
 
-      logger.info(
-        `Deleting ${filesToDelete.length.toString()} file(s) from ${location} storage`,
-      );
-
       await Promise.all(
         filesToDelete.map((fileName) => storage.removeFile(fileName)),
       );
+
+      deletions.push({ location, count: filesToDelete.length });
     }
+
+    return deletions;
   }
 
   async deleteUnassignedFiles(): Promise<void> {
@@ -617,7 +618,7 @@ export class FileService extends BaseService {
     );
   }
 
-  async deleteTempFiles() {
+  async deleteTempFiles(): Promise<number> {
     const fileNames = await this.tmpStorage.getFileNames();
     const currentTime = Date.now();
 
@@ -657,9 +658,7 @@ export class FileService extends BaseService {
         .map((fileName) => this.tmpStorage.removeFile(fileName)),
     );
 
-    logger.info(
-      `Deleted ${results.length.toString()} unused temporary file(s) from disk`,
-    );
+    return results.length;
   }
 
   public async getOverviewCounts() {

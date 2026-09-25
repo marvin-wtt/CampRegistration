@@ -1,3 +1,7 @@
+import { runWithJobContext } from '#core/context/jobContext';
+import logger from '#core/logger';
+import { describeError } from '#utils/errors';
+
 export interface QueueOptions {
   maxAttempts: number;
   retryDelay: number; // milliseconds
@@ -29,6 +33,13 @@ export type JobStatus =
 export interface SimpleJob<T> {
   name: string;
   payload: T;
+}
+
+/** A claimed job, as a driver hands it over for execution. */
+export interface QueuedJob<T> extends SimpleJob<T> {
+  id: string;
+  /** 1-based, including the current attempt. */
+  attempt: number;
 }
 
 export interface Job<T> extends SimpleJob<T> {
@@ -72,9 +83,48 @@ export abstract class Queue<P, R = void, N extends string = string> {
     return this.queue;
   }
 
-  public abstract get type(): string;
+  public process(handler: (job: SimpleJob<P>) => Promise<R>): void {
+    this.consume((job) => this.execute(job, handler));
+  }
 
-  public abstract process(handler: (job: SimpleJob<P>) => Promise<R>): void;
+  /**
+   * Driver hook: deliver claimed jobs to `run`. A rejection means the attempt
+   * failed and is already logged; the driver only handles retry bookkeeping.
+   */
+  protected abstract consume(run: (job: QueuedJob<P>) => Promise<R>): void;
+
+  // Every attempt runs inside its job context, so all logs it produces —
+  // including its failure below — are attributable to the job.
+  private execute(
+    job: QueuedJob<P>,
+    handler: (job: SimpleJob<P>) => Promise<R>,
+  ): Promise<R> {
+    const context = {
+      source: 'queue' as const,
+      queue: this.queue,
+      name: job.name,
+      id: job.id,
+      attempt: job.attempt,
+    };
+
+    return runWithJobContext(context, async () => {
+      try {
+        return await handler({ name: job.name, payload: job.payload });
+      } catch (error) {
+        const attempt = job.attempt.toString();
+        if (job.attempt < this.options.maxAttempts) {
+          logger.warn(
+            `Job failed on attempt ${attempt}, retrying: ${describeError(error)}`,
+          );
+        } else {
+          logger.error(`Job failed after ${attempt} attempts:`, error);
+        }
+        throw error;
+      }
+    });
+  }
+
+  public abstract get type(): string;
 
   public abstract all(status?: JobStatus): Promise<Job<P>[]>;
 

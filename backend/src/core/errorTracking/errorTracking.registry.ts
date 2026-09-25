@@ -1,4 +1,7 @@
-import type { ErrorTracker } from '#core/errorTracking/errorTracker.types';
+import type {
+  ErrorContext,
+  ErrorTracker,
+} from '#core/errorTracking/errorTracker.types';
 import logger from '#core/logger';
 
 /**
@@ -18,10 +21,10 @@ class ErrorTrackingRegistry {
     this.trackers = trackers;
   }
 
-  captureException(error: unknown): void {
+  captureException(error: unknown, context?: ErrorContext): void {
     for (const tracker of this.trackers) {
       try {
-        void Promise.resolve(tracker.captureException(error)).catch(
+        void Promise.resolve(tracker.captureException(error, context)).catch(
           (err: unknown) => {
             this.logFailure(tracker, err);
           },

@@ -6,19 +6,16 @@ import {
   type JobStatus,
   type QueueJobCounts,
   type QueueOptions,
-  type SimpleJob,
+  type QueuedJob,
 } from '#core/queue/Queue';
 import logger from '#core/logger';
 import { Prisma } from '#generated/prisma/client.js';
-
-type PrismaTransaction = Parameters<
-  Parameters<typeof prisma.$transaction>[0]
->[0];
+import type { PrismaTransaction } from '#core/database/transaction';
 
 export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
   public readonly type = 'database';
 
-  private handler: ((payload: SimpleJob<P>) => Promise<R>) | null = null;
+  private handler: ((job: QueuedJob<P>) => Promise<R>) | null = null;
   private sleepResolve: (() => void) | null = null;
   private running = false;
   private closed = false;
@@ -76,7 +73,7 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
     }
   }
 
-  public process(handler: (job: SimpleJob<P>) => Promise<R>): void {
+  protected consume(handler: (job: QueuedJob<P>) => Promise<R>): void {
     if (this.handler != null) {
       logger.warn('Queue handler already defined, overwriting it.');
     }
@@ -187,7 +184,7 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
     logger.info(`Worker for queue ${this.queue} stopped`);
   }
 
-  private async processJob(job: SimpleJob<P> & { id: string }) {
+  private async processJob(job: QueuedJob<P>) {
     if (!this.handler) {
       throw new Error('No handler defined for the queue');
     }
@@ -197,10 +194,6 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
 
       await this.complete(job.id);
     } catch (err) {
-      logger.warn(
-        `Job ${job.id} in queue ${this.queue} failed: ${errorMessage(err)}`,
-      );
-
       await this.release(job.id, err);
     }
   }
@@ -404,7 +397,7 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
     return new Date(Date.now() + delay);
   }
 
-  async poll(): Promise<(SimpleJob<P> & { id: string }) | null> {
+  async poll(): Promise<QueuedJob<P> | null> {
     // READ COMMITTED is required: the rate limit check reads before the claim
     // query, so under REPEATABLE READ the `FOR UPDATE` below fails with
     // ER_CHECKREAD (1020) on any job written since that read.
@@ -416,9 +409,14 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
         }
 
         const rows = await tx.$queryRaw<
-          { id: string; name: string; payload: string | object }[]
+          {
+            id: string;
+            name: string;
+            payload: string | object;
+            attempts: number;
+          }[]
         >`
-          SELECT id, name, payload
+          SELECT id, name, payload, attempts
           FROM jobs
           WHERE status = 'PENDING'
             AND run_at <= NOW(3)
@@ -460,6 +458,7 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
           id: job.id,
           name: job.name,
           payload: job.payload as P,
+          attempt: job.attempts + 1,
         };
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted },

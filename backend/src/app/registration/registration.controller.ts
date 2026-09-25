@@ -147,12 +147,12 @@ export class RegistrationController extends BaseController {
 
   async destroy(req: Request, res: Response) {
     const {
-      query: { suppressMessage },
+      query: { suppressMessage, reason },
     } = await req.validate(validator.destroy);
     const event = req.modelOrFail('event');
     const registration = req.modelOrFail('registration');
 
-    await this.registrationService.deleteRegistration(registration);
+    await this.registrationService.deleteRegistration(registration, reason);
 
     if (!suppressMessage) {
       await RegistrationDeletedMessage.enqueueFor(event, registration);

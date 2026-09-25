@@ -1,7 +1,7 @@
 import type {
   Event,
   EventManager,
-  Invitation,
+  EventInvitation,
   User,
 } from '#generated/prisma/client.js';
 import { translateObject } from '#utils/translateObject';
@@ -12,7 +12,7 @@ import { resolveActionCardText } from '#core/mail/actionCardText';
 import type { ActionCardProps, LocalContext } from '#views/emails/types';
 
 type EventManagerWithUserOrInvitation = EventManager & { user: User | null } & {
-  invitation: Invitation | null;
+  invitation: EventInvitation | null;
 };
 
 abstract class EventManagerMessage<

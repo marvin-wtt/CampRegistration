@@ -62,10 +62,10 @@ export class EventManagerController extends BaseController {
       expiresAt,
     };
 
-    const manager =
-      user === null
-        ? await this.managerService.inviteManager(event.id, email, data)
-        : await this.managerService.addManager(event.id, user.id, data);
+    // Invitations bind on verification, so an unverified account is invited.
+    const manager = !user?.emailVerified
+      ? await this.managerService.inviteManager(event.id, email, data)
+      : await this.managerService.addManager(event.id, user.id, data);
 
     await EventManagerInvitationMessage.enqueue({
       event,

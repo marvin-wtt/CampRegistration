@@ -1,10 +1,11 @@
+import { randomUUID } from 'node:crypto';
 import {
   type JobOptions,
   type Job,
   type JobStatus,
   type QueueJobCounts,
   Queue,
-  type SimpleJob,
+  type QueuedJob,
   type QueueOptions,
 } from '#core/queue/Queue.js';
 import { container } from '#core/ioc/container';
@@ -36,10 +37,10 @@ class TestQueueManager extends QueueManager {
 class TestQueue<P, R, N extends string> extends Queue<P, R, N> {
   public readonly type = 'test';
 
-  private handler: ((payload: SimpleJob<P>) => Promise<R>) | null = null;
+  private handler: ((job: QueuedJob<P>) => Promise<R>) | null = null;
   private closed = false;
 
-  process(handler: (job: SimpleJob<P>) => Promise<R>) {
+  protected consume(handler: (job: QueuedJob<P>) => Promise<R>) {
     if (this.handler !== null) {
       throw new Error('Queue already processed');
     }
@@ -60,7 +61,7 @@ class TestQueue<P, R, N extends string> extends Queue<P, R, N> {
 
     payload = JSON.parse(JSON.stringify(payload));
 
-    await this.handler({ name, payload });
+    await this.handler({ id: randomUUID(), name, payload, attempt: 1 });
   }
 
   async addBulk(

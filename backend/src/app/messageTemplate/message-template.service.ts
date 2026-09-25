@@ -2,12 +2,17 @@ import type { Prisma } from '#generated/prisma/client.js';
 import { BaseService } from '#core/base/BaseService';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service';
+import { AuditService } from '#app/audit/audit.service';
+import { messageTemplateAuditPolicy } from '#app/messageTemplate/message-template.audit';
 import { sanitizeHtmlContent } from '#utils/sanitize';
 import type { MessageTemplateWithFiles } from '#app/messageTemplate/message-template.resource';
 
 @injectable()
 export class MessageTemplateService extends BaseService {
-  constructor(@inject(FileService) private readonly fileService: FileService) {
+  constructor(
+    @inject(FileService) private readonly fileService: FileService,
+    @inject(AuditService) private readonly audit: AuditService,
+  ) {
     super();
   }
 
@@ -70,25 +75,31 @@ export class MessageTemplateService extends BaseService {
     },
     fileFieldId: string,
   ) {
-    return this.prisma.messageTemplate.create({
-      data: {
-        trigger: data.trigger,
-        country: data.country,
-        subject: data.subject,
-        body: sanitizeHtmlContent(data.body),
-        priority: data.priority,
-        replyTo: data.replyTo,
-        eventId,
-        attachments: data.attachmentIds
-          ? this.fileService.getFileConnectInput(
-              data.attachmentIds,
-              fileFieldId,
-            )
-          : undefined,
-      },
-      include: {
-        attachments: true,
-      },
+    return this.transaction(async (tx) => {
+      const template = await tx.messageTemplate.create({
+        data: {
+          trigger: data.trigger,
+          country: data.country,
+          subject: data.subject,
+          body: sanitizeHtmlContent(data.body),
+          priority: data.priority,
+          replyTo: data.replyTo,
+          eventId,
+          attachments: data.attachmentIds
+            ? this.fileService.getFileConnectInput(
+                data.attachmentIds,
+                fileFieldId,
+              )
+            : undefined,
+        },
+        include: {
+          attachments: true,
+        },
+      });
+
+      await this.audit.created(messageTemplateAuditPolicy, template);
+
+      return template;
     });
   }
 
@@ -103,7 +114,12 @@ export class MessageTemplateService extends BaseService {
   ) {
     const fileIds = data.attachmentIds ?? [];
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.transaction(async (tx) => {
+      const before = await tx.messageTemplate.findUniqueOrThrow({
+        where: { id },
+        include: { attachments: { select: { id: true } } },
+      });
+
       const attachments = await this.fileService.syncFilesForOwner(
         tx,
         'messageTemplateId',
@@ -112,7 +128,7 @@ export class MessageTemplateService extends BaseService {
         sessionId,
       );
 
-      return tx.messageTemplate.update({
+      const after = await tx.messageTemplate.update({
         where: {
           id,
           eventId,
@@ -130,15 +146,25 @@ export class MessageTemplateService extends BaseService {
           attachments: true,
         },
       });
+
+      await this.audit.updated(messageTemplateAuditPolicy, before, after);
+
+      return after;
     });
   }
 
   async deleteMessageTemplateById(id: string, eventId: string) {
-    return this.prisma.messageTemplate.delete({
-      where: {
-        id,
-        eventId,
-      },
+    return this.transaction(async (tx) => {
+      const deleted = await tx.messageTemplate.delete({
+        where: {
+          id,
+          eventId,
+        },
+      });
+
+      await this.audit.deleted(messageTemplateAuditPolicy, deleted);
+
+      return deleted;
     });
   }
 }

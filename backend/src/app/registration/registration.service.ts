@@ -10,9 +10,17 @@ import { BaseService } from '#core/base/BaseService';
 import {
   computedRegistrationData,
   CUSTOM_FILE_FIELD_PREFIX,
+  customFileSlots,
 } from '#app/registration/registration.helper';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service';
+import { AuditService } from '#app/audit/audit.service';
+import type { RegistrationDeleteReason } from '@camp-registration/common/entities';
+import {
+  type AuditedRegistration,
+  registrationAuditPolicy,
+} from '#app/registration/registration.audit';
+import type { PrismaTransaction } from '#core/database/transaction';
 import { PrivacyNoticeService } from '#app/privacyNotice/privacy-notice.service';
 
 /** The create uses relation connects throughout, so the stamp must too. */
@@ -39,6 +47,7 @@ export class RegistrationService extends BaseService {
     @inject(FileService) private readonly fileService: FileService,
     @inject(PrivacyNoticeService)
     private readonly privacyNoticeService: PrivacyNoticeService,
+    @inject(AuditService) private readonly audit: AuditService,
   ) {
     super();
   }
@@ -153,7 +162,7 @@ export class RegistrationService extends BaseService {
       event.organizationId,
     );
 
-    return this.prisma.$transaction(
+    return this.transaction(
       async (transaction) => {
         const waitingList = await isWaitingList(transaction);
 
@@ -163,7 +172,7 @@ export class RegistrationService extends BaseService {
             ? 'ACCEPTED'
             : 'PENDING';
 
-        return transaction.registration.create({
+        const registration = await transaction.registration.create({
           data: {
             ...data,
             ...computedData,
@@ -182,6 +191,15 @@ export class RegistrationService extends BaseService {
             files: this.fileService.getFileConnectInput(fileIds, fileField),
           },
         });
+
+        // A registration is created by an external party via the public
+        // form — always system-attributed, never the logged-in manager who
+        // may happen to share the session.
+        await this.audit.created(registrationAuditPolicy, registration, {
+          actorId: null,
+        });
+
+        return registration;
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     );
@@ -201,13 +219,23 @@ export class RegistrationService extends BaseService {
     // Status and custom data are plain field writes; only form data and
     // custom file slots require a transactional file sync.
     if (!data.data && !data.customFiles) {
-      return this.prisma.registration.update({
-        where: { id: registrationId },
-        data: {
-          customData: data.customData,
-          status: data.status,
-        },
-        include: this.registrationInclude,
+      return this.transaction(async (tx) => {
+        const before = await tx.registration.findUniqueOrThrow({
+          where: { id: registrationId },
+        });
+
+        const after = await tx.registration.update({
+          where: { id: registrationId },
+          data: {
+            customData: data.customData,
+            status: data.status,
+          },
+          include: this.registrationInclude,
+        });
+
+        await this.audit.updated(registrationAuditPolicy, before, after);
+
+        return after;
       });
     }
 
@@ -221,7 +249,15 @@ export class RegistrationService extends BaseService {
       formFileIds = form.getFileIds();
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.transaction(async (tx) => {
+      const before: AuditedRegistration =
+        await tx.registration.findUniqueOrThrow({
+          where: { id: registrationId },
+        });
+      if (data.customFiles) {
+        before.customFiles = await this.customFileSlots(tx, registrationId);
+      }
+
       if (data.customFiles) {
         const invalidSlots = await this.fileService.syncFileSlots(
           tx,
@@ -252,7 +288,7 @@ export class RegistrationService extends BaseService {
           )
         : undefined;
 
-      return tx.registration.update({
+      const after = await tx.registration.update({
         where: { id: registrationId },
         data: {
           ...computedData,
@@ -263,11 +299,67 @@ export class RegistrationService extends BaseService {
         },
         include: this.registrationInclude,
       });
+
+      await this.audit.updated(
+        registrationAuditPolicy,
+        before,
+        data.customFiles
+          ? {
+              ...after,
+              customFiles: { ...before.customFiles, ...data.customFiles },
+            }
+          : after,
+      );
+
+      return after;
     });
   }
 
-  async deleteRegistration(registration: Registration) {
-    await this.prisma.registration.delete({ where: { id: registration.id } });
+  private async customFileSlots(
+    tx: PrismaTransaction,
+    registrationId: string,
+  ): Promise<Record<string, string>> {
+    const files = await tx.file.findMany({
+      where: {
+        registrationId,
+        field: { startsWith: CUSTOM_FILE_FIELD_PREFIX },
+      },
+      select: { id: true, field: true },
+    });
+
+    return customFileSlots(files);
+  }
+
+  async getNamesByIds(
+    eventId: string,
+    ids: string[],
+  ): Promise<Map<string, string>> {
+    const registrations = await this.prisma.registration.findMany({
+      where: { eventId, id: { in: ids } },
+      select: { id: true, firstName: true, lastName: true },
+    });
+
+    return new Map(
+      registrations.map(({ id, firstName, lastName }) => [
+        id,
+        [firstName, lastName].filter(Boolean).join(' '),
+      ]),
+    );
+  }
+
+  async deleteRegistration(
+    registration: Registration,
+    reason?: RegistrationDeleteReason,
+  ) {
+    await this.transaction(async (tx) => {
+      const deleted = await tx.registration.delete({
+        where: { id: registration.id },
+      });
+
+      await this.audit.deleted(registrationAuditPolicy, deleted, {
+        details: { reason },
+      });
+    });
   }
 
   async updateRegistrationsComputedDataByEvent(
