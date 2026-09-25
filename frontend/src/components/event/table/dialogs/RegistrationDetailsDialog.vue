@@ -6,9 +6,27 @@
     <q-card
       v-if="registration"
       class="details-card rounded-xl"
-      style="width: min(700px, 95vw); max-width: min(900px, 95vw)"
+      style="width: min(560px, 95vw)"
     >
       <registration-dialog-header :registration="registration">
+        <q-btn
+          class="header-btn"
+          dense
+          flat
+          icon="more_vert"
+          round
+        >
+          <q-tooltip>
+            {{ t('action.menu') }}
+          </q-tooltip>
+          <q-menu auto-close>
+            <registration-action-list
+              :registration="registration"
+              hide-details
+            />
+          </q-menu>
+        </q-btn>
+
         <q-btn
           v-close-popup
           class="header-btn"
@@ -24,229 +42,173 @@
         </q-btn>
       </registration-dialog-header>
 
-      <q-scroll-area style="height: min(520px, 65vh)">
-        <div class="row">
-          <!-- Left column: personal info, contact, address -->
-          <div class="col-12 col-sm-6">
-            <!-- Personal Information -->
-            <q-list>
-              <q-item-label header>
-                {{ t('section.personalInfo') }}
-              </q-item-label>
+      <q-tabs
+        v-if="canViewTimeline"
+        v-model="activeTab"
+        align="justify"
+        no-caps
+        narrow-indicator
+        active-color="primary"
+        indicator-color="primary"
+        class="details-tabs"
+      >
+        <q-tab
+          name="details"
+          :label="t('tab.details')"
+        />
+        <q-tab
+          name="timeline"
+          :label="t('section.timeline')"
+        />
+      </q-tabs>
 
-              <q-item>
-                <q-item-section
-                  avatar
-                  top
+      <q-tab-panels
+        v-model="activeTab"
+        animated
+        class="bg-transparent"
+      >
+        <q-tab-panel
+          name="details"
+          class="q-pa-none"
+        >
+          <div
+            v-if="hasDetails"
+            class="details-panel scroll"
+          >
+            <section v-if="personalRows.length">
+              <div class="section-title">{{ t('section.personal') }}</div>
+              <q-list class="segmented-list">
+                <q-item
+                  v-for="row in personalRows"
+                  :key="row.key"
+                  class="segment"
                 >
-                  <q-icon
-                    color="primary"
-                    name="badge"
-                  />
-                </q-item-section>
-                <q-item-section>
-                  <q-item-label overline>
-                    {{ t('field.name') }}
-                  </q-item-label>
-                  <q-item-label>
-                    {{ personName }}
-                  </q-item-label>
-                </q-item-section>
-              </q-item>
-
-              <q-item v-if="registration.computedData.dateOfBirth">
-                <q-item-section
-                  avatar
-                  top
-                >
-                  <q-icon
-                    color="primary"
-                    name="cake"
-                  />
-                </q-item-section>
-                <q-item-section>
-                  <q-item-label overline>
-                    {{ t('field.dateOfBirth') }}
-                  </q-item-label>
-                  <q-item-label>{{ formattedDateOfBirth }}</q-item-label>
-                </q-item-section>
-              </q-item>
-
-              <q-item v-if="registration.computedData.gender">
-                <q-item-section
-                  avatar
-                  top
-                >
-                  <q-icon
-                    color="primary"
-                    name="wc"
-                  />
-                </q-item-section>
-                <q-item-section>
-                  <q-item-label overline>
-                    {{ t('field.gender') }}
-                  </q-item-label>
-                  <q-item-label>
-                    {{ translatedGender }}
-                  </q-item-label>
-                </q-item-section>
-              </q-item>
-
-              <q-item v-if="registration.computedData.role">
-                <q-item-section
-                  avatar
-                  top
-                >
-                  <q-icon
-                    color="primary"
-                    name="work"
-                  />
-                </q-item-section>
-                <q-item-section>
-                  <q-item-label overline>
-                    {{ t('field.role') }}
-                  </q-item-label>
-                  <q-item-label>{{ translatedRole }}</q-item-label>
-                </q-item-section>
-              </q-item>
-            </q-list>
-
-            <!-- Contact -->
-            <template v-if="emails?.length">
-              <q-separator inset />
-              <q-list>
-                <q-item-label header>
-                  {{ t('section.contact') }}
-                </q-item-label>
-
-                <q-item>
-                  <q-item-section
-                    avatar
-                    top
-                  >
-                    <q-icon
-                      color="primary"
-                      name="email"
-                    />
+                  <q-item-section avatar>
+                    <div class="row-icon">
+                      <q-icon
+                        :name="row.icon"
+                        size="20px"
+                      />
+                    </div>
                   </q-item-section>
                   <q-item-section>
-                    <q-item-label overline>
+                    <q-item-label class="row-label">
+                      {{ row.label }}
+                    </q-item-label>
+                    <q-item-label class="row-value">
+                      {{ row.value }}
+                    </q-item-label>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </section>
+
+            <section v-if="emails?.length || hasAddress">
+              <div class="section-title">{{ t('section.contact') }}</div>
+              <q-list class="segmented-list">
+                <q-item
+                  v-for="email in emails"
+                  :key="email"
+                  :href="`mailto:${email}`"
+                  class="segment"
+                  clickable
+                  tag="a"
+                >
+                  <q-item-section avatar>
+                    <div class="row-icon">
+                      <q-icon
+                        name="email"
+                        size="20px"
+                      />
+                    </div>
+                  </q-item-section>
+                  <q-item-section class="overflow-hidden">
+                    <q-item-label class="row-label">
                       {{ t('field.email') }}
                     </q-item-label>
-                    <q-item-label
-                      v-for="email in emails"
-                      :key="email"
+                    <q-item-label class="row-value row-value--link ellipsis">
+                      {{ email }}
+                    </q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
+                    <q-btn
+                      class="row-action"
+                      flat
+                      icon="content_copy"
+                      round
+                      size="sm"
+                      @click.stop.prevent="copyEmail(email)"
                     >
-                      <a
-                        :href="`mailto:${email}`"
-                        style="all: unset; cursor: pointer"
-                      >
-                        {{ email }}
-                      </a>
-                    </q-item-label>
+                      <q-tooltip>
+                        {{ t('action.copy') }}
+                      </q-tooltip>
+                    </q-btn>
                   </q-item-section>
                 </q-item>
-              </q-list>
-            </template>
 
-            <!-- Address -->
-            <template v-if="hasAddress">
-              <q-separator inset />
-              <q-list>
-                <q-item-label header>
-                  {{ t('section.address') }}
-                </q-item-label>
-
-                <q-item>
-                  <q-item-section
-                    avatar
-                    top
-                  >
-                    <q-icon
-                      color="primary"
-                      name="home"
-                    />
+                <q-item
+                  v-if="hasAddress"
+                  class="segment"
+                >
+                  <q-item-section avatar>
+                    <div class="row-icon">
+                      <q-icon
+                        name="home"
+                        size="20px"
+                      />
+                    </div>
                   </q-item-section>
                   <q-item-section>
-                    <q-item-label v-if="street">
-                      {{ street }}
+                    <q-item-label class="row-label">
+                      {{ t('section.address') }}
                     </q-item-label>
-                    <q-item-label v-if="city">
-                      {{ city }}
-                    </q-item-label>
-                    <q-item-label v-if="country">
-                      {{ country }}
-                    </q-item-label>
-                  </q-item-section>
-                </q-item>
-              </q-list>
-            </template>
-
-            <!-- Room (registration metadata) -->
-            <template v-if="registration.room">
-              <q-separator inset />
-
-              <q-list>
-                <q-item-label header>
-                  {{ t('section.registration') }}
-                </q-item-label>
-
-                <q-item>
-                  <q-item-section
-                    avatar
-                    top
-                  >
-                    <q-icon
-                      color="primary"
-                      name="hotel"
-                    />
-                  </q-item-section>
-                  <q-item-section>
-                    <q-item-label overline>
-                      {{ t('field.room') }}
-                    </q-item-label>
-                    <q-item-label>
-                      {{ to(registration.room) }}
+                    <q-item-label class="row-value">
+                      <div v-if="street">{{ street }}</div>
+                      <div v-if="city">{{ city }}</div>
+                      <div v-if="country">{{ country }}</div>
                     </q-item-label>
                   </q-item-section>
                 </q-item>
               </q-list>
-            </template>
+            </section>
           </div>
 
-          <!-- Right column: room + timeline -->
-          <div class="col-12 col-sm-6 timeline-column">
-            <template v-if="canViewTimeline">
-              <q-separator
-                class="lt-sm"
-                inset
-              />
-
-              <!-- Timeline -->
-              <q-list>
-                <q-item-label header>
-                  {{ t('section.timeline') }}
-                </q-item-label>
-              </q-list>
-
-              <registration-timeline
-                :event-id
-                :registration-id
-                :created-at="registration.createdAt"
-              />
-            </template>
+          <div
+            v-else
+            class="empty-state column flex-center text-center q-pa-xl"
+          >
+            <q-icon
+              name="inbox"
+              size="40px"
+            />
+            <div class="text-body2 q-mt-sm">
+              {{ t('empty') }}
+            </div>
           </div>
-        </div>
-      </q-scroll-area>
+        </q-tab-panel>
 
-      <q-separator />
+        <q-tab-panel
+          v-if="canViewTimeline"
+          name="timeline"
+          class="q-pa-none"
+          lazy-render
+        >
+          <q-scroll-area class="timeline-panel">
+            <registration-timeline
+              :event-id
+              :registration-id
+              :created-at="registration.createdAt"
+            />
+          </q-scroll-area>
+        </q-tab-panel>
+      </q-tab-panels>
 
       <q-card-actions
         align="right"
-        class="q-pa-md"
+        class="details-actions"
       >
         <m-btn
-          outline
+          tonal
           primary
           icon="assignment"
           :disable="!event"
@@ -259,17 +221,18 @@
 </template>
 
 <script setup lang="ts">
-import { useDialogPluginComponent, useQuasar } from 'quasar';
+import { copyToClipboard, useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { computed, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { usePermissions } from '@/composables/permissions';
-import { formatPersonName } from '@/utils/formatters';
+import { useRegistrationHelper } from '@/composables/registrationHelper';
 import { useRegistrationsStore } from '@/stores/registration-store';
 import { useEventDetailsStore } from '@/stores/event-details-store';
+import RegistrationActionList from '@/components/event/table/RegistrationActionList.vue';
 import RegistrationDialogHeader from '@/components/event/table/dialogs/RegistrationDialogHeader.vue';
 import RegistrationFormViewDialog from '@/components/event/table/dialogs/RegistrationFormViewDialog.vue';
 import RegistrationTimeline from '@/components/event/table/dialogs/RegistrationTimeline.vue';
@@ -278,8 +241,9 @@ defineEmits([...useDialogPluginComponent.emits]);
 
 const quasar = useQuasar();
 // eslint-disable-next-line @typescript-eslint/unbound-method
-const { t, te, locale } = useI18n();
+const { t, te, d } = useI18n();
 const { to } = useObjectTranslation();
+const registrationHelper = useRegistrationHelper();
 const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent();
 const route = useRoute();
 
@@ -298,6 +262,10 @@ const canViewTimeline = computed(
   () => can('event.audit.view') || can('event.messages.view'),
 );
 
+// The timeline panel is `lazy-render`, so switching to it is what mounts
+// RegistrationTimeline and fires its fetch — not every dialog open.
+const activeTab = ref<'details' | 'timeline'>('details');
+
 // Reactive lookup instead of a static snapshot, so edits made elsewhere
 // (e.g. the table's inline cell editors) are reflected while the dialog is open.
 const registration = computed(() =>
@@ -309,14 +277,6 @@ watch(registration, (value) => {
   if (!value) {
     dialogRef.value?.hide();
   }
-});
-
-const personName = computed<string>(() => {
-  const firstName = registration.value?.computedData.firstName?.trim() ?? '';
-  const lastName = registration.value?.computedData.lastName?.trim() ?? '';
-  const fullName = `${firstName} ${lastName}`.trim();
-
-  return fullName.length > 0 ? formatPersonName(fullName) : '?';
 });
 
 const emails = computed<string[] | null>(() => {
@@ -336,40 +296,34 @@ const hasAddress = computed<boolean>(() => {
   return !!(addr?.street || addr?.city || addr?.zipCode || addr?.country);
 });
 
-const translatedGender = computed<string>(() => {
-  const g = registration.value?.computedData.gender;
-  if (!g) {
+// Known values are translated; anything else (custom form options) is shown as-is.
+function translateOr(prefix: string, value: string | null): string {
+  if (!value) {
     return '';
   }
-  const key = `gender.${g}`;
-  const result = t(key);
+  const key = `${prefix}.${value}`;
+  return te(key) ? t(key) : value;
+}
 
-  return result === key ? g : result;
-});
+const translatedGender = computed<string>(() =>
+  translateOr('gender', registration.value?.computedData.gender ?? null),
+);
 
-const translatedRole = computed<string>(() => {
-  const r = registration.value?.computedData.role;
-  if (!r) {
-    return '';
-  }
-  const key = `role.${r}`;
-  const result = t(key);
-
-  return result === key ? r : result;
-});
+const translatedRole = computed<string>(() =>
+  translateOr('role', registration.value?.computedData.role ?? null),
+);
 
 const formattedDateOfBirth = computed<string>(() => {
   const dob = registration.value?.computedData.dateOfBirth;
-  if (!dob) {
+  if (!dob || !registration.value) {
     return '';
   }
-  const date = new Date(dob);
 
-  return date.toLocaleDateString(locale.value, {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+  // Same format as the table's date cells
+  const formatted = d(dob, { dateStyle: 'medium' });
+  const age = registrationHelper.age(registration.value);
+
+  return age !== undefined ? `${formatted} (${age})` : formatted;
 });
 
 const street = computed<string | null>(
@@ -377,24 +331,90 @@ const street = computed<string | null>(
 );
 
 const city = computed<string | null>(() => {
-  const zipCode = registration.value?.computedData.address.zipCode;
-  const city = registration.value?.computedData.address.city;
-
-  if (zipCode == null && city == null) {
-    return null;
-  }
-
-  return [zipCode, city].filter(Boolean).join(' ');
+  const { zipCode, city } = registration.value?.computedData.address ?? {};
+  return [zipCode, city].filter(Boolean).join(' ') || null;
 });
 
-const country = computed<string | null>(() => {
-  const country = registration.value?.computedData.address.country;
-  if (country == null) {
-    return country ?? null;
+const country = computed<string | null>(
+  () =>
+    translateOr(
+      'country',
+      registration.value?.computedData.address.country ?? null,
+    ) || null,
+);
+
+interface DetailRow {
+  key: string;
+  icon: string;
+  label: string;
+  value: string;
+}
+
+const personalRows = computed<DetailRow[]>(() => {
+  const value = registration.value;
+  if (!value) {
+    return [];
   }
 
-  return te(`country.${country}`) ? t(`country.${country}`) : country;
+  const data = value.computedData;
+  const rows: DetailRow[] = [];
+
+  if (data.dateOfBirth) {
+    rows.push({
+      key: 'dateOfBirth',
+      icon: 'cake',
+      label: t('field.dateOfBirth'),
+      value: formattedDateOfBirth.value,
+    });
+  }
+  if (data.gender) {
+    rows.push({
+      key: 'gender',
+      icon: 'wc',
+      label: t('field.gender'),
+      value: translatedGender.value,
+    });
+  }
+  if (data.role) {
+    rows.push({
+      key: 'role',
+      icon: 'work',
+      label: t('field.role'),
+      value: translatedRole.value,
+    });
+  }
+  if (value.room) {
+    rows.push({
+      key: 'room',
+      icon: 'hotel',
+      label: t('field.room'),
+      value: to(value.room),
+    });
+  }
+
+  return rows;
 });
+
+const hasDetails = computed<boolean>(
+  () =>
+    personalRows.value.length > 0 || !!emails.value?.length || hasAddress.value,
+);
+
+async function copyEmail(email: string): Promise<void> {
+  try {
+    await copyToClipboard(email);
+    quasar.notify({
+      type: 'positive',
+      message: t('notification.copied'),
+      icon: 'assignment_turned_in',
+    });
+  } catch {
+    quasar.notify({
+      type: 'negative',
+      message: t('notification.copyFailed'),
+    });
+  }
+}
 
 function showFormData(): void {
   if (!event.value || !registration.value) {
@@ -413,14 +433,15 @@ function showFormData(): void {
 
 <i18n lang="yaml" locale="en">
 section:
-  personalInfo: 'Personal Information'
+  personal: 'Personal'
   contact: 'Contact'
   address: 'Address'
-  registration: 'Registration'
   timeline: 'Timeline'
 
+tab:
+  details: 'Details'
+
 field:
-  name: 'Name'
   dateOfBirth: 'Date of Birth'
   gender: 'Gender'
   role: 'Role'
@@ -438,19 +459,28 @@ role:
 
 action:
   close: 'Close'
+  menu: 'More actions'
+  copy: 'Copy'
   showFormData: 'Show form data'
+
+notification:
+  copied: 'Copied to clipboard'
+  copyFailed: 'Copying failed'
+
+empty: 'No details available for this registration'
 </i18n>
 
 <i18n lang="yaml" locale="de">
 section:
-  personalInfo: 'Persönliche Informationen'
+  personal: 'Persönliches'
   contact: 'Kontakt'
   address: 'Adresse'
-  registration: 'Anmeldung'
   timeline: 'Verlauf'
 
+tab:
+  details: 'Details'
+
 field:
-  name: 'Name'
   dateOfBirth: 'Geburtsdatum'
   gender: 'Geschlecht'
   role: 'Rolle'
@@ -468,19 +498,28 @@ role:
 
 action:
   close: 'Schließen'
+  menu: 'Weitere Aktionen'
+  copy: 'Kopieren'
   showFormData: 'Formulardaten anzeigen'
+
+notification:
+  copied: 'In die Zwischenablage kopiert'
+  copyFailed: 'Kopieren fehlgeschlagen'
+
+empty: 'Für diese Anmeldung sind keine Details verfügbar'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 section:
-  personalInfo: 'Informations personnelles'
+  personal: 'Informations personnelles'
   contact: 'Contact'
   address: 'Adresse'
-  registration: 'Inscription'
   timeline: 'Historique'
 
+tab:
+  details: 'Détails'
+
 field:
-  name: 'Nom'
   dateOfBirth: 'Date de naissance'
   gender: 'Genre'
   role: 'Rôle'
@@ -498,19 +537,28 @@ role:
 
 action:
   close: 'Fermer'
+  menu: 'Plus d’actions'
+  copy: 'Copier'
   showFormData: 'Afficher les données du formulaire'
+
+notification:
+  copied: 'Copié dans le presse-papiers'
+  copyFailed: 'Échec de la copie'
+
+empty: 'Aucun détail disponible pour cette inscription'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
 section:
-  personalInfo: 'Informacje osobowe'
+  personal: 'Dane osobowe'
   contact: 'Kontakt'
   address: 'Adres'
-  registration: 'Rejestracja'
   timeline: 'Historia'
 
+tab:
+  details: 'Szczegóły'
+
 field:
-  name: 'Imię i nazwisko'
   dateOfBirth: 'Data urodzenia'
   gender: 'Płeć'
   role: 'Rola'
@@ -528,19 +576,28 @@ role:
 
 action:
   close: 'Zamknij'
+  menu: 'Więcej działań'
+  copy: 'Kopiuj'
   showFormData: 'Pokaż dane formularza'
+
+notification:
+  copied: 'Skopiowano do schowka'
+  copyFailed: 'Kopiowanie nie powiodło się'
+
+empty: 'Brak szczegółów dla tego zgłoszenia'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
 section:
-  personalInfo: 'Osobní informace'
+  personal: 'Osobní údaje'
   contact: 'Kontakt'
   address: 'Adresa'
-  registration: 'Registrace'
   timeline: 'Časová osa'
 
+tab:
+  details: 'Podrobnosti'
+
 field:
-  name: 'Jméno'
   dateOfBirth: 'Datum narození'
   gender: 'Pohlaví'
   role: 'Role'
@@ -558,7 +615,15 @@ role:
 
 action:
   close: 'Zavřít'
+  menu: 'Další akce'
+  copy: 'Kopírovat'
   showFormData: 'Zobrazit data formuláře'
+
+notification:
+  copied: 'Zkopírováno do schránky'
+  copyFailed: 'Kopírování se nezdařilo'
+
+empty: 'Pro tuto registraci nejsou k dispozici žádné podrobnosti'
 </i18n>
 
 <style scoped>
@@ -571,9 +636,120 @@ action:
   color: var(--md3-on-surface-variant);
 }
 
-@media (min-width: 600px) {
-  .timeline-column {
-    border-left: 1px solid var(--md3-outline-variant);
-  }
+/* Details size to their content; the timeline needs a fixed viewport for its
+   scroll area. */
+.details-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 16px;
+  max-height: min(480px, 62vh);
+}
+
+.timeline-panel {
+  height: min(480px, 62vh);
+}
+
+.section-title {
+  padding: 0 4px 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--md3-primary);
+}
+
+/* MD3 Expressive segmented list: rows are separate tiles with a small gap,
+   and only the group's outer corners are fully rounded. */
+.segmented-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.segment {
+  min-height: 64px;
+  padding: 10px 12px 10px 16px;
+  background: var(--md3-surface-container-high);
+  border-radius: 4px;
+  color: var(--md3-on-surface);
+}
+
+.segment:first-child {
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+}
+
+.segment:last-child {
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+}
+
+.segment :deep(.q-item__section--avatar) {
+  min-width: 0;
+  padding-right: 16px;
+}
+
+.row-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--md3-secondary-container);
+  color: var(--md3-on-secondary-container);
+}
+
+.row-label {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  letter-spacing: 0.02em;
+  color: var(--md3-on-surface-variant);
+}
+
+.row-value {
+  margin-top: 2px;
+  font-size: 1rem;
+  line-height: 1.5rem;
+  color: var(--md3-on-surface);
+}
+
+.row-value--link {
+  color: var(--md3-primary);
+}
+
+.row-action {
+  color: var(--md3-on-surface-variant);
+}
+
+.empty-state {
+  color: var(--md3-on-surface-variant);
+}
+
+.details-actions {
+  padding: 8px 16px 16px;
+}
+
+/* Shares the header's surface tone, so the two read as one top zone; the
+   divider from content sits below the tabs instead of between them. */
+.details-tabs {
+  background: var(--md3-surface-container);
+  border-bottom: 1px solid var(--md3-outline-variant);
+}
+
+.details-tabs :deep(.q-tab) {
+  min-height: 48px;
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: var(--md3-on-surface-variant);
+}
+
+.details-tabs :deep(.q-tab--active) {
+  color: var(--md3-primary);
+}
+
+.details-tabs :deep(.q-tabs__indicator) {
+  height: 3px;
+  border-radius: 3px 3px 0 0;
 }
 </style>

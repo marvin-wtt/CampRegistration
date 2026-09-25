@@ -10,6 +10,7 @@
     <div class="col q-ml-md column justify-center overflow-hidden">
       <div class="text-subtitle1 text-weight-medium ellipsis">
         {{ personName }}
+        <q-tooltip>{{ personName }}</q-tooltip>
       </div>
       <div class="row items-center no-wrap q-mt-xs">
         <span
