@@ -2,10 +2,12 @@ import { BaseService } from '#core/base/BaseService';
 import { permissionRegistry } from '#core/permission/permission.registry';
 import type { Prisma } from '#generated/prisma/client.js';
 import type { EventScopedPermission } from '@camp-registration/common/permissions';
+import type { EventManagerRole } from '@camp-registration/common/entities';
 import { RESOURCE_VIEW_PERMISSION } from '@camp-registration/common/realtime';
 import { inject, injectable } from 'inversify';
 import { OrganizationMemberService } from '#app/organizationMember/organization-member.service';
-import { AuditService, type PrismaTransaction } from '#app/audit/audit.service';
+import { AuditService } from '#app/audit/audit.service';
+import type { PrismaTransaction } from '#core/database/transaction';
 import type { VerifiedAccount } from '#app/user/account.lifecycle';
 import {
   eventManagerAuditPolicy,
@@ -27,6 +29,26 @@ export interface ManagerAuthorization {
   permissions: Set<EventScopedPermission>;
   expiresAt: Date | null;
   revalidate?: boolean;
+}
+
+// Weakest first.
+const MANAGER_ROLES: string[] = [
+  'VIEWER',
+  'COUNSELOR',
+  'COORDINATOR',
+  'DIRECTOR',
+] satisfies EventManagerRole[];
+
+function strongerRole(a: string, b: string) {
+  return MANAGER_ROLES.indexOf(b) > MANAGER_ROLES.indexOf(a) ? b : a;
+}
+
+/** `null` never expires. */
+function laterExpiry(a: Date | null, b: Date | null) {
+  if (a === null || b === null) {
+    return null;
+  }
+  return b > a ? b : a;
 }
 
 @injectable()
@@ -189,13 +211,34 @@ export class EventManagerService extends BaseService {
     });
     const managed = await tx.eventManager.findMany({
       where: { userId, eventId: { in: pending.map((m) => m.eventId) } },
-      select: { eventId: true },
+      include: { invitation: true },
     });
-    const managedEventIds = new Set(managed.map((m) => m.eventId));
+    const managedByEvent = new Map(managed.map((m) => [m.eventId, m]));
 
     for (const manager of pending) {
-      // An existing access (under a previous address) stands.
-      if (managedEventIds.has(manager.eventId)) {
+      // An existing access (under a previous address) absorbs the invitation,
+      // keeping the stronger of both grants.
+      const existing = managedByEvent.get(manager.eventId);
+      if (existing) {
+        const role = strongerRole(existing.role, manager.role);
+        const expiresAt = laterExpiry(existing.expiresAt, manager.expiresAt);
+        if (role !== existing.role || expiresAt !== existing.expiresAt) {
+          const merged = await tx.eventManager.update({
+            where: { id: existing.id },
+            data: { role, expiresAt },
+            include: { invitation: true },
+          });
+          await this.audit.updated(
+            tx,
+            eventManagerAuditPolicy,
+            existing,
+            merged,
+            {
+              actorId: null,
+            },
+          );
+        }
+
         await tx.eventManager.delete({ where: { id: manager.id } });
         await this.audit.deleted(tx, eventManagerAuditPolicy, manager, {
           details: { reason: 'duplicate_invitation' },

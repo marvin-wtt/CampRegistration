@@ -10,6 +10,7 @@ import { BaseService } from '#core/base/BaseService';
 import {
   computedRegistrationData,
   CUSTOM_FILE_FIELD_PREFIX,
+  customFileSlots,
 } from '#app/registration/registration.helper';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service';
@@ -19,7 +20,7 @@ import {
   type AuditedRegistration,
   registrationAuditPolicy,
 } from '#app/registration/registration.audit';
-import type { PrismaTransaction } from '#app/audit/audit.service';
+import type { PrismaTransaction } from '#core/database/transaction';
 import { PrivacyNoticeService } from '#app/privacyNotice/privacy-notice.service';
 
 /** The create uses relation connects throughout, so the stamp must too. */
@@ -318,7 +319,6 @@ export class RegistrationService extends BaseService {
     });
   }
 
-  // Custom file slot name → attached file id.
   private async customFileSlots(
     tx: PrismaTransaction,
     registrationId: string,
@@ -331,12 +331,7 @@ export class RegistrationService extends BaseService {
       select: { id: true, field: true },
     });
 
-    return Object.fromEntries(
-      files.map((file) => [
-        (file.field ?? '').slice(CUSTOM_FILE_FIELD_PREFIX.length),
-        file.id,
-      ]),
-    );
+    return customFileSlots(files);
   }
 
   async getNamesByIds(

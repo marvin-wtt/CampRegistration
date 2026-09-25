@@ -27,6 +27,10 @@ function formFieldSnapshot(form: unknown): Map<string, unknown> {
  * outside any question (page/panel titles, survey settings, logic).
  */
 export function formFieldChanges(before: unknown, after: unknown): string[] {
+  if (isDeepStrictEqual(before, after)) {
+    return [];
+  }
+
   const beforeFields = formFieldSnapshot(before);
   const afterFields = formFieldSnapshot(after);
   const names = new Set([...beforeFields.keys(), ...afterFields.keys()]);
@@ -38,7 +42,7 @@ export function formFieldChanges(before: unknown, after: unknown): string[] {
     )
     .map((name) => `form.${name}`);
 
-  if (changed.length === 0 && !isDeepStrictEqual(before, after)) {
+  if (changed.length === 0) {
     return ['form'];
   }
   return changed;

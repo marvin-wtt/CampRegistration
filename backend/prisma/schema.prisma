@@ -715,7 +715,7 @@ model AuditLog {
 
   event Event? @relation(fields: [eventId], references: [id], onDelete: SetNull, map: "audit_logs_event_id_foreign")
 
-  @@index([entityType, entityId], map: "audit_logs_entity_index")
+  @@index([entityType, entityId, createdAt], map: "audit_logs_entity_created_at_index")
   @@index([eventId, createdAt], map: "audit_logs_event_id_created_at_index")
   @@index([actorId], map: "audit_logs_actor_id_index")
   @@map("audit_logs")

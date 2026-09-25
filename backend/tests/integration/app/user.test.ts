@@ -243,7 +243,7 @@ describe('/api/v1/users/', () => {
         });
         await prisma.organizationMember.create({
           data: {
-            organizationId: organization.id,
+            organization: { connect: { id: organization.id } },
             role: 'ADMIN',
             invitation: {
               create: {

@@ -2,7 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mockDeep, type DeepMockProxy } from 'vitest-mock-extended';
 import type { AuditLog, PrismaClient } from '#generated/prisma/client.js';
 import type { AuditDetails } from '@camp-registration/common/entities';
-import { AuditService, type PrismaTransaction } from '#app/audit/audit.service';
+import { AuditService } from '#app/audit/audit.service';
+import type { PrismaTransaction } from '#core/database/transaction';
 import type { AuditChangePolicy, AuditSubject } from '#app/audit/audit.policy';
 import { runWithRequestContext } from '#core/context/requestContext';
 

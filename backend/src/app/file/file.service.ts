@@ -1,4 +1,5 @@
-import { type File, Prisma, PrismaClient } from '#generated/prisma/client.js';
+import { type File, Prisma } from '#generated/prisma/client.js';
+import type { PrismaTransaction } from '#core/database/transaction';
 import { ulid } from '#utils/ulid';
 import { extractKeyFromFieldName } from '#utils/form';
 import { decodeTime, isValid } from 'ulidx';
@@ -32,10 +33,6 @@ interface ModelData {
   id: string;
   name: string;
 }
-
-type PrismaTransaction = Parameters<
-  Parameters<PrismaClient['$transaction']>[0]
->[0];
 
 type PickIds<T> = {
   [K in keyof T as K extends `${string}Id` ? K : never]: T[K];

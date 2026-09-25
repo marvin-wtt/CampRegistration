@@ -16,6 +16,9 @@ import {
 import logger from '#core/logger';
 import config from '#config/index';
 
+// The reason BullMQ's stalled-job script fails a job with.
+const BULL_STALLED_REASON = 'stalled more than allowable limit';
+
 export class RedisQueue<P, R, N extends string> extends Queue<P, R, N> {
   public readonly type = 'redis';
 
@@ -52,6 +55,14 @@ export class RedisQueue<P, R, N extends string> extends Queue<P, R, N> {
 
     this.events = new QueueEvents(this.queue, {
       connection: this.connection,
+    });
+
+    // `execute()` logs handler failures; this catches the ones BullMQ decides
+    // itself (a job stalled too often, e.g. after its lock expired).
+    this.events.on('failed', ({ jobId, failedReason }) => {
+      if (failedReason.includes(BULL_STALLED_REASON)) {
+        logger.error(`Job ${jobId} in queue ${queue} failed: ${failedReason}`);
+      }
     });
 
     this.events.on('stalled', (job) => {

@@ -10,7 +10,7 @@ CREATE TABLE `audit_logs` (
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
     UNIQUE INDEX `audit_logs_id_unique`(`id`),
-    INDEX `audit_logs_entity_index`(`entity_type`, `entity_id`),
+    INDEX `audit_logs_entity_created_at_index`(`entity_type`, `entity_id`, `created_at`),
     INDEX `audit_logs_event_id_created_at_index`(`event_id`, `created_at`),
     INDEX `audit_logs_actor_id_index`(`actor_id`),
     PRIMARY KEY (`id`)

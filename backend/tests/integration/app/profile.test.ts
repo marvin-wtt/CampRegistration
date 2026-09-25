@@ -484,7 +484,7 @@ describe('/api/v1/profile', () => {
         if (other === 'invitation') {
           await prisma.organizationMember.create({
             data: {
-              organizationId: organization.id,
+              organization: { connect: { id: organization.id } },
               role: 'ADMIN',
               invitation: {
                 create: {

@@ -10,10 +10,7 @@ import {
 } from '#core/queue/Queue';
 import logger from '#core/logger';
 import { Prisma } from '#generated/prisma/client.js';
-
-type PrismaTransaction = Parameters<
-  Parameters<typeof prisma.$transaction>[0]
->[0];
+import type { PrismaTransaction } from '#core/database/transaction';
 
 export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
   public readonly type = 'database';

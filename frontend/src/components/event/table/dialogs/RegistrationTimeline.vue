@@ -178,7 +178,7 @@ function emailEntry({ message, trigger }: ReceivedEmail): TimelineEntry {
     title: trigger ? t('automatedEmail') : t('messageSent'),
     subtitle: at ? formatAt(at) : '',
     color: warnings.length > 0 ? 'negative' : 'info',
-    icon: trigger ? 'mail_asterisk' : 'mail',
+    icon: trigger ? 'schedule_send' : 'mail',
     fields: [],
     actor: message.sentBy?.name ?? null,
     ...(trigger

@@ -1,11 +1,8 @@
 import { BaseService } from '#core/base/BaseService';
 import { getRequestContext } from '#core/context/requestContext';
 import { injectable } from 'inversify';
-import {
-  type AuditLog,
-  Prisma,
-  type PrismaClient,
-} from '#generated/prisma/client.js';
+import { type AuditLog, Prisma } from '#generated/prisma/client.js';
+import type { PrismaTransaction } from '#core/database/transaction';
 import type {
   AuditActor,
   AuditDetails,
@@ -18,10 +15,6 @@ import {
 } from '#app/audit/audit.diff';
 import type { AuditChangePolicy, AuditSubject } from '#app/audit/audit.policy';
 import { getAuditNameResolver } from '#app/audit/audit.names';
-
-export type PrismaTransaction = Parameters<
-  Parameters<PrismaClient['$transaction']>[0]
->[0];
 
 const AUDIT_RETENTION_DAYS = 365 * 2;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -129,7 +122,7 @@ export class AuditService extends BaseService {
     policy: AuditChangePolicy<T>,
     before: T,
     after: T,
-    options: { coalesceWithinMs?: number } = {},
+    options: { coalesceWithinMs?: number; actorId?: string | null } = {},
   ): Promise<void> {
     const details = policy.details(before, after);
     if (hasNoChanges(details)) {
@@ -139,6 +132,7 @@ export class AuditService extends BaseService {
       action: 'updated',
       entityType: policy.entityType,
       ...policy.locate(after),
+      actorId: options.actorId,
       details,
     };
     if (
@@ -348,12 +342,26 @@ export class AuditService extends BaseService {
 
   /**
    * Keeps a deleted account's name so its entries stay attributable. Call in
-   * the deleting transaction; the name is purged after the retention window.
+   * the deleting transaction, after its own entries; an account no entry
+   * names keeps nothing. The name is purged after the retention window.
    */
   async rememberDeletedUser(
     tx: PrismaTransaction,
     user: { id: string; name: string },
   ): Promise<void> {
+    const referenced = await tx.auditLog.findFirst({
+      where: {
+        OR: [
+          { actorId: user.id },
+          { details: { path: '$.subjectId', equals: user.id } },
+        ],
+      },
+      select: { id: true },
+    });
+    if (!referenced) {
+      return;
+    }
+
     await tx.auditDeletedUser.upsert({
       where: { id: user.id },
       create: { id: user.id, name: user.name },

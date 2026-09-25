@@ -10,7 +10,8 @@ import { BaseService } from '#core/base/BaseService';
 import { EventService } from '#app/event/event.service';
 import { inject, injectable } from 'inversify';
 import type { ProfileUser } from '#app/profile/profile.types';
-import { AuditService, type PrismaTransaction } from '#app/audit/audit.service';
+import { AuditService } from '#app/audit/audit.service';
+import type { PrismaTransaction } from '#core/database/transaction';
 import { eventManagerAuditPolicy } from '#app/eventManager/event-manager.audit';
 import { AccountLifecycle } from '#app/user/account.lifecycle';
 
@@ -239,16 +240,22 @@ export class UserService extends BaseService {
     const password = data.password
       ? await encryptPassword(data.password)
       : undefined;
-    // Re-verifying an address fires again; the listeners are idempotent.
-    const mayVerify = data.email !== undefined || data.emailVerified === true;
-
     return this.prisma.$transaction(async (tx) => {
+      const before = await tx.user.findUniqueOrThrow({
+        where: { id: userId },
+        select: { email: true },
+      });
+      const emailChanged =
+        data.email !== undefined && data.email !== before.email;
+
+      // A new address starts unverified; verifying happens below.
       const user = await tx.user.update({
         where: { id: userId },
         data: {
           name: data.name,
           email: data.email,
-          emailVerified: data.emailVerified,
+          emailVerified:
+            emailChanged || data.emailVerified === false ? false : undefined,
           password,
           role: data.role,
           locale: data.locale,
@@ -257,11 +264,21 @@ export class UserService extends BaseService {
         include: { twoFactor: { select: { confirmedAt: true } } },
       });
 
-      if (mayVerify && user.emailVerified) {
-        await this.accountLifecycle.emailVerified(tx, user);
+      if (data.emailVerified !== true) {
+        return user;
       }
 
-      return user;
+      // Conditional, so of concurrent verifications only the first fires.
+      const { count } = await tx.user.updateMany({
+        where: { id: userId, emailVerified: false },
+        data: { emailVerified: true },
+      });
+      const verified = { ...user, emailVerified: true };
+      if (count > 0) {
+        await this.accountLifecycle.emailVerified(tx, verified);
+      }
+
+      return verified;
     });
   }
 
@@ -280,13 +297,13 @@ export class UserService extends BaseService {
         );
       }
 
-      await this.audit.rememberDeletedUser(tx, user);
       // The cascade below bypasses `removeManager`, so record it here.
       for (const manager of user.eventRoles) {
         await this.audit.deleted(tx, eventManagerAuditPolicy, manager, {
           details: { reason: 'account_deleted' },
         });
       }
+      await this.audit.rememberDeletedUser(tx, user);
 
       await tx.user.delete({ where: { id: userId } });
     });

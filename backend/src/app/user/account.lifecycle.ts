@@ -1,6 +1,6 @@
 import type { User } from '#generated/prisma/client.js';
 import { injectable } from 'inversify';
-import type { PrismaTransaction } from '#app/audit/audit.service';
+import type { PrismaTransaction } from '#core/database/transaction';
 
 export type VerifiedAccount = Pick<User, 'id' | 'email'>;
 
@@ -22,7 +22,7 @@ export class AccountLifecycle {
   }
 
   // Fired in the verifying transaction, so a failing listener rolls it back.
-  // Listeners must be idempotent: a re-verified address fires again.
+  // Fires when an address becomes verified, once per verification.
   async emailVerified(
     tx: PrismaTransaction,
     account: VerifiedAccount,

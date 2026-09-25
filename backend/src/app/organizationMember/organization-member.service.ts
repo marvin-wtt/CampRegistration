@@ -1,7 +1,7 @@
 import { BaseService } from '#core/base/BaseService';
 import { injectable } from 'inversify';
 import type { VerifiedAccount } from '#app/user/account.lifecycle';
-import type { PrismaTransaction } from '#app/audit/audit.service';
+import type { PrismaTransaction } from '#core/database/transaction';
 import { permissionRegistry } from '#core/permission/permission.registry';
 import type {
   EventScopedPermission,
@@ -202,17 +202,32 @@ export class OrganizationMemberService extends BaseService {
     tx: PrismaTransaction,
     { id: userId, email }: VerifiedAccount,
   ) {
-    // An existing membership (under a previous address) stands; binding the
-    // invitation too would duplicate it.
+    // An existing membership (under a previous address) absorbs the
+    // invitation, taking its role if that is stronger.
     const memberships = await tx.organizationMember.findMany({
       where: { userId },
-      select: { organizationId: true },
+      select: { id: true, organizationId: true, role: true },
     });
-    await tx.organizationMember.deleteMany({
+    const duplicates = await tx.organizationMember.findMany({
       where: {
         invitation: { email },
         organizationId: { in: memberships.map((m) => m.organizationId) },
       },
+      select: { id: true, organizationId: true, role: true },
+    });
+    for (const invited of duplicates) {
+      const existing = memberships.find(
+        (m) => m.organizationId === invited.organizationId,
+      );
+      if (existing?.role === 'MEMBER' && invited.role === 'ADMIN') {
+        await tx.organizationMember.update({
+          where: { id: existing.id },
+          data: { role: 'ADMIN' },
+        });
+      }
+    }
+    await tx.organizationMember.deleteMany({
+      where: { id: { in: duplicates.map((m) => m.id) } },
     });
 
     await tx.organizationMember.updateMany({
