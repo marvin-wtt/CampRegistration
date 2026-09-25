@@ -166,6 +166,10 @@ recurring tasks (e.g. token cleanup, pruning old job records).
 - Registration is idempotent (duplicate names ignored); the scheduler owns job
   lifecycle logging and is stopped deterministically on shutdown.
 
+Both run their handlers inside a job context (`core/context/jobContext.ts`,
+AsyncLocalStorage). The logger stamps it on every entry as `job`, including
+entries from shared code the job calls. Don't repeat queue/job ids in log messages.
+
 ## Organizations
 
 Events and newsletters are owned by an `Organization`, moderated by system administrators — full design in

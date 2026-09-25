@@ -2,12 +2,11 @@ import { randomUUID } from 'node:crypto';
 import {
   type Job,
   Queue,
-  type SimpleJob,
+  type QueuedJob,
   type JobStatus,
   type JobOptions,
   type QueueJobCounts,
 } from '#core/queue/Queue.js';
-import logger from '#core/logger';
 
 type InternalJob<P> = Job<P> & {
   priority: number; // default 100
@@ -17,7 +16,7 @@ type InternalJob<P> = Job<P> & {
 export class MemoryQueue<P, R, N extends string> extends Queue<P, R, N> {
   public readonly type = 'memory';
 
-  private handler: ((job: SimpleJob<P>) => Promise<R>) | null = null;
+  private handler: ((job: QueuedJob<P>) => Promise<R>) | null = null;
 
   private jobs = new Map<string, InternalJob<P>>();
   private paused = false;
@@ -35,7 +34,7 @@ export class MemoryQueue<P, R, N extends string> extends Queue<P, R, N> {
   // keep ALL unfinished jobs + last N finished (completed/failed)
   private finishedRetention = 1000;
 
-  public process(handler: (job: SimpleJob<P>) => Promise<R>): void {
+  protected consume(handler: (job: QueuedJob<P>) => Promise<R>): void {
     this.assertOpen();
     this.handler = handler;
     this.start();
@@ -271,8 +270,12 @@ export class MemoryQueue<P, R, N extends string> extends Queue<P, R, N> {
     this.windowCount += 1;
 
     try {
-      // IMPORTANT: do not pass internal fields to handler
-      await this.handler({ name: next.name, payload: next.payload });
+      await this.handler({
+        id: next.id,
+        name: next.name,
+        payload: next.payload,
+        attempt: next.attempts,
+      });
 
       next.status = 'COMPLETED';
       next.finishedAt = new Date();
@@ -289,10 +292,6 @@ export class MemoryQueue<P, R, N extends string> extends Queue<P, R, N> {
         next.status = 'FAILED';
         next.finishedAt = new Date();
         this.pruneFinished();
-
-        logger.error(
-          `Job ${next.id} failed after ${next.attempts.toString()} attempts: ${next.error as string}`,
-        );
         return;
       }
 
@@ -300,10 +299,6 @@ export class MemoryQueue<P, R, N extends string> extends Queue<P, R, N> {
       const delay = this.computeRetryDelayMs(next.attempts);
       next.status = 'DELAYED';
       next.runAt = new Date(Date.now() + delay);
-
-      logger.warn(
-        `Job ${next.id} failed: ${next.error as string}. Retrying in ${delay.toString()}ms.`,
-      );
     }
   }
 

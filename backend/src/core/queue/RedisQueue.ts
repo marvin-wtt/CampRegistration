@@ -4,7 +4,7 @@ import {
   type JobOptions,
   type JobStatus,
   type QueueJobCounts,
-  type SimpleJob,
+  type QueuedJob,
 } from '#core/queue/Queue';
 import {
   Queue as BullQueue,
@@ -52,13 +52,6 @@ export class RedisQueue<P, R, N extends string> extends Queue<P, R, N> {
 
     this.events = new QueueEvents(this.queue, {
       connection: this.connection,
-    });
-
-    this.events.on('failed', (job) => {
-      logger.error(
-        `Error while processing job ${job.jobId} in queue ${queue}:`,
-        job.failedReason,
-      );
     });
 
     this.events.on('stalled', (job) => {
@@ -129,19 +122,20 @@ export class RedisQueue<P, R, N extends string> extends Queue<P, R, N> {
     );
   }
 
-  public process(handler: (job: SimpleJob<P>) => Promise<R>): void {
+  protected consume(handler: (job: QueuedJob<P>) => Promise<R>): void {
     if (this.worker) {
       throw new Error(`Worker for queue ${this.queue} already exists.`);
     }
 
     this.worker = new Worker<P, R, N>(
       this.queue,
-      (job) => {
-        return handler({
+      (job) =>
+        handler({
+          id: job.id ?? '?',
           name: job.name,
           payload: job.data,
-        });
-      },
+          attempt: job.attemptsMade + 1,
+        }),
       {
         connection: this.connection,
         stalledInterval: this.options.stalledInterval,
