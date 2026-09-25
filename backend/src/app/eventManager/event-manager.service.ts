@@ -265,7 +265,9 @@ export class EventManagerService extends BaseService {
 
   // Events the user is the last non-expiring director of; a pending
   // invitation counts as another director.
-  async getSoleDirectorEvents(userId: string): Promise<AccountDeletionBlocker[]> {
+  async getSoleDirectorEvents(
+    userId: string,
+  ): Promise<AccountDeletionBlocker[]> {
     const events = await this.db.event.findMany({
       select: { id: true, name: true },
       where: {

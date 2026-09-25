@@ -26,8 +26,12 @@ export class EventManagerModule implements AppModule {
     lifecycle.onEmailVerified((account) =>
       managers().resolveManagerInvitations(account),
     );
-    lifecycle.onDeleting((account) => managers().auditAccountDeletion(account.id));
-    lifecycle.blockDeletion((userId) => managers().getSoleDirectorEvents(userId));
+    lifecycle.onDeleting((account) =>
+      managers().auditAccountDeletion(account.id),
+    );
+    lifecycle.blockDeletion((userId) =>
+      managers().getSoleDirectorEvents(userId),
+    );
   }
 
   registerApiRoutes(router: AppRouter): void {

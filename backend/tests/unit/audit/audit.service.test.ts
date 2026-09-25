@@ -74,7 +74,9 @@ describe('AuditService.updated', () => {
   });
 
   it("starts a new entry after another actor's edit", async () => {
-    prisma.auditLog.findFirst.mockResolvedValue(latestEntry({ actorId: 'user-2' }));
+    prisma.auditLog.findFirst.mockResolvedValue(
+      latestEntry({ actorId: 'user-2' }),
+    );
 
     await asUser('user-1', () => change({ changedFields: ['location'] }));
 

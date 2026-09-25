@@ -31,7 +31,9 @@
             <router-link :to="blockerRoute(blocker)">
               {{ blocker.type === 'event' ? to(blocker.name) : blocker.name }}
             </router-link>
-            <span class="blockers__kind">· {{ t(`blockers.${blocker.type}`) }}</span>
+            <span class="blockers__kind"
+              >· {{ t(`blockers.${blocker.type}`) }}</span
+            >
           </li>
         </ul>
       </div>

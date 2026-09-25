@@ -339,9 +339,7 @@ export class AuditService extends BaseService {
    * the deleting transaction, after its own entries; an account no entry
    * names keeps nothing. The name is purged after the retention window.
    */
-  async rememberDeletedUser(
-    user: { id: string; name: string },
-  ): Promise<void> {
+  async rememberDeletedUser(user: { id: string; name: string }): Promise<void> {
     const referenced = await this.db.auditLog.findFirst({
       where: {
         OR: [

@@ -195,11 +195,9 @@ export class RegistrationService extends BaseService {
         // A registration is created by an external party via the public
         // form — always system-attributed, never the logged-in manager who
         // may happen to share the session.
-        await this.audit.created(
-          registrationAuditPolicy,
-          registration,
-          { actorId: null },
-        );
+        await this.audit.created(registrationAuditPolicy, registration, {
+          actorId: null,
+        });
 
         return registration;
       },
