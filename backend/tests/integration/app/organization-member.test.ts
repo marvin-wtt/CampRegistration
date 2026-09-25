@@ -93,6 +93,23 @@ describe('organization members', () => {
       expect(member?.userId).toBeNull();
     });
 
+    it('should invite an unverified account as a pending member', async () => {
+      const { accessToken, organization } =
+        await createOrganizationWithRole('ADMIN');
+      await UserFactory.create({
+        email: 'unverified@example.com',
+        emailVerified: false,
+      });
+
+      const { body } = await request()
+        .post(url(organization.id))
+        .send({ email: 'unverified@example.com', role: 'MEMBER' })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(201);
+
+      expect(body.data.status).toBe('PENDING');
+    });
+
     it('should respond with `409` when the person is already a member', async () => {
       const { accessToken, organization, user } =
         await createOrganizationWithRole('ADMIN');

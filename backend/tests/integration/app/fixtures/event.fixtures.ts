@@ -735,6 +735,10 @@ export const eventUpdateBody: UpdateBodyData[] = [
   },
   {
     name: 'Registration close at null',
+    // The factory sets an opening date, which would require a closing date.
+    event: {
+      registrationOpensAt: null,
+    },
     data: {
       registrationClosesAt: null,
     },

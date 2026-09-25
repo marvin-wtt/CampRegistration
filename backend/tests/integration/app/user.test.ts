@@ -3,6 +3,7 @@ import {
   EventFactory,
   EventManagerFactory,
   InvitationFactory,
+  OrganizationFactory,
   UserFactory,
 } from '../../../prisma/factories/index.js';
 import { request } from '../utils/request.js';
@@ -227,6 +228,48 @@ describe('/api/v1/users/', () => {
           where: { id: pending.id },
         });
         expect(manager.userId).toBe(user.id);
+      });
+
+      it('should drop invitations duplicating existing access', async () => {
+        const { accessToken } = await createAdminWithToken();
+        const user = await UserFactory.create();
+        const pending = await createInvitation('invited@example.com');
+        await EventManagerFactory.create({
+          event: { connect: { id: pending.eventId } },
+          user: { connect: { id: user.id } },
+        });
+        const organization = await OrganizationFactory.create({
+          members: { create: { userId: user.id, role: 'MEMBER' } },
+        });
+        await prisma.organizationMember.create({
+          data: {
+            organizationId: organization.id,
+            role: 'ADMIN',
+            invitation: {
+              create: {
+                organizationId: organization.id,
+                email: 'invited@example.com',
+              },
+            },
+          },
+        });
+
+        await request()
+          .patch(`/api/v1/users/${user.id}`)
+          .send({ email: 'invited@example.com' })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        await expect(
+          prisma.eventManager.count({ where: { eventId: pending.eventId } }),
+        ).resolves.toBe(1);
+        await expect(
+          prisma.organizationMember.findMany({
+            where: { organizationId: organization.id },
+          }),
+        ).resolves.toEqual([
+          expect.objectContaining({ userId: user.id, role: 'MEMBER' }),
+        ]);
       });
 
       it('should not bind pending invitations to an unverified email', async () => {

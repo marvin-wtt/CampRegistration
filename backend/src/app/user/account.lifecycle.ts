@@ -1,9 +1,13 @@
 import type { User } from '#generated/prisma/client.js';
 import { injectable } from 'inversify';
+import type { PrismaTransaction } from '#app/audit/audit.service';
 
 export type VerifiedAccount = Pick<User, 'id' | 'email'>;
 
-export type EmailVerifiedListener = (account: VerifiedAccount) => Promise<void>;
+export type EmailVerifiedListener = (
+  tx: PrismaTransaction,
+  account: VerifiedAccount,
+) => Promise<void>;
 
 /**
  * Lets modules react to account changes without the user module knowing them.
@@ -17,10 +21,14 @@ export class AccountLifecycle {
     this.emailVerifiedListeners.push(listener);
   }
 
-  // Fired whenever an account holds a verified email it did not hold before.
-  async emailVerified(account: VerifiedAccount): Promise<void> {
+  // Fired in the verifying transaction, so a failing listener rolls it back.
+  // Listeners must be idempotent: a re-verified address fires again.
+  async emailVerified(
+    tx: PrismaTransaction,
+    account: VerifiedAccount,
+  ): Promise<void> {
     for (const listener of this.emailVerifiedListeners) {
-      await listener(account);
+      await listener(tx, account);
     }
   }
 }

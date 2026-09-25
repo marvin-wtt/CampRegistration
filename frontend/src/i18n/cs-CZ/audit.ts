@@ -67,6 +67,7 @@ export default {
       },
       reasons: {
         account_deleted: 'Účet smazán',
+        duplicate_invitation: 'Přístup již existoval',
       },
       fields: {
         role: 'Role',

@@ -236,40 +236,32 @@ export class UserService extends BaseService {
       }
     }
 
-    const before = await this.prisma.user.findUniqueOrThrow({
-      where: { id: userId },
-      select: { email: true, emailVerified: true },
-    });
+    const password = data.password
+      ? await encryptPassword(data.password)
+      : undefined;
+    // Re-verifying an address fires again; the listeners are idempotent.
+    const mayVerify = data.email !== undefined || data.emailVerified === true;
 
-    const user = await this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        name: data.name,
-        email: data.email,
-        emailVerified: data.emailVerified,
-        password: data.password
-          ? await encryptPassword(data.password)
-          : undefined,
-        role: data.role,
-        locale: data.locale,
-        locked: data.locked,
-      },
-      include: profileAccessInclude,
-    });
+    return this.prisma.$transaction(async (tx) => {
+      const user = await tx.user.update({
+        where: { id: userId },
+        data: {
+          name: data.name,
+          email: data.email,
+          emailVerified: data.emailVerified,
+          password,
+          role: data.role,
+          locale: data.locale,
+          locked: data.locked,
+        },
+        include: { twoFactor: { select: { confirmedAt: true } } },
+      });
 
-    const newlyVerified =
-      user.emailVerified &&
-      (!before.emailVerified || before.email !== user.email);
-    if (!newlyVerified) {
+      if (mayVerify && user.emailVerified) {
+        await this.accountLifecycle.emailVerified(tx, user);
+      }
+
       return user;
-    }
-
-    await this.accountLifecycle.emailVerified(user);
-
-    // Listeners may have granted access, which the included relations miss.
-    return this.prisma.user.findUniqueOrThrow({
-      where: { id: userId },
-      include: profileAccessInclude,
     });
   }
 
@@ -280,10 +272,11 @@ export class UserService extends BaseService {
         include: { eventRoles: true },
       });
       const blockers = await this.getDeletionBlockers(userId, tx);
-      if (blockers.events.length > 0 || blockers.newsletters.length > 0) {
+      const { events, newsletters, organizations } = blockers;
+      if (events.length + newsletters.length + organizations.length > 0) {
         throw new ApiError(
           httpStatus.CONFLICT,
-          'The account is the only director or owner of an event or newsletter. Hand it over or delete it first.',
+          'The account is the only director, owner or administrator of an event, newsletter or organization. Hand it over or delete it first.',
         );
       }
 
@@ -299,13 +292,14 @@ export class UserService extends BaseService {
     });
   }
 
-  // Mirrors the manager removal rules: an event keeps a non-expiring director
-  // (a pending invitation counts), a newsletter keeps an owner.
+  // Mirrors the removal rules: an event keeps a non-expiring director (a
+  // pending invitation counts), a newsletter keeps an owner and an
+  // organization keeps an administrator (a pending invitation does not).
   async getDeletionBlockers(
     userId: string,
     db: PrismaTransaction = this.prisma,
   ): Promise<AccountDeletionBlockers> {
-    const [events, newsletters] = await Promise.all([
+    const [events, newsletters, organizations] = await Promise.all([
       db.event.findMany({
         select: { id: true, name: true },
         where: {
@@ -332,15 +326,18 @@ export class UserService extends BaseService {
           },
         },
       }),
+      db.organization.findMany({
+        select: { id: true, name: true },
+        where: {
+          members: { some: { userId, role: 'ADMIN' } },
+          NOT: {
+            members: { some: { role: 'ADMIN', userId: { not: userId } } },
+          },
+        },
+      }),
     ]);
 
-    return {
-      events: events.map((event) => ({
-        id: event.id,
-        name: event.name,
-      })),
-      newsletters,
-    };
+    return { events, newsletters, organizations };
   }
 
   async resetTwoFactorById(userId: string) {

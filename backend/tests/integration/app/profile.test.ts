@@ -4,6 +4,7 @@ import {
   EventFactory,
   EventManagerFactory,
   NewsletterFactory,
+  OrganizationFactory,
   TokenFactory,
   UserFactory,
 } from '../../../prisma/factories/index.js';
@@ -459,13 +460,57 @@ describe('/api/v1/profile', () => {
         .expect(409);
     });
 
+    it.each([
+      { other: null, expectedStatus: 409 },
+      { other: 'invitation', expectedStatus: 409 },
+      { other: 'user', expectedStatus: 204 },
+    ] as const)(
+      'responds with $expectedStatus for an organization admin when the other admin is $other',
+      async ({ other, expectedStatus }) => {
+        const user = await UserFactory.create();
+        const organization = await OrganizationFactory.create({
+          members: { create: { userId: user.id, role: 'ADMIN' } },
+        });
+        if (other === 'user') {
+          const otherUser = await UserFactory.create();
+          await prisma.organizationMember.create({
+            data: {
+              organizationId: organization.id,
+              userId: otherUser.id,
+              role: 'ADMIN',
+            },
+          });
+        }
+        if (other === 'invitation') {
+          await prisma.organizationMember.create({
+            data: {
+              organizationId: organization.id,
+              role: 'ADMIN',
+              invitation: {
+                create: {
+                  organizationId: organization.id,
+                  email: 'invited@example.com',
+                },
+              },
+            },
+          });
+        }
+
+        await request()
+          .delete(`/api/v1/profile/`)
+          .auth(generateAccessToken(user), { type: 'bearer' })
+          .send()
+          .expect(expectedStatus);
+      },
+    );
+
     it('should respond with `401` status code when user is unauthenticated', async () => {
       await request().delete(`/api/v1/profile/`).send().expect(401);
     });
   });
 
   describe('GET /api/v1/profile/deletion-blockers', () => {
-    it('lists what the user is the only director or owner of', async () => {
+    it('lists what the user is the only director, owner or admin of', async () => {
       const user = await UserFactory.create();
       const soleEvent = await EventFactory.create();
       await EventManagerFactory.create({
@@ -484,6 +529,9 @@ describe('/api/v1/profile', () => {
       const newsletter = await NewsletterFactory.create({
         managers: { create: { userId: user.id, role: 'OWNER' } },
       });
+      const organization = await OrganizationFactory.create({
+        members: { create: { userId: user.id, role: 'ADMIN' } },
+      });
 
       const { body } = await request()
         .get(`/api/v1/profile/deletion-blockers`)
@@ -493,6 +541,7 @@ describe('/api/v1/profile', () => {
       expect(body.data).toEqual({
         events: [{ id: soleEvent.id, name: soleEvent.name }],
         newsletters: [{ id: newsletter.id, name: newsletter.name }],
+        organizations: [{ id: organization.id, name: organization.name }],
       });
     });
 

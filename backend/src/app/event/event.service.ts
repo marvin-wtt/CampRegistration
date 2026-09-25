@@ -466,12 +466,14 @@ export class EventService extends BaseService {
 
   async deleteEventById(id: string) {
     await this.prisma.$transaction(async (tx) => {
-      // Recorded first, as the entry names the event: the FK then nulls its
-      // `eventId` like on the event's other rows, and retention purges them.
-      const event = await tx.event.findUniqueOrThrow({ where: { id } });
-      await this.audit.deleted(tx, eventAuditPolicy, event);
-
+      // The FK nulls `eventId` on the event's audit rows; retention purges them later.
       await tx.event.delete({ where: { id } });
+
+      await this.audit.record(tx, {
+        action: 'deleted',
+        entityType: eventAuditPolicy.entityType,
+        entityId: id,
+      });
     });
   }
 }

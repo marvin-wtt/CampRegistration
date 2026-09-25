@@ -5,7 +5,7 @@ import type { EventScopedPermission } from '@camp-registration/common/permission
 import { RESOURCE_VIEW_PERMISSION } from '@camp-registration/common/realtime';
 import { inject, injectable } from 'inversify';
 import { OrganizationMemberService } from '#app/organizationMember/organization-member.service';
-import { AuditService } from '#app/audit/audit.service';
+import { AuditService, type PrismaTransaction } from '#app/audit/audit.service';
 import type { VerifiedAccount } from '#app/user/account.lifecycle';
 import {
   eventManagerAuditPolicy,
@@ -179,30 +179,46 @@ export class EventManagerService extends BaseService {
       .then((value) => value !== null);
   }
 
-  async resolveManagerInvitations({ id: userId, email }: VerifiedAccount) {
-    await this.prisma.$transaction(async (tx) => {
-      const pending = await tx.eventManager.findMany({
-        where: { invitation: { email } },
-      });
+  async resolveManagerInvitations(
+    tx: PrismaTransaction,
+    { id: userId, email }: VerifiedAccount,
+  ) {
+    const pending = await tx.eventManager.findMany({
+      where: { invitation: { email } },
+      include: { invitation: true },
+    });
+    const managed = await tx.eventManager.findMany({
+      where: { userId, eventId: { in: pending.map((m) => m.eventId) } },
+      select: { eventId: true },
+    });
+    const managedEventIds = new Set(managed.map((m) => m.eventId));
 
-      await tx.eventManager.updateMany({
-        where: { id: { in: pending.map((manager) => manager.id) } },
-        data: { userId },
-      });
-
-      // Links the invitation's earlier (masked) entries to the account.
-      for (const manager of pending) {
-        await this.audit.recordFor(
-          tx,
-          eventManagerAuditPolicy,
-          'accepted',
-          { ...manager, userId },
-          { actorId: userId },
-        );
+    for (const manager of pending) {
+      // An existing access (under a previous address) stands.
+      if (managedEventIds.has(manager.eventId)) {
+        await tx.eventManager.delete({ where: { id: manager.id } });
+        await this.audit.deleted(tx, eventManagerAuditPolicy, manager, {
+          details: { reason: 'duplicate_invitation' },
+          actorId: null,
+        });
+        continue;
       }
 
-      await tx.invitation.deleteMany({ where: { email } });
-    });
+      await tx.eventManager.update({
+        where: { id: manager.id },
+        data: { userId },
+      });
+      // Links the invitation's earlier (masked) entries to the account.
+      await this.audit.recordFor(
+        tx,
+        eventManagerAuditPolicy,
+        'accepted',
+        { ...manager, userId },
+        { actorId: userId },
+      );
+    }
+
+    await tx.invitation.deleteMany({ where: { email } });
   }
 
   async addManager(eventId: string, userId: string, data: ManagerCreateData) {

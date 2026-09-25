@@ -52,6 +52,22 @@
             </router-link>
             <span class="blockers__kind">· {{ t('blockers.newsletter') }}</span>
           </li>
+          <li
+            v-for="organization in blockers?.organizations"
+            :key="organization.id"
+          >
+            <router-link
+              :to="{
+                name: 'management.organization.members',
+                params: { organizationId: organization.id },
+              }"
+            >
+              {{ organization.name }}
+            </router-link>
+            <span class="blockers__kind">
+              · {{ t('blockers.organization') }}
+            </span>
+          </li>
         </ul>
       </div>
 
@@ -117,7 +133,9 @@ const emit = defineEmits<{
 const blocked = computed(
   () =>
     !!blockers &&
-    (blockers.events.length > 0 || blockers.newsletters.length > 0),
+    (blockers.events.length > 0 ||
+      blockers.newsletters.length > 0 ||
+      blockers.organizations.length > 0),
 );
 
 const consequences = [
@@ -190,9 +208,10 @@ disclaimer:
 
 blockers:
   title: 'Your account cannot be deleted yet'
-  description: 'You are the only director or owner of the following. Give another person that role or delete them first.'
+  description: 'You are the only director, owner or administrator of the following. Give another person that role or delete them first.'
   event: 'Event'
   newsletter: 'Newsletter'
+  organization: 'Organization'
 
 action:
   delete: 'Delete account'
@@ -212,9 +231,10 @@ disclaimer:
 
 blockers:
   title: 'Ihr Konto kann noch nicht gelöscht werden'
-  description: 'Sie sind die einzige Person mit Leitungs- bzw. Inhaberrolle für die folgenden Einträge. Übertragen Sie diese Rolle an eine andere Person oder löschen Sie die Einträge zuerst.'
+  description: 'Sie sind die einzige Person mit Leitungs-, Inhaber- bzw. Administrationsrolle für die folgenden Einträge. Übertragen Sie diese Rolle an eine andere Person oder löschen Sie die Einträge zuerst.'
   event: 'Veranstaltung'
   newsletter: 'Newsletter'
+  organization: 'Organisation'
 
 action:
   delete: 'Konto löschen'
@@ -234,9 +254,10 @@ disclaimer:
 
 blockers:
   title: 'Votre compte ne peut pas encore être supprimé'
-  description: 'Vous êtes le seul directeur ou propriétaire des éléments suivants. Attribuez ce rôle à une autre personne ou supprimez-les d’abord.'
+  description: 'Vous êtes le seul directeur, propriétaire ou administrateur des éléments suivants. Attribuez ce rôle à une autre personne ou supprimez-les d’abord.'
   event: 'Événement'
   newsletter: 'Newsletter'
+  organization: 'Organisation'
 
 action:
   delete: 'Supprimer le compte'
@@ -256,9 +277,10 @@ disclaimer:
 
 blockers:
   title: 'Nie można jeszcze usunąć Twojego konta'
-  description: 'Jesteś jedynym kierownikiem lub właścicielem poniższych pozycji. Przekaż tę rolę innej osobie lub najpierw je usuń.'
+  description: 'Jesteś jedynym kierownikiem, właścicielem lub administratorem poniższych pozycji. Przekaż tę rolę innej osobie lub najpierw je usuń.'
   event: 'Wydarzenie'
   newsletter: 'Newsletter'
+  organization: 'Organizacja'
 
 action:
   delete: 'Usuń konto'
@@ -278,9 +300,10 @@ disclaimer:
 
 blockers:
   title: 'Váš účet zatím nelze smazat'
-  description: 'Jste jediným vedoucím nebo vlastníkem následujících položek. Předejte tuto roli jiné osobě nebo je nejprve smažte.'
+  description: 'Jste jediným vedoucím, vlastníkem nebo správcem následujících položek. Předejte tuto roli jiné osobě nebo je nejprve smažte.'
   event: 'Akce'
   newsletter: 'Newsletter'
+  organization: 'Organizace'
 
 action:
   delete: 'Smazat účet'

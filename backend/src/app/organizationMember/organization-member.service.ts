@@ -1,6 +1,7 @@
 import { BaseService } from '#core/base/BaseService';
 import { injectable } from 'inversify';
 import type { VerifiedAccount } from '#app/user/account.lifecycle';
+import type { PrismaTransaction } from '#app/audit/audit.service';
 import { permissionRegistry } from '#core/permission/permission.registry';
 import type {
   EventScopedPermission,
@@ -164,9 +165,9 @@ export class OrganizationMemberService extends BaseService {
   }
 
   /**
-   * Invites someone who has no account yet. Mirrors the event-manager flow: the
-   * membership row is created with a null `userId` and is bound to the person
-   * when they register with that address.
+   * Invites someone without a verified account. Mirrors the event-manager
+   * flow: the membership row is created with a null `userId` and is bound to
+   * the person once they verify that address.
    */
   async inviteMember(
     organizationId: string,
@@ -197,13 +198,27 @@ export class OrganizationMemberService extends BaseService {
     await this.prisma.organizationMember.delete({ where: { id } });
   }
 
-  async resolveMemberInvitations({ id: userId, email }: VerifiedAccount) {
-    await this.prisma.$transaction([
-      this.prisma.organizationMember.updateMany({
-        where: { invitation: { email } },
-        data: { userId },
-      }),
-      this.prisma.organizationInvitation.deleteMany({ where: { email } }),
-    ]);
+  async resolveMemberInvitations(
+    tx: PrismaTransaction,
+    { id: userId, email }: VerifiedAccount,
+  ) {
+    // An existing membership (under a previous address) stands; binding the
+    // invitation too would duplicate it.
+    const memberships = await tx.organizationMember.findMany({
+      where: { userId },
+      select: { organizationId: true },
+    });
+    await tx.organizationMember.deleteMany({
+      where: {
+        invitation: { email },
+        organizationId: { in: memberships.map((m) => m.organizationId) },
+      },
+    });
+
+    await tx.organizationMember.updateMany({
+      where: { invitation: { email } },
+      data: { userId },
+    });
+    await tx.organizationInvitation.deleteMany({ where: { email } });
   }
 }

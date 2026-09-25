@@ -18,8 +18,8 @@ export class OrganizationMemberModule implements AppModule {
   }
 
   configure(_options: ModuleOptions): void {
-    resolve(AccountLifecycle).onEmailVerified((account) =>
-      resolve(OrganizationMemberService).resolveMemberInvitations(account),
+    resolve(AccountLifecycle).onEmailVerified((tx, account) =>
+      resolve(OrganizationMemberService).resolveMemberInvitations(tx, account),
     );
   }
 

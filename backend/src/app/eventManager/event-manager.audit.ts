@@ -56,10 +56,9 @@ export function managerIdentity(
   });
 }
 
-/** `managerIdentity` plus the initial values the access was granted with. */
+/** The values the access was granted with; the policy adds the identity. */
 export function managerGrant(manager: AuditedManager): AuditDetails {
   return composeDetails({
-    ...managerIdentity(manager),
     values: changedValues(null, manager, FIELD_ALLOWLIST),
   });
 }

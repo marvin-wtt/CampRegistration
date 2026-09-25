@@ -67,6 +67,7 @@ export default {
       },
       reasons: {
         account_deleted: 'Account deleted',
+        duplicate_invitation: 'Already had access',
       },
       fields: {
         role: 'Role',

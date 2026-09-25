@@ -21,8 +21,8 @@ export class EventManagerModule implements AppModule {
 
   configure(_options: ModuleOptions): Promise<void> | void {
     resolve(MailableRegistry).register(EventManagerInvitationMessage);
-    resolve(AccountLifecycle).onEmailVerified((account) =>
-      resolve(EventManagerService).resolveManagerInvitations(account),
+    resolve(AccountLifecycle).onEmailVerified((tx, account) =>
+      resolve(EventManagerService).resolveManagerInvitations(tx, account),
     );
   }
 

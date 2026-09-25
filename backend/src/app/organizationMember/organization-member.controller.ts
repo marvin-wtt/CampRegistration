@@ -46,10 +46,10 @@ export class OrganizationMemberController extends BaseController {
 
     const user = await this.userService.getUserByEmail(email);
 
-    // Someone without an account yet is invited by email and bound to the
-    // membership when they register.
+    // Someone without a verified account is invited by email and bound to the
+    // membership once they verify it.
     const member =
-      user === null
+      !user?.emailVerified
         ? await this.memberService.inviteMember(organization.id, email, role)
         : await this.memberService.addMember(organization.id, user.id, role);
 

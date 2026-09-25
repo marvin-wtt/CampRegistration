@@ -67,6 +67,7 @@ export default {
       },
       reasons: {
         account_deleted: 'Konto usunięte',
+        duplicate_invitation: 'Dostęp już istniał',
       },
       fields: {
         role: 'Rola',

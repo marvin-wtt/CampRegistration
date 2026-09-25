@@ -60,9 +60,10 @@ export type ProfileUpdateData = Partial<Omit<Profile, 'role'>> & {
   currentPassword?: string;
 };
 
-// What the account is the last director or owner of; deletion is refused
-// until these are handed over or deleted.
+// What the account is the last director, owner or administrator of; deletion
+// is refused until these are handed over or deleted.
 export interface AccountDeletionBlockers {
   events: { id: string; name: Translatable }[];
   newsletters: { id: string; name: string }[];
+  organizations: { id: string; name: string }[];
 }
