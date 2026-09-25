@@ -32,6 +32,14 @@ export class ProfileController extends BaseController {
     res.resource(new ProfileResource(user));
   }
 
+  async deletionBlockers(req: Request, res: Response) {
+    const blockers = await this.userService.getDeletionBlockers(
+      req.authUserId(),
+    );
+
+    res.json({ data: blockers });
+  }
+
   async update(req: Request, res: Response) {
     const {
       body: { name, email, password, currentPassword, locale },

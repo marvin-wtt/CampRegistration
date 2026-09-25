@@ -6,8 +6,6 @@ import { type Request, type Response } from 'express';
 import type { AuthTokensResponse } from '#types/response';
 import type { AppConfig } from '#config';
 import ApiError from '#utils/ApiError';
-import { EventManagerService } from '#app/eventManager/event-manager.service.js';
-import { OrganizationMemberService } from '#app/organizationMember/organization-member.service.js';
 import authResource from './auth.resource.js';
 import validator from './auth.validation.js';
 import { TotpService } from '#app/totp/totp.service';
@@ -30,10 +28,6 @@ export class AuthController extends BaseController {
     @Config() private readonly config: AppConfig,
     @inject(AuthService) private readonly authService: AuthService,
     @inject(UserService) private readonly userService: UserService,
-    @inject(EventManagerService)
-    private readonly managerService: EventManagerService,
-    @inject(OrganizationMemberService)
-    private readonly organizationMemberService: OrganizationMemberService,
     @inject(TokenService) private readonly tokenService: TokenService,
     @inject(TotpService) private readonly totpService: TotpService,
   ) {
@@ -52,12 +46,6 @@ export class AuthController extends BaseController {
       password,
       locale,
     });
-
-    await this.managerService.resolveManagerInvitations(user.email, user.id);
-    await this.organizationMemberService.resolveMemberInvitations(
-      user.email,
-      user.id,
-    );
 
     const verifyEmailToken =
       await this.tokenService.generateVerifyEmailToken(user);

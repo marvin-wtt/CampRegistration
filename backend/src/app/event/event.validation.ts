@@ -89,6 +89,26 @@ const updateOrganization = z.object({
   }) satisfies ZodType<EventOrganizationUpdateData>,
 });
 
+// An opening date needs a later closing date, or registration never closes.
+function checkRegistrationWindow(
+  ctx: z.RefinementCtx,
+  opensAt: Date | null | undefined,
+  closesAt: Date | null | undefined,
+) {
+  if (!opensAt || (closesAt && opensAt < closesAt)) {
+    return;
+  }
+
+  ctx.addIssue({
+    code: 'custom',
+    message: closesAt
+      ? 'Closing date must be after opening date'
+      : 'Closing date is required once an opening date is set',
+    path: ['registrationClosesAt'],
+    input: closesAt,
+  });
+}
+
 const store = z.object({
   body: z
     .object({
@@ -175,6 +195,12 @@ const store = z.object({
           });
         }
       }
+
+      checkRegistrationWindow(
+        ctx,
+        val.registrationOpensAt,
+        val.registrationClosesAt,
+      );
     }),
 });
 
@@ -255,6 +281,23 @@ const update = (event: Event) =>
               input: val[keyMin],
             });
           }
+        }
+
+        // Skipped when neither date is sent, so an unrelated update isn't
+        // rejected over dates the event already had.
+        if (
+          val.registrationOpensAt !== undefined ||
+          val.registrationClosesAt !== undefined
+        ) {
+          checkRegistrationWindow(
+            ctx,
+            val.registrationOpensAt === undefined
+              ? event.registrationOpensAt
+              : val.registrationOpensAt,
+            val.registrationClosesAt === undefined
+              ? event.registrationClosesAt
+              : val.registrationClosesAt,
+          );
         }
       }),
   });

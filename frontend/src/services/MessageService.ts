@@ -16,8 +16,20 @@ export function useMessageService() {
   async function fetchMessage(
     eventId: string,
     messageId: string,
-  ): Promise<MessageDelivery> {
+  ): Promise<Message> {
     const response = await api.get(`events/${eventId}/messages/${messageId}/`);
+
+    return response?.data?.data;
+  }
+
+  // The emails a registration received — manual messages and automated ones.
+  async function fetchRegistrationMessages(
+    eventId: string,
+    registrationId: string,
+  ): Promise<MessageDelivery[]> {
+    const response = await api.get(
+      `events/${eventId}/registrations/${registrationId}/messages/`,
+    );
 
     return response?.data?.data;
   }
@@ -52,6 +64,7 @@ export function useMessageService() {
   return {
     fetchMessages,
     fetchMessage,
+    fetchRegistrationMessages,
     createMessage,
     deleteMessage,
     duplicateMessageAttachments,

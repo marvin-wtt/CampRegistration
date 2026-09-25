@@ -177,6 +177,9 @@ import RowActions, {
 import { computed, ref } from 'vue';
 import { useQuasar } from 'quasar';
 import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
+import RegistrationScheduleDialog, {
+  type RegistrationScheduleResult,
+} from '@/components/event/index/RegistrationScheduleDialog.vue';
 import MoveOrganizationDialog from '@/components/organization/MoveOrganizationDialog.vue';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { useRouter } from 'vue-router';
@@ -505,27 +508,19 @@ function onDeleteEvent(event: Event) {
 }
 
 function onActivateEvent(event: Event) {
+  // A closing date is required alongside the opening date, so let the admin
+  // pick one instead of opening registration indefinitely.
   quasar
     .dialog({
-      title: t('dialog.activate.title'),
-      message: t('dialog.activate.message', { name: to(event.name) }),
-      cancel: {
-        label: t('dialog.activate.cancel'),
-        color: 'primary',
-        rounded: true,
-        outline: true,
-      },
-      ok: {
-        label: t('dialog.activate.ok'),
-        color: 'primary',
-        rounded: true,
+      component: RegistrationScheduleDialog,
+      componentProps: {
+        name: to(event.name),
+        opensAt: new Date().toISOString(),
+        closesAt: event.registrationClosesAt,
       },
     })
-    .onOk(() => {
-      void updateEvent(event.id, {
-        registrationOpensAt: new Date().toISOString(),
-        registrationClosesAt: null,
-      });
+    .onOk((result: RegistrationScheduleResult) => {
+      void updateEvent(event.id, result);
     });
 }
 
@@ -547,8 +542,14 @@ function onDeactivateEvent(event: Event) {
       },
     })
     .onOk(() => {
+      const now = new Date();
+      const opensInFuture =
+        !!event.registrationOpensAt &&
+        new Date(event.registrationOpensAt) > now;
+      // Closing now would land before a future opening date, so drop it.
       void updateEvent(event.id, {
-        registrationClosesAt: new Date().toISOString(),
+        ...(opensInFuture && { registrationOpensAt: null }),
+        registrationClosesAt: now.toISOString(),
       });
     });
 }
@@ -643,11 +644,6 @@ column:
   start: 'Start'
 
 dialog:
-  activate:
-    title: 'Activate event'
-    message: 'Are you sure you want to open the registration for { name }?'
-    ok: 'Activate'
-    cancel: 'Cancel'
   deactivate:
     title: 'Deactivate event'
     message: 'Are you sure you want to close the registration for { name }?'
@@ -713,11 +709,6 @@ column:
   start: 'Start'
 
 dialog:
-  activate:
-    title: 'Veranstaltung aktivieren'
-    message: 'Bist du sicher, dass du die Anmeldung für { name } öffnen möchtest?'
-    ok: 'Aktivieren'
-    cancel: 'Abbrechen'
   deactivate:
     title: 'Veranstaltung deaktivieren'
     message: 'Bist du sicher, dass du die Anmeldung für { name } schließen möchtest?'
@@ -784,12 +775,6 @@ column:
   start: 'Début'
 
 dialog:
-  activate:
-    title: "Activer l'événement"
-
-    message: 'Es-tu sûr de vouloir ouvrir les inscriptions pour { name } ?'
-    ok: 'Activer'
-    cancel: 'Annuler'
   deactivate:
     title: "Désactiver l'événement"
 
@@ -860,11 +845,6 @@ column:
   start: 'Start'
 
 dialog:
-  activate:
-    title: 'Aktywuj wydarzenie'
-    message: 'Czy na pewno chcesz otworzyć rejestrację dla { name }?'
-    ok: 'Aktywuj'
-    cancel: 'Anuluj'
   deactivate:
     title: 'Dezaktywuj wydarzenie'
     message: 'Czy na pewno chcesz zamknąć rejestrację dla { name }?'
@@ -930,11 +910,6 @@ column:
   start: 'Start'
 
 dialog:
-  activate:
-    title: 'Aktivovat akci'
-    message: 'Opravdu chcete otevřít registraci pro { name }?'
-    ok: 'Aktivovat'
-    cancel: 'Zrušit'
   deactivate:
     title: 'Deaktivovat akci'
     message: 'Opravdu chcete uzavřít registraci pro { name }?'

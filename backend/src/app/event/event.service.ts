@@ -5,6 +5,8 @@ import type { OptionalByKeys } from '#types/utils';
 import { BaseService } from '#core/base/BaseService';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service.js';
+import { AuditService } from '#app/audit/audit.service';
+import { eventAuditPolicy } from '#app/event/event.audit';
 import {
   EVENT_LOGO_SLOT,
   EVENT_BANNER_SLOT,
@@ -43,6 +45,8 @@ type EventRegistrationStatusFilter = 'open' | 'upcoming' | 'closed';
 // large as the table itself. Below this length, skip the name filter
 // entirely rather than pay that cost for a query that isn't selective yet.
 const MIN_NAME_FILTER_LENGTH = 2;
+// The form editor autosaves; edits closer together than this form one entry.
+const AUDIT_COALESCE_MS = 5 * 60 * 1000;
 
 interface EventQueryArgs {
   listed?: boolean | undefined;
@@ -58,7 +62,10 @@ interface EventQueryArgs {
 
 @injectable()
 export class EventService extends BaseService {
-  constructor(@inject(FileService) private readonly fileService: FileService) {
+  constructor(
+    @inject(FileService) private readonly fileService: FileService,
+    @inject(AuditService) private readonly audit: AuditService,
+  ) {
     super();
   }
 
@@ -347,29 +354,35 @@ export class EventService extends BaseService {
           : undefined,
     }));
 
-    const event = await this.prisma.event.create({
-      data: {
-        ...data,
-        location: dbNullable(data.location),
-        form,
-        eventManager: {
-          create: {
-            userId,
-            role: 'DIRECTOR',
+    const event = await this.transaction(async (tx) => {
+      const created = await tx.event.create({
+        data: {
+          ...data,
+          location: dbNullable(data.location),
+          form,
+          eventManager: {
+            create: {
+              userId,
+              role: 'DIRECTOR',
+            },
+          },
+          tableTemplates: {
+            createMany: { data: this.stripIds(tableTemplates) },
+          },
+          messageTemplates: {
+            createMany: { data: this.stripIds(messageTemplateData) },
+          },
+          files: { createMany: { data: fileData } },
+          eventSettings: {
+            createMany: { data: this.stripIds(settings) },
           },
         },
-        tableTemplates: {
-          createMany: { data: this.stripIds(tableTemplates) },
-        },
-        messageTemplates: {
-          createMany: { data: this.stripIds(messageTemplateData) },
-        },
-        files: { createMany: { data: fileData } },
-        eventSettings: {
-          createMany: { data: this.stripIds(settings) },
-        },
-      },
-      include: { ...this.eventResourceInclude() },
+        include: { ...this.eventResourceInclude() },
+      });
+
+      await this.audit.created(eventAuditPolicy, created);
+
+      return created;
     });
 
     return withMediaFlags({
@@ -419,32 +432,59 @@ export class EventService extends BaseService {
   }
 
   async moveEventToOrganization(eventId: string, organizationId: string) {
-    const updatedEvent = await this.prisma.event.update({
-      where: { id: eventId },
-      data: {
-        organization: { connect: { id: organizationId } },
-      },
-      include: { ...this.eventResourceInclude() },
-    });
+    return this.transaction(async (tx) => {
+      const before = await tx.event.findUniqueOrThrow({
+        where: { id: eventId },
+      });
 
-    return withMediaFlags(enrichFreePlaces(updatedEvent));
+      const updatedEvent = await tx.event.update({
+        where: { id: eventId },
+        data: {
+          organization: { connect: { id: organizationId } },
+        },
+        include: { ...this.eventResourceInclude() },
+      });
+
+      await this.audit.updated(eventAuditPolicy, before, updatedEvent);
+
+      return withMediaFlags(enrichFreePlaces(updatedEvent));
+    });
   }
 
   async updateEvent(event: Event, data: EventUpdateData) {
-    const updatedEvent = await this.prisma.event.update({
-      where: { id: event.id },
-      data: {
-        ...data,
-        location: dbNullable(data.location),
-      },
-      include: { ...this.eventResourceInclude() },
-    });
+    return this.transaction(async (tx) => {
+      const before = await tx.event.findUniqueOrThrow({
+        where: { id: event.id },
+      });
 
-    return withMediaFlags(enrichFreePlaces(updatedEvent));
+      const updatedEvent = await tx.event.update({
+        where: { id: event.id },
+        data: {
+          ...data,
+          location: dbNullable(data.location),
+        },
+        include: { ...this.eventResourceInclude() },
+      });
+
+      await this.audit.updated(eventAuditPolicy, before, updatedEvent, {
+        coalesceWithinMs: AUDIT_COALESCE_MS,
+      });
+
+      return withMediaFlags(enrichFreePlaces(updatedEvent));
+    });
   }
 
   async deleteEventById(id: string) {
-    await this.prisma.event.delete({ where: { id } });
+    await this.transaction(async (tx) => {
+      // The FK nulls `eventId` on the event's audit rows; retention purges them later.
+      await tx.event.delete({ where: { id } });
+
+      await this.audit.record({
+        action: 'deleted',
+        entityType: eventAuditPolicy.entityType,
+        entityId: id,
+      });
+    });
   }
 }
 

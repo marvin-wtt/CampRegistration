@@ -11,6 +11,7 @@ import { EventManagerService } from '#app/eventManager/event-manager.service';
 import { MailableRegistry } from '#core/mail/mail.registry';
 import { EventManagerInvitationMessage } from '#app/eventManager/event-manager.messages';
 import { resolve } from '#core/ioc/container';
+import { AccountLifecycle } from '#app/user/account.lifecycle';
 
 export class EventManagerModule implements AppModule {
   bindContainers(options: BindOptions) {
@@ -20,6 +21,16 @@ export class EventManagerModule implements AppModule {
 
   configure(_options: ModuleOptions): Promise<void> | void {
     resolve(MailableRegistry).register(EventManagerInvitationMessage);
+    const lifecycle = resolve(AccountLifecycle);
+    lifecycle.onEmailVerified((account) =>
+      resolve(EventManagerService).resolveManagerInvitations(account),
+    );
+    lifecycle.onDeleting((account) =>
+      resolve(EventManagerService).auditAccountDeletion(account.id),
+    );
+    lifecycle.blockDeletion((userId) =>
+      resolve(EventManagerService).getSoleDirectorEvents(userId),
+    );
   }
 
   registerApiRoutes(router: AppRouter): void {

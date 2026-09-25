@@ -120,7 +120,7 @@ const items = computed<SettingsItem[]>(() => [
     label: t('emails.label'),
     description: t('emails.description'),
     icon: 'email',
-    color: 'accent',
+    color: 'secondary',
     to: { name: 'management.event.settings.emails' },
     permission: 'event.message_templates.view',
   },
@@ -129,7 +129,7 @@ const items = computed<SettingsItem[]>(() => [
     label: t('files.label'),
     description: t('files.description'),
     icon: 'folder',
-    color: 'accent',
+    color: 'secondary',
     to: { name: 'management.event.settings.files' },
     permission: 'event.files.view',
   },
@@ -147,9 +147,18 @@ const items = computed<SettingsItem[]>(() => [
     label: t('navigation.label'),
     description: t('navigation.description'),
     icon: 'visibility',
-    color: 'secondary',
+    color: 'primary',
     to: { name: 'management.event.settings.navigation' },
     permission: 'event.edit',
+  },
+  {
+    name: 'audit',
+    label: t('audit.label'),
+    description: t('audit.description'),
+    icon: 'history',
+    color: 'tertiary',
+    to: { name: 'management.event.settings.audit' },
+    permission: 'event.audit.view',
   },
 ]);
 
@@ -183,14 +192,17 @@ navigation:
   label: 'Navigation'
   description: "Choose which features appear in this event's navigation."
 emails:
-  label: 'Email templates'
-  description: 'Manage the email templates sent to participants.'
+  label: 'Automated emails'
+  description: 'Emails sent automatically to participants when their registration changes.'
 files:
   label: 'Files'
   description: 'Upload and manage files for this event.'
 privacy:
   label: 'Privacy'
   description: 'What this event adds to the privacy information of its organisation.'
+audit:
+  label: 'Audit Log'
+  description: 'Review the history of changes made to this event.'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -209,14 +221,17 @@ navigation:
   label: 'Navigation'
   description: 'Wähle aus, welche Funktionen in der Navigation dieser Veranstaltung angezeigt werden.'
 emails:
-  label: 'E-Mail-Vorlagen'
-  description: 'Verwalte die an Teilnehmende versendeten E-Mail-Vorlagen.'
+  label: 'Automatische E-Mails'
+  description: 'E-Mails, die Teilnehmenden bei Änderungen ihrer Anmeldung automatisch gesendet werden.'
 files:
   label: 'Dateien'
   description: 'Lade Dateien für diese Veranstaltung hoch und verwalte sie.'
 privacy:
   label: 'Datenschutz'
   description: 'Was diese Freizeit den Datenschutzinformationen ihrer Organisation hinzufügt.'
+audit:
+  label: 'Aktivitätsprotokoll'
+  description: 'Sieh dir den Änderungsverlauf dieser Veranstaltung an.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -235,14 +250,17 @@ navigation:
   label: 'Navigation'
   description: 'Choisissez les fonctionnalités affichées dans la navigation de cet événement.'
 emails:
-  label: "Modèles d'e-mails"
-  description: "Gérez les modèles d'e-mails envoyés aux participants."
+  label: 'E-mails automatiques'
+  description: 'E-mails envoyés automatiquement aux participants lorsque leur inscription change.'
 files:
   label: 'Fichiers'
   description: 'Téléchargez et gérez les fichiers de cet événement.'
 privacy:
   label: 'Confidentialité'
   description: 'Ce que ce séjour ajoute aux informations de son organisation.'
+audit:
+  label: 'Journal d’activité'
+  description: 'Consultez l’historique des modifications apportées à cet événement.'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -261,14 +279,17 @@ navigation:
   label: 'Nawigacja'
   description: 'Wybierz funkcje widoczne w nawigacji tego wydarzenia.'
 emails:
-  label: 'Szablony e-maili'
-  description: 'Zarządzaj szablonami e-maili wysyłanymi do uczestników.'
+  label: 'Automatyczne e-maile'
+  description: 'E-maile wysyłane automatycznie uczestnikom przy zmianie ich rejestracji.'
 files:
   label: 'Pliki'
   description: 'Przesyłaj pliki dla tego wydarzenia i zarządzaj nimi.'
 privacy:
   label: 'Prywatność'
   description: 'Co ten wydarzenie dodaje do informacji swojej organizacji.'
+audit:
+  label: 'Dziennik aktywności'
+  description: 'Przejrzyj historię zmian wprowadzonych w tym wydarzeniu.'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -287,12 +308,15 @@ navigation:
   label: 'Navigace'
   description: 'Vyberte, které funkce se zobrazí v navigaci této akce.'
 emails:
-  label: 'E-mailové šablony'
-  description: 'Spravujte e-mailové šablony zasílané účastníkům.'
+  label: 'Automatické e-maily'
+  description: 'E-maily automaticky odesílané účastníkům při změně jejich registrace.'
 files:
   label: 'Soubory'
   description: 'Nahrávejte a spravujte soubory pro tuto akci.'
 privacy:
   label: 'Soukromí'
   description: 'Co tato akce doplňuje k informacím své organizace.'
+audit:
+  label: 'Deník aktivit'
+  description: 'Prohlédněte si historii změn této akce.'
 </i18n>

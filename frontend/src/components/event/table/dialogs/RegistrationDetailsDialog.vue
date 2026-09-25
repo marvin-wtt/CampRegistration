@@ -216,33 +216,25 @@
 
           <!-- Right column: room + timeline -->
           <div class="col-12 col-sm-6 timeline-column">
-            <q-separator
-              class="lt-sm"
-              inset
-            />
-
-            <!-- Timeline -->
-            <q-list>
-              <q-item-label header>
-                {{ t('section.timeline') }}
-              </q-item-label>
-            </q-list>
-
-            <q-timeline
-              class="q-px-lg"
-              color="primary"
-            >
-              <q-timeline-entry
-                :subtitle="formattedCreatedAt"
-                :title="t('timeline.registered')"
-                color="positive"
-                icon="how_to_reg"
+            <template v-if="canViewTimeline">
+              <q-separator
+                class="lt-sm"
+                inset
               />
-            </q-timeline>
 
-            <p class="text-caption text-grey-6 text-center q-px-md q-pb-md">
-              {{ t('timeline.moreComingSoon') }}
-            </p>
+              <!-- Timeline -->
+              <q-list>
+                <q-item-label header>
+                  {{ t('section.timeline') }}
+                </q-item-label>
+              </q-list>
+
+              <registration-timeline
+                :event-id
+                :registration-id
+                :created-at="registration.createdAt"
+              />
+            </template>
           </div>
         </div>
       </q-scroll-area>
@@ -270,14 +262,17 @@
 import { useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { computed, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import { useObjectTranslation } from '@/composables/objectTranslation';
+import { usePermissions } from '@/composables/permissions';
 import { formatPersonName } from '@/utils/formatters';
 import { useRegistrationsStore } from '@/stores/registration-store';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import RegistrationDialogHeader from '@/components/event/table/dialogs/RegistrationDialogHeader.vue';
 import RegistrationFormViewDialog from '@/components/event/table/dialogs/RegistrationFormViewDialog.vue';
+import RegistrationTimeline from '@/components/event/table/dialogs/RegistrationTimeline.vue';
 
 defineEmits([...useDialogPluginComponent.emits]);
 
@@ -286,6 +281,7 @@ const quasar = useQuasar();
 const { t, te, locale } = useI18n();
 const { to } = useObjectTranslation();
 const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent();
+const route = useRoute();
 
 const { registrationId } = defineProps<{
   registrationId: string;
@@ -293,6 +289,14 @@ const { registrationId } = defineProps<{
 
 const { data: registrations } = storeToRefs(useRegistrationsStore());
 const { data: event } = storeToRefs(useEventDetailsStore());
+const eventId = String(route.params.eventId);
+const { can } = usePermissions();
+
+// Hide the whole section rather than an empty one when neither source is
+// visible to the viewer; RegistrationTimeline itself notes a partial view.
+const canViewTimeline = computed(
+  () => can('event.audit.view') || can('event.messages.view'),
+);
 
 // Reactive lookup instead of a static snapshot, so edits made elsewhere
 // (e.g. the table's inline cell editors) are reflected while the dialog is open.
@@ -368,21 +372,6 @@ const formattedDateOfBirth = computed<string>(() => {
   });
 });
 
-const formattedCreatedAt = computed<string>(() => {
-  const createdAt = registration.value?.createdAt;
-  if (!createdAt) {
-    return '';
-  }
-  const date = new Date(createdAt);
-  return date.toLocaleString(locale.value, {
-    year: 'numeric',
-    month: '2-digit',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-});
-
 const street = computed<string | null>(
   () => registration.value?.computedData.address.street ?? null,
 );
@@ -430,11 +419,6 @@ section:
   registration: 'Registration'
   timeline: 'Timeline'
 
-status:
-  pending: 'Pending'
-  waitlisted: 'Waitlisted'
-  accepted: 'Accepted'
-
 field:
   name: 'Name'
   dateOfBirth: 'Date of Birth'
@@ -452,10 +436,6 @@ role:
   participant: 'Participant'
   counselor: 'Counselor'
 
-timeline:
-  registered: 'Registered'
-  moreComingSoon: 'More timeline events will be available in a future update.'
-
 action:
   close: 'Close'
   showFormData: 'Show form data'
@@ -468,11 +448,6 @@ section:
   address: 'Adresse'
   registration: 'Anmeldung'
   timeline: 'Verlauf'
-
-status:
-  pending: 'Ausstehend'
-  waitlisted: 'Warteliste'
-  accepted: 'Akzeptiert'
 
 field:
   name: 'Name'
@@ -491,10 +466,6 @@ role:
   participant: 'Teilnehmer'
   counselor: 'Betreuer'
 
-timeline:
-  registered: 'Angemeldet'
-  moreComingSoon: 'Weitere Zeitstrahl-Einträge werden in einem zukünftigen Update verfügbar sein.'
-
 action:
   close: 'Schließen'
   showFormData: 'Formulardaten anzeigen'
@@ -507,11 +478,6 @@ section:
   address: 'Adresse'
   registration: 'Inscription'
   timeline: 'Historique'
-
-status:
-  pending: 'En attente'
-  waitlisted: "Liste d'attente"
-  accepted: 'Accepté'
 
 field:
   name: 'Nom'
@@ -530,10 +496,6 @@ role:
   participant: 'Participant'
   counselor: 'Conseiller'
 
-timeline:
-  registered: 'Inscrit'
-  moreComingSoon: "D'autres événements seront disponibles dans une future mise à jour."
-
 action:
   close: 'Fermer'
   showFormData: 'Afficher les données du formulaire'
@@ -546,11 +508,6 @@ section:
   address: 'Adres'
   registration: 'Rejestracja'
   timeline: 'Historia'
-
-status:
-  pending: 'Oczekuje'
-  waitlisted: 'Lista oczekujących'
-  accepted: 'Zaakceptowano'
 
 field:
   name: 'Imię i nazwisko'
@@ -569,10 +526,6 @@ role:
   participant: 'Uczestnik'
   counselor: 'Opiekun'
 
-timeline:
-  registered: 'Zarejestrowano'
-  moreComingSoon: 'Więcej wpisów będzie dostępnych w przyszłej aktualizacji.'
-
 action:
   close: 'Zamknij'
   showFormData: 'Pokaż dane formularza'
@@ -585,11 +538,6 @@ section:
   address: 'Adresa'
   registration: 'Registrace'
   timeline: 'Časová osa'
-
-status:
-  pending: 'Čeká na schválení'
-  waitlisted: 'Na čekací listině'
-  accepted: 'Přijato'
 
 field:
   name: 'Jméno'
@@ -607,10 +555,6 @@ gender:
 role:
   participant: 'Účastník'
   counselor: 'Pečovatel'
-
-timeline:
-  registered: 'Zaregistrováno'
-  moreComingSoon: 'Další záznamy budou dostupné v budoucí aktualizaci.'
 
 action:
   close: 'Zavřít'

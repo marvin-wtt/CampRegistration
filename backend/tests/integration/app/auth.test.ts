@@ -61,13 +61,11 @@ describe('/api/v1/auth', async () => {
       });
     });
 
-    it('should make the user event manager if the user has pending invitations', async () => {
-      await EventManagerFactory.create({
+    it('should keep invitations pending until the email is verified', async () => {
+      const pending = await EventManagerFactory.create({
         event: { create: EventFactory.build() },
         invitation: {
-          create: InvitationFactory.build({
-            email: 'test@email.net',
-          }),
+          create: InvitationFactory.build({ email: 'test@email.net' }),
         },
       });
 
@@ -80,19 +78,11 @@ describe('/api/v1/auth', async () => {
         })
         .expect(201);
 
-      const manager = await prisma.eventManager.findFirst({
-        where: {
-          user: {
-            email: 'test@email.net',
-          },
-        },
-        include: {
-          invitation: true,
-        },
+      const manager = await prisma.eventManager.findUniqueOrThrow({
+        where: { id: pending.id },
       });
-
-      expect(manager).toBeDefined();
-      expect(manager?.invitation).toBeNull();
+      expect(manager.userId).toBeNull();
+      expect(manager.invitationId).not.toBeNull();
     });
 
     it('should set the role to "USER"', async () => {
@@ -1429,6 +1419,39 @@ describe('/api/v1/auth', async () => {
   });
 
   describe('POST /api/v1/auth/verify-email', () => {
+    const verifyEmail = async (user: User) => {
+      const token = generateVerifyEmailToken(user);
+      await TokenFactory.create({
+        user: { connect: { id: user.id } },
+        type: TokenType.VERIFY_EMAIL,
+        token,
+      });
+
+      await request().post('/api/v1/auth/verify-email/').send({ token });
+    };
+
+    it('should make the user event manager if the user has pending invitations', async () => {
+      const pending = await EventManagerFactory.create({
+        event: { create: EventFactory.build() },
+        invitation: {
+          create: InvitationFactory.build({ email: 'test@email.net' }),
+        },
+      });
+      const user = await UserFactory.create({
+        email: 'test@email.net',
+        emailVerified: false,
+      });
+
+      await verifyEmail(user);
+
+      const manager = await prisma.eventManager.findUniqueOrThrow({
+        where: { id: pending.id },
+      });
+      expect(manager.userId).toBe(user.id);
+      expect(manager.invitationId).toBeNull();
+      await expect(prisma.eventInvitation.count()).resolves.toBe(0);
+    });
+
     it('should respond with `204` status code when provided with valid token', async () => {
       const user = await UserFactory.create();
       const token = generateVerifyEmailToken(user);

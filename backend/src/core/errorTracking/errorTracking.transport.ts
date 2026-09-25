@@ -1,9 +1,13 @@
 import Transport from 'winston-transport';
 import { SPLAT } from 'triple-beam';
 import { errorTrackingRegistry } from '#core/errorTracking/errorTracking.registry';
+import type { JobContext } from '#core/context/jobContext';
 
 interface LogInfo {
   [SPLAT]?: unknown[];
+  // Stamped by the logger's job context format; the async-local job context
+  // itself may already be gone by the time a transport runs.
+  job?: JobContext;
 }
 
 // Winston only keeps the logged value's own `instanceof Error` when it was
@@ -28,7 +32,7 @@ export class ErrorTrackingTransport extends Transport {
 
     const error = extractError(info);
     if (error) {
-      errorTrackingRegistry.captureException(error);
+      errorTrackingRegistry.captureException(error, { job: info.job });
     }
 
     callback();

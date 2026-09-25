@@ -5,6 +5,8 @@ import { registerFileGuard } from '#app/file/file.guard';
 import { messageFileGuard } from '#app/message/message.guard';
 import { MessageService } from '#app/message/message.service';
 import { MessageController } from '#app/message/message.controller';
+import { resolve } from '#core/ioc/container';
+import { registerAuditNameResolver } from '#app/audit/audit.names';
 
 export class MessageModule implements AppModule {
   bindContainers(options: BindOptions) {
@@ -16,6 +18,9 @@ export class MessageModule implements AppModule {
     registerFileGuard('message', {
       view: messageFileGuard,
     });
+    registerAuditNameResolver('message', (eventId, ids) =>
+      resolve(MessageService).getSubjectsByIds(eventId, ids),
+    );
 
     router.useRouter('/events/:eventId/messages', new MessageRouter());
   }

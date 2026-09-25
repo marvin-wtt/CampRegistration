@@ -1,5 +1,7 @@
 import { BaseService } from '#core/base/BaseService';
 import { injectable } from 'inversify';
+import type { VerifiedAccount } from '#app/user/account.lifecycle';
+import type { AccountDeletionBlocker } from '@camp-registration/common/entities';
 import { permissionRegistry } from '#core/permission/permission.registry';
 import type {
   EventScopedPermission,
@@ -163,9 +165,9 @@ export class OrganizationMemberService extends BaseService {
   }
 
   /**
-   * Invites someone who has no account yet. Mirrors the event-manager flow: the
-   * membership row is created with a null `userId` and is bound to the person
-   * when they register with that address.
+   * Invites someone without a verified account. Mirrors the event-manager
+   * flow: the membership row is created with a null `userId` and is bound to
+   * the person once they verify that address.
    */
   async inviteMember(
     organizationId: string,
@@ -196,16 +198,59 @@ export class OrganizationMemberService extends BaseService {
     await this.prisma.organizationMember.delete({ where: { id } });
   }
 
-  /**
-   * Binds pending invitations to a freshly registered account. Called from
-   * registration alongside the event-manager equivalent.
-   */
-  async resolveMemberInvitations(email: string, userId: string) {
-    await this.prisma.organizationMember.updateMany({
-      where: { invitation: { email } },
-      data: { userId },
-    });
+  async resolveMemberInvitations({ id: userId, email }: VerifiedAccount) {
+    await this.transaction(async (tx) => {
+      // Selected first: MySQL rejects an UPDATE whose filter subqueries the
+      // same table (error 1093), which the `organization` relation filter
+      // would do. Only the oldest invitation per organization is claimed, to
+      // respect the (organizationId, userId) unique constraint.
+      const claimable = await tx.organizationMember.groupBy({
+        by: ['organizationId'],
+        where: {
+          userId: null,
+          invitation: { email },
+          organization: { members: { none: { userId } } },
+        },
+        _min: { id: true },
+      });
 
-    await this.prisma.organizationInvitation.deleteMany({ where: { email } });
+      if (claimable.length > 0) {
+        const ids = claimable.flatMap((m) => m._min.id ?? []);
+        await tx.organizationMember.updateMany({
+          where: { id: { in: ids } },
+          data: { userId },
+        });
+      }
+
+      // Invitations losing to an existing membership or a claimed sibling
+      // only arise via a rare concurrent-request race (see
+      // organization-member.controller#store); they are discarded rather
+      // than reconciled.
+      await tx.organizationMember.deleteMany({
+        where: { userId: null, invitation: { email } },
+      });
+
+      await tx.organizationInvitation.deleteMany({ where: { email } });
+    });
+  }
+
+  // Organizations the user is the last administrator of; a pending
+  // invitation does not count.
+  async getSoleAdminOrganizations(
+    userId: string,
+  ): Promise<AccountDeletionBlocker[]> {
+    const organizations = await this.db.organization.findMany({
+      select: { id: true, name: true },
+      where: {
+        members: { some: { userId, role: 'ADMIN' } },
+        NOT: {
+          members: { some: { role: 'ADMIN', userId: { not: userId } } },
+        },
+      },
+    });
+    return organizations.map((organization) => ({
+      type: 'organization',
+      ...organization,
+    }));
   }
 }

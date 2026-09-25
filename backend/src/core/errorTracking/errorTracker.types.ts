@@ -1,7 +1,16 @@
+import type { JobContext } from '#core/context/jobContext';
+
+export interface ErrorContext {
+  job?: JobContext;
+}
+
 export interface ErrorTracker {
   name(): string;
 
-  captureException(error: unknown): Promise<void> | void;
+  captureException(
+    error: unknown,
+    context?: ErrorContext,
+  ): Promise<void> | void;
 
   /**
    * Best-effort reachability/config check run once at boot. Omit on a

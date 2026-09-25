@@ -84,6 +84,7 @@ export class MessageController extends BaseController {
         priority,
         replyTo,
         attachmentIds,
+        recipientCount: registrations.length,
       },
       req.sessionId,
     );

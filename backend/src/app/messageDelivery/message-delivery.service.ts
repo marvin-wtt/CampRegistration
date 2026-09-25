@@ -77,6 +77,19 @@ export class MessageDeliveryService extends BaseService {
     }
   }
 
+  /** Every email rendered for a registration, newest first, with its source. */
+  async getDeliveriesForRegistration(registrationId: string) {
+    return this.prisma.messageDelivery.findMany({
+      where: { registrationId },
+      include: {
+        attachments: true,
+        template: { select: { trigger: true } },
+        message: { select: { sentBy: { select: { id: true, name: true } } } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   async getDeliveryWithEventById(id: string) {
     return this.prisma.messageDelivery.findUnique({
       where: { id },

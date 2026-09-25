@@ -2380,6 +2380,40 @@ describe('/api/v1/events/:eventId/registrations', () => {
       },
     );
 
+    it('should record the delete reason on the audit entry', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const registration = await createRegistration(event);
+
+      await request()
+        .delete(
+          `/api/v1/events/${event.id}/registrations/${registration.id}?reason=duplicate`,
+        )
+        .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expect(204);
+
+      const entry = await prisma.auditLog.findFirst({
+        where: { entityId: registration.id, action: 'deleted' },
+      });
+      expect(entry?.details).toEqual({
+        reason: 'duplicate',
+        context: { status: registration.status },
+      });
+    });
+
+    it('should respond with `400` status code when the reason is unknown', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const registration = await createRegistration(event);
+
+      await request()
+        .delete(
+          `/api/v1/events/${event.id}/registrations/${registration.id}?reason=because`,
+        )
+        .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expect(400);
+    });
+
     it('should delete the mails rendered for the registration', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
       const registration = await createRegistration(event);

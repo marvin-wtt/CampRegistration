@@ -5,6 +5,11 @@ export const authLimiter = createRateLimiter('Auth', {
   skipSuccessfulRequests: true,
 });
 
+// Refresh tokens are unguessable, so this only caps abuse
+export const refreshLimiter = createRateLimiter('Refresh', {
+  limit: 120,
+});
+
 export const generalLimiter = createRateLimiter('General', {
   limit: 250,
 });
@@ -15,6 +20,7 @@ export const staticLimiter = createRateLimiter('Static', {
 
 export default {
   authLimiter,
+  refreshLimiter,
   generalLimiter,
   staticLimiter,
 };

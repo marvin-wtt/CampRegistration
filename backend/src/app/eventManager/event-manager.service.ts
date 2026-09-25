@@ -2,9 +2,16 @@ import { BaseService } from '#core/base/BaseService';
 import { permissionRegistry } from '#core/permission/permission.registry';
 import type { Prisma } from '#generated/prisma/client.js';
 import type { EventScopedPermission } from '@camp-registration/common/permissions';
+import type { AccountDeletionBlocker } from '@camp-registration/common/entities';
 import { RESOURCE_VIEW_PERMISSION } from '@camp-registration/common/realtime';
 import { inject, injectable } from 'inversify';
 import { OrganizationMemberService } from '#app/organizationMember/organization-member.service';
+import { AuditService } from '#app/audit/audit.service';
+import type { VerifiedAccount } from '#app/user/account.lifecycle';
+import {
+  eventManagerAuditPolicy,
+  managerGrant,
+} from '#app/eventManager/event-manager.audit';
 
 type ManagerCreateData = Pick<
   Prisma.EventManagerCreateInput,
@@ -28,6 +35,7 @@ export class EventManagerService extends BaseService {
   constructor(
     @inject(OrganizationMemberService)
     private readonly organizationMembers: OrganizationMemberService,
+    @inject(AuditService) private readonly audit: AuditService,
   ) {
     super();
   }
@@ -172,78 +180,173 @@ export class EventManagerService extends BaseService {
       .then((value) => value !== null);
   }
 
-  async resolveManagerInvitations(email: string, userId: string) {
-    await this.prisma.eventManager.updateMany({
+  async resolveManagerInvitations({ id: userId, email }: VerifiedAccount) {
+    await this.transaction(async (tx) => {
+      // Selected first: MySQL rejects an UPDATE whose filter subqueries the
+      // same table (error 1093), which the `event` relation filter would do.
+      // Only the oldest invitation per event is claimed, to respect the
+      // (eventId, userId) unique constraint.
+      const claimable = await tx.eventManager.groupBy({
+        by: ['eventId'],
+        where: {
+          userId: null,
+          invitation: { email },
+          event: { eventManager: { none: { userId } } },
+        },
+        _min: { id: true },
+      });
+
+      // Point the pending invitations to this email at the new user.
+      if (claimable.length > 0) {
+        const ids = claimable.flatMap((m) => m._min.id ?? []);
+        await tx.eventManager.updateMany({
+          where: { id: { in: ids } },
+          data: { userId },
+        });
+      }
+
+      // Remove any pending invitations to this email that are now redundant.
+      await tx.eventManager.deleteMany({
+        where: {
+          userId: null,
+          invitation: { email },
+        },
+      });
+
+      // Delete all claimed invalidations
+      await tx.eventInvitation.deleteMany({ where: { email } });
+    });
+  }
+
+  // Events the user is the last non-expiring director of; a pending
+  // invitation counts as another director.
+  async getSoleDirectorEvents(
+    userId: string,
+  ): Promise<AccountDeletionBlocker[]> {
+    const events = await this.db.event.findMany({
+      select: { id: true, name: true },
       where: {
-        invitation: {
-          email,
+        eventManager: { some: { userId, role: 'DIRECTOR', expiresAt: null } },
+        NOT: {
+          eventManager: {
+            some: {
+              role: 'DIRECTOR',
+              expiresAt: null,
+              OR: [{ userId: null }, { userId: { not: userId } }],
+            },
+          },
         },
       },
-      data: {
-        userId,
-      },
     });
+    return events.map((event) => ({ type: 'event', ...event }));
+  }
 
-    await this.prisma.invitation.deleteMany({
-      where: {
-        email,
-      },
+  // Deleting an account cascades past `removeManager`, so record it here.
+  async auditAccountDeletion(userId: string) {
+    await this.transaction(async (tx) => {
+      const managers = await tx.eventManager.findMany({ where: { userId } });
+      for (const manager of managers) {
+        await this.audit.deleted(eventManagerAuditPolicy, manager, {
+          details: { reason: 'account_deleted' },
+        });
+      }
     });
   }
 
   async addManager(eventId: string, userId: string, data: ManagerCreateData) {
-    return this.prisma.eventManager.create({
-      data: {
-        eventId,
-        userId,
-        role: data.role,
-        expiresAt: data.expiresAt,
-      },
-      include: {
-        user: true,
-        invitation: true,
-      },
+    return this.transaction(async (tx) => {
+      const manager = await tx.eventManager.create({
+        data: {
+          eventId,
+          userId,
+          role: data.role,
+          expiresAt: data.expiresAt,
+        },
+        include: {
+          user: true,
+          invitation: true,
+        },
+      });
+
+      await this.audit.created(eventManagerAuditPolicy, manager, {
+        details: managerGrant(manager),
+      });
+
+      return manager;
     });
   }
 
   async inviteManager(eventId: string, email: string, data: ManagerCreateData) {
-    return this.prisma.eventManager.create({
-      data: {
-        event: { connect: { id: eventId } },
-        role: data.role,
-        expiresAt: data.expiresAt,
-        invitation: {
-          create: {
-            email,
+    return this.transaction(async (tx) => {
+      const manager = await tx.eventManager.create({
+        data: {
+          event: { connect: { id: eventId } },
+          role: data.role,
+          expiresAt: data.expiresAt,
+          invitation: {
+            create: {
+              email,
+            },
           },
         },
-      },
-      include: {
-        invitation: true,
-        user: true,
-      },
+        include: {
+          invitation: true,
+          user: true,
+        },
+      });
+
+      await this.audit.created(eventManagerAuditPolicy, manager, {
+        details: managerGrant(manager),
+      });
+
+      return manager;
     });
   }
 
   async updateManagerById(id: string, data: ManagerUpdateData) {
-    return this.prisma.eventManager.update({
-      where: {
-        id,
-      },
-      data: {
-        role: data.role,
-        expiresAt: data.expiresAt,
-      },
-      include: {
-        invitation: true,
-        user: true,
-      },
+    return this.transaction(async (tx) => {
+      const before = await tx.eventManager.findUniqueOrThrow({
+        where: { id },
+        include: { invitation: true },
+      });
+
+      const after = await tx.eventManager.update({
+        where: {
+          id,
+        },
+        data: {
+          role: data.role,
+          expiresAt: data.expiresAt,
+        },
+        include: {
+          invitation: true,
+          user: true,
+        },
+      });
+
+      await this.audit.updated(eventManagerAuditPolicy, before, after);
+
+      return after;
     });
   }
 
   async removeManager(id: string) {
-    return this.prisma.eventManager.delete({
-      where: { id },
+    return this.transaction(async (tx) => {
+      const deleted = await tx.eventManager.delete({
+        where: { id },
+        include: { invitation: true },
+      });
+
+      // A revoked invitation would otherwise keep the invitee's email forever.
+      if (deleted.invitationId) {
+        await tx.eventInvitation.deleteMany({
+          where: { id: deleted.invitationId, eventManager: { none: {} } },
+        });
+      }
+
+      await this.audit.deleted(eventManagerAuditPolicy, deleted);
+
+      return deleted;
     });
   }
 }

@@ -1,12 +1,30 @@
 import { BaseService } from '#core/base/BaseService';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service.js';
+import { AuditService } from '#app/audit/audit.service';
+import { messageAuditSubject } from '#app/message/message.audit';
 import { sanitizeHtmlContent } from '#utils/sanitize';
 import type { MessageWithFiles } from '#app/message/message.resource';
 
+const MESSAGE_INCLUDE = {
+  attachments: true,
+  sentBy: { select: { id: true, name: true } },
+  deliveries: {
+    select: {
+      registrationId: true,
+      to: true,
+      bouncedAt: true,
+      bounceReason: true,
+    },
+  },
+} as const;
+
 @injectable()
 export class MessageService extends BaseService {
-  constructor(@inject(FileService) private readonly fileService: FileService) {
+  constructor(
+    @inject(FileService) private readonly fileService: FileService,
+    @inject(AuditService) private readonly audit: AuditService,
+  ) {
     super();
   }
 
@@ -14,31 +32,20 @@ export class MessageService extends BaseService {
     return this.prisma.message.findMany({
       where: { eventId },
       orderBy: { createdAt: 'desc' },
-      include: {
-        attachments: true,
-        sentBy: { select: { id: true, name: true } },
-        deliveries: {
-          select: {
-            registrationId: true,
-            to: true,
-            bouncedAt: true,
-            bounceReason: true,
-          },
-        },
-      },
+      include: MESSAGE_INCLUDE,
     });
   }
 
-  async getMessageById(eventId: string, id: string) {
+  async getMessageById(
+    eventId: string,
+    id: string,
+  ): Promise<MessageWithFiles | null> {
     return this.prisma.message.findFirst({
       where: {
         id,
         eventId,
       },
-      include: {
-        attachments: true,
-        sentBy: { select: { id: true, name: true } },
-      },
+      include: MESSAGE_INCLUDE,
     });
   }
 
@@ -62,37 +69,64 @@ export class MessageService extends BaseService {
       priority?: string | undefined;
       replyTo?: string | undefined;
       attachmentIds?: string[] | undefined;
+      recipientCount: number;
     },
     fileFieldId: string,
   ) {
-    return this.prisma.message.create({
-      data: {
-        subject: data.subject,
-        body: sanitizeHtmlContent(data.body),
-        priority: data.priority,
-        replyTo: data.replyTo,
-        eventId,
-        sentByUserId: userId,
-        attachments: data.attachmentIds
-          ? this.fileService.getFileConnectInput(
-              data.attachmentIds,
-              fileFieldId,
-            )
-          : undefined,
-      },
-      include: {
-        attachments: true,
-        sentBy: { select: { id: true, name: true } },
-      },
+    return this.transaction(async (tx) => {
+      const message = await tx.message.create({
+        data: {
+          subject: data.subject,
+          body: sanitizeHtmlContent(data.body),
+          priority: data.priority,
+          replyTo: data.replyTo,
+          eventId,
+          sentByUserId: userId,
+          attachments: data.attachmentIds
+            ? this.fileService.getFileConnectInput(
+                data.attachmentIds,
+                fileFieldId,
+              )
+            : undefined,
+        },
+        include: {
+          attachments: true,
+          sentBy: { select: { id: true, name: true } },
+        },
+      });
+
+      await this.audit.recordFor(messageAuditSubject, 'sent', message, {
+        details: { values: { recipients: data.recipientCount } },
+      });
+
+      return message;
     });
   }
 
+  async getSubjectsByIds(
+    eventId: string,
+    ids: string[],
+  ): Promise<Map<string, string>> {
+    const messages = await this.prisma.message.findMany({
+      where: { eventId, id: { in: ids } },
+      select: { id: true, subject: true },
+    });
+
+    return new Map(messages.map(({ id, subject }) => [id, subject]));
+  }
+
   async deleteMessageById(id: string, eventId: string) {
-    return this.prisma.message.delete({
-      where: {
-        id,
-        eventId,
-      },
+    return this.transaction(async (tx) => {
+      const deleted = await tx.message.delete({
+        where: {
+          id,
+          eventId,
+        },
+      });
+
+      await this.audit.deleted(messageAuditSubject, deleted);
+
+      return deleted;
     });
   }
 }

@@ -5,10 +5,12 @@ vi.mock('#middlewares/rateLimiter.middleware', () => {
 
   return {
     authLimiter: passThrough,
+    refreshLimiter: passThrough,
     generalLimiter: passThrough,
     staticLimiter: passThrough,
     default: {
       authLimiter: passThrough,
+      refreshLimiter: passThrough,
       generalLimiter: passThrough,
       staticLimiter: passThrough,
     },
