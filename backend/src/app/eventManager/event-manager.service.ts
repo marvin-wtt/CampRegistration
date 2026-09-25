@@ -2,10 +2,7 @@ import { BaseService } from '#core/base/BaseService';
 import { permissionRegistry } from '#core/permission/permission.registry';
 import type { Prisma } from '#generated/prisma/client.js';
 import type { EventScopedPermission } from '@camp-registration/common/permissions';
-import type {
-  AccountDeletionBlocker,
-  EventManagerRole,
-} from '@camp-registration/common/entities';
+import type { AccountDeletionBlocker } from '@camp-registration/common/entities';
 import { RESOURCE_VIEW_PERMISSION } from '@camp-registration/common/realtime';
 import { inject, injectable } from 'inversify';
 import { OrganizationMemberService } from '#app/organizationMember/organization-member.service';
@@ -31,26 +28,6 @@ export interface ManagerAuthorization {
   permissions: Set<EventScopedPermission>;
   expiresAt: Date | null;
   revalidate?: boolean;
-}
-
-// Weakest first.
-const MANAGER_ROLES: string[] = [
-  'VIEWER',
-  'COUNSELOR',
-  'COORDINATOR',
-  'DIRECTOR',
-] satisfies EventManagerRole[];
-
-function strongerRole(a: string, b: string) {
-  return MANAGER_ROLES.indexOf(b) > MANAGER_ROLES.indexOf(a) ? b : a;
-}
-
-/** `null` never expires. */
-function laterExpiry(a: Date | null, b: Date | null) {
-  if (a === null || b === null) {
-    return null;
-  }
-  return b > a ? b : a;
 }
 
 @injectable()
@@ -205,60 +182,33 @@ export class EventManagerService extends BaseService {
 
   async resolveManagerInvitations({ id: userId, email }: VerifiedAccount) {
     await this.transaction(async (tx) => {
-      const pending = await tx.eventManager.findMany({
-        where: { invitation: { email } },
-        include: { invitation: true },
+      // Update any pending invitations to this email to point to the new user.
+      await tx.eventManager.updateMany({
+        where: {
+          userId: null,
+          invitation: {
+            email,
+          },
+          event: {
+            eventManager: {
+              none: { userId },
+            },
+          },
+        },
+        data: {
+          userId,
+        },
       });
-      const managed = await tx.eventManager.findMany({
-        where: { userId, eventId: { in: pending.map((m) => m.eventId) } },
-        include: { invitation: true },
+
+      // Remove any pending invitations to this email that are now redundant.
+      await tx.eventManager.deleteMany({
+        where: {
+          userId: null,
+          invitation: { email },
+        },
       });
-      const managedByEvent = new Map(managed.map((m) => [m.eventId, m]));
 
-      for (const manager of pending) {
-        // An existing access (under a previous address) absorbs the invitation,
-        // keeping the stronger of both grants.
-        const existing = managedByEvent.get(manager.eventId);
-        if (existing) {
-          const role = strongerRole(existing.role, manager.role);
-          const expiresAt = laterExpiry(existing.expiresAt, manager.expiresAt);
-          if (role !== existing.role || expiresAt !== existing.expiresAt) {
-            const merged = await tx.eventManager.update({
-              where: { id: existing.id },
-              data: { role, expiresAt },
-              include: { invitation: true },
-            });
-            await this.audit.updated(
-              eventManagerAuditPolicy,
-              existing,
-              merged,
-              {
-                actorId: null,
-              },
-            );
-          }
-
-          await tx.eventManager.delete({ where: { id: manager.id } });
-          await this.audit.deleted(eventManagerAuditPolicy, manager, {
-            details: { reason: 'duplicate_invitation' },
-            actorId: null,
-          });
-          continue;
-        }
-
-        await tx.eventManager.update({
-          where: { id: manager.id },
-          data: { userId },
-        });
-        // Links the invitation's earlier (masked) entries to the account.
-        await this.audit.recordFor(
-          eventManagerAuditPolicy,
-          'accepted',
-          { ...manager, userId },
-          { actorId: userId },
-        );
-      }
-
+      // Delete all claimed invalidations
       await tx.invitation.deleteMany({ where: { email } });
     });
   }

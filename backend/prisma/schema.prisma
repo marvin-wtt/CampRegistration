@@ -215,6 +215,7 @@ model EventManager {
   invitation    Invitation? @relation(fields: [invitationId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "event_managers_invitation_id_foreign")
   assignedTasks Task[]
 
+  @@unique([eventId, userId], map: "event_managers_event_id_user_id_unique")
   @@index([eventId], map: "event_managers_event_id_foreign")
   @@index([userId], map: "event_managers_user_id_foreign")
   @@index([invitationId], map: "event_manager_invitation_id_foreign")

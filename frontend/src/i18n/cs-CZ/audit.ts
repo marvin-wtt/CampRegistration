@@ -62,12 +62,8 @@ export default {
     },
     eventManager: {
       label: 'Přístup',
-      actions: {
-        accepted: 'Přijato',
-      },
       reasons: {
         account_deleted: 'Účet smazán',
-        duplicate_invitation: 'Přístup již existoval',
       },
       fields: {
         role: 'Role',

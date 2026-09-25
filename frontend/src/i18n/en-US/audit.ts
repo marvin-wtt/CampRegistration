@@ -62,12 +62,8 @@ export default {
     },
     eventManager: {
       label: 'Access',
-      actions: {
-        accepted: 'Accepted',
-      },
       reasons: {
         account_deleted: 'Account deleted',
-        duplicate_invitation: 'Already had access',
       },
       fields: {
         role: 'Role',

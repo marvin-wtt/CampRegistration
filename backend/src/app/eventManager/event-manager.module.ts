@@ -22,15 +22,14 @@ export class EventManagerModule implements AppModule {
   configure(_options: ModuleOptions): Promise<void> | void {
     resolve(MailableRegistry).register(EventManagerInvitationMessage);
     const lifecycle = resolve(AccountLifecycle);
-    const managers = () => resolve(EventManagerService);
     lifecycle.onEmailVerified((account) =>
-      managers().resolveManagerInvitations(account),
+      resolve(EventManagerService).resolveManagerInvitations(account),
     );
     lifecycle.onDeleting((account) =>
-      managers().auditAccountDeletion(account.id),
+      resolve(EventManagerService).auditAccountDeletion(account.id),
     );
     lifecycle.blockDeletion((userId) =>
-      managers().getSoleDirectorEvents(userId),
+      resolve(EventManagerService).getSoleDirectorEvents(userId),
     );
   }
 

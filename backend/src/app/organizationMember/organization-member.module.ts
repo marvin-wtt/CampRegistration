@@ -19,12 +19,11 @@ export class OrganizationMemberModule implements AppModule {
 
   configure(_options: ModuleOptions): void {
     const lifecycle = resolve(AccountLifecycle);
-    const members = () => resolve(OrganizationMemberService);
     lifecycle.onEmailVerified((account) =>
-      members().resolveMemberInvitations(account),
+      resolve(OrganizationMemberService).resolveMemberInvitations(account),
     );
     lifecycle.blockDeletion((userId) =>
-      members().getSoleAdminOrganizations(userId),
+      resolve(OrganizationMemberService).getSoleAdminOrganizations(userId),
     );
   }
 

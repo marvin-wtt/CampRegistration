@@ -62,12 +62,8 @@ export default {
     },
     eventManager: {
       label: 'Zugriff',
-      actions: {
-        accepted: 'Angenommen',
-      },
       reasons: {
         account_deleted: 'Konto gelöscht',
-        duplicate_invitation: 'Zugriff bereits vorhanden',
       },
       fields: {
         role: 'Rolle',

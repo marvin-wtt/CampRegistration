@@ -200,38 +200,49 @@ export class OrganizationMemberService extends BaseService {
 
   async resolveMemberInvitations({ id: userId, email }: VerifiedAccount) {
     await this.transaction(async (tx) => {
-      // An existing membership (under a previous address) absorbs the
-      // invitation, taking its role if that is stronger.
-      const memberships = await tx.organizationMember.findMany({
-        where: { userId },
-        select: { id: true, organizationId: true, role: true },
-      });
-      const duplicates = await tx.organizationMember.findMany({
-        where: {
-          invitation: { email },
-          organizationId: { in: memberships.map((m) => m.organizationId) },
-        },
-        select: { id: true, organizationId: true, role: true },
-      });
-      for (const invited of duplicates) {
-        const existing = memberships.find(
-          (m) => m.organizationId === invited.organizationId,
-        );
-        if (existing?.role === 'MEMBER' && invited.role === 'ADMIN') {
-          await tx.organizationMember.update({
-            where: { id: existing.id },
-            data: { role: 'ADMIN' },
-          });
-        }
-      }
-      await tx.organizationMember.deleteMany({
-        where: { id: { in: duplicates.map((m) => m.id) } },
+      const pending = await tx.organizationMember.findMany({
+        where: { invitation: { email } },
+        select: { id: true, organizationId: true },
       });
 
-      await tx.organizationMember.updateMany({
-        where: { invitation: { email } },
-        data: { userId },
+      const memberships = await tx.organizationMember.findMany({
+        where: {
+          userId,
+          organizationId: { in: pending.map((m) => m.organizationId) },
+        },
+        select: { organizationId: true },
       });
+
+      // A pending invitation loses to an organization the user already
+      // belongs to — through an existing membership, or another pending
+      // invitation claimed just above. Both only happen via a rare
+      // concurrent-request race (see organization-member.controller#store);
+      // the loser is silently discarded rather than reconciled.
+      const unavailable = new Set(memberships.map((m) => m.organizationId));
+      const toClaim: string[] = [];
+      const toDiscard: string[] = [];
+      for (const member of pending) {
+        if (unavailable.has(member.organizationId)) {
+          toDiscard.push(member.id);
+          continue;
+        }
+        unavailable.add(member.organizationId);
+        toClaim.push(member.id);
+      }
+
+      if (toDiscard.length > 0) {
+        await tx.organizationMember.deleteMany({
+          where: { id: { in: toDiscard } },
+        });
+      }
+
+      if (toClaim.length > 0) {
+        await tx.organizationMember.updateMany({
+          where: { id: { in: toClaim } },
+          data: { userId },
+        });
+      }
+
       await tx.organizationInvitation.deleteMany({ where: { email } });
     });
   }
