@@ -216,23 +216,25 @@
 
           <!-- Right column: room + timeline -->
           <div class="col-12 col-sm-6 timeline-column">
-            <q-separator
-              class="lt-sm"
-              inset
-            />
+            <template v-if="canViewTimeline">
+              <q-separator
+                class="lt-sm"
+                inset
+              />
 
-            <!-- Timeline -->
-            <q-list>
-              <q-item-label header>
-                {{ t('section.timeline') }}
-              </q-item-label>
-            </q-list>
+              <!-- Timeline -->
+              <q-list>
+                <q-item-label header>
+                  {{ t('section.timeline') }}
+                </q-item-label>
+              </q-list>
 
-            <registration-timeline
-              :event-id
-              :registration-id
-              :created-at="registration.createdAt"
-            />
+              <registration-timeline
+                :event-id
+                :registration-id
+                :created-at="registration.createdAt"
+              />
+            </template>
           </div>
         </div>
       </q-scroll-area>
@@ -264,6 +266,7 @@ import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import { useObjectTranslation } from '@/composables/objectTranslation';
+import { usePermissions } from '@/composables/permissions';
 import { formatPersonName } from '@/utils/formatters';
 import { useRegistrationsStore } from '@/stores/registration-store';
 import { useEventDetailsStore } from '@/stores/event-details-store';
@@ -287,6 +290,13 @@ const { registrationId } = defineProps<{
 const { data: registrations } = storeToRefs(useRegistrationsStore());
 const { data: event } = storeToRefs(useEventDetailsStore());
 const eventId = String(route.params.eventId);
+const { can } = usePermissions();
+
+// Hide the whole section rather than an empty one when neither source is
+// visible to the viewer; RegistrationTimeline itself notes a partial view.
+const canViewTimeline = computed(
+  () => can('event.audit.view') || can('event.messages.view'),
+);
 
 // Reactive lookup instead of a static snapshot, so edits made elsewhere
 // (e.g. the table's inline cell editors) are reflected while the dialog is open.

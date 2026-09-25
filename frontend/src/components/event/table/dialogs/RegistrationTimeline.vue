@@ -1,5 +1,17 @@
 <template>
   <div
+    v-if="restricted"
+    class="row items-center text-caption timeline-restricted-note q-px-lg q-pb-sm"
+  >
+    <q-icon
+      name="lock"
+      size="xs"
+      class="q-mr-xs"
+    />
+    {{ t('restrictedNote') }}
+  </div>
+
+  <div
     v-if="loading"
     class="row justify-center q-py-lg"
   >
@@ -120,7 +132,7 @@ const formFieldLabels = useFormFieldLabels();
 const { data: registrations } = storeToRefs(useRegistrationsStore());
 const { data: event } = storeToRefs(useEventDetailsStore());
 
-const { auditEntries, emails, loading } = useRegistrationTimeline(
+const { auditEntries, emails, loading, restricted } = useRegistrationTimeline(
   eventId,
   registrationId,
 );
@@ -291,6 +303,10 @@ const entries = computed<TimelineEntry[]>(() =>
   color: var(--md3-error);
 }
 
+.timeline-restricted-note {
+  color: var(--md3-on-surface-variant);
+}
+
 /* Long question labels wrap rather than truncate; the raw path stays in the tooltip. */
 .timeline-chips {
   display: flex;
@@ -322,6 +338,7 @@ messageSent: 'Message sent'
 automatedEmail: 'Automated email sent'
 viewMessage: 'View message'
 bounced: 'Not delivered to {to}'
+restrictedNote: "Some entries aren't shown — you don't have permission to view all of them"
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -334,6 +351,7 @@ messageSent: 'Nachricht gesendet'
 automatedEmail: 'Automatische E-Mail gesendet'
 viewMessage: 'Nachricht ansehen'
 bounced: 'Nicht zugestellt an {to}'
+restrictedNote: 'Einige Einträge werden nicht angezeigt — dir fehlt die Berechtigung, alle anzusehen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -346,6 +364,7 @@ messageSent: 'Message envoyé'
 automatedEmail: 'E-mail automatique envoyé'
 viewMessage: 'Voir le message'
 bounced: 'Non distribué à {to}'
+restrictedNote: "Certaines entrées ne sont pas affichées — vous n'avez pas la permission de toutes les voir"
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -358,6 +377,7 @@ messageSent: 'Wysłano wiadomość'
 automatedEmail: 'Wysłano automatyczny e-mail'
 viewMessage: 'Zobacz wiadomość'
 bounced: 'Nie dostarczono do {to}'
+restrictedNote: 'Niektóre wpisy nie są wyświetlane — nie masz uprawnień, aby zobaczyć wszystkie'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -370,4 +390,5 @@ messageSent: 'Zpráva odeslána'
 automatedEmail: 'Automatický e-mail odeslán'
 viewMessage: 'Zobrazit zprávu'
 bounced: 'Nedoručeno na {to}'
+restrictedNote: 'Některé záznamy nejsou zobrazeny — nemáte oprávnění zobrazit vše'
 </i18n>

@@ -5,6 +5,7 @@ import type {
   MessageDelivery,
 } from '@camp-registration/common/entities';
 import { useAPIService } from '@/services/APIService';
+import { usePermissions } from '@/composables/permissions';
 
 export interface ReceivedEmail {
   // Shaped as a message for MessageDetailsDialog: the rendered email, with
@@ -68,17 +69,30 @@ export function useRegistrationTimeline(
   registrationId: string,
 ) {
   const apiService = useAPIService();
+  const { can } = usePermissions();
+
+  const canViewAudit = computed(() => can('event.audit.view'));
+  const canViewMessages = computed(() => can('event.messages.view'));
+  // True once at least one side is hidden by permissions, so the viewer knows
+  // the timeline isn't the full picture.
+  const restricted = computed(
+    () => !canViewAudit.value || !canViewMessages.value,
+  );
 
   const auditEntries = ref<AuditLogEntry[]>([]);
   const deliveries = ref<MessageDelivery[]>([]);
   const loading = ref(true);
 
   onMounted(async () => {
-    // Either may fail on its own (e.g. no permission to view messages) — the
-    // timeline then just shows what it could load.
+    // A side without permission is never requested; allSettled here only
+    // guards against a genuine failure on the side the viewer does have.
     const [audit, received] = await Promise.allSettled([
-      apiService.fetchRegistrationAuditLog(eventId, registrationId),
-      apiService.fetchRegistrationMessages(eventId, registrationId),
+      canViewAudit.value
+        ? apiService.fetchRegistrationAuditLog(eventId, registrationId)
+        : Promise.resolve([]),
+      canViewMessages.value
+        ? apiService.fetchRegistrationMessages(eventId, registrationId)
+        : Promise.resolve([]),
     ]);
     auditEntries.value = audit.status === 'fulfilled' ? audit.value : [];
     deliveries.value = received.status === 'fulfilled' ? received.value : [];
@@ -89,5 +103,5 @@ export function useRegistrationTimeline(
     groupDeliveries(deliveries.value, registrationId),
   );
 
-  return { auditEntries, emails, loading };
+  return { auditEntries, emails, loading, restricted };
 }
