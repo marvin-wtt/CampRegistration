@@ -1,7 +1,6 @@
 import {
   computed,
   nextTick,
-  onMounted,
   ref,
   watch,
   type Ref,
@@ -33,6 +32,11 @@ export interface UseServerListOptions<TRow, TQuery> {
   pageSize?: number;
   sortBy?: string | null;
   descending?: boolean;
+  /**
+   * Initial search term. Pass it here rather than assigning `search` after the
+   * call: the first load starts during setup and would otherwise miss it.
+   */
+  search?: string;
   /** Store name for the mutation progress notifications. */
   storeName?: string;
   /** Runs on `nextTick` after a reset load resolved — scroll the view back to the top. */
@@ -60,7 +64,7 @@ export function useServerList<TRow, TQuery>(
   const rows = ref<TRow[]>([]) as Ref<TRow[]>;
   // Nullable because Quasar's `clearable` inputs emit null, and this ref is
   // bound straight to one.
-  const search = ref<string | null>('');
+  const search = ref<string | null>(options.search ?? '');
   const loading = ref<boolean>(false);
   const error = ref<string | null>(null);
   const total = ref<number>(0);
@@ -142,7 +146,9 @@ export function useServerList<TRow, TQuery>(
     return load(nextCursor.value);
   }
 
-  onMounted(reload);
+  // Started during setup rather than on mount so `loading` is already set for
+  // the first render — otherwise the empty state shows for a frame.
+  reload();
 
   const sources = options.watchSources
     ? Array.isArray(options.watchSources)

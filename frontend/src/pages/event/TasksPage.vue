@@ -159,7 +159,7 @@
 import { useI18n } from 'vue-i18n';
 import { useTaskStore } from '@/stores/task-store';
 import { useEventManagerStore } from '@/stores/event-manager-store';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import type { Task } from '@camp-registration/common/entities';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import { useQuasar } from 'quasar';
@@ -198,9 +198,9 @@ const canAssign = computed<boolean>(
   () => can('event.tasks.create') || can('event.tasks.update'),
 );
 
-onMounted(() => {
-  void taskStore.fetchData();
-});
+// Started during setup, not awaited: the stores flag themselves loading before
+// the first render, so the page renders its skeletons instead of an idle frame.
+void taskStore.fetchData();
 
 // Permissions resolve with the profile and the event, both of which the parent
 // layout loads after this page mounts — so the roster has to be fetched when
@@ -219,11 +219,7 @@ const error = computed<string | null>(() => {
   return taskStore.error;
 });
 
-const loading = computed<boolean>(() => {
-  // The store starts out idle (not loading) before its first fetch, so absent
-  // data counts as loading too — otherwise the empty state flashes first.
-  return taskStore.isLoading || taskStore.data === undefined;
-});
+const loading = computed<boolean>(() => taskStore.isLoading);
 
 const tasks = computed<Task[]>(() => {
   return taskStore.data ?? [];

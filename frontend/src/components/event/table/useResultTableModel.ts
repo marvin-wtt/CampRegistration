@@ -27,7 +27,7 @@ export interface ResultTableModelInput {
   questions: Ref<TableColumnTemplate[]>;
   registrations: Ref<Registration[]>;
   templates: Ref<TableTemplate[]>;
-  event: Ref<EventDetails | undefined>;
+  event: Ref<EventDetails>;
 }
 
 export interface ResultTableModelOptions {
@@ -136,7 +136,7 @@ export function useResultTableModel(
 
   const searchFilter = ref<string | null>('');
 
-  const countries = computed(() => input.event.value?.countries ?? []);
+  const countries = computed(() => input.event.value.countries);
 
   function mapTemplate(
     template: TableTemplate | LocalTableTemplate,
@@ -156,15 +156,12 @@ export function useResultTableModel(
   const allTemplates = computed<CTableTemplate[]>(() => {
     const mapped: CTableTemplate[] = input.templates.value.map(mapTemplate);
 
-    // Hidden, frontend-only templates used as deep-link targets. Skipped while
-    // the event is still loading; they're rebuilt once it resolves.
-    if (input.event.value) {
-      for (const local of buildLocalTableTemplates(
-        registrationAccessor,
-        input.event.value,
-      )) {
-        mapped.push(mapTemplate(local));
-      }
+    // Hidden, frontend-only templates used as deep-link targets.
+    for (const local of buildLocalTableTemplates(
+      registrationAccessor,
+      input.event.value,
+    )) {
+      mapped.push(mapTemplate(local));
     }
 
     // Default template to show all information
@@ -193,22 +190,33 @@ export function useResultTableModel(
   }
 
   function defaultTemplate(): CTableTemplate {
-    const id = options.initialTemplateId ?? null;
-    if (id) {
-      // Resolve against all templates so hidden, local targets can be selected.
-      const found = allTemplates.value.find((v) => v.id == id);
-      if (found) {
-        return found;
-      }
-    }
-
     if (visibleTemplates.value.length === 0) {
       throw new Error('No templates available');
     }
     return visibleTemplates.value[0]!;
   }
 
-  const template = ref<CTableTemplate>(defaultTemplate());
+  // Resolved against all templates so hidden, local targets (e.g. dashboard
+  // deep links) can be selected.
+  function findTemplate(id: string | null | undefined) {
+    return id ? allTemplates.value.find((t) => t.id === id) : undefined;
+  }
+
+  // The selection is an id, fixed here from the inputs as they are at creation
+  // — callers must create the model with its data loaded (see
+  // `ResultTableInteractive`). Template list changes (realtime updates, edits)
+  // never move it; they only replace the instance it resolves to. Should the
+  // selected template be deleted, the default stands in.
+  const selectedTemplateId = ref<string>(
+    (findTemplate(options.initialTemplateId) ?? defaultTemplate()).id,
+  );
+
+  const template = computed<CTableTemplate>({
+    get: () => findTemplate(selectedTemplateId.value) ?? defaultTemplate(),
+    set: (value) => {
+      selectedTemplateId.value = value.id;
+    },
+  });
 
   // The active template may be hidden (e.g. resolved from a dashboard deep
   // link); keep it in the select options so its label can still be rendered
@@ -224,13 +232,19 @@ export function useResultTableModel(
     return visible;
   });
 
-  // Apply the sort order of the initial template since the watcher below only
-  // reacts to subsequent changes.
-  applyTemplateSort(template.value);
-
-  watch(template, (newValue) => {
-    applyTemplateSort(newValue);
-  });
+  // Keyed on the template's sort config rather than its instance, so an
+  // unrelated update (a refetched copy, a renamed column) doesn't reset a sort
+  // the user picked by clicking a column header, while switching templates or
+  // editing the active one's sort does apply.
+  watch(
+    [
+      () => template.value.id,
+      () => template.value.sortBy,
+      () => template.value.sortDirection,
+    ],
+    () => applyTemplateSort(template.value),
+    { immediate: true },
+  );
 
   const rows = computed<Registration[]>(() => {
     let r = [...input.registrations.value];

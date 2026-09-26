@@ -94,7 +94,7 @@
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
-import { computed, onMounted } from 'vue';
+import { computed } from 'vue';
 import type { Event } from '@camp-registration/common/entities';
 import { useAssignedEventsStore } from '@/stores/assigned-events-store';
 import { storeToRefs } from 'pinia';
@@ -121,7 +121,9 @@ const {
   error,
 } = storeToRefs(assignedEventsStore);
 
-onMounted(() => void assignedEventsStore.fetchData());
+// Started during setup, not awaited: the stores flag themselves loading before
+// the first render, so the page renders its skeletons instead of an idle frame.
+void assignedEventsStore.fetchData();
 
 const totalEvents = computed<number>(() => events.value?.length ?? 0);
 

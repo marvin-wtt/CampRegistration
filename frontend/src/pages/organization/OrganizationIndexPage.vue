@@ -100,7 +100,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
@@ -119,15 +119,13 @@ const { t, locale } = useI18n();
 const router = useRouter();
 const quasar = useQuasar();
 const store = useOrganizationsStore();
-const { data, isLoading, error } = storeToRefs(store);
+const { data, isLoading: loading, error } = storeToRefs(store);
+
+// Started during setup, not awaited: the stores flag themselves loading before
+// the first render, so the page renders its skeletons instead of an idle frame.
+void store.fetchData();
 
 const organizations = computed<Organization[]>(() => data.value ?? []);
-
-// The store starts out idle (not loading) before its first fetch, so absent
-// data counts as loading too — otherwise the empty state flashes first.
-const loading = computed<boolean>(
-  () => isLoading.value || data.value === undefined,
-);
 
 function statusIcon(status: OrganizationVerificationStatus): string {
   if (status === 'VERIFIED') return 'verified';
@@ -145,10 +143,6 @@ function showCreateDialog() {
       });
     });
 }
-
-onMounted(async () => {
-  await store.fetchData();
-});
 </script>
 
 <style lang="scss" scoped>
