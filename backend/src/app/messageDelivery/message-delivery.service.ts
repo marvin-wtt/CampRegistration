@@ -1,5 +1,9 @@
 import { Prisma } from '#generated/prisma/client.js';
-import type { Registration, File } from '#generated/prisma/client.js';
+import type {
+  Registration,
+  File,
+  MessageDelivery,
+} from '#generated/prisma/client.js';
 import { BaseService } from '#core/base/BaseService';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service';
@@ -73,17 +77,62 @@ export class MessageDeliveryService extends BaseService {
     }
   }
 
-  async getDeliveryWithCampById(id: string) {
-    return this.prisma.messageDelivery.findUnique({
-      where: {
-        id,
-        registrationId: { not: null },
-      },
+  /** Every email rendered for a registration, newest first, with its source. */
+  async getDeliveriesForRegistration(registrationId: string) {
+    return this.prisma.messageDelivery.findMany({
+      where: { registrationId },
       include: {
-        // `campId` lives on the registration row directly — no camp JOIN needed.
-        registration: { select: { campId: true } },
+        attachments: true,
+        template: { select: { trigger: true } },
+        message: { select: { sentBy: { select: { id: true, name: true } } } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async getDeliveryWithEventById(id: string) {
+    return this.prisma.messageDelivery.findUnique({
+      where: { id },
+      include: {
+        // `eventId` lives on the registration row directly — no event JOIN needed.
+        registration: { select: { eventId: true } },
         attachments: true,
       },
     });
+  }
+
+  /**
+   * Idempotent: an already-bounced delivery is left alone so a duplicate
+   * report never re-fires bounce handling. Returns `null` when there was
+   * nothing to do — unknown id, or already bounced.
+   */
+  async markBounced(
+    id: string,
+    reason: string,
+  ): Promise<MessageDelivery | null> {
+    const { count } = await this.prisma.messageDelivery.updateMany({
+      where: { id, bouncedAt: null },
+      data: { bouncedAt: new Date(), bounceReason: reason },
+    });
+
+    if (count === 0) {
+      return null;
+    }
+
+    return this.prisma.messageDelivery.findUniqueOrThrow({ where: { id } });
+  }
+
+  async markBouncedByCorrelationId(
+    bounceCorrelationId: string,
+    reason: string,
+  ): Promise<MessageDelivery | null> {
+    const delivery = await this.prisma.messageDelivery.findUnique({
+      where: { bounceCorrelationId },
+    });
+    if (!delivery) {
+      return null;
+    }
+
+    return this.markBounced(delivery.id, reason);
   }
 }

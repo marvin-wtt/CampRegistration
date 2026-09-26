@@ -1,7 +1,13 @@
 import type { User } from '#generated/prisma/client';
-import { MailBase } from '#app/mail/mail.base';
-import type { Content } from '#app/mail/mail.types';
+import { MailBase } from '#core/mail/mail.base';
+import type { Content } from '#core/mail/mail.types';
 import { generateUrl } from '#utils/url';
+import { resolveActionCardText } from '#core/mail/actionCardText';
+import type {
+  VerifyEmailProps,
+  ResetPasswordProps,
+  LocalContext,
+} from '#views/emails/types';
 
 abstract class UserMessage<T extends { user: User }> extends MailBase<T> {
   protected to() {
@@ -36,6 +42,7 @@ export class VerifyEmailMessage extends UserMessage<{
   }
 
   protected content(): Content {
+    const t = this.getT();
     const url = generateUrl('login', {
       email: this.payload.user.email,
       token: this.payload.token,
@@ -44,8 +51,10 @@ export class VerifyEmailMessage extends UserMessage<{
     return {
       template: 'verify-email',
       context: {
+        ...resolveActionCardText(t),
+        accidental: t('text.accidental'),
         url,
-      },
+      } satisfies LocalContext<VerifyEmailProps>,
     };
   }
 }
@@ -70,6 +79,7 @@ export class ResetPasswordMessage extends UserMessage<{
   }
 
   protected content(): Content {
+    const t = this.getT();
     const url = generateUrl('reset-password', {
       email: this.payload.user.email,
       token: this.payload.token,
@@ -78,8 +88,10 @@ export class ResetPasswordMessage extends UserMessage<{
     return {
       template: 'reset-password',
       context: {
+        ...resolveActionCardText(t),
+        accidental: t('text.accidental'),
         url,
-      },
+      } satisfies LocalContext<ResetPasswordProps>,
     };
   }
 }

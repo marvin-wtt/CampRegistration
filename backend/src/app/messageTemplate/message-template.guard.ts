@@ -1,9 +1,9 @@
 import type { Request } from 'express';
-import { campManager } from '#app/campManager/camp-manager.guard';
+import { hasEventPermission } from '#app/event/event.guard';
 import { type GuardFn } from '#core/guard';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
-import { CampService } from '#app/camp/camp.service';
+import { EventService } from '#app/event/event.service';
 import { MessageTemplateService } from '#app/messageTemplate/message-template.service';
 import { resolve } from '#core/ioc/container';
 
@@ -21,7 +21,7 @@ export const messageTemplateFileGuard = async (
   // Load models for guard
   const messageTemplateService = resolve(MessageTemplateService);
   const messageTemplate =
-    await messageTemplateService.getMessageTemplateWithCamp(
+    await messageTemplateService.getMessageTemplateWithEvent(
       file.messageTemplateId,
     );
   if (!messageTemplate) {
@@ -31,9 +31,9 @@ export const messageTemplateFileGuard = async (
     );
   }
 
-  const campService = resolve(CampService);
-  const camp = await campService.getCampById(messageTemplate.camp.id);
-  req.setModelOrFail('camp', camp);
+  const eventService = resolve(EventService);
+  const event = await eventService.getEventById(messageTemplate.event.id);
+  req.setModelOrFail('event', event);
 
-  return campManager('camp.message_templates.view');
+  return hasEventPermission('event.message_templates.view');
 };

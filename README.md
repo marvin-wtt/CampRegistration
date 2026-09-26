@@ -9,12 +9,12 @@ multi-language content.
 This is an [npm workspaces](https://docs.npmjs.com/cli/using-npm/workspaces)
 monorepo with four packages:
 
-| Package                   | Description                                                            |
-| ------------------------- | --------------------------------------------------------------------- |
+| Package                   | Description                                                           |
+| ------------------------- |-----------------------------------------------------------------------|
 | [`common/`](./common)     | Shared TypeScript types, entities, form definitions, and permissions. |
 | [`backend/`](./backend)   | Node.js / Express 5 REST API (Prisma, InversifyJS, BullMQ).           |
-| [`frontend/`](./frontend) | Vue 3 / Quasar SPA (Pinia, SurveyJS, vue-i18n).                        |
-| [`e2e/`](./e2e)           | Cypress end-to-end tests.                                             |
+| [`frontend/`](./frontend) | Vue 3 / Quasar SPA (Pinia, SurveyJS, vue-i18n).                       |
+| [`e2e/`](./e2e)           | Playwright end-to-end tests.                                           |
 
 > **Build order matters:** `common` must be built before `backend` and
 > `frontend`. The root `build` script handles this for you.

@@ -12,6 +12,7 @@
     "directory": "e2e"
   },
   "scripts": {
+    "typecheck": "tsc --noEmit",
     "test:ui": "playwright test --ui",
     "test": "playwright test",
     "dev": "node ./scripts/run-end-to-end.mjs",

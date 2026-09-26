@@ -21,7 +21,7 @@ export interface RealtimeCollectionOptions<T extends { id: string }> {
    * without a per-id endpoint, or where bursts of individual events are
    * expected — e.g. table template syncs).
    */
-  fetchOne?: (campId: string, id: string) => Promise<T>;
+  fetchOne?: (eventId: string, id: string) => Promise<T>;
   /** Debounce for collection-level reloads. */
   debounceMs?: number;
   /** Optional hooks, e.g. to forward changes onto a feature bus. */
@@ -54,10 +54,10 @@ interface PendingItemFetch {
  *   so an old item response can't clobber the fresh list;
  * - stream reconnect → full reload (to catch events missed while offline),
  *   only if the list is loaded;
- * - camp switch → an item fetch's result is only applied if the active camp
- *   at completion still matches the camp it was fetched for, so a slow
- *   response started under a previous camp (store-level consumers persist
- *   across navigation) can't be appended into the new camp's list.
+ * - event switch → an item fetch's result is only applied if the active event
+ *   at completion still matches the event it was fetched for, so a slow
+ *   response started under a previous event (store-level consumers persist
+ *   across navigation) can't be appended into the new event's list.
  *
  * Works inside Pinia setup stores and page components alike: cleanup is
  * registered with `onScopeDispose`, so page-level usage unsubscribes on
@@ -80,8 +80,8 @@ export function useRealtimeCollection<T extends { id: string }>(
   // generation discard their result.
   let generation = 0;
 
-  const activeCampId = (): string | undefined => {
-    const value = route.params.campId;
+  const activeEventId = (): string | undefined => {
+    const value = route.params.eventId;
     return Array.isArray(value) ? value[0] : value;
   };
 
@@ -136,7 +136,7 @@ export function useRealtimeCollection<T extends { id: string }>(
     }
   }
 
-  async function fetchItem(campId: string, id: string) {
+  async function fetchItem(eventId: string, id: string) {
     const pending = itemFetches.get(id);
     if (pending) {
       // Coalesce: one trailing refetch replays all events that arrived while
@@ -150,16 +150,16 @@ export function useRealtimeCollection<T extends { id: string }>(
     const startGeneration = generation;
 
     try {
-      const item = await options.fetchOne!(campId, id);
+      const item = await options.fetchOne!(eventId, id);
       // Stale guards: a full reload happened meanwhile (fresher than this
       // response), the entity was deleted, or — since store-level consumers
       // persist across navigation and may swap `data.value` for a different
-      // camp via their own invalidation path (e.g. campBus on route change) —
-      // the active camp itself has moved on from the one this fetch was for.
+      // event via their own invalidation path (e.g. eventBus on route change) —
+      // the active event itself has moved on from the one this fetch was for.
       if (
         generation === startGeneration &&
         !state.cancelled &&
-        activeCampId() === campId
+        activeEventId() === eventId
       ) {
         upsert(item);
       }
@@ -179,16 +179,16 @@ export function useRealtimeCollection<T extends { id: string }>(
         state.rerun &&
         !state.cancelled &&
         generation === startGeneration &&
-        activeCampId() === campId
+        activeEventId() === eventId
       ) {
-        void fetchItem(campId, id);
+        void fetchItem(eventId, id);
       }
     }
   }
 
   function handleEvent(event: RealtimeEvent) {
-    const campId = activeCampId();
-    if (!campId) {
+    const eventId = activeEventId();
+    if (!eventId) {
       return;
     }
 
@@ -220,7 +220,7 @@ export function useRealtimeCollection<T extends { id: string }>(
       return;
     }
 
-    void fetchItem(campId, event.id);
+    void fetchItem(eventId, event.id);
   }
 
   const unsubscribers = [

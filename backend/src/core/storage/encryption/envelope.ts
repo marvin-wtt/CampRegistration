@@ -28,6 +28,10 @@ export const ENCRYPTION_FORMAT = 'aws-esdk';
 // encrypted with the unsigned key-committing suite.
 const SUITE_ID =
   AlgorithmSuiteIdentifier.ALG_AES256_GCM_IV12_TAG16_HKDF_SHA512_COMMIT_KEY;
+// NOT tied to the product name — do not update `app` during a rename. It's
+// stored in each encrypted message's header (harmless to change on its own
+// today, since decryption reads it back from the header rather than
+// requiring a match), but keep it paired with KEY_NAMESPACE above regardless.
 const ENCRYPTION_CONTEXT = {
   app: 'camp-registration',
   purpose: 'file-storage',

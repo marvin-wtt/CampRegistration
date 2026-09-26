@@ -115,14 +115,14 @@ found [here](https://surveyjs.io/form-library/documentation/design-survey/condit
 Functions can also be used in expression fields.
 All functions return null in case of invalid input parameters. This might be evaluated internally as undefined.
 
-| Name           | Parameter                                                   | Return         | Description                                                       |
-| -------------- | ----------------------------------------------------------- | -------------- | ----------------------------------------------------------------- |
-| isMinor        | dateOfBirthQuestion: string, date: string \| Date           | boolean        | Wherever the age is less than 18 at camp start                    |
-| isAdult        | dateOfBirthQuestion: string, date: string \| Date           | boolean        | Wherever the age above 18 at camp start                           |
-| subtractYears  | date: string, years: number                                 | Date           | Subtracts years from a given date                                 |
-| htmlDate       | date: string                                                | string         | Formats a date to the html date format (YYYY-MM-DD)               |
-| translate \| t | value: string \| object, locale?: string, fallback?: string | string \| null | Searches for a translation in an object                           |
-| isWaitingList  | freePlaces: number \| Record<string, number>                | boolean        | Indicates, if the registration will be placed on the waiting list |
+| Name           | Parameter                                                      | Return         | Description                                                                                                                                                                          |
+| -------------- | -------------------------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| isMinor        | dateOfBirthQuestion: string, date: string \| Date              | boolean        | Wherever the age is less than 18 at camp start                                                                                                                                       |
+| isAdult        | dateOfBirthQuestion: string, date: string \| Date              | boolean        | Wherever the age above 18 at camp start                                                                                                                                              |
+| subtractYears  | date: string, years: number                                    | Date           | Subtracts years from a given date                                                                                                                                                    |
+| htmlDate       | date: string                                                   | string         | Formats a date to the html date format (YYYY-MM-DD)                                                                                                                                  |
+| translate \| t | value: string \| object, locale?: string, fallback?: string    | string \| null | Searches for a translation in an object                                                                                                                                              |
+| isWaitingList  | freePlaces: number \| Record<string, number>, country?: string | boolean        | Indicates, if the registration will be placed on the waiting list. `country` is only used when `freePlaces` is a per-country record — a plain number is a shared pool and ignores it |
 
 ## License
 

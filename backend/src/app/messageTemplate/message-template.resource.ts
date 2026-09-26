@@ -15,7 +15,7 @@ export class MessageTemplateResource extends JsonResource<
     return {
       id: this.data.id,
       country: this.data.country ?? null,
-      event: this.data.event,
+      trigger: this.data.trigger,
       subject: this.data.subject,
       body: this.data.body,
       priority: this.data.priority,

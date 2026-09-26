@@ -12,6 +12,8 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 export interface RequestContext {
   /** Originating client id (X-Client-Id header), for realtime echo suppression. */
   clientId?: string;
+  /** Authenticated user, set once authentication has run; absent for anonymous requests. */
+  userId?: string;
 }
 
 const storage = new AsyncLocalStorage<RequestContext>();
@@ -25,4 +27,12 @@ export function runWithRequestContext(
 
 export function getRequestContext(): RequestContext | undefined {
   return storage.getStore();
+}
+
+/** Adds values that only become known later in the chain, e.g. after authentication. */
+export function extendRequestContext(values: Partial<RequestContext>): void {
+  const store = storage.getStore();
+  if (store) {
+    Object.assign(store, values);
+  }
 }

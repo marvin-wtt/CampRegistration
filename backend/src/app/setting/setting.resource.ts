@@ -1,12 +1,12 @@
-import type { CampSetting as CampSettingModel } from '#generated/prisma/client.js';
-import type { CampSetting as CampSettingData } from '@camp-registration/common/entities';
+import type { EventSetting as EventSettingModel } from '#generated/prisma/client.js';
+import type { EventSetting as EventSettingData } from '@camp-registration/common/entities';
 import { JsonResource } from '#core/resource/JsonResource';
 
 export class SettingResource extends JsonResource<
-  CampSettingModel,
-  CampSettingData
+  EventSettingModel,
+  EventSettingData
 > {
-  transform(): CampSettingData {
+  transform(): EventSettingData {
     return {
       id: this.data.id,
       key: this.data.key,

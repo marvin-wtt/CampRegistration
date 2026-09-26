@@ -6,7 +6,7 @@ export interface MessageTemplateQuery {
 }
 
 export interface MessageTemplate extends Identifiable {
-  event: string;
+  trigger: string;
   country: string | null;
   subject: string;
   body: string;
@@ -18,7 +18,7 @@ export interface MessageTemplate extends Identifiable {
 }
 
 export interface MessageTemplateCreateData {
-  event: string;
+  trigger: string;
   country: string | null;
   subject: string;
   body: string;

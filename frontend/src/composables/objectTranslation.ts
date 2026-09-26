@@ -1,16 +1,33 @@
 import { useI18n } from 'vue-i18n';
-import { computed } from 'vue';
+import { COUNTRY_LOCALES } from '@/i18n/locales';
 
-const countryLangMap: Record<string, string> = {
-  cz: 'cs',
-};
+function candidateKeys(locale: string): string[] {
+  const normalizedLocale = locale.toLowerCase();
+  const [language, region] = normalizedLocale.split('-');
 
-function normalizeLocale(locale: string): string {
-  if (locale.length === 5 && locale.charAt(2) === '-') {
-    return locale.slice(0, 2);
+  if (!language) {
+    return [];
   }
 
-  return countryLangMap[locale] ?? locale;
+  const sameLanguageCountries = Object.keys(COUNTRY_LOCALES).filter(
+    (country) => COUNTRY_LOCALES[country] === language,
+  );
+
+  return [
+    ...new Set([
+      normalizedLocale,
+      language,
+
+      // The lookup key can itself be a country code (`cz` -> `cs`).
+      ...(COUNTRY_LOCALES[language] ? [COUNTRY_LOCALES[language]] : []),
+
+      // Prefer the reader's own country over other countries using the
+      // same language.
+      ...(region ? [region] : []),
+
+      ...sameLanguageCountries,
+    ]),
+  ];
 }
 
 function pickTranslation(
@@ -18,13 +35,15 @@ function pickTranslation(
   locale: string,
   fallbackLocale: string,
 ): string {
-  const tryLocale = (locale: string) =>
-    value[locale] ?? value[normalizeLocale(locale)];
+  const tryLocale = (candidate: string) =>
+    candidateKeys(candidate)
+      .map((key) => value[key])
+      .find((translation) => translation != null && translation !== '');
 
   return (
     tryLocale(locale) ??
     tryLocale(fallbackLocale) ??
-    Object.values(value)[0] ??
+    Object.values(value).find(Boolean) ??
     ''
   );
 }
@@ -41,24 +60,24 @@ export function useObjectTranslation() {
       return '';
     }
 
-    if (typeof value !== 'object') {
+    if (typeof value === 'string') {
       return value;
     }
 
-    return computed<string>(() => {
-      const fallback =
-        typeof fallbackLocale.value === 'string' ? fallbackLocale.value : 'en';
+    const fallback =
+      typeof fallbackLocale.value === 'string' ? fallbackLocale.value : 'en';
 
-      return pickTranslation(value, locale.value, fallback);
-    }).value;
+    return pickTranslation(value, locale.value, fallback);
   }
 
-  function toAll(value: string | Record<string, string> | undefined): string {
+  function toAll(
+    value: string | Record<string, string> | undefined | null,
+  ): string {
     if (value == null) {
       return '';
     }
 
-    if (typeof value !== 'object') {
+    if (typeof value === 'string') {
       return value;
     }
 

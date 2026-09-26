@@ -11,7 +11,7 @@ export default {
         button: 'Passwort zurücksetzen',
         accidental:
           'Wenn Sie keine Passwortrücksetzung angefordert haben, können Sie diese E-Mail ignorieren.',
-        greeting: 'Viele Grüße,',
+        greeting: 'Viele Grüße',
         teamName: '{{ appName }} Team',
       },
       footer: {
@@ -30,7 +30,7 @@ export default {
         button: 'E-Mail bestätigen',
         accidental:
           'Wenn Sie kein Konto erstellt haben, klicken Sie bitte nicht auf den Link und kontaktieren Sie uns.',
-        greeting: 'Viele Grüße,',
+        greeting: 'Viele Grüße',
         teamName: '{{ appName }} Team',
       },
       footer: {

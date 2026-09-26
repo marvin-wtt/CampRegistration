@@ -18,6 +18,16 @@ export interface RefreshRequestRetryOptions<
   markRetrying: (config: TConfig) => void;
   markQueued: (config: TConfig) => void;
   retryRequest?: (request: TConfig) => Promise<unknown>;
+  // Distinguishes a refresh failure that actually proves the session is gone
+  // (the refresh endpoint itself rejected as unauthenticated) from a
+  // transport/server failure (network error, timeout, 5xx) that says nothing
+  // about auth state. Defaults to always-authoritative, preserving prior
+  // behavior for callers that don't care about the distinction.
+  isRefreshFailureAuthoritative?: (error: unknown) => boolean;
+  // Marks the original request's config when the refresh failure was NOT
+  // authoritative, so a downstream handler (e.g. a 401 -> redirect-to-login
+  // handler) can tell this rejection isn't proof the user is logged out.
+  markNonAuthoritativeFailure?: (config: TConfig) => void;
 }
 
 export default function refreshRequestRetry<
@@ -25,16 +35,20 @@ export default function refreshRequestRetry<
 >(axiosClient: AxiosInstance, options: RefreshRequestRetryOptions<TConfig>) {
   let isRefreshing = false;
   let failedQueue: {
+    config: TConfig;
     resolve: () => void;
     reject: (error: unknown) => void;
   }[] = [];
 
-  const processQueue = (error?: AxiosError) => {
-    failedQueue.forEach((prom) => {
+  const processQueue = (error?: AxiosError, nonAuthoritative = false) => {
+    failedQueue.forEach(({ config, resolve, reject }) => {
       if (error) {
-        prom.reject(error);
+        if (nonAuthoritative) {
+          options.markNonAuthoritativeFailure?.(config);
+        }
+        reject(error);
       } else {
-        prom.resolve();
+        resolve();
       }
     });
 
@@ -66,7 +80,7 @@ export default function refreshRequestRetry<
     const originalRequest = error.config;
     if (isRefreshing) {
       return new Promise<void>((resolve, reject) => {
-        failedQueue.push({ resolve, reject });
+        failedQueue.push({ config: originalRequest, resolve, reject });
       })
         .then(() => {
           options.markQueued(originalRequest);
@@ -88,7 +102,12 @@ export default function refreshRequestRetry<
           resolve(retryRequest(originalRequest));
         })
         .catch((err) => {
-          processQueue(err);
+          const authoritative =
+            options.isRefreshFailureAuthoritative?.(err) ?? true;
+          if (!authoritative) {
+            options.markNonAuthoritativeFailure?.(originalRequest);
+          }
+          processQueue(err, !authoritative);
           reject(error);
         })
         .finally(() => {

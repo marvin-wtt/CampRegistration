@@ -6,7 +6,6 @@ import { type Request, type Response } from 'express';
 import type { AuthTokensResponse } from '#types/response';
 import type { AppConfig } from '#config';
 import ApiError from '#utils/ApiError';
-import { CampManagerService } from '#app/campManager/camp-manager.service.js';
 import authResource from './auth.resource.js';
 import validator from './auth.validation.js';
 import { TotpService } from '#app/totp/totp.service';
@@ -29,8 +28,6 @@ export class AuthController extends BaseController {
     @Config() private readonly config: AppConfig,
     @inject(AuthService) private readonly authService: AuthService,
     @inject(UserService) private readonly userService: UserService,
-    @inject(CampManagerService)
-    private readonly managerService: CampManagerService,
     @inject(TokenService) private readonly tokenService: TokenService,
     @inject(TotpService) private readonly totpService: TotpService,
   ) {
@@ -49,8 +46,6 @@ export class AuthController extends BaseController {
       password,
       locale,
     });
-
-    await this.managerService.resolveManagerInvitations(user.email, user.id);
 
     const verifyEmailToken =
       await this.tokenService.generateVerifyEmailToken(user);
@@ -115,7 +110,8 @@ export class AuthController extends BaseController {
     userId: string,
     remember: boolean,
   ) {
-    const user = await this.userService.updateUserLastSeenByIdWithCamps(userId);
+    const user =
+      await this.userService.updateUserLastSeenByIdWithEvents(userId);
 
     const tokens = await this.tokenService.generateAuthTokens(user, remember);
 

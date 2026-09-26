@@ -1,41 +1,26 @@
-import { rateLimit, ipKeyGenerator } from 'express-rate-limit';
-import type { Request } from 'express';
-import config from '#config/index';
+import { createRateLimiter } from '#core/rate-limit';
 
-const keyGenerator = (name: string) => {
-  return (req: Request): string => {
-    const key = ipKeyGenerator(req.ip ?? '');
-
-    return `${name}:${key}`;
-  };
-};
-
-const skip = () => config.rateLimit.disabled;
-
-export const authLimiter = rateLimit({
-  windowMs: 60 * 1000,
+export const authLimiter = createRateLimiter('Auth', {
   limit: 15,
   skipSuccessfulRequests: true,
-  skip,
-  keyGenerator: keyGenerator('Auth'),
 });
 
-export const generalLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  limit: 250, // limit each IP to 250 requests per windowMs
-  skip,
-  keyGenerator: keyGenerator('General'),
+// Refresh tokens are unguessable, so this only caps abuse
+export const refreshLimiter = createRateLimiter('Refresh', {
+  limit: 120,
 });
 
-export const staticLimiter = rateLimit({
-  windowMs: 60 * 1000,
+export const generalLimiter = createRateLimiter('General', {
+  limit: 250,
+});
+
+export const staticLimiter = createRateLimiter('Static', {
   limit: 500,
-  skip,
-  keyGenerator: keyGenerator('Static'),
 });
 
 export default {
   authLimiter,
+  refreshLimiter,
   generalLimiter,
   staticLimiter,
 };

@@ -35,7 +35,7 @@ export function useServiceHandler<T>(storeName?: string) {
   const needsUpdate = ref<boolean>(true);
   const pendingRequests = ref<number>(0);
   // Bumped on every fetch; lets a resolving promise detect it's been
-  // superseded by a newer fetch (e.g. the user switched camps again before
+  // superseded by a newer fetch (e.g. the user switched events again before
   // the previous request settled) and skip applying its now-stale result.
   let requestToken = 0;
 

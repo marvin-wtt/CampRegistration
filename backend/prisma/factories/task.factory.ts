@@ -11,7 +11,7 @@ export const TaskFactory = {
       notes: faker.lorem.sentence(),
       dueDate: faker.date.future().toISOString().split('T')[0],
       completed: false,
-      camp: {},
+      event: {},
       ...data,
     };
   },

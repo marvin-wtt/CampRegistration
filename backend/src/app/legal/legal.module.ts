@@ -9,7 +9,7 @@ export class LegalModule implements AppModule {
     options.bind(LegalController).toSelf().inSingletonScope();
   }
 
-  registerRoutes(router: AppRouter): void {
+  registerApiRoutes(router: AppRouter): void {
     router.useRouter('/legal', new LegalRouter());
   }
 }

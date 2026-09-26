@@ -23,7 +23,7 @@ export const RegistrationFactory = {
       country: faker.helpers.arrayElement(['gb', 'fr']),
       status: 'ACCEPTED',
       data: {},
-      camp: {},
+      event: {},
       ...data,
     };
   },

@@ -63,16 +63,16 @@
             icon="person_add"
             :label="t('complete.registerAnother')"
             :to="{
-              name: 'camp',
-              params: { campId: props.campDetails.id },
+              name: 'event',
+              params: { eventId: props.eventDetails.id },
             }"
           />
           <m-btn
             outline
             primary
             icon="explore"
-            :label="t('complete.exploreCamps')"
-            :to="{ name: 'camps' }"
+            :label="t('complete.exploreEvents')"
+            :to="{ name: 'events' }"
           />
         </q-card-actions>
 
@@ -99,7 +99,7 @@ import 'survey-core/survey-core.min.css';
 
 import { useI18n } from 'vue-i18n';
 import { createMarkdownConverter } from '@/utils/markdown';
-import { computed, onMounted, ref, toRef, watchEffect } from 'vue';
+import { computed, onMounted, ref, toRef, watch, watchEffect } from 'vue';
 import { SurveyModel } from 'survey-core';
 import { SurveyComponent } from 'survey-vue3-ui';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
@@ -108,7 +108,10 @@ import {
   startAutoThemeUpdate,
   addFileSlotResolver,
 } from '@/composables/survey';
-import type { CampDetails } from '@camp-registration/common/entities';
+import type {
+  EventDetails,
+  Registration,
+} from '@camp-registration/common/entities';
 import { useAPIService } from '@/services/APIService';
 import { useErrorExtractor } from '@/composables/serviceHandler';
 
@@ -120,35 +123,58 @@ const { extractErrorText } = useErrorExtractor();
 
 interface Props {
   data?: object;
-  campDetails: CampDetails;
-  submitFn: (
+  eventDetails: EventDetails;
+  submitFn?: (
     id: string,
     formData: Record<string, unknown>,
     locale: string,
-  ) => Promise<void>;
-  uploadFileFn: (file: File) => Promise<string>;
+  ) => Promise<Registration | void>;
+  uploadFileFn?: (file: File) => Promise<string>;
   moderation?: boolean;
+  readonly?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   moderation: false,
+  readonly: false,
 });
 
 const emit = defineEmits<{
   (e: 'bgColorUpdate', color: string | undefined): void;
+  (e: 'activeChange', active: boolean): void;
 }>();
 
 // Submit lifecycle shown by the custom overlay. While it is non-null the
 // survey (including its own completed page) is hidden and this UI takes over.
 const submitState = ref<'saving' | 'success' | 'error' | null>(null);
 const submitError = ref<string>();
+// The actual status of the registration just created, so the success panel
+// can reflect whether it was accepted outright, waitlisted, or left pending
+// (moderated events / registrations placed on a waiting list).
+const registrationStatus = ref<Registration['status']>();
+// Stays true once the submission succeeded, including when survey-core takes
+// the screen back over to show the form's own completed page.
+const submitted = ref<boolean>(false);
+
+// Lets the page hide anything that only applies while the form is being
+// filled in — the privacy disclosure above all.
+watch([submitState, submitted], ([state, done]) =>
+  emit('activeChange', state === null && !done),
+);
 
 const statusTitle = computed(() => {
   switch (submitState.value) {
     case 'saving':
       return t('submit.saving.title');
     case 'success':
-      return t('complete.title');
+      switch (registrationStatus.value) {
+        case 'PENDING':
+          return t('complete.pending.title');
+        case 'WAITLISTED':
+          return t('complete.waitlisted.title');
+        default:
+          return t('complete.title');
+      }
     case 'error':
       return t('submit.error.title');
     default:
@@ -161,7 +187,14 @@ const statusText = computed(() => {
     case 'saving':
       return t('submit.saving.text');
     case 'success':
-      return t('complete.text');
+      switch (registrationStatus.value) {
+        case 'PENDING':
+          return t('complete.pending.text');
+        case 'WAITLISTED':
+          return t('complete.waitlisted.text');
+        default:
+          return t('complete.text');
+      }
     case 'error':
       return t('submit.error.text');
     default:
@@ -172,7 +205,14 @@ const statusText = computed(() => {
 const badgeColor = computed(() => {
   switch (submitState.value) {
     case 'success':
-      return 'positive-container';
+      switch (registrationStatus.value) {
+        case 'PENDING':
+          return 'info-container';
+        case 'WAITLISTED':
+          return 'warning-container';
+        default:
+          return 'positive-container';
+      }
     case 'error':
       return 'error-container';
     default:
@@ -183,7 +223,14 @@ const badgeColor = computed(() => {
 const badgeTextColor = computed(() => {
   switch (submitState.value) {
     case 'success':
-      return 'on-positive-container';
+      switch (registrationStatus.value) {
+        case 'PENDING':
+          return 'on-info-container';
+        case 'WAITLISTED':
+          return 'on-warning-container';
+        default:
+          return 'on-positive-container';
+      }
     case 'error':
       return 'on-error-container';
     default:
@@ -191,17 +238,33 @@ const badgeTextColor = computed(() => {
   }
 });
 
-const badgeIcon = computed(() =>
-  submitState.value === 'success' ? 'check_circle' : 'error',
-);
+const badgeIcon = computed(() => {
+  if (submitState.value !== 'success') {
+    return 'error';
+  }
+
+  switch (registrationStatus.value) {
+    case 'PENDING':
+      return 'schedule';
+    case 'WAITLISTED':
+      return 'hourglass_top';
+    default:
+      return 'check_circle';
+  }
+});
+
+// A readonly form reuses the moderation layout (TOC, no validation) and puts
+// survey-core into display mode.
+const moderationLayout = props.moderation || props.readonly;
 
 const model = createModel(
-  props.campDetails.id,
-  props.moderation
-    ? createModerationForm(props.campDetails.form)
-    : props.campDetails.form,
+  props.eventDetails.id,
+  moderationLayout
+    ? createModerationForm(props.eventDetails.form)
+    : props.eventDetails.form,
 );
-model.validationEnabled = !props.moderation;
+model.validationEnabled = !moderationLayout;
+model.mode = props.readonly ? 'display' : 'edit';
 if (props.data) {
   model.data = props.data;
   mapFileIdToFileContent(model);
@@ -209,7 +272,7 @@ if (props.data) {
 
 const bgColor = ref<string>();
 
-const campData = toRef(props.campDetails);
+const eventData = toRef(props.eventDetails);
 
 watchEffect(() => {
   emit('bgColorUpdate', bgColor.value);
@@ -217,8 +280,8 @@ watchEffect(() => {
 
 onMounted(() => {
   // Auto variables update on locale change
-  startAutoDataUpdate(model, campData);
-  startAutoThemeUpdate(model, campData, bgColor);
+  startAutoDataUpdate(model, eventData);
+  startAutoThemeUpdate(model, eventData, bgColor);
 });
 
 function createModerationForm(form: object) {
@@ -229,7 +292,7 @@ function createModerationForm(form: object) {
   };
 }
 
-function createModel(campId: string, form: object): SurveyModel {
+function createModel(eventId: string, form: object): SurveyModel {
   const survey = new SurveyModel(form);
   survey.locale = locale.value;
 
@@ -238,7 +301,7 @@ function createModel(campId: string, form: object): SurveyModel {
   // than survey-core's built-in "Thank you" text.
   const hasFormCompletedHtml = hasCustomCompletedHtml(form);
 
-  if (props.moderation) {
+  if (moderationLayout) {
     const hideComplete = () => {
       survey.navigationBar.getActionById('sv-nav-complete')?.setVisible(false);
     };
@@ -248,6 +311,12 @@ function createModel(campId: string, form: object): SurveyModel {
 
   // Handle file uploads
   survey.onUploadFiles.add(async (_, options) => {
+    const uploadFileFn = props.uploadFileFn;
+    if (!uploadFileFn) {
+      options.callback('error');
+      return;
+    }
+
     try {
       interface FileOption {
         file: Pick<File, 'name' | 'type' | 'size'>;
@@ -255,7 +324,7 @@ function createModel(campId: string, form: object): SurveyModel {
       }
 
       const fileUploads = options.files.map(async (file) => {
-        const name = await props.uploadFileFn(file);
+        const name = await uploadFileFn(file);
 
         return new File([file], name, {
           type: file.type,
@@ -303,19 +372,31 @@ function createModel(campId: string, form: object): SurveyModel {
   });
 
   // Resolve {_file.<slot>} placeholders to locale-aware file URLs on demand.
-  addFileSlotResolver(survey, campId, api);
+  addFileSlotResolver(survey, eventId, api);
 
   // Send data to server. The saving/error UI is rendered by the Vue overlay
   // (see submitState), so the survey's own completed page stays hidden until
   // the submission actually succeeds.
   survey.onComplete.add(async (sender) => {
+    const submitFn = props.submitFn;
+    if (!submitFn) {
+      return;
+    }
+
     submitError.value = undefined;
     submitState.value = 'saving';
+    registrationStatus.value = undefined;
 
     mapFileQuestionValues(sender);
 
     try {
-      await props.submitFn(campId, sender.data ?? {}, sender.locale);
+      const registration = await submitFn(
+        eventId,
+        sender.data ?? {},
+        sender.locale,
+      );
+      registrationStatus.value = registration?.status;
+      submitted.value = true;
       if (sender.showCompletePage && hasFormCompletedHtml) {
         // Reveal the form-defined completed page (survey-core shows it by
         // default; the survey element is unhidden as submitState clears).
@@ -430,9 +511,15 @@ submit:
     retry: 'Try again'
 complete:
   title: 'Registration complete!'
-  text: "Thanks for signing up — we've received your registration and can't wait to see you at camp."
+  text: "Thanks for signing up — we've received your registration and can't wait to see you at event."
+  pending:
+    title: 'Registration received!'
+    text: 'Your registration is now pending review. We will let you know as soon as it has been processed.'
+  waitlisted:
+    title: "You're on the waitlist"
+    text: 'This event is currently full, so your registration has been placed on the waiting list. We will notify you if a spot opens up.'
   registerAnother: 'Register another person'
-  exploreCamps: 'Explore other camps'
+  exploreEvents: 'Explore other events'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -446,9 +533,15 @@ submit:
     retry: 'Erneut versuchen'
 complete:
   title: 'Anmeldung abgeschlossen!'
-  text: 'Danke für deine Anmeldung — wir haben sie erhalten und freuen uns schon darauf, dich im Camp zu begrüßen.'
+  text: 'Danke für deine Anmeldung — wir haben sie erhalten und freuen uns schon darauf, dich bei der Veranstaltung zu begrüßen.'
+  pending:
+    title: 'Anmeldung eingegangen!'
+    text: 'Deine Anmeldung wird nun geprüft. Wir informieren dich, sobald sie bearbeitet wurde.'
+  waitlisted:
+    title: 'Du stehst auf der Warteliste'
+    text: 'Diese Veranstaltung ist derzeit ausgebucht, daher wurde deine Anmeldung auf die Warteliste gesetzt. Wir benachrichtigen dich, sobald ein Platz frei wird.'
   registerAnother: 'Weitere Person anmelden'
-  exploreCamps: 'Weitere Camps entdecken'
+  exploreEvents: 'Weitere Veranstaltungen entdecken'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -462,9 +555,15 @@ submit:
     retry: 'Réessayer'
 complete:
   title: 'Inscription terminée !'
-  text: "Merci pour ton inscription — nous l'avons bien reçue et avons hâte de te voir au camp."
+  text: "Merci pour ton inscription — nous l'avons bien reçue et avons hâte de te voir au événement."
+  pending:
+    title: 'Inscription reçue !'
+    text: "Ton inscription est en cours d'examen. Nous te tiendrons informé dès qu'elle aura été traitée."
+  waitlisted:
+    title: "Tu es sur liste d'attente"
+    text: "Cet événement est actuellement complet, ton inscription a donc été placée sur liste d'attente. Nous te préviendrons si une place se libère."
   registerAnother: 'Inscrire une autre personne'
-  exploreCamps: "Découvrir d'autres camps"
+  exploreEvents: "Découvrir d'autres événements"
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -478,9 +577,15 @@ submit:
     retry: 'Spróbuj ponownie'
 complete:
   title: 'Rejestracja zakończona!'
-  text: 'Dziękujemy za rejestrację — otrzymaliśmy Twoje zgłoszenie i nie możemy się doczekać spotkania na obozie.'
+  text: 'Dziękujemy za rejestrację — otrzymaliśmy Twoje zgłoszenie i nie możemy się doczekać spotkania na tym wydarzeniu.'
+  pending:
+    title: 'Zgłoszenie otrzymane!'
+    text: 'Twoje zgłoszenie oczekuje teraz na weryfikację. Poinformujemy Cię, gdy tylko zostanie rozpatrzone.'
+  waitlisted:
+    title: 'Jesteś na liście oczekujących'
+    text: 'To wydarzenie jest obecnie pełne, więc Twoje zgłoszenie zostało umieszczone na liście oczekujących. Powiadomimy Cię, gdy zwolni się miejsce.'
   registerAnother: 'Zarejestruj kolejną osobę'
-  exploreCamps: 'Odkryj inne obozy'
+  exploreEvents: 'Odkryj inne wydarzenia'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -495,8 +600,14 @@ submit:
 complete:
   title: 'Registrace dokončena!'
   text: 'Děkujeme za registraci — tvou přihlášku jsme přijali a těšíme se na tebe na táboře.'
+  pending:
+    title: 'Registrace přijata!'
+    text: 'Tvoje registrace nyní čeká na schválení. Jakmile bude zpracována, dáme ti vědět.'
+  waitlisted:
+    title: 'Jsi na čekací listině'
+    text: 'Tato akce je momentálně plně obsazená, proto byla tvoje registrace zařazena na čekací listinu. Jakmile se uvolní místo, dáme ti vědět.'
   registerAnother: 'Registrovat další osobu'
-  exploreCamps: 'Prozkoumat další tábory'
+  exploreEvents: 'Prozkoumat další akcey'
 </i18n>
 
 <style lang="scss">

@@ -22,7 +22,7 @@ export class BedController extends BaseController {
   }
 
   async store(req: Request, res: Response) {
-    const camp = req.modelOrFail('camp');
+    const event = req.modelOrFail('event');
     const room = req.modelOrFail('room');
     const {
       body: { registrationId },
@@ -30,20 +30,20 @@ export class BedController extends BaseController {
 
     // Validate registrationId is present
     if (registrationId !== undefined) {
-      await this.getRegistrationOrFail(camp.id, registrationId);
+      await this.getRegistrationOrFail(event.id, registrationId);
     }
 
     const bed = await this.bedService.createBed(room.id, registrationId);
 
     // Beds are not a realtime resource of their own — they render embedded in
     // their room, so subscribers refetch the parent room.
-    void this.realtimeService.emit(camp.id, 'room', room.id, 'updated');
+    void this.realtimeService.emit(event.id, 'room', room.id, 'updated');
 
     res.status(httpStatus.CREATED).resource(new BedResource(bed));
   }
 
   async update(req: Request, res: Response) {
-    const camp = req.modelOrFail('camp');
+    const event = req.modelOrFail('event');
     const room = req.modelOrFail('room');
     const bed = req.modelOrFail('bed');
     const {
@@ -52,7 +52,7 @@ export class BedController extends BaseController {
 
     // Validate registrationId is present
     if (registrationId !== null) {
-      await this.getRegistrationOrFail(camp.id, registrationId);
+      await this.getRegistrationOrFail(event.id, registrationId);
     }
 
     const updatedBed = await this.bedService.updateBedById(
@@ -60,27 +60,27 @@ export class BedController extends BaseController {
       registrationId,
     );
 
-    void this.realtimeService.emit(camp.id, 'room', room.id, 'updated');
+    void this.realtimeService.emit(event.id, 'room', room.id, 'updated');
 
     res.resource(new BedResource(updatedBed));
   }
 
   async destroy(req: Request, res: Response) {
-    const camp = req.modelOrFail('camp');
+    const event = req.modelOrFail('event');
     const room = req.modelOrFail('room');
     const bed = req.modelOrFail('bed');
     await req.validate(validator.destroy);
 
     await this.bedService.deleteBedById(bed.id);
 
-    void this.realtimeService.emit(camp.id, 'room', room.id, 'updated');
+    void this.realtimeService.emit(event.id, 'room', room.id, 'updated');
 
     res.sendStatus(httpStatus.NO_CONTENT);
   }
 
-  private async getRegistrationOrFail(campId: string, registrationId: string) {
+  private async getRegistrationOrFail(eventId: string, registrationId: string) {
     const registration = await this.registrationService.getRegistrationById(
-      campId,
+      eventId,
       registrationId,
     );
 

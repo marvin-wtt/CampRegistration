@@ -8,7 +8,7 @@ export class HealthModule implements AppModule {
     options.bind(HealthService).toSelf().inSingletonScope();
   }
 
-  registerRoutes(router: AppRouter): void {
+  registerApiRoutes(router: AppRouter): void {
     router.get('/health', async (_req, res) => {
       const health = await resolve(HealthService).check();
       const status =

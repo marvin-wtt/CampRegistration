@@ -1,13 +1,12 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import bcrypt from 'bcryptjs';
 import argon2 from 'argon2';
 import prisma from '../utils/prisma.js';
 import { TokenType, User } from '#generated/prisma/client.js';
 import {
-  CampFactory,
+  EventFactory,
   UserFactory,
   TokenFactory,
-  CampManagerFactory,
+  EventManagerFactory,
   InvitationFactory,
 } from '../../../prisma/factories/index.js';
 import {
@@ -62,13 +61,11 @@ describe('/api/v1/auth', async () => {
       });
     });
 
-    it('should make the user camp manager if the user has pending invitations', async () => {
-      await CampManagerFactory.create({
-        camp: { create: CampFactory.build() },
+    it('should keep invitations pending until the email is verified', async () => {
+      const pending = await EventManagerFactory.create({
+        event: { create: EventFactory.build() },
         invitation: {
-          create: InvitationFactory.build({
-            email: 'test@email.net',
-          }),
+          create: InvitationFactory.build({ email: 'test@email.net' }),
         },
       });
 
@@ -81,19 +78,11 @@ describe('/api/v1/auth', async () => {
         })
         .expect(201);
 
-      const manager = await prisma.campManager.findFirst({
-        where: {
-          user: {
-            email: 'test@email.net',
-          },
-        },
-        include: {
-          invitation: true,
-        },
+      const manager = await prisma.eventManager.findUniqueOrThrow({
+        where: { id: pending.id },
       });
-
-      expect(manager).toBeDefined();
-      expect(manager?.invitation).toBeNull();
+      expect(manager.userId).toBeNull();
+      expect(manager.invitationId).not.toBeNull();
     });
 
     it('should set the role to "USER"', async () => {
@@ -1430,6 +1419,39 @@ describe('/api/v1/auth', async () => {
   });
 
   describe('POST /api/v1/auth/verify-email', () => {
+    const verifyEmail = async (user: User) => {
+      const token = generateVerifyEmailToken(user);
+      await TokenFactory.create({
+        user: { connect: { id: user.id } },
+        type: TokenType.VERIFY_EMAIL,
+        token,
+      });
+
+      await request().post('/api/v1/auth/verify-email/').send({ token });
+    };
+
+    it('should make the user event manager if the user has pending invitations', async () => {
+      const pending = await EventManagerFactory.create({
+        event: { create: EventFactory.build() },
+        invitation: {
+          create: InvitationFactory.build({ email: 'test@email.net' }),
+        },
+      });
+      const user = await UserFactory.create({
+        email: 'test@email.net',
+        emailVerified: false,
+      });
+
+      await verifyEmail(user);
+
+      const manager = await prisma.eventManager.findUniqueOrThrow({
+        where: { id: pending.id },
+      });
+      expect(manager.userId).toBe(user.id);
+      expect(manager.invitationId).toBeNull();
+      await expect(prisma.eventInvitation.count()).resolves.toBe(0);
+    });
+
     it('should respond with `204` status code when provided with valid token', async () => {
       const user = await UserFactory.create();
       const token = generateVerifyEmailToken(user);

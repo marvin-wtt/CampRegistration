@@ -41,6 +41,15 @@ export function ensureCsrfSession(
 
 const WEB_CLIENT_TYPE = 'web';
 
+// Inbound provider webhooks (e.g. a mail driver's bounce webhook, mounted
+// under core/mail's shared `/webhooks` prefix — see MailModule) authenticate
+// via a secret in the URL, not a browser-held cookie, so they sit outside
+// CSRF's threat model the same way a Bearer request does — see isCsrfExempt.
+// Relative to this router's own mount point (`/api/v1`, see app.ts), not the
+// full request path. Provider-agnostic on purpose: a new webhook-based
+// provider needs no change here.
+const CSRF_EXEMPT_PATH_PREFIXES = ['/webhooks/'];
+
 // A request is exempt from CSRF protection only when it provably cannot be
 // forged through a victim's browser:
 //
@@ -52,6 +61,8 @@ const WEB_CLIENT_TYPE = 'web';
 //      header is therefore always treated as a protected web request.
 //   2. It is authenticated with a Bearer token. Browsers never attach an
 //      Authorization header automatically, so such requests cannot be forged.
+//   3. It targets a provider webhook path, authenticated by its own URL
+//      secret rather than any ambient credential a browser could replay.
 //
 // The web client always sends `X-Client-Type: web` (and uses CSRF tokens),
 // which keeps it protected.
@@ -61,7 +72,13 @@ export function isCsrfExempt(req: Request): boolean {
     return true;
   }
 
-  return req.headers.authorization?.startsWith('Bearer ') ?? false;
+  if (req.headers.authorization?.startsWith('Bearer ')) {
+    return true;
+  }
+
+  return CSRF_EXEMPT_PATH_PREFIXES.some((prefix) =>
+    req.path.startsWith(prefix),
+  );
 }
 
 const { doubleCsrfProtection } = doubleCsrf({

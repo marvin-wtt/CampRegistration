@@ -1,21 +1,11 @@
 <template>
-  <q-card
-    flat
-    bordered
-  >
-    <q-form @submit="onSetup">
-      <q-card-section class="text-h6">
-        {{ t('title') }}
-      </q-card-section>
-
-      <q-card-section class="text-subtitle-2 q-pt-none">
+  <q-form @submit="onSetup">
+    <q-card-section>
+      <div class="text-body2 text-on-surface-variant q-mb-md">
         {{ t('description') }}
-      </q-card-section>
+      </div>
 
-      <q-card-section
-        class="q-gutter-sm"
-        style="max-width: 500px"
-      >
+      <div class="row q-col-gutter-md">
         <q-input
           v-model="password"
           :label="t('field.password.label')"
@@ -28,41 +18,42 @@
           :disable="loading"
           outlined
           rounded
-          class="settings-input"
+          color="primary"
+          class="col-12 col-md-6"
         >
-          <template #before>
+          <template #prepend>
             <q-icon name="password" />
           </template>
         </q-input>
-      </q-card-section>
-
-      <div
-        v-if="error"
-        class="q-px-md q-pb-sm text-negative text-body2"
-      >
-        <q-icon
-          name="warning"
-          size="xs"
-          class="q-mr-xs"
-        />{{ error }}
       </div>
 
-      <q-card-actions>
-        <q-btn
-          :label="t('action.generate')"
-          type="submit"
-          color="primary"
-          :loading
-          rounded
-        />
-      </q-card-actions>
-    </q-form>
-  </q-card>
+      <q-banner
+        v-if="error"
+        dense
+        class="error-banner rounded-md q-mt-md"
+      >
+        <template #avatar>
+          <q-icon name="warning" />
+        </template>
+        {{ error }}
+      </q-banner>
+    </q-card-section>
+
+    <q-card-actions>
+      <m-btn
+        :label="t('action.generate')"
+        type="submit"
+        color="primary"
+        :loading
+      />
+    </q-card-actions>
+  </q-form>
 </template>
 
 <script lang="ts" setup>
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
 const { t } = useI18n();
 
@@ -82,10 +73,14 @@ function onSetup() {
 }
 </script>
 
-<style scoped></style>
+<style lang="scss" scoped>
+.error-banner {
+  background: var(--md3-error-container);
+  color: var(--md3-on-error-container);
+}
+</style>
 
 <i18n lang="yaml" locale="en">
-title: 'Two-Factor Authentication'
 description: 'To secure your account with two-factor authentication, please
   enter your password to generate a QR code for setup.'
 field:
@@ -98,7 +93,6 @@ action:
 </i18n>
 
 <i18n lang="yaml" locale="de">
-title: 'Zwei-Faktor-Authentifizierung'
 description: 'Um Ihr Konto mit der Zwei-Faktor-Authentifizierung zu sichern,
   geben Sie bitte Ihr Passwort ein, um einen QR-Code zur Einrichtung zu
   generieren.'
@@ -112,7 +106,6 @@ action:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-title: 'Authentification à deux facteurs'
 description: "Pour sécuriser votre compte avec l'authentification à deux
   facteurs, saisissez votre mot de passe pour générer un code QR pour la
   configuration."
@@ -126,7 +119,6 @@ action:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-title: 'Uwierzytelnianie dwuskładnikowe'
 description: 'Aby zabezpieczyć swoje konto za pomocą uwierzytelniania dwuskładnikowego, wprowadź swoje hasło, aby wygenerować kod QR do konfiguracji.'
 field:
   password:
@@ -138,7 +130,6 @@ action:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-title: 'Dvoufázové ověřování'
 description: 'Pro zabezpečení vašeho účtu pomocí dvoufázového ověřování zadejte své heslo a vygenerujte QR kód pro nastavení.'
 field:
   password:

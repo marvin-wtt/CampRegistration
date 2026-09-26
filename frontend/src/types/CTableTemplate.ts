@@ -23,7 +23,7 @@ export interface CTableTemplate extends Omit<TableTemplate, 'columns'> {
   /**
    * Runtime predicate applied on top of the declarative filters. Used by local
    * templates whose condition cannot be expressed as a filter string (e.g.
-   * "missing contact details" or "age outside the camp range").
+   * "missing contact details" or "age outside the event range").
    */
   localFilter?: (registration: Registration) => boolean;
 }

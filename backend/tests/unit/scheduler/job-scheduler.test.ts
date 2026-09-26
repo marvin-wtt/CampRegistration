@@ -1,8 +1,23 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { JobScheduler } from '#core/scheduler/JobScheduler';
+
+const { loggerErrorMock } = vi.hoisted(() => ({
+  loggerErrorMock: vi.fn(),
+}));
+
+vi.mock('#core/logger', () => ({
+  default: {
+    warn: vi.fn(),
+    error: loggerErrorMock,
+    info: vi.fn(),
+    debug: vi.fn(),
+  },
+}));
+
+const { JobScheduler } = await import('#core/scheduler/JobScheduler');
+const { getJobContext } = await import('#core/context/jobContext');
 
 describe('JobScheduler', () => {
-  let scheduler: JobScheduler;
+  let scheduler: InstanceType<typeof JobScheduler>;
 
   afterEach(() => {
     scheduler.stop();
@@ -42,5 +57,49 @@ describe('JobScheduler', () => {
 
     expect(scheduler.findJob('a')).toBeUndefined();
     expect(scheduler.findJob('b')).toBeUndefined();
+  });
+
+  it('logs the actual error message when a job throws, not an empty JSON-stringified object', async () => {
+    scheduler = new JobScheduler();
+    loggerErrorMock.mockClear();
+
+    scheduler.schedule('bounce-poll', '0 0 * * *', () => {
+      throw new Error('bad password');
+    });
+
+    await scheduler.findJob('bounce-poll')?.trigger();
+
+    expect(loggerErrorMock).toHaveBeenCalledWith('Job failed. bad password');
+  });
+
+  it('runs the handler inside a scheduler job context', async () => {
+    scheduler = new JobScheduler();
+    let seen: unknown;
+
+    scheduler.schedule('cleanup', '0 0 * * *', async () => {
+      await Promise.resolve();
+      seen = getJobContext();
+    });
+
+    await scheduler.findJob('cleanup')?.trigger();
+
+    expect(seen).toEqual({ source: 'scheduler', name: 'cleanup' });
+    expect(getJobContext()).toBeUndefined();
+  });
+
+  it('logs job failures inside the job context', async () => {
+    scheduler = new JobScheduler();
+    let context: unknown;
+    loggerErrorMock.mockImplementationOnce(() => {
+      context = getJobContext();
+    });
+
+    scheduler.schedule('bounce-poll', '0 0 * * *', () => {
+      throw new Error('bad password');
+    });
+
+    await scheduler.findJob('bounce-poll')?.trigger();
+
+    expect(context).toEqual({ source: 'scheduler', name: 'bounce-poll' });
   });
 });

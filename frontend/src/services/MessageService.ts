@@ -7,43 +7,55 @@ import type {
 import { api } from '@/services/api';
 
 export function useMessageService() {
-  async function fetchMessages(campId: string): Promise<Message[]> {
-    const response = await api.get(`camps/${campId}/messages/`);
+  async function fetchMessages(eventId: string): Promise<Message[]> {
+    const response = await api.get(`events/${eventId}/messages/`);
 
     return response?.data?.data;
   }
 
   async function fetchMessage(
-    campId: string,
+    eventId: string,
     messageId: string,
-  ): Promise<MessageDelivery> {
-    const response = await api.get(`camps/${campId}/messages/${messageId}/`);
+  ): Promise<Message> {
+    const response = await api.get(`events/${eventId}/messages/${messageId}/`);
+
+    return response?.data?.data;
+  }
+
+  // The emails a registration received — manual messages and automated ones.
+  async function fetchRegistrationMessages(
+    eventId: string,
+    registrationId: string,
+  ): Promise<MessageDelivery[]> {
+    const response = await api.get(
+      `events/${eventId}/registrations/${registrationId}/messages/`,
+    );
 
     return response?.data?.data;
   }
 
   async function createMessage(
-    campId: string,
+    eventId: string,
     data: MessageCreateData,
   ): Promise<Message> {
-    const response = await api.post(`camps/${campId}/messages/`, data);
+    const response = await api.post(`events/${eventId}/messages/`, data);
 
     return response?.data?.data;
   }
 
   async function deleteMessage(
-    campId: string,
+    eventId: string,
     messageId: string,
   ): Promise<void> {
-    await api.delete(`camps/${campId}/messages/${messageId}/`);
+    await api.delete(`events/${eventId}/messages/${messageId}/`);
   }
 
   async function duplicateMessageAttachments(
-    campId: string,
+    eventId: string,
     messageId: string,
   ): Promise<ServiceFile[]> {
     const response = await api.post(
-      `camps/${campId}/messages/${messageId}/attachments/`,
+      `events/${eventId}/messages/${messageId}/attachments/`,
     );
 
     return response?.data?.data;
@@ -52,6 +64,7 @@ export function useMessageService() {
   return {
     fetchMessages,
     fetchMessage,
+    fetchRegistrationMessages,
     createMessage,
     deleteMessage,
     duplicateMessageAttachments,

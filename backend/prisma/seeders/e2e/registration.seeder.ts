@@ -6,6 +6,6 @@ export async function seedE2eRegistrations(): Promise<void> {
     lastName: 'Smith',
     emails: ['tom.smith@example.com'],
     status: 'ACCEPTED',
-    camp: { connect: { id: '01JHP0CXJFR4MQS8SF1HQJCY38' } },
+    event: { connect: { id: '01JHP0CXJFR4MQS8SF1HQJCY38' } },
   });
 }

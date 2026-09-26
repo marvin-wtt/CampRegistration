@@ -115,15 +115,16 @@ export class AuthService extends BaseService {
       throw e;
     }
 
+    // Tokens go only once verified, so a failed attempt can be retried.
+    await this.userService.updateUserById(verifyEmailTokenData.userId, {
+      emailVerified: true,
+    });
+
     await this.prisma.token.deleteMany({
       where: {
         userId: verifyEmailTokenData.userId,
         type: TokenType.VERIFY_EMAIL,
       },
-    });
-
-    await this.userService.updateUserById(verifyEmailTokenData.userId, {
-      emailVerified: true,
     });
   }
 }

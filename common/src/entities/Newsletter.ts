@@ -1,6 +1,10 @@
 import type { Identifiable } from './Identifiable.js';
+import type { OrganizationVerificationStatus } from './Organization.js';
 
 export interface Newsletter extends Identifiable {
+  organizationId: string;
+  organizationName: string;
+  organizationVerificationStatus: OrganizationVerificationStatus;
   name: string;
   description: string | null;
   replyTo: string | null;
@@ -9,6 +13,7 @@ export interface Newsletter extends Identifiable {
 }
 
 export interface NewsletterCreateData {
+  organizationId: string;
   name: string;
   description?: string | null;
   replyTo?: string | null;
@@ -20,12 +25,16 @@ export interface NewsletterUpdateData {
   replyTo?: string | null;
 }
 
+export interface NewsletterOrganizationUpdateData {
+  organizationId: string;
+}
+
 export interface NewsletterQuery {
   view?: 'all' | 'assigned';
-
   cursor?: string;
   limit?: number;
   sortBy?: 'name' | 'createdAt' | 'updatedAt';
   sortType?: 'asc' | 'desc';
   name?: string;
+  organizationId?: string;
 }

@@ -6,39 +6,42 @@ import type {
 import { api } from '@/services/api';
 
 export function useTaskService() {
-  async function fetchTasks(campId: string): Promise<Task[]> {
-    const response = await api.get(`camps/${campId}/tasks/`);
+  async function fetchTasks(eventId: string): Promise<Task[]> {
+    const response = await api.get(`events/${eventId}/tasks/`);
 
     return response?.data?.data;
   }
 
-  async function fetchTask(campId: string, taskId: string): Promise<Task> {
-    const response = await api.get(`camps/${campId}/tasks/${taskId}/`);
+  async function fetchTask(eventId: string, taskId: string): Promise<Task> {
+    const response = await api.get(`events/${eventId}/tasks/${taskId}/`);
 
     return response?.data?.data;
   }
 
   async function createTask(
-    campId: string,
+    eventId: string,
     data: TaskCreateData,
   ): Promise<Task> {
-    const response = await api.post(`camps/${campId}/tasks/`, data);
+    const response = await api.post(`events/${eventId}/tasks/`, data);
 
     return response?.data?.data;
   }
 
   async function updateTask(
-    campId: string,
+    eventId: string,
     taskId: string,
     data: TaskUpdateData,
   ): Promise<Task> {
-    const response = await api.patch(`camps/${campId}/tasks/${taskId}/`, data);
+    const response = await api.patch(
+      `events/${eventId}/tasks/${taskId}/`,
+      data,
+    );
 
     return response?.data?.data;
   }
 
-  async function deleteTask(campId: string, taskId: string): Promise<void> {
-    await api.delete(`camps/${campId}/tasks/${taskId}/`);
+  async function deleteTask(eventId: string, taskId: string): Promise<void> {
+    await api.delete(`events/${eventId}/tasks/${taskId}/`);
   }
 
   return {

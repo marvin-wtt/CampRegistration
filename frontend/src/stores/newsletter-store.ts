@@ -36,7 +36,9 @@ export const useNewsletterStore = defineStore('newsletter', () => {
   async function createData(newData: NewsletterCreateData) {
     await withProgressNotification('create', async () => {
       const newsletter = await api.createNewsletter(newData);
-      data.value?.push(newsletter);
+      // The list is undefined for a user who had no newsletter to fetch, so
+      // the new one has to create it rather than be pushed into nothing.
+      data.value = [...(data.value ?? []), newsletter];
     });
   }
 

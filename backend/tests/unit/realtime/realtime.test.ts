@@ -39,21 +39,25 @@ describe('shouldDeliver', () => {
   it('delivers when the subscriber holds the required permission', () => {
     expect(
       shouldDeliver(
-        event({ requiredPermission: 'camp.tasks.view' }),
-        subscriber('camp.view', 'camp.tasks.view'),
+        event({ requiredPermission: 'event.tasks.view' }),
+        subscriber('event.view', 'event.tasks.view'),
       ),
     ).toBe(true);
   });
 
   it('blocks manager events for subscribers without managers.view (VIEWER)', () => {
-    // VIEWER permission set contains no camp.managers.view.
+    // VIEWER permission set contains no event.managers.view.
     expect(
       shouldDeliver(
         event({
           resource: 'manager',
-          requiredPermission: 'camp.managers.view',
+          requiredPermission: 'event.managers.view',
         }),
-        subscriber('camp.view', 'camp.registrations.view', 'camp.tasks.view'),
+        subscriber(
+          'event.view',
+          'event.registrations.view',
+          'event.tasks.view',
+        ),
       ),
     ).toBe(false);
   });
@@ -63,9 +67,9 @@ describe('shouldDeliver', () => {
       shouldDeliver(
         event({
           resource: 'message',
-          requiredPermission: 'camp.messages.view',
+          requiredPermission: 'event.messages.view',
         }),
-        subscriber('camp.view', 'camp.managers.view', 'camp.tasks.view'),
+        subscriber('event.view', 'event.managers.view', 'event.tasks.view'),
       ),
     ).toBe(false);
   });
@@ -105,16 +109,16 @@ describe('shouldRefreshOn', () => {
 });
 
 describe('MemoryRealtimeBus', () => {
-  it('delivers published events to subscribers of the same camp only', () => {
+  it('delivers published events to subscribers of the same event only', () => {
     const bus = new MemoryRealtimeBus();
     const received: RealtimeEvent[] = [];
     const other = vi.fn();
 
-    bus.subscribe('camp-a', (e) => received.push(e));
-    bus.subscribe('camp-b', other);
+    bus.subscribe('event-a', (e) => received.push(e));
+    bus.subscribe('event-b', other);
 
     const e = event({});
-    bus.publish('camp-a', e);
+    bus.publish('event-a', e);
 
     expect(received).toEqual([e]);
     expect(other).not.toHaveBeenCalled();
@@ -124,9 +128,9 @@ describe('MemoryRealtimeBus', () => {
     const bus = new MemoryRealtimeBus();
     const listener = vi.fn();
 
-    const unsubscribe = bus.subscribe('camp-a', listener);
+    const unsubscribe = bus.subscribe('event-a', listener);
     unsubscribe();
-    bus.publish('camp-a', event({}));
+    bus.publish('event-a', event({}));
 
     expect(listener).not.toHaveBeenCalled();
   });
@@ -142,13 +146,13 @@ describe('RealtimeService', () => {
   it('stamps the required view permission for every resource', async () => {
     const service = new RealtimeService(memoryConfig);
     const received: RealtimeEvent[] = [];
-    service.subscribe('camp-a', (e) => received.push(e));
+    service.subscribe('event-a', (e) => received.push(e));
 
     const resources = Object.keys(
       RESOURCE_VIEW_PERMISSION,
     ) as RealtimeResource[];
     for (const resource of resources) {
-      await service.emit('camp-a', resource, 'some-id', 'updated');
+      await service.emit('event-a', resource, 'some-id', 'updated');
     }
 
     expect(received).toHaveLength(resources.length);
@@ -161,12 +165,12 @@ describe('RealtimeService', () => {
   it('stamps the origin from the ambient request context', async () => {
     const service = new RealtimeService(memoryConfig);
     const received: RealtimeEvent[] = [];
-    service.subscribe('camp-a', (e) => received.push(e));
+    service.subscribe('event-a', (e) => received.push(e));
 
     await new Promise<void>((resolve, reject) => {
       runWithRequestContext({ clientId: 'client-42' }, () => {
         service
-          .emit('camp-a', 'task', 'task-1', 'created')
+          .emit('event-a', 'task', 'task-1', 'created')
           .then(resolve, reject);
       });
     });
@@ -177,10 +181,10 @@ describe('RealtimeService', () => {
   it('emits without an origin outside a request context', async () => {
     const service = new RealtimeService(memoryConfig);
     const received: RealtimeEvent[] = [];
-    service.subscribe('camp-a', (e) => received.push(e));
+    service.subscribe('event-a', (e) => received.push(e));
 
     // e.g. queue jobs / scheduler — everyone must react, incl. the originator.
-    await service.emit('camp-a', 'task', 'task-1', 'created');
+    await service.emit('event-a', 'task', 'task-1', 'created');
 
     expect(received[0]?.origin).toBeUndefined();
   });
@@ -188,11 +192,11 @@ describe('RealtimeService', () => {
   it('emitInvalidation publishes a collection-level event with a null id', async () => {
     const service = new RealtimeService(memoryConfig);
     const received: RealtimeEvent[] = [];
-    service.subscribe('camp-a', (e) => received.push(e));
+    service.subscribe('event-a', (e) => received.push(e));
 
     await new Promise<void>((resolve, reject) => {
       runWithRequestContext({ clientId: 'client-42' }, () => {
-        service.emitInvalidation('camp-a', 'room').then(resolve, reject);
+        service.emitInvalidation('event-a', 'room').then(resolve, reject);
       });
     });
 
@@ -201,7 +205,7 @@ describe('RealtimeService', () => {
         resource: 'room',
         id: null,
         operation: 'invalidated',
-        requiredPermission: 'camp.rooms.view',
+        requiredPermission: 'event.rooms.view',
         origin: 'client-42',
       }),
     ]);
@@ -209,12 +213,12 @@ describe('RealtimeService', () => {
 
   it('swallows bus failures instead of failing the emitting action', async () => {
     const service = new RealtimeService(memoryConfig);
-    service.subscribe('camp-a', () => {
+    service.subscribe('event-a', () => {
       throw new Error('listener exploded');
     });
 
     await expect(
-      service.emit('camp-a', 'task', 'task-1', 'created'),
+      service.emit('event-a', 'task', 'task-1', 'created'),
     ).resolves.toBeUndefined();
   });
 });

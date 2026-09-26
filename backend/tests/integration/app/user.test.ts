@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { UserFactory } from '../../../prisma/factories/index.js';
+import {
+  EventFactory,
+  EventManagerFactory,
+  InvitationFactory,
+  OrganizationFactory,
+  UserFactory,
+} from '../../../prisma/factories/index.js';
 import { request } from '../utils/request.js';
 import prisma from '../utils/prisma.js';
 import { generateAccessToken } from './utils/token.js';
@@ -102,12 +108,12 @@ describe('/api/v1/users/', () => {
       await request().get(`/api/v1/users/${user.id}`).send().expect(401);
     });
 
-    it('should respond with `404` status code when camp id does not exists', async () => {
+    it('should respond with `404` status code when event id does not exists', async () => {
       const { accessToken } = await createAdminWithToken();
-      const campId = ulid();
+      const eventId = ulid();
 
       await request()
-        .delete(`/api/v1/users/${campId}`)
+        .delete(`/api/v1/users/${eventId}`)
         .send()
         .auth(accessToken, { type: 'bearer' })
         .expect(404);
@@ -180,6 +186,110 @@ describe('/api/v1/users/', () => {
   });
 
   describe('PATCH /api/v1/users/:userId', () => {
+    describe('invitation resolution', () => {
+      const createInvitation = (email: string) =>
+        EventManagerFactory.create({
+          event: { create: EventFactory.build() },
+          invitation: { create: InvitationFactory.build({ email }) },
+        });
+
+      it('should bind pending invitations when an admin verifies the email', async () => {
+        const { accessToken } = await createAdminWithToken();
+        const user = await UserFactory.create({
+          email: 'invited@example.com',
+          emailVerified: false,
+        });
+        const pending = await createInvitation('invited@example.com');
+
+        await request()
+          .patch(`/api/v1/users/${user.id}`)
+          .send({ emailVerified: true })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        const manager = await prisma.eventManager.findUniqueOrThrow({
+          where: { id: pending.id },
+        });
+        expect(manager.userId).toBe(user.id);
+      });
+
+      it('should bind pending invitations when an admin changes a verified email', async () => {
+        const { accessToken } = await createAdminWithToken();
+        const user = await UserFactory.create();
+        const pending = await createInvitation('invited@example.com');
+
+        await request()
+          .patch(`/api/v1/users/${user.id}`)
+          .send({ email: 'invited@example.com' })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        const manager = await prisma.eventManager.findUniqueOrThrow({
+          where: { id: pending.id },
+        });
+        expect(manager.userId).toBe(user.id);
+      });
+
+      it('should drop invitations duplicating existing access', async () => {
+        const { accessToken } = await createAdminWithToken();
+        const user = await UserFactory.create();
+        const pending = await createInvitation('invited@example.com');
+        await EventManagerFactory.create({
+          event: { connect: { id: pending.eventId } },
+          user: { connect: { id: user.id } },
+        });
+        const organization = await OrganizationFactory.create({
+          members: { create: { userId: user.id, role: 'MEMBER' } },
+        });
+        await prisma.organizationMember.create({
+          data: {
+            organization: { connect: { id: organization.id } },
+            role: 'ADMIN',
+            invitation: {
+              create: {
+                organizationId: organization.id,
+                email: 'invited@example.com',
+              },
+            },
+          },
+        });
+
+        await request()
+          .patch(`/api/v1/users/${user.id}`)
+          .send({ email: 'invited@example.com' })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        await expect(
+          prisma.eventManager.count({ where: { eventId: pending.eventId } }),
+        ).resolves.toBe(1);
+        await expect(
+          prisma.organizationMember.findMany({
+            where: { organizationId: organization.id },
+          }),
+        ).resolves.toEqual([
+          expect.objectContaining({ userId: user.id, role: 'MEMBER' }),
+        ]);
+      });
+
+      it('should not bind pending invitations to an unverified email', async () => {
+        const { accessToken } = await createAdminWithToken();
+        const user = await UserFactory.create({ emailVerified: false });
+        const pending = await createInvitation('invited@example.com');
+
+        await request()
+          .patch(`/api/v1/users/${user.id}`)
+          .send({ email: 'invited@example.com' })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        const manager = await prisma.eventManager.findUniqueOrThrow({
+          where: { id: pending.id },
+        });
+        expect(manager.userId).toBeNull();
+      });
+    });
+
     describe('should respond with `200` status code when updating properties', () => {
       it('should update the name', async () => {
         const { accessToken } = await createAdminWithToken();
@@ -297,12 +407,12 @@ describe('/api/v1/users/', () => {
         .expect(401);
     });
 
-    it('should respond with `404` status code when camp id does not exists', async () => {
+    it('should respond with `404` status code when event id does not exists', async () => {
       const { accessToken } = await createAdminWithToken();
-      const campId = ulid();
+      const eventId = ulid();
 
       await request()
-        .patch(`/api/v1/users/${campId}`)
+        .patch(`/api/v1/users/${eventId}`)
         .send({
           name: 'NewName',
         })
@@ -348,16 +458,16 @@ describe('/api/v1/users/', () => {
 
       await request().delete(`/api/v1/users/${user.id}`).send().expect(401);
 
-      const campCount = await prisma.user.count();
-      expect(campCount).toBe(1);
+      const eventCount = await prisma.user.count();
+      expect(eventCount).toBe(1);
     });
 
-    it('should respond with `404` status code when camp id does not exists', async () => {
+    it('should respond with `404` status code when event id does not exists', async () => {
       const { accessToken } = await createAdminWithToken();
-      const campId = ulid();
+      const eventId = ulid();
 
       await request()
-        .delete(`/api/v1/users/${campId}`)
+        .delete(`/api/v1/users/${eventId}`)
         .send()
         .auth(accessToken, { type: 'bearer' })
         .expect(404);

@@ -16,11 +16,12 @@ const statusToString = (statusCode: number): string => {
   return httpStatus[statusCode as keyof typeof httpStatus] as string;
 };
 
-const getStack = (err: unknown): string | undefined =>
-  isObject(err) && typeof err.stack === 'string' ? err.stack : undefined;
-
 const getCode = (err: unknown): string | undefined =>
   isObject(err) && typeof err.code === 'string' ? err.code : undefined;
+
+// Known-request codes for a missing table/column — a missing migration or a
+// schema drift, never anything the client did.
+const SCHEMA_MISMATCH_CODES = new Set(['P2021', 'P2022']);
 
 // Prisma failures that indicate a bug or infrastructure problem rather than a
 // faulty request. Their details must not leak to the client.
@@ -28,11 +29,19 @@ const isInternalPrismaError = (err: unknown): boolean =>
   err instanceof Prisma.PrismaClientUnknownRequestError ||
   err instanceof Prisma.PrismaClientValidationError ||
   err instanceof Prisma.PrismaClientRustPanicError ||
-  err instanceof Prisma.PrismaClientInitializationError;
+  err instanceof Prisma.PrismaClientInitializationError ||
+  (err instanceof Prisma.PrismaClientKnownRequestError &&
+    SCHEMA_MISMATCH_CODES.has(err.code));
 
 const toApiError = (err: unknown): ApiError => {
   if (err instanceof ApiError) {
     return err;
+  }
+
+  if (isInternalPrismaError(err)) {
+    return new ApiError(httpStatus.INTERNAL_SERVER_ERROR, undefined, {
+      cause: err,
+    });
   }
 
   // `findUniqueOrThrow` and friends throw a known request error (e.g. P2025)
@@ -42,41 +51,34 @@ const toApiError = (err: unknown): ApiError => {
     return new ApiError(
       httpStatus.BAD_REQUEST,
       statusToString(httpStatus.BAD_REQUEST),
-      true,
-      getStack(err),
-    );
-  }
-
-  if (isInternalPrismaError(err)) {
-    return new ApiError(
-      httpStatus.INTERNAL_SERVER_ERROR,
-      undefined,
-      false,
-      getStack(err),
+      { cause: err },
     );
   }
 
   if (!isObject(err)) {
     const message = typeof err === 'string' ? err : undefined;
 
-    return new ApiError(httpStatus.INTERNAL_SERVER_ERROR, message, false);
+    return new ApiError(httpStatus.INTERNAL_SERVER_ERROR, message, {
+      cause: err,
+    });
   }
 
+  // Express/Node conventionally use `status` (e.g. the router's malformed-URI
+  // `URIError`, body-parser's JSON `SyntaxError`); some libraries use
+  // `statusCode` instead. Accept either.
   const statusCode =
     typeof err.statusCode === 'number'
       ? err.statusCode
-      : httpStatus.INTERNAL_SERVER_ERROR;
+      : typeof err.status === 'number'
+        ? err.status
+        : httpStatus.INTERNAL_SERVER_ERROR;
   const message =
     typeof err.message === 'string' ? err.message : statusToString(statusCode);
-  const isOperational = statusCode >= 400 && statusCode < 500;
 
-  return new ApiError(
-    statusCode,
-    message,
-    isOperational,
-    getStack(err),
-    getCode(err),
-  );
+  return new ApiError(statusCode, message, {
+    cause: err,
+    code: getCode(err),
+  });
 };
 
 export const errorConverter: ErrorRequestHandler = (err, _req, _res, next) => {
@@ -89,24 +91,28 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     return;
   }
 
-  let { statusCode, message } = err;
-  if (config.env === 'production' && !err.isOperational) {
-    statusCode = httpStatus.INTERNAL_SERVER_ERROR;
-    message = httpStatus[httpStatus.INTERNAL_SERVER_ERROR];
-  }
+  const { statusCode } = err;
+  // A fault's message describes an internal failure and must not reach the
+  // client. The status code itself is safe to keep.
+  const masked = err.isFault && config.env === 'production';
+  const message = masked ? statusToString(statusCode) : err.message;
+  // `toApiError` copies `code` off whatever was thrown, so a fault's code names
+  // the internal cause (`ECONNREFUSED`, a driver code) just as its message
+  // does — mask it on the same terms, or the masking is undone by it.
+  const errorCode = masked ? undefined : err.code;
 
   res.locals.errorMessage = err.message;
 
   const response = {
     code: statusCode,
     message,
-    ...(err.isOperational && err.code !== undefined && { errorCode: err.code }),
+    ...(errorCode !== undefined && { errorCode }),
     ...(config.env === 'development' && { stack: err.stack }),
   };
 
-  if (!err.isOperational) {
+  if (err.isFault) {
     logger.error(err);
-  } else if (config.env === 'development') {
+  } else if (statusCode >= 500 || config.env === 'development') {
     logger.warn(err);
   }
 

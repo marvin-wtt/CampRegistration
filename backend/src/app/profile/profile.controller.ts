@@ -27,9 +27,17 @@ export class ProfileController extends BaseController {
 
   async show(req: Request, res: Response) {
     const userId = req.authUserId();
-    const user = await this.userService.getUserByIdWithCampRoles(userId);
+    const user = await this.userService.getProfileUserById(userId);
 
     res.resource(new ProfileResource(user));
+  }
+
+  async deletionBlockers(req: Request, res: Response) {
+    const blockers = await this.userService.getDeletionBlockers(
+      req.authUserId(),
+    );
+
+    res.json({ data: blockers });
   }
 
   async update(req: Request, res: Response) {
@@ -74,10 +82,9 @@ export class ProfileController extends BaseController {
       });
     }
 
-    const userWithCampRoles =
-      await this.userService.getUserByIdWithCampRoles(userId);
+    const profileUser = await this.userService.getProfileUserById(userId);
 
-    res.resource(new ProfileResource(userWithCampRoles));
+    res.resource(new ProfileResource(profileUser));
   }
 
   async destroy(req: Request, res: Response) {

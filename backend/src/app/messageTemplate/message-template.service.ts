@@ -2,20 +2,25 @@ import type { Prisma } from '#generated/prisma/client.js';
 import { BaseService } from '#core/base/BaseService';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service';
+import { AuditService } from '#app/audit/audit.service';
+import { messageTemplateAuditPolicy } from '#app/messageTemplate/message-template.audit';
 import { sanitizeHtmlContent } from '#utils/sanitize';
 import type { MessageTemplateWithFiles } from '#app/messageTemplate/message-template.resource';
 
 @injectable()
 export class MessageTemplateService extends BaseService {
-  constructor(@inject(FileService) private readonly fileService: FileService) {
+  constructor(
+    @inject(FileService) private readonly fileService: FileService,
+    @inject(AuditService) private readonly audit: AuditService,
+  ) {
     super();
   }
 
-  async getMessageTemplateById(campId: string, id: string) {
+  async getMessageTemplateById(eventId: string, id: string) {
     return this.prisma.messageTemplate.findFirst({
       where: {
         id,
-        campId,
+        eventId,
       },
       include: {
         attachments: true,
@@ -23,23 +28,23 @@ export class MessageTemplateService extends BaseService {
     });
   }
 
-  async getMessageTemplateWithCamp(id: string) {
+  async getMessageTemplateWithEvent(id: string) {
     return this.prisma.messageTemplate.findFirst({
       where: {
         id,
       },
       include: {
-        camp: { select: { id: true } },
+        event: { select: { id: true } },
         attachments: true,
       },
     });
   }
 
   async queryMessageTemplates(
-    campId: string,
+    eventId: string,
   ): Promise<MessageTemplateWithFiles[]> {
     return this.prisma.messageTemplate.findMany({
-      where: { campId },
+      where: { eventId },
       include: {
         attachments: true,
       },
@@ -47,14 +52,14 @@ export class MessageTemplateService extends BaseService {
   }
 
   async getMessageTemplateByName(
-    campId: string,
-    event: string,
+    eventId: string,
+    trigger: string,
     country?: string | null,
   ) {
     return this.prisma.messageTemplate.findFirst({
       where: {
-        campId,
-        event,
+        eventId,
+        trigger,
         country,
       },
       include: {
@@ -64,37 +69,43 @@ export class MessageTemplateService extends BaseService {
   }
 
   async createTemplate(
-    campId: string,
-    data: Omit<Prisma.MessageTemplateCreateInput, 'camp'> & {
+    eventId: string,
+    data: Omit<Prisma.MessageTemplateCreateInput, 'event'> & {
       attachmentIds?: string[] | undefined;
     },
     fileFieldId: string,
   ) {
-    return this.prisma.messageTemplate.create({
-      data: {
-        event: data.event,
-        country: data.country,
-        subject: data.subject,
-        body: sanitizeHtmlContent(data.body),
-        priority: data.priority,
-        replyTo: data.replyTo,
-        campId,
-        attachments: data.attachmentIds
-          ? this.fileService.getFileConnectInput(
-              data.attachmentIds,
-              fileFieldId,
-            )
-          : undefined,
-      },
-      include: {
-        attachments: true,
-      },
+    return this.transaction(async (tx) => {
+      const template = await tx.messageTemplate.create({
+        data: {
+          trigger: data.trigger,
+          country: data.country,
+          subject: data.subject,
+          body: sanitizeHtmlContent(data.body),
+          priority: data.priority,
+          replyTo: data.replyTo,
+          eventId,
+          attachments: data.attachmentIds
+            ? this.fileService.getFileConnectInput(
+                data.attachmentIds,
+                fileFieldId,
+              )
+            : undefined,
+        },
+        include: {
+          attachments: true,
+        },
+      });
+
+      await this.audit.created(messageTemplateAuditPolicy, template);
+
+      return template;
     });
   }
 
   async updateMessageTemplate(
     id: string,
-    campId: string,
+    eventId: string,
     data: Prisma.MessageTemplateUpdateInput & {
       attachmentIds?: string[] | undefined;
       body?: string | undefined;
@@ -103,7 +114,12 @@ export class MessageTemplateService extends BaseService {
   ) {
     const fileIds = data.attachmentIds ?? [];
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.transaction(async (tx) => {
+      const before = await tx.messageTemplate.findUniqueOrThrow({
+        where: { id },
+        include: { attachments: { select: { id: true } } },
+      });
+
       const attachments = await this.fileService.syncFilesForOwner(
         tx,
         'messageTemplateId',
@@ -112,10 +128,10 @@ export class MessageTemplateService extends BaseService {
         sessionId,
       );
 
-      return tx.messageTemplate.update({
+      const after = await tx.messageTemplate.update({
         where: {
           id,
-          campId,
+          eventId,
         },
         data: {
           subject: data.subject,
@@ -130,15 +146,25 @@ export class MessageTemplateService extends BaseService {
           attachments: true,
         },
       });
+
+      await this.audit.updated(messageTemplateAuditPolicy, before, after);
+
+      return after;
     });
   }
 
-  async deleteMessageTemplateById(id: string, campId: string) {
-    return this.prisma.messageTemplate.delete({
-      where: {
-        id,
-        campId,
-      },
+  async deleteMessageTemplateById(id: string, eventId: string) {
+    return this.transaction(async (tx) => {
+      const deleted = await tx.messageTemplate.delete({
+        where: {
+          id,
+          eventId,
+        },
+      });
+
+      await this.audit.deleted(messageTemplateAuditPolicy, deleted);
+
+      return deleted;
     });
   }
 }

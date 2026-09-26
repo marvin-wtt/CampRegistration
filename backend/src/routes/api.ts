@@ -1,7 +1,9 @@
 import { generalLimiter, maintenance } from '#middlewares/index';
 import passport from 'passport';
 import { successHandler, clientErrorHandler } from '#core/morgan';
-import context from '#middlewares/context.middleware';
+import context, {
+  authenticatedUserContext,
+} from '#middlewares/context.middleware';
 import extensions from '#middlewares/extension.middleware';
 import { createRouter } from '#core/router/router';
 import { csrfProtection } from '#middlewares/csrf.middleware';
@@ -32,6 +34,9 @@ const router = createRouter()
 
   // authentication
   .use(passport.authenticate(['jwt', 'anonymous'], { session: false }))
+
+  // the authenticated user, for the audit log
+  .use(authenticatedUserContext)
 
   // csrf protection
   .use(csrfProtection)

@@ -1,0 +1,23 @@
+<template>
+  {{ formattedName }}
+</template>
+
+<script lang="ts" setup>
+import { computed } from 'vue';
+import { formatPersonName } from '@/utils/formatters';
+import type { TableCellProps } from '@/components/event/table/tableCells/TableCellProps';
+
+const { props: cellProps } = defineProps<TableCellProps>();
+
+const formattedName = computed<unknown>(() => {
+  const value = cellProps.value;
+
+  if (typeof value !== 'string') {
+    return value;
+  }
+
+  return formatPersonName(value);
+});
+</script>
+
+<style scoped></style>

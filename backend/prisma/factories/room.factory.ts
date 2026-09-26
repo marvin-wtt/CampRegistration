@@ -8,7 +8,7 @@ export const RoomFactory = {
   ): Prisma.RoomCreateInput => {
     return {
       name: faker.string.alpha(),
-      camp: {},
+      event: {},
       ...data,
     };
   },

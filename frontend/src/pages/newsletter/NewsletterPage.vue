@@ -1,25 +1,32 @@
 <template>
-  <page-state-handler
-    :error
-    style="height: 1px"
-  >
-    <div class="absolute fit row no-wrap justify-center q-pa-md">
-      <div class="column no-wrap col-sm-11 col-md-10 col-lg-9 col-12">
+  <page-state-handler :error>
+    <div class="newsletter-page">
+      <div class="newsletter-page__inner">
         <!-- Header -->
-        <div class="row items-start justify-between no-wrap q-mb-lg">
-          <div class="col">
+        <div class="newsletter-header">
+          <div class="newsletter-header__main">
             <div
               class="text-overline text-grey-6 text-uppercase letter-spacing-1"
             >
               {{ t('header.label') }}
             </div>
-            <div class="text-h5 text-weight-medium">{{ newsletter?.name }}</div>
+            <div class="newsletter-header__title text-weight-medium">
+              {{ newsletter?.name }}
+            </div>
             <div
               v-if="newsletter?.description"
-              class="text-body2 text-grey-6 q-mt-xs"
+              class="newsletter-header__description text-body2 text-grey-6 q-mt-xs"
             >
               {{ newsletter.description }}
             </div>
+            <owning-organization-chip
+              v-if="newsletter"
+              class="q-mt-xs"
+              subject="newsletter"
+              :organization-id="newsletter.organizationId"
+              :organization-name="newsletter.organizationName"
+              :verification-status="newsletter.organizationVerificationStatus"
+            />
             <div
               v-if="newsletter?.replyTo"
               class="row items-center q-gutter-x-xs q-mt-xs text-body2 text-grey-6"
@@ -52,6 +59,7 @@
             </div>
           </div>
           <q-btn
+            v-if="canNewsletter('newsletter.edit')"
             flat
             round
             icon="edit"
@@ -64,30 +72,35 @@
         </div>
 
         <!-- Tabs -->
-        <div class="column no-wrap col newsletter-tabs">
+        <div class="newsletter-tabs">
           <q-tabs
             v-model="tab"
-            align="left"
+            :align="compact ? 'justify' : 'left'"
+            :dense="compact"
             no-caps
             indicator-color="primary"
             class="q-mb-none"
           >
             <q-tab
+              v-if="visibleTabs.includes('compose')"
               name="compose"
               :label="t('tab.compose')"
               icon="edit_note"
             />
             <q-tab
+              v-if="visibleTabs.includes('history')"
               name="history"
               :label="t('tab.history')"
               icon="history"
             />
             <q-tab
+              v-if="visibleTabs.includes('subscribers')"
               name="subscribers"
               :label="t('tab.subscribers')"
               icon="people"
             />
             <q-tab
+              v-if="visibleTabs.includes('managers')"
               name="managers"
               :label="t('tab.managers')"
               icon="manage_accounts"
@@ -98,69 +111,93 @@
           <q-tab-panels
             v-model="tab"
             animated
-            class="col bg-transparent newsletter-panels"
+            class="bg-transparent newsletter-panels"
           >
             <!-- Compose Tab -->
             <q-tab-panel
+              v-if="visibleTabs.includes('compose')"
               name="compose"
-              class="q-pa-none q-pt-lg"
-              style="overflow-y: auto"
+              class="newsletter-panel"
             >
-              <div class="q-gutter-y-md">
+              <div class="composer">
+                <!-- Set-up is allowed before verification, sending is not — so
+                     say so where the send button is, not on every tab. -->
+                <organization-unverified-notice
+                  v-if="newsletter"
+                  subject="newsletter"
+                  :organization-id="newsletter.organizationId"
+                  :organization-name="newsletter.organizationName"
+                  :verification-status="
+                    newsletter.organizationVerificationStatus
+                  "
+                />
+
                 <q-input
                   v-model="sendSubject"
                   :label="t('compose.subject')"
+                  :dense="compact"
+                  :disable="sending"
                   outlined
                   rounded
                   clearable
                 >
-                  <template #before>
+                  <template #prepend>
                     <q-icon name="subject" />
                   </template>
                 </q-input>
 
-                <div>
-                  <div class="text-caption text-grey-7 q-mb-xs q-ml-sm">
-                    {{ t('compose.body') }}
-                  </div>
+                <div class="composer__body">
                   <email-editor
                     v-model="sendBody"
+                    :label="t('compose.body')"
                     :placeholder="t('compose.bodyPlaceholder')"
+                    :disable="sending"
                     outlined
                     rounded
-                    style="min-height: 200px"
+                    class="composer__editor"
                   />
                 </div>
 
                 <file-input
                   v-model="sendAttachments"
                   :label="t('compose.attachments')"
+                  :dense="compact"
+                  :disable="sending"
+                  use-chips
                   outlined
                   rounded
                 >
-                  <template #before>
+                  <template #prepend>
                     <q-icon name="attach_file" />
                   </template>
                 </file-input>
 
-                <div class="row justify-between items-center q-pt-sm">
-                  <div class="text-body2 text-grey-6">
+                <div class="composer__actions">
+                  <div
+                    class="composer__hint text-body2"
+                    :class="blockedReason ? 'text-negative' : 'text-grey-6'"
+                  >
                     <q-icon
-                      name="info_outline"
+                      :name="blockedReason ? 'block' : 'info_outline'"
                       size="xs"
-                      class="q-mr-xs"
                     />
-                    {{
-                      t('compose.recipientInfo', { count: subscribers.length })
-                    }}
+                    <span>
+                      {{
+                        blockedReason
+                          ? t('compose.blocked')
+                          : t('compose.recipientInfo', {
+                              count: subscribers.length,
+                            })
+                      }}
+                    </span>
                   </div>
                   <q-btn
+                    class="composer__send"
                     color="primary"
                     icon="send"
                     :label="t('compose.send')"
-                    :disable="
-                      !sendSubject || !sendBody || subscribers.length === 0
-                    "
+                    :loading="sending"
+                    :disable="!canSend"
                     rounded
                     unelevated
                     no-caps
@@ -172,9 +209,9 @@
 
             <!-- History Tab -->
             <q-tab-panel
+              v-if="visibleTabs.includes('history')"
               name="history"
-              class="q-pa-none q-pt-lg"
-              style="overflow-y: auto"
+              class="newsletter-panel"
             >
               <div
                 v-if="messageStore.isLoading"
@@ -209,7 +246,7 @@
                 v-else
                 bordered
                 separator
-                class="rounded-borders list-scroll"
+                class="rounded-borders"
               >
                 <q-expansion-item
                   v-for="message in messages"
@@ -225,11 +262,17 @@
                         icon="email"
                       />
                     </q-item-section>
-                    <q-item-section>
-                      <q-item-label class="text-weight-medium">
+                    <q-item-section class="newsletter-message__text">
+                      <q-item-label
+                        lines="1"
+                        class="text-weight-medium"
+                      >
                         {{ message.subject }}
                       </q-item-label>
-                      <q-item-label caption>
+                      <q-item-label
+                        lines="1"
+                        caption
+                      >
                         {{ d(message.sentAt, 'dateTime') }}
                         <span v-if="message.sentBy">
                           &middot; {{ message.sentBy.name }}
@@ -239,6 +282,7 @@
                     <q-item-section side>
                       <div class="row items-center q-gutter-xs no-wrap">
                         <q-chip
+                          v-if="!compact"
                           dense
                           outline
                           icon="people"
@@ -246,6 +290,7 @@
                           color="grey-6"
                         />
                         <q-btn
+                          v-if="visibleTabs.includes('compose')"
                           flat
                           round
                           dense
@@ -258,6 +303,7 @@
                           </q-tooltip>
                         </q-btn>
                         <q-btn
+                          v-if="canNewsletter('newsletter.messages.delete')"
                           flat
                           round
                           dense
@@ -283,12 +329,12 @@
 
             <!-- Subscribers Tab -->
             <q-tab-panel
+              v-if="visibleTabs.includes('subscribers')"
               name="subscribers"
-              class="q-pa-none column no-wrap"
-              style="overflow: hidden"
+              class="newsletter-panel newsletter-panel--contained"
             >
               <!-- Toolbar + Search -->
-              <div class="row items-center q-gutter-sm q-mb-md q-mt-lg">
+              <div class="row items-center no-wrap q-gutter-sm q-mb-md">
                 <q-input
                   v-model="subscriberFilter"
                   :placeholder="t('subscribers.search')"
@@ -303,6 +349,7 @@
                   </template>
                 </q-input>
                 <q-btn
+                  v-if="canNewsletter('newsletter.subscribers.create')"
                   outline
                   color="primary"
                   icon="file_upload"
@@ -320,6 +367,7 @@
                   </q-tooltip>
                 </q-btn>
                 <q-btn
+                  v-if="canNewsletter('newsletter.subscribers.create')"
                   color="primary"
                   icon="person_add"
                   :label="
@@ -344,9 +392,9 @@
                 class="q-gutter-y-sm"
               >
                 <q-skeleton
-                  v-for="i in 4"
+                  v-for="i in 6"
                   :key="i"
-                  height="56px"
+                  height="36px"
                   class="rounded-borders"
                 />
               </div>
@@ -368,6 +416,7 @@
                   {{ t('subscribers.emptyHint') }}
                 </div>
                 <q-btn
+                  v-if="canNewsletter('newsletter.subscribers.create')"
                   color="primary"
                   icon="person_add"
                   :label="t('subscribers.action.add')"
@@ -399,17 +448,20 @@
                 v-else
                 bordered
                 separator
-                class="col rounded-borders list-scroll"
+                class="rounded-borders list-scroll"
               >
                 <q-item
                   v-for="subscriber in filteredSubscribers"
                   :key="subscriber.id"
+                  dense
+                  class="subscriber-item"
                 >
                   <q-item-section avatar>
                     <q-avatar
                       color="primary"
                       text-color="white"
-                      size="36px"
+                      size="24px"
+                      class="text-caption"
                     >
                       {{
                         (subscriber.name ?? subscriber.email)
@@ -419,23 +471,34 @@
                     </q-avatar>
                   </q-item-section>
                   <q-item-section>
-                    <q-item-label class="text-weight-medium">
-                      {{ subscriber.email }}
-                    </q-item-label>
                     <q-item-label
-                      v-if="subscriber.name"
-                      caption
+                      lines="1"
+                      class="text-body2"
                     >
-                      {{ subscriber.name }}
-                    </q-item-label>
-                    <q-item-label caption>
-                      {{ d(subscriber.subscribedAt, 'date') }}
+                      {{ subscriber.email }}
+                      <span
+                        v-if="subscriber.name"
+                        class="text-grey-6"
+                      >
+                        &middot; {{ subscriber.name }}
+                      </span>
                     </q-item-label>
                   </q-item-section>
-                  <q-item-section side>
+                  <q-item-section
+                    v-if="quasar.screen.gt.xs"
+                    side
+                    class="text-caption text-grey-6"
+                  >
+                    {{ d(subscriber.subscribedAt, 'date') }}
+                  </q-item-section>
+                  <q-item-section
+                    v-if="canNewsletter('newsletter.subscribers.delete')"
+                    side
+                  >
                     <q-btn
                       flat
                       round
+                      dense
                       icon="person_remove"
                       color="negative"
                       size="sm"
@@ -448,15 +511,30 @@
 
             <!-- Managers Tab -->
             <q-tab-panel
+              v-if="visibleTabs.includes('managers')"
               name="managers"
-              class="q-pa-none q-pt-lg"
-              style="overflow-y: auto"
+              class="newsletter-panel"
             >
-              <div class="row justify-end q-mb-md">
+              <div
+                v-if="canNewsletter('newsletter.managers.create')"
+                class="managers-toolbar"
+              >
+                <!-- Organization admins hold this list without appearing on it. -->
+                <div class="managers-toolbar__info">
+                  <q-icon
+                    name="info_outline"
+                    size="xs"
+                    color="grey-6"
+                  />
+                  <div class="text-body2 text-grey-6">
+                    {{ t('managers.organizationInfo') }}
+                  </div>
+                </div>
                 <q-btn
+                  class="managers-toolbar__action"
+                  :label="t('managers.action.add')"
                   color="primary"
                   icon="person_add"
-                  :label="t('managers.action.add')"
                   rounded
                   unelevated
                   no-caps
@@ -467,7 +545,7 @@
               <q-list
                 bordered
                 separator
-                class="rounded-borders list-scroll"
+                class="rounded-borders"
               >
                 <q-item
                   v-for="manager in managers"
@@ -507,7 +585,10 @@
                     </q-chip>
                   </q-item-section>
                   <q-item-section
-                    v-if="manager.email !== userEmail"
+                    v-if="
+                      manager.email !== userEmail &&
+                      canNewsletter('newsletter.managers.delete')
+                    "
                     side
                   >
                     <q-btn
@@ -531,14 +612,15 @@
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useNewsletterStore } from '@/stores/newsletter-store';
 import { useNewsletterManagerStore } from '@/stores/newsletter-manager-store';
 import { useNewsletterSubscriberStore } from '@/stores/newsletter-subscriber-store';
 import { useNewsletterMessageStore } from '@/stores/newsletter-message-store';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
-import EmailEditor from '@/components/campManagement/contact/EmailEditor.vue';
+import OwningOrganizationChip from '@/components/common/OwningOrganizationChip.vue';
+import EmailEditor from '@/components/event/contact/EmailEditor.vue';
 import FileInput, {
   type FileInputModel,
 } from '@/components/common/inputs/FileInput.vue';
@@ -553,19 +635,39 @@ import type {
   NewsletterSubscriberCreateData,
   NewsletterSubscriberImportData,
 } from '@camp-registration/common/entities';
-import type { NewsletterManagerRole } from '@camp-registration/common/permissions';
+import type {
+  NewsletterManagerRole,
+  NewsletterPermission,
+} from '@camp-registration/common/permissions';
 import NewsletterEditDialog from '@/components/newsletter/NewsletterEditDialog.vue';
 import NewsletterSubscriberAddDialog from '@/components/newsletter/NewsletterSubscriberAddDialog.vue';
 import NewsletterSubscriberImportDialog from '@/components/newsletter/NewsletterSubscriberImportDialog.vue';
 import NewsletterManagerAddDialog from '@/components/newsletter/NewsletterManagerAddDialog.vue';
 import { useAPIService } from '@/services/APIService';
+import OrganizationUnverifiedNotice from '@/components/organization/OrganizationUnverifiedNotice.vue';
+import { useNewsletterPermissions } from '@/composables/newsletterPermissions';
 import { useProfileStore } from '@/stores/profile-store';
+import { useRouteTab } from '@/composables/routeTab';
 import DOMPurify from 'dompurify';
+
+/** Each tab, and the permission that makes it worth showing. */
+const TAB_PERMISSION = {
+  compose: 'newsletter.messages.create',
+  history: 'newsletter.messages.view',
+  subscribers: 'newsletter.subscribers.view',
+  managers: 'newsletter.managers.view',
+} as const satisfies Record<string, NewsletterPermission>;
+
+type Tab = keyof typeof TAB_PERMISSION;
+
+const TABS = Object.keys(TAB_PERMISSION) as Tab[];
 
 const { t, d } = useI18n();
 const quasar = useQuasar();
 const route = useRoute();
 const api = useAPIService();
+
+const { canNewsletter } = useNewsletterPermissions();
 
 const profileStore = useProfileStore();
 const newsletterStore = useNewsletterStore();
@@ -573,22 +675,47 @@ const managerStore = useNewsletterManagerStore();
 const subscriberStore = useNewsletterSubscriberStore();
 const messageStore = useNewsletterMessageStore();
 
-const tab = ref('compose');
+/**
+ * An organization ADMIN reaches this page with only `newsletter.view` and
+ * `newsletter.managers.view`, so most tabs must not render at all — an empty
+ * subscriber list is indistinguishable from a forbidden one.
+ */
+const visibleTabs = computed<Tab[]>(() =>
+  TABS.filter((name) => canNewsletter(TAB_PERMISSION[name])),
+);
+
+const tab = useRouteTab(visibleTabs);
 const sendSubject = ref('');
 const sendBody = ref('');
 const sendAttachments = ref<FileInputModel[]>([]);
+const sending = ref(false);
 const subscriberFilter = ref('');
+
+const compact = computed<boolean>(() => quasar.screen.lt.sm);
 
 const newsletterId = computed(() => route.params.newsletterId as string);
 
 onMounted(async () => {
-  await Promise.allSettled([
-    loadNewsletter(),
-    managerStore.fetchData(newsletterId.value),
-    subscriberStore.fetchData(newsletterId.value),
-    messageStore.fetchData(newsletterId.value),
-  ]);
+  await loadNewsletter();
 });
+
+// Fetch only what the user may read. Re-runs when the profile lands, since the
+// auth guard lets a page through while the profile is still loading.
+watch(
+  visibleTabs,
+  (tabs) => {
+    if (tabs.includes('managers')) {
+      void managerStore.fetchData(newsletterId.value);
+    }
+    if (tabs.includes('subscribers')) {
+      void subscriberStore.fetchData(newsletterId.value);
+    }
+    if (tabs.includes('history')) {
+      void messageStore.fetchData(newsletterId.value);
+    }
+  },
+  { immediate: true },
+);
 
 async function loadNewsletter() {
   await newsletterStore.fetchData();
@@ -605,20 +732,39 @@ const newsletter = computed(() =>
   newsletterStore.data?.find((n) => n.id === newsletterId.value),
 );
 
+/** `null` while the organization is verified and the newsletter can send. */
+const blockedReason = computed<'pending' | 'rejected' | null>(() => {
+  const status = newsletter.value?.organizationVerificationStatus;
+  if (status === 'PENDING') {
+    return 'pending';
+  }
+  if (status === 'REJECTED') {
+    return 'rejected';
+  }
+  return null;
+});
+
 const managers = computed<NewsletterManager[]>(() => managerStore.data ?? []);
 const subscribers = computed<NewsletterSubscriber[]>(
   () => subscriberStore.data ?? [],
 );
 const messages = computed<NewsletterMessage[]>(() => messageStore.data ?? []);
 
-const error = computed<string | null>(
+const canSend = computed<boolean>(
   () =>
-    newsletterStore.error ??
-    managerStore.error ??
-    subscriberStore.error ??
-    messageStore.error ??
-    null,
+    !!sendSubject.value &&
+    !!sendBody.value &&
+    subscribers.value.length > 0 &&
+    blockedReason.value === null,
 );
+
+/**
+ * Only the newsletter itself can fail the whole page. The per-tab stores are
+ * deliberately excluded: their failures belong to their tab, and folding them
+ * in here replaced the entire page with an error for anyone holding a partial
+ * permission set.
+ */
+const error = computed<string | null>(() => newsletterStore.error ?? null);
 
 const sanitizedBodies = computed<Record<string, string>>(() =>
   Object.fromEntries(
@@ -663,7 +809,7 @@ function showImportDialog() {
     .dialog({ component: NewsletterSubscriberImportDialog })
     .onOk((data: NewsletterSubscriberImportData) => {
       void (async () => {
-        const result = await subscriberStore.importFromCamp(
+        const result = await subscriberStore.importFromEvent(
           newsletterId.value,
           data,
         );
@@ -774,6 +920,7 @@ function confirmSend() {
     })
     .onOk(() => {
       void (async () => {
+        sending.value = true;
         try {
           const result = await api.sendNewsletterMessage(newsletterId.value, {
             subject: sendSubject.value,
@@ -797,6 +944,8 @@ function confirmSend() {
             type: 'negative',
             message: t('compose.error'),
           });
+        } finally {
+          sending.value = false;
         }
       })();
     });
@@ -822,6 +971,7 @@ compose:
   bodyPlaceholder: 'Write your newsletter content here...'
   attachments: 'Attachments (optional)'
   recipientInfo: 'Will be sent to {count} subscribers'
+  blocked: 'Sending is disabled until the owning organization is verified.'
   send: 'Send Newsletter'
   success: 'Newsletter queued for {count} recipients.'
   error: 'Failed to send newsletter. Please try again.'
@@ -842,12 +992,12 @@ history:
 subscribers:
   count: '{count} subscribers'
   empty: 'No subscribers yet'
-  emptyHint: 'Add subscribers manually or import them from a camp.'
+  emptyHint: 'Add subscribers manually or import them from an event.'
   noResults: 'No subscribers match your search.'
   search: 'Search subscribers...'
   action:
     add: 'Add Subscriber'
-    import: 'Import from Camp'
+    import: 'Import from Event'
   importResult: 'Imported {added} new subscribers, {skipped} already subscribed.'
   dialog:
     delete:
@@ -857,6 +1007,7 @@ subscribers:
 managers:
   action:
     add: 'Add Manager'
+  organizationInfo: 'Organization administrators can also see this list.'
   removeDisabledHint: 'At least one owner is required'
   role:
     OWNER: 'Owner'
@@ -887,6 +1038,7 @@ compose:
   bodyPlaceholder: 'Schreiben Sie hier Ihren Newsletter-Inhalt...'
   attachments: 'Anhänge (optional)'
   recipientInfo: 'Wird an {count} Abonnenten gesendet'
+  blocked: 'Das Senden ist deaktiviert, bis die besitzende Organisation verifiziert ist.'
   send: 'Newsletter senden'
   success: 'Newsletter für {count} Empfänger in die Warteschlange gestellt.'
   error: 'Newsletter konnte nicht gesendet werden. Bitte versuchen Sie es erneut.'
@@ -907,12 +1059,12 @@ history:
 subscribers:
   count: '{count} Abonnenten'
   empty: 'Noch keine Abonnenten'
-  emptyHint: 'Abonnenten manuell hinzufügen oder aus einem Camp importieren.'
+  emptyHint: 'Abonnenten manuell hinzufügen oder aus einer Veranstaltung importieren.'
   noResults: 'Keine Abonnenten entsprechen Ihrer Suche.'
   search: 'Abonnenten suchen...'
   action:
     add: 'Abonnent hinzufügen'
-    import: 'Aus Camp importieren'
+    import: 'Aus Veranstaltung importieren'
   importResult: '{added} neue Abonnenten importiert, {skipped} bereits abonniert.'
   dialog:
     delete:
@@ -922,6 +1074,7 @@ subscribers:
 managers:
   action:
     add: 'Verwalter hinzufügen'
+  organizationInfo: 'Organisations-Administratoren sehen diese Liste ebenfalls.'
   removeDisabledHint: 'Mindestens ein Eigentümer ist erforderlich'
   role:
     OWNER: 'Eigentümer'
@@ -952,6 +1105,7 @@ compose:
   bodyPlaceholder: 'Rédigez ici le contenu de votre newsletter...'
   attachments: 'Pièces jointes (optionnel)'
   recipientInfo: 'Sera envoyé à {count} abonnés'
+  blocked: "L'envoi est désactivé tant que l'organisation propriétaire n'est pas vérifiée."
   send: 'Envoyer la newsletter'
   success: "Newsletter mise en file d'attente pour {count} destinataires."
   error: "Échec de l'envoi de la newsletter. Veuillez réessayer."
@@ -972,12 +1126,12 @@ history:
 subscribers:
   count: '{count} abonnés'
   empty: 'Aucun abonné pour le moment'
-  emptyHint: 'Ajoutez des abonnés manuellement ou importez-les depuis un camp.'
+  emptyHint: 'Ajoutez des abonnés manuellement ou importez-les depuis un événement.'
   noResults: 'Aucun abonné ne correspond à votre recherche.'
   search: 'Rechercher des abonnés...'
   action:
     add: 'Ajouter un abonné'
-    import: 'Importer depuis un camp'
+    import: 'Importer depuis un événement'
   importResult: '{added} nouveaux abonnés importés, {skipped} déjà abonnés.'
   dialog:
     delete:
@@ -987,6 +1141,7 @@ subscribers:
 managers:
   action:
     add: 'Ajouter un gestionnaire'
+  organizationInfo: "Les administrateurs de l'organisation voient aussi cette liste."
   removeDisabledHint: 'Au moins un propriétaire est requis'
   role:
     OWNER: 'Propriétaire'
@@ -1017,6 +1172,7 @@ compose:
   bodyPlaceholder: 'Napisz tutaj treść swojego newslettera...'
   attachments: 'Załączniki (opcjonalnie)'
   recipientInfo: 'Zostanie wysłany do {count} subskrybentów'
+  blocked: 'Wysyłanie jest wyłączone, dopóki organizacja właścicielska nie zostanie zweryfikowana.'
   send: 'Wyślij newsletter'
   success: 'Newsletter dodany do kolejki dla {count} odbiorców.'
   error: 'Nie udało się wysłać newslettera. Spróbuj ponownie.'
@@ -1037,12 +1193,12 @@ history:
 subscribers:
   count: '{count} subskrybentów'
   empty: 'Brak subskrybentów'
-  emptyHint: 'Dodaj subskrybentów ręcznie lub importuj z obozu.'
+  emptyHint: 'Dodaj subskrybentów ręcznie lub importuj z wydarzenia.'
   noResults: 'Brak subskrybentów pasujących do wyszukiwania.'
   search: 'Szukaj subskrybentów...'
   action:
     add: 'Dodaj subskrybenta'
-    import: 'Importuj z obozu'
+    import: 'Importuj z wydarzenia'
   importResult: 'Zaimportowano {added} nowych subskrybentów, {skipped} już zapisanych.'
   dialog:
     delete:
@@ -1052,6 +1208,7 @@ subscribers:
 managers:
   action:
     add: 'Dodaj zarządzającego'
+  organizationInfo: 'Administratorzy organizacji również widzą tę listę.'
   removeDisabledHint: 'Wymagany jest co najmniej jeden właściciel'
   role:
     OWNER: 'Właściciel'
@@ -1082,6 +1239,7 @@ compose:
   bodyPlaceholder: 'Napište zde obsah svého newsletteru...'
   attachments: 'Přílohy (volitelné)'
   recipientInfo: 'Bude odesláno {count} odběratelům'
+  blocked: 'Odesílání je vypnuté, dokud nebude vlastnící organizace ověřena.'
   send: 'Odeslat newsletter'
   success: 'Newsletter zařazen do fronty pro {count} příjemců.'
   error: 'Odeslání newsletteru se nezdařilo. Zkuste to prosím znovu.'
@@ -1102,12 +1260,12 @@ history:
 subscribers:
   count: '{count} odběratelů'
   empty: 'Zatím žádní odběratelé'
-  emptyHint: 'Přidejte odběratele ručně nebo je importujte z tábora.'
+  emptyHint: 'Přidejte odběratele ručně nebo je importujte z akce.'
   noResults: 'Žádní odběratelé neodpovídají vašemu hledání.'
   search: 'Hledat odběratele...'
   action:
     add: 'Přidat odběratele'
-    import: 'Importovat z tábora'
+    import: 'Importovat z akce'
   importResult: 'Importováno {added} nových odběratelů, {skipped} již přihlášených.'
   dialog:
     delete:
@@ -1117,6 +1275,7 @@ subscribers:
 managers:
   action:
     add: 'Přidat správce'
+  organizationInfo: 'Tento seznam vidí i správci organizace.'
   removeDisabledHint: 'Je vyžadován alespoň jeden vlastník'
   role:
     OWNER: 'Vlastník'
@@ -1129,25 +1288,139 @@ managers:
 </i18n>
 
 <style scoped>
-.newsletter-tabs {
+/*
+ * Two layouts. By default the page flows and the window scrolls, which is the
+ * only thing that works on a phone or a landscape handset: the send button
+ * stays reachable no matter how much room the on-screen keyboard takes. Only a
+ * viewport with room to spare switches to the self-contained variant at the
+ * bottom of this file, where the frame fills the page and the panels scroll.
+ */
+.newsletter-page {
+  display: flex;
+  justify-content: center;
+  padding: 16px;
+}
+
+.newsletter-page__inner {
+  display: flex;
+  width: 100%;
+  max-width: 1100px;
   min-height: 0;
+  flex-direction: column;
+}
+
+.newsletter-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  gap: 8px;
+}
+
+.newsletter-header__main {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.newsletter-header__title {
+  font-size: 1.5rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.newsletter-header__description {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.newsletter-tabs {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  flex-wrap: nowrap;
 }
 
 .newsletter-panels {
   display: flex;
+  min-height: 0;
   flex-direction: column;
-  overflow: hidden;
-  min-height: 0;
 }
 
-.newsletter-panels :deep(.q-tab-panel) {
-  flex: 1;
-  min-height: 0;
+.newsletter-panel {
+  padding: 24px 0 0;
 }
 
-.list-scroll {
-  overflow-y: auto;
+.composer {
+  display: flex;
   min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.composer__body {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.composer__editor {
+  min-height: 200px;
+  flex: 1 1 auto;
+}
+
+.composer__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.composer__hint {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 4px;
+}
+
+.composer__send {
+  min-width: 140px;
+  flex: 0 0 auto;
+}
+
+.newsletter-message__text {
+  min-width: 0;
+}
+
+.managers-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  gap: 12px;
+}
+
+.managers-toolbar__info {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 4px;
+}
+
+.subscriber-item {
+  min-height: 36px;
+  padding: 2px 8px;
+}
+
+.subscriber-item .q-item__section--avatar {
+  min-width: 0;
+  padding-right: 8px;
+}
+
+.subscriber-item .q-item__section--side {
+  padding-left: 8px;
 }
 
 .newsletter-preview {
@@ -1169,5 +1442,100 @@ managers:
 
 .newsletter-preview :deep(a) {
   color: var(--q-primary);
+}
+
+/* Phones: tighter spacing, stacked actions, and four tabs that still fit. */
+@media (max-width: 599px) {
+  .newsletter-page {
+    padding: 12px;
+  }
+
+  .newsletter-header {
+    margin-bottom: 12px;
+  }
+
+  .newsletter-header__title {
+    font-size: 1.25rem;
+  }
+
+  .newsletter-panel {
+    padding-top: 16px;
+  }
+
+  .newsletter-tabs :deep(.q-tab) {
+    min-width: 0;
+    padding: 0 4px;
+  }
+
+  .newsletter-tabs :deep(.q-tab__label) {
+    font-size: 0.6875rem;
+  }
+
+  .composer {
+    gap: 12px;
+  }
+
+  .composer__editor {
+    min-height: 180px;
+  }
+
+  .composer__actions,
+  .managers-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .composer__send,
+  .managers-toolbar__action {
+    width: 100%;
+  }
+
+  /* A scroller inside a scrolling page is a trap on touch. */
+  .newsletter-preview {
+    max-height: none;
+  }
+}
+
+/* Roomy viewports: fill the page once, then scroll inside the active panel. */
+@media (min-width: 600px) and (min-height: 600px) {
+  .newsletter-page {
+    position: absolute;
+    inset: 0;
+  }
+
+  .newsletter-page__inner {
+    height: 100%;
+  }
+
+  .newsletter-tabs {
+    flex: 1 1 auto;
+  }
+
+  .newsletter-panels {
+    overflow: hidden;
+    flex: 1 1 auto;
+  }
+
+  .newsletter-panels :deep(.q-tab-panel) {
+    display: flex;
+    min-height: 0;
+    flex: 1 1 auto;
+    flex-direction: column;
+  }
+
+  .newsletter-panel {
+    overflow-y: auto;
+  }
+
+  /* The subscriber list is its own scroller, so the panel must not be one. */
+  .newsletter-panel--contained {
+    overflow: hidden;
+  }
+
+  .list-scroll {
+    min-height: 0;
+    overflow-y: auto;
+    flex: 1 1 auto;
+  }
 }
 </style>

@@ -6,6 +6,8 @@ import { controller } from '#utils/bindController';
 import { newsletterManager } from './newsletter.guard.js';
 import { resolve } from '#core/ioc/container';
 import type { NewsletterQuery } from '@camp-registration/common/entities';
+import { organizationFromBody } from '#app/organization/organization.middleware';
+import { organizationMember } from '#app/organization/organization.guard';
 
 export class NewsletterRouter extends ModuleRouter {
   protected registerBindings() {
@@ -33,7 +35,8 @@ export class NewsletterRouter extends ModuleRouter {
     this.router.post(
       '/',
       auth(),
-      guard(),
+      organizationFromBody(),
+      guard(organizationMember('organization.newsletters.create')),
       controller(newsletterController, 'store'),
     );
     this.router.patch(
@@ -41,6 +44,14 @@ export class NewsletterRouter extends ModuleRouter {
       auth(),
       guard(newsletterManager('newsletter.edit')),
       controller(newsletterController, 'update'),
+    );
+    // Reassigning ownership is a system-administrator action — bare `guard()`.
+    this.router.patch(
+      '/:newsletterId/organization',
+      auth(),
+      organizationFromBody(),
+      guard(),
+      controller(newsletterController, 'updateOrganization'),
     );
     this.router.delete(
       '/:newsletterId',

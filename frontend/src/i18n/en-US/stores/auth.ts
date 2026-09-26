@@ -1,4 +1,7 @@
 export default {
+  refresh: {
+    error: 'Could not restore your session. Retrying…',
+  },
   logout: {
     error: 'Failed to logout',
   },

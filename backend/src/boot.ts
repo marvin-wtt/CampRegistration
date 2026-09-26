@@ -1,42 +1,61 @@
 import type { AppModule } from '#core/base/AppModule';
+import type { CoreModule } from '#core/base/CoreModule';
 import apiRouter from '#routes/api';
-import { createModules } from './modules.js';
+import webRouter from '#routes/web';
+import { createAppModules, createCoreModules } from '#modules';
+import { permissionRegistry } from '#core/permission/permission.registry';
 import {
-  campPermissionRegistry,
-  newsletterPermissionRegistry,
-} from '#core/permission-registry';
-import { initI18n } from '#core/i18n';
+  assertScopeResolversComplete,
+  registerScopeResolver,
+} from '#core/permission/permission.guard';
+import { PERMISSION_SCOPES } from '@camp-registration/common/permissions';
 import { JobScheduler } from '#core/scheduler/JobScheduler';
-import { verifyDatabaseConnection, disconnectDatabase } from '#core/database';
 import { ContainerModule } from 'inversify';
 import { container, resolve } from '#core/ioc/container';
 import logger from '#core/logger';
 
-let modules: AppModule[] = [];
+type Module = CoreModule | AppModule;
 
-export async function boot() {
-  await verifyDatabaseConnection();
+let allModules: Module[] = [];
 
-  await initI18n();
+export interface BootOptions {
+  overrideBindings?: () => void;
+}
 
-  modules = createModules();
+export async function boot(options: BootOptions = {}) {
+  const coreModules = createCoreModules();
+  const appModules = createAppModules();
 
-  bindModuleContainers(modules);
-  await configureModules(modules);
-  registerModulePermissions(modules);
-  registerModuleRoutes(modules);
-  registerModuleJobs(modules);
+  // Core modules boot first and shut down last.
+  allModules = [...coreModules, ...appModules];
+  bindModuleContainers(allModules);
+  options.overrideBindings?.();
+
+  await configureModules(allModules);
+
+  registerModulePermissions(appModules);
+  registerModuleScopeResolvers(appModules);
+  registerModuleApiRoutes(allModules);
+  registerModuleWebRoutes(appModules);
+  registerModuleJobs(allModules);
+
+  await startModules(allModules);
 }
 
 export async function shutdown() {
-  resolve(JobScheduler).stop();
+  quiesceModules(allModules);
 
-  await shutdownModules(modules);
-
-  await disconnectDatabase();
+  await shutdownModules(allModules);
 }
 
-function bindModuleContainers(modules: AppModule[]) {
+// Runs before any module's shutdown() — see CoreModule.quiesce().
+function quiesceModules(modules: Module[]) {
+  for (const module of modules) {
+    module.quiesce?.();
+  }
+}
+
+function bindModuleContainers(modules: Module[]) {
   container.load(
     ...modules.map(
       (module) =>
@@ -47,42 +66,67 @@ function bindModuleContainers(modules: AppModule[]) {
   );
 }
 
-async function configureModules(modules: AppModule[]) {
+async function configureModules(modules: Module[]) {
   for (const module of modules) {
     await module.configure?.({});
   }
 }
 
+async function startModules(modules: Module[]) {
+  for (const module of modules) {
+    await module.ready?.();
+  }
+}
+
 function registerModulePermissions(modules: AppModule[]) {
   for (const module of modules) {
-    if (module.registerPermissions) {
-      campPermissionRegistry.registerAll(module.registerPermissions());
-    }
-    if (module.registerNewsletterPermissions) {
-      newsletterPermissionRegistry.registerAll(
-        module.registerNewsletterPermissions(),
-      );
+    const scoped = module.registerPermissions?.();
+    if (scoped) {
+      permissionRegistry.registerAll(scoped);
     }
   }
 }
 
-function registerModuleRoutes(modules: AppModule[]) {
+function registerModuleScopeResolvers(modules: AppModule[]) {
   for (const module of modules) {
-    module.registerRoutes?.(apiRouter);
+    const declared = module.registerScopeResolvers?.();
+    if (!declared) {
+      continue;
+    }
+
+    for (const scope of PERMISSION_SCOPES) {
+      const resolver = declared[scope];
+      if (resolver) {
+        registerScopeResolver(scope, resolver);
+      }
+    }
+  }
+
+  assertScopeResolversComplete();
+}
+
+function registerModuleApiRoutes(modules: Module[]) {
+  for (const module of modules) {
+    module.registerApiRoutes?.(apiRouter);
   }
 }
 
-function registerModuleJobs(modules: AppModule[]) {
+function registerModuleWebRoutes(modules: AppModule[]) {
+  for (const module of modules) {
+    module.registerWebRoutes?.(webRouter);
+  }
+}
+
+function registerModuleJobs(modules: Module[]) {
   const scheduler = resolve(JobScheduler);
   for (const module of modules) {
     module.registerJobs?.(scheduler);
   }
 }
 
-// Modules are shut down in reverse boot order so that later modules can rely
-// on earlier ones during teardown (e.g. queue handlers still need the mail
-// transport). A failing module must not prevent the remaining cleanup.
-async function shutdownModules(modules: AppModule[]) {
+// Reverse boot order, so every AppModule shuts down while the core mechanisms
+// it may still use are up. A failing module must not skip the rest.
+async function shutdownModules(modules: Module[]) {
   for (const module of modules.toReversed()) {
     try {
       await module.shutdown?.();

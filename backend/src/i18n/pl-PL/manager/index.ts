@@ -1,16 +1,16 @@
 export default {
   email: {
     invitation: {
-      subject: 'Zaproszenie do obozu',
+      subject: 'Zaproszenie do wydarzenia',
       preview:
-        'Zostałeś(-aś) zaproszony(-a) do zarządzania obozem {{ camp.name }}',
+        'Zostałeś(-aś) zaproszony(-a) do zarządzania wydarzeniem {{ event.name }}',
       text: {
         title: 'Cześć,',
         information:
-          'Zostałeś(-aś) zaproszony(-a) do zarządzania obozem {{ camp.name }}. ' +
-          'Jeśli masz już konto, obóz będzie automatycznie dostępny. ' +
+          'Zostałeś(-aś) zaproszony(-a) do zarządzania wydarzeniem {{ event.name }}. ' +
+          'Jeśli masz już konto, wydarzenie będzie automatycznie dostępne. ' +
           'W przeciwnym razie utwórz najpierw bezpłatne konto.',
-        button: 'Zarządzaj obozem',
+        button: 'Zarządzaj wydarzeniem',
         greeting: 'Pozdrawiamy,',
         teamName: 'Zespół {{ appName }}',
       },

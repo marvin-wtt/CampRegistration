@@ -1,4 +1,5 @@
-import { type File, Prisma, PrismaClient } from '#generated/prisma/client.js';
+import { type File, Prisma } from '#generated/prisma/client.js';
+import type { PrismaTransaction } from '#core/database/transaction';
 import { ulid } from '#utils/ulid';
 import { extractKeyFromFieldName } from '#utils/form';
 import { decodeTime, isValid } from 'ulidx';
@@ -33,10 +34,6 @@ interface ModelData {
   name: string;
 }
 
-type PrismaTransaction = Parameters<
-  Parameters<PrismaClient['$transaction']>[0]
->[0];
-
 type PickIds<T> = {
   [K in keyof T as K extends `${string}Id` ? K : never]: T[K];
 };
@@ -49,7 +46,7 @@ type FileOwnerKey = keyof PickIds<Prisma.FileWhereInput>;
 
 // Relational fields for where input fields
 const fileRelationIdFieldsNull: RequireIdKeys<Prisma.FileWhereInput, null> = {
-  campId: null,
+  eventId: null,
   registrationId: null,
   messageId: null,
   messageDeliveryId: null,
@@ -61,6 +58,9 @@ const fileRelationIdFieldsNull: RequireIdKeys<Prisma.FileWhereInput, null> = {
 const fileRelationIdFieldsUndefined = Object.keys(
   fileRelationIdFieldsNull,
 ).reduce((acc, key) => ({ ...acc, [key]: undefined }), {});
+
+// Storage removals issued at once by `deleteUnassignedFiles`.
+const STORAGE_DELETE_CONCURRENCY = 25;
 
 @injectable()
 export class FileService extends BaseService {
@@ -80,7 +80,9 @@ export class FileService extends BaseService {
     this.queue = queueManager.create<FileUploadJobPayload>('file', {
       retryDelay: 1000 * 10,
     });
+  }
 
+  startWorker() {
     this.queue.process(async (job) => {
       if (job.name === 'upload') {
         await this.uploadFile(job.payload);
@@ -499,7 +501,9 @@ export class FileService extends BaseService {
     );
   }
 
-  async deleteUnreferencedFiles(): Promise<void> {
+  async deleteUnreferencedFiles(): Promise<
+    { location: string; count: number }[]
+  > {
     const fileModels = await this.prisma.file.findMany({
       where: {
         storageLocation: {
@@ -517,6 +521,8 @@ export class FileService extends BaseService {
       (fileModel) => fileModel.storageLocation,
     );
 
+    const deletions: { location: string; count: number }[] = [];
+
     for (const [location, models] of Object.entries(fileModesByLocation)) {
       if (!models) {
         continue;
@@ -530,18 +536,18 @@ export class FileService extends BaseService {
         (fileName) => !fileModelNames.includes(fileName),
       );
 
-      logger.info(
-        `Deleting ${filesToDelete.length.toString()} file(s) from ${location} storage`,
-      );
-
       await Promise.all(
         filesToDelete.map((fileName) => storage.removeFile(fileName)),
       );
+
+      deletions.push({ location, count: filesToDelete.length });
     }
+
+    return deletions;
   }
 
   async deleteUnassignedFiles(): Promise<void> {
-    const minAge = moment().subtract('1', 'd').toDate();
+    const minAge = moment().subtract(1, 'day').toDate();
 
     const files = await this.prisma.file.findMany({
       where: {
@@ -558,8 +564,16 @@ export class FileService extends BaseService {
     // Delete files from database first so that the files can no longer be accessed.
     const fileIds = files.map((file) => file.id);
     const result = await this.prisma.file.deleteMany({
-      where: { id: { in: fileIds } },
+      where: {
+        id: { in: fileIds },
+        // Just verify that it is really unassigned to avoid race conditions
+        ...fileRelationIdFieldsNull,
+      },
     });
+
+    logger.info(
+      `Deleted ${result.count.toString()} unassigned file record(s) from database`,
+    );
 
     // Check if any file is still referenced by another model
     const fileNames = files.map((file) => file.name);
@@ -568,21 +582,43 @@ export class FileService extends BaseService {
       select: { name: true },
     });
 
-    logger.info(`Deleting ${result.count.toString()} unreferenced file(s)`);
+    // Delete files from storage that are no longer in use. Batched because a
+    // bulk unassignment can orphan thousands of files at once, and settled
+    // rather than all-or-nothing so one failure cannot hide the rest — a blob
+    // left behind is swept by `deleteUnreferencedFiles`.
+    const orphans = files.filter(
+      (file) => !usedFiles.some((value) => value.name === file.name),
+    );
 
-    // Delete files from storage that are no longer in use
-    const fileDeletions = files
-      .filter((file) => !usedFiles.some((value) => value.name === file.name))
-      .map((file) =>
-        this.storageRegistry
-          .getStorage(file.storageLocation)
-          .removeFile(file.name),
+    let deletedCount = 0;
+    for (let i = 0; i < orphans.length; i += STORAGE_DELETE_CONCURRENCY) {
+      const batch = orphans.slice(i, i + STORAGE_DELETE_CONCURRENCY);
+
+      const results = await Promise.allSettled(
+        batch.map((file) =>
+          this.storageRegistry
+            .getStorage(file.storageLocation)
+            .removeFile(file.name),
+        ),
       );
 
-    await Promise.all(fileDeletions);
+      results.forEach((settled, index) => {
+        if (settled.status === 'rejected') {
+          logger.error(
+            `Failed to remove file ${batch[index]?.name ?? '??'} from storage. ${String(settled.reason)}`,
+          );
+        } else {
+          deletedCount++;
+        }
+      });
+    }
+
+    logger.info(
+      `Deleted ${deletedCount.toString()} unreferenced file(s) from storage`,
+    );
   }
 
-  async deleteTempFiles() {
+  async deleteTempFiles(): Promise<number> {
     const fileNames = await this.tmpStorage.getFileNames();
     const currentTime = Date.now();
 
@@ -622,9 +658,7 @@ export class FileService extends BaseService {
         .map((fileName) => this.tmpStorage.removeFile(fileName)),
     );
 
-    logger.info(
-      `Deleted ${results.length.toString()} unused temporary file(s) from disk`,
-    );
+    return results.length;
   }
 
   public async getOverviewCounts() {

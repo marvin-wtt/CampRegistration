@@ -25,7 +25,7 @@ export class StorageRegistry {
 
     if (this.keyring === null) {
       logger.warn(
-        'STORAGE_ENCRYPTION_KEYS is not set — uploaded files are stored unencrypted',
+        'Storage encryption is not configured — uploaded files are stored unencrypted',
       );
     }
   }

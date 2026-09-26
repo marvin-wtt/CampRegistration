@@ -1,9 +1,47 @@
-import type { Permissions } from '#permissions';
+import type {
+  EventScopedPermission,
+  NewsletterPermission,
+  OrganizationPermission,
+} from '#permissions';
+import type { OrganizationRole } from './OrganizationMember.js';
+import type { OrganizationVerificationStatus } from './Organization.js';
+import type { Translatable } from './Translatable.js';
 
-interface CampAccess {
-  campId: string;
+interface EventAccess {
+  eventId: string;
+  /**
+   * The event-manager role, or the sentinel `'ORGANIZATION'` when the access is
+   * derived purely from an organization OWNER/ADMIN membership.
+   */
   role: string;
-  permissions: Permissions;
+  permissions: EventScopedPermission[];
+  /**
+   * The user's own `EventManager` id, so a client can recognise records assigned
+   * to them (tasks, for one) without loading the roster. `null` when the access
+   * is organization-derived and no manager record exists.
+   */
+  managerId: string | null;
+}
+
+interface NewsletterAccess {
+  newsletterId: string;
+  /**
+   * The newsletter-manager role, or the sentinel `'ORGANIZATION'` when the
+   * access is derived purely from an organization ADMIN membership.
+   */
+  role: string;
+  permissions: NewsletterPermission[];
+}
+
+interface OrganizationAccess {
+  organizationId: string;
+  role: OrganizationRole;
+  permissions: OrganizationPermission[];
+  /**
+   * Carried so the UI can distinguish "you may create an event here" from "this
+   * organization is still awaiting moderation" without a second request.
+   */
+  verificationStatus: OrganizationVerificationStatus;
 }
 
 export interface Profile {
@@ -12,10 +50,19 @@ export interface Profile {
   role: 'USER' | 'ADMIN';
   twoFactorEnabled: boolean;
   locale: string;
-  campAccess: CampAccess[];
+  eventAccess: EventAccess[];
+  newsletterAccess: NewsletterAccess[];
+  organizationAccess: OrganizationAccess[];
 }
 
 export type ProfileUpdateData = Partial<Omit<Profile, 'role'>> & {
   password?: string;
   currentPassword?: string;
 };
+
+// Something the account is the last director, owner or administrator of;
+// deletion is refused until each is handed over or deleted.
+export type AccountDeletionBlocker =
+  | { type: 'event'; id: string; name: Translatable }
+  | { type: 'newsletter'; id: string; name: string }
+  | { type: 'organization'; id: string; name: string };

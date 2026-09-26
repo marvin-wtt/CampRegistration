@@ -23,8 +23,8 @@ export const verifyModel = <T>(
 
 /**
  * Middleware that verifies every route model inferred from the current request
- * params.  For each param ending in "Id" (e.g. "campId", "roomId") it derives
- * the model key ("camp", "room") and throws a 404 when a registered binding
+ * params.  For each param ending in "Id" (e.g. "eventId", "roomId") it derives
+ * the model key ("event", "room") and throws a 404 when a registered binding
  * did not resolve that model.
  */
 export const requireModels: RequestHandler = (req, _res, next) => {
@@ -33,7 +33,7 @@ export const requireModels: RequestHandler = (req, _res, next) => {
       continue;
     }
 
-    const modelKey = paramKey.slice(0, -'Id'.length); // "campId" → "camp"
+    const modelKey = paramKey.slice(0, -'Id'.length); // "eventId" → "event"
     if (isRegisteredModel(modelKey)) {
       routeModel(req.model(modelKey));
     }

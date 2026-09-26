@@ -1,42 +1,24 @@
-import type { Router } from 'express';
+import type { ScopedPermissions } from '@camp-registration/common/permissions';
+import type { ScopeResolvers } from '#core/permission/permission.guard';
 import type {
-  CampManagerRole,
-  NewsletterManagerRole,
-  Permission,
-  NewsletterPermission,
-} from '@camp-registration/common/permissions';
-import type { ModuleRouter } from '#core/router/ModuleRouter';
-import type { JobScheduler } from '#core/scheduler/JobScheduler';
-import type { ContainerModuleLoadOptions } from 'inversify';
+  AppRouter,
+  BindOptions,
+  ModuleOptions,
+  CoreModule,
+} from '#core/base/CoreModule';
 
-export type AppRouter = Router & {
-  useRouter: (path: string, router: ModuleRouter) => void;
-};
+export type { AppRouter, BindOptions, ModuleOptions };
 
-export type ModuleOptions = object;
+export interface AppModule extends CoreModule {
+  registerWebRoutes?(router: AppRouter): void;
 
-export type BindOptions = ContainerModuleLoadOptions;
+  registerPermissions?(): ScopedPermissions;
 
-export type RoleToPermissions<
-  TRole extends string,
-  TPermission extends string,
-> = Partial<Record<TRole, TPermission[]>>;
-
-export interface AppModule {
-  configure?(options: ModuleOptions): Promise<void> | void;
-
-  bindContainers?(options: BindOptions): void;
-
-  registerRoutes?(router: AppRouter): void;
-
-  registerPermissions?(): RoleToPermissions<CampManagerRole, Permission>;
-
-  registerNewsletterPermissions?(): RoleToPermissions<
-    NewsletterManagerRole,
-    NewsletterPermission
-  >;
-
-  registerJobs?(scheduler: JobScheduler): void;
-
-  shutdown?(): Promise<void> | void;
+  /**
+   * The other half of a scope declaration: how a request becomes a permission
+   * set. Separate from `registerPermissions()` because the cardinality differs
+   * — grants are additive across modules, a resolver belongs to exactly the one
+   * module owning the scope's membership table.
+   */
+  registerScopeResolvers?(): ScopeResolvers;
 }

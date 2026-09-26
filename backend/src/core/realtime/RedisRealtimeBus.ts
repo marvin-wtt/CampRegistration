@@ -5,20 +5,20 @@ import type { RealtimeBus, RealtimeListener } from '#core/realtime/RealtimeBus';
 import config from '#config/index';
 import logger from '#core/logger';
 
-const CHANNEL_PREFIX = 'camp:';
+const CHANNEL_PREFIX = 'event:';
 const CHANNEL_SUFFIX = ':events';
 const CHANNEL_PATTERN = `${CHANNEL_PREFIX}*${CHANNEL_SUFFIX}`;
 
-const channelFor = (campId: string) =>
-  `${CHANNEL_PREFIX}${campId}${CHANNEL_SUFFIX}`;
+const channelFor = (eventId: string) =>
+  `${CHANNEL_PREFIX}${eventId}${CHANNEL_SUFFIX}`;
 
-const campIdFromChannel = (channel: string): string =>
+const eventIdFromChannel = (channel: string): string =>
   channel.slice(CHANNEL_PREFIX.length, -CHANNEL_SUFFIX.length);
 
 /**
  * Redis pub/sub realtime bus. Fans events out across backend instances: every
- * instance pattern-subscribes to `camp:*:events` and re-emits onto a local
- * {@link EventEmitter} that the per-camp listeners attach to.
+ * instance pattern-subscribes to `event:*:events` and re-emits onto a local
+ * {@link EventEmitter} that the per-event listeners attach to.
  */
 export class RedisRealtimeBus implements RealtimeBus {
   public readonly type = 'redis';
@@ -51,7 +51,7 @@ export class RedisRealtimeBus implements RealtimeBus {
     this.subscriber.on('pmessage', (_pattern, channel, message) => {
       try {
         const event = JSON.parse(message) as RealtimeEvent;
-        this.emitter.emit(campIdFromChannel(channel), event);
+        this.emitter.emit(eventIdFromChannel(channel), event);
       } catch (err) {
         logger.error('Failed to parse realtime message', err);
       }
@@ -62,13 +62,13 @@ export class RedisRealtimeBus implements RealtimeBus {
     });
   }
 
-  async publish(campId: string, event: RealtimeEvent): Promise<void> {
-    await this.publisher.publish(channelFor(campId), JSON.stringify(event));
+  async publish(eventId: string, event: RealtimeEvent): Promise<void> {
+    await this.publisher.publish(channelFor(eventId), JSON.stringify(event));
   }
 
-  subscribe(campId: string, listener: RealtimeListener): () => void {
-    this.emitter.on(campId, listener);
-    return () => this.emitter.off(campId, listener);
+  subscribe(eventId: string, listener: RealtimeListener): () => void {
+    this.emitter.on(eventId, listener);
+    return () => this.emitter.off(eventId, listener);
   }
 
   async close(): Promise<void> {

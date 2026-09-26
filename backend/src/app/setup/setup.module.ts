@@ -9,7 +9,7 @@ export class SetupModule implements AppModule {
     options.bind(SetupController).toSelf().inSingletonScope();
   }
 
-  registerRoutes(router: AppRouter): void {
+  registerApiRoutes(router: AppRouter): void {
     router.useRouter('/setup', new SetupRouter());
   }
 }

@@ -188,11 +188,23 @@ function setLink() {
       title: t('link'),
       prompt: {
         model: previousUrl ?? '',
+        label: 'URL',
+        color: 'primary',
         type: 'url',
         outlined: true,
+        rounded: true,
       },
-      cancel: { flat: true, rounded: true, label: t('cancel') },
-      ok: { rounded: true, label: t('apply') },
+      cancel: {
+        label: t('cancel'),
+        color: 'primary',
+        flat: true,
+        rounded: true,
+      },
+      ok: {
+        label: t('apply'),
+        color: 'primary',
+        rounded: true,
+      },
     })
     .onOk((url: string) => {
       const chain = editor.value?.chain().focus().extendMarkRange('link');

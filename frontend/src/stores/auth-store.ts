@@ -11,10 +11,22 @@ import { useServiceHandler } from '@/composables/serviceHandler';
 import { useProfileStore } from '@/stores/profile-store';
 import { createInitialAdmin } from '@/services/SetupService';
 import { isCustomAxiosError } from '@/services/AuthService';
+import { isRefreshFailureAuthoritative } from '@/services/authRefreshToken';
+import { createRetryScheduler } from '@/utils/retryScheduler';
+import { computed, ref } from 'vue';
 import { Dialog } from 'quasar';
 import TwoFactorSuggestionDialog from '@/components/settings/twoFactor/TwoFactorSuggestionDialog.vue';
 
 const TWO_FACTOR_SUGGESTION_DISMISSED_KEY = 'two-factor-suggestion-dismissed';
+
+// 'unknown' until the first refresh settles, or while the server can't answer.
+export type AuthStatus = 'unknown' | 'authenticated' | 'unauthenticated';
+export type RefreshOutcome =
+  'authenticated' | 'unauthenticated' | 'unavailable';
+
+type RefreshResult =
+  | { outcome: 'authenticated' | 'unauthenticated' }
+  | { outcome: 'unavailable'; error: unknown };
 
 export const useAuthStore = defineStore('auth', () => {
   const apiService = useAPIService();
@@ -30,28 +42,35 @@ export const useAuthStore = defineStore('auth', () => {
     withResultNotification,
     errorOnFailure,
     checkNotNullWithError,
+    showErrorNotification,
   } = useServiceHandler<void>('auth');
+
+  const status = ref<AuthStatus>('unknown');
 
   let partialAuthToken: string | undefined = undefined;
 
-  let accessTokenTimer: NodeJS.Timeout | null = null;
-  let ongoingRefresh: Promise<boolean> | null = null;
+  let accessTokenTimer: ReturnType<typeof setTimeout> | undefined;
+  // Independent loops: a cold-start session restoration failure must not
+  // cancel a pending proactive-refresh retry, or vice versa.
+  const initRetry = createRetryScheduler();
+  const backgroundRefreshRetry = createRetryScheduler();
 
+  // Only a confirmed logout blocks navigation; while 'unknown', the layout's
+  // init() decides once the session state is known.
   router.beforeEach((to) => {
-    if (
-      !to.meta.auth ||
-      isLoading.value ||
-      profileStore.loading ||
-      profileStore.user
-    ) {
+    if (!to.meta.auth || status.value !== 'unauthenticated') {
       return;
     }
 
-    return buildLoginRoute();
+    return buildLoginRoute(to.fullPath);
   });
 
-  // Redirect to the login page on unauthorized error
+  // An API request failed with 401 and the refresh confirmed the session is gone
   apiService.setOnUnauthenticated(() => {
+    status.value = 'unauthenticated';
+    stopRetry();
+    stopProactiveRefresh();
+
     if (route.name === 'login' || route.fullPath.startsWith('/login')) {
       return;
     }
@@ -59,27 +78,46 @@ export const useAuthStore = defineStore('auth', () => {
     return redirectToLogin();
   });
 
+  apiService.setOnTokenRefresh(scheduleProactiveRefresh);
+
+  bus.on('login', () => {
+    status.value = 'authenticated';
+    stopRetry();
+  });
+
+  bus.on('logout', () => {
+    status.value = 'unauthenticated';
+    stopRetry();
+    stopProactiveRefresh();
+  });
+
   async function redirectToLogin() {
-    return router.push(buildLoginRoute());
+    return router.push(buildLoginRoute(route.fullPath));
   }
 
-  function buildLoginRoute() {
+  function buildLoginRoute(origin: string) {
     return {
       name: 'login',
       query: {
-        origin: encodeURIComponent(route.fullPath),
+        origin: encodeURIComponent(origin),
       },
       replace: false,
     };
   }
 
+  // Clears form state only; the session timers outlive the auth pages
   function reset() {
-    if (accessTokenTimer != null) {
-      clearTimeout(accessTokenTimer);
-      accessTokenTimer = null;
-    }
-
     resetDefault();
+  }
+
+  function stopRetry() {
+    initRetry.stop();
+    backgroundRefreshRetry.stop();
+  }
+
+  function stopProactiveRefresh() {
+    clearTimeout(accessTokenTimer);
+    accessTokenTimer = undefined;
   }
 
   async function init(forceRefresh = false) {
@@ -87,16 +125,22 @@ export const useAuthStore = defineStore('auth', () => {
       return;
     }
 
-    const authenticated = await refreshTokens();
-    if (!authenticated) {
-      // Redirect, in case the user is not authenticated
-      if (route.meta.auth) {
-        await redirectToLogin();
-      }
+    const hadProfile = !!profileStore.user;
+    const result = await tryRefresh();
+    if (result.outcome === 'unavailable') {
+      initRetry.schedule(
+        () => init(forceRefresh),
+        result.error,
+        () => showErrorNotification('refresh'),
+      );
       return;
     }
 
-    await profileStore.fetchProfile();
+    // tryRefresh() already loaded the profile if it was missing; only a
+    // cached copy needs refetching.
+    if (result.outcome === 'authenticated' && forceRefresh && hadProfile) {
+      await profileStore.fetchProfile();
+    }
   }
 
   async function login(
@@ -166,13 +210,13 @@ export const useAuthStore = defineStore('auth', () => {
   async function handleAuthentication(auth: Authentication) {
     bus.emit('login', auth.profile);
 
-    handleTokenRefresh(auth.tokens);
+    scheduleProactiveRefresh(auth.tokens);
 
     // Redirect to origin or home route
     const destination =
       'origin' in route.query && typeof route.query.origin === 'string'
         ? decodeURIComponent(route.query.origin)
-        : { name: 'management.camps' };
+        : { name: 'management.events' };
 
     await router.push(destination);
 
@@ -201,52 +245,84 @@ export const useAuthStore = defineStore('auth', () => {
     });
   }
 
-  async function refreshTokens(): Promise<boolean> {
-    // if there’s already a refresh in progress, return its promise
-    if (ongoingRefresh) {
-      return ongoingRefresh;
-    }
-
-    isLoading.value = true;
-
-    ongoingRefresh = apiService
-      .refreshTokens()
-      .then(handleTokenRefresh)
-      .then(() => true)
-      .catch(() => false)
-      .finally(() => {
-        // allow a new refresh after this one settles
-        ongoingRefresh = null;
-        isLoading.value = false;
-      });
-
-    return ongoingRefresh;
+  async function refreshTokens(): Promise<RefreshOutcome> {
+    return (await tryRefresh()).outcome;
   }
 
-  function handleTokenRefresh(tokens: AuthTokens) {
+  // Only a 400/401 from the refresh endpoint proves the session is gone; a
+  // 429, 5xx or network error leaves the status untouched.
+  async function tryRefresh(): Promise<RefreshResult> {
+    isLoading.value = true;
+
+    try {
+      // Deduped in AuthService, so concurrent callers share one request
+      await apiService.refreshTokens();
+      status.value = 'authenticated';
+      stopRetry();
+
+      // Whichever path restored the session, load the profile right away
+      // rather than leaving it to whatever timer happens to fire next.
+      if (!profileStore.user) {
+        await profileStore.fetchProfile();
+      }
+
+      return { outcome: 'authenticated' };
+    } catch (error) {
+      if (!isRefreshFailureAuthoritative(error)) {
+        return { outcome: 'unavailable', error };
+      }
+
+      status.value = 'unauthenticated';
+      stopRetry();
+      if (route.meta.auth) {
+        await redirectToLogin();
+      }
+
+      return { outcome: 'unauthenticated' };
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  async function refreshInBackground() {
+    const result = await tryRefresh();
+    if (result.outcome === 'unavailable') {
+      backgroundRefreshRetry.schedule(refreshInBackground, result.error, () =>
+        showErrorNotification('refresh'),
+      );
+    }
+  }
+
+  function scheduleProactiveRefresh(tokens: AuthTokens) {
     if (tokens.refresh === undefined) {
       return;
     }
 
+    // Every refresh path lands here, so replace the pending timer
+    stopProactiveRefresh();
+
     const expires = new Date(tokens.access.expires);
-    const now = Date.now();
-    const refreshTime = expires.getTime() - now - 1000 * 60;
+    const refreshTime = expires.getTime() - Date.now() - 1000 * 60;
     accessTokenTimer = setTimeout(() => {
-      // eslint-disable-next-line no-console
-      refreshTokens().catch(console.error);
+      accessTokenTimer = undefined;
+      void refreshInBackground();
     }, refreshTime);
   }
 
   async function logout(): Promise<void> {
-    await withErrorNotification('logout', async () => {
+    const succeeded = await withErrorNotification('logout', async () => {
       await apiService.logout();
 
-      reset();
-
       bus.emit('logout');
+
+      return true;
     });
 
-    await router.push('/');
+    // A failed request leaves the session (cookies, status, timers) as-is —
+    // don't navigate away as if it had actually logged out.
+    if (succeeded) {
+      await router.push('/');
+    }
   }
 
   async function register(name: string, email: string, password: string) {
@@ -336,6 +412,7 @@ export const useAuthStore = defineStore('auth', () => {
   return {
     error,
     loading: isLoading,
+    status: computed(() => status.value),
     init,
     reset,
     refreshTokens,

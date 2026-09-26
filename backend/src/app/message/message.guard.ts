@@ -1,10 +1,10 @@
 import type { Request } from 'express';
-import { campManager } from '#app/campManager/camp-manager.guard';
+import { hasEventPermission } from '#app/event/event.guard';
 import { type GuardFn } from '#core/guard';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 import { MessageService } from '#app/message/message.service';
-import { CampService } from '#app/camp/camp.service';
+import { EventService } from '#app/event/event.service';
 import { resolve } from '#core/ioc/container';
 
 export const messageFileGuard = async (req: Request): Promise<GuardFn> => {
@@ -27,9 +27,9 @@ export const messageFileGuard = async (req: Request): Promise<GuardFn> => {
     );
   }
 
-  const campService = resolve(CampService);
-  const camp = await campService.getCampById(message.campId);
-  req.setModelOrFail('camp', camp);
+  const eventService = resolve(EventService);
+  const event = await eventService.getEventById(message.eventId);
+  req.setModelOrFail('event', event);
 
-  return campManager('camp.messages.view');
+  return hasEventPermission('event.messages.view');
 };

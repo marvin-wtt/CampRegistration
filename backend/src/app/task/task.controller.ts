@@ -27,36 +27,36 @@ export class TaskController extends BaseController {
 
   async index(req: Request, res: Response) {
     await req.validate(validator.index);
-    const camp = req.modelOrFail('camp');
+    const event = req.modelOrFail('event');
 
-    const tasks = await this.taskService.queryTasks(camp.id);
+    const tasks = await this.taskService.queryTasks(event.id);
 
     res.resource(TaskResource.collection(tasks));
   }
 
   async store(req: Request, res: Response) {
     const { body } = await req.validate(validator.store);
-    const camp = req.modelOrFail('camp');
+    const event = req.modelOrFail('event');
 
-    const task = await this.taskService.createTask(camp.id, {
+    const task = await this.taskService.createTask(event.id, {
       title: body.title,
       notes: body.notes ?? undefined,
       dueDate: body.dueDate ?? undefined,
       assigneeId: body.assigneeId ?? undefined,
     });
 
-    void this.realtimeService.emit(camp.id, 'task', task.id, 'created');
+    void this.realtimeService.emit(event.id, 'task', task.id, 'created');
 
     res.status(httpStatus.CREATED).resource(new TaskResource(task));
   }
 
   async update(req: Request, res: Response) {
     const { body } = await req.validate(validator.update);
-    const camp = req.modelOrFail('camp');
+    const event = req.modelOrFail('event');
     const existingTask = req.modelOrFail('task');
 
     const task = await this.taskService.updateTaskById(
-      camp.id,
+      event.id,
       existingTask.id,
       {
         title: body.title,
@@ -67,19 +67,19 @@ export class TaskController extends BaseController {
       },
     );
 
-    void this.realtimeService.emit(camp.id, 'task', task.id, 'updated');
+    void this.realtimeService.emit(event.id, 'task', task.id, 'updated');
 
     res.resource(new TaskResource(task));
   }
 
   async destroy(req: Request, res: Response) {
     await req.validate(validator.destroy);
-    const camp = req.modelOrFail('camp');
+    const event = req.modelOrFail('event');
     const task = req.modelOrFail('task');
 
     await this.taskService.deleteTaskById(task.id);
 
-    void this.realtimeService.emit(camp.id, 'task', task.id, 'deleted');
+    void this.realtimeService.emit(event.id, 'task', task.id, 'deleted');
 
     res.status(httpStatus.NO_CONTENT).send();
   }

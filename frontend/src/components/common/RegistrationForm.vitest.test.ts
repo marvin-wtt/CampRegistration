@@ -18,11 +18,14 @@ vi.mock('vue-router', () => ({
 installQuasarPlugin();
 
 describe('RegistrationForm', () => {
-  const simpleCampDetails = {
+  const simpleEventDetails = {
     id: '',
+    organizationId: '',
+    organizationName: '',
+    organizationVerificationStatus: 'VERIFIED' as const,
     name: 'Test',
     confirmationMode: 'AUTOMATIC' as const,
-    public: true,
+    listed: true,
     registrationOpensAt: null,
     registrationClosesAt: null,
     countries: [],
@@ -32,12 +35,15 @@ describe('RegistrationForm', () => {
     maxParticipants: 0,
     startAt: '',
     endAt: '',
+    timezone: 'UTC',
     minAge: 0,
     maxAge: 0,
     price: 0,
     location: '',
     freePlaces: 0,
+    freePlacesTotal: 0,
     registrationStatus: 'closed' as const,
+    logo: null,
     form: {
       title: '',
       description: '',
@@ -49,8 +55,8 @@ describe('RegistrationForm', () => {
   it('should mount', () => {
     const wrapper = mount(RegistrationForm, {
       props: {
-        campDetails: {
-          ...simpleCampDetails,
+        eventDetails: {
+          ...simpleEventDetails,
         },
         submitFn: () => Promise.reject(new Error()),
         uploadFileFn: () => Promise.reject(new Error()),
@@ -64,8 +70,8 @@ describe('RegistrationForm', () => {
 
     const wrapper = mount(RegistrationForm, {
       props: {
-        // simpleCampDetails.form has no completedHtml
-        campDetails: { ...simpleCampDetails, id: 'camp-1' },
+        // simpleEventDetails.form has no completedHtml
+        eventDetails: { ...simpleEventDetails, id: 'event-1' },
         submitFn,
         uploadFileFn: () => Promise.reject(new Error()),
       },
@@ -101,11 +107,11 @@ describe('RegistrationForm', () => {
 
     const wrapper = mount(RegistrationForm, {
       props: {
-        campDetails: {
-          ...simpleCampDetails,
-          id: 'camp-1',
+        eventDetails: {
+          ...simpleEventDetails,
+          id: 'event-1',
           form: {
-            ...simpleCampDetails.form,
+            ...simpleEventDetails.form,
             completedHtml: 'Registration successful',
           },
         },
@@ -145,11 +151,11 @@ describe('RegistrationForm', () => {
 
     const wrapper = mount(RegistrationForm, {
       props: {
-        campDetails: {
-          ...simpleCampDetails,
-          id: 'camp-1',
+        eventDetails: {
+          ...simpleEventDetails,
+          id: 'event-1',
           form: {
-            ...simpleCampDetails.form,
+            ...simpleEventDetails.form,
             completedHtml: 'Registration successful',
           },
         },
@@ -181,6 +187,52 @@ describe('RegistrationForm', () => {
     expect(
       wrapper.find('[data-test="registration-submit-status"]').exists(),
     ).toBe(false);
+  });
+
+  it('shows a pending-specific message when the registration is left pending', async () => {
+    const submitFn = vi
+      .fn()
+      .mockResolvedValue({ id: 'reg-1', status: 'PENDING' });
+
+    const wrapper = mount(RegistrationForm, {
+      props: {
+        eventDetails: { ...simpleEventDetails, id: 'event-1' },
+        submitFn,
+        uploadFileFn: () => Promise.reject(new Error()),
+      },
+    });
+    const survey = wrapper
+      .getComponent(SurveyComponent)
+      .props('model') as SurveyModel;
+
+    survey.doComplete();
+    await flushPromises();
+
+    const status = wrapper.find('[data-test="registration-submit-status"]');
+    expect(status.text()).toContain('complete.pending.title');
+  });
+
+  it('shows a waitlist-specific message when the registration is waitlisted', async () => {
+    const submitFn = vi
+      .fn()
+      .mockResolvedValue({ id: 'reg-1', status: 'WAITLISTED' });
+
+    const wrapper = mount(RegistrationForm, {
+      props: {
+        eventDetails: { ...simpleEventDetails, id: 'event-1' },
+        submitFn,
+        uploadFileFn: () => Promise.reject(new Error()),
+      },
+    });
+    const survey = wrapper
+      .getComponent(SurveyComponent)
+      .props('model') as SurveyModel;
+
+    survey.doComplete();
+    await flushPromises();
+
+    const status = wrapper.find('[data-test="registration-submit-status"]');
+    expect(status.text()).toContain('complete.waitlisted.title');
   });
 
   it.todo('should set variables');

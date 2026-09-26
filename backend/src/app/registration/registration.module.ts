@@ -1,31 +1,26 @@
 import type {
   AppModule,
   AppRouter,
-  RoleToPermissions,
   BindOptions,
   ModuleOptions,
 } from '#core/base/AppModule';
 import { RegistrationRouter } from '#app/registration/registration.routes';
-import type {
-  CampManagerRole,
-  RegistrationPermission,
-} from '@camp-registration/common/permissions';
+import type { ScopedPermissions } from '@camp-registration/common/permissions';
 import { registerFileGuard } from '#app/file/file.guard';
 import { registrationFileGuard } from '#app/registration/registration.guard';
 import { RegistrationFilesRouter } from '#app/registration/registration-files.routes';
 import { RegistrationService } from '#app/registration/registration.service';
 import { RegistrationController } from '#app/registration/registration.controller';
-import {
-  RegistrationAcceptedMessage,
-  RegistrationConfirmedMessage,
-  RegistrationDeletedMessage,
-  RegistrationNotifyMessage,
-  RegistrationTemplateMessage,
-  RegistrationUpdatedMessage,
-  RegistrationWaitlistedMessage,
-} from '#app/registration/registration.messages';
-import { MailableRegistry } from '#app/mail/mail.registry';
+import { RegistrationNotifyMessage } from '#app/registration/messages/notify.mail';
+import { RegistrationTemplateMessage } from '#app/registration/messages/template.mail';
+import { RegistrationAcceptedMessage } from '#app/registration/messages/accepted.mail';
+import { RegistrationConfirmedMessage } from '#app/registration/messages/confirmed.mail';
+import { RegistrationDeletedMessage } from '#app/registration/messages/deleted.mail';
+import { RegistrationUpdatedMessage } from '#app/registration/messages/updated.mail';
+import { RegistrationWaitlistedMessage } from '#app/registration/messages/waitlisted.mail';
+import { MailableRegistry } from '#core/mail/mail.registry';
 import { resolve } from '#core/ioc/container';
+import { registerAuditNameResolver } from '#app/audit/audit.names';
 
 export class RegistrationModule implements AppModule {
   bindContainers(options: BindOptions) {
@@ -34,52 +29,58 @@ export class RegistrationModule implements AppModule {
   }
 
   configure(_options: ModuleOptions): Promise<void> | void {
+    const mailRegistry = resolve(MailableRegistry);
     // Manual -> Registration
-    resolve(MailableRegistry).register(RegistrationTemplateMessage);
-    // Event -> Camp Contact
-    resolve(MailableRegistry).register(RegistrationNotifyMessage);
+    mailRegistry.register(RegistrationTemplateMessage);
+    // Event -> Event Contact
+    mailRegistry.register(RegistrationNotifyMessage);
     // Event -> Registration
-    resolve(MailableRegistry).register(RegistrationConfirmedMessage);
-    resolve(MailableRegistry).register(RegistrationWaitlistedMessage);
-    resolve(MailableRegistry).register(RegistrationUpdatedMessage);
-    resolve(MailableRegistry).register(RegistrationDeletedMessage);
-    resolve(MailableRegistry).register(RegistrationAcceptedMessage);
+    mailRegistry.register(RegistrationConfirmedMessage);
+    mailRegistry.register(RegistrationWaitlistedMessage);
+    mailRegistry.register(RegistrationUpdatedMessage);
+    mailRegistry.register(RegistrationDeletedMessage);
+    mailRegistry.register(RegistrationAcceptedMessage);
   }
 
-  registerRoutes(router: AppRouter): void {
+  registerApiRoutes(router: AppRouter): void {
     registerFileGuard('registration', {
       view: registrationFileGuard,
     });
+    registerAuditNameResolver('registration', (eventId, ids) =>
+      resolve(RegistrationService).getNamesByIds(eventId, ids),
+    );
 
     router.useRouter(
-      '/camps/:campsId/registrations/:registrationId/files',
+      '/events/:eventsId/registrations/:registrationId/files',
       new RegistrationFilesRouter(),
     );
-    router.useRouter('/camps/:campId/registrations', new RegistrationRouter());
+    router.useRouter(
+      '/events/:eventId/registrations',
+      new RegistrationRouter(),
+    );
   }
 
-  registerPermissions(): RoleToPermissions<
-    CampManagerRole,
-    RegistrationPermission
-  > {
-    // The 'camp.registrations.create' permission bypasses the registration
+  registerPermissions(): ScopedPermissions {
+    // The 'event.registrations.create' permission bypasses the registration
     // open/close checks, allowing managers to create registrations outside
     // the normal registration period.
     return {
-      DIRECTOR: [
-        'camp.registrations.view',
-        'camp.registrations.create',
-        'camp.registrations.edit',
-        'camp.registrations.delete',
-      ],
-      COORDINATOR: [
-        'camp.registrations.view',
-        'camp.registrations.create',
-        'camp.registrations.edit',
-        'camp.registrations.delete',
-      ],
-      COUNSELOR: ['camp.registrations.view', 'camp.registrations.create'],
-      VIEWER: ['camp.registrations.view'],
+      event: {
+        DIRECTOR: [
+          'event.registrations.view',
+          'event.registrations.create',
+          'event.registrations.edit',
+          'event.registrations.delete',
+        ],
+        COORDINATOR: [
+          'event.registrations.view',
+          'event.registrations.create',
+          'event.registrations.edit',
+          'event.registrations.delete',
+        ],
+        COUNSELOR: ['event.registrations.view', 'event.registrations.create'],
+        VIEWER: ['event.registrations.view'],
+      },
     };
   }
 }

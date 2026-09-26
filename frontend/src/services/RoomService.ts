@@ -7,27 +7,27 @@ import type {
 } from '@camp-registration/common/entities';
 
 export function useRoomService() {
-  async function fetchRooms(campId: string): Promise<Room[]> {
-    const response = await api.get(`camps/${campId}/rooms/`);
+  async function fetchRooms(eventId: string): Promise<Room[]> {
+    const response = await api.get(`events/${eventId}/rooms/`);
 
     return response?.data?.data;
   }
 
-  async function fetchRoom(campId: string, id: string): Promise<Room> {
-    const response = await api.get(`camps/${campId}/rooms/${id}/`);
+  async function fetchRoom(eventId: string, id: string): Promise<Room> {
+    const response = await api.get(`events/${eventId}/rooms/${id}/`);
 
     return response?.data?.data;
   }
 
   async function bulkUpdateRooms(
-    campId: string,
+    eventId: string,
     rooms: {
       id: string;
       name?: string | Record<string, string>;
       sortOrder?: number;
     }[],
   ): Promise<Room[]> {
-    const response = await api.patch(`camps/${campId}/rooms/`, {
+    const response = await api.patch(`events/${eventId}/rooms/`, {
       rooms,
     });
 
@@ -35,10 +35,10 @@ export function useRoomService() {
   }
 
   async function createRoom(
-    campId: string,
+    eventId: string,
     data: RoomCreateData,
   ): Promise<Room> {
-    const response = await api.post(`camps/${campId}/rooms/`, {
+    const response = await api.post(`events/${eventId}/rooms/`, {
       name: data.name,
       capacity: data.capacity,
     });
@@ -47,42 +47,42 @@ export function useRoomService() {
   }
 
   async function updateRoom(
-    campId: string,
+    eventId: string,
     id: string,
     data: RoomUpdateData,
   ): Promise<Room> {
-    const response = await api.patch(`camps/${campId}/rooms/${id}/`, data);
+    const response = await api.patch(`events/${eventId}/rooms/${id}/`, data);
 
     return response?.data?.data;
   }
 
-  async function deleteRoom(campId: string, id: string): Promise<void> {
-    await api.delete(`camps/${campId}/rooms/${id}/`);
+  async function deleteRoom(eventId: string, id: string): Promise<void> {
+    await api.delete(`events/${eventId}/rooms/${id}/`);
   }
 
-  async function createBed(campId: string, roomId: string): Promise<Bed> {
-    const response = await api.post(`camps/${campId}/rooms/${roomId}/beds/`);
+  async function createBed(eventId: string, roomId: string): Promise<Bed> {
+    const response = await api.post(`events/${eventId}/rooms/${roomId}/beds/`);
 
     return response?.data?.data;
   }
 
   async function updateBed(
-    campId: string,
+    eventId: string,
     roomId: string,
     bedId: string,
     registrationId: string | null,
   ) {
-    await api.patch(`camps/${campId}/rooms/${roomId}/beds/${bedId}/`, {
+    await api.patch(`events/${eventId}/rooms/${roomId}/beds/${bedId}/`, {
       registrationId,
     });
   }
 
   async function deleteBed(
-    campId: string,
+    eventId: string,
     roomId: string,
     bedId: string,
   ): Promise<void> {
-    await api.delete(`camps/${campId}/rooms/${roomId}/beds/${bedId}/`);
+    await api.delete(`events/${eventId}/rooms/${roomId}/beds/${bedId}/`);
   }
 
   return {

@@ -38,7 +38,7 @@ export class NewsletterSubscriberRouter extends ModuleRouter {
       '/import',
       auth(),
       guard(newsletterManager('newsletter.subscribers.create')),
-      controller(subscriberController, 'importFromCamp'),
+      controller(subscriberController, 'importFromEvent'),
     );
     this.router.delete(
       '/:newsletterSubscriberId',

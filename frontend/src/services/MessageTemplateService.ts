@@ -7,40 +7,43 @@ import { api } from '@/services/api';
 
 export function useMessageTemplateService() {
   async function fetchMessageTemplates(
-    campId: string,
+    eventId: string,
   ): Promise<MessageTemplate[]> {
-    const response = await api.get(`camps/${campId}/message-templates/`);
+    const response = await api.get(`events/${eventId}/message-templates/`);
 
     return response?.data?.data;
   }
 
   async function fetchMessageTemplate(
-    campId: string,
+    eventId: string,
     templateId: string,
   ): Promise<MessageTemplate> {
     const response = await api.get(
-      `camps/${campId}/message-templates/${templateId}/`,
+      `events/${eventId}/message-templates/${templateId}/`,
     );
 
     return response?.data?.data;
   }
 
   async function createMessageTemplate(
-    campId: string,
+    eventId: string,
     data: MessageTemplateCreateData,
   ): Promise<MessageTemplate> {
-    const response = await api.post(`camps/${campId}/message-templates/`, data);
+    const response = await api.post(
+      `events/${eventId}/message-templates/`,
+      data,
+    );
 
     return response?.data?.data;
   }
 
   async function updateMessageTemplate(
-    campId: string,
+    eventId: string,
     templateId: string,
     data: MessageTemplateUpdateData,
   ): Promise<MessageTemplate> {
     const response = await api.patch(
-      `camps/${campId}/message-templates/${templateId}/`,
+      `events/${eventId}/message-templates/${templateId}/`,
       data,
     );
 
@@ -48,10 +51,10 @@ export function useMessageTemplateService() {
   }
 
   async function deleteMessageTemplate(
-    campId: string,
+    eventId: string,
     templateId: string,
   ): Promise<void> {
-    await api.delete(`camps/${campId}/message-templates/${templateId}/`);
+    await api.delete(`events/${eventId}/message-templates/${templateId}/`);
   }
 
   return {

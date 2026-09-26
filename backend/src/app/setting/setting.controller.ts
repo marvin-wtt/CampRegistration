@@ -23,11 +23,11 @@ export class SettingController extends BaseController {
   }
 
   async show(req: Request, res: Response) {
-    const camp = req.modelOrFail('camp');
+    const event = req.modelOrFail('event');
     const { params } = await req.validate(validator.show);
     const key = this.settingsRegistry.keyOrFail(params.key);
 
-    const setting = await this.settingService.getSetting(camp.id, key);
+    const setting = await this.settingService.getSetting(event.id, key);
     if (!setting) {
       throw new ApiError(
         httpStatus.NOT_FOUND,
@@ -39,7 +39,7 @@ export class SettingController extends BaseController {
   }
 
   async update(req: Request, res: Response) {
-    const camp = req.modelOrFail('camp');
+    const event = req.modelOrFail('event');
     const { params } = await req.validate(validator.update);
     const key = this.settingsRegistry.keyOrFail(params.key);
     const definition = this.settingsRegistry.getOrFail(key);
@@ -47,7 +47,7 @@ export class SettingController extends BaseController {
     const { body } = await req.validate(validateBody(definition.schema));
 
     const setting = await this.settingService.upsertSetting(
-      camp.id,
+      event.id,
       key,
       // The per-key schema type is erased to `unknown` by `getOrFail`, but
       // `body.data` was just validated against that exact schema above, and
@@ -55,7 +55,7 @@ export class SettingController extends BaseController {
       body.data as Record<string, unknown>,
     );
 
-    void this.realtimeService.emit(camp.id, 'setting', key, 'updated');
+    void this.realtimeService.emit(event.id, 'setting', key, 'updated');
 
     res.resource(new SettingResource(setting));
   }

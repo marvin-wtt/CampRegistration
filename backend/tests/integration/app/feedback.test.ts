@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { request } from '../utils/request.js';
-import { NoOpMailer } from '#app/mail/noop.mailer.js';
+import { NoOpMailer } from '#core/mail/drivers/noop.mailer.js';
 
 const mailer = NoOpMailer.prototype;
 

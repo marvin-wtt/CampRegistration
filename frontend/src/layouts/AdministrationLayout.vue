@@ -2,33 +2,31 @@
   <general-layout
     :navigation-items="items"
     :title="t('title')"
-    :back-to="backTo"
-  />
+  >
+    <template #toolbar>
+      <workspace-switcher />
+    </template>
+
+    <template #navigation>
+      <workspace-switcher rail />
+    </template>
+  </general-layout>
 </template>
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
 import type { NavigationItemProps } from '@/components/NavigationItemProps.ts';
 import GeneralLayout from '@/components/layout/GeneralLayout.vue';
+import WorkspaceSwitcher from '@/components/layout/WorkspaceSwitcher.vue';
 import { computed, onMounted } from 'vue';
 import { useAuthStore } from '@/stores/auth-store';
-import { useRoute, type RouteLocationRaw } from 'vue-router';
 
 const { t } = useI18n();
-const route = useRoute();
 
 const authStore = useAuthStore();
 
 onMounted(async () => {
   await authStore.init();
-});
-
-const backTo = computed<RouteLocationRaw>(() => {
-  if (route.name === 'administration') {
-    return { name: 'management' };
-  }
-
-  return { name: 'administration' };
 });
 
 const items = computed<NavigationItemProps[]>(() => [
@@ -39,10 +37,16 @@ const items = computed<NavigationItemProps[]>(() => [
     to: { name: 'administration.users' },
   },
   {
-    name: 'camps',
-    label: t('camps'),
+    name: 'organizations',
+    label: t('organizations'),
+    icon: 'apartment',
+    to: { name: 'administration.organizations' },
+  },
+  {
+    name: 'events',
+    label: t('events'),
     icon: 'home',
-    to: { name: 'administration.camps' },
+    to: { name: 'administration.events' },
   },
   {
     name: 'newsletters',
@@ -68,7 +72,8 @@ const items = computed<NavigationItemProps[]>(() => [
 <i18n lang="yaml" locale="en">
 title: 'Administration'
 
-camps: 'Camps'
+organizations: 'Organizations'
+events: 'Events'
 newsletters: 'Newsletters'
 queues: 'Jobs'
 users: 'Users'
@@ -79,7 +84,8 @@ legal: 'Legal Content'
 <i18n lang="yaml" locale="de">
 title: 'Verwaltung'
 
-camps: 'Camps'
+organizations: 'Organisationen'
+events: 'Veranstaltungen'
 newsletters: 'Newsletter'
 queues: 'Aufgaben'
 users: 'Benutzer'
@@ -90,7 +96,8 @@ legal: 'Rechtliches'
 <i18n lang="yaml" locale="fr">
 title: 'Administration'
 
-camps: 'Camps'
+organizations: 'Organisations'
+events: 'Événements'
 newsletters: 'Newsletters'
 queues: 'Tâches'
 users: 'Utilisateurs'
@@ -101,7 +108,8 @@ legal: 'Contenu légal'
 <i18n lang="yaml" locale="pl">
 title: 'Administracja'
 
-camps: 'Obozy'
+organizations: 'Organizacje'
+events: 'Wydarzenia'
 newsletters: 'Newslettery'
 queues: 'Zadania'
 users: 'Użytkownicy'
@@ -112,7 +120,8 @@ legal: 'Treści prawne'
 <i18n lang="yaml" locale="cs">
 title: 'Administrace'
 
-camps: 'Tábory'
+organizations: 'Organizace'
+events: 'Akce'
 newsletters: 'Newslettery'
 queues: 'Úlohy'
 users: 'Uživatelé'

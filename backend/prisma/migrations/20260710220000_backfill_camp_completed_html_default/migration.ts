@@ -1,14 +1,14 @@
 import type { Prisma } from '#generated/prisma/client.js';
 
 /**
- * The `standard` and `minimal` camp form presets used to seed every new
- * camp's `form.completedHtml` with a hardcoded "Thank you for your
+ * The `standard` and `minimal` event form presets used to seed every new
+ * event's `form.completedHtml` with a hardcoded "Thank you for your
  * registration! ..." message. That's been replaced by a default generated
  * on the frontend (see `RegistrationForm.vue`) with call-to-action buttons —
  * but the frontend only generates it when `completedHtml` is absent, so
- * existing camps that still carry the untouched preset text won't pick it
- * up. Clear `completedHtml` for camps whose value still matches that old
- * preset text, leaving any camp-specific customization untouched.
+ * existing events that still carry the untouched preset text won't pick it
+ * up. Clear `completedHtml` for events whose value still matches that old
+ * preset text, leaving any event-specific customization untouched.
  */
 
 // Signature of the old preset default. The `standard` and `minimal` presets
@@ -29,7 +29,7 @@ const OLD_MINIMAL_COMPLETED_HTML = {
   de: '<h3>Vielen Dank für deine Anmeldung!</h3><p style="font-size: 18px">Du solltest in Kürze eine Bestätigungsmail erhalten.</p>',
 };
 
-interface CampForm {
+interface EventForm {
   completedHtml?: unknown;
   [key: string]: unknown;
 }
@@ -52,12 +52,12 @@ function isSameCompletedHtml(
 }
 
 export async function up(tx: Prisma.TransactionClient): Promise<void> {
-  const camps = await tx.camp.findMany({
+  const events = await tx.event.findMany({
     select: { id: true, form: true },
   });
 
-  for (const camp of camps) {
-    const form = camp.form as CampForm | null;
+  for (const event of events) {
+    const form = event.form as EventForm | null;
     if (!form || typeof form !== 'object') {
       continue;
     }
@@ -73,8 +73,8 @@ export async function up(tx: Prisma.TransactionClient): Promise<void> {
 
     const { completedHtml: _removed, ...rest } = form;
 
-    await tx.camp.update({
-      where: { id: camp.id },
+    await tx.event.update({
+      where: { id: event.id },
       data: { form: rest },
     });
   }

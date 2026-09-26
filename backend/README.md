@@ -65,8 +65,11 @@ include:
   (generate fresh values with `npm run secrets:generate`)
 - `QUEUE_DRIVER` — queue backend (`database` or `redis`)
 - `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USERNAME`, `SMTP_PASSWORD` —
-  email server configuration
+  email server configuration; `SMTP_USERNAME` is the SMTP auth identity and may
+  differ from `EMAIL_FROM`
 - `EMAIL_FROM`, `EMAIL_REPLY_TO`, `EMAIL_ADMIN` — email addresses
+- `EMAIL_ENVELOPE_FROM` — envelope sender (return-path) used for bounce
+  handling; defaults to `EMAIL_FROM`
 
 See `.env.dev` for the complete list of options.
 

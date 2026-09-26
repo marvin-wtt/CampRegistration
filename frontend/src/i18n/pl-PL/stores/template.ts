@@ -11,12 +11,12 @@ export default {
     progress: 'Aktualizowanie szablonu...',
     success: 'Szablon pomyślnie zaktualizowany',
     error: 'Błąd podczas aktualizowania szablonu',
-    invalid: 'Nieprawidłowy identyfikator obozu lub szablonu',
+    invalid: 'Nieprawidłowy identyfikator wydarzenia lub szablonu',
   },
   delete: {
     progress: 'Usuwanie szablonu...',
     success: 'Szablon pomyślnie usunięty',
     error: 'Błąd podczas usuwania szablonu',
-    invalid: 'Nieprawidłowy identyfikator obozu lub szablonu',
+    invalid: 'Nieprawidłowy identyfikator wydarzenia lub szablonu',
   },
 };

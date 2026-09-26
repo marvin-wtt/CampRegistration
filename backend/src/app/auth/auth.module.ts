@@ -7,7 +7,7 @@ import type {
 import { AuthRouter } from '#app/auth/auth.routes';
 import { AuthController } from '#app/auth/auth.controller';
 import { AuthService } from '#app/auth/auth.service';
-import { MailableRegistry } from '#app/mail/mail.registry';
+import { MailableRegistry } from '#core/mail/mail.registry';
 import {
   ResetPasswordMessage,
   VerifyEmailMessage,
@@ -25,7 +25,7 @@ export class AuthModule implements AppModule {
     resolve(MailableRegistry).register(ResetPasswordMessage);
   }
 
-  registerRoutes(router: AppRouter): void {
+  registerApiRoutes(router: AppRouter): void {
     router.useRouter('/auth', new AuthRouter());
   }
 }

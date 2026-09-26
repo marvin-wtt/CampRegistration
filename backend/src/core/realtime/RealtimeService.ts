@@ -35,30 +35,30 @@ export class RealtimeService {
   }
 
   /**
-   * Publish an invalidation event for a resource change within a camp.
+   * Publish an invalidation event for a resource change within a event.
    *
    * Best-effort: the triggering action has already committed, so a failure to
    * notify must never fail the caller. Errors are logged and swallowed.
    */
   async emit(
-    campId: string,
+    eventId: string,
     resource: RealtimeResource,
     id: string,
     operation: Exclude<RealtimeOperation, 'invalidated'>,
   ): Promise<void> {
-    await this.publish(campId, { resource, id, operation });
+    await this.publish(eventId, { resource, id, operation });
   }
 
   /**
-   * Publish a collection-level invalidation for a resource within a camp:
+   * Publish a collection-level invalidation for a resource within a event:
    * "something about this collection changed — refetch the list". Used for
    * bulk operations where per-entity events would trigger a refetch stampede.
    */
   async emitInvalidation(
-    campId: string,
+    eventId: string,
     resource: RealtimeResource,
   ): Promise<void> {
-    await this.publish(campId, {
+    await this.publish(eventId, {
       resource,
       id: null,
       operation: 'invalidated',
@@ -66,11 +66,11 @@ export class RealtimeService {
   }
 
   private async publish(
-    campId: string,
+    eventId: string,
     event: Pick<RealtimeEvent, 'resource' | 'id' | 'operation'>,
   ): Promise<void> {
     try {
-      await this.bus.publish(campId, {
+      await this.bus.publish(eventId, {
         ...event,
         requiredPermission: RESOURCE_VIEW_PERMISSION[event.resource],
         // Ambient request context: set for emits inside an HTTP request,
@@ -84,9 +84,9 @@ export class RealtimeService {
     }
   }
 
-  /** Subscribe to a camp's events. Returns an unsubscribe function. */
-  subscribe(campId: string, listener: RealtimeListener): () => void {
-    return this.bus.subscribe(campId, listener);
+  /** Subscribe to a event's events. Returns an unsubscribe function. */
+  subscribe(eventId: string, listener: RealtimeListener): () => void {
+    return this.bus.subscribe(eventId, listener);
   }
 
   async shutdown(): Promise<void> {

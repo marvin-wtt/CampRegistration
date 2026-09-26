@@ -19,6 +19,8 @@ export type CustomAxiosError = AxiosError & {
 
 let retryInterceptorsInstalled = false;
 let onUnauthenticated: (() => unknown) | undefined = undefined;
+let onTokenRefresh: ((tokens: AuthTokens) => void) | undefined = undefined;
+let ongoingRefresh: Promise<AuthTokens> | null = null;
 
 function isCsrfError(error: AxiosError): boolean {
   if (error.response?.status !== 403) {
@@ -113,7 +115,24 @@ export function useAuthService() {
     return response?.data;
   }
 
+  // Shared across every caller (proactive timer, SSE-resume, and the 401
+  // retry interceptor) so a tab regaining focus never fires more than one
+  // concurrent refresh — the backend's refresh tokens are single-use, so a
+  // second concurrent call would be rejected and could wrongly look like an
+  // expired session.
   async function refreshTokens(): Promise<AuthTokens> {
+    if (ongoingRefresh) {
+      return ongoingRefresh;
+    }
+
+    ongoingRefresh = doRefreshTokens().finally(() => {
+      ongoingRefresh = null;
+    });
+
+    return ongoingRefresh;
+  }
+
+  async function doRefreshTokens(): Promise<AuthTokens> {
     await requestCsrfToken();
 
     const response = await api.post('auth/refresh-tokens', undefined, {
@@ -124,7 +143,10 @@ export function useAuthService() {
       _csrfRetry: true,
     } as CustomRequestConfig);
 
-    return response?.data;
+    const tokens: AuthTokens = response?.data;
+    onTokenRefresh?.(tokens);
+
+    return tokens;
   }
 
   async function register(
@@ -199,6 +221,10 @@ export function useAuthService() {
     onUnauthenticated = handler;
   }
 
+  function setOnTokenRefresh(handler: (tokens: AuthTokens) => void) {
+    onTokenRefresh = handler;
+  }
+
   interface PartialAuthResponse {
     token: string;
     partialAuthType: string;
@@ -248,6 +274,7 @@ export function useAuthService() {
     sendEmailVerify,
     refreshTokens,
     setOnUnauthenticated,
+    setOnTokenRefresh,
     requestCsrfToken,
     extractPartialAuthResponse,
   };

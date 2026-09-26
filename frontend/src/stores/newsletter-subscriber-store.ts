@@ -53,7 +53,7 @@ export const useNewsletterSubscriberStore = defineStore(
       });
     }
 
-    async function importFromCamp(
+    async function importFromEvent(
       newsletterId: string,
       importData: NewsletterSubscriberImportData,
     ): Promise<{ added: number; skipped: number }> {
@@ -87,7 +87,7 @@ export const useNewsletterSubscriberStore = defineStore(
       error,
       fetchData,
       createData,
-      importFromCamp,
+      importFromEvent,
       deleteData,
     };
   },

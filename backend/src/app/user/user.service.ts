@@ -2,14 +2,48 @@ import type { Prisma, User } from '#generated/prisma/client.js';
 import httpStatus from 'http-status';
 import ApiError from '#utils/ApiError';
 import { encryptPassword } from '#core/encryption';
-import type { UserUpdateData } from '@camp-registration/common/entities';
+import type {
+  AccountDeletionBlocker,
+  UserUpdateData,
+} from '@camp-registration/common/entities';
 import { BaseService } from '#core/base/BaseService';
-import { CampService } from '#app/camp/camp.service';
+import { EventService } from '#app/event/event.service';
 import { inject, injectable } from 'inversify';
+import type { ProfileUser } from '#app/profile/profile.types';
+import { AuditService } from '#app/audit/audit.service';
+import { AccountLifecycle } from '#app/user/account.lifecycle';
+
+const profileAccessInclude = {
+  eventRoles: true,
+  newsletterManagers: true,
+  twoFactor: { select: { confirmedAt: true } },
+  organizationMembers: {
+    include: {
+      organization: {
+        select: {
+          id: true,
+          verificationStatus: true,
+          // Needed to project organization-derived event and newsletter access
+          // into `eventAccess`/`newsletterAccess`, so the client gates UI
+          // exactly as the server gates requests.
+          events: { select: { id: true } },
+          newsletters: { select: { id: true } },
+        },
+      },
+    },
+  },
+} satisfies Prisma.UserInclude;
+
+const profileAccessOmit = { password: true } satisfies Prisma.UserOmit;
 
 @injectable()
 export class UserService extends BaseService {
-  constructor(@inject(CampService) private readonly campService: CampService) {
+  constructor(
+    @inject(EventService) private readonly eventService: EventService,
+    @inject(AuditService) private readonly audit: AuditService,
+    @inject(AccountLifecycle)
+    private readonly accountLifecycle: AccountLifecycle,
+  ) {
     super();
   }
 
@@ -129,13 +163,19 @@ export class UserService extends BaseService {
     return { total, unverified, locked };
   }
 
-  async getUserByIdWithCampRoles(id: string) {
+  async getProfileUserById(id: string): Promise<ProfileUser> {
     return this.prisma.user.findUniqueOrThrow({
       where: { id },
-      include: {
-        campRoles: true,
-        twoFactor: { select: { confirmedAt: true } },
-      },
+      omit: profileAccessOmit,
+      include: profileAccessInclude,
+    });
+  }
+
+  /** System administrators, for notifications that need a human moderator. */
+  async getAdministrators() {
+    return this.prisma.user.findMany({
+      where: { role: 'ADMIN', locked: false },
+      select: { name: true, email: true, locale: true },
     });
   }
 
@@ -161,23 +201,21 @@ export class UserService extends BaseService {
     });
   }
 
-  async updateUserLastSeenByIdWithCamps(userId: string) {
+  async updateUserLastSeenByIdWithEvents(userId: string) {
     const user = await this.prisma.user.update({
       where: { id: userId },
       data: {
         lastSeen: new Date(),
       },
-      include: {
-        campRoles: true,
-        twoFactor: { select: { confirmedAt: true } },
-      },
+      omit: profileAccessOmit,
+      include: profileAccessInclude,
     });
 
-    const camps = await this.campService.getCampsByUserId(userId);
+    const events = await this.eventService.getEventsByUserId(userId);
 
     return {
       ...user,
-      camps,
+      events,
     };
   }
 
@@ -197,28 +235,54 @@ export class UserService extends BaseService {
       }
     }
 
-    return this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        name: data.name,
-        email: data.email,
-        emailVerified: data.emailVerified,
-        password: data.password
-          ? await encryptPassword(data.password)
-          : undefined,
-        role: data.role,
-        locale: data.locale,
-        locked: data.locked,
-      },
-      include: {
-        campRoles: true,
-        twoFactor: { select: { confirmedAt: true } },
-      },
+    const password = data.password
+      ? await encryptPassword(data.password)
+      : undefined;
+
+    return this.transaction(async (tx) => {
+      const user = await tx.user.update({
+        where: { id: userId },
+        data: {
+          name: data.name,
+          email: data.email,
+          emailVerified: data.emailVerified,
+          password,
+          role: data.role,
+          locale: data.locale,
+          locked: data.locked,
+        },
+        include: { twoFactor: { select: { confirmedAt: true } } },
+      });
+
+      // A verified address may now match pending invitations.
+      if (user.emailVerified && (data.emailVerified || data.email)) {
+        await this.accountLifecycle.emailVerified(user);
+      }
+
+      return user;
     });
   }
 
   async deleteUserById(userId: string) {
-    await this.prisma.user.delete({ where: { id: userId } });
+    await this.transaction(async (tx) => {
+      const user = await tx.user.findUniqueOrThrow({ where: { id: userId } });
+      const blockers = await this.getDeletionBlockers(userId);
+      if (blockers.length > 0) {
+        throw new ApiError(
+          httpStatus.CONFLICT,
+          'The account is the only director, owner or administrator of an event, newsletter or organization. Hand it over or delete it first.',
+        );
+      }
+
+      await this.accountLifecycle.deleting(user);
+      await this.audit.rememberDeletedUser(user);
+
+      await tx.user.delete({ where: { id: userId } });
+    });
+  }
+
+  async getDeletionBlockers(userId: string): Promise<AccountDeletionBlocker[]> {
+    return this.accountLifecycle.deletionBlockers(userId);
   }
 
   async resetTwoFactorById(userId: string) {

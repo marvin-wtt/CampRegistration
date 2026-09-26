@@ -8,40 +8,40 @@ import type {
 import { api } from '@/services/api';
 
 export function useRegistrationService() {
-  async function fetchRegistrations(campId: string): Promise<Registration[]> {
-    const response = await api.get(`camps/${campId}/registrations/`);
+  async function fetchRegistrations(eventId: string): Promise<Registration[]> {
+    const response = await api.get(`events/${eventId}/registrations/`);
 
     return response?.data?.data;
   }
 
   async function fetchRegistration(
-    campId: string,
+    eventId: string,
     registrationId: string,
   ): Promise<Registration> {
     const response = await api.get(
-      `camps/${campId}/registrations/${registrationId}/`,
+      `events/${eventId}/registrations/${registrationId}/`,
     );
 
     return response?.data?.data;
   }
 
   async function createRegistration(
-    campId: string,
+    eventId: string,
     data: RegistrationCreateData,
   ): Promise<Registration> {
-    const response = await api.post(`camps/${campId}/registrations/`, data);
+    const response = await api.post(`events/${eventId}/registrations/`, data);
 
     return response?.data?.data;
   }
 
   async function updateRegistration(
-    campId: string,
+    eventId: string,
     registrationId: string,
     data: RegistrationUpdateData,
     params?: RegistrationUpdateQuery,
   ): Promise<Registration> {
     const response = await api.patch(
-      `camps/${campId}/registrations/${registrationId}/`,
+      `events/${eventId}/registrations/${registrationId}/`,
       data,
       { params },
     );
@@ -50,11 +50,11 @@ export function useRegistrationService() {
   }
 
   async function deleteRegistration(
-    campId: string,
+    eventId: string,
     registrationId: string,
     params?: RegistrationDeleteQuery,
   ): Promise<void> {
-    await api.delete(`camps/${campId}/registrations/${registrationId}/`, {
+    await api.delete(`events/${eventId}/registrations/${registrationId}/`, {
       params,
     });
   }

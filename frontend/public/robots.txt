@@ -1,6 +1,6 @@
 User-agent: *
 Allow: /$
-Allow: /camps
+Allow: /events
 Allow: /imprint
 Allow: /privacy-policy
 Disallow: /setup

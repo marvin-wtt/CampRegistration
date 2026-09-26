@@ -1,15 +1,18 @@
 import type { Identifiable } from './Identifiable.js';
 import { ServiceFile } from './ServiceFile.js';
 
-export interface MessageRecipient {
-  registrationId: string;
+// One per email actually sent to; a registration's emails bounce independently.
+export interface MessageRecipientDelivery {
   to: string | null;
+  bouncedAt: string | null;
+  bounceReason: string | null;
 }
 
-/**
- * An ad-hoc message composed on the contact page and sent to a set of
- * registrations. Its per-recipient rendered emails are {@link MessageDelivery}s.
- */
+export interface MessageRecipient {
+  registrationId: string;
+  deliveries: MessageRecipientDelivery[];
+}
+
 export interface Message extends Identifiable {
   subject: string;
   body: string;

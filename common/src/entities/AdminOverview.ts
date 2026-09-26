@@ -4,7 +4,13 @@ export interface AdminOverview {
     unverified: number;
     locked: number;
   };
-  camps: {
+  organizations: {
+    total: number;
+    pending: number;
+    verified: number;
+    rejected: number;
+  };
+  events: {
     total: number;
     open: number;
     upcoming: number;

@@ -7,20 +7,20 @@ import type {
 
 const show = z.object({
   params: z.object({
-    campId: z.ulid(),
+    eventId: z.ulid(),
     taskId: z.ulid(),
   }),
 });
 
 const index = z.object({
   params: z.object({
-    campId: z.ulid(),
+    eventId: z.ulid(),
   }),
 });
 
 const store = z.object({
   params: z.object({
-    campId: z.ulid(),
+    eventId: z.ulid(),
   }),
   body: z.object({
     title: z.string().min(1),
@@ -32,7 +32,7 @@ const store = z.object({
 
 const update = z.object({
   params: z.object({
-    campId: z.ulid(),
+    eventId: z.ulid(),
     taskId: z.ulid(),
   }),
   body: z
@@ -48,7 +48,7 @@ const update = z.object({
 
 const destroy = z.object({
   params: z.object({
-    campId: z.ulid(),
+    eventId: z.ulid(),
     taskId: z.ulid(),
   }),
 });

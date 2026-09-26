@@ -1,6 +1,7 @@
 export * from './error.middleware.js';
 export {
   authLimiter,
+  refreshLimiter,
   generalLimiter,
   staticLimiter,
 } from './rateLimiter.middleware.js';

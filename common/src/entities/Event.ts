@@ -1,0 +1,97 @@
+import { SurveyJSEventData } from './SurveyJSEventData.js';
+import { Identifiable } from './Identifiable.js';
+import { ITheme } from 'survey-core';
+import { Translatable } from './Translatable.js';
+import type { OrganizationVerificationStatus } from './Organization.js';
+
+export interface Event extends Identifiable {
+  organizationId: string;
+  organizationName: string;
+  organizationVerificationStatus: OrganizationVerificationStatus;
+  listed: boolean;
+  registrationOpensAt: string | null;
+  registrationClosesAt: string | null;
+  confirmationMode: 'AUTOMATIC' | 'MANUAL';
+  countries: string[];
+  locales: string[];
+  name: Translatable;
+  organizer: Translatable;
+  contactEmail: Translatable;
+  maxParticipants: Translatable<number>;
+  /** Naive local datetime (`YYYY-MM-DDTHH:mm:ss`, no offset), local to `timezone` — never a UTC instant. */
+  startAt: string;
+  /** Naive local datetime (`YYYY-MM-DDTHH:mm:ss`, no offset), local to `timezone` — never a UTC instant. */
+  endAt: string;
+  /** IANA zone `startAt`/`endAt` are local to. */
+  timezone: string;
+  minAge: number;
+  maxAge: number;
+  location: Translatable | null;
+  price: number;
+  freePlaces: Translatable<number> | null;
+  freePlacesTotal: number;
+  registrationStatus: EventRegistrationStatus;
+  logo: string | null;
+}
+
+export interface EventDetails extends Event {
+  form: SurveyJSEventData;
+  themes: Record<string, ITheme>;
+}
+
+// Fields the server derives or assigns — never accepted in a write payload.
+type EventServerFields =
+  | 'id'
+  | 'organizationName'
+  | 'organizationVerificationStatus'
+  | 'locales'
+  | 'freePlaces'
+  | 'freePlacesTotal'
+  | 'registrationStatus'
+  | 'logo';
+
+// Fields redeclared below with different optionality — must not stay required via Omit<EventDetails, ...>.
+type EventOverriddenFields =
+  'form' | 'themes' | 'registrationOpensAt' | 'registrationClosesAt';
+
+export type EventCreateData = Omit<
+  EventDetails,
+  EventServerFields | EventOverriddenFields
+> & {
+  form?: SurveyJSEventData | undefined;
+  themes?: Record<string, ITheme> | undefined;
+  registrationOpensAt?: string | null | undefined;
+  registrationClosesAt?: string | null | undefined;
+  referenceEventId?: string | undefined;
+  preset?: 'camp' | 'seminar' | undefined | null;
+};
+
+export type EventUpdateData = Omit<
+  Partial<EventCreateData>,
+  'organizationId' | 'countries'
+>;
+
+export interface EventOrganizationUpdateData {
+  organizationId: string;
+}
+
+export type EventRegistrationStatus = 'open' | 'upcoming' | 'closed';
+
+export interface EventQuery {
+  cursor?: string;
+  limit?: number;
+  sortBy?: string;
+  sortType?: 'asc' | 'desc';
+
+  name?: string;
+  country?: string | string[];
+  age?: number;
+  startAt?: string;
+  endAt?: string;
+
+  listed?: boolean;
+  status?: EventRegistrationStatus;
+  organizationId?: string;
+
+  view?: 'all' | 'assigned';
+}

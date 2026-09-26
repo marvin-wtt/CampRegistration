@@ -7,7 +7,7 @@ export const TableTemplateFactory = {
     data: Partial<Prisma.TableTemplateCreateInput> = {},
   ): Prisma.TableTemplateCreateInput => {
     return {
-      camp: {},
+      event: {},
       data: {
         title: {
           en: faker.commerce.productName(),

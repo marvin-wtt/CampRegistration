@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { SurveyModel } from 'survey-core';
-import '../../../src/form';
+import '../../../src/form/index.js';
 
 describe('functions', () => {
   describe('isMinor', () => {
@@ -224,7 +224,7 @@ describe('functions', () => {
   });
 
   describe('isWaitingList', () => {
-    describe('free places per camp', () => {
+    describe('free places per event', () => {
       it('should return false when free places are positive', () => {
         const model = new SurveyModel({
           calculatedValues: [
@@ -316,6 +316,28 @@ describe('functions', () => {
         model.setVariable('free_places', 10);
 
         expect(model.calculatedValues[0].value).toBe(false);
+      });
+
+      // Real event forms always call isWaitingList({event.freePlaces}, {country})
+      // regardless of whether the event shares one pool or splits it per
+      // country — an event with several countries can still opt into a single
+      // shared number, and the country the registrant picked must not affect
+      // that shared pool's result.
+      it('should ignore a country parameter when free places is a plain number', () => {
+        const model = new SurveyModel({
+          elements: [{ name: 'country', type: 'text' }],
+          calculatedValues: [
+            {
+              name: 'calc1',
+              expression: 'isWaitingList({free_places}, {country})',
+            },
+          ],
+        });
+
+        model.data = { country: 'de' };
+        model.setVariable('free_places', 0);
+
+        expect(model.calculatedValues[0].value).toBe(true);
       });
     });
 

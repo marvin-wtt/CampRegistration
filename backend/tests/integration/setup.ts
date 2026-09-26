@@ -12,12 +12,10 @@ import path from 'path';
 import { mockQueue } from './mocks/mockQueue.js';
 import { mockMailer } from './mocks/mockMailer.js';
 
-mockQueue();
-
 export let app: Express | undefined;
 
 export async function bootApp() {
-  await boot();
+  await boot({ overrideBindings: mockQueue });
 
   app = createApp();
 }

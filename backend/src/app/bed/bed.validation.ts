@@ -3,7 +3,7 @@ import type { Bed } from '@camp-registration/common/entities';
 
 const store = z.object({
   params: z.object({
-    campId: z.ulid(),
+    eventId: z.ulid(),
     roomId: z.ulid(),
   }),
   body: z.object({
@@ -13,7 +13,7 @@ const store = z.object({
 
 const update = z.object({
   params: z.object({
-    campId: z.ulid(),
+    eventId: z.ulid(),
     roomId: z.ulid(),
     bedId: z.ulid(),
   }),
@@ -24,7 +24,7 @@ const update = z.object({
 
 const destroy = z.object({
   params: z.object({
-    campId: z.ulid(),
+    eventId: z.ulid(),
     roomId: z.ulid(),
     bedId: z.ulid(),
   }),

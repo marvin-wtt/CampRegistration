@@ -3,7 +3,11 @@ import { ModuleRouter } from '#core/router/ModuleRouter';
 import { NewsletterMessageController } from './newsletter-message.controller.js';
 import { NewsletterMessageService } from './newsletter-message.service.js';
 import { controller } from '#utils/bindController';
-import { newsletterManager } from '#app/newsletter/newsletter.guard';
+import {
+  newsletterManager,
+  newsletterOrganizationVerified,
+} from '#app/newsletter/newsletter.guard';
+import { and } from '#core/guard';
 import { resolve } from '#core/ioc/container';
 
 export class NewsletterMessageRouter extends ModuleRouter {
@@ -30,7 +34,12 @@ export class NewsletterMessageRouter extends ModuleRouter {
     this.router.post(
       '/',
       auth(),
-      guard(newsletterManager('newsletter.messages.create')),
+      guard(
+        and(
+          newsletterManager('newsletter.messages.create'),
+          newsletterOrganizationVerified,
+        ),
+      ),
       controller(messageController, 'store'),
     );
     this.router.delete(

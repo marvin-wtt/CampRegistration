@@ -8,6 +8,7 @@ enableAutoUnmount(afterEach);
 vi.mock('vue-i18n', () => ({
   useI18n: () => ({
     t: (key: string) => key,
+    te: () => false,
     d: (key: string) => key,
     locale: ref('en'),
   }),

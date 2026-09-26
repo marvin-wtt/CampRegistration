@@ -8,7 +8,7 @@ export interface TableTemplate extends Identifiable {
   filterStatus?: ('PENDING' | 'WAITLISTED' | 'ACCEPTED')[];
   filterRoles?: string[] | undefined;
   printOptions?: {
-    orientation?: 'portrait' | 'landscape';
+    orientation?: 'portrait' | 'landscape' | undefined;
   };
   indexed?: boolean | undefined;
   actions?: boolean | undefined;

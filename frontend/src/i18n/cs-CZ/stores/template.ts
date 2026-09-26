@@ -11,12 +11,12 @@ export default {
     progress: 'Aktualizace šablony...',
     success: 'Šablona úspěšně aktualizována',
     error: 'Chyba při aktualizaci šablony',
-    invalid: 'Neplatné ID tábora nebo šablony',
+    invalid: 'Neplatné ID akce nebo šablony',
   },
   delete: {
     progress: 'Odstraňování šablony...',
     success: 'Šablona úspěšně odstraněna',
     error: 'Chyba při odstraňování šablony',
-    invalid: 'Neplatné ID tábora nebo šablony',
+    invalid: 'Neplatné ID akce nebo šablony',
   },
 };

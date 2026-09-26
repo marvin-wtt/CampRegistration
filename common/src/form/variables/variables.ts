@@ -24,21 +24,21 @@ export const setVariables = (model: SurveyModel, data: Data | undefined) => {
 
   const { t, toDate, toTime } = converter(model.locale);
 
-  model.setVariable('camp.countries', data.countries);
-  model.setVariable('camp.name', t(data.name));
-  model.setVariable('camp.organizer', t(data.organizer));
-  model.setVariable('camp.contactEmail', t(data.contactEmail));
-  model.setVariable('camp.startAt', data.startAt);
-  model.setVariable('camp.startAtDate', toDate(data.startAt));
-  model.setVariable('camp.startAtTime', toTime(data.startAt));
-  model.setVariable('camp.endAt', data.endAt);
-  model.setVariable('camp.endAtDate', toDate(data.endAt));
-  model.setVariable('camp.endAtTime', toTime(data.endAt));
-  model.setVariable('camp.minAge', data.minAge);
-  model.setVariable('camp.maxAge', data.maxAge);
-  model.setVariable('camp.location', data.location ? t(data.location) : null);
-  model.setVariable('camp.price', t(data.price));
-  model.setVariable('camp.freePlaces', data.freePlaces);
+  model.setVariable('event.countries', data.countries);
+  model.setVariable('event.name', t(data.name));
+  model.setVariable('event.organizer', t(data.organizer));
+  model.setVariable('event.contactEmail', t(data.contactEmail));
+  model.setVariable('event.startAt', data.startAt);
+  model.setVariable('event.startAtDate', toDate(data.startAt));
+  model.setVariable('event.startAtTime', toTime(data.startAt));
+  model.setVariable('event.endAt', data.endAt);
+  model.setVariable('event.endAtDate', toDate(data.endAt));
+  model.setVariable('event.endAtTime', toTime(data.endAt));
+  model.setVariable('event.minAge', data.minAge);
+  model.setVariable('event.maxAge', data.maxAge);
+  model.setVariable('event.location', data.location ? t(data.location) : null);
+  model.setVariable('event.price', t(data.price));
+  model.setVariable('event.freePlaces', data.freePlaces);
 
   model.setVariable('_validationEnabled', model.validationEnabled);
 };

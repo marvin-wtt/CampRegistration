@@ -1,26 +1,31 @@
 import express from 'express';
 import type {
   User as UserModel,
-  Camp,
   Registration,
   TableTemplate,
   Message,
   MessageDelivery,
   MessageTemplate,
-  CampManager,
+  EventManager,
   Invitation,
   Bed,
   Room,
   File,
-  Newsletter,
   NewsletterManager,
   NewsletterSubscriber,
   NewsletterMessage,
-  ProgramEvent,
-  Task,
+  Organization,
+  OrganizationMember,
+  OrganizationInvitation,
+  ProgramItem,
+  Chore,
 } from '../../src/generated/prisma/client.js';
 import type { ZodObject, z } from 'zod';
 import type { JsonResource } from '#core/resource/JsonResource';
+import type { EventWithFreePlaces } from '#app/event/event.types';
+import type { NewsletterWithOrganization } from '#app/newsletter/newsletter.types';
+import type { TaskWithAssignee } from '#app/task/task.types';
+import type { ChoreAssignmentWithRelations } from '#app/choreAssignment/choreAssignment.types';
 
 declare global {
   namespace Express {
@@ -28,25 +33,32 @@ declare global {
       user?: UserModel & {
         twoFactor: { confirmedAt: Date | null } | null;
       };
-      camp?: Camp & { freePlaces: number | Record<string, number> };
+      event?: EventWithFreePlaces;
       registration?: Registration;
       tableTemplate?: TableTemplate;
       message?: Message & { attachments: File[] };
       messageDelivery?: MessageDelivery & { attachments: File[] };
       messageTemplate?: MessageTemplate & { attachments: File[] };
-      campManager?: CampManager & {
+      eventManager?: EventManager & {
         user: UserModel | null;
         invitation: Invitation | null;
       };
       room?: Room & { beds: Bed[] };
       bed?: Bed;
       file?: File;
-      newsletter?: Newsletter;
+      organization?: Organization;
+      organizationMember?: OrganizationMember & {
+        user: UserModel | null;
+        invitation: OrganizationInvitation | null;
+      };
+      newsletter?: NewsletterWithOrganization;
       newsletterManager?: NewsletterManager;
       newsletterMessage?: NewsletterMessage;
       newsletterSubscriber?: NewsletterSubscriber;
-      programEvent?: ProgramEvent;
-      task?: Task;
+      programItem?: ProgramItem;
+      task?: TaskWithAssignee;
+      chore?: Chore;
+      choreAssignment?: ChoreAssignmentWithRelations;
     }
 
     interface AuthUser {

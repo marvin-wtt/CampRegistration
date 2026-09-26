@@ -53,10 +53,7 @@ interface Props extends Omit<
 
 const model = defineModel<ModelValue>();
 const slots = defineSlots<ForwardedFieldSlots>();
-
-const props = withDefaults(defineProps<Props>(), {
-  rounded: true,
-});
+const props = defineProps<Props>();
 
 const selectProps = usePassthroughProps(props, ['countries']);
 

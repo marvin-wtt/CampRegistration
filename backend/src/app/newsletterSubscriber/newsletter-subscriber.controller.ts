@@ -6,15 +6,15 @@ import validator from './newsletter-subscriber.validation.js';
 import { type Request, type Response } from 'express';
 import { BaseController } from '#core/base/BaseController';
 import { inject, injectable } from 'inversify';
-import { CampManagerService } from '#app/campManager/camp-manager.service';
+import { EventManagerService } from '#app/eventManager/event-manager.service';
 
 @injectable()
 export class NewsletterSubscriberController extends BaseController {
   constructor(
     @inject(NewsletterSubscriberService)
     private readonly subscriberService: NewsletterSubscriberService,
-    @inject(CampManagerService)
-    private readonly campManagerService: CampManagerService,
+    @inject(EventManagerService)
+    private readonly eventManagerService: EventManagerService,
   ) {
     super();
   }
@@ -59,27 +59,27 @@ export class NewsletterSubscriberController extends BaseController {
       .resource(new NewsletterSubscriberResource(subscriber));
   }
 
-  async importFromCamp(req: Request, res: Response) {
+  async importFromEvent(req: Request, res: Response) {
     const newsletter = req.modelOrFail('newsletter');
     const userId = req.authUserId();
-    const { body } = await req.validate(validator.importFromCamp);
+    const { body } = await req.validate(validator.importFromEvent);
 
     const canViewRegistrations =
-      await this.campManagerService.campManagerHasPermission(
-        body.campId,
+      await this.eventManagerService.eventManagerHasPermission(
+        body.eventId,
         userId,
-        'camp.registrations.view',
+        'event.registrations.view',
       );
     if (!canViewRegistrations) {
       throw new ApiError(
         httpStatus.FORBIDDEN,
-        'You are not allowed to import subscribers from this camp.',
+        'You are not allowed to import subscribers from this event.',
       );
     }
 
-    const result = await this.subscriberService.importSubscribersFromCamp(
+    const result = await this.subscriberService.importSubscribersFromEvent(
       newsletter.id,
-      body.campId,
+      body.eventId,
       body.country,
       body.requireConsent,
     );

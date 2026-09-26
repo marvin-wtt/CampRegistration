@@ -1,57 +1,70 @@
 <template>
-  <general-layout
-    :title="t('title')"
-    :back-to="backTo"
-  />
+  <general-layout :title="title">
+    <template #toolbar>
+      <workspace-switcher />
+    </template>
+
+    <template #navigation>
+      <workspace-switcher rail />
+    </template>
+  </general-layout>
 </template>
 
 <script lang="ts" setup>
 import { computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import GeneralLayout from '@/components/layout/GeneralLayout.vue';
+import WorkspaceSwitcher from '@/components/layout/WorkspaceSwitcher.vue';
 import { useAuthStore } from '@/stores/auth-store';
-import { useRoute, type RouteLocationRaw } from 'vue-router';
+import { useNewsletterStore } from '@/stores/newsletter-store';
+import { useRoute } from 'vue-router';
 
 const { t } = useI18n();
 const authStore = useAuthStore();
 const route = useRoute();
+const newsletterStore = useNewsletterStore();
 
-const backTo = computed<RouteLocationRaw>(() => {
-  if (route.name === 'management.newsletters') {
-    return { name: 'management' };
+const newsletterId = computed<string | undefined>(() => {
+  const value = route.params.newsletterId;
+  return Array.isArray(value) ? value[0] : value;
+});
+
+const title = computed<string>(() => {
+  const id = newsletterId.value;
+  if (!id) {
+    return t('title');
   }
 
-  return { name: 'management.newsletters' };
+  return (
+    newsletterStore.data?.find((newsletter) => newsletter.id === id)?.name ??
+    t('title')
+  );
 });
 
 onMounted(async () => {
   await authStore.init();
+  await newsletterStore.fetchData();
 });
 </script>
 
 <i18n lang="yaml" locale="en">
 title: 'Newsletters'
-back: 'Back'
 </i18n>
 
 <i18n lang="yaml" locale="de">
 title: 'Newsletter'
-back: 'Zurück'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 title: 'Newsletters'
-back: 'Retour'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
 title: 'Newslettery'
-back: 'Wstecz'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
 title: 'Newslettery'
-back: 'Zpět'
 </i18n>
 
 <style>

@@ -3,6 +3,7 @@
   <q-input
     v-model="modelValue"
     v-bind="inputProps"
+    @focus="onFocus"
   >
     <template #append>
       <q-icon
@@ -10,7 +11,7 @@
         name="event"
       >
         <q-popup-proxy
-          ref="datePopupRef"
+          ref="datePopup"
           cover
           transition-hide="scale"
           transition-show="scale"
@@ -29,7 +30,7 @@
         name="schedule"
       >
         <q-popup-proxy
-          ref="timePopupRef"
+          ref="timePopup"
           cover
           transition-hide="scale"
           transition-show="scale"
@@ -44,7 +45,7 @@
                 v-close-popup
                 color="primary"
                 flat
-                :label="t('action.ok')"
+                :label="t('close')"
               />
             </div>
           </q-time>
@@ -65,34 +66,20 @@
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
-import { type QInputProps, type QPopupProxy } from 'quasar';
-import { nextTick, ref } from 'vue';
+import { type QInputProps, type QPopupProxy, useQuasar } from 'quasar';
+import { nextTick, useTemplateRef } from 'vue';
 import {
   type ForwardedFieldSlots,
   usePassthroughProps,
 } from '@/composables/passthroughProps';
 
 const { t } = useI18n();
+const quasar = useQuasar();
 
-type Props = Omit<QInputProps, 'modelValue' | 'onUpdate:modelValue'>;
-
-const slots = defineSlots<ForwardedFieldSlots>();
-
-const props = withDefaults(defineProps<Props>(), {
-  hideBottomSpace: true,
-  outlined: true,
-  rounded: true,
-});
-
-const inputProps = usePassthroughProps(props);
-
-const datePopupRef = ref<QPopupProxy>();
-const timePopupRef = ref<QPopupProxy>();
-
-function onDateSelected() {
-  datePopupRef.value?.hide();
-  void nextTick(() => timePopupRef.value?.show());
-}
+type Props = Omit<
+  QInputProps,
+  'modelValue' | 'onUpdate:modelValue' | 'onFocus'
+>;
 
 type ModelValue = string | null | undefined;
 
@@ -100,6 +87,29 @@ const modelValue = defineModel<ModelValue>({
   get: isoToDateTime,
   set: dateTimeToIso,
 });
+const props = defineProps<Props>();
+const slots = defineSlots<ForwardedFieldSlots>();
+
+const inputProps = usePassthroughProps(props);
+
+const datePopup = useTemplateRef<QPopupProxy>('datePopup');
+const timePopup = useTemplateRef<QPopupProxy>('timePopup');
+
+function onDateSelected() {
+  datePopup.value?.hide();
+  void nextTick(() => timePopup.value?.show());
+}
+
+// On desktop, focus fires on Tab too — auto-opening there would pop the
+// picker over every field a keyboard user tabs past. Touch devices get no
+// such drive-by focus, and typing into a masked field is awkward, so only
+// they open on focus; everyone else uses the icons. Picking a date chains
+// into the time popup via onDateSelected, same as clicking the icons does.
+function onFocus() {
+  if (quasar.platform.has.touch) {
+    datePopup.value?.show();
+  }
+}
 
 function isoToDateTime(isoDate: ModelValue): ModelValue {
   if (!isoDate) {
@@ -148,26 +158,21 @@ function dateTimeToIso(dateTime: ModelValue): ModelValue {
 <style scoped></style>
 
 <i18n lang="yaml" locale="en">
-action:
-  ok: 'Ok'
+close: 'Close'
 </i18n>
 
 <i18n lang="yaml" locale="de">
-action:
-  ok: 'Ok'
+close: 'Schließen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-action:
-  ok: 'Ok'
+close: 'Fermer'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-action:
-  ok: 'Ok'
+close: 'Zamknij'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-action:
-  ok: 'Ok'
+close: 'Zavřít'
 </i18n>

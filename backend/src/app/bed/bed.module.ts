@@ -1,14 +1,6 @@
-import type {
-  AppModule,
-  AppRouter,
-  RoleToPermissions,
-  BindOptions,
-} from '#core/base/AppModule';
+import type { AppModule, AppRouter, BindOptions } from '#core/base/AppModule';
 import { BedRouter } from '#app/bed/bed.routes';
-import type {
-  BedPermission,
-  CampManagerRole,
-} from '@camp-registration/common/permissions';
+import type { ScopedPermissions } from '@camp-registration/common/permissions';
 import { BedService } from '#app/bed/bed.service';
 import { BedController } from '#app/bed/bed.controller';
 
@@ -18,24 +10,26 @@ export class BedModule implements AppModule {
     options.bind(BedController).toSelf().inSingletonScope();
   }
 
-  registerRoutes(router: AppRouter): void {
-    router.useRouter('/camps/:campId/rooms/:roomId/beds', new BedRouter());
+  registerApiRoutes(router: AppRouter): void {
+    router.useRouter('/events/:eventId/rooms/:roomId/beds', new BedRouter());
   }
 
-  registerPermissions(): RoleToPermissions<CampManagerRole, BedPermission> {
+  registerPermissions(): ScopedPermissions {
     return {
-      DIRECTOR: [
-        'camp.rooms.beds.create',
-        'camp.rooms.beds.edit',
-        'camp.rooms.beds.delete',
-      ],
-      COORDINATOR: [
-        'camp.rooms.beds.create',
-        'camp.rooms.beds.edit',
-        'camp.rooms.beds.delete',
-      ],
-      COUNSELOR: ['camp.rooms.beds.edit'],
-      VIEWER: [],
+      event: {
+        DIRECTOR: [
+          'event.rooms.beds.create',
+          'event.rooms.beds.edit',
+          'event.rooms.beds.delete',
+        ],
+        COORDINATOR: [
+          'event.rooms.beds.create',
+          'event.rooms.beds.edit',
+          'event.rooms.beds.delete',
+        ],
+        COUNSELOR: ['event.rooms.beds.edit'],
+        VIEWER: [],
+      },
     };
   }
 }
