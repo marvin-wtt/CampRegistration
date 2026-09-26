@@ -12,7 +12,13 @@
         <div class="text-h6 text-weight-bold">{{ t('title') }}</div>
         <div class="text-caption text-grey-7">{{ t('subtitle') }}</div>
       </div>
+      <q-skeleton
+        v-if="loading"
+        type="QChip"
+        width="120px"
+      />
       <q-chip
+        v-else
         color="primary"
         text-color="white"
         icon="groups"
@@ -72,7 +78,7 @@
     </q-card-section>
 
     <q-card-section
-      v-if="showGenderFilter || showCountryFilter"
+      v-if="!loading && (showGenderFilter || showCountryFilter)"
       class="filter-bar"
     >
       <div class="filter-label">
@@ -120,8 +126,14 @@
 
     <q-card-section class="chart-section">
       <div class="dashboard-chart">
+        <q-skeleton
+          v-if="loading"
+          type="rect"
+          height="340px"
+          class="chart-skeleton"
+        />
         <apex-chart
-          v-if="hasData"
+          v-else-if="hasData"
           type="bar"
           height="340"
           :options="chartOptions"
@@ -156,8 +168,11 @@ import {
 } from '@/composables/eventStatistics';
 import { useRegistrationHelper } from '@/composables/registrationHelper';
 
-const { people } = defineProps<{
+// While `loading` the header and dimension controls render for real; the count
+// chip and the chart area are skeletonized.
+const { people, loading = false } = defineProps<{
   people: Registration[];
+  loading?: boolean;
 }>();
 
 const { t, locale } = useI18n();
@@ -521,6 +536,10 @@ const chartOptions = computed<ApexOptions>(() => {
 
 .chart-section {
   padding: 12px 20px 20px;
+}
+
+.chart-skeleton {
+  border-radius: 12px;
 }
 
 @media (max-width: 899px) {

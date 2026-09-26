@@ -1,11 +1,8 @@
 <template>
-  <page-state-handler
-    :error
-    :loading
-  >
+  <page-state-handler :error>
     <result-table-interactive
-      v-if="event"
       class="absolute fit"
+      :loading
       :questions="columns"
       :registrations="registrations ?? []"
       :templates="templates ?? []"
@@ -90,7 +87,10 @@ function openLinkedRegistration(): void {
 }
 
 const loading = computed<boolean>(() => {
+  // The stores start out idle (not loading) before their first fetch, so an
+  // absent event counts as loading too — the table needs it once rendered.
   return (
+    !event.value ||
     registrationStore.isLoading ||
     eventDetailStore.isLoading ||
     templateStore.isLoading

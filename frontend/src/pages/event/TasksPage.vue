@@ -2,7 +2,6 @@
   <page-state-handler
     padding
     :error
-    :loading
     class="row justify-center"
   >
     <div class="tasks-content col-12 col-md-11 col-lg-10 column q-gutter-y-lg">
@@ -31,9 +30,12 @@
         </div>
       </div>
 
+      <!-- Loading skeleton (data region only; header stays real) -->
+      <task-list-skeleton v-if="loading" />
+
       <!-- Empty state -->
       <div
-        v-if="tasks.length === 0"
+        v-else-if="tasks.length === 0"
         class="empty-state col column items-center justify-center"
       >
         <q-icon
@@ -165,6 +167,7 @@ import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
 import TaskFormDialog from '@/components/event/tasks/dialogs/TaskFormDialog.vue';
 import TaskDetailsDialog from '@/components/event/tasks/dialogs/TaskDetailsDialog.vue';
 import TaskRow from '@/components/event/tasks/TaskRow.vue';
+import TaskListSkeleton from '@/components/event/tasks/TaskListSkeleton.vue';
 import { usePermissions } from '@/composables/permissions';
 import { useCurrentManager } from '@/composables/currentManager';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
@@ -217,7 +220,9 @@ const error = computed<string | null>(() => {
 });
 
 const loading = computed<boolean>(() => {
-  return taskStore.isLoading;
+  // The store starts out idle (not loading) before its first fetch, so absent
+  // data counts as loading too — otherwise the empty state flashes first.
+  return taskStore.isLoading || taskStore.data === undefined;
 });
 
 const tasks = computed<Task[]>(() => {

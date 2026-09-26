@@ -1,5 +1,15 @@
 <template>
-  <div class="participants-view column no-wrap">
+  <result-table-skeleton
+    v-if="loading"
+    v-bind="$attrs"
+    :columns="skeletonColumns"
+  />
+
+  <div
+    v-else
+    v-bind="$attrs"
+    class="participants-view column no-wrap"
+  >
     <!-- Header -->
     <div class="row items-center justify-between no-wrap">
       <div class="col header-text">
@@ -300,7 +310,7 @@
             >
               <table-cell-wrapper
                 :renderer="renderers.get(col.name)!"
-                :event
+                :event="event!"
                 :props="bodyCellProps(bodyProps, col)"
               />
             </q-td>
@@ -426,6 +436,7 @@ import { usePermissions } from '@/composables/permissions';
 import { useTemplateStore } from '@/stores/template-store';
 import TableTemplateIndexDialog from '@/components/event/table/dialogs/TableTemplateIndexDialog.vue';
 import TableCellWrapper from '@/components/event/table/TableCellWrapper.vue';
+import ResultTableSkeleton from '@/components/event/table/ResultTableSkeleton.vue';
 import CountryIcon from '@/components/common/localization/CountryIcon.vue';
 import BottomSheet from '@/components/BottomSheet.vue';
 import type { QTableBodyCellProps } from '@/types/quasar/QTableBodyCellProps';
@@ -438,12 +449,24 @@ import RegistrationRowCardDialog from '@/components/event/table/dialogs/Registra
 import { computed, nextTick, ref, toRef } from 'vue';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
-const { questions, registrations, templates, event } = defineProps<{
+// `event` is optional because the page mounts this component before the event
+// has loaded; while `loading` is true the skeleton is shown and none of the
+// event-dependent markup renders.
+const { questions, registrations, templates, event, loading } = defineProps<{
   questions: TableColumnTemplate[];
   registrations: Registration[];
   templates: TableTemplate[];
-  event: EventDetails;
+  event?: EventDetails | undefined;
+  loading?: boolean;
 }>();
+
+// The page passes `class="absolute fit"`; bind it explicitly so it lands on
+// whichever branch (skeleton or table) is active.
+defineOptions({ inheritAttrs: false });
+
+// Question columns aren't known until the event form loads; fall back to a
+// sensible column count so the loading grid doesn't look sparse.
+const skeletonColumns = computed<number>(() => Math.max(questions.length, 4));
 
 const emit = defineEmits<{
   (e: 'export', templateIds: string[]): void;
@@ -590,6 +613,10 @@ function openPrintDialog() {
 }
 
 function onExportCsv() {
+  if (!event) {
+    return;
+  }
+
   if (rows.value.length === 0) {
     quasar.notify({ type: 'warning', message: t('error.no_rows') });
     return;
@@ -605,6 +632,10 @@ function onExportCsv() {
 }
 
 function editTemplates() {
+  if (!event) {
+    return;
+  }
+
   quasar
     .dialog({
       component: TableTemplateIndexDialog,
@@ -724,7 +755,7 @@ function onRowClick(evt: MouseEvent, row: Registration): void {
   // The full row card is a phone affordance; on larger screens every column is
   // already visible and actions live in the action column / context menu, so a
   // left click does nothing.
-  if (!quasar.screen.xs) {
+  if (!quasar.screen.xs || !event) {
     return;
   }
 

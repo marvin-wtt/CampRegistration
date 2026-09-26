@@ -28,7 +28,20 @@
       </div>
 
       <div
-        v-if="newsletters.length > 0"
+        v-if="loading"
+        class="row q-col-gutter-md"
+      >
+        <div
+          v-for="index in 3"
+          :key="index"
+          class="col-12 col-sm-6 col-md-4"
+        >
+          <newsletter-card-skeleton />
+        </div>
+      </div>
+
+      <div
+        v-else-if="newsletters.length > 0"
         class="row q-col-gutter-md"
       >
         <div
@@ -126,7 +139,7 @@
       </div>
 
       <div
-        v-else-if="!isLoading"
+        v-else
         class="column items-center q-pa-xl q-gutter-md"
       >
         <q-icon
@@ -166,6 +179,7 @@ import type {
 } from '@camp-registration/common/entities';
 import NewsletterCreateDialog from '@/components/newsletter/NewsletterCreateDialog.vue';
 import NewsletterEditDialog from '@/components/newsletter/NewsletterEditDialog.vue';
+import NewsletterCardSkeleton from '@/components/newsletter/NewsletterCardSkeleton.vue';
 import { useRouter } from 'vue-router';
 
 const { t } = useI18n();
@@ -179,7 +193,11 @@ onMounted(async () => {
 });
 
 const newsletters = computed<Newsletter[]>(() => newsletterStore.data ?? []);
-const isLoading = computed<boolean>(() => newsletterStore.isLoading);
+// The store starts out idle (not loading) before its first fetch, so absent
+// data counts as loading too — otherwise the empty state flashes first.
+const loading = computed<boolean>(
+  () => newsletterStore.isLoading || newsletterStore.data === undefined,
+);
 const error = computed<string | null>(() => newsletterStore.error);
 
 function showCreateDialog() {

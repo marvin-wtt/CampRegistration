@@ -27,7 +27,7 @@ export interface ResultTableModelInput {
   questions: Ref<TableColumnTemplate[]>;
   registrations: Ref<Registration[]>;
   templates: Ref<TableTemplate[]>;
-  event: Ref<EventDetails>;
+  event: Ref<EventDetails | undefined>;
 }
 
 export interface ResultTableModelOptions {
@@ -136,7 +136,7 @@ export function useResultTableModel(
 
   const searchFilter = ref<string | null>('');
 
-  const countries = computed(() => input.event.value.countries);
+  const countries = computed(() => input.event.value?.countries ?? []);
 
   function mapTemplate(
     template: TableTemplate | LocalTableTemplate,
@@ -156,12 +156,15 @@ export function useResultTableModel(
   const allTemplates = computed<CTableTemplate[]>(() => {
     const mapped: CTableTemplate[] = input.templates.value.map(mapTemplate);
 
-    // Hidden, frontend-only templates used as deep-link targets.
-    for (const local of buildLocalTableTemplates(
-      registrationAccessor,
-      input.event.value,
-    )) {
-      mapped.push(mapTemplate(local));
+    // Hidden, frontend-only templates used as deep-link targets. Skipped while
+    // the event is still loading; they're rebuilt once it resolves.
+    if (input.event.value) {
+      for (const local of buildLocalTableTemplates(
+        registrationAccessor,
+        input.event.value,
+      )) {
+        mapped.push(mapTemplate(local));
+      }
     }
 
     // Default template to show all information
