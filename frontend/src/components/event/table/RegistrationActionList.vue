@@ -1,6 +1,7 @@
 <template>
   <q-list>
     <q-item
+      v-if="!hideDetails"
       v-close-popup
       clickable
       @click="showDetails"
@@ -83,9 +84,15 @@ import RegistrationMessageDialog from '@/components/event/table/dialogs/Registra
 import { useAPIService } from '@/services/APIService';
 import { useMessageTemplateService } from '@/services/MessageTemplateService';
 
-const { registration, readonly = false } = defineProps<{
+const {
+  registration,
+  readonly = false,
+  hideDetails = false,
+} = defineProps<{
   registration: Registration;
   readonly?: boolean;
+  // Set when rendered inside the details dialog itself
+  hideDetails?: boolean;
 }>();
 
 const quasar = useQuasar();

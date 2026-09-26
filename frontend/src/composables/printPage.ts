@@ -188,7 +188,40 @@ export async function waitForStableLayout(): Promise<void> {
       // ignore — some environments don't support document.fonts
     }
   }
+  await waitForImages();
   // Two frames is usually enough for Quasar/QTable layout + icon/font settling.
   await new Promise<void>((r) => requestAnimationFrame(() => r()));
   await new Promise<void>((r) => requestAnimationFrame(() => r()));
+}
+
+/**
+ * Waits until every `<img>` below `root` has loaded (or failed), so images such
+ * as country flags are not missing from the printout. Bounded by `timeoutMs`
+ * so one stalled request cannot block printing forever.
+ */
+export async function waitForImages(
+  root: ParentNode = document,
+  timeoutMs = 5000,
+): Promise<void> {
+  const pending = Array.from(root.querySelectorAll('img'))
+    .filter((img) => !img.complete)
+    .map(
+      (img) =>
+        new Promise<void>((resolve) => {
+          img.addEventListener('load', () => resolve(), { once: true });
+          img.addEventListener('error', () => resolve(), { once: true });
+        }),
+    );
+
+  if (pending.length === 0) {
+    return;
+  }
+
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<void>((resolve) => {
+    timer = setTimeout(resolve, timeoutMs);
+  });
+
+  await Promise.race([Promise.all(pending), timeout]);
+  clearTimeout(timer);
 }

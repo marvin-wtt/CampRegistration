@@ -166,7 +166,8 @@ function onDelete() {
 /* Header */
 .details-header {
   padding: 20px 24px 16px;
-  background: color-mix(in srgb, var(--md3-primary) 7%, var(--md3-surface));
+  background: var(--md3-surface-container);
+  border-bottom: 1px solid var(--md3-outline-variant);
 }
 
 .details-title {

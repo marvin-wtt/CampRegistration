@@ -12,7 +12,13 @@ export interface ReceivedEmail {
   // this registration's addresses as its only recipient.
   message: Message;
   trigger: string | null;
+  // False once the message or template it was rendered from is deleted —
+  // there is nothing left to render it again from.
+  resendable: boolean;
 }
+
+export const normalizeEmail = (email: string): string =>
+  email.trim().toLowerCase();
 
 // Groups the per-address deliveries of one send into a single email.
 export function groupDeliveries(
@@ -36,6 +42,7 @@ export function groupDeliveries(
     return [
       {
         trigger: first.trigger,
+        resendable: Boolean(first.messageId ?? first.trigger),
         message: {
           id: first.id,
           subject: first.subject,
@@ -83,6 +90,11 @@ export function useRegistrationTimeline(
   const deliveries = ref<MessageDelivery[]>([]);
   const loading = ref(true);
 
+  const fetchDeliveries = (): Promise<MessageDelivery[]> =>
+    canViewMessages.value
+      ? apiService.fetchRegistrationMessages(eventId, registrationId)
+      : Promise.resolve([]);
+
   onMounted(async () => {
     // A side without permission is never requested; allSettled here only
     // guards against a genuine failure on the side the viewer does have.
@@ -90,18 +102,25 @@ export function useRegistrationTimeline(
       canViewAudit.value
         ? apiService.fetchRegistrationAuditLog(eventId, registrationId)
         : Promise.resolve([]),
-      canViewMessages.value
-        ? apiService.fetchRegistrationMessages(eventId, registrationId)
-        : Promise.resolve([]),
+      fetchDeliveries(),
     ]);
     auditEntries.value = audit.status === 'fulfilled' ? audit.value : [];
     deliveries.value = received.status === 'fulfilled' ? received.value : [];
     loading.value = false;
   });
 
+  // Refreshes only the emails, in place — e.g. after a resend.
+  async function reloadEmails(): Promise<void> {
+    try {
+      deliveries.value = await fetchDeliveries();
+    } catch {
+      // Keep what is shown; the next open fetches again.
+    }
+  }
+
   const emails = computed(() =>
     groupDeliveries(deliveries.value, registrationId),
   );
 
-  return { auditEntries, emails, loading, restricted };
+  return { auditEntries, emails, loading, restricted, reloadEmails };
 }

@@ -25,43 +25,47 @@
       </q-banner>
     </div>
 
-    <div
+    <!-- Cell renderers are async components; Suspense resolves only once all
+         of them have loaded, and printing waits for that. -->
+    <suspense
       v-else
-      class="print-document"
+      @resolve="onDocumentRendered"
     >
-      <section
-        v-for="(template, i) in payload.templates"
-        :key="template.id ?? i"
-        class="print-sheet"
-        :class="printOrientationClass(template.printOptions?.orientation)"
-      >
-        <header class="print-header">
-          <div class="print-header__title">
-            {{ to(template.title) }}
-          </div>
+      <div class="print-document">
+        <section
+          v-for="(template, i) in payload.templates"
+          :key="template.id ?? i"
+          class="print-sheet"
+          :class="printOrientationClass(template.printOptions?.orientation)"
+        >
+          <header class="print-header">
+            <div class="print-header__title">
+              {{ to(template.title) }}
+            </div>
 
-          <div class="print-header__meta">
-            <span>{{ to(payload.event.name) }}</span>
-          </div>
-        </header>
+            <div class="print-header__meta">
+              <span>{{ to(payload.event.name) }}</span>
+            </div>
+          </header>
 
-        <result-table-print
-          :title="to(template.title)"
-          :questions="payload.questions"
-          :registrations="payload.registrations"
-          :event="payload.event"
-          :template
-        />
+          <result-table-print
+            :title="to(template.title)"
+            :questions="payload.questions"
+            :registrations="payload.registrations"
+            :event="payload.event"
+            :template
+          />
 
-        <footer class="print-footer">
-          <div class="print-footer__left">{{ to(template.title) }}</div>
-          <div class="print-footer__center">{{ timestamp }}</div>
-          <div class="print-footer__right">
-            {{ i + 1 }} / {{ payload.templates.length }}
-          </div>
-        </footer>
-      </section>
-    </div>
+          <footer class="print-footer">
+            <div class="print-footer__left">{{ to(template.title) }}</div>
+            <div class="print-footer__center">{{ timestamp }}</div>
+            <div class="print-footer__right">
+              {{ i + 1 }} / {{ payload.templates.length }}
+            </div>
+          </footer>
+        </section>
+      </div>
+    </suspense>
   </q-page>
 </template>
 
@@ -80,10 +84,19 @@ const { to } = useObjectTranslation();
 
 const timestamp = ref<string>('');
 
+// Resolved by the Suspense boundary once every async cell renderer inside the
+// document has loaded. Without it, a cold chunk cache (the print page always
+// boots fresh) lets window.print() fire while cells are still empty.
+let onDocumentRendered!: () => void;
+const documentRendered = new Promise<void>((resolve) => {
+  onDocumentRendered = resolve;
+});
+
 const { payload, error } = usePrintPage<PrintTablesPayload>({
   messagePrefix: 'PRINT_TABLES',
   defaultStorageKey: 'print:tables:payload',
   prepare: async () => {
+    await documentRendered;
     await waitForStableLayout();
     assignPageOrientation();
   },

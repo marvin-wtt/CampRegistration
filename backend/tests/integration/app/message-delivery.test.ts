@@ -7,9 +7,12 @@ import {
   MessageDeliveryFactory,
   FileFactory,
   MessageTemplateFactory,
+  MessageFactory,
 } from '../../../prisma/factories/index.js';
 import { generateAccessToken } from './utils/token.js';
 import { request } from '../utils/request.js';
+import { expectEmailCount, expectEmailWith } from '../utils/mail.js';
+import prisma from '../utils/prisma.js';
 import { ulid } from 'ulidx';
 import crypto from 'crypto';
 import { uploadFile } from './utils/file.js';
@@ -171,5 +174,132 @@ describe('/api/v1/events/:eventId/registrations/:registrationId/messages', () =>
       )
       .auth(accessToken, { type: 'bearer' })
       .expect(404);
+  });
+
+  describe('POST /:deliveryId/resend', () => {
+    const resendUrl = (
+      eventId: string,
+      registrationId: string,
+      deliveryId: string,
+    ) =>
+      `/api/v1/events/${eventId}/registrations/${registrationId}/messages/${deliveryId}/resend`;
+
+    const createDelivery = async (role = 'DIRECTOR') => {
+      const { event, accessToken } = await createEventWithManagerAndToken(
+        undefined,
+        role,
+      );
+      const registration = await RegistrationFactory.create({
+        event: { connect: { id: event.id } },
+        emails: ['new@example.com', 'second@example.com'],
+      });
+      const message = await MessageFactory.create({
+        event: { connect: { id: event.id } },
+        subject: 'Resend me',
+      });
+      const delivery = await MessageDeliveryFactory.create({
+        registration: { connect: { id: registration.id } },
+        message: { connect: { id: message.id } },
+        to: 'old@example.com',
+      });
+
+      return { event, accessToken, registration, message, delivery };
+    };
+
+    it.each([
+      { role: 'DIRECTOR', expectedStatus: 202 },
+      { role: 'COORDINATOR', expectedStatus: 202 },
+      { role: 'COUNSELOR', expectedStatus: 403 },
+      { role: 'VIEWER', expectedStatus: 403 },
+    ])(
+      'should respond with `$expectedStatus` status code when user is $role',
+      async ({ role, expectedStatus }) => {
+        const { event, accessToken, registration, delivery } =
+          await createDelivery(role);
+
+        await request()
+          .post(resendUrl(event.id, registration.id, delivery.id))
+          .auth(accessToken, { type: 'bearer' })
+          .expect(expectedStatus);
+      },
+    );
+
+    it('should send the message again to every current address', async () => {
+      const { event, accessToken, registration, message, delivery } =
+        await createDelivery();
+
+      await request()
+        .post(resendUrl(event.id, registration.id, delivery.id))
+        .auth(accessToken, { type: 'bearer' })
+        .expect(202);
+
+      expectEmailCount(2);
+      expectEmailWith({
+        to: 'new@example.com',
+        subject: expect.stringContaining('Resend me'),
+      });
+      expectEmailWith({ to: 'second@example.com' });
+
+      const deliveries = await prisma.messageDelivery.findMany({
+        where: { messageId: message.id, id: { not: delivery.id } },
+      });
+      expect(deliveries.map((d) => d.to).sort()).toEqual([
+        'new@example.com',
+        'second@example.com',
+      ]);
+      // One send, so the new deliveries share a batch.
+      expect(new Set(deliveries.map((d) => d.batchId)).size).toBe(1);
+    });
+
+    it('should send an automated email again from its template', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const registration = await RegistrationFactory.create({
+        event: { connect: { id: event.id } },
+        emails: ['participant@example.com'],
+      });
+      const template = await MessageTemplateFactory.create({
+        event: { connect: { id: event.id } },
+        trigger: 'registration_confirmed',
+      });
+      const delivery = await MessageDeliveryFactory.create({
+        registration: { connect: { id: registration.id } },
+        template: { connect: { id: template.id } },
+      });
+
+      await request()
+        .post(resendUrl(event.id, registration.id, delivery.id))
+        .auth(accessToken, { type: 'bearer' })
+        .expect(202);
+
+      expectEmailCount(1);
+      expectEmailWith({ to: 'participant@example.com' });
+    });
+
+    it('should respond with `409` status code when the source was deleted', async () => {
+      const { event, accessToken, registration, message, delivery } =
+        await createDelivery();
+      await prisma.message.delete({ where: { id: message.id } });
+
+      await request()
+        .post(resendUrl(event.id, registration.id, delivery.id))
+        .auth(accessToken, { type: 'bearer' })
+        .expect(409);
+
+      expectEmailCount(0);
+    });
+
+    it('should respond with `404` status code when the delivery belongs to another registration', async () => {
+      const { event, accessToken, delivery } = await createDelivery();
+      const other = await RegistrationFactory.create({
+        event: { connect: { id: event.id } },
+      });
+
+      await request()
+        .post(resendUrl(event.id, other.id, delivery.id))
+        .auth(accessToken, { type: 'bearer' })
+        .expect(404);
+
+      expectEmailCount(0);
+    });
   });
 });
