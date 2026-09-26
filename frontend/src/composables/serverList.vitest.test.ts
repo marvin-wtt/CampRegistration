@@ -23,7 +23,7 @@ function page(ids: string[], nextCursor: string | null, total?: number) {
 }
 
 /**
- * `useServerList` calls `onMounted`, so it has to run inside a component. The
+ * `useServerList` uses lifecycle-bound watchers, so it has to run inside a component. The
  * returned bindings are handed back for the test to drive directly.
  */
 function setup(
@@ -50,7 +50,7 @@ function setup(
   return { api, wrapper };
 }
 
-/** Lets the mounted `reload()` and any chained `nextTick` settle. */
+/** Lets the initial `reload()` and any chained `nextTick` settle. */
 async function settle(): Promise<void> {
   await nextTick();
   await nextTick();

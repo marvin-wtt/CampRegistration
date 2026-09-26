@@ -220,7 +220,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
@@ -261,40 +261,27 @@ const {
   isLoading: eventLoading,
   error: eventError,
 } = storeToRefs(eventDetailsStore);
-const {
-  data: registrations,
-  isLoading: registrationsLoading,
-  error: registrationsError,
-} = storeToRefs(registrationStore);
+const { isLoading: registrationsLoading, error: registrationsError } =
+  storeToRefs(registrationStore);
 
-// The stores start out idle (not loading) before their first fetch, so absent
-// data counts as loading too — otherwise the cards flash zeros first.
 const loading = computed<boolean>(
-  () =>
-    !event.value ||
-    registrations.value === undefined ||
-    registrationsLoading.value ||
-    eventLoading.value,
+  () => registrationsLoading.value || eventLoading.value,
 );
 
 // Tasks are optional to the dashboard: a failed fetch falls back to the
-// widget's empty state instead of an endless skeleton.
-const tasksLoading = computed<boolean>(
-  () =>
-    taskStore.isLoading ||
-    (taskStore.data === undefined && taskStore.error === null),
-);
+// widget's empty state.
+const tasksLoading = computed<boolean>(() => taskStore.isLoading);
 
 const error = computed<string | null>(
   () => eventError.value ?? registrationsError.value,
 );
 
-onMounted(() => {
-  void registrationStore.fetchData();
-  void eventDetailsStore.fetchData();
-  void eventFilesStore.fetchData();
-  void taskStore.fetchData();
-});
+// Started during setup, not awaited: the stores flag themselves loading before
+// the first render, so the page renders its skeletons instead of an idle frame.
+void registrationStore.fetchData();
+void eventDetailsStore.fetchData();
+void eventFilesStore.fetchData();
+void taskStore.fetchData();
 
 // Pending only matters when registrations are confirmed manually.
 const showPending = computed<boolean>(

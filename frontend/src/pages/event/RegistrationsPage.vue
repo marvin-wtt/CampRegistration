@@ -13,7 +13,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted } from 'vue';
+import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import { useRegistrationsStore } from '@/stores/registration-store';
@@ -45,7 +45,11 @@ const quasar = useQuasar();
 const { locale } = useI18n();
 const { to } = useObjectTranslation();
 
-onMounted(async () => {
+// Started during setup, not awaited: the stores flag themselves loading before
+// the first render, so the page renders its skeletons instead of an idle frame.
+void loadPage();
+
+async function loadPage(): Promise<void> {
   await Promise.allSettled([
     eventDetailStore.fetchData(),
     registrationStore.fetchData(),
@@ -53,7 +57,7 @@ onMounted(async () => {
   ]);
 
   openLinkedRegistration();
-});
+}
 
 function openLinkedRegistration(): void {
   const registrationId = getStringQueryParam('registrationId');
@@ -87,18 +91,19 @@ function openLinkedRegistration(): void {
 }
 
 const loading = computed<boolean>(() => {
-  // The stores start out idle (not loading) before their first fetch, so an
-  // absent event counts as loading too — the table needs it once rendered.
   return (
-    !event.value ||
     registrationStore.isLoading ||
     eventDetailStore.isLoading ||
     templateStore.isLoading
   );
 });
 
+// Templates count too: without them the table would silently fall back to the
+// plain template instead of the one the user expects.
 const error = computed<string | null>(() => {
-  return eventDetailStore.error ?? registrationStore.error;
+  return (
+    eventDetailStore.error ?? registrationStore.error ?? templateStore.error
+  );
 });
 
 const columns = computed<TableColumnTemplate[]>(() => {

@@ -166,7 +166,7 @@
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
-import { computed, onMounted } from 'vue';
+import { computed } from 'vue';
 import { useNewsletterStore } from '@/stores/newsletter-store';
 import { useOrganizationPermissions } from '@/composables/organizationPermissions';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
@@ -188,16 +188,12 @@ const quasar = useQuasar();
 const newsletterStore = useNewsletterStore();
 const { newsletterCreationOrganizationIds } = useOrganizationPermissions();
 
-onMounted(async () => {
-  await newsletterStore.fetchData();
-});
+// Started during setup, not awaited: the stores flag themselves loading before
+// the first render, so the page renders its skeletons instead of an idle frame.
+void newsletterStore.fetchData();
 
 const newsletters = computed<Newsletter[]>(() => newsletterStore.data ?? []);
-// The store starts out idle (not loading) before its first fetch, so absent
-// data counts as loading too — otherwise the empty state flashes first.
-const loading = computed<boolean>(
-  () => newsletterStore.isLoading || newsletterStore.data === undefined,
-);
+const loading = computed<boolean>(() => newsletterStore.isLoading);
 const error = computed<string | null>(() => newsletterStore.error);
 
 function showCreateDialog() {

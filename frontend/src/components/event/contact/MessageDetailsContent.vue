@@ -82,6 +82,7 @@
 
     <div
       class="message-body rounded-lg"
+      :class="{ 'message-body--document': isDocument }"
       v-html="bodyHtml"
     />
   </article>
@@ -116,6 +117,12 @@ const registrationsById = computed(
 // Only the open message is sanitized, so a list of messages scales without
 // parsing every body up front.
 const bodyHtml = computed<string>(() => DOMPurify.sanitize(message.body));
+
+// A delivery stores the whole rendered email, layout included, which brings
+// its own spacing and background — only a bare body needs the viewer's.
+const isDocument = computed<boolean>(() =>
+  /^\s*(<!doctype|<html[\s>])/i.test(message.body),
+);
 
 interface RecipientEmailEntry {
   address: string;
@@ -274,21 +281,27 @@ function openAttachment(file: ServiceFile) {
   overflow-wrap: anywhere;
 }
 
-.message-body :deep(p) {
+.message-body--document {
+  padding: 0;
+  overflow: hidden;
+  line-height: normal;
+}
+
+.message-body:not(.message-body--document) :deep(p) {
   margin: 0 0 0.75em;
 }
 
-.message-body :deep(p:last-child) {
+.message-body:not(.message-body--document) :deep(p:last-child) {
   margin-bottom: 0;
 }
 
-.message-body :deep(ul),
-.message-body :deep(ol) {
+.message-body:not(.message-body--document) :deep(ul),
+.message-body:not(.message-body--document) :deep(ol) {
   padding-left: 1.5em;
   margin: 0 0 0.75em;
 }
 
-.message-body :deep(a) {
+.message-body:not(.message-body--document) :deep(a) {
   color: var(--md3-primary);
 }
 </style>

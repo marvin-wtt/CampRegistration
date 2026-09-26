@@ -282,7 +282,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useQuasar } from 'quasar';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import { useRegistrationsStore } from '@/stores/registration-store';
@@ -365,10 +365,10 @@ useRealtimeCollection<Room>('room', {
   fetchOne: (eventId, id) => apiService.fetchRoom(eventId, id),
 });
 
-onMounted(async () => {
-  await registrationsStore.fetchData();
-  await fetchRooms();
-});
+// Started during setup, not awaited: the stores flag themselves loading before
+// the first render, so the page renders its skeletons instead of an idle frame.
+void registrationsStore.fetchData();
+void fetchRooms();
 
 const loading = computed<boolean>(() => {
   return registrationsStore.isLoading || isLoading.value;
