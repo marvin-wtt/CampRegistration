@@ -50,7 +50,7 @@ type EventServerFields =
   | 'freePlacesTotal'
   | 'registrationStatus'
   | 'logo'
-  | 'bammer';
+  | 'banner';
 
 // Fields redeclared below with different optionality — must not stay required via Omit<EventDetails, ...>.
 type EventOverriddenFields =
