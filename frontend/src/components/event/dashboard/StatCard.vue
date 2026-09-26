@@ -16,7 +16,18 @@
       </div>
       <div class="col">
         <div class="text-caption text-grey-7 ellipsis">{{ label }}</div>
-        <div class="text-h5 text-weight-bold">{{ value }}</div>
+        <q-skeleton
+          v-if="loading"
+          type="text"
+          width="3rem"
+          class="text-h5"
+        />
+        <div
+          v-else
+          class="text-h5 text-weight-bold"
+        >
+          {{ value }}
+        </div>
         <div
           v-if="caption"
           class="text-caption text-grey-6 ellipsis"
@@ -29,12 +40,15 @@
 </template>
 
 <script lang="ts" setup>
+// Label, icon and caption are static, so only the value is skeletonized while
+// `loading` — the card keeps its final footprint.
 defineProps<{
   label: string;
   value: string | number;
   icon: string;
   color: string;
   caption?: string | undefined;
+  loading?: boolean;
 }>();
 </script>
 

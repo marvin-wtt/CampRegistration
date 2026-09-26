@@ -220,7 +220,9 @@ const error = computed<string | null>(() => {
 });
 
 const loading = computed<boolean>(() => {
-  return taskStore.isLoading;
+  // The store starts out idle (not loading) before its first fetch, so absent
+  // data counts as loading too — otherwise the empty state flashes first.
+  return taskStore.isLoading || taskStore.data === undefined;
 });
 
 const tasks = computed<Task[]>(() => {

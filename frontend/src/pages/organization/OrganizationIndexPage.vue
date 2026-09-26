@@ -29,7 +29,20 @@
       </div>
 
       <div
-        v-if="organizations.length > 0"
+        v-if="loading"
+        class="row q-col-gutter-md"
+      >
+        <div
+          v-for="index in 3"
+          :key="index"
+          class="col-12 col-sm-6 col-md-4"
+        >
+          <organization-card-skeleton />
+        </div>
+      </div>
+
+      <div
+        v-else-if="organizations.length > 0"
         class="row q-col-gutter-md"
       >
         <div
@@ -70,7 +83,7 @@
       </div>
 
       <div
-        v-else-if="!isLoading"
+        v-else
         class="column items-center q-pa-xl text-grey-6"
       >
         <q-icon
@@ -94,6 +107,7 @@ import { useQuasar } from 'quasar';
 import { storeToRefs } from 'pinia';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import OrganizationCreateDialog from '@/components/organization/OrganizationCreateDialog.vue';
+import OrganizationCardSkeleton from '@/components/organization/OrganizationCardSkeleton.vue';
 import { useOrganizationsStore } from '@/stores/organizations-store';
 import { countryName } from '@/utils/countries';
 import type {
@@ -108,6 +122,12 @@ const store = useOrganizationsStore();
 const { data, isLoading, error } = storeToRefs(store);
 
 const organizations = computed<Organization[]>(() => data.value ?? []);
+
+// The store starts out idle (not loading) before its first fetch, so absent
+// data counts as loading too — otherwise the empty state flashes first.
+const loading = computed<boolean>(
+  () => isLoading.value || data.value === undefined,
+);
 
 function statusIcon(status: OrganizationVerificationStatus): string {
   if (status === 'VERIFIED') return 'verified';
