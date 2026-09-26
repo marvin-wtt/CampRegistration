@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import { EVENT_PRESET_NAMES } from '@camp-registration/common/entities';
 import {
   EVENT_PRESETS,
+  defaultMessageTemplatesForCountries,
   getEventPreset,
-  type Preset,
 } from '#app/event/presets/index';
 
-const PRESETS: Preset[] = ['camp', 'seminar'];
+const PRESETS = EVENT_PRESET_NAMES;
 const TRANSLATED_KEYS = ['en', 'de', 'fr', 'pl', 'cs', 'es', 'default'];
 
 /** Every locale key used anywhere in a preset's JSON. */
@@ -144,5 +145,47 @@ describe('getEventPreset', () => {
         EVENT_PRESETS.camp.tableTemplates[0]?.title,
       );
     });
+  });
+});
+
+describe('defaultMessageTemplatesForCountries', () => {
+  const TRIGGERS = Object.keys(EVENT_PRESETS.general.messageTemplates);
+
+  it.each(PRESETS)('creates every trigger for every country (%s)', (preset) => {
+    const templates = defaultMessageTemplatesForCountries(['de', 'fr'], preset);
+
+    expect(templates).toHaveLength(TRIGGERS.length * 2);
+    for (const template of templates) {
+      expect(template.subject).toEqual(expect.any(String));
+      expect(template.body).toEqual(expect.any(String));
+    }
+  });
+
+  it.each(PRESETS)('uses the templates of the preset (%s)', (preset) => {
+    const [template] = defaultMessageTemplatesForCountries(['gb'], preset);
+    const { subject, body } =
+      EVENT_PRESETS[preset].messageTemplates.registration_submitted;
+
+    expect(template).toEqual({
+      trigger: 'registration_submitted',
+      country: 'gb',
+      subject: subject.en,
+      body: body.en,
+    });
+  });
+
+  it('uses the formal register for seminars', () => {
+    const confirmed = defaultMessageTemplatesForCountries(
+      ['de'],
+      'seminar',
+    ).find(({ trigger }) => trigger === 'registration_confirmed');
+
+    expect(confirmed?.body).toContain('Ihre Anmeldung');
+  });
+
+  it('defaults to the camp preset', () => {
+    expect(defaultMessageTemplatesForCountries(['de'])).toEqual(
+      defaultMessageTemplatesForCountries(['de'], 'camp'),
+    );
   });
 });

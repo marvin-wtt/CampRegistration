@@ -110,7 +110,7 @@ export class EventController extends BaseController {
       preset.tableTemplates.map((value) => ({ data: value }));
     const messageTemplates =
       cloned?.messageTemplates ??
-      defaultMessageTemplatesForCountries(body.countries);
+      defaultMessageTemplatesForCountries(body.countries, body.preset);
     const settings = cloned?.settings ?? [];
 
     const event = await this.eventService.createEvent(
