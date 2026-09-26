@@ -86,6 +86,8 @@ describe('waitForImages', () => {
 
 describe('usePrintPage', () => {
   let messages: unknown[];
+  let print: ReturnType<typeof vi.fn>;
+  let close: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     route.query = {};
@@ -96,8 +98,10 @@ describe('usePrintPage', () => {
       postMessage: (msg: unknown) => messages.push(msg),
     });
     // happy-dom implements neither print() nor close().
-    vi.stubGlobal('print', vi.fn());
-    vi.stubGlobal('close', vi.fn());
+    print = vi.fn();
+    close = vi.fn();
+    vi.stubGlobal('print', print);
+    vi.stubGlobal('close', close);
   });
 
   afterEach(() => {
@@ -115,7 +119,7 @@ describe('usePrintPage', () => {
 
     expect(types()).toEqual([`${PREFIX}:ERROR`]);
     expect(prepare).not.toHaveBeenCalled();
-    expect(window.print).not.toHaveBeenCalled();
+    expect(print).not.toHaveBeenCalled();
   });
 
   it('reads the payload from the key given in the route', async () => {
@@ -126,7 +130,7 @@ describe('usePrintPage', () => {
     await flushPromises();
 
     expect(wrapper.text()).toBe('custom');
-    expect(window.print).toHaveBeenCalledOnce();
+    expect(print).toHaveBeenCalledOnce();
   });
 
   it('waits for prepare to settle before printing', async () => {
@@ -142,7 +146,7 @@ describe('usePrintPage', () => {
 
     expect(prepare).toHaveBeenCalledWith({ value: 'ok' });
     expect(types()).toEqual([`${PREFIX}:LOADED`]);
-    expect(window.print).not.toHaveBeenCalled();
+    expect(print).not.toHaveBeenCalled();
 
     finishPrepare();
     await flushPromises();
@@ -152,7 +156,7 @@ describe('usePrintPage', () => {
       `${PREFIX}:READY`,
       `${PREFIX}:PRINTING`,
     ]);
-    expect(window.print).toHaveBeenCalledOnce();
+    expect(print).toHaveBeenCalledOnce();
   });
 
   it('cleans up and closes the window after printing', async () => {
@@ -165,6 +169,6 @@ describe('usePrintPage', () => {
 
     expect(sessionStorage.getItem(STORAGE_KEY)).toBeNull();
     expect(types()).toContain(`${PREFIX}:AFTERPRINT`);
-    expect(window.close).toHaveBeenCalledOnce();
+    expect(close).toHaveBeenCalledOnce();
   });
 });

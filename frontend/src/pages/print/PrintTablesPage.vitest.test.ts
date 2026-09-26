@@ -90,6 +90,7 @@ function payload(): PrintTablesPayload {
 
 describe('PrintTablesPage', () => {
   let renderedCellsAtPrint: string[] | undefined;
+  let print: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     registerAsyncCell();
@@ -97,14 +98,12 @@ describe('PrintTablesPage', () => {
 
     renderedCellsAtPrint = undefined;
     // happy-dom does not implement print(); record what would be printed.
-    vi.stubGlobal(
-      'print',
-      vi.fn(() => {
-        renderedCellsAtPrint = Array.from(
-          document.querySelectorAll('.async-cell'),
-        ).map((cell) => cell.textContent ?? '');
-      }),
-    );
+    print = vi.fn(() => {
+      renderedCellsAtPrint = Array.from(
+        document.querySelectorAll('.async-cell'),
+      ).map((cell) => cell.textContent ?? '');
+    });
+    vi.stubGlobal('print', print);
   });
 
   afterEach(() => {
@@ -118,11 +117,11 @@ describe('PrintTablesPage', () => {
     await flushPromises();
     await new Promise((resolve) => setTimeout(resolve, 50));
 
-    expect(window.print).not.toHaveBeenCalled();
+    expect(print).not.toHaveBeenCalled();
 
     releaseCellChunk();
 
-    await vi.waitFor(() => expect(window.print).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(print).toHaveBeenCalledOnce());
     expect(renderedCellsAtPrint).toEqual(['Alice', 'Bob']);
   });
 
@@ -131,7 +130,7 @@ describe('PrintTablesPage', () => {
 
     const wrapper = mount(PrintTablesPage, { attachTo: document.body });
 
-    await vi.waitFor(() => expect(window.print).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(print).toHaveBeenCalledOnce());
     expect(wrapper.findAll('.print-sheet')).toHaveLength(1);
     expect(wrapper.find('.print-header__title').text()).toBe('Participants');
     expect(wrapper.find('.print-header__meta').text()).toBe('Summer Event');

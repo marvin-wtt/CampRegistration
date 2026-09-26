@@ -52,10 +52,10 @@ describe('buildEventPageMeta', () => {
     expect(buildEventPageMeta(event(), 'en-US').image).toBeUndefined();
     expect(
       buildEventPageMeta(
-        event({ logo: 'https://example.org/api/v1/files/1' }),
+        event({ logo: 'https://example.org/api/v1/events/1/files/slots/logo' }),
         'en-US',
       ).image,
-    ).toBe('https://example.org/api/v1/files/1');
+    ).toBe('https://example.org/api/v1/events/1/files/slots/logo');
   });
 
   it('leaves whitespace and length to the renderer', () => {

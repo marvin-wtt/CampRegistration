@@ -32,6 +32,7 @@ export interface Event extends Identifiable {
   freePlacesTotal: number;
   registrationStatus: EventRegistrationStatus;
   logo: string | null;
+  banner: string | null;
 }
 
 export interface EventDetails extends Event {
@@ -48,7 +49,8 @@ type EventServerFields =
   | 'freePlaces'
   | 'freePlacesTotal'
   | 'registrationStatus'
-  | 'logo';
+  | 'logo'
+  | 'banner';
 
 // Fields redeclared below with different optionality — must not stay required via Omit<EventDetails, ...>.
 type EventOverriddenFields =

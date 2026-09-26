@@ -77,6 +77,7 @@ const createEvent = (
   freePlacesTotal: 10,
   registrationStatus: 'closed' as const,
   logo: null,
+  banner: null,
   form: {} as EventDetails['form'],
   themes: {},
   ...overrides,

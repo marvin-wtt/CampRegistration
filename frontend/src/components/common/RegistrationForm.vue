@@ -53,12 +53,22 @@
           </q-banner>
         </q-card-section>
 
+        <q-card-section
+          v-if="submitState === 'success' && submittedRegistration"
+        >
+          <registration-copy-download
+            :event-details="props.eventDetails"
+            :registration="submittedRegistration"
+          />
+        </q-card-section>
+
         <q-card-actions
           v-if="submitState === 'success'"
           align="center"
           class="q-gutter-sm q-pb-md"
         >
           <m-btn
+            outline
             primary
             icon="person_add"
             :label="t('complete.registerAnother')"
@@ -91,6 +101,25 @@
         </q-card-actions>
       </q-card>
     </div>
+
+    <!-- A form-defined completed page replaces the panel above, so the copy
+         offer is rendered alongside it rather than inside it. -->
+    <div
+      v-if="submitState === null && submitted && submittedRegistration"
+      class="row justify-center q-pa-md"
+    >
+      <q-card
+        flat
+        class="registration-copy-card rounded-xl elevation-1"
+      >
+        <q-card-section>
+          <registration-copy-download
+            :event-details="props.eventDetails"
+            :registration="submittedRegistration"
+          />
+        </q-card-section>
+      </q-card>
+    </div>
   </div>
 </template>
 
@@ -99,10 +128,11 @@ import 'survey-core/survey-core.min.css';
 
 import { useI18n } from 'vue-i18n';
 import { createMarkdownConverter } from '@/utils/markdown';
-import { computed, onMounted, ref, toRef, watch, watchEffect } from 'vue';
+import { computed, onBeforeMount, ref, toRef, watch, watchEffect } from 'vue';
 import { SurveyModel } from 'survey-core';
 import { SurveyComponent } from 'survey-vue3-ui';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
+import RegistrationCopyDownload from '@/components/common/RegistrationCopyDownload.vue';
 import {
   startAutoDataUpdate,
   startAutoThemeUpdate,
@@ -148,13 +178,13 @@ const emit = defineEmits<{
 // survey (including its own completed page) is hidden and this UI takes over.
 const submitState = ref<'saving' | 'success' | 'error' | null>(null);
 const submitError = ref<string>();
-// The actual status of the registration just created, so the success panel
-// can reflect whether it was accepted outright, waitlisted, or left pending
-// (moderated events / registrations placed on a waiting list).
-const registrationStatus = ref<Registration['status']>();
 // Stays true once the submission succeeded, including when survey-core takes
 // the screen back over to show the form's own completed page.
 const submitted = ref<boolean>(false);
+// What the server echoed back for the submission, used to render the
+// registrant's copy. Kept separate from the live model, which `retrySubmit`
+// may clear.
+const submittedRegistration = ref<Registration>();
 
 // Lets the page hide anything that only applies while the form is being
 // filled in — the privacy disclosure above all.
@@ -167,7 +197,7 @@ const statusTitle = computed(() => {
     case 'saving':
       return t('submit.saving.title');
     case 'success':
-      switch (registrationStatus.value) {
+      switch (submittedRegistration.value?.status) {
         case 'PENDING':
           return t('complete.pending.title');
         case 'WAITLISTED':
@@ -187,7 +217,7 @@ const statusText = computed(() => {
     case 'saving':
       return t('submit.saving.text');
     case 'success':
-      switch (registrationStatus.value) {
+      switch (submittedRegistration.value?.status) {
         case 'PENDING':
           return t('complete.pending.text');
         case 'WAITLISTED':
@@ -205,7 +235,7 @@ const statusText = computed(() => {
 const badgeColor = computed(() => {
   switch (submitState.value) {
     case 'success':
-      switch (registrationStatus.value) {
+      switch (submittedRegistration.value?.status) {
         case 'PENDING':
           return 'info-container';
         case 'WAITLISTED':
@@ -223,7 +253,7 @@ const badgeColor = computed(() => {
 const badgeTextColor = computed(() => {
   switch (submitState.value) {
     case 'success':
-      switch (registrationStatus.value) {
+      switch (submittedRegistration.value?.status) {
         case 'PENDING':
           return 'on-info-container';
         case 'WAITLISTED':
@@ -243,7 +273,7 @@ const badgeIcon = computed(() => {
     return 'error';
   }
 
-  switch (registrationStatus.value) {
+  switch (submittedRegistration.value?.status) {
     case 'PENDING':
       return 'schedule';
     case 'WAITLISTED':
@@ -278,7 +308,10 @@ watchEffect(() => {
   emit('bgColorUpdate', bgColor.value);
 });
 
-onMounted(() => {
+// Before the first render, not `onMounted`: this is also what puts the event's
+// logo on the model, and applying it afterwards renders the header twice — once
+// without a logo, once with.
+onBeforeMount(() => {
   // Auto variables update on locale change
   startAutoDataUpdate(model, eventData);
   startAutoThemeUpdate(model, eventData, bgColor);
@@ -385,7 +418,6 @@ function createModel(eventId: string, form: object): SurveyModel {
 
     submitError.value = undefined;
     submitState.value = 'saving';
-    registrationStatus.value = undefined;
 
     mapFileQuestionValues(sender);
 
@@ -395,7 +427,7 @@ function createModel(eventId: string, form: object): SurveyModel {
         sender.data ?? {},
         sender.locale,
       );
-      registrationStatus.value = registration?.status;
+      submittedRegistration.value = registration ?? undefined;
       submitted.value = true;
       if (sender.showCompletePage && hasFormCompletedHtml) {
         // Reveal the form-defined completed page (survey-core shows it by
@@ -511,7 +543,7 @@ submit:
     retry: 'Try again'
 complete:
   title: 'Registration complete!'
-  text: "Thanks for signing up — we've received your registration and can't wait to see you at event."
+  text: "Thanks for signing up — we've received your registration and can't wait to see you at the event."
   pending:
     title: 'Registration received!'
     text: 'Your registration is now pending review. We will let you know as soon as it has been processed.'
@@ -640,6 +672,16 @@ complete:
   color: var(--md3-on-surface);
 
   animation: registration-submit-rise 0.35s cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+// The form's own completed page already fills the screen, so the copy panel
+// shown alongside it takes the card's shape without the full-height centering.
+.registration-copy-card {
+  width: 100%;
+  max-width: 600px;
+
+  background-color: var(--md3-surface-container-low);
+  color: var(--md3-on-surface);
 }
 
 .registration-submit-status__badge {

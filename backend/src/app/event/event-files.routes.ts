@@ -32,8 +32,9 @@ export class EventFilesRouter extends ModuleRouter {
     const fileController: FileController = resolve(FileController);
 
     // Resolves a form slot ({_file.<slot>}) to the matching file for the requested
-    // locale and binds it as the route's file model. Access and readiness are then
-    // enforced by the shared file access guard and stream controller below.
+    // locale — the `locale` query, or `Accept-Language` — and binds it as the
+    // route's file model. Access and readiness are then enforced by the shared
+    // file access guard and stream controller below.
     this.router.get(
       '/slots/:slot',
       this.resolveSlotFile,
@@ -77,7 +78,11 @@ export class EventFilesRouter extends ModuleRouter {
     const file = await this.fileService.getModelFileForSlot(
       { id: event.id, name: 'event' },
       slot,
-      locale,
+      // A client that knows better than the browser — the form, whose language
+      // the participant picks independently of `Accept-Language` — says so in
+      // the query. For everyone else (a plain `<img>`, a crawler fetching a
+      // link preview) the header is a far better guess than a fixed default.
+      locale ?? req.preferredLocale(),
     );
 
     if (!file) {
