@@ -46,12 +46,36 @@
       >
         {{ entry.note }}
       </div>
+      <!-- One row per address the email went to, each with its own status:
+           a registration's addresses bounce independently. -->
       <div
-        v-for="warning in entry.warnings"
-        :key="warning"
-        class="text-caption timeline-warning q-mb-xs"
+        v-if="entry.recipients?.length"
+        class="timeline-recipients q-mb-xs"
       >
-        {{ warning }}
+        <div
+          v-for="(recipient, index) in entry.recipients"
+          :key="`${recipient.to}-${index}`"
+          class="timeline-recipient text-caption"
+          :class="{ 'timeline-recipient--bounced': recipient.bounced }"
+        >
+          <q-icon
+            :name="recipient.bounced ? 'error_outline' : 'outgoing_mail'"
+            size="14px"
+          />
+          <span class="ellipsis">{{ recipient.to }}</span>
+          <span
+            v-if="recipient.bounced"
+            class="timeline-recipient__status"
+          >
+            · {{ t('bounced') }}
+          </span>
+          <q-tooltip
+            v-if="recipient.bounceReason"
+            max-width="320px"
+          >
+            {{ recipient.bounceReason }}
+          </q-tooltip>
+        </div>
       </div>
       <div
         v-if="entry.fields.length"
@@ -79,23 +103,41 @@
       >
         {{ t('by', { actor: entry.actor }) }}
       </div>
-      <m-btn
+      <div
         v-if="entry.message"
-        text
-        primary
-        dense
-        no-caps
-        size="sm"
-        class="q-mt-xs"
-        :label="t('viewMessage')"
-        @click="openMessage(entry.message)"
-      />
+        class="row q-gutter-x-xs q-mt-xs"
+      >
+        <m-btn
+          tonal
+          primary
+          dense
+          no-caps
+          size="sm"
+          icon="drafts"
+          :label="t('viewMessage')"
+          @click="openMessage(entry.message)"
+        />
+        <!-- Neutral rather than primary: the secondary, consequential action
+             shouldn't compete with viewing the message. -->
+        <m-btn
+          v-if="entry.resendable && canResend && currentAddresses.length"
+          text
+          dense
+          no-caps
+          size="sm"
+          class="timeline-resend-btn"
+          icon="forward_to_inbox"
+          :label="t('resend.action')"
+          :loading="resendingId === entry.message.id"
+          @click="confirmResend(entry)"
+        />
+      </div>
     </q-timeline-entry>
   </q-timeline>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onBeforeUnmount, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
 import { storeToRefs } from 'pinia';
@@ -110,12 +152,18 @@ import {
   useFormFieldLabels,
 } from '@/composables/audit/auditLabels';
 import {
+  normalizeEmail,
   type ReceivedEmail,
   useRegistrationTimeline,
 } from '@/composables/audit/registrationTimeline';
+import { usePermissions } from '@/composables/permissions';
+import { useAPIService } from '@/services/APIService';
 import { useRegistrationsStore } from '@/stores/registration-store';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import MessageDetailsDialog from '@/components/event/contact/MessageDetailsDialog.vue';
+import ResendMessageDialog, {
+  type ResendRecipient,
+} from '@/components/event/table/dialogs/ResendMessageDialog.vue';
 
 const { eventId, registrationId, createdAt } = defineProps<{
   eventId: string;
@@ -126,16 +174,87 @@ const { eventId, registrationId, createdAt } = defineProps<{
 const { t, locale } = useI18n();
 const { t: tGlobal } = useI18n({ useScope: 'global' });
 const quasar = useQuasar();
+const apiService = useAPIService();
+const { can } = usePermissions();
 const { formatDateTime, actorLabel } = useAuditTimeline();
 const { fieldLabel, valueLabel } = useAuditLabels();
 const formFieldLabels = useFormFieldLabels();
 const { data: registrations } = storeToRefs(useRegistrationsStore());
 const { data: event } = storeToRefs(useEventDetailsStore());
 
-const { auditEntries, emails, loading, restricted } = useRegistrationTimeline(
-  eventId,
-  registrationId,
-);
+const { auditEntries, emails, loading, restricted, reloadEmails } =
+  useRegistrationTimeline(eventId, registrationId);
+
+const canResend = computed(() => can('event.messages.create'));
+const resendingId = ref<string | null>(null);
+
+// Resending renders the source again for the registration's current
+// addresses, which may differ from the ones the original went to.
+const currentAddresses = computed<string[]>(() => {
+  const registration = registrations.value?.find(
+    (r) => r.id === registrationId,
+  );
+  return [
+    ...new Set(
+      (registration?.computedData.emails ?? [])
+        .map(normalizeEmail)
+        .filter(Boolean),
+    ),
+  ];
+});
+
+// Only what the decision needs: which email, and who gets it. An address that
+// bounced last time and is still on the registration is called out, since the
+// resend will most likely fail there again.
+function confirmResend(entry: TimelineEntry): void {
+  const message = entry.message;
+  if (!message) {
+    return;
+  }
+
+  const bounced = new Set(
+    (entry.recipients ?? [])
+      .filter((recipient) => recipient.bounced)
+      .map((recipient) => normalizeEmail(recipient.to)),
+  );
+  const recipients: ResendRecipient[] = currentAddresses.value.map(
+    (address) => ({ address, bouncedLastTime: bounced.has(address) }),
+  );
+
+  quasar
+    .dialog({
+      component: ResendMessageDialog,
+      componentProps: { subject: message.subject, recipients },
+    })
+    .onOk(() => void resend(message));
+}
+
+async function resend(message: Message): Promise<void> {
+  resendingId.value = message.id;
+  try {
+    // `message.id` is the id of the group's first delivery.
+    await apiService.resendRegistrationMessage(
+      eventId,
+      registrationId,
+      message.id,
+    );
+    quasar.notify({ type: 'positive', message: t('resend.success') });
+    scheduleEmailsReload();
+  } catch {
+    quasar.notify({ type: 'negative', message: t('resend.failed') });
+  } finally {
+    resendingId.value = null;
+  }
+}
+
+// A resent email is queued, so its deliveries exist only once a worker has
+// built it — reload a moment later instead of right away.
+let reloadTimer: ReturnType<typeof setTimeout> | undefined;
+function scheduleEmailsReload(): void {
+  clearTimeout(reloadTimer);
+  reloadTimer = setTimeout(() => void reloadEmails(), 3000);
+}
+onBeforeUnmount(() => clearTimeout(reloadTimer));
 
 interface ChangedField {
   label: string;
@@ -155,8 +274,15 @@ interface TimelineEntry {
   actor: string | null;
   caption?: string;
   note?: string;
-  warnings?: string[];
+  recipients?: EmailRecipient[];
   message?: Message;
+  resendable?: boolean;
+}
+
+interface EmailRecipient {
+  to: string;
+  bounced: boolean;
+  bounceReason: string | null;
 }
 
 // Mirrors the status colors used in the dialog header / table cells.
@@ -178,10 +304,16 @@ function openMessage(message: Message): void {
   });
 }
 
-function emailEntry({ message, trigger }: ReceivedEmail): TimelineEntry {
-  const warnings = (message.recipients?.[0]?.deliveries ?? [])
-    .filter((delivery) => delivery.bouncedAt)
-    .map((delivery) => t('bounced', { to: delivery.to ?? '—' }));
+function emailEntry({
+  message,
+  trigger,
+  resendable,
+}: ReceivedEmail): TimelineEntry {
+  // Deliveries without an address predate per-address rows; nothing to show.
+  const recipients = (message.recipients?.[0]?.deliveries ?? []).flatMap(
+    ({ to, bouncedAt, bounceReason }): EmailRecipient[] =>
+      to ? [{ to, bounced: !!bouncedAt, bounceReason }] : [],
+  );
   const at = message.createdAt ?? '';
 
   return {
@@ -189,7 +321,7 @@ function emailEntry({ message, trigger }: ReceivedEmail): TimelineEntry {
     at,
     title: trigger ? t('automatedEmail') : t('messageSent'),
     subtitle: at ? formatAt(at) : '',
-    color: warnings.length > 0 ? 'negative' : 'info',
+    color: recipients.some((r) => r.bounced) ? 'negative' : 'info',
     icon: trigger ? 'schedule_send' : 'mail',
     fields: [],
     actor: message.sentBy?.name ?? null,
@@ -197,8 +329,9 @@ function emailEntry({ message, trigger }: ReceivedEmail): TimelineEntry {
       ? { caption: valueLabel('messageTemplate', 'trigger', trigger) }
       : {}),
     note: message.subject,
-    warnings,
+    recipients,
     message,
+    resendable,
   };
 }
 
@@ -299,8 +432,31 @@ const entries = computed<TimelineEntry[]>(() =>
   color: var(--md3-on-surface-variant);
 }
 
-.timeline-warning {
+.timeline-resend-btn {
+  color: var(--md3-on-surface-variant);
+}
+
+.timeline-recipients {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.timeline-recipient {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  color: var(--md3-on-surface-variant);
+}
+
+.timeline-recipient--bounced {
   color: var(--md3-error);
+}
+
+.timeline-recipient__status {
+  flex-shrink: 0;
+  font-weight: 500;
 }
 
 .timeline-restricted-note {
@@ -337,8 +493,12 @@ changedFields: 'Changed:'
 messageSent: 'Message sent'
 automatedEmail: 'Automated email sent'
 viewMessage: 'View message'
-bounced: 'Not delivered to {to}'
+bounced: 'Not delivered'
 restrictedNote: "Some entries aren't shown — you don't have permission to view all of them"
+resend:
+  action: 'Send again'
+  success: 'Email is being sent'
+  failed: "The email couldn't be sent"
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -350,8 +510,12 @@ changedFields: 'Geändert:'
 messageSent: 'Nachricht gesendet'
 automatedEmail: 'Automatische E-Mail gesendet'
 viewMessage: 'Nachricht ansehen'
-bounced: 'Nicht zugestellt an {to}'
+bounced: 'Nicht zugestellt'
 restrictedNote: 'Einige Einträge werden nicht angezeigt — dir fehlt die Berechtigung, alle anzusehen'
+resend:
+  action: 'Erneut senden'
+  success: 'E-Mail wird gesendet'
+  failed: 'Die E-Mail konnte nicht gesendet werden'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -363,8 +527,12 @@ changedFields: 'Modifié :'
 messageSent: 'Message envoyé'
 automatedEmail: 'E-mail automatique envoyé'
 viewMessage: 'Voir le message'
-bounced: 'Non distribué à {to}'
+bounced: 'Non distribué'
 restrictedNote: "Certaines entrées ne sont pas affichées — vous n'avez pas la permission de toutes les voir"
+resend:
+  action: 'Renvoyer'
+  success: "L'e-mail est en cours d'envoi"
+  failed: "L'e-mail n'a pas pu être envoyé"
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -376,8 +544,12 @@ changedFields: 'Zmieniono:'
 messageSent: 'Wysłano wiadomość'
 automatedEmail: 'Wysłano automatyczny e-mail'
 viewMessage: 'Zobacz wiadomość'
-bounced: 'Nie dostarczono do {to}'
+bounced: 'Nie dostarczono'
 restrictedNote: 'Niektóre wpisy nie są wyświetlane — nie masz uprawnień, aby zobaczyć wszystkie'
+resend:
+  action: 'Wyślij ponownie'
+  success: 'E-mail jest wysyłany'
+  failed: 'Nie udało się wysłać e-maila'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -389,6 +561,10 @@ changedFields: 'Změněno:'
 messageSent: 'Zpráva odeslána'
 automatedEmail: 'Automatický e-mail odeslán'
 viewMessage: 'Zobrazit zprávu'
-bounced: 'Nedoručeno na {to}'
+bounced: 'Nedoručeno'
 restrictedNote: 'Některé záznamy nejsou zobrazeny — nemáte oprávnění zobrazit vše'
+resend:
+  action: 'Odeslat znovu'
+  success: 'E-mail se odesílá'
+  failed: 'E-mail se nepodařilo odeslat'
 </i18n>

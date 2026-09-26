@@ -34,6 +34,18 @@ export function useMessageService() {
     return response?.data?.data;
   }
 
+  // Renders the email's source again and sends it to the registration's
+  // current addresses.
+  async function resendRegistrationMessage(
+    eventId: string,
+    registrationId: string,
+    deliveryId: string,
+  ): Promise<void> {
+    await api.post(
+      `events/${eventId}/registrations/${registrationId}/messages/${deliveryId}/resend/`,
+    );
+  }
+
   async function createMessage(
     eventId: string,
     data: MessageCreateData,
@@ -65,6 +77,7 @@ export function useMessageService() {
     fetchMessages,
     fetchMessage,
     fetchRegistrationMessages,
+    resendRegistrationMessage,
     createMessage,
     deleteMessage,
     duplicateMessageAttachments,
