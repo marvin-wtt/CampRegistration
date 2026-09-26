@@ -29,7 +29,20 @@
       </div>
 
       <div
-        v-if="organizations.length > 0"
+        v-if="loading"
+        class="row q-col-gutter-md"
+      >
+        <div
+          v-for="index in 3"
+          :key="index"
+          class="col-12 col-sm-6 col-md-4"
+        >
+          <organization-card-skeleton />
+        </div>
+      </div>
+
+      <div
+        v-else-if="organizations.length > 0"
         class="row q-col-gutter-md"
       >
         <div
@@ -70,7 +83,7 @@
       </div>
 
       <div
-        v-else-if="!isLoading"
+        v-else
         class="column items-center q-pa-xl text-grey-6"
       >
         <q-icon
@@ -87,13 +100,14 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
 import { storeToRefs } from 'pinia';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import OrganizationCreateDialog from '@/components/organization/OrganizationCreateDialog.vue';
+import OrganizationCardSkeleton from '@/components/organization/OrganizationCardSkeleton.vue';
 import { useOrganizationsStore } from '@/stores/organizations-store';
 import { countryName } from '@/utils/countries';
 import type {
@@ -105,7 +119,11 @@ const { t, locale } = useI18n();
 const router = useRouter();
 const quasar = useQuasar();
 const store = useOrganizationsStore();
-const { data, isLoading, error } = storeToRefs(store);
+const { data, isLoading: loading, error } = storeToRefs(store);
+
+// Started during setup, not awaited: the stores flag themselves loading before
+// the first render, so the page renders its skeletons instead of an idle frame.
+void store.fetchData();
 
 const organizations = computed<Organization[]>(() => data.value ?? []);
 
@@ -125,10 +143,6 @@ function showCreateDialog() {
       });
     });
 }
-
-onMounted(async () => {
-  await store.fetchData();
-});
 </script>
 
 <style lang="scss" scoped>

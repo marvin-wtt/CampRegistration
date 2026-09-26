@@ -90,6 +90,12 @@ export class MessageDeliveryService extends BaseService {
     });
   }
 
+  async getDeliveryForRegistration(registrationId: string, id: string) {
+    return this.prisma.messageDelivery.findFirst({
+      where: { id, registrationId },
+    });
+  }
+
   async getDeliveryWithEventById(id: string) {
     return this.prisma.messageDelivery.findUnique({
       where: { id },

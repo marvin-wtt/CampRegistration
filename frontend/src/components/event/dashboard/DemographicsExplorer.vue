@@ -12,7 +12,13 @@
         <div class="text-h6 text-weight-bold">{{ t('title') }}</div>
         <div class="text-caption text-grey-7">{{ t('subtitle') }}</div>
       </div>
+      <q-skeleton
+        v-if="loading"
+        type="QChip"
+        width="120px"
+      />
       <q-chip
+        v-else
         color="primary"
         text-color="white"
         icon="groups"
@@ -72,7 +78,7 @@
     </q-card-section>
 
     <q-card-section
-      v-if="showGenderFilter || showCountryFilter"
+      v-if="!loading && (showGenderFilter || showCountryFilter)"
       class="filter-bar"
     >
       <div class="filter-label">
@@ -120,8 +126,14 @@
 
     <q-card-section class="chart-section">
       <div class="dashboard-chart">
+        <q-skeleton
+          v-if="loading"
+          type="rect"
+          height="340px"
+          class="chart-skeleton"
+        />
         <apex-chart
-          v-if="hasData"
+          v-else-if="hasData"
           type="bar"
           height="340"
           :options="chartOptions"
@@ -156,8 +168,11 @@ import {
 } from '@/composables/eventStatistics';
 import { useRegistrationHelper } from '@/composables/registrationHelper';
 
-const { people } = defineProps<{
+// While `loading` the header and dimension controls render for real; the count
+// chip and the chart area are skeletonized.
+const { people, loading = false } = defineProps<{
   people: Registration[];
+  loading?: boolean;
 }>();
 
 const { t, locale } = useI18n();
@@ -202,14 +217,35 @@ onMounted(() => {
 });
 
 const xDimension = ref<Dimension>('age');
-const groupDimension = ref<Dimension | 'none'>(
-  stats.hasMultipleCountries.value ? 'country' : 'gender',
-);
 const stacked = ref<boolean>(false);
 const genderFilter = ref<string[] | null>([]);
 const countryFilter = ref<string[] | null>([]);
 
 const countryAvailable = computed(() => stats.hasMultipleCountries.value);
+
+// Only the user's explicit pick is state; the default and its validity are
+// derived, because this card renders (behind skeletons) before the
+// registrations have loaded, when whether the event spans countries isn't
+// known yet. A pick that doesn't apply to the current axis or data shows as
+// 'none' without being discarded.
+const groupChoice = ref<Dimension | 'none' | null>(null);
+
+const groupDimension = computed<Dimension | 'none'>({
+  get: () => {
+    const group =
+      groupChoice.value ?? (countryAvailable.value ? 'country' : 'gender');
+    if (
+      group === xDimension.value ||
+      (group === 'country' && !countryAvailable.value)
+    ) {
+      return 'none';
+    }
+    return group;
+  },
+  set: (value) => {
+    groupChoice.value = value;
+  },
+});
 
 const grouped = computed(() => groupDimension.value !== 'none');
 
@@ -241,17 +277,6 @@ const groupOptions = computed(() => [
     .filter((value) => value !== xDimension.value)
     .map((value) => ({ label: t(`dimension.${value}`), value })),
 ]);
-
-// Keep the breakdown valid when the x-axis changes.
-watch([xDimension, countryAvailable], () => {
-  if (
-    groupDimension.value !== 'none' &&
-    (groupDimension.value === xDimension.value ||
-      (groupDimension.value === 'country' && !countryAvailable.value))
-  ) {
-    groupDimension.value = 'none';
-  }
-});
 
 // --- Value display helpers -------------------------------------------------
 
@@ -521,6 +546,10 @@ const chartOptions = computed<ApexOptions>(() => {
 
 .chart-section {
   padding: 12px 20px 20px;
+}
+
+.chart-skeleton {
+  border-radius: 12px;
 }
 
 @media (max-width: 899px) {

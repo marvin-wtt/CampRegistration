@@ -233,6 +233,7 @@ const {
   pageSize: 24,
   sortBy: sortOrderOf(initialSort).sortBy,
   descending: sortOrderOf(initialSort).descending,
+  search: getStringQueryParam('q') ?? '',
   watchSources: [countries, age, startAt, endAt],
   onReset: () => grid.value?.reset(),
   fetch: (query) => api.fetchEventsPaginated(query),
@@ -254,8 +255,6 @@ const {
       endAt: endAt.value,
     }) as EventQuery,
 });
-
-search.value = getStringQueryParam('q') ?? '';
 
 const sort = computed<EventSortOption>({
   get: () => sortOptionOf(sortBy.value, descending.value),

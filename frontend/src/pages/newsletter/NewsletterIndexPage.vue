@@ -28,7 +28,20 @@
       </div>
 
       <div
-        v-if="newsletters.length > 0"
+        v-if="loading"
+        class="row q-col-gutter-md"
+      >
+        <div
+          v-for="index in 3"
+          :key="index"
+          class="col-12 col-sm-6 col-md-4"
+        >
+          <newsletter-card-skeleton />
+        </div>
+      </div>
+
+      <div
+        v-else-if="newsletters.length > 0"
         class="row q-col-gutter-md"
       >
         <div
@@ -126,7 +139,7 @@
       </div>
 
       <div
-        v-else-if="!isLoading"
+        v-else
         class="column items-center q-pa-xl q-gutter-md"
       >
         <q-icon
@@ -153,7 +166,7 @@
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
-import { computed, onMounted } from 'vue';
+import { computed } from 'vue';
 import { useNewsletterStore } from '@/stores/newsletter-store';
 import { useOrganizationPermissions } from '@/composables/organizationPermissions';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
@@ -166,6 +179,7 @@ import type {
 } from '@camp-registration/common/entities';
 import NewsletterCreateDialog from '@/components/newsletter/NewsletterCreateDialog.vue';
 import NewsletterEditDialog from '@/components/newsletter/NewsletterEditDialog.vue';
+import NewsletterCardSkeleton from '@/components/newsletter/NewsletterCardSkeleton.vue';
 import { useRouter } from 'vue-router';
 
 const { t } = useI18n();
@@ -174,12 +188,12 @@ const quasar = useQuasar();
 const newsletterStore = useNewsletterStore();
 const { newsletterCreationOrganizationIds } = useOrganizationPermissions();
 
-onMounted(async () => {
-  await newsletterStore.fetchData();
-});
+// Started during setup, not awaited: the stores flag themselves loading before
+// the first render, so the page renders its skeletons instead of an idle frame.
+void newsletterStore.fetchData();
 
 const newsletters = computed<Newsletter[]>(() => newsletterStore.data ?? []);
-const isLoading = computed<boolean>(() => newsletterStore.isLoading);
+const loading = computed<boolean>(() => newsletterStore.isLoading);
 const error = computed<string | null>(() => newsletterStore.error);
 
 function showCreateDialog() {

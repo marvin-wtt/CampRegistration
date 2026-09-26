@@ -7,7 +7,22 @@
     <div class="hero-accent" />
     <q-card-section class="hero-content">
       <div class="hero-main">
-        <div class="status-chips">
+        <div
+          v-if="loading"
+          class="status-chips"
+        >
+          <q-skeleton
+            v-for="width in ['96px', '148px', '112px']"
+            :key="width"
+            type="rect"
+            :width="width"
+            class="status-pill-skeleton"
+          />
+        </div>
+        <div
+          v-else
+          class="status-chips"
+        >
           <span
             v-if="countdown"
             class="status-pill countdown-pill"
@@ -61,10 +76,34 @@
           <div class="text-overline text-primary text-weight-bold">
             {{ t('eventOverview') }}
           </div>
-          <h1 class="event-title text-h4 text-weight-bold q-my-none">
+          <q-skeleton
+            v-if="loading"
+            type="text"
+            width="55%"
+            class="event-title text-h4"
+          />
+          <h1
+            v-else
+            class="event-title text-h4 text-weight-bold q-my-none"
+          >
             {{ eventName }}
           </h1>
-          <div class="event-meta">
+          <div
+            v-if="loading"
+            class="event-meta"
+          >
+            <q-skeleton
+              v-for="width in ['132px', '176px', '112px', '96px']"
+              :key="width"
+              type="QChip"
+              :width="width"
+              class="meta-chip-skeleton"
+            />
+          </div>
+          <div
+            v-else
+            class="event-meta"
+          >
             <q-chip
               v-if="event?.organizationName"
               outline
@@ -106,7 +145,31 @@
         </div>
       </div>
 
-      <aside class="capacity-panel">
+      <aside
+        v-if="loading"
+        class="capacity-panel"
+      >
+        <div class="capacity-label">{{ t('capacity') }}</div>
+        <q-skeleton
+          type="text"
+          width="40%"
+          class="capacity-value"
+        />
+        <q-skeleton
+          type="rect"
+          height="10px"
+          class="capacity-bar capacity-bar-skeleton"
+        />
+        <q-skeleton
+          type="text"
+          width="60%"
+          class="capacity-footer"
+        />
+      </aside>
+      <aside
+        v-else
+        class="capacity-panel"
+      >
         <div class="capacity-heading">
           <div>
             <div class="capacity-label">{{ t('capacity') }}</div>
@@ -174,6 +237,12 @@ import { useEventDetailsStore } from '@/stores/event-details-store';
 import { useEventStatistics } from '@/composables/eventStatistics';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { zonedInstant } from '@camp-registration/common/utils';
+
+// While `loading` the static labels render for real and everything derived
+// from the event or its registrations is skeletonized.
+const { loading = false } = defineProps<{
+  loading?: boolean;
+}>();
 
 const { t, d, locale } = useI18n();
 const { to } = useObjectTranslation();
@@ -489,6 +558,20 @@ function daysFromNow(date: string): number {
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 18px;
+}
+
+.status-pill-skeleton {
+  height: 32px;
+  border-radius: 999px;
+}
+
+.meta-chip-skeleton {
+  margin: 0;
+  border-radius: 8px;
+}
+
+.capacity-bar-skeleton {
+  border-radius: 999px;
 }
 
 .meta-chip {

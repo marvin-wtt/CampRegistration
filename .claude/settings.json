@@ -12,7 +12,19 @@
       "Bash(npx vitest run:*)",
       "Bash(npx eslint:*)",
       "Bash(npx prettier --check:*)",
-      "Bash(npx prisma migrate diff:*)"
+      "Bash(npx prisma migrate diff:*)",
+      "PowerShell(npm run lint:*)",
+      "PowerShell(npm run typecheck:*)",
+      "PowerShell(npm run format:check:*)",
+      "PowerShell(npm run build:*)",
+      "PowerShell(npm run test:*)",
+      "PowerShell(npm run i18n:check:*)",
+      "PowerShell(npx tsc --noEmit:*)",
+      "PowerShell(npx vue-tsc --noEmit:*)",
+      "PowerShell(npx vitest run:*)",
+      "PowerShell(npx eslint:*)",
+      "PowerShell(npx prettier --check:*)",
+      "PowerShell(npx prisma migrate diff:*)"
     ],
     "deny": [
       "Read(./backend/.env)",

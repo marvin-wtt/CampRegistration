@@ -2,11 +2,12 @@
   <page-state-handler
     padding
     :error
-    :loading
     class="row justify-center"
   >
+    <!-- Each data card renders its own skeleton while `loading`; the static
+         parts (quick actions, section headings) render for real. -->
     <div class="dashboard-shell col-12 col-md-11 col-xl-10">
-      <event-summary-hero />
+      <event-summary-hero :loading />
 
       <!-- The most consequential thing a manager can be unaware of: the event is
        configured correctly but reaching nobody. -->
@@ -79,11 +80,11 @@
         v-if="can('event.tasks.view')"
         class="dashboard-section"
       >
-        <tasks-due-widget />
+        <tasks-due-widget :loading="tasksLoading" />
       </section>
 
       <q-card
-        v-if="attentionItems.length > 0"
+        v-if="!loading && attentionItems.length > 0"
         flat
         bordered
         class="attention-card"
@@ -157,6 +158,7 @@
               :label="t('kpi.participants')"
               :value="stats.counts.value.accepted"
               :caption="t('kpi.participantsCaption')"
+              :loading
               icon="how_to_reg"
               color="indigo"
             />
@@ -169,6 +171,7 @@
               :label="t('kpi.pending')"
               :value="stats.counts.value.pending"
               :caption="t('kpi.pendingCaption')"
+              :loading
               icon="hourglass_top"
               color="orange"
             />
@@ -178,6 +181,7 @@
               :label="t('kpi.waitlisted')"
               :value="stats.counts.value.waitlisted"
               :caption="t('kpi.waitlistedCaption')"
+              :loading
               icon="event_seat"
               color="blue-grey"
             />
@@ -187,6 +191,7 @@
               :label="t('kpi.team')"
               :value="stats.staff.value.length"
               :caption="t('kpi.teamCaption')"
+              :loading
               icon="supervisor_account"
               color="deep-purple"
             />
@@ -195,7 +200,7 @@
       </section>
 
       <section
-        v-if="stats.multiCountryEvent.value"
+        v-if="!loading && stats.multiCountryEvent.value"
         class="dashboard-section"
       >
         <country-breakdown-table
@@ -205,14 +210,17 @@
       </section>
 
       <section class="dashboard-section">
-        <demographics-explorer :people="stats.acceptedParticipants.value" />
+        <demographics-explorer
+          :people="stats.acceptedParticipants.value"
+          :loading
+        />
       </section>
     </div>
   </page-state-handler>
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
@@ -260,16 +268,20 @@ const loading = computed<boolean>(
   () => registrationsLoading.value || eventLoading.value,
 );
 
+// Tasks are optional to the dashboard: a failed fetch falls back to the
+// widget's empty state.
+const tasksLoading = computed<boolean>(() => taskStore.isLoading);
+
 const error = computed<string | null>(
   () => eventError.value ?? registrationsError.value,
 );
 
-onMounted(() => {
-  void registrationStore.fetchData();
-  void eventDetailsStore.fetchData();
-  void eventFilesStore.fetchData();
-  void taskStore.fetchData();
-});
+// Started during setup, not awaited: the stores flag themselves loading before
+// the first render, so the page renders its skeletons instead of an idle frame.
+void registrationStore.fetchData();
+void eventDetailsStore.fetchData();
+void eventFilesStore.fetchData();
+void taskStore.fetchData();
 
 // Pending only matters when registrations are confirmed manually.
 const showPending = computed<boolean>(

@@ -7,6 +7,25 @@ Frontend-specific conventions. The repo-wide overview, commands, and pitfalls li
 - One Pinia store per feature domain; use `storeToRefs()` for destructuring reactive state
 - Services in `frontend/src/services/` wrap Axios; always type bodies using `common/` types
 
+### Loading state
+
+- **Start a page's initial fetch in `setup`, not `onMounted`**, and don't await it:
+  `void store.fetchData()`, or `void loadPage()` for a sequence. A store sets
+  `isLoading` synchronously when the fetch starts, so it is already true on the first
+  render; `onMounted` runs after that render and leaves one idle frame that flashes
+  the empty state. Never use top-level `await` in `<script setup>` — without a
+  `<Suspense>` boundary the page wouldn't render until the data arrives.
+- **The store's `isLoading` is the loading signal.** Don't infer loading from
+  `data === undefined`: undefined also means failed, reset, or never fetched, so a
+  skeleton gated on it can stay up forever.
+- **Components that mount while loading must not freeze state from their data.** A
+  component that resolves state once at setup (a selection, a default, a sort) gets
+  its data as required props and is mounted only after loading; a thin shell owns the
+  `loading` prop and the skeleton (`ResultTableInteractive` →
+  `ResultTableInteractiveContent`). Where controls stay interactive during loading,
+  store only the user's explicit choice and derive defaults with a `computed`
+  (`DemographicsExplorer`'s grouping).
+
 ## Internationalization
 
 - Locales: `en`, `de`, `fr`, `cs`, `pl`

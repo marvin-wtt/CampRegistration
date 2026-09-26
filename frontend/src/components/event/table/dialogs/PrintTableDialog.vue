@@ -3,7 +3,7 @@
     ref="dialogRef"
     @hide="onDialogHide"
   >
-    <q-card class="q-dialog-plugin">
+    <q-card class="q-dialog-plugin column no-wrap">
       <q-card-section class="q-dialog__title">
         {{ t('title') }}
       </q-card-section>
@@ -14,7 +14,7 @@
 
       <q-separator />
 
-      <q-card-section class="q-dialog-plugin__form">
+      <q-card-section class="q-dialog-plugin__form col-shrink scroll">
         <q-option-group
           v-model="model"
           :options

@@ -2,7 +2,6 @@
   <page-state-handler
     padding
     :error
-    :loading
     class="row justify-center"
   >
     <div class="tasks-content col-12 col-md-11 col-lg-10 column q-gutter-y-lg">
@@ -31,9 +30,12 @@
         </div>
       </div>
 
+      <!-- Loading skeleton (data region only; header stays real) -->
+      <task-list-skeleton v-if="loading" />
+
       <!-- Empty state -->
       <div
-        v-if="tasks.length === 0"
+        v-else-if="tasks.length === 0"
         class="empty-state col column items-center justify-center"
       >
         <q-icon
@@ -157,7 +159,7 @@
 import { useI18n } from 'vue-i18n';
 import { useTaskStore } from '@/stores/task-store';
 import { useEventManagerStore } from '@/stores/event-manager-store';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import type { Task } from '@camp-registration/common/entities';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import { useQuasar } from 'quasar';
@@ -165,6 +167,7 @@ import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
 import TaskFormDialog from '@/components/event/tasks/dialogs/TaskFormDialog.vue';
 import TaskDetailsDialog from '@/components/event/tasks/dialogs/TaskDetailsDialog.vue';
 import TaskRow from '@/components/event/tasks/TaskRow.vue';
+import TaskListSkeleton from '@/components/event/tasks/TaskListSkeleton.vue';
 import { usePermissions } from '@/composables/permissions';
 import { useCurrentManager } from '@/composables/currentManager';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
@@ -195,9 +198,9 @@ const canAssign = computed<boolean>(
   () => can('event.tasks.create') || can('event.tasks.update'),
 );
 
-onMounted(() => {
-  void taskStore.fetchData();
-});
+// Started during setup, not awaited: the stores flag themselves loading before
+// the first render, so the page renders its skeletons instead of an idle frame.
+void taskStore.fetchData();
 
 // Permissions resolve with the profile and the event, both of which the parent
 // layout loads after this page mounts — so the roster has to be fetched when
@@ -216,9 +219,7 @@ const error = computed<string | null>(() => {
   return taskStore.error;
 });
 
-const loading = computed<boolean>(() => {
-  return taskStore.isLoading;
-});
+const loading = computed<boolean>(() => taskStore.isLoading);
 
 const tasks = computed<Task[]>(() => {
   return taskStore.data ?? [];

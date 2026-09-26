@@ -3,11 +3,44 @@
     flat
     bordered
     class="tasks-due-card"
-    :class="{ 'tasks-due-card--slim': !hasOpenTasks }"
+    :class="{ 'tasks-due-card--slim': !loading && !hasOpenTasks }"
   >
+    <!-- Loading: just the heading row, so the card neither shrinks (no open
+         tasks) nor jumps much (upcoming list) once the tasks arrive -->
+    <q-card-section
+      v-if="loading"
+      class="row items-center no-wrap q-gutter-sm"
+    >
+      <div class="tasks-due-icon row items-center justify-center">
+        <q-icon
+          name="checklist"
+          color="primary"
+          size="22px"
+        />
+      </div>
+      <div class="col">
+        <div class="text-subtitle1 text-weight-bold">
+          {{ t('title') }}
+        </div>
+        <q-skeleton
+          type="text"
+          width="40%"
+          class="text-caption"
+        />
+      </div>
+      <q-btn
+        :label="t('action.viewAll')"
+        :to="{ name: 'management.event.tasks' }"
+        flat
+        no-caps
+        dense
+        color="primary"
+      />
+    </q-card-section>
+
     <!-- Slim state: nothing pending, keep the footprint small -->
     <q-card-section
-      v-if="!hasOpenTasks"
+      v-else-if="!hasOpenTasks"
       class="row items-center no-wrap q-gutter-sm"
     >
       <q-icon
@@ -109,6 +142,10 @@ import { useCurrentManager } from '@/composables/currentManager';
 import type { Task } from '@camp-registration/common/entities';
 import { taskPhaseOf } from '@/utils/taskPhase';
 import { parseLocalDate } from '@/utils/date';
+
+const { loading = false } = defineProps<{
+  loading?: boolean;
+}>();
 
 const { t, d } = useI18n();
 const taskStore = useTaskStore();

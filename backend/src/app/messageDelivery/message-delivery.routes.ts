@@ -20,5 +20,11 @@ export class RegistrationMessageRouter extends ModuleRouter {
       guard(hasEventPermission('event.messages.view')),
       controller(deliveryController, 'indexForRegistration'),
     );
+    this.router.post(
+      '/:deliveryId/resend',
+      auth(),
+      guard(hasEventPermission('event.messages.create')),
+      controller(deliveryController, 'resend'),
+    );
   }
 }
