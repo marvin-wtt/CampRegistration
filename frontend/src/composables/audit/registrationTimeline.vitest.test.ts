@@ -74,4 +74,33 @@ describe('groupDeliveries', () => {
       'registration_confirmed',
     ]);
   });
+
+  it('keeps a resent message apart from the original send', () => {
+    const emails = groupDeliveries(
+      [
+        delivery({ id: '1', messageId: 'm1', batchId: 'b2' }),
+        delivery({ id: '2', messageId: 'm1', batchId: 'b1' }),
+      ],
+      'reg',
+    );
+
+    expect(emails).toHaveLength(2);
+  });
+
+  it('is resendable only while its message or template exists', () => {
+    const emails = groupDeliveries(
+      [
+        delivery({ id: '1', messageId: 'm1', batchId: 'b1' }),
+        delivery({ id: '2', trigger: 'registration_confirmed', batchId: 'b2' }),
+        delivery({ id: '3', batchId: 'b3' }),
+      ],
+      'reg',
+    );
+
+    expect(emails.map((email) => email.resendable)).toEqual([
+      true,
+      true,
+      false,
+    ]);
+  });
 });
