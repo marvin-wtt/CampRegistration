@@ -121,7 +121,11 @@ export function useChoreService() {
     query: ChoreAssignmentBulkDeleteQuery,
   ): Promise<number> {
     const response = await api.delete(`events/${eventId}/chore-assignments/`, {
-      params: query,
+      // The backend accepts the chore list in comma form only.
+      params: {
+        ...query,
+        choreId: [query.choreId].flat().join(',') || undefined,
+      },
     });
 
     return response?.data?.data?.count;

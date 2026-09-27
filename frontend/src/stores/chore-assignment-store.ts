@@ -126,12 +126,22 @@ export const useChoreAssignmentStore = defineStore('choreAssignment', () => {
     const eventId = currentEventId();
 
     await withProgressNotification('update', async () => {
-      const updated = await Promise.all(
+      const results = await Promise.allSettled(
         choreAssignmentIds.map((id) =>
           api.updateChoreAssignment(eventId, id, { status }),
         ),
       );
-      updated.forEach(replaceLocal);
+      // Saved ones must show as saved even when another failed — our own
+      // realtime echo is suppressed, so nothing else would correct them.
+      const failed = results.filter((result) => {
+        if (result.status === 'fulfilled') {
+          replaceLocal(result.value);
+        }
+        return result.status === 'rejected';
+      });
+      if (failed[0]) {
+        throw failed[0].reason;
+      }
     });
   }
 

@@ -1167,6 +1167,33 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
       expect(await prisma.choreAssignment.count()).toBe(2);
     });
 
+    it('deletes only the listed chores', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const [a, b, hidden] = await Promise.all(
+        [1, 2, 3].map(() => createChore(event)),
+      );
+      await Promise.all(
+        [a, b, hidden].map((chore) =>
+          createAssignment(event, chore.id, { date: '2026-09-01' }),
+        ),
+      );
+
+      await request()
+        .delete(`/api/v1/events/${event.id}/chore-assignments`)
+        .query({
+          choreId: `${a.id},${b.id}`,
+          from: '2026-09-01',
+          to: '2026-09-01',
+        })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      const remaining = await prisma.choreAssignment.findMany();
+      expect(remaining.map((assignment) => assignment.choreId)).toEqual([
+        hidden.id,
+      ]);
+    });
+
     it('does not delete duties of another event', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
       const otherEvent = await EventFactory.create();

@@ -113,7 +113,12 @@ const destroyMany = z.object({
   query: z
     .object({
       batchId: z.ulid().optional(),
-      choreId: z.ulid().optional(),
+      // Comma-separated, as Express' default query parser has no arrays.
+      choreId: z
+        .string()
+        .transform((value) => value.split(',').map((id) => id.trim()))
+        .pipe(z.array(z.ulid()).nonempty())
+        .optional(),
       slotId: z.ulid().optional(),
       from: DateSchema.optional(),
       to: DateSchema.optional(),

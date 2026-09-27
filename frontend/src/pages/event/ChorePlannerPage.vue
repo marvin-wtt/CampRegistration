@@ -987,8 +987,9 @@ function deleteDay(date: string) {
       void choreAssignmentStore.deleteMany({
         from: date,
         to: date,
-        ...(filterChoreIds.value.length === 1
-          ? { choreId: filterChoreIds.value[0] }
+        // Only the chores on screen — hidden ones keep their duties.
+        ...(filterChoreIds.value.length > 0
+          ? { choreId: filterChoreIds.value }
           : {}),
       }),
   );

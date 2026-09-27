@@ -566,8 +566,19 @@ const showSupervisors = computed<boolean>(
 
 // Suggestions, fairest first — refetched when the duty's identity changes.
 const memberSuggestionList = ref<ChoreAssignmentSuggestionCandidate[]>([]);
-// The unit the list was fetched for — room ids must never be shown as people.
-const memberSuggestionUnit = ref<ChoreRotationUnit | null>(null);
+// What the lists were fetched for. Until a refetch lands they belong to the
+// previous chore or unit — room ids must never be taken for people.
+const suggestionsFor = ref<{
+  choreId: string;
+  date: string | null;
+  unit: ChoreRotationUnit;
+} | null>(null);
+const suggestionsCurrent = computed<boolean>(
+  () =>
+    suggestionsFor.value?.choreId === choreId.value &&
+    suggestionsFor.value?.date === (date.value ?? null) &&
+    suggestionsFor.value?.unit === rotationUnit.value,
+);
 const supervisorSuggestionList = ref<ChoreAssignmentSuggestionCandidate[]>([]);
 const participantStats = ref<Map<string, ChoreAssignmentSuggestionCandidate>>(
   new Map(),
@@ -605,7 +616,7 @@ watch(
       return;
     }
     memberSuggestionList.value = memberResult?.candidates ?? [];
-    memberSuggestionUnit.value = unit;
+    suggestionsFor.value = { choreId: id, date: day ?? null, unit };
     supervisorSuggestionList.value = supervisorResult?.candidates ?? [];
     participantStats.value = new Map(
       [
@@ -628,10 +639,7 @@ const selectedRoomIds = computed<Set<string>>(
 );
 
 const memberSuggestions = computed<ChoreAssignmentSuggestionCandidate[]>(() =>
-  (memberSuggestionUnit.value === rotationUnit.value
-    ? memberSuggestionList.value
-    : []
-  )
+  (suggestionsCurrent.value ? memberSuggestionList.value : [])
     .filter((candidate) =>
       rotationUnit.value === 'ROOM'
         ? !selectedRoomIds.value.has(candidate.id)
@@ -769,10 +777,18 @@ function applySuggestion(candidate: ChoreAssignmentSuggestionCandidate) {
 
 function canAutoFill(role: ChoreMemberRole): boolean {
   const target = role === 'MEMBER' ? headcount.value : supervisorCount.value;
-  return !!choreId.value && !!date.value && activeCount(role) < target;
+  return (
+    !!choreId.value &&
+    !!date.value &&
+    suggestionsCurrent.value &&
+    activeCount(role) < target
+  );
 }
 
 function autoFill() {
+  if (!suggestionsCurrent.value) {
+    return;
+  }
   const taken = new Set(members.value.map((m) => m.registrationId));
   const additions: ChoreAssignmentMember[] = [];
   const add = (registrationId: string, role: ChoreMemberRole) => {

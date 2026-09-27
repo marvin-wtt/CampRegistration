@@ -83,7 +83,7 @@ export interface ChoreSeriesPlanResult {
 
 export interface ChoreAssignmentBulkDeleteQuery {
   batchId?: string;
-  choreId?: string;
+  choreId?: string | string[];
   slotId?: string;
   from?: string;
   to?: string;

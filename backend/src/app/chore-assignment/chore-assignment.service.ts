@@ -337,7 +337,7 @@ export class ChoreAssignmentService extends BaseService {
       where: {
         eventId,
         batchId: query.batchId,
-        choreId: query.choreId,
+        choreId: query.choreId ? { in: [query.choreId].flat() } : undefined,
         slotId: query.slotId,
         date:
           query.from || query.to
