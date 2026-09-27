@@ -3,14 +3,13 @@
     padding
     class="settings-page row justify-center"
   >
-    <div class="col-12 col-sm-10 col-md-8 col-lg-6 column q-gutter-y-lg">
-      <div class="page-title">
-        <div class="text-h5 text-weight-medium">
-          {{ t('title') }}
-        </div>
-        <div class="text-body2 text-grey-6 q-mt-xs">
-          {{ t('subtitle') }}
-        </div>
+    <div
+      class="col-12 col-sm-10 col-md-8 col-lg-6 column no-wrap q-gutter-y-lg"
+    >
+      <page-header
+        :title="t('title')"
+        :subtitle="t('subtitle')"
+      >
         <owning-organization-chip
           v-if="event"
           class="q-mt-sm"
@@ -19,7 +18,7 @@
           :organization-name="event.organizationName"
           :verification-status="event.organizationVerificationStatus"
         />
-      </div>
+      </page-header>
 
       <q-list
         bordered
@@ -64,6 +63,7 @@
 </template>
 
 <script lang="ts" setup>
+import PageHeader from '@/components/common/PageHeader.vue';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { type RouteLocationRaw } from 'vue-router';

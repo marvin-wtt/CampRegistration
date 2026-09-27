@@ -4,10 +4,18 @@ import type {
   ChoreCreateData,
   ChoreUpdateData,
   ChoreAssignment,
+  ChoreAssignmentBulkDeleteQuery,
   ChoreAssignmentCreateData,
+  ChoreAssignmentMemberData,
+  ChoreAssignmentSuggestionQuery,
   ChoreAssignmentUpdateData,
   ChoreAssignmentSuggestions,
-  ChoreRotationUnit,
+  ChoreFairnessEntry,
+  ChoreMemberPreviewData,
+  ChoreRemovePersonData,
+  ChoreRemovePersonResult,
+  ChoreSeriesPlanData,
+  ChoreSeriesPlanResult,
 } from '@camp-registration/common/entities';
 
 export function useChoreService() {
@@ -64,12 +72,79 @@ export function useChoreService() {
 
   async function fetchChoreAssignmentSuggestions(
     eventId: string,
-    choreId: string,
-    unit: ChoreRotationUnit,
+    query: ChoreAssignmentSuggestionQuery,
   ): Promise<ChoreAssignmentSuggestions> {
     const response = await api.get(
       `events/${eventId}/chore-assignments/suggestions/`,
-      { params: { choreId, unit } },
+      { params: query },
+    );
+
+    return response?.data?.data;
+  }
+
+  async function fetchChoreFairness(
+    eventId: string,
+  ): Promise<ChoreFairnessEntry[]> {
+    const response = await api.get(
+      `events/${eventId}/chore-assignments/fairness/`,
+    );
+
+    return response?.data?.data;
+  }
+
+  async function previewChoreMembers(
+    eventId: string,
+    data: ChoreMemberPreviewData,
+  ): Promise<ChoreAssignmentMemberData[]> {
+    const response = await api.post(
+      `events/${eventId}/chore-assignments/preview/`,
+      data,
+    );
+
+    return response?.data?.data;
+  }
+
+  async function planChoreSeries(
+    eventId: string,
+    data: ChoreSeriesPlanData,
+  ): Promise<ChoreSeriesPlanResult> {
+    const response = await api.post(
+      `events/${eventId}/chore-assignments/series/`,
+      data,
+    );
+
+    return response?.data?.data;
+  }
+
+  async function deleteChoreAssignments(
+    eventId: string,
+    query: ChoreAssignmentBulkDeleteQuery,
+  ): Promise<number> {
+    const response = await api.delete(`events/${eventId}/chore-assignments/`, {
+      params: query,
+    });
+
+    return response?.data?.data?.count;
+  }
+
+  async function removePersonFromChores(
+    eventId: string,
+    data: ChoreRemovePersonData,
+  ): Promise<ChoreRemovePersonResult> {
+    const response = await api.post(
+      `events/${eventId}/chore-assignments/remove-person/`,
+      data,
+    );
+
+    return response?.data?.data;
+  }
+
+  async function fillChoreAssignment(
+    eventId: string,
+    choreAssignmentId: string,
+  ): Promise<ChoreAssignment> {
+    const response = await api.post(
+      `events/${eventId}/chore-assignments/${choreAssignmentId}/fill/`,
     );
 
     return response?.data?.data;
@@ -117,6 +192,12 @@ export function useChoreService() {
     fetchChoreAssignments,
     fetchChoreAssignment,
     fetchChoreAssignmentSuggestions,
+    fetchChoreFairness,
+    previewChoreMembers,
+    planChoreSeries,
+    deleteChoreAssignments,
+    removePersonFromChores,
+    fillChoreAssignment,
     createChoreAssignment,
     updateChoreAssignment,
     deleteChoreAssignment,

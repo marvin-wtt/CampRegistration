@@ -1,28 +1,55 @@
 import { BaseService } from '#core/base/BaseService';
 import { injectable } from 'inversify';
 import type {
-  ChoreAssignmentSuggestionCandidate,
+  ChoreAssignmentBulkDeleteQuery,
+  ChoreAssignmentCreateData,
+  ChoreAssignmentMemberData,
   ChoreAssignmentSuggestions,
+  ChoreAssignmentUpdateData,
+  ChoreFairnessEntry,
+  ChoreMemberPreviewData,
+  ChoreMemberRole,
+  ChoreRemovePersonData,
+  ChoreRemovePersonResult,
   ChoreRotationUnit,
+  ChoreSeriesPlanData,
+  ChoreSeriesPlanResult,
 } from '@camp-registration/common/entities';
+import type { ChoreSlot, Prisma } from '#generated/prisma/client.js';
+import {
+  buildLedger,
+  eligibleFor,
+  type ExistingMember,
+  fairnessOverview,
+  groupAverages,
+  type LedgerDuty,
+  type MemberPick,
+  type OccurrenceSpec,
+  pickForOccurrence,
+  planOccurrences,
+  type PoolPerson,
+  rankPeople,
+  rankRooms,
+  recordDuty,
+  toPersonCandidates,
+  toRoomCandidates,
+} from '#app/choreAssignment/chorePlanner';
+import type {
+  ChoreAssignmentWithRelations,
+  ChoreWithSlots,
+} from '#app/choreAssignment/choreAssignment.types';
+import { ulid } from '#utils/ulid';
 
 const CHORE_ASSIGNMENT_INCLUDE = {
   chore: true,
+  members: { orderBy: { id: 'asc' } },
+} as const satisfies Prisma.ChoreAssignmentInclude;
+
+const LEDGER_INCLUDE = {
+  chore: { select: { effort: true } },
+  choreSlot: { select: { effort: true } },
   members: true,
-} as const;
-
-interface ChoreAssignmentDto {
-  choreId: string;
-  rotationUnit: ChoreRotationUnit;
-  date: string;
-  slot?: string | null;
-  registrationIds?: string[];
-}
-
-interface Stat {
-  count: number;
-  lastAssignedAt: string | null;
-}
+} as const satisfies Prisma.ChoreAssignmentInclude;
 
 @injectable()
 export class ChoreAssignmentService extends BaseService {
@@ -41,34 +68,50 @@ export class ChoreAssignmentService extends BaseService {
     });
   }
 
-  async createChoreAssignment(eventId: string, data: ChoreAssignmentDto) {
-    return this.prisma.choreAssignment.create({
-      data: {
-        eventId,
-        choreId: data.choreId,
-        rotationUnit: data.rotationUnit,
-        date: new Date(data.date),
-        slot: data.slot,
-        members: {
-          createMany: {
-            data: (data.registrationIds ?? []).map((registrationId) => ({
-              registrationId,
-            })),
-          },
+  async createChoreAssignment(
+    eventId: string,
+    chore: ChoreWithSlots,
+    data: ChoreAssignmentCreateData,
+  ) {
+    return this.transaction(async (tx) => {
+      let members: MemberPick[] = normalizeMembers(data.members ?? []);
+      if (data.autoFill) {
+        const [ledger, pool] = await Promise.all([
+          this.loadLedger(eventId),
+          this.loadPool(eventId),
+        ]);
+        const spec = occurrenceSpec(
+          chore,
+          findSlot(chore, data.slotId),
+          data.date,
+          data.rotationUnit,
+        );
+        members = [
+          ...members,
+          ...pickForOccurrence(ledger, pool, spec, members),
+        ];
+      }
+
+      return tx.choreAssignment.create({
+        data: {
+          eventId,
+          choreId: chore.id,
+          slotId: data.slotId ?? null,
+          rotationUnit: data.rotationUnit,
+          date: toDbDate(data.date),
+          note: data.note ?? null,
+          members: { createMany: { data: members } },
         },
-      },
-      include: CHORE_ASSIGNMENT_INCLUDE,
+        include: CHORE_ASSIGNMENT_INCLUDE,
+      });
     });
   }
 
-  async updateChoreAssignmentById(
-    id: string,
-    data: Partial<ChoreAssignmentDto>,
-  ) {
-    const { registrationIds, date, ...rest } = data;
+  async updateChoreAssignmentById(id: string, data: ChoreAssignmentUpdateData) {
+    const { members, date, ...rest } = data;
 
     return this.transaction(async (tx) => {
-      if (registrationIds !== undefined) {
+      if (members !== undefined) {
         await tx.choreAssignmentMember.deleteMany({
           where: { choreAssignmentId: id },
         });
@@ -78,17 +121,9 @@ export class ChoreAssignmentService extends BaseService {
         where: { id },
         data: {
           ...rest,
-          ...(date !== undefined ? { date: new Date(date) } : {}),
-          ...(registrationIds !== undefined
-            ? {
-                members: {
-                  createMany: {
-                    data: registrationIds.map((registrationId) => ({
-                      registrationId,
-                    })),
-                  },
-                },
-              }
+          ...(date !== undefined ? { date: toDbDate(date) } : {}),
+          ...(members !== undefined
+            ? { members: { createMany: { data: normalizeMembers(members) } } }
             : {}),
         },
         include: CHORE_ASSIGNMENT_INCLUDE,
@@ -100,249 +135,481 @@ export class ChoreAssignmentService extends BaseService {
     await this.prisma.choreAssignment.delete({ where: { id } });
   }
 
-  /**
-   * Ranked candidates for the *next* occurrence of a chore, for the given
-   * rotation unit (chosen per occurrence, not fixed on the chore — the same
-   * chore's history feeds both a PARTICIPANT and a ROOM view). Computed on
-   * demand from history — per-event data volume is small enough that this
-   * never needs caching.
-   *
-   * Ranking: fewest times assigned, then longest since last assigned
-   * (fairness) — ties broken randomly, so the same "equally fair" group
-   * doesn't always list in the same order. When `chore.balanceCountries` is
-   * set, PARTICIPANT candidates are then interleaved by country as a
-   * secondary pass — fairness order is preserved *within* each country, only
-   * the merge across countries changes.
-   */
-  async getSuggestions(
-    eventId: string,
-    choreId: string,
-    unit: ChoreRotationUnit,
-  ): Promise<ChoreAssignmentSuggestions | null> {
-    const chore = await this.prisma.chore.findFirst({
-      where: { id: choreId, eventId },
-    });
-    if (!chore) {
-      return null;
-    }
-
-    // History is unit-agnostic — a chore's past occurrences may have been
-    // assigned by participant or by room, but the stored data is always just
-    // a member list, so both views are always computed from the same rows.
-    const members = await this.prisma.choreAssignmentMember.findMany({
-      where: { choreAssignment: { choreId } },
-      include: {
-        choreAssignment: { select: { date: true } },
-        registration: { include: { bed: true } },
-      },
-    });
-
-    if (unit === 'ROOM') {
-      // Count each room at most once per occurrence, regardless of how many
-      // of its occupants were listed as members that day.
-      const roomsByAssignment = new Map<
-        string,
-        { date: string; roomIds: Set<string> }
-      >();
-      for (const member of members) {
-        const roomId = member.registration.bed?.roomId;
-        if (!roomId) {
-          continue;
-        }
-        const entry = roomsByAssignment.get(member.choreAssignmentId) ?? {
-          date: toDateString(member.choreAssignment.date),
-          roomIds: new Set<string>(),
-        };
-        entry.roomIds.add(roomId);
-        roomsByAssignment.set(member.choreAssignmentId, entry);
-      }
-
-      const stats = new Map<string, Stat>();
-      for (const { date, roomIds } of roomsByAssignment.values()) {
-        for (const roomId of roomIds) {
-          record(stats, roomId, date);
-        }
-      }
-
-      const rooms = await this.prisma.room.findMany({
-        where: { eventId },
+  /** Tops the assignment up to its headcount and supervisor count. */
+  async fillChoreAssignment(eventId: string, id: string) {
+    return this.transaction(async (tx) => {
+      const before = await tx.choreAssignment.findUniqueOrThrow({
+        where: { id },
         include: {
-          beds: { include: { registration: { select: { role: true } } } },
+          ...CHORE_ASSIGNMENT_INCLUDE,
+          chore: { include: { slots: true } },
         },
       });
-
-      // An empty room can never satisfy the chore — suggesting it would add
-      // no one — so it's excluded regardless of excludeStaff.
-      const occupiedRooms = rooms.filter((room) => hasOccupants(room));
-      const eligibleRooms = chore.excludeStaff
-        ? occupiedRooms.filter((room) => !isStaffOnlyRoom(room))
-        : occupiedRooms;
-
-      return {
-        unit: 'ROOM',
-        candidates: rankCandidates(eligibleRooms, stats),
-      };
-    }
-
-    const stats = new Map<string, Stat>();
-    for (const member of members) {
-      record(
-        stats,
-        member.registrationId,
-        toDateString(member.choreAssignment.date),
+      const [ledger, pool] = await Promise.all([
+        this.loadLedger(eventId),
+        this.loadPool(eventId),
+      ]);
+      const spec = occurrenceSpec(
+        before.chore,
+        findSlot(before.chore, before.slotId),
+        toDateString(before.date),
+        before.rotationUnit,
       );
-    }
+      const picks = pickForOccurrence(ledger, pool, spec, before.members);
 
-    const registrations = await this.prisma.registration.findMany({
-      where: {
-        eventId,
-        status: 'ACCEPTED',
-        ...(chore.excludeStaff ? { role: 'participant' } : {}),
-      },
-      select: { id: true, country: true },
+      await tx.choreAssignmentMember.createMany({
+        data: picks.map((pick) => ({ ...pick, choreAssignmentId: id })),
+      });
+      return tx.choreAssignment.findUniqueOrThrow({
+        where: { id },
+        include: CHORE_ASSIGNMENT_INCLUDE,
+      });
     });
-
-    let candidates = rankCandidates(registrations, stats);
-    if (chore.balanceCountries) {
-      const countryById = new Map(registrations.map((r) => [r.id, r.country]));
-      candidates = interleaveByCountry(candidates, countryById);
-    }
-
-    return { unit: 'PARTICIPANT', candidates };
   }
-}
 
-function toDateString(date: Date): string {
-  return date.toISOString().split('T')[0];
-}
-
-function record(stats: Map<string, Stat>, key: string, date: string) {
-  const entry = stats.get(key) ?? { count: 0, lastAssignedAt: null };
-  entry.count++;
-  if (!entry.lastAssignedAt || date > entry.lastAssignedAt) {
-    entry.lastAssignedAt = date;
-  }
-  stats.set(key, entry);
-}
-
-interface RoomWithOccupants {
-  id: string;
-  beds: { registration: { role: string | null } | null }[];
-}
-
-function hasOccupants(room: RoomWithOccupants): boolean {
-  return room.beds.some((bed) => bed.registration !== null);
-}
-
-/** A room dedicated to staff: it has occupants, and none of them is a participant. */
-function isStaffOnlyRoom(room: RoomWithOccupants): boolean {
-  const occupants = room.beds
-    .map((bed) => bed.registration)
-    .filter(
-      (registration): registration is { role: string | null } => !!registration,
+  /**
+   * The members auto-fill would add, without saving — for the edit dialog,
+   * where the stored members of the assignment are being replaced anyway.
+   */
+  async previewMembers(
+    eventId: string,
+    chore: ChoreWithSlots,
+    data: ChoreMemberPreviewData,
+  ): Promise<MemberPick[]> {
+    const [ledger, pool] = await Promise.all([
+      this.loadLedger(eventId, data.assignmentId ? [data.assignmentId] : []),
+      this.loadPool(eventId),
+    ]);
+    const spec = occurrenceSpec(
+      chore,
+      findSlot(chore, data.slotId),
+      data.date,
+      data.rotationUnit,
     );
 
-  return (
-    occupants.length > 0 && occupants.every((r) => r.role !== 'participant')
-  );
-}
+    return pickForOccurrence(
+      ledger,
+      pool,
+      {
+        ...spec,
+        headcount: data.headcount ?? spec.headcount,
+        supervisorCount: data.supervisorCount ?? spec.supervisorCount,
+      },
+      normalizeMembers(data.members),
+    );
+  }
 
-function rankCandidates(
-  entities: { id: string }[],
-  stats: Map<string, Stat>,
-): ChoreAssignmentSuggestionCandidate[] {
-  const ranked = entities.map((entity) => {
-    const stat = stats.get(entity.id);
-    return {
-      id: entity.id,
-      assignmentCount: stat?.count ?? 0,
-      lastAssignedAt: stat?.lastAssignedAt ?? null,
+  /**
+   * Plans one occurrence per selected day and slot, fairly, in date order.
+   * Existing occurrences are skipped, topped up or replaced; only planned ones
+   * are ever touched — done or cancelled duties are history.
+   */
+  async planSeries(
+    eventId: string,
+    chore: ChoreWithSlots,
+    data: ChoreSeriesPlanData,
+  ): Promise<ChoreSeriesPlanResult> {
+    const dates = eachDate(data.from, data.to).filter(
+      (date) =>
+        !data.weekdays ||
+        data.weekdays.includes(new Date(`${date}T00:00:00Z`).getUTCDay()),
+    );
+    const slots: (ChoreSlot | null)[] =
+      data.slotIds.length > 0
+        ? chore.slots.filter((slot) => data.slotIds.includes(slot.id))
+        : [null];
+
+    return this.transaction(async (tx) => {
+      const existing = await tx.choreAssignment.findMany({
+        where: {
+          eventId,
+          choreId: chore.id,
+          date: { gte: toDbDate(data.from), lte: toDbDate(data.to) },
+        },
+        include: CHORE_ASSIGNMENT_INCLUDE,
+        orderBy: { createdAt: 'asc' },
+      });
+      const existingByKey = new Map<string, ChoreAssignmentWithRelations>();
+      for (const assignment of existing) {
+        const key = occurrenceKey(
+          toDateString(assignment.date),
+          assignment.slotId,
+        );
+        if (!existingByKey.has(key)) {
+          existingByKey.set(key, assignment);
+        }
+      }
+
+      let skipped = 0;
+      const replaced: ChoreAssignmentWithRelations[] = [];
+      const occurrences: {
+        spec: OccurrenceSpec;
+        existing: ExistingMember[];
+        slotId: string | null;
+        target: ChoreAssignmentWithRelations | null;
+      }[] = [];
+
+      for (const date of dates) {
+        for (const slot of slots) {
+          const slotId = slot?.id ?? null;
+          const current = existingByKey.get(occurrenceKey(date, slotId));
+          if (
+            current &&
+            (data.onConflict === 'SKIP' || current.status !== 'PLANNED')
+          ) {
+            skipped++;
+            continue;
+          }
+          if (current && data.onConflict === 'REPLACE') {
+            replaced.push(current);
+          }
+
+          const fill = current && data.onConflict === 'FILL';
+          occurrences.push({
+            spec: occurrenceSpec(chore, slot, date, data.rotationUnit),
+            existing: fill ? current.members : [],
+            slotId,
+            target: fill ? current : null,
+          });
+        }
+      }
+
+      const [ledger, pool] = await Promise.all([
+        this.loadLedger(
+          eventId,
+          replaced.map((assignment) => assignment.id),
+        ),
+        this.loadPool(eventId),
+      ]);
+      const picks = planOccurrences(ledger, pool, occurrences);
+
+      await tx.choreAssignment.deleteMany({
+        where: { id: { in: replaced.map((assignment) => assignment.id) } },
+      });
+
+      const batchId = occurrences.some((o) => !o.target) ? ulid() : null;
+      let created = 0;
+      let filled = 0;
+
+      for (const [index, occurrence] of occurrences.entries()) {
+        const members = picks[index] ?? [];
+        const target = occurrence.target;
+
+        if (target) {
+          if (members.length === 0) {
+            continue;
+          }
+          await tx.choreAssignmentMember.createMany({
+            data: members.map((m) => ({ ...m, choreAssignmentId: target.id })),
+          });
+          filled++;
+          continue;
+        }
+
+        await tx.choreAssignment.create({
+          data: {
+            eventId,
+            choreId: chore.id,
+            slotId: occurrence.slotId,
+            batchId,
+            rotationUnit: data.rotationUnit,
+            date: toDbDate(occurrence.spec.date),
+            members: { createMany: { data: members } },
+          },
+        });
+        created++;
+      }
+
+      return {
+        batchId: created > 0 ? batchId : null,
+        created,
+        filled,
+        skipped,
+      };
+    });
+  }
+
+  async deleteChoreAssignments(
+    eventId: string,
+    query: ChoreAssignmentBulkDeleteQuery,
+  ): Promise<number> {
+    const { count } = await this.prisma.choreAssignment.deleteMany({
+      where: {
+        eventId,
+        batchId: query.batchId,
+        choreId: query.choreId,
+        slotId: query.slotId,
+        date:
+          query.from || query.to
+            ? {
+                gte: query.from ? toDbDate(query.from) : undefined,
+                lte: query.to ? toDbDate(query.to) : undefined,
+              }
+            : undefined,
+      },
+    });
+
+    return count;
+  }
+
+  /**
+   * Takes a person off every planned duty in the range — for illness or an
+   * early departure — optionally refilling each spot with the next-fairest
+   * person. Nothing about their absence is stored.
+   */
+  async removePerson(
+    eventId: string,
+    data: ChoreRemovePersonData,
+  ): Promise<ChoreRemovePersonResult> {
+    return this.transaction(async (tx) => {
+      const assignments = await tx.choreAssignment.findMany({
+        where: {
+          eventId,
+          status: 'PLANNED',
+          date: {
+            gte: toDbDate(data.from),
+            lte: data.to ? toDbDate(data.to) : undefined,
+          },
+          members: { some: { registrationId: data.registrationId } },
+        },
+        include: {
+          ...CHORE_ASSIGNMENT_INCLUDE,
+          chore: { include: { slots: true } },
+        },
+        orderBy: [{ date: 'asc' }, { createdAt: 'asc' }],
+      });
+
+      const [ledger, fullPool] = await Promise.all([
+        this.loadLedger(
+          eventId,
+          assignments.map((assignment) => assignment.id),
+        ),
+        this.loadPool(eventId),
+      ]);
+      const pool = fullPool.filter(
+        (person) => person.id !== data.registrationId,
+      );
+
+      let replaced = 0;
+      for (const before of assignments) {
+        const remaining = before.members.filter(
+          (member) => member.registrationId !== data.registrationId,
+        );
+        const removed = before.members.find(
+          (member) => member.registrationId === data.registrationId,
+        );
+
+        let picks: MemberPick[] = [];
+        if (data.replace && removed && !removed.missed) {
+          const spec = occurrenceSpec(
+            before.chore,
+            findSlot(before.chore, before.slotId),
+            toDateString(before.date),
+            'PARTICIPANT',
+          );
+          // Exactly one spot, in the removed person's role.
+          const count = (role: ChoreMemberRole) =>
+            remaining.filter((m) => m.role === role && !m.missed).length +
+            (removed.role === role ? 1 : 0);
+          picks = pickForOccurrence(
+            ledger,
+            pool,
+            {
+              ...spec,
+              headcount: count('MEMBER'),
+              supervisorCount: count('SUPERVISOR'),
+            },
+            remaining,
+          );
+        }
+        for (const member of [...remaining, ...picks]) {
+          if (!('missed' in member) || !member.missed) {
+            recordDuty(
+              ledger,
+              member.registrationId,
+              {
+                choreId: before.choreId,
+                date: toDateString(before.date),
+                effort: effortOf(
+                  before.chore,
+                  findSlot(before.chore, before.slotId),
+                ),
+              },
+              member.role,
+            );
+          }
+        }
+
+        await tx.choreAssignmentMember.deleteMany({
+          where: {
+            choreAssignmentId: before.id,
+            registrationId: data.registrationId,
+          },
+        });
+        await tx.choreAssignmentMember.createMany({
+          data: picks.map((pick) => ({
+            ...pick,
+            choreAssignmentId: before.id,
+          })),
+        });
+        replaced += picks.length;
+      }
+
+      return { removed: assignments.length, replaced };
+    });
+  }
+
+  async getSuggestions(
+    eventId: string,
+    chore: ChoreWithSlots,
+    query: {
+      unit: ChoreRotationUnit;
+      role: ChoreMemberRole;
+      date?: string | undefined;
+      assignmentId?: string | undefined;
+    },
+  ): Promise<ChoreAssignmentSuggestions> {
+    const [ledger, pool] = await Promise.all([
+      this.loadLedger(eventId, query.assignmentId ? [query.assignmentId] : []),
+      this.loadPool(eventId),
+    ]);
+    const candidates = eligibleFor(pool, query.role, chore.eligibility);
+    const averages = groupAverages(ledger, pool);
+    const ctx = {
+      choreId: chore.id,
+      date: query.date,
+      balanceCountries: query.role === 'MEMBER' && chore.balanceCountries,
     };
-  });
 
-  ranked.sort((a, b) => {
-    if (a.assignmentCount !== b.assignmentCount) {
-      return a.assignmentCount - b.assignmentCount;
-    }
-    return (a.lastAssignedAt ?? '').localeCompare(b.lastAssignedAt ?? '');
-  });
+    const unit = query.role === 'SUPERVISOR' ? 'PARTICIPANT' : query.unit;
+    return {
+      unit,
+      role: query.role,
+      candidates:
+        unit === 'ROOM'
+          ? toRoomCandidates(rankRooms(ledger, candidates, ctx), averages)
+          : toPersonCandidates(rankPeople(ledger, candidates, ctx), averages),
+    };
+  }
 
-  shuffleTiedRuns(
-    ranked,
-    (a, b) =>
-      a.assignmentCount === b.assignmentCount &&
-      a.lastAssignedAt === b.lastAssignedAt,
-  );
+  async getFairness(eventId: string): Promise<ChoreFairnessEntry[]> {
+    const [ledger, pool] = await Promise.all([
+      this.loadLedger(eventId, [], toDateString(new Date())),
+      this.loadPool(eventId),
+    ]);
+    return fairnessOverview(ledger, pool);
+  }
 
-  return ranked;
-}
+  private async loadLedger(
+    eventId: string,
+    excludeIds: string[] = [],
+    today?: string,
+  ) {
+    const assignments = await this.db.choreAssignment.findMany({
+      where: { eventId, id: { notIn: excludeIds } },
+      include: LEDGER_INCLUDE,
+    });
 
-/** Fisher-Yates shuffle applied only within consecutive equal-key runs, so
- * fairness ordering is untouched but ties don't always list the same way. */
-function shuffleTiedRuns<T>(items: T[], isTied: (a: T, b: T) => boolean) {
-  let start = 0;
-  while (start < items.length) {
-    const first = items[start];
-    if (first === undefined) {
-      break;
-    }
+    return buildLedger(
+      assignments.map((assignment): LedgerDuty => ({
+        choreId: assignment.choreId,
+        date: toDateString(assignment.date),
+        effort: assignment.choreSlot?.effort ?? assignment.chore.effort,
+        status: assignment.status,
+        members: assignment.members,
+      })),
+      today,
+    );
+  }
 
-    let end = start + 1;
-    while (end < items.length) {
-      const next = items[end];
-      if (next === undefined || !isTied(first, next)) {
-        break;
-      }
-      end++;
-    }
+  private async loadPool(eventId: string): Promise<PoolPerson[]> {
+    const registrations = await this.db.registration.findMany({
+      where: { eventId, status: 'ACCEPTED' },
+      select: {
+        id: true,
+        role: true,
+        country: true,
+        bed: { select: { roomId: true } },
+      },
+    });
 
-    for (let i = end - 1; i > start; i--) {
-      const j = start + Math.floor(Math.random() * (i - start + 1));
-      const a = items[i];
-      const b = items[j];
-      if (a === undefined || b === undefined) {
-        continue;
-      }
-      items[i] = b;
-      items[j] = a;
-    }
-
-    start = end;
+    return registrations.map((registration) => ({
+      id: registration.id,
+      // A registration without a role is a participant.
+      staff: registration.role !== null && registration.role !== 'participant',
+      country: registration.country,
+      roomId: registration.bed?.roomId ?? null,
+    }));
   }
 }
 
-/** Round-robins the (already fairness+randomness ranked) candidates across
- * country groups, preserving each group's internal order — spreads
- * countries across the top of the list without disturbing fairness within
- * a country. */
-function interleaveByCountry(
-  ranked: ChoreAssignmentSuggestionCandidate[],
-  countryById: Map<string, string | null>,
-): ChoreAssignmentSuggestionCandidate[] {
-  const groups = new Map<string, ChoreAssignmentSuggestionCandidate[]>();
-  for (const candidate of ranked) {
-    const key = countryById.get(candidate.id) ?? '';
-    const group = groups.get(key);
-    if (group) {
-      group.push(candidate);
-    } else {
-      groups.set(key, [candidate]);
-    }
-  }
+function occurrenceSpec(
+  chore: ChoreWithSlots,
+  slot: ChoreSlot | null,
+  date: string,
+  unit: ChoreRotationUnit,
+): OccurrenceSpec {
+  return {
+    choreId: chore.id,
+    date,
+    unit,
+    effort: effortOf(chore, slot),
+    eligibility: chore.eligibility,
+    balanceCountries: chore.balanceCountries,
+    headcount: slot?.headcount ?? chore.defaultCount ?? 0,
+    supervisorCount: slot?.supervisorCount ?? chore.supervisorCount,
+  };
+}
 
-  const queues = [...groups.values()];
-  const result: ChoreAssignmentSuggestionCandidate[] = [];
-  let took = true;
-  while (took) {
-    took = false;
-    for (const queue of queues) {
-      const next = queue.shift();
-      if (next) {
-        result.push(next);
-        took = true;
+function effortOf(chore: ChoreWithSlots, slot: ChoreSlot | null) {
+  return slot?.effort ?? chore.effort;
+}
+
+function findSlot(
+  chore: ChoreWithSlots,
+  slotId: string | null | undefined,
+): ChoreSlot | null {
+  return chore.slots.find((slot) => slot.id === slotId) ?? null;
+}
+
+// Duplicates collapse to the first entry.
+function normalizeMembers(members: ChoreAssignmentMemberData[]) {
+  const seen = new Set<string>();
+  return members
+    .filter(({ registrationId }) => {
+      if (seen.has(registrationId)) {
+        return false;
       }
-    }
-  }
+      seen.add(registrationId);
+      return true;
+    })
+    .map((member) => ({
+      registrationId: member.registrationId,
+      role: member.role ?? 'MEMBER',
+      missed: member.missed ?? false,
+    }));
+}
 
-  return result;
+function occurrenceKey(date: string, slotId: string | null): string {
+  return `${date}|${slotId ?? ''}`;
+}
+
+function toDbDate(date: string): Date {
+  return new Date(`${date}T00:00:00Z`);
+}
+
+export function toDateString(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+function eachDate(from: string, to: string): string[] {
+  const dates: string[] = [];
+  for (
+    const date = toDbDate(from);
+    date <= toDbDate(to);
+    date.setUTCDate(date.getUTCDate() + 1)
+  ) {
+    dates.push(toDateString(date));
+  }
+  return dates;
 }

@@ -19,4 +19,24 @@ export default {
     error: 'Fehler beim Löschen des Diensteinsatzes',
     invalid: 'Ungültige Veranstaltungs-ID',
   },
+  fill: {
+    progress: 'Offene Plätze werden besetzt...',
+    success: 'Offene Plätze besetzt',
+    error: 'Fehler beim Besetzen der offenen Plätze',
+  },
+  series: {
+    progress: 'Dienste werden geplant...',
+    success: 'Dienste geplant',
+    error: 'Fehler beim Planen der Dienste',
+  },
+  deleteMany: {
+    progress: 'Dienste werden gelöscht...',
+    success: 'Dienste gelöscht',
+    error: 'Fehler beim Löschen der Dienste',
+  },
+  removePerson: {
+    progress: 'Wird aus Diensten entfernt...',
+    success: 'Aus Diensten entfernt',
+    error: 'Fehler beim Entfernen aus den Diensten',
+  },
 };

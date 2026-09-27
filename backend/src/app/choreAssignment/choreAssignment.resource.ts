@@ -14,10 +14,17 @@ export class ChoreAssignmentResource extends JsonResource<
         id: this.data.chore.id,
         name: this.data.chore.name,
       },
+      slotId: this.data.slotId,
+      batchId: this.data.batchId,
       rotationUnit: this.data.rotationUnit,
-      date: this.data.date.toISOString().split('T')[0],
-      slot: this.data.slot ?? null,
-      registrationIds: this.data.members.map((member) => member.registrationId),
+      date: this.data.date.toISOString().slice(0, 10),
+      status: this.data.status,
+      note: this.data.note,
+      members: this.data.members.map((member) => ({
+        registrationId: member.registrationId,
+        role: member.role,
+        missed: member.missed,
+      })),
     };
   }
 }

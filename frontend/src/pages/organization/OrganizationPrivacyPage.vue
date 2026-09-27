@@ -7,18 +7,19 @@
   >
     <!-- Same shell as the other organization pages: a centred column rather
          than the full page width. -->
-    <div class="privacy-shell column col-12 col-sm-10 col-md-8 q-gutter-md">
-      <div class="page-title">
-        <div class="text-h5 text-weight-medium">{{ t('title') }}</div>
-        <div class="text-body2 text-on-surface-variant q-mt-xs">
-          {{ t('subtitle') }}
-        </div>
+    <div
+      class="privacy-shell column no-wrap col-12 col-sm-10 col-md-8 q-gutter-md"
+    >
+      <page-header
+        :title="t('title')"
+        :subtitle="t('subtitle')"
+      >
         <!-- The event addendum merges on top of this, so an author needs to know
              up front that they are writing the shared part. -->
         <div class="text-caption text-on-surface-variant q-mt-xs">
           {{ t('baselineNote') }}
         </div>
-      </div>
+      </page-header>
 
       <!-- The builder is the default because it is the only path that produces
            a notice in every language a event runs in. Free text stays available
@@ -613,6 +614,7 @@
 </template>
 
 <script lang="ts" setup>
+import PageHeader from '@/components/common/PageHeader.vue';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';

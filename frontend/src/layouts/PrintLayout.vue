@@ -18,7 +18,9 @@ quasar.dark.set(false);
 </script>
 
 <style>
-.print-layout {
+/* The theme tints pages; paper is plain white. */
+.print-layout,
+.print-layout .q-page {
   background: white;
 }
 

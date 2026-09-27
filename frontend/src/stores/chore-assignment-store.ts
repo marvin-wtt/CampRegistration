@@ -6,10 +6,17 @@ import { useRealtimeCollection } from '@/composables/realtimeCollection';
 import { useAuthBus, useEventBus } from '@/composables/bus';
 import type {
   ChoreAssignment,
+  ChoreAssignmentBulkDeleteQuery,
   ChoreAssignmentCreateData,
-  ChoreAssignmentUpdateData,
+  ChoreAssignmentMemberData,
+  ChoreAssignmentStatus,
+  ChoreAssignmentSuggestionQuery,
   ChoreAssignmentSuggestions,
-  ChoreRotationUnit,
+  ChoreAssignmentUpdateData,
+  ChoreFairnessEntry,
+  ChoreMemberPreviewData,
+  ChoreRemovePersonData,
+  ChoreSeriesPlanData,
 } from '@camp-registration/common/entities';
 
 export const useChoreAssignmentStore = defineStore('choreAssignment', () => {
@@ -46,6 +53,10 @@ export const useChoreAssignmentStore = defineStore('choreAssignment', () => {
     fetchOne: (eventId, id) => api.fetchChoreAssignment(eventId, id),
   });
 
+  function currentEventId(): string {
+    return checkNotNullWithError(route.params.eventId as string | undefined);
+  }
+
   async function fetchData(eventId?: string, opts?: { background?: boolean }) {
     eventId ??= route.params.eventId as string;
 
@@ -54,20 +65,35 @@ export const useChoreAssignmentStore = defineStore('choreAssignment', () => {
     await (opts?.background ? backgroundFetch(fetcher) : lazyFetch(fetcher));
   }
 
-  async function fetchSuggestions(
-    choreId: string,
-    unit: ChoreRotationUnit,
-  ): Promise<ChoreAssignmentSuggestions | undefined> {
-    const eventId = route.params.eventId as string;
+  // Bulk operations change many rows at once; reload quietly afterwards.
+  async function reload() {
+    await fetchData(undefined, { background: true });
+  }
 
-    const cid = checkNotNullWithError(eventId);
-    return api.fetchChoreAssignmentSuggestions(cid, choreId, unit);
+  function replaceLocal(assignment: ChoreAssignment) {
+    data.value = data.value?.map((value) =>
+      value.id === assignment.id ? assignment : value,
+    );
+  }
+
+  async function fetchSuggestions(
+    query: ChoreAssignmentSuggestionQuery,
+  ): Promise<ChoreAssignmentSuggestions | undefined> {
+    return api.fetchChoreAssignmentSuggestions(currentEventId(), query);
+  }
+
+  async function fetchFairness(): Promise<ChoreFairnessEntry[]> {
+    return api.fetchChoreFairness(currentEventId());
+  }
+
+  async function previewMembers(
+    preview: ChoreMemberPreviewData,
+  ): Promise<ChoreAssignmentMemberData[]> {
+    return api.previewChoreMembers(currentEventId(), preview);
   }
 
   async function createData(newData: ChoreAssignmentCreateData) {
-    const eventId = route.params.eventId as string;
-
-    checkNotNullWithError(eventId);
+    const eventId = currentEventId();
 
     return withProgressNotification('create', async () => {
       const assignment = await api.createChoreAssignment(eventId, newData);
@@ -82,28 +108,43 @@ export const useChoreAssignmentStore = defineStore('choreAssignment', () => {
     choreAssignmentId: string,
     updateData: ChoreAssignmentUpdateData,
   ) {
-    const eventId = route.params.eventId as string;
-
-    checkNotNullWithError(eventId);
+    const eventId = currentEventId();
     checkNotNullWithNotification(choreAssignmentId);
 
     await withProgressNotification('update', async () => {
-      const assignment = await api.updateChoreAssignment(
-        eventId,
-        choreAssignmentId,
-        updateData,
-      );
-
-      data.value = data.value?.map((value) =>
-        value.id === assignment.id ? assignment : value,
+      replaceLocal(
+        await api.updateChoreAssignment(eventId, choreAssignmentId, updateData),
       );
     });
   }
 
-  async function deleteData(choreAssignmentId: string) {
-    const eventId = route.params.eventId as string;
+  // e.g. "mark all of today done" — one notification for the whole batch.
+  async function setStatusMany(
+    choreAssignmentIds: string[],
+    status: ChoreAssignmentStatus,
+  ) {
+    const eventId = currentEventId();
 
-    checkNotNullWithError(eventId);
+    await withProgressNotification('update', async () => {
+      const updated = await Promise.all(
+        choreAssignmentIds.map((id) =>
+          api.updateChoreAssignment(eventId, id, { status }),
+        ),
+      );
+      updated.forEach(replaceLocal);
+    });
+  }
+
+  async function fillData(choreAssignmentId: string) {
+    const eventId = currentEventId();
+
+    await withProgressNotification('fill', async () => {
+      replaceLocal(await api.fillChoreAssignment(eventId, choreAssignmentId));
+    });
+  }
+
+  async function deleteData(choreAssignmentId: string) {
+    const eventId = currentEventId();
     checkNotNullWithNotification(choreAssignmentId);
 
     await withProgressNotification('delete', async () => {
@@ -115,6 +156,39 @@ export const useChoreAssignmentStore = defineStore('choreAssignment', () => {
     });
   }
 
+  async function planSeries(plan: ChoreSeriesPlanData) {
+    const eventId = currentEventId();
+
+    const result = await withProgressNotification('series', () =>
+      api.planChoreSeries(eventId, plan),
+    );
+    await reload();
+
+    return result;
+  }
+
+  async function deleteMany(query: ChoreAssignmentBulkDeleteQuery) {
+    const eventId = currentEventId();
+
+    const count = await withProgressNotification('deleteMany', () =>
+      api.deleteChoreAssignments(eventId, query),
+    );
+    await reload();
+
+    return count;
+  }
+
+  async function removePerson(removal: ChoreRemovePersonData) {
+    const eventId = currentEventId();
+
+    const result = await withProgressNotification('removePerson', () =>
+      api.removePersonFromChores(eventId, removal),
+    );
+    await reload();
+
+    return result;
+  }
+
   return {
     reset,
     data,
@@ -122,8 +196,15 @@ export const useChoreAssignmentStore = defineStore('choreAssignment', () => {
     error,
     fetchData,
     fetchSuggestions,
+    fetchFairness,
+    previewMembers,
     createData,
     updateData,
+    setStatusMany,
+    fillData,
     deleteData,
+    planSeries,
+    deleteMany,
+    removePerson,
   };
 });

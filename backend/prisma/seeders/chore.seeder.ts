@@ -1,4 +1,9 @@
-import type { Chore } from '#generated/prisma/client.js';
+import type {
+  Chore,
+  ChoreEffort,
+  ChoreEligibility,
+  ChoreSlot,
+} from '#generated/prisma/client.js';
 import prisma from '../client';
 import { ChoreFactory, ChoreAssignmentFactory } from '../factories';
 import { BaseSeeder } from './BaseSeeder';
@@ -6,11 +11,21 @@ import { EVENT_IDS } from './ids';
 import { eventLocales, forLocales } from './locales';
 import { seedDate } from './timeline';
 
+interface ChoreSlotData {
+  name: string | Record<string, string>;
+  time?: string;
+  headcount?: number;
+  effort?: ChoreEffort;
+}
+
 interface ChoreData {
   name: string | Record<string, string>;
   defaultCount?: number;
-  excludeStaff?: boolean;
+  supervisorCount?: number;
+  eligibility?: ChoreEligibility;
+  effort?: ChoreEffort;
   balanceCountries?: boolean;
+  slots?: ChoreSlotData[];
 }
 
 interface ChoreAssignmentData {
@@ -18,7 +33,8 @@ interface ChoreAssignmentData {
   choreIndex: number;
   /** Days from the moment the seed ran — not from the event's start. */
   day: number;
-  slot?: string | null;
+  /** Index into the chore's slots. */
+  slot?: number;
   rotationUnit: 'PARTICIPANT' | 'ROOM';
   /** Accepted registrations to staff it with, taken in order; omit for an
    * unstaffed occurrence (the planner highlights those). */
@@ -33,13 +49,39 @@ const SUMMER_CHORES: ChoreData[] = [
   {
     name: { en: 'Kitchen Duty', fr: 'Service de cuisine' },
     defaultCount: 4,
-    excludeStaff: true,
+    eligibility: 'PARTICIPANTS',
     balanceCountries: true,
+    slots: [
+      {
+        name: { en: 'Breakfast', fr: 'Petit-déjeuner' },
+        time: '07:30',
+        headcount: 2,
+        effort: 'LIGHT',
+      },
+      { name: { en: 'Lunch', fr: 'Déjeuner' }, time: '12:00' },
+      { name: { en: 'Dinner', fr: 'Dîner' }, time: '18:00' },
+    ],
   },
-  { name: { en: 'Dishwashing', fr: 'Vaisselle' }, defaultCount: 2 },
+  {
+    name: { en: 'Dishwashing', fr: 'Vaisselle' },
+    defaultCount: 2,
+    supervisorCount: 1,
+    effort: 'HEAVY',
+    slots: [
+      { name: { en: 'Lunch', fr: 'Déjeuner' }, time: '13:00' },
+      { name: { en: 'Dinner', fr: 'Dîner' }, time: '19:00' },
+    ],
+  },
   {
     name: { en: 'Trash & Recycling', fr: 'Poubelles et recyclage' },
     defaultCount: 2,
+    effort: 'LIGHT',
+  },
+  {
+    name: { en: 'Night Watch', fr: 'Veille de nuit' },
+    defaultCount: 1,
+    eligibility: 'STAFF',
+    effort: 'HEAVY',
   },
 ];
 
@@ -47,44 +89,43 @@ const SUMMER_ASSIGNMENTS: ChoreAssignmentData[] = [
   {
     choreIndex: 0,
     day: 95,
-    slot: 'Lunch',
+    slot: 1,
     rotationUnit: 'ROOM',
     roomIndex: 0,
   },
   {
     choreIndex: 0,
     day: 96,
-    slot: 'Dinner',
+    slot: 2,
     rotationUnit: 'PARTICIPANT',
     memberCount: 4,
   },
   {
     choreIndex: 0,
     day: 97,
-    slot: 'Breakfast',
+    slot: 0,
     rotationUnit: 'ROOM',
     roomIndex: 1,
   },
   {
     choreIndex: 1,
     day: 95,
-    slot: 'Dinner',
+    slot: 1,
     rotationUnit: 'PARTICIPANT',
     memberCount: 2,
   },
   {
     choreIndex: 1,
     day: 96,
-    slot: 'Lunch',
+    slot: 0,
     rotationUnit: 'PARTICIPANT',
     memberCount: 2,
   },
   // Unstaffed — the roster highlights this one until someone picks it up.
-  { choreIndex: 2, day: 96, slot: null, rotationUnit: 'PARTICIPANT' },
+  { choreIndex: 2, day: 96, rotationUnit: 'PARTICIPANT' },
   {
     choreIndex: 2,
     day: 99,
-    slot: null,
     rotationUnit: 'PARTICIPANT',
     memberCount: 2,
   },
@@ -93,27 +134,34 @@ const SUMMER_ASSIGNMENTS: ChoreAssignmentData[] = [
 // Started two days ago: gives the roster both a past occurrence (tucked
 // behind the "past duties" toggle) and upcoming ones, in the same event.
 const CITY_CHORES: ChoreData[] = [
-  { name: 'Küchendienst', defaultCount: 3 },
-  { name: 'Gemeinschaftsraum aufräumen', defaultCount: 2 },
+  {
+    name: 'Küchendienst',
+    defaultCount: 3,
+    slots: [
+      { name: 'Mittagessen', time: '12:30' },
+      { name: 'Abendessen', time: '18:30' },
+    ],
+  },
+  { name: 'Gemeinschaftsraum aufräumen', defaultCount: 2, effort: 'LIGHT' },
 ];
 
 const CITY_ASSIGNMENTS: ChoreAssignmentData[] = [
   {
     choreIndex: 0,
     day: -2,
-    slot: 'Abendessen',
+    slot: 1,
     rotationUnit: 'PARTICIPANT',
     memberCount: 3,
   },
-  { choreIndex: 1, day: -1, slot: null, rotationUnit: 'PARTICIPANT' },
+  { choreIndex: 1, day: -1, rotationUnit: 'PARTICIPANT' },
   {
     choreIndex: 0,
     day: 1,
-    slot: 'Mittagessen',
+    slot: 0,
     rotationUnit: 'PARTICIPANT',
     memberCount: 3,
   },
-  { choreIndex: 1, day: 3, slot: null, rotationUnit: 'ROOM', roomIndex: 0 },
+  { choreIndex: 1, day: 3, rotationUnit: 'ROOM', roomIndex: 0 },
 ];
 
 class ChoreSeeder extends BaseSeeder {
@@ -136,7 +184,7 @@ class ChoreSeeder extends BaseSeeder {
     });
     const locales = eventLocales(event);
 
-    const createdChores: Chore[] = [];
+    const createdChores: (Chore & { slots: ChoreSlot[] })[] = [];
     for (const [index, chore] of chores.entries()) {
       createdChores.push(
         await ChoreFactory.create({
@@ -144,8 +192,21 @@ class ChoreSeeder extends BaseSeeder {
           name: forLocales(chore.name, locales),
           sortOrder: index,
           defaultCount: chore.defaultCount,
-          excludeStaff: chore.excludeStaff,
+          supervisorCount: chore.supervisorCount,
+          eligibility: chore.eligibility,
+          effort: chore.effort,
           balanceCountries: chore.balanceCountries,
+          slots: {
+            createMany: {
+              data: (chore.slots ?? []).map((slot, sortOrder) => ({
+                name: forLocales(slot.name, locales),
+                time: slot.time,
+                headcount: slot.headcount,
+                effort: slot.effort,
+                sortOrder,
+              })),
+            },
+          },
         }),
       );
     }
@@ -184,12 +245,16 @@ class ChoreSeeder extends BaseSeeder {
         participantCursor += assignment.memberCount;
       }
 
+      const slot =
+        assignment.slot !== undefined
+          ? chore.slots[assignment.slot]
+          : undefined;
       await ChoreAssignmentFactory.create({
         event: { connect: { id: eventId } },
         chore: { connect: { id: chore.id } },
         rotationUnit: assignment.rotationUnit,
         date: seedDate(assignment.day),
-        slot: assignment.slot ?? null,
+        ...(slot ? { choreSlot: { connect: { id: slot.id } } } : {}),
         members: {
           createMany: {
             data: registrationIds.map((registrationId) => ({

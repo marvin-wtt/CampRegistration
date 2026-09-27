@@ -34,16 +34,9 @@ export class ChoreController extends BaseController {
 
   async store(req: Request, res: Response) {
     const event = req.modelOrFail('event');
-    const {
-      body: { name, defaultCount, excludeStaff, balanceCountries },
-    } = await req.validate(validator.store);
+    const { body } = await req.validate(validator.store);
 
-    const chore = await this.choreService.createChore(event.id, {
-      name,
-      defaultCount,
-      excludeStaff,
-      balanceCountries,
-    });
+    const chore = await this.choreService.createChore(event.id, body);
 
     void this.realtimeService.emit(event.id, 'chore', chore.id, 'created');
 
@@ -53,17 +46,12 @@ export class ChoreController extends BaseController {
   async update(req: Request, res: Response) {
     const event = req.modelOrFail('event');
     const chore = req.modelOrFail('chore');
-    const {
-      body: { name, sortOrder, defaultCount, excludeStaff, balanceCountries },
-    } = await req.validate(validator.update);
+    const { body } = await req.validate(validator.update);
 
-    const updatedChore = await this.choreService.updateChoreById(chore.id, {
-      name,
-      sortOrder,
-      defaultCount,
-      excludeStaff,
-      balanceCountries,
-    });
+    const updatedChore = await this.choreService.updateChoreById(
+      chore.id,
+      body,
+    );
 
     void this.realtimeService.emit(
       event.id,

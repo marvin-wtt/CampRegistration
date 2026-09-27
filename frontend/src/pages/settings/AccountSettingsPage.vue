@@ -5,13 +5,13 @@
     :error
     class="row justify-center"
   >
-    <div class="settings-shell column col-12 col-sm-10 col-md-8 q-gutter-md">
-      <div class="page-title">
-        <div class="text-h5 text-weight-medium">{{ t('title') }}</div>
-        <div class="text-body2 text-on-surface-variant q-mt-xs">
-          {{ t('subtitle') }}
-        </div>
-      </div>
+    <div
+      class="settings-shell column no-wrap col-12 col-sm-10 col-md-8 q-gutter-md"
+    >
+      <page-header
+        :title="t('title')"
+        :subtitle="t('subtitle')"
+      />
 
       <template v-if="user">
         <q-card
@@ -45,6 +45,7 @@
 </template>
 
 <script lang="ts" setup>
+import PageHeader from '@/components/common/PageHeader.vue';
 import { useProfileStore } from '@/stores/profile-store';
 import { useQuasar } from 'quasar';
 import { storeToRefs } from 'pinia';

@@ -16,6 +16,7 @@ export const ChoreFactory = {
   create: async (data: Partial<Prisma.ChoreCreateInput> = {}) => {
     return prisma.chore.create({
       data: ChoreFactory.build(data),
+      include: { slots: { orderBy: { sortOrder: 'asc' } } },
     });
   },
 };

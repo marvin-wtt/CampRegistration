@@ -39,6 +39,10 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
     });
   };
 
+  const createSlot = async (choreId: string, name = 'Lunch') => {
+    return prisma.choreSlot.create({ data: { choreId, name } });
+  };
+
   const createRegistration = async (
     event: Event,
     data?: Partial<Parameters<typeof RegistrationFactory.create>[0]>,
@@ -74,10 +78,11 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
         const { event, accessToken } =
           await createEventWithManagerAndToken(role);
         const chore = await createChore(event);
+        const slot = await createSlot(chore.id);
         const registration = await createRegistration(event);
         await createAssignment(event, chore.id, {
           date: '2026-09-01',
-          slot: 'Lunch',
+          choreSlot: { connect: { id: slot.id } },
           members: { create: [{ registrationId: registration.id }] },
         });
 
@@ -94,8 +99,12 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
         expect(item).toHaveProperty('chore.name', chore.name);
         expect(item).toHaveProperty('rotationUnit', 'PARTICIPANT');
         expect(item).toHaveProperty('date', '2026-09-01');
-        expect(item).toHaveProperty('slot', 'Lunch');
-        expect(item.registrationIds).toEqual([registration.id]);
+        expect(item).toHaveProperty('slotId', slot.id);
+        expect(item).toHaveProperty('status', 'PLANNED');
+        expect(item).toHaveProperty('note', null);
+        expect(item.members).toEqual([
+          { registrationId: registration.id, role: 'MEMBER', missed: false },
+        ]);
       },
     );
 
@@ -234,9 +243,9 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
       );
     });
 
-    it('excludes staff from PARTICIPANT candidates when excludeStaff is set', async () => {
+    it('excludes staff from PARTICIPANT candidates for a participant duty', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
-      const chore = await createChore(event, { excludeStaff: true });
+      const chore = await createChore(event, { eligibility: 'PARTICIPANTS' });
       const participant = await createRegistration(event, {
         role: 'participant',
       });
@@ -398,9 +407,9 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
       expect(candidate).toHaveProperty('assignmentCount', 0);
     });
 
-    it('excludes staff-only rooms from ROOM candidates when excludeStaff is set', async () => {
+    it('excludes staff-only rooms from ROOM candidates for a participant duty', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
-      const chore = await createChore(event, { excludeStaff: true });
+      const chore = await createChore(event, { eligibility: 'PARTICIPANTS' });
 
       const participantRoom = await RoomFactory.create({
         event: { connect: { id: event.id } },
@@ -547,6 +556,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
     it('should create an assignment with a rotationUnit and members', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
       const chore = await createChore(event);
+      const slot = await createSlot(chore.id, 'Breakfast');
       const registration = await createRegistration(event);
 
       const { body } = await request()
@@ -555,15 +565,84 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
           choreId: chore.id,
           rotationUnit: 'ROOM',
           date: '2026-09-01',
-          slot: 'Breakfast',
-          registrationIds: [registration.id],
+          slotId: slot.id,
+          note: 'Bring gloves',
+          members: [{ registrationId: registration.id }],
         })
         .auth(accessToken, { type: 'bearer' })
         .expect(201);
 
       expect(body).toHaveProperty('data.rotationUnit', 'ROOM');
-      expect(body).toHaveProperty('data.slot', 'Breakfast');
-      expect(body.data.registrationIds).toEqual([registration.id]);
+      expect(body).toHaveProperty('data.slotId', slot.id);
+      expect(body).toHaveProperty('data.note', 'Bring gloves');
+      expect(body.data.members).toEqual([
+        { registrationId: registration.id, role: 'MEMBER', missed: false },
+      ]);
+    });
+
+    it('should respond with `400` when the slot belongs to another chore', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const chore = await createChore(event);
+      const otherSlot = await createSlot((await createChore(event)).id);
+
+      await request()
+        .post(`/api/v1/events/${event.id}/chore-assignments`)
+        .send({
+          choreId: chore.id,
+          rotationUnit: 'PARTICIPANT',
+          date: '2026-09-01',
+          slotId: otherSlot.id,
+        })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(400);
+    });
+
+    it('should auto-fill members and supervisors from the slot', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const chore = await createChore(event, {
+        eligibility: 'PARTICIPANTS',
+        supervisorCount: 1,
+      });
+      const slot = await prisma.choreSlot.create({
+        data: { choreId: chore.id, name: 'Dinner', headcount: 2 },
+      });
+      const busy = await createRegistration(event, { role: 'participant' });
+      const fresh = await createRegistration(event, { role: 'participant' });
+      const alsoFresh = await createRegistration(event, {
+        role: 'participant',
+      });
+      const counselor = await createRegistration(event, { role: 'counselor' });
+      // Already did a duty — the other two are fairer picks.
+      await createAssignment(event, chore.id, {
+        date: '2026-08-01',
+        members: { create: [{ registrationId: busy.id }] },
+      });
+
+      const { body } = await request()
+        .post(`/api/v1/events/${event.id}/chore-assignments`)
+        .send({
+          choreId: chore.id,
+          rotationUnit: 'PARTICIPANT',
+          date: '2026-09-01',
+          slotId: slot.id,
+          autoFill: true,
+        })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(201);
+
+      const members = body.data.members as {
+        registrationId: string;
+        role: string;
+      }[];
+      expect(
+        members
+          .filter((m) => m.role === 'MEMBER')
+          .map((m) => m.registrationId)
+          .sort(),
+      ).toEqual([fresh.id, alsoFresh.id].sort());
+      expect(members.filter((m) => m.role === 'SUPERVISOR')).toEqual([
+        { registrationId: counselor.id, role: 'SUPERVISOR', missed: false },
+      ]);
     });
 
     it('should respond with `404` when choreId belongs to another event', async () => {
@@ -596,7 +675,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
           choreId: chore.id,
           rotationUnit: 'PARTICIPANT',
           date: '2026-09-01',
-          registrationIds: [otherRegistration.id],
+          members: [{ registrationId: otherRegistration.id }],
         })
         .auth(accessToken, { type: 'bearer' })
         .expect(400);
@@ -672,7 +751,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
           .patch(
             `/api/v1/events/${event.id}/chore-assignments/${assignment.id}`,
           )
-          .send({ slot: 'Dinner' })
+          .send({ note: 'Dinner' })
           .auth(accessToken, { type: 'bearer' })
           .expect(expectedStatus);
       },
@@ -734,14 +813,16 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
 
       const { body } = await request()
         .patch(`/api/v1/events/${event.id}/chore-assignments/${assignment.id}`)
-        .send({ registrationIds: [newMember.id] })
+        .send({ members: [{ registrationId: newMember.id }] })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
-      expect(body.data.registrationIds).toEqual([newMember.id]);
+      expect(body.data.members).toEqual([
+        { registrationId: newMember.id, role: 'MEMBER', missed: false },
+      ]);
     });
 
-    it('should leave membership untouched when registrationIds is omitted', async () => {
+    it('should update status, note and missed members', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
       const chore = await createChore(event);
       const member = await createRegistration(event);
@@ -751,11 +832,36 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
 
       const { body } = await request()
         .patch(`/api/v1/events/${event.id}/chore-assignments/${assignment.id}`)
-        .send({ slot: 'Dinner' })
+        .send({
+          status: 'DONE',
+          note: 'Went well',
+          members: [{ registrationId: member.id, missed: true }],
+        })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
-      expect(body.data.registrationIds).toEqual([member.id]);
+      expect(body).toHaveProperty('data.status', 'DONE');
+      expect(body).toHaveProperty('data.note', 'Went well');
+      expect(body.data.members[0]).toHaveProperty('missed', true);
+    });
+
+    it('should leave membership untouched when members is omitted', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const chore = await createChore(event);
+      const member = await createRegistration(event);
+      const assignment = await createAssignment(event, chore.id, {
+        members: { create: [{ registrationId: member.id }] },
+      });
+
+      const { body } = await request()
+        .patch(`/api/v1/events/${event.id}/chore-assignments/${assignment.id}`)
+        .send({ note: 'Dinner' })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body.data.members).toEqual([
+        { registrationId: member.id, role: 'MEMBER', missed: false },
+      ]);
     });
 
     it('should respond with `404` when the assignment does not exist', async () => {
@@ -763,7 +869,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
 
       await request()
         .patch(`/api/v1/events/${event.id}/chore-assignments/${ulid()}`)
-        .send({ slot: 'Dinner' })
+        .send({ note: 'Dinner' })
         .auth(accessToken, { type: 'bearer' })
         .expect(404);
     });
@@ -818,6 +924,426 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
         .delete(`/api/v1/events/${event.id}/chore-assignments/${ulid()}`)
         .auth(accessToken, { type: 'bearer' })
         .expect(404);
+    });
+  });
+
+  describe('POST /api/v1/events/:eventId/chore-assignments/:choreAssignmentId/fill', () => {
+    it('tops up to the headcount without touching existing members', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const chore = await createChore(event, { defaultCount: 2 });
+      const existing = await createRegistration(event);
+      const other = await createRegistration(event);
+      const assignment = await createAssignment(event, chore.id, {
+        date: '2026-09-01',
+        members: { create: [{ registrationId: existing.id }] },
+      });
+
+      const { body } = await request()
+        .post(
+          `/api/v1/events/${event.id}/chore-assignments/${assignment.id}/fill`,
+        )
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      const ids = body.data.members.map(
+        (m: { registrationId: string }) => m.registrationId,
+      ) as string[];
+      expect(ids.sort()).toEqual([existing.id, other.id].sort());
+    });
+
+    it('should respond with `403` when user is VIEWER', async () => {
+      const { event, accessToken } =
+        await createEventWithManagerAndToken('VIEWER');
+      const chore = await createChore(event, { defaultCount: 1 });
+      const assignment = await createAssignment(event, chore.id);
+
+      await request()
+        .post(
+          `/api/v1/events/${event.id}/chore-assignments/${assignment.id}/fill`,
+        )
+        .auth(accessToken, { type: 'bearer' })
+        .expect(403);
+    });
+  });
+
+  describe('POST /api/v1/events/:eventId/chore-assignments/series', () => {
+    const planSeries = async (
+      eventId: string,
+      accessToken: string,
+      body: Record<string, unknown>,
+      expectedStatus = 201,
+    ) =>
+      request()
+        .post(`/api/v1/events/${eventId}/chore-assignments/series`)
+        .send({ rotationUnit: 'PARTICIPANT', onConflict: 'SKIP', ...body })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(expectedStatus);
+
+    it('plans one duty per day and slot, spread evenly', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const chore = await createChore(event, { defaultCount: 1 });
+      const breakfast = await createSlot(chore.id, 'Breakfast');
+      const dinner = await createSlot(chore.id, 'Dinner');
+      const people = await Promise.all(
+        [1, 2, 3].map(() => createRegistration(event)),
+      );
+
+      const { body } = await planSeries(event.id, accessToken, {
+        choreId: chore.id,
+        slotIds: [breakfast.id, dinner.id],
+        from: '2026-09-01',
+        to: '2026-09-03',
+      });
+
+      expect(body.data).toMatchObject({ created: 6, filled: 0, skipped: 0 });
+      const assignments = await prisma.choreAssignment.findMany({
+        include: { members: true },
+      });
+      expect(assignments).toHaveLength(6);
+      expect(new Set(assignments.map((a) => a.batchId))).toEqual(
+        new Set([body.data.batchId]),
+      );
+
+      const counts = people.map(
+        (person) =>
+          assignments.filter((a) =>
+            a.members.some((m) => m.registrationId === person.id),
+          ).length,
+      );
+      expect(counts).toEqual([2, 2, 2]);
+    });
+
+    it('honours the weekday filter', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const chore = await createChore(event);
+
+      // 2026-09-05 is a Saturday, 2026-09-06 a Sunday.
+      const { body } = await planSeries(event.id, accessToken, {
+        choreId: chore.id,
+        slotIds: [],
+        from: '2026-09-04',
+        to: '2026-09-07',
+        weekdays: [0, 6],
+      });
+
+      expect(body.data.created).toBe(2);
+      const dates = (await prisma.choreAssignment.findMany()).map((a) =>
+        a.date.toISOString().slice(0, 10),
+      );
+      expect(dates.sort()).toEqual(['2026-09-05', '2026-09-06']);
+    });
+
+    it.each([
+      { onConflict: 'SKIP', created: 1, filled: 0, skipped: 1, members: 1 },
+      { onConflict: 'FILL', created: 1, filled: 1, skipped: 0, members: 2 },
+      { onConflict: 'REPLACE', created: 2, filled: 0, skipped: 0, members: 2 },
+    ])(
+      'handles an existing duty with $onConflict',
+      async ({ onConflict, created, filled, skipped, members }) => {
+        const { event, accessToken } = await createEventWithManagerAndToken();
+        const chore = await createChore(event, { defaultCount: 2 });
+        const kept = await createRegistration(event);
+        await Promise.all([1, 2, 3].map(() => createRegistration(event)));
+        await createAssignment(event, chore.id, {
+          date: '2026-09-01',
+          members: { create: [{ registrationId: kept.id }] },
+        });
+
+        const { body } = await planSeries(event.id, accessToken, {
+          choreId: chore.id,
+          slotIds: [],
+          from: '2026-09-01',
+          to: '2026-09-02',
+          onConflict,
+        });
+
+        expect(body.data).toMatchObject({ created, filled, skipped });
+        const first = await prisma.choreAssignment.findFirstOrThrow({
+          where: { date: new Date('2026-09-01') },
+          include: { members: true },
+        });
+        expect(first.members).toHaveLength(members);
+      },
+    );
+
+    it('never touches a duty that is already done', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const chore = await createChore(event, { defaultCount: 1 });
+      await createRegistration(event);
+      const done = await createAssignment(event, chore.id, {
+        date: '2026-09-01',
+        status: 'DONE',
+      });
+
+      const { body } = await planSeries(event.id, accessToken, {
+        choreId: chore.id,
+        slotIds: [],
+        from: '2026-09-01',
+        to: '2026-09-01',
+        onConflict: 'REPLACE',
+      });
+
+      expect(body.data).toMatchObject({ created: 0, skipped: 1 });
+      expect(body.data.batchId).toBeNull();
+      await expect(
+        prisma.choreAssignment.findUnique({ where: { id: done.id } }),
+      ).resolves.not.toBeNull();
+    });
+
+    it.each([
+      { role: 'COUNSELOR', expectedStatus: 201 },
+      { role: 'VIEWER', expectedStatus: 403 },
+    ])(
+      'should respond with `$expectedStatus` when user is $role',
+      async ({ role, expectedStatus }) => {
+        const { event, accessToken } =
+          await createEventWithManagerAndToken(role);
+        const chore = await createChore(event);
+
+        await planSeries(
+          event.id,
+          accessToken,
+          {
+            choreId: chore.id,
+            slotIds: [],
+            from: '2026-09-01',
+            to: '2026-09-01',
+          },
+          expectedStatus,
+        );
+      },
+    );
+
+    it.each([
+      { label: 'the range is reversed', from: '2026-09-05', to: '2026-09-01' },
+      { label: 'the range is too long', from: '2026-01-01', to: '2027-12-31' },
+    ])('should respond with `400` when $label', async ({ from, to }) => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const chore = await createChore(event);
+
+      await planSeries(
+        event.id,
+        accessToken,
+        { choreId: chore.id, slotIds: [], from, to },
+        400,
+      );
+    });
+  });
+
+  describe('DELETE /api/v1/events/:eventId/chore-assignments', () => {
+    it('deletes a whole series by batch', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const chore = await createChore(event);
+      const batchId = ulid();
+      await createAssignment(event, chore.id, { batchId });
+      await createAssignment(event, chore.id, { batchId });
+      await createAssignment(event, chore.id);
+
+      const { body } = await request()
+        .delete(`/api/v1/events/${event.id}/chore-assignments`)
+        .query({ batchId })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body.data.count).toBe(2);
+      expect(await prisma.choreAssignment.count()).toBe(1);
+    });
+
+    it('deletes by chore and date range', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const chore = await createChore(event);
+      const other = await createChore(event);
+      await createAssignment(event, chore.id, { date: '2026-09-01' });
+      await createAssignment(event, chore.id, { date: '2026-09-05' });
+      await createAssignment(event, other.id, { date: '2026-09-01' });
+
+      await request()
+        .delete(`/api/v1/events/${event.id}/chore-assignments`)
+        .query({ choreId: chore.id, from: '2026-09-01', to: '2026-09-02' })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(await prisma.choreAssignment.count()).toBe(2);
+    });
+
+    it('does not delete duties of another event', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const otherEvent = await EventFactory.create();
+      const otherChore = await createChore(otherEvent);
+      await createAssignment(otherEvent, otherChore.id);
+
+      await request()
+        .delete(`/api/v1/events/${event.id}/chore-assignments`)
+        .query({ choreId: otherChore.id })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(await prisma.choreAssignment.count()).toBe(1);
+    });
+
+    it('should respond with `400` without a filter', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const chore = await createChore(event);
+      await createAssignment(event, chore.id);
+
+      await request()
+        .delete(`/api/v1/events/${event.id}/chore-assignments`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(400);
+
+      expect(await prisma.choreAssignment.count()).toBe(1);
+    });
+
+    it('should respond with `403` when user is VIEWER', async () => {
+      const { event, accessToken } =
+        await createEventWithManagerAndToken('VIEWER');
+
+      await request()
+        .delete(`/api/v1/events/${event.id}/chore-assignments`)
+        .query({ batchId: ulid() })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(403);
+    });
+  });
+
+  describe('POST /api/v1/events/:eventId/chore-assignments/remove-person', () => {
+    const membersOf = async (choreAssignmentId: string) =>
+      (
+        await prisma.choreAssignmentMember.findMany({
+          where: { choreAssignmentId },
+        })
+      ).map((member) => member.registrationId);
+
+    it('removes the person from planned duties in the range and refills', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const chore = await createChore(event);
+      const sick = await createRegistration(event);
+      const replacement = await createRegistration(event);
+      const before = await createAssignment(event, chore.id, {
+        date: '2026-08-31',
+        members: { create: [{ registrationId: sick.id }] },
+      });
+      const inRange = await createAssignment(event, chore.id, {
+        date: '2026-09-01',
+        members: { create: [{ registrationId: sick.id }] },
+      });
+      const done = await createAssignment(event, chore.id, {
+        date: '2026-09-02',
+        status: 'DONE',
+        members: { create: [{ registrationId: sick.id }] },
+      });
+
+      const { body } = await request()
+        .post(`/api/v1/events/${event.id}/chore-assignments/remove-person`)
+        .send({ registrationId: sick.id, from: '2026-09-01', replace: true })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body.data).toEqual({ removed: 1, replaced: 1 });
+      expect(await membersOf(before.id)).toEqual([sick.id]);
+      expect(await membersOf(inRange.id)).toEqual([replacement.id]);
+      expect(await membersOf(done.id)).toEqual([sick.id]);
+    });
+
+    it('only removes when replace is off', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const chore = await createChore(event);
+      const sick = await createRegistration(event);
+      await createRegistration(event);
+      const assignment = await createAssignment(event, chore.id, {
+        date: '2026-09-01',
+        members: { create: [{ registrationId: sick.id }] },
+      });
+
+      const { body } = await request()
+        .post(`/api/v1/events/${event.id}/chore-assignments/remove-person`)
+        .send({ registrationId: sick.id, from: '2026-09-01', replace: false })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body.data).toEqual({ removed: 1, replaced: 0 });
+      expect(await membersOf(assignment.id)).toEqual([]);
+    });
+
+    it('should respond with `400` for a registration of another event', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const other = await createRegistration(await EventFactory.create());
+
+      await request()
+        .post(`/api/v1/events/${event.id}/chore-assignments/remove-person`)
+        .send({ registrationId: other.id, from: '2026-09-01', replace: true })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(400);
+    });
+  });
+
+  describe('GET /api/v1/events/:eventId/chore-assignments/fairness', () => {
+    it('reports duties, supervisions and missed duties per person', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const chore = await createChore(event, { effort: 'HEAVY' });
+      const participant = await createRegistration(event, {
+        role: 'participant',
+      });
+      const idle = await createRegistration(event, { role: 'participant' });
+      const counselor = await createRegistration(event, { role: 'counselor' });
+      await createAssignment(event, chore.id, {
+        members: {
+          create: [
+            { registrationId: participant.id },
+            { registrationId: counselor.id, role: 'SUPERVISOR' },
+            { registrationId: idle.id, missed: true },
+          ],
+        },
+      });
+
+      const { body } = await request()
+        .get(`/api/v1/events/${event.id}/chore-assignments/fairness`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      const byId = new Map(
+        (body.data as { registrationId: string }[]).map((entry) => [
+          entry.registrationId,
+          entry,
+        ]),
+      );
+      expect(byId.get(participant.id)).toMatchObject({
+        dutyCount: 1,
+        heavyCount: 1,
+        balance: 'ABOVE',
+      });
+      expect(byId.get(idle.id)).toMatchObject({
+        dutyCount: 0,
+        missedCount: 1,
+        balance: 'BELOW',
+      });
+      expect(byId.get(counselor.id)).toMatchObject({
+        dutyCount: 0,
+        supervisionCount: 1,
+      });
+    });
+  });
+
+  describe('POST /api/v1/events/:eventId/chore-assignments/preview', () => {
+    it('suggests members without saving anything', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const chore = await createChore(event);
+      await Promise.all([1, 2, 3].map(() => createRegistration(event)));
+
+      const { body } = await request()
+        .post(`/api/v1/events/${event.id}/chore-assignments/preview`)
+        .send({
+          choreId: chore.id,
+          date: '2026-09-01',
+          rotationUnit: 'PARTICIPANT',
+          headcount: 2,
+          members: [],
+        })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body.data).toHaveLength(2);
+      expect(await prisma.choreAssignment.count()).toBe(0);
     });
   });
 });

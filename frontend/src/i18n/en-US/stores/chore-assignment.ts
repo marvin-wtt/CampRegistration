@@ -19,4 +19,24 @@ export default {
     error: 'Failed to delete duty assignment',
     invalid: 'Invalid event id',
   },
+  fill: {
+    progress: 'Filling open spots...',
+    success: 'Open spots filled',
+    error: 'Failed to fill open spots',
+  },
+  series: {
+    progress: 'Planning duties...',
+    success: 'Duties planned',
+    error: 'Failed to plan duties',
+  },
+  deleteMany: {
+    progress: 'Deleting duties...',
+    success: 'Duties deleted',
+    error: 'Failed to delete duties',
+  },
+  removePerson: {
+    progress: 'Removing from duties...',
+    success: 'Removed from duties',
+    error: 'Failed to remove from duties',
+  },
 };

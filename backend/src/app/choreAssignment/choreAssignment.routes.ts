@@ -1,4 +1,5 @@
 import { auth, guard } from '#middlewares/index';
+import { and, or } from '#core/guard';
 import { hasEventPermission } from '#app/event/event.guard';
 import { choreFromBody } from './choreAssignment.middleware.js';
 import { ChoreAssignmentController } from './choreAssignment.controller.js';
@@ -36,12 +37,44 @@ export class ChoreAssignmentRouter extends ModuleRouter {
       guard(hasEventPermission('event.chore_assignments.view')),
       controller(this.choreAssignmentController, 'index'),
     );
-    // Must be registered before '/:choreAssignmentId' — otherwise Express would
-    // match this path as a (nonexistent) assignment id.
+    // Fixed paths must be registered before '/:choreAssignmentId' — otherwise
+    // Express would match them as a (nonexistent) assignment id.
     this.router.get(
       '/suggestions',
       guard(hasEventPermission('event.chore_assignments.view')),
       controller(this.choreAssignmentController, 'suggestions'),
+    );
+    this.router.get(
+      '/fairness',
+      guard(hasEventPermission('event.chore_assignments.view')),
+      controller(this.choreAssignmentController, 'fairness'),
+    );
+    this.router.post(
+      '/preview',
+      choreFromBody(),
+      guard(hasEventPermission('event.chore_assignments.view')),
+      controller(this.choreAssignmentController, 'preview'),
+    );
+    this.router.post(
+      '/series',
+      choreFromBody(),
+      guard(
+        and(
+          hasEventPermission('event.chore_assignments.create'),
+          // Replacing deletes the planned duties it replaces.
+          or(
+            (req) =>
+              (req.body as { onConflict?: unknown }).onConflict !== 'REPLACE',
+            hasEventPermission('event.chore_assignments.delete'),
+          ),
+        ),
+      ),
+      controller(this.choreAssignmentController, 'series'),
+    );
+    this.router.post(
+      '/remove-person',
+      guard(hasEventPermission('event.chore_assignments.edit')),
+      controller(this.choreAssignmentController, 'removePerson'),
     );
     this.router.post(
       '/',
@@ -49,10 +82,20 @@ export class ChoreAssignmentRouter extends ModuleRouter {
       guard(hasEventPermission('event.chore_assignments.create')),
       controller(this.choreAssignmentController, 'store'),
     );
+    this.router.delete(
+      '/',
+      guard(hasEventPermission('event.chore_assignments.delete')),
+      controller(this.choreAssignmentController, 'destroyMany'),
+    );
     this.router.get(
       '/:choreAssignmentId',
       guard(hasEventPermission('event.chore_assignments.view')),
       controller(this.choreAssignmentController, 'show'),
+    );
+    this.router.post(
+      '/:choreAssignmentId/fill',
+      guard(hasEventPermission('event.chore_assignments.edit')),
+      controller(this.choreAssignmentController, 'fill'),
     );
     this.router.patch(
       '/:choreAssignmentId',

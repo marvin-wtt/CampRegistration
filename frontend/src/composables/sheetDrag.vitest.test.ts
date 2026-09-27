@@ -136,3 +136,90 @@ describe('useSheetDrag', () => {
     expect(dragging.value).toBe(false);
   });
 });
+
+describe('useSheetDrag with snap heights', () => {
+  // Half and full height of the 800px viewport.
+  const snap = { heights: () => [400, 720] };
+
+  it('opens at the first snap height', () => {
+    const { height, reset } = useSheetDrag(vi.fn(), snap);
+
+    reset();
+
+    expect(height.value).toBe(400);
+  });
+
+  it('grows while dragged up and settles on the nearest height', () => {
+    const { drag, height, reset } = useSheetDrag(vi.fn(), snap);
+    reset();
+
+    drag(pan({ isFirst: true, direction: 'up', offset: { y: -100 } }));
+    expect(height.value).toBe(500);
+
+    drag(pan({ isFinal: true, direction: 'up', offset: { y: -250 } }));
+    expect(height.value).toBe(720);
+  });
+
+  it('springs back to the nearer height when not dragged far enough', () => {
+    const { drag, height, reset } = useSheetDrag(vi.fn(), snap);
+    reset();
+
+    drag(pan({ isFirst: true, direction: 'up', offset: { y: -100 } }));
+    drag(pan({ isFinal: true, direction: 'up', offset: { y: -100 } }));
+
+    expect(height.value).toBe(400);
+  });
+
+  it('moves to the next height on a flick', () => {
+    const { drag, height, reset } = useSheetDrag(vi.fn(), snap);
+    reset();
+
+    drag(pan({ isFirst: true, direction: 'up', offset: { y: -60 } }));
+    drag(
+      pan({
+        isFinal: true,
+        direction: 'up',
+        duration: 120,
+        offset: { y: -60 },
+      }),
+    );
+
+    expect(height.value).toBe(720);
+  });
+
+  it('never grows past the highest snap height', () => {
+    const { drag, height, reset } = useSheetDrag(vi.fn(), snap);
+    reset();
+
+    drag(pan({ isFirst: true, direction: 'up', offset: { y: -900 } }));
+
+    expect(height.value).toBe(720);
+  });
+
+  it('dismisses when pulled well below the lowest height', () => {
+    const dismiss = vi.fn();
+    const { drag, height, offset, reset } = useSheetDrag(dismiss, snap);
+    reset();
+
+    drag(pan({ isFirst: true, offset: { y: 150 } }));
+    expect(height.value).toBe(400);
+    expect(offset.value).toBe(150);
+
+    drag(pan({ isFinal: true, offset: { y: 150 } }));
+    expect(dismiss).toHaveBeenCalledOnce();
+  });
+
+  it('shrinks from full back to the lower height', () => {
+    const dismiss = vi.fn();
+    const { drag, height, reset } = useSheetDrag(dismiss, snap);
+    reset();
+    drag(pan({ isFirst: true, direction: 'up', offset: { y: -320 } }));
+    drag(pan({ isFinal: true, direction: 'up', offset: { y: -320 } }));
+
+    drag(pan({ isFirst: true, offset: { y: 280 } }));
+    drag(pan({ isFinal: true, offset: { y: 280 } }));
+
+    expect(height.value).toBe(400);
+    expect(dismiss).not.toHaveBeenCalled();
+  });
+});
