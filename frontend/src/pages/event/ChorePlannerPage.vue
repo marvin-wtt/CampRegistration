@@ -179,18 +179,51 @@
               flat
               round
               :aria-label="t('nav.previousDay')"
+              :disable="day <= dateRange.min"
               @click="day = addDays(day, -1)"
             />
-            <div
-              class="col text-center text-subtitle1 text-weight-medium ellipsis"
-            >
-              {{ dayTitle }}
+            <div class="col row justify-center no-wrap">
+              <!-- A menu on wide screens, a dialog on phones. -->
+              <q-btn
+                flat
+                rounded
+                no-caps
+                icon-right="arrow_drop_down"
+                class="day-picker-btn text-subtitle1 text-weight-medium"
+                :aria-label="t('nav.pickDay')"
+              >
+                <span class="ellipsis">{{ dayTitle }}</span>
+                <q-popup-proxy
+                  ref="dayPicker"
+                  cover
+                  transition-show="scale"
+                  transition-hide="scale"
+                >
+                  <q-date
+                    :model-value="day"
+                    mask="YYYY-MM-DD"
+                    :options="isPickableDay"
+                    :events="hasDuties"
+                    event-color="primary"
+                    first-day-of-week="1"
+                    @update:model-value="pickDay"
+                  >
+                    <div
+                      class="day-picker-legend row items-center no-wrap text-caption"
+                    >
+                      <span class="day-picker-dot" />
+                      {{ t('nav.daysWithDuties') }}
+                    </div>
+                  </q-date>
+                </q-popup-proxy>
+              </q-btn>
             </div>
             <q-btn
               icon="chevron_right"
               flat
               round
               :aria-label="t('nav.nextDay')"
+              :disable="day >= dateRange.max"
               @click="day = addDays(day, 1)"
             />
           </div>
@@ -268,6 +301,7 @@
               flat
               round
               :aria-label="t('nav.previousWeek')"
+              :disable="weekStart <= mondayOf(dateRange.min)"
               @click="weekStart = addDays(weekStart, -7)"
             />
             <div
@@ -280,6 +314,7 @@
               flat
               round
               :aria-label="t('nav.nextWeek')"
+              :disable="weekStart >= mondayOf(dateRange.max)"
               @click="weekStart = addDays(weekStart, 7)"
             />
           </div>
@@ -456,8 +491,8 @@
 
 <script lang="ts" setup>
 import PageHeader from '@/components/common/PageHeader.vue';
-import { computed, ref } from 'vue';
-import { useQuasar } from 'quasar';
+import { computed, ref, useTemplateRef } from 'vue';
+import { type QPopupProxy, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { useChoreStore } from '@/stores/chore-store';
 import { useChoreAssignmentStore } from '@/stores/chore-assignment-store';
@@ -653,15 +688,63 @@ const focusDate = computed<string>(() => {
   return today;
 });
 
+// Day and Week browse the event plus any duty planned outside it.
+const dateRange = computed<{ min: string; max: string }>(() => {
+  const dates = [
+    focusDate.value,
+    ...(eventStart.value ? [eventStart.value] : []),
+    ...(eventEnd.value ? [eventEnd.value] : []),
+    ...assignments.value.map((a) => a.date),
+  ].sort();
+  return { min: dates[0]!, max: dates.at(-1)! };
+});
+
+function clampDate(date: string, min: string, max: string): string {
+  return date < min ? min : date > max ? max : date;
+}
+
 const chosenDay = ref<string | null>(null);
 const day = computed<string>({
-  get: () => chosenDay.value ?? focusDate.value,
-  set: (value) => (chosenDay.value = value),
+  get: () =>
+    clampDate(
+      chosenDay.value ?? focusDate.value,
+      dateRange.value.min,
+      dateRange.value.max,
+    ),
+  set: (value) =>
+    (chosenDay.value = clampDate(
+      value,
+      dateRange.value.min,
+      dateRange.value.max,
+    )),
 });
 
 const dayAssignments = computed<ChoreAssignment[]>(() =>
   filteredAssignments.value.filter((a) => a.date === day.value),
 );
+
+// Day picker: marks the days that have duties under the current filter.
+const dayPicker = useTemplateRef<QPopupProxy>('dayPicker');
+const dutyDates = computed<Set<string>>(
+  () => new Set(filteredAssignments.value.map((a) => a.date)),
+);
+
+// QDate passes dates as `YYYY/MM/DD`.
+function hasDuties(date: string): boolean {
+  return dutyDates.value.has(date.replaceAll('/', '-'));
+}
+
+function isPickableDay(date: string): boolean {
+  const iso = date.replaceAll('/', '-');
+  return iso >= dateRange.value.min && iso <= dateRange.value.max;
+}
+
+function pickDay(value: string | null) {
+  if (value) {
+    day.value = value;
+    dayPicker.value?.hide();
+  }
+}
 
 const plannedToday = computed<ChoreAssignment[]>(() =>
   dayAssignments.value.filter((a) => a.status === 'PLANNED'),
@@ -689,8 +772,18 @@ function mondayOf(date: string): string {
 
 const chosenWeekStart = ref<string | null>(null);
 const weekStart = computed<string>({
-  get: () => chosenWeekStart.value ?? mondayOf(focusDate.value),
-  set: (value) => (chosenWeekStart.value = value),
+  get: () =>
+    clampDate(
+      chosenWeekStart.value ?? mondayOf(focusDate.value),
+      mondayOf(dateRange.value.min),
+      mondayOf(dateRange.value.max),
+    ),
+  set: (value) =>
+    (chosenWeekStart.value = clampDate(
+      value,
+      mondayOf(dateRange.value.min),
+      mondayOf(dateRange.value.max),
+    )),
 });
 
 function onSwipe({ direction }: { direction?: string }) {
@@ -1161,6 +1254,22 @@ function printWeeks(weekStarts: string[]) {
 </script>
 
 <style scoped>
+.day-picker-btn {
+  max-width: 100%;
+}
+
+.day-picker-legend {
+  gap: 6px;
+  color: var(--md3-on-surface-variant);
+}
+
+.day-picker-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--md3-primary);
+}
+
 .planner-content {
   max-width: 1080px;
   padding-bottom: 24px;
@@ -1231,6 +1340,8 @@ nav:
   previousWeek: 'Previous week'
   nextWeek: 'Next week'
   thisWeek: 'This week'
+  pickDay: 'Pick a day'
+  daysWithDuties: 'Days with duties'
 
 summary:
   duties: 'No duties | 1 duty | {n} duties'
@@ -1291,6 +1402,8 @@ nav:
   previousWeek: 'Vorherige Woche'
   nextWeek: 'Nächste Woche'
   thisWeek: 'Diese Woche'
+  pickDay: 'Tag auswählen'
+  daysWithDuties: 'Tage mit Diensten'
 
 summary:
   duties: 'Keine Dienste | 1 Dienst | {n} Dienste'
@@ -1351,6 +1464,8 @@ nav:
   previousWeek: 'Semaine précédente'
   nextWeek: 'Semaine suivante'
   thisWeek: 'Cette semaine'
+  pickDay: 'Choisir un jour'
+  daysWithDuties: 'Jours avec des corvées'
 
 summary:
   duties: 'Aucune corvée | 1 corvée | {n} corvées'
@@ -1411,6 +1526,8 @@ nav:
   previousWeek: 'Poprzedni tydzień'
   nextWeek: 'Następny tydzień'
   thisWeek: 'Ten tydzień'
+  pickDay: 'Wybierz dzień'
+  daysWithDuties: 'Dni z dyżurami'
 
 summary:
   duties: 'Brak dyżurów | 1 dyżur | {n} dyżurów'
@@ -1471,6 +1588,8 @@ nav:
   previousWeek: 'Předchozí týden'
   nextWeek: 'Další týden'
   thisWeek: 'Tento týden'
+  pickDay: 'Vybrat den'
+  daysWithDuties: 'Dny se službami'
 
 summary:
   duties: 'Žádné služby | 1 služba | {n} služeb'
