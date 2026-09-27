@@ -9,7 +9,7 @@ import {
   planOccurrences,
   type PoolPerson,
   rankPeople,
-} from '#app/choreAssignment/chorePlanner';
+} from '#app/chore-assignment/chore-planner';
 
 const participant = (
   id: string,

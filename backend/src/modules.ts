@@ -28,7 +28,7 @@ import { ProgramPublicModule } from '#app/programPublic/program-public.module';
 import { ProgramPublishedDayModule } from '#app/programPublishedDay/program-published-day.module';
 import { TaskModule } from '#app/task/task.module';
 import { ChoreModule } from '#app/chore/chore.module';
-import { ChoreAssignmentModule } from '#app/choreAssignment/choreAssignment.module';
+import { ChoreAssignmentModule } from '#app/chore-assignment/chore-assignment.module';
 import { SettingModule } from '#app/setting/setting.module';
 import { NewsletterModule } from '#app/newsletter/newsletter.module';
 import { NewsletterSubscriberModule } from '#app/newsletterSubscriber/newsletter-subscriber.module';

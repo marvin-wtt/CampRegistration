@@ -5,7 +5,7 @@ import { ChoreService } from '#app/chore/chore.service';
 
 /**
  * Binds the chore named by `choreId` in the request body, for the routes that
- * take it there rather than in the path (see choreAssignment.routes.ts — the
+ * take it there rather than in the path (see chore-assignment.routes.ts — the
  * chore reference is a mutable field of the assignment, not part of its
  * identity, so it lives in the body like `date`/`slot`). Place it before the
  * route guard, same as `organizationFromBody()`.

@@ -1,14 +1,14 @@
 import httpStatus from 'http-status';
 import ApiError from '#utils/ApiError';
-import { ChoreAssignmentService } from './choreAssignment.service.js';
-import { ChoreAssignmentResource } from './choreAssignment.resource.js';
-import validator from './choreAssignment.validation.js';
+import { ChoreAssignmentService } from './chore-assignment.service.js';
+import { ChoreAssignmentResource } from './chore-assignment.resource.js';
+import validator from './chore-assignment.validation.js';
 import { type Request, type Response } from 'express';
 import { BaseController } from '#core/base/BaseController';
 import { RealtimeService } from '#core/realtime/RealtimeService';
 import { ChoreService } from '#app/chore/chore.service';
 import { RegistrationService } from '#app/registration/registration.service';
-import type { ChoreWithSlots } from '#app/choreAssignment/choreAssignment.types';
+import type { ChoreWithSlots } from '#app/chore-assignment/chore-assignment.types';
 import type { ChoreAssignmentMemberData } from '@camp-registration/common/entities';
 import { inject, injectable } from 'inversify';
 

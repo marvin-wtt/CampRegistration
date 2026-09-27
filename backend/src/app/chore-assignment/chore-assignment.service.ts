@@ -33,11 +33,11 @@ import {
   recordDuty,
   toPersonCandidates,
   toRoomCandidates,
-} from '#app/choreAssignment/chorePlanner';
+} from '#app/chore-assignment/chore-planner';
 import type {
   ChoreAssignmentWithRelations,
   ChoreWithSlots,
-} from '#app/choreAssignment/choreAssignment.types';
+} from '#app/chore-assignment/chore-assignment.types';
 import { ulid } from '#utils/ulid';
 
 const CHORE_ASSIGNMENT_INCLUDE = {

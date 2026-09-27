@@ -27,7 +27,7 @@ import type { TaskWithAssignee } from '#app/task/task.types';
 import type {
   ChoreAssignmentWithRelations,
   ChoreWithSlots,
-} from '#app/choreAssignment/choreAssignment.types';
+} from '#app/chore-assignment/chore-assignment.types';
 
 declare global {
   namespace Express {
