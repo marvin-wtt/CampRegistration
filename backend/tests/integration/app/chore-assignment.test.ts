@@ -1297,7 +1297,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
       expect(await membersOf(assignment.id)).toEqual([]);
     });
 
-    it('should respond with `400` for a registration of another event', async () => {
+    it('should respond with `404` for a registration of another event', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
       const other = await createRegistration(await EventFactory.create());
 
@@ -1307,7 +1307,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
         )
         .query({ from: '2026-09-01', replace: true })
         .auth(accessToken, { type: 'bearer' })
-        .expect(400);
+        .expect(404);
     });
   });
 

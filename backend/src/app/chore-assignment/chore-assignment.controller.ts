@@ -151,16 +151,13 @@ export class ChoreAssignmentController extends BaseController {
 
   async destroyMember(req: Request, res: Response) {
     const event = req.modelOrFail('event');
-    const {
-      params: { registrationId },
-      query,
-    } = await req.validate(validator.destroyMember);
-
-    await this.assertMembersBelongToEvent(event.id, [{ registrationId }]);
+    // Bound within the event — another event's registration is a 404.
+    const registration = req.modelOrFail('registration');
+    const { query } = await req.validate(validator.destroyMember);
 
     const result = await this.choreAssignmentService.removeMember(
       event.id,
-      registrationId,
+      registration.id,
       query,
     );
 
