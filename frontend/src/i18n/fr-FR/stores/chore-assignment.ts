@@ -37,7 +37,8 @@ export default {
   rebalance: {
     progress: 'Rééquilibrage des corvées...',
     success: 'Corvées rééquilibrées',
-    error: 'Impossible de rééquilibrer — les corvées ont peut-être changé entre-temps',
+    error:
+      'Impossible de rééquilibrer — les corvées ont peut-être changé entre-temps',
   },
   removePerson: {
     progress: 'Retrait des corvées...',
