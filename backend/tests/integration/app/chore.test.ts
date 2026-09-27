@@ -187,7 +187,7 @@ describe('/api/v1/events/:eventId/chores', () => {
           defaultRotationUnit: 'ROOM',
           balanceCountries: true,
           slots: [
-            { name: 'Breakfast', time: '07:30', headcount: 2, effort: 'LIGHT' },
+            { name: 'Breakfast', headcount: 2, effort: 'LIGHT' },
             { name: 'Dinner' },
           ],
         })
@@ -204,12 +204,11 @@ describe('/api/v1/events/:eventId/chores', () => {
       expect(body.data.slots).toMatchObject([
         {
           name: 'Breakfast',
-          time: '07:30',
           headcount: 2,
           effort: 'LIGHT',
           sortOrder: 0,
         },
-        { name: 'Dinner', time: null, headcount: null, sortOrder: 1 },
+        { name: 'Dinner', headcount: null, sortOrder: 1 },
       ]);
     });
 
@@ -264,10 +263,6 @@ describe('/api/v1/events/:eventId/chores', () => {
       {
         label: 'eligibility is invalid',
         data: { name: 'Kitchen', eligibility: 'MANAGERS' },
-      },
-      {
-        label: 'a slot time is invalid',
-        data: { name: 'Kitchen', slots: [{ name: 'Lunch', time: '25:00' }] },
       },
     ])('should respond with `400` when $label', async ({ data }) => {
       const { event, accessToken } = await createEventWithManagerAndToken();

@@ -256,8 +256,6 @@ interface GridRow {
   slotId: string | null;
   chore: string;
   slot: string | null;
-  // Sort keys: slot time (untimed last), then chore and slot order.
-  time: string;
   order: [number, number];
 }
 
@@ -271,8 +269,7 @@ const rows = computed<GridRow[]>(() =>
         choreId: chore.id,
         slotId: slot.id,
         chore: to(chore.name),
-        slot: slot.time ? `${to(slot.name)} · ${slot.time}` : to(slot.name),
-        time: slot.time ?? '99:99',
+        slot: to(slot.name),
         order: [chore.sortOrder, slot.sortOrder],
       }));
       const hasUnslotted =
@@ -287,7 +284,6 @@ const rows = computed<GridRow[]>(() =>
               slotId: null,
               chore: to(chore.name),
               slot: null,
-              time: '99:99',
               order: [chore.sortOrder, Number.MAX_SAFE_INTEGER] as [
                 number,
                 number,
@@ -296,12 +292,7 @@ const rows = computed<GridRow[]>(() =>
           ]
         : slotRows;
     })
-    .sort(
-      (a, b) =>
-        a.time.localeCompare(b.time) ||
-        a.order[0] - b.order[0] ||
-        a.order[1] - b.order[1],
-    ),
+    .sort((a, b) => a.order[0] - b.order[0] || a.order[1] - b.order[1]),
 );
 
 const byCell = computed(() => {

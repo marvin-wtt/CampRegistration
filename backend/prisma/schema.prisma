@@ -664,7 +664,6 @@ model ChoreSlot {
   choreId         String       @map("chore_id") @db.Char(26)
   /// ![string | Record<string, string>]
   name            Json         @db.Json
-  time            String?      @db.VarChar(5)
   sortOrder       Int          @default(0) @map("sort_order")
   headcount       Int?         @db.UnsignedInt
   supervisorCount Int?         @map("supervisor_count") @db.UnsignedInt

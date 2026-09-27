@@ -61,12 +61,6 @@
               <q-item-section>
                 <q-item-label>
                   {{ to(slot.name) }}
-                  <span
-                    v-if="slot.time"
-                    class="text-grey-7"
-                  >
-                    · {{ slot.time }}
-                  </span>
                 </q-item-label>
                 <q-item-label caption>{{ slotSummary(slot) }}</q-item-label>
               </q-item-section>

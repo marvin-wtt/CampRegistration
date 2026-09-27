@@ -40,12 +40,6 @@
         :key="duty.id"
         dense
       >
-        <q-item-section
-          avatar
-          class="time"
-        >
-          <span class="text-caption text-weight-medium">{{ duty.time }}</span>
-        </q-item-section>
         <q-item-section>
           <q-item-label :class="{ 'text-strike': duty.cancelled }">
             {{ duty.title }}
@@ -115,7 +109,6 @@ const duties = computed(() => {
       const choreName = chore ? to(chore.name) : '';
       return {
         id: assignment.id,
-        time: slot?.time ?? '',
         title: slot ? `${choreName} — ${to(slot.name)}` : choreName,
         names: assignment.members
           .filter((m) => m.role === 'MEMBER' && !m.missed)
@@ -146,10 +139,6 @@ const openCount = computed<number>(() =>
   height: 40px;
   border-radius: 12px;
   background: var(--md3-primary-container);
-}
-
-.time {
-  min-width: 48px;
 }
 
 .open-text {

@@ -59,7 +59,7 @@ export function openSpots(
   return Math.max(required - filled, 0);
 }
 
-// Chronological within a day: slot time, then chore and slot order.
+// By date, then in the order chores and their slots are listed.
 export function compareAssignments(
   a: ChoreAssignment,
   b: ChoreAssignment,
@@ -72,7 +72,6 @@ export function compareAssignments(
 
   return (
     a.date.localeCompare(b.date) ||
-    (slotA?.time ?? '99:99').localeCompare(slotB?.time ?? '99:99') ||
     (choreA?.sortOrder ?? 0) - (choreB?.sortOrder ?? 0) ||
     (slotA?.sortOrder ?? -1) - (slotB?.sortOrder ?? -1)
   );

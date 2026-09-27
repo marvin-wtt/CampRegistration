@@ -9,7 +9,6 @@ export type ChoreEffort = 'LIGHT' | 'NORMAL' | 'HEAVY';
 
 export interface ChoreSlot extends Identifiable {
   name: Translatable;
-  time: string | null;
   sortOrder: number;
   // Overrides of the chore's values; null falls back to the chore.
   headcount: number | null;
@@ -20,7 +19,7 @@ export interface ChoreSlot extends Identifiable {
 // Slots are upserted with their chore; order follows the array.
 export type ChoreSlotData = Partial<Pick<ChoreSlot, 'id'>> &
   Pick<ChoreSlot, 'name'> &
-  Partial<Pick<ChoreSlot, 'time' | 'headcount' | 'supervisorCount' | 'effort'>>;
+  Partial<Pick<ChoreSlot, 'headcount' | 'supervisorCount' | 'effort'>>;
 
 export interface Chore extends Identifiable {
   name: Translatable;

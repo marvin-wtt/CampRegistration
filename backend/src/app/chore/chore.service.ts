@@ -67,7 +67,6 @@ export class ChoreService extends BaseService {
 function toSlotRow(slot: ChoreSlotData, index: number) {
   return {
     name: slot.name,
-    time: slot.time ?? null,
     headcount: slot.headcount ?? null,
     supervisorCount: slot.supervisorCount ?? null,
     effort: slot.effort ?? null,
@@ -91,7 +90,7 @@ async function syncSlots(
   if (removed.some((slot) => slot._count.assignments > 0)) {
     throw new ApiError(
       httpStatus.CONFLICT,
-      'A time slot that is still used by duties cannot be removed',
+      'A slot that is still used by duties cannot be removed',
     );
   }
   await tx.choreSlot.deleteMany({

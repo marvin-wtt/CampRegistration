@@ -42,12 +42,6 @@
               {{ t(`status.${assignment.status}`) }}
             </q-badge>
           </div>
-          <div
-            v-if="slot?.time"
-            class="text-caption text-grey-7"
-          >
-            {{ slot.time }}
-          </div>
         </div>
         <div
           v-if="canEdit || canDelete"

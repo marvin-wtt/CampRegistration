@@ -30,7 +30,6 @@ CREATE TABLE `chore_slots` (
     `id` CHAR(26) NOT NULL,
     `chore_id` CHAR(26) NOT NULL,
     `name` JSON NOT NULL,
-    `time` VARCHAR(5) NULL,
     `sort_order` INTEGER NOT NULL DEFAULT 0,
     `headcount` INTEGER UNSIGNED NULL,
     `supervisor_count` INTEGER UNSIGNED NULL,

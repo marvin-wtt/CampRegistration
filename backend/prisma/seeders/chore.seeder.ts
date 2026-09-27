@@ -13,7 +13,6 @@ import { seedDate } from './timeline';
 
 interface ChoreSlotData {
   name: string | Record<string, string>;
-  time?: string;
   headcount?: number;
   effort?: ChoreEffort;
 }
@@ -54,12 +53,11 @@ const SUMMER_CHORES: ChoreData[] = [
     slots: [
       {
         name: { en: 'Breakfast', fr: 'Petit-déjeuner' },
-        time: '07:30',
         headcount: 2,
         effort: 'LIGHT',
       },
-      { name: { en: 'Lunch', fr: 'Déjeuner' }, time: '12:00' },
-      { name: { en: 'Dinner', fr: 'Dîner' }, time: '18:00' },
+      { name: { en: 'Lunch', fr: 'Déjeuner' } },
+      { name: { en: 'Dinner', fr: 'Dîner' } },
     ],
   },
   {
@@ -68,8 +66,8 @@ const SUMMER_CHORES: ChoreData[] = [
     supervisorCount: 1,
     effort: 'HEAVY',
     slots: [
-      { name: { en: 'Lunch', fr: 'Déjeuner' }, time: '13:00' },
-      { name: { en: 'Dinner', fr: 'Dîner' }, time: '19:00' },
+      { name: { en: 'After lunch', fr: 'Après le déjeuner' } },
+      { name: { en: 'After dinner', fr: 'Après le dîner' } },
     ],
   },
   {
@@ -137,10 +135,7 @@ const CITY_CHORES: ChoreData[] = [
   {
     name: 'Küchendienst',
     defaultCount: 3,
-    slots: [
-      { name: 'Mittagessen', time: '12:30' },
-      { name: 'Abendessen', time: '18:30' },
-    ],
+    slots: [{ name: 'Mittagessen' }, { name: 'Abendessen' }],
   },
   { name: 'Gemeinschaftsraum aufräumen', defaultCount: 2, effort: 'LIGHT' },
 ];
@@ -200,7 +195,6 @@ class ChoreSeeder extends BaseSeeder {
             createMany: {
               data: (chore.slots ?? []).map((slot, sortOrder) => ({
                 name: forLocales(slot.name, locales),
-                time: slot.time,
                 headcount: slot.headcount,
                 effort: slot.effort,
                 sortOrder,

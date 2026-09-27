@@ -401,7 +401,7 @@ const date = ref<string | null>(
   props.assignment?.date ?? props.initialDate ?? formatLocalDate(new Date()),
 );
 const slotId = ref<string | null>(
-  props.assignment?.slotId ?? props.initialSlotId ?? nextSlotId(),
+  props.assignment?.slotId ?? props.initialSlotId ?? firstSlotId(),
 );
 const rotationUnit = ref<ChoreRotationUnit>(
   props.assignment?.rotationUnit ??
@@ -437,23 +437,13 @@ function resetCounts() {
 }
 resetCounts();
 
-// For a spontaneous duty: the next slot that hasn't started yet today.
-function nextSlotId(): string | null {
+function firstSlotId(): string | null {
   const chore = props.chores.find((c) => c.id === choreId.value);
-  if (!chore || chore.slots.length === 0) {
-    return null;
-  }
-  const now = new Date();
-  const time = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-  return (
-    chore.slots.find((slot) => slot.time && slot.time >= time)?.id ??
-    chore.slots[0]?.id ??
-    null
-  );
+  return chore?.slots[0]?.id ?? null;
 }
 
 function onChoreChange() {
-  slotId.value = nextSlotId();
+  slotId.value = firstSlotId();
   rotationUnit.value =
     selectedChore.value?.defaultRotationUnit ?? rotationUnit.value;
   resetCounts();
@@ -474,7 +464,7 @@ const slotOptions = computed<QSelectOption<string | null>[]>(() => {
   return [
     { label: t('field.slot.none'), value: null },
     ...slots.map((slot) => ({
-      label: slot.time ? `${to(slot.name)} · ${slot.time}` : to(slot.name),
+      label: to(slot.name),
       value: slot.id,
     })),
   ];

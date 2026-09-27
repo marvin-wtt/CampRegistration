@@ -17,7 +17,6 @@ export class ChoreResource extends JsonResource<ChoreWithSlots, ChoreData> {
       slots: this.data.slots.map((slot) => ({
         id: slot.id,
         name: slot.name,
-        time: slot.time,
         sortOrder: slot.sortOrder,
         headcount: slot.headcount,
         supervisorCount: slot.supervisorCount,

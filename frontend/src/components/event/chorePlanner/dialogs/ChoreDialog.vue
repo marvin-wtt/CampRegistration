@@ -125,31 +125,19 @@
               </q-btn>
             </div>
 
-            <div class="field-grid field-grid--wide-narrow">
-              <translated-input
-                v-model="slot.name"
-                :label="t('field.slotName.label')"
-                :rules="[
-                  (val: string | Record<string, string> | undefined) =>
-                    !!val || t('field.slotName.rule.required'),
-                ]"
-                :locales="locales"
-                hide-bottom-space
-                dense
-                outlined
-                rounded
-              />
-              <q-input
-                v-model="slot.time"
-                type="time"
-                :label="t('field.slotTime.label')"
-                stack-label
-                clearable
-                dense
-                outlined
-                rounded
-              />
-            </div>
+            <translated-input
+              v-model="slot.name"
+              :label="t('field.slotName.label')"
+              :rules="[
+                (val: string | Record<string, string> | undefined) =>
+                  !!val || t('field.slotName.rule.required'),
+              ]"
+              :locales="locales"
+              hide-bottom-space
+              dense
+              outlined
+              rounded
+            />
 
             <chore-requirements
               v-model:effort="slot.effort"
@@ -248,7 +236,6 @@ interface EditableSlot {
   // Stable v-for key, also for slots that don't have an id yet.
   key: number;
   name: Translatable;
-  time: string | null;
   headcount: number;
   supervisorCount: number;
   effort: ChoreEffort;
@@ -282,7 +269,6 @@ const slots = ref<EditableSlot[]>(
     id: slot.id,
     key: nextKey++,
     name: slot.name,
-    time: slot.time,
     headcount: slot.headcount ?? data.defaultCount ?? 0,
     supervisorCount: slot.supervisorCount ?? data.supervisorCount,
     effort: slot.effort ?? data.effort,
@@ -327,12 +313,11 @@ const modeOptions = computed(() => [
   { value: 'SLOTS', label: t('field.schedule.option.SLOTS') },
 ]);
 
-function newSlot(from: Omit<EditableSlot, 'id' | 'key' | 'name' | 'time'>) {
+function newSlot(from: Omit<EditableSlot, 'id' | 'key' | 'name'>) {
   return {
     id: undefined,
     key: nextKey++,
     name: '',
-    time: null,
     headcount: from.headcount,
     supervisorCount: from.supervisorCount,
     effort: from.effort,
@@ -398,7 +383,6 @@ function onOKClick(): void {
         ? slots.value.map((slot) => ({
             ...(slot.id ? { id: slot.id } : {}),
             name: slot.name,
-            time: slot.time || null,
             headcount: slot.headcount,
             supervisorCount: slot.supervisorCount,
             effort: slot.effort,
@@ -445,20 +429,18 @@ field:
     label: 'Name'
     rule:
       required: 'The name is required'
-  slotTime:
-    label: 'Time'
   balanceCountries:
     label: 'Balance countries'
     hint: 'Nice to have — try to spread suggested participants across countries. Fairness always comes first.'
   schedule:
-    label: 'When does this duty happen?'
+    label: 'How often per day?'
     option:
-      SINGLE: 'No fixed time'
-      SLOTS: 'At fixed times'
+      SINGLE: 'Once'
+      SLOTS: 'Several times'
     hint:
       SINGLE: 'E.g. trash, cleaning or night watch.'
-      SLOTS: 'E.g. Breakfast, Lunch and Dinner — each with its own numbers.'
-    inUse: 'Duties use these time slots, so they have to stay.'
+      SLOTS: 'Name them after what they belong to, e.g. Breakfast or After dinner — each with its own numbers.'
+    inUse: 'Duties use these slots, so they have to stay.'
 action:
   addSlot: 'Add slot'
   removeSlot: 'Remove slot'
@@ -494,19 +476,17 @@ field:
     label: 'Name'
     rule:
       required: 'Der Name ist erforderlich'
-  slotTime:
-    label: 'Uhrzeit'
   balanceCountries:
     label: 'Länder ausgleichen'
     hint: 'Optional — versucht, vorgeschlagene Teilnehmende über Länder zu streuen. Fairness hat immer Vorrang.'
   schedule:
-    label: 'Wann findet der Dienst statt?'
+    label: 'Wie oft am Tag?'
     option:
-      SINGLE: 'Ohne feste Zeit'
-      SLOTS: 'Zu festen Zeiten'
+      SINGLE: 'Einmal'
+      SLOTS: 'Mehrmals'
     hint:
       SINGLE: 'Z. B. Müll, Putzen oder Nachtwache.'
-      SLOTS: 'Z. B. Frühstück, Mittag- und Abendessen — jedes mit eigenen Angaben.'
+      SLOTS: 'Benenne sie nach dem, wozu sie gehören, z. B. Frühstück oder Nach dem Abendessen — jedes mit eigenen Angaben.'
     inUse: 'Dienste nutzen diese Zeitfenster, deshalb bleiben sie bestehen.'
 action:
   addSlot: 'Zeitfenster'
@@ -543,19 +523,17 @@ field:
     label: 'Nom'
     rule:
       required: 'Le nom est requis'
-  slotTime:
-    label: 'Heure'
   balanceCountries:
     label: 'Équilibrer les pays'
     hint: "Bonus — essaie de répartir les participants suggérés entre les pays. L'équité reste toujours prioritaire."
   schedule:
-    label: 'Quand la corvée a-t-elle lieu ?'
+    label: 'Combien de fois par jour ?'
     option:
-      SINGLE: 'Sans horaire fixe'
-      SLOTS: 'À horaires fixes'
+      SINGLE: 'Une fois'
+      SLOTS: 'Plusieurs fois'
     hint:
       SINGLE: 'Par ex. poubelles, ménage ou veille de nuit.'
-      SLOTS: 'Par ex. petit-déjeuner, déjeuner et dîner — chacun avec ses propres réglages.'
+      SLOTS: 'Nommez-les d’après ce à quoi ils se rattachent, par ex. Petit-déjeuner ou Après le dîner — chacun avec ses propres réglages.'
     inUse: 'Des corvées utilisent ces créneaux, ils doivent donc rester.'
 action:
   addSlot: 'Créneau'
@@ -592,19 +570,17 @@ field:
     label: 'Nazwa'
     rule:
       required: 'Nazwa jest wymagana'
-  slotTime:
-    label: 'Godzina'
   balanceCountries:
     label: 'Równoważ kraje'
     hint: 'Miło mieć — spróbuj rozłożyć sugerowanych uczestników pomiędzy kraje. Sprawiedliwość zawsze ma pierwszeństwo.'
   schedule:
-    label: 'Kiedy odbywa się dyżur?'
+    label: 'Ile razy dziennie?'
     option:
-      SINGLE: 'Bez stałej godziny'
-      SLOTS: 'O stałych porach'
+      SINGLE: 'Raz'
+      SLOTS: 'Kilka razy'
     hint:
       SINGLE: 'Np. śmieci, sprzątanie lub nocny dyżur.'
-      SLOTS: 'Np. śniadanie, obiad i kolacja — każdy z własnymi ustawieniami.'
+      SLOTS: 'Nazwij je od tego, do czego należą, np. Śniadanie lub Po kolacji — każdy z własnymi ustawieniami.'
     inUse: 'Dyżury korzystają z tych przedziałów, więc muszą zostać.'
 action:
   addSlot: 'Przedział'
@@ -641,19 +617,17 @@ field:
     label: 'Název'
     rule:
       required: 'Název je povinný'
-  slotTime:
-    label: 'Čas'
   balanceCountries:
     label: 'Vyvážit země'
     hint: 'Bonus — zkusí rozložit navrhované účastníky mezi země. Spravedlnost má vždy přednost.'
   schedule:
-    label: 'Kdy se služba koná?'
+    label: 'Kolikrát denně?'
     option:
-      SINGLE: 'Bez pevného času'
-      SLOTS: 'V pevných časech'
+      SINGLE: 'Jednou'
+      SLOTS: 'Vícekrát'
     hint:
       SINGLE: 'Např. odpadky, úklid nebo noční hlídka.'
-      SLOTS: 'Např. snídaně, oběd a večeře — každý s vlastním nastavením.'
+      SLOTS: 'Pojmenujte je podle toho, k čemu patří, např. Snídaně nebo Po večeři — každý s vlastním nastavením.'
     inUse: 'Tyto časové bloky používají služby, proto musí zůstat.'
 action:
   addSlot: 'Časový blok'

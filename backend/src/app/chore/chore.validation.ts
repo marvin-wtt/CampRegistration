@@ -14,11 +14,6 @@ const ROTATION_UNIT = z.enum(['PERSON', 'ROOM']);
 const SLOT = z.object({
   id: z.ulid().optional(),
   name: translatedValue(z.string().min(1)),
-  time: z
-    .string()
-    .regex(/^([01]\d|2[0-3]):[0-5]\d$/)
-    .nullable()
-    .optional(),
   headcount: COUNT.nullable().optional(),
   supervisorCount: COUNT.nullable().optional(),
   effort: EFFORT.nullable().optional(),
