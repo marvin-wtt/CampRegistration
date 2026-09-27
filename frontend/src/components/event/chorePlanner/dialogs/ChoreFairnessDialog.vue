@@ -10,6 +10,26 @@
       :width="600"
       @cancel="onDialogCancel"
     >
+      <template
+        v-if="can('event.chore_assignments.edit')"
+        #actions
+      >
+        <q-btn
+          outline
+          rounded
+          color="primary"
+          icon="swap_horiz"
+          no-caps
+          :label="t('action.rebalance')"
+          @click="rebalance"
+        />
+        <q-btn
+          rounded
+          color="primary"
+          :label="t('action.close')"
+          @click="onDialogCancel"
+        />
+      </template>
       <template #pinned>
         <div class="filters row items-center">
           <q-btn-toggle
@@ -148,6 +168,7 @@ import { useI18n } from 'vue-i18n';
 import { computed, ref, useTemplateRef, watch } from 'vue';
 import type {
   ChoreFairnessEntry,
+  ChoreRebalanceChange,
   ChoreMemberRemovalQuery,
   Registration,
 } from '@camp-registration/common/entities';
@@ -158,11 +179,14 @@ import { formatPersonName } from '@/utils/formatters';
 import ChoreDialogCard from '@/components/event/chorePlanner/ChoreDialogCard.vue';
 import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
 import ChoreRemovePersonDialog from '@/components/event/chorePlanner/dialogs/ChoreRemovePersonDialog.vue';
+import ChoreRebalanceDialog from '@/components/event/chorePlanner/dialogs/ChoreRebalanceDialog.vue';
+import { useChoreStore } from '@/stores/chore-store';
 
 const { t } = useI18n();
 const quasar = useQuasar();
 const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent();
 const choreAssignmentStore = useChoreAssignmentStore();
+const choreStore = useChoreStore();
 const registrationHelper = useRegistrationHelper();
 const { can } = usePermissions();
 
@@ -260,6 +284,20 @@ function rowSummary(row: Row): string {
   ]
     .filter(Boolean)
     .join(' · ');
+}
+
+function rebalance() {
+  quasar
+    .dialog({
+      component: ChoreRebalanceDialog,
+      componentProps: {
+        chores: choreStore.data ?? [],
+        registrations: props.registrations,
+      },
+    })
+    .onOk((changes: ChoreRebalanceChange[]) => {
+      void choreAssignmentStore.applyRebalance(changes).then(load);
+    });
 }
 
 function removePerson(registrationId: string) {
@@ -367,6 +405,8 @@ summary:
 action:
   more: 'More'
   remove: 'Remove from duties…'
+  rebalance: 'Rebalance…'
+  close: 'Close'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -392,6 +432,8 @@ summary:
 action:
   more: 'Mehr'
   remove: 'Aus Diensten nehmen…'
+  rebalance: 'Ausgleichen…'
+  close: 'Schließen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -417,6 +459,8 @@ summary:
 action:
   more: 'Plus'
   remove: 'Retirer des corvées…'
+  rebalance: 'Rééquilibrer…'
+  close: 'Fermer'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -442,6 +486,8 @@ summary:
 action:
   more: 'Więcej'
   remove: 'Usuń z dyżurów…'
+  rebalance: 'Wyrównaj…'
+  close: 'Zamknij'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -467,4 +513,6 @@ summary:
 action:
   more: 'Více'
   remove: 'Odebrat ze služeb…'
+  rebalance: 'Vyrovnat…'
+  close: 'Zavřít'
 </i18n>

@@ -75,6 +75,22 @@
                   </q-item-section>
                 </q-item>
                 <q-item
+                  v-if="
+                    can('event.chore_assignments.edit') &&
+                    assignments.length > 0
+                  "
+                  v-close-popup
+                  clickable
+                  @click="openRebalance()"
+                >
+                  <q-item-section avatar>
+                    <q-icon name="swap_horiz" />
+                  </q-item-section>
+                  <q-item-section>
+                    {{ t('action.rebalance') }}
+                  </q-item-section>
+                </q-item>
+                <q-item
                   v-if="assignments.length > 0"
                   v-close-popup
                   clickable
@@ -467,6 +483,7 @@ import ChoreRemovePersonDialog from '@/components/event/chorePlanner/dialogs/Cho
 import ChorePersonPickerDialog from '@/components/event/chorePlanner/dialogs/ChorePersonPickerDialog.vue';
 import ChoreDialog from '@/components/event/chorePlanner/dialogs/ChoreDialog.vue';
 import ChorePrintDialog from '@/components/event/chorePlanner/dialogs/ChorePrintDialog.vue';
+import ChoreRebalanceDialog from '@/components/event/chorePlanner/dialogs/ChoreRebalanceDialog.vue';
 import { printChoreRoster } from '@/components/event/chorePlanner/printChoreRoster';
 import type {
   Chore,
@@ -476,6 +493,7 @@ import type {
   ChoreAssignmentStatus,
   ChoreAssignmentUpdateData,
   ChoreCreateData,
+  ChoreRebalanceChange,
   ChoreMemberRemovalQuery,
   ChoreSeriesPlanData,
   Registration,
@@ -753,7 +771,13 @@ function cardHandlers(assignment: ChoreAssignment) {
     deleteSeries: () => deleteSeries(assignment),
     fill: () => void choreAssignmentStore.fillData(assignment.id),
     setStatus: (status: ChoreAssignmentStatus) =>
-      void choreAssignmentStore.updateData(assignment.id, { status }),
+      void choreAssignmentStore
+        .updateData(assignment.id, { status })
+        .then(() => {
+          if (status === 'CANCELLED') {
+            void suggestRebalance();
+          }
+        }),
     toggleMissed: (id: string) =>
       updateMembers(assignment, (members) =>
         members.map((m) =>
@@ -964,7 +988,10 @@ function assignmentLabel(assignment: ChoreAssignment): string {
 function deleteAssignment(assignment: ChoreAssignment) {
   confirm(
     t('dialog.delete.one', { name: assignmentLabel(assignment) }),
-    () => void choreAssignmentStore.deleteData(assignment.id),
+    () =>
+      void choreAssignmentStore
+        .deleteData(assignment.id)
+        .then(() => suggestRebalance()),
   );
 }
 
@@ -1024,6 +1051,42 @@ function openFairness() {
   quasar.dialog({
     component: ChoreFairnessDialog,
     componentProps: { registrations: registrations.value },
+  });
+}
+
+function openRebalance() {
+  quasar
+    .dialog({
+      component: ChoreRebalanceDialog,
+      componentProps: {
+        chores: chores.value,
+        registrations: registrations.value,
+      },
+    })
+    .onOk((changes: ChoreRebalanceChange[]) => {
+      void choreAssignmentStore.applyRebalance(changes);
+    });
+}
+
+// After a duty drops out, offer to even things out — only if it's uneven now.
+async function suggestRebalance() {
+  if (!canEdit.value) {
+    return;
+  }
+  const changes = await choreAssignmentStore.fetchRebalance().catch(() => []);
+  if (changes.length === 0) {
+    return;
+  }
+  quasar.notify({
+    message: t('rebalanceHint'),
+    timeout: 8000,
+    actions: [
+      {
+        label: t('action.rebalance'),
+        color: 'primary',
+        handler: openRebalance,
+      },
+    ],
   });
 }
 
@@ -1177,6 +1240,7 @@ summary:
 series:
   done: 'Planned {created} new duties ({filled} topped up, {skipped} left as they were).'
 
+rebalanceHint: 'Some people now have noticeably more duties than others.'
 action:
   quick: 'Quick duty'
   series: 'Plan duties'
@@ -1185,6 +1249,7 @@ action:
   addChore: 'Add chore'
   fairness: 'Fairness'
   removePerson: 'Remove someone from duties…'
+  rebalance: 'Rebalance…'
   print: 'Print…'
   allDone: 'All done'
   deleteDay: 'Delete all duties of this day'
@@ -1235,6 +1300,7 @@ summary:
 series:
   done: '{created} neue Dienste geplant ({filled} aufgefüllt, {skipped} unverändert).'
 
+rebalanceHint: 'Manche haben jetzt deutlich mehr Dienste als andere.'
 action:
   quick: 'Schnell-Dienst'
   series: 'Dienste planen'
@@ -1243,6 +1309,7 @@ action:
   addChore: 'Diensttyp hinzufügen'
   fairness: 'Fairness'
   removePerson: 'Jemanden aus Diensten nehmen…'
+  rebalance: 'Ausgleichen…'
   print: 'Drucken…'
   allDone: 'Alle erledigt'
   deleteDay: 'Alle Dienste dieses Tages löschen'
@@ -1293,6 +1360,7 @@ summary:
 series:
   done: '{created} nouvelles corvées planifiées ({filled} complétées, {skipped} laissées telles quelles).'
 
+rebalanceHint: 'Certaines personnes ont maintenant nettement plus de corvées que d’autres.'
 action:
   quick: 'Corvée rapide'
   series: 'Planifier des corvées'
@@ -1301,6 +1369,7 @@ action:
   addChore: 'Ajouter une corvée'
   fairness: 'Équité'
   removePerson: 'Retirer quelqu’un des corvées…'
+  rebalance: 'Rééquilibrer…'
   print: 'Imprimer…'
   allDone: 'Tout est fait'
   deleteDay: 'Supprimer toutes les corvées de ce jour'
@@ -1351,6 +1420,7 @@ summary:
 series:
   done: 'Zaplanowano {created} nowych dyżurów ({filled} uzupełnionych, {skipped} bez zmian).'
 
+rebalanceHint: 'Niektóre osoby mają teraz wyraźnie więcej dyżurów niż inne.'
 action:
   quick: 'Szybki dyżur'
   series: 'Zaplanuj dyżury'
@@ -1359,6 +1429,7 @@ action:
   addChore: 'Dodaj obowiązek'
   fairness: 'Sprawiedliwość'
   removePerson: 'Usuń kogoś z dyżurów…'
+  rebalance: 'Wyrównaj…'
   print: 'Drukuj…'
   allDone: 'Wszystko wykonane'
   deleteDay: 'Usuń wszystkie dyżury tego dnia'
@@ -1409,6 +1480,7 @@ summary:
 series:
   done: 'Naplánováno {created} nových služeb ({filled} doplněno, {skipped} beze změny).'
 
+rebalanceHint: 'Někteří mají teď výrazně víc služeb než ostatní.'
 action:
   quick: 'Rychlá služba'
   series: 'Naplánovat služby'
@@ -1417,6 +1489,7 @@ action:
   addChore: 'Přidat povinnost'
   fairness: 'Spravedlnost'
   removePerson: 'Odebrat někoho ze služeb…'
+  rebalance: 'Vyrovnat…'
   print: 'Tisk…'
   allDone: 'Vše hotovo'
   deleteDay: 'Smazat všechny služby tohoto dne'

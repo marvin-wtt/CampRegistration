@@ -166,6 +166,38 @@ export class ChoreAssignmentController extends BaseController {
     res.json({ data: result, meta: {} });
   }
 
+  async rebalancePreview(req: Request, res: Response) {
+    const event = req.modelOrFail('event');
+    await req.validate(validator.rebalancePreview);
+
+    const changes = await this.choreAssignmentService.previewRebalance(
+      event.id,
+    );
+
+    res.json({ data: changes, meta: {} });
+  }
+
+  async rebalance(req: Request, res: Response) {
+    const event = req.modelOrFail('event');
+    const { body } = await req.validate(validator.rebalance);
+
+    await this.assertMembersBelongToEvent(
+      event.id,
+      body.changes.map((change) => ({
+        registrationId: change.toRegistrationId,
+      })),
+    );
+
+    const count = await this.choreAssignmentService.applyRebalance(
+      event.id,
+      body.changes,
+    );
+
+    void this.realtimeService.emitInvalidation(event.id, 'choreAssignment');
+
+    res.json({ data: { count }, meta: {} });
+  }
+
   async update(req: Request, res: Response) {
     const event = req.modelOrFail('event');
     const existingAssignment = req.modelOrFail('choreAssignment');

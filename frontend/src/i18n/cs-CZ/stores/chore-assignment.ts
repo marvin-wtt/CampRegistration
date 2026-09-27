@@ -34,6 +34,11 @@ export default {
     success: 'Služby smazány',
     error: 'Nepodařilo se smazat služby',
   },
+  rebalance: {
+    progress: 'Vyrovnávání služeb...',
+    success: 'Služby vyrovnány',
+    error: 'Vyrovnání se nezdařilo — služby se mezitím možná změnily',
+  },
   removePerson: {
     progress: 'Odebírání ze služeb...',
     success: 'Odebráno ze služeb',

@@ -34,6 +34,11 @@ export default {
     success: 'Duties deleted',
     error: 'Failed to delete duties',
   },
+  rebalance: {
+    progress: 'Rebalancing duties...',
+    success: 'Duties rebalanced',
+    error: 'Failed to rebalance duties — they may have changed meanwhile',
+  },
   removePerson: {
     progress: 'Removing from duties...',
     success: 'Removed from duties',

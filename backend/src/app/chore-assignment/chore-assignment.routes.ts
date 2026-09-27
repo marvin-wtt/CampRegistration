@@ -49,6 +49,16 @@ export class ChoreAssignmentRouter extends ModuleRouter {
       guard(hasEventPermission('event.chore_assignments.view')),
       controller(this.choreAssignmentController, 'fairness'),
     );
+    this.router.get(
+      '/rebalance',
+      guard(hasEventPermission('event.chore_assignments.edit')),
+      controller(this.choreAssignmentController, 'rebalancePreview'),
+    );
+    this.router.post(
+      '/rebalance',
+      guard(hasEventPermission('event.chore_assignments.edit')),
+      controller(this.choreAssignmentController, 'rebalance'),
+    );
     this.router.post(
       '/auto-fill',
       choreFromBody(),

@@ -147,3 +147,15 @@ export interface ChoreFairnessEntry {
   share: number;
   balance: ChoreBalance;
 }
+
+// One upcoming duty changing hands to even out the load.
+export interface ChoreRebalanceChange {
+  assignmentId: string;
+  role: ChoreMemberRole;
+  fromRegistrationId: string;
+  toRegistrationId: string;
+}
+
+export interface ChoreRebalanceData {
+  changes: ChoreRebalanceChange[];
+}

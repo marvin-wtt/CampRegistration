@@ -34,6 +34,11 @@ export default {
     success: 'Dyżury usunięte',
     error: 'Nie udało się usunąć dyżurów',
   },
+  rebalance: {
+    progress: 'Wyrównywanie dyżurów...',
+    success: 'Dyżury wyrównane',
+    error: 'Nie udało się wyrównać — dyżury mogły się w międzyczasie zmienić',
+  },
   removePerson: {
     progress: 'Usuwanie z dyżurów...',
     success: 'Usunięto z dyżurów',

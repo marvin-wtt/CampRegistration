@@ -17,6 +17,7 @@ import type {
   ChoreFairnessEntry,
   ChoreMemberRemovalQuery,
   ChoreSeriesPlanData,
+  ChoreRebalanceChange,
 } from '@camp-registration/common/entities';
 
 export const useChoreAssignmentStore = defineStore('choreAssignment', () => {
@@ -202,6 +203,19 @@ export const useChoreAssignmentStore = defineStore('choreAssignment', () => {
     return result;
   }
 
+  async function fetchRebalance(): Promise<ChoreRebalanceChange[]> {
+    return api.fetchChoreRebalance(currentEventId());
+  }
+
+  async function applyRebalance(changes: ChoreRebalanceChange[]) {
+    const eventId = currentEventId();
+
+    await withProgressNotification('rebalance', () =>
+      api.applyChoreRebalance(eventId, { changes }),
+    );
+    await reload();
+  }
+
   return {
     reset,
     data,
@@ -219,5 +233,7 @@ export const useChoreAssignmentStore = defineStore('choreAssignment', () => {
     planSeries,
     deleteMany,
     removeMember,
+    fetchRebalance,
+    applyRebalance,
   };
 });

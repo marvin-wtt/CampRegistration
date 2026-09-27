@@ -7,6 +7,7 @@ import type {
   ChoreAssignmentUpdateData,
   ChoreAutoFillData,
   ChoreMemberRemovalQuery,
+  ChoreRebalanceData,
   ChoreSeriesPlanData,
 } from '@camp-registration/common/entities';
 
@@ -160,6 +161,27 @@ const update = z.object({
     .partial() satisfies ZodType<ChoreAssignmentUpdateData>,
 });
 
+const rebalancePreview = z.object({
+  params: eventParams,
+});
+
+const rebalance = z.object({
+  params: eventParams,
+  body: z.object({
+    changes: z
+      .array(
+        z.object({
+          assignmentId: z.ulid(),
+          role: ROLE,
+          fromRegistrationId: z.ulid(),
+          toRegistrationId: z.ulid(),
+        }),
+      )
+      .min(1)
+      .max(1000),
+  }) satisfies ZodType<ChoreRebalanceData>,
+});
+
 const fill = z.object({
   params: assignmentParams,
 });
@@ -182,6 +204,8 @@ export default {
   series,
   destroyMany,
   destroyMember,
+  rebalancePreview,
+  rebalance,
   update,
   fill,
   destroy,

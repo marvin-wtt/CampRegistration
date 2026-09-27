@@ -7,6 +7,7 @@ import {
   type OccurrenceSpec,
   pickForOccurrence,
   planOccurrences,
+  planRebalance,
   type PoolPerson,
   rankPeople,
 } from '#app/chore-assignment/chore-planner';
@@ -365,5 +366,58 @@ describe('balance', () => {
     for (const entry of fairnessOverview(ledger, pool)) {
       expect(entry.balance).toBe('AVERAGE');
     }
+  });
+});
+
+describe('planRebalance', () => {
+  const movable = (id: string, members: string[], date: string) => ({
+    ...duty(members, { date }),
+    id,
+    eligibility: 'PARTICIPANTS' as const,
+  });
+
+  it('hands upcoming duties over until the load is even', () => {
+    const changes = planRebalance(
+      [
+        duty(['a'], { date: '2026-07-01' }),
+        duty(['a'], { date: '2026-07-02' }),
+      ],
+      [movable('d1', ['a'], '2026-07-10'), movable('d2', ['a'], '2026-07-11')],
+      [participant('a'), participant('b')],
+    );
+
+    expect(changes).toHaveLength(2);
+    for (const change of changes) {
+      expect(change).toMatchObject({
+        fromRegistrationId: 'a',
+        toRegistrationId: 'b',
+        role: 'MEMBER',
+      });
+    }
+  });
+
+  it('never hands a duty to someone busy that day or not eligible', () => {
+    const changes = planRebalance(
+      [
+        duty(['a'], { date: '2026-07-01' }),
+        duty(['a'], { date: '2026-07-02' }),
+        duty(['a'], { date: '2026-07-03' }),
+        duty(['b'], { date: '2026-07-10', choreId: 'dishes' }),
+      ],
+      [movable('d1', ['a'], '2026-07-10')],
+      [participant('a'), participant('b'), staff('s')],
+    );
+
+    expect(changes).toEqual([]);
+  });
+
+  it('leaves a balanced plan alone', () => {
+    const changes = planRebalance(
+      [],
+      [movable('d1', ['a'], '2026-07-10'), movable('d2', ['b'], '2026-07-11')],
+      [participant('a'), participant('b')],
+    );
+
+    expect(changes).toEqual([]);
   });
 });

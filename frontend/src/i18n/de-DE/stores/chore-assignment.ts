@@ -34,6 +34,11 @@ export default {
     success: 'Dienste gelöscht',
     error: 'Fehler beim Löschen der Dienste',
   },
+  rebalance: {
+    progress: 'Dienste werden ausgeglichen...',
+    success: 'Dienste ausgeglichen',
+    error: 'Ausgleichen fehlgeschlagen — die Dienste wurden womöglich zwischenzeitlich geändert',
+  },
   removePerson: {
     progress: 'Wird aus Diensten entfernt...',
     success: 'Aus Diensten entfernt',

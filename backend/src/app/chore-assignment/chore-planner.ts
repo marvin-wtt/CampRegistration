@@ -6,6 +6,7 @@ import type {
   ChoreEligibility,
   ChoreFairnessEntry,
   ChoreMemberRole,
+  ChoreRebalanceChange,
   ChoreRotationUnit,
 } from '@camp-registration/common/entities';
 import { shuffleTiedRuns, spreadWithinTies } from '#utils/ordering';
@@ -494,4 +495,134 @@ export function fairnessOverview(
       ),
     };
   });
+}
+
+export interface MovableDuty extends LedgerDuty {
+  id: string;
+  eligibility: ChoreEligibility;
+}
+
+// A working copy of a spot on a duty, remembering who held it at first.
+type Spot = MovableDuty['members'][number] & { originalId: string };
+
+type WorkingDuty = Omit<MovableDuty, 'members'> & { members: Spot[] };
+
+interface Move {
+  spot: Spot;
+  to: string;
+}
+
+/**
+ * Evens out loads with as few changes as possible: one upcoming duty at a
+ * time passes from a more loaded person to a less loaded one who can take it,
+ * as long as that narrows their gap and one of them is outside the average
+ * band. `fixed` duties only count; `movable` ones may change hands.
+ */
+export function planRebalance(
+  fixed: LedgerDuty[],
+  movable: MovableDuty[],
+  pool: PoolPerson[],
+  maxMoves = 200,
+): ChoreRebalanceChange[] {
+  const duties: WorkingDuty[] = movable.map((duty) => ({
+    ...duty,
+    members: duty.members.map((member) => ({
+      ...member,
+      originalId: member.registrationId,
+    })),
+  }));
+
+  // Every move shrinks the spread of loads, so this ends; the cap is a guard.
+  for (let step = 0; step < maxMoves; step++) {
+    const move = findMove(buildLedger([...fixed, ...duties]), duties, pool);
+    if (!move) {
+      break;
+    }
+    move.spot.registrationId = move.to;
+  }
+
+  // Per spot, so one that changed hands twice is a single change.
+  return duties.flatMap((duty) =>
+    duty.members
+      .filter((spot) => spot.registrationId !== spot.originalId)
+      .map((spot) => ({
+        assignmentId: duty.id,
+        role: spot.role,
+        fromRegistrationId: spot.originalId,
+        toRegistrationId: spot.registrationId,
+      })),
+  );
+}
+
+// The most uneven pair first; within it, the duty that evens them out best.
+function findMove(
+  ledger: ChoreLedger,
+  duties: WorkingDuty[],
+  pool: PoolPerson[],
+): Move | undefined {
+  const averages = groupAverages(ledger, pool);
+  const loadOf = (person: PoolPerson) => statsOf(ledger, person.id).load;
+
+  for (const staff of [false, true]) {
+    const average = staff ? averages.staff : averages.participants;
+    const group = pool
+      .filter((person) => person.staff === staff)
+      .sort((a, b) => loadOf(b) - loadOf(a));
+
+    for (const over of group) {
+      for (const under of [...group].reverse()) {
+        const gap = loadOf(over) - loadOf(under);
+        if (gap <= 0) {
+          break;
+        }
+        const outOfBand =
+          balanceOf(loadOf(over), average).balance === 'ABOVE' ||
+          balanceOf(loadOf(under), average).balance === 'BELOW';
+        if (!outOfBand) {
+          continue;
+        }
+        const move = bestMove(ledger, duties, over, under, gap);
+        if (move) {
+          return move;
+        }
+      }
+    }
+  }
+  return undefined;
+}
+
+function bestMove(
+  ledger: ChoreLedger,
+  duties: WorkingDuty[],
+  over: PoolPerson,
+  under: PoolPerson,
+  gap: number,
+): Move | undefined {
+  const busy = statsOf(ledger, under.id).busyDates;
+  let best: (Move & { remaining: number }) | undefined;
+
+  for (const duty of duties) {
+    const effort = EFFORT_POINTS[duty.effort];
+    // Only if it narrows the gap — otherwise it would just flip it.
+    if (gap <= effort || busy.has(duty.date)) {
+      continue;
+    }
+    if (duty.members.some((m) => m.registrationId === under.id)) {
+      continue;
+    }
+    const spot = duty.members.find(
+      (m) => m.registrationId === over.id && !m.missed,
+    );
+    if (
+      !spot ||
+      eligibleFor([under], spot.role, duty.eligibility).length === 0
+    ) {
+      continue;
+    }
+    const remaining = Math.abs(gap - 2 * effort);
+    if (!best || remaining < best.remaining) {
+      best = { spot, to: under.id, remaining };
+    }
+  }
+  return best;
 }

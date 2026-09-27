@@ -967,6 +967,66 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
     });
   });
 
+  describe('/api/v1/events/:eventId/chore-assignments/rebalance', () => {
+    it('previews and applies swaps for upcoming duties', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const chore = await createChore(event);
+      const busy = await createRegistration(event);
+      const idle = await createRegistration(event);
+      for (const date of ['2020-07-01', '2020-07-02']) {
+        await createAssignment(event, chore.id, {
+          date,
+          members: { create: [{ registrationId: busy.id }] },
+        });
+      }
+      const upcoming = await createAssignment(event, chore.id, {
+        date: '2099-07-10',
+        members: { create: [{ registrationId: busy.id }] },
+      });
+      const url = `/api/v1/events/${event.id}/chore-assignments/rebalance`;
+
+      const { body: preview } = await request()
+        .get(url)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+      expect(preview.data).toEqual([
+        {
+          assignmentId: upcoming.id,
+          role: 'MEMBER',
+          fromRegistrationId: busy.id,
+          toRegistrationId: idle.id,
+        },
+      ]);
+
+      await request()
+        .post(url)
+        .send({ changes: preview.data })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+      const members = await prisma.choreAssignmentMember.findMany({
+        where: { choreAssignmentId: upcoming.id },
+      });
+      expect(members.map((m) => m.registrationId)).toEqual([idle.id]);
+
+      // The same preview again no longer matches the duties.
+      await request()
+        .post(url)
+        .send({ changes: preview.data })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(409);
+    });
+
+    it('should respond with `403` when user is VIEWER', async () => {
+      const { event, accessToken } =
+        await createEventWithManagerAndToken('VIEWER');
+
+      await request()
+        .get(`/api/v1/events/${event.id}/chore-assignments/rebalance`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(403);
+    });
+  });
+
   describe('POST /api/v1/events/:eventId/chore-assignments/series', () => {
     const planSeries = async (
       eventId: string,

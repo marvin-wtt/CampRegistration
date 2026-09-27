@@ -1,4 +1,6 @@
 import { BaseService } from '#core/base/BaseService';
+import ApiError from '#utils/ApiError';
+import httpStatus from 'http-status';
 import { injectable } from 'inversify';
 import type {
   ChoreAssignmentBulkDeleteQuery,
@@ -11,6 +13,7 @@ import type {
   ChoreMemberRole,
   ChoreMemberRemovalQuery,
   ChoreMemberRemovalResult,
+  ChoreRebalanceChange,
   ChoreRotationUnit,
   ChoreSeriesPlanData,
   ChoreSeriesPlanResult,
@@ -24,9 +27,11 @@ import {
   groupAverages,
   type LedgerDuty,
   type MemberPick,
+  type MovableDuty,
   type OccurrenceSpec,
   pickForOccurrence,
   planOccurrences,
+  planRebalance,
   type PoolPerson,
   rankPeople,
   rankRooms,
@@ -43,6 +48,12 @@ import { ulid } from '#utils/ulid';
 const CHORE_ASSIGNMENT_INCLUDE = {
   chore: true,
   members: { orderBy: { id: 'asc' } },
+} as const satisfies Prisma.ChoreAssignmentInclude;
+
+const REBALANCE_INCLUDE = {
+  chore: { select: { effort: true, eligibility: true } },
+  choreSlot: { select: { effort: true } },
+  members: true,
 } as const satisfies Prisma.ChoreAssignmentInclude;
 
 const LEDGER_INCLUDE = {
@@ -497,6 +508,105 @@ export class ChoreAssignmentService extends BaseService {
       this.loadPool(eventId),
     ]);
     return fairnessOverview(ledger, pool);
+  }
+
+  /**
+   * Swaps that even out the load, without saving them. Only upcoming planned
+   * duties staffed by person may change hands — today's are left alone.
+   */
+  async previewRebalance(eventId: string): Promise<ChoreRebalanceChange[]> {
+    const today = toDateString(new Date());
+    const [assignments, pool] = await Promise.all([
+      this.db.choreAssignment.findMany({
+        where: { eventId },
+        include: REBALANCE_INCLUDE,
+      }),
+      this.loadPool(eventId),
+    ]);
+
+    const fixed: LedgerDuty[] = [];
+    const movable: MovableDuty[] = [];
+    for (const assignment of assignments) {
+      const duty: LedgerDuty = {
+        choreId: assignment.choreId,
+        date: toDateString(assignment.date),
+        effort: assignment.choreSlot?.effort ?? assignment.chore.effort,
+        status: assignment.status,
+        members: assignment.members,
+      };
+      if (
+        assignment.status === 'PLANNED' &&
+        assignment.rotationUnit === 'PERSON' &&
+        duty.date > today
+      ) {
+        movable.push({
+          ...duty,
+          id: assignment.id,
+          eligibility: assignment.chore.eligibility,
+        });
+      } else {
+        fixed.push(duty);
+      }
+    }
+
+    return planRebalance(fixed, movable, pool);
+  }
+
+  // Applies a preview; refused whole if the duties changed since.
+  async applyRebalance(
+    eventId: string,
+    changes: ChoreRebalanceChange[],
+  ): Promise<number> {
+    const byAssignment = Map.groupBy(changes, (change) => change.assignmentId);
+
+    await this.transaction(async (tx) => {
+      for (const [assignmentId, group] of byAssignment) {
+        const assignment = await tx.choreAssignment.findFirst({
+          where: { id: assignmentId, eventId, status: 'PLANNED' },
+          include: { members: true },
+        });
+        const current = new Set(
+          assignment?.members.map((m) => m.registrationId) ?? [],
+        );
+        const leaving = new Set(group.map((c) => c.fromRegistrationId));
+        const stale =
+          !assignment ||
+          group.some(
+            (c) =>
+              !assignment.members.some(
+                (m) =>
+                  m.registrationId === c.fromRegistrationId &&
+                  m.role === c.role,
+              ) ||
+              (current.has(c.toRegistrationId) &&
+                !leaving.has(c.toRegistrationId)),
+          );
+        if (stale) {
+          throw new ApiError(
+            httpStatus.CONFLICT,
+            'The duties changed in the meantime',
+          );
+        }
+
+        // Out first, then in, so people trading places within a duty don't
+        // collide on the unique member key.
+        await tx.choreAssignmentMember.deleteMany({
+          where: {
+            choreAssignmentId: assignmentId,
+            registrationId: { in: [...leaving] },
+          },
+        });
+        await tx.choreAssignmentMember.createMany({
+          data: group.map((change) => ({
+            choreAssignmentId: assignmentId,
+            registrationId: change.toRegistrationId,
+            role: change.role,
+          })),
+        });
+      }
+    });
+
+    return changes.length;
   }
 
   private async loadLedger(
