@@ -16,7 +16,10 @@
       />
     </q-btn>
 
-    <bottom-sheet v-model="mobileOpen">
+    <bottom-sheet
+      v-model="mobileOpen"
+      :snap-points="['half', 'full']"
+    >
       <div class="row items-center q-mb-sm">
         <span class="text-subtitle1 text-weight-medium">{{ t('title') }}</span>
         <q-badge

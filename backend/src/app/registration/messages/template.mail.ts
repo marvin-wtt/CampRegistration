@@ -34,6 +34,7 @@ import type {
   LocalContext,
 } from '#views/emails/types';
 import { htmlToPreviewText } from '#utils/emailPreview';
+import { htmlToText } from 'html-to-text';
 
 function dateToString(date: Date | string | null): string | null {
   if (date === null) {
@@ -114,16 +115,16 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
     let template = translateObject(
       this.payload.message.subject,
       this.payload.registration.country ?? this.locale(),
-    );
+    ).trim();
 
-    template = template.trim();
-
-    // Remove paragraph tags if they are present
+    // Templates saved by the rich-text editor are HTML; flatten them first.
     if (template.startsWith('<p>') && template.endsWith('</p>')) {
-      template = template.slice(3, -4).trim();
+      template = htmlToText(template, { wordwrap: false });
     }
 
+    // A subject is plain text, so values must not be HTML-escaped.
     const compile = Handlebars.compile(template, {
+      noEscape: true,
       knownHelpersOnly: true,
       knownHelpers: {
         if: true,
@@ -133,7 +134,8 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
       },
     });
 
-    return compile(this.context('text'));
+    // A header can't span lines
+    return compile(this.context('text')).replace(/\s+/g, ' ').trim();
   }
 
   protected replyTo(): AddressLike | undefined {

@@ -27,13 +27,13 @@
             :label="t('field.subject.label')"
             :placeholder="t('field.subject.placeholder')"
             :rules="[
-              (val?: string) => !!val || t('field.subject.rule.required'),
-              (val: string) =>
-                val.trim() !== '<p></p>' || t('field.subject.rule.required'),
+              (val?: string) =>
+                !!val?.trim() || t('field.subject.rule.required'),
             ]"
             hide-bottom-space
             :form
             single-line
+            plain-text
             outlined
             rounded
           />

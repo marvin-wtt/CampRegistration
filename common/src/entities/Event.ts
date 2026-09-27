@@ -4,6 +4,9 @@ import { ITheme } from 'survey-core';
 import { Translatable } from './Translatable.js';
 import type { OrganizationVerificationStatus } from './Organization.js';
 
+export const EVENT_PRESET_NAMES = ['camp', 'seminar', 'general'] as const;
+export type EventPresetName = (typeof EVENT_PRESET_NAMES)[number];
+
 export interface Event extends Identifiable {
   organizationId: string;
   organizationName: string;
@@ -63,7 +66,7 @@ export type EventCreateData = Omit<
   registrationOpensAt?: string | null | undefined;
   registrationClosesAt?: string | null | undefined;
   referenceEventId?: string | undefined;
-  preset?: 'camp' | 'seminar' | undefined | null;
+  preset?: EventPresetName | undefined | null;
 };
 
 export type EventUpdateData = Omit<

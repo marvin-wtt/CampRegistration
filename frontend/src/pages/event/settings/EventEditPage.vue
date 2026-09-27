@@ -9,19 +9,14 @@
     <q-form
       v-if="event"
       greedy
-      class="event-edit col-12 col-md-11 col-lg-10 column q-gutter-y-lg"
+      class="event-edit col-12 col-md-11 col-lg-10 column no-wrap q-gutter-y-lg"
       @reset="onReset"
       @submit="onSubmit"
     >
-      <!-- Header -->
-      <div class="page-title">
-        <div class="text-h5 text-weight-medium">
-          {{ t('title.edit') }}
-        </div>
-        <div class="text-body2 text-grey-6 q-mt-xs">
-          {{ t('subtitle') }}
-        </div>
-      </div>
+      <page-header
+        :title="t('title.edit')"
+        :subtitle="t('subtitle')"
+      />
 
       <!-- Two-column card grid -->
       <div class="row q-col-gutter-md items-start">
@@ -477,6 +472,7 @@
 </template>
 
 <script lang="ts" setup>
+import PageHeader from '@/components/common/PageHeader.vue';
 import { computed, onMounted, ref, watch } from 'vue';
 import type { Event, EventDetails } from '@camp-registration/common/entities';
 import { useRoute, useRouter } from 'vue-router';

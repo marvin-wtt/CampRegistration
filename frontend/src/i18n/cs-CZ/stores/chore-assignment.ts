@@ -19,4 +19,29 @@ export default {
     error: 'Nepodařilo se odstranit přiřazení služby',
     invalid: 'Neplatné ID akce',
   },
+  fill: {
+    progress: 'Obsazování volných míst...',
+    success: 'Volná místa obsazena',
+    error: 'Nepodařilo se obsadit volná místa',
+  },
+  series: {
+    progress: 'Plánování služeb...',
+    success: 'Služby naplánovány',
+    error: 'Nepodařilo se naplánovat služby',
+  },
+  deleteMany: {
+    progress: 'Mazání služeb...',
+    success: 'Služby smazány',
+    error: 'Nepodařilo se smazat služby',
+  },
+  rebalance: {
+    progress: 'Vyrovnávání služeb...',
+    success: 'Služby vyrovnány',
+    error: 'Vyrovnání se nezdařilo — služby se mezitím možná změnily',
+  },
+  removePerson: {
+    progress: 'Odebírání ze služeb...',
+    success: 'Odebráno ze služeb',
+    error: 'Nepodařilo se odebrat ze služeb',
+  },
 };

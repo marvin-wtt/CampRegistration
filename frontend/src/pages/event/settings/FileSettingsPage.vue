@@ -6,30 +6,22 @@
     class="files-page row justify-center"
   >
     <div class="files-content col-12 col-md-11 col-lg-10 q-gutter-y-lg">
-      <!-- Header -->
-      <div class="row items-end justify-between q-col-gutter-y-sm">
-        <div class="col-12 col-sm page-title">
-          <div class="text-h5 text-weight-medium">
-            {{ t('title') }}
-          </div>
-          <div class="text-body2 text-grey-6 q-mt-xs">
-            {{ t('subtitle') }}
-          </div>
-        </div>
-
-        <div
-          v-if="can('event.files.create')"
-          class="col-12 col-sm-auto"
-        >
-          <m-btn
-            :label="t('action.upload')"
-            :loading="uploadOngoing"
-            color="primary"
-            icon="cloud_upload"
-            @click="uploadFile"
-          />
-        </div>
-      </div>
+      <page-header
+        :title="t('title')"
+        :subtitle="t('subtitle')"
+      >
+        <template #actions>
+          <template v-if="can('event.files.create')">
+            <m-btn
+              :label="t('action.upload')"
+              :loading="uploadOngoing"
+              color="primary"
+              icon="cloud_upload"
+              @click="uploadFile"
+            />
+          </template>
+        </template>
+      </page-header>
 
       <!-- Missing documents -->
       <q-card
@@ -342,6 +334,7 @@
 </template>
 
 <script lang="ts" setup>
+import PageHeader from '@/components/common/PageHeader.vue';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import { useI18n } from 'vue-i18n';
@@ -555,10 +548,6 @@ function copyLink(url: string) {
   max-width: 960px;
   min-width: 0;
   padding-bottom: 24px;
-}
-
-.page-title {
-  min-width: 0;
 }
 
 /* The default page padding feels cramped under the app bar on phones. */

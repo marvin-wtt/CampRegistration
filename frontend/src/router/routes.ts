@@ -446,6 +446,11 @@ const routes: RouteRecordRaw[] = [
         name: 'print.calendar',
         component: () => import('@/pages/print/PrintCalendarPage.vue'),
       },
+      {
+        path: 'chores',
+        name: 'print.chores',
+        component: () => import('@/pages/print/PrintChoreRosterPage.vue'),
+      },
     ],
   },
   // Always leave this as last one,

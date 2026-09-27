@@ -19,4 +19,30 @@ export default {
     error: "Impossible de supprimer l'affectation",
     invalid: "ID de l'événement invalide",
   },
+  fill: {
+    progress: 'Attribution des places libres...',
+    success: 'Places libres attribuées',
+    error: "Impossible d'attribuer les places libres",
+  },
+  series: {
+    progress: 'Planification des corvées...',
+    success: 'Corvées planifiées',
+    error: 'Impossible de planifier les corvées',
+  },
+  deleteMany: {
+    progress: 'Suppression des corvées...',
+    success: 'Corvées supprimées',
+    error: 'Impossible de supprimer les corvées',
+  },
+  rebalance: {
+    progress: 'Rééquilibrage des corvées...',
+    success: 'Corvées rééquilibrées',
+    error:
+      'Impossible de rééquilibrer — les corvées ont peut-être changé entre-temps',
+  },
+  removePerson: {
+    progress: 'Retrait des corvées...',
+    success: 'Retiré des corvées',
+    error: 'Impossible de retirer des corvées',
+  },
 };

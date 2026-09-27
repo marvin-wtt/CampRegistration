@@ -4,31 +4,24 @@
     :error
     class="row justify-center"
   >
-    <div class="tasks-content col-12 col-md-11 col-lg-10 column q-gutter-y-lg">
-      <!-- Header -->
-      <div class="row items-start justify-between q-col-gutter-y-sm">
-        <div class="col-12 col-sm page-title">
-          <div class="text-h5 text-weight-medium">
-            {{ t('title') }}
-          </div>
-          <div class="text-body2 text-grey-6 q-mt-xs">
-            {{ t('subtitle') }}
-          </div>
-        </div>
-
-        <div
-          v-if="can('event.tasks.create')"
-          class="col-12 col-sm-auto"
-        >
-          <m-btn
-            :label="t('action.add')"
-            color="primary"
-            icon="add_task"
-            class="full-width"
-            @click="showAddDialog"
-          />
-        </div>
-      </div>
+    <div
+      class="tasks-content col-12 col-md-11 col-lg-10 column no-wrap q-gutter-y-lg"
+    >
+      <page-header
+        :title="t('title')"
+        :subtitle="t('subtitle')"
+      >
+        <template #actions>
+          <template v-if="can('event.tasks.create')">
+            <m-btn
+              :label="t('action.add')"
+              color="primary"
+              icon="add_task"
+              @click="showAddDialog"
+            />
+          </template>
+        </template>
+      </page-header>
 
       <!-- Loading skeleton (data region only; header stays real) -->
       <task-list-skeleton v-if="loading" />
@@ -156,6 +149,7 @@
 </template>
 
 <script lang="ts" setup>
+import PageHeader from '@/components/common/PageHeader.vue';
 import { useI18n } from 'vue-i18n';
 import { useTaskStore } from '@/stores/task-store';
 import { useEventManagerStore } from '@/stores/event-manager-store';

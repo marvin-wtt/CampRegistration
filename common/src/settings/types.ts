@@ -44,11 +44,14 @@ export interface ProgramPlannerSettings {
   browseOutsideEventDates: boolean;
 }
 
+/** Nav-rail items an event can hide via `SETTING_KEYS.NAVIGATION`. */
+export type HideableNavigationItem =
+  'contact' | 'program_planner' | 'room_planner' | 'tasks' | 'chore_planner';
+
 /**
- * Stored under `SETTING_KEYS.NAVIGATION`. Names are frontend-only nav-rail
- * item identifiers (see `EVENT_NAVIGATION_ITEMS` in the frontend) — this is a
- * purely cosmetic setting, so the backend validates it as opaque strings
- * rather than mirroring the frontend's list of item names.
+ * Stored under `SETTING_KEYS.NAVIGATION`. Names are {@link HideableNavigationItem}s
+ * — this is a purely cosmetic setting, so the backend validates it as opaque
+ * strings and tolerates stale names.
  */
 export interface NavigationSettings {
   hiddenItems: string[];

@@ -5,13 +5,13 @@
     :error
     class="row justify-center"
   >
-    <div class="privacy-shell column col-12 col-sm-10 col-md-8 q-gutter-md">
-      <div class="page-title">
-        <div class="text-h5 text-weight-medium">{{ t('title') }}</div>
-        <div class="text-body2 text-on-surface-variant q-mt-xs">
-          {{ t('subtitle') }}
-        </div>
-      </div>
+    <div
+      class="privacy-shell column no-wrap col-12 col-sm-10 col-md-8 q-gutter-md"
+    >
+      <page-header
+        :title="t('title')"
+        :subtitle="t('subtitle')"
+      />
 
       <!-- What the organization already says. Read-only, and shown in full
            rather than summarised in a sentence: without it an author cannot
@@ -403,6 +403,7 @@
 </template>
 
 <script lang="ts" setup>
+import PageHeader from '@/components/common/PageHeader.vue';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';

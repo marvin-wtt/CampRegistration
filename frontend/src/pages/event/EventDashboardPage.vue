@@ -83,6 +83,12 @@
         <tasks-due-widget :loading="tasksLoading" />
       </section>
 
+      <!-- Renders nothing on days without duties. -->
+      <today-duties-widget
+        v-if="can('event.chore_assignments.view') && can('event.chores.view')"
+        class="dashboard-section"
+      />
+
       <q-card
         v-if="!loading && attentionItems.length > 0"
         flat
@@ -227,6 +233,7 @@ import { storeToRefs } from 'pinia';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import EventSummaryHero from '@/components/event/dashboard/EventSummaryHero.vue';
 import StatCard from '@/components/event/dashboard/StatCard.vue';
+import TodayDutiesWidget from '@/components/event/dashboard/TodayDutiesWidget.vue';
 import CountryBreakdownTable from '@/components/event/dashboard/CountryBreakdownTable.vue';
 import DemographicsExplorer from '@/components/event/dashboard/DemographicsExplorer.vue';
 import TasksDueWidget from '@/components/event/dashboard/TasksDueWidget.vue';

@@ -1,6 +1,7 @@
 import type { ChoreAssignment as ChoreAssignmentData } from '@camp-registration/common/entities';
 import { JsonResource } from '#core/resource/JsonResource';
-import type { ChoreAssignmentWithRelations } from '#app/choreAssignment/choreAssignment.types';
+import type { ChoreAssignmentWithRelations } from '#app/chore-assignment/chore-assignment.types';
+import { toDateString } from '#utils/date';
 
 export class ChoreAssignmentResource extends JsonResource<
   ChoreAssignmentWithRelations,
@@ -14,10 +15,17 @@ export class ChoreAssignmentResource extends JsonResource<
         id: this.data.chore.id,
         name: this.data.chore.name,
       },
+      slotId: this.data.slotId,
+      batchId: this.data.batchId,
       rotationUnit: this.data.rotationUnit,
-      date: this.data.date.toISOString().split('T')[0],
-      slot: this.data.slot ?? null,
-      registrationIds: this.data.members.map((member) => member.registrationId),
+      date: toDateString(this.data.date),
+      status: this.data.status,
+      note: this.data.note,
+      members: this.data.members.map((member) => ({
+        registrationId: member.registrationId,
+        role: member.role,
+        missed: member.missed,
+      })),
     };
   }
 }

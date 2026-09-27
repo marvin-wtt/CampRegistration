@@ -6,6 +6,7 @@ import { TableTemplateService } from '#app/tableTemplate/table-template.service'
 import httpStatus from 'http-status';
 import {
   defaultMessageTemplatesForCountries,
+  defaultSettingsForPreset,
   getEventPreset,
   localesForCountries,
 } from '#app/event/presets/index.js';
@@ -110,8 +111,8 @@ export class EventController extends BaseController {
       preset.tableTemplates.map((value) => ({ data: value }));
     const messageTemplates =
       cloned?.messageTemplates ??
-      defaultMessageTemplatesForCountries(body.countries);
-    const settings = cloned?.settings ?? [];
+      defaultMessageTemplatesForCountries(body.countries, body.preset);
+    const settings = cloned?.settings ?? defaultSettingsForPreset(preset);
 
     const event = await this.eventService.createEvent(
       userId,

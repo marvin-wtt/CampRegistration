@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { defineAsyncComponent, defineComponent, h } from 'vue';
 import { installQuasarPlugin } from '@/../test/vitest/utils/quasar';
+import type * as PrintMarginBoxes from '@/utils/printMarginBoxes';
 import PrintTablesPage from '@/pages/print/PrintTablesPage.vue';
 import TableComponentRegistry from '@/components/event/table/ComponentRegistry';
 import type { TableCellProps } from '@/components/event/table/tableCells/TableCellProps';
@@ -13,17 +14,30 @@ import type {
 
 installQuasarPlugin();
 
-vi.mock('vue-router', () => ({
-  useRoute: () => ({ query: { key: STORAGE_KEY } }),
-}));
-
 // Only used inside filters of the hidden local templates, which are not
 // printed here; avoids pulling in the stores (and with them router and API).
 vi.mock('@/composables/registrationHelper', () => ({
   useRegistrationHelper: () => ({}),
 }));
 
-const STORAGE_KEY = 'print:tables:test';
+// The shared mock's d() echoes its Date argument; margin boxes need a string.
+vi.mock('vue-i18n', async () => {
+  const { ref } = await import('vue');
+  return {
+    useI18n: () => ({
+      t: (key: string) => key,
+      d: (value: Date) => value.toISOString(),
+      locale: ref('en'),
+    }),
+  };
+});
+
+const marginBoxSupport = vi.hoisted(() => ({ value: true }));
+vi.mock('@/utils/printMarginBoxes', async (importOriginal) => ({
+  ...(await importOriginal<typeof PrintMarginBoxes>()),
+  supportsMarginBoxes: () => marginBoxSupport.value,
+}));
+
 const CELL_TYPE = 'print_test_async';
 
 // A cell renderer whose chunk only "arrives" once the test releases it, like
@@ -93,8 +107,28 @@ describe('PrintTablesPage', () => {
 
   beforeEach(() => {
     registerAsyncCell();
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(payload()));
 
+    // Standalone window in happy-dom: the opener answers the payload request.
+    const opener = {
+      postMessage: (msg: { type: string }) => {
+        if (msg.type !== 'PRINT_TABLES:REQUEST') {
+          return;
+        }
+        window.dispatchEvent(
+          new MessageEvent('message', {
+            data: {
+              type: 'PRINT_TABLES:PAYLOAD',
+              payload: JSON.stringify(payload()),
+            },
+            origin: window.location.origin,
+            source: opener as unknown as Window,
+          }),
+        );
+      },
+    };
+    vi.stubGlobal('opener', opener);
+
+    marginBoxSupport.value = true;
     renderedCellsAtPrint = undefined;
     // happy-dom does not implement print(); record what would be printed.
     vi.stubGlobal(
@@ -109,7 +143,6 @@ describe('PrintTablesPage', () => {
 
   afterEach(() => {
     TableComponentRegistry.remove(CELL_TYPE);
-    sessionStorage.clear();
     vi.unstubAllGlobals();
   });
 
@@ -134,6 +167,39 @@ describe('PrintTablesPage', () => {
     await vi.waitFor(() => expect(window.print).toHaveBeenCalledOnce());
     expect(wrapper.findAll('.print-sheet')).toHaveLength(1);
     expect(wrapper.find('.print-header__title').text()).toBe('Participants');
+    expect(wrapper.find('.print-table-end').exists()).toBe(true);
+  });
+
+  it('moves event, template title and page numbers into margin boxes', async () => {
+    releaseCellChunk();
+
+    const wrapper = mount(PrintTablesPage, { attachTo: document.body });
+
+    await vi.waitFor(() => expect(window.print).toHaveBeenCalledOnce());
+    const css = Array.from(document.head.querySelectorAll('style'))
+      .map((style) => style.textContent ?? '')
+      .join('\n');
+
+    expect(wrapper.find('.print-sheet').attributes('style')).toContain(
+      'page: table-0',
+    );
+    expect(css).toContain('@top-left { content: "Summer Event"; }');
+    expect(css).toMatch(
+      /@page table-0 \{ size: A4 (portrait|landscape); .*@bottom-left \{ content: "Participants"; \}/,
+    );
+    expect(wrapper.find('.print-header__meta').exists()).toBe(false);
+    expect(wrapper.find('.print-footer').exists()).toBe(false);
+    wrapper.unmount();
+  });
+
+  it('keeps the in-flow header meta and footer without margin box support', async () => {
+    marginBoxSupport.value = false;
+    releaseCellChunk();
+
+    const wrapper = mount(PrintTablesPage, { attachTo: document.body });
+
+    await vi.waitFor(() => expect(window.print).toHaveBeenCalledOnce());
     expect(wrapper.find('.print-header__meta').text()).toBe('Summer Event');
+    expect(wrapper.find('.print-footer__left').text()).toBe('Participants');
   });
 });

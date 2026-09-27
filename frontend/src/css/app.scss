@@ -54,14 +54,6 @@
   background: var(--md3-background);
 }
 
-// Page title blocks sit flush against the content's left edge, which feels
-// cramped next to the rail. The cards/lists/forms below carry their own
-// borders and padding, so only the bare title (and its subtitle) needs a
-// small left inset. Apply to the element wrapping the page title.
-.page-title {
-  padding-left: 8px;
-}
-
 // Administration index pages: a full-height flex column holding a toolbar and a
 // virtual-scroll table. Pinning the page bounds its height so the table scrolls
 // internally instead of growing the page (min-height:0 lets the flex child
@@ -145,4 +137,43 @@ input::-webkit-inner-spin-button {
 /* Firefox */
 input[type='number'] {
   -moz-appearance: textfield;
+}
+
+// Segmented toggles on narrow screens: the selected option adds a check mark,
+// which would otherwise push its label onto a second line.
+.compact-toggle .q-btn {
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.compact-toggle .q-btn__content {
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+// Form fields side by side on wider screens, stacked on phones. A grid with
+// `gap` rather than `q-col-gutter-*`, whose negative margins cancel the
+// spacing of the surrounding `q-gutter-y-*` stack.
+.field-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+
+  &--pairs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: $breakpoint-sm-min) {
+  .field-grid--2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .field-grid--3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .field-grid--wide-narrow {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  }
 }

@@ -6,27 +6,20 @@
     class="room-planner row justify-center"
   >
     <div class="planner-content col-12 col-md-11 col-lg-10 column no-wrap">
-      <!-- Header -->
-      <div class="header row items-start justify-between no-wrap">
-        <div class="header-text col page-title">
-          <div class="row items-center no-wrap q-gutter-x-sm">
-            <div class="text-h5 text-weight-medium ellipsis">
-              {{ t('title') }}
-            </div>
-            <q-badge
-              v-if="!loading"
-              rounded
-              class="count-badge"
-              :label="rooms.length"
-            />
-          </div>
-          <div class="text-body2 text-grey-6 q-mt-xs">
-            {{ t('subtitle') }}
-          </div>
-        </div>
-
-        <!-- Page actions -->
-        <div class="header-actions row items-center no-wrap q-gutter-x-xs">
+      <page-header
+        :title="t('title')"
+        :subtitle="t('subtitle')"
+        inline-actions
+      >
+        <template #title-append>
+          <q-badge
+            v-if="!loading"
+            rounded
+            class="count-badge"
+            :label="rooms.length"
+          />
+        </template>
+        <template #actions>
           <m-btn
             v-if="can('event.rooms.beds.edit')"
             icon="tune"
@@ -101,7 +94,6 @@
               </q-list>
             </q-menu>
           </m-btn>
-
           <m-btn
             v-if="can('event.rooms.edit')"
             icon="swap_vert"
@@ -114,7 +106,6 @@
           >
             <q-tooltip>{{ t('action.reorder') }}</q-tooltip>
           </m-btn>
-
           <m-btn
             v-if="can('event.rooms.edit')"
             :label="isMobile ? undefined : t('action.add')"
@@ -127,8 +118,8 @@
           >
             <q-tooltip v-if="isMobile">{{ t('action.add') }}</q-tooltip>
           </m-btn>
-        </div>
-      </div>
+        </template>
+      </page-header>
 
       <!-- Occupancy stats -->
       <div
@@ -282,6 +273,7 @@
 </template>
 
 <script lang="ts" setup>
+import PageHeader from '@/components/common/PageHeader.vue';
 import { computed, ref } from 'vue';
 import { useQuasar } from 'quasar';
 import { useEventDetailsStore } from '@/stores/event-details-store';
@@ -697,18 +689,6 @@ function findRegistrationById(registrationId: string | null) {
 <style scoped>
 .planner-content {
   min-width: 0;
-}
-
-.header {
-  gap: 12px 16px;
-}
-
-.header-text {
-  min-width: 0;
-}
-
-.header-actions {
-  flex-shrink: 0;
 }
 
 .count-badge {

@@ -4,28 +4,26 @@
     :error
     class="row justify-center"
   >
-    <div class="column col-sm-10 col-md-9 col-lg-8 col-12">
-      <div class="row items-start justify-between no-wrap q-mb-lg">
-        <div class="col page-title">
-          <div class="text-h5 text-weight-medium">
-            {{ t('title') }}
-          </div>
-          <div class="text-body2 text-grey-6 q-mt-xs">
-            {{ t('subtitle') }}
-          </div>
-        </div>
-        <q-btn
-          color="primary"
-          icon="add"
-          :label="quasar.screen.gt.xs ? t('action.create') : ''"
-          :aria-label="t('action.create')"
-          :round="quasar.screen.lt.sm"
-          :rounded="quasar.screen.gt.xs"
-          unelevated
-          no-caps
-          @click="showCreateDialog"
-        />
-      </div>
+    <div class="column no-wrap col-sm-10 col-md-9 col-lg-8 col-12">
+      <page-header
+        class="q-mb-lg"
+        :title="t('title')"
+        :subtitle="t('subtitle')"
+      >
+        <template #actions>
+          <q-btn
+            color="primary"
+            icon="add"
+            :label="quasar.screen.gt.xs ? t('action.create') : ''"
+            :aria-label="t('action.create')"
+            :round="quasar.screen.lt.sm"
+            :rounded="quasar.screen.gt.xs"
+            unelevated
+            no-caps
+            @click="showCreateDialog"
+          />
+        </template>
+      </page-header>
 
       <div
         v-if="loading"
@@ -165,6 +163,7 @@
 </template>
 
 <script lang="ts" setup>
+import PageHeader from '@/components/common/PageHeader.vue';
 import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
 import { useNewsletterStore } from '@/stores/newsletter-store';

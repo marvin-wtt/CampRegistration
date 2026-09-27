@@ -1,38 +1,30 @@
 <template>
-  <q-dialog
+  <responsive-dialog
     ref="dialogRef"
     @hide="onDialogHide"
   >
-    <q-card class="q-dialog-plugin manager-card">
-      <q-card-section class="row items-center justify-between no-wrap">
-        <div class="text-h6">{{ t('title') }}</div>
-        <div class="row items-center q-gutter-x-xs">
-          <q-btn
-            v-if="can('event.chores.create')"
-            icon="add"
-            flat
-            round
-            dense
-            :aria-label="t('action.add')"
-            @click="addChore"
-          >
-            <q-tooltip>{{ t('action.add') }}</q-tooltip>
-          </q-btn>
-          <q-btn
-            v-close-popup
-            icon="close"
-            flat
-            round
-            dense
-            :aria-label="t('action.close')"
-          />
-        </div>
-      </q-card-section>
+    <chore-dialog-card
+      :title="t('title')"
+      :width="480"
+      @cancel="onDialogCancel"
+    >
+      <template #header-actions>
+        <q-btn
+          v-if="can('event.chores.create')"
+          icon="add"
+          flat
+          round
+          :aria-label="t('action.add')"
+          @click="addChore"
+        >
+          <q-tooltip>{{ t('action.add') }}</q-tooltip>
+        </q-btn>
+      </template>
 
-      <q-card-section class="q-pt-none">
+      <div>
         <div
           v-if="chores.length === 0"
-          class="empty-state column items-center text-center"
+          class="empty-state column no-wrap items-center text-center"
         >
           <q-icon
             name="checklist"
@@ -65,25 +57,8 @@
             </q-item-section>
             <q-item-section>
               <q-item-label>{{ to(chore.name) }}</q-item-label>
-              <q-item-label
-                v-if="
-                  chore.defaultCount ||
-                  chore.excludeStaff ||
-                  chore.balanceCountries
-                "
-                caption
-              >
-                <span v-if="chore.defaultCount">
-                  {{
-                    t('dutyType.defaultCount', { count: chore.defaultCount })
-                  }}
-                </span>
-                <span v-if="chore.excludeStaff">
-                  · {{ t('dutyType.excludeStaff') }}
-                </span>
-                <span v-if="chore.balanceCountries">
-                  · {{ t('dutyType.balanceCountries') }}
-                </span>
+              <q-item-label caption>
+                {{ choreSummary(chore) }}
               </q-item-label>
             </q-item-section>
             <q-item-section
@@ -96,7 +71,6 @@
                   icon="edit"
                   flat
                   round
-                  dense
                   :aria-label="t('action.edit')"
                   @click="editChore(chore)"
                 />
@@ -105,7 +79,6 @@
                   icon="delete"
                   flat
                   round
-                  dense
                   :aria-label="t('action.delete')"
                   @click="deleteChore(chore)"
                 />
@@ -113,9 +86,9 @@
             </q-item-section>
           </q-item>
         </q-list>
-      </q-card-section>
-    </q-card>
-  </q-dialog>
+      </div>
+    </chore-dialog-card>
+  </responsive-dialog>
 </template>
 
 <script lang="ts" setup>
@@ -133,10 +106,12 @@ import { useObjectTranslation } from '@/composables/objectTranslation';
 import { usePermissions } from '@/composables/permissions';
 import ConfirmDialog from '@/components/common/dialogs/ConfirmDialog.vue';
 import ChoreDialog from '@/components/event/chorePlanner/dialogs/ChoreDialog.vue';
+import ChoreDialogCard from '@/components/event/chorePlanner/ChoreDialogCard.vue';
+import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
 
 const { t } = useI18n();
 const quasar = useQuasar();
-const { dialogRef, onDialogHide } = useDialogPluginComponent();
+const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent();
 const choreStore = useChoreStore();
 const choreAssignmentStore = useChoreAssignmentStore();
 const { to } = useObjectTranslation();
@@ -150,6 +125,25 @@ const props = defineProps<{
 defineEmits([...useDialogPluginComponent.emits]);
 
 const chores = computed<Chore[]>(() => choreStore.data ?? []);
+
+function choreSummary(chore: Chore): string {
+  return [
+    t(`dutyType.eligibility.${chore.eligibility}`),
+    t(`dutyType.effort.${chore.effort}`),
+    chore.defaultCount
+      ? t('dutyType.defaultCount', { count: chore.defaultCount })
+      : undefined,
+    chore.supervisorCount > 0
+      ? t('dutyType.supervisors', { count: chore.supervisorCount })
+      : undefined,
+    chore.slots.length > 0
+      ? chore.slots.map((slot) => to(slot.name)).join(', ')
+      : undefined,
+    chore.balanceCountries ? t('dutyType.balanceCountries') : undefined,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+}
 
 const canManageChores = computed<boolean>(() => {
   return can('event.chores.edit') || can('event.chores.delete');
@@ -207,10 +201,6 @@ function deleteChore(chore: Chore) {
 </script>
 
 <style scoped>
-.manager-card {
-  min-width: min(480px, 90vw);
-}
-
 .section-card {
   border-radius: 16px;
 }
@@ -232,7 +222,6 @@ action:
   add: 'Add'
   edit: 'Edit'
   delete: 'Delete'
-  close: 'Close'
 
 empty:
   title: 'No chores yet'
@@ -240,7 +229,15 @@ empty:
 
 dutyType:
   defaultCount: 'Usually {count} people'
-  excludeStaff: 'Staff excluded'
+  supervisors: '{count} supervisor | {count} supervisors'
+  eligibility:
+    PARTICIPANTS: 'Participants'
+    STAFF: 'Staff'
+    EVERYONE: 'Everyone'
+  effort:
+    LIGHT: 'Light'
+    NORMAL: 'Normal effort'
+    HEAVY: 'Heavy'
   balanceCountries: 'Country-balanced'
 
 dialog:
@@ -256,7 +253,6 @@ action:
   add: 'Hinzufügen'
   edit: 'Bearbeiten'
   delete: 'Löschen'
-  close: 'Schließen'
 
 empty:
   title: 'Noch keine Diensttypen'
@@ -264,7 +260,15 @@ empty:
 
 dutyType:
   defaultCount: 'Normalerweise {count} Personen'
-  excludeStaff: 'Betreuende ausgeschlossen'
+  supervisors: '{count} Aufsicht | {count} Aufsichten'
+  eligibility:
+    PARTICIPANTS: 'Teilnehmende'
+    STAFF: 'Betreuende'
+    EVERYONE: 'Alle'
+  effort:
+    LIGHT: 'Leicht'
+    NORMAL: 'Normaler Aufwand'
+    HEAVY: 'Schwer'
   balanceCountries: 'Länderausgleich'
 
 dialog:
@@ -280,7 +284,6 @@ action:
   add: 'Ajouter'
   edit: 'Modifier'
   delete: 'Supprimer'
-  close: 'Fermer'
 
 empty:
   title: 'Aucune corvée pour le moment'
@@ -288,7 +291,15 @@ empty:
 
 dutyType:
   defaultCount: 'Généralement {count} personnes'
-  excludeStaff: 'Encadrement exclu'
+  supervisors: '{count} encadrant | {count} encadrants'
+  eligibility:
+    PARTICIPANTS: 'Participants'
+    STAFF: 'Encadrement'
+    EVERYONE: 'Tout le monde'
+  effort:
+    LIGHT: 'Léger'
+    NORMAL: 'Effort normal'
+    HEAVY: 'Lourd'
   balanceCountries: 'Équilibre des pays'
 
 dialog:
@@ -304,7 +315,6 @@ action:
   add: 'Dodaj'
   edit: 'Edytuj'
   delete: 'Usuń'
-  close: 'Zamknij'
 
 empty:
   title: 'Brak obowiązków'
@@ -312,7 +322,15 @@ empty:
 
 dutyType:
   defaultCount: 'Zwykle {count} osób'
-  excludeStaff: 'Kadra wykluczona'
+  supervisors: '{count} opiekun | {count} opiekunów'
+  eligibility:
+    PARTICIPANTS: 'Uczestnicy'
+    STAFF: 'Kadra'
+    EVERYONE: 'Wszyscy'
+  effort:
+    LIGHT: 'Lekki'
+    NORMAL: 'Normalny wysiłek'
+    HEAVY: 'Ciężki'
   balanceCountries: 'Równoważenie krajów'
 
 dialog:
@@ -328,7 +346,6 @@ action:
   add: 'Přidat'
   edit: 'Upravit'
   delete: 'Smazat'
-  close: 'Zavřít'
 
 empty:
   title: 'Zatím žádné povinnosti'
@@ -336,7 +353,15 @@ empty:
 
 dutyType:
   defaultCount: 'Obvykle {count} lidí'
-  excludeStaff: 'Vedoucí vyloučeni'
+  supervisors: '{count} dozor | {count} dozory'
+  eligibility:
+    PARTICIPANTS: 'Účastníci'
+    STAFF: 'Vedoucí'
+    EVERYONE: 'Všichni'
+  effort:
+    LIGHT: 'Lehká'
+    NORMAL: 'Běžná náročnost'
+    HEAVY: 'Těžká'
   balanceCountries: 'Vyvážení zemí'
 
 dialog:

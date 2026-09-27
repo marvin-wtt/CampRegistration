@@ -492,11 +492,12 @@ import CountrySelect from '@/components/common/CountrySelect.vue';
 import TranslatedInput from '@/components/common/inputs/TranslatedInput.vue';
 import DateRangeInput from '@/components/common/inputs/DateRangeInput.vue';
 import { computed, onMounted, ref, watch } from 'vue';
-import type {
-  Event,
-  EventCreateData,
-  EventDetails,
-  Organization,
+import {
+  EVENT_PRESET_NAMES,
+  type Event,
+  type EventCreateData,
+  type EventDetails,
+  type Organization,
 } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from '@/composables/objectTranslation';
@@ -641,14 +642,10 @@ const confirmationModeOptions = computed<
 const presetOptions = computed<QSelectOption<EventCreateData['preset']>[]>(
   () => {
     return [
-      {
-        label: t('preset.camp'),
-        value: 'camp',
-      },
-      {
-        label: t('preset.seminar'),
-        value: 'seminar',
-      },
+      ...EVENT_PRESET_NAMES.map((value) => ({
+        label: t(`preset.${value}`),
+        value,
+      })),
       {
         label: t('preset.otherEvent'),
         value: null,
@@ -798,6 +795,7 @@ field:
 preset:
   camp: 'Camp'
   seminar: 'Seminar'
+  general: 'General event'
   otherEvent: 'Copy from another event'
 
 validation:
@@ -888,6 +886,7 @@ field:
 preset:
   camp: 'Freizeit'
   seminar: 'Seminar'
+  general: 'Allgemeine Veranstaltung'
   otherEvent: 'Von einer anderen Veranstaltung kopieren'
 
 validation:
@@ -978,6 +977,7 @@ field:
 preset:
   camp: 'Colonie de vacances'
   seminar: 'Séminaire'
+  general: 'Événement général'
   otherEvent: 'Copier depuis un autre événement'
 
 validation:
@@ -1068,6 +1068,7 @@ field:
 preset:
   camp: 'Obóz'
   seminar: 'Seminarium'
+  general: 'Wydarzenie ogólne'
   otherEvent: 'Skopiuj z innego wydarzenia'
 
 validation:
@@ -1158,6 +1159,7 @@ field:
 preset:
   camp: 'Tábor'
   seminar: 'Seminář'
+  general: 'Obecná akce'
   otherEvent: 'Zkopírovat z jiné akce'
 
 validation:
