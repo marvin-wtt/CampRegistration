@@ -19,7 +19,7 @@ import { useI18n } from 'vue-i18n';
 import GeneralLayout from '@/components/layout/GeneralLayout.vue';
 import WorkspaceSwitcher from '@/components/layout/WorkspaceSwitcher.vue';
 import { useAuthStore } from '@/stores/auth-store';
-import type { NavigationItemProps } from '@/components/NavigationItemProps.ts';
+import type { NavigationItemProps } from '@/components/layout/NavigationItemProps.ts';
 
 const { t } = useI18n();
 

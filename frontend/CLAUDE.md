@@ -2,6 +2,19 @@
 
 Frontend-specific conventions. The repo-wide overview, commands, and pitfalls live in the root `CLAUDE.md`.
 
+## Structure
+
+- **`src/features/<name>/`** holds everything that belongs to one feature — its pages,
+  components, composables, stores and domain utils. A feature is one place a user works,
+  so all global-admin pages live in `features/administration/`, whatever model they manage.
+- **Top-level `components/`, `composables/`, `stores/`, `utils/`, `services/`** hold only
+  code that several features or the app shell use, plus generic building blocks even when
+  a single feature uses them today. `components/` is `common/`, `layout/` and `emailEditor/`.
+- **Nothing outside `features/` imports from `features/`**, except `router/` and
+  `layouts/`. Features may import from each other.
+- Quasar-owned paths stay put: `boot/`, `router/`, `layouts/`, `stores/index.ts`, `i18n/`,
+  `css/`. `quasar new page|component|store` writes to the default folders — move the file.
+
 ## State & API
 
 - One Pinia store per feature domain; use `storeToRefs()` for destructuring reactive state

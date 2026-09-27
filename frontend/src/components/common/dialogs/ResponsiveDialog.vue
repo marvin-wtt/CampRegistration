@@ -22,7 +22,7 @@
 <script lang="ts" setup>
 import { ref } from 'vue';
 import { useQuasar } from 'quasar';
-import BottomSheet from '@/components/BottomSheet.vue';
+import BottomSheet from '@/components/common/BottomSheet.vue';
 
 const emit = defineEmits<{
   hide: [];

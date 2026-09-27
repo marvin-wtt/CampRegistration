@@ -15,7 +15,7 @@ import { isRefreshFailureAuthoritative } from '@/services/authRefreshToken';
 import { createRetryScheduler } from '@/utils/retryScheduler';
 import { computed, ref } from 'vue';
 import { Dialog } from 'quasar';
-import TwoFactorSuggestionDialog from '@/components/settings/twoFactor/TwoFactorSuggestionDialog.vue';
+import TwoFactorSuggestionDialog from '@/components/common/dialogs/TwoFactorSuggestionDialog.vue';
 
 const TWO_FACTOR_SUGGESTION_DISMISSED_KEY = 'two-factor-suggestion-dismissed';
 
