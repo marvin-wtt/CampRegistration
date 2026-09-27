@@ -4,10 +4,20 @@ import type {
   ChoreCreateData,
   ChoreUpdateData,
   ChoreAssignment,
+  ChoreAssignmentBulkDeleteQuery,
   ChoreAssignmentCreateData,
+  ChoreAssignmentMemberData,
+  ChoreAssignmentSuggestionQuery,
   ChoreAssignmentUpdateData,
   ChoreAssignmentSuggestions,
-  ChoreRotationUnit,
+  ChoreAutoFillData,
+  ChoreFairnessEntry,
+  ChoreMemberRemovalQuery,
+  ChoreMemberRemovalResult,
+  ChoreRebalanceChange,
+  ChoreRebalanceData,
+  ChoreSeriesPlanData,
+  ChoreSeriesPlanResult,
 } from '@camp-registration/common/entities';
 
 export function useChoreService() {
@@ -64,12 +74,106 @@ export function useChoreService() {
 
   async function fetchChoreAssignmentSuggestions(
     eventId: string,
-    choreId: string,
-    unit: ChoreRotationUnit,
+    query: ChoreAssignmentSuggestionQuery,
   ): Promise<ChoreAssignmentSuggestions> {
     const response = await api.get(
       `events/${eventId}/chore-assignments/suggestions/`,
-      { params: { choreId, unit } },
+      { params: query },
+    );
+
+    return response?.data?.data;
+  }
+
+  async function fetchChoreFairness(
+    eventId: string,
+  ): Promise<ChoreFairnessEntry[]> {
+    const response = await api.get(
+      `events/${eventId}/chore-assignments/fairness/`,
+    );
+
+    return response?.data?.data;
+  }
+
+  async function autoFillChoreMembers(
+    eventId: string,
+    data: ChoreAutoFillData,
+  ): Promise<ChoreAssignmentMemberData[]> {
+    const response = await api.post(
+      `events/${eventId}/chore-assignments/auto-fill/`,
+      data,
+    );
+
+    return response?.data?.data;
+  }
+
+  async function planChoreSeries(
+    eventId: string,
+    data: ChoreSeriesPlanData,
+  ): Promise<ChoreSeriesPlanResult> {
+    const response = await api.post(
+      `events/${eventId}/chore-assignments/series/`,
+      data,
+    );
+
+    return response?.data?.data;
+  }
+
+  async function deleteChoreAssignments(
+    eventId: string,
+    query: ChoreAssignmentBulkDeleteQuery,
+  ): Promise<number> {
+    const response = await api.delete(`events/${eventId}/chore-assignments/`, {
+      // The backend accepts the chore list in comma form only.
+      params: {
+        ...query,
+        choreId: [query.choreId].flat().join(',') || undefined,
+      },
+    });
+
+    return response?.data?.data?.count;
+  }
+
+  async function removeChoreMember(
+    eventId: string,
+    registrationId: string,
+    query: ChoreMemberRemovalQuery,
+  ): Promise<ChoreMemberRemovalResult> {
+    const response = await api.delete(
+      `events/${eventId}/chore-assignments/members/${registrationId}/`,
+      { params: query },
+    );
+
+    return response?.data?.data;
+  }
+
+  async function fetchChoreRebalance(
+    eventId: string,
+  ): Promise<ChoreRebalanceChange[]> {
+    const response = await api.get(
+      `events/${eventId}/chore-assignments/rebalance/`,
+    );
+
+    return response?.data?.data;
+  }
+
+  async function applyChoreRebalance(
+    eventId: string,
+    data: ChoreRebalanceData,
+  ): Promise<{ count: number }> {
+    const response = await api.post(
+      `events/${eventId}/chore-assignments/rebalance/`,
+      data,
+    );
+
+    return response?.data?.data;
+  }
+
+  async function fillChoreAssignment(
+    eventId: string,
+    choreAssignmentId: string,
+  ): Promise<ChoreAssignment> {
+    const response = await api.post(
+      `events/${eventId}/chore-assignments/${choreAssignmentId}/fill/`,
     );
 
     return response?.data?.data;
@@ -117,6 +221,14 @@ export function useChoreService() {
     fetchChoreAssignments,
     fetchChoreAssignment,
     fetchChoreAssignmentSuggestions,
+    fetchChoreFairness,
+    autoFillChoreMembers,
+    planChoreSeries,
+    deleteChoreAssignments,
+    removeChoreMember,
+    fetchChoreRebalance,
+    applyChoreRebalance,
+    fillChoreAssignment,
     createChoreAssignment,
     updateChoreAssignment,
     deleteChoreAssignment,

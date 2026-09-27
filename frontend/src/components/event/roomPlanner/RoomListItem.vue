@@ -92,6 +92,7 @@
   <bottom-sheet
     v-if="assignable && useSheet"
     v-model="sheetOpen"
+    :snap-points="['half', 'full']"
     no-padding
   >
     <bed-picker-list

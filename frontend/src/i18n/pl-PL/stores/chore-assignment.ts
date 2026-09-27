@@ -19,4 +19,29 @@ export default {
     error: 'Nie udało się usunąć przydziału dyżuru',
     invalid: 'Nieprawidłowy identyfikator wydarzenia',
   },
+  fill: {
+    progress: 'Uzupełnianie wolnych miejsc...',
+    success: 'Wolne miejsca uzupełnione',
+    error: 'Nie udało się uzupełnić wolnych miejsc',
+  },
+  series: {
+    progress: 'Planowanie dyżurów...',
+    success: 'Dyżury zaplanowane',
+    error: 'Nie udało się zaplanować dyżurów',
+  },
+  deleteMany: {
+    progress: 'Usuwanie dyżurów...',
+    success: 'Dyżury usunięte',
+    error: 'Nie udało się usunąć dyżurów',
+  },
+  rebalance: {
+    progress: 'Wyrównywanie dyżurów...',
+    success: 'Dyżury wyrównane',
+    error: 'Nie udało się wyrównać — dyżury mogły się w międzyczasie zmienić',
+  },
+  removePerson: {
+    progress: 'Usuwanie z dyżurów...',
+    success: 'Usunięto z dyżurów',
+    error: 'Nie udało się usunąć z dyżurów',
+  },
 };

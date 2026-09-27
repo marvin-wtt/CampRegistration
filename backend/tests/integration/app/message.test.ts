@@ -20,10 +20,10 @@ import { expectEmailCount, expectEmailWith } from '../utils/mail.js';
 import { Registration, Message, User } from '#generated/prisma/client';
 import Handlebars from 'handlebars';
 
-// The message body and subject are rendered with Handlebars, which HTML-escapes
-// interpolated values (e.g. `'` -> `&#x27;`, `&` -> `&amp;`). Faker-generated
-// fields such as the company name can contain those characters, so expected
-// values must be escaped the same way to avoid flaky comparisons.
+// The message body is HTML, so Handlebars escapes interpolated values there
+// (e.g. `'` -> `&#x27;`). Faker-generated fields such as the company name can
+// contain those characters, so expected body values are escaped the same way.
+// The subject is plain text and must never be escaped.
 const esc = (value: unknown): string =>
   Handlebars.escapeExpression(String(value));
 
@@ -204,7 +204,7 @@ describe('/api/v1/events/:eventId/messages', () => {
 
       await assertMessages(body.data.id, [
         {
-          subject: `Hi, ${esc(registrationA.data.first_name)}, welcome to ${esc(event.name as string)}`,
+          subject: `Hi, ${registrationA.data.first_name}, welcome to ${event.name as string}`,
           body:
             `Hello ${esc(registrationA.data.first_name)}, the min age is ${esc(event.minAge)}. ` +
             `${esc(event.maxAge)} ${esc(event.maxParticipants as number)} ${esc(event.location as string)} ${esc(event.organizer as string)} ${esc(event.price)}`,
@@ -213,7 +213,7 @@ describe('/api/v1/events/:eventId/messages', () => {
           emails: registrationA.emails!,
         },
         {
-          subject: `Hi, ${esc(registrationB.data.first_name)}, welcome to ${esc(event.name as string)}`,
+          subject: `Hi, ${registrationB.data.first_name}, welcome to ${event.name as string}`,
           body:
             `Hello ${esc(registrationB.data.first_name)}, the min age is ${esc(event.minAge)}. ` +
             `${esc(event.maxAge)} ${esc(event.maxParticipants as number)} ${esc(event.location as string)} ${esc(event.organizer as string)} ${esc(event.price)}`,
@@ -290,7 +290,7 @@ describe('/api/v1/events/:eventId/messages', () => {
         registration: Registration,
         locale: string,
       ) => ({
-        subject: `Hi, ${esc(registration.data.first_name)}, welcome to ${esc(eventAttribute(event.name, locale))}`,
+        subject: `Hi, ${registration.data.first_name}, welcome to ${eventAttribute(event.name, locale)}`,
         body: `Hello ${esc(registration.data.first_name)}, ${esc(eventAttribute(event.organizer, locale))} ${esc(eventAttribute(event.location, locale))} ${esc(eventAttribute(event.maxParticipants, locale))}`,
         priority: 'normal',
         replyTo: eventAttribute(event.contactEmail, locale),
@@ -302,6 +302,55 @@ describe('/api/v1/events/:eventId/messages', () => {
         createExpectedResult(registrationB, 'fr'),
         createExpectedResult(registrationC, 'de'),
       ]);
+    });
+
+    it('should send the subject as plain text without HTML entities', async () => {
+      const { event, accessToken } = await crateEventWithManager({
+        name: "Camp d'enfants & <co>",
+      });
+      const registration = await RegistrationFactory.create({
+        event: { connect: { id: event.id } },
+        emails: ['test@example.com'],
+      });
+
+      const { body } = await request()
+        .post(`/api/v1/events/${event.id}/messages`)
+        .send({
+          registrationIds: [registration.id],
+          subject: "Liste d'attente – {{ event.name }}",
+          body: 'Body',
+        })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(201);
+
+      const subject = "Liste d'attente – Camp d'enfants & <co>";
+      expectEmailWith({ subject });
+      const delivery = await prisma.messageDelivery.findFirstOrThrow({
+        where: { messageId: body.data.id },
+      });
+      expect(delivery.subject).toBe(subject);
+    });
+
+    it('should flatten a subject saved as rich-text HTML', async () => {
+      const { event, accessToken } = await crateEventWithManager({
+        name: "Camp d'enfants",
+      });
+      const registration = await RegistrationFactory.create({
+        event: { connect: { id: event.id } },
+        emails: ['test@example.com'],
+      });
+
+      await request()
+        .post(`/api/v1/events/${event.id}/messages`)
+        .send({
+          registrationIds: [registration.id],
+          subject: '<p>Q&amp;A – {{ event.name }}</p>',
+          body: 'Body',
+        })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(201);
+
+      expectEmailWith({ subject: "Q&A – Camp d'enfants" });
     });
 
     it('should respond with `201` status code with attachments', async () => {

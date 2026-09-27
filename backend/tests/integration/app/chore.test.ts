@@ -35,6 +35,21 @@ describe('/api/v1/events/:eventId/chores', () => {
     });
   };
 
+  const createSlottedAssignment = async (event: Event, chore: Chore) => {
+    const slot = await prisma.choreSlot.create({
+      data: { choreId: chore.id, name: 'Lunch' },
+    });
+    return prisma.choreAssignment.create({
+      data: {
+        eventId: event.id,
+        choreId: chore.id,
+        slotId: slot.id,
+        rotationUnit: 'PERSON',
+        date: new Date('2026-08-31'),
+      },
+    });
+  };
+
   describe('GET /api/v1/events/:eventId/chores', () => {
     it.each([
       { role: 'DIRECTOR', expectedStatus: 200 },
@@ -58,8 +73,11 @@ describe('/api/v1/events/:eventId/chores', () => {
         expect(response.body.data[0]).toHaveProperty('name');
         expect(response.body.data[0]).toHaveProperty('sortOrder');
         expect(response.body.data[0]).toHaveProperty('defaultCount');
-        expect(response.body.data[0]).toHaveProperty('excludeStaff');
+        expect(response.body.data[0]).toHaveProperty('eligibility');
+        expect(response.body.data[0]).toHaveProperty('effort');
+        expect(response.body.data[0]).toHaveProperty('supervisorCount');
         expect(response.body.data[0]).toHaveProperty('balanceCountries');
+        expect(response.body.data[0]).toHaveProperty('slots');
       },
     );
 
@@ -152,7 +170,7 @@ describe('/api/v1/events/:eventId/chores', () => {
       },
     );
 
-    it('should default excludeStaff and balanceCountries to false', async () => {
+    it('should default to a normal-effort participant duty without supervisors', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
 
       const { body } = await request()
@@ -161,21 +179,52 @@ describe('/api/v1/events/:eventId/chores', () => {
         .auth(accessToken, { type: 'bearer' })
         .expect(201);
 
-      expect(body).toHaveProperty('data.excludeStaff', false);
-      expect(body).toHaveProperty('data.balanceCountries', false);
+      expect(body.data).toMatchObject({
+        eligibility: 'PARTICIPANTS',
+        effort: 'NORMAL',
+        supervisorCount: 0,
+        defaultRotationUnit: 'PERSON',
+        balanceCountries: false,
+        slots: [],
+      });
     });
 
-    it('should create a chore with explicit excludeStaff and balanceCountries', async () => {
+    it('should create a chore with explicit settings and slots', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
 
       const { body } = await request()
         .post(`/api/v1/events/${event.id}/chores`)
-        .send({ name: 'Kitchen', excludeStaff: true, balanceCountries: true })
+        .send({
+          name: 'Kitchen',
+          eligibility: 'STAFF',
+          effort: 'HEAVY',
+          supervisorCount: 1,
+          defaultRotationUnit: 'ROOM',
+          balanceCountries: true,
+          slots: [
+            { name: 'Breakfast', headcount: 2, effort: 'LIGHT' },
+            { name: 'Dinner' },
+          ],
+        })
         .auth(accessToken, { type: 'bearer' })
         .expect(201);
 
-      expect(body).toHaveProperty('data.excludeStaff', true);
-      expect(body).toHaveProperty('data.balanceCountries', true);
+      expect(body.data).toMatchObject({
+        eligibility: 'STAFF',
+        effort: 'HEAVY',
+        supervisorCount: 1,
+        defaultRotationUnit: 'ROOM',
+        balanceCountries: true,
+      });
+      expect(body.data.slots).toMatchObject([
+        {
+          name: 'Breakfast',
+          headcount: 2,
+          effort: 'LIGHT',
+          sortOrder: 0,
+        },
+        { name: 'Dinner', headcount: null, sortOrder: 1 },
+      ]);
     });
 
     it('should accept a translated name', async () => {
@@ -226,6 +275,10 @@ describe('/api/v1/events/:eventId/chores', () => {
         label: 'defaultCount is negative',
         data: { name: 'Kitchen', defaultCount: -1 },
       },
+      {
+        label: 'eligibility is invalid',
+        data: { name: 'Kitchen', eligibility: 'MANAGERS' },
+      },
     ])('should respond with `400` when $label', async ({ data }) => {
       const { event, accessToken } = await createEventWithManagerAndToken();
 
@@ -267,10 +320,10 @@ describe('/api/v1/events/:eventId/chores', () => {
       },
     );
 
-    it('should update the name, sortOrder, excludeStaff and balanceCountries', async () => {
+    it('should update the name, sortOrder, eligibility and balanceCountries', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
       const chore = await createChoreForEvent(event, {
-        excludeStaff: false,
+        eligibility: 'PARTICIPANTS',
         balanceCountries: false,
       });
 
@@ -279,7 +332,7 @@ describe('/api/v1/events/:eventId/chores', () => {
         .send({
           name: 'Dishwashing',
           sortOrder: 2,
-          excludeStaff: true,
+          eligibility: 'EVERYONE',
           balanceCountries: true,
         })
         .auth(accessToken, { type: 'bearer' })
@@ -287,8 +340,60 @@ describe('/api/v1/events/:eventId/chores', () => {
 
       expect(body).toHaveProperty('data.name', 'Dishwashing');
       expect(body).toHaveProperty('data.sortOrder', 2);
-      expect(body).toHaveProperty('data.excludeStaff', true);
+      expect(body).toHaveProperty('data.eligibility', 'EVERYONE');
       expect(body).toHaveProperty('data.balanceCountries', true);
+    });
+
+    it('should update, reorder, add and remove slots', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const chore = await createChoreForEvent(event);
+      const lunch = await prisma.choreSlot.create({
+        data: { choreId: chore.id, name: 'Lunch', sortOrder: 0 },
+      });
+      await prisma.choreSlot.create({
+        data: { choreId: chore.id, name: 'Snack', sortOrder: 1 },
+      });
+
+      const { body } = await request()
+        .patch(`/api/v1/events/${event.id}/chores/${chore.id}`)
+        .send({
+          slots: [
+            { name: 'Breakfast' },
+            { id: lunch.id, name: 'Lunch', headcount: 4 },
+          ],
+        })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body.data.slots).toMatchObject([
+        { name: 'Breakfast', sortOrder: 0 },
+        { id: lunch.id, name: 'Lunch', headcount: 4, sortOrder: 1 },
+      ]);
+    });
+
+    it('should respond with `409` when removing a slot that duties still use', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const chore = await createChoreForEvent(event);
+      const slot = await prisma.choreSlot.create({
+        data: { choreId: chore.id, name: 'Lunch' },
+      });
+      await prisma.choreAssignment.create({
+        data: {
+          eventId: event.id,
+          choreId: chore.id,
+          slotId: slot.id,
+          rotationUnit: 'PERSON',
+          date: new Date('2026-09-01'),
+        },
+      });
+
+      await request()
+        .patch(`/api/v1/events/${event.id}/chores/${chore.id}`)
+        .send({ slots: [] })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(409);
+
+      expect(await prisma.choreSlot.count()).toBe(1);
     });
 
     it('should update the defaultCount', async () => {
@@ -370,7 +475,7 @@ describe('/api/v1/events/:eventId/chores', () => {
         data: {
           eventId: event.id,
           choreId: chore.id,
-          rotationUnit: 'PARTICIPANT',
+          rotationUnit: 'PERSON',
           date: new Date('2026-08-31'),
         },
       });
@@ -382,6 +487,31 @@ describe('/api/v1/events/:eventId/chores', () => {
 
       const count = await prisma.choreAssignment.count();
       expect(count).toBe(0);
+    });
+
+    it('should cascade-delete its slots and the assignments using them', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const chore = await createChoreForEvent(event);
+      await createSlottedAssignment(event, chore);
+
+      await request()
+        .delete(`/api/v1/events/${event.id}/chores/${chore.id}`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(204);
+
+      expect(await prisma.choreSlot.count()).toBe(0);
+      expect(await prisma.choreAssignment.count()).toBe(0);
+    });
+
+    it('should not block deleting the event when assignments use slots', async () => {
+      const { event } = await createEventWithManagerAndToken();
+      const chore = await createChoreForEvent(event);
+      await createSlottedAssignment(event, chore);
+
+      await prisma.event.delete({ where: { id: event.id } });
+
+      expect(await prisma.choreSlot.count()).toBe(0);
+      expect(await prisma.choreAssignment.count()).toBe(0);
     });
 
     it('should respond with `404` when the chore does not exist', async () => {

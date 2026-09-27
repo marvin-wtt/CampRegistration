@@ -5,19 +5,14 @@
     :loading
     class="access-page row justify-center"
   >
-    <div class="access-content col-12 col-md-11 col-lg-10 column q-gutter-y-lg">
-      <!-- Header -->
-      <div class="row items-end justify-between q-col-gutter-y-sm">
-        <div class="col-12 col-sm page-title">
-          <div class="text-h5 text-weight-medium">
-            {{ t('title') }}
-          </div>
-          <div class="text-body2 text-grey-6 q-mt-xs">
-            {{ t('subtitle') }}
-          </div>
-        </div>
-
-        <div class="col-12 col-sm-auto row items-center q-gutter-sm">
+    <div
+      class="access-content col-12 col-md-11 col-lg-10 column no-wrap q-gutter-y-lg"
+    >
+      <page-header
+        :title="t('title')"
+        :subtitle="t('subtitle')"
+      >
+        <template #actions>
           <q-btn
             :label="quasar.screen.gt.sm ? t('action.roles') : undefined"
             :aria-label="t('action.roles')"
@@ -35,8 +30,8 @@
             icon="person_add"
             @click="showAddDialog"
           />
-        </div>
-      </div>
+        </template>
+      </page-header>
 
       <!-- Members / pending invitations -->
       <q-card
@@ -283,6 +278,7 @@
 </template>
 
 <script lang="ts" setup>
+import PageHeader from '@/components/common/PageHeader.vue';
 import { useI18n } from 'vue-i18n';
 import { useEventManagerStore } from '@/stores/event-manager-store';
 import { computed, onMounted } from 'vue';

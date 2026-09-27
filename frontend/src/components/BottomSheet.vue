@@ -11,7 +11,6 @@
     @hide="onHide"
   >
     <section
-      ref="sheet"
       class="md3-bottom-sheet"
       :class="{
         'md3-bottom-sheet--full-height': fullHeight,
@@ -24,14 +23,18 @@
     >
       <div
         v-if="!noDragHandle"
-        v-touch-pan.vertical.prevent.mouse="onDragHandlePan"
+        ref="dragArea"
+        v-touch-pan.vertical.prevent.mouse="drag"
         class="md3-bottom-sheet__drag-area"
         aria-hidden="true"
       >
         <div class="md3-bottom-sheet__drag-handle" />
       </div>
 
-      <div class="md3-bottom-sheet__content">
+      <div
+        ref="content"
+        class="md3-bottom-sheet__content"
+      >
         <slot />
       </div>
     </section>
@@ -39,8 +42,16 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue';
+import { computed, nextTick, useTemplateRef, watch } from 'vue';
 import { useDialogPluginComponent } from 'quasar';
+import { useKeyboardInset } from '@/composables/keyboardInset';
+import { useSheetDrag } from '@/composables/sheetDrag';
+
+/**
+ * A resting height: fitting the content, half or (nearly) all of the screen,
+ * or a share of the screen height.
+ */
+type SnapPoint = 'content' | 'half' | 'full' | number;
 
 const {
   persistent = false,
@@ -49,6 +60,8 @@ const {
   noDragHandle = false,
   fullHeight = false,
   noPadding = false,
+  snapPoints = undefined,
+  maxHeight = 0.9,
 } = defineProps<{
   persistent?: boolean;
   noBackdropDismiss?: boolean;
@@ -56,95 +69,97 @@ const {
   noDragHandle?: boolean;
   fullHeight?: boolean;
   noPadding?: boolean;
+  /**
+   * Heights the handle can resize the sheet to; it opens at the first.
+   * Without, the sheet fits its content and the handle only dismisses.
+   */
+  snapPoints?: SnapPoint[] | undefined;
+  /** Tallest the sheet gets, as a share of the screen height. */
+  maxHeight?: number;
 }>();
 
-const model = defineModel<boolean>({
-  required: true,
+// Bind with v-model, or leave it off and drive the sheet via show()/hide() —
+// which also makes it usable as the root of a Quasar dialog plugin component.
+const model = defineModel<boolean>({ default: false });
+
+const emit = defineEmits([...useDialogPluginComponent.emits]);
+
+defineExpose({
+  show: () => (model.value = true),
+  hide: () => (model.value = false),
 });
 
-defineEmits([...useDialogPluginComponent.emits]);
+const dragArea = useTemplateRef('dragArea');
+const content = useTemplateRef('content');
 
-const sheet = useTemplateRef('sheet');
-const dragOffset = ref(0);
-const dragging = ref(false);
-const keyboardInset = ref(0);
-
-// The dialog is anchored with `bottom: 0` against the layout viewport, which
-// mobile browsers keep full-height when the on-screen keyboard opens (only
-// the visual viewport shrinks). Without this, a sheet short enough to fit
-// under the keyboard's height ends up entirely hidden behind it.
-function updateKeyboardInset() {
-  const viewport = window.visualViewport;
-
-  keyboardInset.value = viewport
-    ? Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop)
-    : 0;
+function viewportHeight(): number {
+  return window.visualViewport?.height ?? window.innerHeight;
 }
 
-watch(model, (isOpen) => {
-  const viewport = window.visualViewport;
-  if (!viewport) {
-    return;
+function snapHeight(point: SnapPoint, viewport: number, cap: number): number {
+  switch (point) {
+    case 'full':
+      return cap;
+    case 'half':
+      return viewport * 0.5;
+    case 'content':
+      return (
+        (dragArea.value?.offsetHeight ?? 0) + (content.value?.scrollHeight ?? 0)
+      );
+    default:
+      return viewport * point;
   }
+}
 
-  if (isOpen) {
-    updateKeyboardInset();
-    viewport.addEventListener('resize', updateKeyboardInset);
-    viewport.addEventListener('scroll', updateKeyboardInset);
-  } else {
-    viewport.removeEventListener('resize', updateKeyboardInset);
-    viewport.removeEventListener('scroll', updateKeyboardInset);
-    keyboardInset.value = 0;
+// Ascending pixel heights, none above the cap.
+function snapHeights(): number[] {
+  const viewport = viewportHeight();
+  const cap = viewport * maxHeight;
+  const heights = (snapPoints ?? []).map((point) =>
+    Math.round(Math.min(snapHeight(point, viewport, cap), cap)),
+  );
+  return [...new Set(heights)].sort((a, b) => a - b);
+}
+
+const snaps = !!snapPoints?.length;
+
+const { dragging, offset, height, drag, reset } = useSheetDrag(
+  () => {
+    if (persistent) {
+      reset();
+    } else {
+      // The offset stays where the finger left it, so the slide-down
+      // transition continues from there; it is reset in onHide.
+      model.value = false;
+    }
+  },
+  snaps ? { heights: snapHeights } : undefined,
+);
+
+// Placed once the content has rendered, so 'content' can be measured.
+watch(model, async (open) => {
+  if (open) {
+    await nextTick();
+    reset();
   }
 });
 
-onBeforeUnmount(() => {
-  window.visualViewport?.removeEventListener('resize', updateKeyboardInset);
-  window.visualViewport?.removeEventListener('scroll', updateKeyboardInset);
-});
+// Lifts the sheet above the on-screen keyboard.
+const keyboardInset = useKeyboardInset(model);
 
 const sheetStyle = computed(() => {
-  const translateY = dragOffset.value - keyboardInset.value;
+  const translateY = offset.value - keyboardInset.value;
 
-  return translateY !== 0
-    ? { transform: `translateY(${translateY}px)` }
-    : undefined;
+  return {
+    ...(translateY !== 0 ? { transform: `translateY(${translateY}px)` } : {}),
+    ...(snaps && height.value !== null ? { height: `${height.value}px` } : {}),
+    ...(fullHeight ? {} : { maxHeight: `${maxHeight * 100}dvh` }),
+  };
 });
 
-interface TouchPanDetails {
-  isFirst?: boolean;
-  isFinal?: boolean;
-  offset?: { x: number; y: number };
-}
-
-function onDragHandlePan(details: TouchPanDetails) {
-  if (details.isFirst) {
-    dragging.value = true;
-  }
-
-  // Only follow downward drags; the sheet cannot be pulled up
-  dragOffset.value = Math.max(0, details.offset?.y ?? 0);
-
-  if (!details.isFinal) {
-    return;
-  }
-
-  dragging.value = false;
-
-  const sheetHeight = sheet.value?.offsetHeight ?? 0;
-  const dismissThreshold = Math.max(sheetHeight * 0.25, 80);
-
-  if (!persistent && dragOffset.value > dismissThreshold) {
-    // Keep the offset so the slide-down transition continues from the
-    // current position; it is reset in onHide.
-    model.value = false;
-  } else {
-    dragOffset.value = 0;
-  }
-}
-
 function onHide() {
-  dragOffset.value = 0;
+  reset();
+  emit('hide');
 }
 </script>
 
@@ -156,7 +171,8 @@ function onHide() {
 
   width: 100vw;
   max-width: 640px;
-  max-height: min(80dvh, 720px);
+  /* Overridden by the maxHeight prop; the fallback if styles load first. */
+  max-height: 90dvh;
   margin-inline: auto;
 
   display: flex;
@@ -172,7 +188,9 @@ function onHide() {
     0 1px 3px rgba(0, 0, 0, 0.3),
     0 4px 8px 3px rgba(0, 0, 0, 0.15);
 
-  transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1);
+  transition:
+    transform 0.25s cubic-bezier(0.2, 0, 0, 1),
+    height 0.25s cubic-bezier(0.2, 0, 0, 1);
 }
 
 .md3-bottom-sheet--dragging {

@@ -611,49 +611,103 @@ model Task {
 }
 
 enum ChoreRotationUnit {
-  PARTICIPANT
+  PERSON
   ROOM
 }
 
+enum ChoreEligibility {
+  PARTICIPANTS
+  STAFF
+  EVERYONE
+}
+
+enum ChoreEffort {
+  LIGHT
+  NORMAL
+  HEAVY
+}
+
+enum ChoreAssignmentStatus {
+  PLANNED
+  DONE
+  CANCELLED
+}
+
+enum ChoreMemberRole {
+  MEMBER
+  SUPERVISOR
+}
+
 model Chore {
-  id               String  @id @unique(map: "chores_id_unique") @default(ulid()) @db.Char(26)
-  eventId          String  @map("event_id") @db.Char(26)
+  id                  String            @id @unique(map: "chores_id_unique") @default(ulid()) @db.Char(26)
+  eventId             String            @map("event_id") @db.Char(26)
   /// ![string | Record<string, string>]
-  name             Json    @db.Json
-  sortOrder        Int     @default(999) @map("sort_order")
-  defaultCount     Int?    @map("default_count") @db.UnsignedInt
-  excludeStaff     Boolean @default(false) @map("exclude_staff")
-  balanceCountries Boolean @default(false) @map("balance_countries")
+  name                Json              @db.Json
+  sortOrder           Int               @default(999) @map("sort_order")
+  defaultCount        Int?              @map("default_count") @db.UnsignedInt
+  supervisorCount     Int               @default(0) @map("supervisor_count") @db.UnsignedInt
+  eligibility         ChoreEligibility  @default(PARTICIPANTS)
+  effort              ChoreEffort       @default(NORMAL)
+  defaultRotationUnit ChoreRotationUnit @default(PERSON) @map("default_rotation_unit")
+  balanceCountries    Boolean           @default(false) @map("balance_countries")
 
   event       Event             @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "chores_event_id_foreign")
+  slots       ChoreSlot[]
   assignments ChoreAssignment[]
 
   @@index([eventId], map: "chores_event_id_foreign")
   @@map("chores")
 }
 
-model ChoreAssignment {
-  id           String            @id @unique(map: "chore_assignments_id_unique") @default(ulid()) @db.Char(26)
-  eventId      String            @map("event_id") @db.Char(26)
-  choreId      String            @map("chore_id") @db.Char(26)
-  rotationUnit ChoreRotationUnit @map("rotation_unit")
-  date         DateTime          @db.Date
-  slot         String?
-  createdAt    DateTime          @default(now()) @map("created_at")
+model ChoreSlot {
+  id              String       @id @unique(map: "chore_slots_id_unique") @default(ulid()) @db.Char(26)
+  choreId         String       @map("chore_id") @db.Char(26)
+  /// ![string | Record<string, string>]
+  name            Json         @db.Json
+  sortOrder       Int          @default(0) @map("sort_order")
+  headcount       Int?         @db.UnsignedInt
+  supervisorCount Int?         @map("supervisor_count") @db.UnsignedInt
+  effort          ChoreEffort?
 
-  event   Event                   @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "chore_assignments_event_id_foreign")
-  chore   Chore                   @relation(fields: [choreId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "chore_assignments_chore_id_foreign")
-  members ChoreAssignmentMember[]
+  chore       Chore             @relation(fields: [choreId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "chore_slots_chore_id_foreign")
+  assignments ChoreAssignment[]
+
+  @@index([choreId], map: "chore_slots_chore_id_foreign")
+  @@map("chore_slots")
+}
+
+model ChoreAssignment {
+  id           String                @id @unique(map: "chore_assignments_id_unique") @default(ulid()) @db.Char(26)
+  eventId      String                @map("event_id") @db.Char(26)
+  choreId      String                @map("chore_id") @db.Char(26)
+  slotId       String?               @map("slot_id") @db.Char(26)
+  batchId      String?               @map("batch_id") @db.Char(26)
+  rotationUnit ChoreRotationUnit     @map("rotation_unit")
+  date         DateTime              @db.Date
+  /// Legacy free-text slot, superseded by `slotId`. Drop in the next release.
+  slot         String?
+  status       ChoreAssignmentStatus @default(PLANNED)
+  note         String?               @db.VarChar(500)
+  createdAt    DateTime              @default(now()) @map("created_at")
+
+  event     Event                   @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "chore_assignments_event_id_foreign")
+  chore     Chore                   @relation(fields: [choreId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "chore_assignments_chore_id_foreign")
+  choreSlot ChoreSlot?              @relation(fields: [slotId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "chore_assignments_slot_id_foreign")
+  members   ChoreAssignmentMember[]
 
   @@index([eventId], map: "chore_assignments_event_id_foreign")
   @@index([choreId], map: "chore_assignments_chore_id_foreign")
+  @@index([slotId], map: "chore_assignments_slot_id_foreign")
+  @@index([batchId], map: "chore_assignments_batch_id_index")
   @@map("chore_assignments")
 }
 
 model ChoreAssignmentMember {
-  id                String @id @unique(map: "chore_assignment_members_id_unique") @default(ulid()) @db.Char(26)
-  choreAssignmentId String @map("chore_assignment_id") @db.Char(26)
-  registrationId    String @map("registration_id") @db.Char(26)
+  id                String          @id @unique(map: "chore_assignment_members_id_unique") @default(ulid()) @db.Char(26)
+  choreAssignmentId String          @map("chore_assignment_id") @db.Char(26)
+  registrationId    String          @map("registration_id") @db.Char(26)
+  role              ChoreMemberRole @default(MEMBER)
+  missed            Boolean         @default(false)
 
   choreAssignment ChoreAssignment @relation(fields: [choreAssignmentId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "chore_assignment_members_chore_assignment_id_foreign")
   registration    Registration    @relation(fields: [registrationId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "chore_assignment_members_registration_id_foreign")

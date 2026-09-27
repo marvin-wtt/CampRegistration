@@ -622,6 +622,14 @@ export const eventCreatedBody: CreateBodyData[] = [
     expected: 201,
   },
   {
+    name: 'Preset general',
+    data: {
+      ...eventCreateInternational,
+      preset: 'general',
+    },
+    expected: 201,
+  },
+  {
     name: 'Preset missing',
     data: {
       ...eventCreateInternational,

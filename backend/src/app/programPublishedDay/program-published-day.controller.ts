@@ -6,7 +6,7 @@ import { BaseController } from '#core/base/BaseController';
 import { RealtimeService } from '#core/realtime/RealtimeService';
 import { ProgramPublishedDayService } from './program-published-day.service.js';
 import { ProgramPublishedDayResource } from './program-published-day.resource.js';
-import { enumerateDates } from './program-published-day.util.js';
+import { eachDate } from '#utils/date';
 import validator from './program-published-day.validation.js';
 
 @injectable()
@@ -55,7 +55,7 @@ export class ProgramPublishedDayController extends BaseController {
     const { body } = await req.validate(validator.bulkPublish);
     const event = req.modelOrFail('event');
 
-    const dates = enumerateDates(
+    const dates = eachDate(
       utcCarrierToNaiveDateTime(event.startAt).slice(0, 10),
       utcCarrierToNaiveDateTime(event.endAt).slice(0, 10),
     );

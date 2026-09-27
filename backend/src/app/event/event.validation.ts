@@ -1,9 +1,10 @@
 import { z, type ZodType } from 'zod';
 import { translatedValue } from '#core/validation/helper';
 import type { Event } from '#generated/prisma/client.js';
-import type {
-  EventQuery,
-  EventOrganizationUpdateData,
+import {
+  EVENT_PRESET_NAMES,
+  type EventQuery,
+  type EventOrganizationUpdateData,
 } from '@camp-registration/common/entities';
 import { naiveDateTimeToUtcCarrier } from '@camp-registration/common/utils';
 
@@ -139,7 +140,7 @@ const store = z.object({
       price: z.number().multipleOf(0.01).nonnegative(),
       form: z.record(z.string(), z.unknown()).optional(),
       themes: z.record(z.string(), z.unknown()).optional(),
-      preset: z.enum(['camp', 'seminar']).nullable().optional(),
+      preset: z.enum(EVENT_PRESET_NAMES).nullable().optional(),
       referenceEventId: z.ulid().optional(),
     })
     .superRefine((val, ctx) => {

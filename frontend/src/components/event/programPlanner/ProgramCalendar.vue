@@ -1188,14 +1188,12 @@ function printCalendar(date: string, days: number) {
     interval: settings.timeInterval,
   };
 
-  const key = `print:calendar:${Date.now()}`;
-  sessionStorage.setItem(key, JSON.stringify(printData));
-
   // 703px = A4 portrait usable width, 1032px = A4 landscape usable width (96 dpi, 12mm margins).
   // Real dimensions are required so offsetHeight/clientHeight measurements in the print page work.
   const widthPx = days === 1 ? 703 : 1032;
-  openPrintIframe(`/print/calendar?key=${encodeURIComponent(key)}`, {
+  openPrintIframe('/print/calendar', {
     messagePrefix: 'PRINT_CALENDAR',
+    payload: printData,
     widthPx,
     heightPx: 1123, // A4 height at 96 dpi
     onError: (error) => {

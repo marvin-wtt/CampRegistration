@@ -6,19 +6,12 @@
     class="templates-page row justify-center"
   >
     <div
-      class="templates-content col-12 col-md-11 col-lg-10 column q-gutter-y-lg"
+      class="templates-content col-12 col-md-11 col-lg-10 column no-wrap q-gutter-y-lg"
     >
-      <!-- Header -->
-      <div class="row items-end justify-between q-col-gutter-y-sm">
-        <div class="col-12 col-sm page-title">
-          <div class="text-h5 text-weight-medium">
-            {{ t('page.title') }}
-          </div>
-          <div class="text-body2 text-grey-6 q-mt-xs">
-            {{ t('page.description') }}
-          </div>
-        </div>
-      </div>
+      <page-header
+        :title="t('page.title')"
+        :subtitle="t('page.description')"
+      />
 
       <!-- Registration events -->
       <q-card
@@ -146,6 +139,7 @@
 </template>
 
 <script setup lang="ts">
+import PageHeader from '@/components/common/PageHeader.vue';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import { computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';

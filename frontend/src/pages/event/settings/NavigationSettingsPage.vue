@@ -3,15 +3,13 @@
     padding
     class="navigation-settings-page row justify-center"
   >
-    <div class="col-12 col-sm-10 col-md-8 col-lg-6 column q-gutter-y-lg">
-      <div class="page-title">
-        <div class="text-h5 text-weight-medium">
-          {{ t('title') }}
-        </div>
-        <div class="text-body2 text-on-surface-variant q-mt-xs">
-          {{ t('subtitle') }}
-        </div>
-      </div>
+    <div
+      class="col-12 col-sm-10 col-md-8 col-lg-6 column no-wrap q-gutter-y-lg"
+    >
+      <page-header
+        :title="t('title')"
+        :subtitle="t('subtitle')"
+      />
 
       <q-list
         bordered
@@ -54,6 +52,7 @@
 </template>
 
 <script lang="ts" setup>
+import PageHeader from '@/components/common/PageHeader.vue';
 import { useI18n } from 'vue-i18n';
 import { EVENT_NAVIGATION_ITEMS } from '@/config/eventNavigationItems';
 import { useNavigationSettings } from '@/composables/eventNavigationSettings';
@@ -85,7 +84,7 @@ function setVisible(name: string, visible: boolean) {
 
 <i18n lang="yaml" locale="en">
 title: 'Navigation'
-subtitle: "Choose which features appear in this event's navigation."
+subtitle: "Choose which features appear in this event's navigation and dashboard."
 contact:
   label: 'Contact'
   description: 'Show or hide the contact page.'
@@ -105,7 +104,7 @@ chore_planner:
 
 <i18n lang="yaml" locale="de">
 title: 'Navigation'
-subtitle: 'Wähle aus, welche Funktionen in der Navigation dieser Veranstaltung angezeigt werden.'
+subtitle: 'Wähle aus, welche Funktionen in der Navigation und im Dashboard dieser Veranstaltung angezeigt werden.'
 contact:
   label: 'Kontaktieren'
   description: 'Kontaktseite ein- oder ausblenden.'
@@ -125,7 +124,7 @@ chore_planner:
 
 <i18n lang="yaml" locale="fr">
 title: 'Navigation'
-subtitle: 'Choisissez les fonctionnalités affichées dans la navigation de cet événement.'
+subtitle: 'Choisissez les fonctionnalités affichées dans la navigation et le tableau de bord de cet événement.'
 contact:
   label: 'Contacter'
   description: 'Afficher ou masquer la page de contact.'
@@ -145,7 +144,7 @@ chore_planner:
 
 <i18n lang="yaml" locale="pl">
 title: 'Nawigacja'
-subtitle: 'Wybierz funkcje widoczne w nawigacji tego wydarzenia.'
+subtitle: 'Wybierz funkcje widoczne w nawigacji i na pulpicie tego wydarzenia.'
 contact:
   label: 'Kontakt'
   description: 'Pokaż lub ukryj stronę kontaktową.'
@@ -165,7 +164,7 @@ chore_planner:
 
 <i18n lang="yaml" locale="cs">
 title: 'Navigace'
-subtitle: 'Vyberte, které funkce se zobrazí v navigaci této akce.'
+subtitle: 'Vyberte, které funkce se zobrazí v navigaci a na přehledu této akce.'
 contact:
   label: 'Kontakt'
   description: 'Zobrazit nebo skrýt kontaktní stránku.'

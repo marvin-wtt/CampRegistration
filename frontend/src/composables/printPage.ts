@@ -1,23 +1,17 @@
-import {
-  computed,
-  nextTick,
-  onBeforeUnmount,
-  onMounted,
-  ref,
-  type Ref,
-} from 'vue';
-import { useRoute } from 'vue-router';
+import { nextTick, onBeforeUnmount, onMounted, ref, type Ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Platform } from 'quasar';
+
+// The opener answers right away; this only guards against it having gone away.
+const PAYLOAD_TIMEOUT_MS = 5000;
 
 export interface UsePrintPageOptions<T> {
   /**
    * Message channel prefix shared with the opener/parent, e.g. `PRINT_TABLES`.
-   * The composable emits `${prefix}:LOADED|READY|PRINTING|AFTERPRINT|ERROR`.
+   * The composable emits `${prefix}:REQUEST|LOADED|READY|PRINTING|AFTERPRINT|ERROR`
+   * and receives the payload as `${prefix}:PAYLOAD`.
    */
   messagePrefix: string;
-  /** Fallback sessionStorage key when the route has no `key` query param. */
-  defaultStorageKey: string;
   /**
    * Settle the layout (fonts, table sizing, …) after the payload is rendered
    * and before the print dialog opens. Runs once per export.
@@ -33,9 +27,10 @@ export interface UsePrintPageResult<T> {
 }
 
 /**
- * Shared plumbing for the standalone print routes (tables, calendar): loads the
- * payload from sessionStorage, drives the print dialog, and reports lifecycle
- * back to the opener (iframe parent on desktop, opener window on mobile).
+ * Shared plumbing for the standalone print routes: requests the payload from
+ * the opener (iframe parent on desktop, opener window on mobile) over
+ * postMessage, drives the print dialog, and reports lifecycle back to it. The
+ * payload is never persisted, so nothing outlives the print window.
  *
  * Closing the window is browser-specific: Chrome for Android fires `afterprint`
  * immediately when window.print() is called — before the user has saved or
@@ -46,17 +41,11 @@ export interface UsePrintPageResult<T> {
 export function usePrintPage<T>(
   options: UsePrintPageOptions<T>,
 ): UsePrintPageResult<T> {
-  const { messagePrefix, defaultStorageKey, prepare, beforePrint } = options;
-  const route = useRoute();
+  const { messagePrefix, prepare, beforePrint } = options;
   const { locale } = useI18n({ useScope: 'global' });
 
   const payload = ref<T | null>(null) as Ref<T | null>;
   const error = ref<string | null>(null);
-
-  const storageKey = computed<string>(() => {
-    const key = (route.query.key as string | undefined)?.trim();
-    return key && key.length > 0 ? key : defaultStorageKey;
-  });
 
   function isStandaloneWindow(): boolean {
     // In an iframe, window.parent differs from window. As a popup it does not,
@@ -64,19 +53,15 @@ export function usePrintPage<T>(
     return window.parent === window;
   }
 
-  function postToParent(msg: unknown): void {
-    // Target the iframe parent, or the opener when running as a standalone window.
-    const target = isStandaloneWindow() ? window.opener : window.parent;
-    try {
-      target?.postMessage(msg, window.location.origin);
-    } catch {
-      // ignore
-    }
+  function messageTarget(): Window | null {
+    return isStandaloneWindow()
+      ? (window.opener as Window | null)
+      : window.parent;
   }
 
-  function cleanupSessionStorage(): void {
+  function postToParent(msg: unknown): void {
     try {
-      sessionStorage.removeItem(storageKey.value);
+      messageTarget()?.postMessage(msg, window.location.origin);
     } catch {
       // ignore
     }
@@ -101,7 +86,6 @@ export function usePrintPage<T>(
   }
 
   function onAfterPrint(): void {
-    cleanupSessionStorage();
     postToParent({ type: `${messagePrefix}:AFTERPRINT` });
 
     // On Chrome mobile `afterprint` fires too early; onFocus handles the close.
@@ -118,16 +102,41 @@ export function usePrintPage<T>(
     }
   }
 
-  function loadPayload(): T | null {
-    const raw = sessionStorage.getItem(storageKey.value);
-    if (!raw) {
-      return null;
+  function requestPayload(): Promise<T | null> {
+    const target = messageTarget();
+    if (!target) {
+      return Promise.resolve(null);
     }
-    try {
-      return JSON.parse(raw) as T;
-    } catch {
-      return null;
-    }
+
+    return new Promise((resolve) => {
+      const finish = (p: T | null) => {
+        clearTimeout(timer);
+        window.removeEventListener('message', onMessage);
+        resolve(p);
+      };
+
+      const onMessage = (ev: MessageEvent) => {
+        if (ev.source !== target || ev.origin !== window.location.origin) {
+          return;
+        }
+        const data = ev.data as { type?: unknown; payload?: unknown } | null;
+        if (
+          data?.type !== `${messagePrefix}:PAYLOAD` ||
+          typeof data.payload !== 'string'
+        ) {
+          return;
+        }
+        try {
+          finish(JSON.parse(data.payload) as T);
+        } catch {
+          finish(null);
+        }
+      };
+
+      const timer = setTimeout(() => finish(null), PAYLOAD_TIMEOUT_MS);
+      window.addEventListener('message', onMessage);
+      postToParent({ type: `${messagePrefix}:REQUEST` });
+    });
   }
 
   // Print pages load in a fresh iframe/window, whose i18n instance boots to
@@ -148,10 +157,10 @@ export function usePrintPage<T>(
       window.addEventListener('beforeprint', beforePrint);
     }
 
-    const p = loadPayload();
+    const p = await requestPayload();
     if (!p) {
       error.value =
-        'No print payload found. Please start the export from the management page.';
+        'No print payload received. Please start the export from the management page.';
       postToParent({ type: `${messagePrefix}:ERROR`, error: error.value });
       return;
     }

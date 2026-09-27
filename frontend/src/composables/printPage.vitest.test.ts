@@ -3,14 +3,7 @@ import { flushPromises, mount } from '@vue/test-utils';
 import { defineComponent, h } from 'vue';
 import { usePrintPage, waitForImages } from '@/composables/printPage';
 
-const route = { query: {} as Record<string, string> };
-
-vi.mock('vue-router', () => ({
-  useRoute: () => route,
-}));
-
 const PREFIX = 'PRINT_TEST';
-const STORAGE_KEY = 'print:test:payload';
 
 function pendingImage(): HTMLImageElement {
   const img = document.createElement('img');
@@ -27,7 +20,6 @@ function mountPrintPage(prepare: (payload: unknown) => Promise<void> | void) {
       setup() {
         const { payload, error } = usePrintPage<{ value: string }>({
           messagePrefix: PREFIX,
-          defaultStorageKey: STORAGE_KEY,
           prepare,
         });
 
@@ -88,15 +80,33 @@ describe('usePrintPage', () => {
   let messages: unknown[];
   let print: ReturnType<typeof vi.fn>;
   let close: ReturnType<typeof vi.fn>;
+  // What the stubbed opener answers to a payload request; undefined = silence.
+  let answer: unknown;
+  let opener: { postMessage: (msg: { type: string }) => void };
+
+  function deliverPayload(payload: unknown, source: unknown = opener): void {
+    window.dispatchEvent(
+      new MessageEvent('message', {
+        data: { type: `${PREFIX}:PAYLOAD`, payload: JSON.stringify(payload) },
+        origin: window.location.origin,
+        source: source as Window,
+      }),
+    );
+  }
 
   beforeEach(() => {
-    route.query = {};
-    sessionStorage.clear();
     messages = [];
+    answer = { value: 'ok' };
     // Runs as a standalone window in happy-dom, so messages go to the opener.
-    vi.stubGlobal('opener', {
-      postMessage: (msg: unknown) => messages.push(msg),
-    });
+    opener = {
+      postMessage: (msg) => {
+        messages.push(msg);
+        if (msg.type === `${PREFIX}:REQUEST` && answer !== undefined) {
+          deliverPayload(answer);
+        }
+      },
+    };
+    vi.stubGlobal('opener', opener);
     // happy-dom implements neither print() nor close().
     print = vi.fn();
     close = vi.fn();
@@ -105,6 +115,7 @@ describe('usePrintPage', () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.unstubAllGlobals();
   });
 
@@ -112,30 +123,48 @@ describe('usePrintPage', () => {
     return messages.map((m) => (m as { type: string }).type);
   }
 
-  it('reports an error and never prints without a payload', async () => {
+  it('reports an error and never prints when the opener does not answer', async () => {
+    vi.useFakeTimers();
+    answer = undefined;
     const prepare = vi.fn();
-    mountPrintPage(prepare);
+    const wrapper = mountPrintPage(prepare);
     await flushPromises();
 
-    expect(types()).toEqual([`${PREFIX}:ERROR`]);
+    expect(types()).toEqual([`${PREFIX}:REQUEST`]);
+
+    await vi.advanceTimersByTimeAsync(5000);
+
+    expect(types()).toEqual([`${PREFIX}:REQUEST`, `${PREFIX}:ERROR`]);
+    expect(wrapper.text()).toContain('No print payload received');
     expect(prepare).not.toHaveBeenCalled();
     expect(print).not.toHaveBeenCalled();
   });
 
-  it('reads the payload from the key given in the route', async () => {
-    route.query = { key: 'custom-key' };
-    sessionStorage.setItem('custom-key', JSON.stringify({ value: 'custom' }));
+  it('reports an error right away without an opener', async () => {
+    vi.stubGlobal('opener', null);
+    const wrapper = mountPrintPage(vi.fn());
+    await flushPromises();
 
+    expect(wrapper.text()).toContain('No print payload received');
+    expect(print).not.toHaveBeenCalled();
+  });
+
+  it('ignores payloads from windows other than the opener', async () => {
+    answer = undefined;
     const wrapper = mountPrintPage(() => {});
     await flushPromises();
 
-    expect(wrapper.text()).toBe('custom');
+    deliverPayload({ value: 'forged' }, {});
+    await flushPromises();
+    expect(wrapper.text()).toBe('');
+
+    deliverPayload({ value: 'real' });
+    await flushPromises();
+    expect(wrapper.text()).toBe('real');
     expect(print).toHaveBeenCalledOnce();
   });
 
   it('waits for prepare to settle before printing', async () => {
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ value: 'ok' }));
-
     let finishPrepare!: () => void;
     const prepare = vi.fn(
       () => new Promise<void>((resolve) => (finishPrepare = resolve)),
@@ -145,13 +174,14 @@ describe('usePrintPage', () => {
     await flushPromises();
 
     expect(prepare).toHaveBeenCalledWith({ value: 'ok' });
-    expect(types()).toEqual([`${PREFIX}:LOADED`]);
+    expect(types()).toEqual([`${PREFIX}:REQUEST`, `${PREFIX}:LOADED`]);
     expect(print).not.toHaveBeenCalled();
 
     finishPrepare();
     await flushPromises();
 
     expect(types()).toEqual([
+      `${PREFIX}:REQUEST`,
       `${PREFIX}:LOADED`,
       `${PREFIX}:READY`,
       `${PREFIX}:PRINTING`,
@@ -159,15 +189,12 @@ describe('usePrintPage', () => {
     expect(print).toHaveBeenCalledOnce();
   });
 
-  it('cleans up and closes the window after printing', async () => {
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ value: 'ok' }));
-
+  it('reports and closes the window after printing', async () => {
     mountPrintPage(() => {});
     await flushPromises();
 
     window.dispatchEvent(new Event('afterprint'));
 
-    expect(sessionStorage.getItem(STORAGE_KEY)).toBeNull();
     expect(types()).toContain(`${PREFIX}:AFTERPRINT`);
     expect(close).toHaveBeenCalledOnce();
   });

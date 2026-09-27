@@ -6,29 +6,25 @@
     class="row justify-center"
   >
     <div class="event-mgmt col-12 col-md-11 col-lg-10 col-xl-8 column no-wrap">
-      <!-- Header -->
-      <div class="event-mgmt__header row items-start justify-between no-wrap">
-        <div class="col page-title">
-          <div class="text-h5 text-weight-medium">
-            {{ t('title') }}
-          </div>
-          <div class="event-mgmt__subtitle text-body2 q-mt-xs">
-            {{ t('subtitle') }}
-          </div>
-        </div>
-
-        <q-btn
-          :label="quasar.screen.gt.xs ? t('action.create') : ''"
-          :aria-label="t('action.create')"
-          color="primary"
-          icon="add"
-          unelevated
-          no-caps
-          :round="quasar.screen.lt.sm"
-          :rounded="quasar.screen.gt.xs"
-          @click="onCreateEvent()"
-        />
-      </div>
+      <page-header
+        class="event-mgmt__header"
+        :title="t('title')"
+        :subtitle="t('subtitle')"
+      >
+        <template #actions>
+          <q-btn
+            :label="quasar.screen.gt.xs ? t('action.create') : ''"
+            :aria-label="t('action.create')"
+            color="primary"
+            icon="add"
+            unelevated
+            no-caps
+            :round="quasar.screen.lt.sm"
+            :rounded="quasar.screen.gt.xs"
+            @click="onCreateEvent()"
+          />
+        </template>
+      </page-header>
 
       <!-- Loading -->
       <div
@@ -93,6 +89,7 @@
 </template>
 
 <script lang="ts" setup>
+import PageHeader from '@/components/common/PageHeader.vue';
 import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
 import type { Event } from '@camp-registration/common/entities';
@@ -222,7 +219,6 @@ async function onCreateEvent() {
 
 /* Clear the floating toolbar so the title isn't crowded against it */
 .event-mgmt__header {
-  gap: 16px;
   margin-top: 1rem;
 }
 

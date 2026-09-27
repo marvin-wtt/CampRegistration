@@ -1,28 +1,15 @@
-import campForm from './forms/camp.js';
-import seminarForm from './forms/seminar.js';
-import campTableTemplates from './tableTemplates/camp.js';
-import seminarTableTemplates from './tableTemplates/seminar.js';
+import camp from './camp/index.js';
+import seminar from './seminar/index.js';
+import general from './general/index.js';
+import type { EventPreset } from './types.js';
+import { localeForCountry } from './locales.js';
 import { SurveyModel } from 'survey-core';
+import type { EventPresetName } from '@camp-registration/common/entities';
 
-export type Preset = 'camp' | 'seminar';
-
-interface EventPreset {
-  form: Record<string, unknown>;
-  tableTemplates: Record<string, unknown>[];
-  themes: Record<string, unknown>;
-}
-
-export const EVENT_PRESETS: Record<Preset, EventPreset> = {
-  camp: {
-    form: campForm,
-    tableTemplates: campTableTemplates,
-    themes: {},
-  },
-  seminar: {
-    form: seminarForm,
-    tableTemplates: seminarTableTemplates,
-    themes: {},
-  },
+export const EVENT_PRESETS: Record<EventPresetName, EventPreset> = {
+  camp,
+  seminar,
+  general,
 };
 
 function filterTranslatedValue(value: unknown, locales: string[]): unknown {
@@ -68,7 +55,7 @@ function filterTableTemplateLocales(
 }
 
 export function getEventPreset(
-  name: Preset | null | undefined,
+  name: EventPresetName | null | undefined,
   locales?: string[],
 ): EventPreset {
   const preset = name ? EVENT_PRESETS[name] : EVENT_PRESETS.camp;
@@ -95,5 +82,29 @@ export function getEventPreset(
   };
 }
 
-export { defaultMessageTemplatesForCountries } from './messageTemplates.js';
+export function defaultMessageTemplatesForCountries(
+  countries: string[],
+  presetName?: EventPresetName | null,
+) {
+  const templates = getEventPreset(presetName).messageTemplates;
+
+  return countries.flatMap((country) => {
+    const code = localeForCountry(country);
+
+    return Object.entries(templates).map(([trigger, { subject, body }]) => ({
+      trigger,
+      country,
+      subject: subject[code],
+      body: body[code],
+    }));
+  });
+}
+
+export function defaultSettingsForPreset(preset: EventPreset) {
+  return Object.entries(preset.settings ?? {}).map(([key, data]) => ({
+    key,
+    data,
+  }));
+}
+
 export { localesForCountries } from './locales.js';
