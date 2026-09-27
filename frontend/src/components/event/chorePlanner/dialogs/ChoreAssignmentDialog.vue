@@ -112,6 +112,7 @@
               rounded
               no-caps
               :disable="!canAutoFill('MEMBER') && !canAutoFill('SUPERVISOR')"
+              :loading="autoFilling"
               @click="autoFill"
             />
           </div>
@@ -390,11 +391,10 @@ const choreId = ref<string | null>(
     props.chores[0]?.id ??
     null,
 );
+// The chore store sees chores created from inside this dialog.
+const chores = computed<Chore[]>(() => choreStore.data ?? props.chores);
 const selectedChore = computed<Chore | undefined>(() =>
-  // The chore store sees chores created from inside this dialog.
-  [...(choreStore.data ?? []), ...props.chores].find(
-    (chore) => chore.id === choreId.value,
-  ),
+  chores.value.find((chore) => chore.id === choreId.value),
 );
 
 const date = ref<string | null>(
@@ -438,8 +438,7 @@ function resetCounts() {
 resetCounts();
 
 function firstSlotId(): string | null {
-  const chore = props.chores.find((c) => c.id === choreId.value);
-  return chore?.slots[0]?.id ?? null;
+  return selectedChore.value?.slots[0]?.id ?? null;
 }
 
 function onChoreChange() {
@@ -450,7 +449,7 @@ function onChoreChange() {
 }
 
 const choreOptions = computed<QSelectOption[]>(() =>
-  (choreStore.data ?? props.chores).map((chore) => ({
+  chores.value.map((chore) => ({
     label: to(chore.name),
     value: chore.id,
   })),
@@ -569,7 +568,6 @@ const suggestionsCurrent = computed<boolean>(
     suggestionsFor.value?.date === (date.value ?? null) &&
     suggestionsFor.value?.unit === rotationUnit.value,
 );
-const supervisorSuggestionList = ref<ChoreAssignmentSuggestionCandidate[]>([]);
 const participantStats = ref<Map<string, ChoreAssignmentSuggestionCandidate>>(
   new Map(),
 );
@@ -607,7 +605,6 @@ watch(
     }
     memberSuggestionList.value = memberResult?.candidates ?? [];
     suggestionsFor.value = { choreId: id, date: day ?? null, unit };
-    supervisorSuggestionList.value = supervisorResult?.candidates ?? [];
     participantStats.value = new Map(
       [
         ...(personResult?.candidates ?? memberResult?.candidates ?? []),
@@ -767,52 +764,50 @@ function applySuggestion(candidate: ChoreAssignmentSuggestionCandidate) {
 
 function canAutoFill(role: ChoreMemberRole): boolean {
   const target = role === 'MEMBER' ? headcount.value : supervisorCount.value;
-  return (
-    !!choreId.value &&
-    !!date.value &&
-    suggestionsCurrent.value &&
-    activeCount(role) < target
-  );
+  return !!choreId.value && !!date.value && activeCount(role) < target;
 }
 
-function autoFill() {
-  if (!suggestionsCurrent.value) {
+const autoFilling = ref<boolean>(false);
+
+// The server picks, so the dialog fills exactly like a series or a refill.
+async function autoFill() {
+  if (!choreId.value || !date.value) {
     return;
   }
-  const taken = new Set(members.value.map((m) => m.registrationId));
-  const additions: ChoreAssignmentMember[] = [];
-  const add = (registrationId: string, role: ChoreMemberRole) => {
-    taken.add(registrationId);
-    additions.push({ registrationId, role, missed: false });
-  };
-
-  let missing = headcount.value - activeCount('MEMBER');
-  for (const candidate of memberSuggestionList.value) {
-    if (missing <= 0) {
-      break;
+  const requestedFor = [choreId.value, date.value, rotationUnit.value];
+  autoFilling.value = true;
+  try {
+    const picks = await choreAssignmentStore.autoFillMembers({
+      choreId: choreId.value,
+      slotId: slotId.value,
+      date: date.value,
+      rotationUnit: rotationUnit.value,
+      headcount: headcount.value,
+      supervisorCount: supervisorCount.value,
+      members: members.value,
+      ...(props.assignment ? { assignmentId: props.assignment.id } : {}),
+    });
+    // Picked for another duty if it changed while waiting.
+    if (
+      requestedFor.join() !==
+      [choreId.value, date.value, rotationUnit.value].join()
+    ) {
+      return;
     }
-    // By room, a whole room (its eligible occupants) at a time.
-    const ids = (
-      rotationUnit.value === 'ROOM'
-        ? roomMemberIds(candidate.id)
-        : [candidate.id]
-    ).filter((id) => !taken.has(id));
-    ids.forEach((id) => add(id, 'MEMBER'));
-    missing -= ids.length;
+    const taken = new Set(members.value.map((m) => m.registrationId));
+    members.value = [
+      ...members.value,
+      ...picks
+        .filter((pick) => !taken.has(pick.registrationId))
+        .map((pick) => ({
+          registrationId: pick.registrationId,
+          role: pick.role ?? 'MEMBER',
+          missed: false,
+        })),
+    ];
+  } finally {
+    autoFilling.value = false;
   }
-
-  let missingSupervisors = supervisorCount.value - activeCount('SUPERVISOR');
-  for (const candidate of supervisorSuggestionList.value) {
-    if (missingSupervisors <= 0) {
-      break;
-    }
-    if (!taken.has(candidate.id)) {
-      add(candidate.id, 'SUPERVISOR');
-      missingSupervisors--;
-    }
-  }
-
-  members.value = [...members.value, ...additions];
 }
 
 async function createChore(payload: ChoreCreateData) {

@@ -39,11 +39,10 @@ import {
   toPersonCandidates,
   toRoomCandidates,
 } from '#app/chore-assignment/chore-planner';
-import type {
-  ChoreAssignmentWithRelations,
-  ChoreWithSlots,
-} from '#app/chore-assignment/chore-assignment.types';
+import type { ChoreAssignmentWithRelations } from '#app/chore-assignment/chore-assignment.types';
+import type { ChoreWithSlots } from '#app/chore/chore.types';
 import { ulid } from '#utils/ulid';
+import { eachDate, toDateString, toDbDate, weekdayOf } from '#utils/date';
 
 const CHORE_ASSIGNMENT_INCLUDE = {
   chore: true,
@@ -221,9 +220,7 @@ export class ChoreAssignmentService extends BaseService {
     data: ChoreSeriesPlanData,
   ): Promise<ChoreSeriesPlanResult> {
     const dates = eachDate(data.from, data.to).filter(
-      (date) =>
-        !data.weekdays ||
-        data.weekdays.includes(new Date(`${date}T00:00:00Z`).getUTCDay()),
+      (date) => !data.weekdays || data.weekdays.includes(weekdayOf(date)),
     );
     const slots: (ChoreSlot | null)[] =
       data.slotIds.length > 0
@@ -701,24 +698,4 @@ function normalizeMembers(members: ChoreAssignmentMemberData[]) {
 
 function occurrenceKey(date: string, slotId: string | null): string {
   return `${date}|${slotId ?? ''}`;
-}
-
-function toDbDate(date: string): Date {
-  return new Date(`${date}T00:00:00Z`);
-}
-
-export function toDateString(date: Date): string {
-  return date.toISOString().slice(0, 10);
-}
-
-function eachDate(from: string, to: string): string[] {
-  const dates: string[] = [];
-  for (
-    const date = toDbDate(from);
-    date <= toDbDate(to);
-    date.setUTCDate(date.getUTCDate() + 1)
-  ) {
-    dates.push(toDateString(date));
-  }
-  return dates;
 }

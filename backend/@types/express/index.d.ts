@@ -24,10 +24,8 @@ import type { JsonResource } from '#core/resource/JsonResource';
 import type { EventWithFreePlaces } from '#app/event/event.types';
 import type { NewsletterWithOrganization } from '#app/newsletter/newsletter.types';
 import type { TaskWithAssignee } from '#app/task/task.types';
-import type {
-  ChoreAssignmentWithRelations,
-  ChoreWithSlots,
-} from '#app/chore-assignment/chore-assignment.types';
+import type { ChoreAssignmentWithRelations } from '#app/chore-assignment/chore-assignment.types';
+import type { ChoreWithSlots } from '#app/chore/chore.types';
 
 declare global {
   namespace Express {

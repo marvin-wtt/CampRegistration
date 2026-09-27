@@ -8,7 +8,7 @@ import { BaseController } from '#core/base/BaseController';
 import { RealtimeService } from '#core/realtime/RealtimeService';
 import { ChoreService } from '#app/chore/chore.service';
 import { RegistrationService } from '#app/registration/registration.service';
-import type { ChoreWithSlots } from '#app/chore-assignment/chore-assignment.types';
+import type { ChoreWithSlots } from '#app/chore/chore.types';
 import type { ChoreAssignmentMemberData } from '@camp-registration/common/entities';
 import { inject, injectable } from 'inversify';
 

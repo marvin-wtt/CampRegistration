@@ -35,6 +35,21 @@ describe('/api/v1/events/:eventId/chores', () => {
     });
   };
 
+  const createSlottedAssignment = async (event: Event, chore: Chore) => {
+    const slot = await prisma.choreSlot.create({
+      data: { choreId: chore.id, name: 'Lunch' },
+    });
+    return prisma.choreAssignment.create({
+      data: {
+        eventId: event.id,
+        choreId: chore.id,
+        slotId: slot.id,
+        rotationUnit: 'PERSON',
+        date: new Date('2026-08-31'),
+      },
+    });
+  };
+
   describe('GET /api/v1/events/:eventId/chores', () => {
     it.each([
       { role: 'DIRECTOR', expectedStatus: 200 },
@@ -472,6 +487,31 @@ describe('/api/v1/events/:eventId/chores', () => {
 
       const count = await prisma.choreAssignment.count();
       expect(count).toBe(0);
+    });
+
+    it('should cascade-delete its slots and the assignments using them', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const chore = await createChoreForEvent(event);
+      await createSlottedAssignment(event, chore);
+
+      await request()
+        .delete(`/api/v1/events/${event.id}/chores/${chore.id}`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(204);
+
+      expect(await prisma.choreSlot.count()).toBe(0);
+      expect(await prisma.choreAssignment.count()).toBe(0);
+    });
+
+    it('should not block deleting the event when assignments use slots', async () => {
+      const { event } = await createEventWithManagerAndToken();
+      const chore = await createChoreForEvent(event);
+      await createSlottedAssignment(event, chore);
+
+      await prisma.event.delete({ where: { id: event.id } });
+
+      expect(await prisma.choreSlot.count()).toBe(0);
+      expect(await prisma.choreAssignment.count()).toBe(0);
     });
 
     it('should respond with `404` when the chore does not exist', async () => {
