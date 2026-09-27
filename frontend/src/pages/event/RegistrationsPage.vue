@@ -141,12 +141,9 @@ function onTemplatesPrint(templateIds: string[]) {
     timestamp: new Date().toISOString(),
   };
 
-  // Store payload for the print route
-  const key = `print:tables:${event.value.id}:${Date.now()}`;
-  sessionStorage.setItem(key, JSON.stringify(payload));
-
-  openPrintIframe(`/print/tables?key=${encodeURIComponent(key)}`, {
+  openPrintIframe('/print/tables', {
     messagePrefix: 'PRINT_TABLES',
+    payload,
     // Render at A4 landscape printable size (the widest sheet) so the print
     // page lays out in a desktop-sized viewport instead of a 0x0 one.
     widthPx: 1032,
@@ -157,9 +154,6 @@ function onTemplatesPrint(templateIds: string[]) {
         message: 'An error occurred while preparing the printout.',
         caption: error,
       });
-    },
-    onAfterPrint: () => {
-      sessionStorage.removeItem(key);
     },
   });
 }

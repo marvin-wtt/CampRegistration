@@ -230,7 +230,6 @@ const { locale, t } = useI18n();
 
 const { payload: data, error } = usePrintPage<PrintData>({
   messagePrefix: 'PRINT_CALENDAR',
-  defaultStorageKey: 'print:calendar:payload',
   beforePrint: fitEventText,
   prepare: async () => {
     // First pass: template renders with data, the measured refs become available

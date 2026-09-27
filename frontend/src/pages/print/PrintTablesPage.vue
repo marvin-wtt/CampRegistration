@@ -94,7 +94,6 @@ const documentRendered = new Promise<void>((resolve) => {
 
 const { payload, error } = usePrintPage<PrintTablesPayload>({
   messagePrefix: 'PRINT_TABLES',
-  defaultStorageKey: 'print:tables:payload',
   prepare: async () => {
     await documentRendered;
     await waitForStableLayout();

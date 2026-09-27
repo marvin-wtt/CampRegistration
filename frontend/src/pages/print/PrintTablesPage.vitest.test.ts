@@ -13,17 +13,12 @@ import type {
 
 installQuasarPlugin();
 
-vi.mock('vue-router', () => ({
-  useRoute: () => ({ query: { key: STORAGE_KEY } }),
-}));
-
 // Only used inside filters of the hidden local templates, which are not
 // printed here; avoids pulling in the stores (and with them router and API).
 vi.mock('@/composables/registrationHelper', () => ({
   useRegistrationHelper: () => ({}),
 }));
 
-const STORAGE_KEY = 'print:tables:test';
 const CELL_TYPE = 'print_test_async';
 
 // A cell renderer whose chunk only "arrives" once the test releases it, like
@@ -93,7 +88,26 @@ describe('PrintTablesPage', () => {
 
   beforeEach(() => {
     registerAsyncCell();
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(payload()));
+
+    // Standalone window in happy-dom: the opener answers the payload request.
+    const opener = {
+      postMessage: (msg: { type: string }) => {
+        if (msg.type !== 'PRINT_TABLES:REQUEST') {
+          return;
+        }
+        window.dispatchEvent(
+          new MessageEvent('message', {
+            data: {
+              type: 'PRINT_TABLES:PAYLOAD',
+              payload: JSON.stringify(payload()),
+            },
+            origin: window.location.origin,
+            source: opener as unknown as Window,
+          }),
+        );
+      },
+    };
+    vi.stubGlobal('opener', opener);
 
     renderedCellsAtPrint = undefined;
     // happy-dom does not implement print(); record what would be printed.
@@ -109,7 +123,6 @@ describe('PrintTablesPage', () => {
 
   afterEach(() => {
     TableComponentRegistry.remove(CELL_TYPE);
-    sessionStorage.clear();
     vi.unstubAllGlobals();
   });
 

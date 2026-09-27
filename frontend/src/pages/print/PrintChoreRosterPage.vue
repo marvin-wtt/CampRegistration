@@ -53,7 +53,6 @@ const { to } = useObjectTranslation();
 
 const { payload: data, error } = usePrintPage<PrintChoreRosterPayload>({
   messagePrefix: 'PRINT_CHORES',
-  defaultStorageKey: 'print:chores:payload',
   prepare: () => waitForStableLayout(),
 });
 
