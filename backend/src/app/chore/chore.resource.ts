@@ -1,6 +1,6 @@
 import type { Chore as ChoreData } from '@camp-registration/common/entities';
 import { JsonResource } from '#core/resource/JsonResource';
-import type { ChoreWithSlots } from '#app/choreAssignment/choreAssignment.types';
+import type { ChoreWithSlots } from '#app/chore-assignment/chore-assignment.types';
 
 export class ChoreResource extends JsonResource<ChoreWithSlots, ChoreData> {
   transform(): ChoreData {

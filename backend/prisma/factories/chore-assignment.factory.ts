@@ -7,7 +7,7 @@ export const ChoreAssignmentFactory = {
     data: Partial<Prisma.ChoreAssignmentCreateInput> = {},
   ): Prisma.ChoreAssignmentCreateInput => {
     const built: Prisma.ChoreAssignmentCreateInput = {
-      rotationUnit: 'PARTICIPANT',
+      rotationUnit: 'PERSON',
       date: faker.date.future(),
       event: {},
       chore: {},

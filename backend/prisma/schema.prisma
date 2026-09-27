@@ -611,7 +611,7 @@ model Task {
 }
 
 enum ChoreRotationUnit {
-  PARTICIPANT
+  PERSON
   ROOM
 }
 
@@ -648,7 +648,7 @@ model Chore {
   supervisorCount     Int               @default(0) @map("supervisor_count") @db.UnsignedInt
   eligibility         ChoreEligibility  @default(PARTICIPANTS)
   effort              ChoreEffort       @default(NORMAL)
-  defaultRotationUnit ChoreRotationUnit @default(PARTICIPANT) @map("default_rotation_unit")
+  defaultRotationUnit ChoreRotationUnit @default(PERSON) @map("default_rotation_unit")
   balanceCountries    Boolean           @default(false) @map("balance_countries")
 
   event       Event             @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "chores_event_id_foreign")

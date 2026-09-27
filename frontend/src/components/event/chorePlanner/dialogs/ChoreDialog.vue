@@ -265,7 +265,7 @@ const data = reactive<Required<Omit<ChoreCreateData, 'slots'>>>({
   supervisorCount: props.chore?.supervisorCount ?? 0,
   eligibility: props.chore?.eligibility ?? 'PARTICIPANTS',
   effort: props.chore?.effort ?? 'NORMAL',
-  defaultRotationUnit: props.chore?.defaultRotationUnit ?? 'PARTICIPANT',
+  defaultRotationUnit: props.chore?.defaultRotationUnit ?? 'PERSON',
   balanceCountries: props.chore?.balanceCountries ?? false,
 });
 

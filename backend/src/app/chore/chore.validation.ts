@@ -9,7 +9,7 @@ const DEFAULT_COUNT = z.number().int().positive().nullable();
 const COUNT = z.number().int().min(0).max(1000);
 const ELIGIBILITY = z.enum(['PARTICIPANTS', 'STAFF', 'EVERYONE']);
 const EFFORT = z.enum(['LIGHT', 'NORMAL', 'HEAVY']);
-const ROTATION_UNIT = z.enum(['PARTICIPANT', 'ROOM']);
+const ROTATION_UNIT = z.enum(['PERSON', 'ROOM']);
 
 const SLOT = z.object({
   id: z.ulid().optional(),

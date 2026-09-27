@@ -476,7 +476,7 @@ import type {
   ChoreAssignmentStatus,
   ChoreAssignmentUpdateData,
   ChoreCreateData,
-  ChoreRemovePersonData,
+  ChoreMemberRemovalQuery,
   ChoreSeriesPlanData,
   Registration,
   Room,
@@ -810,8 +810,8 @@ function updateMembers(
   });
 }
 
-// The person stays in the preview as "missed": taken, but not filling a spot,
-// so exactly one fair replacement comes back.
+// The person stays in the auto-fill input as "missed": taken, but not filling
+// a spot, so exactly one fair replacement comes back.
 async function replaceMember(assignment: ChoreAssignment, id: string) {
   const replaced = assignment.members.find((m) => m.registrationId === id);
   if (!replaced) {
@@ -822,11 +822,11 @@ async function replaceMember(assignment: ChoreAssignment, id: string) {
   const members = assignment.members.map((m) =>
     m.registrationId === id ? { ...m, missed: true } : m,
   );
-  const picks = await choreAssignmentStore.previewMembers({
+  const picks = await choreAssignmentStore.autoFillMembers({
     choreId: assignment.choreId,
     slotId: assignment.slotId,
     date: assignment.date,
-    rotationUnit: 'PARTICIPANT',
+    rotationUnit: 'PERSON',
     headcount: active('MEMBER'),
     supervisorCount: active('SUPERVISOR'),
     members,
@@ -987,8 +987,9 @@ function deleteDay(date: string) {
       void choreAssignmentStore.deleteMany({
         from: date,
         to: date,
-        ...(filterChoreIds.value.length === 1
-          ? { choreId: filterChoreIds.value[0] }
+        // Only the chores on screen — hidden ones keep their duties.
+        ...(filterChoreIds.value.length > 0
+          ? { choreId: filterChoreIds.value }
           : {}),
       }),
   );
@@ -1032,9 +1033,14 @@ function removePerson() {
       component: ChoreRemovePersonDialog,
       componentProps: { registrations: registrations.value },
     })
-    .onOk((payload: ChoreRemovePersonData) => {
-      void choreAssignmentStore.removePerson(payload);
-    });
+    .onOk(
+      (removal: { registrationId: string; query: ChoreMemberRemovalQuery }) => {
+        void choreAssignmentStore.removeMember(
+          removal.registrationId,
+          removal.query,
+        );
+      },
+    );
 }
 
 // The event's weeks, plus any other week that has duties.

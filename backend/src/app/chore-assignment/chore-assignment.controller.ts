@@ -1,14 +1,14 @@
 import httpStatus from 'http-status';
 import ApiError from '#utils/ApiError';
-import { ChoreAssignmentService } from './choreAssignment.service.js';
-import { ChoreAssignmentResource } from './choreAssignment.resource.js';
-import validator from './choreAssignment.validation.js';
+import { ChoreAssignmentService } from './chore-assignment.service.js';
+import { ChoreAssignmentResource } from './chore-assignment.resource.js';
+import validator from './chore-assignment.validation.js';
 import { type Request, type Response } from 'express';
 import { BaseController } from '#core/base/BaseController';
 import { RealtimeService } from '#core/realtime/RealtimeService';
 import { ChoreService } from '#app/chore/chore.service';
 import { RegistrationService } from '#app/registration/registration.service';
-import type { ChoreWithSlots } from '#app/choreAssignment/choreAssignment.types';
+import type { ChoreWithSlots } from '#app/chore-assignment/chore-assignment.types';
 import type { ChoreAssignmentMemberData } from '@camp-registration/common/entities';
 import { inject, injectable } from 'inversify';
 
@@ -72,15 +72,15 @@ export class ChoreAssignmentController extends BaseController {
     res.json({ data: entries, meta: {} });
   }
 
-  async preview(req: Request, res: Response) {
+  async autoFill(req: Request, res: Response) {
     const event = req.modelOrFail('event');
     const chore = req.modelOrFail('chore');
-    const { body } = await req.validate(validator.preview);
+    const { body } = await req.validate(validator.autoFill);
 
     this.assertSlotBelongsToChore(chore, body.slotId);
     await this.assertMembersBelongToEvent(event.id, body.members);
 
-    const members = await this.choreAssignmentService.previewMembers(
+    const members = await this.choreAssignmentService.autoFillMembers(
       event.id,
       chore,
       body,
@@ -149,17 +149,16 @@ export class ChoreAssignmentController extends BaseController {
     res.json({ data: { count }, meta: {} });
   }
 
-  async removePerson(req: Request, res: Response) {
+  async destroyMember(req: Request, res: Response) {
     const event = req.modelOrFail('event');
-    const { body } = await req.validate(validator.removePerson);
+    // Bound within the event — another event's registration is a 404.
+    const registration = req.modelOrFail('registration');
+    const { query } = await req.validate(validator.destroyMember);
 
-    await this.assertMembersBelongToEvent(event.id, [
-      { registrationId: body.registrationId },
-    ]);
-
-    const result = await this.choreAssignmentService.removePerson(
+    const result = await this.choreAssignmentService.removeMember(
       event.id,
-      body,
+      registration.id,
+      query,
     );
 
     void this.realtimeService.emitInvalidation(event.id, 'choreAssignment');

@@ -61,7 +61,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
     return ChoreAssignmentFactory.create({
       event: { connect: { id: event.id } },
       chore: { connect: { id: choreId } },
-      rotationUnit: 'PARTICIPANT',
+      rotationUnit: 'PERSON',
       ...data,
     });
   };
@@ -97,7 +97,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
         expect(item).toHaveProperty('choreId', chore.id);
         expect(item).toHaveProperty('chore.id', chore.id);
         expect(item).toHaveProperty('chore.name', chore.name);
-        expect(item).toHaveProperty('rotationUnit', 'PARTICIPANT');
+        expect(item).toHaveProperty('rotationUnit', 'PERSON');
         expect(item).toHaveProperty('date', '2026-09-01');
         expect(item).toHaveProperty('slotId', slot.id);
         expect(item).toHaveProperty('status', 'PLANNED');
@@ -158,7 +158,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
 
       await request()
         .get(`/api/v1/events/${event.id}/chore-assignments/suggestions`)
-        .query({ choreId: chore.id, unit: 'PARTICIPANT' })
+        .query({ choreId: chore.id, unit: 'PERSON' })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
     });
@@ -168,13 +168,13 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
 
       await request()
         .get(`/api/v1/events/${event.id}/chore-assignments/suggestions`)
-        .query({ choreId: ulid(), unit: 'PARTICIPANT' })
+        .query({ choreId: ulid(), unit: 'PERSON' })
         .auth(accessToken, { type: 'bearer' })
         .expect(404);
     });
 
     it.each([
-      { label: 'choreId is missing', query: { unit: 'PARTICIPANT' } },
+      { label: 'choreId is missing', query: { unit: 'PERSON' } },
       { label: 'unit is missing', query: {} },
       {
         label: 'unit is invalid',
@@ -195,7 +195,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
       },
     );
 
-    it('ranks PARTICIPANT candidates least-assigned-first, never-assigned before assigned', async () => {
+    it('ranks PERSON candidates least-assigned-first, never-assigned before assigned', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
       const chore = await createChore(event);
       const assignedTwice = await createRegistration(event);
@@ -221,11 +221,11 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
 
       const { body } = await request()
         .get(`/api/v1/events/${event.id}/chore-assignments/suggestions`)
-        .query({ choreId: chore.id, unit: 'PARTICIPANT' })
+        .query({ choreId: chore.id, unit: 'PERSON' })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
-      expect(body.data.unit).toBe('PARTICIPANT');
+      expect(body.data.unit).toBe('PERSON');
       const order = body.data.candidates.map(
         (c: { id: string }) => c.id,
       ) as string[];
@@ -243,7 +243,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
       );
     });
 
-    it('excludes staff from PARTICIPANT candidates for a participant duty', async () => {
+    it('excludes staff from PERSON candidates for a participant duty', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
       const chore = await createChore(event, { eligibility: 'PARTICIPANTS' });
       const participant = await createRegistration(event, {
@@ -253,7 +253,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
 
       const { body } = await request()
         .get(`/api/v1/events/${event.id}/chore-assignments/suggestions`)
-        .query({ choreId: chore.id, unit: 'PARTICIPANT' })
+        .query({ choreId: chore.id, unit: 'PERSON' })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -463,7 +463,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
 
       const { body } = await request()
         .get(`/api/v1/events/${event.id}/chore-assignments/suggestions`)
-        .query({ choreId: chore.id, unit: 'PARTICIPANT' })
+        .query({ choreId: chore.id, unit: 'PERSON' })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -475,39 +475,40 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
       );
     });
 
-    it('interleaves PARTICIPANT candidates by country when balanceCountries is set', async () => {
+    it('interleaves PERSON candidates by country when balanceCountries is set', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
       const chore = await createChore(event, { balanceCountries: true });
+      const otherChore = await createChore(event);
 
-      // Distinct assignment counts, so fairness ranking alone (no tie) would
-      // list both `gb` candidates before the `fr` one.
+      // One duty each, so all three tie on load — balancing only reorders
+      // within such a tie. The finer tie-breakers (times on this chore, then
+      // longest ago) still separate them, so the fairness order is fixed.
       const gbNeverAssigned = await createRegistration(event, {
         country: 'gb',
       });
       const gbAssignedOnce = await createRegistration(event, {
         country: 'gb',
       });
-      const frAssignedTwice = await createRegistration(event, {
+      const frAssignedLater = await createRegistration(event, {
         country: 'fr',
       });
 
+      await createAssignment(event, otherChore.id, {
+        date: '2026-08-01',
+        members: { create: [{ registrationId: gbNeverAssigned.id }] },
+      });
       await createAssignment(event, chore.id, {
         date: '2026-08-01',
-        members: {
-          create: [
-            { registrationId: gbAssignedOnce.id },
-            { registrationId: frAssignedTwice.id },
-          ],
-        },
+        members: { create: [{ registrationId: gbAssignedOnce.id }] },
       });
       await createAssignment(event, chore.id, {
         date: '2026-08-05',
-        members: { create: [{ registrationId: frAssignedTwice.id }] },
+        members: { create: [{ registrationId: frAssignedLater.id }] },
       });
 
       const { body } = await request()
         .get(`/api/v1/events/${event.id}/chore-assignments/suggestions`)
-        .query({ choreId: chore.id, unit: 'PARTICIPANT' })
+        .query({ choreId: chore.id, unit: 'PERSON' })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -515,11 +516,11 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
         (c: { id: string }) => c.id,
       ) as string[];
       // Fairness alone would rank [gbNeverAssigned, gbAssignedOnce,
-      // frAssignedTwice] — balancing interleaves the `fr` candidate between
+      // frAssignedLater] — balancing interleaves the `fr` candidate between
       // the two `gb` ones instead of leaving it last.
       expect(order).toEqual([
         gbNeverAssigned.id,
-        frAssignedTwice.id,
+        frAssignedLater.id,
         gbAssignedOnce.id,
       ]);
     });
@@ -542,7 +543,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
           .post(`/api/v1/events/${event.id}/chore-assignments`)
           .send({
             choreId: chore.id,
-            rotationUnit: 'PARTICIPANT',
+            rotationUnit: 'PERSON',
             date: '2026-09-01',
           })
           .auth(accessToken, { type: 'bearer' })
@@ -589,7 +590,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
         .post(`/api/v1/events/${event.id}/chore-assignments`)
         .send({
           choreId: chore.id,
-          rotationUnit: 'PARTICIPANT',
+          rotationUnit: 'PERSON',
           date: '2026-09-01',
           slotId: otherSlot.id,
         })
@@ -622,7 +623,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
         .post(`/api/v1/events/${event.id}/chore-assignments`)
         .send({
           choreId: chore.id,
-          rotationUnit: 'PARTICIPANT',
+          rotationUnit: 'PERSON',
           date: '2026-09-01',
           slotId: slot.id,
           autoFill: true,
@@ -654,7 +655,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
         .post(`/api/v1/events/${event.id}/chore-assignments`)
         .send({
           choreId: otherChore.id,
-          rotationUnit: 'PARTICIPANT',
+          rotationUnit: 'PERSON',
           date: '2026-09-01',
         })
         .auth(accessToken, { type: 'bearer' })
@@ -673,7 +674,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
         .post(`/api/v1/events/${event.id}/chore-assignments`)
         .send({
           choreId: chore.id,
-          rotationUnit: 'PARTICIPANT',
+          rotationUnit: 'PERSON',
           date: '2026-09-01',
           members: [{ registrationId: otherRegistration.id }],
         })
@@ -688,7 +689,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
 
       await request()
         .post(`/api/v1/events/${event.id}/chore-assignments`)
-        .send({ rotationUnit: 'PARTICIPANT', date: '2026-09-01' })
+        .send({ rotationUnit: 'PERSON', date: '2026-09-01' })
         .auth(accessToken, { type: 'bearer' })
         .expect(400);
     });
@@ -702,10 +703,10 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
         label: 'rotationUnit is invalid',
         data: { rotationUnit: 'GROUP', date: '2026-09-01' },
       },
-      { label: 'date is missing', data: { rotationUnit: 'PARTICIPANT' } },
+      { label: 'date is missing', data: { rotationUnit: 'PERSON' } },
       {
         label: 'date format is invalid',
-        data: { rotationUnit: 'PARTICIPANT', date: '01-09-2026' },
+        data: { rotationUnit: 'PERSON', date: '01-09-2026' },
       },
     ])('should respond with `400` when $label', async ({ data }) => {
       const { event, accessToken } = await createEventWithManagerAndToken();
@@ -726,7 +727,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
         .post(`/api/v1/events/${event.id}/chore-assignments`)
         .send({
           choreId: chore.id,
-          rotationUnit: 'PARTICIPANT',
+          rotationUnit: 'PERSON',
           date: '2026-09-01',
         })
         .expect(401);
@@ -761,7 +762,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
       const chore = await createChore(event);
       const assignment = await createAssignment(event, chore.id, {
-        rotationUnit: 'PARTICIPANT',
+        rotationUnit: 'PERSON',
       });
 
       const { body } = await request()
@@ -975,7 +976,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
     ) =>
       request()
         .post(`/api/v1/events/${eventId}/chore-assignments/series`)
-        .send({ rotationUnit: 'PARTICIPANT', onConflict: 'SKIP', ...body })
+        .send({ rotationUnit: 'PERSON', onConflict: 'SKIP', ...body })
         .auth(accessToken, { type: 'bearer' })
         .expect(expectedStatus);
 
@@ -1166,6 +1167,33 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
       expect(await prisma.choreAssignment.count()).toBe(2);
     });
 
+    it('deletes only the listed chores', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const [a, b, hidden] = await Promise.all(
+        [1, 2, 3].map(() => createChore(event)),
+      );
+      await Promise.all(
+        [a, b, hidden].map((chore) =>
+          createAssignment(event, chore.id, { date: '2026-09-01' }),
+        ),
+      );
+
+      await request()
+        .delete(`/api/v1/events/${event.id}/chore-assignments`)
+        .query({
+          choreId: `${a.id},${b.id}`,
+          from: '2026-09-01',
+          to: '2026-09-01',
+        })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      const remaining = await prisma.choreAssignment.findMany();
+      expect(remaining.map((assignment) => assignment.choreId)).toEqual([
+        hidden.id,
+      ]);
+    });
+
     it('does not delete duties of another event', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
       const otherEvent = await EventFactory.create();
@@ -1206,7 +1234,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
     });
   });
 
-  describe('POST /api/v1/events/:eventId/chore-assignments/remove-person', () => {
+  describe('DELETE /api/v1/events/:eventId/chore-assignments/members/:registrationId', () => {
     const membersOf = async (choreAssignmentId: string) =>
       (
         await prisma.choreAssignmentMember.findMany({
@@ -1234,8 +1262,10 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
       });
 
       const { body } = await request()
-        .post(`/api/v1/events/${event.id}/chore-assignments/remove-person`)
-        .send({ registrationId: sick.id, from: '2026-09-01', replace: true })
+        .delete(
+          `/api/v1/events/${event.id}/chore-assignments/members/${sick.id}`,
+        )
+        .query({ from: '2026-09-01', replace: true })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -1256,8 +1286,10 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
       });
 
       const { body } = await request()
-        .post(`/api/v1/events/${event.id}/chore-assignments/remove-person`)
-        .send({ registrationId: sick.id, from: '2026-09-01', replace: false })
+        .delete(
+          `/api/v1/events/${event.id}/chore-assignments/members/${sick.id}`,
+        )
+        .query({ from: '2026-09-01', replace: false })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -1265,15 +1297,17 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
       expect(await membersOf(assignment.id)).toEqual([]);
     });
 
-    it('should respond with `400` for a registration of another event', async () => {
+    it('should respond with `404` for a registration of another event', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
       const other = await createRegistration(await EventFactory.create());
 
       await request()
-        .post(`/api/v1/events/${event.id}/chore-assignments/remove-person`)
-        .send({ registrationId: other.id, from: '2026-09-01', replace: true })
+        .delete(
+          `/api/v1/events/${event.id}/chore-assignments/members/${other.id}`,
+        )
+        .query({ from: '2026-09-01', replace: true })
         .auth(accessToken, { type: 'bearer' })
-        .expect(400);
+        .expect(404);
     });
   });
 
@@ -1324,18 +1358,18 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
     });
   });
 
-  describe('POST /api/v1/events/:eventId/chore-assignments/preview', () => {
+  describe('POST /api/v1/events/:eventId/chore-assignments/auto-fill', () => {
     it('suggests members without saving anything', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
       const chore = await createChore(event);
       await Promise.all([1, 2, 3].map(() => createRegistration(event)));
 
       const { body } = await request()
-        .post(`/api/v1/events/${event.id}/chore-assignments/preview`)
+        .post(`/api/v1/events/${event.id}/chore-assignments/auto-fill`)
         .send({
           choreId: chore.id,
           date: '2026-09-01',
-          rotationUnit: 'PARTICIPANT',
+          rotationUnit: 'PERSON',
           headcount: 2,
           members: [],
         })

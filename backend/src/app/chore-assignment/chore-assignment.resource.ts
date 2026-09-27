@@ -1,6 +1,6 @@
 import type { ChoreAssignment as ChoreAssignmentData } from '@camp-registration/common/entities';
 import { JsonResource } from '#core/resource/JsonResource';
-import type { ChoreAssignmentWithRelations } from '#app/choreAssignment/choreAssignment.types';
+import type { ChoreAssignmentWithRelations } from '#app/chore-assignment/chore-assignment.types';
 
 export class ChoreAssignmentResource extends JsonResource<
   ChoreAssignmentWithRelations,

@@ -1,11 +1,11 @@
 import { auth, guard } from '#middlewares/index';
 import { and, or } from '#core/guard';
 import { hasEventPermission } from '#app/event/event.guard';
-import { choreFromBody } from './choreAssignment.middleware.js';
-import { ChoreAssignmentController } from './choreAssignment.controller.js';
+import { choreFromBody } from './chore-assignment.middleware.js';
+import { ChoreAssignmentController } from './chore-assignment.controller.js';
 import { controller } from '#utils/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';
-import { ChoreAssignmentService } from '#app/choreAssignment/choreAssignment.service';
+import { ChoreAssignmentService } from '#app/chore-assignment/chore-assignment.service';
 import { inject, injectable } from 'inversify';
 
 @injectable()
@@ -50,10 +50,10 @@ export class ChoreAssignmentRouter extends ModuleRouter {
       controller(this.choreAssignmentController, 'fairness'),
     );
     this.router.post(
-      '/preview',
+      '/auto-fill',
       choreFromBody(),
       guard(hasEventPermission('event.chore_assignments.view')),
-      controller(this.choreAssignmentController, 'preview'),
+      controller(this.choreAssignmentController, 'autoFill'),
     );
     this.router.post(
       '/series',
@@ -71,10 +71,10 @@ export class ChoreAssignmentRouter extends ModuleRouter {
       ),
       controller(this.choreAssignmentController, 'series'),
     );
-    this.router.post(
-      '/remove-person',
+    this.router.delete(
+      '/members/:registrationId',
       guard(hasEventPermission('event.chore_assignments.edit')),
-      controller(this.choreAssignmentController, 'removePerson'),
+      controller(this.choreAssignmentController, 'destroyMember'),
     );
     this.router.post(
       '/',

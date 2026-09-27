@@ -1,8 +1,8 @@
 import type { AppModule, AppRouter, BindOptions } from '#core/base/AppModule';
-import { ChoreAssignmentRouter } from '#app/choreAssignment/choreAssignment.routes';
+import { ChoreAssignmentRouter } from '#app/chore-assignment/chore-assignment.routes';
 import type { ScopedPermissions } from '@camp-registration/common/permissions';
-import { ChoreAssignmentService } from '#app/choreAssignment/choreAssignment.service';
-import { ChoreAssignmentController } from '#app/choreAssignment/choreAssignment.controller';
+import { ChoreAssignmentService } from '#app/chore-assignment/chore-assignment.service';
+import { ChoreAssignmentController } from '#app/chore-assignment/chore-assignment.controller';
 import { resolve } from '#core/ioc/container';
 
 export class ChoreAssignmentModule implements AppModule {

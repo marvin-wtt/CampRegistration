@@ -35,7 +35,7 @@ interface ChoreAssignmentData {
   day: number;
   /** Index into the chore's slots. */
   slot?: number;
-  rotationUnit: 'PARTICIPANT' | 'ROOM';
+  rotationUnit: 'PERSON' | 'ROOM';
   /** Accepted registrations to staff it with, taken in order; omit for an
    * unstaffed occurrence (the planner highlights those). */
   memberCount?: number;
@@ -97,7 +97,7 @@ const SUMMER_ASSIGNMENTS: ChoreAssignmentData[] = [
     choreIndex: 0,
     day: 96,
     slot: 2,
-    rotationUnit: 'PARTICIPANT',
+    rotationUnit: 'PERSON',
     memberCount: 4,
   },
   {
@@ -111,22 +111,22 @@ const SUMMER_ASSIGNMENTS: ChoreAssignmentData[] = [
     choreIndex: 1,
     day: 95,
     slot: 1,
-    rotationUnit: 'PARTICIPANT',
+    rotationUnit: 'PERSON',
     memberCount: 2,
   },
   {
     choreIndex: 1,
     day: 96,
     slot: 0,
-    rotationUnit: 'PARTICIPANT',
+    rotationUnit: 'PERSON',
     memberCount: 2,
   },
   // Unstaffed — the roster highlights this one until someone picks it up.
-  { choreIndex: 2, day: 96, rotationUnit: 'PARTICIPANT' },
+  { choreIndex: 2, day: 96, rotationUnit: 'PERSON' },
   {
     choreIndex: 2,
     day: 99,
-    rotationUnit: 'PARTICIPANT',
+    rotationUnit: 'PERSON',
     memberCount: 2,
   },
 ];
@@ -150,15 +150,15 @@ const CITY_ASSIGNMENTS: ChoreAssignmentData[] = [
     choreIndex: 0,
     day: -2,
     slot: 1,
-    rotationUnit: 'PARTICIPANT',
+    rotationUnit: 'PERSON',
     memberCount: 3,
   },
-  { choreIndex: 1, day: -1, rotationUnit: 'PARTICIPANT' },
+  { choreIndex: 1, day: -1, rotationUnit: 'PERSON' },
   {
     choreIndex: 0,
     day: 1,
     slot: 0,
-    rotationUnit: 'PARTICIPANT',
+    rotationUnit: 'PERSON',
     memberCount: 3,
   },
   { choreIndex: 1, day: 3, rotationUnit: 'ROOM', roomIndex: 0 },
