@@ -3,7 +3,7 @@ import { useQuasar } from 'quasar';
 import type { AuditEntityView } from '@/features/audit/composables/auditEntityView';
 import { useAPIService } from '@/services/APIService';
 import { useRegistrationsStore } from '@/stores/registration-store';
-import MessageDetailsDialog from '@/features/messages/components/MessageDetailsDialog.vue';
+import MessageDetailsDialog from '@/features/eventMessages/components/MessageDetailsDialog.vue';
 
 export function useMessageAuditView(): AuditEntityView {
   const { t } = useI18n({ useScope: 'global' });

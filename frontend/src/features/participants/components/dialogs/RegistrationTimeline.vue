@@ -160,7 +160,7 @@ import { usePermissions } from '@/composables/permissions';
 import { useAPIService } from '@/services/APIService';
 import { useRegistrationsStore } from '@/stores/registration-store';
 import { useEventDetailsStore } from '@/stores/event-details-store';
-import MessageDetailsDialog from '@/features/messages/components/MessageDetailsDialog.vue';
+import MessageDetailsDialog from '@/features/eventMessages/components/MessageDetailsDialog.vue';
 import ResendMessageDialog, {
   type ResendRecipient,
 } from '@/features/participants/components/dialogs/ResendMessageDialog.vue';

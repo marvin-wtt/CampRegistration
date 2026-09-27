@@ -160,7 +160,7 @@ const routes: RouteRecordRaw[] = [
           {
             path: '',
             component: () =>
-              import('@/features/events/pages/EventManagementIndexPage.vue'),
+              import('@/features/managedEvents/pages/EventManagementIndexPage.vue'),
             name: 'management.events',
           },
           {
@@ -174,7 +174,7 @@ const routes: RouteRecordRaw[] = [
                 path: 'dashboard',
                 name: 'management.event.dashboard',
                 component: () =>
-                  import('@/features/dashboard/pages/EventDashboardPage.vue'),
+                  import('@/features/eventDashboard/pages/EventDashboardPage.vue'),
               },
               {
                 path: 'participants',
@@ -186,7 +186,7 @@ const routes: RouteRecordRaw[] = [
                 path: 'contact',
                 name: 'management.event.contact',
                 component: () =>
-                  import('@/features/messages/pages/ContactPage.vue'),
+                  import('@/features/eventMessages/pages/ContactPage.vue'),
               },
               {
                 path: 'program-planner',
@@ -224,7 +224,7 @@ const routes: RouteRecordRaw[] = [
                     path: 'access',
                     name: 'management.event.settings.access',
                     component: () =>
-                      import('@/features/access/pages/AccessPage.vue'),
+                      import('@/features/eventAccess/pages/AccessPage.vue'),
                   },
                   {
                     path: 'edit',
@@ -236,13 +236,13 @@ const routes: RouteRecordRaw[] = [
                     path: 'emails',
                     name: 'management.event.settings.emails',
                     component: () =>
-                      import('@/features/messages/pages/MessageTemplateEditPage.vue'),
+                      import('@/features/eventMessages/pages/MessageTemplateEditPage.vue'),
                   },
                   {
                     path: 'files',
                     name: 'management.event.settings.files',
                     component: () =>
-                      import('@/features/files/pages/FileSettingsPage.vue'),
+                      import('@/features/eventFiles/pages/FileSettingsPage.vue'),
                   },
                   {
                     path: 'form',

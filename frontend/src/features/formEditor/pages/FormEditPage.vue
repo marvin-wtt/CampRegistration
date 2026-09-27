@@ -19,7 +19,7 @@
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import { computed, onMounted, ref } from 'vue';
 import { useEventDetailsStore } from '@/stores/event-details-store';
-import { useEventFilesStore } from '@/features/files/stores/event-files-store';
+import { useEventFilesStore } from '@/features/eventFiles/stores/event-files-store';
 import { storeToRefs } from 'pinia';
 import { useQuasar } from 'quasar';
 import { useRegistrationsStore } from '@/stores/registration-store';

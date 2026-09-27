@@ -2,7 +2,7 @@ import {
   type AuditEntityView,
   useSettingsLink,
 } from '@/features/audit/composables/auditEntityView';
-import { useEventManagerStore } from '@/features/access/stores/event-manager-store';
+import { useEventManagerStore } from '@/features/eventAccess/stores/event-manager-store';
 
 export function useEventManagerAuditView(): AuditEntityView {
   const store = useEventManagerStore();

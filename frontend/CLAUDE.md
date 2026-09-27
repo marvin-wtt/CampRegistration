@@ -7,6 +7,9 @@ Frontend-specific conventions. The repo-wide overview, commands, and pitfalls li
 - **`src/features/<name>/`** holds everything that belongs to one feature — its pages,
   components, composables, stores and domain utils. A feature is one place a user works,
   so all global-admin pages live in `features/administration/`, whatever model they manage.
+  Prefix a feature name with `event` only when the concept also exists at organization,
+  newsletter or global level (`eventAccess`, `eventMessages`); event-only features stay
+  unprefixed (`chores`, `rooms`).
 - **Top-level `components/`, `composables/`, `stores/`, `utils/`, `services/`** hold only
   code that several features or the app shell use, plus generic building blocks even when
   a single feature uses them today. `components/` is `common/`, `layout/` and `emailEditor/`.

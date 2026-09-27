@@ -179,7 +179,7 @@ import { useQuasar } from 'quasar';
 import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
 import RegistrationScheduleDialog, {
   type RegistrationScheduleResult,
-} from '@/features/events/components/RegistrationScheduleDialog.vue';
+} from '@/features/managedEvents/components/RegistrationScheduleDialog.vue';
 import MoveOrganizationDialog from '@/features/administration/components/MoveOrganizationDialog.vue';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { useRouter } from 'vue-router';

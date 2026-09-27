@@ -106,12 +106,12 @@
 <script lang="ts" setup>
 import { useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { useEventFilesStore } from '@/features/files/stores/event-files-store';
+import { useEventFilesStore } from '@/features/eventFiles/stores/event-files-store';
 import { storeToRefs } from 'pinia';
 import { computed, onMounted, ref } from 'vue';
 import type { ServiceFile } from '@camp-registration/common/entities';
 import { useObjectTranslation } from '@/composables/objectTranslation';
-import FileUploadDialog from '@/features/files/components/FileUploadDialog.vue';
+import FileUploadDialog from '@/features/eventFiles/components/FileUploadDialog.vue';
 
 const quasar = useQuasar();
 const eventFileStore = useEventFilesStore();

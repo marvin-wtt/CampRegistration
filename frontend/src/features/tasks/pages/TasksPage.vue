@@ -152,7 +152,7 @@
 import PageHeader from '@/components/common/PageHeader.vue';
 import { useI18n } from 'vue-i18n';
 import { useTaskStore } from '@/features/tasks/stores/task-store';
-import { useEventManagerStore } from '@/features/access/stores/event-manager-store';
+import { useEventManagerStore } from '@/features/eventAccess/stores/event-manager-store';
 import { computed, ref, watch } from 'vue';
 import type { Task } from '@camp-registration/common/entities';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
