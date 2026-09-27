@@ -1,13 +1,18 @@
 import type { PermissionRequirement } from '@/composables/scopePermissions';
+import type { HideableNavigationItem } from '@camp-registration/common/settings';
 
-export interface EventNavigationItemDef {
-  name: string;
+interface EventNavigationItemBase {
   icon: string;
   routeName: string;
   permission?: PermissionRequirement<'event'>;
   separated?: boolean;
-  hideable?: boolean;
 }
+
+export type EventNavigationItemDef = EventNavigationItemBase &
+  (
+    | { name: HideableNavigationItem; hideable: true }
+    | { name: string; hideable?: false }
+  );
 
 /**
  * The event management nav rail, and the source of which of its items an event

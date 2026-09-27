@@ -100,4 +100,11 @@ export function defaultMessageTemplatesForCountries(
   });
 }
 
+export function defaultSettingsForPreset(preset: EventPreset) {
+  return Object.entries(preset.settings ?? {}).map(([key, data]) => ({
+    key,
+    data,
+  }));
+}
+
 export { localesForCountries } from './locales.js';

@@ -8,4 +8,7 @@ export default {
   tableTemplates,
   messageTemplates,
   themes: {},
+  settings: {
+    navigation: { hiddenItems: ['room_planner', 'chore_planner'] },
+  },
 } satisfies EventPreset;

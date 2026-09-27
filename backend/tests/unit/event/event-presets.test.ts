@@ -3,6 +3,7 @@ import { EVENT_PRESET_NAMES } from '@camp-registration/common/entities';
 import {
   EVENT_PRESETS,
   defaultMessageTemplatesForCountries,
+  defaultSettingsForPreset,
   getEventPreset,
 } from '#app/event/presets/index';
 
@@ -186,6 +187,30 @@ describe('defaultMessageTemplatesForCountries', () => {
   it('defaults to the camp preset', () => {
     expect(defaultMessageTemplatesForCountries(['de'])).toEqual(
       defaultMessageTemplatesForCountries(['de'], 'camp'),
+    );
+  });
+});
+
+describe('defaultSettingsForPreset', () => {
+  it('shows every navigation item for camps', () => {
+    expect(defaultSettingsForPreset(EVENT_PRESETS.camp)).toEqual([]);
+  });
+
+  it.each(['seminar', 'general'] as const)(
+    'hides the room and chore planners (%s)',
+    (preset) => {
+      expect(defaultSettingsForPreset(EVENT_PRESETS[preset])).toEqual([
+        {
+          key: 'navigation',
+          data: { hiddenItems: ['room_planner', 'chore_planner'] },
+        },
+      ]);
+    },
+  );
+
+  it('survives locale filtering', () => {
+    expect(getEventPreset('seminar', ['de']).settings).toEqual(
+      EVENT_PRESETS.seminar.settings,
     );
   });
 });

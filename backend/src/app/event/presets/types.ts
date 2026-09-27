@@ -1,4 +1,8 @@
 import type { AppLocale } from '@camp-registration/common/locales';
+import type {
+  HideableNavigationItem,
+  SETTING_KEYS,
+} from '@camp-registration/common/settings';
 
 export type MessageTemplateTrigger =
   | 'registration_submitted'
@@ -23,4 +27,10 @@ export interface EventPreset {
   tableTemplates: Record<string, unknown>[];
   messageTemplates: PresetMessageTemplates;
   themes: Record<string, unknown>;
+  settings?: Partial<
+    Record<
+      typeof SETTING_KEYS.NAVIGATION,
+      { hiddenItems: HideableNavigationItem[] }
+    >
+  >;
 }
