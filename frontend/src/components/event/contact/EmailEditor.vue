@@ -321,9 +321,9 @@ const {
   placeholder,
 } = defineProps<{
   tokens?: TokenRegistry[];
-  plainText?: boolean;
-  singleLine?: boolean;
-  placeholder?: string;
+  plainText?: boolean | undefined;
+  singleLine?: boolean | undefined;
+  placeholder?: string | undefined;
 }>();
 
 const variables = computed<VariableList>(() => {

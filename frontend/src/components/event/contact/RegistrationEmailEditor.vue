@@ -2,6 +2,9 @@
   <email-editor
     v-model="model"
     :tokens
+    :single-line
+    :plain-text
+    :placeholder
   />
 </template>
 
@@ -24,9 +27,12 @@ const model = defineModel<string>({
   required: true,
 });
 
-const { form, trigger } = defineProps<{
+const { form, trigger, singleLine, plainText, placeholder } = defineProps<{
   form: EventDetails['form'] | undefined;
   trigger?: string | undefined;
+  singleLine?: boolean;
+  plainText?: boolean;
+  placeholder?: string;
 }>();
 
 const eventTokens: (keyof EventDetails)[] = [
