@@ -478,31 +478,32 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
     it('interleaves PARTICIPANT candidates by country when balanceCountries is set', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
       const chore = await createChore(event, { balanceCountries: true });
+      const otherChore = await createChore(event);
 
-      // Distinct assignment counts, so fairness ranking alone (no tie) would
-      // list both `gb` candidates before the `fr` one.
+      // One duty each, so all three tie on load — balancing only reorders
+      // within such a tie. The finer tie-breakers (times on this chore, then
+      // longest ago) still separate them, so the fairness order is fixed.
       const gbNeverAssigned = await createRegistration(event, {
         country: 'gb',
       });
       const gbAssignedOnce = await createRegistration(event, {
         country: 'gb',
       });
-      const frAssignedTwice = await createRegistration(event, {
+      const frAssignedLater = await createRegistration(event, {
         country: 'fr',
       });
 
+      await createAssignment(event, otherChore.id, {
+        date: '2026-08-01',
+        members: { create: [{ registrationId: gbNeverAssigned.id }] },
+      });
       await createAssignment(event, chore.id, {
         date: '2026-08-01',
-        members: {
-          create: [
-            { registrationId: gbAssignedOnce.id },
-            { registrationId: frAssignedTwice.id },
-          ],
-        },
+        members: { create: [{ registrationId: gbAssignedOnce.id }] },
       });
       await createAssignment(event, chore.id, {
         date: '2026-08-05',
-        members: { create: [{ registrationId: frAssignedTwice.id }] },
+        members: { create: [{ registrationId: frAssignedLater.id }] },
       });
 
       const { body } = await request()
@@ -515,11 +516,11 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
         (c: { id: string }) => c.id,
       ) as string[];
       // Fairness alone would rank [gbNeverAssigned, gbAssignedOnce,
-      // frAssignedTwice] — balancing interleaves the `fr` candidate between
+      // frAssignedLater] — balancing interleaves the `fr` candidate between
       // the two `gb` ones instead of leaving it last.
       expect(order).toEqual([
         gbNeverAssigned.id,
-        frAssignedTwice.id,
+        frAssignedLater.id,
         gbAssignedOnce.id,
       ]);
     });
