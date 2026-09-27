@@ -19,76 +19,6 @@
         :verification-status="event.organizationVerificationStatus"
       />
 
-      <section class="dashboard-section">
-        <div class="section-heading row items-end justify-between q-mb-sm">
-          <div>
-            <div class="text-overline text-primary text-weight-bold">
-              {{ t('actions.eyebrow') }}
-            </div>
-            <h2 class="text-h6 text-weight-bold q-my-none">
-              {{ t('actions.title') }}
-            </h2>
-          </div>
-        </div>
-
-        <div class="row q-col-gutter-md">
-          <div
-            v-for="action in quickActions"
-            :key="action.key"
-            class="col-12 col-sm-6 col-lg-3"
-          >
-            <q-card
-              flat
-              bordered
-              class="quick-action-card full-height cursor-pointer"
-              tabindex="0"
-              role="link"
-              @click="goTo(action.route)"
-              @keyup.enter="goTo(action.route)"
-              @keyup.space.prevent="goTo(action.route)"
-            >
-              <q-card-section class="row items-center no-wrap q-gutter-md">
-                <div
-                  class="quick-action-icon row items-center justify-center"
-                  :class="`text-${action.color}`"
-                >
-                  <q-icon
-                    :name="action.icon"
-                    size="24px"
-                  />
-                </div>
-                <div class="col">
-                  <div class="text-subtitle2 text-weight-bold">
-                    {{ action.label }}
-                  </div>
-                  <div class="text-caption text-grey-7">
-                    {{ action.caption }}
-                  </div>
-                </div>
-                <q-icon
-                  name="arrow_forward"
-                  color="grey-6"
-                  size="18px"
-                />
-              </q-card-section>
-            </q-card>
-          </div>
-        </div>
-      </section>
-
-      <section
-        v-if="can('event.tasks.view')"
-        class="dashboard-section"
-      >
-        <tasks-due-widget :loading="tasksLoading" />
-      </section>
-
-      <!-- Renders nothing on days without duties. -->
-      <today-duties-widget
-        v-if="can('event.chore_assignments.view') && can('event.chores.view')"
-        class="dashboard-section"
-      />
-
       <q-card
         v-if="!loading && attentionItems.length > 0"
         flat
@@ -147,6 +77,80 @@
           </div>
         </q-card-section>
       </q-card>
+
+      <section class="dashboard-section">
+        <div class="section-heading row items-end justify-between q-mb-sm">
+          <div>
+            <div class="text-overline text-primary text-weight-bold">
+              {{ t('actions.eyebrow') }}
+            </div>
+            <h2 class="text-h6 text-weight-bold q-my-none">
+              {{ t('actions.title') }}
+            </h2>
+          </div>
+        </div>
+
+        <div class="row q-col-gutter-md">
+          <div
+            v-for="action in quickActions"
+            :key="action.key"
+            class="col-12 col-sm-6 col-lg-3"
+          >
+            <q-card
+              flat
+              bordered
+              class="quick-action-card full-height cursor-pointer"
+              tabindex="0"
+              role="link"
+              @click="goTo(action.route)"
+              @keyup.enter="goTo(action.route)"
+              @keyup.space.prevent="goTo(action.route)"
+            >
+              <q-card-section class="row items-center no-wrap q-gutter-md">
+                <div
+                  class="quick-action-icon row items-center justify-center"
+                  :class="`text-${action.color}`"
+                >
+                  <q-icon
+                    :name="action.icon"
+                    size="24px"
+                  />
+                </div>
+                <div class="col">
+                  <div class="text-subtitle2 text-weight-bold">
+                    {{ action.label }}
+                  </div>
+                  <div class="text-caption text-grey-7">
+                    {{ action.caption }}
+                  </div>
+                </div>
+                <q-icon
+                  name="arrow_forward"
+                  color="grey-6"
+                  size="18px"
+                />
+              </q-card-section>
+            </q-card>
+          </div>
+        </div>
+      </section>
+
+      <section
+        v-if="can('event.tasks.view') && isShown('tasks')"
+        class="dashboard-section"
+      >
+        <tasks-due-widget :loading="tasksLoading" />
+      </section>
+
+      <!-- Renders nothing on days without duties. -->
+      <today-duties-widget
+        v-if="
+          can('event.chore_assignments.view') &&
+          can('event.chores.view') &&
+          isShown('chore_planner')
+        "
+        class="dashboard-section"
+      />
 
       <section class="dashboard-section">
         <div class="section-heading q-mb-sm">
@@ -250,7 +254,9 @@ import {
   LOCAL_TEMPLATE_MISSING,
   LOCAL_TEMPLATE_PENDING,
 } from '@/components/event/table/localTableTemplates';
+import { useNavigationSettings } from '@/composables/eventNavigationSettings';
 import type { PermissionRequirement } from '@/composables/scopePermissions';
+import type { HideableNavigationItem } from '@camp-registration/common/settings';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -262,6 +268,12 @@ const taskStore = useTaskStore();
 const stats = useEventStatistics();
 const helper = useRegistrationHelper();
 const { can, canAccess } = usePermissions();
+const { settings: navigationSettings } = useNavigationSettings();
+
+// Features hidden from the nav rail are hidden here too.
+function isShown(item: HideableNavigationItem): boolean {
+  return !navigationSettings.hiddenItems.includes(item);
+}
 
 const {
   data: event,
@@ -303,6 +315,7 @@ interface QuickAction {
   color: string;
   route: string;
   permission: PermissionRequirement<'event'>;
+  navItem?: HideableNavigationItem;
 }
 
 const quickActions = computed<QuickAction[]>(() =>
@@ -324,6 +337,7 @@ const quickActions = computed<QuickAction[]>(() =>
         icon: 'mark_email_unread',
         color: 'teal',
         route: 'management.event.contact',
+        navItem: 'contact',
         permission: { any: ['event.messages.create', 'event.messages.view'] },
       },
       {
@@ -333,6 +347,7 @@ const quickActions = computed<QuickAction[]>(() =>
         icon: 'calendar_month',
         color: 'deep-orange',
         route: 'management.event.program-planner',
+        navItem: 'program_planner',
         permission: 'event.program_items.view',
       },
       {
@@ -342,10 +357,15 @@ const quickActions = computed<QuickAction[]>(() =>
         icon: 'bed',
         color: 'deep-purple',
         route: 'management.event.room-planner',
+        navItem: 'room_planner',
         permission: 'event.rooms.view',
       },
     ] satisfies QuickAction[]
-  ).filter((action) => canAccess(action.permission)),
+  ).filter(
+    (action) =>
+      canAccess(action.permission) &&
+      (!action.navItem || isShown(action.navItem)),
+  ),
 );
 
 interface AttentionItem {

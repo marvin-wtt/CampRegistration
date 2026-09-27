@@ -190,7 +190,7 @@ form:
   description: 'Design and customize the registration form and theme.'
 navigation:
   label: 'Navigation'
-  description: "Choose which features appear in this event's navigation."
+  description: "Choose which features appear in this event's navigation and dashboard."
 emails:
   label: 'Automated emails'
   description: 'Emails sent automatically to participants when their registration changes.'
@@ -219,7 +219,7 @@ form:
   description: 'Gestalte und passe das Anmeldeformular und das Design an.'
 navigation:
   label: 'Navigation'
-  description: 'Wähle aus, welche Funktionen in der Navigation dieser Veranstaltung angezeigt werden.'
+  description: 'Wähle aus, welche Funktionen in der Navigation und im Dashboard dieser Veranstaltung angezeigt werden.'
 emails:
   label: 'Automatische E-Mails'
   description: 'E-Mails, die Teilnehmenden bei Änderungen ihrer Anmeldung automatisch gesendet werden.'
@@ -248,7 +248,7 @@ form:
   description: "Concevez et personnalisez le formulaire d'inscription et le thème."
 navigation:
   label: 'Navigation'
-  description: 'Choisissez les fonctionnalités affichées dans la navigation de cet événement.'
+  description: 'Choisissez les fonctionnalités affichées dans la navigation et le tableau de bord de cet événement.'
 emails:
   label: 'E-mails automatiques'
   description: 'E-mails envoyés automatiquement aux participants lorsque leur inscription change.'
@@ -277,7 +277,7 @@ form:
   description: 'Zaprojektuj i dostosuj formularz rejestracyjny i motyw.'
 navigation:
   label: 'Nawigacja'
-  description: 'Wybierz funkcje widoczne w nawigacji tego wydarzenia.'
+  description: 'Wybierz funkcje widoczne w nawigacji i na pulpicie tego wydarzenia.'
 emails:
   label: 'Automatyczne e-maile'
   description: 'E-maile wysyłane automatycznie uczestnikom przy zmianie ich rejestracji.'
@@ -306,7 +306,7 @@ form:
   description: 'Navrhněte a přizpůsobte registrační formulář a vzhled.'
 navigation:
   label: 'Navigace'
-  description: 'Vyberte, které funkce se zobrazí v navigaci této akce.'
+  description: 'Vyberte, které funkce se zobrazí v navigaci a na přehledu této akce.'
 emails:
   label: 'Automatické e-maily'
   description: 'E-maily automaticky odesílané účastníkům při změně jejich registrace.'
