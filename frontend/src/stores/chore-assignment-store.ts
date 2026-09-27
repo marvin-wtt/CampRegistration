@@ -13,9 +13,9 @@ import type {
   ChoreAssignmentSuggestionQuery,
   ChoreAssignmentSuggestions,
   ChoreAssignmentUpdateData,
+  ChoreAutoFillData,
   ChoreFairnessEntry,
-  ChoreMemberPreviewData,
-  ChoreRemovePersonData,
+  ChoreMemberRemovalQuery,
   ChoreSeriesPlanData,
 } from '@camp-registration/common/entities';
 
@@ -86,10 +86,10 @@ export const useChoreAssignmentStore = defineStore('choreAssignment', () => {
     return api.fetchChoreFairness(currentEventId());
   }
 
-  async function previewMembers(
-    preview: ChoreMemberPreviewData,
+  async function autoFillMembers(
+    data: ChoreAutoFillData,
   ): Promise<ChoreAssignmentMemberData[]> {
-    return api.previewChoreMembers(currentEventId(), preview);
+    return api.autoFillChoreMembers(currentEventId(), data);
   }
 
   async function createData(newData: ChoreAssignmentCreateData) {
@@ -178,11 +178,14 @@ export const useChoreAssignmentStore = defineStore('choreAssignment', () => {
     return count;
   }
 
-  async function removePerson(removal: ChoreRemovePersonData) {
+  async function removeMember(
+    registrationId: string,
+    query: ChoreMemberRemovalQuery,
+  ) {
     const eventId = currentEventId();
 
     const result = await withProgressNotification('removePerson', () =>
-      api.removePersonFromChores(eventId, removal),
+      api.removeChoreMember(eventId, registrationId, query),
     );
     await reload();
 
@@ -197,7 +200,7 @@ export const useChoreAssignmentStore = defineStore('choreAssignment', () => {
     fetchData,
     fetchSuggestions,
     fetchFairness,
-    previewMembers,
+    autoFillMembers,
     createData,
     updateData,
     setStatusMany,
@@ -205,6 +208,6 @@ export const useChoreAssignmentStore = defineStore('choreAssignment', () => {
     deleteData,
     planSeries,
     deleteMany,
-    removePerson,
+    removeMember,
   };
 });

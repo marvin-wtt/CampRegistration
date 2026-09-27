@@ -50,10 +50,10 @@ export class ChoreAssignmentRouter extends ModuleRouter {
       controller(this.choreAssignmentController, 'fairness'),
     );
     this.router.post(
-      '/preview',
+      '/auto-fill',
       choreFromBody(),
       guard(hasEventPermission('event.chore_assignments.view')),
-      controller(this.choreAssignmentController, 'preview'),
+      controller(this.choreAssignmentController, 'autoFill'),
     );
     this.router.post(
       '/series',
@@ -71,10 +71,10 @@ export class ChoreAssignmentRouter extends ModuleRouter {
       ),
       controller(this.choreAssignmentController, 'series'),
     );
-    this.router.post(
-      '/remove-person',
+    this.router.delete(
+      '/members/:registrationId',
       guard(hasEventPermission('event.chore_assignments.edit')),
-      controller(this.choreAssignmentController, 'removePerson'),
+      controller(this.choreAssignmentController, 'destroyMember'),
     );
     this.router.post(
       '/',

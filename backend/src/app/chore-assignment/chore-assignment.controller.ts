@@ -72,15 +72,15 @@ export class ChoreAssignmentController extends BaseController {
     res.json({ data: entries, meta: {} });
   }
 
-  async preview(req: Request, res: Response) {
+  async autoFill(req: Request, res: Response) {
     const event = req.modelOrFail('event');
     const chore = req.modelOrFail('chore');
-    const { body } = await req.validate(validator.preview);
+    const { body } = await req.validate(validator.autoFill);
 
     this.assertSlotBelongsToChore(chore, body.slotId);
     await this.assertMembersBelongToEvent(event.id, body.members);
 
-    const members = await this.choreAssignmentService.previewMembers(
+    const members = await this.choreAssignmentService.autoFillMembers(
       event.id,
       chore,
       body,
@@ -149,17 +149,19 @@ export class ChoreAssignmentController extends BaseController {
     res.json({ data: { count }, meta: {} });
   }
 
-  async removePerson(req: Request, res: Response) {
+  async destroyMember(req: Request, res: Response) {
     const event = req.modelOrFail('event');
-    const { body } = await req.validate(validator.removePerson);
+    const {
+      params: { registrationId },
+      query,
+    } = await req.validate(validator.destroyMember);
 
-    await this.assertMembersBelongToEvent(event.id, [
-      { registrationId: body.registrationId },
-    ]);
+    await this.assertMembersBelongToEvent(event.id, [{ registrationId }]);
 
-    const result = await this.choreAssignmentService.removePerson(
+    const result = await this.choreAssignmentService.removeMember(
       event.id,
-      body,
+      registrationId,
+      query,
     );
 
     void this.realtimeService.emitInvalidation(event.id, 'choreAssignment');

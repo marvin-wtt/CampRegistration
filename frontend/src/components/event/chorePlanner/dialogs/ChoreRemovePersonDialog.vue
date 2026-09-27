@@ -83,7 +83,7 @@ import { type QSelectOption, useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { computed, ref } from 'vue';
 import type {
-  ChoreRemovePersonData,
+  ChoreMemberRemovalQuery,
   Registration,
 } from '@camp-registration/common/entities';
 import { useRegistrationHelper } from '@/composables/registrationHelper';
@@ -132,13 +132,12 @@ function onOKClick() {
   if (!registrationId.value || !from.value) {
     return;
   }
-  const payload: ChoreRemovePersonData = {
-    registrationId: registrationId.value,
+  const query: ChoreMemberRemovalQuery = {
     from: from.value,
     ...(to.value ? { to: to.value } : {}),
     replace: replace.value,
   };
-  onDialogOK(payload);
+  onDialogOK({ registrationId: registrationId.value, query });
 }
 </script>
 

@@ -1207,7 +1207,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
     });
   });
 
-  describe('POST /api/v1/events/:eventId/chore-assignments/remove-person', () => {
+  describe('DELETE /api/v1/events/:eventId/chore-assignments/members/:registrationId', () => {
     const membersOf = async (choreAssignmentId: string) =>
       (
         await prisma.choreAssignmentMember.findMany({
@@ -1235,8 +1235,10 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
       });
 
       const { body } = await request()
-        .post(`/api/v1/events/${event.id}/chore-assignments/remove-person`)
-        .send({ registrationId: sick.id, from: '2026-09-01', replace: true })
+        .delete(
+          `/api/v1/events/${event.id}/chore-assignments/members/${sick.id}`,
+        )
+        .query({ from: '2026-09-01', replace: true })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -1257,8 +1259,10 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
       });
 
       const { body } = await request()
-        .post(`/api/v1/events/${event.id}/chore-assignments/remove-person`)
-        .send({ registrationId: sick.id, from: '2026-09-01', replace: false })
+        .delete(
+          `/api/v1/events/${event.id}/chore-assignments/members/${sick.id}`,
+        )
+        .query({ from: '2026-09-01', replace: false })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -1271,8 +1275,10 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
       const other = await createRegistration(await EventFactory.create());
 
       await request()
-        .post(`/api/v1/events/${event.id}/chore-assignments/remove-person`)
-        .send({ registrationId: other.id, from: '2026-09-01', replace: true })
+        .delete(
+          `/api/v1/events/${event.id}/chore-assignments/members/${other.id}`,
+        )
+        .query({ from: '2026-09-01', replace: true })
         .auth(accessToken, { type: 'bearer' })
         .expect(400);
     });
@@ -1325,14 +1331,14 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
     });
   });
 
-  describe('POST /api/v1/events/:eventId/chore-assignments/preview', () => {
+  describe('POST /api/v1/events/:eventId/chore-assignments/auto-fill', () => {
     it('suggests members without saving anything', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
       const chore = await createChore(event);
       await Promise.all([1, 2, 3].map(() => createRegistration(event)));
 
       const { body } = await request()
-        .post(`/api/v1/events/${event.id}/chore-assignments/preview`)
+        .post(`/api/v1/events/${event.id}/chore-assignments/auto-fill`)
         .send({
           choreId: chore.id,
           date: '2026-09-01',

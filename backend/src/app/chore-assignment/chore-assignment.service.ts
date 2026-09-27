@@ -6,11 +6,11 @@ import type {
   ChoreAssignmentMemberData,
   ChoreAssignmentSuggestions,
   ChoreAssignmentUpdateData,
+  ChoreAutoFillData,
   ChoreFairnessEntry,
-  ChoreMemberPreviewData,
   ChoreMemberRole,
-  ChoreRemovePersonData,
-  ChoreRemovePersonResult,
+  ChoreMemberRemovalQuery,
+  ChoreMemberRemovalResult,
   ChoreRotationUnit,
   ChoreSeriesPlanData,
   ChoreSeriesPlanResult,
@@ -171,10 +171,10 @@ export class ChoreAssignmentService extends BaseService {
    * The members auto-fill would add, without saving — for the edit dialog,
    * where the stored members of the assignment are being replaced anyway.
    */
-  async previewMembers(
+  async autoFillMembers(
     eventId: string,
     chore: ChoreWithSlots,
-    data: ChoreMemberPreviewData,
+    data: ChoreAutoFillData,
   ): Promise<MemberPick[]> {
     const [ledger, pool] = await Promise.all([
       this.loadLedger(eventId, data.assignmentId ? [data.assignmentId] : []),
@@ -357,20 +357,21 @@ export class ChoreAssignmentService extends BaseService {
    * early departure — optionally refilling each spot with the next-fairest
    * person. Nothing about their absence is stored.
    */
-  async removePerson(
+  async removeMember(
     eventId: string,
-    data: ChoreRemovePersonData,
-  ): Promise<ChoreRemovePersonResult> {
+    registrationId: string,
+    query: ChoreMemberRemovalQuery,
+  ): Promise<ChoreMemberRemovalResult> {
     return this.transaction(async (tx) => {
       const assignments = await tx.choreAssignment.findMany({
         where: {
           eventId,
           status: 'PLANNED',
           date: {
-            gte: toDbDate(data.from),
-            lte: data.to ? toDbDate(data.to) : undefined,
+            gte: toDbDate(query.from),
+            lte: query.to ? toDbDate(query.to) : undefined,
           },
-          members: { some: { registrationId: data.registrationId } },
+          members: { some: { registrationId } },
         },
         include: {
           ...CHORE_ASSIGNMENT_INCLUDE,
@@ -386,21 +387,19 @@ export class ChoreAssignmentService extends BaseService {
         ),
         this.loadPool(eventId),
       ]);
-      const pool = fullPool.filter(
-        (person) => person.id !== data.registrationId,
-      );
+      const pool = fullPool.filter((person) => person.id !== registrationId);
 
       let replaced = 0;
       for (const before of assignments) {
         const remaining = before.members.filter(
-          (member) => member.registrationId !== data.registrationId,
+          (member) => member.registrationId !== registrationId,
         );
         const removed = before.members.find(
-          (member) => member.registrationId === data.registrationId,
+          (member) => member.registrationId === registrationId,
         );
 
         let picks: MemberPick[] = [];
-        if (data.replace && removed && !removed.missed) {
+        if (query.replace && removed && !removed.missed) {
           const spec = occurrenceSpec(
             before.chore,
             findSlot(before.chore, before.slotId),
@@ -443,7 +442,7 @@ export class ChoreAssignmentService extends BaseService {
         await tx.choreAssignmentMember.deleteMany({
           where: {
             choreAssignmentId: before.id,
-            registrationId: data.registrationId,
+            registrationId,
           },
         });
         await tx.choreAssignmentMember.createMany({

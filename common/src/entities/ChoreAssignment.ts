@@ -47,7 +47,7 @@ export type ChoreAssignmentUpdateData = Partial<
 >;
 
 // Who auto-fill would add, without saving anything.
-export interface ChoreMemberPreviewData {
+export interface ChoreAutoFillData {
   choreId: string;
   slotId?: string | null;
   date: string;
@@ -89,15 +89,14 @@ export interface ChoreAssignmentBulkDeleteQuery {
   to?: string;
 }
 
-export interface ChoreRemovePersonData {
-  registrationId: string;
+export interface ChoreMemberRemovalQuery {
   from: string;
   to?: string;
   // Refill each spot with the next-fairest candidate.
   replace: boolean;
 }
 
-export interface ChoreRemovePersonResult {
+export interface ChoreMemberRemovalResult {
   removed: number;
   replaced: number;
 }

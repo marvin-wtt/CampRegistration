@@ -148,7 +148,7 @@ import { useI18n } from 'vue-i18n';
 import { computed, ref, useTemplateRef, watch } from 'vue';
 import type {
   ChoreFairnessEntry,
-  ChoreRemovePersonData,
+  ChoreMemberRemovalQuery,
   Registration,
 } from '@camp-registration/common/entities';
 import { useChoreAssignmentStore } from '@/stores/chore-assignment-store';
@@ -268,9 +268,13 @@ function removePerson(registrationId: string) {
       component: ChoreRemovePersonDialog,
       componentProps: { registrations: props.registrations, registrationId },
     })
-    .onOk((payload: ChoreRemovePersonData) => {
-      void choreAssignmentStore.removePerson(payload).then(load);
-    });
+    .onOk(
+      (removal: { registrationId: string; query: ChoreMemberRemovalQuery }) => {
+        void choreAssignmentStore
+          .removeMember(removal.registrationId, removal.query)
+          .then(load);
+      },
+    );
 }
 </script>
 

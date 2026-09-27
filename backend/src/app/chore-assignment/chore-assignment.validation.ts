@@ -5,8 +5,8 @@ import type {
   ChoreAssignmentCreateData,
   ChoreAssignmentMemberData,
   ChoreAssignmentUpdateData,
-  ChoreMemberPreviewData,
-  ChoreRemovePersonData,
+  ChoreAutoFillData,
+  ChoreMemberRemovalQuery,
   ChoreSeriesPlanData,
 } from '@camp-registration/common/entities';
 
@@ -59,7 +59,7 @@ const fairness = z.object({
   params: eventParams,
 });
 
-const preview = z.object({
+const autoFill = z.object({
   params: eventParams,
   body: z.object({
     choreId: z.ulid(),
@@ -70,7 +70,7 @@ const preview = z.object({
     supervisorCount: z.number().int().min(0).max(100).optional(),
     members: MEMBERS,
     assignmentId: z.ulid().optional(),
-  }) satisfies ZodType<ChoreMemberPreviewData>,
+  }) satisfies ZodType<ChoreAutoFillData>,
 });
 
 const store = z.object({
@@ -124,19 +124,20 @@ const destroyMany = z.object({
     }) satisfies ZodType<ChoreAssignmentBulkDeleteQuery>,
 });
 
-const removePerson = z.object({
-  params: eventParams,
-  body: z
+const destroyMember = z.object({
+  params: eventParams.extend({
+    registrationId: z.ulid(),
+  }),
+  query: z
     .object({
-      registrationId: z.ulid(),
       from: DateSchema,
       to: DateSchema.optional(),
-      replace: z.boolean(),
+      replace: z.stringbool(),
     })
     .refine((data) => !data.to || data.from <= data.to, {
       message: 'The end date must not be before the start date',
       path: ['to'],
-    }) satisfies ZodType<ChoreRemovePersonData>,
+    }) satisfies ZodType<ChoreMemberRemovalQuery>,
 });
 
 const update = z.object({
@@ -171,11 +172,11 @@ export default {
   index,
   suggestions,
   fairness,
-  preview,
+  autoFill,
   store,
   series,
   destroyMany,
-  removePerson,
+  destroyMember,
   update,
   fill,
   destroy,
