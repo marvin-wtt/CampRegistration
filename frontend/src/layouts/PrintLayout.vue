@@ -26,14 +26,20 @@ quasar.dark.set(false);
 
 @page {
   margin: 12mm;
+  /* Inherited by the margin boxes. */
+  font-family: Roboto, Arial, sans-serif;
+  font-size: 9pt;
+  color: rgba(0, 0, 0, 0.6);
 
-  /* Page numbers in the margin box: Chrome 131+ and Safari 18.2+ only, Firefox
-     ignores the rule. Purely additive — the sheet footer carries the table
-     index, so nothing is lost where it is unsupported. */
-  @bottom-center {
+  /* Margin boxes (Chrome 131+, Safari 18.2+; Firefox ignores them). An edge
+     with an author box hides the browser's own header/footer there, so both
+     edges get one. Pages override the content via utils/printMarginBoxes. */
+  @top-center {
+    content: '';
+  }
+
+  @bottom-right {
     content: counter(page) ' / ' counter(pages);
-    font-family: Roboto, Arial, sans-serif;
-    font-size: 12px;
   }
 }
 

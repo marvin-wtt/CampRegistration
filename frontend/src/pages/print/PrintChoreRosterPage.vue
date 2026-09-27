@@ -45,6 +45,12 @@ import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { usePrintPage, waitForStableLayout } from '@/composables/printPage';
 import { addDays, parseLocalDate } from '@/utils/date';
+import {
+  cssString,
+  PAGE_COUNTER,
+  pageRule,
+  usePageStyle,
+} from '@/utils/printMarginBoxes';
 import ChoreWeekGrid from '@/components/event/chorePlanner/ChoreWeekGrid.vue';
 import type { PrintChoreRosterPayload } from '@/components/event/chorePlanner/printChoreRoster';
 
@@ -55,6 +61,15 @@ const { payload: data, error } = usePrintPage<PrintChoreRosterPayload>({
   messagePrefix: 'PRINT_CHORES',
   prepare: () => waitForStableLayout(),
 });
+
+usePageStyle(
+  computed<string>(() =>
+    pageRule({
+      'bottom-center': cssString(d(new Date(), 'dateTime')),
+      'bottom-right': PAGE_COUNTER,
+    }),
+  ),
+);
 
 const names = computed(() => new Map(data.value?.names ?? []));
 

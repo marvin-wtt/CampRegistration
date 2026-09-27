@@ -185,6 +185,7 @@ import {
   layoutDayEvents,
   type EventBox,
 } from '@/pages/print/calendarLayout';
+import { cssString, pageRule, usePageStyle } from '@/utils/printMarginBoxes';
 import type {
   ProgramItem,
   Translatable,
@@ -226,7 +227,7 @@ interface PlacedEvent {
   style: Record<string, string>;
 }
 
-const { locale, t } = useI18n();
+const { locale, t, d } = useI18n();
 
 const { payload: data, error } = usePrintPage<PrintData>({
   messagePrefix: 'PRINT_CALENDAR',
@@ -240,6 +241,13 @@ const { payload: data, error } = usePrintPage<PrintData>({
     fitEventText();
   },
 });
+
+// Always a single page, so the timestamp takes the page counter's place.
+usePageStyle(
+  computed<string>(() =>
+    pageRule({ 'bottom-right': cssString(d(new Date(), 'dateTime')) }),
+  ),
+);
 
 const eventLocales = computed<string[]>(
   () => data.value?.event.locales ?? [locale.value],

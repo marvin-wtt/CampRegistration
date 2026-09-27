@@ -37,13 +37,17 @@
           :key="template.id ?? i"
           class="print-sheet"
           :class="printOrientationClass(template.printOptions?.orientation)"
+          :style="{ page: sheetPageName(i) }"
         >
           <header class="print-header">
             <div class="print-header__title">
               {{ to(template.title) }}
             </div>
 
-            <div class="print-header__meta">
+            <div
+              v-if="!marginBoxes"
+              class="print-header__meta"
+            >
               <span>{{ to(payload.event.name) }}</span>
             </div>
           </header>
@@ -56,7 +60,10 @@
             :template
           />
 
-          <footer class="print-footer">
+          <footer
+            v-if="!marginBoxes"
+            class="print-footer"
+          >
             <div class="print-footer__left">{{ to(template.title) }}</div>
             <div class="print-footer__center">{{ timestamp }}</div>
             <div class="print-footer__right">
@@ -70,19 +77,30 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import ResultTablePrint from '@/components/event/table/ResultTablePrint.vue';
 import type { PrintTablesPayload } from '@/components/event/table/PrintTablesPayload';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { usePrintPage, waitForStableLayout } from '@/composables/printPage';
 import {
   assignPageOrientation,
+  LANDSCAPE_CLASS_NAME,
   printOrientationClass,
+  type PrintOrientation,
 } from '@/pages/print/pageOrientation';
+import {
+  cssString,
+  PAGE_COUNTER,
+  pageRule,
+  supportsMarginBoxes,
+  usePageStyle,
+} from '@/utils/printMarginBoxes';
 
+const { d } = useI18n();
 const { to } = useObjectTranslation();
 
-const timestamp = ref<string>('');
+const marginBoxes = supportsMarginBoxes();
 
 // Resolved by the Suspense boundary once every async cell renderer inside the
 // document has loaded. Without it, a cold chunk cache (the print page always
@@ -92,36 +110,61 @@ const documentRendered = new Promise<void>((resolve) => {
   onDocumentRendered = resolve;
 });
 
+// Known only once the tables are measured, right before printing.
+const sheetOrientations = ref<PrintOrientation[]>([]);
+
 const { payload, error } = usePrintPage<PrintTablesPayload>({
   messagePrefix: 'PRINT_TABLES',
   prepare: async () => {
     await documentRendered;
     await waitForStableLayout();
     assignPageOrientation();
+    sheetOrientations.value = Array.from(
+      document.querySelectorAll('.print-sheet'),
+      (sheet) =>
+        sheet.classList.contains(LANDSCAPE_CLASS_NAME)
+          ? 'landscape'
+          : 'portrait',
+    );
   },
 });
 
-watch(payload, (value) => {
-  timestamp.value = formatDate(
-    value?.timestamp ?? new Date().toISOString(),
-    value?.locale,
-  );
-});
+const timestamp = computed<string>(() =>
+  d(new Date(payload.value?.timestamp ?? Date.now()), 'dateTime'),
+);
 
-function formatDate(iso: string, locale?: string): string {
-  const date = new Date(iso);
-  try {
-    return new Intl.DateTimeFormat(locale, {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(date);
-  } catch {
-    return date.toISOString();
-  }
+// One named page per sheet, so the footer can carry that sheet's title. It
+// overrides the orientation class's named page, hence the size here.
+function sheetPageName(index: number): string {
+  return `table-${index}`;
 }
+
+usePageStyle(
+  computed<string>(() => {
+    if (!payload.value) {
+      return '';
+    }
+
+    const rules = [
+      pageRule({
+        'top-left': cssString(to(payload.value.event.name)),
+        'bottom-center': cssString(timestamp.value),
+        'bottom-right': PAGE_COUNTER,
+      }),
+      ...payload.value.templates.map((template, i) =>
+        pageRule(
+          { 'bottom-left': cssString(to(template.title)) },
+          {
+            name: sheetPageName(i),
+            size: `A4 ${sheetOrientations.value[i] ?? 'portrait'}`,
+          },
+        ),
+      ),
+    ];
+
+    return rules.join('\n');
+  }),
+);
 </script>
 
 <style scoped>
