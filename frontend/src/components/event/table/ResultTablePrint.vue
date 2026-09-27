@@ -53,6 +53,11 @@
       </q-td>
     </template>
   </q-table>
+
+  <!-- A page that ends without this line continues on the next one. -->
+  <div class="print-table-end">
+    {{ t('end', { title: title ?? '', count: rows.length }) }}
+  </div>
 </template>
 
 <script lang="ts" setup>
@@ -70,6 +75,7 @@ import TableCellWrapper from '@/components/event/table/TableCellWrapper.vue';
 import type { QTableBodyCellProps } from '@/types/quasar/QTableBodyCellProps';
 import { useResultTableModel } from './useResultTableModel';
 import { toRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 const { questions, registrations, template, event, title } = defineProps<{
   questions: TableColumnTemplate[];
@@ -79,6 +85,7 @@ const { questions, registrations, template, event, title } = defineProps<{
   title?: string | undefined;
 }>();
 
+const { t } = useI18n();
 const { to } = useObjectTranslation();
 
 const { pagination, rows, columns, renderers } = useResultTableModel(
@@ -125,3 +132,38 @@ const { pagination, rows, columns, renderers } = useResultTableModel(
   }
 }
 </style>
+
+<style lang="scss" scoped>
+.print-table-end {
+  margin-top: 2mm;
+  padding-top: 1.5mm;
+  border-top: 1px solid rgba(0, 0, 0, 0.3);
+  font-size: 9pt;
+  font-style: italic;
+  opacity: 0.75;
+  text-align: center;
+  // Keep it on the page of the last row, never alone on a new page.
+  break-before: avoid;
+  page-break-before: avoid;
+}
+</style>
+
+<i18n lang="yaml" locale="en">
+end: 'End of {title} · Entries: {count}'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+end: 'Ende von {title} · Einträge: {count}'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+end: 'Fin de {title} · Entrées : {count}'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+end: 'Koniec: {title} · Wpisy: {count}'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+end: 'Konec: {title} · Záznamy: {count}'
+</i18n>

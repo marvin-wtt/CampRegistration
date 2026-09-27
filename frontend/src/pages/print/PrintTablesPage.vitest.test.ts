@@ -167,6 +167,7 @@ describe('PrintTablesPage', () => {
     await vi.waitFor(() => expect(window.print).toHaveBeenCalledOnce());
     expect(wrapper.findAll('.print-sheet')).toHaveLength(1);
     expect(wrapper.find('.print-header__title').text()).toBe('Participants');
+    expect(wrapper.find('.print-table-end').exists()).toBe(true);
   });
 
   it('moves event, template title and page numbers into margin boxes', async () => {
