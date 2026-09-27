@@ -13,7 +13,7 @@ import type {
 // Roughly a year — longer ranges are a typo, not a camp.
 const MAX_SERIES_DAYS = 400;
 
-const ROTATION_UNIT = z.enum(['PARTICIPANT', 'ROOM']);
+const ROTATION_UNIT = z.enum(['PERSON', 'ROOM']);
 const ROLE = z.enum(['MEMBER', 'SUPERVISOR']);
 const STATUS = z.enum(['PLANNED', 'DONE', 'CANCELLED']);
 

@@ -1,7 +1,7 @@
 import type { Identifiable } from './Identifiable.js';
 import type { Translatable } from './Translatable.js';
 
-export type ChoreRotationUnit = 'PARTICIPANT' | 'ROOM';
+export type ChoreRotationUnit = 'PERSON' | 'ROOM';
 
 export type ChoreEligibility = 'PARTICIPANTS' | 'STAFF' | 'EVERYONE';
 

@@ -1,5 +1,5 @@
 -- AlterTable
-ALTER TABLE `chores` ADD COLUMN `default_rotation_unit` ENUM('PARTICIPANT', 'ROOM') NOT NULL DEFAULT 'PARTICIPANT',
+ALTER TABLE `chores` ADD COLUMN `default_rotation_unit` ENUM('PERSON', 'ROOM') NOT NULL DEFAULT 'PERSON',
     ADD COLUMN `effort` ENUM('LIGHT', 'NORMAL', 'HEAVY') NOT NULL DEFAULT 'NORMAL',
     ADD COLUMN `eligibility` ENUM('PARTICIPANTS', 'STAFF', 'EVERYONE') NOT NULL DEFAULT 'PARTICIPANTS',
     ADD COLUMN `supervisor_count` INTEGER UNSIGNED NOT NULL DEFAULT 0;
@@ -19,6 +19,11 @@ ALTER TABLE `chore_assignments` ADD COLUMN `batch_id` CHAR(26) NULL,
     ADD COLUMN `note` VARCHAR(500) NULL,
     ADD COLUMN `slot_id` CHAR(26) NULL,
     ADD COLUMN `status` ENUM('PLANNED', 'DONE', 'CANCELLED') NOT NULL DEFAULT 'PLANNED';
+
+-- Rename rotation unit `PARTICIPANT` to `PERSON`: widen, backfill, narrow
+ALTER TABLE `chore_assignments` MODIFY `rotation_unit` ENUM('PARTICIPANT', 'PERSON', 'ROOM') NOT NULL;
+UPDATE `chore_assignments` SET `rotation_unit` = 'PERSON' WHERE `rotation_unit` = 'PARTICIPANT';
+ALTER TABLE `chore_assignments` MODIFY `rotation_unit` ENUM('PERSON', 'ROOM') NOT NULL;
 
 -- CreateTable
 CREATE TABLE `chore_slots` (

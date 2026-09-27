@@ -61,7 +61,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
     return ChoreAssignmentFactory.create({
       event: { connect: { id: event.id } },
       chore: { connect: { id: choreId } },
-      rotationUnit: 'PARTICIPANT',
+      rotationUnit: 'PERSON',
       ...data,
     });
   };
@@ -97,7 +97,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
         expect(item).toHaveProperty('choreId', chore.id);
         expect(item).toHaveProperty('chore.id', chore.id);
         expect(item).toHaveProperty('chore.name', chore.name);
-        expect(item).toHaveProperty('rotationUnit', 'PARTICIPANT');
+        expect(item).toHaveProperty('rotationUnit', 'PERSON');
         expect(item).toHaveProperty('date', '2026-09-01');
         expect(item).toHaveProperty('slotId', slot.id);
         expect(item).toHaveProperty('status', 'PLANNED');
@@ -158,7 +158,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
 
       await request()
         .get(`/api/v1/events/${event.id}/chore-assignments/suggestions`)
-        .query({ choreId: chore.id, unit: 'PARTICIPANT' })
+        .query({ choreId: chore.id, unit: 'PERSON' })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
     });
@@ -168,13 +168,13 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
 
       await request()
         .get(`/api/v1/events/${event.id}/chore-assignments/suggestions`)
-        .query({ choreId: ulid(), unit: 'PARTICIPANT' })
+        .query({ choreId: ulid(), unit: 'PERSON' })
         .auth(accessToken, { type: 'bearer' })
         .expect(404);
     });
 
     it.each([
-      { label: 'choreId is missing', query: { unit: 'PARTICIPANT' } },
+      { label: 'choreId is missing', query: { unit: 'PERSON' } },
       { label: 'unit is missing', query: {} },
       {
         label: 'unit is invalid',
@@ -195,7 +195,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
       },
     );
 
-    it('ranks PARTICIPANT candidates least-assigned-first, never-assigned before assigned', async () => {
+    it('ranks PERSON candidates least-assigned-first, never-assigned before assigned', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
       const chore = await createChore(event);
       const assignedTwice = await createRegistration(event);
@@ -221,11 +221,11 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
 
       const { body } = await request()
         .get(`/api/v1/events/${event.id}/chore-assignments/suggestions`)
-        .query({ choreId: chore.id, unit: 'PARTICIPANT' })
+        .query({ choreId: chore.id, unit: 'PERSON' })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
-      expect(body.data.unit).toBe('PARTICIPANT');
+      expect(body.data.unit).toBe('PERSON');
       const order = body.data.candidates.map(
         (c: { id: string }) => c.id,
       ) as string[];
@@ -243,7 +243,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
       );
     });
 
-    it('excludes staff from PARTICIPANT candidates for a participant duty', async () => {
+    it('excludes staff from PERSON candidates for a participant duty', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
       const chore = await createChore(event, { eligibility: 'PARTICIPANTS' });
       const participant = await createRegistration(event, {
@@ -253,7 +253,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
 
       const { body } = await request()
         .get(`/api/v1/events/${event.id}/chore-assignments/suggestions`)
-        .query({ choreId: chore.id, unit: 'PARTICIPANT' })
+        .query({ choreId: chore.id, unit: 'PERSON' })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -463,7 +463,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
 
       const { body } = await request()
         .get(`/api/v1/events/${event.id}/chore-assignments/suggestions`)
-        .query({ choreId: chore.id, unit: 'PARTICIPANT' })
+        .query({ choreId: chore.id, unit: 'PERSON' })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -475,7 +475,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
       );
     });
 
-    it('interleaves PARTICIPANT candidates by country when balanceCountries is set', async () => {
+    it('interleaves PERSON candidates by country when balanceCountries is set', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
       const chore = await createChore(event, { balanceCountries: true });
       const otherChore = await createChore(event);
@@ -508,7 +508,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
 
       const { body } = await request()
         .get(`/api/v1/events/${event.id}/chore-assignments/suggestions`)
-        .query({ choreId: chore.id, unit: 'PARTICIPANT' })
+        .query({ choreId: chore.id, unit: 'PERSON' })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
@@ -543,7 +543,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
           .post(`/api/v1/events/${event.id}/chore-assignments`)
           .send({
             choreId: chore.id,
-            rotationUnit: 'PARTICIPANT',
+            rotationUnit: 'PERSON',
             date: '2026-09-01',
           })
           .auth(accessToken, { type: 'bearer' })
@@ -590,7 +590,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
         .post(`/api/v1/events/${event.id}/chore-assignments`)
         .send({
           choreId: chore.id,
-          rotationUnit: 'PARTICIPANT',
+          rotationUnit: 'PERSON',
           date: '2026-09-01',
           slotId: otherSlot.id,
         })
@@ -623,7 +623,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
         .post(`/api/v1/events/${event.id}/chore-assignments`)
         .send({
           choreId: chore.id,
-          rotationUnit: 'PARTICIPANT',
+          rotationUnit: 'PERSON',
           date: '2026-09-01',
           slotId: slot.id,
           autoFill: true,
@@ -655,7 +655,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
         .post(`/api/v1/events/${event.id}/chore-assignments`)
         .send({
           choreId: otherChore.id,
-          rotationUnit: 'PARTICIPANT',
+          rotationUnit: 'PERSON',
           date: '2026-09-01',
         })
         .auth(accessToken, { type: 'bearer' })
@@ -674,7 +674,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
         .post(`/api/v1/events/${event.id}/chore-assignments`)
         .send({
           choreId: chore.id,
-          rotationUnit: 'PARTICIPANT',
+          rotationUnit: 'PERSON',
           date: '2026-09-01',
           members: [{ registrationId: otherRegistration.id }],
         })
@@ -689,7 +689,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
 
       await request()
         .post(`/api/v1/events/${event.id}/chore-assignments`)
-        .send({ rotationUnit: 'PARTICIPANT', date: '2026-09-01' })
+        .send({ rotationUnit: 'PERSON', date: '2026-09-01' })
         .auth(accessToken, { type: 'bearer' })
         .expect(400);
     });
@@ -703,10 +703,10 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
         label: 'rotationUnit is invalid',
         data: { rotationUnit: 'GROUP', date: '2026-09-01' },
       },
-      { label: 'date is missing', data: { rotationUnit: 'PARTICIPANT' } },
+      { label: 'date is missing', data: { rotationUnit: 'PERSON' } },
       {
         label: 'date format is invalid',
-        data: { rotationUnit: 'PARTICIPANT', date: '01-09-2026' },
+        data: { rotationUnit: 'PERSON', date: '01-09-2026' },
       },
     ])('should respond with `400` when $label', async ({ data }) => {
       const { event, accessToken } = await createEventWithManagerAndToken();
@@ -727,7 +727,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
         .post(`/api/v1/events/${event.id}/chore-assignments`)
         .send({
           choreId: chore.id,
-          rotationUnit: 'PARTICIPANT',
+          rotationUnit: 'PERSON',
           date: '2026-09-01',
         })
         .expect(401);
@@ -762,7 +762,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
       const chore = await createChore(event);
       const assignment = await createAssignment(event, chore.id, {
-        rotationUnit: 'PARTICIPANT',
+        rotationUnit: 'PERSON',
       });
 
       const { body } = await request()
@@ -976,7 +976,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
     ) =>
       request()
         .post(`/api/v1/events/${eventId}/chore-assignments/series`)
-        .send({ rotationUnit: 'PARTICIPANT', onConflict: 'SKIP', ...body })
+        .send({ rotationUnit: 'PERSON', onConflict: 'SKIP', ...body })
         .auth(accessToken, { type: 'bearer' })
         .expect(expectedStatus);
 
@@ -1342,7 +1342,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
         .send({
           choreId: chore.id,
           date: '2026-09-01',
-          rotationUnit: 'PARTICIPANT',
+          rotationUnit: 'PERSON',
           headcount: 2,
           members: [],
         })

@@ -127,8 +127,8 @@
             toggle-color="primary"
             :options="[
               {
-                label: t('field.rotationUnit.option.PARTICIPANT'),
-                value: 'PARTICIPANT',
+                label: t('field.rotationUnit.option.PERSON'),
+                value: 'PERSON',
               },
               {
                 label: t('field.rotationUnit.option.ROOM'),
@@ -253,13 +253,13 @@ const until = ref<string | null>(
 );
 const weekdays = ref<number[]>([0, 1, 2, 3, 4, 5, 6]);
 const rotationUnit = ref<ChoreRotationUnit>(
-  chore.value?.defaultRotationUnit ?? 'PARTICIPANT',
+  chore.value?.defaultRotationUnit ?? 'PERSON',
 );
 const onConflict = ref<ChoreSeriesConflictMode>('SKIP');
 
 function onChoreChange() {
   slotIds.value = chore.value?.slots.map((s) => s.id) ?? [];
-  rotationUnit.value = chore.value?.defaultRotationUnit ?? 'PARTICIPANT';
+  rotationUnit.value = chore.value?.defaultRotationUnit ?? 'PERSON';
 }
 
 const choreOptions = computed<QSelectOption[]>(() =>
@@ -394,7 +394,7 @@ field:
   rotationUnit:
     label: 'Assign by'
     option:
-      PARTICIPANT: 'People'
+      PERSON: 'People'
       ROOM: 'Room'
   onConflict:
     label: 'Where a duty is already planned'
@@ -427,7 +427,7 @@ field:
   rotationUnit:
     label: 'Einteilen nach'
     option:
-      PARTICIPANT: 'Personen'
+      PERSON: 'Personen'
       ROOM: 'Zimmer'
   onConflict:
     label: 'Wo schon ein Dienst geplant ist'
@@ -460,7 +460,7 @@ field:
   rotationUnit:
     label: 'Attribuer par'
     option:
-      PARTICIPANT: 'Personnes'
+      PERSON: 'Personnes'
       ROOM: 'Chambre'
   onConflict:
     label: 'Quand une corvée est déjà prévue'
@@ -493,7 +493,7 @@ field:
   rotationUnit:
     label: 'Przydziel według'
     option:
-      PARTICIPANT: 'Osoby'
+      PERSON: 'Osoby'
       ROOM: 'Pokój'
   onConflict:
     label: 'Gdy dyżur jest już zaplanowany'
@@ -526,7 +526,7 @@ field:
   rotationUnit:
     label: 'Přiřadit podle'
     option:
-      PARTICIPANT: 'Lidé'
+      PERSON: 'Lidé'
       ROOM: 'Pokoj'
   onConflict:
     label: 'Kde už je služba naplánovaná'

@@ -826,7 +826,7 @@ async function replaceMember(assignment: ChoreAssignment, id: string) {
     choreId: assignment.choreId,
     slotId: assignment.slotId,
     date: assignment.date,
-    rotationUnit: 'PARTICIPANT',
+    rotationUnit: 'PERSON',
     headcount: active('MEMBER'),
     supervisorCount: active('SUPERVISOR'),
     members,

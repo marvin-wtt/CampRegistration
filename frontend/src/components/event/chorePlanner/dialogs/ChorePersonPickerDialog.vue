@@ -115,7 +115,7 @@ async function load() {
   try {
     const result = await choreAssignmentStore.fetchSuggestions({
       choreId: props.assignment.choreId,
-      unit: 'PARTICIPANT',
+      unit: 'PERSON',
       role: props.role,
       date: props.assignment.date,
       assignmentId: props.assignment.id,

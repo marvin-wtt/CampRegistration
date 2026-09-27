@@ -404,7 +404,7 @@ export class ChoreAssignmentService extends BaseService {
             before.chore,
             findSlot(before.chore, before.slotId),
             toDateString(before.date),
-            'PARTICIPANT',
+            'PERSON',
           );
           // Exactly one spot, in the removed person's role.
           const count = (role: ChoreMemberRole) =>
@@ -480,7 +480,7 @@ export class ChoreAssignmentService extends BaseService {
       balanceCountries: query.role === 'MEMBER' && chore.balanceCountries,
     };
 
-    const unit = query.role === 'SUPERVISOR' ? 'PARTICIPANT' : query.unit;
+    const unit = query.role === 'SUPERVISOR' ? 'PERSON' : query.unit;
     return {
       unit,
       role: query.role,

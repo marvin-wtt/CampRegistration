@@ -38,7 +38,7 @@ const spec = (extra: Partial<OccurrenceSpec> = {}): OccurrenceSpec => ({
   choreId: 'kitchen',
   date: '2026-07-10',
   effort: 'NORMAL',
-  unit: 'PARTICIPANT',
+  unit: 'PERSON',
   eligibility: 'PARTICIPANTS',
   balanceCountries: false,
   headcount: 1,

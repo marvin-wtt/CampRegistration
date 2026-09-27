@@ -81,8 +81,8 @@
             toggle-color="primary"
             :options="[
               {
-                label: t('field.rotationUnit.option.PARTICIPANT'),
-                value: 'PARTICIPANT',
+                label: t('field.rotationUnit.option.PERSON'),
+                value: 'PERSON',
                 icon: 'person',
               },
               {
@@ -406,7 +406,7 @@ const slotId = ref<string | null>(
 const rotationUnit = ref<ChoreRotationUnit>(
   props.assignment?.rotationUnit ??
     selectedChore.value?.defaultRotationUnit ??
-    'PARTICIPANT',
+    'PERSON',
 );
 const status = ref<ChoreAssignmentStatus>(
   props.assignment?.status ?? 'PLANNED',
@@ -591,13 +591,13 @@ watch(
       unit === 'ROOM'
         ? choreAssignmentStore.fetchSuggestions({
             ...base,
-            unit: 'PARTICIPANT',
+            unit: 'PERSON',
             role: 'MEMBER',
           })
         : undefined,
       choreAssignmentStore.fetchSuggestions({
         ...base,
-        unit: 'PARTICIPANT',
+        unit: 'PERSON',
         role: 'SUPERVISOR',
       }),
     ]);
@@ -885,7 +885,7 @@ field:
   rotationUnit:
     label: 'Assign by'
     option:
-      PARTICIPANT: 'People'
+      PERSON: 'People'
       ROOM: 'Room'
   headcount: 'People needed'
   supervisorCount: 'Supervisors needed'
@@ -942,7 +942,7 @@ field:
   rotationUnit:
     label: 'Einteilen nach'
     option:
-      PARTICIPANT: 'Personen'
+      PERSON: 'Personen'
       ROOM: 'Zimmer'
   headcount: 'Benötigte Personen'
   supervisorCount: 'Benötigte Aufsichten'
@@ -999,7 +999,7 @@ field:
   rotationUnit:
     label: 'Attribuer par'
     option:
-      PARTICIPANT: 'Personnes'
+      PERSON: 'Personnes'
       ROOM: 'Chambre'
   headcount: 'Personnes nécessaires'
   supervisorCount: 'Encadrants nécessaires'
@@ -1056,7 +1056,7 @@ field:
   rotationUnit:
     label: 'Przydziel według'
     option:
-      PARTICIPANT: 'Osoby'
+      PERSON: 'Osoby'
       ROOM: 'Pokój'
   headcount: 'Potrzebne osoby'
   supervisorCount: 'Potrzebni opiekunowie'
@@ -1113,7 +1113,7 @@ field:
   rotationUnit:
     label: 'Přiřadit podle'
     option:
-      PARTICIPANT: 'Lidé'
+      PERSON: 'Lidé'
       ROOM: 'Pokoj'
   headcount: 'Potřebný počet lidí'
   supervisorCount: 'Potřebný dozor'

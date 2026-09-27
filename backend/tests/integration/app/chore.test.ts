@@ -168,7 +168,7 @@ describe('/api/v1/events/:eventId/chores', () => {
         eligibility: 'PARTICIPANTS',
         effort: 'NORMAL',
         supervisorCount: 0,
-        defaultRotationUnit: 'PARTICIPANT',
+        defaultRotationUnit: 'PERSON',
         balanceCountries: false,
         slots: [],
       });
@@ -372,7 +372,7 @@ describe('/api/v1/events/:eventId/chores', () => {
           eventId: event.id,
           choreId: chore.id,
           slotId: slot.id,
-          rotationUnit: 'PARTICIPANT',
+          rotationUnit: 'PERSON',
           date: new Date('2026-09-01'),
         },
       });
@@ -465,7 +465,7 @@ describe('/api/v1/events/:eventId/chores', () => {
         data: {
           eventId: event.id,
           choreId: chore.id,
-          rotationUnit: 'PARTICIPANT',
+          rotationUnit: 'PERSON',
           date: new Date('2026-08-31'),
         },
       });
