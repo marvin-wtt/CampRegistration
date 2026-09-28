@@ -1,0 +1,40 @@
+diff --git a/node_modules/survey-core/survey.core.js b/node_modules/survey-core/survey.core.js
+--- a/node_modules/survey-core/survey.core.js
++++ b/node_modules/survey-core/survey.core.js
+@@ -28235,6 +28235,7 @@
+                 }
+             });
+             this.locTitle.onStringChanged.add(() => this.resetPropertyValue("titleIsEmpty"));
++            this.locLogo.onStringChanged.add(() => this.resetHasLogo());
+             if (jsonObj) {
+                 if (typeof jsonObj === "string" || jsonObj instanceof String) {
+                     jsonObj = JSON.parse(jsonObj);
+@@ -29054,7 +29055,7 @@
+             return this.logoHeight ? getRenderedStyleSize(this.logoHeight) : undefined;
+         }
+         get hasLogo() {
+-            return this.getPropertyValue("hasLogo", undefined, () => !!this.logo && this.logoPosition !== "none");
++            return this.getPropertyValue("hasLogo", undefined, () => !!this.locLogo.renderedHtml && this.logoPosition !== "none");
+         }
+         resetHasLogo() {
+             this.resetPropertyValue("hasLogo");
+diff --git a/node_modules/survey-core/fesm/survey-core.mjs b/node_modules/survey-core/fesm/survey-core.mjs
+--- a/node_modules/survey-core/fesm/survey-core.mjs
++++ b/node_modules/survey-core/fesm/survey-core.mjs
+@@ -28229,6 +28229,7 @@ class SurveyModel extends SurveyElementCore {
+             }
+         });
+         this.locTitle.onStringChanged.add(() => this.resetPropertyValue("titleIsEmpty"));
++        this.locLogo.onStringChanged.add(() => this.resetHasLogo());
+         if (jsonObj) {
+             if (typeof jsonObj === "string" || jsonObj instanceof String) {
+                 jsonObj = JSON.parse(jsonObj);
+@@ -29048,7 +29049,7 @@ class SurveyModel extends SurveyElementCore {
+         return this.logoHeight ? getRenderedStyleSize(this.logoHeight) : undefined;
+     }
+     get hasLogo() {
+-        return this.getPropertyValue("hasLogo", undefined, () => !!this.logo && this.logoPosition !== "none");
++        return this.getPropertyValue("hasLogo", undefined, () => !!this.locLogo.renderedHtml && this.logoPosition !== "none");
+     }
+     resetHasLogo() {
+         this.resetPropertyValue("hasLogo");
