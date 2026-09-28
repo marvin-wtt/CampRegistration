@@ -138,6 +138,7 @@ import {
   startAutoThemeUpdate,
   addFileSlotResolver,
 } from '@/composables/survey';
+import { emphasizeForwardNavigation } from '@/lib/surveyJs/navigation';
 import type {
   EventDetails,
   Registration,
@@ -406,6 +407,8 @@ function createModel(eventId: string, form: object): SurveyModel {
 
   // Resolve {_file.<slot>} placeholders to locale-aware file URLs on demand.
   addFileSlotResolver(survey, eventId, api);
+
+  emphasizeForwardNavigation(survey);
 
   // survey-core redirects right after `onComplete` fires, while the submission
   // is still in flight, so the redirect is held until the save succeeded. A

@@ -72,6 +72,7 @@ import {
   surveyLocales,
 } from '@/lib/surveyJs/editorModes';
 import { fieldFromParts } from '@/utils/fileField';
+import { emphasizeForwardNavigation } from '@/lib/surveyJs/navigation';
 
 // Ace is bundled; the creator only sets the JSON mode when a base path is
 // given, so point it at the bundled worker's directory — nothing hits a CDN.
@@ -363,6 +364,7 @@ creator.onSurveyInstanceCreated.add((_, options) => {
   }
 
   if (['preview-tab', 'theme-tab'].includes(options.area)) {
+    emphasizeForwardNavigation(survey);
     setVariables(survey, props.event);
     addFileSlotResolver(survey, props.event.id, api);
     survey.onLocaleChangedEvent.add((sender) => {
