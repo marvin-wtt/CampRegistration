@@ -9,11 +9,12 @@ import { injectable } from 'inversify';
 export class FeedbackController extends BaseController {
   async store(req: Request, res: Response) {
     const {
-      body: { message, email, location, userAgent },
+      body: { message, name, email, location, userAgent },
     } = await req.validate(validator.store);
 
     await FeedbackMessage.send({
       message,
+      name,
       email,
       location,
       userAgent,

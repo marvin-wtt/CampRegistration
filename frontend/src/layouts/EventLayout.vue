@@ -77,10 +77,14 @@
         >
           {{ t('footer.privacy_policy') }}
         </router-link>
+        <router-link
+          class="event-footer__link"
+          :to="{ name: 'contact' }"
+        >
+          {{ t('footer.contact') }}
+        </router-link>
       </nav>
     </q-footer>
-
-    <help-fab />
   </q-layout>
 </template>
 
@@ -89,7 +93,6 @@ import LocaleSwitch from '@/components/common/localization/LocaleSwitch.vue';
 import { useI18n } from 'vue-i18n';
 import { useMeta } from 'quasar';
 import ProfileMenu from '@/components/common/ProfileMenu.vue';
-import HelpFab from '@/components/FeedbackFab.vue';
 import { storeToRefs } from 'pinia';
 import { computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
@@ -288,43 +291,48 @@ useMeta(() => {
 events: 'Events'
 back_to_events: 'Back to all events'
 footer:
-  label: 'Legal'
+  label: 'Footer navigation'
   imprint: 'Imprint'
   privacy_policy: 'Privacy Policy'
+  contact: 'Contact'
 </i18n>
 
 <i18n lang="yaml" locale="de">
 events: 'Veranstaltungen'
 back_to_events: 'Zurück zu allen Veranstaltungen'
 footer:
-  label: 'Rechtliches'
+  label: 'Fußzeilennavigation'
   imprint: 'Impressum'
   privacy_policy: 'Datenschutzerklärung'
+  contact: 'Kontakt'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 events: 'Événements'
 back_to_events: 'Retour à tous les événements'
 footer:
-  label: 'Mentions légales'
+  label: 'Navigation de pied de page'
   imprint: 'Mentions légales'
   privacy_policy: 'Politique de confidentialité'
+  contact: 'Contact'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
 events: 'Wydarzenia'
 back_to_events: 'Powrót do wszystkich wydarzeń'
 footer:
-  label: 'Informacje prawne'
+  label: 'Nawigacja w stopce'
   imprint: 'Nota prawna'
   privacy_policy: 'Polityka prywatności'
+  contact: 'Kontakt'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
 events: 'Akce'
 back_to_events: 'Zpět na všechny akce'
 footer:
-  label: 'Právní informace'
+  label: 'Navigace v zápatí'
   imprint: 'Tiráž'
   privacy_policy: 'Zásady ochrany osobních údajů'
+  contact: 'Kontakt'
 </i18n>

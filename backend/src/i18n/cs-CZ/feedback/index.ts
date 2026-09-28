@@ -6,6 +6,7 @@ export default {
       title: 'Nová zpětná vazba',
       replyNote:
         'Na tento e-mail můžete odpovědět a přímo kontaktovat uživatele, pokud poskytl e-mailovou adresu.',
+      senderLabel: 'Od',
       messageLabel: 'Zpráva',
       locationLabel: 'Stránka',
       userAgentLabel: 'Prohlížeč',

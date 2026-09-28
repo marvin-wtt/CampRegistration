@@ -6,6 +6,7 @@ export default {
       title: 'Neues Feedback',
       replyNote:
         'Sie können auf diese E-Mail antworten, um den Benutzer direkt zu kontaktieren, falls er eine E-Mail-Adresse angegeben hat.',
+      senderLabel: 'Von',
       messageLabel: 'Nachricht',
       locationLabel: 'Seite',
       userAgentLabel: 'Browser',

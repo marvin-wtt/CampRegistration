@@ -6,6 +6,7 @@ export default {
       title: 'Nouveau retour',
       replyNote:
         "Vous pouvez répondre à cet e-mail pour contacter l'utilisateur directement s'il a fourni une adresse e-mail.",
+      senderLabel: 'De',
       messageLabel: 'Message',
       locationLabel: 'Page',
       userAgentLabel: 'Navigateur',
