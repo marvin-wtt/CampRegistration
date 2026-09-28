@@ -113,20 +113,21 @@ async function saveFile(file: File): Promise<string> {
   }
 
   // When file is selected via custom picker, then the file is already present
-  // on the server. Referencing it by slot rather than a fixed URL keeps the
-  // reference locale-aware and lets it survive the file being replaced.
+  // on the server. The editor references it by slot rather than a fixed URL,
+  // which keeps it locale-aware and lets it survive the file being replaced.
   if ('id' in file && 'field' in file && typeof file.field === 'string') {
-    return `{_file.${file.field}}`;
+    return file.field;
   }
 
-  const newFile = await eventFileStore.createEntry({
+  const field = createUuid();
+  await eventFileStore.createEntry({
     name: file.name.replace(/\.[^/.]+$/, ''),
-    field: createUuid(),
+    field,
     file,
     accessLevel: 'public',
   });
 
-  return `{_file.${newFile.field}}`;
+  return field;
 }
 </script>
 

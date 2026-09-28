@@ -18,11 +18,13 @@ import 'survey-creator-core/i18n/polish';
 import 'survey-core/i18n/czech';
 import 'survey-creator-core/i18n/czech';
 // Json editor
-import 'ace-builds/src-noconflict/ace';
+import { type Ace, config as aceConfig } from 'ace-builds';
+import 'ace-builds/src-noconflict/mode-json';
 import 'ace-builds/src-noconflict/ext-searchbox';
 import 'ace-builds/src-noconflict/theme-clouds_midnight';
+import aceJsonWorkerUrl from 'ace-builds/src-noconflict/worker-json?url';
 
-import { ref, watch, watchEffect } from 'vue';
+import { onBeforeUnmount, ref, watch, watchEffect } from 'vue';
 import {
   type ICreatorOptions,
   localization,
@@ -33,12 +35,13 @@ import { SurveyCreatorComponent } from 'survey-creator-vue';
 import { useI18n } from 'vue-i18n';
 import eventDataMapping from '@/lib/surveyJs/properties/eventDataMapping';
 import {
-  type Base,
+  Base,
   type ITheme,
   type PageModel,
   type PanelModel,
   type SurveyElement,
   type SurveyModel,
+  Serializer,
 } from 'survey-core';
 import { surveyLocalization } from 'survey-core';
 import { createMarkdownConverter } from '@/utils/markdown';
@@ -50,7 +53,10 @@ import type {
 import { useQuasar } from 'quasar';
 import type { SurveyJSEventData } from '@camp-registration/common/entities';
 import { setVariables } from '@camp-registration/common/form';
-import { addFileSlotResolver } from '@/composables/survey';
+import {
+  addDesignerFileSlotResolver,
+  addFileSlotResolver,
+} from '@/composables/survey';
 import { useAPIService } from '@/services/APIService';
 import { surveyCreatorCustomLocaleConfig } from '@/components/event/settings/form/form-editor-translations';
 import { buildMd3LiteralTheme, resolveMd3Theme } from '@/lib/surveyJs/theme';
@@ -65,9 +71,15 @@ import {
   type EditorMode,
   surveyLocales,
 } from '@/lib/surveyJs/editorModes';
+import { fieldFromParts } from '@/utils/fileField';
 
-AceJsonEditorModel.aceBasePath =
-  'https://unpkg.com/ace-builds/src-min-noconflict/';
+// Ace is bundled; the creator only sets the JSON mode when a base path is
+// given, so point it at the bundled worker's directory — nothing hits a CDN.
+aceConfig.setModuleUrl('ace/mode/json_worker', aceJsonWorkerUrl);
+AceJsonEditorModel.aceBasePath = new URL(
+  './',
+  new URL(aceJsonWorkerUrl, location.href),
+).href;
 
 const props = defineProps<{
   event: EventDetails;
@@ -75,6 +87,7 @@ const props = defineProps<{
   restrictedAccess: boolean;
   saveFormFunc: (form: SurveyJSEventData) => Promise<void>;
   saveThemeFunc: (theme: ITheme) => Promise<void>;
+  // Resolves to the file's slot (its `field`).
   saveFileFunc: (file: File) => Promise<string>;
 }>();
 
@@ -232,8 +245,24 @@ watch(
   () => quasar.dark.isActive,
   (isDark) => {
     applySurveyTheme(isDark);
+    jsonEditor?.setTheme(aceTheme(isDark));
   },
 );
+
+// The JSON tab creates a new Ace editor each time it opens.
+let jsonEditor: Ace.Editor | undefined;
+const onAceEditorCreated = (editor: Ace.Editor) => {
+  jsonEditor = editor;
+  editor.setTheme(aceTheme(quasar.dark.isActive));
+};
+aceConfig.on('editor', onAceEditorCreated);
+onBeforeUnmount(() => {
+  aceConfig.off('editor', onAceEditorCreated);
+});
+
+function aceTheme(isDark: boolean): string {
+  return isDark ? 'ace/theme/clouds_midnight' : 'ace/theme/textmate';
+}
 
 // Creator chrome is themed by `.sjs-theme-overrides` (md3-adapter.scss),
 // which survey-creator-core stamps on the creator root itself — no JS theme
@@ -328,6 +357,11 @@ creator.onSurveyInstanceCreated.add((_, options) => {
     });
   }
 
+  // Design mode skips text processing, so file slots need their own resolver.
+  if (options.area === 'designer-tab') {
+    addDesignerFileSlotResolver(survey, props.event, api);
+  }
+
   if (['preview-tab', 'theme-tab'].includes(options.area)) {
     setVariables(survey, props.event);
     addFileSlotResolver(survey, props.event.id, api);
@@ -382,9 +416,26 @@ creator.onUploadFile.add((_, options) => {
 
   props
     .saveFileFunc(file)
-    .then((fileUrl) => options.callback('success', fileUrl))
+    .then((slot) =>
+      options.callback(
+        'success',
+        isTextProcessed(options.element, options.propertyName.toString())
+          ? `{_file.${slot}}`
+          : api.getEventFileSlotUrl(props.event.id, slot),
+      ),
+    )
     .catch(() => options.callback('error', ''));
 });
+
+// Only localizable strings (logo, image links) go through text processing, so
+// only they can hold a `{_file.<slot>}` placeholder. Everything else — theme
+// and header backgrounds among them — is used verbatim and needs a real URL.
+function isTextProcessed(element: Base | ITheme, propertyName: string) {
+  return (
+    element instanceof Base &&
+    !!Serializer.findProperty(element.getType(), propertyName)?.isLocalizable
+  );
+}
 
 // Named survey elements (pages, panels, questions) share their type with
 // every other instance of it, so `elementType` alone would give every page's
@@ -397,13 +448,11 @@ function elementInstanceName(element: Base | ITheme): string | undefined {
 }
 
 creator.onOpenFileChooser.add((_, options) => {
-  const baseField = [
+  const baseField = fieldFromParts([
     options.elementType.toString(),
     elementInstanceName(options.element),
     options.propertyName.toString(),
-  ]
-    .filter(Boolean)
-    .join('_');
+  ]);
 
   quasar
     .dialog({

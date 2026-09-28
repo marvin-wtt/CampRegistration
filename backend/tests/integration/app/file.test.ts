@@ -369,6 +369,20 @@ describe('/api/v1/files/', () => {
       expect(body.data).toHaveLength(2);
     });
 
+    it('should return every file when no page is requested', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      for (let i = 0; i < 25; i++) {
+        await FileFactory.create({ event: { connect: { id: event.id } } });
+      }
+
+      const { body } = await request()
+        .get(`/api/v1/events/${event.id}/files`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body.data).toHaveLength(25);
+    });
+
     it('should only return files belonging to the event', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
       const file = await FileFactory.create({
@@ -532,6 +546,57 @@ describe('/api/v1/files/', () => {
       await request()
         .get(`/api/v1/events/${event.id}/files/slots/rules`)
         .expect(409);
+    });
+
+    it('should keep serving the ready file while a replacement is pending', async () => {
+      const event = await EventFactory.create({ listed: true });
+      const readyName = crypto.randomUUID() + '.pdf';
+      await uploadFile('blank.pdf', readyName);
+      await FileFactory.create({
+        event: { connect: { id: event.id } },
+        field: 'rules',
+        accessLevel: 'public',
+        originalName: 'ready.pdf',
+        name: readyName,
+        createdAt: new Date(Date.now() - 60_000),
+      });
+      await FileFactory.create({
+        event: { connect: { id: event.id } },
+        field: 'rules',
+        accessLevel: 'public',
+        uploadStatus: 'PENDING',
+      });
+
+      const response = await request()
+        .get(`/api/v1/events/${event.id}/files/slots/rules`)
+        .expect(200);
+
+      expect(response.headers['content-disposition']).toContain('ready.pdf');
+    });
+
+    it('should prefer a public file over a newer private one in the same slot', async () => {
+      const event = await EventFactory.create({ listed: true });
+      const publicName = crypto.randomUUID() + '.pdf';
+      await uploadFile('blank.pdf', publicName);
+      await FileFactory.create({
+        event: { connect: { id: event.id } },
+        field: 'rules',
+        accessLevel: 'public',
+        originalName: 'public.pdf',
+        name: publicName,
+        createdAt: new Date(Date.now() - 60_000),
+      });
+      await FileFactory.create({
+        event: { connect: { id: event.id } },
+        field: 'rules',
+        accessLevel: 'private',
+      });
+
+      const response = await request()
+        .get(`/api/v1/events/${event.id}/files/slots/rules`)
+        .expect(200);
+
+      expect(response.headers['content-disposition']).toContain('public.pdf');
     });
 
     it('should respond with `404` when no file matches the slot', async () => {

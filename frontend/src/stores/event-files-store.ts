@@ -87,14 +87,28 @@ export const useEventFilesStore = defineStore('eventFiles', () => {
   // localized. Unlike a form slot this one is never declared by the form; see
   // EVENT_LOGO_SLOT.
   const logoFile = computed<ServiceFile | undefined>(() =>
-    (data.value ?? []).find((file) => file.field === EVENT_LOGO_SLOT),
+    reservedSlotFile(EVENT_LOGO_SLOT),
   );
 
   // The file behind the reserved banner slot, if any — same reserved-slot
   // mechanism as the logo, see EVENT_BANNER_SLOT.
   const bannerFile = computed<ServiceFile | undefined>(() =>
-    (data.value ?? []).find((file) => file.field === EVENT_BANNER_SLOT),
+    reservedSlotFile(EVENT_BANNER_SLOT),
   );
+
+  // Should a slot hold several files, picks the one the server serves: ready
+  // before pending, public before private, then newest.
+  function reservedSlotFile(slot: string): ServiceFile | undefined {
+    const rank = (file: ServiceFile) =>
+      (file.uploadStatus === 'READY' ? 2 : 0) +
+      (file.accessLevel === 'public' ? 1 : 0);
+
+    return (data.value ?? [])
+      .filter((file) => file.field === slot)
+      .sort(
+        (a, b) => rank(b) - rank(a) || b.createdAt.localeCompare(a.createdAt),
+      )[0];
+  }
 
   // Slots declared in the form via {_file.slotName} that have no uploaded file yet.
   const pendingSlots = computed<string[]>(() => {

@@ -341,11 +341,10 @@ export class FileService extends BaseService {
    * and locale. The slot maps to the file's `field` column. Readiness and access
    * are not checked here — that is the caller's (guard/stream) responsibility.
    *
-   * More than one file can end up sharing a (field, locale) pair — e.g. a
-   * replacement upload that was submitted without deleting the original.
-   * `selectFileByLocale` keeps the first file it sees on a tied score, so
-   * ordering newest-first here makes the most recently uploaded file win
-   * instead of whichever one happens to sort first in storage.
+   * Several files can share a (field, locale) pair while a replacement is
+   * uploading. Ready files are tried first so a pending replacement doesn't
+   * shadow the one being served; on a tied locale score public beats private
+   * and newer beats older (`selectFileByLocale` keeps the first on a tie).
    */
   async getModelFileForSlot(
     model: ModelData,
@@ -364,9 +363,22 @@ export class FileService extends BaseService {
       return null;
     }
 
-    // Select the best matching file for the locale.
-    // If no locale is given, default to English or fallback to the first file.
-    return selectFileByLocale(files, locale ?? 'en') ?? files[0];
+    const targetLocale = locale ?? 'en';
+    const ready = files
+      .filter((file) => file.uploadStatus === 'READY')
+      // Stable sort: newest-first order is kept within each access level.
+      .sort(
+        (a, b) =>
+          Number(b.accessLevel === 'public') -
+          Number(a.accessLevel === 'public'),
+      );
+
+    return (
+      selectFileByLocale(ready, targetLocale) ??
+      selectFileByLocale(files, targetLocale) ??
+      ready[0] ??
+      files[0]
+    );
   }
 
   /**

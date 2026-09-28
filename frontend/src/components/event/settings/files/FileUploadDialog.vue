@@ -100,7 +100,13 @@
               <template #avatar>
                 <q-icon name="warning_amber" />
               </template>
-              {{ t('fields.field_locale.warning') }}
+              {{
+                t(
+                  isEditMode
+                    ? 'fields.field_locale.warning_edit'
+                    : 'fields.field_locale.warning',
+                )
+              }}
             </q-banner>
 
             <!-- Access -->
@@ -172,11 +178,16 @@ import type {
 } from '@camp-registration/common/entities';
 import { useEventFilesStore } from '@/stores/event-files-store';
 import { useEventDetailsStore } from '@/stores/event-details-store';
-import { EVENT_LOGO_SLOT } from '@camp-registration/common/form';
-
-const MAX_FIELD_LENGTH = 40;
-const FALLBACK_FIELD_NAME = 'file';
-const FIELD_NAME_PATTERN = /^[a-z0-9_-]+$/;
+import {
+  EVENT_BANNER_SLOT,
+  EVENT_LOGO_SLOT,
+} from '@camp-registration/common/form';
+import {
+  FIELD_NAME_PATTERN,
+  MAX_FIELD_LENGTH,
+  slugifyFieldName,
+  trimFieldName,
+} from '@/utils/fileField';
 
 interface ServiceFileFormData {
   name?: string | undefined;
@@ -253,12 +264,13 @@ const isFieldLocked = computed(
 const isLocaleLocked = computed(
   // Lock when a concrete locale was supplied (e.g. replace, or a slot that
   // targets a specific language) — a locale-less slot (initialLocale === null)
-  // otherwise stays editable so the user can choose one. The logo is the one
-  // exception: it isn't localized at all, so its locale always stays fixed.
+  // otherwise stays editable so the user can choose one. The logo and banner
+  // are the exception: they aren't localized, so their locale stays fixed.
   () =>
     isReplaceMode.value ||
     initialLocale != null ||
-    initialField === EVENT_LOGO_SLOT,
+    initialField === EVENT_LOGO_SLOT ||
+    initialField === EVENT_BANNER_SLOT,
 );
 
 const isAccessLevelLocked = computed(
@@ -268,11 +280,11 @@ const isAccessLevelLocked = computed(
 const activeFileId = computed(() => fileToEdit?.id ?? fileToReplace?.id);
 
 // The file already occupying the (field, locale) pair this upload targets, if
-// any. Submitting over it replaces that file instead of leaving a duplicate
-// behind — one that could otherwise win or lose slot resolution arbitrarily.
+// any. Submitting an upload over it replaces that file instead of leaving a
+// duplicate behind; an edit can't replace, so it only gets the warning.
 const duplicateFile = computed<ServiceFile | undefined>(() => {
   const field = fileData.field?.trim();
-  if (!field || isEditMode.value) {
+  if (!field) {
     return undefined;
   }
 
@@ -374,28 +386,8 @@ function createSuggestedFieldName(name: string): string {
   return trimFieldName(slug);
 }
 
-function slugifyFieldName(value: string): string {
-  const slug = value
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/&/g, ' and ')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .replace(/-{2,}/g, '-');
-
-  return slug || FALLBACK_FIELD_NAME;
-}
-
-function trimFieldName(value: string): string {
-  return value
-    .slice(0, MAX_FIELD_LENGTH)
-    .replace(/[-_]+$/g, '')
-    .replace(/^[-_]+/g, '');
-}
-
 function normalizeField() {
-  if (!fileData.field) {
+  if (!fileData.field || isFieldLocked.value) {
     return;
   }
 
@@ -519,6 +511,7 @@ fields:
       format: 'Use lowercase letters, numbers, hyphens or underscores'
   field_locale:
     warning: 'Another file already uses this identifier and language. Uploading will replace it.'
+    warning_edit: 'Another file already uses this identifier and language. Only one of them will be shown in the form.'
   file:
     label: 'File'
     rules:
@@ -571,6 +564,7 @@ fields:
       format: 'Verwenden Sie Kleinbuchstaben, Zahlen, Bindestriche oder Unterstriche'
   field_locale:
     warning: 'Eine andere Datei verwendet bereits diese Kennung und Sprache. Beim Hochladen wird sie ersetzt.'
+    warning_edit: 'Eine andere Datei verwendet bereits diese Kennung und Sprache. Im Formular wird nur eine davon angezeigt.'
   file:
     label: 'Datei'
     rules:
@@ -623,6 +617,7 @@ fields:
       format: 'Utilisez des minuscules, des chiffres, des tirets ou des traits de soulignement'
   field_locale:
     warning: 'Un autre fichier utilise déjà cet identifiant et cette langue. Le téléversement le remplacera.'
+    warning_edit: 'Un autre fichier utilise déjà cet identifiant et cette langue. Un seul des deux sera affiché dans le formulaire.'
   file:
     label: 'Fichier'
     rules:
@@ -675,6 +670,7 @@ fields:
       format: 'Użyj małych liter, cyfr, łączników lub podkreśleń'
   field_locale:
     warning: 'Inny plik używa już tego identyfikatora i języka. Przesłanie go zastąpi.'
+    warning_edit: 'Inny plik używa już tego identyfikatora i języka. W formularzu zostanie wyświetlony tylko jeden z nich.'
   file:
     label: 'Plik'
     rules:
@@ -727,6 +723,7 @@ fields:
       format: 'Použijte malá písmena, číslice, pomlčky nebo podtržítka'
   field_locale:
     warning: 'Jiný soubor již používá tento identifikátor a jazyk. Nahráním jej nahradíte.'
+    warning_edit: 'Jiný soubor již používá tento identifikátor a jazyk. Ve formuláři se zobrazí jen jeden z nich.'
   file:
     label: 'Soubor'
     rules:

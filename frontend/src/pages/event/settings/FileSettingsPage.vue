@@ -413,12 +413,13 @@ onMounted(async () => {
 const uploadOngoing = ref(false);
 
 // The logo and banner have their own sections above — excluded here so they
-// aren't listed twice.
+// aren't listed twice. Any other file in those slots stays listed so it can
+// still be found and deleted.
 const files = computed<ServiceFile[]>(() =>
   sortFiles(
     (eventFileStore.data ?? []).filter(
       (file) =>
-        file.field !== EVENT_LOGO_SLOT && file.field !== EVENT_BANNER_SLOT,
+        file.id !== logoFile.value?.id && file.id !== bannerFile.value?.id,
     ),
   ),
 );
@@ -535,15 +536,23 @@ function uploadForSlot(slot: string, locale?: string | null) {
   openDialog({ initialField: slot, initialLocale: locale });
 }
 
-// The logo isn't localized — the dialog locks the locale to null for this
-// slot, so re-submitting always replaces the one existing logo file.
+// The logo isn't localized — changing it replaces the current file, and a
+// first upload gets its locale locked to null by the dialog.
 function uploadLogo() {
-  uploadForSlot(EVENT_LOGO_SLOT, null);
+  uploadReservedSlot(EVENT_LOGO_SLOT, logoFile.value);
 }
 
 // Same reasoning as the logo: a single, non-localized banner file.
 function uploadBanner() {
-  uploadForSlot(EVENT_BANNER_SLOT, null);
+  uploadReservedSlot(EVENT_BANNER_SLOT, bannerFile.value);
+}
+
+function uploadReservedSlot(slot: string, current: ServiceFile | undefined) {
+  if (current) {
+    openReplaceDialog(current);
+  } else {
+    uploadForSlot(slot, null);
+  }
 }
 
 function openReplaceDialog(file: ServiceFile) {
