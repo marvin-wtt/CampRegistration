@@ -166,14 +166,14 @@
 <script lang="ts" setup>
 import { computed, ref, useSlots } from 'vue';
 import { useI18n } from 'vue-i18n';
-import NavigationItem from '@/components/NavigationItem.vue';
-import ProfileMenu from '@/components/common/ProfileMenu.vue';
+import NavigationItem from '@/components/layout/NavigationItem.vue';
+import ProfileMenu from '@/components/layout/ProfileMenu.vue';
 import { useRoute, type RouteLocationRaw, useRouter } from 'vue-router';
 import { useMeta, useQuasar } from 'quasar';
-import type { NavigationItemProps } from '@/components/NavigationItemProps.ts';
+import type { NavigationItemProps } from '@/components/layout/NavigationItemProps.ts';
 import { MToolbar } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eToolbar';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
-import NavigationItemSkeleton from '@/components/NavigationItemSkeleton.vue';
+import NavigationItemSkeleton from '@/components/layout/NavigationItemSkeleton.vue';
 import LayoutFloatingControls from '@/components/layout/LayoutFloatingControls.vue';
 
 const quasar = useQuasar();

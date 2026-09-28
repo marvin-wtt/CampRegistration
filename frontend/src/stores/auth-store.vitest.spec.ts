@@ -71,10 +71,9 @@ vi.mock('@/stores/profile-store', () => ({
 
 vi.mock('@/services/SetupService', () => ({ createInitialAdmin: vi.fn() }));
 vi.mock('@/services/AuthService', () => ({ isCustomAxiosError: vi.fn() }));
-vi.mock(
-  '@/components/settings/twoFactor/TwoFactorSuggestionDialog.vue',
-  () => ({ default: {} }),
-);
+vi.mock('@/components/common/dialogs/TwoFactorSuggestionDialog.vue', () => ({
+  default: {},
+}));
 
 function httpError(status: number, retryAfter?: string): AxiosError {
   const headers = new AxiosHeaders();

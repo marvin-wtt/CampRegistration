@@ -1,0 +1,110 @@
+<template>
+  <q-separator
+    v-if="props.separated && !props.first"
+    spaced
+  />
+
+  <q-item-label
+    v-if="props.header"
+    header
+  >
+    {{ props.label }}
+  </q-item-label>
+
+  <q-item
+    v-else-if="!props.children || props.children.length === 0"
+    v-ripple
+    :to="props.to"
+    clickable
+    :disable="disabled"
+    :inset-level="props.insertLevel"
+  >
+    <q-item-section
+      v-if="props.icon"
+      avatar
+    >
+      <q-icon :name="props.icon" />
+    </q-item-section>
+
+    <q-item-section>
+      {{ props.label }}
+    </q-item-section>
+  </q-item>
+
+  <q-expansion-item
+    v-else
+    v-model="expanded"
+    :icon="props.icon"
+    :label="props.label"
+    :to="props.to"
+    @click.prevent="expanded = !expanded"
+  >
+    <div class="q-mt-sm">
+      <navigation-item
+        v-for="child in props.children"
+        :key="child.name"
+        :name="child.name"
+        :label="child.label"
+        :icon="child.icon"
+        :to="child.to"
+        :separated="child.separated"
+        :children="child.children"
+        :insert-level="0.2"
+      />
+    </div>
+  </q-expansion-item>
+</template>
+
+<script lang="ts" setup>
+import { computed, ref } from 'vue';
+import { useRoute } from 'vue-router';
+import type { NavigationItemProps } from '@/components/layout/NavigationItemProps.ts';
+
+const route = useRoute();
+
+type Props = NavigationItemProps & {
+  first?: boolean | undefined;
+};
+
+const props = defineProps<Props>();
+
+const disabled = computed<boolean>(() => {
+  return !props.header && props.to === undefined;
+});
+
+const expanded = ref<boolean>(isExpanded());
+
+function isExpanded(): boolean {
+  if (props.header) {
+    return false;
+  }
+
+  return (
+    matchNavigationToRoute(props.to) ||
+    props.children?.some((child) => matchNavigationToRoute(child.to)) ||
+    false
+  );
+}
+
+function matchNavigationToRoute(to?: string | object): boolean {
+  if (to === undefined) {
+    return false;
+  }
+
+  if (typeof to === 'string') {
+    return route.path === to;
+  }
+
+  if ('path' in to) {
+    return route.path === to.path;
+  }
+
+  if ('name' in to) {
+    return route.name === to.name;
+  }
+
+  return false;
+}
+</script>
+
+<style scoped></style>

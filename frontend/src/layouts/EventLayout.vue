@@ -85,11 +85,11 @@
 </template>
 
 <script lang="ts" setup>
-import LocaleSwitch from '@/components/common/localization/LocaleSwitch.vue';
+import LocaleSwitch from '@/components/layout/LocaleSwitch.vue';
 import { useI18n } from 'vue-i18n';
 import { useMeta } from 'quasar';
-import ProfileMenu from '@/components/common/ProfileMenu.vue';
-import HelpFab from '@/components/FeedbackFab.vue';
+import ProfileMenu from '@/components/layout/ProfileMenu.vue';
+import HelpFab from '@/components/layout/FeedbackFab.vue';
 import { storeToRefs } from 'pinia';
 import { computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';

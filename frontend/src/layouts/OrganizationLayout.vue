@@ -31,7 +31,7 @@ import { storeToRefs } from 'pinia';
 import WorkspaceSwitcher from '@/components/layout/WorkspaceSwitcher.vue';
 import { useOrganizationDetailsStore } from '@/stores/organization-details-store';
 import { useOrganizationPermissions } from '@/composables/organizationPermissions';
-import type { NavigationItemProps } from '@/components/NavigationItemProps';
+import type { NavigationItemProps } from '@/components/layout/NavigationItemProps';
 import type { OrganizationPermission } from '@camp-registration/common/permissions';
 
 const { t } = useI18n();
