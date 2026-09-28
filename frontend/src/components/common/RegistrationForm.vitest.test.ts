@@ -92,6 +92,50 @@ describe('RegistrationForm', () => {
     expect(status.text()).toContain('complete.title');
   });
 
+  it.each([
+    {
+      name: 'a localized completedHtml',
+      form: { completedHtml: { en: 'Done', de: 'Fertig' } },
+      custom: true,
+    },
+    {
+      name: 'a matching completedHtmlOnCondition',
+      form: {
+        completedHtmlOnCondition: [{ expression: 'true', html: 'Done' }],
+      },
+      custom: true,
+    },
+    {
+      name: 'only a non-matching completedHtmlOnCondition',
+      form: {
+        completedHtmlOnCondition: [{ expression: 'false', html: 'Done' }],
+      },
+      custom: false,
+    },
+  ])('detects the form-defined completed page for $name', async (testCase) => {
+    const wrapper = mount(RegistrationForm, {
+      props: {
+        eventDetails: {
+          ...simpleEventDetails,
+          id: 'event-1',
+          form: { ...simpleEventDetails.form, ...testCase.form },
+        },
+        submitFn: vi.fn().mockResolvedValue(undefined),
+        uploadFileFn: () => Promise.reject(new Error()),
+      },
+    });
+    const survey = wrapper
+      .getComponent(SurveyComponent)
+      .props('model') as SurveyModel;
+
+    survey.doComplete();
+    await flushPromises();
+
+    expect(
+      wrapper.find('[data-test="registration-submit-status"]').exists(),
+    ).toBe(!testCase.custom);
+  });
+
   it('shows the custom error status without touching the completed page', async () => {
     const submitFn = vi.fn(() =>
       // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors

@@ -1,7 +1,10 @@
 import { defineBoot } from '#q-app';
 import '@camp-registration/common/form';
+// English is built in; the rest match the app's locales.
 import 'survey-core/i18n/german';
 import 'survey-core/i18n/french';
+import 'survey-core/i18n/polish';
+import 'survey-core/i18n/czech';
 import { slk } from 'survey-core';
 // Bridges MD3 onto the SurveyJS design tokens. SurveyJS stamps
 // `sjs-theme-overrides` on every survey root and on the Survey Creator root, so

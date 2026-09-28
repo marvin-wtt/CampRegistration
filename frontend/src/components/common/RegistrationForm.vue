@@ -127,7 +127,6 @@
 import 'survey-core/survey-core.min.css';
 
 import { useI18n } from 'vue-i18n';
-import { createMarkdownConverter } from '@/utils/markdown';
 import { computed, onBeforeMount, ref, toRef, watch, watchEffect } from 'vue';
 import { SurveyModel } from 'survey-core';
 import { SurveyComponent } from 'survey-vue3-ui';
@@ -136,8 +135,12 @@ import RegistrationCopyDownload from '@/components/common/RegistrationCopyDownlo
 import {
   startAutoDataUpdate,
   startAutoThemeUpdate,
-  addFileSlotResolver,
 } from '@/composables/survey';
+import {
+  addFileSlotResolver,
+  addMarkdownRenderer,
+} from '@/lib/surveyJs/textProcessing';
+import { readAsDataURL } from '@/utils/readAsDataURL';
 import { emphasizeForwardNavigation } from '@/lib/surveyJs/navigation';
 import type {
   EventDetails,
@@ -145,8 +148,6 @@ import type {
 } from '@camp-registration/common/entities';
 import { useAPIService } from '@/services/APIService';
 import { useErrorExtractor } from '@/composables/serviceHandler';
-
-const mdConverter = createMarkdownConverter();
 
 const { locale, t } = useI18n();
 const api = useAPIService();
@@ -295,7 +296,7 @@ const model = createModel(
     : props.eventDetails.form,
 );
 model.validationEnabled = !moderationLayout;
-model.mode = props.readonly ? 'display' : 'edit';
+model.readOnly = props.readonly;
 if (props.data) {
   model.data = props.data;
   mapFileIdToFileContent(model);
@@ -330,11 +331,6 @@ function createModel(eventId: string, form: object): SurveyModel {
   const survey = new SurveyModel(form);
   survey.locale = locale.value;
 
-  // When the form defines its own completed page we let survey-core render it;
-  // otherwise the default success UI is a Vue panel (see submitState) rather
-  // than survey-core's built-in "Thank you" text.
-  const hasFormCompletedHtml = hasCustomCompletedHtml(form);
-
   if (moderationLayout) {
     const hideComplete = () => {
       survey.navigationBar.getActionById('sv-nav-complete')?.setVisible(false);
@@ -347,42 +343,27 @@ function createModel(eventId: string, form: object): SurveyModel {
   survey.onUploadFiles.add(async (_, options) => {
     const uploadFileFn = props.uploadFileFn;
     if (!uploadFileFn) {
-      options.callback('error');
+      options.callback([], [t('upload.unavailable')]);
       return;
     }
 
     try {
-      interface FileOption {
-        file: Pick<File, 'name' | 'type' | 'size'>;
-        content?: unknown;
-      }
-
-      const fileUploads = options.files.map(async (file) => {
-        const name = await uploadFileFn(file);
-
-        return new File([file], name, {
-          type: file.type,
-          lastModified: file.lastModified,
-        });
-      });
-
-      const files = await Promise.all(fileUploads);
-
-      const readFileAsync = async (file: File): Promise<FileOption> => {
-        const textContent = await readFile(file);
-        return {
-          file: { name: file.name, type: file.type, size: file.size },
-          content: textContent,
-        };
-      };
-
-      const fileOptions: FileOption[] = await Promise.all<FileOption>(
-        files.map((file) => readFileAsync(file)),
+      // The stored value is the server's file name; the local copy is only
+      // read back so the question can preview it.
+      const files = await Promise.all(
+        options.files.map(async (file) => ({
+          file: {
+            name: await uploadFileFn(file),
+            type: file.type,
+            size: file.size,
+          },
+          content: await readAsDataURL(file),
+        })),
       );
 
-      options.callback('success', fileOptions);
-    } catch {
-      options.callback('error');
+      options.callback(files);
+    } catch (e: unknown) {
+      options.callback([], [extractErrorText(e)]);
     }
   });
   // Remove file from storage
@@ -391,22 +372,10 @@ function createModel(eventId: string, form: object): SurveyModel {
     // Files will be deleted eventually by a cleanup job
     options.callback('success');
   });
-  // Convert markdown to html
-  survey.onTextMarkdown.add((_, options) => {
-    // Remove root paragraphs <p></p>
-    options.html = mdConverter.renderInline(options.text);
-  });
-  // Workaround for date input for Safari < 4.1
-  survey.onAfterRenderPage.add((_, options) => {
-    const dateInputs: NodeListOf<HTMLInputElement> =
-      options.htmlElement.querySelectorAll('input[type=date]');
-    dateInputs.forEach((input) => {
-      input.placeholder = 'yyyy-mm-dd';
-    });
-  });
-
-  // Resolve {_file.<slot>} placeholders to locale-aware file URLs on demand.
-  addFileSlotResolver(survey, eventId, api);
+  addMarkdownRenderer(survey);
+  addFileSlotResolver(survey, (slot, locale) =>
+    api.getEventFileSlotUrl(eventId, slot, locale),
+  );
 
   emphasizeForwardNavigation(survey);
 
@@ -442,7 +411,7 @@ function createModel(eventId: string, form: object): SurveyModel {
       );
       submittedRegistration.value = registration ?? undefined;
       submitted.value = true;
-      if (sender.showCompletePage && hasFormCompletedHtml) {
+      if (sender.showCompletePage && hasCustomCompletedHtml(sender)) {
         // Reveal the form-defined completed page (survey-core shows it by
         // default; the survey element is unhidden as submitState clears).
         submitState.value = null;
@@ -484,23 +453,15 @@ function redirect(url: string) {
   }
 }
 
-function hasCustomCompletedHtml(form: object): boolean {
+// When the form defines its own completed page — plain or matched by a
+// condition — survey-core renders it; otherwise the Vue panel (see
+// submitState) replaces survey-core's built-in "Thank you" text. Both getters
+// fall back to that default text, hence the comparisons.
+function hasCustomCompletedHtml(survey: SurveyModel): boolean {
   return (
-    'completedHtml' in form &&
-    typeof form.completedHtml === 'string' &&
-    form.completedHtml.length > 0
+    !survey.locCompletedHtml.isEmpty ||
+    survey.renderedCompletedHtml !== survey.completedHtml
   );
-}
-
-function readFile(file: File) {
-  return new Promise((resolve, reject) => {
-    const fileReader = new FileReader();
-    fileReader.onload = () => {
-      resolve(fileReader.result);
-    };
-    fileReader.onerror = reject;
-    fileReader.readAsDataURL(file);
-  });
 }
 
 function mapFileIdToFileContent(survey: SurveyModel) {
@@ -517,7 +478,7 @@ function mapFileIdToFileContent(survey: SurveyModel) {
 
       const url = file.match(/^https?:\/\//)
         ? file
-        : `${window.origin}/api/v1/files/${file}`;
+        : api.getFileUrl(file);
 
       return {
         name: file,
@@ -563,6 +524,8 @@ defineExpose({
 </script>
 
 <i18n lang="yaml" locale="en">
+upload:
+  unavailable: 'File uploads are not available here.'
 submit:
   saving:
     title: 'Submitting registration'
@@ -585,6 +548,8 @@ complete:
 </i18n>
 
 <i18n lang="yaml" locale="de">
+upload:
+  unavailable: 'Datei-Uploads sind hier nicht möglich.'
 submit:
   saving:
     title: 'Anmeldung wird gesendet'
@@ -607,6 +572,8 @@ complete:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
+upload:
+  unavailable: 'L’envoi de fichiers n’est pas disponible ici.'
 submit:
   saving:
     title: "Envoi de l'inscription"
@@ -629,6 +596,8 @@ complete:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
+upload:
+  unavailable: 'Przesyłanie plików nie jest tu dostępne.'
 submit:
   saving:
     title: 'Wysyłanie rejestracji'
@@ -651,6 +620,8 @@ complete:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
+upload:
+  unavailable: 'Nahrávání souborů zde není k dispozici.'
 submit:
   saving:
     title: 'Odesílání registrace'

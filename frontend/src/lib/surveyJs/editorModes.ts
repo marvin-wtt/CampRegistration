@@ -13,6 +13,7 @@ import {
   createDropdownActionModel,
   type IAction,
   type ListModel,
+  surveyLocalization,
   SvgRegistry,
 } from 'survey-core';
 
@@ -247,6 +248,12 @@ export function applyEditorMode(
     creator.selectElement(null);
     creator.selectElement(selected);
   }
+}
+
+// Undoes the globals `applyEditorMode` sets, so they don't outlive the editor.
+export function resetEditorModeGlobals(): void {
+  SurveyLogic.visibleActions = [];
+  surveyLocalization.supportedLocales = [];
 }
 
 // Signal bars, one filled per mode, so the compact dropdown still shows the

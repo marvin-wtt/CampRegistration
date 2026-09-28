@@ -130,12 +130,8 @@ function resolvePalette(mode: Md3Mode): Record<string, string> {
  * so the values only have to be *pinned* to a palette — hence a mode rather than
  * the page's live one, which would print a dark form for a dark-mode viewer.
  *
- * Survey Creator's Theme Editor is the other consumer this shape serves, and
- * takes it unchanged whenever `showThemeTab` is turned back on.
- *
- * Kept as a plain object rather than importing `ITheme` from `survey-core`, so
- * the module stays free of that dependency; the shape is structurally
- * compatible.
+ * Survey Creator's Theme Editor is the other consumer: it registers these as
+ * the defaults for an event without a saved theme.
  */
 export function buildMd3LiteralTheme(mode: Md3Mode = 'light'): ITheme {
   return {

@@ -4,9 +4,8 @@
     :loading="loading"
   >
     <form-editor
-      v-if="showEditor && eventData && eventFiles"
+      v-if="showEditor && eventData"
       :event="eventData"
-      :files="eventFiles"
       :restricted-access="restrictedAccess"
       :save-form-func="saveForm"
       :save-theme-func="saveTheme"
@@ -34,29 +33,21 @@ const eventDetailsStore = useEventDetailsStore();
 const eventFileStore = useEventFilesStore();
 const registrationStore = useRegistrationsStore();
 const { data: eventData } = storeToRefs(eventDetailsStore);
-const { data: eventFiles } = storeToRefs(eventFileStore);
 
 const showEditor = ref<boolean>(false);
 const restrictedAccess = ref<boolean>(false);
 
 const loading = computed<boolean>(() => {
-  return (
-    eventDetailsStore.isLoading ||
-    eventFileStore.isLoading ||
-    registrationStore.isLoading
-  );
+  return eventDetailsStore.isLoading || registrationStore.isLoading;
 });
 
 const error = computed(() => {
-  return (
-    eventDetailsStore.error || eventFileStore.error || registrationStore.error
-  );
+  return eventDetailsStore.error || registrationStore.error;
 });
 
 onMounted(async () => {
   await Promise.allSettled([
     eventDetailsStore.fetchData(),
-    eventFileStore.fetchData(),
     registrationStore.fetchData(),
   ]);
 
@@ -93,12 +84,12 @@ async function saveForm(form: SurveyJSEventData): Promise<void> {
 }
 
 async function saveTheme(theme: ITheme): Promise<void> {
-  const colorPlatte = theme.colorPalette ?? 'light';
+  const colorPalette = theme.colorPalette ?? 'light';
 
   const data = {
     themes: {
       ...eventDetailsStore.data?.themes,
-      [colorPlatte]: theme,
+      [colorPalette]: theme,
     },
   };
 

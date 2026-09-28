@@ -973,6 +973,5 @@ export default {
     default: 'Register for a fee',
   },
   showCompletePage: false,
-  headerView: 'advanced',
   widthMode: 'static',
 };

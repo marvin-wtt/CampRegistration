@@ -1,14 +1,16 @@
 import { HorizontalAlign, SurveyPDF } from 'survey-pdf';
 import { Spacious } from 'survey-pdf/layouts';
 import { buildMd3LiteralTheme } from '@/lib/surveyJs/theme';
-import { createMarkdownConverter } from '@/utils/markdown';
+import {
+  addFileSlotResolver,
+  addMarkdownRenderer,
+} from '@/lib/surveyJs/textProcessing';
 import { safeFileName } from '@/utils/safeFileName';
 import { setVariables } from '@camp-registration/common/form';
 import type {
   EventDetails,
   Registration,
 } from '@camp-registration/common/entities';
-import type { SurveyModel } from 'survey-core';
 
 interface RegistrationPdfOptions {
   event: EventDetails;
@@ -23,25 +25,6 @@ const registrationIdLabel: Record<string, string> = {
   pl: 'ID rejestracji',
   cs: 'ID registrace',
 };
-
-type DynamicTextHandler = Parameters<
-  SurveyModel['onProcessDynamicText']['add']
->[0];
-
-function fileDynamicTextProcessor(
-  resolver: (slot: string) => string,
-): DynamicTextHandler {
-  return (_sender, options) => {
-    if (options.isExists) {
-      return;
-    }
-    if (!options.name.startsWith('_file.')) {
-      return;
-    }
-    const slot = options.name.slice('_file.'.length);
-    options.value = resolver(slot);
-  };
-}
 
 function buildSurveyPdf(options: RegistrationPdfOptions): SurveyPDF {
   const { event, registration, fileUrl } = options;
@@ -58,11 +41,8 @@ function buildSurveyPdf(options: RegistrationPdfOptions): SurveyPDF {
   surveyPDF.applyLayout(Spacious);
   surveyPDF.readOnly = true;
 
-  const mdConverter = createMarkdownConverter();
-  surveyPDF.onTextMarkdown.add((_, textOptions) => {
-    textOptions.html = mdConverter.renderInline(textOptions.text);
-  });
-  surveyPDF.onProcessDynamicText.add(fileDynamicTextProcessor(fileUrl));
+  addMarkdownRenderer(surveyPDF);
+  addFileSlotResolver(surveyPDF, fileUrl);
 
   const label =
     registrationIdLabel[registration.locale] ?? registrationIdLabel.en;

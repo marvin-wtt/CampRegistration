@@ -338,6 +338,5 @@ export default {
     default: 'Complete Registration',
   },
   showCompletePage: false,
-  headerView: 'advanced',
   widthMode: 'static',
 };

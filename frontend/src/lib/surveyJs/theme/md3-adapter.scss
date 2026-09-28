@@ -182,11 +182,10 @@ $status-roles: (
   --sjs2-color-border-static-2-primary: var(--md3-on-surface--light);
 
   /* ---- Component: survey header ---------------------------------------- */
-  // The corporate header: a `primary` band, shown by setting
-  // `headerView = "advanced"`. Nothing in the app sets that by default — a
-  // camp's saved theme can still have it on regardless, since it's a normal,
-  // exposed property in the SurveyJS Theme Editor. See the Designer-tab note
-  // further down for where these tokens leak through even on `"basic"`.
+  // The corporate header: a `primary` band, shown while `headerView` is
+  // `"advanced"` — SurveyJS's default, so every form gets it unless a saved
+  // theme switches it to `"basic"` in the Theme Editor. See the Designer-tab
+  // note further down for where these tokens leak through regardless.
   //
   // `-bg` reaches only `.sv-header`, the advanced band. The two foreground
   // tokens are *not* so contained — they also colour `.sd-header__text`, the
@@ -257,8 +256,8 @@ $status-roles: (
  * `--sjs2-color-component-survey-header-default-title` and `-description` are
  * shared between `.sv-header` (the branded band) and `.sd-header__text` (the
  * plain title, which sits on the form surface). One token cannot serve both
- * backdrops, so the token carries the branded value and the plain header — the
- * fallback whenever a survey is left on `headerView: "basic"` — is pinned here.
+ * backdrops, so the token carries the branded value and the plain header —
+ * shown when a theme sets `headerView: "basic"` — is pinned here.
  *
  * Prefixed with the override class for specificity: `survey-core.css` is
  * imported per-component and so loads after this file.
@@ -282,12 +281,11 @@ $status-roles: (
  * `--sjs2-color-component-survey-header-default-*` tokens as the branded
  * band above (`survey-creator-core.css`: `.svc-designer-header
  * .svc-surface-header { background-color: var(--sjs2-color-component-survey-header-default-bg …) }`).
- * `headerView` never reaches `"advanced"` in this app (see above), so
- * respondents never see that band; left alone, the Designer tab still paints
- * it — a `primary`-coloured box, `on-primary` text, capped to the survey
- * body's reading width (`.sd-container-modern--static`, 672px) rather than
- * spanning the card, so the white text spills onto the plain canvas outside
- * it. Resetting the tokens *on the card* overrides the inherited value for
+ * Left alone, the Designer tab paints it as a `primary`-coloured box with
+ * `on-primary` text, capped to the survey body's reading width
+ * (`.sd-container-modern--static`, 672px) rather than spanning the card like
+ * the real band, so the white text spills onto the plain canvas outside it.
+ * The Preview tab shows the actual band. Resetting the tokens *on the card* overrides the inherited value for
  * everything that reads them inside it — the background rule above included
  * — without duplicating which literal CSS properties consume each token.
  */

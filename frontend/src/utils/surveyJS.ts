@@ -4,7 +4,7 @@ import {
   type Question,
   QuestionBooleanModel,
   QuestionPanelDynamicModel,
-  type QuestionSelectBase,
+  QuestionSelectBase,
   SurveyModel,
 } from 'survey-core';
 
@@ -160,17 +160,6 @@ function getNestedQuestion(
   return question ?? undefined;
 }
 
-function isSelectQuestion(question: Question): question is QuestionSelectBase {
-  const selectTypes = [
-    'dropdown',
-    'checkbox',
-    'radiogroup',
-    'imagepicker',
-    'ranking',
-  ];
-  return selectTypes.includes(question.getType());
-}
-
 function getBooleanOptions(
   question: QuestionBooleanModel,
 ): Record<string, string | Record<string, string>> {
@@ -189,26 +178,18 @@ function getQuestionOptions(
     return getBooleanOptions(question);
   }
 
-  if (!isSelectQuestion(question)) {
+  // Covers every choice-based type (dropdown, tagbox, checkbox, ranking, …).
+  if (!(question instanceof QuestionSelectBase) || question.choices.length === 0) {
     return undefined;
   }
 
-  if (!question.choices || question.choices.length === 0) {
-    return undefined;
-  }
-
-  // Normalize choices
-  return question.choices.reduce((acc, choice) => {
-    if (typeof choice === 'string') {
-      acc[choice] = choice;
-      return acc;
-    }
-
-    acc[choice.value] =
-      choice.locText?.getJson() ?? choice.text ?? choice.value;
-
-    return acc;
-  }, {});
+  // `choices` is always normalised to ItemValue instances.
+  return Object.fromEntries(
+    question.choices.map((choice) => [
+      choice.value,
+      choice.locText?.getJson() ?? choice.text ?? choice.value,
+    ]),
+  );
 }
 
 export function getSelectOptions(

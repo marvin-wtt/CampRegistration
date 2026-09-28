@@ -3,37 +3,15 @@
 </template>
 
 <script lang="ts" setup>
-// Style
 import 'survey-core/survey-core.min.css';
 import 'survey-creator-core/survey-creator-core.min.css';
-// JS
-import 'survey-core/i18n/english';
-import 'survey-creator-core/i18n/english';
-import 'survey-core/i18n/german';
-import 'survey-creator-core/i18n/german';
-import 'survey-core/i18n/french';
-import 'survey-creator-core/i18n/french';
-import 'survey-core/i18n/polish';
-import 'survey-creator-core/i18n/polish';
-import 'survey-core/i18n/czech';
-import 'survey-creator-core/i18n/czech';
-// Json editor
-import { type Ace, config as aceConfig } from 'ace-builds';
-import 'ace-builds/src-noconflict/mode-json';
-import 'ace-builds/src-noconflict/ext-searchbox';
-import 'ace-builds/src-noconflict/theme-clouds_midnight';
-import aceJsonWorkerUrl from 'ace-builds/src-noconflict/worker-json?url';
-
+import '@/lib/surveyJs/creatorSetup';
+import type { Ace } from 'ace-builds';
+import { config as aceConfig } from 'ace-builds';
 import { onBeforeUnmount, ref, watch, watchEffect } from 'vue';
-import {
-  type ICreatorOptions,
-  localization,
-  PropertyGridEditorCollection,
-  SurveyCreatorModel,
-} from 'survey-creator-core';
+import { type ICreatorOptions, SurveyCreatorModel } from 'survey-creator-core';
 import { SurveyCreatorComponent } from 'survey-creator-vue';
 import { useI18n } from 'vue-i18n';
-import eventDataMapping from '@/lib/surveyJs/properties/eventDataMapping';
 import {
   Base,
   type ITheme,
@@ -43,25 +21,21 @@ import {
   type SurveyModel,
   Serializer,
 } from 'survey-core';
-import { surveyLocalization } from 'survey-core';
-import { createMarkdownConverter } from '@/utils/markdown';
 import FileSelectionDialog from '@/components/event/settings/files/FileSelectionDialog.vue';
 import type {
   EventDetails,
   ServiceFile,
+  SurveyJSEventData,
 } from '@camp-registration/common/entities';
 import { useQuasar } from 'quasar';
-import type { SurveyJSEventData } from '@camp-registration/common/entities';
 import { setVariables } from '@camp-registration/common/form';
 import {
   addDesignerFileSlotResolver,
   addFileSlotResolver,
-} from '@/composables/survey';
+  addMarkdownRenderer,
+} from '@/lib/surveyJs/textProcessing';
 import { useAPIService } from '@/services/APIService';
-import { surveyCreatorCustomLocaleConfig } from '@/components/event/settings/form/form-editor-translations';
 import { buildMd3LiteralTheme, resolveMd3Theme } from '@/lib/surveyJs/theme';
-import { AceJsonEditorModel } from 'survey-creator-core';
-import { hideIrrelevantProperties } from '@/lib/surveyJs/hiddenProperties';
 import {
   addConditionBadge,
   applyEditorMode,
@@ -69,22 +43,14 @@ import {
   createEditorModeAction,
   EDITOR_MODES,
   type EditorMode,
-  surveyLocales,
+  resetEditorModeGlobals,
 } from '@/lib/surveyJs/editorModes';
 import { fieldFromParts } from '@/utils/fileField';
 import { emphasizeForwardNavigation } from '@/lib/surveyJs/navigation';
-
-// Ace is bundled; the creator only sets the JSON mode when a base path is
-// given, so point it at the bundled worker's directory — nothing hits a CDN.
-aceConfig.setModuleUrl('ace/mode/json_worker', aceJsonWorkerUrl);
-AceJsonEditorModel.aceBasePath = new URL(
-  './',
-  new URL(aceJsonWorkerUrl, location.href),
-).href;
+import { readAsDataURL } from '@/utils/readAsDataURL';
 
 const props = defineProps<{
   event: EventDetails;
-  files: ServiceFile[];
   restrictedAccess: boolean;
   saveFormFunc: (form: SurveyJSEventData) => Promise<void>;
   saveThemeFunc: (theme: ITheme) => Promise<void>;
@@ -96,40 +62,11 @@ const quasar = useQuasar();
 const { t, locale } = useI18n();
 const api = useAPIService();
 
-// Custom properties
-PropertyGridEditorCollection.register(eventDataMapping);
-
-hideIrrelevantProperties();
-
-// Add localization
-for (const [locale, sections] of Object.entries(
-  surveyCreatorCustomLocaleConfig,
-)) {
-  const l = localization.getLocale(locale);
-
-  Object.keys(sections).forEach((key) => {
-    const target = l[key];
-    const source = sections[key as keyof typeof sections];
-
-    if (target && typeof target === 'object' && source) {
-      Object.assign(target, source);
-    }
-  });
-}
-
+// Tabs and survey locales come from the mode preset (see `applyMode`).
 const creatorOptions: ICreatorOptions = {
-  showLogicTab: true,
-  showTranslationTab: true,
-  showEmbeddedSurveyTab: false,
   showCreatorThemeSettings: false,
   autoSaveEnabled: true,
-  showThemeTab: true,
-  showJSONEditorTab: !props.restrictedAccess,
 };
-
-const mdConverter = createMarkdownConverter();
-
-surveyLocalization.supportedLocales = surveyLocales(props.event.locales);
 
 const creator = new SurveyCreatorModel(creatorOptions);
 
@@ -259,6 +196,7 @@ const onAceEditorCreated = (editor: Ace.Editor) => {
 aceConfig.on('editor', onAceEditorCreated);
 onBeforeUnmount(() => {
   aceConfig.off('editor', onAceEditorCreated);
+  resetEditorModeGlobals();
 });
 
 function aceTheme(isDark: boolean): string {
@@ -306,11 +244,6 @@ creator.onPropertyDisplayCustomError.add((_, options) => {
     return;
   }
 
-  if (options.value === 0) {
-    options.error = 'Zero is not allowed here.';
-    return;
-  }
-
   // Dots are used to access objects
   if (options.value.includes('.')) {
     options.error = 'Dots are not allowed here.';
@@ -350,57 +283,38 @@ creator.saveThemeFunc = (
 
 creator.onSurveyInstanceCreated.add((_, options) => {
   const survey: SurveyModel = options.survey;
+  const resolveFileSlot = (slot: string, locale: string) =>
+    api.getEventFileSlotUrl(props.event.id, slot, locale);
 
   if (['preview-tab', 'designer-tab', 'theme-tab'].includes(options.area)) {
-    // Convert markdown to html
-    survey.onTextMarkdown.add((_, options) => {
-      options.html = mdConverter.renderInline(options.text);
-    });
+    addMarkdownRenderer(survey);
   }
 
   // Design mode skips text processing, so file slots need their own resolver.
   if (options.area === 'designer-tab') {
-    addDesignerFileSlotResolver(survey, props.event, api);
+    addDesignerFileSlotResolver(survey, resolveFileSlot, props.event.logo);
   }
 
   if (['preview-tab', 'theme-tab'].includes(options.area)) {
     emphasizeForwardNavigation(survey);
     setVariables(survey, props.event);
-    addFileSlotResolver(survey, props.event.id, api);
+    addFileSlotResolver(survey, resolveFileSlot);
     survey.onLocaleChangedEvent.add((sender) => {
       setVariables(sender, props.event);
     });
   }
 
-  if (['preview-tab'].includes(options.area)) {
-    function readAsDataURL(
-      file: File,
-    ): Promise<{ name: string; content: string; type: string; file: File }> {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          resolve({
-            name: file.name,
-            type: file.type,
-            content: reader.result as string,
-            file,
-          });
-        };
-        reader.onerror = () => {
-          reject(new Error(`Failed to read file "${file.name}"`));
-        };
-        reader.readAsDataURL(file);
-      });
-    }
-
+  if (options.area === 'preview-tab') {
+    // Nothing is uploaded from the preview; files stay in memory.
     survey.onUploadFiles.add((_, options) => {
-      Promise.all(options.files.map(readAsDataURL))
-        .then((value) => {
-          options.callback('success', value);
-        })
-        .catch((reason) => {
-          options.callback('error', reason.message);
-        });
+      Promise.all(
+        options.files.map(async (file) => ({
+          file,
+          content: await readAsDataURL(file),
+        })),
+      )
+        .then((files) => options.callback(files))
+        .catch((reason: Error) => options.callback([], [reason.message]));
     });
   }
 });

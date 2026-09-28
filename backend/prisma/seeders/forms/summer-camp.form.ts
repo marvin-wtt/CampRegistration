@@ -914,5 +914,4 @@ export const summerCampForm = {
     default: 'Register for a fee',
   },
   widthMode: 'static',
-  headerView: 'advanced',
 };
