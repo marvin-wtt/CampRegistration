@@ -15,7 +15,7 @@
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
-import type { NavigationItemProps } from '@/components/layout/NavigationItemProps.ts';
+import type { NavigationItemProps } from '@/components/NavigationItemProps.ts';
 import GeneralLayout from '@/components/layout/GeneralLayout.vue';
 import WorkspaceSwitcher from '@/components/layout/WorkspaceSwitcher.vue';
 import { computed, onMounted } from 'vue';

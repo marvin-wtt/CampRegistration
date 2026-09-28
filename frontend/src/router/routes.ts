@@ -8,7 +8,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: '',
         name: 'home',
-        component: () => import('@/features/landing/pages/LandingPage.vue'),
+        component: () => import('@/pages/LandingPage.vue'),
       },
       {
         // Maintain support for legacy links
@@ -24,13 +24,12 @@ const routes: RouteRecordRaw[] = [
             path: '',
             name: 'events',
             component: () =>
-              import('@/features/publicEvents/pages/EventsListedPage.vue'),
+              import('@/pages/listedEvents/EventsListedPage.vue'),
           },
           {
             path: ':eventId',
             name: 'event',
-            component: () =>
-              import('@/features/publicEvents/pages/EventPage.vue'),
+            component: () => import('@/pages/listedEvents/EventPage.vue'),
           },
           // A permanent address for the Art. 13 information, so the
           // confirmation mail can link to it and a registrant can come back to
@@ -39,14 +38,14 @@ const routes: RouteRecordRaw[] = [
             path: ':eventId/privacy',
             name: 'event.privacy',
             component: () =>
-              import('@/features/publicEvents/pages/EventPrivacyPage.vue'),
+              import('@/pages/listedEvents/EventPrivacyPage.vue'),
             props: true,
           },
           {
             path: ':eventId/program',
             name: 'event.program',
             component: () =>
-              import('@/features/program/pages/EventProgramPage.vue'),
+              import('@/pages/listedEvents/EventProgramPage.vue'),
             props: true,
           },
         ],
@@ -54,13 +53,13 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'imprint',
         name: 'imprint',
-        component: () => import('@/features/legal/pages/LegalPage.vue'),
+        component: () => import('@/pages/legal/LegalPage.vue'),
         props: { type: 'IMPRINT' },
       },
       {
         path: 'privacy-policy',
         name: 'privacy-policy',
-        component: () => import('@/features/legal/pages/LegalPage.vue'),
+        component: () => import('@/pages/legal/LegalPage.vue'),
         props: { type: 'PRIVACY_POLICY' },
       },
     ],
@@ -72,7 +71,7 @@ const routes: RouteRecordRaw[] = [
       {
         name: 'setup',
         path: '',
-        component: () => import('@/features/auth/pages/SetupPage.vue'),
+        component: () => import('@/pages/auth/SetupPage.vue'),
       },
     ],
   },
@@ -83,7 +82,7 @@ const routes: RouteRecordRaw[] = [
       {
         name: 'login',
         path: '',
-        component: () => import('@/features/auth/pages/LoginPage.vue'),
+        component: () => import('@/pages/auth/LoginPage.vue'),
       },
     ],
   },
@@ -94,7 +93,7 @@ const routes: RouteRecordRaw[] = [
       {
         name: 'register',
         path: '/register',
-        component: () => import('@/features/auth/pages/RegisterPage.vue'),
+        component: () => import('@/pages/auth/RegisterPage.vue'),
       },
     ],
   },
@@ -105,7 +104,7 @@ const routes: RouteRecordRaw[] = [
       {
         name: 'forgot-password',
         path: '',
-        component: () => import('@/features/auth/pages/ForgotPasswordPage.vue'),
+        component: () => import('@/pages/auth/ForgotPasswordPage.vue'),
       },
     ],
   },
@@ -116,7 +115,7 @@ const routes: RouteRecordRaw[] = [
       {
         name: 'reset-password',
         path: '',
-        component: () => import('@/features/auth/pages/ResetPasswordPage.vue'),
+        component: () => import('@/pages/auth/ResetPasswordPage.vue'),
       },
     ],
   },
@@ -127,7 +126,7 @@ const routes: RouteRecordRaw[] = [
       {
         name: 'verify-email',
         path: '',
-        component: () => import('@/features/auth/pages/VerifyEmailPage.vue'),
+        component: () => import('@/pages/auth/VerifyEmailPage.vue'),
       },
     ],
   },
@@ -138,7 +137,7 @@ const routes: RouteRecordRaw[] = [
       {
         name: 'verify-otp',
         path: '',
-        component: () => import('@/features/auth/pages/VerifyOtpPage.vue'),
+        component: () => import('@/pages/auth/VerifyOtpPage.vue'),
       },
     ],
   },
@@ -160,7 +159,7 @@ const routes: RouteRecordRaw[] = [
           {
             path: '',
             component: () =>
-              import('@/features/managedEvents/pages/EventManagementIndexPage.vue'),
+              import('@/pages/event/EventManagementIndexPage.vue'),
             name: 'management.events',
           },
           {
@@ -173,43 +172,37 @@ const routes: RouteRecordRaw[] = [
               {
                 path: 'dashboard',
                 name: 'management.event.dashboard',
-                component: () =>
-                  import('@/features/eventDashboard/pages/EventDashboardPage.vue'),
+                component: () => import('@/pages/event/EventDashboardPage.vue'),
               },
               {
                 path: 'participants',
                 name: 'management.event.participants',
-                component: () =>
-                  import('@/features/participants/pages/RegistrationsPage.vue'),
+                component: () => import('@/pages/event/RegistrationsPage.vue'),
               },
               {
                 path: 'contact',
                 name: 'management.event.contact',
-                component: () =>
-                  import('@/features/eventMessages/pages/ContactPage.vue'),
+                component: () => import('@/pages/event/ContactPage.vue'),
               },
               {
                 path: 'program-planner',
                 name: 'management.event.program-planner',
-                component: () =>
-                  import('@/features/program/pages/ProgramPlannerPage.vue'),
+                component: () => import('@/pages/event/ProgramPlannerPage.vue'),
               },
               {
                 path: 'room-planner',
                 name: 'management.event.room-planner',
-                component: () =>
-                  import('@/features/rooms/pages/RoomPlannerPage.vue'),
+                component: () => import('@/pages/event/RoomPlannerPage.vue'),
               },
               {
                 path: 'tasks',
                 name: 'management.event.tasks',
-                component: () => import('@/features/tasks/pages/TasksPage.vue'),
+                component: () => import('@/pages/event/TasksPage.vue'),
               },
               {
                 path: 'chore-planner',
                 name: 'management.event.chore-planner',
-                component: () =>
-                  import('@/features/chores/pages/ChorePlannerPage.vue'),
+                component: () => import('@/pages/event/ChorePlannerPage.vue'),
               },
               {
                 path: 'settings',
@@ -218,55 +211,55 @@ const routes: RouteRecordRaw[] = [
                     path: '',
                     name: 'management.event.settings',
                     component: () =>
-                      import('@/features/eventSettings/pages/SettingsPage.vue'),
+                      import('@/pages/event/settings/SettingsPage.vue'),
                   },
                   {
                     path: 'access',
                     name: 'management.event.settings.access',
                     component: () =>
-                      import('@/features/eventAccess/pages/AccessPage.vue'),
+                      import('@/pages/event/settings/AccessPage.vue'),
                   },
                   {
                     path: 'edit',
                     name: 'management.event.settings.edit',
                     component: () =>
-                      import('@/features/eventSettings/pages/EventEditPage.vue'),
+                      import('@/pages/event/settings/EventEditPage.vue'),
                   },
                   {
                     path: 'emails',
                     name: 'management.event.settings.emails',
                     component: () =>
-                      import('@/features/eventMessages/pages/MessageTemplateEditPage.vue'),
+                      import('@/pages/event/settings/MessageTemplateEditPage.vue'),
                   },
                   {
                     path: 'files',
                     name: 'management.event.settings.files',
                     component: () =>
-                      import('@/features/eventFiles/pages/FileSettingsPage.vue'),
+                      import('@/pages/event/settings/FileSettingsPage.vue'),
                   },
                   {
                     path: 'form',
                     name: 'management.event.settings.form',
                     component: () =>
-                      import('@/features/formEditor/pages/FormEditPage.vue'),
+                      import('@/pages/event/settings/FormEditPage.vue'),
                   },
                   {
                     path: 'navigation',
                     name: 'management.event.settings.navigation',
                     component: () =>
-                      import('@/features/eventSettings/pages/NavigationSettingsPage.vue'),
+                      import('@/pages/event/settings/NavigationSettingsPage.vue'),
                   },
                   {
                     path: 'privacy',
                     name: 'management.event.settings.privacy',
                     component: () =>
-                      import('@/features/privacy/pages/EventPrivacyPage.vue'),
+                      import('@/pages/event/settings/EventPrivacyPage.vue'),
                   },
                   {
                     path: 'audit',
                     name: 'management.event.settings.audit',
                     component: () =>
-                      import('@/features/audit/pages/AuditLogPage.vue'),
+                      import('@/pages/event/settings/AuditLogPage.vue'),
                   },
                 ],
               },
@@ -287,7 +280,7 @@ const routes: RouteRecordRaw[] = [
         path: '',
         name: 'management.organizations',
         component: () =>
-          import('@/features/organizations/pages/OrganizationIndexPage.vue'),
+          import('@/pages/organization/OrganizationIndexPage.vue'),
       },
       {
         path: ':organizationId',
@@ -298,37 +291,37 @@ const routes: RouteRecordRaw[] = [
             path: 'dashboard',
             name: 'management.organization.dashboard',
             component: () =>
-              import('@/features/organizations/pages/OrganizationDashboardPage.vue'),
+              import('@/pages/organization/OrganizationDashboardPage.vue'),
           },
           {
             path: 'events',
             name: 'management.organization.events',
             component: () =>
-              import('@/features/organizations/pages/OrganizationEventsPage.vue'),
+              import('@/pages/organization/OrganizationEventsPage.vue'),
           },
           {
             path: 'newsletters',
             name: 'management.organization.newsletters',
             component: () =>
-              import('@/features/organizations/pages/OrganizationNewslettersPage.vue'),
+              import('@/pages/organization/OrganizationNewslettersPage.vue'),
           },
           {
             path: 'members',
             name: 'management.organization.members',
             component: () =>
-              import('@/features/organizations/pages/OrganizationMembersPage.vue'),
+              import('@/pages/organization/OrganizationMembersPage.vue'),
           },
           {
             path: 'privacy',
             name: 'management.organization.privacy',
             component: () =>
-              import('@/features/privacy/pages/OrganizationPrivacyPage.vue'),
+              import('@/pages/organization/OrganizationPrivacyPage.vue'),
           },
           {
             path: 'settings',
             name: 'management.organization.settings',
             component: () =>
-              import('@/features/organizations/pages/OrganizationSettingsPage.vue'),
+              import('@/pages/organization/OrganizationSettingsPage.vue'),
           },
         ],
       },
@@ -344,14 +337,12 @@ const routes: RouteRecordRaw[] = [
       {
         path: '',
         name: 'management.newsletters',
-        component: () =>
-          import('@/features/newsletters/pages/NewsletterIndexPage.vue'),
+        component: () => import('@/pages/newsletter/NewsletterIndexPage.vue'),
       },
       {
         path: ':newsletterId',
         name: 'management.newsletter',
-        component: () =>
-          import('@/features/newsletters/pages/NewsletterPage.vue'),
+        component: () => import('@/pages/newsletter/NewsletterPage.vue'),
       },
     ],
   },
@@ -366,43 +357,40 @@ const routes: RouteRecordRaw[] = [
         path: '',
         name: 'administration',
         component: () =>
-          import('@/features/administration/pages/AdministrationDashboardPage.vue'),
+          import('@/pages/administration/AdministrationDashboardPage.vue'),
       },
       {
         path: 'organizations',
         name: 'administration.organizations',
         component: () =>
-          import('@/features/administration/pages/OrganizationAdminPage.vue'),
+          import('@/pages/administration/OrganizationAdminPage.vue'),
       },
       {
         path: 'events',
         name: 'administration.events',
-        component: () =>
-          import('@/features/administration/pages/EventAdminPage.vue'),
+        component: () => import('@/pages/administration/EventAdminPage.vue'),
       },
       {
         path: 'newsletters',
         name: 'administration.newsletters',
         component: () =>
-          import('@/features/administration/pages/NewsletterAdminPage.vue'),
+          import('@/pages/administration/NewsletterAdminPage.vue'),
       },
       {
         path: 'users',
         name: 'administration.users',
-        component: () =>
-          import('@/features/administration/pages/UserAdminPage.vue'),
+        component: () => import('@/pages/administration/UserAdminPage.vue'),
       },
       {
         path: 'queues',
         name: 'administration.queues',
-        component: () =>
-          import('@/features/administration/pages/QueueAdminPage.vue'),
+        component: () => import('@/pages/administration/QueueAdminPage.vue'),
       },
       {
         path: 'legal',
         name: 'administration.legal',
         component: () =>
-          import('@/features/administration/pages/LegalSettingsAdminPage.vue'),
+          import('@/pages/administration/LegalSettingsAdminPage.vue'),
       },
     ],
   },
@@ -418,20 +406,17 @@ const routes: RouteRecordRaw[] = [
       {
         name: 'settings.profile',
         path: 'profile',
-        component: () =>
-          import('@/features/account/pages/ProfileSettingsPage.vue'),
+        component: () => import('@/pages/settings/ProfileSettingsPage.vue'),
       },
       {
         name: 'settings.security',
         path: 'security',
-        component: () =>
-          import('@/features/account/pages/SecuritySettingsPage.vue'),
+        component: () => import('@/pages/settings/SecuritySettingsPage.vue'),
       },
       {
         name: 'settings.account',
         path: 'account',
-        component: () =>
-          import('@/features/account/pages/AccountSettingsPage.vue'),
+        component: () => import('@/pages/settings/AccountSettingsPage.vue'),
       },
     ],
   },
@@ -443,7 +428,7 @@ const routes: RouteRecordRaw[] = [
         path: '',
         name: 'newsletter.unsubscribe',
         component: () =>
-          import('@/features/newsletters/pages/NewsletterUnsubscribePage.vue'),
+          import('@/pages/newsletter/NewsletterUnsubscribePage.vue'),
       },
     ],
   },
@@ -454,20 +439,17 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'tables',
         name: 'print.tables',
-        component: () =>
-          import('@/features/participants/pages/PrintTablesPage.vue'),
+        component: () => import('@/pages/print/PrintTablesPage.vue'),
       },
       {
         path: 'calendar',
         name: 'print.calendar',
-        component: () =>
-          import('@/features/program/pages/PrintCalendarPage.vue'),
+        component: () => import('@/pages/print/PrintCalendarPage.vue'),
       },
       {
         path: 'chores',
         name: 'print.chores',
-        component: () =>
-          import('@/features/chores/pages/PrintChoreRosterPage.vue'),
+        component: () => import('@/pages/print/PrintChoreRosterPage.vue'),
       },
     ],
   },

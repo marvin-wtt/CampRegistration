@@ -31,7 +31,7 @@ import { useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/auth-store';
 import { useProfileStore } from '@/stores/profile-store';
 import { useObjectTranslation } from '@/composables/objectTranslation';
-import type { NavigationItemProps } from '@/components/layout/NavigationItemProps.ts';
+import type { NavigationItemProps } from '@/components/NavigationItemProps.ts';
 import { usePermissions } from '@/composables/permissions';
 import { useRealtimeStore } from '@/stores/realtime-store';
 import GeneralLayout from '@/components/layout/GeneralLayout.vue';

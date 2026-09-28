@@ -1,0 +1,370 @@
+<template>
+  <page-state-handler
+    padding
+    :error
+    class="row justify-center"
+  >
+    <div class="column no-wrap col-sm-10 col-md-9 col-lg-8 col-12">
+      <page-header
+        class="q-mb-lg"
+        :title="t('title')"
+        :subtitle="t('subtitle')"
+      >
+        <template #actions>
+          <q-btn
+            color="primary"
+            icon="add"
+            :label="quasar.screen.gt.xs ? t('action.create') : ''"
+            :aria-label="t('action.create')"
+            :round="quasar.screen.lt.sm"
+            :rounded="quasar.screen.gt.xs"
+            unelevated
+            no-caps
+            @click="showCreateDialog"
+          />
+        </template>
+      </page-header>
+
+      <div
+        v-if="loading"
+        class="row q-col-gutter-md"
+      >
+        <div
+          v-for="index in 3"
+          :key="index"
+          class="col-12 col-sm-6 col-md-4"
+        >
+          <newsletter-card-skeleton />
+        </div>
+      </div>
+
+      <div
+        v-else-if="newsletters.length > 0"
+        class="row q-col-gutter-md"
+      >
+        <div
+          v-for="newsletter in newsletters"
+          :key="newsletter.id"
+          class="col-12 col-sm-6 col-md-4"
+        >
+          <q-card
+            flat
+            bordered
+            class="newsletter-card cursor-pointer full-height"
+            @click="
+              router.push({
+                name: 'management.newsletter',
+                params: { newsletterId: newsletter.id },
+              })
+            "
+          >
+            <q-card-section class="q-pa-md">
+              <div class="row items-start no-wrap">
+                <div class="col">
+                  <div class="text-subtitle1 text-weight-medium ellipsis">
+                    {{ newsletter.name }}
+                  </div>
+                  <div
+                    class="row items-center q-gutter-x-xs text-caption text-grey-6 no-wrap"
+                  >
+                    <q-icon
+                      name="apartment"
+                      size="xs"
+                    />
+                    <span class="ellipsis">
+                      {{ newsletter.organizationName }}
+                    </span>
+                  </div>
+                  <div
+                    v-if="newsletter.description"
+                    class="text-body2 text-grey-6 q-mt-xs description-clamp"
+                  >
+                    {{ newsletter.description }}
+                  </div>
+                </div>
+                <q-btn
+                  flat
+                  round
+                  icon="more_vert"
+                  color="grey-6"
+                  size="sm"
+                  class="q-ml-xs"
+                  @click.stop
+                >
+                  <q-menu
+                    anchor="bottom right"
+                    self="top right"
+                  >
+                    <q-list style="min-width: 140px">
+                      <q-item
+                        v-close-popup
+                        clickable
+                        @click="showEditDialog(newsletter)"
+                      >
+                        <q-item-section avatar>
+                          <q-icon
+                            name="edit"
+                            size="xs"
+                          />
+                        </q-item-section>
+                        <q-item-section>
+                          {{ t('action.edit') }}
+                        </q-item-section>
+                      </q-item>
+                      <q-item
+                        v-close-popup
+                        clickable
+                        @click="showDeleteDialog(newsletter)"
+                      >
+                        <q-item-section avatar>
+                          <q-icon
+                            name="delete_outline"
+                            color="negative"
+                            size="xs"
+                          />
+                        </q-item-section>
+                        <q-item-section class="text-negative">
+                          {{ t('action.delete') }}
+                        </q-item-section>
+                      </q-item>
+                    </q-list>
+                  </q-menu>
+                </q-btn>
+              </div>
+            </q-card-section>
+          </q-card>
+        </div>
+      </div>
+
+      <div
+        v-else
+        class="column items-center q-pa-xl q-gutter-md"
+      >
+        <q-icon
+          name="mail_outline"
+          size="5rem"
+          color="grey-4"
+        />
+        <div class="text-subtitle1 text-grey-6 text-center">
+          {{ t('empty') }}
+        </div>
+        <q-btn
+          color="primary"
+          icon="add"
+          :label="t('action.create')"
+          rounded
+          unelevated
+          no-caps
+          @click="showCreateDialog"
+        />
+      </div>
+    </div>
+  </page-state-handler>
+</template>
+
+<script lang="ts" setup>
+import PageHeader from '@/components/common/PageHeader.vue';
+import { useI18n } from 'vue-i18n';
+import { computed } from 'vue';
+import { useNewsletterStore } from '@/stores/newsletter-store';
+import { useOrganizationPermissions } from '@/composables/organizationPermissions';
+import PageStateHandler from '@/components/common/PageStateHandler.vue';
+import { useQuasar } from 'quasar';
+import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
+import type {
+  Newsletter,
+  NewsletterCreateData,
+  NewsletterUpdateData,
+} from '@camp-registration/common/entities';
+import NewsletterCreateDialog from '@/components/newsletter/NewsletterCreateDialog.vue';
+import NewsletterEditDialog from '@/components/newsletter/NewsletterEditDialog.vue';
+import NewsletterCardSkeleton from '@/components/newsletter/NewsletterCardSkeleton.vue';
+import { useRouter } from 'vue-router';
+
+const { t } = useI18n();
+const router = useRouter();
+const quasar = useQuasar();
+const newsletterStore = useNewsletterStore();
+const { newsletterCreationOrganizationIds } = useOrganizationPermissions();
+
+// Started during setup, not awaited: the stores flag themselves loading before
+// the first render, so the page renders its skeletons instead of an idle frame.
+void newsletterStore.fetchData();
+
+const newsletters = computed<Newsletter[]>(() => newsletterStore.data ?? []);
+const loading = computed<boolean>(() => newsletterStore.isLoading);
+const error = computed<string | null>(() => newsletterStore.error);
+
+function showCreateDialog() {
+  // A newsletter must name a verified organization the user may create in.
+  // Without one, explain that instead of opening a dialog that would 403.
+  if (newsletterCreationOrganizationIds.value.length === 0) {
+    quasar
+      .dialog({
+        title: t('organization_required.title'),
+        message: t('organization_required.message'),
+        cancel: {
+          outline: true,
+          color: 'primary',
+        },
+        ok: {
+          label: t('organization_required.action'),
+          color: 'primary',
+          rounded: true,
+        },
+      })
+      .onOk(() => {
+        void router.push({ name: 'management.organizations' });
+      });
+    return;
+  }
+
+  quasar
+    .dialog({ component: NewsletterCreateDialog })
+    .onOk((data: NewsletterCreateData) => {
+      void newsletterStore.createData(data);
+    });
+}
+
+function showEditDialog(newsletter: Newsletter) {
+  quasar
+    .dialog({
+      component: NewsletterEditDialog,
+      componentProps: { newsletter },
+    })
+    .onOk((data: NewsletterUpdateData) => {
+      void newsletterStore.updateData(newsletter.id, data);
+    });
+}
+
+function showDeleteDialog(newsletter: Newsletter) {
+  quasar
+    .dialog({
+      component: SafeDeleteDialog,
+      componentProps: {
+        title: t('dialog.delete.title'),
+        message: t('dialog.delete.message'),
+        label: t('dialog.delete.label'),
+        value: newsletter.name,
+      },
+    })
+    .onOk(() => {
+      void newsletterStore.deleteData(newsletter.id);
+    });
+}
+</script>
+
+<i18n lang="yaml" locale="en">
+title: 'Newsletters'
+subtitle: 'Create newsletters and send messages to your subscribers.'
+empty: 'No newsletters yet. Create one to get started.'
+organization_required:
+  title: 'Verified organization required'
+  message: 'Newsletters are sent by an organization. You need a verified organization that lets you create newsletters.'
+  action: 'Go to organizations'
+action:
+  create: 'New Newsletter'
+  edit: 'Edit'
+  delete: 'Delete'
+dialog:
+  delete:
+    title: 'Delete Newsletter'
+    message: 'Are you sure you want to delete this newsletter? All subscribers will be removed.'
+    label: 'Newsletter Name'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+title: 'Newsletter'
+subtitle: 'Newsletter erstellen und Nachrichten an Abonnenten senden.'
+empty: 'Noch keine Newsletter. Erstellen Sie einen, um loszulegen.'
+organization_required:
+  title: 'Verifizierte Organisation erforderlich'
+  message: 'Newsletter werden von einer Organisation versendet. Du brauchst eine verifizierte Organisation, in der du Newsletter erstellen darfst.'
+  action: 'Zu den Organisationen'
+action:
+  create: 'Neuer Newsletter'
+  edit: 'Bearbeiten'
+  delete: 'Löschen'
+dialog:
+  delete:
+    title: 'Newsletter löschen'
+    message: 'Möchten Sie diesen Newsletter wirklich löschen? Alle Abonnenten werden entfernt.'
+    label: 'Newsletter-Name'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+title: 'Newsletters'
+subtitle: 'Créer des newsletters et envoyer des messages à vos abonnés.'
+empty: 'Aucune newsletter pour le moment. Créez-en une pour commencer.'
+organization_required:
+  title: 'Organisation vérifiée requise'
+  message: 'Les newsletters sont envoyées par une organisation. Il te faut une organisation vérifiée dans laquelle tu peux créer des newsletters.'
+  action: 'Aller aux organisations'
+action:
+  create: 'Nouvelle newsletter'
+  edit: 'Modifier'
+  delete: 'Supprimer'
+dialog:
+  delete:
+    title: 'Supprimer la newsletter'
+    message: 'Voulez-vous vraiment supprimer cette newsletter ? Tous les abonnés seront supprimés.'
+    label: 'Nom de la newsletter'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+title: 'Newslettery'
+subtitle: 'Twórz newslettery i wysyłaj wiadomości do swoich subskrybentów.'
+empty: 'Brak newsletterów. Utwórz pierwszy, aby zacząć.'
+organization_required:
+  title: 'Wymagana zweryfikowana organizacja'
+  message: 'Newslettery wysyła organizacja. Potrzebujesz zweryfikowanej organizacji, w której możesz tworzyć newslettery.'
+  action: 'Przejdź do organizacji'
+action:
+  create: 'Nowy newsletter'
+  edit: 'Edytuj'
+  delete: 'Usuń'
+dialog:
+  delete:
+    title: 'Usuń newsletter'
+    message: 'Czy na pewno chcesz usunąć ten newsletter? Wszyscy subskrybenci zostaną usunięci.'
+    label: 'Nazwa newslettera'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+title: 'Newslettery'
+subtitle: 'Vytvářejte newslettery a odesílejte zprávy svým odběratelům.'
+empty: 'Zatím žádné newslettery. Vytvořte první a začněte.'
+organization_required:
+  title: 'Vyžadována ověřená organizace'
+  message: 'Newslettery odesílá organizace. Potřebuješ ověřenou organizaci, ve které můžeš vytvářet newslettery.'
+  action: 'Přejít na organizace'
+action:
+  create: 'Nový newsletter'
+  edit: 'Upravit'
+  delete: 'Smazat'
+dialog:
+  delete:
+    title: 'Smazat newsletter'
+    message: 'Opravdu chcete smazat tento newsletter? Všichni odběratelé budou odstraněni.'
+    label: 'Název newsletteru'
+</i18n>
+
+<style scoped>
+.newsletter-card {
+  transition:
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+.newsletter-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+  transform: translateY(-2px);
+}
+
+.description-clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+</style>
