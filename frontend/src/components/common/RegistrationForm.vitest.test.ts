@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import RegistrationForm from '@/components/common/RegistrationForm.vue';
 import { installQuasarPlugin } from '@/../test/vitest/utils/quasar';
@@ -245,6 +245,100 @@ describe('RegistrationForm', () => {
   it.todo('should map files');
 
   it.todo('should submit the form');
+
+  describe('redirect after submit', () => {
+    function mountWithRedirect(
+      submitFn: () => Promise<void>,
+      options: { url?: string; moderation?: boolean } = {},
+    ) {
+      const wrapper = mount(RegistrationForm, {
+        props: {
+          eventDetails: {
+            ...simpleEventDetails,
+            id: 'event-1',
+            form: {
+              ...simpleEventDetails.form,
+              navigateToUrl: options.url ?? 'https://example.org/thanks',
+            },
+          },
+          submitFn,
+          uploadFileFn: () => Promise.reject(new Error()),
+          moderation: options.moderation ?? false,
+        },
+      });
+      return wrapper
+        .getComponent(SurveyComponent)
+        .props('model') as SurveyModel;
+    }
+
+    function mockAssign() {
+      return vi.spyOn(window.location, 'assign').mockImplementation(() => {});
+    }
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('waits for the submission before redirecting', async () => {
+      const assign = mockAssign();
+      let finishSubmit!: () => void;
+      const survey = mountWithRedirect(
+        () => new Promise<void>((resolve) => (finishSubmit = resolve)),
+      );
+
+      // Registered after the component's own handler, so it sees whether
+      // survey-core may still navigate on its own.
+      const surveyNavigation: boolean[] = [];
+      survey.onNavigateToUrl.add((_, options) => {
+        surveyNavigation.push(options.allow);
+      });
+
+      survey.doComplete();
+      await flushPromises();
+      expect(surveyNavigation).toEqual([false]);
+      expect(assign).not.toHaveBeenCalled();
+
+      finishSubmit();
+      await flushPromises();
+      expect(assign).toHaveBeenCalledExactlyOnceWith(
+        'https://example.org/thanks',
+      );
+    });
+
+    it('stays on the page when the submission fails', async () => {
+      const assign = mockAssign();
+      const survey = mountWithRedirect(() => Promise.reject(new Error()));
+
+      survey.doComplete();
+      await flushPromises();
+
+      expect(assign).not.toHaveBeenCalled();
+    });
+
+    it('never redirects a manager editing a registration', async () => {
+      const assign = mockAssign();
+      const survey = mountWithRedirect(() => Promise.resolve(), {
+        moderation: true,
+      });
+
+      survey.doComplete();
+      await flushPromises();
+
+      expect(assign).not.toHaveBeenCalled();
+    });
+
+    it('ignores URLs that are not web addresses', async () => {
+      const assign = mockAssign();
+      const survey = mountWithRedirect(() => Promise.resolve(), {
+        url: 'javascript:alert(1)',
+      });
+
+      survey.doComplete();
+      await flushPromises();
+
+      expect(assign).not.toHaveBeenCalled();
+    });
+  });
 
   it.todo('should not submit when invalid');
 

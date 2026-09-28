@@ -166,6 +166,7 @@ function modeTabs(mode: EditorMode, context: EditorModeContext): string[] {
 // completion logic and question shuffling that only an expert should reach.
 const STANDARD_EXCLUDED_PROPERTIES = new Set([
   'completedHtmlOnCondition',
+  'navigateToUrlOnCondition',
   'questionOrder',
 ]);
 

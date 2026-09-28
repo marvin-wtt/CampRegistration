@@ -22,10 +22,6 @@ export function hideIrrelevantProperties(): void {
   hideProperty('survey', 'readOnly');
   hideProperty('survey', 'partialSendEnabled');
   hideProperty('survey', 'questionOrder');
-  // Redirecting fires right after `onComplete`, while the registration is still
-  // being submitted, so the request could be cut off.
-  hideProperty('survey', 'navigateToUrl');
-  hideProperty('survey', 'navigateToUrlOnCondition');
   // Quiz features, meaningless on a registration form in any mode.
   hideProperty('survey', 'showTimer');
   hideProperty('survey', 'timerLocation');

@@ -407,6 +407,15 @@ function createModel(eventId: string, form: object): SurveyModel {
   // Resolve {_file.<slot>} placeholders to locale-aware file URLs on demand.
   addFileSlotResolver(survey, eventId, api);
 
+  // survey-core redirects right after `onComplete` fires, while the submission
+  // is still in flight, so the redirect is held until the save succeeded. A
+  // manager editing a registration is never sent away.
+  let pendingRedirect: string | undefined;
+  survey.onNavigateToUrl.add((_, options) => {
+    pendingRedirect = props.moderation ? undefined : options.url;
+    options.allow = false;
+  });
+
   // Send data to server. The saving/error UI is rendered by the Vue overlay
   // (see submitState), so the survey's own completed page stays hidden until
   // the submission actually succeeds.
@@ -416,6 +425,7 @@ function createModel(eventId: string, form: object): SurveyModel {
       return;
     }
 
+    pendingRedirect = undefined;
     submitError.value = undefined;
     submitState.value = 'saving';
 
@@ -437,6 +447,9 @@ function createModel(eventId: string, form: object): SurveyModel {
       } else {
         submitState.value = 'success';
       }
+      if (pendingRedirect) {
+        redirect(pendingRedirect);
+      }
     } catch (e: unknown) {
       submitError.value = extractErrorText(e);
       submitState.value = 'error';
@@ -452,6 +465,20 @@ function retrySubmit() {
   }
   model.clear(false, false);
   model.doComplete();
+}
+
+// The URL comes from the form definition, so only web addresses are followed.
+function redirect(url: string) {
+  let target: URL;
+  try {
+    target = new URL(url, window.location.href);
+  } catch {
+    return;
+  }
+
+  if (target.protocol === 'http:' || target.protocol === 'https:') {
+    window.location.assign(target.href);
+  }
 }
 
 function hasCustomCompletedHtml(form: object): boolean {

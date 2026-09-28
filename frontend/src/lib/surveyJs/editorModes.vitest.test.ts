@@ -155,7 +155,9 @@ describe('editor modes', () => {
     creator.selectElement(creator.survey);
 
     expect(properties()).toContain('completedHtml');
+    expect(properties()).toContain('navigateToUrl');
     expect(properties()).not.toContain('completedHtmlOnCondition');
+    expect(properties()).not.toContain('navigateToUrlOnCondition');
     expect(properties()).not.toContain('showTimer');
   });
 
