@@ -174,7 +174,7 @@ describe('PrintTablesPage', () => {
 
     const wrapper = mount(PrintTablesPage, { attachTo: document.body });
 
-    await vi.waitFor(() => expect(window.print).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(print).toHaveBeenCalledOnce());
     const css = Array.from(document.head.querySelectorAll('style'))
       .map((style) => style.textContent ?? '')
       .join('\n');
@@ -197,7 +197,7 @@ describe('PrintTablesPage', () => {
 
     const wrapper = mount(PrintTablesPage, { attachTo: document.body });
 
-    await vi.waitFor(() => expect(window.print).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(print).toHaveBeenCalledOnce());
     expect(wrapper.find('.print-header__meta').text()).toBe('Summer Event');
     expect(wrapper.find('.print-footer__left').text()).toBe('Participants');
   });
