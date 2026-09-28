@@ -105,13 +105,13 @@ export class JobScheduler {
   }
 
   private onExecution(): void {
-    logger.info('Job executing...');
+    logger.debug('Job executing...');
   }
 
   private onCompletion(job: Cron): void {
     const duration = moment
       .duration(moment().diff(job.currentRun()))
       .humanize();
-    logger.info(`Job completed after ${duration}`);
+    logger.debug(`Job completed after ${duration}`);
   }
 }
