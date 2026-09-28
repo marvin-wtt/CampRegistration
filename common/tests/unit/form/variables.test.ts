@@ -4,28 +4,21 @@ import { fakeEventData } from '../../util/faker.js';
 import { setVariables } from '../../../src/form/index.js';
 
 describe('variables', () => {
+  // Relies on patches/survey-core+3.1.1.patch (surveyjs/survey-library#11830)
+  // until `hasLogo` reads the resolved placeholder upstream.
   describe('logo', () => {
-    it('should show the event logo in the header', () => {
-      const model = new SurveyModel();
-      const logo = 'https://api.test/api/v1/events/1/files/slots/logo';
+    const logo = 'https://api.test/api/v1/events/1/files/slots/logo';
+
+    it('should resolve the logo placeholder to the event logo', () => {
+      const model = new SurveyModel({ logo: '{event.logo}' });
 
       setVariables(model, fakeEventData({ logo }));
 
-      expect(model.logo).toBe(logo);
+      expect(model.locLogo.renderedHtml).toBe(logo);
       expect(model.hasLogo).toBe(true);
     });
 
-    it('should leave no header for an event without a logo', () => {
-      const model = new SurveyModel();
-
-      setVariables(model, fakeEventData({ logo: null }));
-
-      expect(model.hasLogo).toBe(false);
-    });
-
-    // `hasLogo` reads the raw property, so a placeholder would render an empty
-    // <img> for every event without a logo. The property is assigned instead.
-    it('should replace a logo placeholder rather than resolve it', () => {
+    it('should hide the logo for an event without one', () => {
       const model = new SurveyModel({ logo: '{event.logo}' });
 
       setVariables(model, fakeEventData({ logo: null }));
@@ -37,14 +30,13 @@ describe('variables', () => {
       const ownLogo = 'https://example.org/own-logo.png';
       const model = new SurveyModel({ logo: ownLogo });
 
-      setVariables(model, fakeEventData({ logo: 'https://api.test/logo' }));
+      setVariables(model, fakeEventData({ logo }));
 
-      expect(model.logo).toBe(ownLogo);
+      expect(model.locLogo.renderedHtml).toBe(ownLogo);
     });
 
-    it('should drop the header when the event logo is removed', () => {
-      const logo = 'https://api.test/logo';
-      const model = new SurveyModel();
+    it('should hide the logo when the event logo is removed', () => {
+      const model = new SurveyModel({ logo: '{event.logo}' });
 
       setVariables(model, fakeEventData({ logo }));
       setVariables(model, fakeEventData({ logo: null }));

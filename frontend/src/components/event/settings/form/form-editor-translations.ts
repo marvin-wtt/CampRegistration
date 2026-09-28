@@ -2,6 +2,7 @@ type QtKey = 'address' | 'country' | 'date_of_birth' | 'role';
 
 type LocaleSection = {
   qt: Record<QtKey, string>;
+  toolboxCategories: { registration: string };
   p: { eventDataType: string };
   pehelp: { eventDataType: string };
 };
@@ -16,6 +17,9 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
         country: 'Land',
         date_of_birth: 'Geburtstag',
         role: 'Rolle',
+      },
+      toolboxCategories: {
+        registration: 'Anmeldung',
       },
       p: {
         eventDataType: 'Daten-Tag',
@@ -34,6 +38,9 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
         date_of_birth: 'Birthday',
         role: 'Role',
       },
+      toolboxCategories: {
+        registration: 'Registration',
+      },
       p: {
         eventDataType: 'Data Tag',
       },
@@ -49,6 +56,9 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
         country: 'Pays',
         date_of_birth: 'Date de naissance',
         role: 'Rôle',
+      },
+      toolboxCategories: {
+        registration: 'Inscription',
       },
       p: {
         eventDataType: 'Étiquette de données',
@@ -67,6 +77,9 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
         date_of_birth: 'Data urodzenia',
         role: 'Rola',
       },
+      toolboxCategories: {
+        registration: 'Rejestracja',
+      },
       p: {
         eventDataType: 'Tag danych',
       },
@@ -83,6 +96,9 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
         country: 'Země',
         date_of_birth: 'Datum narození',
         role: 'Role',
+      },
+      toolboxCategories: {
+        registration: 'Registrace',
       },
       p: {
         eventDataType: 'Datový štítek',

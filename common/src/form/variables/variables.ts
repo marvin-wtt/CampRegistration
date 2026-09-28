@@ -40,7 +40,7 @@ export const setVariables = (model: SurveyModel, data: Data | undefined) => {
   model.setVariable('event.location', data.location ? t(data.location) : null);
   model.setVariable('event.price', t(data.price));
   model.setVariable('event.freePlaces', data.freePlaces);
-  model.setVariable('event.logo', null);
+  model.setVariable('event.logo', data.logo ?? null);
 
   model.setVariable('_validationEnabled', model.validationEnabled);
 };

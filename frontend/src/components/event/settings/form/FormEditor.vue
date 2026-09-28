@@ -22,7 +22,7 @@ import 'ace-builds/src-noconflict/ace';
 import 'ace-builds/src-noconflict/ext-searchbox';
 import 'ace-builds/src-noconflict/theme-clouds_midnight';
 
-import { watch, watchEffect } from 'vue';
+import { ref, watch, watchEffect } from 'vue';
 import {
   type ICreatorOptions,
   localization,
@@ -39,7 +39,6 @@ import {
   type PanelModel,
   type SurveyElement,
   type SurveyModel,
-  Serializer,
 } from 'survey-core';
 import { surveyLocalization } from 'survey-core';
 import { createMarkdownConverter } from '@/utils/markdown';
@@ -56,6 +55,16 @@ import { useAPIService } from '@/services/APIService';
 import { surveyCreatorCustomLocaleConfig } from '@/components/event/settings/form/form-editor-translations';
 import { buildMd3LiteralTheme, resolveMd3Theme } from '@/lib/surveyJs/theme';
 import { AceJsonEditorModel } from 'survey-creator-core';
+import { hideIrrelevantProperties } from '@/lib/surveyJs/hiddenProperties';
+import {
+  addConditionBadge,
+  applyEditorMode,
+  conditionProperty,
+  createEditorModeAction,
+  EDITOR_MODES,
+  type EditorMode,
+  surveyLocales,
+} from '@/lib/surveyJs/editorModes';
 
 AceJsonEditorModel.aceBasePath =
   'https://unpkg.com/ace-builds/src-min-noconflict/';
@@ -70,31 +79,13 @@ const props = defineProps<{
 }>();
 
 const quasar = useQuasar();
-const { locale } = useI18n();
+const { t, locale } = useI18n();
 const api = useAPIService();
 
 // Custom properties
 PropertyGridEditorCollection.register(eventDataMapping);
 
-function hideProperty(className: string, propertyName: string) {
-  const property = Serializer.getProperty(className, propertyName);
-  if (!property) {
-    // eslint-disable-next-line no-console
-    console.warn(`SurveyJS property not found: ${className}.${propertyName}`);
-    return;
-  }
-
-  property.visible = false;
-}
-
-// Hide the logo as it should be managed by the files settings page only
-hideProperty('survey', 'logo');
-hideProperty('survey', 'cookieName');
-hideProperty('survey', 'widthMode');
-hideProperty('survey', 'completedBeforeHtml');
-hideProperty('survey', 'readOnly');
-hideProperty('survey', 'partialSendEnabled');
-hideProperty('survey', 'questionOrder');
+hideIrrelevantProperties();
 
 // Add localization
 for (const [locale, sections] of Object.entries(
@@ -124,7 +115,7 @@ const creatorOptions: ICreatorOptions = {
 
 const mdConverter = createMarkdownConverter();
 
-surveyLocalization.supportedLocales = ['en', ...props.event.locales];
+surveyLocalization.supportedLocales = surveyLocales(props.event.locales);
 
 const creator = new SurveyCreatorModel(creatorOptions);
 
@@ -140,7 +131,86 @@ creator.themeEditor.addTheme(md3DefaultThemes.dark);
 
 creator.JSON = props.event.form;
 
-if (props.restrictedAccess) {
+// The chosen mode is a per-user convenience, so browser storage is enough.
+const MODE_STORAGE_KEY = 'formEditor.mode';
+
+const mode = ref<EditorMode>(readStoredMode());
+
+// On narrow screens the creator hides its top toolbar and shows a footer bar
+// instead, so the dropdown goes into both — one instance each, as a container
+// restyles the actions it holds. The footer one is icon-only to save width.
+const modeActions = (
+  [
+    [creator.toolbar, false],
+    [creator.footerToolbar, true],
+  ] as const
+).map(([toolbar, compact]) => {
+  const modeAction = createEditorModeAction({
+    mode: mode.value,
+    title: (value) => t(`mode.${value}`),
+    tooltip: (value) => `${t('mode.label')}: ${t(`mode.${value}`)}`,
+    onSelect: selectMode,
+    compact,
+    verticalPosition: compact ? 'top' : 'bottom',
+  });
+  toolbar.actions.unshift(modeAction.action);
+  return modeAction;
+});
+
+// Re-translates the dropdowns on locale changes.
+watchEffect(() => {
+  modeActions.forEach((action) => action.update(mode.value));
+});
+
+addConditionBadge(creator, {
+  title: () => t('mode.condition'),
+  onEdit: (element) => {
+    selectMode('standard');
+    creator.selectElement(element, conditionProperty(element));
+  },
+});
+
+function creatorLocale(): string {
+  return locale.value.split(/[-_]/)[0] ?? 'en';
+}
+
+function applyMode() {
+  applyEditorMode(creator, mode.value, {
+    creatorLocale: creatorLocale(),
+    eventLocales: props.event.locales,
+    restrictedAccess: props.restrictedAccess,
+  });
+  // A preset rebuilds the toolbox, so the restriction goes on top every time.
+  applyRestrictedToolbox();
+}
+
+function selectMode(value: EditorMode) {
+  if (value === mode.value) {
+    return;
+  }
+  mode.value = value;
+  try {
+    localStorage.setItem(MODE_STORAGE_KEY, value);
+  } catch {
+    // Storage unavailable: the choice just won't be remembered.
+  }
+  applyMode();
+}
+
+function readStoredMode(): EditorMode {
+  try {
+    const stored = localStorage.getItem(MODE_STORAGE_KEY);
+    return EDITOR_MODES.find((value) => value === stored) ?? 'simple';
+  } catch {
+    return 'simple';
+  }
+}
+
+function applyRestrictedToolbox() {
+  if (!props.restrictedAccess) {
+    return;
+  }
+
   const panelItem = creator.toolbox.getItemByName('panel');
   // Allow restricted users to add only panels. If you want to hide the entire Toolbox, set `creator.showToolbox = false;`
   creator.toolbox.clearItems();
@@ -152,8 +222,10 @@ if (props.restrictedAccess) {
   creator.showAddQuestionButton = false;
 }
 
+applyMode();
+
 watchEffect(() => {
-  creator.locale = locale.value.split(/[-_]/)[0] ?? 'en';
+  creator.locale = creatorLocale();
 });
 
 watch(
@@ -410,3 +482,48 @@ body {
   --sjs-secondary-background-500: $secondary;
 }
 </style>
+
+<i18n lang="yaml" locale="en">
+mode:
+  label: 'Editor mode'
+  simple: 'Simple'
+  standard: 'Standard'
+  expert: 'Expert'
+  condition: 'Has conditions — edit them in Standard mode'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+mode:
+  label: 'Editormodus'
+  simple: 'Einfach'
+  standard: 'Standard'
+  expert: 'Experte'
+  condition: 'Hat Bedingungen – im Standardmodus bearbeiten'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+mode:
+  label: "Mode de l'éditeur"
+  simple: 'Simple'
+  standard: 'Standard'
+  expert: 'Expert'
+  condition: 'Contient des conditions – modifiables en mode standard'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+mode:
+  label: 'Tryb edytora'
+  simple: 'Prosty'
+  standard: 'Standardowy'
+  expert: 'Ekspert'
+  condition: 'Ma warunki – edytuj je w trybie standardowym'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+mode:
+  label: 'Režim editoru'
+  simple: 'Jednoduchý'
+  standard: 'Standardní'
+  expert: 'Expert'
+  condition: 'Obsahuje podmínky – upravte je ve standardním režimu'
+</i18n>
