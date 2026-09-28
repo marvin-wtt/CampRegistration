@@ -2,8 +2,8 @@ import { api } from '@/services/api';
 
 export interface FeedbackData {
   message: string;
-  name?: string;
-  email?: string;
+  name?: string | undefined;
+  email?: string | undefined;
   location?: string;
   userAgent?: string;
 }
