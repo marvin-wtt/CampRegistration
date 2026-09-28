@@ -525,10 +525,12 @@ function isObjColumn(obj: Base) {
 }
 </script>
 
-<style lang="scss" scoped>
-body {
-  --sjs-primary-background-500: $primary;
-  --sjs-secondary-background-500: $secondary;
+<style lang="scss">
+// Mirrors the toolbar clearance EventLayout gives the header on the
+// registration page, so the preview header is as tall as the real one.
+// Unscoped: the creator root doesn't carry this component's scope attribute.
+.svc-test-tab__content .sv-header {
+  padding-top: 4rem;
 }
 </style>
 
