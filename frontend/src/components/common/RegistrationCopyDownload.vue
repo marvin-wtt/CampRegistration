@@ -70,30 +70,30 @@ async function download() {
 
 <i18n lang="yaml" locale="en">
 label: 'Download PDF'
-hint: 'Save a copy of your registration — this is the only place to download it.'
+hint: 'Save a copy of your registration.'
 error: 'The PDF could not be created. Please try again.'
 </i18n>
 
 <i18n lang="yaml" locale="de">
 label: 'PDF herunterladen'
-hint: 'Sichere dir eine Kopie deiner Anmeldung — nur hier kannst du sie herunterladen.'
+hint: 'Sichere dir eine Kopie deiner Anmeldung.'
 error: 'Das PDF konnte nicht erstellt werden. Bitte versuche es erneut.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 label: 'Télécharger le PDF'
-hint: "Garde une copie de ton inscription — c'est le seul endroit où tu peux la télécharger."
+hint: 'Garde une copie de ton inscription.'
 error: "Le PDF n'a pas pu être créé. Réessaie."
 </i18n>
 
 <i18n lang="yaml" locale="pl">
 label: 'Pobierz PDF'
-hint: 'Zachowaj kopię swojego zgłoszenia — tylko tutaj możesz ją pobrać.'
+hint: 'Zachowaj kopię swojego zgłoszenia.'
 error: 'Nie udało się utworzyć pliku PDF. Spróbuj ponownie.'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
 label: 'Stáhnout PDF'
-hint: 'Ulož si kopii své registrace — stáhnout ji můžeš jen tady.'
+hint: 'Ulož si kopii své registrace.'
 error: 'PDF se nepodařilo vytvořit. Zkus to prosím znovu.'
 </i18n>
