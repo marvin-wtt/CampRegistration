@@ -396,12 +396,17 @@ const closesAtLabel = computed<string>(() => {
   }).format(new Date(props.event.registrationClosesAt));
 });
 
-const { href, navigate } = useLink({
+const link = useLink({
   to: computed(() => ({
     name: 'event',
     params: { eventId: props.event.id },
   })),
 });
+const { href } = link;
+
+function navigate(e: MouseEvent) {
+  return link.navigate(e);
+}
 </script>
 
 <style scoped>
