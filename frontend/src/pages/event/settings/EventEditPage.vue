@@ -47,7 +47,7 @@
                 v-model="event.name"
                 :disable="loading"
                 :label="t('field.name')"
-                :locales="event.countries"
+                :countries="event.countries"
                 :rules="[
                   (val?: string) => !!val || t('validation.name.empty'),
                   (val: string) =>
@@ -67,7 +67,7 @@
                 v-model="event.organizer"
                 :disable="loading"
                 :label="t('field.organizer')"
-                :locales="event.countries"
+                :countries="event.countries"
                 :rules="[
                   (val?: string) => !!val || t('validation.organizer.empty'),
                   (val: string) =>
@@ -88,7 +88,7 @@
                 v-model="event.contactEmail"
                 :disable="loading"
                 :label="t('field.contactEmail')"
-                :locales="event.countries"
+                :countries="event.countries"
                 :rules="[
                   (val?: string) => !!val || t('validation.contactEmail.empty'),
                 ]"
@@ -108,7 +108,7 @@
                 v-model="event.location"
                 :disable="loading"
                 :label="t('field.location')"
-                :locales="event.countries"
+                :countries="event.countries"
                 :rules="[
                   (val?: string) => !!val || t('validation.location.empty'),
                   (val: string) =>
@@ -150,7 +150,7 @@
                 v-model.number="event.maxParticipants"
                 :disable="loading"
                 :label="t('field.maxParticipants')"
-                :locales="event.countries"
+                :countries="event.countries"
                 :rules="[
                   (val?: number) =>
                     !!val || t('validation.maxParticipants.empty'),

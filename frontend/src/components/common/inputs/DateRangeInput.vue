@@ -42,7 +42,18 @@
         v-model="model"
         mask="YYYY-MM-DD"
         :range="!singleDay"
+        :options="selectable ? isSelectable : undefined"
+        :events="eventDays ? isEventDay : undefined"
+        event-color="primary"
+        :default-year-month="eventDays?.from.slice(0, 7).replace('-', '/')"
       >
+        <div
+          v-if="eventDays"
+          class="legend row items-center no-wrap text-caption q-mb-xs"
+        >
+          <span class="legend-dot" />
+          {{ t('field.eventDays') }}
+        </div>
         <div class="row items-center justify-between">
           <q-toggle
             :model-value="singleDay"
@@ -69,6 +80,7 @@ import {
   formatNaiveDateTime,
   localDateToNaiveDateTime,
 } from '@camp-registration/common/utils';
+import { parseLocalDate } from '@/utils/date';
 import {
   type ForwardedFieldSlots,
   usePassthroughProps,
@@ -78,7 +90,7 @@ import {
 // `class`, `data-test` and the like keep behaving as they did without it.
 defineOptions({ inheritAttrs: false });
 
-const { t } = useI18n();
+const { t, d } = useI18n();
 
 interface Props extends Omit<
   QInputProps,
@@ -88,6 +100,12 @@ interface Props extends Omit<
   // existing time to preserve
   defaultStartTime?: string | undefined;
   defaultEndTime?: string | undefined;
+  // Plain `YYYY-MM-DD` days instead of naive datetimes; no time is added.
+  dateOnly?: boolean;
+  // Inclusive `YYYY-MM-DD` days marked in the picker, which opens on them.
+  eventDays?: { from: string; to: string } | undefined;
+  // Inclusive `YYYY-MM-DD` days that can be picked; any day if unset.
+  selectable?: { from: string; to: string } | undefined;
 }
 
 type DateRange = { from?: string | undefined; to?: string | undefined };
@@ -107,6 +125,9 @@ const inputProps = usePassthroughProps(props, [
   'to',
   'defaultStartTime',
   'defaultEndTime',
+  'dateOnly',
+  'eventDays',
+  'selectable',
 ]);
 
 // QDate rejects a plain date string in range mode and a {from, to} object in
@@ -236,8 +257,28 @@ const displayValue = computed<string | undefined>(() => {
     return undefined;
   }
 
-  return fromDay === toDayStr ? fromDay : `${fromDay} - ${toDayStr}`;
+  const format = (day: string) => d(parseLocalDate(day), 'date');
+  return fromDay === toDayStr
+    ? format(fromDay)
+    : `${format(fromDay)} – ${format(toDayStr)}`;
 });
+
+// QDate passes dates as `YYYY/MM/DD`.
+function inRange(
+  value: string,
+  range: { from: string; to: string } | undefined,
+): boolean {
+  const day = value.replaceAll('/', '-');
+  return !!range && day >= range.from && day <= range.to;
+}
+
+function isEventDay(value: string): boolean {
+  return inRange(value, props.eventDays);
+}
+
+function isSelectable(value: string): boolean {
+  return inRange(value, props.selectable);
+}
 
 function isSingleDay(): boolean {
   return !!from.value && toDay(from.value) === toDay(to.value);
@@ -260,7 +301,13 @@ function applyRange(range?: DateRange): void {
 }
 
 function toDay(iso?: string): string | undefined {
-  return iso ? dateUtil.formatDate(new Date(iso), 'YYYY-MM-DD') : undefined;
+  if (!iso) {
+    return undefined;
+  }
+  // Parsing a bare date would read it as UTC midnight and could shift it.
+  return props.dateOnly
+    ? iso
+    : dateUtil.formatDate(new Date(iso), 'YYYY-MM-DD');
 }
 
 function toIso(
@@ -270,6 +317,9 @@ function toIso(
 ): string | undefined {
   if (!day) {
     return undefined;
+  }
+  if (props.dateOnly) {
+    return day;
   }
 
   const [year = 0, month = 1, dayOfMonth = 1] = day.split('-').map(Number);
@@ -295,13 +345,26 @@ function toIso(
 }
 </script>
 
-<style scoped></style>
+<style scoped>
+.legend {
+  gap: 6px;
+  color: var(--md3-on-surface-variant);
+}
+
+.legend-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--md3-primary);
+}
+</style>
 
 <i18n lang="yaml" locale="en">
 actions:
   ok: 'Ok'
 field:
   singleDay: 'Single day'
+  eventDays: 'Event days'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -309,6 +372,7 @@ actions:
   ok: 'Ok'
 field:
   singleDay: 'Eintägig'
+  eventDays: 'Veranstaltungstage'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -316,6 +380,7 @@ actions:
   ok: 'Ok'
 field:
   singleDay: 'Un seul jour'
+  eventDays: 'Jours de l’événement'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -323,6 +388,7 @@ actions:
   ok: 'Ok'
 field:
   singleDay: 'Jeden dzień'
+  eventDays: 'Dni wydarzenia'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -330,4 +396,5 @@ actions:
   ok: 'Ok'
 field:
   singleDay: 'Jeden den'
+  eventDays: 'Dny akce'
 </i18n>

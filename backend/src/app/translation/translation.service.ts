@@ -1,3 +1,4 @@
+import { inspect } from 'node:util';
 import { injectable } from 'inversify';
 import { TranslationProviderFactory } from '#app/translation/translation.factory';
 import type { TranslationProvider } from '#app/translation/translation.provider';
@@ -51,9 +52,14 @@ export class TranslationService {
       if (result.status === 'fulfilled') {
         translations[targetLocale] = result.value;
       } else {
-        reasons.push(result.reason);
+        const reason: unknown = result.reason;
+        const cause = reason instanceof Error ? reason.cause : undefined;
+        reasons.push(reason);
         logger.warn(
-          `Translation to "${targetLocale}" failed: ${String(result.reason)}`,
+          `Translation to "${targetLocale}" failed: ${String(reason)}` +
+            (cause !== undefined
+              ? ` (caused by: ${cause instanceof Error ? String(cause) : inspect(cause)})`
+              : ''),
         );
         translations[targetLocale] = null;
       }

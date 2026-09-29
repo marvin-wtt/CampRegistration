@@ -6,14 +6,48 @@
     <chore-dialog-card
       :title="t('title')"
       :width="400"
-      @submit="onDialogOK(selected === ALL ? weeks : [selected])"
+      @submit="onDialogOK({ pages, choreIds })"
       @cancel="onDialogCancel"
     >
-      <q-option-group
-        v-model="selected"
-        :options="options"
-        type="radio"
-      />
+      <div class="q-gutter-y-md column no-wrap">
+        <date-range-input
+          v-model:from="from"
+          v-model:to="until"
+          date-only
+          :event-days="eventDays"
+          :selectable="selectable"
+          :label="t('field.range')"
+        >
+          <template #prepend>
+            <q-icon name="date_range" />
+          </template>
+        </date-range-input>
+
+        <div v-if="chores.length > 1">
+          <div class="text-caption text-grey-7 q-mb-xs">
+            {{ t('field.chores') }}
+          </div>
+          <div class="chip-row row">
+            <q-chip
+              v-for="chore in chores"
+              :key="chore.id"
+              clickable
+              class="filter-chip"
+              :class="{ 'filter-chip--active': choreIds.includes(chore.id) }"
+              @click="toggleChore(chore.id)"
+            >
+              {{ translate(chore.name) }}
+            </q-chip>
+          </div>
+        </div>
+
+        <div
+          v-if="pages.length > 0"
+          class="text-body2 text-grey-7"
+        >
+          {{ summary }}
+        </div>
+      </div>
 
       <template #actions>
         <q-btn
@@ -28,6 +62,7 @@
           rounded
           color="primary"
           icon="print"
+          :disable="pages.length === 0 || choreIds.length === 0"
           :label="t('action.print')"
         />
       </template>
@@ -39,37 +74,79 @@
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useDialogPluginComponent } from 'quasar';
-import { addDays, parseLocalDate } from '@/utils/date';
 import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
+import DateRangeInput from '@/components/common/inputs/DateRangeInput.vue';
 import ChoreDialogCard from '@/components/event/chorePlanner/ChoreDialogCard.vue';
+import type { Chore } from '@camp-registration/common/entities';
+import { useObjectTranslation } from '@/composables/objectTranslation';
+import { rosterPages } from '@/components/event/chorePlanner/printChoreRoster';
 
-// Which weeks to print, by their Mondays; resolves to the chosen ones.
+// The days and chores to print; resolves to the pages and the chores kept.
 const props = defineProps<{
-  weeks: string[];
-  current: string;
+  from: string;
+  to: string;
+  chores: Chore[];
+  eventDays?: { from: string; to: string } | undefined;
+  // The event's days and every day with a duty, whichever reach further.
+  selectable?: { from: string; to: string } | undefined;
 }>();
 
 defineEmits([...useDialogPluginComponent.emits]);
 
-const { t, d } = useI18n();
+const { t } = useI18n();
+// `to` is the range's end here.
+const { to: translate } = useObjectTranslation();
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
 
-const ALL = 'all';
-const selected = ref<string>(props.current);
+const from = ref<string | undefined>(props.from);
+const until = ref<string | undefined>(props.to);
+// Everything is printed unless taken off.
+const choreIds = ref<string[]>(props.chores.map((chore) => chore.id));
 
-const options = computed(() => [
-  ...props.weeks.map((week) => ({
-    value: week,
-    label: `${d(parseLocalDate(week), 'date')} – ${d(parseLocalDate(addDays(week, 6)), 'date')}`,
-  })),
-  { value: ALL, label: t('all', props.weeks.length) },
-]);
+function toggleChore(id: string) {
+  choreIds.value = choreIds.value.includes(id)
+    ? choreIds.value.filter((choreId) => choreId !== id)
+    : [...choreIds.value, id];
+}
+
+const pages = computed(() =>
+  from.value && until.value ? rosterPages(from.value, until.value) : [],
+);
+
+const summary = computed<string>(() => {
+  const days = pages.value.reduce((sum, page) => sum + page.days, 0);
+  return `${t('days', days)} · ${t('pages', pages.value.length)}`;
+});
 </script>
+
+<style scoped>
+.chip-row {
+  gap: 8px;
+}
+
+.filter-chip {
+  margin: 0;
+  border: 1px solid var(--md3-outline-variant);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--md3-on-surface-variant);
+}
+
+.filter-chip--active {
+  border-color: transparent;
+  background: var(--md3-secondary-container);
+  color: var(--md3-on-secondary-container);
+}
+</style>
 
 <i18n lang="yaml" locale="en">
 title: 'Print duty roster'
-all: 'Whole event (1 page) | Whole event ({n} pages)'
+field:
+  range: 'Period'
+  chores: 'Chores'
+days: '1 day | {n} days'
+pages: '1 page | {n} pages'
 action:
   cancel: 'Cancel'
   print: 'Print'
@@ -77,7 +154,11 @@ action:
 
 <i18n lang="yaml" locale="de">
 title: 'Dienstplan drucken'
-all: 'Ganze Veranstaltung (1 Seite) | Ganze Veranstaltung ({n} Seiten)'
+field:
+  range: 'Zeitraum'
+  chores: 'Diensttypen'
+days: '1 Tag | {n} Tage'
+pages: '1 Seite | {n} Seiten'
 action:
   cancel: 'Abbrechen'
   print: 'Drucken'
@@ -85,7 +166,11 @@ action:
 
 <i18n lang="yaml" locale="fr">
 title: 'Imprimer le planning des corvées'
-all: 'Tout l’événement (1 page) | Tout l’événement ({n} pages)'
+field:
+  range: 'Période'
+  chores: 'Corvées'
+days: '1 jour | {n} jours'
+pages: '1 page | {n} pages'
 action:
   cancel: 'Annuler'
   print: 'Imprimer'
@@ -93,7 +178,11 @@ action:
 
 <i18n lang="yaml" locale="pl">
 title: 'Drukuj grafik dyżurów'
-all: 'Całe wydarzenie (1 strona) | Całe wydarzenie ({n} stron)'
+field:
+  range: 'Okres'
+  chores: 'Obowiązki'
+days: '1 dzień | {n} dni'
+pages: '1 strona | {n} stron'
 action:
   cancel: 'Anuluj'
   print: 'Drukuj'
@@ -101,7 +190,11 @@ action:
 
 <i18n lang="yaml" locale="cs">
 title: 'Vytisknout rozpis služeb'
-all: 'Celá akce (1 strana) | Celá akce ({n} stran)'
+field:
+  range: 'Období'
+  chores: 'Povinnosti'
+days: '1 den | {n} dní'
+pages: '1 strana | {n} stran'
 action:
   cancel: 'Zrušit'
   print: 'Tisk'

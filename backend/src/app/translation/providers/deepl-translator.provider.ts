@@ -7,6 +7,11 @@ interface DeepLTranslateResponse {
   translations: { text: string; detected_source_language: string }[];
 }
 
+const DEFAULT_TARGET_VARIANTS: Partial<Record<string, string>> = {
+  EN: 'EN-GB',
+  PT: 'PT-PT',
+};
+
 export class DeepLTranslatorProvider extends TranslationProvider {
   public readonly name = 'deepl';
 
@@ -21,9 +26,10 @@ export class DeepLTranslatorProvider extends TranslationProvider {
     }
 
     // DeepL wants uppercase codes separated by `-`. `target_lang` accepts a
-    // region (`EN-US`, `PT-BR`); `source_lang` rejects one, so it is reduced to
-    // the bare language.
-    const targetLang = targetLocale.replace('_', '-').toUpperCase();
+    // region (`EN-US`, `PT-BR`) and requires one for English and Portuguese;
+    // `source_lang` rejects one, so it is reduced to the bare language.
+    const upperTarget = targetLocale.replace('_', '-').toUpperCase();
+    const targetLang = DEFAULT_TARGET_VARIANTS[upperTarget] ?? upperTarget;
     const sourceLang = sourceLocale?.split(/[_-]/)[0]?.toUpperCase();
 
     let response: Response;
@@ -53,13 +59,7 @@ export class DeepLTranslatorProvider extends TranslationProvider {
     }
 
     if (!response.ok) {
-      throw new ApiError(
-        httpStatus.BAD_GATEWAY,
-        'Translation provider request failed.',
-        {
-          code: 'TRANSLATION_PROVIDER_ERROR',
-        },
-      );
+      throw await this.requestFailedError(response, targetLocale, sourceLocale);
     }
 
     const data = (await response.json()) as DeepLTranslateResponse;

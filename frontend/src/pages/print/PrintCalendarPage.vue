@@ -556,8 +556,8 @@ const headerDateRange = computed<string>(() => {
 
   const fmt = (s: string) =>
     parseLocalDate(s).toLocaleDateString(primaryLocale.value, {
-      day: 'numeric',
-      month: 'short',
+      day: '2-digit',
+      month: '2-digit',
       year: 'numeric',
     });
 
@@ -578,7 +578,7 @@ function formatWeekday(dateStr: string): string {
 function formatDay(dateStr: string): string {
   return parseLocalDate(dateStr).toLocaleDateString(primaryLocale.value, {
     day: 'numeric',
-    month: 'short',
+    month: 'numeric',
   });
 }
 </script>
