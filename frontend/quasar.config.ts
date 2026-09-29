@@ -118,6 +118,8 @@ export default defineConfig((ctx) => {
         '/api': {
           target: 'http://localhost:3000',
         },
+        '/robots.txt': 'http://localhost:3000',
+        '/sitemap.xml': 'http://localhost:3000',
       },
     },
 

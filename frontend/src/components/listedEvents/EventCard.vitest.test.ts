@@ -6,7 +6,7 @@ import { installQuasarPlugin } from '@/../test/vitest/utils/quasar';
 import type { Event } from '@camp-registration/common/entities';
 
 vi.mock('vue-router', () => ({
-  useRouter: () => ({ push: vi.fn() }),
+  useLink: () => ({ href: ref('/events/1'), navigate: vi.fn() }),
 }));
 
 const locale = ref<string>('en');

@@ -11,6 +11,7 @@ export interface PageMeta {
   url?: string;
   locale?: string;
   image?: string;
+  robots?: string;
 }
 
 // What crawlers actually display: a longer title or description is not shown,
@@ -42,7 +43,7 @@ const TITLE_PATTERN = /<title>[\s\S]*?<\/title>/iu;
 const HEAD_END_PATTERN = /<\/head>/iu;
 // A built shell is minified, so attribute values may be unquoted.
 const REPLACED_META_PATTERN =
-  /<meta[^>]*?(?:property|name)\s*=\s*["']?(?:og:|twitter:|description)[^>]*>/giu;
+  /<meta[^>]*?(?:property|name)\s*=\s*["']?(?:og:|twitter:|description|robots)[^>]*>/giu;
 const REPLACED_CANONICAL_PATTERN =
   /<link[^>]*?rel\s*=\s*["']?canonical["']?[^>]*>/giu;
 
@@ -60,6 +61,7 @@ function renderTags(meta: PageMeta): string {
     ['property', 'og:locale', meta.locale ?? ''],
     ['property', 'og:image', meta.image ?? ''],
     ['name', 'description', meta.description ?? ''],
+    ['name', 'robots', meta.robots ?? ''],
     // The one Twitter tag with no Open Graph equivalent — it selects the card
     // size. `twitter:title`/`twitter:description` are deliberately absent:
     // every consumer falls back to `og:*`, so they are pure duplication.

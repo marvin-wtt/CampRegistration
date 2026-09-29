@@ -4,8 +4,8 @@ import supertest from 'supertest';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { metaRoute, type PageMetaResolver } from '#core/meta/metaRoute';
-import type { PageMeta } from '#utils/pageMeta';
+import { metaRoute, type PageMetaResolver } from '#core/seo/metaRoute';
+import type { PageMeta } from '#core/seo/pageMeta';
 
 /** The shell as Quasar emits it: minified, comments stripped, quotes dropped. */
 const SHELL =

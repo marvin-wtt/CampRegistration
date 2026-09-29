@@ -1,6 +1,6 @@
 import { createRouter } from '#core/router/router';
 import type { AppRouter } from '#core/base/AppModule';
-import { metaRoute } from '#core/meta/metaRoute';
+import { metaRoute } from '#core/seo/metaRoute';
 import { eventPubliclyVisible } from '#app/event/event.guard';
 import { EventResource } from '#app/event/event.resource';
 import { buildEventPageMeta } from '#app/event/event.meta';

@@ -90,6 +90,18 @@ export class EventService extends BaseService {
     return event?.organization.verificationStatus === 'VERIFIED';
   }
 
+  /** The public directory's events that have not ended yet. */
+  async getSitemapEvents() {
+    return this.prisma.event.findMany({
+      where: {
+        ...this.publicDirectoryWhere(),
+        endAt: { gte: new Date() },
+      },
+      select: { id: true, updatedAt: true },
+      orderBy: { startAt: 'asc' },
+    });
+  }
+
   async getEventsByUserId(userId: string) {
     const events = await this.prisma.event.findMany({
       where: {
@@ -176,11 +188,16 @@ export class EventService extends BaseService {
   }
 
   /**
-   * Resolve event ids whose translated `name` JSON matches the query in any
+   * Resolve event ids whose translated `name` JSON contains the query in any
    * locale. Matching the serialized JSON with LIKE covers every locale value
-   * without needing per-locale JSON paths.
+   * without needing per-locale JSON paths. `null` means "don't filter by name".
    */
-  private async eventIdsMatchingName(name: string): Promise<string[]> {
+  private async eventIdsMatchingName(query?: string): Promise<string[] | null> {
+    const name = query?.trim();
+    if (!name || name.length < MIN_NAME_FILTER_LENGTH) {
+      return null;
+    }
+
     const escaped = name
       .replace(/\\/g, '\\\\')
       .replace(/%/g, '\\%')
@@ -194,53 +211,57 @@ export class EventService extends BaseService {
     return rows.map((row) => row.id);
   }
 
-  private async buildEventWhere(
-    filter: EventQueryArgs,
-  ): Promise<Prisma.EventWhereInput> {
-    const where: Prisma.EventWhereInput = {
-      listed: filter.listed,
-      organizationId: filter.organizationId,
-      // The public directory only ever lists events run by a vetted
-      // organization, independent of the event's own `listed` flag.
-      ...(filter.listed === true
-        ? { organization: { verificationStatus: 'VERIFIED' as const } }
-        : {}),
-      minAge: { lte: filter.age },
-      maxAge: { gte: filter.age },
-      startAt: { gte: filter.startAt },
-      endAt: { lte: filter.endAt },
-      ...(filter.managerUserId
-        ? {
-            eventManager: {
-              some: {
-                userId: filter.managerUserId,
-                OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-              },
-            },
-          }
-        : {}),
-      ...(filter.status
-        ? this.eventStatusWhere(filter.status, new Date())
-        : {}),
+  /** Events the user currently manages, ignoring expired assignments. */
+  private eventManagerWhere(
+    userId: string | undefined,
+    now: Date,
+  ): Prisma.EventWhereInput | null {
+    if (!userId) {
+      return null;
+    }
+
+    return {
+      eventManager: {
+        some: {
+          userId,
+          OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+        },
+      },
     };
+  }
 
-    // Nested under AND rather than spread: `eventStatusWhere` already claims the
-    // top-level `OR`/`AND` keys for some statuses, and spreading would drop it.
-    const countries = this.eventCountriesWhere(filter.country);
-    if (countries) {
-      const existing = where.AND;
-      where.AND = [
-        ...(Array.isArray(existing) ? existing : existing ? [existing] : []),
-        countries,
-      ];
-    }
+  private buildEventWhere(
+    filter: EventQueryArgs,
+    nameMatchIds: string[] | null,
+  ): Prisma.EventWhereInput {
+    const now = new Date();
 
-    const name = filter.name?.trim();
-    if (name && name.length >= MIN_NAME_FILTER_LENGTH) {
-      where.id = { in: await this.eventIdsMatchingName(name) };
-    }
+    // One AND of independent clauses, so none can overwrite another's `OR`.
+    // Prisma ignores `undefined` values, so unset filters need no guard.
+    const clauses = [
+      {
+        organizationId: filter.organizationId,
+        minAge: { lte: filter.age },
+        maxAge: { gte: filter.age },
+        startAt: { gte: filter.startAt },
+        endAt: { lte: filter.endAt },
+      },
+      filter.listed ? this.publicDirectoryWhere() : { listed: filter.listed },
+      filter.status ? this.eventStatusWhere(filter.status, now) : null,
+      this.eventManagerWhere(filter.managerUserId, now),
+      this.eventCountriesWhere(filter.country),
+      nameMatchIds ? { id: { in: nameMatchIds } } : null,
+    ];
 
-    return where;
+    return { AND: clauses.filter((clause) => clause !== null) };
+  }
+
+  private publicDirectoryWhere(): Prisma.EventWhereInput {
+    return {
+      listed: true,
+      // Only events run by a vetted organization, whatever their own flag.
+      organization: { verificationStatus: 'VERIFIED' },
+    };
   }
 
   /**
@@ -277,7 +298,8 @@ export class EventService extends BaseService {
     const sortBy = options.sortBy ?? 'startAt';
     const sortType = options.sortType ?? 'desc';
 
-    const where = await this.buildEventWhere(filter);
+    const nameMatchIds = await this.eventIdsMatchingName(filter.name);
+    const where = this.buildEventWhere(filter, nameMatchIds);
 
     // Over-fetch by one to detect whether a further page exists. The `id`
     // tiebreaker keeps the cursor stable when the sort column has duplicates.

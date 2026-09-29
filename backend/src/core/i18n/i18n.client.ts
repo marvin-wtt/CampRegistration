@@ -8,7 +8,7 @@ export const initI18n = async () => {
     fallbackLng: 'en',
     // Translated strings are ultimately rendered by something that escapes at
     // its own HTML-serialization boundary — Vue's SSR renderer for emails,
-    // `#utils/pageMeta`'s own `escapeHtml` for Open Graph tags. Escaping here
+    // `#core/seo/pageMeta`'s own `escapeHtml` for Open Graph tags. Escaping here
     // too would double-escape (`&` -> `&amp;` -> `&amp;amp;`); leave it to the
     // single point that actually knows it's producing HTML.
     interpolation: {

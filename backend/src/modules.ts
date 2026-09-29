@@ -25,6 +25,7 @@ import { PrivacyNoticeModule } from '#app/privacyNotice/privacy-notice.module';
 import { QueueModule } from '#app/queue/queue.module';
 import { ProgramItemModule } from '#app/programItem/program-item.module';
 import { ProgramPublicModule } from '#app/programPublic/program-public.module';
+import { SeoModule } from '#app/seo/seo.module';
 import { ProgramPublishedDayModule } from '#app/programPublishedDay/program-published-day.module';
 import { TaskModule } from '#app/task/task.module';
 import { ChoreModule } from '#app/chore/chore.module';
@@ -97,6 +98,7 @@ export const createAppModules = (): AppModule[] => [
   new NewsletterManagerModule(),
   new NewsletterMessageModule(),
   new TranslationModule(),
+  new SeoModule(),
   // Last: serves the policy every other module has contributed to.
   new PermissionModule(),
 ];

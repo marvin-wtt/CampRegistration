@@ -1,5 +1,5 @@
 import type { Event } from '@camp-registration/common/entities';
-import type { PageMeta } from '#utils/pageMeta';
+import type { PageMeta } from '#core/seo/pageMeta';
 import { translateObject } from '#utils/translateObject';
 import { generateUrl } from '#utils/url';
 import i18n from '#core/i18n/i18n.client';
@@ -30,5 +30,7 @@ export function buildProgramPublicPageMeta(
     url: generateUrl(['events', event.id, 'program']),
     locale: language === locale ? language : locale.replace('-', '_'),
     image: event.logo ?? undefined,
+    // Always: a camp's day-by-day schedule has no place in search results.
+    robots: 'noindex',
   };
 }
