@@ -376,7 +376,7 @@ export class FileService extends BaseService {
     return (
       selectFileByLocale(ready, targetLocale) ??
       selectFileByLocale(files, targetLocale) ??
-      ready[0] ??
+      ready.at(0) ??
       files[0]
     );
   }

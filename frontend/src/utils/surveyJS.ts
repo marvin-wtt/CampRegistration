@@ -179,7 +179,10 @@ function getQuestionOptions(
   }
 
   // Covers every choice-based type (dropdown, tagbox, checkbox, ranking, …).
-  if (!(question instanceof QuestionSelectBase) || question.choices.length === 0) {
+  if (
+    !(question instanceof QuestionSelectBase) ||
+    question.choices.length === 0
+  ) {
     return undefined;
   }
 

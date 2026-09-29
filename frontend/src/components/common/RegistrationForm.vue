@@ -476,9 +476,7 @@ function mapFileIdToFileContent(survey: SurveyModel) {
         return file;
       }
 
-      const url = file.match(/^https?:\/\//)
-        ? file
-        : api.getFileUrl(file);
+      const url = file.match(/^https?:\/\//) ? file : api.getFileUrl(file);
 
       return {
         name: file,
