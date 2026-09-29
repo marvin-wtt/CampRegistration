@@ -183,9 +183,9 @@ export class ChoreAssignmentController extends BaseController {
 
     await this.assertMembersBelongToEvent(
       event.id,
-      body.changes.map((change) => ({
-        registrationId: change.toRegistrationId,
-      })),
+      body.changes.flatMap((change) =>
+        change.toRegistrationIds.map((registrationId) => ({ registrationId })),
+      ),
     );
 
     const count = await this.choreAssignmentService.applyRebalance(

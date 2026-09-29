@@ -68,16 +68,21 @@ export interface ChoreSeriesPlanData {
   slotIds: string[];
   from: string;
   to: string;
-  // 0 = Sunday … 6 = Saturday; omitted means every day.
-  weekdays?: number[];
   rotationUnit: ChoreRotationUnit;
   onConflict: ChoreSeriesConflictMode;
+  // False creates the duties without people, to be filled later. Default true.
+  assign?: boolean;
+  // Only work on duties that exist already — nothing is created, so duties
+  // deleted from a plan stay deleted. FILL keeps each duty's own rotation unit.
+  existingOnly?: boolean;
 }
 
 export interface ChoreSeriesPlanResult {
   batchId: string | null;
   created: number;
   filled: number;
+  // Planned duties whose people were replaced; the duties themselves stay.
+  replaced: number;
   skipped: number;
 }
 
@@ -148,12 +153,13 @@ export interface ChoreFairnessEntry {
   balance: ChoreBalance;
 }
 
-// One upcoming duty changing hands to even out the load.
+// One upcoming duty changing hands to even out the load: one person each on a
+// person duty, whole rooms — possibly of different sizes — on a room duty.
 export interface ChoreRebalanceChange {
   assignmentId: string;
   role: ChoreMemberRole;
-  fromRegistrationId: string;
-  toRegistrationId: string;
+  fromRegistrationIds: string[];
+  toRegistrationIds: string[];
 }
 
 export interface ChoreRebalanceData {

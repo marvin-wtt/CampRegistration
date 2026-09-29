@@ -163,90 +163,108 @@
         </div>
       </div>
 
-      <div class="member-row row items-center q-mt-sm">
-        <span
-          v-if="roomName"
-          class="text-caption text-grey-7"
+      <!-- Supervisors get the same chips and menu as the people on it,
+           in their own row, outlined and marked with an icon. -->
+      <div
+        v-for="group in memberGroups"
+        :key="group.role"
+        class="member-row row items-center"
+        :class="group.role === 'MEMBER' ? 'q-mt-sm' : 'q-mt-xs'"
+      >
+        <q-icon
+          v-if="group.role === 'SUPERVISOR'"
+          name="supervisor_account"
+          size="20px"
+          class="text-grey-7"
+          role="img"
+          :aria-label="t('supervision')"
         >
-          {{ roomName }}:
-        </span>
-        <q-chip
-          v-for="member in people"
-          :key="member.registrationId"
-          :clickable="canEdit"
-          class="member-chip"
-          :class="{ 'member-chip--missed': member.missed }"
+          <q-tooltip>{{ t('supervision') }}</q-tooltip>
+        </q-icon>
+        <!-- A room's label stays with its people when the row wraps. -->
+        <div
+          v-for="segment in group.segments"
+          :key="segment.key"
+          class="member-segment row items-center"
         >
-          {{ name(member.registrationId) }}
-          <q-tooltip v-if="member.missed">{{ t('missed') }}</q-tooltip>
-          <q-menu v-if="canEdit">
-            <q-list>
-              <q-item
-                v-close-popup
-                clickable
-                @click="emit('toggleMissed', member.registrationId)"
-              >
-                <q-item-section avatar>
-                  <q-icon :name="member.missed ? 'undo' : 'person_off'" />
-                </q-item-section>
-                <q-item-section>
-                  {{
-                    member.missed ? t('action.notMissed') : t('action.missed')
-                  }}
-                </q-item-section>
-              </q-item>
-              <q-item
-                v-close-popup
-                clickable
-                @click="emit('replace', member.registrationId)"
-              >
-                <q-item-section avatar>
-                  <q-icon name="swap_horiz" />
-                </q-item-section>
-                <q-item-section>{{ t('action.replace') }}</q-item-section>
-              </q-item>
-              <q-item
-                v-close-popup
-                clickable
-                @click="emit('replaceWith', member.registrationId)"
-              >
-                <q-item-section avatar>
-                  <q-icon name="person_search" />
-                </q-item-section>
-                <q-item-section>{{ t('action.replaceWith') }}</q-item-section>
-              </q-item>
-              <q-item
-                v-close-popup
-                clickable
-                @click="emit('removeMember', member.registrationId)"
-              >
-                <q-item-section avatar>
-                  <q-icon name="person_remove" />
-                </q-item-section>
-                <q-item-section>{{ t('action.remove') }}</q-item-section>
-              </q-item>
-            </q-list>
-          </q-menu>
-        </q-chip>
+          <span
+            v-if="segment.label"
+            class="text-caption text-grey-7"
+          >
+            {{ segment.label }}:
+          </span>
+          <q-chip
+            v-for="member in segment.members"
+            :key="member.registrationId"
+            :clickable="canEdit"
+            class="member-chip"
+            :class="{
+              'member-chip--missed': member.missed,
+              'member-chip--supervisor': group.role === 'SUPERVISOR',
+            }"
+          >
+            {{ name(member.registrationId) }}
+            <q-tooltip v-if="member.missed">{{ t('missed') }}</q-tooltip>
+            <q-menu v-if="canEdit">
+              <q-list>
+                <q-item
+                  v-close-popup
+                  clickable
+                  @click="emit('toggleMissed', member.registrationId)"
+                >
+                  <q-item-section avatar>
+                    <q-icon :name="member.missed ? 'undo' : 'person_off'" />
+                  </q-item-section>
+                  <q-item-section>
+                    {{
+                      member.missed ? t('action.notMissed') : t('action.missed')
+                    }}
+                  </q-item-section>
+                </q-item>
+                <q-item
+                  v-close-popup
+                  clickable
+                  @click="emit('replace', member.registrationId)"
+                >
+                  <q-item-section avatar>
+                    <q-icon name="swap_horiz" />
+                  </q-item-section>
+                  <q-item-section>{{ t('action.replace') }}</q-item-section>
+                </q-item>
+                <q-item
+                  v-close-popup
+                  clickable
+                  @click="emit('replaceWith', member.registrationId)"
+                >
+                  <q-item-section avatar>
+                    <q-icon name="person_search" />
+                  </q-item-section>
+                  <q-item-section>{{ t('action.replaceWith') }}</q-item-section>
+                </q-item>
+                <q-item
+                  v-close-popup
+                  clickable
+                  @click="emit('removeMember', member.registrationId)"
+                >
+                  <q-item-section avatar>
+                    <q-icon name="person_remove" />
+                  </q-item-section>
+                  <q-item-section>{{ t('action.remove') }}</q-item-section>
+                </q-item>
+              </q-list>
+            </q-menu>
+          </q-chip>
+        </div>
         <span
-          v-if="people.length === 0 && openMembers === 0"
+          v-if="
+            group.role === 'MEMBER' &&
+            group.members.length === 0 &&
+            openMembers === 0
+          "
           class="text-caption text-grey-7"
         >
           {{ t('nobody') }}
         </span>
-      </div>
-
-      <div
-        v-if="supervisors.length > 0"
-        class="text-caption text-grey-7 q-mt-xs"
-      >
-        {{
-          t('supervisedBy', {
-            names: supervisors
-              .map((m) => name(m.registrationId) + (m.missed ? ' ✗' : ''))
-              .join(', '),
-          })
-        }}
       </div>
 
       <div
@@ -293,6 +311,7 @@ import { useI18n } from 'vue-i18n';
 import type {
   Chore,
   ChoreAssignment,
+  ChoreAssignmentMember,
   ChoreAssignmentStatus,
   Room,
 } from '@camp-registration/common/entities';
@@ -347,6 +366,26 @@ const supervisors = computed(() =>
   ),
 );
 
+// Members always get a row (it also says "nobody"); supervisors only when set.
+const memberGroups = computed(() => [
+  {
+    role: 'MEMBER' as const,
+    members: people.value,
+    segments: roomSegments(people.value),
+  },
+  ...(supervisors.value.length > 0
+    ? [
+        {
+          role: 'SUPERVISOR' as const,
+          members: supervisors.value,
+          segments: [
+            { key: 'all', label: undefined, members: supervisors.value },
+          ],
+        },
+      ]
+    : []),
+]);
+
 const openMembers = computed(() =>
   openSpots(props.assignment, props.chore, 'MEMBER'),
 );
@@ -390,23 +429,53 @@ function name(registrationId: string): string {
   return props.names.get(registrationId) ?? t('unknown');
 }
 
-// "Room 101: Anna, Ben" when everyone doing it shares a room.
-const roomName = computed<string | undefined>(() => {
-  const ids = people.value.map((m) => m.registrationId);
-  const roomOf = (id: string) =>
-    props.rooms.find((room) => room.beds.some((b) => b.registrationId === id));
-  const first = ids[0] ? roomOf(ids[0]) : undefined;
-  return first &&
-    ids.length > 1 &&
-    ids.every((id) => roomOf(id)?.id === first.id)
-    ? to(first.name)
-    : undefined;
-});
+function roomOf(registrationId: string): Room | undefined {
+  return props.rooms.find((room) =>
+    room.beds.some((bed) => bed.registrationId === registrationId),
+  );
+}
+
+// "Fox Cabin: Anna, Ben · Bear Cabin: Cleo" for a duty staffed by room, or
+// "Room 101: Anna, Ben" when everyone on it happens to share one.
+function roomSegments(members: ChoreAssignmentMember[]) {
+  const byRoom = new Map<
+    string,
+    { room: Room | undefined; members: ChoreAssignmentMember[] }
+  >();
+  for (const member of members) {
+    const room = roomOf(member.registrationId);
+    const key = room?.id ?? '';
+    const group = byRoom.get(key) ?? { room, members: [] };
+    group.members.push(member);
+    byRoom.set(key, group);
+  }
+  const groups = [...byRoom.values()];
+  const sharedRoom =
+    groups.length === 1 && !!groups[0]?.room && members.length > 1;
+  if (props.assignment.rotationUnit !== 'ROOM' && !sharedRoom) {
+    return [{ key: 'all', label: undefined, members }];
+  }
+  // By room name; anyone without a room last.
+  return groups
+    .map((group) => ({
+      key: group.room?.id ?? 'none',
+      label: group.room ? to(group.room.name) : undefined,
+      members: group.members,
+    }))
+    .sort((a, b) =>
+      a.label === undefined
+        ? 1
+        : b.label === undefined
+          ? -1
+          : a.label.localeCompare(b.label),
+    );
+}
 </script>
 
 <style scoped>
 .title-row,
 .member-row,
+.member-segment,
 .open-row {
   gap: 6px;
 }
@@ -462,6 +531,11 @@ const roomName = computed<string | undefined>(() => {
   color: var(--md3-on-surface);
 }
 
+.member-chip--supervisor {
+  border: 1px solid var(--md3-outline);
+  background: transparent;
+}
+
 .member-chip--missed {
   text-decoration: line-through;
   opacity: 0.6;
@@ -472,7 +546,7 @@ const roomName = computed<string | undefined>(() => {
 unknown: 'Unknown person'
 nobody: 'No one assigned'
 missed: 'Missed'
-supervisedBy: 'Supervised by {names}'
+supervision: 'Supervision'
 open:
   people: 'No open spots | 1 spot open | {n} spots open'
   supervisors: 'No supervisor missing | 1 supervisor missing | {n} supervisors missing'
@@ -502,7 +576,7 @@ action:
 unknown: 'Unbekannte Person'
 nobody: 'Niemand eingeteilt'
 missed: 'Verpasst'
-supervisedBy: 'Aufsicht: {names}'
+supervision: 'Aufsicht'
 open:
   people: 'Keine offenen Plätze | 1 Platz offen | {n} Plätze offen'
   supervisors: 'Keine Aufsicht fehlt | 1 Aufsicht fehlt | {n} Aufsichten fehlen'
@@ -532,7 +606,7 @@ action:
 unknown: 'Personne inconnue'
 nobody: 'Personne n’est attribué'
 missed: 'Manquée'
-supervisedBy: 'Encadré par {names}'
+supervision: 'Encadrement'
 open:
   people: 'Aucune place libre | 1 place libre | {n} places libres'
   supervisors: 'Aucun encadrant manquant | 1 encadrant manquant | {n} encadrants manquants'
@@ -562,7 +636,7 @@ action:
 unknown: 'Nieznana osoba'
 nobody: 'Nikt nie przydzielony'
 missed: 'Pominięty'
-supervisedBy: 'Opieka: {names}'
+supervision: 'Opieka'
 open:
   people: 'Brak wolnych miejsc | 1 wolne miejsce | {n} wolnych miejsc'
   supervisors: 'Nie brakuje opiekuna | Brakuje 1 opiekuna | Brakuje {n} opiekunów'
@@ -592,7 +666,7 @@ action:
 unknown: 'Neznámá osoba'
 nobody: 'Nikdo nepřiřazen'
 missed: 'Zmeškáno'
-supervisedBy: 'Dozor: {names}'
+supervision: 'Dozor'
 open:
   people: 'Žádná volná místa | 1 volné místo | {n} volných míst'
   supervisors: 'Žádný dozor nechybí | Chybí 1 dozor | Chybí {n} dozorů'

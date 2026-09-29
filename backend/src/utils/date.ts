@@ -21,8 +21,3 @@ export function eachDate(from: string, to: string): string[] {
   }
   return dates;
 }
-
-// 0 = Sunday … 6 = Saturday.
-export function weekdayOf(date: string): number {
-  return toDbDate(date).getUTCDay();
-}

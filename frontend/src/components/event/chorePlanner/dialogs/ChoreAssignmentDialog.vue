@@ -94,28 +94,21 @@
           />
         </div>
 
-        <!-- Members: how many people it needs, fair picks, then who is on it. -->
-        <div class="section rounded-lg q-pa-sm column no-wrap q-gutter-y-sm">
-          <div class="controls row items-center justify-between">
-            <div class="controls row items-center no-wrap">
-              <span class="text-body2">{{ t('field.headcount') }}</span>
-              <chore-count-stepper
-                v-model="headcount"
-                :label="t('field.headcount')"
-              />
-            </div>
-            <q-btn
-              icon="auto_awesome"
-              :label="t('action.autoFill')"
-              color="primary"
-              outline
-              rounded
-              no-caps
-              :disable="!canAutoFill('MEMBER') && !canAutoFill('SUPERVISOR')"
-              :loading="autoFilling"
-              @click="autoFill"
-            />
-          </div>
+        <chore-role-section
+          v-model="memberIds"
+          v-model:count="headcount"
+          :count-label="t('field.headcount')"
+          :label="t('field.members')"
+          icon="groups"
+          :options="memberOptions"
+          :hint="fillHint('MEMBER', headcount)"
+          :is-missed="isMissed"
+          :show-auto-fill="status === 'PLANNED'"
+          :can-auto-fill="canAutoFill('MEMBER')"
+          :auto-filling="autoFilling === 'MEMBER'"
+          @autofill="autoFill('MEMBER')"
+          @filter="filterOptions"
+        >
           <div
             v-if="rotationUnit === 'ROOM'"
             class="text-caption text-grey-7"
@@ -168,96 +161,24 @@
               </q-menu>
             </q-chip>
           </div>
+        </chore-role-section>
 
-          <q-select
-            v-model="memberIds"
-            :label="t('field.members')"
-            :hint="fillHint('MEMBER', headcount)"
-            :options="memberOptions"
-            map-options
-            emit-value
-            multiple
-            use-chips
-            use-input
-            input-debounce="0"
-            outlined
-            rounded
-            @filter="filterOptions"
-          >
-            <template #prepend>
-              <q-icon name="groups" />
-            </template>
-            <template #option="scope">
-              <q-item v-bind="scope.itemProps">
-                <q-item-section>
-                  <q-item-label>{{ scope.opt.label }}</q-item-label>
-                  <q-item-label
-                    v-if="scope.opt.caption"
-                    caption
-                  >
-                    {{ scope.opt.caption }}
-                  </q-item-label>
-                </q-item-section>
-              </q-item>
-            </template>
-            <template #selected-item="scope">
-              <q-chip
-                removable
-                dense
-                :class="{ 'member-missed': isMissed(scope.opt.value) }"
-                @remove="scope.removeAtIndex(scope.index)"
-              >
-                {{ scope.opt.label }}
-              </q-chip>
-            </template>
-          </q-select>
-        </div>
-
-        <!-- Supervisors: same order. -->
-        <div
+        <chore-role-section
           v-if="showSupervisors"
-          class="section rounded-lg q-pa-sm column no-wrap q-gutter-y-sm"
-        >
-          <div class="controls row items-center no-wrap">
-            <span class="text-body2">{{ t('field.supervisorCount') }}</span>
-            <chore-count-stepper
-              v-model="supervisorCount"
-              :label="t('field.supervisorCount')"
-            />
-          </div>
-          <q-select
-            v-model="supervisorIds"
-            :label="t('field.supervisors')"
-            :hint="fillHint('SUPERVISOR', supervisorCount)"
-            :options="supervisorOptions"
-            map-options
-            emit-value
-            multiple
-            use-chips
-            use-input
-            input-debounce="0"
-            outlined
-            rounded
-            @filter="filterOptions"
-          >
-            <template #prepend>
-              <q-icon name="supervisor_account" />
-            </template>
-            <template #option="scope">
-              <q-item v-bind="scope.itemProps">
-                <q-item-section>
-                  <q-item-label>{{ scope.opt.label }}</q-item-label>
-                  <q-item-label
-                    v-if="scope.opt.caption"
-                    caption
-                  >
-                    {{ scope.opt.caption }}
-                  </q-item-label>
-                </q-item-section>
-              </q-item>
-            </template>
-          </q-select>
-        </div>
+          v-model="supervisorIds"
+          v-model:count="supervisorCount"
+          :count-label="t('field.supervisorCount')"
+          :label="t('field.supervisors')"
+          icon="supervisor_account"
+          :options="supervisorOptions"
+          :hint="fillHint('SUPERVISOR', supervisorCount)"
+          :is-missed="isMissed"
+          :show-auto-fill="status === 'PLANNED'"
+          :can-auto-fill="canAutoFill('SUPERVISOR')"
+          :auto-filling="autoFilling === 'SUPERVISOR'"
+          @autofill="autoFill('SUPERVISOR')"
+          @filter="filterOptions"
+        />
         <div v-else>
           <q-btn
             icon="supervisor_account"
@@ -302,6 +223,16 @@
       </div>
 
       <template #actions>
+        <q-btn
+          v-if="onDelete"
+          flat
+          rounded
+          color="negative"
+          icon="delete"
+          :label="t('action.delete')"
+          @click="deleteAssignment"
+        />
+        <q-space />
         <q-btn
           type="reset"
           outline
@@ -353,7 +284,7 @@ import { formatLocalDate } from '@/utils/date';
 import { findSlot, requiredCount } from '@/utils/chores';
 import ChoreDialog from '@/components/event/chorePlanner/dialogs/ChoreDialog.vue';
 import ChoreDateInput from '@/components/event/chorePlanner/ChoreDateInput.vue';
-import ChoreCountStepper from '@/components/event/chorePlanner/ChoreCountStepper.vue';
+import ChoreRoleSection from '@/components/event/chorePlanner/ChoreRoleSection.vue';
 import ChoreDialogCard from '@/components/event/chorePlanner/ChoreDialogCard.vue';
 import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
 
@@ -379,9 +310,16 @@ const props = defineProps<{
   initialDate?: string;
   locales?: string[];
   countries?: string[];
+  // Offered when editing; the caller confirms and deletes.
+  onDelete?: () => void;
 }>();
 
 defineEmits([...useDialogPluginComponent.emits]);
+
+function deleteAssignment() {
+  onDialogCancel();
+  props.onDelete?.();
+}
 
 const isEdit = computed<boolean>(() => props.assignment !== undefined);
 
@@ -767,23 +705,27 @@ function canAutoFill(role: ChoreMemberRole): boolean {
   return !!choreId.value && !!date.value && activeCount(role) < target;
 }
 
-const autoFilling = ref<boolean>(false);
+const autoFilling = ref<ChoreMemberRole | null>(null);
 
 // The server picks, so the dialog fills exactly like a series or a refill.
-async function autoFill() {
+// One role at a time: the other is asked for no more than it already has.
+async function autoFill(role: ChoreMemberRole) {
   if (!choreId.value || !date.value) {
     return;
   }
   const requestedFor = [choreId.value, date.value, rotationUnit.value];
-  autoFilling.value = true;
+  autoFilling.value = role;
   try {
     const picks = await choreAssignmentStore.autoFillMembers({
       choreId: choreId.value,
       slotId: slotId.value,
       date: date.value,
       rotationUnit: rotationUnit.value,
-      headcount: headcount.value,
-      supervisorCount: supervisorCount.value,
+      headcount: role === 'MEMBER' ? headcount.value : activeCount('MEMBER'),
+      supervisorCount:
+        role === 'SUPERVISOR'
+          ? supervisorCount.value
+          : activeCount('SUPERVISOR'),
       members: members.value,
       ...(props.assignment ? { assignmentId: props.assignment.id } : {}),
     });
@@ -798,7 +740,10 @@ async function autoFill() {
     members.value = [
       ...members.value,
       ...picks
-        .filter((pick) => !taken.has(pick.registrationId))
+        .filter(
+          (pick) =>
+            (pick.role ?? 'MEMBER') === role && !taken.has(pick.registrationId),
+        )
         .map((pick) => ({
           registrationId: pick.registrationId,
           role: pick.role ?? 'MEMBER',
@@ -806,7 +751,7 @@ async function autoFill() {
         })),
     ];
   } finally {
-    autoFilling.value = false;
+    autoFilling.value = null;
   }
 }
 
@@ -853,17 +798,8 @@ function onOKClick(): void {
 </script>
 
 <style scoped>
-.section {
-  border: 1px solid var(--md3-outline-variant);
-}
-
 .controls {
   gap: 8px;
-}
-
-.member-missed {
-  text-decoration: line-through;
-  opacity: 0.7;
 }
 </style>
 
@@ -917,10 +853,10 @@ busy: 'already on a duty that day'
 action:
   otherRoom: 'Other room'
   cancel: 'Cancel'
+  delete: 'Delete'
   create: 'Create'
   save: 'Save'
   addChore: 'New chore'
-  autoFill: 'Fill fairly'
   addSupervisors: 'Add supervisors'
 </i18n>
 
@@ -974,10 +910,10 @@ busy: 'an dem Tag schon im Dienst'
 action:
   otherRoom: 'Weiteres Zimmer'
   cancel: 'Abbrechen'
+  delete: 'Löschen'
   create: 'Erstellen'
   save: 'Speichern'
   addChore: 'Neuer Diensttyp'
-  autoFill: 'Fair besetzen'
   addSupervisors: 'Aufsichten hinzufügen'
 </i18n>
 
@@ -1031,10 +967,10 @@ busy: 'déjà de corvée ce jour-là'
 action:
   otherRoom: 'Autre chambre'
   cancel: 'Annuler'
+  delete: 'Supprimer'
   create: 'Créer'
   save: 'Enregistrer'
   addChore: 'Nouvelle corvée'
-  autoFill: 'Remplir équitablement'
   addSupervisors: 'Ajouter des encadrants'
 </i18n>
 
@@ -1088,10 +1024,10 @@ busy: 'ma już dyżur tego dnia'
 action:
   otherRoom: 'Inny pokój'
   cancel: 'Anuluj'
+  delete: 'Usuń'
   create: 'Utwórz'
   save: 'Zapisz'
   addChore: 'Nowy obowiązek'
-  autoFill: 'Obsadź sprawiedliwie'
   addSupervisors: 'Dodaj opiekunów'
 </i18n>
 
@@ -1145,9 +1081,9 @@ busy: 'ten den už má službu'
 action:
   otherRoom: 'Jiný pokoj'
   cancel: 'Zrušit'
+  delete: 'Smazat'
   create: 'Vytvořit'
   save: 'Uložit'
   addChore: 'Nová povinnost'
-  autoFill: 'Obsadit spravedlivě'
   addSupervisors: 'Přidat dozor'
 </i18n>

@@ -39,13 +39,14 @@ export function membersWithRole(
   return members.filter((member) => member.role === role);
 }
 
-// Spots still to fill — missed members leave theirs open again.
+// Spots still to fill — missed members leave theirs open again. Done and
+// cancelled duties are history: nothing is open on them any more.
 export function openSpots(
   assignment: ChoreAssignment,
   chore: Chore | undefined,
   role: ChoreMemberRole,
 ): number {
-  if (assignment.status === 'CANCELLED') {
+  if (assignment.status !== 'PLANNED') {
     return 0;
   }
   const filled = membersWithRole(assignment.members, role).filter(

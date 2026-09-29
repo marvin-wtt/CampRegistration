@@ -993,8 +993,8 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
         {
           assignmentId: upcoming.id,
           role: 'MEMBER',
-          fromRegistrationId: busy.id,
-          toRegistrationId: idle.id,
+          fromRegistrationIds: [busy.id],
+          toRegistrationIds: [idle.id],
         },
       ]);
 
@@ -1074,33 +1074,34 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
       expect(counts).toEqual([2, 2, 2]);
     });
 
-    it('honours the weekday filter', async () => {
-      const { event, accessToken } = await createEventWithManagerAndToken();
-      const chore = await createChore(event);
-
-      // 2026-09-05 is a Saturday, 2026-09-06 a Sunday.
-      const { body } = await planSeries(event.id, accessToken, {
-        choreId: chore.id,
-        slotIds: [],
-        from: '2026-09-04',
-        to: '2026-09-07',
-        weekdays: [0, 6],
-      });
-
-      expect(body.data.created).toBe(2);
-      const dates = (await prisma.choreAssignment.findMany()).map((a) =>
-        a.date.toISOString().slice(0, 10),
-      );
-      expect(dates.sort()).toEqual(['2026-09-05', '2026-09-06']);
-    });
-
     it.each([
-      { onConflict: 'SKIP', created: 1, filled: 0, skipped: 1, members: 1 },
-      { onConflict: 'FILL', created: 1, filled: 1, skipped: 0, members: 2 },
-      { onConflict: 'REPLACE', created: 2, filled: 0, skipped: 0, members: 2 },
+      {
+        onConflict: 'SKIP',
+        created: 1,
+        filled: 0,
+        replaced: 0,
+        skipped: 1,
+        members: 1,
+      },
+      {
+        onConflict: 'FILL',
+        created: 1,
+        filled: 1,
+        replaced: 0,
+        skipped: 0,
+        members: 2,
+      },
+      {
+        onConflict: 'REPLACE',
+        created: 1,
+        filled: 0,
+        replaced: 1,
+        skipped: 0,
+        members: 2,
+      },
     ])(
       'handles an existing duty with $onConflict',
-      async ({ onConflict, created, filled, skipped, members }) => {
+      async ({ onConflict, created, filled, replaced, skipped, members }) => {
         const { event, accessToken } = await createEventWithManagerAndToken();
         const chore = await createChore(event, { defaultCount: 2 });
         const kept = await createRegistration(event);
@@ -1118,7 +1119,7 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
           onConflict,
         });
 
-        expect(body.data).toMatchObject({ created, filled, skipped });
+        expect(body.data).toMatchObject({ created, filled, replaced, skipped });
         const first = await prisma.choreAssignment.findFirstOrThrow({
           where: { date: new Date('2026-09-01') },
           include: { members: true },
@@ -1126,6 +1127,85 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
         expect(first.members).toHaveLength(members);
       },
     );
+
+    it('creates the duties without people when assign is off', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const chore = await createChore(event, { defaultCount: 1 });
+      await createRegistration(event);
+
+      const { body } = await planSeries(event.id, accessToken, {
+        choreId: chore.id,
+        slotIds: [],
+        from: '2026-09-01',
+        to: '2026-09-03',
+        assign: false,
+      });
+
+      expect(body.data).toMatchObject({ created: 3 });
+      const assignments = await prisma.choreAssignment.findMany({
+        include: { members: true },
+      });
+      expect(assignments).toHaveLength(3);
+      expect(assignments.every((a) => a.members.length === 0)).toBe(true);
+    });
+
+    it('fills only existing duties and keeps their unit', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const chore = await createChore(event, { defaultCount: 1 });
+      await Promise.all([1, 2].map(() => createRegistration(event)));
+      await createAssignment(event, chore.id, { date: '2026-09-01' });
+      await createAssignment(event, chore.id, { date: '2026-09-03' });
+
+      const { body } = await planSeries(event.id, accessToken, {
+        choreId: chore.id,
+        slotIds: [],
+        from: '2026-09-01',
+        to: '2026-09-03',
+        rotationUnit: 'ROOM',
+        onConflict: 'FILL',
+        existingOnly: true,
+      });
+
+      expect(body.data).toMatchObject({ created: 0, filled: 2 });
+      expect(body.data.batchId).toBeNull();
+      // The deleted 2026-09-02 stays deleted.
+      const assignments = await prisma.choreAssignment.findMany({
+        include: { members: true },
+      });
+      expect(assignments).toHaveLength(2);
+      expect(assignments.every((a) => a.members.length === 1)).toBe(true);
+      expect(assignments.every((a) => a.rotationUnit === 'PERSON')).toBe(true);
+    });
+
+    it('replaces existing duties in place, switching the unit', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const chore = await createChore(event, { defaultCount: 1 });
+      const person = await createRegistration(event);
+      const duty = await createAssignment(event, chore.id, {
+        date: '2026-09-01',
+        note: 'Bring gloves',
+        members: { create: [{ registrationId: person.id }] },
+      });
+
+      const { body } = await planSeries(event.id, accessToken, {
+        choreId: chore.id,
+        slotIds: [],
+        from: '2026-09-01',
+        to: '2026-09-02',
+        rotationUnit: 'ROOM',
+        onConflict: 'REPLACE',
+        existingOnly: true,
+      });
+
+      expect(body.data).toMatchObject({ created: 0, replaced: 1 });
+      const assignments = await prisma.choreAssignment.findMany();
+      expect(assignments).toHaveLength(1);
+      expect(assignments[0]).toMatchObject({
+        id: duty.id,
+        note: 'Bring gloves',
+        rotationUnit: 'ROOM',
+      });
+    });
 
     it('never touches a duty that is already done', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
@@ -1178,17 +1258,26 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
     it.each([
       { label: 'the range is reversed', from: '2026-09-05', to: '2026-09-01' },
       { label: 'the range is too long', from: '2026-01-01', to: '2027-12-31' },
-    ])('should respond with `400` when $label', async ({ from, to }) => {
-      const { event, accessToken } = await createEventWithManagerAndToken();
-      const chore = await createChore(event);
+      {
+        label: 'existing duties would only be skipped',
+        from: '2026-09-01',
+        to: '2026-09-02',
+        existingOnly: true,
+      },
+    ])(
+      'should respond with `400` when $label',
+      async ({ from, to, existingOnly }) => {
+        const { event, accessToken } = await createEventWithManagerAndToken();
+        const chore = await createChore(event);
 
-      await planSeries(
-        event.id,
-        accessToken,
-        { choreId: chore.id, slotIds: [], from, to },
-        400,
-      );
-    });
+        await planSeries(
+          event.id,
+          accessToken,
+          { choreId: chore.id, slotIds: [], from, to, existingOnly },
+          400,
+        );
+      },
+    );
   });
 
   describe('DELETE /api/v1/events/:eventId/chore-assignments', () => {
