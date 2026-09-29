@@ -736,7 +736,7 @@ function transfer(
         ? byRoom(member) && roomOf.get(member.registrationId) === from.id
         : !byRoom(member) && member.registrationId === from.id),
   );
-  const [first] = leaving;
+  const first = leaving.at(0);
   if (!first) {
     return undefined;
   }
