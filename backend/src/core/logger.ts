@@ -1,3 +1,4 @@
+import { inspect } from 'node:util';
 import winston from 'winston';
 import 'winston-daily-rotate-file';
 import config from '#config/index';
@@ -5,9 +6,24 @@ import { appPath } from '#utils/paths';
 import { ErrorTrackingTransport } from '#core/errorTracking/errorTracking.transport';
 import { getJobContext, type JobContext } from '#core/context/jobContext';
 
+// Appends each `cause` in the chain, so a wrapping ApiError still shows the
+// error that actually failed. Bounded in case of a cyclic chain.
+const stackWithCauses = (error: Error): string => {
+  let output = error.stack ?? String(error);
+  let cause: unknown = error.cause;
+
+  for (let depth = 0; cause !== undefined && depth < 10; depth++) {
+    const text = cause instanceof Error ? cause.stack : undefined;
+    output += `\nCaused by: ${text ?? inspect(cause)}`;
+    cause = cause instanceof Error ? cause.cause : undefined;
+  }
+
+  return output;
+};
+
 const enumerateErrorFormat = winston.format((info) => {
   if (info instanceof Error) {
-    Object.assign(info, { message: info.stack });
+    Object.assign(info, { message: stackWithCauses(info) });
   }
   return info;
 });
