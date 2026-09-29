@@ -53,12 +53,22 @@
           </q-banner>
         </q-card-section>
 
+        <q-card-section
+          v-if="submitState === 'success' && submittedRegistration"
+        >
+          <registration-copy-download
+            :event-details="props.eventDetails"
+            :registration="submittedRegistration"
+          />
+        </q-card-section>
+
         <q-card-actions
           v-if="submitState === 'success'"
           align="center"
           class="q-gutter-sm q-pb-md"
         >
           <m-btn
+            outline
             primary
             icon="person_add"
             :label="t('complete.registerAnother')"
@@ -91,6 +101,25 @@
         </q-card-actions>
       </q-card>
     </div>
+
+    <!-- A form-defined completed page replaces the panel above, so the copy
+         offer is rendered alongside it rather than inside it. -->
+    <div
+      v-if="submitState === null && submitted && submittedRegistration"
+      class="row justify-center q-pa-md"
+    >
+      <q-card
+        flat
+        class="registration-copy-card rounded-xl elevation-1"
+      >
+        <q-card-section>
+          <registration-copy-download
+            :event-details="props.eventDetails"
+            :registration="submittedRegistration"
+          />
+        </q-card-section>
+      </q-card>
+    </div>
   </div>
 </template>
 
@@ -98,24 +127,27 @@
 import 'survey-core/survey-core.min.css';
 
 import { useI18n } from 'vue-i18n';
-import { createMarkdownConverter } from '@/utils/markdown';
-import { computed, onMounted, ref, toRef, watch, watchEffect } from 'vue';
+import { computed, onBeforeMount, ref, toRef, watch, watchEffect } from 'vue';
 import { SurveyModel } from 'survey-core';
 import { SurveyComponent } from 'survey-vue3-ui';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
+import RegistrationCopyDownload from '@/components/common/RegistrationCopyDownload.vue';
 import {
   startAutoDataUpdate,
   startAutoThemeUpdate,
-  addFileSlotResolver,
 } from '@/composables/survey';
+import {
+  addFileSlotResolver,
+  addMarkdownRenderer,
+} from '@/lib/surveyJs/textProcessing';
+import { readAsDataURL } from '@/utils/readAsDataURL';
+import { emphasizeForwardNavigation } from '@/lib/surveyJs/navigation';
 import type {
   EventDetails,
   Registration,
 } from '@camp-registration/common/entities';
 import { useAPIService } from '@/services/APIService';
 import { useErrorExtractor } from '@/composables/serviceHandler';
-
-const mdConverter = createMarkdownConverter();
 
 const { locale, t } = useI18n();
 const api = useAPIService();
@@ -148,13 +180,13 @@ const emit = defineEmits<{
 // survey (including its own completed page) is hidden and this UI takes over.
 const submitState = ref<'saving' | 'success' | 'error' | null>(null);
 const submitError = ref<string>();
-// The actual status of the registration just created, so the success panel
-// can reflect whether it was accepted outright, waitlisted, or left pending
-// (moderated events / registrations placed on a waiting list).
-const registrationStatus = ref<Registration['status']>();
 // Stays true once the submission succeeded, including when survey-core takes
 // the screen back over to show the form's own completed page.
 const submitted = ref<boolean>(false);
+// What the server echoed back for the submission, used to render the
+// registrant's copy. Kept separate from the live model, which `retrySubmit`
+// may clear.
+const submittedRegistration = ref<Registration>();
 
 // Lets the page hide anything that only applies while the form is being
 // filled in — the privacy disclosure above all.
@@ -167,7 +199,7 @@ const statusTitle = computed(() => {
     case 'saving':
       return t('submit.saving.title');
     case 'success':
-      switch (registrationStatus.value) {
+      switch (submittedRegistration.value?.status) {
         case 'PENDING':
           return t('complete.pending.title');
         case 'WAITLISTED':
@@ -187,7 +219,7 @@ const statusText = computed(() => {
     case 'saving':
       return t('submit.saving.text');
     case 'success':
-      switch (registrationStatus.value) {
+      switch (submittedRegistration.value?.status) {
         case 'PENDING':
           return t('complete.pending.text');
         case 'WAITLISTED':
@@ -205,7 +237,7 @@ const statusText = computed(() => {
 const badgeColor = computed(() => {
   switch (submitState.value) {
     case 'success':
-      switch (registrationStatus.value) {
+      switch (submittedRegistration.value?.status) {
         case 'PENDING':
           return 'info-container';
         case 'WAITLISTED':
@@ -223,7 +255,7 @@ const badgeColor = computed(() => {
 const badgeTextColor = computed(() => {
   switch (submitState.value) {
     case 'success':
-      switch (registrationStatus.value) {
+      switch (submittedRegistration.value?.status) {
         case 'PENDING':
           return 'on-info-container';
         case 'WAITLISTED':
@@ -243,7 +275,7 @@ const badgeIcon = computed(() => {
     return 'error';
   }
 
-  switch (registrationStatus.value) {
+  switch (submittedRegistration.value?.status) {
     case 'PENDING':
       return 'schedule';
     case 'WAITLISTED':
@@ -264,7 +296,7 @@ const model = createModel(
     : props.eventDetails.form,
 );
 model.validationEnabled = !moderationLayout;
-model.mode = props.readonly ? 'display' : 'edit';
+model.readOnly = props.readonly;
 if (props.data) {
   model.data = props.data;
   mapFileIdToFileContent(model);
@@ -278,7 +310,10 @@ watchEffect(() => {
   emit('bgColorUpdate', bgColor.value);
 });
 
-onMounted(() => {
+// Before the first render, not `onMounted`: this is also what puts the event's
+// logo on the model, and applying it afterwards renders the header twice — once
+// without a logo, once with.
+onBeforeMount(() => {
   // Auto variables update on locale change
   startAutoDataUpdate(model, eventData);
   startAutoThemeUpdate(model, eventData, bgColor);
@@ -296,11 +331,6 @@ function createModel(eventId: string, form: object): SurveyModel {
   const survey = new SurveyModel(form);
   survey.locale = locale.value;
 
-  // When the form defines its own completed page we let survey-core render it;
-  // otherwise the default success UI is a Vue panel (see submitState) rather
-  // than survey-core's built-in "Thank you" text.
-  const hasFormCompletedHtml = hasCustomCompletedHtml(form);
-
   if (moderationLayout) {
     const hideComplete = () => {
       survey.navigationBar.getActionById('sv-nav-complete')?.setVisible(false);
@@ -313,42 +343,27 @@ function createModel(eventId: string, form: object): SurveyModel {
   survey.onUploadFiles.add(async (_, options) => {
     const uploadFileFn = props.uploadFileFn;
     if (!uploadFileFn) {
-      options.callback('error');
+      options.callback([], [t('upload.unavailable')]);
       return;
     }
 
     try {
-      interface FileOption {
-        file: Pick<File, 'name' | 'type' | 'size'>;
-        content?: unknown;
-      }
-
-      const fileUploads = options.files.map(async (file) => {
-        const name = await uploadFileFn(file);
-
-        return new File([file], name, {
-          type: file.type,
-          lastModified: file.lastModified,
-        });
-      });
-
-      const files = await Promise.all(fileUploads);
-
-      const readFileAsync = async (file: File): Promise<FileOption> => {
-        const textContent = await readFile(file);
-        return {
-          file: { name: file.name, type: file.type, size: file.size },
-          content: textContent,
-        };
-      };
-
-      const fileOptions: FileOption[] = await Promise.all<FileOption>(
-        files.map((file) => readFileAsync(file)),
+      // The stored value is the server's file name; the local copy is only
+      // read back so the question can preview it.
+      const files = await Promise.all(
+        options.files.map(async (file) => ({
+          file: {
+            name: await uploadFileFn(file),
+            type: file.type,
+            size: file.size,
+          },
+          content: await readAsDataURL(file),
+        })),
       );
 
-      options.callback('success', fileOptions);
-    } catch {
-      options.callback('error');
+      options.callback(files);
+    } catch (e: unknown) {
+      options.callback([], [extractErrorText(e)]);
     }
   });
   // Remove file from storage
@@ -357,22 +372,21 @@ function createModel(eventId: string, form: object): SurveyModel {
     // Files will be deleted eventually by a cleanup job
     options.callback('success');
   });
-  // Convert markdown to html
-  survey.onTextMarkdown.add((_, options) => {
-    // Remove root paragraphs <p></p>
-    options.html = mdConverter.renderInline(options.text);
-  });
-  // Workaround for date input for Safari < 4.1
-  survey.onAfterRenderPage.add((_, options) => {
-    const dateInputs: NodeListOf<HTMLInputElement> =
-      options.htmlElement.querySelectorAll('input[type=date]');
-    dateInputs.forEach((input) => {
-      input.placeholder = 'yyyy-mm-dd';
-    });
-  });
+  addMarkdownRenderer(survey);
+  addFileSlotResolver(survey, (slot, locale) =>
+    api.getEventFileSlotUrl(eventId, slot, locale),
+  );
 
-  // Resolve {_file.<slot>} placeholders to locale-aware file URLs on demand.
-  addFileSlotResolver(survey, eventId, api);
+  emphasizeForwardNavigation(survey);
+
+  // survey-core redirects right after `onComplete` fires, while the submission
+  // is still in flight, so the redirect is held until the save succeeded. A
+  // manager editing a registration is never sent away.
+  let pendingRedirect: string | undefined;
+  survey.onNavigateToUrl.add((_, options) => {
+    pendingRedirect = props.moderation ? undefined : options.url;
+    options.allow = false;
+  });
 
   // Send data to server. The saving/error UI is rendered by the Vue overlay
   // (see submitState), so the survey's own completed page stays hidden until
@@ -383,9 +397,9 @@ function createModel(eventId: string, form: object): SurveyModel {
       return;
     }
 
+    pendingRedirect = undefined;
     submitError.value = undefined;
     submitState.value = 'saving';
-    registrationStatus.value = undefined;
 
     mapFileQuestionValues(sender);
 
@@ -395,15 +409,18 @@ function createModel(eventId: string, form: object): SurveyModel {
         sender.data ?? {},
         sender.locale,
       );
-      registrationStatus.value = registration?.status;
+      submittedRegistration.value = registration ?? undefined;
       submitted.value = true;
-      if (sender.showCompletePage && hasFormCompletedHtml) {
+      if (sender.showCompletePage && hasCustomCompletedHtml(sender)) {
         // Reveal the form-defined completed page (survey-core shows it by
         // default; the survey element is unhidden as submitState clears).
         submitState.value = null;
         sender.render();
       } else {
         submitState.value = 'success';
+      }
+      if (pendingRedirect) {
+        redirect(pendingRedirect);
       }
     } catch (e: unknown) {
       submitError.value = extractErrorText(e);
@@ -422,23 +439,29 @@ function retrySubmit() {
   model.doComplete();
 }
 
-function hasCustomCompletedHtml(form: object): boolean {
-  return (
-    'completedHtml' in form &&
-    typeof form.completedHtml === 'string' &&
-    form.completedHtml.length > 0
-  );
+// The URL comes from the form definition, so only web addresses are followed.
+function redirect(url: string) {
+  let target: URL;
+  try {
+    target = new URL(url, window.location.href);
+  } catch {
+    return;
+  }
+
+  if (target.protocol === 'http:' || target.protocol === 'https:') {
+    window.location.assign(target.href);
+  }
 }
 
-function readFile(file: File) {
-  return new Promise((resolve, reject) => {
-    const fileReader = new FileReader();
-    fileReader.onload = () => {
-      resolve(fileReader.result);
-    };
-    fileReader.onerror = reject;
-    fileReader.readAsDataURL(file);
-  });
+// When the form defines its own completed page — plain or matched by a
+// condition — survey-core renders it; otherwise the Vue panel (see
+// submitState) replaces survey-core's built-in "Thank you" text. Both getters
+// fall back to that default text, hence the comparisons.
+function hasCustomCompletedHtml(survey: SurveyModel): boolean {
+  return (
+    !survey.locCompletedHtml.isEmpty ||
+    survey.renderedCompletedHtml !== survey.completedHtml
+  );
 }
 
 function mapFileIdToFileContent(survey: SurveyModel) {
@@ -453,9 +476,7 @@ function mapFileIdToFileContent(survey: SurveyModel) {
         return file;
       }
 
-      const url = file.match(/^https?:\/\//)
-        ? file
-        : `${window.origin}/api/v1/files/${file}`;
+      const url = file.match(/^https?:\/\//) ? file : api.getFileUrl(file);
 
       return {
         name: file,
@@ -501,6 +522,8 @@ defineExpose({
 </script>
 
 <i18n lang="yaml" locale="en">
+upload:
+  unavailable: 'File uploads are not available here.'
 submit:
   saving:
     title: 'Submitting registration'
@@ -511,7 +534,7 @@ submit:
     retry: 'Try again'
 complete:
   title: 'Registration complete!'
-  text: "Thanks for signing up — we've received your registration and can't wait to see you at event."
+  text: "Thanks for signing up — we've received your registration and can't wait to see you at the event."
   pending:
     title: 'Registration received!'
     text: 'Your registration is now pending review. We will let you know as soon as it has been processed.'
@@ -523,6 +546,8 @@ complete:
 </i18n>
 
 <i18n lang="yaml" locale="de">
+upload:
+  unavailable: 'Datei-Uploads sind hier nicht möglich.'
 submit:
   saving:
     title: 'Anmeldung wird gesendet'
@@ -545,6 +570,8 @@ complete:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
+upload:
+  unavailable: 'L’envoi de fichiers n’est pas disponible ici.'
 submit:
   saving:
     title: "Envoi de l'inscription"
@@ -567,6 +594,8 @@ complete:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
+upload:
+  unavailable: 'Przesyłanie plików nie jest tu dostępne.'
 submit:
   saving:
     title: 'Wysyłanie rejestracji'
@@ -589,6 +618,8 @@ complete:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
+upload:
+  unavailable: 'Nahrávání souborů zde není k dispozici.'
 submit:
   saving:
     title: 'Odesílání registrace'
@@ -640,6 +671,16 @@ complete:
   color: var(--md3-on-surface);
 
   animation: registration-submit-rise 0.35s cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+// The form's own completed page already fills the screen, so the copy panel
+// shown alongside it takes the card's shape without the full-height centering.
+.registration-copy-card {
+  width: 100%;
+  max-width: 600px;
+
+  background-color: var(--md3-surface-container-low);
+  color: var(--md3-on-surface);
 }
 
 .registration-submit-status__badge {

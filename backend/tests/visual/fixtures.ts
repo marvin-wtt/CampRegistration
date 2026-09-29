@@ -65,12 +65,10 @@ export const fixtures: EmailFixture[] = [
       title: 'New Feedback',
       replyNote:
         'You can reply to this email to contact the user directly if they provided an email address.',
+      senderLabel: 'From',
       messageLabel: 'Message',
-      locationLabel: 'Location',
-      userAgentLabel: 'User Agent',
+      sender: 'Jane Doe <jane@example.com>',
       message: 'Great app, but the export button is hard to find.',
-      location: '/management/events/evt_01/participants',
-      userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
     } satisfies LocalContext<FeedbackProps>,
   },
   {

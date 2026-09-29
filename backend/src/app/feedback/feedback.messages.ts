@@ -5,8 +5,7 @@ import type { FeedbackProps, LocalContext } from '#views/emails/types';
 
 export interface FeedbackData {
   message: string;
-  location: string | undefined;
-  userAgent: string | undefined;
+  name: string | undefined;
   email: string | undefined;
 }
 
@@ -29,7 +28,21 @@ export class FeedbackMessage extends MailBase<FeedbackData> {
   }
 
   protected replyTo(): AddressLike | undefined {
-    return this.payload.email;
+    const { name, email } = this.payload;
+    if (!email) {
+      return undefined;
+    }
+
+    return name ? { name, address: email } : email;
+  }
+
+  private sender(): string | undefined {
+    const { name, email } = this.payload;
+    if (name && email) {
+      return `${name} <${email}>`;
+    }
+
+    return name ?? email;
   }
 
   protected content(): Content {
@@ -41,12 +54,10 @@ export class FeedbackMessage extends MailBase<FeedbackData> {
         preview: t('preview', { message: this.payload.message }),
         title: t('text.title'),
         replyNote: t('text.replyNote'),
+        senderLabel: t('text.senderLabel'),
         messageLabel: t('text.messageLabel'),
-        locationLabel: t('text.locationLabel'),
-        userAgentLabel: t('text.userAgentLabel'),
+        sender: this.sender(),
         message: this.payload.message,
-        location: this.payload.location,
-        userAgent: this.payload.userAgent,
         reason: t('footer.cause'),
       } satisfies LocalContext<FeedbackProps>,
     };

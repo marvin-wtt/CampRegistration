@@ -78,6 +78,8 @@ describe('waitForImages', () => {
 
 describe('usePrintPage', () => {
   let messages: unknown[];
+  let print: ReturnType<typeof vi.fn>;
+  let close: ReturnType<typeof vi.fn>;
   // What the stubbed opener answers to a payload request; undefined = silence.
   let answer: unknown;
   let opener: { postMessage: (msg: { type: string }) => void };
@@ -106,8 +108,10 @@ describe('usePrintPage', () => {
     };
     vi.stubGlobal('opener', opener);
     // happy-dom implements neither print() nor close().
-    vi.stubGlobal('print', vi.fn());
-    vi.stubGlobal('close', vi.fn());
+    print = vi.fn();
+    close = vi.fn();
+    vi.stubGlobal('print', print);
+    vi.stubGlobal('close', close);
   });
 
   afterEach(() => {
@@ -133,7 +137,7 @@ describe('usePrintPage', () => {
     expect(types()).toEqual([`${PREFIX}:REQUEST`, `${PREFIX}:ERROR`]);
     expect(wrapper.text()).toContain('No print payload received');
     expect(prepare).not.toHaveBeenCalled();
-    expect(window.print).not.toHaveBeenCalled();
+    expect(print).not.toHaveBeenCalled();
   });
 
   it('reports an error right away without an opener', async () => {
@@ -142,7 +146,7 @@ describe('usePrintPage', () => {
     await flushPromises();
 
     expect(wrapper.text()).toContain('No print payload received');
-    expect(window.print).not.toHaveBeenCalled();
+    expect(print).not.toHaveBeenCalled();
   });
 
   it('ignores payloads from windows other than the opener', async () => {
@@ -157,7 +161,7 @@ describe('usePrintPage', () => {
     deliverPayload({ value: 'real' });
     await flushPromises();
     expect(wrapper.text()).toBe('real');
-    expect(window.print).toHaveBeenCalledOnce();
+    expect(print).toHaveBeenCalledOnce();
   });
 
   it('waits for prepare to settle before printing', async () => {
@@ -171,7 +175,7 @@ describe('usePrintPage', () => {
 
     expect(prepare).toHaveBeenCalledWith({ value: 'ok' });
     expect(types()).toEqual([`${PREFIX}:REQUEST`, `${PREFIX}:LOADED`]);
-    expect(window.print).not.toHaveBeenCalled();
+    expect(print).not.toHaveBeenCalled();
 
     finishPrepare();
     await flushPromises();
@@ -182,7 +186,7 @@ describe('usePrintPage', () => {
       `${PREFIX}:READY`,
       `${PREFIX}:PRINTING`,
     ]);
-    expect(window.print).toHaveBeenCalledOnce();
+    expect(print).toHaveBeenCalledOnce();
   });
 
   it('reports and closes the window after printing', async () => {
@@ -192,6 +196,6 @@ describe('usePrintPage', () => {
     window.dispatchEvent(new Event('afterprint'));
 
     expect(types()).toContain(`${PREFIX}:AFTERPRINT`);
-    expect(window.close).toHaveBeenCalledOnce();
+    expect(close).toHaveBeenCalledOnce();
   });
 });

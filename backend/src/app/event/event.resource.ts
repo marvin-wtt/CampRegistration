@@ -5,11 +5,28 @@ import {
 import { JsonResource } from '#core/resource/JsonResource';
 import { countriesToLocales } from '#utils/countriesToLocales';
 import { eventRegistrationStatus } from '#app/event/event.util';
-import type { EventWithFreePlaces } from '#app/event/event.types';
 import { utcCarrierToNaiveDateTime } from '@camp-registration/common/utils';
+import type { EventWithRelations } from '#app/event/event.types';
+import {
+  EVENT_LOGO_SLOT,
+  EVENT_BANNER_SLOT,
+} from '@camp-registration/common/form';
+import { generateApiUrl } from '#utils/url';
+
+function eventLogoUrl(event: EventWithRelations): string | null {
+  return event.hasLogo
+    ? generateApiUrl(['events', event.id, 'files', 'slots', EVENT_LOGO_SLOT])
+    : null;
+}
+
+function eventBannerUrl(event: EventWithRelations): string | null {
+  return event.hasBanner
+    ? generateApiUrl(['events', event.id, 'files', 'slots', EVENT_BANNER_SLOT])
+    : null;
+}
 
 export class EventResource extends JsonResource<
-  EventWithFreePlaces,
+  EventWithRelations,
   EventResourceData
 > {
   transform(): EventResourceData {
@@ -39,14 +56,14 @@ export class EventResource extends JsonResource<
       freePlaces: this.data.freePlaces,
       freePlacesTotal: this.data.freePlacesTotal,
       registrationStatus: eventRegistrationStatus(this.data),
-      // TODO Extract the logo URL
-      logo: null,
+      logo: eventLogoUrl(this.data),
+      banner: eventBannerUrl(this.data),
     };
   }
 }
 
 export class EventDetailsResource extends JsonResource<
-  EventWithFreePlaces,
+  EventWithRelations,
   EventDetailsResourceData
 > {
   transform(): EventDetailsResourceData {

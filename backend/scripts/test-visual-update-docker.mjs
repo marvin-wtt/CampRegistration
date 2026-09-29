@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 // `node_modules` is bind-mounted from named volumes, never the host
 // directories: reinstalling here for Linux must not clobber the host's own
 // native bindings (e.g. rolldown's platform-specific package).
-const PLAYWRIGHT_IMAGE = 'mcr.microsoft.com/playwright:v1.61.1-noble';
+const PLAYWRIGHT_IMAGE = 'mcr.microsoft.com/playwright:v1.63.0-noble';
 const VOLUME_PREFIX = 'camp-registration-visual';
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));

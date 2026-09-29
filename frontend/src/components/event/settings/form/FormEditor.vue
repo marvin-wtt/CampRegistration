@@ -3,33 +3,17 @@
 </template>
 
 <script lang="ts" setup>
-// Style
 import 'survey-core/survey-core.min.css';
 import 'survey-creator-core/survey-creator-core.min.css';
-// JS
-import 'survey-core/i18n/english';
-import 'survey-creator-core/i18n/english';
-import 'survey-core/i18n/german';
-import 'survey-creator-core/i18n/german';
-import 'survey-core/i18n/french';
-import 'survey-creator-core/i18n/french';
-import 'survey-core/i18n/polish';
-import 'survey-creator-core/i18n/polish';
-import 'survey-core/i18n/czech';
-import 'survey-creator-core/i18n/czech';
-
-import { watch, watchEffect } from 'vue';
-import {
-  type ICreatorOptions,
-  localization,
-  PropertyGridEditorCollection,
-  SurveyCreatorModel,
-} from 'survey-creator-core';
+import '@/lib/surveyJs/creatorSetup';
+import type { Ace } from 'ace-builds';
+import { config as aceConfig } from 'ace-builds';
+import { onBeforeUnmount, ref, watch, watchEffect } from 'vue';
+import { type ICreatorOptions, SurveyCreatorModel } from 'survey-creator-core';
 import { SurveyCreatorComponent } from 'survey-creator-vue';
 import { useI18n } from 'vue-i18n';
-import eventDataMapping from '@/lib/surveyJs/properties/eventDataMapping';
 import {
-  type Base,
+  Base,
   type ITheme,
   type PageModel,
   type PanelModel,
@@ -37,99 +21,147 @@ import {
   type SurveyModel,
   Serializer,
 } from 'survey-core';
-import { surveyLocalization } from 'survey-core';
-import { createMarkdownConverter } from '@/utils/markdown';
 import FileSelectionDialog from '@/components/event/settings/files/FileSelectionDialog.vue';
 import type {
   EventDetails,
   ServiceFile,
+  SurveyJSEventData,
 } from '@camp-registration/common/entities';
 import { useQuasar } from 'quasar';
-import type { SurveyJSEventData } from '@camp-registration/common/entities';
 import { setVariables } from '@camp-registration/common/form';
-import { addFileSlotResolver } from '@/composables/survey';
+import {
+  addDesignerFileSlotResolver,
+  addFileSlotResolver,
+  addMarkdownRenderer,
+} from '@/lib/surveyJs/textProcessing';
 import { useAPIService } from '@/services/APIService';
-import { surveyCreatorCustomLocaleConfig } from '@/components/event/settings/form/form-editor-translations';
-import { createStaticMd3SurveyThemes } from '@/lib/surveyJs/themes/md3';
-import { md3CreatorThemes } from '@/lib/surveyJs/themes/md3-creator';
+import { buildMd3LiteralTheme, resolveMd3Theme } from '@/lib/surveyJs/theme';
+import {
+  addConditionBadge,
+  applyEditorMode,
+  conditionProperty,
+  createEditorModeAction,
+  EDITOR_MODES,
+  type EditorMode,
+  resetEditorModeGlobals,
+} from '@/lib/surveyJs/editorModes';
+import { fieldFromParts } from '@/utils/fileField';
+import { emphasizeForwardNavigation } from '@/lib/surveyJs/navigation';
+import { readAsDataURL } from '@/utils/readAsDataURL';
 
 const props = defineProps<{
   event: EventDetails;
-  files: ServiceFile[];
   restrictedAccess: boolean;
   saveFormFunc: (form: SurveyJSEventData) => Promise<void>;
   saveThemeFunc: (theme: ITheme) => Promise<void>;
+  // Resolves to the file's slot (its `field`).
   saveFileFunc: (file: File) => Promise<string>;
 }>();
 
 const quasar = useQuasar();
-const { locale } = useI18n();
+const { t, locale } = useI18n();
 const api = useAPIService();
 
-// Custom properties
-PropertyGridEditorCollection.register(eventDataMapping);
-
-function hideProperty(className: string, propertyName: string) {
-  const property = Serializer.getProperty(className, propertyName);
-  if (!property) {
-    // eslint-disable-next-line no-console
-    console.warn(`SurveyJS property not found: ${className}.${propertyName}`);
-    return;
-  }
-
-  property.visible = false;
-}
-
-hideProperty('survey', 'cookieName');
-hideProperty('survey', 'widthMode');
-hideProperty('survey', 'completedBeforeHtml');
-hideProperty('survey', 'readOnly');
-hideProperty('survey', 'partialSendEnabled');
-hideProperty('survey', 'questionOrder');
-
-// Add localization
-for (const [locale, sections] of Object.entries(
-  surveyCreatorCustomLocaleConfig,
-)) {
-  const l = localization.getLocale(locale);
-
-  Object.keys(sections).forEach((key) => {
-    const target = l[key];
-    const source = sections[key as keyof typeof sections];
-
-    if (target && typeof target === 'object' && source) {
-      Object.assign(target, source);
-    }
-  });
-}
-
+// Tabs and survey locales come from the mode preset (see `applyMode`).
 const creatorOptions: ICreatorOptions = {
-  showLogicTab: true,
-  showTranslationTab: true,
-  showEmbeddedSurveyTab: false,
   showCreatorThemeSettings: false,
   autoSaveEnabled: true,
-  showThemeTab: true,
-  showJSONEditorTab: !props.restrictedAccess,
 };
-
-const mdConverter = createMarkdownConverter();
-
-surveyLocalization.supportedLocales = ['en', ...props.event.locales];
 
 const creator = new SurveyCreatorModel(creatorOptions);
 
-// Frozen, resolve-on-load MD3 snapshot used as the editable default whenever a
-// event has no saved theme. The editor parses color values back into its pickers,
-// so it must be fed literals — not the var()-based runtime themes.
-const md3DefaultThemes = createStaticMd3SurveyThemes();
+// Resolved MD3 snapshot used as the editable default whenever an event has no
+// saved theme. The editor parses color values back into its pickers, so it
+// must be fed literals — not the var()-based runtime themes.
+const md3DefaultThemes = {
+  light: buildMd3LiteralTheme('light'),
+  dark: buildMd3LiteralTheme('dark'),
+};
 creator.themeEditor.addTheme(md3DefaultThemes.light);
 creator.themeEditor.addTheme(md3DefaultThemes.dark);
 
 creator.JSON = props.event.form;
-creator.theme = props.event.themes['light'] ?? md3DefaultThemes.light;
 
-if (props.restrictedAccess) {
+// The chosen mode is a per-user convenience, so browser storage is enough.
+const MODE_STORAGE_KEY = 'formEditor.mode';
+
+const mode = ref<EditorMode>(readStoredMode());
+
+// On narrow screens the creator hides its top toolbar and shows a footer bar
+// instead, so the dropdown goes into both — one instance each, as a container
+// restyles the actions it holds. The footer one is icon-only to save width.
+const modeActions = (
+  [
+    [creator.toolbar, false],
+    [creator.footerToolbar, true],
+  ] as const
+).map(([toolbar, compact]) => {
+  const modeAction = createEditorModeAction({
+    mode: mode.value,
+    title: (value) => t(`mode.${value}`),
+    tooltip: (value) => `${t('mode.label')}: ${t(`mode.${value}`)}`,
+    onSelect: selectMode,
+    compact,
+    verticalPosition: compact ? 'top' : 'bottom',
+  });
+  toolbar.actions.unshift(modeAction.action);
+  return modeAction;
+});
+
+// Re-translates the dropdowns on locale changes.
+watchEffect(() => {
+  modeActions.forEach((action) => action.update(mode.value));
+});
+
+addConditionBadge(creator, {
+  title: () => t('mode.condition'),
+  onEdit: (element) => {
+    selectMode('standard');
+    creator.selectElement(element, conditionProperty(element));
+  },
+});
+
+function creatorLocale(): string {
+  return locale.value.split(/[-_]/)[0] ?? 'en';
+}
+
+function applyMode() {
+  applyEditorMode(creator, mode.value, {
+    creatorLocale: creatorLocale(),
+    eventLocales: props.event.locales,
+    restrictedAccess: props.restrictedAccess,
+  });
+  // A preset rebuilds the toolbox, so the restriction goes on top every time.
+  applyRestrictedToolbox();
+}
+
+function selectMode(value: EditorMode) {
+  if (value === mode.value) {
+    return;
+  }
+  mode.value = value;
+  try {
+    localStorage.setItem(MODE_STORAGE_KEY, value);
+  } catch {
+    // Storage unavailable: the choice just won't be remembered.
+  }
+  applyMode();
+}
+
+function readStoredMode(): EditorMode {
+  try {
+    const stored = localStorage.getItem(MODE_STORAGE_KEY);
+    return EDITOR_MODES.find((value) => value === stored) ?? 'simple';
+  } catch {
+    return 'simple';
+  }
+}
+
+function applyRestrictedToolbox() {
+  if (!props.restrictedAccess) {
+    return;
+  }
+
   const panelItem = creator.toolbox.getItemByName('panel');
   // Allow restricted users to add only panels. If you want to hide the entire Toolbox, set `creator.showToolbox = false;`
   creator.toolbox.clearItems();
@@ -141,19 +173,50 @@ if (props.restrictedAccess) {
   creator.showAddQuestionButton = false;
 }
 
+applyMode();
+
 watchEffect(() => {
-  creator.locale = locale.value.split(/[-_]/)[0] ?? 'en';
+  creator.locale = creatorLocale();
 });
 
-watch(() => quasar.dark.isActive, applyCreatorTheme);
+watch(
+  () => quasar.dark.isActive,
+  (isDark) => {
+    applySurveyTheme(isDark);
+    jsonEditor?.setTheme(aceTheme(isDark));
+  },
+);
 
-// Creator theme
-applyCreatorTheme(quasar.dark.isActive);
+// The JSON tab creates a new Ace editor each time it opens.
+let jsonEditor: Ace.Editor | undefined;
+const onAceEditorCreated = (editor: Ace.Editor) => {
+  jsonEditor = editor;
+  editor.setTheme(aceTheme(quasar.dark.isActive));
+};
+aceConfig.on('editor', onAceEditorCreated);
+onBeforeUnmount(() => {
+  aceConfig.off('editor', onAceEditorCreated);
+  resetEditorModeGlobals();
+});
 
-function applyCreatorTheme(isDark: boolean) {
-  const theme = isDark ? md3CreatorThemes.dark : md3CreatorThemes.light;
+function aceTheme(isDark: boolean): string {
+  return isDark ? 'ace/theme/clouds_midnight' : 'ace/theme/textmate';
+}
 
-  creator.applyCreatorTheme(theme);
+// Creator chrome is themed by `.sjs-theme-overrides` (md3-adapter.scss),
+// which survey-creator-core stamps on the creator root itself — no JS theme
+// object needed. Only the survey's own theme (design/preview/theme tabs)
+// still has to be applied explicitly.
+applySurveyTheme(quasar.dark.isActive);
+
+// Keeps the survey rendered inside the creator on the same theme the
+// registration page would pick for the same event and mode, so the designer
+// and preview tabs stop drifting from what registrants actually see.
+function applySurveyTheme(isDark: boolean) {
+  creator.theme = resolveMd3Theme(
+    props.event.themes,
+    isDark ? 'dark' : 'light',
+  );
 
   // TODO This is a workaround for the issue with the theme not being applied correctly
   // The value is null because the backend middleware
@@ -178,11 +241,6 @@ creator.onPropertyDisplayCustomError.add((_, options) => {
   // Internal variables start with _
   if (options.value.startsWith('_')) {
     options.error = 'Underscore is not allowed here.';
-    return;
-  }
-
-  if (options.value === 0) {
-    options.error = 'Zero is not allowed here.';
     return;
   }
 
@@ -225,51 +283,38 @@ creator.saveThemeFunc = (
 
 creator.onSurveyInstanceCreated.add((_, options) => {
   const survey: SurveyModel = options.survey;
+  const resolveFileSlot = (slot: string, locale: string) =>
+    api.getEventFileSlotUrl(props.event.id, slot, locale);
 
   if (['preview-tab', 'designer-tab', 'theme-tab'].includes(options.area)) {
-    // Convert markdown to html
-    survey.onTextMarkdown.add((_, options) => {
-      options.html = mdConverter.renderInline(options.text);
-    });
+    addMarkdownRenderer(survey);
+  }
+
+  // Design mode skips text processing, so file slots need their own resolver.
+  if (options.area === 'designer-tab') {
+    addDesignerFileSlotResolver(survey, resolveFileSlot, props.event.logo);
   }
 
   if (['preview-tab', 'theme-tab'].includes(options.area)) {
+    emphasizeForwardNavigation(survey);
     setVariables(survey, props.event);
-    addFileSlotResolver(survey, props.event.id, api);
+    addFileSlotResolver(survey, resolveFileSlot);
     survey.onLocaleChangedEvent.add((sender) => {
       setVariables(sender, props.event);
     });
   }
 
-  if (['preview-tab'].includes(options.area)) {
-    function readAsDataURL(
-      file: File,
-    ): Promise<{ name: string; content: string; type: string; file: File }> {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          resolve({
-            name: file.name,
-            type: file.type,
-            content: reader.result as string,
-            file,
-          });
-        };
-        reader.onerror = () => {
-          reject(new Error(`Failed to read file "${file.name}"`));
-        };
-        reader.readAsDataURL(file);
-      });
-    }
-
+  if (options.area === 'preview-tab') {
+    // Nothing is uploaded from the preview; files stay in memory.
     survey.onUploadFiles.add((_, options) => {
-      Promise.all(options.files.map(readAsDataURL))
-        .then((value) => {
-          options.callback('success', value);
-        })
-        .catch((reason) => {
-          options.callback('error', reason.message);
-        });
+      Promise.all(
+        options.files.map(async (file) => ({
+          file,
+          content: await readAsDataURL(file),
+        })),
+      )
+        .then((files) => options.callback(files))
+        .catch((reason: Error) => options.callback([], [reason.message]));
     });
   }
 });
@@ -287,13 +332,43 @@ creator.onUploadFile.add((_, options) => {
 
   props
     .saveFileFunc(file)
-    .then((fileUrl) => options.callback('success', fileUrl))
+    .then((slot) =>
+      options.callback(
+        'success',
+        isTextProcessed(options.element, options.propertyName.toString())
+          ? `{_file.${slot}}`
+          : api.getEventFileSlotUrl(props.event.id, slot),
+      ),
+    )
     .catch(() => options.callback('error', ''));
 });
 
+// Only localizable strings (logo, image links) go through text processing, so
+// only they can hold a `{_file.<slot>}` placeholder. Everything else — theme
+// and header backgrounds among them — is used verbatim and needs a real URL.
+function isTextProcessed(element: Base | ITheme, propertyName: string) {
+  return (
+    element instanceof Base &&
+    !!Serializer.findProperty(element.getType(), propertyName)?.isLocalizable
+  );
+}
+
+// Named survey elements (pages, panels, questions) share their type with
+// every other instance of it, so `elementType` alone would give every page's
+// backgroundImage the same field. Theme/header targets have no `name` and
+// stay one field per survey, which is what's wanted there anyway.
+function elementInstanceName(element: Base | ITheme): string | undefined {
+  return 'name' in element && typeof element.name === 'string'
+    ? element.name
+    : undefined;
+}
+
 creator.onOpenFileChooser.add((_, options) => {
-  const field =
-    options.elementType.toString() + '_' + options.propertyName.toString();
+  const baseField = fieldFromParts([
+    options.elementType.toString(),
+    elementInstanceName(options.element),
+    options.propertyName.toString(),
+  ]);
 
   quasar
     .dialog({
@@ -301,7 +376,7 @@ creator.onOpenFileChooser.add((_, options) => {
       componentProps: {
         accept: 'image/*',
         accessLevel: 'public',
-        field,
+        field: baseField,
       },
     })
     .onOk((files: ServiceFile[]) => {
@@ -366,9 +441,56 @@ function isObjColumn(obj: Base) {
 }
 </script>
 
-<style lang="scss" scoped>
-body {
-  --sjs-primary-background-500: $primary;
-  --sjs-secondary-background-500: $secondary;
+<style lang="scss">
+// Mirrors the toolbar clearance EventLayout gives the header on the
+// registration page, so the preview header is as tall as the real one.
+// Unscoped: the creator root doesn't carry this component's scope attribute.
+.svc-test-tab__content .sv-header {
+  padding-top: 4rem;
 }
 </style>
+
+<i18n lang="yaml" locale="en">
+mode:
+  label: 'Editor mode'
+  simple: 'Simple'
+  standard: 'Standard'
+  expert: 'Expert'
+  condition: 'Has conditions — edit them in Standard mode'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+mode:
+  label: 'Editormodus'
+  simple: 'Einfach'
+  standard: 'Standard'
+  expert: 'Experte'
+  condition: 'Hat Bedingungen – im Standardmodus bearbeiten'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+mode:
+  label: "Mode de l'éditeur"
+  simple: 'Simple'
+  standard: 'Standard'
+  expert: 'Expert'
+  condition: 'Contient des conditions – modifiables en mode standard'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+mode:
+  label: 'Tryb edytora'
+  simple: 'Prosty'
+  standard: 'Standardowy'
+  expert: 'Ekspert'
+  condition: 'Ma warunki – edytuj je w trybie standardowym'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+mode:
+  label: 'Režim editoru'
+  simple: 'Jednoduchý'
+  standard: 'Standardní'
+  expert: 'Expert'
+  condition: 'Obsahuje podmínky – upravte je ve standardním režimu'
+</i18n>

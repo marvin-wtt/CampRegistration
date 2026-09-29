@@ -47,4 +47,8 @@ export function ensureCsrfToken(): Promise<void> {
   return pendingCsrfToken;
 }
 
+export function setApiLocale(locale: string): void {
+  api.defaults.headers.common['Accept-Language'] = locale;
+}
+
 export { api };
