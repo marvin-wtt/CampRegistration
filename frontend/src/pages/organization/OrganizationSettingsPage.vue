@@ -444,7 +444,6 @@ async function persist() {
       actions: [
         {
           label: t('rejected.action'),
-          color: 'white',
           noCaps: true,
           handler: () => {
             void router.push({ name: 'management.organization.dashboard' });

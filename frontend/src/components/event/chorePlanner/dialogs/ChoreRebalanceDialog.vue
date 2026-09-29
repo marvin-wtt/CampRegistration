@@ -46,18 +46,19 @@
         >
           <q-item
             v-for="row in rows"
-            :key="`${row.assignmentId}:${row.from}`"
+            :key="`${row.assignmentId}:${row.role}`"
           >
             <q-item-section>
               <q-item-label caption>{{ row.duty }}</q-item-label>
-              <q-item-label class="row items-center no-wrap change">
-                <span class="ellipsis">{{ row.from }}</span>
+              <!-- Wraps: a room hands over all of its people at once. -->
+              <q-item-label class="row items-center change">
+                <span>{{ row.from }}</span>
                 <q-icon
                   name="arrow_forward"
                   size="16px"
                   class="col-auto"
                 />
-                <span class="ellipsis text-weight-medium">{{ row.to }}</span>
+                <span class="text-weight-medium">{{ row.to }}</span>
               </q-item-label>
               <q-item-label
                 v-if="row.supervisor"
@@ -147,6 +148,8 @@ const rows = computed(() => {
       ? formatPersonName(registrationHelper.uniqueName(registration))
       : '?';
   };
+  const namesOf = (ids: string[]) =>
+    ids.length > 0 ? ids.map(nameOf).join(', ') : '—';
   const dateFormat = new Intl.DateTimeFormat(locale.value, {
     weekday: 'short',
     day: 'numeric',
@@ -170,8 +173,9 @@ const rows = computed(() => {
             dateFormat.format(parseLocalDate(assignment.date)),
             slot ? `${name} — ${to(slot.name)}` : name,
           ].join(' · '),
-          from: nameOf(change.fromRegistrationId),
-          to: nameOf(change.toRegistrationId),
+          role: change.role,
+          from: namesOf(change.fromRegistrationIds),
+          to: namesOf(change.toRegistrationIds),
           supervisor: change.role === 'SUPERVISOR',
         },
       ];
@@ -188,7 +192,7 @@ const rows = computed(() => {
 
 <i18n lang="yaml" locale="en">
 title: 'Rebalance upcoming duties'
-subtitle: 'Hands a few upcoming duties from people with more to people with less. Today and past duties stay as they are.'
+subtitle: 'Hands over or swaps a few upcoming duties between people and rooms with more and those with less. Today and past duties stay as they are.'
 balanced: 'Everything is balanced — nothing to change.'
 count: '1 change | {n} changes'
 supervisor: 'as supervisor'
@@ -199,7 +203,7 @@ action:
 
 <i18n lang="yaml" locale="de">
 title: 'Kommende Dienste ausgleichen'
-subtitle: 'Gibt einige kommende Dienste von Leuten mit mehr an Leute mit weniger ab. Heutige und vergangene Dienste bleiben, wie sie sind.'
+subtitle: 'Gibt einige kommende Dienste von Leuten und Zimmern mit mehr an solche mit weniger ab oder tauscht sie. Heutige und vergangene Dienste bleiben, wie sie sind.'
 balanced: 'Alles ist ausgeglichen — nichts zu ändern.'
 count: '1 Änderung | {n} Änderungen'
 supervisor: 'als Aufsicht'
@@ -210,7 +214,7 @@ action:
 
 <i18n lang="yaml" locale="fr">
 title: 'Rééquilibrer les corvées à venir'
-subtitle: 'Confie quelques corvées à venir de celles et ceux qui en ont plus à celles et ceux qui en ont moins. Les corvées du jour et passées ne changent pas.'
+subtitle: 'Confie ou échange quelques corvées à venir entre les personnes et chambres qui en ont plus et celles qui en ont moins. Les corvées du jour et passées ne changent pas.'
 balanced: 'Tout est équilibré — rien à changer.'
 count: '1 changement | {n} changements'
 supervisor: 'en encadrement'
@@ -221,7 +225,7 @@ action:
 
 <i18n lang="yaml" locale="pl">
 title: 'Wyrównaj nadchodzące dyżury'
-subtitle: 'Przekazuje kilka nadchodzących dyżurów od osób, które mają ich więcej, osobom, które mają mniej. Dzisiejsze i przeszłe dyżury pozostają bez zmian.'
+subtitle: 'Przekazuje lub zamienia kilka nadchodzących dyżurów między osobami i pokojami, które mają ich więcej, a tymi, które mają mniej. Dzisiejsze i przeszłe dyżury pozostają bez zmian.'
 balanced: 'Wszystko jest wyrównane — nic do zmiany.'
 count: '1 zmiana | {n} zmian'
 supervisor: 'jako opiekun'
@@ -232,7 +236,7 @@ action:
 
 <i18n lang="yaml" locale="cs">
 title: 'Vyrovnat nadcházející služby'
-subtitle: 'Předá několik nadcházejících služeb od těch, kdo jich mají víc, těm, kdo jich mají méně. Dnešní a minulé služby zůstanou, jak jsou.'
+subtitle: 'Předá nebo vymění několik nadcházejících služeb mezi lidmi a pokoji, kteří jich mají víc, a těmi, kdo jich mají méně. Dnešní a minulé služby zůstanou, jak jsou.'
 balanced: 'Vše je vyrovnané — není co měnit.'
 count: '1 změna | {n} změn'
 supervisor: 'jako dozor'

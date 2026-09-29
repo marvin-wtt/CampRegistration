@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import type { ChoreRebalanceChange } from '@camp-registration/common/entities';
 import {
   balanceOf,
   buildLedger,
   fairnessOverview,
   type LedgerDuty,
+  type MovableDuty,
   type OccurrenceSpec,
   pickForOccurrence,
   planOccurrences,
@@ -305,6 +307,55 @@ describe('planOccurrences', () => {
 
     expect(ids(first).filter((id) => ids(second).includes(id))).toEqual([]);
   });
+
+  it('gives a second duty that day to whoever has the lightest one', () => {
+    const pool = ['a', 'b', 'c'].map((id) => participant(id));
+    const ledger = buildLedger([
+      duty(['a'], { date: '2026-07-10', choreId: 'dishes', effort: 'LIGHT' }),
+      duty(['b'], { date: '2026-07-10', choreId: 'trash', effort: 'HEAVY' }),
+      duty(['c'], { date: '2026-07-10', choreId: 'hall', effort: 'NORMAL' }),
+      // The most overall, but the least today.
+      duty(['a'], { date: '2026-07-01', effort: 'HEAVY' }),
+    ]);
+
+    const [picks = []] = planOccurrences(ledger, pool, [
+      { spec: spec({ date: '2026-07-10' }), existing: [] },
+    ]);
+
+    expect(ids(picks)).toEqual(['a']);
+  });
+
+  it('spreads a day across rooms even when their history differs', () => {
+    const rooms = Array.from({ length: 9 }, (_, index) => `r${index}`);
+    const occupants = (roomId: string) =>
+      [1, 2, 3].map((n) => `${roomId}-${n}`);
+    const pool = rooms.flatMap((roomId) =>
+      occupants(roomId).map((id) => participant(id, { roomId })),
+    );
+    // The first four rooms carried more on earlier days.
+    const ledger = buildLedger(
+      ['r0', 'r1', 'r2', 'r3'].map((roomId) =>
+        duty(occupants(roomId), { effort: 'HEAVY', choreId: 'past' }),
+      ),
+    );
+    const occurrence = (choreId: string, effort: 'LIGHT' | 'NORMAL') => ({
+      spec: spec({ choreId, effort, unit: 'ROOM', headcount: 3 }),
+      existing: [],
+    });
+    const normal = (i: number) => occurrence(`n${i}`, 'NORMAL');
+    const light = (i: number) => occurrence(`l${i}`, 'LIGHT');
+
+    planOccurrences(ledger, pool, [
+      ...[0, 1, 2, 3].map(normal),
+      ...[0, 1, 2, 3, 4].map(light),
+      ...[4, 5, 6, 7, 8].map(normal),
+    ]);
+
+    const dayLoads = pool.map(
+      (person) => ledger.get(person.id)?.days.get('2026-07-10')?.load,
+    );
+    expect(new Set(dayLoads)).toEqual(new Set([2, 3]));
+  });
 });
 
 describe('balance', () => {
@@ -370,11 +421,39 @@ describe('balance', () => {
 });
 
 describe('planRebalance', () => {
-  const movable = (id: string, members: string[], date: string) => ({
+  const movable = (
+    id: string,
+    members: string[],
+    date: string,
+    extra: Partial<MovableDuty> = {},
+  ): MovableDuty => ({
     ...duty(members, { date }),
     id,
-    eligibility: 'PARTICIPANTS' as const,
+    eligibility: 'PARTICIPANTS',
+    unit: 'PERSON',
+    headcount: members.length,
+    ...extra,
   });
+
+  // The duties' people once the changes are applied.
+  const apply = (duties: MovableDuty[], changes: ChoreRebalanceChange[]) =>
+    duties.map((duty) => {
+      const mine = changes.filter((c) => c.assignmentId === duty.id);
+      const leaving = mine.flatMap((c) => c.fromRegistrationIds);
+      return {
+        ...duty,
+        members: [
+          ...duty.members.filter((m) => !leaving.includes(m.registrationId)),
+          ...mine.flatMap((c) =>
+            c.toRegistrationIds.map((registrationId) => ({
+              registrationId,
+              role: c.role,
+              missed: false,
+            })),
+          ),
+        ],
+      };
+    });
 
   it('hands upcoming duties over until the load is even', () => {
     const changes = planRebalance(
@@ -389,8 +468,8 @@ describe('planRebalance', () => {
     expect(changes).toHaveLength(2);
     for (const change of changes) {
       expect(change).toMatchObject({
-        fromRegistrationId: 'a',
-        toRegistrationId: 'b',
+        fromRegistrationIds: ['a'],
+        toRegistrationIds: ['b'],
         role: 'MEMBER',
       });
     }
@@ -409,6 +488,115 @@ describe('planRebalance', () => {
     );
 
     expect(changes).toEqual([]);
+  });
+
+  it('swaps duties when handing one over would double up a day', () => {
+    const changes = planRebalance(
+      [],
+      [
+        movable('n1', ['a'], '2026-07-10', { choreId: 'n1' }),
+        movable('n2', ['a'], '2026-07-10', { choreId: 'n2' }),
+        movable('l1', ['b'], '2026-07-10', { choreId: 'l1', effort: 'LIGHT' }),
+      ],
+      [participant('a'), participant('b')],
+    );
+
+    expect(changes).toHaveLength(2);
+    expect(changes).toContainEqual(
+      expect.objectContaining({
+        assignmentId: 'l1',
+        toRegistrationIds: ['a'],
+      }),
+    );
+    expect(changes).toContainEqual(
+      expect.objectContaining({
+        fromRegistrationIds: ['a'],
+        toRegistrationIds: ['b'],
+      }),
+    );
+  });
+
+  it('moves room duties by whole rooms', () => {
+    // Four rooms on two normal chores, four on one light chore.
+    const rooms = Array.from({ length: 9 }, (_, index) => `r${index}`);
+    const pool = rooms.flatMap((roomId) =>
+      [1, 2, 3].map((n) => participant(`${roomId}-${n}`, { roomId })),
+    );
+    const occupants = (roomId: string) =>
+      [1, 2, 3].map((n) => `${roomId}-${n}`);
+    const room = (id: string, roomId: string, effort: 'LIGHT' | 'NORMAL') =>
+      movable(id, occupants(roomId), '2026-07-10', {
+        choreId: id,
+        effort,
+        unit: 'ROOM',
+      });
+    const duties = [
+      ...['r0', 'r1', 'r2', 'r3'].flatMap((roomId) => [
+        room(`${roomId}-a`, roomId, 'NORMAL'),
+        room(`${roomId}-b`, roomId, 'NORMAL'),
+      ]),
+      room('r4-a', 'r4', 'NORMAL'),
+      room('r4-b', 'r4', 'LIGHT'),
+      ...['r5', 'r6', 'r7', 'r8'].map((roomId) =>
+        room(`${roomId}-a`, roomId, 'LIGHT'),
+      ),
+    ];
+
+    const changes = planRebalance([], duties, pool);
+
+    const after = apply(duties, changes);
+    for (const duty of after) {
+      const roomsOnDuty = new Set(
+        duty.members.map((m) => m.registrationId.split('-')[0]),
+      );
+      expect(roomsOnDuty.size).toBe(1);
+    }
+    const ledger = buildLedger(after);
+    const loads = pool.map((person) => ledger.get(person.id)?.load ?? 0);
+    expect(new Set(loads)).toEqual(new Set([2, 3]));
+  });
+
+  it('lets rooms of different sizes swap, keeping the duty staffed', () => {
+    // A room of three carries two duties, a room of four none; each needs 3.
+    const pool = [
+      ...['a1', 'a2', 'a3'].map((id) => participant(id, { roomId: 'a' })),
+      ...['b1', 'b2', 'b3', 'b4'].map((id) => participant(id, { roomId: 'b' })),
+    ];
+    const room = (id: string, date: string) =>
+      movable(id, ['a1', 'a2', 'a3'], date, {
+        choreId: id,
+        unit: 'ROOM',
+        headcount: 3,
+      });
+    const duties = [room('d1', '2026-07-10'), room('d2', '2026-07-11')];
+
+    const changes = planRebalance([], duties, pool);
+
+    expect(changes).toEqual([
+      expect.objectContaining({
+        fromRegistrationIds: ['a1', 'a2', 'a3'],
+        toRegistrationIds: ['b1', 'b2', 'b3', 'b4'],
+      }),
+    ]);
+    for (const duty of apply(duties, changes)) {
+      expect(duty.members.length).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it('never lets a smaller room take a duty below its headcount', () => {
+    const pool = [
+      ...['a1', 'a2', 'a3'].map((id) => participant(id, { roomId: 'a' })),
+      ...['b1', 'b2'].map((id) => participant(id, { roomId: 'b' })),
+    ];
+    const duties = ['d1', 'd2'].map((id, index) =>
+      movable(id, ['a1', 'a2', 'a3'], `2026-07-1${index}`, {
+        choreId: id,
+        unit: 'ROOM',
+        headcount: 3,
+      }),
+    );
+
+    expect(planRebalance([], duties, pool)).toEqual([]);
   });
 
   it('leaves a balanced plan alone', () => {

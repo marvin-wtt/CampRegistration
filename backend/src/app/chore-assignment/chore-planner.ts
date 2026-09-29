@@ -36,7 +36,12 @@ export interface PersonStats {
   missedCount: number;
   choreCounts: Map<string, number>;
   lastByChore: Map<string, string>;
-  busyDates: Set<string>;
+  days: Map<string, DayStats>;
+}
+
+export interface DayStats {
+  dutyCount: number;
+  load: number;
 }
 
 export type ChoreLedger = Map<string, PersonStats>;
@@ -86,7 +91,7 @@ const EMPTY_STATS: PersonStats = {
   missedCount: 0,
   choreCounts: new Map(),
   lastByChore: new Map(),
-  busyDates: new Set(),
+  days: new Map(),
 };
 
 function statsOf(ledger: ChoreLedger, id: string): PersonStats {
@@ -100,7 +105,7 @@ function mutableStatsOf(ledger: ChoreLedger, id: string): PersonStats {
       ...EMPTY_STATS,
       choreCounts: new Map(),
       lastByChore: new Map(),
-      busyDates: new Set(),
+      days: new Map(),
     };
     ledger.set(id, stats);
   }
@@ -149,8 +154,13 @@ export function recordDuty(
   role: ChoreMemberRole,
 ) {
   const stats = mutableStatsOf(ledger, registrationId);
-  stats.load += EFFORT_POINTS[duty.effort];
-  stats.busyDates.add(duty.date);
+  const effort = EFFORT_POINTS[duty.effort];
+  const day = stats.days.get(duty.date) ?? { dutyCount: 0, load: 0 };
+  stats.load += effort;
+  stats.days.set(duty.date, {
+    dutyCount: day.dutyCount + 1,
+    load: day.load + effort,
+  });
 
   if (role === 'SUPERVISOR') {
     stats.supervisionCount++;
@@ -187,6 +197,8 @@ export function eligibleFor(
 
 interface Ranked {
   busy: boolean;
+  // Load already carried on the day being planned.
+  dayLoad: number;
   load: number;
   choreCount: number;
   last: string;
@@ -195,7 +207,7 @@ interface Ranked {
 
 function compareRanked(a: Ranked, b: Ranked): number {
   return (
-    Number(a.busy) - Number(b.busy) ||
+    a.dayLoad - b.dayLoad ||
     a.load - b.load ||
     a.choreCount - b.choreCount ||
     a.last.localeCompare(b.last)
@@ -203,10 +215,11 @@ function compareRanked(a: Ranked, b: Ranked): number {
 }
 
 /**
- * Fairest first: not already on a duty that day, then lowest load across all
- * chores, then fewest times on this chore, then longest ago — ties shuffled.
- * With country balancing, the country seen least so far goes first among
- * candidates equally busy and loaded — never ahead of a fairer one.
+ * Fairest first: least already carried that day — so a second duty goes to
+ * whoever has the lightest one — then lowest load across all chores, then
+ * fewest times on this chore, then longest ago — ties shuffled. With country
+ * balancing, the country seen least so far goes first among candidates
+ * equally loaded — never ahead of a fairer one.
  */
 function rank<T extends Ranked>(items: T[], ctx: RankContext): T[] {
   const sorted = shuffleTiedRuns(
@@ -220,10 +233,14 @@ function rank<T extends Ranked>(items: T[], ctx: RankContext): T[] {
 
   return spreadWithinTies(
     sorted,
-    (a, b) => a.busy === b.busy && a.load === b.load,
+    (a, b) => a.dayLoad === b.dayLoad && a.load === b.load,
     (item) => item.country,
     ctx.countryCounts,
   );
+}
+
+function dayLoadOf(stats: PersonStats, date: string | undefined): number {
+  return date === undefined ? 0 : (stats.days.get(date)?.load ?? 0);
 }
 
 export interface RankedPerson extends Ranked {
@@ -239,10 +256,12 @@ export function rankPeople(
   return rank(
     people.map((person) => {
       const stats = statsOf(ledger, person.id);
+      const dayLoad = dayLoadOf(stats, ctx.date);
       return {
         person,
         stats,
-        busy: ctx.date !== undefined && stats.busyDates.has(ctx.date),
+        busy: dayLoad > 0,
+        dayLoad,
         load: stats.load,
         choreCount: stats.choreCounts.get(ctx.choreId) ?? 0,
         last: stats.lastByChore.get(ctx.choreId) ?? '',
@@ -277,12 +296,13 @@ export function rankRooms(
       const stats = occupants.map((person) => statsOf(ledger, person.id));
       const mean = (value: (s: PersonStats) => number) =>
         stats.reduce((sum, s) => sum + value(s), 0) / stats.length;
+      // The busiest occupant, as the room goes together.
+      const dayLoad = Math.max(...stats.map((s) => dayLoadOf(s, ctx.date)));
       return {
         roomId,
         memberIds: occupants.map((person) => person.id),
-        busy:
-          ctx.date !== undefined &&
-          stats.some((s) => s.busyDates.has(ctx.date ?? '')),
+        busy: dayLoad > 0,
+        dayLoad,
         load: mean((s) => s.load),
         dutyCount: Math.round(mean((s) => s.dutyCount)),
         choreCount: mean((s) => s.choreCounts.get(ctx.choreId) ?? 0),
@@ -500,23 +520,38 @@ export function fairnessOverview(
 export interface MovableDuty extends LedgerDuty {
   id: string;
   eligibility: ChoreEligibility;
+  unit: ChoreRotationUnit;
+  // People it needs: a smaller room may take it over, but never below this.
+  headcount: number;
 }
 
-// A working copy of a spot on a duty, remembering who held it at first.
-type Spot = MovableDuty['members'][number] & { originalId: string };
+type Member = MovableDuty['members'][number];
 
-type WorkingDuty = Omit<MovableDuty, 'members'> & { members: Spot[] };
+// Who a duty passes between: one person, or a room doing it together.
+interface Holder {
+  kind: ChoreRotationUnit;
+  id: string;
+  // Whose load the holder is measured by.
+  people: PoolPerson[];
+  // Who would take a duty over.
+  occupants: PoolPerson[];
+}
 
-interface Move {
-  spot: Spot;
-  to: string;
+// What one holder does of a duty, handed to another: one person each on a
+// person duty, whole rooms — of any size — on a room duty.
+interface Transfer {
+  duty: MovableDuty;
+  role: ChoreMemberRole;
+  leaving: string[];
+  joining: string[];
 }
 
 /**
  * Evens out loads with as few changes as possible: one upcoming duty at a
- * time passes from a more loaded person to a less loaded one who can take it,
- * as long as that narrows their gap and one of them is outside the average
- * band. `fixed` duties only count; `movable` ones may change hands.
+ * time passes from a more loaded holder to a less loaded one — or two trade
+ * places — as long as one of them is outside the average band. Room duties
+ * move by whole rooms. `fixed` duties only count; `movable` ones may change
+ * hands.
  */
 export function planRebalance(
   fixed: LedgerDuty[],
@@ -524,66 +559,123 @@ export function planRebalance(
   pool: PoolPerson[],
   maxMoves = 200,
 ): ChoreRebalanceChange[] {
-  const duties: WorkingDuty[] = movable.map((duty) => ({
+  const duties = movable.map((duty) => ({
     ...duty,
-    members: duty.members.map((member) => ({
-      ...member,
-      originalId: member.registrationId,
-    })),
+    members: [...duty.members],
   }));
+  const roomOf = new Map(pool.map((person) => [person.id, person.roomId]));
 
-  // Every move shrinks the spread of loads, so this ends; the cap is a guard.
+  // Every move narrows the spread around the averages; the cap is a guard.
   for (let step = 0; step < maxMoves; step++) {
-    const move = findMove(buildLedger([...fixed, ...duties]), duties, pool);
-    if (!move) {
+    const ledger = buildLedger([...fixed, ...duties]);
+    const transfers = findTransfers(ledger, duties, pool, roomOf);
+    if (!transfers) {
       break;
     }
-    move.spot.registrationId = move.to;
+    for (const { duty, role, leaving, joining } of transfers) {
+      duty.members = [
+        ...duty.members.filter(
+          (member) =>
+            member.role !== role || !leaving.includes(member.registrationId),
+        ),
+        ...joining.map((registrationId) => ({
+          registrationId,
+          role,
+          missed: false,
+        })),
+      ];
+    }
   }
 
-  // Per spot, so one that changed hands twice is a single change.
-  return duties.flatMap((duty) =>
-    duty.members
-      .filter((spot) => spot.registrationId !== spot.originalId)
-      .map((spot) => ({
-        assignmentId: duty.id,
-        role: spot.role,
-        fromRegistrationId: spot.originalId,
-        toRegistrationId: spot.registrationId,
-      })),
-  );
+  // Per duty and role, so one that changed hands twice is a single change.
+  return movable.flatMap((original, index) => {
+    const final = duties[index] ?? original;
+    return (['MEMBER', 'SUPERVISOR'] as const).flatMap((role) => {
+      const idsOf = (members: Member[]) =>
+        members.filter((m) => m.role === role).map((m) => m.registrationId);
+      const before = idsOf(original.members);
+      const after = idsOf(final.members);
+      const from = before.filter((id) => !after.includes(id));
+      const to = after.filter((id) => !before.includes(id));
+      return from.length + to.length > 0
+        ? [
+            {
+              assignmentId: original.id,
+              role,
+              fromRegistrationIds: from,
+              toRegistrationIds: to,
+            },
+          ]
+        : [];
+    });
+  });
 }
 
-// The most uneven pair first; within it, the duty that evens them out best.
-function findMove(
+function holdersOf(pool: PoolPerson[], staff: boolean): Holder[][] {
+  const people = pool.filter((person) => person.staff === staff);
+  const rooms = Map.groupBy(
+    people.filter((person) => person.roomId !== null),
+    (person) => person.roomId ?? '',
+  );
+  return [
+    people.map((person) => ({
+      kind: 'PERSON',
+      id: person.id,
+      people: [person],
+      occupants: [person],
+    })),
+    [...rooms].map(([roomId, members]) => ({
+      kind: 'ROOM',
+      id: roomId,
+      people: members,
+      occupants: pool.filter((person) => person.roomId === roomId),
+    })),
+  ];
+}
+
+// The most uneven pair first; within it, the change that evens loads out best.
+function findTransfers(
   ledger: ChoreLedger,
-  duties: WorkingDuty[],
+  duties: MovableDuty[],
   pool: PoolPerson[],
-): Move | undefined {
+  roomOf: ReadonlyMap<string, string | null>,
+): Transfer[] | undefined {
   const averages = groupAverages(ledger, pool);
-  const loadOf = (person: PoolPerson) => statsOf(ledger, person.id).load;
+  const staffIds = new Set(
+    pool.filter((person) => person.staff).map((person) => person.id),
+  );
+  const averageOf = (id: string) =>
+    staffIds.has(id) ? averages.staff : averages.participants;
+  const loadOf = (holder: Holder) =>
+    mean(holder.people.map((person) => statsOf(ledger, person.id).load));
 
   for (const staff of [false, true]) {
     const average = staff ? averages.staff : averages.participants;
-    const group = pool
-      .filter((person) => person.staff === staff)
-      .sort((a, b) => loadOf(b) - loadOf(a));
+    for (const holders of holdersOf(pool, staff)) {
+      const sorted = holders.sort((a, b) => loadOf(b) - loadOf(a));
 
-    for (const over of group) {
-      for (const under of [...group].reverse()) {
-        const gap = loadOf(over) - loadOf(under);
-        if (gap <= 0) {
-          break;
-        }
-        const outOfBand =
-          balanceOf(loadOf(over), average).balance === 'ABOVE' ||
-          balanceOf(loadOf(under), average).balance === 'BELOW';
-        if (!outOfBand) {
-          continue;
-        }
-        const move = bestMove(ledger, duties, over, under, gap);
-        if (move) {
-          return move;
+      for (const over of sorted) {
+        for (const under of [...sorted].reverse()) {
+          if (loadOf(over) <= loadOf(under)) {
+            break;
+          }
+          const outOfBand =
+            balanceOf(loadOf(over), average).balance === 'ABOVE' ||
+            balanceOf(loadOf(under), average).balance === 'BELOW';
+          if (!outOfBand) {
+            continue;
+          }
+          const best = bestTransfers(
+            ledger,
+            duties,
+            roomOf,
+            averageOf,
+            over,
+            under,
+          );
+          if (best) {
+            return best;
+          }
         }
       }
     }
@@ -591,38 +683,137 @@ function findMove(
   return undefined;
 }
 
-function bestMove(
+// A hand-over from `over` to `under`, or a swap of a heavier for a lighter duty.
+function bestTransfers(
   ledger: ChoreLedger,
-  duties: WorkingDuty[],
-  over: PoolPerson,
-  under: PoolPerson,
-  gap: number,
-): Move | undefined {
-  const busy = statsOf(ledger, under.id).busyDates;
-  let best: (Move & { remaining: number }) | undefined;
+  duties: MovableDuty[],
+  roomOf: ReadonlyMap<string, string | null>,
+  averageOf: (id: string) => number,
+  over: Holder,
+  under: Holder,
+): Transfer[] | undefined {
+  const outgoing = duties.flatMap(
+    (duty) => transfer(duty, over, under, roomOf) ?? [],
+  );
+  const incoming = duties.flatMap(
+    (duty) => transfer(duty, under, over, roomOf) ?? [],
+  );
 
-  for (const duty of duties) {
-    const effort = EFFORT_POINTS[duty.effort];
-    // Only if it narrows the gap — otherwise it would just flip it.
-    if (gap <= effort || busy.has(duty.date)) {
-      continue;
+  let best: { transfers: Transfer[]; gain: number } | undefined;
+  const consider = (transfers: Transfer[]) => {
+    const gain = gainOf(ledger, transfers, averageOf);
+    if (gain > 0 && (!best || gain > best.gain)) {
+      best = { transfers, gain };
     }
-    if (duty.members.some((m) => m.registrationId === under.id)) {
-      continue;
-    }
-    const spot = duty.members.find(
-      (m) => m.registrationId === over.id && !m.missed,
-    );
-    if (
-      !spot ||
-      eligibleFor([under], spot.role, duty.eligibility).length === 0
-    ) {
-      continue;
-    }
-    const remaining = Math.abs(gap - 2 * effort);
-    if (!best || remaining < best.remaining) {
-      best = { spot, to: under.id, remaining };
+  };
+
+  for (const give of outgoing) {
+    consider([give]);
+    for (const take of incoming) {
+      if (EFFORT_POINTS[take.duty.effort] < EFFORT_POINTS[give.duty.effort]) {
+        consider([give, take]);
+      }
     }
   }
-  return best;
+  return best?.transfers;
+}
+
+// What `from` holds of the duty, handed to `to` — whole rooms on room duties.
+function transfer(
+  duty: MovableDuty,
+  from: Holder,
+  to: Holder,
+  roomOf: ReadonlyMap<string, string | null>,
+): Transfer | undefined {
+  const byRoom = (member: Member) =>
+    duty.unit === 'ROOM' &&
+    member.role === 'MEMBER' &&
+    !!roomOf.get(member.registrationId);
+  const leaving = duty.members.filter(
+    (member) =>
+      !member.missed &&
+      (from.kind === 'ROOM'
+        ? byRoom(member) && roomOf.get(member.registrationId) === from.id
+        : !byRoom(member) && member.registrationId === from.id),
+  );
+  const first = leaving.at(0);
+  if (!first) {
+    return undefined;
+  }
+
+  const takers = eligibleFor(to.occupants, first.role, duty.eligibility);
+  if (
+    takers.length === 0 ||
+    takers.some((taker) =>
+      duty.members.some((member) => member.registrationId === taker.id),
+    )
+  ) {
+    return undefined;
+  }
+
+  // A room of another size may take over, but the duty keeps the people it
+  // needs — or, if it was short already, at least those it had.
+  if (to.kind === 'ROOM') {
+    const active = duty.members.filter(
+      (member) => member.role === 'MEMBER' && !member.missed,
+    ).length;
+    if (
+      active - leaving.length + takers.length <
+      Math.min(duty.headcount, active)
+    ) {
+      return undefined;
+    }
+  }
+
+  return {
+    duty,
+    role: first.role,
+    leaving: leaving.map((member) => member.registrationId),
+    joining: takers.map((taker) => taker.id),
+  };
+}
+
+/**
+ * How much the change evens out loads, as the drop in their squared distance
+ * from each person's group average — against the average rather than zero,
+ * so a smaller room is not favoured just for doing a duty with fewer people.
+ * Zero if it would give anyone more duties on a day than they had already,
+ * unless they were free.
+ */
+function gainOf(
+  ledger: ChoreLedger,
+  transfers: Transfer[],
+  averageOf: (id: string) => number,
+): number {
+  const loadDelta = new Map<string, number>();
+  const dayDelta = new Map<string, number>();
+  const add = <K>(map: Map<K, number>, key: K, value: number) =>
+    map.set(key, (map.get(key) ?? 0) + value);
+
+  for (const { duty, leaving, joining } of transfers) {
+    const effort = EFFORT_POINTS[duty.effort];
+    for (const id of leaving) {
+      add(loadDelta, id, -effort);
+      add(dayDelta, `${id}|${duty.date}`, -1);
+    }
+    for (const id of joining) {
+      add(loadDelta, id, effort);
+      add(dayDelta, `${id}|${duty.date}`, 1);
+    }
+  }
+
+  for (const [key, delta] of dayDelta) {
+    const [id = '', date = ''] = key.split('|');
+    const before = statsOf(ledger, id).days.get(date)?.dutyCount ?? 0;
+    if (delta > 0 && before + delta > Math.max(before, 1)) {
+      return 0;
+    }
+  }
+
+  let gain = 0;
+  for (const [id, delta] of loadDelta) {
+    const offset = statsOf(ledger, id).load - averageOf(id);
+    gain += offset * offset - (offset + delta) * (offset + delta);
+  }
+  return gain;
 }

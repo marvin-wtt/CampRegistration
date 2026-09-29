@@ -1079,7 +1079,6 @@ async function publish() {
         actions: [
           {
             label: t('notify.rejectedAction'),
-            color: 'white',
             noCaps: true,
             handler: () => {
               void router.push({ name: 'management.organization.dashboard' });

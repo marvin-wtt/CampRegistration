@@ -95,9 +95,15 @@ const series = z.object({
       slotIds: z.array(z.ulid()).max(50),
       from: DateSchema,
       to: DateSchema,
-      weekdays: z.array(z.number().int().min(0).max(6)).min(1).optional(),
       rotationUnit: ROTATION_UNIT,
       onConflict: z.enum(['SKIP', 'FILL', 'REPLACE']),
+      assign: z.boolean().optional(),
+      existingOnly: z.boolean().optional(),
+    })
+    // Working only on existing duties while skipping them does nothing.
+    .refine((data) => !data.existingOnly || data.onConflict !== 'SKIP', {
+      message: 'Existing duties must be filled or replaced',
+      path: ['onConflict'],
     })
     .refine((data) => data.from <= data.to, {
       message: 'The end date must not be before the start date',
@@ -173,8 +179,8 @@ const rebalance = z.object({
         z.object({
           assignmentId: z.ulid(),
           role: ROLE,
-          fromRegistrationId: z.ulid(),
-          toRegistrationId: z.ulid(),
+          fromRegistrationIds: z.array(z.ulid()).max(50),
+          toRegistrationIds: z.array(z.ulid()).max(50),
         }),
       )
       .min(1)

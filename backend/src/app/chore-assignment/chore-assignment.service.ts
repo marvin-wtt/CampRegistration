@@ -42,7 +42,7 @@ import {
 import type { ChoreAssignmentWithRelations } from '#app/chore-assignment/chore-assignment.types';
 import type { ChoreWithSlots } from '#app/chore/chore.types';
 import { ulid } from '#utils/ulid';
-import { eachDate, toDateString, toDbDate, weekdayOf } from '#utils/date';
+import { eachDate, toDateString, toDbDate } from '#utils/date';
 
 const CHORE_ASSIGNMENT_INCLUDE = {
   chore: true,
@@ -50,8 +50,8 @@ const CHORE_ASSIGNMENT_INCLUDE = {
 } as const satisfies Prisma.ChoreAssignmentInclude;
 
 const REBALANCE_INCLUDE = {
-  chore: { select: { effort: true, eligibility: true } },
-  choreSlot: { select: { effort: true } },
+  chore: { select: { effort: true, eligibility: true, defaultCount: true } },
+  choreSlot: { select: { effort: true, headcount: true } },
   members: true,
 } as const satisfies Prisma.ChoreAssignmentInclude;
 
@@ -212,16 +212,15 @@ export class ChoreAssignmentService extends BaseService {
   /**
    * Plans one occurrence per selected day and slot, fairly, in date order.
    * Existing occurrences are skipped, topped up or replaced; only planned ones
-   * are ever touched — done or cancelled duties are history.
+   * are ever touched — done or cancelled duties are history. Without `assign`
+   * the duties are created empty; with `existingOnly` none are created.
    */
   async planSeries(
     eventId: string,
     chore: ChoreWithSlots,
     data: ChoreSeriesPlanData,
   ): Promise<ChoreSeriesPlanResult> {
-    const dates = eachDate(data.from, data.to).filter(
-      (date) => !data.weekdays || data.weekdays.includes(weekdayOf(date)),
-    );
+    const dates = eachDate(data.from, data.to);
     const slots: (ChoreSlot | null)[] =
       data.slotIds.length > 0
         ? chore.slots.filter((slot) => data.slotIds.includes(slot.id))
@@ -249,89 +248,121 @@ export class ChoreAssignmentService extends BaseService {
       }
 
       let skipped = 0;
-      const replaced: ChoreAssignmentWithRelations[] = [];
       const occurrences: {
         spec: OccurrenceSpec;
         existing: ExistingMember[];
         slotId: string | null;
         target: ChoreAssignmentWithRelations | null;
+        replace: boolean;
       }[] = [];
 
       for (const date of dates) {
         for (const slot of slots) {
           const slotId = slot?.id ?? null;
           const current = existingByKey.get(occurrenceKey(date, slotId));
-          if (
-            current &&
-            (data.onConflict === 'SKIP' || current.status !== 'PLANNED')
-          ) {
+          if (!current) {
+            if (!data.existingOnly) {
+              occurrences.push({
+                spec: occurrenceSpec(chore, slot, date, data.rotationUnit),
+                existing: [],
+                slotId,
+                target: null,
+                replace: false,
+              });
+            }
+            continue;
+          }
+          if (data.onConflict === 'SKIP' || current.status !== 'PLANNED') {
             skipped++;
             continue;
           }
-          if (current && data.onConflict === 'REPLACE') {
-            replaced.push(current);
-          }
 
-          const fill = current && data.onConflict === 'FILL';
+          const replace = data.onConflict === 'REPLACE';
           occurrences.push({
-            spec: occurrenceSpec(chore, slot, date, data.rotationUnit),
-            existing: fill ? current.members : [],
+            // Filling keeps the duty's own unit; replacing switches it.
+            spec: occurrenceSpec(
+              chore,
+              slot,
+              date,
+              replace ? data.rotationUnit : current.rotationUnit,
+            ),
+            existing: replace ? [] : current.members,
             slotId,
-            target: fill ? current : null,
+            target: current,
+            replace,
           });
         }
       }
 
-      const [ledger, pool] = await Promise.all([
-        this.loadLedger(
-          eventId,
-          replaced.map((assignment) => assignment.id),
-        ),
-        this.loadPool(eventId),
-      ]);
-      const picks = planOccurrences(ledger, pool, occurrences);
-
-      await tx.choreAssignment.deleteMany({
-        where: { id: { in: replaced.map((assignment) => assignment.id) } },
-      });
+      let picks: MemberPick[][] = [];
+      if (data.assign ?? true) {
+        const [ledger, pool] = await Promise.all([
+          this.loadLedger(
+            eventId,
+            occurrences.flatMap((o) =>
+              o.replace && o.target ? [o.target.id] : [],
+            ),
+          ),
+          this.loadPool(eventId),
+        ]);
+        picks = planOccurrences(ledger, pool, occurrences);
+      }
 
       const batchId = occurrences.some((o) => !o.target) ? ulid() : null;
       let created = 0;
       let filled = 0;
+      let replaced = 0;
 
       for (const [index, occurrence] of occurrences.entries()) {
         const members = picks[index] ?? [];
         const target = occurrence.target;
 
-        if (target) {
-          if (members.length === 0) {
-            continue;
-          }
-          await tx.choreAssignmentMember.createMany({
-            data: members.map((m) => ({ ...m, choreAssignmentId: target.id })),
+        if (!target) {
+          await tx.choreAssignment.create({
+            data: {
+              eventId,
+              choreId: chore.id,
+              slotId: occurrence.slotId,
+              batchId,
+              rotationUnit: data.rotationUnit,
+              date: toDbDate(occurrence.spec.date),
+              members: { createMany: { data: members } },
+            },
           });
-          filled++;
+          created++;
           continue;
         }
 
-        await tx.choreAssignment.create({
-          data: {
-            eventId,
-            choreId: chore.id,
-            slotId: occurrence.slotId,
-            batchId,
-            rotationUnit: data.rotationUnit,
-            date: toDbDate(occurrence.spec.date),
-            members: { createMany: { data: members } },
-          },
+        // In place, so the duty keeps its id, note and series.
+        if (occurrence.replace) {
+          await tx.choreAssignmentMember.deleteMany({
+            where: { choreAssignmentId: target.id },
+          });
+          await tx.choreAssignment.update({
+            where: { id: target.id },
+            data: {
+              rotationUnit: data.rotationUnit,
+              members: { createMany: { data: members } },
+            },
+          });
+          replaced++;
+          continue;
+        }
+
+        if (members.length === 0) {
+          continue;
+        }
+        await tx.choreAssignmentMember.createMany({
+          data: members.map((m) => ({ ...m, choreAssignmentId: target.id })),
         });
-        created++;
+        filled++;
       }
 
       return {
         batchId: created > 0 ? batchId : null,
         created,
         filled,
+        replaced,
         skipped,
       };
     });
@@ -509,7 +540,7 @@ export class ChoreAssignmentService extends BaseService {
 
   /**
    * Swaps that even out the load, without saving them. Only upcoming planned
-   * duties staffed by person may change hands — today's are left alone.
+   * duties may change hands — today's are left alone.
    */
   async previewRebalance(eventId: string): Promise<ChoreRebalanceChange[]> {
     const today = toDateString(new Date());
@@ -531,15 +562,16 @@ export class ChoreAssignmentService extends BaseService {
         status: assignment.status,
         members: assignment.members,
       };
-      if (
-        assignment.status === 'PLANNED' &&
-        assignment.rotationUnit === 'PERSON' &&
-        duty.date > today
-      ) {
+      if (assignment.status === 'PLANNED' && duty.date > today) {
         movable.push({
           ...duty,
           id: assignment.id,
           eligibility: assignment.chore.eligibility,
+          unit: assignment.rotationUnit,
+          headcount:
+            assignment.choreSlot?.headcount ??
+            assignment.chore.defaultCount ??
+            0,
         });
       } else {
         fixed.push(duty);
@@ -565,18 +597,20 @@ export class ChoreAssignmentService extends BaseService {
         const current = new Set(
           assignment?.members.map((m) => m.registrationId) ?? [],
         );
-        const leaving = new Set(group.map((c) => c.fromRegistrationId));
+        const leaving = new Set(group.flatMap((c) => c.fromRegistrationIds));
         const stale =
           !assignment ||
           group.some(
             (c) =>
-              !assignment.members.some(
-                (m) =>
-                  m.registrationId === c.fromRegistrationId &&
-                  m.role === c.role,
+              c.fromRegistrationIds.some(
+                (id) =>
+                  !assignment.members.some(
+                    (m) => m.registrationId === id && m.role === c.role,
+                  ),
               ) ||
-              (current.has(c.toRegistrationId) &&
-                !leaving.has(c.toRegistrationId)),
+              c.toRegistrationIds.some(
+                (id) => current.has(id) && !leaving.has(id),
+              ),
           );
         if (stale) {
           throw new ApiError(
@@ -594,11 +628,13 @@ export class ChoreAssignmentService extends BaseService {
           },
         });
         await tx.choreAssignmentMember.createMany({
-          data: group.map((change) => ({
-            choreAssignmentId: assignmentId,
-            registrationId: change.toRegistrationId,
-            role: change.role,
-          })),
+          data: group.flatMap((change) =>
+            change.toRegistrationIds.map((registrationId) => ({
+              choreAssignmentId: assignmentId,
+              registrationId,
+              role: change.role,
+            })),
+          ),
         });
       }
     });

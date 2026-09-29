@@ -1009,7 +1009,13 @@ function editAssignment(assignment: ChoreAssignment) {
   quasar
     .dialog({
       component: ChoreAssignmentDialog,
-      componentProps: { ...dialogContext.value, assignment },
+      componentProps: {
+        ...dialogContext.value,
+        assignment,
+        onDelete: canDelete.value
+          ? () => deleteAssignment(assignment)
+          : undefined,
+      },
     })
     .onOk((payload: ChoreAssignmentUpdateData) => {
       void choreAssignmentStore.updateData(assignment.id, payload);
@@ -1044,6 +1050,7 @@ async function runSeries(payload: ChoreSeriesPlanData) {
     message: t('series.done', {
       created: result.created,
       filled: result.filled,
+      replaced: result.replaced,
       skipped: result.skipped,
     }),
     timeout: 10000,
@@ -1051,7 +1058,6 @@ async function runSeries(payload: ChoreSeriesPlanData) {
       ? [
           {
             label: t('action.undo'),
-            color: 'primary',
             handler: () => void choreAssignmentStore.deleteMany({ batchId }),
           },
         ]
@@ -1176,7 +1182,6 @@ async function suggestRebalance() {
     actions: [
       {
         label: t('action.rebalance'),
-        color: 'primary',
         handler: openRebalance,
       },
     ],
@@ -1349,7 +1354,7 @@ summary:
   allFilled: 'all spots filled'
 
 series:
-  done: 'Planned {created} new duties ({filled} topped up, {skipped} left as they were).'
+  done: 'Planned {created} new duties ({filled} topped up, {replaced} reassigned, {skipped} left as they were).'
 
 rebalanceHint: 'Some people now have noticeably more duties than others.'
 action:
@@ -1411,7 +1416,7 @@ summary:
   allFilled: 'alle Plätze besetzt'
 
 series:
-  done: '{created} neue Dienste geplant ({filled} aufgefüllt, {skipped} unverändert).'
+  done: '{created} neue Dienste geplant ({filled} aufgefüllt, {replaced} neu eingeteilt, {skipped} unverändert).'
 
 rebalanceHint: 'Manche haben jetzt deutlich mehr Dienste als andere.'
 action:
@@ -1473,7 +1478,7 @@ summary:
   allFilled: 'toutes les places sont prises'
 
 series:
-  done: '{created} nouvelles corvées planifiées ({filled} complétées, {skipped} laissées telles quelles).'
+  done: '{created} nouvelles corvées planifiées ({filled} complétées, {replaced} réattribuées, {skipped} laissées telles quelles).'
 
 rebalanceHint: 'Certaines personnes ont maintenant nettement plus de corvées que d’autres.'
 action:
@@ -1535,7 +1540,7 @@ summary:
   allFilled: 'wszystkie miejsca obsadzone'
 
 series:
-  done: 'Zaplanowano {created} nowych dyżurów ({filled} uzupełnionych, {skipped} bez zmian).'
+  done: 'Zaplanowano {created} nowych dyżurów ({filled} uzupełnionych, {replaced} przydzielonych na nowo, {skipped} bez zmian).'
 
 rebalanceHint: 'Niektóre osoby mają teraz wyraźnie więcej dyżurów niż inne.'
 action:
@@ -1597,7 +1602,7 @@ summary:
   allFilled: 'všechna místa obsazena'
 
 series:
-  done: 'Naplánováno {created} nových služeb ({filled} doplněno, {skipped} beze změny).'
+  done: 'Naplánováno {created} nových služeb ({filled} doplněno, {replaced} znovu přiděleno, {skipped} beze změny).'
 
 rebalanceHint: 'Někteří mají teď výrazně víc služeb než ostatní.'
 action:

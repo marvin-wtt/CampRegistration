@@ -90,19 +90,35 @@
           >
             <q-item-section>
               <q-item-label>{{ row.name }}</q-item-label>
+              <!-- The balance leads the caption rather than sitting beside the
+                   bar, so the bar keeps the full width on a phone. "About
+                   average" is left to the bar and its average line. -->
               <q-item-label
-                v-if="rowSummary(row)"
+                v-if="showBalance(row) || rowParts(row).length > 0"
                 caption
+                class="row-parts"
               >
-                {{ rowSummary(row) }}
+                <span
+                  v-if="showBalance(row)"
+                  class="balance-text"
+                  :class="`balance-text--${row.balance}`"
+                >
+                  {{ t(`balance.${row.balance}`) }}
+                </span>
+                <span
+                  v-for="part in rowParts(row)"
+                  :key="part"
+                >
+                  {{ part }}
+                </span>
               </q-item-label>
               <!-- Bar: share of the busiest person's load, solid where done;
                    line: the average. -->
               <div
                 v-if="row.load > 0"
-                class="balance row items-center no-wrap q-mt-xs"
+                class="q-mt-xs"
               >
-                <div class="balance-bar col rounded-full">
+                <div class="balance-bar rounded-full">
                   <div
                     class="balance-fill rounded-full"
                     :class="`balance-fill--${row.balance}`"
@@ -117,9 +133,6 @@
                     class="balance-average"
                     :style="{ left: percent(groupAverage) }"
                   />
-                </div>
-                <div class="balance-label text-caption">
-                  {{ t(`balance.${row.balance}`) }}
                 </div>
               </div>
               <div
@@ -196,6 +209,10 @@ const props = defineProps<{
 
 defineEmits([...useDialogPluginComponent.emits]);
 
+function showBalance(row: Row): boolean {
+  return row.load > 0 && row.balance !== 'AVERAGE';
+}
+
 interface Row extends ChoreFairnessEntry {
   name: string;
   staff: boolean;
@@ -269,7 +286,7 @@ const rows = computed<Row[]>(() =>
     .sort((a, b) => b.share - a.share || a.name.localeCompare(b.name)),
 );
 
-function rowSummary(row: Row): string {
+function rowParts(row: Row): string[] {
   return [
     // "No duty yet" below already says it for someone without any.
     row.doneDutyCount > 0 ? t('summary.done', row.doneDutyCount) : undefined,
@@ -281,9 +298,7 @@ function rowSummary(row: Row): string {
       ? t('summary.supervisions', row.supervisionCount)
       : undefined,
     row.missedCount > 0 ? t('summary.missed', row.missedCount) : undefined,
-  ]
-    .filter(Boolean)
-    .join(' · ');
+  ].filter((part): part is string => !!part);
 }
 
 function rebalance() {
@@ -331,14 +346,36 @@ function removePerson(registrationId: string) {
   color: var(--md3-on-secondary-container);
 }
 
-.filters,
-.balance {
+.filters {
   gap: 8px;
 }
 
-.balance-label {
-  flex: none;
-  min-width: 9em;
+/* Wraps between parts, never inside one ("1 duty done" stays together). */
+.row-parts {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 4px;
+}
+
+.row-parts > span {
+  white-space: nowrap;
+}
+
+.row-parts > span:not(:last-child)::after {
+  content: '·';
+  margin-left: 4px;
+}
+
+.balance-text {
+  font-weight: 500;
+}
+
+.balance-text--BELOW {
+  color: var(--md3-tertiary);
+}
+
+.balance-text--ABOVE {
+  color: var(--md3-error);
 }
 
 .balance-bar {
@@ -394,7 +431,6 @@ filter:
   unassigned: 'No duty yet ({count})'
 balance:
   BELOW: 'Less than average'
-  AVERAGE: 'About average'
   ABOVE: 'More than average'
 summary:
   done: 'No duties done | 1 duty done | {n} duties done'
@@ -421,7 +457,6 @@ filter:
   unassigned: 'Noch kein Dienst ({count})'
 balance:
   BELOW: 'Weniger als der Durchschnitt'
-  AVERAGE: 'Etwa Durchschnitt'
   ABOVE: 'Mehr als der Durchschnitt'
 summary:
   done: 'Keine Dienste erledigt | 1 Dienst erledigt | {n} Dienste erledigt'
@@ -448,7 +483,6 @@ filter:
   unassigned: 'Aucune corvée ({count})'
 balance:
   BELOW: 'Moins que la moyenne'
-  AVERAGE: 'Dans la moyenne'
   ABOVE: 'Plus que la moyenne'
 summary:
   done: 'Aucune corvée faite | 1 corvée faite | {n} corvées faites'
@@ -475,7 +509,6 @@ filter:
   unassigned: 'Bez dyżuru ({count})'
 balance:
   BELOW: 'Mniej niż średnio'
-  AVERAGE: 'Około średniej'
   ABOVE: 'Więcej niż średnio'
 summary:
   done: 'Brak wykonanych dyżurów | 1 dyżur wykonany | {n} dyżurów wykonanych'
@@ -502,7 +535,6 @@ filter:
   unassigned: 'Zatím bez služby ({count})'
 balance:
   BELOW: 'Méně než průměr'
-  AVERAGE: 'Zhruba průměr'
   ABOVE: 'Více než průměr'
 summary:
   done: 'Žádné služby hotové | 1 služba hotová | {n} služeb hotových'
