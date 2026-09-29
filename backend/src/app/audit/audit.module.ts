@@ -32,13 +32,17 @@ export class AuditModule implements AppModule {
   }
 
   registerJobs(scheduler: JobScheduler): void {
-    scheduler.schedule('audit-log-retention-cleanup', '0 5 * * *', async () => {
-      const service = resolve(AuditService);
-      const count = await service.purgeExpiredAuditLogs();
-      logger.info(`Removed ${count.toString()} audit log entry(ies)`);
-      const names = await service.purgeExpiredDeletedUsers();
-      logger.info(`Removed ${names.toString()} deleted user name(s)`);
-    });
+    scheduler.schedule(
+      'audit-log-retention-cleanup',
+      '30 5 * * *',
+      async () => {
+        const service = resolve(AuditService);
+        const count = await service.purgeExpiredAuditLogs();
+        logger.info(`Removed ${count.toString()} audit log entry(ies)`);
+        const names = await service.purgeExpiredDeletedUsers();
+        logger.info(`Removed ${names.toString()} deleted user name(s)`);
+      },
+    );
   }
 
   shutdown(): void {

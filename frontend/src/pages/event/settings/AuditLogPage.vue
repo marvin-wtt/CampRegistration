@@ -5,20 +5,19 @@
     class="audit-log-page row justify-center"
   >
     <div
-      class="audit-log-content col-12 col-md-11 col-lg-10 column q-gutter-y-lg"
+      class="audit-log-content col-12 col-md-11 col-lg-10 column no-wrap q-gutter-y-lg"
     >
-      <div class="row items-start justify-between q-col-gutter-y-sm">
-        <div class="col-12 col-sm">
-          <div class="text-h5 text-weight-medium">
-            {{ t('title') }}
-          </div>
-          <div class="text-body2 text-variant q-mt-xs">
-            {{ t('subtitle') }}
-          </div>
-        </div>
-        <div class="col-auto">
+      <!-- Icon-only on phones so it stays beside the title. -->
+      <page-header
+        :title="t('title')"
+        :subtitle="t('subtitle')"
+        :inline-actions="quasar.screen.xs"
+      >
+        <template #actions>
           <m-btn
-            :label="t('refresh')"
+            :label="quasar.screen.xs ? undefined : t('refresh')"
+            :round="quasar.screen.xs"
+            :aria-label="t('refresh')"
             :loading="loading && rows.length > 0"
             icon="refresh"
             tonal
@@ -26,8 +25,8 @@
             no-caps
             @click="refresh"
           />
-        </div>
-      </div>
+        </template>
+      </page-header>
 
       <!-- Filters -->
       <div class="filter-row">
@@ -381,6 +380,7 @@ import { useEventDetailsStore } from '@/stores/event-details-store';
 import { addDays, parseLocalDate } from '@/utils/date';
 import { browserTimezone } from '@/utils/timezones';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
+import PageHeader from '@/components/common/PageHeader.vue';
 
 type DateRange = { from: string; to: string };
 
@@ -596,8 +596,9 @@ const dateRangeLabel = computed<string | null>(() => {
 @media (max-width: 599.98px) {
   .filter-row {
     flex-wrap: nowrap;
-    margin-inline: -16px;
-    padding-inline: 16px;
+    /* Bleeds to the screen edge through q-layout-padding (8px on phones). */
+    margin-inline: -8px;
+    padding-inline: 8px;
     overflow-x: auto;
     scrollbar-width: none;
   }
@@ -651,6 +652,22 @@ const dateRangeLabel = computed<string | null>(() => {
 
 .audit-entry {
   padding-block: 12px;
+}
+
+/* Every pixel goes to the title and chips on phones. */
+@media (max-width: 599.98px) {
+  .audit-entry {
+    padding-inline: 12px 4px;
+  }
+
+  .audit-entry > .q-item__section--avatar {
+    min-width: 0;
+    padding-right: 12px;
+  }
+
+  .audit-entry > .q-item__section--side {
+    padding-left: 4px;
+  }
 }
 
 .audit-entry__title {
