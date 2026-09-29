@@ -43,11 +43,11 @@
             <template v-if="modifiers.number">
               <!-- Numeric inputs -->
               <q-input
-                v-for="(locale, index) in props.locales"
+                v-for="(locale, index) in keys"
                 :key="index"
                 v-model.number="translations[locale]"
                 v-bind="inputProps"
-                :lang="locale"
+                :lang="languageOf(locale)"
                 :aria-label="fieldAriaLabel(locale)"
                 :disable="Boolean(props.disable) || isAutoTranslating(locale)"
                 :loading="Boolean(props.loading) || isAutoTranslating(locale)"
@@ -60,7 +60,7 @@
                     name="prepend"
                   />
                   <div class="locale-marker row items-center no-wrap">
-                    <country-icon :locale="locale" />
+                    <country-icon v-bind="flagProps(locale)" />
                     <span class="locale-code">
                       {{ locale.toUpperCase() }}
                     </span>
@@ -109,11 +109,11 @@
             <!-- Other inputs -->
             <template v-else>
               <q-input
-                v-for="(locale, index) in props.locales"
+                v-for="(locale, index) in keys"
                 :key="index"
                 v-model="translations[locale]"
                 v-bind="inputProps"
-                :lang="locale"
+                :lang="languageOf(locale)"
                 :aria-label="fieldAriaLabel(locale)"
                 :disable="Boolean(props.disable) || isAutoTranslating(locale)"
                 :loading="Boolean(props.loading) || isAutoTranslating(locale)"
@@ -126,7 +126,7 @@
                     name="prepend"
                   />
                   <div class="locale-marker row items-center no-wrap">
-                    <country-icon :locale="locale" />
+                    <country-icon v-bind="flagProps(locale)" />
                     <span class="locale-code">{{ locale.toUpperCase() }}</span>
                     <q-tooltip>{{ localeName(locale) }}</q-tooltip>
                   </div>
@@ -192,6 +192,7 @@ import {
   usePassthroughProps,
 } from '@/composables/passthroughProps';
 import { useTranslationStore } from '@/stores/translation-store';
+import { COUNTRY_LOCALES } from '@/i18n/locales';
 
 type Translations = Record<string, string | number>;
 type ModelValueType = undefined | null | string | number | Translations;
@@ -200,7 +201,10 @@ interface Props extends Omit<
   QInputProps,
   'modelValue' | 'onUpdate:modelValue'
 > {
+  // The keys of the translated value: languages (`locales`) or, for texts
+  // stored per country such as an event's own, countries (`countries`).
   locales?: string[] | undefined;
+  countries?: string[] | undefined;
   // Keep the translated inputs on, without the toggle to leave them
   always?: boolean | undefined;
   defaultUntranslated?: boolean | undefined;
@@ -239,17 +243,29 @@ const props = withDefaults(defineProps<Props>(), {
 
 const inputProps = usePassthroughProps(props, [
   'locales',
+  'countries',
   'always',
   'defaultUntranslated',
   'noTranslation',
 ]);
+
+const keys = computed<string[]>(() => props.countries ?? props.locales);
+
+// The language a key's text is written in, as the translation API expects.
+function languageOf(key: string): string {
+  return props.countries ? (COUNTRY_LOCALES[key] ?? key) : key;
+}
+
+function flagProps(key: string) {
+  return props.countries ? { country: key } : { locale: key };
+}
 
 const useTranslations = ref(defaultUseTranslations());
 const value = ref<string | number>(defaultValue());
 const translations = ref<Translations>(defaultTranslations());
 
 const enabled = computed<boolean>(() => {
-  return props.locales.length > 1;
+  return keys.value.length > 1;
 });
 
 // In translated mode the per-locale flag stands in for the field icon, so the
@@ -266,10 +282,19 @@ const translatedSlots = computed<Partial<ForwardedFieldSlots>>(() => {
 });
 
 // Localized country/language name for the locale marker tooltip; falls back to
-// the uppercased code when no global `country.*` key exists for the value.
+// the uppercased code when the name is unknown.
 function localeName(value: string): string {
-  const key = `country.${value.toLowerCase()}`;
-  return te(key) ? tGlobal(key) : value.toUpperCase();
+  if (props.countries) {
+    const key = `country.${value.toLowerCase()}`;
+    return te(key) ? tGlobal(key) : value.toUpperCase();
+  }
+
+  try {
+    const names = new Intl.DisplayNames([locale.value], { type: 'language' });
+    return names.of(value) ?? value.toUpperCase();
+  } catch {
+    return value.toUpperCase();
+  }
 }
 
 // The flag + code prepend is visual only, so screen readers can't tell one
@@ -292,11 +317,11 @@ function defaultValue(): string | number {
   // If the model value if an object and there is only one locale, we assume that the object is a translation and
   //  contains a translation for the given locale
   if (
-    props.locales.length === 1 &&
+    keys.value.length === 1 &&
     model.value !== null &&
     typeof model.value === 'object'
   ) {
-    const locale = props.locales[0]!;
+    const locale = keys.value[0]!;
 
     if (!(locale in model.value)) {
       return Object.values(model.value)[0] ?? '';
@@ -359,11 +384,13 @@ function isAutoTranslating(locale: string): boolean {
 // The field an empty locale pulls its text from: the user's own locale when it
 // carries content, otherwise the first filled locale in prop order.
 function translationSource(targetLocale: string): string | undefined {
-  const candidates = props.locales.filter(
+  const candidates = keys.value.filter(
     (l) => l !== targetLocale && hasContent(translations.value[l]),
   );
 
-  return candidates.find((l) => l === userLocale.value) ?? candidates[0];
+  return (
+    candidates.find((l) => languageOf(l) === userLocale.value) ?? candidates[0]
+  );
 }
 
 // The action fills its own field, so it only makes sense on an empty one that
@@ -379,6 +406,12 @@ function canAutoTranslate(locale: string): boolean {
 async function autoTranslateInto(targetLocale: string) {
   const sourceLocale = translationSource(targetLocale);
   if (!sourceLocale || autoTranslating.value) {
+    return;
+  }
+
+  // Two countries sharing a language (`gb`, `us`) need no provider round-trip.
+  if (languageOf(sourceLocale) === languageOf(targetLocale)) {
+    translations.value[targetLocale] = translations.value[sourceLocale]!;
     return;
   }
 
@@ -401,8 +434,8 @@ async function fillTranslations(
   try {
     const results = await translationStore.translate(
       text,
-      targetLocales,
-      sourceLocale,
+      [...new Set(targetLocales.map(languageOf))],
+      sourceLocale && languageOf(sourceLocale),
     );
 
     if (token !== fillToken) {
@@ -414,7 +447,7 @@ async function fillTranslations(
     // notification) or just that locale did within an otherwise-successful
     // batch; either way, leave that field untouched.
     targetLocales.forEach((targetLocale) => {
-      const translated = results?.[targetLocale];
+      const translated = results?.[languageOf(targetLocale)];
       if (translated == null) {
         return;
       }
@@ -450,7 +483,9 @@ watch(
       return;
     }
 
-    const matchedLocale = props.locales.find((l) => l === userLocale.value);
+    const matchedLocale = keys.value.find(
+      (l) => languageOf(l) === userLocale.value,
+    );
 
     if (isEnabled) {
       // Turning translations on: fan the single value out over every locale
@@ -462,7 +497,7 @@ watch(
 
       // Park the typed text in the user's own locale first, so it stays
       // visible if translation is unavailable or the request fails.
-      const seedLocale = matchedLocale ?? props.locales[0];
+      const seedLocale = matchedLocale ?? keys.value[0];
       const seedLocaleWasEmpty =
         !!seedLocale && !hasContent(translations.value[seedLocale]);
       if (seedLocale && seedLocaleWasEmpty) {
@@ -475,7 +510,7 @@ watch(
         // detected rather than assumed. Locales the user already filled are
         // left alone — including the seed locale, whose own wording would
         // otherwise be round-tripped through the provider and overwritten.
-        const targetLocales = props.locales.filter((l) =>
+        const targetLocales = keys.value.filter((l) =>
           l === seedLocale
             ? seedLocaleWasEmpty
             : !hasContent(translations.value[l]),
@@ -494,7 +529,7 @@ watch(
     const sourceLocale =
       matchedLocale && matchedLocale in translations.value
         ? matchedLocale
-        : props.locales.find((l) => l in translations.value);
+        : keys.value.find((l) => l in translations.value);
 
     if (sourceLocale) {
       value.value = translations.value[sourceLocale]!;

@@ -57,11 +57,7 @@ export class AzureTranslatorProvider extends TranslationProvider {
     }
 
     if (!response.ok) {
-      throw new ApiError(
-        httpStatus.BAD_GATEWAY,
-        'Translation provider request failed.',
-        { code: 'TRANSLATION_PROVIDER_ERROR' },
-      );
+      throw await this.requestFailedError(response, targetLocale, sourceLocale);
     }
 
     const data = (await response.json()) as AzureTranslateResponseItem[];

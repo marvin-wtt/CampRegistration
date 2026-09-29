@@ -1,16 +1,26 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import TranslatedInput from '@/components/common/inputs/TranslatedInput.vue';
 import { installQuasarPlugin } from '@/../test/vitest/utils/quasar';
+import { flushPromises } from '@vue/test-utils';
+
+const translateText = vi.fn();
+vi.mock('@/services/APIService', () => ({
+  useAPIService: () => ({
+    fetchTranslationStatus: () => Promise.resolve({ available: true }),
+    translateText,
+  }),
+}));
 
 installQuasarPlugin();
 
 beforeEach(() => {
   setActivePinia(createPinia());
+  translateText.mockReset();
 });
 
-describe('SafeDeleteDialog', () => {
+describe('TranslatedInput', () => {
   it('should mount', () => {
     const wrapper = mount(TranslatedInput, {
       props: {
@@ -172,5 +182,27 @@ describe('SafeDeleteDialog', () => {
     await wrapper.find('button[aria-label="action.enable"]').trigger('click');
     inputs = wrapper.findAll('input');
     expect(inputs.length).toBe(2);
+  });
+
+  it('should translate country keys in the language spoken there', async () => {
+    translateText.mockResolvedValue({ cs: 'Ahoj' });
+    const wrapper = mount(TranslatedInput, {
+      props: {
+        modelValue: { de: 'Hallo' },
+        countries: ['de', 'cz', 'gb'],
+        'onUpdate:modelValue': (e) => wrapper.setProps({ modelValue: e }),
+      },
+    });
+    await flushPromises();
+
+    // Rendered in key order, so the first action belongs to `cz`.
+    await wrapper.find('.translate-action').trigger('click');
+    await flushPromises();
+
+    expect(translateText).toHaveBeenCalledWith('Hallo', ['cs'], 'de');
+    expect(wrapper.props().modelValue).toStrictEqual({
+      de: 'Hallo',
+      cz: 'Ahoj',
+    });
   });
 });
