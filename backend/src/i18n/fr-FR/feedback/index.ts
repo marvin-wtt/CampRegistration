@@ -8,8 +8,6 @@ export default {
         "Vous pouvez répondre à cet e-mail pour contacter l'utilisateur directement s'il a fourni une adresse e-mail.",
       senderLabel: 'De',
       messageLabel: 'Message',
-      locationLabel: 'Page',
-      userAgentLabel: 'Navigateur',
     },
     footer: {
       cause: '$t(email:footer.cause) vous êtes administrateur.',

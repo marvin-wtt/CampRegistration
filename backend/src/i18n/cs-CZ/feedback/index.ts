@@ -8,8 +8,6 @@ export default {
         'Na tento e-mail můžete odpovědět a přímo kontaktovat uživatele, pokud poskytl e-mailovou adresu.',
       senderLabel: 'Od',
       messageLabel: 'Zpráva',
-      locationLabel: 'Stránka',
-      userAgentLabel: 'Prohlížeč',
     },
     footer: {
       cause: '$t(email:footer.cause) jste správce.',

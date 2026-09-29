@@ -88,46 +88,6 @@ defineProps<FeedbackProps>();
             </p>
             {{ message }}
           </mj-text>
-          <mj-text
-            v-if="location || userAgent"
-            font-size="15px"
-            line-height="1.7"
-            color="#1f2937"
-            padding="20px 36px 0"
-          >
-            <template v-if="location">
-              <p
-                style="
-                  margin: 0 0 4px;
-                  font-size: 11px;
-                  font-weight: 600;
-                  color: #9ca3af;
-                  letter-spacing: 0.08em;
-                  text-transform: uppercase;
-                "
-              >
-                {{ locationLabel }}
-              </p>
-              {{ location }}
-            </template>
-            <template v-if="userAgent">
-              <p
-                :style="{
-                  margin: `${location ? '16px' : '0'} 0 4px`,
-                  fontSize: '11px',
-                  fontWeight: '600',
-                  color: '#9ca3af',
-                  letterSpacing: '0.08em',
-                  textTransform: 'uppercase',
-                }"
-              >
-                {{ userAgentLabel }}
-              </p>
-              <span style="font-size: 13px; color: #6b7280">{{
-                userAgent
-              }}</span>
-            </template>
-          </mj-text>
         </mj-column>
       </mj-section>
       <email-footer

@@ -8,8 +8,6 @@ export default {
         'Sie können auf diese E-Mail antworten, um den Benutzer direkt zu kontaktieren, falls er eine E-Mail-Adresse angegeben hat.',
       senderLabel: 'Von',
       messageLabel: 'Nachricht',
-      locationLabel: 'Seite',
-      userAgentLabel: 'Browser',
     },
     footer: {
       cause: '$t(email:footer.cause) Sie Administrator sind.',

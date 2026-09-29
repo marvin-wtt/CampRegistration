@@ -130,20 +130,11 @@ async function send() {
   loading.value = true;
   error.value = null;
 
-  // The page the visitor came from is more useful context than /contact itself
-  const back = router.options.history.state.back;
-  const location =
-    typeof back === 'string'
-      ? new URL(router.resolve(back).href, window.location.origin).href
-      : window.location.href;
-
   try {
     await api.sendFeedback({
       message: message.value,
       name: name.value.trim() || undefined,
       email: email.value.trim() || undefined,
-      location,
-      userAgent: navigator.userAgent,
     });
     sent.value = true;
   } catch (err) {

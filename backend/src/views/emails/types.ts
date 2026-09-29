@@ -54,12 +54,8 @@ export interface FeedbackProps extends BaseEmailProps {
   replyNote: string;
   senderLabel: string;
   messageLabel: string;
-  locationLabel: string;
-  userAgentLabel: string;
   sender?: string;
   message: string;
-  location?: string;
-  userAgent?: string;
 }
 
 export interface VerifyEmailProps extends ActionCardProps {

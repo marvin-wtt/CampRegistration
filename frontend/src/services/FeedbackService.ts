@@ -4,8 +4,6 @@ export interface FeedbackData {
   message: string;
   name?: string | undefined;
   email?: string | undefined;
-  location?: string;
-  userAgent?: string;
 }
 
 export function useFeedbackService() {

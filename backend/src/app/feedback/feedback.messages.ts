@@ -6,8 +6,6 @@ import type { FeedbackProps, LocalContext } from '#views/emails/types';
 export interface FeedbackData {
   message: string;
   name: string | undefined;
-  location: string | undefined;
-  userAgent: string | undefined;
   email: string | undefined;
 }
 
@@ -58,12 +56,8 @@ export class FeedbackMessage extends MailBase<FeedbackData> {
         replyNote: t('text.replyNote'),
         senderLabel: t('text.senderLabel'),
         messageLabel: t('text.messageLabel'),
-        locationLabel: t('text.locationLabel'),
-        userAgentLabel: t('text.userAgentLabel'),
         sender: this.sender(),
         message: this.payload.message,
-        location: this.payload.location,
-        userAgent: this.payload.userAgent,
         reason: t('footer.cause'),
       } satisfies LocalContext<FeedbackProps>,
     };
