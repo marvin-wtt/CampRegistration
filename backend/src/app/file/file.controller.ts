@@ -97,7 +97,9 @@ export class FileController extends BaseController {
         type,
       },
       {
-        limit: 20,
+        // Unpaged by default: the editor derives slot state (logo, banner,
+        // free versions) from the whole list, not the first page of it.
+        limit: page ? 20 : undefined,
         page,
         sortBy: 'id',
         sortType: 'asc',

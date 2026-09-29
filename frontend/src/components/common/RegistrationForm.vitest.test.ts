@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import RegistrationForm from '@/components/common/RegistrationForm.vue';
 import { installQuasarPlugin } from '@/../test/vitest/utils/quasar';
@@ -44,6 +44,7 @@ describe('RegistrationForm', () => {
     freePlacesTotal: 0,
     registrationStatus: 'closed' as const,
     logo: null,
+    banner: null,
     form: {
       title: '',
       description: '',
@@ -89,6 +90,50 @@ describe('RegistrationForm', () => {
     const status = wrapper.find('[data-test="registration-submit-status"]');
     expect(status.exists()).toBe(true);
     expect(status.text()).toContain('complete.title');
+  });
+
+  it.each([
+    {
+      name: 'a localized completedHtml',
+      form: { completedHtml: { en: 'Done', de: 'Fertig' } },
+      custom: true,
+    },
+    {
+      name: 'a matching completedHtmlOnCondition',
+      form: {
+        completedHtmlOnCondition: [{ expression: 'true', html: 'Done' }],
+      },
+      custom: true,
+    },
+    {
+      name: 'only a non-matching completedHtmlOnCondition',
+      form: {
+        completedHtmlOnCondition: [{ expression: 'false', html: 'Done' }],
+      },
+      custom: false,
+    },
+  ])('detects the form-defined completed page for $name', async (testCase) => {
+    const wrapper = mount(RegistrationForm, {
+      props: {
+        eventDetails: {
+          ...simpleEventDetails,
+          id: 'event-1',
+          form: { ...simpleEventDetails.form, ...testCase.form },
+        },
+        submitFn: vi.fn().mockResolvedValue(undefined),
+        uploadFileFn: () => Promise.reject(new Error()),
+      },
+    });
+    const survey = wrapper
+      .getComponent(SurveyComponent)
+      .props('model') as SurveyModel;
+
+    survey.doComplete();
+    await flushPromises();
+
+    expect(
+      wrapper.find('[data-test="registration-submit-status"]').exists(),
+    ).toBe(!testCase.custom);
   });
 
   it('shows the custom error status without touching the completed page', async () => {
@@ -244,6 +289,100 @@ describe('RegistrationForm', () => {
   it.todo('should map files');
 
   it.todo('should submit the form');
+
+  describe('redirect after submit', () => {
+    function mountWithRedirect(
+      submitFn: () => Promise<void>,
+      options: { url?: string; moderation?: boolean } = {},
+    ) {
+      const wrapper = mount(RegistrationForm, {
+        props: {
+          eventDetails: {
+            ...simpleEventDetails,
+            id: 'event-1',
+            form: {
+              ...simpleEventDetails.form,
+              navigateToUrl: options.url ?? 'https://example.org/thanks',
+            },
+          },
+          submitFn,
+          uploadFileFn: () => Promise.reject(new Error()),
+          moderation: options.moderation ?? false,
+        },
+      });
+      return wrapper
+        .getComponent(SurveyComponent)
+        .props('model') as SurveyModel;
+    }
+
+    function mockAssign() {
+      return vi.spyOn(window.location, 'assign').mockImplementation(() => {});
+    }
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('waits for the submission before redirecting', async () => {
+      const assign = mockAssign();
+      let finishSubmit!: () => void;
+      const survey = mountWithRedirect(
+        () => new Promise<void>((resolve) => (finishSubmit = resolve)),
+      );
+
+      // Registered after the component's own handler, so it sees whether
+      // survey-core may still navigate on its own.
+      const surveyNavigation: boolean[] = [];
+      survey.onNavigateToUrl.add((_, options) => {
+        surveyNavigation.push(options.allow);
+      });
+
+      survey.doComplete();
+      await flushPromises();
+      expect(surveyNavigation).toEqual([false]);
+      expect(assign).not.toHaveBeenCalled();
+
+      finishSubmit();
+      await flushPromises();
+      expect(assign).toHaveBeenCalledExactlyOnceWith(
+        'https://example.org/thanks',
+      );
+    });
+
+    it('stays on the page when the submission fails', async () => {
+      const assign = mockAssign();
+      const survey = mountWithRedirect(() => Promise.reject(new Error()));
+
+      survey.doComplete();
+      await flushPromises();
+
+      expect(assign).not.toHaveBeenCalled();
+    });
+
+    it('never redirects a manager editing a registration', async () => {
+      const assign = mockAssign();
+      const survey = mountWithRedirect(() => Promise.resolve(), {
+        moderation: true,
+      });
+
+      survey.doComplete();
+      await flushPromises();
+
+      expect(assign).not.toHaveBeenCalled();
+    });
+
+    it('ignores URLs that are not web addresses', async () => {
+      const assign = mockAssign();
+      const survey = mountWithRedirect(() => Promise.resolve(), {
+        url: 'javascript:alert(1)',
+      });
+
+      survey.doComplete();
+      await flushPromises();
+
+      expect(assign).not.toHaveBeenCalled();
+    });
+  });
 
   it.todo('should not submit when invalid');
 

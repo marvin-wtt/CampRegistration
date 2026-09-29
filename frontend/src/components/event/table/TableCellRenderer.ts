@@ -1,6 +1,6 @@
 import { type Component } from 'vue';
 import type { CTableColumnTemplate } from '@/types/CTableTemplate';
-import { ExpressionEvaluator } from '@/components/ExpressionEvaluator';
+import { ExpressionEvaluator } from '@/lib/surveyJs/ExpressionEvaluator';
 import type { TableCellProps } from '@/components/event/table/tableCells/TableCellProps';
 import type { ComponentRegistryEntry } from '@/components/event/table/ComponentRegistry';
 import type { CsvFormatContext } from '@/utils/csvValueFormatter';

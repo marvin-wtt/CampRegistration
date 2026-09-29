@@ -52,12 +52,10 @@ export interface FeedbackProps extends BaseEmailProps {
   reason: string;
   title: string;
   replyNote: string;
+  senderLabel: string;
   messageLabel: string;
-  locationLabel: string;
-  userAgentLabel: string;
+  sender?: string;
   message: string;
-  location?: string;
-  userAgent?: string;
 }
 
 export interface VerifyEmailProps extends ActionCardProps {

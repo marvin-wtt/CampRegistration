@@ -65,11 +65,12 @@ export function useFileService() {
   function getEventFileSlotUrl(
     eventId: string,
     slot: string,
-    locale: string,
+    // Without one, the server picks by the browser's Accept-Language.
+    locale?: string,
   ): string {
     return api.getUri({
       url: `events/${eventId}/files/slots/${slot}/`,
-      params: { locale },
+      params: locale ? { locale } : undefined,
     });
   }
 

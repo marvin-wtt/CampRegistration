@@ -100,7 +100,13 @@
               <template #avatar>
                 <q-icon name="warning_amber" />
               </template>
-              {{ t('fields.field_locale.warning') }}
+              {{
+                t(
+                  isEditMode
+                    ? 'fields.field_locale.warning_edit'
+                    : 'fields.field_locale.warning',
+                )
+              }}
             </q-banner>
 
             <!-- Access -->
@@ -172,10 +178,16 @@ import type {
 } from '@camp-registration/common/entities';
 import { useEventFilesStore } from '@/stores/event-files-store';
 import { useEventDetailsStore } from '@/stores/event-details-store';
-
-const MAX_FIELD_LENGTH = 40;
-const FALLBACK_FIELD_NAME = 'file';
-const FIELD_NAME_PATTERN = /^[a-z0-9_-]+$/;
+import {
+  EVENT_BANNER_SLOT,
+  EVENT_LOGO_SLOT,
+} from '@camp-registration/common/form';
+import {
+  FIELD_NAME_PATTERN,
+  MAX_FIELD_LENGTH,
+  slugifyFieldName,
+  trimFieldName,
+} from '@/utils/fileField';
 
 interface ServiceFileFormData {
   name?: string | undefined;
@@ -250,10 +262,15 @@ const isFieldLocked = computed(
 );
 
 const isLocaleLocked = computed(
-  // Lock only when a concrete locale was supplied (e.g. replace, or a slot that
-  // targets a specific language). A locale-less slot (initialLocale === null)
-  // stays editable so the user can choose one.
-  () => isReplaceMode.value || initialLocale != null,
+  // Lock when a concrete locale was supplied (e.g. replace, or a slot that
+  // targets a specific language) — a locale-less slot (initialLocale === null)
+  // otherwise stays editable so the user can choose one. The logo and banner
+  // are the exception: they aren't localized, so their locale stays fixed.
+  () =>
+    isReplaceMode.value ||
+    initialLocale != null ||
+    initialField === EVENT_LOGO_SLOT ||
+    initialField === EVENT_BANNER_SLOT,
 );
 
 const isAccessLevelLocked = computed(
@@ -262,22 +279,29 @@ const isAccessLevelLocked = computed(
 
 const activeFileId = computed(() => fileToEdit?.id ?? fileToReplace?.id);
 
-const hasDuplicateFieldLocale = computed<boolean>(() => {
+// The file already occupying the (field, locale) pair this upload targets, if
+// any. Submitting an upload over it replaces that file instead of leaving a
+// duplicate behind; an edit can't replace, so it only gets the warning.
+const duplicateFile = computed<ServiceFile | undefined>(() => {
   const field = fileData.field?.trim();
   if (!field) {
-    return false;
+    return undefined;
   }
 
   const locale = fileData.locale ?? null;
   const files = eventFileStore.data ?? [];
 
-  return files.some(
+  return files.find(
     (file) =>
       file.id !== activeFileId.value &&
       file.field === field &&
       file.locale === locale,
   );
 });
+
+const hasDuplicateFieldLocale = computed<boolean>(
+  () => duplicateFile.value !== undefined,
+);
 
 const dialogTitle = computed<string>(() => t(`title.${mode.value}`));
 
@@ -362,28 +386,8 @@ function createSuggestedFieldName(name: string): string {
   return trimFieldName(slug);
 }
 
-function slugifyFieldName(value: string): string {
-  const slug = value
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/&/g, ' and ')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .replace(/-{2,}/g, '-');
-
-  return slug || FALLBACK_FIELD_NAME;
-}
-
-function trimFieldName(value: string): string {
-  return value
-    .slice(0, MAX_FIELD_LENGTH)
-    .replace(/[-_]+$/g, '')
-    .replace(/^[-_]+/g, '');
-}
-
 function normalizeField() {
-  if (!fileData.field) {
+  if (!fileData.field || isFieldLocked.value) {
     return;
   }
 
@@ -418,6 +422,11 @@ async function onOKClick(): Promise<void> {
     } else if (fileToReplace) {
       file = await eventFileStore.replaceFile(
         fileToReplace,
+        createData(metadata),
+      );
+    } else if (duplicateFile.value) {
+      file = await eventFileStore.replaceFile(
+        duplicateFile.value,
         createData(metadata),
       );
     } else {
@@ -501,7 +510,8 @@ fields:
       max_length: 'Use {max} characters or fewer'
       format: 'Use lowercase letters, numbers, hyphens or underscores'
   field_locale:
-    warning: 'Another file already uses this identifier and language. The newer file may hide the older one in forms.'
+    warning: 'Another file already uses this identifier and language. Uploading will replace it.'
+    warning_edit: 'Another file already uses this identifier and language. Only one of them will be shown in the form.'
   file:
     label: 'File'
     rules:
@@ -553,7 +563,8 @@ fields:
       max_length: 'Verwenden Sie höchstens {max} Zeichen'
       format: 'Verwenden Sie Kleinbuchstaben, Zahlen, Bindestriche oder Unterstriche'
   field_locale:
-    warning: 'Eine andere Datei verwendet bereits diese Kennung und Sprache. Die neuere Datei kann die ältere im Formular überdecken.'
+    warning: 'Eine andere Datei verwendet bereits diese Kennung und Sprache. Beim Hochladen wird sie ersetzt.'
+    warning_edit: 'Eine andere Datei verwendet bereits diese Kennung und Sprache. Im Formular wird nur eine davon angezeigt.'
   file:
     label: 'Datei'
     rules:
@@ -605,7 +616,8 @@ fields:
       max_length: 'Utilisez {max} caractères au maximum'
       format: 'Utilisez des minuscules, des chiffres, des tirets ou des traits de soulignement'
   field_locale:
-    warning: "Un autre fichier utilise déjà cet identifiant et cette langue. Le fichier le plus récent peut masquer l'ancien dans les formulaires."
+    warning: 'Un autre fichier utilise déjà cet identifiant et cette langue. Le téléversement le remplacera.'
+    warning_edit: 'Un autre fichier utilise déjà cet identifiant et cette langue. Un seul des deux sera affiché dans le formulaire.'
   file:
     label: 'Fichier'
     rules:
@@ -657,7 +669,8 @@ fields:
       max_length: 'Użyj maksymalnie {max} znaków'
       format: 'Użyj małych liter, cyfr, łączników lub podkreśleń'
   field_locale:
-    warning: 'Inny plik używa już tego identyfikatora i języka. Nowszy plik może ukryć starszy w formularzach.'
+    warning: 'Inny plik używa już tego identyfikatora i języka. Przesłanie go zastąpi.'
+    warning_edit: 'Inny plik używa już tego identyfikatora i języka. W formularzu zostanie wyświetlony tylko jeden z nich.'
   file:
     label: 'Plik'
     rules:
@@ -709,7 +722,8 @@ fields:
       max_length: 'Použijte nejvýše {max} znaků'
       format: 'Použijte malá písmena, číslice, pomlčky nebo podtržítka'
   field_locale:
-    warning: 'Jiný soubor již používá tento identifikátor a jazyk. Novější soubor může ve formulářích skrýt starší.'
+    warning: 'Jiný soubor již používá tento identifikátor a jazyk. Nahráním jej nahradíte.'
+    warning_edit: 'Jiný soubor již používá tento identifikátor a jazyk. Ve formuláři se zobrazí jen jeden z nich.'
   file:
     label: 'Soubor'
     rules:

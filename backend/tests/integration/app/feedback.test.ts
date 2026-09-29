@@ -15,5 +15,17 @@ describe('/api/v1/feedback', () => {
 
       expect(mailer.sendMail).toHaveBeenCalled();
     });
+
+    it('should accept an optional name', async () => {
+      const data = {
+        message: 'This is a message',
+        name: 'Jane Doe',
+        email: 'jane@example.com',
+      };
+
+      await request().post(`/api/v1/feedback/`).send(data).expect(204);
+
+      expect(mailer.sendMail).toHaveBeenCalled();
+    });
   });
 });

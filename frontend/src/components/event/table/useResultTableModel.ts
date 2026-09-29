@@ -1,6 +1,6 @@
 import TableComponentRegistry from '@/components/event/table/ComponentRegistry';
 import { computed, type Ref, ref, watch } from 'vue';
-import { ExpressionEvaluator } from '@/components/ExpressionEvaluator';
+import { ExpressionEvaluator } from '@/lib/surveyJs/ExpressionEvaluator';
 import { objectValueByPath } from '@/utils/objectValueByPath';
 import { useRegistrationHelper } from '@/composables/registrationHelper';
 import { TableCellRenderer } from '@/components/event/table/TableCellRenderer';

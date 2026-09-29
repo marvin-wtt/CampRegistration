@@ -62,6 +62,11 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/pages/legal/LegalPage.vue'),
         props: { type: 'PRIVACY_POLICY' },
       },
+      {
+        path: 'contact',
+        name: 'contact',
+        component: () => import('@/pages/ContactPage.vue'),
+      },
     ],
   },
   {

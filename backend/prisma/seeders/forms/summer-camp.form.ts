@@ -7,6 +7,7 @@ export const summerCampForm = {
   locale: 'en',
   title: '{event.name}',
   description: '{event.startAtDate} - {event.endAtDate}',
+  logo: '{event.logo}',
   logoHeight: '80px',
   logoPosition: 'right',
   completedHtml: {
@@ -913,5 +914,4 @@ export const summerCampForm = {
     default: 'Register for a fee',
   },
   widthMode: 'static',
-  headerView: 'advanced',
 };

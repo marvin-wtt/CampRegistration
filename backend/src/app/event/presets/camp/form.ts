@@ -2,6 +2,7 @@ export default {
   locale: 'de',
   title: '{event.name}',
   description: '{event.startAtDate} - {event.endAtDate}',
+  logo: '{event.logo}',
   logoHeight: '80px',
   logoPosition: 'right',
   pages: [
@@ -972,6 +973,5 @@ export default {
     default: 'Register for a fee',
   },
   showCompletePage: false,
-  headerView: 'advanced',
   widthMode: 'static',
 };

@@ -8,7 +8,7 @@ import {
   type RegistrationUpdateQuery,
   type RegistrationDeleteQuery,
 } from '@camp-registration/common/entities';
-import type { EventWithFreePlaces } from '#app/event/event.types';
+import type { EventWithRelations } from '#app/event/event.types';
 
 const RegistrationDataSchema = z.record(z.string(), z.unknown());
 
@@ -25,7 +25,7 @@ const show = z.object({
   }),
 });
 
-const store = (event: EventWithFreePlaces) =>
+const store = (event: EventWithRelations) =>
   z.object({
     params: z.object({
       eventId: z.ulid(),

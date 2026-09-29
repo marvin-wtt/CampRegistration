@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ExpressionEvaluator } from '@/components/ExpressionEvaluator';
+import { ExpressionEvaluator } from './ExpressionEvaluator';
 
 describe('ExpressionEvaluator', () => {
   it('evaluates comparison operators against curly-brace variables', () => {
