@@ -110,7 +110,7 @@
               v-if="isOutside(day)"
               class="text-caption"
             >
-              {{ t('outside') }}
+              {{ label('outside') }}
             </div>
           </th>
         </tr>
@@ -206,8 +206,10 @@ import { openSpots, sortByName } from '@/utils/chores';
 const props = defineProps<{
   chores: Chore[];
   assignments: ChoreAssignment[];
-  // First day shown; seven days follow.
+  // First day shown.
   weekStart: string;
+  // Days shown from there; a week unless printing an event's own range.
+  dayCount?: number;
   names: Map<string, string>;
   canCreate?: boolean;
   print?: boolean;
@@ -215,6 +217,8 @@ const props = defineProps<{
   // Inclusive `YYYY-MM-DD` event dates; days outside are shown muted.
   eventStart?: string | undefined;
   eventEnd?: string | undefined;
+  // Printing: every label in all these languages, the first one for dates.
+  locales?: string[] | undefined;
 }>();
 
 const emit = defineEmits<{
@@ -229,7 +233,22 @@ const emit = defineEmits<{
 }>();
 
 const { t, locale } = useI18n();
-const { to } = useObjectTranslation();
+const { to, toAll } = useObjectTranslation();
+
+// "Montag / lundi": each language once, in the given order.
+function joinDistinct(values: string[]): string {
+  return [...new Set(values)].join(' / ');
+}
+
+function label(key: string): string {
+  return props.locales
+    ? joinDistinct(props.locales.map((l) => t(key, {}, { locale: l })))
+    : t(key);
+}
+
+function nameOf(value: Chore['name']): string {
+  return props.locales ? toAll(value) : to(value);
+}
 
 const today = formatLocalDate(new Date());
 
@@ -243,11 +262,21 @@ const dayFormat = computed(
 );
 
 function dayLabel(day: string): string {
-  return dayFormat.value.format(parseLocalDate(day));
+  const date = parseLocalDate(day);
+  const [primary] = props.locales ?? [];
+  if (!props.locales || !primary) {
+    return dayFormat.value.format(date);
+  }
+  const weekdays = joinDistinct(
+    props.locales.map((l) => date.toLocaleDateString(l, { weekday: 'short' })),
+  );
+  return `${weekdays} ${date.toLocaleDateString(primary, { day: 'numeric', month: 'numeric' })}`;
 }
 
 const days = computed<string[]>(() =>
-  Array.from({ length: 7 }, (_, index) => addDays(props.weekStart, index)),
+  Array.from({ length: props.dayCount ?? 7 }, (_, index) =>
+    addDays(props.weekStart, index),
+  ),
 );
 
 interface GridRow {
@@ -268,8 +297,8 @@ const rows = computed<GridRow[]>(() =>
         key: `${chore.id}:${slot.id}`,
         choreId: chore.id,
         slotId: slot.id,
-        chore: to(chore.name),
-        slot: to(slot.name),
+        chore: nameOf(chore.name),
+        slot: nameOf(slot.name),
         order: [chore.sortOrder, slot.sortOrder],
       }));
       const hasUnslotted =
@@ -282,7 +311,7 @@ const rows = computed<GridRow[]>(() =>
               key: chore.id,
               choreId: chore.id,
               slotId: null,
-              chore: to(chore.name),
+              chore: nameOf(chore.name),
               slot: null,
               order: [chore.sortOrder, Number.MAX_SAFE_INTEGER] as [
                 number,

@@ -4,10 +4,11 @@ const format = {
     month: '2-digit',
     day: '2-digit',
   },
+  // Numeric like `short`: no month names to translate or to misread.
   date: {
     year: 'numeric',
-    month: 'short',
-    day: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
   },
   dateFull: {
     weekday: 'long',

@@ -152,8 +152,9 @@ const rows = computed(() => {
     ids.length > 0 ? ids.map(nameOf).join(', ') : '—';
   const dateFormat = new Intl.DateTimeFormat(locale.value, {
     weekday: 'short',
-    day: 'numeric',
-    month: 'short',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
   });
 
   return changes.value

@@ -78,17 +78,17 @@
           </div>
         </div>
 
-        <div class="field-grid field-grid--2">
-          <chore-date-input
-            v-model="from"
-            :label="t('field.from')"
-          />
-          <chore-date-input
-            v-model="until"
-            :label="t('field.to')"
-            :min="from ?? undefined"
-          />
-        </div>
+        <date-range-input
+          v-model:from="from"
+          v-model:to="until"
+          date-only
+          :event-days="eventDays"
+          :label="t('field.range')"
+        >
+          <template #prepend>
+            <q-icon name="date_range" />
+          </template>
+        </date-range-input>
 
         <div v-if="scope === 'EXISTING'">
           <div class="text-caption text-grey-7 q-mb-xs">
@@ -234,7 +234,7 @@ import type {
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { formatLocalDate } from '@/utils/date';
 import { eachDate, requiredCount } from '@/utils/chores';
-import ChoreDateInput from '@/components/event/chorePlanner/ChoreDateInput.vue';
+import DateRangeInput from '@/components/common/inputs/DateRangeInput.vue';
 import ChoreDialogCard from '@/components/event/chorePlanner/ChoreDialogCard.vue';
 import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
 import ChoreDialog from '@/components/event/chorePlanner/dialogs/ChoreDialog.vue';
@@ -274,10 +274,10 @@ const chore = computed<Chore | undefined>(() =>
 );
 const slotIds = ref<string[]>(chore.value?.slots.map((s) => s.id) ?? []);
 // From today (or the start, if the event hasn't begun) to the end.
-const from = ref<string | null>(
+const from = ref<string | undefined>(
   props.eventStart && props.eventStart > today ? props.eventStart : today,
 );
-const until = ref<string | null>(
+const until = ref<string | undefined>(
   props.eventEnd && props.eventEnd >= (from.value ?? today)
     ? props.eventEnd
     : from.value,
@@ -301,6 +301,12 @@ function onChoreChange() {
   slotIds.value = chore.value?.slots.map((s) => s.id) ?? [];
   rotationUnit.value = chore.value?.defaultRotationUnit ?? 'PERSON';
 }
+
+const eventDays = computed(() =>
+  props.eventStart && props.eventEnd
+    ? { from: props.eventStart, to: props.eventEnd }
+    : undefined,
+);
 
 const choreOptions = computed<QSelectOption[]>(() =>
   chores.value.map((c) => ({ label: to(c.name), value: c.id })),
@@ -500,8 +506,7 @@ description:
 field:
   chore: 'Chore'
   slots: 'Slots'
-  from: 'From'
-  to: 'Until'
+  range: 'Period'
   existingAction:
     label: 'What happens to them'
     option:
@@ -550,8 +555,7 @@ description:
 field:
   chore: 'Diensttyp'
   slots: 'Zeitfenster'
-  from: 'Von'
-  to: 'Bis'
+  range: 'Zeitraum'
   existingAction:
     label: 'Was mit ihnen passiert'
     option:
@@ -600,8 +604,7 @@ description:
 field:
   chore: 'Corvée'
   slots: 'Créneaux'
-  from: 'Du'
-  to: 'Au'
+  range: 'Période'
   existingAction:
     label: 'Ce qui leur arrive'
     option:
@@ -650,8 +653,7 @@ description:
 field:
   chore: 'Obowiązek'
   slots: 'Przedziały czasowe'
-  from: 'Od'
-  to: 'Do'
+  range: 'Okres'
   existingAction:
     label: 'Co się z nimi stanie'
     option:
@@ -700,8 +702,7 @@ description:
 field:
   chore: 'Povinnost'
   slots: 'Časové bloky'
-  from: 'Od'
-  to: 'Do'
+  range: 'Období'
   existingAction:
     label: 'Co se s nimi stane'
     option:

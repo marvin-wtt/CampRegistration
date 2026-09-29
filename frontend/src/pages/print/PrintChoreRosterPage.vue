@@ -14,25 +14,27 @@
 
     <template v-else-if="data">
       <div
-        v-for="weekStart in data.weekStarts"
-        :key="weekStart"
+        v-for="page in data.pages"
+        :key="page.start"
         class="print-sheet print-sheet--landscape roster-sheet"
       >
         <header class="roster-header">
-          <div class="text-h6">{{ t('title') }}</div>
-          <div>{{ to(data.eventName) }} · {{ range(weekStart) }}</div>
+          <div class="text-h6">{{ label('title') }}</div>
+          <div>{{ toAll(data.eventName) }} · {{ range(page) }}</div>
         </header>
 
         <chore-week-grid
           :chores="data.chores"
           :assignments="data.assignments"
-          :week-start="weekStart"
+          :week-start="page.start"
+          :day-count="page.days"
           :names="names"
+          :locales="locales"
           print
         />
 
         <footer class="roster-footer text-caption">
-          {{ t('legend') }}
+          {{ label('legend') }}
         </footer>
       </div>
     </template>
@@ -52,10 +54,13 @@ import {
   usePageStyle,
 } from '@/utils/printMarginBoxes';
 import ChoreWeekGrid from '@/components/event/chorePlanner/ChoreWeekGrid.vue';
-import type { PrintChoreRosterPayload } from '@/components/event/chorePlanner/printChoreRoster';
+import type {
+  PrintChoreRosterPage,
+  PrintChoreRosterPayload,
+} from '@/components/event/chorePlanner/printChoreRoster';
 
-const { t, d } = useI18n();
-const { to } = useObjectTranslation();
+const { t, d, locale } = useI18n();
+const { toAll } = useObjectTranslation();
 
 const { payload: data, error } = usePrintPage<PrintChoreRosterPayload>({
   messagePrefix: 'PRINT_CHORES',
@@ -73,10 +78,23 @@ usePageStyle(
 
 const names = computed(() => new Map(data.value?.names ?? []));
 
-function range(weekStart: string): string {
-  const start = parseLocalDate(weekStart);
-  const end = parseLocalDate(addDays(weekStart, 6));
-  return `${d(start, 'date')} – ${d(end, 'date')}`;
+// Printed for everyone at the event, so in all its languages.
+const locales = computed<string[]>(() =>
+  data.value?.locales.length ? data.value.locales : [locale.value],
+);
+
+function label(key: string): string {
+  return [...new Set(locales.value.map((l) => t(key, {}, { locale: l })))].join(
+    ' / ',
+  );
+}
+
+function range(page: PrintChoreRosterPage): string {
+  const primary = locales.value[0] ?? locale.value;
+  const start = parseLocalDate(page.start);
+  const end = parseLocalDate(addDays(page.start, page.days - 1));
+  // Numeric, so no month name needs translating on a multilingual roster.
+  return `${d(start, 'short', primary)} – ${d(end, 'short', primary)}`;
 }
 </script>
 

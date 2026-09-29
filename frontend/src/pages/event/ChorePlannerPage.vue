@@ -519,7 +519,10 @@ import ChorePersonPickerDialog from '@/components/event/chorePlanner/dialogs/Cho
 import ChoreDialog from '@/components/event/chorePlanner/dialogs/ChoreDialog.vue';
 import ChorePrintDialog from '@/components/event/chorePlanner/dialogs/ChorePrintDialog.vue';
 import ChoreRebalanceDialog from '@/components/event/chorePlanner/dialogs/ChoreRebalanceDialog.vue';
-import { printChoreRoster } from '@/components/event/chorePlanner/printChoreRoster';
+import {
+  printChoreRoster,
+  type PrintChoreRosterPage,
+} from '@/components/event/chorePlanner/printChoreRoster';
 import type {
   Chore,
   ChoreAssignment,
@@ -799,21 +802,20 @@ const dayTitle = computed<string>(() =>
   quasar.screen.lt.sm
     ? new Intl.DateTimeFormat(locale.value, {
         weekday: 'short',
-        day: 'numeric',
-        month: 'short',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
       }).format(parseLocalDate(day.value))
     : d(parseLocalDate(day.value), 'dateFull'),
 );
 
-const weekLabel = computed<string>(() => {
-  const format = new Intl.DateTimeFormat(locale.value, {
-    day: 'numeric',
-    month: 'short',
-  });
-  return `${format.format(parseLocalDate(weekStart.value))} – ${format.format(
-    parseLocalDate(addDays(weekStart.value, 6)),
-  )}`;
-});
+const weekLabel = computed<string>(
+  () =>
+    `${d(parseLocalDate(weekStart.value), 'short')} – ${d(
+      parseLocalDate(addDays(weekStart.value, 6)),
+      'short',
+    )}`,
+);
 
 // List view
 const showPast = ref(false);
@@ -1204,52 +1206,84 @@ function removePerson() {
     );
 }
 
-// The event's weeks, plus any other week that has duties.
-const printableWeeks = computed<string[]>(() => {
-  const weeks = new Set<string>();
+// The event's days by default — a stray duty outside them should not stretch
+// the roster over months; the dialog can still widen it.
+const printRange = computed<{ from: string; to: string }>(() => {
   if (eventStart.value && eventEnd.value) {
-    let week = mondayOf(eventStart.value);
-    for (; week <= eventEnd.value; week = addDays(week, 7)) {
-      weeks.add(week);
-    }
+    return { from: eventStart.value, to: eventEnd.value };
   }
-  for (const assignment of filteredAssignments.value) {
-    if (assignment.status !== 'CANCELLED') {
-      weeks.add(mondayOf(assignment.date));
-    }
-  }
-  return [...weeks].sort();
+  const dates = filteredAssignments.value
+    .filter((assignment) => assignment.status !== 'CANCELLED')
+    .map((assignment) => assignment.date)
+    .sort();
+  const first = view.value === 'week' ? weekStart.value : day.value;
+  return {
+    from: dates[0] ?? first,
+    to: dates.at(-1) ?? addDays(first, 6),
+  };
+});
+
+// Nothing outside the event or its duties is worth printing.
+const printBounds = computed<{ from: string; to: string } | undefined>(() => {
+  const dates = [
+    eventStart.value,
+    eventEnd.value,
+    ...filteredAssignments.value
+      .filter((assignment) => assignment.status !== 'CANCELLED')
+      .map((assignment) => assignment.date),
+  ]
+    .filter((date): date is string => !!date)
+    .sort();
+  const [first] = dates;
+  const last = dates.at(-1);
+  return first && last ? { from: first, to: last } : undefined;
 });
 
 function print() {
-  const current = view.value === 'week' ? weekStart.value : mondayOf(day.value);
-  const weeks = [...new Set([...printableWeeks.value, current])].sort();
-  if (weeks.length === 1) {
-    printWeeks(weeks);
-    return;
-  }
   quasar
     .dialog({
       component: ChorePrintDialog,
-      componentProps: { weeks, current },
+      componentProps: {
+        ...printRange.value,
+        selectable: printBounds.value,
+        chores: visibleChores.value,
+        eventDays:
+          eventStart.value && eventEnd.value
+            ? { from: eventStart.value, to: eventEnd.value }
+            : undefined,
+      },
     })
-    .onOk(printWeeks);
+    .onOk(printPages);
 }
 
-function printWeeks(weekStarts: string[]) {
+function printPages({
+  pages,
+  choreIds,
+}: {
+  pages: PrintChoreRosterPage[];
+  choreIds: string[];
+}) {
   const event = eventDetailsStore.data;
-  if (!event) {
+  const last = pages.at(-1);
+  if (!event || !pages[0] || !last) {
     return;
   }
-  const inWeeks = (date: string) =>
-    weekStarts.some((week) => date >= week && date <= addDays(week, 6));
+  const from = pages[0].start;
+  const to = addDays(last.start, last.days - 1);
   printChoreRoster(
     {
       eventName: event.name,
-      weekStarts,
-      chores: visibleChores.value,
+      locales: event.locales,
+      pages,
+      chores: visibleChores.value.filter((chore) =>
+        choreIds.includes(chore.id),
+      ),
       assignments: filteredAssignments.value.filter(
-        (a) => inWeeks(a.date) && a.status !== 'CANCELLED',
+        (a) =>
+          choreIds.includes(a.choreId) &&
+          a.date >= from &&
+          a.date <= to &&
+          a.status !== 'CANCELLED',
       ),
       names: [...names.value],
     },
