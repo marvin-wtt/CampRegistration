@@ -1,6 +1,6 @@
 import type { Request, RequestHandler } from 'express';
 import fs from 'node:fs/promises';
-import { injectPageMeta, type PageMeta } from '#utils/pageMeta';
+import { injectPageMeta, type PageMeta } from '#core/seo/pageMeta';
 import { spaIndexPath } from '#utils/paths';
 import logger from '#core/logger';
 

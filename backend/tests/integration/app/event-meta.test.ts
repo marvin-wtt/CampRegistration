@@ -95,6 +95,22 @@ describe('GET /events/:eventId (link preview)', () => {
     expect(text).not.toContain('<script>alert');
   });
 
+  it('should keep an unlisted event out of search results', async () => {
+    const event = await createEvent({ listed: false });
+
+    const { text } = await request().get(`/events/${event.id}`).expect(200);
+
+    expect(text).toContain('<meta name="robots" content="noindex">');
+  });
+
+  it('should let search engines index a listed event', async () => {
+    const event = await createEvent();
+
+    const { text } = await request().get(`/events/${event.id}`).expect(200);
+
+    expect(text).not.toContain('name="robots"');
+  });
+
   it('should serve the generic shell for an unknown event', async () => {
     const { text } = await request()
       .get('/events/01JB000000000000000000000X')

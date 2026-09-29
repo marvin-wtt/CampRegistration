@@ -1,5 +1,5 @@
 import type { Event } from '@camp-registration/common/entities';
-import type { PageMeta } from '#utils/pageMeta';
+import type { PageMeta } from '#core/seo/pageMeta';
 import { translateObject } from '#utils/translateObject';
 import { generateUrl } from '#utils/url';
 import config from '#config/index';
@@ -69,5 +69,7 @@ export function buildEventPageMeta(event: Event, locale: string): PageMeta {
     url: generateUrl(['events', event.id]),
     locale: language === locale ? language : locale.replace('-', '_'),
     image: event.logo ?? undefined,
+    // Reachable by link, but kept out of search results like the directory.
+    robots: event.listed ? undefined : 'noindex',
   };
 }

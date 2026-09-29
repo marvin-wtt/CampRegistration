@@ -55,6 +55,12 @@ describe('buildProgramPublicPageMeta', () => {
     ).toBe('https://example.org/api/v1/files/1');
   });
 
+  it('keeps the program out of search results, even for a listed event', () => {
+    expect(
+      buildProgramPublicPageMeta(event({ listed: true }), 'en-US').robots,
+    ).toBe('noindex');
+  });
+
   it('normalizes region-variant locales for the meta tag', () => {
     expect(buildProgramPublicPageMeta(event(), 'de-DE').locale).toBe('de_DE');
   });

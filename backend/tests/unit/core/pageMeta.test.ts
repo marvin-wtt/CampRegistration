@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { injectPageMeta, type PageMeta } from '#utils/pageMeta';
+import { injectPageMeta, type PageMeta } from '#core/seo/pageMeta';
 
 /** The shell as Quasar emits it: minified, comments stripped, quotes dropped. */
 const SHELL =
@@ -92,6 +92,13 @@ describe('injectPageMeta', () => {
       /property="og:description" content="([^"]*)"/.exec(html)?.[1],
     ).toHaveLength(200);
     expect(html).toContain('…');
+  });
+
+  it('writes a robots directive only when one is given', () => {
+    expect(injectPageMeta(SHELL, meta({ robots: 'noindex' }))).toContain(
+      '<meta name="robots" content="noindex">',
+    );
+    expect(injectPageMeta(SHELL, meta())).not.toContain('name="robots"');
   });
 
   it('returns null for a shell it does not recognise', () => {

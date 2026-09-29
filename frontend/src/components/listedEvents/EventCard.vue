@@ -1,14 +1,14 @@
 <template>
+  <!-- A real anchor so crawlers can follow it to the event page -->
   <q-card
     v-ripple
+    tag="a"
+    :href
     class="event-card cursor-pointer"
     :class="`event-card--${tone}`"
     data-test="event-card"
-    tabindex="0"
-    role="link"
     :aria-label="to(props.event.name)"
-    @click="navigateToRegistration"
-    @keyup.enter="navigateToRegistration"
+    @click="navigate"
   >
     <span class="q-focus-helper" />
     <div
@@ -195,13 +195,12 @@
 import { computed, ref, watch } from 'vue';
 import type { Event } from '@camp-registration/common/entities';
 import { useObjectTranslation } from '@/composables/objectTranslation';
-import { useRouter } from 'vue-router';
+import { useLink } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import CountryIcon from '@/components/common/localization/CountryIcon.vue';
 
 const { to } = useObjectTranslation();
 const { t, locale } = useI18n();
-const router = useRouter();
 
 interface Props {
   event: Event;
@@ -397,13 +396,16 @@ const closesAtLabel = computed<string>(() => {
   }).format(new Date(props.event.registrationClosesAt));
 });
 
-function navigateToRegistration() {
-  void router.push({
+const link = useLink({
+  to: computed(() => ({
     name: 'event',
-    params: {
-      eventId: props.event.id,
-    },
-  });
+    params: { eventId: props.event.id },
+  })),
+});
+const { href } = link;
+
+function navigate(e: MouseEvent) {
+  return link.navigate(e);
 }
 </script>
 
@@ -414,6 +416,8 @@ function navigateToRegistration() {
 
   min-width: 0;
   border-radius: var(--md3-corner-extra-large, 28px);
+  color: inherit;
+  text-decoration: none;
   overflow: hidden;
 
   background: var(--md3-surface-container);

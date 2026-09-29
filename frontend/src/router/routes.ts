@@ -1,5 +1,7 @@
 import { type RouteRecordRaw } from 'vue-router';
 
+// Public pages are children of `/`; every other top-level path is private and
+// must be listed in `DISALLOWED_PATHS` (backend/src/app/seo/seo.routes.ts).
 const routes: RouteRecordRaw[] = [
   {
     path: '/',

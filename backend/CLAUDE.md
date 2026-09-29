@@ -234,13 +234,14 @@ Driver: `REALTIME_DRIVER` env (`redis`/`memory`); defaults to `redis` only when
 Crawlers never run the SPA, so `/events/:eventId` (and the legacy `/camps/:eventId`)
 is served with the shell's `<head>` rewritten. Three layers:
 
-- **`#core/meta/metaRoute`** — `metaRoute(resolver)` owns the mechanism: load the
+- **`#core/seo/metaRoute`** — `metaRoute(resolver)` owns the mechanism: load the
   built shell (cached per path by mtime), inject, set cache headers. A resolver
   returns `PageMeta` or `null`, and _every_ way of not producing a page — declined,
   no build, unrecognised shell, a throw — continues to the next handler, which
   serves the shell unchanged. A preview is never wrong, only ever absent.
-- **`#utils/pageMeta`** — the pure rendering: escape, replace the shell's own
+- **`#core/seo/pageMeta`** — the pure rendering: escape, replace the shell's own
   `<title>`/`description`/`og:*`, emit Open Graph plus `twitter:card` and a canonical link.
+  `#core/seo/sitemap` is its sitemap.xml counterpart; `app/seo` serves it and `robots.txt`.
 - **the module** — `EventModule.registerWebRoutes()` declares the route beside its
   JSON routes; `buildEventPageMeta` turns the event into values. `#routes/web`
   collects every module's web routes and `#routes/static` mounts them ahead of the shell.
