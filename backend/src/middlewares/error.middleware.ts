@@ -39,9 +39,11 @@ const toApiError = (err: unknown): ApiError => {
   }
 
   if (isInternalPrismaError(err)) {
-    return new ApiError(httpStatus.INTERNAL_SERVER_ERROR, undefined, {
-      cause: err,
-    });
+    return new ApiError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      statusToString(httpStatus.INTERNAL_SERVER_ERROR),
+      { cause: err },
+    );
   }
 
   // `findUniqueOrThrow` and friends throw a known request error (e.g. P2025)
@@ -56,7 +58,10 @@ const toApiError = (err: unknown): ApiError => {
   }
 
   if (!isObject(err)) {
-    const message = typeof err === 'string' ? err : undefined;
+    const message =
+      typeof err === 'string'
+        ? err
+        : statusToString(httpStatus.INTERNAL_SERVER_ERROR);
 
     return new ApiError(httpStatus.INTERNAL_SERVER_ERROR, message, {
       cause: err,
@@ -72,8 +77,12 @@ const toApiError = (err: unknown): ApiError => {
       : typeof err.status === 'number'
         ? err.status
         : httpStatus.INTERNAL_SERVER_ERROR;
+  // Never leave the message empty: winston only logs an error as an Error
+  // when its message is truthy, and otherwise prints just "Error".
   const message =
-    typeof err.message === 'string' ? err.message : statusToString(statusCode);
+    typeof err.message === 'string' && err.message !== ''
+      ? err.message
+      : statusToString(statusCode);
 
   return new ApiError(statusCode, message, {
     cause: err,
