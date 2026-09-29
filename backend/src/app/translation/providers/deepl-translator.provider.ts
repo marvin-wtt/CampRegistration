@@ -59,8 +59,6 @@ export class DeepLTranslatorProvider extends TranslationProvider {
     }
 
     if (!response.ok) {
-
-
       throw await this.requestFailedError(response, targetLocale, sourceLocale);
     }
 
