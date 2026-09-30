@@ -30,9 +30,11 @@ type EventSettingCreateData = OptionalByKeys<
 // query shape are the service's business — a caller never writes Prisma input.
 // `retentionReminderSentAt` sits with the timestamps rather than the payload:
 // it is written once by the retention job and never by an author.
+// `priceModelId` is billing's: only an administrator sets it, through the
+// billing module.
 export type EventCreateData = Omit<
   Event,
-  'id' | 'createdAt' | 'updatedAt' | 'retentionReminderSentAt'
+  'id' | 'createdAt' | 'updatedAt' | 'retentionReminderSentAt' | 'priceModelId'
 >;
 // Ownership moves through `moveEventToOrganization`, never a field update.
 export type EventUpdateData = Partial<Omit<EventCreateData, 'organizationId'>>;

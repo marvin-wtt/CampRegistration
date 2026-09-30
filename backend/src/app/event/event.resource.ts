@@ -1,4 +1,5 @@
 import {
+  type AdminEvent as AdminEventResourceData,
   type Event as EventResourceData,
   type EventDetails as EventDetailsResourceData,
 } from '@camp-registration/common/entities';
@@ -58,6 +59,22 @@ export class EventResource extends JsonResource<
       registrationStatus: eventRegistrationStatus(this.data),
       logo: eventLogoUrl(this.data),
       banner: eventBannerUrl(this.data),
+    };
+  }
+}
+
+/**
+ * The administrators' listing (`view=all`): the public shape plus the price
+ * model override, which is between the platform and the organization.
+ */
+export class AdminEventResource extends JsonResource<
+  EventWithRelations,
+  AdminEventResourceData
+> {
+  transform(): AdminEventResourceData {
+    return {
+      ...new EventResource(this.data).transform(),
+      priceModelId: this.data.priceModelId,
     };
   }
 }

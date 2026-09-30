@@ -84,7 +84,9 @@ enum OrganizationVerificationStatus {
 }
 
 model Organization {
-  id                 String                         @id @unique(map: "organizations_id_unique") @default(ulid()) @db.Char(26)
+  id           String @id @unique(map: "organizations_id_unique") @default(ulid()) @db.Char(26)
+  priceModelId String @map("price_model_id") @db.Char(26)
+
   name               String                         @db.VarChar(255)
   verificationStatus OrganizationVerificationStatus @default(PENDING) @map("verification_status")
 
@@ -108,13 +110,16 @@ model Organization {
   updatedAt DateTime? @updatedAt @map("updated_at")
 
   reviewedBy  User?                    @relation("OrganizationReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "organizations_reviewed_by_user_id_foreign")
+  priceModel  PriceModel               @relation(fields: [priceModelId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "organizations_price_model_id_foreign")
   members     OrganizationMember[]
   invitations OrganizationInvitation[]
   events      Event[]
   newsletters Newsletter[]
+  eventBills  EventBill[]
 
   @@index([verificationStatus], map: "organizations_verification_status_index")
   @@index([reviewedByUserId], map: "organizations_reviewed_by_user_id_index")
+  @@index([priceModelId], map: "organizations_price_model_id_index")
   @@map("organizations")
 }
 
@@ -179,10 +184,14 @@ model Event {
   /// ![Record<string, unknown>]
   themes                  Json             @default("{}") @db.Json
   retentionReminderSentAt DateTime?        @map("retention_reminder_sent_at")
+  /// Overrides the organization's price model for this event only.
+  priceModelId            String?          @map("price_model_id") @db.Char(26)
   createdAt               DateTime?        @default(now()) @map("created_at")
   updatedAt               DateTime?        @updatedAt @map("updated_at")
 
   organization         Organization          @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "events_organization_id_foreign")
+  priceModel           PriceModel?           @relation(fields: [priceModelId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "events_price_model_id_foreign")
+  bills                EventBill[]
   eventManager         EventManager[]
   registrations        Registration[]
   rooms                Room[]
@@ -199,6 +208,7 @@ model Event {
   auditLogs            AuditLog[]
 
   @@index([organizationId], map: "events_organization_id_index")
+  @@index([priceModelId], map: "events_price_model_id_index")
   @@map("events")
 }
 
@@ -785,4 +795,86 @@ model AuditDeletedUser {
 
   @@index([deletedAt], map: "audit_deleted_users_deleted_at_index")
   @@map("audit_deleted_users")
+}
+
+model PriceModel {
+  id                   String    @id @unique(map: "price_models_id_unique") @default(ulid()) @db.Char(26)
+  /// ![string | Record<string, string>]
+  name                 Json      @db.Json
+  currency             String    @default("EUR") @db.Char(3)
+  pricePerRegistration Decimal   @default(0) @map("price_per_registration") @db.Decimal(10, 2)
+  baseFee              Decimal   @default(0) @map("base_fee") @db.Decimal(10, 2)
+  /// Percent, e.g. 19.00
+  taxRate              Decimal   @default(0) @map("tax_rate") @db.Decimal(5, 2)
+  /// `true` or `NULL` — the unique index lets at most one model be the default.
+  isDefault            Boolean?  @unique(map: "price_models_is_default_unique") @map("is_default")
+  archivedAt           DateTime? @map("archived_at")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime? @updatedAt @map("updated_at")
+
+  organizations Organization[]
+  events        Event[]
+  bills         EventBill[]
+
+  @@map("price_models")
+}
+
+enum EventBillStatus {
+  DRAFT
+  OPEN
+  PAID
+  VOID
+}
+
+model EventBill {
+  id                        String          @id @unique(map: "event_bills_id_unique") @default(ulid()) @db.Char(26)
+  eventId                   String?         @map("event_id") @db.Char(26)
+  /// `eventId` while the bill is not VOID, else NULL. Its unique index allows
+  /// any number of voided bills per event but only one live one — which also
+  /// makes the billing jobs idempotent across instances. Written only by
+  /// `BillingService`.
+  activeEventId             String?         @unique(map: "event_bills_active_event_id_unique") @map("active_event_id") @db.Char(26)
+  /// The voided bill this one was issued to replace.
+  replacesBillId            String?         @unique(map: "event_bills_replaces_bill_id_unique") @map("replaces_bill_id") @db.Char(26)
+  organizationId            String          @map("organization_id") @db.Char(26)
+  priceModelId              String?         @map("price_model_id") @db.Char(26)
+  status                    EventBillStatus @default(DRAFT)
+  /// Accepted registrations when the event started.
+  startRegistrationCount    Int             @default(0) @map("start_registration_count") @db.UnsignedInt
+  /// Accepted registrations when the event ended; null while DRAFT.
+  endRegistrationCount      Int?            @map("end_registration_count") @db.UnsignedInt
+  /// An administrator's correction; overrides the measured counts when set.
+  adjustedRegistrationCount Int?            @map("adjusted_registration_count") @db.UnsignedInt
+  /// What is billed: the adjustment if any, else the higher measured count.
+  registrationCount         Int             @default(0) @map("registration_count") @db.UnsignedInt
+  /// ![string | Record<string, string>]
+  eventName                 Json            @map("event_name") @db.Json
+  eventStartAt              DateTime        @map("event_start_at") @db.DateTime(0)
+  eventEndAt                DateTime        @map("event_end_at") @db.DateTime(0)
+  eventTimezone             String          @map("event_timezone") @db.VarChar(64)
+  currency                  String?         @db.Char(3)
+  pricePerRegistration      Decimal?        @map("price_per_registration") @db.Decimal(10, 2)
+  baseFee                   Decimal?        @map("base_fee") @db.Decimal(10, 2)
+  taxRate                   Decimal?        @map("tax_rate") @db.Decimal(5, 2)
+  netAmount                 Decimal?        @map("net_amount") @db.Decimal(12, 2)
+  taxAmount                 Decimal?        @map("tax_amount") @db.Decimal(12, 2)
+  grossAmount               Decimal?        @map("gross_amount") @db.Decimal(12, 2)
+  finalizedAt               DateTime?       @map("finalized_at")
+  paidAt                    DateTime?       @map("paid_at")
+  voidedAt                  DateTime?       @map("voided_at")
+  note                      String?         @db.Text
+  createdAt                 DateTime        @default(now()) @map("created_at")
+  updatedAt                 DateTime?       @updatedAt @map("updated_at")
+
+  event        Event?       @relation(fields: [eventId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "event_bills_event_id_foreign")
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "event_bills_organization_id_foreign")
+  priceModel   PriceModel?  @relation(fields: [priceModelId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "event_bills_price_model_id_foreign")
+  replaces     EventBill?   @relation("EventBillReplacement", fields: [replacesBillId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "event_bills_replaces_bill_id_foreign")
+  replacedBy   EventBill?   @relation("EventBillReplacement")
+
+  @@index([eventId], map: "event_bills_event_id_index")
+  @@index([organizationId, status], map: "event_bills_organization_id_status_index")
+  @@index([status], map: "event_bills_status_index")
+  @@index([priceModelId], map: "event_bills_price_model_id_index")
+  @@map("event_bills")
 }

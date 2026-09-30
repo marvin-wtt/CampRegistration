@@ -8,14 +8,18 @@ import choreSeeder from './chore.seeder';
 import newsletterSeeder from './newsletter.seeder';
 import auditSeeder from './audit.seeder';
 import organizationSeeder from './organization.seeder';
+import priceModelSeeder from './price-model.seeder';
+import billingSeeder from './billing.seeder';
 import { BaseSeeder } from './BaseSeeder';
 
 async function main() {
-  // Order is a dependency order: events need their organization, managers need
-  // both, tasks are assigned to manager records, and chores need the
-  // registrations and rooms the event seeder creates.
+  // Order is a dependency order: organizations need their price model, events
+  // need their organization, managers need both, tasks are assigned to manager
+  // records, chores need the registrations and rooms the event seeder creates,
+  // and bills count those registrations.
   const seeders: BaseSeeder[] = [
     userSeeder,
+    priceModelSeeder,
     organizationSeeder,
     eventSeeder,
     tableTemplateSeeder,
@@ -23,6 +27,7 @@ async function main() {
     taskSeeder,
     choreSeeder,
     newsletterSeeder,
+    billingSeeder,
     auditSeeder,
   ];
 

@@ -16,6 +16,7 @@ export interface Organization extends Identifiable {
   addressZipCode: string;
   addressCity: string;
   registrationNumber: string | null;
+  priceModelId: string;
 
   verificationNote: string | null;
   reviewNote: string | null;

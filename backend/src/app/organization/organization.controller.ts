@@ -206,7 +206,7 @@ export class OrganizationController extends BaseController {
     const organization = req.modelOrFail('organization');
     await req.validate(validator.destroy);
 
-    const { events, newsletters } =
+    const { events, newsletters, bills } =
       await this.organizationService.countOwnedResources(organization.id);
     if (events > 0 || newsletters > 0) {
       // Carries a stable code so the client can explain what is blocking
@@ -215,6 +215,15 @@ export class OrganizationController extends BaseController {
         httpStatus.CONFLICT,
         `The organization still owns ${events.toString()} event(s) and ${newsletters.toString()} newsletter(s). Move or delete them first.`,
         { code: 'ORGANIZATION_NOT_EMPTY' },
+      );
+    }
+
+    // Bills are financial records and outlive the events they were for.
+    if (bills > 0) {
+      throw new ApiError(
+        httpStatus.CONFLICT,
+        'The organization has been billed for events and cannot be deleted.',
+        { code: 'ORGANIZATION_HAS_BILLS' },
       );
     }
 

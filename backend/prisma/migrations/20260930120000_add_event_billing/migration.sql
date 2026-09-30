@@ -1,0 +1,81 @@
+-- CreateTable
+CREATE TABLE `price_models` (
+    `id` CHAR(26) NOT NULL,
+    `name` JSON NOT NULL,
+    `currency` CHAR(3) NOT NULL DEFAULT 'EUR',
+    `price_per_registration` DECIMAL(10, 2) NOT NULL DEFAULT 0,
+    `base_fee` DECIMAL(10, 2) NOT NULL DEFAULT 0,
+    `tax_rate` DECIMAL(5, 2) NOT NULL DEFAULT 0,
+    `is_default` BOOLEAN NULL,
+    `archived_at` DATETIME(3) NULL,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updated_at` DATETIME(3) NULL,
+
+-- The seeded free model. Every existing organization starts on it, and it is the
+-- default for new organizations until an administrator marks another one.
+-- The id is fixed so code and fixtures can refer to it (FREE_PRICE_MODEL_ID).
+INSERT INTO `price_models` (`id`, `name`, `currency`, `price_per_registration`, `base_fee`, `tax_rate`, `is_default`)
+VALUES ('01K6B00000000000000000FREE', '{"en":"Free","de":"Kostenlos","fr":"Gratuit","pl":"Bezpłatny","cs":"Zdarma"}', 'EUR', 0, 0, 0, true);
+
+-- AlterTable: backfill before NOT NULL
+ALTER TABLE `organizations` ADD COLUMN `price_model_id` CHAR(26) NULL;
+UPDATE `organizations` SET `price_model_id` = '01K6B00000000000000000FREE';
+ALTER TABLE `organizations` MODIFY `price_model_id` CHAR(26) NOT NULL;
+
+-- AlterTable
+ALTER TABLE `events` ADD COLUMN `price_model_id` CHAR(26) NULL;
+
+-- CreateTable
+CREATE TABLE `event_bills` (
+    `id` CHAR(26) NOT NULL,
+    `event_id` CHAR(26) NULL,
+    `active_event_id` CHAR(26) NULL,
+    `replaces_bill_id` CHAR(26) NULL,
+    `organization_id` CHAR(26) NOT NULL,
+    `price_model_id` CHAR(26) NULL,
+    `status` ENUM('DRAFT', 'OPEN', 'PAID', 'VOID') NOT NULL DEFAULT 'DRAFT',
+    `start_registration_count` INTEGER UNSIGNED NOT NULL DEFAULT 0,
+    `end_registration_count` INTEGER UNSIGNED NULL,
+    `adjusted_registration_count` INTEGER UNSIGNED NULL,
+    `registration_count` INTEGER UNSIGNED NOT NULL DEFAULT 0,
+    `event_name` JSON NOT NULL,
+    `event_start_at` DATETIME(0) NOT NULL,
+    `event_end_at` DATETIME(0) NOT NULL,
+    `event_timezone` VARCHAR(64) NOT NULL,
+    `currency` CHAR(3) NULL,
+    `price_per_registration` DECIMAL(10, 2) NULL,
+    `base_fee` DECIMAL(10, 2) NULL,
+    `tax_rate` DECIMAL(5, 2) NULL,
+    `net_amount` DECIMAL(12, 2) NULL,
+    `tax_amount` DECIMAL(12, 2) NULL,
+    `gross_amount` DECIMAL(12, 2) NULL,
+    `finalized_at` DATETIME(3) NULL,
+    `paid_at` DATETIME(3) NULL,
+    `voided_at` DATETIME(3) NULL,
+    `note` TEXT NULL,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updated_at` DATETIME(3) NULL,
+
+-- CreateIndex
+CREATE INDEX `events_price_model_id_index` ON `events`(`price_model_id`);
+
+-- CreateIndex
+CREATE INDEX `organizations_price_model_id_index` ON `organizations`(`price_model_id`);
+
+-- AddForeignKey
+ALTER TABLE `organizations` ADD CONSTRAINT `organizations_price_model_id_foreign` FOREIGN KEY (`price_model_id`) REFERENCES `price_models`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `events` ADD CONSTRAINT `events_price_model_id_foreign` FOREIGN KEY (`price_model_id`) REFERENCES `price_models`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `event_bills` ADD CONSTRAINT `event_bills_event_id_foreign` FOREIGN KEY (`event_id`) REFERENCES `events`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `event_bills` ADD CONSTRAINT `event_bills_organization_id_foreign` FOREIGN KEY (`organization_id`) REFERENCES `organizations`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `event_bills` ADD CONSTRAINT `event_bills_price_model_id_foreign` FOREIGN KEY (`price_model_id`) REFERENCES `price_models`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `event_bills` ADD CONSTRAINT `event_bills_replaces_bill_id_foreign` FOREIGN KEY (`replaces_bill_id`) REFERENCES `event_bills`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;

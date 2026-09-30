@@ -38,6 +38,15 @@ export interface Event extends Identifiable {
   banner: string | null;
 }
 
+/**
+ * An event as the administrators' listing (`view=all`) returns it: with its
+ * price model override, which the public resource leaves out.
+ */
+export interface AdminEvent extends Event {
+  /** `null`: the organization's price model applies. */
+  priceModelId: string | null;
+}
+
 export interface EventDetails extends Event {
   form: SurveyJSEventData;
   themes: Record<string, ITheme>;

@@ -27,6 +27,7 @@ export class OrganizationResource extends JsonResource<
       addressZipCode: this.data.addressZipCode,
       addressCity: this.data.addressCity,
       registrationNumber: this.data.registrationNumber ?? null,
+      priceModelId: this.data.priceModelId,
       verificationNote: this.data.verificationNote ?? null,
       reviewNote: this.data.reviewNote ?? null,
       reviewedAt: this.data.reviewedAt?.toISOString() ?? null,

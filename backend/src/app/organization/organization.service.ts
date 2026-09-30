@@ -4,6 +4,7 @@ import { inject, injectable } from 'inversify';
 import httpStatus from 'http-status';
 import ApiError from '#utils/ApiError';
 import { PrivacyNoticeService } from '#app/privacyNotice/privacy-notice.service';
+import { PriceModelService } from '#app/billing/price-model.service';
 import type {
   OrganizationCreateData,
   OrganizationUpdateData,
@@ -17,6 +18,8 @@ export class OrganizationService extends BaseService {
   constructor(
     @inject(PrivacyNoticeService)
     private readonly privacyNoticeService: PrivacyNoticeService,
+    @inject(PriceModelService)
+    private readonly priceModelService: PriceModelService,
   ) {
     super();
   }
@@ -75,13 +78,20 @@ export class OrganizationService extends BaseService {
     });
   }
 
-  /** The creating user becomes its first ADMIN, so an organization is never ownerless. */
+  /**
+   * The creating user becomes its first ADMIN, so an organization is never
+   * ownerless. It starts on the default price model; only an administrator
+   * can change that.
+   */
   async createOrganization(userId: string, data: OrganizationCreateData) {
+    const priceModel = await this.priceModelService.getDefault();
+
     return this.prisma.organization.create({
       data: {
         ...data,
         verificationStatus: 'PENDING',
         submittedAt: new Date(),
+        priceModel: { connect: { id: priceModel.id } },
         members: {
           create: { userId, role: 'ADMIN' },
         },
@@ -132,12 +142,13 @@ export class OrganizationService extends BaseService {
   }
 
   async countOwnedResources(id: string) {
-    const [events, newsletters] = await this.prisma.$transaction([
+    const [events, newsletters, bills] = await this.prisma.$transaction([
       this.prisma.event.count({ where: { organizationId: id } }),
       this.prisma.newsletter.count({ where: { organizationId: id } }),
+      this.prisma.eventBill.count({ where: { organizationId: id } }),
     ]);
 
-    return { events, newsletters };
+    return { events, newsletters, bills };
   }
 
   /** Puts a previously rejected organization back into the moderation queue. */

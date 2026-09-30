@@ -95,7 +95,8 @@ export type OrganizationPermission =
   | 'organization.events.view'
   | 'organization.events.create'
   | 'organization.newsletters.view'
-  | 'organization.newsletters.create';
+  | 'organization.newsletters.create'
+  | 'organization.billing.view';
 
 /**
  * Everything resolvable against an event-manager role. Named separately from

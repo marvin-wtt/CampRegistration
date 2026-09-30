@@ -182,6 +182,7 @@ exports[`the assembled permission policy > grants newsletter roles exactly these
 exports[`the assembled permission policy > grants organization roles exactly these permissions 1`] = `
 {
   "ADMIN": [
+    "organization.billing.view",
     "organization.delete",
     "organization.edit",
     "organization.events.create",

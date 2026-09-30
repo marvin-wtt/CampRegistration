@@ -37,6 +37,7 @@ import { NewsletterManagerModule } from '#app/newsletterManager/newsletter-manag
 import { NewsletterMessageModule } from '#app/newsletterMessage/newsletter-message.module';
 import { AuditModule } from '#app/audit/audit.module';
 import { AdminModule } from '#app/admin/admin.module';
+import { BillingModule } from '#app/billing/billing.module';
 import { PermissionModule } from '#app/permission/permission.module';
 import type { CoreModule } from '#core/base/CoreModule';
 import { ErrorTrackingModule } from '#core/errorTracking/errorTracking.module';
@@ -76,6 +77,7 @@ export const createAppModules = (): AppModule[] => [
   new EventModule(),
   new UserModule(),
   new AdminModule(),
+  new BillingModule(),
   new LegalModule(),
   new PrivacyNoticeModule(),
   new RegistrationModule(),

@@ -60,6 +60,14 @@
           </q-td>
         </template>
 
+        <template #body-cell-priceModel="props">
+          <price-model-td
+            :props
+            :price-model-id="props.row.priceModelId"
+            scope="organization"
+          />
+        </template>
+
         <template #body-cell-action="props">
           <q-td
             :props
@@ -87,6 +95,8 @@ import OrganizationReviewDialog, {
   type OrganizationReviewResult,
 } from '@/components/organization/OrganizationReviewDialog.vue';
 import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
+import PriceModelAssignDialog from '@/components/billing/PriceModelAssignDialog.vue';
+import PriceModelTd from '@/components/billing/PriceModelTd.vue';
 import { useAPIService } from '@/services/APIService';
 import { useServerTable } from '@/composables/serverTable';
 import { useServiceNotifications } from '@/composables/serviceHandler';
@@ -103,6 +113,7 @@ const quasar = useQuasar();
 const router = useRouter();
 const api = useAPIService();
 const { withErrorNotification } = useServiceNotifications();
+const billingNotifications = useServiceNotifications('billing');
 
 const status = ref<OrganizationVerificationStatus | null>(null);
 
@@ -172,6 +183,12 @@ const columns = computed<QTableColumn<Organization>[]>(() => [
     sortable: true,
   },
   {
+    name: 'priceModel',
+    label: t('column.priceModel'),
+    field: 'priceModelId',
+    align: 'left',
+  },
+  {
     name: 'submittedAt',
     label: t('column.submittedAt'),
     field: 'submittedAt',
@@ -221,6 +238,12 @@ function actionsFor(organization: Organization): RowAction[] {
       handler: () => openOrganization(organization),
     },
     {
+      key: 'priceModel',
+      label: t('action.priceModel'),
+      icon: 'sell',
+      handler: () => assignPriceModel(organization),
+    },
+    {
       key: 'delete',
       label: t('action.delete'),
       icon: 'delete',
@@ -242,6 +265,28 @@ function openOrganization(organization: Organization) {
   });
 
   window.open(routeData.href, '_blank');
+}
+
+function assignPriceModel(organization: Organization) {
+  quasar
+    .dialog({
+      component: PriceModelAssignDialog,
+      componentProps: {
+        subject: organization.name,
+        current: organization.priceModelId,
+      },
+    })
+    .onOk((priceModelId: string) => {
+      void billingNotifications
+        .withProgressNotification('assign', () =>
+          api.assignOrganizationPriceModel(organization.id, priceModelId),
+        )
+        .then(
+          () => reload(),
+          // Already reported by the progress notification.
+          () => undefined,
+        );
+    });
 }
 
 function showDetails(organization: Organization) {
@@ -343,11 +388,13 @@ column:
   country: 'Country'
   registrationNumber: 'Registration number'
   status: 'Status'
+  priceModel: 'Price model'
   submittedAt: 'Submitted'
   action: 'Actions'
 action:
   details: 'Details'
   open: 'Open organization'
+  priceModel: 'Price model'
   review: 'Review'
   changeDecision: 'Change decision'
   delete: 'Delete'
@@ -381,11 +428,13 @@ column:
   country: 'Land'
   registrationNumber: 'Registernummer'
   status: 'Status'
+  priceModel: 'Preismodell'
   submittedAt: 'Eingereicht'
   action: 'Aktionen'
 action:
   details: 'Details'
   open: 'Organisation öffnen'
+  priceModel: 'Preismodell'
   review: 'Prüfen'
   changeDecision: 'Entscheidung ändern'
   delete: 'Löschen'
@@ -419,11 +468,13 @@ column:
   country: 'Pays'
   registrationNumber: "Numéro d'enregistrement"
   status: 'Statut'
+  priceModel: 'Modèle tarifaire'
   submittedAt: 'Soumise'
   action: 'Actions'
 action:
   details: 'Détails'
   open: "Ouvrir l'organisation"
+  priceModel: 'Modèle tarifaire'
   review: 'Contrôler'
   changeDecision: 'Modifier la décision'
   delete: 'Supprimer'
@@ -457,11 +508,13 @@ column:
   country: 'Kraj'
   registrationNumber: 'Numer rejestrowy'
   status: 'Status'
+  priceModel: 'Model cenowy'
   submittedAt: 'Zgłoszono'
   action: 'Akcje'
 action:
   details: 'Szczegóły'
   open: 'Otwórz organizację'
+  priceModel: 'Model cenowy'
   review: 'Sprawdź'
   changeDecision: 'Zmień decyzję'
   delete: 'Usuń'
@@ -495,11 +548,13 @@ column:
   country: 'Země'
   registrationNumber: 'Registrační číslo'
   status: 'Stav'
+  priceModel: 'Cenový model'
   submittedAt: 'Odesláno'
   action: 'Akce'
 action:
   details: 'Detaily'
   open: 'Otevřít organizaci'
+  priceModel: 'Cenový model'
   review: 'Zkontrolovat'
   changeDecision: 'Změnit rozhodnutí'
   delete: 'Smazat'

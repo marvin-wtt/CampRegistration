@@ -47,6 +47,23 @@
         </div>
       </div>
 
+      <div>
+        <div class="text-subtitle1 text-weight-medium q-mb-sm">
+          {{ t('stat.billingTitle') }}
+        </div>
+        <div class="row q-col-gutter-md">
+          <administration-stat-card
+            v-for="stat in billingStats"
+            :key="stat.key"
+            :label="stat.label"
+            :value="stat.value"
+            :icon="stat.icon"
+            :color="stat.color"
+            :to="stat.to"
+          />
+        </div>
+      </div>
+
       <!-- Needs attention -->
       <div v-if="attention.length > 0">
         <div class="text-subtitle1 text-weight-medium">
@@ -100,12 +117,13 @@ import AdministrationCard from '@/components/administration/AdministrationCard.v
 import AdministrationStatCard from '@/components/administration/AdministrationStatCard.vue';
 import { useAPIService } from '@/services/APIService';
 import { useServiceHandler } from '@/composables/serviceHandler';
+import { formatMoney } from '@/utils/money';
 
 interface StatTile {
   key: string;
   icon: string;
   color: string;
-  value: number;
+  value: number | string;
   label: string;
   to?: RouteLocationRaw | undefined;
 }
@@ -118,7 +136,7 @@ interface AttentionItem {
   to: RouteLocationRaw;
 }
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const router = useRouter();
 const api = useAPIService();
 
@@ -226,6 +244,47 @@ const eventStats = computed<StatTile[]>(() => {
   ];
 });
 
+// One outstanding tile per currency: amounts in different currencies are never
+// added up.
+const billingStats = computed<StatTile[]>(() => {
+  const data = overview.value;
+  if (!data) {
+    return [];
+  }
+
+  const outstanding =
+    data.billing.outstanding.length > 0
+      ? data.billing.outstanding
+      : [{ currency: 'EUR', amount: '0.00' }];
+
+  return [
+    {
+      key: 'billsDraft',
+      icon: 'pending_actions',
+      color: 'info',
+      value: data.billing.draft,
+      label: t('stat.billsDraft'),
+      to: { name: 'administration.billing', query: { status: 'DRAFT' } },
+    },
+    {
+      key: 'billsOpen',
+      icon: 'receipt_long',
+      color: data.billing.open > 0 ? 'warning' : 'positive',
+      value: data.billing.open,
+      label: t('stat.billsOpen'),
+      to: { name: 'administration.billing', query: { status: 'OPEN' } },
+    },
+    ...outstanding.map((entry) => ({
+      key: `outstanding-${entry.currency}`,
+      icon: 'payments',
+      color: 'tertiary',
+      value: formatMoney(entry.amount, entry.currency, locale.value),
+      label: t('stat.outstanding'),
+      to: { name: 'administration.billing', query: { status: 'OPEN' } },
+    })),
+  ];
+});
+
 const attention = computed<AttentionItem[]>(() => {
   const data = overview.value;
   if (!data) {
@@ -279,6 +338,16 @@ const attention = computed<AttentionItem[]>(() => {
     });
   }
 
+  if (data.billing.open > 0) {
+    items.push({
+      key: 'billsOpen',
+      icon: 'receipt_long',
+      color: 'warning',
+      label: t('attention.billsOpen', { count: data.billing.open }),
+      to: { name: 'administration.billing', query: { status: 'OPEN' } },
+    });
+  }
+
   return items;
 });
 
@@ -313,6 +382,13 @@ const sections = computed(() => [
     to: { name: 'administration.newsletters' },
   },
   {
+    name: 'billing',
+    label: t('billing.label'),
+    description: t('billing.description'),
+    icon: 'receipt_long',
+    to: { name: 'administration.billing' },
+  },
+  {
     name: 'queues',
     label: t('queues.label'),
     description: t('queues.description'),
@@ -344,6 +420,7 @@ subtitle: 'Platform overview and management.'
 stat:
   platformTitle: 'Platform'
   eventsTitle: 'Events'
+  billingTitle: 'Billing'
   users: 'Users'
   organizations: 'Organizations'
   files: 'Files'
@@ -353,6 +430,9 @@ stat:
   eventsUpcoming: 'Registration upcoming'
   eventsClosed: 'Registration closed'
   failedJobs: 'Failed jobs'
+  billsDraft: 'Running'
+  billsOpen: 'Open bills'
+  outstanding: 'Outstanding'
 
 attention:
   title: 'Needs attention'
@@ -361,6 +441,7 @@ attention:
   locked: '{count} locked users'
   organizationsPending: '{count} organizations awaiting review'
   legalMissing: '{count} legal documents missing'
+  billsOpen: '{count} open bills awaiting payment'
 
 sections:
   title: 'Manage'
@@ -377,6 +458,9 @@ events:
 newsletters:
   label: 'Newsletters'
   description: 'Manage newsletter lists and subscriber imports.'
+billing:
+  label: 'Billing'
+  description: 'Price models, and the bills issued for events after they end.'
 queues:
   label: 'Jobs'
   description: 'Monitor background jobs, retry or delete failed jobs.'
@@ -392,6 +476,7 @@ subtitle: 'Plattformübersicht und Verwaltung.'
 stat:
   platformTitle: 'Plattform'
   eventsTitle: 'Veranstaltungen'
+  billingTitle: 'Abrechnung'
   users: 'Benutzer'
   organizations: 'Organisationen'
   files: 'Dateien'
@@ -401,6 +486,9 @@ stat:
   eventsUpcoming: 'Anmeldung bevorstehend'
   eventsClosed: 'Anmeldung geschlossen'
   failedJobs: 'Fehlgeschlagene Jobs'
+  billsDraft: 'Laufend'
+  billsOpen: 'Offene Rechnungen'
+  outstanding: 'Ausstehend'
 
 attention:
   title: 'Erfordert Aufmerksamkeit'
@@ -409,6 +497,7 @@ attention:
   locked: '{count} gesperrte Benutzer'
   organizationsPending: '{count} Organisationen warten auf Prüfung'
   legalMissing: '{count} fehlende rechtliche Inhalte'
+  billsOpen: '{count} offene Rechnungen warten auf Zahlung'
 
 sections:
   title: 'Verwalten'
@@ -425,6 +514,9 @@ events:
 newsletters:
   label: 'Newsletter'
   description: 'Newsletter-Listen und Abonnenten-Importe verwalten.'
+billing:
+  label: 'Abrechnung'
+  description: 'Preismodelle und die Rechnungen, die nach dem Ende von Veranstaltungen erstellt werden.'
 queues:
   label: 'Aufgaben'
   description: 'Hintergrundjobs überwachen, fehlgeschlagene Jobs wiederholen oder löschen.'
@@ -440,6 +532,7 @@ subtitle: 'Vue d’ensemble et gestion de la plateforme.'
 stat:
   platformTitle: 'Plateforme'
   eventsTitle: 'Événements'
+  billingTitle: 'Facturation'
   users: 'Utilisateurs'
   organizations: 'Organisations'
   files: 'Fichiers'
@@ -449,6 +542,9 @@ stat:
   eventsUpcoming: 'Inscriptions à venir'
   eventsClosed: 'Inscriptions fermées'
   failedJobs: 'Tâches échouées'
+  billsDraft: 'En cours'
+  billsOpen: 'Factures ouvertes'
+  outstanding: 'À encaisser'
 
 attention:
   title: 'Nécessite une attention'
@@ -457,6 +553,7 @@ attention:
   locked: '{count} utilisateurs verrouillés'
   organizationsPending: '{count} organisations en attente de contrôle'
   legalMissing: '{count} documents légaux manquants'
+  billsOpen: '{count} factures ouvertes en attente de paiement'
 
 sections:
   title: 'Gérer'
@@ -473,6 +570,9 @@ events:
 newsletters:
   label: 'Newsletters'
   description: "Gérer les listes de newsletters et les importations d'abonnés."
+billing:
+  label: 'Facturation'
+  description: 'Les modèles tarifaires et les factures émises à la fin des événements.'
 queues:
   label: 'Tâches'
   description: 'Surveiller les tâches en arrière-plan, relancer ou supprimer les tâches échouées.'
@@ -488,6 +588,7 @@ subtitle: 'Przegląd i zarządzanie platformą.'
 stat:
   platformTitle: 'Platforma'
   eventsTitle: 'Wydarzenia'
+  billingTitle: 'Rozliczenia'
   users: 'Użytkownicy'
   organizations: 'Organizacje'
   files: 'Pliki'
@@ -497,6 +598,9 @@ stat:
   eventsUpcoming: 'Rejestracja nadchodząca'
   eventsClosed: 'Rejestracja zamknięta'
   failedJobs: 'Nieudane zadania'
+  billsDraft: 'W toku'
+  billsOpen: 'Otwarte rachunki'
+  outstanding: 'Do zapłaty'
 
 attention:
   title: 'Wymaga uwagi'
@@ -505,6 +609,7 @@ attention:
   locked: '{count} zablokowanych użytkowników'
   organizationsPending: '{count} organizacji oczekuje na sprawdzenie'
   legalMissing: '{count} brakujących dokumentów prawnych'
+  billsOpen: 'Otwarte rachunki oczekujące na płatność: {count}'
 
 sections:
   title: 'Zarządzaj'
@@ -521,6 +626,9 @@ events:
 newsletters:
   label: 'Newslettery'
   description: 'Zarządzaj listami newsletterów i importami subskrybentów.'
+billing:
+  label: 'Rozliczenia'
+  description: 'Modele cenowe i rachunki wystawiane po zakończeniu wydarzeń.'
 queues:
   label: 'Zadania'
   description: 'Monitoruj zadania w tle, ponawiaj lub usuwaj nieudane zadania.'
@@ -536,6 +644,7 @@ subtitle: 'Přehled a správa platformy.'
 stat:
   platformTitle: 'Platforma'
   eventsTitle: 'Akce'
+  billingTitle: 'Vyúčtování'
   users: 'Uživatelé'
   organizations: 'Organizace'
   files: 'Pliki'
@@ -545,6 +654,9 @@ stat:
   eventsUpcoming: 'Registrace nadcházející'
   eventsClosed: 'Registrace uzavřená'
   failedJobs: 'Neúspěšné úlohy'
+  billsDraft: 'Probíhá'
+  billsOpen: 'Otevřené faktury'
+  outstanding: 'K úhradě'
 
 attention:
   title: 'Vyžaduje pozornost'
@@ -553,6 +665,7 @@ attention:
   locked: '{count} zamčených uživatelů'
   organizationsPending: '{count} organizací čeká na kontrolu'
   legalMissing: '{count} chybějících právních dokumentů'
+  billsOpen: 'Otevřené faktury čekající na úhradu: {count}'
 
 sections:
   title: 'Spravovat'
@@ -569,6 +682,9 @@ events:
 newsletters:
   label: 'Newslettery'
   description: 'Spravujte seznamy newsletterů a importy odběratelů.'
+billing:
+  label: 'Vyúčtování'
+  description: 'Cenové modely a faktury vystavené po skončení akcí.'
 queues:
   label: 'Úlohy'
   description: 'Sledujte úlohy na pozadí, opakujte nebo mažte neúspěšné úlohy.'

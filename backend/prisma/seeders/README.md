@@ -116,3 +116,23 @@ nothing else — no subscribers, no messages, no sending. It is reachable throug
 
 "Lettre d'information" belongs to a `PENDING` organization: it can be edited and prepared freely, but sending is refused
 until the organization is verified.
+
+## Billing
+
+| Price model    | Per registration | Base fee | Tax | Assigned to                                             |
+| -------------- | ---------------- | -------- | --- | ------------------------------------------------------- |
+| Free           | 0.00 EUR         | 0.00     | 0 % | **Default** — Nouvelle Association, Bergfreunde e.V.    |
+| Standard       | 1.50 EUR         | 25.00    | 19% | Youth Adventures, Harbour Youth Trust, Coastal Events   |
+| Non-profit     | 0.50 EUR         | 0.00     | 0 % | Alpine Explorers; Spring Event as an **event override** |
+| Standard (CZK) | 35.00 CZK        | 500.00   | 21% | Nobody — available to assign                            |
+| Legacy 2024    | 2.00 EUR         | 10.00    | 19% | Nobody — **archived**, cannot be assigned               |
+
+| Bill                 | Status | What it shows                                                                     |
+| -------------------- | ------ | --------------------------------------------------------------------------------- |
+| Winter Event         | PAID   | Start and end counts equal, paid three weeks after the event, with a note         |
+| Spring Event         | OPEN   | Two cancellations during the event: the higher start count (24) is billed         |
+| City Event           | DRAFT  | Running — only the start count is known; finalized by the job once the event ends |
+| Test Event (deleted) | VOID   | Its event is gone; the bill keeps its own copy of the event name and dates        |
+
+John sees the Youth Adventures bills under the organization's **Billing** page; Alpine Explorers' running City Event
+bill is only visible to its administrator (Erika) and to the system administrator.
