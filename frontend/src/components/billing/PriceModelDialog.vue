@@ -28,6 +28,7 @@
 
           <q-select
             v-model="currency"
+            :disable="pricingLocked"
             :options="currencyOptions"
             :label="t('field.currency')"
             options-selected-class=""
@@ -41,6 +42,7 @@
 
           <q-input
             v-model.number="taxRate"
+            :disable="pricingLocked"
             :label="t('field.taxRate')"
             :rules="[percent]"
             type="number"
@@ -56,6 +58,7 @@
 
           <q-input
             v-model.number="pricePerRegistration"
+            :disable="pricingLocked"
             :label="t('field.pricePerRegistration')"
             :rules="[required, nonNegative]"
             :suffix="currency"
@@ -70,6 +73,7 @@
 
           <q-input
             v-model.number="baseFee"
+            :disable="pricingLocked"
             :label="t('field.baseFee')"
             :rules="[nonNegative]"
             :suffix="currency"
@@ -83,7 +87,7 @@
           />
 
           <div class="span-2 text-caption text-on-surface-variant">
-            {{ t('hint') }}
+            {{ pricingLocked ? t('locked') : t('hint') }}
           </div>
         </q-card-section>
 
@@ -111,7 +115,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import {
@@ -127,6 +131,18 @@ import { APP_LOCALES } from '@/i18n/locales';
 const { priceModel = null } = defineProps<{
   priceModel?: PriceModel | null;
 }>();
+
+/**
+ * Something was promised these prices — an organization, an event or a bill.
+ * Only the name can change; a new price is a new model.
+ */
+const pricingLocked = computed(() => {
+  const usage = priceModel?.usage;
+
+  return (
+    usage !== undefined && usage.organizations + usage.events + usage.bills > 0
+  );
+});
 
 defineEmits([...useDialogPluginComponent.emits]);
 
@@ -225,6 +241,7 @@ field:
   baseFee: 'Base fee per event'
   taxRate: 'Tax rate'
 hint: 'The base fee is charged once per event, on top of the price per registration.'
+locked: "The prices can't change while organizations, events or bills use this model. Create a new model and assign it instead."
 validation:
   required: 'Required'
   nonNegative: 'Must not be negative'
@@ -245,6 +262,7 @@ field:
   baseFee: 'Grundgebühr pro Veranstaltung'
   taxRate: 'Steuersatz'
 hint: 'Die Grundgebühr wird einmal pro Veranstaltung zusätzlich zum Preis pro Anmeldung berechnet.'
+locked: 'Die Preise können nicht geändert werden, solange Organisationen, Veranstaltungen oder Rechnungen dieses Modell verwenden. Erstelle stattdessen ein neues Modell und weise es zu.'
 validation:
   required: 'Erforderlich'
   nonNegative: 'Darf nicht negativ sein'
@@ -265,6 +283,7 @@ field:
   baseFee: 'Frais de base par événement'
   taxRate: 'Taux de taxe'
 hint: 'Les frais de base sont facturés une fois par événement, en plus du prix par inscription.'
+locked: 'Les prix ne peuvent pas changer tant que des organisations, des événements ou des factures utilisent ce modèle. Créez plutôt un nouveau modèle et attribuez-le.'
 validation:
   required: 'Obligatoire'
   nonNegative: 'Ne doit pas être négatif'
@@ -285,6 +304,7 @@ field:
   baseFee: 'Opłata podstawowa za wydarzenie'
   taxRate: 'Stawka podatku'
 hint: 'Opłata podstawowa jest naliczana raz na wydarzenie, dodatkowo do ceny za zgłoszenie.'
+locked: 'Cen nie można zmienić, dopóki organizacje, wydarzenia lub rachunki korzystają z tego modelu. Utwórz nowy model i przypisz go.'
 validation:
   required: 'Wymagane'
   nonNegative: 'Nie może być ujemna'
@@ -305,6 +325,7 @@ field:
   baseFee: 'Základní poplatek za akci'
   taxRate: 'Sazba daně'
 hint: 'Základní poplatek se účtuje jednou za akci, navíc k ceně za přihlášku.'
+locked: 'Ceny nelze změnit, dokud tento model používají organizace, akce nebo faktury. Místo toho vytvořte nový model a přiřaďte jej.'
 validation:
   required: 'Povinné'
   nonNegative: 'Nesmí být záporné'

@@ -32,7 +32,7 @@ export interface PriceModel extends Identifiable {
   createdAt: string;
   updatedAt: string | null;
   /** How many organizations and event overrides use it; admin listing only. */
-  usage?: { organizations: number; events: number };
+  usage?: { organizations: number; events: number; bills: number };
 }
 
 /** What a listing needs to show which model applies. */
@@ -51,7 +51,15 @@ export type PriceModelUpdateData = Partial<PriceModelCreateData> & {
 };
 
 export interface PriceModelAssignmentData {
-  priceModelId: string | null;
+  priceModelId: string;
+}
+
+export interface OrganizationPriceModelAssignmentData extends PriceModelAssignmentData {
+  /**
+   * Also move the organization's events that have not started and are still
+   * on its previous model. Events with a model of their own keep it.
+   */
+  applyToUpcomingEvents?: boolean;
 }
 
 /**
@@ -194,7 +202,7 @@ export interface OrganizationBilling {
 /** The model an event is priced with, as its managers see it. */
 export interface EventBilling {
   priceModel: PriceModel;
-  /** The event has its own model rather than its organization's. */
+  /** The event's model differs from the one its organization is on now. */
   isOverride: boolean;
   /** The event's live bill — the end of its replacement chain — if any. */
   bill: EventBill | null;

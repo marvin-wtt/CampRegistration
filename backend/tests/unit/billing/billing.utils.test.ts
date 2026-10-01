@@ -14,7 +14,11 @@ const pricing = (price: string, baseFee: string, taxRate: string) => ({
 });
 
 describe('billedRegistrationCount', () => {
-  const counts = (start: number, end: number | null, adjusted: number | null) => ({
+  const counts = (
+    start: number,
+    end: number | null,
+    adjusted: number | null,
+  ) => ({
     startRegistrationCount: start,
     endRegistrationCount: end,
     adjustedRegistrationCount: adjusted,

@@ -27,8 +27,14 @@ ALTER TABLE `organizations` ADD COLUMN `price_model_id` CHAR(26) NULL;
 UPDATE `organizations` SET `price_model_id` = '01K6B00000000000000000FREE';
 ALTER TABLE `organizations` MODIFY `price_model_id` CHAR(26) NOT NULL;
 
--- AlterTable
+-- AlterTable: every event is pinned to the model its organization was on when
+-- it was created, so a later change of the organization's model leaves the
+-- event's price alone. Existing events take their organization's model.
 ALTER TABLE `events` ADD COLUMN `price_model_id` CHAR(26) NULL;
+UPDATE `events` e
+    JOIN `organizations` o ON o.`id` = e.`organization_id`
+    SET e.`price_model_id` = o.`price_model_id`;
+ALTER TABLE `events` MODIFY `price_model_id` CHAR(26) NOT NULL;
 
 -- CreateTable
 CREATE TABLE `event_bills` (

@@ -131,7 +131,12 @@ export class EventService extends BaseService {
         select: { country: true },
       },
       organization: {
-        select: { id: true, name: true, verificationStatus: true },
+        select: {
+          id: true,
+          name: true,
+          verificationStatus: true,
+          priceModelId: true,
+        },
       },
       // Only `AdminEventResource` outputs it.
       priceModel: { select: priceModelSummarySelect },
@@ -382,9 +387,17 @@ export class EventService extends BaseService {
     }));
 
     const event = await this.transaction(async (tx) => {
+      // The event is pinned to the model its organization is on now, so a
+      // later change of the organization's model leaves its price alone.
+      const { priceModelId } = await tx.organization.findUniqueOrThrow({
+        where: { id: data.organizationId },
+        select: { priceModelId: true },
+      });
+
       const created = await tx.event.create({
         data: {
           ...data,
+          priceModelId,
           location: dbNullable(data.location),
           form,
           eventManager: {
@@ -458,16 +471,35 @@ export class EventService extends BaseService {
     return JSON.parse(formStr) as Record<string, unknown>;
   }
 
+  /**
+   * An event that is still on its old owner's model, and not billed yet,
+   * follows its new owner's: that is who pays. A model chosen for the event
+   * itself, or one a bill already used, stays.
+   */
   async moveEventToOrganization(eventId: string, organizationId: string) {
     return this.transaction(async (tx) => {
       const before = await tx.event.findUniqueOrThrow({
         where: { id: eventId },
+        include: {
+          organization: { select: { priceModelId: true } },
+          _count: { select: { bills: true } },
+        },
       });
+      const target = await tx.organization.findUniqueOrThrow({
+        where: { id: organizationId },
+        select: { priceModelId: true },
+      });
+      const followsOwner =
+        before.priceModelId === before.organization.priceModelId &&
+        before._count.bills === 0;
 
       const updatedEvent = await tx.event.update({
         where: { id: eventId },
         data: {
           organization: { connect: { id: organizationId } },
+          ...(followsOwner
+            ? { priceModel: { connect: { id: target.priceModelId } } }
+            : {}),
         },
         include: { ...this.eventResourceInclude() },
       });

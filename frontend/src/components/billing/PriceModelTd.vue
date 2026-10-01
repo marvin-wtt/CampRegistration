@@ -1,25 +1,20 @@
 <template>
   <q-td :props>
-    <template v-if="priceModel === null">
-      <span class="text-on-surface-variant">{{ t('inherited') }}</span>
-    </template>
-    <template v-else>
-      <q-chip
-        :class="chipClass"
-        :icon="scope === 'event' ? 'sell' : undefined"
-        dense
-        square
-      >
-        {{ to(priceModel.name) }}
-        <q-tooltip v-if="scope === 'event'">{{ t('override') }}</q-tooltip>
-      </q-chip>
-      <q-badge
-        v-if="priceModel.isDefault"
-        :label="t('default')"
-        color="primary"
-        outline
-      />
-    </template>
+    <q-chip
+      :class="chipClass"
+      :icon="override ? 'sell' : undefined"
+      dense
+      square
+    >
+      {{ to(priceModel.name) }}
+      <q-tooltip v-if="override">{{ t('override') }}</q-tooltip>
+    </q-chip>
+    <q-badge
+      v-if="priceModel.isDefault"
+      :label="t('default')"
+      color="primary"
+      outline
+    />
   </q-td>
 </template>
 
@@ -30,20 +25,26 @@ import type { PriceModelSummary } from '@camp-registration/common/entities';
 import type { QTableBodyCellProps } from '@/types/quasar/QTableBodyCellProps';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 
-const { props, priceModel, scope } = defineProps<{
+const {
+  props,
+  priceModel,
+  override = false,
+} = defineProps<{
   props: QTableBodyCellProps<unknown>;
-  /** `null` on an event: no override, the organization's model applies. */
-  priceModel: PriceModelSummary | null;
-  scope: 'organization' | 'event';
+  priceModel: PriceModelSummary;
+  /** An event on another model than its organization is on now. */
+  override?: boolean;
 }>();
 
 const { t } = useI18n();
 const { to } = useObjectTranslation();
 
-// An organization on the default model is the normal case and stays quiet;
-// anything else — a deliberate choice for it or its event — stands out.
+// The normal case stays quiet: an organization on the default model, an
+// event on its organization's. Anything else is a deliberate choice.
 const chipClass = computed(() =>
-  priceModel?.isDefault ? 'price-model--default' : 'price-model--custom',
+  override || !priceModel.isDefault
+    ? 'price-model--custom'
+    : 'price-model--default',
 );
 </script>
 
@@ -60,31 +61,26 @@ const chipClass = computed(() =>
 </style>
 
 <i18n lang="yaml" locale="en">
-inherited: "Organization's"
-override: "Overrides the organization's price model"
+override: "Differs from the organization's current price model"
 default: 'Default'
 </i18n>
 
 <i18n lang="yaml" locale="de">
-inherited: 'Der Organisation'
-override: 'Ersetzt das Preismodell der Organisation'
+override: 'Weicht vom aktuellen Preismodell der Organisation ab'
 default: 'Standard'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-inherited: "Celui de l'organisation"
-override: "Remplace le modèle tarifaire de l'organisation"
+override: "Diffère du modèle tarifaire actuel de l'organisation"
 default: 'Par défaut'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-inherited: 'Organizacji'
-override: 'Zastępuje model cenowy organizacji'
+override: 'Różni się od obecnego modelu cenowego organizacji'
 default: 'Domyślny'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-inherited: 'Organizace'
-override: 'Nahrazuje cenový model organizace'
+override: 'Liší se od současného cenového modelu organizace'
 default: 'Výchozí'
 </i18n>

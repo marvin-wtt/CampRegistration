@@ -44,8 +44,10 @@ export interface Event extends Identifiable {
  * price model override, which the public resource leaves out.
  */
 export interface AdminEvent extends Event {
-  /** `null`: the organization's price model applies. */
-  priceModel: PriceModelSummary | null;
+  /** The model pinned on the event when it was created, or assigned since. */
+  priceModel: PriceModelSummary;
+  /** It differs from the model its organization is on now. */
+  isPriceModelOverride: boolean;
 }
 
 export interface EventDetails extends Event {

@@ -187,12 +187,12 @@ model Event {
   themes                  Json             @default("{}") @db.Json
   retentionReminderSentAt DateTime?        @map("retention_reminder_sent_at")
   /// Overrides the organization's price model for this event only.
-  priceModelId            String?          @map("price_model_id") @db.Char(26)
+  priceModelId            String           @map("price_model_id") @db.Char(26)
   createdAt               DateTime?        @default(now()) @map("created_at")
   updatedAt               DateTime?        @updatedAt @map("updated_at")
 
   organization         Organization          @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "events_organization_id_foreign")
-  priceModel           PriceModel?           @relation(fields: [priceModelId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "events_price_model_id_foreign")
+  priceModel           PriceModel            @relation(fields: [priceModelId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "events_price_model_id_foreign")
   bills                EventBill[]
   eventManager         EventManager[]
   registrations        Registration[]

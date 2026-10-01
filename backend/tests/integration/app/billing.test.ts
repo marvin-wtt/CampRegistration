@@ -16,6 +16,8 @@ import { request } from '../utils/request.js';
 import prisma from '../utils/prisma.js';
 import { resolve } from '#core/ioc/container';
 import { BillingService } from '#app/billing/billing.service';
+import { EventService } from '#app/event/event.service';
+import { eventCreateNational } from './fixtures/event.fixtures.js';
 import { billedRegistrationCount } from '#app/billing/billing.utils';
 import type { Prisma } from '#generated/prisma/client.js';
 
@@ -863,7 +865,7 @@ describe('event billing', () => {
         .expect(403);
     });
 
-    it('shows event overrides in the admin listing only', async () => {
+    it("shows an event's price model in the admin listing only", async () => {
       const priceModel = await PriceModelFactory.create();
       const event = await EventFactory.create({
         listed: true,
@@ -880,10 +882,163 @@ describe('event billing', () => {
 
       expect(
         admin.data.find((row: { id: string }) => row.id === event.id),
-      ).toMatchObject({ priceModelId: priceModel.id });
+      ).toMatchObject({
+        priceModel: { id: priceModel.id },
+        isPriceModelOverride: true,
+      });
       for (const row of listed.data) {
-        expect(row).not.toHaveProperty('priceModelId');
+        expect(row).not.toHaveProperty('priceModel');
       }
+    });
+
+    it("pins a new event to its organization's price model", async () => {
+      const priceModel = await PriceModelFactory.create();
+      const user = await UserFactory.create();
+      const organization = await OrganizationFactory.create({
+        priceModel: { connect: { id: priceModel.id } },
+        members: { create: { userId: user.id, role: 'ADMIN' } },
+      });
+
+      const { body } = await request()
+        .post('/api/v1/events')
+        .send({ ...eventCreateNational, organizationId: organization.id })
+        .auth(generateAccessToken(user), { type: 'bearer' })
+        .expect(201);
+
+      const event = await prisma.event.findUniqueOrThrow({
+        where: { id: body.data.id },
+      });
+      expect(event.priceModelId).toBe(priceModel.id);
+    });
+
+    it("keeps an event's model when its organization moves to another", async () => {
+      const event = await eventRunning();
+      const pinned = event.priceModelId;
+      const other = await PriceModelFactory.create();
+
+      await request()
+        .put(`/api/v1/organizations/${event.organizationId}/price-model`)
+        .send({ priceModelId: other.id })
+        .auth(await adminToken(), { type: 'bearer' })
+        .expect(200);
+
+      const after = await prisma.event.findUniqueOrThrow({
+        where: { id: event.id },
+      });
+      expect(after.priceModelId).toBe(pinned);
+    });
+
+    it('moves only upcoming events still on the old model along, when asked', async () => {
+      const previous = await PriceModelFactory.create();
+      const custom = await PriceModelFactory.create();
+      const next = await PriceModelFactory.create();
+      const organization = await OrganizationFactory.create({
+        priceModel: { connect: { id: previous.id } },
+      });
+      const organizationConnect = {
+        organization: { connect: { id: organization.id } },
+      };
+      const upcoming = await EventFactory.create({
+        ...organizationConnect,
+        timezone: 'UTC',
+        startAt: moment().add(10, 'days').toDate(),
+        endAt: moment().add(12, 'days').toDate(),
+      });
+      const upcomingCustom = await EventFactory.create({
+        ...organizationConnect,
+        priceModel: { connect: { id: custom.id } },
+        timezone: 'UTC',
+        startAt: moment().add(10, 'days').toDate(),
+        endAt: moment().add(12, 'days').toDate(),
+      });
+      const running = await eventRunning(organizationConnect);
+      await billing().openDraftsForStartedEvents();
+
+      const { body } = await request()
+        .put(`/api/v1/organizations/${organization.id}/price-model`)
+        .send({ priceModelId: next.id, applyToUpcomingEvents: true })
+        .auth(await adminToken(), { type: 'bearer' })
+        .expect(200);
+
+      expect(body.meta.updatedEvents).toBe(1);
+      const models = Object.fromEntries(
+        (
+          await prisma.event.findMany({
+            where: { organizationId: organization.id },
+            select: { id: true, priceModelId: true },
+          })
+        ).map((event) => [event.id, event.priceModelId]),
+      );
+      expect(models[upcoming.id]).toBe(next.id);
+      expect(models[upcomingCustom.id]).toBe(custom.id);
+      expect(models[running.id]).toBe(previous.id);
+    });
+
+    it('refuses to change the prices of a price model in use', async () => {
+      const priceModel = await PriceModelFactory.create({
+        pricePerRegistration: 2,
+      });
+      await OrganizationFactory.create({
+        priceModel: { connect: { id: priceModel.id } },
+      });
+
+      await request()
+        .patch(`/api/v1/price-models/${priceModel.id}`)
+        .send({ pricePerRegistration: 3 })
+        .auth(await adminToken(), { type: 'bearer' })
+        .expect(409);
+    });
+
+    it('renames a price model in use, and accepts unchanged prices', async () => {
+      const priceModel = await PriceModelFactory.create({
+        pricePerRegistration: 2,
+      });
+      await OrganizationFactory.create({
+        priceModel: { connect: { id: priceModel.id } },
+      });
+
+      const { body } = await request()
+        .patch(`/api/v1/price-models/${priceModel.id}`)
+        .send({ name: 'Renamed', pricePerRegistration: 2 })
+        .auth(await adminToken(), { type: 'bearer' })
+        .expect(200);
+
+      expect(body.data.name).toBe('Renamed');
+    });
+
+    it('changes the prices of an unused price model', async () => {
+      const priceModel = await PriceModelFactory.create({
+        pricePerRegistration: 2,
+      });
+
+      const { body } = await request()
+        .patch(`/api/v1/price-models/${priceModel.id}`)
+        .send({ pricePerRegistration: 3 })
+        .auth(await adminToken(), { type: 'bearer' })
+        .expect(200);
+
+      expect(body.data.pricePerRegistration).toBe('3.00');
+    });
+
+    it("moves an event to its new owner's model when it was on the old owner's", async () => {
+      const ownModel = await PriceModelFactory.create();
+      const targetModel = await PriceModelFactory.create();
+      const source = await OrganizationFactory.create({
+        priceModel: { connect: { id: ownModel.id } },
+      });
+      const target = await OrganizationFactory.create({
+        priceModel: { connect: { id: targetModel.id } },
+      });
+      const event = await EventFactory.create({
+        organization: { connect: { id: source.id } },
+      });
+
+      await resolve(EventService).moveEventToOrganization(event.id, target.id);
+
+      const moved = await prisma.event.findUniqueOrThrow({
+        where: { id: event.id },
+      });
+      expect(moved.priceModelId).toBe(targetModel.id);
     });
 
     it('counts where each price model is used', async () => {

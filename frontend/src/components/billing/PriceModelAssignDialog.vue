@@ -16,7 +16,7 @@
             :options
             :loading="loading"
             :label="t('field.priceModel')"
-            :hint="inherit ? t('hint.event') : t('hint.organization')"
+            :hint="t(`hint.${scope}`)"
             options-selected-class=""
             emit-value
             map-options
@@ -24,20 +24,29 @@
             outlined
             rounded
           >
-            <template #option="scope">
-              <q-item v-bind="scope.itemProps">
+            <template #option="option">
+              <q-item v-bind="option.itemProps">
                 <q-item-section>
-                  <q-item-label>{{ scope.opt.label }}</q-item-label>
+                  <q-item-label>{{ option.opt.label }}</q-item-label>
                   <q-item-label
-                    v-if="scope.opt.caption"
+                    v-if="option.opt.caption"
                     caption
                   >
-                    {{ scope.opt.caption }}
+                    {{ option.opt.caption }}
                   </q-item-label>
                 </q-item-section>
               </q-item>
             </template>
           </q-select>
+
+          <q-toggle
+            v-if="scope === 'organization'"
+            v-model="applyToUpcomingEvents"
+            :label="t('applyToUpcomingEvents')"
+            :disable="selected === current"
+            color="primary"
+            class="q-mt-md"
+          />
         </q-card-section>
 
         <q-card-actions align="right">
@@ -51,7 +60,7 @@
           />
           <q-btn
             :label="t('action.save')"
-            :disable="loading || (!inherit && selected === null)"
+            :disable="loading || selected === null"
             type="submit"
             color="primary"
             unelevated
@@ -74,16 +83,21 @@ import { useServiceNotifications } from '@/composables/serviceHandler';
 import { formatMoney } from '@/utils/money';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 
+export interface PriceModelAssignResult {
+  priceModelId: string;
+  /** Organizations only: move upcoming events still on the old model too. */
+  applyToUpcomingEvents: boolean;
+}
+
 const {
   subject,
+  scope,
   current = null,
-  inherit = false,
 } = defineProps<{
   /** What the model is assigned to, shown under the title. */
   subject: string;
+  scope: 'organization' | 'event';
   current?: string | null;
-  /** Offer "use the organization's model" (`null`) — for events. */
-  inherit?: boolean;
 }>();
 
 defineEmits([...useDialogPluginComponent.emits]);
@@ -95,13 +109,8 @@ const { to } = useObjectTranslation();
 const api = useAPIService();
 const { withErrorNotification } = useServiceNotifications('billing');
 
-/**
- * The inherit option's value. QSelect treats a `null` option value as "nothing
- * selected", so it is `''` here — never a ULID — and becomes `null` on submit.
- */
-const INHERIT = '';
-
-const selected = ref<string | null>(current ?? (inherit ? INHERIT : null));
+const selected = ref<string | null>(current);
+const applyToUpcomingEvents = ref(false);
 const priceModels = ref<PriceModel[]>([]);
 const loading = ref(true);
 
@@ -126,11 +135,8 @@ function describe(model: PriceModel): string {
 
 // Archived models cannot be assigned, but the current one stays listed so the
 // select does not show a bare id.
-const options = computed(() => [
-  ...(inherit
-    ? [{ label: t('inherit'), value: INHERIT, caption: t('inheritCaption') }]
-    : []),
-  ...priceModels.value
+const options = computed(() =>
+  priceModels.value
     .filter((model) => !model.archivedAt || model.id === current)
     .map((model) => ({
       label: to(model.name),
@@ -138,10 +144,20 @@ const options = computed(() => [
       caption: describe(model),
       disable: !!model.archivedAt,
     })),
-]);
+);
 
 function onSubmit() {
-  onDialogOK(selected.value === INHERIT ? null : selected.value);
+  if (selected.value === null) {
+    return;
+  }
+
+  onDialogOK({
+    priceModelId: selected.value,
+    applyToUpcomingEvents:
+      scope === 'organization' &&
+      selected.value !== current &&
+      applyToUpcomingEvents.value,
+  } satisfies PriceModelAssignResult);
 }
 </script>
 
@@ -155,13 +171,12 @@ function onSubmit() {
 <i18n lang="yaml" locale="en">
 title: 'Price model'
 caption: '{price} per registration · {baseFee} base fee · {taxRate} % tax'
-inherit: "Use the organization's model"
-inheritCaption: 'No override for this event'
 field:
   priceModel: 'Price model'
 hint:
-  organization: 'Applies to all events of the organization without an override'
-  event: "Overrides the organization's model for this event only"
+  organization: 'New events are priced with it. Existing events keep the model they were created with.'
+  event: 'Replaces the model this event was created with.'
+applyToUpcomingEvents: "Also apply to events that haven't started yet"
 action:
   cancel: 'Cancel'
   save: 'Save'
@@ -170,13 +185,12 @@ action:
 <i18n lang="yaml" locale="de">
 title: 'Preismodell'
 caption: '{price} pro Anmeldung · {baseFee} Grundgebühr · {taxRate} % Steuer'
-inherit: 'Modell der Organisation verwenden'
-inheritCaption: 'Keine Abweichung für diese Veranstaltung'
 field:
   priceModel: 'Preismodell'
 hint:
-  organization: 'Gilt für alle Veranstaltungen der Organisation ohne eigenes Modell'
-  event: 'Ersetzt das Modell der Organisation nur für diese Veranstaltung'
+  organization: 'Neue Veranstaltungen werden damit abgerechnet. Bestehende behalten das Modell, mit dem sie erstellt wurden.'
+  event: 'Ersetzt das Modell, mit dem diese Veranstaltung erstellt wurde.'
+applyToUpcomingEvents: 'Auch auf Veranstaltungen anwenden, die noch nicht begonnen haben'
 action:
   cancel: 'Abbrechen'
   save: 'Speichern'
@@ -185,13 +199,12 @@ action:
 <i18n lang="yaml" locale="fr">
 title: 'Modèle tarifaire'
 caption: '{price} par inscription · {baseFee} de frais de base · {taxRate} % de taxe'
-inherit: "Utiliser le modèle de l'organisation"
-inheritCaption: 'Aucune dérogation pour cet événement'
 field:
   priceModel: 'Modèle tarifaire'
 hint:
-  organization: "S'applique à tous les événements de l'organisation sans dérogation"
-  event: "Remplace le modèle de l'organisation pour cet événement uniquement"
+  organization: 'Les nouveaux événements sont facturés avec ce modèle. Les événements existants gardent celui avec lequel ils ont été créés.'
+  event: 'Remplace le modèle avec lequel cet événement a été créé.'
+applyToUpcomingEvents: "Appliquer aussi aux événements qui n'ont pas encore commencé"
 action:
   cancel: 'Annuler'
   save: 'Enregistrer'
@@ -200,13 +213,12 @@ action:
 <i18n lang="yaml" locale="pl">
 title: 'Model cenowy'
 caption: '{price} za zgłoszenie · {baseFee} opłaty podstawowej · {taxRate} % podatku'
-inherit: 'Użyj modelu organizacji'
-inheritCaption: 'Brak odstępstwa dla tego wydarzenia'
 field:
   priceModel: 'Model cenowy'
 hint:
-  organization: 'Dotyczy wszystkich wydarzeń organizacji bez własnego modelu'
-  event: 'Zastępuje model organizacji tylko dla tego wydarzenia'
+  organization: 'Nowe wydarzenia są rozliczane według tego modelu. Istniejące zachowują model, z którym zostały utworzone.'
+  event: 'Zastępuje model, z którym to wydarzenie zostało utworzone.'
+applyToUpcomingEvents: 'Zastosuj także do wydarzeń, które jeszcze się nie rozpoczęły'
 action:
   cancel: 'Anuluj'
   save: 'Zapisz'
@@ -215,13 +227,12 @@ action:
 <i18n lang="yaml" locale="cs">
 title: 'Cenový model'
 caption: '{price} za přihlášku · {baseFee} základní poplatek · {taxRate} % daň'
-inherit: 'Použít model organizace'
-inheritCaption: 'Bez výjimky pro tuto akci'
 field:
   priceModel: 'Cenový model'
 hint:
-  organization: 'Platí pro všechny akce organizace bez vlastního modelu'
-  event: 'Nahrazuje model organizace pouze pro tuto akci'
+  organization: 'Nové akce se účtují podle tohoto modelu. Stávající akce si ponechají model, se kterým byly vytvořeny.'
+  event: 'Nahrazuje model, se kterým byla tato akce vytvořena.'
+applyToUpcomingEvents: 'Použít také na akce, které ještě nezačaly'
 action:
   cancel: 'Zrušit'
   save: 'Uložit'

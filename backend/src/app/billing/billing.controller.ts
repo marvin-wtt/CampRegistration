@@ -179,7 +179,7 @@ export class BillingController extends BaseController {
   }
 
   private async sendInvoice(res: Response, invoice: { files: File[] }) {
-    const file = invoice.files[0];
+    const file = invoice.files.at(0);
     if (!file) {
       throw new ApiError(httpStatus.NOT_FOUND, 'Invoice file not found');
     }

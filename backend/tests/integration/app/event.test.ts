@@ -48,10 +48,11 @@ const sumParticipants = (value: number | Record<string, number>): number =>
 
 // The unchecked variant: these assertions describe a request body and the row
 // it produces, both of which carry a scalar `organizationId` rather than the
-// nested `organization` relation of `EventCreateInput`.
+// nested `organization` relation of `EventCreateInput`. A body never carries
+// `priceModelId`: the server pins the organization's model.
 type EventCreateData = PartialBy<
   Prisma.EventUncheckedCreateInput,
-  'id' | 'form' | 'themes' | 'organizationId'
+  'id' | 'form' | 'themes' | 'organizationId' | 'priceModelId'
 >;
 
 const assertEventModel = async (id: string, data: EventCreateData) => {

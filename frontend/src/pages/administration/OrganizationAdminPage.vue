@@ -64,7 +64,6 @@
           <price-model-td
             :props
             :price-model="props.row.priceModel"
-            scope="organization"
           />
         </template>
 
@@ -95,7 +94,9 @@ import OrganizationReviewDialog, {
   type OrganizationReviewResult,
 } from '@/components/organization/OrganizationReviewDialog.vue';
 import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
-import PriceModelAssignDialog from '@/components/billing/PriceModelAssignDialog.vue';
+import PriceModelAssignDialog, {
+  type PriceModelAssignResult,
+} from '@/components/billing/PriceModelAssignDialog.vue';
 import PriceModelTd from '@/components/billing/PriceModelTd.vue';
 import { useAPIService } from '@/services/APIService';
 import { useServerTable } from '@/composables/serverTable';
@@ -273,13 +274,14 @@ function assignPriceModel(organization: AdminOrganization) {
       component: PriceModelAssignDialog,
       componentProps: {
         subject: organization.name,
+        scope: 'organization',
         current: organization.priceModelId,
       },
     })
-    .onOk((priceModelId: string) => {
+    .onOk((result: PriceModelAssignResult) => {
       void billingNotifications
         .withProgressNotification('assign', () =>
-          api.assignOrganizationPriceModel(organization.id, priceModelId),
+          api.assignOrganizationPriceModel(organization.id, result),
         )
         .then(
           () => reload(),

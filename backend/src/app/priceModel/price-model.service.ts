@@ -1,6 +1,7 @@
 import httpStatus from 'http-status';
 import { injectable } from 'inversify';
 import { Prisma, type PriceModel } from '#generated/prisma/client.js';
+import { eventInstant } from '#app/billing/billing.utils';
 import { BaseService } from '#core/base/BaseService';
 import ApiError from '#utils/ApiError';
 import type {
@@ -12,6 +13,24 @@ import {
   FREE_PRICE_MODEL_NAME,
 } from './price-model.utils.js';
 
+/** Whether `data` would change what the model charges. */
+function pricingChanges(
+  priceModel: PriceModel,
+  data: PriceModelUpdateData,
+): boolean {
+  const differs = (
+    value: number | undefined,
+    current: Prisma.Decimal,
+  ): boolean => value !== undefined && !current.equals(value);
+
+  return (
+    (data.currency !== undefined && data.currency !== priceModel.currency) ||
+    differs(data.pricePerRegistration, priceModel.pricePerRegistration) ||
+    differs(data.baseFee, priceModel.baseFee) ||
+    differs(data.taxRate, priceModel.taxRate)
+  );
+}
+
 @injectable()
 export class PriceModelService extends BaseService {
   async getPriceModelById(id: string) {
@@ -22,7 +41,9 @@ export class PriceModelService extends BaseService {
     // The name is translatable JSON, so the client sorts by the reader's
     // language; the default and live models come first.
     return this.prisma.priceModel.findMany({
-      include: { _count: { select: { organizations: true, events: true } } },
+      include: {
+        _count: { select: { organizations: true, events: true, bills: true } },
+      },
       orderBy: [{ isDefault: 'desc' }, { archivedAt: 'asc' }, { id: 'asc' }],
     });
   }
@@ -78,12 +99,27 @@ export class PriceModelService extends BaseService {
     });
   }
 
+  /**
+   * The name can always change and a model can be archived; its prices only
+   * while nothing uses it. An organization, event or bill on a model was
+   * promised those prices — a new price is a new model, assigned explicitly.
+   */
   async updatePriceModel(priceModel: PriceModel, data: PriceModelUpdateData) {
     if (data.archived && priceModel.isDefault) {
       throw new ApiError(
         httpStatus.CONFLICT,
         'The default price model cannot be archived.',
       );
+    }
+
+    if (pricingChanges(priceModel, data)) {
+      const usage = await this.countUsage(priceModel.id);
+      if (usage.organizations + usage.events + usage.bills > 0) {
+        throw new ApiError(
+          httpStatus.CONFLICT,
+          'The prices of a price model in use cannot change. Create a new model and assign it instead.',
+        );
+      }
     }
 
     return this.prisma.priceModel.update({
@@ -159,40 +195,85 @@ export class PriceModelService extends BaseService {
     return { organizations, events, bills };
   }
 
-  /** The event's own model, else its organization's. */
+  /** The model pinned on the event, and whether its organization's differs. */
   async getForEvent(eventId: string) {
     const event = await this.prisma.event.findUniqueOrThrow({
       where: { id: eventId },
       select: {
         priceModel: true,
-        organization: { select: { priceModel: true } },
+        organization: { select: { priceModelId: true } },
       },
     });
 
     return {
-      priceModel: event.priceModel ?? event.organization.priceModel,
-      isOverride: event.priceModel !== null,
+      priceModel: event.priceModel,
+      isOverride: event.priceModel.id !== event.organization.priceModelId,
     };
   }
 
-  async assignToOrganization(organizationId: string, priceModel: PriceModel) {
+  /**
+   * Moves the organization to another model. Its events keep the model they
+   * were created with — unless `applyToUpcomingEvents`, which also moves the
+   * ones that have not started (no bill yet) and are still on the previous
+   * model. Returns how many events moved along.
+   */
+  async assignToOrganization(
+    organizationId: string,
+    priceModel: PriceModel,
+    { applyToUpcomingEvents = false } = {},
+  ): Promise<{ updatedEvents: number }> {
     this.assertAssignable(priceModel);
 
-    return this.prisma.organization.update({
-      where: { id: organizationId },
-      data: { priceModelId: priceModel.id },
+    return this.transaction(async (tx) => {
+      const { priceModelId: previous } =
+        await tx.organization.findUniqueOrThrow({
+          where: { id: organizationId },
+          select: { priceModelId: true },
+        });
+
+      await tx.organization.update({
+        where: { id: organizationId },
+        data: { priceModelId: priceModel.id },
+      });
+
+      if (!applyToUpcomingEvents || previous === priceModel.id) {
+        return { updatedEvents: 0 };
+      }
+
+      // Started events have a bill (the job opens one at the start); the
+      // zoned check covers the gap until the job's next run.
+      const now = new Date();
+      const candidates = await tx.event.findMany({
+        where: {
+          organizationId,
+          priceModelId: previous,
+          bills: { none: {} },
+        },
+        select: { id: true, startAt: true, timezone: true },
+      });
+      const upcoming = candidates
+        .filter((event) => eventInstant(event.startAt, event.timezone) > now)
+        .map((event) => event.id);
+
+      if (upcoming.length === 0) {
+        return { updatedEvents: 0 };
+      }
+
+      const { count } = await tx.event.updateMany({
+        where: { id: { in: upcoming } },
+        data: { priceModelId: priceModel.id },
+      });
+
+      return { updatedEvents: count };
     });
   }
 
-  /** `null` falls back to the organization's model. */
-  async assignToEvent(eventId: string, priceModel: PriceModel | null) {
-    if (priceModel) {
-      this.assertAssignable(priceModel);
-    }
+  async assignToEvent(eventId: string, priceModel: PriceModel) {
+    this.assertAssignable(priceModel);
 
     return this.prisma.event.update({
       where: { id: eventId },
-      data: { priceModelId: priceModel?.id ?? null },
+      data: { priceModelId: priceModel.id },
       select: { id: true, priceModelId: true },
     });
   }

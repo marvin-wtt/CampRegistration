@@ -151,7 +151,7 @@
           <price-model-td
             :props
             :price-model="props.row.priceModel"
-            scope="event"
+            :override="props.row.isPriceModelOverride"
           />
         </template>
 
@@ -190,7 +190,9 @@ import RegistrationScheduleDialog, {
   type RegistrationScheduleResult,
 } from '@/components/event/index/RegistrationScheduleDialog.vue';
 import MoveOrganizationDialog from '@/components/organization/MoveOrganizationDialog.vue';
-import PriceModelAssignDialog from '@/components/billing/PriceModelAssignDialog.vue';
+import PriceModelAssignDialog, {
+  type PriceModelAssignResult,
+} from '@/components/billing/PriceModelAssignDialog.vue';
 import PriceModelTd from '@/components/billing/PriceModelTd.vue';
 import EventBillDialog, {
   type EventBillDialogResult,
@@ -335,7 +337,7 @@ const columns = computed<QTableColumn<AdminEvent>[]>(() => [
   {
     name: 'priceModel',
     label: t('column.priceModel'),
-    field: (row) => row.priceModel?.id ?? null,
+    field: (row) => row.priceModel.id,
     align: 'left',
   },
   {
@@ -481,21 +483,17 @@ function onMoveEvent(event: Event) {
     });
 }
 
-/**
- * The override is read on demand: it is not part of the event resource, which
- * is public, while pricing is between the platform and the organization.
- */
 function onPriceModel(event: AdminEvent) {
   quasar
     .dialog({
       component: PriceModelAssignDialog,
       componentProps: {
         subject: to(event.name),
-        current: event.priceModel?.id ?? null,
-        inherit: true,
+        scope: 'event',
+        current: event.priceModel.id,
       },
     })
-    .onOk((priceModelId: string | null) => {
+    .onOk(({ priceModelId }: PriceModelAssignResult) => {
       void billingNotifications
         .withProgressNotification('assign', () =>
           api.assignEventPriceModel(event.id, priceModelId),

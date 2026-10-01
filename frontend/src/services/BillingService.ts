@@ -9,6 +9,7 @@ import type {
   Invoice,
   InvoiceCreateData,
   OrganizationBilling,
+  OrganizationPriceModelAssignmentData,
   PriceModel,
   PriceModelCreateData,
   PriceModelUpdateData,
@@ -48,22 +49,23 @@ export function useBillingService() {
     await api.delete(`price-models/${id}/`);
   }
 
+  /** Resolves to how many upcoming events were moved along. */
   async function assignOrganizationPriceModel(
     organizationId: string,
-    priceModelId: string,
-  ): Promise<PriceModel> {
+    data: OrganizationPriceModelAssignmentData,
+  ): Promise<{ updatedEvents: number }> {
     const response = await api.put(
       `organizations/${organizationId}/price-model/`,
-      { priceModelId },
+      data,
     );
 
-    return response?.data?.data;
+    return { updatedEvents: response?.data?.meta?.updatedEvents ?? 0 };
   }
 
   async function assignEventPriceModel(
     eventId: string,
-    priceModelId: string | null,
-  ): Promise<{ id: string; priceModelId: string | null }> {
+    priceModelId: string,
+  ): Promise<{ id: string; priceModelId: string }> {
     const response = await api.put(`events/${eventId}/price-model/`, {
       priceModelId,
     });

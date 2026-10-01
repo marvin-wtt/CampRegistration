@@ -25,7 +25,7 @@ export function priceModelSummary(
 }
 
 export type PriceModelWithUsage = PriceModel & {
-  _count?: { organizations: number; events: number } | undefined;
+  _count?: { organizations: number; events: number; bills: number } | undefined;
 };
 
 export class PriceModelResource extends JsonResource<

@@ -65,19 +65,19 @@ export class EventResource extends JsonResource<
 }
 
 /**
- * The administrators' listing (`view=all`): the public shape plus the price
- * model override, which is between the platform and the organization.
+ * The administrators' listing (`view=all`): the public shape plus the event's
+ * price model, which is between the platform and the organization.
  */
 export class AdminEventResource extends JsonResource<
   EventWithRelations,
   AdminEventResourceData
 > {
   transform(): AdminEventResourceData {
-    const { priceModel } = this.data;
-
     return {
       ...new EventResource(this.data).transform(),
-      priceModel: priceModel ? priceModelSummary(priceModel) : null,
+      priceModel: priceModelSummary(this.data.priceModel),
+      isPriceModelOverride:
+        this.data.priceModelId !== this.data.organization.priceModelId,
     };
   }
 }

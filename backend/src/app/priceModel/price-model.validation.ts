@@ -2,6 +2,7 @@ import { z, type ZodType } from 'zod';
 import { translatedValue } from '#core/validation/helper';
 import { PRICE_MODEL_CURRENCIES } from '@camp-registration/common/entities';
 import type {
+  OrganizationPriceModelAssignmentData,
   PriceModelAssignmentData,
   PriceModelCreateData,
   PriceModelUpdateData,
@@ -51,7 +52,8 @@ const assignToOrganization = z.object({
   }),
   body: z.object({
     priceModelId: z.ulid(),
-  }) satisfies ZodType<PriceModelAssignmentData>,
+    applyToUpcomingEvents: z.boolean().optional(),
+  }) satisfies ZodType<OrganizationPriceModelAssignmentData>,
 });
 
 const assignToEvent = z.object({
@@ -59,7 +61,7 @@ const assignToEvent = z.object({
     eventId: z.ulid(),
   }),
   body: z.object({
-    priceModelId: z.ulid().nullable(),
+    priceModelId: z.ulid(),
   }) satisfies ZodType<PriceModelAssignmentData>,
 });
 

@@ -67,20 +67,21 @@ export class PriceModelController extends BaseController {
     const organization = req.modelOrFail('organization');
     const priceModel = await this.findPriceModel(body.priceModelId);
 
-    await this.priceModelService.assignToOrganization(
+    const { updatedEvents } = await this.priceModelService.assignToOrganization(
       organization.id,
       priceModel,
+      { applyToUpcomingEvents: body.applyToUpcomingEvents ?? false },
     );
 
-    res.resource(new PriceModelResource(priceModel));
+    res.resource(
+      new PriceModelResource(priceModel).withMeta({ updatedEvents }),
+    );
   }
 
   async assignToEvent(req: Request, res: Response) {
     const { body } = await req.validate(validator.assignToEvent);
     const event = req.modelOrFail('event');
-    const priceModel = body.priceModelId
-      ? await this.findPriceModel(body.priceModelId)
-      : null;
+    const priceModel = await this.findPriceModel(body.priceModelId);
 
     const result = await this.priceModelService.assignToEvent(
       event.id,

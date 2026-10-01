@@ -32,7 +32,7 @@ export class InvoiceResource extends JsonResource<
   InvoiceData
 > {
   transform(): InvoiceData {
-    const file = this.data.files[0];
+    const file = this.data.files.at(0);
 
     return {
       id: this.data.id,
