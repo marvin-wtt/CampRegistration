@@ -37,4 +37,14 @@ export default {
     success: 'Bill updated',
     error: 'Failed to update bill',
   },
+  uploadInvoice: {
+    progress: 'Uploading invoice...',
+    success: 'Invoice uploaded',
+    error: 'Failed to upload invoice',
+  },
+  deleteInvoice: {
+    progress: 'Deleting invoice...',
+    success: 'Invoice deleted',
+    error: 'Failed to delete invoice',
+  },
 };

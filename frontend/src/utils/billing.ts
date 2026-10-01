@@ -17,3 +17,21 @@ export function formatBillPeriod(
     naiveDate(bill.eventEndAt),
   );
 }
+
+export type InvoiceOwner =
+  { organizationId: string } | { eventId: string } | { billId: string };
+
+/**
+ * Invoices download through the organization's or the event's billing, or for
+ * administrators through the bill, which outlives its organization.
+ */
+export function invoiceUrl(owner: InvoiceOwner, invoiceId: string): string {
+  const base =
+    'billId' in owner
+      ? `bills/${owner.billId}`
+      : 'organizationId' in owner
+        ? `organizations/${owner.organizationId}/billing`
+        : `events/${owner.eventId}/billing`;
+
+  return `${window.origin}/api/v1/${base}/invoices/${invoiceId}`;
+}

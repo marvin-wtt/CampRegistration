@@ -50,5 +50,21 @@ export default {
         cause: '$t(email:footer.cause) spravuješ tuto organizaci.',
       },
     },
+    invoiceIssued: {
+      subject: 'Faktura za {{ event.name }}',
+      preview: '{{ amount }} za {{ event.name }}',
+      text: {
+        title: 'Nová faktura je připravena',
+        information:
+          'Faktura za {{ event.name }} je připravena: {{ amount }}. ' +
+          'Můžeš si ji stáhnout na stránce vyúčtování organizace {{ organization.name }}.',
+        button: 'Otevřít vyúčtování',
+        greeting: 'S pozdravem,',
+        teamName: 'Tým {{ appName }}',
+      },
+      footer: {
+        cause: '$t(email:footer.cause) spravuješ tuto organizaci.',
+      },
+    },
   },
 };

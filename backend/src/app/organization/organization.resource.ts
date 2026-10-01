@@ -1,13 +1,16 @@
-import type { Organization } from '#generated/prisma/client.js';
+import type { Organization, PriceModel } from '#generated/prisma/client.js';
 import type {
+  AdminOrganization as AdminOrganizationData,
   Organization as OrganizationData,
   OrganizationDetails as OrganizationDetailsData,
 } from '@camp-registration/common/entities';
 import { JsonResource } from '#core/resource/JsonResource';
+import { priceModelSummary } from '#app/priceModel/price-model.resource';
 
 export interface OrganizationWithCounts extends Organization {
   ownedEvents: number;
   ownedNewsletters: number;
+  unpaidBills: number;
 }
 
 export class OrganizationResource extends JsonResource<
@@ -27,6 +30,7 @@ export class OrganizationResource extends JsonResource<
       addressZipCode: this.data.addressZipCode,
       addressCity: this.data.addressCity,
       registrationNumber: this.data.registrationNumber ?? null,
+      vatNumber: this.data.vatNumber ?? null,
       priceModelId: this.data.priceModelId,
       verificationNote: this.data.verificationNote ?? null,
       reviewNote: this.data.reviewNote ?? null,
@@ -34,6 +38,21 @@ export class OrganizationResource extends JsonResource<
       submittedAt: this.data.submittedAt.toISOString(),
       createdAt: this.data.createdAt.toISOString(),
       updatedAt: this.data.updatedAt?.toISOString() ?? null,
+    };
+  }
+}
+
+/** The administrators' listing (`view=all`): plus the price model it is on. */
+export class AdminOrganizationResource extends JsonResource<
+  Organization & {
+    priceModel: Pick<PriceModel, 'id' | 'name' | 'isDefault'>;
+  },
+  AdminOrganizationData
+> {
+  transform(): AdminOrganizationData {
+    return {
+      ...new OrganizationResource(this.data).transform(),
+      priceModel: priceModelSummary(this.data.priceModel),
     };
   }
 }
@@ -47,6 +66,7 @@ export class OrganizationDetailsResource extends JsonResource<
       ...new OrganizationResource(this.data).transform(),
       ownedEvents: this.data.ownedEvents,
       ownedNewsletters: this.data.ownedNewsletters,
+      unpaidBills: this.data.unpaidBills,
     };
   }
 }

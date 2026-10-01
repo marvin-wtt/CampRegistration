@@ -2,12 +2,16 @@ import { describe, expect, it } from 'vitest';
 import moment from 'moment';
 import {
   EventFactory,
+  FileFactory,
   OrganizationFactory,
   PriceModelFactory,
   RegistrationFactory,
   UserFactory,
 } from '../../../prisma/factories/index.js';
 import { generateAccessToken } from './utils/token.js';
+import { uploadFile } from './utils/file.js';
+import { expectEmailCount, expectEmailTo } from '../utils/mail.js';
+import crypto from 'crypto';
 import { request } from '../utils/request.js';
 import prisma from '../utils/prisma.js';
 import { resolve } from '#core/ioc/container';
@@ -1007,7 +1011,7 @@ describe('event billing', () => {
       expect(body.data[0].organization.id).toBeDefined();
     });
 
-    it('refuses to delete an organization that has been billed', async () => {
+    it('refuses to delete an organization with an unpaid bill', async () => {
       const user = await UserFactory.create();
       const organization = await OrganizationFactory.create({
         members: { create: { userId: user.id, role: 'ADMIN' } },
@@ -1023,7 +1027,293 @@ describe('event billing', () => {
         .auth(generateAccessToken(user), { type: 'bearer' })
         .expect(409);
 
-      expect(body.errorCode).toBe('ORGANIZATION_HAS_BILLS');
+      expect(body.errorCode).toBe('ORGANIZATION_HAS_UNPAID_BILLS');
+    });
+
+    it('freezes the customer onto a finalized bill', async () => {
+      const { bill: openedBill } = await openBill();
+      const organization = await prisma.organization.findUniqueOrThrow({
+        where: { id: openedBill.organizationId ?? '' },
+      });
+
+      expect(openedBill).toMatchObject({
+        customerName: organization.name,
+        customerAddressStreet: organization.addressStreet,
+        customerAddressZipCode: organization.addressZipCode,
+        customerAddressCity: organization.addressCity,
+        customerCountry: organization.country,
+        customerVatNumber: organization.vatNumber,
+      });
+    });
+
+    it('deletes an organization whose bills are settled and keeps the bills', async () => {
+      const user = await UserFactory.create();
+      const { event, bill: openedBill } = await openBill();
+      await prisma.organizationMember.create({
+        data: {
+          organizationId: event.organizationId,
+          userId: user.id,
+          role: 'ADMIN',
+        },
+      });
+      await prisma.eventBill.update({
+        where: { id: openedBill.id },
+        data: { status: 'PAID', paidAt: new Date() },
+      });
+      await prisma.event.delete({ where: { id: event.id } });
+
+      await request()
+        .delete(`/api/v1/organizations/${event.organizationId}`)
+        .auth(generateAccessToken(user), { type: 'bearer' })
+        .expect(204);
+
+      const kept = await prisma.eventBill.findUniqueOrThrow({
+        where: { id: openedBill.id },
+      });
+      expect(kept.organizationId).toBeNull();
+      expect(kept.customerName).toBe(openedBill.customerName);
+
+      const { body } = await request()
+        .get('/api/v1/bills')
+        .query({ search: openedBill.customerName })
+        .auth(await adminToken(), { type: 'bearer' })
+        .expect(200);
+      expect(body.data).toContainEqual(
+        expect.objectContaining({
+          id: openedBill.id,
+          organization: null,
+          customer: expect.objectContaining({ name: openedBill.customerName }),
+        }),
+      );
+    });
+
+    it('refuses to bill a deleted organization again', async () => {
+      const token = await adminToken();
+      const { bill: openedBill } = await openBill();
+      await request()
+        .patch(`/api/v1/bills/${openedBill.id}`)
+        .send({ status: 'VOID' })
+        .auth(token, { type: 'bearer' })
+        .expect(200);
+      await prisma.eventBill.update({
+        where: { id: openedBill.id },
+        data: { organizationId: null },
+      });
+
+      await request()
+        .post('/api/v1/bills')
+        .send({ replacesBillId: openedBill.id })
+        .auth(token, { type: 'bearer' })
+        .expect(409);
+    });
+  });
+
+  describe('invoices', () => {
+    /** A PDF this session uploaded as a temporary file. */
+    async function temporaryPdf(sessionId: string) {
+      const name = crypto.randomUUID() + '.pdf';
+      const file = await FileFactory.create({
+        field: sessionId,
+        name,
+        accessLevel: 'private',
+      });
+      await uploadFile('blank.pdf', name);
+
+      return file;
+    }
+
+    async function attachInvoice(
+      billId: string,
+      options: { status?: number; sessionId?: string; fileId?: string } = {},
+    ) {
+      const sessionId = options.sessionId ?? crypto.randomUUID();
+      const fileId = options.fileId ?? (await temporaryPdf(sessionId)).id;
+
+      return request()
+        .post(`/api/v1/bills/${billId}/invoices`)
+        .set('Cookie', ['session=' + sessionId, '__Host-session=' + sessionId])
+        .auth(await adminToken(), { type: 'bearer' })
+        .send({ fileId })
+        .expect(options.status ?? 201);
+    }
+
+    async function organizationAdmin(organizationId: string | null) {
+      if (!organizationId) {
+        throw new Error('The bill has no organization');
+      }
+      const user = await UserFactory.create();
+      await prisma.organizationMember.create({
+        data: { organizationId, userId: user.id, role: 'ADMIN' },
+      });
+
+      return user;
+    }
+
+    it("attaches the PDF and emails the organization's admins", async () => {
+      const { bill: openedBill } = await openBill();
+      const admin = await organizationAdmin(openedBill.organizationId);
+
+      const { body } = await attachInvoice(openedBill.id);
+
+      expect(body.data).toMatchObject({ source: 'UPLOADED', type: 'INVOICE' });
+      expectEmailTo(admin.email);
+
+      const { body: billing } = await request()
+        .get(`/api/v1/organizations/${openedBill.organizationId}/billing`)
+        .auth(generateAccessToken(admin), { type: 'bearer' })
+        .expect(200);
+      expect(billing.data.bills[0].invoices).toHaveLength(1);
+    });
+
+    it('does not email when nothing is owed', async () => {
+      const { bill: openedBill } = await openBill();
+      await organizationAdmin(openedBill.organizationId);
+      await prisma.eventBill.update({
+        where: { id: openedBill.id },
+        data: { status: 'PAID', paidAt: new Date() },
+      });
+
+      await attachInvoice(openedBill.id);
+
+      expectEmailCount(0);
+    });
+
+    it('refuses an invoice for a running bill', async () => {
+      const event = await eventRunning();
+      await billing().openDraftsForStartedEvents();
+
+      await attachInvoice((await bill(event.id)).id, { status: 409 });
+    });
+
+    it("refuses another session's upload", async () => {
+      const { bill: openedBill } = await openBill();
+      const file = await temporaryPdf(crypto.randomUUID());
+
+      await attachInvoice(openedBill.id, { fileId: file.id, status: 400 });
+    });
+
+    it('refuses a file that is not a PDF', async () => {
+      const { bill: openedBill } = await openBill();
+      const sessionId = crypto.randomUUID();
+      const file = await FileFactory.create({
+        field: sessionId,
+        type: 'image/png',
+      });
+
+      await attachInvoice(openedBill.id, {
+        sessionId,
+        fileId: file.id,
+        status: 400,
+      });
+    });
+
+    it('lets only system administrators attach invoices', async () => {
+      const { bill: openedBill } = await openBill();
+      const admin = await organizationAdmin(openedBill.organizationId);
+
+      await request()
+        .post(`/api/v1/bills/${openedBill.id}/invoices`)
+        .auth(generateAccessToken(admin), { type: 'bearer' })
+        .send({ fileId: (await temporaryPdf(crypto.randomUUID())).id })
+        .expect(403);
+    });
+
+    it('serves the PDF to the organization and the event director', async () => {
+      const { event, bill: openedBill } = await openBill();
+      const admin = await organizationAdmin(openedBill.organizationId);
+      const { body } = await attachInvoice(openedBill.id);
+
+      await request()
+        .get(
+          `/api/v1/organizations/${openedBill.organizationId}/billing/invoices/${body.data.id}`,
+        )
+        .auth(generateAccessToken(admin), { type: 'bearer' })
+        .expect(200)
+        .expect('Content-Type', /application\/pdf/);
+
+      await request()
+        .get(`/api/v1/events/${event.id}/billing/invoices/${body.data.id}`)
+        .auth(await directorToken(event.id), { type: 'bearer' })
+        .expect(200);
+    });
+
+    it("hides an invoice behind another organization's route", async () => {
+      const { bill: openedBill } = await openBill();
+      const { body } = await attachInvoice(openedBill.id);
+      const other = await OrganizationFactory.create();
+      const otherAdmin = await organizationAdmin(other.id);
+
+      await request()
+        .get(
+          `/api/v1/organizations/${other.id}/billing/invoices/${body.data.id}`,
+        )
+        .auth(generateAccessToken(otherAdmin), { type: 'bearer' })
+        .expect(404);
+    });
+
+    it('refuses a second invoice for a bill', async () => {
+      const { bill: openedBill } = await openBill();
+      await attachInvoice(openedBill.id);
+
+      await attachInvoice(openedBill.id, { status: 409 });
+    });
+
+    it('serves the PDF to administrators through the bill', async () => {
+      const { bill: openedBill } = await openBill();
+      const { body } = await attachInvoice(openedBill.id);
+
+      await request()
+        .get(`/api/v1/bills/${openedBill.id}/invoices/${body.data.id}`)
+        .auth(await adminToken(), { type: 'bearer' })
+        .expect(200);
+    });
+
+    it('deletes an uploaded invoice', async () => {
+      const { bill: openedBill } = await openBill();
+      const { body } = await attachInvoice(openedBill.id);
+
+      await request()
+        .delete(`/api/v1/bills/${openedBill.id}/invoices/${body.data.id}`)
+        .auth(await adminToken(), { type: 'bearer' })
+        .expect(204);
+
+      expect(
+        await prisma.invoice.findUnique({ where: { id: body.data.id } }),
+      ).toBeNull();
+    });
+
+    it('never deletes a cancelled invoice', async () => {
+      const { bill: openedBill } = await openBill();
+      const { body } = await attachInvoice(openedBill.id);
+      await prisma.invoice.create({
+        data: {
+          eventBillId: openedBill.id,
+          source: 'UPLOADED',
+          type: 'CANCELLATION',
+          cancelsInvoiceId: body.data.id,
+        },
+      });
+
+      await request()
+        .delete(`/api/v1/bills/${openedBill.id}/invoices/${body.data.id}`)
+        .auth(await adminToken(), { type: 'bearer' })
+        .expect(409);
+    });
+
+    it('never deletes an issued invoice', async () => {
+      const { bill: openedBill } = await openBill();
+      const invoice = await prisma.invoice.create({
+        data: {
+          eventBillId: openedBill.id,
+          source: 'GENERATED',
+          number: '2026-0001',
+        },
+      });
+
+      await request()
+        .delete(`/api/v1/bills/${openedBill.id}/invoices/${invoice.id}`)
+        .auth(await adminToken(), { type: 'bearer' })
+        .expect(409);
     });
   });
 });

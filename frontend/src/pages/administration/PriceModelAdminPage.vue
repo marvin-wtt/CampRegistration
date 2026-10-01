@@ -84,7 +84,6 @@ import PriceModelDialog from '@/components/billing/PriceModelDialog.vue';
 import { useAPIService } from '@/services/APIService';
 import { useServiceNotifications } from '@/composables/serviceHandler';
 import { formatMoney } from '@/utils/money';
-import { usePriceModelsStore } from '@/stores/price-models-store';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 
 const { t, locale } = useI18n();
@@ -92,8 +91,6 @@ const { to } = useObjectTranslation();
 const quasar = useQuasar();
 const api = useAPIService();
 const { withProgressNotification } = useServiceNotifications('billing');
-
-const priceModelsStore = usePriceModelsStore();
 
 const rows = ref<PriceModel[]>([]);
 const loading = ref(false);
@@ -105,8 +102,6 @@ async function reload() {
   try {
     rows.value = await api.fetchPriceModels();
     error.value = null;
-    // Other administration pages name models from the shared store.
-    priceModelsStore.invalidate();
   } catch (e: unknown) {
     error.value = e instanceof Error ? e.message : String(e);
   } finally {

@@ -35,6 +35,9 @@ export interface PriceModel extends Identifiable {
   usage?: { organizations: number; events: number };
 }
 
+/** What a listing needs to show which model applies. */
+export type PriceModelSummary = Pick<PriceModel, 'id' | 'name' | 'isDefault'>;
+
 export interface PriceModelCreateData {
   name: Translatable;
   currency?: PriceModelCurrency;
@@ -58,9 +61,49 @@ export interface PriceModelAssignmentData {
  */
 export type EventBillStatus = 'DRAFT' | 'OPEN' | 'PAID' | 'VOID';
 
+/**
+ * - `UPLOADED`: a PDF an administrator attached.
+ * - `GENERATED`: issued by the platform itself, numbered.
+ */
+export type InvoiceSource = 'UPLOADED' | 'GENERATED';
+
+export type InvoiceType = 'INVOICE' | 'CANCELLATION';
+
+export interface Invoice extends Identifiable {
+  eventBillId: string;
+  source: InvoiceSource;
+  type: InvoiceType;
+  /** The sequential invoice number; only `GENERATED` invoices have one. */
+  number: string | null;
+  /** On a `CANCELLATION`: the invoice it cancels. */
+  cancelsInvoiceId: string | null;
+  issuedAt: string;
+  /** The PDF; `ready` is false while it is still being stored. */
+  file: { name: string; size: number; ready: boolean } | null;
+  createdAt: string;
+}
+
+/** Attaches a PDF uploaded as a temporary file by the same session. */
+export interface InvoiceCreateData {
+  fileId: string;
+}
+
+/** The organization as billed, frozen when the bill is finalized. */
+export interface EventBillCustomer {
+  name: string;
+  addressStreet: string;
+  addressZipCode: string;
+  addressCity: string;
+  country: string;
+  vatNumber: string | null;
+}
+
 export interface EventBill extends Identifiable {
   eventId: string | null;
-  organizationId: string;
+  /** `null` once the organization is deleted; `customer` keeps who was billed. */
+  organizationId: string | null;
+  /** `null` while the bill is running. */
+  customer: EventBillCustomer | null;
   priceModelId: string | null;
   status: EventBillStatus;
   /** Accepted registrations when the event started. */
@@ -94,11 +137,13 @@ export interface EventBill extends Identifiable {
   paidAt: string | null;
   voidedAt: string | null;
   note: string | null;
+  invoices: Invoice[];
   createdAt: string;
 }
 
 export interface AdminEventBill extends EventBill {
-  organization: { id: string; name: string };
+  /** `null` once the organization is deleted. */
+  organization: { id: string; name: string } | null;
 }
 
 export interface EventBillUpdateData {
@@ -151,4 +196,6 @@ export interface EventBilling {
   priceModel: PriceModel;
   /** The event has its own model rather than its organization's. */
   isOverride: boolean;
+  /** The event's live bill — the end of its replacement chain — if any. */
+  bill: EventBill | null;
 }

@@ -94,6 +94,8 @@ model Organization {
   phone              String? @db.VarChar(50)
   website            String? @db.VarChar(255)
   registrationNumber String? @map("registration_number") @db.VarChar(100)
+  /// Value-added tax identification number, printed on invoices.
+  vatNumber          String? @map("vat_number") @db.VarChar(32)
 
   addressStreet  String @map("address_street") @db.VarChar(255)
   addressZipCode String @map("address_zip_code") @db.VarChar(20)
@@ -375,6 +377,7 @@ model File {
   messageDeliveryId   String?      @map("message_delivery_id") @db.Char(26) // Prisma does not support morth
   messageTemplateId   String?      @map("message_template_id") @db.Char(26) // Prisma does not support morth
   newsletterMessageId String?      @map("newsletter_message_id") @db.Char(26) // Prisma does not support morth
+  invoiceId           String?      @map("invoice_id") @db.Char(26) // Prisma does not support morth
   name                String
   originalName        String       @map("original_name")
   field               String?
@@ -393,6 +396,7 @@ model File {
   messageDelivery   MessageDelivery?   @relation(fields: [messageDeliveryId], references: [id], onDelete: SetNull)
   messageTemplate   MessageTemplate?   @relation(fields: [messageTemplateId], references: [id], onDelete: SetNull)
   newsletterMessage NewsletterMessage? @relation(fields: [newsletterMessageId], references: [id], onDelete: SetNull)
+  invoice           Invoice?           @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
 
   @@map("files")
 }
@@ -826,6 +830,40 @@ enum EventBillStatus {
   VOID
 }
 
+/// An invoice document for a bill: uploaded by an administrator, or (later)
+/// issued by the app itself — the only kind that carries a `number`.
+model Invoice {
+  id               String        @id @unique(map: "invoices_id_unique") @default(ulid()) @db.Char(26)
+  eventBillId      String        @map("event_bill_id") @db.Char(26)
+  source           InvoiceSource
+  type             InvoiceType   @default(INVOICE)
+  /// The sequential invoice number of an invoice the app issued.
+  number           String?       @unique(map: "invoices_number_unique") @db.VarChar(64)
+  /// Set on a CANCELLATION only: the invoice it cancels, at most once.
+  cancelsInvoiceId String?       @unique(map: "invoices_cancels_invoice_id_unique") @map("cancels_invoice_id") @db.Char(26)
+  issuedAt         DateTime      @default(now()) @map("issued_at")
+  createdAt        DateTime      @default(now()) @map("created_at")
+
+  eventBill   EventBill @relation(fields: [eventBillId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "invoices_event_bill_id_foreign")
+  cancels     Invoice?  @relation("InvoiceCancellation", fields: [cancelsInvoiceId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "invoices_cancels_invoice_id_foreign")
+  cancelledBy Invoice?  @relation("InvoiceCancellation")
+  files       File[]
+
+  /// One invoice and at most one cancellation per bill.
+  @@unique([eventBillId, type], map: "invoices_event_bill_id_type_unique")
+  @@map("invoices")
+}
+
+enum InvoiceSource {
+  UPLOADED
+  GENERATED
+}
+
+enum InvoiceType {
+  INVOICE
+  CANCELLATION
+}
+
 model EventBill {
   id             String  @id @unique(map: "event_bills_id_unique") @default(ulid()) @db.Char(26)
   eventId        String? @map("event_id") @db.Char(26)
@@ -835,7 +873,8 @@ model EventBill {
   /// Unique per event, so an event has at most one live bill: the end of its
   /// replacement chain. Also makes the billing jobs idempotent across instances.
   sequence       Int     @default(0) @db.UnsignedSmallInt
-  organizationId String  @map("organization_id") @db.Char(26)
+  /// NULL once the organization is deleted; the customer fields keep who was billed.
+  organizationId String? @map("organization_id") @db.Char(26)
   priceModelId   String? @map("price_model_id") @db.Char(26)
 
   status                    EventBillStatus @default(DRAFT)
@@ -850,6 +889,13 @@ model EventBill {
   eventStartAt              DateTime        @map("event_start_at") @db.DateTime(0)
   eventEndAt                DateTime        @map("event_end_at") @db.DateTime(0)
   eventTimezone             String          @map("event_timezone") @db.VarChar(64)
+  /// The organization as billed, frozen when the bill is finalized.
+  customerName              String?         @map("customer_name") @db.VarChar(255)
+  customerAddressStreet     String?         @map("customer_address_street") @db.VarChar(255)
+  customerAddressZipCode    String?         @map("customer_address_zip_code") @db.VarChar(20)
+  customerAddressCity       String?         @map("customer_address_city") @db.VarChar(255)
+  customerCountry           String?         @map("customer_country") @db.Char(2)
+  customerVatNumber         String?         @map("customer_vat_number") @db.VarChar(32)
   currency                  String?         @db.Char(3)
   pricePerRegistration      Decimal?        @map("price_per_registration") @db.Decimal(10, 2)
   baseFee                   Decimal?        @map("base_fee") @db.Decimal(10, 2)
@@ -864,11 +910,12 @@ model EventBill {
   createdAt                 DateTime        @default(now()) @map("created_at")
   updatedAt                 DateTime?       @updatedAt @map("updated_at")
 
-  event        Event?       @relation(fields: [eventId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "event_bills_event_id_foreign")
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "event_bills_organization_id_foreign")
-  priceModel   PriceModel?  @relation(fields: [priceModelId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "event_bills_price_model_id_foreign")
-  replaces     EventBill?   @relation("EventBillReplacement", fields: [replacesBillId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "event_bills_replaces_bill_id_foreign")
-  replacedBy   EventBill?   @relation("EventBillReplacement")
+  event        Event?        @relation(fields: [eventId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "event_bills_event_id_foreign")
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "event_bills_organization_id_foreign")
+  priceModel   PriceModel?   @relation(fields: [priceModelId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "event_bills_price_model_id_foreign")
+  replaces     EventBill?    @relation("EventBillReplacement", fields: [replacesBillId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "event_bills_replaces_bill_id_foreign")
+  replacedBy   EventBill?    @relation("EventBillReplacement")
+  invoices     Invoice[]
 
   @@unique([eventId, sequence], map: "event_bills_event_id_sequence_unique")
   @@index([organizationId, status], map: "event_bills_organization_id_status_index")

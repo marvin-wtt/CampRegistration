@@ -1,4 +1,5 @@
 import type { Identifiable } from './Identifiable.js';
+import type { PriceModelSummary } from './Billing.js';
 
 export type OrganizationVerificationStatus =
   'PENDING' | 'VERIFIED' | 'REJECTED';
@@ -16,6 +17,7 @@ export interface Organization extends Identifiable {
   addressZipCode: string;
   addressCity: string;
   registrationNumber: string | null;
+  vatNumber: string | null;
   priceModelId: string;
 
   verificationNote: string | null;
@@ -26,9 +28,16 @@ export interface Organization extends Identifiable {
   updatedAt: string | null;
 }
 
+/** The administrators' listing (`view=all`). */
+export interface AdminOrganization extends Organization {
+  priceModel: PriceModelSummary;
+}
+
 export interface OrganizationDetails extends Organization {
   ownedEvents: number;
   ownedNewsletters: number;
+  /** Running or open bills; they block deletion until paid. */
+  unpaidBills: number;
 }
 
 export const ORGANIZATION_VERIFICATION_FIELDS = [
@@ -62,6 +71,7 @@ export interface OrganizationCreateData {
   addressZipCode: string;
   addressCity: string;
   registrationNumber?: string | null;
+  vatNumber?: string | null;
   verificationNote?: string | null;
 }
 

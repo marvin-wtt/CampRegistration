@@ -8,6 +8,7 @@ import { countriesToLocales } from '#utils/countriesToLocales';
 import { eventRegistrationStatus } from '#app/event/event.util';
 import { utcCarrierToNaiveDateTime } from '@camp-registration/common/utils';
 import type { EventWithRelations } from '#app/event/event.types';
+import { priceModelSummary } from '#app/priceModel/price-model.resource';
 import {
   EVENT_LOGO_SLOT,
   EVENT_BANNER_SLOT,
@@ -72,9 +73,11 @@ export class AdminEventResource extends JsonResource<
   AdminEventResourceData
 > {
   transform(): AdminEventResourceData {
+    const { priceModel } = this.data;
+
     return {
       ...new EventResource(this.data).transform(),
-      priceModelId: this.data.priceModelId,
+      priceModel: priceModel ? priceModelSummary(priceModel) : null,
     };
   }
 }

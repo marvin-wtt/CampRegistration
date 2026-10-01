@@ -3,6 +3,7 @@ import { Identifiable } from './Identifiable.js';
 import { ITheme } from 'survey-core';
 import { Translatable } from './Translatable.js';
 import type { OrganizationVerificationStatus } from './Organization.js';
+import type { PriceModelSummary } from './Billing.js';
 
 export const EVENT_PRESET_NAMES = ['camp', 'seminar', 'general'] as const;
 export type EventPresetName = (typeof EVENT_PRESET_NAMES)[number];
@@ -44,7 +45,7 @@ export interface Event extends Identifiable {
  */
 export interface AdminEvent extends Event {
   /** `null`: the organization's price model applies. */
-  priceModelId: string | null;
+  priceModel: PriceModelSummary | null;
 }
 
 export interface EventDetails extends Event {

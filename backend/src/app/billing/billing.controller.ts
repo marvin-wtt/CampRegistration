@@ -6,9 +6,18 @@ import ApiError from '#utils/ApiError';
 import validator from './billing.validation.js';
 import { BillingService } from './billing.service.js';
 import { PriceModelService } from '#app/priceModel/price-model.service';
+import { FileService } from '#app/file/file.service';
+import { sendFile } from '#app/file/file.response';
+import { OrganizationService } from '#app/organization/organization.service';
+import { OrganizationMemberService } from '#app/organizationMember/organization-member.service';
+import type { EventBill, File } from '#generated/prisma/client.js';
+import { money } from '#utils/money';
+import { InvoiceService } from './invoice.service.js';
+import { InvoiceIssuedMessage } from './billing.messages.js';
 import {
   AdminEventBillResource,
   EventBillingResource,
+  InvoiceResource,
   OrganizationBillingResource,
 } from './billing.resource.js';
 
@@ -18,6 +27,12 @@ export class BillingController extends BaseController {
     @inject(BillingService) private readonly billingService: BillingService,
     @inject(PriceModelService)
     private readonly priceModelService: PriceModelService,
+    @inject(InvoiceService) private readonly invoiceService: InvoiceService,
+    @inject(FileService) private readonly fileService: FileService,
+    @inject(OrganizationService)
+    private readonly organizationService: OrganizationService,
+    @inject(OrganizationMemberService)
+    private readonly organizationMemberService: OrganizationMemberService,
   ) {
     super();
   }
@@ -82,8 +97,123 @@ export class BillingController extends BaseController {
   async event(req: Request, res: Response) {
     await req.validate(validator.event);
     const event = req.modelOrFail('event');
-    const billing = await this.priceModelService.getForEvent(event.id);
+    const [billing, bill] = await Promise.all([
+      this.priceModelService.getForEvent(event.id),
+      this.billingService.getLiveBillForEvent(event.id),
+    ]);
 
-    res.resource(new EventBillingResource(billing));
+    res.resource(new EventBillingResource({ ...billing, bill }));
+  }
+
+  /** Attaches an invoice PDF to a finalized bill. */
+  async storeInvoice(req: Request, res: Response) {
+    const { body } = await req.validate(validator.storeInvoice);
+    const bill = req.modelOrFail('eventBill');
+    if (bill.status === 'DRAFT' || bill.status === 'VOID') {
+      throw new ApiError(
+        httpStatus.CONFLICT,
+        'Only an open or paid bill can have an invoice',
+      );
+    }
+
+    const invoice = await this.invoiceService.createUploadedInvoice(
+      bill.id,
+      body.fileId,
+      req.sessionId,
+    );
+
+    // Nothing to pay, nothing to announce: a paid bill's invoice is a receipt.
+    if (bill.status === 'OPEN' && bill.grossAmount?.isPositive()) {
+      await this.notifyInvoiceIssued(bill);
+    }
+
+    res.status(httpStatus.CREATED).resource(new InvoiceResource(invoice));
+  }
+
+  async destroyInvoice(req: Request, res: Response) {
+    await req.validate(validator.destroyInvoice);
+    const bill = req.modelOrFail('eventBill');
+    const invoice = this.invoiceOf(req, ({ id }) => id === bill.id);
+
+    await this.invoiceService.deleteInvoice(invoice);
+
+    res.status(httpStatus.NO_CONTENT).send();
+  }
+
+  /** The administrators' download, which works after the organization is gone. */
+  async showInvoice(req: Request, res: Response) {
+    await req.validate(validator.showInvoice);
+    const bill = req.modelOrFail('eventBill');
+    const invoice = this.invoiceOf(req, ({ id }) => id === bill.id);
+
+    await this.sendInvoice(res, invoice);
+  }
+
+  async organizationInvoice(req: Request, res: Response) {
+    await req.validate(validator.organizationInvoice);
+    const organization = req.modelOrFail('organization');
+    const invoice = this.invoiceOf(
+      req,
+      (bill) => bill.organizationId === organization.id,
+    );
+
+    await this.sendInvoice(res, invoice);
+  }
+
+  async eventInvoice(req: Request, res: Response) {
+    await req.validate(validator.eventInvoice);
+    const event = req.modelOrFail('event');
+    const invoice = this.invoiceOf(req, (bill) => bill.eventId === event.id);
+
+    await this.sendInvoice(res, invoice);
+  }
+
+  /** The bound invoice, if it belongs to the subject the route is scoped to. */
+  private invoiceOf(req: Request, belongs: (bill: EventBill) => boolean) {
+    const invoice = req.modelOrFail('invoice');
+    if (!belongs(invoice.eventBill)) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Invoice not found');
+    }
+
+    return invoice;
+  }
+
+  private async sendInvoice(res: Response, invoice: { files: File[] }) {
+    const file = invoice.files[0];
+    if (!file) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Invoice file not found');
+    }
+
+    await sendFile(res, this.fileService, file, true);
+  }
+
+  private async notifyInvoiceIssued(bill: EventBill) {
+    const { grossAmount, currency } = bill;
+    if (!grossAmount || !currency) {
+      return;
+    }
+    const { organizationId } = bill;
+    if (!organizationId) {
+      return;
+    }
+    const [organization, recipients] = await Promise.all([
+      this.organizationService.getOrganizationById(organizationId),
+      this.organizationMemberService.getAdministratorRecipients(organizationId),
+    ]);
+    if (!organization) {
+      return;
+    }
+
+    await InvoiceIssuedMessage.enqueueBulk(
+      recipients.map((recipient) => ({
+        organization: { id: organization.id, name: organization.name },
+        bill: {
+          eventName: bill.eventName,
+          grossAmount: money(grossAmount),
+          currency,
+        },
+        recipient,
+      })),
+    );
   }
 }

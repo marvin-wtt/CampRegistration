@@ -63,7 +63,7 @@
         <template #body-cell-priceModel="props">
           <price-model-td
             :props
-            :price-model-id="props.row.priceModelId"
+            :price-model="props.row.priceModel"
             scope="organization"
           />
         </template>
@@ -103,7 +103,7 @@ import { useServiceNotifications } from '@/composables/serviceHandler';
 import { useRouter } from 'vue-router';
 import { countryName } from '@/utils/countries';
 import type {
-  Organization,
+  AdminOrganization,
   OrganizationQuery,
   OrganizationVerificationStatus,
 } from '@camp-registration/common/entities';
@@ -129,7 +129,7 @@ const {
   identitySort,
   reload,
   withProgressNotification,
-} = useServerTable<Organization, OrganizationQuery>({
+} = useServerTable<AdminOrganization, OrganizationQuery>({
   storeName: 'organization',
   sortBy: 'submittedAt',
   descending: true,
@@ -155,7 +155,7 @@ const statusOptions = computed(() => [
   { label: t('status.REJECTED'), value: 'REJECTED' },
 ]);
 
-const columns = computed<QTableColumn<Organization>[]>(() => [
+const columns = computed<QTableColumn<AdminOrganization>[]>(() => [
   {
     name: 'name',
     label: t('column.name'),
@@ -211,7 +211,7 @@ function statusColor(status: OrganizationVerificationStatus): string {
   return 'warning';
 }
 
-function actionsFor(organization: Organization): RowAction[] {
+function actionsFor(organization: AdminOrganization): RowAction[] {
   return [
     {
       key: 'details',
@@ -256,7 +256,7 @@ function actionsFor(organization: Organization): RowAction[] {
   ];
 }
 
-function openOrganization(organization: Organization) {
+function openOrganization(organization: AdminOrganization) {
   const routeData = router.resolve({
     name: 'management.organization',
     params: {
@@ -267,7 +267,7 @@ function openOrganization(organization: Organization) {
   window.open(routeData.href, '_blank');
 }
 
-function assignPriceModel(organization: Organization) {
+function assignPriceModel(organization: AdminOrganization) {
   quasar
     .dialog({
       component: PriceModelAssignDialog,
@@ -289,7 +289,7 @@ function assignPriceModel(organization: Organization) {
     });
 }
 
-function showDetails(organization: Organization) {
+function showDetails(organization: AdminOrganization) {
   quasar.dialog({
     component: OrganizationDetailsDialog,
     componentProps: { organization },
@@ -303,7 +303,7 @@ function showDetails(organization: Organization) {
  * up front: being told what blocks the deletion beats typing the name to
  * confirm and only then being refused.
  */
-async function onDelete(organization: Organization) {
+async function onDelete(organization: AdminOrganization) {
   const details = await withErrorNotification(
     'details',
     () => api.fetchOrganization(organization.id),
@@ -351,7 +351,7 @@ async function onDelete(organization: Organization) {
     });
 }
 
-function review(organization: Organization) {
+function review(organization: AdminOrganization) {
   quasar
     .dialog({
       component: OrganizationReviewDialog,

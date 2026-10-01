@@ -37,4 +37,14 @@ export default {
     success: 'Rachunek zaktualizowany',
     error: 'Nie udało się zaktualizować rachunku',
   },
+  uploadInvoice: {
+    progress: 'Przesyłanie faktury...',
+    success: 'Faktura przesłana',
+    error: 'Nie udało się przesłać faktury',
+  },
+  deleteInvoice: {
+    progress: 'Usuwanie faktury...',
+    success: 'Faktura usunięta',
+    error: 'Nie udało się usunąć faktury',
+  },
 };

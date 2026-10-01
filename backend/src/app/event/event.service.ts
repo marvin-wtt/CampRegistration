@@ -1,4 +1,5 @@
 import type { Event, File, Prisma } from '#generated/prisma/client.js';
+import { priceModelSummarySelect } from '#app/priceModel/price-model.resource';
 import { ulid } from '#utils/ulid';
 import { dbNullable } from '#utils/db';
 import type { OptionalByKeys } from '#types/utils';
@@ -132,6 +133,8 @@ export class EventService extends BaseService {
       organization: {
         select: { id: true, name: true, verificationStatus: true },
       },
+      // Only `AdminEventResource` outputs it.
+      priceModel: { select: priceModelSummarySelect },
       files: this.fileService.publicSlotFileInclude([
         EVENT_LOGO_SLOT,
         EVENT_BANNER_SLOT,

@@ -3,6 +3,7 @@ import type {
   EventBillCreateData,
   EventBillQuery,
   EventBillUpdateData,
+  InvoiceCreateData,
 } from '@camp-registration/common/entities';
 
 const registrationCount = z.number().int().nonnegative().max(100_000);
@@ -63,10 +64,47 @@ const event = z.object({
   }),
 });
 
+const storeInvoice = z.object({
+  params: z.object({
+    eventBillId: z.ulid(),
+  }),
+  body: z.object({
+    fileId: z.ulid(),
+  }) satisfies ZodType<InvoiceCreateData>,
+});
+
+const destroyInvoice = z.object({
+  params: z.object({
+    eventBillId: z.ulid(),
+    invoiceId: z.ulid(),
+  }),
+});
+
+const showInvoice = destroyInvoice;
+
+const organizationInvoice = z.object({
+  params: z.object({
+    organizationId: z.ulid(),
+    invoiceId: z.ulid(),
+  }),
+});
+
+const eventInvoice = z.object({
+  params: z.object({
+    eventId: z.ulid(),
+    invoiceId: z.ulid(),
+  }),
+});
+
 export default {
   index,
   update,
   store,
   organization,
   event,
+  storeInvoice,
+  destroyInvoice,
+  showInvoice,
+  organizationInvoice,
+  eventInvoice,
 };

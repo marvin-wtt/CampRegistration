@@ -37,4 +37,14 @@ export default {
     success: 'Faktura aktualizována',
     error: 'Fakturu se nepodařilo aktualizovat',
   },
+  uploadInvoice: {
+    progress: 'Nahrávání faktury...',
+    success: 'Faktura nahrána',
+    error: 'Fakturu se nepodařilo nahrát',
+  },
+  deleteInvoice: {
+    progress: 'Mazání faktury...',
+    success: 'Faktura smazána',
+    error: 'Fakturu se nepodařilo smazat',
+  },
 };

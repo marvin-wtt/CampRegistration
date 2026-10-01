@@ -51,5 +51,21 @@ export default {
         cause: '$t(email:footer.cause) du diese Organisation verwaltest.',
       },
     },
+    invoiceIssued: {
+      subject: 'Rechnung für {{ event.name }}',
+      preview: '{{ amount }} für {{ event.name }}',
+      text: {
+        title: 'Eine neue Rechnung liegt vor',
+        information:
+          'Die Rechnung für {{ event.name }} liegt vor: {{ amount }}. ' +
+          'Du kannst sie auf der Abrechnungsseite von {{ organization.name }} herunterladen.',
+        button: 'Abrechnung öffnen',
+        greeting: 'Viele Grüße',
+        teamName: '{{ appName }} Team',
+      },
+      footer: {
+        cause: '$t(email:footer.cause) du diese Organisation verwaltest.',
+      },
+    },
   },
 };

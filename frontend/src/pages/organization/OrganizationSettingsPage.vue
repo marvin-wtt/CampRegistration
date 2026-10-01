@@ -140,9 +140,24 @@
                 :label="t('field.country')"
                 :rules="[required]"
                 :disable="locked"
-                class="col-12"
+                class="col-12 col-md-7"
                 rounded
               />
+              <q-input
+                v-model="form.vatNumber"
+                :label="t('field.vatNumber')"
+                :hint="t('field.vatNumberHint')"
+                :disable="locked"
+                color="primary"
+                clearable
+                rounded
+                outlined
+                class="col-12 col-md-5"
+              >
+                <template #prepend>
+                  <q-icon name="receipt_long" />
+                </template>
+              </q-input>
             </div>
           </q-card-section>
         </q-card>
@@ -269,8 +284,23 @@
           {{ t('danger.title') }}
         </div>
         <div class="text-body2 text-on-surface-variant q-mt-xs">
-          {{ blocking ? blockingText : t('danger.description') }}
+          {{ t('danger.description') }}
         </div>
+        <ul
+          v-if="blocking"
+          class="danger-blockers text-body2 q-mt-xs q-mb-none"
+        >
+          <li v-if="ownsContent">{{ blockingText }}</li>
+          <li v-if="organization.unpaidBills > 0">
+            {{
+              t(
+                'danger.unpaidBills',
+                { count: organization.unpaidBills },
+                organization.unpaidBills,
+              )
+            }}
+          </li>
+        </ul>
         <div
           v-if="blocking"
           class="row q-gutter-x-md q-mt-xs"
@@ -293,6 +323,16 @@
             :to="{ name: 'management.organization.newsletters' }"
           >
             {{ t('danger.viewNewsletters') }}
+          </router-link>
+          <router-link
+            v-if="
+              organization.unpaidBills > 0 &&
+              canOrg('organization.billing.view')
+            "
+            class="text-primary text-body2"
+            :to="{ name: 'management.organization.billing' }"
+          >
+            {{ t('danger.viewBilling') }}
           </router-link>
         </div>
 
@@ -357,10 +397,15 @@ const reverificationRequired = computed(
  * keys are `Restrict` so participant data can never be cascaded away. Surface
  * that here rather than letting the request fail.
  */
-const blocking = computed(
+const ownsContent = computed(
   () =>
     (organization.value?.ownedEvents ?? 0) > 0 ||
     (organization.value?.ownedNewsletters ?? 0) > 0,
+);
+
+// Settled bills don't block: they are kept as financial records.
+const blocking = computed(
+  () => ownsContent.value || (organization.value?.unpaidBills ?? 0) > 0,
 );
 
 const blockingText = computed(() =>
@@ -381,6 +426,7 @@ function snapshot(value: OrganizationDetails): OrganizationUpdateData {
     addressCity: value.addressCity,
     country: value.country,
     registrationNumber: value.registrationNumber,
+    vatNumber: value.vatNumber,
     verificationNote: value.verificationNote ?? '',
   };
 }
@@ -425,6 +471,7 @@ function payload(data: OrganizationUpdateData): OrganizationUpdateData {
     phone: data.phone || null,
     website: data.website || null,
     registrationNumber: data.registrationNumber || null,
+    vatNumber: data.vatNumber || null,
     verificationNote: data.verificationNote || null,
   };
 }
@@ -511,6 +558,11 @@ onMounted(async () => {
   max-width: 60rem;
 }
 
+.danger-blockers {
+  padding-left: 1.25rem;
+  color: var(--md3-on-surface);
+}
+
 .notice {
   border-radius: 12px;
   padding: 12px 16px;
@@ -568,6 +620,8 @@ field:
   country: 'Country'
   registrationNumber: 'Registration number'
   registrationNumberHint: 'Optional, e.g. the register of associations'
+  vatNumber: 'VAT number'
+  vatNumberHint: 'Optional, printed on invoices'
 action:
   save: 'Save'
   saveResubmit: 'Save and resubmit'
@@ -575,10 +629,12 @@ action:
   delete: 'Delete organization'
 danger:
   title: 'Delete this organization'
-  description: 'Only possible once it owns no events or newsletters.'
+  description: 'Only possible once it owns no events or newsletters and all its bills are paid. Paid bills are kept as financial records.'
   blocked: 'Still owns {events} event(s) and {newsletters} newsletter(s). Delete them first, or ask an administrator to move them to another organization.'
   viewEvents: 'View events'
   viewNewsletters: 'View newsletters'
+  viewBilling: 'View billing'
+  unpaidBills: 'One bill is not paid yet. | {count} bills are not paid yet.'
   confirm:
     title: 'Delete organization'
     message: 'This cannot be undone.'
@@ -620,6 +676,8 @@ field:
   country: 'Land'
   registrationNumber: 'Registernummer'
   registrationNumberHint: 'Optional, z. B. die Vereinsregisternummer'
+  vatNumber: 'USt-IdNr.'
+  vatNumberHint: 'Optional, wird auf Rechnungen angegeben'
 action:
   save: 'Speichern'
   saveResubmit: 'Speichern und einreichen'
@@ -627,10 +685,12 @@ action:
   delete: 'Organisation löschen'
 danger:
   title: 'Diese Organisation löschen'
-  description: 'Nur möglich, wenn sie keine Veranstaltungen oder Newsletter besitzt.'
+  description: 'Nur möglich, wenn sie keine Veranstaltungen oder Newsletter mehr besitzt und alle Rechnungen bezahlt sind. Bezahlte Rechnungen bleiben als Buchhaltungsbelege erhalten.'
   blocked: 'Besitzt noch {events} Veranstaltung(s) und {newsletters} Newsletter. Lösche sie zuerst, oder bitte einen Administrator, sie in eine andere Organisation zu verschieben.'
   viewEvents: 'Veranstaltungen anzeigen'
   viewNewsletters: 'Newsletter anzeigen'
+  viewBilling: 'Abrechnung anzeigen'
+  unpaidBills: 'Eine Rechnung ist noch nicht bezahlt. | {count} Rechnungen sind noch nicht bezahlt.'
   confirm:
     title: 'Organisation löschen'
     message: 'Dies kann nicht rückgängig gemacht werden.'
@@ -672,6 +732,8 @@ field:
   country: 'Pays'
   registrationNumber: "Numéro d'enregistrement"
   registrationNumberHint: 'Facultatif, par ex. le registre des associations'
+  vatNumber: 'Numéro de TVA'
+  vatNumberHint: 'Facultatif, figure sur les factures'
 action:
   save: 'Enregistrer'
   saveResubmit: 'Enregistrer et soumettre'
@@ -679,10 +741,12 @@ action:
   delete: "Supprimer l'organisation"
 danger:
   title: 'Supprimer cette organisation'
-  description: 'Possible uniquement si elle ne possède aucun événement ni newsletter.'
+  description: 'Possible uniquement si elle ne possède plus aucun événement ni newsletter et que toutes ses factures sont payées. Les factures payées sont conservées comme pièces comptables.'
   blocked: "Possède encore {events} événement(s) et {newsletters} newsletter(s). Supprime-les d'abord, ou demande à un administrateur de les déplacer vers une autre organisation."
   viewEvents: 'Voir les événements'
   viewNewsletters: 'Voir les newsletters'
+  viewBilling: 'Voir la facturation'
+  unpaidBills: "Une facture n'est pas encore payée. | {count} factures ne sont pas encore payées."
   confirm:
     title: "Supprimer l'organisation"
     message: 'Cette action est irréversible.'
@@ -724,6 +788,8 @@ field:
   country: 'Kraj'
   registrationNumber: 'Numer rejestrowy'
   registrationNumberHint: 'Opcjonalnie, np. numer w rejestrze stowarzyszeń'
+  vatNumber: 'Numer VAT'
+  vatNumberHint: 'Opcjonalnie, podawany na fakturach'
 action:
   save: 'Zapisz'
   saveResubmit: 'Zapisz i wyślij'
@@ -731,10 +797,12 @@ action:
   delete: 'Usuń organizację'
 danger:
   title: 'Usuń tę organizację'
-  description: 'Możliwe tylko, gdy nie posiada wydarzeń ani newsletterów.'
+  description: 'Możliwe tylko, gdy nie posiada wydarzeń ani newsletterów, a wszystkie rachunki są opłacone. Opłacone rachunki są przechowywane jako dokumenty księgowe.'
   blocked: 'Nadal posiada {events} wydarzenie/wydarzenia i {newsletters} newsletter(y). Najpierw je usuń lub poproś administratora o przeniesienie ich do innej organizacji.'
   viewEvents: 'Zobacz wydarzenia'
   viewNewsletters: 'Zobacz newslettery'
+  viewBilling: 'Zobacz rozliczenia'
+  unpaidBills: 'Nieopłacone rachunki: {count}.'
   confirm:
     title: 'Usuń organizację'
     message: 'Tej operacji nie można cofnąć.'
@@ -776,6 +844,8 @@ field:
   country: 'Země'
   registrationNumber: 'Registrační číslo'
   registrationNumberHint: 'Nepovinné, např. číslo ve spolkovém rejstříku'
+  vatNumber: 'DIČ'
+  vatNumberHint: 'Nepovinné, uvádí se na fakturách'
 action:
   save: 'Uložit'
   saveResubmit: 'Uložit a odeslat'
@@ -783,10 +853,12 @@ action:
   delete: 'Smazat organizaci'
 danger:
   title: 'Smazat tuto organizaci'
-  description: 'Možné pouze, pokud nevlastní žádné akce ani newslettery.'
+  description: 'Možné pouze, pokud nevlastní žádné akce ani newslettery a všechny faktury jsou zaplacené. Zaplacené faktury zůstávají uchovány jako účetní doklady.'
   blocked: 'Stále vlastní {events} akcí a {newsletters} newsletter(y). Nejprve je smaž, nebo požádej správce o jejich přesun do jiné organizace.'
   viewEvents: 'Zobrazit akce'
   viewNewsletters: 'Zobrazit newslettery'
+  viewBilling: 'Zobrazit vyúčtování'
+  unpaidBills: 'Nezaplacené faktury: {count}.'
   confirm:
     title: 'Smazat organizaci'
     message: 'Tuto akci nelze vrátit zpět.'

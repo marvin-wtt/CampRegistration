@@ -1,16 +1,13 @@
-import { pipeline } from 'stream/promises';
 import { FileService } from './file.service.js';
 import httpStatus from 'http-status';
 import ApiError from '#utils/ApiError';
-import logger from '#core/logger';
 import type { Request, Response } from 'express';
 import { FileResource } from './file.resource.js';
+import { sendFile } from './file.response.js';
 import validator from './file.validation.js';
 import { BaseController } from '#core/base/BaseController';
 import { RealtimeService } from '#core/realtime/RealtimeService';
 import { inject, injectable } from 'inversify';
-import contentDisposition from 'content-disposition';
-import { isClientDisconnect } from '#utils/stream';
 
 interface ModelData {
   id: string;
@@ -32,46 +29,7 @@ export class FileController extends BaseController {
       query: { download },
     } = await req.validate(validator.stream);
 
-    const file = req.modelOrFail('file');
-
-    if (file.uploadStatus === 'PENDING') {
-      throw new ApiError(
-        httpStatus.CONFLICT,
-        'File upload is still in progress',
-      );
-    }
-
-    const fileStream = await this.fileService.getFileStream(file);
-
-    // Set response headers for image display
-    res.contentType(file.type);
-
-    res.setHeader(
-      'Content-disposition',
-      this.buildContentDisposition(file.originalName, download),
-    );
-
-    // pipeline (unlike pipe) propagates stream errors and tears the whole
-    // chain down when either side fails or the client disconnects.
-    try {
-      await pipeline(fileStream, res);
-    } catch (error) {
-      if (isClientDisconnect(error)) {
-        return;
-      }
-
-      if (!res.headersSent) {
-        throw new ApiError(
-          httpStatus.INTERNAL_SERVER_ERROR,
-          'Failed to read file',
-        );
-      }
-
-      // Mid-stream failure: the status is already out, so destroying the
-      // socket is the only way to signal a truncated response.
-      logger.error(`Failed to stream file "${file.id}"`, error);
-      res.destroy();
-    }
+    await sendFile(res, this.fileService, req.modelOrFail('file'), download);
   }
 
   show(req: Request, res: Response) {
@@ -174,19 +132,6 @@ export class FileController extends BaseController {
     }
 
     res.sendStatus(httpStatus.NO_CONTENT);
-  }
-
-  private buildContentDisposition(
-    originalName: string,
-    download: boolean | undefined,
-  ): string {
-    const type = download ? 'attachment' : 'inline';
-    try {
-      return contentDisposition.create(originalName, { type });
-    } catch {
-      // originalName contains characters rejected by RFC 6266 (e.g. CR/LF);
-      return contentDisposition.create(undefined, { type });
-    }
   }
 
   getRelationModel(req: Request): ModelData | undefined {

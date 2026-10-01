@@ -46,6 +46,7 @@ const organizationBody = {
   addressZipCode: z.string().min(1).max(20),
   addressCity: z.string().min(1).max(255),
   registrationNumber: z.string().max(100).nullable().optional(),
+  vatNumber: z.string().trim().toUpperCase().max(32).nullable().optional(),
   verificationNote: z.string().max(5000).nullable().optional(),
 };
 

@@ -19,6 +19,34 @@ export function billedRegistrationCount(bill: {
   );
 }
 
+/** The organization fields frozen onto a bill as its customer. */
+export const customerSelect = {
+  name: true,
+  addressStreet: true,
+  addressZipCode: true,
+  addressCity: true,
+  country: true,
+  vatNumber: true,
+} as const;
+
+export function customerSnapshot(organization: {
+  name: string;
+  addressStreet: string;
+  addressZipCode: string;
+  addressCity: string;
+  country: string;
+  vatNumber: string | null;
+}) {
+  return {
+    customerName: organization.name,
+    customerAddressStreet: organization.addressStreet,
+    customerAddressZipCode: organization.addressZipCode,
+    customerAddressCity: organization.addressCity,
+    customerCountry: organization.country,
+    customerVatNumber: organization.vatNumber,
+  };
+}
+
 export interface BillPricing {
   pricePerRegistration: Prisma.Decimal;
   baseFee: Prisma.Decimal;

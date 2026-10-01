@@ -3,7 +3,10 @@ import prisma from '../client';
 import { BaseSeeder } from './BaseSeeder';
 import { BILL_IDS, EVENT_IDS, ORGANIZATION_IDS, PRICE_MODEL_IDS } from './ids';
 import { PHASE, seedDate } from './timeline';
-import { calculateBillAmounts } from '#app/billing/billing.utils';
+import {
+  customerSnapshot,
+  calculateBillAmounts,
+} from '#app/billing/billing.utils';
 
 /**
  * One bill in every state, as the billing jobs would have left them. Amounts
@@ -74,6 +77,7 @@ class BillingSeeder extends BaseSeeder {
         eventStartAt: seedDate(-40, '15:00'),
         eventEndAt: seedDate(-38, '10:00'),
         eventTimezone: 'Europe/Berlin',
+        ...(await this.customer(ORGANIZATION_IDS.youthAdventures)),
         ...this.pricing(standard, 3),
         finalizedAt: seedDate(-38, '10:15'),
         voidedAt: seedDate(-37),
@@ -81,6 +85,14 @@ class BillingSeeder extends BaseSeeder {
         createdAt: seedDate(-40, '15:15'),
       },
     });
+  }
+
+  private async customer(organizationId: string) {
+    return customerSnapshot(
+      await prisma.organization.findUniqueOrThrow({
+        where: { id: organizationId },
+      }),
+    );
   }
 
   private async finalized(bill: {
@@ -113,6 +125,7 @@ class BillingSeeder extends BaseSeeder {
         eventStartAt: event.startAt,
         eventEndAt: event.endAt,
         eventTimezone: event.timezone,
+        ...(await this.customer(event.organizationId)),
         ...this.pricing(priceModel, registrationCount),
         finalizedAt: seedDate(-bill.finalizedDaysAgo, '10:15'),
         paidAt:

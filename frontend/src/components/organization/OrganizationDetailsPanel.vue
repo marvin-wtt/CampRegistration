@@ -234,6 +234,10 @@ const groups = computed<{ title: string; rows: DetailRow[] }[]>(() => {
           label: t('field.registrationNumber'),
           value: organization.registrationNumber ?? '',
         },
+        {
+          label: t('field.vatNumber'),
+          value: organization.vatNumber ?? '',
+        },
       ],
     },
   ];
@@ -299,6 +303,7 @@ field:
   city: 'Postal code and city'
   country: 'Country'
   registrationNumber: 'Registration number'
+  vatNumber: 'VAT number'
   verificationNote: 'Note from the applicant'
   reviewNote: 'Previous review note'
 privacyNotice:
@@ -320,6 +325,7 @@ field:
   city: 'PLZ und Stadt'
   country: 'Land'
   registrationNumber: 'Registernummer'
+  vatNumber: 'USt-IdNr.'
   verificationNote: 'Hinweis der Organisation'
   reviewNote: 'Vorherige Prüfnotiz'
 privacyNotice:
@@ -341,6 +347,7 @@ field:
   city: 'Code postal et ville'
   country: 'Pays'
   registrationNumber: "Numéro d'enregistrement"
+  vatNumber: 'Numéro de TVA'
   verificationNote: "Note de l'organisation"
   reviewNote: 'Note de contrôle précédente'
 privacyNotice:
@@ -362,6 +369,7 @@ field:
   city: 'Kod pocztowy i miasto'
   country: 'Kraj'
   registrationNumber: 'Numer rejestrowy'
+  vatNumber: 'Numer VAT'
   verificationNote: 'Uwaga od organizacji'
   reviewNote: 'Poprzednia uwaga weryfikatora'
 privacyNotice:
@@ -383,6 +391,7 @@ field:
   city: 'PSČ a město'
   country: 'Země'
   registrationNumber: 'Registrační číslo'
+  vatNumber: 'DIČ'
   verificationNote: 'Poznámka od organizace'
   reviewNote: 'Předchozí poznámka z kontroly'
 privacyNotice:

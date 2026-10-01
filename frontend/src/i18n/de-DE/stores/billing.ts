@@ -37,4 +37,14 @@ export default {
     success: 'Rechnung aktualisiert',
     error: 'Rechnung konnte nicht aktualisiert werden',
   },
+  uploadInvoice: {
+    progress: 'Rechnungsdokument wird hochgeladen...',
+    success: 'Rechnungsdokument hochgeladen',
+    error: 'Rechnungsdokument konnte nicht hochgeladen werden',
+  },
+  deleteInvoice: {
+    progress: 'Rechnungsdokument wird gelöscht...',
+    success: 'Rechnungsdokument gelöscht',
+    error: 'Rechnungsdokument konnte nicht gelöscht werden',
+  },
 };

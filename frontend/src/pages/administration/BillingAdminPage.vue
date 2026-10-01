@@ -119,6 +119,37 @@
           </q-td>
         </template>
 
+        <template #body-cell-invoices="props">
+          <q-td :props>
+            <invoice-links
+              v-if="props.row.invoices.length > 0"
+              :invoices="props.row.invoices"
+              :owner="{ billId: props.row.id }"
+              removable
+              @remove="(invoice) => deleteInvoice(props.row, invoice)"
+            />
+            <q-btn
+              v-else-if="canUploadInvoice(props.row)"
+              :label="t('action.uploadInvoice')"
+              icon="upload_file"
+              color="primary"
+              size="sm"
+              flat
+              dense
+              rounded
+              no-caps
+              class="q-px-sm"
+              @click="pickInvoice(props.row)"
+            />
+            <span
+              v-else
+              class="text-on-surface-variant"
+            >
+              —
+            </span>
+          </q-td>
+        </template>
+
         <template #body-cell-action="props">
           <q-td
             :props
@@ -141,6 +172,8 @@ import type {
   EventBillQuery,
   EventBillStatus,
   EventBillUpdateData,
+  Invoice,
+  InvoiceCreateData,
 } from '@camp-registration/common/entities';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import AdminListToolbar from '@/components/administration/AdminListToolbar.vue';
@@ -148,6 +181,8 @@ import RowActions, {
   type RowAction,
 } from '@/components/administration/RowActions.vue';
 import EventBillStatusChip from '@/components/billing/EventBillStatusChip.vue';
+import InvoiceLinks from '@/components/billing/InvoiceLinks.vue';
+import InvoiceUploadDialog from '@/components/billing/InvoiceUploadDialog.vue';
 import EventBillDialog, {
   type EventBillDialogResult,
 } from '@/components/billing/EventBillDialog.vue';
@@ -216,7 +251,7 @@ const columns = computed<QTableColumn<AdminEventBill>[]>(() => [
   {
     name: 'organization',
     label: t('column.organization'),
-    field: (row) => row.organization.name,
+    field: (row) => billedTo(row),
     align: 'left',
   },
   {
@@ -235,6 +270,12 @@ const columns = computed<QTableColumn<AdminEventBill>[]>(() => [
     name: 'status',
     label: t('column.status'),
     field: 'status',
+    align: 'left',
+  },
+  {
+    name: 'invoices',
+    label: t('column.invoices'),
+    field: (row) => row.invoices.length,
     align: 'left',
   },
   {
@@ -292,6 +333,13 @@ function actionsFor(bill: AdminEventBill): RowAction[] {
       handler: () => rebill(bill),
     },
     {
+      key: 'invoice',
+      label: t('action.uploadInvoice'),
+      icon: 'upload_file',
+      hidden: !canUploadInvoice(bill),
+      handler: () => pickInvoice(bill),
+    },
+    {
       key: 'note',
       label: t('action.note'),
       icon: 'edit_note',
@@ -301,13 +349,66 @@ function actionsFor(bill: AdminEventBill): RowAction[] {
   ];
 }
 
+/** The bill keeps its customer after the organization is deleted. */
+function billedTo(bill: AdminEventBill): string {
+  return bill.organization?.name ?? bill.customer?.name ?? '—';
+}
+
+/** One invoice per bill; a wrong one is deleted and uploaded again. */
+function canUploadInvoice(bill: AdminEventBill): boolean {
+  return (
+    (bill.status === 'OPEN' || bill.status === 'PAID') &&
+    !bill.invoices.some((invoice) => invoice.type === 'INVOICE')
+  );
+}
+
+function pickInvoice(bill: AdminEventBill) {
+  quasar
+    .dialog({
+      component: InvoiceUploadDialog,
+      componentProps: {
+        subject: `${to(bill.eventName)} · ${billedTo(bill)}`,
+        notifies: bill.status === 'OPEN' && bill.grossAmount !== '0.00',
+      },
+    })
+    .onOk((data: InvoiceCreateData) => {
+      void withProgressNotification('uploadInvoice', () =>
+        api.createInvoice(bill.id, data),
+      ).then(() => reload());
+    });
+}
+
+function deleteInvoice(bill: AdminEventBill, invoice: Invoice) {
+  quasar
+    .dialog({
+      title: t('dialog.deleteInvoice.title'),
+      message: t('dialog.deleteInvoice.message'),
+      cancel: {
+        label: t('dialog.cancel'),
+        color: 'primary',
+        flat: true,
+        rounded: true,
+      },
+      ok: {
+        label: t('dialog.deleteInvoice.confirm'),
+        color: 'negative',
+        rounded: true,
+      },
+    })
+    .onOk(() => {
+      void withProgressNotification('deleteInvoice', () =>
+        api.deleteInvoice(bill.id, invoice.id),
+      ).then(() => reload());
+    });
+}
+
 function correct(bill: AdminEventBill) {
   quasar
     .dialog({
       component: EventBillDialog,
       componentProps: {
         mode: 'correct',
-        subject: `${to(bill.eventName)} · ${bill.organization.name}`,
+        subject: `${to(bill.eventName)} · ${billedTo(bill)}`,
         measured: Math.max(
           bill.startRegistrationCount,
           bill.endRegistrationCount ?? 0,
@@ -336,7 +437,7 @@ function rebill(bill: AdminEventBill) {
       component: EventBillDialog,
       componentProps: {
         mode: 'rebill',
-        subject: `${to(bill.eventName)} · ${bill.organization.name}`,
+        subject: `${to(bill.eventName)} · ${billedTo(bill)}`,
         measured: Math.max(
           bill.startRegistrationCount,
           bill.endRegistrationCount ?? 0,
@@ -435,6 +536,7 @@ column:
   registrationCount: 'Registrations'
   grossAmount: 'Total'
   status: 'Status'
+  invoices: 'Invoices'
   finalizedAt: 'Billed'
   action: 'Actions'
 action:
@@ -444,7 +546,12 @@ action:
   correct: 'Correct registrations'
   rebill: 'Bill again'
   note: 'Edit note'
+  uploadInvoice: 'Upload invoice'
 dialog:
+  deleteInvoice:
+    title: 'Delete invoice'
+    message: 'The uploaded invoice is removed for the organization too.'
+    confirm: 'Delete'
   PAID:
     title: 'Mark as paid'
     message: 'Record the payment of {amount}.'
@@ -476,6 +583,7 @@ column:
   registrationCount: 'Anmeldungen'
   grossAmount: 'Gesamt'
   status: 'Status'
+  invoices: 'Rechnungen'
   finalizedAt: 'Abgerechnet'
   action: 'Aktionen'
 action:
@@ -485,7 +593,12 @@ action:
   correct: 'Anmeldungen korrigieren'
   rebill: 'Neu abrechnen'
   note: 'Notiz bearbeiten'
+  uploadInvoice: 'Rechnung hochladen'
 dialog:
+  deleteInvoice:
+    title: 'Rechnung löschen'
+    message: 'Die hochgeladene Rechnung wird auch für die Organisation entfernt.'
+    confirm: 'Löschen'
   PAID:
     title: 'Als bezahlt markieren'
     message: 'Zahlung über {amount} erfassen.'
@@ -517,6 +630,7 @@ column:
   registrationCount: 'Inscriptions'
   grossAmount: 'Total'
   status: 'Statut'
+  invoices: 'Factures'
   finalizedAt: 'Facturée'
   action: 'Actions'
 action:
@@ -526,7 +640,12 @@ action:
   correct: 'Corriger les inscriptions'
   rebill: 'Facturer à nouveau'
   note: 'Modifier la note'
+  uploadInvoice: 'Téléverser la facture'
 dialog:
+  deleteInvoice:
+    title: 'Supprimer la facture'
+    message: "La facture téléversée est aussi retirée pour l'organisation."
+    confirm: 'Supprimer'
   PAID:
     title: 'Marquer comme payée'
     message: 'Enregistrer le paiement de {amount}.'
@@ -558,6 +677,7 @@ column:
   registrationCount: 'Zgłoszenia'
   grossAmount: 'Razem'
   status: 'Status'
+  invoices: 'Faktury'
   finalizedAt: 'Rozliczono'
   action: 'Akcje'
 action:
@@ -567,7 +687,12 @@ action:
   correct: 'Popraw liczbę zgłoszeń'
   rebill: 'Rozlicz ponownie'
   note: 'Edytuj notatkę'
+  uploadInvoice: 'Prześlij fakturę'
 dialog:
+  deleteInvoice:
+    title: 'Usuń fakturę'
+    message: 'Przesłana faktura zostanie usunięta również dla organizacji.'
+    confirm: 'Usuń'
   PAID:
     title: 'Oznacz jako opłacony'
     message: 'Zarejestruj płatność w kwocie {amount}.'
@@ -599,6 +724,7 @@ column:
   registrationCount: 'Přihlášky'
   grossAmount: 'Celkem'
   status: 'Stav'
+  invoices: 'Faktury'
   finalizedAt: 'Vyúčtováno'
   action: 'Akce'
 action:
@@ -608,7 +734,12 @@ action:
   correct: 'Opravit přihlášky'
   rebill: 'Vyúčtovat znovu'
   note: 'Upravit poznámku'
+  uploadInvoice: 'Nahrát fakturu'
 dialog:
+  deleteInvoice:
+    title: 'Smazat fakturu'
+    message: 'Nahraná faktura bude odstraněna i pro organizaci.'
+    confirm: 'Smazat'
   PAID:
     title: 'Označit jako zaplacenou'
     message: 'Zaznamenat platbu {amount}.'

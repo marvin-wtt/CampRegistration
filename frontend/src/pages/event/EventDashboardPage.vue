@@ -229,6 +229,7 @@
       <!-- Administrative, so it trails the registration overview. -->
       <price-model-widget
         v-if="!loading && can('event.billing.view')"
+        id="event-billing"
         :registrations="stats.counts.value.accepted"
         class="dashboard-section"
       />
@@ -237,7 +238,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
@@ -253,6 +254,7 @@ import { useEventDetailsStore } from '@/stores/event-details-store';
 import { useRegistrationsStore } from '@/stores/registration-store';
 import { useEventFilesStore } from '@/stores/event-files-store';
 import { useTaskStore } from '@/stores/task-store';
+import { useEventBillingStore } from '@/stores/event-billing-store';
 import { useEventStatistics } from '@/composables/eventStatistics';
 import { useRegistrationHelper } from '@/composables/registrationHelper';
 import { usePermissions } from '@/composables/permissions';
@@ -273,6 +275,7 @@ const eventDetailsStore = useEventDetailsStore();
 const registrationStore = useRegistrationsStore();
 const eventFilesStore = useEventFilesStore();
 const taskStore = useTaskStore();
+const billingStore = useEventBillingStore();
 const stats = useEventStatistics();
 const helper = useRegistrationHelper();
 const { can, canAccess } = usePermissions();
@@ -309,6 +312,15 @@ void registrationStore.fetchData();
 void eventDetailsStore.fetchData();
 void eventFilesStore.fetchData();
 void taskStore.fetchData();
+watch(
+  () => can('event.billing.view'),
+  (allowed) => {
+    if (allowed) {
+      void billingStore.fetchData();
+    }
+  },
+  { immediate: true },
+);
 
 // Pending only matters when registrations are confirmed manually.
 const showPending = computed<boolean>(
@@ -384,8 +396,10 @@ interface AttentionItem {
   color: string;
   // Deep-links into the participants table via a hidden local template…
   template?: string;
-  // …or navigates to another management route (e.g. file settings).
+  // …or navigates to another management route (e.g. file settings)…
   route?: string;
+  // …or scrolls to a section of this page.
+  anchor?: string;
 }
 
 const attentionItems = computed<AttentionItem[]>(() => {
@@ -409,6 +423,15 @@ const attentionItems = computed<AttentionItem[]>(() => {
   // Event file slots that need attention: declared but not uploaded, plus slots
   // missing a file for one of the event's locales (see event-files-store).
   const missingFiles = eventFilesStore.missingFilesCount;
+
+  // Once the invoice is out, paying it is on the organizer.
+  const bill = billingStore.data?.bill;
+  const unpaidInvoices =
+    can('event.billing.view') &&
+    bill?.status === 'OPEN' &&
+    bill.invoices.some((invoice) => invoice.type === 'INVOICE')
+      ? 1
+      : 0;
 
   const items: AttentionItem[] = [
     {
@@ -443,6 +466,14 @@ const attentionItems = computed<AttentionItem[]>(() => {
       color: 'blue',
       route: 'management.event.settings.files',
     },
+    {
+      key: 'invoice',
+      label: t('attention.invoice'),
+      count: unpaidInvoices,
+      icon: 'receipt_long',
+      color: 'red',
+      anchor: 'event-billing',
+    },
   ];
 
   return items.filter((item) => item.count > 0);
@@ -455,6 +486,12 @@ function goToItem(item: AttentionItem) {
   }
   if (item.route) {
     goTo(item.route);
+    return;
+  }
+  if (item.anchor) {
+    document
+      .getElementById(item.anchor)
+      ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 }
 
@@ -634,6 +671,7 @@ attention:
   missing: 'Missing contact details'
   age: 'Age outside event range'
   files: 'Missing files'
+  invoice: 'Invoice awaiting payment'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -671,6 +709,7 @@ attention:
   missing: 'Fehlende Kontaktdaten'
   age: 'Alter außerhalb des Bereichs'
   files: 'Fehlende Dateien'
+  invoice: 'Rechnung offen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -709,6 +748,7 @@ attention:
   missing: 'Coordonnées manquantes'
   age: 'Âge hors de la plage'
   files: 'Fichiers manquants'
+  invoice: 'Facture en attente de paiement'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -746,6 +786,7 @@ attention:
   missing: 'Brakujące dane kontaktowe'
   age: 'Wiek poza zakresem'
   files: 'Brakujące pliki'
+  invoice: 'Faktura oczekuje na płatność'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -783,4 +824,5 @@ attention:
   missing: 'Chybějící kontaktní údaje'
   age: 'Věk mimo rozsah'
   files: 'Chybějící soubory'
+  invoice: 'Faktura čeká na úhradu'
 </i18n>

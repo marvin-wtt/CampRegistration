@@ -36,7 +36,7 @@ CREATE TABLE `event_bills` (
     `event_id` CHAR(26) NULL,
     `replaces_bill_id` CHAR(26) NULL,
     `sequence` SMALLINT UNSIGNED NOT NULL DEFAULT 0,
-    `organization_id` CHAR(26) NOT NULL,
+    `organization_id` CHAR(26) NULL,
     `price_model_id` CHAR(26) NULL,
     `status` ENUM('DRAFT', 'OPEN', 'PAID', 'VOID') NOT NULL DEFAULT 'DRAFT',
     `start_registration_count` INTEGER UNSIGNED NOT NULL DEFAULT 0,
@@ -46,6 +46,12 @@ CREATE TABLE `event_bills` (
     `event_start_at` DATETIME(0) NOT NULL,
     `event_end_at` DATETIME(0) NOT NULL,
     `event_timezone` VARCHAR(64) NOT NULL,
+    `customer_name` VARCHAR(255) NULL,
+    `customer_address_street` VARCHAR(255) NULL,
+    `customer_address_zip_code` VARCHAR(20) NULL,
+    `customer_address_city` VARCHAR(255) NULL,
+    `customer_country` CHAR(2) NULL,
+    `customer_vat_number` VARCHAR(32) NULL,
     `currency` CHAR(3) NULL,
     `price_per_registration` DECIMAL(10, 2) NULL,
     `base_fee` DECIMAL(10, 2) NULL,
@@ -85,7 +91,7 @@ ALTER TABLE `events` ADD CONSTRAINT `events_price_model_id_foreign` FOREIGN KEY 
 ALTER TABLE `event_bills` ADD CONSTRAINT `event_bills_event_id_foreign` FOREIGN KEY (`event_id`) REFERENCES `events`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `event_bills` ADD CONSTRAINT `event_bills_organization_id_foreign` FOREIGN KEY (`organization_id`) REFERENCES `organizations`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `event_bills` ADD CONSTRAINT `event_bills_organization_id_foreign` FOREIGN KEY (`organization_id`) REFERENCES `organizations`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `event_bills` ADD CONSTRAINT `event_bills_price_model_id_foreign` FOREIGN KEY (`price_model_id`) REFERENCES `price_models`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;

@@ -2,9 +2,27 @@ import type { PriceModel } from '#generated/prisma/client.js';
 import type {
   PriceModelCurrency,
   PriceModel as PriceModelData,
+  PriceModelSummary,
 } from '@camp-registration/common/entities';
 import { JsonResource } from '#core/resource/JsonResource';
 import { money } from '#utils/money';
+
+export const priceModelSummarySelect = {
+  id: true,
+  name: true,
+  isDefault: true,
+} as const;
+
+/** `isDefault` is `true` or `NULL` in the database. */
+export function priceModelSummary(
+  priceModel: Pick<PriceModel, 'id' | 'name' | 'isDefault'>,
+): PriceModelSummary {
+  return {
+    id: priceModel.id,
+    name: priceModel.name,
+    isDefault: priceModel.isDefault === true,
+  };
+}
 
 export type PriceModelWithUsage = PriceModel & {
   _count?: { organizations: number; events: number } | undefined;

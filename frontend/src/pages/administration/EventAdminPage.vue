@@ -150,7 +150,7 @@
         <template #body-cell-priceModel="props">
           <price-model-td
             :props
-            :price-model-id="props.row.priceModelId"
+            :price-model="props.row.priceModel"
             scope="event"
           />
         </template>
@@ -335,7 +335,7 @@ const columns = computed<QTableColumn<AdminEvent>[]>(() => [
   {
     name: 'priceModel',
     label: t('column.priceModel'),
-    field: 'priceModelId',
+    field: (row) => row.priceModel?.id ?? null,
     align: 'left',
   },
   {
@@ -491,7 +491,7 @@ function onPriceModel(event: AdminEvent) {
       component: PriceModelAssignDialog,
       componentProps: {
         subject: to(event.name),
-        current: event.priceModelId,
+        current: event.priceModel?.id ?? null,
         inherit: true,
       },
     })

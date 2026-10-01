@@ -37,4 +37,14 @@ export default {
     success: 'Facture mise à jour',
     error: 'Impossible de mettre à jour la facture',
   },
+  uploadInvoice: {
+    progress: 'Envoi de la facture...',
+    success: 'Facture envoyée',
+    error: "Impossible d'envoyer la facture",
+  },
+  deleteInvoice: {
+    progress: 'Suppression de la facture...',
+    success: 'Facture supprimée',
+    error: 'Impossible de supprimer la facture',
+  },
 };

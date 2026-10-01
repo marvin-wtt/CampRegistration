@@ -1,8 +1,15 @@
-import type { EventBill, PriceModel } from '#generated/prisma/client.js';
+import type {
+  EventBill,
+  File,
+  Invoice,
+  PriceModel,
+} from '#generated/prisma/client.js';
 import type {
   AdminEventBill as AdminEventBillData,
   EventBill as EventBillData,
+  EventBillCustomer,
   EventBilling as EventBillingData,
+  Invoice as InvoiceData,
   OrganizationBilling as OrganizationBillingData,
   OrganizationEventBill as OrganizationEventBillData,
 } from '@camp-registration/common/entities';
@@ -12,8 +19,40 @@ import { utcCarrierToNaiveDateTime } from '@camp-registration/common/utils';
 import { PriceModelResource } from '#app/priceModel/price-model.resource';
 import { billedRegistrationCount } from './billing.utils.js';
 
-/** A bill as the billing service loads it: with its replacement, if any. */
-type BillWithReplacement = EventBill & { replacedBy: { id: string } | null };
+type InvoiceWithFiles = Invoice & { files: File[] };
+
+/** A bill as the billing service loads it: with its replacement and invoices. */
+type BillWithReplacement = EventBill & {
+  replacedBy: { id: string } | null;
+  invoices: InvoiceWithFiles[];
+};
+
+export class InvoiceResource extends JsonResource<
+  InvoiceWithFiles,
+  InvoiceData
+> {
+  transform(): InvoiceData {
+    const file = this.data.files[0];
+
+    return {
+      id: this.data.id,
+      eventBillId: this.data.eventBillId,
+      source: this.data.source,
+      type: this.data.type,
+      number: this.data.number,
+      cancelsInvoiceId: this.data.cancelsInvoiceId,
+      issuedAt: this.data.issuedAt.toISOString(),
+      file: file
+        ? {
+            name: file.originalName,
+            size: file.size,
+            ready: file.uploadStatus === 'READY',
+          }
+        : null,
+      createdAt: this.data.createdAt.toISOString(),
+    };
+  }
+}
 
 export class EventBillResource extends JsonResource<
   BillWithReplacement,
@@ -24,6 +63,7 @@ export class EventBillResource extends JsonResource<
       id: this.data.id,
       eventId: this.data.eventId,
       organizationId: this.data.organizationId,
+      customer: this.customer(),
       priceModelId: this.data.priceModelId,
       status: this.data.status,
       startRegistrationCount: this.data.startRegistrationCount,
@@ -47,22 +87,48 @@ export class EventBillResource extends JsonResource<
       paidAt: this.data.paidAt?.toISOString() ?? null,
       voidedAt: this.data.voidedAt?.toISOString() ?? null,
       note: this.data.note,
+      invoices: this.data.invoices.map((invoice) =>
+        new InvoiceResource(invoice).transform(),
+      ),
       createdAt: this.data.createdAt.toISOString(),
+    };
+  }
+
+  private customer(): EventBillCustomer | null {
+    const bill = this.data;
+    if (
+      bill.customerName === null ||
+      bill.customerAddressStreet === null ||
+      bill.customerAddressZipCode === null ||
+      bill.customerAddressCity === null ||
+      bill.customerCountry === null
+    ) {
+      return null;
+    }
+
+    return {
+      name: bill.customerName,
+      addressStreet: bill.customerAddressStreet,
+      addressZipCode: bill.customerAddressZipCode,
+      addressCity: bill.customerAddressCity,
+      country: bill.customerCountry,
+      vatNumber: bill.customerVatNumber,
     };
   }
 }
 
 export class AdminEventBillResource extends JsonResource<
-  BillWithReplacement & { organization: { id: string; name: string } },
+  BillWithReplacement & { organization: { id: string; name: string } | null },
   AdminEventBillData
 > {
   transform(): AdminEventBillData {
+    const { organization } = this.data;
+
     return {
       ...new EventBillResource(this.data).transform(),
-      organization: {
-        id: this.data.organization.id,
-        name: this.data.organization.name,
-      },
+      organization: organization
+        ? { id: organization.id, name: organization.name }
+        : null,
     };
   }
 }
@@ -109,13 +175,18 @@ export class OrganizationBillingResource extends JsonResource<
 }
 
 export class EventBillingResource extends JsonResource<
-  { priceModel: PriceModel; isOverride: boolean },
+  {
+    priceModel: PriceModel;
+    isOverride: boolean;
+    bill: BillWithReplacement | null;
+  },
   EventBillingData
 > {
   transform(): EventBillingData {
     return {
       priceModel: new PriceModelResource(this.data.priceModel).transform(),
       isOverride: this.data.isOverride,
+      bill: this.data.bill && new EventBillResource(this.data.bill).transform(),
     };
   }
 }

@@ -90,6 +90,12 @@
                 )
               }}
             </q-item-label>
+            <q-item-label v-if="bill.invoices.length > 0">
+              <invoice-links
+                :invoices="bill.invoices"
+                :owner="{ organizationId }"
+              />
+            </q-item-label>
           </q-item-section>
 
           <q-item-section
@@ -142,8 +148,10 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
+import { useRoute } from 'vue-router';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import EventBillStatusChip from '@/components/billing/EventBillStatusChip.vue';
+import InvoiceLinks from '@/components/billing/InvoiceLinks.vue';
 import { useOrganizationBillingStore } from '@/stores/organization-billing-store';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { formatMoney } from '@/utils/money';
@@ -152,6 +160,8 @@ import { formatBillPeriod } from '@/utils/billing';
 const { t, locale } = useI18n();
 const { to } = useObjectTranslation();
 const store = useOrganizationBillingStore();
+const route = useRoute();
+const organizationId = route.params.organizationId as string;
 const { data, isLoading, error } = storeToRefs(store);
 
 const priceModel = computed(() => data.value?.priceModel);

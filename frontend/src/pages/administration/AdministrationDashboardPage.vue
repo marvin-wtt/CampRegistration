@@ -338,16 +338,6 @@ const attention = computed<AttentionItem[]>(() => {
     });
   }
 
-  if (data.billing.open > 0) {
-    items.push({
-      key: 'billsOpen',
-      icon: 'receipt_long',
-      color: 'warning',
-      label: t('attention.billsOpen', { count: data.billing.open }),
-      to: { name: 'administration.billing', query: { status: 'OPEN' } },
-    });
-  }
-
   return items;
 });
 
@@ -441,7 +431,6 @@ attention:
   locked: '{count} locked users'
   organizationsPending: '{count} organizations awaiting review'
   legalMissing: '{count} legal documents missing'
-  billsOpen: '{count} open bills awaiting payment'
 
 sections:
   title: 'Manage'
@@ -497,7 +486,6 @@ attention:
   locked: '{count} gesperrte Benutzer'
   organizationsPending: '{count} Organisationen warten auf Prüfung'
   legalMissing: '{count} fehlende rechtliche Inhalte'
-  billsOpen: '{count} offene Rechnungen warten auf Zahlung'
 
 sections:
   title: 'Verwalten'
@@ -553,7 +541,6 @@ attention:
   locked: '{count} utilisateurs verrouillés'
   organizationsPending: '{count} organisations en attente de contrôle'
   legalMissing: '{count} documents légaux manquants'
-  billsOpen: '{count} factures ouvertes en attente de paiement'
 
 sections:
   title: 'Gérer'
@@ -609,7 +596,6 @@ attention:
   locked: '{count} zablokowanych użytkowników'
   organizationsPending: '{count} organizacji oczekuje na sprawdzenie'
   legalMissing: '{count} brakujących dokumentów prawnych'
-  billsOpen: 'Otwarte rachunki oczekujące na płatność: {count}'
 
 sections:
   title: 'Zarządzaj'
@@ -665,7 +651,6 @@ attention:
   locked: '{count} zamčených uživatelů'
   organizationsPending: '{count} organizací čeká na kontrolu'
   legalMissing: '{count} chybějících právních dokumentů'
-  billsOpen: 'Otevřené faktury čekající na úhradu: {count}'
 
 sections:
   title: 'Spravovat'

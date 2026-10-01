@@ -17,6 +17,8 @@ import type {
 } from '@camp-registration/common/entities';
 import {
   billedRegistrationCount,
+  customerSelect,
+  customerSnapshot,
   calculateBillAmounts,
   eventInstant,
 } from './billing.utils.js';
@@ -37,9 +39,14 @@ const TIMEZONE_SLACK_HOURS = 14;
 
 const FINALIZE_BATCH_SIZE = 100;
 
+const invoiceInclude = {
+  invoices: { include: { files: true }, orderBy: { issuedAt: 'asc' } },
+} satisfies Prisma.EventBillInclude;
+
 const billInclude = {
   organization: { select: { id: true, name: true } },
   replacedBy: { select: { id: true } },
+  ...invoiceInclude,
 } satisfies Prisma.EventBillInclude;
 
 // A DRAFT has no model yet; the event's is the one it will be priced with.
@@ -47,6 +54,7 @@ const organizationBillInclude = {
   replacedBy: { select: { id: true } },
   priceModel: { select: { id: true, name: true } },
   event: { select: { priceModel: { select: { id: true, name: true } } } },
+  ...invoiceInclude,
 } satisfies Prisma.EventBillInclude;
 
 function isUniqueViolation(error: unknown, column: string): boolean {
@@ -124,8 +132,12 @@ export class BillingService extends BaseService {
     const where: Prisma.EventBillWhereInput = {
       status: filter.status,
       organizationId: filter.organizationId,
-      organization: filter.search
-        ? { name: { contains: filter.search } }
+      // The customer name still finds bills of deleted organizations.
+      OR: filter.search
+        ? [
+            { organization: { name: { contains: filter.search } } },
+            { customerName: { contains: filter.search } },
+          ]
         : undefined,
     };
 
@@ -147,6 +159,15 @@ export class BillingService extends BaseService {
       : await this.prisma.eventBill.count({ where });
 
     return { bills, nextCursor, limit, total };
+  }
+
+  /** The end of the event's replacement chain: its only bill that counts. */
+  async getLiveBillForEvent(eventId: string) {
+    return this.prisma.eventBill.findFirst({
+      where: { eventId },
+      include: { replacedBy: { select: { id: true } }, ...invoiceInclude },
+      orderBy: { sequence: 'desc' },
+    });
   }
 
   async getBillsForOrganization(organizationId: string) {
@@ -261,10 +282,7 @@ export class BillingService extends BaseService {
     const event = eventId
       ? await this.prisma.event.findUnique({
           where: { id: eventId },
-          include: {
-            priceModel: true,
-            organization: { select: { priceModel: true } },
-          },
+          include: { priceModel: true },
         })
       : null;
 
@@ -282,15 +300,25 @@ export class BillingService extends BaseService {
       );
     }
 
-    const organizationId = replaces?.organizationId ?? event?.organizationId;
-    if (!organizationId) {
-      throw new ApiError(httpStatus.BAD_REQUEST, 'Nothing to bill');
+    const organizationId = replaces
+      ? replaces.organizationId
+      : (event?.organizationId ?? null);
+    const organization = organizationId
+      ? await this.prisma.organization.findUnique({
+          where: { id: organizationId },
+          select: { ...customerSelect, priceModel: true },
+        })
+      : null;
+    if (!organizationId || !organization) {
+      throw new ApiError(
+        httpStatus.CONFLICT,
+        'The organization was deleted and cannot be billed again.',
+      );
     }
 
     const priceModel = await this.resolvePriceModel(
       data.priceModelId,
-      event ? (event.priceModel ?? event.organization.priceModel) : null,
-      organizationId,
+      event?.priceModel ?? organization.priceModel,
     );
 
     const counts = {
@@ -322,6 +350,7 @@ export class BillingService extends BaseService {
           eventEndAt: event?.endAt ?? replaces?.eventEndAt ?? finalizedAt,
           eventTimezone:
             event?.timezone ?? replaces?.eventTimezone ?? 'Europe/Berlin',
+          ...customerSnapshot(organization),
           ...snapshot,
           status: free ? 'PAID' : 'OPEN',
           finalizedAt,
@@ -349,8 +378,7 @@ export class BillingService extends BaseService {
 
   private async resolvePriceModel(
     requestedId: string | undefined,
-    eventModel: PriceModel | null,
-    organizationId: string,
+    fallback: PriceModel,
   ): Promise<PriceModel> {
     if (requestedId) {
       const requested = await this.prisma.priceModel.findUnique({
@@ -368,17 +396,7 @@ export class BillingService extends BaseService {
       return requested;
     }
 
-    if (eventModel) {
-      return eventModel;
-    }
-
-    // The event is gone: fall back to what the organization pays today.
-    const organization = await this.prisma.organization.findUniqueOrThrow({
-      where: { id: organizationId },
-      select: { priceModel: true },
-    });
-
-    return organization.priceModel;
+    return fallback;
   }
 
   private async countNow(eventId: string | null) {
@@ -504,7 +522,7 @@ export class BillingService extends BaseService {
             priceModel: true,
           },
         },
-        organization: { select: { priceModel: true } },
+        organization: { select: { ...customerSelect, priceModel: true } },
       },
       orderBy: { eventEndAt: 'asc' },
       take: FINALIZE_BATCH_SIZE,
@@ -517,6 +535,12 @@ export class BillingService extends BaseService {
       if (end > now) {
         continue;
       }
+      // Deleting an organization is refused while it has a running bill.
+      const { organization } = bill;
+      if (!organization) {
+        logger.error(`Bill ${bill.id} is running without an organization`);
+        continue;
+      }
 
       try {
         await this.transaction(async (tx) => {
@@ -525,8 +549,7 @@ export class BillingService extends BaseService {
                 where: { eventId: bill.eventId, status: 'ACCEPTED' },
               })
             : null;
-          const priceModel =
-            bill.event?.priceModel ?? bill.organization.priceModel;
+          const priceModel = bill.event?.priceModel ?? organization.priceModel;
           const snapshot = pricingSnapshot(
             priceModel,
             billedRegistrationCount({ ...bill, endRegistrationCount }),
@@ -546,6 +569,7 @@ export class BillingService extends BaseService {
                   }
                 : {}),
               endRegistrationCount,
+              ...customerSnapshot(organization),
               ...snapshot,
               status: free ? 'PAID' : 'OPEN',
               finalizedAt,

@@ -1,6 +1,6 @@
 <template>
   <q-td :props>
-    <template v-if="priceModelId === null">
+    <template v-if="priceModel === null">
       <span class="text-on-surface-variant">{{ t('inherited') }}</span>
     </template>
     <template v-else>
@@ -10,11 +10,11 @@
         dense
         square
       >
-        {{ model ? to(model.name) : '…' }}
+        {{ to(priceModel.name) }}
         <q-tooltip v-if="scope === 'event'">{{ t('override') }}</q-tooltip>
       </q-chip>
       <q-badge
-        v-if="model?.isDefault"
+        v-if="priceModel.isDefault"
         :label="t('default')"
         color="primary"
         outline
@@ -26,33 +26,24 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { storeToRefs } from 'pinia';
+import type { PriceModelSummary } from '@camp-registration/common/entities';
 import type { QTableBodyCellProps } from '@/types/quasar/QTableBodyCellProps';
-import { usePriceModelsStore } from '@/stores/price-models-store';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 
-const { props, priceModelId, scope } = defineProps<{
+const { props, priceModel, scope } = defineProps<{
   props: QTableBodyCellProps<unknown>;
   /** `null` on an event: no override, the organization's model applies. */
-  priceModelId: string | null;
+  priceModel: PriceModelSummary | null;
   scope: 'organization' | 'event';
 }>();
 
 const { t } = useI18n();
 const { to } = useObjectTranslation();
-const store = usePriceModelsStore();
-const { byId } = storeToRefs(store);
-
-void store.fetchData();
-
-const model = computed(() =>
-  priceModelId === null ? undefined : byId.value.get(priceModelId),
-);
 
 // An organization on the default model is the normal case and stays quiet;
 // anything else — a deliberate choice for it or its event — stands out.
 const chipClass = computed(() =>
-  model.value?.isDefault ? 'price-model--default' : 'price-model--custom',
+  priceModel?.isDefault ? 'price-model--default' : 'price-model--custom',
 );
 </script>
 

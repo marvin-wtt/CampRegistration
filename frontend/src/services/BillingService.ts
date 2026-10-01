@@ -6,6 +6,8 @@ import type {
   EventBillQuery,
   EventBillUpdateData,
   EventBilling,
+  Invoice,
+  InvoiceCreateData,
   OrganizationBilling,
   PriceModel,
   PriceModelCreateData,
@@ -111,6 +113,19 @@ export function useBillingService() {
     return response?.data?.data;
   }
 
+  async function createInvoice(
+    billId: string,
+    data: InvoiceCreateData,
+  ): Promise<Invoice> {
+    const response = await api.post(`bills/${billId}/invoices/`, data);
+
+    return response?.data?.data;
+  }
+
+  async function deleteInvoice(billId: string, invoiceId: string) {
+    await api.delete(`bills/${billId}/invoices/${invoiceId}/`);
+  }
+
   return {
     fetchPriceModels,
     createPriceModel,
@@ -124,5 +139,7 @@ export function useBillingService() {
     updateBill,
     fetchOrganizationBilling,
     fetchEventBilling,
+    createInvoice,
+    deleteInvoice,
   };
 }

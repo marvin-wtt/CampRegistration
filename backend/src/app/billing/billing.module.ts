@@ -4,6 +4,9 @@ import type { JobScheduler } from '#core/scheduler/JobScheduler';
 import { resolve } from '#core/ioc/container';
 import { BillingController } from './billing.controller.js';
 import { BillingService } from './billing.service.js';
+import { InvoiceService } from './invoice.service.js';
+import { InvoiceIssuedMessage } from './billing.messages.js';
+import { MailableRegistry } from '#core/mail/mail.registry';
 import {
   EventBillingRouter,
   EventBillRouter,
@@ -13,7 +16,12 @@ import {
 export class BillingModule implements AppModule {
   bindContainers(options: BindOptions) {
     options.bind(BillingService).toSelf().inSingletonScope();
+    options.bind(InvoiceService).toSelf().inSingletonScope();
     options.bind(BillingController).toSelf().inSingletonScope();
+  }
+
+  configure() {
+    resolve(MailableRegistry).register(InvoiceIssuedMessage);
   }
 
   registerApiRoutes(router: AppRouter): void {
