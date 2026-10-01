@@ -1,3 +1,7 @@
 # Shell scripts are executed inside Linux containers — CRLF checkouts on
 # Windows would make them unrunnable ("bad interpreter").
 *.sh text eol=lf
+
+# patch-package diffs must match the LF files in node_modules, or they fail to
+# apply on Windows checkouts.
+*.patch text eol=lf
