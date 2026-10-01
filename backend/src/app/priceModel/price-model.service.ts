@@ -7,7 +7,10 @@ import type {
   PriceModelCreateData,
   PriceModelUpdateData,
 } from '@camp-registration/common/entities';
-import { FREE_PRICE_MODEL_ID, FREE_PRICE_MODEL_NAME } from './billing.utils.js';
+import {
+  FREE_PRICE_MODEL_ID,
+  FREE_PRICE_MODEL_NAME,
+} from './price-model.utils.js';
 
 @injectable()
 export class PriceModelService extends BaseService {
@@ -156,19 +159,20 @@ export class PriceModelService extends BaseService {
     return { organizations, events, bills };
   }
 
-  /** The organization's events that override its price model. */
-  async getEventOverrides(organizationId: string) {
-    return this.prisma.event.findMany({
-      where: { organizationId, priceModelId: { not: null } },
+  /** The event's own model, else its organization's. */
+  async getForEvent(eventId: string) {
+    const event = await this.prisma.event.findUniqueOrThrow({
+      where: { id: eventId },
       select: {
-        id: true,
-        name: true,
-        startAt: true,
-        endAt: true,
         priceModel: true,
+        organization: { select: { priceModel: true } },
       },
-      orderBy: { startAt: 'desc' },
     });
+
+    return {
+      priceModel: event.priceModel ?? event.organization.priceModel,
+      isOverride: event.priceModel !== null,
+    };
   }
 
   async assignToOrganization(organizationId: string, priceModel: PriceModel) {

@@ -79,6 +79,7 @@ exports[`the assembled permission policy > grants event roles exactly these perm
   ],
   "DIRECTOR": [
     "event.audit.view",
+    "event.billing.view",
     "event.chore_assignments.create",
     "event.chore_assignments.delete",
     "event.chore_assignments.edit",

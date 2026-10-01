@@ -17,6 +17,7 @@
             :label="t('field.name')"
             :rules="[requiredName]"
             :locales="APP_LOCALES"
+            default-untranslated
             class="span-2"
             maxlength="255"
             hide-bottom-space

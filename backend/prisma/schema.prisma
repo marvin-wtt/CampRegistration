@@ -827,17 +827,17 @@ enum EventBillStatus {
 }
 
 model EventBill {
-  id                        String          @id @unique(map: "event_bills_id_unique") @default(ulid()) @db.Char(26)
-  eventId                   String?         @map("event_id") @db.Char(26)
-  /// `eventId` while the bill is not VOID, else NULL. Its unique index allows
-  /// any number of voided bills per event but only one live one — which also
-  /// makes the billing jobs idempotent across instances. Written only by
-  /// `BillingService`.
-  activeEventId             String?         @unique(map: "event_bills_active_event_id_unique") @map("active_event_id") @db.Char(26)
+  id             String  @id @unique(map: "event_bills_id_unique") @default(ulid()) @db.Char(26)
+  eventId        String? @map("event_id") @db.Char(26)
   /// The voided bill this one was issued to replace.
-  replacesBillId            String?         @unique(map: "event_bills_replaces_bill_id_unique") @map("replaces_bill_id") @db.Char(26)
-  organizationId            String          @map("organization_id") @db.Char(26)
-  priceModelId              String?         @map("price_model_id") @db.Char(26)
+  replacesBillId String? @unique(map: "event_bills_replaces_bill_id_unique") @map("replaces_bill_id") @db.Char(26)
+  /// 0 for an event's first bill, `replaces.sequence + 1` for a replacement.
+  /// Unique per event, so an event has at most one live bill: the end of its
+  /// replacement chain. Also makes the billing jobs idempotent across instances.
+  sequence       Int     @default(0) @db.UnsignedSmallInt
+  organizationId String  @map("organization_id") @db.Char(26)
+  priceModelId   String? @map("price_model_id") @db.Char(26)
+
   status                    EventBillStatus @default(DRAFT)
   /// Accepted registrations when the event started.
   startRegistrationCount    Int             @default(0) @map("start_registration_count") @db.UnsignedInt
@@ -845,8 +845,6 @@ model EventBill {
   endRegistrationCount      Int?            @map("end_registration_count") @db.UnsignedInt
   /// An administrator's correction; overrides the measured counts when set.
   adjustedRegistrationCount Int?            @map("adjusted_registration_count") @db.UnsignedInt
-  /// What is billed: the adjustment if any, else the higher measured count.
-  registrationCount         Int             @default(0) @map("registration_count") @db.UnsignedInt
   /// ![string | Record<string, string>]
   eventName                 Json            @map("event_name") @db.Json
   eventStartAt              DateTime        @map("event_start_at") @db.DateTime(0)
@@ -872,7 +870,7 @@ model EventBill {
   replaces     EventBill?   @relation("EventBillReplacement", fields: [replacesBillId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "event_bills_replaces_bill_id_foreign")
   replacedBy   EventBill?   @relation("EventBillReplacement")
 
-  @@index([eventId], map: "event_bills_event_id_index")
+  @@unique([eventId, sequence], map: "event_bills_event_id_sequence_unique")
   @@index([organizationId, status], map: "event_bills_organization_id_status_index")
   @@index([status], map: "event_bills_status_index")
   @@index([priceModelId], map: "event_bills_price_model_id_index")

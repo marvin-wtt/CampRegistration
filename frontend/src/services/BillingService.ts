@@ -5,6 +5,7 @@ import type {
   EventBillCreateData,
   EventBillQuery,
   EventBillUpdateData,
+  EventBilling,
   OrganizationBilling,
   PriceModel,
   PriceModelCreateData,
@@ -104,6 +105,12 @@ export function useBillingService() {
     return response?.data?.data;
   }
 
+  async function fetchEventBilling(eventId: string): Promise<EventBilling> {
+    const response = await api.get(`events/${eventId}/billing/`);
+
+    return response?.data?.data;
+  }
+
   return {
     fetchPriceModels,
     createPriceModel,
@@ -116,5 +123,6 @@ export function useBillingService() {
     createBill,
     updateBill,
     fetchOrganizationBilling,
+    fetchEventBilling,
   };
 }

@@ -69,7 +69,7 @@ export interface EventBill extends Identifiable {
   endRegistrationCount: number | null;
   /** An administrator's correction, overriding the measured counts. */
   adjustedRegistrationCount: number | null;
-  /** What is billed: the adjustment if any, else the higher measured count. */
+  /** What is billed: the adjustment if any, else the higher measured count. Derived, not stored. */
   registrationCount: number;
   /** The voided bill this one replaces. */
   replacesBillId: string | null;
@@ -132,19 +132,23 @@ export interface EventBillQuery {
   search?: string;
 }
 
-/** An event priced by its own model instead of its organization's. */
-export interface EventPriceModelOverride {
-  eventId: string;
-  eventName: Translatable;
-  /** Naive local datetimes, like the event's own. */
-  eventStartAt: string;
-  eventEndAt: string;
-  priceModel: PriceModel;
+/** A bill as its organization sees it. */
+export interface OrganizationEventBill extends EventBill {
+  /**
+   * The model the bill was priced with — for a DRAFT, the one it will be
+   * priced with. `null` when that model no longer exists.
+   */
+  priceModel: Pick<PriceModel, 'id' | 'name'> | null;
 }
 
 export interface OrganizationBilling {
   priceModel: PriceModel;
-  bills: EventBill[];
-  /** The organization's events that override its price model. */
-  eventOverrides: EventPriceModelOverride[];
+  bills: OrganizationEventBill[];
+}
+
+/** The model an event is priced with, as its managers see it. */
+export interface EventBilling {
+  priceModel: PriceModel;
+  /** The event has its own model rather than its organization's. */
+  isOverride: boolean;
 }

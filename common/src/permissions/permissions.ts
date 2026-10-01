@@ -64,6 +64,8 @@ export type ChorePermission =
   | 'event.chores.edit'
   | 'event.chores.delete';
 
+export type BillingPermission = 'event.billing.view';
+
 export type ChoreAssignmentPermission =
   | 'event.chore_assignments.view'
   | 'event.chore_assignments.create'
@@ -117,7 +119,8 @@ export type EventScopedPermission =
   | ProgramItemPermission
   | TaskPermission
   | ChorePermission
-  | ChoreAssignmentPermission;
+  | ChoreAssignmentPermission
+  | BillingPermission;
 
 export type Permission =
   EventScopedPermission | NewsletterPermission | OrganizationPermission;
@@ -136,8 +139,9 @@ export const ORGANIZATION_EVENT_ACCESS_ROLES = ['ADMIN'] as const;
  * every event their organization owns, without any event-manager record.
  *
  * Deliberately minimal: see that the event exists, stop it accepting
- * registrations (`event.edit`), and see who manages it. It must NEVER include
- * `event.registrations.view` or any other event permission — an organization role
+ * registrations (`event.edit`), see who manages it and what it is billed at.
+ * It must NEVER include `event.registrations.view` or any other event
+ * permission — an organization role
  * is an ownership and accountability relationship, not a grant of access to
  * participants' personal data.
  *
@@ -148,6 +152,7 @@ export const ORGANIZATION_EVENT_PERMISSIONS = [
   'event.view',
   'event.edit',
   'event.managers.view',
+  'event.billing.view',
 ] as const satisfies readonly EventScopedPermission[];
 
 /**

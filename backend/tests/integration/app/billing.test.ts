@@ -12,6 +12,7 @@ import { request } from '../utils/request.js';
 import prisma from '../utils/prisma.js';
 import { resolve } from '#core/ioc/container';
 import { BillingService } from '#app/billing/billing.service';
+import { billedRegistrationCount } from '#app/billing/billing.utils';
 import type { Prisma } from '#generated/prisma/client.js';
 
 const billing = () => resolve(BillingService);
@@ -99,7 +100,7 @@ describe('event billing', () => {
 
       const draft = await bill(event.id);
       expect(draft.status).toBe('DRAFT');
-      expect(draft.registrationCount).toBe(2);
+      expect(billedRegistrationCount(draft)).toBe(2);
       expect(draft.organizationId).toBe(event.organizationId);
     });
 
@@ -157,6 +158,19 @@ describe('event billing', () => {
         await prisma.eventBill.count({ where: { eventId: event.id } }),
       ).toBe(1);
     });
+
+    it('opens one draft when two instances run at once', async () => {
+      const event = await eventRunning();
+
+      await Promise.all([
+        billing().openDraftsForStartedEvents(),
+        billing().openDraftsForStartedEvents(),
+      ]);
+
+      expect(
+        await prisma.eventBill.count({ where: { eventId: event.id } }),
+      ).toBe(1);
+    });
   });
 
   describe('counting at start and end', () => {
@@ -181,7 +195,7 @@ describe('event billing', () => {
       const finalized = await finalize(event.id);
       expect(finalized.startRegistrationCount).toBe(2);
       expect(finalized.endRegistrationCount).toBe(1);
-      expect(finalized.registrationCount).toBe(2);
+      expect(billedRegistrationCount(finalized)).toBe(2);
     });
 
     it('bills the end count when registrations are accepted during the event', async () => {
@@ -199,7 +213,7 @@ describe('event billing', () => {
       const finalized = await finalize(event.id);
       expect(finalized.startRegistrationCount).toBe(1);
       expect(finalized.endRegistrationCount).toBe(2);
-      expect(finalized.registrationCount).toBe(2);
+      expect(billedRegistrationCount(finalized)).toBe(2);
     });
 
     it('bills a replacement once', async () => {
@@ -219,7 +233,7 @@ describe('event billing', () => {
         .auth(token, { type: 'bearer' })
         .expect(200);
 
-      expect((await finalize(event.id)).registrationCount).toBe(1);
+      expect(billedRegistrationCount(await finalize(event.id))).toBe(1);
     });
 
     it('does not count waitlisted or pending registrations', async () => {
@@ -228,7 +242,7 @@ describe('event billing', () => {
       await register(event.id, 'WAITLISTED');
       await billing().openDraftsForStartedEvents();
 
-      expect((await finalize(event.id)).registrationCount).toBe(0);
+      expect(billedRegistrationCount(await finalize(event.id))).toBe(0);
     });
 
     it('does not change a finalized bill', async () => {
@@ -239,7 +253,7 @@ describe('event billing', () => {
 
       await billing().finalizeEndedEvents();
 
-      expect((await bill(event.id)).registrationCount).toBe(0);
+      expect(billedRegistrationCount(await bill(event.id))).toBe(0);
     });
   });
 
@@ -267,7 +281,7 @@ describe('event billing', () => {
 
       const finalized = await bill(event.id);
       expect(finalized.status).toBe('OPEN');
-      expect(finalized.registrationCount).toBe(3);
+      expect(billedRegistrationCount(finalized)).toBe(3);
       expect(finalized.priceModelId).toBe(priceModel.id);
       expect(finalized.currency).toBe('EUR');
       expect(finalized.netAmount?.toFixed(2)).toBe('16.00');
@@ -770,6 +784,33 @@ describe('event billing', () => {
         .expect(409);
     });
 
+    it('bills a billed event again only through its voided bill', async () => {
+      const token = await adminToken();
+      const { event, bill: open } = await openBill();
+      await request()
+        .patch(`/api/v1/bills/${open.id}`)
+        .send({ status: 'VOID' })
+        .auth(token, { type: 'bearer' })
+        .expect(200);
+
+      await request()
+        .post('/api/v1/bills')
+        .send({ eventId: event.id })
+        .auth(token, { type: 'bearer' })
+        .expect(409);
+      const { body } = await request()
+        .post('/api/v1/bills')
+        .send({ replacesBillId: open.id })
+        .auth(token, { type: 'bearer' })
+        .expect(201);
+
+      const replacement = await prisma.eventBill.findUniqueOrThrow({
+        where: { id: body.data.id },
+      });
+      expect(open.sequence).toBe(0);
+      expect(replacement.sequence).toBe(1);
+    });
+
     it('does not reopen a draft for an event whose bill was voided', async () => {
       const token = await adminToken();
       const event = await eventRunning();
@@ -777,7 +818,7 @@ describe('event billing', () => {
       const draft = await bill(event.id);
       await prisma.eventBill.update({
         where: { id: draft.id },
-        data: { status: 'VOID', activeEventId: null },
+        data: { status: 'VOID' },
       });
 
       await billing().openDraftsForStartedEvents();
@@ -860,30 +901,96 @@ describe('event billing', () => {
       ).toMatchObject({ usage: { organizations: 1, events: 1 } });
     });
 
-    it("lists an organization's event overrides on its billing page", async () => {
+    it("shows each bill's price model, a DRAFT's being the one it will use", async () => {
       const user = await UserFactory.create();
       const organization = await OrganizationFactory.create({
         members: { create: { userId: user.id, role: 'ADMIN' } },
       });
       const override = await PriceModelFactory.create();
-      const event = await EventFactory.create({
+      await eventRunning({
         organization: { connect: { id: organization.id } },
         priceModel: { connect: { id: override.id } },
       });
-      await EventFactory.create({
+      await eventRunning({
         organization: { connect: { id: organization.id } },
       });
+      await billing().openDraftsForStartedEvents();
 
       const { body } = await request()
         .get(`/api/v1/organizations/${organization.id}/billing`)
         .auth(generateAccessToken(user), { type: 'bearer' })
         .expect(200);
 
-      expect(body.data.eventOverrides).toHaveLength(1);
-      expect(body.data.eventOverrides[0]).toMatchObject({
-        eventId: event.id,
-        priceModel: { id: override.id },
+      expect(body.data).not.toHaveProperty('eventOverrides');
+      expect(
+        body.data.bills.map(
+          (row: { priceModel: { id: string } }) => row.priceModel.id,
+        ),
+      ).toEqual(
+        expect.arrayContaining([override.id, organization.priceModelId]),
+      );
+    });
+
+    it("shows a DIRECTOR the event's own price model", async () => {
+      const override = await PriceModelFactory.create();
+      const event = await eventRunning({
+        priceModel: { connect: { id: override.id } },
       });
+
+      const { body } = await request()
+        .get(`/api/v1/events/${event.id}/billing`)
+        .auth(await directorToken(event.id), { type: 'bearer' })
+        .expect(200);
+
+      expect(body.data).toMatchObject({
+        priceModel: { id: override.id },
+        isOverride: true,
+      });
+    });
+
+    it("falls back to the organization's price model for an event", async () => {
+      const event = await eventRunning();
+      const { priceModelId } = await prisma.organization.findUniqueOrThrow({
+        where: { id: event.organizationId },
+      });
+
+      const { body } = await request()
+        .get(`/api/v1/events/${event.id}/billing`)
+        .auth(await directorToken(event.id), { type: 'bearer' })
+        .expect(200);
+
+      expect(body.data).toMatchObject({
+        priceModel: { id: priceModelId },
+        isOverride: false,
+      });
+    });
+
+    it("shows an organization ADMIN its event's price model", async () => {
+      const user = await UserFactory.create();
+      const organization = await OrganizationFactory.create({
+        members: { create: { userId: user.id, role: 'ADMIN' } },
+      });
+      const event = await eventRunning({
+        organization: { connect: { id: organization.id } },
+      });
+
+      await request()
+        .get(`/api/v1/events/${event.id}/billing`)
+        .auth(generateAccessToken(user), { type: 'bearer' })
+        .expect(200);
+    });
+
+    it("hides an event's price model from managers below DIRECTOR", async () => {
+      const event = await eventRunning();
+      const user = await UserFactory.create();
+      await prisma.eventManager.create({
+        data: { eventId: event.id, userId: user.id, role: 'COORDINATOR' },
+      });
+
+      await request()
+        .get(`/api/v1/events/${event.id}/billing`)
+        .auth(generateAccessToken(user), { type: 'bearer' })
+        .expect(403);
     });
 
     it('filters bills by status', async () => {

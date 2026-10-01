@@ -225,6 +225,13 @@
           :loading
         />
       </section>
+
+      <!-- Administrative, so it trails the registration overview. -->
+      <price-model-widget
+        v-if="!loading && can('event.billing.view')"
+        :registrations="stats.counts.value.accepted"
+        class="dashboard-section"
+      />
     </div>
   </page-state-handler>
 </template>
@@ -241,6 +248,7 @@ import TodayDutiesWidget from '@/components/event/dashboard/TodayDutiesWidget.vu
 import CountryBreakdownTable from '@/components/event/dashboard/CountryBreakdownTable.vue';
 import DemographicsExplorer from '@/components/event/dashboard/DemographicsExplorer.vue';
 import TasksDueWidget from '@/components/event/dashboard/TasksDueWidget.vue';
+import PriceModelWidget from '@/components/event/dashboard/PriceModelWidget.vue';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import { useRegistrationsStore } from '@/stores/registration-store';
 import { useEventFilesStore } from '@/stores/event-files-store';

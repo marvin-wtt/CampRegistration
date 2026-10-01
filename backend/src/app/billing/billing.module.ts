@@ -4,36 +4,32 @@ import type { JobScheduler } from '#core/scheduler/JobScheduler';
 import { resolve } from '#core/ioc/container';
 import { BillingController } from './billing.controller.js';
 import { BillingService } from './billing.service.js';
-import { PriceModelService } from './price-model.service.js';
 import {
+  EventBillingRouter,
   EventBillRouter,
-  EventPriceModelRouter,
   OrganizationBillingRouter,
-  PriceModelRouter,
 } from './billing.routes.js';
 
 export class BillingModule implements AppModule {
   bindContainers(options: BindOptions) {
-    options.bind(PriceModelService).toSelf().inSingletonScope();
     options.bind(BillingService).toSelf().inSingletonScope();
     options.bind(BillingController).toSelf().inSingletonScope();
   }
 
   registerApiRoutes(router: AppRouter): void {
-    router.useRouter('/price-models', new PriceModelRouter());
     router.useRouter('/bills', new EventBillRouter());
     router.useRouter(
-      '/organizations/:organizationId',
+      '/organizations/:organizationId/billing',
       new OrganizationBillingRouter(),
     );
-    router.useRouter(
-      '/events/:eventId/price-model',
-      new EventPriceModelRouter(),
-    );
+    router.useRouter('/events/:eventId/billing', new EventBillingRouter());
   }
 
   registerPermissions(): ScopedPermissions {
     return {
+      event: {
+        DIRECTOR: ['event.billing.view'],
+      },
       organization: {
         ADMIN: ['organization.billing.view'],
       },

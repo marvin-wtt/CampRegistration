@@ -4,7 +4,7 @@ import { inject, injectable } from 'inversify';
 import httpStatus from 'http-status';
 import ApiError from '#utils/ApiError';
 import { PrivacyNoticeService } from '#app/privacyNotice/privacy-notice.service';
-import { PriceModelService } from '#app/billing/price-model.service';
+import { PriceModelService } from '#app/priceModel/price-model.service';
 import type {
   OrganizationCreateData,
   OrganizationUpdateData,

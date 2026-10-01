@@ -5,7 +5,7 @@ import { seedDate } from './timeline';
 import {
   FREE_PRICE_MODEL_ID,
   FREE_PRICE_MODEL_NAME,
-} from '#app/billing/billing.utils';
+} from '#app/priceModel/price-model.utils';
 
 /**
  * Runs before the organizations: every organization needs a price model, and

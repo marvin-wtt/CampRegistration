@@ -11,6 +11,11 @@ CREATE TABLE `price_models` (
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NULL,
 
+    UNIQUE INDEX `price_models_id_unique`(`id`),
+    UNIQUE INDEX `price_models_is_default_unique`(`is_default`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 -- The seeded free model. Every existing organization starts on it, and it is the
 -- default for new organizations until an administrator marks another one.
 -- The id is fixed so code and fixtures can refer to it (FREE_PRICE_MODEL_ID).
@@ -29,15 +34,14 @@ ALTER TABLE `events` ADD COLUMN `price_model_id` CHAR(26) NULL;
 CREATE TABLE `event_bills` (
     `id` CHAR(26) NOT NULL,
     `event_id` CHAR(26) NULL,
-    `active_event_id` CHAR(26) NULL,
     `replaces_bill_id` CHAR(26) NULL,
+    `sequence` SMALLINT UNSIGNED NOT NULL DEFAULT 0,
     `organization_id` CHAR(26) NOT NULL,
     `price_model_id` CHAR(26) NULL,
     `status` ENUM('DRAFT', 'OPEN', 'PAID', 'VOID') NOT NULL DEFAULT 'DRAFT',
     `start_registration_count` INTEGER UNSIGNED NOT NULL DEFAULT 0,
     `end_registration_count` INTEGER UNSIGNED NULL,
     `adjusted_registration_count` INTEGER UNSIGNED NULL,
-    `registration_count` INTEGER UNSIGNED NOT NULL DEFAULT 0,
     `event_name` JSON NOT NULL,
     `event_start_at` DATETIME(0) NOT NULL,
     `event_end_at` DATETIME(0) NOT NULL,
@@ -55,6 +59,15 @@ CREATE TABLE `event_bills` (
     `note` TEXT NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NULL,
+
+    UNIQUE INDEX `event_bills_id_unique`(`id`),
+    UNIQUE INDEX `event_bills_replaces_bill_id_unique`(`replaces_bill_id`),
+    INDEX `event_bills_organization_id_status_index`(`organization_id`, `status`),
+    INDEX `event_bills_status_index`(`status`),
+    INDEX `event_bills_price_model_id_index`(`price_model_id`),
+    UNIQUE INDEX `event_bills_event_id_sequence_unique`(`event_id`, `sequence`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateIndex
 CREATE INDEX `events_price_model_id_index` ON `events`(`price_model_id`);

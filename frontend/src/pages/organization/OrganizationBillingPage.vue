@@ -22,8 +22,8 @@
           </div>
         </q-card-section>
 
-        <q-card-section class="row q-col-gutter-md q-pt-none">
-          <div class="col-12 col-sm-4">
+        <q-card-section class="price-model-rates q-pt-none">
+          <div>
             <div class="text-caption text-on-surface-variant">
               {{ t('priceModel.pricePerRegistration') }}
             </div>
@@ -31,7 +31,7 @@
               {{ money(priceModel.pricePerRegistration, priceModel.currency) }}
             </div>
           </div>
-          <div class="col-12 col-sm-4">
+          <div>
             <div class="text-caption text-on-surface-variant">
               {{ t('priceModel.baseFee') }}
             </div>
@@ -39,11 +39,13 @@
               {{ money(priceModel.baseFee, priceModel.currency) }}
             </div>
           </div>
-          <div class="col-12 col-sm-4">
+          <div>
             <div class="text-caption text-on-surface-variant">
               {{ t('priceModel.taxRate') }}
             </div>
-            <div class="text-body1">{{ priceModel.taxRate }} %</div>
+            <div class="text-body1">
+              {{ Number(priceModel.taxRate).toLocaleString(locale) }} %
+            </div>
           </div>
         </q-card-section>
 
@@ -51,62 +53,6 @@
           {{ t('explanation') }}
         </q-card-section>
       </q-card>
-
-      <template v-if="eventOverrides.length > 0">
-        <div class="text-subtitle1 text-weight-medium q-mt-lg">
-          {{ t('overrides.title') }}
-        </div>
-        <div class="text-caption text-on-surface-variant">
-          {{ t('overrides.caption') }}
-        </div>
-
-        <q-list
-          bordered
-          separator
-          class="rounded-lg"
-        >
-          <q-item
-            v-for="override in eventOverrides"
-            :key="override.eventId"
-          >
-            <q-item-section>
-              <q-item-label>{{ to(override.eventName) }}</q-item-label>
-              <q-item-label caption>
-                {{
-                  formatBillPeriod(
-                    {
-                      eventStartAt: override.eventStartAt,
-                      eventEndAt: override.eventEndAt,
-                    },
-                    locale,
-                  )
-                }}
-              </q-item-label>
-            </q-item-section>
-
-            <q-item-section side>
-              <q-chip
-                class="override-chip"
-                icon="sell"
-                dense
-                square
-              >
-                {{ to(override.priceModel.name) }}
-              </q-chip>
-              <div class="text-caption">
-                {{
-                  t('overrides.price', {
-                    price: money(
-                      override.priceModel.pricePerRegistration,
-                      override.priceModel.currency,
-                    ),
-                  })
-                }}
-              </div>
-            </q-item-section>
-          </q-item>
-        </q-list>
-      </template>
 
       <div class="text-subtitle1 text-weight-medium q-mt-lg">
         {{ t('bills') }}
@@ -123,23 +69,25 @@
           :key="bill.id"
         >
           <q-item-section>
-            <q-item-label>{{ to(bill.eventName) }}</q-item-label>
-            <q-item-label caption>
-              {{ formatBillPeriod(bill, locale) }}
+            <q-item-label class="bill-title">
+              <span>{{ to(bill.eventName) }}</span>
+              <q-chip
+                v-if="bill.priceModel && deviates(bill.priceModel)"
+                :label="to(bill.priceModel.name)"
+                class="override-chip q-ma-none"
+                icon="sell"
+                dense
+                square
+              />
             </q-item-label>
             <q-item-label caption>
+              {{ formatBillPeriod(bill, locale) }} ·
               {{
-                bill.status === 'DRAFT'
-                  ? t(
-                      'peak',
-                      { count: bill.registrationCount },
-                      bill.registrationCount,
-                    )
-                  : t(
-                      'registrations',
-                      { count: bill.registrationCount },
-                      bill.registrationCount,
-                    )
+                t(
+                  bill.status === 'DRAFT' ? 'peak' : 'registrations',
+                  { count: bill.registrationCount },
+                  bill.registrationCount,
+                )
               }}
             </q-item-label>
           </q-item-section>
@@ -148,11 +96,18 @@
             side
             class="items-end"
           >
-            <div
-              v-if="bill.grossAmount !== null"
-              class="text-body1 text-weight-medium text-on-surface"
-            >
-              {{ money(bill.grossAmount, bill.currency) }}
+            <div class="row items-center no-wrap q-gutter-x-sm">
+              <event-bill-status-chip
+                :status="bill.status"
+                class="q-ma-none"
+              />
+              <span
+                v-if="bill.grossAmount !== null"
+                :class="{ 'bill-amount--void': bill.status === 'VOID' }"
+                class="text-body1 text-weight-medium text-on-surface"
+              >
+                {{ money(bill.grossAmount, bill.currency) }}
+              </span>
             </div>
             <div
               v-if="bill.taxAmount !== null && bill.taxAmount !== '0.00'"
@@ -165,7 +120,6 @@
                 })
               }}
             </div>
-            <event-bill-status-chip :status="bill.status" />
           </q-item-section>
         </q-item>
       </q-list>
@@ -202,7 +156,11 @@ const { data, isLoading, error } = storeToRefs(store);
 
 const priceModel = computed(() => data.value?.priceModel);
 const bills = computed(() => data.value?.bills ?? []);
-const eventOverrides = computed(() => data.value?.eventOverrides ?? []);
+
+/** Bills priced with another model than the organization's current one. */
+function deviates(model: { id: string }): boolean {
+  return model.id !== priceModel.value?.id;
+}
 
 function money(amount: string | null, currency: string | null): string {
   return formatMoney(amount, currency, locale.value);
@@ -221,22 +179,36 @@ void store.fetchData();
   background: var(--md3-surface-container);
   color: var(--md3-on-surface);
 }
+
+.price-model-rates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 40px;
+}
+
+.bill-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+
+.bill-amount--void {
+  color: var(--md3-on-surface-variant);
+  text-decoration: line-through;
+}
 </style>
 
 <i18n lang="yaml" locale="en">
 title: 'Billing'
 bills: 'Bills'
-overrides:
-  title: 'Events with their own price model'
-  caption: 'These events are billed with the model shown instead of the one above.'
-  price: '{price} per registration'
 priceModel:
   label: 'Price model'
   pricePerRegistration: 'Per registration'
   baseFee: 'Base fee per event'
   taxRate: 'Tax'
 explanation: 'Each event is billed after it ends. Accepted registrations are counted when the event starts and when it ends, and the higher number is billed — pending and waitlisted registrations are not counted.'
-peak: 'Running · { count } registration at start | Running · { count } registrations at start'
+peak: '{ count } registration at start | { count } registrations at start'
 registrations: '{ count } registration | { count } registrations'
 tax: '{net} + {tax} tax'
 empty: 'No events have been billed yet'
@@ -245,17 +217,13 @@ empty: 'No events have been billed yet'
 <i18n lang="yaml" locale="de">
 title: 'Abrechnung'
 bills: 'Rechnungen'
-overrides:
-  title: 'Veranstaltungen mit eigenem Preismodell'
-  caption: 'Diese Veranstaltungen werden mit dem angezeigten Modell statt dem obigen abgerechnet.'
-  price: '{price} pro Anmeldung'
 priceModel:
   label: 'Preismodell'
   pricePerRegistration: 'Pro Anmeldung'
   baseFee: 'Grundgebühr pro Veranstaltung'
   taxRate: 'Steuer'
 explanation: 'Jede Veranstaltung wird nach ihrem Ende abgerechnet. Die angenommenen Anmeldungen werden zu Beginn und am Ende der Veranstaltung gezählt, abgerechnet wird die höhere Zahl — offene Anmeldungen und Anmeldungen auf der Warteliste zählen nicht.'
-peak: 'Laufend · { count } Anmeldung zu Beginn | Laufend · { count } Anmeldungen zu Beginn'
+peak: '{ count } Anmeldung zu Beginn | { count } Anmeldungen zu Beginn'
 registrations: '{ count } Anmeldung | { count } Anmeldungen'
 tax: '{net} + {tax} Steuer'
 empty: 'Es wurden noch keine Veranstaltungen abgerechnet'
@@ -264,17 +232,13 @@ empty: 'Es wurden noch keine Veranstaltungen abgerechnet'
 <i18n lang="yaml" locale="fr">
 title: 'Facturation'
 bills: 'Factures'
-overrides:
-  title: 'Événements avec leur propre modèle tarifaire'
-  caption: 'Ces événements sont facturés avec le modèle indiqué au lieu de celui ci-dessus.'
-  price: '{price} par inscription'
 priceModel:
   label: 'Modèle tarifaire'
   pricePerRegistration: 'Par inscription'
   baseFee: 'Frais de base par événement'
   taxRate: 'Taxe'
 explanation: "Chaque événement est facturé après sa fin. Les inscriptions acceptées sont comptées au début et à la fin de l'événement, et le nombre le plus élevé est facturé — les inscriptions en attente et sur liste d'attente ne sont pas comptées."
-peak: 'En cours · { count } inscription au début | En cours · { count } inscriptions au début'
+peak: '{ count } inscription au début | { count } inscriptions au début'
 registrations: '{ count } inscription | { count } inscriptions'
 tax: '{net} + {tax} de taxe'
 empty: "Aucun événement n'a encore été facturé"
@@ -283,17 +247,13 @@ empty: "Aucun événement n'a encore été facturé"
 <i18n lang="yaml" locale="pl">
 title: 'Rozliczenia'
 bills: 'Rachunki'
-overrides:
-  title: 'Wydarzenia z własnym modelem cenowym'
-  caption: 'Te wydarzenia są rozliczane według wskazanego modelu zamiast powyższego.'
-  price: '{price} za zgłoszenie'
 priceModel:
   label: 'Model cenowy'
   pricePerRegistration: 'Za zgłoszenie'
   baseFee: 'Opłata podstawowa za wydarzenie'
   taxRate: 'Podatek'
 explanation: 'Każde wydarzenie jest rozliczane po jego zakończeniu. Zaakceptowane zgłoszenia są liczone na początku i na końcu wydarzenia, a rozliczana jest wyższa liczba — zgłoszenia oczekujące i z listy rezerwowej nie są liczone.'
-peak: 'W toku · zgłoszenia na początku: { count }'
+peak: 'Zgłoszenia na początku: { count }'
 registrations: 'Zgłoszenia: { count }'
 tax: '{net} + {tax} podatku'
 empty: 'Żadne wydarzenie nie zostało jeszcze rozliczone'
@@ -302,17 +262,13 @@ empty: 'Żadne wydarzenie nie zostało jeszcze rozliczone'
 <i18n lang="yaml" locale="cs">
 title: 'Vyúčtování'
 bills: 'Faktury'
-overrides:
-  title: 'Akce s vlastním cenovým modelem'
-  caption: 'Tyto akce se účtují podle uvedeného modelu místo modelu výše.'
-  price: '{price} za přihlášku'
 priceModel:
   label: 'Cenový model'
   pricePerRegistration: 'Za přihlášku'
   baseFee: 'Základní poplatek za akci'
   taxRate: 'Daň'
 explanation: 'Každá akce se vyúčtuje po svém skončení. Přijaté přihlášky se počítají na začátku a na konci akce a účtuje se vyšší počet — čekající přihlášky a přihlášky na čekací listině se nepočítají.'
-peak: 'Probíhá · přihlášky na začátku: { count }'
+peak: 'Přihlášky na začátku: { count }'
 registrations: 'Přihlášky: { count }'
 tax: '{net} + {tax} daň'
 empty: 'Zatím nebyla vyúčtována žádná akce'

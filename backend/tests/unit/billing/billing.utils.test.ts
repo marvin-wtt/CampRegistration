@@ -1,12 +1,37 @@
 import { describe, expect, it } from 'vitest';
 import { Prisma, type EventBill } from '#generated/prisma/client';
-import { calculateBillAmounts, eventInstant } from '#app/billing/billing.utils';
+import {
+  billedRegistrationCount,
+  calculateBillAmounts,
+  eventInstant,
+} from '#app/billing/billing.utils';
 import { BillingService } from '#app/billing/billing.service';
 
 const pricing = (price: string, baseFee: string, taxRate: string) => ({
   pricePerRegistration: new Prisma.Decimal(price),
   baseFee: new Prisma.Decimal(baseFee),
   taxRate: new Prisma.Decimal(taxRate),
+});
+
+describe('billedRegistrationCount', () => {
+  const counts = (start: number, end: number | null, adjusted: number | null) => ({
+    startRegistrationCount: start,
+    endRegistrationCount: end,
+    adjustedRegistrationCount: adjusted,
+  });
+
+  it('bills the higher of the measured counts', () => {
+    expect(billedRegistrationCount(counts(3, 5, null))).toBe(5);
+    expect(billedRegistrationCount(counts(5, 3, null))).toBe(5);
+  });
+
+  it('bills the start count while the end count is unknown', () => {
+    expect(billedRegistrationCount(counts(4, null, null))).toBe(4);
+  });
+
+  it('lets a correction override the measured counts', () => {
+    expect(billedRegistrationCount(counts(5, 6, 2))).toBe(2);
+  });
 });
 
 describe('calculateBillAmounts', () => {

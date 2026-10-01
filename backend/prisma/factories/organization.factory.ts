@@ -9,7 +9,7 @@ import prisma from '../client.js';
 import {
   FREE_PRICE_MODEL_ID,
   FREE_PRICE_MODEL_NAME,
-} from '#app/billing/billing.utils';
+} from '#app/priceModel/price-model.utils';
 
 interface OrganizationFactoryOptions {
   /**

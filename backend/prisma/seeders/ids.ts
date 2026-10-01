@@ -73,10 +73,10 @@ export const PRICE_MODEL_IDS = {
 } as const;
 
 export const BILL_IDS = {
-  winter: seedId('BL1'),
-  spring: seedId('BL2'),
-  city: seedId('BL3'),
-  deleted: seedId('BL4'),
+  winter: seedId('BN1'),
+  spring: seedId('BN2'),
+  city: seedId('BN3'),
+  deleted: seedId('BN4'),
 } as const;
 
 export const SEED_PASSWORD = 'password';

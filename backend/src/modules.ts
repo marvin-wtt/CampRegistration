@@ -38,6 +38,7 @@ import { NewsletterMessageModule } from '#app/newsletterMessage/newsletter-messa
 import { AuditModule } from '#app/audit/audit.module';
 import { AdminModule } from '#app/admin/admin.module';
 import { BillingModule } from '#app/billing/billing.module';
+import { PriceModelModule } from '#app/priceModel/price-model.module';
 import { PermissionModule } from '#app/permission/permission.module';
 import type { CoreModule } from '#core/base/CoreModule';
 import { ErrorTrackingModule } from '#core/errorTracking/errorTracking.module';
@@ -77,6 +78,7 @@ export const createAppModules = (): AppModule[] => [
   new EventModule(),
   new UserModule(),
   new AdminModule(),
+  new PriceModelModule(),
   new BillingModule(),
   new LegalModule(),
   new PrivacyNoticeModule(),

@@ -15,7 +15,11 @@ import type {
   EventBillCreateData,
   EventBillUpdateData,
 } from '@camp-registration/common/entities';
-import { calculateBillAmounts, eventInstant } from './billing.utils.js';
+import {
+  billedRegistrationCount,
+  calculateBillAmounts,
+  eventInstant,
+} from './billing.utils.js';
 
 /**
  * How long after its end an event that never got a DRAFT bill is still picked
@@ -38,8 +42,11 @@ const billInclude = {
   replacedBy: { select: { id: true } },
 } satisfies Prisma.EventBillInclude;
 
+// A DRAFT has no model yet; the event's is the one it will be priced with.
 const organizationBillInclude = {
   replacedBy: { select: { id: true } },
+  priceModel: { select: { id: true, name: true } },
+  event: { select: { priceModel: { select: { id: true, name: true } } } },
 } satisfies Prisma.EventBillInclude;
 
 function isUniqueViolation(error: unknown, column: string): boolean {
@@ -180,13 +187,8 @@ export class BillingService extends BaseService {
         );
       }
 
-      const registrationCount =
-        data.adjustedRegistrationCount ??
-        Math.max(bill.startRegistrationCount, bill.endRegistrationCount ?? 0);
-
       correction = {
         adjustedRegistrationCount: data.adjustedRegistrationCount,
-        registrationCount,
         ...calculateBillAmounts(
           {
             pricePerRegistration:
@@ -194,7 +196,10 @@ export class BillingService extends BaseService {
             baseFee: bill.baseFee ?? new Prisma.Decimal(0),
             taxRate: bill.taxRate ?? new Prisma.Decimal(0),
           },
-          registrationCount,
+          billedRegistrationCount({
+            ...bill,
+            adjustedRegistrationCount: data.adjustedRegistrationCount,
+          }),
         ),
       };
     }
@@ -211,9 +216,6 @@ export class BillingService extends BaseService {
               status: statusChange,
               paidAt: statusChange === 'PAID' ? now : undefined,
               voidedAt: statusChange === 'VOID' ? now : undefined,
-              // A voided bill gives up the event's one live slot, so the
-              // event can be billed again.
-              activeEventId: statusChange === 'VOID' ? null : undefined,
             }
           : {}),
       },
@@ -222,9 +224,10 @@ export class BillingService extends BaseService {
   }
 
   /**
-   * Bills by hand, finalized at once: an ended event without a live bill (it
-   * ended before billing existed, or the jobs missed it), or again after a bill
-   * was voided, e.g. with a different price model.
+   * Bills by hand, finalized at once: an ended event that was never billed (it
+   * ended before billing existed, or the jobs missed it), or a voided bill
+   * again, e.g. with a different price model. An event with a bill is only
+   * billed again through `replacesBillId`, which continues its sequence.
    *
    * A replacement inherits the voided bill's event snapshot and counts, so it
    * works even after the event was deleted. A bill for an event counts the
@@ -290,20 +293,19 @@ export class BillingService extends BaseService {
       organizationId,
     );
 
-    const measured = replaces
-      ? {
-          startRegistrationCount: replaces.startRegistrationCount,
-          endRegistrationCount: replaces.endRegistrationCount,
-          count: Math.max(
-            replaces.startRegistrationCount,
-            replaces.endRegistrationCount ?? 0,
-          ),
-        }
-      : await this.countNow(eventId);
-
-    const adjustedRegistrationCount = data.adjustedRegistrationCount ?? null;
-    const registrationCount = adjustedRegistrationCount ?? measured.count;
-    const snapshot = pricingSnapshot(priceModel, registrationCount);
+    const counts = {
+      ...(replaces
+        ? {
+            startRegistrationCount: replaces.startRegistrationCount,
+            endRegistrationCount: replaces.endRegistrationCount,
+          }
+        : await this.countNow(eventId)),
+      adjustedRegistrationCount: data.adjustedRegistrationCount ?? null,
+    };
+    const snapshot = pricingSnapshot(
+      priceModel,
+      billedRegistrationCount(counts),
+    );
     const finalizedAt = new Date();
     const free = snapshot.grossAmount.isZero();
 
@@ -311,13 +313,10 @@ export class BillingService extends BaseService {
       return await this.prisma.eventBill.create({
         data: {
           eventId,
-          activeEventId: event ? event.id : null,
           organizationId,
           replacesBillId: replaces?.id ?? null,
-          startRegistrationCount: measured.startRegistrationCount,
-          endRegistrationCount: measured.endRegistrationCount,
-          adjustedRegistrationCount,
-          registrationCount,
+          sequence: replaces ? replaces.sequence + 1 : 0,
+          ...counts,
           eventName: event?.name ?? replaces?.eventName ?? '',
           eventStartAt: event?.startAt ?? replaces?.eventStartAt ?? finalizedAt,
           eventEndAt: event?.endAt ?? replaces?.eventEndAt ?? finalizedAt,
@@ -332,10 +331,10 @@ export class BillingService extends BaseService {
         include: billInclude,
       });
     } catch (error: unknown) {
-      if (isUniqueViolation(error, 'active_event_id')) {
+      if (isUniqueViolation(error, 'sequence')) {
         throw new ApiError(
           httpStatus.CONFLICT,
-          'The event already has a bill that is not voided.',
+          'The event has already been billed. Void its bill and bill that again instead.',
         );
       }
       if (isUniqueViolation(error, 'replaces_bill_id')) {
@@ -392,7 +391,6 @@ export class BillingService extends BaseService {
     return {
       startRegistrationCount: count,
       endRegistrationCount: count,
-      count,
     };
   }
 
@@ -403,8 +401,8 @@ export class BillingService extends BaseService {
    *
    * An event with any bill, voided ones included, is left alone: voiding was
    * a deliberate decision, and billing again is an explicit action. The unique
-   * `activeEventId` makes a second instance, or a second run, lose with P2002
-   * instead of creating a duplicate.
+   * `(eventId, sequence)` makes a second instance, or a second run, lose with
+   * P2002 instead of creating a duplicate.
    */
   async openDraftsForStartedEvents(now = new Date()): Promise<void> {
     const events = await this.prisma.event.findMany({
@@ -451,10 +449,8 @@ export class BillingService extends BaseService {
           await tx.eventBill.create({
             data: {
               eventId: event.id,
-              activeEventId: event.id,
               organizationId: event.organizationId,
               startRegistrationCount: accepted,
-              registrationCount: accepted,
               eventName: event.name,
               eventStartAt: event.startAt,
               eventEndAt: event.endAt,
@@ -529,14 +525,12 @@ export class BillingService extends BaseService {
                 where: { eventId: bill.eventId, status: 'ACCEPTED' },
               })
             : null;
-          const registrationCount = Math.max(
-            bill.startRegistrationCount,
-            endRegistrationCount ?? 0,
-          );
-
           const priceModel =
             bill.event?.priceModel ?? bill.organization.priceModel;
-          const snapshot = pricingSnapshot(priceModel, registrationCount);
+          const snapshot = pricingSnapshot(
+            priceModel,
+            billedRegistrationCount({ ...bill, endRegistrationCount }),
+          );
           const finalizedAt = new Date();
           const free = snapshot.grossAmount.isZero();
 
@@ -552,7 +546,6 @@ export class BillingService extends BaseService {
                   }
                 : {}),
               endRegistrationCount,
-              registrationCount,
               ...snapshot,
               status: free ? 'PAID' : 'OPEN',
               finalizedAt,

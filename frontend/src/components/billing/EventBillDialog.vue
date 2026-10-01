@@ -36,6 +36,7 @@
             type="number"
             min="0"
             step="1"
+            clearable
             stack-label
             hide-bottom-space
             outlined
