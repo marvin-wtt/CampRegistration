@@ -43,12 +43,14 @@ export function useServiceHandler<T>(storeName?: string) {
     return pendingRequests.value > 0;
   });
 
-  // A failed fetch stays stale (`errorOnFailure` clears the flag only on
-  // success), so the next `lazyFetch` retries instead of keeping the error.
   async function forceFetch(
     fn: () => Promise<T> | Promise<undefined>,
   ): Promise<void> {
-    await errorOnFailure(fn, ++requestToken);
+    const token = ++requestToken;
+    await errorOnFailure(fn, token);
+    if (token === requestToken) {
+      needsUpdate.value = false;
+    }
   }
 
   async function asyncUpdate(fn: () => Promise<unknown>) {

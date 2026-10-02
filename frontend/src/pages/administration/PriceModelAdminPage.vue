@@ -38,19 +38,23 @@
             <span :class="{ 'text-on-surface-variant': props.row.archivedAt }">
               {{ to(props.row.name) }}
             </span>
-            <q-badge
+            <q-icon
               v-if="props.row.isDefault"
-              :label="t('badge.default')"
+              name="star"
               color="primary"
-              class="q-ml-sm"
-            />
-            <q-badge
+              size="18px"
+              class="q-ml-xs"
+            >
+              <q-tooltip>{{ t('badge.default') }}</q-tooltip>
+            </q-icon>
+            <q-icon
               v-if="props.row.archivedAt"
-              :label="t('badge.archived')"
-              color="grey"
-              outline
-              class="q-ml-sm"
-            />
+              name="inventory_2"
+              size="18px"
+              class="text-on-surface-variant q-ml-xs"
+            >
+              <q-tooltip>{{ t('badge.archived') }}</q-tooltip>
+            </q-icon>
           </q-td>
         </template>
 
@@ -261,7 +265,7 @@ title: 'Price models'
 search: 'Search by name'
 usage: '{organizations} organizations · {events} events'
 badge:
-  default: 'Default'
+  default: 'Default price model'
   archived: 'Archived'
 column:
   name: 'Name'
@@ -290,7 +294,7 @@ title: 'Preismodelle'
 search: 'Nach Name suchen'
 usage: '{organizations} Organisationen · {events} Veranstaltungen'
 badge:
-  default: 'Standard'
+  default: 'Standard-Preismodell'
   archived: 'Archiviert'
 column:
   name: 'Name'
@@ -319,7 +323,7 @@ title: 'Modèles tarifaires'
 search: 'Rechercher par nom'
 usage: '{organizations} organisations · {events} événements'
 badge:
-  default: 'Par défaut'
+  default: 'Modèle tarifaire par défaut'
   archived: 'Archivé'
 column:
   name: 'Nom'
@@ -348,7 +352,7 @@ title: 'Modele cenowe'
 search: 'Szukaj po nazwie'
 usage: 'Organizacje: {organizations} · wydarzenia: {events}'
 badge:
-  default: 'Domyślny'
+  default: 'Domyślny model cenowy'
   archived: 'Zarchiwizowany'
 column:
   name: 'Nazwa'
@@ -377,7 +381,7 @@ title: 'Cenové modely'
 search: 'Hledat podle názvu'
 usage: 'Organizace: {organizations} · akce: {events}'
 badge:
-  default: 'Výchozí'
+  default: 'Výchozí cenový model'
   archived: 'Archivováno'
 column:
   name: 'Název'

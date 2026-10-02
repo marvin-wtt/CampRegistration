@@ -97,12 +97,15 @@ export class BillingController extends BaseController {
   async event(req: Request, res: Response) {
     await req.validate(validator.event);
     const event = req.modelOrFail('event');
-    const [billing, bill] = await Promise.all([
+    const [billing, bill, acceptedRegistrationCount] = await Promise.all([
       this.priceModelService.getForEvent(event.id),
-      this.billingService.getLiveBillForEvent(event.id),
+      this.billingService.getLiveBillForEvent(event.id, event.organizationId),
+      this.billingService.countAccepted(event.id),
     ]);
 
-    res.resource(new EventBillingResource({ ...billing, bill }));
+    res.resource(
+      new EventBillingResource({ ...billing, bill, acceptedRegistrationCount }),
+    );
   }
 
   /** Attaches an invoice PDF to a finalized bill. */
@@ -163,7 +166,12 @@ export class BillingController extends BaseController {
   async eventInvoice(req: Request, res: Response) {
     await req.validate(validator.eventInvoice);
     const event = req.modelOrFail('event');
-    const invoice = this.invoiceOf(req, (bill) => bill.eventId === event.id);
+    const invoice = this.invoiceOf(
+      req,
+      (bill) =>
+        bill.eventId === event.id &&
+        bill.organizationId === event.organizationId,
+    );
 
     await this.sendInvoice(res, invoice);
   }

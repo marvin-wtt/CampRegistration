@@ -49,12 +49,27 @@ const billInclude = {
   ...invoiceInclude,
 } satisfies Prisma.EventBillInclude;
 
-// A DRAFT has no model yet; the event's is the one it will be priced with.
+// A DRAFT is priced with its event's model, or the one pinned on it when the
+// event was deleted.
 const organizationBillInclude = {
   replacedBy: { select: { id: true } },
   priceModel: { select: { id: true, name: true } },
   event: { select: { priceModel: { select: { id: true, name: true } } } },
   ...invoiceInclude,
+} satisfies Prisma.EventBillInclude;
+
+const draftInclude = {
+  event: {
+    select: {
+      name: true,
+      startAt: true,
+      endAt: true,
+      timezone: true,
+      priceModel: true,
+    },
+  },
+  priceModel: true,
+  organization: { select: { ...customerSelect, priceModel: true } },
 } satisfies Prisma.EventBillInclude;
 
 function isUniqueViolation(error: unknown, column: string): boolean {
@@ -161,10 +176,14 @@ export class BillingService extends BaseService {
     return { bills, nextCursor, limit, total };
   }
 
-  /** The end of the event's replacement chain: its only bill that counts. */
-  async getLiveBillForEvent(eventId: string) {
+  /**
+   * The end of the event's replacement chain: its only bill that counts. Only
+   * the owning organization's, so a moved event shows nothing of the former
+   * owner's billing.
+   */
+  async getLiveBillForEvent(eventId: string, organizationId: string) {
     return this.prisma.eventBill.findFirst({
-      where: { eventId },
+      where: { eventId, organizationId },
       include: { replacedBy: { select: { id: true } }, ...invoiceInclude },
       orderBy: { sequence: 'desc' },
     });
@@ -205,6 +224,16 @@ export class BillingService extends BaseService {
         throw new ApiError(
           httpStatus.CONFLICT,
           'Only an open bill can be corrected. Void it and bill again instead.',
+        );
+      }
+      // The invoice already sent states the amount; it must stay true.
+      const invoiced = await this.prisma.invoice.count({
+        where: { eventBillId: bill.id, type: 'INVOICE' },
+      });
+      if (invoiced > 0) {
+        throw new ApiError(
+          httpStatus.CONFLICT,
+          'An invoiced bill cannot be corrected. Delete its invoice first, or void it and bill again.',
         );
       }
 
@@ -399,12 +428,14 @@ export class BillingService extends BaseService {
     return fallback;
   }
 
+  async countAccepted(eventId: string): Promise<number> {
+    return this.prisma.registration.count({
+      where: { eventId, status: 'ACCEPTED' },
+    });
+  }
+
   private async countNow(eventId: string | null) {
-    const count = eventId
-      ? await this.prisma.registration.count({
-          where: { eventId, status: 'ACCEPTED' },
-        })
-      : 0;
+    const count = eventId ? await this.countAccepted(eventId) : 0;
 
     return {
       startRegistrationCount: count,
@@ -493,9 +524,9 @@ export class BillingService extends BaseService {
    * registrations are counted a second time, and the higher of the start and
    * end counts is billed: someone who cancels during the event is still
    * covered by the start count, a late registration who stays by the end
-   * count. The price model is resolved (event override, else the
-   * organization's), and pricing and amounts are written as a snapshot so
-   * later model edits never touch a finalized bill.
+   * count. The price model is the event's (or the one pinned on the bill when
+   * the event was deleted), and pricing and amounts are written as a snapshot
+   * so later model edits never touch a finalized bill.
    *
    * The event's current dates win over the snapshot, so a moved end date is
    * respected. A bill whose event was deleted mid-run has no end count and is
@@ -504,30 +535,34 @@ export class BillingService extends BaseService {
   async finalizeEndedEvents(now = new Date()): Promise<void> {
     const horizon = moment(now).add(TIMEZONE_SLACK_HOURS, 'hours').toDate();
 
-    const drafts = await this.prisma.eventBill.findMany({
-      where: {
-        status: 'DRAFT',
-        OR: [
-          { eventEndAt: { lt: horizon } },
-          { event: { is: { endAt: { lt: horizon } } } },
-        ],
-      },
-      include: {
-        event: {
-          select: {
-            name: true,
-            startAt: true,
-            endAt: true,
-            timezone: true,
-            priceModel: true,
-          },
+    // Pages through every due draft, so drafts that are skipped or keep
+    // failing never crowd the others out of a batch.
+    let cursor: string | undefined;
+    do {
+      const drafts = await this.prisma.eventBill.findMany({
+        where: {
+          status: 'DRAFT',
+          id: cursor ? { gt: cursor } : undefined,
+          OR: [
+            { eventId: null, eventEndAt: { lt: horizon } },
+            { event: { is: { endAt: { lt: horizon } } } },
+          ],
         },
-        organization: { select: { ...customerSelect, priceModel: true } },
-      },
-      orderBy: { eventEndAt: 'asc' },
-      take: FINALIZE_BATCH_SIZE,
-    });
+        include: draftInclude,
+        orderBy: { id: 'asc' },
+        take: FINALIZE_BATCH_SIZE,
+      });
+      cursor =
+        drafts.length === FINALIZE_BATCH_SIZE ? drafts.at(-1)?.id : undefined;
 
+      await this.finalizeDrafts(drafts, now);
+    } while (cursor);
+  }
+
+  private async finalizeDrafts(
+    drafts: Prisma.EventBillGetPayload<{ include: typeof draftInclude }>[],
+    now: Date,
+  ): Promise<void> {
     for (const bill of drafts) {
       const end = bill.event
         ? eventInstant(bill.event.endAt, bill.event.timezone)
@@ -549,7 +584,10 @@ export class BillingService extends BaseService {
                 where: { eventId: bill.eventId, status: 'ACCEPTED' },
               })
             : null;
-          const priceModel = bill.event?.priceModel ?? organization.priceModel;
+          const priceModel =
+            bill.event?.priceModel ??
+            bill.priceModel ??
+            organization.priceModel;
           const snapshot = pricingSnapshot(
             priceModel,
             billedRegistrationCount({ ...bill, endRegistrationCount }),

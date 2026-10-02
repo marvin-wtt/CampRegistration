@@ -147,7 +147,9 @@ export class OrganizationEventBillResource extends JsonResource<
   transform(): OrganizationEventBillData {
     const priceModel =
       this.data.status === 'DRAFT'
-        ? (this.data.event?.priceModel ?? this.data.organizationPriceModel)
+        ? (this.data.event?.priceModel ??
+          this.data.priceModel ??
+          this.data.organizationPriceModel)
         : this.data.priceModel;
 
     return {
@@ -179,6 +181,7 @@ export class EventBillingResource extends JsonResource<
     priceModel: PriceModel;
     isOverride: boolean;
     bill: BillWithReplacement | null;
+    acceptedRegistrationCount: number;
   },
   EventBillingData
 > {
@@ -187,6 +190,7 @@ export class EventBillingResource extends JsonResource<
       priceModel: new PriceModelResource(this.data.priceModel).transform(),
       isOverride: this.data.isOverride,
       bill: this.data.bill && new EventBillResource(this.data.bill).transform(),
+      acceptedRegistrationCount: this.data.acceptedRegistrationCount,
     };
   }
 }

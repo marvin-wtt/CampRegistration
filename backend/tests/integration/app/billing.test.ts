@@ -372,6 +372,31 @@ describe('event billing', () => {
       expect(orphan.eventId).toBeNull();
       expect(orphan.startRegistrationCount).toBe(1);
     });
+
+    it("prices a deleted event's bill with the event's model", async () => {
+      const override = await PriceModelFactory.create({
+        pricePerRegistration: 1,
+      });
+      const event = await eventRunning({
+        priceModel: { connect: { id: override.id } },
+      });
+      await register(event.id);
+      await billing().openDraftsForStartedEvents();
+      const { id } = await bill(event.id);
+
+      await resolve(EventService).deleteEventById(event.id);
+      await prisma.eventBill.update({
+        where: { id },
+        data: { eventEndAt: moment().subtract(1, 'minute').toDate() },
+      });
+      await billing().finalizeEndedEvents();
+
+      const finalized = await prisma.eventBill.findUniqueOrThrow({
+        where: { id },
+      });
+      expect(finalized.priceModelId).toBe(override.id);
+      expect(finalized.grossAmount?.toFixed(2)).toBe('1.00');
+    });
   });
 
   describe('GET /api/v1/organizations/:organizationId/billing', () => {
@@ -1132,11 +1157,17 @@ describe('event billing', () => {
       const event = await eventRunning({
         organization: { connect: { id: organization.id } },
       });
+      await register(event.id);
+      await register(event.id);
+      await register(event.id, 'PENDING');
 
-      await request()
+      // The admin cannot list registrations, so the estimate's count comes here.
+      const { body } = await request()
         .get(`/api/v1/events/${event.id}/billing`)
         .auth(generateAccessToken(user), { type: 'bearer' })
         .expect(200);
+
+      expect(body.data.acceptedRegistrationCount).toBe(2);
     });
 
     it("hides an event's price model from managers below DIRECTOR", async () => {
@@ -1403,6 +1434,39 @@ describe('event billing', () => {
           `/api/v1/organizations/${other.id}/billing/invoices/${body.data.id}`,
         )
         .auth(generateAccessToken(otherAdmin), { type: 'bearer' })
+        .expect(404);
+    });
+
+    it('refuses to correct an invoiced bill', async () => {
+      const { bill: openedBill } = await openBill();
+      await attachInvoice(openedBill.id);
+
+      await request()
+        .patch(`/api/v1/bills/${openedBill.id}`)
+        .send({ adjustedRegistrationCount: 5 })
+        .auth(await adminToken(), { type: 'bearer' })
+        .expect(409);
+    });
+
+    it("hides a former owner's bill and invoice once the event moved", async () => {
+      const { event, bill: openedBill } = await openBill();
+      const { body } = await attachInvoice(openedBill.id);
+      const target = await OrganizationFactory.create();
+      const targetAdmin = generateAccessToken(
+        await organizationAdmin(target.id),
+      );
+
+      await resolve(EventService).moveEventToOrganization(event.id, target.id);
+
+      const { body: billing } = await request()
+        .get(`/api/v1/events/${event.id}/billing`)
+        .auth(targetAdmin, { type: 'bearer' })
+        .expect(200);
+      expect(billing.data.bill).toBeNull();
+
+      await request()
+        .get(`/api/v1/events/${event.id}/billing/invoices/${body.data.id}`)
+        .auth(targetAdmin, { type: 'bearer' })
         .expect(404);
     });
 

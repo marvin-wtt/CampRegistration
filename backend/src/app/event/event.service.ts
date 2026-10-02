@@ -535,6 +535,17 @@ export class EventService extends BaseService {
 
   async deleteEventById(id: string) {
     await this.transaction(async (tx) => {
+      // A running bill loses its event, so it keeps the event's model to be
+      // finalized with.
+      const { priceModelId } = await tx.event.findUniqueOrThrow({
+        where: { id },
+        select: { priceModelId: true },
+      });
+      await tx.eventBill.updateMany({
+        where: { eventId: id, status: 'DRAFT' },
+        data: { priceModelId },
+      });
+
       // The FK nulls `eventId` on the event's audit rows; retention purges them later.
       await tx.event.delete({ where: { id } });
 

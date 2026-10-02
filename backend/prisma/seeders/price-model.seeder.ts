@@ -17,8 +17,11 @@ class PriceModelSeeder extends BaseSeeder {
   }
 
   async run(): Promise<void> {
-    await prisma.priceModel.create({
-      data: {
+    // Upsert: `migrate deploy` already inserts this row, `db push` does not.
+    await prisma.priceModel.upsert({
+      where: { id: FREE_PRICE_MODEL_ID },
+      update: {},
+      create: {
         id: FREE_PRICE_MODEL_ID,
         name: FREE_PRICE_MODEL_NAME,
         isDefault: true,

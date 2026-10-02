@@ -230,7 +230,6 @@
       <price-model-widget
         v-if="!loading && can('event.billing.view')"
         id="event-billing"
-        :registrations="stats.counts.value.accepted"
         class="dashboard-section"
       />
     </div>

@@ -2,19 +2,13 @@
   <q-td :props>
     <q-chip
       :class="chipClass"
-      :icon="override ? 'sell' : undefined"
+      :icon
       dense
       square
     >
       {{ to(priceModel.name) }}
-      <q-tooltip v-if="override">{{ t('override') }}</q-tooltip>
+      <q-tooltip v-if="tooltip">{{ tooltip }}</q-tooltip>
     </q-chip>
-    <q-badge
-      v-if="priceModel.isDefault"
-      :label="t('default')"
-      color="primary"
-      outline
-    />
   </q-td>
 </template>
 
@@ -46,6 +40,21 @@ const chipClass = computed(() =>
     ? 'price-model--custom'
     : 'price-model--default',
 );
+
+// An icon, not a badge: "Standard" next to a model named Standard misreads.
+const icon = computed(() => {
+  if (override) {
+    return 'sell';
+  }
+  return priceModel.isDefault ? 'star' : undefined;
+});
+
+const tooltip = computed(() => {
+  if (override) {
+    return t('override');
+  }
+  return priceModel.isDefault ? t('default') : undefined;
+});
 </script>
 
 <style scoped lang="scss">
@@ -62,25 +71,25 @@ const chipClass = computed(() =>
 
 <i18n lang="yaml" locale="en">
 override: "Differs from the organization's current price model"
-default: 'Default'
+default: 'Default price model'
 </i18n>
 
 <i18n lang="yaml" locale="de">
 override: 'Weicht vom aktuellen Preismodell der Organisation ab'
-default: 'Standard'
+default: 'Standard-Preismodell'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 override: "Diffère du modèle tarifaire actuel de l'organisation"
-default: 'Par défaut'
+default: 'Modèle tarifaire par défaut'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
 override: 'Różni się od obecnego modelu cenowego organizacji'
-default: 'Domyślny'
+default: 'Domyślny model cenowy'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
 override: 'Liší se od současného cenového modelu organizace'
-default: 'Výchozí'
+default: 'Výchozí cenový model'
 </i18n>

@@ -301,9 +301,9 @@ function showDetails(organization: AdminOrganization) {
 /**
  * Deletion is refused while the organization still owns events or newsletters —
  * their foreign keys are `Restrict`, so registrations can never be taken down
- * with it. Only the details response carries those counts, so they are fetched
- * up front: being told what blocks the deletion beats typing the name to
- * confirm and only then being refused.
+ * with it — or has unpaid bills. Only the details response carries those
+ * counts, so they are fetched up front: being told what blocks the deletion
+ * beats typing the name to confirm and only then being refused.
  */
 async function onDelete(organization: AdminOrganization) {
   const details = await withErrorNotification(
@@ -316,13 +316,25 @@ async function onDelete(organization: AdminOrganization) {
     return;
   }
 
-  if (details.ownedEvents > 0 || details.ownedNewsletters > 0) {
+  const ownsContent = details.ownedEvents > 0 || details.ownedNewsletters > 0;
+  if (ownsContent || details.unpaidBills > 0) {
+    const reasons = [
+      ownsContent &&
+        t('dialog.blocked.message', {
+          events: details.ownedEvents,
+          newsletters: details.ownedNewsletters,
+        }),
+      details.unpaidBills > 0 &&
+        t(
+          'dialog.blocked.unpaidBills',
+          { count: details.unpaidBills },
+          details.unpaidBills,
+        ),
+    ];
+
     quasar.dialog({
       title: t('dialog.blocked.title'),
-      message: t('dialog.blocked.message', {
-        events: details.ownedEvents,
-        newsletters: details.ownedNewsletters,
-      }),
+      message: reasons.filter(Boolean).join(' '),
       ok: {
         label: t('dialog.blocked.ok'),
         color: 'primary',
@@ -412,6 +424,7 @@ dialog:
     message:
       'This organization still owns { events } event(s) and { newsletters } newsletter(s).
       Move or delete them before deleting the organization.'
+    unpaidBills: 'One bill is not paid yet. | {count} bills are not paid yet.'
     ok: 'Close'
 notify:
   reviewFailed: 'The decision could not be saved'
@@ -452,6 +465,7 @@ dialog:
     message:
       'Diese Organisation besitzt noch { events } Veranstaltung(s) und { newsletters } Newsletter.
       Verschiebe oder lösche sie, bevor du die Organisation löschst.'
+    unpaidBills: 'Eine Rechnung ist noch nicht bezahlt. | {count} Rechnungen sind noch nicht bezahlt.'
     ok: 'Schließen'
 notify:
   reviewFailed: 'Die Entscheidung konnte nicht gespeichert werden'
@@ -492,6 +506,7 @@ dialog:
     message:
       "Cette organisation possède encore { events } événement(s) et { newsletters } newsletter(s).
       Déplacez-les ou supprimez-les avant de supprimer l'organisation."
+    unpaidBills: "Une facture n'est pas encore payée. | {count} factures ne sont pas encore payées."
     ok: 'Fermer'
 notify:
   reviewFailed: "La décision n'a pas pu être enregistrée"
@@ -532,6 +547,7 @@ dialog:
     message:
       'Ta organizacja nadal posiada wydarzenia ({ events }) i newslettery ({ newsletters }).
       Przenieś je lub usuń przed usunięciem organizacji.'
+    unpaidBills: 'Nieopłacone rachunki: {count}.'
     ok: 'Zamknij'
 notify:
   reviewFailed: 'Nie udało się zapisać decyzji'
@@ -572,6 +588,7 @@ dialog:
     message:
       'Tato organizace stále vlastní akce ({ events }) a newslettery ({ newsletters }).
       Než organizaci smažete, přesuňte je nebo smažte.'
+    unpaidBills: 'Nezaplacené faktury: {count}.'
     ok: 'Zavřít'
 notify:
   reviewFailed: 'Rozhodnutí se nepodařilo uložit'

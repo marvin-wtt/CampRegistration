@@ -129,11 +129,6 @@ import { formatMoney } from '@/utils/money';
 import EventBillStatusChip from '@/components/billing/EventBillStatusChip.vue';
 import InvoiceList from '@/components/billing/InvoiceList.vue';
 
-const { registrations } = defineProps<{
-  /** Accepted registrations right now. */
-  registrations: number;
-}>();
-
 const { t, d, locale } = useI18n();
 const route = useRoute();
 const { to } = useObjectTranslation();
@@ -187,7 +182,10 @@ const notice = computed<{
 
 // A running event is billed for the higher of its start and end counts.
 const estimatedCount = computed<number>(() =>
-  Math.max(registrations, data.value?.bill?.startRegistrationCount ?? 0),
+  Math.max(
+    data.value?.acceptedRegistrationCount ?? 0,
+    data.value?.bill?.startRegistrationCount ?? 0,
+  ),
 );
 
 const cents = (amount: string) => Math.round(Number(amount) * 100);
