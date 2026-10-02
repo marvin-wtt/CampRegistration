@@ -3,140 +3,86 @@
     flat
     bordered
     class="tasks-due-card"
-    :class="{ 'tasks-due-card--slim': !loading && !hasOpenTasks }"
   >
-    <!-- Loading: just the heading row, so the card neither shrinks (no open
-         tasks) nor jumps much (upcoming list) once the tasks arrive -->
-    <q-card-section
-      v-if="loading"
-      class="row items-center no-wrap q-gutter-sm"
-    >
-      <div class="tasks-due-icon row items-center justify-center">
-        <q-icon
-          name="checklist"
-          color="primary"
-          size="22px"
-        />
-      </div>
-      <div class="col">
-        <div class="text-subtitle1 text-weight-bold">
-          {{ t('title') }}
-        </div>
-        <q-skeleton
-          type="text"
-          width="40%"
-          class="text-caption"
-        />
-      </div>
-      <q-btn
-        :label="t('action.viewAll')"
-        :to="{ name: 'management.event.tasks' }"
-        flat
-        no-caps
-        dense
-        color="primary"
-      />
-    </q-card-section>
-
-    <!-- Slim state: nothing pending, keep the footprint small -->
-    <q-card-section
-      v-else-if="!hasOpenTasks"
-      class="row items-center no-wrap q-gutter-sm"
-    >
-      <q-icon
-        name="task_alt"
-        color="positive"
-        size="22px"
-      />
-      <div class="col text-body2 text-grey-7">
-        {{ t('empty') }}
-      </div>
-      <q-btn
-        :label="t('action.viewAll')"
-        :to="{ name: 'management.event.tasks' }"
-        flat
-        no-caps
-        dense
-        color="primary"
-      />
-    </q-card-section>
-
-    <!-- Full state: heading, due summary and upcoming list -->
-    <template v-else>
-      <q-card-section class="row items-center no-wrap q-gutter-sm">
-        <div class="tasks-due-icon row items-center justify-center">
-          <q-icon
-            name="checklist"
-            color="primary"
-            size="22px"
+    <q-card-section>
+      <dashboard-card-header
+        :icon="!loading && !hasOpenTasks ? 'task_alt' : 'checklist'"
+        :tone="!loading && !hasOpenTasks ? 'positive' : 'primary'"
+        :title="t('title')"
+      >
+        <template #caption>
+          <q-skeleton
+            v-if="loading"
+            type="text"
+            width="40%"
           />
-        </div>
-        <div class="col">
-          <div class="text-subtitle1 text-weight-bold">
-            {{ t('title') }}
-          </div>
-          <div class="text-caption text-grey-7">
-            {{
-              dueCount > 0
-                ? t('summary.due', { count: dueCount })
-                : t('subtitle')
-            }}
-          </div>
-        </div>
-        <q-btn
-          :label="t('action.viewAll')"
-          :to="{ name: 'management.event.tasks' }"
-          flat
-          no-caps
-          dense
-          color="primary"
-        />
-      </q-card-section>
+          <template v-else-if="!hasOpenTasks">{{ t('empty') }}</template>
+          <template v-else-if="dueCount > 0">
+            {{ t('summary.due', { count: dueCount }) }}
+          </template>
+          <template v-else>{{ t('subtitle') }}</template>
+        </template>
+        <template #action>
+          <m-btn
+            :label="t('action.viewAll')"
+            :to="{ name: 'management.event.tasks' }"
+            icon-right="chevron_right"
+            primary
+            text
+            no-caps
+          />
+        </template>
+      </dashboard-card-header>
+    </q-card-section>
 
-      <q-list class="q-pb-sm">
-        <q-item
-          v-for="task in upcomingTasks"
-          :key="task.id"
-          clickable
-          :to="{ name: 'management.event.tasks' }"
-          class="tasks-due-item"
+    <q-list
+      v-if="!loading && upcomingTasks.length > 0"
+      class="tasks-due-list"
+    >
+      <q-item
+        v-for="task in upcomingTasks"
+        :key="task.id"
+        clickable
+        :to="{ name: 'management.event.tasks' }"
+        class="tasks-due-item"
+      >
+        <q-item-section
+          avatar
+          class="due-marker-section"
         >
-          <q-item-section
-            avatar
-            class="due-marker-section"
-          >
-            <span
-              class="due-marker"
-              :class="`due-marker--${taskPhaseOf(task)}`"
+          <span
+            class="due-marker"
+            :class="`due-marker--${taskPhaseOf(task)}`"
+          />
+        </q-item-section>
+        <q-item-section>
+          <q-item-label class="row items-center no-wrap q-gutter-x-xs">
+            <span class="ellipsis">{{ task.title }}</span>
+            <q-badge
+              v-if="isMine(task)"
+              class="mine-badge"
+              color="primary"
+              :label="t('you')"
             />
-          </q-item-section>
-          <q-item-section>
-            <q-item-label class="row items-center no-wrap q-gutter-x-xs">
-              <span class="ellipsis">{{ task.title }}</span>
-              <q-badge
-                v-if="isMine(task)"
-                class="mine-badge"
-                color="primary"
-                :label="t('you')"
-              />
-            </q-item-label>
-          </q-item-section>
-          <q-item-section
-            side
-            class="due-date-section"
-            :class="`due-text--${taskPhaseOf(task)}`"
-          >
-            {{ task.dueDate ? d(parseLocalDate(task.dueDate), 'date') : '—' }}
-          </q-item-section>
-        </q-item>
-      </q-list>
-    </template>
+          </q-item-label>
+        </q-item-section>
+        <q-item-section
+          side
+          class="due-date-section"
+          :class="`due-text--${taskPhaseOf(task)}`"
+        >
+          {{ task.dueDate ? d(parseLocalDate(task.dueDate), 'date') : '—' }}
+        </q-item-section>
+      </q-item>
+    </q-list>
   </q-card>
 </template>
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
+import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
+import DashboardCardHeader from '@/components/event/dashboard/DashboardCardHeader.vue';
 import { useTaskStore } from '@/stores/task-store';
 import { useCurrentManager } from '@/composables/currentManager';
 import type { Task } from '@camp-registration/common/entities';
@@ -200,16 +146,8 @@ function isMine(task: Task): boolean {
   border-radius: 16px;
 }
 
-.tasks-due-card--slim {
-  background: color-mix(in srgb, var(--md3-positive) 5%, var(--md3-surface));
-}
-
-.tasks-due-icon {
-  width: 44px;
-  height: 44px;
-  flex: 0 0 auto;
-  border-radius: 13px;
-  background: rgba(127, 127, 127, 0.1);
+.tasks-due-list {
+  padding: 0 8px 8px;
 }
 
 .tasks-due-item {

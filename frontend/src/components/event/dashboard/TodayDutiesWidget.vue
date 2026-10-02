@@ -6,35 +6,31 @@
     bordered
     class="duties-card"
   >
-    <q-card-section class="row items-center no-wrap q-gutter-sm">
-      <div class="duties-icon row items-center justify-center">
-        <q-icon
-          name="cleaning_services"
-          color="primary"
-          size="22px"
-        />
-      </div>
-      <div class="col">
-        <div class="text-subtitle1 text-weight-bold">{{ t('title') }}</div>
-        <div class="text-caption text-grey-7">
-          {{
-            openCount > 0
-              ? t('summary.open', openCount)
-              : t('summary.filled', duties.length)
-          }}
-        </div>
-      </div>
-      <q-btn
-        :label="t('action.open')"
-        :to="{ name: 'management.event.chore-planner' }"
-        flat
-        no-caps
-        dense
-        color="primary"
-      />
+    <q-card-section>
+      <dashboard-card-header
+        icon="cleaning_services"
+        :tone="openCount > 0 ? 'warning' : 'primary'"
+        :title="t('title')"
+        :caption="
+          openCount > 0
+            ? t('summary.open', openCount)
+            : t('summary.filled', duties.length)
+        "
+      >
+        <template #action>
+          <m-btn
+            :label="t('action.open')"
+            :to="{ name: 'management.event.chore-planner' }"
+            icon-right="chevron_right"
+            primary
+            text
+            no-caps
+          />
+        </template>
+      </dashboard-card-header>
     </q-card-section>
 
-    <q-list class="q-pb-sm">
+    <q-list class="duties-list">
       <q-item
         v-for="duty in duties"
         :key="duty.id"
@@ -71,6 +67,8 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
+import DashboardCardHeader from '@/components/event/dashboard/DashboardCardHeader.vue';
 import { useChoreStore } from '@/stores/chore-store';
 import { useChoreAssignmentStore } from '@/stores/chore-assignment-store';
 import { useRegistrationsStore } from '@/stores/registration-store';
@@ -134,11 +132,8 @@ const openCount = computed<number>(() =>
   border-radius: 16px;
 }
 
-.duties-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  background: var(--md3-primary-container);
+.duties-list {
+  padding: 0 8px 8px;
 }
 
 .open-text {

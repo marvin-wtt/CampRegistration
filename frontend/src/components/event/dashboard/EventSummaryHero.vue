@@ -6,224 +6,137 @@
   >
     <div class="hero-accent" />
     <q-card-section class="hero-content">
-      <div class="hero-main">
-        <div
-          v-if="loading"
-          class="status-chips"
+      <div
+        v-if="loading"
+        class="status-chips"
+      >
+        <q-skeleton
+          v-for="width in ['96px', '148px']"
+          :key="width"
+          type="rect"
+          :width="width"
+          class="status-pill-skeleton"
+        />
+      </div>
+      <div
+        v-else
+        class="status-chips"
+      >
+        <span
+          v-if="countdown"
+          class="status-pill countdown-pill"
         >
-          <q-skeleton
-            v-for="width in ['96px', '148px', '112px']"
-            :key="width"
-            type="rect"
-            :width="width"
-            class="status-pill-skeleton"
+          <q-icon
+            name="schedule"
+            size="16px"
           />
-        </div>
-        <div
-          v-else
-          class="status-chips"
+          {{ countdown }}
+        </span>
+        <span
+          class="status-pill"
+          :class="`registration-${registrationStatus.tone}`"
         >
-          <span
-            v-if="countdown"
-            class="status-pill countdown-pill"
-          >
-            <q-icon
-              name="schedule"
-              size="17px"
-            />
-            {{ countdown }}
-          </span>
-          <span
-            class="status-pill registration-pill"
-            :class="`registration-${registrationStatus.tone}`"
-          >
-            <q-icon
-              :name="registrationStatus.icon"
-              size="17px"
-            />
-            {{ registrationStatus.label }}
-          </span>
-          <!-- Sharing stays offered outside the registration window — the event
-               page is still reachable. The pill keeps its neutral look: the
-               registration state is already spelled out by the pill next to it,
-               and the unverified-organization case by the notice above the
-               hero, so an alarm colour here would only read as a malfunction.
-               The caveat rides along in the tooltip instead. -->
-          <button
-            v-if="event"
-            type="button"
-            class="status-pill copy-link-pill"
-            @click="copyRegistrationLink"
-          >
-            <q-icon
-              name="link"
-              size="17px"
-            />
-            {{ t('copyLink.label') }}
-            <q-tooltip class="copy-link-tooltip">
-              <div>{{ t('copyLink.tooltip') }}</div>
-              <div
-                v-if="shareCaveat"
-                class="copy-link-tooltip__caveat"
-              >
-                {{ shareCaveat }}
-              </div>
-            </q-tooltip>
-          </button>
-        </div>
-
-        <div class="hero-copy">
-          <div class="text-overline text-primary text-weight-bold">
-            {{ t('eventOverview') }}
-          </div>
-          <q-skeleton
-            v-if="loading"
-            type="text"
-            width="55%"
-            class="event-title text-h4"
+          <q-icon
+            :name="registrationStatus.icon"
+            size="16px"
           />
-          <h1
-            v-else
-            class="event-title text-h4 text-weight-bold q-my-none"
-          >
-            {{ eventName }}
-          </h1>
-          <div
-            v-if="loading"
-            class="event-meta"
-          >
-            <q-skeleton
-              v-for="width in ['132px', '176px', '112px', '96px']"
-              :key="width"
-              type="QChip"
-              :width="width"
-              class="meta-chip-skeleton"
-            />
-          </div>
-          <div
-            v-else
-            class="event-meta"
-          >
-            <q-chip
-              v-if="event?.organizationName"
-              outline
-              icon="apartment"
-              :label="event.organizationName"
-              class="meta-chip"
-            >
-              <q-tooltip>{{ t('organization') }}</q-tooltip>
-            </q-chip>
-            <q-chip
-              outline
-              icon="calendar_month"
-              :label="dateRange"
-              class="meta-chip"
-            />
-            <q-chip
-              v-if="location"
-              outline
-              icon="location_on"
-              :label="location"
-              class="meta-chip"
-            />
-            <q-chip
-              outline
-              icon="cake"
-              :label="t('ageRange', { min: event?.minAge, max: event?.maxAge })"
-              class="meta-chip"
-            />
-            <q-chip
-              v-if="countryNames"
-              outline
-              icon="public"
-              :label="countryNames"
-              class="meta-chip"
-            >
-              <q-tooltip>{{ countryNames }}</q-tooltip>
-            </q-chip>
-          </div>
-        </div>
+          {{ registrationStatus.label }}
+        </span>
       </div>
 
-      <aside
-        v-if="loading"
-        class="capacity-panel"
-      >
-        <div class="capacity-label">{{ t('capacity') }}</div>
+      <div class="hero-title-row">
         <q-skeleton
+          v-if="loading"
           type="text"
-          width="40%"
-          class="capacity-value"
+          width="55%"
+          class="event-title"
         />
-        <q-skeleton
-          type="rect"
-          height="10px"
-          class="capacity-bar capacity-bar-skeleton"
-        />
-        <q-skeleton
-          type="text"
-          width="60%"
-          class="capacity-footer"
-        />
-      </aside>
-      <aside
-        v-else
-        class="capacity-panel"
-      >
-        <div class="capacity-heading">
-          <div>
-            <div class="capacity-label">{{ t('capacity') }}</div>
-            <div class="capacity-value">
-              <span>{{ capacity.accepted }}</span>
-              <span
-                v-if="capacity.max != null"
-                class="capacity-max"
-              >
-                / {{ capacity.max }}
-              </span>
-            </div>
-          </div>
-          <div
-            v-if="capacity.max != null"
-            class="capacity-percent"
-            :class="`text-${barColor}`"
-          >
-            {{ percent }}%
-          </div>
-        </div>
-
-        <template v-if="capacity.max != null">
-          <q-linear-progress
-            :value="ratio"
-            :color="barColor"
-            track-color="grey-5"
-            rounded
-            size="10px"
-            class="capacity-bar"
-          />
-          <div class="capacity-footer">
-            <span>{{ t('confirmed') }}</span>
-            <span
-              class="text-weight-bold"
-              :class="`text-${barColor}`"
-            >
-              {{
-                over > 0
-                  ? t('over', { n: over })
-                  : t('free', { n: freeDisplay })
-              }}
-            </span>
-          </div>
-        </template>
-        <div
+        <h1
           v-else
-          class="capacity-footer"
+          class="event-title"
         >
-          <span>{{ t('confirmed') }}</span>
-          <span>{{ t('capacityUnset') }}</span>
-        </div>
-      </aside>
+          {{ eventName }}
+        </h1>
+        <!-- Sharing stays offered outside the registration window — the event
+             page is still reachable. The caveat rides along in the tooltip. -->
+        <m-btn
+          v-if="event"
+          :label="t('copyLink.label')"
+          icon="link"
+          class="copy-link-btn"
+          primary
+          tonal
+          no-caps
+          @click="copyRegistrationLink"
+        >
+          <q-tooltip class="copy-link-tooltip">
+            <div>{{ t('copyLink.tooltip') }}</div>
+            <div
+              v-if="shareCaveat"
+              class="copy-link-tooltip__caveat"
+            >
+              {{ shareCaveat }}
+            </div>
+          </q-tooltip>
+        </m-btn>
+      </div>
+
+      <div
+        v-if="loading"
+        class="event-meta"
+      >
+        <q-skeleton
+          v-for="width in ['132px', '176px', '112px', '96px']"
+          :key="width"
+          type="text"
+          :width="width"
+        />
+      </div>
+      <ul
+        v-else
+        class="event-meta"
+      >
+        <li
+          v-if="event?.organizationName"
+          class="meta-item"
+        >
+          <q-icon name="apartment" />
+          <span>{{ event.organizationName }}</span>
+          <q-tooltip>{{ t('organization') }}</q-tooltip>
+        </li>
+        <li class="meta-item">
+          <q-icon name="calendar_month" />
+          <span>{{ dateRange }}</span>
+        </li>
+        <li
+          v-if="location"
+          class="meta-item"
+        >
+          <q-icon name="location_on" />
+          <span>{{ location }}</span>
+        </li>
+        <li class="meta-item">
+          <q-icon name="cake" />
+          <span>
+            {{ t('ageRange', { min: event?.minAge, max: event?.maxAge }) }}
+          </span>
+        </li>
+        <li
+          v-if="countryNames"
+          class="meta-item"
+        >
+          <q-icon name="public" />
+          <span>{{ countryNames }}</span>
+        </li>
+      </ul>
     </q-card-section>
+
+    <template v-if="$slots.actions">
+      <q-separator />
+      <q-card-section class="hero-actions">
+        <slot name="actions" />
+      </q-card-section>
+    </template>
   </q-card>
 </template>
 
@@ -233,13 +146,13 @@ import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { copyToClipboard, useQuasar } from 'quasar';
 import { storeToRefs } from 'pinia';
+import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import { useEventDetailsStore } from '@/stores/event-details-store';
-import { useEventStatistics } from '@/composables/eventStatistics';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { zonedInstant } from '@camp-registration/common/utils';
 
-// While `loading` the static labels render for real and everything derived
-// from the event or its registrations is skeletonized.
+// While `loading` everything derived from the event is skeletonized. Quick
+// actions come in through the `actions` slot.
 const { loading = false } = defineProps<{
   loading?: boolean;
 }>();
@@ -249,7 +162,6 @@ const { to } = useObjectTranslation();
 const router = useRouter();
 const quasar = useQuasar();
 const eventDetailsStore = useEventDetailsStore();
-const stats = useEventStatistics();
 
 const { data: event } = storeToRefs(eventDetailsStore);
 
@@ -389,45 +301,6 @@ async function copyRegistrationLink() {
   }
 }
 
-const capacity = computed(() => ({
-  accepted: stats.counts.value.accepted,
-  max: stats.capacity.value.max,
-  free: stats.capacity.value.free,
-}));
-
-const ratio = computed<number>(() => {
-  const { accepted, max } = capacity.value;
-  if (max == null || max === 0) {
-    return 0;
-  }
-  return Math.min(1, accepted / max);
-});
-
-const percent = computed<number>(() => Math.round(ratio.value * 100));
-
-const over = computed<number>(() => {
-  const { accepted, max } = capacity.value;
-  return max != null && accepted > max ? accepted - max : 0;
-});
-
-const freeDisplay = computed<number>(() => {
-  const { free, max, accepted } = capacity.value;
-  if (free != null) {
-    return Math.max(0, free);
-  }
-  return max != null ? Math.max(0, max - accepted) : 0;
-});
-
-const barColor = computed<string>(() => {
-  if (over.value > 0 || ratio.value >= 1) {
-    return 'negative';
-  }
-  if (ratio.value >= 0.85) {
-    return 'orange';
-  }
-  return 'primary';
-});
-
 function daysFromNow(date: string): number {
   const target = new Date(date);
   const now = new Date();
@@ -448,11 +321,6 @@ function daysFromNow(date: string): number {
 </script>
 
 <style scoped>
-/*
- * Styling relies on the MD3 design tokens exposed by
- * @anoyomoose/q2-fresh-paint-md3e (--md3-*). These switch automatically
- * between light and dark, so no manual dark-mode overrides are needed.
- */
 .hero-card {
   position: relative;
   overflow: hidden;
@@ -468,25 +336,10 @@ function daysFromNow(date: string): number {
 }
 
 .hero-content {
-  display: grid;
-  grid-template-columns: minmax(0, 1.55fr) minmax(280px, 0.75fr);
-  gap: 24px;
-  align-items: stretch;
-  padding: 24px;
-}
-
-.hero-main {
   display: flex;
-  min-width: 0;
   flex-direction: column;
-  justify-content: space-between;
-  gap: 20px;
-}
-
-.event-title {
-  max-width: 900px;
-  line-height: 1.2;
-  letter-spacing: -0.025em;
+  gap: 12px;
+  padding: 24px 24px 20px;
 }
 
 .status-chips {
@@ -499,9 +352,9 @@ function daysFromNow(date: string): number {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 32px;
-  padding: 5px 12px;
-  font-size: 0.78rem;
+  min-height: 28px;
+  padding: 4px 12px;
+  font-size: 0.8125rem;
   font-weight: 600;
   border-radius: 999px;
 }
@@ -526,22 +379,33 @@ function daysFromNow(date: string): number {
   background: var(--md3-surface-container-highest);
 }
 
-.copy-link-pill {
-  color: var(--md3-on-secondary-container);
-  background: var(--md3-secondary-container);
-  border: none;
-  cursor: pointer;
-  font: inherit;
-  font-weight: 600;
-  transition:
-    background 0.18s ease,
-    box-shadow 0.18s ease;
+.status-pill-skeleton {
+  height: 28px;
+  border-radius: 999px;
 }
 
-.copy-link-pill:hover,
-.copy-link-pill:focus-visible {
-  box-shadow: 0 2px 8px rgba(38, 50, 56, 0.16);
-  outline: none;
+.hero-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 24px;
+}
+
+.event-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  color: var(--md3-on-surface);
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+
+.copy-link-btn {
+  flex: 0 0 auto;
 }
 
 .copy-link-tooltip {
@@ -556,156 +420,72 @@ function daysFromNow(date: string): number {
 .event-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 18px;
-}
-
-.status-pill-skeleton {
-  height: 32px;
-  border-radius: 999px;
-}
-
-.meta-chip-skeleton {
+  gap: 8px 20px;
   margin: 0;
-  border-radius: 8px;
+  padding: 0;
+  list-style: none;
 }
 
-.capacity-bar-skeleton {
-  border-radius: 999px;
-}
-
-.meta-chip {
-  margin: 0;
-  max-width: 100%;
-  background: var(--md3-surface-container-high);
-}
-
-.meta-chip :deep(.q-chip__icon) {
-  color: var(--md3-primary);
-}
-
-.capacity-panel {
-  display: flex;
+.meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   min-width: 0;
-  flex-direction: column;
-  justify-content: center;
-  padding: 20px;
-  background: color-mix(in srgb, var(--md3-primary) 7%, var(--md3-surface));
-  border: 1px solid color-mix(in srgb, var(--md3-primary) 22%, transparent);
-  border-radius: 12px;
+  max-width: 100%;
+  color: var(--md3-on-surface-variant);
+  font-size: 0.875rem;
 }
 
-.capacity-heading {
+.meta-item .q-icon {
+  flex: 0 0 auto;
+  color: var(--md3-primary);
+  font-size: 18px;
+}
+
+.meta-item span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hero-actions {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.capacity-label {
-  margin-bottom: 3px;
-  color: var(--md3-on-surface-variant);
-  font-size: 0.76rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.capacity-value {
-  color: var(--md3-on-surface);
-  font-size: 2.2rem;
-  font-weight: 750;
-  line-height: 1.1;
-  letter-spacing: -0.04em;
-}
-
-.capacity-max {
-  color: var(--md3-on-surface-variant);
-  font-size: 1.2rem;
-  font-weight: 500;
-}
-
-.capacity-percent {
-  font-size: 1.1rem;
-  font-weight: 700;
-}
-
-.capacity-bar {
-  margin-top: 22px;
-}
-
-.capacity-footer {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: 10px;
-  color: var(--md3-on-surface-variant);
-  font-size: 0.8rem;
-}
-
-@media (max-width: 899px) {
-  .hero-content {
-    grid-template-columns: 1fr;
-    gap: 20px;
-  }
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 24px;
+  background: var(--md3-surface-container-low);
 }
 
 @media (max-width: 599px) {
   .hero-content {
-    gap: 18px;
-    padding: 18px;
-  }
-
-  .status-chips {
-    gap: 6px;
-  }
-
-  .status-pill {
-    min-height: 28px;
-    padding: 3px 10px;
-    font-size: 0.72rem;
-  }
-
-  .status-pill :deep(.q-icon) {
-    font-size: 15px !important;
+    gap: 10px;
+    padding: 20px 16px 16px;
   }
 
   .event-title {
-    font-size: 1.6rem;
+    font-size: 1.5rem;
   }
 
-  .hero-main {
-    gap: 16px;
+  .copy-link-btn {
+    width: 100%;
   }
 
   .event-meta {
-    margin-top: 4px;
+    flex-direction: column;
+    gap: 6px;
   }
 
-  .capacity-panel {
-    padding: 16px;
-  }
-
-  .capacity-value {
-    font-size: 2rem;
-  }
-
-  .capacity-bar {
-    margin-top: 16px;
+  .hero-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 12px 16px;
   }
 }
 </style>
 
 <i18n lang="yaml" locale="en">
-confirmed: 'confirmed'
-eventOverview: 'Event overview'
 organization: 'Owning organization'
 ageRange: 'Ages {min}–{max}'
-capacity: 'Participant capacity'
-capacityUnset: 'No participant limit configured'
-filled: '{n}% filled'
-free: '{n} places free'
-over: '{n} over capacity'
 countdown:
   until: '{days} days to go'
   today: 'Starts today'
@@ -728,15 +508,8 @@ copyLink:
 </i18n>
 
 <i18n lang="yaml" locale="de">
-confirmed: 'bestätigt'
-eventOverview: 'Veranstaltungsübersicht'
 organization: 'Besitzende Organisation'
 ageRange: 'Alter {min}–{max}'
-capacity: 'Teilnehmendenkapazität'
-capacityUnset: 'Kein Teilnehmendenlimit festgelegt'
-filled: '{n}% belegt'
-free: '{n} Plätze frei'
-over: '{n} über Kapazität'
 countdown:
   until: 'Noch {days} Tage'
   today: 'Beginnt heute'
@@ -759,16 +532,8 @@ copyLink:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-confirmed: 'confirmés'
-eventOverview: "Aperçu de l'événement"
-
 organization: 'Organisation propriétaire'
 ageRange: 'De {min} à {max} ans'
-capacity: 'Capacité des participants'
-capacityUnset: 'Aucune limite de participants'
-filled: 'Rempli à {n}%'
-free: '{n} places libres'
-over: '{n} au-dessus de la capacité'
 countdown:
   until: 'Encore {days} jours'
   today: "Commence aujourd'hui"
@@ -793,15 +558,8 @@ copyLink:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-confirmed: 'potwierdzonych'
-eventOverview: 'Przegląd wydarzenia'
 organization: 'Organizacja właścicielska'
 ageRange: 'Wiek {min}–{max}'
-capacity: 'Limit uczestników'
-capacityUnset: 'Nie ustawiono limitu uczestników'
-filled: 'Zapełniono w {n}%'
-free: 'Wolnych miejsc: {n}'
-over: '{n} ponad limit'
 countdown:
   until: 'Pozostało {days} dni'
   today: 'Zaczyna się dziś'
@@ -824,15 +582,8 @@ copyLink:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-confirmed: 'potvrzených'
-eventOverview: 'Přehled akce'
 organization: 'Vlastnící organizace'
 ageRange: 'Věk {min}–{max}'
-capacity: 'Kapacita účastníků'
-capacityUnset: 'Limit účastníků není nastaven'
-filled: 'Obsazeno z {n}%'
-free: 'Volných míst: {n}'
-over: '{n} nad kapacitu'
 countdown:
   until: 'Zbývá {days} dní'
   today: 'Začíná dnes'

@@ -53,6 +53,12 @@
             dense
           />
         </div>
+        <div
+          v-if="priceModel && !billed"
+          class="text-caption text-on-surface-variant"
+        >
+          {{ breakdown }}
+        </div>
       </div>
 
       <!-- Billed: what the bill says, with its invoices -->
@@ -83,14 +89,28 @@
         class="price-model-amount"
       >
         <div class="text-caption text-on-surface-variant">
-          {{ t('estimate', { count: estimatedCount }) }}
+          {{ t('current', { count: estimatedCount }) }}
         </div>
-        <div class="text-subtitle1 text-weight-bold">
+        <div class="text-h6 text-weight-bold">
           {{ money(estimate) }}
         </div>
-        <div class="text-caption text-on-surface-variant">
-          {{ breakdown }}
-        </div>
+      </div>
+    </q-card-section>
+
+    <q-card-section
+      v-if="priceModel && !billed"
+      class="q-pt-none"
+    >
+      <div
+        class="billing-notice billing-notice--info row items-center no-wrap rounded-md"
+      >
+        <q-icon
+          name="info"
+          size="20px"
+        />
+        <span class="text-body2">
+          {{ data?.bill ? t('hint.running') : t('hint.upcoming') }}
+        </span>
       </div>
     </q-card-section>
 
@@ -226,6 +246,7 @@ function money(amount: string | null): string {
 <style scoped lang="scss">
 .price-model-widget {
   border-radius: 16px;
+  container-type: inline-size;
 }
 
 .price-model-content {
@@ -234,7 +255,7 @@ function money(amount: string | null): string {
   align-items: center;
   gap: 12px 16px;
 
-  @media (max-width: 599px) {
+  @container (max-width: 480px) {
     grid-template-columns: auto minmax(0, 1fr);
 
     .price-model-amount {
@@ -250,8 +271,8 @@ function money(amount: string | null): string {
 }
 
 .price-model-icon {
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   border-radius: 12px;
   color: var(--md3-on-secondary-container);
   background: var(--md3-secondary-container);
@@ -280,6 +301,11 @@ function money(amount: string | null): string {
   gap: 10px;
   padding: 10px 12px;
 
+  &--info {
+    color: var(--md3-on-surface-variant);
+    background: var(--md3-surface-container-high);
+  }
+
   &--warning {
     color: var(--md3-on-warning-container);
     background: var(--md3-warning-container);
@@ -302,7 +328,10 @@ failed: 'Billing could not be loaded.'
 retry: 'Retry'
 title: 'Price model'
 override: 'Own model'
-estimate: 'Estimated cost · {count} registrations'
+current: 'Current amount · {count} registrations'
+hint:
+  upcoming: "Based on today's registrations. The final amount is set when the event ends."
+  running: 'You pay for the higher of the registration counts at the start and the end of the event.'
 billed: 'Billed · {count} registrations'
 breakdown: '{price} per registration + {baseFee} base fee, incl. {taxRate} % tax'
 notice:
@@ -316,7 +345,10 @@ failed: 'Die Abrechnung konnte nicht geladen werden.'
 retry: 'Erneut versuchen'
 title: 'Preismodell'
 override: 'Eigenes Modell'
-estimate: 'Voraussichtliche Kosten · {count} Anmeldungen'
+current: 'Aktueller Stand · {count} Anmeldungen'
+hint:
+  upcoming: 'Berechnet aus den heutigen Anmeldungen. Der endgültige Betrag steht am Ende der Veranstaltung fest.'
+  running: 'Abgerechnet wird die höhere Anmeldezahl zu Beginn oder am Ende der Veranstaltung.'
 billed: 'Abgerechnet · {count} Anmeldungen'
 breakdown: '{price} pro Anmeldung + {baseFee} Grundgebühr, inkl. {taxRate} % Steuer'
 notice:
@@ -326,11 +358,14 @@ notice:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-failed: 'La facturation n''a pas pu être chargée.'
+failed: "La facturation n'a pas pu être chargée."
 retry: 'Réessayer'
 title: 'Modèle tarifaire'
 override: 'Modèle propre'
-estimate: 'Coût estimé · {count} inscriptions'
+current: 'Montant actuel · {count} inscriptions'
+hint:
+  upcoming: "Calculé à partir des inscriptions actuelles. Le montant définitif est fixé à la fin de l'événement."
+  running: "Le nombre d'inscriptions le plus élevé entre le début et la fin de l'événement est facturé."
 billed: 'Facturé · {count} inscriptions'
 breakdown: '{price} par inscription + {baseFee} de frais de base, dont {taxRate} % de taxe'
 notice:
@@ -344,7 +379,10 @@ failed: 'Nie udało się wczytać rozliczenia.'
 retry: 'Spróbuj ponownie'
 title: 'Model cenowy'
 override: 'Własny model'
-estimate: 'Szacowany koszt · zgłoszenia: {count}'
+current: 'Kwota bieżąca · zgłoszenia: {count}'
+hint:
+  upcoming: 'Na podstawie dzisiejszych zgłoszeń. Ostateczna kwota zostanie ustalona po zakończeniu wydarzenia.'
+  running: 'Rozliczana jest wyższa liczba zgłoszeń z początku lub końca wydarzenia.'
 billed: 'Rozliczono · zgłoszenia: {count}'
 breakdown: '{price} za zgłoszenie + {baseFee} opłaty podstawowej, w tym {taxRate} % podatku'
 notice:
@@ -358,7 +396,10 @@ failed: 'Vyúčtování se nepodařilo načíst.'
 retry: 'Zkusit znovu'
 title: 'Cenový model'
 override: 'Vlastní model'
-estimate: 'Odhadované náklady · přihlášky: {count}'
+current: 'Aktuální částka · přihlášky: {count}'
+hint:
+  upcoming: 'Vychází z dnešních přihlášek. Konečná částka se stanoví po skončení akce.'
+  running: 'Účtuje se vyšší počet přihlášek ze začátku nebo konce akce.'
 billed: 'Vyúčtováno · přihlášky: {count}'
 breakdown: '{price} za přihlášku + {baseFee} základní poplatek, vč. {taxRate} % daně'
 notice:

@@ -5,35 +5,40 @@
     class="demographics-card"
   >
     <q-card-section class="demographics-header">
-      <div class="header-text">
-        <div class="text-h6 text-weight-bold">{{ t('title') }}</div>
-        <div class="header-subtitle">{{ t('subtitle') }}</div>
-      </div>
-      <q-skeleton
-        v-if="loading"
-        type="QChip"
-        width="120px"
-      />
-      <div
-        v-else
-        class="people-count"
-        :class="{ 'people-count--filtered': hasActiveFilters }"
+      <dashboard-card-header
+        icon="bar_chart"
+        tone="tertiary"
+        :title="t('title')"
+        :caption="t('subtitle')"
       >
-        <q-icon
-          name="groups"
-          size="18px"
-        />
-        <span>
-          {{
-            hasActiveFilters
-              ? t('shown', {
-                  shown: filteredPeople.length,
-                  total: people.length,
-                })
-              : t('total', { total: people.length })
-          }}
-        </span>
-      </div>
+        <template #action>
+          <q-skeleton
+            v-if="loading"
+            type="QChip"
+            width="120px"
+          />
+          <div
+            v-else
+            class="people-count"
+            :class="{ 'people-count--filtered': hasActiveFilters }"
+          >
+            <q-icon
+              name="groups"
+              size="18px"
+            />
+            <span>
+              {{
+                hasActiveFilters
+                  ? t('shown', {
+                      shown: filteredPeople.length,
+                      total: people.length,
+                    })
+                  : t('total', { total: people.length })
+              }}
+            </span>
+          </div>
+        </template>
+      </dashboard-card-header>
     </q-card-section>
 
     <q-card-section class="demographics-controls">
@@ -200,6 +205,7 @@ import type { ApexOptions } from 'apexcharts';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
+import DashboardCardHeader from '@/components/event/dashboard/DashboardCardHeader.vue';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import { MBtnGroup } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtnGroup';
 import type { Registration } from '@camp-registration/common/entities';
@@ -600,16 +606,7 @@ const chartOptions = computed<ApexOptions>(() => {
 }
 
 .demographics-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 20px 20px 4px;
-}
-
-.header-subtitle {
-  color: var(--md3-on-surface-variant);
-  font-size: 0.875rem;
+  padding-bottom: 0;
 }
 
 .people-count {
@@ -679,10 +676,6 @@ const chartOptions = computed<ApexOptions>(() => {
 }
 
 @media (max-width: 599px) {
-  .demographics-header {
-    padding: 16px 16px 0;
-  }
-
   .demographics-controls {
     flex-direction: column;
     align-items: stretch;
