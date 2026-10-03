@@ -1,5 +1,7 @@
 import { api } from '@/services/api';
 import type {
+  AdminOrganization,
+  CursorPaginated,
   Event,
   Newsletter,
   Organization,
@@ -20,7 +22,9 @@ export function useOrganizationService() {
   }
 
   /** The administrators' moderation queue; cursor-paginated for `useServerTable`. */
-  async function fetchOrganizationsPaginated(params?: OrganizationQuery) {
+  async function fetchOrganizationsPaginated(
+    params?: OrganizationQuery,
+  ): Promise<CursorPaginated<AdminOrganization>> {
     const response = await api.get('organizations/', {
       params: { ...params, view: 'all' },
     });

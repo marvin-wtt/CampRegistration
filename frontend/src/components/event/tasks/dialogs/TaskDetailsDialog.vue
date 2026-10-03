@@ -1,9 +1,13 @@
 <template>
-  <q-dialog
+  <responsive-dialog
     ref="dialogRef"
     @hide="onDialogHide"
   >
-    <q-card class="task-details">
+    <q-card
+      class="task-details"
+      :class="{ 'task-details--sheet': sheet }"
+      :flat="sheet"
+    >
       <!-- Header -->
       <div class="details-header">
         <div class="row items-start no-wrap q-gutter-sm">
@@ -119,17 +123,19 @@
         />
       </q-card-actions>
     </q-card>
-  </q-dialog>
+  </responsive-dialog>
 </template>
 
 <script lang="ts" setup>
-import { useDialogPluginComponent } from 'quasar';
+import { useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
 import type { Task } from '@camp-registration/common/entities';
 import { taskPhaseOf } from '@/utils/taskPhase';
 import { parseLocalDate } from '@/utils/date';
+import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
 
+const quasar = useQuasar();
 const { t, d } = useI18n();
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
@@ -143,6 +149,9 @@ const props = defineProps<{
 }>();
 
 defineEmits([...useDialogPluginComponent.emits]);
+
+// Mirrors ResponsiveDialog's switch to a bottom sheet.
+const sheet = computed<boolean>(() => quasar.screen.lt.sm);
 
 const phase = computed(() => taskPhaseOf(props.task));
 const dueTextClass = computed<string>(() => `due-text--${phase.value}`);
@@ -161,6 +170,22 @@ function onDelete() {
   width: 440px;
   max-width: 100%;
   border-radius: 20px;
+}
+
+/* The sheet draws the surface and the drag handle sits above the header. */
+.task-details--sheet {
+  width: 100%;
+  border-radius: 0;
+  background: transparent;
+}
+
+.task-details--sheet .details-header {
+  padding-top: 0;
+  background: transparent;
+}
+
+.task-details--sheet .details-actions {
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
 }
 
 /* Header */

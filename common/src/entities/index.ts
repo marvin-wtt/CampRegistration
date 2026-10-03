@@ -36,6 +36,7 @@ export * from './NewsletterMessage.js';
 
 export * from './Organization.js';
 export * from './OrganizationMember.js';
+export * from './Billing.js';
 
 // Types
 export * from './AdminOverview.js';

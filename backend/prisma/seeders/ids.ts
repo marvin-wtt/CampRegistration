@@ -61,5 +61,23 @@ export const NEWSLETTER_IDS = {
   alpineNews: seedId('NW6'),
 } as const;
 
+export const PRICE_MODEL_IDS = {
+  /** Fixed `standard` tier: per-registration price, base fee and VAT. */
+  standard: seedId('PM1'),
+  /** Discounted tier without base fee or tax. */
+  nonProfit: seedId('PM2'),
+  /** Retired tier — archived, so it cannot be assigned any more. */
+  legacy: seedId('PM3'),
+  /** A tier billed in Czech koruna. */
+  czech: seedId('PM4'),
+} as const;
+
+export const BILL_IDS = {
+  winter: seedId('BN1'),
+  spring: seedId('BN2'),
+  city: seedId('BN3'),
+  deleted: seedId('BN4'),
+} as const;
+
 export const SEED_PASSWORD = 'password';
 export const SEED_ADMIN_PASSWORD = 'admin-password';

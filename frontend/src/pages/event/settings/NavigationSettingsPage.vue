@@ -1,6 +1,7 @@
 <template>
-  <q-page
+  <page-state-handler
     padding
+    :error="eventError ?? error"
     class="navigation-settings-page row justify-center"
   >
     <div
@@ -10,6 +11,17 @@
         :title="t('title')"
         :subtitle="t('subtitle')"
       />
+
+      <q-banner
+        v-if="readOnly"
+        dense
+        class="read-only-banner"
+      >
+        <template #avatar>
+          <q-icon name="lock" />
+        </template>
+        {{ t('readOnly') }}
+      </q-banner>
 
       <q-list
         bordered
@@ -41,14 +53,14 @@
           <q-item-section side>
             <q-toggle
               :model-value="isVisible(item.name)"
-              :disable="isLoading"
+              :disable="isLoading || readOnly"
               @update:model-value="(value) => setVisible(item.name, value)"
             />
           </q-item-section>
         </q-item>
       </q-list>
     </div>
-  </q-page>
+  </page-state-handler>
 </template>
 
 <script lang="ts" setup>
@@ -56,10 +68,29 @@ import PageHeader from '@/components/common/PageHeader.vue';
 import { useI18n } from 'vue-i18n';
 import { EVENT_NAVIGATION_ITEMS } from '@/config/eventNavigationItems';
 import { useNavigationSettings } from '@/composables/eventNavigationSettings';
+import PageStateHandler from '@/components/common/PageStateHandler.vue';
+import { usePermissions } from '@/composables/permissions';
+import { computed } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useProfileStore } from '@/stores/profile-store';
+import { useEventDetailsStore } from '@/stores/event-details-store';
 
 const { t } = useI18n();
+const { can } = usePermissions();
+const profileStore = useProfileStore();
+const { data: event, error: eventError } = storeToRefs(
+  useEventDetailsStore(),
+);
 
-const { settings, isLoading } = useNavigationSettings();
+const { settings, isLoading, error } = useNavigationSettings();
+
+// Permissions resolve only once both profile and event are loaded.
+const readOnly = computed<boolean>(
+  () =>
+    profileStore.user !== undefined &&
+    event.value !== undefined &&
+    !can('event.edit'),
+);
 
 const hideableItems = EVENT_NAVIGATION_ITEMS.filter((item) => item.hideable);
 
@@ -75,6 +106,12 @@ function setVisible(name: string, visible: boolean) {
 </script>
 
 <style scoped>
+.read-only-banner {
+  background-color: var(--md3-surface-container-high);
+  color: var(--md3-on-surface-variant);
+  border-radius: 12px;
+}
+
 @media (max-width: 599px) {
   .navigation-settings-page {
     padding-top: 24px;
@@ -85,6 +122,7 @@ function setVisible(name: string, visible: boolean) {
 <i18n lang="yaml" locale="en">
 title: 'Navigation'
 subtitle: "Choose which features appear in this event's navigation and dashboard."
+readOnly: 'You can view these settings but not change them.'
 contact:
   label: 'Contact'
   description: 'Show or hide the contact page.'
@@ -105,6 +143,7 @@ chore_planner:
 <i18n lang="yaml" locale="de">
 title: 'Navigation'
 subtitle: 'Wähle aus, welche Funktionen in der Navigation und im Dashboard dieser Veranstaltung angezeigt werden.'
+readOnly: 'Du kannst diese Einstellungen ansehen, aber nicht ändern.'
 contact:
   label: 'Kontaktieren'
   description: 'Kontaktseite ein- oder ausblenden.'
@@ -125,6 +164,7 @@ chore_planner:
 <i18n lang="yaml" locale="fr">
 title: 'Navigation'
 subtitle: 'Choisissez les fonctionnalités affichées dans la navigation et le tableau de bord de cet événement.'
+readOnly: 'Vous pouvez consulter ces paramètres, mais pas les modifier.'
 contact:
   label: 'Contacter'
   description: 'Afficher ou masquer la page de contact.'
@@ -145,6 +185,7 @@ chore_planner:
 <i18n lang="yaml" locale="pl">
 title: 'Nawigacja'
 subtitle: 'Wybierz funkcje widoczne w nawigacji i na pulpicie tego wydarzenia.'
+readOnly: 'Możesz przeglądać te ustawienia, ale nie możesz ich zmieniać.'
 contact:
   label: 'Kontakt'
   description: 'Pokaż lub ukryj stronę kontaktową.'
@@ -165,6 +206,7 @@ chore_planner:
 <i18n lang="yaml" locale="cs">
 title: 'Navigace'
 subtitle: 'Vyberte, které funkce se zobrazí v navigaci a na přehledu této akce.'
+readOnly: 'Tato nastavení můžete zobrazit, ale ne měnit.'
 contact:
   label: 'Kontakt'
   description: 'Zobrazit nebo skrýt kontaktní stránku.'

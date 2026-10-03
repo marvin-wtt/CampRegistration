@@ -1,10 +1,11 @@
 import type {
-  Event,
-  EventDetails,
-  EventCreateData,
-  EventUpdateData,
-  EventQuery,
+  AdminEvent,
   CursorPaginated,
+  Event,
+  EventCreateData,
+  EventDetails,
+  EventQuery,
+  EventUpdateData,
 } from '@camp-registration/common/entities';
 import { api } from '@/services/api';
 import { extendAxiosConfig } from '@/services/AuthService';
@@ -16,6 +17,23 @@ export function useEventService() {
     });
 
     return response?.data?.data;
+  }
+
+  /**
+   * The administrators' listing (`view=all`), which also carries each event's
+   * price model override.
+   */
+  async function fetchAdminEventsPaginated(
+    query?: EventQuery,
+  ): Promise<CursorPaginated<AdminEvent>> {
+    const response = await api.get('events/', {
+      params: { ...query, view: 'all' },
+    });
+
+    return {
+      data: response?.data?.data ?? [],
+      meta: response?.data?.meta,
+    };
   }
 
   async function fetchEventsPaginated(
@@ -67,6 +85,7 @@ export function useEventService() {
   return {
     fetchEvents,
     fetchEventsPaginated,
+    fetchAdminEventsPaginated,
     fetchEvent,
     createEvent,
     updateEvent,

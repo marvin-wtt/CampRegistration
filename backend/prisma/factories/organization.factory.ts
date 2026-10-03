@@ -6,6 +6,10 @@ import {
   completePrivacyNoticeContent,
 } from './privacy-notice.factory.js';
 import prisma from '../client.js';
+import {
+  FREE_PRICE_MODEL_ID,
+  FREE_PRICE_MODEL_NAME,
+} from '#app/priceModel/price-model.utils';
 
 interface OrganizationFactoryOptions {
   /**
@@ -32,6 +36,13 @@ export const OrganizationFactory = {
       addressZipCode: faker.location.zipCode(),
       addressCity: faker.location.city(),
       registrationNumber: faker.string.alphanumeric(10).toUpperCase(),
+      // The seeded free model — recreated here because tests truncate it away.
+      priceModel: {
+        connectOrCreate: {
+          where: { id: FREE_PRICE_MODEL_ID },
+          create: { id: FREE_PRICE_MODEL_ID, name: FREE_PRICE_MODEL_NAME },
+        },
+      },
       ...data,
     };
   },

@@ -1,8 +1,5 @@
 <template>
-  <q-card
-    class="mgmt-card"
-    :class="`mgmt-card--${tone}`"
-  >
+  <q-card class="mgmt-card">
     <!-- Header: monogram, title, timing, overflow -->
     <div
       class="mgmt-card__head"
@@ -12,26 +9,11 @@
       @click="openEvent"
       @keyup.enter="openEvent"
     >
-      <div
-        v-if="event.logo && !logoFailed"
-        class="mgmt-card__avatar mgmt-card__avatar--logo"
-      >
-        <img
-          class="mgmt-card__logo"
-          :src="event.logo"
-          alt=""
-          aria-hidden="true"
-          loading="lazy"
-          @error="logoFailed = true"
-        />
-      </div>
-      <div
-        v-else
-        class="mgmt-card__avatar"
-        aria-hidden="true"
-      >
-        {{ monogram }}
-      </div>
+      <event-avatar
+        :event-id="event.id"
+        :name="to(event.name)"
+        :logo="event.logo"
+      />
 
       <div class="mgmt-card__heading">
         <div
@@ -99,7 +81,6 @@
       <div
         v-if="capacity"
         class="mgmt-card__capacity"
-        :class="{ 'mgmt-card__capacity--low': capacity.low }"
       >
         <div class="mgmt-card__capacity-head">
           <span class="mgmt-card__capacity-label">
@@ -185,6 +166,7 @@
 
 <script lang="ts" setup>
 import EventCardMenu from '@/components/event/index/EventCardMenu.vue';
+import EventAvatar from '@/components/event/EventAvatar.vue';
 import { useEventsStore } from '@/stores/events-store';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -193,7 +175,7 @@ import { copyToClipboard, useQuasar } from 'quasar';
 import type { Event } from '@camp-registration/common/entities';
 import type { ScopePermission } from '@camp-registration/common/permissions';
 import { zonedInstant } from '@camp-registration/common/utils';
-import { computed, type Ref, ref, watch } from 'vue';
+import { computed, type Ref, ref } from 'vue';
 import { useProfileStore } from '@/stores/profile-store';
 import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
 import RegistrationScheduleDialog from '@/components/event/index/RegistrationScheduleDialog.vue';
@@ -220,29 +202,6 @@ function onTitleEnter() {
   // Only show the tooltip when the title is actually clamped/truncated.
   showTitleTooltip.value = !!el && el.scrollHeight > el.clientHeight;
 }
-
-const tones = ['primary', 'secondary', 'tertiary'] as const;
-
-const tone = computed<(typeof tones)[number]>(() => {
-  const hash = [...event.id].reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  return tones[hash % tones.length] ?? 'primary';
-});
-
-const monogram = computed<string>(() => {
-  return to(event.name).trim().charAt(0).toUpperCase() || '•';
-});
-
-// The URL points at a slot, not at a file id: the file behind it can be gone
-// (deleted, or turned private) while this card is still on screen. Falling
-// back to the monogram beats a broken-image icon.
-const logoFailed = ref(false);
-
-watch(
-  () => event.logo,
-  () => {
-    logoFailed.value = false;
-  },
-);
 
 const dateRange = computed<string>(() => {
   const formatter = new Intl.DateTimeFormat(locale.value, {
@@ -318,7 +277,6 @@ interface Capacity {
   free: number;
   used: number;
   percent: number;
-  low: boolean;
 }
 
 const capacity = computed<Capacity | null>(() => {
@@ -334,7 +292,6 @@ const capacity = computed<Capacity | null>(() => {
     free,
     used,
     percent: Math.min(100, Math.max(0, (used / max) * 100)),
-    low: free <= 5,
   };
 });
 
@@ -608,57 +565,6 @@ async function withLoading(flag: Ref<boolean>, fn: () => Promise<void>) {
   outline-offset: 2px;
 }
 
-.mgmt-card__avatar {
-  flex-shrink: 0;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  width: 44px;
-  height: 44px;
-  overflow: hidden;
-  border-radius: 12px;
-
-  font-size: 22px;
-  font-weight: 700;
-  line-height: 1;
-  user-select: none;
-}
-
-.mgmt-card--primary .mgmt-card__avatar {
-  background: var(--md3-primary-container);
-  color: var(--md3-on-primary-container);
-}
-
-.mgmt-card--secondary .mgmt-card__avatar {
-  background: var(--md3-secondary-container);
-  color: var(--md3-on-secondary-container);
-}
-
-.mgmt-card--tertiary .mgmt-card__avatar {
-  background: var(--md3-tertiary-container);
-  color: var(--md3-on-tertiary-container);
-}
-
-/*
- * A real logo brings its own background color, which can clash with the
- * tone container above — so logos always sit on a neutral plate instead,
- * regardless of which tone the card was dealt.
- */
-.mgmt-card__avatar--logo {
-  border: 1px solid var(--md3-outline-variant);
-
-  background: var(--md3-surface-container-highest);
-}
-
-.mgmt-card__logo {
-  width: 100%;
-  height: 100%;
-
-  object-fit: contain;
-}
-
 .mgmt-card__heading {
   flex: 1;
   min-width: 0;
@@ -773,10 +679,6 @@ async function withLoading(flag: Ref<boolean>, fn: () => Promise<void>) {
   font-weight: 500;
 }
 
-.mgmt-card__capacity--low .mgmt-card__capacity-count {
-  color: var(--md3-warning);
-}
-
 .mgmt-card__capacity-track {
   height: 6px;
   border-radius: 3px;
@@ -792,18 +694,6 @@ async function withLoading(flag: Ref<boolean>, fn: () => Promise<void>) {
   background: var(--md3-primary);
 
   transition: width 0.3s cubic-bezier(0.2, 0, 0, 1);
-}
-
-.mgmt-card--secondary .mgmt-card__capacity-fill {
-  background: var(--md3-secondary);
-}
-
-.mgmt-card--tertiary .mgmt-card__capacity-fill {
-  background: var(--md3-tertiary);
-}
-
-.mgmt-card__capacity--low .mgmt-card__capacity-fill {
-  background: var(--md3-warning);
 }
 
 /* Registration status chip */

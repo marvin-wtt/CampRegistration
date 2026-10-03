@@ -820,9 +820,13 @@ function navigate(e: MouseEvent) {
   transition: width 0.3s cubic-bezier(0.2, 0, 0, 1);
 }
 
-.event-card__capacity-row--low .event-card__capacity-fill,
-.event-card__capacity-row--full .event-card__capacity-fill {
+.event-card__capacity-row--low .event-card__capacity-fill {
   background: var(--md3-warning);
+}
+
+/* Full reads as settled rather than urgent, unlike the few places left */
+.event-card__capacity-row--full .event-card__capacity-fill {
+  background: var(--md3-outline);
 }
 
 .event-card__capacity-count {
@@ -841,9 +845,12 @@ function navigate(e: MouseEvent) {
   font-weight: 500;
 }
 
-.event-card__capacity-row--low .event-card__capacity-count,
-.event-card__capacity-row--full .event-card__capacity-count {
+.event-card__capacity-row--low .event-card__capacity-count {
   color: var(--md3-warning);
+}
+
+.event-card__capacity-row--full .event-card__capacity-count {
+  color: var(--md3-on-surface-variant);
 }
 
 @media (prefers-reduced-motion: reduce) {

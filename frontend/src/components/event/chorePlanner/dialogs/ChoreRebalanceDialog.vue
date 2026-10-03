@@ -3,7 +3,7 @@
     ref="dialogRef"
     @hide="onDialogHide"
   >
-    <chore-dialog-card
+    <dialog-card
       :title="t('title')"
       :subtitle="t('subtitle')"
       :width="480"
@@ -87,7 +87,7 @@
           :label="t('action.apply')"
         />
       </template>
-    </chore-dialog-card>
+    </dialog-card>
   </responsive-dialog>
 </template>
 
@@ -107,7 +107,7 @@ import { formatPersonName } from '@/utils/formatters';
 import { parseLocalDate } from '@/utils/date';
 import { findSlot } from '@/utils/chores';
 import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
-import ChoreDialogCard from '@/components/event/chorePlanner/ChoreDialogCard.vue';
+import DialogCard from '@/components/common/dialogs/DialogCard.vue';
 
 // Previews the swaps that even out upcoming duties; resolves to them.
 const props = defineProps<{

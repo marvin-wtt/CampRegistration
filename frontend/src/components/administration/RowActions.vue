@@ -1,32 +1,7 @@
 <template>
   <div class="row items-center justify-center no-wrap">
-    <!-- Wide screens: inline icon buttons -->
-    <template v-if="quasar.screen.gt.md">
-      <template
-        v-for="(action, index) in visibleActions"
-        :key="action.key"
-      >
-        <q-separator
-          v-if="action.separatorBefore && index > 0"
-          vertical
-          class="q-mx-xs"
-        />
-        <q-btn
-          :icon="action.icon"
-          :color="action.color"
-          round
-          flat
-          size="sm"
-          @click="action.handler"
-        >
-          <q-tooltip>{{ action.label }}</q-tooltip>
-        </q-btn>
-      </template>
-    </template>
-
-    <!-- Small screens: overflow menu -->
     <q-btn
-      v-else
+      :aria-label="t('actions')"
       icon="more_vert"
       round
       flat
@@ -59,7 +34,7 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue';
-import { useQuasar } from 'quasar';
+import { useI18n } from 'vue-i18n';
 
 export interface RowAction {
   key: string;
@@ -75,9 +50,29 @@ const { actions } = defineProps<{
   actions: RowAction[];
 }>();
 
-const quasar = useQuasar();
+const { t } = useI18n();
 
 const visibleActions = computed<RowAction[]>(() =>
   actions.filter((action) => !action.hidden),
 );
 </script>
+
+<i18n lang="yaml" locale="en">
+actions: 'Actions'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+actions: 'Aktionen'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+actions: 'Actions'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+actions: 'Akcje'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+actions: 'Akce'
+</i18n>

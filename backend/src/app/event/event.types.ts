@@ -1,4 +1,4 @@
-import type { Event } from '#generated/prisma/client';
+import type { Event, PriceModel } from '#generated/prisma/client';
 import type { OrganizationVerificationStatus } from '#generated/prisma/enums';
 
 // The shape `eventResourceInclude()` fetches, enriched with the computed
@@ -12,7 +12,9 @@ export interface EventWithRelations extends Event {
     id: string;
     name: string;
     verificationStatus: OrganizationVerificationStatus;
+    priceModelId: string;
   };
+  priceModel: Pick<PriceModel, 'id' | 'name' | 'isDefault'>;
   // See `EVENT_LOGO_SLOT`/`EVENT_BANNER_SLOT` — whether a public, ready file
   // exists for each reserved slot. `EventResource` addresses it by slot, not
   // by id.

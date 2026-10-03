@@ -20,6 +20,8 @@ import organizationMember from './organization-member';
 import organizationEvents from './organization-events';
 import organizationNewsletters from './organization-newsletters';
 import translation from './translation';
+import billing from './billing';
+import setting from './setting';
 
 export default {
   event,
@@ -44,4 +46,6 @@ export default {
   organizationEvents,
   organizationNewsletters,
   translation,
+  billing,
+  setting,
 };

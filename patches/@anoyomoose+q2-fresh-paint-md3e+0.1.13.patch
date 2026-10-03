@@ -11,6 +11,26 @@ index ea55db5..74acf20 100644
  }
  
  // === Header ===
+diff --git a/node_modules/@anoyomoose/q2-fresh-paint-md3e/dist/theme/components/QDialog.scss b/node_modules/@anoyomoose/q2-fresh-paint-md3e/dist/theme/components/QDialog.scss
+index 465bdbf..a2769bc 100644
+--- a/node_modules/@anoyomoose/q2-fresh-paint-md3e/dist/theme/components/QDialog.scss
++++ b/node_modules/@anoyomoose/q2-fresh-paint-md3e/dist/theme/components/QDialog.scss
+@@ -47,6 +47,15 @@
+   color: var(--md3-on-surface-variant); // intentional: differentiate supporting text from heading (on-surface-variant vs inherited on-surface)
+ }
+ 
++// === Plugin Prompt / Options Section ===
++// Quasar zeroes the top padding of a card section that follows another, and the
++// plugin's form section scrolls (overflow: auto). The outlined notch floats the
++// label onto the field's top border (see QField.scss), ~6px above the control,
++// so without padding the scroll box clips the label whenever it floats.
++.q-dialog-plugin .q-card__section + .q-card__section.q-dialog-plugin__form {
++  padding-top: 8px;
++}
++
+ // === Dialog Action Buttons ===
+ // MD3E: action label text is primary-colored
+ .q-dialog__inner > .q-card > .q-card__actions .q-btn {
 diff --git a/node_modules/@anoyomoose/q2-fresh-paint-md3e/dist/theme/components/QNotify.scss b/node_modules/@anoyomoose/q2-fresh-paint-md3e/dist/theme/components/QNotify.scss
 index f438471..347ca2b 100644
 --- a/node_modules/@anoyomoose/q2-fresh-paint-md3e/dist/theme/components/QNotify.scss

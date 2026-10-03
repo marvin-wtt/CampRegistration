@@ -50,5 +50,21 @@ export default {
         cause: '$t(email:footer.cause) you administer this organization.',
       },
     },
+    invoiceIssued: {
+      subject: 'Invoice for {{ event.name }}',
+      preview: '{{ amount }} for {{ event.name }}',
+      text: {
+        title: 'A new invoice is ready',
+        information:
+          'The invoice for {{ event.name }} is ready: {{ amount }}. ' +
+          'You can download it on the billing page of {{ organization.name }}.',
+        button: 'Open billing',
+        greeting: 'Best regards,',
+        teamName: '{{ appName }} team',
+      },
+      footer: {
+        cause: '$t(email:footer.cause) you administer this organization.',
+      },
+    },
   },
 };

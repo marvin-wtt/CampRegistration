@@ -18,6 +18,9 @@ import type {
   OrganizationMember,
   OrganizationInvitation,
   ProgramItem,
+  PriceModel,
+  EventBill,
+  Invoice,
 } from '../../src/generated/prisma/client.js';
 import type { ZodObject, z } from 'zod';
 import type { JsonResource } from '#core/resource/JsonResource';
@@ -59,6 +62,9 @@ declare global {
       task?: TaskWithAssignee;
       chore?: ChoreWithSlots;
       choreAssignment?: ChoreAssignmentWithRelations;
+      priceModel?: PriceModel;
+      eventBill?: EventBill;
+      invoice?: Invoice & { files: File[]; eventBill: EventBill };
     }
 
     interface AuthUser {

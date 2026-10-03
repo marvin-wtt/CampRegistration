@@ -23,3 +23,4 @@ export * from './event-setting.factory';
 export * from './organization.factory';
 export * from './privacy-notice.factory';
 export * from './organization-member.factory';
+export * from './price-model.factory';

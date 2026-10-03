@@ -60,6 +60,13 @@
           </q-td>
         </template>
 
+        <template #body-cell-priceModel="props">
+          <price-model-td
+            :props
+            :price-model="props.row.priceModel"
+          />
+        </template>
+
         <template #body-cell-action="props">
           <q-td
             :props
@@ -87,13 +94,17 @@ import OrganizationReviewDialog, {
   type OrganizationReviewResult,
 } from '@/components/organization/OrganizationReviewDialog.vue';
 import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
+import PriceModelAssignDialog, {
+  type PriceModelAssignResult,
+} from '@/components/billing/PriceModelAssignDialog.vue';
+import PriceModelTd from '@/components/billing/PriceModelTd.vue';
 import { useAPIService } from '@/services/APIService';
 import { useServerTable } from '@/composables/serverTable';
 import { useServiceNotifications } from '@/composables/serviceHandler';
 import { useRouter } from 'vue-router';
 import { countryName } from '@/utils/countries';
 import type {
-  Organization,
+  AdminOrganization,
   OrganizationQuery,
   OrganizationVerificationStatus,
 } from '@camp-registration/common/entities';
@@ -103,6 +114,7 @@ const quasar = useQuasar();
 const router = useRouter();
 const api = useAPIService();
 const { withErrorNotification } = useServiceNotifications();
+const billingNotifications = useServiceNotifications('billing');
 
 const status = ref<OrganizationVerificationStatus | null>(null);
 
@@ -118,7 +130,7 @@ const {
   identitySort,
   reload,
   withProgressNotification,
-} = useServerTable<Organization, OrganizationQuery>({
+} = useServerTable<AdminOrganization, OrganizationQuery>({
   storeName: 'organization',
   sortBy: 'submittedAt',
   descending: true,
@@ -144,7 +156,7 @@ const statusOptions = computed(() => [
   { label: t('status.REJECTED'), value: 'REJECTED' },
 ]);
 
-const columns = computed<QTableColumn<Organization>[]>(() => [
+const columns = computed<QTableColumn<AdminOrganization>[]>(() => [
   {
     name: 'name',
     label: t('column.name'),
@@ -172,6 +184,12 @@ const columns = computed<QTableColumn<Organization>[]>(() => [
     sortable: true,
   },
   {
+    name: 'priceModel',
+    label: t('column.priceModel'),
+    field: 'priceModelId',
+    align: 'left',
+  },
+  {
     name: 'submittedAt',
     label: t('column.submittedAt'),
     field: 'submittedAt',
@@ -194,7 +212,7 @@ function statusColor(status: OrganizationVerificationStatus): string {
   return 'warning';
 }
 
-function actionsFor(organization: Organization): RowAction[] {
+function actionsFor(organization: AdminOrganization): RowAction[] {
   return [
     {
       key: 'details',
@@ -221,6 +239,12 @@ function actionsFor(organization: Organization): RowAction[] {
       handler: () => openOrganization(organization),
     },
     {
+      key: 'priceModel',
+      label: t('action.priceModel'),
+      icon: 'sell',
+      handler: () => assignPriceModel(organization),
+    },
+    {
       key: 'delete',
       label: t('action.delete'),
       icon: 'delete',
@@ -233,7 +257,7 @@ function actionsFor(organization: Organization): RowAction[] {
   ];
 }
 
-function openOrganization(organization: Organization) {
+function openOrganization(organization: AdminOrganization) {
   const routeData = router.resolve({
     name: 'management.organization',
     params: {
@@ -244,7 +268,30 @@ function openOrganization(organization: Organization) {
   window.open(routeData.href, '_blank');
 }
 
-function showDetails(organization: Organization) {
+function assignPriceModel(organization: AdminOrganization) {
+  quasar
+    .dialog({
+      component: PriceModelAssignDialog,
+      componentProps: {
+        subject: organization.name,
+        scope: 'organization',
+        current: organization.priceModelId,
+      },
+    })
+    .onOk((result: PriceModelAssignResult) => {
+      void billingNotifications
+        .withProgressNotification('assign', () =>
+          api.assignOrganizationPriceModel(organization.id, result),
+        )
+        .then(
+          () => reload(),
+          // Already reported by the progress notification.
+          () => undefined,
+        );
+    });
+}
+
+function showDetails(organization: AdminOrganization) {
   quasar.dialog({
     component: OrganizationDetailsDialog,
     componentProps: { organization },
@@ -254,11 +301,11 @@ function showDetails(organization: Organization) {
 /**
  * Deletion is refused while the organization still owns events or newsletters —
  * their foreign keys are `Restrict`, so registrations can never be taken down
- * with it. Only the details response carries those counts, so they are fetched
- * up front: being told what blocks the deletion beats typing the name to
- * confirm and only then being refused.
+ * with it — or has unpaid bills. Only the details response carries those
+ * counts, so they are fetched up front: being told what blocks the deletion
+ * beats typing the name to confirm and only then being refused.
  */
-async function onDelete(organization: Organization) {
+async function onDelete(organization: AdminOrganization) {
   const details = await withErrorNotification(
     'details',
     () => api.fetchOrganization(organization.id),
@@ -269,13 +316,25 @@ async function onDelete(organization: Organization) {
     return;
   }
 
-  if (details.ownedEvents > 0 || details.ownedNewsletters > 0) {
+  const ownsContent = details.ownedEvents > 0 || details.ownedNewsletters > 0;
+  if (ownsContent || details.unpaidBills > 0) {
+    const reasons = [
+      ownsContent &&
+        t('dialog.blocked.message', {
+          events: details.ownedEvents,
+          newsletters: details.ownedNewsletters,
+        }),
+      details.unpaidBills > 0 &&
+        t(
+          'dialog.blocked.unpaidBills',
+          { count: details.unpaidBills },
+          details.unpaidBills,
+        ),
+    ];
+
     quasar.dialog({
       title: t('dialog.blocked.title'),
-      message: t('dialog.blocked.message', {
-        events: details.ownedEvents,
-        newsletters: details.ownedNewsletters,
-      }),
+      message: reasons.filter(Boolean).join(' '),
       ok: {
         label: t('dialog.blocked.ok'),
         color: 'primary',
@@ -306,7 +365,7 @@ async function onDelete(organization: Organization) {
     });
 }
 
-function review(organization: Organization) {
+function review(organization: AdminOrganization) {
   quasar
     .dialog({
       component: OrganizationReviewDialog,
@@ -343,11 +402,13 @@ column:
   country: 'Country'
   registrationNumber: 'Registration number'
   status: 'Status'
+  priceModel: 'Price model'
   submittedAt: 'Submitted'
   action: 'Actions'
 action:
   details: 'Details'
   open: 'Open organization'
+  priceModel: 'Price model'
   review: 'Review'
   changeDecision: 'Change decision'
   delete: 'Delete'
@@ -363,6 +424,7 @@ dialog:
     message:
       'This organization still owns { events } event(s) and { newsletters } newsletter(s).
       Move or delete them before deleting the organization.'
+    unpaidBills: 'One bill is not paid yet. | {count} bills are not paid yet.'
     ok: 'Close'
 notify:
   reviewFailed: 'The decision could not be saved'
@@ -381,11 +443,13 @@ column:
   country: 'Land'
   registrationNumber: 'Registernummer'
   status: 'Status'
+  priceModel: 'Preismodell'
   submittedAt: 'Eingereicht'
   action: 'Aktionen'
 action:
   details: 'Details'
   open: 'Organisation öffnen'
+  priceModel: 'Preismodell'
   review: 'Prüfen'
   changeDecision: 'Entscheidung ändern'
   delete: 'Löschen'
@@ -401,6 +465,7 @@ dialog:
     message:
       'Diese Organisation besitzt noch { events } Veranstaltung(s) und { newsletters } Newsletter.
       Verschiebe oder lösche sie, bevor du die Organisation löschst.'
+    unpaidBills: 'Eine Rechnung ist noch nicht bezahlt. | {count} Rechnungen sind noch nicht bezahlt.'
     ok: 'Schließen'
 notify:
   reviewFailed: 'Die Entscheidung konnte nicht gespeichert werden'
@@ -419,11 +484,13 @@ column:
   country: 'Pays'
   registrationNumber: "Numéro d'enregistrement"
   status: 'Statut'
+  priceModel: 'Modèle tarifaire'
   submittedAt: 'Soumise'
   action: 'Actions'
 action:
   details: 'Détails'
   open: "Ouvrir l'organisation"
+  priceModel: 'Modèle tarifaire'
   review: 'Contrôler'
   changeDecision: 'Modifier la décision'
   delete: 'Supprimer'
@@ -439,6 +506,7 @@ dialog:
     message:
       "Cette organisation possède encore { events } événement(s) et { newsletters } newsletter(s).
       Déplacez-les ou supprimez-les avant de supprimer l'organisation."
+    unpaidBills: "Une facture n'est pas encore payée. | {count} factures ne sont pas encore payées."
     ok: 'Fermer'
 notify:
   reviewFailed: "La décision n'a pas pu être enregistrée"
@@ -457,11 +525,13 @@ column:
   country: 'Kraj'
   registrationNumber: 'Numer rejestrowy'
   status: 'Status'
+  priceModel: 'Model cenowy'
   submittedAt: 'Zgłoszono'
   action: 'Akcje'
 action:
   details: 'Szczegóły'
   open: 'Otwórz organizację'
+  priceModel: 'Model cenowy'
   review: 'Sprawdź'
   changeDecision: 'Zmień decyzję'
   delete: 'Usuń'
@@ -477,6 +547,7 @@ dialog:
     message:
       'Ta organizacja nadal posiada wydarzenia ({ events }) i newslettery ({ newsletters }).
       Przenieś je lub usuń przed usunięciem organizacji.'
+    unpaidBills: 'Nieopłacone rachunki: {count}.'
     ok: 'Zamknij'
 notify:
   reviewFailed: 'Nie udało się zapisać decyzji'
@@ -495,11 +566,13 @@ column:
   country: 'Země'
   registrationNumber: 'Registrační číslo'
   status: 'Stav'
+  priceModel: 'Cenový model'
   submittedAt: 'Odesláno'
   action: 'Akce'
 action:
   details: 'Detaily'
   open: 'Otevřít organizaci'
+  priceModel: 'Cenový model'
   review: 'Zkontrolovat'
   changeDecision: 'Změnit rozhodnutí'
   delete: 'Smazat'
@@ -515,6 +588,7 @@ dialog:
     message:
       'Tato organizace stále vlastní akce ({ events }) a newslettery ({ newsletters }).
       Než organizaci smažete, přesuňte je nebo smažte.'
+    unpaidBills: 'Nezaplacené faktury: {count}.'
     ok: 'Zavřít'
 notify:
   reviewFailed: 'Rozhodnutí se nepodařilo uložit'

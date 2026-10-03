@@ -70,7 +70,12 @@ const title = computed<string>(() => {
   return eventName.value ?? t('title');
 });
 
+// The store keeps the last event after leaving it, so only an event route
+// names it.
 const eventName = computed<string | undefined>(() => {
+  if (route.params.eventId === undefined) {
+    return undefined;
+  }
   const name = eventDetailStore.data?.name;
 
   return name ? to(name) : undefined;

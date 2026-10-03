@@ -189,7 +189,7 @@ Events and newsletters are owned by an `Organization`, moderated by system admin
   `Event.organizationVerificationStatus` / `Newsletter.organizationVerificationStatus` to explain why a event isn't
   reaching anyone or why sending is disabled.
 - Organization `ADMIN`s hold exactly `ORGANIZATION_EVENT_PERMISSIONS`
-  (`event.view`, `event.edit`, `event.managers.view`) on every event their organization owns, merged in
+  (`event.view`, `event.edit`, `event.managers.view`, `event.billing.view`) on every event their organization owns, merged in
   `EventManagerService.getManagerAuthorization()`, and exactly `ORGANIZATION_NEWSLETTER_PERMISSIONS`
   (`newsletter.view`, `newsletter.managers.view`) on every newsletter it owns, merged in
   `NewsletterManagerService.getManagerPermissions()`. **Never extend either constant to personal data** — registrations

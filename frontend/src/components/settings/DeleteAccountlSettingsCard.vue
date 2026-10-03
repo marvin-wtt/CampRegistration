@@ -236,7 +236,7 @@ disclaimer:
 
 blockers:
   title: 'Votre compte ne peut pas encore être supprimé'
-  description: 'Vous êtes le seul directeur, propriétaire ou administrateur des éléments suivants. Attribuez ce rôle à une autre personne ou supprimez-les d’abord.'
+  description: 'Vous êtes la seule personne ayant un rôle de direction, de gestion ou d’administration pour les éléments suivants. Attribuez ce rôle à une autre personne ou supprimez-les d’abord.'
   event: 'Événement'
   newsletter: 'Newsletter'
   organization: 'Organisation'
@@ -259,7 +259,7 @@ disclaimer:
 
 blockers:
   title: 'Nie można jeszcze usunąć Twojego konta'
-  description: 'Jesteś jedynym kierownikiem, właścicielem lub administratorem poniższych pozycji. Przekaż tę rolę innej osobie lub najpierw je usuń.'
+  description: 'Jesteś jedyną osobą z rolą kierownictwa, zarządzania lub administracji w poniższych pozycjach. Przekaż tę rolę innej osobie lub najpierw je usuń.'
   event: 'Wydarzenie'
   newsletter: 'Newsletter'
   organization: 'Organizacja'
@@ -282,7 +282,7 @@ disclaimer:
 
 blockers:
   title: 'Váš účet zatím nelze smazat'
-  description: 'Jste jediným vedoucím, vlastníkem nebo správcem následujících položek. Předejte tuto roli jiné osobě nebo je nejprve smažte.'
+  description: 'Jste jedinou osobou s rolí vedení, správy či administrace u následujících položek. Předejte tuto roli jiné osobě nebo je nejprve smažte.'
   event: 'Akce'
   newsletter: 'Newsletter'
   organization: 'Organizace'

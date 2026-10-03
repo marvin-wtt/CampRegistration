@@ -29,4 +29,12 @@ export interface AdminOverview {
   files: {
     total: number;
   };
+  billing: {
+    /** Events currently running, billed once they end. */
+    draft: number;
+    /** Finalized, awaiting payment. */
+    open: number;
+    /** What the open bills add up to, per currency (decimal strings). */
+    outstanding: { currency: string; amount: string }[];
+  };
 }

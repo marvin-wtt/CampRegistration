@@ -4,6 +4,8 @@ import { inject, injectable } from 'inversify';
 import httpStatus from 'http-status';
 import ApiError from '#utils/ApiError';
 import { PrivacyNoticeService } from '#app/privacyNotice/privacy-notice.service';
+import { PriceModelService } from '#app/priceModel/price-model.service';
+import { priceModelSummarySelect } from '#app/priceModel/price-model.resource';
 import type {
   OrganizationCreateData,
   OrganizationUpdateData,
@@ -17,6 +19,8 @@ export class OrganizationService extends BaseService {
   constructor(
     @inject(PrivacyNoticeService)
     private readonly privacyNoticeService: PrivacyNoticeService,
+    @inject(PriceModelService)
+    private readonly priceModelService: PriceModelService,
   ) {
     super();
   }
@@ -53,6 +57,7 @@ export class OrganizationService extends BaseService {
       take: limit + 1,
       ...(options.cursor ? { cursor: { id: options.cursor }, skip: 1 } : {}),
       orderBy: [{ [sortBy]: sortType }, { id: sortType }],
+      include: { priceModel: { select: priceModelSummarySelect } },
     });
 
     const hasMore = items.length > limit;
@@ -75,13 +80,20 @@ export class OrganizationService extends BaseService {
     });
   }
 
-  /** The creating user becomes its first ADMIN, so an organization is never ownerless. */
+  /**
+   * The creating user becomes its first ADMIN, so an organization is never
+   * ownerless. It starts on the default price model; only an administrator
+   * can change that.
+   */
   async createOrganization(userId: string, data: OrganizationCreateData) {
+    const priceModel = await this.priceModelService.getDefault();
+
     return this.prisma.organization.create({
       data: {
         ...data,
         verificationStatus: 'PENDING',
         submittedAt: new Date(),
+        priceModel: { connect: { id: priceModel.id } },
         members: {
           create: { userId, role: 'ADMIN' },
         },
@@ -132,12 +144,16 @@ export class OrganizationService extends BaseService {
   }
 
   async countOwnedResources(id: string) {
-    const [events, newsletters] = await this.prisma.$transaction([
+    const [events, newsletters, unpaidBills] = await this.prisma.$transaction([
       this.prisma.event.count({ where: { organizationId: id } }),
       this.prisma.newsletter.count({ where: { organizationId: id } }),
+      // Settled bills don't block: they keep their customer snapshot.
+      this.prisma.eventBill.count({
+        where: { organizationId: id, status: { in: ['DRAFT', 'OPEN'] } },
+      }),
     ]);
 
-    return { events, newsletters };
+    return { events, newsletters, unpaidBills };
   }
 
   /** Puts a previously rejected organization back into the moderation queue. */

@@ -3,7 +3,7 @@
     ref="dialogRef"
     @hide="onDialogHide"
   >
-    <chore-dialog-card
+    <dialog-card
       :title="t('title')"
       :subtitle="t(`description.${scope}`)"
       :width="560"
@@ -210,7 +210,7 @@
           :label="t('action.plan')"
         />
       </template>
-    </chore-dialog-card>
+    </dialog-card>
   </responsive-dialog>
 </template>
 
@@ -235,7 +235,7 @@ import { useObjectTranslation } from '@/composables/objectTranslation';
 import { formatLocalDate } from '@/utils/date';
 import { eachDate, requiredCount } from '@/utils/chores';
 import DateRangeInput from '@/components/common/inputs/DateRangeInput.vue';
-import ChoreDialogCard from '@/components/event/chorePlanner/ChoreDialogCard.vue';
+import DialogCard from '@/components/common/dialogs/DialogCard.vue';
 import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
 import ChoreDialog from '@/components/event/chorePlanner/dialogs/ChoreDialog.vue';
 import { useChoreStore } from '@/stores/chore-store';

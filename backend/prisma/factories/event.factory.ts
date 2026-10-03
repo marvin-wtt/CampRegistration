@@ -3,6 +3,10 @@ import { Prisma } from '#generated/prisma/client.js';
 import prisma from '../client.js';
 import { MessageTemplateFactory } from './message-template.factory';
 import { OrganizationFactory } from './organization.factory';
+import {
+  FREE_PRICE_MODEL_ID,
+  FREE_PRICE_MODEL_NAME,
+} from '#app/priceModel/price-model.utils';
 
 export const EventFactory = {
   build: (
@@ -29,6 +33,15 @@ export const EventFactory = {
       // Give the event an owner unless the caller named one.
       organization: data.organization ?? {
         create: OrganizationFactory.build(),
+      },
+      // A new organization starts on the free model, so does its event.
+      // `create()` pins an event of an existing organization to that
+      // organization's model instead, as the API does.
+      priceModel: {
+        connectOrCreate: {
+          where: { id: FREE_PRICE_MODEL_ID },
+          create: { id: FREE_PRICE_MODEL_ID, name: FREE_PRICE_MODEL_NAME },
+        },
       },
       listed: faker.datatype.boolean(),
       countries,
@@ -57,8 +70,22 @@ export const EventFactory = {
   },
 
   create: async (data: Partial<Prisma.EventCreateInput> = {}) => {
+    const organizationId = data.organization?.connect?.id;
+    const pinned =
+      data.priceModel === undefined && organizationId
+        ? await prisma.organization.findUniqueOrThrow({
+            where: { id: organizationId },
+            select: { priceModelId: true },
+          })
+        : undefined;
+
     return prisma.event.create({
-      data: EventFactory.build(data),
+      data: EventFactory.build({
+        ...data,
+        ...(pinned
+          ? { priceModel: { connect: { id: pinned.priceModelId } } }
+          : {}),
+      }),
     });
   },
 };

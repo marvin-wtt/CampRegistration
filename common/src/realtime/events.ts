@@ -21,7 +21,8 @@ export type RealtimeResource =
   | 'message'
   | 'file'
   | 'table_template'
-  | 'setting';
+  | 'setting'
+  | 'billing';
 
 /**
  * `created` / `updated` / `deleted` target a single entity (`id` set).
@@ -90,4 +91,6 @@ export const RESOURCE_VIEW_PERMISSION: Record<
   file: 'event.files.view',
   table_template: 'event.table_templates.view',
   setting: 'event.view',
+  // The event's price model and its live bill, with its invoices.
+  billing: 'event.billing.view',
 };

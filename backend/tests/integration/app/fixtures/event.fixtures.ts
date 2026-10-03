@@ -779,6 +779,18 @@ export const eventUpdateBody: UpdateBodyData[] = [
     expected: 200,
   },
   {
+    // Stored translations are not re-validated on an unrelated update.
+    name: 'Listed with stored translations not matching countries',
+    event: {
+      countries: ['de', 'fr'],
+      name: { de: 'Beispiel', en: 'Example' },
+    },
+    data: {
+      listed: false,
+    },
+    expected: 200,
+  },
+  {
     name: 'Listed invalid',
     data: {
       listed: 'private',

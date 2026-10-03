@@ -50,5 +50,21 @@ export default {
         cause: '$t(email:footer.cause) zarządzasz tą organizacją.',
       },
     },
+    invoiceIssued: {
+      subject: 'Faktura za {{ event.name }}',
+      preview: '{{ amount }} za {{ event.name }}',
+      text: {
+        title: 'Nowa faktura jest gotowa',
+        information:
+          'Faktura za {{ event.name }} jest gotowa: {{ amount }}. ' +
+          'Możesz ją pobrać na stronie rozliczeń organizacji {{ organization.name }}.',
+        button: 'Otwórz rozliczenia',
+        greeting: 'Pozdrawiamy,',
+        teamName: 'Zespół {{ appName }}',
+      },
+      footer: {
+        cause: '$t(email:footer.cause) zarządzasz tą organizacją.',
+      },
+    },
   },
 };

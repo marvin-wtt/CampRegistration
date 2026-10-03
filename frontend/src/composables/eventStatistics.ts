@@ -62,6 +62,41 @@ export interface CountryStats {
   free: number | undefined;
 }
 
+export interface CapacityGroup {
+  max: number;
+  /** Accepted and pending registrations. */
+  holding: number;
+  waitlisted: number;
+}
+
+export interface PlaceSplit {
+  free: number;
+  /** Places freed while people wait, kept for the waiting list. */
+  reserved: number;
+  /** Places held beyond a group's capacity. */
+  overbooked: number;
+}
+
+/**
+ * Splits capacity the way the server counts free places: every registration
+ * takes a place, and each group stands on its own — what one group holds
+ * beyond its capacity never comes from another.
+ */
+export function splitPlaces(groups: CapacityGroup[]): PlaceSplit {
+  return groups.reduce<PlaceSplit>(
+    (split, { max, holding, waitlisted }) => {
+      const room = max - holding;
+
+      return {
+        free: split.free + Math.max(0, room - waitlisted),
+        reserved: split.reserved + Math.max(0, Math.min(waitlisted, room)),
+        overbooked: split.overbooked + Math.max(0, -room),
+      };
+    },
+    { free: 0, reserved: 0, overbooked: 0 },
+  );
+}
+
 export function useEventStatistics() {
   const eventDetailsStore = useEventDetailsStore();
   const registrationStore = useRegistrationsStore();
@@ -174,6 +209,23 @@ export function useEventStatistics() {
         free: translatableField(event.freePlaces, country),
       };
     });
+  });
+
+  /** Free places from the server, split from the same counts. */
+  const placeSplit = computed<PlaceSplit>(() => {
+    const limit = eventDetailsStore.data?.maxParticipants;
+    const { accepted, pending, waitlisted } = counts.value;
+    const split = splitPlaces(
+      typeof limit === 'number'
+        ? [{ max: limit, holding: accepted + pending, waitlisted }]
+        : perCountry.value.map((row) => ({
+            max: row.max ?? 0,
+            holding: row.accepted + row.pending,
+            waitlisted: row.waitlisted,
+          })),
+    );
+
+    return { ...split, free: capacity.value.free ?? split.free };
   });
 
   /** Distinct gender values present across all registrations. */
@@ -367,6 +419,7 @@ export function useEventStatistics() {
     hasMultipleCountries,
     multiCountryEvent,
     perCountry,
+    placeSplit,
     ageBands,
     crossTab,
   };

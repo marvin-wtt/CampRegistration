@@ -1,5 +1,9 @@
 import { EventService } from './event.service.js';
-import { EventResource, EventDetailsResource } from './event.resource.js';
+import {
+  AdminEventResource,
+  EventDetailsResource,
+  EventResource,
+} from './event.resource.js';
 import { FileService } from '#app/file/file.service';
 import { RegistrationService } from '#app/registration/registration.service';
 import { TableTemplateService } from '#app/tableTemplate/table-template.service';
@@ -76,8 +80,12 @@ export class EventController extends BaseController {
         },
       );
 
+    // `view=all` is administrators only (see the route guard), so it may
+    // carry what the public listing must not.
+    const Resource = query.view === 'all' ? AdminEventResource : EventResource;
+
     res.resource(
-      EventResource.collection(events).withCursor(nextCursor, limit, total),
+      Resource.collection(events).withCursor(nextCursor, limit, total),
     );
   }
 

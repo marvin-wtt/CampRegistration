@@ -50,5 +50,21 @@ export default {
         cause: '$t(email:footer.cause) tu administres cette organisation.',
       },
     },
+    invoiceIssued: {
+      subject: 'Facture pour {{ event.name }}',
+      preview: '{{ amount }} pour {{ event.name }}',
+      text: {
+        title: 'Une nouvelle facture est disponible',
+        information:
+          'La facture pour {{ event.name }} est disponible : {{ amount }}. ' +
+          'Tu peux la télécharger sur la page de facturation de {{ organization.name }}.',
+        button: 'Ouvrir la facturation',
+        greeting: 'Cordialement,',
+        teamName: "L'équipe {{ appName }}",
+      },
+      footer: {
+        cause: '$t(email:footer.cause) tu administres cette organisation.',
+      },
+    },
   },
 };

@@ -113,6 +113,16 @@
               outlined
               class="col-12 col-sm-6"
             />
+            <q-input
+              v-model="data.vatNumber"
+              :label="t('field.vatNumber')"
+              :hint="t('hint.vatNumber')"
+              color="primary"
+              hide-bottom-space
+              rounded
+              outlined
+              class="col-12"
+            />
           </div>
 
           <q-input
@@ -191,6 +201,7 @@ const data = ref<OrganizationCreateData>({
   addressZipCode: '',
   addressCity: '',
   registrationNumber: '',
+  vatNumber: '',
   verificationNote: '',
 });
 
@@ -204,6 +215,7 @@ async function onSubmit() {
       phone: data.value.phone || null,
       website: data.value.website || null,
       registrationNumber: data.value.registrationNumber || null,
+      vatNumber: data.value.vatNumber || null,
       verificationNote: data.value.verificationNote || null,
     });
 
@@ -250,6 +262,7 @@ rule:
 hint:
   name: 'The registered name of your organization'
   registrationNumber: 'As shown in the official register'
+  vatNumber: 'Printed on invoices'
 field:
   name: 'Organization name'
   contactEmail: 'Contact email'
@@ -260,6 +273,7 @@ field:
   addressCity: 'City'
   country: 'Country'
   registrationNumber: 'Registration number (optional)'
+  vatNumber: 'VAT number (optional)'
   verificationNote: 'Note for the reviewer (optional)'
 action:
   create: 'Create'
@@ -278,6 +292,7 @@ rule:
 hint:
   name: 'Der eingetragene Name deiner Organisation'
   registrationNumber: 'Wie im offiziellen Register angegeben'
+  vatNumber: 'Wird auf Rechnungen angegeben'
 field:
   name: 'Name der Organisation'
   contactEmail: 'Kontakt-E-Mail'
@@ -288,6 +303,7 @@ field:
   addressCity: 'Stadt'
   country: 'Land'
   registrationNumber: 'Registernummer (optional)'
+  vatNumber: 'USt-IdNr. (optional)'
   verificationNote: 'Hinweis für die Prüfung (optional)'
 action:
   create: 'Erstellen'
@@ -306,6 +322,7 @@ rule:
 hint:
   name: 'Le nom enregistré de ton organisation'
   registrationNumber: 'Tel qu’indiqué au registre officiel'
+  vatNumber: 'Figure sur les factures'
 field:
   name: "Nom de l'organisation"
   contactEmail: 'E-mail de contact'
@@ -316,6 +333,7 @@ field:
   addressCity: 'Ville'
   country: 'Pays'
   registrationNumber: "Numéro d'enregistrement (optionnel)"
+  vatNumber: 'Numéro de TVA (facultatif)'
   verificationNote: 'Note pour le vérificateur (optionnel)'
 action:
   create: 'Créer'
@@ -334,6 +352,7 @@ rule:
 hint:
   name: 'Zarejestrowana nazwa Twojej organizacji'
   registrationNumber: 'Zgodnie z oficjalnym rejestrem'
+  vatNumber: 'Podawany na fakturach'
 field:
   name: 'Nazwa organizacji'
   contactEmail: 'E-mail kontaktowy'
@@ -344,6 +363,7 @@ field:
   addressCity: 'Miasto'
   country: 'Kraj'
   registrationNumber: 'Numer rejestrowy (opcjonalnie)'
+  vatNumber: 'Numer VAT (opcjonalnie)'
   verificationNote: 'Uwaga dla weryfikatora (opcjonalnie)'
 action:
   create: 'Utwórz'
@@ -362,6 +382,7 @@ rule:
 hint:
   name: 'Registrovaný název tvé organizace'
   registrationNumber: 'Jak je uvedeno v oficiálním rejstříku'
+  vatNumber: 'Uvádí se na fakturách'
 field:
   name: 'Název organizace'
   contactEmail: 'Kontaktní e-mail'
@@ -372,6 +393,7 @@ field:
   addressCity: 'Město'
   country: 'Země'
   registrationNumber: 'Registrační číslo (volitelné)'
+  vatNumber: 'DIČ (volitelné)'
   verificationNote: 'Poznámka pro ověřovatele (volitelné)'
 action:
   create: 'Vytvořit'

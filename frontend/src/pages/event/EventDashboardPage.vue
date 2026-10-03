@@ -4,10 +4,36 @@
     :error
     class="row justify-center"
   >
-    <!-- Each data card renders its own skeleton while `loading`; the static
-         parts (quick actions, section headings) render for real. -->
+    <!-- Each data card renders its own skeleton while `loading`. -->
     <div class="dashboard-shell col-12 col-md-11 col-xl-10">
-      <event-summary-hero :loading />
+      <event-summary-hero :loading>
+        <template
+          v-if="shortcutsLoading || quickActions.length > 0"
+          #actions
+        >
+          <template v-if="shortcutsLoading">
+            <q-skeleton
+              v-for="width in ['132px', '152px', '116px', '104px']"
+              :key="width"
+              type="QBtn"
+              :width="width"
+              class="shortcut-skeleton"
+            />
+          </template>
+          <template v-else>
+            <m-btn
+              v-for="action in quickActions"
+              :key="action.key"
+              :label="action.label"
+              :icon="action.icon"
+              :to="{ name: action.route }"
+              secondary
+              tonal
+              no-caps
+            />
+          </template>
+        </template>
+      </event-summary-hero>
 
       <!-- The most consequential thing a manager can be unaware of: the event is
        configured correctly but reaching nobody. -->
@@ -19,232 +45,109 @@
         :verification-status="event.organizationVerificationStatus"
       />
 
-      <q-card
-        v-if="!loading && attentionItems.length > 0"
-        flat
-        bordered
-        class="attention-card"
-      >
-        <q-card-section class="attention-content">
-          <div class="attention-heading row items-center no-wrap q-gutter-sm">
-            <div class="attention-icon row items-center justify-center">
-              <q-icon
-                name="notifications_active"
-                color="warning"
-                size="22px"
-              />
-            </div>
-            <div class="col">
-              <div class="text-subtitle1 text-weight-bold">
-                {{ t('attention.title') }}
-              </div>
-              <div class="text-caption text-grey-7">
-                {{ t('attention.subtitle') }}
-              </div>
-            </div>
-          </div>
+      <!-- Wide screens: numbers and charts on the left, things to do on the
+           right. Narrow screens: one column, ordered by `area-*`. -->
+      <div class="dashboard-columns">
+        <div class="dashboard-column dashboard-column--main">
+          <registration-overview-card
+            :loading
+            class="area-registrations"
+          />
 
-          <div class="attention-grid">
-            <button
-              v-for="item in attentionItems"
-              :key="item.key"
-              type="button"
-              class="attention-item"
-              @click="goToItem(item)"
-            >
-              <div class="attention-icon row items-center justify-center">
+          <demographics-explorer
+            :people="stats.acceptedParticipants.value"
+            :loading
+            class="area-demographics"
+          />
+        </div>
+
+        <div class="dashboard-column dashboard-column--side">
+          <q-card
+            v-if="!loading && attentionItems.length > 0"
+            flat
+            bordered
+            class="attention-card area-attention"
+          >
+            <q-card-section>
+              <dashboard-card-header
+                icon="notifications_active"
+                tone="warning"
+                :title="t('attention.title')"
+                :caption="t('attention.subtitle')"
+              />
+            </q-card-section>
+            <q-card-section class="attention-grid q-pt-none">
+              <button
+                v-for="item in attentionItems"
+                :key="item.key"
+                type="button"
+                class="attention-item"
+                @click="goToItem(item)"
+              >
                 <q-icon
                   :name="item.icon"
-                  :color="item.color"
                   size="20px"
+                  class="attention-item__icon"
                 />
-              </div>
-              <span class="col text-left text-body2 text-weight-medium">
-                {{ item.label }}
-              </span>
-              <q-badge
-                :color="item.color"
-                rounded
-              >
-                {{ item.count }}
-              </q-badge>
-              <q-icon
-                name="chevron_right"
-                color="grey-6"
-                size="18px"
-              />
-            </button>
-          </div>
-        </q-card-section>
-      </q-card>
-
-      <section class="dashboard-section">
-        <div class="section-heading row items-end justify-between q-mb-sm">
-          <div>
-            <div class="text-overline text-primary text-weight-bold">
-              {{ t('actions.eyebrow') }}
-            </div>
-            <h2 class="text-h6 text-weight-bold q-my-none">
-              {{ t('actions.title') }}
-            </h2>
-          </div>
-        </div>
-
-        <div class="row q-col-gutter-md">
-          <div
-            v-for="action in quickActions"
-            :key="action.key"
-            class="col-12 col-sm-6 col-lg-3"
-          >
-            <q-card
-              flat
-              bordered
-              class="quick-action-card full-height cursor-pointer"
-              tabindex="0"
-              role="link"
-              @click="goTo(action.route)"
-              @keyup.enter="goTo(action.route)"
-              @keyup.space.prevent="goTo(action.route)"
-            >
-              <q-card-section class="row items-center no-wrap q-gutter-md">
-                <div
-                  class="quick-action-icon row items-center justify-center"
-                  :class="`text-${action.color}`"
-                >
-                  <q-icon
-                    :name="action.icon"
-                    size="24px"
-                  />
-                </div>
-                <div class="col">
-                  <div class="text-subtitle2 text-weight-bold">
-                    {{ action.label }}
-                  </div>
-                  <div class="text-caption text-grey-7">
-                    {{ action.caption }}
-                  </div>
-                </div>
+                <span class="attention-item__label">{{ item.label }}</span>
+                <span class="attention-item__count">{{ item.count }}</span>
                 <q-icon
-                  name="arrow_forward"
-                  color="grey-6"
+                  name="chevron_right"
                   size="18px"
+                  class="attention-item__chevron"
                 />
-              </q-card-section>
-            </q-card>
-          </div>
+              </button>
+            </q-card-section>
+          </q-card>
+
+          <tasks-due-widget
+            v-if="can('event.tasks.view') && isShown('tasks')"
+            :loading="tasksLoading"
+            class="area-tasks"
+          />
+
+          <!-- Renders nothing on days without duties. -->
+          <today-duties-widget
+            v-if="
+              can('event.chore_assignments.view') &&
+              can('event.chores.view') &&
+              isShown('chore_planner')
+            "
+            class="area-duties"
+          />
+
+          <!-- Administrative, so it trails everything else on narrow screens. -->
+          <price-model-widget
+            v-if="can('event.billing.view')"
+            id="event-billing"
+            class="area-billing"
+          />
         </div>
-      </section>
-
-      <section
-        v-if="can('event.tasks.view') && isShown('tasks')"
-        class="dashboard-section"
-      >
-        <tasks-due-widget :loading="tasksLoading" />
-      </section>
-
-      <!-- Renders nothing on days without duties. -->
-      <today-duties-widget
-        v-if="
-          can('event.chore_assignments.view') &&
-          can('event.chores.view') &&
-          isShown('chore_planner')
-        "
-        class="dashboard-section"
-      />
-
-      <section class="dashboard-section">
-        <div class="section-heading q-mb-sm">
-          <div class="text-overline text-primary text-weight-bold">
-            {{ t('overview.eyebrow') }}
-          </div>
-          <h2 class="text-h6 text-weight-bold q-my-none">
-            {{ t('overview.title') }}
-          </h2>
-        </div>
-
-        <div class="row q-col-gutter-md">
-          <div class="col-6 col-md-3 col-xs-12">
-            <stat-card
-              :label="t('kpi.participants')"
-              :value="stats.counts.value.accepted"
-              :caption="t('kpi.participantsCaption')"
-              :loading
-              icon="how_to_reg"
-              color="indigo"
-            />
-          </div>
-          <div
-            v-if="showPending"
-            class="col-6 col-md-3 col-xs-12"
-          >
-            <stat-card
-              :label="t('kpi.pending')"
-              :value="stats.counts.value.pending"
-              :caption="t('kpi.pendingCaption')"
-              :loading
-              icon="hourglass_top"
-              color="orange"
-            />
-          </div>
-          <div class="col-6 col-md-3 col-xs-12">
-            <stat-card
-              :label="t('kpi.waitlisted')"
-              :value="stats.counts.value.waitlisted"
-              :caption="t('kpi.waitlistedCaption')"
-              :loading
-              icon="event_seat"
-              color="blue-grey"
-            />
-          </div>
-          <div class="col-6 col-md-3 col-xs-12">
-            <stat-card
-              :label="t('kpi.team')"
-              :value="stats.staff.value.length"
-              :caption="t('kpi.teamCaption')"
-              :loading
-              icon="supervisor_account"
-              color="deep-purple"
-            />
-          </div>
-        </div>
-      </section>
-
-      <section
-        v-if="!loading && stats.multiCountryEvent.value"
-        class="dashboard-section"
-      >
-        <country-breakdown-table
-          :rows="stats.perCountry.value"
-          :show-pending="showPending"
-        />
-      </section>
-
-      <section class="dashboard-section">
-        <demographics-explorer
-          :people="stats.acceptedParticipants.value"
-          :loading
-        />
-      </section>
+      </div>
     </div>
   </page-state-handler>
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
+import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import EventSummaryHero from '@/components/event/dashboard/EventSummaryHero.vue';
-import StatCard from '@/components/event/dashboard/StatCard.vue';
 import TodayDutiesWidget from '@/components/event/dashboard/TodayDutiesWidget.vue';
-import CountryBreakdownTable from '@/components/event/dashboard/CountryBreakdownTable.vue';
+import RegistrationOverviewCard from '@/components/event/dashboard/RegistrationOverviewCard.vue';
+import DashboardCardHeader from '@/components/event/dashboard/DashboardCardHeader.vue';
 import DemographicsExplorer from '@/components/event/dashboard/DemographicsExplorer.vue';
 import TasksDueWidget from '@/components/event/dashboard/TasksDueWidget.vue';
+import PriceModelWidget from '@/components/event/dashboard/PriceModelWidget.vue';
 import { useEventDetailsStore } from '@/stores/event-details-store';
+import { useProfileStore } from '@/stores/profile-store';
 import { useRegistrationsStore } from '@/stores/registration-store';
 import { useEventFilesStore } from '@/stores/event-files-store';
 import { useTaskStore } from '@/stores/task-store';
+import { useEventBillingStore } from '@/stores/event-billing-store';
 import { useEventStatistics } from '@/composables/eventStatistics';
 import { useRegistrationHelper } from '@/composables/registrationHelper';
 import { usePermissions } from '@/composables/permissions';
@@ -262,13 +165,16 @@ const { t } = useI18n();
 const router = useRouter();
 
 const eventDetailsStore = useEventDetailsStore();
+const profileStore = useProfileStore();
 const registrationStore = useRegistrationsStore();
 const eventFilesStore = useEventFilesStore();
 const taskStore = useTaskStore();
+const billingStore = useEventBillingStore();
 const stats = useEventStatistics();
 const helper = useRegistrationHelper();
 const { can, canAccess } = usePermissions();
-const { settings: navigationSettings } = useNavigationSettings();
+const { settings: navigationSettings, isLoading: navigationLoading } =
+  useNavigationSettings();
 
 // Features hidden from the nav rail are hidden here too.
 function isShown(item: HideableNavigationItem): boolean {
@@ -282,6 +188,15 @@ const {
 } = storeToRefs(eventDetailsStore);
 const { isLoading: registrationsLoading, error: registrationsError } =
   storeToRefs(registrationStore);
+
+// Shortcuts depend on permissions (profile and event) and the hidden nav items;
+// most managers have some, so they are skeletonized rather than left out.
+const shortcutsLoading = computed<boolean>(
+  () =>
+    navigationLoading.value ||
+    profileStore.user === undefined ||
+    event.value === undefined,
+);
 
 const loading = computed<boolean>(
   () => registrationsLoading.value || eventLoading.value,
@@ -301,18 +216,20 @@ void registrationStore.fetchData();
 void eventDetailsStore.fetchData();
 void eventFilesStore.fetchData();
 void taskStore.fetchData();
-
-// Pending only matters when registrations are confirmed manually.
-const showPending = computed<boolean>(
-  () => event.value?.confirmationMode !== 'AUTOMATIC',
+watch(
+  () => can('event.billing.view'),
+  (allowed) => {
+    if (allowed) {
+      void billingStore.fetchData();
+    }
+  },
+  { immediate: true },
 );
 
 interface QuickAction {
   key: string;
   label: string;
-  caption: string;
   icon: string;
-  color: string;
   route: string;
   permission: PermissionRequirement<'event'>;
   navItem?: HideableNavigationItem;
@@ -323,39 +240,31 @@ const quickActions = computed<QuickAction[]>(() =>
     [
       {
         key: 'participants',
-        label: t('actions.participants.label'),
-        caption: t('actions.participants.caption'),
+        label: t('actions.participants'),
         icon: 'groups',
-        color: 'primary',
         route: 'management.event.participants',
         permission: 'event.registrations.view',
       },
       {
         key: 'contact',
-        label: t('actions.contact.label'),
-        caption: t('actions.contact.caption'),
+        label: t('actions.contact'),
         icon: 'mark_email_unread',
-        color: 'teal',
         route: 'management.event.contact',
         navItem: 'contact',
         permission: { any: ['event.messages.create', 'event.messages.view'] },
       },
       {
         key: 'program',
-        label: t('actions.program.label'),
-        caption: t('actions.program.caption'),
+        label: t('actions.program'),
         icon: 'calendar_month',
-        color: 'deep-orange',
         route: 'management.event.program-planner',
         navItem: 'program_planner',
         permission: 'event.program_items.view',
       },
       {
         key: 'rooms',
-        label: t('actions.rooms.label'),
-        caption: t('actions.rooms.caption'),
+        label: t('actions.rooms'),
         icon: 'bed',
-        color: 'deep-purple',
         route: 'management.event.room-planner',
         navItem: 'room_planner',
         permission: 'event.rooms.view',
@@ -373,11 +282,12 @@ interface AttentionItem {
   label: string;
   count: number;
   icon: string;
-  color: string;
   // Deep-links into the participants table via a hidden local template…
   template?: string;
-  // …or navigates to another management route (e.g. file settings).
+  // …or navigates to another management route (e.g. file settings)…
   route?: string;
+  // …or scrolls to a section of this page.
+  anchor?: string;
 }
 
 const attentionItems = computed<AttentionItem[]>(() => {
@@ -402,13 +312,21 @@ const attentionItems = computed<AttentionItem[]>(() => {
   // missing a file for one of the event's locales (see event-files-store).
   const missingFiles = eventFilesStore.missingFilesCount;
 
+  // Once the invoice is out, paying it is on the organizer.
+  const bill = billingStore.data?.bill;
+  const unpaidInvoices =
+    can('event.billing.view') &&
+    bill?.status === 'OPEN' &&
+    bill.invoices.some((invoice) => invoice.type === 'INVOICE')
+      ? 1
+      : 0;
+
   const items: AttentionItem[] = [
     {
       key: 'pending',
       label: t('attention.pending'),
       count: pending,
       icon: 'hourglass_top',
-      color: 'orange',
       template: LOCAL_TEMPLATE_PENDING,
     },
     {
@@ -416,7 +334,6 @@ const attentionItems = computed<AttentionItem[]>(() => {
       label: t('attention.missing'),
       count: missingInfo,
       icon: 'contact_mail',
-      color: 'red',
       template: LOCAL_TEMPLATE_MISSING,
     },
     {
@@ -424,7 +341,6 @@ const attentionItems = computed<AttentionItem[]>(() => {
       label: t('attention.age'),
       count: ageOutOfRange,
       icon: 'cake',
-      color: 'deep-orange',
       template: LOCAL_TEMPLATE_AGE,
     },
     {
@@ -432,8 +348,14 @@ const attentionItems = computed<AttentionItem[]>(() => {
       label: t('attention.files'),
       count: missingFiles,
       icon: 'upload_file',
-      color: 'blue',
       route: 'management.event.settings.files',
+    },
+    {
+      key: 'invoice',
+      label: t('attention.invoice'),
+      count: unpaidInvoices,
+      icon: 'receipt_long',
+      anchor: 'event-billing',
     },
   ];
 
@@ -447,6 +369,12 @@ function goToItem(item: AttentionItem) {
   }
   if (item.route) {
     goTo(item.route);
+    return;
+  }
+  if (item.anchor) {
+    document
+      .getElementById(item.anchor)
+      ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 }
 
@@ -463,84 +391,85 @@ function goTo(routeName: string) {
 </script>
 
 <style scoped>
-/* Mirrors `.attention-card`, but keyed to `error`: that card lists things to
-   get around to, this one says the event is currently reaching nobody. */
+.shortcut-skeleton {
+  height: 40px;
+  border-radius: 999px;
+}
+
+@media (max-width: 599px) {
+  .shortcut-skeleton {
+    width: auto !important;
+  }
+}
+
 .dashboard-shell {
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 20px;
   max-width: 1440px;
 }
 
-.dashboard-section {
-  min-width: 0;
+.dashboard-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
 }
 
-.section-heading {
-  padding-inline: 2px;
+/* Single column: the wrappers dissolve so the areas can be reordered. */
+.dashboard-column {
+  display: contents;
 }
 
-.quick-action-card,
+.area-attention {
+  order: 1;
+}
+
+.area-registrations {
+  order: 2;
+}
+
+.area-tasks {
+  order: 3;
+}
+
+.area-duties {
+  order: 4;
+}
+
+.area-demographics {
+  order: 5;
+}
+
+.area-billing {
+  order: 6;
+}
+
 .attention-card {
   border-radius: 16px;
-}
-
-.quick-action-card {
-  transition:
-    transform 0.18s ease,
-    border-color 0.18s ease,
-    box-shadow 0.18s ease;
-}
-
-.quick-action-card:hover,
-.quick-action-card:focus-visible {
-  border-color: var(--q-primary);
-  box-shadow: 0 8px 24px rgba(38, 50, 56, 0.1);
-  outline: none;
-  transform: translateY(-2px);
-}
-
-.quick-action-icon,
-.attention-icon {
-  width: 44px;
-  height: 44px;
-  flex: 0 0 auto;
-  border-radius: 13px;
-  background: rgba(127, 127, 127, 0.1);
-}
-
-.attention-card {
-  border-left: 4px solid var(--md3-warning);
-  background: color-mix(in srgb, var(--md3-warning) 7%, var(--md3-surface));
-}
-
-.attention-content {
-  display: grid;
-  grid-template-columns: minmax(220px, 0.7fr) minmax(0, 2fr);
-  gap: 16px 24px;
-  padding: 16px;
+  border-color: color-mix(in srgb, var(--md3-warning) 45%, transparent);
+  background: color-mix(in srgb, var(--md3-warning) 6%, var(--md3-surface));
 }
 
 .attention-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 8px;
 }
 
 .attention-item {
   display: flex;
   min-width: 0;
-  min-height: 52px;
+  min-height: 48px;
   align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  color: inherit;
+  gap: 12px;
+  padding: 8px 8px 8px 12px;
+  color: var(--md3-on-surface);
   font: inherit;
   text-align: left;
   cursor: pointer;
   background: var(--md3-surface);
   border: 1px solid var(--md3-outline-variant);
-  border-radius: 10px;
+  border-radius: 12px;
   transition:
     border-color 0.18s ease,
     background 0.18s ease;
@@ -553,72 +482,69 @@ function goTo(routeName: string) {
   outline: none;
 }
 
-.attention-item .attention-icon {
-  width: 34px;
-  height: 34px;
-  border-radius: 9px;
+.attention-item__icon {
+  color: var(--md3-warning);
 }
 
-:global(.body--dark) .quick-action-card:hover,
-:global(.body--dark) .quick-action-card:focus-visible {
-  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.28);
+.attention-item__label {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
 }
 
-@media (max-width: 1199px) {
-  .attention-content {
-    grid-template-columns: 1fr;
+.attention-item__count {
+  min-width: 24px;
+  padding: 2px 8px;
+  color: var(--md3-on-warning-container);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-align: center;
+  background: var(--md3-warning-container);
+  border-radius: 999px;
+}
+
+.attention-item__chevron {
+  color: var(--md3-on-surface-variant);
+}
+
+@media (min-width: 1280px) {
+  .dashboard-columns {
+    grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
+    align-items: start;
   }
-}
 
-@media (max-width: 899px) {
-  .attention-grid {
-    grid-template-columns: 1fr;
+  .dashboard-column {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* Nothing to do (or nothing permitted): the main column takes the width. */
+  .dashboard-columns:has(> .dashboard-column--side:empty) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dashboard-column--side:empty {
+    display: none;
   }
 }
 
 @media (max-width: 599px) {
-  .dashboard-shell {
-    gap: 22px;
-  }
-
-  .quick-action-card .q-card__section {
-    padding: 14px;
-  }
-
-  .attention-content {
-    padding: 14px;
+  .dashboard-shell,
+  .dashboard-columns {
+    gap: 16px;
   }
 }
 </style>
 
 <i18n lang="yaml" locale="en">
-kpi:
-  participants: 'Participants'
-  participantsCaption: 'Accepted registrations'
-  pending: 'Pending'
-  pendingCaption: 'Awaiting confirmation'
-  waitlisted: 'Waitlisted'
-  waitlistedCaption: 'Waiting for a place'
-  team: 'Team'
-  teamCaption: 'Leaders and staff'
 actions:
-  eyebrow: 'Coordinator tools'
-  title: 'Quick actions'
-  participants:
-    label: 'Participants'
-    caption: 'Review and manage registrations'
-  contact:
-    label: 'Communication'
-    caption: 'Send updates to your groups'
-  program:
-    label: 'Program'
-    caption: 'Plan the event schedule'
-  rooms:
-    label: 'Rooms'
-    caption: 'Assign beds and rooms'
-overview:
-  eyebrow: 'At a glance'
-  title: 'Registration overview'
+  participants: 'Participants'
+  contact: 'Communication'
+  program: 'Program'
+  rooms: 'Rooms'
 attention:
   title: 'Needs attention'
   subtitle: 'Items that may require a decision'
@@ -626,36 +552,15 @@ attention:
   missing: 'Missing contact details'
   age: 'Age outside event range'
   files: 'Missing files'
+  invoice: 'Invoice awaiting payment'
 </i18n>
 
 <i18n lang="yaml" locale="de">
-kpi:
-  participants: 'Teilnehmende'
-  participantsCaption: 'Angenommene Anmeldungen'
-  pending: 'Ausstehend'
-  pendingCaption: 'Warten auf Bestätigung'
-  waitlisted: 'Warteliste'
-  waitlistedCaption: 'Warten auf einen Platz'
-  team: 'Team'
-  teamCaption: 'Leitung und Mitarbeitende'
 actions:
-  eyebrow: 'Werkzeuge'
-  title: 'Schnellzugriff'
-  participants:
-    label: 'Teilnehmende'
-    caption: 'Anmeldungen verwalten'
-  contact:
-    label: 'Kommunikation'
-    caption: 'Nachrichten an Gruppen senden'
-  program:
-    label: 'Programm'
-    caption: 'Veranstaltungsprogramm planen'
-  rooms:
-    label: 'Zimmer'
-    caption: 'Betten und Zimmer zuweisen'
-overview:
-  eyebrow: 'Auf einen Blick'
-  title: 'Anmeldeübersicht'
+  participants: 'Teilnehmende'
+  contact: 'Kommunikation'
+  program: 'Programm'
+  rooms: 'Zimmer'
 attention:
   title: 'Zu erledigen'
   subtitle: 'Punkte, die eine Entscheidung benötigen'
@@ -663,37 +568,15 @@ attention:
   missing: 'Fehlende Kontaktdaten'
   age: 'Alter außerhalb des Bereichs'
   files: 'Fehlende Dateien'
+  invoice: 'Rechnung offen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-kpi:
-  participants: 'Participants'
-  participantsCaption: 'Inscriptions acceptées'
-  pending: 'En attente'
-  pendingCaption: 'En attente de confirmation'
-  waitlisted: "Liste d'attente"
-  waitlistedCaption: "En attente d'une place"
-  team: 'Équipe'
-  teamCaption: 'Responsables et équipe'
 actions:
-  eyebrow: 'Outils de coordination'
-  title: 'Actions rapides'
-  participants:
-    label: 'Participants'
-    caption: 'Gérer les inscriptions'
-  contact:
-    label: 'Communication'
-    caption: 'Envoyer des nouvelles aux groupes'
-  program:
-    label: 'Programme'
-    caption: "Planifier le programme de l'événement"
-
-  rooms:
-    label: 'Chambres'
-    caption: 'Attribuer les lits et chambres'
-overview:
-  eyebrow: "En un coup d'œil"
-  title: 'Aperçu des inscriptions'
+  participants: 'Participants'
+  contact: 'Communication'
+  program: 'Programme'
+  rooms: 'Chambres'
 attention:
   title: 'À traiter'
   subtitle: 'Éléments nécessitant une décision'
@@ -701,36 +584,15 @@ attention:
   missing: 'Coordonnées manquantes'
   age: 'Âge hors de la plage'
   files: 'Fichiers manquants'
+  invoice: 'Facture en attente de paiement'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-kpi:
-  participants: 'Uczestnicy'
-  participantsCaption: 'Zaakceptowane rejestracje'
-  pending: 'Oczekujący'
-  pendingCaption: 'Oczekują na potwierdzenie'
-  waitlisted: 'Lista rezerwowa'
-  waitlistedCaption: 'Oczekują na miejsce'
-  team: 'Zespół'
-  teamCaption: 'Kadra i personel'
 actions:
-  eyebrow: 'Narzędzia koordynatora'
-  title: 'Szybkie działania'
-  participants:
-    label: 'Uczestnicy'
-    caption: 'Zarządzaj rejestracjami'
-  contact:
-    label: 'Komunikacja'
-    caption: 'Wysyłaj wiadomości do grup'
-  program:
-    label: 'Program'
-    caption: 'Zaplanuj harmonogram wydarzenia'
-  rooms:
-    label: 'Pokoje'
-    caption: 'Przydziel łóżka i pokoje'
-overview:
-  eyebrow: 'W skrócie'
-  title: 'Przegląd rejestracji'
+  participants: 'Uczestnicy'
+  contact: 'Komunikacja'
+  program: 'Program'
+  rooms: 'Pokoje'
 attention:
   title: 'Wymaga uwagi'
   subtitle: 'Sprawy wymagające decyzji'
@@ -738,36 +600,15 @@ attention:
   missing: 'Brakujące dane kontaktowe'
   age: 'Wiek poza zakresem'
   files: 'Brakujące pliki'
+  invoice: 'Faktura oczekuje na płatność'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-kpi:
-  participants: 'Účastníci'
-  participantsCaption: 'Přijaté registrace'
-  pending: 'Čekající'
-  pendingCaption: 'Čeká na potvrzení'
-  waitlisted: 'Čekací listina'
-  waitlistedCaption: 'Čekají na místo'
-  team: 'Tým'
-  teamCaption: 'Vedoucí a personál'
 actions:
-  eyebrow: 'Nástroje koordinátora'
-  title: 'Rychlé akce'
-  participants:
-    label: 'Účastníci'
-    caption: 'Správa registrací'
-  contact:
-    label: 'Komunikace'
-    caption: 'Poslat zprávy skupinám'
-  program:
-    label: 'Program'
-    caption: 'Naplánovat program akce'
-  rooms:
-    label: 'Pokoje'
-    caption: 'Přiřadit lůžka a pokoje'
-overview:
-  eyebrow: 'Na první pohled'
-  title: 'Přehled registrací'
+  participants: 'Účastníci'
+  contact: 'Komunikace'
+  program: 'Program'
+  rooms: 'Pokoje'
 attention:
   title: 'Vyžaduje pozornost'
   subtitle: 'Položky vyžadující rozhodnutí'
@@ -775,4 +616,5 @@ attention:
   missing: 'Chybějící kontaktní údaje'
   age: 'Věk mimo rozsah'
   files: 'Chybějící soubory'
+  invoice: 'Faktura čeká na úhradu'
 </i18n>

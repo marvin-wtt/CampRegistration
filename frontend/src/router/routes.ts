@@ -173,7 +173,7 @@ const routes: RouteRecordRaw[] = [
             path: ':eventId',
             name: 'management.event',
             redirect: {
-              name: 'management.event.participants',
+              name: 'management.event.dashboard',
             },
             children: [
               {
@@ -325,6 +325,12 @@ const routes: RouteRecordRaw[] = [
               import('@/pages/organization/OrganizationPrivacyPage.vue'),
           },
           {
+            path: 'billing',
+            name: 'management.organization.billing',
+            component: () =>
+              import('@/pages/organization/OrganizationBillingPage.vue'),
+          },
+          {
             path: 'settings',
             name: 'management.organization.settings',
             component: () =>
@@ -387,6 +393,23 @@ const routes: RouteRecordRaw[] = [
         path: 'users',
         name: 'administration.users',
         component: () => import('@/pages/administration/UserAdminPage.vue'),
+      },
+      {
+        path: 'billing',
+        name: 'administration.billing',
+        component: () => import('@/pages/administration/BillingAdminPage.vue'),
+      },
+      {
+        path: 'billing/overview',
+        name: 'administration.billing.overview',
+        component: () =>
+          import('@/pages/administration/BillingOverviewPage.vue'),
+      },
+      {
+        path: 'price-models',
+        name: 'administration.price-models',
+        component: () =>
+          import('@/pages/administration/PriceModelAdminPage.vue'),
       },
       {
         path: 'queues',
