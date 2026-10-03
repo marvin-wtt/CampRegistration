@@ -51,6 +51,36 @@ export default {
         cause: '$t(email:footer.cause) du diese Organisation verwaltest.',
       },
     },
+    priceModelOffered: {
+      subject: 'Neue Preise für {{ organization.name }}',
+      preview: 'Bitte stimme dem neuen Preismodell bis zum {{ date }} zu',
+      text: {
+        title: 'Bitte stimme den neuen Preisen zu',
+        information:
+          'Ab dem {{ date }} wechselt {{ organization.name }} zum Preismodell {{ model.name }}: {{ model.price }} pro Anmeldung zuzüglich einer Grundgebühr von {{ model.baseFee }}, inklusive {{ model.taxRate }} % Steuer. Bereits angelegte Veranstaltungen behalten ihre Preise. Solange du nicht zustimmst, kannst du ab dem {{ date }} keine neuen Veranstaltungen anlegen. Zustimmen oder ablehnen kannst du auf der Abrechnungsseite.',
+        button: 'Preise ansehen',
+        greeting: 'Viele Grüße',
+        teamName: '{{ appName }} Team',
+      },
+      footer: {
+        cause: '$t(email:footer.cause) du diese Organisation verwaltest.',
+      },
+    },
+    priceModelLowered: {
+      subject: 'Niedrigere Preise für {{ organization.name }}',
+      preview: '{{ organization.name }} zahlt jetzt weniger',
+      text: {
+        title: 'Deine Preise sind gesunken',
+        information:
+          '{{ organization.name }} nutzt jetzt das Preismodell {{ model.name }}: {{ model.price }} pro Anmeldung zuzüglich einer Grundgebühr von {{ model.baseFee }}, inklusive {{ model.taxRate }} % Steuer. Es gilt für Veranstaltungen, die du ab jetzt anlegst. Da nichts teurer wird, musst du nicht zustimmen.',
+        button: 'Abrechnung öffnen',
+        greeting: 'Viele Grüße',
+        teamName: '{{ appName }} Team',
+      },
+      footer: {
+        cause: '$t(email:footer.cause) du diese Organisation verwaltest.',
+      },
+    },
     invoiceIssued: {
       subject: 'Rechnung für {{ event.name }}',
       preview: '{{ amount }} für {{ event.name }}',

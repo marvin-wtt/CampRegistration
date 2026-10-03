@@ -5,7 +5,7 @@ import type {
   Event,
   Newsletter,
   Organization,
-  OrganizationCreateData,
+  OrganizationCreateRequest,
   OrganizationDetails,
   OrganizationQuery,
   OrganizationReviewData,
@@ -42,7 +42,7 @@ export function useOrganizationService() {
   }
 
   async function createOrganization(
-    data: OrganizationCreateData,
+    data: OrganizationCreateRequest,
   ): Promise<OrganizationDetails> {
     const response = await api.post('organizations/', data);
 

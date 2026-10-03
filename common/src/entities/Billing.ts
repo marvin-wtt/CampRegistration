@@ -54,14 +54,6 @@ export interface PriceModelAssignmentData {
   priceModelId: string;
 }
 
-export interface OrganizationPriceModelAssignmentData extends PriceModelAssignmentData {
-  /**
-   * Also move the organization's events that have not started and are still
-   * on its previous model. Events with a model of their own keep it.
-   */
-  applyToUpcomingEvents?: boolean;
-}
-
 /**
  * - `DRAFT`: the event is running; only the start count is known.
  * - `OPEN`: finalized after the event ended and awaiting payment.
@@ -251,7 +243,53 @@ export interface OrganizationEventBill extends EventBill {
 
 export interface OrganizationBilling {
   priceModel: PriceModel;
+  offer: PriceModelOffer | null;
   bills: OrganizationEventBill[];
+}
+
+/**
+ * A price change the organization has to accept. From `effectiveAt` on, it
+ * can't create events until it does; existing events keep their model.
+ */
+export interface PriceModelOffer extends Identifiable {
+  organizationId: string | null;
+  priceModel: PriceModel;
+  /** ISO instant. */
+  effectiveAt: string;
+  /** `null` while pending. */
+  acceptedAt: string | null;
+  createdAt: string;
+}
+
+/**
+ * When a pending price change takes effect, for whoever creates the
+ * organization's events: from then on, creating them needs the change accepted.
+ */
+export interface PendingPriceModelOffer {
+  /** ISO instant. */
+  effectiveAt: string;
+}
+
+export interface PriceModelOfferCreateData {
+  priceModelId: string;
+  /** `YYYY-MM-DD`, at least {@link PRICE_MODEL_OFFER_MIN_NOTICE_DAYS} ahead. */
+  effectiveOn: string;
+}
+
+/**
+ * The EU platform-to-business rules ask for at least 15 days' notice of
+ * changed terms; the offer may not take effect sooner.
+ */
+export const PRICE_MODEL_OFFER_MIN_NOTICE_DAYS = 15;
+
+/** What changing an organization's model did. */
+export interface PriceModelChangeResult {
+  /**
+   * `applied`: nothing got more expensive, so it applied at once and the
+   * organization was told. `offered`: it waits for the organization.
+   */
+  outcome: 'applied' | 'offered';
+  offer: PriceModelOffer | null;
 }
 
 /** The model an event is priced with, as its managers see it. */

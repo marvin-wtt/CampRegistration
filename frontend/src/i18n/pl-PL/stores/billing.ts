@@ -47,4 +47,19 @@ export default {
     success: 'Faktura usunięta',
     error: 'Nie udało się usunąć faktury',
   },
+  offer: {
+    progress: 'Zmiana modelu cenowego...',
+    success: 'Zmiana cen zapisana',
+    error: 'Nie udało się zmienić modelu cenowego',
+  },
+  withdrawOffer: {
+    progress: 'Wycofywanie oferty...',
+    success: 'Oferta wycofana',
+    error: 'Nie udało się wycofać oferty',
+  },
+  acceptOffer: {
+    progress: 'Akceptowanie nowych cen...',
+    success: 'Nowe ceny zaakceptowane',
+    error: 'Nie udało się zaakceptować nowych cen',
+  },
 };

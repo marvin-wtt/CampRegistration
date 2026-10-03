@@ -10,6 +10,7 @@ import { monthOf } from '#utils/date';
 import type { BillingSummary } from '@camp-registration/common/entities';
 import { BillingService } from './billing.service.js';
 import { PriceModelService } from '#app/priceModel/price-model.service';
+import { PriceModelOfferService } from '#app/priceModel/price-model-offer.service';
 import { FileService } from '#app/file/file.service';
 import { sendFile } from '#app/file/file.response';
 import { OrganizationService } from '#app/organization/organization.service';
@@ -39,6 +40,8 @@ export class BillingController extends BaseController {
     @inject(OrganizationMemberService)
     private readonly organizationMemberService: OrganizationMemberService,
     @inject(RealtimeService) private readonly realtimeService: RealtimeService,
+    @inject(PriceModelOfferService)
+    private readonly priceModelOfferService: PriceModelOfferService,
   ) {
     super();
   }
@@ -121,15 +124,16 @@ export class BillingController extends BaseController {
     await req.validate(validator.organization);
     const organization = req.modelOrFail('organization');
 
-    const [priceModel, bills] = await Promise.all([
+    const [priceModel, offer, bills] = await Promise.all([
       this.priceModelService.getPriceModelById(organization.priceModelId),
+      this.priceModelOfferService.getPendingOffer(organization.id),
       this.billingService.getBillsForOrganization(organization.id),
     ]);
     if (!priceModel) {
       throw new ApiError(httpStatus.NOT_FOUND, 'Price model not found');
     }
 
-    res.resource(new OrganizationBillingResource({ priceModel, bills }));
+    res.resource(new OrganizationBillingResource({ priceModel, offer, bills }));
   }
 
   /** The model the event is priced with. */

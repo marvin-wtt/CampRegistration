@@ -1,8 +1,9 @@
-import type { PriceModel } from '#generated/prisma/client.js';
+import type { PriceModel, PriceModelOffer } from '#generated/prisma/client.js';
 import type {
   PriceModelCurrency,
   PriceModel as PriceModelData,
   PriceModelSummary,
+  PriceModelOffer as PriceModelOfferData,
 } from '@camp-registration/common/entities';
 import { JsonResource } from '#core/resource/JsonResource';
 import { money } from '#utils/money';
@@ -46,6 +47,22 @@ export class PriceModelResource extends JsonResource<
       archivedAt: this.data.archivedAt?.toISOString() ?? null,
       createdAt: this.data.createdAt.toISOString(),
       updatedAt: this.data.updatedAt?.toISOString() ?? null,
+    };
+  }
+}
+
+export class PriceModelOfferResource extends JsonResource<
+  PriceModelOffer & { priceModel: PriceModel },
+  PriceModelOfferData
+> {
+  transform(): PriceModelOfferData {
+    return {
+      id: this.data.id,
+      organizationId: this.data.organizationId,
+      priceModel: new PriceModelResource(this.data.priceModel).transform(),
+      effectiveAt: this.data.effectiveAt.toISOString(),
+      acceptedAt: this.data.acceptedAt?.toISOString() ?? null,
+      createdAt: this.data.createdAt.toISOString(),
     };
   }
 }

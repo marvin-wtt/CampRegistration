@@ -31,6 +31,8 @@ export interface Organization extends Identifiable {
 /** The administrators' listing (`view=all`). */
 export interface AdminOrganization extends Organization {
   priceModel: PriceModelSummary;
+  /** A price change the organization hasn't answered yet. */
+  pendingOffer: { priceModel: PriceModelSummary; effectiveAt: string } | null;
 }
 
 export interface OrganizationDetails extends Organization {
@@ -73,6 +75,14 @@ export interface OrganizationCreateData {
   registrationNumber?: string | null;
   vatNumber?: string | null;
   verificationNote?: string | null;
+}
+
+export interface OrganizationCreateRequest extends OrganizationCreateData {
+  /**
+   * The default price model the creator was shown and agreed to. It must still
+   * be the default, so nobody agrees to prices they didn't see.
+   */
+  acceptedPriceModelId: string;
 }
 
 export type OrganizationUpdateData = Partial<OrganizationCreateData>;

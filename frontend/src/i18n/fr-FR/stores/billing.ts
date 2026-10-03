@@ -47,4 +47,19 @@ export default {
     success: 'Facture supprimée',
     error: 'Impossible de supprimer la facture',
   },
+  offer: {
+    progress: 'Modification du modèle tarifaire...',
+    success: 'Changement de tarif enregistré',
+    error: 'Échec de la modification du modèle tarifaire',
+  },
+  withdrawOffer: {
+    progress: "Retrait de l'offre...",
+    success: 'Offre retirée',
+    error: "Échec du retrait de l'offre",
+  },
+  acceptOffer: {
+    progress: 'Acceptation des nouveaux tarifs...',
+    success: 'Nouveaux tarifs acceptés',
+    error: "Échec de l'acceptation des nouveaux tarifs",
+  },
 };

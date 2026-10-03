@@ -3,6 +3,7 @@ import type {
   File,
   Invoice,
   PriceModel,
+  PriceModelOffer,
 } from '#generated/prisma/client.js';
 import type {
   AdminEventBill as AdminEventBillData,
@@ -16,7 +17,10 @@ import type {
 import { JsonResource } from '#core/resource/JsonResource';
 import { money } from '#utils/money';
 import { utcCarrierToNaiveDateTime } from '@camp-registration/common/utils';
-import { PriceModelResource } from '#app/priceModel/price-model.resource';
+import {
+  PriceModelOfferResource,
+  PriceModelResource,
+} from '#app/priceModel/price-model.resource';
 import { billedRegistrationCount } from './billing.utils.js';
 
 type InvoiceWithFiles = Invoice & { files: File[] };
@@ -160,12 +164,19 @@ export class OrganizationEventBillResource extends JsonResource<
 }
 
 export class OrganizationBillingResource extends JsonResource<
-  { priceModel: PriceModel; bills: OrganizationBill[] },
+  {
+    priceModel: PriceModel;
+    offer: (PriceModelOffer & { priceModel: PriceModel }) | null;
+    bills: OrganizationBill[];
+  },
   OrganizationBillingData
 > {
   transform(): OrganizationBillingData {
+    const { offer } = this.data;
+
     return {
       priceModel: new PriceModelResource(this.data.priceModel).transform(),
+      offer: offer ? new PriceModelOfferResource(offer).transform() : null,
       bills: this.data.bills.map((bill) =>
         new OrganizationEventBillResource({
           ...bill,

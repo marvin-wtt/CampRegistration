@@ -50,6 +50,36 @@ export default {
         cause: '$t(email:footer.cause) zarządzasz tą organizacją.',
       },
     },
+    priceModelOffered: {
+      subject: 'Nowe ceny dla {{ organization.name }}',
+      preview: 'Zaakceptuj nowy model cenowy do {{ date }}',
+      text: {
+        title: 'Zaakceptuj nowe ceny',
+        information:
+          'Od {{ date }} {{ organization.name }} przechodzi na model cenowy {{ model.name }}: {{ model.price }} za zgłoszenie plus opłata podstawowa {{ model.baseFee }}, w tym {{ model.taxRate }} % podatku. Utworzone już wydarzenia zachowują swoje ceny. Dopóki nie zaakceptujesz, od {{ date }} nie możesz tworzyć nowych wydarzeń. Możesz zaakceptować lub odrzucić na stronie rozliczeń.',
+        button: 'Zobacz ceny',
+        greeting: 'Pozdrawiamy,',
+        teamName: 'Zespół {{ appName }}',
+      },
+      footer: {
+        cause: '$t(email:footer.cause) zarządzasz tą organizacją.',
+      },
+    },
+    priceModelLowered: {
+      subject: 'Niższe ceny dla {{ organization.name }}',
+      preview: '{{ organization.name }} płaci teraz mniej',
+      text: {
+        title: 'Twoje ceny spadły',
+        information:
+          '{{ organization.name }} korzysta teraz z modelu cenowego {{ model.name }}: {{ model.price }} za zgłoszenie plus opłata podstawowa {{ model.baseFee }}, w tym {{ model.taxRate }} % podatku. Dotyczy wydarzeń tworzonych od teraz. Nic nie zdrożało, więc nie trzeba niczego akceptować.',
+        button: 'Otwórz rozliczenia',
+        greeting: 'Pozdrawiamy,',
+        teamName: 'Zespół {{ appName }}',
+      },
+      footer: {
+        cause: '$t(email:footer.cause) zarządzasz tą organizacją.',
+      },
+    },
     invoiceIssued: {
       subject: 'Faktura za {{ event.name }}',
       preview: '{{ amount }} za {{ event.name }}',

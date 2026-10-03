@@ -47,4 +47,19 @@ export default {
     success: 'Invoice deleted',
     error: 'Failed to delete invoice',
   },
+  offer: {
+    progress: 'Changing price model...',
+    success: 'Price change saved',
+    error: 'Failed to change the price model',
+  },
+  withdrawOffer: {
+    progress: 'Withdrawing offer...',
+    success: 'Offer withdrawn',
+    error: 'Failed to withdraw the offer',
+  },
+  acceptOffer: {
+    progress: 'Accepting new prices...',
+    success: 'New prices accepted',
+    error: 'Failed to accept the new prices',
+  },
 };

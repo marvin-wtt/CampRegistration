@@ -7,7 +7,7 @@ import { PrivacyNoticeService } from '#app/privacyNotice/privacy-notice.service'
 import { PriceModelService } from '#app/priceModel/price-model.service';
 import { priceModelSummarySelect } from '#app/priceModel/price-model.resource';
 import type {
-  OrganizationCreateData,
+  OrganizationCreateRequest,
   OrganizationUpdateData,
   OrganizationVerificationStatus,
 } from '@camp-registration/common/entities';
@@ -57,7 +57,18 @@ export class OrganizationService extends BaseService {
       take: limit + 1,
       ...(options.cursor ? { cursor: { id: options.cursor }, skip: 1 } : {}),
       orderBy: [{ [sortBy]: sortType }, { id: sortType }],
-      include: { priceModel: { select: priceModelSummarySelect } },
+      include: {
+        priceModel: { select: priceModelSummarySelect },
+        priceModelOffers: {
+          where: { acceptedAt: null },
+          select: {
+            effectiveAt: true,
+            priceModel: { select: priceModelSummarySelect },
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
+      },
     });
 
     const hasMore = items.length > limit;
@@ -85,17 +96,44 @@ export class OrganizationService extends BaseService {
    * ownerless. It starts on the default price model; only an administrator
    * can change that.
    */
-  async createOrganization(userId: string, data: OrganizationCreateData) {
+  /**
+   * The founder agrees to the default model's prices by creating the
+   * organization. They must have seen the current default, so a default
+   * changed in the meantime is refused rather than silently agreed to.
+   */
+  async createOrganization(
+    userId: string,
+    { acceptedPriceModelId, ...data }: OrganizationCreateRequest,
+  ) {
     const priceModel = await this.priceModelService.getDefault();
+    if (priceModel.id !== acceptedPriceModelId) {
+      throw new ApiError(
+        httpStatus.CONFLICT,
+        'The default price model changed. Review the new prices and try again.',
+        { code: 'PRICE_MODEL_CHANGED' },
+      );
+    }
+
+    const now = new Date();
 
     return this.prisma.organization.create({
       data: {
         ...data,
         verificationStatus: 'PENDING',
-        submittedAt: new Date(),
+        submittedAt: now,
         priceModel: { connect: { id: priceModel.id } },
         members: {
           create: { userId, role: 'ADMIN' },
+        },
+        // The founder's agreement, recorded like an accepted offer.
+        priceModelOffers: {
+          create: {
+            priceModelId: priceModel.id,
+            effectiveAt: now,
+            createdByUserId: userId,
+            acceptedByUserId: userId,
+            acceptedAt: now,
+          },
         },
       },
     });

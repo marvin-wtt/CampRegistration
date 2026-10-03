@@ -5,6 +5,8 @@ import {
   EventResource,
 } from './event.resource.js';
 import { FileService } from '#app/file/file.service';
+import { BillingService } from '#app/billing/billing.service';
+import { eventInstant } from '#app/billing/billing.utils';
 import { RegistrationService } from '#app/registration/registration.service';
 import { TableTemplateService } from '#app/tableTemplate/table-template.service';
 import httpStatus from 'http-status';
@@ -44,6 +46,8 @@ export class EventController extends BaseController {
     private readonly privacyNoticeService: PrivacyNoticeService,
     @inject(RealtimeService)
     private readonly realtimeService: RealtimeService,
+    @inject(BillingService)
+    private readonly billingService: BillingService,
   ) {
     super();
   }
@@ -244,6 +248,20 @@ export class EventController extends BaseController {
   async update(req: Request, res: Response) {
     const event = req.modelOrFail('event');
     const { body } = await req.validate(validator.update(event));
+    const datesChange =
+      body.startAt !== undefined ||
+      body.endAt !== undefined ||
+      body.timezone !== undefined;
+
+    if (datesChange) {
+      await this.billingService.assertDatesMayChange(
+        event.id,
+        eventInstant(
+          body.endAt ?? event.endAt,
+          body.timezone ?? event.timezone,
+        ),
+      );
+    }
 
     const updatedEvent = await this.eventService.updateEvent(event, {
       name: body.name,
@@ -270,6 +288,13 @@ export class EventController extends BaseController {
       await this.registrationService.updateRegistrationsComputedDataByEvent(
         updatedEvent,
       );
+    }
+
+    if (
+      datesChange &&
+      (await this.billingService.afterDatesChanged(updatedEvent))
+    ) {
+      void this.realtimeService.emitInvalidation(updatedEvent.id, 'billing');
     }
 
     void this.realtimeService.emit(

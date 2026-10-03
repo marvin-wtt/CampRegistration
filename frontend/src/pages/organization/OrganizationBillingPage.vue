@@ -11,40 +11,63 @@
       <q-card
         v-if="priceModel"
         flat
-        class="price-model-card rounded-lg"
+        class="price-model-card rounded-lg overflow-hidden"
       >
+        <!-- A pending change is shown in place: the rates read current → new. -->
+        <price-model-offer-strip
+          v-if="offer"
+          :offer
+          :organization-id="organizationId"
+          :organization-name="organization?.name ?? ''"
+          :can-accept="canOrg('organization.price_model.accept')"
+          @accepted="reload"
+        />
+
         <q-card-section>
           <div class="text-overline text-on-surface-variant">
             {{ t('priceModel.label') }}
           </div>
-          <div class="text-subtitle1 text-weight-medium">
-            {{ to(priceModel.name) }}
+          <div class="price-model-change text-subtitle1 text-weight-medium">
+            <span :class="{ 'text-on-surface-variant': offer }">
+              {{ to(priceModel.name) }}
+            </span>
+            <template v-if="offer">
+              <q-icon
+                name="arrow_forward"
+                size="18px"
+                class="text-on-surface-variant"
+              />
+              <span>{{ to(offer.priceModel.name) }}</span>
+            </template>
           </div>
         </q-card-section>
 
         <q-card-section class="price-model-rates q-pt-none">
-          <div>
+          <div
+            v-for="rate in rates"
+            :key="rate.key"
+          >
             <div class="text-caption text-on-surface-variant">
-              {{ t('priceModel.pricePerRegistration') }}
+              {{ t(`priceModel.${rate.key}`) }}
             </div>
-            <div class="text-body1">
-              {{ money(priceModel.pricePerRegistration, priceModel.currency) }}
-            </div>
-          </div>
-          <div>
-            <div class="text-caption text-on-surface-variant">
-              {{ t('priceModel.baseFee') }}
-            </div>
-            <div class="text-body1">
-              {{ money(priceModel.baseFee, priceModel.currency) }}
-            </div>
-          </div>
-          <div>
-            <div class="text-caption text-on-surface-variant">
-              {{ t('priceModel.taxRate') }}
-            </div>
-            <div class="text-body1">
-              {{ Number(priceModel.taxRate).toLocaleString(locale) }} %
+            <div class="price-model-change text-body1">
+              <span :class="{ 'text-on-surface-variant': rate.next !== null }">
+                {{ rate.current }}
+              </span>
+              <template v-if="rate.next !== null">
+                <q-icon
+                  name="arrow_forward"
+                  size="16px"
+                  class="text-on-surface-variant"
+                />
+                <span class="text-weight-medium">{{ rate.next }}</span>
+                <q-icon
+                  v-if="rate.increase"
+                  name="arrow_upward"
+                  size="16px"
+                  class="price-model-increase"
+                />
+              </template>
             </div>
           </div>
         </q-card-section>
@@ -152,6 +175,9 @@ import { useRoute } from 'vue-router';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import EventBillStatusChip from '@/components/billing/EventBillStatusChip.vue';
 import InvoiceLinks from '@/components/billing/InvoiceLinks.vue';
+import PriceModelOfferStrip from '@/components/billing/PriceModelOfferStrip.vue';
+import { useOrganizationDetailsStore } from '@/stores/organization-details-store';
+import { useOrganizationPermissions } from '@/composables/organizationPermissions';
 import { useOrganizationBillingStore } from '@/stores/organization-billing-store';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { formatMoney } from '@/utils/money';
@@ -165,6 +191,54 @@ const organizationId = route.params.organizationId as string;
 const { data, isLoading, error } = storeToRefs(store);
 
 const priceModel = computed(() => data.value?.priceModel);
+const offer = computed(() => data.value?.offer ?? null);
+const { data: organization } = storeToRefs(useOrganizationDetailsStore());
+const { canOrg } = useOrganizationPermissions();
+
+/** Each rate as it is now and, while a change is pending, as it will be. */
+const rates = computed(() => {
+  const current = priceModel.value;
+  if (!current) {
+    return [];
+  }
+  const next = offer.value?.priceModel ?? null;
+  const amount = (value: string, currency: string) => money(value, currency);
+  const percent = (value: string) =>
+    `${Number(value).toLocaleString(locale.value)} %`;
+  // Another currency can't be compared, so it reads as an increase.
+  const higher = (a: string, b: string) =>
+    next !== null &&
+    (current.currency !== next.currency || Number(b) > Number(a));
+
+  return [
+    {
+      key: 'pricePerRegistration',
+      current: amount(current.pricePerRegistration, current.currency),
+      next: next && amount(next.pricePerRegistration, next.currency),
+      increase: higher(
+        current.pricePerRegistration,
+        next?.pricePerRegistration ?? '0',
+      ),
+    },
+    {
+      key: 'baseFee',
+      current: amount(current.baseFee, current.currency),
+      next: next && amount(next.baseFee, next.currency),
+      increase: higher(current.baseFee, next?.baseFee ?? '0'),
+    },
+    {
+      key: 'taxRate',
+      current: percent(current.taxRate),
+      next: next && percent(next.taxRate),
+      increase: next !== null && Number(next.taxRate) > Number(current.taxRate),
+    },
+  ];
+});
+
+function reload() {
+  store.invalidate();
+  void store.fetchData();
+}
 const bills = computed(() => data.value?.bills ?? []);
 
 /** Bills priced with another model than the organization's current one. */
@@ -188,6 +262,17 @@ void store.fetchData();
 .price-model-card {
   background: var(--md3-surface-container);
   color: var(--md3-on-surface);
+}
+
+.price-model-change {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+
+.price-model-increase {
+  color: var(--md3-error);
 }
 
 .price-model-rates {

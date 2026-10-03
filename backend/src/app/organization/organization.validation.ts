@@ -1,6 +1,6 @@
 import { z, type ZodType } from 'zod';
 import type {
-  OrganizationCreateData,
+  OrganizationCreateRequest,
   OrganizationUpdateData,
   OrganizationQuery,
   OrganizationReviewData,
@@ -51,7 +51,10 @@ const organizationBody = {
 };
 
 const store = z.object({
-  body: z.object(organizationBody) satisfies ZodType<OrganizationCreateData>,
+  body: z.object({
+    ...organizationBody,
+    acceptedPriceModelId: z.ulid(),
+  }) satisfies ZodType<OrganizationCreateRequest>,
 });
 
 const update = z.object({

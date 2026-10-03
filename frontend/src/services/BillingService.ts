@@ -12,7 +12,11 @@ import type {
   Invoice,
   InvoiceCreateData,
   OrganizationBilling,
-  OrganizationPriceModelAssignmentData,
+  PendingPriceModelOffer,
+  PriceModelAssignmentData,
+  PriceModelChangeResult,
+  PriceModelOffer,
+  PriceModelOfferCreateData,
   PriceModel,
   PriceModelCreateData,
   PriceModelUpdateData,
@@ -55,14 +59,60 @@ export function useBillingService() {
   /** Resolves to how many upcoming events were moved along. */
   async function assignOrganizationPriceModel(
     organizationId: string,
-    data: OrganizationPriceModelAssignmentData,
-  ): Promise<{ updatedEvents: number }> {
-    const response = await api.put(
-      `organizations/${organizationId}/price-model/`,
+    data: PriceModelAssignmentData,
+  ): Promise<void> {
+    await api.put(`organizations/${organizationId}/price-model/`, data);
+  }
+
+  /** When its pending price change takes effect, without the prices. */
+  async function fetchPendingPriceModelOffer(
+    organizationId: string,
+  ): Promise<PendingPriceModelOffer | null> {
+    const response = await api.get(
+      `organizations/${organizationId}/price-model-offers/pending`,
+    );
+
+    return response?.data?.data ?? null;
+  }
+
+  /** Applies a cheaper model at once; offers anything else for acceptance. */
+  async function offerOrganizationPriceModel(
+    organizationId: string,
+    data: PriceModelOfferCreateData,
+  ): Promise<PriceModelChangeResult> {
+    const response = await api.post(
+      `organizations/${organizationId}/price-model-offers/`,
       data,
     );
 
-    return { updatedEvents: response?.data?.meta?.updatedEvents ?? 0 };
+    return response?.data?.data;
+  }
+
+  async function withdrawPriceModelOffer(
+    organizationId: string,
+    offerId: string,
+  ): Promise<void> {
+    await api.delete(
+      `organizations/${organizationId}/price-model-offers/${offerId}/`,
+    );
+  }
+
+  async function acceptPriceModelOffer(
+    organizationId: string,
+    offerId: string,
+  ): Promise<PriceModelOffer> {
+    const response = await api.post(
+      `organizations/${organizationId}/price-model-offers/${offerId}/accept`,
+    );
+
+    return response?.data?.data;
+  }
+
+  /** The model a new organization starts on, which its founder agrees to. */
+  async function fetchDefaultPriceModel(): Promise<PriceModel> {
+    const response = await api.get('price-models/default');
+
+    return response?.data?.data;
   }
 
   async function assignEventPriceModel(
@@ -157,6 +207,11 @@ export function useBillingService() {
     deletePriceModel,
     assignOrganizationPriceModel,
     assignEventPriceModel,
+    offerOrganizationPriceModel,
+    fetchPendingPriceModelOffer,
+    withdrawPriceModelOffer,
+    acceptPriceModelOffer,
+    fetchDefaultPriceModel,
     fetchBillsPaginated,
     createBill,
     updateBill,

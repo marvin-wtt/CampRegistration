@@ -104,3 +104,36 @@ ALTER TABLE `event_bills` ADD CONSTRAINT `event_bills_price_model_id_foreign` FO
 
 -- AddForeignKey
 ALTER TABLE `event_bills` ADD CONSTRAINT `event_bills_replaces_bill_id_foreign` FOREIGN KEY (`replaces_bill_id`) REFERENCES `event_bills`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- Price changes need the organization's acceptance; accepted offers are the proof.
+-- CreateTable
+CREATE TABLE `price_model_offers` (
+    `id` CHAR(26) NOT NULL,
+    `organization_id` CHAR(26) NULL,
+    `price_model_id` CHAR(26) NOT NULL,
+    `effective_at` DATETIME(3) NOT NULL,
+    `created_by_user_id` CHAR(26) NULL,
+    `accepted_by_user_id` CHAR(26) NULL,
+    `accepted_at` DATETIME(3) NULL,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    UNIQUE INDEX `price_model_offers_id_unique`(`id`),
+    INDEX `price_model_offers_organization_id_accepted_at_index`(`organization_id`, `accepted_at`),
+    INDEX `price_model_offers_price_model_id_index`(`price_model_id`),
+    INDEX `price_model_offers_created_by_user_id_index`(`created_by_user_id`),
+    INDEX `price_model_offers_accepted_by_user_id_index`(`accepted_by_user_id`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- AddForeignKey
+ALTER TABLE `price_model_offers` ADD CONSTRAINT `price_model_offers_organization_id_foreign` FOREIGN KEY (`organization_id`) REFERENCES `organizations`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `price_model_offers` ADD CONSTRAINT `price_model_offers_price_model_id_foreign` FOREIGN KEY (`price_model_id`) REFERENCES `price_models`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `price_model_offers` ADD CONSTRAINT `price_model_offers_created_by_user_id_foreign` FOREIGN KEY (`created_by_user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `price_model_offers` ADD CONSTRAINT `price_model_offers_accepted_by_user_id_foreign` FOREIGN KEY (`accepted_by_user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+

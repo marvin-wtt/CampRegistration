@@ -1,7 +1,6 @@
 import httpStatus from 'http-status';
-import { injectable } from 'inversify';
+import { inject, injectable } from 'inversify';
 import { Prisma, type PriceModel } from '#generated/prisma/client.js';
-import { eventInstant } from '#app/billing/billing.utils';
 import { BaseService } from '#core/base/BaseService';
 import ApiError from '#utils/ApiError';
 import type {
@@ -12,6 +11,7 @@ import {
   FREE_PRICE_MODEL_ID,
   FREE_PRICE_MODEL_NAME,
 } from './price-model.utils.js';
+import { PriceModelOfferService } from './price-model-offer.service.js';
 
 /** Whether `data` would change what the model charges. */
 function pricingChanges(
@@ -33,6 +33,13 @@ function pricingChanges(
 
 @injectable()
 export class PriceModelService extends BaseService {
+  constructor(
+    @inject(PriceModelOfferService)
+    private readonly offers: PriceModelOfferService,
+  ) {
+    super();
+  }
+
   async getPriceModelById(id: string) {
     return this.prisma.priceModel.findUnique({ where: { id } });
   }
@@ -113,8 +120,7 @@ export class PriceModelService extends BaseService {
     }
 
     if (pricingChanges(priceModel, data)) {
-      const usage = await this.countUsage(priceModel.id);
-      if (usage.organizations + usage.events + usage.bills > 0) {
+      if (await this.isInUse(priceModel.id)) {
         throw new ApiError(
           httpStatus.CONFLICT,
           'The prices of a price model in use cannot change. Create a new model and assign it instead.',
@@ -174,8 +180,7 @@ export class PriceModelService extends BaseService {
       );
     }
 
-    const usage = await this.countUsage(priceModel.id);
-    if (usage.organizations + usage.events + usage.bills > 0) {
+    if (await this.isInUse(priceModel.id)) {
       throw new ApiError(
         httpStatus.CONFLICT,
         'The price model is in use. Archive it instead.',
@@ -185,14 +190,24 @@ export class PriceModelService extends BaseService {
     await this.prisma.priceModel.delete({ where: { id: priceModel.id } });
   }
 
+  /** Anything referring to the model makes it immutable and undeletable. */
   async countUsage(id: string) {
-    const [organizations, events, bills] = await this.prisma.$transaction([
-      this.prisma.organization.count({ where: { priceModelId: id } }),
-      this.prisma.event.count({ where: { priceModelId: id } }),
-      this.prisma.eventBill.count({ where: { priceModelId: id } }),
-    ]);
+    const [organizations, events, bills, offers] =
+      await this.prisma.$transaction([
+        this.prisma.organization.count({ where: { priceModelId: id } }),
+        this.prisma.event.count({ where: { priceModelId: id } }),
+        this.prisma.eventBill.count({ where: { priceModelId: id } }),
+        this.prisma.priceModelOffer.count({ where: { priceModelId: id } }),
+      ]);
 
-    return { organizations, events, bills };
+    return { organizations, events, bills, offers };
+  }
+
+  /** In use by anything, so its prices are locked. */
+  private async isInUse(id: string): Promise<boolean> {
+    const usage = await this.countUsage(id);
+
+    return Object.values(usage).some((count) => count > 0);
   }
 
   /** The model pinned on the event, and whether its organization's differs. */
@@ -212,59 +227,19 @@ export class PriceModelService extends BaseService {
   }
 
   /**
-   * Moves the organization to another model. Its events keep the model they
-   * were created with — unless `applyToUpcomingEvents`, which also moves the
-   * ones that have not started (no bill yet) and are still on the previous
-   * model. Returns how many events moved along.
+   * Moves the organization to another model directly, e.g. agreed outside
+   * the app. Its events keep the model they were created with.
    */
-  async assignToOrganization(
-    organizationId: string,
-    priceModel: PriceModel,
-    { applyToUpcomingEvents = false } = {},
-  ): Promise<{ updatedEvents: number }> {
+  async assignToOrganization(organizationId: string, priceModel: PriceModel) {
     this.assertAssignable(priceModel);
 
-    return this.transaction(async (tx) => {
-      const { priceModelId: previous } =
-        await tx.organization.findUniqueOrThrow({
-          where: { id: organizationId },
-          select: { priceModelId: true },
-        });
-
+    await this.transaction(async (tx) => {
       await tx.organization.update({
         where: { id: organizationId },
         data: { priceModelId: priceModel.id },
       });
-
-      if (!applyToUpcomingEvents || previous === priceModel.id) {
-        return { updatedEvents: 0 };
-      }
-
-      // Started events have a bill (the job opens one at the start); the
-      // zoned check covers the gap until the job's next run.
-      const now = new Date();
-      const candidates = await tx.event.findMany({
-        where: {
-          organizationId,
-          priceModelId: previous,
-          bills: { none: {} },
-        },
-        select: { id: true, startAt: true, timezone: true },
-      });
-      const upcoming = candidates
-        .filter((event) => eventInstant(event.startAt, event.timezone) > now)
-        .map((event) => event.id);
-
-      if (upcoming.length === 0) {
-        return { updatedEvents: 0 };
-      }
-
-      const { count } = await tx.event.updateMany({
-        where: { id: { in: upcoming } },
-        data: { priceModelId: priceModel.id },
-      });
-
-      return { updatedEvents: count };
+      // Assigned directly, e.g. agreed outside the app: a pending offer is moot.
+      await this.offers.deletePendingOffers(tx, organizationId);
     });
   }
 

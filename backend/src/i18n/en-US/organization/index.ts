@@ -50,6 +50,36 @@ export default {
         cause: '$t(email:footer.cause) you administer this organization.',
       },
     },
+    priceModelOffered: {
+      subject: 'New prices for {{ organization.name }}',
+      preview: 'Please accept the new price model by {{ date }}',
+      text: {
+        title: 'Please accept the new prices',
+        information:
+          "From {{ date }}, {{ organization.name }} moves to the price model {{ model.name }}: {{ model.price }} per registration plus a base fee of {{ model.baseFee }}, including {{ model.taxRate }} % tax. Events you already created keep their prices. Until you accept, you can't create new events from {{ date }} on. You can accept or decline on the billing page.",
+        button: 'Review the prices',
+        greeting: 'Best regards,',
+        teamName: '{{ appName }} team',
+      },
+      footer: {
+        cause: '$t(email:footer.cause) you administer this organization.',
+      },
+    },
+    priceModelLowered: {
+      subject: 'Lower prices for {{ organization.name }}',
+      preview: '{{ organization.name }} now pays less',
+      text: {
+        title: 'Your prices went down',
+        information:
+          '{{ organization.name }} is now on the price model {{ model.name }}: {{ model.price }} per registration plus a base fee of {{ model.baseFee }}, including {{ model.taxRate }} % tax. It applies to events you create from now on. Nothing got more expensive, so there is nothing to accept.',
+        button: 'Open billing',
+        greeting: 'Best regards,',
+        teamName: '{{ appName }} team',
+      },
+      footer: {
+        cause: '$t(email:footer.cause) you administer this organization.',
+      },
+    },
     invoiceIssued: {
       subject: 'Invoice for {{ event.name }}',
       preview: '{{ amount }} for {{ event.name }}',

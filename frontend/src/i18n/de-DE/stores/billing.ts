@@ -47,4 +47,19 @@ export default {
     success: 'Rechnungsdokument gelöscht',
     error: 'Rechnungsdokument konnte nicht gelöscht werden',
   },
+  offer: {
+    progress: 'Preismodell wird geändert...',
+    success: 'Preisänderung gespeichert',
+    error: 'Preismodell konnte nicht geändert werden',
+  },
+  withdrawOffer: {
+    progress: 'Angebot wird zurückgezogen...',
+    success: 'Angebot zurückgezogen',
+    error: 'Angebot konnte nicht zurückgezogen werden',
+  },
+  acceptOffer: {
+    progress: 'Neue Preise werden angenommen...',
+    success: 'Neue Preise angenommen',
+    error: 'Neue Preise konnten nicht angenommen werden',
+  },
 };

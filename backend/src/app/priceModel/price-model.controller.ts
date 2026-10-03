@@ -29,6 +29,14 @@ export class PriceModelController extends BaseController {
     res.resource(PriceModelResource.collection(priceModels));
   }
 
+  /** The model a new organization starts on, which its founder agrees to. */
+  async showDefault(req: Request, res: Response) {
+    await req.validate(validator.showDefault);
+    const priceModel = await this.priceModelService.getDefault();
+
+    res.resource(new PriceModelResource(priceModel));
+  }
+
   async store(req: Request, res: Response) {
     const { body } = await req.validate(validator.store);
     const priceModel = await this.priceModelService.createPriceModel(body);
@@ -69,15 +77,12 @@ export class PriceModelController extends BaseController {
     const organization = req.modelOrFail('organization');
     const priceModel = await this.findPriceModel(body.priceModelId);
 
-    const { updatedEvents } = await this.priceModelService.assignToOrganization(
+    await this.priceModelService.assignToOrganization(
       organization.id,
       priceModel,
-      { applyToUpcomingEvents: body.applyToUpcomingEvents ?? false },
     );
 
-    res.resource(
-      new PriceModelResource(priceModel).withMeta({ updatedEvents }),
-    );
+    res.resource(new PriceModelResource(priceModel));
   }
 
   async assignToEvent(req: Request, res: Response) {

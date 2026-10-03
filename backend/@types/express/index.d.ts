@@ -19,6 +19,7 @@ import type {
   OrganizationInvitation,
   ProgramItem,
   PriceModel,
+  PriceModelOffer,
   EventBill,
   Invoice,
 } from '../../src/generated/prisma/client.js';
@@ -63,6 +64,7 @@ declare global {
       chore?: ChoreWithSlots;
       choreAssignment?: ChoreAssignmentWithRelations;
       priceModel?: PriceModel;
+      priceModelOffer?: PriceModelOffer & { priceModel: PriceModel };
       eventBill?: EventBill;
       invoice?: Invoice & { files: File[]; eventBill: EventBill };
     }

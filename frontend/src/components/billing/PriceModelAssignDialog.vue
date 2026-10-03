@@ -39,14 +39,31 @@
             </template>
           </q-select>
 
-          <q-toggle
-            v-if="scope === 'organization'"
-            v-model="applyToUpcomingEvents"
-            :label="t('applyToUpcomingEvents')"
-            :disable="selected === current"
-            color="primary"
-            class="q-mt-md"
-          />
+          <template v-if="scope === 'organization'">
+            <q-option-group
+              v-model="mode"
+              :options="modeOptions"
+              color="primary"
+              class="q-mt-md"
+            />
+            <q-input
+              v-if="mode === 'offer'"
+              v-model="effectiveOn"
+              :label="t('field.effectiveOn')"
+              :hint="t('hint.effectiveOn', { days: MIN_NOTICE_DAYS })"
+              :rules="[
+                (value: string) =>
+                  value >= earliest ||
+                  t('rule.effectiveOn', { days: MIN_NOTICE_DAYS }),
+              ]"
+              :min="earliest"
+              type="date"
+              color="primary"
+              outlined
+              rounded
+              class="q-mt-sm"
+            />
+          </template>
         </q-card-section>
 
         <q-card-actions align="right">
@@ -77,7 +94,10 @@
 import { computed, ref } from 'vue';
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import type { PriceModel } from '@camp-registration/common/entities';
+import {
+  PRICE_MODEL_OFFER_MIN_NOTICE_DAYS,
+  type PriceModel,
+} from '@camp-registration/common/entities';
 import { useAPIService } from '@/services/APIService';
 import { useServiceNotifications } from '@/composables/serviceHandler';
 import { formatMoney } from '@/utils/money';
@@ -85,8 +105,28 @@ import { useObjectTranslation } from '@/composables/objectTranslation';
 
 export interface PriceModelAssignResult {
   priceModelId: string;
-  /** Organizations only: move upcoming events still on the old model too. */
-  applyToUpcomingEvents: boolean;
+  /**
+   * Organizations only. `offer`: the organization has to accept, unless
+   * nothing gets more expensive. `direct`: assigned at once, for changes
+   * agreed outside the app.
+   */
+  mode: 'offer' | 'direct';
+  /** `offer` only: `YYYY-MM-DD`. */
+  effectiveOn: string;
+}
+
+const MIN_NOTICE_DAYS = PRICE_MODEL_OFFER_MIN_NOTICE_DAYS;
+
+/** `YYYY-MM-DD`, `days` from today in the viewer's time zone. */
+function dayFromToday(days: number): string {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getDate()).padStart(2, '0'),
+  ].join('-');
 }
 
 const {
@@ -110,7 +150,14 @@ const api = useAPIService();
 const { withErrorNotification } = useServiceNotifications('billing');
 
 const selected = ref<string | null>(current);
-const applyToUpcomingEvents = ref(false);
+const mode = ref<'offer' | 'direct'>('offer');
+const earliest = dayFromToday(MIN_NOTICE_DAYS);
+const effectiveOn = ref(dayFromToday(30));
+
+const modeOptions = computed(() => [
+  { label: t('mode.offer'), value: 'offer' },
+  { label: t('mode.direct'), value: 'direct' },
+]);
 const priceModels = ref<PriceModel[]>([]);
 const loading = ref(true);
 
@@ -153,10 +200,8 @@ function onSubmit() {
 
   onDialogOK({
     priceModelId: selected.value,
-    applyToUpcomingEvents:
-      scope === 'organization' &&
-      selected.value !== current &&
-      applyToUpcomingEvents.value,
+    mode: scope === 'organization' ? mode.value : 'direct',
+    effectiveOn: effectiveOn.value,
   } satisfies PriceModelAssignResult);
 }
 </script>
@@ -173,10 +218,16 @@ title: 'Price model'
 caption: '{price} per registration · {baseFee} base fee · {taxRate} % tax'
 field:
   priceModel: 'Price model'
+  effectiveOn: 'Effective from'
+mode:
+  offer: 'Send as an offer: the organization has to accept a price increase'
+  direct: 'Assign directly: already agreed outside the app'
+rule:
+  effectiveOn: 'At least {days} days ahead'
 hint:
+  effectiveOn: "At least {days} days ahead. From then on, the organization can't create events until it accepts."
   organization: 'New events are priced with it. Existing events keep the model they were created with.'
   event: 'Replaces the model this event was created with.'
-applyToUpcomingEvents: "Also apply to events that haven't started yet"
 action:
   cancel: 'Cancel'
   save: 'Save'
@@ -187,10 +238,16 @@ title: 'Preismodell'
 caption: '{price} pro Anmeldung · {baseFee} Grundgebühr · {taxRate} % Steuer'
 field:
   priceModel: 'Preismodell'
+  effectiveOn: 'Gültig ab'
+mode:
+  offer: 'Als Angebot senden: Eine Preiserhöhung muss die Organisation annehmen'
+  direct: 'Direkt zuweisen: bereits außerhalb der App vereinbart'
+rule:
+  effectiveOn: 'Mindestens {days} Tage im Voraus'
 hint:
+  effectiveOn: 'Mindestens {days} Tage im Voraus. Ab dann kann die Organisation keine Veranstaltungen anlegen, bis sie zustimmt.'
   organization: 'Neue Veranstaltungen werden damit abgerechnet. Bestehende behalten das Modell, mit dem sie erstellt wurden.'
   event: 'Ersetzt das Modell, mit dem diese Veranstaltung erstellt wurde.'
-applyToUpcomingEvents: 'Auch auf Veranstaltungen anwenden, die noch nicht begonnen haben'
 action:
   cancel: 'Abbrechen'
   save: 'Speichern'
@@ -201,10 +258,16 @@ title: 'Modèle tarifaire'
 caption: '{price} par inscription · {baseFee} de frais de base · {taxRate} % de taxe'
 field:
   priceModel: 'Modèle tarifaire'
+  effectiveOn: 'En vigueur à partir du'
+mode:
+  offer: "Envoyer comme offre : l'organisation doit accepter une hausse de prix"
+  direct: "Attribuer directement : déjà convenu en dehors de l'application"
+rule:
+  effectiveOn: "Au moins {days} jours à l'avance"
 hint:
+  effectiveOn: "Au moins {days} jours à l'avance. Ensuite, l'organisation ne peut plus créer d'événements tant qu'elle n'a pas accepté."
   organization: 'Les nouveaux événements sont facturés avec ce modèle. Les événements existants gardent celui avec lequel ils ont été créés.'
   event: 'Remplace le modèle avec lequel cet événement a été créé.'
-applyToUpcomingEvents: "Appliquer aussi aux événements qui n'ont pas encore commencé"
 action:
   cancel: 'Annuler'
   save: 'Enregistrer'
@@ -215,10 +278,16 @@ title: 'Model cenowy'
 caption: '{price} za zgłoszenie · {baseFee} opłaty podstawowej · {taxRate} % podatku'
 field:
   priceModel: 'Model cenowy'
+  effectiveOn: 'Obowiązuje od'
+mode:
+  offer: 'Wyślij jako ofertę: organizacja musi zaakceptować podwyżkę'
+  direct: 'Przypisz bezpośrednio: uzgodnione już poza aplikacją'
+rule:
+  effectiveOn: 'Co najmniej {days} dni wcześniej'
 hint:
+  effectiveOn: 'Co najmniej {days} dni wcześniej. Od tego dnia organizacja nie może tworzyć wydarzeń, dopóki nie zaakceptuje.'
   organization: 'Nowe wydarzenia są rozliczane według tego modelu. Istniejące zachowują model, z którym zostały utworzone.'
   event: 'Zastępuje model, z którym to wydarzenie zostało utworzone.'
-applyToUpcomingEvents: 'Zastosuj także do wydarzeń, które jeszcze się nie rozpoczęły'
 action:
   cancel: 'Anuluj'
   save: 'Zapisz'
@@ -229,10 +298,16 @@ title: 'Cenový model'
 caption: '{price} za přihlášku · {baseFee} základní poplatek · {taxRate} % daň'
 field:
   priceModel: 'Cenový model'
+  effectiveOn: 'Platné od'
+mode:
+  offer: 'Odeslat jako nabídku: zdražení musí organizace přijmout'
+  direct: 'Přiřadit přímo: již dohodnuto mimo aplikaci'
+rule:
+  effectiveOn: 'Nejméně {days} dní předem'
 hint:
+  effectiveOn: 'Nejméně {days} dní předem. Od té doby nemůže organizace vytvářet akce, dokud nový model nepřijme.'
   organization: 'Nové akce se účtují podle tohoto modelu. Stávající akce si ponechají model, se kterým byly vytvořeny.'
   event: 'Nahrazuje model, se kterým byla tato akce vytvořena.'
-applyToUpcomingEvents: 'Použít také na akce, které ještě nezačaly'
 action:
   cancel: 'Zrušit'
   save: 'Uložit'

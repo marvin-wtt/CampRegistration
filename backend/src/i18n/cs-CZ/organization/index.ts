@@ -50,6 +50,36 @@ export default {
         cause: '$t(email:footer.cause) spravuješ tuto organizaci.',
       },
     },
+    priceModelOffered: {
+      subject: 'Nové ceny pro {{ organization.name }}',
+      preview: 'Přijmi prosím nový cenový model do {{ date }}',
+      text: {
+        title: 'Přijmi prosím nové ceny',
+        information:
+          'Od {{ date }} přechází {{ organization.name }} na cenový model {{ model.name }}: {{ model.price }} za přihlášku plus základní poplatek {{ model.baseFee }}, včetně {{ model.taxRate }} % daně. Již vytvořené akce si ponechají své ceny. Dokud nový model nepřijmeš, nemůžeš od {{ date }} vytvářet nové akce. Přijmout nebo odmítnout ho můžeš na stránce vyúčtování.',
+        button: 'Zobrazit ceny',
+        greeting: 'S pozdravem,',
+        teamName: 'Tým {{ appName }}',
+      },
+      footer: {
+        cause: '$t(email:footer.cause) spravuješ tuto organizaci.',
+      },
+    },
+    priceModelLowered: {
+      subject: 'Nižší ceny pro {{ organization.name }}',
+      preview: '{{ organization.name }} nyní platí méně',
+      text: {
+        title: 'Tvé ceny klesly',
+        information:
+          '{{ organization.name }} nyní používá cenový model {{ model.name }}: {{ model.price }} za přihlášku plus základní poplatek {{ model.baseFee }}, včetně {{ model.taxRate }} % daně. Platí pro akce vytvořené od teď. Nic nezdražilo, takže není co přijímat.',
+        button: 'Otevřít vyúčtování',
+        greeting: 'S pozdravem,',
+        teamName: 'Tým {{ appName }}',
+      },
+      footer: {
+        cause: '$t(email:footer.cause) spravuješ tuto organizaci.',
+      },
+    },
     invoiceIssued: {
       subject: 'Faktura za {{ event.name }}',
       preview: '{{ amount }} za {{ event.name }}',

@@ -198,6 +198,10 @@ Events and newsletters are owned by an `Organization`, moderated by system admin
   `GET /events?view=assigned` or `GET /newsletters`. `GET /organizations/:id/events` and
   `GET /organizations/:id/newsletters` exist to make them reachable — add the matching listing whenever a new implicit
   grant is introduced, or the permission is unreachable outside a direct link.
+- A price model is part of the organization's contract. A change that makes nothing more expensive applies at once;
+  anything else is a `PriceModelOffer` its `ADMIN`s must accept. Once a pending offer is past its `effectiveAt`,
+  `PriceModelOfferService.assertMayCreateEvents` refuses new events — a contract gate on creation, unlike the
+  verification gates above. Events keep the model they were created with; models in use are immutable.
 
 ## Realtime (SSE live updates)
 

@@ -53,9 +53,11 @@ type Props = QStepProps & {
   name: number;
   title?: string;
   last?: boolean;
+  /** The last step's button, when "finish" undersells what it does. */
+  lastLabel?: string;
 };
 
-const { name, title = '', last = false } = defineProps<Props>();
+const { name, title = '', last = false, lastLabel } = defineProps<Props>();
 const emit = defineEmits<{
   (e: 'next-step'): void;
   (e: 'previous-step'): void;
@@ -64,7 +66,11 @@ const emit = defineEmits<{
 const hasError = ref<boolean>();
 
 const nextLabel = computed<string>(() => {
-  return last ? t('action.finish') : t('action.continue');
+  if (!last) {
+    return t('action.continue');
+  }
+
+  return lastLabel ?? t('action.finish');
 });
 
 const isDone = computed<boolean>(() => {

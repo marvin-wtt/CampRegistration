@@ -1,22 +1,20 @@
 <template>
-  <q-dialog
+  <responsive-dialog
     ref="dialogRef"
+    :snap-points="['full']"
     persistent
     @hide="onDialogHide"
   >
-    <q-card class="q-dialog-plugin q-pb-none event-create-dialog-card">
-      <q-btn
-        icon="close"
-        class="absolute-top-right z-top"
-        style="margin: 8px"
-        flat
-        dense
-        round
-        @click="onDialogHide"
-      />
-
+    <dialog-card
+      :title="t('title')"
+      :width="560"
+      icon="event"
+      no-form
+      @cancel="onDialogCancel"
+    >
       <q-stepper
         v-model="step"
+        class="bg-transparent"
         vertical
         color="primary"
         animated
@@ -36,6 +34,7 @@
             :options="organizationOptions"
             :rules="[
               (val?: string) => !!val || t('rule.organization_required'),
+              () => !priceChangeDue || t('rule.price_model_not_accepted'),
             ]"
             hide-bottom-space
             outlined
@@ -89,6 +88,41 @@
               <q-icon name="info" />
             </template>
             {{ t('unverified_notice') }}
+          </q-banner>
+
+          <!-- The API refuses events once a price change is due unaccepted;
+               say so before the dialog is filled in, not on submit. -->
+          <q-banner
+            v-if="pendingPriceChange"
+            dense
+            :class="priceChangeDue ? 'price-change-due' : 'unverified-note'"
+            class="rounded-md q-mt-sm"
+          >
+            <template #avatar>
+              <q-icon :name="priceChangeDue ? 'block' : 'schedule'" />
+            </template>
+            {{
+              priceChangeDue
+                ? t('price_change.due')
+                : t('price_change.pending', { date: priceChangeDate })
+            }}
+            <template
+              v-if="canOrgFor(data.organizationId, 'organization.billing.view')"
+              #action
+            >
+              <q-btn
+                :label="t('price_change.review')"
+                :to="{
+                  name: 'management.organization.billing',
+                  params: { organizationId: data.organizationId },
+                }"
+                color="primary"
+                flat
+                rounded
+                no-caps
+                @click="onDialogCancel"
+              />
+            </template>
           </q-banner>
         </event-edit-step>
 
@@ -476,8 +510,8 @@
           </div>
         </event-edit-step>
       </q-stepper>
-    </q-card>
-  </q-dialog>
+    </dialog-card>
+  </responsive-dialog>
 </template>
 
 <script setup lang="ts">
@@ -498,6 +532,7 @@ import {
   type EventCreateData,
   type EventDetails,
   type Organization,
+  type PendingPriceModelOffer,
 } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from '@/composables/objectTranslation';
@@ -505,7 +540,10 @@ import { useAssignedEventsStore } from '@/stores/assigned-events-store';
 import { useEventsStore } from '@/stores/events-store';
 import { useOrganizationsStore } from '@/stores/organizations-store';
 import { useOrganizationPermissions } from '@/composables/organizationPermissions';
+import { useAPIService } from '@/services/APIService';
 import OrganizationCreateDialog from '@/components/organization/OrganizationCreateDialog.vue';
+import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
+import DialogCard from '@/components/common/dialogs/DialogCard.vue';
 import { storeToRefs } from 'pinia';
 import { useQuasar } from 'quasar';
 import { browserTimezone } from '@/utils/timezones';
@@ -513,7 +551,8 @@ import { browserTimezone } from '@/utils/timezones';
 const assignedEventsStore = useAssignedEventsStore();
 const eventStore = useEventsStore();
 const quasar = useQuasar();
-const { dialogRef, onDialogHide, onDialogOK } = useDialogPluginComponent();
+const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
+  useDialogPluginComponent();
 
 const DEFAULT_DATA = {
   confirmationMode: 'AUTOMATIC',
@@ -535,7 +574,10 @@ const { to } = useObjectTranslation();
 
 const organizationsStore = useOrganizationsStore();
 const { data: organizations } = storeToRefs(organizationsStore);
-const { eventCreationOrganizationIds } = useOrganizationPermissions();
+const { eventCreationOrganizationIds, canOrgFor } =
+  useOrganizationPermissions();
+const api = useAPIService();
+const { d } = useI18n();
 
 const organizationOptions = computed<QSelectOption<string>[]>(() => {
   const eligible = eventCreationOrganizationIds.value;
@@ -579,6 +621,40 @@ watch(selectedOrganization, (organization, previous) => {
 
   data.value.organizer = organization.name;
 });
+
+const pendingPriceChange = ref<PendingPriceModelOffer | null>(null);
+
+// Only the date: event creators may not see the organization's prices.
+watch(
+  () => data.value.organizationId,
+  async (organizationId) => {
+    pendingPriceChange.value = null;
+    if (!organizationId) {
+      return;
+    }
+    try {
+      const pending = await api.fetchPendingPriceModelOffer(organizationId);
+      // Ignore a slow answer for an organization no longer selected.
+      if (data.value.organizationId === organizationId) {
+        pendingPriceChange.value = pending;
+      }
+    } catch {
+      // Not knowing only costs the early warning; the API still refuses.
+    }
+  },
+);
+
+const priceChangeDue = computed<boolean>(
+  () =>
+    pendingPriceChange.value !== null &&
+    new Date(pendingPriceChange.value.effectiveAt) <= new Date(),
+);
+
+const priceChangeDate = computed<string>(() =>
+  pendingPriceChange.value
+    ? d(new Date(pendingPriceChange.value.effectiveAt), 'short')
+    : '',
+);
 
 watch(selectedOrganizationUnverified, (unverified) => {
   if (unverified) {
@@ -732,8 +808,9 @@ function createOrganization() {
 </script>
 
 <style scoped>
-.event-create-dialog-card {
-  width: 500px;
+.price-change-due {
+  background: var(--md3-error-container);
+  color: var(--md3-on-error-container);
 }
 
 .unverified-note {
@@ -750,6 +827,7 @@ function createOrganization() {
 </style>
 
 <i18n lang="yaml" locale="en">
+title: 'Create event'
 step:
   organization: 'Organization'
   general: 'General'
@@ -771,6 +849,11 @@ organization_note:
 unverified_notice: 'This organization is not verified. You can set the event up now, but until it is verified the event stays hidden from the public listing and cannot accept registrations.'
 rule:
   organization_required: 'Please choose an organization'
+  price_model_not_accepted: 'Your organization has to accept its new prices first.'
+price_change:
+  due: 'Your organization has to accept its new prices before you can create events.'
+  pending: 'From {date}, creating events requires your organization to accept its new prices.'
+  review: 'Review prices'
 field:
   organization: 'Organization'
   countries: 'Countries'
@@ -841,6 +924,7 @@ confirmation_mode:
 </i18n>
 
 <i18n lang="yaml" locale="de">
+title: 'Veranstaltung erstellen'
 step:
   organization: 'Organisation'
   general: 'Allgemein'
@@ -862,6 +946,11 @@ organization_note:
 unverified_notice: 'Diese Organisation ist nicht verifiziert. Du kannst die Veranstaltung jetzt einrichten, aber bis zur Verifizierung ist es nicht öffentlich sichtbar und nimmt keine Anmeldungen an.'
 rule:
   organization_required: 'Bitte wähle eine Organisation'
+  price_model_not_accepted: 'Deine Organisation muss zuerst ihren neuen Preisen zustimmen.'
+price_change:
+  due: 'Deine Organisation muss ihren neuen Preisen zustimmen, bevor du Veranstaltungen anlegen kannst.'
+  pending: 'Ab dem {date} muss deine Organisation ihren neuen Preisen zustimmen, um Veranstaltungen anzulegen.'
+  review: 'Preise ansehen'
 field:
   organization: 'Organisation'
   countries: 'Länder'
@@ -932,6 +1021,7 @@ confirmation_mode:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
+title: 'Créer un événement'
 step:
   organization: 'Organisation'
   general: 'Général'
@@ -953,6 +1043,11 @@ organization_note:
 unverified_notice: "Cette organisation n'est pas vérifiée. Vous pouvez configurer l'événement dès maintenant, mais tant qu'elle ne l'est pas, il reste masqué de la liste publique et ne peut pas accepter d'inscriptions."
 rule:
   organization_required: 'Choisis une organisation'
+  price_model_not_accepted: "Ton organisation doit d'abord accepter ses nouveaux tarifs."
+price_change:
+  due: 'Ton organisation doit accepter ses nouveaux tarifs avant que tu puisses créer des événements.'
+  pending: 'À partir du {date}, ton organisation devra accepter ses nouveaux tarifs pour créer des événements.'
+  review: 'Voir les tarifs'
 field:
   organization: 'Organisation'
   countries: 'Pays'
@@ -1023,6 +1118,7 @@ confirmation_mode:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
+title: 'Utwórz wydarzenie'
 step:
   organization: 'Organizacja'
   general: 'Ogólne'
@@ -1044,6 +1140,11 @@ organization_note:
 unverified_notice: 'Ta organizacja nie jest zweryfikowana. Wydarzenie możesz przygotować już teraz, ale do czasu weryfikacji pozostaje ukryty na liście publicznej i nie przyjmuje zapisów.'
 rule:
   organization_required: 'Wybierz organizację'
+  price_model_not_accepted: 'Twoja organizacja musi najpierw zaakceptować nowe ceny.'
+price_change:
+  due: 'Twoja organizacja musi zaakceptować nowe ceny, zanim będziesz mógł tworzyć wydarzenia.'
+  pending: 'Od {date} tworzenie wydarzeń wymaga zaakceptowania nowych cen przez twoją organizację.'
+  review: 'Zobacz ceny'
 field:
   organization: 'Organizacja'
   countries: 'Kraje'
@@ -1114,6 +1215,7 @@ confirmation_mode:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
+title: 'Vytvořit akci'
 step:
   organization: 'Organizace'
   general: 'Obecné'
@@ -1135,6 +1237,11 @@ organization_note:
 unverified_notice: 'Tato organizace není ověřená. Akci můžete připravit už teď, ale do ověření zůstane skrytá ve veřejném seznamu a nebude přijímat registrace.'
 rule:
   organization_required: 'Vyber organizaci'
+  price_model_not_accepted: 'Tvá organizace musí nejprve přijmout nové ceny.'
+price_change:
+  due: 'Tvá organizace musí přijmout nové ceny, než budeš moci vytvářet akce.'
+  pending: 'Od {date} vyžaduje vytváření akcí, aby tvá organizace přijala nové ceny.'
+  review: 'Zobrazit ceny'
 field:
   organization: 'Organizace'
   countries: 'Země'

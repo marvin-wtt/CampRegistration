@@ -46,13 +46,26 @@ export class OrganizationResource extends JsonResource<
 export class AdminOrganizationResource extends JsonResource<
   Organization & {
     priceModel: Pick<PriceModel, 'id' | 'name' | 'isDefault'>;
+    /** The open offer, if any — at most one. */
+    priceModelOffers: {
+      effectiveAt: Date;
+      priceModel: Pick<PriceModel, 'id' | 'name' | 'isDefault'>;
+    }[];
   },
   AdminOrganizationData
 > {
   transform(): AdminOrganizationData {
+    const offer = this.data.priceModelOffers.at(0);
+
     return {
       ...new OrganizationResource(this.data).transform(),
       priceModel: priceModelSummary(this.data.priceModel),
+      pendingOffer: offer
+        ? {
+            priceModel: priceModelSummary(offer.priceModel),
+            effectiveAt: offer.effectiveAt.toISOString(),
+          }
+        : null,
     };
   }
 }

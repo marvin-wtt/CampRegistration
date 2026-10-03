@@ -10,6 +10,8 @@ import { resolve } from '#core/ioc/container';
 import { hasEventPermission, eventViewGuard } from '#app/event/event.guard';
 import { organizationFromBody } from '#app/organization/organization.middleware';
 import { organizationMember } from '#app/organization/organization.guard';
+import { priceModelAccepted } from '#app/priceModel/price-model.guard';
+import { and } from '#core/guard';
 
 export class EventRouter extends ModuleRouter {
   protected registerBindings() {
@@ -52,7 +54,12 @@ export class EventRouter extends ModuleRouter {
       '/',
       auth(),
       organizationFromBody(),
-      guard(organizationMember('organization.events.create')),
+      guard(
+        and(
+          organizationMember('organization.events.create'),
+          priceModelAccepted,
+        ),
+      ),
       controller(eventController, 'store'),
     );
 

@@ -50,6 +50,37 @@ export default {
         cause: '$t(email:footer.cause) tu administres cette organisation.',
       },
     },
+    priceModelOffered: {
+      subject: 'Nouveaux tarifs pour {{ organization.name }}',
+      preview:
+        "Merci d'accepter le nouveau modèle tarifaire avant le {{ date }}",
+      text: {
+        title: "Merci d'accepter les nouveaux tarifs",
+        information:
+          "À partir du {{ date }}, {{ organization.name }} passe au modèle tarifaire {{ model.name }} : {{ model.price }} par inscription plus des frais de base de {{ model.baseFee }}, dont {{ model.taxRate }} % de taxe. Les événements déjà créés conservent leurs tarifs. Tant que tu n'as pas accepté, tu ne pourras plus créer d'événements à partir du {{ date }}. Tu peux accepter ou refuser sur la page de facturation.",
+        button: 'Voir les tarifs',
+        greeting: 'Cordialement,',
+        teamName: "L'équipe {{ appName }}",
+      },
+      footer: {
+        cause: '$t(email:footer.cause) tu administres cette organisation.',
+      },
+    },
+    priceModelLowered: {
+      subject: 'Tarifs réduits pour {{ organization.name }}',
+      preview: '{{ organization.name }} paie désormais moins',
+      text: {
+        title: 'Tes tarifs ont baissé',
+        information:
+          "{{ organization.name }} utilise désormais le modèle tarifaire {{ model.name }} : {{ model.price }} par inscription plus des frais de base de {{ model.baseFee }}, dont {{ model.taxRate }} % de taxe. Il s'applique aux événements créés à partir de maintenant. Rien n'est plus cher, il n'y a donc rien à accepter.",
+        button: 'Ouvrir la facturation',
+        greeting: 'Cordialement,',
+        teamName: "L'équipe {{ appName }}",
+      },
+      footer: {
+        cause: '$t(email:footer.cause) tu administres cette organisation.',
+      },
+    },
     invoiceIssued: {
       subject: 'Facture pour {{ event.name }}',
       preview: '{{ amount }} pour {{ event.name }}',

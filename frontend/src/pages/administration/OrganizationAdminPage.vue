@@ -64,6 +64,7 @@
           <price-model-td
             :props
             :price-model="props.row.priceModel"
+            :pending-offer="props.row.pendingOffer"
           />
         </template>
 
@@ -245,6 +246,13 @@ function actionsFor(organization: AdminOrganization): RowAction[] {
       handler: () => assignPriceModel(organization),
     },
     {
+      key: 'withdrawOffer',
+      label: t('action.withdrawOffer'),
+      icon: 'undo',
+      hidden: organization.pendingOffer === null,
+      handler: () => withdrawOffer(organization),
+    },
+    {
       key: 'delete',
       label: t('action.delete'),
       icon: 'delete',
@@ -279,16 +287,56 @@ function assignPriceModel(organization: AdminOrganization) {
       },
     })
     .onOk((result: PriceModelAssignResult) => {
+      if (result.mode === 'direct') {
+        void billingNotifications
+          .withProgressNotification('assign', () =>
+            api.assignOrganizationPriceModel(organization.id, {
+              priceModelId: result.priceModelId,
+            }),
+          )
+          .then(
+            () => reload(),
+            // Already reported by the progress notification.
+            () => undefined,
+          );
+        return;
+      }
+
       void billingNotifications
-        .withProgressNotification('assign', () =>
-          api.assignOrganizationPriceModel(organization.id, result),
+        .withProgressNotification('offer', () =>
+          api.offerOrganizationPriceModel(organization.id, {
+            priceModelId: result.priceModelId,
+            effectiveOn: result.effectiveOn,
+          }),
         )
         .then(
-          () => reload(),
+          ({ outcome }) => {
+            // The admin should know whether it applied or now waits.
+            quasar.notify({
+              type: 'info',
+              message: t(`priceChange.${outcome}`),
+            });
+            void reload();
+          },
           // Already reported by the progress notification.
           () => undefined,
         );
     });
+}
+
+function withdrawOffer(organization: AdminOrganization) {
+  void billingNotifications
+    .withProgressNotification('withdrawOffer', async () => {
+      const { offer } = await api.fetchOrganizationBilling(organization.id);
+      if (offer) {
+        await api.withdrawPriceModelOffer(organization.id, offer.id);
+      }
+    })
+    .then(
+      () => reload(),
+      // Already reported by the progress notification.
+      () => undefined,
+    );
 }
 
 function showDetails(organization: AdminOrganization) {
@@ -391,6 +439,9 @@ function review(organization: AdminOrganization) {
 </script>
 
 <i18n lang="yaml" locale="en">
+priceChange:
+  applied: 'Nothing got more expensive, so the new model applies now. The organization was informed.'
+  offered: 'Sent as an offer. The organization has to accept it before the effective date.'
 title: 'Organizations'
 search: 'Search by name'
 status:
@@ -406,6 +457,7 @@ column:
   submittedAt: 'Submitted'
   action: 'Actions'
 action:
+  withdrawOffer: 'Withdraw price offer'
   details: 'Details'
   open: 'Open organization'
   priceModel: 'Price model'
@@ -432,6 +484,9 @@ notify:
 </i18n>
 
 <i18n lang="yaml" locale="de">
+priceChange:
+  applied: 'Nichts wird teurer, daher gilt das neue Modell sofort. Die Organisation wurde informiert.'
+  offered: 'Als Angebot gesendet. Die Organisation muss es vor dem Stichtag annehmen.'
 title: 'Organisationen'
 search: 'Nach Name suchen'
 status:
@@ -447,6 +502,7 @@ column:
   submittedAt: 'Eingereicht'
   action: 'Aktionen'
 action:
+  withdrawOffer: 'Preisangebot zurückziehen'
   details: 'Details'
   open: 'Organisation öffnen'
   priceModel: 'Preismodell'
@@ -473,6 +529,9 @@ notify:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
+priceChange:
+  applied: "Rien n'est plus cher, le nouveau modèle s'applique donc immédiatement. L'organisation a été informée."
+  offered: "Envoyé comme offre. L'organisation doit l'accepter avant la date d'effet."
 title: 'Organisations'
 search: 'Rechercher par nom'
 status:
@@ -488,6 +547,7 @@ column:
   submittedAt: 'Soumise'
   action: 'Actions'
 action:
+  withdrawOffer: "Retirer l'offre de prix"
   details: 'Détails'
   open: "Ouvrir l'organisation"
   priceModel: 'Modèle tarifaire'
@@ -514,6 +574,9 @@ notify:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
+priceChange:
+  applied: 'Nic nie zdrożało, więc nowy model obowiązuje od razu. Organizacja została poinformowana.'
+  offered: 'Wysłano jako ofertę. Organizacja musi ją zaakceptować przed datą wejścia w życie.'
 title: 'Organizacje'
 search: 'Szukaj po nazwie'
 status:
@@ -529,6 +592,7 @@ column:
   submittedAt: 'Zgłoszono'
   action: 'Akcje'
 action:
+  withdrawOffer: 'Wycofaj ofertę cenową'
   details: 'Szczegóły'
   open: 'Otwórz organizację'
   priceModel: 'Model cenowy'
@@ -555,6 +619,9 @@ notify:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
+priceChange:
+  applied: 'Nic nezdražilo, nový model proto platí hned. Organizace byla informována.'
+  offered: 'Odesláno jako nabídka. Organizace ji musí přijmout před datem účinnosti.'
 title: 'Organizace'
 search: 'Hledat podle názvu'
 status:
@@ -570,6 +637,7 @@ column:
   submittedAt: 'Odesláno'
   action: 'Akce'
 action:
+  withdrawOffer: 'Stáhnout cenovou nabídku'
   details: 'Detaily'
   open: 'Otevřít organizaci'
   priceModel: 'Cenový model'

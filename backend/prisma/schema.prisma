@@ -25,14 +25,16 @@ model User {
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime? @updatedAt @map("updated_at")
 
-  eventRoles             EventManager[]
-  tokens                 Token[]
-  newsletterManagers     NewsletterManager[]
-  sentNewsletterMessages NewsletterMessage[]
-  sentMessages           Message[]
-  organizationMembers    OrganizationMember[]
-  reviewedOrganizations  Organization[]       @relation("OrganizationReviewer")
-  twoFactor              UserTwoFactor?
+  eventRoles               EventManager[]
+  tokens                   Token[]
+  newsletterManagers       NewsletterManager[]
+  sentNewsletterMessages   NewsletterMessage[]
+  sentMessages             Message[]
+  organizationMembers      OrganizationMember[]
+  reviewedOrganizations    Organization[]       @relation("OrganizationReviewer")
+  priceModelOffersMade     PriceModelOffer[]    @relation("PriceModelOfferCreator")
+  priceModelOffersAccepted PriceModelOffer[]    @relation("PriceModelOfferAcceptor")
+  twoFactor                UserTwoFactor?
 
   @@map("users")
 }
@@ -111,13 +113,14 @@ model Organization {
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime? @updatedAt @map("updated_at")
 
-  reviewedBy  User?                    @relation("OrganizationReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "organizations_reviewed_by_user_id_foreign")
-  priceModel  PriceModel               @relation(fields: [priceModelId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "organizations_price_model_id_foreign")
-  members     OrganizationMember[]
-  invitations OrganizationInvitation[]
-  events      Event[]
-  newsletters Newsletter[]
-  eventBills  EventBill[]
+  reviewedBy       User?                    @relation("OrganizationReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "organizations_reviewed_by_user_id_foreign")
+  priceModel       PriceModel               @relation(fields: [priceModelId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "organizations_price_model_id_foreign")
+  members          OrganizationMember[]
+  invitations      OrganizationInvitation[]
+  events           Event[]
+  newsletters      Newsletter[]
+  eventBills       EventBill[]
+  priceModelOffers PriceModelOffer[]
 
   @@index([verificationStatus], map: "organizations_verification_status_index")
   @@index([reviewedByUserId], map: "organizations_reviewed_by_user_id_index")
@@ -819,8 +822,37 @@ model PriceModel {
   organizations Organization[]
   events        Event[]
   bills         EventBill[]
+  offers        PriceModelOffer[]
 
   @@map("price_models")
+}
+
+/// A price change for an organization. It changes the contract, so it only
+/// applies once an organization admin accepts; from `effectiveAt` on, the
+/// organization can't create events until it does. Founding an organization
+/// records its agreement to the default model as an offer accepted at once.
+/// Accepted offers are the proof of what was agreed, so they outlive the
+/// organization.
+model PriceModelOffer {
+  id               String    @id @unique(map: "price_model_offers_id_unique") @default(ulid()) @db.Char(26)
+  organizationId   String?   @map("organization_id") @db.Char(26)
+  priceModelId     String    @map("price_model_id") @db.Char(26)
+  effectiveAt      DateTime  @map("effective_at")
+  createdByUserId  String?   @map("created_by_user_id") @db.Char(26)
+  acceptedByUserId String?   @map("accepted_by_user_id") @db.Char(26)
+  acceptedAt       DateTime? @map("accepted_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "price_model_offers_organization_id_foreign")
+  priceModel   PriceModel    @relation(fields: [priceModelId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "price_model_offers_price_model_id_foreign")
+  createdBy    User?         @relation("PriceModelOfferCreator", fields: [createdByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "price_model_offers_created_by_user_id_foreign")
+  acceptedBy   User?         @relation("PriceModelOfferAcceptor", fields: [acceptedByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "price_model_offers_accepted_by_user_id_foreign")
+
+  @@index([organizationId, acceptedAt], map: "price_model_offers_organization_id_accepted_at_index")
+  @@index([priceModelId], map: "price_model_offers_price_model_id_index")
+  @@index([createdByUserId], map: "price_model_offers_created_by_user_id_index")
+  @@index([acceptedByUserId], map: "price_model_offers_accepted_by_user_id_index")
+  @@map("price_model_offers")
 }
 
 enum EventBillStatus {

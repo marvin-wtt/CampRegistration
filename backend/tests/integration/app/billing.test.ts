@@ -403,6 +403,109 @@ describe('event billing', () => {
     });
   });
 
+  describe('moving event dates', () => {
+    /** Naive local digits for an event in UTC, `hours` from now. */
+    const at = (hours: number) =>
+      moment().utc().add(hours, 'hours').format('YYYY-MM-DDTHH:mm:ss');
+
+    const moveEvent = async (
+      eventId: string,
+      startInHours: number,
+      endInHours: number,
+    ) =>
+      request()
+        .patch(`/api/v1/events/${eventId}`)
+        .send({ startAt: at(startInHours), endAt: at(endInHours) })
+        .auth(await directorToken(eventId), { type: 'bearer' });
+
+    it('discards a running bill when the event is postponed', async () => {
+      const event = await eventRunning();
+      await billing().openDraftsForStartedEvents();
+      expect(
+        await prisma.eventBill.count({ where: { eventId: event.id } }),
+      ).toBe(1);
+
+      expect((await moveEvent(event.id, 24 * 10, 24 * 12)).status).toBe(200);
+
+      expect(
+        await prisma.eventBill.count({ where: { eventId: event.id } }),
+      ).toBe(0);
+    });
+
+    it('keeps a running bill when only the end moves later', async () => {
+      const event = await eventRunning();
+      await billing().openDraftsForStartedEvents();
+
+      expect((await moveEvent(event.id, -1, 24 * 5)).status).toBe(200);
+
+      expect((await bill(event.id)).status).toBe('DRAFT');
+    });
+
+    it('refuses to move a billed event into the future', async () => {
+      const { event } = await openBill();
+
+      const response = await moveEvent(event.id, 24 * 300, 24 * 302);
+
+      expect(response.status).toBe(409);
+      expect(response.body.errorCode).toBe('EVENT_ALREADY_BILLED');
+    });
+
+    it('lets a billed event be corrected within the past', async () => {
+      const { event } = await openBill();
+
+      expect((await moveEvent(event.id, -48, -24)).status).toBe(200);
+    });
+
+    it('bills a voided event again once it is rescheduled', async () => {
+      const token = await adminToken();
+      const { event, bill: voided } = await openBill();
+      await request()
+        .patch(`/api/v1/bills/${voided.id}`)
+        .send({ status: 'VOID' })
+        .auth(token, { type: 'bearer' })
+        .expect(200);
+
+      expect((await moveEvent(event.id, -1, 24)).status).toBe(200);
+      await billing().openDraftsForStartedEvents();
+
+      const replacement = await bill(event.id);
+      expect(replacement).toMatchObject({
+        status: 'DRAFT',
+        sequence: 1,
+        replacesBillId: voided.id,
+      });
+    });
+
+    it('bills an event moved into the recent past at once', async () => {
+      const event = await EventFactory.create({
+        timezone: 'UTC',
+        startAt: moment().add(30, 'days').toDate(),
+        endAt: moment().add(32, 'days').toDate(),
+      });
+      await register(event.id);
+
+      expect((await moveEvent(event.id, -24 * 3, -24 * 2)).status).toBe(200);
+
+      const billed = await bill(event.id);
+      expect(billed.finalizedAt).not.toBeNull();
+      expect(billed.startRegistrationCount).toBe(1);
+    });
+
+    it('leaves an event moved far into the past unbilled', async () => {
+      const event = await EventFactory.create({
+        timezone: 'UTC',
+        startAt: moment().add(30, 'days').toDate(),
+        endAt: moment().add(32, 'days').toDate(),
+      });
+
+      expect((await moveEvent(event.id, -24 * 90, -24 * 88)).status).toBe(200);
+
+      expect(
+        await prisma.eventBill.count({ where: { eventId: event.id } }),
+      ).toBe(0);
+    });
+  });
+
   describe('GET /api/v1/organizations/:organizationId/billing', () => {
     it.each([
       { role: 'ADMIN', expectedStatus: 200 },
@@ -522,16 +625,26 @@ describe('event billing', () => {
           addressStreet: 'Example Street 1',
           addressZipCode: '10115',
           addressCity: 'Berlin',
+          acceptedPriceModelId: priceModel.id,
         })
         .auth(generateAccessToken(user), { type: 'bearer' })
         .expect(201);
 
       expect(body.data.priceModelId).toBe(priceModel.id);
+      // The founder's agreement, recorded as an accepted offer.
+      const agreement = await prisma.priceModelOffer.findFirstOrThrow({
+        where: { organizationId: body.data.id },
+      });
+      expect(agreement).toMatchObject({
+        priceModelId: priceModel.id,
+        acceptedByUserId: user.id,
+      });
+      expect(agreement.acceptedAt).not.toBeNull();
     });
 
-    it('recreates the free default when none exists', async () => {
-      await prisma.priceModel.updateMany({ data: { isDefault: null } });
-      const user = await UserFactory.create();
+    it('refuses a new organization agreeing to a model that is no longer the default', async () => {
+      const outdated = await PriceModelFactory.create();
+      await PriceModelFactory.create({ isDefault: true });
 
       const { body } = await request()
         .post('/api/v1/organizations')
@@ -542,6 +655,34 @@ describe('event billing', () => {
           addressStreet: 'Example Street 1',
           addressZipCode: '10115',
           addressCity: 'Berlin',
+          acceptedPriceModelId: outdated.id,
+        })
+        .auth(generateAccessToken(await UserFactory.create()), {
+          type: 'bearer',
+        })
+        .expect(409);
+
+      expect(body.errorCode).toBe('PRICE_MODEL_CHANGED');
+    });
+
+    it('recreates the free default when none exists', async () => {
+      await prisma.priceModel.updateMany({ data: { isDefault: null } });
+      const user = await UserFactory.create();
+      const { body: shown } = await request()
+        .get('/api/v1/price-models/default')
+        .auth(generateAccessToken(user), { type: 'bearer' })
+        .expect(200);
+
+      const { body } = await request()
+        .post('/api/v1/organizations')
+        .send({
+          name: 'Youth Adventures',
+          contactEmail: 'contact@example.com',
+          country: 'de',
+          addressStreet: 'Example Street 1',
+          addressZipCode: '10115',
+          addressCity: 'Berlin',
+          acceptedPriceModelId: shown.data.id,
         })
         .auth(generateAccessToken(user), { type: 'bearer' })
         .expect(201);
@@ -957,50 +1098,30 @@ describe('event billing', () => {
       expect(after.priceModelId).toBe(pinned);
     });
 
-    it('moves only upcoming events still on the old model along, when asked', async () => {
+    it('leaves existing events on their model when the organization moves', async () => {
       const previous = await PriceModelFactory.create();
-      const custom = await PriceModelFactory.create();
       const next = await PriceModelFactory.create();
       const organization = await OrganizationFactory.create({
         priceModel: { connect: { id: previous.id } },
       });
-      const organizationConnect = {
-        organization: { connect: { id: organization.id } },
-      };
       const upcoming = await EventFactory.create({
-        ...organizationConnect,
+        organization: { connect: { id: organization.id } },
+        priceModel: { connect: { id: previous.id } },
         timezone: 'UTC',
         startAt: moment().add(10, 'days').toDate(),
         endAt: moment().add(12, 'days').toDate(),
       });
-      const upcomingCustom = await EventFactory.create({
-        ...organizationConnect,
-        priceModel: { connect: { id: custom.id } },
-        timezone: 'UTC',
-        startAt: moment().add(10, 'days').toDate(),
-        endAt: moment().add(12, 'days').toDate(),
-      });
-      const running = await eventRunning(organizationConnect);
-      await billing().openDraftsForStartedEvents();
 
-      const { body } = await request()
+      await request()
         .put(`/api/v1/organizations/${organization.id}/price-model`)
-        .send({ priceModelId: next.id, applyToUpcomingEvents: true })
+        .send({ priceModelId: next.id })
         .auth(await adminToken(), { type: 'bearer' })
         .expect(200);
 
-      expect(body.meta.updatedEvents).toBe(1);
-      const models = Object.fromEntries(
-        (
-          await prisma.event.findMany({
-            where: { organizationId: organization.id },
-            select: { id: true, priceModelId: true },
-          })
-        ).map((event) => [event.id, event.priceModelId]),
-      );
-      expect(models[upcoming.id]).toBe(next.id);
-      expect(models[upcomingCustom.id]).toBe(custom.id);
-      expect(models[running.id]).toBe(previous.id);
+      const event = await prisma.event.findUniqueOrThrow({
+        where: { id: upcoming.id },
+      });
+      expect(event.priceModelId).toBe(previous.id);
     });
 
     it('refuses to change the prices of a price model in use', async () => {

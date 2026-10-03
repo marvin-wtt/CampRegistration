@@ -2,9 +2,9 @@ import { z, type ZodType } from 'zod';
 import { translatedValue } from '#core/validation/helper';
 import { PRICE_MODEL_CURRENCIES } from '@camp-registration/common/entities';
 import type {
-  OrganizationPriceModelAssignmentData,
   PriceModelAssignmentData,
   PriceModelCreateData,
+  PriceModelOfferCreateData,
   PriceModelUpdateData,
 } from '@camp-registration/common/entities';
 
@@ -23,6 +23,33 @@ const priceModelParams = z.object({
 });
 
 const index = z.object({});
+
+const showDefault = z.object({});
+
+const offerParams = z.object({
+  organizationId: z.ulid(),
+  priceModelOfferId: z.ulid(),
+});
+
+const storeOffer = z.object({
+  params: z.object({
+    organizationId: z.ulid(),
+  }),
+  body: z.object({
+    priceModelId: z.ulid(),
+    effectiveOn: z.iso.date(),
+  }) satisfies ZodType<PriceModelOfferCreateData>,
+});
+
+const showPendingOffer = z.object({
+  params: z.object({
+    organizationId: z.ulid(),
+  }),
+});
+
+const withdrawOffer = z.object({ params: offerParams });
+
+const acceptOffer = z.object({ params: offerParams });
 
 const store = z.object({
   body: z.object(priceModelBody) satisfies ZodType<PriceModelCreateData>,
@@ -52,8 +79,7 @@ const assignToOrganization = z.object({
   }),
   body: z.object({
     priceModelId: z.ulid(),
-    applyToUpcomingEvents: z.boolean().optional(),
-  }) satisfies ZodType<OrganizationPriceModelAssignmentData>,
+  }) satisfies ZodType<PriceModelAssignmentData>,
 });
 
 const assignToEvent = z.object({
@@ -67,6 +93,11 @@ const assignToEvent = z.object({
 
 export default {
   index,
+  showDefault,
+  storeOffer,
+  showPendingOffer,
+  withdrawOffer,
+  acceptOffer,
   store,
   update,
   makeDefault,

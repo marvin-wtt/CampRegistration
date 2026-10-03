@@ -47,4 +47,19 @@ export default {
     success: 'Faktura smazána',
     error: 'Fakturu se nepodařilo smazat',
   },
+  offer: {
+    progress: 'Mění se cenový model...',
+    success: 'Změna cen uložena',
+    error: 'Cenový model se nepodařilo změnit',
+  },
+  withdrawOffer: {
+    progress: 'Nabídka se stahuje...',
+    success: 'Nabídka stažena',
+    error: 'Nabídku se nepodařilo stáhnout',
+  },
+  acceptOffer: {
+    progress: 'Nové ceny se přijímají...',
+    success: 'Nové ceny přijaty',
+    error: 'Nové ceny se nepodařilo přijmout',
+  },
 };
