@@ -36,7 +36,39 @@
     </q-card-section>
 
     <q-list
-      v-if="!loading && upcomingTasks.length > 0"
+      v-if="loading"
+      class="tasks-due-list"
+    >
+      <q-item
+        v-for="width in ['70%', '55%', '62%']"
+        :key="width"
+        class="tasks-due-item"
+      >
+        <q-item-section
+          avatar
+          class="due-marker-section"
+        >
+          <q-skeleton
+            type="circle"
+            size="10px"
+          />
+        </q-item-section>
+        <q-item-section>
+          <q-skeleton
+            type="text"
+            :width="width"
+          />
+        </q-item-section>
+        <q-item-section side>
+          <q-skeleton
+            type="text"
+            width="64px"
+          />
+        </q-item-section>
+      </q-item>
+    </q-list>
+    <q-list
+      v-else-if="upcomingTasks.length > 0"
       class="tasks-due-list"
     >
       <q-item
@@ -202,7 +234,7 @@ function isMine(task: Task): boolean {
 <i18n lang="yaml" locale="en">
 title: 'Tasks'
 subtitle: 'Upcoming to-dos'
-empty: 'No pending tasks — nice work!'
+empty: 'No pending tasks'
 you: 'You'
 summary:
   due: '{count} due soon'
@@ -213,7 +245,7 @@ action:
 <i18n lang="yaml" locale="de">
 title: 'Aufgaben'
 subtitle: 'Anstehende Aufgaben'
-empty: 'Keine offenen Aufgaben — gut gemacht!'
+empty: 'Keine offenen Aufgaben'
 you: 'Du'
 summary:
   due: '{count} bald fällig'
@@ -224,7 +256,7 @@ action:
 <i18n lang="yaml" locale="fr">
 title: 'Tâches'
 subtitle: 'Tâches à venir'
-empty: 'Aucune tâche en attente — bien joué !'
+empty: 'Aucune tâche en attente'
 you: 'Toi'
 summary:
   due: '{count} à échéance proche'
@@ -235,7 +267,7 @@ action:
 <i18n lang="yaml" locale="pl">
 title: 'Zadania'
 subtitle: 'Nadchodzące zadania'
-empty: 'Brak oczekujących zadań — świetna robota!'
+empty: 'Brak oczekujących zadań'
 you: 'Ty'
 summary:
   due: '{count} na wkrótce'
@@ -246,7 +278,7 @@ action:
 <i18n lang="yaml" locale="cs">
 title: 'Úkoly'
 subtitle: 'Nadcházející úkoly'
-empty: 'Žádné čekající úkoly — skvělá práce!'
+empty: 'Žádné čekající úkoly'
 you: 'Ty'
 summary:
   due: '{count} s blížícím se termínem'

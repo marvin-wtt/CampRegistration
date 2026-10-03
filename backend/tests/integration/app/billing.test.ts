@@ -18,7 +18,11 @@ import { resolve } from '#core/ioc/container';
 import { BillingService } from '#app/billing/billing.service';
 import { EventService } from '#app/event/event.service';
 import { eventCreateNational } from './fixtures/event.fixtures.js';
-import { billedRegistrationCount } from '#app/billing/billing.utils';
+import {
+  BILLING_TIME_ZONE,
+  billedRegistrationCount,
+} from '#app/billing/billing.utils';
+import { addMonths, monthOf } from '#utils/date';
 import type { Prisma } from '#generated/prisma/client.js';
 
 const billing = () => resolve(BillingService);
@@ -1195,6 +1199,98 @@ describe('event billing', () => {
 
       expect(body.data).toHaveLength(1);
       expect(body.data[0].organization.id).toBeDefined();
+    });
+
+    describe('monthly overview', () => {
+      const thisMonth = () => monthOf(new Date(), BILLING_TIME_ZONE);
+
+      it('sums the bills of this month', async () => {
+        await openBill(3, 2);
+
+        const { body } = await request()
+          .get('/api/v1/bills/summary')
+          .auth(await adminToken(), { type: 'bearer' })
+          .expect(200);
+
+        const year = Number(thisMonth().slice(0, 4));
+        expect(body.data.year).toBe(year);
+        expect(body.data.years).toEqual([year]);
+        // Billing started this month, so it is the only one listed.
+        expect(body.data.months).toHaveLength(1);
+        expect(body.data.totals).toEqual([
+          expect.objectContaining({ currency: 'EUR', grossAmount: '6.00' }),
+        ]);
+        expect(body.data.months[0]).toMatchObject({
+          month: thisMonth(),
+          currency: 'EUR',
+          bills: 1,
+          grossAmount: '6.00',
+          openAmount: '6.00',
+          receivedAmount: '0.00',
+        });
+      });
+
+      it('filters the bill list by month', async () => {
+        const token = await adminToken();
+        const { bill: openedBill } = await openBill();
+
+        const { body: current } = await request()
+          .get('/api/v1/bills')
+          .query({ month: thisMonth() })
+          .auth(token, { type: 'bearer' })
+          .expect(200);
+        const { body: earlier } = await request()
+          .get('/api/v1/bills')
+          .query({ month: addMonths(thisMonth(), -1) })
+          .auth(token, { type: 'bearer' })
+          .expect(200);
+
+        expect(current.data.map((bill: { id: string }) => bill.id)).toEqual([
+          openedBill.id,
+        ]);
+        expect(earlier.data).toHaveLength(0);
+      });
+
+      it('exports the months as CSV', async () => {
+        const { bill: openedBill } = await openBill(3, 2);
+
+        const response = await request()
+          .get('/api/v1/bills/export')
+          .query({ from: thisMonth(), to: thisMonth() })
+          .auth(await adminToken(), { type: 'bearer' })
+          .expect(200);
+
+        expect(response.headers['content-type']).toContain('text/csv');
+        expect(response.headers['content-disposition']).toContain(
+          `bills-${thisMonth()}_${thisMonth()}.csv`,
+        );
+        const [header, line] = response.text.split('\r\n');
+        expect(header).toContain('invoice_date,bill_id');
+        expect(line).toContain(openedBill.id);
+        expect(line).toContain('6.00');
+      });
+
+      it('refuses an inverted export range', async () => {
+        await request()
+          .get('/api/v1/bills/export')
+          .query({ from: thisMonth(), to: addMonths(thisMonth(), -1) })
+          .auth(await adminToken(), { type: 'bearer' })
+          .expect(400);
+      });
+
+      it('is for system administrators only', async () => {
+        const token = generateAccessToken(await UserFactory.create());
+
+        await request()
+          .get('/api/v1/bills/summary')
+          .auth(token, { type: 'bearer' })
+          .expect(403);
+        await request()
+          .get('/api/v1/bills/export')
+          .query({ from: thisMonth(), to: thisMonth() })
+          .auth(token, { type: 'bearer' })
+          .expect(403);
+      });
     });
 
     it('refuses to delete an organization with an unpaid bill', async () => {

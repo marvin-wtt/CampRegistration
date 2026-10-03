@@ -1,7 +1,10 @@
 import { api } from '@/services/api';
 import type {
   AdminEventBill,
+  BillingSummary,
+  BillingSummaryQuery,
   CursorPaginated,
+  EventBillExportQuery,
   EventBillCreateData,
   EventBillQuery,
   EventBillUpdateData,
@@ -128,6 +131,21 @@ export function useBillingService() {
     await api.delete(`bills/${billId}/invoices/${invoiceId}/`);
   }
 
+  async function fetchBillingSummary(
+    params?: BillingSummaryQuery,
+  ): Promise<BillingSummary> {
+    const response = await api.get('bills/summary', { params });
+
+    return response?.data?.data;
+  }
+
+  /** A download link; the session cookie authenticates it like any request. */
+  function billsExportUrl(query: EventBillExportQuery): string {
+    const params = new URLSearchParams({ from: query.from, to: query.to });
+
+    return `${window.origin}/api/v1/bills/export?${params.toString()}`;
+  }
+
   return {
     fetchPriceModels,
     createPriceModel,
@@ -143,5 +161,7 @@ export function useBillingService() {
     fetchEventBilling,
     createInvoice,
     deleteInvoice,
+    fetchBillingSummary,
+    billsExportUrl,
   };
 }

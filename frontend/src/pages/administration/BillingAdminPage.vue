@@ -11,6 +11,15 @@
       >
         <template #actions>
           <q-btn
+            :label="t('action.overview')"
+            :to="{ name: 'administration.billing.overview' }"
+            icon="calendar_month"
+            color="primary"
+            flat
+            rounded
+            no-caps
+          />
+          <q-btn
             :label="t('action.priceModels')"
             :to="{ name: 'administration.price-models' }"
             icon="sell"
@@ -34,6 +43,17 @@
               map-options
               options-dense
               style="min-width: 160px"
+            />
+          </div>
+          <div
+            v-if="month"
+            class="col-12 col-sm-auto row items-center"
+          >
+            <q-chip
+              :label="t('filter.month', { month: formatMonth(month) })"
+              icon="calendar_month"
+              removable
+              @remove="month = null"
             />
           </div>
         </template>
@@ -87,6 +107,18 @@
                 })
               }}
             </div>
+          </q-td>
+        </template>
+
+        <template #body-cell-grossAmount="props">
+          <q-td
+            :props
+            :class="{
+              'text-strike text-on-surface-variant':
+                props.row.status === 'VOID',
+            }"
+          >
+            {{ props.value }}
           </q-td>
         </template>
 
@@ -200,6 +232,12 @@ const api = useAPIService();
 
 const routeQuery = useRouteQueryParams();
 
+const MONTH_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
+const initialMonth = routeQuery.getStringQueryParam('month');
+const month = ref<string | null>(
+  initialMonth && MONTH_PATTERN.test(initialMonth) ? initialMonth : null,
+);
+
 const status = ref<EventBillStatus | null>(
   routeQuery.getEnumQueryParam<EventBillStatus>('status', [
     'DRAFT',
@@ -230,8 +268,9 @@ const {
       limit,
       search: search || undefined,
       status: status.value ?? undefined,
+      month: month.value ?? undefined,
     }) as EventBillQuery,
-  watchSources: [status],
+  watchSources: [status, month],
 });
 
 const statusOptions = computed(() =>
@@ -293,6 +332,15 @@ const columns = computed<QTableColumn<AdminEventBill>[]>(() => [
     align: 'center',
   },
 ]);
+
+function formatMonth(value: string): string {
+  const [year = 0, monthNumber = 1] = value.split('-').map(Number);
+
+  return new Intl.DateTimeFormat(locale.value, {
+    year: 'numeric',
+    month: '2-digit',
+  }).format(new Date(year, monthNumber - 1, 1));
+}
 
 function formatPeriod(bill: AdminEventBill): string {
   return formatBillPeriod(bill, locale.value);
@@ -519,6 +567,8 @@ function update(bill: AdminEventBill, newStatus?: 'PAID' | 'VOID') {
 </script>
 
 <i18n lang="yaml" locale="en">
+filter:
+  month: 'Billed in {month}'
 title: 'Bills'
 search: 'Search by organization'
 counts: 'Start {start} · End {end}'
@@ -540,6 +590,7 @@ column:
   finalizedAt: 'Billed'
   action: 'Actions'
 action:
+  overview: 'Monthly overview'
   priceModels: 'Price models'
   paid: 'Mark as paid'
   void: 'Void'
@@ -566,6 +617,8 @@ dialog:
 </i18n>
 
 <i18n lang="yaml" locale="de">
+filter:
+  month: 'Abgerechnet im {month}'
 title: 'Rechnungen'
 search: 'Nach Organisation suchen'
 counts: 'Beginn {start} · Ende {end}'
@@ -587,6 +640,7 @@ column:
   finalizedAt: 'Abgerechnet'
   action: 'Aktionen'
 action:
+  overview: 'Monatsübersicht'
   priceModels: 'Preismodelle'
   paid: 'Als bezahlt markieren'
   void: 'Stornieren'
@@ -613,6 +667,8 @@ dialog:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
+filter:
+  month: 'Facturé en {month}'
 title: 'Factures'
 search: 'Rechercher par organisation'
 counts: 'Début {start} · Fin {end}'
@@ -634,6 +690,7 @@ column:
   finalizedAt: 'Facturée'
   action: 'Actions'
 action:
+  overview: 'Aperçu mensuel'
   priceModels: 'Modèles tarifaires'
   paid: 'Marquer comme payée'
   void: 'Annuler'
@@ -660,6 +717,8 @@ dialog:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
+filter:
+  month: 'Zafakturowano w {month}'
 title: 'Rachunki'
 search: 'Szukaj po organizacji'
 counts: 'Początek {start} · Koniec {end}'
@@ -681,6 +740,7 @@ column:
   finalizedAt: 'Rozliczono'
   action: 'Akcje'
 action:
+  overview: 'Przegląd miesięczny'
   priceModels: 'Modele cenowe'
   paid: 'Oznacz jako opłacony'
   void: 'Anuluj'
@@ -707,6 +767,8 @@ dialog:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
+filter:
+  month: 'Vyúčtováno v {month}'
 title: 'Faktury'
 search: 'Hledat podle organizace'
 counts: 'Začátek {start} · Konec {end}'
@@ -728,6 +790,7 @@ column:
   finalizedAt: 'Vyúčtováno'
   action: 'Akce'
 action:
+  overview: 'Měsíční přehled'
   priceModels: 'Cenové modely'
   paid: 'Označit jako zaplacenou'
   void: 'Stornovat'

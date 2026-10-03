@@ -4,6 +4,10 @@ import { inject, injectable } from 'inversify';
 import { BaseController } from '#core/base/BaseController';
 import ApiError from '#utils/ApiError';
 import validator from './billing.validation.js';
+import { billsToCsv } from './billing.export.js';
+import { BILLING_TIME_ZONE } from './billing.utils.js';
+import { monthOf } from '#utils/date';
+import type { BillingSummary } from '@camp-registration/common/entities';
 import { BillingService } from './billing.service.js';
 import { PriceModelService } from '#app/priceModel/price-model.service';
 import { FileService } from '#app/file/file.service';
@@ -46,6 +50,7 @@ export class BillingController extends BaseController {
           status: query?.status,
           organizationId: query?.organizationId,
           search: query?.search,
+          month: query?.month,
         },
         { cursor: query?.cursor, limit: query?.limit },
       );
@@ -57,6 +62,31 @@ export class BillingController extends BaseController {
         total,
       ),
     );
+  }
+
+  async summary(req: Request, res: Response) {
+    const { query } = await req.validate(validator.summary);
+    const year =
+      query?.year ?? Number(monthOf(new Date(), BILLING_TIME_ZONE).slice(0, 4));
+    const summary: BillingSummary =
+      await this.billingService.getYearSummary(year);
+
+    res.json({ data: summary });
+  }
+
+  /** CSV for the platform's bookkeeping, one line per finalized bill. */
+  async export(req: Request, res: Response) {
+    const { query } = await req.validate(validator.exportBills);
+    const bills = await this.billingService.getBillsForExport(
+      query.from,
+      query.to,
+    );
+    const csv = billsToCsv(bills, BILLING_TIME_ZONE, req.preferredLocale());
+
+    res
+      .type('text/csv; charset=utf-8')
+      .attachment(`bills-${query.from}_${query.to}.csv`)
+      .send(csv);
   }
 
   /** Bills an ended event by hand, or again after its bill was voided. */

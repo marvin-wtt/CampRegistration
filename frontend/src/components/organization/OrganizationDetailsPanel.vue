@@ -99,6 +99,24 @@
       >
         {{ t('privacyNotice.missing') }}
       </q-banner>
+      <q-banner
+        v-else-if="noticeState === 'error'"
+        dense
+        class="review-banner rounded-md"
+      >
+        {{ t('privacyNotice.error') }}
+        <div class="text-caption">{{ noticeError }}</div>
+        <template #action>
+          <q-btn
+            :label="t('privacyNotice.retry')"
+            color="on-error-container"
+            rounded
+            flat
+            no-caps
+            @click="loadNotice"
+          />
+        </template>
+      </q-banner>
       <div
         v-else-if="noticeState === 'loading'"
         class="q-pa-md"
@@ -126,6 +144,7 @@ import {
 } from '@camp-registration/common/privacy';
 import PrivacyNotice from '@/components/privacy/PrivacyNotice.vue';
 import { usePrivacyNoticeService } from '@/services/PrivacyNoticeService';
+import { useErrorExtractor } from '@/composables/serviceHandler';
 
 const props = defineProps<{
   organization: Organization;
@@ -139,8 +158,12 @@ const props = defineProps<{
 
 const { t, locale } = useI18n();
 const { fetchOrganizationNotice } = usePrivacyNoticeService();
+const { extractErrorText } = useErrorExtractor();
 
-const noticeState = ref<'idle' | 'loading' | 'ready' | 'missing'>('idle');
+const noticeState = ref<'idle' | 'loading' | 'ready' | 'missing' | 'error'>(
+  'idle',
+);
+const noticeError = ref<string | null>(null);
 const notice = ref<PublishedPrivacyNotice | null>(null);
 
 onMounted(() => {
@@ -156,7 +179,7 @@ onMounted(() => {
  * organization on screen.
  */
 async function loadNotice() {
-  if (noticeState.value !== 'idle') {
+  if (noticeState.value !== 'idle' && noticeState.value !== 'error') {
     return;
   }
 
@@ -187,8 +210,10 @@ async function loadNotice() {
       eventVersion: null,
     };
     noticeState.value = 'ready';
-  } catch {
-    noticeState.value = 'missing';
+  } catch (err: unknown) {
+    // Not 'missing': a failed fetch says nothing about whether one is published.
+    noticeError.value = extractErrorText(err);
+    noticeState.value = 'error';
   }
 }
 
@@ -311,6 +336,8 @@ privacyNotice:
   published: 'Published'
   notPublished: 'Not published'
   missing: 'This organisation has not published a privacy notice. It cannot be verified until it does.'
+  error: 'The privacy notice could not be loaded.'
+  retry: 'Retry'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -333,6 +360,8 @@ privacyNotice:
   published: 'Veröffentlicht'
   notPublished: 'Nicht veröffentlicht'
   missing: 'Diese Organisation hat keine Datenschutzinformationen veröffentlicht. Bis dahin kann sie nicht verifiziert werden.'
+  error: 'Die Datenschutzinformationen konnten nicht geladen werden.'
+  retry: 'Erneut versuchen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -355,6 +384,8 @@ privacyNotice:
   published: 'Publiées'
   notPublished: 'Non publiées'
   missing: "Cette organisation n'a pas publié d'informations sur la protection des données. Elle ne peut pas être vérifiée tant que ce n'est pas fait."
+  error: "Les informations sur la protection des données n'ont pas pu être chargées."
+  retry: 'Réessayer'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -377,6 +408,8 @@ privacyNotice:
   published: 'Opublikowane'
   notPublished: 'Nieopublikowane'
   missing: 'Ta organizacja nie opublikowała informacji o ochronie danych. Do tego czasu nie może zostać zweryfikowana.'
+  error: 'Nie udało się wczytać informacji o ochronie danych.'
+  retry: 'Spróbuj ponownie'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -399,4 +432,6 @@ privacyNotice:
   published: 'Zveřejněné'
   notPublished: 'Nezveřejněné'
   missing: 'Tato organizace nezveřejnila informace o ochraně osobních údajů. Do té doby ji nelze ověřit.'
+  error: 'Informace o ochraně osobních údajů se nepodařilo načíst.'
+  retry: 'Zkusit znovu'
 </i18n>

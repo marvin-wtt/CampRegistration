@@ -183,6 +183,55 @@ export interface EventBillQuery {
   organizationId?: string;
   /** Matches the organization name. */
   search?: string;
+  /** `YYYY-MM`: bills finalized in that month. */
+  month?: string;
+}
+
+/**
+ * One month of billing in one currency. Months are calendar months in the
+ * platform's billing time zone; voided bills are left out.
+ */
+export interface BillingMonth {
+  /** `YYYY-MM` */
+  month: string;
+  currency: string;
+  /** Bills finalized in the month. */
+  bills: number;
+  netAmount: string;
+  taxAmount: string;
+  grossAmount: string;
+  /** Paid in the month, whenever the bill was finalized. */
+  receivedAmount: string;
+  /** Of the month's bills, what is still unpaid. */
+  openAmount: string;
+}
+
+/** A year's totals in one currency: its months added up. */
+export type BillingTotal = Omit<BillingMonth, 'month'>;
+
+/** One calendar year of billing, for the platform's bookkeeping. */
+export interface BillingSummary {
+  year: number;
+  /** Every year since billing started, newest first, for choosing another. */
+  years: number[];
+  /**
+   * Newest first: up to the current month in the current year, and from the
+   * first month anything was billed in the first year.
+   */
+  months: BillingMonth[];
+  totals: BillingTotal[];
+}
+
+export interface BillingSummaryQuery {
+  /** Defaults to the current year. */
+  year?: number;
+}
+
+export interface EventBillExportQuery {
+  /** `YYYY-MM`, inclusive. */
+  from: string;
+  /** `YYYY-MM`, inclusive. */
+  to: string;
 }
 
 /** A bill as its organization sees it. */

@@ -26,6 +26,8 @@ export class EventBillRouter extends ModuleRouter {
     this.router.use(auth(), guard());
 
     this.router.get('/', controller(billingController, 'index'));
+    this.router.get('/summary', controller(billingController, 'summary'));
+    this.router.get('/export', controller(billingController, 'export'));
     this.router.post('/', controller(billingController, 'store'));
     this.router.patch('/:eventBillId', controller(billingController, 'update'));
     this.router.post(

@@ -1,6 +1,17 @@
 <template>
   <div class="admin-toolbar q-mb-md">
     <div class="row items-center no-wrap q-mb-sm">
+      <q-btn
+        v-if="backTo"
+        :to="backTo"
+        :aria-label="backLabel ?? t('back')"
+        icon="arrow_back"
+        class="q-mr-sm"
+        flat
+        round
+      >
+        <q-tooltip>{{ backLabel ?? t('back') }}</q-tooltip>
+      </q-btn>
       <div class="column">
         <div class="text-h6 text-weight-medium">{{ title }}</div>
         <div
@@ -80,12 +91,16 @@
 import { computed, ref, useSlots } from 'vue';
 import { useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
+import type { RouteLocationRaw } from 'vue-router';
 
 defineProps<{
   title: string;
   total?: number | null;
   searchPlaceholder?: string;
   loading?: boolean;
+  /** Shows a back arrow, for a page that belongs under another one. */
+  backTo?: RouteLocationRaw;
+  backLabel?: string;
 }>();
 
 const emit = defineEmits<{
@@ -109,6 +124,7 @@ const filtersOpen = ref(false);
 </style>
 
 <i18n lang="yaml" locale="en">
+back: 'Back'
 search: 'Search'
 refresh: 'Refresh'
 filters: 'Filters'
@@ -116,6 +132,7 @@ count: '{count} entries'
 </i18n>
 
 <i18n lang="yaml" locale="de">
+back: 'Zurück'
 search: 'Suchen'
 refresh: 'Aktualisieren'
 filters: 'Filter'
@@ -123,6 +140,7 @@ count: '{count} Einträge'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
+back: 'Retour'
 search: 'Rechercher'
 refresh: 'Actualiser'
 filters: 'Filtres'
@@ -130,6 +148,7 @@ count: '{count} entrées'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
+back: 'Wstecz'
 search: 'Szukaj'
 refresh: 'Odśwież'
 filters: 'Filtry'
@@ -137,6 +156,7 @@ count: '{count} wpisów'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
+back: 'Zpět'
 search: 'Hledat'
 refresh: 'Obnovit'
 filters: 'Filtry'

@@ -400,6 +400,12 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/pages/administration/BillingAdminPage.vue'),
       },
       {
+        path: 'billing/overview',
+        name: 'administration.billing.overview',
+        component: () =>
+          import('@/pages/administration/BillingOverviewPage.vue'),
+      },
+      {
         path: 'price-models',
         name: 'administration.price-models',
         component: () =>

@@ -1,6 +1,8 @@
 import { z, type ZodType } from 'zod';
 import type {
+  BillingSummaryQuery,
   EventBillCreateData,
+  EventBillExportQuery,
   EventBillQuery,
   EventBillUpdateData,
   InvoiceCreateData,
@@ -10,6 +12,8 @@ const registrationCount = z.number().int().nonnegative().max(100_000);
 
 const billStatus = z.enum(['DRAFT', 'OPEN', 'PAID', 'VOID']);
 
+const month = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Expected YYYY-MM');
+
 const index = z.object({
   query: z
     .object({
@@ -18,9 +22,27 @@ const index = z.object({
       status: billStatus,
       organizationId: z.ulid(),
       search: z.string().max(255),
+      month,
     })
     .partial()
     .optional() satisfies ZodType<EventBillQuery | undefined>,
+});
+
+const summary = z.object({
+  query: z
+    .object({
+      year: z.coerce.number().int().min(2000).max(2100),
+    })
+    .partial()
+    .optional() satisfies ZodType<BillingSummaryQuery | undefined>,
+});
+
+const exportBills = z.object({
+  query: z
+    .object({ from: month, to: month })
+    .refine(({ from, to }) => from <= to, {
+      message: '`from` must not be after `to`',
+    }) satisfies ZodType<EventBillExportQuery>,
 });
 
 const update = z.object({
@@ -98,6 +120,8 @@ const eventInvoice = z.object({
 
 export default {
   index,
+  summary,
+  exportBills,
   update,
   store,
   organization,

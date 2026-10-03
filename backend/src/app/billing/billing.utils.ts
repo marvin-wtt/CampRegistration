@@ -19,6 +19,12 @@ export function billedRegistrationCount(bill: {
   );
 }
 
+/**
+ * The time zone billing months are counted in: the platform's, not the
+ * event's, since they feed the platform's own bookkeeping.
+ */
+export const BILLING_TIME_ZONE = 'Europe/Berlin';
+
 /** The organization fields frozen onto a bill as its customer. */
 export const customerSelect = {
   name: true,
