@@ -66,6 +66,9 @@ const upload = (fields: ParameterType) => {
   // TODO Add file filter to check if the disk has enough space with a threshold before upload
   const upload = multer({
     storage: tmpStorage,
+    // Browsers send the file name as UTF-8; multer would read it as Latin-1
+    // and turn "ä" into "Ã¤".
+    defParamCharset: 'utf8',
     limits: {
       fileSize: config.storage.maxFileSize,
     },

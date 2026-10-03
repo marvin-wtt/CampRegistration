@@ -39,6 +39,9 @@
                 @click.stop.prevent
               />
             </template>
+            <template #file="{ file }">
+              <file-chip :name="file.name" />
+            </template>
           </q-file>
 
           <template v-if="showMetadataFields">
@@ -163,6 +166,7 @@
 </template>
 
 <script lang="ts" setup>
+import FileChip from '@/components/common/inputs/FileChip.vue';
 import {
   type QSelectOption,
   type QRejectedEntry,
