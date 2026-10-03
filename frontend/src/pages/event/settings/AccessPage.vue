@@ -748,10 +748,10 @@ empty:
 you: 'Sie'
 
 role:
-  coordinator: 'Koordinator'
-  counselor: 'Betreuer'
-  director: 'Leiter'
-  viewer: 'Betrachter'
+  coordinator: 'Koordination'
+  counselor: 'Betreuung'
+  director: 'Leitung'
+  viewer: 'Lesezugriff'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -797,10 +797,10 @@ empty:
 you: 'Vous'
 
 role:
-  coordinator: 'Coordinateur'
-  counselor: 'Conseiller'
-  director: 'Directeur'
-  viewer: 'Lecteur'
+  coordinator: 'Coordination'
+  counselor: 'Encadrement'
+  director: 'Direction'
+  viewer: 'Lecture seule'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -844,10 +844,10 @@ empty:
 you: 'Ty'
 
 role:
-  coordinator: 'Koordynator'
-  counselor: 'Opiekun'
-  director: 'Kierownik'
-  viewer: 'Podglądający'
+  coordinator: 'Koordynacja'
+  counselor: 'Opieka'
+  director: 'Kierownictwo'
+  viewer: 'Podgląd'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -891,8 +891,8 @@ empty:
 you: 'Vy'
 
 role:
-  coordinator: 'Koordinátor'
-  counselor: 'Vedoucí'
-  director: 'Ředitel'
-  viewer: 'Pozorovatel'
+  coordinator: 'Koordinace'
+  counselor: 'Dozor'
+  director: 'Vedení'
+  viewer: 'Jen čtení'
 </i18n>
