@@ -137,7 +137,7 @@
               </td>
               <td class="text-right">
                 <q-btn
-                  :href="api.billsExportUrl({ from: row.month, to: row.month })"
+                  :href="billExoortUrl(row.month, row.month)"
                   :aria-label="
                     t('export.month', { month: formatMonth(row.month) })
                   "
@@ -264,7 +264,9 @@ const yearExportUrl = computed(() => {
   const to = shown[0]?.month;
   const from = shown[shown.length - 1]?.month;
 
-  return from && to ? api.billsExportUrl({ from, to }) : null;
+  return from && to
+    ? api.billsExportUrl({ from, to, locale: locale.value })
+    : null;
 });
 
 function openMonth(month: string) {
@@ -283,6 +285,14 @@ function formatMonth(month: string): string {
 
 function money(amount: string, row: { currency: string }): string {
   return formatMoney(amount, row.currency, locale.value);
+}
+
+function billExoortUrl(from: string, to: string): string {
+  return api.billsExportUrl({
+    from: from,
+    to: to,
+    locale: locale.value,
+  });
 }
 </script>
 

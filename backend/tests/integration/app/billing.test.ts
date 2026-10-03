@@ -1270,6 +1270,20 @@ describe('event billing', () => {
         expect(line).toContain('6.00');
       });
 
+      it('separates the export the way the locale expects', async () => {
+        await openBill(3, 2);
+
+        const response = await request()
+          .get('/api/v1/bills/export')
+          .query({ from: thisMonth(), to: thisMonth(), locale: 'de-DE' })
+          .auth(await adminToken(), { type: 'bearer' })
+          .expect(200);
+
+        const [header, line] = response.text.split('\r\n');
+        expect(header).toContain('invoice_date;bill_id');
+        expect(line).toContain(';6,00;');
+      });
+
       it('refuses an inverted export range', async () => {
         await request()
           .get('/api/v1/bills/export')

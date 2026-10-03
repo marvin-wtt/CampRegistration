@@ -5,6 +5,7 @@ import { BaseController } from '#core/base/BaseController';
 import ApiError from '#utils/ApiError';
 import validator from './price-model.validation.js';
 import { PriceModelService } from './price-model.service.js';
+import { RealtimeService } from '#core/realtime/RealtimeService';
 import {
   PriceModelResource,
   type PriceModelWithUsage,
@@ -15,6 +16,7 @@ export class PriceModelController extends BaseController {
   constructor(
     @inject(PriceModelService)
     private readonly priceModelService: PriceModelService,
+    @inject(RealtimeService) private readonly realtimeService: RealtimeService,
   ) {
     super();
   }
@@ -87,6 +89,9 @@ export class PriceModelController extends BaseController {
       event.id,
       priceModel,
     );
+    // An organization-wide assignment isn't announced: it would take one
+    // event per affected event, for something that rarely changes.
+    void this.realtimeService.emitInvalidation(event.id, 'billing');
 
     res.json({ data: result });
   }

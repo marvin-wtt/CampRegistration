@@ -173,7 +173,7 @@ const routes: RouteRecordRaw[] = [
             path: ':eventId',
             name: 'management.event',
             redirect: {
-              name: 'management.event.participants',
+              name: 'management.event.dashboard',
             },
             children: [
               {

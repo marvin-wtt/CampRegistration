@@ -12,6 +12,14 @@ const registrationCount = z.number().int().nonnegative().max(100_000);
 
 const billStatus = z.enum(['DRAFT', 'OPEN', 'PAID', 'VOID']);
 
+function isLocale(value: string): boolean {
+  try {
+    return Intl.getCanonicalLocales(value).length === 1;
+  } catch {
+    return false;
+  }
+}
+
 const month = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Expected YYYY-MM');
 
 const index = z.object({
@@ -39,7 +47,11 @@ const summary = z.object({
 
 const exportBills = z.object({
   query: z
-    .object({ from: month, to: month })
+    .object({
+      from: month,
+      to: month,
+      locale: z.string().max(35).refine(isLocale).optional(),
+    })
     .refine(({ from, to }) => from <= to, {
       message: '`from` must not be after `to`',
     }) satisfies ZodType<EventBillExportQuery>,

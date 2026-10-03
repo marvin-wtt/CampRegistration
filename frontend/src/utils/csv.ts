@@ -1,15 +1,10 @@
-export type CsvSeparator = ',' | ';';
+import type { CsvSeparator } from '@camp-registration/common/utils';
 
-// German, French, Polish, and Czech Excel installs default to `;` as the CSV
-// list separator (since `,` is their decimal separator) and will import a
-// comma-separated file as a single unsplit column; everything else keeps the
-// standard `,`.
-const SEMICOLON_LOCALES = new Set(['de', 'fr', 'pl', 'cs']);
-
-export function csvSeparatorForLocale(locale: string): CsvSeparator {
-  const base = locale.split('-')[0]?.toLowerCase();
-  return base != null && SEMICOLON_LOCALES.has(base) ? ';' : ',';
-}
+// The locale rule is shared with the backend's exports.
+export {
+  type CsvSeparator,
+  csvSeparatorForLocale,
+} from '@camp-registration/common/utils';
 
 function specialCharsPattern(separator: CsvSeparator): RegExp {
   return new RegExp(`["${separator}\r\n]`);

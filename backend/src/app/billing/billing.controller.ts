@@ -17,6 +17,7 @@ import { OrganizationMemberService } from '#app/organizationMember/organization-
 import type { EventBill, File } from '#generated/prisma/client.js';
 import { money } from '#utils/money';
 import { InvoiceService } from './invoice.service.js';
+import { RealtimeService } from '#core/realtime/RealtimeService';
 import { InvoiceIssuedMessage } from './billing.messages.js';
 import {
   AdminEventBillResource,
@@ -37,6 +38,7 @@ export class BillingController extends BaseController {
     private readonly organizationService: OrganizationService,
     @inject(OrganizationMemberService)
     private readonly organizationMemberService: OrganizationMemberService,
+    @inject(RealtimeService) private readonly realtimeService: RealtimeService,
   ) {
     super();
   }
@@ -81,7 +83,11 @@ export class BillingController extends BaseController {
       query.from,
       query.to,
     );
-    const csv = billsToCsv(bills, BILLING_TIME_ZONE, req.preferredLocale());
+    const csv = billsToCsv(
+      bills,
+      BILLING_TIME_ZONE,
+      query.locale ?? req.preferredLocale(),
+    );
 
     res
       .type('text/csv; charset=utf-8')
@@ -93,6 +99,7 @@ export class BillingController extends BaseController {
   async store(req: Request, res: Response) {
     const { body } = await req.validate(validator.store);
     const bill = await this.billingService.createManualBill(body);
+    this.emitBillChange(bill, 'created');
 
     res.status(httpStatus.CREATED).resource(new AdminEventBillResource(bill));
   }
@@ -103,6 +110,8 @@ export class BillingController extends BaseController {
       req.modelOrFail('eventBill'),
       body,
     );
+
+    this.emitBillChange(bill, 'updated');
 
     res.resource(new AdminEventBillResource(bill));
   }
@@ -160,6 +169,8 @@ export class BillingController extends BaseController {
       await this.notifyInvoiceIssued(bill);
     }
 
+    this.emitBillChange(bill, 'updated');
+
     res.status(httpStatus.CREATED).resource(new InvoiceResource(invoice));
   }
 
@@ -169,6 +180,7 @@ export class BillingController extends BaseController {
     const invoice = this.invoiceOf(req, ({ id }) => id === bill.id);
 
     await this.invoiceService.deleteInvoice(invoice);
+    this.emitBillChange(bill, 'updated');
 
     res.status(httpStatus.NO_CONTENT).send();
   }
@@ -204,6 +216,21 @@ export class BillingController extends BaseController {
     );
 
     await this.sendInvoice(res, invoice);
+  }
+
+  /**
+   * Refreshes the event's billing for its managers. A bill whose event was
+   * deleted has no stream to notify.
+   */
+  private emitBillChange(bill: EventBill, operation: 'created' | 'updated') {
+    if (bill.eventId) {
+      void this.realtimeService.emit(
+        bill.eventId,
+        'billing',
+        bill.id,
+        operation,
+      );
+    }
   }
 
   /** The bound invoice, if it belongs to the subject the route is scoped to. */

@@ -142,6 +142,9 @@ export function useBillingService() {
   /** A download link; the session cookie authenticates it like any request. */
   function billsExportUrl(query: EventBillExportQuery): string {
     const params = new URLSearchParams({ from: query.from, to: query.to });
+    if (query.locale) {
+      params.set('locale', query.locale);
+    }
 
     return `${window.origin}/api/v1/bills/export?${params.toString()}`;
   }

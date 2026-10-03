@@ -232,6 +232,12 @@ export interface EventBillExportQuery {
   from: string;
   /** `YYYY-MM`, inclusive. */
   to: string;
+  /**
+   * The reader's locale, which picks the CSV separator and decimal mark. A
+   * download link sends the browser's language, not the app's, so the app
+   * passes its own; without it, `Accept-Language` applies.
+   */
+  locale?: string;
 }
 
 /** A bill as its organization sees it. */

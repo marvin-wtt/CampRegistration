@@ -1,9 +1,17 @@
-import type { EventBill, InvoiceType } from '#generated/prisma/client.js';
+import type {
+  EventBill,
+  InvoiceType,
+  Prisma,
+} from '#generated/prisma/client.js';
 import { toCsv } from '#utils/csv';
 import { money } from '#utils/money';
 import { dayOf } from '#utils/date';
 import { translateObject } from '#utils/translateObject';
-import { utcCarrierToNaiveDateTime } from '@camp-registration/common/utils';
+import {
+  csvDecimalMark,
+  csvSeparatorForLocale,
+  utcCarrierToNaiveDateTime,
+} from '@camp-registration/common/utils';
 import { billedRegistrationCount } from './billing.utils.js';
 
 export type ExportedBill = EventBill & {
@@ -11,8 +19,6 @@ export type ExportedBill = EventBill & {
   invoices: { type: InvoiceType; number: string | null }[];
 };
 
-// Machine-readable on purpose: ISO dates and dot decimals, so the file imports
-// the same way whatever the reader's locale.
 const HEADER = [
   'invoice_date',
   'bill_id',
@@ -35,13 +41,22 @@ const HEADER = [
   'replaces_bill_id',
 ];
 
-/** One line per bill, for the platform's bookkeeping. */
+/**
+ * One line per bill, for the platform's bookkeeping. Separator and decimal
+ * mark follow `locale`, as the frontend's exports do, so the reader's Excel
+ * splits the columns and reads the amounts as numbers. Dates stay ISO, which
+ * Excel reads in every locale.
+ */
 export function billsToCsv(
   bills: ExportedBill[],
   timeZone: string,
   locale: string,
 ): string {
+  const separator = csvSeparatorForLocale(locale);
+  const decimal = csvDecimalMark(separator);
   const day = (date: Date | null) => (date ? dayOf(date, timeZone) : null);
+  const amount = (value: Prisma.Decimal | null) =>
+    money(value)?.replace('.', decimal);
 
   return toCsv(
     HEADER,
@@ -58,13 +73,14 @@ export function billsToCsv(
       utcCarrierToNaiveDateTime(bill.eventEndAt).slice(0, 10),
       billedRegistrationCount(bill),
       bill.currency,
-      money(bill.netAmount),
-      money(bill.taxRate),
-      money(bill.taxAmount),
-      money(bill.grossAmount),
+      amount(bill.netAmount),
+      amount(bill.taxRate),
+      amount(bill.taxAmount),
+      amount(bill.grossAmount),
       day(bill.paidAt),
       day(bill.voidedAt),
       bill.replacesBillId,
     ]),
+    separator,
   );
 }

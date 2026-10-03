@@ -37,6 +37,7 @@ export class BillingModule implements AppModule {
     return {
       event: {
         DIRECTOR: ['event.billing.view'],
+        COORDINATOR: ['event.billing.view'],
       },
       organization: {
         ADMIN: ['organization.billing.view'],
