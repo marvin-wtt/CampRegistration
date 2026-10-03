@@ -6,6 +6,7 @@ import type { NavigationSettings } from '@camp-registration/common/settings';
 interface NavigationSettingsHandle {
   settings: NavigationSettings;
   isLoading: Ref<boolean>;
+  error: Ref<string | null>;
 }
 
 const NAVIGATION_SETTINGS_KEY: InjectionKey<NavigationSettingsHandle> = Symbol(

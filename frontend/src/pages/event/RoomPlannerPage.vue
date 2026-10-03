@@ -367,7 +367,9 @@ const loading = computed<boolean>(() => {
 });
 
 const error = computed<string | null>(() => {
-  return registrationsStore.error ?? roomError.value;
+  return (
+    eventDetailsStore.error ?? registrationsStore.error ?? roomError.value
+  );
 });
 
 const updateInProgress = computed<boolean>(() => {

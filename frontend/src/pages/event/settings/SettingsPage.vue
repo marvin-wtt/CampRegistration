@@ -1,6 +1,7 @@
 <template>
-  <q-page
+  <page-state-handler
     padding
+    :error="eventError"
     class="settings-page row justify-center"
   >
     <div
@@ -10,8 +11,14 @@
         :title="t('title')"
         :subtitle="t('subtitle')"
       >
+        <q-skeleton
+          v-if="loading"
+          type="QChip"
+          width="160px"
+          class="q-mt-sm"
+        />
         <owning-organization-chip
-          v-if="event"
+          v-else-if="event"
           class="q-mt-sm"
           subject="event"
           :organization-id="event.organizationId"
@@ -21,6 +28,35 @@
       </page-header>
 
       <q-list
+        v-if="loading"
+        bordered
+        separator
+        class="rounded-borders overflow-hidden"
+      >
+        <q-item
+          v-for="width in ['45%', '60%', '35%', '55%', '40%']"
+          :key="width"
+          class="q-py-md"
+        >
+          <q-item-section avatar>
+            <q-skeleton type="QAvatar" />
+          </q-item-section>
+
+          <q-item-section>
+            <q-skeleton
+              type="text"
+              width="30%"
+            />
+            <q-skeleton
+              type="text"
+              :width="width"
+            />
+          </q-item-section>
+        </q-item>
+      </q-list>
+
+      <q-list
+        v-else
         bordered
         separator
         class="rounded-borders overflow-hidden"
@@ -59,11 +95,12 @@
         </q-item>
       </q-list>
     </div>
-  </q-page>
+  </page-state-handler>
 </template>
 
 <script lang="ts" setup>
 import PageHeader from '@/components/common/PageHeader.vue';
+import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { type RouteLocationRaw } from 'vue-router';
@@ -71,11 +108,21 @@ import { usePermissions } from '@/composables/permissions';
 import type { PermissionRequirement } from '@/composables/scopePermissions';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import { storeToRefs } from 'pinia';
+import { useProfileStore } from '@/stores/profile-store';
 import OwningOrganizationChip from '@/components/common/OwningOrganizationChip.vue';
 
 const { t } = useI18n();
 const { canAccess } = usePermissions();
-const { data: event } = storeToRefs(useEventDetailsStore());
+const profileStore = useProfileStore();
+const { data: event, error: eventError } = storeToRefs(useEventDetailsStore());
+
+// The items depend on permissions (profile and event). The layout starts the
+// event fetch after this page's first render, so `isLoading` isn't set yet.
+const loading = computed<boolean>(
+  () =>
+    profileStore.user === undefined ||
+    (event.value === undefined && !eventError.value),
+);
 
 interface SettingsItem {
   name: string;
