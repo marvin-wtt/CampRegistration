@@ -1,103 +1,98 @@
 <template>
-  <q-dialog
+  <responsive-dialog
     ref="dialogRef"
     @hide="onDialogHide"
   >
-    <q-card class="q-dialog-plugin q-pb-none">
-      <q-form
-        @submit="onOKClick"
-        @reset="onCancelClick"
-      >
-        <q-card-section>
-          <div class="text-h6">
-            {{ t('title') }}
-          </div>
-        </q-card-section>
+    <dialog-card
+      :title="t('title')"
+      :width="480"
+      @submit="onOKClick"
+      @cancel="onCancelClick"
+    >
+      <div class="q-gutter-y-md column no-wrap">
+        <q-toggle
+          v-model="enabled"
+          :label="t('field.enabled.label')"
+        />
 
-        <q-card-section class="q-pt-none q-gutter-y-md column">
-          <q-toggle
-            v-model="enabled"
-            :label="t('field.enabled.label')"
-          />
-
-          <!-- Only while turning the link on: `props.enabled` is the
+        <!-- Only while turning the link on: `props.enabled` is the
                server's own state (it was off before this dialog opened),
                and `enabled` is the toggle above being switched on right now.
                Once the link is already live, publishing days is the
                per-day header's job, not a bulk action tucked in here. -->
-          <template v-if="!props.enabled && enabled">
-            <q-select
-              v-model="publishAllPlan"
-              :label="t('field.publishAll.label')"
-              :hint="t('field.publishAll.hint')"
-              :options="publishAllOptions"
-              emit-value
-              map-options
-              outlined
-              rounded
-            />
-          </template>
-
-          <template v-if="enabled">
-            <q-input
-              :model-value="publicUrl"
-              :label="t('field.link.label')"
-              readonly
-              outlined
-              rounded
-              hide-bottom-space
-            >
-              <template #append>
-                <q-btn
-                  icon="content_copy"
-                  flat
-                  round
-                  dense
-                  @click="copyLink"
-                >
-                  <q-tooltip>{{ t('field.link.copy') }}</q-tooltip>
-                </q-btn>
-              </template>
-            </q-input>
-
-            <div class="text-caption text-grey-7">
-              {{ t('field.perDayHint') }}
-            </div>
-
-            <q-toggle
-              v-model="allowPastDates"
-              :label="t('field.allowPastDates.label')"
-            />
-            <div class="text-caption text-grey-7">
-              {{ t('field.allowPastDates.caption') }}
-            </div>
-          </template>
-        </q-card-section>
-
-        <!-- action buttons -->
-        <q-card-actions align="right">
-          <q-btn
-            type="reset"
-            outline
+        <template v-if="!props.enabled && enabled">
+          <q-select
+            v-model="publishAllPlan"
+            :label="t('field.publishAll.label')"
+            :hint="t('field.publishAll.hint')"
+            :options="publishAllOptions"
+            emit-value
+            map-options
+            outlined
             rounded
-            color="primary"
-            :label="t('actions.cancel')"
           />
-          <q-btn
-            type="submit"
+        </template>
+
+        <template v-if="enabled">
+          <q-input
+            :model-value="publicUrl"
+            :label="t('field.link.label')"
+            readonly
+            outlined
             rounded
-            color="primary"
-            :label="t('actions.save')"
+            hide-bottom-space
+          >
+            <template #append>
+              <q-btn
+                icon="content_copy"
+                flat
+                round
+                dense
+                @click="copyLink"
+              >
+                <q-tooltip>{{ t('field.link.copy') }}</q-tooltip>
+              </q-btn>
+            </template>
+          </q-input>
+
+          <div class="text-caption text-grey-7">
+            {{ t('field.perDayHint') }}
+          </div>
+
+          <q-toggle
+            v-model="allowPastDates"
+            :label="t('field.allowPastDates.label')"
           />
-        </q-card-actions>
-      </q-form>
-    </q-card>
-  </q-dialog>
+          <div class="text-caption text-grey-7">
+            {{ t('field.allowPastDates.caption') }}
+          </div>
+        </template>
+      </div>
+
+      <template #actions>
+        <q-btn
+          type="reset"
+          outline
+          rounded
+          color="primary"
+          :label="t('actions.cancel')"
+        />
+        <q-btn
+          type="submit"
+          rounded
+          color="primary"
+          :label="t('actions.save')"
+        />
+      </template>
+    </dialog-card>
+  </responsive-dialog>
 </template>
 
 <script lang="ts" setup>
 import { copyToClipboard, useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
+import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
+import DialogCard from '@/components/common/dialogs/DialogCard.vue';
 import { useRouter } from 'vue-router';
 import { computed, ref } from 'vue';
 

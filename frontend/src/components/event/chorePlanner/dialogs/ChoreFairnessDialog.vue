@@ -3,7 +3,7 @@
     ref="dialogRef"
     @hide="onDialogHide"
   >
-    <chore-dialog-card
+    <dialog-card
       ref="card"
       :title="t('title')"
       :subtitle="t('subtitle')"
@@ -171,7 +171,7 @@
           </q-item>
         </q-list>
       </div>
-    </chore-dialog-card>
+    </dialog-card>
   </responsive-dialog>
 </template>
 
@@ -189,7 +189,7 @@ import { useChoreAssignmentStore } from '@/stores/chore-assignment-store';
 import { useRegistrationHelper } from '@/composables/registrationHelper';
 import { usePermissions } from '@/composables/permissions';
 import { formatPersonName } from '@/utils/formatters';
-import ChoreDialogCard from '@/components/event/chorePlanner/ChoreDialogCard.vue';
+import DialogCard from '@/components/common/dialogs/DialogCard.vue';
 import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
 import ChoreRemovePersonDialog from '@/components/event/chorePlanner/dialogs/ChoreRemovePersonDialog.vue';
 import ChoreRebalanceDialog from '@/components/event/chorePlanner/dialogs/ChoreRebalanceDialog.vue';

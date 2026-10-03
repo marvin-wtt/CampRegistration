@@ -3,7 +3,7 @@
     ref="dialogRef"
     @hide="onDialogHide"
   >
-    <chore-dialog-card
+    <dialog-card
       :title="isEdit ? t('title.edit') : t('title.create')"
       :width="600"
       @submit="onOKClick"
@@ -247,7 +247,7 @@
           :label="isEdit ? t('action.save') : t('action.create')"
         />
       </template>
-    </chore-dialog-card>
+    </dialog-card>
   </responsive-dialog>
 </template>
 
@@ -285,7 +285,7 @@ import { findSlot, requiredCount } from '@/utils/chores';
 import ChoreDialog from '@/components/event/chorePlanner/dialogs/ChoreDialog.vue';
 import ChoreDateInput from '@/components/event/chorePlanner/ChoreDateInput.vue';
 import ChoreRoleSection from '@/components/event/chorePlanner/ChoreRoleSection.vue';
-import ChoreDialogCard from '@/components/event/chorePlanner/ChoreDialogCard.vue';
+import DialogCard from '@/components/common/dialogs/DialogCard.vue';
 import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
 
 const SUGGESTION_CHIPS = 3;

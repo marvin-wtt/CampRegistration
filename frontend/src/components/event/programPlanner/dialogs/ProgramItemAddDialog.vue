@@ -1,187 +1,182 @@
 <template>
-  <q-dialog
+  <responsive-dialog
     ref="dialogRef"
     @hide="onDialogHide"
   >
-    <q-card class="q-dialog-plugin q-pb-none">
-      <q-form
-        @submit="onOKClick"
-        @reset="onDialogCancel"
-      >
-        <q-card-section>
-          <div class="text-h5 text-center">
-            {{ t('title') }}
-          </div>
-        </q-card-section>
+    <dialog-card
+      :title="t('title')"
+      :width="560"
+      @submit="onOKClick"
+      @cancel="onDialogCancel"
+    >
+      <div class="q-gutter-y-sm column no-wrap">
+        <translated-input
+          v-model="data.title"
+          :locales="props.locales ?? []"
+          :label="t('field.title.label')"
+          :rules="[
+            (val?: string) => !!val?.length || t('field.title.rule.required'),
+          ]"
+          hide-bottom-space
+          autofocus
+          default-untranslated
+          outlined
+          rounded
+        >
+          <template #before>
+            <q-icon name="title" />
+          </template>
+        </translated-input>
 
-        <q-card-section class="q-pt-none q-gutter-y-sm column">
-          <translated-input
-            v-model="data.title"
-            :locales="props.locales ?? []"
-            :label="t('field.title.label')"
-            :rules="[
-              (val?: string) => !!val?.length || t('field.title.rule.required'),
-            ]"
-            hide-bottom-space
-            autofocus
-            default-untranslated
-            outlined
-            rounded
-          >
-            <template #before>
-              <q-icon name="title" />
-            </template>
-          </translated-input>
+        <translated-input
+          v-model="data.location"
+          :locales="props.locales ?? []"
+          :label="t('field.location.label')"
+          default-untranslated
+          outlined
+          rounded
+        >
+          <template #before>
+            <q-icon name="place" />
+          </template>
+        </translated-input>
 
-          <translated-input
-            v-model="data.location"
-            :locales="props.locales ?? []"
-            :label="t('field.location.label')"
-            default-untranslated
-            outlined
-            rounded
-          >
-            <template #before>
-              <q-icon name="place" />
-            </template>
-          </translated-input>
+        <translated-input
+          v-model="data.details"
+          :locales="props.locales ?? []"
+          :label="t('field.details.label')"
+          default-untranslated
+          autogrow
+          outlined
+          rounded
+        >
+          <template #before>
+            <q-icon name="description" />
+          </template>
+        </translated-input>
 
-          <translated-input
-            v-model="data.details"
-            :locales="props.locales ?? []"
-            :label="t('field.details.label')"
-            default-untranslated
-            autogrow
-            outlined
-            rounded
-          >
-            <template #before>
-              <q-icon name="description" />
-            </template>
-          </translated-input>
-
-          <!-- Date -->
-          <q-input
-            v-model="data.date"
-            :label="t('field.date.label')"
-            outlined
-            rounded
-          >
-            <template #prepend>
-              <q-icon name="calendar_month" />
-            </template>
-            <template #append>
-              <q-icon
-                name="event"
-                class="cursor-pointer"
+        <!-- Date -->
+        <q-input
+          v-model="data.date"
+          :label="t('field.date.label')"
+          outlined
+          rounded
+        >
+          <template #prepend>
+            <q-icon name="calendar_month" />
+          </template>
+          <template #append>
+            <q-icon
+              name="event"
+              class="cursor-pointer"
+            >
+              <q-popup-proxy
+                cover
+                transition-show="scale"
+                transition-hide="scale"
               >
-                <q-popup-proxy
-                  cover
-                  transition-show="scale"
-                  transition-hide="scale"
+                <q-date
+                  v-model="data.date"
+                  mask="YYYY-MM-DD"
+                  :options="dateOptions"
+                  :navigation-min-year-month="monthYearMin"
+                  :navigation-max-year-month="monthYearMax"
                 >
-                  <q-date
-                    v-model="data.date"
-                    mask="YYYY-MM-DD"
-                    :options="dateOptions"
-                    :navigation-min-year-month="monthYearMin"
-                    :navigation-max-year-month="monthYearMax"
-                  >
-                    <div class="row items-center justify-end">
-                      <q-btn
-                        v-close-popup
-                        :label="t('action.close')"
-                        color="primary"
-                        flat
-                        rounded
-                      />
-                    </div>
-                  </q-date>
-                </q-popup-proxy>
-              </q-icon>
-            </template>
-          </q-input>
+                  <div class="row items-center justify-end">
+                    <q-btn
+                      v-close-popup
+                      :label="t('action.close')"
+                      color="primary"
+                      flat
+                      rounded
+                    />
+                  </div>
+                </q-date>
+              </q-popup-proxy>
+            </q-icon>
+          </template>
+        </q-input>
 
-          <q-toggle
-            v-if="data.date"
-            v-model="fullDay"
-            :label="t('field.fullDay.label')"
-          />
+        <q-toggle
+          v-if="data.date"
+          v-model="fullDay"
+          :label="t('field.fullDay.label')"
+        />
 
-          <!-- time & duration -->
-          <div
-            v-if="data.date && !fullDay"
-            class="row q-gutter-sm"
-          >
-            <!-- time -->
-            <time-of-day-input
-              v-model="data.time"
-              :label="t('field.start.label')"
-              :rules="['time']"
-              class="col-12 col-sm"
-              hide-bottom-space
-              outlined
-              rounded
-            />
-
-            <!-- duration -->
-            <time-of-day-input
-              v-model="timeEnd"
-              :label="t('field.end.label')"
-              :rules="[
-                'time',
-                (val: string) =>
-                  (data.time && isValidTimeRange(data.time, val)) ||
-                  t('field.end.rule.later'),
-              ]"
-              class="col-12 col-sm"
-              hide-bottom-space
-              outlined
-              rounded
-            />
-          </div>
-
-          <!-- color -->
-          <color-picker-input
-            v-model="data.color"
-            :label="t('field.color.label')"
-          />
-
-          <!-- plan -->
-          <q-btn-toggle
-            v-model="data.plan"
-            :options="planOptions"
-            spread
-            outline
+        <!-- time & duration -->
+        <div
+          v-if="data.date && !fullDay"
+          class="row q-gutter-sm"
+        >
+          <!-- time -->
+          <time-of-day-input
+            v-model="data.time"
+            :label="t('field.start.label')"
+            :rules="['time']"
+            class="col-12 col-sm"
+            hide-bottom-space
+            outlined
             rounded
           />
-        </q-card-section>
 
-        <!-- action buttons -->
-        <q-card-actions align="right">
-          <q-btn
-            type="reset"
-            outline
+          <!-- duration -->
+          <time-of-day-input
+            v-model="timeEnd"
+            :label="t('field.end.label')"
+            :rules="[
+              'time',
+              (val: string) =>
+                (data.time && isValidTimeRange(data.time, val)) ||
+                t('field.end.rule.later'),
+            ]"
+            class="col-12 col-sm"
+            hide-bottom-space
+            outlined
             rounded
-            color="primary"
-            :label="t('action.cancel')"
           />
-          <q-btn
-            type="submit"
-            rounded
-            color="primary"
-            :label="t('action.ok')"
-          />
-        </q-card-actions>
-      </q-form>
-    </q-card>
-  </q-dialog>
+        </div>
+
+        <!-- color -->
+        <color-picker-input
+          v-model="data.color"
+          :label="t('field.color.label')"
+        />
+
+        <!-- plan -->
+        <q-btn-toggle
+          v-model="data.plan"
+          :options="planOptions"
+          spread
+          outline
+          rounded
+        />
+      </div>
+
+      <template #actions>
+        <q-btn
+          type="reset"
+          outline
+          rounded
+          color="primary"
+          :label="t('action.cancel')"
+        />
+        <q-btn
+          type="submit"
+          rounded
+          color="primary"
+          :label="t('action.ok')"
+        />
+      </template>
+    </dialog-card>
+  </responsive-dialog>
 </template>
 
 <script lang="ts" setup>
 import { addToDate, getTime, parseTimestamp } from '@timestamp-js/core';
 import { useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
+import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
+import DialogCard from '@/components/common/dialogs/DialogCard.vue';
 import { computed, reactive, ref, watch } from 'vue';
 import TranslatedInput from '@/components/common/inputs/TranslatedInput.vue';
 import ColorPickerInput from '@/components/common/inputs/ColorPickerInput.vue';

@@ -1,12 +1,15 @@
 <template>
-  <q-dialog
+  <responsive-dialog
     ref="dialogRef"
+    :snap-points="[0.6, 'full']"
     @hide="onDialogHide"
   >
     <q-card
       v-if="registration"
-      class="details-card rounded-xl"
-      style="width: min(560px, 95vw)"
+      class="details-card"
+      :class="sheet ? 'details-card--sheet' : 'rounded-xl'"
+      :style="sheet ? undefined : { width: 'min(560px, 95vw)' }"
+      :flat="sheet"
     >
       <registration-dialog-header :registration="registration">
         <q-btn
@@ -65,7 +68,7 @@
       <q-tab-panels
         v-model="activeTab"
         animated
-        class="bg-transparent"
+        class="details-panels bg-transparent"
       >
         <q-tab-panel
           name="details"
@@ -98,6 +101,12 @@
                     <q-item-label class="row-value">
                       {{ row.value }}
                     </q-item-label>
+                  </q-item-section>
+                  <q-item-section
+                    v-if="row.badge"
+                    side
+                  >
+                    <span class="row-badge rounded-full">{{ row.badge }}</span>
                   </q-item-section>
                 </q-item>
               </q-list>
@@ -217,7 +226,7 @@
         />
       </q-card-actions>
     </q-card>
-  </q-dialog>
+  </responsive-dialog>
 </template>
 
 <script setup lang="ts">
@@ -236,10 +245,13 @@ import RegistrationActionList from '@/components/event/table/RegistrationActionL
 import RegistrationDialogHeader from '@/components/event/table/dialogs/RegistrationDialogHeader.vue';
 import RegistrationFormViewDialog from '@/components/event/table/dialogs/RegistrationFormViewDialog.vue';
 import RegistrationTimeline from '@/components/event/table/dialogs/RegistrationTimeline.vue';
+import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
 
 defineEmits([...useDialogPluginComponent.emits]);
 
 const quasar = useQuasar();
+// Mirrors ResponsiveDialog's switch to a bottom sheet.
+const sheet = computed<boolean>(() => quasar.screen.lt.sm);
 // eslint-disable-next-line @typescript-eslint/unbound-method
 const { t, te, d } = useI18n();
 const { to } = useObjectTranslation();
@@ -315,15 +327,15 @@ const translatedRole = computed<string>(() =>
 
 const formattedDateOfBirth = computed<string>(() => {
   const dob = registration.value?.computedData.dateOfBirth;
-  if (!dob || !registration.value) {
-    return '';
-  }
-
   // Same format as the table's date cells
-  const formatted = d(dob, { dateStyle: 'medium' });
-  const age = registrationHelper.age(registration.value);
+  return dob ? d(dob, { dateStyle: 'medium' }) : '';
+});
 
-  return age !== undefined ? `${formatted} (${age})` : formatted;
+const ageBadge = computed<string | undefined>(() => {
+  const age = registration.value
+    ? registrationHelper.age(registration.value)
+    : undefined;
+  return age !== undefined ? t('field.age', { age }) : undefined;
 });
 
 const street = computed<string | null>(
@@ -348,6 +360,7 @@ interface DetailRow {
   icon: string;
   label: string;
   value: string;
+  badge?: string | undefined;
 }
 
 const personalRows = computed<DetailRow[]>(() => {
@@ -365,6 +378,7 @@ const personalRows = computed<DetailRow[]>(() => {
       icon: 'cake',
       label: t('field.dateOfBirth'),
       value: formattedDateOfBirth.value,
+      badge: ageBadge.value,
     });
   }
   if (data.gender) {
@@ -443,6 +457,7 @@ tab:
 
 field:
   dateOfBirth: 'Date of Birth'
+  age: 'Age {age}'
   gender: 'Gender'
   role: 'Role'
   email: 'Email'
@@ -482,6 +497,7 @@ tab:
 
 field:
   dateOfBirth: 'Geburtsdatum'
+  age: 'Alter {age}'
   gender: 'Geschlecht'
   role: 'Rolle'
   email: 'E-Mail'
@@ -521,6 +537,7 @@ tab:
 
 field:
   dateOfBirth: 'Date de naissance'
+  age: 'Âge {age}'
   gender: 'Genre'
   role: 'Rôle'
   email: 'E-mail'
@@ -560,6 +577,7 @@ tab:
 
 field:
   dateOfBirth: 'Data urodzenia'
+  age: 'Wiek {age}'
   gender: 'Płeć'
   role: 'Rola'
   email: 'E-mail'
@@ -599,6 +617,7 @@ tab:
 
 field:
   dateOfBirth: 'Datum narození'
+  age: 'Věk {age}'
   gender: 'Pohlaví'
   role: 'Role'
   email: 'E-mail'
@@ -648,6 +667,43 @@ empty: 'Pro tuto registraci nejsou k dispozici žádné podrobnosti'
 
 .timeline-panel {
   height: min(480px, 62vh);
+}
+
+/* The sheet draws the surface and sets the height: header, tabs and actions
+   stay put, the panels fill the rest and scroll. */
+.details-card--sheet {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+}
+
+.details-card--sheet :deep(.dialog-header) {
+  padding-top: 0;
+  background: transparent;
+}
+
+.details-card--sheet .details-tabs {
+  background: transparent;
+}
+
+.details-card--sheet .details-panels {
+  flex: 1;
+  min-height: 0;
+}
+
+.details-card--sheet .details-panel {
+  max-height: none;
+  height: 100%;
+}
+
+.details-card--sheet .timeline-panel {
+  height: 100%;
+}
+
+.details-card--sheet .details-actions {
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
 }
 
 .section-title {
@@ -712,6 +768,17 @@ empty: 'Pro tuto registraci nejsou k dispozici žádné podrobnosti'
   font-size: 1rem;
   line-height: 1.5rem;
   color: var(--md3-on-surface);
+}
+
+.row-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.25rem;
+  white-space: nowrap;
+  background: var(--md3-tertiary-container);
+  color: var(--md3-on-tertiary-container);
 }
 
 .row-value--link {

@@ -3,7 +3,7 @@
     ref="dialogRef"
     @hide="onDialogHide"
   >
-    <chore-dialog-card
+    <dialog-card
       :title="t('title')"
       :subtitle="t('description')"
       :width="480"
@@ -74,7 +74,7 @@
           :label="t('action.remove')"
         />
       </template>
-    </chore-dialog-card>
+    </dialog-card>
   </responsive-dialog>
 </template>
 
@@ -90,7 +90,7 @@ import { useRegistrationHelper } from '@/composables/registrationHelper';
 import { formatPersonName } from '@/utils/formatters';
 import { formatLocalDate } from '@/utils/date';
 import ChoreDateInput from '@/components/event/chorePlanner/ChoreDateInput.vue';
-import ChoreDialogCard from '@/components/event/chorePlanner/ChoreDialogCard.vue';
+import DialogCard from '@/components/common/dialogs/DialogCard.vue';
 import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
 
 const { t } = useI18n();

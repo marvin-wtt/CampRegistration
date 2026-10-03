@@ -17,10 +17,19 @@
             width="40%"
           />
           <template v-else-if="!hasOpenTasks">{{ t('empty') }}</template>
-          <template v-else-if="dueCount > 0">
-            {{ t('summary.due', { count: dueCount }) }}
+          <template v-else>
+            {{
+              dueCount > 0
+                ? t('summary.due', { count: dueCount })
+                : t('subtitle')
+            }}
+            <span
+              v-if="mineCount > 0"
+              class="mine-summary"
+            >
+              · {{ t('summary.mine', mineCount) }}
+            </span>
           </template>
-          <template v-else>{{ t('subtitle') }}</template>
         </template>
         <template #action>
           <m-btn
@@ -77,6 +86,7 @@
         clickable
         :to="{ name: 'management.event.tasks' }"
         class="tasks-due-item"
+        :class="{ 'tasks-due-item--mine': isMine(task) }"
       >
         <q-item-section
           avatar
@@ -144,8 +154,8 @@ const upcomingTasks = computed<Task[]>(() => {
         task.assigneeId === null || task.assigneeId === currentManagerId.value,
     )
     .sort((a, b) => {
-      if (!a.dueDate && !b.dueDate) {
-        return 0;
+      if (a.dueDate === b.dueDate) {
+        return Number(isMine(b)) - Number(isMine(a));
       }
       if (!a.dueDate) {
         return 1;
@@ -163,6 +173,10 @@ const dueCount = computed<number>(() => {
     const phase = taskPhaseOf(task);
     return phase === 'overdue' || phase === 'dueSoon';
   }).length;
+});
+
+const mineCount = computed<number>(() => {
+  return openTasks.value.filter(isMine).length;
 });
 
 function isMine(task: Task): boolean {
@@ -207,11 +221,27 @@ function isMine(task: Task): boolean {
   background: var(--md3-warning);
 }
 
+.tasks-due-item + .tasks-due-item {
+  margin-top: 2px;
+}
+
+.tasks-due-item--mine {
+  border-left: 3px solid var(--md3-primary);
+  border-radius: 0 8px 8px 0;
+  padding-left: 13px;
+  background: color-mix(in srgb, var(--md3-primary) 5%, transparent);
+}
+
 .mine-badge {
   flex: 0 0 auto;
   border-radius: 6px;
   font-size: 10px;
   font-weight: 600;
+}
+
+.mine-summary {
+  color: var(--md3-primary);
+  font-weight: 500;
 }
 
 .due-date-section {
@@ -238,6 +268,7 @@ empty: 'No pending tasks'
 you: 'You'
 summary:
   due: '{count} due soon'
+  mine: '{n} assigned to you'
 action:
   viewAll: 'View all'
 </i18n>
@@ -249,6 +280,7 @@ empty: 'Keine offenen Aufgaben'
 you: 'Du'
 summary:
   due: '{count} bald fällig'
+  mine: '{n} dir zugewiesen'
 action:
   viewAll: 'Alle anzeigen'
 </i18n>
@@ -260,6 +292,7 @@ empty: 'Aucune tâche en attente'
 you: 'Toi'
 summary:
   due: '{count} à échéance proche'
+  mine: '{n} assignée à toi | {n} assignées à toi'
 action:
   viewAll: 'Voir tout'
 </i18n>
@@ -271,6 +304,7 @@ empty: 'Brak oczekujących zadań'
 you: 'Ty'
 summary:
   due: '{count} na wkrótce'
+  mine: '{n} przypisane do ciebie'
 action:
   viewAll: 'Zobacz wszystkie'
 </i18n>
@@ -282,6 +316,7 @@ empty: 'Žádné čekající úkoly'
 you: 'Ty'
 summary:
   due: '{count} s blížícím se termínem'
+  mine: '{n} přiřazen tobě'
 action:
   viewAll: 'Zobrazit vše'
 </i18n>

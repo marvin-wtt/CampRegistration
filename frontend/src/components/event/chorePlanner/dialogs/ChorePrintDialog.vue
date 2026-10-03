@@ -3,7 +3,7 @@
     ref="dialogRef"
     @hide="onDialogHide"
   >
-    <chore-dialog-card
+    <dialog-card
       :title="t('title')"
       :width="400"
       @submit="onDialogOK({ pages, choreIds })"
@@ -66,7 +66,7 @@
           :label="t('action.print')"
         />
       </template>
-    </chore-dialog-card>
+    </dialog-card>
   </responsive-dialog>
 </template>
 
@@ -76,7 +76,7 @@ import { useI18n } from 'vue-i18n';
 import { useDialogPluginComponent } from 'quasar';
 import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
 import DateRangeInput from '@/components/common/inputs/DateRangeInput.vue';
-import ChoreDialogCard from '@/components/event/chorePlanner/ChoreDialogCard.vue';
+import DialogCard from '@/components/common/dialogs/DialogCard.vue';
 import type { Chore } from '@camp-registration/common/entities';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { rosterPages } from '@/components/event/chorePlanner/printChoreRoster';
