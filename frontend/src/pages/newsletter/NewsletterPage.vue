@@ -1075,11 +1075,11 @@ managers:
   action:
     add: 'Verwalter hinzufügen'
   organizationInfo: 'Organisations-Administratoren sehen diese Liste ebenfalls.'
-  removeDisabledHint: 'Mindestens ein Eigentümer ist erforderlich'
+  removeDisabledHint: 'Mindestens eine Person mit Verwaltungsrolle ist erforderlich'
   role:
-    OWNER: 'Eigentümer'
-    EDITOR: 'Redakteur'
-    VIEWER: 'Betrachter'
+    OWNER: 'Verwaltung'
+    EDITOR: 'Redaktion'
+    VIEWER: 'Lesezugriff'
   dialog:
     delete:
       title: 'Verwalter entfernen'
@@ -1142,11 +1142,11 @@ managers:
   action:
     add: 'Ajouter un gestionnaire'
   organizationInfo: "Les administrateurs de l'organisation voient aussi cette liste."
-  removeDisabledHint: 'Au moins un propriétaire est requis'
+  removeDisabledHint: 'Au moins une personne avec le rôle Gestion est requise'
   role:
-    OWNER: 'Propriétaire'
-    EDITOR: 'Éditeur'
-    VIEWER: 'Lecteur'
+    OWNER: 'Gestion'
+    EDITOR: 'Rédaction'
+    VIEWER: 'Lecture seule'
   dialog:
     delete:
       title: 'Supprimer un gestionnaire'
@@ -1209,11 +1209,11 @@ managers:
   action:
     add: 'Dodaj zarządzającego'
   organizationInfo: 'Administratorzy organizacji również widzą tę listę.'
-  removeDisabledHint: 'Wymagany jest co najmniej jeden właściciel'
+  removeDisabledHint: 'Wymagana jest co najmniej jedna osoba z rolą Zarządzanie'
   role:
-    OWNER: 'Właściciel'
-    EDITOR: 'Redaktor'
-    VIEWER: 'Obserwator'
+    OWNER: 'Zarządzanie'
+    EDITOR: 'Redakcja'
+    VIEWER: 'Podgląd'
   dialog:
     delete:
       title: 'Usuń zarządzającego'
@@ -1276,11 +1276,11 @@ managers:
   action:
     add: 'Přidat správce'
   organizationInfo: 'Tento seznam vidí i správci organizace.'
-  removeDisabledHint: 'Je vyžadován alespoň jeden vlastník'
+  removeDisabledHint: 'Je vyžadována alespoň jedna osoba s rolí Správa'
   role:
-    OWNER: 'Vlastník'
-    EDITOR: 'Editor'
-    VIEWER: 'Pozorovatel'
+    OWNER: 'Správa'
+    EDITOR: 'Redakce'
+    VIEWER: 'Jen čtení'
   dialog:
     delete:
       title: 'Odstranit správce'
