@@ -1,8 +1,5 @@
 <template>
-  <q-card
-    class="mgmt-card"
-    :class="`mgmt-card--${tone}`"
-  >
+  <q-card class="mgmt-card">
     <!-- Header: monogram, title, timing, overflow -->
     <div
       class="mgmt-card__head"
@@ -84,7 +81,6 @@
       <div
         v-if="capacity"
         class="mgmt-card__capacity"
-        :class="{ 'mgmt-card__capacity--low': capacity.low }"
       >
         <div class="mgmt-card__capacity-head">
           <span class="mgmt-card__capacity-label">
@@ -170,7 +166,7 @@
 
 <script lang="ts" setup>
 import EventCardMenu from '@/components/event/index/EventCardMenu.vue';
-import EventAvatar, { eventTone } from '@/components/event/EventAvatar.vue';
+import EventAvatar from '@/components/event/EventAvatar.vue';
 import { useEventsStore } from '@/stores/events-store';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -206,8 +202,6 @@ function onTitleEnter() {
   // Only show the tooltip when the title is actually clamped/truncated.
   showTitleTooltip.value = !!el && el.scrollHeight > el.clientHeight;
 }
-
-const tone = computed(() => eventTone(event.id));
 
 const dateRange = computed<string>(() => {
   const formatter = new Intl.DateTimeFormat(locale.value, {
@@ -283,7 +277,6 @@ interface Capacity {
   free: number;
   used: number;
   percent: number;
-  low: boolean;
 }
 
 const capacity = computed<Capacity | null>(() => {
@@ -299,7 +292,6 @@ const capacity = computed<Capacity | null>(() => {
     free,
     used,
     percent: Math.min(100, Math.max(0, (used / max) * 100)),
-    low: free <= 5,
   };
 });
 
@@ -687,10 +679,6 @@ async function withLoading(flag: Ref<boolean>, fn: () => Promise<void>) {
   font-weight: 500;
 }
 
-.mgmt-card__capacity--low .mgmt-card__capacity-count {
-  color: var(--md3-warning);
-}
-
 .mgmt-card__capacity-track {
   height: 6px;
   border-radius: 3px;
@@ -706,18 +694,6 @@ async function withLoading(flag: Ref<boolean>, fn: () => Promise<void>) {
   background: var(--md3-primary);
 
   transition: width 0.3s cubic-bezier(0.2, 0, 0, 1);
-}
-
-.mgmt-card--secondary .mgmt-card__capacity-fill {
-  background: var(--md3-secondary);
-}
-
-.mgmt-card--tertiary .mgmt-card__capacity-fill {
-  background: var(--md3-tertiary);
-}
-
-.mgmt-card__capacity--low .mgmt-card__capacity-fill {
-  background: var(--md3-warning);
 }
 
 /* Registration status chip */
