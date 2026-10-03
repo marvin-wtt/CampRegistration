@@ -8,19 +8,30 @@
     <div class="dashboard-shell col-12 col-md-11 col-xl-10">
       <event-summary-hero :loading>
         <template
-          v-if="quickActions.length > 0"
+          v-if="shortcutsLoading || quickActions.length > 0"
           #actions
         >
-          <m-btn
-            v-for="action in quickActions"
-            :key="action.key"
-            :label="action.label"
-            :icon="action.icon"
-            :to="{ name: action.route }"
-            secondary
-            tonal
-            no-caps
-          />
+          <template v-if="shortcutsLoading">
+            <q-skeleton
+              v-for="width in ['132px', '152px', '116px', '104px']"
+              :key="width"
+              type="QBtn"
+              :width="width"
+              class="shortcut-skeleton"
+            />
+          </template>
+          <template v-else>
+            <m-btn
+              v-for="action in quickActions"
+              :key="action.key"
+              :label="action.label"
+              :icon="action.icon"
+              :to="{ name: action.route }"
+              secondary
+              tonal
+              no-caps
+            />
+          </template>
         </template>
       </event-summary-hero>
 
@@ -40,7 +51,6 @@
         <div class="dashboard-column dashboard-column--main">
           <registration-overview-card
             :loading
-            :show-pending="showPending"
             class="area-registrations"
           />
 
@@ -108,7 +118,7 @@
 
           <!-- Administrative, so it trails everything else on narrow screens. -->
           <price-model-widget
-            v-if="!loading && can('event.billing.view')"
+            v-if="can('event.billing.view')"
             id="event-billing"
             class="area-billing"
           />
@@ -133,6 +143,7 @@ import DemographicsExplorer from '@/components/event/dashboard/DemographicsExplo
 import TasksDueWidget from '@/components/event/dashboard/TasksDueWidget.vue';
 import PriceModelWidget from '@/components/event/dashboard/PriceModelWidget.vue';
 import { useEventDetailsStore } from '@/stores/event-details-store';
+import { useProfileStore } from '@/stores/profile-store';
 import { useRegistrationsStore } from '@/stores/registration-store';
 import { useEventFilesStore } from '@/stores/event-files-store';
 import { useTaskStore } from '@/stores/task-store';
@@ -154,6 +165,7 @@ const { t } = useI18n();
 const router = useRouter();
 
 const eventDetailsStore = useEventDetailsStore();
+const profileStore = useProfileStore();
 const registrationStore = useRegistrationsStore();
 const eventFilesStore = useEventFilesStore();
 const taskStore = useTaskStore();
@@ -161,7 +173,8 @@ const billingStore = useEventBillingStore();
 const stats = useEventStatistics();
 const helper = useRegistrationHelper();
 const { can, canAccess } = usePermissions();
-const { settings: navigationSettings } = useNavigationSettings();
+const { settings: navigationSettings, isLoading: navigationLoading } =
+  useNavigationSettings();
 
 // Features hidden from the nav rail are hidden here too.
 function isShown(item: HideableNavigationItem): boolean {
@@ -175,6 +188,15 @@ const {
 } = storeToRefs(eventDetailsStore);
 const { isLoading: registrationsLoading, error: registrationsError } =
   storeToRefs(registrationStore);
+
+// Shortcuts depend on permissions (profile and event) and the hidden nav items;
+// most managers have some, so they are skeletonized rather than left out.
+const shortcutsLoading = computed<boolean>(
+  () =>
+    navigationLoading.value ||
+    profileStore.user === undefined ||
+    event.value === undefined,
+);
 
 const loading = computed<boolean>(
   () => registrationsLoading.value || eventLoading.value,
@@ -202,11 +224,6 @@ watch(
     }
   },
   { immediate: true },
-);
-
-// Pending only matters when registrations are confirmed manually.
-const showPending = computed<boolean>(
-  () => event.value?.confirmationMode !== 'AUTOMATIC',
 );
 
 interface QuickAction {
@@ -374,6 +391,17 @@ function goTo(routeName: string) {
 </script>
 
 <style scoped>
+.shortcut-skeleton {
+  height: 40px;
+  border-radius: 999px;
+}
+
+@media (max-width: 599px) {
+  .shortcut-skeleton {
+    width: auto !important;
+  }
+}
+
 .dashboard-shell {
   display: flex;
   flex-direction: column;
@@ -491,6 +519,15 @@ function goTo(routeName: string) {
     min-width: 0;
     flex-direction: column;
     gap: 20px;
+  }
+
+  /* Nothing to do (or nothing permitted): the main column takes the width. */
+  .dashboard-columns:has(> .dashboard-column--side:empty) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dashboard-column--side:empty {
+    display: none;
   }
 }
 

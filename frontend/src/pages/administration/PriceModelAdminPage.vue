@@ -5,6 +5,8 @@
         v-model:search="search"
         :title="t('title')"
         :total="filteredRows.length"
+        :back-to="{ name: 'administration.billing' }"
+        :back-label="t('back')"
         :loading
         :search-placeholder="t('search')"
         @refresh="reload"
@@ -261,6 +263,7 @@ function onDelete(priceModel: PriceModel) {
 </script>
 
 <i18n lang="yaml" locale="en">
+back: 'Back to bills'
 title: 'Price models'
 search: 'Search by name'
 usage: '{organizations} organizations · {events} events'
@@ -290,6 +293,7 @@ dialog:
 </i18n>
 
 <i18n lang="yaml" locale="de">
+back: 'Zurück zu den Rechnungen'
 title: 'Preismodelle'
 search: 'Nach Name suchen'
 usage: '{organizations} Organisationen · {events} Veranstaltungen'
@@ -319,6 +323,7 @@ dialog:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
+back: 'Retour aux factures'
 title: 'Modèles tarifaires'
 search: 'Rechercher par nom'
 usage: '{organizations} organisations · {events} événements'
@@ -348,6 +353,7 @@ dialog:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
+back: 'Powrót do rachunków'
 title: 'Modele cenowe'
 search: 'Szukaj po nazwie'
 usage: 'Organizacje: {organizations} · wydarzenia: {events}'
@@ -377,6 +383,7 @@ dialog:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
+back: 'Zpět na faktury'
 title: 'Cenové modely'
 search: 'Hledat podle názvu'
 usage: 'Organizace: {organizations} · akce: {events}'

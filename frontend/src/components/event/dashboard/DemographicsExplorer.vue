@@ -36,6 +36,21 @@
                   : t('total', { total: people.length })
               }}
             </span>
+            <!-- Resetting lives here, not in the filter row, so turning a
+                 filter on never reflows the controls. -->
+            <q-btn
+              v-if="hasActiveFilters"
+              :aria-label="t('resetFilters')"
+              icon="close"
+              size="sm"
+              class="people-count__reset"
+              flat
+              round
+              dense
+              @click="resetFilters"
+            >
+              <q-tooltip>{{ t('resetFilters') }}</q-tooltip>
+            </q-btn>
           </div>
         </template>
       </dashboard-card-header>
@@ -146,15 +161,6 @@
               </q-list>
             </q-menu>
           </m-btn>
-          <m-btn
-            v-if="hasActiveFilters"
-            :label="t('resetFilters')"
-            icon="filter_list_off"
-            primary
-            text
-            no-caps
-            @click="resetFilters"
-          />
         </div>
       </div>
     </q-card-section>
@@ -167,13 +173,49 @@
           height="340px"
           class="chart-skeleton"
         />
-        <apex-chart
-          v-else-if="hasData"
-          type="bar"
-          height="340"
-          :options="chartOptions"
-          :series="chartSeries"
-        />
+        <template v-else-if="hasData">
+          <!-- Our own tooltip rather than the library's: it is placed above
+               the column (or beside it), never on the bars it describes. -->
+          <div
+            ref="chartWrap"
+            class="chart-wrap"
+            @mouseleave="activeIndex = null"
+          >
+            <apex-chart
+              type="bar"
+              height="340"
+              :options="chartOptions"
+              :series="chartSeries"
+            />
+            <div
+              v-if="readout"
+              ref="tooltipEl"
+              class="chart-tooltip"
+              role="status"
+              :style="tooltipStyle"
+            >
+              <div class="chart-tooltip__title">{{ readout.category }}</div>
+              <div
+                v-for="item in readout.items"
+                :key="item.name"
+                class="chart-tooltip__row"
+              >
+                <span
+                  class="chart-tooltip__dot"
+                  :style="{ background: item.color }"
+                />
+                <span class="chart-tooltip__name">{{ item.name }}</span>
+                <strong>{{ item.value }}</strong>
+              </div>
+              <div
+                v-if="grouped"
+                class="chart-tooltip__total"
+              >
+                {{ t('readoutTotal', { n: readout.total }) }}
+              </div>
+            </div>
+          </div>
+        </template>
         <div
           v-else
           class="chart-empty column items-center justify-center"
@@ -507,6 +549,115 @@ const chartSeries = computed(() => {
   }));
 });
 
+// The category under the pointer, or the last one tapped on touch screens.
+const activeIndex = ref<number | null>(null);
+
+watch(crossTab, () => {
+  activeIndex.value = null;
+});
+
+function seriesColor(index: number): string {
+  const colors = themeColors.value.series;
+  return colors[index % colors.length] ?? '';
+}
+
+const readout = computed(() => {
+  const index = activeIndex.value;
+  const category = crossTab.value.categories[index ?? -1];
+  if (index === null || category === undefined) {
+    return null;
+  }
+  const items = chartSeries.value.map((series, i) => ({
+    name: series.name,
+    color: seriesColor(i),
+    value: series.data[index] ?? 0,
+  }));
+  const label = labelFor(xDimension.value, category);
+
+  return {
+    category:
+      xDimension.value === 'age' ? `${t('dimension.age')} ${label}` : label,
+    items,
+    total: items.reduce((sum, item) => sum + item.value, 0),
+  };
+});
+
+const chartWrap = ref<HTMLElement>();
+const tooltipEl = ref<HTMLElement>();
+const tooltipPosition = ref<{ left: number; top: number } | null>(null);
+
+const tooltipStyle = computed(() =>
+  tooltipPosition.value
+    ? {
+        left: `${tooltipPosition.value.left}px`,
+        top: `${tooltipPosition.value.top}px`,
+      }
+    : { visibility: 'hidden' as const },
+);
+
+// Above the column when there is room, otherwise beside it; horizontal bars
+// prefer the space after the row. Rendered hidden first, so it can be measured.
+async function placeTooltip() {
+  tooltipPosition.value = null;
+  const index = activeIndex.value;
+  if (index === null) {
+    return;
+  }
+  await nextTick();
+  const wrap = chartWrap.value;
+  const tip = tooltipEl.value;
+  if (!wrap || !tip) {
+    return;
+  }
+
+  const box = wrap.getBoundingClientRect();
+  const bars = [
+    ...wrap.querySelectorAll(`.apexcharts-bar-area[j="${index}"]`),
+  ].map((bar) => bar.getBoundingClientRect());
+  if (bars.length === 0) {
+    return;
+  }
+
+  const left = Math.min(...bars.map((r) => r.left)) - box.left;
+  const right = Math.max(...bars.map((r) => r.right)) - box.left;
+  const top = Math.min(...bars.map((r) => r.top)) - box.top;
+  const bottom = Math.max(...bars.map((r) => r.bottom)) - box.top;
+  const width = tip.offsetWidth;
+  const height = tip.offsetHeight;
+  const gap = 8;
+  const clampX = (x: number) => Math.min(Math.max(x, 0), box.width - width);
+  // It may rise above the chart, over the controls, up to the card's edge.
+  const card = wrap.closest('.demographics-card');
+  const minTop = card ? card.getBoundingClientRect().top - box.top + gap : 0;
+  const clampY = (y: number) =>
+    Math.min(Math.max(y, minTop), box.height - height);
+  const middleY = clampY((top + bottom) / 2 - height / 2);
+
+  if (horizontal.value) {
+    tooltipPosition.value =
+      right + gap + width <= box.width
+        ? { left: right + gap, top: middleY }
+        : {
+            left: clampX(right - width),
+            top: Math.max(minTop, top - gap - height),
+          };
+    return;
+  }
+
+  if (top - gap - height >= minTop) {
+    tooltipPosition.value = {
+      left: clampX((left + right) / 2 - width / 2),
+      top: top - gap - height,
+    };
+  } else if (right + gap + width <= box.width) {
+    tooltipPosition.value = { left: right + gap, top: middleY };
+  } else {
+    tooltipPosition.value = { left: clampX(left - gap - width), top: middleY };
+  }
+}
+
+watch(activeIndex, () => void placeTooltip());
+
 const chartOptions = computed<ApexOptions>(() => {
   const categories = crossTab.value.categories.map((c) =>
     labelFor(xDimension.value, c),
@@ -522,6 +673,24 @@ const chartOptions = computed<ApexOptions>(() => {
       animations: { speed: 250 },
       background: 'transparent',
       foreColor: themeColors.value.foreColor,
+      events: {
+        dataPointMouseEnter: (_e, _chart, opts) => {
+          activeIndex.value = opts?.dataPointIndex ?? null;
+        },
+        dataPointMouseLeave: () => {
+          activeIndex.value = null;
+        },
+        // Touch screens have no hover: a tap pins the tooltip instead, and a
+        // tap beside the bars clears it.
+        dataPointSelection: (_e, _chart, opts) => {
+          activeIndex.value = opts?.dataPointIndex ?? null;
+        },
+        click: (_e, _chart, opts) => {
+          if ((opts?.dataPointIndex ?? -1) < 0) {
+            activeIndex.value = null;
+          }
+        },
+      },
     },
     theme: { mode: quasar.dark.isActive ? 'dark' : 'light' },
     colors: themeColors.value.series,
@@ -544,7 +713,10 @@ const chartOptions = computed<ApexOptions>(() => {
     dataLabels: { enabled: false },
     states: {
       hover: { filter: { type: 'darken' } },
-      active: { filter: { type: 'none' } },
+      active: {
+        filter: { type: 'none' },
+        allowMultipleDataPointsSelection: false,
+      },
     },
     legend: {
       show: grouped.value,
@@ -586,14 +758,7 @@ const chartOptions = computed<ApexOptions>(() => {
           : { formatter: (val: number) => `${Math.round(val)}` }),
       },
     },
-    tooltip: {
-      shared: grouped.value && !horizontal.value,
-      intersect: false,
-      y: {
-        formatter: (val: number) => `${Math.round(val)}`,
-      },
-      theme: quasar.dark.isActive ? 'dark' : 'light',
-    },
+    tooltip: { enabled: false },
     noData: { text: t('empty') },
   };
 });
@@ -624,8 +789,13 @@ const chartOptions = computed<ApexOptions>(() => {
 }
 
 .people-count--filtered {
+  padding-right: 4px;
   background: var(--md3-primary-container);
   color: var(--md3-on-primary-container);
+}
+
+.people-count__reset {
+  margin: -4px 0;
 }
 
 .demographics-controls {
@@ -658,6 +828,54 @@ const chartOptions = computed<ApexOptions>(() => {
 
 .chart-section {
   padding: 0 12px 12px;
+}
+
+.chart-wrap {
+  position: relative;
+}
+
+.chart-tooltip {
+  position: absolute;
+  z-index: 2;
+  min-width: 140px;
+  padding: 8px 12px;
+  color: var(--md3-on-surface);
+  font-size: 0.8125rem;
+  pointer-events: none;
+  background: var(--md3-surface-container-highest);
+  border: 1px solid var(--md3-outline-variant);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+}
+
+.chart-tooltip__title {
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.chart-tooltip__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chart-tooltip__name {
+  flex: 1 1 auto;
+  color: var(--md3-on-surface-variant);
+}
+
+.chart-tooltip__dot {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.chart-tooltip__total {
+  margin-top: 4px;
+  padding-top: 4px;
+  color: var(--md3-on-surface-variant);
+  border-top: 1px solid var(--md3-outline-variant);
 }
 
 .chart-skeleton {
@@ -709,6 +927,7 @@ viewBy: 'View by'
 breakdown: 'Breakdown'
 filters: 'Filters'
 count: 'People'
+readoutTotal: '{n} in total'
 empty: 'No data to display.'
 unknown: 'Unknown'
 dimension:
@@ -744,6 +963,7 @@ viewBy: 'Ansicht nach'
 breakdown: 'Aufschlüsselung'
 filters: 'Filter'
 count: 'Personen'
+readoutTotal: '{n} gesamt'
 empty: 'Keine Daten vorhanden.'
 unknown: 'Unbekannt'
 dimension:
@@ -779,6 +999,7 @@ viewBy: 'Afficher par'
 breakdown: 'Répartition'
 filters: 'Filtres'
 count: 'Personnes'
+readoutTotal: '{n} au total'
 empty: 'Aucune donnée à afficher.'
 unknown: 'Inconnu'
 dimension:
@@ -814,6 +1035,7 @@ viewBy: 'Pokaż według'
 breakdown: 'Podział'
 filters: 'Filtry'
 count: 'Osoby'
+readoutTotal: 'Razem: {n}'
 empty: 'Brak danych do wyświetlenia.'
 unknown: 'Nieznane'
 dimension:
@@ -849,6 +1071,7 @@ viewBy: 'Zobrazit podle'
 breakdown: 'Rozdělení'
 filters: 'Filtry'
 count: 'Osoby'
+readoutTotal: 'Celkem: {n}'
 empty: 'Žádná data k zobrazení.'
 unknown: 'Neznámé'
 dimension:

@@ -9,91 +9,64 @@
         icon="how_to_reg"
         :title="t('title')"
         :caption="t('subtitle')"
-      >
-        <template
-          v-if="can('event.registrations.view')"
-          #action
-        >
-          <m-btn
-            :label="t('viewAll')"
-            :to="{ name: 'management.event.participants' }"
-            icon-right="chevron_right"
-            primary
-            text
-            no-caps
-          />
-        </template>
-      </dashboard-card-header>
+      />
     </q-card-section>
 
     <q-card-section class="overview-section">
-      <div
-        class="overview-grid"
-        :style="{ '--kpi-count': kpis.length }"
-      >
+      <div class="overview-grid">
         <div class="tile capacity-tile">
           <div class="tile-label">{{ t('accepted') }}</div>
-          <q-skeleton
-            v-if="loading"
-            type="text"
-            width="5rem"
-            class="capacity-value"
-          />
-          <div
-            v-else
-            class="capacity-value"
-          >
-            <span>{{ accepted }}</span>
-            <span
-              v-if="max != null"
-              class="capacity-max"
-            >
-              / {{ max }}
-            </span>
-            <span
-              v-if="max != null"
-              class="capacity-percent"
-              :class="`tone--${tone}`"
-            >
-              {{ percent }} %
-            </span>
-          </div>
-          <capacity-meter
-            v-if="loading || max != null"
-            :ratio="loading ? 0 : ratio"
-            :tone
-            :label="t('accepted')"
-          />
-          <q-skeleton
-            v-if="loading"
-            type="text"
-            width="40%"
-            class="tile-caption"
-          />
-          <div
-            v-else
-            class="tile-caption"
-          >
-            <template v-if="max == null">{{ t('capacityUnset') }}</template>
-            <template v-else>
-              <span :class="`tone--${tone}`">
-                {{ t('free', { n: stats.placeSplit.value.free }) }}
-              </span>
+          <template v-if="loading">
+            <q-skeleton
+              type="text"
+              width="5rem"
+              class="capacity-value"
+            />
+            <q-skeleton
+              type="rect"
+              height="10px"
+              class="rounded-full"
+            />
+            <q-skeleton
+              type="text"
+              width="60%"
+              class="q-mt-sm"
+            />
+          </template>
+          <template v-else>
+            <div class="capacity-value">
+              <span>{{ split.accepted }}</span>
               <span
-                v-if="stats.placeSplit.value.reserved > 0"
-                class="caption-detail"
+                v-if="max != null"
+                class="capacity-max"
               >
-                · {{ t('reserved', { n: stats.placeSplit.value.reserved }) }}
+                / {{ max }}
               </span>
-              <span
-                v-if="stats.placeSplit.value.overbooked > 0"
-                class="caption-detail tone--error"
-              >
-                ·
-                {{ t('overbooked', { n: stats.placeSplit.value.overbooked }) }}
-              </span>
-            </template>
-          </div>
+            </div>
+            <capacity-meter
+              v-if="max != null"
+              :max
+              :accepted="split.accepted"
+              :pending="split.pending"
+              :reserved="split.reserved"
+              :free="split.free"
+              :overbooked="split.overbooked"
+              :label="
+                t('meterLabel', {
+                  accepted: split.accepted,
+                  pending: split.pending,
+                  max,
+                })
+              "
+              legend
+            />
+            <div
+              v-else
+              class="tile-caption"
+            >
+              {{ t('capacityUnset') }}
+            </div>
+          </template>
         </div>
 
         <div
@@ -105,7 +78,7 @@
             <q-icon
               :name="kpi.icon"
               size="16px"
-              :class="`tone--${kpi.tone}`"
+              class="kpi-icon"
             />
             <span class="ellipsis">{{ kpi.label }}</span>
           </div>
@@ -126,13 +99,13 @@
       </div>
     </q-card-section>
 
-    <template v-if="!loading && stats.multiCountryEvent.value">
+    <template v-if="stats.multiCountryEvent.value">
       <q-separator inset />
-      <q-card-section>
+      <q-card-section class="country-section">
         <div class="subsection-label">{{ t('byCountry') }}</div>
         <ul class="country-list">
           <li
-            v-for="row in stats.perCountry.value"
+            v-for="row in countryRows"
             :key="row.country"
             class="country-row"
           >
@@ -143,33 +116,51 @@
               />
               <span class="ellipsis">{{ countryLabel(row.country) }}</span>
             </div>
-            <div class="country-capacity">
-              <capacity-meter
-                :ratio="ratioOf(row.accepted, row.max)"
-                :tone="toneOf(row.accepted, row.max)"
-                :label="countryLabel(row.country)"
-                class="col"
+            <template v-if="loading">
+              <q-skeleton
+                type="rect"
+                height="10px"
+                class="country-meter rounded-full"
               />
-              <span class="country-count">
-                <strong>{{ row.accepted }}</strong>
-                <span v-if="row.max != null"> / {{ row.max }}</span>
-              </span>
-            </div>
-            <div class="country-stats">
-              <span :class="{ 'tone--positive': (row.free ?? 0) > 0 }">
-                {{ t('country.free', { n: row.free ?? '—' }) }}
-              </span>
-              <span
-                v-if="showPending"
-                :class="{ 'tone--warning': row.pending > 0 }"
-              >
-                {{ t('country.pending', { n: row.pending }) }}
-              </span>
-              <span :class="{ 'tone--error': row.waitlisted > 0 }">
-                {{ t('country.waitlisted', { n: row.waitlisted }) }}
-              </span>
-              <span>{{ t('country.team', { n: row.team }) }}</span>
-            </div>
+              <q-skeleton
+                type="text"
+                width="12rem"
+                class="country-stats"
+              />
+            </template>
+            <template v-else>
+              <div class="country-meter">
+                <capacity-meter
+                  v-if="row.max != null"
+                  :max="row.max"
+                  :accepted="row.accepted"
+                  :pending="row.pending"
+                  :reserved="row.reserved"
+                  :overbooked="row.overbooked"
+                  :label="
+                    t('meterLabel', {
+                      accepted: row.accepted,
+                      pending: row.pending,
+                      max: row.max,
+                    })
+                  "
+                  class="col"
+                />
+                <span class="country-count">
+                  <strong>{{ row.accepted }}</strong>
+                  <span v-if="row.max != null"> / {{ row.max }}</span>
+                </span>
+              </div>
+              <div class="country-stats">
+                <span
+                  v-for="item in row.details"
+                  :key="item.key"
+                  :class="`country-stat--${item.key}`"
+                >
+                  {{ item.text }}
+                </span>
+              </div>
+            </template>
           </li>
         </ul>
       </q-card-section>
@@ -180,67 +171,33 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import DashboardCardHeader from '@/components/event/dashboard/DashboardCardHeader.vue';
 import CapacityMeter from '@/components/event/dashboard/CapacityMeter.vue';
 import CountryIcon from '@/components/common/localization/CountryIcon.vue';
-import { useEventStatistics } from '@/composables/eventStatistics';
-import { usePermissions } from '@/composables/permissions';
+import { splitPlaces, useEventStatistics } from '@/composables/eventStatistics';
 
-const { loading = false, showPending = true } = defineProps<{
+const { loading = false } = defineProps<{
   loading?: boolean;
-  showPending?: boolean;
 }>();
 
 const { t, locale } = useI18n();
 const stats = useEventStatistics();
-const { can } = usePermissions();
 
-const accepted = computed(() => stats.counts.value.accepted);
 const max = computed(() => stats.capacity.value.max);
 
-function ratioOf(value: number, limit: number | undefined): number {
-  if (limit == null || limit === 0) {
-    return 0;
-  }
-  return Math.min(1, value / limit);
-}
-
-function toneOf(
-  value: number,
-  limit: number | undefined,
-): 'primary' | 'warning' | 'error' {
-  const r = ratioOf(value, limit);
-  if (limit != null && (value > limit || r >= 1)) {
-    return 'error';
-  }
-  return r >= 0.85 ? 'warning' : 'primary';
-}
-
-const ratio = computed(() => ratioOf(accepted.value, max.value));
-const percent = computed(() => Math.round(ratio.value * 100));
-const tone = computed(() => toneOf(accepted.value, max.value));
+const split = computed(() => ({
+  ...stats.placeSplit.value,
+  accepted: stats.counts.value.accepted,
+  pending: stats.counts.value.pending,
+}));
 
 const kpis = computed(() => [
-  ...(showPending
-    ? [
-        {
-          key: 'pending',
-          label: t('kpi.pending'),
-          caption: t('kpi.pendingCaption'),
-          value: stats.counts.value.pending,
-          icon: 'hourglass_top',
-          tone: 'warning',
-        },
-      ]
-    : []),
   {
     key: 'waitlisted',
     label: t('kpi.waitlisted'),
     caption: t('kpi.waitlistedCaption'),
     value: stats.counts.value.waitlisted,
     icon: 'event_seat',
-    tone: 'secondary',
   },
   {
     key: 'team',
@@ -248,9 +205,33 @@ const kpis = computed(() => [
     caption: t('kpi.teamCaption'),
     value: stats.staff.value.length,
     icon: 'supervisor_account',
-    tone: 'tertiary',
   },
 ]);
+
+// Zero counts are left out, except free places — "0 free" is the news.
+const countryRows = computed(() =>
+  stats.perCountry.value.map((row) => {
+    const { reserved, overbooked } = splitPlaces([
+      {
+        max: row.max ?? 0,
+        holding: row.accepted + row.pending,
+        waitlisted: row.waitlisted,
+      },
+    ]);
+    const details = [
+      { key: 'overbooked', n: overbooked },
+      { key: 'pending', n: row.pending },
+      { key: 'free', n: row.free ?? 0, always: row.max != null },
+      { key: 'reserved', n: reserved },
+      { key: 'waitlisted', n: row.waitlisted },
+      { key: 'team', n: row.team },
+    ]
+      .filter((item) => item.n > 0 || item.always)
+      .map((item) => ({ key: item.key, text: t(`country.${item.key}`, item) }));
+
+    return { ...row, reserved, overbooked, details };
+  }),
+);
 
 const regionNames = computed(() => {
   try {
@@ -313,19 +294,14 @@ function countryLabel(value: string): string {
   font-weight: 500;
 }
 
+.kpi-icon {
+  color: var(--md3-primary);
+}
+
 .tile-caption {
   margin-top: 2px;
   color: var(--md3-on-surface-variant);
   font-size: 0.75rem;
-}
-
-.capacity-tile .tile-caption {
-  margin-top: 8px;
-  font-weight: 600;
-}
-
-.caption-detail {
-  font-weight: 400;
 }
 
 .kpi-caption {
@@ -350,12 +326,6 @@ function countryLabel(value: string): string {
   font-weight: 500;
 }
 
-.capacity-percent {
-  margin-left: auto;
-  font-size: 1rem;
-  font-weight: 700;
-}
-
 .kpi-value {
   color: var(--md3-on-surface);
   font-size: 1.25rem;
@@ -363,56 +333,32 @@ function countryLabel(value: string): string {
   line-height: 1.15;
 }
 
-.tone--primary {
-  color: var(--md3-primary);
-}
-
-.tone--secondary {
-  color: var(--md3-secondary);
-}
-
-.tone--tertiary {
-  color: var(--md3-tertiary);
-}
-
-.tone--warning {
-  color: var(--md3-warning);
-}
-
-.tone--positive {
-  color: var(--md3-positive);
-}
-
-.tone--error {
-  color: var(--md3-error);
+.country-section {
+  container-type: inline-size;
 }
 
 .subsection-label {
-  margin-bottom: 8px;
+  margin-bottom: 4px;
   color: var(--md3-on-surface-variant);
   font-size: 0.8125rem;
   font-weight: 500;
 }
 
 .country-list {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
   margin: 0;
   padding: 0;
   list-style: none;
-  container-type: inline-size;
 }
 
 .country-row {
   display: grid;
-  grid-template-columns: auto minmax(96px, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   grid-template-areas:
-    'name capacity'
-    'stats stats';
-  gap: 6px 16px;
-  align-items: center;
-  padding: 10px 0;
+    'name'
+    'meter'
+    'stats';
+  gap: 6px;
+  padding: 12px 0;
 }
 
 .country-row + .country-row {
@@ -434,15 +380,15 @@ function countryLabel(value: string): string {
   border-radius: 3px;
 }
 
-.country-capacity {
+.country-meter {
   display: flex;
-  grid-area: capacity;
+  grid-area: meter;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .country-count {
-  min-width: 4.5em;
+  min-width: 4em;
   color: var(--md3-on-surface-variant);
   text-align: right;
   white-space: nowrap;
@@ -456,17 +402,24 @@ function countryLabel(value: string): string {
   display: flex;
   flex-wrap: wrap;
   grid-area: stats;
-  gap: 4px 16px;
+  gap: 2px 14px;
   color: var(--md3-on-surface-variant);
   font-size: 0.8125rem;
 }
 
+.country-stat--free {
+  color: var(--md3-on-surface);
+  font-weight: 600;
+}
+
+.country-stat--overbooked {
+  color: var(--md3-error);
+  font-weight: 600;
+}
+
 @container (min-width: 640px) {
   .overview-grid {
-    grid-template-columns: minmax(0, 1.8fr) repeat(
-        var(--kpi-count, 3),
-        minmax(0, 1fr)
-      );
+    grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr));
   }
 
   .kpi-tile {
@@ -482,136 +435,119 @@ function countryLabel(value: string): string {
   .kpi-caption {
     display: block;
   }
-}
 
-@container (min-width: 720px) {
   .country-row {
-    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1fr) minmax(0, 1.5fr);
-    grid-template-areas: 'name capacity stats';
-  }
-
-  .country-stats {
-    justify-content: flex-end;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    grid-template-areas:
+      'name meter'
+      '. stats';
+    gap: 4px 20px;
+    align-items: center;
   }
 }
 </style>
 
 <i18n lang="yaml" locale="en">
 title: 'Registrations'
-subtitle: 'Places, open requests and team'
-viewAll: 'Participants'
+subtitle: 'Places, waitlist and team'
 accepted: 'Confirmed participants'
 capacityUnset: 'No participant limit set'
-free: '{n} places free'
-reserved: '{n} reserved for the waitlist'
-overbooked: '{n} overbooked'
+meterLabel: '{accepted} confirmed and {pending} pending of {max} places'
 byCountry: 'By country'
 kpi:
-  pending: 'Pending'
-  pendingCaption: 'Awaiting confirmation'
   waitlisted: 'Waitlist'
   waitlistedCaption: 'Waiting for a place'
   team: 'Team'
   teamCaption: 'Leaders and staff'
 country:
-  free: '{n} free'
+  overbooked: '{n} overbooked'
   pending: '{n} pending'
+  free: '{n} free'
+  reserved: '{n} reserved for the waitlist'
   waitlisted: '{n} waitlisted'
   team: '{n} team'
 </i18n>
 
 <i18n lang="yaml" locale="de">
 title: 'Anmeldungen'
-subtitle: 'Plätze, offene Anfragen und Team'
-viewAll: 'Teilnehmende'
+subtitle: 'Plätze, Warteliste und Team'
 accepted: 'Bestätigte Teilnehmende'
 capacityUnset: 'Kein Teilnehmendenlimit festgelegt'
-free: '{n} Plätze frei'
-reserved: '{n} für die Warteliste reserviert'
-overbooked: '{n} überbucht'
+meterLabel: '{accepted} bestätigt und {pending} ausstehend von {max} Plätzen'
 byCountry: 'Nach Land'
 kpi:
-  pending: 'Ausstehend'
-  pendingCaption: 'Warten auf Bestätigung'
   waitlisted: 'Warteliste'
   waitlistedCaption: 'Warten auf einen Platz'
   team: 'Team'
   teamCaption: 'Leitung und Mitarbeitende'
 country:
-  free: '{n} frei'
+  overbooked: '{n} überbucht'
   pending: '{n} ausstehend'
+  free: '{n} frei'
+  reserved: '{n} für die Warteliste reserviert'
   waitlisted: '{n} auf Warteliste'
   team: '{n} im Team'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 title: 'Inscriptions'
-subtitle: 'Places, demandes en cours et équipe'
-viewAll: 'Participants'
+subtitle: "Places, liste d'attente et équipe"
 accepted: 'Participants confirmés'
 capacityUnset: 'Aucune limite de participants'
-free: '{n} places libres'
-reserved: "{n} réservées pour la liste d'attente"
-overbooked: '{n} en surréservation'
+meterLabel: '{accepted} confirmés et {pending} en attente sur {max} places'
 byCountry: 'Par pays'
 kpi:
-  pending: 'En attente'
-  pendingCaption: 'En attente de confirmation'
   waitlisted: "Liste d'attente"
   waitlistedCaption: "En attente d'une place"
   team: 'Équipe'
   teamCaption: 'Responsables et équipe'
 country:
-  free: '{n} libres'
+  overbooked: '{n} en surréservation'
   pending: '{n} en attente'
+  free: '{n} libres'
+  reserved: "{n} réservées pour la liste d'attente"
   waitlisted: "{n} en liste d'attente"
   team: "{n} dans l'équipe"
 </i18n>
 
 <i18n lang="yaml" locale="pl">
 title: 'Rejestracje'
-subtitle: 'Miejsca, oczekujące zgłoszenia i zespół'
-viewAll: 'Uczestnicy'
+subtitle: 'Miejsca, lista rezerwowa i zespół'
 accepted: 'Potwierdzeni uczestnicy'
 capacityUnset: 'Nie ustawiono limitu uczestników'
-free: 'Wolnych miejsc: {n}'
-reserved: 'Zarezerwowane dla listy rezerwowej: {n}'
-overbooked: 'Ponad limit: {n}'
+meterLabel: 'Potwierdzeni: {accepted}, oczekujący: {pending}, miejsca: {max}'
 byCountry: 'Według kraju'
 kpi:
-  pending: 'Oczekujący'
-  pendingCaption: 'Oczekują na potwierdzenie'
   waitlisted: 'Lista rezerwowa'
   waitlistedCaption: 'Oczekują na miejsce'
   team: 'Zespół'
   teamCaption: 'Kadra i personel'
 country:
-  free: 'Wolne: {n}'
+  overbooked: 'Ponad limit: {n}'
   pending: 'Oczekujący: {n}'
+  free: 'Wolne: {n}'
+  reserved: 'Zarezerwowane dla listy rezerwowej: {n}'
   waitlisted: 'Lista rezerwowa: {n}'
   team: 'Zespół: {n}'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
 title: 'Registrace'
-subtitle: 'Místa, čekající žádosti a tým'
-viewAll: 'Účastníci'
+subtitle: 'Místa, čekací listina a tým'
 accepted: 'Potvrzení účastníci'
 capacityUnset: 'Limit účastníků není nastaven'
-free: 'Volných míst: {n}'
-reserved: 'Rezervováno pro čekací listinu: {n}'
-overbooked: 'Nad kapacitu: {n}'
+meterLabel: 'Potvrzení: {accepted}, čekající: {pending}, místa: {max}'
 byCountry: 'Podle země'
 kpi:
-  pending: 'Čekající'
-  pendingCaption: 'Čeká na potvrzení'
   waitlisted: 'Čekací listina'
   waitlistedCaption: 'Čekají na místo'
   team: 'Tým'
   teamCaption: 'Vedoucí a personál'
 country:
-  free: 'Volná: {n}'
+  overbooked: 'Nad kapacitu: {n}'
   pending: 'Čekající: {n}'
+  free: 'Volná: {n}'
+  reserved: 'Rezervováno pro čekací listinu: {n}'
   waitlisted: 'Čekací listina: {n}'
   team: 'Tým: {n}'
 </i18n>

@@ -6,79 +6,73 @@
   >
     <div class="hero-accent" />
     <q-card-section class="hero-content">
-      <div
-        v-if="loading"
-        class="status-chips"
-      >
+      <div class="hero-identity">
         <q-skeleton
-          v-for="width in ['96px', '148px']"
-          :key="width"
+          v-if="loading || !event"
           type="rect"
-          :width="width"
-          class="status-pill-skeleton"
+          class="hero-avatar hero-avatar-skeleton"
         />
-      </div>
-      <div
-        v-else
-        class="status-chips"
-      >
-        <span
-          v-if="countdown"
-          class="status-pill countdown-pill"
-        >
-          <q-icon
-            name="schedule"
-            size="16px"
-          />
-          {{ countdown }}
-        </span>
-        <span
-          class="status-pill"
-          :class="`registration-${registrationStatus.tone}`"
-        >
-          <q-icon
-            :name="registrationStatus.icon"
-            size="16px"
-          />
-          {{ registrationStatus.label }}
-        </span>
-      </div>
-
-      <div class="hero-title-row">
-        <q-skeleton
-          v-if="loading"
-          type="text"
-          width="55%"
-          class="event-title"
-        />
-        <h1
+        <event-avatar
           v-else
-          class="event-title"
-        >
-          {{ eventName }}
-        </h1>
-        <!-- Sharing stays offered outside the registration window — the event
-             page is still reachable. The caveat rides along in the tooltip. -->
-        <m-btn
-          v-if="event"
-          :label="t('copyLink.label')"
-          icon="link"
-          class="copy-link-btn"
-          primary
-          tonal
-          no-caps
-          @click="copyRegistrationLink"
-        >
-          <q-tooltip class="copy-link-tooltip">
-            <div>{{ t('copyLink.tooltip') }}</div>
-            <div
-              v-if="shareCaveat"
-              class="copy-link-tooltip__caveat"
+          :event-id="event.id"
+          :name="eventName"
+          :logo="event.logo"
+          :size="quasar.screen.lt.sm ? 48 : 64"
+          class="hero-avatar"
+        />
+
+        <div class="hero-heading">
+          <div
+            v-if="loading"
+            class="status-chips"
+          >
+            <q-skeleton
+              v-for="width in ['96px', '148px']"
+              :key="width"
+              type="rect"
+              :width="width"
+              class="status-pill-skeleton"
+            />
+          </div>
+          <div
+            v-else
+            class="status-chips"
+          >
+            <span
+              v-if="countdown"
+              class="status-pill countdown-pill"
             >
-              {{ shareCaveat }}
-            </div>
-          </q-tooltip>
-        </m-btn>
+              <q-icon
+                name="schedule"
+                size="16px"
+              />
+              {{ countdown }}
+            </span>
+            <span
+              class="status-pill"
+              :class="`registration-${registrationStatus.tone}`"
+            >
+              <q-icon
+                :name="registrationStatus.icon"
+                size="16px"
+              />
+              {{ registrationStatus.label }}
+            </span>
+          </div>
+
+          <q-skeleton
+            v-if="loading"
+            type="text"
+            width="55%"
+            class="event-title"
+          />
+          <h1
+            v-else
+            class="event-title"
+          >
+            {{ eventName }}
+          </h1>
+        </div>
       </div>
 
       <div
@@ -131,12 +125,36 @@
       </ul>
     </q-card-section>
 
-    <template v-if="$slots.actions">
-      <q-separator />
-      <q-card-section class="hero-actions">
+    <q-separator />
+    <q-card-section class="hero-actions">
+      <div
+        v-if="$slots.actions"
+        class="hero-shortcuts"
+      >
         <slot name="actions" />
-      </q-card-section>
-    </template>
+      </div>
+      <!-- Sharing stays offered outside the registration window, as the event
+           page is still reachable. The caveat rides along in the tooltip. -->
+      <m-btn
+        :label="t('copyLink.label')"
+        :disable="!event"
+        icon="link"
+        class="copy-link-btn"
+        primary
+        no-caps
+        @click="copyRegistrationLink"
+      >
+        <q-tooltip class="copy-link-tooltip">
+          <div>{{ t('copyLink.tooltip') }}</div>
+          <div
+            v-if="shareCaveat"
+            class="copy-link-tooltip__caveat"
+          >
+            {{ shareCaveat }}
+          </div>
+        </q-tooltip>
+      </m-btn>
+    </q-card-section>
   </q-card>
 </template>
 
@@ -147,6 +165,7 @@ import { useRouter } from 'vue-router';
 import { copyToClipboard, useQuasar } from 'quasar';
 import { storeToRefs } from 'pinia';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
+import EventAvatar from '@/components/event/EventAvatar.vue';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { zonedInstant } from '@camp-registration/common/utils';
@@ -338,8 +357,30 @@ function daysFromNow(date: string): number {
 .hero-content {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 24px 24px 20px;
+  gap: 16px;
+  padding: 24px;
+}
+
+.hero-identity {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-width: 0;
+}
+
+.hero-avatar-skeleton {
+  flex: 0 0 auto;
+  width: 64px;
+  height: 64px;
+  border-radius: 17px;
+}
+
+.hero-heading {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
 }
 
 .status-chips {
@@ -352,8 +393,8 @@ function daysFromNow(date: string): number {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 28px;
-  padding: 4px 12px;
+  min-height: 26px;
+  padding: 3px 10px;
   font-size: 0.8125rem;
   font-weight: 600;
   border-radius: 999px;
@@ -380,21 +421,11 @@ function daysFromNow(date: string): number {
 }
 
 .status-pill-skeleton {
-  height: 28px;
+  height: 26px;
   border-radius: 999px;
 }
 
-.hero-title-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px 24px;
-}
-
 .event-title {
-  flex: 1 1 auto;
-  min-width: 0;
   margin: 0;
   color: var(--md3-on-surface);
   font-size: 2rem;
@@ -404,25 +435,13 @@ function daysFromNow(date: string): number {
   overflow-wrap: anywhere;
 }
 
-.copy-link-btn {
-  flex: 0 0 auto;
-}
-
-.copy-link-tooltip {
-  max-width: 260px;
-}
-
-.copy-link-tooltip__caveat {
-  margin-top: 4px;
-  opacity: 0.8;
-}
-
+/* Aligned with the title, past the avatar. */
 .event-meta {
   display: flex;
   flex-wrap: wrap;
   gap: 8px 20px;
   margin: 0;
-  padding: 0;
+  padding: 0 0 0 84px;
   list-style: none;
 }
 
@@ -451,34 +470,95 @@ function daysFromNow(date: string): number {
 .hero-actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
   padding: 12px 24px;
   background: var(--md3-surface-container-low);
 }
 
+.hero-shortcuts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.copy-link-btn {
+  margin-left: auto;
+}
+
+.copy-link-tooltip {
+  max-width: 260px;
+}
+
+.copy-link-tooltip__caveat {
+  margin-top: 4px;
+  opacity: 0.8;
+}
+
 @media (max-width: 599px) {
   .hero-content {
-    gap: 10px;
+    gap: 14px;
     padding: 20px 16px 16px;
+  }
+
+  /* Avatar and title share a row, the status pills go below. */
+  .hero-identity {
+    display: grid;
+    grid-template-areas:
+      'avatar title'
+      'chips chips';
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 12px 14px;
+  }
+
+  .hero-heading {
+    display: contents;
+  }
+
+  .hero-avatar {
+    grid-area: avatar;
+  }
+
+  .event-title {
+    grid-area: title;
+  }
+
+  .status-chips {
+    grid-area: chips;
+  }
+
+  .hero-avatar-skeleton {
+    width: 48px;
+    height: 48px;
+    border-radius: 13px;
   }
 
   .event-title {
     font-size: 1.5rem;
   }
 
-  .copy-link-btn {
-    width: 100%;
-  }
-
   .event-meta {
     flex-direction: column;
     gap: 6px;
+    padding-left: 0;
   }
 
   .hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 12px 16px 16px;
+  }
+
+  /* The main action leads on phones, the shortcuts follow as a grid. */
+  .copy-link-btn {
+    order: -1;
+    margin-left: 0;
+  }
+
+  .hero-shortcuts {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    padding: 12px 16px;
   }
 }
 </style>
