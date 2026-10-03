@@ -74,15 +74,25 @@
             v-else
             class="tile-caption"
           >
-            <span :class="{ [`tone--${tone}`]: max != null }">
-              {{ capacityCaption }}
-            </span>
-            <span
-              v-if="max != null"
-              class="taken-caption"
-            >
-              · {{ t('taken', { taken: max - freePlaces, max }) }}
-            </span>
+            <template v-if="max == null">{{ t('capacityUnset') }}</template>
+            <template v-else>
+              <span :class="`tone--${tone}`">
+                {{ t('free', { n: stats.placeSplit.value.free }) }}
+              </span>
+              <span
+                v-if="stats.placeSplit.value.reserved > 0"
+                class="caption-detail"
+              >
+                · {{ t('reserved', { n: stats.placeSplit.value.reserved }) }}
+              </span>
+              <span
+                v-if="stats.placeSplit.value.overbooked > 0"
+                class="caption-detail tone--error"
+              >
+                ·
+                {{ t('overbooked', { n: stats.placeSplit.value.overbooked }) }}
+              </span>
+            </template>
           </div>
         </div>
 
@@ -211,25 +221,6 @@ const ratio = computed(() => ratioOf(accepted.value, max.value));
 const percent = computed(() => Math.round(ratio.value * 100));
 const tone = computed(() => toneOf(accepted.value, max.value));
 
-// Accepted and pending registrations hold places; the server pools them across
-// countries. The fallback ignores that pooling.
-const freePlaces = computed<number>(() => {
-  const limit = max.value ?? 0;
-  const holding = stats.counts.value.accepted + stats.counts.value.pending;
-  return Math.max(0, stats.capacity.value.free ?? limit - holding);
-});
-
-const capacityCaption = computed<string>(() => {
-  const limit = max.value;
-  if (limit == null) {
-    return t('capacityUnset');
-  }
-  if (accepted.value > limit) {
-    return t('over', { n: accepted.value - limit });
-  }
-  return t('free', { n: freePlaces.value });
-});
-
 const kpis = computed(() => [
   ...(showPending
     ? [
@@ -333,7 +324,7 @@ function countryLabel(value: string): string {
   font-weight: 600;
 }
 
-.taken-caption {
+.caption-detail {
   font-weight: 400;
 }
 
@@ -512,8 +503,8 @@ viewAll: 'Participants'
 accepted: 'Confirmed participants'
 capacityUnset: 'No participant limit set'
 free: '{n} places free'
-taken: '{taken} of {max} taken'
-over: '{n} over capacity'
+reserved: '{n} reserved for the waitlist'
+overbooked: '{n} overbooked'
 byCountry: 'By country'
 kpi:
   pending: 'Pending'
@@ -536,8 +527,8 @@ viewAll: 'Teilnehmende'
 accepted: 'Bestätigte Teilnehmende'
 capacityUnset: 'Kein Teilnehmendenlimit festgelegt'
 free: '{n} Plätze frei'
-taken: '{taken} von {max} vergeben'
-over: '{n} über Kapazität'
+reserved: '{n} für die Warteliste reserviert'
+overbooked: '{n} überbucht'
 byCountry: 'Nach Land'
 kpi:
   pending: 'Ausstehend'
@@ -560,8 +551,8 @@ viewAll: 'Participants'
 accepted: 'Participants confirmés'
 capacityUnset: 'Aucune limite de participants'
 free: '{n} places libres'
-taken: '{taken} sur {max} attribuées'
-over: '{n} au-dessus de la capacité'
+reserved: "{n} réservées pour la liste d'attente"
+overbooked: '{n} en surréservation'
 byCountry: 'Par pays'
 kpi:
   pending: 'En attente'
@@ -584,8 +575,8 @@ viewAll: 'Uczestnicy'
 accepted: 'Potwierdzeni uczestnicy'
 capacityUnset: 'Nie ustawiono limitu uczestników'
 free: 'Wolnych miejsc: {n}'
-taken: 'Zajęte: {taken} z {max}'
-over: '{n} ponad limit'
+reserved: 'Zarezerwowane dla listy rezerwowej: {n}'
+overbooked: 'Ponad limit: {n}'
 byCountry: 'Według kraju'
 kpi:
   pending: 'Oczekujący'
@@ -608,8 +599,8 @@ viewAll: 'Účastníci'
 accepted: 'Potvrzení účastníci'
 capacityUnset: 'Limit účastníků není nastaven'
 free: 'Volných míst: {n}'
-taken: 'Obsazeno: {taken} z {max}'
-over: '{n} nad kapacitu'
+reserved: 'Rezervováno pro čekací listinu: {n}'
+overbooked: 'Nad kapacitu: {n}'
 byCountry: 'Podle země'
 kpi:
   pending: 'Čekající'

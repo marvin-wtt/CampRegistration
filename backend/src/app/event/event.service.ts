@@ -9,6 +9,10 @@ import { FileService } from '#app/file/file.service.js';
 import { AuditService } from '#app/audit/audit.service';
 import { eventAuditPolicy } from '#app/event/event.audit';
 import {
+  calculateFreePlaces,
+  type FreePlaces,
+} from '#app/event/event.util';
+import {
   EVENT_LOGO_SLOT,
   EVENT_BANNER_SLOT,
 } from '@camp-registration/common/form';
@@ -427,8 +431,7 @@ export class EventService extends BaseService {
 
     return withMediaFlags({
       ...event,
-      freePlaces: data.maxParticipants,
-      freePlacesTotal: sumParticipants(data.maxParticipants),
+      ...calculateFreePlaces(data.maxParticipants, []),
     });
   }
 
@@ -558,57 +561,16 @@ export class EventService extends BaseService {
   }
 }
 
-// Sums a per-group `maxParticipants` down to the event's total capacity, or
-// passes a single shared value through unchanged.
-const sumParticipants = (value: number | Record<string, number>): number =>
-  typeof value === 'number'
-    ? value
-    : Object.values(value).reduce((sum, v) => sum + v, 0);
-
 // Generic so whatever relations the caller included (the owning organization,
 // in particular) survive into the returned type.
 const enrichFreePlaces = <
   T extends Event & { registrations: { country: string | null }[] },
 >(
   event: T,
-): T & {
-  freePlaces: number | Record<string, number>;
-  freePlacesTotal: number;
-} => {
-  // Pooled across groups, treating `maxParticipants` as one shared capacity
-  // even when it is split per group: a group that has gone over its own
-  // share cannot be recovered by summing per-group `freePlaces`, which are
-  // each floored at 0, so the total is computed from the real counts here.
-  const freePlacesTotal = Math.max(
-    0,
-    sumParticipants(event.maxParticipants) - event.registrations.length,
-  );
-
-  if (typeof event.maxParticipants === 'number') {
-    return {
-      ...event,
-      freePlaces: freePlacesTotal,
-      freePlacesTotal,
-    };
-  }
-
-  return {
-    ...event,
-    freePlaces: event.registrations.reduce(
-      (acc, { country }) => {
-        // Skip invalid registrations
-        if (country === null || !(country in acc)) {
-          return acc;
-        }
-        acc[country] = Math.max(0, acc[country] - 1);
-
-        return acc;
-      },
-      { ...event.maxParticipants },
-    ),
-    freePlacesTotal,
-  };
-};
+): T & FreePlaces => ({
+  ...event,
+  ...calculateFreePlaces(event.maxParticipants, event.registrations),
+});
 
 // `files` (from `publicSlotFileInclude`) only ever tells us which of the
 // reserved slots have a ready, public file — collapse it to booleans here,
