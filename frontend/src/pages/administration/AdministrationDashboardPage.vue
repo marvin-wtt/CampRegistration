@@ -343,14 +343,6 @@ const attention = computed<AttentionItem[]>(() => {
 
 const sections = computed(() => [
   {
-    name: 'organizations',
-    label: t('organizations.label'),
-    description: t('organizations.description'),
-    icon: 'apartment',
-    color: 'tertiary',
-    to: { name: 'administration.organizations' },
-  },
-  {
     name: 'users',
     label: t('users.label'),
     description: t('users.description'),
@@ -377,6 +369,14 @@ const sections = computed(() => [
     description: t('billing.description'),
     icon: 'receipt_long',
     to: { name: 'administration.billing' },
+  },
+  {
+    name: 'organizations',
+    label: t('organizations.label'),
+    description: t('organizations.description'),
+    icon: 'apartment',
+    color: 'tertiary',
+    to: { name: 'administration.organizations' },
   },
   {
     name: 'queues',
