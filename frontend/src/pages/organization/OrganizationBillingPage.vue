@@ -92,33 +92,53 @@
           :key="bill.id"
         >
           <q-item-section>
-            <q-item-label class="bill-title">
-              <span>{{ to(bill.eventName) }}</span>
-              <q-chip
+            <q-item-label>{{ to(bill.eventName) }}</q-item-label>
+            <q-item-label
+              caption
+              class="bill-meta"
+            >
+              <span>
+                {{ formatBillPeriod(bill, locale) }} ·
+                {{
+                  t(
+                    bill.status === 'DRAFT' ? 'peak' : 'registrations',
+                    { count: bill.registrationCount },
+                    bill.registrationCount,
+                  )
+                }}
+              </span>
+              <span
                 v-if="bill.priceModel && deviates(bill.priceModel)"
-                :label="to(bill.priceModel.name)"
-                class="override-chip q-ma-none"
-                icon="sell"
-                dense
-                square
-              />
+                class="override-label"
+              >
+                <q-icon
+                  name="sell"
+                  size="14px"
+                />
+                {{ to(bill.priceModel.name) }}
+              </span>
             </q-item-label>
-            <q-item-label caption>
-              {{ formatBillPeriod(bill, locale) }} ·
-              {{
-                t(
-                  bill.status === 'DRAFT' ? 'peak' : 'registrations',
-                  { count: bill.registrationCount },
-                  bill.registrationCount,
-                )
-              }}
-            </q-item-label>
-            <q-item-label v-if="bill.invoices.length > 0">
+            <q-item-label
+              v-if="bill.invoices.length > 0"
+              class="lt-md"
+            >
               <invoice-links
                 :invoices="bill.invoices"
                 :owner="{ organizationId }"
               />
             </q-item-label>
+          </q-item-section>
+
+          <q-item-section
+            v-if="bill.invoices.length > 0"
+            class="gt-sm"
+            side
+          >
+            <invoice-links
+              :invoices="bill.invoices"
+              :owner="{ organizationId }"
+              class="bill-invoices"
+            />
           </q-item-section>
 
           <q-item-section
@@ -139,7 +159,7 @@
               </span>
             </div>
             <div
-              v-if="bill.taxAmount !== null && bill.taxAmount !== '0.00'"
+              v-if="bill.taxAmount !== null"
               class="text-caption"
             >
               {{
@@ -254,9 +274,12 @@ void store.fetchData();
 </script>
 
 <style lang="scss" scoped>
-.override-chip {
-  background: var(--md3-tertiary-container);
-  color: var(--md3-on-tertiary-container);
+.override-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--md3-tertiary);
+  font-weight: 500;
 }
 
 .price-model-card {
@@ -281,11 +304,16 @@ void store.fetchData();
   gap: 12px 40px;
 }
 
-.bill-title {
+.bill-meta {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 4px 8px;
+  gap: 2px 12px;
+}
+
+.bill-invoices {
+  flex-direction: column;
+  align-items: flex-end;
 }
 
 .bill-amount--void {
