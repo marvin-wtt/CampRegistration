@@ -50,66 +50,84 @@
           v-else
           class="status-row"
         >
-          <button
+          <span
             v-if="viewedPhase"
-            type="button"
-            class="status-pill phase-pill"
-            :class="{ 'phase-pill--preview': previewing }"
-            :aria-label="t('phase.switch')"
-            data-test="dashboard-phase"
+            class="phase-group"
           >
-            <q-icon
-              :name="previewing ? 'visibility' : PHASE_ICONS[viewedPhase]"
-              size="16px"
-            />
-            {{
-              previewing
-                ? t('phase.preview', { phase: t(`phase.${viewedPhase}`) })
-                : t(`phase.${viewedPhase}`)
-            }}
-            <q-icon
-              name="arrow_drop_down"
-              size="18px"
-            />
-            <q-menu
-              anchor="bottom left"
-              self="top left"
-              class="rounded-md"
+            <button
+              type="button"
+              class="status-pill phase-pill"
+              :class="{ 'phase-pill--preview': previewing }"
+              :aria-label="t('phase.switch')"
+              data-test="dashboard-phase"
             >
-              <q-list class="phase-menu">
-                <q-item-label header>{{ t('phase.switch') }}</q-item-label>
-                <q-item
-                  v-for="phase in EVENT_PHASES"
-                  :key="phase"
-                  v-close-popup
-                  clickable
-                  @click="viewedPhase = phase"
-                >
-                  <q-item-section avatar>
-                    <q-icon :name="PHASE_ICONS[phase]" />
-                  </q-item-section>
-                  <q-item-section>
-                    <q-item-label>{{ t(`phase.${phase}`) }}</q-item-label>
-                    <q-item-label
-                      v-if="phase === actualPhase"
-                      caption
-                    >
-                      {{ t('phase.current') }}
-                    </q-item-label>
-                  </q-item-section>
-                  <q-item-section
-                    v-if="phase === viewedPhase"
-                    side
+              <q-icon
+                :name="previewing ? 'visibility' : PHASE_ICONS[viewedPhase]"
+                size="16px"
+              />
+              {{
+                previewing
+                  ? t('phase.preview', { phase: t(`phase.${viewedPhase}`) })
+                  : t(`phase.${viewedPhase}`)
+              }}
+              <q-icon
+                name="arrow_drop_down"
+                size="18px"
+              />
+              <q-menu
+                anchor="bottom left"
+                self="top left"
+                class="rounded-md"
+              >
+                <q-list class="phase-menu">
+                  <q-item-label header>{{ t('phase.switch') }}</q-item-label>
+                  <q-item
+                    v-for="phase in EVENT_PHASES"
+                    :key="phase"
+                    v-close-popup
+                    clickable
+                    @click="viewedPhase = phase"
                   >
-                    <q-icon
-                      name="check"
-                      color="primary"
-                    />
-                  </q-item-section>
-                </q-item>
-              </q-list>
-            </q-menu>
-          </button>
+                    <q-item-section avatar>
+                      <q-icon :name="PHASE_ICONS[phase]" />
+                    </q-item-section>
+                    <q-item-section>
+                      <q-item-label>{{ t(`phase.${phase}`) }}</q-item-label>
+                      <q-item-label
+                        v-if="phase === actualPhase"
+                        caption
+                      >
+                        {{ t('phase.current') }}
+                      </q-item-label>
+                    </q-item-section>
+                    <q-item-section
+                      v-if="phase === viewedPhase"
+                      side
+                    >
+                      <q-icon
+                        name="check"
+                        color="primary"
+                      />
+                    </q-item-section>
+                  </q-item>
+                </q-list>
+              </q-menu>
+            </button>
+            <m-btn
+              v-if="previewing"
+              :aria-label="t('phase.back')"
+              icon="close"
+              size="sm"
+              round
+              flat
+              dense
+              color="primary"
+              data-test="dashboard-phase-back"
+              @click="viewedPhase = actualPhase"
+            >
+              <q-tooltip>{{ t('phase.back') }}</q-tooltip>
+            </m-btn>
+          </span>
           <span
             v-if="timing"
             class="status-pill timing-pill"
@@ -131,15 +149,6 @@
             />
             {{ registrationStatus.label }}
           </span>
-          <m-btn
-            v-if="previewing"
-            :label="t('phase.back')"
-            size="sm"
-            primary
-            text
-            no-caps
-            @click="viewedPhase = actualPhase"
-          />
         </div>
 
         <div
@@ -388,6 +397,12 @@ async function copyRegistrationLink() {
 </script>
 
 <style scoped>
+.phase-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
 .header-card {
   position: relative;
   overflow: hidden;

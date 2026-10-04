@@ -9,6 +9,10 @@
         :icon="!loading && openTasks.length === 0 ? 'task_alt' : 'checklist'"
         :tone="!loading && openTasks.length === 0 ? 'positive' : 'primary'"
         :title="t('title')"
+        :link="{
+          label: t('action.allTasks'),
+          to: { name: 'management.event.tasks' },
+        }"
       >
         <template #caption>
           <q-skeleton
@@ -32,16 +36,6 @@
               · {{ t('summary.mine', mineCount) }}
             </span>
           </template>
-        </template>
-        <template #action>
-          <m-btn
-            :label="t('action.allTasks')"
-            :to="{ name: 'management.event.tasks' }"
-            icon-right="chevron_right"
-            primary
-            text
-            no-caps
-          />
         </template>
       </dashboard-card-header>
     </q-card-section>
@@ -111,7 +105,6 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import DashboardCardHeader from '@/components/event/dashboard/DashboardCardHeader.vue';
 import { useTaskStore } from '@/stores/task-store';
 import { useCurrentManager } from '@/composables/currentManager';

@@ -10,6 +10,10 @@
         icon="cleaning_services"
         :tone="openCount > 0 ? 'warning' : 'primary'"
         :title="isToday ? t('title.today') : t('title.day', { day: day.day })"
+        :link="{
+          label: t('duties.openRoster'),
+          to: { name: 'management.event.chore-planner' },
+        }"
       >
         <template #caption>
           <q-skeleton
@@ -24,16 +28,6 @@
                 : t('duties.filled', dayDuties.length)
             }}
           </template>
-        </template>
-        <template #action>
-          <m-btn
-            :label="t('duties.openRoster')"
-            :to="{ name: 'management.event.chore-planner' }"
-            icon-right="chevron_right"
-            primary
-            text
-            no-caps
-          />
         </template>
       </dashboard-card-header>
     </q-card-section>
@@ -95,7 +89,6 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { Event } from '@camp-registration/common/entities';
-import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import DashboardCardHeader from '@/components/event/dashboard/DashboardCardHeader.vue';
 import { useDayDuties } from '@/composables/dayDuties';
 import { eventDayOf, shownEventDate } from '@/composables/eventPhase';

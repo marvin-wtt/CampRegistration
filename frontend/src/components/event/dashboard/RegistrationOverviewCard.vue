@@ -9,6 +9,14 @@
         icon="how_to_reg"
         :title="t('title')"
         :caption="t('subtitle')"
+        :link="
+          can('event.registrations.view')
+            ? {
+                label: t('openParticipants'),
+                to: { name: 'management.event.participants' },
+              }
+            : undefined
+        "
       />
     </q-card-section>
 
@@ -175,6 +183,7 @@ import DashboardCardHeader from '@/components/event/dashboard/DashboardCardHeade
 import CapacityMeter from '@/components/event/dashboard/CapacityMeter.vue';
 import CountryIcon from '@/components/common/localization/CountryIcon.vue';
 import { splitPlaces, useEventStatistics } from '@/composables/eventStatistics';
+import { usePermissions } from '@/composables/permissions';
 
 const { loading = false } = defineProps<{
   loading?: boolean;
@@ -182,6 +191,7 @@ const { loading = false } = defineProps<{
 
 const { t, locale } = useI18n();
 const stats = useEventStatistics();
+const { can } = usePermissions();
 
 const max = computed(() => stats.capacity.value.max);
 
@@ -450,6 +460,7 @@ function countryLabel(value: string): string {
 <i18n lang="yaml" locale="en">
 title: 'Registrations'
 subtitle: 'Places, waitlist and team'
+openParticipants: 'All participants'
 accepted: 'Confirmed participants'
 capacityUnset: 'No participant limit set'
 meterLabel: '{accepted} confirmed and {pending} pending of {max} places'
@@ -471,6 +482,7 @@ country:
 <i18n lang="yaml" locale="de">
 title: 'Anmeldungen'
 subtitle: 'Plätze, Warteliste und Team'
+openParticipants: 'Alle Teilnehmenden'
 accepted: 'Bestätigte Teilnehmende'
 capacityUnset: 'Kein Teilnehmendenlimit festgelegt'
 meterLabel: '{accepted} bestätigt und {pending} ausstehend von {max} Plätzen'
@@ -492,6 +504,7 @@ country:
 <i18n lang="yaml" locale="fr">
 title: 'Inscriptions'
 subtitle: "Places, liste d'attente et équipe"
+openParticipants: 'Tous les participants'
 accepted: 'Participants confirmés'
 capacityUnset: 'Aucune limite de participants'
 meterLabel: '{accepted} confirmés et {pending} en attente sur {max} places'
@@ -513,6 +526,7 @@ country:
 <i18n lang="yaml" locale="pl">
 title: 'Rejestracje'
 subtitle: 'Miejsca, lista rezerwowa i zespół'
+openParticipants: 'Wszyscy uczestnicy'
 accepted: 'Potwierdzeni uczestnicy'
 capacityUnset: 'Nie ustawiono limitu uczestników'
 meterLabel: 'Potwierdzeni: {accepted}, oczekujący: {pending}, miejsca: {max}'
@@ -534,6 +548,7 @@ country:
 <i18n lang="yaml" locale="cs">
 title: 'Registrace'
 subtitle: 'Místa, čekací listina a tým'
+openParticipants: 'Všichni účastníci'
 accepted: 'Potvrzení účastníci'
 capacityUnset: 'Limit účastníků není nastaven'
 meterLabel: 'Potvrzení: {accepted}, čekající: {pending}, místa: {max}'

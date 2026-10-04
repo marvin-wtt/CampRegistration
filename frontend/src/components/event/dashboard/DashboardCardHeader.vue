@@ -24,16 +24,46 @@
     >
       <slot name="action" />
     </div>
+    <div
+      v-if="link"
+      class="header-link"
+    >
+      <m-btn
+        :label="link.label"
+        :to="link.to"
+        icon-right="chevron_right"
+        primary
+        text
+        no-caps
+        class="header-link--full"
+      />
+      <m-btn
+        :aria-label="link.label"
+        :to="link.to"
+        icon="chevron_right"
+        primary
+        text
+        round
+        class="header-link--compact"
+      >
+        <q-tooltip>{{ link.label }}</q-tooltip>
+      </m-btn>
+    </div>
   </div>
 </template>
 
 <script lang="ts" setup>
+import type { RouteLocationRaw } from 'vue-router';
+import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
+
 // Shared heading row of the dashboard cards: tonal icon, title, caption and an
-// optional action on the right.
+// optional action on the right. A `link` to the feature's page stays on the
+// title row, shrinking to a chevron on narrow cards.
 const { tone = 'primary' } = defineProps<{
   icon: string;
   title: string;
   caption?: string | undefined;
+  link?: { label: string; to: RouteLocationRaw } | undefined;
   tone?: 'primary' | 'secondary' | 'tertiary' | 'warning' | 'positive';
 }>();
 </script>
@@ -104,9 +134,14 @@ const { tone = 'primary' } = defineProps<{
   line-height: 1.35;
 }
 
-.header-action {
+.header-action,
+.header-link {
   flex: 0 0 auto;
   margin-left: auto;
+}
+
+.header-link--compact {
+  display: none;
 }
 
 /* On phones the action always sits under the title, aligned with it. */
@@ -116,7 +151,24 @@ const { tone = 'primary' } = defineProps<{
   }
 
   .header-action {
-    margin-left: 40px;
+    margin-left: 52px;
+  }
+
+  /* The link keeps its place: the text takes what the chevron leaves. */
+  .header-text:has(+ .header-link) {
+    flex-basis: 0;
+  }
+
+  .header-link {
+    margin-right: -8px;
+  }
+
+  .header-link--full {
+    display: none;
+  }
+
+  .header-link--compact {
+    display: inline-flex;
   }
 }
 </style>

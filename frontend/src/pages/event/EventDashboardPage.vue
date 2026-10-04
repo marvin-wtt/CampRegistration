@@ -146,6 +146,7 @@ import { useEventFilesStore } from '@/stores/event-files-store';
 import { useTaskStore } from '@/stores/task-store';
 import { useEventBillingStore } from '@/stores/event-billing-store';
 import { useProgramPlannerStore } from '@/stores/program-planner-store';
+import { useProgramPublishedDayStore } from '@/stores/program-published-day-store';
 import { useChoreStore } from '@/stores/chore-store';
 import { useChoreAssignmentStore } from '@/stores/chore-assignment-store';
 import { useEventStatistics } from '@/composables/eventStatistics';
@@ -220,6 +221,7 @@ const eventFilesStore = useEventFilesStore();
 const taskStore = useTaskStore();
 const billingStore = useEventBillingStore();
 const programStore = useProgramPlannerStore();
+const publishedDayStore = useProgramPublishedDayStore();
 const choreStore = useChoreStore();
 const choreAssignmentStore = useChoreAssignmentStore();
 const stats = useEventStatistics();
@@ -275,6 +277,7 @@ watch(
     }
     if (program) {
       void programStore.fetchData();
+      void publishedDayStore.fetchData();
     }
     if (duties) {
       void choreStore.fetchData();
@@ -372,12 +375,14 @@ const quickActions = computed<QuickAction[]>(() =>
         permission: 'event.program_items.view',
       },
       {
-        key: 'rooms',
-        label: t('actions.rooms'),
-        icon: 'bed',
-        route: 'management.event.room-planner',
-        navItem: 'room_planner',
-        permission: 'event.rooms.view',
+        key: 'duties',
+        label: t('actions.duties'),
+        icon: 'cleaning_services',
+        route: 'management.event.chore-planner',
+        navItem: 'chore_planner',
+        permission: {
+          all: ['event.chore_assignments.view', 'event.chores.view'],
+        },
       },
     ] satisfies QuickAction[]
   ).filter(
@@ -448,7 +453,7 @@ actions:
   participants: 'Participants'
   contact: 'Communication'
   program: 'Program'
-  rooms: 'Rooms'
+  duties: 'Duties'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -456,7 +461,7 @@ actions:
   participants: 'Teilnehmende'
   contact: 'Kommunikation'
   program: 'Programm'
-  rooms: 'Zimmer'
+  duties: 'Dienste'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -464,7 +469,7 @@ actions:
   participants: 'Participants'
   contact: 'Communication'
   program: 'Programme'
-  rooms: 'Chambres'
+  duties: 'Corvées'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -472,7 +477,7 @@ actions:
   participants: 'Uczestnicy'
   contact: 'Komunikacja'
   program: 'Program'
-  rooms: 'Pokoje'
+  duties: 'Dyżury'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -480,5 +485,5 @@ actions:
   participants: 'Účastníci'
   contact: 'Komunikace'
   program: 'Program'
-  rooms: 'Pokoje'
+  duties: 'Služby'
 </i18n>
