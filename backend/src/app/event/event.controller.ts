@@ -248,14 +248,18 @@ export class EventController extends BaseController {
   async update(req: Request, res: Response) {
     const event = req.modelOrFail('event');
     const { body } = await req.validate(validator.update(event));
+    // The edit page always sends every field, so compare against what's stored.
     const datesChange =
-      body.startAt !== undefined ||
-      body.endAt !== undefined ||
-      body.timezone !== undefined;
+      (body.startAt !== undefined &&
+        body.startAt.getTime() !== event.startAt.getTime()) ||
+      (body.endAt !== undefined &&
+        body.endAt.getTime() !== event.endAt.getTime()) ||
+      (body.timezone !== undefined && body.timezone !== event.timezone);
 
     if (datesChange) {
       await this.billingService.assertDatesMayChange(
         event.id,
+        eventInstant(event.endAt, event.timezone),
         eventInstant(
           body.endAt ?? event.endAt,
           body.timezone ?? event.timezone,

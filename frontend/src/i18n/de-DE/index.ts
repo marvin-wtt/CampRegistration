@@ -20,6 +20,8 @@ export default {
     errors: {
       EVENT_ALREADY_BILLED:
         'Diese Veranstaltung wurde für ihre Termine bereits abgerechnet. Um sie erneut durchzuführen, dupliziere sie für den neuen Termin. Waren die Termine falsch, bitte einen Administrator, die Rechnung zuerst zu stornieren.',
+      EVENT_DATES_OUT_OF_RANGE:
+        'Eine Veranstaltung kann nicht so verschoben werden, dass sie vor mehr als 30 Tagen endet.',
       PRICE_MODEL_NOT_ACCEPTED:
         'Deine Organisation muss ihren neuen Preisen zustimmen, bevor du Veranstaltungen anlegen kannst. Ein Administrator der Organisation kann das auf ihrer Abrechnungsseite tun.',
       PRICE_MODEL_CHANGED:

@@ -17,6 +17,8 @@ export default {
     errors: {
       EVENT_ALREADY_BILLED:
         'To wydarzenie zostało już rozliczone za swoje terminy. Aby zorganizować je ponownie, zduplikuj je na nowy termin. Jeśli terminy były błędne, poproś najpierw administratora o anulowanie rachunku.',
+      EVENT_DATES_OUT_OF_RANGE:
+        'Wydarzenia nie można przenieść tak, aby zakończyło się ponad 30 dni temu.',
       PRICE_MODEL_NOT_ACCEPTED:
         'Twoja organizacja musi zaakceptować nowe ceny, zanim będziesz mógł tworzyć wydarzenia. Administrator organizacji może je zaakceptować na stronie rozliczeń.',
       PRICE_MODEL_CHANGED:

@@ -169,7 +169,7 @@ export class BillingController extends BaseController {
     );
 
     // Nothing to pay, nothing to announce: a paid bill's invoice is a receipt.
-    if (bill.status === 'OPEN' && bill.grossAmount?.isPositive()) {
+    if (bill.status === 'OPEN' && bill.grossAmount?.gt(0)) {
       await this.notifyInvoiceIssued(bill);
     }
 

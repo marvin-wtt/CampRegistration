@@ -369,6 +369,13 @@ export class BillingService extends BaseService {
         );
       }
 
+      if (data.adjustedRegistrationCount === 0) {
+        throw new ApiError(
+          httpStatus.CONFLICT,
+          'An event without registrations is not billed. Void the bill instead.',
+        );
+      }
+
       correction = {
         adjustedRegistrationCount: data.adjustedRegistrationCount,
         ...calculateBillAmounts(
@@ -450,11 +457,7 @@ export class BillingService extends BaseService {
     if (data.eventId && !event) {
       throw new ApiError(httpStatus.NOT_FOUND, 'Event not found');
     }
-    if (
-      !replaces &&
-      event &&
-      eventInstant(event.endAt, event.timezone) > new Date()
-    ) {
+    if (event && eventInstant(event.endAt, event.timezone) > new Date()) {
       throw new ApiError(
         httpStatus.CONFLICT,
         'The event has not ended yet; it is billed automatically when it does.',
@@ -491,10 +494,14 @@ export class BillingService extends BaseService {
         : await this.countNow(eventId)),
       adjustedRegistrationCount: data.adjustedRegistrationCount ?? null,
     };
-    const snapshot = pricingSnapshot(
-      priceModel,
-      billedRegistrationCount(counts),
-    );
+    const registrationCount = billedRegistrationCount(counts);
+    if (registrationCount === 0) {
+      throw new ApiError(
+        httpStatus.CONFLICT,
+        'An event without registrations is not billed.',
+      );
+    }
+    const snapshot = pricingSnapshot(priceModel, registrationCount);
     const finalizedAt = new Date();
     const free = snapshot.grossAmount.isZero();
 
@@ -579,8 +586,24 @@ export class BillingService extends BaseService {
    * Refuses to move a billed event so it ends in the future: its bill is for
    * the dates it had. A recurring event is duplicated for the new date; wrong
    * dates are fixed after an administrator voids the bill.
+   *
+   * Also refuses to move an event out of billing's reach: past the
+   * {@link PAST_BILLING_DAYS} window, it would never be billed.
    */
-  async assertDatesMayChange(eventId: string, nextEnd: Date, now = new Date()) {
+  async assertDatesMayChange(
+    eventId: string,
+    previousEnd: Date,
+    nextEnd: Date,
+    now = new Date(),
+  ) {
+    const pastLimit = moment(now).subtract(PAST_BILLING_DAYS, 'days').toDate();
+    if (nextEnd < pastLimit && previousEnd >= pastLimit) {
+      throw new ApiError(
+        httpStatus.CONFLICT,
+        `An event cannot be moved to end more than ${PAST_BILLING_DAYS} days ago.`,
+        { code: 'EVENT_DATES_OUT_OF_RANGE' },
+      );
+    }
     if (nextEnd <= now) {
       return;
     }
@@ -642,7 +665,7 @@ export class BillingService extends BaseService {
     }
 
     try {
-      await this.billEndedEvent(event.id, place);
+      return await this.billEndedEvent(event.id, place);
     } catch (error: unknown) {
       // Billed concurrently, e.g. by the job: nothing left to do.
       if (isUniqueViolation(error, 'sequence')) {
@@ -650,14 +673,16 @@ export class BillingService extends BaseService {
       }
       throw error;
     }
-    return true;
   }
 
-  /** A finalized bill for an ended event, on its accepted registrations now. */
+  /**
+   * A finalized bill for an ended event, on its accepted registrations now.
+   * Returns whether it billed: an event without registrations is not.
+   */
   private async billEndedEvent(
     eventId: string,
     place: { sequence: number; replacesBillId: string | null },
-  ) {
+  ): Promise<boolean> {
     const event = await this.prisma.event.findUniqueOrThrow({
       where: { id: eventId },
       include: {
@@ -669,6 +694,9 @@ export class BillingService extends BaseService {
     const accepted = await this.prisma.registration.count({
       where: { eventId, status: 'ACCEPTED' },
     });
+    if (accepted === 0) {
+      return false;
+    }
     const counts = {
       startRegistrationCount: accepted,
       endRegistrationCount: accepted,
@@ -698,6 +726,7 @@ export class BillingService extends BaseService {
         paidAt: free ? finalizedAt : null,
       },
     });
+    return true;
   }
 
   /**
@@ -744,9 +773,10 @@ export class BillingService extends BaseService {
       .toDate();
 
     for (const event of events) {
+      const end = eventInstant(event.endAt, event.timezone);
       if (
         eventInstant(event.startAt, event.timezone) > now ||
-        eventInstant(event.endAt, event.timezone) < lateLimit
+        end < lateLimit
       ) {
         continue;
       }
@@ -760,6 +790,11 @@ export class BillingService extends BaseService {
           const accepted = await tx.registration.count({
             where: { eventId: event.id, status: 'ACCEPTED' },
           });
+          // Already over, and no registrations left to bill: finalizing would
+          // only discard it again.
+          if (accepted === 0 && end <= now) {
+            return;
+          }
 
           await tx.eventBill.create({
             data: {
@@ -855,10 +890,18 @@ export class BillingService extends BaseService {
             bill.event?.priceModel ??
             bill.priceModel ??
             organization.priceModel;
-          const snapshot = pricingSnapshot(
-            priceModel,
-            billedRegistrationCount({ ...bill, endRegistrationCount }),
-          );
+          const registrationCount = billedRegistrationCount({
+            ...bill,
+            endRegistrationCount,
+          });
+          // An event without registrations is not billed.
+          if (registrationCount === 0) {
+            await tx.eventBill.deleteMany({
+              where: { id: bill.id, status: 'DRAFT' },
+            });
+            return;
+          }
+          const snapshot = pricingSnapshot(priceModel, registrationCount);
           const finalizedAt = new Date();
           const free = snapshot.grossAmount.isZero();
 

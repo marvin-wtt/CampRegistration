@@ -8,10 +8,7 @@ import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service.js';
 import { AuditService } from '#app/audit/audit.service';
 import { eventAuditPolicy } from '#app/event/event.audit';
-import {
-  calculateFreePlaces,
-  type FreePlaces,
-} from '#app/event/event.util';
+import { calculateFreePlaces, type FreePlaces } from '#app/event/event.util';
 import {
   EVENT_LOGO_SLOT,
   EVENT_BANNER_SLOT,
@@ -485,7 +482,10 @@ export class EventService extends BaseService {
         where: { id: eventId },
         include: {
           organization: { select: { priceModelId: true } },
-          _count: { select: { bills: true } },
+          // A running bill is priced only once the event ends.
+          _count: {
+            select: { bills: { where: { status: { not: 'DRAFT' } } } },
+          },
         },
       });
       const target = await tx.organization.findUniqueOrThrow({
@@ -505,6 +505,12 @@ export class EventService extends BaseService {
             : {}),
         },
         include: { ...this.eventResourceInclude() },
+      });
+      // A running bill goes to whoever owns the event when it ends; finalized
+      // ones stay with the owner they billed.
+      await tx.eventBill.updateMany({
+        where: { eventId, status: 'DRAFT' },
+        data: { organizationId },
       });
 
       await this.audit.updated(eventAuditPolicy, before, updatedEvent);

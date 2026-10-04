@@ -19,6 +19,8 @@ export default {
     errors: {
       EVENT_ALREADY_BILLED:
         'This event was already billed for its dates. To hold it again, duplicate it for the new date. If the dates were wrong, ask an administrator to void the bill first.',
+      EVENT_DATES_OUT_OF_RANGE:
+        "An event can't be moved to end more than 30 days ago.",
       PRICE_MODEL_NOT_ACCEPTED:
         'Your organization has to accept its new prices before you can create events. An administrator of the organization can accept them on its billing page.',
       PRICE_MODEL_CHANGED:

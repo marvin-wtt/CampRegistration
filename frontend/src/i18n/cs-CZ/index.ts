@@ -19,6 +19,8 @@ export default {
     errors: {
       EVENT_ALREADY_BILLED:
         'Tato akce už byla za své termíny vyúčtována. Chceš-li ji pořádat znovu, zduplikuj ji na nový termín. Pokud byly termíny chybné, požádej nejprve správce o stornování faktury.',
+      EVENT_DATES_OUT_OF_RANGE:
+        'Akci nelze přesunout tak, aby skončila před více než 30 dny.',
       PRICE_MODEL_NOT_ACCEPTED:
         'Tvá organizace musí přijmout nové ceny, než budeš moci vytvářet akce. Správce organizace je může přijmout na její stránce vyúčtování.',
       PRICE_MODEL_CHANGED:
