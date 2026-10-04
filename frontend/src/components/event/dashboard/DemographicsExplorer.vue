@@ -12,45 +12,59 @@
         :caption="t('subtitle')"
       >
         <template #action>
-          <q-skeleton
-            v-if="loading"
-            type="QChip"
-            width="120px"
-          />
-          <div
-            v-else
-            class="people-count"
-            :class="{ 'people-count--filtered': hasActiveFilters }"
-          >
-            <q-icon
-              name="groups"
-              size="18px"
+          <div class="row items-center no-wrap">
+            <q-skeleton
+              v-if="loading"
+              type="QChip"
+              width="120px"
             />
-            <span>
-              {{
-                hasActiveFilters
-                  ? t('shown', {
-                      shown: filteredPeople.length,
-                      total: people.length,
-                    })
-                  : t('total', { total: people.length })
-              }}
-            </span>
-            <!-- Resetting lives here, not in the filter row, so turning a
-                 filter on never reflows the controls. -->
-            <q-btn
-              v-if="hasActiveFilters"
-              :aria-label="t('resetFilters')"
-              icon="close"
-              size="sm"
-              class="people-count__reset"
-              flat
-              round
-              dense
-              @click="resetFilters"
+            <div
+              v-else
+              class="people-count"
+              :class="{ 'people-count--filtered': hasActiveFilters }"
             >
-              <q-tooltip>{{ t('resetFilters') }}</q-tooltip>
-            </q-btn>
+              <q-icon
+                name="groups"
+                size="18px"
+              />
+              <span>
+                {{
+                  hasActiveFilters
+                    ? t('shown', {
+                        shown: filteredPeople.length,
+                        total: people.length,
+                      })
+                    : t('total', { total: people.length })
+                }}
+              </span>
+              <!-- Resetting lives here, not in the filter row, so turning a
+                 filter on never reflows the controls. -->
+              <q-btn
+                v-if="hasActiveFilters"
+                :aria-label="t('resetFilters')"
+                icon="close"
+                size="sm"
+                class="people-count__reset"
+                flat
+                round
+                dense
+                @click="resetFilters"
+              >
+                <q-tooltip>{{ t('resetFilters') }}</q-tooltip>
+              </q-btn>
+            </div>
+            <m-btn
+              v-if="collapsible"
+              :aria-label="t('collapse')"
+              icon="unfold_less"
+              class="q-ml-xs"
+              primary
+              text
+              round
+              @click="emit('collapse')"
+            >
+              <q-tooltip>{{ t('collapse') }}</q-tooltip>
+            </m-btn>
           </div>
         </template>
       </dashboard-card-header>
@@ -259,9 +273,18 @@ import { useRegistrationHelper } from '@/composables/registrationHelper';
 
 // While `loading` the header and dimension controls render for real; the count
 // chip and the chart area are skeletonized.
-const { people, loading = false } = defineProps<{
+const {
+  people,
+  loading = false,
+  collapsible = false,
+} = defineProps<{
   people: Registration[];
   loading?: boolean;
+  collapsible?: boolean;
+}>();
+
+const emit = defineEmits<{
+  (e: 'collapse'): void;
 }>();
 
 const { t, locale } = useI18n();
@@ -918,6 +941,7 @@ const chartOptions = computed<ApexOptions>(() => {
 
 <i18n lang="yaml" locale="en">
 title: 'Demographics'
+collapse: 'Show summary only'
 subtitle: 'Break down the group by age, gender and country.'
 shown: '{shown} of {total} people'
 total: '{total} people'
@@ -954,6 +978,7 @@ gender:
 
 <i18n lang="yaml" locale="de">
 title: 'Demografie'
+collapse: 'Nur Zusammenfassung anzeigen'
 subtitle: 'Gruppe nach Alter, Geschlecht und Land aufschlüsseln.'
 shown: '{shown} von {total} Personen'
 total: '{total} Personen'
@@ -990,6 +1015,7 @@ gender:
 
 <i18n lang="yaml" locale="fr">
 title: 'Démographie'
+collapse: 'Afficher uniquement le résumé'
 subtitle: 'Répartir le groupe par âge, genre et pays.'
 shown: '{shown} personnes sur {total}'
 total: '{total} personnes'
@@ -1026,6 +1052,7 @@ gender:
 
 <i18n lang="yaml" locale="pl">
 title: 'Demografia'
+collapse: 'Pokaż tylko podsumowanie'
 subtitle: 'Podziel grupę według wieku, płci i kraju.'
 shown: '{shown} z {total} osób'
 total: '{total} osób'
@@ -1062,6 +1089,7 @@ gender:
 
 <i18n lang="yaml" locale="cs">
 title: 'Demografie'
+collapse: 'Zobrazit jen souhrn'
 subtitle: 'Rozdělte skupinu podle věku, pohlaví a země.'
 shown: '{shown} z {total} osob'
 total: '{total} osob'

@@ -1,31 +1,37 @@
 <template>
   <q-td :props>
-    <q-chip
-      :class="chipClass"
-      :icon
-      dense
-      square
-    >
-      {{ to(priceModel.name) }}
-      <q-tooltip v-if="tooltip">{{ tooltip }}</q-tooltip>
-    </q-chip>
-    <div
-      v-if="pendingOffer"
-      class="pending-offer text-caption row items-center no-wrap"
-    >
-      <q-icon
-        name="schedule"
-        size="14px"
-      />
-      <span class="ellipsis">
-        {{
-          t('pending', {
-            name: to(pendingOffer.priceModel.name),
-            date: d(new Date(pendingOffer.effectiveAt), 'short'),
-          })
-        }}
-      </span>
-      <q-tooltip>{{ t('pendingHint') }}</q-tooltip>
+    <div class="price-model-cell">
+      <q-chip
+        :class="chipClass"
+        :icon
+        dense
+        square
+      >
+        {{ to(priceModel.name) }}
+        <q-tooltip v-if="tooltip">{{ tooltip }}</q-tooltip>
+      </q-chip>
+
+      <!-- An offer the organization hasn't accepted, on the same line. -->
+      <template v-if="pendingOffer">
+        <q-icon
+          name="arrow_forward"
+          size="16px"
+          class="text-on-surface-variant"
+        />
+        <q-chip
+          :class="{ 'price-model--due': due }"
+          :icon="due ? 'block' : 'schedule'"
+          class="price-model--offered"
+          dense
+          square
+        >
+          {{ to(pendingOffer.priceModel.name) }}
+          <span class="price-model__date">{{ date }}</span>
+          <q-tooltip>
+            {{ due ? t('dueHint', { date }) : t('pendingHint', { date }) }}
+          </q-tooltip>
+        </q-chip>
+      </template>
     </div>
   </q-td>
 </template>
@@ -54,6 +60,14 @@ const {
 const { t, d } = useI18n();
 const { to } = useObjectTranslation();
 
+const due = computed(
+  () =>
+    pendingOffer !== null && new Date(pendingOffer.effectiveAt) <= new Date(),
+);
+const date = computed(() =>
+  pendingOffer ? d(new Date(pendingOffer.effectiveAt), 'short') : '',
+);
+
 // The normal case stays quiet: an organization on the default model, an
 // event on its organization's. Anything else is a deliberate choice.
 const chipClass = computed(() =>
@@ -79,10 +93,31 @@ const tooltip = computed(() => {
 </script>
 
 <style scoped lang="scss">
-.pending-offer {
+.price-model-cell {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 4px;
-  margin: 2px 4px 0;
-  color: var(--md3-warning);
+
+  .q-chip {
+    margin: 0;
+  }
+}
+
+// Not agreed yet: tonal like the status chips, red once it blocks events.
+.price-model--offered {
+  background: var(--md3-warning-container);
+  color: var(--md3-on-warning-container);
+
+  &.price-model--due {
+    background: var(--md3-error-container);
+    color: var(--md3-on-error-container);
+  }
+}
+
+.price-model__date {
+  margin-left: 6px;
+  opacity: 0.8;
 }
 
 .price-model--default {
@@ -97,36 +132,36 @@ const tooltip = computed(() => {
 </style>
 
 <i18n lang="yaml" locale="en">
-pending: '→ {name} from {date}'
-pendingHint: "Offered, not accepted yet. From that date, the organization can't create events until it accepts."
+pendingHint: "Offered, not accepted yet. From {date}, the organization can't create events until it accepts."
+dueHint: "Not accepted. Since {date}, the organization can't create events until it accepts."
 override: "Differs from the organization's current price model"
 default: 'Default price model'
 </i18n>
 
 <i18n lang="yaml" locale="de">
-pending: '→ {name} ab {date}'
-pendingHint: 'Angeboten, noch nicht angenommen. Ab diesem Datum kann die Organisation keine Veranstaltungen anlegen, bis sie zustimmt.'
+pendingHint: 'Angeboten, noch nicht angenommen. Ab dem {date} kann die Organisation keine Veranstaltungen anlegen, bis sie zustimmt.'
+dueHint: 'Nicht angenommen. Seit dem {date} kann die Organisation keine Veranstaltungen anlegen, bis sie zustimmt.'
 override: 'Weicht vom aktuellen Preismodell der Organisation ab'
 default: 'Standard-Preismodell'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-pending: '→ {name} à partir du {date}'
-pendingHint: "Proposé, pas encore accepté. À partir de cette date, l'organisation ne peut plus créer d'événements tant qu'elle n'a pas accepté."
+pendingHint: "Proposé, pas encore accepté. À partir du {date}, l'organisation ne peut plus créer d'événements tant qu'elle n'a pas accepté."
+dueHint: "Non accepté. Depuis le {date}, l'organisation ne peut plus créer d'événements tant qu'elle n'a pas accepté."
 override: "Diffère du modèle tarifaire actuel de l'organisation"
 default: 'Modèle tarifaire par défaut'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-pending: '→ {name} od {date}'
-pendingHint: 'Zaproponowano, jeszcze nie zaakceptowano. Od tej daty organizacja nie może tworzyć wydarzeń, dopóki nie zaakceptuje.'
+pendingHint: 'Zaproponowano, jeszcze nie zaakceptowano. Od {date} organizacja nie może tworzyć wydarzeń, dopóki nie zaakceptuje.'
+dueHint: 'Nie zaakceptowano. Od {date} organizacja nie może tworzyć wydarzeń, dopóki nie zaakceptuje.'
 override: 'Różni się od obecnego modelu cenowego organizacji'
 default: 'Domyślny model cenowy'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-pending: '→ {name} od {date}'
-pendingHint: 'Nabídnuto, zatím nepřijato. Od tohoto data nemůže organizace vytvářet akce, dokud nový model nepřijme.'
+pendingHint: 'Nabídnuto, zatím nepřijato. Od {date} nemůže organizace vytvářet akce, dokud nový model nepřijme.'
+dueHint: 'Nepřijato. Od {date} nemůže organizace vytvářet akce, dokud nový model nepřijme.'
 override: 'Liší se od současného cenového modelu organizace'
 default: 'Výchozí cenový model'
 </i18n>

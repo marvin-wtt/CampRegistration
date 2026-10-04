@@ -2,12 +2,12 @@
   <q-card
     flat
     bordered
-    class="tasks-due-card"
+    class="tasks-card"
   >
     <q-card-section>
       <dashboard-card-header
-        :icon="!loading && !hasOpenTasks ? 'task_alt' : 'checklist'"
-        :tone="!loading && !hasOpenTasks ? 'positive' : 'primary'"
+        :icon="!loading && openTasks.length === 0 ? 'task_alt' : 'checklist'"
+        :tone="!loading && openTasks.length === 0 ? 'positive' : 'primary'"
         :title="t('title')"
       >
         <template #caption>
@@ -16,12 +16,14 @@
             type="text"
             width="40%"
           />
-          <template v-else-if="!hasOpenTasks">{{ t('empty') }}</template>
+          <template v-else-if="openTasks.length === 0">{{
+            t('empty')
+          }}</template>
           <template v-else>
             {{
               dueCount > 0
                 ? t('summary.due', { count: dueCount })
-                : t('subtitle')
+                : t('summary.open', openTasks.length)
             }}
             <span
               v-if="mineCount > 0"
@@ -33,7 +35,7 @@
         </template>
         <template #action>
           <m-btn
-            :label="t('action.viewAll')"
+            :label="t('action.allTasks')"
             :to="{ name: 'management.event.tasks' }"
             icon-right="chevron_right"
             primary
@@ -46,83 +48,69 @@
 
     <q-list
       v-if="loading"
-      class="tasks-due-list"
+      class="todo-list"
     >
       <q-item
         v-for="width in ['70%', '55%', '62%']"
         :key="width"
-        class="tasks-due-item"
       >
-        <q-item-section
-          avatar
-          class="due-marker-section"
-        >
-          <q-skeleton
-            type="circle"
-            size="10px"
-          />
-        </q-item-section>
         <q-item-section>
           <q-skeleton
             type="text"
             :width="width"
           />
         </q-item-section>
-        <q-item-section side>
-          <q-skeleton
-            type="text"
-            width="64px"
-          />
-        </q-item-section>
       </q-item>
     </q-list>
-    <q-list
+    <q-card-section
       v-else-if="upcomingTasks.length > 0"
-      class="tasks-due-list"
+      class="tasks-section"
     >
-      <q-item
-        v-for="task in upcomingTasks"
-        :key="task.id"
-        clickable
-        :to="{ name: 'management.event.tasks' }"
-        class="tasks-due-item"
-        :class="{ 'tasks-due-item--mine': isMine(task) }"
-      >
-        <q-item-section
-          avatar
-          class="due-marker-section"
+      <q-list class="tasks-list">
+        <q-item
+          v-for="task in upcomingTasks"
+          :key="task.id"
+          clickable
+          :to="{ name: 'management.event.tasks' }"
+          class="task-item"
+          :class="{ 'task-item--mine': isMine(task) }"
         >
-          <span
-            class="due-marker"
-            :class="`due-marker--${taskPhaseOf(task)}`"
-          />
-        </q-item-section>
-        <q-item-section>
-          <q-item-label class="row items-center no-wrap q-gutter-x-xs">
-            <span class="ellipsis">{{ task.title }}</span>
-            <q-badge
-              v-if="isMine(task)"
-              class="mine-badge"
-              color="primary"
-              :label="t('you')"
+          <q-item-section
+            avatar
+            class="due-marker-section"
+          >
+            <span
+              class="due-marker"
+              :class="`due-marker--${taskPhaseOf(task)}`"
             />
-          </q-item-label>
-        </q-item-section>
-        <q-item-section
-          side
-          class="due-date-section"
-          :class="`due-text--${taskPhaseOf(task)}`"
-        >
-          {{ task.dueDate ? d(parseLocalDate(task.dueDate), 'date') : '—' }}
-        </q-item-section>
-      </q-item>
-    </q-list>
+          </q-item-section>
+          <q-item-section>
+            <q-item-label class="row items-center no-wrap q-gutter-x-xs">
+              <span class="ellipsis">{{ task.title }}</span>
+              <q-badge
+                v-if="isMine(task)"
+                class="mine-badge"
+                color="primary"
+                :label="t('you')"
+              />
+            </q-item-label>
+          </q-item-section>
+          <q-item-section
+            side
+            class="due-date-section"
+            :class="`due-text--${taskPhaseOf(task)}`"
+          >
+            {{ task.dueDate ? d(parseLocalDate(task.dueDate), 'date') : '—' }}
+          </q-item-section>
+        </q-item>
+      </q-list>
+    </q-card-section>
   </q-card>
 </template>
 
 <script lang="ts" setup>
-import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import DashboardCardHeader from '@/components/event/dashboard/DashboardCardHeader.vue';
 import { useTaskStore } from '@/stores/task-store';
@@ -131,6 +119,7 @@ import type { Task } from '@camp-registration/common/entities';
 import { taskPhaseOf } from '@/utils/taskPhase';
 import { parseLocalDate } from '@/utils/date';
 
+// Open tasks the team created, unassigned or the manager's own first.
 const { loading = false } = defineProps<{
   loading?: boolean;
 }>();
@@ -139,16 +128,12 @@ const { t, d } = useI18n();
 const taskStore = useTaskStore();
 const { currentManagerId } = useCurrentManager();
 
-const openTasks = computed<Task[]>(() => {
-  return (taskStore.data ?? []).filter((task) => !task.completed);
-});
-
-const hasOpenTasks = computed<boolean>(() => {
-  return openTasks.value.length > 0;
-});
+const openTasks = computed<Task[]>(() =>
+  (taskStore.data ?? []).filter((task) => !task.completed),
+);
 
 const upcomingTasks = computed<Task[]>(() => {
-  return [...openTasks.value]
+  return openTasks.value
     .filter(
       (task) =>
         task.assigneeId === null || task.assigneeId === currentManagerId.value,
@@ -168,16 +153,15 @@ const upcomingTasks = computed<Task[]>(() => {
     .slice(0, 5);
 });
 
-const dueCount = computed<number>(() => {
-  return openTasks.value.filter((task) => {
-    const phase = taskPhaseOf(task);
-    return phase === 'overdue' || phase === 'dueSoon';
-  }).length;
-});
+const dueCount = computed<number>(
+  () =>
+    openTasks.value.filter((task) => {
+      const taskPhase = taskPhaseOf(task);
+      return taskPhase === 'overdue' || taskPhase === 'dueSoon';
+    }).length,
+);
 
-const mineCount = computed<number>(() => {
-  return openTasks.value.filter(isMine).length;
-});
+const mineCount = computed<number>(() => openTasks.value.filter(isMine).length);
 
 function isMine(task: Task): boolean {
   return (
@@ -188,17 +172,38 @@ function isMine(task: Task): boolean {
 </script>
 
 <style scoped>
-.tasks-due-card {
+.tasks-card {
   border-radius: 16px;
 }
 
-.tasks-due-list {
+.tasks-section {
+  padding-top: 0;
+}
+
+.tasks-list {
+  padding: 0;
+}
+
+.todo-list {
   padding: 0 8px 8px;
 }
 
-.tasks-due-item {
-  border-radius: 8px;
+.task-item {
   min-height: 44px;
+  padding-right: 8px;
+  padding-left: 8px;
+  border-radius: 8px;
+}
+
+.task-item + .task-item {
+  margin-top: 2px;
+}
+
+.task-item--mine {
+  padding-left: 5px;
+  background: color-mix(in srgb, var(--md3-primary) 5%, transparent);
+  border-left: 3px solid var(--md3-primary);
+  border-radius: 0 8px 8px 0;
 }
 
 .due-marker-section {
@@ -209,8 +214,8 @@ function isMine(task: Task): boolean {
 .due-marker {
   width: 10px;
   height: 10px;
-  border-radius: 50%;
   background: var(--md3-outline);
+  border-radius: 50%;
 }
 
 .due-marker--overdue {
@@ -221,22 +226,11 @@ function isMine(task: Task): boolean {
   background: var(--md3-warning);
 }
 
-.tasks-due-item + .tasks-due-item {
-  margin-top: 2px;
-}
-
-.tasks-due-item--mine {
-  border-left: 3px solid var(--md3-primary);
-  border-radius: 0 8px 8px 0;
-  padding-left: 13px;
-  background: color-mix(in srgb, var(--md3-primary) 5%, transparent);
-}
-
 .mine-badge {
   flex: 0 0 auto;
-  border-radius: 6px;
   font-size: 10px;
   font-weight: 600;
+  border-radius: 6px;
 }
 
 .mine-summary {
@@ -245,8 +239,8 @@ function isMine(task: Task): boolean {
 }
 
 .due-date-section {
-  font-size: 12px;
   color: var(--md3-on-surface-variant);
+  font-size: 12px;
   white-space: nowrap;
 }
 
@@ -263,60 +257,60 @@ function isMine(task: Task): boolean {
 
 <i18n lang="yaml" locale="en">
 title: 'Tasks'
-subtitle: 'Upcoming to-dos'
-empty: 'No pending tasks'
+empty: 'No open tasks'
 you: 'You'
 summary:
   due: '{count} due soon'
+  open: '{n} open task | {n} open tasks'
   mine: '{n} assigned to you'
 action:
-  viewAll: 'View all'
+  allTasks: 'All tasks'
 </i18n>
 
 <i18n lang="yaml" locale="de">
 title: 'Aufgaben'
-subtitle: 'Anstehende Aufgaben'
 empty: 'Keine offenen Aufgaben'
 you: 'Du'
 summary:
   due: '{count} bald fällig'
+  open: '{n} offene Aufgabe | {n} offene Aufgaben'
   mine: '{n} dir zugewiesen'
 action:
-  viewAll: 'Alle anzeigen'
+  allTasks: 'Alle Aufgaben'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 title: 'Tâches'
-subtitle: 'Tâches à venir'
-empty: 'Aucune tâche en attente'
+empty: 'Aucune tâche ouverte'
 you: 'Toi'
 summary:
   due: '{count} à échéance proche'
+  open: '{n} tâche ouverte | {n} tâches ouvertes'
   mine: '{n} assignée à toi | {n} assignées à toi'
 action:
-  viewAll: 'Voir tout'
+  allTasks: 'Toutes les tâches'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
 title: 'Zadania'
-subtitle: 'Nadchodzące zadania'
-empty: 'Brak oczekujących zadań'
+empty: 'Brak otwartych zadań'
 you: 'Ty'
 summary:
   due: '{count} na wkrótce'
+  open: '{n} otwarte zadanie | {n} otwarte zadania'
   mine: '{n} przypisane do ciebie'
 action:
-  viewAll: 'Zobacz wszystkie'
+  allTasks: 'Wszystkie zadania'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
 title: 'Úkoly'
-subtitle: 'Nadcházející úkoly'
-empty: 'Žádné čekající úkoly'
+empty: 'Žádné otevřené úkoly'
 you: 'Ty'
 summary:
   due: '{count} s blížícím se termínem'
+  open: '{n} otevřený úkol | {n} otevřené úkoly'
   mine: '{n} přiřazen tobě'
 action:
-  viewAll: 'Zobrazit vše'
+  allTasks: 'Všechny úkoly'
 </i18n>
