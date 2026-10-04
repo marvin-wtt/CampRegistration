@@ -136,7 +136,6 @@ export interface EventBill extends Identifiable {
   finalizedAt: string | null;
   paidAt: string | null;
   voidedAt: string | null;
-  note: string | null;
   invoices: Invoice[];
   createdAt: string;
 }
@@ -144,6 +143,8 @@ export interface EventBill extends Identifiable {
 export interface AdminEventBill extends EventBill {
   /** `null` once the organization is deleted. */
   organization: { id: string; name: string } | null;
+  /** Internal to administrators; never served to organizations. */
+  note: string | null;
 }
 
 export interface EventBillUpdateData {
@@ -281,6 +282,12 @@ export interface PriceModelOfferCreateData {
  * changed terms; the offer may not take effect sooner.
  */
 export const PRICE_MODEL_OFFER_MIN_NOTICE_DAYS = 15;
+
+/**
+ * The time zone billing months and offer dates are counted in: the
+ * platform's, not the event's, since they feed its own bookkeeping.
+ */
+export const BILLING_TIME_ZONE = 'Europe/Berlin';
 
 /** What changing an organization's model did. */
 export interface PriceModelChangeResult {

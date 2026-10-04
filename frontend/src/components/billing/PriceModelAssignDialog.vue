@@ -95,6 +95,7 @@ import { computed, ref } from 'vue';
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import {
+  BILLING_TIME_ZONE,
   PRICE_MODEL_OFFER_MIN_NOTICE_DAYS,
   type PriceModel,
 } from '@camp-registration/common/entities';
@@ -117,16 +118,19 @@ export interface PriceModelAssignResult {
 
 const MIN_NOTICE_DAYS = PRICE_MODEL_OFFER_MIN_NOTICE_DAYS;
 
-/** `YYYY-MM-DD`, `days` from today in the viewer's time zone. */
-function dayFromToday(days: number): string {
-  const date = new Date();
-  date.setDate(date.getDate() + days);
+const DAY_MS = 24 * 60 * 60 * 1000;
 
-  return [
-    date.getFullYear(),
-    String(date.getMonth() + 1).padStart(2, '0'),
-    String(date.getDate()).padStart(2, '0'),
-  ].join('-');
+/**
+ * `YYYY-MM-DD`, `days` from now in the billing time zone — the same day the
+ * backend's `earliestEffectiveDay` computes, whatever the viewer's zone.
+ */
+function dayFromToday(days: number): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: BILLING_TIME_ZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date(Date.now() + days * DAY_MS));
 }
 
 const {

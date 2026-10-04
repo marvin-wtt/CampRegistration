@@ -152,6 +152,28 @@ function pricingSnapshot(priceModel: PriceModel, registrationCount: number) {
   };
 }
 
+/**
+ * Everything a bill gets as it is finalized, besides its event snapshot and
+ * counts: customer, pricing, and the status — a free bill is settled at once.
+ */
+function finalizedBillData(
+  organization: Parameters<typeof customerSnapshot>[0],
+  priceModel: PriceModel,
+  registrationCount: number,
+) {
+  const snapshot = pricingSnapshot(priceModel, registrationCount);
+  const finalizedAt = new Date();
+  const free = snapshot.grossAmount.isZero();
+
+  return {
+    ...customerSnapshot(organization),
+    ...snapshot,
+    status: free ? ('PAID' as const) : ('OPEN' as const),
+    finalizedAt,
+    paidAt: free ? finalizedAt : null,
+  };
+}
+
 const ALLOWED_TRANSITIONS: Partial<Record<EventBillStatus, EventBillStatus[]>> =
   {
     OPEN: ['PAID', 'VOID'],
@@ -369,7 +391,12 @@ export class BillingService extends BaseService {
         );
       }
 
-      if (data.adjustedRegistrationCount === 0) {
+      // Also when removing a correction falls back to measured counts of 0.
+      const registrationCount = billedRegistrationCount({
+        ...bill,
+        adjustedRegistrationCount: data.adjustedRegistrationCount,
+      });
+      if (registrationCount === 0) {
         throw new ApiError(
           httpStatus.CONFLICT,
           'An event without registrations is not billed. Void the bill instead.',
@@ -385,10 +412,7 @@ export class BillingService extends BaseService {
             baseFee: bill.baseFee ?? new Prisma.Decimal(0),
             taxRate: bill.taxRate ?? new Prisma.Decimal(0),
           },
-          billedRegistrationCount({
-            ...bill,
-            adjustedRegistrationCount: data.adjustedRegistrationCount,
-          }),
+          registrationCount,
         ),
       };
     }
@@ -501,9 +525,12 @@ export class BillingService extends BaseService {
         'An event without registrations is not billed.',
       );
     }
-    const snapshot = pricingSnapshot(priceModel, registrationCount);
-    const finalizedAt = new Date();
-    const free = snapshot.grossAmount.isZero();
+    const finalized = finalizedBillData(
+      organization,
+      priceModel,
+      registrationCount,
+    );
+    const { finalizedAt } = finalized;
 
     try {
       return await this.prisma.eventBill.create({
@@ -518,11 +545,7 @@ export class BillingService extends BaseService {
           eventEndAt: event?.endAt ?? replaces?.eventEndAt ?? finalizedAt,
           eventTimezone:
             event?.timezone ?? replaces?.eventTimezone ?? 'Europe/Berlin',
-          ...customerSnapshot(organization),
-          ...snapshot,
-          status: free ? 'PAID' : 'OPEN',
-          finalizedAt,
-          paidAt: free ? finalizedAt : null,
+          ...finalized,
           note: data.note ?? null,
         },
         include: billInclude,
@@ -691,39 +714,23 @@ export class BillingService extends BaseService {
       },
     });
     // Its start is past, so one count stands for both.
-    const accepted = await this.prisma.registration.count({
-      where: { eventId, status: 'ACCEPTED' },
-    });
+    const accepted = await this.countAccepted(eventId);
     if (accepted === 0) {
       return false;
     }
-    const counts = {
-      startRegistrationCount: accepted,
-      endRegistrationCount: accepted,
-      adjustedRegistrationCount: null,
-    };
-    const snapshot = pricingSnapshot(
-      event.priceModel,
-      billedRegistrationCount(counts),
-    );
-    const finalizedAt = new Date();
-    const free = snapshot.grossAmount.isZero();
 
     await this.prisma.eventBill.create({
       data: {
         eventId,
         ...place,
         organizationId: event.organizationId,
-        ...counts,
+        startRegistrationCount: accepted,
+        endRegistrationCount: accepted,
         eventName: event.name,
         eventStartAt: event.startAt,
         eventEndAt: event.endAt,
         eventTimezone: event.timezone,
-        ...customerSnapshot(event.organization),
-        ...snapshot,
-        status: free ? 'PAID' : 'OPEN',
-        finalizedAt,
-        paidAt: free ? finalizedAt : null,
+        ...finalizedBillData(event.organization, event.priceModel, accepted),
       },
     });
     return true;
@@ -901,10 +908,6 @@ export class BillingService extends BaseService {
             });
             return;
           }
-          const snapshot = pricingSnapshot(priceModel, registrationCount);
-          const finalizedAt = new Date();
-          const free = snapshot.grossAmount.isZero();
-
           await tx.eventBill.updateMany({
             where: { id: bill.id, status: 'DRAFT' },
             data: {
@@ -917,11 +920,7 @@ export class BillingService extends BaseService {
                   }
                 : {}),
               endRegistrationCount,
-              ...customerSnapshot(organization),
-              ...snapshot,
-              status: free ? 'PAID' : 'OPEN',
-              finalizedAt,
-              paidAt: free ? finalizedAt : null,
+              ...finalizedBillData(organization, priceModel, registrationCount),
             },
           });
         });

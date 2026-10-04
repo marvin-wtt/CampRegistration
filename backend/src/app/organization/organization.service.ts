@@ -93,11 +93,7 @@ export class OrganizationService extends BaseService {
 
   /**
    * The creating user becomes its first ADMIN, so an organization is never
-   * ownerless. It starts on the default price model; only an administrator
-   * can change that.
-   */
-  /**
-   * The founder agrees to the default model's prices by creating the
+   * ownerless. The founder agrees to the default model's prices by creating the
    * organization. They must have seen the current default, so a default
    * changed in the meantime is refused rather than silently agreed to.
    */
@@ -177,8 +173,17 @@ export class OrganizationService extends BaseService {
     });
   }
 
+  /**
+   * Pending offers go with it — the FK would only orphan them and keep their
+   * model in use. Accepted ones stay as the record of what was agreed.
+   */
   async deleteOrganization(id: string) {
-    await this.prisma.organization.delete({ where: { id } });
+    await this.prisma.$transaction([
+      this.prisma.priceModelOffer.deleteMany({
+        where: { organizationId: id, acceptedAt: null },
+      }),
+      this.prisma.organization.delete({ where: { id } }),
+    ]);
   }
 
   async countOwnedResources(id: string) {

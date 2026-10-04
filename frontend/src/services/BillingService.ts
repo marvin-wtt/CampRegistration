@@ -56,7 +56,7 @@ export function useBillingService() {
     await api.delete(`price-models/${id}/`);
   }
 
-  /** Resolves to how many upcoming events were moved along. */
+  /** Its events keep the model they were created with. */
   async function assignOrganizationPriceModel(
     organizationId: string,
     data: PriceModelAssignmentData,

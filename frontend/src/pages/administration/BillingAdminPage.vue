@@ -369,7 +369,8 @@ function actionsFor(bill: AdminEventBill): RowAction[] {
       label: t('action.correct'),
       icon: 'edit',
       separatorBefore: true,
-      hidden: bill.status !== 'OPEN',
+      // An invoice states the amount; the backend refuses to change it.
+      hidden: bill.status !== 'OPEN' || isInvoiced(bill),
       handler: () => correct(bill),
     },
     {
@@ -402,11 +403,14 @@ function billedTo(bill: AdminEventBill): string {
   return bill.organization?.name ?? bill.customer?.name ?? '—';
 }
 
+function isInvoiced(bill: AdminEventBill): boolean {
+  return bill.invoices.some((invoice) => invoice.type === 'INVOICE');
+}
+
 /** One invoice per bill; a wrong one is deleted and uploaded again. */
 function canUploadInvoice(bill: AdminEventBill): boolean {
   return (
-    (bill.status === 'OPEN' || bill.status === 'PAID') &&
-    !bill.invoices.some((invoice) => invoice.type === 'INVOICE')
+    (bill.status === 'OPEN' || bill.status === 'PAID') && !isInvoiced(bill)
   );
 }
 

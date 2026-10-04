@@ -90,7 +90,6 @@ export class EventBillResource extends JsonResource<
       finalizedAt: this.data.finalizedAt?.toISOString() ?? null,
       paidAt: this.data.paidAt?.toISOString() ?? null,
       voidedAt: this.data.voidedAt?.toISOString() ?? null,
-      note: this.data.note,
       invoices: this.data.invoices.map((invoice) =>
         new InvoiceResource(invoice).transform(),
       ),
@@ -133,6 +132,7 @@ export class AdminEventBillResource extends JsonResource<
       organization: organization
         ? { id: organization.id, name: organization.name }
         : null,
+      note: this.data.note,
     };
   }
 }
