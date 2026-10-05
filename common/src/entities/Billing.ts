@@ -253,7 +253,7 @@ export interface OrganizationBilling {
  * can't create events until it does; existing events keep their model.
  */
 export interface PriceModelOffer extends Identifiable {
-  organizationId: string | null;
+  organizationId: string;
   priceModel: PriceModel;
   /** ISO instant. */
   effectiveAt: string;

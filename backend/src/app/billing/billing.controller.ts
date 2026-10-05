@@ -109,14 +109,13 @@ export class BillingController extends BaseController {
 
   async update(req: Request, res: Response) {
     const { body } = await req.validate(validator.update);
-    const bill = await this.billingService.updateBill(
-      req.modelOrFail('eventBill'),
-      body,
-    );
+    const bill = req.modelOrFail('eventBill');
 
-    this.emitBillChange(bill, 'updated');
+    const updatedBill = await this.billingService.updateBill(bill, body);
 
-    res.resource(new AdminEventBillResource(bill));
+    this.emitBillChange(updatedBill, 'updated');
+
+    res.resource(new AdminEventBillResource(updatedBill));
   }
 
   /** What the organization pays and what it has been billed. */

@@ -120,10 +120,6 @@ export class PriceModelOfferService extends BaseService {
   /** Moves the organization to the offered model and records who agreed. */
   async accept(offer: PriceModelOffer, userId: string) {
     this.assertPending(offer);
-    const { organizationId } = offer;
-    if (!organizationId) {
-      throw new ApiError(httpStatus.CONFLICT, 'The offer is no longer open.');
-    }
 
     return this.transaction(async (tx) => {
       // Conditional, so a concurrent acceptance or replacement can't race it.
@@ -135,7 +131,7 @@ export class PriceModelOfferService extends BaseService {
         throw new ApiError(httpStatus.CONFLICT, 'The offer is no longer open.');
       }
       await tx.organization.update({
-        where: { id: organizationId },
+        where: { id: offer.organizationId },
         data: { priceModelId: offer.priceModelId },
       });
 

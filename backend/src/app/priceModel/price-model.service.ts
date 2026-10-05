@@ -118,6 +118,19 @@ export class PriceModelService extends BaseService {
         'The default price model cannot be archived.',
       );
     }
+    // Accepting would assign an archived model; refusing would leave the
+    // organization unable to create events once the offer is due.
+    if (data.archived && !priceModel.archivedAt) {
+      const pending = await this.prisma.priceModelOffer.count({
+        where: { priceModelId: priceModel.id, acceptedAt: null },
+      });
+      if (pending > 0) {
+        throw new ApiError(
+          httpStatus.CONFLICT,
+          'The price model is offered to an organization. Withdraw the offer first.',
+        );
+      }
+    }
 
     if (pricingChanges(priceModel, data)) {
       if (await this.isInUse(priceModel.id)) {

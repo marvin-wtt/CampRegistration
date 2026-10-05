@@ -173,17 +173,8 @@ export class OrganizationService extends BaseService {
     });
   }
 
-  /**
-   * Pending offers go with it — the FK would only orphan them and keep their
-   * model in use. Accepted ones stay as the record of what was agreed.
-   */
   async deleteOrganization(id: string) {
-    await this.prisma.$transaction([
-      this.prisma.priceModelOffer.deleteMany({
-        where: { organizationId: id, acceptedAt: null },
-      }),
-      this.prisma.organization.delete({ where: { id } }),
-    ]);
+    await this.prisma.organization.delete({ where: { id } });
   }
 
   async countOwnedResources(id: string) {

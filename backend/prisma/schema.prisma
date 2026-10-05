@@ -831,11 +831,11 @@ model PriceModel {
 /// applies once an organization admin accepts; from `effectiveAt` on, the
 /// organization can't create events until it does. Founding an organization
 /// records its agreement to the default model as an offer accepted at once.
-/// Accepted offers are the proof of what was agreed, so they outlive the
-/// organization.
+/// Accepted offers are the proof of what was agreed; they go with the
+/// organization, whose bills keep their own snapshot.
 model PriceModelOffer {
   id               String    @id @unique(map: "price_model_offers_id_unique") @default(ulid()) @db.Char(26)
-  organizationId   String?   @map("organization_id") @db.Char(26)
+  organizationId   String    @map("organization_id") @db.Char(26)
   priceModelId     String    @map("price_model_id") @db.Char(26)
   effectiveAt      DateTime  @map("effective_at")
   createdByUserId  String?   @map("created_by_user_id") @db.Char(26)
@@ -843,10 +843,10 @@ model PriceModelOffer {
   acceptedAt       DateTime? @map("accepted_at")
   createdAt        DateTime  @default(now()) @map("created_at")
 
-  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "price_model_offers_organization_id_foreign")
-  priceModel   PriceModel    @relation(fields: [priceModelId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "price_model_offers_price_model_id_foreign")
-  createdBy    User?         @relation("PriceModelOfferCreator", fields: [createdByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "price_model_offers_created_by_user_id_foreign")
-  acceptedBy   User?         @relation("PriceModelOfferAcceptor", fields: [acceptedByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "price_model_offers_accepted_by_user_id_foreign")
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "price_model_offers_organization_id_foreign")
+  priceModel   PriceModel   @relation(fields: [priceModelId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "price_model_offers_price_model_id_foreign")
+  createdBy    User?        @relation("PriceModelOfferCreator", fields: [createdByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "price_model_offers_created_by_user_id_foreign")
+  acceptedBy   User?        @relation("PriceModelOfferAcceptor", fields: [acceptedByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "price_model_offers_accepted_by_user_id_foreign")
 
   @@index([organizationId, acceptedAt], map: "price_model_offers_organization_id_accepted_at_index")
   @@index([priceModelId], map: "price_model_offers_price_model_id_index")

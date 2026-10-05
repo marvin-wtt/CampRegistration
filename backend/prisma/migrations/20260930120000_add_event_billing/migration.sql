@@ -109,7 +109,7 @@ ALTER TABLE `event_bills` ADD CONSTRAINT `event_bills_replaces_bill_id_foreign` 
 -- CreateTable
 CREATE TABLE `price_model_offers` (
     `id` CHAR(26) NOT NULL,
-    `organization_id` CHAR(26) NULL,
+    `organization_id` CHAR(26) NOT NULL,
     `price_model_id` CHAR(26) NOT NULL,
     `effective_at` DATETIME(3) NOT NULL,
     `created_by_user_id` CHAR(26) NULL,
@@ -126,7 +126,7 @@ CREATE TABLE `price_model_offers` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- AddForeignKey
-ALTER TABLE `price_model_offers` ADD CONSTRAINT `price_model_offers_organization_id_foreign` FOREIGN KEY (`organization_id`) REFERENCES `organizations`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE `price_model_offers` ADD CONSTRAINT `price_model_offers_organization_id_foreign` FOREIGN KEY (`organization_id`) REFERENCES `organizations`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `price_model_offers` ADD CONSTRAINT `price_model_offers_price_model_id_foreign` FOREIGN KEY (`price_model_id`) REFERENCES `price_models`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;

@@ -6,7 +6,11 @@ import {
   type EventQuery,
   type EventOrganizationUpdateData,
 } from '@camp-registration/common/entities';
-import { naiveDateTimeToUtcCarrier } from '@camp-registration/common/utils';
+import {
+  naiveDateTimeToUtcCarrier,
+  utcCarrierToNaiveDateTime,
+  zonedInstant,
+} from '@camp-registration/common/utils';
 
 // `z.iso.datetime()` accepts a `Z` suffix regardless of `local`/`offset`, so a
 // real instant must be rejected explicitly — startAt/endAt are the organizer's
@@ -195,6 +199,21 @@ const store = z.object({
             input: val[keyMin],
           });
         }
+      }
+
+      // Billing only sees events that run after they exist; an ended one would
+      // never be billed.
+      if (
+        Intl.supportedValuesOf('timeZone').includes(val.timezone) &&
+        zonedInstant(utcCarrierToNaiveDateTime(val.endAt), val.timezone) <=
+          new Date()
+      ) {
+        ctx.addIssue({
+          code: 'custom',
+          message: 'The event must not have ended already',
+          path: ['endAt'],
+          input: val.endAt,
+        });
       }
 
       checkRegistrationWindow(
