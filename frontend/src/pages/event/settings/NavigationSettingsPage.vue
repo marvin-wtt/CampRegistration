@@ -78,9 +78,7 @@ import { useEventDetailsStore } from '@/stores/event-details-store';
 const { t } = useI18n();
 const { can } = usePermissions();
 const profileStore = useProfileStore();
-const { data: event, error: eventError } = storeToRefs(
-  useEventDetailsStore(),
-);
+const { data: event, error: eventError } = storeToRefs(useEventDetailsStore());
 
 const { settings, isLoading, error } = useNavigationSettings();
 
