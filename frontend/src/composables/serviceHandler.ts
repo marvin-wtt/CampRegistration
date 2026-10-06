@@ -168,9 +168,10 @@ export function useServiceHandler<T>(storeName?: string) {
 }
 
 export function useErrorExtractor() {
-  const { t } = useI18n({
+  const i18n = useI18n({
     useScope: 'global',
   });
+  const { t } = i18n;
 
   function extractErrorText(err: unknown): string {
     if (!isAPIServiceError(err)) {
@@ -178,6 +179,13 @@ export function useErrorExtractor() {
     }
 
     if (err.response) {
+      // A known error code reads in the user's language; the server's
+      // message is English.
+      const code: unknown = err.response.data.errorCode;
+      if (typeof code === 'string' && i18n.te(`service.errors.${code}`)) {
+        return t(`service.errors.${code}`);
+      }
+
       return err.response.data.message ?? err.response.statusText;
     }
 

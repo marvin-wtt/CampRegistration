@@ -1,9 +1,11 @@
 import { api } from '@/services/api';
 import type {
+  AdminOrganization,
+  CursorPaginated,
   Event,
   Newsletter,
   Organization,
-  OrganizationCreateData,
+  OrganizationCreateRequest,
   OrganizationDetails,
   OrganizationQuery,
   OrganizationReviewData,
@@ -20,7 +22,9 @@ export function useOrganizationService() {
   }
 
   /** The administrators' moderation queue; cursor-paginated for `useServerTable`. */
-  async function fetchOrganizationsPaginated(params?: OrganizationQuery) {
+  async function fetchOrganizationsPaginated(
+    params?: OrganizationQuery,
+  ): Promise<CursorPaginated<AdminOrganization>> {
     const response = await api.get('organizations/', {
       params: { ...params, view: 'all' },
     });
@@ -38,7 +42,7 @@ export function useOrganizationService() {
   }
 
   async function createOrganization(
-    data: OrganizationCreateData,
+    data: OrganizationCreateRequest,
   ): Promise<OrganizationDetails> {
     const response = await api.post('organizations/', data);
 

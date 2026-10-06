@@ -218,6 +218,7 @@ const GROUP_ORDER = [
   'tasks',
   'chores',
   'chore_assignments',
+  'billing',
   'audit',
 ];
 
@@ -235,6 +236,7 @@ const GROUP_ICONS: Record<string, string> = {
   tasks: 'task_alt',
   chores: 'cleaning_services',
   chore_assignments: 'checklist',
+  billing: 'receipt_long',
   audit: 'history',
 };
 
@@ -631,6 +633,7 @@ permissions:
     tasks: 'Tasks'
     chores: 'Chores'
     chore_assignments: 'Duty roster'
+    billing: 'Billing'
     audit: 'Audit log'
   action:
     view: 'View'
@@ -669,6 +672,7 @@ permissions:
     tasks: 'Aufgaben'
     chores: 'Diensttypen'
     chore_assignments: 'Dienstplan'
+    billing: 'Abrechnung'
     audit: 'Änderungsprotokoll'
   action:
     view: 'Anzeigen'
@@ -707,6 +711,7 @@ permissions:
     tasks: 'Tâches'
     chores: 'Corvées'
     chore_assignments: 'Plan des corvées'
+    billing: 'Facturation'
     audit: 'Journal d’audit'
   action:
     view: 'Voir'
@@ -745,6 +750,7 @@ permissions:
     tasks: 'Zadania'
     chores: 'Obowiązki'
     chore_assignments: 'Grafik dyżurów'
+    billing: 'Rozliczenia'
     audit: 'Dziennik zmian'
   action:
     view: 'Podgląd'
@@ -783,6 +789,7 @@ permissions:
     tasks: 'Úkoly'
     chores: 'Povinnosti'
     chore_assignments: 'Rozpis služeb'
+    billing: 'Vyúčtování'
     audit: 'Protokol změn'
   action:
     view: 'Zobrazit'

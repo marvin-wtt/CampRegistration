@@ -1,20 +1,17 @@
-/** The current calendar date (`YYYY-MM-DD`) as observed in `timeZone`. */
-export function currentDateInTimeZone(timeZone: string): string {
-  const formatter = new Intl.DateTimeFormat('en-US', {
+/** The calendar date (`YYYY-MM-DD`) an instant falls on in `timeZone`. */
+export function calendarDateInTimeZone(date: Date, timeZone: string): string {
+  // en-CA formats as YYYY-MM-DD.
+  return new Intl.DateTimeFormat('en-CA', {
     timeZone,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
-  });
+  }).format(date);
+}
 
-  const parts = formatter
-    .formatToParts(new Date())
-    .reduce<Record<string, string>>((acc, part) => {
-      acc[part.type] = part.value;
-      return acc;
-    }, {});
-
-  return `${parts.year}-${parts.month}-${parts.day}`;
+/** The current calendar date (`YYYY-MM-DD`) as observed in `timeZone`. */
+export function currentDateInTimeZone(timeZone: string): string {
+  return calendarDateInTimeZone(new Date(), timeZone);
 }
 
 /** Clamps a plain `YYYY-MM-DD` date to the inclusive `[min, max]` range. */

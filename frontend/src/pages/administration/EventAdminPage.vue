@@ -147,6 +147,14 @@
           </q-td>
         </template>
 
+        <template #body-cell-priceModel="props">
+          <price-model-td
+            :props
+            :price-model="props.row.priceModel"
+            :override="props.row.isPriceModelOverride"
+          />
+        </template>
+
         <template #body-cell-action="props">
           <q-td
             :props="props"
@@ -163,10 +171,11 @@
 <script lang="ts" setup>
 import { type QTableColumn } from 'quasar';
 import type {
+  AdminEvent,
   Event,
-  EventUpdateData,
   EventQuery,
   EventRegistrationStatus,
+  EventUpdateData,
 } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
@@ -181,10 +190,18 @@ import RegistrationScheduleDialog, {
   type RegistrationScheduleResult,
 } from '@/components/event/index/RegistrationScheduleDialog.vue';
 import MoveOrganizationDialog from '@/components/organization/MoveOrganizationDialog.vue';
+import PriceModelAssignDialog, {
+  type PriceModelAssignResult,
+} from '@/components/billing/PriceModelAssignDialog.vue';
+import PriceModelTd from '@/components/billing/PriceModelTd.vue';
+import EventBillDialog, {
+  type EventBillDialogResult,
+} from '@/components/billing/EventBillDialog.vue';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { useRouter } from 'vue-router';
 import { useAPIService } from '@/services/APIService';
 import { useServerTable } from '@/composables/serverTable';
+import { useServiceNotifications } from '@/composables/serviceHandler';
 import TranslationTd from '@/components/administration/events/TranslationTd.vue';
 import CountryIcon from '@/components/common/localization/CountryIcon.vue';
 import { useRouteQueryParams } from '@/composables/useRouteQueryParams';
@@ -195,6 +212,7 @@ const quasar = useQuasar();
 const router = useRouter();
 const routeQuery = useRouteQueryParams();
 const api = useAPIService();
+const billingNotifications = useServiceNotifications('billing');
 
 const statusFilter = ref<EventRegistrationStatus | null>(
   routeQuery.getEnumQueryParam<EventRegistrationStatus>('status', [
@@ -219,12 +237,12 @@ const {
   identitySort,
   reload,
   withProgressNotification,
-} = useServerTable<Event, EventQuery>({
+} = useServerTable<AdminEvent, EventQuery>({
   storeName: 'event',
   sortBy: 'startAt',
   descending: true,
   watchSources: [statusFilter, listedFilter],
-  fetch: (query) => api.fetchEventsPaginated(query),
+  fetch: (query) => api.fetchAdminEventsPaginated(query),
   buildQuery: ({ cursor, limit, sortBy, sortType, search }) =>
     ({
       view: 'all',
@@ -249,7 +267,7 @@ const listedOptions = computed(() => [
   { label: t('value.unlisted'), value: false },
 ]);
 
-const columns = computed<QTableColumn<Event>[]>(() => [
+const columns = computed<QTableColumn<AdminEvent>[]>(() => [
   {
     name: 'name',
     label: t('column.name'),
@@ -317,6 +335,12 @@ const columns = computed<QTableColumn<Event>[]>(() => [
     sortable: true,
   },
   {
+    name: 'priceModel',
+    label: t('column.priceModel'),
+    field: (row) => row.priceModel.id,
+    align: 'left',
+  },
+  {
     name: 'registrationStatus',
     label: t('column.registrationStatus'),
     field: 'registrationStatus',
@@ -338,7 +362,7 @@ const columns = computed<QTableColumn<Event>[]>(() => [
   },
 ]);
 
-const columnFilterOptions = computed<QTableColumn<Event>[]>(() => {
+const columnFilterOptions = computed<QTableColumn<AdminEvent>[]>(() => {
   return columns.value.filter((column) => !column.required);
 });
 
@@ -350,10 +374,11 @@ const visibleColumns = ref([
   'startAt',
   'registrationStatus',
   'listed',
+  'priceModel',
   'action',
 ]);
 
-function rowActionsFn(event: Event): RowAction[] {
+function rowActionsFn(event: AdminEvent): RowAction[] {
   const status = event.registrationStatus;
 
   return [
@@ -407,6 +432,20 @@ function rowActionsFn(event: Event): RowAction[] {
       handler: () => onMoveEvent(event),
     },
     {
+      key: 'priceModel',
+      label: t('action.priceModel'),
+      icon: 'sell',
+      handler: () => {
+        onPriceModel(event);
+      },
+    },
+    {
+      key: 'bill',
+      label: t('action.bill'),
+      icon: 'receipt_long',
+      handler: () => onBillEvent(event),
+    },
+    {
       key: 'delete',
       label: t('action.delete'),
       icon: 'delete',
@@ -441,6 +480,62 @@ function onMoveEvent(event: Event) {
         await api.moveEventToOrganization(event.id, organizationId);
         reload();
       });
+    });
+}
+
+function onPriceModel(event: AdminEvent) {
+  quasar
+    .dialog({
+      component: PriceModelAssignDialog,
+      componentProps: {
+        subject: to(event.name),
+        scope: 'event',
+        current: event.priceModel.id,
+      },
+    })
+    .onOk(({ priceModelId }: PriceModelAssignResult) => {
+      void billingNotifications
+        .withProgressNotification('assign', () =>
+          api.assignEventPriceModel(event.id, priceModelId),
+        )
+        .then(
+          () => reload(),
+          // Already reported by the progress notification.
+          () => undefined,
+        );
+    });
+}
+
+/**
+ * Bills an ended event by hand — one that ended before billing existed, or
+ * that the billing jobs missed. The server refuses an event that is still
+ * running, or one that already has a bill that is not voided.
+ */
+function onBillEvent(event: Event) {
+  quasar
+    .dialog({
+      component: EventBillDialog,
+      componentProps: {
+        mode: 'bill',
+        subject: to(event.name),
+      },
+    })
+    .onOk((result: EventBillDialogResult) => {
+      void billingNotifications
+        .withProgressNotification('createBill', () =>
+          api.createBill({
+            eventId: event.id,
+            ...(result.priceModelId
+              ? { priceModelId: result.priceModelId }
+              : {}),
+            ...(result.adjustedRegistrationCount !== null
+              ? { adjustedRegistrationCount: result.adjustedRegistrationCount }
+              : {}),
+            note: result.note,
+          }),
+        )
+        // Already reported by the progress notification.
+        .catch(() => undefined);
     });
 }
 
@@ -622,6 +717,8 @@ action:
   activate: 'Activate'
   deactivate: 'Deactivate'
   move: 'Move to organization'
+  priceModel: 'Price model'
+  bill: 'Bill event'
   delete: 'Delete'
   form: 'Form'
   publish: 'Publish'
@@ -631,6 +728,7 @@ action:
 column:
   action: 'Action'
   registrationStatus: 'Registration'
+  priceModel: 'Price model'
   countries: 'Countries'
   end: 'End'
   maxAge: 'Max Age'
@@ -687,6 +785,8 @@ action:
   activate: 'Aktivieren'
   deactivate: 'Deaktivieren'
   move: 'In Organisation verschieben'
+  priceModel: 'Preismodell'
+  bill: 'Veranstaltung abrechnen'
   delete: 'Löschen'
   form: 'Formular'
   publish: 'Veröffentlichen'
@@ -696,6 +796,7 @@ action:
 column:
   action: 'Aktion'
   registrationStatus: 'Anmeldung'
+  priceModel: 'Preismodell'
   countries: 'Länder'
   end: 'Ende'
   maxAge: 'Max. Alter'
@@ -753,6 +854,8 @@ action:
   activate: 'Activer'
   deactivate: 'Désactiver'
   move: 'Déplacer vers une organisation'
+  priceModel: 'Modèle tarifaire'
+  bill: "Facturer l'événement"
   delete: 'Supprimer'
   form: 'Formulaire'
   publish: 'Publier'
@@ -762,6 +865,7 @@ action:
 column:
   action: 'Action'
   registrationStatus: 'Inscription'
+  priceModel: 'Modèle tarifaire'
   countries: 'Pays'
   end: 'Fin'
   maxAge: 'Âge max'
@@ -823,6 +927,8 @@ action:
   activate: 'Aktywuj'
   deactivate: 'Dezaktywuj'
   move: 'Przenieś do organizacji'
+  priceModel: 'Model cenowy'
+  bill: 'Rozlicz wydarzenie'
   delete: 'Usuń'
   form: 'Formularz'
   publish: 'Opublikuj'
@@ -832,6 +938,7 @@ action:
 column:
   action: 'Akcja'
   registrationStatus: 'Rejestracja'
+  priceModel: 'Model cenowy'
   countries: 'Kraje'
   end: 'Koniec'
   maxAge: 'Maks. wiek'
@@ -888,6 +995,8 @@ action:
   activate: 'Aktivovat'
   deactivate: 'Deaktivovat'
   move: 'Přesunout do organizace'
+  priceModel: 'Cenový model'
+  bill: 'Vyúčtovat akci'
   delete: 'Smazat'
   form: 'Formulář'
   publish: 'Zveřejnit'
@@ -897,6 +1006,7 @@ action:
 column:
   action: 'Akce'
   registrationStatus: 'Registrace'
+  priceModel: 'Cenový model'
   countries: 'Země'
   end: 'Konec'
   maxAge: 'Max. věk'

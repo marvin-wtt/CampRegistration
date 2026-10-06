@@ -1,0 +1,783 @@
+import httpStatus from 'http-status';
+import moment from 'moment';
+import { inject, injectable } from 'inversify';
+import {
+  type EventBill,
+  type EventBillStatus,
+  type PriceModel,
+  Prisma,
+} from '#generated/prisma/client.js';
+import { BaseService } from '#core/base/BaseService';
+import ApiError from '#utils/ApiError';
+import logger from '#core/logger';
+import type {
+  EventBillCreateData,
+  EventBillUpdateData,
+} from '@camp-registration/common/entities';
+import {
+  billedRegistrationCount,
+  customerSelect,
+  customerSnapshot,
+  calculateBillAmounts,
+  eventSnapshot,
+} from './billing.utils.js';
+import { BillingQueryService, billInclude } from './billing-query.service.js';
+import { eventInstant } from '#app/event/event.util';
+import { isUniqueViolation } from '#utils/db';
+
+/**
+ * How long after its end an event that never got a DRAFT bill is still picked
+ * up. Longer than the job interval, so an event shorter than one interval is
+ * not missed — short enough that events which ended before billing existed are
+ * never billed retroactively.
+ */
+const LATE_START_GRACE_HOURS = 1;
+
+/**
+ * The widest gap between an event's wall-clock digits and the real instant
+ * (UTC−12…UTC+14), used to pre-filter in SQL before the exact zoned check.
+ */
+const TIMEZONE_SLACK_HOURS = 14;
+
+const FINALIZE_BATCH_SIZE = 100;
+
+/**
+ * How far back an event moved into the past without a bill is still billed
+ * at once. Long enough to catch dates corrected after the event; short enough
+ * that entering old events, or ones from before billing, stays free.
+ */
+const PAST_BILLING_DAYS = 30;
+
+/** The latest bill of an event, as needed to decide whether to bill again. */
+const latestBillSelect = {
+  id: true,
+  sequence: true,
+  status: true,
+  eventStartAt: true,
+  eventTimezone: true,
+  replacedBy: { select: { id: true } },
+} satisfies Prisma.EventBillSelect;
+
+type LatestBill = Prisma.EventBillGetPayload<{
+  select: typeof latestBillSelect;
+}>;
+
+/**
+ * Where a new bill for the event goes in its chain, or `null` if it must not
+ * be billed again. Never billed: the first bill. Last bill voided and the
+ * event rescheduled since: a replacement of it — voiding is a deliberate
+ * decision, so an event whose dates stayed put is not billed again.
+ */
+function nextInChain(
+  event: { startAt: Date; timezone: string },
+  latest: LatestBill | undefined,
+): { sequence: number; replacesBillId: string | null } | null {
+  if (!latest) {
+    return { sequence: 0, replacesBillId: null };
+  }
+  if (latest.status !== 'VOID' || latest.replacedBy) {
+    return null;
+  }
+  const rescheduled =
+    eventInstant(event.startAt, event.timezone).getTime() !==
+    eventInstant(latest.eventStartAt, latest.eventTimezone).getTime();
+
+  return rescheduled
+    ? { sequence: latest.sequence + 1, replacesBillId: latest.id }
+    : null;
+}
+
+const draftInclude = {
+  event: {
+    select: {
+      name: true,
+      startAt: true,
+      endAt: true,
+      timezone: true,
+      priceModel: true,
+    },
+  },
+  priceModel: true,
+  organization: { select: { ...customerSelect, priceModel: true } },
+} satisfies Prisma.EventBillInclude;
+
+/** Pricing and amounts, frozen onto a bill as it is finalized. */
+function pricingSnapshot(priceModel: PriceModel, registrationCount: number) {
+  return {
+    priceModelId: priceModel.id,
+    currency: priceModel.currency,
+    pricePerRegistration: priceModel.pricePerRegistration,
+    baseFee: priceModel.baseFee,
+    taxRate: priceModel.taxRate,
+    ...calculateBillAmounts(priceModel, registrationCount),
+  };
+}
+
+/**
+ * Everything a bill gets as it is finalized, besides its event snapshot and
+ * counts: customer, pricing, and the status — a free bill is settled at once.
+ */
+function finalizedBillData(
+  organization: Parameters<typeof customerSnapshot>[0],
+  priceModel: PriceModel,
+  registrationCount: number,
+) {
+  const snapshot = pricingSnapshot(priceModel, registrationCount);
+  const finalizedAt = new Date();
+  const free = snapshot.grossAmount.isZero();
+
+  return {
+    ...customerSnapshot(organization),
+    ...snapshot,
+    status: free ? ('PAID' as const) : ('OPEN' as const),
+    finalizedAt,
+    paidAt: free ? finalizedAt : null,
+  };
+}
+
+const ALLOWED_TRANSITIONS: Partial<Record<EventBillStatus, EventBillStatus[]>> =
+  {
+    OPEN: ['PAID', 'VOID'],
+    PAID: ['VOID'],
+  };
+
+type DatedEvent = { startAt: Date; endAt: Date; timezone: string };
+
+function datesDiffer(before: DatedEvent, after: DatedEvent): boolean {
+  return (
+    before.startAt.getTime() !== after.startAt.getTime() ||
+    before.endAt.getTime() !== after.endAt.getTime() ||
+    before.timezone !== after.timezone
+  );
+}
+
+/**
+ * A bill's life: opened when its event starts, finalized when it ends, settled
+ * or corrected by administrators, and kept right as its event changes. The
+ * `onEvent*` hooks run inside the event service's transactions.
+ */
+@injectable()
+export class BillingService extends BaseService {
+  constructor(
+    @inject(BillingQueryService) private readonly query: BillingQueryService,
+  ) {
+    super();
+  }
+
+  /**
+   * Settles a bill (PAID / VOID), edits its note, or corrects the billed count
+   * of an OPEN bill. A correction re-prices the bill with the pricing frozen on
+   * it and keeps the measured counts beside it as evidence; `null` removes it.
+   */
+  async updateBill(bill: EventBill, data: EventBillUpdateData) {
+    const statusChange =
+      data.status !== undefined && data.status !== bill.status
+        ? data.status
+        : undefined;
+
+    if (statusChange) {
+      const allowed = ALLOWED_TRANSITIONS[bill.status] ?? [];
+      if (!allowed.includes(statusChange)) {
+        throw new ApiError(
+          httpStatus.CONFLICT,
+          `A ${bill.status} bill cannot become ${statusChange}.`,
+        );
+      }
+    }
+
+    let correction: Prisma.EventBillUpdateInput = {};
+    if (data.adjustedRegistrationCount !== undefined) {
+      if (bill.status !== 'OPEN') {
+        throw new ApiError(
+          httpStatus.CONFLICT,
+          'Only an open bill can be corrected. Void it and bill again instead.',
+        );
+      }
+      // The invoice already sent states the amount; it must stay true.
+      const invoiced = await this.prisma.invoice.count({
+        where: { eventBillId: bill.id, type: 'INVOICE' },
+      });
+      if (invoiced > 0) {
+        throw new ApiError(
+          httpStatus.CONFLICT,
+          'An invoiced bill cannot be corrected. Delete its invoice first, or void it and bill again.',
+        );
+      }
+
+      // Also when removing a correction falls back to measured counts of 0.
+      const registrationCount = billedRegistrationCount({
+        ...bill,
+        adjustedRegistrationCount: data.adjustedRegistrationCount,
+      });
+      if (registrationCount === 0) {
+        throw new ApiError(
+          httpStatus.CONFLICT,
+          'An event without registrations is not billed. Void the bill instead.',
+        );
+      }
+
+      correction = {
+        adjustedRegistrationCount: data.adjustedRegistrationCount,
+        ...calculateBillAmounts(
+          {
+            pricePerRegistration:
+              bill.pricePerRegistration ?? new Prisma.Decimal(0),
+            baseFee: bill.baseFee ?? new Prisma.Decimal(0),
+            taxRate: bill.taxRate ?? new Prisma.Decimal(0),
+          },
+          registrationCount,
+        ),
+      };
+    }
+
+    const now = new Date();
+
+    return this.prisma.eventBill.update({
+      where: { id: bill.id },
+      data: {
+        note: data.note,
+        ...correction,
+        ...(statusChange
+          ? {
+              status: statusChange,
+              paidAt: statusChange === 'PAID' ? now : undefined,
+              voidedAt: statusChange === 'VOID' ? now : undefined,
+            }
+          : {}),
+      },
+      include: billInclude,
+    });
+  }
+
+  /**
+   * Bills by hand, finalized at once: an ended event that was never billed (it
+   * ended before billing existed, or the jobs missed it), or a voided bill
+   * again, e.g. with a different price model. An event with a bill is only
+   * billed again through `replacesBillId`, which continues its sequence.
+   *
+   * A replacement inherits the voided bill's event snapshot and counts, so it
+   * works even after the event was deleted. A bill for an event counts the
+   * accepted registrations now; its start is past, so that one count stands
+   * for both.
+   */
+  async createManualBill(data: EventBillCreateData) {
+    const replaces = data.replacesBillId
+      ? await this.query.getBillById(data.replacesBillId)
+      : null;
+
+    if (data.replacesBillId) {
+      if (!replaces) {
+        throw new ApiError(httpStatus.NOT_FOUND, 'Bill not found');
+      }
+      if (replaces.status !== 'VOID') {
+        throw new ApiError(
+          httpStatus.CONFLICT,
+          'Only a voided bill can be billed again.',
+        );
+      }
+      if (replaces.replacedBy) {
+        throw new ApiError(
+          httpStatus.CONFLICT,
+          'This bill has already been billed again.',
+        );
+      }
+    }
+
+    const eventId = replaces ? replaces.eventId : (data.eventId ?? null);
+    const event = eventId
+      ? await this.prisma.event.findUnique({
+          where: { id: eventId },
+          include: { priceModel: true },
+        })
+      : null;
+
+    if (data.eventId && !event) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Event not found');
+    }
+    if (event && eventInstant(event.endAt, event.timezone) > new Date()) {
+      throw new ApiError(
+        httpStatus.CONFLICT,
+        'The event has not ended yet; it is billed automatically when it does.',
+      );
+    }
+
+    const organizationId = replaces
+      ? replaces.organizationId
+      : (event?.organizationId ?? null);
+    const organization = organizationId
+      ? await this.prisma.organization.findUnique({
+          where: { id: organizationId },
+          select: { ...customerSelect, priceModel: true },
+        })
+      : null;
+    if (!organizationId || !organization) {
+      throw new ApiError(
+        httpStatus.CONFLICT,
+        'The organization was deleted and cannot be billed again.',
+      );
+    }
+
+    const priceModel = await this.resolvePriceModel(
+      data.priceModelId,
+      event?.priceModel ?? organization.priceModel,
+    );
+
+    const counts = {
+      ...(replaces
+        ? {
+            startRegistrationCount: replaces.startRegistrationCount,
+            endRegistrationCount: replaces.endRegistrationCount,
+          }
+        : await this.countNow(eventId)),
+      adjustedRegistrationCount: data.adjustedRegistrationCount ?? null,
+    };
+    const registrationCount = billedRegistrationCount(counts);
+    if (registrationCount === 0) {
+      throw new ApiError(
+        httpStatus.CONFLICT,
+        'An event without registrations is not billed.',
+      );
+    }
+    // A replacement whose event was deleted keeps the voided bill's snapshot.
+    const snapshot = event
+      ? eventSnapshot(event)
+      : replaces && {
+          eventName: replaces.eventName,
+          eventStartAt: replaces.eventStartAt,
+          eventEndAt: replaces.eventEndAt,
+          eventTimezone: replaces.eventTimezone,
+        };
+    if (!snapshot) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Event not found');
+    }
+
+    try {
+      return await this.prisma.eventBill.create({
+        data: {
+          eventId,
+          organizationId,
+          replacesBillId: replaces?.id ?? null,
+          sequence: replaces ? replaces.sequence + 1 : 0,
+          ...counts,
+          ...snapshot,
+          ...finalizedBillData(organization, priceModel, registrationCount),
+          note: data.note ?? null,
+        },
+        include: billInclude,
+      });
+    } catch (error: unknown) {
+      if (isUniqueViolation(error, 'sequence')) {
+        throw new ApiError(
+          httpStatus.CONFLICT,
+          'The event has already been billed. Void its bill and bill that again instead.',
+        );
+      }
+      if (isUniqueViolation(error, 'replaces_bill_id')) {
+        throw new ApiError(
+          httpStatus.CONFLICT,
+          'This bill has already been billed again.',
+        );
+      }
+      throw error;
+    }
+  }
+
+  private async resolvePriceModel(
+    requestedId: string | undefined,
+    fallback: PriceModel,
+  ): Promise<PriceModel> {
+    if (requestedId) {
+      const requested = await this.prisma.priceModel.findUnique({
+        where: { id: requestedId },
+      });
+      if (!requested) {
+        throw new ApiError(httpStatus.BAD_REQUEST, 'Unknown price model');
+      }
+      if (requested.archivedAt) {
+        throw new ApiError(
+          httpStatus.CONFLICT,
+          'An archived price model cannot be used for a new bill.',
+        );
+      }
+      return requested;
+    }
+
+    return fallback;
+  }
+
+  private async countNow(eventId: string | null) {
+    const count = eventId ? await this.query.countAccepted(eventId) : 0;
+
+    return {
+      startRegistrationCount: count,
+      endRegistrationCount: count,
+    };
+  }
+
+  /**
+   * After an event's dates were saved: refuses a change billing can't follow
+   * (rolling the caller's transaction back), else keeps the bills right.
+   * Returns whether the event's billing changed.
+   */
+  async onEventDatesChanged(
+    before: DatedEvent,
+    after: DatedEvent & { id: string },
+    now = new Date(),
+  ): Promise<boolean> {
+    if (!datesDiffer(before, after)) {
+      return false;
+    }
+    await this.assertDatesMayChange(
+      after.id,
+      eventInstant(before.endAt, before.timezone),
+      eventInstant(after.endAt, after.timezone),
+      now,
+    );
+
+    return this.afterDatesChanged(after, now);
+  }
+
+  /**
+   * As an event moves to another organization. A finalized bill stays with
+   * the owner it billed, so a billed event only moves once an administrator
+   * voided the bill. A running one goes to the new owner, who owns the event
+   * when it ends.
+   */
+  async onEventMoving(eventId: string, organizationId: string) {
+    const billed = await this.db.eventBill.count({
+      where: { eventId, status: { in: ['OPEN', 'PAID'] } },
+    });
+    if (billed > 0) {
+      throw new ApiError(
+        httpStatus.CONFLICT,
+        'The event was already billed to its organization. Void the bill before moving the event.',
+        { code: 'EVENT_ALREADY_BILLED' },
+      );
+    }
+    await this.db.eventBill.updateMany({
+      where: { eventId, status: 'DRAFT' },
+      data: { organizationId },
+    });
+  }
+
+  /** Before an event is deleted: a running bill keeps its model to finalize. */
+  async onEventDeleting(eventId: string) {
+    const { priceModelId } = await this.db.event.findUniqueOrThrow({
+      where: { id: eventId },
+      select: { priceModelId: true },
+    });
+    await this.db.eventBill.updateMany({
+      where: { eventId, status: 'DRAFT' },
+      data: { priceModelId },
+    });
+  }
+
+  /**
+   * Refuses to move a billed event so it ends in the future: its bill is for
+   * the dates it had. A recurring event is duplicated for the new date; wrong
+   * dates are fixed after an administrator voids the bill.
+   *
+   * Also refuses to move an event out of billing's reach: past the
+   * {@link PAST_BILLING_DAYS} window, it would never be billed.
+   */
+  private async assertDatesMayChange(
+    eventId: string,
+    previousEnd: Date,
+    nextEnd: Date,
+    now = new Date(),
+  ) {
+    const pastLimit = moment(now).subtract(PAST_BILLING_DAYS, 'days').toDate();
+    if (nextEnd < pastLimit && previousEnd >= pastLimit) {
+      throw new ApiError(
+        httpStatus.CONFLICT,
+        `An event cannot be moved to end more than ${PAST_BILLING_DAYS} days ago.`,
+        { code: 'EVENT_DATES_OUT_OF_RANGE' },
+      );
+    }
+    if (nextEnd <= now) {
+      return;
+    }
+    const billed = await this.db.eventBill.count({
+      where: { eventId, status: { in: ['OPEN', 'PAID'] } },
+    });
+    if (billed > 0) {
+      throw new ApiError(
+        httpStatus.CONFLICT,
+        'The event was already billed for its dates. Duplicate it for a new date, or have an administrator void the bill first.',
+        { code: 'EVENT_ALREADY_BILLED' },
+      );
+    }
+  }
+
+  /**
+   * Keeps billing right after an event's dates changed. Returns whether its
+   * billing changed.
+   *
+   * - A running bill (DRAFT) whose event now starts in the future was opened
+   *   too early, with a start count from before the real start: it is
+   *   discarded, and the job opens a new one when the event starts.
+   * - An event moved into the recent past without a bill would never be seen
+   *   running by the jobs: it is billed at once, on today's registrations.
+   */
+  private async afterDatesChanged(
+    event: DatedEvent & { id: string },
+    now: Date,
+  ): Promise<boolean> {
+    const live = await this.db.eventBill.findFirst({
+      where: { eventId: event.id, status: { not: 'VOID' } },
+      select: { id: true, status: true },
+    });
+
+    if (live?.status === 'DRAFT') {
+      if (eventInstant(event.startAt, event.timezone) <= now) {
+        return false;
+      }
+      await this.db.eventBill.deleteMany({
+        where: { id: live.id, status: 'DRAFT' },
+      });
+      return true;
+    }
+
+    const end = eventInstant(event.endAt, event.timezone);
+    const pastLimit = moment(now).subtract(PAST_BILLING_DAYS, 'days').toDate();
+    if (live || end > now || end < pastLimit) {
+      return false;
+    }
+
+    const latest = await this.db.eventBill.findFirst({
+      where: { eventId: event.id },
+      select: latestBillSelect,
+      orderBy: { sequence: 'desc' },
+    });
+    const place = nextInChain(event, latest ?? undefined);
+    if (!place) {
+      return false;
+    }
+
+    try {
+      return await this.billEndedEvent(event.id, place);
+    } catch (error: unknown) {
+      // Billed concurrently, e.g. by the job: nothing left to do.
+      if (isUniqueViolation(error, 'sequence')) {
+        return false;
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * A finalized bill for an ended event, on its accepted registrations now.
+   * Returns whether it billed: an event without registrations is not.
+   */
+  private async billEndedEvent(
+    eventId: string,
+    place: { sequence: number; replacesBillId: string | null },
+  ): Promise<boolean> {
+    const event = await this.db.event.findUniqueOrThrow({
+      where: { id: eventId },
+      include: {
+        priceModel: true,
+        organization: { select: customerSelect },
+      },
+    });
+    // Its start is past, so one count stands for both.
+    const accepted = await this.query.countAccepted(eventId);
+    if (accepted === 0) {
+      return false;
+    }
+
+    await this.db.eventBill.create({
+      data: {
+        eventId,
+        ...place,
+        organizationId: event.organizationId,
+        startRegistrationCount: accepted,
+        endRegistrationCount: accepted,
+        ...eventSnapshot(event),
+        ...finalizedBillData(event.organization, event.priceModel, accepted),
+      },
+    });
+    return true;
+  }
+
+  /**
+   * Opens a DRAFT bill for every event that has started, recording how many
+   * registrations were accepted at that moment — the first of the two counts
+   * a bill is based on.
+   *
+   * An event with a live bill is left alone, and so is one whose bill was
+   * voided, unless it was rescheduled since (see `nextInChain`). The unique
+   * `(eventId, sequence)` makes a second instance, or a second run, lose with
+   * P2002 instead of creating a duplicate.
+   */
+  async openDraftsForStartedEvents(now = new Date()): Promise<void> {
+    const events = await this.prisma.event.findMany({
+      where: {
+        bills: { none: { status: { not: 'VOID' } } },
+        startAt: {
+          lt: moment(now).add(TIMEZONE_SLACK_HOURS, 'hours').toDate(),
+        },
+        endAt: {
+          gt: moment(now)
+            .subtract(TIMEZONE_SLACK_HOURS + LATE_START_GRACE_HOURS, 'hours')
+            .toDate(),
+        },
+      },
+      select: {
+        id: true,
+        organizationId: true,
+        name: true,
+        startAt: true,
+        endAt: true,
+        timezone: true,
+        bills: {
+          select: latestBillSelect,
+          orderBy: { sequence: 'desc' },
+          take: 1,
+        },
+      },
+      orderBy: { startAt: 'asc' },
+    });
+
+    const lateLimit = moment(now)
+      .subtract(LATE_START_GRACE_HOURS, 'hours')
+      .toDate();
+
+    for (const event of events) {
+      const end = eventInstant(event.endAt, event.timezone);
+      if (
+        eventInstant(event.startAt, event.timezone) > now ||
+        end < lateLimit
+      ) {
+        continue;
+      }
+      const place = nextInChain(event, event.bills[0]);
+      if (!place) {
+        continue;
+      }
+
+      try {
+        await this.transaction(async (tx) => {
+          const accepted = await tx.registration.count({
+            where: { eventId: event.id, status: 'ACCEPTED' },
+          });
+          // Already over, and no registrations left to bill: finalizing would
+          // only discard it again.
+          if (accepted === 0 && end <= now) {
+            return;
+          }
+
+          await tx.eventBill.create({
+            data: {
+              eventId: event.id,
+              ...place,
+              organizationId: event.organizationId,
+              startRegistrationCount: accepted,
+              ...eventSnapshot(event),
+            },
+          });
+        });
+      } catch (error: unknown) {
+        if (isUniqueViolation(error)) {
+          continue;
+        }
+        logger.error(`Failed to open the bill for event ${event.id}:`, error);
+      }
+    }
+  }
+
+  /**
+   * Finalizes every DRAFT bill whose event has ended. The accepted
+   * registrations are counted a second time, and the higher of the start and
+   * end counts is billed: someone who cancels during the event is still
+   * covered by the start count, a late registration who stays by the end
+   * count. The price model is the event's (or the one pinned on the bill when
+   * the event was deleted), and pricing and amounts are written as a snapshot
+   * so later model edits never touch a finalized bill.
+   *
+   * The event's current dates win over the snapshot, so a moved end date is
+   * respected. A bill whose event was deleted mid-run has no end count and is
+   * finalized with its start count; an administrator can void it.
+   */
+  async finalizeEndedEvents(now = new Date()): Promise<void> {
+    const horizon = moment(now).add(TIMEZONE_SLACK_HOURS, 'hours').toDate();
+
+    // Pages through every due draft, so drafts that are skipped or keep
+    // failing never crowd the others out of a batch.
+    let cursor: string | undefined;
+    do {
+      const drafts = await this.prisma.eventBill.findMany({
+        where: {
+          status: 'DRAFT',
+          id: cursor ? { gt: cursor } : undefined,
+          OR: [
+            { eventId: null, eventEndAt: { lt: horizon } },
+            { event: { is: { endAt: { lt: horizon } } } },
+          ],
+        },
+        include: draftInclude,
+        orderBy: { id: 'asc' },
+        take: FINALIZE_BATCH_SIZE,
+      });
+      cursor =
+        drafts.length === FINALIZE_BATCH_SIZE ? drafts.at(-1)?.id : undefined;
+
+      await this.finalizeDrafts(drafts, now);
+    } while (cursor);
+  }
+
+  private async finalizeDrafts(
+    drafts: Prisma.EventBillGetPayload<{ include: typeof draftInclude }>[],
+    now: Date,
+  ): Promise<void> {
+    for (const bill of drafts) {
+      const end = bill.event
+        ? eventInstant(bill.event.endAt, bill.event.timezone)
+        : eventInstant(bill.eventEndAt, bill.eventTimezone);
+      if (end > now) {
+        continue;
+      }
+      // Deleting an organization is refused while it has a running bill.
+      const { organization } = bill;
+      if (!organization) {
+        logger.error(`Bill ${bill.id} is running without an organization`);
+        continue;
+      }
+
+      try {
+        await this.transaction(async (tx) => {
+          const endRegistrationCount = bill.eventId
+            ? await tx.registration.count({
+                where: { eventId: bill.eventId, status: 'ACCEPTED' },
+              })
+            : null;
+          const priceModel =
+            bill.event?.priceModel ??
+            bill.priceModel ??
+            organization.priceModel;
+          const registrationCount = billedRegistrationCount({
+            ...bill,
+            endRegistrationCount,
+          });
+          // An event without registrations is not billed.
+          if (registrationCount === 0) {
+            await tx.eventBill.deleteMany({
+              where: { id: bill.id, status: 'DRAFT' },
+            });
+            return;
+          }
+          await tx.eventBill.updateMany({
+            where: { id: bill.id, status: 'DRAFT' },
+            data: {
+              ...(bill.event ? eventSnapshot(bill.event) : {}),
+              endRegistrationCount,
+              ...finalizedBillData(organization, priceModel, registrationCount),
+            },
+          });
+        });
+      } catch (error: unknown) {
+        logger.error(`Failed to finalize bill ${bill.id}:`, error);
+      }
+    }
+  }
+}

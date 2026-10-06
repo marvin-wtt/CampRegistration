@@ -55,6 +55,12 @@ const items = computed<NavigationItemProps[]>(() => [
     to: { name: 'administration.organizations' },
   },
   {
+    name: 'billing',
+    label: t('billing'),
+    icon: 'receipt_long',
+    to: { name: 'administration.billing' },
+  },
+  {
     name: 'queues',
     label: t('queues'),
     icon: 'queue',
@@ -75,6 +81,7 @@ title: 'Administration'
 organizations: 'Organizations'
 events: 'Events'
 newsletters: 'Newsletters'
+billing: 'Billing'
 queues: 'Jobs'
 users: 'Users'
 settings: 'Settings'
@@ -87,6 +94,7 @@ title: 'Verwaltung'
 organizations: 'Organisationen'
 events: 'Veranstaltungen'
 newsletters: 'Newsletter'
+billing: 'Abrechnung'
 queues: 'Aufgaben'
 users: 'Benutzer'
 settings: 'Einstellungen'
@@ -99,6 +107,7 @@ title: 'Administration'
 organizations: 'Organisations'
 events: 'Événements'
 newsletters: 'Newsletters'
+billing: 'Facturation'
 queues: 'Tâches'
 users: 'Utilisateurs'
 settings: 'Paramètres'
@@ -111,6 +120,7 @@ title: 'Administracja'
 organizations: 'Organizacje'
 events: 'Wydarzenia'
 newsletters: 'Newslettery'
+billing: 'Rozliczenia'
 queues: 'Zadania'
 users: 'Użytkownicy'
 settings: 'Ustawienia'
@@ -123,6 +133,7 @@ title: 'Administrace'
 organizations: 'Organizace'
 events: 'Akce'
 newsletters: 'Newslettery'
+billing: 'Vyúčtování'
 queues: 'Úlohy'
 users: 'Uživatelé'
 settings: 'Nastavení'

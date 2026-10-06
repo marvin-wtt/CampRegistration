@@ -15,6 +15,19 @@ export default {
     invalidParams: 'Neplatné parametry.',
     unavailable: 'Služba je dočasně nedostupná. Zkuste to prosím později.',
     unknown: 'Služba je dočasně nedostupná.',
+    // Server error codes; anything else shows the server's message.
+    errors: {
+      EVENT_ALREADY_BILLED:
+        'Tato akce už byla za své termíny vyúčtována. Chceš-li ji pořádat znovu, zduplikuj ji na nový termín. Pokud byly termíny chybné, požádej nejprve správce o stornování faktury.',
+      EVENT_DATES_OUT_OF_RANGE:
+        'Akci nelze přesunout tak, aby skončila před více než 30 dny.',
+      PRICE_MODEL_NOT_ACCEPTED:
+        'Tvá organizace musí přijmout nové ceny, než budeš moci vytvářet akce. Správce organizace je může přijmout na její stránce vyúčtování.',
+      PRICE_MODEL_CHANGED:
+        'Ceny se mezitím změnily. Zkontroluj prosím nové ceny a zkus to znovu.',
+      ORGANIZATION_HAS_UNPAID_BILLS:
+        'Organizace má ještě nezaplacené faktury. Musí být zaplaceny, než ji bude možné smazat.',
+    },
   },
 
   country: {

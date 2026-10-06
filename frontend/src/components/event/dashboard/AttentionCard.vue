@@ -74,6 +74,7 @@ import { useRouter } from 'vue-router';
 import DashboardCardHeader from '@/components/event/dashboard/DashboardCardHeader.vue';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import { useEventFilesStore } from '@/stores/event-files-store';
+import { useEventBillingStore } from '@/stores/event-billing-store';
 import { useEventStatistics } from '@/composables/eventStatistics';
 import { useRegistrationHelper } from '@/composables/registrationHelper';
 import type { EventPhase } from '@/composables/eventPhase';
@@ -89,16 +90,19 @@ const {
   phase,
   loading = false,
   rooms = false,
+  billing = false,
 } = defineProps<{
   phase: EventPhase;
   loading?: boolean;
   rooms?: boolean;
+  billing?: boolean;
 }>();
 
 const { t } = useI18n();
 const router = useRouter();
 const eventDetailsStore = useEventDetailsStore();
 const eventFilesStore = useEventFilesStore();
+const billingStore = useEventBillingStore();
 const stats = useEventStatistics();
 const helper = useRegistrationHelper();
 
@@ -139,6 +143,12 @@ const items = computed<AttentionItem[]>(() => {
   const withoutRoom = accepted.some((r) => r.room)
     ? accepted.filter((r) => !r.room).length
     : 0;
+
+  // Once the invoice is out, paying it is on the organizer.
+  const bill = billingStore.data?.bill;
+  const unpaidInvoice =
+    bill?.status === 'OPEN' &&
+    bill.invoices.some((invoice) => invoice.type === 'INVOICE');
 
   const items: (AttentionItem & { shown: boolean })[] = [
     {
@@ -181,6 +191,15 @@ const items = computed<AttentionItem[]>(() => {
       icon: 'upload_file',
       route: 'management.event.settings.files',
       shown: phase !== 'setup',
+    },
+    {
+      // Billing isn't on the page while the event runs.
+      key: 'invoice',
+      label: t('item.invoice'),
+      count: unpaidInvoice ? 1 : 0,
+      icon: 'receipt_long',
+      anchor: 'event-billing',
+      shown: billing && !running,
     },
   ];
 
@@ -288,6 +307,7 @@ item:
   missing: 'Missing contact details'
   age: 'Age outside event range'
   files: 'Missing files'
+  invoice: 'Invoice awaiting payment'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -300,6 +320,7 @@ item:
   missing: 'Fehlende Kontaktdaten'
   age: 'Alter außerhalb des Bereichs'
   files: 'Fehlende Dateien'
+  invoice: 'Rechnung offen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -312,6 +333,7 @@ item:
   missing: 'Coordonnées manquantes'
   age: 'Âge hors de la plage'
   files: 'Fichiers manquants'
+  invoice: 'Facture en attente de paiement'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -324,6 +346,7 @@ item:
   missing: 'Brakujące dane kontaktowe'
   age: 'Wiek poza zakresem'
   files: 'Brakujące pliki'
+  invoice: 'Faktura oczekuje na płatność'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -336,4 +359,5 @@ item:
   missing: 'Chybějící kontaktní údaje'
   age: 'Věk mimo rozsah'
   files: 'Chybějící soubory'
+  invoice: 'Faktura čeká na úhradu'
 </i18n>

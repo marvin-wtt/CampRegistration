@@ -1,7 +1,7 @@
 import { OrganizationFactory } from '../factories';
 import prisma from '../client';
 import { BaseSeeder } from './BaseSeeder';
-import { ORGANIZATION_IDS, USER_IDS } from './ids';
+import { ORGANIZATION_IDS, PRICE_MODEL_IDS, USER_IDS } from './ids';
 import { seedDate } from './timeline';
 
 class OrganizationSeeder extends BaseSeeder {
@@ -12,11 +12,15 @@ class OrganizationSeeder extends BaseSeeder {
   async run(): Promise<void> {
     // No legacy organization here: the migration only creates one for databases
     // that already had events, and a seeded database creates its own.
+    //
+    // Organizations without an explicit price model start on the default (the
+    // free model), exactly as one created through the API would.
 
     // John administers this one — implicit ORGANIZATION_EVENT_PERMISSIONS on
     // every event it owns, even the ones he does not manage.
     await OrganizationFactory.create({
       id: ORGANIZATION_IDS.youthAdventures,
+      priceModel: { connect: { id: PRICE_MODEL_IDS.standard } },
       name: 'Youth Adventures',
       verificationStatus: 'VERIFIED',
       contactEmail: 'office@youth-adventures.example.com',
@@ -55,6 +59,7 @@ class OrganizationSeeder extends BaseSeeder {
     // holds nothing implicit on the events it already owns.
     await OrganizationFactory.create({
       id: ORGANIZATION_IDS.alpineExplorers,
+      priceModel: { connect: { id: PRICE_MODEL_IDS.nonProfit } },
       name: 'Alpine Explorers',
       verificationStatus: 'VERIFIED',
       contactEmail: 'buero@alpine-explorers.example.com',
@@ -89,6 +94,7 @@ class OrganizationSeeder extends BaseSeeder {
     // Rejected after review — the rejection unpublished its events.
     await OrganizationFactory.create({
       id: ORGANIZATION_IDS.harbourTrust,
+      priceModel: { connect: { id: PRICE_MODEL_IDS.standard } },
       name: 'Harbour Youth Trust',
       verificationStatus: 'REJECTED',
       reviewNote: 'Registration number could not be verified.',
@@ -106,6 +112,7 @@ class OrganizationSeeder extends BaseSeeder {
     // management route must refuse him.
     await OrganizationFactory.create({
       id: ORGANIZATION_IDS.coastalEvents,
+      priceModel: { connect: { id: PRICE_MODEL_IDS.standard } },
       name: 'Coastal Events',
       verificationStatus: 'VERIFIED',
       contactEmail: 'hello@coastal-events.example.com',

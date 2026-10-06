@@ -9,6 +9,7 @@ import { RegistrationService } from '#app/registration/registration.service';
 import { AdminOverviewResource } from './admin.resource.js';
 import { FileService } from '#app/file/file.service';
 import { OrganizationService } from '#app/organization/organization.service';
+import { BillingQueryService } from '#app/billing/billing-query.service';
 
 @injectable()
 export class AdminController extends BaseController {
@@ -22,6 +23,8 @@ export class AdminController extends BaseController {
     @inject(FileService) private readonly fileService: FileService,
     @inject(RegistrationService)
     private readonly registrationService: RegistrationService,
+    @inject(BillingQueryService)
+    private readonly billingQueryService: BillingQueryService,
   ) {
     super();
   }
@@ -35,6 +38,7 @@ export class AdminController extends BaseController {
       legal,
       files,
       registrations,
+      billing,
     ] = await Promise.all([
       this.userService.getOverviewCounts(),
       this.organizationService.getOverviewCounts(),
@@ -43,6 +47,7 @@ export class AdminController extends BaseController {
       this.legalService.getOverviewCounts(),
       this.fileService.getOverviewCounts(),
       this.registrationService.getOverviewCounts(),
+      this.billingQueryService.getOverviewCounts(),
     ]);
 
     res.resource(
@@ -54,6 +59,7 @@ export class AdminController extends BaseController {
         legal,
         files,
         registrations,
+        billing,
       }),
     );
   }

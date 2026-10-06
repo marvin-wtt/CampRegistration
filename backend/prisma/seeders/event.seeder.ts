@@ -11,7 +11,7 @@ import {
   defaultMessageTemplatesForCountries,
 } from '#app/event/presets/index.js';
 import { summerCampForm } from './forms/summer-camp.form';
-import { EVENT_IDS, ORGANIZATION_IDS } from './ids';
+import { EVENT_IDS, ORGANIZATION_IDS, PRICE_MODEL_IDS } from './ids';
 import { PHASE, seedDate } from './timeline';
 import type { Prisma } from '#generated/prisma/client.js';
 
@@ -191,6 +191,9 @@ class EventSeeder extends BaseSeeder {
     const spring = await EventFactory.create({
       id: EVENT_IDS.spring,
       organization,
+      // Priced below its organization's Standard model: the one seeded
+      // override, and the bill below shows it winning.
+      priceModel: { connect: { id: PRICE_MODEL_IDS.nonProfit } },
       name: 'Spring Event',
       organizer: 'Youth Adventures UK',
       listed: true,

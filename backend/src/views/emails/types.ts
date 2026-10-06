@@ -26,8 +26,8 @@ export interface DefaultEmailProps extends BaseEmailProps {
 /**
  * Fields shared by every "action card" email — a heading, body copy, a
  * single CTA button, and a sign-off. A template with nothing beyond this
- * (manager-invitation, organization-review-pending, organization-verified)
- * uses `ActionCardProps` directly; one that needs more declares its own
+ * (manager-invitation, organization-review-pending, organization-verified,
+ * invoice-issued) uses `ActionCardProps` directly; one that needs more declares its own
  * interface `extend`ing it (never a `type X = Y` alias of another
  * template's name) so a field added for one template can never silently
  * change another's contract.

@@ -72,6 +72,7 @@
               :phase
               :loading
               :rooms="features.rooms"
+              :billing="features.billing"
               :style="card.style"
             />
             <tasks-card
@@ -108,6 +109,11 @@
               :loading
               :style="card.style"
             />
+            <price-model-widget
+              v-else-if="card.key === 'billing'"
+              id="event-billing"
+              :style="card.style"
+            />
           </template>
         </div>
       </div>
@@ -131,12 +137,14 @@ import TodayDutiesCard from '@/components/event/dashboard/TodayDutiesCard.vue';
 import RegistrationOverviewCard from '@/components/event/dashboard/RegistrationOverviewCard.vue';
 import ReadinessCard from '@/components/event/dashboard/ReadinessCard.vue';
 import DemographicsCard from '@/components/event/dashboard/DemographicsCard.vue';
+import PriceModelWidget from '@/components/event/dashboard/PriceModelWidget.vue';
 import OrganizationUnverifiedNotice from '@/components/organization/OrganizationUnverifiedNotice.vue';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import { useProfileStore } from '@/stores/profile-store';
 import { useRegistrationsStore } from '@/stores/registration-store';
 import { useEventFilesStore } from '@/stores/event-files-store';
 import { useTaskStore } from '@/stores/task-store';
+import { useEventBillingStore } from '@/stores/event-billing-store';
 import { useProgramPlannerStore } from '@/stores/program-planner-store';
 import { useProgramPublishedDayStore } from '@/stores/program-published-day-store';
 import { useChoreStore } from '@/stores/chore-store';
@@ -156,7 +164,8 @@ type CardKey =
   | 'duties'
   | 'registrations'
   | 'readiness'
-  | 'demographics';
+  | 'demographics'
+  | 'billing';
 
 type Column = 'main' | 'side';
 
@@ -168,12 +177,14 @@ const LAYOUTS: Record<EventPhase, [CardKey, Column][]> = {
     ['setup', 'main'],
     ['tasks', 'side'],
     ['registrations', 'main'],
+    ['billing', 'side'],
   ],
   registration: [
     ['attention', 'side'],
     ['tasks', 'side'],
     ['registrations', 'main'],
     ['demographics', 'main'],
+    ['billing', 'side'],
   ],
   preparation: [
     ['attention', 'side'],
@@ -181,6 +192,7 @@ const LAYOUTS: Record<EventPhase, [CardKey, Column][]> = {
     ['registrations', 'main'],
     ['readiness', 'side'],
     ['demographics', 'main'],
+    ['billing', 'side'],
   ],
   running: [
     ['attention', 'side'],
@@ -195,6 +207,7 @@ const LAYOUTS: Record<EventPhase, [CardKey, Column][]> = {
     ['tasks', 'side'],
     ['registrations', 'main'],
     ['demographics', 'main'],
+    ['billing', 'main'],
   ],
 };
 
@@ -206,6 +219,7 @@ const profileStore = useProfileStore();
 const registrationStore = useRegistrationsStore();
 const eventFilesStore = useEventFilesStore();
 const taskStore = useTaskStore();
+const billingStore = useEventBillingStore();
 const programStore = useProgramPlannerStore();
 const publishedDayStore = useProgramPublishedDayStore();
 const choreStore = useChoreStore();
@@ -245,6 +259,7 @@ const features = computed(() => ({
     isShown('chore_planner'),
   program: can('event.program_items.view') && isShown('program_planner'),
   rooms: can('event.rooms.view') && isShown('room_planner'),
+  billing: can('event.billing.view'),
 }));
 
 // Started during setup, not awaited: the stores flag themselves loading before
@@ -256,7 +271,10 @@ void eventFilesStore.fetchData();
 void taskStore.fetchData();
 watch(
   features,
-  ({ program, duties }) => {
+  ({ billing, program, duties }) => {
+    if (billing) {
+      void billingStore.fetchData();
+    }
     if (program) {
       void programStore.fetchData();
       void publishedDayStore.fetchData();
@@ -282,6 +300,8 @@ function isAvailable(key: CardKey): boolean {
       return features.value.duties;
     case 'readiness':
       return features.value.rooms || features.value.program;
+    case 'billing':
+      return features.value.billing;
     default:
       return true;
   }

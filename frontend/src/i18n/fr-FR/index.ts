@@ -16,6 +16,19 @@ export default {
     unavailable:
       'Service temporairement indisponible. Veuillez réessayer plus tard.',
     unknown: 'Service temporairement indisponible.',
+    // Server error codes; anything else shows the server's message.
+    errors: {
+      EVENT_ALREADY_BILLED:
+        "Cet événement a déjà été facturé pour ses dates. Pour l'organiser à nouveau, duplique-le pour la nouvelle date. Si les dates étaient erronées, demande d'abord à un administrateur d'annuler la facture.",
+      EVENT_DATES_OUT_OF_RANGE:
+        'Un événement ne peut pas être déplacé pour se terminer il y a plus de 30 jours.',
+      PRICE_MODEL_NOT_ACCEPTED:
+        "Ton organisation doit accepter ses nouveaux tarifs avant que tu puisses créer des événements. Un administrateur de l'organisation peut les accepter sur sa page de facturation.",
+      PRICE_MODEL_CHANGED:
+        'Les tarifs ont changé entre-temps. Vérifie les nouveaux tarifs et réessaie.',
+      ORGANIZATION_HAS_UNPAID_BILLS:
+        "L'organisation a encore des factures impayées. Elles doivent être payées avant qu'elle puisse être supprimée.",
+    },
   },
 
   country: {

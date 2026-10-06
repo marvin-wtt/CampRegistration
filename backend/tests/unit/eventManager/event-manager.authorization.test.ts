@@ -170,13 +170,14 @@ describe('EventManagerService.getManagerAuthorization', () => {
 });
 
 describe('ORGANIZATION_EVENT_PERMISSIONS', () => {
-  it('grants only viewing the event, editing it, and seeing its managers', () => {
+  it('grants only viewing the event, editing it, and seeing its managers and pricing', () => {
     // A guard against widening this set without a deliberate privacy review:
     // organization roles are an ownership relationship, not a data-access one.
     expect([...ORGANIZATION_EVENT_PERMISSIONS]).toEqual<Permission[]>([
       'event.view',
       'event.edit',
       'event.managers.view',
+      'event.billing.view',
     ]);
   });
 });

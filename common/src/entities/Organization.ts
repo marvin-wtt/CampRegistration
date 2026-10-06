@@ -1,4 +1,5 @@
 import type { Identifiable } from './Identifiable.js';
+import type { PriceModelSummary } from './Billing.js';
 
 export type OrganizationVerificationStatus =
   'PENDING' | 'VERIFIED' | 'REJECTED';
@@ -16,6 +17,8 @@ export interface Organization extends Identifiable {
   addressZipCode: string;
   addressCity: string;
   registrationNumber: string | null;
+  vatNumber: string | null;
+  priceModelId: string;
 
   verificationNote: string | null;
   reviewNote: string | null;
@@ -25,9 +28,18 @@ export interface Organization extends Identifiable {
   updatedAt: string | null;
 }
 
+/** The administrators' listing (`view=all`). */
+export interface AdminOrganization extends Organization {
+  priceModel: PriceModelSummary;
+  /** A price change the organization hasn't answered yet. */
+  pendingOffer: { priceModel: PriceModelSummary; effectiveAt: string } | null;
+}
+
 export interface OrganizationDetails extends Organization {
   ownedEvents: number;
   ownedNewsletters: number;
+  /** Running or open bills; they block deletion until paid. */
+  unpaidBills: number;
 }
 
 export const ORGANIZATION_VERIFICATION_FIELDS = [
@@ -61,7 +73,16 @@ export interface OrganizationCreateData {
   addressZipCode: string;
   addressCity: string;
   registrationNumber?: string | null;
+  vatNumber?: string | null;
   verificationNote?: string | null;
+}
+
+export interface OrganizationCreateRequest extends OrganizationCreateData {
+  /**
+   * The default price model the creator was shown and agreed to. It must still
+   * be the default, so nobody agrees to prices they didn't see.
+   */
+  acceptedPriceModelId: string;
 }
 
 export type OrganizationUpdateData = Partial<OrganizationCreateData>;

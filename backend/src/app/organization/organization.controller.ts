@@ -5,6 +5,7 @@ import { BaseController } from '#core/base/BaseController';
 import { inject, injectable } from 'inversify';
 import { OrganizationService } from './organization.service.js';
 import {
+  AdminOrganizationResource,
   OrganizationResource,
   OrganizationDetailsResource,
 } from './organization.resource.js';
@@ -115,7 +116,7 @@ export class OrganizationController extends BaseController {
         );
 
       res.resource(
-        OrganizationResource.collection(organizations).withCursor(
+        AdminOrganizationResource.collection(organizations).withCursor(
           nextCursor,
           limit,
           total,
@@ -156,13 +157,14 @@ export class OrganizationController extends BaseController {
    * the rejected request. Kept off the list response — it is a query per row.
    */
   private async toDetailsResource(organization: Organization) {
-    const { events, newsletters } =
+    const { events, newsletters, unpaidBills } =
       await this.organizationService.countOwnedResources(organization.id);
 
     return new OrganizationDetailsResource({
       ...organization,
       ownedEvents: events,
       ownedNewsletters: newsletters,
+      unpaidBills,
     });
   }
 
@@ -206,7 +208,7 @@ export class OrganizationController extends BaseController {
     const organization = req.modelOrFail('organization');
     await req.validate(validator.destroy);
 
-    const { events, newsletters } =
+    const { events, newsletters, unpaidBills } =
       await this.organizationService.countOwnedResources(organization.id);
     if (events > 0 || newsletters > 0) {
       // Carries a stable code so the client can explain what is blocking
@@ -215,6 +217,15 @@ export class OrganizationController extends BaseController {
         httpStatus.CONFLICT,
         `The organization still owns ${events.toString()} event(s) and ${newsletters.toString()} newsletter(s). Move or delete them first.`,
         { code: 'ORGANIZATION_NOT_EMPTY' },
+      );
+    }
+
+    // Settled bills outlive the organization through their customer snapshot.
+    if (unpaidBills > 0) {
+      throw new ApiError(
+        httpStatus.CONFLICT,
+        `The organization has ${unpaidBills.toString()} unpaid bill(s). They must be paid first.`,
+        { code: 'ORGANIZATION_HAS_UNPAID_BILLS' },
       );
     }
 

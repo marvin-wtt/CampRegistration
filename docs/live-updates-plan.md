@@ -55,17 +55,18 @@ not every role may see.
 
 ### Resources
 
-| Resource         | View permission             | Notes                                                                                                                                       |
-| ---------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `camp`           | `camp.view`                 |                                                                                                                                             |
-| `registration`   | `camp.registrations.view`   |                                                                                                                                             |
-| `program_event`  | `camp.program_events.view`  |                                                                                                                                             |
-| `room`           | `camp.rooms.view`           | Bed changes emit `room updated` for the parent room (beds render embedded in rooms). Bulk reorders emit one collection `invalidated` event. |
-| `task`           | `camp.tasks.view`           |                                                                                                                                             |
-| `manager`        | `camp.managers.view`        | Not visible to VIEWER.                                                                                                                      |
-| `message`        | `camp.messages.view`        | DIRECTOR/COORDINATOR only.                                                                                                                  |
-| `file`           | `camp.files.view`           | Camp-owned files only. The async upload-completion (`READY`) status flip does **not** emit (see known gaps).                                |
-| `table_template` | `camp.table_templates.view` |                                                                                                                                             |
+| Resource         | View permission             | Notes                                                                                                                                                                                                    |
+| ---------------- | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `camp`           | `camp.view`                 |                                                                                                                                                                                                          |
+| `registration`   | `camp.registrations.view`   |                                                                                                                                                                                                          |
+| `program_event`  | `camp.program_events.view`  |                                                                                                                                                                                                          |
+| `room`           | `camp.rooms.view`           | Bed changes emit `room updated` for the parent room (beds render embedded in rooms). Bulk reorders emit one collection `invalidated` event.                                                              |
+| `task`           | `camp.tasks.view`           |                                                                                                                                                                                                          |
+| `manager`        | `camp.managers.view`        | Not visible to VIEWER.                                                                                                                                                                                   |
+| `message`        | `camp.messages.view`        | DIRECTOR/COORDINATOR only.                                                                                                                                                                               |
+| `file`           | `camp.files.view`           | Camp-owned files only. The async upload-completion (`READY`) status flip does **not** emit (see known gaps).                                                                                             |
+| `table_template` | `camp.table_templates.view` |                                                                                                                                                                                                          |
+| `billing`        | `event.billing.view`        | The event's price model and live bill. Admin writes emit (invoices, paid/void, corrections, re-billing, event price model); the scheduled open/finalize jobs and organization-wide model changes do not. |
 
 ## Event payload (invalidation-only)
 

@@ -25,14 +25,16 @@ model User {
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime? @updatedAt @map("updated_at")
 
-  eventRoles             EventManager[]
-  tokens                 Token[]
-  newsletterManagers     NewsletterManager[]
-  sentNewsletterMessages NewsletterMessage[]
-  sentMessages           Message[]
-  organizationMembers    OrganizationMember[]
-  reviewedOrganizations  Organization[]       @relation("OrganizationReviewer")
-  twoFactor              UserTwoFactor?
+  eventRoles               EventManager[]
+  tokens                   Token[]
+  newsletterManagers       NewsletterManager[]
+  sentNewsletterMessages   NewsletterMessage[]
+  sentMessages             Message[]
+  organizationMembers      OrganizationMember[]
+  reviewedOrganizations    Organization[]       @relation("OrganizationReviewer")
+  priceModelOffersMade     PriceModelOffer[]    @relation("PriceModelOfferCreator")
+  priceModelOffersAccepted PriceModelOffer[]    @relation("PriceModelOfferAcceptor")
+  twoFactor                UserTwoFactor?
 
   @@map("users")
 }
@@ -84,7 +86,9 @@ enum OrganizationVerificationStatus {
 }
 
 model Organization {
-  id                 String                         @id @unique(map: "organizations_id_unique") @default(ulid()) @db.Char(26)
+  id           String @id @unique(map: "organizations_id_unique") @default(ulid()) @db.Char(26)
+  priceModelId String @map("price_model_id") @db.Char(26)
+
   name               String                         @db.VarChar(255)
   verificationStatus OrganizationVerificationStatus @default(PENDING) @map("verification_status")
 
@@ -92,6 +96,8 @@ model Organization {
   phone              String? @db.VarChar(50)
   website            String? @db.VarChar(255)
   registrationNumber String? @map("registration_number") @db.VarChar(100)
+  /// Value-added tax identification number, printed on invoices.
+  vatNumber          String? @map("vat_number") @db.VarChar(32)
 
   addressStreet  String @map("address_street") @db.VarChar(255)
   addressZipCode String @map("address_zip_code") @db.VarChar(20)
@@ -107,14 +113,18 @@ model Organization {
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime? @updatedAt @map("updated_at")
 
-  reviewedBy  User?                    @relation("OrganizationReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "organizations_reviewed_by_user_id_foreign")
-  members     OrganizationMember[]
-  invitations OrganizationInvitation[]
-  events      Event[]
-  newsletters Newsletter[]
+  reviewedBy       User?                    @relation("OrganizationReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "organizations_reviewed_by_user_id_foreign")
+  priceModel       PriceModel               @relation(fields: [priceModelId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "organizations_price_model_id_foreign")
+  members          OrganizationMember[]
+  invitations      OrganizationInvitation[]
+  events           Event[]
+  newsletters      Newsletter[]
+  eventBills       EventBill[]
+  priceModelOffers PriceModelOffer[]
 
   @@index([verificationStatus], map: "organizations_verification_status_index")
   @@index([reviewedByUserId], map: "organizations_reviewed_by_user_id_index")
+  @@index([priceModelId], map: "organizations_price_model_id_index")
   @@map("organizations")
 }
 
@@ -179,10 +189,14 @@ model Event {
   /// ![Record<string, unknown>]
   themes                  Json             @default("{}") @db.Json
   retentionReminderSentAt DateTime?        @map("retention_reminder_sent_at")
+  /// Overrides the organization's price model for this event only.
+  priceModelId            String           @map("price_model_id") @db.Char(26)
   createdAt               DateTime?        @default(now()) @map("created_at")
   updatedAt               DateTime?        @updatedAt @map("updated_at")
 
   organization         Organization          @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "events_organization_id_foreign")
+  priceModel           PriceModel            @relation(fields: [priceModelId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "events_price_model_id_foreign")
+  bills                EventBill[]
   eventManager         EventManager[]
   registrations        Registration[]
   rooms                Room[]
@@ -199,6 +213,7 @@ model Event {
   auditLogs            AuditLog[]
 
   @@index([organizationId], map: "events_organization_id_index")
+  @@index([priceModelId], map: "events_price_model_id_index")
   @@map("events")
 }
 
@@ -365,6 +380,7 @@ model File {
   messageDeliveryId   String?      @map("message_delivery_id") @db.Char(26) // Prisma does not support morth
   messageTemplateId   String?      @map("message_template_id") @db.Char(26) // Prisma does not support morth
   newsletterMessageId String?      @map("newsletter_message_id") @db.Char(26) // Prisma does not support morth
+  invoiceId           String?      @map("invoice_id") @db.Char(26) // Prisma does not support morth
   name                String
   originalName        String       @map("original_name")
   field               String?
@@ -383,6 +399,7 @@ model File {
   messageDelivery   MessageDelivery?   @relation(fields: [messageDeliveryId], references: [id], onDelete: SetNull)
   messageTemplate   MessageTemplate?   @relation(fields: [messageTemplateId], references: [id], onDelete: SetNull)
   newsletterMessage NewsletterMessage? @relation(fields: [newsletterMessageId], references: [id], onDelete: SetNull)
+  invoice           Invoice?           @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
 
   @@map("files")
 }
@@ -785,4 +802,159 @@ model AuditDeletedUser {
 
   @@index([deletedAt], map: "audit_deleted_users_deleted_at_index")
   @@map("audit_deleted_users")
+}
+
+model PriceModel {
+  id                   String    @id @unique(map: "price_models_id_unique") @default(ulid()) @db.Char(26)
+  /// ![string | Record<string, string>]
+  name                 Json      @db.Json
+  currency             String    @default("EUR") @db.Char(3)
+  pricePerRegistration Decimal   @default(0) @map("price_per_registration") @db.Decimal(10, 2)
+  baseFee              Decimal   @default(0) @map("base_fee") @db.Decimal(10, 2)
+  /// Percent, e.g. 19.00
+  taxRate              Decimal   @default(0) @map("tax_rate") @db.Decimal(5, 2)
+  /// `true` or `NULL` — the unique index lets at most one model be the default.
+  isDefault            Boolean?  @unique(map: "price_models_is_default_unique") @map("is_default")
+  archivedAt           DateTime? @map("archived_at")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime? @updatedAt @map("updated_at")
+
+  organizations Organization[]
+  events        Event[]
+  bills         EventBill[]
+  offers        PriceModelOffer[]
+
+  @@map("price_models")
+}
+
+/// A price change for an organization. It changes the contract, so it only
+/// applies once an organization admin accepts, and never before `effectiveAt`;
+/// from then on, the organization can't create events until it accepts. Founding an organization
+/// records its agreement to the default model as an offer accepted at once.
+/// Accepted offers are the proof of what was agreed; they go with the
+/// organization, whose bills keep their own snapshot.
+model PriceModelOffer {
+  id               String    @id @unique(map: "price_model_offers_id_unique") @default(ulid()) @db.Char(26)
+  organizationId   String    @map("organization_id") @db.Char(26)
+  priceModelId     String    @map("price_model_id") @db.Char(26)
+  effectiveAt      DateTime  @map("effective_at")
+  createdByUserId  String?   @map("created_by_user_id") @db.Char(26)
+  acceptedByUserId String?   @map("accepted_by_user_id") @db.Char(26)
+  acceptedAt       DateTime? @map("accepted_at")
+  /// When the organization was moved to the model: on acceptance, or at
+  /// `effectiveAt` if accepted earlier. `null` while the change is open.
+  appliedAt        DateTime? @map("applied_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "price_model_offers_organization_id_foreign")
+  priceModel   PriceModel   @relation(fields: [priceModelId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "price_model_offers_price_model_id_foreign")
+  createdBy    User?        @relation("PriceModelOfferCreator", fields: [createdByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "price_model_offers_created_by_user_id_foreign")
+  acceptedBy   User?        @relation("PriceModelOfferAcceptor", fields: [acceptedByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "price_model_offers_accepted_by_user_id_foreign")
+
+  @@index([organizationId, acceptedAt], map: "price_model_offers_organization_id_accepted_at_index")
+  @@index([priceModelId], map: "price_model_offers_price_model_id_index")
+  @@index([createdByUserId], map: "price_model_offers_created_by_user_id_index")
+  @@index([acceptedByUserId], map: "price_model_offers_accepted_by_user_id_index")
+  @@map("price_model_offers")
+}
+
+enum EventBillStatus {
+  DRAFT
+  OPEN
+  PAID
+  VOID
+}
+
+/// An invoice document for a bill: uploaded by an administrator, or (later)
+/// issued by the app itself — the only kind that carries a `number`.
+model Invoice {
+  id               String        @id @unique(map: "invoices_id_unique") @default(ulid()) @db.Char(26)
+  eventBillId      String        @map("event_bill_id") @db.Char(26)
+  source           InvoiceSource
+  type             InvoiceType   @default(INVOICE)
+  /// The sequential invoice number of an invoice the app issued.
+  number           String?       @unique(map: "invoices_number_unique") @db.VarChar(64)
+  /// Set on a CANCELLATION only: the invoice it cancels, at most once.
+  cancelsInvoiceId String?       @unique(map: "invoices_cancels_invoice_id_unique") @map("cancels_invoice_id") @db.Char(26)
+  issuedAt         DateTime      @default(now()) @map("issued_at")
+  createdAt        DateTime      @default(now()) @map("created_at")
+
+  eventBill   EventBill @relation(fields: [eventBillId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "invoices_event_bill_id_foreign")
+  cancels     Invoice?  @relation("InvoiceCancellation", fields: [cancelsInvoiceId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "invoices_cancels_invoice_id_foreign")
+  cancelledBy Invoice?  @relation("InvoiceCancellation")
+  files       File[]
+
+  /// One invoice and at most one cancellation per bill.
+  @@unique([eventBillId, type], map: "invoices_event_bill_id_type_unique")
+  @@map("invoices")
+}
+
+enum InvoiceSource {
+  UPLOADED
+  GENERATED
+}
+
+enum InvoiceType {
+  INVOICE
+  CANCELLATION
+}
+
+model EventBill {
+  id             String  @id @unique(map: "event_bills_id_unique") @default(ulid()) @db.Char(26)
+  eventId        String? @map("event_id") @db.Char(26)
+  /// The voided bill this one was issued to replace.
+  replacesBillId String? @unique(map: "event_bills_replaces_bill_id_unique") @map("replaces_bill_id") @db.Char(26)
+  /// 0 for an event's first bill, `replaces.sequence + 1` for a replacement.
+  /// Unique per event, so an event has at most one live bill: the end of its
+  /// replacement chain. Also makes the billing jobs idempotent across instances.
+  sequence       Int     @default(0) @db.UnsignedSmallInt
+  /// NULL once the organization is deleted; the customer fields keep who was billed.
+  organizationId String? @map("organization_id") @db.Char(26)
+  priceModelId   String? @map("price_model_id") @db.Char(26)
+
+  status                    EventBillStatus @default(DRAFT)
+  /// Accepted registrations when the event started.
+  startRegistrationCount    Int             @default(0) @map("start_registration_count") @db.UnsignedInt
+  /// Accepted registrations when the event ended; null while DRAFT.
+  endRegistrationCount      Int?            @map("end_registration_count") @db.UnsignedInt
+  /// An administrator's correction; overrides the measured counts when set.
+  adjustedRegistrationCount Int?            @map("adjusted_registration_count") @db.UnsignedInt
+  /// ![string | Record<string, string>]
+  eventName                 Json            @map("event_name") @db.Json
+  eventStartAt              DateTime        @map("event_start_at") @db.DateTime(0)
+  eventEndAt                DateTime        @map("event_end_at") @db.DateTime(0)
+  eventTimezone             String          @map("event_timezone") @db.VarChar(64)
+  /// The organization as billed, frozen when the bill is finalized.
+  customerName              String?         @map("customer_name") @db.VarChar(255)
+  customerAddressStreet     String?         @map("customer_address_street") @db.VarChar(255)
+  customerAddressZipCode    String?         @map("customer_address_zip_code") @db.VarChar(20)
+  customerAddressCity       String?         @map("customer_address_city") @db.VarChar(255)
+  customerCountry           String?         @map("customer_country") @db.Char(2)
+  customerVatNumber         String?         @map("customer_vat_number") @db.VarChar(32)
+  currency                  String?         @db.Char(3)
+  pricePerRegistration      Decimal?        @map("price_per_registration") @db.Decimal(10, 2)
+  baseFee                   Decimal?        @map("base_fee") @db.Decimal(10, 2)
+  taxRate                   Decimal?        @map("tax_rate") @db.Decimal(5, 2)
+  netAmount                 Decimal?        @map("net_amount") @db.Decimal(12, 2)
+  taxAmount                 Decimal?        @map("tax_amount") @db.Decimal(12, 2)
+  grossAmount               Decimal?        @map("gross_amount") @db.Decimal(12, 2)
+  finalizedAt               DateTime?       @map("finalized_at")
+  paidAt                    DateTime?       @map("paid_at")
+  voidedAt                  DateTime?       @map("voided_at")
+  note                      String?         @db.Text
+  createdAt                 DateTime        @default(now()) @map("created_at")
+  updatedAt                 DateTime?       @updatedAt @map("updated_at")
+
+  event        Event?        @relation(fields: [eventId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "event_bills_event_id_foreign")
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "event_bills_organization_id_foreign")
+  priceModel   PriceModel?   @relation(fields: [priceModelId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "event_bills_price_model_id_foreign")
+  replaces     EventBill?    @relation("EventBillReplacement", fields: [replacesBillId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "event_bills_replaces_bill_id_foreign")
+  replacedBy   EventBill?    @relation("EventBillReplacement")
+  invoices     Invoice[]
+
+  @@unique([eventId, sequence], map: "event_bills_event_id_sequence_unique")
+  @@index([organizationId, status], map: "event_bills_organization_id_status_index")
+  @@index([status], map: "event_bills_status_index")
+  @@index([priceModelId], map: "event_bills_price_model_id_index")
+  @@map("event_bills")
 }

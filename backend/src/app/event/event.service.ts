@@ -1,4 +1,5 @@
 import type { Event, File, Prisma } from '#generated/prisma/client.js';
+import { priceModelSummarySelect } from '#app/priceModel/price-model.resource';
 import { ulid } from '#utils/ulid';
 import { dbNullable } from '#utils/db';
 import type { OptionalByKeys } from '#types/utils';
@@ -6,6 +7,7 @@ import { BaseService } from '#core/base/BaseService';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service.js';
 import { AuditService } from '#app/audit/audit.service';
+import { BillingService } from '#app/billing/billing.service';
 import { eventAuditPolicy } from '#app/event/event.audit';
 import { calculateFreePlaces, type FreePlaces } from '#app/event/event.util';
 import {
@@ -31,9 +33,11 @@ type EventSettingCreateData = OptionalByKeys<
 // query shape are the service's business — a caller never writes Prisma input.
 // `retentionReminderSentAt` sits with the timestamps rather than the payload:
 // it is written once by the retention job and never by an author.
+// `priceModelId` is billing's: only an administrator sets it, through the
+// billing module.
 export type EventCreateData = Omit<
   Event,
-  'id' | 'createdAt' | 'updatedAt' | 'retentionReminderSentAt'
+  'id' | 'createdAt' | 'updatedAt' | 'retentionReminderSentAt' | 'priceModelId'
 >;
 // Ownership moves through `moveEventToOrganization`, never a field update.
 export type EventUpdateData = Partial<Omit<EventCreateData, 'organizationId'>>;
@@ -66,6 +70,7 @@ export class EventService extends BaseService {
   constructor(
     @inject(FileService) private readonly fileService: FileService,
     @inject(AuditService) private readonly audit: AuditService,
+    @inject(BillingService) private readonly billing: BillingService,
   ) {
     super();
   }
@@ -129,8 +134,15 @@ export class EventService extends BaseService {
         select: { country: true },
       },
       organization: {
-        select: { id: true, name: true, verificationStatus: true },
+        select: {
+          id: true,
+          name: true,
+          verificationStatus: true,
+          priceModelId: true,
+        },
       },
+      // Only `AdminEventResource` outputs it.
+      priceModel: { select: priceModelSummarySelect },
       files: this.fileService.publicSlotFileInclude([
         EVENT_LOGO_SLOT,
         EVENT_BANNER_SLOT,
@@ -378,9 +390,17 @@ export class EventService extends BaseService {
     }));
 
     const event = await this.transaction(async (tx) => {
+      // The event is pinned to the model its organization is on now, so a
+      // later change of the organization's model leaves its price alone.
+      const { priceModelId } = await tx.organization.findUniqueOrThrow({
+        where: { id: data.organizationId },
+        select: { priceModelId: true },
+      });
+
       const created = await tx.event.create({
         data: {
           ...data,
+          priceModelId,
           location: dbNullable(data.location),
           form,
           eventManager: {
@@ -453,16 +473,40 @@ export class EventService extends BaseService {
     return JSON.parse(formStr) as Record<string, unknown>;
   }
 
+  /**
+   * An event that is still on its old owner's model, and not billed yet,
+   * follows its new owner's: that is who pays. A model chosen for the event
+   * itself, or one a bill already used, stays.
+   */
   async moveEventToOrganization(eventId: string, organizationId: string) {
     return this.transaction(async (tx) => {
       const before = await tx.event.findUniqueOrThrow({
         where: { id: eventId },
+        include: {
+          organization: { select: { priceModelId: true } },
+          // A running bill is priced only once the event ends.
+          _count: {
+            select: { bills: { where: { status: { not: 'DRAFT' } } } },
+          },
+        },
       });
+      const target = await tx.organization.findUniqueOrThrow({
+        where: { id: organizationId },
+        select: { priceModelId: true },
+      });
+      const followsOwner =
+        before.priceModelId === before.organization.priceModelId &&
+        before._count.bills === 0;
+
+      await this.billing.onEventMoving(eventId, organizationId);
 
       const updatedEvent = await tx.event.update({
         where: { id: eventId },
         data: {
           organization: { connect: { id: organizationId } },
+          ...(followsOwner
+            ? { priceModel: { connect: { id: target.priceModelId } } }
+            : {}),
         },
         include: { ...this.eventResourceInclude() },
       });
@@ -473,6 +517,7 @@ export class EventService extends BaseService {
     });
   }
 
+  /** Also returns whether the event's billing changed with its dates. */
   async updateEvent(event: Event, data: EventUpdateData) {
     return this.transaction(async (tx) => {
       const before = await tx.event.findUniqueOrThrow({
@@ -488,16 +533,26 @@ export class EventService extends BaseService {
         include: { ...this.eventResourceInclude() },
       });
 
+      const billingChanged = await this.billing.onEventDatesChanged(
+        before,
+        updatedEvent,
+      );
+
       await this.audit.updated(eventAuditPolicy, before, updatedEvent, {
         coalesceWithinMs: AUDIT_COALESCE_MS,
       });
 
-      return withMediaFlags(enrichFreePlaces(updatedEvent));
+      return {
+        event: withMediaFlags(enrichFreePlaces(updatedEvent)),
+        billingChanged,
+      };
     });
   }
 
   async deleteEventById(id: string) {
     await this.transaction(async (tx) => {
+      await this.billing.onEventDeleting(id);
+
       // The FK nulls `eventId` on the event's audit rows; retention purges them later.
       await tx.event.delete({ where: { id } });
 

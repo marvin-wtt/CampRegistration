@@ -1,4 +1,5 @@
 import {
+  type AdminEvent as AdminEventResourceData,
   type Event as EventResourceData,
   type EventDetails as EventDetailsResourceData,
 } from '@camp-registration/common/entities';
@@ -7,6 +8,7 @@ import { countriesToLocales } from '#utils/countriesToLocales';
 import { eventRegistrationStatus } from '#app/event/event.util';
 import { utcCarrierToNaiveDateTime } from '@camp-registration/common/utils';
 import type { EventWithRelations } from '#app/event/event.types';
+import { priceModelSummary } from '#app/priceModel/price-model.resource';
 import {
   EVENT_LOGO_SLOT,
   EVENT_BANNER_SLOT,
@@ -58,6 +60,24 @@ export class EventResource extends JsonResource<
       registrationStatus: eventRegistrationStatus(this.data),
       logo: eventLogoUrl(this.data),
       banner: eventBannerUrl(this.data),
+    };
+  }
+}
+
+/**
+ * The administrators' listing (`view=all`): the public shape plus the event's
+ * price model, which is between the platform and the organization.
+ */
+export class AdminEventResource extends JsonResource<
+  EventWithRelations,
+  AdminEventResourceData
+> {
+  transform(): AdminEventResourceData {
+    return {
+      ...new EventResource(this.data).transform(),
+      priceModel: priceModelSummary(this.data.priceModel),
+      isPriceModelOverride:
+        this.data.priceModelId !== this.data.organization.priceModelId,
     };
   }
 }

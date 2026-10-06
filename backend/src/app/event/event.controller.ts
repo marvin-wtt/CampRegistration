@@ -1,5 +1,9 @@
 import { EventService } from './event.service.js';
-import { EventResource, EventDetailsResource } from './event.resource.js';
+import {
+  AdminEventResource,
+  EventDetailsResource,
+  EventResource,
+} from './event.resource.js';
 import { FileService } from '#app/file/file.service';
 import { RegistrationService } from '#app/registration/registration.service';
 import { TableTemplateService } from '#app/tableTemplate/table-template.service';
@@ -76,8 +80,12 @@ export class EventController extends BaseController {
         },
       );
 
+    // `view=all` is administrators only (see the route guard), so it may
+    // carry what the public listing must not.
+    const Resource = query.view === 'all' ? AdminEventResource : EventResource;
+
     res.resource(
-      EventResource.collection(events).withCursor(nextCursor, limit, total),
+      Resource.collection(events).withCursor(nextCursor, limit, total),
     );
   }
 
@@ -237,31 +245,36 @@ export class EventController extends BaseController {
     const event = req.modelOrFail('event');
     const { body } = await req.validate(validator.update(event));
 
-    const updatedEvent = await this.eventService.updateEvent(event, {
-      name: body.name,
-      organizer: body.organizer,
-      contactEmail: body.contactEmail,
-      listed: body.listed,
-      registrationOpensAt: body.registrationOpensAt,
-      registrationClosesAt: body.registrationClosesAt,
-      maxParticipants: body.maxParticipants,
-      confirmationMode: body.confirmationMode,
-      startAt: body.startAt,
-      endAt: body.endAt,
-      timezone: body.timezone,
-      minAge: body.minAge,
-      maxAge: body.maxAge,
-      price: body.price,
-      location: body.location,
-      form: body.form,
-      themes: body.themes,
-    });
+    const { event: updatedEvent, billingChanged } =
+      await this.eventService.updateEvent(event, {
+        name: body.name,
+        organizer: body.organizer,
+        contactEmail: body.contactEmail,
+        listed: body.listed,
+        registrationOpensAt: body.registrationOpensAt,
+        registrationClosesAt: body.registrationClosesAt,
+        maxParticipants: body.maxParticipants,
+        confirmationMode: body.confirmationMode,
+        startAt: body.startAt,
+        endAt: body.endAt,
+        timezone: body.timezone,
+        minAge: body.minAge,
+        maxAge: body.maxAge,
+        price: body.price,
+        location: body.location,
+        form: body.form,
+        themes: body.themes,
+      });
 
     // Re-generate computed data fields
     if (body.form) {
       await this.registrationService.updateRegistrationsComputedDataByEvent(
         updatedEvent,
       );
+    }
+
+    if (billingChanged) {
+      void this.realtimeService.emitInvalidation(updatedEvent.id, 'billing');
     }
 
     void this.realtimeService.emit(

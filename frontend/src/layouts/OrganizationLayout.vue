@@ -99,6 +99,13 @@ const navigationItems = computed<NavigationItemProps<'organization'>[]>(() => {
       permission: 'organization.view',
     },
     {
+      name: 'billing',
+      label: t('nav.billing'),
+      icon: 'receipt_long',
+      to: { name: 'management.organization.billing' },
+      permission: 'organization.billing.view',
+    },
+    {
       name: 'settings',
       label: t('nav.settings'),
       icon: 'settings',
@@ -133,6 +140,7 @@ nav:
   newsletters: 'Newsletters'
   members: 'Members'
   privacy: 'Privacy'
+  billing: 'Billing'
   settings: 'Settings'
 </i18n>
 
@@ -144,6 +152,7 @@ nav:
   newsletters: 'Newsletter'
   members: 'Mitglieder'
   privacy: 'Datenschutz'
+  billing: 'Abrechnung'
   settings: 'Einstellungen'
 </i18n>
 
@@ -155,6 +164,7 @@ nav:
   newsletters: 'Newsletters'
   members: 'Membres'
   privacy: 'Confidentialité'
+  billing: 'Facturation'
   settings: 'Paramètres'
 </i18n>
 
@@ -166,6 +176,7 @@ nav:
   newsletters: 'Newslettery'
   members: 'Członkowie'
   privacy: 'Prywatność'
+  billing: 'Rozliczenia'
   settings: 'Ustawienia'
 </i18n>
 
@@ -177,5 +188,6 @@ nav:
   newsletters: 'Newslettery'
   members: 'Členové'
   privacy: 'Soukromí'
+  billing: 'Vyúčtování'
   settings: 'Nastavení'
 </i18n>

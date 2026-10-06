@@ -5,7 +5,7 @@ import { useAuthBus, useOrganizationBus } from '@/composables/bus';
 import { useProfileStore } from '@/stores/profile-store';
 import type {
   Organization,
-  OrganizationCreateData,
+  OrganizationCreateRequest,
 } from '@camp-registration/common/entities';
 
 /** The organizations the signed-in user belongs to. */
@@ -51,7 +51,7 @@ export const useOrganizationsStore = defineStore('organizations', () => {
   }
 
   async function createData(
-    createData: OrganizationCreateData,
+    createData: OrganizationCreateRequest,
   ): Promise<Organization> {
     return withProgressNotification('create', async () => {
       const organization = await api.createOrganization(createData);

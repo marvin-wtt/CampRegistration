@@ -12,6 +12,8 @@ import { ulid } from 'ulidx';
 import type { OrganizationRole } from '@camp-registration/common/permissions';
 import type { OrganizationVerificationStatus } from '@camp-registration/common/entities';
 
+import { FREE_PRICE_MODEL_ID } from '#app/priceModel/price-model.utils';
+
 const BASE = '/api/v1/organizations';
 
 const validBody = () => ({
@@ -22,6 +24,8 @@ const validBody = () => ({
   addressZipCode: '10115',
   addressCity: 'Berlin',
   registrationNumber: 'VR123456',
+  // Without another default, the server recreates the free model as it.
+  acceptedPriceModelId: FREE_PRICE_MODEL_ID,
 });
 
 const createOrganizationWithRole = async (

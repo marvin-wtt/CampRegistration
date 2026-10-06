@@ -3,6 +3,7 @@ import { Identifiable } from './Identifiable.js';
 import { ITheme } from 'survey-core';
 import { Translatable } from './Translatable.js';
 import type { OrganizationVerificationStatus } from './Organization.js';
+import type { PriceModelSummary } from './Billing.js';
 
 export const EVENT_PRESET_NAMES = ['camp', 'seminar', 'general'] as const;
 export type EventPresetName = (typeof EVENT_PRESET_NAMES)[number];
@@ -36,6 +37,17 @@ export interface Event extends Identifiable {
   registrationStatus: EventRegistrationStatus;
   logo: string | null;
   banner: string | null;
+}
+
+/**
+ * An event as the administrators' listing (`view=all`) returns it: with its
+ * price model override, which the public resource leaves out.
+ */
+export interface AdminEvent extends Event {
+  /** The model pinned on the event when it was created, or assigned since. */
+  priceModel: PriceModelSummary;
+  /** It differs from the model its organization is on now. */
+  isPriceModelOverride: boolean;
 }
 
 export interface EventDetails extends Event {
