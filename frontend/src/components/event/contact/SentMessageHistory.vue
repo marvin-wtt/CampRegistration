@@ -17,23 +17,16 @@
     <q-tooltip>{{ t('title') }}</q-tooltip>
   </q-btn>
 
-  <q-dialog
+  <responsive-dialog
     v-model="open"
-    :maximized="quasar.screen.lt.sm"
+    :snap-points="['full']"
   >
-    <q-card class="history-dialog column no-wrap">
+    <q-card
+      class="history-dialog column no-wrap"
+      :class="{ 'history-dialog--sheet': sheet }"
+    >
       <q-toolbar class="history-toolbar q-px-sm">
-        <q-btn
-          v-if="quasar.screen.lt.sm && mobileDetail"
-          flat
-          round
-          dense
-          icon="arrow_back"
-          :aria-label="t('action.back')"
-          @click="mobileDetail = false"
-        />
         <q-icon
-          v-else
           name="history"
           size="sm"
           class="q-mx-sm"
@@ -74,10 +67,7 @@
         class="history-body row no-wrap col"
       >
         <!-- List pane -->
-        <div
-          class="history-list column no-wrap"
-          :class="{ 'pane--hidden': quasar.screen.lt.sm && mobileDetail }"
-        >
+        <div class="history-list column no-wrap">
           <div class="history-search">
             <q-input
               v-model="search"
@@ -153,10 +143,10 @@
           </div>
         </div>
 
-        <!-- Detail pane -->
+        <!-- Detail pane; phones open the message in a sheet of its own. -->
         <div
+          v-if="!sheet"
           class="history-detail column no-wrap col rounded-xl"
-          :class="{ 'pane--hidden': quasar.screen.lt.sm && !mobileDetail }"
         >
           <template v-if="selected">
             <div class="history-detail__content col scroll">
@@ -176,8 +166,7 @@
                 error
                 no-caps
                 icon="delete_outline"
-                :label="quasar.screen.lt.sm ? undefined : t('action.delete')"
-                :aria-label="t('action.delete')"
+                :label="t('action.delete')"
                 @click="confirmDelete(selected)"
               />
               <m-btn
@@ -204,7 +193,7 @@
         </div>
       </div>
     </q-card>
-  </q-dialog>
+  </responsive-dialog>
 </template>
 
 <script lang="ts" setup>
@@ -214,6 +203,10 @@ import { useQuasar } from 'quasar';
 import type { Message, Registration } from '@camp-registration/common/entities';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import MessageDetailsContent from '@/components/event/contact/MessageDetailsContent.vue';
+import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
+import MessageDetailsDialog, {
+  type MessageAction,
+} from '@/components/event/contact/MessageDetailsDialog.vue';
 
 const {
   messages,
@@ -238,7 +231,9 @@ const quasar = useQuasar();
 const open = ref<boolean>(false);
 const search = ref<string>('');
 const selectedId = ref<string | null>(null);
-const mobileDetail = ref<boolean>(false);
+
+// Mirrors ResponsiveDialog's switch to a bottom sheet.
+const sheet = computed<boolean>(() => quasar.screen.lt.sm);
 
 const filtered = computed<Message[]>(() => {
   const query = search.value.trim().toLowerCase();
@@ -265,10 +260,28 @@ function hasBounce(template: Message): boolean {
 }
 
 function selectMessage(template: Message) {
-  selectedId.value = template.id;
-  if (quasar.screen.lt.sm) {
-    mobileDetail.value = true;
+  if (!sheet.value) {
+    selectedId.value = template.id;
+    return;
   }
+  // Stacked on the list, so dismissing the message is the way back.
+  quasar
+    .dialog({
+      component: MessageDetailsDialog,
+      componentProps: {
+        message: template,
+        registrations,
+        canDelete,
+        canReuse,
+      },
+    })
+    .onOk((action: MessageAction) => {
+      if (action === 'reuse') {
+        onResend(template);
+      } else {
+        confirmDelete(template);
+      }
+    });
 }
 
 function onResend(template: Message) {
@@ -300,11 +313,7 @@ function confirmDelete(template: Message) {
 
 // On wide screens auto-select the first message so the detail pane isn't empty.
 watch(open, (isOpen) => {
-  if (!isOpen) {
-    return;
-  }
-  mobileDetail.value = false;
-  if (quasar.screen.gt.xs && !selected.value) {
+  if (isOpen && !sheet.value && !selected.value) {
     selectedId.value = filtered.value[0]?.id ?? null;
   }
 });
@@ -314,10 +323,7 @@ watch(
   () => messages,
   (list) => {
     if (selectedId.value && !list.some((m) => m.id === selectedId.value)) {
-      selectedId.value = quasar.screen.gt.xs ? (list[0]?.id ?? null) : null;
-      if (quasar.screen.lt.sm) {
-        mobileDetail.value = false;
-      }
+      selectedId.value = list[0]?.id ?? null;
     }
   },
 );
@@ -325,10 +331,6 @@ watch(
 
 <style scoped>
 .history-dialog {
-  width: 960px;
-  max-width: 95vw;
-  height: 80vh;
-  max-height: 85vh;
   background: var(--md3-surface-container-low);
 }
 
@@ -436,22 +438,36 @@ watch(
   text-align: center;
 }
 
+/* The sheet draws the surface and sets the height. */
+.history-dialog--sheet {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  box-shadow: none;
+}
+
+.history-dialog--sheet .history-body {
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+}
+
 @media (min-width: 600px) {
+  .history-dialog {
+    width: 960px;
+    max-width: 95vw;
+    height: 80vh;
+    max-height: 85vh;
+  }
+
   .history-list {
     flex: 0 0 320px;
   }
 }
 
 @media (max-width: 599px) {
-  .history-list,
-  .history-detail {
+  .history-list {
     flex: 1 1 100%;
     width: 100%;
   }
-}
-
-.pane--hidden {
-  display: none !important;
 }
 </style>
 
@@ -466,7 +482,6 @@ action:
   reuse: 'Use as template'
   delete: 'Delete'
   close: 'Close'
-  back: 'Back'
 dialog:
   delete:
     title: 'Delete message'
@@ -484,7 +499,6 @@ action:
   reuse: 'Als Vorlage verwenden'
   delete: 'Löschen'
   close: 'Schließen'
-  back: 'Zurück'
 dialog:
   delete:
     title: 'Nachricht löschen'
@@ -502,7 +516,6 @@ action:
   reuse: 'Utiliser comme modèle'
   delete: 'Supprimer'
   close: 'Fermer'
-  back: 'Retour'
 dialog:
   delete:
     title: 'Supprimer le message'
@@ -520,7 +533,6 @@ action:
   reuse: 'Użyj jako szablon'
   delete: 'Usuń'
   close: 'Zamknij'
-  back: 'Wstecz'
 dialog:
   delete:
     title: 'Usuń wiadomość'
@@ -538,7 +550,6 @@ action:
   reuse: 'Použít jako šablonu'
   delete: 'Smazat'
   close: 'Zavřít'
-  back: 'Zpět'
 dialog:
   delete:
     title: 'Smazat zprávu'

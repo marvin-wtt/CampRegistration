@@ -149,13 +149,22 @@ watch(model, async (open) => {
 // Lifts the sheet above the on-screen keyboard.
 const keyboardInset = useKeyboardInset(model);
 
+// Lifted, a tall sheet would push its top — often the focused input — off
+// screen, so it shrinks to the space above the keyboard.
+const capHeight = computed<string | null>(() => {
+  if (keyboardInset.value > 0) {
+    return `${maxHeight * (window.innerHeight - keyboardInset.value)}px`;
+  }
+  return fullHeight ? null : `${maxHeight * 100}dvh`;
+});
+
 const sheetStyle = computed(() => {
   const translateY = offset.value - keyboardInset.value;
 
   return {
     ...(translateY !== 0 ? { transform: `translateY(${translateY}px)` } : {}),
     ...(snaps && height.value !== null ? { height: `${height.value}px` } : {}),
-    ...(fullHeight ? {} : { maxHeight: `${maxHeight * 100}dvh` }),
+    ...(capHeight.value ? { maxHeight: capHeight.value } : {}),
   };
 });
 

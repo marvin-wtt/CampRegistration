@@ -3,7 +3,10 @@
     flat
     bordered
     class="attention-card"
-    :class="{ 'attention-card--active': !loading && items.length > 0 }"
+    :class="{
+      'attention-card--active': !loading && items.length > 0,
+      'attention-card--empty': !loading && items.length === 0,
+    }"
   >
     <q-card-section>
       <dashboard-card-header

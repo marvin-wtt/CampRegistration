@@ -23,7 +23,6 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue';
 import { useQuasar } from 'quasar';
 import BottomSheet, { type SnapPoint } from '@/components/BottomSheet.vue';
 
@@ -37,7 +36,8 @@ const emit = defineEmits<{
 }>();
 
 const quasar = useQuasar();
-const open = ref<boolean>(false);
+// Bind with v-model, or drive it via show()/hide().
+const open = defineModel<boolean>({ default: false });
 
 defineExpose({
   show: () => (open.value = true),

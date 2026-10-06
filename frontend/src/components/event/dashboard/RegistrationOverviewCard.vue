@@ -108,7 +108,7 @@
     </q-card-section>
 
     <template v-if="stats.multiCountryEvent.value">
-      <q-separator inset />
+      <q-separator class="q-mx-md" />
       <q-card-section class="country-section">
         <div class="subsection-label">{{ t('byCountry') }}</div>
         <ul class="country-list">

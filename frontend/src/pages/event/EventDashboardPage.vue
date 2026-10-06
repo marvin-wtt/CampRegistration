@@ -420,6 +420,13 @@ const quickActions = computed<QuickAction[]>(() =>
   }
 }
 
+/* Single column: an all-clear card leading the page only pushes content down. */
+@media (max-width: 1279px) {
+  .attention-card--empty {
+    display: none;
+  }
+}
+
 @media (max-width: 599px) {
   .dashboard-shell,
   .dashboard-columns {
