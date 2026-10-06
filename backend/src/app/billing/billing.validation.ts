@@ -70,20 +70,26 @@ const update = z.object({
     .partial() satisfies ZodType<EventBillUpdateData>,
 });
 
+const billOptions = {
+  priceModelId: z.ulid().optional(),
+  adjustedRegistrationCount: registrationCount.optional(),
+  note: z.string().max(5000).nullable().optional(),
+};
+
+// Exactly one of `eventId` and `replacesBillId`.
 const store = z.object({
-  body: z
-    .object({
-      eventId: z.ulid().optional(),
-      replacesBillId: z.ulid().optional(),
-      priceModelId: z.ulid().optional(),
-      adjustedRegistrationCount: registrationCount.optional(),
-      note: z.string().max(5000).nullable().optional(),
-    })
-    .refine(
-      (body) =>
-        (body.eventId === undefined) !== (body.replacesBillId === undefined),
-      { message: 'Pass exactly one of eventId and replacesBillId' },
-    ) as unknown as ZodType<EventBillCreateData>,
+  body: z.union([
+    z.object({
+      eventId: z.ulid(),
+      replacesBillId: z.never().optional(),
+      ...billOptions,
+    }),
+    z.object({
+      replacesBillId: z.ulid(),
+      eventId: z.never().optional(),
+      ...billOptions,
+    }),
+  ]) satisfies ZodType<EventBillCreateData>,
 });
 
 const organization = z.object({

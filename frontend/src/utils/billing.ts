@@ -1,4 +1,7 @@
-import type { EventBill } from '@camp-registration/common/entities';
+import type {
+  AdminEventBill,
+  EventBill,
+} from '@camp-registration/common/entities';
 import { parseNaiveDateTime } from '@camp-registration/common/utils';
 
 function naiveDate(value: string): Date {
@@ -34,4 +37,22 @@ export function invoiceUrl(owner: InvoiceOwner, invoiceId: string): string {
         : `events/${owner.eventId}/billing`;
 
   return `${window.origin}/api/v1/${base}/invoices/${invoiceId}`;
+}
+
+/** The bill keeps its customer after the organization is deleted. */
+export function billedTo(bill: AdminEventBill): string {
+  return bill.organization?.name ?? bill.customer?.name ?? '—';
+}
+
+export function isInvoiced(bill: Pick<EventBill, 'invoices'>): boolean {
+  return bill.invoices.some((invoice) => invoice.type === 'INVOICE');
+}
+
+/** One invoice per bill; a wrong one is deleted and uploaded again. */
+export function canUploadInvoice(
+  bill: Pick<EventBill, 'status' | 'invoices'>,
+): boolean {
+  return (
+    (bill.status === 'OPEN' || bill.status === 'PAID') && !isInvoiced(bill)
+  );
 }

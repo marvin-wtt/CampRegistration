@@ -115,6 +115,7 @@ CREATE TABLE `price_model_offers` (
     `created_by_user_id` CHAR(26) NULL,
     `accepted_by_user_id` CHAR(26) NULL,
     `accepted_at` DATETIME(3) NULL,
+    `applied_at` DATETIME(3) NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
     UNIQUE INDEX `price_model_offers_id_unique`(`id`),

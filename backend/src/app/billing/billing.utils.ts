@@ -1,8 +1,4 @@
-import { Prisma } from '#generated/prisma/client.js';
-import {
-  utcCarrierToNaiveDateTime,
-  zonedInstant,
-} from '@camp-registration/common/utils';
+import { type Event, Prisma } from '#generated/prisma/client.js';
 
 /**
  * What a bill charges for: an administrator's correction if any, else the
@@ -30,6 +26,18 @@ export const customerSelect = {
   country: true,
   vatNumber: true,
 } as const;
+
+/** The event fields frozen onto a bill, so it outlives later edits. */
+export function eventSnapshot(
+  event: Pick<Event, 'name' | 'startAt' | 'endAt' | 'timezone'>,
+) {
+  return {
+    eventName: event.name,
+    eventStartAt: event.startAt,
+    eventEndAt: event.endAt,
+    eventTimezone: event.timezone,
+  };
+}
 
 export function customerSnapshot(organization: {
   name: string;
@@ -85,13 +93,4 @@ export function calculateBillAmounts(
     taxAmount,
     grossAmount: netAmount.plus(taxAmount),
   };
-}
-
-/**
- * The real instant of an event date. `startAt`/`endAt` hold the organizer's
- * wall-clock digits in a UTC-typed column, so they must never be compared with
- * `new Date()` directly.
- */
-export function eventInstant(carrier: Date, timezone: string): Date {
-  return zonedInstant(utcCarrierToNaiveDateTime(carrier), timezone);
 }

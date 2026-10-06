@@ -99,6 +99,10 @@ import {
   PRICE_MODEL_OFFER_MIN_NOTICE_DAYS,
   type PriceModel,
 } from '@camp-registration/common/entities';
+import {
+  calendarDateInTimeZone,
+  earliestPriceChangeDay,
+} from '@camp-registration/common/utils';
 import { useAPIService } from '@/services/APIService';
 import { useServiceNotifications } from '@/composables/serviceHandler';
 import { formatMoney } from '@/utils/money';
@@ -118,20 +122,7 @@ export interface PriceModelAssignResult {
 
 const MIN_NOTICE_DAYS = PRICE_MODEL_OFFER_MIN_NOTICE_DAYS;
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-/**
- * `YYYY-MM-DD`, `days` from now in the billing time zone — the same day the
- * backend's `earliestEffectiveDay` computes, whatever the viewer's zone.
- */
-function dayFromToday(days: number): string {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: BILLING_TIME_ZONE,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(new Date(Date.now() + days * DAY_MS));
-}
+const DEFAULT_NOTICE_MS = 30 * 24 * 60 * 60 * 1000;
 
 const {
   subject,
@@ -155,8 +146,13 @@ const { withErrorNotification } = useServiceNotifications('billing');
 
 const selected = ref<string | null>(current);
 const mode = ref<'offer' | 'direct'>('offer');
-const earliest = dayFromToday(MIN_NOTICE_DAYS);
-const effectiveOn = ref(dayFromToday(30));
+const earliest = earliestPriceChangeDay(new Date());
+const effectiveOn = ref(
+  calendarDateInTimeZone(
+    new Date(Date.now() + DEFAULT_NOTICE_MS),
+    BILLING_TIME_ZONE,
+  ),
+);
 
 const modeOptions = computed(() => [
   { label: t('mode.offer'), value: 'offer' },

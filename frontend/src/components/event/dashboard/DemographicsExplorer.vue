@@ -204,7 +204,7 @@
             <div
               v-if="readout"
               ref="tooltipEl"
-              class="chart-tooltip"
+              class="chart-tooltip elevation-2"
               role="status"
               :style="tooltipStyle"
             >
@@ -868,7 +868,6 @@ const chartOptions = computed<ApexOptions>(() => {
   background: var(--md3-surface-container-highest);
   border: 1px solid var(--md3-outline-variant);
   border-radius: 10px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
 }
 
 .chart-tooltip__title {

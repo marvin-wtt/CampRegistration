@@ -443,11 +443,18 @@ describe('event billing', () => {
 
     it('refuses to move a billed event into the future', async () => {
       const { event } = await openBill();
+      const before = await prisma.event.findUniqueOrThrow({
+        where: { id: event.id },
+      });
 
       const response = await moveEvent(event.id, 24 * 300, 24 * 302);
 
       expect(response.status).toBe(409);
       expect(response.body.errorCode).toBe('EVENT_ALREADY_BILLED');
+      const unchanged = await prisma.event.findUniqueOrThrow({
+        where: { id: event.id },
+      });
+      expect(unchanged.endAt).toEqual(before.endAt);
     });
 
     it('lets a billed event be corrected within the past', async () => {
@@ -491,14 +498,32 @@ describe('event billing', () => {
       expect(billed.startRegistrationCount).toBe(1);
     });
 
-    it('leaves an event moved far into the past unbilled', async () => {
+    it('refuses to move an event far into the past', async () => {
       const event = await EventFactory.create({
         timezone: 'UTC',
         startAt: moment().add(30, 'days').toDate(),
         endAt: moment().add(32, 'days').toDate(),
       });
+      await register(event.id);
 
-      expect((await moveEvent(event.id, -24 * 90, -24 * 88)).status).toBe(200);
+      const response = await moveEvent(event.id, -24 * 90, -24 * 88);
+
+      expect(response.status).toBe(409);
+      expect(response.body.errorCode).toBe('EVENT_DATES_OUT_OF_RANGE');
+      expect(
+        await prisma.eventBill.count({ where: { eventId: event.id } }),
+      ).toBe(0);
+    });
+
+    it('lets an event long past be corrected without billing it', async () => {
+      const event = await EventFactory.create({
+        timezone: 'UTC',
+        startAt: moment().subtract(90, 'days').toDate(),
+        endAt: moment().subtract(88, 'days').toDate(),
+      });
+      await register(event.id);
+
+      expect((await moveEvent(event.id, -24 * 91, -24 * 89)).status).toBe(200);
 
       expect(
         await prisma.eventBill.count({ where: { eventId: event.id } }),
@@ -1191,6 +1216,37 @@ describe('event billing', () => {
       expect(moved.priceModelId).toBe(targetModel.id);
     });
 
+    it('hands a running bill to the new owner of a moved event', async () => {
+      const event = await eventRunning();
+      await register(event.id);
+      await billing().openDraftsForStartedEvents();
+      const target = await OrganizationFactory.create();
+
+      await resolve(EventService).moveEventToOrganization(event.id, target.id);
+
+      expect((await bill(event.id)).organizationId).toBe(target.id);
+    });
+
+    it('marks an event as an override once its organization changed model', async () => {
+      const event = await eventRunning();
+      const next = await PriceModelFactory.create();
+      await prisma.organization.update({
+        where: { id: event.organizationId },
+        data: { priceModelId: next.id },
+      });
+
+      const { body } = await request()
+        .get(`/api/v1/events/${event.id}/billing`)
+        .auth(await directorToken(event.id), { type: 'bearer' })
+        .expect(200);
+
+      // It keeps the model it was created with.
+      expect(body.data).toMatchObject({
+        priceModel: { id: event.priceModelId },
+        isOverride: true,
+      });
+    });
+
     it('counts where each price model is used', async () => {
       const priceModel = await PriceModelFactory.create();
       await OrganizationFactory.create({
@@ -1292,21 +1348,29 @@ describe('event billing', () => {
         .auth(generateAccessToken(user), { type: 'bearer' })
         .expect(200);
 
-      expect(body.data.acceptedRegistrationCount).toBe(2);
+      expect(body.data.estimate.registrationCount).toBe(2);
     });
 
-    it("hides an event's price model from managers below DIRECTOR", async () => {
-      const event = await eventRunning();
-      const user = await UserFactory.create();
-      await prisma.eventManager.create({
-        data: { eventId: event.id, userId: user.id, role: 'COORDINATOR' },
-      });
+    it.each([
+      { role: 'DIRECTOR', expectedStatus: 200 },
+      { role: 'COORDINATOR', expectedStatus: 200 },
+      { role: 'COUNSELOR', expectedStatus: 403 },
+      { role: 'VIEWER', expectedStatus: 403 },
+    ] as const)(
+      "should respond with `$expectedStatus` for an event's $role",
+      async ({ role, expectedStatus }) => {
+        const event = await eventRunning();
+        const user = await UserFactory.create();
+        await prisma.eventManager.create({
+          data: { eventId: event.id, userId: user.id, role },
+        });
 
-      await request()
-        .get(`/api/v1/events/${event.id}/billing`)
-        .auth(generateAccessToken(user), { type: 'bearer' })
-        .expect(403);
-    });
+        await request()
+          .get(`/api/v1/events/${event.id}/billing`)
+          .auth(generateAccessToken(user), { type: 'bearer' })
+          .expect(expectedStatus);
+      },
+    );
 
     it('filters bills by status', async () => {
       const token = await adminToken();
@@ -1679,9 +1743,27 @@ describe('event billing', () => {
         .expect(409);
     });
 
-    it("hides a former owner's bill and invoice once the event moved", async () => {
+    it('refuses to move a billed event to another organization', async () => {
+      const { event } = await openBill();
+      const target = await OrganizationFactory.create();
+
+      await expect(
+        resolve(EventService).moveEventToOrganization(event.id, target.id),
+      ).rejects.toMatchObject({ statusCode: 409 });
+
+      const unmoved = await prisma.event.findUniqueOrThrow({
+        where: { id: event.id },
+      });
+      expect(unmoved.organizationId).toBe(event.organizationId);
+    });
+
+    it("hides a former owner's voided bill and invoice once the event moved", async () => {
       const { event, bill: openedBill } = await openBill();
       const { body } = await attachInvoice(openedBill.id);
+      await prisma.eventBill.update({
+        where: { id: openedBill.id },
+        data: { status: 'VOID', voidedAt: new Date() },
+      });
       const target = await OrganizationFactory.create();
       const targetAdmin = generateAccessToken(
         await organizationAdmin(target.id),

@@ -6,11 +6,8 @@ import {
   type EventQuery,
   type EventOrganizationUpdateData,
 } from '@camp-registration/common/entities';
-import {
-  naiveDateTimeToUtcCarrier,
-  utcCarrierToNaiveDateTime,
-  zonedInstant,
-} from '@camp-registration/common/utils';
+import { naiveDateTimeToUtcCarrier } from '@camp-registration/common/utils';
+import { eventInstant } from '#app/event/event.util';
 
 // `z.iso.datetime()` accepts a `Z` suffix regardless of `local`/`offset`, so a
 // real instant must be rejected explicitly — startAt/endAt are the organizer's
@@ -201,12 +198,10 @@ const store = z.object({
         }
       }
 
-      // Billing only sees events that run after they exist; an ended one would
-      // never be billed.
+      // An event is created to run: one already over would also never be billed.
       if (
         Intl.supportedValuesOf('timeZone').includes(val.timezone) &&
-        zonedInstant(utcCarrierToNaiveDateTime(val.endAt), val.timezone) <=
-          new Date()
+        eventInstant(val.endAt, val.timezone) <= new Date()
       ) {
         ctx.addIssue({
           code: 'custom',

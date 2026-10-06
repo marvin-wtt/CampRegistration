@@ -189,28 +189,10 @@ const notice = computed<{
   return null;
 });
 
-// A running event is billed for the higher of its start and end counts.
-const estimatedCount = computed<number>(() =>
-  Math.max(
-    data.value?.acceptedRegistrationCount ?? 0,
-    data.value?.bill?.startRegistrationCount ?? 0,
-  ),
+const estimatedCount = computed(
+  () => data.value?.estimate.registrationCount ?? 0,
 );
-
-const cents = (amount: string) => Math.round(Number(amount) * 100);
-
-// Mirrors the server's pricing in whole cents, rounding tax half-up.
-const estimate = computed<string>(() => {
-  if (!priceModel.value) {
-    return '0';
-  }
-  const { baseFee, pricePerRegistration, taxRate } = priceModel.value;
-  const net =
-    cents(baseFee) + cents(pricePerRegistration) * estimatedCount.value;
-  const tax = Math.round((net * Number(taxRate)) / 100);
-
-  return ((net + tax) / 100).toFixed(2);
-});
+const estimate = computed(() => data.value?.estimate.grossAmount ?? '0');
 
 const breakdown = computed<string>(() => {
   if (!priceModel.value) {

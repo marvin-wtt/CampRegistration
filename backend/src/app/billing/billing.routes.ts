@@ -5,7 +5,7 @@ import { resolve } from '#core/ioc/container';
 import { organizationMember } from '#app/organization/organization.guard';
 import { hasEventPermission } from '#app/event/event.guard';
 import { BillingController } from './billing.controller.js';
-import { BillingService } from './billing.service.js';
+import { BillingQueryService } from './billing-query.service.js';
 import { InvoiceService } from './invoice.service.js';
 
 // Bills are the platform's business: everything here except an organization
@@ -14,9 +14,11 @@ import { InvoiceService } from './invoice.service.js';
 
 export class EventBillRouter extends ModuleRouter {
   protected registerBindings() {
-    const billingService = resolve(BillingService);
+    const billingQueryService = resolve(BillingQueryService);
     const invoiceService = resolve(InvoiceService);
-    this.bindModel('eventBill', (_req, id) => billingService.getBillById(id));
+    this.bindModel('eventBill', (_req, id) =>
+      billingQueryService.getBillById(id),
+    );
     this.bindModel('invoice', (_req, id) => invoiceService.getInvoiceById(id));
   }
 

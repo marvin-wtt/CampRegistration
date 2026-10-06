@@ -1,9 +1,11 @@
 import httpStatus from 'http-status';
 import { inject, injectable } from 'inversify';
-import { Prisma, type Invoice } from '#generated/prisma/client.js';
+import type { Invoice } from '#generated/prisma/client.js';
+import { isUniqueViolation } from '#utils/db';
 import { BaseService } from '#core/base/BaseService';
 import ApiError from '#utils/ApiError';
 import { FileService } from '#app/file/file.service';
+import logger from '#core/logger';
 
 /**
  * Invoice files are reachable only through the invoice routes: this field
@@ -39,10 +41,7 @@ export class InvoiceService extends BaseService {
         .create({ data: { eventBillId, source: 'UPLOADED' } })
         .catch((error: unknown) => {
           // One invoice per bill: a wrong one is deleted and uploaded again.
-          if (
-            error instanceof Prisma.PrismaClientKnownRequestError &&
-            error.code === 'P2002'
-          ) {
+          if (isUniqueViolation(error)) {
             throw new ApiError(
               httpStatus.CONFLICT,
               'The bill already has an invoice',
@@ -92,9 +91,13 @@ export class InvoiceService extends BaseService {
       );
     }
 
-    for (const file of invoice.files) {
-      await this.fileService.deleteFile(file.id);
-    }
+    // The row first: its files are detached by the FK, and any left behind
+    // here is removed by the unassigned-file cleanup job.
     await this.prisma.invoice.delete({ where: { id: invoice.id } });
+    for (const file of invoice.files) {
+      await this.fileService.deleteFile(file.id).catch((error: unknown) => {
+        logger.error(`Failed to delete invoice file ${file.id}:`, error);
+      });
+    }
   }
 }

@@ -8,9 +8,11 @@ import type {
 } from '#generated/prisma/client.js';
 import { BaseService } from '#core/base/BaseService';
 import ApiError from '#utils/ApiError';
-import { dayOf } from '#utils/date';
 import { BILLING_TIME_ZONE } from '#app/billing/billing.utils';
-import { zonedInstant } from '@camp-registration/common/utils';
+import {
+  earliestPriceChangeDay,
+  zonedInstant,
+} from '@camp-registration/common/utils';
 import { PRICE_MODEL_OFFER_MIN_NOTICE_DAYS } from '@camp-registration/common/entities';
 import { costsNoMore } from './price-model.utils.js';
 
@@ -18,16 +20,16 @@ const offerInclude = { priceModel: true } as const;
 
 export type OfferWithModel = PriceModelOffer & { priceModel: PriceModel };
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-
 /**
  * Price changes are contract changes. One that makes nothing more expensive
  * applies at once; anything else becomes an offer the organization must
  * accept, announced ahead of its effective date. From then on it can't create
  * events until it accepts, while its existing events keep their model.
  *
- * An offer is pending until accepted (`acceptedAt`). Withdrawing or replacing
- * it deletes it; accepted offers stay as the record of what was agreed.
+ * An offer is pending until accepted (`acceptedAt`), and open until the
+ * organization is moved to it (`appliedAt`) — on acceptance, or on its
+ * effective date if accepted earlier. Withdrawing or replacing an open offer
+ * deletes it; applied offers stay as the record of what was agreed.
  */
 @injectable()
 export class PriceModelOfferService extends BaseService {
@@ -46,10 +48,18 @@ export class PriceModelOfferService extends BaseService {
     });
   }
 
+  /** The change not applied yet, accepted or not, if any. */
+  async getOpenOffer(organizationId: string) {
+    return this.prisma.priceModelOffer.findFirst({
+      where: { organizationId, appliedAt: null },
+      include: offerInclude,
+    });
+  }
+
   /**
    * Moves the organization to `next`: at once when nothing gets more
    * expensive, else as an offer taking effect on `effectiveOn` (`YYYY-MM-DD`
-   * in the billing time zone). Either way, it replaces a pending offer.
+   * in the billing time zone). Either way, it replaces an open offer.
    */
   async changeOrganizationModel(
     organization: Organization & { priceModel: PriceModel },
@@ -73,7 +83,7 @@ export class PriceModelOfferService extends BaseService {
 
     if (costsNoMore(organization.priceModel, next)) {
       await this.transaction(async (tx) => {
-        await this.deletePendingOffers(tx, organization.id);
+        await this.deleteOpenOffers(tx, organization.id);
         await tx.organization.update({
           where: { id: organization.id },
           data: { priceModelId: next.id },
@@ -83,7 +93,7 @@ export class PriceModelOfferService extends BaseService {
       return { outcome: 'applied', offer: null };
     }
 
-    const earliest = earliestEffectiveDay(now);
+    const earliest = earliestPriceChangeDay(now);
     if (effectiveOn < earliest) {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
@@ -92,7 +102,7 @@ export class PriceModelOfferService extends BaseService {
     }
 
     const offer = await this.transaction(async (tx) => {
-      await this.deletePendingOffers(tx, organization.id);
+      await this.deleteOpenOffers(tx, organization.id);
 
       return tx.priceModelOffer.create({
         data: {
@@ -117,29 +127,64 @@ export class PriceModelOfferService extends BaseService {
     await this.prisma.priceModelOffer.delete({ where: { id: offer.id } });
   }
 
-  /** Moves the organization to the offered model and records who agreed. */
-  async accept(offer: PriceModelOffer, userId: string) {
+  /**
+   * Records who agreed. The organization moves to the model at once if the
+   * offer is due, else on its effective date (see `applyDueOffers`).
+   */
+  async accept(offer: PriceModelOffer, userId: string, now = new Date()) {
     this.assertPending(offer);
 
     return this.transaction(async (tx) => {
       // Conditional, so a concurrent acceptance or replacement can't race it.
       const { count } = await tx.priceModelOffer.updateMany({
         where: { id: offer.id, acceptedAt: null },
-        data: { acceptedByUserId: userId, acceptedAt: new Date() },
+        data: { acceptedByUserId: userId, acceptedAt: now },
       });
       if (count === 0) {
         throw new ApiError(httpStatus.CONFLICT, 'The offer is no longer open.');
       }
-      await tx.organization.update({
-        where: { id: offer.organizationId },
-        data: { priceModelId: offer.priceModelId },
-      });
+      if (offer.effectiveAt <= now) {
+        await this.apply(tx, offer, now);
+      }
 
       return tx.priceModelOffer.findUniqueOrThrow({
         where: { id: offer.id },
         include: offerInclude,
       });
     });
+  }
+
+  /** Moves organizations to the offers they accepted ahead of their date. */
+  async applyDueOffers(now = new Date()): Promise<void> {
+    const due = await this.prisma.priceModelOffer.findMany({
+      where: {
+        acceptedAt: { not: null },
+        appliedAt: null,
+        effectiveAt: { lte: now },
+      },
+    });
+
+    for (const offer of due) {
+      await this.transaction((tx) => this.apply(tx, offer, now));
+    }
+  }
+
+  private async apply(
+    tx: Prisma.TransactionClient,
+    offer: PriceModelOffer,
+    now: Date,
+  ) {
+    // Conditional, so a replacement in the meantime wins.
+    const { count } = await tx.priceModelOffer.updateMany({
+      where: { id: offer.id, appliedAt: null },
+      data: { appliedAt: now },
+    });
+    if (count > 0) {
+      await tx.organization.update({
+        where: { id: offer.organizationId },
+        data: { priceModelId: offer.priceModelId },
+      });
+    }
   }
 
   /**
@@ -160,13 +205,13 @@ export class PriceModelOfferService extends BaseService {
     }
   }
 
-  /** Replaced, e.g. by an administrator assigning a model directly. */
-  async deletePendingOffers(
-    tx: Prisma.TransactionClient,
-    organizationId: string,
-  ) {
+  /**
+   * Replaced, e.g. by an administrator assigning a model directly — also one
+   * accepted ahead of its date, which would otherwise undo the new model.
+   */
+  async deleteOpenOffers(tx: Prisma.TransactionClient, organizationId: string) {
     await tx.priceModelOffer.deleteMany({
-      where: { organizationId, acceptedAt: null },
+      where: { organizationId, appliedAt: null },
     });
   }
 
@@ -178,12 +223,4 @@ export class PriceModelOfferService extends BaseService {
       );
     }
   }
-}
-
-/** The first day an increase may take effect, in the billing time zone. */
-export function earliestEffectiveDay(now: Date): string {
-  return dayOf(
-    new Date(now.getTime() + PRICE_MODEL_OFFER_MIN_NOTICE_DAYS * DAY_MS),
-    BILLING_TIME_ZONE,
-  );
 }

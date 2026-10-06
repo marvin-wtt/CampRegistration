@@ -39,14 +39,7 @@ export function monthOf(date: Date, timeZone: string): string {
 }
 
 /** The `YYYY-MM-DD` an instant falls on, in `timeZone`. */
-export function dayOf(date: Date, timeZone: string): string {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(date);
-}
+export { calendarDateInTimeZone as dayOf } from '@camp-registration/common/utils';
 
 /** `month` moved by `delta` months, e.g. `addMonths('2026-01', -1)` is `2025-12`. */
 export function addMonths(month: string, delta: number): string {

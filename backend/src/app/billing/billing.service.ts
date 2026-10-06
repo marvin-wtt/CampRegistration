@@ -1,6 +1,6 @@
 import httpStatus from 'http-status';
 import moment from 'moment';
-import { injectable } from 'inversify';
+import { inject, injectable } from 'inversify';
 import {
   type EventBill,
   type EventBillStatus,
@@ -11,25 +11,19 @@ import { BaseService } from '#core/base/BaseService';
 import ApiError from '#utils/ApiError';
 import logger from '#core/logger';
 import type {
-  AdminOverview,
   EventBillCreateData,
   EventBillUpdateData,
 } from '@camp-registration/common/entities';
 import {
-  BILLING_TIME_ZONE,
   billedRegistrationCount,
   customerSelect,
   customerSnapshot,
   calculateBillAmounts,
-  eventInstant,
+  eventSnapshot,
 } from './billing.utils.js';
-import {
-  billingYears,
-  summarizeByMonth,
-  summarizeTotals,
-  yearMonths,
-} from './billing.summary.js';
-import { monthOf, monthRange } from '#utils/date';
+import { BillingQueryService, billInclude } from './billing-query.service.js';
+import { eventInstant } from '#app/event/event.util';
+import { isUniqueViolation } from '#utils/db';
 
 /**
  * How long after its end an event that never got a DRAFT bill is still picked
@@ -93,25 +87,6 @@ function nextInChain(
     : null;
 }
 
-const invoiceInclude = {
-  invoices: { include: { files: true }, orderBy: { issuedAt: 'asc' } },
-} satisfies Prisma.EventBillInclude;
-
-const billInclude = {
-  organization: { select: { id: true, name: true } },
-  replacedBy: { select: { id: true } },
-  ...invoiceInclude,
-} satisfies Prisma.EventBillInclude;
-
-// A DRAFT is priced with its event's model, or the one pinned on it when the
-// event was deleted.
-const organizationBillInclude = {
-  replacedBy: { select: { id: true } },
-  priceModel: { select: { id: true, name: true } },
-  event: { select: { priceModel: { select: { id: true, name: true } } } },
-  ...invoiceInclude,
-} satisfies Prisma.EventBillInclude;
-
 const draftInclude = {
   event: {
     select: {
@@ -125,20 +100,6 @@ const draftInclude = {
   priceModel: true,
   organization: { select: { ...customerSelect, priceModel: true } },
 } satisfies Prisma.EventBillInclude;
-
-function isUniqueViolation(error: unknown, column: string): boolean {
-  if (
-    !(error instanceof Prisma.PrismaClientKnownRequestError) ||
-    error.code !== 'P2002'
-  ) {
-    return false;
-  }
-  // Depending on the driver adapter, `meta` names the index or the fields.
-  const meta = JSON.stringify(error.meta ?? {});
-  const camel = column.replace(/_(\w)/g, (_, c: string) => c.toUpperCase());
-
-  return meta.includes(column) || meta.includes(camel);
-}
 
 /** Pricing and amounts, frozen onto a bill as it is finalized. */
 function pricingSnapshot(priceModel: PriceModel, registrationCount: number) {
@@ -180,175 +141,27 @@ const ALLOWED_TRANSITIONS: Partial<Record<EventBillStatus, EventBillStatus[]>> =
     PAID: ['VOID'],
   };
 
+type DatedEvent = { startAt: Date; endAt: Date; timezone: string };
+
+function datesDiffer(before: DatedEvent, after: DatedEvent): boolean {
+  return (
+    before.startAt.getTime() !== after.startAt.getTime() ||
+    before.endAt.getTime() !== after.endAt.getTime() ||
+    before.timezone !== after.timezone
+  );
+}
+
+/**
+ * A bill's life: opened when its event starts, finalized when it ends, settled
+ * or corrected by administrators, and kept right as its event changes. The
+ * `onEvent*` hooks run inside the event service's transactions.
+ */
 @injectable()
 export class BillingService extends BaseService {
-  async getBillById(id: string) {
-    return this.prisma.eventBill.findUnique({
-      where: { id },
-      include: organizationBillInclude,
-    });
-  }
-
-  async getOverviewCounts(): Promise<AdminOverview['billing']> {
-    const [draft, open, outstanding] = await Promise.all([
-      this.prisma.eventBill.count({ where: { status: 'DRAFT' } }),
-      this.prisma.eventBill.count({ where: { status: 'OPEN' } }),
-      this.prisma.eventBill.groupBy({
-        by: ['currency'],
-        where: { status: 'OPEN', currency: { not: null } },
-        _sum: { grossAmount: true },
-        orderBy: { currency: 'asc' },
-      }),
-    ]);
-
-    return {
-      draft,
-      open,
-      outstanding: outstanding.map((row) => ({
-        currency: row.currency ?? '',
-        amount: (row._sum.grossAmount ?? new Prisma.Decimal(0)).toFixed(2),
-      })),
-    };
-  }
-
-  async queryBills(
-    filter: {
-      status?: EventBillStatus;
-      organizationId?: string;
-      search?: string;
-      month?: string;
-    } = {},
-    options: { limit?: number; cursor?: string } = {},
+  constructor(
+    @inject(BillingQueryService) private readonly query: BillingQueryService,
   ) {
-    const limit = options.limit ?? 25;
-    const finalized = filter.month
-      ? monthRange(filter.month, BILLING_TIME_ZONE)
-      : null;
-    const where: Prisma.EventBillWhereInput = {
-      status: filter.status,
-      organizationId: filter.organizationId,
-      finalizedAt: finalized
-        ? { gte: finalized.start, lt: finalized.end }
-        : undefined,
-      // The customer name still finds bills of deleted organizations.
-      OR: filter.search
-        ? [
-            { organization: { name: { contains: filter.search } } },
-            { customerName: { contains: filter.search } },
-          ]
-        : undefined,
-    };
-
-    // Over-fetch by one to detect a further page. ULIDs are time-ordered, so
-    // `id` alone is a stable newest-first cursor.
-    const items = await this.prisma.eventBill.findMany({
-      where,
-      include: billInclude,
-      take: limit + 1,
-      ...(options.cursor ? { cursor: { id: options.cursor }, skip: 1 } : {}),
-      orderBy: { id: 'desc' },
-    });
-
-    const hasMore = items.length > limit;
-    const bills = hasMore ? items.slice(0, limit) : items;
-    const nextCursor = hasMore ? (bills[bills.length - 1]?.id ?? null) : null;
-    const total = options.cursor
-      ? undefined
-      : await this.prisma.eventBill.count({ where });
-
-    return { bills, nextCursor, limit, total };
-  }
-
-  /**
-   * The end of the event's replacement chain: its only bill that counts. Only
-   * the owning organization's, so a moved event shows nothing of the former
-   * owner's billing.
-   */
-  async getLiveBillForEvent(eventId: string, organizationId: string) {
-    return this.prisma.eventBill.findFirst({
-      where: { eventId, organizationId },
-      include: { replacedBy: { select: { id: true } }, ...invoiceInclude },
-      orderBy: { sequence: 'desc' },
-    });
-  }
-
-  /**
-   * Billing per month and currency for one calendar year. "Billed" counts by
-   * the finalization (invoice) date, "received" by the payment date — both
-   * matter for VAT, depending on whether it is due on invoicing or on payment.
-   */
-  async getYearSummary(year: number, now = new Date()) {
-    const current = monthOf(now, BILLING_TIME_ZONE);
-    const { _min } = await this.prisma.eventBill.aggregate({
-      _min: { finalizedAt: true },
-    });
-    const first = _min.finalizedAt
-      ? monthOf(_min.finalizedAt, BILLING_TIME_ZONE)
-      : null;
-    const months = yearMonths(year, current, first);
-
-    const bills = months.length
-      ? await this.prisma.eventBill.findMany({
-          where: {
-            status: { not: 'VOID' },
-            currency: { not: null },
-            OR: [
-              { finalizedAt: this.monthsRange(months) },
-              { paidAt: this.monthsRange(months) },
-            ],
-          },
-          select: {
-            status: true,
-            currency: true,
-            finalizedAt: true,
-            paidAt: true,
-            netAmount: true,
-            taxAmount: true,
-            grossAmount: true,
-          },
-        })
-      : [];
-    const rows = summarizeByMonth(bills, months, BILLING_TIME_ZONE);
-
-    return {
-      year,
-      years: billingYears(first, current),
-      months: rows,
-      totals: summarizeTotals(rows),
-    };
-  }
-
-  private monthsRange(months: string[]) {
-    const { start } = monthRange(months[0] ?? '', BILLING_TIME_ZONE);
-    const { end } = monthRange(
-      months[months.length - 1] ?? '',
-      BILLING_TIME_ZONE,
-    );
-
-    return { gte: start, lt: end };
-  }
-
-  /** Every finalized bill of the months, voided ones included, oldest first. */
-  async getBillsForExport(from: string, to: string) {
-    const { start } = monthRange(from, BILLING_TIME_ZONE);
-    const { end } = monthRange(to, BILLING_TIME_ZONE);
-
-    return this.prisma.eventBill.findMany({
-      where: { finalizedAt: { gte: start, lt: end } },
-      include: {
-        organization: { select: { name: true } },
-        invoices: { select: { type: true, number: true } },
-      },
-      orderBy: [{ finalizedAt: 'asc' }, { id: 'asc' }],
-    });
-  }
-
-  async getBillsForOrganization(organizationId: string) {
-    return this.prisma.eventBill.findMany({
-      where: { organizationId },
-      include: organizationBillInclude,
-      orderBy: { id: 'desc' },
-    });
+    super();
   }
 
   /**
@@ -449,7 +262,7 @@ export class BillingService extends BaseService {
    */
   async createManualBill(data: EventBillCreateData) {
     const replaces = data.replacesBillId
-      ? await this.getBillById(data.replacesBillId)
+      ? await this.query.getBillById(data.replacesBillId)
       : null;
 
     if (data.replacesBillId) {
@@ -525,12 +338,18 @@ export class BillingService extends BaseService {
         'An event without registrations is not billed.',
       );
     }
-    const finalized = finalizedBillData(
-      organization,
-      priceModel,
-      registrationCount,
-    );
-    const { finalizedAt } = finalized;
+    // A replacement whose event was deleted keeps the voided bill's snapshot.
+    const snapshot = event
+      ? eventSnapshot(event)
+      : replaces && {
+          eventName: replaces.eventName,
+          eventStartAt: replaces.eventStartAt,
+          eventEndAt: replaces.eventEndAt,
+          eventTimezone: replaces.eventTimezone,
+        };
+    if (!snapshot) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Event not found');
+    }
 
     try {
       return await this.prisma.eventBill.create({
@@ -540,12 +359,8 @@ export class BillingService extends BaseService {
           replacesBillId: replaces?.id ?? null,
           sequence: replaces ? replaces.sequence + 1 : 0,
           ...counts,
-          eventName: event?.name ?? replaces?.eventName ?? '',
-          eventStartAt: event?.startAt ?? replaces?.eventStartAt ?? finalizedAt,
-          eventEndAt: event?.endAt ?? replaces?.eventEndAt ?? finalizedAt,
-          eventTimezone:
-            event?.timezone ?? replaces?.eventTimezone ?? 'Europe/Berlin',
-          ...finalized,
+          ...snapshot,
+          ...finalizedBillData(organization, priceModel, registrationCount),
           note: data.note ?? null,
         },
         include: billInclude,
@@ -590,19 +405,71 @@ export class BillingService extends BaseService {
     return fallback;
   }
 
-  async countAccepted(eventId: string): Promise<number> {
-    return this.prisma.registration.count({
-      where: { eventId, status: 'ACCEPTED' },
-    });
-  }
-
   private async countNow(eventId: string | null) {
-    const count = eventId ? await this.countAccepted(eventId) : 0;
+    const count = eventId ? await this.query.countAccepted(eventId) : 0;
 
     return {
       startRegistrationCount: count,
       endRegistrationCount: count,
     };
+  }
+
+  /**
+   * After an event's dates were saved: refuses a change billing can't follow
+   * (rolling the caller's transaction back), else keeps the bills right.
+   * Returns whether the event's billing changed.
+   */
+  async onEventDatesChanged(
+    before: DatedEvent,
+    after: DatedEvent & { id: string },
+    now = new Date(),
+  ): Promise<boolean> {
+    if (!datesDiffer(before, after)) {
+      return false;
+    }
+    await this.assertDatesMayChange(
+      after.id,
+      eventInstant(before.endAt, before.timezone),
+      eventInstant(after.endAt, after.timezone),
+      now,
+    );
+
+    return this.afterDatesChanged(after, now);
+  }
+
+  /**
+   * As an event moves to another organization. A finalized bill stays with
+   * the owner it billed, so a billed event only moves once an administrator
+   * voided the bill. A running one goes to the new owner, who owns the event
+   * when it ends.
+   */
+  async onEventMoving(eventId: string, organizationId: string) {
+    const billed = await this.db.eventBill.count({
+      where: { eventId, status: { in: ['OPEN', 'PAID'] } },
+    });
+    if (billed > 0) {
+      throw new ApiError(
+        httpStatus.CONFLICT,
+        'The event was already billed to its organization. Void the bill before moving the event.',
+        { code: 'EVENT_ALREADY_BILLED' },
+      );
+    }
+    await this.db.eventBill.updateMany({
+      where: { eventId, status: 'DRAFT' },
+      data: { organizationId },
+    });
+  }
+
+  /** Before an event is deleted: a running bill keeps its model to finalize. */
+  async onEventDeleting(eventId: string) {
+    const { priceModelId } = await this.db.event.findUniqueOrThrow({
+      where: { id: eventId },
+      select: { priceModelId: true },
+    });
+    await this.db.eventBill.updateMany({
+      where: { eventId, status: 'DRAFT' },
+      data: { priceModelId },
+    });
   }
 
   /**
@@ -613,7 +480,7 @@ export class BillingService extends BaseService {
    * Also refuses to move an event out of billing's reach: past the
    * {@link PAST_BILLING_DAYS} window, it would never be billed.
    */
-  async assertDatesMayChange(
+  private async assertDatesMayChange(
     eventId: string,
     previousEnd: Date,
     nextEnd: Date,
@@ -630,7 +497,7 @@ export class BillingService extends BaseService {
     if (nextEnd <= now) {
       return;
     }
-    const billed = await this.prisma.eventBill.count({
+    const billed = await this.db.eventBill.count({
       where: { eventId, status: { in: ['OPEN', 'PAID'] } },
     });
     if (billed > 0) {
@@ -652,11 +519,11 @@ export class BillingService extends BaseService {
    * - An event moved into the recent past without a bill would never be seen
    *   running by the jobs: it is billed at once, on today's registrations.
    */
-  async afterDatesChanged(
-    event: { id: string; startAt: Date; endAt: Date; timezone: string },
-    now = new Date(),
+  private async afterDatesChanged(
+    event: DatedEvent & { id: string },
+    now: Date,
   ): Promise<boolean> {
-    const live = await this.prisma.eventBill.findFirst({
+    const live = await this.db.eventBill.findFirst({
       where: { eventId: event.id, status: { not: 'VOID' } },
       select: { id: true, status: true },
     });
@@ -665,7 +532,7 @@ export class BillingService extends BaseService {
       if (eventInstant(event.startAt, event.timezone) <= now) {
         return false;
       }
-      await this.prisma.eventBill.deleteMany({
+      await this.db.eventBill.deleteMany({
         where: { id: live.id, status: 'DRAFT' },
       });
       return true;
@@ -677,7 +544,7 @@ export class BillingService extends BaseService {
       return false;
     }
 
-    const latest = await this.prisma.eventBill.findFirst({
+    const latest = await this.db.eventBill.findFirst({
       where: { eventId: event.id },
       select: latestBillSelect,
       orderBy: { sequence: 'desc' },
@@ -706,7 +573,7 @@ export class BillingService extends BaseService {
     eventId: string,
     place: { sequence: number; replacesBillId: string | null },
   ): Promise<boolean> {
-    const event = await this.prisma.event.findUniqueOrThrow({
+    const event = await this.db.event.findUniqueOrThrow({
       where: { id: eventId },
       include: {
         priceModel: true,
@@ -714,22 +581,19 @@ export class BillingService extends BaseService {
       },
     });
     // Its start is past, so one count stands for both.
-    const accepted = await this.countAccepted(eventId);
+    const accepted = await this.query.countAccepted(eventId);
     if (accepted === 0) {
       return false;
     }
 
-    await this.prisma.eventBill.create({
+    await this.db.eventBill.create({
       data: {
         eventId,
         ...place,
         organizationId: event.organizationId,
         startRegistrationCount: accepted,
         endRegistrationCount: accepted,
-        eventName: event.name,
-        eventStartAt: event.startAt,
-        eventEndAt: event.endAt,
-        eventTimezone: event.timezone,
+        ...eventSnapshot(event),
         ...finalizedBillData(event.organization, event.priceModel, accepted),
       },
     });
@@ -809,18 +673,12 @@ export class BillingService extends BaseService {
               ...place,
               organizationId: event.organizationId,
               startRegistrationCount: accepted,
-              eventName: event.name,
-              eventStartAt: event.startAt,
-              eventEndAt: event.endAt,
-              eventTimezone: event.timezone,
+              ...eventSnapshot(event),
             },
           });
         });
       } catch (error: unknown) {
-        if (
-          error instanceof Prisma.PrismaClientKnownRequestError &&
-          error.code === 'P2002'
-        ) {
+        if (isUniqueViolation(error)) {
           continue;
         }
         logger.error(`Failed to open the bill for event ${event.id}:`, error);
@@ -911,14 +769,7 @@ export class BillingService extends BaseService {
           await tx.eventBill.updateMany({
             where: { id: bill.id, status: 'DRAFT' },
             data: {
-              ...(bill.event
-                ? {
-                    eventName: bill.event.name,
-                    eventStartAt: bill.event.startAt,
-                    eventEndAt: bill.event.endAt,
-                    eventTimezone: bill.event.timezone,
-                  }
-                : {}),
+              ...(bill.event ? eventSnapshot(bill.event) : {}),
               endRegistrationCount,
               ...finalizedBillData(organization, priceModel, registrationCount),
             },

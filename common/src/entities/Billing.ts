@@ -306,6 +306,12 @@ export interface EventBilling {
   isOverride: boolean;
   /** The event's live bill — the end of its replacement chain — if any. */
   bill: EventBill | null;
-  /** Accepted registrations now; organization admins cannot list them. */
-  acceptedRegistrationCount: number;
+  /**
+   * What the event would be billed if it ended now, priced by the server.
+   * Organization admins cannot list registrations, so the count comes here.
+   */
+  estimate: {
+    registrationCount: number;
+    grossAmount: string;
+  };
 }

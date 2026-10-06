@@ -3,8 +3,8 @@ import { Prisma, type EventBill } from '#generated/prisma/client';
 import {
   billedRegistrationCount,
   calculateBillAmounts,
-  eventInstant,
 } from '#app/billing/billing.utils';
+import { eventInstant } from '#app/event/event.util';
 import { BillingService } from '#app/billing/billing.service';
 
 const pricing = (price: string, baseFee: string, taxRate: string) => ({
@@ -95,7 +95,7 @@ describe('eventInstant', () => {
 });
 
 describe('BillingService.updateBill', () => {
-  const service = new BillingService();
+  const service = new BillingService({} as never);
   const bill = (status: EventBill['status']) =>
     ({ id: '01K6B0000000000000000BILL1', status }) as EventBill;
 

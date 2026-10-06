@@ -7,6 +7,7 @@ import { BaseService } from '#core/base/BaseService';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service.js';
 import { AuditService } from '#app/audit/audit.service';
+import { BillingService } from '#app/billing/billing.service';
 import { eventAuditPolicy } from '#app/event/event.audit';
 import { calculateFreePlaces, type FreePlaces } from '#app/event/event.util';
 import {
@@ -69,6 +70,7 @@ export class EventService extends BaseService {
   constructor(
     @inject(FileService) private readonly fileService: FileService,
     @inject(AuditService) private readonly audit: AuditService,
+    @inject(BillingService) private readonly billing: BillingService,
   ) {
     super();
   }
@@ -496,6 +498,8 @@ export class EventService extends BaseService {
         before.priceModelId === before.organization.priceModelId &&
         before._count.bills === 0;
 
+      await this.billing.onEventMoving(eventId, organizationId);
+
       const updatedEvent = await tx.event.update({
         where: { id: eventId },
         data: {
@@ -506,12 +510,6 @@ export class EventService extends BaseService {
         },
         include: { ...this.eventResourceInclude() },
       });
-      // A running bill goes to whoever owns the event when it ends; finalized
-      // ones stay with the owner they billed.
-      await tx.eventBill.updateMany({
-        where: { eventId, status: 'DRAFT' },
-        data: { organizationId },
-      });
 
       await this.audit.updated(eventAuditPolicy, before, updatedEvent);
 
@@ -519,6 +517,7 @@ export class EventService extends BaseService {
     });
   }
 
+  /** Also returns whether the event's billing changed with its dates. */
   async updateEvent(event: Event, data: EventUpdateData) {
     return this.transaction(async (tx) => {
       const before = await tx.event.findUniqueOrThrow({
@@ -534,26 +533,25 @@ export class EventService extends BaseService {
         include: { ...this.eventResourceInclude() },
       });
 
+      const billingChanged = await this.billing.onEventDatesChanged(
+        before,
+        updatedEvent,
+      );
+
       await this.audit.updated(eventAuditPolicy, before, updatedEvent, {
         coalesceWithinMs: AUDIT_COALESCE_MS,
       });
 
-      return withMediaFlags(enrichFreePlaces(updatedEvent));
+      return {
+        event: withMediaFlags(enrichFreePlaces(updatedEvent)),
+        billingChanged,
+      };
     });
   }
 
   async deleteEventById(id: string) {
     await this.transaction(async (tx) => {
-      // A running bill loses its event, so it keeps the event's model to be
-      // finalized with.
-      const { priceModelId } = await tx.event.findUniqueOrThrow({
-        where: { id },
-        select: { priceModelId: true },
-      });
-      await tx.eventBill.updateMany({
-        where: { eventId: id, status: 'DRAFT' },
-        data: { priceModelId },
-      });
+      await this.billing.onEventDeleting(id);
 
       // The FK nulls `eventId` on the event's audit rows; retention purges them later.
       await tx.event.delete({ where: { id } });

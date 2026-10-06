@@ -1,6 +1,19 @@
 import type { EventRegistrationStatus } from '@camp-registration/common/entities';
 import type { Event } from '#generated/prisma/client';
 import { translateObject } from '#utils/translateObject';
+import {
+  utcCarrierToNaiveDateTime,
+  zonedInstant,
+} from '@camp-registration/common/utils';
+
+/**
+ * The real instant of an event date. `startAt`/`endAt` hold the organizer's
+ * wall-clock digits in a UTC-typed column, so they must never be compared with
+ * `new Date()` directly.
+ */
+export function eventInstant(carrier: Date, timezone: string): Date {
+  return zonedInstant(utcCarrierToNaiveDateTime(carrier), timezone);
+}
 
 /** The event's translatable fields resolved to one locale, for templates. */
 export function translateEventContext(event: Event, locale: string) {

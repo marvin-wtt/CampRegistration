@@ -9,6 +9,7 @@ import { BILLING_TIME_ZONE } from './billing.utils.js';
 import { monthOf } from '#utils/date';
 import type { BillingSummary } from '@camp-registration/common/entities';
 import { BillingService } from './billing.service.js';
+import { BillingQueryService } from './billing-query.service.js';
 import { PriceModelService } from '#app/priceModel/price-model.service';
 import { PriceModelOfferService } from '#app/priceModel/price-model-offer.service';
 import { FileService } from '#app/file/file.service';
@@ -31,6 +32,8 @@ import {
 export class BillingController extends BaseController {
   constructor(
     @inject(BillingService) private readonly billingService: BillingService,
+    @inject(BillingQueryService)
+    private readonly billingQueryService: BillingQueryService,
     @inject(PriceModelService)
     private readonly priceModelService: PriceModelService,
     @inject(InvoiceService) private readonly invoiceService: InvoiceService,
@@ -50,7 +53,7 @@ export class BillingController extends BaseController {
     const { query } = await req.validate(validator.index);
 
     const { bills, nextCursor, limit, total } =
-      await this.billingService.queryBills(
+      await this.billingQueryService.queryBills(
         {
           status: query?.status,
           organizationId: query?.organizationId,
@@ -74,7 +77,7 @@ export class BillingController extends BaseController {
     const year =
       query?.year ?? Number(monthOf(new Date(), BILLING_TIME_ZONE).slice(0, 4));
     const summary: BillingSummary =
-      await this.billingService.getYearSummary(year);
+      await this.billingQueryService.getYearSummary(year);
 
     res.json({ data: summary });
   }
@@ -82,7 +85,7 @@ export class BillingController extends BaseController {
   /** CSV for the platform's bookkeeping, one line per finalized bill. */
   async export(req: Request, res: Response) {
     const { query } = await req.validate(validator.exportBills);
-    const bills = await this.billingService.getBillsForExport(
+    const bills = await this.billingQueryService.getBillsForExport(
       query.from,
       query.to,
     );
@@ -125,8 +128,8 @@ export class BillingController extends BaseController {
 
     const [priceModel, offer, bills] = await Promise.all([
       this.priceModelService.getPriceModelById(organization.priceModelId),
-      this.priceModelOfferService.getPendingOffer(organization.id),
-      this.billingService.getBillsForOrganization(organization.id),
+      this.priceModelOfferService.getOpenOffer(organization.id),
+      this.billingQueryService.getBillsForOrganization(organization.id),
     ]);
     if (!priceModel) {
       throw new ApiError(httpStatus.NOT_FOUND, 'Price model not found');
@@ -141,8 +144,11 @@ export class BillingController extends BaseController {
     const event = req.modelOrFail('event');
     const [billing, bill, acceptedRegistrationCount] = await Promise.all([
       this.priceModelService.getForEvent(event.id),
-      this.billingService.getLiveBillForEvent(event.id, event.organizationId),
-      this.billingService.countAccepted(event.id),
+      this.billingQueryService.getLiveBillForEvent(
+        event.id,
+        event.organizationId,
+      ),
+      this.billingQueryService.countAccepted(event.id),
     ]);
 
     res.resource(

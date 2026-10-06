@@ -5,8 +5,6 @@ import {
   EventResource,
 } from './event.resource.js';
 import { FileService } from '#app/file/file.service';
-import { BillingService } from '#app/billing/billing.service';
-import { eventInstant } from '#app/billing/billing.utils';
 import { RegistrationService } from '#app/registration/registration.service';
 import { TableTemplateService } from '#app/tableTemplate/table-template.service';
 import httpStatus from 'http-status';
@@ -46,8 +44,6 @@ export class EventController extends BaseController {
     private readonly privacyNoticeService: PrivacyNoticeService,
     @inject(RealtimeService)
     private readonly realtimeService: RealtimeService,
-    @inject(BillingService)
-    private readonly billingService: BillingService,
   ) {
     super();
   }
@@ -248,44 +244,27 @@ export class EventController extends BaseController {
   async update(req: Request, res: Response) {
     const event = req.modelOrFail('event');
     const { body } = await req.validate(validator.update(event));
-    // The edit page always sends every field, so compare against what's stored.
-    const datesChange =
-      (body.startAt !== undefined &&
-        body.startAt.getTime() !== event.startAt.getTime()) ||
-      (body.endAt !== undefined &&
-        body.endAt.getTime() !== event.endAt.getTime()) ||
-      (body.timezone !== undefined && body.timezone !== event.timezone);
 
-    if (datesChange) {
-      await this.billingService.assertDatesMayChange(
-        event.id,
-        eventInstant(event.endAt, event.timezone),
-        eventInstant(
-          body.endAt ?? event.endAt,
-          body.timezone ?? event.timezone,
-        ),
-      );
-    }
-
-    const updatedEvent = await this.eventService.updateEvent(event, {
-      name: body.name,
-      organizer: body.organizer,
-      contactEmail: body.contactEmail,
-      listed: body.listed,
-      registrationOpensAt: body.registrationOpensAt,
-      registrationClosesAt: body.registrationClosesAt,
-      maxParticipants: body.maxParticipants,
-      confirmationMode: body.confirmationMode,
-      startAt: body.startAt,
-      endAt: body.endAt,
-      timezone: body.timezone,
-      minAge: body.minAge,
-      maxAge: body.maxAge,
-      price: body.price,
-      location: body.location,
-      form: body.form,
-      themes: body.themes,
-    });
+    const { event: updatedEvent, billingChanged } =
+      await this.eventService.updateEvent(event, {
+        name: body.name,
+        organizer: body.organizer,
+        contactEmail: body.contactEmail,
+        listed: body.listed,
+        registrationOpensAt: body.registrationOpensAt,
+        registrationClosesAt: body.registrationClosesAt,
+        maxParticipants: body.maxParticipants,
+        confirmationMode: body.confirmationMode,
+        startAt: body.startAt,
+        endAt: body.endAt,
+        timezone: body.timezone,
+        minAge: body.minAge,
+        maxAge: body.maxAge,
+        price: body.price,
+        location: body.location,
+        form: body.form,
+        themes: body.themes,
+      });
 
     // Re-generate computed data fields
     if (body.form) {
@@ -294,10 +273,7 @@ export class EventController extends BaseController {
       );
     }
 
-    if (
-      datesChange &&
-      (await this.billingService.afterDatesChanged(updatedEvent))
-    ) {
+    if (billingChanged) {
       void this.realtimeService.emitInvalidation(updatedEvent.id, 'billing');
     }
 

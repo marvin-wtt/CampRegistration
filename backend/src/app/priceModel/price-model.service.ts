@@ -3,6 +3,7 @@ import { inject, injectable } from 'inversify';
 import { Prisma, type PriceModel } from '#generated/prisma/client.js';
 import { BaseService } from '#core/base/BaseService';
 import ApiError from '#utils/ApiError';
+import { isUniqueViolation } from '#utils/db';
 import type {
   PriceModelCreateData,
   PriceModelUpdateData,
@@ -82,10 +83,7 @@ export class PriceModelService extends BaseService {
         update: { isDefault: true, archivedAt: null },
       });
     } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2002'
-      ) {
+      if (isUniqueViolation(error)) {
         return this.db.priceModel.findUniqueOrThrow({
           where: { isDefault: true },
         });
@@ -118,11 +116,11 @@ export class PriceModelService extends BaseService {
         'The default price model cannot be archived.',
       );
     }
-    // Accepting would assign an archived model; refusing would leave the
-    // organization unable to create events once the offer is due.
+    // An open offer would still move an organization onto it; refusing to
+    // would leave one unable to create events once the offer is due.
     if (data.archived && !priceModel.archivedAt) {
       const pending = await this.prisma.priceModelOffer.count({
-        where: { priceModelId: priceModel.id, acceptedAt: null },
+        where: { priceModelId: priceModel.id, appliedAt: null },
       });
       if (pending > 0) {
         throw new ApiError(
@@ -252,7 +250,7 @@ export class PriceModelService extends BaseService {
         data: { priceModelId: priceModel.id },
       });
       // Assigned directly, e.g. agreed outside the app: a pending offer is moot.
-      await this.offers.deletePendingOffers(tx, organizationId);
+      await this.offers.deleteOpenOffers(tx, organizationId);
     });
   }
 

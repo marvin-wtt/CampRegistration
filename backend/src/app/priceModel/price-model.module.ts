@@ -16,6 +16,7 @@ import {
 import type { ScopedPermissions } from '@camp-registration/common/permissions';
 import { MailableRegistry } from '#core/mail/mail.registry';
 import { resolve } from '#core/ioc/container';
+import type { JobScheduler } from '#core/scheduler/JobScheduler';
 
 export class PriceModelModule implements AppModule {
   bindContainers(options: BindOptions) {
@@ -44,6 +45,13 @@ export class PriceModelModule implements AppModule {
     router.useRouter(
       '/events/:eventId/price-model',
       new EventPriceModelRouter(),
+    );
+  }
+
+  registerJobs(scheduler: JobScheduler): void {
+    // Offers take effect at midnight in the billing time zone.
+    scheduler.schedule('price-model-apply-offers', '*/15 * * * *', () =>
+      resolve(PriceModelOfferService).applyDueOffers(),
     );
   }
 

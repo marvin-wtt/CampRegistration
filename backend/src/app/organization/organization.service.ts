@@ -129,6 +129,7 @@ export class OrganizationService extends BaseService {
             createdByUserId: userId,
             acceptedByUserId: userId,
             acceptedAt: now,
+            appliedAt: now,
           },
         },
       },

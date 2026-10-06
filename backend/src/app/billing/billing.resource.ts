@@ -21,7 +21,10 @@ import {
   PriceModelOfferResource,
   PriceModelResource,
 } from '#app/priceModel/price-model.resource';
-import { billedRegistrationCount } from './billing.utils.js';
+import {
+  billedRegistrationCount,
+  calculateBillAmounts,
+} from './billing.utils.js';
 
 type InvoiceWithFiles = Invoice & { files: File[] };
 
@@ -197,11 +200,24 @@ export class EventBillingResource extends JsonResource<
   EventBillingData
 > {
   transform(): EventBillingData {
+    const { priceModel, bill, acceptedRegistrationCount } = this.data;
+    // Counted now as the end count, beside a running bill's start count.
+    const registrationCount = billedRegistrationCount({
+      startRegistrationCount: bill?.startRegistrationCount ?? 0,
+      endRegistrationCount: acceptedRegistrationCount,
+      adjustedRegistrationCount: null,
+    });
+
     return {
-      priceModel: new PriceModelResource(this.data.priceModel).transform(),
+      priceModel: new PriceModelResource(priceModel).transform(),
       isOverride: this.data.isOverride,
-      bill: this.data.bill && new EventBillResource(this.data.bill).transform(),
-      acceptedRegistrationCount: this.data.acceptedRegistrationCount,
+      bill: bill && new EventBillResource(bill).transform(),
+      estimate: {
+        registrationCount,
+        grossAmount: money(
+          calculateBillAmounts(priceModel, registrationCount).grossAmount,
+        ),
+      },
     };
   }
 }

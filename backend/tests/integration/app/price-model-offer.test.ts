@@ -14,6 +14,8 @@ import {
 } from './fixtures/event.fixtures.js';
 import { dayOf } from '#utils/date';
 import { BILLING_TIME_ZONE } from '#app/billing/billing.utils';
+import { resolve } from '#core/ioc/container';
+import { PriceModelOfferService } from '#app/priceModel/price-model-offer.service';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -100,27 +102,101 @@ describe('price model offers', () => {
     expect(response.status).toBe(400);
   });
 
-  it('switches the organization once its admin accepts, recording who did', async () => {
+  const accept = (organizationId: string, offerId: string, token: string) =>
+    request()
+      .post(
+        `/api/v1/organizations/${organizationId}/price-model-offers/${offerId}/accept`,
+      )
+      .auth(token, { type: 'bearer' });
+
+  it('records who accepted, but waits for the effective date', async () => {
     const { organization, owner, ownerToken } = await organizationOn(3);
-    const { next, response } = await offer(organization.id, 5);
+    const { response } = await offer(organization.id, 5);
     const offerId = response.body.data.offer.id;
 
-    await request()
-      .post(
-        `/api/v1/organizations/${organization.id}/price-model-offers/${offerId}/accept`,
-      )
-      .auth(ownerToken, { type: 'bearer' })
-      .expect(200);
+    await accept(organization.id, offerId, ownerToken).expect(200);
 
-    const updated = await prisma.organization.findUniqueOrThrow({
+    const unchanged = await prisma.organization.findUniqueOrThrow({
       where: { id: organization.id },
     });
-    expect(updated.priceModelId).toBe(next.id);
+    expect(unchanged.priceModelId).toBe(organization.priceModelId);
     const accepted = await prisma.priceModelOffer.findUniqueOrThrow({
       where: { id: offerId },
     });
     expect(accepted.acceptedByUserId).toBe(owner.id);
     expect(accepted.acceptedAt).not.toBeNull();
+    expect(accepted.appliedAt).toBeNull();
+  });
+
+  it('switches the organization on the effective date of an accepted offer', async () => {
+    const { organization, ownerToken } = await organizationOn(3);
+    const { next, response } = await offer(organization.id, 5);
+    const offerId = response.body.data.offer.id;
+    await accept(organization.id, offerId, ownerToken).expect(200);
+    await prisma.priceModelOffer.update({
+      where: { id: offerId },
+      data: { effectiveAt: new Date(Date.now() - DAY_MS) },
+    });
+
+    await resolve(PriceModelOfferService).applyDueOffers();
+
+    const updated = await prisma.organization.findUniqueOrThrow({
+      where: { id: organization.id },
+    });
+    expect(updated.priceModelId).toBe(next.id);
+  });
+
+  it('switches the organization at once when a due offer is accepted', async () => {
+    const { organization, ownerToken } = await organizationOn(3);
+    const { next, response } = await offer(organization.id, 5);
+    const offerId = response.body.data.offer.id;
+    await prisma.priceModelOffer.update({
+      where: { id: offerId },
+      data: { effectiveAt: new Date(Date.now() - DAY_MS) },
+    });
+
+    await accept(organization.id, offerId, ownerToken).expect(200);
+
+    const updated = await prisma.organization.findUniqueOrThrow({
+      where: { id: organization.id },
+    });
+    expect(updated.priceModelId).toBe(next.id);
+  });
+
+  it('drops an accepted offer once an administrator assigns a model', async () => {
+    const { organization, ownerToken } = await organizationOn(3);
+    const { response } = await offer(organization.id, 5);
+    const offerId = response.body.data.offer.id;
+    await accept(organization.id, offerId, ownerToken).expect(200);
+    const assigned = await PriceModelFactory.create({
+      pricePerRegistration: 4,
+    });
+
+    await request()
+      .put(`/api/v1/organizations/${organization.id}/price-model`)
+      .send({ priceModelId: assigned.id })
+      .auth(await adminToken(), { type: 'bearer' })
+      .expect(200);
+    await prisma.priceModelOffer.updateMany({
+      data: { effectiveAt: new Date(Date.now() - DAY_MS) },
+    });
+    await resolve(PriceModelOfferService).applyDueOffers();
+
+    const updated = await prisma.organization.findUniqueOrThrow({
+      where: { id: organization.id },
+    });
+    expect(updated.priceModelId).toBe(assigned.id);
+  });
+
+  it('refuses to archive a model while it is offered', async () => {
+    const { organization } = await organizationOn(3);
+    const { next } = await offer(organization.id, 5);
+
+    await request()
+      .patch(`/api/v1/price-models/${next.id}`)
+      .send({ archived: true })
+      .auth(await adminToken(), { type: 'bearer' })
+      .expect(409);
   });
 
   it('lets only organization admins answer', async () => {
@@ -158,6 +234,20 @@ describe('price model offers', () => {
     });
   });
 
+  it('keeps showing an accepted offer until it takes effect', async () => {
+    const { organization, ownerToken } = await organizationOn(3);
+    const { next, response } = await offer(organization.id, 5);
+    await accept(organization.id, response.body.data.offer.id, ownerToken);
+
+    const { body } = await request()
+      .get(`/api/v1/organizations/${organization.id}/billing`)
+      .auth(ownerToken, { type: 'bearer' })
+      .expect(200);
+
+    expect(body.data.offer.acceptedAt).not.toBeNull();
+    expect(body.data.offer.priceModel.id).toBe(next.id);
+  });
+
   describe('creating events', () => {
     async function dueOffer(organizationId: string) {
       const { response } = await offer(organizationId, 5);
@@ -191,12 +281,7 @@ describe('price model offers', () => {
       const { organization, ownerToken } = await organizationOn(3);
       const offerId = await dueOffer(organization.id);
 
-      await request()
-        .post(
-          `/api/v1/organizations/${organization.id}/price-model-offers/${offerId}/accept`,
-        )
-        .auth(ownerToken, { type: 'bearer' })
-        .expect(200);
+      await accept(organization.id, offerId, ownerToken).expect(200);
       await createEvent(ownerToken).expect(201);
     });
 

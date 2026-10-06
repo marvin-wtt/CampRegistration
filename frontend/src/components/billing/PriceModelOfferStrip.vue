@@ -1,30 +1,24 @@
 <template>
   <div class="offer-strip">
     <q-icon
-      :name="due ? 'block' : 'schedule'"
-      :class="due ? 'offer-strip__icon--due' : 'offer-strip__icon--pending'"
+      :name="state.icon"
+      :class="`offer-strip__icon--${state.tone}`"
       size="22px"
       class="offer-strip__icon"
     />
     <div class="offer-strip__text">
       <div
-        :class="due ? 'offer-strip__icon--due' : 'offer-strip__icon--pending'"
+        :class="`offer-strip__icon--${state.tone}`"
         class="text-subtitle2"
       >
-        {{ due ? t('title.due', { date }) : t('title.pending', { date }) }}
+        {{ state.title }}
       </div>
       <div class="text-body2 text-on-surface-variant">
-        {{
-          canAccept
-            ? due
-              ? t('blocked')
-              : t('notice', { date })
-            : t('adminsOnly')
-        }}
+        {{ state.text }}
       </div>
     </div>
     <q-btn
-      v-if="canAccept"
+      v-if="canAccept && !accepted"
       :label="t('action.accept')"
       :loading="busy"
       color="primary"
@@ -47,8 +41,9 @@ import { useServiceNotifications } from '@/composables/serviceHandler';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 
 /**
- * The top of the price model card while a price change awaits acceptance:
- * what is due when, and the accept action for those allowed to agree.
+ * The top of the price model card while a price change is open: what is due
+ * when, and the accept action for those allowed to agree. An offer accepted
+ * ahead of its date stays shown until it takes effect.
  */
 const { offer, organizationId, organizationName, canAccept } = defineProps<{
   offer: PriceModelOffer;
@@ -70,17 +65,45 @@ const { withProgressNotification } = useServiceNotifications('billing');
 
 const busy = ref(false);
 
+const accepted = computed(() => offer.acceptedAt !== null);
 const due = computed(() => new Date(offer.effectiveAt) <= new Date());
 const date = computed(() => d(new Date(offer.effectiveAt), 'short'));
+
+const state = computed(() => {
+  const params = { date: date.value };
+  if (accepted.value) {
+    return {
+      tone: 'accepted',
+      icon: 'event_available',
+      title: t('title.accepted', params),
+      text: t('acceptedNotice', params),
+    };
+  }
+  if (due.value) {
+    return {
+      tone: 'due',
+      icon: 'block',
+      title: t('title.due', params),
+      text: canAccept ? t('blocked') : t('adminsOnly'),
+    };
+  }
+  return {
+    tone: 'pending',
+    icon: 'schedule',
+    title: t('title.pending', params),
+    text: canAccept ? t('notice', params) : t('adminsOnly'),
+  };
+});
 
 /** Agreeing changes the contract, so it is confirmed explicitly. */
 function confirmAccept() {
   quasar
     .dialog({
       title: t('confirm.title'),
-      message: t('confirm.message', {
+      message: t(due.value ? 'confirm.message' : 'confirm.messageFrom', {
         organization: organizationName,
         model: to(offer.priceModel.name),
+        date: date.value,
       }),
       cancel: {
         label: t('confirm.cancel'),
@@ -143,6 +166,10 @@ function accept() {
   &--due {
     color: var(--md3-error);
   }
+
+  &--accepted {
+    color: var(--md3-positive);
+  }
 }
 
 .offer-strip__action {
@@ -154,14 +181,17 @@ function accept() {
 title:
   pending: 'New prices from {date} – your agreement is needed'
   due: 'New prices since {date} – no new events until you agree'
+  accepted: 'New prices from {date} – agreed'
 notice: "Until you agree, you can't create new events from {date} on. Events you already created keep their prices."
 blocked: 'Agree to the new prices to create events again. Events you already created keep their prices.'
 adminsOnly: 'An administrator of the organization has to agree to the new prices.'
+acceptedNotice: 'Events created from {date} on use the new prices. Events created before keep their prices.'
 action:
   accept: 'Agree to new prices'
 confirm:
   title: 'Agree to new prices'
   message: '{organization} agrees to the price model {model}. It applies to all events created from now on.'
+  messageFrom: '{organization} agrees to the price model {model}. It applies to all events created from {date} on.'
   cancel: 'Cancel'
   ok: 'Agree'
 </i18n>
@@ -170,14 +200,17 @@ confirm:
 title:
   pending: 'Neue Preise ab {date} – deine Zustimmung ist nötig'
   due: 'Neue Preise seit {date} – keine neuen Veranstaltungen bis zur Zustimmung'
+  accepted: 'Neue Preise ab {date} – zugestimmt'
 notice: 'Solange du nicht zustimmst, kannst du ab dem {date} keine neuen Veranstaltungen anlegen. Bereits angelegte Veranstaltungen behalten ihre Preise.'
 blocked: 'Stimme den neuen Preisen zu, um wieder Veranstaltungen anzulegen. Bereits angelegte Veranstaltungen behalten ihre Preise.'
 adminsOnly: 'Ein Administrator der Organisation muss den neuen Preisen zustimmen.'
+acceptedNotice: 'Ab dem {date} angelegte Veranstaltungen nutzen die neuen Preise. Vorher angelegte behalten ihre Preise.'
 action:
   accept: 'Neuen Preisen zustimmen'
 confirm:
   title: 'Neuen Preisen zustimmen'
   message: '{organization} stimmt dem Preismodell {model} zu. Es gilt für alle ab jetzt angelegten Veranstaltungen.'
+  messageFrom: '{organization} stimmt dem Preismodell {model} zu. Es gilt für alle ab dem {date} angelegten Veranstaltungen.'
   cancel: 'Abbrechen'
   ok: 'Zustimmen'
 </i18n>
@@ -186,14 +219,17 @@ confirm:
 title:
   pending: 'Nouveaux tarifs à partir du {date} – ton accord est nécessaire'
   due: 'Nouveaux tarifs depuis le {date} – aucun nouvel événement sans ton accord'
+  accepted: 'Nouveaux tarifs à partir du {date} – acceptés'
 notice: "Tant que tu n'as pas donné ton accord, tu ne pourras plus créer d'événements à partir du {date}. Les événements déjà créés conservent leurs tarifs."
 blocked: 'Accepte les nouveaux tarifs pour créer à nouveau des événements. Les événements déjà créés conservent leurs tarifs.'
 adminsOnly: "Un administrateur de l'organisation doit accepter les nouveaux tarifs."
+acceptedNotice: 'Les événements créés à partir du {date} utilisent les nouveaux tarifs. Ceux créés avant conservent leurs tarifs.'
 action:
   accept: 'Accepter les nouveaux tarifs'
 confirm:
   title: 'Accepter les nouveaux tarifs'
   message: "{organization} accepte le modèle tarifaire {model}. Il s'applique à tous les événements créés à partir de maintenant."
+  messageFrom: "{organization} accepte le modèle tarifaire {model}. Il s'applique à tous les événements créés à partir du {date}."
   cancel: 'Annuler'
   ok: 'Accepter'
 </i18n>
@@ -202,14 +238,17 @@ confirm:
 title:
   pending: 'Nowe ceny od {date} – potrzebna jest twoja zgoda'
   due: 'Nowe ceny od {date} – bez zgody nie można tworzyć wydarzeń'
+  accepted: 'Nowe ceny od {date} – zaakceptowane'
 notice: 'Dopóki nie wyrazisz zgody, od {date} nie możesz tworzyć nowych wydarzeń. Utworzone już wydarzenia zachowują swoje ceny.'
 blocked: 'Zaakceptuj nowe ceny, aby znów tworzyć wydarzenia. Utworzone już wydarzenia zachowują swoje ceny.'
 adminsOnly: 'Nowe ceny musi zaakceptować administrator organizacji.'
+acceptedNotice: 'Wydarzenia utworzone od {date} korzystają z nowych cen. Utworzone wcześniej zachowują swoje ceny.'
 action:
   accept: 'Zaakceptuj nowe ceny'
 confirm:
   title: 'Zaakceptuj nowe ceny'
   message: '{organization} akceptuje model cenowy {model}. Obowiązuje on dla wszystkich wydarzeń tworzonych od teraz.'
+  messageFrom: '{organization} akceptuje model cenowy {model}. Obowiązuje on dla wszystkich wydarzeń tworzonych od {date}.'
   cancel: 'Anuluj'
   ok: 'Zaakceptuj'
 </i18n>
@@ -218,14 +257,17 @@ confirm:
 title:
   pending: 'Nové ceny od {date} – je potřeba tvůj souhlas'
   due: 'Nové ceny od {date} – bez souhlasu nelze vytvářet akce'
+  accepted: 'Nové ceny od {date} – přijaty'
 notice: 'Dokud nesouhlasíš, nemůžeš od {date} vytvářet nové akce. Již vytvořené akce si ponechají své ceny.'
 blocked: 'Přijmi nové ceny, abys mohl znovu vytvářet akce. Již vytvořené akce si ponechají své ceny.'
 adminsOnly: 'Nové ceny musí přijmout správce organizace.'
+acceptedNotice: 'Akce vytvořené od {date} používají nové ceny. Dříve vytvořené akce si ponechají své ceny.'
 action:
   accept: 'Přijmout nové ceny'
 confirm:
   title: 'Přijmout nové ceny'
   message: '{organization} přijímá cenový model {model}. Platí pro všechny akce vytvořené od teď.'
+  messageFrom: '{organization} přijímá cenový model {model}. Platí pro všechny akce vytvořené od {date}.'
   cancel: 'Zrušit'
   ok: 'Přijmout'
 </i18n>

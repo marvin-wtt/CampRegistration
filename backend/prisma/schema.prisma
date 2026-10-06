@@ -828,8 +828,8 @@ model PriceModel {
 }
 
 /// A price change for an organization. It changes the contract, so it only
-/// applies once an organization admin accepts; from `effectiveAt` on, the
-/// organization can't create events until it does. Founding an organization
+/// applies once an organization admin accepts, and never before `effectiveAt`;
+/// from then on, the organization can't create events until it accepts. Founding an organization
 /// records its agreement to the default model as an offer accepted at once.
 /// Accepted offers are the proof of what was agreed; they go with the
 /// organization, whose bills keep their own snapshot.
@@ -841,6 +841,9 @@ model PriceModelOffer {
   createdByUserId  String?   @map("created_by_user_id") @db.Char(26)
   acceptedByUserId String?   @map("accepted_by_user_id") @db.Char(26)
   acceptedAt       DateTime? @map("accepted_at")
+  /// When the organization was moved to the model: on acceptance, or at
+  /// `effectiveAt` if accepted earlier. `null` while the change is open.
+  appliedAt        DateTime? @map("applied_at")
   createdAt        DateTime  @default(now()) @map("created_at")
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "price_model_offers_organization_id_foreign")

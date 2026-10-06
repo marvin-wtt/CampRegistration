@@ -4,6 +4,7 @@ import type { JobScheduler } from '#core/scheduler/JobScheduler';
 import { resolve } from '#core/ioc/container';
 import { BillingController } from './billing.controller.js';
 import { BillingService } from './billing.service.js';
+import { BillingQueryService } from './billing-query.service.js';
 import { InvoiceService } from './invoice.service.js';
 import { InvoiceIssuedMessage } from './billing.messages.js';
 import { MailableRegistry } from '#core/mail/mail.registry';
@@ -15,6 +16,7 @@ import {
 
 export class BillingModule implements AppModule {
   bindContainers(options: BindOptions) {
+    options.bind(BillingQueryService).toSelf().inSingletonScope();
     options.bind(BillingService).toSelf().inSingletonScope();
     options.bind(InvoiceService).toSelf().inSingletonScope();
     options.bind(BillingController).toSelf().inSingletonScope();

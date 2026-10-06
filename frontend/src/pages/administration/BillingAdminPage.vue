@@ -153,32 +153,10 @@
 
         <template #body-cell-invoices="props">
           <q-td :props>
-            <invoice-links
-              v-if="props.row.invoices.length > 0"
-              :invoices="props.row.invoices"
-              :owner="{ billId: props.row.id }"
-              removable
-              @remove="(invoice) => deleteInvoice(props.row, invoice)"
+            <bill-invoices-cell
+              :bill="props.row"
+              @changed="reload"
             />
-            <q-btn
-              v-else-if="canUploadInvoice(props.row)"
-              :label="t('action.uploadInvoice')"
-              icon="upload_file"
-              color="primary"
-              size="sm"
-              flat
-              dense
-              rounded
-              no-caps
-              class="q-px-sm"
-              @click="pickInvoice(props.row)"
-            />
-            <span
-              v-else
-              class="text-on-surface-variant"
-            >
-              —
-            </span>
           </q-td>
         </template>
 
@@ -187,7 +165,10 @@
             :props
             auto-width
           >
-            <row-actions :actions="actionsFor(props.row)" />
+            <bill-row-actions
+              :bill="props.row"
+              @changed="reload"
+            />
           </q-td>
         </template>
       </q-table>
@@ -198,36 +179,26 @@
 <script lang="ts" setup>
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useQuasar, type QTableColumn } from 'quasar';
+import type { QTableColumn } from 'quasar';
 import type {
   AdminEventBill,
   EventBillQuery,
   EventBillStatus,
-  EventBillUpdateData,
-  Invoice,
-  InvoiceCreateData,
 } from '@camp-registration/common/entities';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import AdminListToolbar from '@/components/administration/AdminListToolbar.vue';
-import RowActions, {
-  type RowAction,
-} from '@/components/administration/RowActions.vue';
 import EventBillStatusChip from '@/components/billing/EventBillStatusChip.vue';
-import InvoiceLinks from '@/components/billing/InvoiceLinks.vue';
-import InvoiceUploadDialog from '@/components/billing/InvoiceUploadDialog.vue';
-import EventBillDialog, {
-  type EventBillDialogResult,
-} from '@/components/billing/EventBillDialog.vue';
+import BillInvoicesCell from '@/components/billing/BillInvoicesCell.vue';
+import BillRowActions from '@/components/billing/BillRowActions.vue';
 import { useAPIService } from '@/services/APIService';
 import { useServerTable } from '@/composables/serverTable';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { formatMoney } from '@/utils/money';
-import { formatBillPeriod } from '@/utils/billing';
+import { billedTo, formatBillPeriod } from '@/utils/billing';
 import { useRouteQueryParams } from '@/composables/useRouteQueryParams';
 
 const { t, d, locale } = useI18n();
 const { to } = useObjectTranslation();
-const quasar = useQuasar();
 const api = useAPIService();
 
 const routeQuery = useRouteQueryParams();
@@ -258,7 +229,6 @@ const {
   onVirtualScroll,
   identitySort,
   reload,
-  withProgressNotification,
 } = useServerTable<AdminEventBill, EventBillQuery>({
   storeName: 'billing',
   fetch: (query) => api.fetchBillsPaginated(query),
@@ -345,229 +315,6 @@ function formatMonth(value: string): string {
 function formatPeriod(bill: AdminEventBill): string {
   return formatBillPeriod(bill, locale.value);
 }
-
-function actionsFor(bill: AdminEventBill): RowAction[] {
-  return [
-    {
-      key: 'paid',
-      label: t('action.paid'),
-      icon: 'paid',
-      color: 'positive',
-      hidden: bill.status !== 'OPEN',
-      handler: () => update(bill, 'PAID'),
-    },
-    {
-      key: 'void',
-      label: t('action.void'),
-      icon: 'block',
-      color: 'negative',
-      hidden: bill.status !== 'OPEN' && bill.status !== 'PAID',
-      handler: () => update(bill, 'VOID'),
-    },
-    {
-      key: 'correct',
-      label: t('action.correct'),
-      icon: 'edit',
-      separatorBefore: true,
-      // An invoice states the amount; the backend refuses to change it.
-      hidden: bill.status !== 'OPEN' || isInvoiced(bill),
-      handler: () => correct(bill),
-    },
-    {
-      key: 'rebill',
-      label: t('action.rebill'),
-      icon: 'autorenew',
-      color: 'primary',
-      hidden: bill.status !== 'VOID' || bill.replacedByBillId !== null,
-      handler: () => rebill(bill),
-    },
-    {
-      key: 'invoice',
-      label: t('action.uploadInvoice'),
-      icon: 'upload_file',
-      hidden: !canUploadInvoice(bill),
-      handler: () => pickInvoice(bill),
-    },
-    {
-      key: 'note',
-      label: t('action.note'),
-      icon: 'edit_note',
-      separatorBefore: bill.status !== 'DRAFT',
-      handler: () => update(bill),
-    },
-  ];
-}
-
-/** The bill keeps its customer after the organization is deleted. */
-function billedTo(bill: AdminEventBill): string {
-  return bill.organization?.name ?? bill.customer?.name ?? '—';
-}
-
-function isInvoiced(bill: AdminEventBill): boolean {
-  return bill.invoices.some((invoice) => invoice.type === 'INVOICE');
-}
-
-/** One invoice per bill; a wrong one is deleted and uploaded again. */
-function canUploadInvoice(bill: AdminEventBill): boolean {
-  return (
-    (bill.status === 'OPEN' || bill.status === 'PAID') && !isInvoiced(bill)
-  );
-}
-
-function pickInvoice(bill: AdminEventBill) {
-  quasar
-    .dialog({
-      component: InvoiceUploadDialog,
-      componentProps: {
-        subject: `${to(bill.eventName)} · ${billedTo(bill)}`,
-        notifies: bill.status === 'OPEN' && bill.grossAmount !== '0.00',
-      },
-    })
-    .onOk((data: InvoiceCreateData) => {
-      void withProgressNotification('uploadInvoice', () =>
-        api.createInvoice(bill.id, data),
-      ).then(() => reload());
-    });
-}
-
-function deleteInvoice(bill: AdminEventBill, invoice: Invoice) {
-  quasar
-    .dialog({
-      title: t('dialog.deleteInvoice.title'),
-      message: t('dialog.deleteInvoice.message'),
-      cancel: {
-        label: t('dialog.cancel'),
-        color: 'primary',
-        flat: true,
-        rounded: true,
-      },
-      ok: {
-        label: t('dialog.deleteInvoice.confirm'),
-        color: 'negative',
-        rounded: true,
-      },
-    })
-    .onOk(() => {
-      void withProgressNotification('deleteInvoice', () =>
-        api.deleteInvoice(bill.id, invoice.id),
-      ).then(() => reload());
-    });
-}
-
-function correct(bill: AdminEventBill) {
-  quasar
-    .dialog({
-      component: EventBillDialog,
-      componentProps: {
-        mode: 'correct',
-        subject: `${to(bill.eventName)} · ${billedTo(bill)}`,
-        measured: Math.max(
-          bill.startRegistrationCount,
-          bill.endRegistrationCount ?? 0,
-        ),
-        adjusted: bill.adjustedRegistrationCount,
-        note: bill.note,
-      },
-    })
-    .onOk((result: EventBillDialogResult) => {
-      void withProgressNotification('updateBill', () =>
-        api.updateBill(bill.id, {
-          adjustedRegistrationCount: result.adjustedRegistrationCount,
-          note: result.note,
-        }),
-      ).then(
-        () => reload(),
-        // Already reported by the progress notification.
-        () => undefined,
-      );
-    });
-}
-
-function rebill(bill: AdminEventBill) {
-  quasar
-    .dialog({
-      component: EventBillDialog,
-      componentProps: {
-        mode: 'rebill',
-        subject: `${to(bill.eventName)} · ${billedTo(bill)}`,
-        measured: Math.max(
-          bill.startRegistrationCount,
-          bill.endRegistrationCount ?? 0,
-        ),
-        adjusted: bill.adjustedRegistrationCount,
-      },
-    })
-    .onOk((result: EventBillDialogResult) => {
-      void withProgressNotification('createBill', () =>
-        api.createBill({
-          replacesBillId: bill.id,
-          ...(result.priceModelId ? { priceModelId: result.priceModelId } : {}),
-          ...(result.adjustedRegistrationCount !== null
-            ? { adjustedRegistrationCount: result.adjustedRegistrationCount }
-            : {}),
-          note: result.note,
-        }),
-      ).then(
-        () => reload(),
-        // Already reported by the progress notification.
-        () => undefined,
-      );
-    });
-}
-
-/** Every change asks for a note — the bill's only record of why. */
-function update(bill: AdminEventBill, newStatus?: 'PAID' | 'VOID') {
-  quasar
-    .dialog({
-      title: newStatus
-        ? t(`dialog.${newStatus}.title`)
-        : t('dialog.note.title'),
-      ...(newStatus
-        ? {
-            message: t(`dialog.${newStatus}.message`, {
-              amount: formatMoney(
-                bill.grossAmount,
-                bill.currency,
-                locale.value,
-              ),
-            }),
-          }
-        : {}),
-      prompt: {
-        model: bill.note ?? '',
-        type: 'textarea',
-        label: t('dialog.note.label'),
-        color: 'primary',
-        outlined: true,
-        rounded: true,
-      },
-      cancel: {
-        label: t('dialog.cancel'),
-        color: 'primary',
-        flat: true,
-        rounded: true,
-      },
-      ok: {
-        label: t('dialog.confirm'),
-        color: newStatus === 'VOID' ? 'negative' : 'primary',
-        rounded: true,
-      },
-    })
-    .onOk((note: string) => {
-      const data: EventBillUpdateData = {
-        ...(newStatus ? { status: newStatus } : {}),
-        note: note.trim() || null,
-      };
-
-      void withProgressNotification('updateBill', () =>
-        api.updateBill(bill.id, data),
-      ).then(
-        () => reload(),
-        // Already reported by the progress notification.
-        () => undefined,
-      );
-    });
-}
 </script>
 
 <i18n lang="yaml" locale="en">
@@ -596,28 +343,6 @@ column:
 action:
   overview: 'Monthly overview'
   priceModels: 'Price models'
-  paid: 'Mark as paid'
-  void: 'Void'
-  correct: 'Correct registrations'
-  rebill: 'Bill again'
-  note: 'Edit note'
-  uploadInvoice: 'Upload invoice'
-dialog:
-  deleteInvoice:
-    title: 'Delete invoice'
-    message: 'The uploaded invoice is removed for the organization too.'
-    confirm: 'Delete'
-  PAID:
-    title: 'Mark as paid'
-    message: 'Record the payment of {amount}.'
-  VOID:
-    title: 'Void bill'
-    message: 'The bill of {amount} will no longer be owed. This cannot be undone.'
-  note:
-    title: 'Note'
-    label: 'Note (optional)'
-  cancel: 'Cancel'
-  confirm: 'Save'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -646,28 +371,6 @@ column:
 action:
   overview: 'Monatsübersicht'
   priceModels: 'Preismodelle'
-  paid: 'Als bezahlt markieren'
-  void: 'Stornieren'
-  correct: 'Anmeldungen korrigieren'
-  rebill: 'Neu abrechnen'
-  note: 'Notiz bearbeiten'
-  uploadInvoice: 'Rechnung hochladen'
-dialog:
-  deleteInvoice:
-    title: 'Rechnung löschen'
-    message: 'Die hochgeladene Rechnung wird auch für die Organisation entfernt.'
-    confirm: 'Löschen'
-  PAID:
-    title: 'Als bezahlt markieren'
-    message: 'Zahlung über {amount} erfassen.'
-  VOID:
-    title: 'Rechnung stornieren'
-    message: 'Die Rechnung über {amount} ist dann nicht mehr geschuldet. Das kann nicht rückgängig gemacht werden.'
-  note:
-    title: 'Notiz'
-    label: 'Notiz (optional)'
-  cancel: 'Abbrechen'
-  confirm: 'Speichern'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -696,28 +399,6 @@ column:
 action:
   overview: 'Aperçu mensuel'
   priceModels: 'Modèles tarifaires'
-  paid: 'Marquer comme payée'
-  void: 'Annuler'
-  correct: 'Corriger les inscriptions'
-  rebill: 'Facturer à nouveau'
-  note: 'Modifier la note'
-  uploadInvoice: 'Téléverser la facture'
-dialog:
-  deleteInvoice:
-    title: 'Supprimer la facture'
-    message: "La facture téléversée est aussi retirée pour l'organisation."
-    confirm: 'Supprimer'
-  PAID:
-    title: 'Marquer comme payée'
-    message: 'Enregistrer le paiement de {amount}.'
-  VOID:
-    title: 'Annuler la facture'
-    message: 'La facture de {amount} ne sera plus due. Cette action est irréversible.'
-  note:
-    title: 'Note'
-    label: 'Note (facultative)'
-  cancel: 'Annuler'
-  confirm: 'Enregistrer'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -746,28 +427,6 @@ column:
 action:
   overview: 'Przegląd miesięczny'
   priceModels: 'Modele cenowe'
-  paid: 'Oznacz jako opłacony'
-  void: 'Anuluj'
-  correct: 'Popraw liczbę zgłoszeń'
-  rebill: 'Rozlicz ponownie'
-  note: 'Edytuj notatkę'
-  uploadInvoice: 'Prześlij fakturę'
-dialog:
-  deleteInvoice:
-    title: 'Usuń fakturę'
-    message: 'Przesłana faktura zostanie usunięta również dla organizacji.'
-    confirm: 'Usuń'
-  PAID:
-    title: 'Oznacz jako opłacony'
-    message: 'Zarejestruj płatność w kwocie {amount}.'
-  VOID:
-    title: 'Anuluj rachunek'
-    message: 'Rachunek na {amount} nie będzie już należny. Tej operacji nie można cofnąć.'
-  note:
-    title: 'Notatka'
-    label: 'Notatka (opcjonalnie)'
-  cancel: 'Anuluj'
-  confirm: 'Zapisz'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -796,26 +455,4 @@ column:
 action:
   overview: 'Měsíční přehled'
   priceModels: 'Cenové modely'
-  paid: 'Označit jako zaplacenou'
-  void: 'Stornovat'
-  correct: 'Opravit přihlášky'
-  rebill: 'Vyúčtovat znovu'
-  note: 'Upravit poznámku'
-  uploadInvoice: 'Nahrát fakturu'
-dialog:
-  deleteInvoice:
-    title: 'Smazat fakturu'
-    message: 'Nahraná faktura bude odstraněna i pro organizaci.'
-    confirm: 'Smazat'
-  PAID:
-    title: 'Označit jako zaplacenou'
-    message: 'Zaznamenat platbu {amount}.'
-  VOID:
-    title: 'Stornovat fakturu'
-    message: 'Faktura na {amount} již nebude splatná. Tuto akci nelze vrátit zpět.'
-  note:
-    title: 'Poznámka'
-    label: 'Poznámka (nepovinná)'
-  cancel: 'Zrušit'
-  confirm: 'Uložit'
 </i18n>

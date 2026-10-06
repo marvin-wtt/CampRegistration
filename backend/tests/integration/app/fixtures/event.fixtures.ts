@@ -519,6 +519,25 @@ export const eventCreatedBody: CreateBodyData[] = [
     },
     expected: 400,
   },
+  {
+    name: 'Event already ended',
+    data: {
+      ...eventCreateInternational,
+      startAt: '2024-01-01T00:00:00',
+      endAt: '2024-01-02T00:00:00',
+    },
+    expected: 400,
+  },
+  {
+    name: 'Event already started but not ended',
+    data: {
+      ...eventCreateInternational,
+      startAt: utcCarrierToNaiveDateTime(
+        moment().subtract(2, 'days').startOf('hour').toDate(),
+      ),
+    },
+    expected: 201,
+  },
   // Price
   {
     name: 'Price missing',
