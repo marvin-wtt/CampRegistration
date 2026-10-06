@@ -582,6 +582,7 @@ const loading = computed<boolean>(
 
 const error = computed<string | null>(
   () =>
+    eventDetailsStore.error ??
     registrationsStore.error ??
     choreStore.error ??
     choreAssignmentStore.error ??

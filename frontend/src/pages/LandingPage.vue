@@ -900,7 +900,7 @@ hero:
   eyebrow: 'Open-source event management'
   title: 'Run your event,'
   title_highlight: 'not your paperwork'
-  subtitle: '@:app_name brings registrations, participants, rooms, program and communication together in one place — built by event organizers, for event organizers.'
+  subtitle: '@:app_name brings registrations, participants, program, rooms and communication together in one place for your whole team — built by event organizers, for event organizers.'
   proof_label: 'What @:app_name gives you'
   proof:
     open_source: 'Open source, AGPLv3'
@@ -967,7 +967,7 @@ hero:
   eyebrow: 'Open-Source-Veranstaltungsverwaltung'
   title: 'Organisiere deine Veranstaltung,'
   title_highlight: 'nicht deinen Papierkram'
-  subtitle: '@:app_name vereint Anmeldungen, Teilnehmende, Zimmer, Programm und Kommunikation an einem Ort — von Veranstaltungsorganisatoren für Veranstaltungsorganisatoren entwickelt.'
+  subtitle: '@:app_name vereint Anmeldungen, Teilnehmende, Programm, Zimmer und Kommunikation an einem Ort für dein ganzes Team — von Veranstaltungsorganisatoren für Veranstaltungsorganisatoren entwickelt.'
   proof_label: 'Was dir @:app_name bietet'
   proof:
     open_source: 'Open Source, AGPLv3'
@@ -1034,7 +1034,7 @@ hero:
   eyebrow: "Gestion d'événements open source"
   title: 'Organisez votre événement,'
   title_highlight: 'pas votre paperasse'
-  subtitle: "@:app_name réunit inscriptions, participants, chambres, programme et communication en un seul endroit — conçu par des organisateurs d'événements, pour des organisateurs d'événements."
+  subtitle: "@:app_name réunit inscriptions, participants, programme, chambres et communication en un seul endroit pour toute votre équipe — conçu par des organisateurs d'événements, pour des organisateurs d'événements."
   proof_label: 'Ce que vous apporte @:app_name'
   proof:
     open_source: 'Open source, AGPLv3'
@@ -1101,7 +1101,7 @@ hero:
   eyebrow: 'Zarządzanie wydarzeniami open source'
   title: 'Organizuj wydarzenie,'
   title_highlight: 'nie papierkową robotę'
-  subtitle: '@:app_name łączy rejestracje, uczestników, pokoje, program i komunikację w jednym miejscu — stworzona przez organizatorów wydarzeń dla organizatorów wydarzeń.'
+  subtitle: '@:app_name łączy rejestracje, uczestników, program, pokoje i komunikację w jednym miejscu dla całego zespołu — stworzona przez organizatorów wydarzeń dla organizatorów wydarzeń.'
   proof_label: 'Co daje Ci @:app_name'
   proof:
     open_source: 'Open source, AGPLv3'
@@ -1168,7 +1168,7 @@ hero:
   eyebrow: 'Open-source správa akcí'
   title: 'Organizujte akci,'
   title_highlight: 'ne papírování'
-  subtitle: '@:app_name spojuje registrace, účastníky, pokoje, program a komunikaci na jednom místě — vytvořena organizátory akcí pro organizátory akcí.'
+  subtitle: '@:app_name spojuje registrace, účastníky, program, pokoje a komunikaci na jednom místě pro celý váš tým — vytvořena organizátory akcí pro organizátory akcí.'
   proof_label: 'Co vám @:app_name přináší'
   proof:
     open_source: 'Open source, AGPLv3'

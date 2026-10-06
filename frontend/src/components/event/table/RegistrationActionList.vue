@@ -114,23 +114,31 @@ const hasEmail = computed<boolean>(() => {
 
 let templatesFetch: Promise<MessageTemplate[]> | null = null;
 
-function ensureTemplates(): Promise<MessageTemplate[]> {
+// `null` when the templates couldn't be loaded. Not cached, so the next action retries.
+function ensureTemplates(): Promise<MessageTemplate[] | null> {
   const eventId = eventData.value?.id;
   if (!eventId) {
-    return Promise.resolve([]);
+    return Promise.resolve(null);
   }
 
-  templatesFetch ??= messageTemplateService
-    .fetchMessageTemplates(eventId)
-    .catch(() => []);
+  templatesFetch ??= messageTemplateService.fetchMessageTemplates(eventId);
 
-  return templatesFetch;
+  return templatesFetch.catch(() => {
+    templatesFetch = null;
+    return null;
+  });
 }
 
 function hasTemplateForTrigger(
-  allTemplates: MessageTemplate[],
+  allTemplates: MessageTemplate[] | null,
   trigger: string,
 ): boolean {
+  // Unknown counts as yes: otherwise the dialog hides the "send email" choice
+  // and the backend sends one without asking.
+  if (allTemplates === null) {
+    return true;
+  }
+
   const country = registration.computedData.address.country ?? null;
 
   return allTemplates

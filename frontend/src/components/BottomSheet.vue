@@ -41,17 +41,19 @@
   </q-dialog>
 </template>
 
+<script lang="ts">
+/**
+ * A resting height: fitting the content, half or (nearly) all of the screen,
+ * or a share of the screen height.
+ */
+export type SnapPoint = 'content' | 'half' | 'full' | number;
+</script>
+
 <script lang="ts" setup>
 import { computed, nextTick, useTemplateRef, watch } from 'vue';
 import { useDialogPluginComponent } from 'quasar';
 import { useKeyboardInset } from '@/composables/keyboardInset';
 import { useSheetDrag } from '@/composables/sheetDrag';
-
-/**
- * A resting height: fitting the content, half or (nearly) all of the screen,
- * or a share of the screen height.
- */
-type SnapPoint = 'content' | 'half' | 'full' | number;
 
 const {
   persistent = false,

@@ -5,6 +5,8 @@
   <bottom-sheet
     v-if="quasar.screen.lt.sm"
     v-model="open"
+    :persistent
+    :snap-points
     no-padding
     @hide="emit('hide')"
   >
@@ -13,6 +15,7 @@
   <q-dialog
     v-else
     v-model="open"
+    :persistent
     @hide="emit('hide')"
   >
     <slot />
@@ -22,7 +25,12 @@
 <script lang="ts" setup>
 import { ref } from 'vue';
 import { useQuasar } from 'quasar';
-import BottomSheet from '@/components/BottomSheet.vue';
+import BottomSheet, { type SnapPoint } from '@/components/BottomSheet.vue';
+
+const { persistent = false, snapPoints = undefined } = defineProps<{
+  persistent?: boolean;
+  snapPoints?: SnapPoint[] | undefined;
+}>();
 
 const emit = defineEmits<{
   hide: [];

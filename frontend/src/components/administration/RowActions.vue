@@ -1,65 +1,36 @@
 <template>
-  <div class="row items-center justify-center no-wrap">
-    <!-- Wide screens: inline icon buttons -->
-    <template v-if="quasar.screen.gt.md">
-      <template
-        v-for="(action, index) in visibleActions"
-        :key="action.key"
-      >
-        <q-separator
-          v-if="action.separatorBefore && index > 0"
-          vertical
-          class="q-mx-xs"
-        />
-        <q-btn
-          :icon="action.icon"
-          :color="action.color"
-          round
-          flat
-          size="sm"
-          @click="action.handler"
-        >
-          <q-tooltip>{{ action.label }}</q-tooltip>
-        </q-btn>
-      </template>
-    </template>
-
-    <!-- Small screens: overflow menu -->
+  <div
+    ref="rootRef"
+    class="row items-center justify-center no-wrap"
+  >
     <q-btn
-      v-else
+      :aria-label="t('actions')"
       icon="more_vert"
       round
       flat
       size="sm"
     >
       <q-menu>
-        <q-list style="min-width: 160px">
-          <template
-            v-for="(action, index) in visibleActions"
-            :key="action.key"
-          >
-            <q-separator v-if="action.separatorBefore && index > 0" />
-            <q-item
-              v-close-popup
-              clickable
-              :class="action.color ? `text-${action.color}` : undefined"
-              @click="action.handler"
-            >
-              <q-item-section avatar>
-                <q-icon :name="action.icon" />
-              </q-item-section>
-              <q-item-section>{{ action.label }}</q-item-section>
-            </q-item>
-          </template>
-        </q-list>
+        <row-action-list :actions="visibleActions" />
       </q-menu>
     </q-btn>
+
+    <!-- Right-click (or long-press) anywhere on the surrounding table row -->
+    <q-menu
+      v-if="visibleActions.length > 0"
+      :target="rowEl ?? false"
+      context-menu
+      touch-position
+    >
+      <row-action-list :actions="visibleActions" />
+    </q-menu>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
-import { useQuasar } from 'quasar';
+import { computed, onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+import RowActionList from '@/components/administration/RowActionList.vue';
 
 export interface RowAction {
   key: string;
@@ -75,9 +46,36 @@ const { actions } = defineProps<{
   actions: RowAction[];
 }>();
 
-const quasar = useQuasar();
+const { t } = useI18n();
+
+const rootRef = ref<HTMLElement | null>(null);
+const rowEl = ref<HTMLElement | null>(null);
+
+onMounted(() => {
+  rowEl.value = rootRef.value?.closest('tr') ?? null;
+});
 
 const visibleActions = computed<RowAction[]>(() =>
   actions.filter((action) => !action.hidden),
 );
 </script>
+
+<i18n lang="yaml" locale="en">
+actions: 'Actions'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+actions: 'Aktionen'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+actions: 'Actions'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+actions: 'Akcje'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+actions: 'Akce'
+</i18n>

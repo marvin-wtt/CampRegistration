@@ -248,9 +248,11 @@ const update = (event: Event) =>
           'location',
         ] as const;
 
-        // Validate Translated keys
+        // Validate Translated keys. Only what the request sends — stored
+        // values aren't re-checked, so an unrelated update can't be rejected
+        // over translations the event already had.
         for (const key of recordKeys) {
-          const value = val[key] ?? event[key];
+          const value = val[key];
           if (
             value &&
             typeof value === 'object' &&

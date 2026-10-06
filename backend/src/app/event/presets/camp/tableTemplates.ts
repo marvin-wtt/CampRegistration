@@ -122,27 +122,6 @@ export default [
         shrink: true,
       },
       {
-        name: 'waiting_list',
-        field: 'data.waiting_list',
-        source: 'form',
-        label: {
-          en: 'Waiting list',
-          de: 'Warteliste',
-          fr: 'Liste d’attente',
-          pl: 'Lista oczekujących',
-          cs: 'Čekací listina',
-        },
-        align: 'center',
-        renderAs: 'icon',
-        renderOptions: {
-          name: 'hourglass_top',
-          color: 'warning',
-        },
-        showIf: '$data.waiting_list == true',
-        headerVertical: true,
-        shrink: true,
-      },
-      {
         name: 'created_at',
         field: 'createdAt',
         source: 'meta',

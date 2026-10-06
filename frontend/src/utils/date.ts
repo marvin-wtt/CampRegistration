@@ -56,6 +56,13 @@ export function timeDifference(startTime: string, endTime: string): number {
   return end - start;
 }
 
+/** Minutes since midnight as `HH:MM`, wrapping past midnight. */
+export function formatMinutesAsTime(minutes: number): string {
+  const wrapped = ((minutes % 1440) + 1440) % 1440;
+  const hours = Math.floor(wrapped / 60);
+  return `${String(hours).padStart(2, '0')}:${String(wrapped % 60).padStart(2, '0')}`;
+}
+
 export function parseTimeToMinutes(time: string): number | null {
   const parts = time.split(':');
 

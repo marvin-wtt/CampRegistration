@@ -71,10 +71,10 @@ export default {
       },
       values: {
         role: {
-          DIRECTOR: 'Ředitel',
-          COORDINATOR: 'Koordinátor',
-          COUNSELOR: 'Vedoucí',
-          VIEWER: 'Pozorovatel',
+          DIRECTOR: 'Vedení',
+          COORDINATOR: 'Koordinace',
+          COUNSELOR: 'Dozor',
+          VIEWER: 'Jen čtení',
         },
       },
     },

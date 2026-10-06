@@ -115,9 +115,9 @@ input:
   role:
     label: 'Rolle'
     options:
-      OWNER: 'Eigentümer'
-      EDITOR: 'Redakteur'
-      VIEWER: 'Betrachter'
+      OWNER: 'Verwaltung'
+      EDITOR: 'Redaktion'
+      VIEWER: 'Lesezugriff'
 action:
   add: 'Hinzufügen'
   cancel: 'Abbrechen'
@@ -133,9 +133,9 @@ input:
   role:
     label: 'Rôle'
     options:
-      OWNER: 'Propriétaire'
-      EDITOR: 'Éditeur'
-      VIEWER: 'Lecteur'
+      OWNER: 'Gestion'
+      EDITOR: 'Rédaction'
+      VIEWER: 'Lecture seule'
 action:
   add: 'Ajouter'
   cancel: 'Annuler'
@@ -151,9 +151,9 @@ input:
   role:
     label: 'Rola'
     options:
-      OWNER: 'Właściciel'
-      EDITOR: 'Redaktor'
-      VIEWER: 'Obserwator'
+      OWNER: 'Zarządzanie'
+      EDITOR: 'Redakcja'
+      VIEWER: 'Podgląd'
 action:
   add: 'Dodaj'
   cancel: 'Anuluj'
@@ -169,9 +169,9 @@ input:
   role:
     label: 'Role'
     options:
-      OWNER: 'Vlastník'
-      EDITOR: 'Editor'
-      VIEWER: 'Pozorovatel'
+      OWNER: 'Správa'
+      EDITOR: 'Redakce'
+      VIEWER: 'Jen čtení'
 action:
   add: 'Přidat'
   cancel: 'Zrušit'

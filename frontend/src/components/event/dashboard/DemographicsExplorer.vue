@@ -5,121 +5,176 @@
     class="demographics-card"
   >
     <q-card-section class="demographics-header">
-      <div>
-        <div class="text-overline text-primary text-weight-bold">
-          {{ t('eyebrow') }}
-        </div>
-        <div class="text-h6 text-weight-bold">{{ t('title') }}</div>
-        <div class="text-caption text-grey-7">{{ t('subtitle') }}</div>
-      </div>
-      <q-skeleton
-        v-if="loading"
-        type="QChip"
-        width="120px"
-      />
-      <q-chip
-        v-else
-        color="primary"
-        text-color="white"
-        icon="groups"
-        :label="
-          t('shown', { shown: filteredPeople.length, total: people.length })
-        "
-        class="q-ma-none"
-      />
+      <dashboard-card-header
+        icon="bar_chart"
+        tone="tertiary"
+        :title="t('title')"
+        :caption="t('subtitle')"
+      >
+        <template #action>
+          <div class="row items-center no-wrap">
+            <q-skeleton
+              v-if="loading"
+              type="QChip"
+              width="120px"
+            />
+            <div
+              v-else
+              class="people-count"
+              :class="{ 'people-count--filtered': hasActiveFilters }"
+            >
+              <q-icon
+                name="groups"
+                size="18px"
+              />
+              <span>
+                {{
+                  hasActiveFilters
+                    ? t('shown', {
+                        shown: filteredPeople.length,
+                        total: people.length,
+                      })
+                    : t('total', { total: people.length })
+                }}
+              </span>
+              <!-- Resetting lives here, not in the filter row, so turning a
+                 filter on never reflows the controls. -->
+              <q-btn
+                v-if="hasActiveFilters"
+                :aria-label="t('resetFilters')"
+                icon="close"
+                size="sm"
+                class="people-count__reset"
+                flat
+                round
+                dense
+                @click="resetFilters"
+              >
+                <q-tooltip>{{ t('resetFilters') }}</q-tooltip>
+              </q-btn>
+            </div>
+            <m-btn
+              v-if="collapsible"
+              :aria-label="t('collapse')"
+              icon="unfold_less"
+              class="q-ml-xs"
+              primary
+              text
+              round
+              @click="emit('collapse')"
+            >
+              <q-tooltip>{{ t('collapse') }}</q-tooltip>
+            </m-btn>
+          </div>
+        </template>
+      </dashboard-card-header>
     </q-card-section>
 
-    <q-separator />
-
     <q-card-section class="demographics-controls">
-      <div class="control-block">
+      <div class="control-group">
         <div class="control-label">{{ t('viewBy') }}</div>
-        <div class="dimension-buttons">
-          <q-btn
+        <m-btn-group
+          connected
+          class="segmented"
+        >
+          <m-btn
             v-for="option in xOptions"
             :key="option.value"
+            class="q-btn--toggle"
+            :class="{ 'q-btn--selected': xDimension === option.value }"
+            :aria-pressed="xDimension === option.value"
             :label="option.label"
-            :outline="xDimension !== option.value"
-            :unelevated="xDimension === option.value"
-            :color="xDimension === option.value ? 'primary' : 'grey-7'"
+            primary
             no-caps
             @click="xDimension = option.value"
           />
-        </div>
+        </m-btn-group>
       </div>
 
-      <div class="control-block breakdown-control">
+      <div class="control-group">
         <div class="control-label">{{ t('breakdown') }}</div>
-        <q-select
-          v-model="groupDimension"
-          :options="groupOptions"
-          emit-value
-          map-options
-          outlined
-          rounded
-          dense
-          options-dense
-          class="breakdown-select"
-        />
-        <q-btn-toggle
-          v-if="grouped"
-          v-model="stacked"
-          :options="stackOptions"
-          :aria-label="t('stack.label')"
-          toggle-color="primary"
-          color="grey-7"
-          unelevated
-          rounded
-          dense
-          no-caps
-          class="layout-toggle"
-        />
-      </div>
-    </q-card-section>
-
-    <q-card-section
-      v-if="!loading && (showGenderFilter || showCountryFilter)"
-      class="filter-bar"
-    >
-      <div class="filter-label">
-        <q-icon
-          name="filter_alt"
-          size="18px"
-        />
-        <span>{{ t('filters') }}</span>
-      </div>
-      <div class="filter-fields">
-        <div v-if="showGenderFilter">
-          <q-select
-            v-model="genderFilter"
-            :options="genderFilterOptions"
-            :label="t('filter.gender')"
-            multiple
-            clearable
-            use-chips
-            emit-value
-            map-options
-            outlined
-            rounded
-            dense
-            options-dense
-          />
+        <div class="row no-wrap items-center q-gutter-x-sm">
+          <m-btn-group
+            connected
+            class="segmented"
+          >
+            <m-btn
+              v-for="option in groupOptions"
+              :key="option.value"
+              class="q-btn--toggle"
+              :class="{ 'q-btn--selected': groupDimension === option.value }"
+              :aria-pressed="groupDimension === option.value"
+              :label="option.label"
+              primary
+              no-caps
+              @click="groupDimension = option.value"
+            />
+          </m-btn-group>
+          <m-btn-group
+            v-if="grouped"
+            connected
+            :aria-label="t('stack.label')"
+          >
+            <m-btn
+              v-for="option in stackOptions"
+              :key="option.value"
+              class="q-btn--toggle"
+              :class="{ 'q-btn--selected': barLayout === option.value }"
+              :aria-pressed="barLayout === option.value"
+              :icon="option.icon"
+              :aria-label="option.label"
+              primary
+              @click="barLayout = option.value"
+            >
+              <q-tooltip>{{ option.label }}</q-tooltip>
+            </m-btn>
+          </m-btn-group>
         </div>
-        <div v-if="showCountryFilter">
-          <q-select
-            v-model="countryFilter"
-            :options="countryFilterOptions"
-            :label="t('filter.country')"
-            multiple
-            clearable
-            use-chips
-            emit-value
-            map-options
-            outlined
-            rounded
-            dense
-            options-dense
-          />
+      </div>
+
+      <div
+        v-if="!loading && (showGenderFilter || showCountryFilter)"
+        class="control-group filter-group"
+      >
+        <div class="control-label">{{ t('filters') }}</div>
+        <div class="row items-center q-gutter-sm filter-buttons">
+          <m-btn
+            v-for="filter in filters"
+            :key="filter.key"
+            :label="filter.label"
+            :tonal="filter.model.value.length > 0"
+            :outline="filter.model.value.length === 0"
+            :icon="filter.model.value.length > 0 ? 'check' : 'filter_list'"
+            icon-right="arrow_drop_down"
+            primary
+            no-caps
+          >
+            <q-menu
+              anchor="bottom left"
+              self="top left"
+              class="rounded-md"
+            >
+              <q-list dense>
+                <q-item
+                  v-for="option in filter.options"
+                  :key="option.value"
+                  v-ripple
+                  tag="label"
+                  clickable
+                >
+                  <q-item-section side>
+                    <q-checkbox
+                      v-model="filter.model.value"
+                      :val="option.value"
+                      color="primary"
+                      dense
+                    />
+                  </q-item-section>
+                  <q-item-section>{{ option.label }}</q-item-section>
+                </q-item>
+              </q-list>
+            </q-menu>
+          </m-btn>
         </div>
       </div>
     </q-card-section>
@@ -132,23 +187,68 @@
           height="340px"
           class="chart-skeleton"
         />
-        <apex-chart
-          v-else-if="hasData"
-          type="bar"
-          height="340"
-          :options="chartOptions"
-          :series="chartSeries"
-        />
+        <template v-else-if="hasData">
+          <!-- Our own tooltip rather than the library's: it is placed above
+               the column (or beside it), never on the bars it describes. -->
+          <div
+            ref="chartWrap"
+            class="chart-wrap"
+            @mouseleave="activeIndex = null"
+          >
+            <apex-chart
+              type="bar"
+              height="340"
+              :options="chartOptions"
+              :series="chartSeries"
+            />
+            <div
+              v-if="readout"
+              ref="tooltipEl"
+              class="chart-tooltip elevation-2"
+              role="status"
+              :style="tooltipStyle"
+            >
+              <div class="chart-tooltip__title">{{ readout.category }}</div>
+              <div
+                v-for="item in readout.items"
+                :key="item.name"
+                class="chart-tooltip__row"
+              >
+                <span
+                  class="chart-tooltip__dot"
+                  :style="{ background: item.color }"
+                />
+                <span class="chart-tooltip__name">{{ item.name }}</span>
+                <strong>{{ item.value }}</strong>
+              </div>
+              <div
+                v-if="grouped"
+                class="chart-tooltip__total"
+              >
+                {{ t('readoutTotal', { n: readout.total }) }}
+              </div>
+            </div>
+          </div>
+        </template>
         <div
           v-else
-          class="column items-center justify-center text-grey-6"
-          style="height: 340px"
+          class="chart-empty column items-center justify-center"
         >
           <q-icon
             name="bar_chart"
             size="48px"
           />
           <div class="q-mt-sm">{{ t('empty') }}</div>
+          <m-btn
+            v-if="hasActiveFilters"
+            :label="t('resetFilters')"
+            icon="filter_list_off"
+            class="q-mt-sm"
+            primary
+            text
+            no-caps
+            @click="resetFilters"
+          />
         </div>
       </div>
     </q-card-section>
@@ -161,6 +261,9 @@ import type { ApexOptions } from 'apexcharts';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
+import DashboardCardHeader from '@/components/event/dashboard/DashboardCardHeader.vue';
+import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
+import { MBtnGroup } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtnGroup';
 import type { Registration } from '@camp-registration/common/entities';
 import {
   useEventStatistics,
@@ -170,9 +273,18 @@ import { useRegistrationHelper } from '@/composables/registrationHelper';
 
 // While `loading` the header and dimension controls render for real; the count
 // chip and the chart area are skeletonized.
-const { people, loading = false } = defineProps<{
+const {
+  people,
+  loading = false,
+  collapsible = false,
+} = defineProps<{
   people: Registration[];
   loading?: boolean;
+  collapsible?: boolean;
+}>();
+
+const emit = defineEmits<{
+  (e: 'collapse'): void;
 }>();
 
 const { t, locale } = useI18n();
@@ -217,9 +329,9 @@ onMounted(() => {
 });
 
 const xDimension = ref<Dimension>('age');
-const stacked = ref<boolean>(false);
-const genderFilter = ref<string[] | null>([]);
-const countryFilter = ref<string[] | null>([]);
+const barLayout = ref<'grouped' | 'stacked'>('grouped');
+const genderFilter = ref<string[]>([]);
+const countryFilter = ref<string[]>([]);
 
 const countryAvailable = computed(() => stats.hasMultipleCountries.value);
 
@@ -267,8 +379,12 @@ const xOptions = computed(() =>
 );
 
 const stackOptions = computed(() => [
-  { label: t('stack.grouped'), value: false, icon: 'bar_chart' },
-  { label: t('stack.stacked'), value: true, icon: 'stacked_bar_chart' },
+  { label: t('stack.grouped'), value: 'grouped' as const, icon: 'bar_chart' },
+  {
+    label: t('stack.stacked'),
+    value: 'stacked' as const,
+    icon: 'stacked_bar_chart',
+  },
 ]);
 
 const groupOptions = computed(() => [
@@ -324,13 +440,13 @@ function labelFor(dimension: Dimension, value: string): string {
 
 const filteredPeople = computed<Registration[]>(() => {
   return people.filter((registration) => {
-    if (genderFilter.value !== null && genderFilter.value.length > 0) {
+    if (genderFilter.value.length > 0) {
       const value = helper.gender(registration) ?? stats.UNKNOWN;
       if (!genderFilter.value.includes(value)) {
         return false;
       }
     }
-    if (countryFilter.value !== null && countryFilter.value.length > 0) {
+    if (countryFilter.value.length > 0) {
       const value = helper.country(registration) ?? stats.UNKNOWN;
       if (!countryFilter.value.includes(value)) {
         return false;
@@ -359,6 +475,59 @@ const countryFilterOptions = computed(() =>
     value,
   })),
 );
+
+const hasActiveFilters = computed(
+  () => genderFilter.value.length > 0 || countryFilter.value.length > 0,
+);
+
+function resetFilters() {
+  genderFilter.value = [];
+  countryFilter.value = [];
+}
+
+function filterLabel(
+  dimension: Dimension,
+  selected: string[],
+  options: { label: string; value: string }[],
+): string {
+  const name = t(`dimension.${dimension}`);
+  if (selected.length === 0) {
+    return name;
+  }
+  if (selected.length === 1) {
+    return options.find((o) => o.value === selected[0])?.label ?? name;
+  }
+  return t('filterCount', { name, count: selected.length });
+}
+
+const filters = computed(() => {
+  const list = [];
+  if (showGenderFilter.value) {
+    list.push({
+      key: 'gender',
+      model: genderFilter,
+      options: genderFilterOptions.value,
+      label: filterLabel(
+        'gender',
+        genderFilter.value,
+        genderFilterOptions.value,
+      ),
+    });
+  }
+  if (showCountryFilter.value) {
+    list.push({
+      key: 'country',
+      model: countryFilter,
+      options: countryFilterOptions.value,
+      label: filterLabel(
+        'country',
+        countryFilter.value,
+        countryFilterOptions.value,
+      ),
+    });
+  }
+  return list;
+});
 
 // Drop filter selections that no longer apply (e.g. dimension became the axis).
 watch(showGenderFilter, (visible) => {
@@ -403,11 +572,120 @@ const chartSeries = computed(() => {
   }));
 });
 
+// The category under the pointer, or the last one tapped on touch screens.
+const activeIndex = ref<number | null>(null);
+
+watch(crossTab, () => {
+  activeIndex.value = null;
+});
+
+function seriesColor(index: number): string {
+  const colors = themeColors.value.series;
+  return colors[index % colors.length] ?? '';
+}
+
+const readout = computed(() => {
+  const index = activeIndex.value;
+  const category = crossTab.value.categories[index ?? -1];
+  if (index === null || category === undefined) {
+    return null;
+  }
+  const items = chartSeries.value.map((series, i) => ({
+    name: series.name,
+    color: seriesColor(i),
+    value: series.data[index] ?? 0,
+  }));
+  const label = labelFor(xDimension.value, category);
+
+  return {
+    category:
+      xDimension.value === 'age' ? `${t('dimension.age')} ${label}` : label,
+    items,
+    total: items.reduce((sum, item) => sum + item.value, 0),
+  };
+});
+
+const chartWrap = ref<HTMLElement>();
+const tooltipEl = ref<HTMLElement>();
+const tooltipPosition = ref<{ left: number; top: number } | null>(null);
+
+const tooltipStyle = computed(() =>
+  tooltipPosition.value
+    ? {
+        left: `${tooltipPosition.value.left}px`,
+        top: `${tooltipPosition.value.top}px`,
+      }
+    : { visibility: 'hidden' as const },
+);
+
+// Above the column when there is room, otherwise beside it; horizontal bars
+// prefer the space after the row. Rendered hidden first, so it can be measured.
+async function placeTooltip() {
+  tooltipPosition.value = null;
+  const index = activeIndex.value;
+  if (index === null) {
+    return;
+  }
+  await nextTick();
+  const wrap = chartWrap.value;
+  const tip = tooltipEl.value;
+  if (!wrap || !tip) {
+    return;
+  }
+
+  const box = wrap.getBoundingClientRect();
+  const bars = [
+    ...wrap.querySelectorAll(`.apexcharts-bar-area[j="${index}"]`),
+  ].map((bar) => bar.getBoundingClientRect());
+  if (bars.length === 0) {
+    return;
+  }
+
+  const left = Math.min(...bars.map((r) => r.left)) - box.left;
+  const right = Math.max(...bars.map((r) => r.right)) - box.left;
+  const top = Math.min(...bars.map((r) => r.top)) - box.top;
+  const bottom = Math.max(...bars.map((r) => r.bottom)) - box.top;
+  const width = tip.offsetWidth;
+  const height = tip.offsetHeight;
+  const gap = 8;
+  const clampX = (x: number) => Math.min(Math.max(x, 0), box.width - width);
+  // It may rise above the chart, over the controls, up to the card's edge.
+  const card = wrap.closest('.demographics-card');
+  const minTop = card ? card.getBoundingClientRect().top - box.top + gap : 0;
+  const clampY = (y: number) =>
+    Math.min(Math.max(y, minTop), box.height - height);
+  const middleY = clampY((top + bottom) / 2 - height / 2);
+
+  if (horizontal.value) {
+    tooltipPosition.value =
+      right + gap + width <= box.width
+        ? { left: right + gap, top: middleY }
+        : {
+            left: clampX(right - width),
+            top: Math.max(minTop, top - gap - height),
+          };
+    return;
+  }
+
+  if (top - gap - height >= minTop) {
+    tooltipPosition.value = {
+      left: clampX((left + right) / 2 - width / 2),
+      top: top - gap - height,
+    };
+  } else if (right + gap + width <= box.width) {
+    tooltipPosition.value = { left: right + gap, top: middleY };
+  } else {
+    tooltipPosition.value = { left: clampX(left - gap - width), top: middleY };
+  }
+}
+
+watch(activeIndex, () => void placeTooltip());
+
 const chartOptions = computed<ApexOptions>(() => {
   const categories = crossTab.value.categories.map((c) =>
     labelFor(xDimension.value, c),
   );
-  const isStacked = grouped.value && stacked.value;
+  const isStacked = grouped.value && barLayout.value === 'stacked';
 
   return {
     chart: {
@@ -418,202 +696,261 @@ const chartOptions = computed<ApexOptions>(() => {
       animations: { speed: 250 },
       background: 'transparent',
       foreColor: themeColors.value.foreColor,
+      events: {
+        dataPointMouseEnter: (_e, _chart, opts) => {
+          activeIndex.value = opts?.dataPointIndex ?? null;
+        },
+        dataPointMouseLeave: () => {
+          activeIndex.value = null;
+        },
+        // Touch screens have no hover: a tap pins the tooltip instead, and a
+        // tap beside the bars clears it.
+        dataPointSelection: (_e, _chart, opts) => {
+          activeIndex.value = opts?.dataPointIndex ?? null;
+        },
+        click: (_e, _chart, opts) => {
+          if ((opts?.dataPointIndex ?? -1) < 0) {
+            activeIndex.value = null;
+          }
+        },
+      },
     },
     theme: { mode: quasar.dark.isActive ? 'dark' : 'light' },
     colors: themeColors.value.series,
     plotOptions: {
       bar: {
         horizontal: horizontal.value,
-        borderRadius: 4,
+        borderRadius: 6,
         borderRadiusApplication: 'end',
-        columnWidth: '65%',
+        borderRadiusWhenStacked: 'last',
+        columnWidth: grouped.value && !isStacked ? '72%' : '48%',
+        barHeight: grouped.value && !isStacked ? '72%' : '60%',
       },
     },
+    // A thin gap in the surface color separates adjacent bars of a group.
+    stroke: {
+      show: grouped.value,
+      width: 2,
+      colors: ['transparent'],
+    },
     dataLabels: { enabled: false },
+    states: {
+      hover: { filter: { type: 'darken' } },
+      active: {
+        filter: { type: 'none' },
+        allowMultipleDataPointsSelection: false,
+      },
+    },
     legend: {
       show: grouped.value,
       position: 'top',
       horizontalAlign: 'left',
+      fontSize: '13px',
+      markers: { shape: 'circle', size: 6 },
+      itemMargin: { horizontal: 12, vertical: 4 },
     },
     grid: {
       strokeDashArray: 4,
       borderColor: themeColors.value.gridColor,
+      padding: { left: 8, right: 8 },
+      xaxis: { lines: { show: horizontal.value } },
+      yaxis: { lines: { show: !horizontal.value } },
     },
+    // The axes are named by the controls above, so they carry no titles.
     xaxis: {
       categories,
-      title: { text: t(`dimension.${xDimension.value}`) },
+      axisBorder: {
+        show: !horizontal.value,
+        color: themeColors.value.gridColor,
+      },
+      axisTicks: { show: false },
+      labels: {
+        style: { fontSize: '13px' },
+        ...(horizontal.value
+          ? { formatter: (val: string) => `${Math.round(Number(val))}` }
+          : {}),
+      },
     },
     yaxis: {
-      title: { text: horizontal.value ? '' : t('count') },
+      min: 0,
+      forceNiceScale: true,
       labels: {
-        formatter: (val: number) => `${Math.round(val)}`,
+        style: { fontSize: '12px' },
+        ...(horizontal.value
+          ? {}
+          : { formatter: (val: number) => `${Math.round(val)}` }),
       },
     },
-    tooltip: {
-      y: {
-        formatter: (val: number) => `${Math.round(val)}`,
-      },
-      theme: quasar.dark.isActive ? 'dark' : 'light',
-    },
+    tooltip: { enabled: false },
     noData: { text: t('empty') },
   };
 });
 </script>
 
 <style scoped>
-.dashboard-chart {
-  min-height: 340px;
-}
-
 .demographics-card {
   overflow: hidden;
   border-radius: 16px;
 }
 
 .demographics-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 20px;
+  padding-bottom: 0;
+}
+
+.people-count {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--md3-surface-container-high);
+  color: var(--md3-on-surface-variant);
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.people-count--filtered {
+  padding-right: 4px;
+  background: var(--md3-primary-container);
+  color: var(--md3-on-primary-container);
+}
+
+.people-count__reset {
+  margin: -4px 0;
 }
 
 .demographics-controls {
-  display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(260px, 1fr);
-  gap: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px 32px;
   padding: 16px 20px;
 }
 
-.control-block {
+.control-group {
   min-width: 0;
 }
 
-.control-label,
-.filter-label {
-  margin-bottom: 8px;
+.filter-group {
+  margin-left: auto;
+}
+
+.control-label {
+  margin-bottom: 6px;
   color: var(--md3-on-surface-variant);
   font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font-weight: 500;
+  letter-spacing: 0.03em;
 }
 
-.dimension-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.breakdown-control {
-  display: grid;
-  grid-template-columns: minmax(140px, 1fr) auto;
-  align-items: end;
-  gap: 8px 16px;
-}
-
-.breakdown-control .control-label {
-  grid-column: 1 / -1;
-}
-
-.layout-toggle {
-  align-self: end;
-}
-
-.filter-bar {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: start;
-  gap: 16px;
-  padding: 14px 20px;
-  background: var(--md3-surface-container-low);
-  border-block: 1px solid var(--md3-outline-variant);
-}
-
-.filter-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 9px;
-  margin-bottom: 0;
-}
-
-.filter-fields {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+.dashboard-chart {
+  min-height: 340px;
 }
 
 .chart-section {
-  padding: 12px 20px 20px;
+  padding: 0 12px 12px;
+}
+
+.chart-wrap {
+  position: relative;
+}
+
+.chart-tooltip {
+  position: absolute;
+  z-index: 2;
+  min-width: 140px;
+  padding: 8px 12px;
+  color: var(--md3-on-surface);
+  font-size: 0.8125rem;
+  pointer-events: none;
+  background: var(--md3-surface-container-highest);
+  border: 1px solid var(--md3-outline-variant);
+  border-radius: 10px;
+}
+
+.chart-tooltip__title {
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.chart-tooltip__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chart-tooltip__name {
+  flex: 1 1 auto;
+  color: var(--md3-on-surface-variant);
+}
+
+.chart-tooltip__dot {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.chart-tooltip__total {
+  margin-top: 4px;
+  padding-top: 4px;
+  color: var(--md3-on-surface-variant);
+  border-top: 1px solid var(--md3-outline-variant);
 }
 
 .chart-skeleton {
   border-radius: 12px;
 }
 
-@media (max-width: 899px) {
-  .demographics-controls {
-    grid-template-columns: 1fr;
-    gap: 18px;
+.chart-empty {
+  height: 340px;
+  color: var(--md3-on-surface-variant);
+}
+
+@media (max-width: 1023px) {
+  .filter-group {
+    margin-left: 0;
   }
 }
 
 @media (max-width: 599px) {
-  .demographics-header {
-    flex-direction: column;
-    padding: 16px;
-  }
-
   .demographics-controls {
+    flex-direction: column;
+    align-items: stretch;
     padding: 16px;
   }
 
-  .dimension-buttons > .q-btn {
+  .segmented {
+    display: flex;
     flex: 1 1 auto;
   }
 
-  .breakdown-control {
-    grid-template-columns: 1fr;
-  }
-
-  .breakdown-control .control-label {
-    grid-column: auto;
-  }
-
-  .filter-bar {
-    grid-template-columns: 1fr;
-    gap: 8px;
-    padding: 14px 16px;
-  }
-
-  .filter-label {
-    margin-top: 0;
-  }
-
-  .filter-fields {
-    grid-template-columns: 1fr;
+  .segmented > :deep(.q-btn) {
+    flex: 1 1 0;
+    min-width: 0;
   }
 
   .chart-section {
-    padding: 8px 8px 16px;
-  }
-
-  .dashboard-chart {
-    margin-inline: -8px;
+    padding: 0 4px 8px;
   }
 }
 </style>
 
 <i18n lang="yaml" locale="en">
-eyebrow: 'Group insights'
 title: 'Demographics'
+collapse: 'Show summary only'
 subtitle: 'Break down the group by age, gender and country.'
 shown: '{shown} of {total} people'
+total: '{total} people'
+filterCount: '{name} ({count})'
+resetFilters: 'Reset filters'
 viewBy: 'View by'
 breakdown: 'Breakdown'
 filters: 'Filters'
 count: 'People'
+readoutTotal: '{n} in total'
 empty: 'No data to display.'
 unknown: 'Unknown'
 dimension:
@@ -639,14 +976,18 @@ gender:
 </i18n>
 
 <i18n lang="yaml" locale="de">
-eyebrow: 'Einblicke in die Gruppe'
 title: 'Demografie'
+collapse: 'Nur Zusammenfassung anzeigen'
 subtitle: 'Gruppe nach Alter, Geschlecht und Land aufschlüsseln.'
 shown: '{shown} von {total} Personen'
+total: '{total} Personen'
+filterCount: '{name} ({count})'
+resetFilters: 'Filter zurücksetzen'
 viewBy: 'Ansicht nach'
 breakdown: 'Aufschlüsselung'
 filters: 'Filter'
 count: 'Personen'
+readoutTotal: '{n} gesamt'
 empty: 'Keine Daten vorhanden.'
 unknown: 'Unbekannt'
 dimension:
@@ -672,14 +1013,18 @@ gender:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-eyebrow: 'Aperçu du groupe'
 title: 'Démographie'
+collapse: 'Afficher uniquement le résumé'
 subtitle: 'Répartir le groupe par âge, genre et pays.'
 shown: '{shown} personnes sur {total}'
+total: '{total} personnes'
+filterCount: '{name} ({count})'
+resetFilters: 'Réinitialiser les filtres'
 viewBy: 'Afficher par'
 breakdown: 'Répartition'
 filters: 'Filtres'
 count: 'Personnes'
+readoutTotal: '{n} au total'
 empty: 'Aucune donnée à afficher.'
 unknown: 'Inconnu'
 dimension:
@@ -705,14 +1050,18 @@ gender:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-eyebrow: 'Informacje o grupie'
 title: 'Demografia'
+collapse: 'Pokaż tylko podsumowanie'
 subtitle: 'Podziel grupę według wieku, płci i kraju.'
 shown: '{shown} z {total} osób'
+total: '{total} osób'
+filterCount: '{name} ({count})'
+resetFilters: 'Wyczyść filtry'
 viewBy: 'Pokaż według'
 breakdown: 'Podział'
 filters: 'Filtry'
 count: 'Osoby'
+readoutTotal: 'Razem: {n}'
 empty: 'Brak danych do wyświetlenia.'
 unknown: 'Nieznane'
 dimension:
@@ -738,14 +1087,18 @@ gender:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-eyebrow: 'Informace o skupině'
 title: 'Demografie'
+collapse: 'Zobrazit jen souhrn'
 subtitle: 'Rozdělte skupinu podle věku, pohlaví a země.'
 shown: '{shown} z {total} osob'
+total: '{total} osob'
+filterCount: '{name} ({count})'
+resetFilters: 'Zrušit filtry'
 viewBy: 'Zobrazit podle'
 breakdown: 'Rozdělení'
 filters: 'Filtry'
 count: 'Osoby'
+readoutTotal: 'Celkem: {n}'
 empty: 'Žádná data k zobrazení.'
 unknown: 'Neznámé'
 dimension:

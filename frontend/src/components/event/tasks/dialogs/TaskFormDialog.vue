@@ -1,140 +1,135 @@
 <template>
-  <q-dialog
+  <responsive-dialog
     ref="dialogRef"
     @hide="onDialogHide"
   >
-    <q-card class="q-dialog-plugin q-pb-none">
-      <q-form
-        @submit="onOKClick"
-        @reset="onDialogCancel"
-      >
-        <q-card-section>
-          <div class="text-h5 text-center">
-            {{ isEdit ? t('title.edit') : t('title.create') }}
-          </div>
-        </q-card-section>
+    <dialog-card
+      :title="isEdit ? t('title.edit') : t('title.create')"
+      :width="560"
+      @submit="onOKClick"
+      @cancel="onDialogCancel"
+    >
+      <div class="q-gutter-y-sm column no-wrap">
+        <q-input
+          v-model="data.title"
+          :label="t('field.title.label')"
+          :rules="[
+            (val?: string) => !!val?.length || t('field.title.rule.required'),
+          ]"
+          hide-bottom-space
+          autofocus
+          outlined
+          rounded
+        >
+          <template #prepend>
+            <q-icon name="title" />
+          </template>
+        </q-input>
 
-        <q-card-section class="q-pt-none q-gutter-y-sm column">
-          <q-input
-            v-model="data.title"
-            :label="t('field.title.label')"
-            :rules="[
-              (val?: string) => !!val?.length || t('field.title.rule.required'),
-            ]"
-            hide-bottom-space
-            autofocus
-            outlined
-            rounded
-          >
-            <template #prepend>
-              <q-icon name="title" />
-            </template>
-          </q-input>
+        <q-input
+          v-model="data.notes"
+          :label="t('field.notes.label')"
+          autogrow
+          outlined
+          rounded
+        >
+          <template #prepend>
+            <q-icon name="description" />
+          </template>
+        </q-input>
 
-          <q-input
-            v-model="data.notes"
-            :label="t('field.notes.label')"
-            autogrow
-            outlined
-            rounded
-          >
-            <template #prepend>
-              <q-icon name="description" />
-            </template>
-          </q-input>
-
-          <q-input
-            v-model="data.dueDate"
-            :label="t('field.dueDate.label')"
-            :hint="t('field.dueDate.hint')"
-            outlined
-            rounded
-          >
-            <template #prepend>
-              <q-icon name="calendar_month" />
-            </template>
-            <template #append>
-              <q-icon
-                v-if="data.dueDate"
-                name="close"
-                class="cursor-pointer"
-                @click="data.dueDate = null"
-              />
-              <q-icon
-                name="event"
-                class="cursor-pointer"
+        <q-input
+          v-model="data.dueDate"
+          :label="t('field.dueDate.label')"
+          :hint="t('field.dueDate.hint')"
+          outlined
+          rounded
+        >
+          <template #prepend>
+            <q-icon name="calendar_month" />
+          </template>
+          <template #append>
+            <q-icon
+              v-if="data.dueDate"
+              name="close"
+              class="cursor-pointer"
+              @click="data.dueDate = null"
+            />
+            <q-icon
+              name="event"
+              class="cursor-pointer"
+            >
+              <q-popup-proxy
+                cover
+                transition-show="scale"
+                transition-hide="scale"
               >
-                <q-popup-proxy
-                  cover
-                  transition-show="scale"
-                  transition-hide="scale"
+                <q-date
+                  v-model="data.dueDate"
+                  mask="YYYY-MM-DD"
                 >
-                  <q-date
-                    v-model="data.dueDate"
-                    mask="YYYY-MM-DD"
-                  >
-                    <div class="row items-center justify-end">
-                      <q-btn
-                        v-close-popup
-                        :label="t('action.close')"
-                        color="primary"
-                        flat
-                        rounded
-                      />
-                    </div>
-                  </q-date>
-                </q-popup-proxy>
-              </q-icon>
-            </template>
-          </q-input>
+                  <div class="row items-center justify-end">
+                    <q-btn
+                      v-close-popup
+                      :label="t('action.close')"
+                      color="primary"
+                      flat
+                      rounded
+                    />
+                  </div>
+                </q-date>
+              </q-popup-proxy>
+            </q-icon>
+          </template>
+        </q-input>
 
-          <q-select
-            v-model="data.assigneeId"
-            :label="t('field.assignee.label')"
-            :hint="t('field.assignee.hint')"
-            :options="assigneeOptions"
-            map-options
-            emit-value
-            clearable
-            outlined
-            rounded
-          >
-            <template #prepend>
-              <q-icon name="person" />
-            </template>
-          </q-select>
+        <q-select
+          v-model="data.assigneeId"
+          :label="t('field.assignee.label')"
+          :hint="t('field.assignee.hint')"
+          :options="assigneeOptions"
+          map-options
+          emit-value
+          clearable
+          outlined
+          rounded
+        >
+          <template #prepend>
+            <q-icon name="person" />
+          </template>
+        </q-select>
 
-          <q-checkbox
-            v-if="isEdit"
-            v-model="data.completed"
-            :label="t('field.completed.label')"
-          />
-        </q-card-section>
+        <q-checkbox
+          v-if="isEdit"
+          v-model="data.completed"
+          :label="t('field.completed.label')"
+        />
+      </div>
 
-        <!-- action buttons -->
-        <q-card-actions align="right">
-          <q-btn
-            type="reset"
-            outline
-            rounded
-            color="primary"
-            :label="t('action.cancel')"
-          />
-          <q-btn
-            type="submit"
-            rounded
-            color="primary"
-            :label="isEdit ? t('action.save') : t('action.create')"
-          />
-        </q-card-actions>
-      </q-form>
-    </q-card>
-  </q-dialog>
+      <template #actions>
+        <q-btn
+          type="reset"
+          outline
+          rounded
+          color="primary"
+          :label="t('action.cancel')"
+        />
+        <q-btn
+          type="submit"
+          rounded
+          color="primary"
+          :label="isEdit ? t('action.save') : t('action.create')"
+        />
+      </template>
+    </dialog-card>
+  </responsive-dialog>
 </template>
 
 <script lang="ts" setup>
 import { type QSelectOption, useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
+import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
+import DialogCard from '@/components/common/dialogs/DialogCard.vue';
 import { computed, reactive } from 'vue';
 import type {
   EventManager,

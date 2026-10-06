@@ -3,7 +3,7 @@
     ref="dialogRef"
     @hide="onDialogHide"
   >
-    <chore-dialog-card
+    <dialog-card
       :title="t('title')"
       :width="480"
       @cancel="onDialogCancel"
@@ -87,7 +87,7 @@
           </q-item>
         </q-list>
       </div>
-    </chore-dialog-card>
+    </dialog-card>
   </responsive-dialog>
 </template>
 
@@ -106,7 +106,7 @@ import { useObjectTranslation } from '@/composables/objectTranslation';
 import { usePermissions } from '@/composables/permissions';
 import ConfirmDialog from '@/components/common/dialogs/ConfirmDialog.vue';
 import ChoreDialog from '@/components/event/chorePlanner/dialogs/ChoreDialog.vue';
-import ChoreDialogCard from '@/components/event/chorePlanner/ChoreDialogCard.vue';
+import DialogCard from '@/components/common/dialogs/DialogCard.vue';
 import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
 
 const { t } = useI18n();

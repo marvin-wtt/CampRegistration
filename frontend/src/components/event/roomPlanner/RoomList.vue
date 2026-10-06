@@ -87,17 +87,6 @@
       </q-btn>
     </div>
 
-    <div
-      class="room-card__meter"
-      role="presentation"
-    >
-      <div
-        class="room-card__meter-fill"
-        :class="{ 'room-card__meter-fill--full': isFull }"
-        :style="{ width: `${occupancyPercent}%` }"
-      />
-    </div>
-
     <div class="room-card__beds">
       <room-list-item
         v-for="(_, index) in room.beds"
@@ -154,14 +143,6 @@ const occupiedCount = computed<number>(() => {
 
 const isFull = computed<boolean>(() => {
   return room.beds.length > 0 && occupiedCount.value === room.beds.length;
-});
-
-const occupancyPercent = computed<number>(() => {
-  if (room.beds.length === 0) {
-    return 0;
-  }
-
-  return (occupiedCount.value / room.beds.length) * 100;
 });
 
 const roomGender = computed<string | undefined>(() => {
@@ -296,8 +277,8 @@ function deleteRoom(): void {
 }
 
 .room-card__occupancy--full {
-  background: var(--md3-positive-container);
-  color: var(--md3-on-positive-container);
+  background: var(--md3-primary-container);
+  color: var(--md3-on-primary-container);
 }
 
 .room-card__menu-btn {
@@ -310,35 +291,12 @@ function deleteRoom(): void {
   color: var(--md3-error);
 }
 
-.room-card__meter {
-  height: 4px;
-  margin: 0 16px;
-  border-radius: 999px;
-
-  background: var(--md3-surface-container-highest);
-
-  overflow: hidden;
-}
-
-.room-card__meter-fill {
-  height: 100%;
-  border-radius: 999px;
-
-  background: var(--md3-primary);
-
-  transition: width 0.3s cubic-bezier(0.2, 0, 0, 1);
-}
-
-.room-card__meter-fill--full {
-  background: var(--md3-positive);
-}
-
 .room-card__beds {
   display: flex;
   flex-direction: column;
   gap: 4px;
 
-  padding: 12px;
+  padding: 4px 12px 12px;
 }
 </style>
 

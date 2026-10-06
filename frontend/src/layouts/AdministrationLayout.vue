@@ -37,12 +37,6 @@ const items = computed<NavigationItemProps[]>(() => [
     to: { name: 'administration.users' },
   },
   {
-    name: 'organizations',
-    label: t('organizations'),
-    icon: 'apartment',
-    to: { name: 'administration.organizations' },
-  },
-  {
     name: 'events',
     label: t('events'),
     icon: 'home',
@@ -53,6 +47,12 @@ const items = computed<NavigationItemProps[]>(() => [
     label: t('newsletters'),
     icon: 'mail',
     to: { name: 'administration.newsletters' },
+  },
+  {
+    name: 'organizations',
+    label: t('organizations'),
+    icon: 'apartment',
+    to: { name: 'administration.organizations' },
   },
   {
     name: 'queues',

@@ -36,23 +36,6 @@
             >
               <q-list class="settings-list">
                 <q-item-label header>
-                  {{ t('settings.sortBy.label') }}
-                </q-item-label>
-
-                <q-item>
-                  <q-item-section>
-                    <q-select
-                      v-model="settings.sortBy"
-                      dense
-                      outlined
-                      emit-value
-                      map-options
-                      :options="sortByOptions"
-                    />
-                  </q-item-section>
-                </q-item>
-
-                <q-item-label header>
                   {{ t('settings.title') }}
                 </q-item-label>
 
@@ -91,6 +74,25 @@
                     <q-toggle v-model="settings.skipRoleFilter" />
                   </q-item-section>
                 </q-item>
+
+                <q-separator spaced />
+
+                <q-item-label header>
+                  {{ t('settings.sortBy.label') }}
+                </q-item-label>
+
+                <div class="settings-sort">
+                  <q-btn-toggle
+                    v-model="settings.sortBy"
+                    class="full-width compact-toggle"
+                    spread
+                    no-caps
+                    rounded
+                    unelevated
+                    toggle-color="primary"
+                    :options="sortByOptions"
+                  />
+                </div>
               </q-list>
             </q-menu>
           </m-btn>
@@ -367,7 +369,7 @@ const loading = computed<boolean>(() => {
 });
 
 const error = computed<string | null>(() => {
-  return registrationsStore.error ?? roomError.value;
+  return eventDetailsStore.error ?? registrationsStore.error ?? roomError.value;
 });
 
 const updateInProgress = computed<boolean>(() => {
@@ -750,6 +752,10 @@ function findRegistrationById(registrationId: string | null) {
 .settings-list {
   min-width: 300px;
   max-width: 360px;
+}
+
+.settings-sort {
+  padding: 0 16px 16px;
 }
 
 .settings-warning {

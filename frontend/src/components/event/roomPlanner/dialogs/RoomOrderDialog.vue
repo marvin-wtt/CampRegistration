@@ -1,46 +1,44 @@
 <template>
-  <q-dialog
+  <responsive-dialog
     ref="dialogRef"
     persistent
     @hide="onDialogHide"
   >
-    <q-card class="q-dialog-plugin q-pb-none">
-      <q-card-section class="text-h6">
-        {{ t('title') }}
-      </q-card-section>
+    <dialog-card
+      :title="t('title')"
+      :width="480"
+      @submit="onOKClick"
+      @cancel="onDialogCancel"
+    >
+      <sortable-list
+        v-slot="slotProps"
+        v-model="modifiedRooms"
+        sortable
+        bordered
+        separator
+      >
+        <q-item-section>
+          {{ to(slotProps.item.name) }}
+        </q-item-section>
+      </sortable-list>
 
-      <q-card-section class="q-pt-none">
-        <sortable-list
-          v-slot="slotProps"
-          v-model="modifiedRooms"
-          sortable
-          bordered
-          separator
-        >
-          <q-item-section>
-            {{ to(slotProps.item.name) }}
-          </q-item-section>
-        </sortable-list>
-      </q-card-section>
-
-      <!-- buttons example -->
-      <q-card-actions align="right">
+      <template #actions>
         <q-btn
+          type="reset"
           color="primary"
           :label="t('action.cancel')"
           outline
           rounded
-          @click="onDialogCancel"
         />
         <q-btn
+          type="submit"
           color="primary"
           :label="t('action.ok')"
           rounded
-          @click="onOKClick"
         />
-      </q-card-actions>
-    </q-card>
-  </q-dialog>
+      </template>
+    </dialog-card>
+  </responsive-dialog>
 </template>
 
 <script lang="ts" setup>
@@ -48,6 +46,8 @@ import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import SortableList from '@/components/common/SortableList.vue';
+import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
+import DialogCard from '@/components/common/dialogs/DialogCard.vue';
 import { onBeforeUpdate, ref } from 'vue';
 import type { RoomWithRoommates } from '@/types/Room';
 import { deepToRaw } from '@/utils/deepToRaw';

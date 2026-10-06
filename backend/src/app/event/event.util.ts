@@ -34,3 +34,39 @@ export function eventRegistrationStatus(event: Event): EventRegistrationStatus {
 
   return 'open';
 }
+
+export interface FreePlaces {
+  freePlaces: number | Record<string, number>;
+  freePlacesTotal: number;
+}
+
+/**
+ * Free places per group, counted the way registration decides the waiting
+ * list: every participant registration takes a place — accepted, pending and
+ * waitlisted alike — so places freed while people wait stay theirs.
+ *
+ * Groups are independent, as registration checks each on its own: the total
+ * is their sum, and an overbooked group never takes places from another.
+ * Registrations outside every group are not counted.
+ */
+export function calculateFreePlaces(
+  maxParticipants: number | Record<string, number>,
+  registrations: { country: string | null }[],
+): FreePlaces {
+  if (typeof maxParticipants === 'number') {
+    const free = Math.max(0, maxParticipants - registrations.length);
+
+    return { freePlaces: free, freePlacesTotal: free };
+  }
+
+  const freePlaces: Record<string, number> = {};
+  for (const [country, limit] of Object.entries(maxParticipants)) {
+    const count = registrations.filter((r) => r.country === country).length;
+    freePlaces[country] = Math.max(0, limit - count);
+  }
+
+  return {
+    freePlaces,
+    freePlacesTotal: Object.values(freePlaces).reduce((sum, v) => sum + v, 0),
+  };
+}
