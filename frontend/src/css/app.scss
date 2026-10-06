@@ -90,6 +90,12 @@
   }
 }
 
+// A file input in a column layout is otherwise as wide as its file names,
+// pushing past its dialog before a name's ellipsis can apply (`FileChip`).
+.q-file {
+  max-width: 100%;
+}
+
 // Fix the active item color in rail mode for nested routes
 .body--dark
   .q-list--rail

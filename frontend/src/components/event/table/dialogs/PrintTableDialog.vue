@@ -1,48 +1,40 @@
 <template>
-  <q-dialog
+  <responsive-dialog
     ref="dialogRef"
     @hide="onDialogHide"
   >
-    <q-card class="q-dialog-plugin column no-wrap">
-      <q-card-section class="q-dialog__title">
-        {{ t('title') }}
-      </q-card-section>
+    <dialog-card
+      :title="t('title')"
+      :subtitle="t('message')"
+      :width="480"
+      @submit="onOKClick"
+      @cancel="onDialogCancel"
+    >
+      <q-option-group
+        v-model="model"
+        :options
+        type="checkbox"
+        color="primary"
+      />
 
-      <q-card-section class="q-dialog__message">
-        {{ t('message') }}
-      </q-card-section>
-
-      <q-separator />
-
-      <q-card-section class="q-dialog-plugin__form col-shrink scroll">
-        <q-option-group
-          v-model="model"
-          :options
-          type="checkbox"
-          color="primary"
-        />
-      </q-card-section>
-
-      <q-separator />
-
-      <q-card-actions align="right">
+      <template #actions>
         <q-btn
+          type="reset"
           :label="t('action.cancel')"
           color="primary"
           rounded
           outline
-          @click="onDialogCancel"
         />
         <q-btn
+          type="submit"
           :label="t('action.ok')"
           :disable="model.length === 0"
           color="primary"
           rounded
-          @click="onOKClick"
         />
-      </q-card-actions>
-    </q-card>
-  </q-dialog>
+      </template>
+    </dialog-card>
+  </responsive-dialog>
 </template>
 
 <script lang="ts" setup>
@@ -51,6 +43,8 @@ import type { TableTemplate } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
 import { computed, ref } from 'vue';
 import { useObjectTranslation } from '@/composables/objectTranslation';
+import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
+import DialogCard from '@/components/common/dialogs/DialogCard.vue';
 
 type SimpleTableTemplate = Pick<TableTemplate, 'title' | 'id' | 'order'>;
 

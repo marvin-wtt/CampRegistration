@@ -3,7 +3,11 @@
     ref="dialogRef"
     @hide="onDialogHide"
   >
-    <q-card class="roles-dialog">
+    <!-- `lang` lets `hyphens: auto` break long compound labels correctly. -->
+    <q-card
+      class="roles-dialog"
+      :lang="i18n.locale.value"
+    >
       <q-card-section class="dialog-header row items-center no-wrap q-pb-sm">
         <q-icon
           name="security"
@@ -214,6 +218,7 @@ const GROUP_ORDER = [
   'tasks',
   'chores',
   'chore_assignments',
+  'audit',
 ];
 
 const GROUP_ICONS: Record<string, string> = {
@@ -230,6 +235,7 @@ const GROUP_ICONS: Record<string, string> = {
   tasks: 'task_alt',
   chores: 'cleaning_services',
   chore_assignments: 'checklist',
+  audit: 'history',
 };
 
 /** Group keys whose translation predates the derived name. */
@@ -387,6 +393,9 @@ function actionIcon(action: string): string {
 }
 
 .pm-feature-label {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  hyphens: auto;
   color: var(--md3-on-surface);
   font-size: 13px;
   font-weight: 600;
@@ -402,21 +411,31 @@ function actionIcon(action: string): string {
 
 .pm-actions {
   display: flex;
+  min-width: 0;
   justify-content: center;
   flex-wrap: wrap;
   gap: 6px;
 }
 
 .pm-action-chip {
-  height: 28px;
+  height: auto;
+  min-height: 28px;
+  max-width: 100%;
   margin: 0;
-  padding: 0 8px;
+  padding: 4px 8px;
   border-radius: 8px;
   background: var(--md3-surface-container-high);
   color: var(--md3-on-surface-variant);
 
   font-size: 12px;
   font-weight: 500;
+}
+
+.pm-action-chip :deep(.q-chip__content) {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  hyphens: auto;
+  line-height: 1.2;
 }
 
 .pm-action-chip :deep(.q-icon) {
@@ -483,9 +502,16 @@ function actionIcon(action: string): string {
 }
 
 .md3-chip {
-  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  min-height: 24px;
   margin: 0;
-  padding: 0 10px;
+  padding: 3px 10px;
+  overflow-wrap: anywhere;
+  hyphens: auto;
+  text-align: center;
+  line-height: 1.2;
   border-radius: 8px;
   font-size: 12px;
   font-weight: 500;
@@ -547,11 +573,15 @@ function actionIcon(action: string): string {
     background: var(--md3-surface-container-low);
   }
 
+  /* Role name and its grants side by side; both columns wrap instead of overlapping. */
   .pm-role-col {
-    position: relative;
-    justify-content: flex-start;
+    display: grid;
+    grid-template-columns: minmax(0, 6.5rem) minmax(0, 1fr);
+    align-items: center;
+    justify-items: start;
+    gap: 12px;
     min-height: 48px;
-    padding: 10px 12px 10px 112px;
+    padding: 10px 12px;
   }
 
   .pm-role-col + .pm-role-col {
@@ -561,11 +591,9 @@ function actionIcon(action: string): string {
 
   .pm-role-col::before {
     content: attr(data-role);
-    position: absolute;
-    left: 12px;
-    top: 50%;
-    max-width: 88px;
-    transform: translateY(-50%);
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    hyphens: auto;
     color: var(--md3-on-surface-variant);
     font-size: 12px;
     font-weight: 600;
@@ -603,6 +631,7 @@ permissions:
     tasks: 'Tasks'
     chores: 'Chores'
     chore_assignments: 'Duty roster'
+    audit: 'Audit log'
   action:
     view: 'View'
     create: 'Create'
@@ -620,10 +649,10 @@ title: 'Rollenberechtigungen'
 close: 'Schließen'
 
 role:
-  coordinator: 'Koordinator'
-  counselor: 'Betreuer'
-  director: 'Leiter'
-  viewer: 'Betrachter'
+  coordinator: 'Koordination'
+  counselor: 'Betreuung'
+  director: 'Leitung'
+  viewer: 'Lesezugriff'
 
 permissions:
   group:
@@ -640,6 +669,7 @@ permissions:
     tasks: 'Aufgaben'
     chores: 'Diensttypen'
     chore_assignments: 'Dienstplan'
+    audit: 'Änderungsprotokoll'
   action:
     view: 'Anzeigen'
     create: 'Erstellen'
@@ -657,15 +687,14 @@ title: 'Permissions par rôle'
 close: 'Fermer'
 
 role:
-  coordinator: 'Coordinateur'
-  counselor: 'Conseiller'
-  director: 'Directeur'
-  viewer: 'Lecteur'
+  coordinator: 'Coordination'
+  counselor: 'Encadrement'
+  director: 'Direction'
+  viewer: 'Lecture seule'
 
 permissions:
   group:
     event: "Paramètres de l'événement"
-
     files: 'Fichiers'
     registrations: 'Inscriptions'
     managers: 'Accès équipe'
@@ -678,6 +707,7 @@ permissions:
     tasks: 'Tâches'
     chores: 'Corvées'
     chore_assignments: 'Plan des corvées'
+    audit: 'Journal d’audit'
   action:
     view: 'Voir'
     create: 'Créer'
@@ -695,10 +725,10 @@ title: 'Uprawnienia ról'
 close: 'Zamknij'
 
 role:
-  coordinator: 'Koordynator'
-  counselor: 'Opiekun'
-  director: 'Kierownik'
-  viewer: 'Podglądający'
+  coordinator: 'Koordynacja'
+  counselor: 'Opieka'
+  director: 'Kierownictwo'
+  viewer: 'Podgląd'
 
 permissions:
   group:
@@ -715,6 +745,7 @@ permissions:
     tasks: 'Zadania'
     chores: 'Obowiązki'
     chore_assignments: 'Grafik dyżurów'
+    audit: 'Dziennik zmian'
   action:
     view: 'Podgląd'
     create: 'Tworzenie'
@@ -732,10 +763,10 @@ title: 'Oprávnění rolí'
 close: 'Zavřít'
 
 role:
-  coordinator: 'Koordinátor'
-  counselor: 'Vedoucí'
-  director: 'Ředitel'
-  viewer: 'Pozorovatel'
+  coordinator: 'Koordinace'
+  counselor: 'Dozor'
+  director: 'Vedení'
+  viewer: 'Jen čtení'
 
 permissions:
   group:
@@ -752,6 +783,7 @@ permissions:
     tasks: 'Úkoly'
     chores: 'Povinnosti'
     chore_assignments: 'Rozpis služeb'
+    audit: 'Protokol změn'
   action:
     view: 'Zobrazit'
     create: 'Vytvořit'

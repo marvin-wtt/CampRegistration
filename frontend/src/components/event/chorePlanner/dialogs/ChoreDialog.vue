@@ -3,7 +3,7 @@
     ref="dialogRef"
     @hide="onDialogHide"
   >
-    <chore-dialog-card
+    <dialog-card
       :title="isEdit ? t('title.edit') : t('title.create')"
       :width="640"
       @submit="onOKClick"
@@ -195,7 +195,7 @@
           :label="isEdit ? t('action.save') : t('action.create')"
         />
       </template>
-    </chore-dialog-card>
+    </dialog-card>
   </responsive-dialog>
 </template>
 
@@ -212,7 +212,7 @@ import type {
 } from '@camp-registration/common/entities';
 import { useChoreAssignmentStore } from '@/stores/chore-assignment-store';
 import TranslatedInput from '@/components/common/inputs/TranslatedInput.vue';
-import ChoreDialogCard from '@/components/event/chorePlanner/ChoreDialogCard.vue';
+import DialogCard from '@/components/common/dialogs/DialogCard.vue';
 import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
 import ChoreRequirements from '@/components/event/chorePlanner/ChoreRequirements.vue';
 

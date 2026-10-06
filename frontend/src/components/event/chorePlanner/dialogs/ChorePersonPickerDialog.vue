@@ -3,7 +3,7 @@
     ref="dialogRef"
     @hide="onDialogHide"
   >
-    <chore-dialog-card
+    <dialog-card
       ref="card"
       :title="title"
       :subtitle="t('subtitle')"
@@ -63,7 +63,7 @@
           </q-item-section>
         </q-item>
       </q-list>
-    </chore-dialog-card>
+    </dialog-card>
   </responsive-dialog>
 </template>
 
@@ -78,7 +78,7 @@ import type {
 } from '@camp-registration/common/entities';
 import { useChoreAssignmentStore } from '@/stores/chore-assignment-store';
 import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
-import ChoreDialogCard from '@/components/event/chorePlanner/ChoreDialogCard.vue';
+import DialogCard from '@/components/common/dialogs/DialogCard.vue';
 
 // Picks one person for a duty — to replace someone, or to add them —
 // fairest first, from the same ranking as everywhere else.

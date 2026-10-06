@@ -7,19 +7,12 @@
     @update:model-value="updateFiles"
   >
     <template #file="{ index, file }">
-      <q-chip
-        removable
+      <file-chip
+        :name="file.name"
         :icon="model?.at(index)?.id ? 'done' : 'cloud_upload'"
+        removable
         @remove="removeFile(index)"
-      >
-        <div class="ellipsis relative-position">
-          {{ file.name }}
-        </div>
-
-        <q-tooltip>
-          {{ file.name }}
-        </q-tooltip>
-      </q-chip>
+      />
     </template>
 
     <!-- Parent slots -->
@@ -34,6 +27,7 @@
 </template>
 
 <script lang="ts" setup>
+import FileChip from '@/components/common/inputs/FileChip.vue';
 import { ref, watch } from 'vue';
 import type { QFileProps } from 'quasar';
 import { useQuasar } from 'quasar';

@@ -7,15 +7,26 @@
     :flat="sheet"
     :style="sheet ? undefined : { width: `min(${width}px, 95vw)` }"
   >
-    <q-form
+    <!-- Content with forms of its own (a stepper) gets a plain container,
+         since forms can't nest. -->
+    <component
+      :is="noForm ? 'div' : QForm"
       class="column no-wrap col"
-      @submit="emit('submit')"
-      @reset="emit('cancel')"
+      v-on="noForm ? {} : formListeners"
     >
       <q-card-section
         class="row items-start no-wrap"
         :class="sheet ? 'q-pt-none q-pb-sm' : 'q-pb-sm'"
       >
+        <div
+          v-if="icon"
+          class="dialog-icon row items-center justify-center q-mr-md"
+        >
+          <q-icon
+            :name="icon"
+            size="24px"
+          />
+        </div>
         <div class="col">
           <div :class="sheet ? 'text-h6' : 'text-h5'">{{ title }}</div>
           <div
@@ -64,7 +75,7 @@
       >
         <slot name="actions" />
       </q-card-actions>
-    </q-form>
+    </component>
   </q-card>
 </template>
 
@@ -77,7 +88,7 @@ import {
   ref,
   useTemplateRef,
 } from 'vue';
-import { useQuasar } from 'quasar';
+import { QForm, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 
 withDefaults(
@@ -85,8 +96,12 @@ withDefaults(
     title: string;
     subtitle?: string | undefined;
     width?: number;
+    /** Shown in a tonal circle before the title. */
+    icon?: string | undefined;
+    /** For content with forms of its own; `submit` is then never emitted. */
+    noForm?: boolean;
   }>(),
-  { width: 560, subtitle: undefined },
+  { width: 560, subtitle: undefined, icon: undefined, noForm: false },
 );
 
 const emit = defineEmits<{
@@ -96,6 +111,11 @@ const emit = defineEmits<{
 
 const quasar = useQuasar();
 const { t } = useI18n();
+
+const formListeners = {
+  submit: () => emit('submit'),
+  reset: () => emit('cancel'),
+};
 
 // Mirrors ResponsiveDialog's switch to a bottom sheet.
 const sheet = computed<boolean>(() => quasar.screen.lt.sm);
@@ -138,6 +158,15 @@ onBeforeUnmount(() => observer.disconnect());
 </script>
 
 <style scoped>
+.dialog-icon {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  color: var(--md3-on-primary-container);
+  background: var(--md3-primary-container);
+}
+
 .dialog-card {
   max-width: 95vw;
   max-height: 90vh;

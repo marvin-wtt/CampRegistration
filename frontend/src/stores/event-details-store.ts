@@ -56,16 +56,19 @@ export const useEventDetailsStore = defineStore('eventDetails', () => {
   // React to live changes pushed from other clients.
   realtime.on('event', (event) => void handleRemoteChange(event));
   realtime.onReconnect('event', () => {
-    if (data.value === undefined) {
+    if (data.value === undefined || route.params.eventId === undefined) {
       return;
     }
     void fetchData(data.value.id, { background: true });
   });
 
   router.beforeEach(async (to, from) => {
+    // Leaving the event only marks it stale: the page being left keeps
+    // rendering until its route is resolved and its fade-out ends, and must
+    // not see the event vanish. Entering any event refetches it below.
     if (to.params.eventId === undefined) {
-      if (data.value !== undefined) {
-        reset();
+      if (from.params.eventId !== undefined) {
+        invalidate();
         bus.emit('change', undefined);
       }
       return;

@@ -1,12 +1,15 @@
 <template>
-  <q-dialog
+  <responsive-dialog
     ref="dialogRef"
+    :snap-points="[0.6, 'full']"
     @hide="onDialogHide"
   >
     <q-card
       v-if="registration"
-      class="row-card rounded-xl"
-      style="width: min(560px, 95vw); max-width: min(640px, 95vw)"
+      class="row-card"
+      :class="sheet ? 'row-card--sheet' : 'rounded-xl'"
+      :style="cardStyle"
+      :flat="sheet"
     >
       <registration-dialog-header :registration="registration">
         <q-btn
@@ -41,7 +44,7 @@
 
       <q-scroll-area
         v-if="fields.length > 0"
-        style="height: min(480px, 65vh)"
+        class="field-scroll"
       >
         <div class="field-list">
           <div
@@ -81,8 +84,10 @@
 
     <q-card
       v-else
-      class="row-card rounded-xl"
-      style="width: min(560px, 95vw); max-width: min(640px, 95vw)"
+      class="row-card"
+      :class="sheet ? 'row-card--sheet' : 'rounded-xl'"
+      :style="cardStyle"
+      :flat="sheet"
     >
       <div class="empty-state column flex-center text-center q-pa-xl">
         <q-icon
@@ -103,11 +108,11 @@
         />
       </div>
     </q-card>
-  </q-dialog>
+  </responsive-dialog>
 </template>
 
 <script setup lang="ts">
-import { useDialogPluginComponent } from 'quasar';
+import { useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { computed, watch } from 'vue';
 import { storeToRefs } from 'pinia';
@@ -125,6 +130,7 @@ import { useRegistrationsStore } from '@/stores/registration-store';
 import TableCellWrapper from '@/components/event/table/TableCellWrapper.vue';
 import RegistrationActionList from '@/components/event/table/RegistrationActionList.vue';
 import RegistrationDialogHeader from '@/components/event/table/dialogs/RegistrationDialogHeader.vue';
+import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
 
 defineEmits([...useDialogPluginComponent.emits]);
 
@@ -135,11 +141,21 @@ const { registrationId, columns, renderers, event } = defineProps<{
   event: EventDetails;
 }>();
 
+const quasar = useQuasar();
 const { t } = useI18n();
 const { to } = useObjectTranslation();
 const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent();
 
 const { data: registrations } = storeToRefs(useRegistrationsStore());
+
+// Mirrors ResponsiveDialog's switch to a bottom sheet.
+const sheet = computed<boolean>(() => quasar.screen.lt.sm);
+
+const cardStyle = computed(() =>
+  sheet.value
+    ? undefined
+    : { width: 'min(560px, 95vw)', maxWidth: 'min(640px, 95vw)' },
+);
 
 // Reactive lookup instead of a static snapshot, so edits made elsewhere
 // (e.g. the table's inline cell editors) are reflected while the dialog is open.
@@ -200,6 +216,35 @@ const fields = computed<Field[]>(() => {
 .row-card {
   background: var(--md3-surface-container-low);
   overflow: hidden;
+}
+
+/* The sheet draws the surface and sets the height; the field list fills
+   the rest below the header and scrolls. */
+.row-card--sheet {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+
+  :deep(.dialog-header) {
+    padding-top: 0;
+    background: transparent;
+  }
+
+  .field-scroll {
+    flex: 1;
+    height: auto;
+    min-height: 0;
+  }
+
+  .field-list {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+.field-scroll {
+  height: min(480px, 65vh);
 }
 
 .header-btn {

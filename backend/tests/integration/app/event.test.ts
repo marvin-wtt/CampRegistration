@@ -264,6 +264,79 @@ describe('/api/v1/events', () => {
       expect(eventResultB).toHaveProperty('freePlaces.fr', 4);
     });
 
+    describe('free places total', () => {
+      const register = (
+        eventId: string,
+        country: string,
+        status: 'ACCEPTED' | 'PENDING' | 'WAITLISTED',
+        count: number,
+      ) =>
+        Promise.all(
+          Array.from({ length: count }, () =>
+            RegistrationFactory.create({
+              event: { connect: { id: eventId } },
+              role: 'participant',
+              country,
+              status,
+            }),
+          ),
+        );
+
+      const fetchEvent = async (eventId: string) => {
+        const { body } = await request().get(`/api/v1/events/`).send();
+
+        return body.data.find((v: any) => v.id === eventId);
+      };
+
+      it('should count every status and reserve freed places for the waiting list', async () => {
+        const event = await EventFactory.create({
+          ...eventListed,
+          countries: ['gb', 'fr'],
+          maxParticipants: { gb: 4, fr: 5 },
+        });
+        await register(event.id, 'gb', 'ACCEPTED', 2);
+        await register(event.id, 'gb', 'WAITLISTED', 2);
+        await register(event.id, 'fr', 'ACCEPTED', 2);
+        await register(event.id, 'fr', 'PENDING', 1);
+
+        const result = await fetchEvent(event.id);
+
+        expect(result).toHaveProperty('freePlaces', { gb: 0, fr: 2 });
+        expect(result).toHaveProperty('freePlacesTotal', 2);
+      });
+
+      it('should not let an overbooked country take places from another', async () => {
+        const event = await EventFactory.create({
+          ...eventListed,
+          countries: ['gb', 'fr'],
+          maxParticipants: { gb: 4, fr: 5 },
+        });
+        await register(event.id, 'gb', 'ACCEPTED', 4);
+        await register(event.id, 'gb', 'PENDING', 1);
+        await register(event.id, 'gb', 'WAITLISTED', 1);
+        await register(event.id, 'fr', 'ACCEPTED', 2);
+
+        const result = await fetchEvent(event.id);
+
+        expect(result).toHaveProperty('freePlaces', { gb: 0, fr: 3 });
+        expect(result).toHaveProperty('freePlacesTotal', 3);
+      });
+
+      it('should keep a freed shared place for the waiting list', async () => {
+        const event = await EventFactory.create({
+          ...eventListed,
+          maxParticipants: 5,
+        });
+        await register(event.id, 'gb', 'ACCEPTED', 4);
+        await register(event.id, 'gb', 'WAITLISTED', 2);
+
+        const result = await fetchEvent(event.id);
+
+        expect(result).toHaveProperty('freePlaces', 0);
+        expect(result).toHaveProperty('freePlacesTotal', 0);
+      });
+    });
+
     describe('query', () => {
       it('should respond with all events if view is "all" and user is admin', async () => {
         await EventFactory.create(eventListed);

@@ -1,85 +1,80 @@
 <template>
-  <q-dialog
+  <responsive-dialog
     ref="dialogRef"
     @hide="onDialogHide"
   >
-    <q-card class="q-dialog-plugin q-pb-none">
-      <q-form
-        @submit="onOKClick"
-        @reset="onCancelClick"
-      >
-        <q-card-section>
-          <div class="text-h6">
-            {{ t('title') }}
-          </div>
-        </q-card-section>
+    <dialog-card
+      :title="t('title')"
+      :width="480"
+      @submit="onOKClick"
+      @cancel="onCancelClick"
+    >
+      <div class="q-gutter-y-sm column no-wrap">
+        <!-- Time interval -->
+        <q-input
+          v-model.number="data.timeInterval"
+          :label="t('field.timeInterval.label')"
+          :hint="t('field.timeInterval.hint')"
+          hide-bottom-space
+          outlined
+          rounded
+        />
 
-        <q-card-section class="q-pt-none q-gutter-y-sm column">
-          <!-- Time interval -->
-          <q-input
-            v-model.number="data.timeInterval"
-            :label="t('field.timeInterval.label')"
-            :hint="t('field.timeInterval.hint')"
-            hide-bottom-space
-            outlined
-            rounded
-          />
+        <!-- Day start -->
+        <time-of-day-input
+          v-model="data.dayStart"
+          :label="t('field.dayStart.label')"
+          :rules="['time']"
+          hide-bottom-space
+          outlined
+          rounded
+        />
 
-          <!-- Day start -->
-          <time-of-day-input
-            v-model="data.dayStart"
-            :label="t('field.dayStart.label')"
-            :rules="['time']"
-            hide-bottom-space
-            outlined
-            rounded
-          />
+        <!-- Day end -->
+        <time-of-day-input
+          v-model="data.dayEnd"
+          :label="t('field.dayEnd.label')"
+          :rules="['time']"
+          hide-bottom-space
+          outlined
+          rounded
+        />
+        <!-- Show all translations -->
+        <q-toggle
+          v-model="data.showAllTranslations"
+          :label="t('field.showAllTranslations.label')"
+        />
+        <!-- Browse outside event dates -->
+        <q-toggle
+          v-model="data.browseOutsideEventDates"
+          :label="t('field.browseOutsideEventDates.label')"
+        />
+      </div>
 
-          <!-- Day end -->
-          <time-of-day-input
-            v-model="data.dayEnd"
-            :label="t('field.dayEnd.label')"
-            :rules="['time']"
-            hide-bottom-space
-            outlined
-            rounded
-          />
-          <!-- Show all translations -->
-          <q-toggle
-            v-model="data.showAllTranslations"
-            :label="t('field.showAllTranslations.label')"
-          />
-          <!-- Browse outside event dates -->
-          <q-toggle
-            v-model="data.browseOutsideEventDates"
-            :label="t('field.browseOutsideEventDates.label')"
-          />
-        </q-card-section>
-
-        <!-- action buttons -->
-        <q-card-actions align="right">
-          <q-btn
-            type="reset"
-            outline
-            rounded
-            color="primary"
-            :label="t('actions.cancel')"
-          />
-          <q-btn
-            type="submit"
-            rounded
-            color="primary"
-            :label="t('actions.save')"
-          />
-        </q-card-actions>
-      </q-form>
-    </q-card>
-  </q-dialog>
+      <template #actions>
+        <q-btn
+          type="reset"
+          outline
+          rounded
+          color="primary"
+          :label="t('actions.cancel')"
+        />
+        <q-btn
+          type="submit"
+          rounded
+          color="primary"
+          :label="t('actions.save')"
+        />
+      </template>
+    </dialog-card>
+  </responsive-dialog>
 </template>
 
 <script lang="ts" setup>
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
+import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
+import DialogCard from '@/components/common/dialogs/DialogCard.vue';
 import { reactive, toRaw } from 'vue';
 import TimeOfDayInput from '@/components/common/inputs/TimeOfDayInput.vue';
 import type { ProgramPlannerSettings } from '@camp-registration/common/settings';

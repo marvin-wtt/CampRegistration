@@ -71,10 +71,10 @@ export default {
       },
       values: {
         role: {
-          DIRECTOR: 'Directeur',
-          COORDINATOR: 'Coordinateur',
-          COUNSELOR: 'Conseiller',
-          VIEWER: 'Lecteur',
+          DIRECTOR: 'Direction',
+          COORDINATOR: 'Coordination',
+          COUNSELOR: 'Encadrement',
+          VIEWER: 'Lecture seule',
         },
       },
     },

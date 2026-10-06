@@ -4,10 +4,37 @@
     :error
     class="row justify-center"
   >
-    <!-- Each data card renders its own skeleton while `loading`; the static
-         parts (quick actions, section headings) render for real. -->
+    <!-- Each data card renders its own skeleton while `loading`. -->
     <div class="dashboard-shell col-12 col-md-11 col-xl-10">
-      <event-summary-hero :loading />
+      <event-summary-header :loading>
+        <template
+          v-if="
+            quasar.screen.lt.sm && (shortcutsLoading || quickActions.length > 0)
+          "
+          #actions
+        >
+          <template v-if="shortcutsLoading">
+            <q-skeleton
+              v-for="width in ['132px', '152px', '116px', '104px']"
+              :key="width"
+              type="QBtn"
+              class="shortcut-skeleton"
+            />
+          </template>
+          <template v-else>
+            <m-btn
+              v-for="action in quickActions"
+              :key="action.key"
+              :label="action.label"
+              :icon="action.icon"
+              :to="{ name: action.route }"
+              secondary
+              tonal
+              no-caps
+            />
+          </template>
+        </template>
+      </event-summary-header>
 
       <!-- The most consequential thing a manager can be unaware of: the event is
        configured correctly but reaching nobody. -->
@@ -19,256 +46,175 @@
         :verification-status="event.organizationVerificationStatus"
       />
 
-      <q-card
-        v-if="!loading && attentionItems.length > 0"
-        flat
-        bordered
-        class="attention-card"
+      <!-- Wide screens: the phase's main cards on the left, things to do on the
+           right. Narrow screens: one column in the layout's order. -->
+      <div
+        class="dashboard-columns"
+        :class="{ 'dashboard-columns--single': sideCards.length === 0 }"
       >
-        <q-card-section class="attention-content">
-          <div class="attention-heading row items-center no-wrap q-gutter-sm">
-            <div class="attention-icon row items-center justify-center">
-              <q-icon
-                name="notifications_active"
-                color="warning"
-                size="22px"
-              />
-            </div>
-            <div class="col">
-              <div class="text-subtitle1 text-weight-bold">
-                {{ t('attention.title') }}
-              </div>
-              <div class="text-caption text-grey-7">
-                {{ t('attention.subtitle') }}
-              </div>
-            </div>
-          </div>
-
-          <div class="attention-grid">
-            <button
-              v-for="item in attentionItems"
-              :key="item.key"
-              type="button"
-              class="attention-item"
-              @click="goToItem(item)"
-            >
-              <div class="attention-icon row items-center justify-center">
-                <q-icon
-                  :name="item.icon"
-                  :color="item.color"
-                  size="20px"
-                />
-              </div>
-              <span class="col text-left text-body2 text-weight-medium">
-                {{ item.label }}
-              </span>
-              <q-badge
-                :color="item.color"
-                rounded
-              >
-                {{ item.count }}
-              </q-badge>
-              <q-icon
-                name="chevron_right"
-                color="grey-6"
-                size="18px"
-              />
-            </button>
-          </div>
-        </q-card-section>
-      </q-card>
-
-      <section class="dashboard-section">
-        <div class="section-heading row items-end justify-between q-mb-sm">
-          <div>
-            <div class="text-overline text-primary text-weight-bold">
-              {{ t('actions.eyebrow') }}
-            </div>
-            <h2 class="text-h6 text-weight-bold q-my-none">
-              {{ t('actions.title') }}
-            </h2>
-          </div>
-        </div>
-
-        <div class="row q-col-gutter-md">
-          <div
-            v-for="action in quickActions"
-            :key="action.key"
-            class="col-12 col-sm-6 col-lg-3"
+        <div
+          v-for="column in columns"
+          :key="column.name"
+          class="dashboard-column"
+          :class="`dashboard-column--${column.name}`"
+        >
+          <template
+            v-for="card in column.cards"
+            :key="card.key"
           >
-            <q-card
-              flat
-              bordered
-              class="quick-action-card full-height cursor-pointer"
-              tabindex="0"
-              role="link"
-              @click="goTo(action.route)"
-              @keyup.enter="goTo(action.route)"
-              @keyup.space.prevent="goTo(action.route)"
-            >
-              <q-card-section class="row items-center no-wrap q-gutter-md">
-                <div
-                  class="quick-action-icon row items-center justify-center"
-                  :class="`text-${action.color}`"
-                >
-                  <q-icon
-                    :name="action.icon"
-                    size="24px"
-                  />
-                </div>
-                <div class="col">
-                  <div class="text-subtitle2 text-weight-bold">
-                    {{ action.label }}
-                  </div>
-                  <div class="text-caption text-grey-7">
-                    {{ action.caption }}
-                  </div>
-                </div>
-                <q-icon
-                  name="arrow_forward"
-                  color="grey-6"
-                  size="18px"
-                />
-              </q-card-section>
-            </q-card>
-          </div>
+            <setup-checklist-card
+              v-if="card.key === 'setup' && event"
+              :event
+              :style="card.style"
+            />
+            <attention-card
+              v-else-if="card.key === 'attention'"
+              :phase
+              :loading
+              :rooms="features.rooms"
+              :style="card.style"
+            />
+            <tasks-card
+              v-else-if="card.key === 'tasks'"
+              :loading="taskStore.isLoading"
+              :style="card.style"
+            />
+            <today-program-card
+              v-else-if="card.key === 'program' && event"
+              :event
+              :style="card.style"
+            />
+            <today-duties-card
+              v-else-if="card.key === 'duties' && event"
+              :event
+              :style="card.style"
+            />
+            <registration-overview-card
+              v-else-if="card.key === 'registrations'"
+              :loading
+              :style="card.style"
+            />
+            <readiness-card
+              v-else-if="card.key === 'readiness' && event"
+              :event
+              :loading
+              :rooms="features.rooms"
+              :program="features.program"
+              :style="card.style"
+            />
+            <demographics-card
+              v-else-if="card.key === 'demographics'"
+              :people="stats.acceptedParticipants.value"
+              :loading
+              :style="card.style"
+            />
+          </template>
         </div>
-      </section>
-
-      <section
-        v-if="can('event.tasks.view') && isShown('tasks')"
-        class="dashboard-section"
-      >
-        <tasks-due-widget :loading="tasksLoading" />
-      </section>
-
-      <!-- Renders nothing on days without duties. -->
-      <today-duties-widget
-        v-if="
-          can('event.chore_assignments.view') &&
-          can('event.chores.view') &&
-          isShown('chore_planner')
-        "
-        class="dashboard-section"
-      />
-
-      <section class="dashboard-section">
-        <div class="section-heading q-mb-sm">
-          <div class="text-overline text-primary text-weight-bold">
-            {{ t('overview.eyebrow') }}
-          </div>
-          <h2 class="text-h6 text-weight-bold q-my-none">
-            {{ t('overview.title') }}
-          </h2>
-        </div>
-
-        <div class="row q-col-gutter-md">
-          <div class="col-6 col-md-3 col-xs-12">
-            <stat-card
-              :label="t('kpi.participants')"
-              :value="stats.counts.value.accepted"
-              :caption="t('kpi.participantsCaption')"
-              :loading
-              icon="how_to_reg"
-              color="indigo"
-            />
-          </div>
-          <div
-            v-if="showPending"
-            class="col-6 col-md-3 col-xs-12"
-          >
-            <stat-card
-              :label="t('kpi.pending')"
-              :value="stats.counts.value.pending"
-              :caption="t('kpi.pendingCaption')"
-              :loading
-              icon="hourglass_top"
-              color="orange"
-            />
-          </div>
-          <div class="col-6 col-md-3 col-xs-12">
-            <stat-card
-              :label="t('kpi.waitlisted')"
-              :value="stats.counts.value.waitlisted"
-              :caption="t('kpi.waitlistedCaption')"
-              :loading
-              icon="event_seat"
-              color="blue-grey"
-            />
-          </div>
-          <div class="col-6 col-md-3 col-xs-12">
-            <stat-card
-              :label="t('kpi.team')"
-              :value="stats.staff.value.length"
-              :caption="t('kpi.teamCaption')"
-              :loading
-              icon="supervisor_account"
-              color="deep-purple"
-            />
-          </div>
-        </div>
-      </section>
-
-      <section
-        v-if="!loading && stats.multiCountryEvent.value"
-        class="dashboard-section"
-      >
-        <country-breakdown-table
-          :rows="stats.perCountry.value"
-          :show-pending="showPending"
-        />
-      </section>
-
-      <section class="dashboard-section">
-        <demographics-explorer
-          :people="stats.acceptedParticipants.value"
-          :loading
-        />
-      </section>
+      </div>
     </div>
   </page-state-handler>
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRouter } from 'vue-router';
+import { useQuasar } from 'quasar';
 import { storeToRefs } from 'pinia';
+import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
-import EventSummaryHero from '@/components/event/dashboard/EventSummaryHero.vue';
-import StatCard from '@/components/event/dashboard/StatCard.vue';
-import TodayDutiesWidget from '@/components/event/dashboard/TodayDutiesWidget.vue';
-import CountryBreakdownTable from '@/components/event/dashboard/CountryBreakdownTable.vue';
-import DemographicsExplorer from '@/components/event/dashboard/DemographicsExplorer.vue';
-import TasksDueWidget from '@/components/event/dashboard/TasksDueWidget.vue';
+import EventSummaryHeader from '@/components/event/dashboard/EventSummaryHeader.vue';
+import AttentionCard from '@/components/event/dashboard/AttentionCard.vue';
+import TasksCard from '@/components/event/dashboard/TasksCard.vue';
+import SetupChecklistCard from '@/components/event/dashboard/SetupChecklistCard.vue';
+import TodayProgramCard from '@/components/event/dashboard/TodayProgramCard.vue';
+import TodayDutiesCard from '@/components/event/dashboard/TodayDutiesCard.vue';
+import RegistrationOverviewCard from '@/components/event/dashboard/RegistrationOverviewCard.vue';
+import ReadinessCard from '@/components/event/dashboard/ReadinessCard.vue';
+import DemographicsCard from '@/components/event/dashboard/DemographicsCard.vue';
+import OrganizationUnverifiedNotice from '@/components/organization/OrganizationUnverifiedNotice.vue';
 import { useEventDetailsStore } from '@/stores/event-details-store';
+import { useProfileStore } from '@/stores/profile-store';
 import { useRegistrationsStore } from '@/stores/registration-store';
 import { useEventFilesStore } from '@/stores/event-files-store';
 import { useTaskStore } from '@/stores/task-store';
+import { useProgramPlannerStore } from '@/stores/program-planner-store';
+import { useProgramPublishedDayStore } from '@/stores/program-published-day-store';
+import { useChoreStore } from '@/stores/chore-store';
+import { useChoreAssignmentStore } from '@/stores/chore-assignment-store';
 import { useEventStatistics } from '@/composables/eventStatistics';
-import { useRegistrationHelper } from '@/composables/registrationHelper';
 import { usePermissions } from '@/composables/permissions';
-import OrganizationUnverifiedNotice from '@/components/organization/OrganizationUnverifiedNotice.vue';
-import {
-  LOCAL_TEMPLATE_AGE,
-  LOCAL_TEMPLATE_MISSING,
-  LOCAL_TEMPLATE_PENDING,
-} from '@/components/event/table/localTableTemplates';
 import { useNavigationSettings } from '@/composables/eventNavigationSettings';
+import { type EventPhase, useEventPhase } from '@/composables/eventPhase';
 import type { PermissionRequirement } from '@/composables/scopePermissions';
 import type { HideableNavigationItem } from '@camp-registration/common/settings';
 
+type CardKey =
+  | 'setup'
+  | 'attention'
+  | 'tasks'
+  | 'program'
+  | 'duties'
+  | 'registrations'
+  | 'readiness'
+  | 'demographics';
+
+type Column = 'main' | 'side';
+
+// Ordered by priority, which is also the order on narrow screens. Detected
+// issues always lead.
+const LAYOUTS: Record<EventPhase, [CardKey, Column][]> = {
+  setup: [
+    ['attention', 'side'],
+    ['setup', 'main'],
+    ['tasks', 'side'],
+    ['registrations', 'main'],
+  ],
+  registration: [
+    ['attention', 'side'],
+    ['tasks', 'side'],
+    ['registrations', 'main'],
+    ['demographics', 'main'],
+  ],
+  preparation: [
+    ['attention', 'side'],
+    ['tasks', 'side'],
+    ['registrations', 'main'],
+    ['readiness', 'side'],
+    ['demographics', 'main'],
+  ],
+  running: [
+    ['attention', 'side'],
+    ['program', 'main'],
+    ['duties', 'side'],
+    ['tasks', 'side'],
+    ['registrations', 'main'],
+    ['demographics', 'main'],
+  ],
+  wrapUp: [
+    ['attention', 'side'],
+    ['tasks', 'side'],
+    ['registrations', 'main'],
+    ['demographics', 'main'],
+  ],
+};
+
 const { t } = useI18n();
-const router = useRouter();
+const quasar = useQuasar();
 
 const eventDetailsStore = useEventDetailsStore();
+const profileStore = useProfileStore();
 const registrationStore = useRegistrationsStore();
 const eventFilesStore = useEventFilesStore();
 const taskStore = useTaskStore();
+const programStore = useProgramPlannerStore();
+const publishedDayStore = useProgramPublishedDayStore();
+const choreStore = useChoreStore();
+const choreAssignmentStore = useChoreAssignmentStore();
 const stats = useEventStatistics();
-const helper = useRegistrationHelper();
 const { can, canAccess } = usePermissions();
-const { settings: navigationSettings } = useNavigationSettings();
+const { settings: navigationSettings, isLoading: navigationLoading } =
+  useNavigationSettings();
+const { viewedPhase } = useEventPhase();
 
 // Features hidden from the nav rail are hidden here too.
 function isShown(item: HideableNavigationItem): boolean {
@@ -287,32 +233,96 @@ const loading = computed<boolean>(
   () => registrationsLoading.value || eventLoading.value,
 );
 
-// Tasks are optional to the dashboard: a failed fetch falls back to the
-// widget's empty state.
-const tasksLoading = computed<boolean>(() => taskStore.isLoading);
-
 const error = computed<string | null>(
   () => eventError.value ?? registrationsError.value,
 );
 
+const features = computed(() => ({
+  tasks: can('event.tasks.view') && isShown('tasks'),
+  duties:
+    can('event.chore_assignments.view') &&
+    can('event.chores.view') &&
+    isShown('chore_planner'),
+  program: can('event.program_items.view') && isShown('program_planner'),
+  rooms: can('event.rooms.view') && isShown('room_planner'),
+}));
+
 // Started during setup, not awaited: the stores flag themselves loading before
 // the first render, so the page renders its skeletons instead of an idle frame.
+// Tasks are optional to the dashboard: a failed fetch leaves them out.
 void registrationStore.fetchData();
 void eventDetailsStore.fetchData();
 void eventFilesStore.fetchData();
 void taskStore.fetchData();
+watch(
+  features,
+  ({ program, duties }) => {
+    if (program) {
+      void programStore.fetchData();
+      void publishedDayStore.fetchData();
+    }
+    if (duties) {
+      void choreStore.fetchData();
+      void choreAssignmentStore.fetchData();
+    }
+  },
+  { immediate: true },
+);
 
-// Pending only matters when registrations are confirmed manually.
-const showPending = computed<boolean>(
-  () => event.value?.confirmationMode !== 'AUTOMATIC',
+// Before the event has loaded the registration layout stands in.
+const phase = computed<EventPhase>(() => viewedPhase.value ?? 'registration');
+
+function isAvailable(key: CardKey): boolean {
+  switch (key) {
+    case 'tasks':
+      return features.value.tasks;
+    case 'program':
+      return features.value.program;
+    case 'duties':
+      return features.value.duties;
+    case 'readiness':
+      return features.value.rooms || features.value.program;
+    default:
+      return true;
+  }
+}
+
+const cards = computed(() =>
+  LAYOUTS[phase.value]
+    .filter(([key]) => isAvailable(key))
+    .map(([key, column], index) => ({
+      key,
+      column,
+      // Takes effect where the columns dissolve on narrow screens.
+      style: { order: index },
+    })),
+);
+
+const sideCards = computed(() =>
+  cards.value.filter((card) => card.column === 'side'),
+);
+
+const columns = computed<{ name: Column; cards: typeof cards.value }[]>(() => [
+  {
+    name: 'main',
+    cards: cards.value.filter((card) => card.column === 'main'),
+  },
+  { name: 'side', cards: sideCards.value },
+]);
+
+// Shortcuts depend on permissions (profile and event) and the hidden nav items;
+// most managers have some, so they are skeletonized rather than left out.
+const shortcutsLoading = computed<boolean>(
+  () =>
+    navigationLoading.value ||
+    profileStore.user === undefined ||
+    event.value === undefined,
 );
 
 interface QuickAction {
   key: string;
   label: string;
-  caption: string;
   icon: string;
-  color: string;
   route: string;
   permission: PermissionRequirement<'event'>;
   navItem?: HideableNavigationItem;
@@ -323,42 +333,36 @@ const quickActions = computed<QuickAction[]>(() =>
     [
       {
         key: 'participants',
-        label: t('actions.participants.label'),
-        caption: t('actions.participants.caption'),
+        label: t('actions.participants'),
         icon: 'groups',
-        color: 'primary',
         route: 'management.event.participants',
         permission: 'event.registrations.view',
       },
       {
         key: 'contact',
-        label: t('actions.contact.label'),
-        caption: t('actions.contact.caption'),
+        label: t('actions.contact'),
         icon: 'mark_email_unread',
-        color: 'teal',
         route: 'management.event.contact',
         navItem: 'contact',
         permission: { any: ['event.messages.create', 'event.messages.view'] },
       },
       {
         key: 'program',
-        label: t('actions.program.label'),
-        caption: t('actions.program.caption'),
+        label: t('actions.program'),
         icon: 'calendar_month',
-        color: 'deep-orange',
         route: 'management.event.program-planner',
         navItem: 'program_planner',
         permission: 'event.program_items.view',
       },
       {
-        key: 'rooms',
-        label: t('actions.rooms.label'),
-        caption: t('actions.rooms.caption'),
-        icon: 'bed',
-        color: 'deep-purple',
-        route: 'management.event.room-planner',
-        navItem: 'room_planner',
-        permission: 'event.rooms.view',
+        key: 'duties',
+        label: t('actions.duties'),
+        icon: 'cleaning_services',
+        route: 'management.event.chore-planner',
+        navItem: 'chore_planner',
+        permission: {
+          all: ['event.chore_assignments.view', 'event.chores.view'],
+        },
       },
     ] satisfies QuickAction[]
   ).filter(
@@ -367,412 +371,99 @@ const quickActions = computed<QuickAction[]>(() =>
       (!action.navItem || isShown(action.navItem)),
   ),
 );
-
-interface AttentionItem {
-  key: string;
-  label: string;
-  count: number;
-  icon: string;
-  color: string;
-  // Deep-links into the participants table via a hidden local template…
-  template?: string;
-  // …or navigates to another management route (e.g. file settings).
-  route?: string;
-}
-
-const attentionItems = computed<AttentionItem[]>(() => {
-  const participants = stats.participants.value;
-  const event = eventDetailsStore.data;
-
-  const pending = stats.counts.value.pending;
-
-  const missingInfo = participants.filter(
-    (r) => !helper.email(r) || !helper.fullName(r),
-  ).length;
-
-  const ageOutOfRange = participants.filter((r) => {
-    const age = helper.age(r);
-    if (age == null || event == null) {
-      return false;
-    }
-    return age < event.minAge || age > event.maxAge;
-  }).length;
-
-  // Event file slots that need attention: declared but not uploaded, plus slots
-  // missing a file for one of the event's locales (see event-files-store).
-  const missingFiles = eventFilesStore.missingFilesCount;
-
-  const items: AttentionItem[] = [
-    {
-      key: 'pending',
-      label: t('attention.pending'),
-      count: pending,
-      icon: 'hourglass_top',
-      color: 'orange',
-      template: LOCAL_TEMPLATE_PENDING,
-    },
-    {
-      key: 'missing',
-      label: t('attention.missing'),
-      count: missingInfo,
-      icon: 'contact_mail',
-      color: 'red',
-      template: LOCAL_TEMPLATE_MISSING,
-    },
-    {
-      key: 'age',
-      label: t('attention.age'),
-      count: ageOutOfRange,
-      icon: 'cake',
-      color: 'deep-orange',
-      template: LOCAL_TEMPLATE_AGE,
-    },
-    {
-      key: 'files',
-      label: t('attention.files'),
-      count: missingFiles,
-      icon: 'upload_file',
-      color: 'blue',
-      route: 'management.event.settings.files',
-    },
-  ];
-
-  return items.filter((item) => item.count > 0);
-});
-
-function goToItem(item: AttentionItem) {
-  if (item.template) {
-    goToTemplate(item.template);
-    return;
-  }
-  if (item.route) {
-    goTo(item.route);
-  }
-}
-
-function goToTemplate(template: string) {
-  void router.push({
-    name: 'management.event.participants',
-    query: { template },
-  });
-}
-
-function goTo(routeName: string) {
-  void router.push({ name: routeName });
-}
 </script>
 
 <style scoped>
-/* Mirrors `.attention-card`, but keyed to `error`: that card lists things to
-   get around to, this one says the event is currently reaching nobody. */
+.shortcut-skeleton {
+  height: 40px;
+  border-radius: 999px;
+}
+
 .dashboard-shell {
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 20px;
   max-width: 1440px;
 }
 
-.dashboard-section {
-  min-width: 0;
-}
-
-.section-heading {
-  padding-inline: 2px;
-}
-
-.quick-action-card,
-.attention-card {
-  border-radius: 16px;
-}
-
-.quick-action-card {
-  transition:
-    transform 0.18s ease,
-    border-color 0.18s ease,
-    box-shadow 0.18s ease;
-}
-
-.quick-action-card:hover,
-.quick-action-card:focus-visible {
-  border-color: var(--q-primary);
-  box-shadow: 0 8px 24px rgba(38, 50, 56, 0.1);
-  outline: none;
-  transform: translateY(-2px);
-}
-
-.quick-action-icon,
-.attention-icon {
-  width: 44px;
-  height: 44px;
-  flex: 0 0 auto;
-  border-radius: 13px;
-  background: rgba(127, 127, 127, 0.1);
-}
-
-.attention-card {
-  border-left: 4px solid var(--md3-warning);
-  background: color-mix(in srgb, var(--md3-warning) 7%, var(--md3-surface));
-}
-
-.attention-content {
+.dashboard-columns {
   display: grid;
-  grid-template-columns: minmax(220px, 0.7fr) minmax(0, 2fr);
-  gap: 16px 24px;
-  padding: 16px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
 }
 
-.attention-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
+/* Single column: the wrappers dissolve so the cards follow their `order`. */
+.dashboard-column {
+  display: contents;
 }
 
-.attention-item {
-  display: flex;
-  min-width: 0;
-  min-height: 52px;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-  background: var(--md3-surface);
-  border: 1px solid var(--md3-outline-variant);
-  border-radius: 10px;
-  transition:
-    border-color 0.18s ease,
-    background 0.18s ease;
-}
-
-.attention-item:hover,
-.attention-item:focus-visible {
-  background: var(--md3-surface-container-high);
-  border-color: var(--md3-warning);
-  outline: none;
-}
-
-.attention-item .attention-icon {
-  width: 34px;
-  height: 34px;
-  border-radius: 9px;
-}
-
-:global(.body--dark) .quick-action-card:hover,
-:global(.body--dark) .quick-action-card:focus-visible {
-  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.28);
-}
-
-@media (max-width: 1199px) {
-  .attention-content {
-    grid-template-columns: 1fr;
+@media (min-width: 1280px) {
+  .dashboard-columns {
+    grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
+    align-items: start;
   }
-}
 
-@media (max-width: 899px) {
-  .attention-grid {
-    grid-template-columns: 1fr;
+  .dashboard-column {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* Nothing on the side: the main column takes the width. */
+  .dashboard-columns--single {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dashboard-columns--single .dashboard-column--side {
+    display: none;
   }
 }
 
 @media (max-width: 599px) {
-  .dashboard-shell {
-    gap: 22px;
-  }
-
-  .quick-action-card .q-card__section {
-    padding: 14px;
-  }
-
-  .attention-content {
-    padding: 14px;
+  .dashboard-shell,
+  .dashboard-columns {
+    gap: 16px;
   }
 }
 </style>
 
 <i18n lang="yaml" locale="en">
-kpi:
-  participants: 'Participants'
-  participantsCaption: 'Accepted registrations'
-  pending: 'Pending'
-  pendingCaption: 'Awaiting confirmation'
-  waitlisted: 'Waitlisted'
-  waitlistedCaption: 'Waiting for a place'
-  team: 'Team'
-  teamCaption: 'Leaders and staff'
 actions:
-  eyebrow: 'Coordinator tools'
-  title: 'Quick actions'
-  participants:
-    label: 'Participants'
-    caption: 'Review and manage registrations'
-  contact:
-    label: 'Communication'
-    caption: 'Send updates to your groups'
-  program:
-    label: 'Program'
-    caption: 'Plan the event schedule'
-  rooms:
-    label: 'Rooms'
-    caption: 'Assign beds and rooms'
-overview:
-  eyebrow: 'At a glance'
-  title: 'Registration overview'
-attention:
-  title: 'Needs attention'
-  subtitle: 'Items that may require a decision'
-  pending: 'Pending confirmations'
-  missing: 'Missing contact details'
-  age: 'Age outside event range'
-  files: 'Missing files'
+  participants: 'Participants'
+  contact: 'Communication'
+  program: 'Program'
+  duties: 'Duties'
 </i18n>
 
 <i18n lang="yaml" locale="de">
-kpi:
-  participants: 'Teilnehmende'
-  participantsCaption: 'Angenommene Anmeldungen'
-  pending: 'Ausstehend'
-  pendingCaption: 'Warten auf Bestätigung'
-  waitlisted: 'Warteliste'
-  waitlistedCaption: 'Warten auf einen Platz'
-  team: 'Team'
-  teamCaption: 'Leitung und Mitarbeitende'
 actions:
-  eyebrow: 'Werkzeuge'
-  title: 'Schnellzugriff'
-  participants:
-    label: 'Teilnehmende'
-    caption: 'Anmeldungen verwalten'
-  contact:
-    label: 'Kommunikation'
-    caption: 'Nachrichten an Gruppen senden'
-  program:
-    label: 'Programm'
-    caption: 'Veranstaltungsprogramm planen'
-  rooms:
-    label: 'Zimmer'
-    caption: 'Betten und Zimmer zuweisen'
-overview:
-  eyebrow: 'Auf einen Blick'
-  title: 'Anmeldeübersicht'
-attention:
-  title: 'Zu erledigen'
-  subtitle: 'Punkte, die eine Entscheidung benötigen'
-  pending: 'Ausstehende Bestätigungen'
-  missing: 'Fehlende Kontaktdaten'
-  age: 'Alter außerhalb des Bereichs'
-  files: 'Fehlende Dateien'
+  participants: 'Teilnehmende'
+  contact: 'Kommunikation'
+  program: 'Programm'
+  duties: 'Dienste'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-kpi:
-  participants: 'Participants'
-  participantsCaption: 'Inscriptions acceptées'
-  pending: 'En attente'
-  pendingCaption: 'En attente de confirmation'
-  waitlisted: "Liste d'attente"
-  waitlistedCaption: "En attente d'une place"
-  team: 'Équipe'
-  teamCaption: 'Responsables et équipe'
 actions:
-  eyebrow: 'Outils de coordination'
-  title: 'Actions rapides'
-  participants:
-    label: 'Participants'
-    caption: 'Gérer les inscriptions'
-  contact:
-    label: 'Communication'
-    caption: 'Envoyer des nouvelles aux groupes'
-  program:
-    label: 'Programme'
-    caption: "Planifier le programme de l'événement"
-
-  rooms:
-    label: 'Chambres'
-    caption: 'Attribuer les lits et chambres'
-overview:
-  eyebrow: "En un coup d'œil"
-  title: 'Aperçu des inscriptions'
-attention:
-  title: 'À traiter'
-  subtitle: 'Éléments nécessitant une décision'
-  pending: 'Confirmations en attente'
-  missing: 'Coordonnées manquantes'
-  age: 'Âge hors de la plage'
-  files: 'Fichiers manquants'
+  participants: 'Participants'
+  contact: 'Communication'
+  program: 'Programme'
+  duties: 'Corvées'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-kpi:
-  participants: 'Uczestnicy'
-  participantsCaption: 'Zaakceptowane rejestracje'
-  pending: 'Oczekujący'
-  pendingCaption: 'Oczekują na potwierdzenie'
-  waitlisted: 'Lista rezerwowa'
-  waitlistedCaption: 'Oczekują na miejsce'
-  team: 'Zespół'
-  teamCaption: 'Kadra i personel'
 actions:
-  eyebrow: 'Narzędzia koordynatora'
-  title: 'Szybkie działania'
-  participants:
-    label: 'Uczestnicy'
-    caption: 'Zarządzaj rejestracjami'
-  contact:
-    label: 'Komunikacja'
-    caption: 'Wysyłaj wiadomości do grup'
-  program:
-    label: 'Program'
-    caption: 'Zaplanuj harmonogram wydarzenia'
-  rooms:
-    label: 'Pokoje'
-    caption: 'Przydziel łóżka i pokoje'
-overview:
-  eyebrow: 'W skrócie'
-  title: 'Przegląd rejestracji'
-attention:
-  title: 'Wymaga uwagi'
-  subtitle: 'Sprawy wymagające decyzji'
-  pending: 'Oczekujące potwierdzenia'
-  missing: 'Brakujące dane kontaktowe'
-  age: 'Wiek poza zakresem'
-  files: 'Brakujące pliki'
+  participants: 'Uczestnicy'
+  contact: 'Komunikacja'
+  program: 'Program'
+  duties: 'Dyżury'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-kpi:
-  participants: 'Účastníci'
-  participantsCaption: 'Přijaté registrace'
-  pending: 'Čekající'
-  pendingCaption: 'Čeká na potvrzení'
-  waitlisted: 'Čekací listina'
-  waitlistedCaption: 'Čekají na místo'
-  team: 'Tým'
-  teamCaption: 'Vedoucí a personál'
 actions:
-  eyebrow: 'Nástroje koordinátora'
-  title: 'Rychlé akce'
-  participants:
-    label: 'Účastníci'
-    caption: 'Správa registrací'
-  contact:
-    label: 'Komunikace'
-    caption: 'Poslat zprávy skupinám'
-  program:
-    label: 'Program'
-    caption: 'Naplánovat program akce'
-  rooms:
-    label: 'Pokoje'
-    caption: 'Přiřadit lůžka a pokoje'
-overview:
-  eyebrow: 'Na první pohled'
-  title: 'Přehled registrací'
-attention:
-  title: 'Vyžaduje pozornost'
-  subtitle: 'Položky vyžadující rozhodnutí'
-  pending: 'Čekající potvrzení'
-  missing: 'Chybějící kontaktní údaje'
-  age: 'Věk mimo rozsah'
-  files: 'Chybějící soubory'
+  participants: 'Účastníci'
+  contact: 'Komunikace'
+  program: 'Program'
+  duties: 'Služby'
 </i18n>
