@@ -31,7 +31,12 @@ export interface MessageContent {
  * the same step, so they can't drift from what recipients get.
  */
 export function prepareMessageContent(content: MessageContent): MessageContent {
-  return { ...content, body: sanitizeHtmlContent(content.body) };
+  return {
+    subject: content.subject,
+    body: sanitizeHtmlContent(content.body),
+    priority: content.priority,
+    replyTo: content.replyTo,
+  };
 }
 
 @injectable()

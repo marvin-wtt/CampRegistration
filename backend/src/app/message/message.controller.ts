@@ -12,7 +12,6 @@ import {
   draftToRenderable,
   messageToRenderable,
 } from '#app/registration/messages/renderable-message';
-import Handlebars from 'handlebars';
 import { RegistrationTemplateMessage } from '#app/registration/messages/template.mail';
 import { MessageResource } from '#app/message/message.resource';
 import { FileResource } from '#app/file/file.resource';
@@ -143,16 +142,7 @@ export class MessageController extends BaseController {
       message: draftToRenderable(prepareMessageContent({ subject, body })),
     });
 
-    let preview: MessagePreview;
-    try {
-      preview = await mail.preview();
-    } catch (error) {
-      // A placeholder typo is the manager's to fix, not a server fault.
-      if (error instanceof Handlebars.Exception) {
-        throw new ApiError(httpStatus.BAD_REQUEST, error.message);
-      }
-      throw error;
-    }
+    const preview: MessagePreview = await mail.preview();
 
     res.json({ data: preview });
   }

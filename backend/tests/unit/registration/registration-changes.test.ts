@@ -3,11 +3,13 @@ import type { Event, Registration } from '#generated/prisma/client.js';
 import {
   changesForRegistration,
   diffRegistrationData,
+} from '#app/registration/registration.changes';
+import {
   redactChangeValues,
   renderChangesHtml,
   renderChangesText,
   unwrapChangesBlock,
-} from '#app/registration/registration.changes';
+} from '#app/registration/messages/changes.markup';
 
 const labels = { cleared: 'removed', file: 'file updated' };
 
