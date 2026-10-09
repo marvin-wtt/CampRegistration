@@ -1,17 +1,17 @@
 <template>
   <responsive-dialog
     ref="dialogRef"
-    :snap-points="[0.6, 'full']"
+    :snap-points="['full']"
     @hide="onDialogHide"
   >
     <q-card
-      class="details-card column no-wrap"
-      :class="sheet ? 'details-card--sheet' : 'rounded-xl'"
+      class="picker-card column no-wrap"
+      :class="sheet ? 'picker-card--sheet' : 'rounded-xl'"
       :flat="sheet"
     >
-      <m-toolbar class="details-toolbar q-px-sm">
+      <m-toolbar class="picker-toolbar q-px-sm">
         <q-icon
-          name="mail"
+          name="history"
           size="sm"
           class="q-mx-sm"
         />
@@ -31,14 +31,12 @@
         </m-btn>
       </m-toolbar>
 
-      <!-- Sized to the email, scrolling only once it outgrows the viewport. -->
-      <message-view
-        :message
-        :registrations
-        :can-delete
-        :can-reuse
-        class="details-view"
-        @action="onDialogOK"
+      <div class="picker-hint">{{ t('hint') }}</div>
+
+      <message-list
+        class="col picker-list"
+        :messages
+        @select="(message) => onDialogOK(message)"
       />
     </q-card>
   </responsive-dialog>
@@ -50,88 +48,95 @@ import { useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { MToolbar } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eToolbar';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
-import type { Message, Registration } from '@camp-registration/common/entities';
-import MessageView from '@/components/event/contact/MessageView.vue';
+import type { Message } from '@camp-registration/common/entities';
 import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
+import MessageList from '@/components/event/contact/MessageList.vue';
 
 defineEmits([...useDialogPluginComponent.emits]);
+
+defineProps<{
+  messages: Message[];
+}>();
 
 const { t } = useI18n();
 const quasar = useQuasar();
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
 
-// A static snapshot rather than a reactive store lookup (unlike
-// RegistrationDetailsDialog): messages have no in-place editors elsewhere in
-// the UI, so there's nothing for this dialog to stay in sync with.
-const { canDelete = false, canReuse = false } = defineProps<{
-  message: Message;
-  registrations: Registration[];
-  canDelete?: boolean;
-  canReuse?: boolean;
-}>();
-
 // Mirrors ResponsiveDialog's switch to a bottom sheet.
 const sheet = computed<boolean>(() => quasar.screen.lt.sm);
 </script>
 
 <style scoped>
-.details-card {
-  width: min(720px, 95vw);
-  max-width: min(900px, 95vw);
-  max-height: 88vh;
+.picker-card {
+  width: min(560px, 95vw);
+  height: 80vh;
+  max-height: 85vh;
   background: var(--md3-surface-container-low);
-  overflow: hidden;
 }
 
 /* The sheet draws the surface and sets the height. */
-.details-card--sheet {
+.picker-card--sheet {
   width: 100%;
-  max-width: none;
   height: 100%;
   max-height: none;
   background: transparent;
 }
 
-.details-toolbar {
+.picker-toolbar {
   background: transparent;
-}
-
-.details-view {
-  flex: 1 1 auto;
 }
 
 .header-btn {
   color: var(--md3-on-surface-variant);
 }
+
+.picker-hint {
+  padding: 0 20px 12px;
+  color: var(--md3-on-surface-variant);
+  font-size: 0.8125rem;
+}
+
+.picker-list {
+  padding: 0 8px 12px;
+}
+
+.picker-card--sheet .picker-list {
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+}
 </style>
 
 <i18n lang="yaml" locale="en">
-title: 'Sent message'
+title: 'Start from a sent message'
+hint: 'Subject, text and attachments are copied. You choose the recipients.'
 action:
   close: 'Close'
 </i18n>
 
 <i18n lang="yaml" locale="de">
-title: 'Gesendete Nachricht'
+title: 'Gesendete Nachricht übernehmen'
+hint: 'Betreff, Text und Anhänge werden übernommen. Die Empfänger wählst du selbst.'
 action:
   close: 'Schließen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-title: 'Message envoyé'
+title: 'Partir d’un message envoyé'
+hint: 'L’objet, le texte et les pièces jointes sont copiés. Vous choisissez les destinataires.'
 action:
   close: 'Fermer'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-title: 'Wysłana wiadomość'
+title: 'Użyj wysłanej wiadomości'
+hint: 'Temat, treść i załączniki zostaną skopiowane. Odbiorców wybierasz samodzielnie.'
 action:
   close: 'Zamknij'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-title: 'Odeslaná zpráva'
+title: 'Vyjít z odeslané zprávy'
+hint: 'Předmět, text a přílohy se zkopírují. Příjemce si vybereš sám.'
 action:
   close: 'Zavřít'
 </i18n>

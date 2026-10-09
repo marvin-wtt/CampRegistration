@@ -281,7 +281,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
     ]);
   }
 
-  protected content(): Content | Promise<Content> {
+  private renderBody(): string {
     const locale = this.payload.registration.country ?? this.locale();
 
     const template = translateObject(this.payload.message.body, locale);
@@ -296,7 +296,20 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
       },
     });
 
-    const body = unwrapChangesBlock(compile(this.context('html')));
+    return unwrapChangesBlock(compile(this.context('html')));
+  }
+
+  /** Subject and body as this recipient would get them, without sending. */
+  async preview(): Promise<{ subject: string; body: string }> {
+    return {
+      subject: await this.subject(),
+      body: this.renderBody(),
+    };
+  }
+
+  protected content(): Content | Promise<Content> {
+    const locale = this.payload.registration.country ?? this.locale();
+    const body = this.renderBody();
     // The hidden preheader is flattened to plain text here, before `build()`
     // redacts the mail's HTML for the durable copy — by then there is no
     // `change-value` span left for that redaction to strip. Redact first so a

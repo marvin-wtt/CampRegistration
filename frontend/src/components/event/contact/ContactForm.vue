@@ -2,9 +2,8 @@
   <q-form
     ref="formRef"
     class="contact-form"
-    :class="{ 'contact-form--standalone': standalone }"
     data-test="contact-form"
-    @submit="send()"
+    @submit="confirmAndSend()"
     @reset="reset()"
   >
     <div class="composer">
@@ -209,6 +208,19 @@
           </template>
         </file-input>
 
+        <m-btn
+          v-if="persistKey && hasContent"
+          text
+          error
+          no-caps
+          icon="delete_outline"
+          :label="t('draft.discard.action')"
+          :disable="sendInProgress"
+          data-test="discard-draft"
+          class="discard-button"
+          @click="discard()"
+        />
+
         <q-btn
           :label="sendLabel"
           :loading="sendInProgress"
@@ -228,10 +240,21 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+} from 'vue';
 import { useI18n } from 'vue-i18n';
 import ContactSelect from '@/components/event/contact/ContactSelect.vue';
-import type { Message, Registration } from '@camp-registration/common/entities';
+import type {
+  Message,
+  Registration,
+  ServiceFile,
+} from '@camp-registration/common/entities';
 import type { Contact, ContactDraft } from '@/components/event/contact/Contact';
 import { QForm, type QSelectOption, useQuasar } from 'quasar';
 import { type QRejectedEntry } from 'quasar';
@@ -242,18 +265,27 @@ import { useAPIService } from '@/services/APIService';
 import FileInput, {
   type FileInputModel,
 } from '@/components/common/inputs/FileInput.vue';
+import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import { usePermissions } from '@/composables/permissions';
+import MessageSendCheckDialog from '@/components/event/contact/MessageSendCheckDialog.vue';
+import {
+  type StoredRecipient,
+  useMessageDraft,
+} from '@/composables/messageDraft';
+import { useRegistrationContact } from '@/composables/registrationContact';
+import { uniqueRegistrations } from '@/components/event/contact/contactHelpers';
 
 const {
   registrations,
   initialContacts,
   draft = null,
-  standalone = false,
+  persistKey = null,
 } = defineProps<{
   registrations: Registration[];
   initialContacts?: Contact[];
   draft?: ContactDraft | null;
-  standalone?: boolean;
+  /** Keeps the unsent message in this browser under this key. */
+  persistKey?: string | null;
 }>();
 
 const emit = defineEmits<{
@@ -266,10 +298,13 @@ const apiService = useAPIService();
 const eventDetailsStore = useEventDetailsStore();
 const { withResultNotification } = useServiceNotifications();
 const { can } = usePermissions();
+const { contactFor } = useRegistrationContact();
 
 onMounted(async () => {
   if (initialContacts?.length) {
     to.value = [...initialContacts];
+  } else if (!draft) {
+    restoreStoredDraft();
   }
   // Ensure event details (contact email, form) are available before deriving
   // the default reply-to address.
@@ -287,19 +322,11 @@ const to = ref<Contact[]>([]);
 const replyTo = ref<string>('');
 const suggestedReplyTo = computed(() => defaultReplyTo());
 
-const recipientCountries = computed(() => {
-  const extractRegistrationCountry = (r: Registration) => {
-    return r.computedData.address.country;
-  };
-
-  return to.value
-    .flatMap((contact) =>
-      contact.type === 'group'
-        ? contact.registrations.map(extractRegistrationCountry)
-        : [extractRegistrationCountry(contact.registration)],
-    )
-    .filter((c): c is string => c != null);
-});
+const recipientCountries = computed(() =>
+  uniqueRegistrations(to.value)
+    .map((r) => r.computedData.address.country)
+    .filter((c): c is string => c != null),
+);
 
 function defaultReplyTo(): string {
   const contactEmail = eventDetailsStore.data?.contactEmail;
@@ -373,15 +400,7 @@ function setPriority(value: unknown) {
 }
 
 function recipientIds(contacts: Contact[]): Set<string> {
-  const ids = new Set<string>();
-  contacts.forEach((contact) => {
-    if (contact.type === 'group') {
-      contact.registrations.forEach((r: Registration) => ids.add(r.id));
-    } else {
-      ids.add(contact.registration.id);
-    }
-  });
-  return ids;
+  return new Set(uniqueRegistrations(contacts).map((r) => r.id));
 }
 
 const recipientCount = computed<number>(() => recipientIds(to.value).size);
@@ -460,6 +479,36 @@ function getAttachmentErrorTranslated(entity: QRejectedEntry): string {
   }
 }
 
+// Sending to a whole event can't be taken back, so it goes through a check.
+function confirmAndSend() {
+  if (attachments.value?.find((value) => value.id === undefined)) {
+    quasar.notify({
+      type: 'warning',
+      message: t('error.attachment.ongoing'),
+    });
+    return;
+  }
+
+  quasar
+    .dialog({
+      component: MessageSendCheckDialog,
+      componentProps: {
+        recipients: uniqueRegistrations(to.value),
+        subject: subject.value,
+        body: text.value,
+        replyTo: replyTo.value,
+        attachments: uploadedAttachments(),
+      },
+    })
+    .onOk(() => void send());
+}
+
+function uploadedAttachments(): ServiceFile[] {
+  return (attachments.value ?? []).filter(
+    (file): file is ServiceFile => file.id !== undefined,
+  );
+}
+
 async function send() {
   const eventId = eventDetailsStore.data?.id;
   if (!eventId) {
@@ -482,11 +531,8 @@ async function send() {
   try {
     const message = await withResultNotification('send', async () => {
       return apiService.createMessage(eventId, {
-        registrationIds: to.value.flatMap((contact) => {
-          return contact.type === 'group'
-            ? contact.registrations.map((r: Registration) => r.id)
-            : contact.registration.id;
-        }),
+        // Selected groups may overlap; the server expects each id once.
+        registrationIds: [...recipientIds(to.value)],
         replyTo: replyTo.value,
         subject: subject.value,
         body: text.value,
@@ -499,6 +545,7 @@ async function send() {
 
     // Reset all fields on success
     reset();
+    storedDraft.clear();
     emit('sent', message);
   } finally {
     sendInProgress.value = false;
@@ -510,46 +557,55 @@ async function send() {
 // loads, or the form is reset) so `dirty` doesn't compare against a stale
 // `draft` prop once its content has been superseded (e.g. after sending).
 const baseline = ref<{
+  recipientIds: Set<string>;
   subject: string;
   body: string;
   priority: 'high' | 'normal' | 'low';
   attachments: FileInputModel[];
 }>({
+  recipientIds: recipientIds(initialContacts ?? []),
   subject: '',
   body: '',
   priority: 'normal',
   attachments: [],
 });
 
-// Loading a draft (e.g. resending a sent message) replaces the message content
-// but intentionally starts with an empty recipient list so the user chooses who
-// to send to. Attachments arrive pre-duplicated as fresh session files.
+// Loads content into the composer as its new pristine state. Without
+// recipients it keeps the pre-filled ones, so the user chooses who to send to.
+// Attachments arrive pre-duplicated as fresh session files.
+function load(value: ContactDraft) {
+  to.value = value.recipients
+    ? [...value.recipients]
+    : initialContacts?.length
+      ? [...initialContacts]
+      : [];
+  subject.value = value.subject;
+  text.value = value.body;
+  priority.value = value.priority;
+  // Keep the draft's reply-to if set; otherwise derive it only when we already
+  // have recipients, leaving it empty to be filled on "To" blur if not.
+  replyTo.value = value.replyTo ?? '';
+  if (to.value.length > 0) {
+    applyDefaultReplyTo();
+  }
+  attachments.value = [...value.attachments];
+  baseline.value = {
+    recipientIds: recipientIds(to.value),
+    subject: value.subject,
+    body: value.body,
+    priority: value.priority,
+    attachments: [...value.attachments],
+  };
+
+  void nextTick(() => formRef.value?.resetValidation());
+}
+
 watch(
   () => draft,
   (value) => {
-    if (!value) {
-      return;
+    if (value) {
+      load(value);
     }
-
-    to.value = initialContacts?.length ? [...initialContacts] : [];
-    subject.value = value.subject;
-    text.value = value.body;
-    priority.value = value.priority;
-    // Keep the draft's reply-to if set; otherwise derive it only when we already
-    // have recipients, leaving it empty to be filled on "To" blur if not.
-    replyTo.value = value.replyTo ?? '';
-    if (to.value.length > 0) {
-      applyDefaultReplyTo();
-    }
-    attachments.value = [...value.attachments];
-    baseline.value = {
-      subject: value.subject,
-      body: value.body,
-      priority: value.priority,
-      attachments: [...value.attachments],
-    };
-
-    void nextTick(() => formRef.value?.resetValidation());
   },
 );
 
@@ -565,6 +621,7 @@ function reset() {
   }
   attachments.value = [];
   baseline.value = {
+    recipientIds: recipientIds(to.value),
     subject: '',
     body: '',
     priority: 'normal',
@@ -590,13 +647,12 @@ function attachmentsChanged(): boolean {
   );
 }
 
-// Whether the user has changed anything relative to the pristine `baseline`
-// (recipients are compared against `initialContacts` directly, since those
-// never change after mount). The reply-to is excluded because it is derived
-// automatically rather than authored.
+// Whether the user has changed anything relative to the pristine `baseline`.
+// The reply-to is excluded because it is derived automatically rather than
+// authored.
 const dirty = computed<boolean>(() => {
   return (
-    !sameIds(recipientIds(to.value), recipientIds(initialContacts ?? [])) ||
+    !sameIds(recipientIds(to.value), baseline.value.recipientIds) ||
     subject.value !== baseline.value.subject ||
     text.value !== baseline.value.body ||
     priority.value !== baseline.value.priority ||
@@ -604,7 +660,173 @@ const dirty = computed<boolean>(() => {
   );
 });
 
-defineExpose({ dirty });
+const hasContent = computed<boolean>(
+  () =>
+    to.value.length > 0 ||
+    subject.value !== '' ||
+    text.value !== '' ||
+    attachments.value.length > 0,
+);
+
+const storedDraft = useMessageDraft(() => persistKey);
+const storedOk = ref<boolean>(false);
+
+function storedRecipient(contact: Contact): StoredRecipient {
+  return contact.type === 'group'
+    ? {
+        type: 'group',
+        name: contact.name,
+        registrationIds: contact.registrations.map((r) => r.id),
+        ...(contact.country !== undefined ? { country: contact.country } : {}),
+      }
+    : { type: 'registration', registrationId: contact.registration.id };
+}
+
+function restoredContact(
+  recipient: StoredRecipient,
+  byId: Map<string, Registration>,
+): Contact | null {
+  if (recipient.type === 'registration') {
+    const registration = byId.get(recipient.registrationId);
+    return registration ? contactFor(registration) : null;
+  }
+  // Registrations deleted since drop out of the group.
+  const members = recipient.registrationIds.flatMap((id) => {
+    const registration = byId.get(id);
+    return registration ? [registration] : [];
+  });
+  return members.length > 0
+    ? {
+        type: 'group',
+        name: recipient.name,
+        registrations: members,
+        ...(recipient.country !== undefined
+          ? { country: recipient.country }
+          : {}),
+      }
+    : null;
+}
+
+function restoreStoredDraft() {
+  const stored = storedDraft.draft.value;
+  if (!stored) {
+    return;
+  }
+  const byId = new Map(registrations.map((r) => [r.id, r]));
+  load({
+    recipients: stored.recipients.flatMap(
+      (recipient) => restoredContact(recipient, byId) ?? [],
+    ),
+    subject: stored.subject,
+    body: stored.body,
+    priority: stored.priority,
+    replyTo: stored.replyTo || null,
+    attachments: [],
+  });
+  storedOk.value = true;
+
+  if (stored.attachmentNames.length > 0) {
+    quasar.notify({
+      type: 'info',
+      message: t('draft.attachmentsLost', stored.attachmentNames.length),
+      caption: stored.attachmentNames.join(', '),
+    });
+  }
+}
+
+// The key can arrive after mount (profile or event still loading).
+watch(
+  () => persistKey,
+  (key, previous) => {
+    if (key && !previous && !hasContent.value) {
+      restoreStoredDraft();
+    }
+  },
+);
+
+// Autosaved while there is something to keep, cleared once there isn't.
+let saveTimer: ReturnType<typeof setTimeout> | undefined;
+
+function persist() {
+  saveTimer = undefined;
+  if (!hasContent.value) {
+    storedDraft.clear();
+    storedOk.value = false;
+    return;
+  }
+  storedOk.value = storedDraft.save({
+    recipients: to.value.map(storedRecipient),
+    subject: subject.value,
+    body: text.value,
+    priority: priority.value,
+    replyTo: replyTo.value,
+    attachmentNames: attachmentNames.value,
+  });
+}
+
+// Leaving must not drop what was typed in the last moments before it.
+function flush() {
+  if (saveTimer !== undefined) {
+    clearTimeout(saveTimer);
+    persist();
+  }
+}
+
+// Not deep: recipients are replaced, not mutated, so walking every selected
+// registration on each keystroke would buy nothing. Attachments are mutated in
+// place, and only their names are stored.
+const attachmentNames = computed<string[]>(() =>
+  attachments.value.map((file) => file.name),
+);
+
+watch([to, subject, text, priority, replyTo, attachmentNames], () => {
+  if (!persistKey) {
+    return;
+  }
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(persist, 400);
+});
+
+window.addEventListener('pagehide', flush);
+onBeforeUnmount(() => {
+  window.removeEventListener('pagehide', flush);
+  flush();
+});
+
+// Changes that a reload would lose: everything without a stored draft, and
+// attachments even with one.
+const unsaved = computed<boolean>(
+  () =>
+    dirty.value &&
+    (!persistKey || !storedOk.value || attachments.value.length > 0),
+);
+
+function discard() {
+  quasar
+    .dialog({
+      title: t('draft.discard.title'),
+      message: t('draft.discard.message'),
+      ok: {
+        label: t('draft.discard.ok'),
+        color: 'negative',
+        rounded: true,
+      },
+      cancel: {
+        color: 'primary',
+        flat: true,
+        rounded: true,
+      },
+      persistent: true,
+    })
+    .onOk(() => {
+      clearTimeout(saveTimer);
+      reset();
+      storedDraft.clear();
+      storedOk.value = false;
+    });
+}
+
+defineExpose({ dirty, unsaved, hasContent, load });
 </script>
 
 <style scoped>
@@ -614,12 +836,6 @@ defineExpose({ dirty });
   min-height: 0;
   overflow: hidden;
   flex-direction: column;
-}
-
-.contact-form--standalone {
-  width: min(100%, 1040px);
-  margin-inline: auto;
-  padding: 24px;
 }
 
 .composer {
@@ -691,10 +907,6 @@ defineExpose({ dirty });
 }
 
 @media (max-width: 599px) {
-  .contact-form--standalone {
-    padding: 0 16px 16px;
-  }
-
   .composer-fields {
     padding: 12px 16px;
   }
@@ -721,6 +933,14 @@ defineExpose({ dirty });
 </style>
 
 <i18n lang="yaml" locale="en">
+draft:
+  attachmentsLost: 'Your draft was restored, but its attachment has to be added again. | Your draft was restored, but its attachments have to be added again.'
+  discard:
+    action: 'Discard'
+    title: 'Discard draft'
+    message: 'Delete this unsent message? This can’t be undone.'
+    ok: 'Discard'
+
 action:
   send: 'Send'
   sendTo: 'Send ({count})'
@@ -768,6 +988,14 @@ request:
 </i18n>
 
 <i18n lang="yaml" locale="de">
+draft:
+  attachmentsLost: 'Dein Entwurf wurde wiederhergestellt, der Anhang muss aber erneut hinzugefügt werden. | Dein Entwurf wurde wiederhergestellt, die Anhänge müssen aber erneut hinzugefügt werden.'
+  discard:
+    action: 'Verwerfen'
+    title: 'Entwurf verwerfen'
+    message: 'Diese ungesendete Nachricht löschen? Das kann nicht rückgängig gemacht werden.'
+    ok: 'Verwerfen'
+
 action:
   send: 'Senden'
   sendTo: 'Senden ({count})'
@@ -815,6 +1043,14 @@ request:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
+draft:
+  attachmentsLost: 'Votre brouillon a été restauré, mais sa pièce jointe doit être ajoutée à nouveau. | Votre brouillon a été restauré, mais ses pièces jointes doivent être ajoutées à nouveau.'
+  discard:
+    action: 'Supprimer'
+    title: 'Supprimer le brouillon'
+    message: 'Supprimer ce message non envoyé ? Cette action est irréversible.'
+    ok: 'Supprimer'
+
 action:
   send: 'Envoyer'
   sendTo: 'Envoyer ({count})'
@@ -862,6 +1098,14 @@ request:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
+draft:
+  attachmentsLost: 'Wersja robocza została przywrócona, ale załącznik trzeba dodać ponownie. | Wersja robocza została przywrócona, ale załączniki trzeba dodać ponownie.'
+  discard:
+    action: 'Odrzuć'
+    title: 'Odrzuć wersję roboczą'
+    message: 'Usunąć tę niewysłaną wiadomość? Tej operacji nie można cofnąć.'
+    ok: 'Odrzuć'
+
 action:
   send: 'Wyślij'
   sendTo: 'Wyślij ({count})'
@@ -909,6 +1153,14 @@ request:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
+draft:
+  attachmentsLost: 'Koncept byl obnoven, ale přílohu je třeba přidat znovu. | Koncept byl obnoven, ale přílohy je třeba přidat znovu.'
+  discard:
+    action: 'Zahodit'
+    title: 'Zahodit koncept'
+    message: 'Smazat tuto neodeslanou zprávu? Tuto akci nelze vrátit.'
+    ok: 'Zahodit'
+
 action:
   send: 'Odeslat'
   sendTo: 'Odeslat ({count})'

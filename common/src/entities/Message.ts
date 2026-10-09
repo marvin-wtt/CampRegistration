@@ -24,6 +24,18 @@ export interface Message extends Identifiable {
   createdAt: string | null;
 }
 
+export interface MessagePreviewData {
+  registrationId: string;
+  subject: string;
+  body: string;
+}
+
+/** A message rendered for one recipient: placeholders filled, no layout. */
+export interface MessagePreview {
+  subject: string;
+  body: string;
+}
+
 export interface MessageCreateData {
   registrationIds: string[];
   replyTo?: string | string[] | undefined;

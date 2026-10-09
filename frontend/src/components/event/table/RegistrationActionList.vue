@@ -11,8 +11,9 @@
       </q-item-section>
     </q-item>
 
+    <!-- Pending registrations can't be written to: the server refuses them. -->
     <q-item
-      v-if="can('event.messages.create')"
+      v-if="can('event.messages.create') && registration.status !== 'PENDING'"
       v-close-popup
       :disable="!hasEmail"
       clickable

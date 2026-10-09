@@ -1,5 +1,8 @@
 import { z, type ZodType } from 'zod';
-import type { MessageCreateData } from '@camp-registration/common/entities';
+import type {
+  MessageCreateData,
+  MessagePreviewData,
+} from '@camp-registration/common/entities';
 
 const show = z.object({
   params: z.object({
@@ -29,6 +32,17 @@ const store = z.object({
   }) satisfies ZodType<MessageCreateData>,
 });
 
+const preview = z.object({
+  params: z.object({
+    eventId: z.ulid(),
+  }),
+  body: z.object({
+    registrationId: z.ulid(),
+    subject: z.string().trim().min(1),
+    body: z.string().trim().min(1),
+  }) satisfies ZodType<MessagePreviewData>,
+});
+
 const resend = z.object({
   params: z.object({
     eventId: z.ulid(),
@@ -54,6 +68,7 @@ export default {
   show,
   index,
   store,
+  preview,
   resend,
   destroy,
   duplicateAttachments,

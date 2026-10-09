@@ -1,70 +1,76 @@
-import { test, expect } from "../support/fixtures";
-import { waitForMessageBySentTo } from "../support/maildev";
+import { test, expect } from '../support/fixtures';
+import { waitForMessageBySentTo } from '../support/maildev';
 
-test.describe("message", () => {
-  test("should send a message to a registration and deliver it by email", async ({
+test.describe('message', () => {
+  test('should send a message to a registration and deliver it by email', async ({
     page,
   }) => {
-    const eventId = "01JHP0CXJFR4MQS8SF1HQJCY38";
+    const eventId = '01JHP0CXJFR4MQS8SF1HQJCY38';
 
-    await page.goto("/login");
-    const loginForm = page.getByTestId("login-form");
-    await loginForm.getByTestId("email").fill("john@example.com");
-    await loginForm.getByTestId("password").fill("password");
-    await loginForm.getByTestId("submit").click();
+    await page.goto('/login');
+    const loginForm = page.getByTestId('login-form');
+    await loginForm.getByTestId('email').fill('john@example.com');
+    await loginForm.getByTestId('password').fill('password');
+    await loginForm.getByTestId('submit').click();
     await expect(page).toHaveURL(/\/management\/events$/);
 
     await page.goto(`/management/events/${eventId}/contact`);
 
-    const contactForm = page.getByTestId("contact-form");
+    const contactForm = page.getByTestId('contact-form');
 
-    const toField = contactForm.getByTestId("to");
+    const toField = contactForm.getByTestId('to');
     await toField.click();
 
-    const toValue = "Tom";
+    const toValue = 'Tom';
 
-    const dialog = page.getByRole("dialog");
+    const dialog = page.getByRole('dialog');
     if (await dialog.isVisible()) {
-      await dialog.locator("input").fill(toValue);
+      await dialog.locator('input').fill(toValue);
     } else {
-      await toField.locator("input").fill(toValue);
+      await toField.locator('input').fill(toValue);
     }
 
-    await page.getByText("Tom Smith", { exact: true }).click();
+    await page.getByText('Tom Smith', { exact: true }).click();
 
     if (await dialog.isVisible()) {
       // Close the dialog.
-      await page.keyboard.press("Escape");
+      await page.keyboard.press('Escape');
     }
 
-    const replyToInput = contactForm.getByTestId("reply-to").locator("input");
+    const replyToInput = contactForm.getByTestId('reply-to').locator('input');
     await replyToInput.clear();
-    await replyToInput.fill("test@email.com");
+    await replyToInput.fill('test@email.com');
 
-    const subjectField = contactForm.getByTestId("subject");
+    const subjectField = contactForm.getByTestId('subject');
     await subjectField.click();
     await subjectField
       .locator('[contenteditable="true"]')
-      .pressSequentially("Welcome to event");
+      .pressSequentially('Welcome to event');
 
-    const messageField = contactForm.getByTestId("message");
+    const messageField = contactForm.getByTestId('message');
     await messageField.click();
     await messageField
       .locator('[contenteditable="true"]')
-      .pressSequentially("See you soon!");
+      .pressSequentially('See you soon!');
+
+    // Sending opens a check, which previews the message before anything goes out.
+    await contactForm.getByTestId('send').click();
+    const confirm = page.getByTestId('send-check-confirm');
+    await expect(confirm).toBeEnabled();
 
     const createMessageResponse = page.waitForResponse(
       (resp) =>
-        resp.url().includes(`/api/v1/events/${eventId}/messages`) &&
-        resp.request().method() === "POST",
+        new URL(resp.url()).pathname.replace(/\/$/, '') ===
+          `/api/v1/events/${eventId}/messages` &&
+        resp.request().method() === 'POST',
     );
-    await contactForm.getByTestId("send").click();
+    await confirm.click();
     const response = await createMessageResponse;
 
     expect(response.status()).toBe(201);
 
-    const email = await waitForMessageBySentTo("tom.smith@example.com");
-    expect(email.subject).toBe("Welcome to event");
-    expect(email.text).toContain("See you soon!");
+    const email = await waitForMessageBySentTo('tom.smith@example.com');
+    expect(email.subject).toBe('Welcome to event');
+    expect(email.text).toContain('See you soon!');
   });
 });

@@ -19,6 +19,21 @@ const MESSAGE_INCLUDE = {
   },
 } as const;
 
+export interface MessageContent {
+  subject: string;
+  body: string;
+  priority?: string | undefined;
+  replyTo?: string | undefined;
+}
+
+/**
+ * A message as it is stored, and therefore as it is sent. Previews go through
+ * the same step, so they can't drift from what recipients get.
+ */
+export function prepareMessageContent(content: MessageContent): MessageContent {
+  return { ...content, body: sanitizeHtmlContent(content.body) };
+}
+
 @injectable()
 export class MessageService extends BaseService {
   constructor(
@@ -76,10 +91,7 @@ export class MessageService extends BaseService {
     return this.transaction(async (tx) => {
       const message = await tx.message.create({
         data: {
-          subject: data.subject,
-          body: sanitizeHtmlContent(data.body),
-          priority: data.priority,
-          replyTo: data.replyTo,
+          ...prepareMessageContent(data),
           eventId,
           sentByUserId: userId,
           attachments: data.attachmentIds
