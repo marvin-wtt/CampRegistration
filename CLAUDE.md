@@ -113,7 +113,9 @@ reconstructing the steps:
 
 `.claude/hooks/` runs on every session: Prettier after each write, an i18n
 completeness check after touching translations, and approval prompts before
-destructive commands or edits under `prisma/migrations/`.
+destructive commands or edits under `prisma/migrations/`. The Prettier hook only
+covers Write/Edit — run `npx prettier --write` on files changed through Bash (sed,
+scripts) before finishing.
 
 ## Testing
 

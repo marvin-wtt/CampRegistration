@@ -173,9 +173,7 @@ const sendable = computed<Registration[]>(() =>
 );
 
 // Countries matter only for events held across several, like the dashboard's.
-const multiCountry = computed<boolean>(
-  () => stats.multiCountryEvent.value,
-);
+const multiCountry = computed<boolean>(() => stats.multiCountryEvent.value);
 
 const options = computed<Contact[]>(() => [
   ...createGroups(sendable.value),
