@@ -53,10 +53,15 @@
           <q-input
             v-model="data.website"
             :label="t('field.website')"
+            :rules="[website]"
+            type="url"
+            inputmode="url"
+            placeholder="https://"
             color="primary"
             hide-bottom-space
             rounded
             outlined
+            @blur="data.website = normalizeWebsiteUrl(data.website ?? '')"
           />
 
           <q-separator spaced />
@@ -169,6 +174,7 @@ import { useI18n } from 'vue-i18n';
 import { ref } from 'vue';
 import { useOrganizationsStore } from '@/stores/organizations-store';
 import CountrySelect from '@/components/common/inputs/CountrySelect.vue';
+import { isValidWebsiteUrl, normalizeWebsiteUrl } from '@/utils/websiteUrl';
 import type { OrganizationCreateData } from '@camp-registration/common/entities';
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
@@ -195,6 +201,10 @@ const data = ref<OrganizationCreateData>({
 });
 
 const required = (val?: string | null) => !!val || t('rule.required');
+const website = (val?: string | null) =>
+  !val?.trim() ||
+  isValidWebsiteUrl(normalizeWebsiteUrl(val)) ||
+  t('rule.website');
 
 async function onSubmit() {
   loading.value = true;
@@ -202,7 +212,7 @@ async function onSubmit() {
     const organization = await store.createData({
       ...data.value,
       phone: data.value.phone || null,
-      website: data.value.website || null,
+      website: normalizeWebsiteUrl(data.value.website ?? '') || null,
       registrationNumber: data.value.registrationNumber || null,
       verificationNote: data.value.verificationNote || null,
     });
@@ -247,6 +257,7 @@ section:
   registration: 'Registered address'
 rule:
   required: 'This field is required'
+  website: 'Enter a valid website address, e.g. https://example.com'
 hint:
   name: 'The registered name of your organization'
   registrationNumber: 'As shown in the official register'
@@ -275,6 +286,7 @@ section:
   registration: 'Eingetragene Adresse'
 rule:
   required: 'Dieses Feld ist erforderlich'
+  website: 'Gib eine gültige Webadresse ein, z. B. https://example.com'
 hint:
   name: 'Der eingetragene Name deiner Organisation'
   registrationNumber: 'Wie im offiziellen Register angegeben'
@@ -303,6 +315,7 @@ section:
   registration: 'Adresse enregistrée'
 rule:
   required: 'Ce champ est requis'
+  website: 'Saisis une adresse web valide, p. ex. https://example.com'
 hint:
   name: 'Le nom enregistré de ton organisation'
   registrationNumber: 'Tel qu’indiqué au registre officiel'
@@ -331,6 +344,7 @@ section:
   registration: 'Adres rejestrowy'
 rule:
   required: 'To pole jest wymagane'
+  website: 'Podaj prawidłowy adres strony, np. https://example.com'
 hint:
   name: 'Zarejestrowana nazwa Twojej organizacji'
   registrationNumber: 'Zgodnie z oficjalnym rejestrem'
@@ -359,6 +373,7 @@ section:
   registration: 'Registrovaná adresa'
 rule:
   required: 'Toto pole je povinné'
+  website: 'Zadej platnou webovou adresu, např. https://example.com'
 hint:
   name: 'Registrovaný název tvé organizace'
   registrationNumber: 'Jak je uvedeno v oficiálním rejstříku'

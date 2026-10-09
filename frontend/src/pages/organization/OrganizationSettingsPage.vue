@@ -204,13 +204,17 @@
               <q-input
                 v-model="form.website"
                 :label="t('field.website')"
+                :rules="[website]"
                 type="url"
+                inputmode="url"
+                placeholder="https://"
                 :disable="locked"
                 hide-bottom-space
                 color="primary"
                 rounded
                 outlined
                 class="col-12"
+                @blur="form.website = normalizeWebsiteUrl(form.website ?? '')"
               >
                 <template #prepend>
                   <q-icon name="language" />
@@ -325,6 +329,7 @@ import CountrySelect from '@/components/common/inputs/CountrySelect.vue';
 import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
 import DangerCard from '@/components/common/DangerCard.vue';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
+import { isValidWebsiteUrl, normalizeWebsiteUrl } from '@/utils/websiteUrl';
 import { requiresReverification } from '@camp-registration/common/entities';
 import type {
   OrganizationDetails,
@@ -413,6 +418,14 @@ function required(value?: string | null): true | string {
   return !!value?.trim() || t('rule.required');
 }
 
+function website(value?: string | null): true | string {
+  return (
+    !value?.trim() ||
+    isValidWebsiteUrl(normalizeWebsiteUrl(value)) ||
+    t('rule.website')
+  );
+}
+
 /**
  * The inputs hold `''` for a field the entity stores as `null`. Coerce in one
  * place so the re-verification check compares against the same shape the server
@@ -423,7 +436,7 @@ function payload(data: OrganizationUpdateData): OrganizationUpdateData {
   return {
     ...data,
     phone: data.phone || null,
-    website: data.website || null,
+    website: normalizeWebsiteUrl(data.website ?? '') || null,
     registrationNumber: data.registrationNumber || null,
     verificationNote: data.verificationNote || null,
   };
@@ -542,6 +555,7 @@ rejected:
   action: 'Overview'
 rule:
   required: 'Required'
+  website: 'Enter a valid website address, e.g. https://example.com'
 section:
   identity:
     title: 'Legal identity'
@@ -594,6 +608,7 @@ rejected:
   action: 'Übersicht'
 rule:
   required: 'Pflichtfeld'
+  website: 'Gib eine gültige Webadresse ein, z. B. https://example.com'
 section:
   identity:
     title: 'Rechtliche Identität'
@@ -646,6 +661,7 @@ rejected:
   action: 'Aperçu'
 rule:
   required: 'Obligatoire'
+  website: 'Saisis une adresse web valide, p. ex. https://example.com'
 section:
   identity:
     title: 'Identité légale'
@@ -698,6 +714,7 @@ rejected:
   action: 'Przegląd'
 rule:
   required: 'Pole wymagane'
+  website: 'Podaj prawidłowy adres strony, np. https://example.com'
 section:
   identity:
     title: 'Dane rejestrowe'
@@ -750,6 +767,7 @@ rejected:
   action: 'Přehled'
 rule:
   required: 'Povinné'
+  website: 'Zadej platnou webovou adresu, např. https://example.com'
 section:
   identity:
     title: 'Právní údaje'
