@@ -7,6 +7,8 @@ interface GroupContact {
   type: 'group';
   name: string;
   registrations: Registration[];
+  /** One country's share of the group; `null` for those without one. */
+  country?: string | null;
 }
 
 interface RegistrationContact {
@@ -18,11 +20,12 @@ interface RegistrationContact {
 export type Contact = GroupContact | RegistrationContact;
 
 /**
- * Message content loaded into the composer when resending a sent message.
- * Recipients are intentionally excluded — resending starts with an empty
+ * Content loaded into the composer: a sent message reused as a template, or a
+ * restored draft. Without `recipients` the composer starts with an empty
  * recipient list so the user chooses who to send to.
  */
 export interface ContactDraft {
+  recipients?: Contact[];
   subject: string;
   body: string;
   priority: 'high' | 'normal' | 'low';

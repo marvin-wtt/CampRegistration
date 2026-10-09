@@ -1,6 +1,6 @@
-import { describe, it, expect, vi } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
-import { nextTick } from 'vue';
+import { nextTick, ref } from 'vue';
 import { installQuasarPlugin } from '@/../test/vitest/utils/quasar';
 import { QSelect } from 'quasar';
 import ContactSelect from '@/components/event/contact/ContactSelect.vue';
@@ -8,6 +8,17 @@ import type { Registration } from '@camp-registration/common/entities';
 import type { Contact } from '@/components/event/contact/Contact';
 
 installQuasarPlugin();
+
+// Whether the event is held across several countries.
+const multiCountryEvent = ref(false);
+
+vi.mock('@/composables/eventStatistics', () => ({
+  useEventStatistics: () => ({ multiCountryEvent }),
+}));
+
+beforeEach(() => {
+  multiCountryEvent.value = false;
+});
 
 vi.mock('@/composables/registrationHelper', () => ({
   useRegistrationHelper: () => ({
@@ -69,34 +80,19 @@ describe('ContactSelect', () => {
     expect(mountContactSelect([]).exists()).toBe(true);
   });
 
-  it('includes PENDING registrations as individual options with pending type', () => {
+  it('never offers PENDING registrations, alone or in a group', () => {
     const pending = createRegistration({ status: 'PENDING' });
     const accepted = createRegistration({ status: 'ACCEPTED' });
 
     const options = getOptions(mountContactSelect([pending, accepted]));
-    const allIds = options.flatMap((o) =>
+    const offeredIds = options.flatMap((o) =>
       o.type === 'group'
         ? o.registrations.map((r) => r.id)
         : [o.registration.id],
     );
 
-    expect(allIds).toContain(pending.id);
-    expect(allIds).toContain(accepted.id);
-
-    const pendingContact = options.find(
-      (o) => o.type !== 'group' && o.registration.id === pending.id,
-    );
-    expect(pendingContact?.type).toBe('pending');
-  });
-
-  it('never rolls PENDING registrations up into a group', () => {
-    const pending1 = createRegistration({ status: 'PENDING' });
-    const pending2 = createRegistration({ status: 'PENDING' });
-
-    const options = getOptions(mountContactSelect([pending1, pending2]));
-
-    expect(options.filter((o) => o.type === 'group')).toHaveLength(0);
-    expect(options.filter((o) => o.type === 'pending')).toHaveLength(2);
+    expect(offeredIds).not.toContain(pending.id);
+    expect(offeredIds).toContain(accepted.id);
   });
 
   it('creates an individual contact for each non-PENDING registration', () => {
@@ -157,22 +153,159 @@ describe('ContactSelect', () => {
     expect(group.registrations).toHaveLength(2);
   });
 
-  it('creates separate groups for registrations with different countries', () => {
-    const r1 = createRegistration({
+  function inCountry(
+    code: string | null,
+    overrides: Partial<Registration> = {},
+  ): Registration {
+    return createRegistration({
+      ...overrides,
       computedData: {
         ...baseComputedData(),
-        address: { street: null, city: null, zipCode: null, country: 'DE' },
+        ...overrides.computedData,
+        address: { street: null, city: null, zipCode: null, country: code },
       },
     });
-    const r2 = createRegistration({
-      computedData: {
-        ...baseComputedData(),
-        address: { street: null, city: null, zipCode: null, country: 'FR' },
-      },
+  }
+
+  function groups(options: Contact[]) {
+    return options.filter(
+      (o): o is Extract<Contact, { type: 'group' }> => o.type === 'group',
+    );
+  }
+
+  it('offers a group across countries and one per country', () => {
+    multiCountryEvent.value = true;
+    const de1 = inCountry('DE');
+    const de2 = inCountry('DE');
+    const fr = inCountry('FR');
+
+    const result = groups(getOptions(mountContactSelect([de1, de2, fr])));
+
+    // Countries follow their translated names: France before Germany.
+    expect(result.map((g) => [g.country, g.registrations.length])).toEqual([
+      [undefined, 3],
+      ['FR', 1],
+      ['DE', 2],
+    ]);
+  });
+
+  it('gives registrations without a country a group of their own, listed last', () => {
+    multiCountryEvent.value = true;
+    const result = groups(
+      getOptions(mountContactSelect([inCountry(null), inCountry('DE')])),
+    );
+
+    expect(result.map((g) => g.country)).toEqual([undefined, 'DE', null]);
+  });
+
+  it('offers only the country group for a role within a single country', () => {
+    multiCountryEvent.value = true;
+    const participantDe = inCountry('DE');
+    const participantFr = inCountry('FR');
+    const counselorDe = inCountry('DE', {
+      computedData: { ...baseComputedData(), role: 'counselor' },
     });
 
-    const options = getOptions(mountContactSelect([r1, r2]));
-    expect(options.filter((o) => o.type === 'group')).toHaveLength(2);
+    const result = groups(
+      getOptions(
+        mountContactSelect([participantDe, participantFr, counselorDe]),
+      ),
+    );
+    const counselorGroups = result.filter((g) =>
+      g.registrations.some((r) => r.id === counselorDe.id),
+    );
+
+    expect(counselorGroups).toHaveLength(1);
+    expect(counselorGroups[0]?.country).toBe('DE');
+  });
+
+  it('ignores address countries in an event held in one country', () => {
+    const result = groups(
+      getOptions(
+        mountContactSelect([inCountry('DE'), inCountry('AT'), inCountry(null)]),
+      ),
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result[0]?.country).toBeUndefined();
+  });
+
+  it('labels the group with its country while an international event has registrations from one', () => {
+    multiCountryEvent.value = true;
+    const result = groups(
+      getOptions(mountContactSelect([inCountry('DE'), inCountry('DE')])),
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result[0]?.country).toBe('DE');
+  });
+
+  it('drops a country group once the group across countries is selected', async () => {
+    const de = inCountry('DE');
+    const fr = inCountry('FR');
+    const countryGroup: Contact = {
+      type: 'group',
+      name: 'Participant',
+      country: 'DE',
+      registrations: [de],
+    };
+    const wholeGroup: Contact = {
+      type: 'group',
+      name: 'Participant',
+      registrations: [de, fr],
+    };
+
+    const wrapper = mountContactSelect([de, fr], [countryGroup]);
+    await wrapper.setProps({ modelValue: [countryGroup, wholeGroup] });
+    await nextTick();
+
+    const emitted = wrapper.emitted('update:modelValue') as [Contact[]][];
+    expect(emitted.at(-1)![0]).toEqual([wholeGroup]);
+  });
+
+  it('names the waitlist group by its status, adding the role only when several roles wait', () => {
+    const waitingParticipant = createRegistration({ status: 'WAITLISTED' });
+    const waitingCounselor = createRegistration({
+      status: 'WAITLISTED',
+      computedData: { ...baseComputedData(), role: 'counselor' },
+    });
+
+    // Tests run without the component's translations, so `t` returns keys.
+    const single = groups(getOptions(mountContactSelect([waitingParticipant])));
+    expect(single.map((g) => g.name)).toEqual(['type.waitingList']);
+
+    const both = groups(
+      getOptions(mountContactSelect([waitingParticipant, waitingCounselor])),
+    );
+    expect(both.map((g) => g.name)).toEqual([
+      'type.waitingList (type.participant)',
+      'type.waitingList (counselor)',
+    ]);
+  });
+
+  it('lists waitlist groups after every other group', () => {
+    const waiting = createRegistration({ status: 'WAITLISTED' });
+    const counselor = createRegistration({
+      computedData: { ...baseComputedData(), role: 'counselor' },
+    });
+
+    const result = groups(getOptions(mountContactSelect([waiting, counselor])));
+    expect(result.at(-1)?.registrations[0]?.id).toBe(waiting.id);
+  });
+
+  it('finds groups by country name', async () => {
+    multiCountryEvent.value = true;
+    const wrapper = mountContactSelect([inCountry('DE'), inCountry('FR')]);
+    const filterFn = wrapper.findComponent(QSelect).props('onFilter') as (
+      val: string,
+      done: (fn: () => void) => void,
+    ) => void;
+
+    filterFn('france', (fn) => fn());
+    await nextTick();
+
+    const result = groups(getOptions(wrapper));
+    expect(result.map((g) => g.country)).toEqual(['FR']);
   });
 
   it('creates separate groups for registrations with different roles', () => {

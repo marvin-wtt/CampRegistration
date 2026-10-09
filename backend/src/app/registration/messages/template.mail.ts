@@ -12,7 +12,6 @@ import type {
 import { generateUrl } from '#utils/url';
 import { ulid } from '#utils/ulid';
 import { describeError } from '#utils/errors';
-import Handlebars from 'handlebars';
 import logger from '#core/logger';
 import { MessageDeliveryService } from '#app/messageDelivery/message-delivery.service';
 import { processBounceResults } from '#app/messageDelivery/message-bounce-notifier';
@@ -23,10 +22,12 @@ import { resolve } from '#core/ioc/container';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 import type { RegistrationChange } from '../registration.changes.js';
+import { redactChangeValues, unwrapChangesBlock } from './changes.markup.js';
 import {
-  redactChangeValues,
-  unwrapChangesBlock,
-} from '../registration.changes.js';
+  renderTemplate,
+  type SafeHtml,
+  TemplateError,
+} from '#core/mail/templating';
 import { RegistrationMessage } from './base.mail.js';
 import type { RenderableMessage } from './renderable-message.js';
 import type {
@@ -123,19 +124,10 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
     }
 
     // A subject is plain text, so values must not be HTML-escaped.
-    const compile = Handlebars.compile(template, {
-      noEscape: true,
-      knownHelpersOnly: true,
-      knownHelpers: {
-        if: true,
-        unless: true,
-        each: true,
-        with: true,
-      },
-    });
+    const subject = renderTemplate(template, this.context('text'), 'text');
 
     // A header can't span lines
-    return compile(this.context('text')).replace(/\s+/g, ' ').trim();
+    return subject.replace(/\s+/g, ' ').trim();
   }
 
   protected replyTo(): AddressLike | undefined {
@@ -162,9 +154,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
    * previous version to diff, so elsewhere the token renders to nothing
    * rather than breaking the mail.
    */
-  protected renderChanges(
-    _format: 'html' | 'text',
-  ): Handlebars.SafeString | string {
+  protected renderChanges(_format: 'html' | 'text'): SafeHtml | string {
     return '';
   }
 
@@ -281,22 +271,35 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
     ]);
   }
 
-  protected content(): Content | Promise<Content> {
+  private renderBody(): string {
     const locale = this.payload.registration.country ?? this.locale();
 
     const template = translateObject(this.payload.message.body, locale);
 
-    const compile = Handlebars.compile(template, {
-      knownHelpersOnly: true,
-      knownHelpers: {
-        if: true,
-        unless: true,
-        each: true,
-        with: true,
-      },
-    });
+    return unwrapChangesBlock(
+      renderTemplate(template, this.context('html'), 'html'),
+    );
+  }
 
-    const body = unwrapChangesBlock(compile(this.context('html')));
+  /** Subject and body as this recipient would get them, without sending. */
+  async preview(): Promise<{ subject: string; body: string }> {
+    try {
+      return {
+        subject: await this.subject(),
+        body: this.renderBody(),
+      };
+    } catch (error) {
+      // A placeholder typo is the manager's to fix, not a server fault.
+      if (error instanceof TemplateError) {
+        throw new ApiError(httpStatus.BAD_REQUEST, error.message);
+      }
+      throw error;
+    }
+  }
+
+  protected content(): Content | Promise<Content> {
+    const locale = this.payload.registration.country ?? this.locale();
+    const body = this.renderBody();
     // The hidden preheader is flattened to plain text here, before `build()`
     // redacts the mail's HTML for the durable copy — by then there is no
     // `change-value` span left for that redaction to strip. Redact first so a

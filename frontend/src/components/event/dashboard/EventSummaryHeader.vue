@@ -271,7 +271,7 @@ const showRegistrationStatus = computed<boolean>(
 .event-title {
   margin: 0;
   color: var(--md3-on-surface);
-  font-size: 1.5rem;
+  font-size: 1.75rem;
   font-weight: 700;
   line-height: 1.25;
   letter-spacing: -0.01em;
@@ -377,7 +377,7 @@ const showRegistrationStatus = computed<boolean>(
   }
 
   .event-title {
-    font-size: 1.25rem;
+    font-size: 1.5rem;
   }
 
   .copy-link-btn {

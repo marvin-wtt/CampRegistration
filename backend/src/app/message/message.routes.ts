@@ -40,6 +40,11 @@ export class MessageRouter extends ModuleRouter {
       controller(messageController, 'store'),
     );
     this.router.post(
+      '/preview',
+      guard(hasEventPermission('event.messages.create')),
+      controller(messageController, 'preview'),
+    );
+    this.router.post(
       '/:messageId/resend',
       guard(hasEventPermission('event.messages.create')),
       controller(messageController, 'resend'),

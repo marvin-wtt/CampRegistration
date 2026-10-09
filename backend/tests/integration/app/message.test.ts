@@ -567,6 +567,103 @@ describe('/api/v1/events/:eventId/messages', () => {
     });
   });
 
+  describe('POST /api/v1/events/:eventId/messages/preview', () => {
+    it('should render the placeholders for the registration without sending', async () => {
+      const { event, accessToken } = await crateEventWithManager({
+        name: "Camp d'enfants",
+      });
+      const registration = await RegistrationFactory.create({
+        event: { connect: { id: event.id } },
+        firstName: 'Max',
+        emails: ['test@example.com'],
+      });
+
+      const { body } = await request()
+        .post(`/api/v1/events/${event.id}/messages/preview`)
+        .send({
+          registrationId: registration.id,
+          subject: '{{ event.name }}',
+          body: '<p>Hi {{ registration.computedData.firstName }}</p>',
+        })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body.data).toStrictEqual({
+        subject: "Camp d'enfants",
+        body: '<p>Hi Max</p>',
+      });
+      expectEmailCount(0);
+      expect(await prisma.messageDelivery.count()).toBe(0);
+      expect(await prisma.message.count()).toBe(0);
+    });
+
+    it.each([
+      { name: 'an unclosed block', body: '{{#if registration.id}}Hi' },
+      { name: 'an unknown helper', body: '{{shout registration.id}}' },
+    ])('should respond with `400` status code for $name', async ({ body }) => {
+      const { event, accessToken } = await crateEventWithManager();
+      const registration = await RegistrationFactory.create({
+        event: { connect: { id: event.id } },
+      });
+
+      await request()
+        .post(`/api/v1/events/${event.id}/messages/preview`)
+        .send({ registrationId: registration.id, subject: 'Subject', body })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(400);
+    });
+
+    it('should respond with `400` status code when the registration is not in the event', async () => {
+      const { event, accessToken } = await crateEventWithManager();
+      const other = await RegistrationFactory.create({
+        event: { create: EventFactory.build() },
+      });
+
+      await request()
+        .post(`/api/v1/events/${event.id}/messages/preview`)
+        .send({ registrationId: other.id, subject: 'Subject', body: 'Body' })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(400);
+    });
+
+    it.each([
+      { role: 'DIRECTOR', expectedStatus: 200 },
+      { role: 'COORDINATOR', expectedStatus: 200 },
+      { role: 'COUNSELOR', expectedStatus: 403 },
+      { role: 'VIEWER', expectedStatus: 403 },
+    ])(
+      'should respond with `$expectedStatus` status code when user is $role',
+      async ({ role, expectedStatus }) => {
+        const { event, accessToken } = await crateEventWithManager(
+          undefined,
+          role,
+        );
+        const registration = await RegistrationFactory.create({
+          event: { connect: { id: event.id } },
+        });
+
+        await request()
+          .post(`/api/v1/events/${event.id}/messages/preview`)
+          .send({
+            registrationId: registration.id,
+            subject: 'Subject',
+            body: 'Body',
+          })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(expectedStatus);
+      },
+    );
+
+    it('should respond with `401` status code when unauthenticated', async () => {
+      const event = await EventFactory.create();
+
+      await request()
+        .post(`/api/v1/events/${event.id}/messages/preview`)
+        .send()
+        .expect(401);
+    });
+  });
+
   describe('GET /api/v1/events/:eventId/messages/', () => {
     it.each([
       { role: 'DIRECTOR', expectedStatus: 200 },

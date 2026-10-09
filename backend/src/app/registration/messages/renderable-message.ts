@@ -40,6 +40,25 @@ export function templateToRenderable(
 
 type MessageWithFiles = Message & { attachments: File[] };
 
+// A message not stored yet, shaped as it will be once it is: the column
+// defaults stand in for what was left out.
+export function draftToRenderable(content: {
+  subject: string;
+  body: string;
+  priority?: string | undefined;
+  replyTo?: string | undefined;
+}): RenderableMessage {
+  return {
+    kind: 'message',
+    id: '',
+    subject: content.subject,
+    body: content.body,
+    priority: content.priority ?? 'normal',
+    replyTo: content.replyTo ?? null,
+    attachments: [],
+  };
+}
+
 // Adapts an ad-hoc Message into the shared RenderableMessage contract, mirroring
 // templateToRenderable so both send paths build the shape in exactly one place.
 export function messageToRenderable(

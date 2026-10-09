@@ -2,6 +2,8 @@ import type {
   Message,
   MessageCreateData,
   MessageDelivery,
+  MessagePreview,
+  MessagePreviewData,
   ServiceFile,
 } from '@camp-registration/common/entities';
 import { api } from '@/services/api';
@@ -55,6 +57,19 @@ export function useMessageService() {
     return response?.data?.data;
   }
 
+  // Renders a message for one recipient without sending it.
+  async function previewMessage(
+    eventId: string,
+    data: MessagePreviewData,
+  ): Promise<MessagePreview> {
+    const response = await api.post(
+      `events/${eventId}/messages/preview/`,
+      data,
+    );
+
+    return response?.data?.data;
+  }
+
   async function deleteMessage(
     eventId: string,
     messageId: string,
@@ -79,6 +94,7 @@ export function useMessageService() {
     fetchRegistrationMessages,
     resendRegistrationMessage,
     createMessage,
+    previewMessage,
     deleteMessage,
     duplicateMessageAttachments,
   };

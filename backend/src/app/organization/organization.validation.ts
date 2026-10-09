@@ -40,7 +40,12 @@ const organizationBody = {
   name: z.string().min(1).max(255),
   contactEmail: z.email().max(255),
   phone: z.string().max(50).nullable().optional(),
-  website: z.url().max(255).nullable().optional(),
+  // Rendered as a public link, so only http(s) to a real domain.
+  website: z
+    .url({ protocol: /^https?$/, hostname: z.regexes.domain })
+    .max(255)
+    .nullable()
+    .optional(),
   country: z.string().length(2).toLowerCase(),
   addressStreet: z.string().min(1).max(255),
   addressZipCode: z.string().min(1).max(20),

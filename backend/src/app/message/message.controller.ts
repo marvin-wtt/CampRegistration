@@ -3,15 +3,22 @@ import { RegistrationService } from '#app/registration/registration.service';
 import { BaseController } from '#core/base/BaseController';
 import type { Request, Response } from 'express';
 import validator from '#app/message/message.validation';
-import { MessageService } from '#app/message/message.service';
+import {
+  MessageService,
+  prepareMessageContent,
+} from '#app/message/message.service';
 import ApiError from '#utils/ApiError';
-import { messageToRenderable } from '#app/registration/messages/renderable-message';
+import {
+  draftToRenderable,
+  messageToRenderable,
+} from '#app/registration/messages/renderable-message';
 import { RegistrationTemplateMessage } from '#app/registration/messages/template.mail';
 import { MessageResource } from '#app/message/message.resource';
 import { FileResource } from '#app/file/file.resource';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service';
 import { RealtimeService } from '#core/realtime/RealtimeService';
+import type { MessagePreview } from '@camp-registration/common/entities';
 
 @injectable()
 export class MessageController extends BaseController {
@@ -110,6 +117,34 @@ export class MessageController extends BaseController {
         })),
       }),
     );
+  }
+
+  async preview(req: Request, res: Response) {
+    const {
+      body: { registrationId, subject, body },
+    } = await req.validate(validator.preview);
+    const event = req.modelOrFail('event');
+
+    // The same lookup as `store`, so what can't be sent can't be previewed.
+    const registration = (
+      await this.registrationService.getRegistrationsByIds(event.id, [
+        registrationId,
+      ])
+    ).at(0);
+    if (!registration) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid registration id');
+    }
+
+    const mail = new RegistrationTemplateMessage({
+      event,
+      registration,
+      email: registration.emails?.[0] ?? '',
+      message: draftToRenderable(prepareMessageContent({ subject, body })),
+    });
+
+    const preview: MessagePreview = await mail.preview();
+
+    res.json({ data: preview });
   }
 
   async resend(req: Request, res: Response) {

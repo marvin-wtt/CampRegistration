@@ -61,8 +61,17 @@
           </q-tooltip>
         </q-avatar>
 
-        <span class="q-ml-xs">
-          {{ scope.opt.name }}
+        <span class="q-ml-xs">{{ contactLabel(scope.opt) }}</span>
+        <country-icon
+          v-if="contactCountry(scope.opt)"
+          :country="contactCountry(scope.opt)!"
+          class="contact-flag q-ml-xs"
+        />
+        <span
+          v-if="scope.opt.type === 'group'"
+          class="contact-count q-ml-xs"
+        >
+          {{ scope.opt.registrations.length }}
         </span>
       </q-chip>
     </template>
@@ -86,8 +95,19 @@
           </q-avatar>
         </q-item-section>
         <q-item-section>
-          <q-item-label>
-            {{ scope.opt.name }}
+          <q-item-label class="contact-option__label">
+            {{ contactLabel(scope.opt) }}
+            <country-icon
+              v-if="contactCountry(scope.opt)"
+              :country="contactCountry(scope.opt)!"
+              class="contact-flag"
+            />
+          </q-item-label>
+          <q-item-label
+            v-if="scope.opt.type === 'group'"
+            caption
+          >
+            {{ t('people', scope.opt.registrations.length) }}
           </q-item-label>
         </q-item-section>
       </q-item>
@@ -103,12 +123,18 @@ import { computed, ref, useAttrs, useTemplateRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { Contact } from '@/components/event/contact/Contact';
 import { useRegistrationHelper } from '@/composables/registrationHelper';
-import { formatPersonName } from '@/utils/formatters';
+import { useRegistrationContact } from '@/composables/registrationContact';
+import { contactRegistrations } from '@/components/event/contact/contactHelpers';
+import { useEventStatistics } from '@/composables/eventStatistics';
+import CountryIcon from '@/components/common/localization/CountryIcon.vue';
+import { countryName } from '@/utils/countries';
 
 const attrs = useAttrs();
 const quasar = useQuasar();
-const { t } = useI18n();
-const { fullName, role, country } = useRegistrationHelper();
+const { t, locale } = useI18n();
+const { role, country } = useRegistrationHelper();
+const { contactFor } = useRegistrationContact();
+const stats = useEventStatistics();
 
 const selectRef = useTemplateRef<QSelect>('selectRef');
 const filterQuery = ref('');
@@ -141,54 +167,46 @@ watch(model, (value) => {
   }
 });
 
-const options = computed<Contact[]>(() => {
-  const registrationOptions = props.registrations.map(
-    (registration): Contact => ({
-      registration,
-      name: formatPersonName(fullName(registration)),
-      type: getRegistrationType(registration),
-    }),
-  );
-
-  return sortItems([
-    ...createGroups(props.registrations),
-    ...registrationOptions,
-  ]);
-});
-
-const selectedContactKeys = computed<Set<string>>(
-  () => new Set(model.value.map(getContactKey)),
+// The server refuses pending registrations, so they are never offered.
+const sendable = computed<Registration[]>(() =>
+  props.registrations.filter((r) => r.status !== 'PENDING'),
 );
+
+// Countries matter only for events held across several, like the dashboard's.
+const multiCountry = computed<boolean>(() => stats.multiCountryEvent.value);
+
+const options = computed<Contact[]>(() => [
+  ...createGroups(sendable.value),
+  ...sortIndividuals(sendable.value.map(contactFor)),
+]);
 
 const selectedRegistrationIds = computed<Set<string>>(() => {
   const ids = new Set<string>();
 
   for (const contact of model.value) {
-    if (contact.type === 'group') {
-      for (const registration of contact.registrations) {
-        ids.add(registration.id);
-      }
-    } else {
-      ids.add(contact.registration.id);
+    for (const registration of contactRegistrations(contact)) {
+      ids.add(registration.id);
     }
   }
 
   return ids;
 });
 
+// A group stays offered while it would add someone.
 const filteredOptions = computed<Contact[]>(() => {
   const query = filterQuery.value;
 
   return options.value.filter((contact) => {
-    if (query.length > 0 && !foldForSearch(contact.name).includes(query)) {
+    if (
+      query.length > 0 &&
+      !foldForSearch(contactLabel(contact)).includes(query)
+    ) {
       return false;
     }
 
-    if (contact.type === 'group') {
-      return !selectedContactKeys.value.has(getContactKey(contact));
-    }
-
-    return !selectedRegistrationIds.value.has(contact.registration.id);
+    return contactRegistrations(contact).some(
+      (registration) => !selectedRegistrationIds.value.has(registration.id),
+    );
   });
 });
 
@@ -213,36 +231,36 @@ function closePopup(): void {
   selectRef.value?.hidePopup();
 }
 
+// Drops whatever a larger selected group already covers: smaller groups and
+// individuals alike, so nobody is listed (or sent to) twice.
 function normalizeContacts(contacts: Contact[]): Contact[] {
-  const registrationsInGroups = new Set<string>();
+  const covered = new Set<string>();
+  const keptGroups = new Set<Contact>();
 
-  for (const contact of contacts) {
-    if (contact.type !== 'group') {
+  const groups = contacts
+    .filter((contact) => contact.type === 'group')
+    .sort((a, b) => b.registrations.length - a.registrations.length);
+
+  for (const group of groups) {
+    if (group.registrations.every((r) => covered.has(r.id))) {
       continue;
     }
-
-    for (const registration of contact.registrations) {
-      registrationsInGroups.add(registration.id);
-    }
+    keptGroups.add(group);
+    group.registrations.forEach((r) => covered.add(r.id));
   }
 
-  const seenContactKeys = new Set<string>();
+  const seen = new Set<string>();
 
   return contacts.filter((contact) => {
-    if (
-      contact.type !== 'group' &&
-      registrationsInGroups.has(contact.registration.id)
-    ) {
-      return false;
-    }
-
+    const kept =
+      contact.type === 'group'
+        ? keptGroups.has(contact)
+        : !covered.has(contact.registration.id);
     const key = getContactKey(contact);
-
-    if (seenContactKeys.has(key)) {
+    if (!kept || seen.has(key)) {
       return false;
     }
-
-    seenContactKeys.add(key);
+    seen.add(key);
     return true;
   });
 }
@@ -260,88 +278,132 @@ function getContactKey(contact: Contact): string {
   return `registration:${contact.registration.id}`;
 }
 
-function getRegistrationType(
-  registration: Registration,
-): Exclude<Contact['type'], 'group'> {
-  if (registration.status === 'PENDING') {
-    return 'pending';
-  }
-
-  if (registration.status === 'WAITLISTED') {
-    return 'waitingList';
-  }
-
-  const registrationRole = role(registration);
-
-  return registrationRole === undefined || registrationRole === 'participant'
-    ? 'participant'
-    : 'counselor';
-}
-
 interface ContactGroupData {
-  role: string;
-  country?: string | undefined;
+  role: string | undefined;
   waitingList: boolean;
   registrations: Registration[];
 }
 
+const roleOrder: Record<string, number> = { participant: 0, counselor: 1 };
+
+// One group per role and waitlist status. Across countries it also splits by
+// country, keeping the whole as a group of its own.
 function createGroups(registrations: Registration[]): Contact[] {
   const groups = new Map<string, ContactGroupData>();
 
   for (const registration of registrations) {
-    // Pending registrations are offered only as individual contacts
-    if (registration.status === 'PENDING') {
-      continue;
-    }
-
     const registrationRole = role(registration);
-    const registrationCountry = country(registration);
     const waitingList = registration.status === 'WAITLISTED';
+    const key = JSON.stringify([registrationRole ?? null, waitingList]);
 
-    const key = JSON.stringify([
-      registrationRole ?? null,
-      registrationCountry ?? null,
-      waitingList,
-    ]);
-
-    const existingGroup = groups.get(key);
-
-    if (existingGroup) {
-      existingGroup.registrations.push(registration);
-      continue;
+    const group = groups.get(key);
+    if (group) {
+      group.registrations.push(registration);
+    } else {
+      groups.set(key, {
+        role: registrationRole,
+        waitingList,
+        registrations: [registration],
+      });
     }
-
-    groups.set(key, {
-      role: registrationRole,
-      country: registrationCountry,
-      waitingList,
-      registrations: [registration],
-    });
   }
 
-  return Array.from(groups.values(), (group): Contact => ({
-    type: 'group',
-    name: getGroupName(group.role, group.country, group.waitingList),
-    registrations: group.registrations,
-  }));
+  // The role only tells waitlist groups apart when more than one is waiting.
+  const qualifyWaitlist =
+    [...groups.values()].filter((g) => g.waitingList).length > 1;
+
+  return [...groups.values()]
+    .sort(
+      (a, b) =>
+        Number(a.waitingList) - Number(b.waitingList) ||
+        (roleOrder[a.role ?? 'participant'] ?? 2) -
+          (roleOrder[b.role ?? 'participant'] ?? 2) ||
+        (a.role ?? '').localeCompare(b.role ?? ''),
+    )
+    .flatMap((group) => splitByCountry(group, qualifyWaitlist));
 }
 
+function splitByCountry(
+  group: ContactGroupData,
+  qualifyWaitlist: boolean,
+): Contact[] {
+  const name = getGroupName(group.role, group.waitingList, qualifyWaitlist);
+  const whole: Contact = {
+    type: 'group',
+    name,
+    registrations: group.registrations,
+  };
+  if (!multiCountry.value) {
+    return [whole];
+  }
+
+  const byCountry = new Map<string | null, Registration[]>();
+  for (const registration of group.registrations) {
+    const code = country(registration) ?? null;
+    byCountry.set(code, [...(byCountry.get(code) ?? []), registration]);
+  }
+
+  const parts = [...byCountry.entries()]
+    .map(([code, members]): Contact => ({
+      type: 'group',
+      name,
+      country: code,
+      registrations: members,
+    }))
+    // Those without a country last.
+    .sort((a, b) =>
+      a.type === 'group' && b.type === 'group'
+        ? Number(a.country === null) - Number(b.country === null) ||
+          countryLabel(a.country).localeCompare(countryLabel(b.country))
+        : 0,
+    );
+
+  // Within a single country, that country's group is the whole group.
+  return parts.length > 1 ? [whole, ...parts] : parts;
+}
+
+// Waitlist groups lead with the status: it is what sets them apart.
 function getGroupName(
-  groupRole?: string,
-  groupCountry?: string,
-  waitingList = false,
+  groupRole: string | undefined,
+  waitingList: boolean,
+  qualifyWaitlist: boolean,
 ): string {
-  let name = groupRole ? getRoleTranslation(groupRole) : t('type.participant');
+  const roleName = groupRole
+    ? getRoleTranslation(groupRole)
+    : t('type.participant');
 
-  if (groupCountry) {
-    name += ` - ${groupCountry}`;
+  if (!waitingList) {
+    return roleName;
   }
+  return qualifyWaitlist
+    ? `${t('type.waitingList')} (${roleName})`
+    : t('type.waitingList');
+}
 
-  if (waitingList) {
-    name += ` (${t('type.waitingList')})`;
+function countryLabel(code: string | null | undefined): string {
+  return code ? countryName(code, locale.value) : t('country.unknown');
+}
+
+/** The group name with its country: shown, and searched. */
+function contactLabel(contact: Contact): string {
+  if (contact.type !== 'group' || !multiCountry.value) {
+    return contact.name;
   }
+  const scope =
+    contact.country === undefined
+      ? t('country.all')
+      : countryLabel(contact.country);
 
-  return name;
+  return `${contact.name} · ${scope}`;
+}
+
+function contactCountry(contact: Contact): string | undefined {
+  if (!multiCountry.value) {
+    return undefined;
+  }
+  return contact.type === 'group'
+    ? (contact.country ?? undefined)
+    : country(contact.registration);
 }
 
 function getRoleTranslation(name: string): string {
@@ -363,7 +425,7 @@ const typeSortOrder: Record<Contact['type'], number> = {
   pending: 4,
 };
 
-function sortItems(items: Contact[]): Contact[] {
+function sortIndividuals(items: Contact[]): Contact[] {
   return [...items].sort((a, b) => {
     const typeComparison = typeSortOrder[a.type] - typeSortOrder[b.type];
 
@@ -380,7 +442,34 @@ const typeColors: Record<Contact['type'], NamedColor> = {
 };
 </script>
 
+<style scoped>
+.contact-option__label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.contact-flag {
+  flex: 0 0 auto;
+  width: 1.25em;
+  border-radius: 2px;
+}
+
+.contact-count {
+  padding: 0 6px;
+  font-size: 0.75em;
+  font-weight: 600;
+  background: var(--md3-surface-container-highest);
+  border-radius: 999px;
+}
+</style>
+
 <i18n lang="yaml" locale="en">
+people: '{n} person | {n} people'
+country:
+  all: 'All countries'
+  unknown: 'No country'
+
 selector:
   selectContacts: 'Select contacts'
   done: 'Done'
@@ -398,6 +487,11 @@ role:
 </i18n>
 
 <i18n lang="yaml" locale="de">
+people: '{n} Person | {n} Personen'
+country:
+  all: 'Alle Länder'
+  unknown: 'Ohne Land'
+
 selector:
   selectContacts: 'Kontakte auswählen'
   done: 'Fertig'
@@ -415,6 +509,11 @@ role:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
+people: '{n} personne | {n} personnes'
+country:
+  all: 'Tous les pays'
+  unknown: 'Sans pays'
+
 selector:
   selectContacts: 'Sélectionner des contacts'
   done: 'Terminé'
@@ -432,6 +531,11 @@ role:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
+people: '{n} osoba | {n} osób'
+country:
+  all: 'Wszystkie kraje'
+  unknown: 'Bez kraju'
+
 selector:
   selectContacts: 'Wybierz kontakty'
   done: 'Gotowe'
@@ -449,6 +553,11 @@ role:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
+people: '{n} osoba | {n} osob'
+country:
+  all: 'Všechny země'
+  unknown: 'Bez země'
+
 selector:
   selectContacts: 'Vybrat kontakty'
   done: 'Hotovo'

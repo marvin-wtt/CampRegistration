@@ -1,17 +1,12 @@
-import Handlebars from 'handlebars';
-import {
-  renderChangesHtml,
-  renderChangesText,
-} from '../registration.changes.js';
+import { SafeHtml } from '#core/mail/templating';
+import { renderChangesHtml, renderChangesText } from './changes.markup.js';
 import { RegistrationEventMessage } from './event.mail.js';
 
 export class RegistrationUpdatedMessage extends RegistrationEventMessage {
   static readonly trigger = 'registration_updated';
   static readonly type = 'registration:template:updated';
 
-  protected renderChanges(
-    format: 'html' | 'text',
-  ): Handlebars.SafeString | string {
+  protected renderChanges(format: 'html' | 'text'): SafeHtml | string {
     // Absent for a job enqueued before this field existed, and for any caller
     // that supplied none. Nothing to list is not an error worth failing a send
     // over — the participant still learns they were edited.
@@ -30,8 +25,7 @@ export class RegistrationUpdatedMessage extends RegistrationEventMessage {
       return renderChangesText(changes, labels);
     }
 
-    // Values are escaped as the markup is built, so the result is safe to emit
-    // through a double-stash and must not be escaped a second time.
-    return new Handlebars.SafeString(renderChangesHtml(changes, labels));
+    // Values are escaped as the markup is built; escaping again would show tags.
+    return new SafeHtml(renderChangesHtml(changes, labels));
   }
 }

@@ -2,13 +2,13 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { nextTick } from 'vue';
 import { createPinia } from 'pinia';
-import { Notify, QForm } from 'quasar';
+import { Dialog, Notify, QForm } from 'quasar';
 import { installQuasarPlugin } from '@/../test/vitest/utils/quasar';
 import ContactForm from '@/components/event/contact/ContactForm.vue';
 import type { Contact, ContactDraft } from '@/components/event/contact/Contact';
 import type { Message, ServiceFile } from '@camp-registration/common/entities';
 
-installQuasarPlugin({ plugins: { Notify } });
+installQuasarPlugin({ plugins: { Dialog, Notify } });
 
 const eventDetails = {
   id: 'event-1',
@@ -69,14 +69,13 @@ function mountForm(
     registrations: [];
     initialContacts: Contact[];
     draft: ContactDraft | null;
-    standalone: boolean;
+    persistKey: string;
   }> = {},
 ) {
   return mount(ContactForm, {
     props: {
       registrations: [],
       draft: null,
-      standalone: true,
       ...props,
     },
     global: {
@@ -141,6 +140,17 @@ describe('ContactForm dirty check', () => {
     await nextTick();
     expect(wrapper.vm.dirty).toBe(false);
 
+    // Submitting opens the check before sending; confirm it straight away.
+    vi.spyOn(wrapper.vm.$q, 'dialog').mockImplementation(() => {
+      const chain = {
+        onOk: (fn: () => void) => {
+          fn();
+          return chain;
+        },
+      };
+      return chain as unknown as ReturnType<typeof wrapper.vm.$q.dialog>;
+    });
+
     // Submitting the form sends the message and, on success, blanks the
     // fields via reset(). The parent (ContactPage) never clears the `draft`
     // prop, so it still holds the old, non-empty content here.
@@ -170,5 +180,50 @@ describe('ContactForm dirty check', () => {
     await nextTick();
 
     expect(wrapper.vm.dirty).toBe(false);
+  });
+});
+
+describe('ContactForm draft persistence', () => {
+  it('autosaves the message under its key', async () => {
+    vi.useFakeTimers();
+    const wrapper = mountForm({ persistKey: 'autosave-test' });
+
+    const subjectEditor = wrapper.findAllComponents({
+      name: 'RegistrationEmailEditor',
+    })[0]!;
+    await subjectEditor.vm.$emit('update:modelValue', 'Packing list');
+    vi.advanceTimersByTime(400);
+    vi.useRealTimers();
+
+    const stored = JSON.parse(
+      localStorage.getItem('message-draft:autosave-test') ?? 'null',
+    );
+    expect(stored).toMatchObject({ subject: 'Packing list', recipients: [] });
+  });
+
+  it('restores a stored draft on mount without counting it as a change', async () => {
+    localStorage.setItem(
+      'message-draft:restore-test',
+      JSON.stringify({
+        recipients: [],
+        subject: 'Bus times',
+        body: '<p>Hello</p>',
+        priority: 'high',
+        replyTo: '',
+        attachmentNames: [],
+        savedAt: '2026-10-06T10:00:00Z',
+      }),
+    );
+
+    const wrapper = mountForm({ persistKey: 'restore-test' });
+    await flushPromises();
+
+    const [subjectEditor, messageEditor] = wrapper.findAllComponents({
+      name: 'RegistrationEmailEditor',
+    });
+    expect(subjectEditor!.props('modelValue')).toBe('Bus times');
+    expect(messageEditor!.props('modelValue')).toBe('<p>Hello</p>');
+    expect(wrapper.vm.dirty).toBe(false);
+    expect(wrapper.vm.unsaved).toBe(false);
   });
 });

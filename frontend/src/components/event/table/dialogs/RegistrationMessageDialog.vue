@@ -45,8 +45,7 @@ import type { Registration } from '@camp-registration/common/entities';
 import type { Contact } from '@/components/event/contact/Contact';
 import ContactForm from '@/components/event/contact/ContactForm.vue';
 import { useRegistrationsStore } from '@/stores/registration-store';
-import { useRegistrationHelper } from '@/composables/registrationHelper';
-import { formatPersonName } from '@/utils/formatters';
+import { useRegistrationContact } from '@/composables/registrationContact';
 
 const quasar = useQuasar();
 const { t } = useI18n();
@@ -60,7 +59,7 @@ const { registration } = defineProps<{
 defineEmits([...useDialogPluginComponent.emits]);
 
 const registrationStore = useRegistrationsStore();
-const { fullName, role } = useRegistrationHelper();
+const { contactFor } = useRegistrationContact();
 
 const contactFormRef = ref<{ dirty: boolean } | null>(null);
 
@@ -72,20 +71,7 @@ const registrations = computed<Registration[]>(() => {
   return registrationStore.data ?? [registration];
 });
 
-const initialContacts = computed<Contact[]>(() => [
-  {
-    type: contactType(registration),
-    name: formatPersonName(fullName(registration)),
-    registration,
-  },
-]);
-
-function contactType(reg: Registration): Exclude<Contact['type'], 'group'> {
-  if (reg.status === 'WAITLISTED') {
-    return 'waitingList';
-  }
-  return role(reg) === 'participant' ? 'participant' : 'counselor';
-}
+const initialContacts = computed<Contact[]>(() => [contactFor(registration)]);
 </script>
 
 <style scoped>
