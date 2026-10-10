@@ -28,9 +28,11 @@
               :label="action.label"
               :icon="action.icon"
               :to="{ name: action.route }"
+              class="shortcut-btn"
               secondary
               tonal
               no-caps
+              no-wrap
             />
           </template>
         </template>
@@ -374,6 +376,26 @@ const quickActions = computed<QuickAction[]>(() =>
 </script>
 
 <style scoped>
+/* Two per row on phones: keep icon and label on one line, ellipsize if needed. */
+.shortcut-btn {
+  min-width: 0;
+  padding-inline: 12px;
+}
+
+.shortcut-btn :deep(.q-btn__content) {
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+.shortcut-btn :deep(.q-icon.on-left) {
+  margin-right: 8px;
+}
+
+.shortcut-btn :deep(.q-btn__content > .block) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .shortcut-skeleton {
   height: 40px;
   border-radius: 999px;
