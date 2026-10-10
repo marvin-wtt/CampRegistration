@@ -157,7 +157,7 @@ import { computed, ref, watch } from 'vue';
 import type { Task } from '@camp-registration/common/entities';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import { useQuasar } from 'quasar';
-import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
+import ConfirmDialog from '@/components/common/dialogs/ConfirmDialog.vue';
 import TaskFormDialog from '@/components/event/tasks/dialogs/TaskFormDialog.vue';
 import TaskDetailsDialog from '@/components/event/tasks/dialogs/TaskDetailsDialog.vue';
 import TaskRow from '@/components/event/tasks/TaskRow.vue';
@@ -328,12 +328,12 @@ function showEditDialog(task: Task) {
 function showDeleteDialog(task: Task) {
   quasar
     .dialog({
-      component: SafeDeleteDialog,
+      component: ConfirmDialog,
       componentProps: {
         title: t('dialog.delete.title'),
-        message: t('dialog.delete.message'),
-        label: t('dialog.delete.label'),
-        value: task.title,
+        message: t('dialog.delete.message', { title: task.title }),
+        okLabel: t('action.delete'),
+        color: 'negative',
       },
     })
     .onOk(() => {
@@ -403,12 +403,12 @@ action:
   add: 'Add task'
   toggleCompleted: 'Show completed ({count})'
   hideCompleted: 'Hide completed'
+  delete: 'Delete'
 
 dialog:
   delete:
     title: 'Delete task'
-    message: 'Do you really want to delete this task?'
-    label: 'Title'
+    message: 'Do you really want to delete the task "{title}"?'
 
 empty:
   title: 'No tasks yet'
@@ -432,12 +432,12 @@ action:
   add: 'Aufgabe hinzufügen'
   toggleCompleted: 'Erledigte anzeigen ({count})'
   hideCompleted: 'Erledigte ausblenden'
+  delete: 'Löschen'
 
 dialog:
   delete:
     title: 'Aufgabe löschen'
-    message: 'Möchtest du diese Aufgabe wirklich löschen?'
-    label: 'Titel'
+    message: 'Möchtest du die Aufgabe "{title}" wirklich löschen?'
 
 empty:
   title: 'Noch keine Aufgaben'
@@ -461,12 +461,12 @@ action:
   add: 'Ajouter une tâche'
   toggleCompleted: 'Afficher terminées ({count})'
   hideCompleted: 'Masquer terminées'
+  delete: 'Supprimer'
 
 dialog:
   delete:
     title: 'Supprimer la tâche'
-    message: 'Veux-tu vraiment supprimer cette tâche ?'
-    label: 'Titre'
+    message: 'Veux-tu vraiment supprimer la tâche « {title} » ?'
 
 empty:
   title: 'Aucune tâche pour le moment'
@@ -490,12 +490,12 @@ action:
   add: 'Dodaj zadanie'
   toggleCompleted: 'Pokaż ukończone ({count})'
   hideCompleted: 'Ukryj ukończone'
+  delete: 'Usuń'
 
 dialog:
   delete:
     title: 'Usuń zadanie'
-    message: 'Czy na pewno chcesz usunąć to zadanie?'
-    label: 'Tytuł'
+    message: 'Czy na pewno chcesz usunąć zadanie „{title}”?'
 
 empty:
   title: 'Brak zadań'
@@ -519,12 +519,12 @@ action:
   add: 'Přidat úkol'
   toggleCompleted: 'Zobrazit dokončené ({count})'
   hideCompleted: 'Skrýt dokončené'
+  delete: 'Smazat'
 
 dialog:
   delete:
     title: 'Smazat úkol'
-    message: 'Opravdu chceš tento úkol smazat?'
-    label: 'Název'
+    message: 'Opravdu chceš smazat úkol „{title}“?'
 
 empty:
   title: 'Zatím žádné úkoly'
