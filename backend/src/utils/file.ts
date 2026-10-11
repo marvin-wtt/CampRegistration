@@ -13,3 +13,9 @@ export function fileNameExtension(fileName: string): string {
 
   return `.${extension}`;
 }
+
+// Multer names the fields of a multi-file upload `files[<key>]`.
+export function extractKeyFromFieldName(fieldName: string): string {
+  const match = /^files\[(.+)]$/.exec(fieldName);
+  return match ? match[1] : fieldName;
+}

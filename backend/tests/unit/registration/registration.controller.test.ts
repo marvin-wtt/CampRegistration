@@ -181,7 +181,7 @@ describe('RegistrationController.store', () => {
     registrationService.createRegistration.mockResolvedValue(registration);
     const req = fakeRequest({
       models: { event },
-      validateResult: { body: { data: {}, locale: null } },
+      validateResult: { body: { data: {}, locale: 'en-US' } },
     });
     const res = fakeResponse();
 
@@ -212,7 +212,7 @@ describe('RegistrationController.store', () => {
     registrationService.createRegistration.mockResolvedValue(registration);
     const req = fakeRequest({
       models: { event },
-      validateResult: { body: { data: {}, locale: null } },
+      validateResult: { body: { data: {}, locale: 'en-US' } },
     });
 
     await controller.store(req, fakeResponse());
@@ -230,7 +230,7 @@ describe('RegistrationController.store', () => {
     registrationService.createRegistration.mockResolvedValue(registration);
     const req = fakeRequest({
       models: { event },
-      validateResult: { body: { data: {}, locale: null } },
+      validateResult: { body: { data: {}, locale: 'en-US' } },
     });
 
     await controller.store(req, fakeResponse());

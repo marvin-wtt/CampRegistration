@@ -1,5 +1,8 @@
 import type { Event, Registration } from '#generated/prisma/client.js';
-import { formUtils, type FormAnswer } from '#utils/form';
+import {
+  RegistrationForm,
+  type FormAnswer,
+} from '#app/registration/registration.form';
 import logger from '#core/logger';
 
 /** One form field whose answer differs between two versions of a registration. */
@@ -76,7 +79,9 @@ function answersFor(
 ): Map<string, FormAnswer> {
   // `freePlaces` only feeds `visibleIf` expressions, which do not affect how an
   // answer is labelled or displayed — a mail payload carries no place count.
-  const form = formUtils({ ...event, freePlaces: 0 }, data, { locale });
+  const form = new RegistrationForm({ ...event, freePlaces: 0 }, { locale });
+
+  form.load(data);
 
   return new Map(form.answers().map((answer) => [answer.path, answer]));
 }

@@ -1,11 +1,8 @@
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
-import {
-  type Event,
-  Prisma,
-  type Registration,
-} from '#generated/prisma/client.js';
-import { formUtils } from '#utils/form';
+import { Prisma, type Registration } from '#generated/prisma/client.js';
+import type { EventWithFreePlaces } from '#app/event/event.types';
+import { RegistrationForm } from '#app/registration/registration.form';
 import { BaseService } from '#core/base/BaseService';
 import {
   computedRegistrationData,
@@ -94,13 +91,13 @@ export class RegistrationService extends BaseService {
   }
 
   async createRegistration(
-    event: Event & { freePlaces: number | Record<string, number> },
+    event: EventWithFreePlaces,
     data: Pick<Registration, 'data' | 'locale'>,
     fileField: string,
   ) {
-    const form = formUtils(event, data.data);
+    const form = new RegistrationForm(event).load(data.data);
 
-    const formData = form.data();
+    const formData = form.data;
     const computedData = computedRegistrationData(form.extractEventData());
 
     if (event.countries.length > 1 && !computedData.country) {
@@ -206,7 +203,7 @@ export class RegistrationService extends BaseService {
   }
 
   async updateRegistrationById(
-    event: Event & { freePlaces: number | Record<string, number> },
+    event: EventWithFreePlaces,
     registrationId: string,
     data: Pick<
       Prisma.RegistrationUpdateInput,
@@ -243,8 +240,7 @@ export class RegistrationService extends BaseService {
     let formFileIds: string[] | undefined;
 
     if (data.data) {
-      const form = formUtils(event);
-      form.updateData(data.data);
+      const form = new RegistrationForm(event).load(data.data);
       computedData = computedRegistrationData(form.extractEventData());
       formFileIds = form.getFileIds();
     }
@@ -362,14 +358,12 @@ export class RegistrationService extends BaseService {
     });
   }
 
-  async updateRegistrationsComputedDataByEvent(
-    event: Event & { freePlaces: number | Record<string, number> },
-  ) {
-    const form = formUtils(event);
+  async updateRegistrationsComputedDataByEvent(event: EventWithFreePlaces) {
+    const form = new RegistrationForm(event);
     const registrations = await this.queryRegistrations(event.id);
 
     const results = registrations.map((registration) => {
-      form.updateData(registration.data);
+      form.load(registration.data);
       const computedData = computedRegistrationData(form.extractEventData());
 
       return this.prisma.registration.update({

@@ -1,14 +1,13 @@
 import { type File, Prisma } from '#generated/prisma/client.js';
 import type { PrismaTransaction } from '#core/database/transaction';
 import { ulid } from '#utils/ulid';
-import { extractKeyFromFieldName } from '#utils/form';
 import { decodeTime, isValid } from 'ulidx';
 import moment from 'moment';
 import logger from '#core/logger';
 import { DiskStorage } from '#core/storage/disk.storage';
 import { StorageRegistry } from '#core/storage/storage.registry';
 import { BaseService } from '#core/base/BaseService';
-import { fileNameExtension } from '#utils/file';
+import { extractKeyFromFieldName, fileNameExtension } from '#utils/file';
 import { isClientDisconnect } from '#utils/stream';
 import { inject, injectable } from 'inversify';
 import { Config } from '#core/ioc/decorators';

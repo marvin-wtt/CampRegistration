@@ -1,6 +1,6 @@
 import { z, type ZodType } from 'zod';
 import { LocaleSchema } from '#core/validation/helper';
-import { formUtils } from '#utils/form';
+import { RegistrationForm } from '#app/registration/registration.form';
 import {
   REGISTRATION_DELETE_REASONS,
   type RegistrationCreateData,
@@ -25,33 +25,31 @@ const show = z.object({
   }),
 });
 
-const store = (event: EventWithRelations) =>
+// `fallbackLocale` resolves a missing body locale here, once, so the errors and
+// the stored registration share the language the registrant is answered in.
+const store = (event: EventWithRelations, fallbackLocale: string) =>
   z.object({
     params: z.object({
       eventId: z.ulid(),
     }),
-    body: z.object({
-      data: RegistrationDataSchema.superRefine((data, ctx) => {
-        const form = formUtils(event, data);
+    body: z
+      .object({
+        data: RegistrationDataSchema,
+        locale: LocaleSchema.nullable()
+          .optional()
+          .transform((locale) => locale ?? fallbackLocale),
+      })
+      .superRefine(async ({ data, locale }, ctx) => {
+        const form = new RegistrationForm(event, { locale }).load(data);
 
-        if (form.hasDataErrors()) {
+        for (const error of await form.dataErrors()) {
           ctx.addIssue({
             code: 'custom',
-            message: `Invalid survey data: ${form.getDataErrorFields()}`,
-          });
-          return;
-        }
-
-        const unknownFields = form.unknownDataFields();
-        if (unknownFields.length > 0) {
-          ctx.addIssue({
-            code: 'custom',
-            message: `Unknown fields '${unknownFields.join(', ')}'`,
+            path: ['data'],
+            message: `${error.message} '${error.path}'`,
           });
         }
-      }),
-      locale: LocaleSchema.nullable().optional(),
-    }) satisfies ZodType<RegistrationCreateData>,
+      }) satisfies ZodType<RegistrationCreateData>,
   });
 
 const update = z.object({
