@@ -2,7 +2,7 @@ import { RegistrationFactory } from '../factories';
 import type { Event, Prisma } from '#generated/prisma/client.js';
 import { faker } from '@faker-js/faker/locale/en';
 import moment from 'moment';
-import { formUtils } from '#utils/form';
+import { RegistrationForm } from '#app/registration/registration.form.js';
 import { computedRegistrationData } from '#app/registration/registration.helper.js';
 import { localeForCountry } from '#app/event/presets/locales.js';
 import {
@@ -36,11 +36,12 @@ export class RegistrationSeeder {
       );
 
       const files = await this.seedUploads(fileFields, data);
+      const locale = localeForCountry(registrant.country);
 
       await RegistrationFactory.create({
         event: { connect: { id: this.event.id } },
-        ...this.computedData(data, waitingList),
-        locale: localeForCountry(registrant.country),
+        ...this.computedData(data, waitingList, locale),
+        locale,
         data,
         files: files.length
           ? { connect: files.map((id) => ({ id })) }
@@ -150,11 +151,12 @@ export class RegistrationSeeder {
   private computedData(
     data: Record<string, unknown>,
     waitingList: boolean,
+    locale: string,
   ): Partial<Prisma.RegistrationCreateInput> {
-    const form = formUtils(
+    const form = new RegistrationForm(
       { ...this.event, freePlaces: freePlacesFor(this.event, waitingList) },
-      data,
-    );
+      { locale },
+    ).load(data);
 
     return computedRegistrationData(form.extractEventData());
   }

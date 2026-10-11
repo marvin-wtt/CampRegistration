@@ -19,3 +19,7 @@ export interface EventWithRelations extends Event {
   hasLogo: boolean;
   hasBanner: boolean;
 }
+
+export interface EventWithFreePlaces extends Event {
+  freePlaces: number | Record<string, number>;
+}
