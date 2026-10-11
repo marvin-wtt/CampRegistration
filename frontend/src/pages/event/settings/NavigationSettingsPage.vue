@@ -143,7 +143,7 @@ title: 'Navigation'
 subtitle: 'Wähle aus, welche Funktionen in der Navigation und im Dashboard dieser Veranstaltung angezeigt werden.'
 readOnly: 'Du kannst diese Einstellungen ansehen, aber nicht ändern.'
 contact:
-  label: 'Kontaktieren'
+  label: 'Kontakt'
   description: 'Kontaktseite ein- oder ausblenden.'
 program_planner:
   label: 'Programm'
@@ -164,7 +164,7 @@ title: 'Navigation'
 subtitle: 'Choisissez les fonctionnalités affichées dans la navigation et le tableau de bord de cet événement.'
 readOnly: 'Vous pouvez consulter ces paramètres, mais pas les modifier.'
 contact:
-  label: 'Contacter'
+  label: 'Contact'
   description: 'Afficher ou masquer la page de contact.'
 program_planner:
   label: 'Programme'

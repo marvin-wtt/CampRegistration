@@ -68,10 +68,29 @@
       mini
       :width="300"
       :mini-width="96"
-      bordered
+      :bordered="quasar.screen.gt.xs"
       show-if-above
       class="column no-wrap"
     >
+      <!-- Modal header (mobile): the same toolbar geometry as the top bar, so
+           the close button sits exactly where the menu button was. -->
+      <m-toolbar
+        v-if="quasar.screen.lt.sm"
+        class="drawer-header"
+      >
+        <m-btn
+          :aria-label="t('closeNavigation')"
+          icon="menu_open"
+          square
+          round
+          text
+          @click="drawer = false"
+        />
+        <q-toolbar-title class="drawer-header__title">
+          {{ title }}
+        </q-toolbar-title>
+      </m-toolbar>
+
       <!-- Rail header: back to the app (desktop only — mobile uses the top bar) -->
       <div
         v-if="quasar.screen.gt.xs"
@@ -266,22 +285,27 @@ const backRoute = computed<RouteLocationRaw>(() => {
 </script>
 
 <i18n lang="yaml" locale="en">
+closeNavigation: 'Close navigation'
 back: 'Back'
 </i18n>
 
 <i18n lang="yaml" locale="de">
+closeNavigation: 'Navigation schließen'
 back: 'Zurück'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
+closeNavigation: 'Fermer la navigation'
 back: 'Retour'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
+closeNavigation: 'Zamknij nawigację'
 back: 'Wstecz'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
+closeNavigation: 'Zavřít navigaci'
 back: 'Zpět'
 </i18n>
 
@@ -314,5 +338,15 @@ back: 'Zpět'
 /* MD3 only applies margin to the left - apply right margin manually */
 .q-drawer__content .q-separator--horizontal-inset {
   margin-right: 16px;
+}
+
+.q-drawer__content .q-separator {
+  background: var(--md3-outline-variant);
+}
+
+.drawer-header__title {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--md3-on-surface-variant);
 }
 </style>

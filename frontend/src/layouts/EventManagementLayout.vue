@@ -154,7 +154,7 @@ title: 'Event Management'
 </i18n>
 
 <i18n lang="yaml" locale="de">
-contact: 'Kontaktieren'
+contact: 'Kontakt'
 dashboard: 'Dashboard'
 participants: 'Teilnehmende'
 program_planner: 'Programm'
@@ -167,7 +167,7 @@ title: 'Veranstaltungsverwaltung'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-contact: 'Contacter'
+contact: 'Contact'
 dashboard: 'Dashboard'
 participants: 'Participants'
 program_planner: 'Programme'

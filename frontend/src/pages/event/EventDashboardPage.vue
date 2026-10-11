@@ -460,7 +460,7 @@ const quickActions = computed<QuickAction[]>(() =>
 <i18n lang="yaml" locale="en">
 actions:
   participants: 'Participants'
-  contact: 'Communication'
+  contact: 'Contact'
   program: 'Program'
   duties: 'Duties'
 </i18n>
@@ -468,7 +468,7 @@ actions:
 <i18n lang="yaml" locale="de">
 actions:
   participants: 'Teilnehmende'
-  contact: 'Kommunikation'
+  contact: 'Kontakt'
   program: 'Programm'
   duties: 'Dienste'
 </i18n>
@@ -476,7 +476,7 @@ actions:
 <i18n lang="yaml" locale="fr">
 actions:
   participants: 'Participants'
-  contact: 'Communication'
+  contact: 'Contact'
   program: 'Programme'
   duties: 'Corvées'
 </i18n>
@@ -484,7 +484,7 @@ actions:
 <i18n lang="yaml" locale="pl">
 actions:
   participants: 'Uczestnicy'
-  contact: 'Komunikacja'
+  contact: 'Kontakt'
   program: 'Program'
   duties: 'Dyżury'
 </i18n>
@@ -492,7 +492,7 @@ actions:
 <i18n lang="yaml" locale="cs">
 actions:
   participants: 'Účastníci'
-  contact: 'Komunikace'
+  contact: 'Kontakt'
   program: 'Program'
   duties: 'Služby'
 </i18n>
