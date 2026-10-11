@@ -28,9 +28,11 @@
               :label="action.label"
               :icon="action.icon"
               :to="{ name: action.route }"
+              class="shortcut-btn"
               secondary
               tonal
               no-caps
+              no-wrap
             />
           </template>
         </template>
@@ -374,6 +376,26 @@ const quickActions = computed<QuickAction[]>(() =>
 </script>
 
 <style scoped>
+/* Two per row on phones: keep icon and label on one line, ellipsize if needed. */
+.shortcut-btn {
+  min-width: 0;
+  padding-inline: 12px;
+}
+
+.shortcut-btn :deep(.q-btn__content) {
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+.shortcut-btn :deep(.q-icon.on-left) {
+  margin-right: 8px;
+}
+
+.shortcut-btn :deep(.q-btn__content > .block) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .shortcut-skeleton {
   height: 40px;
   border-radius: 999px;
@@ -438,7 +460,7 @@ const quickActions = computed<QuickAction[]>(() =>
 <i18n lang="yaml" locale="en">
 actions:
   participants: 'Participants'
-  contact: 'Communication'
+  contact: 'Contact'
   program: 'Program'
   duties: 'Duties'
 </i18n>
@@ -446,7 +468,7 @@ actions:
 <i18n lang="yaml" locale="de">
 actions:
   participants: 'Teilnehmende'
-  contact: 'Kommunikation'
+  contact: 'Kontakt'
   program: 'Programm'
   duties: 'Dienste'
 </i18n>
@@ -454,7 +476,7 @@ actions:
 <i18n lang="yaml" locale="fr">
 actions:
   participants: 'Participants'
-  contact: 'Communication'
+  contact: 'Contact'
   program: 'Programme'
   duties: 'Corvées'
 </i18n>
@@ -462,7 +484,7 @@ actions:
 <i18n lang="yaml" locale="pl">
 actions:
   participants: 'Uczestnicy'
-  contact: 'Komunikacja'
+  contact: 'Kontakt'
   program: 'Program'
   duties: 'Dyżury'
 </i18n>
@@ -470,7 +492,7 @@ actions:
 <i18n lang="yaml" locale="cs">
 actions:
   participants: 'Účastníci'
-  contact: 'Komunikace'
+  contact: 'Kontakt'
   program: 'Program'
   duties: 'Služby'
 </i18n>
