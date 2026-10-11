@@ -95,7 +95,11 @@ export class RegistrationService extends BaseService {
     data: Pick<Registration, 'data' | 'locale'>,
     fileField: string,
   ) {
-    const form = new RegistrationForm(event).load(data.data);
+    // Built in the locale the data was validated in: event variables such as
+    // `{event.price}` resolve per locale, so computed values can differ.
+    const form = new RegistrationForm(event, { locale: data.locale }).load(
+      data.data,
+    );
 
     const formData = form.data;
     const computedData = computedRegistrationData(form.extractEventData());
