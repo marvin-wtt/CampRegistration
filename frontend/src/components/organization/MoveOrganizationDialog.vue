@@ -39,17 +39,13 @@
                 </q-item-section>
                 <q-item-section side>
                   <q-chip
-                    :color="scope.opt.verified ? 'positive' : 'warning'"
+                    :color="statusColor(scope.opt.status)"
                     text-color="white"
                     dense
                     square
                     size="sm"
                   >
-                    {{
-                      scope.opt.verified
-                        ? t('status.verified')
-                        : t('status.unverified')
-                    }}
+                    {{ t(`status.${scope.opt.status}`) }}
                   </q-chip>
                 </q-item-section>
               </q-item>
@@ -105,7 +101,10 @@ import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { useAPIService } from '@/services/APIService';
 import { countryName } from '@/utils/countries';
-import type { Organization } from '@camp-registration/common/entities';
+import type {
+  Organization,
+  OrganizationVerificationStatus,
+} from '@camp-registration/common/entities';
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
@@ -128,7 +127,7 @@ interface OrganizationOption {
   label: string;
   caption: string;
   value: string;
-  verified: boolean;
+  status: OrganizationVerificationStatus;
 }
 
 const organizations = ref<Organization[]>([]);
@@ -146,7 +145,7 @@ const allOptions = computed<OrganizationOption[]>(() =>
       label: organization.name,
       caption: countryName(organization.country, locale.value),
       value: organization.id,
-      verified: organization.verificationStatus === 'VERIFIED',
+      status: organization.verificationStatus,
     })),
 );
 
@@ -155,8 +154,14 @@ const showUnverifiedWarning = computed(() => {
     return false;
   }
 
-  return !selectedOption.value.verified;
+  return selectedOption.value.status !== 'VERIFIED';
 });
+
+function statusColor(status: OrganizationVerificationStatus): string {
+  if (status === 'VERIFIED') return 'positive';
+  if (status === 'REJECTED') return 'negative';
+  return 'warning';
+}
 
 // The listing is server-paginated, so searching has to go back to the API —
 // filtering the first page would hide every organization beyond it.
@@ -227,8 +232,9 @@ title: 'Move to another organization'
 field:
   organization: 'Target organization'
 status:
-  verified: 'Verified'
-  unverified: 'Not verified'
+  PENDING: 'Awaiting review'
+  VERIFIED: 'Verified'
+  REJECTED: 'Rejected'
 rule:
   required: 'Please choose an organization'
 noResults: 'No matching organization'
@@ -242,8 +248,9 @@ title: 'In andere Organisation verschieben'
 field:
   organization: 'Zielorganisation'
 status:
-  verified: 'Verifiziert'
-  unverified: 'Nicht verifiziert'
+  PENDING: 'Wartet auf Prüfung'
+  VERIFIED: 'Verifiziert'
+  REJECTED: 'Abgelehnt'
 rule:
   required: 'Bitte wähle eine Organisation'
 noResults: 'Keine passende Organisation'
@@ -257,8 +264,9 @@ title: 'Déplacer vers une autre organisation'
 field:
   organization: 'Organisation cible'
 status:
-  verified: 'Vérifiée'
-  unverified: 'Non vérifiée'
+  PENDING: 'En attente de contrôle'
+  VERIFIED: 'Vérifiée'
+  REJECTED: 'Refusée'
 rule:
   required: 'Choisis une organisation'
 noResults: 'Aucune organisation correspondante'
@@ -272,8 +280,9 @@ title: 'Przenieś do innej organizacji'
 field:
   organization: 'Organizacja docelowa'
 status:
-  verified: 'Zweryfikowana'
-  unverified: 'Niezweryfikowana'
+  PENDING: 'Oczekuje na sprawdzenie'
+  VERIFIED: 'Zweryfikowana'
+  REJECTED: 'Odrzucona'
 rule:
   required: 'Wybierz organizację'
 noResults: 'Brak pasującej organizacji'
@@ -287,8 +296,9 @@ title: 'Přesunout do jiné organizace'
 field:
   organization: 'Cílová organizace'
 status:
-  verified: 'Ověřená'
-  unverified: 'Neověřená'
+  PENDING: 'Čeká na kontrolu'
+  VERIFIED: 'Ověřená'
+  REJECTED: 'Zamítnutá'
 rule:
   required: 'Vyber organizaci'
 noResults: 'Žádná odpovídající organizace'
