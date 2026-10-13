@@ -162,6 +162,7 @@ import {
 } from '@/lib/surveyJs/textProcessing';
 import { readAsDataURL } from '@/utils/readAsDataURL';
 import { emphasizeForwardNavigation } from '@/lib/surveyJs/navigation';
+import { addAmountSummary, trackAmountDue } from '@/lib/surveyJs/amountDue';
 import type {
   EventDetails,
   Registration,
@@ -345,6 +346,12 @@ model.readOnly = props.readonly;
 if (props.data) {
   model.data = props.data;
   mapFileIdToFileContent(model);
+}
+
+// After loading data: assigning `model.data` fires no change event. Managers
+// never see the Complete button, so neither needs the total.
+if (!moderationLayout) {
+  addAmountSummary(model, trackAmountDue(model, props.eventDetails));
 }
 
 const bgColor = ref<string>();

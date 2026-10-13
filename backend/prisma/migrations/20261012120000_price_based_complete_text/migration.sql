@@ -1,0 +1,4 @@
+-- This is an empty migration.
+-- It hosts the data migration in `migration.ts`, which drops the presets' fixed
+-- Complete button text from existing registration forms so the price-based
+-- default applies.
