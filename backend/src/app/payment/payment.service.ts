@@ -16,7 +16,11 @@ import type {
 } from '@camp-registration/common/entities';
 import { SETTING_KEYS } from '@camp-registration/common/settings';
 import type { PaymentSettings } from '@camp-registration/common/settings';
-import { toMinorUnits, translate } from '@camp-registration/common/utils';
+import {
+  computeAmountDue,
+  toMinorUnits,
+  translate,
+} from '@camp-registration/common/utils';
 import { BaseService } from '#core/base/BaseService';
 import logger from '#core/logger';
 import ApiError from '#utils/ApiError';
@@ -37,7 +41,6 @@ import {
   refundableAmount,
   registrationPayment,
 } from './payment.balance.js';
-import { computeAmountDue } from './payment-amount.js';
 import { paymentPageUrl } from './payment-link.js';
 
 export const DEFAULT_PAYMENT_SETTINGS: PaymentSettings = {

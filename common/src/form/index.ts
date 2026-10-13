@@ -24,6 +24,7 @@ Serializer.getProperty('file', 'storeDataAsText').defaultValue = false;
 
 export { setVariables, VARIABLE_NAMES };
 export { formLintOptions } from './lint.js';
+export { extractEventData } from './eventData.js';
 export {
   selectFileByLocale,
   EVENT_LOGO_SLOT,

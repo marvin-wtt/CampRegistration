@@ -48,7 +48,9 @@ const SIMPLE_QUESTION_TYPES = new Set(
 const SIMPLE_PROPERTY_GRID: ISurveyPropertyGridDefinition = {
   generateOtherTab: false,
   classes: {
-    survey: { properties: ['title', 'description', 'completedHtml'] },
+    survey: {
+      properties: ['title', 'description', 'completeText', 'completedHtml'],
+    },
     page: { properties: ['title', 'description'] },
     panel: { properties: ['title', 'description'] },
     question: {
