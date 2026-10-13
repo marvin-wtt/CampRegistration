@@ -1,18 +1,18 @@
-import type { Event } from '#generated/prisma/client.js';
-import { toMinorUnits } from '@camp-registration/common/utils';
+import { toMinorUnits } from './money.js';
 
 /** The `eventDataType` tag a form question uses to contribute to the amount due. */
 export const PAYMENT_AMOUNT_TAG = 'payment_amount';
 
 /**
  * The amount a registration owes, in minor units of the event currency, from
- * its submitted answers: the sum of every question tagged `payment_amount`
- * (numbers, or numeric strings from expressions), else the event's flat
- * price. Always computed server-side from the validated form data — a client
- * never sends an amount. Negative totals clamp to zero.
+ * its answers: the sum of every question tagged `payment_amount` (numbers, or
+ * numeric strings from expressions), else the event's flat price. The server
+ * computes what is charged from the validated form data — a client never
+ * sends an amount; the registration form only previews the same total.
+ * Negative totals clamp to zero.
  */
 export function computeAmountDue(
-  event: Pick<Event, 'price' | 'currency'>,
+  event: { price: number; currency: string },
   dataByTags: Record<string, unknown[]>,
 ): number {
   const tagged = (dataByTags[PAYMENT_AMOUNT_TAG] ?? [])
