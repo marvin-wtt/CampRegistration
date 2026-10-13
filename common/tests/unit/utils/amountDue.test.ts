@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeAmountDue } from '#app/payment/payment-amount';
+import { computeAmountDue } from '../../../src/utils/amountDue.js';
 
 const event = { price: 150, currency: 'EUR' };
 

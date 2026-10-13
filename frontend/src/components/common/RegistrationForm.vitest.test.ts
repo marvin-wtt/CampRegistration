@@ -4,6 +4,8 @@ import RegistrationForm from '@/components/common/RegistrationForm.vue';
 import { installQuasarPlugin } from '@/../test/vitest/utils/quasar';
 import { SurveyComponent } from 'survey-vue3-ui';
 import type { SurveyModel } from 'survey-core';
+// The app loads it in the surveyJS boot file.
+import 'survey-core/i18n/german';
 
 // The completed-page markup builds action links via `router.resolve(...)`;
 // stub it out since routing itself is irrelevant to these tests.
@@ -290,6 +292,120 @@ describe('RegistrationForm', () => {
   it.todo('should map files');
 
   it.todo('should submit the form');
+
+  describe('complete button text', () => {
+    function completeText(price: number, form: object = {}) {
+      const wrapper = mount(RegistrationForm, {
+        props: {
+          eventDetails: {
+            ...simpleEventDetails,
+            price,
+            form: { ...simpleEventDetails.form, ...form },
+          },
+          submitFn: () => Promise.resolve(),
+          uploadFileFn: () => Promise.reject(new Error()),
+        },
+      });
+      const survey = wrapper
+        .getComponent(SurveyComponent)
+        .props('model') as SurveyModel;
+      survey.locale = 'de';
+
+      return { survey, text: survey.completeText };
+    }
+
+    it('says registering costs money when the event has a price', () => {
+      expect(completeText(120).text).toBe('Kostenpflichtig anmelden');
+    });
+
+    it('asks for a binding registration when the event is free', () => {
+      expect(completeText(0).text).toBe('Verbindlich anmelden');
+    });
+
+    it('keeps a text set in the form editor', () => {
+      expect(
+        completeText(120, { completeText: { de: 'Jetzt anmelden' } }).text,
+      ).toBe('Jetzt anmelden');
+    });
+
+    it('never writes the default into the form JSON', () => {
+      expect(completeText(120).survey.toJSON()).not.toHaveProperty(
+        'completeText',
+      );
+    });
+  });
+
+  describe('amount summary', () => {
+    // A priced option: its answer is what the registration costs.
+    const pricedForm = {
+      pages: [
+        {
+          name: 'page1',
+          elements: [
+            {
+              type: 'text',
+              name: 'option',
+              inputType: 'number',
+              eventDataType: 'payment_amount',
+            },
+          ],
+        },
+      ],
+    };
+
+    function mountForm(price: number, form: object) {
+      const wrapper = mount(RegistrationForm, {
+        props: {
+          eventDetails: { ...simpleEventDetails, price, form },
+          submitFn: () => Promise.resolve(),
+          uploadFileFn: () => Promise.reject(new Error()),
+        },
+      });
+      const survey = wrapper
+        .getComponent(SurveyComponent)
+        .props('model') as SurveyModel;
+
+      return {
+        survey,
+        summary: () =>
+          wrapper.find('[data-test="registration-amount-summary"]'),
+      };
+    }
+
+    it('shows the event price above the button on the last page', async () => {
+      const { summary } = mountForm(120, {
+        pages: [{ name: 'page1', elements: [{ type: 'text', name: 'a' }] }],
+      });
+      await flushPromises();
+
+      expect(summary().exists()).toBe(true);
+      expect(summary().text()).toContain('120.00');
+    });
+
+    it('turns a free event paid once a priced answer is given', async () => {
+      const { survey, summary } = mountForm(0, pricedForm);
+      survey.locale = 'de';
+      await flushPromises();
+
+      expect(summary().exists()).toBe(false);
+      expect(survey.completeText).toBe('Verbindlich anmelden');
+
+      survey.setValue('option', 45);
+      await flushPromises();
+
+      expect(summary().text()).toContain('45.00');
+      expect(survey.completeText).toBe('Kostenpflichtig anmelden');
+    });
+
+    it('shows nothing for a free event', async () => {
+      const { summary } = mountForm(0, {
+        pages: [{ name: 'page1', elements: [{ type: 'text', name: 'a' }] }],
+      });
+      await flushPromises();
+
+      expect(summary().exists()).toBe(false);
+    });
+  });
 
   describe('redirect after submit', () => {
     function mountWithRedirect(

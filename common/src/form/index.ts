@@ -23,6 +23,7 @@ Serializer.getProperty('file', 'storeDataAsText').visible = false;
 Serializer.getProperty('file', 'storeDataAsText').defaultValue = false;
 
 export { setVariables };
+export { extractEventData } from './eventData.js';
 export {
   selectFileByLocale,
   EVENT_LOGO_SLOT,
