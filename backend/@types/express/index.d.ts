@@ -26,6 +26,7 @@ import type { NewsletterWithOrganization } from '#app/newsletter/newsletter.type
 import type { TaskWithAssignee } from '#app/task/task.types';
 import type { ChoreAssignmentWithRelations } from '#app/chore-assignment/chore-assignment.types';
 import type { ChoreWithSlots } from '#app/chore/chore.types';
+import type { PaymentWithDetails } from '#app/payment/payment.service';
 
 declare global {
   namespace Express {
@@ -59,6 +60,7 @@ declare global {
       task?: TaskWithAssignee;
       chore?: ChoreWithSlots;
       choreAssignment?: ChoreAssignmentWithRelations;
+      payment?: PaymentWithDetails;
     }
 
     interface AuthUser {

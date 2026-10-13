@@ -10,7 +10,7 @@ import 'survey-core/i18n/french';
 import 'survey-core/i18n/polish';
 import 'survey-core/i18n/czech';
 import type { IDataIssue, IPanel, PanelModelBase, Question } from 'survey-core';
-import { setVariables } from '@camp-registration/common/form';
+import { extractEventData, setVariables } from '@camp-registration/common/form';
 import type { EventWithFreePlaces } from '#app/event/event.types';
 import { withTimeout } from '#utils/promiseUtils';
 
@@ -235,24 +235,7 @@ export class RegistrationForm {
 
   /** The answers of the questions tagged with an `eventDataType`, by tag. */
   extractEventData(): Record<string, unknown[]> {
-    const plain = this.survey.getPlainData({
-      includeEmpty: true,
-      includeValues: true,
-      calculations: [{ propertyName: 'eventDataType' }],
-    });
-
-    const eventData: Record<string, unknown[]> = {};
-    for (const entry of plain) {
-      const tag: unknown = entry.eventDataType;
-      if (typeof tag !== 'string' || !tag) {
-        continue;
-      }
-
-      // Undefined is not accepted by prisma and must be replaced with null
-      (eventData[tag] ??= []).push(entry.value ?? null);
-    }
-
-    return eventData;
+    return extractEventData(this.survey);
   }
 
   /**

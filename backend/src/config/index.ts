@@ -211,6 +211,10 @@ const config = {
     deepl: deeplTranslationConfig(),
     google: googleTranslationConfig(),
   },
+  payment: {
+    linkSecret: env.PAYMENT_LINK_SECRET,
+    fakeProvider: env.PAYMENT_FAKE_PROVIDER,
+  },
   errorTracking: {
     drivers:
       env.ERROR_TRACKING_DRIVERS?.split(',')

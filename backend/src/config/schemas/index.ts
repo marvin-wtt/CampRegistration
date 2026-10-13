@@ -9,6 +9,7 @@ import { RedisEnvSchema } from './redis.schema.js';
 import { QueueEnvSchema } from './queue.schema.js';
 import { RealtimeEnvSchema } from './realtime.schema.js';
 import { TranslationEnvSchema } from './translation.schema.js';
+import { PaymentEnvSchema } from './payment.schema.js';
 
 export const EnvSchema = z
   .object({})
@@ -22,6 +23,7 @@ export const EnvSchema = z
   .and(QueueEnvSchema)
   .and(RealtimeEnvSchema)
   .and(TranslationEnvSchema)
+  .and(PaymentEnvSchema)
   .readonly();
 
 export type Env = z.output<typeof EnvSchema>;

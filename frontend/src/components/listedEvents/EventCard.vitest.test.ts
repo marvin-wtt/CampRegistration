@@ -44,6 +44,7 @@ const createEvent = (overrides: Partial<Event> = {}): Event => ({
   minAge: 8,
   maxAge: 14,
   price: 180,
+  currency: 'EUR',
   location: 'Bad Segeberg',
   freePlaces: null,
   freePlacesTotal: 100,

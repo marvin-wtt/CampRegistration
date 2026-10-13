@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   formatFormSelectCsvValue,
   formatIsoDateCsvValue,
+  formatPaymentCsvValue,
   isTranslatableCsvValue,
   stringifyCsvValue,
   type CsvFormatContext,
@@ -92,5 +93,42 @@ describe('formatFormSelectCsvValue', () => {
     expect(
       formatFormSelectCsvValue('computedData.role', 'participant', ctx),
     ).toBe('participant');
+  });
+});
+
+describe('formatPaymentCsvValue', () => {
+  it('formats paid and due in major units', () => {
+    expect(
+      formatPaymentCsvValue({
+        status: 'PARTIAL',
+        currency: 'EUR',
+        amountDue: 15000,
+        amountPaid: 5000,
+      }),
+    ).toBe('PARTIAL 50.00/150.00 EUR');
+  });
+
+  it('omits the due amount when none is set', () => {
+    expect(
+      formatPaymentCsvValue({
+        status: 'PAID',
+        currency: 'JPY',
+        amountDue: null,
+        amountPaid: 1500,
+      }),
+    ).toBe('PAID 1500 JPY');
+  });
+
+  it('is empty when no payment is required or the value is not a payment', () => {
+    expect(
+      formatPaymentCsvValue({
+        status: 'NOT_REQUIRED',
+        currency: 'EUR',
+        amountDue: null,
+        amountPaid: 0,
+      }),
+    ).toBe('');
+    expect(formatPaymentCsvValue('PAID')).toBe('');
+    expect(formatPaymentCsvValue(null)).toBe('');
   });
 });

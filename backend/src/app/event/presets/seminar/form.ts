@@ -60,8 +60,7 @@ export default {
             cs: 'Cena',
             default: 'Price',
           },
-          description: '{event.price} €',
-          currency: 'EUR',
+          description: '{event.price} {event.currency}',
         },
         {
           type: 'role',
@@ -329,14 +328,6 @@ export default {
   ],
   showProgressBar: true,
   progressBarLocation: 'bottom',
-  completeText: {
-    en: 'Complete Registration',
-    de: 'Anmeldung abschließen',
-    fr: "Finaliser l'inscription",
-    pl: 'Zakończ rejestrację',
-    cs: 'Dokončit registraci',
-    default: 'Complete Registration',
-  },
   showCompletePage: false,
   widthMode: 'static',
 };

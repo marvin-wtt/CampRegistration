@@ -5,6 +5,7 @@ import type { EventPreset } from './types.js';
 import { localeForCountry } from './locales.js';
 import { SurveyModel } from 'survey-core';
 import type { EventPresetName } from '@camp-registration/common/entities';
+import paymentMessageTemplates from './paymentMessageTemplates.js';
 
 export const EVENT_PRESETS: Record<EventPresetName, EventPreset> = {
   camp,
@@ -86,7 +87,10 @@ export function defaultMessageTemplatesForCountries(
   countries: string[],
   presetName?: EventPresetName | null,
 ) {
-  const templates = getEventPreset(presetName).messageTemplates;
+  const templates = {
+    ...getEventPreset(presetName).messageTemplates,
+    ...paymentMessageTemplates,
+  };
 
   return countries.flatMap((country) => {
     const code = localeForCountry(country);

@@ -315,14 +315,6 @@ export default {
   ],
   showProgressBar: true,
   progressBarLocation: 'bottom',
-  completeText: {
-    en: 'Complete Registration',
-    de: 'Anmeldung abschließen',
-    fr: "Finaliser l'inscription",
-    pl: 'Zakończ rejestrację',
-    cs: 'Dokončit registraci',
-    default: 'Complete Registration',
-  },
   showCompletePage: false,
   widthMode: 'static',
 };

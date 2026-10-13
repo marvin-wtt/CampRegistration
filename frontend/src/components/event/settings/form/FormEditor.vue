@@ -47,6 +47,8 @@ import {
 } from '@/lib/surveyJs/editorModes';
 import { fieldFromParts } from '@/utils/fileField';
 import { emphasizeForwardNavigation } from '@/lib/surveyJs/navigation';
+import { setCompleteTextDefault } from '@/lib/surveyJs/completeText';
+import { addAmountSummary, trackAmountDue } from '@/lib/surveyJs/amountDue';
 import { readAsDataURL } from '@/utils/readAsDataURL';
 
 const props = defineProps<{
@@ -288,6 +290,9 @@ creator.onSurveyInstanceCreated.add((_, options) => {
 
   if (['preview-tab', 'designer-tab', 'theme-tab'].includes(options.area)) {
     addMarkdownRenderer(survey);
+    // Shows the default the registration form will use until the form sets
+    // its own Complete button text; the preview follows its answers below.
+    setCompleteTextDefault(survey, props.event.price > 0);
   }
 
   // Design mode skips text processing, so file slots need their own resolver.
@@ -305,6 +310,7 @@ creator.onSurveyInstanceCreated.add((_, options) => {
   }
 
   if (options.area === 'preview-tab') {
+    addAmountSummary(survey, trackAmountDue(survey, props.event));
     // Nothing is uploaded from the preview; files stay in memory.
     survey.onUploadFiles.add((_, options) => {
       Promise.all(
