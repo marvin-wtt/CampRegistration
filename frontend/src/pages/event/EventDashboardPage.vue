@@ -15,7 +15,7 @@
         >
           <template v-if="shortcutsLoading">
             <q-skeleton
-              v-for="width in ['132px', '152px', '116px', '104px']"
+              v-for="width in ['132px', '116px']"
               :key="width"
               type="QBtn"
               class="shortcut-skeleton"
@@ -348,24 +348,6 @@ const quickActions = computed<QuickAction[]>(() =>
         navItem: 'contact',
         permission: { any: ['event.messages.create', 'event.messages.view'] },
       },
-      {
-        key: 'program',
-        label: t('actions.program'),
-        icon: 'calendar_month',
-        route: 'management.event.program-planner',
-        navItem: 'program_planner',
-        permission: 'event.program_items.view',
-      },
-      {
-        key: 'duties',
-        label: t('actions.duties'),
-        icon: 'cleaning_services',
-        route: 'management.event.chore-planner',
-        navItem: 'chore_planner',
-        permission: {
-          all: ['event.chore_assignments.view', 'event.chores.view'],
-        },
-      },
     ] satisfies QuickAction[]
   ).filter(
     (action) =>
@@ -461,38 +443,28 @@ const quickActions = computed<QuickAction[]>(() =>
 actions:
   participants: 'Participants'
   contact: 'Contact'
-  program: 'Program'
-  duties: 'Duties'
 </i18n>
 
 <i18n lang="yaml" locale="de">
 actions:
   participants: 'Teilnehmende'
   contact: 'Kontakt'
-  program: 'Programm'
-  duties: 'Dienste'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 actions:
   participants: 'Participants'
   contact: 'Contact'
-  program: 'Programme'
-  duties: 'Corvées'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
 actions:
   participants: 'Uczestnicy'
   contact: 'Kontakt'
-  program: 'Program'
-  duties: 'Dyżury'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
 actions:
   participants: 'Účastníci'
   contact: 'Kontakt'
-  program: 'Program'
-  duties: 'Služby'
 </i18n>
