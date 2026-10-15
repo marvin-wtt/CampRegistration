@@ -3,8 +3,6 @@
     view="hHh Lpr lFf"
     @scroll="onScroll"
   >
-    <q-ajax-bar color="accent" />
-
     <!-- Top bar: mobile only. Desktop uses either the rail or floating controls. -->
     <q-header
       v-if="showTopBar"

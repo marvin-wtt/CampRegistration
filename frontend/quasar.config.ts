@@ -21,6 +21,8 @@ export default defineConfig((ctx) => {
       'language-pack',
       'surveyJS',
       'notify-defaults',
+      'navigation-progress',
+      'chunk-reload',
     ],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#css
@@ -127,6 +129,7 @@ export default defineConfig((ctx) => {
     framework: {
       config: {
         dark: 'auto',
+        loadingBar: { color: 'accent' },
       },
 
       cssAddon: true,
@@ -141,7 +144,7 @@ export default defineConfig((ctx) => {
       directives: ['TouchPan', 'TouchSwipe'],
 
       // Quasar plugins
-      plugins: ['Dialog', 'Notify', 'Loading', 'Meta'],
+      plugins: ['Dialog', 'Notify', 'Loading', 'LoadingBar', 'Meta'],
     },
 
     // animations: 'all', // --- includes all animations
