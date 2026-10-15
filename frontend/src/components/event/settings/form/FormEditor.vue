@@ -28,7 +28,7 @@ import type {
   SurveyJSEventData,
 } from '@camp-registration/common/entities';
 import { useQuasar } from 'quasar';
-import { setVariables } from '@camp-registration/common/form';
+import { formLintOptions, setVariables } from '@camp-registration/common/form';
 import {
   addDesignerFileSlotResolver,
   addFileSlotResolver,
@@ -69,6 +69,11 @@ const creatorOptions: ICreatorOptions = {
 };
 
 const creator = new SurveyCreatorModel(creatorOptions);
+
+// Same options the preset lint test uses (see `formLintOptions`).
+creator.onLintSurvey.add((_, options) => {
+  options.lintOptions = formLintOptions(options.lintOptions);
+});
 
 // Resolved MD3 snapshot used as the editable default whenever an event has no
 // saved theme. The editor parses color values back into its pickers, so it

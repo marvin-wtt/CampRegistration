@@ -1,7 +1,7 @@
 import questions from './questions/index.js';
 import functions from './functions/index.js';
 import properties from './properties/index.js';
-import { setVariables } from './variables/index.js';
+import { setVariables, VARIABLE_NAMES } from './variables/index.js';
 import { Serializer, ComponentCollection, FunctionFactory } from 'survey-core';
 
 for (const component of questions) {
@@ -22,9 +22,11 @@ for (const property of properties) {
 Serializer.getProperty('file', 'storeDataAsText').visible = false;
 Serializer.getProperty('file', 'storeDataAsText').defaultValue = false;
 
-export { setVariables };
+export { setVariables, VARIABLE_NAMES };
+export { formLintOptions } from './lint.js';
 export {
   selectFileByLocale,
   EVENT_LOGO_SLOT,
   EVENT_BANNER_SLOT,
+  FILE_VARIABLE,
 } from './files.js';
