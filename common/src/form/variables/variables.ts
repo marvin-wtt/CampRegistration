@@ -18,6 +18,34 @@ export interface Data {
   logo?: string | null;
 }
 
+const EVENT_VARIABLES = [
+  'countries',
+  'name',
+  'organizer',
+  'contactEmail',
+  'startAt',
+  'startAtDate',
+  'startAtTime',
+  'endAt',
+  'endAtDate',
+  'endAtTime',
+  'minAge',
+  'maxAge',
+  'location',
+  'price',
+  'freePlaces',
+  'logo',
+] as const;
+
+type EventVariable = (typeof EVENT_VARIABLES)[number];
+
+// Every variable `setVariables` defines. Forms reference them in expressions,
+// so the form editor's linter must know them.
+export const VARIABLE_NAMES: readonly string[] = [
+  ...EVENT_VARIABLES.map((name) => `event.${name}`),
+  '_validationEnabled',
+];
+
 export const setVariables = (model: SurveyModel, data: Data | undefined) => {
   if (!data) {
     return;
@@ -25,22 +53,28 @@ export const setVariables = (model: SurveyModel, data: Data | undefined) => {
 
   const { t, toDate, toTime } = converter(model.locale);
 
-  model.setVariable('event.countries', data.countries);
-  model.setVariable('event.name', t(data.name));
-  model.setVariable('event.organizer', t(data.organizer));
-  model.setVariable('event.contactEmail', t(data.contactEmail));
-  model.setVariable('event.startAt', data.startAt);
-  model.setVariable('event.startAtDate', toDate(data.startAt));
-  model.setVariable('event.startAtTime', toTime(data.startAt));
-  model.setVariable('event.endAt', data.endAt);
-  model.setVariable('event.endAtDate', toDate(data.endAt));
-  model.setVariable('event.endAtTime', toTime(data.endAt));
-  model.setVariable('event.minAge', data.minAge);
-  model.setVariable('event.maxAge', data.maxAge);
-  model.setVariable('event.location', data.location ? t(data.location) : null);
-  model.setVariable('event.price', t(data.price));
-  model.setVariable('event.freePlaces', data.freePlaces);
-  model.setVariable('event.logo', data.logo ?? null);
+  const values: Record<EventVariable, unknown> = {
+    countries: data.countries,
+    name: t(data.name),
+    organizer: t(data.organizer),
+    contactEmail: t(data.contactEmail),
+    startAt: data.startAt,
+    startAtDate: toDate(data.startAt),
+    startAtTime: toTime(data.startAt),
+    endAt: data.endAt,
+    endAtDate: toDate(data.endAt),
+    endAtTime: toTime(data.endAt),
+    minAge: data.minAge,
+    maxAge: data.maxAge,
+    location: data.location ? t(data.location) : null,
+    price: t(data.price),
+    freePlaces: data.freePlaces,
+    logo: data.logo ?? null,
+  };
+
+  for (const name of EVENT_VARIABLES) {
+    model.setVariable(`event.${name}`, values[name]);
+  }
 
   model.setVariable('_validationEnabled', model.validationEnabled);
 };
