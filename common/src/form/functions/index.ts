@@ -6,6 +6,7 @@ import translate from './translate.js';
 import objectValues from './objectValues.js';
 import joinStrings from './joinStrings.js';
 import isWaitingList from './isWaitingList.js';
+import daysBetween from './daysBetween.js';
 
 interface FunctionRegistrationParams {
   name: string;
@@ -50,6 +51,10 @@ const functions: FunctionRegistrationParams[] = [
     name: 'isWaitingList',
     func: isWaitingList,
   },
+  {
+    name: 'daysBetween',
+    func: daysBetween,
+  },
 ];
 
 export {
@@ -59,6 +64,7 @@ export {
   htmlDate,
   translate,
   isWaitingList,
+  daysBetween,
   functions,
 };
 
