@@ -962,7 +962,7 @@ export default {
     },
     {
       name: 'waitingList',
-      expression: 'isWaitingList({event.freePlaces}, {address.country})',
+      expression: '{event.freePlaces} <= 0',
     },
   ],
   showProgressBar: true,

@@ -16,7 +16,7 @@ import {
 } from '../../../prisma/factories/index.js';
 import { Event, Prisma } from '#generated/prisma/client.js';
 import { eventRegistrationStatus } from '#app/event/event.util';
-import { countriesToLocales } from '#utils/countriesToLocales';
+import { localesForCountries } from '@camp-registration/common/locales';
 import moment from 'moment';
 import { ulid } from 'ulidx';
 import {
@@ -1731,7 +1731,7 @@ describe('/api/v1/events', () => {
           assertEventResponseBody(
             {
               ...expected,
-              locales: [...new Set(countriesToLocales(event.countries))],
+              locales: localesForCountries(event.countries),
             },
             response.body,
           );

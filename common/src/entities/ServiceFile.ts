@@ -4,6 +4,8 @@ export interface ServiceFile extends Identifiable {
   name: string;
   field: string | null;
   locale: string | null;
+  /** The country it applies to (`gb`, `cz`); null for every country. */
+  country: string | null;
   type: string;
   size: number;
   accessLevel: string | null;
@@ -16,6 +18,7 @@ export interface ServiceFileUpdateData {
   name?: string;
   field?: string;
   locale?: string | null;
+  country?: string | null;
   accessLevel?: 'private' | 'public';
 }
 

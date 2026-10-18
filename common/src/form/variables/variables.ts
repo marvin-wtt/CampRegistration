@@ -1,28 +1,31 @@
-import { SurveyModel } from 'survey-core';
-
-type Translatable<T = string> = T | Record<string, T>;
+import { CalculatedValue, type Question, SurveyModel } from 'survey-core';
+import type { PerCountry, Translatable } from '../../entities/index.js';
+import {
+  eventCountry,
+  eventCountryFields,
+  translate,
+} from '../../utils/index.js';
 
 export interface Data {
   countries: string[];
   name: Translatable;
-  organizer: Translatable;
-  contactEmail: Translatable;
-  maxParticipants: Translatable<number>;
+  organizer: PerCountry<string>;
+  contactEmail: PerCountry<string>;
+  maxParticipants: PerCountry<number>;
   startAt: Date | string;
   endAt: Date | string;
   minAge: number;
   maxAge: number;
   location: Translatable | null;
-  price: Translatable<number>;
-  freePlaces: Translatable<number> | null;
+  price: number;
+  freePlaces: PerCountry<number> | null;
   logo?: string | null;
 }
 
+// Resolved once per locale.
 const EVENT_VARIABLES = [
   'countries',
   'name',
-  'organizer',
-  'contactEmail',
   'startAt',
   'startAtDate',
   'startAtTime',
@@ -33,8 +36,16 @@ const EVENT_VARIABLES = [
   'maxAge',
   'location',
   'price',
-  'freePlaces',
   'logo',
+] as const;
+
+// Per-country fields, resolved for the country the registration selects (or
+// the event's only one) by `eventCountryFields`.
+const COUNTRY_VARIABLES = [
+  'organizer',
+  'contactEmail',
+  'maxParticipants',
+  'freePlaces',
 ] as const;
 
 type EventVariable = (typeof EVENT_VARIABLES)[number];
@@ -43,6 +54,8 @@ type EventVariable = (typeof EVENT_VARIABLES)[number];
 // so the form editor's linter must know them.
 export const VARIABLE_NAMES: readonly string[] = [
   ...EVENT_VARIABLES.map((name) => `event.${name}`),
+  ...COUNTRY_VARIABLES.map((name) => `event.${name}`),
+  'event.country',
   '_validationEnabled',
 ];
 
@@ -51,13 +64,12 @@ export const setVariables = (model: SurveyModel, data: Data | undefined) => {
     return;
   }
 
-  const { t, toDate, toTime } = converter(model.locale);
+  const locale = model.locale || 'en';
+  const { toDate, toTime } = converter(locale);
 
   const values: Record<EventVariable, unknown> = {
     countries: data.countries,
-    name: t(data.name),
-    organizer: t(data.organizer),
-    contactEmail: t(data.contactEmail),
+    name: translate(data.name, locale),
     startAt: data.startAt,
     startAtDate: toDate(data.startAt),
     startAtTime: toTime(data.startAt),
@@ -66,9 +78,8 @@ export const setVariables = (model: SurveyModel, data: Data | undefined) => {
     endAtTime: toTime(data.endAt),
     minAge: data.minAge,
     maxAge: data.maxAge,
-    location: data.location ? t(data.location) : null,
-    price: t(data.price),
-    freePlaces: data.freePlaces,
+    location: translate(data.location, locale) ?? null,
+    price: data.price,
     logo: data.logo ?? null,
   };
 
@@ -77,7 +88,118 @@ export const setVariables = (model: SurveyModel, data: Data | undefined) => {
   }
 
   model.setVariable('_validationEnabled', model.validationEnabled);
+
+  bindSelectedCountry(model, data);
 };
+
+// Recomputes on every change of the selected country, however it changes: a
+// respondent's answer, `survey.data = …` or `mergeData` alike. Only an
+// expression is reactive to all three; `onValueChanged` misses the last two.
+// One hidden calculated value per question the country can come from.
+const SELECTED_COUNTRY = '__eventCountry';
+
+interface CountryBinding {
+  data: Data;
+  sources: CountrySource[];
+}
+
+interface CountrySource {
+  expression: string;
+  read: () => unknown;
+}
+
+const bindings = new WeakMap<SurveyModel, CountryBinding>();
+
+function bindSelectedCountry(model: SurveyModel, data: Data) {
+  const existing = bindings.get(model);
+  if (existing) {
+    existing.data = data;
+    updateCountryVariables(model, existing);
+    return;
+  }
+
+  const binding: CountryBinding = { data, sources: countrySources(model) };
+  bindings.set(model, binding);
+
+  // A design surface is what the editor saves: the calculated values would be
+  // written into the form.
+  if (binding.sources.length > 0 && !model.isDesignMode) {
+    binding.sources.forEach((source, index) => {
+      model.calculatedValues.push(
+        new CalculatedValue(
+          SELECTED_COUNTRY + String(index),
+          source.expression,
+        ),
+      );
+    });
+    // SurveyJS reports variable names lower-cased.
+    const prefix = SELECTED_COUNTRY.toLowerCase();
+    model.onVariableChanged.add((_, options) => {
+      if (options.name.toLowerCase().startsWith(prefix)) {
+        updateCountryVariables(model, binding);
+      }
+    });
+  }
+
+  updateCountryVariables(model, binding);
+}
+
+function updateCountryVariables(model: SurveyModel, binding: CountryBinding) {
+  const { data } = binding;
+  const country = eventCountry(data, selectedCountry(binding.sources));
+  const fields = eventCountryFields(data, country);
+
+  model.setVariable('event.country', country);
+  for (const name of COUNTRY_VARIABLES) {
+    model.setVariable(`event.${name}`, fields[name]);
+  }
+}
+
+// The first source that holds a country, as the server picks it.
+function selectedCountry(sources: CountrySource[]): string | null {
+  for (const source of sources) {
+    const value = source.read();
+    if (typeof value === 'string' && value !== '') {
+      return value;
+    }
+  }
+
+  return null;
+}
+
+// The questions holding the registration's country, in the order the server
+// extracts it (`RegistrationHelper.country`): a `country` question, then an
+// address's country.
+function countrySources(model: SurveyModel): CountrySource[] {
+  const questions = model.getAllQuestions(false, false, true);
+  const tagged = (tag: string): Question | undefined =>
+    questions.find(
+      (question) => question.getPropertyValue('eventDataType') === tag,
+    );
+
+  const sources: CountrySource[] = [];
+
+  const country = tagged('country');
+  if (country) {
+    const name = country.getValueName();
+    sources.push({
+      expression: `{${name}}`,
+      read: (): unknown => model.getValue(name),
+    });
+  }
+
+  const address = tagged('address');
+  if (address) {
+    const name = address.getValueName();
+    sources.push({
+      expression: `{${name}.country}`,
+      read: () =>
+        (model.getValue(name) as { country?: unknown } | undefined)?.country,
+    });
+  }
+
+  return sources;
+}
 
 const converter = (locale: string) => {
   const fallbackLocale = 'en-US';
@@ -121,41 +243,7 @@ const converter = (locale: string) => {
     });
   }
 
-  const t = (
-    value: Record<string, unknown> | string | number,
-    fallback?: string,
-  ): unknown => {
-    // Expected input: [value: object | string, locale: string, fallback?: string]
-    const defaultFallback = 'en-US';
-
-    if (typeof value === 'string' || typeof value === 'number') {
-      return value;
-    }
-
-    if (locale in value) {
-      return value[locale];
-    }
-
-    const shortLocale = locale.split('-')[0];
-    if (shortLocale in value) {
-      return value[shortLocale];
-    }
-
-    fallback ??= defaultFallback;
-    if (fallback in value) {
-      return value[fallback];
-    }
-
-    const shortFallback = fallback.split('-')[0];
-    if (shortFallback in value) {
-      return value[shortFallback];
-    }
-
-    return Object.values(value)[0];
-  };
-
   return {
-    t,
     toDate,
     toTime,
   };

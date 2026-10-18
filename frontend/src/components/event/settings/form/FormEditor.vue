@@ -288,8 +288,11 @@ creator.saveThemeFunc = (
 
 creator.onSurveyInstanceCreated.add((_, options) => {
   const survey: SurveyModel = options.survey;
-  const resolveFileSlot = (slot: string, locale: string) =>
-    api.getEventFileSlotUrl(props.event.id, slot, locale);
+  const resolveFileSlot = (
+    slot: string,
+    locale: string,
+    country: string | null = null,
+  ) => api.getEventFileSlotUrl(props.event.id, slot, locale, country);
 
   if (['preview-tab', 'designer-tab', 'theme-tab'].includes(options.area)) {
     addMarkdownRenderer(survey);

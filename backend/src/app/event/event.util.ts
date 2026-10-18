@@ -1,16 +1,28 @@
 import type { EventRegistrationStatus } from '@camp-registration/common/entities';
+import { eventCountryFields, translate } from '@camp-registration/common/utils';
 import type { Event } from '#generated/prisma/client';
-import { translateObject } from '#utils/translateObject';
 
-/** The event's translatable fields resolved to one locale, for templates. */
-export function translateEventContext(event: Event, locale: string) {
+/**
+ * The event's fields resolved for templates: text in the reader's `locale`,
+ * per-country values for the registration's `country` — by the same rule the
+ * form resolves them (`eventCountryFields`).
+ */
+export function translateEventContext(
+  event: Event,
+  { locale, country }: { locale: string; country: string | null },
+) {
+  const { organizer, contactEmail, maxParticipants } = eventCountryFields(
+    event,
+    country,
+  );
+
   return {
     ...event,
-    name: translateObject(event.name, locale),
-    organizer: translateObject(event.organizer, locale),
-    contactEmail: translateObject(event.contactEmail, locale),
-    maxParticipants: translateObject(event.maxParticipants, locale),
-    location: translateObject(event.location, locale),
+    name: translate(event.name, locale) ?? '',
+    location: translate(event.location, locale) ?? null,
+    organizer,
+    contactEmail,
+    maxParticipants,
   };
 }
 

@@ -47,7 +47,7 @@
                 v-model="event.name"
                 :disable="loading"
                 :label="t('field.name')"
-                :countries="event.countries"
+                :locales="localesForCountries(event.countries)"
                 :rules="[
                   (val?: string) => !!val || t('validation.name.empty'),
                   (val: string) =>
@@ -108,7 +108,7 @@
                 v-model="event.location"
                 :disable="loading"
                 :label="t('field.location')"
-                :countries="event.countries"
+                :locales="localesForCountries(event.countries)"
                 :rules="[
                   (val?: string) => !!val || t('validation.location.empty'),
                   (val: string) =>
@@ -481,6 +481,7 @@ import { storeToRefs } from 'pinia';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import TimeInput from '@/components/common/inputs/TimeInput.vue';
 import TranslatedInput from '@/components/common/inputs/TranslatedInput.vue';
+import { localesForCountries } from '@/i18n/locales';
 import DateRangeInput from '@/components/common/inputs/DateRangeInput.vue';
 import DateTimeInput from '@/components/common/inputs/DateTimeInput.vue';
 import TimezoneSelect from '@/components/common/inputs/TimezoneSelect.vue';

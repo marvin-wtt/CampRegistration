@@ -53,7 +53,7 @@ class EventSeeder extends BaseSeeder {
       listed: true,
       confirmationMode: 'MANUAL',
       countries: ['gb', 'fr'],
-      name: { gb: 'Summer Camp', fr: 'Colonie de vacances' },
+      name: { en: 'Summer Camp', fr: 'Colonie de vacances' },
       organizer: { gb: 'Youth Adventures UK', fr: 'Aventures Jeunesse' },
       contactEmail: { gb: 'event-gb@example.com', fr: 'event-fr@example.com' },
       maxParticipants: { gb: 24, fr: 25 },

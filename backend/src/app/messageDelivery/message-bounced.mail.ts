@@ -5,7 +5,12 @@ import type {
 } from '#generated/prisma/client.js';
 import { MailBase } from '#core/mail/mail.base';
 import type { AddressLike, Content } from '#core/mail/mail.types';
-import { objectValueOrAll } from '#utils/translateObject';
+import {
+  allCountryValues,
+  eventCountry,
+  forCountry,
+} from '@camp-registration/common/utils';
+import { localeForCountry } from '@camp-registration/common/locales';
 import { translateEventContext } from '#app/event/event.util';
 import { generateUrl } from '#utils/url';
 import { resolveActionCardText } from '#core/mail/actionCardText';
@@ -32,16 +37,26 @@ export class MessageBouncedNotification extends MailBase<MessageBouncedNotificat
   }
 
   protected to(): AddressLike {
-    const country = this.payload.registration.country;
-    const event = this.payload.event;
+    const { contactEmail } = this.payload.event;
 
-    return objectValueOrAll(event.contactEmail, country ?? 'unknown');
+    // Without a country, every country's contact is told.
+    return (
+      forCountry(contactEmail, this.country()) ?? allCountryValues(contactEmail)
+    );
   }
 
   protected locale(): string {
-    return (
-      this.payload.registration.country ?? this.payload.registration.locale
-    );
+    // The contact's own language is unknown; the contact of a country
+    // presumably reads that country's.
+    const country = this.country();
+
+    return country
+      ? localeForCountry(country)
+      : this.payload.registration.locale;
+  }
+
+  private country(): string | null {
+    return eventCountry(this.payload.event, this.payload.registration.country);
   }
 
   protected subject(): string {
@@ -75,8 +90,9 @@ export class MessageBouncedNotification extends MailBase<MessageBouncedNotificat
   }
 
   private createEventContext() {
-    const locale = this.payload.registration.country ?? this.locale();
-
-    return translateEventContext(this.payload.event, locale);
+    return translateEventContext(this.payload.event, {
+      locale: this.locale(),
+      country: this.country(),
+    });
   }
 }

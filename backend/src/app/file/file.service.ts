@@ -292,6 +292,7 @@ export class FileService extends BaseService {
     field?: string,
     locale?: string | null,
     accessLevel?: string,
+    country?: string | null,
   ) {
     const originalFileName = name
       ? name + fileNameExtension(file.filename)
@@ -310,6 +311,7 @@ export class FileService extends BaseService {
       data: {
         ...fileData,
         ...modelData,
+        country: country ?? null,
         uploadStatus: 'PENDING',
       },
     });
@@ -336,9 +338,16 @@ export class FileService extends BaseService {
   }
 
   /**
-   * Resolves the best-matching file for a form slot ({_file.<slot>}) on a model
-   * and locale. The slot maps to the file's `field` column. Readiness and access
-   * are not checked here — that is the caller's (guard/stream) responsibility.
+   * Resolves the best-matching file for a form slot ({_file.<slot>}) on a model,
+   * country and locale. The slot maps to the file's `field` column. Readiness
+   * and access are not checked here — that is the caller's (guard/stream)
+   * responsibility.
+   *
+   * The country narrows first: a file of the country, else one for every
+   * country (`country` null) — never another country's, since its terms are
+   * not this one's. Only within that group does the locale decide, so a
+   * country's own file in another language beats a generic one in the
+   * reader's.
    *
    * Several files can share a (field, locale) pair while a replacement is
    * uploading. Ready files are tried first so a pending replacement doesn't
@@ -349,6 +358,7 @@ export class FileService extends BaseService {
     model: ModelData,
     slot: string,
     locale: string | undefined,
+    country: string | null = null,
   ): Promise<File | null> {
     const files = await this.prisma.file.findMany({
       where: {
@@ -358,11 +368,23 @@ export class FileService extends BaseService {
       orderBy: { createdAt: 'desc' },
     });
 
-    if (files.length === 0) {
-      return null;
+    const groups = [
+      ...(country ? [files.filter((file) => file.country === country)] : []),
+      files.filter((file) => file.country === null),
+    ];
+    const targetLocale = locale ?? 'en';
+
+    for (const group of groups) {
+      const file = this.pickByLocale(group, targetLocale);
+      if (file) {
+        return file;
+      }
     }
 
-    const targetLocale = locale ?? 'en';
+    return null;
+  }
+
+  private pickByLocale(files: File[], locale: string): File | null {
     const ready = files
       .filter((file) => file.uploadStatus === 'READY')
       // Stable sort: newest-first order is kept within each access level.
@@ -373,10 +395,11 @@ export class FileService extends BaseService {
       );
 
     return (
-      selectFileByLocale(ready, targetLocale) ??
-      selectFileByLocale(files, targetLocale) ??
+      selectFileByLocale(ready, locale) ??
+      selectFileByLocale(files, locale) ??
       ready.at(0) ??
-      files[0]
+      files.at(0) ??
+      null
     );
   }
 
@@ -461,6 +484,7 @@ export class FileService extends BaseService {
       name?: string;
       field?: string;
       locale?: string | null;
+      country?: string | null;
       accessLevel?: string;
     },
   ) {
@@ -470,6 +494,7 @@ export class FileService extends BaseService {
         originalName: data.name,
         field: data.field,
         locale: data.locale,
+        country: data.country,
         accessLevel: data.accessLevel,
       },
     });

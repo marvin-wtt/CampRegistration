@@ -1,0 +1,3 @@
+-- This is an empty migration.
+-- It hosts the data migration in `migration.ts`, which re-keys the event's
+-- name and location from country codes to locales.

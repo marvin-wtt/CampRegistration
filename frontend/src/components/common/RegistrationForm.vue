@@ -373,8 +373,8 @@ function createModel(eventId: string, form: object): SurveyModel {
     options.callback('success');
   });
   addMarkdownRenderer(survey);
-  addFileSlotResolver(survey, (slot, locale) =>
-    api.getEventFileSlotUrl(eventId, slot, locale),
+  addFileSlotResolver(survey, (slot, locale, country) =>
+    api.getEventFileSlotUrl(eventId, slot, locale, country),
   );
 
   emphasizeForwardNavigation(survey);

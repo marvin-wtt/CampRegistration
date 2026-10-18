@@ -521,6 +521,86 @@ describe('/api/v1/files/', () => {
       );
     });
 
+    describe('country', () => {
+      const slotFile = async (
+        eventId: string,
+        originalName: string,
+        data: { locale?: string | null; country?: string | null },
+      ) => {
+        const name = crypto.randomUUID() + '.pdf';
+        await uploadFile('blank.pdf', name);
+        await FileFactory.create({
+          event: { connect: { id: eventId } },
+          field: 'terms',
+          accessLevel: 'public',
+          originalName,
+          name,
+          ...data,
+        });
+      };
+
+      it("should prefer the country's own file over a generic one in the reader's language", async () => {
+        const event = await EventFactory.create({
+          listed: true,
+          countries: ['de', 'fr'],
+        });
+        await slotFile(event.id, 'generic.pdf', {
+          locale: 'en',
+          country: null,
+        });
+        await slotFile(event.id, 'de-terms.pdf', {
+          locale: 'de',
+          country: 'de',
+        });
+
+        const response = await request()
+          .get(
+            `/api/v1/events/${event.id}/files/slots/terms?locale=en&country=de`,
+          )
+          .expect(200);
+
+        expect(response.headers['content-disposition']).toContain(
+          'de-terms.pdf',
+        );
+      });
+
+      it("should never serve another country's file", async () => {
+        const event = await EventFactory.create({
+          listed: true,
+          countries: ['de', 'fr'],
+        });
+        await slotFile(event.id, 'de-terms.pdf', {
+          locale: 'de',
+          country: 'de',
+        });
+
+        await request()
+          .get(`/api/v1/events/${event.id}/files/slots/terms?country=fr`)
+          .expect(404);
+        // No country selected yet: only a file for every country would do.
+        await request()
+          .get(`/api/v1/events/${event.id}/files/slots/terms`)
+          .expect(404);
+      });
+
+      it("should use the event's only country without a query", async () => {
+        const event = await EventFactory.create({
+          listed: true,
+          countries: ['gb'],
+        });
+        await slotFile(event.id, 'generic.pdf', { country: null });
+        await slotFile(event.id, 'gb-terms.pdf', { country: 'gb' });
+
+        const response = await request()
+          .get(`/api/v1/events/${event.id}/files/slots/terms`)
+          .expect(200);
+
+        expect(response.headers['content-disposition']).toContain(
+          'gb-terms.pdf',
+        );
+      });
+    });
+
     it('should respond with `401` when the matching file is private and the user is anonymous', async () => {
       const event = await EventFactory.create({ listed: true });
       await FileFactory.create({

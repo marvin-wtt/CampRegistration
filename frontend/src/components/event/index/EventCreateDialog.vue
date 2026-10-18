@@ -181,7 +181,7 @@
             v-model="data.name"
             :disable="loading"
             :label="t('field.name')"
-            :countries="data.countries"
+            :locales="localesForCountries(data.countries)"
             :rules="[
               (val?: string) => !!val || t('validation.name.empty'),
               (val: string) => val.length <= 255 || t('validation.name.length'),
@@ -416,7 +416,7 @@
             v-model="data.location"
             :disable="loading"
             :label="t('field.location')"
-            :countries="data.countries"
+            :locales="localesForCountries(data.countries)"
             :rules="[
               (val?: string) => !!val || t('validation.location.empty'),
               (val: string) =>
@@ -490,6 +490,7 @@ import TimeInput from '@/components/common/inputs/TimeInput.vue';
 import EventEditStep from '@/components/event/settings/create/EventEditStep.vue';
 import CountrySelect from '@/components/common/CountrySelect.vue';
 import TranslatedInput from '@/components/common/inputs/TranslatedInput.vue';
+import { localesForCountries } from '@/i18n/locales';
 import DateRangeInput from '@/components/common/inputs/DateRangeInput.vue';
 import { computed, onMounted, ref, watch } from 'vue';
 import {

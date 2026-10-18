@@ -111,7 +111,7 @@ export class FileController extends BaseController {
 
   async store(req: Request, res: Response) {
     const {
-      body: { accessLevel, field, locale, name },
+      body: { accessLevel, country, field, locale, name },
       file,
     } = await req.validate(validator.store);
 
@@ -128,6 +128,7 @@ export class FileController extends BaseController {
       fieldValue,
       locale,
       accessLevel ?? 'private',
+      country,
     );
 
     // Files are polymorphic; only event-owned files are a realtime resource.
@@ -140,12 +141,13 @@ export class FileController extends BaseController {
 
   async update(req: Request, res: Response) {
     const {
-      body: { accessLevel, field, locale, name },
+      body: { accessLevel, country, field, locale, name },
     } = await req.validate(validator.update);
     const file = req.modelOrFail('file');
 
     const updatedFile = await this.fileService.updateFile(file.id, {
       accessLevel,
+      country,
       field,
       locale,
       name,

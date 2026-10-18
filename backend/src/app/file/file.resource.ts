@@ -10,6 +10,7 @@ export class FileResource extends JsonResource<File, FileResourceData> {
       name: this.data.originalName,
       field: this.data.field,
       locale: this.data.locale,
+      country: this.data.country,
       type: this.data.type,
       size: this.data.size,
       accessLevel: this.data.accessLevel,

@@ -12,6 +12,9 @@ const stream = z.object({
     .partial(),
 });
 
+// A country an event runs in, as event countries are stored (`gb`, `cz`).
+const COUNTRY = z.string().regex(/^[a-z]{2}$/);
+
 const show = z.object({
   params: z.object({
     fileId: z.ulid(),
@@ -25,6 +28,7 @@ const slotFile = z.object({
   query: z
     .object({
       locale: z.string(),
+      country: COUNTRY,
     })
     .partial(),
 });
@@ -44,6 +48,7 @@ const store = z.object({
     name: z.string().optional(),
     field: z.string().optional(),
     locale: z.string().nullable().optional(),
+    country: COUNTRY.nullable().optional(),
     accessLevel: z.enum(['private', 'public']).optional(),
   }) satisfies ZodType<ServiceFileUpdateData>,
   file: z.custom<Express.Multer.File>((file) => {
@@ -59,6 +64,7 @@ const update = z.object({
     name: z.string().optional(),
     field: z.string().optional(),
     locale: z.string().nullable().optional(),
+    country: COUNTRY.nullable().optional(),
     accessLevel: z.enum(['private', 'public']).optional(),
   }) satisfies ZodType<ServiceFileUpdateData>,
 });
