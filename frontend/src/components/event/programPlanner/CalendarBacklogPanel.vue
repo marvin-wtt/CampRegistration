@@ -64,7 +64,7 @@
             class="backlog-card__plan-icon q-mt-xs"
           />
           <calendar-item-popup
-            :event="event"
+            :item="event"
             :editable="editable"
             :deletable="deletable"
             :creatable="creatable"
@@ -170,7 +170,7 @@
           class="backlog-card__plan-icon q-mt-xs"
         />
         <calendar-item-popup
-          :event="event"
+          :item="event"
           :editable="editable"
           :deletable="deletable"
           :creatable="creatable"

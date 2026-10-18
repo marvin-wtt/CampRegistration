@@ -39,7 +39,7 @@
 
     <calendar-item-popup
       ref="popup"
-      :event="event"
+      :item="event"
       :editable="editable"
       :deletable="deletable"
       :creatable="creatable"
