@@ -98,6 +98,10 @@ export const setVariables = (model: SurveyModel, data: Data | undefined) => {
 // One hidden calculated value per question the country can come from.
 const SELECTED_COUNTRY = '__eventCountry';
 
+// SurveyJS reports variable names lower-cased.
+const isSelectedCountryValue = (name: string): boolean =>
+  name.toLowerCase().startsWith(SELECTED_COUNTRY.toLowerCase());
+
 interface CountryBinding {
   data: Data;
   sources: CountrySource[];
@@ -111,37 +115,62 @@ interface CountrySource {
 const bindings = new WeakMap<SurveyModel, CountryBinding>();
 
 function bindSelectedCountry(model: SurveyModel, data: Data) {
-  const existing = bindings.get(model);
-  if (existing) {
-    existing.data = data;
-    updateCountryVariables(model, existing);
-    return;
+  let binding = bindings.get(model);
+  if (!binding) {
+    binding = { data, sources: [] };
+    bindings.set(model, binding);
+    listenForSelectedCountry(model, binding);
   }
 
-  const binding: CountryBinding = { data, sources: countrySources(model) };
-  bindings.set(model, binding);
-
-  // A design surface is what the editor saves: the calculated values would be
-  // written into the form.
-  if (binding.sources.length > 0 && !model.isDesignMode) {
-    binding.sources.forEach((source, index) => {
-      model.calculatedValues.push(
-        new CalculatedValue(
-          SELECTED_COUNTRY + String(index),
-          source.expression,
-        ),
-      );
-    });
-    // SurveyJS reports variable names lower-cased.
-    const prefix = SELECTED_COUNTRY.toLowerCase();
-    model.onVariableChanged.add((_, options) => {
-      if (options.name.toLowerCase().startsWith(prefix)) {
-        updateCountryVariables(model, binding);
-      }
-    });
+  binding.data = data;
+  // Re-derived on every call: the form's questions may have changed since.
+  binding.sources = countrySources(model);
+  // A design surface is what the editor saves: no runtime wiring belongs there.
+  if (!model.isDesignMode) {
+    replaceSourceValues(model, binding.sources);
   }
 
   updateCountryVariables(model, binding);
+}
+
+function listenForSelectedCountry(model: SurveyModel, binding: CountryBinding) {
+  model.onVariableChanged.add((_, options) => {
+    if (isSelectedCountryValue(options.name)) {
+      updateCountryVariables(model, binding);
+    }
+  });
+
+  // The hidden values are runtime wiring, not form content: keep them out of
+  // the form's JSON, whoever serializes this model.
+  const toJSON = model.toJSON.bind(model);
+  model.toJSON = (options) => {
+    const json = toJSON(options) as { calculatedValues?: { name: string }[] };
+    const own = json.calculatedValues?.filter(
+      (value) => !isSelectedCountryValue(value.name),
+    );
+    if (own?.length) {
+      json.calculatedValues = own;
+    } else {
+      delete json.calculatedValues;
+    }
+
+    return json;
+  };
+}
+
+function replaceSourceValues(model: SurveyModel, sources: CountrySource[]) {
+  const values = model.calculatedValues;
+  for (let index = values.length - 1; index >= 0; index--) {
+    if (isSelectedCountryValue(values[index].name)) {
+      values.splice(index, 1);
+    }
+  }
+
+  sources.forEach((source, index) => {
+    values.push(
+      new CalculatedValue(SELECTED_COUNTRY + String(index), source.expression),
+    );
+  });
 }
 
 function updateCountryVariables(model: SurveyModel, binding: CountryBinding) {

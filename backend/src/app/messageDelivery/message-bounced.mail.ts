@@ -5,13 +5,7 @@ import type {
 } from '#generated/prisma/client.js';
 import { MailBase } from '#core/mail/mail.base';
 import type { AddressLike, Content } from '#core/mail/mail.types';
-import {
-  allCountryValues,
-  eventCountry,
-  forCountry,
-} from '@camp-registration/common/utils';
-import { localeForCountry } from '@camp-registration/common/locales';
-import { translateEventContext } from '#app/event/event.util';
+import { eventContactFor, translateEventContext } from '#app/event/event.util';
 import { generateUrl } from '#utils/url';
 import { resolveActionCardText } from '#core/mail/actionCardText';
 import type { MessageBouncedProps, LocalContext } from '#views/emails/types';
@@ -37,26 +31,15 @@ export class MessageBouncedNotification extends MailBase<MessageBouncedNotificat
   }
 
   protected to(): AddressLike {
-    const { contactEmail } = this.payload.event;
-
-    // Without a country, every country's contact is told.
-    return (
-      forCountry(contactEmail, this.country()) ?? allCountryValues(contactEmail)
-    );
+    return this.contact().to;
   }
 
   protected locale(): string {
-    // The contact's own language is unknown; the contact of a country
-    // presumably reads that country's.
-    const country = this.country();
-
-    return country
-      ? localeForCountry(country)
-      : this.payload.registration.locale;
+    return this.contact().locale;
   }
 
-  private country(): string | null {
-    return eventCountry(this.payload.event, this.payload.registration.country);
+  private contact() {
+    return eventContactFor(this.payload.event, this.payload.registration);
   }
 
   protected subject(): string {
@@ -90,9 +73,6 @@ export class MessageBouncedNotification extends MailBase<MessageBouncedNotificat
   }
 
   private createEventContext() {
-    return translateEventContext(this.payload.event, {
-      locale: this.locale(),
-      country: this.country(),
-    });
+    return translateEventContext(this.payload.event, this.contact());
   }
 }

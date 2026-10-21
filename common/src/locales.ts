@@ -8,19 +8,34 @@ export const APP_LOCALES = ['en', 'de', 'fr', 'cs', 'pl'] as const;
 
 export type AppLocale = (typeof APP_LOCALES)[number];
 
-/**
- * The language each country an event can run in writes in. Countries and
- * locales only look alike (`gb` → `en`, `cz` → `cs`): a value stored under one
- * is never found by looking up the other.
- */
-export const COUNTRY_LOCALES: Readonly<Record<string, AppLocale>> = {
+const COUNTRY_LOCALE_MAP = {
   de: 'de',
   fr: 'fr',
   gb: 'en',
   us: 'en',
   pl: 'pl',
   cz: 'cs',
-};
+} as const satisfies Record<string, AppLocale>;
+
+/**
+ * The language each country writes in. Countries and locales only look alike
+ * (`gb` → `en`, `cz` → `cs`): a value stored under one is never found by
+ * looking up the other.
+ */
+export const COUNTRY_LOCALES: Readonly<Record<string, AppLocale>> =
+  COUNTRY_LOCALE_MAP;
+
+/**
+ * The countries an event can be created for. Each must have a language above —
+ * one without would silently be written in English.
+ */
+export const EVENT_COUNTRIES = [
+  'de',
+  'fr',
+  'gb',
+  'pl',
+  'cz',
+] as const satisfies readonly (keyof typeof COUNTRY_LOCALE_MAP)[];
 
 /** The app locale a country writes in, English when it has none. */
 export function localeForCountry(country: string): AppLocale {

@@ -106,5 +106,3 @@ export function defaultSettingsForPreset(preset: EventPreset) {
     data,
   }));
 }
-
-export { localesForCountries } from '@camp-registration/common/locales';

@@ -161,7 +161,7 @@
                 ? t('field.countries_hint_reference')
                 : t('field.countries_hint')
             "
-            :countries="['de', 'fr', 'gb', 'pl', 'cz']"
+            :countries="EVENT_COUNTRIES"
             :rules="[
               (val?: string[]) =>
                 (val && val.length > 0) || t('validation.countries.empty'),
@@ -181,7 +181,7 @@
             v-model="data.name"
             :disable="loading"
             :label="t('field.name')"
-            :locales="localesForCountries(data.countries)"
+            :locales="eventTextLocales(data.countries)"
             :rules="[
               (val?: string) => !!val || t('validation.name.empty'),
               (val: string) => val.length <= 255 || t('validation.name.length'),
@@ -416,7 +416,7 @@
             v-model="data.location"
             :disable="loading"
             :label="t('field.location')"
-            :locales="localesForCountries(data.countries)"
+            :locales="eventTextLocales(data.countries)"
             :rules="[
               (val?: string) => !!val || t('validation.location.empty'),
               (val: string) =>
@@ -490,7 +490,7 @@ import TimeInput from '@/components/common/inputs/TimeInput.vue';
 import EventEditStep from '@/components/event/settings/create/EventEditStep.vue';
 import CountrySelect from '@/components/common/CountrySelect.vue';
 import TranslatedInput from '@/components/common/inputs/TranslatedInput.vue';
-import { localesForCountries } from '@/i18n/locales';
+import { EVENT_COUNTRIES, eventTextLocales } from '@/i18n/locales';
 import DateRangeInput from '@/components/common/inputs/DateRangeInput.vue';
 import { computed, onMounted, ref, watch } from 'vue';
 import {

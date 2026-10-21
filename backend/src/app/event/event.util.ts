@@ -1,6 +1,13 @@
 import type { EventRegistrationStatus } from '@camp-registration/common/entities';
-import { eventCountryFields, translate } from '@camp-registration/common/utils';
-import type { Event } from '#generated/prisma/client';
+import {
+  allCountryValues,
+  eventCountry,
+  eventCountryFields,
+  forCountry,
+  translate,
+} from '@camp-registration/common/utils';
+import { localeForCountry } from '@camp-registration/common/locales';
+import type { Event, Registration } from '#generated/prisma/client';
 
 /**
  * The event's fields resolved for templates: text in the reader's `locale`,
@@ -23,6 +30,29 @@ export function translateEventContext(
     organizer,
     contactEmail,
     maxParticipants,
+  };
+}
+
+/**
+ * Who answers for a registration on the event's side: the contact of its
+ * country (the one it selected, else the event's only one), addressed in that
+ * country's language. Without a country — or one the event has no contact
+ * for — every country's contact is addressed, in the registration's language.
+ */
+export function eventContactFor(
+  event: Event,
+  registration: Pick<Registration, 'country' | 'locale'>,
+) {
+  const country = eventCountry(event, registration.country);
+
+  return {
+    country,
+    to:
+      forCountry(event.contactEmail, country) ??
+      allCountryValues(event.contactEmail),
+    // The contact's own language is unknown; the contact of a country
+    // presumably reads that country's.
+    locale: country ? localeForCountry(country) : registration.locale,
   };
 }
 

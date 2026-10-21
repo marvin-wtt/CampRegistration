@@ -1,7 +1,8 @@
 import {
   APP_LOCALES as APP_LOCALES_READONLY,
   type AppLocale,
-  localesForCountries as localesForCountriesOf,
+  EVENT_COUNTRIES as EVENT_COUNTRIES_READONLY,
+  localesForCountries,
 } from '@camp-registration/common/locales';
 
 export type { AppLocale };
@@ -16,15 +17,16 @@ export { COUNTRY_LOCALES } from '@camp-registration/common/locales';
  */
 export const APP_LOCALES: AppLocale[] = [...APP_LOCALES_READONLY];
 
+/** The countries an event can be created for; mutable like `APP_LOCALES`. */
+export const EVENT_COUNTRIES: string[] = [...EVENT_COUNTRIES_READONLY];
+
 /**
  * The languages a event writes its own texts in. Every locale when the event
  * names no country — offering nothing to write in would be worse than offering
  * too much.
  */
-export function localesForCountries(
-  countries: string[] | undefined,
-): AppLocale[] {
-  const matched = localesForCountriesOf(countries ?? []);
+export function eventTextLocales(countries: string[] | undefined): AppLocale[] {
+  const matched = localesForCountries(countries ?? []);
 
   return matched.length > 0 ? matched : [...APP_LOCALES];
 }

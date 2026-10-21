@@ -8,8 +8,8 @@ import {
   defaultMessageTemplatesForCountries,
   defaultSettingsForPreset,
   getEventPreset,
-  localesForCountries,
 } from '#app/event/presets/index.js';
+import { localesForCountries } from '@camp-registration/common/locales';
 import validator from './event.validation.js';
 import type { Request, Response } from 'express';
 import { BaseController } from '#core/base/BaseController';

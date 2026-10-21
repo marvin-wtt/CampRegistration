@@ -110,12 +110,13 @@ export class FileController extends BaseController {
   }
 
   async store(req: Request, res: Response) {
+    const model = this.getRelationModel(req);
     const {
       body: { accessLevel, country, field, locale, name },
       file,
-    } = await req.validate(validator.store);
-
-    const model = this.getRelationModel(req);
+    } = await req.validate(
+      validator.store(this.countriesOf(req, model?.name === 'event')),
+    );
 
     // Use the session id as the default field value if no field is provided
     // This helps to avoid that other people can hijack anonymous files
@@ -140,10 +141,12 @@ export class FileController extends BaseController {
   }
 
   async update(req: Request, res: Response) {
+    const file = req.modelOrFail('file');
     const {
       body: { accessLevel, country, field, locale, name },
-    } = await req.validate(validator.update);
-    const file = req.modelOrFail('file');
+    } = await req.validate(
+      validator.update(this.countriesOf(req, file.eventId !== null), file),
+    );
 
     const updatedFile = await this.fileService.updateFile(file.id, {
       accessLevel,
@@ -189,6 +192,12 @@ export class FileController extends BaseController {
       // originalName contains characters rejected by RFC 6266 (e.g. CR/LF);
       return contentDisposition.create(undefined, { type });
     }
+  }
+
+  // Only an event's files can be per country. Its model is bound by the event
+  // files router on upload and by the event file guard on update.
+  private countriesOf(req: Request, eventOwned: boolean): readonly string[] {
+    return eventOwned ? req.modelOrFail('event').countries : [];
   }
 
   getRelationModel(req: Request): ModelData | undefined {

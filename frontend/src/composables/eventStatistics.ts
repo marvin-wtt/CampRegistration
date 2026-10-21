@@ -1,5 +1,6 @@
 import type { Registration } from '@camp-registration/common/entities';
-import type { Translatable } from '@camp-registration/common/entities';
+import type { PerCountry } from '@camp-registration/common/entities';
+import { sumCountryValues } from '@camp-registration/common/utils';
 import { computed } from 'vue';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import { useRegistrationsStore } from '@/stores/registration-store';
@@ -25,24 +26,11 @@ const UNKNOWN = '__unknown__';
 const PER_YEAR_AGE_SPAN = 8;
 
 /**
- * Sums a {@link Translatable} number. Events may define per-country values
- * (a record) or a single shared value (a plain number).
+ * Reads a {@link PerCountry} number for a single country key — only a value
+ * stored per country, not one shared by every country.
  */
-function sumTranslatableNumber(
-  value: Translatable<number> | null | undefined,
-): number | undefined {
-  if (value == null) {
-    return undefined;
-  }
-  if (typeof value === 'number') {
-    return value;
-  }
-  return Object.values(value).reduce<number>((sum, v) => sum + (v ?? 0), 0);
-}
-
-/** Reads the value of a {@link Translatable} number for a single country key. */
-function translatableField(
-  value: Translatable<number> | null | undefined,
+function countryField(
+  value: PerCountry<number> | null | undefined,
   country: string,
 ): number | undefined {
   if (value == null || typeof value === 'number') {
@@ -146,7 +134,9 @@ export function useEventStatistics() {
   });
 
   const capacity = computed(() => ({
-    max: sumTranslatableNumber(eventDetailsStore.data?.maxParticipants),
+    max: eventDetailsStore.data
+      ? sumCountryValues(eventDetailsStore.data.maxParticipants)
+      : undefined,
     free: eventDetailsStore.data?.freePlacesTotal,
   }));
 
@@ -205,8 +195,8 @@ export function useEventStatistics() {
         waitlisted: byStatus('WAITLISTED'),
         total: inCountry.length,
         team,
-        max: translatableField(event.maxParticipants, country),
-        free: translatableField(event.freePlaces, country),
+        max: countryField(event.maxParticipants, country),
+        free: countryField(event.freePlaces, country),
       };
     });
   });

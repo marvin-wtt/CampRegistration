@@ -96,7 +96,7 @@
 
             <!-- Country: only an event in several countries can tell them apart -->
             <q-select
-              v-if="countryOptions.length > 2"
+              v-if="hasSeveralCountries"
               v-model="fileData.country"
               :options="countryOptions"
               :label="t('fields.country.label')"
@@ -350,8 +350,15 @@ const localeOptions = computed<QSelectOption<string | null>[]>(() => {
   ];
 });
 
+const eventCountries = computed<string[]>(
+  () => eventStore.data?.countries ?? [],
+);
+const hasSeveralCountries = computed<boolean>(
+  () => eventCountries.value.length > 1,
+);
+
 const countryOptions = computed<QSelectOption<string | null>[]>(() => {
-  const countries = eventStore.data?.countries ?? [];
+  const countries = eventCountries.value;
   return [
     { label: t('fields.country.default'), value: null },
     ...countries.map((country) => ({

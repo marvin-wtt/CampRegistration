@@ -174,7 +174,10 @@ import { useObjectTranslation } from '@/composables/objectTranslation';
 import { copyToClipboard, useQuasar } from 'quasar';
 import type { Event } from '@camp-registration/common/entities';
 import type { ScopePermission } from '@camp-registration/common/permissions';
-import { zonedInstant } from '@camp-registration/common/utils';
+import {
+  sumCountryValues,
+  zonedInstant,
+} from '@camp-registration/common/utils';
 import { computed, type Ref, ref } from 'vue';
 import { useProfileStore } from '@/stores/profile-store';
 import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
@@ -260,18 +263,6 @@ const relLabel = computed<string>(() => {
   return relativeTime(target);
 });
 
-function sumTranslatable(
-  value: number | Record<string, number> | null | undefined,
-): number | null {
-  if (value == null) {
-    return null;
-  }
-  if (typeof value === 'number') {
-    return value;
-  }
-  return Object.values(value).reduce<number>((sum, n) => sum + (n ?? 0), 0);
-}
-
 interface Capacity {
   max: number;
   free: number;
@@ -280,8 +271,8 @@ interface Capacity {
 }
 
 const capacity = computed<Capacity | null>(() => {
-  const max = sumTranslatable(event.maxParticipants);
-  if (max == null || max <= 0) {
+  const max = sumCountryValues(event.maxParticipants);
+  if (max <= 0) {
     return null;
   }
 

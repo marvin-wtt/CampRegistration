@@ -244,6 +244,44 @@ describe('variables', () => {
 
       expect(model.calculatedValues).toHaveLength(0);
     });
+
+    it('should keep the country binding out of the form JSON', () => {
+      const model = new SurveyModel({
+        elements: [
+          { type: 'country', name: 'country', eventDataType: 'country' },
+        ],
+        calculatedValues: [
+          { name: 'waitingList', expression: '{event.freePlaces} <= 0' },
+        ],
+      });
+      setVariables(model, fakeEventData(event));
+
+      expect(model.calculatedValues).toHaveLength(2);
+      expect(model.toJSON()).toHaveProperty('calculatedValues', [
+        { name: 'waitingList', expression: '{event.freePlaces} <= 0' },
+      ]);
+    });
+
+    it('should leave no calculated values in the JSON of a form without any', () => {
+      const model = countryForm('country');
+      setVariables(model, fakeEventData(event));
+
+      expect(model.toJSON()).not.toHaveProperty('calculatedValues');
+    });
+
+    it('should follow a country question added after the first binding', () => {
+      const model = new SurveyModel({ pages: [{ name: 'page' }] });
+      setVariables(model, fakeEventData(event));
+
+      model.pages[0]
+        .addNewQuestion('country', 'country')
+        .setPropertyValue('eventDataType', 'country');
+      setVariables(model, fakeEventData(event));
+      model.setValue('country', 'fr');
+
+      expect(model.getVariable('event.country')).toBe('fr');
+      expect(model.calculatedValues).toHaveLength(1);
+    });
   });
 
   describe('dates', () => {

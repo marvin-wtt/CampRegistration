@@ -78,7 +78,7 @@ export class EventManagerInvitationMessage extends EventManagerMessage<{
   protected content() {
     const t = this.getT();
     const event = this.payload.event;
-    const eventName = translate(event.name, this.locale() ?? 'en');
+    const eventName = translate(event.name, this.locale() ?? 'en') ?? '';
     const url = generateUrl(['management', 'events', event.id]);
     const vars = { event: { name: eventName } };
 

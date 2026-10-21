@@ -1,10 +1,6 @@
 import type { Event, Registration } from '#generated/prisma/client.js';
-import {
-  eventCountry,
-  forCountry,
-  translate,
-} from '@camp-registration/common/utils';
-import { translateEventContext } from '#app/event/event.util';
+import { translate } from '@camp-registration/common/utils';
+import { eventContactFor, translateEventContext } from '#app/event/event.util';
 import type {
   Address,
   AddressLike,
@@ -135,7 +131,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
     if (this.payload.message.replyTo) {
       return this.payload.message.replyTo;
     }
-    return forCountry(this.payload.event.contactEmail, this.country());
+    return this.contact().to;
   }
 
   protected priority(): MailPriority {
@@ -163,7 +159,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
       event: {
         ...translateEventContext(event, {
           locale: this.locale(),
-          country: this.country(),
+          country: this.contact().country,
         }),
         // Format dates using the registration's full locale
         startAt: formatEventDate(event.startAt, this.locale()),
@@ -271,8 +267,10 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
     ]);
   }
 
-  private country(): string | null {
-    return eventCountry(this.payload.event, this.payload.registration.country);
+  // The participant reads the mail in their own language; only the contact
+  // it names follows the registration's country.
+  private contact() {
+    return eventContactFor(this.payload.event, this.payload.registration);
   }
 
   private renderBody(): string {

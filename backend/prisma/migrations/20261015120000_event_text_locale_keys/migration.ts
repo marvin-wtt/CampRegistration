@@ -1,5 +1,15 @@
 import { Prisma } from '#generated/prisma/client.js';
-import { COUNTRY_LOCALES } from '@camp-registration/common/locales';
+
+// Frozen copy of `COUNTRY_LOCALES` as of this migration: a later change to the
+// live map must not change what this migration does on a fresh database.
+const COUNTRY_LOCALES: Readonly<Record<string, string>> = {
+  de: 'de',
+  fr: 'fr',
+  gb: 'en',
+  us: 'en',
+  pl: 'pl',
+  cz: 'cs',
+};
 
 /**
  * An event's name and location are text, read by locale, but were stored per
