@@ -1,7 +1,8 @@
 import type { SurveyModel } from 'survey-core';
+import { FILE_VARIABLE } from '@camp-registration/common/form';
 import { createMarkdownConverter } from '@/utils/markdown';
 
-const FILE_PREFIX = '_file.';
+const FILE_PREFIX = `${FILE_VARIABLE}.`;
 
 export function addMarkdownRenderer(model: SurveyModel) {
   const mdConverter = createMarkdownConverter();

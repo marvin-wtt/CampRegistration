@@ -40,6 +40,12 @@ function localeScore(fileLocale: string | null, targetLocale: string): number {
 }
 
 /**
+ * The root of the `{_file.<slot>}` placeholders a form uses to reference an
+ * uploaded file. The client resolves them at render time.
+ */
+export const FILE_VARIABLE = '_file';
+
+/**
  * Reserved slot for an event's logo. Unlike the slots a form declares through
  * {_file.<slot>}, this one exists whether or not the form mentions it: it is
  * the event's brand image, surfaced by the API as `Event.logo` and rendered on

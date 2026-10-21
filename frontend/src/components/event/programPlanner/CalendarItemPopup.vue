@@ -11,9 +11,12 @@
       flat
       class="event-popup"
     >
-      <q-card-actions align="right">
+      <q-card-actions
+        v-if="hasActions"
+        align="right"
+      >
         <q-btn
-          v-if="!event.date && editable"
+          v-if="!item.date && editable"
           v-close-popup
           icon="event"
           size="sm"
@@ -24,7 +27,7 @@
           <q-tooltip>{{ t('action.schedule') }}</q-tooltip>
         </q-btn>
         <q-btn
-          v-if="event.date && editable"
+          v-if="item.date && editable"
           v-close-popup
           icon="inbox"
           size="sm"
@@ -85,55 +88,85 @@
             <q-item-section avatar>
               <q-icon
                 name="circle"
-                :style="{ color: event.color }"
+                :style="{ color: item.color }"
               />
             </q-item-section>
             <q-item-section>
               <q-item-label class="text-h6">
-                {{ to(event.title) }}
+                {{ to(item.title) }}
               </q-item-label>
               <q-item-label caption>
                 {{ dateTime }}
               </q-item-label>
             </q-item-section>
+            <q-item-section
+              v-if="!hasActions"
+              class="gt-xs"
+              side
+              top
+            >
+              <q-btn
+                v-close-popup
+                icon="close"
+                size="sm"
+                flat
+                rounded
+              />
+            </q-item-section>
           </q-item>
 
           <!-- plan (only shown when not 'both') -->
-          <q-item v-if="event.plan !== 'both'">
+          <q-item v-if="item.plan !== 'both'">
             <q-item-section avatar>
               <plan-letter-icon
-                :plan="event.plan === 'a' ? 'a' : 'b'"
+                :plan="item.plan === 'a' ? 'a' : 'b'"
                 size="1.5em"
               />
             </q-item-section>
             <q-item-section>
               <q-item-label>
-                {{ event.plan === 'a' ? t('plan.a') : t('plan.b') }}
+                {{ item.plan === 'a' ? t('plan.a') : t('plan.b') }}
               </q-item-label>
             </q-item-section>
           </q-item>
 
-          <q-item v-if="event.location">
+          <q-item v-if="item.location">
             <q-item-section avatar>
               <q-icon name="place" />
             </q-item-section>
             <q-item-section>
               <q-item-label>
-                {{ to(event.location) }}
+                {{ to(item.location) }}
               </q-item-label>
             </q-item-section>
           </q-item>
 
-          <q-item v-if="event.details">
+          <q-item v-if="item.details">
             <q-item-section avatar>
               <q-icon name="description" />
             </q-item-section>
             <q-item-section style="white-space: pre-line">
-              {{ to(event.details) }}
+              {{ to(item.details) }}
             </q-item-section>
           </q-item>
         </q-list>
       </q-card-section>
+
+      <q-card-actions
+        v-if="plannerLink"
+        class="q-pt-none"
+        align="right"
+      >
+        <m-btn
+          v-close-popup
+          :label="t('action.openPlanner')"
+          :to="plannerLink"
+          icon-right="chevron_right"
+          primary
+          text
+          no-caps
+        />
+      </q-card-actions>
     </q-card>
   </q-popup-proxy>
 </template>
@@ -144,25 +177,30 @@ import { useObjectTranslation } from '@/composables/objectTranslation';
 import { computed, useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { QPopupProxy } from 'quasar';
+import type { RouteLocationRaw } from 'vue-router';
+import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import PlanLetterIcon from '@/components/event/programPlanner/PlanLetterIcon.vue';
 
 const { locale, t } = useI18n();
 const { to } = useObjectTranslation();
 
 const {
-  event,
+  item,
   editable = false,
   deletable = false,
   creatable = false,
   noParentEvent = false,
+  plannerLink,
 } = defineProps<{
-  event: ProgramItem;
+  item: ProgramItem;
   editable?: boolean;
   deletable?: boolean;
   creatable?: boolean;
   // Disables the popup's default open-on-parent-click behavior so a caller
   // can decide itself (e.g. via `show()`) when the popup should open.
   noParentEvent?: boolean;
+  // Read-only callers (e.g. the dashboard) link to the planner instead.
+  plannerLink?: RouteLocationRaw;
 }>();
 
 const emit = defineEmits<{
@@ -173,6 +211,10 @@ const emit = defineEmits<{
   (e: 'move-to-backlog'): void;
 }>();
 
+// Without any action, the top bar would only hold the close button, so that
+// moves into the title row instead.
+const hasActions = computed<boolean>(() => editable || deletable || creatable);
+
 const popupProxyRef = useTemplateRef<QPopupProxy>('popupProxyRef');
 
 defineExpose({
@@ -181,18 +223,18 @@ defineExpose({
 });
 
 const dateTime = computed<string>(() => {
-  if (!event.date) {
+  if (!item.date) {
     return '';
   }
 
-  const start = event.time
-    ? new Date(`${event.date}T${event.time}`)
-    : new Date(event.date);
-  const end = event.duration
-    ? new Date(start.getTime() + event.duration * 60000)
+  const start = item.time
+    ? new Date(`${item.date}T${item.time}`)
+    : new Date(item.date);
+  const end = item.duration
+    ? new Date(start.getTime() + item.duration * 60000)
     : start;
 
-  const fullDay = !event.time && !event.duration;
+  const fullDay = !item.time && !item.duration;
 
   return new Intl.DateTimeFormat(locale.value, {
     month: 'long',
@@ -248,6 +290,7 @@ action:
   duplicate: 'Duplicate'
   edit: 'Edit'
   delete: 'Delete'
+  openPlanner: 'Open in planner'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -260,6 +303,7 @@ action:
   duplicate: 'Duplizieren'
   edit: 'Bearbeiten'
   delete: 'Löschen'
+  openPlanner: 'Im Planer öffnen'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -272,6 +316,7 @@ action:
   duplicate: 'Dupliquer'
   edit: 'Modifier'
   delete: 'Supprimer'
+  openPlanner: 'Ouvrir dans le planificateur'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -284,6 +329,7 @@ action:
   duplicate: 'Duplikuj'
   edit: 'Edytuj'
   delete: 'Usuń'
+  openPlanner: 'Otwórz w planerze'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -296,4 +342,5 @@ action:
   duplicate: 'Duplikovat'
   edit: 'Upravit'
   delete: 'Smazat'
+  openPlanner: 'Otevřít v plánovači'
 </i18n>

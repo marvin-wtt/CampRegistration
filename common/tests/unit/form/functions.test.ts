@@ -837,6 +837,153 @@ describe('functions', () => {
     });
   });
 
+  describe('daysBetween', () => {
+    const evaluate = (
+      expression: string,
+      variables: Record<string, unknown>,
+    ): unknown => {
+      const model = new SurveyModel({
+        calculatedValues: [{ name: 'calc1', expression }],
+      });
+
+      for (const [name, value] of Object.entries(variables)) {
+        model.setVariable(name, value);
+      }
+
+      return model.calculatedValues[0].value;
+    };
+
+    it('should exclude the start day and include the end day by default', () => {
+      // Monday → Friday: four nights
+      expect(
+        evaluate('daysBetween({start}, {end})', {
+          start: '2025-07-07',
+          end: '2025-07-11',
+        }),
+      ).toBe(4);
+    });
+
+    it('should count both start and end day when inclusive', () => {
+      expect(
+        evaluate('daysBetween({start}, {end}, true)', {
+          start: '2025-07-07',
+          end: '2025-07-11',
+        }),
+      ).toBe(5);
+    });
+
+    it('should behave like the default when inclusive is false', () => {
+      expect(
+        evaluate('daysBetween({start}, {end}, false)', {
+          start: '2025-07-07',
+          end: '2025-07-11',
+        }),
+      ).toBe(4);
+    });
+
+    it('should return 0 for the same day, or 1 when inclusive', () => {
+      const variables = { start: '2025-07-07', end: '2025-07-07' };
+
+      expect(evaluate('daysBetween({start}, {end})', variables)).toBe(0);
+      expect(evaluate('daysBetween({start}, {end}, true)', variables)).toBe(1);
+    });
+
+    it('should support the event start and end variables', () => {
+      expect(
+        evaluate('daysBetween({event.startAt}, {event.endAt})', {
+          'event.startAt': '2025-07-07T14:00:00',
+          'event.endAt': '2025-07-11T10:00:00',
+        }),
+      ).toBe(4);
+    });
+
+    it('should ignore the time of day', () => {
+      // Less than 24 hours apart, but on different calendar days
+      expect(
+        evaluate('daysBetween({start}, {end})', {
+          start: '2025-07-07T23:00:00',
+          end: '2025-07-08T01:00:00',
+        }),
+      ).toBe(1);
+    });
+
+    it('should not be affected by a DST change', () => {
+      expect(
+        evaluate('daysBetween({start}, {end})', {
+          start: '2025-03-29T12:00:00',
+          end: '2025-03-31T12:00:00',
+        }),
+      ).toBe(2);
+    });
+
+    it('should count leap days', () => {
+      expect(
+        evaluate('daysBetween({start}, {end})', {
+          start: '2024-02-28',
+          end: '2024-03-01',
+        }),
+      ).toBe(2);
+    });
+
+    it('should accept dates as Date', () => {
+      expect(
+        evaluate('daysBetween({start}, {end})', {
+          start: new Date(2025, 6, 7, 14),
+          end: new Date(2025, 6, 11, 10),
+        }),
+      ).toBe(4);
+    });
+
+    it('should return a negative value when end is before start', () => {
+      const variables = { start: '2025-07-11', end: '2025-07-07' };
+
+      expect(evaluate('daysBetween({start}, {end})', variables)).toBe(-4);
+      expect(evaluate('daysBetween({start}, {end}, true)', variables)).toBe(-5);
+    });
+
+    it('should return undefined when a date is missing', () => {
+      expect(
+        evaluate('daysBetween({start}, {end})', { start: '2025-07-07' }),
+      ).toBe(undefined);
+      expect(evaluate('daysBetween({start})', { start: '2025-07-07' })).toBe(
+        undefined,
+      );
+      expect(evaluate('daysBetween()', {})).toBe(undefined);
+    });
+
+    it('should return undefined when a date is invalid', () => {
+      expect(
+        evaluate('daysBetween({start}, {end})', {
+          start: 'invalid',
+          end: '2025-07-07',
+        }),
+      ).toBe(undefined);
+      expect(
+        evaluate('daysBetween({start}, {end})', {
+          start: '2025-07-07',
+          end: '2025-02-30',
+        }),
+      ).toBe(undefined);
+      expect(
+        evaluate('daysBetween({start}, {end})', {
+          start: new Date('invalid'),
+          end: '2025-07-07',
+        }),
+      ).toBe(undefined);
+    });
+
+    it('should return undefined when inclusive is not a boolean', () => {
+      expect(
+        // Set first: once the value was 4, SurveyJS keeps a later null as-is
+        evaluate('daysBetween({start}, {end}, {inclusive})', {
+          inclusive: 'yes',
+          start: '2025-07-07',
+          end: '2025-07-11',
+        }),
+      ).toBe(undefined);
+    });
+  });
+
   describe.todo('joinStrings');
 
   describe.todo('objectValues');

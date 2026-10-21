@@ -8,10 +8,7 @@
       <dashboard-card-header
         icon="calendar_month"
         :title="isToday ? t('title.today') : t('title.day', { day: day.day })"
-        :link="{
-          label: t('program.open'),
-          to: { name: 'management.event.program-planner' },
-        }"
+        :link="{ label: t('program.open'), to: plannerLink }"
         :caption="caption"
       />
     </q-card-section>
@@ -75,51 +72,66 @@
           <li
             v-for="row in visibleRows"
             :key="row.id"
-            class="program-item"
-            :class="`program-item--${row.state}`"
-            :style="row.color ? { '--item-color': row.color } : undefined"
           >
-            <span class="program-time">
-              <template v-if="row.start">
-                <span>{{ row.start }}</span>
-                <span
-                  v-if="row.end"
-                  class="program-end"
-                >
-                  {{ row.end }}
+            <button
+              type="button"
+              class="program-item"
+              :class="`program-item--${row.state}`"
+              :style="row.color ? { '--item-color': row.color } : undefined"
+              data-test="dashboard-program-item"
+            >
+              <span class="program-time">
+                <template v-if="row.start">
+                  <span>{{ row.start }}</span>
+                  <span
+                    v-if="row.end"
+                    class="program-end"
+                  >
+                    {{ row.end }}
+                  </span>
+                </template>
+                <template v-else>{{ t('program.allDay') }}</template>
+              </span>
+              <span class="program-text">
+                <span class="program-title">
+                  {{ row.title }}
+                  <span
+                    v-if="row.state === 'now'"
+                    class="state-badge state-badge--now"
+                  >
+                    {{ t('program.now') }}
+                  </span>
+                  <span
+                    v-else-if="
+                      row.id === nextRow?.id && nextRow.startsIn !== null
+                    "
+                    class="state-badge"
+                  >
+                    {{ t('program.startsIn', nextRow.startsIn) }}
+                  </span>
                 </span>
-              </template>
-              <template v-else>{{ t('program.allDay') }}</template>
-            </span>
-            <span class="program-text">
-              <span class="program-title">
-                {{ row.title }}
                 <span
-                  v-if="row.state === 'now'"
-                  class="state-badge state-badge--now"
+                  v-if="row.location"
+                  class="program-location"
                 >
-                  {{ t('program.now') }}
-                </span>
-                <span
-                  v-else-if="
-                    row.id === nextRow?.id && nextRow.startsIn !== null
-                  "
-                  class="state-badge"
-                >
-                  {{ t('program.startsIn', nextRow.startsIn) }}
+                  <q-icon
+                    name="place"
+                    size="14px"
+                  />
+                  {{ row.location }}
                 </span>
               </span>
-              <span
-                v-if="row.location"
-                class="program-location"
-              >
-                <q-icon
-                  name="place"
-                  size="14px"
-                />
-                {{ row.location }}
-              </span>
-            </span>
+              <q-icon
+                v-if="row.item.details"
+                name="description"
+                size="16px"
+                class="program-details-hint"
+              />
+              <calendar-item-popup
+                :item="row.item"
+                :planner-link="plannerLink"
+              />
+            </button>
           </li>
         </ol>
         <m-btn
@@ -154,6 +166,7 @@ import { useI18n } from 'vue-i18n';
 import type { Event, ProgramItem } from '@camp-registration/common/entities';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import DashboardCardHeader from '@/components/event/dashboard/DashboardCardHeader.vue';
+import CalendarItemPopup from '@/components/event/programPlanner/CalendarItemPopup.vue';
 import { useProgramPlannerStore } from '@/stores/program-planner-store';
 import { useProgramPublishedDayStore } from '@/stores/program-published-day-store';
 import { useObjectTranslation } from '@/composables/objectTranslation';
@@ -177,6 +190,7 @@ type RowState = 'past' | 'now' | 'upcoming';
 
 interface Row {
   id: string;
+  item: ProgramItem;
   title: string;
   location: string | null;
   color: string | null;
@@ -199,6 +213,8 @@ const { to } = useObjectTranslation();
 const programStore = useProgramPlannerStore();
 const publishedDayStore = useProgramPublishedDayStore();
 const clock = useMinuteClock();
+
+const plannerLink = { name: 'management.event.program-planner' };
 
 const date = computed<string>(() => shownEventDate(event));
 
@@ -285,6 +301,7 @@ const rows = computed<Row[]>(() => {
   return timed.map(({ item, start }) => {
     const base = {
       id: item.id,
+      item,
       title: to(item.title),
       location: item.location ? to(item.location) : null,
       color: item.color,
@@ -412,18 +429,41 @@ const nextRow = computed(() => {
 
 .program-item {
   display: grid;
-  grid-template-columns: 3.5rem minmax(0, 1fr);
+  grid-template-columns: 3.5rem minmax(0, 1fr) auto;
   gap: 12px;
+  width: 100%;
   padding: 8px 10px 8px 9px;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+  background: transparent;
+  border: none;
   border-left: 3px solid var(--item-color, var(--md3-outline-variant));
   border-radius: 4px 10px 10px 4px;
+  transition: background-color 0.15s;
+}
+
+.program-item:hover {
+  background: color-mix(in srgb, var(--md3-on-surface) 8%, transparent);
+}
+
+.program-item:focus-visible {
+  outline: 2px solid var(--md3-primary);
+  outline-offset: 1px;
+}
+
+.program-details-hint {
+  align-self: center;
+  color: var(--md3-on-surface-variant);
 }
 
 .program-item--past {
   opacity: 0.6;
 }
 
-.program-item--now {
+.program-item--now,
+.program-item--now:hover {
   background: var(--md3-primary-container);
 }
 
@@ -443,7 +483,8 @@ const nextRow = computed(() => {
 
 .program-item--now .program-time,
 .program-item--now .program-title,
-.program-item--now .program-location {
+.program-item--now .program-location,
+.program-item--now .program-details-hint {
   color: var(--md3-on-primary-container);
 }
 

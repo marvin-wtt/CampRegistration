@@ -1,5 +1,4 @@
 export default {
-  locale: 'en',
   title: '{event.name}',
   description: '{event.startAtDate} - {event.endAtDate}',
   logo: '{event.logo}',

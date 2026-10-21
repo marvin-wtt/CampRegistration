@@ -1,0 +1,10 @@
+/*
+ * Applied only while toHaveScreenshot() captures. Hides transient UI whose
+ * presence depends on timing rather than on the page under test.
+ */
+
+/* Quasar's LoadingBar lingers at 100% for 1s after the last XHR, which races
+   the networkidle settle. */
+.q-loading-bar {
+  display: none !important;
+}

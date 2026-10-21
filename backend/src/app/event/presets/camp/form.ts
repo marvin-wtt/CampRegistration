@@ -176,6 +176,9 @@ export default {
         {
           type: 'date_of_birth',
           name: 'date_of_birth',
+          // Shared with counselor_date_of_birth; declared on both so the
+          // overlap is explicit.
+          valueName: 'date_of_birth',
           visibleIf: "{role} = 'participant'",
           title: {
             en: 'Date of Birth',
@@ -959,7 +962,7 @@ export default {
     },
     {
       name: 'waitingList',
-      expression: 'isWaitingList({event.freePlaces}, {country})',
+      expression: 'isWaitingList({event.freePlaces}, {address.country})',
     },
   ],
   showProgressBar: true,

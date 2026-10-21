@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "surveyjs": {
+      "type": "http",
+      "url": "https://mcp.surveyjs.io/mcp"
+    }
+  }
+}
