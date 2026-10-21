@@ -53,17 +53,21 @@ export function forCountry<T>(
 
 /**
  * The country a registration belongs to: the one it selected, or the event's
- * only country.
+ * only country. A selection the event doesn't run in counts as none — no
+ * per-country value or template exists for it.
  */
 export function eventCountry(
   event: { countries: readonly string[] },
   selected: string | null | undefined,
 ): string | null {
-  if (selected) {
-    return selected.toLowerCase();
+  const countries = event.countries.map((country) => country.toLowerCase());
+  const country = selected?.toLowerCase();
+
+  if (country && countries.includes(country)) {
+    return country;
   }
 
-  return event.countries.length === 1 ? event.countries[0] : null;
+  return countries.length === 1 ? countries[0] : null;
 }
 
 /** Every country's distinct value, for when no single country applies. */

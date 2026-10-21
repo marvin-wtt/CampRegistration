@@ -188,7 +188,7 @@ import {
   useQuasar,
 } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { computed, reactive, ref } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import type {
   ServiceFileCreateData,
   ServiceFileUpdateData,
@@ -295,13 +295,23 @@ const isLocaleLocked = computed(
     initialField === EVENT_BANNER_SLOT,
 );
 
-// The logo and banner are the event's own, the same in every country.
+// The logo and banner are the event's own, the same in every country — also
+// when an identifier is typed to one of them, which the server would reject
+// with a country set.
+const isCountrylessField = computed<boolean>(() => {
+  const field = fileData.field?.trim();
+  return field === EVENT_LOGO_SLOT || field === EVENT_BANNER_SLOT;
+});
+
 const isCountryLocked = computed(
-  () =>
-    isReplaceMode.value ||
-    initialField === EVENT_LOGO_SLOT ||
-    initialField === EVENT_BANNER_SLOT,
+  () => isReplaceMode.value || isCountrylessField.value,
 );
+
+watch(isCountrylessField, (countryless) => {
+  if (countryless) {
+    fileData.country = null;
+  }
+});
 
 const isAccessLevelLocked = computed(
   () => isReplaceMode.value || isSlotUploadMode.value,

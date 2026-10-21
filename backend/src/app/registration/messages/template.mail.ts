@@ -157,10 +157,8 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
 
     return {
       event: {
-        ...translateEventContext(event, {
-          locale: this.locale(),
-          country: this.contact().country,
-        }),
+        // In the template's language: it was picked by the same country.
+        ...translateEventContext(event, this.contact()),
         // Format dates using the registration's full locale
         startAt: formatEventDate(event.startAt, this.locale()),
         endAt: formatEventDate(event.endAt, this.locale()),
@@ -267,8 +265,9 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
     ]);
   }
 
-  // The participant reads the mail in their own language; only the contact
-  // it names follows the registration's country.
+  // The template is the registration's country's, so the event's texts placed
+  // into it follow that country's language. The mail's own chrome (footer,
+  // sender name) stays in the participant's language.
   private contact() {
     return eventContactFor(this.payload.event, this.payload.registration);
   }

@@ -53,6 +53,11 @@ describe('eventCountry', () => {
     expect(eventCountry({ countries: ['gb'] }, null)).toBe('gb');
     expect(eventCountry({ countries: ['de', 'fr'] }, undefined)).toBeNull();
   });
+
+  it("should ignore a selection the event doesn't run in", () => {
+    expect(eventCountry({ countries: ['de'] }, 'at')).toBe('de');
+    expect(eventCountry({ countries: ['de', 'fr'] }, 'at')).toBeNull();
+  });
 });
 
 describe('country locales', () => {
