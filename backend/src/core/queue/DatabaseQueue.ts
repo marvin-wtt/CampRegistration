@@ -408,15 +408,19 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
           return null;
         }
 
+        // The payload is read as text and parsed here: whether a raw query
+        // returns a JSON column parsed depends on the driver adapter detecting
+        // it, which @prisma/adapter-mariadb 7.10.1 no longer does.
+        // See https://github.com/prisma/orm/issues/30818
         const rows = await tx.$queryRaw<
           {
             id: string;
             name: string;
-            payload: string | object;
+            payload: string;
             attempts: number;
           }[]
         >`
-          SELECT id, name, payload, attempts
+          SELECT id, name, CAST(payload AS CHAR) AS payload, attempts
           FROM jobs
           WHERE status = 'PENDING'
             AND run_at <= NOW(3)
@@ -457,7 +461,7 @@ export class DatabaseQueue<P, R, N extends string> extends Queue<P, R, N> {
         return {
           id: job.id,
           name: job.name,
-          payload: job.payload as P,
+          payload: JSON.parse(job.payload) as P,
           attempt: job.attempts + 1,
         };
       },
