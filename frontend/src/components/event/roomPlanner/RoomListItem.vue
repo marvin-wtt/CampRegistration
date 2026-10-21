@@ -214,6 +214,7 @@ function closePicker() {
 
   min-height: 44px;
   padding: 6px 8px;
+  border: 1.5px solid transparent;
   border-radius: 12px;
 
   outline: none;
@@ -231,7 +232,8 @@ function closePicker() {
 }
 
 .bed-row--empty {
-  border: 1.5px dashed var(--md3-outline-variant);
+  border-style: dashed;
+  border-color: var(--md3-outline-variant);
 
   color: var(--md3-on-surface-variant);
 }

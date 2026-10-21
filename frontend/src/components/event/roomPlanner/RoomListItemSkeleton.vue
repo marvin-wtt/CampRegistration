@@ -26,6 +26,7 @@ const { nameWidth = '60%' } = defineProps<{
 
   min-height: 44px;
   padding: 6px 8px;
+  border: 1.5px solid transparent;
 }
 
 .bed-row-skeleton__name {
