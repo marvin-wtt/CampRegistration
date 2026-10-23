@@ -307,7 +307,7 @@ describe('/api/v1/events/:eventId/messages', () => {
           body: `Hello Paula, ${esc('Organizer DE / Organizer FR')} Location DE 17`,
           priority: 'normal',
           replyTo: ['de@email.com', 'fr@email.com'],
-          emails: registrationC.emails,
+          emails: registrationC.emails!,
         },
       ]);
     });
