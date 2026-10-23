@@ -112,14 +112,32 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue';
+import { computed, defineAsyncComponent, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { Registration } from '@camp-registration/common/entities';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import DashboardCardHeader from '@/components/event/dashboard/DashboardCardHeader.vue';
-import DemographicsExplorer from '@/components/event/dashboard/DemographicsExplorer.vue';
+import DemographicsExplorerSkeleton from '@/components/event/dashboard/DemographicsExplorerSkeleton.vue';
 import { useEventStatistics } from '@/composables/eventStatistics';
 import { useRegistrationHelper } from '@/composables/registrationHelper';
+
+// Only rendered once expanded, so the chart library stays out of the dashboard
+// chunk. It is preloaded once the page is idle; the skeleton covers slow loads.
+const loadExplorer = () =>
+  import('@/components/event/dashboard/DemographicsExplorer.vue');
+const DemographicsExplorer = defineAsyncComponent({
+  loader: loadExplorer,
+  loadingComponent: DemographicsExplorerSkeleton,
+});
+
+onMounted(() => {
+  const preload = () => void loadExplorer();
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(preload);
+  } else {
+    setTimeout(preload, 2000);
+  }
+});
 
 // A one-line digest; the full explorer opens on demand.
 const { people, loading = false } = defineProps<{

@@ -256,7 +256,10 @@
 </template>
 
 <script lang="ts" setup>
-import ApexChart from 'vue3-apexcharts';
+import ApexChart from 'vue3-apexcharts/core';
+import 'apexcharts/bar';
+import 'apexcharts/features/legend';
+import 'apexcharts/features/keyboard';
 import type { ApexOptions } from 'apexcharts';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
