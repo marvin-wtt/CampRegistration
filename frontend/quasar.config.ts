@@ -86,7 +86,8 @@ export default defineConfig((ctx) => {
               useFlatConfig: true,
             },
           },
-          { server: false },
+          // Builds skip it: /verify and CI lint separately, and it dominated build time.
+          { server: false, client: ctx.dev },
         ],
         [
           '@intlify/unplugin-vue-i18n/vite',
