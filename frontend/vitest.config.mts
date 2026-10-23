@@ -18,7 +18,8 @@ export default defineConfig({
     coverage: {
       enabled: true,
       reportOnFailure: true,
-      include: ['src/*'],
+      include: ['src/**/*.{ts,vue}'],
+      exclude: ['**/*.d.ts'],
       provider: 'v8',
       reporter: ['text', 'json-summary', 'json'],
       reportsDirectory: './tests/coverage',

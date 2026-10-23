@@ -9,7 +9,8 @@ export default defineConfig({
     include: ['tests/**/*.test.ts'],
     coverage: {
       enabled: true,
-      include: ['src/*'],
+      include: ['src/**/*.ts'],
+      exclude: ['**/*.d.ts'],
       provider: 'v8',
       reporter: ['html', 'text', 'json', 'json-summary', 'clover'],
       reportOnFailure: true,
