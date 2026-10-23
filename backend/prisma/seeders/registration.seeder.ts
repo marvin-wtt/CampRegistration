@@ -4,7 +4,7 @@ import { faker } from '@faker-js/faker/locale/en';
 import moment from 'moment';
 import { RegistrationForm } from '#app/registration/registration.form.js';
 import { computedRegistrationData } from '#app/registration/registration.helper.js';
-import { localeForCountry } from '#app/event/presets/locales.js';
+import { localeForCountry } from '@camp-registration/common/locales';
 import {
   buildRegistrationData,
   freePlacesFor,

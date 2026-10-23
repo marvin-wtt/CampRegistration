@@ -260,6 +260,71 @@ describe('/api/v1/files/', () => {
         .send({ name: 'Updated Rules.pdf' })
         .expect(403);
     });
+
+    describe('country', () => {
+      const createEventFile = async (
+        countries: string[],
+        data: Partial<Prisma.FileCreateInput> = {},
+      ) => {
+        const { event, accessToken } = await createEventWithManagerAndToken({
+          countries,
+        });
+        const file = await FileFactory.create({
+          event: { connect: { id: event.id } },
+          name: crypto.randomUUID() + '.pdf',
+          ...data,
+        });
+
+        return { file, accessToken };
+      };
+
+      it("should accept a country of the file's event", async () => {
+        const { file, accessToken } = await createEventFile(['de', 'fr']);
+
+        const { body } = await request()
+          .patch(`/api/v1/files/${file.id}`)
+          .auth(accessToken, { type: 'bearer' })
+          .send({ country: 'fr' })
+          .expect(200);
+
+        expect(body).toHaveProperty('data.country', 'fr');
+      });
+
+      it("should reject a country the file's event doesn't run in", async () => {
+        const { file, accessToken } = await createEventFile(['de', 'fr']);
+
+        await request()
+          .patch(`/api/v1/files/${file.id}`)
+          .auth(accessToken, { type: 'bearer' })
+          .send({ country: 'pl' })
+          .expect(400);
+      });
+
+      it('should reject a country for the logo', async () => {
+        const { file, accessToken } = await createEventFile(['de', 'fr'], {
+          field: 'logo',
+        });
+
+        await request()
+          .patch(`/api/v1/files/${file.id}`)
+          .auth(accessToken, { type: 'bearer' })
+          .send({ country: 'de' })
+          .expect(400);
+      });
+
+      it('should reject turning a per-country file into the banner', async () => {
+        const { file, accessToken } = await createEventFile(['de', 'fr'], {
+          field: 'terms',
+          country: 'de',
+        });
+
+        await request()
+          .patch(`/api/v1/files/${file.id}`)
+          .auth(accessToken, { type: 'bearer' })
+          .send({ field: 'banner' })
+          .expect(400);
+      });
+    });
   });
 
   describe('DELETE /api/v1/files/:fileId', () => {
@@ -349,6 +414,52 @@ describe('/api/v1/files/', () => {
         .delete(`/api/v1/files/${file.id}`)
         .auth(accessToken, { type: 'bearer' })
         .expect(403);
+    });
+  });
+
+  describe('POST /api/v1/events/:eventId/files', () => {
+    it('should store the country of an event file', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken({
+        countries: ['de', 'fr'],
+      });
+
+      const { body } = await request()
+        .post(`/api/v1/events/${event.id}/files`)
+        .auth(accessToken, { type: 'bearer' })
+        .field('field', 'terms')
+        .field('country', 'fr')
+        .attach('file', `${__dirname}/resources/blank.pdf`)
+        .expect(201);
+
+      expect(body).toHaveProperty('data.country', 'fr');
+    });
+
+    it("should reject a country the event doesn't run in", async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken({
+        countries: ['de', 'fr'],
+      });
+
+      await request()
+        .post(`/api/v1/events/${event.id}/files`)
+        .auth(accessToken, { type: 'bearer' })
+        .field('field', 'terms')
+        .field('country', 'pl')
+        .attach('file', `${__dirname}/resources/blank.pdf`)
+        .expect(400);
+    });
+
+    it('should reject a country for the banner', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken({
+        countries: ['de', 'fr'],
+      });
+
+      await request()
+        .post(`/api/v1/events/${event.id}/files`)
+        .auth(accessToken, { type: 'bearer' })
+        .field('field', 'banner')
+        .field('country', 'de')
+        .attach('file', `${__dirname}/resources/blank.pdf`)
+        .expect(400);
     });
   });
 
@@ -519,6 +630,86 @@ describe('/api/v1/files/', () => {
       expect(response.headers['content-disposition']).toContain(
         'localized.pdf',
       );
+    });
+
+    describe('country', () => {
+      const slotFile = async (
+        eventId: string,
+        originalName: string,
+        data: { locale?: string | null; country?: string | null },
+      ) => {
+        const name = crypto.randomUUID() + '.pdf';
+        await uploadFile('blank.pdf', name);
+        await FileFactory.create({
+          event: { connect: { id: eventId } },
+          field: 'terms',
+          accessLevel: 'public',
+          originalName,
+          name,
+          ...data,
+        });
+      };
+
+      it("should prefer the country's own file over a generic one in the reader's language", async () => {
+        const event = await EventFactory.create({
+          listed: true,
+          countries: ['de', 'fr'],
+        });
+        await slotFile(event.id, 'generic.pdf', {
+          locale: 'en',
+          country: null,
+        });
+        await slotFile(event.id, 'de-terms.pdf', {
+          locale: 'de',
+          country: 'de',
+        });
+
+        const response = await request()
+          .get(
+            `/api/v1/events/${event.id}/files/slots/terms?locale=en&country=de`,
+          )
+          .expect(200);
+
+        expect(response.headers['content-disposition']).toContain(
+          'de-terms.pdf',
+        );
+      });
+
+      it("should never serve another country's file", async () => {
+        const event = await EventFactory.create({
+          listed: true,
+          countries: ['de', 'fr'],
+        });
+        await slotFile(event.id, 'de-terms.pdf', {
+          locale: 'de',
+          country: 'de',
+        });
+
+        await request()
+          .get(`/api/v1/events/${event.id}/files/slots/terms?country=fr`)
+          .expect(404);
+        // No country selected yet: only a file for every country would do.
+        await request()
+          .get(`/api/v1/events/${event.id}/files/slots/terms`)
+          .expect(404);
+      });
+
+      it("should use the event's only country without a query", async () => {
+        const event = await EventFactory.create({
+          listed: true,
+          countries: ['gb'],
+        });
+        await slotFile(event.id, 'generic.pdf', { country: null });
+        await slotFile(event.id, 'gb-terms.pdf', { country: 'gb' });
+
+        const response = await request()
+          .get(`/api/v1/events/${event.id}/files/slots/terms`)
+          .expect(200);
+
+        expect(response.headers['content-disposition']).toContain(
+          'gb-terms.pdf',
+        );
+      });
     });
 
     it('should respond with `401` when the matching file is private and the user is anonymous', async () => {

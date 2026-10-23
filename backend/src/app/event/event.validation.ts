@@ -7,6 +7,7 @@ import {
   type EventOrganizationUpdateData,
 } from '@camp-registration/common/entities';
 import { naiveDateTimeToUtcCarrier } from '@camp-registration/common/utils';
+import { localesForCountries } from '@camp-registration/common/locales';
 
 // `z.iso.datetime()` accepts a `Z` suffix regardless of `local`/`offset`, so a
 // real instant must be rejected explicitly — startAt/endAt are the organizer's
@@ -70,7 +71,7 @@ const index = z.object({
 
 function validateRecordKeys(
   record: Record<string, unknown>,
-  allowedKeys: string[],
+  allowedKeys: readonly string[],
 ) {
   const recordKeys = Object.keys(record);
 
@@ -79,6 +80,47 @@ function validateRecordKeys(
   }
 
   return recordKeys.every((key) => allowedKeys.includes(key));
+}
+
+// Text is keyed by the languages the event's countries write in (`en`, `cs`);
+// per-country values by the countries themselves (`gb`, `cz`).
+const LOCALE_KEYED = ['name', 'location'] as const;
+const COUNTRY_KEYED = ['organizer', 'contactEmail', 'maxParticipants'] as const;
+
+type KeyedField =
+  (typeof LOCALE_KEYED)[number] | (typeof COUNTRY_KEYED)[number];
+
+/**
+ * Reports every keyed field whose record doesn't hold exactly the keys the
+ * event's countries call for. A plain value applies everywhere and passes.
+ */
+function checkRecordKeys(
+  ctx: z.RefinementCtx,
+  val: Partial<Record<KeyedField, unknown>>,
+  countries: readonly string[],
+) {
+  const fields = [
+    ...LOCALE_KEYED.map(
+      (key) => [key, localesForCountries(countries)] as const,
+    ),
+    ...COUNTRY_KEYED.map((key) => [key, countries] as const),
+  ];
+
+  for (const [key, allowedKeys] of fields) {
+    const value = val[key];
+    if (
+      value &&
+      typeof value === 'object' &&
+      !validateRecordKeys(value as Record<string, unknown>, allowedKeys)
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Missing or invalid key(s)',
+        path: [key],
+        input: value,
+      });
+    }
+  }
 }
 
 const updateOrganization = z.object({
@@ -154,29 +196,7 @@ const store = z.object({
         });
       }
 
-      const recordKeys = [
-        'name',
-        'organizer',
-        'contactEmail',
-        'maxParticipants',
-        'location',
-      ] as const;
-
-      // Validate Translated keys
-      for (const key of recordKeys) {
-        const value = val[key];
-        if (
-          typeof value === 'object' &&
-          !validateRecordKeys(value, val.countries)
-        ) {
-          ctx.addIssue({
-            code: 'custom',
-            message: 'Missing or invalid key(s)',
-            path: [key],
-            input: val[key],
-          });
-        }
-      }
+      checkRecordKeys(ctx, val, val.countries);
 
       const compareKeys = [
         ['minAge', 'maxAge'],
@@ -240,32 +260,10 @@ const update = (event: Event) =>
       })
       .partial()
       .superRefine((val, ctx) => {
-        const recordKeys = [
-          'name',
-          'organizer',
-          'contactEmail',
-          'maxParticipants',
-          'location',
-        ] as const;
-
-        // Validate Translated keys. Only what the request sends — stored
-        // values aren't re-checked, so an unrelated update can't be rejected
-        // over translations the event already had.
-        for (const key of recordKeys) {
-          const value = val[key];
-          if (
-            value &&
-            typeof value === 'object' &&
-            !validateRecordKeys(value, event.countries)
-          ) {
-            ctx.addIssue({
-              code: 'custom',
-              message: 'Missing or invalid key(s)',
-              path: [key],
-              input: val[key],
-            });
-          }
-        }
+        // Only what the request sends — stored values aren't re-checked, so an
+        // unrelated update can't be rejected over translations the event
+        // already had.
+        checkRecordKeys(ctx, val, event.countries);
 
         const compareKeys = [
           ['minAge', 'maxAge'],

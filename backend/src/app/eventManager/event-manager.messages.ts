@@ -4,10 +4,10 @@ import type {
   EventInvitation,
   User,
 } from '#generated/prisma/client.js';
-import { translateObject } from '#utils/translateObject';
+import { translate } from '@camp-registration/common/utils';
+import { localeForCountry } from '@camp-registration/common/locales';
 import { MailBase } from '#core/mail/mail.base';
 import { generateUrl } from '#utils/url';
-import { countriesToLocales } from '#utils/countriesToLocales.js';
 import { resolveActionCardText } from '#core/mail/actionCardText';
 import type { ActionCardProps, LocalContext } from '#views/emails/types';
 
@@ -69,7 +69,7 @@ export class EventManagerInvitationMessage extends EventManagerMessage<{
     }
 
     if (this.payload.event.countries.length === 1) {
-      return countriesToLocales(this.payload.event.countries)[0];
+      return localeForCountry(this.payload.event.countries[0]);
     }
 
     return undefined;
@@ -78,7 +78,7 @@ export class EventManagerInvitationMessage extends EventManagerMessage<{
   protected content() {
     const t = this.getT();
     const event = this.payload.event;
-    const eventName = translateObject(event.name, this.locale());
+    const eventName = translate(event.name, this.locale() ?? 'en') ?? '';
     const url = generateUrl(['management', 'events', event.id]);
     const vars = { event: { name: eventName } };
 

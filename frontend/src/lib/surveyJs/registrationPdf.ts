@@ -15,7 +15,7 @@ import type {
 interface RegistrationPdfOptions {
   event: EventDetails;
   registration: Registration;
-  fileUrl: (slot: string) => string;
+  fileUrl: (slot: string, locale: string, country: string | null) => string;
 }
 
 const registrationIdLabel: Record<string, string> = {

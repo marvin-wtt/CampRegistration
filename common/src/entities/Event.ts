@@ -1,7 +1,7 @@
 import { SurveyJSEventData } from './SurveyJSEventData.js';
 import { Identifiable } from './Identifiable.js';
 import { ITheme } from 'survey-core';
-import { Translatable } from './Translatable.js';
+import type { PerCountry, Translatable } from './Translatable.js';
 import type { OrganizationVerificationStatus } from './Organization.js';
 
 export const EVENT_PRESET_NAMES = ['camp', 'seminar', 'general'] as const;
@@ -18,9 +18,9 @@ export interface Event extends Identifiable {
   countries: string[];
   locales: string[];
   name: Translatable;
-  organizer: Translatable;
-  contactEmail: Translatable;
-  maxParticipants: Translatable<number>;
+  organizer: PerCountry<string>;
+  contactEmail: PerCountry<string>;
+  maxParticipants: PerCountry<number>;
   /** Naive local datetime (`YYYY-MM-DDTHH:mm:ss`, no offset), local to `timezone` — never a UTC instant. */
   startAt: string;
   /** Naive local datetime (`YYYY-MM-DDTHH:mm:ss`, no offset), local to `timezone` — never a UTC instant. */
@@ -31,7 +31,7 @@ export interface Event extends Identifiable {
   maxAge: number;
   location: Translatable | null;
   price: number;
-  freePlaces: Translatable<number> | null;
+  freePlaces: PerCountry<number> | null;
   freePlacesTotal: number;
   registrationStatus: EventRegistrationStatus;
   logo: string | null;

@@ -243,6 +243,46 @@ export const eventCreatedBody: CreateBodyData[] = [
     },
     expected: 400,
   },
+  {
+    // Text is keyed by language, per-country values by country.
+    name: 'Name and location by language, the rest by country',
+    data: {
+      ...eventCreateInternational,
+      countries: ['gb', 'cz'],
+      name: { en: 'Example event', cs: 'Příklad akce' },
+      location: { en: 'Somewhere', cs: 'Někde' },
+      organizer: { gb: 'Example org', cz: 'Příklad organizace' },
+      contactEmail: { gb: 'test@example.co.uk', cz: 'test@example.cz' },
+      maxParticipants: { gb: 10, cz: 11 },
+    },
+    expected: 201,
+  },
+  {
+    name: 'Name keyed by country',
+    data: {
+      ...eventCreateInternational,
+      countries: ['gb', 'cz'],
+      name: { gb: 'Example event', cz: 'Příklad akce' },
+      location: { en: 'Somewhere', cs: 'Někde' },
+      organizer: { gb: 'Example org', cz: 'Příklad organizace' },
+      contactEmail: { gb: 'test@example.co.uk', cz: 'test@example.cz' },
+      maxParticipants: { gb: 10, cz: 11 },
+    },
+    expected: 400,
+  },
+  {
+    name: 'Organizer keyed by language',
+    data: {
+      ...eventCreateInternational,
+      countries: ['gb', 'cz'],
+      name: { en: 'Example event', cs: 'Příklad akce' },
+      location: { en: 'Somewhere', cs: 'Někde' },
+      organizer: { en: 'Example org', cs: 'Příklad organizace' },
+      contactEmail: { gb: 'test@example.co.uk', cz: 'test@example.cz' },
+      maxParticipants: { gb: 10, cz: 11 },
+    },
+    expected: 400,
+  },
   // Organizer
   {
     name: 'Organization missing',
@@ -808,7 +848,7 @@ export const eventUpdateBody: UpdateBodyData[] = [
   {
     name: 'Name international',
     event: {
-      countries: ['en', 'fr'],
+      countries: ['gb', 'fr'],
     },
     data: {
       name: {
@@ -817,6 +857,33 @@ export const eventUpdateBody: UpdateBodyData[] = [
       },
     },
     expected: 200,
+  },
+  {
+    // `gb` and `us` both write English: one text serves both.
+    name: 'Name international sharing a language',
+    event: {
+      countries: ['gb', 'us', 'fr'],
+    },
+    data: {
+      name: {
+        en: 'Exemple event',
+        fr: 'Exemple de event',
+      },
+    },
+    expected: 200,
+  },
+  {
+    name: 'Name keyed by country',
+    event: {
+      countries: ['gb', 'fr'],
+    },
+    data: {
+      name: {
+        gb: 'Exemple event',
+        fr: 'Exemple de event',
+      },
+    },
+    expected: 400,
   },
   {
     name: 'Name null',
@@ -1292,15 +1359,28 @@ export const eventUpdateBody: UpdateBodyData[] = [
   {
     name: 'Location international',
     event: {
-      countries: ['en', 'fr'],
+      countries: ['cz', 'fr'],
     },
     data: {
       location: {
-        en: 'Somewhere',
+        cs: 'Někde',
         fr: 'Quelque part',
       },
     },
     expected: 200,
+  },
+  {
+    name: 'Location keyed by country',
+    event: {
+      countries: ['cz', 'fr'],
+    },
+    data: {
+      location: {
+        cz: 'Někde',
+        fr: 'Quelque part',
+      },
+    },
+    expected: 400,
   },
   {
     name: 'Location null',

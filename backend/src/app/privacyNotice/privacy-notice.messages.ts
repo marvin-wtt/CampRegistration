@@ -1,7 +1,7 @@
 import type { Prisma } from '#generated/prisma/client.js';
 import type { RetentionAnchor } from '@camp-registration/common/privacy';
 import { MailBase } from '#core/mail/mail.base';
-import { translateObject } from '#utils/translateObject';
+import { translate } from '@camp-registration/common/utils';
 import { generateUrl } from '#utils/url';
 import { resolveActionCardText } from '#core/mail/actionCardText';
 import type { EventRetentionDueProps, LocalContext } from '#views/emails/types';
@@ -78,9 +78,9 @@ export class EventRetentionDueMessage extends MailBase<EventRetentionDuePayload>
     return {
       event: {
         id: event.id,
-        name: translateObject(
+        name: translate(
           event.name as string | Record<string, string>,
-          locale,
+          locale ?? 'en',
         ),
       },
       // Formatted here rather than in the template: only the mailable knows the

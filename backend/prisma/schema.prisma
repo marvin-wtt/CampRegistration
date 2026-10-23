@@ -369,6 +369,8 @@ model File {
   originalName        String       @map("original_name")
   field               String?
   locale              String?
+  /// The country a file applies to (`gb`, `cz`); null for every country.
+  country             String?      @db.VarChar(2)
   type                String
   size                Int
   accessLevel         String?      @map("access_level")

@@ -1,6 +1,5 @@
 import type { Event, Registration } from '#generated/prisma/client.js';
-import { objectValueOrAll } from '#utils/translateObject';
-import { translateEventContext } from '#app/event/event.util';
+import { eventContactFor, translateEventContext } from '#app/event/event.util';
 import { MailBase } from '#core/mail/mail.base';
 import type { AddressLike, Content } from '#core/mail/mail.types';
 import { generateUrl } from '#utils/url';
@@ -25,18 +24,15 @@ export class RegistrationNotifyMessage extends MailBase<{
   }
 
   protected to(): AddressLike {
-    const country = this.payload.registration.country;
-    const event = this.payload.event;
-
-    return objectValueOrAll(event.contactEmail, country ?? 'unknown');
+    return this.contact().to;
   }
 
   protected locale(): string {
-    // The locale of the contact mail is unknown, so we use the country and
-    //  locale of the registration to determine the language of the email.
-    return (
-      this.payload.registration.country ?? this.payload.registration.locale
-    );
+    return this.contact().locale;
+  }
+
+  private contact() {
+    return eventContactFor(this.payload.event, this.payload.registration);
   }
 
   protected replyTo(): AddressLike | undefined {
@@ -76,8 +72,6 @@ export class RegistrationNotifyMessage extends MailBase<{
   }
 
   private createEventContext() {
-    const locale = this.payload.registration.country ?? this.locale();
-
-    return translateEventContext(this.payload.event, locale);
+    return translateEventContext(this.payload.event, this.contact());
   }
 }

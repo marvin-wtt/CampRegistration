@@ -94,6 +94,20 @@
               rounded
             />
 
+            <!-- Country: only an event in several countries can tell them apart -->
+            <q-select
+              v-if="hasSeveralCountries"
+              v-model="fileData.country"
+              :options="countryOptions"
+              :label="t('fields.country.label')"
+              :hint="t('fields.country.hint')"
+              :readonly="isCountryLocked"
+              emit-value
+              map-options
+              outlined
+              rounded
+            />
+
             <q-banner
               v-if="hasDuplicateFieldLocale"
               dense
@@ -174,7 +188,7 @@ import {
   useQuasar,
 } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { computed, reactive, ref } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import type {
   ServiceFileCreateData,
   ServiceFileUpdateData,
@@ -197,6 +211,7 @@ interface ServiceFileFormData {
   name?: string | undefined;
   field?: string | undefined;
   locale?: string | null;
+  country?: string | null;
   accessLevel?: 'private' | 'public' | undefined;
   file?: File | null;
 }
@@ -221,6 +236,8 @@ const eventFileStore = useEventFilesStore();
 const eventStore = useEventDetailsStore();
 
 const { t } = useI18n();
+// The `country.*` names live in the global messages, not this component's.
+const { t: tGlobal } = useI18n({ useScope: 'global' });
 const quasar = useQuasar();
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
@@ -232,6 +249,7 @@ const fileData = reactive<ServiceFileFormData>({
   ),
   field: fileToEdit?.field ?? fileToReplace?.field ?? initialField,
   locale: fileToEdit?.locale ?? fileToReplace?.locale ?? initialLocale ?? null,
+  country: fileToEdit?.country ?? fileToReplace?.country ?? null,
   name: fileToEdit?.name,
 });
 
@@ -277,13 +295,31 @@ const isLocaleLocked = computed(
     initialField === EVENT_BANNER_SLOT,
 );
 
+// The logo and banner are the event's own, the same in every country — also
+// when an identifier is typed to one of them, which the server would reject
+// with a country set.
+const isCountrylessField = computed<boolean>(() => {
+  const field = fileData.field?.trim();
+  return field === EVENT_LOGO_SLOT || field === EVENT_BANNER_SLOT;
+});
+
+const isCountryLocked = computed(
+  () => isReplaceMode.value || isCountrylessField.value,
+);
+
+watch(isCountrylessField, (countryless) => {
+  if (countryless) {
+    fileData.country = null;
+  }
+});
+
 const isAccessLevelLocked = computed(
   () => isReplaceMode.value || isSlotUploadMode.value,
 );
 
 const activeFileId = computed(() => fileToEdit?.id ?? fileToReplace?.id);
 
-// The file already occupying the (field, locale) pair this upload targets, if
+// The file already occupying the (field, locale, country) this upload targets, if
 // any. Submitting an upload over it replaces that file instead of leaving a
 // duplicate behind; an edit can't replace, so it only gets the warning.
 const duplicateFile = computed<ServiceFile | undefined>(() => {
@@ -293,13 +329,15 @@ const duplicateFile = computed<ServiceFile | undefined>(() => {
   }
 
   const locale = fileData.locale ?? null;
+  const country = fileData.country ?? null;
   const files = eventFileStore.data ?? [];
 
   return files.find(
     (file) =>
       file.id !== activeFileId.value &&
       file.field === field &&
-      file.locale === locale,
+      file.locale === locale &&
+      file.country === country,
   );
 });
 
@@ -319,6 +357,24 @@ const localeOptions = computed<QSelectOption<string | null>[]>(() => {
   return [
     { label: t('fields.locale.default'), value: null },
     ...locales.map((locale) => ({ label: locale, value: locale })),
+  ];
+});
+
+const eventCountries = computed<string[]>(
+  () => eventStore.data?.countries ?? [],
+);
+const hasSeveralCountries = computed<boolean>(
+  () => eventCountries.value.length > 1,
+);
+
+const countryOptions = computed<QSelectOption<string | null>[]>(() => {
+  const countries = eventCountries.value;
+  return [
+    { label: t('fields.country.default'), value: null },
+    ...countries.map((country) => ({
+      label: tGlobal(`country.${country}`),
+      value: country,
+    })),
   ];
 });
 
@@ -446,6 +502,7 @@ async function onOKClick(): Promise<void> {
 function fileMetadata(): ServiceFileUpdateData {
   const metadata: ServiceFileUpdateData = {
     locale: fileData.locale ?? null,
+    country: fileData.country ?? null,
   };
   const name = fileData.name?.trim();
   const field = fileData.field?.trim();
@@ -506,6 +563,10 @@ fields:
     label: 'Access'
     rules:
       required: 'This field is required'
+  country:
+    label: 'Country'
+    hint: 'Leave as default to apply to all countries'
+    default: 'Default (all countries)'
   field:
     label: 'Identifier'
     hint: 'Used to reference the file in the form'
@@ -514,8 +575,8 @@ fields:
       max_length: 'Use {max} characters or fewer'
       format: 'Use lowercase letters, numbers, hyphens or underscores'
   field_locale:
-    warning: 'Another file already uses this identifier and language. Uploading will replace it.'
-    warning_edit: 'Another file already uses this identifier and language. Only one of them will be shown in the form.'
+    warning: 'Another file already uses this identifier, language and country. Uploading will replace it.'
+    warning_edit: 'Another file already uses this identifier, language and country. Only one of them will be shown in the form.'
   file:
     label: 'File'
     rules:
@@ -559,6 +620,10 @@ fields:
     label: 'Zugriff'
     rules:
       required: 'Dieses Feld ist erforderlich'
+  country:
+    label: 'Land'
+    hint: 'Leer lassen, um auf alle Länder anzuwenden'
+    default: 'Standard (alle Länder)'
   field:
     label: 'Kennung'
     hint: 'Wird verwendet, um auf die Datei im Formular zu verweisen'
@@ -567,8 +632,8 @@ fields:
       max_length: 'Verwenden Sie höchstens {max} Zeichen'
       format: 'Verwenden Sie Kleinbuchstaben, Zahlen, Bindestriche oder Unterstriche'
   field_locale:
-    warning: 'Eine andere Datei verwendet bereits diese Kennung und Sprache. Beim Hochladen wird sie ersetzt.'
-    warning_edit: 'Eine andere Datei verwendet bereits diese Kennung und Sprache. Im Formular wird nur eine davon angezeigt.'
+    warning: 'Eine andere Datei verwendet bereits diese Kennung, Sprache und dieses Land. Beim Hochladen wird sie ersetzt.'
+    warning_edit: 'Eine andere Datei verwendet bereits diese Kennung, Sprache und dieses Land. Im Formular wird nur eine davon angezeigt.'
   file:
     label: 'Datei'
     rules:
@@ -612,6 +677,10 @@ fields:
     label: 'Accès'
     rules:
       required: 'Ce champ est requis'
+  country:
+    label: 'Pays'
+    hint: 'Laisser par défaut pour appliquer à tous les pays'
+    default: 'Par défaut (tous les pays)'
   field:
     label: 'Identifiant'
     hint: 'Utilisé pour référencer le fichier dans le formulaire'
@@ -620,8 +689,8 @@ fields:
       max_length: 'Utilisez {max} caractères au maximum'
       format: 'Utilisez des minuscules, des chiffres, des tirets ou des traits de soulignement'
   field_locale:
-    warning: 'Un autre fichier utilise déjà cet identifiant et cette langue. Le téléversement le remplacera.'
-    warning_edit: 'Un autre fichier utilise déjà cet identifiant et cette langue. Un seul des deux sera affiché dans le formulaire.'
+    warning: 'Un autre fichier utilise déjà cet identifiant, cette langue et ce pays. Le téléversement le remplacera.'
+    warning_edit: 'Un autre fichier utilise déjà cet identifiant, cette langue et ce pays. Un seul des deux sera affiché dans le formulaire.'
   file:
     label: 'Fichier'
     rules:
@@ -665,6 +734,10 @@ fields:
     label: 'Dostęp'
     rules:
       required: 'To pole jest wymagane'
+  country:
+    label: 'Kraj'
+    hint: 'Pozostaw domyślnie, aby zastosować do wszystkich krajów'
+    default: 'Domyślnie (wszystkie kraje)'
   field:
     label: 'Identyfikator'
     hint: 'Używany do odwoływania się do pliku w formularzu'
@@ -673,8 +746,8 @@ fields:
       max_length: 'Użyj maksymalnie {max} znaków'
       format: 'Użyj małych liter, cyfr, łączników lub podkreśleń'
   field_locale:
-    warning: 'Inny plik używa już tego identyfikatora i języka. Przesłanie go zastąpi.'
-    warning_edit: 'Inny plik używa już tego identyfikatora i języka. W formularzu zostanie wyświetlony tylko jeden z nich.'
+    warning: 'Inny plik używa już tego identyfikatora, języka i kraju. Przesłanie go zastąpi.'
+    warning_edit: 'Inny plik używa już tego identyfikatora, języka i kraju. W formularzu zostanie wyświetlony tylko jeden z nich.'
   file:
     label: 'Plik'
     rules:
@@ -718,6 +791,10 @@ fields:
     label: 'Přístup'
     rules:
       required: 'Toto pole je povinné'
+  country:
+    label: 'Země'
+    hint: 'Ponechte výchozí pro použití ve všech zemích'
+    default: 'Výchozí (všechny země)'
   field:
     label: 'Identifikátor'
     hint: 'Používá se pro odkazování na soubor ve formuláři'
@@ -726,8 +803,8 @@ fields:
       max_length: 'Použijte nejvýše {max} znaků'
       format: 'Použijte malá písmena, číslice, pomlčky nebo podtržítka'
   field_locale:
-    warning: 'Jiný soubor již používá tento identifikátor a jazyk. Nahráním jej nahradíte.'
-    warning_edit: 'Jiný soubor již používá tento identifikátor a jazyk. Ve formuláři se zobrazí jen jeden z nich.'
+    warning: 'Jiný soubor již používá tento identifikátor, jazyk a zemi. Nahráním jej nahradíte.'
+    warning_edit: 'Jiný soubor již používá tento identifikátor, jazyk a zemi. Ve formuláři se zobrazí jen jeden z nich.'
   file:
     label: 'Soubor'
     rules:

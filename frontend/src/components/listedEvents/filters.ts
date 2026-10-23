@@ -1,7 +1,6 @@
 import type { EventQuery } from '@camp-registration/common/entities';
 
-/** The countries a event can be authored for — mirrors the event editor's list. */
-export const EVENT_COUNTRIES: string[] = ['de', 'fr', 'gb', 'pl', 'cz'];
+export { EVENT_COUNTRIES } from '@/i18n/locales';
 
 /**
  * Sorting is offered as single opaque values rather than a field/direction pair,

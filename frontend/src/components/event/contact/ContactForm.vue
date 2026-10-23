@@ -274,6 +274,7 @@ import {
 } from '@/composables/messageDraft';
 import { useRegistrationContact } from '@/composables/registrationContact';
 import { uniqueRegistrations } from '@/components/event/contact/contactHelpers';
+import { eventCountry, forCountry } from '@camp-registration/common/utils';
 
 const {
   registrations,
@@ -322,11 +323,18 @@ const to = ref<Contact[]>([]);
 const replyTo = ref<string>('');
 const suggestedReplyTo = computed(() => defaultReplyTo());
 
-const recipientCountries = computed(() =>
-  uniqueRegistrations(to.value)
-    .map((r) => r.computedData.address.country)
-    .filter((c): c is string => c != null),
-);
+// Resolved as the mails resolve a registration's contact (`eventCountry`), so
+// a country the event doesn't run in falls back like it does there.
+const recipientCountries = computed<string[]>(() => {
+  const event = eventDetailsStore.data;
+  if (!event) {
+    return [];
+  }
+
+  return uniqueRegistrations(to.value)
+    .map((r) => eventCountry(event, r.computedData.address.country))
+    .filter((c): c is string => c != null);
+});
 
 function defaultReplyTo(): string {
   const contactEmail = eventDetailsStore.data?.contactEmail;
@@ -344,11 +352,13 @@ function defaultReplyTo(): string {
       freq.set(c, (freq.get(c) ?? 0) + 1);
     }
     const dominant = [...freq.entries()].sort((a, b) => b[1] - a[1])[0]![0];
-    if (contactEmail[dominant]) {
-      return contactEmail[dominant];
+    const contact = forCountry(contactEmail, dominant);
+    if (contact) {
+      return contact;
     }
   }
 
+  // A single field takes a single address: the first country's.
   return Object.values(contactEmail)[0] ?? '';
 }
 

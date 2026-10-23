@@ -900,7 +900,7 @@ export const summerCampForm = {
     },
     {
       name: 'waitingList',
-      expression: 'isWaitingList({event.freePlaces}, {country})',
+      expression: '{event.freePlaces} <= 0',
     },
   ],
   showProgressBar: true,

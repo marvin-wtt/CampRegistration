@@ -58,8 +58,14 @@ async function download() {
     await downloadRegistrationPdf({
       event: eventDetails,
       registration,
-      fileUrl: (slot) =>
-        api.getEventFileSlotUrl(eventDetails.id, slot, registration.locale),
+      // The registration's own language, whatever the survey renders in.
+      fileUrl: (slot, _locale, country) =>
+        api.getEventFileSlotUrl(
+          eventDetails.id,
+          slot,
+          registration.locale,
+          country,
+        ),
     });
     state.value = 'idle';
   } catch {

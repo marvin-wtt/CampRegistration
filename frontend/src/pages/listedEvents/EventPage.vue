@@ -57,9 +57,10 @@
         </div>
 
         <q-btn
-          v-if="eventContactEmail"
-          :href="`mailto:${eventContactEmail}`"
-          :label="eventContactEmail"
+          v-for="email in eventContactEmails"
+          :key="email"
+          :href="`mailto:${email}`"
+          :label="email"
           icon="mail"
           type="a"
           flat
@@ -91,6 +92,7 @@ import {
   type EventDetails,
   type EventRegistrationStatus,
 } from '@camp-registration/common/entities';
+import { allCountryValues } from '@camp-registration/common/utils';
 import { isAPIServiceError, useAPIService } from '@/services/APIService';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -201,13 +203,13 @@ const registrationStatus = computed<RegistrationStatus>(() => {
   return event.value.registrationStatus;
 });
 
-const eventContactEmail = computed<string | null>(() => {
+// The visitor's group is unknown here, so every group's contact is listed.
+const eventContactEmails = computed<string[]>(() => {
   if (!event.value?.contactEmail) {
-    return null;
+    return [];
   }
 
-  const email = event.value.contactEmail;
-  return typeof email === 'string' ? email : (Object.values(email)[0] ?? null);
+  return allCountryValues(event.value.contactEmail).filter(Boolean);
 });
 
 const statusIcon = computed<string>(() => {

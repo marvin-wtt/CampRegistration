@@ -300,7 +300,15 @@ describe('/api/v1/events/:eventId/messages', () => {
       await assertMessages(body.data.id, [
         createExpectedResult(registrationA, 'de'),
         createExpectedResult(registrationB, 'fr'),
-        createExpectedResult(registrationC, 'de'),
+        // Without a country, no group is guessed: every group's contact is
+        // named, and the texts follow the registration's own language.
+        {
+          subject: 'Hi, Paula, welcome to Test Event DE',
+          body: `Hello Paula, ${esc('Organizer DE / Organizer FR')} Location DE 17`,
+          priority: 'normal',
+          replyTo: ['de@email.com', 'fr@email.com'],
+          emails: registrationC.emails!,
+        },
       ]);
     });
 
@@ -595,6 +603,36 @@ describe('/api/v1/events/:eventId/messages', () => {
       expectEmailCount(0);
       expect(await prisma.messageDelivery.count()).toBe(0);
       expect(await prisma.message.count()).toBe(0);
+    });
+
+    it("should fill in the event's texts in the language of the registration's country", async () => {
+      const { event, accessToken } = await crateEventWithManager({
+        countries: ['de', 'fr'],
+        name: { de: 'Sommerlager', fr: 'Colonie de vacances' },
+      });
+      // Reads the app in German, but belongs to the French group: the French
+      // group's template is French, so the name inside it must be too.
+      const registration = await RegistrationFactory.create({
+        event: { connect: { id: event.id } },
+        country: 'fr',
+        locale: 'de',
+        emails: ['test@example.com'],
+      });
+
+      const { body } = await request()
+        .post(`/api/v1/events/${event.id}/messages/preview`)
+        .send({
+          registrationId: registration.id,
+          subject: '{{ event.name }}',
+          body: '<p>{{ event.name }}</p>',
+        })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body.data).toStrictEqual({
+        subject: 'Colonie de vacances',
+        body: '<p>Colonie de vacances</p>',
+      });
     });
 
     it.each([

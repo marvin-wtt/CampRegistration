@@ -443,7 +443,7 @@ import {
   useServiceNotifications,
 } from '@/composables/serviceHandler';
 import { extractEventDataTypes } from '@/utils/surveyJS';
-import { APP_LOCALES, localesForCountries } from '@/i18n/locales';
+import { APP_LOCALES, eventTextLocales } from '@/i18n/locales';
 
 const { t, d } = useI18n();
 const { t: gt } = useI18n({ useScope: 'global' });
@@ -822,7 +822,7 @@ const additionalForLocale = computed({
 const pinnedAdditionalLocale = ref<string | null>(null);
 
 const additionalLocales = computed(() => {
-  const own = localesForCountries(event.value?.countries);
+  const own = eventTextLocales(event.value?.countries);
 
   // Text written before the event's countries changed stays reachable: it is
   // published either way, and a tab nobody can open is a tab nobody can fix.

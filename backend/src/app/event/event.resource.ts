@@ -3,7 +3,7 @@ import {
   type EventDetails as EventDetailsResourceData,
 } from '@camp-registration/common/entities';
 import { JsonResource } from '#core/resource/JsonResource';
-import { countriesToLocales } from '#utils/countriesToLocales';
+import { localesForCountries } from '@camp-registration/common/locales';
 import { eventRegistrationStatus } from '#app/event/event.util';
 import { utcCarrierToNaiveDateTime } from '@camp-registration/common/utils';
 import type { EventWithRelations } from '#app/event/event.types';
@@ -41,7 +41,7 @@ export class EventResource extends JsonResource<
         this.data.registrationClosesAt?.toISOString() ?? null,
       confirmationMode: this.data.confirmationMode,
       countries: this.data.countries,
-      locales: countriesToLocales(this.data.countries),
+      locales: localesForCountries(this.data.countries),
       name: this.data.name,
       organizer: this.data.organizer,
       contactEmail: this.data.contactEmail,
