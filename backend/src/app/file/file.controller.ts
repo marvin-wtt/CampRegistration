@@ -12,6 +12,18 @@ import { inject, injectable } from 'inversify';
 import contentDisposition from 'content-disposition';
 import { isClientDisconnect } from '#utils/stream';
 
+// Types a browser shows without running anything. Everything else downloads:
+// an XML upload (an SVG or XHTML with an `<?xml` prolog) would otherwise render,
+// scripts included, on the API's origin.
+const INLINE_MIME_TYPES = new Set([
+  'image/png',
+  'image/jpeg',
+  'image/gif',
+  'image/webp',
+  'image/avif',
+  'application/pdf',
+]);
+
 interface ModelData {
   id: string;
   name: string;
@@ -34,13 +46,7 @@ export class FileController extends BaseController {
 
     const file = req.modelOrFail('file');
 
-    if (file.uploadStatus === 'PENDING') {
-      throw new ApiError(
-        httpStatus.CONFLICT,
-        'File upload is still in progress',
-      );
-    }
-
+    // A file still being moved into storage is served from the tmp dir.
     const fileStream = await this.fileService.getFileStream(file);
 
     // Set response headers for image display
@@ -48,7 +54,10 @@ export class FileController extends BaseController {
 
     res.setHeader(
       'Content-disposition',
-      this.buildContentDisposition(file.originalName, download),
+      this.buildContentDisposition(
+        file.originalName,
+        download || !INLINE_MIME_TYPES.has(file.type),
+      ),
     );
 
     // pipeline (unlike pipe) propagates stream errors and tears the whole

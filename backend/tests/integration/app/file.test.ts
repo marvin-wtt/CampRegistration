@@ -8,7 +8,7 @@ import {
   RegistrationFactory,
   UserFactory,
 } from '../../../prisma/factories/index.js';
-import { uploadFile, verifyFileExists } from './utils/file.js';
+import { uploadFile, verifyFileExists, stageUpload } from './utils/file.js';
 import { generateAccessToken } from './utils/token.js';
 import { Prisma } from '#generated/prisma/client.js';
 import { ulid } from 'ulidx';
@@ -133,6 +133,37 @@ describe('/api/v1/files/', () => {
         .set('Cookie', ['session=' + sessionId, '__Host-session=' + sessionId])
         .send()
         .expect(200);
+    });
+
+    it('should show a PDF inline', async () => {
+      const { file, accessToken } = await createEventWithFileAndToken();
+
+      const response = await request()
+        .get(`/api/v1/files/${file.id}`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(response.headers['content-disposition']).toMatch(/^inline/);
+    });
+
+    // `file-type` reads an `<?xml` prolog as XML, which a browser would render
+    // as the SVG it is — scripts included.
+    it('should only offer an XML upload as a download', async () => {
+      const sessionId = crypto.randomUUID();
+      const cookies = ['session=' + sessionId, '__Host-session=' + sessionId];
+      const { body } = await request()
+        .post('/api/v1/files/')
+        .set('Cookie', cookies)
+        .attach('file', `${__dirname}/resources/xml-prolog.svg`)
+        .expect(201);
+
+      const response = await request()
+        .get(`/api/v1/files/${body.data.id}`)
+        .set('Cookie', cookies)
+        .expect(200);
+
+      expect(response.headers['content-type']).toContain('application/xml');
+      expect(response.headers['content-disposition']).toMatch(/^attachment/);
     });
 
     it('should respond with `404` status code when the physical file is missing', async () => {
@@ -725,7 +756,28 @@ describe('/api/v1/files/', () => {
         .expect(401);
     });
 
-    it('should respond with `409` when the matching file is not ready', async () => {
+    // A preview right after upload must not wait for the queue.
+    it('should serve a file still being moved into storage', async () => {
+      const event = await EventFactory.create({ listed: true });
+      const name = crypto.randomUUID() + '.pdf';
+      await stageUpload('blank.pdf', name);
+      await FileFactory.create({
+        event: { connect: { id: event.id } },
+        field: 'rules',
+        accessLevel: 'public',
+        originalName: 'pending.pdf',
+        name,
+        uploadStatus: 'PENDING',
+      });
+
+      const response = await request()
+        .get(`/api/v1/events/${event.id}/files/slots/rules`)
+        .expect(200);
+
+      expect(response.headers['content-disposition']).toContain('pending.pdf');
+    });
+
+    it('should respond with `404` when a pending file is found nowhere', async () => {
       const event = await EventFactory.create({ listed: true });
       await FileFactory.create({
         event: { connect: { id: event.id } },
@@ -736,7 +788,7 @@ describe('/api/v1/files/', () => {
 
       await request()
         .get(`/api/v1/events/${event.id}/files/slots/rules`)
-        .expect(409);
+        .expect(404);
     });
 
     it('should keep serving the ready file while a replacement is pending', async () => {

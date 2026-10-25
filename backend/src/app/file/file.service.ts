@@ -9,6 +9,8 @@ import { StorageRegistry } from '#core/storage/storage.registry';
 import { BaseService } from '#core/base/BaseService';
 import { extractKeyFromFieldName, fileNameExtension } from '#utils/file';
 import { isClientDisconnect } from '#utils/stream';
+import ApiError from '#utils/ApiError';
+import httpStatus from 'http-status';
 import { inject, injectable } from 'inversify';
 import { Config } from '#core/ioc/decorators';
 import type { AppConfig } from '#config';
@@ -456,10 +458,10 @@ export class FileService extends BaseService {
     });
   }
 
-  async getFileStream(file: StorageFile) {
-    const stream = await this.storageRegistry
-      .getStorage(file.storageLocation)
-      .openReadStream(file);
+  async getFileStream(
+    file: StorageFile & { uploadStatus?: File['uploadStatus'] },
+  ) {
+    const stream = await this.openReadStream(file);
 
     // Decryption/storage errors surface asynchronously, possibly before the
     // consumer (HTTP response, mail transport) attaches its own 'error'
@@ -476,6 +478,32 @@ export class FileService extends BaseService {
     });
 
     return stream;
+  }
+
+  // A pending upload already sits complete in the tmp dir, so it is served
+  // from there until the queue has moved it — a preview right after upload
+  // works. One moved in the meantime is read from its storage instead, with
+  // the record reloaded for the encryption format the move recorded.
+  private async openReadStream(
+    file: StorageFile & { uploadStatus?: File['uploadStatus'] },
+  ) {
+    if (file.uploadStatus === 'PENDING') {
+      try {
+        return await this.tmpStorage.openReadStream(file);
+      } catch (error) {
+        if (
+          !(error instanceof ApiError) ||
+          error.statusCode !== httpStatus.NOT_FOUND
+        ) {
+          throw error;
+        }
+      }
+      file = (await this.getFileById(file.id)) ?? file;
+    }
+
+    return this.storageRegistry
+      .getStorage(file.storageLocation)
+      .openReadStream(file);
   }
 
   async updateFile(

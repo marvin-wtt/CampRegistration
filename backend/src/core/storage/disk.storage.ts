@@ -38,15 +38,21 @@ export class DiskStorage implements Storage {
     return fse.readdir(this.storageDir);
   }
 
-  openReadStream(file: StorageFile) {
+  // Opened before returning: a file moved away in between (a tmp upload taken
+  // into storage) is then a NOT_FOUND here, not a later stream error. Once
+  // open, the stream reads it to the end even if it is moved.
+  async openReadStream(file: StorageFile) {
     const filePath = safeJoinFilePath(this.storageDir, file.name);
 
-    // eslint-disable-next-line security/detect-non-literal-fs-filename
-    if (!fse.existsSync(filePath)) {
-      throw new ApiError(httpStatus.NOT_FOUND, 'File is missing in storage.');
+    try {
+      // eslint-disable-next-line security/detect-non-literal-fs-filename
+      const handle = await fse.promises.open(filePath, 'r');
+      return handle.createReadStream();
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        throw new ApiError(httpStatus.NOT_FOUND, 'File is missing in storage.');
+      }
+      throw error;
     }
-
-    // eslint-disable-next-line security/detect-non-literal-fs-filename
-    return Promise.resolve(fse.createReadStream(filePath));
   }
 }
