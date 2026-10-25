@@ -16,6 +16,8 @@ const UPCOMING_EVENT = '01JHP0CXJFR4MQS8SF1HQJCA10'; // opens in 2999 -> upcomin
 const CLOSED_EVENT = '01JHP0CXJFR4MQS8SF1HQJCA20'; // closed in 2020 -> closed
 // A well-formed but unseeded id -> 404 -> "not found".
 const MISSING_EVENT = '01JHP0CXJFR4MQS8SF1HQJCY30';
+// Two groups (Germany, France), chosen before the form.
+const GROUP_EVENT = '01JHP0CXJFR4MQS8SF1HQJCG01';
 
 /** Wait for the page to reach a stable state before capturing a screenshot. */
 async function settle(page: Page): Promise<void> {
@@ -83,6 +85,43 @@ test.describe('event page — visual', () => {
     await settle(page);
 
     await expect(page).toHaveScreenshot('event-page-not-found.png');
+  });
+
+  test('group choice', async ({ page }) => {
+    await page.goto(`/events/${GROUP_EVENT}`);
+
+    await expect(page.getByTestId('registration-group-fr')).toBeVisible();
+    await settle(page);
+
+    await expect(page).toHaveScreenshot('event-page-group-choice.png');
+  });
+
+  // The group sits in the floating header; the strict address shows it locked.
+  test('group form', async ({ page }) => {
+    await page.goto(`/events/${GROUP_EVENT}?group=fr`);
+
+    await expect(page.getByTestId('registration-group')).toBeVisible();
+    await expect(
+      page
+        .getByTestId('registration-form')
+        .locator('[data-name=address]')
+        .first(),
+    ).toBeVisible();
+    await settle(page);
+
+    await expect(page).toHaveScreenshot('event-page-group-form.png', {
+      fullPage: true,
+    });
+  });
+
+  test('group menu', async ({ page }) => {
+    await page.goto(`/events/${GROUP_EVENT}?group=fr`);
+
+    await page.getByTestId('registration-group').click();
+    await expect(page.getByTestId('registration-group-change')).toBeVisible();
+    await settle(page);
+
+    await expect(page).toHaveScreenshot('event-page-group-menu.png');
   });
 
   test('submit — saving overlay', async ({ page }) => {
@@ -251,6 +290,7 @@ async function mockRegistrationResponse(
             },
             customData: {},
             customFiles: {},
+            group: null,
             locale: 'en',
             room: null,
             createdAt: new Date().toISOString(),
