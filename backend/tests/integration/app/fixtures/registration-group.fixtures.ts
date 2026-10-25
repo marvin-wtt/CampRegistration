@@ -44,6 +44,23 @@ export const eventWithStrictCountry = {
   ]),
 };
 
+// A computed column that depends on the group, so reading answers without it
+// stores another value.
+export const roleByGroupForm = createForm([
+  firstName,
+  {
+    type: 'expression',
+    name: 'role',
+    eventDataType: 'role',
+    expression: "iif({event.group} = 'fr', 'counselor', 'participant')",
+  },
+]);
+
+export const eventWithRoleByGroup = {
+  ...international,
+  form: roleByGroupForm,
+};
+
 export const eventNationalWithAddress = {
   countries: ['de'],
   maxParticipants: 5,
@@ -66,10 +83,10 @@ export const groupTemplates = [
   'registration_confirmed',
   'registration_waitlisted',
 ].flatMap((trigger) =>
-  ['de', 'fr'].map((country) => ({
+  ['de', 'fr'].map((group) => ({
     trigger,
-    country,
-    subject: `${trigger} ${country}`,
+    group,
+    subject: `${trigger} ${group}`,
     body: 'Hello',
   })),
 );

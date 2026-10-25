@@ -1293,7 +1293,7 @@ describe('/api/v1/events', () => {
           expect(templates.length).not.toBe(0);
 
           for (const template of templates) {
-            expect(template.country).toBeOneOf(['de', 'cz']);
+            expect(template.group).toBeOneOf(['de', 'cz']);
           }
         });
       });

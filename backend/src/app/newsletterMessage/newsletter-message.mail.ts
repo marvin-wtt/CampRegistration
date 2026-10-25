@@ -74,20 +74,9 @@ export class NewsletterMessageMail extends MailBase<NewsletterMailPayload> {
     };
   }
 
-  protected async attachments(): Promise<MailAttachment[]> {
-    const files = this.payload.attachments ?? [];
-    if (!files.length) {
-      return [];
-    }
-
-    const fileService = resolve(FileService);
-
-    return Promise.all(
-      files.map(async (file) => ({
-        filename: file.originalName,
-        content: await fileService.getFileBuffer(file),
-        contentType: file.type,
-      })),
+  protected attachments(): Promise<MailAttachment[]> {
+    return resolve(FileService).getMailAttachments(
+      this.payload.attachments ?? [],
     );
   }
 

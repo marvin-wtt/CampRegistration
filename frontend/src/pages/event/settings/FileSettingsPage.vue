@@ -56,7 +56,7 @@
               :key="doc.id"
               clickable
               class="file-row file-row--clickable"
-              @click="uploadForSlot(doc.field, doc.locale)"
+              @click="uploadForSlot(doc.field, doc.locale, doc.group)"
             >
               <q-item-section avatar>
                 <q-avatar
@@ -83,6 +83,13 @@
                 side
                 class="file-meta file-meta--inline"
               >
+                <q-chip
+                  v-if="doc.group"
+                  class="md3-chip locale-chip"
+                  :label="doc.group.toUpperCase()"
+                  icon="flag"
+                  :title="countryName(doc.group, locale)"
+                />
                 <q-chip
                   v-if="doc.locale"
                   class="md3-chip locale-chip"
@@ -246,6 +253,19 @@
                   </a>
                 </q-item-label>
                 <q-item-label class="file-caption">
+                  <q-badge
+                    v-if="file.group"
+                    rounded
+                    class="locale-badge"
+                    :label="file.group.toUpperCase()"
+                    :title="countryName(file.group, locale)"
+                  >
+                    <q-icon
+                      name="flag"
+                      size="12px"
+                      class="q-mr-xs"
+                    />
+                  </q-badge>
                   <q-badge
                     v-if="file.locale"
                     rounded
@@ -424,6 +444,7 @@ import PageHeader from '@/components/common/PageHeader.vue';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import { useI18n } from 'vue-i18n';
+import { countryName } from '@/utils/countries';
 import { computed, onMounted, ref } from 'vue';
 import { copyToClipboard, useQuasar } from 'quasar';
 import FileUploadDialog from '@/components/event/settings/files/FileUploadDialog.vue';
@@ -445,7 +466,7 @@ import {
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
 // eslint-disable-next-line @typescript-eslint/unbound-method
-const { t, te } = useI18n();
+const { t, te, locale } = useI18n();
 const quasar = useQuasar();
 const eventStore = useEventDetailsStore();
 const eventFileStore = useEventFilesStore();
@@ -506,7 +527,8 @@ const bannerPreviewEvent = computed(() => {
 /**
  * Presentational ordering for the file list:
  * 1. Fielded slot documents (rules, toc, …) first, grouped by `field`.
- * 2. Within a field, by `locale` so language variants cluster together.
+ * 2. Within a field, by group, then `locale`, so group and language
+ *    variants cluster together.
  * 3. Free uploads (no field) last, newest first.
  * `id` is the final tiebreaker to keep the order stable across refetches.
  */
@@ -520,6 +542,11 @@ function sortFiles(list: ServiceFile[]): ServiceFile[] {
       const byField = a.field.localeCompare(b.field);
       if (byField !== 0) {
         return byField;
+      }
+
+      const byGroup = (a.group ?? '').localeCompare(b.group ?? '');
+      if (byGroup !== 0) {
+        return byGroup;
       }
 
       const byLocale = (a.locale ?? '').localeCompare(b.locale ?? '');
@@ -541,6 +568,7 @@ interface MissingDocument {
   id: string;
   field: string;
   locale: string | null;
+  group: string | null;
 }
 
 const missingDocuments = computed<MissingDocument[]>(() => {
@@ -552,18 +580,19 @@ const missingDocuments = computed<MissingDocument[]>(() => {
     id: `__pending__${slot}`,
     field: slot,
     locale: null,
+    group: null,
   }));
 
-  const missingLocales = eventFileStore.slotsWithMissingLocales.flatMap(
-    ({ slot, missingLocales }) =>
-      missingLocales.map((locale) => ({
-        id: `__missing__${slot}__${locale}`,
-        field: slot,
-        locale,
-      })),
+  const missing = eventFileStore.missingFiles.map(
+    ({ slot, group, locale }) => ({
+      id: `__missing__${slot}__${group ?? ''}__${locale ?? ''}`,
+      field: slot,
+      locale,
+      group,
+    }),
   );
 
-  return [...pending, ...missingLocales];
+  return [...pending, ...missing];
 });
 
 const loading = computed<boolean>(
@@ -603,8 +632,16 @@ function getUploadHint(field: string, locale?: string | null): string {
   return locale ? `${versioned} (${locale})` : versioned;
 }
 
-function uploadForSlot(slot: string, locale?: string | null) {
-  openDialog({ initialField: slot, initialLocale: locale });
+function uploadForSlot(
+  slot: string,
+  locale?: string | null,
+  group?: string | null,
+) {
+  openDialog({
+    initialField: slot,
+    initialLocale: locale,
+    initialGroup: group,
+  });
 }
 
 // The logo isn't localized — changing it replaces the current file, and a

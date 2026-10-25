@@ -94,7 +94,7 @@ export default {
       label: 'Automatický e-mail',
       fields: {
         trigger: 'Spouštěč',
-        country: 'Země',
+        group: 'Skupina',
         subject: 'Předmět',
         body: 'Obsah',
         priority: 'Priorita',

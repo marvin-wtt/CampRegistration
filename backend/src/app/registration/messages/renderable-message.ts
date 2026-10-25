@@ -7,7 +7,7 @@ import type {
 import { MessageTemplateService } from '#app/messageTemplate/message-template.service';
 import logger from '#core/logger';
 import { resolve } from '#core/ioc/container';
-import { eventCountry } from '@camp-registration/common/utils';
+import { eventGroup } from '@camp-registration/common/utils';
 
 export type MessageTemplateWithFiles = MessageTemplate & {
   attachments: File[];
@@ -79,7 +79,7 @@ export function messageToRenderable(
 export async function loadMessageTemplate(
   event: Event,
   trigger: string,
-  country: string | null | undefined,
+  group: string | null | undefined,
 ): Promise<MessageTemplateWithFiles | null> {
   try {
     const messageTemplateService = resolve(MessageTemplateService);
@@ -87,7 +87,7 @@ export async function loadMessageTemplate(
     return await messageTemplateService.getMessageTemplateByName(
       event.id,
       trigger,
-      eventCountry(event, country),
+      eventGroup(event, group),
     );
   } catch (error) {
     logger.error(error);

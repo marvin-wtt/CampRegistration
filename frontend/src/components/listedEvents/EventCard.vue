@@ -79,7 +79,7 @@
         </div>
         <div
           v-for="entry in availability"
-          :key="entry.countries.join('-')"
+          :key="entry.groups.join('-')"
           class="event-card__capacity-row"
           :class="{
             'event-card__capacity-row--low': isLow(entry),
@@ -93,9 +93,9 @@
         >
           <template v-if="availability.length > 1">
             <country-icon
-              v-for="country in entry.countries"
-              :key="country"
-              :country
+              v-for="group in entry.groups"
+              :key="group"
+              :country="group"
             />
           </template>
 

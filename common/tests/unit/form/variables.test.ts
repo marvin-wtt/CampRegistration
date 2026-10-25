@@ -112,7 +112,7 @@ describe('variables', () => {
     });
   });
 
-  describe('per-country values', () => {
+  describe('per-group values', () => {
     const event: Partial<Data> = {
       countries: ['de', 'fr'],
       organizer: { de: 'Verein', fr: 'Association' },
@@ -191,7 +191,7 @@ describe('variables', () => {
         ],
       });
 
-    it('should resolve the per-country values for the given group', () => {
+    it('should resolve the per-group values for the given group', () => {
       const model = countryForm();
 
       setVariables(model, fakeEventData(event), { group: 'fr' });
@@ -213,7 +213,7 @@ describe('variables', () => {
       expect(model.calculatedValues).toHaveLength(0);
     });
 
-    it("should use the event's only country without a group", () => {
+    it("should use the event's only group without a group", () => {
       const model = countryForm();
 
       setVariables(model, fakeEventData({ ...event, countries: ['de'] }), {

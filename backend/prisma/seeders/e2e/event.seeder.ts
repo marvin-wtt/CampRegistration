@@ -137,13 +137,13 @@ export async function seedE2eEvents(): Promise<void> {
       create: [
         {
           trigger: 'registration_waitlisted',
-          country: 'fr',
+          group: 'fr',
           subject: 'Waiting list France',
           body: 'You are on the waiting list.',
         },
         {
           trigger: 'registration_confirmed',
-          country: 'fr',
+          group: 'fr',
           subject: 'Confirmed France',
           body: 'You are registered.',
         },

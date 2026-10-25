@@ -173,8 +173,8 @@ export class RegistrationForm {
   private readonly survey: SurveyModel;
   private issues: IDataIssue[] = [];
 
-  // `group` is the country the form is answered for. Without one, only a
-  // single-country event knows it — enough to read the answers back.
+  // `group` is the group the form is answered for. Without one, only a
+  // single-group event knows it — enough to read the answers back.
   constructor(
     event: EventWithFreePlaces,
     options?: { locale?: string; group?: string | null | undefined },

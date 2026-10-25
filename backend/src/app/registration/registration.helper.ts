@@ -106,9 +106,7 @@ export class RegistrationEventDataHelper {
     return this.stringValue('zip_code') ?? this.address()?.zipCode;
   }
 
-  // Like the other address fields: a question of its own, or the address's.
-  // Never the group, which is chosen before the form.
-  addressCountry(): string | undefined {
+  country(): string | undefined {
     return this.stringValue('country') ?? this.address()?.country;
   }
 
@@ -160,7 +158,7 @@ export function computedRegistrationData(
     street: helper.street() ?? null,
     city: helper.city() ?? null,
     zipCode: helper.zipCode() ?? null,
-    country: helper.addressCountry() ?? null,
+    country: helper.country() ?? null,
     dateOfBirth: helper.dateOfBirth() ?? null,
     emails: helper.emails() ?? [],
     role: helper.role() ?? null,

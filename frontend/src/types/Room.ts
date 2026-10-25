@@ -8,7 +8,7 @@ export interface Roommate extends Identifiable {
   name: string;
   age?: number | undefined;
   gender?: string | undefined;
-  country?: string | undefined;
+  group?: string | undefined;
   participant?: boolean | undefined;
   role?: string | undefined;
 }

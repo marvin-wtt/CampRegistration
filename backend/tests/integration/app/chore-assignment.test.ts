@@ -475,9 +475,9 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
       );
     });
 
-    it('interleaves PERSON candidates by country when balanceCountries is set', async () => {
+    it('interleaves PERSON candidates by group when balanceGroups is set', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
-      const chore = await createChore(event, { balanceCountries: true });
+      const chore = await createChore(event, { balanceGroups: true });
       const otherChore = await createChore(event);
 
       // One duty each, so all three tie on load — balancing only reorders

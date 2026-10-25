@@ -90,7 +90,7 @@
         </div>
 
         <div
-          v-if="stats.hasMultipleCountries.value"
+          v-if="stats.hasMultipleGroups.value"
           class="summary-tile"
         >
           <div class="summary-label">{{ t('countries') }}</div>

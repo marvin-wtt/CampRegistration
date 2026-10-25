@@ -1,6 +1,6 @@
 import type { Event } from '@camp-registration/common/entities';
 import type { PageMeta } from '#core/seo/pageMeta';
-import { eventCountryFields, translate } from '@camp-registration/common/utils';
+import { eventGroupFields, translate } from '@camp-registration/common/utils';
 import { generateUrl } from '#utils/url';
 import config from '#config/index';
 import { naiveDateTimeToUtcCarrier } from '@camp-registration/common/utils';
@@ -46,8 +46,8 @@ export function buildEventPageMeta(event: Event, locale: string): PageMeta {
   // anything else.
   const language = locale.split('-')[0];
 
-  // A link preview has no country: name every country's organizer.
-  const organizer = text(eventCountryFields(event, null).organizer);
+  // A link preview has no group: name every group's organizer.
+  const organizer = text(eventGroupFields(event, null).organizer);
   const location =
     event.location === null
       ? ''

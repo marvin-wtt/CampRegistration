@@ -157,7 +157,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
 
     return {
       event: {
-        // In the template's language: it was picked by the same country.
+        // In the template's language: it was picked by the same group.
         ...translateEventContext(event, this.contact()),
         // Format dates using the registration's full locale
         startAt: formatEventDate(event.startAt, this.locale()),
@@ -196,20 +196,9 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
     };
   }
 
-  protected async attachments(): Promise<MailAttachment[]> {
-    const files = this.payload.message.attachments;
-    if (!files.length) {
-      return [];
-    }
-
-    const fileService = resolve(FileService);
-
-    return Promise.all(
-      files.map(async (file) => ({
-        filename: file.originalName,
-        content: await fileService.getFileBuffer(file),
-        contentType: file.type,
-      })),
+  protected attachments(): Promise<MailAttachment[]> {
+    return resolve(FileService).getMailAttachments(
+      this.payload.message.attachments,
     );
   }
 
@@ -267,8 +256,8 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
     ]);
   }
 
-  // The template is the registration's country's, so the event's texts placed
-  // into it follow that country's language. The mail's own chrome (footer,
+  // The template is the registration's group's, so the event's texts placed
+  // into it follow the language of the group's country. The mail's own chrome (footer,
   // sender name) stays in the participant's language.
   private contact() {
     return eventContactFor(this.payload.event, this.payload.registration);

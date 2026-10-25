@@ -1,4 +1,4 @@
-import type { PerCountry, Translatable } from '../entities/index.js';
+import type { PerGroup, Translatable } from '../entities/index.js';
 
 function isRecord<T>(value: T | Record<string, T>): value is Record<string, T> {
   return typeof value === 'object' && value !== null;
@@ -31,87 +31,87 @@ export function translate<T>(
 }
 
 /**
- * A `PerCountry` value for one country. Without a country only a value that is
- * the same in every country resolves: guessing another country's limit or
- * contact would be wrong rather than incomplete.
+ * A `PerGroup` value for one group. Without a group only a value that is the
+ * same in every group resolves: guessing another group's limit or contact
+ * would be wrong rather than incomplete.
  */
-export function forCountry<T>(
-  value: PerCountry<T> | null | undefined,
-  country: string | null | undefined,
+export function forGroup<T>(
+  value: PerGroup<T> | null | undefined,
+  group: string | null | undefined,
 ): T | undefined {
   if (value === null || value === undefined || !isRecord(value)) {
     return value ?? undefined;
   }
 
-  if (country) {
-    return value[country.toLowerCase()];
+  if (group) {
+    return value[group.toLowerCase()];
   }
 
-  const values = allCountryValues(value);
+  const values = allGroupValues(value);
   return values.length === 1 ? values[0] : undefined;
 }
 
 /**
- * The country a registration belongs to: the one it selected, or the event's
- * only country. A selection the event doesn't run in counts as none — no
- * per-country value or template exists for it.
+ * The group a registration belongs to: the one it selected, or the event's
+ * only one. A selection the event doesn't run counts as none — no per-group
+ * value or template exists for it. An event's groups are its countries.
  */
-export function eventCountry(
+export function eventGroup(
   event: { countries: readonly string[] },
   selected: string | null | undefined,
 ): string | null {
-  const countries = event.countries.map((country) => country.toLowerCase());
-  const country = selected?.toLowerCase();
+  const groups = event.countries.map((group) => group.toLowerCase());
+  const group = selected?.toLowerCase();
 
-  if (country && countries.includes(country)) {
-    return country;
+  if (group && groups.includes(group)) {
+    return group;
   }
 
-  return countries.length === 1 ? countries[0] : null;
+  return groups.length === 1 ? groups[0] : null;
 }
 
-/** Every country's distinct value, for when no single country applies. */
-export function allCountryValues<T>(value: PerCountry<T>): T[] {
+/** Every group's distinct value, for when no single group applies. */
+export function allGroupValues<T>(value: PerGroup<T>): T[] {
   return isRecord(value) ? [...new Set(Object.values(value))] : [value];
 }
 
-/** The sum over every country, e.g. an event's total participant limit. */
-export function sumCountryValues(value: PerCountry<number>): number {
+/** The sum over every group, e.g. an event's total participant limit. */
+export function sumGroupValues(value: PerGroup<number>): number {
   return isRecord(value)
     ? Object.values(value).reduce((sum, count) => sum + count, 0)
     : value;
 }
 
-export interface EventCountryFieldData {
-  organizer: PerCountry<string>;
-  contactEmail: PerCountry<string>;
-  maxParticipants: PerCountry<number>;
-  freePlaces?: PerCountry<number> | null;
+export interface EventGroupFieldData {
+  organizer: PerGroup<string>;
+  contactEmail: PerGroup<string>;
+  maxParticipants: PerGroup<number>;
+  freePlaces?: PerGroup<number> | null;
 }
 
 /**
- * An event's per-country fields for one country — the single rule the form
- * and the mails resolve them by. Without a country (or one the event has no
- * value for) the texts name every country's value and the limit is the
- * event's total; the free places stay unresolved, since a waiting list must
- * not be decided by another country's count.
+ * An event's per-group fields for one group — the single rule the form and
+ * the mails resolve them by. Without a group (or one the event has no value
+ * for) the texts name every group's value and the limit is the event's total;
+ * the free places stay unresolved, since a waiting list must not be decided
+ * by another group's count.
  */
-export function eventCountryFields(
-  event: EventCountryFieldData,
-  country: string | null,
+export function eventGroupFields(
+  event: EventGroupFieldData,
+  group: string | null,
 ) {
   return {
     organizer:
-      forCountry(event.organizer, country) ??
-      allCountryValues(event.organizer).filter(Boolean).join(' / '),
+      forGroup(event.organizer, group) ??
+      allGroupValues(event.organizer).filter(Boolean).join(' / '),
     contactEmail:
-      forCountry(event.contactEmail, country) ??
-      allCountryValues(event.contactEmail).filter(Boolean).join(', '),
-    // Without a country the limit is the event's — the total, even where every
-    // country happens to have the same one.
+      forGroup(event.contactEmail, group) ??
+      allGroupValues(event.contactEmail).filter(Boolean).join(', '),
+    // Without a group the limit is the event's — the total, even where every
+    // group happens to have the same one.
     maxParticipants:
-      (country ? forCountry(event.maxParticipants, country) : undefined) ??
-      sumCountryValues(event.maxParticipants),
-    freePlaces: forCountry(event.freePlaces, country) ?? null,
+      (group ? forGroup(event.maxParticipants, group) : undefined) ??
+      sumGroupValues(event.maxParticipants),
+    freePlaces: forGroup(event.freePlaces, group) ?? null,
   };
 }

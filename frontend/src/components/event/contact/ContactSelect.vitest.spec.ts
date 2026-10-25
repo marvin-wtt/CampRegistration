@@ -9,15 +9,15 @@ import type { Contact } from '@/components/event/contact/Contact';
 
 installQuasarPlugin();
 
-// Whether the event is held across several countries.
-const multiCountryEvent = ref(false);
+// Whether the event is held across several groups.
+const multiGroupEvent = ref(false);
 
 vi.mock('@/composables/eventStatistics', () => ({
-  useEventStatistics: () => ({ multiCountryEvent }),
+  useEventStatistics: () => ({ multiGroupEvent }),
 }));
 
 beforeEach(() => {
-  multiCountryEvent.value = false;
+  multiGroupEvent.value = false;
 });
 
 vi.mock('@/composables/registrationHelper', () => ({
@@ -141,7 +141,7 @@ describe('ContactSelect', () => {
     expect(individual?.type).toBe('waitingList');
   });
 
-  it('creates a group for registrations sharing the same role, country, and waitlist status', () => {
+  it('creates a group for registrations sharing the same role, group, and waitlist status', () => {
     const r1 = createRegistration({ status: 'ACCEPTED' });
     const r2 = createRegistration({ status: 'ACCEPTED' });
 
@@ -153,7 +153,7 @@ describe('ContactSelect', () => {
     expect(group.registrations).toHaveLength(2);
   });
 
-  function inCountry(
+  function inGroup(
     code: string | null,
     overrides: Partial<Registration> = {},
   ): Registration {
@@ -166,36 +166,36 @@ describe('ContactSelect', () => {
     );
   }
 
-  it('offers a group across countries and one per country', () => {
-    multiCountryEvent.value = true;
-    const de1 = inCountry('DE');
-    const de2 = inCountry('DE');
-    const fr = inCountry('FR');
+  it('offers a group across groups and one per group', () => {
+    multiGroupEvent.value = true;
+    const de1 = inGroup('DE');
+    const de2 = inGroup('DE');
+    const fr = inGroup('FR');
 
     const result = groups(getOptions(mountContactSelect([de1, de2, fr])));
 
-    // Countries follow their translated names: France before Germany.
-    expect(result.map((g) => [g.country, g.registrations.length])).toEqual([
+    // Groups follow their translated names: France before Germany.
+    expect(result.map((g) => [g.eventGroup, g.registrations.length])).toEqual([
       [undefined, 3],
       ['FR', 1],
       ['DE', 2],
     ]);
   });
 
-  it('gives registrations without a country a group of their own, listed last', () => {
-    multiCountryEvent.value = true;
+  it('gives registrations without a group a group of their own, listed last', () => {
+    multiGroupEvent.value = true;
     const result = groups(
-      getOptions(mountContactSelect([inCountry(null), inCountry('DE')])),
+      getOptions(mountContactSelect([inGroup(null), inGroup('DE')])),
     );
 
-    expect(result.map((g) => g.country)).toEqual([undefined, 'DE', null]);
+    expect(result.map((g) => g.eventGroup)).toEqual([undefined, 'DE', null]);
   });
 
-  it('offers only the country group for a role within a single country', () => {
-    multiCountryEvent.value = true;
-    const participantDe = inCountry('DE');
-    const participantFr = inCountry('FR');
-    const counselorDe = inCountry('DE', {
+  it('offers only the group group for a role within a single group', () => {
+    multiGroupEvent.value = true;
+    const participantDe = inGroup('DE');
+    const participantFr = inGroup('FR');
+    const counselorDe = inGroup('DE', {
       computedData: { ...baseComputedData(), role: 'counselor' },
     });
 
@@ -209,37 +209,37 @@ describe('ContactSelect', () => {
     );
 
     expect(counselorGroups).toHaveLength(1);
-    expect(counselorGroups[0]?.country).toBe('DE');
+    expect(counselorGroups[0]?.eventGroup).toBe('DE');
   });
 
-  it('ignores countries in an event held in one country', () => {
+  it('ignores groups in an event held in one group', () => {
     const result = groups(
       getOptions(
-        mountContactSelect([inCountry('DE'), inCountry('AT'), inCountry(null)]),
+        mountContactSelect([inGroup('DE'), inGroup('AT'), inGroup(null)]),
       ),
     );
 
     expect(result).toHaveLength(1);
-    expect(result[0]?.country).toBeUndefined();
+    expect(result[0]?.eventGroup).toBeUndefined();
   });
 
-  it('labels the group with its country while an international event has registrations from one', () => {
-    multiCountryEvent.value = true;
+  it('labels the group with its group while an international event has registrations from one', () => {
+    multiGroupEvent.value = true;
     const result = groups(
-      getOptions(mountContactSelect([inCountry('DE'), inCountry('DE')])),
+      getOptions(mountContactSelect([inGroup('DE'), inGroup('DE')])),
     );
 
     expect(result).toHaveLength(1);
-    expect(result[0]?.country).toBe('DE');
+    expect(result[0]?.eventGroup).toBe('DE');
   });
 
-  it('drops a country group once the group across countries is selected', async () => {
-    const de = inCountry('DE');
-    const fr = inCountry('FR');
-    const countryGroup: Contact = {
+  it('drops a group group once the group across groups is selected', async () => {
+    const de = inGroup('DE');
+    const fr = inGroup('FR');
+    const eventGroupContact: Contact = {
       type: 'group',
       name: 'Participant',
-      country: 'DE',
+      eventGroup: 'DE',
       registrations: [de],
     };
     const wholeGroup: Contact = {
@@ -248,8 +248,8 @@ describe('ContactSelect', () => {
       registrations: [de, fr],
     };
 
-    const wrapper = mountContactSelect([de, fr], [countryGroup]);
-    await wrapper.setProps({ modelValue: [countryGroup, wholeGroup] });
+    const wrapper = mountContactSelect([de, fr], [eventGroupContact]);
+    await wrapper.setProps({ modelValue: [eventGroupContact, wholeGroup] });
     await nextTick();
 
     const emitted = wrapper.emitted('update:modelValue') as [Contact[]][];
@@ -286,9 +286,9 @@ describe('ContactSelect', () => {
     expect(result.at(-1)?.registrations[0]?.id).toBe(waiting.id);
   });
 
-  it('finds groups by country name', async () => {
-    multiCountryEvent.value = true;
-    const wrapper = mountContactSelect([inCountry('DE'), inCountry('FR')]);
+  it('finds groups by group name', async () => {
+    multiGroupEvent.value = true;
+    const wrapper = mountContactSelect([inGroup('DE'), inGroup('FR')]);
     const filterFn = wrapper.findComponent(QSelect).props('onFilter') as (
       val: string,
       done: (fn: () => void) => void,
@@ -298,7 +298,7 @@ describe('ContactSelect', () => {
     await nextTick();
 
     const result = groups(getOptions(wrapper));
-    expect(result.map((g) => g.country)).toEqual(['FR']);
+    expect(result.map((g) => g.eventGroup)).toEqual(['FR']);
   });
 
   it('creates separate groups for registrations with different roles', () => {

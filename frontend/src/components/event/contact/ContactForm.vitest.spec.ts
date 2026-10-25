@@ -43,7 +43,7 @@ function createFile(overrides: Partial<ServiceFile> = {}): ServiceFile {
     name: 'attachment.pdf',
     field: null,
     locale: null,
-    country: null,
+    group: null,
     type: 'application/pdf',
     size: 1234,
     accessLevel: null,

@@ -1146,27 +1146,27 @@ describe('/api/v1/events/:eventId/registrations', () => {
             createMany: {
               data: [
                 MessageTemplateFactory.build({
-                  country: 'fr',
+                  group: 'fr',
                   trigger: 'registration_submitted',
                   subject: 'Registration received',
                 }),
                 MessageTemplateFactory.build({
                   trigger: 'registration_confirmed',
                   subject: 'Registration confirmed',
-                  country: 'fr',
+                  group: 'fr',
                 }),
                 MessageTemplateFactory.build({
-                  country: 'fr',
+                  group: 'fr',
                   trigger: 'registration_waitlisted',
                   subject: 'Registration on waiting list',
                 }),
                 MessageTemplateFactory.build({
-                  country: 'fr',
+                  group: 'fr',
                   trigger: 'registration_updated',
                   subject: 'Registration updated',
                 }),
                 MessageTemplateFactory.build({
-                  country: 'fr',
+                  group: 'fr',
                   trigger: 'registration_canceled',
                   subject: 'Registration canceled',
                 }),
@@ -1183,7 +1183,7 @@ describe('/api/v1/events/:eventId/registrations', () => {
             create: MessageTemplateFactory.build({
               trigger: 'registration_confirmed',
               subject: 'Registration confirmed',
-              country: 'de',
+              group: 'de',
             }),
           },
         });
@@ -1755,7 +1755,7 @@ describe('/api/v1/events/:eventId/registrations', () => {
           messageTemplates: {
             create: MessageTemplateFactory.build({
               trigger: 'registration_updated',
-              country: 'fr',
+              group: 'fr',
               subject: 'Registration updated',
             }),
           },
@@ -1787,7 +1787,7 @@ describe('/api/v1/events/:eventId/registrations', () => {
           messageTemplates: {
             create: MessageTemplateFactory.build({
               trigger: 'registration_waitlist_accepted',
-              country: 'fr',
+              group: 'fr',
               subject: 'Registration accepted',
             }),
           },
@@ -2500,12 +2500,12 @@ describe('/api/v1/events/:eventId/registrations', () => {
               data: [
                 MessageTemplateFactory.build({
                   trigger: 'registration_canceled',
-                  country: 'us',
+                  group: 'us',
                   subject: 'Oops',
                 }),
                 MessageTemplateFactory.build({
                   trigger: 'registration_canceled',
-                  country: 'fr',
+                  group: 'fr',
                   subject: 'Registration canceled',
                 }),
               ],
@@ -2540,12 +2540,12 @@ describe('/api/v1/events/:eventId/registrations', () => {
               data: [
                 MessageTemplateFactory.build({
                   trigger: 'registration_canceled',
-                  country: 'us',
+                  group: 'us',
                   subject: 'Oops',
                 }),
                 MessageTemplateFactory.build({
                   trigger: 'registration_canceled',
-                  country: 'fr',
+                  group: 'fr',
                   subject: 'Registration canceled',
                 }),
               ],
@@ -2581,7 +2581,7 @@ describe('/api/v1/events/:eventId/registrations', () => {
             create: MessageTemplateFactory.build({
               trigger: 'registration_canceled',
               subject: 'Registration canceled',
-              country: 'fr',
+              group: 'fr',
             }),
           },
         });

@@ -7,8 +7,8 @@ interface GroupContact {
   type: 'group';
   name: string;
   registrations: Registration[];
-  /** One country's share of the group; `null` for those without one. */
-  country?: string | null;
+  /** One event group's share of it; `null` for those without one. */
+  eventGroup?: string | null;
 }
 
 interface RegistrationContact {

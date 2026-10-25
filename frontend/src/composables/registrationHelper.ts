@@ -97,7 +97,7 @@ export function useRegistrationHelper() {
     return registration.group ?? undefined;
   }
 
-  function addressCountry(registration: Registration): string | undefined {
+  function country(registration: Registration): string | undefined {
     return address(registration)?.country ?? undefined;
   }
 
@@ -135,7 +135,7 @@ export function useRegistrationHelper() {
     age,
     gender,
     group,
-    addressCountry,
+    addressCountry: country,
     address,
     role,
     participant,

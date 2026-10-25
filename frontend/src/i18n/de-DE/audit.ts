@@ -94,7 +94,7 @@ export default {
       label: 'Automatische E-Mail',
       fields: {
         trigger: 'Auslöser',
-        country: 'Land',
+        group: 'Gruppe',
         subject: 'Betreff',
         body: 'Inhalt',
         priority: 'Priorität',

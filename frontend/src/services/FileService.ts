@@ -67,12 +67,12 @@ export function useFileService() {
     slot: string,
     // Without one, the server picks by the browser's Accept-Language.
     locale?: string,
-    // Without one, the server uses the event's only country, if it has one.
-    country?: string | null,
+    // Without one, the server uses the event's only group, if it has one.
+    group?: string | null,
   ): string {
     const params = {
       ...(locale ? { locale } : {}),
-      ...(country ? { country } : {}),
+      ...(group ? { group } : {}),
     };
 
     return api.getUri({

@@ -169,7 +169,7 @@ describe('defaultMessageTemplatesForCountries', () => {
 
     expect(template).toEqual({
       trigger: 'registration_submitted',
-      country: 'gb',
+      group: 'gb',
       subject: subject.en,
       body: body.en,
     });

@@ -59,12 +59,12 @@ async function download() {
       event: eventDetails,
       registration,
       // The registration's own language, whatever the survey renders in.
-      fileUrl: (slot, _locale, country) =>
+      fileUrl: (slot, _locale, group) =>
         api.getEventFileSlotUrl(
           eventDetails.id,
           slot,
           registration.locale,
-          country,
+          group,
         ),
     });
     state.value = 'idle';

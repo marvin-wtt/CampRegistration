@@ -18,6 +18,7 @@ import type { AppConfig } from '#config';
 import { Queue } from '#core/queue/Queue';
 import { QueueManager } from '#core/queue/QueueManager';
 import type { StorageFile } from '#core/storage/storage';
+import type { MailAttachment } from '#core/mail/mail.types';
 import { selectFileByLocale } from '@camp-registration/common/form';
 
 type RequestFile = Express.Multer.File;
@@ -295,7 +296,7 @@ export class FileService extends BaseService {
     field?: string,
     locale?: string | null,
     accessLevel?: string,
-    country?: string | null,
+    group?: string | null,
   ) {
     const originalFileName = name
       ? name + fileNameExtension(file.filename)
@@ -314,7 +315,7 @@ export class FileService extends BaseService {
       data: {
         ...fileData,
         ...modelData,
-        country: country ?? null,
+        group: group ?? null,
         uploadStatus: 'PENDING',
       },
     });
@@ -342,15 +343,14 @@ export class FileService extends BaseService {
 
   /**
    * Resolves the best-matching file for a form slot ({_file.<slot>}) on a model,
-   * country and locale. The slot maps to the file's `field` column. Readiness
+   * group and locale. The slot maps to the file's `field` column. Readiness
    * and access are not checked here — that is the caller's (guard/stream)
    * responsibility.
    *
-   * The country narrows first: a file of the country, else one for every
-   * country (`country` null) — never another country's, since its terms are
-   * not this one's. Only within that group does the locale decide, so a
-   * country's own file in another language beats a generic one in the
-   * reader's.
+   * The group narrows first: a file of the group, else one for every group
+   * (`group` null) — never another group's, since its terms are not this
+   * one's. Only within those does the locale decide, so a group's own file in
+   * another language beats a generic one in the reader's.
    *
    * Several files can share a (field, locale) pair while a replacement is
    * uploading. Ready files are tried first so a pending replacement doesn't
@@ -361,7 +361,7 @@ export class FileService extends BaseService {
     model: ModelData,
     slot: string,
     locale: string | undefined,
-    country: string | null = null,
+    group: string | null = null,
   ): Promise<File | null> {
     const files = await this.prisma.file.findMany({
       where: {
@@ -371,14 +371,14 @@ export class FileService extends BaseService {
       orderBy: { createdAt: 'desc' },
     });
 
-    const groups = [
-      ...(country ? [files.filter((file) => file.country === country)] : []),
-      files.filter((file) => file.country === null),
+    const candidates = [
+      ...(group ? [files.filter((file) => file.group === group)] : []),
+      files.filter((file) => file.group === null),
     ];
     const targetLocale = locale ?? 'en';
 
-    for (const group of groups) {
-      const file = this.pickByLocale(group, targetLocale);
+    for (const pool of candidates) {
+      const file = this.pickByLocale(pool, targetLocale);
       if (file) {
         return file;
       }
@@ -491,6 +491,17 @@ export class FileService extends BaseService {
     return buffer(await this.openReadStream(file));
   }
 
+  /** Files attached to a mail under their original names, read whole. */
+  async getMailAttachments(files: StorageFile[]): Promise<MailAttachment[]> {
+    return Promise.all(
+      files.map(async (file) => ({
+        filename: file.originalName,
+        content: await this.getFileBuffer(file),
+        contentType: file.type,
+      })),
+    );
+  }
+
   // A pending upload already sits complete in the tmp dir, so it is served
   // from there until the queue has moved it — a preview right after upload
   // works. One moved in the meantime is read from its storage instead, with
@@ -523,7 +534,7 @@ export class FileService extends BaseService {
       name?: string;
       field?: string;
       locale?: string | null;
-      country?: string | null;
+      group?: string | null;
       accessLevel?: string;
     },
   ) {
@@ -533,7 +544,7 @@ export class FileService extends BaseService {
         originalName: data.name,
         field: data.field,
         locale: data.locale,
-        country: data.country,
+        group: data.group,
         accessLevel: data.accessLevel,
       },
     });

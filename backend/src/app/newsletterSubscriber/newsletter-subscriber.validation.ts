@@ -25,7 +25,7 @@ const store = z.object({
 
 const importFromEventBody = z.object({
   eventId: z.ulid(),
-  country: z.string().max(5).nullable().optional(),
+  group: z.string().max(5).nullable().optional(),
   requireConsent: z.boolean().optional(),
   consentConfirmed: z.boolean().optional(),
 }) satisfies ZodType<NewsletterSubscriberImportData>;

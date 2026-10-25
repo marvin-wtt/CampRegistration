@@ -265,12 +265,6 @@ export default {
       ],
     },
   ],
-  calculatedValues: [
-    {
-      name: 'waitingList',
-      expression: '{event.freePlaces} <= 0',
-    },
-  ],
   showProgressBar: true,
   progressBarLocation: 'bottom',
   completeText: {

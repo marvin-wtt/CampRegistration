@@ -52,11 +52,14 @@ export class FileController extends BaseController {
     // Set response headers for image display
     res.contentType(file.type);
 
+    // Inline only when nothing asks for a download and the type is safe to
+    // show; every other case downloads, so a request can't opt a script in.
+    const inline = !download && INLINE_MIME_TYPES.has(file.type);
     res.setHeader(
       'Content-disposition',
       this.buildContentDisposition(
         file.originalName,
-        download ?? !INLINE_MIME_TYPES.has(file.type),
+        inline ? 'inline' : 'attachment',
       ),
     );
 
@@ -121,10 +124,10 @@ export class FileController extends BaseController {
   async store(req: Request, res: Response) {
     const model = this.getRelationModel(req);
     const {
-      body: { accessLevel, country, field, locale, name },
+      body: { accessLevel, group, field, locale, name },
       file,
     } = await req.validate(
-      validator.store(this.countriesOf(req, model?.name === 'event')),
+      validator.store(this.groupsOf(req, model?.name === 'event')),
     );
 
     // Use the session id as the default field value if no field is provided
@@ -138,7 +141,7 @@ export class FileController extends BaseController {
       fieldValue,
       locale,
       accessLevel ?? 'private',
-      country,
+      group,
     );
 
     // Files are polymorphic; only event-owned files are a realtime resource.
@@ -152,14 +155,14 @@ export class FileController extends BaseController {
   async update(req: Request, res: Response) {
     const file = req.modelOrFail('file');
     const {
-      body: { accessLevel, country, field, locale, name },
+      body: { accessLevel, group, field, locale, name },
     } = await req.validate(
-      validator.update(this.countriesOf(req, file.eventId !== null), file),
+      validator.update(this.groupsOf(req, file.eventId !== null), file),
     );
 
     const updatedFile = await this.fileService.updateFile(file.id, {
       accessLevel,
-      country,
+      group,
       field,
       locale,
       name,
@@ -192,9 +195,8 @@ export class FileController extends BaseController {
 
   private buildContentDisposition(
     originalName: string,
-    download: boolean | undefined,
+    type: 'inline' | 'attachment',
   ): string {
-    const type = download ? 'attachment' : 'inline';
     try {
       return contentDisposition.create(originalName, { type });
     } catch {
@@ -203,9 +205,9 @@ export class FileController extends BaseController {
     }
   }
 
-  // Only an event's files can be per country. Its model is bound by the event
+  // Only an event's files can be per group. Its model is bound by the event
   // files router on upload and by the event file guard on update.
-  private countriesOf(req: Request, eventOwned: boolean): readonly string[] {
+  private groupsOf(req: Request, eventOwned: boolean): readonly string[] {
     return eventOwned ? req.modelOrFail('event').countries : [];
   }
 

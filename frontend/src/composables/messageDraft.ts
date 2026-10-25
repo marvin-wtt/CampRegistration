@@ -21,7 +21,7 @@ export type StoredRecipient =
       type: 'group';
       name: string;
       registrationIds: string[];
-      country?: string | null;
+      eventGroup?: string | null;
     }
   | { type: 'registration'; registrationId: string };
 

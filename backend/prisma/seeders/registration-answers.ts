@@ -24,6 +24,7 @@ export interface Registrant {
   city: string;
   zipCode: string;
   country: string;
+  group: string;
   guardians: { firstName: string; lastName: string; email: string }[];
   emergencyContacts: { description: string; phoneNumber: string }[];
   medicalRestrictions: string;
@@ -110,10 +111,14 @@ export function buildRegistrationData(
 ): { data: Record<string, unknown>; fileFields: FileField[] } {
   const survey = new SurveyModel(event.form);
   survey.locale = 'en-US';
-  setVariables(survey, {
-    ...event,
-    freePlaces: freePlacesFor(event, options.waitingList ?? false),
-  } as Parameters<typeof setVariables>[1]);
+  setVariables(
+    survey,
+    {
+      ...event,
+      freePlaces: freePlacesFor(event, options.waitingList ?? false),
+    } as Parameters<typeof setVariables>[1],
+    { group: registrant.group },
+  );
 
   const book = answerBook(registrant);
   const fileFields: FileField[] = [];

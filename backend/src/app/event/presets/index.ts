@@ -88,12 +88,12 @@ export function defaultMessageTemplatesForCountries(
 ) {
   const templates = getEventPreset(presetName).messageTemplates;
 
-  return countries.flatMap((country) => {
-    const code = localeForCountry(country);
+  return countries.flatMap((group) => {
+    const code = localeForCountry(group);
 
     return Object.entries(templates).map(([trigger, { subject, body }]) => ({
       trigger,
-      country,
+      group,
       subject: subject[code],
       body: body[code],
     }));

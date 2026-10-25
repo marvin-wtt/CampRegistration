@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
-  eventCountry,
-  eventCountryFields,
-  forCountry,
-  sumCountryValues,
+  eventGroup,
+  eventGroupFields,
+  forGroup,
+  sumGroupValues,
   translate,
 } from '../../../src/utils/translatable.js';
 import { localeForCountry, localesForCountries } from '../../../src/locales.js';
@@ -27,36 +27,36 @@ describe('translate', () => {
   });
 });
 
-describe('forCountry', () => {
+describe('forGroup', () => {
   it("should return the country's value", () => {
-    expect(forCountry({ de: 10, fr: 5 }, 'fr')).toBe(5);
-    expect(forCountry({ de: 10, fr: 5 }, 'FR')).toBe(5);
+    expect(forGroup({ de: 10, fr: 5 }, 'fr')).toBe(5);
+    expect(forGroup({ de: 10, fr: 5 }, 'FR')).toBe(5);
   });
 
   it("should not guess another country's value", () => {
-    expect(forCountry({ de: 10, fr: 5 }, 'pl')).toBeUndefined();
-    expect(forCountry({ de: 10, fr: 5 }, null)).toBeUndefined();
+    expect(forGroup({ de: 10, fr: 5 }, 'pl')).toBeUndefined();
+    expect(forGroup({ de: 10, fr: 5 }, null)).toBeUndefined();
   });
 
   it('should resolve a value that is the same in every country', () => {
-    expect(forCountry(12, 'de')).toBe(12);
-    expect(forCountry({ de: 10, fr: 10 }, null)).toBe(10);
+    expect(forGroup(12, 'de')).toBe(12);
+    expect(forGroup({ de: 10, fr: 10 }, null)).toBe(10);
   });
 });
 
-describe('eventCountry', () => {
+describe('eventGroup', () => {
   it('should prefer the selected country', () => {
-    expect(eventCountry({ countries: ['de', 'fr'] }, 'FR')).toBe('fr');
+    expect(eventGroup({ countries: ['de', 'fr'] }, 'FR')).toBe('fr');
   });
 
   it("should fall back to the event's only country", () => {
-    expect(eventCountry({ countries: ['gb'] }, null)).toBe('gb');
-    expect(eventCountry({ countries: ['de', 'fr'] }, undefined)).toBeNull();
+    expect(eventGroup({ countries: ['gb'] }, null)).toBe('gb');
+    expect(eventGroup({ countries: ['de', 'fr'] }, undefined)).toBeNull();
   });
 
   it("should ignore a selection the event doesn't run in", () => {
-    expect(eventCountry({ countries: ['de'] }, 'at')).toBe('de');
-    expect(eventCountry({ countries: ['de', 'fr'] }, 'at')).toBeNull();
+    expect(eventGroup({ countries: ['de'] }, 'at')).toBe('de');
+    expect(eventGroup({ countries: ['de', 'fr'] }, 'at')).toBeNull();
   });
 });
 
@@ -76,14 +76,14 @@ describe('country locales', () => {
   });
 });
 
-describe('sumCountryValues', () => {
+describe('sumGroupValues', () => {
   it('should count countries with the same value each', () => {
-    expect(sumCountryValues({ de: 10, fr: 10 })).toBe(20);
-    expect(sumCountryValues(12)).toBe(12);
+    expect(sumGroupValues({ de: 10, fr: 10 })).toBe(20);
+    expect(sumGroupValues(12)).toBe(12);
   });
 });
 
-describe('eventCountryFields', () => {
+describe('eventGroupFields', () => {
   const event = {
     organizer: { de: 'Verein', fr: 'Association' },
     contactEmail: { de: 'de@test', fr: 'fr@test' },
@@ -92,7 +92,7 @@ describe('eventCountryFields', () => {
   };
 
   it('should resolve every field for the country', () => {
-    expect(eventCountryFields(event, 'fr')).toEqual({
+    expect(eventGroupFields(event, 'fr')).toEqual({
       organizer: 'Association',
       contactEmail: 'fr@test',
       maxParticipants: 10,
@@ -101,7 +101,7 @@ describe('eventCountryFields', () => {
   });
 
   it('should cover every country without one, but never guess free places', () => {
-    expect(eventCountryFields(event, null)).toEqual({
+    expect(eventGroupFields(event, null)).toEqual({
       organizer: 'Verein / Association',
       contactEmail: 'de@test, fr@test',
       maxParticipants: 20,
@@ -110,7 +110,7 @@ describe('eventCountryFields', () => {
   });
 
   it('should treat a country the event has no value for like no country', () => {
-    expect(eventCountryFields(event, 'pl')).toMatchObject({
+    expect(eventGroupFields(event, 'pl')).toMatchObject({
       organizer: 'Verein / Association',
       freePlaces: null,
     });

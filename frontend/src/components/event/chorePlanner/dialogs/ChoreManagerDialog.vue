@@ -139,7 +139,7 @@ function choreSummary(chore: Chore): string {
     chore.slots.length > 0
       ? chore.slots.map((slot) => to(slot.name)).join(', ')
       : undefined,
-    chore.balanceCountries ? t('dutyType.balanceCountries') : undefined,
+    chore.balanceGroups ? t('dutyType.balanceGroups') : undefined,
   ]
     .filter(Boolean)
     .join(' · ');
@@ -238,7 +238,7 @@ dutyType:
     LIGHT: 'Light'
     NORMAL: 'Normal effort'
     HEAVY: 'Heavy'
-  balanceCountries: 'Country-balanced'
+  balanceGroups: 'Group-balanced'
 
 dialog:
   deleteDuty:
@@ -269,7 +269,7 @@ dutyType:
     LIGHT: 'Leicht'
     NORMAL: 'Normaler Aufwand'
     HEAVY: 'Schwer'
-  balanceCountries: 'Länderausgleich'
+  balanceGroups: 'Gruppenausgleich'
 
 dialog:
   deleteDuty:
@@ -300,7 +300,7 @@ dutyType:
     LIGHT: 'Léger'
     NORMAL: 'Effort normal'
     HEAVY: 'Lourd'
-  balanceCountries: 'Équilibre des pays'
+  balanceGroups: 'Équilibre des groupes'
 
 dialog:
   deleteDuty:
@@ -331,7 +331,7 @@ dutyType:
     LIGHT: 'Lekki'
     NORMAL: 'Normalny wysiłek'
     HEAVY: 'Ciężki'
-  balanceCountries: 'Równoważenie krajów'
+  balanceGroups: 'Równoważenie grup'
 
 dialog:
   deleteDuty:
@@ -362,7 +362,7 @@ dutyType:
     LIGHT: 'Lehká'
     NORMAL: 'Běžná náročnost'
     HEAVY: 'Těžká'
-  balanceCountries: 'Vyvážení zemí'
+  balanceGroups: 'Vyvážení skupin'
 
 dialog:
   deleteDuty:

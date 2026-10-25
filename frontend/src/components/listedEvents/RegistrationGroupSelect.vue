@@ -40,14 +40,14 @@
     >
       <q-item
         v-for="option in options"
-        :key="option.country"
+        :key="option.group"
         clickable
         class="group-select__item"
-        :data-test="`registration-group-${option.country}`"
-        @click="emit('select', option.country)"
+        :data-test="`registration-group-${option.group}`"
+        @click="emit('select', option.group)"
       >
         <q-item-section avatar>
-          <country-icon :country="option.country" />
+          <country-icon :country="option.group" />
         </q-item-section>
         <q-item-section>
           <q-item-label class="text-body1">{{ option.name }}</q-item-label>
@@ -86,7 +86,7 @@ const { event } = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'select', country: string): void;
+  (e: 'select', group: string): void;
 }>();
 
 const { t, locale } = useI18n();
@@ -110,17 +110,17 @@ const details = computed<string>(() =>
 );
 
 interface GroupOption {
-  country: string;
+  group: string;
   name: string;
   // Null when the event shares one limit or doesn't publish its free places.
   free: number | null;
 }
 
 const options = computed<GroupOption[]>(() =>
-  event.countries.map((country) => ({
-    country,
-    name: countryName(country, locale.value),
-    free: groupFreePlaces(event, country),
+  event.countries.map((group) => ({
+    group,
+    name: countryName(group, locale.value),
+    free: groupFreePlaces(event, group),
   })),
 );
 </script>

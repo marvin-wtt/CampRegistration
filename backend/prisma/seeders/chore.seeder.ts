@@ -23,7 +23,7 @@ interface ChoreData {
   supervisorCount?: number;
   eligibility?: ChoreEligibility;
   effort?: ChoreEffort;
-  balanceCountries?: boolean;
+  balanceGroups?: boolean;
   slots?: ChoreSlotData[];
 }
 
@@ -49,7 +49,7 @@ const SUMMER_CHORES: ChoreData[] = [
     name: { en: 'Kitchen Duty', fr: 'Service de cuisine' },
     defaultCount: 4,
     eligibility: 'PARTICIPANTS',
-    balanceCountries: true,
+    balanceGroups: true,
     slots: [
       {
         name: { en: 'Breakfast', fr: 'Petit-déjeuner' },
@@ -190,7 +190,7 @@ class ChoreSeeder extends BaseSeeder {
           supervisorCount: chore.supervisorCount,
           eligibility: chore.eligibility,
           effort: chore.effort,
-          balanceCountries: chore.balanceCountries,
+          balanceGroups: chore.balanceGroups,
           slots: {
             createMany: {
               data: (chore.slots ?? []).map((slot, sortOrder) => ({

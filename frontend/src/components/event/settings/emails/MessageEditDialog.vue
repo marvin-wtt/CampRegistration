@@ -17,7 +17,9 @@
           </div>
           <div class="text-subtitle2">
             {{ name }}
-            <template v-if="country"> ({{ country }}) </template>
+            <template v-if="group">
+              · {{ t('field.group', { group: countryName(group, locale) }) }}
+            </template>
           </div>
         </q-card-section>
 
@@ -94,6 +96,7 @@
 <script setup lang="ts">
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
+import { countryName } from '@/utils/countries';
 import { reactive, ref } from 'vue';
 import RegistrationEmailEditor from '@/components/event/contact/RegistrationEmailEditor.vue';
 import type {
@@ -107,11 +110,11 @@ import FileInput, {
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 defineEmits([...useDialogPluginComponent.emits]);
 
-const { name, trigger, subject, body, form, country, attachments, saveFn } =
+const { name, trigger, subject, body, form, group, attachments, saveFn } =
   defineProps<{
     name: string;
     trigger: string;
@@ -119,7 +122,7 @@ const { name, trigger, subject, body, form, country, attachments, saveFn } =
     body: string;
     attachments: ServiceFile[] | null;
     form: EventDetails['form'];
-    country: string;
+    group: string;
 
     saveFn: (data: {
       subject: string;
@@ -155,7 +158,7 @@ action:
   cancel: 'Cancel'
 
 field:
-  country: 'Edit template for participants from:'
+  group: 'Group: {group}'
   subject:
     label: 'Subject:'
     placeholder: 'Type your subject here...'
@@ -179,7 +182,7 @@ action:
   cancel: 'Abbrechen'
 
 field:
-  country: 'Vorlage bearbeiten für Teilnehmer aus:'
+  group: 'Gruppe: {group}'
   subject:
     label: 'Betreff:'
     placeholder: 'Gib hier deinen Betreff ein...'
@@ -203,7 +206,7 @@ action:
   cancel: 'Annuler'
 
 field:
-  country: 'Modifier le modèle pour les participants venant de :'
+  group: 'Groupe : {group}'
   subject:
     label: 'Objet :'
     placeholder: 'Tapez votre objet ici...'
@@ -227,7 +230,7 @@ action:
   cancel: 'Anuluj'
 
 field:
-  country: 'Edytuj szablon dla uczestników z:'
+  group: 'Grupa: {group}'
   subject:
     label: 'Temat:'
     placeholder: 'Wpisz tutaj temat...'
@@ -251,7 +254,7 @@ action:
   cancel: 'Zrušit'
 
 field:
-  country: 'Upravit šablonu pro účastníky z:'
+  group: 'Skupina: {group}'
   subject:
     label: 'Předmět:'
     placeholder: 'Zadejte zde předmět...'

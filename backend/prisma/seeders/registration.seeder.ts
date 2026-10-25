@@ -36,11 +36,11 @@ export class RegistrationSeeder {
       );
 
       const files = await this.seedUploads(fileFields, data);
-      const locale = localeForCountry(registrant.country);
+      const locale = localeForCountry(registrant.group);
 
       await RegistrationFactory.create({
         event: { connect: { id: this.event.id } },
-        ...this.computedData(data, waitingList, registrant.country, locale),
+        ...this.computedData(data, waitingList, registrant.group, locale),
         locale,
         data,
         files: files.length
@@ -60,7 +60,7 @@ export class RegistrationSeeder {
   }
 
   private createRegistrant(overrides: Data): Registrant {
-    const country =
+    const group =
       (overrides.group as string | undefined) ??
       faker.helpers.arrayElement(this.event.countries);
     const role = (overrides.role as string | undefined) ?? 'participant';
@@ -88,7 +88,8 @@ export class RegistrationSeeder {
       street: faker.location.streetAddress(),
       city: faker.location.city(),
       zipCode: faker.location.zipCode(),
-      country,
+      country: group,
+      group,
       guardians: faker.helpers.multiple(
         () => ({
           firstName: faker.person.firstName(),

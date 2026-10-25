@@ -1,8 +1,8 @@
 import type { SurveyModel } from 'survey-core';
-import type { PerCountry, Translatable } from '../../entities/index.js';
+import type { PerGroup, Translatable } from '../../entities/index.js';
 import {
-  eventCountry,
-  eventCountryFields,
+  eventGroup,
+  eventGroupFields,
   translate,
   utcCarrierToNaiveDateTime,
 } from '../../utils/index.js';
@@ -10,9 +10,9 @@ import {
 export interface Data {
   countries: string[];
   name: Translatable;
-  organizer: PerCountry<string>;
-  contactEmail: PerCountry<string>;
-  maxParticipants: PerCountry<number>;
+  organizer: PerGroup<string>;
+  contactEmail: PerGroup<string>;
+  maxParticipants: PerGroup<number>;
   // Naive local datetimes, or the backend's UTC carriers of them.
   startAt: Date | string;
   endAt: Date | string;
@@ -20,7 +20,7 @@ export interface Data {
   maxAge: number;
   location: Translatable | null;
   price: number;
-  freePlaces: PerCountry<number> | null;
+  freePlaces: PerGroup<number> | null;
   logo?: string | null;
 }
 
@@ -43,31 +43,31 @@ const EVENT_VARIABLES = [
 
 type EventVariable = (typeof EVENT_VARIABLES)[number];
 
-type CountryVariable = keyof ReturnType<typeof eventCountryFields>;
+type GroupVariable = keyof ReturnType<typeof eventGroupFields>;
 
-// Resolved for the group. A record, so a field added to `eventCountryFields`
+// Resolved for the group. A record, so a field added to `eventGroupFields`
 // can't be forgotten here.
-const COUNTRY_FIELDS: Record<CountryVariable, true> = {
+const GROUP_FIELDS: Record<GroupVariable, true> = {
   organizer: true,
   contactEmail: true,
   maxParticipants: true,
   freePlaces: true,
 };
 
-const COUNTRY_VARIABLES = Object.keys(COUNTRY_FIELDS) as CountryVariable[];
+const GROUP_VARIABLES = Object.keys(GROUP_FIELDS) as GroupVariable[];
 
 // Every variable `setVariables` defines. Forms reference them in expressions,
 // so the form editor's linter must know them.
 export const VARIABLE_NAMES: readonly string[] = [
   ...EVENT_VARIABLES.map((name) => `event.${name}`),
-  ...COUNTRY_VARIABLES.map((name) => `event.${name}`),
+  ...GROUP_VARIABLES.map((name) => `event.${name}`),
   'event.group',
   '_validationEnabled',
 ];
 
 export interface VariableOptions {
   // The group chosen before the form, by its country code. Without one, only
-  // a single-country event resolves its per-country fields.
+  // a single-group event resolves its per-group fields.
   group?: string | null | undefined;
 }
 
@@ -108,10 +108,10 @@ export const setVariables = (
 
   model.setVariable('_validationEnabled', model.validationEnabled);
 
-  const group = eventCountry(data, options.group);
-  const fields = eventCountryFields(data, group);
+  const group = eventGroup(data, options.group);
+  const fields = eventGroupFields(data, group);
   model.setVariable('event.group', group);
-  for (const name of COUNTRY_VARIABLES) {
+  for (const name of GROUP_VARIABLES) {
     model.setVariable(`event.${name}`, fields[name]);
   }
 };

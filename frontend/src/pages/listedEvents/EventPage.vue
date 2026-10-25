@@ -139,7 +139,7 @@ import {
   type EventDetails,
   type EventRegistrationStatus,
 } from '@camp-registration/common/entities';
-import { allCountryValues } from '@camp-registration/common/utils';
+import { allGroupValues } from '@camp-registration/common/utils';
 import { isAPIServiceError, useAPIService } from '@/services/APIService';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -194,17 +194,17 @@ const registrationFormVisible = computed<boolean>(() => {
 
 // The group the form is filled in for, chosen before the form and kept in
 // `?group=` so a link can preselect it and a reload keeps it. Undefined while
-// a multi-country event still needs the choice.
+// an event with several groups still needs the choice.
 const group = computed<string | null | undefined>(() => {
-  const countries = event.value?.countries ?? [];
-  if (countries.length <= 1) {
-    return countries[0] ?? null;
+  const groups = event.value?.countries ?? [];
+  if (groups.length <= 1) {
+    return groups[0] ?? null;
   }
 
   const query = route.query.group;
   const selected = typeof query === 'string' ? query.toLowerCase() : null;
 
-  return selected && countries.includes(selected) ? selected : undefined;
+  return selected && groups.includes(selected) ? selected : undefined;
 });
 
 // A new form starts active; the previous one may have ended in its
@@ -246,7 +246,7 @@ function backToGroupChoice() {
 // Bumped to start an empty form for the same group.
 const formRun = ref<number>(0);
 
-// The next person may belong to another group, so a multi-country event asks
+// The next person may belong to another group, so an event with several asks
 // again; otherwise the form simply starts over.
 function registerAnother() {
   if ((event.value?.countries.length ?? 0) > 1) {
@@ -323,7 +323,7 @@ const eventContactEmails = computed<string[]>(() => {
     return [];
   }
 
-  return allCountryValues(event.value.contactEmail).filter(Boolean);
+  return allGroupValues(event.value.contactEmail).filter(Boolean);
 });
 
 const statusIcon = computed<string>(() => {

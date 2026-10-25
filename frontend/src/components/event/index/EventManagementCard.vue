@@ -175,7 +175,7 @@ import { copyToClipboard, useQuasar } from 'quasar';
 import type { Event } from '@camp-registration/common/entities';
 import type { ScopePermission } from '@camp-registration/common/permissions';
 import {
-  sumCountryValues,
+  sumGroupValues,
   zonedInstant,
 } from '@camp-registration/common/utils';
 import { computed, type Ref, ref } from 'vue';
@@ -271,7 +271,7 @@ interface Capacity {
 }
 
 const capacity = computed<Capacity | null>(() => {
-  const max = sumCountryValues(event.maxParticipants);
+  const max = sumGroupValues(event.maxParticipants);
   if (max <= 0) {
     return null;
   }

@@ -9,7 +9,7 @@ import {
   type RegistrationDeleteQuery,
 } from '@camp-registration/common/entities';
 import type { EventWithRelations } from '#app/event/event.types';
-import { eventCountry } from '@camp-registration/common/utils';
+import { eventGroup } from '@camp-registration/common/utils';
 
 const RegistrationDataSchema = z.record(z.string(), z.unknown());
 
@@ -44,11 +44,11 @@ const store = (event: EventWithRelations, fallbackLocale: string) =>
           .string()
           .toLowerCase()
           .refine((group) => event.countries.includes(group), {
-            message: 'Group is not one of the event countries',
+            message: 'Not a group of the event',
           })
           .nullable()
           .optional()
-          .transform((group) => eventCountry(event, group)),
+          .transform((group) => eventGroup(event, group)),
       })
       .superRefine(async ({ data, locale, group }, ctx) => {
         if (event.countries.length > 1 && !group) {
@@ -93,7 +93,7 @@ const update = (event: EventWithRelations) =>
           .string()
           .toLowerCase()
           .refine((group) => event.countries.includes(group), {
-            message: 'Group is not one of the event countries',
+            message: 'Not a group of the event',
           }),
       })
       .partial() satisfies ZodType<RegistrationUpdateData>,

@@ -38,7 +38,7 @@ export class MessageTemplateController extends BaseController {
 
   async store(req: Request, res: Response) {
     const {
-      body: { country, trigger, subject, body, priority, attachmentIds },
+      body: { group, trigger, subject, body, priority, attachmentIds },
     } = await req.validate(validator.store);
     const event = req.modelOrFail('event');
 
@@ -46,7 +46,7 @@ export class MessageTemplateController extends BaseController {
     const existing = await this.messageTemplateService.getMessageTemplateByName(
       event.id,
       trigger,
-      country,
+      group,
     );
 
     if (existing) {
@@ -58,7 +58,7 @@ export class MessageTemplateController extends BaseController {
 
     const template = await this.messageTemplateService.createTemplate(
       event.id,
-      { trigger, country, subject, body, priority, attachmentIds },
+      { trigger, group, subject, body, priority, attachmentIds },
       req.sessionId,
     );
 

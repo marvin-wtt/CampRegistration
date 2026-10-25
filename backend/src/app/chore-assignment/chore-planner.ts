@@ -67,7 +67,7 @@ export interface OccurrenceSpec {
   effort: ChoreEffort;
   unit: ChoreRotationUnit;
   eligibility: ChoreEligibility;
-  balanceCountries: boolean;
+  balanceGroups: boolean;
   headcount: number;
   supervisorCount: number;
 }
@@ -75,7 +75,7 @@ export interface OccurrenceSpec {
 interface RankContext {
   choreId: string;
   date?: string | undefined;
-  balanceCountries?: boolean | undefined;
+  balanceGroups?: boolean | undefined;
   // Groups already on the duty, so balancing continues from them.
   groupCounts?: ReadonlyMap<string, number> | undefined;
   random?: (() => number) | undefined;
@@ -227,7 +227,7 @@ function rank<T extends Ranked>(items: T[], ctx: RankContext): T[] {
     (a, b) => compareRanked(a, b) === 0,
     ctx.random,
   );
-  if (!ctx.balanceCountries) {
+  if (!ctx.balanceGroups) {
     return sorted;
   }
 
@@ -334,7 +334,7 @@ export function pickForOccurrence(
   const ctx: RankContext = {
     choreId: spec.choreId,
     date: spec.date,
-    balanceCountries: spec.balanceCountries,
+    balanceGroups: spec.balanceGroups,
     groupCounts: groupsOf(pool, existing),
     random,
   };
@@ -382,7 +382,7 @@ export function pickForOccurrence(
       spec.eligibility,
     ).filter((person) => !taken.has(person.id));
     picks.push(
-      ...rankPeople(ledger, supervisors, { ...ctx, balanceCountries: false })
+      ...rankPeople(ledger, supervisors, { ...ctx, balanceGroups: false })
         .slice(0, missingSupervisors)
         .map(({ person }) => ({
           registrationId: person.id,

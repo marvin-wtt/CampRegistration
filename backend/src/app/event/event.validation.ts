@@ -83,12 +83,11 @@ function validateRecordKeys(
 }
 
 // Text is keyed by the languages the event's countries write in (`en`, `cs`);
-// per-country values by the countries themselves (`gb`, `cz`).
+// per-group values by the groups, the countries themselves (`gb`, `cz`).
 const LOCALE_KEYED = ['name', 'location'] as const;
-const COUNTRY_KEYED = ['organizer', 'contactEmail', 'maxParticipants'] as const;
+const GROUP_KEYED = ['organizer', 'contactEmail', 'maxParticipants'] as const;
 
-type KeyedField =
-  (typeof LOCALE_KEYED)[number] | (typeof COUNTRY_KEYED)[number];
+type KeyedField = (typeof LOCALE_KEYED)[number] | (typeof GROUP_KEYED)[number];
 
 /**
  * Reports every keyed field whose record doesn't hold exactly the keys the
@@ -103,7 +102,7 @@ function checkRecordKeys(
     ...LOCALE_KEYED.map(
       (key) => [key, localesForCountries(countries)] as const,
     ),
-    ...COUNTRY_KEYED.map((key) => [key, countries] as const),
+    ...GROUP_KEYED.map((key) => [key, countries] as const),
   ];
 
   for (const [key, allowedKeys] of fields) {

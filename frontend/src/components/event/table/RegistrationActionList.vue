@@ -179,13 +179,12 @@ function hasTemplateForTrigger(
     return true;
   }
 
-  const country = registration.group ?? null;
+  const group = registration.group ?? null;
 
   return allTemplates
     .filter((tmpl) => tmpl.trigger === trigger)
     .some(
-      (tmpl) =>
-        country === null || tmpl.country === null || tmpl.country === country,
+      (tmpl) => group === null || tmpl.group === null || tmpl.group === group,
     );
 }
 

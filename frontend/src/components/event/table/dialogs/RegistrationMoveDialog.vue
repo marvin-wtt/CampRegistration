@@ -121,13 +121,13 @@ interface MoveOption {
 
 const options = computed<MoveOption[]>(() =>
   event.countries
-    .filter((country) => country !== registration.group)
-    .map((country) => {
-      const free = groupFreePlaces(event, country);
+    .filter((group) => group !== registration.group)
+    .map((group) => {
+      const free = groupFreePlaces(event, group);
 
       return {
-        value: country,
-        label: countryName(country, locale.value),
+        value: group,
+        label: countryName(group, locale.value),
         caption:
           free === null
             ? null
@@ -142,7 +142,7 @@ const options = computed<MoveOption[]>(() =>
 <i18n locale="en" lang="yaml">
 title: 'Change group'
 text: 'Move the registration of {name} from {current} to:'
-warning: 'The registration was filled in and its terms accepted for {current}. The answers stay as given and are not checked against the new country. Status and waiting list stay unchanged, and no message is sent.'
+warning: 'The registration was filled in and its terms accepted for {current}. The answers stay as given and are not checked against the new group. Status and waiting list stay unchanged, and no message is sent.'
 full: 'No places left'
 placesLeft: 'No places left | 1 place left | {count} places left'
 action:
@@ -153,7 +153,7 @@ action:
 <i18n locale="de" lang="yaml">
 title: 'Gruppe wechseln'
 text: 'Anmeldung von {name} von {current} verschieben nach:'
-warning: 'Die Anmeldung wurde für {current} ausgefüllt und deren Bedingungen akzeptiert. Die Antworten bleiben unverändert und werden nicht gegen das neue Land geprüft. Status und Warteliste bleiben gleich, und es wird keine Nachricht gesendet.'
+warning: 'Die Anmeldung wurde für {current} ausgefüllt und deren Bedingungen akzeptiert. Die Antworten bleiben unverändert und werden nicht gegen die neue Gruppe geprüft. Status und Warteliste bleiben gleich, und es wird keine Nachricht gesendet.'
 full: 'Keine Plätze frei'
 placesLeft: 'Keine Plätze frei | 1 Platz frei | {count} Plätze frei'
 action:
@@ -164,7 +164,7 @@ action:
 <i18n locale="fr" lang="yaml">
 title: 'Changer de groupe'
 text: "Déplacer l'inscription de {name} de {current} vers :"
-warning: "L'inscription a été remplie et ses conditions acceptées pour {current}. Les réponses restent telles quelles et ne sont pas vérifiées pour le nouveau pays. Le statut et la liste d'attente ne changent pas, et aucun message n'est envoyé."
+warning: "L'inscription a été remplie et ses conditions acceptées pour {current}. Les réponses restent telles quelles et ne sont pas vérifiées pour le nouveau groupe. Le statut et la liste d'attente ne changent pas, et aucun message n'est envoyé."
 full: 'Aucune place restante'
 placesLeft: 'Aucune place restante | 1 place restante | {count} places restantes'
 action:
@@ -175,7 +175,7 @@ action:
 <i18n locale="pl" lang="yaml">
 title: 'Zmień grupę'
 text: 'Przenieś zgłoszenie {name} z: {current} do:'
-warning: 'Zgłoszenie zostało wypełnione, a jego warunki zaakceptowane dla: {current}. Odpowiedzi pozostają bez zmian i nie są sprawdzane pod kątem nowego kraju. Status i lista oczekujących się nie zmieniają, a żadna wiadomość nie zostanie wysłana.'
+warning: 'Zgłoszenie zostało wypełnione, a jego warunki zaakceptowane dla: {current}. Odpowiedzi pozostają bez zmian i nie są sprawdzane pod kątem nowej grupy. Status i lista oczekujących się nie zmieniają, a żadna wiadomość nie zostanie wysłana.'
 full: 'Brak wolnych miejsc'
 placesLeft: 'Wolne miejsca: {count}'
 action:
@@ -186,7 +186,7 @@ action:
 <i18n locale="cs" lang="yaml">
 title: 'Změnit skupinu'
 text: 'Přesunout registraci {name} z: {current} do:'
-warning: 'Registrace byla vyplněna a její podmínky přijaty pro: {current}. Odpovědi zůstávají beze změny a nekontrolují se vůči nové zemi. Stav ani čekací listina se nemění a žádná zpráva se neodešle.'
+warning: 'Registrace byla vyplněna a její podmínky přijaty pro: {current}. Odpovědi zůstávají beze změny a nekontrolují se vůči nové skupině. Stav ani čekací listina se nemění a žádná zpráva se neodešle.'
 full: 'Žádná volná místa'
 placesLeft: 'Volná místa: {count}'
 action:

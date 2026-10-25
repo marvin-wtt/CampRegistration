@@ -10,7 +10,7 @@ import validator from '#app/file/file.validation';
 import { ModuleRouter } from '#core/router/ModuleRouter';
 import { resolve } from '#core/ioc/container';
 import ApiError from '#utils/ApiError';
-import { eventCountry } from '@camp-registration/common/utils';
+import { eventGroup } from '@camp-registration/common/utils';
 
 export class EventFilesRouter extends ModuleRouter {
   private readonly fileService = resolve(FileService);
@@ -73,7 +73,7 @@ export class EventFilesRouter extends ModuleRouter {
     const event = req.modelOrFail('event');
     const {
       params: { slot },
-      query: { locale, country },
+      query: { locale, group },
     } = await req.validate(validator.slotFile);
 
     const file = await this.fileService.getModelFileForSlot(
@@ -84,9 +84,9 @@ export class EventFilesRouter extends ModuleRouter {
       // the query. For everyone else (a plain `<img>`, a crawler fetching a
       // link preview) the header is a far better guess than a fixed default.
       locale ?? req.preferredLocale(),
-      // The country the form selected, else the event's only one. Without
-      // either, only a file for every country is served.
-      eventCountry(event, country),
+      // The group the form is for, else the event's only one. Without either,
+      // only a file for every group is served.
+      eventGroup(event, group),
     );
 
     if (!file) {

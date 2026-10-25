@@ -516,7 +516,7 @@ export class ChoreAssignmentService extends BaseService {
     const ctx = {
       choreId: chore.id,
       date: query.date,
-      balanceCountries: query.role === 'MEMBER' && chore.balanceCountries,
+      balanceGroups: query.role === 'MEMBER' && chore.balanceGroups,
     };
 
     const unit = query.role === 'SUPERVISOR' ? 'PERSON' : query.unit;
@@ -697,7 +697,7 @@ function occurrenceSpec(
     unit,
     effort: effortOf(chore, slot),
     eligibility: chore.eligibility,
-    balanceCountries: chore.balanceCountries,
+    balanceGroups: chore.balanceGroups,
     headcount: slot?.headcount ?? chore.defaultCount ?? 0,
     supervisorCount: slot?.supervisorCount ?? chore.supervisorCount,
   };

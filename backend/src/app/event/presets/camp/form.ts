@@ -890,8 +890,8 @@ export default {
               type: 'expression',
               text: {
                 en: 'You must be a legal guardian',
-                de: 'Sie müssen Sorgeberechtigte:r sein',
-                fr: "Vous devez être titulaire de l'autorité parentale",
+                de: 'Du musst Sorgeberechtigte:r sein',
+                fr: "Tu dois être titulaire de l'autorité parentale",
                 pl: 'Musisz być opiekunem prawnym',
                 cs: 'Musíš být zákonným zástupcem',
                 default: 'You must be a legal guardian',
@@ -919,10 +919,6 @@ export default {
     {
       name: 'isminor',
       expression: 'isMinor({date_of_birth}, {event.startAt})',
-    },
-    {
-      name: 'waitingList',
-      expression: '{event.freePlaces} <= 0',
     },
   ],
   showProgressBar: true,

@@ -11,13 +11,13 @@ const stream = z.object({
   }),
   query: z
     .object({
-      download: z.boolean(),
+      download: z.stringbool(),
     })
     .partial(),
 });
 
-// A country an event runs in, as event countries are stored (`gb`, `cz`).
-const COUNTRY = z.string().regex(/^[a-z]{2}$/);
+// A group, by its country code as event countries are stored (`gb`, `cz`).
+const GROUP = z.string().regex(/^[a-z]{2}$/);
 
 const show = z.object({
   params: z.object({
@@ -32,7 +32,7 @@ const slotFile = z.object({
   query: z
     .object({
       locale: z.string(),
-      country: COUNTRY,
+      group: GROUP,
     })
     .partial(),
 });
@@ -51,72 +51,72 @@ const metadata = z.object({
   name: z.string().optional(),
   field: z.string().optional(),
   locale: z.string().nullable().optional(),
-  country: COUNTRY.nullable().optional(),
+  group: GROUP.nullable().optional(),
   accessLevel: z.enum(['private', 'public']).optional(),
 }) satisfies ZodType<ServiceFileUpdateData>;
 
-// The logo and banner are the event's own, the same in every country.
-const COUNTRYLESS_FIELDS: readonly (string | null)[] = [
+// The logo and banner are the event's own, the same in every group.
+const GROUPLESS_FIELDS: readonly (string | null)[] = [
   EVENT_LOGO_SLOT,
   EVENT_BANNER_SLOT,
 ];
 
 interface StoredFile {
   field: string | null;
-  country: string | null;
+  group: string | null;
 }
 
 /**
- * A file names only a country its owner runs in — an event's; nothing else has
- * any — and none for a slot that is the same everywhere. An update is checked
- * against the stored file it changes, but only when it touches the country or
+ * A file names only a group its owner runs — an event's; nothing else has any
+ * — and none for a slot that is the same everywhere. An update is checked
+ * against the stored file it changes, but only when it touches the group or
  * the field, so an unrelated edit isn't rejected over what is already stored.
  */
-const withCountryCheck = (countries: readonly string[], stored?: StoredFile) =>
+const withGroupCheck = (groups: readonly string[], stored?: StoredFile) =>
   metadata.superRefine((body, ctx) => {
-    if (body.country === undefined && body.field === undefined) {
+    if (body.group === undefined && body.field === undefined) {
       return;
     }
 
-    const country = body.country === undefined ? stored?.country : body.country;
-    if (!country) {
+    const group = body.group === undefined ? stored?.group : body.group;
+    if (!group) {
       return;
     }
 
-    if (!countries.includes(country)) {
+    if (!groups.includes(group)) {
       ctx.addIssue({
         code: 'custom',
-        message: 'Not a country of the event',
-        path: ['country'],
-        input: country,
+        message: 'Not a group of the event',
+        path: ['group'],
+        input: group,
       });
     }
 
     const field = body.field ?? stored?.field ?? null;
-    if (COUNTRYLESS_FIELDS.includes(field)) {
+    if (GROUPLESS_FIELDS.includes(field)) {
       ctx.addIssue({
         code: 'custom',
-        message: 'This file applies to every country',
-        path: ['country'],
-        input: country,
+        message: 'This file applies to every group',
+        path: ['group'],
+        input: group,
       });
     }
   });
 
-const store = (countries: readonly string[]) =>
+const store = (groups: readonly string[]) =>
   z.object({
-    body: withCountryCheck(countries),
+    body: withGroupCheck(groups),
     file: z.custom<Express.Multer.File>((file) => {
       return file !== undefined;
     }),
   });
 
-const update = (countries: readonly string[], stored: StoredFile) =>
+const update = (groups: readonly string[], stored: StoredFile) =>
   z.object({
     params: z.object({
       fileId: z.ulid(),
     }),
-    body: withCountryCheck(countries, stored),
+    body: withGroupCheck(groups, stored),
   });
 
 const destroy = z.object({

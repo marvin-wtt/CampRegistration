@@ -32,7 +32,7 @@ export const MessageTemplateFactory = {
     return countries.flatMap((country) =>
       defaultTriggers.map((trigger) =>
         MessageTemplateFactory.build({
-          country,
+          group: country,
           trigger,
           ...builder?.(trigger),
         }),

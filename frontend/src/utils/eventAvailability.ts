@@ -1,7 +1,7 @@
 import type { Event } from '@camp-registration/common/entities';
 
 export interface AvailabilityEntry {
-  countries: string[];
+  groups: string[];
   free: number;
   max: number | null;
 }
@@ -36,27 +36,26 @@ export function eventAvailability(
 
     return [
       {
-        countries: event.countries,
+        groups: event.countries,
         free,
         max: maxTotal > 0 ? maxTotal : null,
       },
     ];
   }
 
-  // Per-country record — one row per country
-  const entries = event.countries.flatMap<AvailabilityEntry>((country) => {
-    const countryFree = free[country];
-    if (countryFree === undefined) {
+  // Per-group record — one row per group
+  const entries = event.countries.flatMap<AvailabilityEntry>((group) => {
+    const groupFree = free[group];
+    if (groupFree === undefined) {
       return [];
     }
-    const countryMax =
-      typeof max === 'number' ? null : (max?.[country] ?? null);
+    const groupMax = typeof max === 'number' ? null : (max?.[group] ?? null);
 
     return [
       {
-        countries: [country],
-        free: countryFree,
-        max: countryMax != null && countryMax > 0 ? countryMax : null,
+        groups: [group],
+        free: groupFree,
+        max: groupMax != null && groupMax > 0 ? groupMax : null,
       },
     ];
   });
@@ -70,7 +69,7 @@ export function eventAvailability(
  */
 export function groupFreePlaces(
   event: AvailabilityEvent,
-  country: string,
+  group: string,
 ): number | null {
   const availability = eventAvailability(event);
   if (availability === null || availability.length < 2) {
@@ -78,7 +77,6 @@ export function groupFreePlaces(
   }
 
   return (
-    availability.find((entry) => entry.countries.includes(country))?.free ??
-    null
+    availability.find((entry) => entry.groups.includes(group))?.free ?? null
   );
 }

@@ -82,8 +82,11 @@ export function useAuditLabels() {
       return '—';
     }
     const text = String(value);
-    // A registration's group is a country code.
-    if (entityType === 'registration' && key === 'group') {
+    // A group, by its country code: a registration's, or a template's.
+    if (
+      (entityType === 'registration' && key === 'group') ||
+      (entityType === 'messageTemplate' && key === 'group')
+    ) {
       return countryName(text, locale.value);
     }
     if (ISO_DATE_TIME.test(text)) {

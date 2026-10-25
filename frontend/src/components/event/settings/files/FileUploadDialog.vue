@@ -94,14 +94,14 @@
               rounded
             />
 
-            <!-- Country: only an event in several countries can tell them apart -->
+            <!-- Group: only an event with several groups can tell them apart -->
             <q-select
-              v-if="hasSeveralCountries"
-              v-model="fileData.country"
-              :options="countryOptions"
-              :label="t('fields.country.label')"
-              :hint="t('fields.country.hint')"
-              :readonly="isCountryLocked"
+              v-if="hasSeveralGroups"
+              v-model="fileData.group"
+              :options="groupOptions"
+              :label="t('fields.group.label')"
+              :hint="t('fields.group.hint')"
+              :readonly="isGroupLocked"
               emit-value
               map-options
               outlined
@@ -212,7 +212,7 @@ interface ServiceFileFormData {
   name?: string | undefined;
   field?: string | undefined;
   locale?: string | null;
-  country?: string | null;
+  group?: string | null;
   accessLevel?: 'private' | 'public' | undefined;
   file?: File | null;
 }
@@ -220,12 +220,15 @@ interface ServiceFileFormData {
 const {
   initialField,
   initialLocale,
+  initialGroup,
   initialAccessLevel,
   fileToReplace,
   fileToEdit,
 } = defineProps<{
   initialField?: string;
   initialLocale?: string | null;
+  // The group a missing file is for; preset, but another can be chosen.
+  initialGroup?: string | null;
   initialAccessLevel?: string;
   fileToReplace?: ServiceFile;
   fileToEdit?: ServiceFile;
@@ -248,7 +251,7 @@ const fileData = reactive<ServiceFileFormData>({
   ),
   field: fileToEdit?.field ?? fileToReplace?.field ?? initialField,
   locale: fileToEdit?.locale ?? fileToReplace?.locale ?? initialLocale ?? null,
-  country: fileToEdit?.country ?? fileToReplace?.country ?? null,
+  group: fileToEdit?.group ?? fileToReplace?.group ?? initialGroup ?? null,
   name: fileToEdit?.name,
 });
 
@@ -294,21 +297,21 @@ const isLocaleLocked = computed(
     initialField === EVENT_BANNER_SLOT,
 );
 
-// The logo and banner are the event's own, the same in every country — also
+// The logo and banner are the event's own, the same in every group — also
 // when an identifier is typed to one of them, which the server would reject
-// with a country set.
-const isCountrylessField = computed<boolean>(() => {
+// with a group set.
+const isGrouplessField = computed<boolean>(() => {
   const field = fileData.field?.trim();
   return field === EVENT_LOGO_SLOT || field === EVENT_BANNER_SLOT;
 });
 
-const isCountryLocked = computed(
-  () => isReplaceMode.value || isCountrylessField.value,
+const isGroupLocked = computed(
+  () => isReplaceMode.value || isGrouplessField.value,
 );
 
-watch(isCountrylessField, (countryless) => {
-  if (countryless) {
-    fileData.country = null;
+watch(isGrouplessField, (groupless) => {
+  if (groupless) {
+    fileData.group = null;
   }
 });
 
@@ -318,7 +321,7 @@ const isAccessLevelLocked = computed(
 
 const activeFileId = computed(() => fileToEdit?.id ?? fileToReplace?.id);
 
-// The file already occupying the (field, locale, country) this upload targets, if
+// The file already occupying the (field, locale, group) this upload targets, if
 // any. Submitting an upload over it replaces that file instead of leaving a
 // duplicate behind; an edit can't replace, so it only gets the warning.
 const duplicateFile = computed<ServiceFile | undefined>(() => {
@@ -328,7 +331,7 @@ const duplicateFile = computed<ServiceFile | undefined>(() => {
   }
 
   const locale = fileData.locale ?? null;
-  const country = fileData.country ?? null;
+  const group = fileData.group ?? null;
   const files = eventFileStore.data ?? [];
 
   return files.find(
@@ -336,7 +339,7 @@ const duplicateFile = computed<ServiceFile | undefined>(() => {
       file.id !== activeFileId.value &&
       file.field === field &&
       file.locale === locale &&
-      file.country === country,
+      file.group === group,
   );
 });
 
@@ -359,20 +362,17 @@ const localeOptions = computed<QSelectOption<string | null>[]>(() => {
   ];
 });
 
-const eventCountries = computed<string[]>(
-  () => eventStore.data?.countries ?? [],
-);
-const hasSeveralCountries = computed<boolean>(
-  () => eventCountries.value.length > 1,
-);
+// An event's groups are its countries.
+const eventGroups = computed<string[]>(() => eventStore.data?.countries ?? []);
+const hasSeveralGroups = computed<boolean>(() => eventGroups.value.length > 1);
 
-const countryOptions = computed<QSelectOption<string | null>[]>(() => {
-  const countries = eventCountries.value;
+const groupOptions = computed<QSelectOption<string | null>[]>(() => {
+  const groups = eventGroups.value;
   return [
-    { label: t('fields.country.default'), value: null },
-    ...countries.map((country) => ({
-      label: countryName(country, locale.value),
-      value: country,
+    { label: t('fields.group.default'), value: null },
+    ...groups.map((group) => ({
+      label: countryName(group, locale.value),
+      value: group,
     })),
   ];
 });
@@ -501,7 +501,7 @@ async function onOKClick(): Promise<void> {
 function fileMetadata(): ServiceFileUpdateData {
   const metadata: ServiceFileUpdateData = {
     locale: fileData.locale ?? null,
-    country: fileData.country ?? null,
+    group: fileData.group ?? null,
   };
   const name = fileData.name?.trim();
   const field = fileData.field?.trim();
@@ -562,10 +562,10 @@ fields:
     label: 'Access'
     rules:
       required: 'This field is required'
-  country:
-    label: 'Country'
-    hint: 'Leave as default to apply to all countries'
-    default: 'Default (all countries)'
+  group:
+    label: 'Group'
+    hint: 'Leave as default to apply to all groups'
+    default: 'Default (all groups)'
   field:
     label: 'Identifier'
     hint: 'Used to reference the file in the form'
@@ -574,8 +574,8 @@ fields:
       max_length: 'Use {max} characters or fewer'
       format: 'Use lowercase letters, numbers, hyphens or underscores'
   field_locale:
-    warning: 'Another file already uses this identifier, language and country. Uploading will replace it.'
-    warning_edit: 'Another file already uses this identifier, language and country. Only one of them will be shown in the form.'
+    warning: 'Another file already uses this identifier, language and group. Uploading will replace it.'
+    warning_edit: 'Another file already uses this identifier, language and group. Only one of them will be shown in the form.'
   file:
     label: 'File'
     rules:
@@ -619,10 +619,10 @@ fields:
     label: 'Zugriff'
     rules:
       required: 'Dieses Feld ist erforderlich'
-  country:
-    label: 'Land'
-    hint: 'Leer lassen, um auf alle Länder anzuwenden'
-    default: 'Standard (alle Länder)'
+  group:
+    label: 'Gruppe'
+    hint: 'Leer lassen, um auf alle Gruppen anzuwenden'
+    default: 'Standard (alle Gruppen)'
   field:
     label: 'Kennung'
     hint: 'Wird verwendet, um auf die Datei im Formular zu verweisen'
@@ -631,8 +631,8 @@ fields:
       max_length: 'Verwende höchstens {max} Zeichen'
       format: 'Verwende Kleinbuchstaben, Zahlen, Bindestriche oder Unterstriche'
   field_locale:
-    warning: 'Eine andere Datei verwendet bereits diese Kennung, Sprache und dieses Land. Beim Hochladen wird sie ersetzt.'
-    warning_edit: 'Eine andere Datei verwendet bereits diese Kennung, Sprache und dieses Land. Im Formular wird nur eine davon angezeigt.'
+    warning: 'Eine andere Datei verwendet bereits diese Kennung, Sprache und Gruppe. Beim Hochladen wird sie ersetzt.'
+    warning_edit: 'Eine andere Datei verwendet bereits diese Kennung, Sprache und Gruppe. Im Formular wird nur eine davon angezeigt.'
   file:
     label: 'Datei'
     rules:
@@ -676,10 +676,10 @@ fields:
     label: 'Accès'
     rules:
       required: 'Ce champ est requis'
-  country:
-    label: 'Pays'
-    hint: 'Laisser par défaut pour appliquer à tous les pays'
-    default: 'Par défaut (tous les pays)'
+  group:
+    label: 'Groupe'
+    hint: 'Laisser par défaut pour appliquer à tous les groupes'
+    default: 'Par défaut (tous les groupes)'
   field:
     label: 'Identifiant'
     hint: 'Utilisé pour référencer le fichier dans le formulaire'
@@ -688,8 +688,8 @@ fields:
       max_length: 'Utilisez {max} caractères au maximum'
       format: 'Utilisez des minuscules, des chiffres, des tirets ou des traits de soulignement'
   field_locale:
-    warning: 'Un autre fichier utilise déjà cet identifiant, cette langue et ce pays. Le téléversement le remplacera.'
-    warning_edit: 'Un autre fichier utilise déjà cet identifiant, cette langue et ce pays. Un seul des deux sera affiché dans le formulaire.'
+    warning: 'Un autre fichier utilise déjà cet identifiant, cette langue et ce groupe. Le téléversement le remplacera.'
+    warning_edit: 'Un autre fichier utilise déjà cet identifiant, cette langue et ce groupe. Un seul des deux sera affiché dans le formulaire.'
   file:
     label: 'Fichier'
     rules:
@@ -733,10 +733,10 @@ fields:
     label: 'Dostęp'
     rules:
       required: 'To pole jest wymagane'
-  country:
-    label: 'Kraj'
-    hint: 'Pozostaw domyślnie, aby zastosować do wszystkich krajów'
-    default: 'Domyślnie (wszystkie kraje)'
+  group:
+    label: 'Grupa'
+    hint: 'Pozostaw domyślnie, aby zastosować do wszystkich grup'
+    default: 'Domyślnie (wszystkie grupy)'
   field:
     label: 'Identyfikator'
     hint: 'Używany do odwoływania się do pliku w formularzu'
@@ -745,8 +745,8 @@ fields:
       max_length: 'Użyj maksymalnie {max} znaków'
       format: 'Użyj małych liter, cyfr, łączników lub podkreśleń'
   field_locale:
-    warning: 'Inny plik używa już tego identyfikatora, języka i kraju. Przesłanie go zastąpi.'
-    warning_edit: 'Inny plik używa już tego identyfikatora, języka i kraju. W formularzu zostanie wyświetlony tylko jeden z nich.'
+    warning: 'Inny plik używa już tego identyfikatora, języka i grupy. Przesłanie go zastąpi.'
+    warning_edit: 'Inny plik używa już tego identyfikatora, języka i grupy. W formularzu zostanie wyświetlony tylko jeden z nich.'
   file:
     label: 'Plik'
     rules:
@@ -790,10 +790,10 @@ fields:
     label: 'Přístup'
     rules:
       required: 'Toto pole je povinné'
-  country:
-    label: 'Země'
-    hint: 'Ponechte výchozí pro použití ve všech zemích'
-    default: 'Výchozí (všechny země)'
+  group:
+    label: 'Skupina'
+    hint: 'Ponechte výchozí pro použití ve všech skupinách'
+    default: 'Výchozí (všechny skupiny)'
   field:
     label: 'Identifikátor'
     hint: 'Používá se pro odkazování na soubor ve formuláři'
@@ -802,8 +802,8 @@ fields:
       max_length: 'Použijte nejvýše {max} znaků'
       format: 'Použijte malá písmena, číslice, pomlčky nebo podtržítka'
   field_locale:
-    warning: 'Jiný soubor již používá tento identifikátor, jazyk a zemi. Nahráním jej nahradíte.'
-    warning_edit: 'Jiný soubor již používá tento identifikátor, jazyk a zemi. Ve formuláři se zobrazí jen jeden z nich.'
+    warning: 'Jiný soubor již používá tento identifikátor, jazyk a skupinu. Nahráním jej nahradíte.'
+    warning_edit: 'Jiný soubor již používá tento identifikátor, jazyk a skupinu. Ve formuláři se zobrazí jen jeden z nich.'
   file:
     label: 'Soubor'
     rules:

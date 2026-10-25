@@ -31,7 +31,7 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
       },
       pehelp: {
         eventDataType:
-          'Wählen Sie aus, welche Art von Daten der Benutzer eingibt. ' +
+          'Wähle aus, welche Art von Daten die Person eingibt. ' +
           'Die Informationen werden dem Dienst unabhängig vom Feldnamen zur Verfügung gestellt.',
         groupCountryMatch:
           'Wie sich das Land zur gewählten Gruppe verhält. ' +

@@ -24,10 +24,7 @@
             class="event-brand row items-center no-wrap"
             :aria-label="t('app_name')"
           >
-            <q-avatar
-              size="36px"
-              class="event-brand__logo"
-            >
+            <q-avatar class="event-brand__logo">
               <!-- TODO: replace with the brand logo once available -->
               <q-icon name="cabin" />
             </q-avatar>
@@ -134,6 +131,14 @@ useMeta(() => {
 
 <style scoped>
 .event-header {
+  /*
+   * One size for every pill (back, brand, toolbar) and one for the controls in
+   * them: MD3's 40px icon button inside a 48px touch target. The page's 4rem
+   * top clearance below is the 1rem padding plus the pill.
+   */
+  --event-pill-size: 48px;
+  --event-control-size: 40px;
+
   z-index: 2000;
   padding: 1rem;
   /* Let clicks pass through the empty strip between the two pills */
@@ -158,25 +163,23 @@ useMeta(() => {
   display: contents;
 }
 
-/*
- * The header padding owns the outer spacing, not the floating toolbar. Every
- * pill shares the brand's 44px height (MD3's floating toolbar defaults to
- * 64px), its controls one step smaller.
- */
+/* The header padding owns the outer spacing, not the floating toolbar. */
 .event-toolbar.q-toolbar--floating {
   margin: 0;
-  min-height: 44px;
+  min-height: var(--event-pill-size);
   padding: 0 4px;
   gap: 4px;
 }
 
+/* Every control, the teleported group chip included, at one height. */
 .event-toolbar :deep(.q-btn) {
-  min-height: 36px;
-  min-width: 36px;
+  min-height: var(--event-control-size);
+  min-width: var(--event-control-size);
 }
 
 .event-brand {
-  padding: 0.25rem 0.75rem 0.25rem 0.25rem;
+  height: var(--event-pill-size);
+  padding: 4px 0.75rem 4px 4px;
   border-radius: 1.5rem;
   text-decoration: none;
   color: var(--md3-on-surface);
@@ -187,8 +190,8 @@ useMeta(() => {
 }
 
 .event-back {
-  width: 44px;
-  height: 44px;
+  width: var(--event-pill-size);
+  height: var(--event-pill-size);
   color: var(--md3-on-surface);
   background: var(--md3-surface-container);
   box-shadow:
@@ -197,6 +200,7 @@ useMeta(() => {
 }
 
 .event-brand__logo {
+  font-size: var(--event-control-size);
   background: var(--md3-primary-container);
   color: var(--md3-on-primary-container);
 }
@@ -236,11 +240,13 @@ useMeta(() => {
     padding: 0.5rem 0.75rem;
   }
 
+  /* The merged bar is the pill; everything in it is a control. */
   .event-header__inner {
     pointer-events: auto;
+    min-height: var(--event-pill-size);
     background: var(--md3-surface-container);
     border-radius: 999px;
-    padding: 0.25rem 0.5rem 0.25rem 0.25rem;
+    padding: 4px 0.5rem 4px 4px;
     box-shadow:
       0 1px 2px rgba(0, 0, 0, 0.18),
       0 1px 3px 1px rgba(0, 0, 0, 0.12);
@@ -254,6 +260,16 @@ useMeta(() => {
   .event-back {
     background: transparent;
     box-shadow: none;
+  }
+
+  .event-back {
+    width: var(--event-control-size);
+    height: var(--event-control-size);
+  }
+
+  .event-brand {
+    height: var(--event-control-size);
+    padding: 0 0.5rem 0 0;
   }
 
   .event-toolbar.q-toolbar--floating {

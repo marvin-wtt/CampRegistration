@@ -56,7 +56,7 @@ export class RegistrationController extends BaseController {
       {
         data,
         locale,
-        group: group ?? null,
+        group,
       },
       req.sessionId,
     );

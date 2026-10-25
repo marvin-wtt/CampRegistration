@@ -21,8 +21,10 @@ import {
   eventWithGroupMessages,
   eventWithStrictAddress,
   eventWithStrictCountry,
+  eventWithRoleByGroup,
   eventWithWarnAddress,
   groupTemplates,
+  roleByGroupForm,
 } from './fixtures/registration-group.fixtures.js';
 
 // The group is chosen before the form and stored apart from the address's
@@ -190,6 +192,27 @@ describe('registration groups', () => {
       });
     });
 
+    it("reads edited answers in the registration's group", async () => {
+      const event = await EventFactory.create(eventWithRoleByGroup);
+      const accessToken = await managerOf(event);
+      const registration = await registrationIn(event, {
+        group: 'fr',
+        role: null,
+        data: { first_name: 'Ann' },
+      });
+
+      await request()
+        .patch(`/api/v1/events/${event.id}/registrations/${registration.id}`)
+        .send({ data: { first_name: 'Anne' } })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(await stored(registration.id)).toMatchObject({
+        firstName: 'Anne',
+        role: 'counselor',
+      });
+    });
+
     it('moves the registration to another group and changes nothing else', async () => {
       const event = await EventFactory.create(eventWithStrictAddress);
       const accessToken = await managerOf(event);
@@ -254,6 +277,31 @@ describe('registration groups', () => {
         .expect(403);
 
       expect((await stored(registration.id)).group).toBe('de');
+    });
+  });
+
+  describe('PATCH /api/v1/events/:eventId', () => {
+    it('recomputes every registration in its own group when the form changes', async () => {
+      const event = await EventFactory.create(eventWithStrictAddress);
+      const accessToken = await managerOf(event);
+      const [inDe, inFr] = await Promise.all(
+        ['de', 'fr'].map((group) =>
+          registrationIn(event, {
+            group,
+            role: null,
+            data: { first_name: 'Ann' },
+          }),
+        ),
+      );
+
+      await request()
+        .patch(`/api/v1/events/${event.id}`)
+        .send({ form: roleByGroupForm })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(await stored(inDe!.id)).toHaveProperty('role', 'participant');
+      expect(await stored(inFr!.id)).toHaveProperty('role', 'counselor');
     });
   });
 

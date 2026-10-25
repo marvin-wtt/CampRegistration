@@ -98,7 +98,7 @@ export class RegistrationService extends BaseService {
     // Built in the locale the data was validated in: event variables such as
     // `{event.price}` resolve per locale, so computed values can differ.
     // Resolved by validation: one of the event's countries, defaulted for a
-    // single-country event.
+    // single-group event.
     const { group } = data;
 
     const form = new RegistrationForm(event, {
@@ -131,13 +131,10 @@ export class RegistrationService extends BaseService {
         return registrationCount >= event.maxParticipants;
       }
 
-      // Max participants per country
-      // Throw error when country is missing
+      // Max participants per group
+      // Throw error when group is missing
       if (!group || !(group in event.maxParticipants)) {
-        throw new ApiError(
-          httpStatus.BAD_REQUEST,
-          'Invalid or missing country data',
-        );
+        throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid or missing group');
       }
 
       const registrationCount = await transaction.registration.count({

@@ -474,7 +474,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
       expect(body.data).toEqual({ added: 0, skipped: 1 });
     });
 
-    it('should filter by country when provided', async () => {
+    it('should filter by group when provided', async () => {
       const { accessToken, newsletter, event } =
         await createNewsletterAndEventWithManager();
       await RegistrationFactory.create({
@@ -490,7 +490,7 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
 
       const { body } = await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ eventId: event.id, country: 'de', consentConfirmed: true })
+        .send({ eventId: event.id, group: 'de', consentConfirmed: true })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 

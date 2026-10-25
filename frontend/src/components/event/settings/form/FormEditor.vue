@@ -327,8 +327,8 @@ creator.onSurveyInstanceCreated.add((_, options) => {
   const resolveFileSlot = (
     slot: string,
     locale: string,
-    country: string | null = null,
-  ) => api.getEventFileSlotUrl(props.event.id, slot, locale, country);
+    group: string | null = null,
+  ) => api.getEventFileSlotUrl(props.event.id, slot, locale, group);
 
   if (['preview-tab', 'designer-tab', 'theme-tab'].includes(options.area)) {
     addMarkdownRenderer(survey);

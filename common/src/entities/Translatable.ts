@@ -5,9 +5,9 @@
 export type Translatable<T = string> = T | Record<string, T>;
 
 /**
- * A value per country an event runs in, keyed by country code (`gb`, `cz`) —
- * or a single value for every country. Not a translation: `gb` and `us` share
- * a language and may still differ. Resolve it with `forCountry`, never by
- * locale.
+ * A value per group, keyed by the group's country code as in `event.countries`
+ * (`gb`, `cz`) — or a single value for every group. Not a translation: `gb`
+ * and `us` share a language and may still differ. Resolve it with `forGroup`,
+ * never by locale.
  */
-export type PerCountry<T> = T | Record<string, T>;
+export type PerGroup<T> = T | Record<string, T>;

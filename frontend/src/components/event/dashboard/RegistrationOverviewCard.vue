@@ -107,37 +107,37 @@
       </div>
     </q-card-section>
 
-    <template v-if="stats.multiCountryEvent.value">
+    <template v-if="stats.multiGroupEvent.value">
       <q-separator class="q-mx-md" />
-      <q-card-section class="country-section">
-        <div class="subsection-label">{{ t('byCountry') }}</div>
-        <ul class="country-list">
+      <q-card-section class="group-section">
+        <div class="subsection-label">{{ t('byGroup') }}</div>
+        <ul class="group-list">
           <li
-            v-for="row in countryRows"
-            :key="row.country"
-            class="country-row"
+            v-for="row in groupRows"
+            :key="row.group"
+            class="group-row"
           >
-            <div class="country-name">
+            <div class="group-name">
               <country-icon
-                :country="row.country"
-                class="country-flag"
+                :country="row.group"
+                class="group-flag"
               />
-              <span class="ellipsis">{{ countryLabel(row.country) }}</span>
+              <span class="ellipsis">{{ groupLabel(row.group) }}</span>
             </div>
             <template v-if="loading">
               <q-skeleton
                 type="rect"
                 height="10px"
-                class="country-meter rounded-full"
+                class="group-meter rounded-full"
               />
               <q-skeleton
                 type="text"
                 width="12rem"
-                class="country-stats"
+                class="group-stats"
               />
             </template>
             <template v-else>
-              <div class="country-meter">
+              <div class="group-meter">
                 <capacity-meter
                   v-if="row.max != null"
                   :max="row.max"
@@ -154,16 +154,16 @@
                   "
                   class="col"
                 />
-                <span class="country-count">
+                <span class="group-count">
                   <strong>{{ row.accepted }}</strong>
                   <span v-if="row.max != null"> / {{ row.max }}</span>
                 </span>
               </div>
-              <div class="country-stats">
+              <div class="group-stats">
                 <span
                   v-for="item in row.details"
                   :key="item.key"
-                  :class="`country-stat--${item.key}`"
+                  :class="`group-stat--${item.key}`"
                 >
                   {{ item.text }}
                 </span>
@@ -219,8 +219,8 @@ const kpis = computed(() => [
 ]);
 
 // Zero counts are left out, except free places — "0 free" is the news.
-const countryRows = computed(() =>
-  stats.perCountry.value.map((row) => {
+const groupRows = computed(() =>
+  stats.perGroup.value.map((row) => {
     const { reserved, overbooked } = splitPlaces([
       {
         max: row.max ?? 0,
@@ -237,7 +237,7 @@ const countryRows = computed(() =>
       { key: 'team', n: row.team },
     ]
       .filter((item) => item.n > 0 || item.always)
-      .map((item) => ({ key: item.key, text: t(`country.${item.key}`, item) }));
+      .map((item) => ({ key: item.key, text: t(`group.${item.key}`, item) }));
 
     return { ...row, reserved, overbooked, details };
   }),
@@ -251,7 +251,7 @@ const regionNames = computed(() => {
   }
 });
 
-function countryLabel(value: string): string {
+function groupLabel(value: string): string {
   const upper = value.toUpperCase();
   try {
     return regionNames.value?.of(upper) ?? upper;
@@ -343,7 +343,7 @@ function countryLabel(value: string): string {
   line-height: 1.15;
 }
 
-.country-section {
+.group-section {
   container-type: inline-size;
 }
 
@@ -354,13 +354,13 @@ function countryLabel(value: string): string {
   font-weight: 500;
 }
 
-.country-list {
+.group-list {
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.country-row {
+.group-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   grid-template-areas:
@@ -371,11 +371,11 @@ function countryLabel(value: string): string {
   padding: 12px 0;
 }
 
-.country-row + .country-row {
+.group-row + .group-row {
   border-top: 1px solid var(--md3-outline-variant);
 }
 
-.country-name {
+.group-name {
   display: flex;
   grid-area: name;
   align-items: center;
@@ -384,31 +384,31 @@ function countryLabel(value: string): string {
   font-weight: 500;
 }
 
-.country-flag {
+.group-flag {
   flex: 0 0 auto;
   width: 1.5em;
   border-radius: 3px;
 }
 
-.country-meter {
+.group-meter {
   display: flex;
   grid-area: meter;
   align-items: center;
   gap: 12px;
 }
 
-.country-count {
+.group-count {
   min-width: 4em;
   color: var(--md3-on-surface-variant);
   text-align: right;
   white-space: nowrap;
 }
 
-.country-count strong {
+.group-count strong {
   color: var(--md3-on-surface);
 }
 
-.country-stats {
+.group-stats {
   display: flex;
   flex-wrap: wrap;
   grid-area: stats;
@@ -417,12 +417,12 @@ function countryLabel(value: string): string {
   font-size: 0.8125rem;
 }
 
-.country-stat--free {
+.group-stat--free {
   color: var(--md3-on-surface);
   font-weight: 600;
 }
 
-.country-stat--overbooked {
+.group-stat--overbooked {
   color: var(--md3-error);
   font-weight: 600;
 }
@@ -446,7 +446,7 @@ function countryLabel(value: string): string {
     display: block;
   }
 
-  .country-row {
+  .group-row {
     grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
     grid-template-areas:
       'name meter'
@@ -464,13 +464,13 @@ openParticipants: 'All participants'
 accepted: 'Confirmed participants'
 capacityUnset: 'No participant limit set'
 meterLabel: '{accepted} confirmed and {pending} pending of {max} places'
-byCountry: 'By country'
+byGroup: 'By group'
 kpi:
   waitlisted: 'Waitlist'
   waitlistedCaption: 'Waiting for a place'
   team: 'Team'
   teamCaption: 'Leaders and staff'
-country:
+group:
   overbooked: '{n} overbooked'
   pending: '{n} pending'
   free: '{n} free'
@@ -486,13 +486,13 @@ openParticipants: 'Alle Teilnehmenden'
 accepted: 'Bestätigte Teilnehmende'
 capacityUnset: 'Kein Teilnehmendenlimit festgelegt'
 meterLabel: '{accepted} bestätigt und {pending} ausstehend von {max} Plätzen'
-byCountry: 'Nach Land'
+byGroup: 'Nach Gruppe'
 kpi:
   waitlisted: 'Warteliste'
   waitlistedCaption: 'Warten auf einen Platz'
   team: 'Team'
   teamCaption: 'Leitung und Mitarbeitende'
-country:
+group:
   overbooked: '{n} überbucht'
   pending: '{n} ausstehend'
   free: '{n} frei'
@@ -508,13 +508,13 @@ openParticipants: 'Tous les participants'
 accepted: 'Participants confirmés'
 capacityUnset: 'Aucune limite de participants'
 meterLabel: '{accepted} confirmés et {pending} en attente sur {max} places'
-byCountry: 'Par pays'
+byGroup: 'Par groupe'
 kpi:
   waitlisted: "Liste d'attente"
   waitlistedCaption: "En attente d'une place"
   team: 'Équipe'
   teamCaption: 'Responsables et équipe'
-country:
+group:
   overbooked: '{n} en surréservation'
   pending: '{n} en attente'
   free: '{n} libres'
@@ -530,13 +530,13 @@ openParticipants: 'Wszyscy uczestnicy'
 accepted: 'Potwierdzeni uczestnicy'
 capacityUnset: 'Nie ustawiono limitu uczestników'
 meterLabel: 'Potwierdzeni: {accepted}, oczekujący: {pending}, miejsca: {max}'
-byCountry: 'Według kraju'
+byGroup: 'Według grupy'
 kpi:
   waitlisted: 'Lista rezerwowa'
   waitlistedCaption: 'Oczekują na miejsce'
   team: 'Zespół'
   teamCaption: 'Kadra i personel'
-country:
+group:
   overbooked: 'Ponad limit: {n}'
   pending: 'Oczekujący: {n}'
   free: 'Wolne: {n}'
@@ -552,13 +552,13 @@ openParticipants: 'Všichni účastníci'
 accepted: 'Potvrzení účastníci'
 capacityUnset: 'Limit účastníků není nastaven'
 meterLabel: 'Potvrzení: {accepted}, čekající: {pending}, místa: {max}'
-byCountry: 'Podle země'
+byGroup: 'Podle skupiny'
 kpi:
   waitlisted: 'Čekací listina'
   waitlistedCaption: 'Čekají na místo'
   team: 'Tým'
   teamCaption: 'Vedoucí a personál'
-country:
+group:
   overbooked: 'Nad kapacitu: {n}'
   pending: 'Čekající: {n}'
   free: 'Volná: {n}'

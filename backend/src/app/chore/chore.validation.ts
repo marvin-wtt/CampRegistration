@@ -44,7 +44,7 @@ const store = z.object({
     eligibility: ELIGIBILITY.optional(),
     effort: EFFORT.optional(),
     defaultRotationUnit: ROTATION_UNIT.optional(),
-    balanceCountries: z.boolean().optional(),
+    balanceGroups: z.boolean().optional(),
     slots: SLOTS.optional(),
   }) satisfies ZodType<ChoreCreateData>,
 });
@@ -63,7 +63,7 @@ const update = z.object({
       eligibility: ELIGIBILITY,
       effort: EFFORT,
       defaultRotationUnit: ROTATION_UNIT,
-      balanceCountries: z.boolean(),
+      balanceGroups: z.boolean(),
       slots: SLOTS,
     })
     .partial() satisfies ZodType<ChoreUpdateData>,

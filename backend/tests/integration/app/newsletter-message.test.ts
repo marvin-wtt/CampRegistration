@@ -11,6 +11,7 @@ import { request } from '../utils/request.js';
 import prisma from '../utils/prisma.js';
 import { ulid } from 'ulidx';
 import { randomBytes } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
 import { NoOpMailer } from '#core/mail/drivers/noop.mailer.js';
 import { expectEmailCount, expectEmailWith } from '../utils/mail';
 import type { NewsletterManagerRole } from '@camp-registration/common/permissions';
@@ -358,10 +359,17 @@ describe(`${BASE}/:newsletterId/messages`, () => {
         .auth(accessToken, { type: 'bearer' })
         .expect(201);
 
+      // The file's bytes, read whole: a stream would hold the file open until
+      // the mailer read it, or forever when it never did.
+      const content = await readFile(`${__dirname}/resources/blank.pdf`);
       expectEmailWith({
-        attachments: expect.arrayContaining([
-          expect.objectContaining({ filename: 'blank.pdf' }),
-        ]),
+        attachments: [
+          expect.objectContaining({
+            filename: 'blank.pdf',
+            contentType: 'application/pdf',
+            content,
+          }),
+        ],
       });
     });
 
