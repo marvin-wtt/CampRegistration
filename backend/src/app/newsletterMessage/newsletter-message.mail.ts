@@ -85,7 +85,7 @@ export class NewsletterMessageMail extends MailBase<NewsletterMailPayload> {
     return Promise.all(
       files.map(async (file) => ({
         filename: file.originalName,
-        content: await fileService.getFileStream(file),
+        content: await fileService.getFileBuffer(file),
         contentType: file.type,
       })),
     );

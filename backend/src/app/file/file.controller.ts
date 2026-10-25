@@ -56,7 +56,7 @@ export class FileController extends BaseController {
       'Content-disposition',
       this.buildContentDisposition(
         file.originalName,
-        download || !INLINE_MIME_TYPES.has(file.type),
+        download ?? !INLINE_MIME_TYPES.has(file.type),
       ),
     );
 

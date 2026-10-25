@@ -109,6 +109,26 @@ describe('group country match', () => {
       country.value = 'fr';
       expect(messages(country)).toEqual([]);
     });
+    it("should show the warning for an address's country in a dynamic panel", () => {
+      const model = new SurveyModel({
+        elements: [
+          {
+            type: 'paneldynamic',
+            name: 'contacts',
+            panelCount: 1,
+            templateElements: [
+              { type: 'address', name: 'address', groupCountryMatch: 'warn' },
+            ],
+          },
+        ],
+      });
+      setVariables(model, event, { country: 'fr' });
+      const country = nestedCountry(model);
+
+      country.value = 'it';
+
+      expect(messages(country)).toEqual(['warning']);
+    });
   });
 
   describe('free', () => {
@@ -183,6 +203,36 @@ describe('group country match', () => {
 
       expect(nestedCountry(model).isReadOnly).toBe(true);
     });
+  });
+
+  it('should not add survey handlers per panel', () => {
+    const model = new SurveyModel({
+      elements: [
+        {
+          type: 'paneldynamic',
+          name: 'contacts',
+          templateElements: [
+            { type: 'address', name: 'address', groupCountryMatch: 'warn' },
+          ],
+        },
+      ],
+    });
+    setVariables(model, event, { country: 'fr' });
+    const contacts = model.getQuestionByName('contacts') as Question & {
+      addPanel: () => void;
+    };
+    const handlers = () => [
+      model.onValueChanged.length,
+      model.onVariableChanged.length,
+      model.onLocaleChangedEvent.length,
+    ];
+
+    contacts.addPanel();
+    const before = handlers();
+    contacts.addPanel();
+    contacts.addPanel();
+
+    expect(handlers()).toEqual(before);
   });
 
   it("should list every country, the event's first", () => {

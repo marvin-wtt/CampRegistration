@@ -186,6 +186,8 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
         customData: this.payload.registration.customData ?? {},
         changes: this.renderChanges(format),
         locale: this.payload.registration.locale,
+        // The group's country code; the address's own is `address.country`.
+        group: this.payload.registration.group,
         room: null,
         // Use snake case because form keys should be snake case too
         updatedAt: dateToString(this.payload.registration.updatedAt),
@@ -205,7 +207,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
     return Promise.all(
       files.map(async (file) => ({
         filename: file.originalName,
-        content: await fileService.getFileStream(file),
+        content: await fileService.getFileBuffer(file),
         contentType: file.type,
       })),
     );

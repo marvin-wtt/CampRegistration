@@ -146,7 +146,8 @@ export class RegistrationEventDataHelper {
  * The columns a registration's answers imply, mapped from the values tagged
  * with a `eventDataType` in the event's form. The single definition of what the
  * computed columns mean — the API derives them on every write, and the seed
- * derives them from the answers it generates. The group isn't one of them: it is chosen, not answered, so editing the answers never moves it.
+ * derives them from the answers it generates. The group isn't one of them: it
+ * is chosen, not answered, so editing the answers never moves it.
  */
 export function computedRegistrationData(
   dataByTags: Record<string, unknown[]>,

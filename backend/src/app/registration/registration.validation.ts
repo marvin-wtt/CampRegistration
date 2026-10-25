@@ -9,6 +9,7 @@ import {
   type RegistrationDeleteQuery,
 } from '@camp-registration/common/entities';
 import type { EventWithRelations } from '#app/event/event.types';
+import { eventCountry } from '@camp-registration/common/utils';
 
 const RegistrationDataSchema = z.record(z.string(), z.unknown());
 
@@ -47,11 +48,7 @@ const store = (event: EventWithRelations, fallbackLocale: string) =>
           })
           .nullable()
           .optional()
-          .transform(
-            (group) =>
-              group ??
-              (event.countries.length === 1 ? event.countries[0] : null),
-          ),
+          .transform((group) => eventCountry(event, group)),
       })
       .superRefine(async ({ data, locale, group }, ctx) => {
         if (event.countries.length > 1 && !group) {

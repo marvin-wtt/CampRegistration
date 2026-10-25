@@ -79,7 +79,7 @@ import CountryIcon from '@/components/common/localization/CountryIcon.vue';
 import EventCover from '@/components/listedEvents/EventCover.vue';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { countryName } from '@/utils/countries';
-import { eventAvailability } from '@/utils/eventAvailability';
+import { groupFreePlaces } from '@/utils/eventAvailability';
 
 const { event } = defineProps<{
   event: EventDetails;
@@ -116,19 +116,13 @@ interface GroupOption {
   free: number | null;
 }
 
-const options = computed<GroupOption[]>(() => {
-  const availability = eventAvailability(event);
-  const perGroup = availability !== null && availability.length > 1;
-
-  return event.countries.map((country) => ({
+const options = computed<GroupOption[]>(() =>
+  event.countries.map((country) => ({
     country,
     name: countryName(country, locale.value),
-    free: perGroup
-      ? (availability.find((entry) => entry.countries.includes(country))
-          ?.free ?? null)
-      : null,
-  }));
-});
+    free: groupFreePlaces(event, country),
+  })),
+);
 </script>
 
 <style lang="scss" scoped>

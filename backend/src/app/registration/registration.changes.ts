@@ -3,6 +3,7 @@ import {
   RegistrationForm,
   type FormAnswer,
 } from '#app/registration/registration.form';
+import { eventContactFor } from '#app/event/event.util';
 import logger from '#core/logger';
 
 /** One form field whose answer differs between two versions of a registration. */
@@ -75,11 +76,15 @@ function formatValue(value: unknown): string | null {
 function answersFor(
   event: Event,
   data: unknown,
+  group: string | null,
   locale: string,
 ): Map<string, FormAnswer> {
   // `freePlaces` only feeds `visibleIf` expressions, which do not affect how an
   // answer is labelled or displayed — a mail payload carries no place count.
-  const form = new RegistrationForm({ ...event, freePlaces: 0 }, { locale });
+  const form = new RegistrationForm(
+    { ...event, freePlaces: 0 },
+    { locale, group },
+  );
 
   form.load(data);
 
@@ -107,9 +112,10 @@ export function diffRegistrationData(
   before: unknown,
   after: unknown,
   locale: string,
+  group: string | null = null,
 ): RegistrationChange[] {
-  const previous = answersFor(event, before, locale);
-  const current = answersFor(event, after, locale);
+  const previous = answersFor(event, before, group, locale);
+  const current = answersFor(event, after, group, locale);
 
   const changes: RegistrationChange[] = [];
 
@@ -168,12 +174,18 @@ export function changesForRegistration(
   previous: Registration,
   current: Registration,
 ): RegistrationChange[] {
-  // The group picks its language where a event has several; `locale` is the
-  // fallback, and only its language part is a form locale.
-  const locale = (current.group ?? current.locale).split('-')[0];
-
   try {
-    return diffRegistrationData(event, previous.data, current.data, locale);
+    // In the language of the group's template the list is placed into; only
+    // the language part is a form locale.
+    const locale = eventContactFor(event, current).locale.split('-')[0];
+
+    return diffRegistrationData(
+      event,
+      previous.data,
+      current.data,
+      locale,
+      current.group,
+    );
   } catch (err) {
     logger.warn(
       `Failed to build the change list for registration ${current.id}: ${err instanceof Error ? err.message : String(err)}`,

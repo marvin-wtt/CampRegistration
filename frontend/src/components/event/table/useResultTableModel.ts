@@ -306,7 +306,13 @@ export function useResultTableModel(
   });
 
   const columns = computed<CTableColumnTemplate[]>(() => {
-    const cols = [...template.value.columns];
+    // A single-country event has one group, so its column says nothing.
+    const cols = template.value.columns.filter(
+      (column) =>
+        countries.value.length > 1 ||
+        column.source !== 'meta' ||
+        column.fieldName !== 'group',
+    );
 
     // Add index column as first column
     if (template.value.indexed) {

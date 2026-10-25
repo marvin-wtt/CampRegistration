@@ -196,6 +196,7 @@ import type {
 } from '@camp-registration/common/entities';
 import { useEventFilesStore } from '@/stores/event-files-store';
 import { useEventDetailsStore } from '@/stores/event-details-store';
+import { countryName } from '@/utils/countries';
 import {
   EVENT_BANNER_SLOT,
   EVENT_LOGO_SLOT,
@@ -235,9 +236,7 @@ defineEmits([...useDialogPluginComponent.emits]);
 const eventFileStore = useEventFilesStore();
 const eventStore = useEventDetailsStore();
 
-const { t } = useI18n();
-// The `country.*` names live in the global messages, not this component's.
-const { t: tGlobal } = useI18n({ useScope: 'global' });
+const { t, locale } = useI18n();
 const quasar = useQuasar();
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
@@ -356,7 +355,7 @@ const localeOptions = computed<QSelectOption<string | null>[]>(() => {
   const locales = eventStore.data?.locales ?? [];
   return [
     { label: t('fields.locale.default'), value: null },
-    ...locales.map((locale) => ({ label: locale, value: locale })),
+    ...locales.map((code) => ({ label: code, value: code })),
   ];
 });
 
@@ -372,7 +371,7 @@ const countryOptions = computed<QSelectOption<string | null>[]>(() => {
   return [
     { label: t('fields.country.default'), value: null },
     ...countries.map((country) => ({
-      label: tGlobal(`country.${country}`),
+      label: countryName(country, locale.value),
       value: country,
     })),
   ];

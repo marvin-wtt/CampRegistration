@@ -97,17 +97,9 @@ export class RegistrationService extends BaseService {
   ) {
     // Built in the locale the data was validated in: event variables such as
     // `{event.price}` resolve per locale, so computed values can differ.
-    // Validated as one of the event's countries, and required when there are
-    // several; a single-country event has only the one.
-    const group =
-      data.group ?? (event.countries.length === 1 ? event.countries[0] : null);
-
-    if (event.countries.length > 1 && !group) {
-      throw new ApiError(
-        httpStatus.BAD_REQUEST,
-        'A group is required for events with multiple countries',
-      );
-    }
+    // Resolved by validation: one of the event's countries, defaulted for a
+    // single-country event.
+    const { group } = data;
 
     const form = new RegistrationForm(event, {
       locale: data.locale,
@@ -216,8 +208,9 @@ export class RegistrationService extends BaseService {
     registrationId: string,
     data: Pick<
       Prisma.RegistrationUpdateInput,
-      'status' | 'data' | 'customData' | 'group'
+      'status' | 'data' | 'customData'
     > & {
+      group?: string;
       customFiles?: Record<string, string | null>;
     },
     sessionId: string,
@@ -246,20 +239,25 @@ export class RegistrationService extends BaseService {
       });
     }
 
-    let computedData: Partial<Prisma.RegistrationCreateInput> = {};
-    let formFileIds: string[] | undefined;
-
-    if (data.data) {
-      const form = new RegistrationForm(event).load(data.data);
-      computedData = computedRegistrationData(form.extractEventData());
-      formFileIds = form.getFileIds();
-    }
-
     return this.transaction(async (tx) => {
       const before: AuditedRegistration =
         await tx.registration.findUniqueOrThrow({
           where: { id: registrationId },
         });
+
+      let computedData: Partial<Prisma.RegistrationCreateInput> = {};
+      let formFileIds: string[] | undefined;
+
+      if (data.data) {
+        // Read as the form it was answered in: the group's `{event.*}` values
+        // and the locale can change what the form shows and computes.
+        const form = new RegistrationForm(event, {
+          locale: before.locale,
+          group: data.group ?? before.group,
+        }).load(data.data);
+        computedData = computedRegistrationData(form.extractEventData());
+        formFileIds = form.getFileIds();
+      }
       if (data.customFiles) {
         before.customFiles = await this.customFileSlots(tx, registrationId);
       }
@@ -370,11 +368,22 @@ export class RegistrationService extends BaseService {
   }
 
   async updateRegistrationsComputedDataByEvent(event: EventWithFreePlaces) {
-    const form = new RegistrationForm(event);
     const registrations = await this.queryRegistrations(event.id);
 
+    // One form per (locale, group) a registration was answered in.
+    const forms = new Map<string, RegistrationForm>();
+    const formFor = ({ locale, group }: Registration) => {
+      const key = `${locale}|${group ?? ''}`;
+      let form = forms.get(key);
+      if (!form) {
+        form = new RegistrationForm(event, { locale, group });
+        forms.set(key, form);
+      }
+      return form;
+    };
+
     const results = registrations.map((registration) => {
-      form.load(registration.data);
+      const form = formFor(registration).load(registration.data);
       const computedData = computedRegistrationData(form.extractEventData());
 
       return this.prisma.registration.update({

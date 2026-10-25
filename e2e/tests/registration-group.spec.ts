@@ -131,7 +131,6 @@ test.describe('registration groups', () => {
     await form(page).locator('[data-name=first_name] input').fill('Tom');
 
     await page.getByTestId('registration-group').click();
-    await page.getByTestId('registration-group-change').click();
     await page.locator('[data-testid="submit"]').click();
 
     await expect(groupChoice(page)).toBeVisible();

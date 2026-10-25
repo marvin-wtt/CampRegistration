@@ -86,7 +86,7 @@ import type {
 } from '@camp-registration/common/entities';
 import CountryIcon from '@/components/common/localization/CountryIcon.vue';
 import { countryName } from '@/utils/countries';
-import { eventAvailability } from '@/utils/eventAvailability';
+import { groupFreePlaces } from '@/utils/eventAvailability';
 
 defineEmits([...useDialogPluginComponent.emits]);
 
@@ -119,29 +119,24 @@ interface MoveOption {
   caption: string | null;
 }
 
-const options = computed<MoveOption[]>(() => {
-  const availability = eventAvailability(event);
-  const perGroup = availability !== null && availability.length > 1;
-
-  return event.countries
+const options = computed<MoveOption[]>(() =>
+  event.countries
     .filter((country) => country !== registration.group)
     .map((country) => {
-      const free = perGroup
-        ? availability.find((entry) => entry.countries.includes(country))?.free
-        : undefined;
+      const free = groupFreePlaces(event, country);
 
       return {
         value: country,
         label: countryName(country, locale.value),
         caption:
-          free === undefined
+          free === null
             ? null
             : free === 0
               ? t('full')
               : t('placesLeft', { count: free }, free),
       };
-    });
-});
+    }),
+);
 </script>
 
 <i18n locale="en" lang="yaml">

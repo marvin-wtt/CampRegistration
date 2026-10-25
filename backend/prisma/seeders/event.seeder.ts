@@ -76,19 +76,19 @@ class EventSeeder extends BaseSeeder {
     });
 
     await new RegistrationSeeder(event).seed(24, {
-      country: 'gb',
+      group: 'gb',
       status: 'ACCEPTED',
     });
     await new RegistrationSeeder(event).seed(5, {
-      country: 'gb',
+      group: 'gb',
       status: 'WAITLISTED',
     });
     await new RegistrationSeeder(event).seed(20, {
-      country: 'fr',
+      group: 'fr',
       status: 'ACCEPTED',
     });
     await new RegistrationSeeder(event).seed(3, {
-      country: 'fr',
+      group: 'fr',
       status: 'PENDING',
     });
     // Counselors are excluded from the room planner's default role filter.

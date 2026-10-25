@@ -22,29 +22,18 @@
             rounded
             no-caps
             class="event-page__group"
-            :aria-label="t('group.current', { group: groupName })"
+            :aria-label="`${t('group.current', { group: groupName })}. ${t('group.change')}`"
             data-test="registration-group"
+            @click="changeGroup"
           >
             <country-icon :country="group" />
             <span class="gt-xs q-ml-sm">{{ groupName }}</span>
-            <q-menu>
-              <q-list style="min-width: 220px">
-                <q-item-label header>
-                  {{ t('group.current', { group: groupName }) }}
-                </q-item-label>
-                <q-item
-                  v-close-popup
-                  clickable
-                  data-test="registration-group-change"
-                  @click="changeGroup"
-                >
-                  <q-item-section avatar>
-                    <q-icon name="swap_horiz" />
-                  </q-item-section>
-                  <q-item-section>{{ t('group.change') }}</q-item-section>
-                </q-item>
-              </q-list>
-            </q-menu>
+            <q-icon
+              name="swap_horiz"
+              size="xs"
+              class="q-ml-xs"
+            />
+            <q-tooltip>{{ t('group.change') }}</q-tooltip>
           </q-btn>
           <!-- The group belongs to this page; what follows, to the app. -->
           <q-separator
@@ -137,7 +126,7 @@
 
 <script lang="ts" setup>
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, onUnmounted, ref, watch } from 'vue';
 import { useMeta, useQuasar } from 'quasar';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import RegistrationForm from '@/components/common/RegistrationForm.vue';
@@ -176,9 +165,7 @@ const knownError = ref<'unavailable' | 'not_found' | null>(null);
 
 let openTimer: ReturnType<typeof setTimeout> | null = null;
 
-onMounted(async () => {
-  await loadEvent();
-});
+void loadEvent();
 
 onUnmounted(() => {
   stopRegistrationOpenTimer();

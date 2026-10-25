@@ -114,14 +114,14 @@ test.describe('event page — visual', () => {
     });
   });
 
-  test('group menu', async ({ page }) => {
+  test('group change', async ({ page }) => {
     await page.goto(`/events/${GROUP_EVENT}?group=fr`);
 
     await page.getByTestId('registration-group').click();
-    await expect(page.getByTestId('registration-group-change')).toBeVisible();
+    await expect(page.locator('[data-testid="submit"]')).toBeVisible();
     await settle(page);
 
-    await expect(page).toHaveScreenshot('event-page-group-menu.png');
+    await expect(page).toHaveScreenshot('event-page-group-change.png');
   });
 
   test('submit — saving overlay', async ({ page }) => {

@@ -139,7 +139,8 @@ if (props.event.countries.length > 1) {
         t('preview.group', { group: countryName(country, locale.value) }),
       onSelect: (country) => {
         previewGroup.value = country;
-        creator.getPlugin('preview')?.update?.();
+        // Rebuilds the open tab's survey, now answered for the new group.
+        creator.getPlugin(creator.activeTab)?.update?.();
       },
       compact,
       verticalPosition: compact ? 'top' : 'bottom',

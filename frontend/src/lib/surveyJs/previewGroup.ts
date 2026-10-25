@@ -27,7 +27,8 @@ export interface PreviewGroupActionOptions {
 
 /**
  * The group the preview is filled in for, like the group step on the event
- * page. Only on the preview tab: elsewhere there is no form to answer.
+ * page. Only on the preview and theme tabs: elsewhere there is no form to
+ * answer.
  */
 export function createPreviewGroupAction(
   creator: SurveyCreatorModel,
@@ -43,7 +44,9 @@ export function createPreviewGroupAction(
       id: 'preview-group',
       iconName: 'icon-preview-group',
       iconSize: 'auto',
-      visible: new ComputedUpdater(() => creator.activeTab === 'preview'),
+      visible: new ComputedUpdater(() =>
+        ['preview', 'theme'].includes(creator.activeTab),
+      ),
     },
     {
       items,

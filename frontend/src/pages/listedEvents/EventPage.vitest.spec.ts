@@ -160,10 +160,6 @@ describe('EventPage', () => {
       .querySelector<HTMLElement>('[data-test="registration-group"]')!
       .click();
     await flushPromises();
-    document
-      .querySelector<HTMLElement>('[data-test="registration-group-change"]')!
-      .click();
-    await flushPromises();
 
     expect(router.currentRoute.value.query.group).toBeUndefined();
     expect(

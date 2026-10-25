@@ -3,10 +3,7 @@ import type { Event, Prisma } from '#generated/prisma/client.js';
 import { faker } from '@faker-js/faker/locale/en';
 import moment from 'moment';
 import { RegistrationForm } from '#app/registration/registration.form.js';
-import {
-  computedRegistrationData,
-  extractedGroup,
-} from '#app/registration/registration.helper.js';
+import { computedRegistrationData } from '#app/registration/registration.helper.js';
 import { localeForCountry } from '@camp-registration/common/locales';
 import {
   buildRegistrationData,
@@ -43,7 +40,7 @@ export class RegistrationSeeder {
 
       await RegistrationFactory.create({
         event: { connect: { id: this.event.id } },
-        ...this.computedData(data, waitingList, locale),
+        ...this.computedData(data, waitingList, registrant.country, locale),
         locale,
         data,
         files: files.length
@@ -64,7 +61,7 @@ export class RegistrationSeeder {
 
   private createRegistrant(overrides: Data): Registrant {
     const country =
-      (overrides.country as string | undefined) ??
+      (overrides.group as string | undefined) ??
       faker.helpers.arrayElement(this.event.countries);
     const role = (overrides.role as string | undefined) ?? 'participant';
     const firstName = faker.person.firstName();
@@ -154,18 +151,17 @@ export class RegistrationSeeder {
   private computedData(
     data: Record<string, unknown>,
     waitingList: boolean,
+    group: string,
     locale: string,
   ): Partial<Prisma.RegistrationCreateInput> {
     const form = new RegistrationForm(
       { ...this.event, freePlaces: freePlacesFor(this.event, waitingList) },
-      { locale },
+      { locale, group },
     ).load(data);
 
-    const eventData = form.extractEventData();
-
     return {
-      ...computedRegistrationData(eventData),
-      group: extractedGroup(eventData),
+      ...computedRegistrationData(form.extractEventData()),
+      group,
     };
   }
 }

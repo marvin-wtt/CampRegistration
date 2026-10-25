@@ -56,10 +56,17 @@ const NAME_COLUMNS: TableColumnTemplate[] = [
   },
 ];
 
-const COUNTRY_COLUMN: TableColumnTemplate = {
-  name: 'country',
-  field: 'computedData.address.country',
-  label: { en: 'Country', de: 'Land', fr: 'Pays', cs: 'Země', pl: 'Kraj' },
+const GROUP_COLUMN: TableColumnTemplate = {
+  name: 'group',
+  field: 'group',
+  source: 'meta',
+  label: {
+    en: 'Group',
+    de: 'Gruppe',
+    fr: 'Groupe',
+    cs: 'Skupina',
+    pl: 'Grupa',
+  },
   align: 'left',
   sortable: true,
   renderAs: 'country_flag',
@@ -148,7 +155,7 @@ export function buildLocalTableTemplates(
       localFilter: isParticipant,
       columns: [
         ...NAME_COLUMNS,
-        COUNTRY_COLUMN,
+        GROUP_COLUMN,
         REGISTERED_COLUMN,
         STATUS_COLUMN,
       ],
@@ -171,7 +178,7 @@ export function buildLocalTableTemplates(
       localFilter: (registration) =>
         isParticipant(registration) &&
         (!helper.email(registration) || !helper.fullName(registration)),
-      columns: [...NAME_COLUMNS, EMAIL_COLUMN, COUNTRY_COLUMN, STATUS_COLUMN],
+      columns: [...NAME_COLUMNS, EMAIL_COLUMN, GROUP_COLUMN, STATUS_COLUMN],
     },
     {
       id: LOCAL_TEMPLATE_AGE,
@@ -198,7 +205,7 @@ export function buildLocalTableTemplates(
         }
         return age < event.minAge || age > event.maxAge;
       },
-      columns: [...NAME_COLUMNS, AGE_COLUMN, COUNTRY_COLUMN, STATUS_COLUMN],
+      columns: [...NAME_COLUMNS, AGE_COLUMN, GROUP_COLUMN, STATUS_COLUMN],
     },
   ];
 }

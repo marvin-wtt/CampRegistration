@@ -257,7 +257,7 @@ model Registration {
   country                            String?
   // The group the registration belongs to, by its country code. The address's
   // own country is `country`, and may differ.
-  group                              String?
+  group                              String?            @db.VarChar(2)
   newsletterConsent                  Boolean?           @map("newsletter_consent")
   locale                             String             @default("en-US") @db.VarChar(5)
   //
@@ -280,6 +280,8 @@ model Registration {
 
   @@index([organizationPrivacyNoticeVersionId], map: "registrations_organization_privacy_notice_version_id_index")
   @@index([eventPrivacyNoticeVersionId], map: "registrations_event_privacy_notice_version_id_index")
+  // Counted per group on every registration, for its participant limit.
+  @@index([eventId, group], map: "registrations_event_id_group_index")
   @@map("registrations")
 }
 

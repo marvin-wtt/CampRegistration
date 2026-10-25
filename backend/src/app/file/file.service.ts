@@ -11,6 +11,7 @@ import { extractKeyFromFieldName, fileNameExtension } from '#utils/file';
 import { isClientDisconnect } from '#utils/stream';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
+import { buffer } from 'node:stream/consumers';
 import { inject, injectable } from 'inversify';
 import { Config } from '#core/ioc/decorators';
 import type { AppConfig } from '#config';
@@ -464,7 +465,7 @@ export class FileService extends BaseService {
     const stream = await this.openReadStream(file);
 
     // Decryption/storage errors surface asynchronously, possibly before the
-    // consumer (HTTP response, mail transport) attaches its own 'error'
+    // consumer (the HTTP response) attaches its own 'error'
     // listener — without one here, such an error crashes the process.
     stream.on('error', (error: Error) => {
       // Says nothing about the file, and every cancelled preview emits one —
@@ -478,6 +479,16 @@ export class FileService extends BaseService {
     });
 
     return stream;
+  }
+
+  /**
+   * The whole file in memory, for consumers that hold it anyway, such as mail
+   * attachments: unlike a stream, nothing is left open when it goes unread.
+   */
+  async getFileBuffer(
+    file: StorageFile & { uploadStatus?: File['uploadStatus'] },
+  ): Promise<Buffer> {
+    return buffer(await this.openReadStream(file));
   }
 
   // A pending upload already sits complete in the tmp dir, so it is served

@@ -232,9 +232,32 @@ describe('changesForRegistration', () => {
     ]);
   });
 
+  it("uses the group's language, not its country code", () => {
+    const event = {
+      ...eventWith({
+        elements: [
+          {
+            type: 'text',
+            name: 'diet',
+            title: { default: 'Diet', cs: 'Strava' },
+          },
+        ],
+      }),
+      countries: ['de', 'cz'],
+    } as unknown as Event;
+
+    const changes = changesForRegistration(
+      event,
+      registrationWith({ diet: 'vegan' }),
+      registrationWith({ diet: 'none' }, { group: 'cz' }),
+    );
+
+    expect(changes).toMatchObject([{ label: 'Strava' }]);
+  });
+
   it('falls back to the registration locale when there is no group', () => {
     const changes = changesForRegistration(
-      simpleEvent,
+      { ...simpleEvent, countries: ['de', 'fr'] },
       registrationWith({ diet: 'vegan' }),
       registrationWith({ diet: 'vegetarian' }, { locale: 'en-US' }),
     );

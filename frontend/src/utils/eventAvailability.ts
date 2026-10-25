@@ -63,3 +63,22 @@ export function eventAvailability(
 
   return entries.length > 0 ? entries : null;
 }
+
+/**
+ * One group's free places. `null` when the event shares one limit across its
+ * groups or doesn't publish its free places.
+ */
+export function groupFreePlaces(
+  event: AvailabilityEvent,
+  country: string,
+): number | null {
+  const availability = eventAvailability(event);
+  if (availability === null || availability.length < 2) {
+    return null;
+  }
+
+  return (
+    availability.find((entry) => entry.countries.includes(country))?.free ??
+    null
+  );
+}
