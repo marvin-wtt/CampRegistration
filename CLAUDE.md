@@ -39,8 +39,9 @@ npm run format --workspace backend
 
 # Single test file (unit) — `--` forwards the path to vitest, `run` disables watch mode
 npm run test:unit --workspace backend -- run tests/unit/path/to/test.ts
-# Single test file (integration)
-npm run test:int --workspace backend -- run tests/integration/path/to/test.ts
+# Single test file (integration) — `test:int` doesn't load `.env.test`, so call
+# vitest through dotenv; the suite prints only at the end when not in a terminal
+npm exec --workspace backend -- dotenv -e .env.test -- vitest -c ./vitest.config.integration.ts run tests/integration/path/to/test.ts
 
 # Database
 npm run db:migrate --workspace backend               # Apply Prisma migrations
@@ -97,7 +98,8 @@ is opened. Read the relevant one before changing that workspace:
 - **`backend/CLAUDE.md`** — modules & DI, request flow, database, auth, permission
   scopes, email, queues & scheduler, organizations, realtime (SSE), the `#*` alias
 - **`frontend/CLAUDE.md`** — Pinia/API conventions, i18n, MD3 styling and tokens
-- **`docs/organizations.md`** and **`docs/live-updates-plan.md`** — the full designs
+- **`docs/organizations.md`**, **`docs/live-updates-plan.md`** and
+  **`docs/country-groups.md`** — the full designs
 - **`backend/prisma/data-migrations/README.md`** — the data migration runner
 
 ### Skills
