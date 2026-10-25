@@ -1,6 +1,7 @@
 export default {
   refresh: {
-    error: 'Deine Sitzung konnte nicht wiederhergestellt werden. Neuer Versuch…',
+    error:
+      'Deine Sitzung konnte nicht wiederhergestellt werden. Neuer Versuch…',
   },
   logout: {
     error: 'Abmeldung fehlgeschlagen',
