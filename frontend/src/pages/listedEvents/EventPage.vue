@@ -5,76 +5,78 @@
     class="row justify-center"
     :style="{ backgroundColor: bgColor }"
   >
-    <div
-      v-if="event && registrationFormVisible && group !== undefined"
-      class="event-page__content full-width"
-    >
-      <!-- In the floating header, so the form's own header keeps the top. -->
-      <teleport
-        v-if="group && formActive && event.countries.length > 1"
-        to="#event-header-actions"
-        defer
+    <template v-if="event && registrationFormVisible">
+      <div
+        v-if="group !== undefined"
+        class="event-page__content full-width"
       >
-        <q-btn
-          flat
-          dense
-          rounded
-          no-caps
-          class="event-page__group"
-          :aria-label="t('group.current', { group: groupName })"
-          data-test="registration-group"
+        <!-- In the floating header, so the form's own header keeps the top. -->
+        <teleport
+          v-if="group && formActive && event.countries.length > 1"
+          to="#event-header-actions"
+          defer
         >
-          <country-icon :country="group" />
-          <span class="gt-xs q-ml-sm">{{ groupName }}</span>
-          <q-menu>
-            <q-list style="min-width: 220px">
-              <q-item-label header>
-                {{ t('group.current', { group: groupName }) }}
-              </q-item-label>
-              <q-item
-                v-close-popup
-                clickable
-                data-test="registration-group-change"
-                @click="changeGroup"
-              >
-                <q-item-section avatar>
-                  <q-icon name="swap_horiz" />
-                </q-item-section>
-                <q-item-section>{{ t('group.change') }}</q-item-section>
-              </q-item>
-            </q-list>
-          </q-menu>
-        </q-btn>
-        <!-- The group belongs to this page; what follows, to the app. -->
-        <q-separator
-          vertical
-          class="event-page__group-separator"
+          <q-btn
+            flat
+            dense
+            rounded
+            no-caps
+            class="event-page__group"
+            :aria-label="t('group.current', { group: groupName })"
+            data-test="registration-group"
+          >
+            <country-icon :country="group" />
+            <span class="gt-xs q-ml-sm">{{ groupName }}</span>
+            <q-menu>
+              <q-list style="min-width: 220px">
+                <q-item-label header>
+                  {{ t('group.current', { group: groupName }) }}
+                </q-item-label>
+                <q-item
+                  v-close-popup
+                  clickable
+                  data-test="registration-group-change"
+                  @click="changeGroup"
+                >
+                  <q-item-section avatar>
+                    <q-icon name="swap_horiz" />
+                  </q-item-section>
+                  <q-item-section>{{ t('group.change') }}</q-item-section>
+                </q-item>
+              </q-list>
+            </q-menu>
+          </q-btn>
+          <!-- The group belongs to this page; what follows, to the app. -->
+          <q-separator
+            vertical
+            class="event-page__group-separator"
+          />
+        </teleport>
+        <!-- Keyed: a new group or a new registrant needs a new form. -->
+        <registration-form
+          :key="`${group ?? ''}-${formRun}`"
+          :event-details="event"
+          :group
+          :submit-fn="submit"
+          :upload-file-fn="uploadFile"
+          class="full-width"
+          @bg-color-update="(color) => updateBgColor(color)"
+          @active-change="(active) => (formActive = active)"
+          @restart="registerAnother"
         />
-      </teleport>
-      <!-- Keyed: a new group or a new registrant needs a new form. -->
-      <registration-form
-        :key="`${group ?? ''}-${formRun}`"
-        :event-details="event"
-        :group
-        :submit-fn="submit"
-        :upload-file-fn="uploadFile"
-        class="full-width"
-        @bg-color-update="(color) => updateBgColor(color)"
-        @active-change="(active) => (formActive = active)"
-        @restart="registerAnother"
-      />
-      <privacy-notice-disclosure
-        v-if="formActive"
-        :event-id="event.id"
-        class="event-page__privacy"
-      />
-    </div>
+        <privacy-notice-disclosure
+          v-if="formActive"
+          :event-id="event.id"
+          class="event-page__privacy"
+        />
+      </div>
 
-    <registration-group-select
-      v-else-if="event && registrationFormVisible"
-      :event
-      @select="chooseGroup"
-    />
+      <registration-group-select
+        v-else
+        :event
+        @select="chooseGroup"
+      />
+    </template>
 
     <!-- Not available / registration closed -->
     <div
