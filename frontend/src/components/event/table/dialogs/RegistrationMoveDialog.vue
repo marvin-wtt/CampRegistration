@@ -51,7 +51,7 @@
           rounded
           class="bg-warning-container text-on-warning-container text-body2"
         >
-          {{ t('warning', { current: currentName }) }}
+          {{ t('warning') }}
         </q-banner>
       </q-card-section>
 
@@ -142,7 +142,7 @@ const options = computed<MoveOption[]>(() =>
 <i18n locale="en" lang="yaml">
 title: 'Change group'
 text: 'Move the registration of {name} from {current} to:'
-warning: 'The registration was filled in and its terms accepted for {current}. The answers stay as given and are not checked against the new group. Status and waiting list stay unchanged, and no message is sent.'
+warning: "Only the group changes. The answers and accepted terms stay as they are, even if some don't fit the new group, so check them if needed. Status and waiting list stay the same, and the person is not notified."
 full: 'No places left'
 placesLeft: 'No places left | 1 place left | {count} places left'
 action:
@@ -153,7 +153,7 @@ action:
 <i18n locale="de" lang="yaml">
 title: 'Gruppe wechseln'
 text: 'Anmeldung von {name} von {current} verschieben nach:'
-warning: 'Die Anmeldung wurde für {current} ausgefüllt und deren Bedingungen akzeptiert. Die Antworten bleiben unverändert und werden nicht gegen die neue Gruppe geprüft. Status und Warteliste bleiben gleich, und es wird keine Nachricht gesendet.'
+warning: 'Nur die Gruppe ändert sich. Antworten und akzeptierte Bedingungen bleiben, wie sie sind, auch wenn manche nicht zur neuen Gruppe passen. Prüfe sie bei Bedarf. Status und Warteliste bleiben gleich, und die Person wird nicht benachrichtigt.'
 full: 'Keine Plätze frei'
 placesLeft: 'Keine Plätze frei | 1 Platz frei | {count} Plätze frei'
 action:
@@ -164,7 +164,7 @@ action:
 <i18n locale="fr" lang="yaml">
 title: 'Changer de groupe'
 text: "Déplacer l'inscription de {name} de {current} vers :"
-warning: "L'inscription a été remplie et ses conditions acceptées pour {current}. Les réponses restent telles quelles et ne sont pas vérifiées pour le nouveau groupe. Le statut et la liste d'attente ne changent pas, et aucun message n'est envoyé."
+warning: "Seul le groupe change. Les réponses et les conditions acceptées restent telles quelles, même si certaines ne correspondent pas au nouveau groupe : à vérifier si nécessaire. Le statut et la liste d'attente ne changent pas, et la personne n'est pas prévenue."
 full: 'Aucune place restante'
 placesLeft: 'Aucune place restante | 1 place restante | {count} places restantes'
 action:
@@ -175,7 +175,7 @@ action:
 <i18n locale="pl" lang="yaml">
 title: 'Zmień grupę'
 text: 'Przenieś zgłoszenie {name} z: {current} do:'
-warning: 'Zgłoszenie zostało wypełnione, a jego warunki zaakceptowane dla: {current}. Odpowiedzi pozostają bez zmian i nie są sprawdzane pod kątem nowej grupy. Status i lista oczekujących się nie zmieniają, a żadna wiadomość nie zostanie wysłana.'
+warning: 'Zmienia się tylko grupa. Odpowiedzi i zaakceptowane warunki pozostają bez zmian, nawet jeśli niektóre nie pasują do nowej grupy, więc w razie potrzeby je sprawdź. Status i lista oczekujących się nie zmieniają, a osoba nie zostanie powiadomiona.'
 full: 'Brak wolnych miejsc'
 placesLeft: 'Wolne miejsca: {count}'
 action:
@@ -186,7 +186,7 @@ action:
 <i18n locale="cs" lang="yaml">
 title: 'Změnit skupinu'
 text: 'Přesunout registraci {name} z: {current} do:'
-warning: 'Registrace byla vyplněna a její podmínky přijaty pro: {current}. Odpovědi zůstávají beze změny a nekontrolují se vůči nové skupině. Stav ani čekací listina se nemění a žádná zpráva se neodešle.'
+warning: 'Mění se pouze skupina. Odpovědi a přijaté podmínky zůstávají beze změny, i když některé nemusí odpovídat nové skupině, proto je v případě potřeby zkontrolujte. Stav ani čekací listina se nemění a osoba nebude upozorněna.'
 full: 'Žádná volná místa'
 placesLeft: 'Volná místa: {count}'
 action:
