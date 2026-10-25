@@ -425,6 +425,37 @@ describe('RegistrationForm.extractEventData', () => {
       email: ['jhon@example.com', null],
     });
   });
+
+  it('collects tagged questions inside dynamic panels and matrices', () => {
+    const event = eventWith([
+      {
+        type: 'paneldynamic',
+        name: 'contacts',
+        templateElements: [
+          { type: 'text', name: 'name' },
+          { type: 'text', name: 'phone', eventDataType: 'phone' },
+        ],
+      },
+      {
+        type: 'matrixdynamic',
+        name: 'guardians',
+        columns: [{ name: 'email', cellType: 'text', eventDataType: 'email' }],
+      },
+    ]);
+
+    const form = new RegistrationForm(event).load({
+      contacts: [
+        { name: 'Mom', phone: '+49 123' },
+        { name: 'Dad', phone: '+49 456' },
+      ],
+      guardians: [{ email: 'mom@example.com' }],
+    });
+
+    expect(form.extractEventData()).toEqual({
+      phone: ['+49 123', '+49 456'],
+      email: ['mom@example.com'],
+    });
+  });
 });
 
 describe('RegistrationForm.getFileIds', () => {
