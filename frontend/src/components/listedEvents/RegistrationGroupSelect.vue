@@ -4,30 +4,11 @@
     data-test="registration-group-select"
   >
     <!-- Usually the first page of a shared link: show whose event this is. -->
-    <header
-      class="group-select__identity rounded-xl q-mb-lg"
+    <event-identity
+      :event
+      class="q-mb-lg"
       data-test="registration-group-identity"
-    >
-      <event-cover
-        :event
-        :ratio="3.4"
-        badge-align="center"
-      />
-
-      <div
-        class="group-select__heading column items-center text-center q-px-md q-pb-md"
-      >
-        <h1 class="text-h5 text-weight-medium q-my-none">
-          {{ to(event.name) }}
-        </h1>
-        <div
-          v-if="details"
-          class="text-body2 text-on-surface-variant q-mt-xs"
-        >
-          {{ details }}
-        </div>
-      </div>
-    </header>
+    />
 
     <div class="text-body1 text-center text-on-surface-variant q-mb-md">
       {{ t('prompt') }}
@@ -76,8 +57,7 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { EventDetails } from '@camp-registration/common/entities';
 import CountryIcon from '@/components/common/localization/CountryIcon.vue';
-import EventCover from '@/components/listedEvents/EventCover.vue';
-import { useObjectTranslation } from '@/composables/objectTranslation';
+import EventIdentity from '@/components/listedEvents/EventIdentity.vue';
 import { countryName } from '@/utils/countries';
 import { groupFreePlaces } from '@/utils/eventAvailability';
 
@@ -90,24 +70,6 @@ const emit = defineEmits<{
 }>();
 
 const { t, locale } = useI18n();
-const { to } = useObjectTranslation();
-
-// Both dates in full, like the form's own header right after this page.
-const dateRange = computed<string>(() => {
-  const formatter = new Intl.DateTimeFormat(locale.value, {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
-  return [event.startAt, event.endAt]
-    .map((date) => formatter.format(new Date(date)))
-    .join(' – ');
-});
-
-// What people check first: when and where.
-const details = computed<string>(() =>
-  [dateRange.value, to(event.location)].filter(Boolean).join(' · '),
-);
 
 interface GroupOption {
   group: string;
@@ -126,21 +88,6 @@ const options = computed<GroupOption[]>(() =>
 </script>
 
 <style lang="scss" scoped>
-// Outlined like the group list below it.
-.group-select__identity {
-  // A definite width: in Quasar's wrapping `column` the height would be
-  // sized at a narrower width, so the cover's aspect ratio clips the text.
-  width: 100%;
-  background: var(--md3-surface-container-low);
-  border: 1px solid var(--md3-outline-variant);
-  overflow: hidden;
-}
-
-.group-select__heading {
-  // Clears the badge overlapping down from the cover.
-  padding-top: 32px;
-}
-
 .group-select__list {
   width: 100%;
   background: var(--md3-surface-container-low);

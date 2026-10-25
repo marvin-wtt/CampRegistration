@@ -141,6 +141,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import type { Event } from '@camp-registration/common/entities';
+import { eventGroupFields } from '@camp-registration/common/utils';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { useLink } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -163,7 +164,11 @@ const props = defineProps<Props>();
 
 const tone = computed(() => eventTone(props.event.id));
 
-const organizerLabel = computed<string>(() => to(props.event.organizer));
+// Organizers are per group, not per locale; a card has no group, so it names
+// every group's.
+const organizerLabel = computed<string>(
+  () => eventGroupFields(props.event, null).organizer,
+);
 
 /** Collapsed for comparison only — never for display. */
 function normalize(value: string): string {

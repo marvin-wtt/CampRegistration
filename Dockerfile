@@ -34,6 +34,10 @@ FROM node:22-bookworm-slim AS runtime
 ENV NODE_ENV=production \
     APP_PORT=3000
 
+# The migrate service runs the Prisma CLI here, whose schema engine needs libssl
+RUN apt-get update && apt-get install -y --no-install-recommends openssl \
+    && rm -rf /var/lib/apt/lists/*
+
 # /data is the mounted uploads/tmp volume. The app handles SIGTERM itself, so
 # no init (tini) is needed; set `init: true` in compose if you want one.
 RUN mkdir -p /data/uploads /data/tmp && chown -R node:node /data
