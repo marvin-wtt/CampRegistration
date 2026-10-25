@@ -131,6 +131,7 @@
           bannerFile ? eventFileStore.getUrl(bannerFile.id) : undefined
         "
         :description="t('banner.description')"
+        :thumbnail-ratio="2.4"
         :empty-text="t('banner.empty')"
         :not-public-text="t('banner.not_public')"
         :add-label="t('action.add_banner')"
@@ -140,7 +141,53 @@
         :upload-loading="uploadOngoing"
         @upload="uploadBanner"
         @delete="showDeleteDialog(bannerFile!)"
-      />
+      >
+        <!-- The banner is cropped differently where it's shown. Collapsed:
+             it's only needed while choosing an image. -->
+        <template v-if="bannerPreviewEvent">
+          <m-btn
+            :label="
+              t(
+                bannerPreviewOpen
+                  ? 'banner.preview.hide'
+                  : 'banner.preview.show',
+              )
+            "
+            :icon-right="bannerPreviewOpen ? 'expand_less' : 'expand_more'"
+            color="primary"
+            text
+            no-caps
+            rounded
+            data-test="banner-preview-toggle"
+            @click="bannerPreviewOpen = !bannerPreviewOpen"
+          />
+          <q-slide-transition>
+            <div
+              v-if="bannerPreviewOpen"
+              class="banner-previews q-pt-sm"
+              data-test="banner-previews"
+            >
+              <figure
+                v-for="preview in BANNER_PREVIEWS"
+                :key="preview.key"
+                class="banner-preview"
+                :style="{ maxWidth: `${preview.width}px` }"
+              >
+                <div class="banner-preview__frame rounded-lg">
+                  <event-cover
+                    :event="bannerPreviewEvent"
+                    :ratio="preview.ratio"
+                    :badge-align="preview.badgeAlign"
+                  />
+                </div>
+                <figcaption class="text-caption text-on-surface-variant">
+                  {{ t(`banner.preview.${preview.key}`) }}
+                </figcaption>
+              </figure>
+            </div>
+          </q-slide-transition>
+        </template>
+      </file-slot-card>
 
       <!-- Files -->
       <q-card
@@ -381,6 +428,7 @@ import { computed, onMounted, ref } from 'vue';
 import { copyToClipboard, useQuasar } from 'quasar';
 import FileUploadDialog from '@/components/event/settings/files/FileUploadDialog.vue';
 import FileSlotCard from '@/components/event/settings/files/FileSlotCard.vue';
+import EventCover from '@/components/listedEvents/EventCover.vue';
 import type { ServiceFile } from '@camp-registration/common/entities';
 import { formatBytes } from '@/utils/formatters/formatBytes';
 import { formatUtcDateTime } from '@/utils/formatters/formatUtcDateTime';
@@ -431,6 +479,29 @@ const logoFile = computed<ServiceFile | undefined>(
 const bannerFile = computed<ServiceFile | undefined>(
   () => eventFileStore.bannerFile,
 );
+
+// The crops the banner is shown in, at about the width they take there.
+const BANNER_PREVIEWS = [
+  { key: 'card', ratio: 2.4, width: 300, badgeAlign: 'start' },
+  { key: 'group', ratio: 3.4, width: 420, badgeAlign: 'center' },
+] as const;
+
+const bannerPreviewOpen = ref(false);
+
+// The uploaded file, not the event's public banner, so a private one shows too.
+const bannerPreviewEvent = computed(() => {
+  const event = eventStore.data;
+  if (!event || !bannerFile.value?.type.startsWith('image/')) {
+    return null;
+  }
+
+  return {
+    id: event.id,
+    name: event.name,
+    logo: event.logo,
+    banner: eventFileStore.getUrl(bannerFile.value.id),
+  };
+});
 
 /**
  * Presentational ordering for the file list:
@@ -612,6 +683,29 @@ function copyLink(url: string) {
   max-width: 960px;
   min-width: 0;
   padding-bottom: 24px;
+}
+
+.banner-previews {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.banner-preview {
+  flex: 1 1 240px;
+  margin: 0;
+}
+
+/* Room below for the badge overlapping the banner's edge. */
+.banner-preview__frame {
+  padding-bottom: 24px;
+  border: 1px solid var(--md3-outline-variant);
+  background: var(--md3-surface-container-low);
+  overflow: hidden;
+}
+
+.banner-preview figcaption {
+  margin-top: 4px;
 }
 
 /* The default page padding feels cramped under the app bar on phones. */
@@ -892,7 +986,12 @@ logo:
   not_public: 'The logo is private. Only public files are shown to participants.'
 
 banner:
-  description: 'Shown as a wide cover image on the event card, when set.'
+  description: 'Shown as a cover image on the event card and on the group selection, when set.'
+  preview:
+    show: 'Show preview'
+    hide: 'Hide preview'
+    card: 'Event card'
+    group: 'Group selection'
   empty: 'No banner uploaded yet.'
   not_public: 'The banner is private. Only public files are shown to participants.'
 
@@ -956,7 +1055,12 @@ logo:
   not_public: 'Das Logo ist privat. Teilnehmenden werden nur öffentliche Dateien angezeigt.'
 
 banner:
-  description: 'Wird, falls vorhanden, als breites Titelbild auf der Veranstaltungskarte angezeigt.'
+  description: 'Wird, falls vorhanden, als Titelbild auf der Veranstaltungskarte und bei der Gruppenauswahl angezeigt.'
+  preview:
+    show: 'Vorschau anzeigen'
+    hide: 'Vorschau ausblenden'
+    card: 'Veranstaltungskarte'
+    group: 'Gruppenauswahl'
   empty: 'Noch kein Banner hochgeladen.'
   not_public: 'Das Banner ist privat. Teilnehmenden werden nur öffentliche Dateien angezeigt.'
 
@@ -1020,7 +1124,12 @@ logo:
   not_public: 'Le logo est privé. Seuls les fichiers publics sont affichés aux participants.'
 
 banner:
-  description: "Affichée, si définie, comme grande image de couverture sur la carte de l'événement."
+  description: "Affichée, si définie, comme image de couverture sur la carte de l'événement et lors du choix du groupe."
+  preview:
+    show: "Afficher l'aperçu"
+    hide: "Masquer l'aperçu"
+    card: "Carte de l'événement"
+    group: 'Choix du groupe'
   empty: 'Aucune bannière téléversée pour le moment.'
   not_public: 'La bannière est privée. Seuls les fichiers publics sont affichés aux participants.'
 
@@ -1084,7 +1193,12 @@ logo:
   not_public: 'Logo jest prywatne. Uczestnikom pokazywane są tylko pliki publiczne.'
 
 banner:
-  description: 'Wyświetlany, jeśli ustawiony, jako szeroki obraz tytułowy na karcie wydarzenia.'
+  description: 'Wyświetlany, jeśli ustawiony, jako obraz tytułowy na karcie wydarzenia i przy wyborze grupy.'
+  preview:
+    show: 'Pokaż podgląd'
+    hide: 'Ukryj podgląd'
+    card: 'Karta wydarzenia'
+    group: 'Wybór grupy'
   empty: 'Nie przesłano jeszcze banera.'
   not_public: 'Baner jest prywatny. Uczestnikom pokazywane są tylko pliki publiczne.'
 
@@ -1148,7 +1262,12 @@ logo:
   not_public: 'Logo je soukromé. Účastníkům se zobrazují pouze veřejné soubory.'
 
 banner:
-  description: 'Pokud je nastaven, zobrazuje se jako široký titulní obrázek na kartě akce.'
+  description: 'Pokud je nastaven, zobrazuje se jako titulní obrázek na kartě akce a při výběru skupiny.'
+  preview:
+    show: 'Zobrazit náhled'
+    hide: 'Skrýt náhled'
+    card: 'Karta akce'
+    group: 'Výběr skupiny'
   empty: 'Zatím nebyl nahrán žádný banner.'
   not_public: 'Banner je soukromý. Účastníkům se zobrazují pouze veřejné soubory.'
 

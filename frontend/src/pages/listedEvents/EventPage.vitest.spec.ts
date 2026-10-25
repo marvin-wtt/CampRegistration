@@ -61,6 +61,9 @@ function eventWith(countries: string[]): EventDetails {
     freePlaces: Object.fromEntries(countries.map((c) => [c, 3])),
     maxParticipants: Object.fromEntries(countries.map((c) => [c, 10])),
     registrationStatus: 'open',
+    startAt: '2027-01-26T09:00:00',
+    endAt: '2027-02-02T17:00:00',
+    location: 'Sometown',
     registrationOpensAt: null,
     registrationClosesAt: null,
     form: {},
@@ -127,24 +130,18 @@ describe('EventPage', () => {
         .trigger('click');
       await flushPromises();
 
-      expect(router.currentRoute.value.query.country).toBe('fr');
+      expect(router.currentRoute.value.query.group).toBe('fr');
       expect(form(wrapper).attributes('data-group')).toBe('fr');
     });
 
     it('opens the form directly for a group preselected by a link', async () => {
-      const wrapper = await mountPage(
-        ['de', 'fr'],
-        '/events/event-1?country=FR',
-      );
+      const wrapper = await mountPage(['de', 'fr'], '/events/event-1?group=FR');
 
       expect(form(wrapper).attributes('data-group')).toBe('fr');
     });
 
     it('asks again for a group the event does not run', async () => {
-      const wrapper = await mountPage(
-        ['de', 'fr'],
-        '/events/event-1?country=it',
-      );
+      const wrapper = await mountPage(['de', 'fr'], '/events/event-1?group=it');
 
       expect(form(wrapper).exists()).toBe(false);
     });
@@ -157,7 +154,7 @@ describe('EventPage', () => {
   });
 
   it('returns to the choice after confirming a group change', async () => {
-    const wrapper = await mountPage(['de', 'fr'], '/events/event-1?country=fr');
+    const wrapper = await mountPage(['de', 'fr'], '/events/event-1?group=fr');
 
     document
       .querySelector<HTMLElement>('[data-test="registration-group"]')!
@@ -168,7 +165,7 @@ describe('EventPage', () => {
       .click();
     await flushPromises();
 
-    expect(router.currentRoute.value.query.country).toBeUndefined();
+    expect(router.currentRoute.value.query.group).toBeUndefined();
     expect(
       wrapper.find('[data-test="registration-group-select"]').exists(),
     ).toBe(true);
@@ -187,15 +184,12 @@ describe('EventPage', () => {
     });
 
     it('asks for the group again on a multi-country event', async () => {
-      const wrapper = await mountPage(
-        ['de', 'fr'],
-        '/events/event-1?country=fr',
-      );
+      const wrapper = await mountPage(['de', 'fr'], '/events/event-1?group=fr');
 
       wrapper.findComponent(RegistrationFormStub).vm.$emit('restart');
       await flushPromises();
 
-      expect(router.currentRoute.value.query.country).toBeUndefined();
+      expect(router.currentRoute.value.query.group).toBeUndefined();
       expect(
         wrapper.find('[data-test="registration-group-select"]').exists(),
       ).toBe(true);
@@ -203,7 +197,7 @@ describe('EventPage', () => {
   });
 
   it('submits the chosen group with the answers', async () => {
-    const wrapper = await mountPage(['de', 'fr'], '/events/event-1?country=fr');
+    const wrapper = await mountPage(['de', 'fr'], '/events/event-1?group=fr');
     const submit = wrapper
       .findComponent(RegistrationFormStub)
       .props('submitFn') as (

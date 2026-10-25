@@ -19,14 +19,17 @@
 
     <q-card-section class="file-slot-body">
       <div class="file-slot-main">
+        <!-- At the image's own shape, so a wide banner isn't cropped square. -->
         <q-avatar
           size="64px"
           rounded
           class="file-tile"
           :class="file ? fileTileClass(file.type) : 'tile--other'"
+          :style="{ width: `${64 * thumbnailRatio}px` }"
         >
           <img
             v-if="file?.type.startsWith('image/')"
+            class="file-tile__image"
             :src="fileUrl"
             :alt="title"
           />
@@ -78,6 +81,13 @@
         />
       </div>
     </q-card-section>
+    <!-- A preview of how the file is used, where a thumbnail can't show it. -->
+    <q-card-section
+      v-if="$slots.default"
+      class="q-pt-none"
+    >
+      <slot />
+    </q-card-section>
   </q-card>
 </template>
 
@@ -89,7 +99,7 @@ import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
 const { t } = useI18n();
 
-defineProps<{
+const { thumbnailRatio = 1 } = defineProps<{
   icon: string;
   title: string;
   file?: ServiceFile | undefined;
@@ -102,6 +112,8 @@ defineProps<{
   canUpload: boolean;
   canDelete: boolean;
   uploadLoading?: boolean;
+  // Width to height of the thumbnail.
+  thumbnailRatio?: number;
 }>();
 
 const emit = defineEmits<{
@@ -116,7 +128,12 @@ const emit = defineEmits<{
 }
 
 .file-tile {
+  flex-shrink: 0;
   border-radius: 12px;
+}
+
+.file-tile__image {
+  object-fit: cover;
 }
 
 .tile--document {
@@ -146,6 +163,7 @@ const emit = defineEmits<{
 
 .file-slot-main {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 16px;
 
@@ -153,8 +171,9 @@ const emit = defineEmits<{
   min-width: 0;
 }
 
+/* Drops below a wide thumbnail rather than shrinking to a narrow column. */
 .file-slot-info {
-  flex: 1;
+  flex: 1 1 180px;
   min-width: 0;
 }
 

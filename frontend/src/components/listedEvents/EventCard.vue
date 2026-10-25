@@ -11,60 +11,7 @@
     @click="navigate"
   >
     <span class="q-focus-helper" />
-    <div
-      class="event-card__banner"
-      aria-hidden="true"
-    >
-      <div class="event-card__banner-media">
-        <img
-          v-if="hasBanner"
-          class="event-card__banner-image"
-          :src="props.event.banner!"
-          alt=""
-          loading="lazy"
-          @error="bannerFailed = true"
-        />
-        <!-- No photo to show, so the tone gradient carries the banner on its
-             own instead of sitting empty. -->
-        <template v-else>
-          <span
-            class="event-card__banner-shape event-card__banner-shape--top"
-          />
-          <span
-            class="event-card__banner-shape event-card__banner-shape--bottom"
-          />
-        </template>
-        <!-- Grounds the badge below, whether it sits over a photo of any
-             brightness or over the tone gradient — either would otherwise
-             leave a same-tone badge with too little contrast to read. -->
-        <div class="event-card__banner-scrim" />
-      </div>
-
-      <!-- Deliberately outside the clipped media layer above, and rendered
-           the same way with or without a banner photo: one badge overlapping
-           the banner/content boundary, like a profile picture over a cover
-           photo, rather than a giant bare monogram in one case and a small
-           flush avatar in the other. -->
-      <div
-        class="event-card__badge"
-        :class="{ 'event-card__badge--plain': !hasLogo }"
-      >
-        <img
-          v-if="hasLogo"
-          class="event-card__badge-logo"
-          :src="props.event.logo!"
-          alt=""
-          loading="lazy"
-          @error="logoFailed = true"
-        />
-        <span
-          v-else
-          class="event-card__badge-monogram"
-        >
-          {{ monogram }}
-        </span>
-      </div>
-    </div>
+    <event-cover :event="props.event" />
 
     <q-card-section class="event-card__body">
       <div class="event-card__heading">
@@ -192,12 +139,14 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, watch } from 'vue';
+import { computed } from 'vue';
 import type { Event } from '@camp-registration/common/entities';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { useLink } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import CountryIcon from '@/components/common/localization/CountryIcon.vue';
+import EventCover from '@/components/listedEvents/EventCover.vue';
+import { eventTone } from '@/utils/eventTone';
 import {
   type AvailabilityEntry,
   eventAvailability,
@@ -212,51 +161,7 @@ interface Props {
 
 const props = defineProps<Props>();
 
-const tones = ['primary', 'secondary', 'tertiary'] as const;
-
-const tone = computed<(typeof tones)[number]>(() => {
-  const hash = [...props.event.id].reduce(
-    (acc, char) => acc + char.charCodeAt(0),
-    0,
-  );
-
-  return tones[hash % tones.length] ?? 'primary';
-});
-
-// The URL points at a slot, not at a file id: the file behind it can be gone
-// (deleted, or turned private) while this list is still on screen. Falling back
-// to the monogram beats a broken-image icon.
-const logoFailed = ref(false);
-
-watch(
-  () => props.event.logo,
-  () => {
-    logoFailed.value = false;
-  },
-);
-
-const hasLogo = computed<boolean>(
-  () => !!props.event.logo && !logoFailed.value,
-);
-
-// Same reasoning as the logo: a banner can vanish while the list is on
-// screen, so a broken image quietly falls back to no banner at all.
-const bannerFailed = ref(false);
-
-watch(
-  () => props.event.banner,
-  () => {
-    bannerFailed.value = false;
-  },
-);
-
-const hasBanner = computed<boolean>(
-  () => !!props.event.banner && !bannerFailed.value,
-);
-
-const monogram = computed<string>(() => {
-  return to(props.event.name).trim().charAt(0).toUpperCase() || '•';
-});
+const tone = computed(() => eventTone(props.event.id));
 
 const organizerLabel = computed<string>(() => to(props.event.organizer));
 
@@ -395,206 +300,13 @@ function navigate(e: MouseEvent) {
   outline-offset: 2px;
 }
 
-/* Banner — always reserves the same height so every card in a row lines up
-   evenly; falls back to a tone gradient when no banner is set, rather than
-   leaving stretched neighbors with a blank gap. Not itself clipped: the
-   badge overlaps its bottom edge, so only the inner media layer (the banner
-   photo, tone gradient, or scrim) is. */
-.event-card__banner {
-  position: relative;
-  flex-shrink: 0;
-
-  width: 100%;
-  aspect-ratio: 2.4;
-}
-
-.event-card__banner-media {
-  position: absolute;
-  inset: 0;
-
-  overflow: hidden;
-}
-
-.event-card--primary .event-card__banner {
-  color: var(--md3-on-primary-container);
-}
-
-.event-card--secondary .event-card__banner {
-  color: var(--md3-on-secondary-container);
-}
-
-.event-card--tertiary .event-card__banner {
-  color: var(--md3-on-tertiary-container);
-}
-
-/* A diagonal two-tone gradient per tone, rather than a flat fill, so the
-   placeholder banner reads as an intentional background instead of an empty
-   one. */
-.event-card--primary .event-card__banner-media {
-  background: linear-gradient(
-    135deg,
-    var(--md3-primary-container),
-    color-mix(
-      in srgb,
-      var(--md3-primary-container) 55%,
-      var(--md3-tertiary-container)
-    )
-  );
-}
-
-.event-card--secondary .event-card__banner-media {
-  background: linear-gradient(
-    135deg,
-    var(--md3-secondary-container),
-    color-mix(
-      in srgb,
-      var(--md3-secondary-container) 55%,
-      var(--md3-primary-container)
-    )
-  );
-}
-
-.event-card--tertiary .event-card__banner-media {
-  background: linear-gradient(
-    135deg,
-    var(--md3-tertiary-container),
-    color-mix(
-      in srgb,
-      var(--md3-tertiary-container) 55%,
-      var(--md3-secondary-container)
-    )
-  );
-}
-
-.event-card__banner-image {
-  display: block;
-
-  width: 100%;
-  height: 100%;
-
-  object-fit: cover;
-
-  transition: transform 0.4s cubic-bezier(0.2, 0, 0, 1);
-}
-
-.event-card:hover .event-card__banner-image {
+/* The cover zooms with the card. */
+.event-card:hover :deep(.event-cover__image) {
   transform: scale(1.05);
 }
 
-/* Grounds the badge against a photo of any brightness — without this a
-   plain surface plate can float inconsistently over busy or light banners. */
-.event-card__banner-scrim {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  height: 60%;
-
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.4), transparent);
-  pointer-events: none;
-}
-
-/* Decorative — echoes the tone color at low opacity, placed to frame the
-   badge in the opposite corner rather than collide with it. */
-.event-card__banner-shape {
-  position: absolute;
-
-  border-radius: 50%;
-  background: currentColor;
-  opacity: 0.12;
-}
-
-.event-card__banner-shape--top {
-  top: -38%;
-  right: -8%;
-
-  width: 60%;
-  aspect-ratio: 1;
-}
-
-.event-card__banner-shape--bottom {
-  right: 14%;
-  bottom: -42%;
-
-  width: 40%;
-  aspect-ratio: 1;
-}
-
-/* Badge — one visual treatment for the logo/monogram whether or not there is
-   a banner photo underneath: it always overlaps the banner/content boundary,
-   the same way a profile picture sits over a cover photo. */
-.event-card__badge {
-  position: absolute;
-  /* Left-aligned with the heading below (`.event-card__body`'s own 16px
-     padding), overlapping the banner's bottom edge rather than sitting
-     fully inside it or fully below it. */
-  left: 16px;
-  bottom: -20px;
-  z-index: 1;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-
-  width: 25%;
-  aspect-ratio: 1;
-  min-width: 60px;
-  max-width: 88px;
-  overflow: hidden;
-  border: 1px solid var(--md3-outline-variant);
-  border-radius: var(--md3-corner-large, 16px);
-
-  background: var(--md3-surface-container-highest);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-
-  transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1);
-}
-
-.event-card:hover .event-card__badge {
+.event-card:hover :deep(.event-cover__badge) {
   transform: scale(1.06);
-}
-
-.event-card__badge-logo {
-  display: block;
-
-  width: 100%;
-  height: 100%;
-
-  object-fit: contain;
-}
-
-/*
- * Without a logo, the badge carries the monogram on the card's tone color
- * instead of the neutral logo plate — colorful, and consistent whether or
- * not there's a banner behind it.
- */
-.event-card__badge--plain {
-  padding: 6px;
-  border-color: transparent;
-}
-
-.event-card--primary .event-card__badge--plain {
-  background: var(--md3-primary-container);
-  color: var(--md3-on-primary-container);
-}
-
-.event-card--secondary .event-card__badge--plain {
-  background: var(--md3-secondary-container);
-  color: var(--md3-on-secondary-container);
-}
-
-.event-card--tertiary .event-card__badge--plain {
-  background: var(--md3-tertiary-container);
-  color: var(--md3-on-tertiary-container);
-}
-
-.event-card__badge-monogram {
-  font-size: clamp(22px, 7vw, 32px);
-  font-weight: 700;
-  line-height: 1;
-
-  user-select: none;
 }
 
 /* Content */
@@ -808,8 +520,8 @@ function navigate(e: MouseEvent) {
 
 @media (prefers-reduced-motion: reduce) {
   .event-card,
-  .event-card__badge,
-  .event-card__banner-image,
+  .event-card :deep(.event-cover__badge),
+  .event-card :deep(.event-cover__image),
   .event-card__capacity-fill {
     transition: none;
   }
@@ -818,8 +530,8 @@ function navigate(e: MouseEvent) {
     transform: none;
   }
 
-  .event-card:hover .event-card__badge,
-  .event-card:hover .event-card__banner-image {
+  .event-card:hover :deep(.event-cover__badge),
+  .event-card:hover :deep(.event-cover__image) {
     transform: none;
   }
 }

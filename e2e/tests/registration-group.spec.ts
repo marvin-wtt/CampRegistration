@@ -1,10 +1,13 @@
 import type { Page } from '@playwright/test';
 import { test, expect } from '../support/fixtures';
+import { getAllMessages, waitForMessageBySentTo } from '../support/maildev';
 
 // Seeded in backend/prisma/seeders/e2e: Germany and France, a strict address
 // (the default) and a nationality question that only warns.
 const GROUP_EVENT_ID = '01JHP0CXJFR4MQS8SF1HQJCG01';
 const SINGLE_EVENT_ID = '01JHP0CXJFR4MQS8SF1HQJCY38';
+// The same two groups, the French one full.
+const WAITLIST_EVENT_ID = '01JHP0CXJFR4MQS8SF1HQJCW01';
 
 const form = (page: Page) => page.getByTestId('registration-form');
 const groupChoice = (page: Page) =>
@@ -41,7 +44,7 @@ test.describe('registration groups', () => {
 
     await expect(form(page)).toBeHidden();
     await groupChoice(page).getByTestId('registration-group-fr').click();
-    await expect(page).toHaveURL(/[?&]country=fr/);
+    await expect(page).toHaveURL(/[?&]group=fr/);
 
     await fillAnswers(page);
     const response = await submit(page, GROUP_EVENT_ID);
@@ -62,7 +65,7 @@ test.describe('registration groups', () => {
   test('should open the form directly for a group in the link', async ({
     page,
   }) => {
-    await page.goto(`/events/${GROUP_EVENT_ID}?country=de`);
+    await page.goto(`/events/${GROUP_EVENT_ID}?group=de`);
 
     await expect(groupChoice(page)).toBeHidden();
     await expect(form(page)).toBeVisible();
@@ -89,7 +92,7 @@ test.describe('registration groups', () => {
   test("should lock a strict address country to the group's", async ({
     page,
   }) => {
-    await page.goto(`/events/${GROUP_EVENT_ID}?country=fr`);
+    await page.goto(`/events/${GROUP_EVENT_ID}?group=fr`);
 
     const country = form(page)
       .locator('[data-name=address]')
@@ -102,13 +105,15 @@ test.describe('registration groups', () => {
   test('should warn about another nationality without blocking', async ({
     page,
   }) => {
-    await page.goto(`/events/${GROUP_EVENT_ID}?country=fr`);
+    await page.goto(`/events/${GROUP_EVENT_ID}?group=fr`);
     await fillAnswers(page);
 
     const nationality = form(page).locator('[data-name=nationality]');
+    // Prefilled with the group's country, so its search starts with "France".
     await nationality.locator('.sd-dropdown').click();
+    await page.keyboard.press('ControlOrMeta+A');
     await page.keyboard.type('Italy');
-    await page.getByRole('option', { name: 'Italy' }).click();
+    await page.getByRole('option', { name: 'Italy', exact: true }).click();
 
     await expect(
       nationality.getByText(/differs from the group you are registering for/),
@@ -122,7 +127,7 @@ test.describe('registration groups', () => {
   });
 
   test('should reset the form when changing the group', async ({ page }) => {
-    await page.goto(`/events/${GROUP_EVENT_ID}?country=fr`);
+    await page.goto(`/events/${GROUP_EVENT_ID}?group=fr`);
     await form(page).locator('[data-name=first_name] input').fill('Tom');
 
     await page.getByTestId('registration-group').click();
@@ -140,14 +145,14 @@ test.describe('registration groups', () => {
     test('should ask for the group again on a multi-country event', async ({
       page,
     }) => {
-      await page.goto(`/events/${GROUP_EVENT_ID}?country=fr`);
+      await page.goto(`/events/${GROUP_EVENT_ID}?group=fr`);
       await fillAnswers(page);
       expect((await submit(page, GROUP_EVENT_ID)).status()).toBe(201);
 
       await page.getByTestId('registration-register-another').click();
 
       await expect(groupChoice(page)).toBeVisible();
-      await expect(page).not.toHaveURL(/country=/);
+      await expect(page).not.toHaveURL(/group=/);
     });
 
     test('should start an empty form on a single-country event', async ({
@@ -170,6 +175,34 @@ test.describe('registration groups', () => {
         registrationForm.locator('[data-name=first_name] input'),
       ).toHaveValue('');
     });
+  });
+
+  test("should put a registration on the full group's waiting list and mail it", async ({
+    page,
+  }) => {
+    const email = 'waitlist.tester@example.com';
+    await page.goto(`/events/${WAITLIST_EVENT_ID}?group=fr`);
+    const registrationForm = form(page);
+    await registrationForm.locator('[data-name=first_name] input').fill('Tom');
+    await registrationForm.locator('[data-name=email] input').fill(email);
+
+    const response = await submit(page, WAITLIST_EVENT_ID);
+
+    expect(response.status()).toBe(201);
+    expect((await response.json()).data).toMatchObject({
+      status: 'WAITLISTED',
+      group: 'fr',
+    });
+    await expect(
+      page.getByTestId('registration-submit-status-success'),
+    ).toContainText(/waiting list/i);
+
+    const message = await waitForMessageBySentTo(email);
+    expect(message.subject).toBe('Waiting list France');
+    expect(message.text).toContain('You are on the waiting list.');
+    expect((await getAllMessages()).map((sent) => sent.subject)).not.toContain(
+      'Confirmed France',
+    );
   });
 
   test('should let a manager move a registration to the other group', async ({

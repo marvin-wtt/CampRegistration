@@ -18,6 +18,16 @@ export async function seedE2eRegistrations(): Promise<void> {
     status: 'ACCEPTED',
     group: 'de',
     country: 'de',
+    // The participant table shows the answers, so the row needs them.
+    data: {
+      first_name: 'Lena',
+      address: {
+        address: 'Hauptstraße 1',
+        zip_code: '10115',
+        city: 'Berlin',
+        country: 'de',
+      },
+    },
     event: { connect: { id: E2E_GROUP_EVENT_ID } },
   });
 }

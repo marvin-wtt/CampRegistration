@@ -204,7 +204,7 @@ const registrationFormVisible = computed<boolean>(() => {
 });
 
 // The group the form is filled in for, chosen before the form and kept in
-// `?country=` so a link can preselect it and a reload keeps it. Undefined while
+// `?group=` so a link can preselect it and a reload keeps it. Undefined while
 // a multi-country event still needs the choice.
 const group = computed<string | null | undefined>(() => {
   const countries = event.value?.countries ?? [];
@@ -212,7 +212,7 @@ const group = computed<string | null | undefined>(() => {
     return countries[0] ?? null;
   }
 
-  const query = route.query.country;
+  const query = route.query.group;
   const selected = typeof query === 'string' ? query.toLowerCase() : null;
 
   return selected && countries.includes(selected) ? selected : undefined;
@@ -228,9 +228,9 @@ const groupName = computed<string>(() =>
   group.value ? countryName(group.value, locale.value) : '',
 );
 
-function chooseGroup(country: string) {
+function chooseGroup(group: string) {
   // A history entry, so going back returns to the choice.
-  void router.push({ query: { ...route.query, country } });
+  void router.push({ query: { ...route.query, group } });
 }
 
 // Every answer was given to the old group's form — its texts, files and terms
@@ -250,7 +250,7 @@ function changeGroup() {
 
 function backToGroupChoice() {
   const query = { ...route.query };
-  delete query.country;
+  delete query.group;
   void router.push({ query });
 }
 
