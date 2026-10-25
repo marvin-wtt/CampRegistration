@@ -17,7 +17,7 @@ export function startAutoDataUpdate(
     [locale, data],
     ([locale, data]) => {
       model.locale = locale;
-      setVariables(model, data, { country: group });
+      setVariables(model, data, { group });
     },
     { immediate: true },
   );

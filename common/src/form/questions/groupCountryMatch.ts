@@ -58,7 +58,7 @@ const MESSAGES: Record<'strict' | 'warn', Localized> = {
 /**
  * Wires a country question to the group: the event's countries first among
  * its choices, and the rules of its mode. The rules are expressions over
- * `{event.country}`, so they take effect whenever `setVariables` sets it.
+ * `{event.group}`, so they take effect whenever `setVariables` sets it.
  */
 export function applyGroupCountry(question: Question) {
   // An address wires its own country: this hook runs before its mode loads.
@@ -83,63 +83,75 @@ function wire(question: Question) {
     return;
   }
 
-  followEventCountries(question, survey);
-  applyMode(question, survey, matchMode(question));
+  followSurvey(survey);
+  orderChoices(question, survey);
+  applyMode(question, matchMode(question));
 }
 
-function followEventCountries(question: Question, survey: SurveyModel) {
-  const order = () => {
-    const countries: unknown = survey.getVariable('event.countries');
-    if (!question.isDisposed && Array.isArray(countries)) {
-      orderChoices(question, countries as string[], survey.locale || 'en');
+const followedSurveys = new WeakSet<SurveyModel>();
+
+/**
+ * Reorders every country question when the event's countries or the locale
+ * change — survey events a question type has no hook for. Registered once
+ * per survey: questions of dynamic panels come and go, and per-question
+ * handlers on the survey would outlive them.
+ */
+function followSurvey(survey: SurveyModel) {
+  if (followedSurveys.has(survey)) {
+    return;
+  }
+  followedSurveys.add(survey);
+
+  const orderAll = () => {
+    for (const question of survey.getAllQuestions(false, false, true)) {
+      if (question.getType() === 'country') {
+        orderChoices(question, survey);
+      }
     }
   };
 
-  order();
   // SurveyJS reports variable names lower-cased, and skips unchanged values,
   // so a new locale needs its own trigger.
   survey.onVariableChanged.add((_, options) => {
     if (options.name.toLowerCase() === 'event.countries') {
-      order();
+      orderAll();
     }
   });
-  survey.onLocaleChangedEvent.add(order);
+  survey.onLocaleChangedEvent.add(orderAll);
 }
 
-function applyMode(
-  question: Question,
-  survey: SurveyModel,
-  mode: GroupCountryMatch,
-) {
+/**
+ * A warning never stops navigation, so one checked only on "Next" would never
+ * be read: it is shown as soon as the answer changes instead. Called from the
+ * country question's own `onValueChanged`, which an address's country shares.
+ */
+export function showGroupCountryWarning(question: Question) {
+  if (!question.isDesignMode && matchMode(question) === 'warn') {
+    question.validate(true);
+  }
+}
+
+function applyMode(question: Question, mode: GroupCountryMatch) {
   if (mode === 'free') {
     return;
   }
 
-  question.defaultValueExpression ??= '{event.country}';
+  question.defaultValueExpression ??= '{event.group}';
 
   const value = valueReference(question);
   const validator = new ExpressionValidator(
-    `{event.country} empty or ${value} empty or ${value} = {event.country}`,
+    `{event.group} empty or ${value} empty or ${value} = {event.group}`,
   );
   validator.locText.setJson(MESSAGES[mode]);
   question.validators.push(validator);
 
   if (mode === 'warn') {
     validator.notificationType = 'warning';
-    // A warning never stops navigation, so one checked only on "Next" would
-    // never be read. Shown as soon as the answer is stored instead; an
-    // address reports its country's change as its own.
-    const owner = parentOf(question) ?? question;
-    survey.onValueChanged.add((_, options) => {
-      if (options.question === owner) {
-        question.validate(true);
-      }
-    });
   }
 
   if (mode === 'strict') {
     // Editable again when no group is known, rather than stuck empty.
-    const locked = '{event.country} empty';
+    const locked = '{event.group} empty';
     question.enableIf = question.enableIf
       ? `(${question.enableIf}) and ${locked}`
       : locked;
@@ -180,18 +192,16 @@ function parentOf(question: Question): Question | null {
   return question.parentQuestion;
 }
 
-// The event's countries first, the others by their name in `locale`.
-function orderChoices(
-  question: Question,
-  countries: readonly string[],
-  locale: string,
-) {
+// The event's countries first, the others by their name in the locale.
+function orderChoices(question: Question, survey: SurveyModel) {
+  const countries: unknown = survey.getVariable('event.countries');
   const content = (
     question as Question & { contentQuestion?: QuestionSelectBase }
   ).contentQuestion;
-  if (!content) {
+  if (!content || !Array.isArray(countries)) {
     return;
   }
+  const locale = survey.locale || 'en';
 
   const own = (item: ItemValue) => countries.indexOf(String(item.value));
   const choices = content.choices as ItemValue[];

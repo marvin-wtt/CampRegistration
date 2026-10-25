@@ -126,7 +126,7 @@ describe('variables', () => {
 
       setVariables(model, fakeEventData(event));
 
-      expect(model.getVariable('event.country')).toBeNull();
+      expect(model.getVariable('event.group')).toBeNull();
       expect(model.getVariable('event.freePlaces')).toBeNull();
       expect(model.getVariable('event.organizer')).toBe('Verein / Association');
       expect(model.getVariable('event.contactEmail')).toBe('de@test, fr@test');
@@ -135,10 +135,10 @@ describe('variables', () => {
 
     it('should pick up new event data for the group', () => {
       const model = new SurveyModel();
-      setVariables(model, fakeEventData(event), { country: 'de' });
+      setVariables(model, fakeEventData(event), { group: 'de' });
 
       setVariables(model, fakeEventData({ ...event, freePlaces: { de: 0 } }), {
-        country: 'de',
+        group: 'de',
       });
 
       expect(model.getVariable('event.freePlaces')).toBe(0);
@@ -156,7 +156,7 @@ describe('variables', () => {
             },
           ],
         });
-        setVariables(model, fakeEventData(event), { country: group });
+        setVariables(model, fakeEventData(event), { group: group });
         return model.getVariable('waitingList') as unknown;
       };
 
@@ -169,7 +169,7 @@ describe('variables', () => {
         elements: [{ type: 'country', name: 'country' }],
       });
 
-      setVariables(model, fakeEventData(event), { country: 'fr' });
+      setVariables(model, fakeEventData(event), { group: 'fr' });
 
       expect(model.toJSON()).not.toHaveProperty('calculatedValues');
     });
@@ -194,9 +194,9 @@ describe('variables', () => {
     it('should resolve the per-country values for the given group', () => {
       const model = countryForm();
 
-      setVariables(model, fakeEventData(event), { country: 'fr' });
+      setVariables(model, fakeEventData(event), { group: 'fr' });
 
-      expect(model.getVariable('event.country')).toBe('fr');
+      expect(model.getVariable('event.group')).toBe('fr');
       expect(model.getVariable('event.organizer')).toBe('Association');
       expect(model.getVariable('event.contactEmail')).toBe('fr@test');
       expect(model.getVariable('event.maxParticipants')).toBe(5);
@@ -205,11 +205,11 @@ describe('variables', () => {
 
     it('should not follow the answers', () => {
       const model = countryForm();
-      setVariables(model, fakeEventData(event), { country: 'fr' });
+      setVariables(model, fakeEventData(event), { group: 'fr' });
 
       model.setValue('country', 'de');
 
-      expect(model.getVariable('event.country')).toBe('fr');
+      expect(model.getVariable('event.group')).toBe('fr');
       expect(model.calculatedValues).toHaveLength(0);
     });
 
@@ -217,18 +217,18 @@ describe('variables', () => {
       const model = countryForm();
 
       setVariables(model, fakeEventData({ ...event, countries: ['de'] }), {
-        country: null,
+        group: null,
       });
 
-      expect(model.getVariable('event.country')).toBe('de');
+      expect(model.getVariable('event.group')).toBe('de');
     });
 
     it('should ignore a group the event does not run', () => {
       const model = countryForm();
 
-      setVariables(model, fakeEventData(event), { country: 'it' });
+      setVariables(model, fakeEventData(event), { group: 'it' });
 
-      expect(model.getVariable('event.country')).toBeNull();
+      expect(model.getVariable('event.group')).toBeNull();
     });
   });
 

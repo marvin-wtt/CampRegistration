@@ -28,7 +28,7 @@ describe('group country match', () => {
     it("should show the group's country, read-only", () => {
       const model = countryForm('strict');
 
-      setVariables(model, event, { country: 'fr' });
+      setVariables(model, event, { group: 'fr' });
 
       const question = model.getQuestionByName('country');
       expect(question.value).toBe('fr');
@@ -38,14 +38,14 @@ describe('group country match', () => {
     it('should apply to a question without the property', () => {
       const model = countryForm();
 
-      setVariables(model, event, { country: 'fr' });
+      setVariables(model, event, { group: 'fr' });
 
       expect(model.getQuestionByName('country').isReadOnly).toBe(true);
     });
 
     it('should reject another country', () => {
       const model = countryForm();
-      setVariables(model, event, { country: 'fr' });
+      setVariables(model, event, { group: 'fr' });
 
       model.setValue('country', 'de');
 
@@ -56,7 +56,7 @@ describe('group country match', () => {
     it('should stay editable when no group is known', () => {
       const model = countryForm();
 
-      setVariables(model, event, { country: null });
+      setVariables(model, event, { group: null });
 
       const question = model.getQuestionByName('country');
       expect(question.isReadOnly).toBe(false);
@@ -68,7 +68,7 @@ describe('group country match', () => {
     it("should prefill the group's country, editable", () => {
       const model = countryForm('warn');
 
-      setVariables(model, event, { country: 'fr' });
+      setVariables(model, event, { group: 'fr' });
 
       const question = model.getQuestionByName('country');
       expect(question.value).toBe('fr');
@@ -77,7 +77,7 @@ describe('group country match', () => {
 
     it('should warn about another country without rejecting it', () => {
       const model = countryForm('warn');
-      setVariables(model, event, { country: 'fr' });
+      setVariables(model, event, { group: 'fr' });
 
       model.setValue('country', 'it');
 
@@ -88,7 +88,7 @@ describe('group country match', () => {
     // A warning never stops "Next", so it must not wait for it.
     it('should show the warning as soon as the answer changes', () => {
       const model = countryForm('warn');
-      setVariables(model, event, { country: 'fr' });
+      setVariables(model, event, { group: 'fr' });
       const question = model.getQuestionByName('country');
 
       question.value = 'it';
@@ -100,7 +100,7 @@ describe('group country match', () => {
 
     it("should show the warning as soon as an address's country changes", () => {
       const model = addressForm('warn');
-      setVariables(model, event, { country: 'fr' });
+      setVariables(model, event, { group: 'fr' });
       const country = nestedCountry(model);
 
       country.value = 'it';
@@ -122,7 +122,7 @@ describe('group country match', () => {
           },
         ],
       });
-      setVariables(model, event, { country: 'fr' });
+      setVariables(model, event, { group: 'fr' });
       const country = nestedCountry(model);
 
       country.value = 'it';
@@ -134,7 +134,7 @@ describe('group country match', () => {
   describe('free', () => {
     it('should ask without a default or a check', () => {
       const model = countryForm('free');
-      setVariables(model, event, { country: 'fr' });
+      setVariables(model, event, { group: 'fr' });
 
       model.setValue('country', 'it');
 
@@ -147,7 +147,7 @@ describe('group country match', () => {
     it('should lock its country by default', () => {
       const model = addressForm();
 
-      setVariables(model, event, { country: 'fr' });
+      setVariables(model, event, { group: 'fr' });
 
       const country = nestedCountry(model);
       expect(country.value).toBe('fr');
@@ -156,7 +156,7 @@ describe('group country match', () => {
 
     it('should reject loaded answers with another country, as the server does', () => {
       const model = addressForm();
-      setVariables(model, event, { country: 'fr' });
+      setVariables(model, event, { group: 'fr' });
 
       model.data = {
         address: {
@@ -173,7 +173,7 @@ describe('group country match', () => {
 
     it('should hand its mode to its country', () => {
       const model = addressForm('warn');
-      setVariables(model, event, { country: 'fr' });
+      setVariables(model, event, { group: 'fr' });
 
       const country = nestedCountry(model);
       country.value = 'it';
@@ -193,7 +193,7 @@ describe('group country match', () => {
           },
         ],
       });
-      setVariables(model, event, { country: 'fr' });
+      setVariables(model, event, { group: 'fr' });
 
       (
         model.getQuestionByName('contacts') as Question & {
@@ -217,7 +217,7 @@ describe('group country match', () => {
         },
       ],
     });
-    setVariables(model, event, { country: 'fr' });
+    setVariables(model, event, { group: 'fr' });
     const contacts = model.getQuestionByName('contacts') as Question & {
       addPanel: () => void;
     };
@@ -239,7 +239,7 @@ describe('group country match', () => {
     const model = countryForm('free');
 
     setVariables(model, fakeEventData({ countries: ['fr', 'de'] }), {
-      country: 'fr',
+      group: 'fr',
     });
 
     const question = model.getQuestionByName('country') as Question & {
@@ -265,7 +265,7 @@ describe('group country match', () => {
     model.setDesignMode(true);
     model.fromJSON({ elements: [{ type: 'country', name: 'country' }] });
 
-    setVariables(model, event, { country: 'fr' });
+    setVariables(model, event, { group: 'fr' });
 
     expect(model.toJSON()).toEqual({
       pages: [

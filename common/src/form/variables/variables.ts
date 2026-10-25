@@ -61,14 +61,14 @@ const COUNTRY_VARIABLES = Object.keys(COUNTRY_FIELDS) as CountryVariable[];
 export const VARIABLE_NAMES: readonly string[] = [
   ...EVENT_VARIABLES.map((name) => `event.${name}`),
   ...COUNTRY_VARIABLES.map((name) => `event.${name}`),
-  'event.country',
+  'event.group',
   '_validationEnabled',
 ];
 
 export interface VariableOptions {
   // The group chosen before the form, by its country code. Without one, only
   // a single-country event resolves its per-country fields.
-  country?: string | null | undefined;
+  group?: string | null | undefined;
 }
 
 export const setVariables = (
@@ -108,9 +108,9 @@ export const setVariables = (
 
   model.setVariable('_validationEnabled', model.validationEnabled);
 
-  const country = eventCountry(data, options.country);
-  const fields = eventCountryFields(data, country);
-  model.setVariable('event.country', country);
+  const group = eventCountry(data, options.group);
+  const fields = eventCountryFields(data, group);
+  model.setVariable('event.group', group);
   for (const name of COUNTRY_VARIABLES) {
     model.setVariable(`event.${name}`, fields[name]);
   }

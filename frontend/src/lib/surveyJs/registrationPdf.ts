@@ -55,7 +55,7 @@ function buildSurveyPdf(options: RegistrationPdfOptions): SurveyPDF {
     });
   });
 
-  setVariables(surveyPDF, event, { country: registration.group });
+  setVariables(surveyPDF, event, { group: registration.group });
 
   return surveyPDF;
 }

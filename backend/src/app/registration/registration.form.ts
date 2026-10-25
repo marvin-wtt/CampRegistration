@@ -183,7 +183,7 @@ export class RegistrationForm {
 
     // SurveyJS resolves `de-DE` to its `de` strings, but not `de_DE`.
     this.survey.locale = (options?.locale ?? 'en-US').replace('_', '-');
-    setVariables(this.survey, event, { country: options?.group });
+    setVariables(this.survey, event, { group: options?.group });
   }
 
   /** Replaces the response the form holds, running the form's logic on it. */

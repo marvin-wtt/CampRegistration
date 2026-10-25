@@ -3,6 +3,7 @@ import {
   applyGroupCountry,
   countryChoices,
   groupCountryMatchProperty,
+  showGroupCountryWarning,
 } from './groupCountryMatch.js';
 import type { Localized } from '../../locales.js';
 
@@ -28,6 +29,9 @@ const country: ICustomQuestionTypeConfiguration = {
   },
   onLoaded(question) {
     applyGroupCountry(question);
+  },
+  onValueChanged(question) {
+    showGroupCountryWarning(question);
   },
 };
 

@@ -341,11 +341,11 @@ creator.onSurveyInstanceCreated.add((_, options) => {
 
   if (['preview-tab', 'theme-tab'].includes(options.area)) {
     emphasizeForwardNavigation(survey);
-    const country = previewGroup.value;
-    setVariables(survey, props.event, { country });
+    const group = previewGroup.value;
+    setVariables(survey, props.event, { group });
     addFileSlotResolver(survey, resolveFileSlot);
     survey.onLocaleChangedEvent.add((sender) => {
-      setVariables(sender, props.event, { country });
+      setVariables(sender, props.event, { group });
     });
   }
 
