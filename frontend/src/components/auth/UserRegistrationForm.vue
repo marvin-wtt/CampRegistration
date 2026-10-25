@@ -244,11 +244,11 @@ field:
   name:
     label: 'Vor- und Nachname'
     rule:
-      required: 'Sie müssen einen Namen angeben'
+      required: 'Du musst einen Namen angeben'
   email:
     label: 'E-Mail'
     rule:
-      required: 'Sie müssen eine gültige E-Mail-Adresse angeben'
+      required: 'Du musst eine gültige E-Mail-Adresse angeben'
   password:
     label: 'Passwort'
     rule:

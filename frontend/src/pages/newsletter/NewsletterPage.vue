@@ -1035,32 +1035,32 @@ header:
 compose:
   subject: 'Betreff'
   body: 'Nachricht'
-  bodyPlaceholder: 'Schreiben Sie hier Ihren Newsletter-Inhalt...'
+  bodyPlaceholder: 'Schreibe hier deinen Newsletter-Inhalt...'
   attachments: 'Anhänge (optional)'
   recipientInfo: 'Wird an {count} Abonnenten gesendet'
   blocked: 'Das Senden ist deaktiviert, bis die besitzende Organisation verifiziert ist.'
   send: 'Newsletter senden'
   success: 'Newsletter für {count} Empfänger in die Warteschlange gestellt.'
-  error: 'Newsletter konnte nicht gesendet werden. Bitte versuchen Sie es erneut.'
+  error: 'Newsletter konnte nicht gesendet werden. Bitte versuche es erneut.'
   dialog:
     title: 'Newsletter senden'
     message: 'Diesen Newsletter an {count} Abonnenten senden?'
 
 history:
   empty: 'Noch keine Newsletter gesendet'
-  emptyHint: 'Ihre gesendeten Newsletter erscheinen hier.'
+  emptyHint: 'Deine gesendeten Newsletter erscheinen hier.'
   useAsTemplate: 'Als Vorlage verwenden'
   delete: 'Löschen'
   dialog:
     delete:
       title: 'Nachricht löschen'
-      message: 'Möchten Sie diese Nachricht wirklich löschen? Dies kann nicht rückgängig gemacht werden.'
+      message: 'Möchtest du diese Nachricht wirklich löschen? Dies kann nicht rückgängig gemacht werden.'
 
 subscribers:
   count: '{count} Abonnenten'
   empty: 'Noch keine Abonnenten'
   emptyHint: 'Abonnenten manuell hinzufügen oder aus einer Veranstaltung importieren.'
-  noResults: 'Keine Abonnenten entsprechen Ihrer Suche.'
+  noResults: 'Keine Abonnenten entsprechen deiner Suche.'
   search: 'Abonnenten suchen...'
   action:
     add: 'Abonnent hinzufügen'
@@ -1069,7 +1069,7 @@ subscribers:
   dialog:
     delete:
       title: 'Abonnent entfernen'
-      message: 'Möchten Sie diesen Abonnenten wirklich entfernen?'
+      message: 'Möchtest du diesen Abonnenten wirklich entfernen?'
 
 managers:
   action:
@@ -1083,7 +1083,7 @@ managers:
   dialog:
     delete:
       title: 'Verwalter entfernen'
-      message: 'Möchten Sie diesen Verwalter wirklich entfernen?'
+      message: 'Möchtest du diesen Verwalter wirklich entfernen?'
 </i18n>
 
 <i18n lang="yaml" locale="fr">

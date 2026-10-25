@@ -909,7 +909,7 @@ settings:
 
 empty:
   title: 'Noch keine Zimmer'
-  message: 'Erstellen Sie Zimmer, um Personen Betten zuzuweisen.'
+  message: 'Erstelle Zimmer, um Personen Betten zuzuweisen.'
 
 request:
   fetch:

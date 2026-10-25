@@ -47,7 +47,7 @@ action:
 </i18n>
 
 <i18n lang="yaml" locale="de">
-description: 'Exportieren Sie alle Daten, die mit diesem Konto verbunden sind.'
+description: 'Exportiere alle Daten, die mit diesem Konto verbunden sind.'
 comingSoon: 'Noch nicht verfügbar.'
 
 action:

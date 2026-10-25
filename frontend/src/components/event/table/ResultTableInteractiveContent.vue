@@ -946,7 +946,7 @@ error:
 <i18n lang="yaml" locale="de">
 template: 'Vorlage'
 title: 'Teilnehmende'
-subtitle: 'Durchsuchen, filtern und drucken Sie die Anmeldungen dieser Veranstaltung.'
+subtitle: 'Durchsuche, filtere und drucke die Anmeldungen dieser Veranstaltung.'
 
 action:
   print: 'Drucken'
@@ -966,7 +966,7 @@ empty:
 
 no_match:
   title: 'Keine passenden Teilnehmenden'
-  message: 'Passen Sie die Suche oder die Filter an.'
+  message: 'Passe die Suche oder die Filter an.'
 
 error:
   no_rows: 'Für die aktuellen Filter gibt es nichts zu exportieren.'

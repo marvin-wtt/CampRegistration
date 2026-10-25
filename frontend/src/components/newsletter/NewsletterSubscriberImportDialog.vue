@@ -184,7 +184,7 @@ title: 'Abonnenten aus einer Veranstaltung importieren'
 input:
   event:
     label: 'Veranstaltung'
-    hint: 'Wählen Sie die Veranstaltung aus, aus dem Abonnenten importiert werden sollen'
+    hint: 'Wähle die Veranstaltung aus, aus der Abonnenten importiert werden sollen'
     rule:
       required: 'Veranstaltung ist erforderlich'
   country:

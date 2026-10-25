@@ -116,15 +116,15 @@ delete:
 
 <i18n lang="yaml" locale="de">
 title: 'Konto'
-subtitle: 'Ihre Daten und was mit diesem Konto geschieht.'
+subtitle: 'Deine Daten und was mit diesem Konto geschieht.'
 
 section:
   export:
     title: 'Daten exportieren'
 
 delete:
-  title: 'Ihr Konto dauerhaft löschen'
-  message: 'Sind Sie sicher, dass Sie Ihr Konto löschen möchten? Diese Aktion ist endgültig.'
+  title: 'Dein Konto dauerhaft löschen'
+  message: 'Bist du sicher, dass du dein Konto löschen möchtest? Diese Aktion ist endgültig.'
   label: 'E-Mail'
 </i18n>
 

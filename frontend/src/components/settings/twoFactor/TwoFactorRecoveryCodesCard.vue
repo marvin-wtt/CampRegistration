@@ -214,11 +214,11 @@ notify:
 
 <i18n lang="yaml" locale="de">
 title: 'Wiederherstellungscodes'
-description: 'Mit Wiederherstellungscodes können Sie sich anmelden, wenn Sie den
-  Zugriff auf Ihre Authentifizierungs-App verlieren. Jeder Code kann einmal
-  verwendet werden. Bewahren Sie sie sicher auf.'
-warning: 'Diese Codes werden nur einmal angezeigt. Speichern Sie sie jetzt – Sie
-  können sie später nicht mehr einsehen. Zuvor generierte Codes sind nicht mehr
+description: 'Mit Wiederherstellungscodes kannst du dich anmelden, wenn du den
+  Zugriff auf deine Authentifizierungs-App verlierst. Jeder Code kann einmal
+  verwendet werden. Bewahre sie sicher auf.'
+warning: 'Diese Codes werden nur einmal angezeigt. Speichere sie jetzt – du
+  kannst sie später nicht mehr einsehen. Zuvor generierte Codes sind nicht mehr
   gültig.'
 field:
   password:

@@ -846,7 +846,7 @@ share:
 dialog:
   delete:
     title: 'Veranstaltung löschen'
-    message: 'Sind Sie sicher, dass Sie diese Veranstaltung löschen möchten? Alle Anmeldungen gehen verloren. Diese Veranstaltung kann nicht als Vorlage für zukünftige Veranstaltungen verwendet werden.'
+    message: 'Bist du sicher, dass du diese Veranstaltung löschen möchtest? Alle Anmeldungen gehen verloren. Diese Veranstaltung kann nicht als Vorlage für zukünftige Veranstaltungen verwendet werden.'
     label: 'Veranstaltungsname'
 notification:
   share_success: 'Link in die Zwischenablage kopiert'

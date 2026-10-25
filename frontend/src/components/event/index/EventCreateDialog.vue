@@ -855,7 +855,7 @@ step:
 organization_note:
   title: 'Warum eine Organisation?'
   entity: 'Sie ist der Rechtsträger hinter der Veranstaltung und verantwortlich für die Daten, die bei der Anmeldung erhoben werden.'
-  access: 'Ihre Administratoren können die Veranstaltung ansehen und bearbeiten und sehen, wer es leitet. Anmeldungen sehen sie nie.'
+  access: 'Ihre Administratoren können die Veranstaltung ansehen und bearbeiten und sehen, wer sie leitet. Anmeldungen sehen sie nie.'
   organizer: 'Die Veranstaltung tritt unter dem Veranstalter auf, den du separat festlegst. Die Organisation sehen Teilnehmende trotzdem: neben dem Veranstalter in der Veranstaltungsliste und in den Datenschutzinformationen.'
   create: 'Ist die passende nicht dabei? Leg eine neue Organisation an.'
   create_action: 'Neue Organisation'
@@ -892,39 +892,39 @@ preset:
 
 validation:
   countries:
-    empty: 'Bitte wählen Sie mindestens ein Land aus'
+    empty: 'Bitte wähle mindestens ein Land aus'
   referenceEventId:
     empty: 'Bitte wähle eine Veranstaltung aus, von dem kopiert werden soll'
   name:
-    empty: 'Bitte geben Sie einen Veranstaltungsnamen ein'
+    empty: 'Bitte gib einen Veranstaltungsnamen ein'
     length: 'Der Veranstaltungsname darf maximal 255 Zeichen haben'
   organizer:
-    empty: 'Bitte geben Sie ein Veranstalter an'
+    empty: 'Bitte gib einen Veranstalter an'
   contactEmail:
-    empty: 'Bitte geben Sie eine Email Adresse an'
+    empty: 'Bitte gib eine E-Mail-Adresse an'
   maxParticipants:
-    empty: 'Bitte geben Sie die maximale Teilnehmerzahl ein'
+    empty: 'Bitte gib die maximale Teilnehmerzahl ein'
     positive: 'Die maximale Teilnehmerzahl muss eine positive Zahl sein'
   dateRange:
-    empty: 'Bitte wählen Sie ein Start- und Enddatum aus'
+    empty: 'Bitte wähle ein Start- und Enddatum aus'
   startAt:
-    empty: 'Bitte wählen Sie eine Startzeit aus'
+    empty: 'Bitte wähle eine Startzeit aus'
   endAt:
-    empty: 'Bitte wählen Sie eine Endzeit aus'
+    empty: 'Bitte wähle eine Endzeit aus'
     min: 'Die Endzeit muss nach der Startzeit liegen'
   minAge:
-    empty: 'Bitte geben Sie ein Mindestalter ein'
+    empty: 'Bitte gib ein Mindestalter ein'
     nonNegative: 'Das Mindestalter darf nicht negativ sein'
     max: 'Das Mindestalter muss kleiner als 100 sein'
   maxAge:
-    empty: 'Bitte geben Sie ein Höchstalter ein'
+    empty: 'Bitte gib ein Höchstalter ein'
     min: 'Das Höchstalter muss größer oder gleich dem Mindestalter sein'
     max: 'Das Höchstalter muss kleiner als 100 sein'
   location:
-    empty: 'Bitte geben Sie einen Ort ein'
+    empty: 'Bitte gib einen Ort ein'
     length: 'Der Ort darf maximal 255 Zeichen haben'
   price:
-    empty: 'Bitte geben Sie einen Preis größer oder gleich 0 ein'
+    empty: 'Bitte gib einen Preis größer oder gleich 0 ein'
     nonNegative: 'Der Preis darf nicht negativ sein'
 
 confirmation_mode:

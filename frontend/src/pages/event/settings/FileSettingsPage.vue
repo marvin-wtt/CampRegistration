@@ -929,7 +929,7 @@ notification:
 
 <i18n lang="yaml" locale="de">
 title: 'Dateien'
-subtitle: 'Laden Sie Dokumente für diese Veranstaltung hoch und verwalten Sie sie.'
+subtitle: 'Lade Dokumente für diese Veranstaltung hoch und verwalte sie.'
 
 action:
   delete: 'Löschen'
@@ -963,13 +963,13 @@ banner:
 dialog:
   delete:
     title: 'Datei löschen'
-    message: 'Möchten Sie „{name}“ wirklich löschen?'
+    message: 'Möchtest du „{name}“ wirklich löschen?'
     cancel: 'Abbrechen'
     ok: 'Löschen'
 
 empty:
   title: 'Noch keine Dateien'
-  message: 'Laden Sie Dokumente wie Veranstaltungregeln oder AGB hoch.'
+  message: 'Lade Dokumente wie Veranstaltungsregeln oder AGB hoch.'
 
 virtual:
   upload_hint:

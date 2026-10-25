@@ -117,10 +117,10 @@ action:
 
 <i18n lang="yaml" locale="de">
 title: 'Willkommen'
-subtitle: 'Erstellen Sie das Administratorkonto, um die Einrichtung abzuschließen.'
+subtitle: 'Erstelle das Administratorkonto, um die Einrichtung abzuschließen.'
 completed:
   title: 'Einrichtung abgeschlossen'
-  message: 'Diese Instanz hat bereits einen Administrator. Melden Sie sich an, um fortzufahren.'
+  message: 'Diese Instanz hat bereits einen Administrator. Melde dich an, um fortzufahren.'
 action:
   create: 'Administrator erstellen'
   login: 'Zur Anmeldung'

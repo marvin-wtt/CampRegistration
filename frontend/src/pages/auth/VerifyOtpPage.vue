@@ -155,10 +155,10 @@ action:
 <i18n lang="yaml" locale="de">
 title: 'OTP-Verifizierung'
 
-description: 'Um fortzufahren, öffnen Sie Ihre Authentifizierungs-App und geben Sie den angezeigten 6-stelligen Code ein.'
+description: 'Um fortzufahren, öffne deine Authentifizierungs-App und gib den angezeigten 6-stelligen Code ein.'
 
 recovery:
-  description: 'Geben Sie einen Ihrer Wiederherstellungscodes ein, um sich anzumelden.'
+  description: 'Gib einen deiner Wiederherstellungscodes ein, um dich anzumelden.'
   label: 'Wiederherstellungscode'
   useCode: 'Stattdessen einen Wiederherstellungscode verwenden'
   useApp: 'Stattdessen die Authentifizierungs-App verwenden'

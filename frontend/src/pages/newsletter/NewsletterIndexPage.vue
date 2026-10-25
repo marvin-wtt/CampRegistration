@@ -276,7 +276,7 @@ dialog:
 <i18n lang="yaml" locale="de">
 title: 'Newsletter'
 subtitle: 'Newsletter erstellen und Nachrichten an Abonnenten senden.'
-empty: 'Noch keine Newsletter. Erstellen Sie einen, um loszulegen.'
+empty: 'Noch keine Newsletter. Erstelle einen, um loszulegen.'
 organization_required:
   title: 'Verifizierte Organisation erforderlich'
   message: 'Newsletter werden von einer Organisation versendet. Du brauchst eine verifizierte Organisation, in der du Newsletter erstellen darfst.'
@@ -288,7 +288,7 @@ action:
 dialog:
   delete:
     title: 'Newsletter löschen'
-    message: 'Möchten Sie diesen Newsletter wirklich löschen? Alle Abonnenten werden entfernt.'
+    message: 'Möchtest du diesen Newsletter wirklich löschen? Alle Abonnenten werden entfernt.'
     label: 'Newsletter-Name'
 </i18n>
 

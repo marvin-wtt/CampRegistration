@@ -629,18 +629,18 @@ fields:
     hint: 'Wird verwendet, um auf die Datei im Formular zu verweisen'
     rules:
       required: 'Dieses Feld ist erforderlich'
-      max_length: 'Verwenden Sie höchstens {max} Zeichen'
-      format: 'Verwenden Sie Kleinbuchstaben, Zahlen, Bindestriche oder Unterstriche'
+      max_length: 'Verwende höchstens {max} Zeichen'
+      format: 'Verwende Kleinbuchstaben, Zahlen, Bindestriche oder Unterstriche'
   field_locale:
     warning: 'Eine andere Datei verwendet bereits diese Kennung, Sprache und dieses Land. Beim Hochladen wird sie ersetzt.'
     warning_edit: 'Eine andere Datei verwendet bereits diese Kennung, Sprache und dieses Land. Im Formular wird nur eine davon angezeigt.'
   file:
     label: 'Datei'
     rules:
-      required: 'Bitte wählen Sie eine Datei zum Hochladen aus'
+      required: 'Bitte wähle eine Datei zum Hochladen aus'
     rejected:
       max_file_size: 'Die Datei ist zu groß. Die maximale Dateigröße beträgt 100 MB.'
-      accept: 'Dieser Dateityp ist nicht zulässig. Bitte wählen Sie ein Bild oder PDF.'
+      accept: 'Dieser Dateityp ist nicht zulässig. Bitte wähle ein Bild oder PDF.'
       generic: 'Die ausgewählte Datei konnte nicht hinzugefügt werden.'
   locale:
     label: 'Sprache'
@@ -649,7 +649,7 @@ fields:
   name:
     label: 'Name'
     rules:
-      required: 'Bitte geben Sie den neuen Dateinamen ein'
+      required: 'Bitte gib den neuen Dateinamen ein'
 
 action:
   upload: 'Hochladen'

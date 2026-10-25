@@ -118,7 +118,7 @@ input:
     label: 'Name (optional)'
   consent:
     label: 'Diese Person hat dem Erhalt dieses Newsletters zugestimmt'
-    hint: 'Fügen Sie nur Personen hinzu, die Ihnen ihre Einwilligung gegeben haben.'
+    hint: 'Füge nur Personen hinzu, die dir ihre Einwilligung gegeben haben.'
 action:
   add: 'Hinzufügen'
   cancel: 'Abbrechen'

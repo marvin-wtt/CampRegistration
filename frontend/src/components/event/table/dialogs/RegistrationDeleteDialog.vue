@@ -156,7 +156,7 @@ action:
 <i18n locale="de" lang="yaml">
 title: 'Anmeldung löschen'
 
-text: 'Sind Sie sicher, dass Sie die Anmeldung von {name} löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.'
+text: 'Bist du sicher, dass du die Anmeldung von {name} löschen möchtest? Diese Aktion kann nicht rückgängig gemacht werden.'
 
 field:
   reason:

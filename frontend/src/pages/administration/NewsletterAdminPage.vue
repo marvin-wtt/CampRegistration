@@ -250,7 +250,7 @@ dialog:
     unverifiedWarning: 'Diese Organisation ist nicht verifiziert. Der Newsletter kann bis dahin keine Nachrichten versenden. Abonnenten und Entwürfe bleiben erhalten.'
   delete:
     title: 'Newsletter löschen'
-    message: 'Möchten Sie diesen Newsletter wirklich löschen? Alle Abonnenten werden entfernt.'
+    message: 'Möchtest du diesen Newsletter wirklich löschen? Alle Abonnenten werden entfernt.'
     label: 'Newsletter-Name'
 </i18n>
 

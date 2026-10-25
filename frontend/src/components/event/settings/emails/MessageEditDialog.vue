@@ -182,12 +182,12 @@ field:
   country: 'Vorlage bearbeiten für Teilnehmer aus:'
   subject:
     label: 'Betreff:'
-    placeholder: 'Geben Sie hier Ihren Betreff ein...'
+    placeholder: 'Gib hier deinen Betreff ein...'
     rule:
       required: 'Der Betreff ist erforderlich'
   body:
     label: 'Nachricht:'
-    placeholder: 'Geben Sie hier Ihre Nachricht ein...'
+    placeholder: 'Gib hier deine Nachricht ein...'
     rule:
       required: 'Die Nachricht ist erforderlich'
   attachment:

@@ -126,7 +126,7 @@ action:
 <i18n locale="de" lang="yaml">
 title: 'Anmeldung Akzeptieren'
 
-text: 'Sind Sie sicher, dass Sie die Anmeldung von {name} akzeptieren möchten? Diese Aktion kann nicht rückgängig gemacht werden.'
+text: 'Bist du sicher, dass du die Anmeldung von {name} akzeptieren möchtest? Diese Aktion kann nicht rückgängig gemacht werden.'
 
 field:
   sendAutomatedMessage:

@@ -203,17 +203,17 @@ action:
 title: 'Konto löschen'
 
 disclaimer:
-  title: 'Ihr Konto löschen'
-  description: 'Das Löschen Ihres Kontos ist eine dauerhafte Aktion und kann nicht rückgängig gemacht werden. Bitte prüfen Sie Folgendes, bevor Sie fortfahren:'
-  dataRemoval: 'Alle Ihre persönlichen Informationen, Einstellungen und zugehörigen Daten werden dauerhaft gelöscht.'
-  accessLoss: 'Sie verlieren den Zugriff auf alle Veranstaltungen, Tools und Dienste, die mit Ihrem Konto verbunden sind.'
-  collaborationImpact: 'Mitarbeiter können Ihre Beiträge möglicherweise nicht mehr sehen.'
-  auditRetention: 'Ihre Änderungen an Veranstaltungen bleiben mit Ihrem Namen bis zu zwei Jahre im Änderungsprotokoll erhalten.'
+  title: 'Dein Konto löschen'
+  description: 'Das Löschen deines Kontos ist dauerhaft und kann nicht rückgängig gemacht werden. Bitte prüfe Folgendes, bevor du fortfährst:'
+  dataRemoval: 'Alle deine persönlichen Informationen, Einstellungen und zugehörigen Daten werden dauerhaft gelöscht.'
+  accessLoss: 'Du verlierst den Zugriff auf alle Veranstaltungen, Tools und Dienste, die mit deinem Konto verbunden sind.'
+  collaborationImpact: 'Mitarbeiter können deine Beiträge möglicherweise nicht mehr sehen.'
+  auditRetention: 'Deine Änderungen an Veranstaltungen bleiben mit deinem Namen bis zu zwei Jahre im Änderungsprotokoll erhalten.'
   irreversible: 'Diese Aktion ist endgültig.'
 
 blockers:
-  title: 'Ihr Konto kann noch nicht gelöscht werden'
-  description: 'Sie sind die einzige Person mit Leitungs-, Inhaber- bzw. Administrationsrolle für die folgenden Einträge. Übertragen Sie diese Rolle an eine andere Person oder löschen Sie die Einträge zuerst.'
+  title: 'Dein Konto kann noch nicht gelöscht werden'
+  description: 'Du bist die einzige Person mit Leitungs-, Inhaber- bzw. Administrationsrolle für die folgenden Einträge. Übertrage diese Rolle an eine andere Person oder lösche die Einträge zuerst.'
   event: 'Veranstaltung'
   newsletter: 'Newsletter'
   organization: 'Organisation'
