@@ -39,6 +39,7 @@ const format = {
 } as const;
 
 export default {
+  'en-GB': format,
   'en-US': format,
   en: format,
   'de-DE': format,

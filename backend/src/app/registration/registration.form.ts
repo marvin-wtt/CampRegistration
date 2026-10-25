@@ -48,6 +48,12 @@ interface PlainDataEntry {
   data?: PlainDataEntry[];
 }
 
+interface TaggedPlainDataEntry {
+  value: unknown;
+  eventDataType?: unknown;
+  data?: TaggedPlainDataEntry[];
+}
+
 /**
  * Question types whose plain-data children are distinct sub-questions rather
  * than one entry per selected choice. Only these are descended into: a checkbox
@@ -247,15 +253,21 @@ export class RegistrationForm {
     });
 
     const eventData: Record<string, unknown[]> = {};
-    for (const entry of plain) {
-      const tag: unknown = entry.eventDataType;
-      if (typeof tag !== 'string' || !tag) {
-        continue;
-      }
+    // The survey lists only top-level questions; those of a dynamic panel or
+    // matrix sit in the `data` of its panel and row entries.
+    const collect = (entries: TaggedPlainDataEntry[]) => {
+      for (const entry of entries) {
+        const tag = entry.eventDataType;
+        if (typeof tag !== 'string' || !tag) {
+          collect(entry.data ?? []);
+          continue;
+        }
 
-      // Undefined is not accepted by prisma and must be replaced with null
-      (eventData[tag] ??= []).push(entry.value ?? null);
-    }
+        // Undefined is not accepted by prisma and must be replaced with null
+        (eventData[tag] ??= []).push(entry.value ?? null);
+      }
+    };
+    collect(plain);
 
     return eventData;
   }
