@@ -290,6 +290,7 @@ export default {
               'If you do not have your own telephone number, you can leave this field blank',
           },
           requiredIf: '{isadult}',
+          eventDataType: 'phone',
           inputType: 'tel',
           autocomplete: 'tel',
         },

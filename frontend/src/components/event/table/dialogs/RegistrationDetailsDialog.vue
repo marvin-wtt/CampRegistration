@@ -88,7 +88,12 @@
                 >
                   <q-item-section avatar>
                     <div class="row-icon">
+                      <country-icon
+                        v-if="row.country"
+                        :country="row.country"
+                      />
                       <q-icon
+                        v-else
                         :name="row.icon"
                         size="20px"
                       />
@@ -112,7 +117,7 @@
               </q-list>
             </section>
 
-            <section v-if="emails?.length || hasAddress">
+            <section v-if="emails?.length || phoneNumbers.length || hasAddress">
               <div class="section-title">{{ t('section.contact') }}</div>
               <q-list class="segmented-list">
                 <q-item
@@ -146,7 +151,47 @@
                       icon="content_copy"
                       round
                       size="sm"
-                      @click.stop.prevent="copyEmail(email)"
+                      @click.stop.prevent="copy(email)"
+                    >
+                      <q-tooltip>
+                        {{ t('action.copy') }}
+                      </q-tooltip>
+                    </q-btn>
+                  </q-item-section>
+                </q-item>
+
+                <q-item
+                  v-for="phoneNumber in phoneNumbers"
+                  :key="phoneNumber"
+                  :href="`tel:${phoneNumber.replace(/\s/g, '')}`"
+                  class="segment"
+                  clickable
+                  tag="a"
+                >
+                  <q-item-section avatar>
+                    <div class="row-icon">
+                      <q-icon
+                        name="phone"
+                        size="20px"
+                      />
+                    </div>
+                  </q-item-section>
+                  <q-item-section class="overflow-hidden">
+                    <q-item-label class="row-label">
+                      {{ t('field.phone') }}
+                    </q-item-label>
+                    <q-item-label class="row-value row-value--link ellipsis">
+                      {{ phoneNumber }}
+                    </q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
+                    <q-btn
+                      class="row-action"
+                      flat
+                      icon="content_copy"
+                      round
+                      size="sm"
+                      @click.stop.prevent="copy(phoneNumber)"
                     >
                       <q-tooltip>
                         {{ t('action.copy') }}
@@ -239,6 +284,7 @@ import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { usePermissions } from '@/composables/permissions';
 import { countryName } from '@/utils/countries';
+import { formatPhoneNumber } from '@/utils/formatPhoneNumber';
 import { useRegistrationHelper } from '@/composables/registrationHelper';
 import { useRegistrationsStore } from '@/stores/registration-store';
 import { useEventDetailsStore } from '@/stores/event-details-store';
@@ -247,6 +293,7 @@ import RegistrationDialogHeader from '@/components/event/table/dialogs/Registrat
 import RegistrationFormViewDialog from '@/components/event/table/dialogs/RegistrationFormViewDialog.vue';
 import RegistrationTimeline from '@/components/event/table/dialogs/RegistrationTimeline.vue';
 import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
+import CountryIcon from '@/components/common/localization/CountryIcon.vue';
 
 defineEmits([...useDialogPluginComponent.emits]);
 
@@ -304,6 +351,29 @@ const emails = computed<string[] | null>(() => {
   return [...new Set(values.map(normalizeEmail).filter(Boolean))];
 });
 
+// Formatted before deduplicating, so one number entered twice in different
+// notations is listed once.
+const phoneNumbers = computed<string[]>(() => {
+  const value = registration.value;
+  if (!value?.computedData.phoneNumbers) {
+    return [];
+  }
+
+  const countries = {
+    country: registrationHelper.country(value),
+    eventCountries: event.value?.countries ?? [],
+  };
+
+  return [
+    ...new Set(
+      value.computedData.phoneNumbers
+        .map((phoneNumber) => phoneNumber.trim())
+        .filter(Boolean)
+        .map((phoneNumber) => formatPhoneNumber(phoneNumber, countries)),
+    ),
+  ];
+});
+
 const hasAddress = computed<boolean>(() => {
   const addr = registration.value?.computedData.address;
   return !!(addr?.street || addr?.city || addr?.zipCode || addr?.country);
@@ -359,10 +429,19 @@ const country = computed<string | null>(
 interface DetailRow {
   key: string;
   icon: string;
+  // Shows this country's flag in place of the icon.
+  country?: string;
   label: string;
   value: string;
   badge?: string | undefined;
 }
+
+// As in GenderTableCell; custom form options keep the generic icon.
+const GENDER_ICONS: Record<string, string> = {
+  m: 'male',
+  f: 'female',
+  d: 'transgender',
+};
 
 const personalRows = computed<DetailRow[]>(() => {
   const value = registration.value;
@@ -385,7 +464,7 @@ const personalRows = computed<DetailRow[]>(() => {
   if (data.gender) {
     rows.push({
       key: 'gender',
-      icon: 'wc',
+      icon: GENDER_ICONS[data.gender] ?? 'wc',
       label: t('field.gender'),
       value: translatedGender.value,
     });
@@ -396,6 +475,7 @@ const personalRows = computed<DetailRow[]>(() => {
     rows.push({
       key: 'group',
       icon: 'flag',
+      country: value.group,
       label: t('field.group'),
       value: countryName(value.group, locale.value),
     });
@@ -422,12 +502,15 @@ const personalRows = computed<DetailRow[]>(() => {
 
 const hasDetails = computed<boolean>(
   () =>
-    personalRows.value.length > 0 || !!emails.value?.length || hasAddress.value,
+    personalRows.value.length > 0 ||
+    !!emails.value?.length ||
+    phoneNumbers.value.length > 0 ||
+    hasAddress.value,
 );
 
-async function copyEmail(email: string): Promise<void> {
+async function copy(value: string): Promise<void> {
   try {
-    await copyToClipboard(email);
+    await copyToClipboard(value);
     quasar.notify({
       type: 'positive',
       message: t('notification.copied'),
@@ -474,6 +557,7 @@ field:
   gender: 'Gender'
   role: 'Role'
   email: 'Email'
+  phone: 'Phone'
   room: 'Room'
 
 gender:
@@ -515,6 +599,7 @@ field:
   gender: 'Geschlecht'
   role: 'Rolle'
   email: 'E-Mail'
+  phone: 'Telefon'
   room: 'Zimmer'
 
 gender:
@@ -556,6 +641,7 @@ field:
   gender: 'Genre'
   role: 'Rôle'
   email: 'E-mail'
+  phone: 'Téléphone'
   room: 'Chambre'
 
 gender:
@@ -597,6 +683,7 @@ field:
   gender: 'Płeć'
   role: 'Rola'
   email: 'E-mail'
+  phone: 'Telefon'
   room: 'Pokój'
 
 gender:
@@ -638,6 +725,7 @@ field:
   gender: 'Pohlaví'
   role: 'Role'
   email: 'E-mail'
+  phone: 'Telefon'
   room: 'Pokoj'
 
 gender:

@@ -9,6 +9,7 @@ export interface Registration extends Identifiable, Timestamps {
     lastName: string | null;
     dateOfBirth: string | null;
     emails: string[] | null;
+    phoneNumbers: string[] | null;
     role: string | null;
     gender: string | null;
     address: {

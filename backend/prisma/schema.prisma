@@ -251,6 +251,8 @@ model Registration {
   dateOfBirth                        DateTime?          @map("date_of_birth") @db.Date
   /// ![Array<string>]
   emails                             Json?
+  /// ![Array<string>]
+  phoneNumbers                       Json?              @map("phone_numbers")
   street                             String?
   city                               String?
   zipCode                            String?            @map("zip_code")

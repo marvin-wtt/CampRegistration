@@ -296,6 +296,12 @@ export const eventWithAllEventDataTypes = {
       eventDataType: 'email',
     },
     {
+      name: 'phone',
+      type: 'text',
+      inputType: 'tel',
+      eventDataType: 'phone',
+    },
+    {
       name: 'role',
       type: 'text',
       eventDataType: 'role',

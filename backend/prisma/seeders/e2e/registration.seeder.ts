@@ -6,6 +6,7 @@ export async function seedE2eRegistrations(): Promise<void> {
     firstName: 'Tom',
     lastName: 'Smith',
     emails: ['tom.smith@example.com'],
+    phoneNumbers: ['+49 151 23456789'],
     status: 'ACCEPTED',
     event: { connect: { id: '01JHP0CXJFR4MQS8SF1HQJCY38' } },
   });
@@ -15,6 +16,7 @@ export async function seedE2eRegistrations(): Promise<void> {
     firstName: 'Lena',
     lastName: 'Weber',
     emails: ['lena.weber@example.com'],
+    phoneNumbers: ['+49 160 98765432'],
     status: 'ACCEPTED',
     group: 'de',
     country: 'de',

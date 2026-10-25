@@ -16,6 +16,7 @@ describe('computedRegistrationData', () => {
         country: ['de'],
         date_of_birth: ['2014-05-03'],
         email: ['ann@example.com'],
+        phone: ['+49 151 23456789'],
         role: ['participant'],
         gender: ['f'],
         newsletter_consent: [true],
@@ -29,6 +30,7 @@ describe('computedRegistrationData', () => {
       country: 'de',
       dateOfBirth: '2014-05-03T00:00:00.000Z',
       emails: ['ann@example.com'],
+      phoneNumbers: ['+49 151 23456789'],
       role: 'participant',
       gender: 'f',
       newsletterConsent: true,
@@ -45,6 +47,7 @@ describe('computedRegistrationData', () => {
       country: null,
       dateOfBirth: null,
       emails: [],
+      phoneNumbers: [],
       role: null,
       gender: null,
       newsletterConsent: null,
@@ -125,6 +128,16 @@ describe('computedRegistrationData', () => {
         email: ['ann@example.com', '', null, 'parent@example.com'],
       }),
     ).toMatchObject({ emails: ['ann@example.com', 'parent@example.com'] });
+  });
+
+  it('collects every phone number, skipping empty ones', () => {
+    expect(
+      computedRegistrationData({
+        phone: ['+49 151 23456789', '', null, '+33 6 12 34 56 78'],
+      }),
+    ).toMatchObject({
+      phoneNumbers: ['+49 151 23456789', '+33 6 12 34 56 78'],
+    });
   });
 
   it('records newsletter consent only when one answer agreed', () => {

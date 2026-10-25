@@ -61,6 +61,25 @@ export const email: EventDataType = {
   },
 };
 
+export const phone: EventDataType = {
+  element: {
+    value: 'phone',
+    text: {
+      en: 'Phone Number (Contact)',
+      de: 'Telefonnummer (Kontakt)',
+      fr: 'Numéro de téléphone (Contact)',
+      pl: 'Numer telefonu (Kontakt)',
+      cs: 'Telefonní číslo (Kontakt)',
+    },
+  },
+  fit: (obj) => {
+    return (
+      obj.getType() === 'text' &&
+      ['tel', 'text'].includes(obj.getPropertyValue('inputType'))
+    );
+  },
+};
+
 export const firstName: EventDataType = {
   element: {
     value: 'first_name',

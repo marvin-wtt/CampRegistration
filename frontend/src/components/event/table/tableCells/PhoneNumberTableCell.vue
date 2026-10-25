@@ -8,9 +8,9 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue';
-import parsePhoneNumber, { isSupportedCountry } from 'libphonenumber-js';
 import type { TableCellProps } from '@/components/event/table/tableCells/TableCellProps';
 import { useRegistrationHelper } from '@/composables/registrationHelper';
+import { formatPhoneNumber } from '@/utils/formatPhoneNumber';
 import type { Registration } from '@camp-registration/common/entities';
 
 const { props: cellProps, event } = defineProps<TableCellProps>();
@@ -27,27 +27,10 @@ const formattedPhoneNumber = computed<unknown>(() => {
     return value;
   }
 
-  // If the event has only one country, use that country as fallback
-  const country =
-    registrationHelper.addressCountry(registration.value) ??
-    (event.countries.length === 1 ? event.countries[0] : undefined);
-
-  const normalizedCountry = country?.toUpperCase();
-
-  const countryCode =
-    normalizedCountry && isSupportedCountry(normalizedCountry)
-      ? normalizedCountry
-      : undefined;
-
-  return value
-    .toString()
-    .split(/[,;]+/g)
-    .map(
-      (value: string) =>
-        parsePhoneNumber(value.trim(), countryCode)?.formatInternational() ??
-        value,
-    )
-    .join(', ');
+  return formatPhoneNumber(value.toString(), {
+    country: registrationHelper.country(registration.value),
+    eventCountries: event.countries,
+  });
 });
 </script>
 

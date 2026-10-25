@@ -17,6 +17,7 @@ export const RegistrationFactory = {
         max: 17,
       }),
       emails: [faker.internet.email()],
+      phoneNumbers: [faker.phone.number({ style: 'international' })],
       street: faker.location.street(),
       city: faker.location.city(),
       zipCode: faker.location.zipCode(),

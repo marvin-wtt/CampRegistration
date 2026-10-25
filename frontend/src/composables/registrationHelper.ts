@@ -135,7 +135,7 @@ export function useRegistrationHelper() {
     age,
     gender,
     group,
-    addressCountry: country,
+    country,
     address,
     role,
     participant,

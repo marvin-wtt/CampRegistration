@@ -174,6 +174,7 @@ export default {
             cs: 'Telefonní číslo',
             default: 'Phone Number',
           },
+          eventDataType: 'phone',
           inputType: 'tel',
           autocomplete: 'tel',
         },
