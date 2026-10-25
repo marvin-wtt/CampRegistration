@@ -78,4 +78,32 @@ export async function seedE2eEvents(): Promise<void> {
     registrationClosesAt: '2020-06-01T09:00:00.000Z',
     form: { name: 'Closed event', elements: [] },
   });
+
+  // Two groups, chosen before the form. Unlisted, so the listing baselines
+  // don't change. The address is strict (the default), the nationality warns.
+  await EventFactory.create({
+    id: E2E_GROUP_EVENT_ID,
+    name: 'Group Event',
+    listed: false,
+    organization: { connect: { id: E2E_ORGANIZATION_ID } },
+    contactEmail: 'group-event@example.com',
+    countries: ['de', 'fr'],
+    maxParticipants: { de: 10, fr: 10 },
+    registrationClosesAt: null,
+    form: {
+      name: 'Group test event',
+      elements: [
+        { name: 'first_name', type: 'text', isRequired: true },
+        {
+          name: 'address',
+          type: 'address',
+          eventDataType: 'address',
+          isRequired: true,
+        },
+        { name: 'nationality', type: 'country', groupCountryMatch: 'warn' },
+      ],
+    },
+  });
 }
+
+export const E2E_GROUP_EVENT_ID = '01JHP0CXJFR4MQS8SF1HQJCG01';

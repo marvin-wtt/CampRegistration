@@ -136,6 +136,27 @@ describe('RegistrationForm', () => {
     ).toBe(!testCase.custom);
   });
 
+  it('asks the page for a fresh form to register another person', async () => {
+    const wrapper = mount(RegistrationForm, {
+      props: {
+        eventDetails: { ...simpleEventDetails, id: 'event-1' },
+        submitFn: vi.fn().mockResolvedValue(undefined),
+        uploadFileFn: () => Promise.reject(new Error()),
+      },
+    });
+    const survey = wrapper
+      .getComponent(SurveyComponent)
+      .props('model') as SurveyModel;
+    survey.doComplete();
+    await flushPromises();
+
+    await wrapper
+      .find('[data-test="registration-register-another"]')
+      .trigger('click');
+
+    expect(wrapper.emitted('restart')).toHaveLength(1);
+  });
+
   it('shows the custom error status without touching the completed page', async () => {
     const submitFn = vi.fn(() =>
       // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors

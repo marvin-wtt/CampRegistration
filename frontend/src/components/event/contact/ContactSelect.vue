@@ -132,7 +132,7 @@ import { countryName } from '@/utils/countries';
 const attrs = useAttrs();
 const quasar = useQuasar();
 const { t, locale } = useI18n();
-const { role, country } = useRegistrationHelper();
+const { role, group: registrationGroup } = useRegistrationHelper();
 const { contactFor } = useRegistrationContact();
 const stats = useEventStatistics();
 
@@ -339,7 +339,7 @@ function splitByCountry(
 
   const byCountry = new Map<string | null, Registration[]>();
   for (const registration of group.registrations) {
-    const code = country(registration) ?? null;
+    const code = registrationGroup(registration) ?? null;
     byCountry.set(code, [...(byCountry.get(code) ?? []), registration]);
   }
 
@@ -403,7 +403,7 @@ function contactCountry(contact: Contact): string | undefined {
   }
   return contact.type === 'group'
     ? (contact.country ?? undefined)
-    : country(contact.registration);
+    : registrationGroup(contact.registration);
 }
 
 function getRoleTranslation(name: string): string {

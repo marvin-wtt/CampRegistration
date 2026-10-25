@@ -1,4 +1,4 @@
-import type { PerCountry, Translatable } from '../entities/Translatable.js';
+import type { PerCountry, Translatable } from '../entities/index.js';
 
 function isRecord<T>(value: T | Record<string, T>): value is Record<string, T> {
   return typeof value === 'object' && value !== null;
@@ -82,7 +82,7 @@ export function sumCountryValues(value: PerCountry<number>): number {
     : value;
 }
 
-interface EventCountryFieldData {
+export interface EventCountryFieldData {
   organizer: PerCountry<string>;
   contactEmail: PerCountry<string>;
   maxParticipants: PerCountry<number>;

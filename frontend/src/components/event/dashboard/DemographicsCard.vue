@@ -219,7 +219,7 @@ const regionNames = computed(() => {
 const topCountries = computed<string>(() => {
   const counts = new Map<string, number>();
   for (const registration of people) {
-    const country = helper.country(registration);
+    const country = helper.addressCountry(registration);
     if (country) {
       counts.set(country, (counts.get(country) ?? 0) + 1);
     }

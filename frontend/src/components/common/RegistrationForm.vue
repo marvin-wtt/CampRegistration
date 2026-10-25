@@ -72,10 +72,8 @@
             primary
             icon="person_add"
             :label="t('complete.registerAnother')"
-            :to="{
-              name: 'event',
-              params: { eventId: props.eventDetails.id },
-            }"
+            data-test="registration-register-another"
+            @click="emit('restart')"
           />
           <m-btn
             outline
@@ -156,6 +154,8 @@ const { extractErrorText } = useErrorExtractor();
 interface Props {
   data?: object;
   eventDetails: EventDetails;
+  // Fixed for the form's lifetime: changing the group needs a new form.
+  group?: string | null | undefined;
   submitFn?: (
     id: string,
     formData: Record<string, unknown>,
@@ -174,6 +174,9 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   (e: 'bgColorUpdate', color: string | undefined): void;
   (e: 'activeChange', active: boolean): void;
+  // "Register another person": the page decides what a fresh start means. A
+  // link to the event can't, since it usually is the current page already.
+  (e: 'restart'): void;
 }>();
 
 // Submit lifecycle shown by the custom overlay. While it is non-null the
@@ -315,7 +318,7 @@ watchEffect(() => {
 // without a logo, once with.
 onBeforeMount(() => {
   // Auto variables update on locale change
-  startAutoDataUpdate(model, eventData);
+  startAutoDataUpdate(model, eventData, props.group);
   startAutoThemeUpdate(model, eventData, bgColor);
 });
 

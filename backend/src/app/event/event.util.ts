@@ -41,9 +41,9 @@ export function translateEventContext(
  */
 export function eventContactFor(
   event: Event,
-  registration: Pick<Registration, 'country' | 'locale'>,
+  registration: Pick<Registration, 'group' | 'locale'>,
 ) {
-  const country = eventCountry(event, registration.country);
+  const country = eventCountry(event, registration.group);
 
   return {
     country,
@@ -93,7 +93,7 @@ export interface FreePlaces {
  */
 export function calculateFreePlaces(
   maxParticipants: number | Record<string, number>,
-  registrations: { country: string | null }[],
+  registrations: { group: string | null }[],
 ): FreePlaces {
   if (typeof maxParticipants === 'number') {
     const free = Math.max(0, maxParticipants - registrations.length);
@@ -103,7 +103,7 @@ export function calculateFreePlaces(
 
   const freePlaces: Record<string, number> = {};
   for (const [country, limit] of Object.entries(maxParticipants)) {
-    const count = registrations.filter((r) => r.country === country).length;
+    const count = registrations.filter((r) => r.group === country).length;
     freePlaces[country] = Math.max(0, limit - count);
   }
 

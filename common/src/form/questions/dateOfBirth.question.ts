@@ -1,4 +1,5 @@
 import { ICustomQuestionTypeConfiguration } from 'survey-core';
+import type { Localized } from '../../locales.js';
 
 const dateOfBirth: ICustomQuestionTypeConfiguration = {
   name: 'date_of_birth',
@@ -20,14 +21,14 @@ const dateOfBirth: ICustomQuestionTypeConfiguration = {
       fr: "L'âge maximum pour cet événement est de {event.maxAge} ans",
       pl: 'Maksymalny wiek uczestników wydarzenia wynosi {event.maxAge} lat',
       cs: 'Maximální věk pro účast na této akci je {event.maxAge} let',
-    },
+    } satisfies Localized,
     maxErrorText: {
       de: 'Das Mindestalter für diese Veranstaltung beträgt {event.minAge} Jahre',
       en: 'The minimum age for this event is {event.minAge} years',
       fr: "L'âge minimum pour cet événement est de {event.minAge} ans",
       pl: 'Minimalny wiek uczestników wydarzenia wynosi {event.minAge} lat',
       cs: 'Minimální věk pro účast na této akci je {event.minAge} let',
-    },
+    } satisfies Localized,
   },
 };
 

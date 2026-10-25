@@ -41,6 +41,7 @@ export default {
         customFiles: 'Fichier personnalisé',
         status: 'Statut',
         country: 'Pays',
+        group: 'Groupe',
       },
       values: {
         status: {

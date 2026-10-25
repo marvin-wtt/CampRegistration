@@ -255,6 +255,9 @@ model Registration {
   city                               String?
   zipCode                            String?            @map("zip_code")
   country                            String?
+  // The group the registration belongs to, by its country code. The address's
+  // own country is `country`, and may differ.
+  group                              String?
   newsletterConsent                  Boolean?           @map("newsletter_consent")
   locale                             String             @default("en-US") @db.VarChar(5)
   //

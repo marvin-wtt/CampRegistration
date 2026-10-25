@@ -92,24 +92,31 @@ export class RegistrationService extends BaseService {
 
   async createRegistration(
     event: EventWithFreePlaces,
-    data: Pick<Registration, 'data' | 'locale'>,
+    data: Pick<Registration, 'data' | 'locale' | 'group'>,
     fileField: string,
   ) {
     // Built in the locale the data was validated in: event variables such as
     // `{event.price}` resolve per locale, so computed values can differ.
-    const form = new RegistrationForm(event, { locale: data.locale }).load(
-      data.data,
-    );
+    // Validated as one of the event's countries, and required when there are
+    // several; a single-country event has only the one.
+    const group =
+      data.group ?? (event.countries.length === 1 ? event.countries[0] : null);
 
-    const formData = form.data;
-    const computedData = computedRegistrationData(form.extractEventData());
-
-    if (event.countries.length > 1 && !computedData.country) {
+    if (event.countries.length > 1 && !group) {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
-        'Country data is required for events with multiple countries. This is likely due to an invalid registration form',
+        'A group is required for events with multiple countries',
       );
     }
+
+    const form = new RegistrationForm(event, {
+      locale: data.locale,
+      group,
+    }).load(data.data);
+
+    const formData = form.data;
+    const eventData = form.extractEventData();
+    const computedData = computedRegistrationData(eventData);
 
     const fileIds = form.getFileIds();
 
@@ -134,10 +141,7 @@ export class RegistrationService extends BaseService {
 
       // Max participants per country
       // Throw error when country is missing
-      if (
-        !computedData.country ||
-        !(computedData.country in event.maxParticipants)
-      ) {
+      if (!group || !(group in event.maxParticipants)) {
         throw new ApiError(
           httpStatus.BAD_REQUEST,
           'Invalid or missing country data',
@@ -148,11 +152,11 @@ export class RegistrationService extends BaseService {
         where: {
           eventId: event.id,
           OR: [{ role: 'participant' }, { role: null }],
-          country: computedData.country,
+          group,
         },
       });
 
-      return registrationCount >= event.maxParticipants[computedData.country];
+      return registrationCount >= event.maxParticipants[group];
     };
 
     // Which privacy information this person was shown, resolved before the
@@ -177,6 +181,7 @@ export class RegistrationService extends BaseService {
           data: {
             ...data,
             ...computedData,
+            group,
             id: undefined, // Force new ID generation
             data: formData,
             status,
@@ -211,13 +216,13 @@ export class RegistrationService extends BaseService {
     registrationId: string,
     data: Pick<
       Prisma.RegistrationUpdateInput,
-      'status' | 'data' | 'customData'
+      'status' | 'data' | 'customData' | 'group'
     > & {
       customFiles?: Record<string, string | null>;
     },
     sessionId: string,
   ) {
-    // Status and custom data are plain field writes; only form data and
+    // Status, group and custom data are plain field writes; only form data and
     // custom file slots require a transactional file sync.
     if (!data.data && !data.customFiles) {
       return this.transaction(async (tx) => {
@@ -230,6 +235,7 @@ export class RegistrationService extends BaseService {
           data: {
             customData: data.customData,
             status: data.status,
+            group: data.group,
           },
           include: this.registrationInclude,
         });
@@ -295,6 +301,7 @@ export class RegistrationService extends BaseService {
           data: data.data,
           customData: data.customData,
           status: data.status,
+          group: data.group,
           files,
         },
         include: this.registrationInclude,

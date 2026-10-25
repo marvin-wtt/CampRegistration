@@ -450,7 +450,7 @@ const filteredPeople = computed<Registration[]>(() => {
       }
     }
     if (countryFilter.value.length > 0) {
-      const value = helper.country(registration) ?? stats.UNKNOWN;
+      const value = helper.addressCountry(registration) ?? stats.UNKNOWN;
       if (!countryFilter.value.includes(value)) {
         return false;
       }

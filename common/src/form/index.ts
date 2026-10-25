@@ -30,3 +30,4 @@ export {
   EVENT_BANNER_SLOT,
   FILE_VARIABLE,
 } from './files.js';
+export type { GroupCountryMatch } from './questions/groupCountryMatch.js';

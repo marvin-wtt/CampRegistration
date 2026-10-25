@@ -17,7 +17,7 @@ import {
 const participant = (
   id: string,
   extra: Partial<PoolPerson> = {},
-): PoolPerson => ({ id, staff: false, country: null, roomId: null, ...extra });
+): PoolPerson => ({ id, staff: false, group: null, roomId: null, ...extra });
 const staff = (id: string, extra: Partial<PoolPerson> = {}): PoolPerson =>
   participant(id, { staff: true, ...extra });
 
@@ -121,10 +121,10 @@ describe('rankPeople', () => {
   it('interleaves countries without disturbing the order within one', () => {
     const ledger = buildLedger([duty(['de2']), duty(['de3']), duty(['de3'])]);
     const pool = [
-      participant('de1', { country: 'de' }),
-      participant('de2', { country: 'de' }),
-      participant('de3', { country: 'de' }),
-      participant('fr1', { country: 'fr' }),
+      participant('de1', { group: 'de' }),
+      participant('de2', { group: 'de' }),
+      participant('de3', { group: 'de' }),
+      participant('fr1', { group: 'fr' }),
     ];
 
     const order = rankPeople(ledger, pool, {
@@ -139,9 +139,9 @@ describe('rankPeople', () => {
   it('never balances countries at the expense of fairness', () => {
     const ledger = buildLedger([duty(['fr1']), duty(['fr1']), duty(['fr1'])]);
     const pool = [
-      participant('de1', { country: 'de' }),
-      participant('de2', { country: 'de' }),
-      participant('fr1', { country: 'fr' }),
+      participant('de1', { group: 'de' }),
+      participant('de2', { group: 'de' }),
+      participant('fr1', { group: 'fr' }),
     ];
 
     const order = rankPeople(ledger, pool, {
@@ -156,9 +156,9 @@ describe('rankPeople', () => {
 describe('pickForOccurrence', () => {
   it('balances countries against the members already on the duty', () => {
     const pool = [
-      participant('de1', { country: 'de' }),
-      participant('de2', { country: 'de' }),
-      participant('fr1', { country: 'fr' }),
+      participant('de1', { group: 'de' }),
+      participant('de2', { group: 'de' }),
+      participant('fr1', { group: 'fr' }),
     ];
 
     const picks = pickForOccurrence(

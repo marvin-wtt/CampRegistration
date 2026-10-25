@@ -62,7 +62,8 @@ export class NewsletterSubscriberService extends BaseService {
     const registrations = await this.prisma.registration.findMany({
       where: {
         eventId,
-        country,
+        // One of the event's countries: a group, not where people live.
+        group: country,
         ...newsletterConsentWhere,
       },
       select: {

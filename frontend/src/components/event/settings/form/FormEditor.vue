@@ -45,6 +45,8 @@ import {
   type EditorMode,
   resetEditorModeGlobals,
 } from '@/lib/surveyJs/editorModes';
+import { createPreviewGroupAction } from '@/lib/surveyJs/previewGroup';
+import { countryName } from '@/utils/countries';
 import { fieldFromParts } from '@/utils/fileField';
 import { emphasizeForwardNavigation } from '@/lib/surveyJs/navigation';
 import { readAsDataURL } from '@/utils/readAsDataURL';
@@ -117,6 +119,39 @@ const modeActions = (
 watchEffect(() => {
   modeActions.forEach((action) => action.update(mode.value));
 });
+
+// The group the preview and theme tabs answer the form for, as the group step
+// does on the event page. A form keeps its group, so a change rebuilds it.
+const previewGroup = ref<string | null>(props.event.countries[0] ?? null);
+
+if (props.event.countries.length > 1) {
+  const groupActions = (
+    [
+      [creator.toolbar, false],
+      [creator.footerToolbar, true],
+    ] as const
+  ).map(([toolbar, compact]) => {
+    const groupAction = createPreviewGroupAction(creator, {
+      countries: props.event.countries,
+      group: previewGroup.value ?? '',
+      title: (country) => countryName(country, locale.value),
+      tooltip: (country) =>
+        t('preview.group', { group: countryName(country, locale.value) }),
+      onSelect: (country) => {
+        previewGroup.value = country;
+        creator.getPlugin('preview')?.update?.();
+      },
+      compact,
+      verticalPosition: compact ? 'top' : 'bottom',
+    });
+    toolbar.actions.push(groupAction.action);
+    return groupAction;
+  });
+
+  watchEffect(() => {
+    groupActions.forEach((action) => action.update(previewGroup.value ?? ''));
+  });
+}
 
 addConditionBadge(creator, {
   title: () => t('mode.condition'),
@@ -305,10 +340,11 @@ creator.onSurveyInstanceCreated.add((_, options) => {
 
   if (['preview-tab', 'theme-tab'].includes(options.area)) {
     emphasizeForwardNavigation(survey);
-    setVariables(survey, props.event);
+    const country = previewGroup.value;
+    setVariables(survey, props.event, { country });
     addFileSlotResolver(survey, resolveFileSlot);
     survey.onLocaleChangedEvent.add((sender) => {
-      setVariables(sender, props.event);
+      setVariables(sender, props.event, { country });
     });
   }
 
@@ -459,6 +495,8 @@ function isObjColumn(obj: Base) {
 </style>
 
 <i18n lang="yaml" locale="en">
+preview:
+  group: 'Preview as group: {group}'
 mode:
   label: 'Editor mode'
   simple: 'Simple'
@@ -468,6 +506,8 @@ mode:
 </i18n>
 
 <i18n lang="yaml" locale="de">
+preview:
+  group: 'Vorschau als Gruppe: {group}'
 mode:
   label: 'Editormodus'
   simple: 'Einfach'
@@ -477,6 +517,8 @@ mode:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
+preview:
+  group: 'Aperçu pour le groupe : {group}'
 mode:
   label: "Mode de l'éditeur"
   simple: 'Simple'
@@ -486,6 +528,8 @@ mode:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
+preview:
+  group: 'Podgląd dla grupy: {group}'
 mode:
   label: 'Tryb edytora'
   simple: 'Prosty'
@@ -495,6 +539,8 @@ mode:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
+preview:
+  group: 'Náhled pro skupinu: {group}'
 mode:
   label: 'Režim editoru'
   simple: 'Jednoduchý'

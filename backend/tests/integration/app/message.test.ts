@@ -164,7 +164,7 @@ describe('/api/v1/events/:eventId/messages', () => {
           first_name: 'Max',
         },
         emails: ['test@example.com'],
-        country: 'de',
+        group: 'de',
       });
 
       const registrationB = await RegistrationFactory.create({
@@ -240,7 +240,7 @@ describe('/api/v1/events/:eventId/messages', () => {
           first_name: 'Max',
         },
         emails: ['test@example.com'],
-        country: 'de',
+        group: 'de',
       });
 
       const registrationB = await RegistrationFactory.create({
@@ -249,7 +249,7 @@ describe('/api/v1/events/:eventId/messages', () => {
           first_name: 'Tom',
         },
         emails: ['mail1@example.com', 'mail2@example.com'],
-        country: 'fr',
+        group: 'fr',
       });
 
       const registrationC = await RegistrationFactory.create({
@@ -258,7 +258,7 @@ describe('/api/v1/events/:eventId/messages', () => {
           first_name: 'Paula',
         },
         emails: ['some@example.com'],
-        country: undefined,
+        group: undefined,
       });
 
       const data = {
@@ -392,7 +392,7 @@ describe('/api/v1/events/:eventId/messages', () => {
           first_name: 'Max',
         },
         emails: ['test@example.com'],
-        country: 'de',
+        group: 'de',
       });
 
       const data = {
@@ -454,7 +454,7 @@ describe('/api/v1/events/:eventId/messages', () => {
           first_name: 'Max',
         },
         emails: ['test@example.com'],
-        country: 'de',
+        group: 'de',
       });
 
       const data = {
@@ -614,7 +614,7 @@ describe('/api/v1/events/:eventId/messages', () => {
       // group's template is French, so the name inside it must be too.
       const registration = await RegistrationFactory.create({
         event: { connect: { id: event.id } },
-        country: 'fr',
+        group: 'fr',
         locale: 'de',
         emails: ['test@example.com'],
       });

@@ -480,12 +480,12 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
       await RegistrationFactory.create({
         event: { connect: { id: event.id } },
         emails: ['de@example.com'],
-        country: 'de',
+        group: 'de',
       });
       await RegistrationFactory.create({
         event: { connect: { id: event.id } },
         emails: ['fr@example.com'],
-        country: 'fr',
+        group: 'fr',
       });
 
       const { body } = await request()

@@ -670,7 +670,7 @@ export class ChoreAssignmentService extends BaseService {
       select: {
         id: true,
         role: true,
-        country: true,
+        group: true,
         bed: { select: { roomId: true } },
       },
     });
@@ -679,7 +679,7 @@ export class ChoreAssignmentService extends BaseService {
       id: registration.id,
       // A registration without a role is a participant.
       staff: registration.role !== null && registration.role !== 'participant',
-      country: registration.country,
+      group: registration.group,
       roomId: registration.bed?.roomId ?? null,
     }));
   }

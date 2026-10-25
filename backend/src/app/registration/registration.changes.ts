@@ -168,9 +168,9 @@ export function changesForRegistration(
   previous: Registration,
   current: Registration,
 ): RegistrationChange[] {
-  // Country picks the group's language where a event has several; `locale` is
-  // the fallback, and only its language part is a form locale.
-  const locale = (current.country ?? current.locale).split('-')[0];
+  // The group picks its language where a event has several; `locale` is the
+  // fallback, and only its language part is a form locale.
+  const locale = (current.group ?? current.locale).split('-')[0];
 
   try {
     return diffRegistrationData(event, previous.data, current.data, locale);

@@ -38,9 +38,33 @@ const store = (event: EventWithRelations, fallbackLocale: string) =>
         locale: LocaleSchema.nullable()
           .optional()
           .transform((locale) => locale ?? fallbackLocale),
+        // Defaults to the only country; required when there are several.
+        group: z
+          .string()
+          .toLowerCase()
+          .refine((group) => event.countries.includes(group), {
+            message: 'Group is not one of the event countries',
+          })
+          .nullable()
+          .optional()
+          .transform(
+            (group) =>
+              group ??
+              (event.countries.length === 1 ? event.countries[0] : null),
+          ),
       })
-      .superRefine(async ({ data, locale }, ctx) => {
-        const form = new RegistrationForm(event, { locale }).load(data);
+      .superRefine(async ({ data, locale, group }, ctx) => {
+        if (event.countries.length > 1 && !group) {
+          // Only a page loaded before the group step existed sends none.
+          ctx.addIssue({
+            code: 'custom',
+            path: ['group'],
+            message: 'A group is required. Please reload the page.',
+          });
+          return;
+        }
+
+        const form = new RegistrationForm(event, { locale, group }).load(data);
 
         for (const error of await form.dataErrors()) {
           ctx.addIssue({
@@ -52,25 +76,36 @@ const store = (event: EventWithRelations, fallbackLocale: string) =>
       }) satisfies ZodType<RegistrationCreateData>,
   });
 
-const update = z.object({
-  params: z.object({
-    eventId: z.ulid(),
-    registrationId: z.ulid(),
-  }),
-  body: z
-    .object({
-      data: RegistrationDataSchema,
-      customData: z.record(z.string(), z.unknown()),
-      customFiles: z.record(z.string().regex(/^[^\s.]+$/), z.ulid().nullable()),
-      status: z.enum(['PENDING', 'WAITLISTED', 'ACCEPTED']).optional(),
-    })
-    .partial() satisfies ZodType<RegistrationUpdateData>,
-  query: z
-    .object({
-      suppressMessage: z.stringbool(),
-    })
-    .partial() satisfies ZodType<RegistrationUpdateQuery>,
-});
+const update = (event: EventWithRelations) =>
+  z.object({
+    params: z.object({
+      eventId: z.ulid(),
+      registrationId: z.ulid(),
+    }),
+    body: z
+      .object({
+        data: RegistrationDataSchema,
+        customData: z.record(z.string(), z.unknown()),
+        customFiles: z.record(
+          z.string().regex(/^[^\s.]+$/),
+          z.ulid().nullable(),
+        ),
+        status: z.enum(['PENDING', 'WAITLISTED', 'ACCEPTED']).optional(),
+        // A manager moving the registration; the answers stay as given.
+        group: z
+          .string()
+          .toLowerCase()
+          .refine((group) => event.countries.includes(group), {
+            message: 'Group is not one of the event countries',
+          }),
+      })
+      .partial() satisfies ZodType<RegistrationUpdateData>,
+    query: z
+      .object({
+        suppressMessage: z.stringbool(),
+      })
+      .partial() satisfies ZodType<RegistrationUpdateQuery>,
+  });
 
 const destroy = z.object({
   params: z.object({

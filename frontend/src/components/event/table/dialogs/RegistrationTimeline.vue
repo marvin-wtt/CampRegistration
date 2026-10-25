@@ -380,8 +380,21 @@ function fromAuditEntry(entry: AuditLogEntry): TimelineEntry[] {
     });
   }
 
+  const group = entry.details?.values?.group;
+  if (typeof group === 'string') {
+    entries.push({
+      ...shared,
+      id: `${entry.id}-group`,
+      title: t('moved', {
+        group: valueLabel('registration', 'group', group),
+      }),
+      color: 'primary',
+      icon: 'flag',
+    });
+  }
+
   const fields = (entry.details?.changedFields ?? []).filter(
-    (path) => path !== 'status',
+    (path) => path !== 'status' && path !== 'group',
   );
   if (fields.length > 0) {
     entries.push({
@@ -487,6 +500,7 @@ const entries = computed<TimelineEntry[]>(() =>
 <i18n lang="yaml" locale="en">
 created: 'Registered'
 updated: 'Updated'
+moved: 'Moved to {group}'
 deleted: 'Deleted'
 by: 'by {actor}'
 changedFields: 'Changed:'
@@ -504,6 +518,7 @@ resend:
 <i18n lang="yaml" locale="de">
 created: 'Angemeldet'
 updated: 'Aktualisiert'
+moved: 'Verschoben nach {group}'
 deleted: 'Gelöscht'
 by: 'von {actor}'
 changedFields: 'Geändert:'
@@ -521,6 +536,7 @@ resend:
 <i18n lang="yaml" locale="fr">
 created: 'Inscrit'
 updated: 'Mis à jour'
+moved: 'Déplacé vers {group}'
 deleted: 'Supprimé'
 by: 'par {actor}'
 changedFields: 'Modifié :'
@@ -538,6 +554,7 @@ resend:
 <i18n lang="yaml" locale="pl">
 created: 'Zarejestrowano'
 updated: 'Zaktualizowano'
+moved: 'Przeniesiono do: {group}'
 deleted: 'Usunięto'
 by: 'przez {actor}'
 changedFields: 'Zmieniono:'
@@ -555,6 +572,7 @@ resend:
 <i18n lang="yaml" locale="cs">
 created: 'Zaregistrováno'
 updated: 'Aktualizováno'
+moved: 'Přesunuto do: {group}'
 deleted: 'Smazáno'
 by: 'uživatelem {actor}'
 changedFields: 'Změněno:'

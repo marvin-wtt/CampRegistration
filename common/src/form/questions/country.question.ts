@@ -1,46 +1,10 @@
-import { ICustomQuestionTypeConfiguration } from 'survey-core';
-import { type AppLocale, EVENT_COUNTRIES } from '../../locales.js';
-
-type EventCountry = (typeof EVENT_COUNTRIES)[number];
-
-// Every country an event can run in needs a name here, or this fails to compile.
-const COUNTRY_NAMES: Record<EventCountry, Record<AppLocale, string>> = {
-  de: {
-    de: 'Deutschland',
-    en: 'Germany',
-    fr: 'Allemagne',
-    pl: 'Niemcy',
-    cs: 'Německo',
-  },
-  fr: {
-    de: 'Frankreich',
-    en: 'France',
-    fr: 'France',
-    pl: 'Francja',
-    cs: 'Francie',
-  },
-  gb: {
-    de: 'Großbritannien',
-    en: 'Great Britain',
-    fr: 'Grande-Bretagne',
-    pl: 'Wielka Brytania',
-    cs: 'Velká Británie',
-  },
-  pl: {
-    de: 'Polen',
-    en: 'Poland',
-    fr: 'Pologne',
-    pl: 'Polska',
-    cs: 'Polsko',
-  },
-  cz: {
-    de: 'Tschechien',
-    en: 'Czech Republic',
-    fr: 'République tchèque',
-    pl: 'Czechy',
-    cs: 'Česká republika',
-  },
-};
+import { type ICustomQuestionTypeConfiguration, Serializer } from 'survey-core';
+import {
+  applyGroupCountry,
+  countryChoices,
+  groupCountryMatchProperty,
+} from './groupCountryMatch.js';
+import type { Localized } from '../../locales.js';
 
 const country: ICustomQuestionTypeConfiguration = {
   name: 'country',
@@ -54,13 +18,16 @@ const country: ICustomQuestionTypeConfiguration = {
       fr: 'Sélectionnez un pays...',
       pl: 'Wybierz kraj...',
       cs: 'Vyberte zemi...',
-    },
-    // Only the countries the event runs in are offered.
-    choices: EVENT_COUNTRIES.map((code) => ({
-      value: code,
-      text: COUNTRY_NAMES[code],
-      visibleIf: `{event.countries} contains '${code}'`,
-    })),
+    } satisfies Localized,
+    // Residence abroad must be answerable; the event's countries are moved to
+    // the top once known (see `applyGroupCountry`).
+    choices: countryChoices(),
+  },
+  onInit() {
+    Serializer.addProperty('country', groupCountryMatchProperty);
+  },
+  onLoaded(question) {
+    applyGroupCountry(question);
   },
 };
 

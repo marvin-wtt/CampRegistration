@@ -12,16 +12,16 @@ interface Group {
 // Status is carried along to show what each case models — the calculation
 // itself must not depend on it.
 const people = (
-  country: string | null,
+  group: string | null,
   { A = 0, P = 0, W = 0 }: Group,
-): { country: string | null; status: Status }[] => [
+): { group: string | null; status: Status }[] => [
   ...Array.from({ length: A }, () => ({
-    country,
+    group,
     status: 'ACCEPTED' as const,
   })),
-  ...Array.from({ length: P }, () => ({ country, status: 'PENDING' as const })),
+  ...Array.from({ length: P }, () => ({ group, status: 'PENDING' as const })),
   ...Array.from({ length: W }, () => ({
-    country,
+    group,
     status: 'WAITLISTED' as const,
   })),
 ];

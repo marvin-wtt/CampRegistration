@@ -8,6 +8,9 @@ export const APP_LOCALES = ['en', 'de', 'fr', 'cs', 'pl'] as const;
 
 export type AppLocale = (typeof APP_LOCALES)[number];
 
+/** A text in every app locale: adding a locale makes each missing one fail to compile. */
+export type Localized = Record<AppLocale, string>;
+
 const COUNTRY_LOCALE_MAP = {
   de: 'de',
   fr: 'fr',

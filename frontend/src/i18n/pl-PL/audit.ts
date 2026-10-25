@@ -41,6 +41,7 @@ export default {
         customFiles: 'Plik niestandardowy',
         status: 'Status',
         country: 'Kraj',
+        group: 'Grupa',
       },
       values: {
         status: {

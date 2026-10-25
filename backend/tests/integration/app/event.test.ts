@@ -248,7 +248,7 @@ describe('/api/v1/events', () => {
       await RegistrationFactory.create({
         event: { connect: { id: eventB.id } },
         role: 'participant',
-        country: 'fr',
+        group: 'fr',
       });
 
       const { body } = await request().get(`/api/v1/events/`).send();
@@ -276,7 +276,7 @@ describe('/api/v1/events', () => {
             RegistrationFactory.create({
               event: { connect: { id: eventId } },
               role: 'participant',
-              country,
+              group: country,
               status,
             }),
           ),
@@ -1063,17 +1063,17 @@ describe('/api/v1/events', () => {
         await RegistrationFactory.create({
           event: { connect: { id: event.id } },
           role: 'participant',
-          country: 'de',
+          group: 'de',
         });
         await RegistrationFactory.create({
           event: { connect: { id: event.id } },
           role: 'participant',
-          country: 'fr',
+          group: 'fr',
         });
         await RegistrationFactory.create({
           event: { connect: { id: event.id } },
           role: 'counselor',
-          country: 'fr',
+          group: 'fr',
         });
 
         const { body } = await request()
@@ -1793,18 +1793,18 @@ describe('/api/v1/events', () => {
       // Normal registrations
       await RegistrationFactory.create({
         event: { connect: { id: event.id } },
-        country: 'fr',
+        group: 'fr',
         role: 'participant',
       });
       await RegistrationFactory.create({
         event: { connect: { id: event.id } },
-        country: 'fr',
+        group: 'fr',
         role: 'participant',
       });
       // Counselor should not influence free places
       await RegistrationFactory.create({
         event: { connect: { id: event.id } },
-        country: 'fr',
+        group: 'fr',
         role: 'counselor',
       });
 

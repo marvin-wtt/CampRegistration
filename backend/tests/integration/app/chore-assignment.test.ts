@@ -484,13 +484,13 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
       // within such a tie. The finer tie-breakers (times on this chore, then
       // longest ago) still separate them, so the fairness order is fixed.
       const gbNeverAssigned = await createRegistration(event, {
-        country: 'gb',
+        group: 'gb',
       });
       const gbAssignedOnce = await createRegistration(event, {
-        country: 'gb',
+        group: 'gb',
       });
       const frAssignedLater = await createRegistration(event, {
-        country: 'fr',
+        group: 'fr',
       });
 
       await createAssignment(event, otherChore.id, {

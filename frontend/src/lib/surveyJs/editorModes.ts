@@ -62,6 +62,8 @@ const SIMPLE_PROPERTY_GRID: ISurveyPropertyGridDefinition = {
     file: { properties: ['allowMultiple', 'acceptedCategories', 'maxSize'] },
     boolean: { properties: ['labelTrue', 'labelFalse'] },
     html: { properties: ['html'] },
+    country: { properties: ['groupCountryMatch'] },
+    address: { properties: ['groupCountryMatch'] },
   },
 };
 

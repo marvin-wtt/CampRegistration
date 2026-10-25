@@ -126,7 +126,7 @@ export class EventService extends BaseService {
         where: {
           OR: [{ role: 'participant' }, { role: null }],
         },
-        select: { country: true },
+        select: { group: true },
       },
       organization: {
         select: { id: true, name: true, verificationStatus: true },
@@ -513,7 +513,7 @@ export class EventService extends BaseService {
 // Generic so whatever relations the caller included (the owning organization,
 // in particular) survive into the returned type.
 const enrichFreePlaces = <
-  T extends Event & { registrations: { country: string | null }[] },
+  T extends Event & { registrations: { group: string | null }[] },
 >(
   event: T,
 ): T & FreePlaces => ({

@@ -9,6 +9,7 @@ import { resolveMd3Theme } from '@/lib/surveyJs/theme';
 export function startAutoDataUpdate(
   model: SurveyModel,
   data: Ref<EventDetails | undefined>,
+  group?: string | null,
 ) {
   const { locale } = useI18n();
 
@@ -16,7 +17,7 @@ export function startAutoDataUpdate(
     [locale, data],
     ([locale, data]) => {
       model.locale = locale;
-      setVariables(model, data);
+      setVariables(model, data, { country: group });
     },
     { immediate: true },
   );

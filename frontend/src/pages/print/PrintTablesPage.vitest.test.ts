@@ -66,6 +66,7 @@ function registration(firstName: string): Registration {
     data: {},
     computedData: { firstName } as Registration['computedData'],
     customData: {},
+    group: null,
     status: 'ACCEPTED',
     createdAt: '2026-01-01T00:00:00Z',
   };

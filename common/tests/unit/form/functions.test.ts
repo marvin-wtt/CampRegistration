@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SurveyModel } from 'survey-core';
 import '../../../src/form/index.js';
 
@@ -776,6 +776,79 @@ describe('functions', () => {
       expect(model.calculatedValues[0].value).toBe('Hallo');
     });
   });
+
+  // Dates of birth are plain dates and event dates naive datetimes: both are
+  // calendar dates, whatever the runtime's timezone.
+  describe.each(['UTC', 'America/New_York', 'Asia/Tokyo'])(
+    'calendar dates in %s',
+    (timeZone) => {
+      beforeEach(() => {
+        vi.stubEnv('TZ', timeZone);
+      });
+      afterEach(() => {
+        vi.unstubAllEnvs();
+      });
+
+      const run = (expression: string, data: Record<string, unknown>) => {
+        const model = new SurveyModel();
+        model.data = data;
+
+        return model.runExpression(expression);
+      };
+
+      it.each([
+        ['2000-01-01', '2000-01-01'],
+        ['2026-07-01T00:30:00', '2026-07-01'],
+        ['2026-07-14T23:30:00', '2026-07-14'],
+      ])('htmlDate should keep the date of %s', (date, expected) => {
+        expect(run('htmlDate({date})', { date })).toBe(expected);
+      });
+
+      it.each([
+        ['2026-07-01T00:30:00', 8, '2018-07-01'],
+        ['2026-07-14T23:30:00', 15, '2011-07-14'],
+        ['2024-02-29T12:00:00', 1, '2023-03-01'],
+      ])(
+        'subtractYears should keep the date of %s',
+        (date, years, expected) => {
+          expect(run('subtractYears({date}, {years})', { date, years })).toBe(
+            expected,
+          );
+          expect(
+            run('htmlDate(subtractYears({date}, {years}))', { date, years }),
+          ).toBe(expected);
+        },
+      );
+
+      it.each([
+        ['2026-06-30T23:30:00', true],
+        ['2026-07-01T00:00:00', false],
+        ['2026-07-01T10:00:00', false],
+      ])('isMinor should count the 18th birthday at %s', (start, minor) => {
+        const data = { date_of_birth: '2008-07-01', start };
+
+        expect(run('isMinor({date_of_birth}, {start})', data)).toBe(minor);
+        expect(run('isAdult({date_of_birth}, {start})', data)).toBe(!minor);
+      });
+
+      it('isMinor should count a 29.02. birthday from 01.03. on', () => {
+        const data = { date_of_birth: '2008-02-29' };
+
+        expect(
+          run('isMinor({date_of_birth}, {start})', {
+            ...data,
+            start: '2026-02-28T12:00:00',
+          }),
+        ).toBe(true);
+        expect(
+          run('isMinor({date_of_birth}, {start})', {
+            ...data,
+            start: '2026-03-01T12:00:00',
+          }),
+        ).toBe(false);
+      });
+    },
+  );
 
   describe('htmlDate', () => {
     it('should return a date string in html format', () => {

@@ -1,7 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { SurveyModel } from 'survey-core';
 import { fakeEventData } from '../../util/faker.js';
 import { setVariables } from '../../../src/form/index.js';
+import { naiveDateTimeToUtcCarrier } from '../../../src/utils/index.js';
 import type { Data } from '../../../src/form/variables/variables.js';
 
 describe('variables', () => {
@@ -111,7 +112,7 @@ describe('variables', () => {
     });
   });
 
-  describe('selected country', () => {
+  describe('per-country values', () => {
     const event: Partial<Data> = {
       countries: ['de', 'fr'],
       organizer: { de: 'Verein', fr: 'Association' },
@@ -120,16 +121,8 @@ describe('variables', () => {
       freePlaces: { de: 3, fr: 0 },
     };
 
-    const countryForm = (eventDataType: 'country' | 'address') =>
-      new SurveyModel({
-        elements:
-          eventDataType === 'country'
-            ? [{ type: 'country', name: 'country', eventDataType }]
-            : [{ type: 'address', name: 'address', eventDataType }],
-      });
-
-    it('should leave per-country values unresolved until a country is selected', () => {
-      const model = countryForm('country');
+    it('should leave them unresolved without a group', () => {
+      const model = new SurveyModel();
 
       setVariables(model, fakeEventData(event));
 
@@ -140,147 +133,102 @@ describe('variables', () => {
       expect(model.getVariable('event.maxParticipants')).toBe(15);
     });
 
-    it('should follow the answer of a country question', () => {
-      const model = countryForm('country');
-      setVariables(model, fakeEventData(event));
-
-      model.setValue('country', 'fr');
-
-      expect(model.getVariable('event.country')).toBe('fr');
-      expect(model.getVariable('event.contactEmail')).toBe('fr@test');
-      expect(model.getVariable('event.maxParticipants')).toBe(5);
-      expect(model.getVariable('event.freePlaces')).toBe(0);
-      expect(model.getVariable('event.organizer')).toBe('Association');
-    });
-
-    it('should follow the country of an address', () => {
-      const model = countryForm('address');
-      setVariables(model, fakeEventData(event));
-
-      model.setValue('address', { country: 'de' });
-
-      expect(model.getVariable('event.freePlaces')).toBe(3);
-    });
-
-    it("should fall back to the address's country, as the server does", () => {
-      const model = new SurveyModel({
-        elements: [
-          { type: 'country', name: 'country', eventDataType: 'country' },
-          { type: 'address', name: 'address', eventDataType: 'address' },
-        ],
-      });
-      setVariables(model, fakeEventData(event));
-
-      model.setValue('address', { country: 'fr' });
-      expect(model.getVariable('event.country')).toBe('fr');
-
-      model.setValue('country', 'de');
-      expect(model.getVariable('event.country')).toBe('de');
-
-      model.clearValue('country');
-      expect(model.getVariable('event.country')).toBe('fr');
-    });
-
-    it('should follow data loaded into the form', () => {
-      const model = countryForm('address');
-      setVariables(model, fakeEventData(event));
-
-      model.data = { address: { country: 'fr' } };
-      expect(model.getVariable('event.country')).toBe('fr');
-
-      model.mergeData({ address: { country: 'de' } });
-      expect(model.getVariable('event.country')).toBe('de');
-    });
-
-    it('should pick up new event data for the selected country', () => {
-      const model = countryForm('country');
-      setVariables(model, fakeEventData(event));
-      model.setValue('country', 'de');
-
-      setVariables(model, fakeEventData({ ...event, freePlaces: { de: 0 } }));
-
-      expect(model.getVariable('event.freePlaces')).toBe(0);
-      expect(model.calculatedValues).toHaveLength(1);
-    });
-
-    it('should keep forms that pass the free places to isWaitingList working', () => {
-      const model = new SurveyModel({
-        elements: [
-          { type: 'country', name: 'country', eventDataType: 'country' },
-        ],
-        calculatedValues: [
-          {
-            name: 'waitingList',
-            expression: 'isWaitingList({event.freePlaces}, {country})',
-          },
-        ],
-      });
-      setVariables(model, fakeEventData(event));
-
-      model.setValue('country', 'fr');
-      expect(model.getVariable('waitingList')).toBe(true);
-
-      model.setValue('country', 'de');
-      expect(model.getVariable('waitingList')).toBe(false);
-    });
-
-    it("should use the event's only country without a selection", () => {
+    it('should pick up new event data for the group', () => {
       const model = new SurveyModel();
+      setVariables(model, fakeEventData(event), { country: 'de' });
 
-      setVariables(
-        model,
-        fakeEventData({ countries: ['gb'], contactEmail: { gb: 'gb@test' } }),
-      );
-
-      expect(model.getVariable('event.country')).toBe('gb');
-      expect(model.getVariable('event.contactEmail')).toBe('gb@test');
-    });
-
-    it('should not write the country binding into a design surface', () => {
-      const model = countryForm('country');
-      model.setDesignMode(true);
-
-      setVariables(model, fakeEventData(event));
-
-      expect(model.calculatedValues).toHaveLength(0);
-    });
-
-    it('should keep the country binding out of the form JSON', () => {
-      const model = new SurveyModel({
-        elements: [
-          { type: 'country', name: 'country', eventDataType: 'country' },
-        ],
-        calculatedValues: [
-          { name: 'waitingList', expression: '{event.freePlaces} <= 0' },
-        ],
+      setVariables(model, fakeEventData({ ...event, freePlaces: { de: 0 } }), {
+        country: 'de',
       });
-      setVariables(model, fakeEventData(event));
 
-      expect(model.calculatedValues).toHaveLength(2);
-      expect(model.toJSON()).toHaveProperty('calculatedValues', [
-        { name: 'waitingList', expression: '{event.freePlaces} <= 0' },
-      ]);
+      expect(model.getVariable('event.freePlaces')).toBe(0);
     });
 
-    it('should leave no calculated values in the JSON of a form without any', () => {
-      const model = countryForm('country');
-      setVariables(model, fakeEventData(event));
+    // Older forms pass the answer along; the free places are the group's.
+    it('should keep forms that pass the free places to isWaitingList working', () => {
+      const waitingList = (group: string) => {
+        const model = new SurveyModel({
+          elements: [{ type: 'country', name: 'country' }],
+          calculatedValues: [
+            {
+              name: 'waitingList',
+              expression: 'isWaitingList({event.freePlaces}, {country})',
+            },
+          ],
+        });
+        setVariables(model, fakeEventData(event), { country: group });
+        return model.getVariable('waitingList') as unknown;
+      };
+
+      expect(waitingList('fr')).toBe(true);
+      expect(waitingList('de')).toBe(false);
+    });
+
+    it('should add nothing to the form JSON', () => {
+      const model = new SurveyModel({
+        elements: [{ type: 'country', name: 'country' }],
+      });
+
+      setVariables(model, fakeEventData(event), { country: 'fr' });
 
       expect(model.toJSON()).not.toHaveProperty('calculatedValues');
     });
+  });
 
-    it('should follow a country question added after the first binding', () => {
-      const model = new SurveyModel({ pages: [{ name: 'page' }] });
-      setVariables(model, fakeEventData(event));
+  describe('fixed group', () => {
+    const event: Partial<Data> = {
+      countries: ['de', 'fr'],
+      organizer: { de: 'Verein', fr: 'Association' },
+      contactEmail: { de: 'de@test', fr: 'fr@test' },
+      maxParticipants: { de: 10, fr: 5 },
+      freePlaces: { de: 3, fr: 0 },
+    };
 
-      model.pages[0]
-        .addNewQuestion('country', 'country')
-        .setPropertyValue('eventDataType', 'country');
-      setVariables(model, fakeEventData(event));
-      model.setValue('country', 'fr');
+    const countryForm = () =>
+      new SurveyModel({
+        elements: [
+          { type: 'country', name: 'country', eventDataType: 'country' },
+        ],
+      });
+
+    it('should resolve the per-country values for the given group', () => {
+      const model = countryForm();
+
+      setVariables(model, fakeEventData(event), { country: 'fr' });
 
       expect(model.getVariable('event.country')).toBe('fr');
-      expect(model.calculatedValues).toHaveLength(1);
+      expect(model.getVariable('event.organizer')).toBe('Association');
+      expect(model.getVariable('event.contactEmail')).toBe('fr@test');
+      expect(model.getVariable('event.maxParticipants')).toBe(5);
+      expect(model.getVariable('event.freePlaces')).toBe(0);
+    });
+
+    it('should not follow the answers', () => {
+      const model = countryForm();
+      setVariables(model, fakeEventData(event), { country: 'fr' });
+
+      model.setValue('country', 'de');
+
+      expect(model.getVariable('event.country')).toBe('fr');
+      expect(model.calculatedValues).toHaveLength(0);
+    });
+
+    it("should use the event's only country without a group", () => {
+      const model = countryForm();
+
+      setVariables(model, fakeEventData({ ...event, countries: ['de'] }), {
+        country: null,
+      });
+
+      expect(model.getVariable('event.country')).toBe('de');
+    });
+
+    it('should ignore a group the event does not run', () => {
+      const model = countryForm();
+
+      setVariables(model, fakeEventData(event), { country: 'it' });
+
+      expect(model.getVariable('event.country')).toBeNull();
     });
   });
 
@@ -309,6 +257,35 @@ describe('variables', () => {
       setVariables(model, data);
 
       expect(model.getVariable('event.startAtDate')).toBe('01/10/2000');
+    });
+
+    it("should read the backend's UTC carriers like the frontend's naive strings", () => {
+      // Off UTC, a carrier read in local time would shift its digits.
+      vi.stubEnv('TZ', 'America/New_York');
+      const startAt = '2026-07-01T00:30:00';
+      const endAt = '2026-07-14T23:30:00';
+      const variables = (dates: Pick<Data, 'startAt' | 'endAt'>) => {
+        const model = new SurveyModel();
+        model.locale = 'de';
+        setVariables(model, fakeEventData(dates));
+
+        return [
+          'startAt',
+          'startAtDate',
+          'startAtTime',
+          'endAt',
+          'endAtTime',
+        ].map((name) => model.getVariable(`event.${name}`));
+      };
+
+      const carried = variables({
+        startAt: naiveDateTimeToUtcCarrier(startAt),
+        endAt: naiveDateTimeToUtcCarrier(endAt),
+      });
+
+      vi.unstubAllEnvs();
+      expect(carried).toEqual(variables({ startAt, endAt }));
+      expect(carried).toEqual([startAt, '01.07.2026', '00:30', endAt, '23:30']);
     });
   });
 

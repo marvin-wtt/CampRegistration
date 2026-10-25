@@ -7,6 +7,7 @@ import type {
 } from '@camp-registration/common/entities';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import { extractFormFields } from '@/utils/surveyJS';
+import { countryName } from '@/utils/countries';
 
 // How the backend records a `Date` value.
 const ISO_DATE_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
@@ -81,6 +82,10 @@ export function useAuditLabels() {
       return '—';
     }
     const text = String(value);
+    // A registration's group is a country code.
+    if (entityType === 'registration' && key === 'group') {
+      return countryName(text, locale.value);
+    }
     if (ISO_DATE_TIME.test(text)) {
       return new Date(text).toLocaleString(locale.value, {
         dateStyle: 'medium',

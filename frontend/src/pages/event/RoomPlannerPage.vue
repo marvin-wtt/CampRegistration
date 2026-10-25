@@ -638,7 +638,7 @@ function mapRegistrationRoommate(registration: Registration): Roommate {
   const name = formatPersonName(registrationHelper.uniqueName(registration));
   const age = registrationHelper.age(registration);
   const gender = registrationHelper.gender(registration);
-  const country = registrationHelper.country(registration);
+  const country = registrationHelper.group(registration);
   const participant = registrationHelper.participant(registration);
   const role = registrationHelper.role(registration);
 

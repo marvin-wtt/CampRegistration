@@ -1,4 +1,9 @@
-import { ICustomQuestionTypeConfiguration } from 'survey-core';
+import { type ICustomQuestionTypeConfiguration, Serializer } from 'survey-core';
+import {
+  applyAddressCountry,
+  groupCountryMatchProperty,
+} from './groupCountryMatch.js';
+import type { Localized } from '../../locales.js';
 
 const address: ICustomQuestionTypeConfiguration = {
   name: 'address',
@@ -14,7 +19,7 @@ const address: ICustomQuestionTypeConfiguration = {
         fr: 'Rue & Numéro',
         pl: 'Ulica i numer domu',
         cs: 'Ulice a číslo domu',
-      },
+      } satisfies Localized,
       isRequired: true,
     },
     {
@@ -27,7 +32,7 @@ const address: ICustomQuestionTypeConfiguration = {
         fr: 'Code Postal',
         pl: 'Kod pocztowy',
         cs: 'Poštovní směrovací číslo',
-      },
+      } satisfies Localized,
       isRequired: true,
     },
     {
@@ -40,7 +45,7 @@ const address: ICustomQuestionTypeConfiguration = {
         fr: 'Ville',
         pl: 'Miejsce',
         cs: 'Místo',
-      },
+      } satisfies Localized,
       isRequired: true,
       startWithNewLine: false,
     },
@@ -53,10 +58,16 @@ const address: ICustomQuestionTypeConfiguration = {
         fr: 'Pays',
         pl: 'Kraj',
         cs: 'Země',
-      },
+      } satisfies Localized,
       isRequired: true,
     },
   ],
+  onInit() {
+    Serializer.addProperty('address', groupCountryMatchProperty);
+  },
+  onLoaded(question) {
+    applyAddressCountry(question);
+  },
 };
 
 export default address;

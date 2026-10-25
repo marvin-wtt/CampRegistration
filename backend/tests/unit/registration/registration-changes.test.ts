@@ -216,7 +216,7 @@ describe('changesForRegistration', () => {
       id: 'registration-1',
       data,
       locale: 'en-US',
-      country: null,
+      group: null,
       ...overrides,
     }) as unknown as Registration;
 
@@ -224,7 +224,7 @@ describe('changesForRegistration', () => {
     const changes = changesForRegistration(
       simpleEvent,
       registrationWith({ diet: 'vegan' }),
-      registrationWith({ diet: 'vegetarian' }, { country: 'de' }),
+      registrationWith({ diet: 'vegetarian' }, { group: 'de' }),
     );
 
     expect(changes).toMatchObject([
@@ -232,7 +232,7 @@ describe('changesForRegistration', () => {
     ]);
   });
 
-  it('falls back to the registration locale when there is no country', () => {
+  it('falls back to the registration locale when there is no group', () => {
     const changes = changesForRegistration(
       simpleEvent,
       registrationWith({ diet: 'vegan' }),

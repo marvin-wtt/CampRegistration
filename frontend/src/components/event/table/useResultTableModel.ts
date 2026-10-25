@@ -282,7 +282,7 @@ export function useResultTableModel(
     // Country filter (interactive-only typically)
     if (Array.isArray(countryFilter.value) && countryFilter.value.length > 0) {
       r = r.filter((value) => {
-        const country = registrationAccessor.country(value);
+        const country = registrationAccessor.group(value);
         return country && countryFilter.value?.includes(country);
       });
     }

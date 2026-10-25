@@ -332,7 +332,7 @@ const recipientCountries = computed<string[]>(() => {
   }
 
   return uniqueRegistrations(to.value)
-    .map((r) => eventCountry(event, r.computedData.address.country))
+    .map((r) => eventCountry(event, r.group))
     .filter((c): c is string => c != null);
 });
 

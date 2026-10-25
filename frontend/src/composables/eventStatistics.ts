@@ -149,7 +149,7 @@ export function useEventStatistics() {
   const presentCountries = computed<string[]>(() => {
     const fromEvent = eventDetailsStore.data?.countries ?? [];
     const fromData = registrations.value
-      .map((r) => helper.country(r))
+      .map((r) => helper.group(r))
       .filter((c): c is string => !!c);
 
     const order = [...fromEvent];
@@ -180,12 +180,12 @@ export function useEventStatistics() {
     const countries = [...event.countries].sort();
     return countries.map((country) => {
       const inCountry = participants.value.filter(
-        (r) => helper.country(r) === country,
+        (r) => helper.group(r) === country,
       );
       const byStatus = (status: Registration['status']) =>
         inCountry.filter((r) => r.status === status).length;
       const team = staff.value.filter(
-        (r) => helper.country(r) === country,
+        (r) => helper.group(r) === country,
       ).length;
 
       return {
@@ -295,7 +295,7 @@ export function useEventStatistics() {
       case 'gender':
         return helper.gender(registration) ?? UNKNOWN;
       case 'country':
-        return helper.country(registration) ?? UNKNOWN;
+        return helper.addressCountry(registration) ?? UNKNOWN;
     }
   }
 

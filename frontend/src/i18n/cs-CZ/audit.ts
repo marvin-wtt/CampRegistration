@@ -41,6 +41,7 @@ export default {
         customFiles: 'Vlastní soubor',
         status: 'Stav',
         country: 'Země',
+        group: 'Skupina',
       },
       values: {
         status: {

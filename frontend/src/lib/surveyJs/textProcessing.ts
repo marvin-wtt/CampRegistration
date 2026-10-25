@@ -14,7 +14,8 @@ export function addMarkdownRenderer(model: SurveyModel) {
 /**
  * Resolves `{_file.<slot>}` placeholders to a URL on demand; the browser only
  * requests a file when a link/image actually renders. The URL carries the
- * selected country (`{event.country}`), so a slot can hold a file per country.
+ * group (`{event.country}`), so a slot can hold a file per country; the group
+ * is fixed for the form's lifetime.
  */
 export function addFileSlotResolver(
   model: SurveyModel,
@@ -30,14 +31,6 @@ export function addFileSlotResolver(
       sender.locale,
       typeof country === 'string' ? country : null,
     );
-  });
-
-  // A placeholder doesn't name the country, so nothing re-renders it when the
-  // selection changes. SurveyJS reports variable names lower-cased.
-  model.onVariableChanged.add((sender, options) => {
-    if (options.name.toLowerCase() === 'event.country') {
-      sender.locStrsChanged();
-    }
   });
 }
 

@@ -48,7 +48,7 @@ export class RegistrationController extends BaseController {
   async store(req: Request, res: Response) {
     const event = req.modelOrFail('event');
     const {
-      body: { data, locale },
+      body: { data, locale, group },
     } = await req.validate(validator.store(event, req.preferredLocale()));
 
     const registration = await this.registrationService.createRegistration(
@@ -56,6 +56,7 @@ export class RegistrationController extends BaseController {
       {
         data,
         locale,
+        group: group ?? null,
       },
       req.sessionId,
     );
@@ -85,11 +86,11 @@ export class RegistrationController extends BaseController {
   }
 
   async update(req: Request, res: Response) {
-    const {
-      body: { data, customData, customFiles, status },
-      query: { suppressMessage },
-    } = await req.validate(validator.update);
     const event = req.modelOrFail('event');
+    const {
+      body: { data, customData, customFiles, status, group },
+      query: { suppressMessage },
+    } = await req.validate(validator.update(event));
     const previousRegistration = req.modelOrFail('registration');
 
     const updateData = {
@@ -97,6 +98,7 @@ export class RegistrationController extends BaseController {
       customData,
       customFiles,
       status,
+      group,
     };
 
     const registration = await this.registrationService.updateRegistrationById(

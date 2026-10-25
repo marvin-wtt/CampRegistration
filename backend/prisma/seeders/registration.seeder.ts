@@ -3,7 +3,10 @@ import type { Event, Prisma } from '#generated/prisma/client.js';
 import { faker } from '@faker-js/faker/locale/en';
 import moment from 'moment';
 import { RegistrationForm } from '#app/registration/registration.form.js';
-import { computedRegistrationData } from '#app/registration/registration.helper.js';
+import {
+  computedRegistrationData,
+  extractedGroup,
+} from '#app/registration/registration.helper.js';
 import { localeForCountry } from '@camp-registration/common/locales';
 import {
   buildRegistrationData,
@@ -158,6 +161,11 @@ export class RegistrationSeeder {
       { locale },
     ).load(data);
 
-    return computedRegistrationData(form.extractEventData());
+    const eventData = form.extractEventData();
+
+    return {
+      ...computedRegistrationData(eventData),
+      group: extractedGroup(eventData),
+    };
   }
 }

@@ -173,12 +173,17 @@ export class RegistrationForm {
   private readonly survey: SurveyModel;
   private issues: IDataIssue[] = [];
 
-  constructor(event: EventWithFreePlaces, options?: { locale?: string }) {
+  // `group` is the country the form is answered for. Without one, only a
+  // single-country event knows it — enough to read the answers back.
+  constructor(
+    event: EventWithFreePlaces,
+    options?: { locale?: string; group?: string | null | undefined },
+  ) {
     this.survey = new SurveyModel(event.form);
 
     // SurveyJS resolves `de-DE` to its `de` strings, but not `de_DE`.
     this.survey.locale = (options?.locale ?? 'en-US').replace('_', '-');
-    setVariables(this.survey, event);
+    setVariables(this.survey, event, { country: options?.group });
   }
 
   /** Replaces the response the form holds, running the form's logic on it. */

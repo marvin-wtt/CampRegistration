@@ -106,7 +106,9 @@ export class RegistrationEventDataHelper {
     return this.stringValue('zip_code') ?? this.address()?.zipCode;
   }
 
-  country(): string | undefined {
+  // Like the other address fields: a question of its own, or the address's.
+  // Never the group, which is chosen before the form.
+  addressCountry(): string | undefined {
     return this.stringValue('country') ?? this.address()?.country;
   }
 
@@ -144,7 +146,7 @@ export class RegistrationEventDataHelper {
  * The columns a registration's answers imply, mapped from the values tagged
  * with a `eventDataType` in the event's form. The single definition of what the
  * computed columns mean — the API derives them on every write, and the seed
- * derives them from the answers it generates.
+ * derives them from the answers it generates. The group isn't one of them: it is chosen, not answered, so editing the answers never moves it.
  */
 export function computedRegistrationData(
   dataByTags: Record<string, unknown[]>,
@@ -157,7 +159,7 @@ export function computedRegistrationData(
     street: helper.street() ?? null,
     city: helper.city() ?? null,
     zipCode: helper.zipCode() ?? null,
-    country: helper.country() ?? null,
+    country: helper.addressCountry() ?? null,
     dateOfBirth: helper.dateOfBirth() ?? null,
     emails: helper.emails() ?? [],
     role: helper.role() ?? null,

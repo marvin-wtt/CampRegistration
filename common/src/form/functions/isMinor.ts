@@ -1,3 +1,6 @@
+import htmlDate from './htmlDate.js';
+import subtractYears from './subtractYears.js';
+
 const isMinor = (params: unknown[]) => {
   if (params.length < 1 || params[0] === null) {
     return null;
@@ -10,16 +13,14 @@ const isMinor = (params: unknown[]) => {
     return null;
   }
 
-  const birthdate = new Date(params[0]);
-  const date = new Date(params[1]);
-
-  if (isNaN(birthdate.getTime()) || isNaN(date.getTime())) {
+  const birthdate = htmlDate([params[0]]);
+  const adultsBornBy = subtractYears([params[1], 18]);
+  if (!birthdate || !adultsBornBy) {
     return null;
   }
 
-  const ageInMillis = date.getTime() - birthdate.getTime();
-  const ageInYears = ageInMillis / (1000 * 60 * 60 * 24 * 365.25); // Taking leap years into account
-  return ageInYears < 18;
+  // ISO dates compare as strings: adult from the 18th birthday on.
+  return birthdate > adultsBornBy;
 };
 
 export default isMinor;

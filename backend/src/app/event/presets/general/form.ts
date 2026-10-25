@@ -120,21 +120,6 @@ export default {
           eventDataType: 'last_name',
           autocomplete: 'family-name',
         },
-        {
-          type: 'country',
-          name: 'country',
-          visibleIf: 'count({event.countries}) > 1',
-          requiredIf: 'count({event.countries}) > 1',
-          title: {
-            en: 'Country',
-            de: 'Land',
-            fr: 'Pays',
-            pl: 'Kraj',
-            cs: 'Země',
-            default: 'Country',
-          },
-          eventDataType: 'country',
-        },
       ],
     },
     {

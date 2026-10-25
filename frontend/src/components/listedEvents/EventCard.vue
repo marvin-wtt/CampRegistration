@@ -198,6 +198,10 @@ import { useObjectTranslation } from '@/composables/objectTranslation';
 import { useLink } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import CountryIcon from '@/components/common/localization/CountryIcon.vue';
+import {
+  type AvailabilityEntry,
+  eventAvailability,
+} from '@/utils/eventAvailability';
 
 const { to } = useObjectTranslation();
 const { t, locale } = useI18n();
@@ -274,60 +278,9 @@ const owningOrganization = computed<string | null>(() => {
     : organization;
 });
 
-interface AvailabilityEntry {
-  countries: string[];
-  free: number;
-  max: number | null;
-}
-
-const availability = computed<AvailabilityEntry[] | null>(() => {
-  const free = props.event.freePlaces;
-  if (free == null) {
-    return null;
-  }
-  const max = props.event.maxParticipants;
-
-  // Single total — one row carrying all event flags
-  if (typeof free === 'number') {
-    const maxTotal =
-      typeof max === 'number'
-        ? max
-        : Object.values(max ?? {}).reduce<number>(
-            (sum, v) => sum + (v ?? 0),
-            0,
-          );
-
-    return [
-      {
-        countries: props.event.countries,
-        free,
-        max: maxTotal > 0 ? maxTotal : null,
-      },
-    ];
-  }
-
-  // Per-country record — one row per country
-  const entries = props.event.countries.flatMap<AvailabilityEntry>(
-    (country) => {
-      const countryFree = free[country];
-      if (countryFree === undefined) {
-        return [];
-      }
-      const countryMax =
-        typeof max === 'number' ? null : (max?.[country] ?? null);
-
-      return [
-        {
-          countries: [country],
-          free: countryFree,
-          max: countryMax != null && countryMax > 0 ? countryMax : null,
-        },
-      ];
-    },
-  );
-
-  return entries.length > 0 ? entries : null;
-});
+const availability = computed<AvailabilityEntry[] | null>(() =>
+  eventAvailability(props.event),
+);
 
 function occupancyPercent(entry: AvailabilityEntry): number {
   if (entry.max === null || entry.max === 0) {

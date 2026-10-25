@@ -30,8 +30,7 @@ vi.mock('@/composables/registrationHelper', () => ({
     },
     role: (r: Registration): string | undefined =>
       r.computedData.role ?? undefined,
-    country: (r: Registration): string | undefined =>
-      r.computedData.address?.country ?? undefined,
+    group: (r: Registration): string | undefined => r.group ?? undefined,
   }),
 }));
 
@@ -56,6 +55,7 @@ function createRegistration(
     data: {},
     computedData: baseComputedData(),
     customData: {},
+    group: null,
     status: 'ACCEPTED',
     createdAt: '2024-01-01T00:00:00Z',
     ...overrides,
@@ -157,14 +157,7 @@ describe('ContactSelect', () => {
     code: string | null,
     overrides: Partial<Registration> = {},
   ): Registration {
-    return createRegistration({
-      ...overrides,
-      computedData: {
-        ...baseComputedData(),
-        ...overrides.computedData,
-        address: { street: null, city: null, zipCode: null, country: code },
-      },
-    });
+    return createRegistration({ ...overrides, group: code });
   }
 
   function groups(options: Contact[]) {
@@ -219,7 +212,7 @@ describe('ContactSelect', () => {
     expect(counselorGroups[0]?.country).toBe('DE');
   });
 
-  it('ignores address countries in an event held in one country', () => {
+  it('ignores countries in an event held in one country', () => {
     const result = groups(
       getOptions(
         mountContactSelect([inCountry('DE'), inCountry('AT'), inCountry(null)]),

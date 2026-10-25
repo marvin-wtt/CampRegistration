@@ -134,21 +134,6 @@ export default {
           },
           autocomplete: 'organization',
         },
-        {
-          type: 'country',
-          name: 'country',
-          visibleIf: 'count({event.countries}) > 1',
-          requiredIf: 'count({event.countries}) > 1',
-          title: {
-            en: 'Country',
-            de: 'Land',
-            fr: 'Pays',
-            pl: 'Kraj',
-            cs: 'Země',
-            default: 'Country',
-          },
-          eventDataType: 'country',
-        },
       ],
     },
     {

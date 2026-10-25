@@ -41,12 +41,20 @@
           floating
           class="event-toolbar"
         >
+          <!-- Page-specific controls, teleported in (the event page's group). -->
+          <div
+            id="event-header-actions"
+            class="event-header-actions"
+          />
           <locale-switch
             flat
             round
             dense
           />
-          <profile-menu hide-language />
+          <profile-menu
+            hide-language
+            dense
+          />
         </m-toolbar>
       </div>
     </header>
@@ -145,9 +153,26 @@ useMeta(() => {
   pointer-events: auto;
 }
 
-/* The header padding owns the outer spacing, not the floating toolbar */
+/* Teleported controls space like the toolbar's own children */
+.event-header-actions {
+  display: contents;
+}
+
+/*
+ * The header padding owns the outer spacing, not the floating toolbar. Every
+ * pill shares the brand's 44px height (MD3's floating toolbar defaults to
+ * 64px), its controls one step smaller.
+ */
 .event-toolbar.q-toolbar--floating {
   margin: 0;
+  min-height: 44px;
+  padding: 0 4px;
+  gap: 4px;
+}
+
+.event-toolbar :deep(.q-btn) {
+  min-height: 36px;
+  min-width: 36px;
 }
 
 .event-brand {
@@ -162,6 +187,8 @@ useMeta(() => {
 }
 
 .event-back {
+  width: 44px;
+  height: 44px;
   color: var(--md3-on-surface);
   background: var(--md3-surface-container);
   box-shadow:
