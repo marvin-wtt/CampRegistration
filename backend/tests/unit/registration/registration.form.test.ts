@@ -75,13 +75,44 @@ describe('RegistrationForm.dataErrors', async () => {
     ]);
   });
 
-  it('reports a country the event is not open to', async () => {
+  it('accepts any country but reports an unknown one', async () => {
     const event = eventWith([{ type: 'country', name: 'country' }]);
 
     await expect(errorsFor(event, { country: 'fr' })).resolves.toEqual([]);
-    await expect(errorsFor(event, { country: 'pl' })).resolves.toEqual([
+    // A residence abroad must be answerable.
+    await expect(errorsFor(event, { country: 'pl' })).resolves.toEqual([]);
+    await expect(errorsFor(event, { country: 'xx' })).resolves.toEqual([
       { path: 'country', message: 'Unknown choice' },
     ]);
+  });
+
+  describe('group country match', () => {
+    const groupErrors = (groupCountryMatch: string | undefined, data: object) =>
+      new RegistrationForm(
+        eventWith([{ type: 'country', name: 'country', groupCountryMatch }]),
+        { group: 'fr' },
+      )
+        .load(data)
+        .dataErrors();
+
+    it("rejects another country than the group's by default", async () => {
+      await expect(groupErrors(undefined, { country: 'fr' })).resolves.toEqual(
+        [],
+      );
+      await expect(groupErrors(undefined, { country: 'de' })).resolves.toEqual([
+        { path: 'country', message: "This has to be your group's country." },
+      ]);
+    });
+
+    it('only warns about another country in warn mode', async () => {
+      await expect(groupErrors('warn', { country: 'de' })).resolves.toEqual([]);
+    });
+
+    it('does not check the country without a group', async () => {
+      const event = eventWith([{ type: 'country', name: 'country' }]);
+
+      await expect(errorsFor(event, { country: 'de' })).resolves.toEqual([]);
+    });
   });
 
   it('reports a value of the wrong type', async () => {
@@ -369,7 +400,7 @@ describe('RegistrationForm.dataErrors', async () => {
       waiting_list: false,
     });
 
-    expect(form.dataErrors()).resolves.toEqual([]);
+    await expect(form.dataErrors()).resolves.toEqual([]);
     expect(form.data).toHaveProperty('waiting_list', true);
   });
 });

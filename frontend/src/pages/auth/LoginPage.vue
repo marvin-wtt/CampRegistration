@@ -193,11 +193,11 @@ fields:
   email:
     label: 'E-Mail'
     rules:
-      required: 'Sie müssen eine gültige E-Mail-Adresse angeben'
+      required: 'Du musst eine gültige E-Mail-Adresse angeben'
   password:
     label: 'Passwort'
     rules:
-      required: 'Sie müssen ein gültiges Passwort angeben'
+      required: 'Du musst ein gültiges Passwort angeben'
   remember: 'Angemeldet bleiben'
 
 action:

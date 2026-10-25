@@ -7,7 +7,7 @@ export interface MessageTemplateQuery {
 
 export interface MessageTemplate extends Identifiable {
   trigger: string;
-  country: string | null;
+  group: string | null;
   subject: string;
   body: string;
   replyTo: string | null;
@@ -19,7 +19,7 @@ export interface MessageTemplate extends Identifiable {
 
 export interface MessageTemplateCreateData {
   trigger: string;
-  country: string | null;
+  group: string | null;
   subject: string;
   body: string;
   priority?: string | undefined;

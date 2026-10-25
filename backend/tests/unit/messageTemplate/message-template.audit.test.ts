@@ -14,14 +14,14 @@ describe('messageTemplateAuditPolicy.details', () => {
   it('reports editable content fields that changed', () => {
     const before = {
       trigger: 'registration_confirmation',
-      country: 'de',
+      group: 'de',
       subject: 'Hi',
       body: '<p>a</p>',
       priority: 'normal',
     };
     const after = {
       trigger: 'registration_confirmation',
-      country: 'de',
+      group: 'de',
       subject: 'Hello',
       body: '<p>b</p>',
       priority: 'high',
@@ -30,12 +30,12 @@ describe('messageTemplateAuditPolicy.details', () => {
     // Fields are reported in allow-list order, not sorted.
     expect(policy.details(before, after)).toEqual({
       changedFields: ['subject', 'body', 'priority'],
-      context: { trigger: 'registration_confirmation', country: 'de' },
+      context: { trigger: 'registration_confirmation', group: 'de' },
     });
   });
 
   it('reports a changed attachment set, ignoring order', () => {
-    const base = { trigger: 'registration_confirmation', country: 'de' };
+    const base = { trigger: 'registration_confirmation', group: 'de' };
 
     expect(
       policy.details(
@@ -54,23 +54,23 @@ describe('messageTemplateAuditPolicy.details', () => {
   it('ignores fields outside the allow-list (id, eventId, updatedAt)', () => {
     const before = {
       trigger: 'registration_confirmation',
-      country: 'de',
+      group: 'de',
       subject: 'Hi',
       eventId: 'e1',
       updatedAt: '2026-06-01',
     };
     const after = {
       trigger: 'registration_confirmation',
-      country: 'de',
+      group: 'de',
       subject: 'Hi',
       eventId: 'e1',
       updatedAt: '2026-06-28',
     };
 
-    // trigger/country are still attached — they identify the template even
+    // trigger/group are still attached — they identify the template even
     // when nothing else changed.
     expect(policy.details(before, after)).toEqual({
-      context: { trigger: 'registration_confirmation', country: 'de' },
+      context: { trigger: 'registration_confirmation', group: 'de' },
     });
   });
 });

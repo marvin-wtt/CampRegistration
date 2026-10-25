@@ -31,11 +31,13 @@
             </template>
           </q-select>
           <q-select
-            v-if="selectedEventCountries.length > 0"
-            v-model="country"
-            :label="t('input.country.label')"
-            :hint="t('input.country.hint')"
-            :options="selectedEventCountries"
+            v-if="groupOptions.length > 0"
+            v-model="group"
+            :label="t('input.group.label')"
+            :hint="t('input.group.hint')"
+            :options="groupOptions"
+            emit-value
+            map-options
             clearable
             rounded
             outlined
@@ -96,6 +98,7 @@
 <script lang="ts" setup>
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
+import { countryName } from '@/utils/countries';
 import { computed, onMounted, ref, watch } from 'vue';
 import type { NewsletterSubscriberImportData } from '@camp-registration/common/entities';
 import { useAssignedEventsStore } from '@/stores/assigned-events-store';
@@ -103,7 +106,7 @@ import { useObjectTranslation } from '@/composables/objectTranslation';
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const { to } = useObjectTranslation();
 const assignedEventsStore = useAssignedEventsStore();
 
@@ -114,7 +117,7 @@ onMounted(async () => {
 });
 
 const eventId = ref<string>('');
-const country = ref<string | null>(null);
+const group = ref<string | null>(null);
 const requireConsent = ref(true);
 const consentConfirmed = ref(false);
 
@@ -125,19 +128,24 @@ const eventOptions = computed(() => {
   }));
 });
 
-const selectedEventCountries = computed<string[]>(() => {
+// An event's groups are its countries.
+const groupOptions = computed(() => {
   if (!eventId.value) {
     return [];
   }
 
-  return (
-    assignedEventsStore.data?.find((c) => c.id === eventId.value)?.countries ??
-    []
-  );
+  const groups =
+    assignedEventsStore.data?.find((event) => event.id === eventId.value)
+      ?.countries ?? [];
+
+  return groups.map((value) => ({
+    label: countryName(value, locale.value),
+    value,
+  }));
 });
 
 watch(eventId, () => {
-  country.value = null;
+  group.value = null;
   requireConsent.value = true;
 });
 
@@ -148,7 +156,7 @@ watch(requireConsent, () => {
 function onSubmit() {
   const data: NewsletterSubscriberImportData = {
     eventId: eventId.value,
-    country: country.value ?? null,
+    group: group.value ?? null,
     requireConsent: requireConsent.value,
     consentConfirmed: consentConfirmed.value,
   };
@@ -164,9 +172,9 @@ input:
     hint: 'Select the event to import subscribers from'
     rule:
       required: 'Event is required'
-  country:
-    label: 'Filter by Country (optional)'
-    hint: 'Leave empty to import all countries'
+  group:
+    label: 'Filter by group (optional)'
+    hint: 'Leave empty to import all groups'
   consent:
     label: 'Require explicit newsletter consent'
     hint: 'Registrations that declined are always excluded.'
@@ -184,12 +192,12 @@ title: 'Abonnenten aus einer Veranstaltung importieren'
 input:
   event:
     label: 'Veranstaltung'
-    hint: 'Wählen Sie die Veranstaltung aus, aus dem Abonnenten importiert werden sollen'
+    hint: 'Wähle die Veranstaltung aus, aus der Abonnenten importiert werden sollen'
     rule:
       required: 'Veranstaltung ist erforderlich'
-  country:
-    label: 'Nach Land filtern (optional)'
-    hint: 'Leer lassen, um alle Länder zu importieren'
+  group:
+    label: 'Nach Gruppe filtern (optional)'
+    hint: 'Leer lassen, um alle Gruppen zu importieren'
   consent:
     label: 'Ausdrückliche Newsletter-Einwilligung erforderlich'
     hint: 'Anmeldungen, die abgelehnt haben, werden immer ausgeschlossen.'
@@ -212,9 +220,9 @@ input:
     rule:
       required: "L'événement est requis"
 
-  country:
-    label: 'Filtrer par pays (optionnel)'
-    hint: 'Laisser vide pour importer tous les pays'
+  group:
+    label: 'Filtrer par groupe (optionnel)'
+    hint: 'Laisser vide pour importer tous les groupes'
   consent:
     label: 'Exiger un consentement explicite à la newsletter'
     hint: 'Les inscriptions ayant refusé sont toujours exclues.'
@@ -235,9 +243,9 @@ input:
     hint: 'Wybierz wydarzenie, z którego mają być importowani subskrybenci'
     rule:
       required: 'Wydarzenie jest wymagany'
-  country:
-    label: 'Filtruj według kraju (opcjonalnie)'
-    hint: 'Pozostaw puste, aby importować wszystkie kraje'
+  group:
+    label: 'Filtruj według grupy (opcjonalnie)'
+    hint: 'Pozostaw puste, aby importować wszystkie grupy'
   consent:
     label: 'Wymagaj wyraźnej zgody na newsletter'
     hint: 'Zgłoszenia, które odmówiły, są zawsze wykluczone.'
@@ -258,9 +266,9 @@ input:
     hint: 'Vyberte akci, ze které se mají importovat odběratelé'
     rule:
       required: 'Akce je povinná'
-  country:
-    label: 'Filtrovat podle země (volitelné)'
-    hint: 'Nechte prázdné pro import všech zemí'
+  group:
+    label: 'Filtrovat podle skupiny (volitelné)'
+    hint: 'Nechte prázdné pro import všech skupin'
   consent:
     label: 'Vyžadovat výslovný souhlas s newsletterem'
     hint: 'Registrace, které odmítly, jsou vždy vyloučeny.'

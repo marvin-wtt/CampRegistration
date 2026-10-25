@@ -195,15 +195,15 @@ section:
 
 <i18n lang="yaml" locale="de">
 title: 'Sicherheit'
-subtitle: 'Schützen Sie Ihr Konto vor unbefugtem Zugriff.'
+subtitle: 'Schütze dein Konto vor unbefugtem Zugriff.'
 
 section:
   password:
     title: 'Passwort'
-    hint: 'Wählen Sie ein Passwort, das Sie nirgendwo sonst verwenden.'
+    hint: 'Wähle ein Passwort, das du nirgendwo sonst verwendest.'
   twoFactor:
     title: 'Zwei-Faktor-Authentifizierung'
-    hint: 'Zusätzlich zum Passwort wird ein Einmalcode aus Ihrer Authentifizierungs-App verlangt.'
+    hint: 'Zusätzlich zum Passwort wird ein Einmalcode aus deiner Authentifizierungs-App verlangt.'
     statusOn: 'Aktiviert'
     statusOff: 'Deaktiviert'
 </i18n>

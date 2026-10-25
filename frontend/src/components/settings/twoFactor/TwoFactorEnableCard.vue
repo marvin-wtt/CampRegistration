@@ -147,12 +147,12 @@ action:
 </i18n>
 
 <i18n lang="yaml" locale="de">
-description: 'Sichern Sie Ihr Konto, indem Sie die Zwei-Faktor-Authentifizierung
-  aktivieren. Scannen Sie den QR-Code oder verwenden Sie den geheimen Schlüssel,
-  um Ihre Authentifizierungs-App einzurichten. Geben Sie dann das OTP ein, um die
+description: 'Sichere dein Konto, indem du die Zwei-Faktor-Authentifizierung
+  aktivierst. Scanne den QR-Code oder verwende den geheimen Schlüssel,
+  um deine Authentifizierungs-App einzurichten. Gib dann das OTP ein, um die
   Aktivierung abzuschließen.'
 secret: 'Geheimer Schlüssel'
-secretInstructions: 'Sie können diesen Schlüssel verwenden, um die
+secretInstructions: 'Du kannst diesen Schlüssel verwenden, um die
   Zwei-Faktor-Authentifizierung manuell zu konfigurieren, falls erforderlich.'
 field:
   otp:

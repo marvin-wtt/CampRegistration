@@ -144,13 +144,13 @@ action:
 <i18n lang="yaml" locale="de">
 title: 'Passwort zurücksetzen'
 
-description: 'Erstellen Sie ein neues Passwort, um wieder Zugriff auf Ihr Konto zu erhalten.'
+description: 'Erstelle ein neues Passwort, um wieder Zugriff auf dein Konto zu erhalten.'
 
 field:
   password:
     label: 'Neues Passwort'
     rule:
-      required: 'Sie müssen ein gültiges Passwort angeben'
+      required: 'Du musst ein gültiges Passwort angeben'
   confirm-password:
     label: 'Passwort bestätigen'
     rule:

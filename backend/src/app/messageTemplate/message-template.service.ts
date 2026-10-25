@@ -54,13 +54,13 @@ export class MessageTemplateService extends BaseService {
   async getMessageTemplateByName(
     eventId: string,
     trigger: string,
-    country?: string | null,
+    group?: string | null,
   ) {
     return this.prisma.messageTemplate.findFirst({
       where: {
         eventId,
         trigger,
-        country,
+        group,
       },
       include: {
         attachments: true,
@@ -79,7 +79,7 @@ export class MessageTemplateService extends BaseService {
       const template = await tx.messageTemplate.create({
         data: {
           trigger: data.trigger,
-          country: data.country,
+          group: data.group,
           subject: data.subject,
           body: sanitizeHtmlContent(data.body),
           priority: data.priority,

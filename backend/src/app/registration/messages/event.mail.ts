@@ -50,7 +50,7 @@ export class RegistrationEventMessage extends RegistrationTemplateMessage {
     const messageTemplate = await loadMessageTemplate(
       event,
       this.trigger,
-      registration.country,
+      registration.group,
     );
     if (!messageTemplate) {
       logger.debug(

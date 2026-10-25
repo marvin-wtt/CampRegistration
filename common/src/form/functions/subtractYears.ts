@@ -1,14 +1,9 @@
 import htmlDate from './htmlDate.js';
+import { toCalendarDate } from './calendarDate.js';
 
 const subtractYears = (params: unknown[]): string | null => {
   if (params.length !== 2) {
     return null;
-  }
-
-  let date = params[0];
-
-  if (typeof date === 'string') {
-    date = new Date(date);
   }
 
   const years = params[1];
@@ -16,14 +11,13 @@ const subtractYears = (params: unknown[]): string | null => {
     return null;
   }
 
-  if (!(date instanceof Date) || isNaN(date.getTime())) {
+  const date = toCalendarDate(params[0]);
+  if (!date) {
     return null;
   }
 
-  const newDate = new Date(date);
-  newDate.setFullYear(newDate.getFullYear() - years);
-
-  return htmlDate([newDate]);
+  // A local date, as htmlDate reads it; 29.02. rolls over to 01.03.
+  return htmlDate([new Date(date.year - years, date.month - 1, date.day)]);
 };
 
 export default subtractYears;

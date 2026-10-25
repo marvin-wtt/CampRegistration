@@ -39,18 +39,18 @@ const ROOMS: RoomData[] = [
 ];
 
 /**
- * Round-robins the countries against each other, so an international event gets
- * rooms whose occupants come from both of them instead of the rooms filling up
- * country by country in the order the registrations were seeded.
+ * Round-robins the groups against each other, so an international event gets
+ * rooms whose occupants come from all of them instead of the rooms filling up
+ * group by group in the order the registrations were seeded.
  */
-function mixCountries(registrations: Registration[]): Registration[] {
+function mixGroups(registrations: Registration[]): Registration[] {
   const queues = new Map<string | null, Registration[]>();
   for (const registration of registrations) {
-    const queue = queues.get(registration.country);
+    const queue = queues.get(registration.group);
     if (queue) {
       queue.push(registration);
     } else {
-      queues.set(registration.country, [registration]);
+      queues.set(registration.group, [registration]);
     }
   }
 
@@ -84,17 +84,17 @@ export class RoomSeeder {
     const locales = eventLocales(this.event);
 
     const queues: Record<RoomData['occupants'], Registration[]> = {
-      f: mixCountries(
+      f: mixGroups(
         registrations.filter(
           (it) => it.role === 'participant' && it.gender === 'f',
         ),
       ),
-      m: mixCountries(
+      m: mixGroups(
         registrations.filter(
           (it) => it.role === 'participant' && it.gender === 'm',
         ),
       ),
-      counselor: mixCountries(
+      counselor: mixGroups(
         registrations.filter((it) => it.role !== 'participant'),
       ),
     };

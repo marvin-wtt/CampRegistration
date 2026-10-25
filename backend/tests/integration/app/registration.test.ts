@@ -28,7 +28,6 @@ import {
   eventWithMaxParticipantsRolesNational,
   eventWithAllEventDataTypes,
   eventWithRequiredField,
-  eventWithoutCountryData,
   eventWithEmail,
   eventWithMultipleEmails,
   eventWithContactEmailInternational,
@@ -783,14 +782,16 @@ describe('/api/v1/events/:eventId/registrations', () => {
     });
 
     describe('waiting list', () => {
+      // `group`: the one chosen before the form, on a multi-country event.
       const assertRegistration = async (
         eventId: string,
         data: unknown,
         expected: string,
+        group?: string,
       ) => {
         const { body } = await request()
           .post(`/api/v1/events/${eventId}/registrations`)
-          .send({ data })
+          .send({ data, group })
           .expect(201);
 
         expect(body).toHaveProperty('data.status', expected);
@@ -836,6 +837,7 @@ describe('/api/v1/events/:eventId/registrations', () => {
               country: 'de',
             },
             'ACCEPTED',
+            'de',
           );
         }
 
@@ -847,6 +849,7 @@ describe('/api/v1/events/:eventId/registrations', () => {
             country: 'de',
           },
           'WAITLISTED',
+          'de',
         );
 
         // Other nation should not be on waiting list
@@ -857,6 +860,7 @@ describe('/api/v1/events/:eventId/registrations', () => {
             country: 'fr',
           },
           'ACCEPTED',
+          'fr',
         );
       });
 
@@ -873,6 +877,7 @@ describe('/api/v1/events/:eventId/registrations', () => {
             country: 'de',
           },
           'ACCEPTED',
+          'de',
         );
         await assertRegistration(
           event.id,
@@ -881,6 +886,7 @@ describe('/api/v1/events/:eventId/registrations', () => {
             country: 'fr',
           },
           'ACCEPTED',
+          'fr',
         );
         for (let i = 2; i < 5; i++) {
           await assertRegistration(
@@ -890,6 +896,7 @@ describe('/api/v1/events/:eventId/registrations', () => {
               country: 'de',
             },
             'ACCEPTED',
+            'de',
           );
         }
 
@@ -902,6 +909,7 @@ describe('/api/v1/events/:eventId/registrations', () => {
             country: 'fr',
           },
           'WAITLISTED',
+          'fr',
         );
       });
 
@@ -967,6 +975,7 @@ describe('/api/v1/events/:eventId/registrations', () => {
             country: 'de',
           },
           'ACCEPTED',
+          'de',
         );
 
         // Fill event
@@ -979,6 +988,7 @@ describe('/api/v1/events/:eventId/registrations', () => {
               country: 'de',
             },
             'ACCEPTED',
+            'de',
           );
         }
 
@@ -991,6 +1001,7 @@ describe('/api/v1/events/:eventId/registrations', () => {
             country: 'de',
           },
           'WAITLISTED',
+          'de',
         );
 
         // Check another counselor
@@ -1002,6 +1013,7 @@ describe('/api/v1/events/:eventId/registrations', () => {
             country: 'de',
           },
           'ACCEPTED',
+          'de',
         );
 
         // Check participant from other nation
@@ -1013,6 +1025,7 @@ describe('/api/v1/events/:eventId/registrations', () => {
             country: 'fr',
           },
           'ACCEPTED',
+          'fr',
         );
       });
 
@@ -1030,6 +1043,7 @@ describe('/api/v1/events/:eventId/registrations', () => {
               },
             },
             'ACCEPTED',
+            'de',
           );
         }
 
@@ -1043,6 +1057,7 @@ describe('/api/v1/events/:eventId/registrations', () => {
             },
           },
           'WAITLISTED',
+          'de',
         );
 
         // Other nation should not be on waiting list
@@ -1055,6 +1070,7 @@ describe('/api/v1/events/:eventId/registrations', () => {
             },
           },
           'ACCEPTED',
+          'fr',
         );
       });
 
@@ -1084,50 +1100,38 @@ describe('/api/v1/events/:eventId/registrations', () => {
         );
       });
 
-      it('should respond with `400` status code when event country data is missing for international event', async () => {
-        const event = await EventFactory.create(eventWithoutCountryData);
+      it('should respond with `400` status code when the group is missing for an international event', async () => {
+        const event = await EventFactory.create(
+          eventWithMaxParticipantsInternational,
+        );
 
-        const data = {
-          data: {
-            first_name: `Jhon`,
-          },
-        };
+        const { body } = await request()
+          .post(`/api/v1/events/${event.id}/registrations`)
+          .send({ data: { first_name: 'Jhon', country: 'de' } })
+          .expect(400);
+
+        expect(JSON.stringify(body)).toContain('reload');
+      });
+
+      it('should respond with `400` status code when the group is invalid for an international event', async () => {
+        const event = await EventFactory.create(
+          eventWithMaxParticipantsInternational,
+        );
 
         await request()
           .post(`/api/v1/events/${event.id}/registrations`)
-          .send(data)
+          .send({ data: { first_name: 'Jhon', country: 'de' }, group: 1 })
           .expect(400);
       });
 
-      it('should respond with `400` status code when event country data is invalid for international event', async () => {
-        const event = await EventFactory.create(eventWithoutCountryData);
-
-        const data = {
-          data: {
-            first_name: `Jhon`,
-            country: 1,
-          },
-        };
+      it('should respond with `400` status code when the group is not one of the event countries', async () => {
+        const event = await EventFactory.create(
+          eventWithMaxParticipantsInternational,
+        );
 
         await request()
           .post(`/api/v1/events/${event.id}/registrations`)
-          .send(data)
-          .expect(400);
-      });
-
-      it('should respond with `400` status code when event country data is not matching for international event', async () => {
-        const event = await EventFactory.create(eventWithoutCountryData);
-
-        const data = {
-          data: {
-            first_name: `Jhon`,
-            country: 'us',
-          },
-        };
-
-        await request()
-          .post(`/api/v1/events/${event.id}/registrations`)
-          .send(data)
+          .send({ data: { first_name: 'Jhon', country: 'de' }, group: 'us' })
           .expect(400);
       });
     });
@@ -1142,27 +1146,27 @@ describe('/api/v1/events/:eventId/registrations', () => {
             createMany: {
               data: [
                 MessageTemplateFactory.build({
-                  country: 'fr',
+                  group: 'fr',
                   trigger: 'registration_submitted',
                   subject: 'Registration received',
                 }),
                 MessageTemplateFactory.build({
                   trigger: 'registration_confirmed',
                   subject: 'Registration confirmed',
-                  country: 'fr',
+                  group: 'fr',
                 }),
                 MessageTemplateFactory.build({
-                  country: 'fr',
+                  group: 'fr',
                   trigger: 'registration_waitlisted',
                   subject: 'Registration on waiting list',
                 }),
                 MessageTemplateFactory.build({
-                  country: 'fr',
+                  group: 'fr',
                   trigger: 'registration_updated',
                   subject: 'Registration updated',
                 }),
                 MessageTemplateFactory.build({
-                  country: 'fr',
+                  group: 'fr',
                   trigger: 'registration_canceled',
                   subject: 'Registration canceled',
                 }),
@@ -1179,7 +1183,7 @@ describe('/api/v1/events/:eventId/registrations', () => {
             create: MessageTemplateFactory.build({
               trigger: 'registration_confirmed',
               subject: 'Registration confirmed',
-              country: 'de',
+              group: 'de',
             }),
           },
         });
@@ -1193,7 +1197,7 @@ describe('/api/v1/events/:eventId/registrations', () => {
 
         await request()
           .post(`/api/v1/events/${event.id}/registrations`)
-          .send({ data })
+          .send({ data, group: 'fr' })
           .expect(201);
       });
 
@@ -1209,7 +1213,7 @@ describe('/api/v1/events/:eventId/registrations', () => {
 
         await request()
           .post(`/api/v1/events/${event.id}/registrations`)
-          .send({ data })
+          .send({ data, group: 'fr' })
           .expect(201);
 
         expectEmailWith({
@@ -1231,7 +1235,7 @@ describe('/api/v1/events/:eventId/registrations', () => {
 
         await request()
           .post(`/api/v1/events/${event.id}/registrations`)
-          .send({ data })
+          .send({ data, group: 'fr' })
           .expect(201);
 
         expectEmailWith({
@@ -1277,7 +1281,7 @@ describe('/api/v1/events/:eventId/registrations', () => {
 
         await request()
           .post(`/api/v1/events/${event.id}/registrations`)
-          .send({ data })
+          .send({ data, group: 'fr' })
           .expect(201);
 
         // TODO Assert correct language
@@ -1298,7 +1302,7 @@ describe('/api/v1/events/:eventId/registrations', () => {
 
         await request()
           .post(`/api/v1/events/${event.id}/registrations`)
-          .send({ data })
+          .send({ data, group: 'de' })
           .expect(201);
 
         const expectedEmail =
@@ -1321,7 +1325,7 @@ describe('/api/v1/events/:eventId/registrations', () => {
 
         await request()
           .post(`/api/v1/events/${event.id}/registrations`)
-          .send({ data })
+          .send({ data, group: 'fr' })
           .expect(201);
 
         expectEmailWith({
@@ -1751,13 +1755,13 @@ describe('/api/v1/events/:eventId/registrations', () => {
           messageTemplates: {
             create: MessageTemplateFactory.build({
               trigger: 'registration_updated',
-              country: 'fr',
+              group: 'fr',
               subject: 'Registration updated',
             }),
           },
         });
         const registration = await createRegistration(event, {
-          country: 'bg',
+          group: 'bg',
         });
 
         const data = {
@@ -1783,14 +1787,14 @@ describe('/api/v1/events/:eventId/registrations', () => {
           messageTemplates: {
             create: MessageTemplateFactory.build({
               trigger: 'registration_waitlist_accepted',
-              country: 'fr',
+              group: 'fr',
               subject: 'Registration accepted',
             }),
           },
         });
         const registration = await createRegistration(event, {
           status: 'WAITLISTED',
-          country: 'fr',
+          group: 'fr',
         });
 
         const data = {
@@ -2496,12 +2500,12 @@ describe('/api/v1/events/:eventId/registrations', () => {
               data: [
                 MessageTemplateFactory.build({
                   trigger: 'registration_canceled',
-                  country: 'us',
+                  group: 'us',
                   subject: 'Oops',
                 }),
                 MessageTemplateFactory.build({
                   trigger: 'registration_canceled',
-                  country: 'fr',
+                  group: 'fr',
                   subject: 'Registration canceled',
                 }),
               ],
@@ -2511,7 +2515,7 @@ describe('/api/v1/events/:eventId/registrations', () => {
         const registration = await RegistrationFactory.create({
           event: { connect: { id: event.id } },
           emails: ['test@email.com'],
-          country: 'fr',
+          group: 'fr',
         });
         await request()
           .delete(`/api/v1/events/${event.id}/registrations/${registration.id}`)
@@ -2536,12 +2540,12 @@ describe('/api/v1/events/:eventId/registrations', () => {
               data: [
                 MessageTemplateFactory.build({
                   trigger: 'registration_canceled',
-                  country: 'us',
+                  group: 'us',
                   subject: 'Oops',
                 }),
                 MessageTemplateFactory.build({
                   trigger: 'registration_canceled',
-                  country: 'fr',
+                  group: 'fr',
                   subject: 'Registration canceled',
                 }),
               ],
@@ -2551,7 +2555,7 @@ describe('/api/v1/events/:eventId/registrations', () => {
         const registration = await RegistrationFactory.create({
           event: { connect: { id: event.id } },
           emails: ['test@email.com'],
-          country: 'fr',
+          group: 'fr',
         });
         await request()
           .delete(
@@ -2577,14 +2581,14 @@ describe('/api/v1/events/:eventId/registrations', () => {
             create: MessageTemplateFactory.build({
               trigger: 'registration_canceled',
               subject: 'Registration canceled',
-              country: 'fr',
+              group: 'fr',
             }),
           },
         });
         const registration = await RegistrationFactory.create({
           event: { connect: { id: event.id } },
           emails: ['test@email.com'],
-          country: 'fr',
+          group: 'fr',
         });
         await request()
           .delete(

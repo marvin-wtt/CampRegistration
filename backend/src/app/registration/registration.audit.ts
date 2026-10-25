@@ -10,7 +10,7 @@ import type { Registration } from '#generated/prisma/client';
 import type { AuditDetails } from '@camp-registration/common/entities';
 
 // Bounded, non-identifying fields whose new value is recorded, not just the name.
-const VALUE_FIELDS = ['status'] as const;
+const VALUE_FIELDS = ['status', 'group'] as const;
 
 // `customFiles` maps each custom file slot to its file id; only set when the
 // update touches custom files.

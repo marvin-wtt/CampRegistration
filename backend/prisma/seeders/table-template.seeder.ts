@@ -123,9 +123,10 @@ class TableTemplateSeeder extends BaseSeeder {
             renderAs: 'name',
           },
           {
-            name: 'country',
-            field: 'country',
-            label: { en: 'Country', de: 'Land', fr: 'Pays' },
+            name: 'group',
+            field: 'group',
+            source: 'meta',
+            label: { en: 'Group', de: 'Gruppe', fr: 'Groupe' },
             align: 'left',
             sortable: true,
             renderAs: 'country_flag',

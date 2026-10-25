@@ -84,10 +84,10 @@ error:
 <i18n lang="yaml" locale="de">
 success:
   title: 'Erfolgreich abgemeldet'
-  message: 'Sie wurden erfolgreich vom Newsletter abgemeldet. Sie erhalten keine weiteren E-Mails von diesem Newsletter.'
+  message: 'Du wurdest erfolgreich vom Newsletter abgemeldet. Du erhältst keine weiteren E-Mails von diesem Newsletter.'
 error:
   title: 'Abmeldung fehlgeschlagen'
-  message: 'Der Abmelde-Link ist ungültig oder wurde bereits verwendet. Möglicherweise sind Sie bereits abgemeldet.'
+  message: 'Der Abmelde-Link ist ungültig oder wurde bereits verwendet. Möglicherweise bist du bereits abgemeldet.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">

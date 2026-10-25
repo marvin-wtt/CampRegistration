@@ -238,6 +238,7 @@ import { storeToRefs } from 'pinia';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { usePermissions } from '@/composables/permissions';
+import { countryName } from '@/utils/countries';
 import { useRegistrationHelper } from '@/composables/registrationHelper';
 import { useRegistrationsStore } from '@/stores/registration-store';
 import { useEventDetailsStore } from '@/stores/event-details-store';
@@ -253,7 +254,7 @@ const quasar = useQuasar();
 // Mirrors ResponsiveDialog's switch to a bottom sheet.
 const sheet = computed<boolean>(() => quasar.screen.lt.sm);
 // eslint-disable-next-line @typescript-eslint/unbound-method
-const { t, te, d } = useI18n();
+const { t, te, d, locale } = useI18n();
 const { to } = useObjectTranslation();
 const registrationHelper = useRegistrationHelper();
 const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent();
@@ -389,6 +390,16 @@ const personalRows = computed<DetailRow[]>(() => {
       value: translatedGender.value,
     });
   }
+  // With the role and room: how the person takes part. Only meaningful when
+  // the event has several groups.
+  if (value.group && (event.value?.countries.length ?? 0) > 1) {
+    rows.push({
+      key: 'group',
+      icon: 'flag',
+      label: t('field.group'),
+      value: countryName(value.group, locale.value),
+    });
+  }
   if (data.role) {
     rows.push({
       key: 'role',
@@ -440,6 +451,7 @@ function showFormData(): void {
     componentProps: {
       event: event.value,
       data: registration.value.data,
+      group: registration.value.group,
     },
   });
 }
@@ -456,6 +468,7 @@ tab:
   details: 'Details'
 
 field:
+  group: 'Group'
   dateOfBirth: 'Date of Birth'
   age: 'Age {age}'
   gender: 'Gender'
@@ -496,6 +509,7 @@ tab:
   details: 'Details'
 
 field:
+  group: 'Gruppe'
   dateOfBirth: 'Geburtsdatum'
   age: 'Alter {age}'
   gender: 'Geschlecht'
@@ -536,6 +550,7 @@ tab:
   details: 'Détails'
 
 field:
+  group: 'Groupe'
   dateOfBirth: 'Date de naissance'
   age: 'Âge {age}'
   gender: 'Genre'
@@ -576,6 +591,7 @@ tab:
   details: 'Szczegóły'
 
 field:
+  group: 'Grupa'
   dateOfBirth: 'Data urodzenia'
   age: 'Wiek {age}'
   gender: 'Płeć'
@@ -616,6 +632,7 @@ tab:
   details: 'Podrobnosti'
 
 field:
+  group: 'Skupina'
   dateOfBirth: 'Datum narození'
   age: 'Věk {age}'
   gender: 'Pohlaví'

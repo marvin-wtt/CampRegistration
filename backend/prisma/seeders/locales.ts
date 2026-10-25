@@ -1,9 +1,9 @@
 import type { Event } from '#generated/prisma/client.js';
-import { countriesToLocales } from '#utils/countriesToLocales';
+import { localesForCountries } from '@camp-registration/common/locales';
 
 /** The locales a event can actually render, derived from its countries. */
 export function eventLocales(event: Event): string[] {
-  return [...new Set(countriesToLocales(event.countries))];
+  return localesForCountries(event.countries);
 }
 
 /**

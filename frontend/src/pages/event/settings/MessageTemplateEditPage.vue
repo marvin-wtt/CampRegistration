@@ -47,19 +47,19 @@
 
             <q-list>
               <q-item
-                v-for="{ country, template } in triggerTemplates"
-                :key="country"
+                v-for="{ group, template } in triggerTemplates"
+                :key="group"
                 :clickable="!!template"
                 :aria-label="!!template ? t('action.edit') : undefined"
                 @click="editTemplate(template)"
               >
                 <q-item-section avatar>
-                  <country-icon :country />
+                  <country-icon :country="group" />
                 </q-item-section>
 
                 <q-item-section>
                   {{ t(`template.${trigger ?? 'default'}.label`) }}
-                  ({{ country }})
+                  ({{ countryName(group, locale) }})
                 </q-item-section>
 
                 <q-item-section side>
@@ -125,7 +125,7 @@
                       round
                       dense
                       unelevated
-                      @click="addTemplate(trigger, country)"
+                      @click="addTemplate(trigger, group)"
                     />
                   </template>
                 </q-item-section>
@@ -143,6 +143,7 @@ import PageHeader from '@/components/common/PageHeader.vue';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import { computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { countryName } from '@/utils/countries';
 import { useQuasar } from 'quasar';
 import MessageEditDialog from '@/components/event/settings/emails/MessageEditDialog.vue';
 import { useEventDetailsStore } from '@/stores/event-details-store';
@@ -164,7 +165,7 @@ const {
 
 const api = useAPIService();
 const quasar = useQuasar();
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const eventDetailsStore = useEventDetailsStore();
 const { data: event } = storeToRefs(eventDetailsStore);
 const { can } = usePermissions();
@@ -208,16 +209,17 @@ async function loadData() {
 interface MappedTemplate {
   trigger: string;
   templates: {
-    country: string;
+    group: string;
     template: MessageTemplate | undefined;
   }[];
 }
 
 const templates = computed<MappedTemplate[]>(() => {
   const values = data.value;
-  const countries = event.value?.countries;
+  // An event's groups are its countries.
+  const groups = event.value?.countries;
   const confirmationMode = event.value?.confirmationMode;
-  if (!values || !countries || !confirmationMode) {
+  if (!values || !groups || !confirmationMode) {
     return [];
   }
 
@@ -226,24 +228,24 @@ const templates = computed<MappedTemplate[]>(() => {
       confirmationMode === 'MANUAL' || trigger !== 'registration_submitted',
   ).map((trigger) => ({
     trigger,
-    templates: countries.map((country) => {
+    templates: groups.map((group) => {
       return {
-        country,
+        group,
         template: values.find(
-          (t) => t.trigger === trigger && t.country === country,
+          (t) => t.trigger === trigger && t.group === group,
         ),
       };
     }),
   }));
 });
 
-function addTemplate(trigger: string, country: string) {
+function addTemplate(trigger: string, group: string) {
   const event = eventDetailsStore.data;
   if (!event) {
     throw new Error('No event details loaded!');
   }
 
-  // Search for existing template for same trigger but different country
+  // Search for existing template for same trigger but different group
   const template = data.value?.find((template) => template.trigger === trigger);
 
   quasar
@@ -252,7 +254,7 @@ function addTemplate(trigger: string, country: string) {
       componentProps: {
         name: t(`template.${trigger}.label`),
         trigger,
-        country,
+        group,
         form: event.form,
         subject: template?.subject ?? '',
         body: template?.body ?? '',
@@ -266,7 +268,7 @@ function addTemplate(trigger: string, country: string) {
           await withResultNotification('create', async () => {
             return api.createMessageTemplate(event.id, {
               trigger,
-              country,
+              group,
               subject: message.subject,
               body: message.body,
               attachmentIds: message.attachmentIds ?? undefined,
@@ -296,7 +298,7 @@ function editTemplate(template: MessageTemplate | undefined) {
       componentProps: {
         name: t(`template.${template.trigger}.label`),
         trigger: template.trigger,
-        country: template.country,
+        group: template.group,
         form: event.form,
         subject: template.subject,
         body: template.body,

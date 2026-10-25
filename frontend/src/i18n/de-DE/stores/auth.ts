@@ -1,20 +1,21 @@
 export default {
   refresh: {
-    error: 'Ihre Sitzung konnte nicht wiederhergestellt werden. Neuer Versuch…',
+    error:
+      'Deine Sitzung konnte nicht wiederhergestellt werden. Neuer Versuch…',
   },
   logout: {
     error: 'Abmeldung fehlgeschlagen',
   },
   'forgot-password': {
     error:
-      'Beim Zurücksetzen Ihres Passworts ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.',
+      'Beim Zurücksetzen deines Passworts ist ein Fehler aufgetreten. Bitte versuche es erneut.',
     success:
-      'Überprüfen Sie Ihre E-Mails auf den Link zum Zurücksetzen des Passworts.',
+      'Überprüfe deine E-Mails auf den Link zum Zurücksetzen des Passworts.',
   },
   'reset-password': {
     error:
-      'Beim Zurücksetzen Ihres Passworts ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.',
-    success: 'Ihr Passwort wurde erfolgreich zurückgesetzt.',
+      'Beim Zurücksetzen deines Passworts ist ein Fehler aufgetreten. Bitte versuche es erneut.',
+    success: 'Dein Passwort wurde erfolgreich zurückgesetzt.',
   },
   'verify-email': {
     error: 'E-Mail-Verifizierung fehlgeschlagen',

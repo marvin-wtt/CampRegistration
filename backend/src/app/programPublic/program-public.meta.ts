@@ -1,6 +1,6 @@
 import type { Event } from '@camp-registration/common/entities';
 import type { PageMeta } from '#core/seo/pageMeta';
-import { translateObject } from '#utils/translateObject';
+import { translate } from '@camp-registration/common/utils';
 import { generateUrl } from '#utils/url';
 import i18n from '#core/i18n/i18n.client';
 import config from '#config/index';
@@ -20,7 +20,7 @@ export function buildProgramPublicPageMeta(
   locale: string,
 ): PageMeta {
   const language = locale.split('-')[0];
-  const name = text(translateObject(event.name, locale));
+  const name = text(translate(event.name, locale) ?? '');
   const t = i18n.getFixedT(locale, 'programPublic', 'meta');
 
   return {

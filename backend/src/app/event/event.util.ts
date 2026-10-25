@@ -1,16 +1,58 @@
 import type { EventRegistrationStatus } from '@camp-registration/common/entities';
-import type { Event } from '#generated/prisma/client';
-import { translateObject } from '#utils/translateObject';
+import {
+  allGroupValues,
+  eventGroup,
+  eventGroupFields,
+  forGroup,
+  translate,
+} from '@camp-registration/common/utils';
+import { localeForCountry } from '@camp-registration/common/locales';
+import type { Event, Registration } from '#generated/prisma/client';
 
-/** The event's translatable fields resolved to one locale, for templates. */
-export function translateEventContext(event: Event, locale: string) {
+/**
+ * The event's fields resolved for templates: text in the reader's `locale`,
+ * per-group values for the registration's `group` — by the same rule the form
+ * resolves them (`eventGroupFields`).
+ */
+export function translateEventContext(
+  event: Event,
+  { locale, group }: { locale: string; group: string | null },
+) {
+  const { organizer, contactEmail, maxParticipants } = eventGroupFields(
+    event,
+    group,
+  );
+
   return {
     ...event,
-    name: translateObject(event.name, locale),
-    organizer: translateObject(event.organizer, locale),
-    contactEmail: translateObject(event.contactEmail, locale),
-    maxParticipants: translateObject(event.maxParticipants, locale),
-    location: translateObject(event.location, locale),
+    name: translate(event.name, locale) ?? '',
+    location: translate(event.location, locale) ?? null,
+    organizer,
+    contactEmail,
+    maxParticipants,
+  };
+}
+
+/**
+ * Who answers for a registration on the event's side: the contact of its
+ * group (the one it selected, else the event's only one), addressed in the
+ * language of the group's country. Without a group — or one the event has no
+ * contact for — every group's contact is addressed, in the registration's
+ * language.
+ */
+export function eventContactFor(
+  event: Event,
+  registration: Pick<Registration, 'group' | 'locale'>,
+) {
+  const group = eventGroup(event, registration.group);
+
+  return {
+    group,
+    to:
+      forGroup(event.contactEmail, group) ?? allGroupValues(event.contactEmail),
+    // The contact's own language is unknown; the contact of a group
+    // presumably reads its country's.
+    locale: group ? localeForCountry(group) : registration.locale,
   };
 }
 
@@ -51,7 +93,7 @@ export interface FreePlaces {
  */
 export function calculateFreePlaces(
   maxParticipants: number | Record<string, number>,
-  registrations: { country: string | null }[],
+  registrations: { group: string | null }[],
 ): FreePlaces {
   if (typeof maxParticipants === 'number') {
     const free = Math.max(0, maxParticipants - registrations.length);
@@ -60,9 +102,9 @@ export function calculateFreePlaces(
   }
 
   const freePlaces: Record<string, number> = {};
-  for (const [country, limit] of Object.entries(maxParticipants)) {
-    const count = registrations.filter((r) => r.country === country).length;
-    freePlaces[country] = Math.max(0, limit - count);
+  for (const [group, limit] of Object.entries(maxParticipants)) {
+    const count = registrations.filter((r) => r.group === group).length;
+    freePlaces[group] = Math.max(0, limit - count);
   }
 
   return {

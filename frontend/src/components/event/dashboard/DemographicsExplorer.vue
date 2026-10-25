@@ -133,7 +133,7 @@
       </div>
 
       <div
-        v-if="!loading && (showGenderFilter || showCountryFilter)"
+        v-if="!loading && (showGenderFilter || showGroupFilter)"
         class="control-group filter-group"
       >
         <div class="control-label">{{ t('filters') }}</div>
@@ -256,7 +256,10 @@
 </template>
 
 <script lang="ts" setup>
-import ApexChart from 'vue3-apexcharts';
+import ApexChart from 'vue3-apexcharts/core';
+import 'apexcharts/bar';
+import 'apexcharts/features/legend';
+import 'apexcharts/features/keyboard';
 import type { ApexOptions } from 'apexcharts';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -331,9 +334,9 @@ onMounted(() => {
 const xDimension = ref<Dimension>('age');
 const barLayout = ref<'grouped' | 'stacked'>('grouped');
 const genderFilter = ref<string[]>([]);
-const countryFilter = ref<string[]>([]);
+const groupFilter = ref<string[]>([]);
 
-const countryAvailable = computed(() => stats.hasMultipleCountries.value);
+const groupAvailable = computed(() => stats.hasMultipleGroups.value);
 
 // Only the user's explicit pick is state; the default and its validity are
 // derived, because this card renders (behind skeletons) before the
@@ -344,15 +347,15 @@ const groupChoice = ref<Dimension | 'none' | null>(null);
 
 const groupDimension = computed<Dimension | 'none'>({
   get: () => {
-    const group =
-      groupChoice.value ?? (countryAvailable.value ? 'country' : 'gender');
+    const choice =
+      groupChoice.value ?? (groupAvailable.value ? 'group' : 'gender');
     if (
-      group === xDimension.value ||
-      (group === 'country' && !countryAvailable.value)
+      choice === xDimension.value ||
+      (choice === 'group' && !groupAvailable.value)
     ) {
       return 'none';
     }
-    return group;
+    return choice;
   },
   set: (value) => {
     groupChoice.value = value;
@@ -365,8 +368,8 @@ const grouped = computed(() => groupDimension.value !== 'none');
 
 const allDimensions = computed<Dimension[]>(() => {
   const dims: Dimension[] = ['age', 'gender'];
-  if (countryAvailable.value) {
-    dims.push('country');
+  if (groupAvailable.value) {
+    dims.push('group');
   }
   return dims;
 });
@@ -414,7 +417,7 @@ function genderLabel(value: string): string {
   return translated === key ? value : translated;
 }
 
-function countryLabel(value: string): string {
+function groupLabel(value: string): string {
   if (value === stats.UNKNOWN) {
     return t('unknown');
   }
@@ -430,8 +433,8 @@ function labelFor(dimension: Dimension, value: string): string {
   if (dimension === 'gender') {
     return genderLabel(value);
   }
-  if (dimension === 'country') {
-    return countryLabel(value);
+  if (dimension === 'group') {
+    return groupLabel(value);
   }
   return value === stats.UNKNOWN ? t('unknown') : value;
 }
@@ -446,9 +449,9 @@ const filteredPeople = computed<Registration[]>(() => {
         return false;
       }
     }
-    if (countryFilter.value.length > 0) {
-      const value = helper.country(registration) ?? stats.UNKNOWN;
-      if (!countryFilter.value.includes(value)) {
+    if (groupFilter.value.length > 0) {
+      const value = helper.group(registration) ?? stats.UNKNOWN;
+      if (!groupFilter.value.includes(value)) {
         return false;
       }
     }
@@ -459,8 +462,8 @@ const filteredPeople = computed<Registration[]>(() => {
 const showGenderFilter = computed(
   () => xDimension.value !== 'gender' && stats.presentGenders.value.length > 0,
 );
-const showCountryFilter = computed(
-  () => xDimension.value !== 'country' && countryAvailable.value,
+const showGroupFilter = computed(
+  () => xDimension.value !== 'group' && groupAvailable.value,
 );
 
 const genderFilterOptions = computed(() =>
@@ -469,20 +472,20 @@ const genderFilterOptions = computed(() =>
     value,
   })),
 );
-const countryFilterOptions = computed(() =>
-  stats.presentCountries.value.map((value) => ({
-    label: countryLabel(value),
+const groupFilterOptions = computed(() =>
+  stats.presentGroups.value.map((value) => ({
+    label: groupLabel(value),
     value,
   })),
 );
 
 const hasActiveFilters = computed(
-  () => genderFilter.value.length > 0 || countryFilter.value.length > 0,
+  () => genderFilter.value.length > 0 || groupFilter.value.length > 0,
 );
 
 function resetFilters() {
   genderFilter.value = [];
-  countryFilter.value = [];
+  groupFilter.value = [];
 }
 
 function filterLabel(
@@ -514,16 +517,12 @@ const filters = computed(() => {
       ),
     });
   }
-  if (showCountryFilter.value) {
+  if (showGroupFilter.value) {
     list.push({
-      key: 'country',
-      model: countryFilter,
-      options: countryFilterOptions.value,
-      label: filterLabel(
-        'country',
-        countryFilter.value,
-        countryFilterOptions.value,
-      ),
+      key: 'group',
+      model: groupFilter,
+      options: groupFilterOptions.value,
+      label: filterLabel('group', groupFilter.value, groupFilterOptions.value),
     });
   }
   return list;
@@ -535,9 +534,9 @@ watch(showGenderFilter, (visible) => {
     genderFilter.value = [];
   }
 });
-watch(showCountryFilter, (visible) => {
+watch(showGroupFilter, (visible) => {
   if (!visible) {
-    countryFilter.value = [];
+    groupFilter.value = [];
   }
 });
 
@@ -941,7 +940,7 @@ const chartOptions = computed<ApexOptions>(() => {
 <i18n lang="yaml" locale="en">
 title: 'Demographics'
 collapse: 'Show summary only'
-subtitle: 'Break down the group by age, gender and country.'
+subtitle: 'Break down the people by age, gender and group.'
 shown: '{shown} of {total} people'
 total: '{total} people'
 filterCount: '{name} ({count})'
@@ -957,14 +956,14 @@ dimension:
   none: 'Nothing'
   age: 'Age'
   gender: 'Gender'
-  country: 'Country'
+  group: 'Group'
 stack:
   label: 'Bar layout'
   grouped: 'Grouped'
   stacked: 'Stacked'
 filter:
   gender: 'Filter by gender'
-  country: 'Filter by country'
+  group: 'Filter by group'
 gender:
   male: 'Male'
   female: 'Female'
@@ -978,7 +977,7 @@ gender:
 <i18n lang="yaml" locale="de">
 title: 'Demografie'
 collapse: 'Nur Zusammenfassung anzeigen'
-subtitle: 'Gruppe nach Alter, Geschlecht und Land aufschlüsseln.'
+subtitle: 'Teilnehmende nach Alter, Geschlecht und Gruppe aufschlüsseln.'
 shown: '{shown} von {total} Personen'
 total: '{total} Personen'
 filterCount: '{name} ({count})'
@@ -994,14 +993,14 @@ dimension:
   none: 'Nichts'
   age: 'Alter'
   gender: 'Geschlecht'
-  country: 'Land'
+  group: 'Gruppe'
 stack:
   label: 'Balken-Layout'
   grouped: 'Gruppiert'
   stacked: 'Gestapelt'
 filter:
   gender: 'Nach Geschlecht filtern'
-  country: 'Nach Land filtern'
+  group: 'Nach Gruppe filtern'
 gender:
   male: 'Männlich'
   female: 'Weiblich'
@@ -1015,7 +1014,7 @@ gender:
 <i18n lang="yaml" locale="fr">
 title: 'Démographie'
 collapse: 'Afficher uniquement le résumé'
-subtitle: 'Répartir le groupe par âge, genre et pays.'
+subtitle: 'Répartir les personnes par âge, genre et groupe.'
 shown: '{shown} personnes sur {total}'
 total: '{total} personnes'
 filterCount: '{name} ({count})'
@@ -1031,14 +1030,14 @@ dimension:
   none: 'Rien'
   age: 'Âge'
   gender: 'Genre'
-  country: 'Pays'
+  group: 'Groupe'
 stack:
   label: 'Disposition des barres'
   grouped: 'Groupé'
   stacked: 'Empilé'
 filter:
   gender: 'Filtrer par genre'
-  country: 'Filtrer par pays'
+  group: 'Filtrer par groupe'
 gender:
   male: 'Masculin'
   female: 'Féminin'
@@ -1052,7 +1051,7 @@ gender:
 <i18n lang="yaml" locale="pl">
 title: 'Demografia'
 collapse: 'Pokaż tylko podsumowanie'
-subtitle: 'Podziel grupę według wieku, płci i kraju.'
+subtitle: 'Podziel osoby według wieku, płci i grupy.'
 shown: '{shown} z {total} osób'
 total: '{total} osób'
 filterCount: '{name} ({count})'
@@ -1068,14 +1067,14 @@ dimension:
   none: 'Nic'
   age: 'Wiek'
   gender: 'Płeć'
-  country: 'Kraj'
+  group: 'Grupa'
 stack:
   label: 'Układ słupków'
   grouped: 'Zgrupowane'
   stacked: 'Skumulowane'
 filter:
   gender: 'Filtruj według płci'
-  country: 'Filtruj według kraju'
+  group: 'Filtruj według grupy'
 gender:
   male: 'Mężczyzna'
   female: 'Kobieta'
@@ -1089,7 +1088,7 @@ gender:
 <i18n lang="yaml" locale="cs">
 title: 'Demografie'
 collapse: 'Zobrazit jen souhrn'
-subtitle: 'Rozdělte skupinu podle věku, pohlaví a země.'
+subtitle: 'Rozdělte osoby podle věku, pohlaví a skupiny.'
 shown: '{shown} z {total} osob'
 total: '{total} osob'
 filterCount: '{name} ({count})'
@@ -1105,14 +1104,14 @@ dimension:
   none: 'Nic'
   age: 'Věk'
   gender: 'Pohlaví'
-  country: 'Země'
+  group: 'Skupina'
 stack:
   label: 'Rozložení sloupců'
   grouped: 'Seskupené'
   stacked: 'Skládané'
 filter:
   gender: 'Filtrovat podle pohlaví'
-  country: 'Filtrovat podle země'
+  group: 'Filtrovat podle skupiny'
 gender:
   male: 'Muž'
   female: 'Žena'

@@ -49,7 +49,7 @@ export type ChoreLedger = Map<string, PersonStats>;
 export interface PoolPerson {
   id: string;
   staff: boolean;
-  country: string | null;
+  group: string | null;
   roomId: string | null;
 }
 
@@ -67,7 +67,7 @@ export interface OccurrenceSpec {
   effort: ChoreEffort;
   unit: ChoreRotationUnit;
   eligibility: ChoreEligibility;
-  balanceCountries: boolean;
+  balanceGroups: boolean;
   headcount: number;
   supervisorCount: number;
 }
@@ -75,9 +75,9 @@ export interface OccurrenceSpec {
 interface RankContext {
   choreId: string;
   date?: string | undefined;
-  balanceCountries?: boolean | undefined;
-  // Countries already on the duty, so balancing continues from them.
-  countryCounts?: ReadonlyMap<string, number> | undefined;
+  balanceGroups?: boolean | undefined;
+  // Groups already on the duty, so balancing continues from them.
+  groupCounts?: ReadonlyMap<string, number> | undefined;
   random?: (() => number) | undefined;
 }
 
@@ -202,7 +202,7 @@ interface Ranked {
   load: number;
   choreCount: number;
   last: string;
-  country: string;
+  group: string;
 }
 
 function compareRanked(a: Ranked, b: Ranked): number {
@@ -217,8 +217,8 @@ function compareRanked(a: Ranked, b: Ranked): number {
 /**
  * Fairest first: least already carried that day — so a second duty goes to
  * whoever has the lightest one — then lowest load across all chores, then
- * fewest times on this chore, then longest ago — ties shuffled. With country
- * balancing, the country seen least so far goes first among candidates
+ * fewest times on this chore, then longest ago — ties shuffled. With group
+ * balancing, the group seen least so far goes first among candidates
  * equally loaded — never ahead of a fairer one.
  */
 function rank<T extends Ranked>(items: T[], ctx: RankContext): T[] {
@@ -227,15 +227,15 @@ function rank<T extends Ranked>(items: T[], ctx: RankContext): T[] {
     (a, b) => compareRanked(a, b) === 0,
     ctx.random,
   );
-  if (!ctx.balanceCountries) {
+  if (!ctx.balanceGroups) {
     return sorted;
   }
 
   return spreadWithinTies(
     sorted,
     (a, b) => a.dayLoad === b.dayLoad && a.load === b.load,
-    (item) => item.country,
-    ctx.countryCounts,
+    (item) => item.group,
+    ctx.groupCounts,
   );
 }
 
@@ -265,7 +265,7 @@ export function rankPeople(
         load: stats.load,
         choreCount: stats.choreCounts.get(ctx.choreId) ?? 0,
         last: stats.lastByChore.get(ctx.choreId) ?? '',
-        country: person.country ?? '',
+        group: person.group ?? '',
       };
     }),
     ctx,
@@ -310,7 +310,7 @@ export function rankRooms(
           const last = s.lastByChore.get(ctx.choreId) ?? '';
           return last > latest ? last : latest;
         }, ''),
-        country: '',
+        group: '',
       };
     }),
     ctx,
@@ -334,8 +334,8 @@ export function pickForOccurrence(
   const ctx: RankContext = {
     choreId: spec.choreId,
     date: spec.date,
-    balanceCountries: spec.balanceCountries,
-    countryCounts: countriesOf(pool, existing),
+    balanceGroups: spec.balanceGroups,
+    groupCounts: groupsOf(pool, existing),
     random,
   };
 
@@ -382,7 +382,7 @@ export function pickForOccurrence(
       spec.eligibility,
     ).filter((person) => !taken.has(person.id));
     picks.push(
-      ...rankPeople(ledger, supervisors, { ...ctx, balanceCountries: false })
+      ...rankPeople(ledger, supervisors, { ...ctx, balanceGroups: false })
         .slice(0, missingSupervisors)
         .map(({ person }) => ({
           registrationId: person.id,
@@ -394,16 +394,16 @@ export function pickForOccurrence(
   return picks;
 }
 
-function countriesOf(
+function groupsOf(
   pool: PoolPerson[],
   existing: ExistingMember[],
 ): Map<string, number> {
-  const countryById = new Map(pool.map((p) => [p.id, p.country ?? '']));
+  const groupById = new Map(pool.map((p) => [p.id, p.group ?? '']));
   const counts = new Map<string, number>();
   for (const member of existing) {
     if (member.role === 'MEMBER' && !member.missed) {
-      const country = countryById.get(member.registrationId) ?? '';
-      counts.set(country, (counts.get(country) ?? 0) + 1);
+      const group = groupById.get(member.registrationId) ?? '';
+      counts.set(group, (counts.get(group) ?? 0) + 1);
     }
   }
   return counts;

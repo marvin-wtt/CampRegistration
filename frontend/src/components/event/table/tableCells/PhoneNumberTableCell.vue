@@ -29,7 +29,7 @@ const formattedPhoneNumber = computed<unknown>(() => {
 
   // If the event has only one country, use that country as fallback
   const country =
-    registrationHelper.country(registration.value) ??
+    registrationHelper.addressCountry(registration.value) ??
     (event.countries.length === 1 ? event.countries[0] : undefined);
 
   const normalizedCountry = country?.toUpperCase();

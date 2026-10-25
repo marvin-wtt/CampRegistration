@@ -27,38 +27,55 @@
       </q-tooltip>
     </q-item>
 
-    <q-item
-      v-if="!readonly && can('event.registrations.edit')"
-      v-close-popup
-      clickable
-      @click="editItem"
-    >
-      <q-item-section>
-        {{ t('option.edit') }}
-      </q-item-section>
-    </q-item>
-    <q-item
-      v-if="!accepted && !readonly && can('event.registrations.edit')"
-      v-close-popup
-      clickable
-      @click="accept"
-    >
-      <q-item-section>
-        {{ t('option.accept') }}
-      </q-item-section>
-    </q-item>
-    <q-separator v-if="!readonly && can('event.registrations.delete')" />
-    <q-item
-      v-if="!readonly && can('event.registrations.delete')"
-      v-close-popup
-      class="text-negative"
-      clickable
-      @click="deleteItem"
-    >
-      <q-item-section>
-        {{ t('option.delete') }}
-      </q-item-section>
-    </q-item>
+    <template v-if="!readonly && can('event.registrations.edit')">
+      <q-separator />
+
+      <q-item
+        v-close-popup
+        clickable
+        @click="editItem"
+      >
+        <q-item-section>
+          {{ t('option.edit') }}
+        </q-item-section>
+      </q-item>
+      <q-item
+        v-if="multiCountry"
+        v-close-popup
+        clickable
+        data-test="registration-move"
+        @click="moveItem"
+      >
+        <q-item-section>
+          {{ t('option.move') }}
+        </q-item-section>
+      </q-item>
+      <q-item
+        v-if="!accepted"
+        v-close-popup
+        clickable
+        @click="accept"
+      >
+        <q-item-section>
+          {{ t('option.accept') }}
+        </q-item-section>
+      </q-item>
+    </template>
+
+    <template v-if="!readonly && can('event.registrations.delete')">
+      <q-separator />
+
+      <q-item
+        v-close-popup
+        class="text-negative"
+        clickable
+        @click="deleteItem"
+      >
+        <q-item-section>
+          {{ t('option.delete') }}
+        </q-item-section>
+      </q-item>
+    </template>
   </q-list>
 </template>
 
@@ -80,6 +97,7 @@ import { useRegistrationsStore } from '@/stores/registration-store';
 import { usePermissions } from '@/composables/permissions';
 import RegistrationDeleteDialog from '@/components/event/table/dialogs/RegistrationDeleteDialog.vue';
 import RegistrationAcceptDialog from '@/components/event/table/dialogs/RegistrationAcceptDialog.vue';
+import RegistrationMoveDialog from '@/components/event/table/dialogs/RegistrationMoveDialog.vue';
 import RegistrationDetailsDialog from '@/components/event/table/dialogs/RegistrationDetailsDialog.vue';
 import RegistrationMessageDialog from '@/components/event/table/dialogs/RegistrationMessageDialog.vue';
 import { useAPIService } from '@/services/APIService';
@@ -108,6 +126,27 @@ const { can } = usePermissions();
 const accepted = computed<boolean>(() => {
   return registration.status === 'ACCEPTED';
 });
+
+const multiCountry = computed<boolean>(
+  () => (eventData.value?.countries.length ?? 0) > 1,
+);
+
+// Rare, so it only changes the group: the answers, status and waiting list
+// stay, and no message is sent.
+function moveItem() {
+  if (!eventData.value) {
+    return;
+  }
+
+  quasar
+    .dialog({
+      component: RegistrationMoveDialog,
+      componentProps: { registration, event: eventData.value },
+    })
+    .onOk(({ group }: { group: string }) => {
+      void registrationStore.updateData(registration.id, { group });
+    });
+}
 
 const hasEmail = computed<boolean>(() => {
   return !!registration.computedData.emails?.length;
@@ -140,13 +179,12 @@ function hasTemplateForTrigger(
     return true;
   }
 
-  const country = registration.computedData.address.country ?? null;
+  const group = registration.group ?? null;
 
   return allTemplates
     .filter((tmpl) => tmpl.trigger === trigger)
     .some(
-      (tmpl) =>
-        country === null || tmpl.country === null || tmpl.country === country,
+      (tmpl) => group === null || tmpl.group === null || tmpl.group === group,
     );
 }
 
@@ -231,6 +269,7 @@ async function editItem(): Promise<void> {
       componentProps: {
         event: eventData.value,
         data: registration.data,
+        group: registration.group,
         uploadFileFn: uploadFile,
         hasTemplate,
       },
@@ -257,6 +296,7 @@ option:
   sendMessage: 'Send message'
   sendMessageDisabled: 'No email address available'
   edit: 'Edit'
+  move: 'Change group'
   delete: 'Delete'
   accept: 'Accept'
 </i18n>
@@ -267,6 +307,7 @@ option:
   sendMessage: 'Nachricht senden'
   sendMessageDisabled: 'Keine E-Mail-Adresse verfügbar'
   edit: 'Bearbeiten'
+  move: 'Gruppe wechseln'
   delete: 'Löschen'
   accept: 'Akzeptieren'
 </i18n>
@@ -277,6 +318,7 @@ option:
   sendMessage: 'Envoyer un message'
   sendMessageDisabled: 'Aucune adresse e-mail disponible'
   edit: 'Modifier'
+  move: 'Changer de groupe'
   delete: 'Supprimer'
   accept: 'Accepter'
 </i18n>
@@ -287,6 +329,7 @@ option:
   sendMessage: 'Wyślij wiadomość'
   sendMessageDisabled: 'Brak dostępnego adresu e-mail'
   edit: 'Edytuj'
+  move: 'Zmień grupę'
   delete: 'Usuń'
   accept: 'Akceptuj'
 </i18n>
@@ -297,6 +340,7 @@ option:
   sendMessage: 'Odeslat zprávu'
   sendMessageDisabled: 'Není k dispozici žádná e-mailová adresa'
   edit: 'Upravit'
+  move: 'Změnit skupinu'
   delete: 'Smazat'
   accept: 'Přijmout'
 </i18n>

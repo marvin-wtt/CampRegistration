@@ -32,8 +32,8 @@
       </div>
 
       <country-icon
-        v-if="model.country"
-        :country="model.country"
+        v-if="model.group"
+        :country="model.group"
         class="bed-row__flag"
       />
 

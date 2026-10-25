@@ -127,7 +127,7 @@ action:
 
 <i18n lang="yaml" locale="de">
 title: 'E-Mail bestätigen'
-description: 'Wir haben eine Bestätigungs-E-Mail an Ihre Adresse gesendet. Bitte klicken Sie auf den Link, um Ihr Konto zu verifizieren.'
+description: 'Wir haben eine Bestätigungs-E-Mail an deine Adresse gesendet. Bitte klicke auf den Link, um dein Konto zu verifizieren.'
 action:
   login: 'Anmelden'
   resend: 'Erneut senden'

@@ -31,6 +31,7 @@ const createCellProps = (
     data: {},
     computedData: {} as Registration['computedData'],
     customData: {},
+    group: null,
     status: 'ACCEPTED',
     createdAt: '2023-01-01T00:00:00Z',
   },

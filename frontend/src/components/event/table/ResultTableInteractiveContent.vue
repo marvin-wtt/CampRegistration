@@ -32,21 +32,21 @@
           />
 
           <q-btn
-            v-if="countries.length > 1"
-            :aria-label="t('filter.country')"
+            v-if="groups.length > 1"
+            :aria-label="t('filter.group')"
             icon="filter_list"
             class="header-action-btn"
-            :class="{ 'header-action-btn--active': activeCountryCount > 0 }"
+            :class="{ 'header-action-btn--active': activeGroupCount > 0 }"
             flat
             round
             @click="filterSheetOpen = true"
           >
             <q-badge
-              v-if="activeCountryCount > 0"
+              v-if="activeGroupCount > 0"
               rounded
               floating
               class="filter-btn-badge"
-              :label="activeCountryCount"
+              :label="activeGroupCount"
             />
           </q-btn>
 
@@ -204,27 +204,27 @@
         </q-input>
       </div>
 
-      <!-- Country filter chips; on phones the filter lives in a bottom sheet -->
+      <!-- Group filter chips; on phones the filter lives in a bottom sheet -->
       <div
-        v-if="countries.length > 1 && !quasar.screen.xs"
+        v-if="groups.length > 1 && !quasar.screen.xs"
         class="col-12 col-sm-auto"
       >
         <div class="row items-center filter-row">
           <q-chip
-            v-for="country in countries"
-            :key="country"
+            v-for="group in groups"
+            :key="group"
             clickable
             class="filter-chip"
-            :class="{ 'filter-chip--active': isCountryActive(country) }"
-            @click="toggleCountry(country)"
+            :class="{ 'filter-chip--active': isGroupActive(group) }"
+            @click="toggleGroup(group)"
           >
             <country-icon
-              :country
+              :country="group"
               class="chip-flag q-mr-xs"
             />
-            {{ countryLabel(country) }}
+            {{ groupLabel(group) }}
             <q-icon
-              v-if="isCountryActive(country)"
+              v-if="isGroupActive(group)"
               name="check"
               size="16px"
               class="q-ml-xs"
@@ -362,39 +362,39 @@
       </div>
     </q-card>
 
-    <!-- Mobile country filter sheet -->
+    <!-- Mobile group filter sheet -->
     <bottom-sheet v-model="filterSheetOpen">
       <div class="row items-center justify-between q-mb-sm">
         <div class="text-subtitle1 text-weight-medium">
-          {{ t('filter.country') }}
+          {{ t('filter.group') }}
         </div>
         <q-btn
-          v-if="activeCountryCount > 0"
+          v-if="activeGroupCount > 0"
           :label="t('filter.reset')"
           color="primary"
           flat
           dense
           no-caps
-          @click="countryFilter = []"
+          @click="groupFilter = []"
         />
       </div>
 
       <q-list>
         <q-item
-          v-for="country in countries"
-          :key="country"
+          v-for="group in groups"
+          :key="group"
           clickable
-          @click="toggleCountry(country)"
+          @click="toggleGroup(group)"
         >
           <q-item-section avatar>
-            <country-icon :country />
+            <country-icon :country="group" />
           </q-item-section>
           <q-item-section>
-            {{ countryLabel(country) }}
+            {{ groupLabel(group) }}
           </q-item-section>
           <q-item-section side>
             <q-checkbox
-              :model-value="isCountryActive(country)"
+              :model-value="isGroupActive(group)"
               class="no-pointer-events"
               dense
             />
@@ -469,9 +469,9 @@ const {
   rows,
   columns,
   renderers,
-  countryFilter,
+  groupFilter,
   searchFilter,
-  countries,
+  groups,
 } = useResultTableModel(
   {
     questions: toRef(() => questions),
@@ -531,13 +531,13 @@ const countLabel = computed<string>(() => {
     : `${rows.value.length} / ${total}`;
 });
 
-const activeCountryCount = computed<number>(() => {
-  return countryFilter.value?.length ?? 0;
+const activeGroupCount = computed<number>(() => {
+  return groupFilter.value?.length ?? 0;
 });
 
 const hasActiveFilters = computed<boolean>(() => {
   return (
-    (searchFilter.value?.trim().length ?? 0) > 0 || activeCountryCount.value > 0
+    (searchFilter.value?.trim().length ?? 0) > 0 || activeGroupCount.value > 0
   );
 });
 
@@ -549,8 +549,8 @@ const regionNames = computed(() => {
   }
 });
 
-function countryLabel(country: string): string {
-  const upper = country.toUpperCase();
+function groupLabel(group: string): string {
+  const upper = group.toUpperCase();
   try {
     return regionNames.value?.of(upper) ?? upper;
   } catch {
@@ -558,20 +558,20 @@ function countryLabel(country: string): string {
   }
 }
 
-function isCountryActive(country: string): boolean {
-  return countryFilter.value?.includes(country) ?? false;
+function isGroupActive(group: string): boolean {
+  return groupFilter.value?.includes(group) ?? false;
 }
 
-function toggleCountry(country: string) {
-  const current = countryFilter.value ?? [];
-  countryFilter.value = current.includes(country)
-    ? current.filter((value) => value !== country)
-    : [...current, country];
+function toggleGroup(group: string) {
+  const current = groupFilter.value ?? [];
+  groupFilter.value = current.includes(group)
+    ? current.filter((value) => value !== group)
+    : [...current, group];
 }
 
 function clearFilters() {
   searchFilter.value = '';
-  countryFilter.value = [];
+  groupFilter.value = [];
 }
 
 function onTemplateChange() {
@@ -927,7 +927,7 @@ action:
   menu: 'Actions'
 
 filter:
-  country: 'Country'
+  group: 'Group'
   search: 'Search participants'
   reset: 'Reset'
 
@@ -946,7 +946,7 @@ error:
 <i18n lang="yaml" locale="de">
 template: 'Vorlage'
 title: 'Teilnehmende'
-subtitle: 'Durchsuchen, filtern und drucken Sie die Anmeldungen dieser Veranstaltung.'
+subtitle: 'Durchsuche, filtere und drucke die Anmeldungen dieser Veranstaltung.'
 
 action:
   print: 'Drucken'
@@ -956,7 +956,7 @@ action:
   menu: 'Aktionen'
 
 filter:
-  country: 'Land'
+  group: 'Gruppe'
   search: 'Teilnehmende suchen'
   reset: 'Zurücksetzen'
 
@@ -966,7 +966,7 @@ empty:
 
 no_match:
   title: 'Keine passenden Teilnehmenden'
-  message: 'Passen Sie die Suche oder die Filter an.'
+  message: 'Passe die Suche oder die Filter an.'
 
 error:
   no_rows: 'Für die aktuellen Filter gibt es nichts zu exportieren.'
@@ -985,7 +985,7 @@ action:
   menu: 'Actions'
 
 filter:
-  country: 'Pays'
+  group: 'Groupe'
   search: 'Rechercher des participants'
   reset: 'Réinitialiser'
 
@@ -1014,7 +1014,7 @@ action:
   menu: 'Akcje'
 
 filter:
-  country: 'Kraj'
+  group: 'Grupa'
   search: 'Szukaj uczestników'
   reset: 'Resetuj'
 
@@ -1043,7 +1043,7 @@ action:
   menu: 'Akce'
 
 filter:
-  country: 'Země'
+  group: 'Skupina'
   search: 'Hledat účastníky'
   reset: 'Obnovit'
 

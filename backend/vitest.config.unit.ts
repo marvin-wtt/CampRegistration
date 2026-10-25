@@ -10,8 +10,8 @@ export default defineConfig({
     include: ['tests/unit/**/*.test.ts'],
     coverage: {
       enabled: true,
-      include: ['src/**'],
-      exclude: ['src/views/emails/**'],
+      include: ['src/**/*.ts'],
+      exclude: ['src/views/emails/**', '**/*.d.ts'],
       provider: 'v8',
       reporter: ['html', 'text', 'json', 'clover'],
       reportsDirectory: './tests/unit/coverage',

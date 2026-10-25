@@ -306,6 +306,7 @@ const CUSTOM_FILES_FIELD_PREFIX = 'customFiles';
 // of an existing column.
 const META_FIELDS = [
   'status',
+  'group',
   'room',
   'createdAt',
 ] as const satisfies readonly (keyof Omit<
@@ -383,6 +384,7 @@ watch(
     if (data.source === 'meta') {
       applyRenderer(field, {
         status: 'status',
+        group: 'country_flag',
         room: 'room',
       });
       return;
@@ -631,6 +633,7 @@ field:
       no_dots: 'File field names must not contain dots'
     options:
       createdAt: 'Creation date'
+      group: 'Group'
       room: 'Room'
       status: 'Status'
     computed:
@@ -743,6 +746,7 @@ field:
       no_dots: 'Dateifeld-Namen dürfen keine Punkte enthalten'
     options:
       createdAt: 'Erstellungsdatum'
+      group: 'Gruppe'
       room: 'Raum'
       status: 'Status'
     computed:
@@ -855,6 +859,7 @@ field:
       no_dots: 'Les noms de champs de fichier ne doivent pas contenir de points'
     options:
       createdAt: 'Date de création'
+      group: 'Groupe'
       room: 'Salle'
       status: 'Statut'
     computed:
@@ -967,6 +972,7 @@ field:
       no_dots: 'Nazwy pól plików nie mogą zawierać kropek'
     options:
       createdAt: 'Data utworzenia'
+      group: 'Grupa'
       room: 'Pokój'
       status: 'Status'
     computed:
@@ -1079,6 +1085,7 @@ field:
       no_dots: 'Názvy souborových polí nesmí obsahovat tečky'
     options:
       createdAt: 'Datum vytvoření'
+      group: 'Skupina'
       room: 'Pokoj'
       status: 'Stav'
     computed:

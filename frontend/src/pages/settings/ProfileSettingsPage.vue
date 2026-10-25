@@ -113,15 +113,15 @@ section:
 
 <i18n lang="yaml" locale="de">
 title: 'Profil'
-subtitle: 'Wie Ihr Konto erscheint und wie wir Sie erreichen.'
+subtitle: 'Wie dein Konto erscheint und wie wir dich erreichen.'
 
 section:
   details:
     title: 'Persönliche Angaben'
-    hint: 'Ihr Name wird anderen Mitgliedern der von Ihnen verwalteten Veranstaltungen angezeigt.'
+    hint: 'Dein Name wird anderen Mitgliedern der von dir verwalteten Veranstaltungen angezeigt.'
   email:
     title: 'E-Mail-Adresse'
-    hint: 'Wird zur Anmeldung und für Benachrichtigungen verwendet. Für eine Änderung ist Ihr Passwort erforderlich.'
+    hint: 'Wird zur Anmeldung und für Benachrichtigungen verwendet. Für eine Änderung ist dein Passwort erforderlich.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">

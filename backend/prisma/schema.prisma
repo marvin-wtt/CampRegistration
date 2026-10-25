@@ -255,6 +255,9 @@ model Registration {
   city                               String?
   zipCode                            String?            @map("zip_code")
   country                            String?
+  // The group the registration belongs to, by its country code. The address's
+  // own country is `country`, and may differ.
+  group                              String?            @db.VarChar(2)
   newsletterConsent                  Boolean?           @map("newsletter_consent")
   locale                             String             @default("en-US") @db.VarChar(5)
   //
@@ -277,6 +280,8 @@ model Registration {
 
   @@index([organizationPrivacyNoticeVersionId], map: "registrations_organization_privacy_notice_version_id_index")
   @@index([eventPrivacyNoticeVersionId], map: "registrations_event_privacy_notice_version_id_index")
+  // Counted per group on every registration, for its participant limit.
+  @@index([eventId, group], map: "registrations_event_id_group_index")
   @@map("registrations")
 }
 
@@ -369,6 +374,8 @@ model File {
   originalName        String       @map("original_name")
   field               String?
   locale              String?
+  /// The group a file applies to, by its country code; null for every group.
+  group               String?      @db.VarChar(2)
   type                String
   size                Int
   accessLevel         String?      @map("access_level")
@@ -445,7 +452,8 @@ model MessageDelivery {
 model MessageTemplate {
   id        String    @id @unique(map: "message_template_id_unique") @default(ulid()) @db.Char(26)
   eventId   String    @map("event_id") @db.Char(26)
-  country   String?
+  // The group the template is for, by its country code; null for every group.
+  group     String?
   trigger   String
   priority  String    @default("normal")
   replyTo   String?   @map("reply_to")
@@ -458,7 +466,7 @@ model MessageTemplate {
   deliveries  MessageDelivery[]
   attachments File[]
 
-  @@unique([country, trigger, eventId], map: "message_templates_country_trigger_event_id_unique")
+  @@unique([group, trigger, eventId], map: "message_templates_group_trigger_event_id_unique")
   @@map("message_templates")
 }
 
@@ -649,7 +657,7 @@ model Chore {
   eligibility         ChoreEligibility  @default(PARTICIPANTS)
   effort              ChoreEffort       @default(NORMAL)
   defaultRotationUnit ChoreRotationUnit @default(PERSON) @map("default_rotation_unit")
-  balanceCountries    Boolean           @default(false) @map("balance_countries")
+  balanceGroups       Boolean           @default(false) @map("balance_groups")
 
   event       Event             @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "chores_event_id_foreign")
   slots       ChoreSlot[]

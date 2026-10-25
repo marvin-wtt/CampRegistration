@@ -17,7 +17,7 @@ import {
 const participant = (
   id: string,
   extra: Partial<PoolPerson> = {},
-): PoolPerson => ({ id, staff: false, country: null, roomId: null, ...extra });
+): PoolPerson => ({ id, staff: false, group: null, roomId: null, ...extra });
 const staff = (id: string, extra: Partial<PoolPerson> = {}): PoolPerson =>
   participant(id, { staff: true, ...extra });
 
@@ -43,7 +43,7 @@ const spec = (extra: Partial<OccurrenceSpec> = {}): OccurrenceSpec => ({
   effort: 'NORMAL',
   unit: 'PERSON',
   eligibility: 'PARTICIPANTS',
-  balanceCountries: false,
+  balanceGroups: false,
   headcount: 1,
   supervisorCount: 0,
   ...extra,
@@ -118,35 +118,35 @@ describe('rankPeople', () => {
     ]);
   });
 
-  it('interleaves countries without disturbing the order within one', () => {
+  it('interleaves groups without disturbing the order within one', () => {
     const ledger = buildLedger([duty(['de2']), duty(['de3']), duty(['de3'])]);
     const pool = [
-      participant('de1', { country: 'de' }),
-      participant('de2', { country: 'de' }),
-      participant('de3', { country: 'de' }),
-      participant('fr1', { country: 'fr' }),
+      participant('de1', { group: 'de' }),
+      participant('de2', { group: 'de' }),
+      participant('de3', { group: 'de' }),
+      participant('fr1', { group: 'fr' }),
     ];
 
     const order = rankPeople(ledger, pool, {
       choreId: 'kitchen',
-      balanceCountries: true,
+      balanceGroups: true,
     }).map((r) => r.person.id);
 
     expect(order.slice(0, 2).sort()).toEqual(['de1', 'fr1']);
     expect(order.indexOf('de2')).toBeLessThan(order.indexOf('de3'));
   });
 
-  it('never balances countries at the expense of fairness', () => {
+  it('never balances groups at the expense of fairness', () => {
     const ledger = buildLedger([duty(['fr1']), duty(['fr1']), duty(['fr1'])]);
     const pool = [
-      participant('de1', { country: 'de' }),
-      participant('de2', { country: 'de' }),
-      participant('fr1', { country: 'fr' }),
+      participant('de1', { group: 'de' }),
+      participant('de2', { group: 'de' }),
+      participant('fr1', { group: 'fr' }),
     ];
 
     const order = rankPeople(ledger, pool, {
       choreId: 'kitchen',
-      balanceCountries: true,
+      balanceGroups: true,
     }).map((r) => r.person.id);
 
     expect(order.at(-1)).toBe('fr1');
@@ -154,17 +154,17 @@ describe('rankPeople', () => {
 });
 
 describe('pickForOccurrence', () => {
-  it('balances countries against the members already on the duty', () => {
+  it('balances groups against the members already on the duty', () => {
     const pool = [
-      participant('de1', { country: 'de' }),
-      participant('de2', { country: 'de' }),
-      participant('fr1', { country: 'fr' }),
+      participant('de1', { group: 'de' }),
+      participant('de2', { group: 'de' }),
+      participant('fr1', { group: 'fr' }),
     ];
 
     const picks = pickForOccurrence(
       buildLedger([]),
       pool,
-      spec({ headcount: 2, balanceCountries: true }),
+      spec({ headcount: 2, balanceGroups: true }),
       [{ registrationId: 'de1', role: 'MEMBER' }],
     );
 

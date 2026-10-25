@@ -13,7 +13,7 @@ export class ChoreResource extends JsonResource<ChoreWithSlots, ChoreData> {
       eligibility: this.data.eligibility,
       effort: this.data.effort,
       defaultRotationUnit: this.data.defaultRotationUnit,
-      balanceCountries: this.data.balanceCountries,
+      balanceGroups: this.data.balanceGroups,
       slots: this.data.slots.map((slot) => ({
         id: slot.id,
         name: slot.name,

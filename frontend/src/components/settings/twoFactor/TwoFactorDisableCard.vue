@@ -105,9 +105,8 @@ action:
 </i18n>
 
 <i18n lang="yaml" locale="de">
-description:
-  'Die Zwei-Faktor-Authentifizierung ist derzeit aktiv. Sie können sie
-  deaktivieren, indem Sie Ihr Passwort und das OTP eingeben.'
+description: 'Die Zwei-Faktor-Authentifizierung ist derzeit aktiv. Du kannst sie
+  deaktivieren, indem du dein Passwort und das OTP eingibst.'
 
 field:
   password:

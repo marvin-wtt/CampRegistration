@@ -10,8 +10,8 @@ export default defineConfig({
     setupFiles: ['tests/integration/setup.ts'],
     coverage: {
       enabled: true,
-      include: ['src/*'],
-      exclude: ['src/i18n/*', 'entry.js', 'index.ts'],
+      include: ['src/**/*.ts'],
+      exclude: ['src/i18n/**', '**/*.d.ts', '**/entry.js', '**/index.ts'],
       provider: 'v8',
       reporter: ['html', 'text', 'json', 'json-summary', 'clover'],
       reportsDirectory: './tests/integration/coverage',

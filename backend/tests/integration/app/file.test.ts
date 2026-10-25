@@ -8,7 +8,7 @@ import {
   RegistrationFactory,
   UserFactory,
 } from '../../../prisma/factories/index.js';
-import { uploadFile, verifyFileExists } from './utils/file.js';
+import { uploadFile, verifyFileExists, stageUpload } from './utils/file.js';
 import { generateAccessToken } from './utils/token.js';
 import { Prisma } from '#generated/prisma/client.js';
 import { ulid } from 'ulidx';
@@ -133,6 +133,65 @@ describe('/api/v1/files/', () => {
         .set('Cookie', ['session=' + sessionId, '__Host-session=' + sessionId])
         .send()
         .expect(200);
+    });
+
+    it('should show a PDF inline', async () => {
+      const { file, accessToken } = await createEventWithFileAndToken();
+
+      const response = await request()
+        .get(`/api/v1/files/${file.id}`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(response.headers['content-disposition']).toMatch(/^inline/);
+    });
+
+    // `file-type` reads an `<?xml` prolog as XML, which a browser would render
+    // as the SVG it is — scripts included.
+    it('should only offer an XML upload as a download', async () => {
+      const sessionId = crypto.randomUUID();
+      const cookies = ['session=' + sessionId, '__Host-session=' + sessionId];
+      const { body } = await request()
+        .post('/api/v1/files/')
+        .set('Cookie', cookies)
+        .attach('file', `${__dirname}/resources/xml-prolog.svg`)
+        .expect(201);
+
+      const response = await request()
+        .get(`/api/v1/files/${body.data.id}`)
+        .set('Cookie', cookies)
+        .expect(200);
+
+      expect(response.headers['content-type']).toContain('application/xml');
+      expect(response.headers['content-disposition']).toMatch(/^attachment/);
+    });
+
+    it('should download a PDF when asked to', async () => {
+      const { file, accessToken } = await createEventWithFileAndToken();
+
+      const response = await request()
+        .get(`/api/v1/files/${file.id}?download=true`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(response.headers['content-disposition']).toMatch(/^attachment/);
+    });
+
+    it('should not show an XML upload inline when no download is asked for', async () => {
+      const sessionId = crypto.randomUUID();
+      const cookies = ['session=' + sessionId, '__Host-session=' + sessionId];
+      const { body } = await request()
+        .post('/api/v1/files/')
+        .set('Cookie', cookies)
+        .attach('file', `${__dirname}/resources/xml-prolog.svg`)
+        .expect(201);
+
+      const response = await request()
+        .get(`/api/v1/files/${body.data.id}?download=false`)
+        .set('Cookie', cookies)
+        .expect(200);
+
+      expect(response.headers['content-disposition']).toMatch(/^attachment/);
     });
 
     it('should respond with `404` status code when the physical file is missing', async () => {
@@ -260,6 +319,71 @@ describe('/api/v1/files/', () => {
         .send({ name: 'Updated Rules.pdf' })
         .expect(403);
     });
+
+    describe('group', () => {
+      const createEventFile = async (
+        countries: string[],
+        data: Partial<Prisma.FileCreateInput> = {},
+      ) => {
+        const { event, accessToken } = await createEventWithManagerAndToken({
+          countries,
+        });
+        const file = await FileFactory.create({
+          event: { connect: { id: event.id } },
+          name: crypto.randomUUID() + '.pdf',
+          ...data,
+        });
+
+        return { file, accessToken };
+      };
+
+      it("should accept a group of the file's event", async () => {
+        const { file, accessToken } = await createEventFile(['de', 'fr']);
+
+        const { body } = await request()
+          .patch(`/api/v1/files/${file.id}`)
+          .auth(accessToken, { type: 'bearer' })
+          .send({ group: 'fr' })
+          .expect(200);
+
+        expect(body).toHaveProperty('data.group', 'fr');
+      });
+
+      it("should reject a group the file's event doesn't run in", async () => {
+        const { file, accessToken } = await createEventFile(['de', 'fr']);
+
+        await request()
+          .patch(`/api/v1/files/${file.id}`)
+          .auth(accessToken, { type: 'bearer' })
+          .send({ group: 'pl' })
+          .expect(400);
+      });
+
+      it('should reject a group for the logo', async () => {
+        const { file, accessToken } = await createEventFile(['de', 'fr'], {
+          field: 'logo',
+        });
+
+        await request()
+          .patch(`/api/v1/files/${file.id}`)
+          .auth(accessToken, { type: 'bearer' })
+          .send({ group: 'de' })
+          .expect(400);
+      });
+
+      it('should reject turning a per-group file into the banner', async () => {
+        const { file, accessToken } = await createEventFile(['de', 'fr'], {
+          field: 'terms',
+          group: 'de',
+        });
+
+        await request()
+          .patch(`/api/v1/files/${file.id}`)
+          .auth(accessToken, { type: 'bearer' })
+          .send({ field: 'banner' })
+          .expect(400);
+      });
+    });
   });
 
   describe('DELETE /api/v1/files/:fileId', () => {
@@ -349,6 +473,52 @@ describe('/api/v1/files/', () => {
         .delete(`/api/v1/files/${file.id}`)
         .auth(accessToken, { type: 'bearer' })
         .expect(403);
+    });
+  });
+
+  describe('POST /api/v1/events/:eventId/files', () => {
+    it('should store the group of an event file', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken({
+        countries: ['de', 'fr'],
+      });
+
+      const { body } = await request()
+        .post(`/api/v1/events/${event.id}/files`)
+        .auth(accessToken, { type: 'bearer' })
+        .field('field', 'terms')
+        .field('group', 'fr')
+        .attach('file', `${__dirname}/resources/blank.pdf`)
+        .expect(201);
+
+      expect(body).toHaveProperty('data.group', 'fr');
+    });
+
+    it("should reject a group the event doesn't run in", async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken({
+        countries: ['de', 'fr'],
+      });
+
+      await request()
+        .post(`/api/v1/events/${event.id}/files`)
+        .auth(accessToken, { type: 'bearer' })
+        .field('field', 'terms')
+        .field('group', 'pl')
+        .attach('file', `${__dirname}/resources/blank.pdf`)
+        .expect(400);
+    });
+
+    it('should reject a group for the banner', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken({
+        countries: ['de', 'fr'],
+      });
+
+      await request()
+        .post(`/api/v1/events/${event.id}/files`)
+        .auth(accessToken, { type: 'bearer' })
+        .field('field', 'banner')
+        .field('group', 'de')
+        .attach('file', `${__dirname}/resources/blank.pdf`)
+        .expect(400);
     });
   });
 
@@ -521,6 +691,86 @@ describe('/api/v1/files/', () => {
       );
     });
 
+    describe('group', () => {
+      const slotFile = async (
+        eventId: string,
+        originalName: string,
+        data: { locale?: string | null; group?: string | null },
+      ) => {
+        const name = crypto.randomUUID() + '.pdf';
+        await uploadFile('blank.pdf', name);
+        await FileFactory.create({
+          event: { connect: { id: eventId } },
+          field: 'terms',
+          accessLevel: 'public',
+          originalName,
+          name,
+          ...data,
+        });
+      };
+
+      it("should prefer the group's own file over a generic one in the reader's language", async () => {
+        const event = await EventFactory.create({
+          listed: true,
+          countries: ['de', 'fr'],
+        });
+        await slotFile(event.id, 'generic.pdf', {
+          locale: 'en',
+          group: null,
+        });
+        await slotFile(event.id, 'de-terms.pdf', {
+          locale: 'de',
+          group: 'de',
+        });
+
+        const response = await request()
+          .get(
+            `/api/v1/events/${event.id}/files/slots/terms?locale=en&group=de`,
+          )
+          .expect(200);
+
+        expect(response.headers['content-disposition']).toContain(
+          'de-terms.pdf',
+        );
+      });
+
+      it("should never serve another group's file", async () => {
+        const event = await EventFactory.create({
+          listed: true,
+          countries: ['de', 'fr'],
+        });
+        await slotFile(event.id, 'de-terms.pdf', {
+          locale: 'de',
+          group: 'de',
+        });
+
+        await request()
+          .get(`/api/v1/events/${event.id}/files/slots/terms?group=fr`)
+          .expect(404);
+        // No group selected yet: only a file for every group would do.
+        await request()
+          .get(`/api/v1/events/${event.id}/files/slots/terms`)
+          .expect(404);
+      });
+
+      it("should use the event's only group without a query", async () => {
+        const event = await EventFactory.create({
+          listed: true,
+          countries: ['gb'],
+        });
+        await slotFile(event.id, 'generic.pdf', { group: null });
+        await slotFile(event.id, 'gb-terms.pdf', { group: 'gb' });
+
+        const response = await request()
+          .get(`/api/v1/events/${event.id}/files/slots/terms`)
+          .expect(200);
+
+        expect(response.headers['content-disposition']).toContain(
+          'gb-terms.pdf',
+        );
+      });
+    });
+
     it('should respond with `401` when the matching file is private and the user is anonymous', async () => {
       const event = await EventFactory.create({ listed: true });
       await FileFactory.create({
@@ -534,7 +784,28 @@ describe('/api/v1/files/', () => {
         .expect(401);
     });
 
-    it('should respond with `409` when the matching file is not ready', async () => {
+    // A preview right after upload must not wait for the queue.
+    it('should serve a file still being moved into storage', async () => {
+      const event = await EventFactory.create({ listed: true });
+      const name = crypto.randomUUID() + '.pdf';
+      await stageUpload('blank.pdf', name);
+      await FileFactory.create({
+        event: { connect: { id: event.id } },
+        field: 'rules',
+        accessLevel: 'public',
+        originalName: 'pending.pdf',
+        name,
+        uploadStatus: 'PENDING',
+      });
+
+      const response = await request()
+        .get(`/api/v1/events/${event.id}/files/slots/rules`)
+        .expect(200);
+
+      expect(response.headers['content-disposition']).toContain('pending.pdf');
+    });
+
+    it('should respond with `404` when a pending file is found nowhere', async () => {
       const event = await EventFactory.create({ listed: true });
       await FileFactory.create({
         event: { connect: { id: event.id } },
@@ -545,7 +816,7 @@ describe('/api/v1/files/', () => {
 
       await request()
         .get(`/api/v1/events/${event.id}/files/slots/rules`)
-        .expect(409);
+        .expect(404);
     });
 
     it('should keep serving the ready file while a replacement is pending', async () => {

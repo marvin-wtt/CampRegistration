@@ -12,22 +12,22 @@ interface Group {
 // Status is carried along to show what each case models — the calculation
 // itself must not depend on it.
 const people = (
-  country: string | null,
+  group: string | null,
   { A = 0, P = 0, W = 0 }: Group,
-): { country: string | null; status: Status }[] => [
+): { group: string | null; status: Status }[] => [
   ...Array.from({ length: A }, () => ({
-    country,
+    group,
     status: 'ACCEPTED' as const,
   })),
-  ...Array.from({ length: P }, () => ({ country, status: 'PENDING' as const })),
+  ...Array.from({ length: P }, () => ({ group, status: 'PENDING' as const })),
   ...Array.from({ length: W }, () => ({
-    country,
+    group,
     status: 'WAITLISTED' as const,
   })),
 ];
 
 describe('calculateFreePlaces', () => {
-  describe('per-country capacity (DE 24, FR 25)', () => {
+  describe('per-group capacity (DE 24, FR 25)', () => {
     const capacity = { de: 24, fr: 25 };
 
     it.each<[string, Group, Group, { de: number; fr: number }, number]>([
@@ -117,7 +117,7 @@ describe('calculateFreePlaces', () => {
       });
     });
 
-    it('should never let an overbooked country take places from another', () => {
+    it('should never let an overbooked group take places from another', () => {
       const registrations = [
         ...people('de', { A: 30, P: 5, W: 10 }),
         ...people('fr', { A: 20 }),
@@ -129,7 +129,7 @@ describe('calculateFreePlaces', () => {
       });
     });
 
-    it('should ignore registrations outside every country', () => {
+    it('should ignore registrations outside every group', () => {
       const registrations = [
         ...people('de', { A: 20 }),
         ...people(null, { A: 3 }),
@@ -142,7 +142,7 @@ describe('calculateFreePlaces', () => {
       });
     });
 
-    it('should equal the sum of the per-country free places', () => {
+    it('should equal the sum of the per-group free places', () => {
       const { freePlaces, freePlacesTotal } = calculateFreePlaces(capacity, [
         ...people('de', { A: 7, P: 3, W: 2 }),
         ...people('fr', { A: 12, W: 4 }),
@@ -173,7 +173,7 @@ describe('calculateFreePlaces', () => {
       });
     });
 
-    it('should count registrations without a country', () => {
+    it('should count registrations without a group', () => {
       const registrations = [
         ...people('de', { A: 20 }),
         ...people(null, { A: 4 }),

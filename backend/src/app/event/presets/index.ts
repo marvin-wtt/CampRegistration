@@ -2,7 +2,7 @@ import camp from './camp/index.js';
 import seminar from './seminar/index.js';
 import general from './general/index.js';
 import type { EventPreset } from './types.js';
-import { localeForCountry } from './locales.js';
+import { localeForCountry } from '@camp-registration/common/locales';
 import { SurveyModel } from 'survey-core';
 import type { EventPresetName } from '@camp-registration/common/entities';
 
@@ -88,12 +88,12 @@ export function defaultMessageTemplatesForCountries(
 ) {
   const templates = getEventPreset(presetName).messageTemplates;
 
-  return countries.flatMap((country) => {
-    const code = localeForCountry(country);
+  return countries.flatMap((group) => {
+    const code = localeForCountry(group);
 
     return Object.entries(templates).map(([trigger, { subject, body }]) => ({
       trigger,
-      country,
+      group,
       subject: subject[code],
       body: body[code],
     }));
@@ -106,5 +106,3 @@ export function defaultSettingsForPreset(preset: EventPreset) {
     data,
   }));
 }
-
-export { localesForCountries } from './locales.js';

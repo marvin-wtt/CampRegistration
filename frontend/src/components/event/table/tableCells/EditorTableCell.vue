@@ -349,7 +349,7 @@ action:
   save: 'Speichern'
 
 error:
-  hint: 'Bitte aktualisieren Sie die Spaltendefinition.'
+  hint: 'Bitte aktualisiere die Spaltendefinition.'
   registration_id: 'Registrierungs-ID wurde nicht gefunden!'
   field_name: 'Feldname ist erforderlich!'
 </i18n>

@@ -25,10 +25,18 @@
         </q-btn>
       </q-bar>
 
-      <q-scroll-area class="col-grow">
+      <!-- Capped at the dialog width: the content box otherwise grows to fit
+           the form, which then never sees a narrow screen and keeps its
+           desktop layout, hiding the mobile table of contents. -->
+      <q-scroll-area
+        class="col-grow"
+        :content-style="{ width: '100%' }"
+        :content-active-style="{ width: '100%' }"
+      >
         <registration-form
           :event-details="event"
           :data="data"
+          :group
           readonly
         />
       </q-scroll-area>
@@ -52,6 +60,7 @@ const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent();
 defineProps<{
   event: EventDetails;
   data: Registration['data'];
+  group: Registration['group'];
 }>();
 
 defineEmits([...useDialogPluginComponent.emits]);

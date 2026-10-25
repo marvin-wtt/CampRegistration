@@ -216,7 +216,7 @@ describe('changesForRegistration', () => {
       id: 'registration-1',
       data,
       locale: 'en-US',
-      country: null,
+      group: null,
       ...overrides,
     }) as unknown as Registration;
 
@@ -224,7 +224,7 @@ describe('changesForRegistration', () => {
     const changes = changesForRegistration(
       simpleEvent,
       registrationWith({ diet: 'vegan' }),
-      registrationWith({ diet: 'vegetarian' }, { country: 'de' }),
+      registrationWith({ diet: 'vegetarian' }, { group: 'de' }),
     );
 
     expect(changes).toMatchObject([
@@ -232,9 +232,32 @@ describe('changesForRegistration', () => {
     ]);
   });
 
-  it('falls back to the registration locale when there is no country', () => {
+  it("uses the group's language, not its country code", () => {
+    const event = {
+      ...eventWith({
+        elements: [
+          {
+            type: 'text',
+            name: 'diet',
+            title: { default: 'Diet', cs: 'Strava' },
+          },
+        ],
+      }),
+      countries: ['de', 'cz'],
+    } as unknown as Event;
+
     const changes = changesForRegistration(
-      simpleEvent,
+      event,
+      registrationWith({ diet: 'vegan' }),
+      registrationWith({ diet: 'none' }, { group: 'cz' }),
+    );
+
+    expect(changes).toMatchObject([{ label: 'Strava' }]);
+  });
+
+  it('falls back to the registration locale when there is no group', () => {
+    const changes = changesForRegistration(
+      { ...simpleEvent, countries: ['de', 'fr'] },
       registrationWith({ diet: 'vegan' }),
       registrationWith({ diet: 'vegetarian' }, { locale: 'en-US' }),
     );

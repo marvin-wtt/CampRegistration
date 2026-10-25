@@ -1,28 +1,33 @@
-import { SurveyModel } from 'survey-core';
-
-type Translatable<T = string> = T | Record<string, T>;
+import type { SurveyModel } from 'survey-core';
+import type { PerGroup, Translatable } from '../../entities/index.js';
+import {
+  eventGroup,
+  eventGroupFields,
+  translate,
+  utcCarrierToNaiveDateTime,
+} from '../../utils/index.js';
 
 export interface Data {
   countries: string[];
   name: Translatable;
-  organizer: Translatable;
-  contactEmail: Translatable;
-  maxParticipants: Translatable<number>;
+  organizer: PerGroup<string>;
+  contactEmail: PerGroup<string>;
+  maxParticipants: PerGroup<number>;
+  // Naive local datetimes, or the backend's UTC carriers of them.
   startAt: Date | string;
   endAt: Date | string;
   minAge: number;
   maxAge: number;
   location: Translatable | null;
-  price: Translatable<number>;
-  freePlaces: Translatable<number> | null;
+  price: number;
+  freePlaces: PerGroup<number> | null;
   logo?: string | null;
 }
 
+// Resolved once per locale.
 const EVENT_VARIABLES = [
   'countries',
   'name',
-  'organizer',
-  'contactEmail',
   'startAt',
   'startAtDate',
   'startAtTime',
@@ -33,42 +38,67 @@ const EVENT_VARIABLES = [
   'maxAge',
   'location',
   'price',
-  'freePlaces',
   'logo',
 ] as const;
 
 type EventVariable = (typeof EVENT_VARIABLES)[number];
 
+type GroupVariable = keyof ReturnType<typeof eventGroupFields>;
+
+// Resolved for the group. A record, so a field added to `eventGroupFields`
+// can't be forgotten here.
+const GROUP_FIELDS: Record<GroupVariable, true> = {
+  organizer: true,
+  contactEmail: true,
+  maxParticipants: true,
+  freePlaces: true,
+};
+
+const GROUP_VARIABLES = Object.keys(GROUP_FIELDS) as GroupVariable[];
+
 // Every variable `setVariables` defines. Forms reference them in expressions,
 // so the form editor's linter must know them.
 export const VARIABLE_NAMES: readonly string[] = [
   ...EVENT_VARIABLES.map((name) => `event.${name}`),
+  ...GROUP_VARIABLES.map((name) => `event.${name}`),
+  'event.group',
   '_validationEnabled',
 ];
 
-export const setVariables = (model: SurveyModel, data: Data | undefined) => {
+export interface VariableOptions {
+  // The group chosen before the form, by its country code. Without one, only
+  // a single-group event resolves its per-group fields.
+  group?: string | null | undefined;
+}
+
+export const setVariables = (
+  model: SurveyModel,
+  data: Data | undefined,
+  options: VariableOptions = {},
+) => {
   if (!data) {
     return;
   }
 
-  const { t, toDate, toTime } = converter(model.locale);
+  const locale = model.locale || 'en';
+  const { toDate, toTime } = converter(locale);
+  // One representation on every side, so expressions over them agree.
+  const startAt = naiveDateTime(data.startAt);
+  const endAt = naiveDateTime(data.endAt);
 
   const values: Record<EventVariable, unknown> = {
     countries: data.countries,
-    name: t(data.name),
-    organizer: t(data.organizer),
-    contactEmail: t(data.contactEmail),
-    startAt: data.startAt,
-    startAtDate: toDate(data.startAt),
-    startAtTime: toTime(data.startAt),
-    endAt: data.endAt,
-    endAtDate: toDate(data.endAt),
-    endAtTime: toTime(data.endAt),
+    name: translate(data.name, locale),
+    startAt,
+    startAtDate: toDate(startAt),
+    startAtTime: toTime(startAt),
+    endAt,
+    endAtDate: toDate(endAt),
+    endAtTime: toTime(endAt),
     minAge: data.minAge,
     maxAge: data.maxAge,
-    location: data.location ? t(data.location) : null,
-    price: t(data.price),
-    freePlaces: data.freePlaces,
+    location: translate(data.location, locale) ?? null,
+    price: data.price,
     logo: data.logo ?? null,
   };
 
@@ -77,7 +107,18 @@ export const setVariables = (model: SurveyModel, data: Data | undefined) => {
   }
 
   model.setVariable('_validationEnabled', model.validationEnabled);
+
+  const group = eventGroup(data, options.group);
+  const fields = eventGroupFields(data, group);
+  model.setVariable('event.group', group);
+  for (const name of GROUP_VARIABLES) {
+    model.setVariable(`event.${name}`, fields[name]);
+  }
 };
+
+// Naive digits as written; a `Date` is the backend's UTC carrier of them.
+const naiveDateTime = (value: Date | string): string =>
+  typeof value === 'string' ? value : utcCarrierToNaiveDateTime(value);
 
 const converter = (locale: string) => {
   const fallbackLocale = 'en-US';
@@ -121,41 +162,7 @@ const converter = (locale: string) => {
     });
   }
 
-  const t = (
-    value: Record<string, unknown> | string | number,
-    fallback?: string,
-  ): unknown => {
-    // Expected input: [value: object | string, locale: string, fallback?: string]
-    const defaultFallback = 'en-US';
-
-    if (typeof value === 'string' || typeof value === 'number') {
-      return value;
-    }
-
-    if (locale in value) {
-      return value[locale];
-    }
-
-    const shortLocale = locale.split('-')[0];
-    if (shortLocale in value) {
-      return value[shortLocale];
-    }
-
-    fallback ??= defaultFallback;
-    if (fallback in value) {
-      return value[fallback];
-    }
-
-    const shortFallback = fallback.split('-')[0];
-    if (shortFallback in value) {
-      return value[shortFallback];
-    }
-
-    return Object.values(value)[0];
-  };
-
   return {
-    t,
     toDate,
     toTime,
   };

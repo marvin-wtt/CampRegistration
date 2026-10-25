@@ -4,6 +4,7 @@ import type {
   Question,
 } from 'survey-core';
 import { Serializer } from 'survey-core';
+import type { Localized } from '../../locales.js';
 
 type RoleQuestionConfiguration = ICustomQuestionTypeConfiguration & {
   initialChoices: ItemValue[];
@@ -21,7 +22,7 @@ const roleQuestion: RoleQuestionConfiguration = {
       fr: 'Sélectionner un rôle...',
       pl: 'Wybierz rolkę...',
       cs: 'Vyberte roli...',
-    },
+    } satisfies Localized,
     choices: [
       {
         value: 'participant',
@@ -31,7 +32,7 @@ const roleQuestion: RoleQuestionConfiguration = {
           fr: 'Participant',
           pl: 'Uczestnicy',
           cs: 'Účastníci',
-        },
+        } satisfies Localized,
       },
       {
         value: 'counselor',
@@ -41,7 +42,7 @@ const roleQuestion: RoleQuestionConfiguration = {
           fr: 'Conseiller',
           pl: 'Opiekun',
           cs: 'Pečovatel',
-        },
+        } satisfies Localized,
       },
     ],
   },

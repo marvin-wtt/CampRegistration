@@ -46,6 +46,21 @@ describe('registrationAuditPolicy.details', () => {
     });
   });
 
+  it('records a move to another group with its new value', () => {
+    const before = {
+      status: 'ACCEPTED',
+      group: 'de',
+      customData: {},
+      data: {},
+    };
+    const after = { status: 'ACCEPTED', group: 'fr', customData: {}, data: {} };
+
+    expect(policy.details(before, after)).toEqual({
+      changedFields: ['group'],
+      values: { group: 'fr' },
+    });
+  });
+
   it('reports custom file slots that changed', () => {
     const base = { status: 'PENDING', customData: {}, data: {} };
 

@@ -41,6 +41,7 @@ export default {
         customFiles: 'Benutzerdefinierte Datei',
         status: 'Status',
         country: 'Land',
+        group: 'Gruppe',
       },
       values: {
         status: {
@@ -93,7 +94,7 @@ export default {
       label: 'Automatische E-Mail',
       fields: {
         trigger: 'Auslöser',
-        country: 'Land',
+        group: 'Gruppe',
         subject: 'Betreff',
         body: 'Inhalt',
         priority: 'Priorität',

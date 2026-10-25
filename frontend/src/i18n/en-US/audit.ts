@@ -41,6 +41,7 @@ export default {
         customFiles: 'Custom file',
         status: 'Status',
         country: 'Country',
+        group: 'Group',
       },
       values: {
         status: {
@@ -93,7 +94,7 @@ export default {
       label: 'Automated email',
       fields: {
         trigger: 'Trigger',
-        country: 'Country',
+        group: 'Group',
         subject: 'Subject',
         body: 'Body',
         priority: 'Priority',

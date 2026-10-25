@@ -7,6 +7,7 @@ import type {
 import { MessageTemplateService } from '#app/messageTemplate/message-template.service';
 import logger from '#core/logger';
 import { resolve } from '#core/ioc/container';
+import { eventGroup } from '@camp-registration/common/utils';
 
 export type MessageTemplateWithFiles = MessageTemplate & {
   attachments: File[];
@@ -78,20 +79,15 @@ export function messageToRenderable(
 export async function loadMessageTemplate(
   event: Event,
   trigger: string,
-  country: string | null | undefined,
+  group: string | null | undefined,
 ): Promise<MessageTemplateWithFiles | null> {
   try {
     const messageTemplateService = resolve(MessageTemplateService);
 
-    // When the event has only one group, we can assume the person is in that group
-    if (country === null && event.countries.length === 1) {
-      country = event.countries[0];
-    }
-
     return await messageTemplateService.getMessageTemplateByName(
       event.id,
       trigger,
-      country,
+      eventGroup(event, group),
     );
   } catch (error) {
     logger.error(error);

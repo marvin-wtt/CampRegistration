@@ -9,12 +9,16 @@ import { StorageRegistry } from '#core/storage/storage.registry';
 import { BaseService } from '#core/base/BaseService';
 import { extractKeyFromFieldName, fileNameExtension } from '#utils/file';
 import { isClientDisconnect } from '#utils/stream';
+import ApiError from '#utils/ApiError';
+import httpStatus from 'http-status';
+import { buffer } from 'node:stream/consumers';
 import { inject, injectable } from 'inversify';
 import { Config } from '#core/ioc/decorators';
 import type { AppConfig } from '#config';
 import { Queue } from '#core/queue/Queue';
 import { QueueManager } from '#core/queue/QueueManager';
 import type { StorageFile } from '#core/storage/storage';
+import type { MailAttachment } from '#core/mail/mail.types';
 import { selectFileByLocale } from '@camp-registration/common/form';
 
 type RequestFile = Express.Multer.File;
@@ -292,6 +296,7 @@ export class FileService extends BaseService {
     field?: string,
     locale?: string | null,
     accessLevel?: string,
+    group?: string | null,
   ) {
     const originalFileName = name
       ? name + fileNameExtension(file.filename)
@@ -310,6 +315,7 @@ export class FileService extends BaseService {
       data: {
         ...fileData,
         ...modelData,
+        group: group ?? null,
         uploadStatus: 'PENDING',
       },
     });
@@ -336,9 +342,15 @@ export class FileService extends BaseService {
   }
 
   /**
-   * Resolves the best-matching file for a form slot ({_file.<slot>}) on a model
-   * and locale. The slot maps to the file's `field` column. Readiness and access
-   * are not checked here — that is the caller's (guard/stream) responsibility.
+   * Resolves the best-matching file for a form slot ({_file.<slot>}) on a model,
+   * group and locale. The slot maps to the file's `field` column. Readiness
+   * and access are not checked here — that is the caller's (guard/stream)
+   * responsibility.
+   *
+   * The group narrows first: a file of the group, else one for every group
+   * (`group` null) — never another group's, since its terms are not this
+   * one's. Only within those does the locale decide, so a group's own file in
+   * another language beats a generic one in the reader's.
    *
    * Several files can share a (field, locale) pair while a replacement is
    * uploading. Ready files are tried first so a pending replacement doesn't
@@ -349,6 +361,7 @@ export class FileService extends BaseService {
     model: ModelData,
     slot: string,
     locale: string | undefined,
+    group: string | null = null,
   ): Promise<File | null> {
     const files = await this.prisma.file.findMany({
       where: {
@@ -358,11 +371,23 @@ export class FileService extends BaseService {
       orderBy: { createdAt: 'desc' },
     });
 
-    if (files.length === 0) {
-      return null;
+    const candidates = [
+      ...(group ? [files.filter((file) => file.group === group)] : []),
+      files.filter((file) => file.group === null),
+    ];
+    const targetLocale = locale ?? 'en';
+
+    for (const pool of candidates) {
+      const file = this.pickByLocale(pool, targetLocale);
+      if (file) {
+        return file;
+      }
     }
 
-    const targetLocale = locale ?? 'en';
+    return null;
+  }
+
+  private pickByLocale(files: File[], locale: string): File | null {
     const ready = files
       .filter((file) => file.uploadStatus === 'READY')
       // Stable sort: newest-first order is kept within each access level.
@@ -373,10 +398,11 @@ export class FileService extends BaseService {
       );
 
     return (
-      selectFileByLocale(ready, targetLocale) ??
-      selectFileByLocale(files, targetLocale) ??
+      selectFileByLocale(ready, locale) ??
+      selectFileByLocale(files, locale) ??
       ready.at(0) ??
-      files[0]
+      files.at(0) ??
+      null
     );
   }
 
@@ -433,13 +459,13 @@ export class FileService extends BaseService {
     });
   }
 
-  async getFileStream(file: StorageFile) {
-    const stream = await this.storageRegistry
-      .getStorage(file.storageLocation)
-      .openReadStream(file);
+  async getFileStream(
+    file: StorageFile & { uploadStatus?: File['uploadStatus'] },
+  ) {
+    const stream = await this.openReadStream(file);
 
     // Decryption/storage errors surface asynchronously, possibly before the
-    // consumer (HTTP response, mail transport) attaches its own 'error'
+    // consumer (the HTTP response) attaches its own 'error'
     // listener — without one here, such an error crashes the process.
     stream.on('error', (error: Error) => {
       // Says nothing about the file, and every cancelled preview emits one —
@@ -455,12 +481,60 @@ export class FileService extends BaseService {
     return stream;
   }
 
+  /**
+   * The whole file in memory, for consumers that hold it anyway, such as mail
+   * attachments: unlike a stream, nothing is left open when it goes unread.
+   */
+  async getFileBuffer(
+    file: StorageFile & { uploadStatus?: File['uploadStatus'] },
+  ): Promise<Buffer> {
+    return buffer(await this.openReadStream(file));
+  }
+
+  /** Files attached to a mail under their original names, read whole. */
+  async getMailAttachments(files: StorageFile[]): Promise<MailAttachment[]> {
+    return Promise.all(
+      files.map(async (file) => ({
+        filename: file.originalName,
+        content: await this.getFileBuffer(file),
+        contentType: file.type,
+      })),
+    );
+  }
+
+  // A pending upload already sits complete in the tmp dir, so it is served
+  // from there until the queue has moved it — a preview right after upload
+  // works. One moved in the meantime is read from its storage instead, with
+  // the record reloaded for the encryption format the move recorded.
+  private async openReadStream(
+    file: StorageFile & { uploadStatus?: File['uploadStatus'] },
+  ) {
+    if (file.uploadStatus === 'PENDING') {
+      try {
+        return await this.tmpStorage.openReadStream(file);
+      } catch (error) {
+        if (
+          !(error instanceof ApiError) ||
+          error.statusCode !== httpStatus.NOT_FOUND
+        ) {
+          throw error;
+        }
+      }
+      file = (await this.getFileById(file.id)) ?? file;
+    }
+
+    return this.storageRegistry
+      .getStorage(file.storageLocation)
+      .openReadStream(file);
+  }
+
   async updateFile(
     id: string,
     data: {
       name?: string;
       field?: string;
       locale?: string | null;
+      group?: string | null;
       accessLevel?: string;
     },
   ) {
@@ -470,6 +544,7 @@ export class FileService extends BaseService {
         originalName: data.name,
         field: data.field,
         locale: data.locale,
+        group: data.group,
         accessLevel: data.accessLevel,
       },
     });

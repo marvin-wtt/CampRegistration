@@ -93,8 +93,8 @@ action:
 </i18n>
 
 <i18n lang="yaml" locale="de">
-description: 'Um Ihr Konto mit der Zwei-Faktor-Authentifizierung zu sichern,
-  geben Sie bitte Ihr Passwort ein, um einen QR-Code zur Einrichtung zu
+description: 'Um dein Konto mit der Zwei-Faktor-Authentifizierung zu sichern,
+  gib bitte dein Passwort ein, um einen QR-Code zur Einrichtung zu
   generieren.'
 field:
   password:

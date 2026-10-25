@@ -188,11 +188,11 @@ event:
 newsletter:
   pending:
     title: 'Dieser Newsletter kann noch nicht senden'
-    message: '{organization} wartet auf die Verifizierung. Sie können alles vorbereiten — nur das Senden ist deaktiviert.'
+    message: '{organization} wartet auf die Verifizierung. Du kannst alles vorbereiten — nur das Senden ist deaktiviert.'
     short: 'Senden bis zur Verifizierung deaktiviert'
   rejected:
     title: 'Dieser Newsletter kann nicht senden'
-    message: '{organization} wurde nicht verifiziert. Korrigieren Sie die Angaben und reichen Sie sie erneut ein.'
+    message: '{organization} wurde nicht verifiziert. Korrigiere die Angaben und reiche sie erneut ein.'
     short: 'Senden deaktiviert — nicht verifiziert'
 action: 'Organisation öffnen'
 close: 'Schließen'

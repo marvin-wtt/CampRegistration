@@ -516,7 +516,7 @@ export class ChoreAssignmentService extends BaseService {
     const ctx = {
       choreId: chore.id,
       date: query.date,
-      balanceCountries: query.role === 'MEMBER' && chore.balanceCountries,
+      balanceGroups: query.role === 'MEMBER' && chore.balanceGroups,
     };
 
     const unit = query.role === 'SUPERVISOR' ? 'PERSON' : query.unit;
@@ -670,7 +670,7 @@ export class ChoreAssignmentService extends BaseService {
       select: {
         id: true,
         role: true,
-        country: true,
+        group: true,
         bed: { select: { roomId: true } },
       },
     });
@@ -679,7 +679,7 @@ export class ChoreAssignmentService extends BaseService {
       id: registration.id,
       // A registration without a role is a participant.
       staff: registration.role !== null && registration.role !== 'participant',
-      country: registration.country,
+      group: registration.group,
       roomId: registration.bed?.roomId ?? null,
     }));
   }
@@ -697,7 +697,7 @@ function occurrenceSpec(
     unit,
     effort: effortOf(chore, slot),
     eligibility: chore.eligibility,
-    balanceCountries: chore.balanceCountries,
+    balanceGroups: chore.balanceGroups,
     headcount: slot?.headcount ?? chore.defaultCount ?? 0,
     supervisorCount: slot?.supervisorCount ?? chore.supervisorCount,
   };

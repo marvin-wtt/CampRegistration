@@ -328,23 +328,6 @@ export const eventWithAllEventDataTypes = {
   ]),
 };
 
-export const eventWithoutCountryData = {
-  ...eventWithMaxParticipantsInternational,
-  form: createForm([
-    {
-      name: 'first_name',
-      type: 'text',
-      isRequired: true,
-    },
-    {
-      name: 'country',
-      type: 'text',
-      eventDataType: 'country',
-      isRequired: false,
-    },
-  ]),
-};
-
 export const eventWithEmail = {
   ...eventPrivate,
   countries: ['de', 'fr'],

@@ -274,6 +274,7 @@ import {
 } from '@/composables/messageDraft';
 import { useRegistrationContact } from '@/composables/registrationContact';
 import { uniqueRegistrations } from '@/components/event/contact/contactHelpers';
+import { eventGroup, forGroup } from '@camp-registration/common/utils';
 
 const {
   registrations,
@@ -322,11 +323,18 @@ const to = ref<Contact[]>([]);
 const replyTo = ref<string>('');
 const suggestedReplyTo = computed(() => defaultReplyTo());
 
-const recipientCountries = computed(() =>
-  uniqueRegistrations(to.value)
-    .map((r) => r.computedData.address.country)
-    .filter((c): c is string => c != null),
-);
+// Resolved as the mails resolve a registration's contact (`eventGroup`), so
+// a group the event doesn't run falls back like it does there.
+const recipientGroups = computed<string[]>(() => {
+  const event = eventDetailsStore.data;
+  if (!event) {
+    return [];
+  }
+
+  return uniqueRegistrations(to.value)
+    .map((r) => eventGroup(event, r.group))
+    .filter((c): c is string => c != null);
+});
 
 function defaultReplyTo(): string {
   const contactEmail = eventDetailsStore.data?.contactEmail;
@@ -337,18 +345,20 @@ function defaultReplyTo(): string {
     return contactEmail;
   }
 
-  const countries = recipientCountries.value;
-  if (countries.length > 0) {
+  const groups = recipientGroups.value;
+  if (groups.length > 0) {
     const freq = new Map<string, number>();
-    for (const c of countries) {
-      freq.set(c, (freq.get(c) ?? 0) + 1);
+    for (const group of groups) {
+      freq.set(group, (freq.get(group) ?? 0) + 1);
     }
     const dominant = [...freq.entries()].sort((a, b) => b[1] - a[1])[0]![0];
-    if (contactEmail[dominant]) {
-      return contactEmail[dominant];
+    const contact = forGroup(contactEmail, dominant);
+    if (contact) {
+      return contact;
     }
   }
 
+  // A single field takes a single address: the first group's.
   return Object.values(contactEmail)[0] ?? '';
 }
 
@@ -361,7 +371,7 @@ function applyDefaultReplyTo() {
 }
 
 // Once the user finishes choosing recipients, derive the reply-to from the
-// selected recipients' countries — but only when the field is still empty so a
+// selected recipients' groups — but only when the field is still empty so a
 // manually entered address is preserved.
 function onToBlur() {
   applyDefaultReplyTo();
@@ -677,7 +687,9 @@ function storedRecipient(contact: Contact): StoredRecipient {
         type: 'group',
         name: contact.name,
         registrationIds: contact.registrations.map((r) => r.id),
-        ...(contact.country !== undefined ? { country: contact.country } : {}),
+        ...(contact.eventGroup !== undefined
+          ? { eventGroup: contact.eventGroup }
+          : {}),
       }
     : { type: 'registration', registrationId: contact.registration.id };
 }
@@ -700,8 +712,8 @@ function restoredContact(
         type: 'group',
         name: recipient.name,
         registrations: members,
-        ...(recipient.country !== undefined
-          ? { country: recipient.country }
+        ...(recipient.eventGroup !== undefined
+          ? { eventGroup: recipient.eventGroup }
           : {}),
       }
     : null;

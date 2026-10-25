@@ -15,6 +15,10 @@ import {
   EVENT_LOGO_SLOT,
   EVENT_BANNER_SLOT,
 } from '@camp-registration/common/form';
+import {
+  missingSlotFiles,
+  type MissingSlotFile,
+} from '@/utils/fileSlotCoverage';
 
 // Matches {_file.slotName} placeholders used in SurveyJS form definitions.
 const FILE_SLOT_REGEX = /\{\s?_file\.([a-z0-9_-]+)\s?}/g;
@@ -135,50 +139,24 @@ export const useEventFilesStore = defineStore('eventFiles', () => {
     return [...declared].filter((slot) => !uploadedFields.has(slot));
   });
 
-  // Slots that have at least one file but are missing a locale-specific file for one or more
-  // of the event's configured locales (only when no null-locale fallback covers all locales).
-  const slotsWithMissingLocales = computed<
-    { slot: string; missingLocales: string[] }[]
-  >(() => {
-    const locales = eventStore.data?.locales;
-    if (!locales?.length) {
+  // Files missing from slots that already hold some, per group and language.
+  const missingFiles = computed<MissingSlotFile[]>(() => {
+    const event = eventStore.data;
+    if (!event) {
       return [];
     }
 
-    const filesByField = new Map<string, ServiceFile[]>();
-    for (const file of data.value ?? []) {
-      if (!file.field) {
-        continue;
-      }
-      const existing = filesByField.get(file.field);
-      if (existing) {
-        existing.push(file);
-      } else {
-        filesByField.set(file.field, [file]);
-      }
-    }
-
-    return [...filesByField.entries()].flatMap(([slot, files]) => {
-      if (files.some((f) => f.locale === null)) {
-        return [];
-      }
-      const covered = new Set(files.map((f) => f.locale));
-      const missing = locales.filter((l) => !covered.has(l));
-
-      return missing.length ? [{ slot, missingLocales: missing }] : [];
+    return missingSlotFiles(data.value ?? [], {
+      locales: event.locales,
+      groups: event.countries,
     });
   });
 
   // Number of files that need attention: one per declared-but-not-uploaded slot,
-  // plus one per missing locale on slots that already have files. A pending slot
+  // plus one per missing file on slots that already have files. A pending slot
   // has no files at all, so the two sets are disjoint and can be summed.
   const missingFilesCount = computed<number>(
-    () =>
-      pendingSlots.value.length +
-      slotsWithMissingLocales.value.reduce(
-        (sum, { missingLocales }) => sum + missingLocales.length,
-        0,
-      ),
+    () => pendingSlots.value.length + missingFiles.value.length,
   );
 
   async function fetchData(opts?: { background?: boolean }) {
@@ -318,7 +296,7 @@ export const useEventFilesStore = defineStore('eventFiles', () => {
     logoFile,
     bannerFile,
     pendingSlots,
-    slotsWithMissingLocales,
+    missingFiles,
     missingFilesCount,
     downloadFile,
     getUrl,

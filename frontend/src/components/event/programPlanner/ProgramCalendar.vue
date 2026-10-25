@@ -2514,7 +2514,7 @@ public:
 dialog:
   delete:
     title: 'Ereignis löschen'
-    message: 'Sind Sie sicher, dass Sie dieses Ereignis löschen möchten?'
+    message: 'Bist du sicher, dass du dieses Ereignis löschen möchtest?'
 actions:
   printDay: 'Diesen Tag drucken'
 public:

@@ -19,6 +19,9 @@ export interface Registration extends Identifiable, Timestamps {
     };
   };
   customData: Record<string, unknown>;
+  // The group, by its country code; the address's own country is in
+  // `computedData.address`.
+  group: string | null;
   status: 'PENDING' | 'WAITLISTED' | 'ACCEPTED';
   locale: string;
   room?: Translatable | null;
@@ -27,10 +30,11 @@ export interface Registration extends Identifiable, Timestamps {
 
 export type RegistrationCreateData = Pick<Registration, 'data'> & {
   locale?: string | null;
+  group?: string | null;
 };
 
 export type RegistrationUpdateData = Partial<
-  Pick<Registration, 'data' | 'customData' | 'status'>
+  Pick<Registration, 'data' | 'customData' | 'status' | 'group'>
 > & {
   customFiles?: Record<string, string | null>;
 };

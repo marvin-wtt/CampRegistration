@@ -43,14 +43,14 @@ function attachmentsChanged(
   return ids(before) !== ids(after);
 }
 
-// Which automated email (and country variant) an entry is about.
+// Which automated email (and group variant) an entry is about.
 export function templateIdentity(
-  template: Pick<MessageTemplate, 'trigger' | 'country'> | null | undefined,
+  template: Pick<MessageTemplate, 'trigger' | 'group'> | null | undefined,
 ): AuditDetails {
   if (!template) {
     return {};
   }
   return {
-    context: { trigger: template.trigger, country: template.country },
+    context: { trigger: template.trigger, group: template.group },
   };
 }

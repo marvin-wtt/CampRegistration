@@ -80,7 +80,7 @@ export class NewsletterSubscriberController extends BaseController {
     const result = await this.subscriberService.importSubscribersFromEvent(
       newsletter.id,
       body.eventId,
-      body.country,
+      body.group,
       body.requireConsent,
     );
 

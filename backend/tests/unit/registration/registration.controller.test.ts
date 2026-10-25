@@ -93,6 +93,7 @@ const buildRegistration = (
     city: null,
     zipCode: null,
     country: null,
+    group: null,
     newsletterConsent: null,
     locale: 'en-US',
     createdAt: new Date('2024-01-01'),
@@ -367,6 +368,31 @@ describe('RegistrationController.update', () => {
         },
       ],
     );
+  });
+
+  it('moves the registration to another group without a message', async () => {
+    const previousRegistration = buildRegistration({ status: 'ACCEPTED' });
+    const registration = buildRegistration({ status: 'ACCEPTED' });
+    registrationService.updateRegistrationById.mockResolvedValue(registration);
+    const req = fakeRequest({
+      models: { event, registration: previousRegistration },
+      validateResult: {
+        body: { group: 'fr' },
+        query: { suppressMessage: false },
+      },
+    });
+
+    await controller.update(req, fakeResponse());
+
+    expect(registrationService.updateRegistrationById).toHaveBeenCalledWith(
+      event,
+      previousRegistration.id,
+      expect.objectContaining({ group: 'fr', data: undefined }),
+      expect.anything(),
+    );
+    expect(RegistrationUpdatedMessage.enqueueFor).not.toHaveBeenCalled();
+    expect(RegistrationAcceptedMessage.enqueueFor).not.toHaveBeenCalled();
+    expect(RegistrationConfirmedMessage.enqueueFor).not.toHaveBeenCalled();
   });
 });
 

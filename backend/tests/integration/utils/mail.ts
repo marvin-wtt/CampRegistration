@@ -8,6 +8,12 @@ export function expectEmailWith(data: Partial<BuiltMail>) {
   expect(mailer.sendMail).toHaveBeenCalledWith(expect.objectContaining(data));
 }
 
+export function expectNoEmailWith(data: Partial<BuiltMail>) {
+  expect(mailer.sendMail).not.toHaveBeenCalledWith(
+    expect.objectContaining(data),
+  );
+}
+
 export function expectEmailCount(count: number) {
   expect(mailer.sendMail).toBeCalledTimes(count);
 }

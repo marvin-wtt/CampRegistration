@@ -92,24 +92,23 @@ export class RegistrationService extends BaseService {
 
   async createRegistration(
     event: EventWithFreePlaces,
-    data: Pick<Registration, 'data' | 'locale'>,
+    data: Pick<Registration, 'data' | 'locale' | 'group'>,
     fileField: string,
   ) {
     // Built in the locale the data was validated in: event variables such as
     // `{event.price}` resolve per locale, so computed values can differ.
-    const form = new RegistrationForm(event, { locale: data.locale }).load(
-      data.data,
-    );
+    // Resolved by validation: one of the event's countries, defaulted for a
+    // single-group event.
+    const { group } = data;
+
+    const form = new RegistrationForm(event, {
+      locale: data.locale,
+      group,
+    }).load(data.data);
 
     const formData = form.data;
-    const computedData = computedRegistrationData(form.extractEventData());
-
-    if (event.countries.length > 1 && !computedData.country) {
-      throw new ApiError(
-        httpStatus.BAD_REQUEST,
-        'Country data is required for events with multiple countries. This is likely due to an invalid registration form',
-      );
-    }
+    const eventData = form.extractEventData();
+    const computedData = computedRegistrationData(eventData);
 
     const fileIds = form.getFileIds();
 
@@ -132,27 +131,21 @@ export class RegistrationService extends BaseService {
         return registrationCount >= event.maxParticipants;
       }
 
-      // Max participants per country
-      // Throw error when country is missing
-      if (
-        !computedData.country ||
-        !(computedData.country in event.maxParticipants)
-      ) {
-        throw new ApiError(
-          httpStatus.BAD_REQUEST,
-          'Invalid or missing country data',
-        );
+      // Max participants per group
+      // Throw error when group is missing
+      if (!group || !(group in event.maxParticipants)) {
+        throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid or missing group');
       }
 
       const registrationCount = await transaction.registration.count({
         where: {
           eventId: event.id,
           OR: [{ role: 'participant' }, { role: null }],
-          country: computedData.country,
+          group,
         },
       });
 
-      return registrationCount >= event.maxParticipants[computedData.country];
+      return registrationCount >= event.maxParticipants[group];
     };
 
     // Which privacy information this person was shown, resolved before the
@@ -177,6 +170,7 @@ export class RegistrationService extends BaseService {
           data: {
             ...data,
             ...computedData,
+            group,
             id: undefined, // Force new ID generation
             data: formData,
             status,
@@ -213,11 +207,12 @@ export class RegistrationService extends BaseService {
       Prisma.RegistrationUpdateInput,
       'status' | 'data' | 'customData'
     > & {
+      group?: string;
       customFiles?: Record<string, string | null>;
     },
     sessionId: string,
   ) {
-    // Status and custom data are plain field writes; only form data and
+    // Status, group and custom data are plain field writes; only form data and
     // custom file slots require a transactional file sync.
     if (!data.data && !data.customFiles) {
       return this.transaction(async (tx) => {
@@ -230,6 +225,7 @@ export class RegistrationService extends BaseService {
           data: {
             customData: data.customData,
             status: data.status,
+            group: data.group,
           },
           include: this.registrationInclude,
         });
@@ -240,20 +236,25 @@ export class RegistrationService extends BaseService {
       });
     }
 
-    let computedData: Partial<Prisma.RegistrationCreateInput> = {};
-    let formFileIds: string[] | undefined;
-
-    if (data.data) {
-      const form = new RegistrationForm(event).load(data.data);
-      computedData = computedRegistrationData(form.extractEventData());
-      formFileIds = form.getFileIds();
-    }
-
     return this.transaction(async (tx) => {
       const before: AuditedRegistration =
         await tx.registration.findUniqueOrThrow({
           where: { id: registrationId },
         });
+
+      let computedData: Partial<Prisma.RegistrationCreateInput> = {};
+      let formFileIds: string[] | undefined;
+
+      if (data.data) {
+        // Read as the form it was answered in: the group's `{event.*}` values
+        // and the locale can change what the form shows and computes.
+        const form = new RegistrationForm(event, {
+          locale: before.locale,
+          group: data.group ?? before.group,
+        }).load(data.data);
+        computedData = computedRegistrationData(form.extractEventData());
+        formFileIds = form.getFileIds();
+      }
       if (data.customFiles) {
         before.customFiles = await this.customFileSlots(tx, registrationId);
       }
@@ -295,6 +296,7 @@ export class RegistrationService extends BaseService {
           data: data.data,
           customData: data.customData,
           status: data.status,
+          group: data.group,
           files,
         },
         include: this.registrationInclude,
@@ -363,11 +365,22 @@ export class RegistrationService extends BaseService {
   }
 
   async updateRegistrationsComputedDataByEvent(event: EventWithFreePlaces) {
-    const form = new RegistrationForm(event);
     const registrations = await this.queryRegistrations(event.id);
 
+    // One form per (locale, group) a registration was answered in.
+    const forms = new Map<string, RegistrationForm>();
+    const formFor = ({ locale, group }: Registration) => {
+      const key = `${locale}|${group ?? ''}`;
+      let form = forms.get(key);
+      if (!form) {
+        form = new RegistrationForm(event, { locale, group });
+        forms.set(key, form);
+      }
+      return form;
+    };
+
     const results = registrations.map((registration) => {
-      form.load(registration.data);
+      const form = formFor(registration).load(registration.data);
       const computedData = computedRegistrationData(form.extractEventData());
 
       return this.prisma.registration.update({

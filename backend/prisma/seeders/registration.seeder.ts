@@ -4,7 +4,7 @@ import { faker } from '@faker-js/faker/locale/en';
 import moment from 'moment';
 import { RegistrationForm } from '#app/registration/registration.form.js';
 import { computedRegistrationData } from '#app/registration/registration.helper.js';
-import { localeForCountry } from '#app/event/presets/locales.js';
+import { localeForCountry } from '@camp-registration/common/locales';
 import {
   buildRegistrationData,
   freePlacesFor,
@@ -36,11 +36,11 @@ export class RegistrationSeeder {
       );
 
       const files = await this.seedUploads(fileFields, data);
-      const locale = localeForCountry(registrant.country);
+      const locale = localeForCountry(registrant.group);
 
       await RegistrationFactory.create({
         event: { connect: { id: this.event.id } },
-        ...this.computedData(data, waitingList, locale),
+        ...this.computedData(data, waitingList, registrant.group, locale),
         locale,
         data,
         files: files.length
@@ -60,8 +60,8 @@ export class RegistrationSeeder {
   }
 
   private createRegistrant(overrides: Data): Registrant {
-    const country =
-      (overrides.country as string | undefined) ??
+    const group =
+      (overrides.group as string | undefined) ??
       faker.helpers.arrayElement(this.event.countries);
     const role = (overrides.role as string | undefined) ?? 'participant';
     const firstName = faker.person.firstName();
@@ -88,7 +88,8 @@ export class RegistrationSeeder {
       street: faker.location.streetAddress(),
       city: faker.location.city(),
       zipCode: faker.location.zipCode(),
-      country,
+      country: group,
+      group,
       guardians: faker.helpers.multiple(
         () => ({
           firstName: faker.person.firstName(),
@@ -151,13 +152,17 @@ export class RegistrationSeeder {
   private computedData(
     data: Record<string, unknown>,
     waitingList: boolean,
+    group: string,
     locale: string,
   ): Partial<Prisma.RegistrationCreateInput> {
     const form = new RegistrationForm(
       { ...this.event, freePlaces: freePlacesFor(this.event, waitingList) },
-      { locale },
+      { locale, group },
     ).load(data);
 
-    return computedRegistrationData(form.extractEventData());
+    return {
+      ...computedRegistrationData(form.extractEventData()),
+      group,
+    };
   }
 }

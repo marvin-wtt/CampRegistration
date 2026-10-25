@@ -250,7 +250,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
         );
         const data = {
           trigger: 'some-event',
-          country: 'gb',
+          group: 'gb',
           subject: 'Test Subject',
           body: 'Test body content',
           priority: 'high',
@@ -269,7 +269,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
         name: 'input is valid',
         data: {
           trigger: 'some-event',
-          country: 'gb',
+          group: 'gb',
           subject: 'Test Subject',
           body: 'Test body content',
           priority: 'high',
@@ -281,7 +281,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
         name: 'subject is missing',
         data: {
           trigger: 'some-event',
-          country: 'gb',
+          group: 'gb',
           body: 'Test body content',
         },
         expected: 400,
@@ -290,7 +290,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
         name: 'subject is number',
         data: {
           trigger: 'some-event',
-          country: 'gb',
+          group: 'gb',
           subject: 2,
           body: 'Test body content',
         },
@@ -301,7 +301,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
         name: 'body is missing',
         data: {
           trigger: 'some-event',
-          country: 'gb',
+          group: 'gb',
           subject: 'Test Subject',
         },
         expected: 400,
@@ -310,7 +310,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
         name: 'body is number',
         data: {
           trigger: 'some-event',
-          country: 'gb',
+          group: 'gb',
           subject: 'Test Subject',
           body: 1,
         },
@@ -320,7 +320,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
       {
         name: 'trigger is missing',
         data: {
-          country: 'gb',
+          group: 'gb',
           subject: 'Test Subject',
           body: 'Test body content',
         },
@@ -330,7 +330,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
         name: 'trigger is null',
         data: {
           trigger: null,
-          country: 'gb',
+          group: 'gb',
           subject: 'Test Subject',
           body: 'Test body content',
         },
@@ -340,7 +340,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
         name: 'trigger is number',
         data: {
           trigger: 1,
-          country: 'gb',
+          group: 'gb',
           subject: 'Test Subject',
           body: 'Test body content',
         },
@@ -348,7 +348,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
       },
       // Country
       {
-        name: 'country is missing',
+        name: 'group is missing',
         data: {
           trigger: 'some-event',
           subject: 'Test Subject',
@@ -357,20 +357,20 @@ describe('/api/v1/events/:eventId/message-templates', () => {
         expected: 400,
       },
       {
-        name: 'country is null',
+        name: 'group is null',
         data: {
           trigger: 'some-event',
-          country: null,
+          group: null,
           subject: 'Test Subject',
           body: 'Test body content',
         },
         expected: 400,
       },
       {
-        name: 'country is invalid',
+        name: 'group is invalid',
         data: {
           trigger: 'some-event',
-          country: 'usa',
+          group: 'usa',
           subject: 'Test Subject',
           body: 'Test body content',
         },
@@ -381,7 +381,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
         name: 'priority is missing',
         data: {
           trigger: 'some-event',
-          country: 'gb',
+          group: 'gb',
           subject: 'Test Subject',
           body: 'Test body content',
         },
@@ -391,7 +391,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
         name: 'priority is invalid',
         data: {
           trigger: 'some-event',
-          country: 'gb',
+          group: 'gb',
           subject: 'Test Subject',
           body: 'Test body content',
           priority: 'urgent',
@@ -402,7 +402,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
         name: 'priority is null',
         data: {
           trigger: 'some-event',
-          country: 'gb',
+          group: 'gb',
           subject: 'Test Subject',
           body: 'Test body content',
           priority: null,
@@ -428,7 +428,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
       const event = await EventFactory.create();
       const data = {
         trigger: 'some-event',
-        country: 'gb',
+        group: 'gb',
         subject: 'Test Subject',
         body: 'Test body content',
       };
@@ -441,17 +441,17 @@ describe('/api/v1/events/:eventId/message-templates', () => {
         .expect(403);
     });
 
-    it('should respond with 409 status code when event for country already exists', async () => {
+    it('should respond with 409 status code when event for group already exists', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
       await MessageTemplateFactory.create({
         event: { connect: { id: event.id } },
         trigger: 'some-event',
-        country: 'gb',
+        group: 'gb',
       });
 
       const data = {
         trigger: 'some-event',
-        country: 'gb',
+        group: 'gb',
         subject: 'Test Subject',
         body: 'Test body content',
       };
@@ -467,7 +467,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
       const event = await EventFactory.create();
       const data = {
         trigger: 'some-event',
-        country: 'gb',
+        group: 'gb',
         subject: 'Test Subject',
         body: 'Test body content',
       };
@@ -491,7 +491,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
 
         const data = {
           trigger: 'some-event',
-          country: 'gb',
+          group: 'gb',
           subject: 'Test Subject',
           body: 'Test body content',
           priority: 'high',
@@ -519,7 +519,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
         const { event, accessToken } = await createEventWithManagerAndToken();
         const data = {
           trigger: 'some-event',
-          country: 'gb',
+          group: 'gb',
           subject: 'Test Subject',
           body: 'Test body content',
           priority: 'high',
@@ -542,7 +542,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
 
         const data = {
           trigger: 'some-event',
-          country: 'gb',
+          group: 'gb',
           subject: 'Test Subject',
           body: 'Test body content',
           priority: 'high',
@@ -569,7 +569,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
 
         const data = {
           trigger: 'some-event',
-          country: 'gb',
+          group: 'gb',
           subject: 'Test Subject',
           body: 'Test body content',
           priority: 'high',
@@ -601,7 +601,7 @@ describe('/api/v1/events/:eventId/message-templates', () => {
 
         const data = {
           trigger: 'some-event',
-          country: 'gb',
+          group: 'gb',
           subject: 'Test Subject',
           body: 'Test body content',
           priority: 'high',

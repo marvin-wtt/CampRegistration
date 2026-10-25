@@ -67,10 +67,17 @@ export function useFileService() {
     slot: string,
     // Without one, the server picks by the browser's Accept-Language.
     locale?: string,
+    // Without one, the server uses the event's only group, if it has one.
+    group?: string | null,
   ): string {
+    const params = {
+      ...(locale ? { locale } : {}),
+      ...(group ? { group } : {}),
+    };
+
     return api.getUri({
       url: `events/${eventId}/files/slots/${slot}/`,
-      params: locale ? { locale } : undefined,
+      params: Object.keys(params).length > 0 ? params : undefined,
     });
   }
 

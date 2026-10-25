@@ -63,8 +63,8 @@
 
         <span class="q-ml-xs">{{ contactLabel(scope.opt) }}</span>
         <country-icon
-          v-if="contactCountry(scope.opt)"
-          :country="contactCountry(scope.opt)!"
+          v-if="contactEventGroup(scope.opt)"
+          :country="contactEventGroup(scope.opt)!"
           class="contact-flag q-ml-xs"
         />
         <span
@@ -98,8 +98,8 @@
           <q-item-label class="contact-option__label">
             {{ contactLabel(scope.opt) }}
             <country-icon
-              v-if="contactCountry(scope.opt)"
-              :country="contactCountry(scope.opt)!"
+              v-if="contactEventGroup(scope.opt)"
+              :country="contactEventGroup(scope.opt)!"
               class="contact-flag"
             />
           </q-item-label>
@@ -132,7 +132,7 @@ import { countryName } from '@/utils/countries';
 const attrs = useAttrs();
 const quasar = useQuasar();
 const { t, locale } = useI18n();
-const { role, country } = useRegistrationHelper();
+const { role, group: registrationGroup } = useRegistrationHelper();
 const { contactFor } = useRegistrationContact();
 const stats = useEventStatistics();
 
@@ -172,8 +172,8 @@ const sendable = computed<Registration[]>(() =>
   props.registrations.filter((r) => r.status !== 'PENDING'),
 );
 
-// Countries matter only for events held across several, like the dashboard's.
-const multiCountry = computed<boolean>(() => stats.multiCountryEvent.value);
+// Event groups matter only for events with several, like the dashboard's.
+const multiGroup = computed<boolean>(() => stats.multiGroupEvent.value);
 
 const options = computed<Contact[]>(() => [
   ...createGroups(sendable.value),
@@ -286,8 +286,8 @@ interface ContactGroupData {
 
 const roleOrder: Record<string, number> = { participant: 0, counselor: 1 };
 
-// One group per role and waitlist status. Across countries it also splits by
-// country, keeping the whole as a group of its own.
+// One group per role and waitlist status. Across event groups it also splits
+// by event group, keeping the whole as a group of its own.
 function createGroups(registrations: Registration[]): Contact[] {
   const groups = new Map<string, ContactGroupData>();
 
@@ -320,10 +320,10 @@ function createGroups(registrations: Registration[]): Contact[] {
           (roleOrder[b.role ?? 'participant'] ?? 2) ||
         (a.role ?? '').localeCompare(b.role ?? ''),
     )
-    .flatMap((group) => splitByCountry(group, qualifyWaitlist));
+    .flatMap((group) => splitByEventGroup(group, qualifyWaitlist));
 }
 
-function splitByCountry(
+function splitByEventGroup(
   group: ContactGroupData,
   qualifyWaitlist: boolean,
 ): Contact[] {
@@ -333,32 +333,34 @@ function splitByCountry(
     name,
     registrations: group.registrations,
   };
-  if (!multiCountry.value) {
+  if (!multiGroup.value) {
     return [whole];
   }
 
-  const byCountry = new Map<string | null, Registration[]>();
+  const byGroup = new Map<string | null, Registration[]>();
   for (const registration of group.registrations) {
-    const code = country(registration) ?? null;
-    byCountry.set(code, [...(byCountry.get(code) ?? []), registration]);
+    const code = registrationGroup(registration) ?? null;
+    byGroup.set(code, [...(byGroup.get(code) ?? []), registration]);
   }
 
-  const parts = [...byCountry.entries()]
+  const parts = [...byGroup.entries()]
     .map(([code, members]): Contact => ({
       type: 'group',
       name,
-      country: code,
+      eventGroup: code,
       registrations: members,
     }))
-    // Those without a country last.
+    // Those without an event group last.
     .sort((a, b) =>
       a.type === 'group' && b.type === 'group'
-        ? Number(a.country === null) - Number(b.country === null) ||
-          countryLabel(a.country).localeCompare(countryLabel(b.country))
+        ? Number(a.eventGroup === null) - Number(b.eventGroup === null) ||
+          eventGroupLabel(a.eventGroup).localeCompare(
+            eventGroupLabel(b.eventGroup),
+          )
         : 0,
     );
 
-  // Within a single country, that country's group is the whole group.
+  // Within a single event group, its part is the whole recipient group.
   return parts.length > 1 ? [whole, ...parts] : parts;
 }
 
@@ -380,30 +382,30 @@ function getGroupName(
     : t('type.waitingList');
 }
 
-function countryLabel(code: string | null | undefined): string {
-  return code ? countryName(code, locale.value) : t('country.unknown');
+function eventGroupLabel(code: string | null | undefined): string {
+  return code ? countryName(code, locale.value) : t('eventGroup.unknown');
 }
 
-/** The group name with its country: shown, and searched. */
+/** The recipient group's name with its event group: shown, and searched. */
 function contactLabel(contact: Contact): string {
-  if (contact.type !== 'group' || !multiCountry.value) {
+  if (contact.type !== 'group' || !multiGroup.value) {
     return contact.name;
   }
   const scope =
-    contact.country === undefined
-      ? t('country.all')
-      : countryLabel(contact.country);
+    contact.eventGroup === undefined
+      ? t('eventGroup.all')
+      : eventGroupLabel(contact.eventGroup);
 
   return `${contact.name} · ${scope}`;
 }
 
-function contactCountry(contact: Contact): string | undefined {
-  if (!multiCountry.value) {
+function contactEventGroup(contact: Contact): string | undefined {
+  if (!multiGroup.value) {
     return undefined;
   }
   return contact.type === 'group'
-    ? (contact.country ?? undefined)
-    : country(contact.registration);
+    ? (contact.eventGroup ?? undefined)
+    : registrationGroup(contact.registration);
 }
 
 function getRoleTranslation(name: string): string {
@@ -466,9 +468,9 @@ const typeColors: Record<Contact['type'], NamedColor> = {
 
 <i18n lang="yaml" locale="en">
 people: '{n} person | {n} people'
-country:
-  all: 'All countries'
-  unknown: 'No country'
+eventGroup:
+  all: 'All groups'
+  unknown: 'No group'
 
 selector:
   selectContacts: 'Select contacts'
@@ -488,9 +490,9 @@ role:
 
 <i18n lang="yaml" locale="de">
 people: '{n} Person | {n} Personen'
-country:
-  all: 'Alle Länder'
-  unknown: 'Ohne Land'
+eventGroup:
+  all: 'Alle Gruppen'
+  unknown: 'Ohne Gruppe'
 
 selector:
   selectContacts: 'Kontakte auswählen'
@@ -510,9 +512,9 @@ role:
 
 <i18n lang="yaml" locale="fr">
 people: '{n} personne | {n} personnes'
-country:
-  all: 'Tous les pays'
-  unknown: 'Sans pays'
+eventGroup:
+  all: 'Tous les groupes'
+  unknown: 'Sans groupe'
 
 selector:
   selectContacts: 'Sélectionner des contacts'
@@ -532,9 +534,9 @@ role:
 
 <i18n lang="yaml" locale="pl">
 people: '{n} osoba | {n} osób'
-country:
-  all: 'Wszystkie kraje'
-  unknown: 'Bez kraju'
+eventGroup:
+  all: 'Wszystkie grupy'
+  unknown: 'Bez grupy'
 
 selector:
   selectContacts: 'Wybierz kontakty'
@@ -554,9 +556,9 @@ role:
 
 <i18n lang="yaml" locale="cs">
 people: '{n} osoba | {n} osob'
-country:
-  all: 'Všechny země'
-  unknown: 'Bez země'
+eventGroup:
+  all: 'Všechny skupiny'
+  unknown: 'Bez skupiny'
 
 selector:
   selectContacts: 'Vybrat kontakty'

@@ -132,11 +132,12 @@ export function useResultTableModel(
     sortBy: null,
   });
 
-  const countryFilter = ref<string[] | undefined>([]);
+  const groupFilter = ref<string[] | undefined>([]);
 
   const searchFilter = ref<string | null>('');
 
-  const countries = computed(() => input.event.value.countries);
+  // An event's groups are its countries.
+  const groups = computed(() => input.event.value.countries);
 
   function mapTemplate(
     template: TableTemplate | LocalTableTemplate,
@@ -279,11 +280,11 @@ export function useResultTableModel(
       });
     }
 
-    // Country filter (interactive-only typically)
-    if (Array.isArray(countryFilter.value) && countryFilter.value.length > 0) {
+    // Group filter (interactive-only typically)
+    if (Array.isArray(groupFilter.value) && groupFilter.value.length > 0) {
       r = r.filter((value) => {
-        const country = registrationAccessor.country(value);
-        return country && countryFilter.value?.includes(country);
+        const group = registrationAccessor.group(value);
+        return group && groupFilter.value?.includes(group);
       });
     }
 
@@ -306,7 +307,13 @@ export function useResultTableModel(
   });
 
   const columns = computed<CTableColumnTemplate[]>(() => {
-    const cols = [...template.value.columns];
+    // A single-group event's column would always say the same.
+    const cols = template.value.columns.filter(
+      (column) =>
+        groups.value.length > 1 ||
+        column.source !== 'meta' ||
+        column.fieldName !== 'group',
+    );
 
     // Add index column as first column
     if (template.value.indexed) {
@@ -366,8 +373,8 @@ export function useResultTableModel(
     rows,
     columns,
     renderers,
-    countryFilter,
+    groupFilter,
     searchFilter,
-    countries,
+    groups,
   };
 }

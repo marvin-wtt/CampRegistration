@@ -13,19 +13,23 @@ export function addMarkdownRenderer(model: SurveyModel) {
 
 /**
  * Resolves `{_file.<slot>}` placeholders to a URL on demand; the browser only
- * requests a file when a link/image actually renders.
+ * requests a file when a link/image actually renders. The URL carries the
+ * group (`{event.group}`), so a slot can hold a file per group; the group
+ * is fixed for the form's lifetime.
  */
 export function addFileSlotResolver(
   model: SurveyModel,
-  resolveUrl: (slot: string, locale: string) => string,
+  resolveUrl: (slot: string, locale: string, group: string | null) => string,
 ) {
   model.onProcessDynamicText.add((sender, options) => {
     if (options.isExists || !options.name.startsWith(FILE_PREFIX)) {
       return;
     }
+    const group: unknown = sender.getVariable('event.group');
     options.value = resolveUrl(
       options.name.slice(FILE_PREFIX.length),
       sender.locale,
+      typeof group === 'string' ? group : null,
     );
   });
 }

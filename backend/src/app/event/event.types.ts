@@ -7,7 +7,7 @@ import type { OrganizationVerificationStatus } from '#generated/prisma/enums';
 export interface EventWithRelations extends Event {
   freePlaces: Record<string, number> | number;
   freePlacesTotal: number;
-  registrations: { country: string | null }[];
+  registrations: { group: string | null }[];
   organization: {
     id: string;
     name: string;

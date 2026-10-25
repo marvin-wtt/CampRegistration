@@ -118,13 +118,13 @@ action:
 <i18n lang="yaml" locale="de">
 title: 'Passwort vergessen'
 
-description: 'Geben Sie Ihre E-Mail-Adresse ein, und wir senden Ihnen Anweisungen zum Zurücksetzen Ihres Passworts.'
+description: 'Gib deine E-Mail-Adresse ein, und wir senden dir Anweisungen zum Zurücksetzen deines Passworts.'
 
 field:
   email:
     label: 'E-Mail'
     rule:
-      required: 'Sie müssen eine gültige E-Mail-Adresse angeben'
+      required: 'Du musst eine gültige E-Mail-Adresse angeben'
 
 action:
   register: 'Anweisungen senden'

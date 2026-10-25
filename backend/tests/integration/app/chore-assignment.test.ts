@@ -475,22 +475,22 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
       );
     });
 
-    it('interleaves PERSON candidates by country when balanceCountries is set', async () => {
+    it('interleaves PERSON candidates by group when balanceGroups is set', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
-      const chore = await createChore(event, { balanceCountries: true });
+      const chore = await createChore(event, { balanceGroups: true });
       const otherChore = await createChore(event);
 
       // One duty each, so all three tie on load — balancing only reorders
       // within such a tie. The finer tie-breakers (times on this chore, then
       // longest ago) still separate them, so the fairness order is fixed.
       const gbNeverAssigned = await createRegistration(event, {
-        country: 'gb',
+        group: 'gb',
       });
       const gbAssignedOnce = await createRegistration(event, {
-        country: 'gb',
+        group: 'gb',
       });
       const frAssignedLater = await createRegistration(event, {
-        country: 'fr',
+        group: 'fr',
       });
 
       await createAssignment(event, otherChore.id, {

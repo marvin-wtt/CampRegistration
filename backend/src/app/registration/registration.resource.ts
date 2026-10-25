@@ -41,6 +41,7 @@ export class RegistrationResource extends JsonResource<
         emails: this.data.emails,
       },
       customData: this.data.customData ?? {},
+      group: this.data.group,
       // Derived from the File rows — the single source of truth for custom
       // file slots (`field = 'custom:<slot>'`).
       customFiles: customFileSlots(this.data.files ?? []),

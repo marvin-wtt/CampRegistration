@@ -1,11 +1,12 @@
 import type { Registration } from '@camp-registration/common/entities';
-import type { Translatable } from '@camp-registration/common/entities';
+import type { PerGroup } from '@camp-registration/common/entities';
+import { sumGroupValues } from '@camp-registration/common/utils';
 import { computed } from 'vue';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import { useRegistrationsStore } from '@/stores/registration-store';
 import { useRegistrationHelper } from '@/composables/registrationHelper';
 
-export type Dimension = 'age' | 'gender' | 'country';
+export type Dimension = 'age' | 'gender' | 'group';
 
 export interface CrossTabResult {
   /** Ordered category labels for the x-axis. */
@@ -25,34 +26,21 @@ const UNKNOWN = '__unknown__';
 const PER_YEAR_AGE_SPAN = 8;
 
 /**
- * Sums a {@link Translatable} number. Events may define per-country values
- * (a record) or a single shared value (a plain number).
+ * Reads a {@link PerGroup} number for a single group — only a value stored
+ * per group, not one shared by every group.
  */
-function sumTranslatableNumber(
-  value: Translatable<number> | null | undefined,
-): number | undefined {
-  if (value == null) {
-    return undefined;
-  }
-  if (typeof value === 'number') {
-    return value;
-  }
-  return Object.values(value).reduce<number>((sum, v) => sum + (v ?? 0), 0);
-}
-
-/** Reads the value of a {@link Translatable} number for a single country key. */
-function translatableField(
-  value: Translatable<number> | null | undefined,
-  country: string,
+function groupField(
+  value: PerGroup<number> | null | undefined,
+  group: string,
 ): number | undefined {
   if (value == null || typeof value === 'number') {
     return undefined;
   }
-  return value[country];
+  return value[group];
 }
 
-export interface CountryStats {
-  country: string;
+export interface GroupStats {
+  group: string;
   accepted: number;
   pending: number;
   waitlisted: number;
@@ -115,7 +103,7 @@ export function useEventStatistics() {
   );
 
   /**
-   * Accepted participants only. Demographics (age/gender/country breakdowns)
+   * Accepted participants only. Demographics (age/gender/group breakdowns)
    * describe who is actually attending, so pending and waitlisted registrations
    * are excluded here even though they still count toward {@link counts}.
    */
@@ -146,67 +134,67 @@ export function useEventStatistics() {
   });
 
   const capacity = computed(() => ({
-    max: sumTranslatableNumber(eventDetailsStore.data?.maxParticipants),
+    max: eventDetailsStore.data
+      ? sumGroupValues(eventDetailsStore.data.maxParticipants)
+      : undefined,
     free: eventDetailsStore.data?.freePlacesTotal,
   }));
 
   /**
-   * Country codes to show: the event's configured countries plus any extra
-   * country appearing in the data. Configured countries are kept even when no
-   * one has registered yet, so they surface as an explicit zero rather than
-   * looking absent. Event order is preserved, data-only countries are appended.
+   * Groups to show: the event's configured groups plus any extra group
+   * appearing in the data. Configured groups are kept even when no one has
+   * registered yet, so they surface as an explicit zero rather than looking
+   * absent. Event order is preserved, data-only groups are appended.
    */
-  const presentCountries = computed<string[]>(() => {
+  const presentGroups = computed<string[]>(() => {
     const fromEvent = eventDetailsStore.data?.countries ?? [];
     const fromData = registrations.value
-      .map((r) => helper.country(r))
-      .filter((c): c is string => !!c);
+      .map((r) => helper.group(r))
+      .filter((group): group is string => !!group);
 
     const order = [...fromEvent];
-    for (const country of fromData) {
-      if (!order.includes(country)) {
-        order.push(country);
+    for (const group of fromData) {
+      if (!order.includes(group)) {
+        order.push(group);
       }
     }
     return order;
   });
 
-  const hasMultipleCountries = computed<boolean>(
-    () => presentCountries.value.length > 1,
+  const hasMultipleGroups = computed<boolean>(
+    () => presentGroups.value.length > 1,
   );
 
-  /** True when the event itself is configured for more than one country. */
-  const multiCountryEvent = computed<boolean>(
+  /** True when the event itself is configured for more than one group. */
+  const multiGroupEvent = computed<boolean>(
     () => (eventDetailsStore.data?.countries?.length ?? 0) > 1,
   );
 
-  /** Per-country capacity and status counts (configured event countries). */
-  const perCountry = computed<CountryStats[]>(() => {
+  /** Per-group capacity and status counts (configured event groups). */
+  const perGroup = computed<GroupStats[]>(() => {
     const event = eventDetailsStore.data;
     if (!event) {
       return [];
     }
 
-    const countries = [...event.countries].sort();
-    return countries.map((country) => {
-      const inCountry = participants.value.filter(
-        (r) => helper.country(r) === country,
+    const groups = [...event.countries].sort();
+    return groups.map((group) => {
+      const inGroup = participants.value.filter(
+        (r) => helper.group(r) === group,
       );
       const byStatus = (status: Registration['status']) =>
-        inCountry.filter((r) => r.status === status).length;
-      const team = staff.value.filter(
-        (r) => helper.country(r) === country,
-      ).length;
+        inGroup.filter((r) => r.status === status).length;
+      const team = staff.value.filter((r) => helper.group(r) === group).length;
 
       return {
-        country,
+        group,
         accepted: byStatus('ACCEPTED'),
         pending: byStatus('PENDING'),
         waitlisted: byStatus('WAITLISTED'),
-        total: inCountry.length,
+        total: inGroup.length,
         team,
-        max: translatableField(event.maxParticipants, country),
-        free: translatableField(event.freePlaces, country),
+        max: groupField(event.maxParticipants, group),
+        free: groupField(event.freePlaces, group),
       };
     });
   });
@@ -218,7 +206,7 @@ export function useEventStatistics() {
     const split = splitPlaces(
       typeof limit === 'number'
         ? [{ max: limit, holding: accepted + pending, waitlisted }]
-        : perCountry.value.map((row) => ({
+        : perGroup.value.map((row) => ({
             max: row.max ?? 0,
             holding: row.accepted + row.pending,
             waitlisted: row.waitlisted,
@@ -304,8 +292,8 @@ export function useEventStatistics() {
         return ageBandLabel(helper.age(registration));
       case 'gender':
         return helper.gender(registration) ?? UNKNOWN;
-      case 'country':
-        return helper.country(registration) ?? UNKNOWN;
+      case 'group':
+        return helper.group(registration) ?? UNKNOWN;
     }
   }
 
@@ -316,8 +304,8 @@ export function useEventStatistics() {
         return ageBands.value.map((b) => b.label);
       case 'gender':
         return presentGenders.value;
-      case 'country':
-        return presentCountries.value;
+      case 'group':
+        return presentGroups.value;
     }
   }
 
@@ -414,11 +402,11 @@ export function useEventStatistics() {
     staffByRole,
     counts,
     capacity,
-    presentCountries,
+    presentGroups,
     presentGenders,
-    hasMultipleCountries,
-    multiCountryEvent,
-    perCountry,
+    hasMultipleGroups,
+    multiGroupEvent,
+    perGroup,
     placeSplit,
     ageBands,
     crossTab,

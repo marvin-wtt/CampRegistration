@@ -5,24 +5,67 @@
     class="row justify-center"
     :style="{ backgroundColor: bgColor }"
   >
-    <div
-      v-if="event && registrationFormVisible"
-      class="event-page__content full-width"
-    >
-      <registration-form
-        :event-details="event"
-        :submit-fn="submit"
-        :upload-file-fn="uploadFile"
-        class="full-width"
-        @bg-color-update="(color) => updateBgColor(color)"
-        @active-change="(active) => (formActive = active)"
+    <template v-if="event && registrationFormVisible">
+      <div
+        v-if="group !== undefined"
+        class="event-page__content full-width"
+      >
+        <!-- In the floating header, so the form's own header keeps the top. -->
+        <teleport
+          v-if="group && formActive && event.countries.length > 1"
+          to="#event-header-actions"
+          defer
+        >
+          <q-btn
+            flat
+            dense
+            rounded
+            no-caps
+            class="event-page__group"
+            :aria-label="`${t('group.current', { group: groupName })}. ${t('group.change')}`"
+            data-test="registration-group"
+            @click="changeGroup"
+          >
+            <country-icon :country="group" />
+            <span class="gt-xs q-ml-sm">{{ groupName }}</span>
+            <q-icon
+              name="swap_horiz"
+              size="xs"
+              class="q-ml-xs"
+            />
+            <q-tooltip>{{ t('group.change') }}</q-tooltip>
+          </q-btn>
+          <!-- The group belongs to this page; what follows, to the app. -->
+          <q-separator
+            vertical
+            class="event-page__group-separator"
+          />
+        </teleport>
+        <!-- Keyed: a new group or a new registrant needs a new form. -->
+        <registration-form
+          :key="`${group ?? ''}-${formRun}`"
+          :event-details="event"
+          :group
+          :submit-fn="submit"
+          :upload-file-fn="uploadFile"
+          class="full-width"
+          @bg-color-update="(color) => updateBgColor(color)"
+          @active-change="(active) => (formActive = active)"
+          @restart="registerAnother"
+        />
+        <privacy-notice-disclosure
+          v-if="formActive"
+          :event-id="event.id"
+          class="event-page__privacy"
+        />
+      </div>
+
+      <registration-group-select
+        v-else
+        :event
+        @select="chooseGroup"
       />
-      <privacy-notice-disclosure
-        v-if="formActive"
-        :event-id="event.id"
-        class="event-page__privacy"
-      />
-    </div>
+    </template>
 
     <!-- Not available / registration closed -->
     <div
@@ -57,9 +100,10 @@
         </div>
 
         <q-btn
-          v-if="eventContactEmail"
-          :href="`mailto:${eventContactEmail}`"
-          :label="eventContactEmail"
+          v-for="email in eventContactEmails"
+          :key="email"
+          :href="`mailto:${email}`"
+          :label="email"
           icon="mail"
           type="a"
           flat
@@ -82,25 +126,32 @@
 
 <script lang="ts" setup>
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
-import { useMeta } from 'quasar';
+import { computed, onUnmounted, ref, watch } from 'vue';
+import { useMeta, useQuasar } from 'quasar';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import RegistrationForm from '@/components/common/RegistrationForm.vue';
+import RegistrationGroupSelect from '@/components/listedEvents/RegistrationGroupSelect.vue';
+import CountryIcon from '@/components/common/localization/CountryIcon.vue';
+import ConfirmDialog from '@/components/common/dialogs/ConfirmDialog.vue';
 import PrivacyNoticeDisclosure from '@/components/privacy/PrivacyNoticeDisclosure.vue';
+import { countryName } from '@/utils/countries';
 import {
   type EventDetails,
   type EventRegistrationStatus,
 } from '@camp-registration/common/entities';
+import { allGroupValues } from '@camp-registration/common/utils';
 import { isAPIServiceError, useAPIService } from '@/services/APIService';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useErrorExtractor } from '@/composables/serviceHandler';
 import { usePermissions } from '@/composables/permissions';
 
-const { t, d } = useI18n();
+const { t, d, locale } = useI18n();
 const { to } = useObjectTranslation();
 const api = useAPIService();
 const route = useRoute();
+const router = useRouter();
+const quasar = useQuasar();
 const { extractErrorText } = useErrorExtractor();
 const { canFor } = usePermissions();
 
@@ -114,9 +165,7 @@ const knownError = ref<'unavailable' | 'not_found' | null>(null);
 
 let openTimer: ReturnType<typeof setTimeout> | null = null;
 
-onMounted(async () => {
-  await loadEvent();
-});
+void loadEvent();
 
 onUnmounted(() => {
   stopRegistrationOpenTimer();
@@ -142,6 +191,73 @@ const registrationFormVisible = computed<boolean>(() => {
     managerRegistrationOverrideEnabled.value
   );
 });
+
+// The group the form is filled in for, chosen before the form and kept in
+// `?group=` so a link can preselect it and a reload keeps it. Undefined while
+// an event with several groups still needs the choice.
+const group = computed<string | null | undefined>(() => {
+  const groups = event.value?.countries ?? [];
+  if (groups.length <= 1) {
+    return groups[0] ?? null;
+  }
+
+  const query = route.query.group;
+  const selected = typeof query === 'string' ? query.toLowerCase() : null;
+
+  return selected && groups.includes(selected) ? selected : undefined;
+});
+
+// A new form starts active; the previous one may have ended in its
+// submitted state.
+watch(group, () => {
+  formActive.value = true;
+});
+
+const groupName = computed<string>(() =>
+  group.value ? countryName(group.value, locale.value) : '',
+);
+
+function chooseGroup(group: string) {
+  // A history entry, so going back returns to the choice.
+  void router.push({ query: { ...route.query, group } });
+}
+
+// Every answer was given to the old group's form — its texts, files and terms
+// — so nothing carries over: the form is keyed by the group.
+function changeGroup() {
+  quasar
+    .dialog({
+      component: ConfirmDialog,
+      componentProps: {
+        title: t('group.dialog.title'),
+        message: t('group.dialog.message'),
+        okLabel: t('group.change'),
+      },
+    })
+    .onOk(backToGroupChoice);
+}
+
+function backToGroupChoice() {
+  const query = { ...route.query };
+  delete query.group;
+  void router.push({ query });
+}
+
+// Bumped to start an empty form for the same group.
+const formRun = ref<number>(0);
+
+// The next person may belong to another group, so an event with several asks
+// again; otherwise the form simply starts over.
+function registerAnother() {
+  if ((event.value?.countries.length ?? 0) > 1) {
+    backToGroupChoice();
+    return;
+  }
+
+  formRun.value += 1;
+  formActive.value = true;
+  window.scrollTo({ top: 0 });
+}
 
 const canCreateRegistrationAsManager = computed<boolean>(() => {
   return (
@@ -201,13 +317,13 @@ const registrationStatus = computed<RegistrationStatus>(() => {
   return event.value.registrationStatus;
 });
 
-const eventContactEmail = computed<string | null>(() => {
+// The visitor's group is unknown here, so every group's contact is listed.
+const eventContactEmails = computed<string[]>(() => {
   if (!event.value?.contactEmail) {
-    return null;
+    return [];
   }
 
-  const email = event.value.contactEmail;
-  return typeof email === 'string' ? email : (Object.values(email)[0] ?? null);
+  return allGroupValues(event.value.contactEmail).filter(Boolean);
 });
 
 const statusIcon = computed<string>(() => {
@@ -253,7 +369,11 @@ async function submit(
   formData: Record<string, unknown>,
   locale: string,
 ) {
-  return api.createRegistration(eventId, { data: formData, locale });
+  return api.createRegistration(eventId, {
+    data: formData,
+    locale,
+    group: group.value ?? null,
+  });
 }
 
 async function uploadFile(file: File): Promise<string> {
@@ -319,6 +439,16 @@ function enableManagerRegistrationOverride() {
   flex-direction: column;
 }
 
+.event-page__group {
+  padding: 0 0.75rem;
+}
+
+.event-page__group-separator {
+  align-self: center;
+  height: 20px;
+  margin: 0 4px;
+}
+
 // Keeps the disclosure at the bottom edge for short forms instead of stranding
 // it mid-page; with a long form the auto margin collapses to zero.
 .event-page__privacy {
@@ -327,6 +457,13 @@ function enableManagerRegistrationOverride() {
 </style>
 
 <i18n lang="yaml" locale="en">
+group:
+  current: 'Group: {group}'
+  change: 'Change group'
+  dialog:
+    title: 'Change group?'
+    message: "The form is reset: every answer you have given so far is cleared, since it belongs to this group's form."
+
 action:
   open_form_for_manager: 'Open form as manager'
 
@@ -341,6 +478,13 @@ error:
 </i18n>
 
 <i18n lang="yaml" locale="de">
+group:
+  current: 'Gruppe: {group}'
+  change: 'Gruppe wechseln'
+  dialog:
+    title: 'Gruppe wechseln?'
+    message: 'Das Formular wird zurückgesetzt: Alle deine bisherigen Angaben werden gelöscht, da sie zum Formular dieser Gruppe gehören.'
+
 action:
   open_form_for_manager: 'Als Veranstaltungsmanager öffnen'
 
@@ -351,10 +495,17 @@ error:
   upcoming: 'Die Anmeldung für diese Veranstaltung hat noch nicht begonnen.'
   closed: 'Die Anmeldung für diese Veranstaltung ist bereits geschlossen.'
   unavailable: 'Diese Veranstaltung ist nicht verfügbar.'
-  not_found: 'Das gesuchte Veranstaltung konnte nicht gefunden werden. Bitte überprüfen Sie die URL.'
+  not_found: 'Die gesuchte Veranstaltung konnte nicht gefunden werden. Bitte überprüfe die URL.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
+group:
+  current: 'Groupe : {group}'
+  change: 'Changer de groupe'
+  dialog:
+    title: 'Changer de groupe ?'
+    message: 'Le formulaire est réinitialisé : toutes tes réponses sont effacées, car elles appartiennent au formulaire de ce groupe.'
+
 action:
   open_form_for_manager: 'Ouvrir comme gestionnaire'
 
@@ -369,6 +520,13 @@ error:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
+group:
+  current: 'Grupa: {group}'
+  change: 'Zmień grupę'
+  dialog:
+    title: 'Zmienić grupę?'
+    message: 'Formularz zostanie zresetowany: wszystkie dotychczasowe odpowiedzi zostaną usunięte, ponieważ należą do formularza tej grupy.'
+
 action:
   open_form_for_manager: 'Otwórz jako menedżer'
 
@@ -383,6 +541,13 @@ error:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
+group:
+  current: 'Skupina: {group}'
+  change: 'Změnit skupinu'
+  dialog:
+    title: 'Změnit skupinu?'
+    message: 'Formulář se vynuluje: všechny dosavadní odpovědi budou smazány, protože patří k formuláři této skupiny.'
+
 action:
   open_form_for_manager: 'Otevřít jako správce'
 

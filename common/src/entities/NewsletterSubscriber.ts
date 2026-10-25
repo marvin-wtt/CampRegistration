@@ -14,7 +14,7 @@ export interface NewsletterSubscriberCreateData {
 
 export interface NewsletterSubscriberImportData {
   eventId: string;
-  country?: string | null;
+  group?: string | null;
   requireConsent?: boolean;
   consentConfirmed?: boolean;
 }

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { ref } from 'vue';
 import EventCard from '@/components/listedEvents/EventCard.vue';
+import EventCover from '@/components/listedEvents/EventCover.vue';
 import { installQuasarPlugin } from '@/../test/vitest/utils/quasar';
 import type { Event } from '@camp-registration/common/entities';
 
@@ -102,111 +103,11 @@ describe('EventCard', () => {
     locale.value = 'en';
   });
 
-  describe('logo', () => {
-    // The badge is rendered the same way whether or not there is a banner
-    // photo — one visual treatment, not two.
-    describe('without a banner', () => {
-      it('shows the monogram badge without a logo', () => {
-        const card = mountCard(createEvent());
+  // Logo and banner fallbacks are covered by EventCover's own tests.
+  it('renders the cover with the event', () => {
+    const cover = mountCard(createEvent()).findComponent(EventCover);
 
-        expect(card.find('.event-card__badge--plain').exists()).toBe(true);
-        expect(card.find('.event-card__badge-monogram').text()).toBe('S');
-        expect(card.find('.event-card__badge-logo').exists()).toBe(false);
-      });
-
-      it('shows the logo badge when set', () => {
-        const card = mountCard(
-          createEvent({ logo: 'https://api.test/events/1/files/slots/logo' }),
-        );
-
-        expect(card.find('.event-card__badge-logo').attributes('src')).toBe(
-          'https://api.test/events/1/files/slots/logo',
-        );
-        expect(card.find('.event-card__badge-monogram').exists()).toBe(false);
-      });
-
-      it('falls back to the monogram badge when the logo fails to load', async () => {
-        const card = mountCard(
-          createEvent({ logo: 'https://api.test/events/1/files/slots/logo' }),
-        );
-
-        await card.find('.event-card__badge-logo').trigger('error');
-
-        expect(card.find('.event-card__badge-logo').exists()).toBe(false);
-        expect(card.find('.event-card__badge-monogram').exists()).toBe(true);
-      });
-    });
-
-    describe('with a banner', () => {
-      const banner = 'https://api.test/events/1/files/slots/banner';
-
-      it('shows the monogram badge without a logo', () => {
-        const card = mountCard(createEvent({ banner }));
-
-        expect(card.find('.event-card__badge-logo').exists()).toBe(false);
-        expect(card.find('.event-card__badge-monogram').text()).toBe('S');
-      });
-
-      it('shows the logo badge when set', () => {
-        const card = mountCard(
-          createEvent({
-            banner,
-            logo: 'https://api.test/events/1/files/slots/logo',
-          }),
-        );
-
-        expect(card.find('.event-card__badge-logo').attributes('src')).toBe(
-          'https://api.test/events/1/files/slots/logo',
-        );
-        expect(card.find('.event-card__badge-monogram').exists()).toBe(false);
-      });
-
-      it('falls back to the monogram badge when the logo fails to load', async () => {
-        const card = mountCard(
-          createEvent({
-            banner,
-            logo: 'https://api.test/events/1/files/slots/logo',
-          }),
-        );
-
-        await card.find('.event-card__badge-logo').trigger('error');
-
-        expect(card.find('.event-card__badge-logo').exists()).toBe(false);
-        expect(card.find('.event-card__badge-monogram').exists()).toBe(true);
-      });
-    });
-  });
-
-  describe('banner', () => {
-    it('falls back to the tone color without a banner', () => {
-      const card = mountCard(createEvent());
-
-      expect(card.find('.event-card__banner').exists()).toBe(true);
-      expect(card.find('.event-card__banner-image').exists()).toBe(false);
-    });
-
-    it('renders the banner the API published', () => {
-      const card = mountCard(
-        createEvent({
-          banner: 'https://api.test/events/1/files/slots/banner',
-        }),
-      );
-
-      expect(card.find('.event-card__banner-image').attributes('src')).toBe(
-        'https://api.test/events/1/files/slots/banner',
-      );
-    });
-
-    it('falls back to the tone color when the banner fails to load', async () => {
-      const card = mountCard(
-        createEvent({
-          banner: 'https://api.test/events/1/files/slots/banner',
-        }),
-      );
-
-      await card.find('.event-card__banner-image').trigger('error');
-
-      expect(card.find('.event-card__banner-image').exists()).toBe(false);
-    });
+    expect(cover.exists()).toBe(true);
+    expect(cover.props('event').id).toBe('01J0000000000000000000000A');
   });
 });

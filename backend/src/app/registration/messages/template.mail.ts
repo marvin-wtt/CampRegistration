@@ -1,6 +1,6 @@
 import type { Event, Registration } from '#generated/prisma/client.js';
-import { translateObject } from '#utils/translateObject';
-import { translateEventContext } from '#app/event/event.util';
+import { translate } from '@camp-registration/common/utils';
+import { eventContactFor, translateEventContext } from '#app/event/event.util';
 import type {
   Address,
   AddressLike,
@@ -104,7 +104,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
       );
     }
     const senderName = typeof from === 'string' ? undefined : from?.name;
-    const eventName = translateObject(this.payload.event.name, this.locale());
+    const eventName = translate(this.payload.event.name, this.locale()) ?? '';
 
     return {
       name: senderName ? `${eventName} | ${senderName}` : eventName,
@@ -113,10 +113,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
   }
 
   protected subject(): string | Promise<string> {
-    let template = translateObject(
-      this.payload.message.subject,
-      this.payload.registration.country ?? this.locale(),
-    ).trim();
+    let template = this.payload.message.subject.trim();
 
     // Templates saved by the rich-text editor are HTML; flatten them first.
     if (template.startsWith('<p>') && template.endsWith('</p>')) {
@@ -134,10 +131,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
     if (this.payload.message.replyTo) {
       return this.payload.message.replyTo;
     }
-    return translateObject(
-      this.payload.event.contactEmail,
-      this.payload.registration.country ?? '',
-    );
+    return this.contact().to;
   }
 
   protected priority(): MailPriority {
@@ -159,12 +153,12 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
   }
 
   private context(format: 'html' | 'text'): object {
-    const locale = this.payload.registration.country ?? this.locale();
     const event = this.payload.event;
 
     return {
       event: {
-        ...translateEventContext(event, locale),
+        // In the template's language: it was picked by the same group.
+        ...translateEventContext(event, this.contact()),
         // Format dates using the registration's full locale
         startAt: formatEventDate(event.startAt, this.locale()),
         endAt: formatEventDate(event.endAt, this.locale()),
@@ -192,6 +186,8 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
         customData: this.payload.registration.customData ?? {},
         changes: this.renderChanges(format),
         locale: this.payload.registration.locale,
+        // The group's country code; the address's own is `address.country`.
+        group: this.payload.registration.group,
         room: null,
         // Use snake case because form keys should be snake case too
         updatedAt: dateToString(this.payload.registration.updatedAt),
@@ -200,20 +196,9 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
     };
   }
 
-  protected async attachments(): Promise<MailAttachment[]> {
-    const files = this.payload.message.attachments;
-    if (!files.length) {
-      return [];
-    }
-
-    const fileService = resolve(FileService);
-
-    return Promise.all(
-      files.map(async (file) => ({
-        filename: file.originalName,
-        content: await fileService.getFileStream(file),
-        contentType: file.type,
-      })),
+  protected attachments(): Promise<MailAttachment[]> {
+    return resolve(FileService).getMailAttachments(
+      this.payload.message.attachments,
     );
   }
 
@@ -271,10 +256,15 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
     ]);
   }
 
-  private renderBody(): string {
-    const locale = this.payload.registration.country ?? this.locale();
+  // The template is the registration's group's, so the event's texts placed
+  // into it follow the language of the group's country. The mail's own chrome (footer,
+  // sender name) stays in the participant's language.
+  private contact() {
+    return eventContactFor(this.payload.event, this.payload.registration);
+  }
 
-    const template = translateObject(this.payload.message.body, locale);
+  private renderBody(): string {
+    const template = this.payload.message.body;
 
     return unwrapChangesBlock(
       renderTemplate(template, this.context('html'), 'html'),
@@ -298,7 +288,6 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
   }
 
   protected content(): Content | Promise<Content> {
-    const locale = this.payload.registration.country ?? this.locale();
     const body = this.renderBody();
     // The hidden preheader is flattened to plain text here, before `build()`
     // redacts the mail's HTML for the durable copy — by then there is no
@@ -311,7 +300,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
       context: {
         preview,
         body,
-        eventName: translateObject(this.payload.event.name, locale),
+        eventName: translate(this.payload.event.name, this.locale()) ?? '',
         reason: this.reason(),
         // Art. 13 information has to stay reachable after submission, and the
         // message body is manager-authored — so the link belongs in the footer

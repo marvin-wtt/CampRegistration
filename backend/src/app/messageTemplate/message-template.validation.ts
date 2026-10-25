@@ -24,7 +24,7 @@ const store = z.object({
     eventId: z.ulid(),
   }),
   body: z.object({
-    country: z.string().length(2),
+    group: z.string().length(2),
     trigger: z.string(),
     subject: z.string(),
     body: z.string(),

@@ -41,6 +41,7 @@ export default {
         customFiles: 'Vlastní soubor',
         status: 'Stav',
         country: 'Země',
+        group: 'Skupina',
       },
       values: {
         status: {
@@ -93,7 +94,7 @@ export default {
       label: 'Automatický e-mail',
       fields: {
         trigger: 'Spouštěč',
-        country: 'Země',
+        group: 'Skupina',
         subject: 'Předmět',
         body: 'Obsah',
         priority: 'Priorita',

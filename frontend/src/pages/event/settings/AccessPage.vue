@@ -709,7 +709,7 @@ role:
 
 <i18n lang="yaml" locale="de">
 title: 'Zugriff verwalten'
-subtitle: 'Legen Sie fest, wer auf diese Veranstaltung zugreifen kann und welche Rolle die Person hat.'
+subtitle: 'Lege fest, wer auf diese Veranstaltung zugreifen kann und welche Rolle die Person hat.'
 
 action:
   add: 'Hinzufügen'
@@ -730,11 +730,11 @@ organization:
 dialog:
   delete:
     title: 'Zugriff entziehen'
-    message: 'Möchten Sie den Zugriff dieses Nutzers wirklich entziehen?'
+    message: 'Möchtest du den Zugriff dieses Nutzers wirklich entziehen?'
     label: 'E-Mail'
   leave:
     title: 'Veranstaltung verlassen'
-    message: 'Möchten Sie diese Veranstaltung wirklich verlassen? Sie verlieren dadurch den Zugriff.'
+    message: 'Möchtest du diese Veranstaltung wirklich verlassen? Du verlierst dadurch den Zugriff.'
     label: 'E-Mail'
 
 expiry:
@@ -743,9 +743,9 @@ expiry:
 
 empty:
   title: 'Noch niemand hat Zugriff'
-  message: 'Laden Sie Teammitglieder ein, um diese Veranstaltung gemeinsam zu verwalten.'
+  message: 'Lade Teammitglieder ein, um diese Veranstaltung gemeinsam zu verwalten.'
 
-you: 'Sie'
+you: 'Du'
 
 role:
   coordinator: 'Koordination'

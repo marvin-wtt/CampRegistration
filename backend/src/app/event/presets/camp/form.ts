@@ -293,46 +293,6 @@ export default {
           inputType: 'tel',
           autocomplete: 'tel',
         },
-        {
-          type: 'boolean',
-          name: 'waiting_list',
-          visible: false,
-          visibleIf: '{waitingList} = true',
-          title: {
-            en: 'Waiting list',
-            de: 'Warteliste',
-            fr: "Liste d'attente",
-            pl: 'Lista oczekujących',
-            cs: 'Čekací listina',
-            default: 'Waiting list',
-          },
-          description: {
-            en: 'Unfortunately, all places for participants from this country are already taken. However, you can put your name on the waiting list. We will inform you as soon as a place becomes available.',
-            de: 'Leider sind bereits alle Plätze für Teilnehmer aus diesem Land belegt. Du kannst dich aber auf die Warteliste setzten. Wir informieren dich dann sobald ein Platz frei wird.',
-            fr: "Malheureusement, toutes les places pour les participants de ce pays sont déjà prises. Tu peux toutefois t'inscrire sur la liste d'attente. Nous t'informerons dès qu'une place se libérera.",
-            pl: 'Niestety wszystkie miejsca dla uczestników z tego kraju są już zajęte. Możesz jednak zapisać się na listę oczekujących. Poinformujemy Cię, gdy tylko zwolni się miejsce.',
-            cs: 'Bohužel jsou všechna místa pro účastníky z této země již obsazena. Můžeš se ale zapsat na čekací listinu. Dáme ti vědět, jakmile se uvolní místo.',
-            default:
-              'Unfortunately, all places for participants from this country are already taken. However, you can put your name on the waiting list. We will inform you as soon as a place becomes available.',
-          },
-          correctAnswer: true,
-          isRequired: true,
-          validators: [
-            {
-              type: 'expression',
-              text: {
-                en: 'Please confirm that you wish to be on the waiting list',
-                de: 'Bitte bestätige, dass du auf die Warteliste möchtest',
-                fr: "Confirme que tu souhaites être sur la liste d'attente",
-                pl: 'Potwierdź, że chcesz znaleźć się na liście oczekujących',
-                cs: 'Potvrď, že chceš být na čekací listině',
-                default:
-                  "Confirme que tu souhaites être sur la liste d'attente",
-              },
-              expression: '{waiting_list} = true',
-            },
-          ],
-        },
       ],
       title: {
         en: 'Contact Information',
@@ -930,8 +890,8 @@ export default {
               type: 'expression',
               text: {
                 en: 'You must be a legal guardian',
-                de: 'Sie müssen Sorgeberechtigte:r sein',
-                fr: "Vous devez être titulaire de l'autorité parentale",
+                de: 'Du musst Sorgeberechtigte:r sein',
+                fr: "Tu dois être titulaire de l'autorité parentale",
                 pl: 'Musisz być opiekunem prawnym',
                 cs: 'Musíš být zákonným zástupcem',
                 default: 'You must be a legal guardian',
@@ -959,10 +919,6 @@ export default {
     {
       name: 'isminor',
       expression: 'isMinor({date_of_birth}, {event.startAt})',
-    },
-    {
-      name: 'waitingList',
-      expression: 'isWaitingList({event.freePlaces}, {address.country})',
     },
   ],
   showProgressBar: true,

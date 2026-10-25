@@ -1,6 +1,6 @@
 import type { Event } from '@camp-registration/common/entities';
 import type { PageMeta } from '#core/seo/pageMeta';
-import { translateObject } from '#utils/translateObject';
+import { eventGroupFields, translate } from '@camp-registration/common/utils';
 import { generateUrl } from '#utils/url';
 import config from '#config/index';
 import { naiveDateTimeToUtcCarrier } from '@camp-registration/common/utils';
@@ -46,11 +46,12 @@ export function buildEventPageMeta(event: Event, locale: string): PageMeta {
   // anything else.
   const language = locale.split('-')[0];
 
-  const organizer = text(translateObject(event.organizer, locale));
+  // A link preview has no group: name every group's organizer.
+  const organizer = text(eventGroupFields(event, null).organizer);
   const location =
     event.location === null
       ? ''
-      : text(translateObject(event.location, locale));
+      : text(translate(event.location, locale) ?? '');
 
   // Composed from data only — no translated words — so the description needs no
   // locale files of its own.
@@ -63,7 +64,7 @@ export function buildEventPageMeta(event: Event, locale: string): PageMeta {
     .join(' · ');
 
   return {
-    title: text(translateObject(event.name, locale)),
+    title: text(translate(event.name, locale) ?? ''),
     siteName: config.appName,
     description,
     url: generateUrl(['events', event.id]),

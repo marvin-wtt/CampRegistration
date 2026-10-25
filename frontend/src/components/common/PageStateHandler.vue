@@ -181,7 +181,7 @@ error:
   retry: 'Erneut versuchen'
 leave:
   title: 'Ungespeicherte Änderungen'
-  message: 'Sie haben ungespeicherte Änderungen. Diese gehen verloren, wenn Sie fortfahren.'
+  message: 'Du hast ungespeicherte Änderungen. Diese gehen verloren, wenn du fortfährst.'
   cancel: 'Abbrechen'
   ok: 'Fortfahren'
 </i18n>

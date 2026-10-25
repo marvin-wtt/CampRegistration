@@ -47,8 +47,8 @@
       >
         <q-item-section avatar>
           <country-icon
-            v-if="person.country"
-            :country="person.country"
+            v-if="person.group"
+            :country="person.group"
           />
           <q-icon
             v-else

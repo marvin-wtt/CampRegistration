@@ -15,7 +15,7 @@ import type {
 interface RegistrationPdfOptions {
   event: EventDetails;
   registration: Registration;
-  fileUrl: (slot: string) => string;
+  fileUrl: (slot: string, locale: string, group: string | null) => string;
 }
 
 const registrationIdLabel: Record<string, string> = {
@@ -55,7 +55,7 @@ function buildSurveyPdf(options: RegistrationPdfOptions): SurveyPDF {
     });
   });
 
-  setVariables(surveyPDF, event);
+  setVariables(surveyPDF, event, { group: registration.group });
 
   return surveyPDF;
 }

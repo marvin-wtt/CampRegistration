@@ -235,3 +235,31 @@ describe('useResultTableModel template selection', () => {
     });
   });
 });
+
+describe('useResultTableModel group column', () => {
+  const columns = [
+    { name: 'last_name', field: 'computedData.lastName', label: 'Name' },
+    { name: 'group', field: 'group', source: 'meta', label: 'Group' },
+  ] as TableColumnTemplate[];
+
+  function columnNames(countries: string[]) {
+    const model = useResultTableModel({
+      questions: ref<TableColumnTemplate[]>([]),
+      registrations: ref<Registration[]>([]),
+      templates: ref([
+        { id: 'a', title: 'A', columns, order: 1, actions: false },
+      ] as unknown as TableTemplate[]),
+      event: ref({ countries } as unknown as EventDetails),
+    });
+
+    return model.columns.value.map((column) => column.name);
+  }
+
+  it('shows the group on an event with several', () => {
+    expect(columnNames(['de', 'fr'])).toEqual(['last_name', 'group']);
+  });
+
+  it('hides it on a single-country event, where it never differs', () => {
+    expect(columnNames(['de'])).toEqual(['last_name']);
+  });
+});

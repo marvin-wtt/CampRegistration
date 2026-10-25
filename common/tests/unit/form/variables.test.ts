@@ -1,10 +1,12 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { SurveyModel } from 'survey-core';
 import { fakeEventData } from '../../util/faker.js';
 import { setVariables } from '../../../src/form/index.js';
+import { naiveDateTimeToUtcCarrier } from '../../../src/utils/index.js';
+import type { Data } from '../../../src/form/variables/variables.js';
 
 describe('variables', () => {
-  // Relies on patches/survey-core+3.1.1.patch (surveyjs/survey-library#11830)
+  // Relies on patches/survey-core+3.2.1.patch (surveyjs/survey-library#11830)
   // until `hasLogo` reads the resolved placeholder upstream.
   describe('logo', () => {
     const logo = 'https://api.test/api/v1/events/1/files/slots/logo';
@@ -110,6 +112,126 @@ describe('variables', () => {
     });
   });
 
+  describe('per-group values', () => {
+    const event: Partial<Data> = {
+      countries: ['de', 'fr'],
+      organizer: { de: 'Verein', fr: 'Association' },
+      contactEmail: { de: 'de@test', fr: 'fr@test' },
+      maxParticipants: { de: 10, fr: 5 },
+      freePlaces: { de: 3, fr: 0 },
+    };
+
+    it('should leave them unresolved without a group', () => {
+      const model = new SurveyModel();
+
+      setVariables(model, fakeEventData(event));
+
+      expect(model.getVariable('event.group')).toBeNull();
+      expect(model.getVariable('event.freePlaces')).toBeNull();
+      expect(model.getVariable('event.organizer')).toBe('Verein / Association');
+      expect(model.getVariable('event.contactEmail')).toBe('de@test, fr@test');
+      expect(model.getVariable('event.maxParticipants')).toBe(15);
+    });
+
+    it('should pick up new event data for the group', () => {
+      const model = new SurveyModel();
+      setVariables(model, fakeEventData(event), { group: 'de' });
+
+      setVariables(model, fakeEventData({ ...event, freePlaces: { de: 0 } }), {
+        group: 'de',
+      });
+
+      expect(model.getVariable('event.freePlaces')).toBe(0);
+    });
+
+    // Older forms pass the answer along; the free places are the group's.
+    it('should keep forms that pass the free places to isWaitingList working', () => {
+      const waitingList = (group: string) => {
+        const model = new SurveyModel({
+          elements: [{ type: 'country', name: 'country' }],
+          calculatedValues: [
+            {
+              name: 'waitingList',
+              expression: 'isWaitingList({event.freePlaces}, {country})',
+            },
+          ],
+        });
+        setVariables(model, fakeEventData(event), { group: group });
+        return model.getVariable('waitingList') as unknown;
+      };
+
+      expect(waitingList('fr')).toBe(true);
+      expect(waitingList('de')).toBe(false);
+    });
+
+    it('should add nothing to the form JSON', () => {
+      const model = new SurveyModel({
+        elements: [{ type: 'country', name: 'country' }],
+      });
+
+      setVariables(model, fakeEventData(event), { group: 'fr' });
+
+      expect(model.toJSON()).not.toHaveProperty('calculatedValues');
+    });
+  });
+
+  describe('fixed group', () => {
+    const event: Partial<Data> = {
+      countries: ['de', 'fr'],
+      organizer: { de: 'Verein', fr: 'Association' },
+      contactEmail: { de: 'de@test', fr: 'fr@test' },
+      maxParticipants: { de: 10, fr: 5 },
+      freePlaces: { de: 3, fr: 0 },
+    };
+
+    const countryForm = () =>
+      new SurveyModel({
+        elements: [
+          { type: 'country', name: 'country', eventDataType: 'country' },
+        ],
+      });
+
+    it('should resolve the per-group values for the given group', () => {
+      const model = countryForm();
+
+      setVariables(model, fakeEventData(event), { group: 'fr' });
+
+      expect(model.getVariable('event.group')).toBe('fr');
+      expect(model.getVariable('event.organizer')).toBe('Association');
+      expect(model.getVariable('event.contactEmail')).toBe('fr@test');
+      expect(model.getVariable('event.maxParticipants')).toBe(5);
+      expect(model.getVariable('event.freePlaces')).toBe(0);
+    });
+
+    it('should not follow the answers', () => {
+      const model = countryForm();
+      setVariables(model, fakeEventData(event), { group: 'fr' });
+
+      model.setValue('country', 'de');
+
+      expect(model.getVariable('event.group')).toBe('fr');
+      expect(model.calculatedValues).toHaveLength(0);
+    });
+
+    it("should use the event's only group without a group", () => {
+      const model = countryForm();
+
+      setVariables(model, fakeEventData({ ...event, countries: ['de'] }), {
+        group: null,
+      });
+
+      expect(model.getVariable('event.group')).toBe('de');
+    });
+
+    it('should ignore a group the event does not run', () => {
+      const model = countryForm();
+
+      setVariables(model, fakeEventData(event), { group: 'it' });
+
+      expect(model.getVariable('event.group')).toBeNull();
+    });
+  });
+
   describe('dates', () => {
     it('should set the date for a given locale', () => {
       const model = new SurveyModel();
@@ -135,6 +257,35 @@ describe('variables', () => {
       setVariables(model, data);
 
       expect(model.getVariable('event.startAtDate')).toBe('01/10/2000');
+    });
+
+    it("should read the backend's UTC carriers like the frontend's naive strings", () => {
+      // Off UTC, a carrier read in local time would shift its digits.
+      vi.stubEnv('TZ', 'America/New_York');
+      const startAt = '2026-07-01T00:30:00';
+      const endAt = '2026-07-14T23:30:00';
+      const variables = (dates: Pick<Data, 'startAt' | 'endAt'>) => {
+        const model = new SurveyModel();
+        model.locale = 'de';
+        setVariables(model, fakeEventData(dates));
+
+        return [
+          'startAt',
+          'startAtDate',
+          'startAtTime',
+          'endAt',
+          'endAtTime',
+        ].map((name) => model.getVariable(`event.${name}`));
+      };
+
+      const carried = variables({
+        startAt: naiveDateTimeToUtcCarrier(startAt),
+        endAt: naiveDateTimeToUtcCarrier(endAt),
+      });
+
+      vi.unstubAllEnvs();
+      expect(carried).toEqual(variables({ startAt, endAt }));
+      expect(carried).toEqual([startAt, '01.07.2026', '00:30', endAt, '23:30']);
     });
   });
 

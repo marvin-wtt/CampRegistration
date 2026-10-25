@@ -50,7 +50,7 @@ export class NewsletterSubscriberService extends BaseService {
   async importSubscribersFromEvent(
     newsletterId: string,
     eventId: string,
-    country: string | null | undefined,
+    group: string | null | undefined,
     requireConsent: boolean | undefined,
   ): Promise<{ added: number; skipped: number }> {
     const newsletterConsentWhere = requireConsent
@@ -62,7 +62,8 @@ export class NewsletterSubscriberService extends BaseService {
     const registrations = await this.prisma.registration.findMany({
       where: {
         eventId,
-        country,
+        // The registrations' group, not where people live.
+        group,
         ...newsletterConsentWhere,
       },
       select: {

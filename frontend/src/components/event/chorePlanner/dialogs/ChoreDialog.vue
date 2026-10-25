@@ -162,20 +162,20 @@
         </div>
 
         <q-item
-          v-if="hasMultipleCountries"
+          v-if="hasMultipleGroups"
           tag="label"
           class="q-px-none"
         >
           <q-item-section>
             <q-item-label>
-              {{ t('field.balanceCountries.label') }}
+              {{ t('field.balanceGroups.label') }}
             </q-item-label>
             <q-item-label caption>
-              {{ t('field.balanceCountries.hint') }}
+              {{ t('field.balanceGroups.hint') }}
             </q-item-label>
           </q-item-section>
           <q-item-section side>
-            <q-toggle v-model="data.balanceCountries" />
+            <q-toggle v-model="data.balanceGroups" />
           </q-item-section>
         </q-item>
       </div>
@@ -242,7 +242,7 @@ interface EditableSlot {
 }
 
 const isEdit = computed<boolean>(() => props.chore !== undefined);
-const hasMultipleCountries = computed<boolean>(
+const hasMultipleGroups = computed<boolean>(
   () => (props.countries?.length ?? 0) > 1,
 );
 
@@ -253,7 +253,7 @@ const data = reactive<Required<Omit<ChoreCreateData, 'slots'>>>({
   eligibility: props.chore?.eligibility ?? 'PARTICIPANTS',
   effort: props.chore?.effort ?? 'NORMAL',
   defaultRotationUnit: props.chore?.defaultRotationUnit ?? 'PERSON',
-  balanceCountries: props.chore?.balanceCountries ?? false,
+  balanceGroups: props.chore?.balanceGroups ?? false,
 });
 
 // The stepper counts from 0; the chore stores "not set" as null.
@@ -429,9 +429,9 @@ field:
     label: 'Name'
     rule:
       required: 'The name is required'
-  balanceCountries:
-    label: 'Balance countries'
-    hint: 'Nice to have — try to spread suggested participants across countries. Fairness always comes first.'
+  balanceGroups:
+    label: 'Balance groups'
+    hint: 'Nice to have — try to spread suggested participants across groups. Fairness always comes first.'
   schedule:
     label: 'How often per day?'
     option:
@@ -476,9 +476,9 @@ field:
     label: 'Name'
     rule:
       required: 'Der Name ist erforderlich'
-  balanceCountries:
-    label: 'Länder ausgleichen'
-    hint: 'Optional — versucht, vorgeschlagene Teilnehmende über Länder zu streuen. Fairness hat immer Vorrang.'
+  balanceGroups:
+    label: 'Gruppen ausgleichen'
+    hint: 'Optional — versucht, vorgeschlagene Teilnehmende über die Gruppen zu streuen. Fairness hat immer Vorrang.'
   schedule:
     label: 'Wie oft am Tag?'
     option:
@@ -523,9 +523,9 @@ field:
     label: 'Nom'
     rule:
       required: 'Le nom est requis'
-  balanceCountries:
-    label: 'Équilibrer les pays'
-    hint: "Bonus — essaie de répartir les participants suggérés entre les pays. L'équité reste toujours prioritaire."
+  balanceGroups:
+    label: 'Équilibrer les groupes'
+    hint: "Bonus — essaie de répartir les participants suggérés entre les groupes. L'équité reste toujours prioritaire."
   schedule:
     label: 'Combien de fois par jour ?'
     option:
@@ -570,9 +570,9 @@ field:
     label: 'Nazwa'
     rule:
       required: 'Nazwa jest wymagana'
-  balanceCountries:
-    label: 'Równoważ kraje'
-    hint: 'Miło mieć — spróbuj rozłożyć sugerowanych uczestników pomiędzy kraje. Sprawiedliwość zawsze ma pierwszeństwo.'
+  balanceGroups:
+    label: 'Równoważ grupy'
+    hint: 'Miło mieć — spróbuj rozłożyć sugerowanych uczestników pomiędzy grupy. Sprawiedliwość zawsze ma pierwszeństwo.'
   schedule:
     label: 'Ile razy dziennie?'
     option:
@@ -617,9 +617,9 @@ field:
     label: 'Název'
     rule:
       required: 'Název je povinný'
-  balanceCountries:
-    label: 'Vyvážit země'
-    hint: 'Bonus — zkusí rozložit navrhované účastníky mezi země. Spravedlnost má vždy přednost.'
+  balanceGroups:
+    label: 'Vyvážit skupiny'
+    hint: 'Bonus — zkusí rozložit navrhované účastníky mezi skupiny. Spravedlnost má vždy přednost.'
   schedule:
     label: 'Kolikrát denně?'
     option:

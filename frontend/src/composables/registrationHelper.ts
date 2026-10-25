@@ -93,6 +93,10 @@ export function useRegistrationHelper() {
     return registration.computedData.gender ?? undefined;
   }
 
+  function group(registration: Registration): string | undefined {
+    return registration.group ?? undefined;
+  }
+
   function country(registration: Registration): string | undefined {
     return address(registration)?.country ?? undefined;
   }
@@ -130,7 +134,8 @@ export function useRegistrationHelper() {
     dateOfBirth,
     age,
     gender,
-    country,
+    group,
+    addressCountry: country,
     address,
     role,
     participant,

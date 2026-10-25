@@ -25,11 +25,19 @@
         </q-btn>
       </q-bar>
 
-      <q-scroll-area class="col-grow">
+      <!-- Capped at the dialog width: the content box otherwise grows to fit
+           the form, which then never sees a narrow screen and keeps its
+           desktop layout, hiding the mobile table of contents. -->
+      <q-scroll-area
+        class="col-grow"
+        :content-style="{ width: '100%' }"
+        :content-active-style="{ width: '100%' }"
+      >
         <registration-form
           ref="formRef"
           :event-details="event"
           :data="data"
+          :group
           :submit-fn="onSubmit"
           :upload-file-fn="uploadFileFn"
           moderation
@@ -83,9 +91,10 @@ const { t } = useI18n();
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
 
-const { event, data, uploadFileFn, hasTemplate } = defineProps<{
+const { event, data, group, uploadFileFn, hasTemplate } = defineProps<{
   event: EventDetails;
   data: Registration['data'];
+  group: Registration['group'];
   uploadFileFn: (file: File) => Promise<string>;
   hasTemplate: boolean;
 }>();

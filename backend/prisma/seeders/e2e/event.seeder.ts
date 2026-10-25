@@ -78,4 +78,79 @@ export async function seedE2eEvents(): Promise<void> {
     registrationClosesAt: '2020-06-01T09:00:00.000Z',
     form: { name: 'Closed event', elements: [] },
   });
+
+  // Two groups, chosen before the form. Unlisted, so the listing baselines
+  // don't change. The address is strict (the default), the nationality warns.
+  await EventFactory.create({
+    id: E2E_GROUP_EVENT_ID,
+    name: 'Group Event',
+    listed: false,
+    organization: { connect: { id: E2E_ORGANIZATION_ID } },
+    contactEmail: 'group-event@example.com',
+    // Shown on the group choice, which has a visual baseline.
+    startAt: '2027-07-01T09:00:00.000Z',
+    endAt: '2027-07-14T17:00:00.000Z',
+    location: 'Lakeside Camp',
+    countries: ['de', 'fr'],
+    maxParticipants: { de: 10, fr: 10 },
+    registrationClosesAt: null,
+    form: {
+      name: 'Group test event',
+      elements: [
+        { name: 'first_name', type: 'text', isRequired: true },
+        {
+          name: 'address',
+          type: 'address',
+          eventDataType: 'address',
+          isRequired: true,
+        },
+        { name: 'nationality', type: 'country', groupCountryMatch: 'warn' },
+      ],
+    },
+  });
+
+  // The French group is full, so a registration for it goes on the waiting
+  // list. Fixed subjects, so the test can tell which message arrived.
+  await EventFactory.create({
+    id: E2E_WAITLIST_EVENT_ID,
+    name: 'Waitlist Event',
+    listed: false,
+    organization: { connect: { id: E2E_ORGANIZATION_ID } },
+    contactEmail: 'waitlist-event@example.com',
+    countries: ['de', 'fr'],
+    maxParticipants: { de: 10, fr: 0 },
+    registrationClosesAt: null,
+    form: {
+      name: 'Waitlist test event',
+      elements: [
+        { name: 'first_name', type: 'text', isRequired: true },
+        {
+          name: 'email',
+          type: 'text',
+          inputType: 'email',
+          eventDataType: 'email',
+          isRequired: true,
+        },
+      ],
+    },
+    messageTemplates: {
+      create: [
+        {
+          trigger: 'registration_waitlisted',
+          group: 'fr',
+          subject: 'Waiting list France',
+          body: 'You are on the waiting list.',
+        },
+        {
+          trigger: 'registration_confirmed',
+          group: 'fr',
+          subject: 'Confirmed France',
+          body: 'You are registered.',
+        },
+      ],
+    },
+  });
 }
+
+export const E2E_GROUP_EVENT_ID = '01JHP0CXJFR4MQS8SF1HQJCG01';
+export const E2E_WAITLIST_EVENT_ID = '01JHP0CXJFR4MQS8SF1HQJCW01';

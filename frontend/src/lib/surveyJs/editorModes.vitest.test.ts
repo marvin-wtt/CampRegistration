@@ -85,6 +85,23 @@ describe('editor modes', () => {
     expect(properties).not.toContain('visibleIf');
   });
 
+  it('offers the group match on country and address questions in simple mode', () => {
+    const creator = createCreator();
+    creator.JSON = {
+      elements: [
+        { type: 'country', name: 'country' },
+        { type: 'address', name: 'address' },
+      ],
+    };
+    const properties = trackPropertyGrid(creator);
+    applyEditorMode(creator, 'simple', context);
+
+    for (const name of ['country', 'address']) {
+      creator.selectElement(creator.survey.getQuestionByName(name));
+      expect(properties()).toContain('groupCountryMatch');
+    }
+  });
+
   it('rebuilds the property grid of the selected element', () => {
     const creator = createCreator();
     const properties = trackPropertyGrid(creator);

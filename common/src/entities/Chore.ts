@@ -29,7 +29,7 @@ export interface Chore extends Identifiable {
   eligibility: ChoreEligibility;
   effort: ChoreEffort;
   defaultRotationUnit: ChoreRotationUnit;
-  balanceCountries: boolean;
+  balanceGroups: boolean;
   slots: ChoreSlot[];
 }
 
@@ -40,7 +40,7 @@ type ChoreSettings = Pick<
   | 'eligibility'
   | 'effort'
   | 'defaultRotationUnit'
-  | 'balanceCountries'
+  | 'balanceGroups'
 >;
 
 export type ChoreCreateData = Pick<Chore, 'name'> &

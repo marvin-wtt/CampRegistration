@@ -12,6 +12,18 @@ import { inject, injectable } from 'inversify';
 import contentDisposition from 'content-disposition';
 import { isClientDisconnect } from '#utils/stream';
 
+// Types a browser shows without running anything. Everything else downloads:
+// an XML upload (an SVG or XHTML with an `<?xml` prolog) would otherwise render,
+// scripts included, on the API's origin.
+const INLINE_MIME_TYPES = new Set([
+  'image/png',
+  'image/jpeg',
+  'image/gif',
+  'image/webp',
+  'image/avif',
+  'application/pdf',
+]);
+
 interface ModelData {
   id: string;
   name: string;
@@ -34,21 +46,21 @@ export class FileController extends BaseController {
 
     const file = req.modelOrFail('file');
 
-    if (file.uploadStatus === 'PENDING') {
-      throw new ApiError(
-        httpStatus.CONFLICT,
-        'File upload is still in progress',
-      );
-    }
-
+    // A file still being moved into storage is served from the tmp dir.
     const fileStream = await this.fileService.getFileStream(file);
 
     // Set response headers for image display
     res.contentType(file.type);
 
+    // Inline only when nothing asks for a download and the type is safe to
+    // show; every other case downloads, so a request can't opt a script in.
+    const inline = !download && INLINE_MIME_TYPES.has(file.type);
     res.setHeader(
       'Content-disposition',
-      this.buildContentDisposition(file.originalName, download),
+      this.buildContentDisposition(
+        file.originalName,
+        inline ? 'inline' : 'attachment',
+      ),
     );
 
     // pipeline (unlike pipe) propagates stream errors and tears the whole
@@ -110,12 +122,13 @@ export class FileController extends BaseController {
   }
 
   async store(req: Request, res: Response) {
-    const {
-      body: { accessLevel, field, locale, name },
-      file,
-    } = await req.validate(validator.store);
-
     const model = this.getRelationModel(req);
+    const {
+      body: { accessLevel, group, field, locale, name },
+      file,
+    } = await req.validate(
+      validator.store(this.groupsOf(req, model?.name === 'event')),
+    );
 
     // Use the session id as the default field value if no field is provided
     // This helps to avoid that other people can hijack anonymous files
@@ -128,6 +141,7 @@ export class FileController extends BaseController {
       fieldValue,
       locale,
       accessLevel ?? 'private',
+      group,
     );
 
     // Files are polymorphic; only event-owned files are a realtime resource.
@@ -139,13 +153,16 @@ export class FileController extends BaseController {
   }
 
   async update(req: Request, res: Response) {
-    const {
-      body: { accessLevel, field, locale, name },
-    } = await req.validate(validator.update);
     const file = req.modelOrFail('file');
+    const {
+      body: { accessLevel, group, field, locale, name },
+    } = await req.validate(
+      validator.update(this.groupsOf(req, file.eventId !== null), file),
+    );
 
     const updatedFile = await this.fileService.updateFile(file.id, {
       accessLevel,
+      group,
       field,
       locale,
       name,
@@ -178,15 +195,20 @@ export class FileController extends BaseController {
 
   private buildContentDisposition(
     originalName: string,
-    download: boolean | undefined,
+    type: 'inline' | 'attachment',
   ): string {
-    const type = download ? 'attachment' : 'inline';
     try {
       return contentDisposition.create(originalName, { type });
     } catch {
       // originalName contains characters rejected by RFC 6266 (e.g. CR/LF);
       return contentDisposition.create(undefined, { type });
     }
+  }
+
+  // Only an event's files can be per group. Its model is bound by the event
+  // files router on upload and by the event file guard on update.
+  private groupsOf(req: Request, eventOwned: boolean): readonly string[] {
+    return eventOwned ? req.modelOrFail('event').countries : [];
   }
 
   getRelationModel(req: Request): ModelData | undefined {

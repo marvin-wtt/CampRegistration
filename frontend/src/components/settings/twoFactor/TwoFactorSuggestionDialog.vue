@@ -91,10 +91,10 @@ action:
 </i18n>
 
 <i18n lang="yaml" locale="de">
-title: 'Schützen Sie Ihr Konto'
-description: 'Fügen Sie eine zusätzliche Schutzebene hinzu, indem Sie die
-  Zwei-Faktor-Authentifizierung aktivieren. Es dauert nur eine Minute und schützt
-  Ihr Konto, selbst wenn Ihr Passwort kompromittiert wird.'
+title: 'Schütze dein Konto'
+description: 'Füge eine zusätzliche Schutzebene hinzu, indem du die
+  Zwei-Faktor-Authentifizierung aktivierst. Es dauert nur eine Minute und schützt
+  dein Konto, selbst wenn dein Passwort kompromittiert wird.'
 dontRemind: 'Nicht mehr erinnern'
 action:
   enable: 'Jetzt aktivieren'

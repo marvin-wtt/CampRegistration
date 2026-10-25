@@ -169,10 +169,10 @@
                 :key="person.id"
               >
                 <q-item-section
-                  v-if="person.country"
+                  v-if="person.group"
                   avatar
                 >
-                  <country-icon :country="person.country" />
+                  <country-icon :country="person.group" />
                 </q-item-section>
                 <q-item-section>
                   <q-item-label class="ellipsis">
@@ -638,7 +638,7 @@ function mapRegistrationRoommate(registration: Registration): Roommate {
   const name = formatPersonName(registrationHelper.uniqueName(registration));
   const age = registrationHelper.age(registration);
   const gender = registrationHelper.gender(registration);
-  const country = registrationHelper.country(registration);
+  const group = registrationHelper.group(registration);
   const participant = registrationHelper.participant(registration);
   const role = registrationHelper.role(registration);
 
@@ -647,7 +647,7 @@ function mapRegistrationRoommate(registration: Registration): Roommate {
     name,
     age,
     gender,
-    country,
+    group,
     participant,
     role,
   };
@@ -909,7 +909,7 @@ settings:
 
 empty:
   title: 'Noch keine Zimmer'
-  message: 'Erstellen Sie Zimmer, um Personen Betten zuzuweisen.'
+  message: 'Erstelle Zimmer, um Personen Betten zuzuweisen.'
 
 request:
   fetch:

@@ -557,7 +557,7 @@ action:
   fromSent: 'Aus gesendeter Nachricht'
 empty:
   title: 'Noch keine Anmeldungen'
-  message: 'Sobald sich Personen anmelden, können Sie ihnen von hier aus eine Nachricht senden.'
+  message: 'Sobald sich Personen anmelden, kannst du ihnen von hier aus eine Nachricht senden.'
 dialog:
   delete:
     title: 'Nachricht löschen'

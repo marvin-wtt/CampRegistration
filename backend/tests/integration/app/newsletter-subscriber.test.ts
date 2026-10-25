@@ -474,23 +474,23 @@ describe(`${BASE}/:newsletterId/subscribers`, () => {
       expect(body.data).toEqual({ added: 0, skipped: 1 });
     });
 
-    it('should filter by country when provided', async () => {
+    it('should filter by group when provided', async () => {
       const { accessToken, newsletter, event } =
         await createNewsletterAndEventWithManager();
       await RegistrationFactory.create({
         event: { connect: { id: event.id } },
         emails: ['de@example.com'],
-        country: 'de',
+        group: 'de',
       });
       await RegistrationFactory.create({
         event: { connect: { id: event.id } },
         emails: ['fr@example.com'],
-        country: 'fr',
+        group: 'fr',
       });
 
       const { body } = await request()
         .post(`${BASE}/${newsletter.id}/subscribers/import`)
-        .send({ eventId: event.id, country: 'de', consentConfirmed: true })
+        .send({ eventId: event.id, group: 'de', consentConfirmed: true })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 

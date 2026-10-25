@@ -41,6 +41,7 @@ export default {
         customFiles: 'Plik niestandardowy',
         status: 'Status',
         country: 'Kraj',
+        group: 'Grupa',
       },
       values: {
         status: {
@@ -93,7 +94,7 @@ export default {
       label: 'Automatyczny e-mail',
       fields: {
         trigger: 'Wyzwalacz',
-        country: 'Kraj',
+        group: 'Grupa',
         subject: 'Temat',
         body: 'Treść',
         priority: 'Priorytet',

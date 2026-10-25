@@ -41,6 +41,7 @@ export default {
         customFiles: 'Fichier personnalisé',
         status: 'Statut',
         country: 'Pays',
+        group: 'Groupe',
       },
       values: {
         status: {
@@ -93,7 +94,7 @@ export default {
       label: 'E-mail automatique',
       fields: {
         trigger: 'Déclencheur',
-        country: 'Pays',
+        group: 'Groupe',
         subject: 'Objet',
         body: 'Contenu',
         priority: 'Priorité',

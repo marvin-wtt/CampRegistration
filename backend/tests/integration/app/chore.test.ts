@@ -76,7 +76,7 @@ describe('/api/v1/events/:eventId/chores', () => {
         expect(response.body.data[0]).toHaveProperty('eligibility');
         expect(response.body.data[0]).toHaveProperty('effort');
         expect(response.body.data[0]).toHaveProperty('supervisorCount');
-        expect(response.body.data[0]).toHaveProperty('balanceCountries');
+        expect(response.body.data[0]).toHaveProperty('balanceGroups');
         expect(response.body.data[0]).toHaveProperty('slots');
       },
     );
@@ -184,7 +184,7 @@ describe('/api/v1/events/:eventId/chores', () => {
         effort: 'NORMAL',
         supervisorCount: 0,
         defaultRotationUnit: 'PERSON',
-        balanceCountries: false,
+        balanceGroups: false,
         slots: [],
       });
     });
@@ -200,7 +200,7 @@ describe('/api/v1/events/:eventId/chores', () => {
           effort: 'HEAVY',
           supervisorCount: 1,
           defaultRotationUnit: 'ROOM',
-          balanceCountries: true,
+          balanceGroups: true,
           slots: [
             { name: 'Breakfast', headcount: 2, effort: 'LIGHT' },
             { name: 'Dinner' },
@@ -214,7 +214,7 @@ describe('/api/v1/events/:eventId/chores', () => {
         effort: 'HEAVY',
         supervisorCount: 1,
         defaultRotationUnit: 'ROOM',
-        balanceCountries: true,
+        balanceGroups: true,
       });
       expect(body.data.slots).toMatchObject([
         {
@@ -320,11 +320,11 @@ describe('/api/v1/events/:eventId/chores', () => {
       },
     );
 
-    it('should update the name, sortOrder, eligibility and balanceCountries', async () => {
+    it('should update the name, sortOrder, eligibility and balanceGroups', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
       const chore = await createChoreForEvent(event, {
         eligibility: 'PARTICIPANTS',
-        balanceCountries: false,
+        balanceGroups: false,
       });
 
       const { body } = await request()
@@ -333,7 +333,7 @@ describe('/api/v1/events/:eventId/chores', () => {
           name: 'Dishwashing',
           sortOrder: 2,
           eligibility: 'EVERYONE',
-          balanceCountries: true,
+          balanceGroups: true,
         })
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
@@ -341,7 +341,7 @@ describe('/api/v1/events/:eventId/chores', () => {
       expect(body).toHaveProperty('data.name', 'Dishwashing');
       expect(body).toHaveProperty('data.sortOrder', 2);
       expect(body).toHaveProperty('data.eligibility', 'EVERYONE');
-      expect(body).toHaveProperty('data.balanceCountries', true);
+      expect(body).toHaveProperty('data.balanceGroups', true);
     });
 
     it('should update, reorder, add and remove slots', async () => {
