@@ -198,6 +198,7 @@ describe('/api/v1/events/:eventId/registrations', () => {
       expect(data).toHaveProperty('computedData.address');
       expect(data).toHaveProperty('computedData.role');
       expect(data).toHaveProperty('computedData.emails');
+      expect(data).toHaveProperty('computedData.phoneNumbers');
       expect(data).toHaveProperty('customData');
       expect(data).toHaveProperty('locale');
       expect(data).toHaveProperty('room');
@@ -724,6 +725,7 @@ describe('/api/v1/events/:eventId/registrations', () => {
           dateOfBirth: '2000-01-01',
           email: 'test@example.com',
           emailSecondary: 'other@example.com',
+          phone: '+49 151 23456789',
           role: 'counselor',
           gender: 'f',
           street: 'Somestreet 1',
@@ -743,6 +745,7 @@ describe('/api/v1/events/:eventId/registrations', () => {
           lastName: 'Doe',
           dateOfBirth: '2000-01-01',
           emails: ['test@example.com', 'other@example.com'],
+          phoneNumbers: ['+49 151 23456789'],
           role: 'counselor',
           gender: 'f',
           address: {
@@ -1835,6 +1838,7 @@ describe('/api/v1/events/:eventId/registrations', () => {
           dateOfBirth: '2000-01-01',
           email: 'test@example.com',
           emailSecondary: 'other@example.com',
+          phone: '+49 151 23456789',
           role: 'counselor',
           gender: 'f',
           street: 'Somestreet 1',
@@ -1855,6 +1859,7 @@ describe('/api/v1/events/:eventId/registrations', () => {
           lastName: 'Doe',
           dateOfBirth: '2000-01-01',
           emails: ['test@example.com', 'other@example.com'],
+          phoneNumbers: ['+49 151 23456789'],
           role: 'counselor',
           gender: 'f',
           address: {

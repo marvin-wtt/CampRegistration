@@ -54,6 +54,10 @@ export class RegistrationEventDataHelper {
     return this.stringArray('email');
   }
 
+  phoneNumbers(): string[] | undefined {
+    return this.stringArray('phone');
+  }
+
   private address():
     | {
         street?: string | undefined;
@@ -161,6 +165,7 @@ export function computedRegistrationData(
     country: helper.country() ?? null,
     dateOfBirth: helper.dateOfBirth() ?? null,
     emails: helper.emails() ?? [],
+    phoneNumbers: helper.phoneNumbers() ?? [],
     role: helper.role() ?? null,
     gender: helper.gender() ?? null,
     newsletterConsent: helper.newsletterConsent() ?? null,

@@ -259,7 +259,7 @@ function textAnswer(question: QuestionTextModel): unknown {
     case 'email':
       return faker.internet.email();
     case 'tel':
-      return faker.phone.number();
+      return faker.phone.number({ style: 'international' });
     case 'url':
       return faker.internet.url();
     case 'number':

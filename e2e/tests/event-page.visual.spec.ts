@@ -279,6 +279,7 @@ async function mockRegistrationResponse(
               lastName: 'Smith',
               dateOfBirth: null,
               emails: null,
+              phoneNumbers: null,
               role: null,
               gender: null,
               address: {

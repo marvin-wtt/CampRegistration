@@ -182,6 +182,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
           },
           role: this.payload.registration.role,
           emails: this.payload.registration.emails,
+          phoneNumbers: this.payload.registration.phoneNumbers,
         },
         customData: this.payload.registration.customData ?? {},
         changes: this.renderChanges(format),

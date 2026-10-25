@@ -43,6 +43,7 @@ function baseComputedData(): Registration['computedData'] {
     gender: null,
     address: { street: null, city: null, zipCode: null, country: null },
     emails: [],
+    phoneNumbers: [],
   };
 }
 

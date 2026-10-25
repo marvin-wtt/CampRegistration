@@ -12,6 +12,7 @@ import {
   gender,
   lastName,
   name,
+  phone,
 } from '@/lib/surveyJs/properties/eventDataMapping/types';
 
 const dataTypes: EventDataType[] = [];
@@ -25,6 +26,7 @@ dataTypes.push(gender);
 dataTypes.push(lastName);
 dataTypes.push(name);
 dataTypes.push(newsletterConsent);
+dataTypes.push(phone);
 dataTypes.push(role);
 dataTypes.push(waitingList);
 

@@ -39,6 +39,7 @@ export class RegistrationResource extends JsonResource<
         },
         role: this.data.role,
         emails: this.data.emails,
+        phoneNumbers: this.data.phoneNumbers,
       },
       customData: this.data.customData ?? {},
       group: this.data.group,
