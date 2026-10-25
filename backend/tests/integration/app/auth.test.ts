@@ -222,7 +222,7 @@ describe('/api/v1/auth', async () => {
       expect(body).toHaveProperty('locale', 'fr-CH');
     });
 
-    it('should use en-US as default locale', async () => {
+    it('should use en-GB as default locale', async () => {
       const data = {
         name: 'testuser',
         email: 'test@email.net',
@@ -234,7 +234,7 @@ describe('/api/v1/auth', async () => {
         .send(data)
         .expect(201);
 
-      expect(body).toHaveProperty('locale', 'en-US');
+      expect(body).toHaveProperty('locale', 'en-GB');
     });
 
     it('should send verify email notification to the user', async () => {

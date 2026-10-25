@@ -19,7 +19,7 @@ model User {
   emailVerified Boolean   @default(false) @map("email_verified")
   password      String    @db.VarChar(255)
   role          Role      @default(USER)
-  locale        String    @default("en-US") @db.VarChar(5)
+  locale        String    @default("en-GB") @db.VarChar(5)
   locked        Boolean   @default(false)
   lastSeen      DateTime? @map("last_seen")
   createdAt     DateTime  @default(now()) @map("created_at")
@@ -261,7 +261,7 @@ model Registration {
   // own country is `country`, and may differ.
   group                              String?            @db.VarChar(2)
   newsletterConsent                  Boolean?           @map("newsletter_consent")
-  locale                             String             @default("en-US") @db.VarChar(5)
+  locale                             String             @default("en-GB") @db.VarChar(5)
   //
   status                             RegistrationStatus @default(PENDING)
   // Which privacy information this person was actually shown. Nullable because

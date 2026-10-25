@@ -43,8 +43,8 @@ const options = [
     value: 'fr-FR',
   },
   {
-    label: 'English (US)',
-    value: 'en-US',
+    label: 'English',
+    value: 'en-GB',
   },
   {
     label: 'Polski',

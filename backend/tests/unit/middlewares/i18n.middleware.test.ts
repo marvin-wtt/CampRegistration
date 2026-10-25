@@ -16,16 +16,16 @@ describe('requestLocale', () => {
   });
 
   it('defaults when the client accepts anything', () => {
-    expect(requestLocale(req(['*']))).toBe('en-US');
+    expect(requestLocale(req(['*']))).toBe('en-GB');
   });
 
   // An empty `Accept-Language` header yields no language at all.
   it('defaults when there is no language to speak of', () => {
-    expect(requestLocale(req([]))).toBe('en-US');
+    expect(requestLocale(req([]))).toBe('en-GB');
   });
 
   it('defaults for a malformed tag rather than throwing', () => {
-    expect(requestLocale(req(['en_US~broken']))).toBe('en-US');
-    expect(requestLocale(req(['x'.repeat(40)]))).toBe('en-US');
+    expect(requestLocale(req(['en_US~broken']))).toBe('en-GB');
+    expect(requestLocale(req(['x'.repeat(40)]))).toBe('en-GB');
   });
 });

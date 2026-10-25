@@ -164,7 +164,7 @@
                   v-for="localeOption in locales"
                   :key="localeOption.value"
                   clickable
-                  :active="locale === localeOption.value"
+                  :active="sameLanguage(locale, localeOption.value)"
                   @click="updateLocale(localeOption.value)"
                 >
                   <q-item-section avatar>
@@ -247,7 +247,7 @@ const { hideLanguage = false } = defineProps<{
 const locales = computed<QSelectOption[]>(() => [
   { label: 'Deutsch', value: 'de-DE' },
   { label: 'Français', value: 'fr-FR' },
-  { label: 'English', value: 'en-US' },
+  { label: 'English', value: 'en-GB' },
   { label: 'Polski', value: 'pl-PL' },
   { label: 'Česky', value: 'cs-CZ' },
 ]);
@@ -305,6 +305,11 @@ const languageMenuAnchor = computed<Pick<QMenuProps, 'anchor' | 'self'>>(() => {
     ? { anchor: 'top end', self: 'top start' }
     : { anchor: 'bottom end', self: 'top end' };
 });
+
+// `en-US` stays active for US browsers, so English matches either variant.
+function sameLanguage(a: string, b: string): boolean {
+  return a.split('-')[0] === b.split('-')[0];
+}
 
 function updateLocale(value: string) {
   locale.value = value;

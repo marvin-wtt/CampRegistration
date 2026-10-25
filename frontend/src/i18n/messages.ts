@@ -1,10 +1,12 @@
 import enUS from './en-US';
+import enGB from './en-GB';
 import deDE from './de-DE';
 import frFR from './fr-FR';
 import plPl from './pl-PL';
 import csCZ from './cs-CZ';
 
 export default {
+  'en-GB': enGB,
   'en-US': enUS,
   en: enUS,
   'de-DE': deDE,

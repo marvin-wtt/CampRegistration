@@ -1,6 +1,6 @@
 import type { Request } from 'express';
 
-const DEFAULT_LOCALE = 'en-US';
+const DEFAULT_LOCALE = 'en-GB';
 
 /**
  * The request's preferred locale, as a canonical BCP-47 tag.
