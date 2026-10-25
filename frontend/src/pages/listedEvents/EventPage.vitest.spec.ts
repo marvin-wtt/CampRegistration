@@ -52,7 +52,10 @@ const RegistrationFormStub = defineComponent({
   },
 });
 
-function eventWith(countries: string[]): EventDetails {
+function eventWith(
+  countries: string[],
+  overrides: Partial<EventDetails> = {},
+): EventDetails {
   return {
     id: 'event-1',
     name: 'Summer Camp',
@@ -68,13 +71,18 @@ function eventWith(countries: string[]): EventDetails {
     registrationClosesAt: null,
     form: {},
     themes: {},
+    ...overrides,
   } as unknown as EventDetails;
 }
 
 let router: Router;
 
-async function mountPage(countries: string[], url = '/events/event-1') {
-  api.fetchEvent.mockResolvedValue(eventWith(countries));
+async function mountPage(
+  countries: string[],
+  url = '/events/event-1',
+  overrides: Partial<EventDetails> = {},
+) {
+  api.fetchEvent.mockResolvedValue(eventWith(countries, overrides));
   router = createRouter({
     history: createMemoryHistory(),
     routes: [{ path: '/events/:eventId', name: 'event', component: EventPage }],
@@ -208,6 +216,61 @@ describe('EventPage', () => {
       data: { first_name: 'Ann' },
       locale: 'de-DE',
       group: 'fr',
+    });
+  });
+
+  describe('contacts while registration is closed', () => {
+    const closed = {
+      registrationStatus: 'closed',
+      contactEmail: {
+        de: 'de@example.com',
+        at: 'de@example.com',
+        fr: 'fr@example.com',
+      },
+    } as const;
+
+    const contacts = (wrapper: Awaited<ReturnType<typeof mountPage>>) =>
+      wrapper.findAll('[data-test="event-contact"]').map((contact) => ({
+        email: contact.attributes('href'),
+        groups: contact.find('[data-test="event-contact-groups"]').exists()
+          ? contact.find('[data-test="event-contact-groups"]').text()
+          : null,
+      }));
+
+    it('labels every contact with the groups it answers for', async () => {
+      const wrapper = await mountPage(
+        ['de', 'at', 'fr'],
+        '/events/event-1',
+        closed,
+      );
+
+      expect(contacts(wrapper)).toEqual([
+        { email: 'mailto:de@example.com', groups: 'Germany, Austria' },
+        { email: 'mailto:fr@example.com', groups: 'France' },
+      ]);
+    });
+
+    it("shows only the linked group's contact", async () => {
+      const wrapper = await mountPage(
+        ['de', 'at', 'fr'],
+        '/events/event-1?group=fr',
+        closed,
+      );
+
+      expect(contacts(wrapper)).toEqual([
+        { email: 'mailto:fr@example.com', groups: null },
+      ]);
+    });
+
+    it('leaves a contact shared by every group unlabelled', async () => {
+      const wrapper = await mountPage(['de', 'fr'], '/events/event-1', {
+        registrationStatus: 'closed',
+        contactEmail: { de: 'info@example.com', fr: 'info@example.com' },
+      });
+
+      expect(contacts(wrapper)).toEqual([
+        { email: 'mailto:info@example.com', groups: null },
+      ]);
     });
   });
 });

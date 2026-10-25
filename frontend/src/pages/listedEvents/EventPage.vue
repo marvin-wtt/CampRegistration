@@ -73,7 +73,123 @@
       class="column justify-center q-pa-md col-xs-12 col-sm-8 col-md-5 col-lg-4"
       :data-test="`event-registration-status-${registrationStatus}`"
     >
-      <div class="col-shrink column items-center q-gutter-md">
+      <div
+        v-if="event"
+        class="event-page__status column no-wrap"
+      >
+        <event-identity :event />
+
+        <div
+          class="event-page__notice row no-wrap items-center rounded-xl q-pa-md"
+          data-test="event-registration-notice"
+        >
+          <q-icon
+            :name="statusIcon"
+            size="md"
+            class="q-mr-md"
+          />
+          <div>
+            <div class="text-body1 text-weight-medium">
+              {{ statusText }}
+            </div>
+            <div
+              v-if="statusDate"
+              class="text-body2"
+            >
+              {{ statusDate }}
+            </div>
+          </div>
+        </div>
+
+        <section
+          v-if="eventContacts.length > 0"
+          class="event-page__contacts"
+        >
+          <div class="text-subtitle2 text-on-surface-variant q-mb-sm q-ml-md">
+            {{ t('contact.title') }}
+          </div>
+          <q-list
+            bordered
+            separator
+            class="event-page__contact-list rounded-xl"
+          >
+            <q-item
+              v-for="contact in eventContacts"
+              :key="contact.email"
+              :href="`mailto:${contact.email}`"
+              tag="a"
+              clickable
+              class="event-page__contact"
+              data-test="event-contact"
+            >
+              <q-item-section
+                avatar
+                class="event-page__contact-avatar"
+              >
+                <div
+                  v-if="contact.groups.length > 0"
+                  class="event-page__contact-flags"
+                >
+                  <country-icon
+                    v-for="contactGroup in contact.groups"
+                    :key="contactGroup"
+                    :country="contactGroup"
+                  />
+                </div>
+                <q-icon
+                  v-else
+                  name="mail"
+                  color="primary"
+                />
+              </q-item-section>
+              <q-item-section>
+                <q-item-label
+                  v-if="contact.groups.length > 0"
+                  class="text-body1"
+                  data-test="event-contact-groups"
+                >
+                  {{ contactGroupNames(contact.groups) }}
+                </q-item-label>
+                <q-item-label
+                  :caption="contact.groups.length > 0"
+                  :class="{ 'text-body1': contact.groups.length === 0 }"
+                  class="event-page__contact-email"
+                >
+                  {{ contact.email }}
+                </q-item-label>
+              </q-item-section>
+              <q-item-section
+                v-if="contact.groups.length > 0"
+                side
+              >
+                <q-icon name="mail" />
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </section>
+
+        <div
+          v-if="canCreateRegistrationAsManager"
+          class="column items-center q-gutter-y-xs"
+        >
+          <m-btn
+            primary
+            icon="lock_open"
+            :label="t('action.open_form_anyway')"
+            data-test="registration-override"
+            @click="enableManagerRegistrationOverride()"
+          />
+          <div class="text-caption text-on-surface-variant">
+            {{ t('action.open_form_anyway_hint') }}
+          </div>
+        </div>
+      </div>
+
+      <!-- No event to show: not found or not available. -->
+      <div
+        v-else
+        class="col-shrink column items-center q-gutter-md"
+      >
         <q-avatar
           :icon="statusIcon"
           color="primary"
@@ -81,44 +197,9 @@
           size="100px"
         />
 
-        <div
-          v-if="event"
-          class="text-h5 text-center text-weight-medium"
-        >
-          {{ to(event.name) }}
-        </div>
-
         <div class="text-body1 text-center">
           {{ statusText }}
         </div>
-
-        <div
-          v-if="statusDate"
-          class="text-body2 text-center text-grey-7"
-        >
-          {{ statusDate }}
-        </div>
-
-        <q-btn
-          v-for="email in eventContactEmails"
-          :key="email"
-          :href="`mailto:${email}`"
-          :label="email"
-          icon="mail"
-          type="a"
-          flat
-          rounded
-          color="primary"
-        />
-
-        <q-btn
-          v-if="canCreateRegistrationAsManager"
-          :label="t('action.open_form_for_manager')"
-          color="primary"
-          icon="lock_open"
-          rounded
-          @click="enableManagerRegistrationOverride()"
-        />
       </div>
     </div>
   </page-state-handler>
@@ -131,6 +212,8 @@ import { useMeta, useQuasar } from 'quasar';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import RegistrationForm from '@/components/common/RegistrationForm.vue';
 import RegistrationGroupSelect from '@/components/listedEvents/RegistrationGroupSelect.vue';
+import EventIdentity from '@/components/listedEvents/EventIdentity.vue';
+import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import CountryIcon from '@/components/common/localization/CountryIcon.vue';
 import ConfirmDialog from '@/components/common/dialogs/ConfirmDialog.vue';
 import PrivacyNoticeDisclosure from '@/components/privacy/PrivacyNoticeDisclosure.vue';
@@ -139,12 +222,13 @@ import {
   type EventDetails,
   type EventRegistrationStatus,
 } from '@camp-registration/common/entities';
-import { allGroupValues } from '@camp-registration/common/utils';
+import { forGroup } from '@camp-registration/common/utils';
 import { isAPIServiceError, useAPIService } from '@/services/APIService';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useErrorExtractor } from '@/composables/serviceHandler';
 import { usePermissions } from '@/composables/permissions';
+import { useRouteQueryParams } from '@/composables/useRouteQueryParams';
 
 const { t, d, locale } = useI18n();
 const { to } = useObjectTranslation();
@@ -154,6 +238,7 @@ const router = useRouter();
 const quasar = useQuasar();
 const { extractErrorText } = useErrorExtractor();
 const { canFor } = usePermissions();
+const { getEnumQueryParam } = useRouteQueryParams();
 
 const managerRegistrationOverrideEnabled = ref<boolean>(false);
 const formActive = ref<boolean>(true);
@@ -201,10 +286,9 @@ const group = computed<string | null | undefined>(() => {
     return groups[0] ?? null;
   }
 
-  const query = route.query.group;
-  const selected = typeof query === 'string' ? query.toLowerCase() : null;
-
-  return selected && groups.includes(selected) ? selected : undefined;
+  return (
+    getEnumQueryParam('group', groups, { caseInsensitive: true }) ?? undefined
+  );
 });
 
 // A new form starts active; the previous one may have ended in its
@@ -317,14 +401,42 @@ const registrationStatus = computed<RegistrationStatus>(() => {
   return event.value.registrationStatus;
 });
 
-// The visitor's group is unknown here, so every group's contact is listed.
-const eventContactEmails = computed<string[]>(() => {
-  if (!event.value?.contactEmail) {
+interface EventContact {
+  email: string;
+  // The groups it answers for; empty when it is the only contact.
+  groups: string[];
+}
+
+// A link's `?group=` names the visitor's contact; without one, every group's
+// is listed with the groups it answers for.
+const eventContacts = computed<EventContact[]>(() => {
+  const contactEmail = event.value?.contactEmail;
+  if (!contactEmail) {
     return [];
   }
 
-  return allGroupValues(event.value.contactEmail).filter(Boolean);
+  const own = forGroup(contactEmail, group.value);
+  if (own) {
+    return [{ email: own, groups: [] }];
+  }
+
+  if (typeof contactEmail === 'string') {
+    return [];
+  }
+
+  const contacts = new Map<string, string[]>();
+  for (const [contactGroup, email] of Object.entries(contactEmail)) {
+    if (email) {
+      contacts.set(email, [...(contacts.get(email) ?? []), contactGroup]);
+    }
+  }
+
+  return [...contacts].map(([email, groups]) => ({ email, groups }));
 });
+
+function contactGroupNames(groups: string[]): string {
+  return groups.map((group) => countryName(group, locale.value)).join(', ');
+}
 
 const statusIcon = computed<string>(() => {
   switch (registrationStatus.value) {
@@ -439,6 +551,50 @@ function enableManagerRegistrationOverride() {
   flex-direction: column;
 }
 
+.event-page__status {
+  gap: 16px;
+
+  // Taller than the window, the page scrolls instead of the cards clipping.
+  > * {
+    flex-shrink: 0;
+  }
+}
+
+// Tonal, so the status reads as a note about the event rather than a card
+// of its own.
+.event-page__notice {
+  background: var(--md3-secondary-container);
+  color: var(--md3-on-secondary-container);
+}
+
+.event-page__contacts {
+  margin-top: 8px;
+}
+
+.event-page__contact-list {
+  background: var(--md3-surface-container-low);
+  overflow: hidden;
+}
+
+// Touch-sized rows, like the group choice.
+.event-page__contact {
+  min-height: 64px;
+}
+
+// Fits two flags, so rows with one or two keep their text aligned.
+.event-page__contact-avatar {
+  min-width: 64px;
+}
+
+.event-page__contact-flags {
+  display: flex;
+  gap: 4px;
+}
+
+.event-page__contact-email {
+  overflow-wrap: anywhere;
+}
+
 .event-page__group {
   padding: 0 0.75rem;
 }
@@ -457,6 +613,9 @@ function enableManagerRegistrationOverride() {
 </style>
 
 <i18n lang="yaml" locale="en">
+contact:
+  title: 'Contact'
+
 group:
   current: 'Group: {group}'
   change: 'Change group'
@@ -465,7 +624,8 @@ group:
     message: "The form is reset: every answer you have given so far is cleared, since it belongs to this group's form."
 
 action:
-  open_form_for_manager: 'Open form as manager'
+  open_form_anyway: 'Open form anyway'
+  open_form_anyway_hint: 'Only the event team sees this'
 
 date:
   opens: 'Opens on {date}'
@@ -478,6 +638,9 @@ error:
 </i18n>
 
 <i18n lang="yaml" locale="de">
+contact:
+  title: 'Kontakt'
+
 group:
   current: 'Gruppe: {group}'
   change: 'Gruppe wechseln'
@@ -486,7 +649,8 @@ group:
     message: 'Das Formular wird zurückgesetzt: Alle deine bisherigen Angaben werden gelöscht, da sie zum Formular dieser Gruppe gehören.'
 
 action:
-  open_form_for_manager: 'Als Veranstaltungsmanager öffnen'
+  open_form_anyway: 'Formular trotzdem öffnen'
+  open_form_anyway_hint: 'Nur für das Veranstaltungsteam sichtbar'
 
 date:
   opens: 'Öffnet am {date}'
@@ -499,6 +663,9 @@ error:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
+contact:
+  title: 'Contact'
+
 group:
   current: 'Groupe : {group}'
   change: 'Changer de groupe'
@@ -507,7 +674,8 @@ group:
     message: 'Le formulaire est réinitialisé : toutes tes réponses sont effacées, car elles appartiennent au formulaire de ce groupe.'
 
 action:
-  open_form_for_manager: 'Ouvrir comme gestionnaire'
+  open_form_anyway: 'Ouvrir le formulaire quand même'
+  open_form_anyway_hint: "Visible uniquement par l'équipe de l'événement"
 
 date:
   opens: 'Ouvre le {date}'
@@ -520,6 +688,9 @@ error:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
+contact:
+  title: 'Kontakt'
+
 group:
   current: 'Grupa: {group}'
   change: 'Zmień grupę'
@@ -528,7 +699,8 @@ group:
     message: 'Formularz zostanie zresetowany: wszystkie dotychczasowe odpowiedzi zostaną usunięte, ponieważ należą do formularza tej grupy.'
 
 action:
-  open_form_for_manager: 'Otwórz jako menedżer'
+  open_form_anyway: 'Otwórz formularz mimo to'
+  open_form_anyway_hint: 'Widoczne tylko dla zespołu wydarzenia'
 
 date:
   opens: 'Otwiera się {date}'
@@ -541,6 +713,9 @@ error:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
+contact:
+  title: 'Kontakt'
+
 group:
   current: 'Skupina: {group}'
   change: 'Změnit skupinu'
@@ -549,7 +724,8 @@ group:
     message: 'Formulář se vynuluje: všechny dosavadní odpovědi budou smazány, protože patří k formuláři této skupiny.'
 
 action:
-  open_form_for_manager: 'Otevřít jako správce'
+  open_form_anyway: 'Přesto otevřít formulář'
+  open_form_anyway_hint: 'Viditelné pouze pro tým akce'
 
 date:
   opens: 'Otevírá se {date}'

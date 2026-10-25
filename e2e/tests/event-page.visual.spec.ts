@@ -18,6 +18,9 @@ const CLOSED_EVENT = '01JHP0CXJFR4MQS8SF1HQJCA20'; // closed in 2020 -> closed
 const MISSING_EVENT = '01JHP0CXJFR4MQS8SF1HQJCY30';
 // Two groups (Germany, France), chosen before the form.
 const GROUP_EVENT = '01JHP0CXJFR4MQS8SF1HQJCG01';
+// Several groups with a contact each: Germany and Austria share one.
+const GROUP_UPCOMING_EVENT = '01JHP0CXJFR4MQS8SF1HQJCG10';
+const GROUP_CLOSED_EVENT = '01JHP0CXJFR4MQS8SF1HQJCG20';
 
 /** Wait for the page to reach a stable state before capturing a screenshot. */
 async function settle(page: Page): Promise<void> {
@@ -85,6 +88,53 @@ test.describe('event page — visual', () => {
     await settle(page);
 
     await expect(page).toHaveScreenshot('event-page-not-found.png');
+  });
+
+  test('registration upcoming — contact per group', async ({ page }) => {
+    await page.goto(`/events/${GROUP_UPCOMING_EVENT}`);
+
+    await expect(
+      page.getByTestId('event-registration-status-upcoming'),
+    ).toBeVisible();
+    await settle(page);
+
+    await expect(page).toHaveScreenshot('event-page-upcoming-groups.png');
+  });
+
+  test('registration closed — contact per group', async ({ page }) => {
+    await page.goto(`/events/${GROUP_CLOSED_EVENT}`);
+
+    await expect(page.getByTestId('event-contact')).toHaveCount(2);
+    await settle(page);
+
+    await expect(page).toHaveScreenshot('event-page-closed-groups.png');
+  });
+
+  // A group link names the visitor's contact, so only that one is listed.
+  test('registration closed — linked group', async ({ page }) => {
+    await page.goto(`/events/${GROUP_CLOSED_EVENT}?group=fr`);
+
+    await expect(page.getByTestId('event-contact')).toHaveCount(1);
+    await settle(page);
+
+    await expect(page).toHaveScreenshot('event-page-closed-linked-group.png');
+  });
+
+  // Only the event team sees the override, so this one signs in as a manager.
+  test('registration closed — form override', async ({ page }) => {
+    await page.goto('/login');
+    const loginForm = page.getByTestId('login-form');
+    await loginForm.getByTestId('email').fill('john@example.com');
+    await loginForm.getByTestId('password').fill('password');
+    await loginForm.getByTestId('submit').click();
+    await expect(page).toHaveURL(/\/management\/events$/);
+
+    await page.goto(`/events/${GROUP_CLOSED_EVENT}`);
+
+    await expect(page.getByTestId('registration-override')).toBeVisible();
+    await settle(page);
+
+    await expect(page).toHaveScreenshot('event-page-closed-override.png');
   });
 
   test('group choice', async ({ page }) => {

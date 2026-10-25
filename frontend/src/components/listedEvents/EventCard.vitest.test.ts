@@ -86,8 +86,9 @@ describe('EventCard', () => {
     expect(line.exists()).toBe(false);
   });
 
-  it('compares the organizer translation actually rendered', () => {
+  it("names every group's organizer, whatever the locale", () => {
     const event = createEvent({
+      countries: ['de', 'fr'],
       organizer: {
         de: 'Pfadfinder Deutschland e.V.',
         fr: "Scouts d'Allemagne",
@@ -95,12 +96,28 @@ describe('EventCard', () => {
     });
 
     locale.value = 'de';
-    expect(ownerLine(event).exists()).toBe(false);
+    const card = mountCard(event);
 
-    locale.value = 'fr';
-    expect(ownerLine(event).exists()).toBe(true);
+    expect(card.find('.event-card__organizer').text()).toBe(
+      "Pfadfinder Deutschland e.V. / Scouts d'Allemagne",
+    );
+    expect(card.find('.event-card__owner').exists()).toBe(true);
 
     locale.value = 'en';
+  });
+
+  it('omits the organization when every group shares it as organizer', () => {
+    const line = ownerLine(
+      createEvent({
+        countries: ['de', 'fr'],
+        organizer: {
+          de: 'Pfadfinder Deutschland e.V.',
+          fr: 'Pfadfinder Deutschland e.V.',
+        },
+      }),
+    );
+
+    expect(line.exists()).toBe(false);
   });
 
   // Logo and banner fallbacks are covered by EventCover's own tests.

@@ -59,6 +59,10 @@ export async function seedE2eEvents(): Promise<void> {
   await EventFactory.create({
     id: '01JHP0CXJFR4MQS8SF1HQJCA10',
     name: 'Upcoming Event',
+    // Shown on the status page, which has a visual baseline.
+    startAt: '2027-07-01T09:00:00.000Z',
+    endAt: '2027-07-14T17:00:00.000Z',
+    location: 'Lakeside Camp',
     listed: true,
     organization: { connect: { id: E2E_ORGANIZATION_ID } },
     contactEmail: 'upcoming-event@example.com',
@@ -71,6 +75,10 @@ export async function seedE2eEvents(): Promise<void> {
   await EventFactory.create({
     id: '01JHP0CXJFR4MQS8SF1HQJCA20',
     name: 'Closed Event',
+    // Shown on the status page, which has a visual baseline.
+    startAt: '2027-07-01T09:00:00.000Z',
+    endAt: '2027-07-14T17:00:00.000Z',
+    location: 'Lakeside Camp',
     listed: true,
     organization: { connect: { id: E2E_ORGANIZATION_ID } },
     contactEmail: 'closed-event@example.com',
@@ -107,6 +115,49 @@ export async function seedE2eEvents(): Promise<void> {
         { name: 'nationality', type: 'country', groupCountryMatch: 'warn' },
       ],
     },
+  });
+
+  // Closed and upcoming with a contact per group, labelled on the status page.
+  // Germany and Austria share one, so it is listed once for both.
+  await EventFactory.create({
+    id: E2E_GROUP_CLOSED_EVENT_ID,
+    name: 'Closed Group Event',
+    // Shown on the status page, which has a visual baseline.
+    startAt: '2027-07-01T09:00:00.000Z',
+    endAt: '2027-07-14T17:00:00.000Z',
+    location: 'Lakeside Camp',
+    listed: false,
+    organization: { connect: { id: E2E_ORGANIZATION_ID } },
+    countries: ['de', 'at', 'fr'],
+    contactEmail: {
+      de: 'de-group@example.com',
+      at: 'de-group@example.com',
+      fr: 'fr-group@example.com',
+    },
+    maxParticipants: { de: 10, at: 10, fr: 10 },
+    registrationOpensAt: null,
+    registrationClosesAt: '2020-06-01T09:00:00.000Z',
+    form: { name: 'Closed group event', elements: [] },
+  });
+
+  await EventFactory.create({
+    id: E2E_GROUP_UPCOMING_EVENT_ID,
+    name: 'Upcoming Group Event',
+    // Shown on the status page, which has a visual baseline.
+    startAt: '2027-07-01T09:00:00.000Z',
+    endAt: '2027-07-14T17:00:00.000Z',
+    location: 'Lakeside Camp',
+    listed: false,
+    organization: { connect: { id: E2E_ORGANIZATION_ID } },
+    countries: ['de', 'fr'],
+    contactEmail: {
+      de: 'de-group@example.com',
+      fr: 'fr-group@example.com',
+    },
+    maxParticipants: { de: 10, fr: 10 },
+    registrationOpensAt: '2999-01-01T09:00:00.000Z',
+    registrationClosesAt: null,
+    form: { name: 'Upcoming group event', elements: [] },
   });
 
   // The French group is full, so a registration for it goes on the waiting
@@ -154,3 +205,5 @@ export async function seedE2eEvents(): Promise<void> {
 
 export const E2E_GROUP_EVENT_ID = '01JHP0CXJFR4MQS8SF1HQJCG01';
 export const E2E_WAITLIST_EVENT_ID = '01JHP0CXJFR4MQS8SF1HQJCW01';
+export const E2E_GROUP_CLOSED_EVENT_ID = '01JHP0CXJFR4MQS8SF1HQJCG20';
+export const E2E_GROUP_UPCOMING_EVENT_ID = '01JHP0CXJFR4MQS8SF1HQJCG10';
