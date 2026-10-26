@@ -4,7 +4,8 @@
       v-if="!hideDetails"
       v-close-popup
       clickable
-      @click="showDetails"
+      data-test="registration-details"
+      @click="showDetails()"
     >
       <q-item-section>
         {{ t('option.details') }}
@@ -26,6 +27,33 @@
         {{ t('option.sendMessageDisabled') }}
       </q-tooltip>
     </q-item>
+
+    <!-- Recording a payment is routine during collection, so it sits here
+        rather than at the bottom of the details. -->
+    <template v-if="!readonly && canRecordPayment">
+      <q-separator />
+      <q-item
+        v-close-popup
+        clickable
+        data-test="registration-record-payment"
+        @click="recordPayment"
+      >
+        <q-item-section>
+          {{ t('option.recordPayment') }}
+        </q-item-section>
+      </q-item>
+      <q-item
+        v-if="canRequestPayment"
+        v-close-popup
+        clickable
+        data-test="registration-request-payment"
+        @click="requestPayment"
+      >
+        <q-item-section>
+          {{ t('option.requestPayment') }}
+        </q-item-section>
+      </q-item>
+    </template>
 
     <template v-if="!readonly && can('event.registrations.edit')">
       <q-separator />
@@ -89,6 +117,7 @@ import { storeToRefs } from 'pinia';
 import { computed } from 'vue';
 import type {
   MessageTemplate,
+  PaymentCreateData,
   Registration,
   RegistrationDeleteQuery,
   RegistrationUpdateQuery,
@@ -100,6 +129,8 @@ import RegistrationAcceptDialog from '@/components/event/table/dialogs/Registrat
 import RegistrationMoveDialog from '@/components/event/table/dialogs/RegistrationMoveDialog.vue';
 import RegistrationDetailsDialog from '@/components/event/table/dialogs/RegistrationDetailsDialog.vue';
 import RegistrationMessageDialog from '@/components/event/table/dialogs/RegistrationMessageDialog.vue';
+import RecordPaymentDialog from '@/components/event/payment/RecordPaymentDialog.vue';
+import { useErrorExtractor } from '@/composables/serviceHandler';
 import { useAPIService } from '@/services/APIService';
 import { useMessageTemplateService } from '@/services/MessageTemplateService';
 
@@ -122,10 +153,68 @@ const registrationStore = useRegistrationsStore();
 const messageTemplateService = useMessageTemplateService();
 const { data: eventData } = storeToRefs(eventDetailStore);
 const { can } = usePermissions();
+const { extractErrorText } = useErrorExtractor();
 
 const accepted = computed<boolean>(() => {
   return registration.status === 'ACCEPTED';
 });
+
+// Only for registrations that owe a fee; the request only once accepted.
+const canRecordPayment = computed<boolean>(
+  () =>
+    can('event.payments.create') &&
+    registration.payment.status !== 'NOT_REQUIRED',
+);
+const canRequestPayment = computed<boolean>(
+  () => accepted.value && registration.payment.outstanding > 0,
+);
+
+function recordPayment() {
+  const eventId = eventData.value?.id;
+  if (!eventId) {
+    return;
+  }
+  quasar
+    .dialog({
+      component: RecordPaymentDialog,
+      componentProps: {
+        currency: registration.payment.currency,
+        outstanding: registration.payment.outstanding,
+        amountDue: registration.payment.amountDue,
+      },
+    })
+    .onOk((data: PaymentCreateData) => {
+      void runPaymentAction(
+        () => apiService.createManualPayment(eventId, registration.id, data),
+        t('notify.recorded'),
+      );
+    });
+}
+
+function requestPayment() {
+  const eventId = eventData.value?.id;
+  if (!eventId) {
+    return;
+  }
+  void runPaymentAction(
+    () => apiService.requestPayment(eventId, registration.id),
+    t('notify.requested'),
+  );
+}
+
+async function runPaymentAction(
+  action: () => Promise<unknown>,
+  success: string,
+): Promise<void> {
+  try {
+    await action();
+    quasar.notify({ type: 'positive', message: success });
+  } catch (err) {
+    quasar.notify({ type: 'negative', message: extractErrorText(err) });
+  } finally {
+    await registrationStore.refreshOne(registration.id);
+  }
+}
 
 const multiCountry = computed<boolean>(
   () => (eventData.value?.countries.length ?? 0) > 1,
@@ -188,11 +277,12 @@ function hasTemplateForTrigger(
     );
 }
 
-function showDetails(): void {
+function showDetails(initialTab?: 'payments'): void {
   quasar.dialog({
     component: RegistrationDetailsDialog,
     componentProps: {
       registrationId: registration.id,
+      initialTab,
     },
   });
 }
@@ -221,7 +311,11 @@ async function deleteItem(): Promise<void> {
         hasTemplate,
       },
     })
-    .onOk((params: RegistrationDeleteQuery) => {
+    .onOk((params: RegistrationDeleteQuery | { refundFirst: true }) => {
+      if ('refundFirst' in params) {
+        showDetails('payments');
+        return;
+      }
       void registrationStore.deleteData(registration.id, params);
     });
 }
@@ -298,7 +392,12 @@ option:
   edit: 'Edit'
   move: 'Change group'
   delete: 'Delete'
+  recordPayment: 'Record payment'
+  requestPayment: 'Send payment request'
   accept: 'Accept'
+notify:
+  recorded: 'Payment recorded'
+  requested: 'Payment request sent'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -309,7 +408,12 @@ option:
   edit: 'Bearbeiten'
   move: 'Gruppe wechseln'
   delete: 'Löschen'
+  recordPayment: 'Zahlung erfassen'
+  requestPayment: 'Zahlungsaufforderung senden'
   accept: 'Akzeptieren'
+notify:
+  recorded: 'Zahlung erfasst'
+  requested: 'Zahlungsaufforderung gesendet'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -320,7 +424,12 @@ option:
   edit: 'Modifier'
   move: 'Changer de groupe'
   delete: 'Supprimer'
+  recordPayment: 'Enregistrer un paiement'
+  requestPayment: 'Envoyer une demande de paiement'
   accept: 'Accepter'
+notify:
+  recorded: 'Paiement enregistré'
+  requested: 'Demande de paiement envoyée'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -331,7 +440,12 @@ option:
   edit: 'Edytuj'
   move: 'Zmień grupę'
   delete: 'Usuń'
+  recordPayment: 'Zarejestruj płatność'
+  requestPayment: 'Wyślij wezwanie do zapłaty'
   accept: 'Akceptuj'
+notify:
+  recorded: 'Zarejestrowano płatność'
+  requested: 'Wysłano wezwanie do zapłaty'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -342,7 +456,12 @@ option:
   edit: 'Upravit'
   move: 'Změnit skupinu'
   delete: 'Smazat'
+  recordPayment: 'Zaznamenat platbu'
+  requestPayment: 'Odeslat výzvu k platbě'
   accept: 'Přijmout'
+notify:
+  recorded: 'Platba zaznamenána'
+  requested: 'Výzva k platbě odeslána'
 </i18n>
 
 <style scoped></style>

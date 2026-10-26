@@ -50,6 +50,15 @@ const routes: RouteRecordRaw[] = [
               import('@/pages/listedEvents/EventProgramPage.vue'),
             props: true,
           },
+          // A registration's payment page, reached through the tokenized link
+          // in payment emails and as the provider's return URL.
+          {
+            path: ':eventId/registrations/:registrationId/payment',
+            name: 'event.registration.payment',
+            component: () =>
+              import('@/pages/listedEvents/RegistrationPaymentPage.vue'),
+            props: true,
+          },
         ],
       },
       {
@@ -187,6 +196,11 @@ const routes: RouteRecordRaw[] = [
                 component: () => import('@/pages/event/RegistrationsPage.vue'),
               },
               {
+                path: 'payments',
+                name: 'management.event.payments',
+                component: () => import('@/pages/event/EventPaymentsPage.vue'),
+              },
+              {
                 path: 'contact',
                 name: 'management.event.contact',
                 component: () => import('@/pages/event/ContactPage.vue'),
@@ -257,6 +271,12 @@ const routes: RouteRecordRaw[] = [
                       import('@/pages/event/settings/NavigationSettingsPage.vue'),
                   },
                   {
+                    path: 'payments',
+                    name: 'management.event.settings.payments',
+                    component: () =>
+                      import('@/pages/event/settings/PaymentSettingsPage.vue'),
+                  },
+                  {
                     path: 'privacy',
                     name: 'management.event.settings.privacy',
                     component: () =>
@@ -323,6 +343,12 @@ const routes: RouteRecordRaw[] = [
             name: 'management.organization.privacy',
             component: () =>
               import('@/pages/organization/OrganizationPrivacyPage.vue'),
+          },
+          {
+            path: 'payments',
+            name: 'management.organization.payments',
+            component: () =>
+              import('@/pages/organization/OrganizationPaymentsPage.vue'),
           },
           {
             path: 'settings',

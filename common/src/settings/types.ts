@@ -85,3 +85,51 @@ export interface ProgramPublicSettings {
    */
   allowPastDates: boolean;
 }
+
+/**
+ * When accepted registrations are asked to pay. Only accepted ones ever are:
+ * with automatic confirmation that is right after registering.
+ */
+export type PaymentTiming = 'ACCEPTANCE' | 'DATE' | 'BEFORE_START';
+
+/**
+ * Stored under `SETTING_KEYS.PAYMENT`. Whether and when participants pay
+ * online. Money lands in the owning organization's connected provider
+ * account; enabling this without one is allowed — checkout is what refuses.
+ */
+export interface PaymentSettings {
+  /**
+   * Whether new registrations owe a payment at all.
+   *
+   * @default false
+   */
+  enabled: boolean;
+  /**
+   * `ACCEPTANCE` asks as soon as a registration is accepted — one accepted
+   * on submit is also sent straight to checkout. `DATE` and `BEFORE_START`
+   * ask from `requestDate` or `requestDaysBeforeStart` days before the event
+   * on: everyone accepted by then, and later acceptances right away.
+   *
+   * @default 'ACCEPTANCE'
+   */
+  timing: PaymentTiming;
+  /**
+   * `YYYY-MM-DD` in the event's time zone, for `DATE` timing.
+   *
+   * @default null
+   */
+  requestDate: string | null;
+  /**
+   * For `BEFORE_START` timing.
+   *
+   * @default null
+   */
+  requestDaysBeforeStart: number | null;
+  /**
+   * Days after the payment request until a reminder is sent for an
+   * outstanding balance, repeating at that interval. `null` disables reminders.
+   *
+   * @default null
+   */
+  reminderAfterDays: number | null;
+}

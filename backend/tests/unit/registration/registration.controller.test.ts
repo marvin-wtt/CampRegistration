@@ -14,6 +14,8 @@ import { RegistrationDeletedMessage } from '#app/registration/messages/deleted.m
 import { RegistrationSubmittedMessage } from '#app/registration/messages/submitted.mail';
 import { RegistrationUpdatedMessage } from '#app/registration/messages/updated.mail';
 import { RegistrationWaitlistedMessage } from '#app/registration/messages/waitlisted.mail';
+import { PaymentService } from '#app/payment/payment.service';
+import { PaymentRequestedMessage } from '#app/payment/messages/requested.mail';
 
 vi.mock('#app/registration/messages/notify.mail', () => ({
   RegistrationNotifyMessage: { enqueue: vi.fn() },
@@ -36,13 +38,18 @@ vi.mock('#app/registration/messages/updated.mail', () => ({
 vi.mock('#app/registration/messages/waitlisted.mail', () => ({
   RegistrationWaitlistedMessage: { enqueueFor: vi.fn() },
 }));
+vi.mock('#app/payment/messages/requested.mail', () => ({
+  PaymentRequestedMessage: { enqueueFor: vi.fn() },
+}));
 
 const registrationService = mock<RegistrationService>();
 const realtimeService = mock<RealtimeService>();
+const paymentService = mock<PaymentService>();
 
 const controller = new RegistrationController(
   registrationService,
   realtimeService,
+  paymentService,
 );
 
 // A real form and the variables `setVariables` reads, so the update path can
@@ -71,6 +78,14 @@ type RegistrationEntity = Prisma.RegistrationGetPayload<{
   include: {
     bed: { include: { room: true } };
     files: { select: { id: true; field: true } };
+    payments: {
+      select: {
+        status: true;
+        amount: true;
+        refunds: { select: { status: true; amount: true } };
+      };
+    };
+    event: { select: { id: true; currency: true } };
   };
 }>;
 
@@ -98,8 +113,13 @@ const buildRegistration = (
     locale: 'en-US',
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
+    amountDue: null,
+    paymentRequestedAt: null,
+    paymentReminderSentAt: null,
     bed: null,
     files: [],
+    payments: [],
+    event: { id: event.id, currency: 'EUR' },
     ...overrides,
   }) as unknown as RegistrationEntity;
 
@@ -144,8 +164,18 @@ const resourceData = (res: ReturnType<typeof fakeResponse>): unknown =>
     'data' as never
   ];
 
+const disabledPayments = {
+  enabled: false,
+  timing: 'ACCEPTANCE',
+  requestDate: null,
+  requestDaysBeforeStart: null,
+  reminderAfterDays: null,
+} as const;
+
 beforeEach(() => {
   vi.clearAllMocks();
+  paymentService.getSettings.mockResolvedValue(disabledPayments);
+  paymentService.requestsOpen.mockReturnValue(true);
 });
 
 describe('RegistrationController.show', () => {
@@ -410,6 +440,7 @@ describe('RegistrationController.destroy', () => {
     expect(registrationService.deleteRegistration).toHaveBeenCalledWith(
       registration,
       undefined,
+      undefined,
     );
     expect(RegistrationDeletedMessage.enqueueFor).toHaveBeenCalledWith(
       event,
@@ -434,5 +465,223 @@ describe('RegistrationController.destroy', () => {
     await controller.destroy(req, fakeResponse());
 
     expect(RegistrationDeletedMessage.enqueueFor).not.toHaveBeenCalled();
+  });
+});
+
+describe('RegistrationController payments', () => {
+  const resourceMeta = (res: ReturnType<typeof fakeResponse>): unknown =>
+    (
+      res.resource.mock.calls[0]?.[0] as RegistrationResource | undefined
+    )?.getAllMetadata();
+
+  const storeRequest = () =>
+    fakeRequest({
+      models: { event },
+      validateResult: { body: { data: {}, locale: null } },
+    });
+
+  const pricedRequest = (displayedTotal: number) =>
+    fakeRequest({
+      models: { event },
+      validateResult: {
+        body: { data: {}, locale: null, priceCheck: { displayedTotal } },
+      },
+    });
+
+  it('refuses a submission whose price changed, creating nothing', async () => {
+    registrationService.quoteAmount.mockReturnValue(20000);
+
+    await expect(
+      controller.store(pricedRequest(15000), fakeResponse()),
+    ).rejects.toMatchObject({
+      statusCode: 409,
+      details: { quotedAmount: 20000 },
+    });
+    expect(registrationService.createRegistration).not.toHaveBeenCalled();
+  });
+
+  it('never hands the displayed total on to the registration', async () => {
+    registrationService.quoteAmount.mockReturnValue(20000);
+    registrationService.createRegistration.mockResolvedValue(
+      buildRegistration({ status: 'PENDING' }),
+    );
+
+    await controller.store(pricedRequest(20000), fakeResponse());
+
+    const [, input] = registrationService.createRegistration.mock.calls[0]!;
+    expect(input).not.toHaveProperty('priceCheck');
+    expect(JSON.stringify(input)).not.toContain('displayedTotal');
+  });
+
+  it('adds no payment meta when the registration owes nothing', async () => {
+    registrationService.createRegistration.mockResolvedValue(
+      buildRegistration({ status: 'ACCEPTED' }),
+    );
+    const res = fakeResponse();
+
+    await controller.store(storeRequest(), res);
+
+    expect(resourceMeta(res)).toEqual({});
+    expect(paymentService.startCheckout).not.toHaveBeenCalled();
+  });
+
+  it('asks an automatically accepted registration to pay and opens a checkout', async () => {
+    const registration = buildRegistration({
+      status: 'ACCEPTED',
+      amountDue: 5000,
+    });
+    registrationService.createRegistration.mockResolvedValue(registration);
+    paymentService.getSettings.mockResolvedValue({
+      ...disabledPayments,
+      enabled: true,
+    });
+    paymentService.startCheckout.mockResolvedValue({
+      checkoutUrl: 'https://checkout.example/abc',
+      payment: {} as never,
+    });
+    const res = fakeResponse();
+
+    await controller.store(storeRequest(), res);
+
+    expect(PaymentRequestedMessage.enqueueFor).toHaveBeenCalledWith(
+      event,
+      registration,
+    );
+    expect(paymentService.markRequested).toHaveBeenCalledTimes(1);
+    expect(resourceMeta(res)).toMatchObject({
+      payment: {
+        checkoutUrl: 'https://checkout.example/abc',
+        pageUrl: expect.stringContaining(
+          `/events/${event.id}/registrations/${registration.id}/payment?token=`,
+        ) as unknown,
+      },
+    });
+  });
+
+  it('still creates the registration when the checkout fails', async () => {
+    registrationService.createRegistration.mockResolvedValue(
+      buildRegistration({ status: 'ACCEPTED', amountDue: 5000 }),
+    );
+    paymentService.getSettings.mockResolvedValue({
+      ...disabledPayments,
+      enabled: true,
+    });
+    paymentService.startCheckout.mockRejectedValue(new Error('provider down'));
+    const res = fakeResponse();
+
+    await controller.store(storeRequest(), res);
+
+    expect(res.status).toHaveBeenCalledWith(httpStatus.CREATED);
+    expect(resourceMeta(res)).toMatchObject({
+      payment: { checkoutUrl: null },
+    });
+  });
+
+  it.each(['PENDING', 'WAITLISTED'] as const)(
+    'never asks a %s registration to pay',
+    async (status) => {
+      registrationService.createRegistration.mockResolvedValue(
+        buildRegistration({ status, amountDue: 5000 }),
+      );
+      paymentService.getSettings.mockResolvedValue({
+        ...disabledPayments,
+        enabled: true,
+      });
+
+      await controller.store(storeRequest(), fakeResponse());
+
+      expect(PaymentRequestedMessage.enqueueFor).not.toHaveBeenCalled();
+      expect(paymentService.startCheckout).not.toHaveBeenCalled();
+    },
+  );
+
+  it('opens no checkout before the request date', async () => {
+    registrationService.createRegistration.mockResolvedValue(
+      buildRegistration({ status: 'ACCEPTED', amountDue: 5000 }),
+    );
+    paymentService.getSettings.mockResolvedValue({
+      ...disabledPayments,
+      enabled: true,
+      timing: 'DATE',
+      requestDate: '2099-01-01',
+    });
+    paymentService.requestsOpen.mockReturnValue(false);
+    const res = fakeResponse();
+
+    await controller.store(storeRequest(), res);
+
+    expect(paymentService.startCheckout).not.toHaveBeenCalled();
+    expect(resourceMeta(res)).toMatchObject({ payment: { checkoutUrl: null } });
+  });
+
+  it('emails the payment link when an automatically accepted registration owes money after acceptance', async () => {
+    const registration = buildRegistration({
+      status: 'ACCEPTED',
+      amountDue: 5000,
+    });
+    registrationService.createRegistration.mockResolvedValue(registration);
+    paymentService.getSettings.mockResolvedValue({
+      ...disabledPayments,
+      enabled: true,
+    });
+
+    await controller.store(storeRequest(), fakeResponse());
+
+    expect(PaymentRequestedMessage.enqueueFor).toHaveBeenCalledWith(
+      event,
+      registration,
+    );
+  });
+
+  it('emails the payment link when a manager accepts the registration', async () => {
+    const registration = buildRegistration({
+      status: 'ACCEPTED',
+      amountDue: 5000,
+    });
+    registrationService.updateRegistrationById.mockResolvedValue(registration);
+    paymentService.getSettings.mockResolvedValue({
+      ...disabledPayments,
+      enabled: true,
+    });
+    const req = fakeRequest({
+      models: { event, registration: buildRegistration() },
+      validateResult: {
+        body: { status: 'ACCEPTED' },
+        query: { suppressMessage: false },
+      },
+    });
+
+    await controller.update(req, fakeResponse());
+
+    expect(PaymentRequestedMessage.enqueueFor).toHaveBeenCalledWith(
+      event,
+      registration,
+    );
+    expect(paymentService.markRequested).toHaveBeenCalledWith(registration);
+  });
+
+  it('does not request payment twice', async () => {
+    registrationService.updateRegistrationById.mockResolvedValue(
+      buildRegistration({
+        status: 'ACCEPTED',
+        amountDue: 5000,
+        paymentRequestedAt: new Date(),
+      }),
+    );
+    paymentService.getSettings.mockResolvedValue({
+      ...disabledPayments,
+      enabled: true,
+    });
+    const req = fakeRequest({
+      models: { event, registration: buildRegistration() },
+      validateResult: {
+        body: { status: 'ACCEPTED' },
+        query: { suppressMessage: false },
+      },
+    });
+
+    await controller.update(req, fakeResponse());
+
+    expect(PaymentRequestedMessage.enqueueFor).not.toHaveBeenCalled();
   });
 });

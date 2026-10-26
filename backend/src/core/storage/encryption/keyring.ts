@@ -33,15 +33,24 @@ export interface StorageKeyring {
  * remaining keys can only decrypt files written while they were first.
  * Keys must decode to exactly 32 bytes, e.g. generated with
  * `openssl rand -base64 32`.
+ *
+ * `keyNamespace` defaults to the (frozen) file-storage namespace; other
+ * keyrings, e.g. field-level secrets, pass their own so a ciphertext of one
+ * kind can never be decrypted as the other. `setting` names the variable the
+ * spec came from, for error messages.
  */
-export function parseStorageKeyring(spec: string): StorageKeyring {
+export function parseStorageKeyring(
+  spec: string,
+  keyNamespace: string = KEY_NAMESPACE,
+  setting = 'STORAGE_ENCRYPTION_KEYS',
+): StorageKeyring {
   const entries = spec
     .split(',')
     .map((entry) => entry.trim())
     .filter((entry) => entry.length > 0);
 
   if (entries.length === 0) {
-    throw new Error('STORAGE_ENCRYPTION_KEYS contains no keys');
+    throw new Error(`${setting} contains no keys`);
   }
 
   const seen = new Set<string>();
@@ -49,7 +58,7 @@ export function parseStorageKeyring(spec: string): StorageKeyring {
     const separatorIndex = entry.indexOf(':');
     if (separatorIndex <= 0) {
       throw new Error(
-        'STORAGE_ENCRYPTION_KEYS entries must have the form "keyId:base64Key"',
+        `${setting} entries must have the form "keyId:base64Key"`,
       );
     }
 
@@ -57,25 +66,23 @@ export function parseStorageKeyring(spec: string): StorageKeyring {
     const encodedKey = entry.slice(separatorIndex + 1).trim();
 
     if (id.length === 0 || Buffer.byteLength(id, 'utf8') > MAX_KEY_ID_LENGTH) {
-      throw new Error('STORAGE_ENCRYPTION_KEYS contains an invalid key id');
+      throw new Error(`${setting} contains an invalid key id`);
     }
     if (seen.has(id)) {
-      throw new Error(
-        `STORAGE_ENCRYPTION_KEYS contains duplicate key id "${id}"`,
-      );
+      throw new Error(`${setting} contains duplicate key id "${id}"`);
     }
     seen.add(id);
 
     const key = Buffer.from(encodedKey, 'base64');
     if (key.length !== KEY_LENGTH) {
       throw new Error(
-        `STORAGE_ENCRYPTION_KEYS key "${id}" must be ${KEY_LENGTH.toString()} bytes of base64 (e.g. \`openssl rand -base64 32\`)`,
+        `${setting} key "${id}" must be ${KEY_LENGTH.toString()} bytes of base64 (e.g. \`openssl rand -base64 32\`)`,
       );
     }
 
     return new RawAesKeyringNode({
       keyName: id,
-      keyNamespace: KEY_NAMESPACE,
+      keyNamespace,
       // The ESDK rejects views into Node's shared buffer pool; copy the key
       // into a buffer that owns its whole allocation.
       unencryptedMasterKey: new Uint8Array(key),

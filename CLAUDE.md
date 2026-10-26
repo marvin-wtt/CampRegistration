@@ -98,8 +98,8 @@ is opened. Read the relevant one before changing that workspace:
 - **`backend/CLAUDE.md`** — modules & DI, request flow, database, auth, permission
   scopes, email, queues & scheduler, organizations, realtime (SSE), the `#*` alias
 - **`frontend/CLAUDE.md`** — Pinia/API conventions, i18n, MD3 styling and tokens
-- **`docs/organizations.md`**, **`docs/live-updates-plan.md`** and
-  **`docs/country-groups.md`** — the full designs
+- **`docs/organizations.md`**, **`docs/live-updates-plan.md`**,
+  **`docs/country-groups.md`** and **`docs/payments.md`** — the full designs
 - **`backend/prisma/data-migrations/README.md`** — the data migration runner
 
 ### Skills

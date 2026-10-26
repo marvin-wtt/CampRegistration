@@ -2,8 +2,10 @@ import { z, type ZodType } from 'zod';
 import { LocaleSchema } from '#core/validation/helper';
 import { RegistrationForm } from '#app/registration/registration.form';
 import {
+  PAYMENT_SETTLEMENTS,
   REGISTRATION_DELETE_REASONS,
   type RegistrationCreateData,
+  type RegistrationPriceCheck,
   type RegistrationUpdateData,
   type RegistrationUpdateQuery,
   type RegistrationDeleteQuery,
@@ -49,6 +51,14 @@ const store = (event: EventWithRelations, fallbackLocale: string) =>
           .nullable()
           .optional()
           .transform((group) => eventGroup(event, group)),
+        // Untrusted, never an amount: compared with the server's quote only
+        // (`assertPriceUnchanged`).
+        priceCheck: z
+          .object({
+            displayedTotal: z.number().int().nonnegative().max(1_000_000_000),
+          })
+          .strict()
+          .optional() satisfies ZodType<RegistrationPriceCheck | undefined>,
       })
       .superRefine(async ({ data, locale, group }, ctx) => {
         if (event.countries.length > 1 && !group) {
@@ -113,6 +123,7 @@ const destroy = z.object({
     .object({
       suppressMessage: z.stringbool(),
       reason: z.enum(REGISTRATION_DELETE_REASONS),
+      paymentSettlement: z.enum(PAYMENT_SETTLEMENTS),
     })
     .partial() satisfies ZodType<RegistrationDeleteQuery>,
 });

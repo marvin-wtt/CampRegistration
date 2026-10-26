@@ -1,3 +1,5 @@
+import ApiError from '#utils/ApiError';
+import httpStatus from 'http-status';
 import type { Event, File, Prisma } from '#generated/prisma/client.js';
 import { ulid } from '#utils/ulid';
 import { dbNullable } from '#utils/db';
@@ -63,6 +65,21 @@ interface EventQueryArgs {
 
 @injectable()
 export class EventService extends BaseService {
+  /**
+   * Whether the currency is fixed: stored amounts are minor units of it, so
+   * changing it after anything was quoted or paid would change their value.
+   */
+  async isCurrencyLocked(eventId: string): Promise<boolean> {
+    const [payments, quoted] = await Promise.all([
+      this.prisma.payment.count({ where: { eventId } }),
+      this.prisma.registration.count({
+        where: { eventId, quotedAmount: { gt: 0 } },
+      }),
+    ]);
+
+    return payments > 0 || quoted > 0;
+  }
+
   constructor(
     @inject(FileService) private readonly fileService: FileService,
     @inject(AuditService) private readonly audit: AuditService,
@@ -496,8 +513,25 @@ export class EventService extends BaseService {
     });
   }
 
+  /**
+   * Money that changed hands keeps its record: an event with paid payments
+   * can't be deleted (the ledger's event reference is `Restrict`). Attempts
+   * that never settled carry no money and go with the event.
+   */
   async deleteEventById(id: string) {
     await this.transaction(async (tx) => {
+      const paid = await tx.payment.count({
+        where: { eventId: id, status: 'PAID' },
+      });
+      if (paid > 0) {
+        throw new ApiError(
+          httpStatus.CONFLICT,
+          'This event has received payments and cannot be deleted',
+          { code: 'EVENT_HAS_PAYMENTS' },
+        );
+      }
+
+      await tx.payment.deleteMany({ where: { eventId: id } });
       // The FK nulls `eventId` on the event's audit rows; retention purges them later.
       await tx.event.delete({ where: { id } });
 

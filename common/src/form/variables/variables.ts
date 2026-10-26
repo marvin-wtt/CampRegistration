@@ -20,6 +20,7 @@ export interface Data {
   maxAge: number;
   location: Translatable | null;
   price: number;
+  currency?: string;
   freePlaces: PerGroup<number> | null;
   logo?: string | null;
 }
@@ -38,6 +39,7 @@ const EVENT_VARIABLES = [
   'maxAge',
   'location',
   'price',
+  'currency',
   'logo',
 ] as const;
 
@@ -99,6 +101,7 @@ export const setVariables = (
     maxAge: data.maxAge,
     location: translate(data.location, locale) ?? null,
     price: data.price,
+    currency: data.currency ?? 'EUR',
     logo: data.logo ?? null,
   };
 

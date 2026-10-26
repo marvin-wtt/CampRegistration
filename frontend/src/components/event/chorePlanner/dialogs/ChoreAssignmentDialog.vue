@@ -46,7 +46,7 @@
           class="field-grid"
           :class="{ 'field-grid--2': slotOptions.length > 0 }"
         >
-          <chore-date-input
+          <date-input
             v-model="date"
             :label="t('field.date.label')"
           />
@@ -283,7 +283,7 @@ import { formatPersonName } from '@/utils/formatters';
 import { formatLocalDate } from '@/utils/date';
 import { findSlot, requiredCount } from '@/utils/chores';
 import ChoreDialog from '@/components/event/chorePlanner/dialogs/ChoreDialog.vue';
-import ChoreDateInput from '@/components/event/chorePlanner/ChoreDateInput.vue';
+import DateInput from '@/components/common/inputs/DateInput.vue';
 import ChoreRoleSection from '@/components/event/chorePlanner/ChoreRoleSection.vue';
 import DialogCard from '@/components/common/dialogs/DialogCard.vue';
 import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';

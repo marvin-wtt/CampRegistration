@@ -1,4 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { SurveyModel } from 'survey-core';
+import { extractPaymentAmounts } from '@camp-registration/common/form';
+import { computeAmountDue } from '@camp-registration/common/utils';
 import { EVENT_PRESET_NAMES } from '@camp-registration/common/entities';
 import {
   EVENT_PRESETS,
@@ -6,6 +9,7 @@ import {
   defaultSettingsForPreset,
   getEventPreset,
 } from '#app/event/presets/index';
+import paymentMessageTemplates from '#app/event/presets/paymentMessageTemplates';
 
 const PRESETS = EVENT_PRESET_NAMES;
 const TRANSLATED_KEYS = ['en', 'de', 'fr', 'pl', 'cs', 'es', 'default'];
@@ -118,6 +122,29 @@ describe('getEventPreset', () => {
     });
   });
 
+  describe('amount due', () => {
+    const event = { price: 120, currency: 'EUR' };
+
+    // Loaded the way the server reads a submission: the data as submitted,
+    // computed questions recalculated from it.
+    function amountDue(preset: (typeof PRESETS)[number], role: string) {
+      const survey = new SurveyModel(EVENT_PRESETS[preset].form);
+      survey.setVariable('event.price', event.price);
+      survey.setData({ role });
+
+      return computeAmountDue(event, extractPaymentAmounts(survey));
+    }
+
+    it.each(PRESETS)('charges participants the event price (%s)', (preset) => {
+      expect(amountDue(preset, 'participant')).toBe(12000);
+    });
+
+    it.each(PRESETS)('waives the price for every other role (%s)', (preset) => {
+      expect(amountDue(preset, 'counselor')).toBe(0);
+      expect(amountDue(preset, 'helper')).toBe(0);
+    });
+  });
+
   describe('table templates', () => {
     it.each(PRESETS)('keeps only the requested locales (%s)', (preset) => {
       const { tableTemplates } = getEventPreset(preset, ['de', 'pl']);
@@ -150,7 +177,10 @@ describe('getEventPreset', () => {
 });
 
 describe('defaultMessageTemplatesForCountries', () => {
-  const TRIGGERS = Object.keys(EVENT_PRESETS.general.messageTemplates);
+  const TRIGGERS = [
+    ...Object.keys(EVENT_PRESETS.general.messageTemplates),
+    ...Object.keys(paymentMessageTemplates),
+  ];
 
   it.each(PRESETS)('creates every trigger for every country (%s)', (preset) => {
     const templates = defaultMessageTemplatesForCountries(['de', 'fr'], preset);

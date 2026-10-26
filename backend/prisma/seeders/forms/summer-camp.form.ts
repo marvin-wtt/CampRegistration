@@ -86,8 +86,7 @@ export const summerCampForm = {
             cs: 'Cena',
             default: 'Price',
           },
-          description: '{event.price} €',
-          currency: 'EUR',
+          description: '{event.price} {event.currency}',
         },
         {
           type: 'role',
@@ -906,13 +905,5 @@ export const summerCampForm = {
   ],
   showProgressBar: true,
   progressBarLocation: 'bottom',
-  completeText: {
-    en: 'Register for a fee',
-    de: 'Kostenpflichtig Anmelden',
-    fr: 'Inscription payante',
-    pl: 'Zarejestruj się (płatne)',
-    cs: 'Zaregistrovat se (placeně)',
-    default: 'Register for a fee',
-  },
   widthMode: 'static',
 };

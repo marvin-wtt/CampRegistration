@@ -187,3 +187,25 @@ export const newsletterConsent: EventDataType = {
     return obj.getType() === 'boolean';
   },
 };
+
+// Numbers here adjust the event's price to what a registration owes (see the
+// event's payment settings) — negative for a discount — while shown.
+export const paymentAmount: EventDataType = {
+  element: {
+    value: 'payment_amount',
+    text: {
+      en: 'Payment amount',
+      de: 'Zahlungsbetrag',
+      fr: 'Montant du paiement',
+      pl: 'Kwota płatności',
+      cs: 'Částka platby',
+    },
+  },
+  fit: (obj) => {
+    return (
+      obj.getType() === 'expression' ||
+      (obj.getType() === 'text' &&
+        obj.getPropertyValue('inputType') === 'number')
+    );
+  },
+};

@@ -2,10 +2,16 @@ import type { Registration, Room, Bed } from '#generated/prisma/client.js';
 import type { Registration as RegistrationData } from '@camp-registration/common/entities';
 import { JsonResource } from '#core/resource/JsonResource';
 import { customFileSlots } from '#app/registration/registration.helper';
+import {
+  registrationPayment,
+  type PaymentWithRefunds,
+} from '#app/payment/payment.balance';
 
 export interface RegistrationWithBed extends Registration {
   bed?: BedWithRoom | null;
   files?: FileSlot[];
+  payments?: PaymentWithRefunds[];
+  event?: { currency: string };
 }
 
 interface BedWithRoom extends Bed {
@@ -47,6 +53,22 @@ export class RegistrationResource extends JsonResource<
       // file slots (`field = 'custom:<slot>'`).
       customFiles: customFileSlots(this.data.files ?? []),
       locale: this.data.locale,
+      payment: {
+        ...registrationPayment(
+          this.data.amountDue,
+          this.data.event?.currency ?? 'EUR',
+          this.data.payments ?? [],
+        ),
+        quotedAmount: this.data.quotedAmount,
+        requestedAt: this.data.paymentRequestedAt?.toISOString() ?? null,
+        remindedAt: this.data.paymentReminderSentAt?.toISOString() ?? null,
+        adjustment: this.data.amountDueAdjustedAt
+          ? {
+              note: this.data.amountDueNote,
+              adjustedAt: this.data.amountDueAdjustedAt.toISOString(),
+            }
+          : null,
+      },
       room: this.data.bed ? this.data.bed.room.name : null,
       // Use snake case because form keys should be snake case too
       updatedAt: this.data.updatedAt?.toISOString() ?? null,

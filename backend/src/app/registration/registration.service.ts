@@ -2,6 +2,10 @@ import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 import { Prisma, type Registration } from '#generated/prisma/client.js';
 import type { EventWithFreePlaces } from '#app/event/event.types';
+import { computeAmountDue } from '@camp-registration/common/utils';
+import type { PaymentSettlement } from '@camp-registration/common/entities';
+import { PaymentService } from '#app/payment/payment.service';
+import { getRequestContext } from '#core/context/requestContext';
 import { RegistrationForm } from '#app/registration/registration.form';
 import { BaseService } from '#core/base/BaseService';
 import {
@@ -16,6 +20,7 @@ import type { RegistrationDeleteReason } from '@camp-registration/common/entitie
 import {
   type AuditedRegistration,
   registrationAuditPolicy,
+  registrationIdentity,
 } from '#app/registration/registration.audit';
 import type { PrismaTransaction } from '#core/database/transaction';
 import { PrivacyNoticeService } from '#app/privacyNotice/privacy-notice.service';
@@ -38,6 +43,15 @@ export class RegistrationService extends BaseService {
       select: { id: true, field: true },
       where: { field: { startsWith: CUSTOM_FILE_FIELD_PREFIX } },
     },
+    // The ledger summary (`Registration.payment`) is derived on read.
+    payments: {
+      select: {
+        status: true,
+        amount: true,
+        refunds: { select: { status: true, amount: true } },
+      },
+    },
+    event: { select: { id: true, currency: true } },
   } satisfies Prisma.RegistrationInclude;
 
   constructor(
@@ -45,6 +59,8 @@ export class RegistrationService extends BaseService {
     @inject(PrivacyNoticeService)
     private readonly privacyNoticeService: PrivacyNoticeService,
     @inject(AuditService) private readonly audit: AuditService,
+    @inject(PaymentService)
+    private readonly paymentService: PaymentService,
   ) {
     super();
   }
@@ -70,10 +86,7 @@ export class RegistrationService extends BaseService {
   async getRegistrationWithEventById(id: string) {
     return this.prisma.registration.findUnique({
       where: { id },
-      include: {
-        ...this.registrationInclude,
-        event: { select: { id: true } },
-      },
+      include: this.registrationInclude,
     });
   }
 
@@ -88,6 +101,23 @@ export class RegistrationService extends BaseService {
     const total = await this.prisma.registration.count();
 
     return { total };
+  }
+
+  /**
+   * What a submission of `data` would be charged, as `createRegistration`
+   * calculates it — the server's own amount, for comparing with what the
+   * form displayed.
+   */
+  quoteAmount(
+    event: EventWithFreePlaces,
+    data: Pick<Registration, 'data' | 'locale' | 'group'>,
+  ): number {
+    const form = new RegistrationForm(event, {
+      locale: data.locale,
+      group: data.group,
+    }).load(data.data);
+
+    return computeAmountDue(event, form.paymentAmounts());
   }
 
   async createRegistration(
@@ -109,6 +139,9 @@ export class RegistrationService extends BaseService {
     const formData = form.data;
     const eventData = form.extractEventData();
     const computedData = computedRegistrationData(eventData);
+    // Stored whether or not payments are collected: the form showed it, so
+    // it is what this person agreed to.
+    const quotedAmount = computeAmountDue(event, form.paymentAmounts());
 
     const fileIds = form.getFileIds();
 
@@ -174,6 +207,8 @@ export class RegistrationService extends BaseService {
             id: undefined, // Force new ID generation
             data: formData,
             status,
+            quotedAmount,
+            amountDue: quotedAmount,
             platformPrivacyPolicyUpdatedAt:
               privacyStamp.platformPrivacyPolicyUpdatedAt,
             organizationPrivacyNotice: connectVersion(
@@ -185,6 +220,7 @@ export class RegistrationService extends BaseService {
             event: { connect: { id: event.id } },
             files: this.fileService.getFileConnectInput(fileIds, fileField),
           },
+          include: this.registrationInclude,
         });
 
         // A registration is created by an external party via the public
@@ -252,8 +288,12 @@ export class RegistrationService extends BaseService {
           locale: before.locale,
           group: data.group ?? before.group,
         }).load(data.data);
-        computedData = computedRegistrationData(form.extractEventData());
+        const eventData = form.extractEventData();
+        computedData = computedRegistrationData(eventData);
         formFileIds = form.getFileIds();
+
+        // What is owed is never re-priced by an edit: people owe what the
+        // form showed them, unless a manager changes it explicitly.
       }
       if (data.customFiles) {
         before.customFiles = await this.customFileSlots(tx, registrationId);
@@ -352,14 +392,31 @@ export class RegistrationService extends BaseService {
   async deleteRegistration(
     registration: Registration,
     reason?: RegistrationDeleteReason,
+    paymentSettlement?: PaymentSettlement,
   ) {
     await this.transaction(async (tx) => {
+      // Payments stay, with their payer snapshot; money still held must be
+      // settled first, or the deletion is refused.
+      const settlement = await this.paymentService.settleForDeletion(
+        registration,
+        paymentSettlement,
+        getRequestContext()?.userId ?? null,
+      );
+
       const deleted = await tx.registration.delete({
         where: { id: registration.id },
       });
 
       await this.audit.deleted(registrationAuditPolicy, deleted, {
-        details: { reason },
+        details: {
+          reason,
+          ...(settlement && {
+            context: {
+              ...registrationIdentity(deleted).context,
+              paymentSettlement: settlement,
+            },
+          }),
+        },
       });
     });
   }

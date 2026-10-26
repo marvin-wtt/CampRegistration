@@ -4,6 +4,8 @@ import { EventModule } from '#app/event/event.module';
 import { OrganizationModule } from '#app/organization/organization.module';
 import { OrganizationMemberModule } from '#app/organizationMember/organization-member.module';
 import { RegistrationModule } from '#app/registration/registration.module';
+import { PaymentAccountModule } from '#app/paymentAccount/payment-account.module';
+import { PaymentModule } from '#app/payment/payment.module';
 import { TableTemplateModule } from '#app/tableTemplate/table-template.module';
 import { EventManagerModule } from '#app/eventManager/event-manager.module.js';
 import { MessageDeliveryModule } from '#app/messageDelivery/message-delivery.module';
@@ -79,6 +81,8 @@ export const createAppModules = (): AppModule[] => [
   new LegalModule(),
   new PrivacyNoticeModule(),
   new RegistrationModule(),
+  new PaymentAccountModule(),
+  new PaymentModule(),
   new TableTemplateModule(),
   new EventManagerModule(),
   new MessageDeliveryModule(),

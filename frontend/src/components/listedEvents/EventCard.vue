@@ -231,7 +231,7 @@ const priceLabel = computed<string>(() => {
 
   return new Intl.NumberFormat(locale.value, {
     style: 'currency',
-    currency: 'EUR',
+    currency: props.event.currency,
     minimumFractionDigits: Number.isInteger(props.event.price) ? 0 : 2,
   }).format(props.event.price);
 });

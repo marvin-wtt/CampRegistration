@@ -1,3 +1,5 @@
+import paymentAmount from '../paymentAmount.js';
+
 export default {
   locale: 'de',
   title: '{event.name}',
@@ -72,8 +74,7 @@ export default {
             cs: 'Cena',
             default: 'Price',
           },
-          description: '{event.price} €',
-          currency: 'EUR',
+          description: '{event.price} {event.currency}',
         },
         {
           type: 'role',
@@ -90,6 +91,7 @@ export default {
           isRequired: true,
           eventDataType: 'role',
         },
+        ...paymentAmount,
       ],
       title: {
         en: 'Information',
@@ -924,14 +926,6 @@ export default {
   ],
   showProgressBar: true,
   progressBarLocation: 'bottom',
-  completeText: {
-    en: 'Register for a fee',
-    de: 'Kostenpflichtig Anmelden',
-    fr: 'Inscription payante',
-    pl: 'Zarejestruj się (płatne)',
-    cs: 'Zaregistrovat se (placeně)',
-    default: 'Register for a fee',
-  },
   showCompletePage: false,
   widthMode: 'static',
 };

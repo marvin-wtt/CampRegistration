@@ -10,7 +10,11 @@ import 'survey-core/i18n/french';
 import 'survey-core/i18n/polish';
 import 'survey-core/i18n/czech';
 import type { IDataIssue, IPanel, PanelModelBase, Question } from 'survey-core';
-import { setVariables } from '@camp-registration/common/form';
+import {
+  extractEventData,
+  extractPaymentAmounts,
+  setVariables,
+} from '@camp-registration/common/form';
 import type { EventWithFreePlaces } from '#app/event/event.types';
 import { withTimeout } from '#utils/promiseUtils';
 
@@ -46,12 +50,6 @@ interface PlainDataEntry {
   displayValue: unknown;
   questionType?: string;
   data?: PlainDataEntry[];
-}
-
-interface TaggedPlainDataEntry {
-  value: unknown;
-  eventDataType?: unknown;
-  data?: TaggedPlainDataEntry[];
 }
 
 /**
@@ -246,30 +244,12 @@ export class RegistrationForm {
 
   /** The answers of the questions tagged with an `eventDataType`, by tag. */
   extractEventData(): Record<string, unknown[]> {
-    const plain = this.survey.getPlainData({
-      includeEmpty: true,
-      includeValues: true,
-      calculations: [{ propertyName: 'eventDataType' }],
-    });
+    return extractEventData(this.survey);
+  }
 
-    const eventData: Record<string, unknown[]> = {};
-    // The survey lists only top-level questions; those of a dynamic panel or
-    // matrix sit in the `data` of its panel and row entries.
-    const collect = (entries: TaggedPlainDataEntry[]) => {
-      for (const entry of entries) {
-        const tag = entry.eventDataType;
-        if (typeof tag !== 'string' || !tag) {
-          collect(entry.data ?? []);
-          continue;
-        }
-
-        // Undefined is not accepted by prisma and must be replaced with null
-        (eventData[tag] ??= []).push(entry.value ?? null);
-      }
-    };
-    collect(plain);
-
-    return eventData;
+  /** What the answers add to the event price, for `computeAmountDue`. */
+  paymentAmounts(): unknown[] {
+    return extractPaymentAmounts(this.survey);
   }
 
   /**

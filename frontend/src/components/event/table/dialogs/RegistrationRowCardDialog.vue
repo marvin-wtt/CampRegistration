@@ -18,6 +18,7 @@
           flat
           icon="more_vert"
           round
+          data-test="registration-card-actions"
         >
           <q-tooltip>
             {{ t('action.menu') }}

@@ -24,11 +24,11 @@
             font-size="44px"
             :color="badgeColor"
             :text-color="badgeTextColor"
-            :icon="submitState !== 'saving' ? badgeIcon : undefined"
+            :icon="!isBusy ? badgeIcon : undefined"
             class="registration-submit-status__badge"
           >
             <q-spinner
-              v-if="submitState === 'saving'"
+              v-if="isBusy"
               size="40px"
               :thickness="4"
             />
@@ -63,10 +63,32 @@
         </q-card-section>
 
         <q-card-actions
+          v-if="submitState === 'redirecting' && payment?.checkoutUrl"
+          align="center"
+          class="q-pb-md"
+        >
+          <m-btn
+            primary
+            icon="payments"
+            :label="t('payment.continue')"
+            :href="payment.checkoutUrl"
+            data-test="registration-payment-continue"
+          />
+        </q-card-actions>
+
+        <q-card-actions
           v-if="submitState === 'success'"
           align="center"
           class="q-gutter-sm q-pb-md"
         >
+          <m-btn
+            v-if="payment && submittedRegistration?.status !== 'WAITLISTED'"
+            primary
+            icon="payments"
+            :label="t('payment.pay')"
+            :href="payment.pageUrl"
+            data-test="registration-payment-page"
+          />
           <m-btn
             outline
             primary
@@ -81,6 +103,28 @@
             icon="explore"
             :label="t('complete.exploreEvents')"
             :to="{ name: 'events' }"
+          />
+        </q-card-actions>
+
+        <q-card-actions
+          v-else-if="submitState === 'priceChanged'"
+          align="center"
+          class="q-gutter-sm q-pb-md"
+        >
+          <m-btn
+            primary
+            icon="how_to_reg"
+            :label="t('submit.priceChanged.confirm', { amount: quotedPrice })"
+            data-test="registration-price-confirm"
+            @click="confirmServerQuote"
+          />
+          <m-btn
+            outline
+            primary
+            icon="edit"
+            :label="t('submit.priceChanged.back')"
+            data-test="registration-price-back"
+            @click="backToForm"
           />
         </q-card-actions>
 
@@ -140,16 +184,27 @@ import {
 } from '@/lib/surveyJs/textProcessing';
 import { readAsDataURL } from '@/utils/readAsDataURL';
 import { emphasizeForwardNavigation } from '@/lib/surveyJs/navigation';
+import { addAmountSummary, trackAmountDue } from '@/lib/surveyJs/amountDue';
 import type {
   EventDetails,
   Registration,
+  RegistrationCreatePaymentMeta,
+  RegistrationPriceCheck,
 } from '@camp-registration/common/entities';
+import { formatMoney } from '@camp-registration/common/utils';
 import { useAPIService } from '@/services/APIService';
+import { serverQuoteFromPriceChange } from '@/services/RegistrationService';
 import { useErrorExtractor } from '@/composables/serviceHandler';
 
 const { locale, t } = useI18n();
 const api = useAPIService();
 const { extractErrorText } = useErrorExtractor();
+
+/** A submit that also reports the payment step for the submitter. */
+export interface RegistrationSubmitResult {
+  registration: Registration;
+  payment: RegistrationCreatePaymentMeta | null;
+}
 
 interface Props {
   data?: object;
@@ -160,7 +215,9 @@ interface Props {
     id: string,
     formData: Record<string, unknown>,
     locale: string,
-  ) => Promise<Registration | void>;
+    // What the form displayed, for the server to compare — never an amount.
+    priceCheck?: RegistrationPriceCheck,
+  ) => Promise<Registration | RegistrationSubmitResult | void>;
   uploadFileFn?: (file: File) => Promise<string>;
   moderation?: boolean;
   readonly?: boolean;
@@ -181,7 +238,14 @@ const emit = defineEmits<{
 
 // Submit lifecycle shown by the custom overlay. While it is non-null the
 // survey (including its own completed page) is hidden and this UI takes over.
-const submitState = ref<'saving' | 'success' | 'error' | null>(null);
+const submitState = ref<
+  'saving' | 'redirecting' | 'success' | 'error' | 'priceChanged' | null
+>(null);
+// After a price change: the server's amount, which the person confirms.
+const serverQuote = ref<number | null>(null);
+// Set when the new registration owes money: where to pay, and whether a
+// checkout is already waiting (then we redirect straight to it).
+const payment = ref<RegistrationCreatePaymentMeta | null>(null);
 const submitError = ref<string>();
 // Stays true once the submission succeeded, including when survey-core takes
 // the screen back over to show the form's own completed page.
@@ -201,6 +265,8 @@ const statusTitle = computed(() => {
   switch (submitState.value) {
     case 'saving':
       return t('submit.saving.title');
+    case 'redirecting':
+      return t('payment.redirecting.title');
     case 'success':
       switch (submittedRegistration.value?.status) {
         case 'PENDING':
@@ -212,6 +278,8 @@ const statusTitle = computed(() => {
       }
     case 'error':
       return t('submit.error.title');
+    case 'priceChanged':
+      return t('submit.priceChanged.title');
     default:
       return '';
   }
@@ -221,6 +289,8 @@ const statusText = computed(() => {
   switch (submitState.value) {
     case 'saving':
       return t('submit.saving.text');
+    case 'redirecting':
+      return t('payment.redirecting.text');
     case 'success':
       switch (submittedRegistration.value?.status) {
         case 'PENDING':
@@ -232,6 +302,8 @@ const statusText = computed(() => {
       }
     case 'error':
       return t('submit.error.text');
+    case 'priceChanged':
+      return t('submit.priceChanged.text', { amount: quotedPrice.value });
     default:
       return '';
   }
@@ -250,6 +322,8 @@ const badgeColor = computed(() => {
       }
     case 'error':
       return 'error-container';
+    case 'priceChanged':
+      return 'warning-container';
     default:
       return 'primary-container';
   }
@@ -268,12 +342,21 @@ const badgeTextColor = computed(() => {
       }
     case 'error':
       return 'on-error-container';
+    case 'priceChanged':
+      return 'on-warning-container';
     default:
       return 'on-primary-container';
   }
 });
 
+const isBusy = computed<boolean>(
+  () => submitState.value === 'saving' || submitState.value === 'redirecting',
+);
+
 const badgeIcon = computed(() => {
+  if (submitState.value === 'priceChanged') {
+    return 'price_change';
+  }
   if (submitState.value !== 'success') {
     return 'error';
   }
@@ -303,6 +386,15 @@ model.readOnly = props.readonly;
 if (props.data) {
   model.data = props.data;
   mapFileIdToFileContent(model);
+}
+
+// After loading data: assigning `model.data` fires no change event. Managers
+// never see the Complete button, so neither needs the total.
+const amountShown = moderationLayout
+  ? null
+  : trackAmountDue(model, props.eventDetails);
+if (amountShown) {
+  addAmountSummary(model, amountShown);
 }
 
 const bgColor = ref<string>();
@@ -403,17 +495,42 @@ function createModel(eventId: string, form: object): SurveyModel {
     pendingRedirect = undefined;
     submitError.value = undefined;
     submitState.value = 'saving';
+    payment.value = null;
 
     mapFileQuestionValues(sender);
 
+    // What the summary showed. Only for the server to compare: it charges
+    // its own amount, whatever this says.
+    const priceCheck =
+      serverQuote.value !== null
+        ? { displayedTotal: serverQuote.value }
+        : amountShown
+          ? { displayedTotal: amountShown.amount }
+          : undefined;
+
     try {
-      const registration = await submitFn(
+      const result = await submitFn(
         eventId,
         sender.data ?? {},
         sender.locale,
+        priceCheck,
       );
+      const registration =
+        result && 'registration' in result ? result.registration : result;
+      payment.value =
+        result && 'registration' in result ? result.payment : null;
       submittedRegistration.value = registration ?? undefined;
       submitted.value = true;
+
+      // The event charges at registration and a checkout is ready: go there
+      // directly. The card stays up with a manual link in case the browser
+      // blocks or delays the navigation.
+      if (payment.value?.checkoutUrl) {
+        submitState.value = 'redirecting';
+        window.location.assign(payment.value.checkoutUrl);
+        return;
+      }
+
       if (sender.showCompletePage && hasCustomCompletedHtml(sender)) {
         // Reveal the form-defined completed page (survey-core shows it by
         // default; the survey element is unhidden as submitState clears).
@@ -426,12 +543,35 @@ function createModel(eventId: string, form: object): SurveyModel {
         redirect(pendingRedirect);
       }
     } catch (e: unknown) {
+      const quote = serverQuoteFromPriceChange(e);
+      if (quote !== null) {
+        serverQuote.value = quote;
+        submitState.value = 'priceChanged';
+        return;
+      }
       submitError.value = extractErrorText(e);
       submitState.value = 'error';
     }
   });
 
   return survey;
+}
+
+const quotedPrice = computed(() =>
+  serverQuote.value === null
+    ? ''
+    : formatMoney(serverQuote.value, props.eventDetails.currency, locale.value),
+);
+
+// Resubmits, now confirming the server's amount the person was just shown.
+function confirmServerQuote() {
+  retrySubmit();
+}
+
+function backToForm() {
+  serverQuote.value = null;
+  model.clear(false, false);
+  submitState.value = null;
 }
 
 function retrySubmit() {
@@ -525,12 +665,23 @@ defineExpose({
 </script>
 
 <i18n lang="yaml" locale="en">
+payment:
+  pay: 'Pay now'
+  continue: 'Continue to payment'
+  redirecting:
+    title: 'Registration saved'
+    text: 'Taking you to the payment page…'
 upload:
   unavailable: 'File uploads are not available here.'
 submit:
   saving:
     title: 'Submitting registration'
     text: 'Please wait while your registration is being saved.'
+  priceChanged:
+    title: 'The price has changed'
+    text: 'Registering now costs {amount}. The price changed while the form was open.'
+    confirm: 'Register for {amount}'
+    back: 'Back to the form'
   error:
     title: 'Registration failed'
     text: 'Your registration could not be saved. Please try again.'
@@ -549,12 +700,23 @@ complete:
 </i18n>
 
 <i18n lang="yaml" locale="de">
+payment:
+  pay: 'Jetzt bezahlen'
+  continue: 'Weiter zur Zahlung'
+  redirecting:
+    title: 'Anmeldung gespeichert'
+    text: 'Du wirst zur Zahlungsseite weitergeleitet…'
 upload:
   unavailable: 'Datei-Uploads sind hier nicht möglich.'
 submit:
   saving:
     title: 'Anmeldung wird gesendet'
     text: 'Bitte warte, während deine Anmeldung gespeichert wird.'
+  priceChanged:
+    title: 'Der Preis hat sich geändert'
+    text: 'Die Anmeldung kostet jetzt {amount}. Der Preis hat sich geändert, während das Formular geöffnet war.'
+    confirm: 'Für {amount} anmelden'
+    back: 'Zurück zum Formular'
   error:
     title: 'Anmeldung fehlgeschlagen'
     text: 'Deine Anmeldung konnte nicht gespeichert werden. Bitte versuche es erneut.'
@@ -573,12 +735,23 @@ complete:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
+payment:
+  pay: 'Payer maintenant'
+  continue: 'Continuer vers le paiement'
+  redirecting:
+    title: 'Inscription enregistrée'
+    text: 'Redirection vers la page de paiement…'
 upload:
   unavailable: 'L’envoi de fichiers n’est pas disponible ici.'
 submit:
   saving:
     title: "Envoi de l'inscription"
     text: "Veuillez patienter pendant l'enregistrement de votre inscription."
+  priceChanged:
+    title: 'Le prix a changé'
+    text: "L'inscription coûte désormais {amount}. Le prix a changé pendant que le formulaire était ouvert."
+    confirm: "S'inscrire pour {amount}"
+    back: 'Retour au formulaire'
   error:
     title: "Échec de l'inscription"
     text: "Votre inscription n'a pas pu être enregistrée. Veuillez réessayer."
@@ -597,12 +770,23 @@ complete:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
+payment:
+  pay: 'Zapłać teraz'
+  continue: 'Przejdź do płatności'
+  redirecting:
+    title: 'Zgłoszenie zapisane'
+    text: 'Przekierowujemy Cię na stronę płatności…'
 upload:
   unavailable: 'Przesyłanie plików nie jest tu dostępne.'
 submit:
   saving:
     title: 'Wysyłanie rejestracji'
     text: 'Poczekaj, trwa zapisywanie rejestracji.'
+  priceChanged:
+    title: 'Cena się zmieniła'
+    text: 'Rejestracja kosztuje teraz {amount}. Cena zmieniła się, gdy formularz był otwarty.'
+    confirm: 'Zarejestruj się za {amount}'
+    back: 'Wróć do formularza'
   error:
     title: 'Rejestracja nie powiodła się'
     text: 'Nie udało się zapisać rejestracji. Spróbuj ponownie.'
@@ -621,12 +805,23 @@ complete:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
+payment:
+  pay: 'Zaplatit nyní'
+  continue: 'Pokračovat k platbě'
+  redirecting:
+    title: 'Registrace uložena'
+    text: 'Přesměrováváme tě na platební stránku…'
 upload:
   unavailable: 'Nahrávání souborů zde není k dispozici.'
 submit:
   saving:
     title: 'Odesílání registrace'
     text: 'Počkej prosím, než bude registrace uložena.'
+  priceChanged:
+    title: 'Cena se změnila'
+    text: 'Registrace nyní stojí {amount}. Cena se změnila, zatímco byl formulář otevřený.'
+    confirm: 'Zaregistrovat se za {amount}'
+    back: 'Zpět k formuláři'
   error:
     title: 'Registrace se nezdařila'
     text: 'Registraci se nepodařilo uložit. Zkus to prosím znovu.'

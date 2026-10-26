@@ -78,6 +78,15 @@ Explorers**, where John is only a MEMBER.
 - four hand-written table templates, the default message templates per country
 - three sent messages with per-recipient deliveries
 - stored room planner and program planner settings
+- payments: the fee is requested on acceptance (reminders every 7 days) and collected through Youth Adventures' fake
+  provider account. Accepted participants cover every state — paid online, by bank transfer and in cash, partly paid,
+  unpaid with and without a reminder, a failed online attempt, a partial and a full refund — and the counselors' fee
+  is waived by hand. Pending and waitlisted registrations owe the fee but haven't been asked yet
+
+Online checkouts need `PAYMENT_FAKE_PROVIDER=true`, and the payment account needs `SECRETS_ENCRYPTION_KEYS` (without it,
+the account is skipped and the payments are still seeded). The fake provider keeps its payments in memory, so the
+seeded online payments can't be refunded from the app; record a manual refund instead, or pay a new checkout first.
+
 - five managers, one of them expiring, plus one invited by email
 
 ### Registrations
