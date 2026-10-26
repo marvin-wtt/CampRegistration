@@ -1,37 +1,5 @@
 <template>
   <div data-test="registration-payments">
-    <div class="section-title row items-center no-wrap">
-      <span class="col">{{ t('title') }}</span>
-      <q-btn
-        v-if="menuActions.length > 0"
-        class="row-action"
-        flat
-        round
-        size="sm"
-        icon="more_vert"
-        :aria-label="t('action.more')"
-        data-test="payment-menu"
-      >
-        <q-menu>
-          <q-list style="min-width: 220px">
-            <q-item
-              v-for="action in menuActions"
-              :key="action.key"
-              v-close-popup
-              clickable
-              :data-test="`payment-${action.key}`"
-              @click="action.run"
-            >
-              <q-item-section avatar>
-                <q-icon :name="action.icon" />
-              </q-item-section>
-              <q-item-section>{{ action.label }}</q-item-section>
-            </q-item>
-          </q-list>
-        </q-menu>
-      </q-btn>
-    </div>
-
     <q-list class="segmented-list">
       <q-item
         class="segment"
@@ -47,21 +15,58 @@
         </q-item-section>
         <q-item-section>
           <q-item-label class="row-label">
-            {{ outstanding > 0 ? t('open') : t('paidInFull') }}
+            {{ payment.amountDue === null ? t('paid') : t('due') }}
           </q-item-label>
           <q-item-label class="row-value balance-value">
-            {{ money(outstanding > 0 ? outstanding : payment.amountPaid) }}
+            {{ money(payment.amountDue ?? payment.amountPaid) }}
           </q-item-label>
+          <!-- Paid and open as labelled amounts, never "x of y". -->
+          <template v-if="payment.amountDue">
+            <q-linear-progress
+              :value="paidShare"
+              color="primary"
+              track-color="surface-container-highest"
+              size="6px"
+              rounded
+              class="q-mt-sm"
+              :aria-label="t('paidShare')"
+            />
+            <div
+              class="balance-figures row justify-between no-wrap q-mt-xs"
+              data-test="payment-figures"
+            >
+              <span>
+                {{ t('paid') }}
+                <strong>{{ money(payment.amountPaid) }}</strong>
+              </span>
+              <span
+                v-if="payment.overpaid > 0"
+                class="balance-figures__overpaid"
+              >
+                {{ t('overpaid') }}
+                <strong>{{ money(payment.overpaid) }}</strong>
+              </span>
+              <span v-else-if="outstanding > 0">
+                {{ t('open') }}
+                <strong>{{ money(outstanding) }}</strong>
+              </span>
+            </div>
+          </template>
           <q-item-label
-            v-if="payment.amountDue !== null && outstanding > 0"
-            class="row-caption"
+            v-if="payment.overpaid > 0"
+            class="row-caption row-caption--warning"
+            data-test="payment-overpaid"
           >
-            {{
-              t('paidOf', {
-                paid: money(payment.amountPaid),
-                due: money(payment.amountDue),
-              })
-            }}
+            {{ t('overpaidHint') }}
+            <a
+              v-if="overpaymentSource"
+              class="inline-action"
+              href="#"
+              data-test="payment-refund-overpaid"
+              @click.prevent="refund(overpaymentSource)"
+            >
+              {{ t('action.refund') }}
+            </a>
           </q-item-label>
           <q-item-label
             v-if="payment.adjustment"
@@ -69,11 +74,11 @@
             data-test="payment-adjustment"
           >
             {{ t('adjusted') }}
-            <template v-if="payment.quotedAmount !== null">
-              · {{ t('quoted', { amount: money(payment.quotedAmount) }) }}
-            </template>
             <template v-if="payment.adjustment.note">
               · {{ payment.adjustment.note }}
+            </template>
+            <template v-if="payment.quotedAmount !== null">
+              · {{ t('quoted', { amount: money(payment.quotedAmount) }) }}
             </template>
           </q-item-label>
           <q-item-label
@@ -94,7 +99,37 @@
           </q-item-label>
         </q-item-section>
         <q-item-section side>
-          <payment-status-chip :status="payment.status" />
+          <div class="row items-center no-wrap q-gutter-x-xs">
+            <payment-status-chip :status="payment.status" />
+            <q-btn
+              v-if="menuActions.length > 0"
+              class="row-action"
+              flat
+              round
+              size="sm"
+              icon="more_vert"
+              :aria-label="t('action.more')"
+              data-test="payment-menu"
+            >
+              <q-menu>
+                <q-list style="min-width: 220px">
+                  <q-item
+                    v-for="action in menuActions"
+                    :key="action.key"
+                    v-close-popup
+                    clickable
+                    :data-test="`payment-${action.key}`"
+                    @click="action.run"
+                  >
+                    <q-item-section avatar>
+                      <q-icon :name="action.icon" />
+                    </q-item-section>
+                    <q-item-section>{{ action.label }}</q-item-section>
+                  </q-item>
+                </q-list>
+              </q-menu>
+            </q-btn>
+          </div>
         </q-item-section>
       </q-item>
 
@@ -299,6 +334,30 @@ const outstanding = computed<number>(() =>
   ),
 );
 
+const paidShare = computed<number>(() => {
+  const due = payment.value.amountDue ?? 0;
+  return due > 0 ? Math.min(1, payment.value.amountPaid / due) : 0;
+});
+
+// The payment to give the excess back from: the latest one that can return
+// all of it, else the latest that can return anything.
+const overpaymentSource = computed<Payment | null>(() => {
+  if (payment.value.overpaid <= 0) {
+    return null;
+  }
+  const candidates = payments.value
+    .filter(canRefund)
+    .sort((a, b) =>
+      (b.paidAt ?? b.createdAt).localeCompare(a.paidAt ?? a.createdAt),
+    );
+
+  return (
+    candidates.find((entry) => refundable(entry) >= payment.value.overpaid) ??
+    candidates[0] ??
+    null
+  );
+});
+
 function money(minor: number, currency = registration.payment.currency) {
   return formatMoney(minor, currency, locale.value);
 }
@@ -391,8 +450,8 @@ async function run(action: () => Promise<unknown>, success: string) {
   }
 }
 
-// Secondary actions share one menu next to the title; recording a payment
-// is the list's own last row.
+// What concerns the balance sits in its tile's menu; recording a payment is
+// the list's own last row.
 const menuActions = computed(() =>
   [
     {
@@ -429,6 +488,7 @@ function record(): void {
       componentProps: {
         currency: registration.payment.currency,
         outstanding: outstanding.value,
+        amountDue: registration.payment.amountDue,
       },
     })
     .onOk((data: PaymentCreateData) => {
@@ -486,6 +546,7 @@ function refund(payment: Payment): void {
       componentProps: {
         currency: payment.currency,
         refundable: refundable(payment),
+        overpaid: registration.payment.overpaid,
         manual: payment.source === 'manual',
       },
     })
@@ -536,11 +597,13 @@ async function copyLink(): Promise<void> {
 </script>
 
 <i18n lang="yaml" locale="en">
-title: 'Payments'
 balance: 'Paid / due'
 open: 'Open'
-paidInFull: 'Paid in full'
-paidOf: '{paid} of {due} paid'
+due: 'Due'
+paid: 'Paid'
+overpaid: 'Overpaid'
+overpaidHint: 'More arrived than is due.'
+paidShare: 'Share paid'
 adjusted: 'Set by hand'
 quoted: 'Shown at registration: {amount}'
 answersDiffer: 'The answers now come to {amount}.'
@@ -589,11 +652,13 @@ notify:
 </i18n>
 
 <i18n lang="yaml" locale="de">
-title: 'Zahlungen'
 balance: 'Bezahlt / fällig'
 open: 'Offen'
-paidInFull: 'Vollständig bezahlt'
-paidOf: '{paid} von {due} bezahlt'
+due: 'Fällig'
+paid: 'Bezahlt'
+overpaid: 'Überzahlt'
+overpaidHint: 'Es ist mehr eingegangen als fällig.'
+paidShare: 'Bezahlter Anteil'
 adjusted: 'Von Hand festgelegt'
 quoted: 'Bei der Anmeldung angezeigt: {amount}'
 answersDiffer: 'Die Antworten ergeben jetzt {amount}.'
@@ -642,11 +707,13 @@ notify:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-title: 'Paiements'
 balance: 'Payé / dû'
 open: 'À payer'
-paidInFull: 'Entièrement payé'
-paidOf: '{paid} sur {due} payés'
+due: 'Montant dû'
+paid: 'Payé'
+overpaid: 'Trop-perçu'
+overpaidHint: 'Plus que le montant dû a été reçu.'
+paidShare: 'Part payée'
 adjusted: 'Défini manuellement'
 quoted: "Affiché à l'inscription : {amount}"
 answersDiffer: 'Les réponses donnent maintenant {amount}.'
@@ -695,11 +762,13 @@ notify:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-title: 'Płatności'
 balance: 'Zapłacono / należne'
 open: 'Do zapłaty'
-paidInFull: 'Opłacone w całości'
-paidOf: 'Zapłacono {paid} z {due}'
+due: 'Do zapłaty'
+paid: 'Zapłacono'
+overpaid: 'Nadpłata'
+overpaidHint: 'Wpłynęło więcej, niż wynosi należność.'
+paidShare: 'Zapłacona część'
 adjusted: 'Ustawione ręcznie'
 quoted: 'Pokazane przy rejestracji: {amount}'
 answersDiffer: 'Odpowiedzi dają teraz {amount}.'
@@ -748,11 +817,13 @@ notify:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-title: 'Platby'
 balance: 'Zaplaceno / splatné'
 open: 'Nezaplaceno'
-paidInFull: 'Zaplaceno v plné výši'
-paidOf: 'Zaplaceno {paid} z {due}'
+due: 'Splatné'
+paid: 'Zaplaceno'
+overpaid: 'Přeplaceno'
+overpaidHint: 'Přišlo víc, než je splatné.'
+paidShare: 'Zaplacený podíl'
 adjusted: 'Nastaveno ručně'
 quoted: 'Zobrazeno při registraci: {amount}'
 answersDiffer: 'Odpovědi teď dávají {amount}.'
@@ -808,11 +879,20 @@ notify:
   font-weight: 600;
 }
 
-.row-caption {
-  margin-top: 2px;
+.balance-figures {
+  gap: 12px;
   font-size: 0.8125rem;
-  line-height: 1.125rem;
   color: var(--md3-on-surface-variant);
+}
+
+.balance-figures strong {
+  color: var(--md3-on-surface);
+  font-variant-numeric: tabular-nums;
+}
+
+.balance-figures__overpaid,
+.balance-figures__overpaid strong {
+  color: var(--md3-tertiary);
 }
 
 .row-caption--warning {

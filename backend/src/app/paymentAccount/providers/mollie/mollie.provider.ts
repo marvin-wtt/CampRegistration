@@ -177,6 +177,13 @@ export class MollieProvider implements PaymentProvider {
     };
   }
 
+  async cancelCheckout(
+    credentials: ProviderCredentials,
+    providerPaymentId: string,
+  ): Promise<void> {
+    await this.client(credentials).payments.cancel(providerPaymentId);
+  }
+
   parseWebhook(req: RawBodyRequest): Promise<string | null> {
     const body = req.body as Record<string, unknown> | undefined;
     const id = body?.id;

@@ -83,6 +83,18 @@ Checkout refuses — rather than registration — when nothing is due, the
 organization is unverified or has no account, or the registration isn't
 accepted or asked to pay yet.
 
+### Overpayments
+
+More than is due can arrive: an old checkout paid after a cash payment, a
+typo when recording one, an amount due lowered afterwards. The balance then
+reads `OVERPAID` with the excess as `overpaid`, and the payments tab offers
+to refund it. `closeStaleCheckouts` narrows the window by cancelling open
+checkouts worth more than is outstanding — on a new checkout, a recorded
+payment, a changed amount due, and a provider payment arriving — but it is
+best effort: Mollie can't cancel every method, and a checkout being paid
+right now may still go through. Refunding an overpayment never lowers the
+amount due; only the part of a refund beyond the excess can.
+
 ## Deleting registrations
 
 Payments outlive their registration as the accounting record: each keeps a

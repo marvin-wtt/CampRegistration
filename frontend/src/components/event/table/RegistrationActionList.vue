@@ -179,6 +179,7 @@ function recordPayment() {
       componentProps: {
         currency: registration.payment.currency,
         outstanding: registration.payment.outstanding,
+        amountDue: registration.payment.amountDue,
       },
     })
     .onOk((data: PaymentCreateData) => {

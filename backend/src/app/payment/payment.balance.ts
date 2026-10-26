@@ -52,6 +52,7 @@ export function registrationPayment(
     amountDue,
     amountPaid,
     outstanding: outstandingAmount({ amountDue, amountPaid }),
+    overpaid: overpaidAmount({ amountDue, amountPaid }),
   };
 }
 
@@ -63,14 +64,32 @@ function paymentStatus(
   if (received > 0 && amountPaid <= 0) {
     return 'REFUNDED';
   }
-  if (amountDue === null || amountDue === 0) {
+  if (amountDue === null) {
     return amountPaid > 0 ? 'PAID' : 'NOT_REQUIRED';
   }
-  if (amountPaid >= amountDue) {
+  if (amountPaid > amountDue) {
+    return 'OVERPAID';
+  }
+  if (amountDue === 0) {
+    return 'NOT_REQUIRED';
+  }
+  if (amountPaid === amountDue) {
     return 'PAID';
   }
 
   return amountPaid > 0 ? 'PARTIAL' : 'UNPAID';
+}
+
+/**
+ * Paid beyond the amount due, in minor units. Without an amount due nothing
+ * was asked for, so nothing counts as too much.
+ */
+export function overpaidAmount(
+  balance: Pick<RegistrationPayment, 'amountDue' | 'amountPaid'>,
+): number {
+  return balance.amountDue === null
+    ? 0
+    : Math.max(0, balance.amountPaid - balance.amountDue);
 }
 
 /** Outstanding balance in minor units, never negative. */

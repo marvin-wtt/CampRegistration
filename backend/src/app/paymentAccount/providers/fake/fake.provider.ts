@@ -167,6 +167,16 @@ export class FakeProvider implements PaymentProvider {
     return Promise.resolve(id);
   }
 
+  async cancelCheckout(
+    _credentials: unknown,
+    providerPaymentId: string,
+  ): Promise<void> {
+    if (payments.get(providerPaymentId)?.status !== 'OPEN') {
+      throw new Error(`Fake payment ${providerPaymentId} is not open`);
+    }
+    await completeFakePayment(providerPaymentId, 'CANCELED');
+  }
+
   createRefund(
     _credentials: unknown,
     providerPaymentId: string,
