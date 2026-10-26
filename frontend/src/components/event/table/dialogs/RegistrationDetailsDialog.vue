@@ -258,6 +258,12 @@
                     <q-item-label class="row-value">
                       {{ paymentSummary.value }}
                     </q-item-label>
+                    <q-item-label
+                      v-if="paymentSummary.caption"
+                      class="row-caption"
+                    >
+                      {{ paymentSummary.caption }}
+                    </q-item-label>
                   </q-item-section>
                   <q-item-section side>
                     <div class="row items-center no-wrap q-gutter-x-xs">
@@ -426,20 +432,39 @@ const showPayments = computed<boolean>(() => {
 const paymentSummary = computed(() => {
   const payment = registration.value?.payment;
   if (!payment) {
-    return { label: '', value: '' };
+    return { label: '', value: '', caption: null };
   }
   const money = (minor: number) =>
     formatMoney(minor, payment.currency, locale.value);
+  // Both amounts named, so "200 € of 200 €" can't read like a page count.
+  const caption =
+    payment.amountDue === null
+      ? null
+      : t('payment.figures', {
+          paid: money(payment.amountPaid),
+          due: money(payment.amountDue),
+        });
 
-  return payment.outstanding > 0
-    ? {
-        label: t('payment.open'),
-        value: t('payment.ofDue', {
-          open: money(payment.outstanding),
-          due: money(payment.amountDue ?? 0),
-        }),
-      }
-    : { label: t('payment.paid'), value: money(payment.amountPaid) };
+  if (payment.overpaid > 0) {
+    return {
+      label: t('payment.overpaid'),
+      value: money(payment.overpaid),
+      caption,
+    };
+  }
+  if (payment.outstanding > 0) {
+    return {
+      label: t('payment.open'),
+      value: money(payment.outstanding),
+      caption,
+    };
+  }
+
+  return {
+    label: t('payment.paid'),
+    value: money(payment.amountPaid),
+    caption: null,
+  };
 });
 
 // Reactive lookup instead of a static snapshot, so edits made elsewhere
@@ -701,7 +726,8 @@ empty: 'No details available for this registration'
 payment:
   open: 'Open'
   paid: 'Paid'
-  ofDue: '{open} of {due}'
+  overpaid: 'Overpaid by'
+  figures: '{paid} paid · {due} due'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -749,7 +775,8 @@ empty: 'Für diese Anmeldung sind keine Details verfügbar'
 payment:
   open: 'Offen'
   paid: 'Bezahlt'
-  ofDue: '{open} von {due}'
+  overpaid: 'Überzahlt um'
+  figures: '{paid} bezahlt · {due} fällig'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -797,7 +824,8 @@ empty: 'Aucun détail disponible pour cette inscription'
 payment:
   open: 'À payer'
   paid: 'Payé'
-  ofDue: '{open} sur {due}'
+  overpaid: 'Trop-perçu de'
+  figures: '{paid} payés · {due} dus'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -845,7 +873,8 @@ empty: 'Brak szczegółów dla tego zgłoszenia'
 payment:
   open: 'Do zapłaty'
   paid: 'Zapłacono'
-  ofDue: '{open} z {due}'
+  overpaid: 'Nadpłata'
+  figures: 'Zapłacono {paid} · do zapłaty {due}'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -893,7 +922,8 @@ empty: 'Pro tuto registraci nejsou k dispozici žádné podrobnosti'
 payment:
   open: 'Nezaplaceno'
   paid: 'Zaplaceno'
-  ofDue: '{open} z {due}'
+  overpaid: 'Přeplaceno o'
+  figures: 'Zaplaceno {paid} · splatné {due}'
 </i18n>
 
 <style scoped lang="scss">
@@ -908,14 +938,13 @@ payment:
   color: var(--md3-on-surface-variant);
 }
 
-/* Details size to their content; the timeline needs a fixed viewport for its
-   scroll area. */
+/* One height for every tab, so switching tabs doesn't resize the dialog. */
 .details-panel {
   display: flex;
   flex-direction: column;
   gap: 20px;
   padding: 16px;
-  max-height: min(480px, 62vh);
+  height: min(480px, 62vh);
 }
 
 .timeline-panel {
@@ -947,10 +976,10 @@ payment:
 }
 
 .details-card--sheet .details-panel {
-  max-height: none;
   height: 100%;
 }
 
+.details-card--sheet .empty-state,
 .details-card--sheet .timeline-panel {
   height: 100%;
 }
@@ -960,6 +989,7 @@ payment:
 }
 
 .empty-state {
+  height: min(480px, 62vh);
   color: var(--md3-on-surface-variant);
 }
 

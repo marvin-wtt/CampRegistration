@@ -55,12 +55,31 @@
             data-test="refund-route"
           />
           <!-- A refund usually lowers the price (late arrival, goodwill);
-               otherwise the registration would owe it again. -->
+               otherwise the registration would owe it again. Returning an
+               overpayment lowers nothing: that money was never owed. -->
           <q-checkbox
+            v-if="lowersBy > 0"
             v-model="reduceAmountDue"
-            :label="t('field.reduceAmountDue')"
+            :label="
+              overpaid > 0
+                ? t('field.reduceAmountDueBy', {
+                    amount: formatMoney(lowersBy, currency, locale),
+                  })
+                : t('field.reduceAmountDue')
+            "
             data-test="refund-reduce-amount-due"
           />
+          <div
+            v-if="overpaid > 0"
+            class="text-body2 text-on-surface-variant"
+            data-test="refund-overpaid-hint"
+          >
+            {{
+              t('overpaid', {
+                amount: formatMoney(overpaid, currency, locale),
+              })
+            }}
+          </div>
           <q-checkbox
             v-model="notify"
             :label="t('field.notify')"
@@ -110,10 +129,17 @@ import {
   toMinorUnits,
 } from '@camp-registration/common/utils';
 
-const { currency, refundable, manual } = defineProps<{
+const {
+  currency,
+  refundable,
+  overpaid = 0,
+  manual,
+} = defineProps<{
   currency: string;
   /** Minor units still refundable on this payment. */
   refundable: number;
+  /** Minor units the registration paid beyond its amount due. */
+  overpaid?: number;
   /** Manual payments are only recorded as refunded; no money moves here. */
   manual: boolean;
 }>();
@@ -124,7 +150,18 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
 const { t, locale } = useI18n();
 
-const amount = ref<number>(fromMinorUnits(refundable, currency));
+// An overpayment is the likely reason to refund, so it is the suggestion.
+const amount = ref<number>(
+  fromMinorUnits(
+    overpaid > 0 ? Math.min(overpaid, refundable) : refundable,
+    currency,
+  ),
+);
+
+// The part beyond the overpayment, which the amount due can drop by.
+const lowersBy = computed<number>(() =>
+  Math.max(0, toMinorUnits(amount.value || 0, currency) - overpaid),
+);
 const route = ref<'provider' | 'outside'>('provider');
 const routeOptions = computed(() => [
   { value: 'provider', label: t('route.provider') },
@@ -140,7 +177,7 @@ function submit(): void {
     reason: reason.value.trim() || null,
     suppressMessage: !notify.value,
     outsideApp: !manual && route.value === 'outside',
-    reduceAmountDue: reduceAmountDue.value,
+    reduceAmountDue: lowersBy.value > 0 && reduceAmountDue.value,
   } satisfies PaymentRefundCreateData);
 }
 </script>
@@ -148,8 +185,10 @@ function submit(): void {
 <i18n lang="yaml" locale="en">
 title: 'Refund payment'
 hint: 'Up to {refundable} can be refunded.'
+overpaid: '{amount} was paid beyond what is due; giving that back leaves the amount due as it is.'
 field:
   reduceAmountDue: 'Also lower the amount due by this refund'
+  reduceAmountDueBy: 'Also lower the amount due by {amount}'
   amount: 'Amount to refund'
   reason: 'Reason'
   reasonHint: 'Included in the email to the participant'
@@ -169,8 +208,10 @@ action:
 <i18n lang="yaml" locale="de">
 title: 'Zahlung erstatten'
 hint: 'Es können bis zu {refundable} erstattet werden.'
+overpaid: '{amount} wurden über den fälligen Betrag hinaus gezahlt; deren Erstattung ändert den fälligen Betrag nicht.'
 field:
   reduceAmountDue: 'Fälligen Betrag um diese Erstattung senken'
+  reduceAmountDueBy: 'Fälligen Betrag um {amount} senken'
   amount: 'Zu erstattender Betrag'
   reason: 'Grund'
   reasonHint: 'Wird in die E-Mail an die teilnehmende Person übernommen'
@@ -190,8 +231,10 @@ action:
 <i18n lang="yaml" locale="fr">
 title: 'Rembourser le paiement'
 hint: "Jusqu'à {refundable} peuvent être remboursés."
+overpaid: '{amount} ont été payés au-delà du montant dû ; les rembourser ne change pas le montant dû.'
 field:
   reduceAmountDue: 'Réduire aussi le montant dû de ce remboursement'
+  reduceAmountDueBy: 'Réduire aussi le montant dû de {amount}'
   amount: 'Montant à rembourser'
   reason: 'Motif'
   reasonHint: "Repris dans l'e-mail envoyé au participant"
@@ -211,8 +254,10 @@ action:
 <i18n lang="yaml" locale="pl">
 title: 'Zwróć płatność'
 hint: 'Można zwrócić maksymalnie {refundable}.'
+overpaid: '{amount} wpłacono ponad należność; zwrot tej części nie zmienia kwoty do zapłaty.'
 field:
   reduceAmountDue: 'Obniż też kwotę do zapłaty o ten zwrot'
+  reduceAmountDueBy: 'Obniż też kwotę do zapłaty o {amount}'
   amount: 'Kwota zwrotu'
   reason: 'Powód'
   reasonHint: 'Zostanie dołączony do e-maila do uczestnika'
@@ -232,8 +277,10 @@ action:
 <i18n lang="yaml" locale="cs">
 title: 'Vrátit platbu'
 hint: 'Vrátit lze nejvýše {refundable}.'
+overpaid: '{amount} bylo zaplaceno nad rámec dlužné částky; jejich vrácení dlužnou částku nemění.'
 field:
   reduceAmountDue: 'Snížit také dlužnou částku o toto vrácení'
+  reduceAmountDueBy: 'Snížit také dlužnou částku o {amount}'
   amount: 'Částka k vrácení'
   reason: 'Důvod'
   reasonHint: 'Bude uveden v e-mailu účastníkovi'

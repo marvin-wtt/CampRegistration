@@ -105,6 +105,16 @@ export interface PaymentProvider {
   ): Promise<ProviderPaymentSnapshot>;
 
   /**
+   * Closes an unpaid checkout so it can no longer be paid. Throws when the
+   * provider refuses, e.g. a Mollie method that cannot be canceled. The new
+   * status arrives the usual way, through a re-fetch.
+   */
+  cancelCheckout(
+    credentials: ProviderCredentials,
+    providerPaymentId: string,
+  ): Promise<void>;
+
+  /**
    * Authenticates an incoming webhook and returns the provider payment id it
    * refers to, or `null` for a genuine event that doesn't concern a payment
    * of ours. Throws `InvalidWebhookError` when the request is not authentic.

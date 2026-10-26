@@ -32,6 +32,24 @@
             autofocus
             data-test="record-payment-amount"
           />
+          <!-- Allowed (a donation, rounding up), but rarely meant. -->
+          <q-banner
+            v-if="excess > 0"
+            dense
+            rounded
+            class="bg-warning-container text-on-warning-container text-body2"
+            data-test="record-payment-excess"
+          >
+            <template #avatar>
+              <q-icon name="warning" />
+            </template>
+            {{
+              t('excess', {
+                excess: formatMoney(excess, currency, locale),
+                outstanding: formatMoney(outstanding, currency, locale),
+              })
+            }}
+          </q-banner>
           <q-select
             v-model="method"
             :label="t('field.method')"
@@ -84,13 +102,17 @@ import { formatLocalDate } from '@/utils/date';
 import type { PaymentCreateData } from '@camp-registration/common/entities';
 import {
   currencySymbol,
+  formatMoney,
   fromMinorUnits,
+  toMinorUnits,
 } from '@camp-registration/common/utils';
 
-const { currency, outstanding } = defineProps<{
+const { currency, outstanding, amountDue } = defineProps<{
   currency: string;
   /** Minor units, suggested as the amount. */
   outstanding: number;
+  /** Minor units; `null` when nothing was asked for, so nothing is too much. */
+  amountDue: number | null;
 }>();
 
 defineEmits([...useDialogPluginComponent.emits]);
@@ -101,6 +123,12 @@ const { t, locale } = useI18n();
 
 const amount = ref<number | null>(
   outstanding > 0 ? fromMinorUnits(outstanding, currency) : null,
+);
+// Minor units beyond what is open.
+const excess = computed<number>(() =>
+  amountDue === null || !amount.value
+    ? 0
+    : Math.max(0, toMinorUnits(amount.value, currency) - outstanding),
 );
 const method = ref<string>('bank_transfer');
 // Local today, not UTC: shortly after midnight they differ.
@@ -132,6 +160,7 @@ function submit(): void {
 <i18n lang="yaml" locale="en">
 title: 'Record payment'
 hint: 'Record money received outside the online checkout, e.g. by bank transfer or in cash.'
+excess: 'That is {excess} more than the {outstanding} still open. You can save it anyway; the registration then shows as overpaid.'
 field:
   amount: 'Amount'
   method: 'Method'
@@ -151,6 +180,7 @@ action:
 <i18n lang="yaml" locale="de">
 title: 'Zahlung erfassen'
 hint: 'Erfasse Geld, das außerhalb der Online-Zahlung eingegangen ist, z. B. per Überweisung oder bar.'
+excess: 'Das sind {excess} mehr als die noch offenen {outstanding}. Du kannst trotzdem speichern; die Anmeldung gilt dann als überzahlt.'
 field:
   amount: 'Betrag'
   method: 'Zahlungsart'
@@ -170,6 +200,7 @@ action:
 <i18n lang="yaml" locale="fr">
 title: 'Enregistrer un paiement'
 hint: 'Enregistrez un montant reçu en dehors du paiement en ligne, par ex. par virement ou en espèces.'
+excess: "C'est {excess} de plus que les {outstanding} encore dus. Vous pouvez tout de même enregistrer ; l'inscription apparaîtra alors en trop-perçu."
 field:
   amount: 'Montant'
   method: 'Moyen'
@@ -189,6 +220,7 @@ action:
 <i18n lang="yaml" locale="pl">
 title: 'Zarejestruj płatność'
 hint: 'Zarejestruj pieniądze otrzymane poza płatnością online, np. przelewem lub gotówką.'
+excess: 'To o {excess} więcej niż pozostałe {outstanding}. Możesz mimo to zapisać; zgłoszenie będzie wtedy oznaczone jako nadpłacone.'
 field:
   amount: 'Kwota'
   method: 'Metoda'
@@ -208,6 +240,7 @@ action:
 <i18n lang="yaml" locale="cs">
 title: 'Zaznamenat platbu'
 hint: 'Zaznamenejte peníze přijaté mimo online platbu, např. bankovním převodem nebo v hotovosti.'
+excess: 'To je o {excess} víc než zbývajících {outstanding}. Přesto můžete uložit; přihláška se pak zobrazí jako přeplacená.'
 field:
   amount: 'Částka'
   method: 'Způsob'

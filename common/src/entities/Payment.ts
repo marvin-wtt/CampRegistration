@@ -24,7 +24,12 @@ export type RefundStatus = 'PENDING' | 'REFUNDED' | 'FAILED' | 'CANCELED';
  * `REFUNDED` means money was paid and the net paid amount is back to zero.
  */
 export type RegistrationPaymentStatus =
-  'NOT_REQUIRED' | 'UNPAID' | 'PARTIAL' | 'PAID' | 'REFUNDED';
+  | 'NOT_REQUIRED'
+  | 'UNPAID'
+  | 'PARTIAL'
+  | 'PAID'
+  | 'OVERPAID'
+  | 'REFUNDED';
 
 export interface PaymentRefund extends Identifiable {
   paymentId: string;
@@ -108,6 +113,8 @@ export interface RegistrationPayment {
   amountPaid: number;
   /** Minor units still owed, never negative. */
   outstanding: number;
+  /** Minor units paid beyond the amount due, never negative. */
+  overpaid: number;
 }
 
 /** A manager's fixed `amountDue`, replacing the one calculated from the answers. */
