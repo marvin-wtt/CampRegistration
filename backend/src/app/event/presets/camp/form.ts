@@ -1,3 +1,5 @@
+import paymentAmount from '../paymentAmount.js';
+
 export default {
   locale: 'de',
   title: '{event.name}',
@@ -89,6 +91,7 @@ export default {
           isRequired: true,
           eventDataType: 'role',
         },
+        ...paymentAmount,
       ],
       title: {
         en: 'Information',

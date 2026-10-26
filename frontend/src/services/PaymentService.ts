@@ -1,9 +1,11 @@
 import type {
+  AmountDueUpdateData,
   EventPaymentStatus,
   Payment,
   PaymentCheckout,
   PaymentCreateData,
   PaymentRefundCreateData,
+  PaymentRequestResult,
   RegistrationPaymentSummary,
 } from '@camp-registration/common/entities';
 import { api } from '@/services/api';
@@ -50,6 +52,17 @@ export function usePaymentService() {
     return response?.data?.data;
   }
 
+  async function updateAmountDue(
+    eventId: string,
+    registrationId: string,
+    data: AmountDueUpdateData,
+  ): Promise<void> {
+    await api.put(
+      `events/${eventId}/registrations/${registrationId}/payments/amount-due/`,
+      data,
+    );
+  }
+
   async function deletePayment(
     eventId: string,
     registrationId: string,
@@ -81,6 +94,14 @@ export function usePaymentService() {
     await api.post(
       `events/${eventId}/registrations/${registrationId}/payments/request/`,
     );
+  }
+
+  async function requestAllPayments(
+    eventId: string,
+  ): Promise<PaymentRequestResult> {
+    const response = await api.post(`events/${eventId}/payments/request/`);
+
+    return response?.data?.data;
   }
 
   async function fetchPaymentSummary(
@@ -115,9 +136,11 @@ export function usePaymentService() {
     fetchEventPaymentStatus,
     fetchRegistrationPayments,
     createManualPayment,
+    updateAmountDue,
     deletePayment,
     refundPayment,
     requestPayment,
+    requestAllPayments,
     fetchPaymentSummary,
     startCheckout,
   };

@@ -188,8 +188,8 @@ export const newsletterConsent: EventDataType = {
   },
 };
 
-// Numbers here add up to what a registration owes (see the event's payment
-// settings); without any, the event's price applies.
+// Numbers here adjust the event's price to what a registration owes (see the
+// event's payment settings) — negative for a discount — while shown.
 export const paymentAmount: EventDataType = {
   element: {
     value: 'payment_amount',

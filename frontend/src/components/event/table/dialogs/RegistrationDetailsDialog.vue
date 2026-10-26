@@ -46,7 +46,7 @@
       </registration-dialog-header>
 
       <q-tabs
-        v-if="canViewTimeline"
+        v-if="canViewTimeline || showPayments"
         v-model="activeTab"
         align="justify"
         no-caps
@@ -60,6 +60,13 @@
           :label="t('tab.details')"
         />
         <q-tab
+          v-if="showPayments"
+          name="payments"
+          :label="t('tab.payments')"
+          data-test="registration-tab-payments"
+        />
+        <q-tab
+          v-if="canViewTimeline"
           name="timeline"
           :label="t('section.timeline')"
         />
@@ -226,11 +233,47 @@
               </q-list>
             </section>
 
-            <section v-if="showPayments && event">
-              <registration-payments-section
-                :event-id="event.id"
-                :registration
-              />
+            <!-- The glance stays here; the history and actions have a tab. -->
+            <section v-if="showPayments">
+              <div class="section-title">{{ t('section.payment') }}</div>
+              <q-list class="segmented-list">
+                <q-item
+                  class="segment"
+                  clickable
+                  data-test="registration-payment-summary"
+                  @click="activeTab = 'payments'"
+                >
+                  <q-item-section avatar>
+                    <div class="row-icon">
+                      <q-icon
+                        name="payments"
+                        size="20px"
+                      />
+                    </div>
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label class="row-label">
+                      {{ paymentSummary.label }}
+                    </q-item-label>
+                    <q-item-label class="row-value">
+                      {{ paymentSummary.value }}
+                    </q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
+                    <div class="row items-center no-wrap q-gutter-x-xs">
+                      <payment-status-chip
+                        v-if="registration.payment.status !== 'NOT_REQUIRED'"
+                        :status="registration.payment.status"
+                      />
+                      <q-icon
+                        name="chevron_right"
+                        size="20px"
+                        class="row-action"
+                      />
+                    </div>
+                  </q-item-section>
+                </q-item>
+              </q-list>
             </section>
           </div>
 
@@ -245,6 +288,20 @@
             <div class="text-body2 q-mt-sm">
               {{ t('empty') }}
             </div>
+          </div>
+        </q-tab-panel>
+
+        <q-tab-panel
+          v-if="showPayments && event"
+          name="payments"
+          class="q-pa-none"
+          lazy-render
+        >
+          <div class="details-panel scroll">
+            <registration-payments-section
+              :event-id="event.id"
+              :registration
+            />
           </div>
         </q-tab-panel>
 
@@ -302,6 +359,13 @@ import RegistrationTimeline from '@/components/event/table/dialogs/RegistrationT
 import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
 import CountryIcon from '@/components/common/localization/CountryIcon.vue';
 import RegistrationPaymentsSection from '@/components/event/payment/RegistrationPaymentsSection.vue';
+import PaymentStatusChip from '@/components/event/payment/PaymentStatusChip.vue';
+import { formatMoney } from '@camp-registration/common/utils';
+import { useEventSettings } from '@/composables/eventSettings';
+import {
+  type PaymentSettings,
+  SETTING_KEYS,
+} from '@camp-registration/common/settings';
 
 defineEmits([...useDialogPluginComponent.emits]);
 
@@ -315,8 +379,9 @@ const registrationHelper = useRegistrationHelper();
 const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent();
 const route = useRoute();
 
-const { registrationId } = defineProps<{
+const { registrationId, initialTab = 'details' } = defineProps<{
   registrationId: string;
+  initialTab?: 'details' | 'payments' | 'timeline';
 }>();
 
 const { data: registrations } = storeToRefs(useRegistrationsStore());
@@ -332,15 +397,50 @@ const canViewTimeline = computed(
 
 // The timeline panel is `lazy-render`, so switching to it is what mounts
 // RegistrationTimeline and fires its fetch — not every dialog open.
-const activeTab = ref<'details' | 'timeline'>('details');
+const activeTab = ref<'details' | 'payments' | 'timeline'>(initialTab);
 
-// Only once the registration owes (or has paid) anything — events that
-// don't collect payments keep the dialog as it was.
-const showPayments = computed<boolean>(
-  () =>
-    can('event.payments.view') &&
-    registration.value?.payment.status !== 'NOT_REQUIRED',
-);
+const { settings: paymentSettings } = useEventSettings<
+  Pick<PaymentSettings, 'enabled'>
+>(SETTING_KEYS.PAYMENT, { enabled: false });
+
+// Only while the event collects payments and this registration owes (or has
+// paid) anything. Money already recorded stays visible after payments are
+// turned off; a mere quote does not.
+const showPayments = computed<boolean>(() => {
+  const payment = registration.value?.payment;
+  if (!can('event.payments.view') || !payment) {
+    return false;
+  }
+  if (payment.status === 'NOT_REQUIRED') {
+    return false;
+  }
+
+  return (
+    paymentSettings.enabled ||
+    payment.amountPaid > 0 ||
+    payment.status === 'REFUNDED'
+  );
+});
+
+// What the payments tab holds, at a glance: what is open, else what was paid.
+const paymentSummary = computed(() => {
+  const payment = registration.value?.payment;
+  if (!payment) {
+    return { label: '', value: '' };
+  }
+  const money = (minor: number) =>
+    formatMoney(minor, payment.currency, locale.value);
+
+  return payment.outstanding > 0
+    ? {
+        label: t('payment.open'),
+        value: t('payment.ofDue', {
+          open: money(payment.outstanding),
+          due: money(payment.amountDue ?? 0),
+        }),
+      }
+    : { label: t('payment.paid'), value: money(payment.amountPaid) };
+});
 
 // Reactive lookup instead of a static snapshot, so edits made elsewhere
 // (e.g. the table's inline cell editors) are reflected while the dialog is open.
@@ -558,12 +658,14 @@ function showFormData(): void {
 
 <i18n lang="yaml" locale="en">
 section:
+  payment: 'Payment'
   personal: 'Personal'
   contact: 'Contact'
   address: 'Address'
   timeline: 'Timeline'
 
 tab:
+  payments: 'Payments'
   details: 'Details'
 
 field:
@@ -596,16 +698,22 @@ notification:
   copyFailed: 'Copying failed'
 
 empty: 'No details available for this registration'
+payment:
+  open: 'Open'
+  paid: 'Paid'
+  ofDue: '{open} of {due}'
 </i18n>
 
 <i18n lang="yaml" locale="de">
 section:
+  payment: 'Zahlung'
   personal: 'Persönliches'
   contact: 'Kontakt'
   address: 'Adresse'
   timeline: 'Verlauf'
 
 tab:
+  payments: 'Zahlungen'
   details: 'Details'
 
 field:
@@ -638,16 +746,22 @@ notification:
   copyFailed: 'Kopieren fehlgeschlagen'
 
 empty: 'Für diese Anmeldung sind keine Details verfügbar'
+payment:
+  open: 'Offen'
+  paid: 'Bezahlt'
+  ofDue: '{open} von {due}'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 section:
+  payment: 'Paiement'
   personal: 'Informations personnelles'
   contact: 'Contact'
   address: 'Adresse'
   timeline: 'Historique'
 
 tab:
+  payments: 'Paiements'
   details: 'Détails'
 
 field:
@@ -680,16 +794,22 @@ notification:
   copyFailed: 'Échec de la copie'
 
 empty: 'Aucun détail disponible pour cette inscription'
+payment:
+  open: 'À payer'
+  paid: 'Payé'
+  ofDue: '{open} sur {due}'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
 section:
+  payment: 'Płatność'
   personal: 'Dane osobowe'
   contact: 'Kontakt'
   address: 'Adres'
   timeline: 'Historia'
 
 tab:
+  payments: 'Płatności'
   details: 'Szczegóły'
 
 field:
@@ -722,16 +842,22 @@ notification:
   copyFailed: 'Kopiowanie nie powiodło się'
 
 empty: 'Brak szczegółów dla tego zgłoszenia'
+payment:
+  open: 'Do zapłaty'
+  paid: 'Zapłacono'
+  ofDue: '{open} z {due}'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
 section:
+  payment: 'Platba'
   personal: 'Osobní údaje'
   contact: 'Kontakt'
   address: 'Adresa'
   timeline: 'Časová osa'
 
 tab:
+  payments: 'Platby'
   details: 'Podrobnosti'
 
 field:
@@ -764,9 +890,15 @@ notification:
   copyFailed: 'Kopírování se nezdařilo'
 
 empty: 'Pro tuto registraci nejsou k dispozici žádné podrobnosti'
+payment:
+  open: 'Nezaplaceno'
+  paid: 'Zaplaceno'
+  ofDue: '{open} z {due}'
 </i18n>
 
-<style scoped>
+<style scoped lang="scss">
+@use '../../../../css/segmented-list';
+
 .details-card {
   background: var(--md3-surface-container-low);
   overflow: hidden;
@@ -825,89 +957,6 @@ empty: 'Pro tuto registraci nejsou k dispozici žádné podrobnosti'
 
 .details-card--sheet .details-actions {
   padding-bottom: calc(16px + env(safe-area-inset-bottom));
-}
-
-.section-title {
-  padding: 0 4px 8px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  color: var(--md3-primary);
-}
-
-/* MD3 Expressive segmented list: rows are separate tiles with a small gap,
-   and only the group's outer corners are fully rounded. */
-.segmented-list {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.segment {
-  min-height: 64px;
-  padding: 10px 12px 10px 16px;
-  background: var(--md3-surface-container-high);
-  border-radius: 4px;
-  color: var(--md3-on-surface);
-}
-
-.segment:first-child {
-  border-top-left-radius: 16px;
-  border-top-right-radius: 16px;
-}
-
-.segment:last-child {
-  border-bottom-left-radius: 16px;
-  border-bottom-right-radius: 16px;
-}
-
-.segment :deep(.q-item__section--avatar) {
-  min-width: 0;
-  padding-right: 16px;
-}
-
-.row-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: var(--md3-secondary-container);
-  color: var(--md3-on-secondary-container);
-}
-
-.row-label {
-  font-size: 0.75rem;
-  line-height: 1rem;
-  letter-spacing: 0.02em;
-  color: var(--md3-on-surface-variant);
-}
-
-.row-value {
-  margin-top: 2px;
-  font-size: 1rem;
-  line-height: 1.5rem;
-  color: var(--md3-on-surface);
-}
-
-.row-badge {
-  display: inline-block;
-  padding: 4px 12px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  line-height: 1.25rem;
-  white-space: nowrap;
-  background: var(--md3-tertiary-container);
-  color: var(--md3-on-tertiary-container);
-}
-
-.row-value--link {
-  color: var(--md3-primary);
-}
-
-.row-action {
-  color: var(--md3-on-surface-variant);
 }
 
 .empty-state {

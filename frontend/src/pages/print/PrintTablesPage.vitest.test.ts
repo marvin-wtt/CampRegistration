@@ -79,6 +79,11 @@ function registration(
       currency: 'EUR',
       amountDue: null,
       amountPaid: 0,
+      quotedAmount: null,
+      adjustment: null,
+      outstanding: 0,
+      requestedAt: null,
+      remindedAt: null,
     },
     createdAt: '2026-01-01T00:00:00Z',
   };

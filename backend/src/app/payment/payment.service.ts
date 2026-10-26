@@ -5,37 +5,35 @@ import {
   type Organization,
   type Payment,
   type PaymentRefund,
-  type PaymentStatus,
   Prisma,
-  type RefundStatus,
   type Registration,
 } from '#generated/prisma/client.js';
 import type {
+  PaymentSettlement,
   RegistrationPayment,
   RegistrationPaymentSummary,
 } from '@camp-registration/common/entities';
 import { SETTING_KEYS } from '@camp-registration/common/settings';
 import type { PaymentSettings } from '@camp-registration/common/settings';
 import {
-  computeAmountDue,
+  paymentRequestsOpen,
   toMinorUnits,
+  utcCarrierToNaiveDateTime,
   translate,
 } from '@camp-registration/common/utils';
 import { BaseService } from '#core/base/BaseService';
-import logger from '#core/logger';
+import config from '#config/index';
 import ApiError from '#utils/ApiError';
 import { describeError } from '#utils/errors';
 import { ulid } from '#utils/ulid';
 import { SettingService } from '#app/setting/setting.service';
+import { AuditService } from '#app/audit/audit.service';
+import { paymentAuditEntry } from './payment.audit.js';
 import {
   PaymentAccountService,
   paymentWebhookUrl,
   type ResolvedPaymentAccount,
-} from './payment-account.service.js';
-import type {
-  ProviderPaymentSnapshot,
-  ProviderRefundSnapshot,
-} from './providers/payment.provider.js';
+} from '#app/paymentAccount/payment-account.service';
 import {
   outstandingAmount,
   refundableAmount,
@@ -46,46 +44,13 @@ import { paymentPageUrl } from './payment-link.js';
 export const DEFAULT_PAYMENT_SETTINGS: PaymentSettings = {
   enabled: false,
   timing: 'ACCEPTANCE',
+  requestDate: null,
+  requestDaysBeforeStart: null,
   reminderAfterDays: null,
 };
 
 // A checkout closer than this to expiring is not handed out again.
 const CHECKOUT_REUSE_MARGIN_MS = 5 * 60 * 1000;
-
-const PAYMENT_STATUS_RANK: Record<PaymentStatus, number> = {
-  OPEN: 0,
-  PENDING: 1,
-  PAID: 2,
-  FAILED: 2,
-  CANCELED: 2,
-  EXPIRED: 2,
-};
-
-/**
- * Statuses only move forward: a late or replayed webhook can never undo a
- * newer state. A terminal non-paid state may still turn `PAID` — the money
- * arrived after all, and the ledger must say so.
- */
-export function isPaymentStatusAdvance(
-  from: PaymentStatus,
-  to: PaymentStatus,
-): boolean {
-  if (from === to || from === 'PAID') {
-    return false;
-  }
-  if (to === 'PAID') {
-    return true;
-  }
-
-  return PAYMENT_STATUS_RANK[to] > PAYMENT_STATUS_RANK[from];
-}
-
-export function isRefundStatusAdvance(
-  from: RefundStatus,
-  to: RefundStatus,
-): boolean {
-  return from === 'PENDING' && to !== 'PENDING';
-}
 
 const paymentInclude = {
   refunds: {
@@ -99,22 +64,28 @@ export type PaymentWithDetails = Prisma.PaymentGetPayload<{
   include: typeof paymentInclude;
 }>;
 
+/** What a payment keeps of its registration for accounting. */
+function payerSnapshot(
+  registration: Pick<Registration, 'id' | 'firstName' | 'lastName'>,
+): { payerName: string | null; registrationRef: string } {
+  const name = [registration.firstName, registration.lastName]
+    .filter(Boolean)
+    .join(' ')
+    .trim();
+
+  return { payerName: name || null, registrationRef: registration.id };
+}
+
+interface AmountDueBefore {
+  registrationId: string;
+  amountDue: number | null;
+  amountDueAdjustedAt: Date | null;
+  amountDueNote: string | null;
+}
+
 type EventWithOrganization = Event & {
   organization: Pick<Organization, 'verificationStatus'>;
 };
-
-/** What a sync changed, so the caller can notify (mail, realtime). */
-export interface PaymentSyncOutcome {
-  payment: Payment;
-  registration: Registration | null;
-  event: Event;
-  /** The new payment status, if it changed. */
-  statusChange: PaymentStatus | null;
-  /** Refunds that just completed. */
-  completedRefunds: PaymentRefund[];
-  /** Whether anything at all was written. */
-  changed: boolean;
-}
 
 /**
  * The payment ledger and its lifecycle, independent of any provider:
@@ -128,6 +99,7 @@ export class PaymentService extends BaseService {
     private readonly accountService: PaymentAccountService,
     @inject(SettingService)
     private readonly settingService: SettingService,
+    @inject(AuditService) private readonly audit: AuditService,
   ) {
     super();
   }
@@ -142,19 +114,6 @@ export class PaymentService extends BaseService {
       ...DEFAULT_PAYMENT_SETTINGS,
       ...(setting?.data as Partial<PaymentSettings> | undefined),
     };
-  }
-
-  /**
-   * The amount a new submission owes, or `null` when the event doesn't
-   * collect payments. Snapshotted onto the registration at submit.
-   */
-  async amountDueFor(
-    event: Pick<Event, 'id' | 'price' | 'currency'>,
-    dataByTags: Record<string, unknown[]>,
-  ): Promise<number | null> {
-    const settings = await this.getSettings(event.id);
-
-    return settings.enabled ? computeAmountDue(event, dataByTags) : null;
   }
 
   async getBalance(
@@ -201,21 +160,17 @@ export class PaymentService extends BaseService {
     });
   }
 
-  async isKnownProviderPayment(
-    source: string,
-    providerPaymentId: string,
-  ): Promise<boolean> {
-    const count = await this.prisma.payment.count({
-      where: { source, providerPaymentId },
-    });
-
-    return count > 0;
-  }
-
-  async markRequested(registrationId: string): Promise<void> {
-    await this.prisma.registration.update({
-      where: { id: registrationId },
-      data: { paymentRequestedAt: new Date() },
+  async markRequested(
+    registration: Pick<Registration, 'id' | 'eventId'>,
+  ): Promise<void> {
+    await this.transaction(async (tx) => {
+      await tx.registration.update({
+        where: { id: registration.id },
+        data: { paymentRequestedAt: new Date() },
+      });
+      await this.audit.record(
+        paymentAuditEntry(registration, 'payment_requested'),
+      );
     });
   }
 
@@ -242,26 +197,53 @@ export class PaymentService extends BaseService {
       latestPaymentStatus: latest?.status ?? null,
       payable:
         outstandingAmount(balance) > 0 &&
-        this.mayPayYet(settings, registration) &&
+        this.mayPayYet(settings, event, registration) &&
         event.organization.verificationStatus === 'VERIFIED' &&
         account !== null,
     };
   }
 
   /**
-   * Waitlisted registrations never pay; with `ACCEPTANCE` timing nobody pays
-   * before being accepted either.
+   * Only accepted registrations pay, only once they are asked to, and only
+   * while the event collects payments.
    */
   private mayPayYet(
     settings: PaymentSettings,
+    event: Pick<Event, 'startAt' | 'timezone'>,
     registration: Pick<Registration, 'status'>,
   ): boolean {
-    if (registration.status === 'WAITLISTED') {
-      return false;
-    }
-
     return (
-      settings.timing === 'REGISTRATION' || registration.status === 'ACCEPTED'
+      settings.enabled &&
+      registration.status === 'ACCEPTED' &&
+      this.requestsOpen(settings, event)
+    );
+  }
+
+  /** Accepted registrations that owe money but were never asked to pay. */
+  async findUnrequested(eventId: string): Promise<Registration[]> {
+    return this.prisma.registration.findMany({
+      where: {
+        eventId,
+        status: 'ACCEPTED',
+        amountDue: { gt: 0 },
+        paymentRequestedAt: null,
+      },
+    });
+  }
+
+  /** Whether accepted registrations are asked to pay yet. */
+  requestsOpen(
+    settings: PaymentSettings,
+    event: Pick<Event, 'startAt' | 'timezone'>,
+    now = new Date(),
+  ): boolean {
+    return paymentRequestsOpen(
+      settings,
+      {
+        startAt: utcCarrierToNaiveDateTime(event.startAt),
+        timezone: event.timezone,
+      },
+      now,
     );
   }
 
@@ -274,10 +256,12 @@ export class PaymentService extends BaseService {
     event: EventWithOrganization,
     registration: Registration,
   ): Promise<{ checkoutUrl: string; payment: Payment }> {
-    if (!this.mayPayYet(await this.getSettings(event.id), registration)) {
+    if (
+      !this.mayPayYet(await this.getSettings(event.id), event, registration)
+    ) {
       throw new ApiError(
         httpStatus.CONFLICT,
-        'This registration cannot be paid before it is accepted',
+        'This registration cannot be paid yet',
         { code: 'PAYMENT_NOT_ACCEPTED' },
       );
     }
@@ -347,6 +331,7 @@ export class PaymentService extends BaseService {
         status: 'OPEN',
         amount,
         currency: event.currency,
+        ...payerSnapshot(registration),
       },
     });
 
@@ -379,7 +364,7 @@ export class PaymentService extends BaseService {
       });
 
       if (!registration.paymentRequestedAt) {
-        await this.markRequested(registration.id);
+        await this.markRequested(registration);
       }
 
       return { checkoutUrl: checkout.checkoutUrl, payment };
@@ -395,183 +380,154 @@ export class PaymentService extends BaseService {
   }
 
   /**
-   * Re-fetches a provider payment and applies it. The single path by which
-   * provider state enters the ledger — webhooks and the participant's return
-   * both end up here.
+   * Sets what a registration owes. `adjusted` marks a manager's fixed amount;
+   * without it, `amountDue` is the quote again.
    */
-  async syncProviderPayment(
-    source: string,
-    providerPaymentId: string,
-  ): Promise<PaymentSyncOutcome | null> {
-    const payment = await this.prisma.payment.findUnique({
-      where: { source_providerPaymentId: { source, providerPaymentId } },
-      include: { event: true },
-    });
-    if (!payment) {
-      logger.debug(
-        `Ignoring sync for unknown ${source} payment ${providerPaymentId}`,
-      );
-      return null;
-    }
-
-    const resolved = await this.accountService.resolveForOrganization(
-      payment.event.organizationId,
-    );
-    if (resolved?.account.provider !== source) {
-      logger.warn(
-        `Cannot sync ${source} payment ${providerPaymentId}: the organization's account changed`,
-      );
-      return null;
-    }
-
-    const snapshot = await resolved.provider.fetchPayment(
-      resolved.credentials,
-      providerPaymentId,
-    );
-
-    return this.applySnapshot(payment.id, snapshot);
-  }
-
-  /** Syncs a registration's latest unsettled provider payment, if any. */
-  async syncLatestOpen(
-    registrationId: string,
-  ): Promise<PaymentSyncOutcome | null> {
-    const payment = await this.prisma.payment.findFirst({
-      where: {
-        registrationId,
-        source: { not: 'manual' },
-        providerPaymentId: { not: null },
-        status: { in: ['OPEN', 'PENDING'] },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-    if (!payment?.providerPaymentId) {
-      return null;
-    }
-
-    try {
-      return await this.syncProviderPayment(
-        payment.source,
-        payment.providerPaymentId,
-      );
-    } catch (error) {
-      logger.warn(
-        `Failed to sync payment ${payment.id}: ${describeError(error)}`,
-      );
-      return null;
-    }
-  }
-
-  async applySnapshot(
-    paymentId: string,
-    snapshot: ProviderPaymentSnapshot,
-  ): Promise<PaymentSyncOutcome> {
-    return this.prisma.$transaction(
-      async (tx) => {
-        const current = await tx.payment.findUniqueOrThrow({
-          where: { id: paymentId },
-          include: { refunds: true, event: true, registration: true },
-        });
-
-        let changed = false;
-        let statusChange: PaymentStatus | null = null;
-        let payment: Payment = current;
-
-        if (isPaymentStatusAdvance(current.status, snapshot.status)) {
-          statusChange = snapshot.status;
-          payment = await tx.payment.update({
-            where: { id: current.id },
-            data: {
-              status: snapshot.status,
-              method: snapshot.method ?? current.method,
-              paidAt:
-                snapshot.status === 'PAID'
-                  ? (snapshot.paidAt ?? new Date())
-                  : current.paidAt,
-            },
-          });
-          changed = true;
-        }
-
-        const completedRefunds: PaymentRefund[] = [];
-        for (const refundSnapshot of snapshot.refunds) {
-          const result = await this.applyRefundSnapshot(
-            tx,
-            current.id,
-            current.refunds,
-            refundSnapshot,
-          );
-          if (result.changed) {
-            changed = true;
-          }
-          if (result.completed) {
-            completedRefunds.push(result.completed);
-          }
-        }
-
-        return {
-          payment,
-          registration: current.registration,
-          event: current.event,
-          statusChange,
-          completedRefunds,
-          changed,
-        };
-      },
-      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
-    );
-  }
-
-  private async applyRefundSnapshot(
-    tx: Prisma.TransactionClient,
-    paymentId: string,
-    known: PaymentRefund[],
-    snapshot: ProviderRefundSnapshot,
-  ): Promise<{ changed: boolean; completed: PaymentRefund | null }> {
-    // Our own refund is matched by provider id, or — before we stored that —
-    // by the reference we passed; anything else was made in the dashboard.
-    const existing =
-      known.find((r) => r.providerRefundId === snapshot.providerRefundId) ??
-      known.find(
-        (r) => r.providerRefundId === null && r.id === snapshot.reference,
-      );
-
-    if (!existing) {
-      const created = await tx.paymentRefund.create({
+  async setAmountDue(
+    registration: Pick<Registration, 'id'>,
+    data: { amountDue: number | null; adjusted: boolean; note: string | null },
+  ): Promise<Registration> {
+    return this.transaction(async (tx) => {
+      const updated = await tx.registration.update({
+        where: { id: registration.id },
         data: {
-          paymentId,
-          providerRefundId: snapshot.providerRefundId,
-          status: snapshot.status,
-          amount: snapshot.amount,
-          refundedAt: snapshot.refundedAt,
+          amountDue: data.amountDue,
+          amountDueAdjustedAt: data.adjusted ? new Date() : null,
+          amountDueNote: data.adjusted ? data.note : null,
         },
       });
+      await this.audit.record(
+        paymentAuditEntry(
+          updated,
+          data.adjusted ? 'amount_due_adjusted' : 'amount_due_reset',
+          { amountDue: data.amountDue },
+        ),
+      );
+      return updated;
+    });
+  }
 
-      return {
-        changed: true,
-        completed: created.status === 'REFUNDED' ? created : null,
-      };
+  /**
+   * Lowers what a registration owes by a refund, as a manager's adjustment
+   * with the refund's reason. Returns the previous state, to undo it.
+   */
+  private async reduceAmountDue(
+    tx: Prisma.TransactionClient,
+    registrationId: string,
+    amount: number,
+    reason: string | null,
+  ): Promise<AmountDueBefore | null> {
+    const registration = await tx.registration.findUniqueOrThrow({
+      where: { id: registrationId },
+    });
+    if (registration.amountDue === null) {
+      return null;
     }
 
-    const advance = isRefundStatusAdvance(existing.status, snapshot.status);
-    if (!advance && existing.providerRefundId !== null) {
-      return { changed: false, completed: null };
-    }
-
-    const updated = await tx.paymentRefund.update({
-      where: { id: existing.id },
+    const amountDue = Math.max(0, registration.amountDue - amount);
+    await tx.registration.update({
+      where: { id: registrationId },
       data: {
-        providerRefundId: snapshot.providerRefundId,
-        ...(advance
-          ? { status: snapshot.status, refundedAt: snapshot.refundedAt }
-          : {}),
+        amountDue,
+        amountDueAdjustedAt: new Date(),
+        amountDueNote: reason ?? registration.amountDueNote,
       },
     });
+    await this.audit.record(
+      paymentAuditEntry(registration, 'amount_due_adjusted', { amountDue }),
+    );
 
     return {
-      changed: true,
-      completed: advance && updated.status === 'REFUNDED' ? updated : null,
+      registrationId,
+      amountDue: registration.amountDue,
+      amountDueAdjustedAt: registration.amountDueAdjustedAt,
+      amountDueNote: registration.amountDueNote,
     };
+  }
+
+  private async restoreAmountDue(before: AmountDueBefore): Promise<void> {
+    const { registrationId, ...data } = before;
+    await this.prisma.registration.update({
+      where: { id: registrationId },
+      data,
+    });
+  }
+
+  /**
+   * Settles money a registration still holds before it is deleted, inside the
+   * deletion's transaction. Without anything held nothing is required; with
+   * money held, `settlement` decides: `retained` keeps it (e.g. a
+   * cancellation fee), `settled_outside` books the rest as refunded outside
+   * the app. The payments stay either way, with their payer snapshot.
+   */
+  async settleForDeletion(
+    registration: Registration,
+    settlement: PaymentSettlement | undefined,
+    userId: string | null,
+  ): Promise<PaymentSettlement | null> {
+    const payments = await this.db.payment.findMany({
+      where: { registrationId: registration.id, status: 'PAID' },
+      include: { refunds: true },
+    });
+    const held = payments.filter((payment) => refundableAmount(payment) > 0);
+    if (held.length === 0) {
+      return null;
+    }
+    if (!settlement) {
+      throw new ApiError(
+        httpStatus.CONFLICT,
+        'This registration still holds money; settle it before deleting',
+        { code: 'PAYMENT_SETTLEMENT_REQUIRED' },
+      );
+    }
+
+    for (const payment of held) {
+      if (settlement === 'settled_outside') {
+        const amount = refundableAmount(payment);
+        await this.db.paymentRefund.create({
+          data: {
+            paymentId: payment.id,
+            amount,
+            reason: null,
+            notifyParticipant: false,
+            createdById: userId,
+            status: 'REFUNDED',
+            refundedAt: new Date(),
+          },
+        });
+        await this.audit.record(
+          paymentAuditEntry(registration, 'payment_refunded', { amount }),
+        );
+      }
+      await this.db.payment.update({
+        where: { id: payment.id },
+        data: { settlement },
+      });
+    }
+
+    return settlement;
+  }
+
+  /**
+   * Removes the payer name of payments whose registration is gone, once the
+   * accounting retention period has passed. Amounts and dates stay.
+   */
+  async anonymizeExpiredPayers(now = new Date()): Promise<number> {
+    const cutoff = new Date(now);
+    cutoff.setFullYear(
+      cutoff.getFullYear() - config.payment.recordRetentionYears,
+    );
+
+    const { count } = await this.prisma.payment.updateMany({
+      where: {
+        registrationId: null,
+        createdAt: { lt: cutoff },
+        OR: [{ payerName: { not: null } }, { registrationRef: { not: null } }],
+      },
+      data: { payerName: null, registrationRef: null },
+    });
+
+    return count;
   }
 
   /** Records money received outside the app (bank transfer, cash). */
@@ -586,20 +542,29 @@ export class PaymentService extends BaseService {
     },
     userId: string,
   ): Promise<PaymentWithDetails> {
-    return this.prisma.payment.create({
-      data: {
-        registrationId: registration.id,
-        eventId: event.id,
-        source: 'manual',
-        status: 'PAID',
-        amount: toMinorUnits(data.amount, event.currency),
-        currency: event.currency,
-        method: data.method ?? null,
-        note: data.note ?? null,
-        paidAt: data.paidAt ?? new Date(),
-        createdById: userId,
-      },
-      include: paymentInclude,
+    return this.transaction(async (tx) => {
+      const payment = await tx.payment.create({
+        data: {
+          registrationId: registration.id,
+          eventId: event.id,
+          source: 'manual',
+          status: 'PAID',
+          amount: toMinorUnits(data.amount, event.currency),
+          currency: event.currency,
+          method: data.method ?? null,
+          note: data.note ?? null,
+          paidAt: data.paidAt ?? new Date(),
+          createdById: userId,
+          ...payerSnapshot(registration),
+        },
+        include: paymentInclude,
+      });
+      await this.audit.record(
+        paymentAuditEntry(registration, 'payment_recorded', {
+          amount: payment.amount,
+        }),
+      );
+      return payment;
     });
   }
 
@@ -618,19 +583,37 @@ export class PaymentService extends BaseService {
       );
     }
 
-    await this.prisma.payment.delete({ where: { id: payment.id } });
+    await this.transaction(async (tx) => {
+      await tx.payment.delete({ where: { id: payment.id } });
+      if (payment.registrationId) {
+        await this.audit.record(
+          paymentAuditEntry(
+            { id: payment.registrationId, eventId: payment.eventId },
+            'payment_deleted',
+            { amount: payment.amount },
+          ),
+        );
+      }
+    });
   }
 
   /**
    * Gives money back. The limit check and the PENDING row are one
    * serializable transaction, so concurrent refunds can never exceed what
    * was paid; the provider is called only after it committed. A manual
-   * payment's refund is recorded as already done.
+   * payment's refund, or one given back outside the app, is recorded as
+   * already done.
    */
   async refund(
     event: Event,
     paymentId: string,
-    data: { amount: number; reason: string | null; notifyParticipant: boolean },
+    data: {
+      amount: number;
+      reason: string | null;
+      notifyParticipant: boolean;
+      outsideApp: boolean;
+      reduceAmountDue: boolean;
+    },
     userId: string,
   ): Promise<{
     refund: PaymentRefund;
@@ -643,7 +626,7 @@ export class PaymentService extends BaseService {
     });
 
     let resolved: ResolvedPaymentAccount | null = null;
-    if (payment.source !== 'manual') {
+    if (payment.source !== 'manual' && !data.outsideApp) {
       resolved = await this.accountService.resolveForOrganization(
         event.organizationId,
       );
@@ -659,7 +642,8 @@ export class PaymentService extends BaseService {
       }
     }
 
-    const refund = await this.prisma.$transaction(
+    // What the registration owed before, restored should the provider refuse.
+    const { refund, reduction } = await this.transaction(
       async (tx) => {
         const current = await tx.payment.findUniqueOrThrow({
           where: { id: paymentId },
@@ -680,9 +664,10 @@ export class PaymentService extends BaseService {
           );
         }
 
-        const manual = current.source === 'manual';
+        // Nothing to wait for: no provider takes part.
+        const manual = current.source === 'manual' || data.outsideApp;
 
-        return tx.paymentRefund.create({
+        const created = await tx.paymentRefund.create({
           data: {
             paymentId: current.id,
             amount: data.amount,
@@ -693,6 +678,25 @@ export class PaymentService extends BaseService {
             refundedAt: manual ? new Date() : null,
           },
         });
+        if (current.registrationId) {
+          await this.audit.record(
+            paymentAuditEntry(
+              { id: current.registrationId, eventId: current.eventId },
+              'payment_refunded',
+              { amount: data.amount },
+            ),
+          );
+        }
+        const reduction =
+          current.registrationId && data.reduceAmountDue
+            ? await this.reduceAmountDue(
+                tx,
+                current.registrationId,
+                data.amount,
+                data.reason,
+              )
+            : null;
+        return { refund: created, reduction };
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     );
@@ -735,6 +739,9 @@ export class PaymentService extends BaseService {
           where: { id: refund.id, status: 'PENDING' },
           data: { status: 'FAILED' },
         });
+        if (reduction) {
+          await this.restoreAmountDue(reduction);
+        }
 
         throw new ApiError(
           httpStatus.BAD_GATEWAY,
@@ -754,6 +761,50 @@ export class PaymentService extends BaseService {
       }),
       completedNow,
     };
+  }
+
+  /**
+   * Accepted registrations owing money that were never asked to pay, for
+   * events whose request date has come — `DATE` and `BEFORE_START` timing.
+   */
+  async findDueRequests(now = new Date()) {
+    const settings = await this.prisma.eventSetting.findMany({
+      where: { key: SETTING_KEYS.PAYMENT },
+      select: { eventId: true, data: true },
+    });
+
+    const due: { event: Event; registration: Registration }[] = [];
+
+    for (const setting of settings) {
+      const data = {
+        ...DEFAULT_PAYMENT_SETTINGS,
+        ...(setting.data as Partial<PaymentSettings>),
+      };
+      if (
+        !data.enabled ||
+        (data.timing !== 'DATE' && data.timing !== 'BEFORE_START')
+      ) {
+        continue;
+      }
+
+      const registrations = await this.prisma.registration.findMany({
+        where: {
+          eventId: setting.eventId,
+          status: 'ACCEPTED',
+          amountDue: { gt: 0 },
+          paymentRequestedAt: null,
+        },
+        include: { event: true },
+      });
+
+      for (const { event, ...registration } of registrations) {
+        if (this.requestsOpen(data, event, now)) {
+          due.push({ event, registration });
+        }
+      }
+    }
+
+    return due;
   }
 
   /**

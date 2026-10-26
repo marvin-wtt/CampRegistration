@@ -47,12 +47,26 @@
             outlined
             rounded
           />
+          <!-- An online payment can also have been settled in person. -->
+          <q-option-group
+            v-if="!manual"
+            v-model="route"
+            :options="routeOptions"
+            data-test="refund-route"
+          />
+          <!-- A refund usually lowers the price (late arrival, goodwill);
+               otherwise the registration would owe it again. -->
+          <q-checkbox
+            v-model="reduceAmountDue"
+            :label="t('field.reduceAmountDue')"
+            data-test="refund-reduce-amount-due"
+          />
           <q-checkbox
             v-model="notify"
             :label="t('field.notify')"
           />
           <q-banner
-            v-if="!manual"
+            v-if="!manual && route === 'provider'"
             dense
             rounded
             class="bg-warning-container text-on-warning-container text-body2"
@@ -84,7 +98,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
@@ -111,14 +125,22 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 const { t, locale } = useI18n();
 
 const amount = ref<number>(fromMinorUnits(refundable, currency));
+const route = ref<'provider' | 'outside'>('provider');
+const routeOptions = computed(() => [
+  { value: 'provider', label: t('route.provider') },
+  { value: 'outside', label: t('route.outside') },
+]);
 const reason = ref<string>('');
 const notify = ref<boolean>(true);
+const reduceAmountDue = ref<boolean>(true);
 
 function submit(): void {
   onDialogOK({
     amount: toMinorUnits(amount.value, currency),
     reason: reason.value.trim() || null,
     suppressMessage: !notify.value,
+    outsideApp: !manual && route.value === 'outside',
+    reduceAmountDue: reduceAmountDue.value,
   } satisfies PaymentRefundCreateData);
 }
 </script>
@@ -127,6 +149,7 @@ function submit(): void {
 title: 'Refund payment'
 hint: 'Up to {refundable} can be refunded.'
 field:
+  reduceAmountDue: 'Also lower the amount due by this refund'
   amount: 'Amount to refund'
   reason: 'Reason'
   reasonHint: 'Included in the email to the participant'
@@ -134,6 +157,9 @@ field:
 validation:
   positive: 'Enter an amount greater than zero'
   max: 'That is more than can be refunded'
+route:
+  provider: 'Refund through the payment provider'
+  outside: 'Already given back outside the app (cash, bank transfer)'
 warning: 'The refund is sent to the payment provider right away and cannot be undone.'
 action:
   cancel: 'Cancel'
@@ -144,6 +170,7 @@ action:
 title: 'Zahlung erstatten'
 hint: 'Es können bis zu {refundable} erstattet werden.'
 field:
+  reduceAmountDue: 'Fälligen Betrag um diese Erstattung senken'
   amount: 'Zu erstattender Betrag'
   reason: 'Grund'
   reasonHint: 'Wird in die E-Mail an die teilnehmende Person übernommen'
@@ -151,6 +178,9 @@ field:
 validation:
   positive: 'Gib einen Betrag größer als null ein'
   max: 'Das ist mehr, als erstattet werden kann'
+route:
+  provider: 'Über den Zahlungsanbieter erstatten'
+  outside: 'Bereits außerhalb der App erstattet (bar, Überweisung)'
 warning: 'Die Erstattung wird sofort an den Zahlungsanbieter übermittelt und kann nicht rückgängig gemacht werden.'
 action:
   cancel: 'Abbrechen'
@@ -161,6 +191,7 @@ action:
 title: 'Rembourser le paiement'
 hint: "Jusqu'à {refundable} peuvent être remboursés."
 field:
+  reduceAmountDue: 'Réduire aussi le montant dû de ce remboursement'
   amount: 'Montant à rembourser'
   reason: 'Motif'
   reasonHint: "Repris dans l'e-mail envoyé au participant"
@@ -168,6 +199,9 @@ field:
 validation:
   positive: 'Saisissez un montant supérieur à zéro'
   max: 'Ce montant dépasse ce qui peut être remboursé'
+route:
+  provider: 'Rembourser via le prestataire de paiement'
+  outside: "Déjà remboursé en dehors de l'application (espèces, virement)"
 warning: 'Le remboursement est transmis immédiatement au prestataire de paiement et ne peut pas être annulé.'
 action:
   cancel: 'Annuler'
@@ -178,6 +212,7 @@ action:
 title: 'Zwróć płatność'
 hint: 'Można zwrócić maksymalnie {refundable}.'
 field:
+  reduceAmountDue: 'Obniż też kwotę do zapłaty o ten zwrot'
   amount: 'Kwota zwrotu'
   reason: 'Powód'
   reasonHint: 'Zostanie dołączony do e-maila do uczestnika'
@@ -185,6 +220,9 @@ field:
 validation:
   positive: 'Wpisz kwotę większą od zera'
   max: 'To więcej, niż można zwrócić'
+route:
+  provider: 'Zwrot przez operatora płatności'
+  outside: 'Zwrócono już poza aplikacją (gotówka, przelew)'
 warning: 'Zwrot zostanie od razu przekazany operatorowi płatności i nie można go cofnąć.'
 action:
   cancel: 'Anuluj'
@@ -195,6 +233,7 @@ action:
 title: 'Vrátit platbu'
 hint: 'Vrátit lze nejvýše {refundable}.'
 field:
+  reduceAmountDue: 'Snížit také dlužnou částku o toto vrácení'
   amount: 'Částka k vrácení'
   reason: 'Důvod'
   reasonHint: 'Bude uveden v e-mailu účastníkovi'
@@ -202,6 +241,9 @@ field:
 validation:
   positive: 'Zadejte částku větší než nula'
   max: 'To je víc, než lze vrátit'
+route:
+  provider: 'Vrátit přes platebního poskytovatele'
+  outside: 'Již vráceno mimo aplikaci (hotově, převodem)'
 warning: 'Vrácení se ihned odešle platebnímu poskytovateli a nelze ho vzít zpět.'
 action:
   cancel: 'Zrušit'

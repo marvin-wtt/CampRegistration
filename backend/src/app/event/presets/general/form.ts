@@ -1,3 +1,5 @@
+import paymentAmount from '../paymentAmount.js';
+
 export default {
   title: '{event.name}',
   description: '{event.startAtDate} - {event.endAtDate}',
@@ -58,8 +60,7 @@ export default {
             cs: 'Cena',
             default: 'Price',
           },
-          description: '{event.price} €',
-          currency: 'EUR',
+          description: '{event.price} {event.currency}',
         },
         {
           type: 'role',
@@ -76,6 +77,7 @@ export default {
           isRequired: true,
           eventDataType: 'role',
         },
+        ...paymentAmount,
       ],
     },
     {

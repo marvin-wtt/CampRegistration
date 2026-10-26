@@ -10,9 +10,13 @@ import { PaymentRequestedMessage } from './messages/requested.mail.js';
 import { PaymentRefundedMessage } from './messages/refunded.mail.js';
 import validator from './payment.validation.js';
 import { paymentPageUrl } from './payment-link.js';
-import { PaymentAccountService } from './payment-account.service.js';
+import { PaymentAccountService } from '#app/paymentAccount/payment-account.service';
+import { RealtimeService } from '#core/realtime/RealtimeService';
+import { EventService } from '#app/event/event.service';
+import { toMinorUnits } from '@camp-registration/common/utils';
 import type {
   EventPaymentStatus,
+  PaymentRequestResult,
   PaymentProviderName,
 } from '@camp-registration/common/entities';
 
@@ -22,6 +26,9 @@ export class PaymentController extends BaseController {
     @inject(PaymentNotifier) private readonly notifier: PaymentNotifier,
     @inject(PaymentAccountService)
     private readonly accountService: PaymentAccountService,
+    @inject(RealtimeService)
+    private readonly realtimeService: RealtimeService,
+    @inject(EventService) private readonly eventService: EventService,
   ) {
     super();
   }
@@ -54,6 +61,9 @@ export class PaymentController extends BaseController {
           : null,
         organizationVerified:
           event.organization.verificationStatus === 'VERIFIED',
+        unrequested: (await this.paymentService.findUnrequested(event.id))
+          .length,
+        currencyLocked: await this.eventService.isCurrencyLocked(event.id),
       } satisfies EventPaymentStatus,
     });
   }
@@ -124,11 +134,13 @@ export class PaymentController extends BaseController {
         amount: body.amount,
         reason: body.reason ?? null,
         notifyParticipant,
+        outsideApp: body.outsideApp ?? false,
+        reduceAmountDue: body.reduceAmountDue ?? false,
       },
       req.authUserId(),
     );
 
-    // Otherwise the provider's confirmation (webhook sync) notifies.
+    // Otherwise the provider's confirmation (reconciled from the webhook) notifies.
     if (result.completedNow && notifyParticipant) {
       await PaymentRefundedMessage.enqueueForRefund(
         event,
@@ -142,6 +154,74 @@ export class PaymentController extends BaseController {
     res
       .status(httpStatus.CREATED)
       .resource(new PaymentResource(result.payment));
+  }
+
+  /**
+   * Fixes what a registration owes, or with `amount: null` resets it to the
+   * quote — what the registration form showed.
+   */
+  async updateAmountDue(req: Request, res: Response) {
+    const { body } = await req.validate(validator.updateAmountDue);
+    const event = req.modelOrFail('event');
+    const registration = req.modelOrFail('registration');
+
+    if (body.amount === null && registration.quotedAmount === null) {
+      throw new ApiError(
+        httpStatus.CONFLICT,
+        'This registration predates quoted amounts; set the amount instead',
+        { code: 'PAYMENT_NO_QUOTE' },
+      );
+    }
+    const amountDue =
+      body.amount === null
+        ? registration.quotedAmount
+        : toMinorUnits(body.amount, event.currency);
+
+    await this.paymentService.setAmountDue(registration, {
+      amountDue,
+      adjusted: body.amount !== null,
+      note: body.note ?? null,
+    });
+
+    void this.realtimeService.emit(
+      event.id,
+      'registration',
+      registration.id,
+      'updated',
+    );
+
+    res.status(httpStatus.NO_CONTENT).send();
+  }
+
+  /**
+   * Asks every accepted registration that owes money and was never asked —
+   * e.g. after payments were turned on with registrations already in.
+   */
+  async requestAll(req: Request, res: Response) {
+    await req.validate(validator.eventIndex);
+    const event = req.modelOrFail('event');
+
+    const settings = await this.paymentService.getSettings(event.id);
+    if (
+      !settings.enabled ||
+      !this.paymentService.requestsOpen(settings, event)
+    ) {
+      throw new ApiError(
+        httpStatus.CONFLICT,
+        'Payment requests are not due for this event',
+        { code: 'PAYMENT_REQUESTS_CLOSED' },
+      );
+    }
+
+    const registrations = await this.paymentService.findUnrequested(event.id);
+    for (const registration of registrations) {
+      await PaymentRequestedMessage.enqueueFor(event, registration);
+      await this.paymentService.markRequested(registration);
+    }
+
+    res.json({
+      data: { requested: registrations.length } satisfies PaymentRequestResult,
+    });
   }
 
   /** Re-sends the payment request mail, with the participant's payment link. */
@@ -159,7 +239,7 @@ export class PaymentController extends BaseController {
     }
 
     await PaymentRequestedMessage.enqueueFor(event, registration);
-    await this.paymentService.markRequested(registration.id);
+    await this.paymentService.markRequested(registration);
 
     res.status(httpStatus.NO_CONTENT).send();
   }

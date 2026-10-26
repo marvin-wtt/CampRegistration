@@ -4,11 +4,9 @@ import { ModuleRouter } from '#core/router/ModuleRouter';
 import { controller } from '#utils/bindController';
 import { resolve } from '#core/ioc/container';
 import { hasEventPermission } from '#app/event/event.guard';
-import { organizationMember } from '#app/organization/organization.guard';
 import { PaymentService } from './payment.service.js';
 import { PaymentController } from './payment.controller.js';
 import { PaymentPublicController } from './payment-public.controller.js';
-import { PaymentAccountController } from './payment-account.controller.js';
 import { verifyPaymentToken } from './payment-link.js';
 
 /**
@@ -45,6 +43,12 @@ export class EventPaymentRouter extends ModuleRouter {
       auth(),
       guard(hasEventPermission('event.edit')),
       controller(paymentController, 'status'),
+    );
+    this.router.post(
+      '/request',
+      auth(),
+      guard(hasEventPermission('event.payments.create')),
+      controller(paymentController, 'requestAll'),
     );
   }
 }
@@ -84,6 +88,12 @@ export class RegistrationPaymentRouter extends ModuleRouter {
       guard(hasEventPermission('event.payments.create')),
       controller(paymentController, 'request'),
     );
+    this.router.put(
+      '/payments/amount-due',
+      auth(),
+      guard(hasEventPermission('event.payments.adjust')),
+      controller(paymentController, 'updateAmountDue'),
+    );
     this.router.delete(
       '/payments/:paymentId',
       auth(),
@@ -106,40 +116,6 @@ export class RegistrationPaymentRouter extends ModuleRouter {
       '/payment/checkout',
       guard(paymentLinkToken),
       controller(publicController, 'checkout'),
-    );
-  }
-}
-
-/** `/organizations/:organizationId/payment-account` */
-export class PaymentAccountRouter extends ModuleRouter {
-  protected registerBindings() {
-    /* organization is bound globally */
-  }
-
-  protected defineRoutes() {
-    const accountController = resolve(PaymentAccountController);
-
-    this.router.use(auth());
-
-    this.router.get(
-      '/',
-      guard(organizationMember('organization.payments.view')),
-      controller(accountController, 'show'),
-    );
-    this.router.get(
-      '/providers',
-      guard(organizationMember('organization.payments.view')),
-      controller(accountController, 'providers'),
-    );
-    this.router.put(
-      '/',
-      guard(organizationMember('organization.payments.edit')),
-      controller(accountController, 'connect'),
-    );
-    this.router.delete(
-      '/',
-      guard(organizationMember('organization.payments.edit')),
-      controller(accountController, 'disconnect'),
     );
   }
 }

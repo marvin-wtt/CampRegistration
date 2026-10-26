@@ -36,6 +36,9 @@ export default {
     registration: {
       label: 'Inscription',
       fields: {
+        amount: 'Montant',
+        amountDue: 'Montant dû',
+        paymentStatus: 'Statut du paiement',
         data: 'Réponse du formulaire',
         customData: 'Champ personnalisé',
         customFiles: 'Fichier personnalisé',
@@ -44,11 +47,28 @@ export default {
         group: 'Groupe',
       },
       values: {
+        paymentStatus: {
+          OPEN: 'Paiement ouvert',
+          PENDING: 'En cours de traitement',
+          PAID: 'Payé',
+          FAILED: 'Échoué',
+          CANCELED: 'Annulé',
+          EXPIRED: 'Expiré',
+        },
         status: {
           ACCEPTED: 'Accepté',
           PENDING: 'En attente',
           WAITLISTED: "Liste d'attente",
         },
+      },
+      actions: {
+        payment_recorded: 'Paiement enregistré',
+        payment_deleted: 'Paiement supprimé',
+        payment_refunded: 'Remboursement effectué',
+        payment_requested: 'Paiement demandé',
+        payment_status_changed: 'Statut du paiement modifié',
+        amount_due_adjusted: 'Montant dû défini manuellement',
+        amount_due_reset: 'Montant dû rétabli au montant affiché',
       },
       reasons: {
         canceled: 'Annulée',

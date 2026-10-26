@@ -1203,7 +1203,7 @@ export default [
           pl: 'Opłata za udział',
           cs: 'Účastnický poplatek',
         },
-        align: 'center',
+        align: 'left',
         renderAs: 'payment',
         sortable: false,
       },

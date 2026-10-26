@@ -80,6 +80,7 @@ export function useCsvExport() {
     const ctx: CsvFormatContext = {
       translate: to,
       translateCountry,
+      currency: event.currency,
       getFormSelectOptions: (fieldName: string) =>
         FormSelectCache.get(event, fieldName),
     };

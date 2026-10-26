@@ -5,8 +5,8 @@ type QtKey = 'address' | 'country' | 'date_of_birth' | 'role';
 type LocaleSection = {
   qt: Record<QtKey, string>;
   toolboxCategories: { registration: string };
-  p: { eventDataType: string; groupCountryMatch: string };
-  pehelp: { eventDataType: string; groupCountryMatch: string };
+  p: { eventDataType: string; groupCountryMatch: string; price: string };
+  pehelp: { eventDataType: string; groupCountryMatch: string; price: string };
   // Property values, looked up by the creator as `pv.<property>.<value>`.
   pv: { groupCountryMatch: Record<GroupCountryMatch, string> };
 };
@@ -28,11 +28,14 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
       p: {
         eventDataType: 'Daten-Tag',
         groupCountryMatch: 'Abgleich mit der Gruppe',
+        price: 'Preis',
       },
       pehelp: {
         eventDataType:
           'Wähle aus, welche Art von Daten die Person eingibt. ' +
           'Die Informationen werden dem Dienst unabhängig vom Feldnamen zur Verfügung gestellt.',
+        price:
+          'Wird zum Preis der Veranstaltung addiert, solange die Antwort gewählt und sichtbar ist. Ein negativer Betrag ist ein Rabatt.',
         groupCountryMatch:
           'Wie sich das Land zur gewählten Gruppe verhält. ' +
           'Streng: das Land der Gruppe, nicht änderbar. ' +
@@ -61,11 +64,14 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
       p: {
         eventDataType: 'Data Tag',
         groupCountryMatch: 'Match with group',
+        price: 'Price',
       },
       pehelp: {
         eventDataType:
           'Select what type of data the user enters. ' +
           'The information is made available to the service regardless of the field name.',
+        price:
+          'Added to the event price while this answer is selected and shown. A negative amount is a discount.',
         groupCountryMatch:
           'How the country relates to the chosen group. ' +
           "Strict: the group's country, read-only. " +
@@ -93,11 +99,14 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
       p: {
         eventDataType: 'Étiquette de données',
         groupCountryMatch: 'Correspondance avec le groupe',
+        price: 'Prix',
       },
       pehelp: {
         eventDataType:
           'Sélectionnez le type de données que l’utilisateur saisit. ' +
           'Les informations sont mises à la disposition du service indépendamment du nom du champ.',
+        price:
+          "Ajouté au prix de l'événement tant que cette réponse est choisie et affichée. Un montant négatif est une réduction.",
         groupCountryMatch:
           'Comment le pays se rapporte au groupe choisi. ' +
           'Strict : le pays du groupe, non modifiable. ' +
@@ -126,11 +135,14 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
       p: {
         eventDataType: 'Tag danych',
         groupCountryMatch: 'Zgodność z grupą',
+        price: 'Cena',
       },
       pehelp: {
         eventDataType:
           'Wybierz, jaki typ danych wprowadza użytkownik. ' +
           'Informacje są przekazywane do usługi niezależnie od nazwy pola.',
+        price:
+          'Dodawana do ceny wydarzenia, dopóki ta odpowiedź jest wybrana i widoczna. Kwota ujemna oznacza zniżkę.',
         groupCountryMatch:
           'Jak kraj odnosi się do wybranej grupy. ' +
           'Ścisły: kraj grupy, bez możliwości zmiany. ' +
@@ -159,11 +171,14 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
       p: {
         eventDataType: 'Datový štítek',
         groupCountryMatch: 'Shoda se skupinou',
+        price: 'Cena',
       },
       pehelp: {
         eventDataType:
           'Vyberte, jaký typ dat uživatel zadává. ' +
           'Informace jsou službě k dispozici nezávisle na názvu pole.',
+        price:
+          'Připočítá se k ceně akce, dokud je tato odpověď vybraná a zobrazená. Záporná částka je sleva.',
         groupCountryMatch:
           'Jak se země vztahuje ke zvolené skupině. ' +
           'Přísný: země skupiny, nelze změnit. ' +
