@@ -83,8 +83,10 @@ import type { EventPhase } from '@/composables/eventPhase';
 import {
   LOCAL_TEMPLATE_AGE,
   LOCAL_TEMPLATE_MISSING,
+  LOCAL_TEMPLATE_PAYMENTS_OVERPAID,
   LOCAL_TEMPLATE_PENDING,
   LOCAL_TEMPLATE_WAITLISTED,
+  paymentOverpaid,
 } from '@/components/event/table/localTableTemplates';
 
 // Issues the app detects on its own; tasks people create live in TasksCard.
@@ -95,12 +97,14 @@ const {
   registrations = false,
   files = false,
   rooms = false,
+  payments = false,
 } = defineProps<{
   phase: EventPhase;
   loading?: boolean;
   registrations?: boolean;
   files?: boolean;
   rooms?: boolean;
+  payments?: boolean;
 }>();
 
 const { t } = useI18n();
@@ -190,6 +194,15 @@ const items = computed<AttentionItem[]>(() => {
       icon: 'cake',
       template: LOCAL_TEMPLATE_AGE,
       shown: registrations,
+    },
+    {
+      // Money to give back; no one else notices it.
+      key: 'overpaid',
+      label: t('item.overpaid'),
+      count: stats.registrations.value.filter(paymentOverpaid).length,
+      icon: 'currency_exchange',
+      template: LOCAL_TEMPLATE_PAYMENTS_OVERPAID,
+      shown: payments,
     },
     {
       // The setup checklist covers files while setting up.
@@ -306,6 +319,7 @@ item:
   rooms: 'Without a room'
   missing: 'Missing contact details'
   age: 'Age outside event range'
+  overpaid: 'Overpaid'
   files: 'Missing files'
 </i18n>
 
@@ -319,6 +333,7 @@ item:
   rooms: 'Ohne Zimmer'
   missing: 'Fehlende Kontaktdaten'
   age: 'Alter außerhalb des Bereichs'
+  overpaid: 'Überzahlt'
   files: 'Fehlende Dateien'
 </i18n>
 
@@ -332,6 +347,7 @@ item:
   rooms: 'Sans chambre'
   missing: 'Coordonnées manquantes'
   age: 'Âge hors de la plage'
+  overpaid: 'Trop-perçus'
   files: 'Fichiers manquants'
 </i18n>
 
@@ -345,6 +361,7 @@ item:
   rooms: 'Bez pokoju'
   missing: 'Brakujące dane kontaktowe'
   age: 'Wiek poza zakresem'
+  overpaid: 'Nadpłacone'
   files: 'Brakujące pliki'
 </i18n>
 
@@ -358,5 +375,6 @@ item:
   rooms: 'Bez pokoje'
   missing: 'Chybějící kontaktní údaje'
   age: 'Věk mimo rozsah'
+  overpaid: 'Přeplaceno'
   files: 'Chybějící soubory'
 </i18n>

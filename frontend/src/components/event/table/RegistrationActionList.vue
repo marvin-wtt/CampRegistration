@@ -4,6 +4,7 @@
       v-if="!hideDetails"
       v-close-popup
       clickable
+      data-test="registration-details"
       @click="showDetails()"
     >
       <q-item-section>
