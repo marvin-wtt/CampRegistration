@@ -1,188 +1,268 @@
 <template>
-  <q-list data-test="registration-payments">
-    <q-item-label
-      header
-      class="row items-center no-wrap"
-    >
+  <div data-test="registration-payments">
+    <div class="section-title row items-center no-wrap">
       <span class="col">{{ t('title') }}</span>
-      <payment-status-chip :status="registration.payment.status" />
-    </q-item-label>
-
-    <q-item v-if="registration.payment.amountDue !== null">
-      <q-item-section
-        avatar
-        top
+      <q-btn
+        v-if="menuActions.length > 0"
+        class="row-action"
+        flat
+        round
+        size="sm"
+        icon="more_vert"
+        :aria-label="t('action.more')"
+        data-test="payment-menu"
       >
-        <q-icon
-          color="primary"
-          name="payments"
-        />
-      </q-item-section>
-      <q-item-section>
-        <q-item-label overline>{{ t('balance') }}</q-item-label>
-        <q-item-label>
-          {{ money(registration.payment.amountPaid) }} /
-          {{ money(registration.payment.amountDue) }}
-        </q-item-label>
-      </q-item-section>
-    </q-item>
+        <q-menu>
+          <q-list style="min-width: 220px">
+            <q-item
+              v-for="action in menuActions"
+              :key="action.key"
+              v-close-popup
+              clickable
+              :data-test="`payment-${action.key}`"
+              @click="action.run"
+            >
+              <q-item-section avatar>
+                <q-icon :name="action.icon" />
+              </q-item-section>
+              <q-item-section>{{ action.label }}</q-item-section>
+            </q-item>
+          </q-list>
+        </q-menu>
+      </q-btn>
+    </div>
 
-    <q-item v-if="loading">
-      <q-item-section>
-        <q-skeleton type="text" />
-        <q-skeleton
-          type="text"
-          width="60%"
-        />
-      </q-item-section>
-    </q-item>
-
-    <q-item
-      v-for="payment in payments"
-      :key="payment.id"
-      :data-test="`payment-${payment.id}`"
-    >
-      <q-item-section
-        avatar
-        top
+    <q-list class="segmented-list">
+      <q-item
+        class="segment"
+        data-test="payment-balance"
       >
-        <q-icon
-          :name="payment.source === 'manual' ? 'edit_note' : 'credit_card'"
-          :color="payment.status === 'PAID' ? 'positive' : 'grey-6'"
-        />
-      </q-item-section>
-      <q-item-section>
-        <q-item-label>
-          {{ money(payment.amount, payment.currency) }}
-          <span class="text-on-surface-variant">
-            · {{ t(`status.${payment.status}`) }}
-          </span>
-        </q-item-label>
-        <q-item-label caption>
-          {{ describePayment(payment) }}
-        </q-item-label>
-        <q-item-label
-          v-if="payment.note"
-          caption
-        >
-          {{ payment.note }}
-        </q-item-label>
-        <q-item-label
-          v-for="refund in payment.refunds"
-          :key="refund.id"
-          caption
-          class="row items-center no-wrap q-gutter-x-xs"
-        >
-          <q-icon
-            name="undo"
-            size="14px"
-          />
-          <span>
+        <q-item-section avatar>
+          <div class="row-icon">
+            <q-icon
+              name="payments"
+              size="20px"
+            />
+          </div>
+        </q-item-section>
+        <q-item-section>
+          <q-item-label class="row-label">
+            {{ outstanding > 0 ? t('open') : t('paidInFull') }}
+          </q-item-label>
+          <q-item-label class="row-value balance-value">
+            {{ money(outstanding > 0 ? outstanding : payment.amountPaid) }}
+          </q-item-label>
+          <q-item-label
+            v-if="payment.amountDue !== null && outstanding > 0"
+            class="row-caption"
+          >
             {{
-              t('refund.line', {
-                amount: money(refund.amount, payment.currency),
-                status: t(`refundStatus.${refund.status}`),
+              t('paidOf', {
+                paid: money(payment.amountPaid),
+                due: money(payment.amountDue),
               })
             }}
-            <template v-if="refund.createdBy">
-              · {{ refund.createdBy }}</template
+          </q-item-label>
+          <q-item-label
+            v-if="payment.adjustment"
+            class="row-caption"
+            data-test="payment-adjustment"
+          >
+            {{ t('adjusted') }}
+            <template v-if="payment.quotedAmount !== null">
+              · {{ t('quoted', { amount: money(payment.quotedAmount) }) }}
+            </template>
+            <template v-if="payment.adjustment.note">
+              · {{ payment.adjustment.note }}
+            </template>
+          </q-item-label>
+          <q-item-label
+            v-if="answersAmount !== null"
+            class="row-caption row-caption--warning"
+            data-test="payment-answers-differ"
+          >
+            {{ t('answersDiffer', { amount: money(answersAmount) }) }}
+            <a
+              v-if="can('event.payments.adjust')"
+              class="inline-action"
+              href="#"
+              data-test="payment-adjust-to-answers"
+              @click.prevent="adjust(answersAmount)"
             >
-            <template v-if="refund.reason"> · {{ refund.reason }}</template>
-          </span>
-        </q-item-label>
-      </q-item-section>
-      <q-item-section
-        v-if="canRefund(payment) || canDelete(payment)"
-        side
-        top
-      >
-        <q-btn
-          flat
-          round
-          dense
-          icon="more_vert"
-          :aria-label="t('action.menu')"
-        >
-          <q-menu>
-            <q-list dense>
-              <q-item
-                v-if="canRefund(payment)"
-                v-close-popup
-                clickable
-                data-test="payment-refund"
-                @click="refund(payment)"
-              >
-                <q-item-section avatar>
-                  <q-icon name="undo" />
-                </q-item-section>
-                <q-item-section>{{ t('action.refund') }}</q-item-section>
-              </q-item>
-              <q-item
-                v-if="canDelete(payment)"
-                v-close-popup
-                clickable
-                @click="remove(payment)"
-              >
-                <q-item-section avatar>
-                  <q-icon name="delete" />
-                </q-item-section>
-                <q-item-section>{{ t('action.delete') }}</q-item-section>
-              </q-item>
-            </q-list>
-          </q-menu>
-        </q-btn>
-      </q-item-section>
-    </q-item>
+              {{ t('action.adjust') }}
+            </a>
+          </q-item-label>
+        </q-item-section>
+        <q-item-section side>
+          <payment-status-chip :status="payment.status" />
+        </q-item-section>
+      </q-item>
 
-    <q-item v-if="can('event.payments.create')">
-      <q-item-section>
-        <div class="row q-gutter-sm">
-          <m-btn
-            outline
-            primary
-            size="sm"
-            icon="add"
-            :label="t('action.record')"
-            data-test="payment-record"
-            @click="record"
+      <q-item
+        v-if="loading && payments.length === 0"
+        class="segment"
+      >
+        <q-item-section avatar>
+          <q-skeleton
+            type="QAvatar"
+            size="40px"
           />
-          <m-btn
-            v-if="registration.payment.amountDue && outstanding > 0"
-            outline
-            primary
-            size="sm"
-            icon="forward_to_inbox"
-            :label="t('action.request')"
-            :loading="requesting"
-            @click="request"
+        </q-item-section>
+        <q-item-section>
+          <q-skeleton
+            type="text"
+            width="40%"
           />
-          <m-btn
-            v-if="pageUrl"
-            text
-            primary
-            size="sm"
-            icon="link"
-            :label="t('action.copyLink')"
-            @click="copyLink"
+          <q-skeleton
+            type="text"
+            width="60%"
           />
-        </div>
-      </q-item-section>
-    </q-item>
-  </q-list>
+        </q-item-section>
+      </q-item>
+
+      <q-item
+        v-for="entry in payments"
+        :key="entry.id"
+        class="segment"
+        :data-test="`payment-${entry.id}`"
+      >
+        <q-item-section avatar>
+          <div
+            class="row-icon"
+            :class="{ 'row-icon--muted': entry.status !== 'PAID' }"
+          >
+            <q-icon
+              :name="paymentIcon(entry)"
+              size="20px"
+            />
+          </div>
+        </q-item-section>
+        <q-item-section>
+          <q-item-label class="row-label">
+            {{ describePayment(entry) }}
+          </q-item-label>
+          <q-item-label class="row-value">
+            {{ money(entry.amount, entry.currency) }}
+            <span
+              v-if="entry.status !== 'PAID'"
+              class="row-value--muted"
+            >
+              · {{ t(`status.${entry.status}`) }}
+            </span>
+          </q-item-label>
+          <q-item-label
+            v-if="entry.note"
+            class="row-caption"
+          >
+            {{ entry.note }}
+          </q-item-label>
+          <q-item-label
+            v-for="refund in entry.refunds"
+            :key="refund.id"
+            class="row-caption row items-center no-wrap"
+          >
+            <q-icon
+              name="undo"
+              size="14px"
+              class="q-mr-xs"
+            />
+            <span>
+              {{
+                t('refund.line', {
+                  amount: money(refund.amount, entry.currency),
+                  status: t(`refundStatus.${refund.status}`),
+                })
+              }}
+              <template v-if="refund.reason"> · {{ refund.reason }}</template>
+            </span>
+          </q-item-label>
+        </q-item-section>
+        <q-item-section
+          v-if="canRefund(entry) || canDelete(entry)"
+          side
+        >
+          <q-btn
+            class="row-action"
+            flat
+            round
+            size="sm"
+            icon="more_vert"
+            :aria-label="t('action.menu')"
+          >
+            <q-menu>
+              <q-list style="min-width: 180px">
+                <q-item
+                  v-if="canRefund(entry)"
+                  v-close-popup
+                  clickable
+                  data-test="payment-refund"
+                  @click="refund(entry)"
+                >
+                  <q-item-section avatar>
+                    <q-icon name="undo" />
+                  </q-item-section>
+                  <q-item-section>{{ t('action.refund') }}</q-item-section>
+                </q-item>
+                <q-item
+                  v-if="canDelete(entry)"
+                  v-close-popup
+                  clickable
+                  @click="remove(entry)"
+                >
+                  <q-item-section avatar>
+                    <q-icon name="delete" />
+                  </q-item-section>
+                  <q-item-section>{{ t('action.delete') }}</q-item-section>
+                </q-item>
+              </q-list>
+            </q-menu>
+          </q-btn>
+        </q-item-section>
+      </q-item>
+
+      <q-item
+        v-if="can('event.payments.create')"
+        class="segment"
+        clickable
+        data-test="payment-record"
+        @click="record"
+      >
+        <q-item-section avatar>
+          <div class="row-icon row-icon--action">
+            <q-icon
+              name="add"
+              size="20px"
+            />
+          </div>
+        </q-item-section>
+        <q-item-section>
+          <q-item-label class="row-value row-value--link">
+            {{ t('action.record') }}
+          </q-item-label>
+        </q-item-section>
+      </q-item>
+    </q-list>
+  </div>
 </template>
 
 <script lang="ts" setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { copyToClipboard, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import type {
+  AmountDueUpdateData,
   Payment,
   PaymentCreateData,
   PaymentRefundCreateData,
   Registration,
 } from '@camp-registration/common/entities';
-import { formatMoney } from '@camp-registration/common/utils';
+import { SurveyModel } from 'survey-core';
+import { computeAmountDue, formatMoney } from '@camp-registration/common/utils';
+import {
+  extractPaymentAmounts,
+  setVariables,
+} from '@camp-registration/common/form';
+import { useEventDetailsStore } from '@/stores/event-details-store';
 import { useAPIService } from '@/services/APIService';
 import { usePermissions } from '@/composables/permissions';
 import { useErrorExtractor } from '@/composables/serviceHandler';
@@ -190,6 +270,7 @@ import { useRealtimeStore } from '@/stores/realtime-store';
 import { useRegistrationsStore } from '@/stores/registration-store';
 import PaymentStatusChip from '@/components/event/payment/PaymentStatusChip.vue';
 import RecordPaymentDialog from '@/components/event/payment/RecordPaymentDialog.vue';
+import AdjustAmountDueDialog from '@/components/event/payment/AdjustAmountDueDialog.vue';
 import RefundPaymentDialog from '@/components/event/payment/RefundPaymentDialog.vue';
 
 const { eventId, registration } = defineProps<{
@@ -197,12 +278,13 @@ const { eventId, registration } = defineProps<{
   registration: Registration;
 }>();
 
-const { t, locale } = useI18n();
+const { t, d, locale } = useI18n();
 const quasar = useQuasar();
 const api = useAPIService();
 const { can } = usePermissions();
 const { extractErrorText } = useErrorExtractor();
 const registrationsStore = useRegistrationsStore();
+const eventDetailsStore = useEventDetailsStore();
 const realtime = useRealtimeStore();
 
 const payments = ref<Payment[]>([]);
@@ -221,13 +303,29 @@ function money(minor: number, currency = registration.payment.currency) {
   return formatMoney(minor, currency, locale.value);
 }
 
-function describePayment(payment: Payment): string {
-  const parts = [t(`source.${payment.source}`)];
-  if (payment.method && payment.source === 'manual') {
-    parts.push(t(`method.${payment.method}`));
+const payment = computed(() => registration.payment);
+
+function paymentIcon(entry: Payment): string {
+  if (entry.source !== 'manual') {
+    return 'credit_card';
   }
-  const date = payment.paidAt ?? payment.createdAt;
-  parts.push(new Date(date).toLocaleDateString(locale.value));
+  switch (entry.method) {
+    case 'bank_transfer':
+      return 'account_balance';
+    case 'cash':
+      return 'payments';
+    default:
+      return 'edit_note';
+  }
+}
+
+function describePayment(payment: Payment): string {
+  const parts = [
+    payment.source === 'manual' && payment.method
+      ? t(`method.${payment.method}`)
+      : t(`source.${payment.source}`),
+  ];
+  parts.push(d(payment.paidAt ?? payment.createdAt, 'date'));
   if (payment.createdBy) {
     parts.push(payment.createdBy);
   }
@@ -293,6 +391,37 @@ async function run(action: () => Promise<unknown>, success: string) {
   }
 }
 
+// Secondary actions share one menu next to the title; recording a payment
+// is the list's own last row.
+const menuActions = computed(() =>
+  [
+    {
+      key: 'adjust',
+      icon: 'edit',
+      label: t('action.adjust'),
+      shown: can('event.payments.adjust'),
+      run: () => adjust(),
+    },
+    {
+      key: 'request',
+      icon: 'forward_to_inbox',
+      label: t('action.request'),
+      shown:
+        can('event.payments.create') &&
+        !!registration.payment.amountDue &&
+        outstanding.value > 0,
+      run: () => void request(),
+    },
+    {
+      key: 'copy-link',
+      icon: 'link',
+      label: t('action.copyLink'),
+      shown: !!pageUrl.value,
+      run: () => void copyLink(),
+    },
+  ].filter((action) => action.shown),
+);
+
 function record(): void {
   quasar
     .dialog({
@@ -306,6 +435,46 @@ function record(): void {
       void run(
         () => api.createManualPayment(eventId, registration.id, data),
         t('notify.recorded'),
+      );
+    });
+}
+
+// What the answers come to today, when that differs from what is owed and
+// no manager has set the amount: edits never re-price on their own.
+const answersAmount = computed<number | null>(() => {
+  const event = eventDetailsStore.data;
+  const { payment } = registration;
+  if (!event || payment.adjustment || payment.amountDue === null) {
+    return null;
+  }
+
+  const survey = new SurveyModel(event.form);
+  survey.locale = registration.locale;
+  setVariables(survey, event, { group: registration.group });
+  survey.data = registration.data;
+  const amount = computeAmountDue(event, extractPaymentAmounts(survey));
+
+  return amount === payment.amountDue ? null : amount;
+});
+
+function adjust(suggestedAmount: number | null = null): void {
+  const { payment } = registration;
+  quasar
+    .dialog({
+      component: AdjustAmountDueDialog,
+      componentProps: {
+        currency: payment.currency,
+        amountDue: payment.amountDue,
+        quotedAmount: payment.quotedAmount,
+        suggestedAmount,
+        note: payment.adjustment?.note ?? null,
+        adjusted: payment.adjustment !== null,
+      },
+    })
+    .onOk((data: AmountDueUpdateData) => {
+      void run(
+        () => api.updateAmountDue(eventId, registration.id, data),
+        t('notify.adjusted'),
       );
     });
 }
@@ -369,6 +538,12 @@ async function copyLink(): Promise<void> {
 <i18n lang="yaml" locale="en">
 title: 'Payments'
 balance: 'Paid / due'
+open: 'Open'
+paidInFull: 'Paid in full'
+paidOf: '{paid} of {due} paid'
+adjusted: 'Set by hand'
+quoted: 'Shown at registration: {amount}'
+answersDiffer: 'The answers now come to {amount}.'
 status:
   OPEN: 'Checkout open'
   PENDING: 'Processing'
@@ -394,9 +569,11 @@ method:
   other: 'Other'
 action:
   menu: 'Payment actions'
+  more: 'More payment actions'
   record: 'Record payment'
   request: 'Send payment request'
   copyLink: 'Copy payment link'
+  adjust: 'Change amount'
   refund: 'Refund'
   delete: 'Delete'
 delete:
@@ -408,11 +585,18 @@ notify:
   deleted: 'Payment deleted'
   requested: 'Payment request sent'
   copied: 'Payment link copied'
+  adjusted: 'Amount due updated'
 </i18n>
 
 <i18n lang="yaml" locale="de">
 title: 'Zahlungen'
 balance: 'Bezahlt / fällig'
+open: 'Offen'
+paidInFull: 'Vollständig bezahlt'
+paidOf: '{paid} von {due} bezahlt'
+adjusted: 'Von Hand festgelegt'
+quoted: 'Bei der Anmeldung angezeigt: {amount}'
+answersDiffer: 'Die Antworten ergeben jetzt {amount}.'
 status:
   OPEN: 'Zahlung offen'
   PENDING: 'In Bearbeitung'
@@ -438,9 +622,11 @@ method:
   other: 'Sonstige'
 action:
   menu: 'Zahlungsaktionen'
+  more: 'Weitere Zahlungsaktionen'
   record: 'Zahlung erfassen'
   request: 'Zahlungsaufforderung senden'
   copyLink: 'Zahlungslink kopieren'
+  adjust: 'Betrag ändern'
   refund: 'Erstatten'
   delete: 'Löschen'
 delete:
@@ -452,11 +638,18 @@ notify:
   deleted: 'Zahlung gelöscht'
   requested: 'Zahlungsaufforderung gesendet'
   copied: 'Zahlungslink kopiert'
+  adjusted: 'Fälliger Betrag aktualisiert'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 title: 'Paiements'
 balance: 'Payé / dû'
+open: 'À payer'
+paidInFull: 'Entièrement payé'
+paidOf: '{paid} sur {due} payés'
+adjusted: 'Défini manuellement'
+quoted: "Affiché à l'inscription : {amount}"
+answersDiffer: 'Les réponses donnent maintenant {amount}.'
 status:
   OPEN: 'Paiement ouvert'
   PENDING: 'En cours'
@@ -482,9 +675,11 @@ method:
   other: 'Autre'
 action:
   menu: 'Actions de paiement'
+  more: 'Autres actions de paiement'
   record: 'Enregistrer un paiement'
   request: 'Envoyer une demande de paiement'
   copyLink: 'Copier le lien de paiement'
+  adjust: 'Modifier le montant'
   refund: 'Rembourser'
   delete: 'Supprimer'
 delete:
@@ -496,11 +691,18 @@ notify:
   deleted: 'Paiement supprimé'
   requested: 'Demande de paiement envoyée'
   copied: 'Lien de paiement copié'
+  adjusted: 'Montant dû mis à jour'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
 title: 'Płatności'
 balance: 'Zapłacono / należne'
+open: 'Do zapłaty'
+paidInFull: 'Opłacone w całości'
+paidOf: 'Zapłacono {paid} z {due}'
+adjusted: 'Ustawione ręcznie'
+quoted: 'Pokazane przy rejestracji: {amount}'
+answersDiffer: 'Odpowiedzi dają teraz {amount}.'
 status:
   OPEN: 'Płatność otwarta'
   PENDING: 'W toku'
@@ -526,9 +728,11 @@ method:
   other: 'Inna'
 action:
   menu: 'Akcje płatności'
+  more: 'Więcej działań płatności'
   record: 'Zarejestruj płatność'
   request: 'Wyślij prośbę o płatność'
   copyLink: 'Kopiuj link do płatności'
+  adjust: 'Zmień kwotę'
   refund: 'Zwróć'
   delete: 'Usuń'
 delete:
@@ -540,11 +744,18 @@ notify:
   deleted: 'Płatność usunięta'
   requested: 'Prośba o płatność wysłana'
   copied: 'Link do płatności skopiowany'
+  adjusted: 'Zaktualizowano kwotę do zapłaty'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
 title: 'Platby'
 balance: 'Zaplaceno / splatné'
+open: 'Nezaplaceno'
+paidInFull: 'Zaplaceno v plné výši'
+paidOf: 'Zaplaceno {paid} z {due}'
+adjusted: 'Nastaveno ručně'
+quoted: 'Zobrazeno při registraci: {amount}'
+answersDiffer: 'Odpovědi teď dávají {amount}.'
 status:
   OPEN: 'Platba otevřená'
   PENDING: 'Zpracovává se'
@@ -570,9 +781,11 @@ method:
   other: 'Jiné'
 action:
   menu: 'Akce platby'
+  more: 'Další akce plateb'
   record: 'Zaznamenat platbu'
   request: 'Poslat výzvu k platbě'
   copyLink: 'Kopírovat odkaz na platbu'
+  adjust: 'Změnit částku'
   refund: 'Vrátit'
   delete: 'Smazat'
 delete:
@@ -584,4 +797,46 @@ notify:
   deleted: 'Platba smazána'
   requested: 'Výzva k platbě odeslána'
   copied: 'Odkaz na platbu zkopírován'
+  adjusted: 'Dlužná částka aktualizována'
 </i18n>
+
+<style scoped lang="scss">
+@use '../../../css/segmented-list';
+
+.balance-value {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.row-caption {
+  margin-top: 2px;
+  font-size: 0.8125rem;
+  line-height: 1.125rem;
+  color: var(--md3-on-surface-variant);
+}
+
+.row-caption--warning {
+  color: var(--md3-on-surface);
+}
+
+.row-value--muted {
+  color: var(--md3-on-surface-variant);
+}
+
+.row-icon--muted {
+  background: var(--md3-surface-container-highest);
+  color: var(--md3-on-surface-variant);
+}
+
+.row-icon--action {
+  background: var(--md3-primary-container);
+  color: var(--md3-on-primary-container);
+}
+
+.inline-action {
+  margin-left: 4px;
+  font-weight: 500;
+  color: var(--md3-primary);
+  text-decoration: none;
+}
+</style>

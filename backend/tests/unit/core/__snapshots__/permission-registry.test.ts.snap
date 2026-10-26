@@ -106,6 +106,7 @@ exports[`the assembled permission policy > grants event roles exactly these perm
     "event.messages.create",
     "event.messages.delete",
     "event.messages.view",
+    "event.payments.adjust",
     "event.payments.create",
     "event.payments.refund",
     "event.payments.view",

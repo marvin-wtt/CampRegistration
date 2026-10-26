@@ -433,7 +433,7 @@
                 type="number"
               >
                 <template #before>
-                  <q-icon name="euro" />
+                  <q-icon name="sell" />
                 </template>
               </q-input>
 

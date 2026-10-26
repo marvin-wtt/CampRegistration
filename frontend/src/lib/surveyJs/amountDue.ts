@@ -1,7 +1,7 @@
 import { reactive } from 'vue';
 import type { SurveyModel } from 'survey-core';
 import { ComponentFactory } from 'survey-vue3-ui';
-import { extractEventData } from '@camp-registration/common/form';
+import { extractPaymentAmounts } from '@camp-registration/common/form';
 import { computeAmountDue } from '@camp-registration/common/utils';
 import { setCompleteTextDefault } from '@/lib/surveyJs/completeText';
 import RegistrationAmountSummary from '@/components/common/RegistrationAmountSummary.vue';
@@ -24,10 +24,7 @@ export interface AmountDueState {
  * Follows what the current answers will cost, with the same computation the
  * server charges by, and keeps the Complete button's default label in step:
  * a free event whose priced options get picked becomes a paid registration.
- *
- * One gap remains: an answer whose question was hidden afterwards still counts
- * here until submit, when survey-core clears it (`clearInvisibleValues` is
- * `onComplete` by default) — the server then charges without it.
+ * Hidden questions don't count, here or on the server.
  */
 export function trackAmountDue(
   survey: SurveyModel,
@@ -40,7 +37,7 @@ export function trackAmountDue(
   });
 
   const update = () => {
-    state.amount = computeAmountDue(event, extractEventData(survey));
+    state.amount = computeAmountDue(event, extractPaymentAmounts(survey));
     state.lastPage = survey.isLastPage;
     setCompleteTextDefault(survey, state.amount > 0);
   };

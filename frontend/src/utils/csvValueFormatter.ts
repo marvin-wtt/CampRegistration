@@ -10,9 +10,24 @@ export interface CsvFormatContext {
     value: string | Record<string, string> | null | undefined,
   ) => string;
   translateCountry: (country: string) => string;
+  // The event's: every amount of an event is in it.
+  currency: string;
   getFormSelectOptions: (
     fieldName: string,
   ) => Record<string, string | Record<string, string>> | undefined;
+}
+
+/** Minor units as a plain decimal (`150.00`), the currency's own precision. */
+export function formatMoneyCsvValue(
+  value: unknown,
+  ctx: CsvFormatContext,
+): string {
+  if (typeof value !== 'number') {
+    return '';
+  }
+  return fromMinorUnits(value, ctx.currency).toFixed(
+    currencyFractionDigits(ctx.currency),
+  );
 }
 
 // Generic fallback used by cell renderers that have no CSV-specific

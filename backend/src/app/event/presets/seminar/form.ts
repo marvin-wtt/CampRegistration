@@ -1,3 +1,5 @@
+import paymentAmount from '../paymentAmount.js';
+
 export default {
   title: '{event.name}',
   description: '{event.startAtDate} - {event.endAtDate}',
@@ -76,6 +78,7 @@ export default {
           isRequired: true,
           eventDataType: 'role',
         },
+        ...paymentAmount,
       ],
     },
     {

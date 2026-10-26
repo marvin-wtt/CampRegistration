@@ -38,8 +38,25 @@ export interface PaymentRefund extends Identifiable {
   createdAt: string;
 }
 
+/**
+ * How money still held was settled when its registration was deleted:
+ * kept (e.g. as a cancellation fee) or already given back outside the app.
+ */
+export type PaymentSettlement = 'retained' | 'settled_outside';
+
+export const PAYMENT_SETTLEMENTS: readonly PaymentSettlement[] = [
+  'retained',
+  'settled_outside',
+];
+
 export interface Payment extends Identifiable {
+  /** `null` once the registration was deleted; see `registrationRef`. */
   registrationId: string | null;
+  /** The registration it was made for, kept after that is deleted. */
+  registrationRef: string | null;
+  /** Who paid, kept for accounting; removed after the retention period. */
+  payerName: string | null;
+  settlement: PaymentSettlement | null;
   source: PaymentSource;
   status: PaymentStatus;
   /** Minor units (e.g. cents) of {@link currency}. */
@@ -68,6 +85,17 @@ export interface PaymentRefundCreateData {
   amount: number;
   reason?: string | null | undefined;
   suppressMessage?: boolean | undefined;
+  /**
+   * The money went back outside the app (cash, bank transfer): recorded as
+   * done, without the provider. Manual payments are always refunded so.
+   */
+  outsideApp?: boolean | undefined;
+  /**
+   * The refund lowers the price (late arrival, goodwill): what is owed drops
+   * by the same amount, so the registration doesn't owe it again. Without
+   * it, the debt stays — e.g. money returned before charging correctly.
+   */
+  reduceAmountDue?: boolean | undefined;
 }
 
 /** A registration's balance, as embedded in `Registration.payment`. */
@@ -78,6 +106,36 @@ export interface RegistrationPayment {
   amountDue: number | null;
   /** Minor units: paid minus refunded. */
   amountPaid: number;
+  /** Minor units still owed, never negative. */
+  outstanding: number;
+}
+
+/** A manager's fixed `amountDue`, replacing the one calculated from the answers. */
+export interface AmountDueAdjustment {
+  note: string | null;
+  adjustedAt: string;
+}
+
+/** A registration's balance as managers see it. */
+export interface RegistrationPaymentDetails extends RegistrationPayment {
+  /**
+   * Minor units: what the server calculated, and the form showed, at
+   * submission. `null` on registrations predating it.
+   */
+  quotedAmount: number | null;
+  adjustment: AmountDueAdjustment | null;
+  /** When the person was last asked to pay, and last reminded. */
+  requestedAt: string | null;
+  remindedAt: string | null;
+}
+
+/**
+ * Sets what a registration owes. `amount` is in major units; `null` goes back
+ * to the quoted amount — what the registration form showed.
+ */
+export interface AmountDueUpdateData {
+  amount: number | null;
+  note?: string | null | undefined;
 }
 
 /** The public, token-authenticated view of a registration's balance. */
@@ -121,6 +179,15 @@ export interface PaymentAccount {
 export interface EventPaymentStatus {
   account: Pick<PaymentAccount, 'provider' | 'mode'> | null;
   organizationVerified: boolean;
+  /** Accepted registrations that owe money but were never asked to pay. */
+  unrequested: number;
+  /** Once anything was quoted or paid, the event's currency is fixed. */
+  currencyLocked: boolean;
+}
+
+/** The outcome of asking every accepted registration that owes money. */
+export interface PaymentRequestResult {
+  requested: number;
 }
 
 /** Which providers this deployment offers, for the connect form. */

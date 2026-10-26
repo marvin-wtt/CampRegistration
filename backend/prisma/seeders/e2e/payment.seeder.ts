@@ -71,7 +71,9 @@ export async function seedE2ePayments(): Promise<void> {
         key: SETTING_KEYS.PAYMENT,
         data: {
           enabled: true,
-          timing: 'REGISTRATION',
+          timing: 'ACCEPTANCE',
+          requestDate: null,
+          requestDaysBeforeStart: null,
           reminderAfterDays: null,
         },
       },

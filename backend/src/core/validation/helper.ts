@@ -1,3 +1,4 @@
+import { SUPPORTED_CURRENCIES } from '@camp-registration/common/utils';
 import { z, type ZodType } from 'zod';
 
 export const PasswordSchema = z.string().min(8).max(72);
@@ -28,14 +29,6 @@ export const translatedValue = <T extends ZodType>(valueSchema: T) => {
 };
 
 /** An ISO 4217 currency code the runtime knows, e.g. `EUR`. */
-export const CurrencySchema = z
-  .string()
-  .regex(/^[A-Z]{3}$/)
-  .refine((code) => {
-    try {
-      new Intl.NumberFormat('en', { style: 'currency', currency: code });
-      return Intl.supportedValuesOf('currency').includes(code);
-    } catch {
-      return false;
-    }
-  }, 'Unknown currency');
+// Two-decimal currencies only: the amount inputs and the price validation
+// assume cents.
+export const CurrencySchema = z.enum(SUPPORTED_CURRENCIES);

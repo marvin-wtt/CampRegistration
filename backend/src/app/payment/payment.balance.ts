@@ -51,6 +51,7 @@ export function registrationPayment(
     currency,
     amountDue,
     amountPaid,
+    outstanding: outstandingAmount({ amountDue, amountPaid }),
   };
 }
 
@@ -73,6 +74,8 @@ function paymentStatus(
 }
 
 /** Outstanding balance in minor units, never negative. */
-export function outstandingAmount(balance: RegistrationPayment): number {
+export function outstandingAmount(
+  balance: Pick<RegistrationPayment, 'amountDue' | 'amountPaid'>,
+): number {
   return Math.max(0, (balance.amountDue ?? 0) - balance.amountPaid);
 }

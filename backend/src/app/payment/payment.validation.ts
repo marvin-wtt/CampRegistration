@@ -1,16 +1,38 @@
 import { z, type ZodType } from 'zod';
 import type {
-  PaymentAccountConnectData,
+  AmountDueUpdateData,
   PaymentCreateData,
   PaymentRefundCreateData,
 } from '@camp-registration/common/entities';
 import type { PaymentSettings } from '@camp-registration/common/settings';
 
-export const PaymentSettingsValidation = z.object({
-  enabled: z.boolean(),
-  timing: z.enum(['REGISTRATION', 'ACCEPTANCE']),
-  reminderAfterDays: z.number().int().min(1).max(365).nullable(),
-}) satisfies z.ZodType<PaymentSettings>;
+export const PaymentSettingsValidation = z
+  .object({
+    enabled: z.boolean(),
+    timing: z.enum(['ACCEPTANCE', 'DATE', 'BEFORE_START']),
+    requestDate: z.iso.date().nullable(),
+    requestDaysBeforeStart: z.number().int().min(0).max(365).nullable(),
+    reminderAfterDays: z.number().int().min(1).max(365).nullable(),
+  })
+  .superRefine((settings, ctx) => {
+    if (settings.timing === 'DATE' && settings.requestDate === null) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['requestDate'],
+        message: 'A request date is required for this timing',
+      });
+    }
+    if (
+      settings.timing === 'BEFORE_START' &&
+      settings.requestDaysBeforeStart === null
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['requestDaysBeforeStart'],
+        message: 'The days before the start are required for this timing',
+      });
+    }
+  }) satisfies z.ZodType<PaymentSettings>;
 
 const eventParams = z.object({
   eventId: z.ulid(),
@@ -56,11 +78,26 @@ const refund = z.object({
     amount: z.number().int().positive(),
     reason: z.string().trim().max(500).nullable().optional(),
     suppressMessage: z.boolean().optional(),
+    outsideApp: z.boolean().optional(),
+    reduceAmountDue: z.boolean().optional(),
   }) satisfies ZodType<PaymentRefundCreateData>,
 });
 
 const request = z.object({
   params: registrationParams,
+});
+
+const updateAmountDue = z.object({
+  params: registrationParams,
+  body: z.object({
+    amount: z
+      .number()
+      .nonnegative()
+      .max(1_000_000)
+      .multipleOf(0.001)
+      .nullable(),
+    note: z.string().trim().max(500).nullable().optional(),
+  }) satisfies ZodType<AmountDueUpdateData>,
 });
 
 const summary = z.object({
@@ -73,14 +110,6 @@ const checkout = z.object({
   query: tokenQuery,
 });
 
-const connect = z.object({
-  params: z.object({ organizationId: z.ulid() }),
-  body: z.object({
-    provider: z.enum(['mollie', 'stripe', 'fake']),
-    apiKey: z.string().trim().min(1).max(255),
-  }) satisfies ZodType<PaymentAccountConnectData>,
-});
-
 export default {
   eventIndex,
   index,
@@ -88,7 +117,7 @@ export default {
   destroy,
   refund,
   request,
+  updateAmountDue,
   summary,
   checkout,
-  connect,
 };

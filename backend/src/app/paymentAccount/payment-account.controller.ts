@@ -7,7 +7,7 @@ import { secretsAvailable } from '#core/secrets';
 import { PaymentAccountService } from './payment-account.service.js';
 import { PaymentAccountResource } from './payment-account.resource.js';
 import { availableProviders } from './providers/payment.factory.js';
-import validator from './payment.validation.js';
+import validator from './payment-account.validation.js';
 
 export class PaymentAccountController extends BaseController {
   constructor(

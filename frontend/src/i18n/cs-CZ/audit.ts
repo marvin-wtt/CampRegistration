@@ -36,6 +36,9 @@ export default {
     registration: {
       label: 'Registrace',
       fields: {
+        amount: 'Částka',
+        amountDue: 'Dlužná částka',
+        paymentStatus: 'Stav platby',
         data: 'Odpověď z formuláře',
         customData: 'Vlastní pole',
         customFiles: 'Vlastní soubor',
@@ -44,11 +47,28 @@ export default {
         group: 'Skupina',
       },
       values: {
+        paymentStatus: {
+          OPEN: 'Platba otevřena',
+          PENDING: 'Zpracovává se',
+          PAID: 'Zaplaceno',
+          FAILED: 'Neúspěšné',
+          CANCELED: 'Zrušeno',
+          EXPIRED: 'Vypršelo',
+        },
         status: {
           ACCEPTED: 'Přijato',
           PENDING: 'Čeká na schválení',
           WAITLISTED: 'Na čekací listině',
         },
+      },
+      actions: {
+        payment_recorded: 'Platba zaznamenána',
+        payment_deleted: 'Platba smazána',
+        payment_refunded: 'Vrácení provedeno',
+        payment_requested: 'Vyžádána platba',
+        payment_status_changed: 'Změněn stav platby',
+        amount_due_adjusted: 'Dlužná částka nastavena ručně',
+        amount_due_reset: 'Dlužná částka vrácena na zobrazenou částku',
       },
       reasons: {
         canceled: 'Zrušeno',

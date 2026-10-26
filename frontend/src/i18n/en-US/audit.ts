@@ -36,6 +36,9 @@ export default {
     registration: {
       label: 'Registration',
       fields: {
+        amount: 'Amount',
+        amountDue: 'Amount due',
+        paymentStatus: 'Payment status',
         data: 'Form answer',
         customData: 'Custom field',
         customFiles: 'Custom file',
@@ -44,11 +47,29 @@ export default {
         group: 'Group',
       },
       values: {
+        paymentStatus: {
+          OPEN: 'Checkout open',
+          PENDING: 'Processing',
+          PAID: 'Paid',
+          FAILED: 'Failed',
+          CANCELED: 'Canceled',
+          EXPIRED: 'Expired',
+        },
         status: {
           ACCEPTED: 'Accepted',
           PENDING: 'Pending',
           WAITLISTED: 'Waitlisted',
         },
+      },
+      actions: {
+        payment_recorded: 'Payment recorded',
+        payment_deleted: 'Payment deleted',
+        payment_refunded: 'Refund issued',
+        payment_requested: 'Payment requested',
+        payment_status_changed: 'Payment status changed',
+        amount_due_adjusted: 'Amount due set by hand',
+        amount_due_reset:
+          'Amount due reset to the amount shown at registration',
       },
       reasons: {
         canceled: 'Canceled',

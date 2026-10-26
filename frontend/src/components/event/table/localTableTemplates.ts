@@ -22,6 +22,33 @@ export interface LocalTableTemplate extends TableTemplate {
 export const LOCAL_TEMPLATE_PENDING = 'attention-pending';
 export const LOCAL_TEMPLATE_MISSING = 'attention-missing';
 export const LOCAL_TEMPLATE_AGE = 'attention-age';
+export const LOCAL_TEMPLATE_PAYMENTS = 'payments';
+export const LOCAL_TEMPLATE_PAYMENTS_OPEN = 'payments-open';
+
+/** Has a fee at all. */
+export function hasFee(registration: Registration): boolean {
+  return registration.payment.status !== 'NOT_REQUIRED';
+}
+
+/**
+ * Accepted with a fee — the `payments` table and the dashboard's counts.
+ * Pending and waitlisted registrations are not asked to pay.
+ */
+export function owesFee(registration: Registration): boolean {
+  return registration.status === 'ACCEPTED' && hasFee(registration);
+}
+
+/**
+ * Accepted but not paid in full. Pending and waitlisted registrations may
+ * still be turned down, so they don't count as owing yet.
+ */
+export function paymentOpen(registration: Registration): boolean {
+  const { status } = registration.payment;
+  return (
+    registration.status === 'ACCEPTED' &&
+    (status === 'UNPAID' || status === 'PARTIAL')
+  );
+}
 
 type RegistrationHelper = ReturnType<typeof useRegistrationHelper>;
 
@@ -104,6 +131,74 @@ const STATUS_COLUMN: TableColumnTemplate = {
   align: 'left',
   sortable: true,
   renderAs: 'status',
+};
+
+const PAYMENT_STATUS_COLUMN: TableColumnTemplate = {
+  name: 'payment_status',
+  field: 'payment.status',
+  label: {
+    en: 'Payment',
+    de: 'Zahlung',
+    fr: 'Paiement',
+    cs: 'Platba',
+    pl: 'Płatność',
+  },
+  align: 'left',
+  sortable: true,
+  renderAs: 'payment_status',
+};
+
+// Minor units of the event currency, right-aligned so amounts line up.
+const moneyColumn = (
+  name: string,
+  field: string,
+  label: TableColumnTemplate['label'],
+): TableColumnTemplate => ({
+  name,
+  field,
+  label,
+  align: 'right',
+  sortable: true,
+  renderAs: 'money',
+});
+
+const AMOUNT_COLUMNS: TableColumnTemplate[] = [
+  moneyColumn('amount_due', 'payment.amountDue', {
+    en: 'Due',
+    de: 'Fällig',
+    fr: 'Dû',
+    cs: 'Dlužno',
+    pl: 'Należne',
+  }),
+  moneyColumn('amount_paid', 'payment.amountPaid', {
+    en: 'Paid',
+    de: 'Bezahlt',
+    fr: 'Payé',
+    cs: 'Zaplaceno',
+    pl: 'Zapłacono',
+  }),
+  moneyColumn('outstanding', 'payment.outstanding', {
+    en: 'Open',
+    de: 'Offen',
+    fr: 'À payer',
+    cs: 'Nezaplaceno',
+    pl: 'Do zapłaty',
+  }),
+];
+
+const REQUESTED_COLUMN: TableColumnTemplate = {
+  name: 'requested_at',
+  field: 'payment.requestedAt',
+  label: {
+    en: 'Asked to pay',
+    de: 'Aufgefordert',
+    fr: 'Demande envoyée',
+    cs: 'Vyzváno',
+    pl: 'Wezwano',
+  },
+  align: 'left',
+  sortable: true,
+  renderAs: 'time_ago',
 };
 
 const REGISTERED_COLUMN: TableColumnTemplate = {
@@ -206,6 +301,57 @@ export function buildLocalTableTemplates(
         return age < event.minAge || age > event.maxAge;
       },
       columns: [...NAME_COLUMNS, AGE_COLUMN, GROUP_COLUMN, STATUS_COLUMN],
+    },
+    {
+      id: LOCAL_TEMPLATE_PAYMENTS_OPEN,
+      title: {
+        en: 'Not paid in full',
+        de: 'Nicht vollständig bezahlt',
+        fr: 'Pas entièrement payé',
+        cs: 'Nezaplaceno v plné výši',
+        pl: 'Nie w pełni opłacone',
+      },
+      hidden: true,
+      generated: true,
+      order: 903,
+      indexed: true,
+      actions: true,
+      // Largest open amount first: who to chase.
+      sortBy: 'outstanding',
+      sortDirection: 'desc',
+      localFilter: paymentOpen,
+      columns: [
+        ...NAME_COLUMNS,
+        GROUP_COLUMN,
+        PAYMENT_STATUS_COLUMN,
+        ...AMOUNT_COLUMNS,
+        REQUESTED_COLUMN,
+        EMAIL_COLUMN,
+      ],
+    },
+    {
+      id: LOCAL_TEMPLATE_PAYMENTS,
+      title: {
+        en: 'Payments',
+        de: 'Zahlungen',
+        fr: 'Paiements',
+        cs: 'Platby',
+        pl: 'Płatności',
+      },
+      hidden: true,
+      generated: true,
+      order: 904,
+      indexed: true,
+      actions: true,
+      sortBy: 'last_name',
+      localFilter: owesFee,
+      columns: [
+        ...NAME_COLUMNS,
+        GROUP_COLUMN,
+        STATUS_COLUMN,
+        PAYMENT_STATUS_COLUMN,
+        ...AMOUNT_COLUMNS,
+      ],
     },
   ];
 }

@@ -269,10 +269,16 @@ model Registration {
   locale                             String             @default("en-GB") @db.VarChar(5)
   //
   status                             RegistrationStatus @default(PENDING)
-  // Payment snapshot taken at submit, in minor units of the event currency;
-  // null when the event didn't require payment at the time.
+  // Minor units of the event currency. `quotedAmount` is what the server
+  // calculated — and the form showed — at submission, whether or not payments
+  // were collected, and never changes; `amountDue` is what is owed: the quote
+  // unless a manager adjusted it. Null on registrations predating the quote.
+  quotedAmount                       Int?               @map("quoted_amount") @db.UnsignedInt
   amountDue                          Int?               @map("amount_due") @db.UnsignedInt
-  paymentRequestedAt                 DateTime?          @map("payment_requested_at")
+  // Set when a manager fixed `amountDue` by hand; edited answers then leave it.
+  amountDueAdjustedAt                DateTime?          @map("amount_due_adjusted_at")
+  amountDueNote                      String?            @map("amount_due_note") @db.Text
+  paymentRequestedAt                DateTime?          @map("payment_requested_at")
   paymentReminderSentAt              DateTime?          @map("payment_reminder_sent_at")
   // Which privacy information this person was actually shown. Nullable because
   // registrations predating the feature were shown none — do not backfill.
@@ -859,6 +865,13 @@ model Payment {
   paidAt            DateTime?     @map("paid_at")
   note              String?       @db.Text
   createdById       String?       @map("created_by_id") @db.Char(26)
+  // Accounting snapshot that outlives the registration: who paid, and which
+  // registration it was (audit entries are filed under that id). Removed
+  // after the accounting retention period.
+  payerName         String?       @map("payer_name") @db.VarChar(255)
+  registrationRef   String?       @map("registration_ref") @db.Char(26)
+  // How money still held was settled when the registration was deleted.
+  settlement        String?       @db.VarChar(32)
   createdAt         DateTime      @default(now()) @map("created_at")
   updatedAt         DateTime?     @updatedAt @map("updated_at")
 

@@ -71,7 +71,10 @@ export type ChoreAssignmentPermission =
   | 'event.chore_assignments.delete';
 
 export type PaymentPermission =
-  'event.payments.view' | 'event.payments.create' | 'event.payments.refund';
+  | 'event.payments.view'
+  | 'event.payments.create'
+  | 'event.payments.refund'
+  | 'event.payments.adjust';
 
 export type NewsletterPermission =
   | 'newsletter.view'

@@ -2,6 +2,10 @@ import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 import { Prisma, type Registration } from '#generated/prisma/client.js';
 import type { EventWithFreePlaces } from '#app/event/event.types';
+import { computeAmountDue } from '@camp-registration/common/utils';
+import type { PaymentSettlement } from '@camp-registration/common/entities';
+import { PaymentService } from '#app/payment/payment.service';
+import { getRequestContext } from '#core/context/requestContext';
 import { RegistrationForm } from '#app/registration/registration.form';
 import { BaseService } from '#core/base/BaseService';
 import {
@@ -16,10 +20,10 @@ import type { RegistrationDeleteReason } from '@camp-registration/common/entitie
 import {
   type AuditedRegistration,
   registrationAuditPolicy,
+  registrationIdentity,
 } from '#app/registration/registration.audit';
 import type { PrismaTransaction } from '#core/database/transaction';
 import { PrivacyNoticeService } from '#app/privacyNotice/privacy-notice.service';
-import { PaymentService } from '#app/payment/payment.service';
 
 /** The create uses relation connects throughout, so the stamp must too. */
 function connectVersion(id: string | null) {
@@ -99,6 +103,23 @@ export class RegistrationService extends BaseService {
     return { total };
   }
 
+  /**
+   * What a submission of `data` would be charged, as `createRegistration`
+   * calculates it — the server's own amount, for comparing with what the
+   * form displayed.
+   */
+  quoteAmount(
+    event: EventWithFreePlaces,
+    data: Pick<Registration, 'data' | 'locale' | 'group'>,
+  ): number {
+    const form = new RegistrationForm(event, {
+      locale: data.locale,
+      group: data.group,
+    }).load(data.data);
+
+    return computeAmountDue(event, form.paymentAmounts());
+  }
+
   async createRegistration(
     event: EventWithFreePlaces,
     data: Pick<Registration, 'data' | 'locale' | 'group'>,
@@ -118,7 +139,9 @@ export class RegistrationService extends BaseService {
     const formData = form.data;
     const eventData = form.extractEventData();
     const computedData = computedRegistrationData(eventData);
-    const amountDue = await this.paymentService.amountDueFor(event, eventData);
+    // Stored whether or not payments are collected: the form showed it, so
+    // it is what this person agreed to.
+    const quotedAmount = computeAmountDue(event, form.paymentAmounts());
 
     const fileIds = form.getFileIds();
 
@@ -184,7 +207,8 @@ export class RegistrationService extends BaseService {
             id: undefined, // Force new ID generation
             data: formData,
             status,
-            amountDue,
+            quotedAmount,
+            amountDue: quotedAmount,
             platformPrivacyPolicyUpdatedAt:
               privacyStamp.platformPrivacyPolicyUpdatedAt,
             organizationPrivacyNotice: connectVersion(
@@ -268,16 +292,8 @@ export class RegistrationService extends BaseService {
         computedData = computedRegistrationData(eventData);
         formFileIds = form.getFileIds();
 
-        // Edited answers may change what is owed. With payments turned off
-        // the existing snapshot stays — switching the setting off must not
-        // silently wipe what people already owe.
-        const amountDue = await this.paymentService.amountDueFor(
-          event,
-          eventData,
-        );
-        if (amountDue !== null) {
-          computedData.amountDue = amountDue;
-        }
+        // What is owed is never re-priced by an edit: people owe what the
+        // form showed them, unless a manager changes it explicitly.
       }
       if (data.customFiles) {
         before.customFiles = await this.customFileSlots(tx, registrationId);
@@ -376,14 +392,31 @@ export class RegistrationService extends BaseService {
   async deleteRegistration(
     registration: Registration,
     reason?: RegistrationDeleteReason,
+    paymentSettlement?: PaymentSettlement,
   ) {
     await this.transaction(async (tx) => {
+      // Payments stay, with their payer snapshot; money still held must be
+      // settled first, or the deletion is refused.
+      const settlement = await this.paymentService.settleForDeletion(
+        registration,
+        paymentSettlement,
+        getRequestContext()?.userId ?? null,
+      );
+
       const deleted = await tx.registration.delete({
         where: { id: registration.id },
       });
 
       await this.audit.deleted(registrationAuditPolicy, deleted, {
-        details: { reason },
+        details: {
+          reason,
+          ...(settlement && {
+            context: {
+              ...registrationIdentity(deleted).context,
+              paymentSettlement: settlement,
+            },
+          }),
+        },
       });
     });
   }

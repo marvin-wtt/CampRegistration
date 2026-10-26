@@ -167,12 +167,15 @@ const resourceData = (res: ReturnType<typeof fakeResponse>): unknown =>
 const disabledPayments = {
   enabled: false,
   timing: 'ACCEPTANCE',
+  requestDate: null,
+  requestDaysBeforeStart: null,
   reminderAfterDays: null,
 } as const;
 
 beforeEach(() => {
   vi.clearAllMocks();
   paymentService.getSettings.mockResolvedValue(disabledPayments);
+  paymentService.requestsOpen.mockReturnValue(true);
 });
 
 describe('RegistrationController.show', () => {
@@ -437,6 +440,7 @@ describe('RegistrationController.destroy', () => {
     expect(registrationService.deleteRegistration).toHaveBeenCalledWith(
       registration,
       undefined,
+      undefined,
     );
     expect(RegistrationDeletedMessage.enqueueFor).toHaveBeenCalledWith(
       event,
@@ -476,6 +480,39 @@ describe('RegistrationController payments', () => {
       validateResult: { body: { data: {}, locale: null } },
     });
 
+  const pricedRequest = (displayedTotal: number) =>
+    fakeRequest({
+      models: { event },
+      validateResult: {
+        body: { data: {}, locale: null, priceCheck: { displayedTotal } },
+      },
+    });
+
+  it('refuses a submission whose price changed, creating nothing', async () => {
+    registrationService.quoteAmount.mockReturnValue(20000);
+
+    await expect(
+      controller.store(pricedRequest(15000), fakeResponse()),
+    ).rejects.toMatchObject({
+      statusCode: 409,
+      details: { quotedAmount: 20000 },
+    });
+    expect(registrationService.createRegistration).not.toHaveBeenCalled();
+  });
+
+  it('never hands the displayed total on to the registration', async () => {
+    registrationService.quoteAmount.mockReturnValue(20000);
+    registrationService.createRegistration.mockResolvedValue(
+      buildRegistration({ status: 'PENDING' }),
+    );
+
+    await controller.store(pricedRequest(20000), fakeResponse());
+
+    const [, input] = registrationService.createRegistration.mock.calls[0]!;
+    expect(input).not.toHaveProperty('priceCheck');
+    expect(JSON.stringify(input)).not.toContain('displayedTotal');
+  });
+
   it('adds no payment meta when the registration owes nothing', async () => {
     registrationService.createRegistration.mockResolvedValue(
       buildRegistration({ status: 'ACCEPTED' }),
@@ -488,7 +525,7 @@ describe('RegistrationController payments', () => {
     expect(paymentService.startCheckout).not.toHaveBeenCalled();
   });
 
-  it('opens a checkout at registration and returns its URL', async () => {
+  it('asks an automatically accepted registration to pay and opens a checkout', async () => {
     const registration = buildRegistration({
       status: 'ACCEPTED',
       amountDue: 5000,
@@ -497,7 +534,6 @@ describe('RegistrationController payments', () => {
     paymentService.getSettings.mockResolvedValue({
       ...disabledPayments,
       enabled: true,
-      timing: 'REGISTRATION',
     });
     paymentService.startCheckout.mockResolvedValue({
       checkoutUrl: 'https://checkout.example/abc',
@@ -507,7 +543,11 @@ describe('RegistrationController payments', () => {
 
     await controller.store(storeRequest(), res);
 
-    expect(paymentService.markRequested).toHaveBeenCalledWith(registration.id);
+    expect(PaymentRequestedMessage.enqueueFor).toHaveBeenCalledWith(
+      event,
+      registration,
+    );
+    expect(paymentService.markRequested).toHaveBeenCalledTimes(1);
     expect(resourceMeta(res)).toMatchObject({
       payment: {
         checkoutUrl: 'https://checkout.example/abc',
@@ -520,12 +560,11 @@ describe('RegistrationController payments', () => {
 
   it('still creates the registration when the checkout fails', async () => {
     registrationService.createRegistration.mockResolvedValue(
-      buildRegistration({ status: 'PENDING', amountDue: 5000 }),
+      buildRegistration({ status: 'ACCEPTED', amountDue: 5000 }),
     );
     paymentService.getSettings.mockResolvedValue({
       ...disabledPayments,
       enabled: true,
-      timing: 'REGISTRATION',
     });
     paymentService.startCheckout.mockRejectedValue(new Error('provider down'));
     const res = fakeResponse();
@@ -538,19 +577,41 @@ describe('RegistrationController payments', () => {
     });
   });
 
-  it('never charges a waitlisted registration up front', async () => {
+  it.each(['PENDING', 'WAITLISTED'] as const)(
+    'never asks a %s registration to pay',
+    async (status) => {
+      registrationService.createRegistration.mockResolvedValue(
+        buildRegistration({ status, amountDue: 5000 }),
+      );
+      paymentService.getSettings.mockResolvedValue({
+        ...disabledPayments,
+        enabled: true,
+      });
+
+      await controller.store(storeRequest(), fakeResponse());
+
+      expect(PaymentRequestedMessage.enqueueFor).not.toHaveBeenCalled();
+      expect(paymentService.startCheckout).not.toHaveBeenCalled();
+    },
+  );
+
+  it('opens no checkout before the request date', async () => {
     registrationService.createRegistration.mockResolvedValue(
-      buildRegistration({ status: 'WAITLISTED', amountDue: 5000 }),
+      buildRegistration({ status: 'ACCEPTED', amountDue: 5000 }),
     );
     paymentService.getSettings.mockResolvedValue({
       ...disabledPayments,
       enabled: true,
-      timing: 'REGISTRATION',
+      timing: 'DATE',
+      requestDate: '2099-01-01',
     });
+    paymentService.requestsOpen.mockReturnValue(false);
+    const res = fakeResponse();
 
-    await controller.store(storeRequest(), fakeResponse());
+    await controller.store(storeRequest(), res);
 
     expect(paymentService.startCheckout).not.toHaveBeenCalled();
+    expect(resourceMeta(res)).toMatchObject({ payment: { checkoutUrl: null } });
   });
 
   it('emails the payment link when an automatically accepted registration owes money after acceptance', async () => {
@@ -570,7 +631,6 @@ describe('RegistrationController payments', () => {
       event,
       registration,
     );
-    expect(paymentService.startCheckout).not.toHaveBeenCalled();
   });
 
   it('emails the payment link when a manager accepts the registration', async () => {
@@ -597,7 +657,7 @@ describe('RegistrationController payments', () => {
       event,
       registration,
     );
-    expect(paymentService.markRequested).toHaveBeenCalledWith(registration.id);
+    expect(paymentService.markRequested).toHaveBeenCalledWith(registration);
   });
 
   it('does not request payment twice', async () => {

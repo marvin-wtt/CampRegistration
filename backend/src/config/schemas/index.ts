@@ -10,6 +10,7 @@ import { QueueEnvSchema } from './queue.schema.js';
 import { RealtimeEnvSchema } from './realtime.schema.js';
 import { TranslationEnvSchema } from './translation.schema.js';
 import { PaymentEnvSchema } from './payment.schema.js';
+import { SecretsEnvSchema } from './secrets.schema.js';
 
 export const EnvSchema = z
   .object({})
@@ -24,6 +25,7 @@ export const EnvSchema = z
   .and(RealtimeEnvSchema)
   .and(TranslationEnvSchema)
   .and(PaymentEnvSchema)
+  .and(SecretsEnvSchema)
   .readonly();
 
 export type Env = z.output<typeof EnvSchema>;

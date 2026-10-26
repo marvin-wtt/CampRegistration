@@ -1,3 +1,4 @@
+import type { AuditService } from '#app/audit/audit.service';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 import type {
@@ -7,23 +8,17 @@ import type {
   Prisma,
 } from '#generated/prisma/client.js';
 import prisma from '../../../src/__mock__/client.js';
-import {
-  isPaymentStatusAdvance,
-  isRefundStatusAdvance,
-  PaymentService,
-} from '#app/payment/payment.service';
-import type { PaymentAccountService } from '#app/payment/payment-account.service';
+import { PaymentService } from '#app/payment/payment.service';
+import type { PaymentAccountService } from '#app/paymentAccount/payment-account.service';
 import type { SettingService } from '#app/setting/setting.service';
-import type {
-  PaymentProvider,
-  ProviderPaymentSnapshot,
-} from '#app/payment/providers/payment.provider';
+import type { PaymentProvider } from '#app/paymentAccount/providers/payment.provider';
 
 const accountService = mock<PaymentAccountService>();
 const settingService = mock<SettingService>();
 const provider = mock<PaymentProvider>();
+const audit = mock<AuditService>();
 
-const service = new PaymentService(accountService, settingService);
+const service = new PaymentService(accountService, settingService, audit);
 (service as unknown as { prisma: typeof prisma }).prisma = prisma;
 
 const event = {
@@ -47,6 +42,9 @@ const buildPayment = (overrides: Partial<Payment> = {}): Payment => ({
   paidAt: null,
   note: null,
   createdById: null,
+  payerName: null,
+  registrationRef: null,
+  settlement: null,
   createdAt: new Date(),
   updatedAt: null,
   ...overrides,
@@ -69,184 +67,10 @@ const buildRefund = (
   ...overrides,
 });
 
-const snapshot = (
-  overrides: Partial<ProviderPaymentSnapshot> = {},
-): ProviderPaymentSnapshot => ({
-  providerPaymentId: 'cs_1',
-  status: 'OPEN',
-  amount: 5000,
-  currency: 'EUR',
-  method: null,
-  paidAt: null,
-  refunds: [],
-  ...overrides,
-});
-
 beforeEach(() => {
   vi.clearAllMocks();
   prisma.$transaction.mockImplementation(((fn: (tx: unknown) => unknown) =>
     fn(prisma)) as never);
-});
-
-describe('status transitions', () => {
-  it('only moves payments forward', () => {
-    expect(isPaymentStatusAdvance('OPEN', 'PENDING')).toBe(true);
-    expect(isPaymentStatusAdvance('PENDING', 'PAID')).toBe(true);
-    expect(isPaymentStatusAdvance('PENDING', 'OPEN')).toBe(false);
-    expect(isPaymentStatusAdvance('PAID', 'FAILED')).toBe(false);
-    expect(isPaymentStatusAdvance('FAILED', 'EXPIRED')).toBe(false);
-    expect(isPaymentStatusAdvance('OPEN', 'OPEN')).toBe(false);
-  });
-
-  it('lets money that arrived late still count', () => {
-    expect(isPaymentStatusAdvance('EXPIRED', 'PAID')).toBe(true);
-  });
-
-  it('only settles pending refunds', () => {
-    expect(isRefundStatusAdvance('PENDING', 'REFUNDED')).toBe(true);
-    expect(isRefundStatusAdvance('REFUNDED', 'FAILED')).toBe(false);
-    expect(isRefundStatusAdvance('PENDING', 'PENDING')).toBe(false);
-  });
-});
-
-describe('PaymentService.applySnapshot', () => {
-  const loadCurrent = (payment: Payment, refunds: PaymentRefund[] = []) => {
-    prisma.payment.findUniqueOrThrow.mockResolvedValue({
-      ...payment,
-      refunds,
-      event,
-      registration: { id: 'registration-1' },
-    } as never);
-  };
-
-  it('records a payment becoming paid', async () => {
-    const paidAt = new Date('2026-01-01');
-    loadCurrent(buildPayment());
-    prisma.payment.update.mockResolvedValue(
-      buildPayment({ status: 'PAID', paidAt }),
-    );
-
-    const outcome = await service.applySnapshot(
-      'payment-1',
-      snapshot({ status: 'PAID', paidAt, method: 'card' }),
-    );
-
-    expect(prisma.payment.update).toHaveBeenCalledWith({
-      where: { id: 'payment-1' },
-      data: { status: 'PAID', method: 'card', paidAt },
-    });
-    expect(outcome).toMatchObject({ statusChange: 'PAID', changed: true });
-  });
-
-  it('is a no-op for a replayed webhook', async () => {
-    loadCurrent(buildPayment({ status: 'PAID' }));
-
-    const outcome = await service.applySnapshot(
-      'payment-1',
-      snapshot({ status: 'PAID' }),
-    );
-
-    expect(prisma.payment.update).not.toHaveBeenCalled();
-    expect(outcome).toMatchObject({ statusChange: null, changed: false });
-  });
-
-  it('never regresses on an out-of-order webhook', async () => {
-    loadCurrent(buildPayment({ status: 'PAID' }));
-
-    const outcome = await service.applySnapshot(
-      'payment-1',
-      snapshot({ status: 'PENDING' }),
-    );
-
-    expect(prisma.payment.update).not.toHaveBeenCalled();
-    expect(outcome.statusChange).toBeNull();
-  });
-
-  it('inserts a refund made in the provider dashboard', async () => {
-    loadCurrent(buildPayment({ status: 'PAID' }));
-    const created = buildRefund({
-      providerRefundId: 're_1',
-      status: 'REFUNDED',
-      createdById: null,
-    });
-    prisma.paymentRefund.create.mockResolvedValue(created);
-
-    const outcome = await service.applySnapshot(
-      'payment-1',
-      snapshot({
-        status: 'PAID',
-        refunds: [
-          {
-            providerRefundId: 're_1',
-            reference: null,
-            status: 'REFUNDED',
-            amount: 1000,
-            refundedAt: new Date(),
-          },
-        ],
-      }),
-    );
-
-    expect(prisma.paymentRefund.create).toHaveBeenCalled();
-    expect(outcome.completedRefunds).toEqual([created]);
-  });
-
-  it('matches its own refund by reference instead of duplicating it', async () => {
-    const own = buildRefund();
-    loadCurrent(buildPayment({ status: 'PAID' }), [own]);
-    const settled = buildRefund({
-      providerRefundId: 're_1',
-      status: 'REFUNDED',
-    });
-    prisma.paymentRefund.update.mockResolvedValue(settled);
-
-    const outcome = await service.applySnapshot(
-      'payment-1',
-      snapshot({
-        status: 'PAID',
-        refunds: [
-          {
-            providerRefundId: 're_1',
-            reference: own.id,
-            status: 'REFUNDED',
-            amount: 1000,
-            refundedAt: new Date(),
-          },
-        ],
-      }),
-    );
-
-    expect(prisma.paymentRefund.create).not.toHaveBeenCalled();
-    expect(prisma.paymentRefund.update).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: own.id } }),
-    );
-    expect(outcome.completedRefunds).toEqual([settled]);
-  });
-
-  it('reports a completed refund only once', async () => {
-    loadCurrent(buildPayment({ status: 'PAID' }), [
-      buildRefund({ providerRefundId: 're_1', status: 'REFUNDED' }),
-    ]);
-
-    const outcome = await service.applySnapshot(
-      'payment-1',
-      snapshot({
-        status: 'PAID',
-        refunds: [
-          {
-            providerRefundId: 're_1',
-            reference: 'refund-1',
-            status: 'REFUNDED',
-            amount: 1000,
-            refundedAt: new Date(),
-          },
-        ],
-      }),
-    );
-
-    expect(prisma.paymentRefund.update).not.toHaveBeenCalled();
-    expect(outcome).toMatchObject({ completedRefunds: [], changed: false });
-  });
 });
 
 describe('PaymentService.refund', () => {
@@ -274,13 +98,84 @@ describe('PaymentService.refund', () => {
     prisma.paymentRefund.findUniqueOrThrow.mockResolvedValue(buildRefund());
   };
 
-  const refund = (amount: number) =>
+  const refund = (
+    amount: number,
+    outsideApp = false,
+    reduceAmountDue = false,
+    reason: string | null = null,
+  ) =>
     service.refund(
       event,
       'payment-1',
-      { amount, reason: null, notifyParticipant: true },
+      {
+        amount,
+        reason,
+        notifyParticipant: true,
+        outsideApp,
+        reduceAmountDue,
+      },
       'user-1',
     );
+
+  const owing = (amountDue: number) =>
+    prisma.registration.findUniqueOrThrow.mockResolvedValue({
+      id: 'registration-1',
+      eventId: event.id,
+      amountDue,
+      amountDueAdjustedAt: null,
+      amountDueNote: null,
+    } as never);
+
+  it('lowers what is owed by the refund when asked to', async () => {
+    setup(buildPayment({ status: 'PAID', source: 'manual' }));
+    owing(5000);
+
+    await refund(1000, false, true, 'Arrives late');
+
+    expect(prisma.registration.update).toHaveBeenCalledWith({
+      where: { id: 'registration-1' },
+      data: expect.objectContaining({
+        amountDue: 4000,
+        amountDueNote: 'Arrives late',
+      }) as unknown,
+    });
+  });
+
+  it('keeps what is owed unless asked to lower it', async () => {
+    setup(buildPayment({ status: 'PAID', source: 'manual' }));
+
+    await refund(1000);
+
+    expect(prisma.registration.update).not.toHaveBeenCalled();
+  });
+
+  it('restores what was owed when the provider rejects the refund', async () => {
+    setup(buildPayment({ status: 'PAID' }));
+    owing(5000);
+    provider.createRefund.mockRejectedValue(new Error('insufficient balance'));
+
+    await expect(refund(1000, false, true)).rejects.toMatchObject({
+      statusCode: 502,
+    });
+    expect(prisma.registration.update).toHaveBeenLastCalledWith({
+      where: { id: 'registration-1' },
+      data: { amountDue: 5000, amountDueAdjustedAt: null, amountDueNote: null },
+    });
+  });
+
+  it('records an online refund given back outside the app at once', async () => {
+    setup(buildPayment({ status: 'PAID' }));
+
+    const result = await refund(1000, true);
+
+    expect(accountService.resolveForOrganization).not.toHaveBeenCalled();
+    expect(prisma.paymentRefund.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ status: 'REFUNDED' }) as unknown,
+      }),
+    );
+    expect(result.completedNow).toBe(true);
+  });
 
   it('rejects refunding more than is left', async () => {
     setup(buildPayment({ status: 'PAID' }), [

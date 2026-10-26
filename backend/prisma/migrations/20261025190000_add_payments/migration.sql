@@ -2,7 +2,10 @@
 ALTER TABLE `events` ADD COLUMN `currency` CHAR(3) NOT NULL DEFAULT 'EUR';
 
 -- AlterTable
-ALTER TABLE `registrations` ADD COLUMN `amount_due` INTEGER UNSIGNED NULL,
+ALTER TABLE `registrations` ADD COLUMN `quoted_amount` INTEGER UNSIGNED NULL,
+    ADD COLUMN `amount_due` INTEGER UNSIGNED NULL,
+    ADD COLUMN `amount_due_adjusted_at` DATETIME(3) NULL,
+    ADD COLUMN `amount_due_note` TEXT NULL,
     ADD COLUMN `payment_reminder_sent_at` DATETIME(3) NULL,
     ADD COLUMN `payment_requested_at` DATETIME(3) NULL;
 
@@ -38,6 +41,9 @@ CREATE TABLE `payments` (
     `paid_at` DATETIME(3) NULL,
     `note` TEXT NULL,
     `created_by_id` CHAR(26) NULL,
+    `payer_name` VARCHAR(255) NULL,
+    `registration_ref` CHAR(26) NULL,
+    `settlement` VARCHAR(32) NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NULL,
 

@@ -1,14 +1,17 @@
 import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
 import type { AuditEntityView } from '@/composables/audit/auditEntityView';
+import { formatMoney } from '@camp-registration/common/utils';
 import { useRegistrationsStore } from '@/stores/registration-store';
+import { useEventDetailsStore } from '@/stores/event-details-store';
 import { formatPersonName } from '@/utils/formatters';
 import RegistrationDetailsDialog from '@/components/event/table/dialogs/RegistrationDetailsDialog.vue';
 
 export function useRegistrationAuditView(): AuditEntityView {
-  const { t } = useI18n({ useScope: 'global' });
+  const { t, locale } = useI18n({ useScope: 'global' });
   const quasar = useQuasar();
   const store = useRegistrationsStore();
+  const eventStore = useEventDetailsStore();
 
   return {
     icon: 'person',
@@ -22,6 +25,17 @@ export function useRegistrationAuditView(): AuditEntityView {
       return entry.entityName === null && entry.action !== 'deleted'
         ? t('audit.entities.registration.deleted')
         : null;
+    },
+
+    // Payment entries record minor units of the event currency.
+    formatValue(key, value) {
+      const currency = eventStore.data?.currency;
+      if ((key === 'amount' || key === 'amountDue') && currency) {
+        return typeof value === 'number'
+          ? formatMoney(value, currency, locale.value)
+          : undefined;
+      }
+      return undefined;
     },
 
     open: {

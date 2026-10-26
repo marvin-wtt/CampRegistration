@@ -13,6 +13,7 @@ function makeContext(
   return {
     translate: (value) =>
       typeof value === 'string' ? value : (value?.en ?? ''),
+    currency: 'EUR',
     translateCountry: (country) => country.toUpperCase(),
     getFormSelectOptions: () => undefined,
     ...overrides,

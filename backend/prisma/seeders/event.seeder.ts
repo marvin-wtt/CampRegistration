@@ -5,6 +5,7 @@ import { ProgramItemSeeder } from './program-item.seeder';
 import { MessageSeeder } from './message.seeder';
 import { RoomSeeder } from './room.seeder';
 import { EventSettingSeeder } from './event-setting.seeder';
+import { PaymentSeeder } from './payment.seeder';
 import { EventFileSeeder } from './file.seeder';
 import {
   EVENT_PRESETS,
@@ -44,7 +45,7 @@ class EventSeeder extends BaseSeeder {
   /**
    * "Summer Camp": the one event with every child model populated — two
    * countries, five locales, registrations in every status, rooms and beds,
-   * a full program, message history, documents and both event settings.
+   * a full program, message history, documents, payments and its settings.
    */
   private async seedFlagshipEvent(): Promise<void> {
     const event = await EventFactory.create({
@@ -101,6 +102,7 @@ class EventSeeder extends BaseSeeder {
     await new MessageSeeder(event).seed();
     await new RoomSeeder(event).seed();
     await new EventSettingSeeder(event).seed();
+    await new PaymentSeeder(event).seed();
 
     // The form links its rules and terms through {_file.<slot>}, so both are
     // uploaded in both of the event's locales; the other two documents belong

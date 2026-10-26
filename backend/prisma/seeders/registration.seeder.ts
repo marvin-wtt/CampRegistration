@@ -5,6 +5,7 @@ import moment from 'moment';
 import { RegistrationForm } from '#app/registration/registration.form.js';
 import { computedRegistrationData } from '#app/registration/registration.helper.js';
 import { localeForCountry } from '@camp-registration/common/locales';
+import { computeAmountDue } from '@camp-registration/common/utils';
 import {
   buildRegistrationData,
   freePlacesFor,
@@ -160,9 +161,14 @@ export class RegistrationSeeder {
       { locale, group },
     ).load(data);
 
+    // As the API stores it on submission: what the form showed.
+    const quotedAmount = computeAmountDue(this.event, form.paymentAmounts());
+
     return {
       ...computedRegistrationData(form.extractEventData()),
       group,
+      quotedAmount,
+      amountDue: quotedAmount,
     };
   }
 }

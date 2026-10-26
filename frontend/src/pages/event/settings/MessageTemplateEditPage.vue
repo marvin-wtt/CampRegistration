@@ -176,7 +176,13 @@ const { data: event } = storeToRefs(eventDetailsStore);
 const { can } = usePermissions();
 const { settings: paymentSettings } = useEventSettings<PaymentSettings>(
   SETTING_KEYS.PAYMENT,
-  { enabled: false, timing: 'ACCEPTANCE', reminderAfterDays: null },
+  {
+    enabled: false,
+    timing: 'ACCEPTANCE',
+    requestDate: null,
+    requestDaysBeforeStart: null,
+    reminderAfterDays: null,
+  },
 );
 
 onMounted(async () => {

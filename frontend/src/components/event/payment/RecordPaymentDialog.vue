@@ -41,12 +41,10 @@
             outlined
             rounded
           />
-          <q-input
+          <date-input
             v-model="paidAt"
             :label="t('field.paidAt')"
-            type="date"
-            outlined
-            rounded
+            :max="today"
           />
           <q-input
             v-model="note"
@@ -81,6 +79,8 @@ import { computed, ref } from 'vue';
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
+import DateInput from '@/components/common/inputs/DateInput.vue';
+import { formatLocalDate } from '@/utils/date';
 import type { PaymentCreateData } from '@camp-registration/common/entities';
 import {
   currencySymbol,
@@ -103,7 +103,9 @@ const amount = ref<number | null>(
   outstanding > 0 ? fromMinorUnits(outstanding, currency) : null,
 );
 const method = ref<string>('bank_transfer');
-const paidAt = ref<string>(new Date().toISOString().slice(0, 10));
+// Local today, not UTC: shortly after midnight they differ.
+const today = formatLocalDate(new Date());
+const paidAt = ref<string | null>(today);
 const note = ref<string>('');
 
 const methodOptions = computed(() =>
@@ -121,7 +123,7 @@ function submit(): void {
   onDialogOK({
     amount: amount.value,
     method: method.value,
-    paidAt: new Date(`${paidAt.value}T12:00:00`).toISOString(),
+    paidAt: new Date(`${paidAt.value ?? today}T12:00:00`).toISOString(),
     note: note.value.trim() || null,
   } satisfies PaymentCreateData);
 }

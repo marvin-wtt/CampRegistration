@@ -1,0 +1,87 @@
+// The registration dialog's segmented list (MD3 Expressive): titled sections
+// of separate tiles, only the group's outer corners fully rounded. Shared so
+// sections rendered by child components look the same; `@use` it inside a
+// scoped style block.
+
+.section-title {
+  padding: 0 4px 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--md3-primary);
+}
+
+/* MD3 Expressive segmented list: rows are separate tiles with a small gap,
+   and only the group's outer corners are fully rounded. */
+.segmented-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.segment {
+  min-height: 64px;
+  padding: 10px 12px 10px 16px;
+  background: var(--md3-surface-container-high);
+  border-radius: 4px;
+  color: var(--md3-on-surface);
+}
+
+.segment:first-child {
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+}
+
+.segment:last-child {
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+}
+
+.segment :deep(.q-item__section--avatar) {
+  min-width: 0;
+  padding-right: 16px;
+}
+
+.row-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--md3-secondary-container);
+  color: var(--md3-on-secondary-container);
+}
+
+.row-label {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  letter-spacing: 0.02em;
+  color: var(--md3-on-surface-variant);
+}
+
+.row-value {
+  margin-top: 2px;
+  font-size: 1rem;
+  line-height: 1.5rem;
+  color: var(--md3-on-surface);
+}
+
+.row-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.25rem;
+  white-space: nowrap;
+  background: var(--md3-tertiary-container);
+  color: var(--md3-on-tertiary-container);
+}
+
+.row-value--link {
+  color: var(--md3-primary);
+}
+
+.row-action {
+  color: var(--md3-on-surface-variant);
+}

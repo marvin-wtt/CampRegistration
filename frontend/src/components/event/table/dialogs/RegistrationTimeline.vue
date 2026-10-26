@@ -146,6 +146,7 @@ import type {
   AuditLogEntry,
   Message,
 } from '@camp-registration/common/entities';
+import { formatMoney } from '@camp-registration/common/utils';
 import { useAuditTimeline } from '@/composables/audit/auditTimeline';
 import {
   useAuditLabels,
@@ -177,7 +178,7 @@ const quasar = useQuasar();
 const apiService = useAPIService();
 const { can } = usePermissions();
 const { formatDateTime, actorLabel } = useAuditTimeline();
-const { fieldLabel, valueLabel } = useAuditLabels();
+const { actionLabel, fieldLabel, valueLabel } = useAuditLabels();
 const formFieldLabels = useFormFieldLabels();
 const { data: registrations } = storeToRefs(useRegistrationsStore());
 const { data: event } = storeToRefs(useEventDetailsStore());
@@ -335,6 +336,43 @@ function emailEntry({
   };
 }
 
+// Payment actions are filed on the registration (`payment.audit.ts`).
+const PAYMENT_ENTRIES: Record<string, { color: string; icon: string }> = {
+  payment_recorded: { color: 'positive', icon: 'payments' },
+  payment_deleted: { color: 'negative', icon: 'delete' },
+  payment_refunded: { color: 'warning', icon: 'undo' },
+  payment_requested: { color: 'info', icon: 'forward_to_inbox' },
+  payment_status_changed: { color: 'primary', icon: 'credit_card' },
+  amount_due_adjusted: { color: 'primary', icon: 'edit' },
+  amount_due_reset: { color: 'primary', icon: 'restart_alt' },
+};
+
+function paymentEntry(
+  entry: AuditLogEntry,
+  style: { color: string; icon: string },
+  shared: Pick<TimelineEntry, 'at' | 'subtitle' | 'actor' | 'fields'>,
+): TimelineEntry {
+  const values = entry.details?.values ?? {};
+  // Recorded in minor units of the event currency.
+  const amount = values.amount ?? values.amountDue;
+  const parts = [
+    typeof amount === 'number' && event.value
+      ? formatMoney(amount, event.value.currency, locale.value)
+      : null,
+    typeof values.paymentStatus === 'string'
+      ? valueLabel('registration', 'paymentStatus', values.paymentStatus)
+      : null,
+  ].filter((part): part is string => part !== null);
+
+  return {
+    ...shared,
+    id: entry.id,
+    title: actionLabel('registration', entry.action),
+    ...style,
+    ...(parts.length > 0 ? { caption: parts.join(' · ') } : {}),
+  };
+}
+
 // An update splits into a status entry (titled with the new status) and a
 // changed-fields entry, since the status is the most salient edit.
 function fromAuditEntry(entry: AuditLogEntry): TimelineEntry[] {
@@ -355,6 +393,10 @@ function fromAuditEntry(entry: AuditLogEntry): TimelineEntry[] {
         icon: 'how_to_reg',
       },
     ];
+  }
+  const payment = PAYMENT_ENTRIES[entry.action];
+  if (payment) {
+    return [paymentEntry(entry, payment, shared)];
   }
   if (entry.action === 'deleted') {
     return [

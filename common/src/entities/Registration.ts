@@ -1,7 +1,10 @@
 import { Identifiable } from './Identifiable.js';
 import { Timestamps } from './Timestamps.js';
 import { Translatable } from './Translatable.js';
-import type { RegistrationPayment } from './Payment.js';
+import type {
+  PaymentSettlement,
+  RegistrationPaymentDetails,
+} from './Payment.js';
 
 export interface Registration extends Identifiable, Timestamps {
   data: Record<string, unknown>;
@@ -26,7 +29,7 @@ export interface Registration extends Identifiable, Timestamps {
   group: string | null;
   status: 'PENDING' | 'WAITLISTED' | 'ACCEPTED';
   locale: string;
-  payment: RegistrationPayment;
+  payment: RegistrationPaymentDetails;
   room?: Translatable | null;
   customFiles?: Record<string, string>;
 }
@@ -34,7 +37,25 @@ export interface Registration extends Identifiable, Timestamps {
 export type RegistrationCreateData = Pick<Registration, 'data'> & {
   locale?: string | null;
   group?: string | null;
+  priceCheck?: RegistrationPriceCheck | undefined;
 };
+
+/**
+ * What the registration form showed as the total, sent along so the server
+ * can refuse a registration whose price changed while the form was open.
+ *
+ * Untrusted client input and **never an amount**: it is not stored, charged
+ * or shown anywhere. The server always charges what it calculates itself and
+ * only compares that with `displayedTotal`; on a mismatch it refuses with
+ * `REGISTRATION_PRICE_CHANGED` and its own amount, which the person must
+ * confirm before resubmitting.
+ */
+export interface RegistrationPriceCheck {
+  /** Minor units of the event currency, as displayed. */
+  displayedTotal: number;
+}
+
+export const REGISTRATION_PRICE_CHANGED = 'REGISTRATION_PRICE_CHANGED';
 
 export type RegistrationUpdateData = Partial<
   Pick<Registration, 'data' | 'customData' | 'status' | 'group'>
@@ -61,4 +82,6 @@ export type RegistrationDeleteReason =
 export interface RegistrationDeleteQuery {
   suppressMessage?: boolean | undefined;
   reason?: RegistrationDeleteReason | undefined;
+  /** Required while the registration holds money (paid minus refunded). */
+  paymentSettlement?: PaymentSettlement | undefined;
 }

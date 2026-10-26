@@ -10,7 +10,11 @@ import 'survey-core/i18n/french';
 import 'survey-core/i18n/polish';
 import 'survey-core/i18n/czech';
 import type { IDataIssue, IPanel, PanelModelBase, Question } from 'survey-core';
-import { extractEventData, setVariables } from '@camp-registration/common/form';
+import {
+  extractEventData,
+  extractPaymentAmounts,
+  setVariables,
+} from '@camp-registration/common/form';
 import type { EventWithFreePlaces } from '#app/event/event.types';
 import { withTimeout } from '#utils/promiseUtils';
 
@@ -241,6 +245,11 @@ export class RegistrationForm {
   /** The answers of the questions tagged with an `eventDataType`, by tag. */
   extractEventData(): Record<string, unknown[]> {
     return extractEventData(this.survey);
+  }
+
+  /** What the answers add to the event price, for `computeAmountDue`. */
+  paymentAmounts(): unknown[] {
+    return extractPaymentAmounts(this.survey);
   }
 
   /**

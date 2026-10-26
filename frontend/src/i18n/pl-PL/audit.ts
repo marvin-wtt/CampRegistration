@@ -36,6 +36,9 @@ export default {
     registration: {
       label: 'Zgłoszenie',
       fields: {
+        amount: 'Kwota',
+        amountDue: 'Kwota do zapłaty',
+        paymentStatus: 'Status płatności',
         data: 'Odpowiedź z formularza',
         customData: 'Pole niestandardowe',
         customFiles: 'Plik niestandardowy',
@@ -44,11 +47,28 @@ export default {
         group: 'Grupa',
       },
       values: {
+        paymentStatus: {
+          OPEN: 'Płatność otwarta',
+          PENDING: 'W toku',
+          PAID: 'Opłacone',
+          FAILED: 'Nieudane',
+          CANCELED: 'Anulowane',
+          EXPIRED: 'Wygasłe',
+        },
         status: {
           ACCEPTED: 'Zaakceptowano',
           PENDING: 'Oczekuje',
           WAITLISTED: 'Lista oczekujących',
         },
+      },
+      actions: {
+        payment_recorded: 'Zarejestrowano płatność',
+        payment_deleted: 'Usunięto płatność',
+        payment_refunded: 'Zlecono zwrot',
+        payment_requested: 'Wezwano do zapłaty',
+        payment_status_changed: 'Zmieniono status płatności',
+        amount_due_adjusted: 'Kwotę do zapłaty ustawiono ręcznie',
+        amount_due_reset: 'Przywrócono kwotę pokazaną przy rejestracji',
       },
       reasons: {
         canceled: 'Anulowane',

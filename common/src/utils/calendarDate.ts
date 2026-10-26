@@ -1,5 +1,8 @@
 /** The current calendar date (`YYYY-MM-DD`) as observed in `timeZone`. */
-export function currentDateInTimeZone(timeZone: string): string {
+export function currentDateInTimeZone(
+  timeZone: string,
+  now = new Date(),
+): string {
   const formatter = new Intl.DateTimeFormat('en-US', {
     timeZone,
     year: 'numeric',
@@ -8,7 +11,7 @@ export function currentDateInTimeZone(timeZone: string): string {
   });
 
   const parts = formatter
-    .formatToParts(new Date())
+    .formatToParts(now)
     .reduce<Record<string, string>>((acc, part) => {
       acc[part.type] = part.value;
       return acc;

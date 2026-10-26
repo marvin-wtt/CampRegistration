@@ -238,6 +238,18 @@ export class EventController extends BaseController {
     const event = req.modelOrFail('event');
     const { body } = await req.validate(validator.update(event));
 
+    if (
+      body.currency !== undefined &&
+      body.currency !== event.currency &&
+      (await this.eventService.isCurrencyLocked(event.id))
+    ) {
+      throw new ApiError(
+        httpStatus.CONFLICT,
+        'The currency cannot change once amounts were quoted or paid',
+        { code: 'EVENT_CURRENCY_LOCKED' },
+      );
+    }
+
     const updatedEvent = await this.eventService.updateEvent(event, {
       name: body.name,
       organizer: body.organizer,

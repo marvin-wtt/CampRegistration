@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import Stripe from 'stripe';
-import { StripeProvider } from '#app/payment/providers/stripe/stripe.provider';
-import { MollieProvider } from '#app/payment/providers/mollie/mollie.provider';
+import { StripeProvider } from '#app/paymentAccount/providers/stripe/stripe.provider';
+import { MollieProvider } from '#app/paymentAccount/providers/mollie/mollie.provider';
 import {
   InvalidCredentialsError,
   InvalidWebhookError,
   type RawBodyRequest,
-} from '#app/payment/providers/payment.provider';
+} from '#app/paymentAccount/providers/payment.provider';
 
 const molliePayments = { get: vi.fn(), create: vi.fn() };
 const mollieRefunds = { page: vi.fn(), create: vi.fn() };

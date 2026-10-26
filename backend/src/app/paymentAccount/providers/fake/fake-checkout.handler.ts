@@ -1,9 +1,6 @@
 import type { RequestHandler } from 'express';
 import { formatMoney } from '@camp-registration/common/utils';
-import {
-  completeFakePayment,
-  getFakePayment,
-} from './providers/fake/fake.provider.js';
+import { completeFakePayment, getFakePayment } from './fake.provider.js';
 
 function escapeHtml(value: string): string {
   return value
