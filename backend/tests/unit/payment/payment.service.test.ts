@@ -117,7 +117,8 @@ describe('PaymentService.refund', () => {
       'user-1',
     );
 
-  const owing = (amountDue: number) =>
+  // What the registration owes, and what it paid before the refund.
+  const owing = (amountDue: number, paidBefore = amountDue) => {
     prisma.registration.findUniqueOrThrow.mockResolvedValue({
       id: 'registration-1',
       eventId: event.id,
@@ -125,6 +126,17 @@ describe('PaymentService.refund', () => {
       amountDueAdjustedAt: null,
       amountDueNote: null,
     } as never);
+    // The ledger as the reduction reads it: the new refund already booked.
+    prisma.payment.findMany.mockImplementation((() => {
+      const refunds = vi
+        .mocked(prisma.paymentRefund.create)
+        .mock.calls.map(([args]) => ({
+          status: 'PENDING',
+          amount: args.data.amount,
+        }));
+      return Promise.resolve([{ status: 'PAID', amount: paidBefore, refunds }]);
+    }) as never);
+  };
 
   it('lowers what is owed by the refund when asked to', async () => {
     setup(buildPayment({ status: 'PAID', source: 'manual' }));
@@ -138,6 +150,27 @@ describe('PaymentService.refund', () => {
         amountDue: 4000,
         amountDueNote: 'Arrives late',
       }) as unknown,
+    });
+  });
+
+  it('leaves what is owed alone when the refund only returns an overpayment', async () => {
+    setup(buildPayment({ status: 'PAID', source: 'manual' }));
+    owing(5000, 10000);
+
+    await refund(5000, false, true);
+
+    expect(prisma.registration.update).not.toHaveBeenCalled();
+  });
+
+  it('lowers what is owed only by the part beyond the overpayment', async () => {
+    setup(buildPayment({ status: 'PAID', source: 'manual' }));
+    owing(5000, 6000);
+
+    await refund(3000, false, true);
+
+    expect(prisma.registration.update).toHaveBeenCalledWith({
+      where: { id: 'registration-1' },
+      data: expect.objectContaining({ amountDue: 3000 }) as unknown,
     });
   });
 
@@ -269,5 +302,63 @@ describe('PaymentService.refund', () => {
       }),
     );
     expect(result.completedNow).toBe(true);
+  });
+});
+
+describe('PaymentService.closeStaleCheckouts', () => {
+  const registration = { id: 'registration-1', amountDue: 5000 };
+
+  beforeEach(() => {
+    accountService.resolveForOrganization.mockResolvedValue({
+      account: { provider: 'stripe' },
+      provider,
+      credentials: { apiKey: 'sk_test' },
+    } as never);
+  });
+
+  it('cancels open checkouts worth more than is outstanding', async () => {
+    // First the balance (2000 paid of 5000), then the open checkouts.
+    prisma.payment.findMany
+      .mockResolvedValueOnce([
+        { status: 'PAID', amount: 2000, refunds: [] },
+      ] as never)
+      .mockResolvedValueOnce([buildPayment({ id: 'payment-2' })]);
+
+    await service.closeStaleCheckouts(event, registration);
+
+    expect(prisma.payment.findMany).toHaveBeenLastCalledWith({
+      where: expect.objectContaining({
+        status: 'OPEN',
+        amount: { gt: 3000 },
+      }) as unknown,
+    });
+    expect(provider.cancelCheckout).toHaveBeenCalledWith(
+      { apiKey: 'sk_test' },
+      'cs_1',
+    );
+    expect(prisma.payment.updateMany).toHaveBeenCalledWith({
+      where: { id: 'payment-2', status: 'OPEN' },
+      data: { checkoutUrl: null },
+    });
+  });
+
+  it('keeps the checkout bookable when the provider refuses', async () => {
+    prisma.payment.findMany.mockResolvedValueOnce([buildPayment()]);
+    provider.cancelCheckout.mockRejectedValue(new Error('not cancelable'));
+
+    await expect(
+      service.closeStaleCheckouts(event, registration, 0),
+    ).resolves.toBeUndefined();
+    expect(prisma.payment.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('leaves checkouts of a no longer connected account alone', async () => {
+    prisma.payment.findMany.mockResolvedValueOnce([
+      buildPayment({ source: 'mollie', providerPaymentId: 'tr_1' }),
+    ]);
+
+    await service.closeStaleCheckouts(event, registration, 0);
+
+    expect(provider.cancelCheckout).not.toHaveBeenCalled();
   });
 });

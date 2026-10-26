@@ -1,13 +1,14 @@
 import { inject, injectable } from 'inversify';
 import { RealtimeService } from '#core/realtime/RealtimeService';
 import type { ReconciliationOutcome } from './payment-reconciliation.service.js';
+import { PaymentService } from './payment.service.js';
 import { PaymentReceivedMessage } from './messages/received.mail.js';
 import { PaymentFailedMessage } from './messages/failed.mail.js';
 import { PaymentRefundedMessage } from './messages/refunded.mail.js';
 
 /**
- * Turns a ledger change into its side effects: participant mail and realtime
- * invalidation. The one place outside a controller that emits realtime —
+ * Turns a ledger change into its side effects: participant mail, realtime
+ * invalidation, and closing checkouts a payment made redundant. The one place outside a controller that emits realtime —
  * reconciliations also run from the queue worker, which has no controller to
  * hand the outcome back to — so `PaymentService` itself stays side-effect free.
  */
@@ -16,6 +17,7 @@ export class PaymentNotifier {
   constructor(
     @inject(RealtimeService)
     private readonly realtimeService: RealtimeService,
+    @inject(PaymentService) private readonly paymentService: PaymentService,
   ) {}
 
   async notify(outcome: ReconciliationOutcome | null): Promise<void> {
@@ -29,6 +31,7 @@ export class PaymentNotifier {
     if (registration) {
       if (statusChange === 'PAID') {
         await PaymentReceivedMessage.enqueueFor(event, registration);
+        await this.paymentService.closeStaleCheckouts(event, registration);
       } else if (statusChange === 'FAILED') {
         await PaymentFailedMessage.enqueueFor(event, registration);
       }

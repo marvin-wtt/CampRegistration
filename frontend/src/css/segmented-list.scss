@@ -78,6 +78,13 @@
   color: var(--md3-on-tertiary-container);
 }
 
+.row-caption {
+  margin-top: 2px;
+  font-size: 0.8125rem;
+  line-height: 1.125rem;
+  color: var(--md3-on-surface-variant);
+}
+
 .row-value--link {
   color: var(--md3-primary);
 }

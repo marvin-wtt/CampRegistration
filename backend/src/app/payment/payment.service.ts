@@ -22,6 +22,7 @@ import {
   translate,
 } from '@camp-registration/common/utils';
 import { BaseService } from '#core/base/BaseService';
+import logger from '#core/logger';
 import config from '#config/index';
 import ApiError from '#utils/ApiError';
 import { describeError } from '#utils/errors';
@@ -36,6 +37,7 @@ import {
 } from '#app/paymentAccount/payment-account.service';
 import {
   outstandingAmount,
+  overpaidAmount,
   refundableAmount,
   registrationPayment,
 } from './payment.balance.js';
@@ -312,7 +314,67 @@ export class PaymentService extends BaseService {
       return { checkoutUrl: reusable.checkoutUrl, payment: reusable };
     }
 
+    // The new checkout replaces any other: both paid would be too much.
+    await this.closeStaleCheckouts(event, registration, 0);
+
     return this.createCheckout(event, registration, resolved, amount);
+  }
+
+  /**
+   * Cancels a registration's open checkouts that would now pay more than it
+   * owes (more than `limit`, by default what is outstanding). Best effort: a
+   * checkout the provider refuses to cancel can still be paid, and then shows
+   * as an overpayment.
+   */
+  async closeStaleCheckouts(
+    event: Pick<Event, 'organizationId' | 'currency'>,
+    registration: Pick<Registration, 'id' | 'amountDue'>,
+    limit?: number,
+  ): Promise<void> {
+    const max =
+      limit ??
+      outstandingAmount(await this.getBalance(registration, event.currency));
+    const stale = await this.prisma.payment.findMany({
+      where: {
+        registrationId: registration.id,
+        status: 'OPEN',
+        providerPaymentId: { not: null },
+        amount: { gt: max },
+      },
+    });
+    if (stale.length === 0) {
+      return;
+    }
+
+    const resolved = await this.accountService.resolveForOrganization(
+      event.organizationId,
+    );
+    for (const payment of stale) {
+      if (!payment.providerPaymentId) {
+        continue;
+      }
+      if (resolved?.account.provider !== payment.source) {
+        logger.warn(
+          `Cannot cancel ${payment.source} checkout ${payment.id}: the organization's account changed`,
+        );
+        continue;
+      }
+      try {
+        await resolved.provider.cancelCheckout(
+          resolved.credentials,
+          payment.providerPaymentId,
+        );
+        // Never handed out again; the status follows with the next re-fetch.
+        await this.prisma.payment.updateMany({
+          where: { id: payment.id, status: 'OPEN' },
+          data: { checkoutUrl: null },
+        });
+      } catch (error) {
+        logger.warn(
+          `Could not cancel checkout ${payment.id}: ${describeError(error)}`,
+        );
+      }
+    }
   }
 
   private async createCheckout(
@@ -384,10 +446,11 @@ export class PaymentService extends BaseService {
    * without it, `amountDue` is the quote again.
    */
   async setAmountDue(
+    event: Pick<Event, 'organizationId' | 'currency'>,
     registration: Pick<Registration, 'id'>,
     data: { amountDue: number | null; adjusted: boolean; note: string | null },
   ): Promise<Registration> {
-    return this.transaction(async (tx) => {
+    const updated = await this.transaction(async (tx) => {
       const updated = await tx.registration.update({
         where: { id: registration.id },
         data: {
@@ -405,11 +468,16 @@ export class PaymentService extends BaseService {
       );
       return updated;
     });
+    await this.closeStaleCheckouts(event, updated);
+
+    return updated;
   }
 
   /**
    * Lowers what a registration owes by a refund, as a manager's adjustment
-   * with the refund's reason. Returns the previous state, to undo it.
+   * with the refund's reason. Returns the previous state, to undo it. Called
+   * after the refund is booked; the part of it that only gives back an
+   * overpayment owed nothing and leaves the amount due alone.
    */
   private async reduceAmountDue(
     tx: Prisma.TransactionClient,
@@ -424,7 +492,29 @@ export class PaymentService extends BaseService {
       return null;
     }
 
-    const amountDue = Math.max(0, registration.amountDue - amount);
+    const payments = await tx.payment.findMany({
+      where: { registrationId },
+      select: {
+        status: true,
+        amount: true,
+        refunds: { select: { status: true, amount: true } },
+      },
+    });
+    const { amountPaid } = registrationPayment(
+      registration.amountDue,
+      '',
+      payments,
+    );
+    const overpaidBefore = overpaidAmount({
+      amountDue: registration.amountDue,
+      amountPaid: amountPaid + amount,
+    });
+    const reduction = Math.max(0, amount - overpaidBefore);
+    if (reduction === 0) {
+      return null;
+    }
+
+    const amountDue = Math.max(0, registration.amountDue - reduction);
     await tx.registration.update({
       where: { id: registrationId },
       data: {
@@ -542,7 +632,7 @@ export class PaymentService extends BaseService {
     },
     userId: string,
   ): Promise<PaymentWithDetails> {
-    return this.transaction(async (tx) => {
+    const payment = await this.transaction(async (tx) => {
       const payment = await tx.payment.create({
         data: {
           registrationId: registration.id,
@@ -566,6 +656,9 @@ export class PaymentService extends BaseService {
       );
       return payment;
     });
+    await this.closeStaleCheckouts(event, registration);
+
+    return payment;
   }
 
   /** Only manual entries without refunds can be removed — a typo fix, not an undo. */

@@ -177,7 +177,7 @@ export class PaymentController extends BaseController {
         ? registration.quotedAmount
         : toMinorUnits(body.amount, event.currency);
 
-    await this.paymentService.setAmountDue(registration, {
+    await this.paymentService.setAmountDue(event, registration, {
       amountDue,
       adjusted: body.amount !== null,
       note: body.note ?? null,

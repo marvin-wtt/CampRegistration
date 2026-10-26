@@ -22,6 +22,7 @@ function registration(
       quotedAmount: null,
       adjustment: null,
       outstanding: 0,
+      overpaid: 0,
       requestedAt: null,
       remindedAt: null,
     },

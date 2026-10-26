@@ -250,6 +250,13 @@ export class StripeProvider implements PaymentProvider {
     };
   }
 
+  async cancelCheckout(
+    credentials: ProviderCredentials,
+    providerPaymentId: string,
+  ): Promise<void> {
+    await this.client(credentials).checkout.sessions.expire(providerPaymentId);
+  }
+
   async parseWebhook(
     req: RawBodyRequest,
     credentials: ProviderCredentials,

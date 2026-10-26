@@ -28,6 +28,7 @@ const { t } = useI18n();
 // MD3 color role per status, rendered with the role's container tokens.
 const ROLES: Record<RegistrationPaymentStatus, string> = {
   PAID: 'positive',
+  OVERPAID: 'tertiary',
   PARTIAL: 'warning',
   UNPAID: 'error',
   REFUNDED: 'info',
@@ -36,6 +37,7 @@ const ROLES: Record<RegistrationPaymentStatus, string> = {
 
 const ICONS: Record<RegistrationPaymentStatus, string> = {
   PAID: 'check_circle',
+  OVERPAID: 'add_circle',
   PARTIAL: 'timelapse',
   UNPAID: 'schedule',
   REFUNDED: 'undo',
@@ -84,6 +86,7 @@ const style = computed(() => {
 <i18n lang="yaml" locale="en">
 status:
   PAID: 'Paid'
+  OVERPAID: 'Overpaid'
   PARTIAL: 'Partially paid'
   UNPAID: 'Unpaid'
   REFUNDED: 'Refunded'
@@ -93,6 +96,7 @@ status:
 <i18n lang="yaml" locale="de">
 status:
   PAID: 'Bezahlt'
+  OVERPAID: 'Überzahlt'
   PARTIAL: 'Teilweise bezahlt'
   UNPAID: 'Offen'
   REFUNDED: 'Erstattet'
@@ -102,6 +106,7 @@ status:
 <i18n lang="yaml" locale="fr">
 status:
   PAID: 'Payé'
+  OVERPAID: 'Trop-perçu'
   PARTIAL: 'Partiellement payé'
   UNPAID: 'Impayé'
   REFUNDED: 'Remboursé'
@@ -111,6 +116,7 @@ status:
 <i18n lang="yaml" locale="pl">
 status:
   PAID: 'Opłacone'
+  OVERPAID: 'Nadpłacone'
   PARTIAL: 'Częściowo opłacone'
   UNPAID: 'Nieopłacone'
   REFUNDED: 'Zwrócone'
@@ -120,6 +126,7 @@ status:
 <i18n lang="yaml" locale="cs">
 status:
   PAID: 'Zaplaceno'
+  OVERPAID: 'Přeplaceno'
   PARTIAL: 'Částečně zaplaceno'
   UNPAID: 'Nezaplaceno'
   REFUNDED: 'Vráceno'

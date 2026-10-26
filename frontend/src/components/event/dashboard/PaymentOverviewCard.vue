@@ -161,7 +161,7 @@ const summary = computed(() => {
       continue;
     }
     withFee++;
-    if (payment.status === 'PAID') {
+    if (payment.status === 'PAID' || payment.status === 'OVERPAID') {
       counts.paid++;
     } else if (payment.status === 'PARTIAL') {
       counts.partial++;

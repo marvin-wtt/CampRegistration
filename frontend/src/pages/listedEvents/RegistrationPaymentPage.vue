@@ -7,7 +7,7 @@
     <q-card
       v-if="summary"
       flat
-      class="payment-card rounded-xl elevation-1 col-12"
+      class="payment-card bg-surface-container-low rounded-xl col-12"
       data-test="registration-payment"
       :data-test-status="summary.status"
     >
@@ -38,12 +38,11 @@
       </q-card-section>
 
       <q-card-section class="q-pt-none">
-        <q-list
-          bordered
-          separator
-          class="rounded-lg"
-        >
-          <q-item v-if="summary.amountDue !== null">
+        <q-list class="segmented-list">
+          <q-item
+            v-if="summary.amountDue !== null"
+            class="segment amount-row"
+          >
             <q-item-section>{{ t('amount.due') }}</q-item-section>
             <q-item-section
               side
@@ -53,7 +52,7 @@
               {{ money(summary.amountDue) }}
             </q-item-section>
           </q-item>
-          <q-item>
+          <q-item class="segment amount-row">
             <q-item-section>{{ t('amount.paid') }}</q-item-section>
             <q-item-section
               side
@@ -63,7 +62,10 @@
               {{ money(summary.amountPaid) }}
             </q-item-section>
           </q-item>
-          <q-item v-if="outstanding > 0">
+          <q-item
+            v-if="outstanding > 0"
+            class="segment amount-row"
+          >
             <q-item-section>{{ t('amount.outstanding') }}</q-item-section>
             <q-item-section
               side
@@ -186,8 +188,8 @@ interface State {
 const state = computed<State>(() => {
   const status = summary.value?.status;
 
-  if (status === 'PAID' || status === 'NOT_REQUIRED') {
-    return { key: 'paid', color: 'positive-container', icon: 'check_circle' };
+  if (status === 'PAID' || status === 'OVERPAID' || status === 'NOT_REQUIRED') {
+    return { key: 'paid', color: 'positive-container', icon: 'check' };
   }
   if (status === 'REFUNDED') {
     return { key: 'refunded', color: 'info-container', icon: 'undo' };
@@ -199,10 +201,14 @@ const state = computed<State>(() => {
     return { key: 'checking', color: 'primary-container', icon: 'schedule' };
   }
   if (lastAttemptFailed.value) {
-    return { key: 'failed', color: 'error-container', icon: 'error' };
+    return { key: 'failed', color: 'error-container', icon: 'close' };
   }
   if (!summary.value?.payable) {
-    return { key: 'unavailable', color: 'warning-container', icon: 'info' };
+    return {
+      key: 'unavailable',
+      color: 'warning-container',
+      icon: 'hourglass_empty',
+    };
   }
   if (status === 'PARTIAL') {
     return { key: 'partial', color: 'warning-container', icon: 'payments' };
@@ -267,8 +273,19 @@ onBeforeUnmount(() => {
 </script>
 
 <style lang="scss" scoped>
+@use '../../css/segmented-list';
+
 .payment-card {
   max-width: 480px;
+}
+
+.amount-row {
+  min-height: 52px;
+  font-variant-numeric: tabular-nums;
+}
+
+.amount-row :deep(.q-item__section--side) {
+  color: var(--md3-on-surface);
 }
 
 .payment-card__text {
