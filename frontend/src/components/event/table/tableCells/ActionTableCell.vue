@@ -7,6 +7,7 @@
     flat
     icon="more_vert"
     round
+    data-test="registration-row-actions"
   >
     <q-menu auto-close>
       <registration-action-list
