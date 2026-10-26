@@ -6,6 +6,7 @@ import type {
 import {
   owesFee,
   paymentOpen,
+  paymentOverpaid,
 } from '@/components/event/table/localTableTemplates';
 
 function registration(
@@ -47,5 +48,12 @@ describe('payment templates', () => {
     expect(owesFee(registration('ACCEPTED', 'NOT_REQUIRED'))).toBe(false);
     expect(owesFee(registration('PENDING', 'UNPAID'))).toBe(false);
     expect(owesFee(registration('WAITLISTED', 'UNPAID'))).toBe(false);
+  });
+
+  it('lists overpaid registrations whatever their status, to refund', () => {
+    expect(paymentOverpaid(registration('ACCEPTED', 'OVERPAID'))).toBe(true);
+    expect(paymentOverpaid(registration('WAITLISTED', 'OVERPAID'))).toBe(true);
+    expect(paymentOverpaid(registration('ACCEPTED', 'PAID'))).toBe(false);
+    expect(paymentOpen(registration('ACCEPTED', 'OVERPAID'))).toBe(false);
   });
 });

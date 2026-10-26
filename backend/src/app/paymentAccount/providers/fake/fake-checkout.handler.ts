@@ -38,7 +38,7 @@ export const fakeCheckoutPage: RequestHandler = (req, res) => {
   <h1>Fake checkout</h1>
   <p>${escapeHtml(payment.description)}</p>
   <p data-test="fake-checkout-amount">${escapeHtml(formatMoney(payment.amount, payment.currency, 'en-US'))}</p>
-  <p>Status: ${payment.status}</p>
+  <p data-test="fake-checkout-status">${payment.status}</p>
   <p>${link('paid', 'Pay')} · ${link('failed', 'Fail')} · ${link('cancel', 'Cancel')}</p>
 </body>
 </html>`);

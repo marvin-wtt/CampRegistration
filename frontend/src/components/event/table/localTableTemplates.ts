@@ -24,6 +24,7 @@ export const LOCAL_TEMPLATE_MISSING = 'attention-missing';
 export const LOCAL_TEMPLATE_AGE = 'attention-age';
 export const LOCAL_TEMPLATE_PAYMENTS = 'payments';
 export const LOCAL_TEMPLATE_PAYMENTS_OPEN = 'payments-open';
+export const LOCAL_TEMPLATE_PAYMENTS_OVERPAID = 'payments-overpaid';
 
 /** Has a fee at all. */
 export function hasFee(registration: Registration): boolean {
@@ -48,6 +49,11 @@ export function paymentOpen(registration: Registration): boolean {
     registration.status === 'ACCEPTED' &&
     (status === 'UNPAID' || status === 'PARTIAL')
   );
+}
+
+/** Paid more than is due, whatever the registration's status: to refund. */
+export function paymentOverpaid(registration: Registration): boolean {
+  return registration.payment.status === 'OVERPAID';
 }
 
 type RegistrationHelper = ReturnType<typeof useRegistrationHelper>;
@@ -162,21 +168,25 @@ const moneyColumn = (
   renderAs: 'money',
 });
 
+const AMOUNT_DUE_COLUMN = moneyColumn('amount_due', 'payment.amountDue', {
+  en: 'Due',
+  de: 'Fällig',
+  fr: 'Dû',
+  cs: 'Dlužno',
+  pl: 'Należne',
+});
+
+const AMOUNT_PAID_COLUMN = moneyColumn('amount_paid', 'payment.amountPaid', {
+  en: 'Paid',
+  de: 'Bezahlt',
+  fr: 'Payé',
+  cs: 'Zaplaceno',
+  pl: 'Zapłacono',
+});
+
 const AMOUNT_COLUMNS: TableColumnTemplate[] = [
-  moneyColumn('amount_due', 'payment.amountDue', {
-    en: 'Due',
-    de: 'Fällig',
-    fr: 'Dû',
-    cs: 'Dlužno',
-    pl: 'Należne',
-  }),
-  moneyColumn('amount_paid', 'payment.amountPaid', {
-    en: 'Paid',
-    de: 'Bezahlt',
-    fr: 'Payé',
-    cs: 'Zaplaceno',
-    pl: 'Zapłacono',
-  }),
+  AMOUNT_DUE_COLUMN,
+  AMOUNT_PAID_COLUMN,
   moneyColumn('outstanding', 'payment.outstanding', {
     en: 'Open',
     de: 'Offen',
@@ -326,6 +336,40 @@ export function buildLocalTableTemplates(
         PAYMENT_STATUS_COLUMN,
         ...AMOUNT_COLUMNS,
         REQUESTED_COLUMN,
+        EMAIL_COLUMN,
+      ],
+    },
+    {
+      id: LOCAL_TEMPLATE_PAYMENTS_OVERPAID,
+      title: {
+        en: 'Overpaid',
+        de: 'Überzahlt',
+        fr: 'Trop-perçus',
+        cs: 'Přeplaceno',
+        pl: 'Nadpłacone',
+      },
+      hidden: true,
+      generated: true,
+      order: 905,
+      indexed: true,
+      actions: true,
+      sortBy: 'overpaid',
+      sortDirection: 'desc',
+      localFilter: paymentOverpaid,
+      columns: [
+        ...NAME_COLUMNS,
+        GROUP_COLUMN,
+        STATUS_COLUMN,
+        PAYMENT_STATUS_COLUMN,
+        AMOUNT_DUE_COLUMN,
+        AMOUNT_PAID_COLUMN,
+        moneyColumn('overpaid', 'payment.overpaid', {
+          en: 'Overpaid',
+          de: 'Überzahlt',
+          fr: 'Trop-perçu',
+          cs: 'Přeplaceno',
+          pl: 'Nadpłata',
+        }),
         EMAIL_COLUMN,
       ],
     },

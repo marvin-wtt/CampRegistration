@@ -74,6 +74,7 @@
               :phase
               :loading
               :rooms="features.rooms"
+              :payments="can('event.payments.view')"
               :style="card.style"
             />
             <tasks-card
