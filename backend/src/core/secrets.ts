@@ -23,8 +23,10 @@ let keyring: StorageKeyring | null | undefined;
 
 function getKeyring(): StorageKeyring | null {
   if (keyring === undefined) {
-    const spec = config.storage.encryptionKeys;
-    keyring = spec ? parseStorageKeyring(spec, KEY_NAMESPACE) : null;
+    const spec = config.secrets.encryptionKeys;
+    keyring = spec
+      ? parseStorageKeyring(spec, KEY_NAMESPACE, 'SECRETS_ENCRYPTION_KEYS')
+      : null;
   }
 
   return keyring;
@@ -33,7 +35,7 @@ function getKeyring(): StorageKeyring | null {
 export class SecretsUnavailableError extends Error {
   constructor() {
     super(
-      'Secret encryption is not configured: set STORAGE_ENCRYPTION_KEYS to store credentials.',
+      'Secret encryption is not configured: set SECRETS_ENCRYPTION_KEYS to store credentials.',
     );
   }
 }
@@ -45,8 +47,8 @@ export function secretsAvailable(): boolean {
 
 /**
  * Field-level encryption for small secrets (API keys, webhook secrets) at
- * rest, with the same master keys and rotation as file storage
- * (`STORAGE_ENCRYPTION_KEYS`) but a separate key namespace. `purpose` is
+ * rest, with master keys of their own (`SECRETS_ENCRYPTION_KEYS`) in the same
+ * `keyId:key` format and rotation as file storage. `purpose` is
  * bound into the ciphertext and checked on decrypt, so a secret stored for
  * one use can't be substituted for another.
  */

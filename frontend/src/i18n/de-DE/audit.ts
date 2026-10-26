@@ -36,6 +36,9 @@ export default {
     registration: {
       label: 'Anmeldung',
       fields: {
+        amount: 'Betrag',
+        amountDue: 'Fälliger Betrag',
+        paymentStatus: 'Zahlungsstatus',
         data: 'Formularantwort',
         customData: 'Benutzerdefiniertes Feld',
         customFiles: 'Benutzerdefinierte Datei',
@@ -44,11 +47,29 @@ export default {
         group: 'Gruppe',
       },
       values: {
+        paymentStatus: {
+          OPEN: 'Bezahlvorgang offen',
+          PENDING: 'In Bearbeitung',
+          PAID: 'Bezahlt',
+          FAILED: 'Fehlgeschlagen',
+          CANCELED: 'Abgebrochen',
+          EXPIRED: 'Abgelaufen',
+        },
         status: {
           ACCEPTED: 'Akzeptiert',
           PENDING: 'Ausstehend',
           WAITLISTED: 'Warteliste',
         },
+      },
+      actions: {
+        payment_recorded: 'Zahlung erfasst',
+        payment_deleted: 'Zahlung gelöscht',
+        payment_refunded: 'Erstattung veranlasst',
+        payment_requested: 'Zahlung angefordert',
+        payment_status_changed: 'Zahlungsstatus geändert',
+        amount_due_adjusted: 'Fälliger Betrag von Hand festgelegt',
+        amount_due_reset:
+          'Fälliger Betrag auf den angezeigten Betrag zurückgesetzt',
       },
       reasons: {
         canceled: 'Storniert',

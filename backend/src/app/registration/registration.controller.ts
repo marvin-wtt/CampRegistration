@@ -1,3 +1,4 @@
+import { assertPriceUnchanged } from './registration.price-check.js';
 import httpStatus from 'http-status';
 import { RegistrationService } from './registration.service.js';
 import {
@@ -40,31 +41,36 @@ export class RegistrationController extends BaseController {
   }
 
   /**
-   * Emails the payment link once a registration that owes money is accepted,
-   * for events that charge after acceptance — or charge at registration but
-   * placed this person on the waitlist, where nothing was charged up front.
+   * Emails the payment link once a registration that owes money is accepted.
+   * Before a date-based timing's request date, the daily job asks later.
+   * Returns whether it asked.
    */
   private async requestPaymentOnAcceptance(
     event: Event,
     registration: Registration,
-  ): Promise<void> {
+  ): Promise<boolean> {
     if (!registration.amountDue || registration.paymentRequestedAt) {
-      return;
+      return false;
     }
 
     const settings = await this.paymentService.getSettings(event.id);
-    if (!settings.enabled) {
-      return;
+    if (
+      !settings.enabled ||
+      !this.paymentService.requestsOpen(settings, event)
+    ) {
+      return false;
     }
 
     await PaymentRequestedMessage.enqueueFor(event, registration);
-    await this.paymentService.markRequested(registration.id);
+    await this.paymentService.markRequested(registration);
+    return true;
   }
 
   /**
-   * For events that charge at registration: open a checkout right away so
-   * the submitter can be redirected. Never fails the registration itself —
-   * the participant can still pay later through the payment page.
+   * A registration accepted on submit (automatic confirmation) is asked to
+   * pay at once and gets a checkout to be redirected to. Never fails the
+   * registration itself — the participant can still pay later through the
+   * payment page, whose link the request mail carries.
    */
   private async paymentMetaForNewRegistration(
     event: EventWithRelations,
@@ -81,24 +87,19 @@ export class RegistrationController extends BaseController {
 
     const pageUrl = paymentPageUrl(event.id, registration.id);
 
-    if (settings.timing === 'ACCEPTANCE') {
-      if (registration.status === 'ACCEPTED') {
-        await this.requestPaymentOnAcceptance(event, registration);
-      }
+    if (
+      registration.status !== 'ACCEPTED' ||
+      !(await this.requestPaymentOnAcceptance(event, registration))
+    ) {
       return { checkoutUrl: null, pageUrl };
     }
-
-    if (registration.status === 'WAITLISTED') {
-      return { checkoutUrl: null, pageUrl };
-    }
-
-    await this.paymentService.markRequested(registration.id);
 
     try {
-      const { checkoutUrl } = await this.paymentService.startCheckout(
-        event,
-        registration,
-      );
+      const { checkoutUrl } = await this.paymentService.startCheckout(event, {
+        ...registration,
+        // Just asked: the checkout must not record the request again.
+        paymentRequestedAt: new Date(),
+      });
       return { checkoutUrl, pageUrl };
     } catch (error) {
       logger.warn(
@@ -127,8 +128,15 @@ export class RegistrationController extends BaseController {
   async store(req: Request, res: Response) {
     const event = req.modelOrFail('event');
     const {
-      body: { data, locale, group },
+      body: { data, locale, group, priceCheck },
     } = await req.validate(validator.store(event, req.preferredLocale()));
+
+    // The check only refuses; the registration below is charged what the
+    // server calculates, and `priceCheck` goes no further than this line.
+    assertPriceUnchanged(
+      this.registrationService.quoteAmount(event, { data, locale, group }),
+      priceCheck,
+    );
 
     const registration = await this.registrationService.createRegistration(
       event,
@@ -241,12 +249,16 @@ export class RegistrationController extends BaseController {
 
   async destroy(req: Request, res: Response) {
     const {
-      query: { suppressMessage, reason },
+      query: { suppressMessage, reason, paymentSettlement },
     } = await req.validate(validator.destroy);
     const event = req.modelOrFail('event');
     const registration = req.modelOrFail('registration');
 
-    await this.registrationService.deleteRegistration(registration, reason);
+    await this.registrationService.deleteRegistration(
+      registration,
+      reason,
+      paymentSettlement,
+    );
 
     if (!suppressMessage) {
       await RegistrationDeletedMessage.enqueueFor(event, registration);

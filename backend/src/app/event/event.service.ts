@@ -65,6 +65,21 @@ interface EventQueryArgs {
 
 @injectable()
 export class EventService extends BaseService {
+  /**
+   * Whether the currency is fixed: stored amounts are minor units of it, so
+   * changing it after anything was quoted or paid would change their value.
+   */
+  async isCurrencyLocked(eventId: string): Promise<boolean> {
+    const [payments, quoted] = await Promise.all([
+      this.prisma.payment.count({ where: { eventId } }),
+      this.prisma.registration.count({
+        where: { eventId, quotedAmount: { gt: 0 } },
+      }),
+    ]);
+
+    return payments > 0 || quoted > 0;
+  }
+
   constructor(
     @inject(FileService) private readonly fileService: FileService,
     @inject(AuditService) private readonly audit: AuditService,

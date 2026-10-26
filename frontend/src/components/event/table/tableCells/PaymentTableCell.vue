@@ -1,7 +1,8 @@
 <template>
-  <div
+  <!-- One line: the status, then what is still open (or what was paid). -->
+  <span
     v-if="payment && payment.status !== 'NOT_REQUIRED'"
-    class="column items-center"
+    class="payment-cell"
   >
     <payment-status-chip
       :status="payment.status"
@@ -9,11 +10,15 @@
     />
     <span
       v-if="!cellProps.dense && payment.amountDue !== null"
-      class="text-caption payment-cell__amount"
+      class="payment-cell__amount"
     >
-      {{ money(payment.amountPaid) }} / {{ money(payment.amountDue) }}
+      {{
+        payment.outstanding > 0
+          ? t('open', { amount: money(payment.outstanding) })
+          : money(payment.amountPaid)
+      }}
     </span>
-  </div>
+  </span>
 </template>
 
 <script lang="ts" setup>
@@ -25,7 +30,7 @@ import PaymentStatusChip from '@/components/event/payment/PaymentStatusChip.vue'
 
 const { props: cellProps } = defineProps<TableCellProps>();
 
-const { locale } = useI18n();
+const { t, locale } = useI18n();
 
 // Always the row's own ledger summary, whatever path the column names.
 const payment = computed(() => cellProps.row.payment);
@@ -36,7 +41,35 @@ function money(minor: number): string {
 </script>
 
 <style scoped>
+.payment-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
 .payment-cell__amount {
   color: var(--md3-on-surface-variant);
+  font-variant-numeric: tabular-nums;
 }
 </style>
+
+<i18n lang="yaml" locale="en">
+open: '{amount} open'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+open: '{amount} offen'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+open: '{amount} à payer'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+open: 'Do zapłaty: {amount}'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+open: 'Nezaplaceno: {amount}'
+</i18n>

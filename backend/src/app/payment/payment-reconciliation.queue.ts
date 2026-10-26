@@ -1,10 +1,10 @@
 import { inject, injectable } from 'inversify';
 import { QueueManager } from '#core/queue/QueueManager';
 import type { Queue } from '#core/queue/Queue';
-import { PaymentService } from './payment.service.js';
+import { PaymentReconciliationService } from './payment-reconciliation.service.js';
 import { PaymentNotifier } from './payment.notifier.js';
 
-interface PaymentSyncJob {
+interface PaymentReconciliationJob {
   source: string;
   providerPaymentId: string;
 }
@@ -15,15 +15,16 @@ interface PaymentSyncJob {
  * API is briefly unavailable.
  */
 @injectable()
-export class PaymentSyncQueue {
-  private readonly queue: Queue<PaymentSyncJob>;
+export class PaymentReconciliationQueue {
+  private readonly queue: Queue<PaymentReconciliationJob>;
 
   constructor(
     @inject(QueueManager) queueManager: QueueManager,
-    @inject(PaymentService) private readonly paymentService: PaymentService,
+    @inject(PaymentReconciliationService)
+    private readonly reconciliation: PaymentReconciliationService,
     @inject(PaymentNotifier) private readonly notifier: PaymentNotifier,
   ) {
-    this.queue = queueManager.create<PaymentSyncJob>('payment', {
+    this.queue = queueManager.create<PaymentReconciliationJob>('payment', {
       maxAttempts: 5,
       retryDelay: 1000 * 30,
       retryDelayType: 'exponential',
@@ -32,7 +33,7 @@ export class PaymentSyncQueue {
 
   startWorker(): void {
     this.queue.process(async ({ payload }) => {
-      const outcome = await this.paymentService.syncProviderPayment(
+      const outcome = await this.reconciliation.reconcileProviderPayment(
         payload.source,
         payload.providerPaymentId,
       );
@@ -42,6 +43,6 @@ export class PaymentSyncQueue {
   }
 
   async enqueue(source: string, providerPaymentId: string): Promise<void> {
-    await this.queue.add('sync', { source, providerPaymentId });
+    await this.queue.add('reconcile', { source, providerPaymentId });
   }
 }

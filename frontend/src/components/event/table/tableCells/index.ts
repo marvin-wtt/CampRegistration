@@ -5,6 +5,7 @@ import { formatAddress } from '@/utils/formatAddress';
 import {
   formatFormSelectCsvValue,
   formatIsoDateCsvValue,
+  formatMoneyCsvValue,
   formatPaymentCsvValue,
   isTranslatableCsvValue,
   stringifyCsvValue,
@@ -18,6 +19,13 @@ import {
 // zero bundle-size benefit.
 const PaymentTableCell = defineAsyncComponent(
   () => import('@/components/event/table/tableCells/PaymentTableCell.vue'),
+);
+const PaymentStatusTableCell = defineAsyncComponent(
+  () =>
+    import('@/components/event/table/tableCells/PaymentStatusTableCell.vue'),
+);
+const MoneyTableCell = defineAsyncComponent(
+  () => import('@/components/event/table/tableCells/MoneyTableCell.vue'),
 );
 const ActionTableCell = defineAsyncComponent(
   () => import('@/components/event/table/tableCells/ActionTableCell.vue'),
@@ -144,6 +152,10 @@ const components = () => {
   TableComponentRegistry.register('phone_number', PhoneNumberTableCell);
   TableComponentRegistry.register('payment', PaymentTableCell, {
     toCsv: formatPaymentCsvValue,
+  });
+  TableComponentRegistry.register('payment_status', PaymentStatusTableCell);
+  TableComponentRegistry.register('money', MoneyTableCell, {
+    toCsv: formatMoneyCsvValue,
   });
   TableComponentRegistry.register('status', StatusTableCell);
   TableComponentRegistry.register('text', TextTableCell, {

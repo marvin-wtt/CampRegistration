@@ -685,6 +685,8 @@ field:
 
 cellType:
   payment: 'Payment'
+  payment_status: 'Payment status'
+  money: 'Amount'
   status: 'Status'
   address: 'Address'
   age: 'Age'
@@ -800,6 +802,8 @@ field:
 
 cellType:
   payment: 'Zahlung'
+  payment_status: 'Zahlungsstatus'
+  money: 'Betrag'
   status: 'Status'
   address: 'Adresse'
   age: 'Alter'
@@ -915,6 +919,8 @@ field:
 
 cellType:
   payment: 'Paiement'
+  payment_status: 'Statut du paiement'
+  money: 'Montant'
   status: 'Statut'
   address: 'Adresse'
   age: 'Âge'
@@ -1030,6 +1036,8 @@ field:
 
 cellType:
   payment: 'Płatność'
+  payment_status: 'Status płatności'
+  money: 'Kwota'
   status: 'Status'
   address: 'Adres'
   age: 'Wiek'
@@ -1145,6 +1153,8 @@ field:
 
 cellType:
   payment: 'Platba'
+  payment_status: 'Stav platby'
+  money: 'Částka'
   status: 'Stav'
   address: 'Adresa'
   age: 'Věk'

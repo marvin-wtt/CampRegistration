@@ -4,7 +4,7 @@ import {
   SurveyCreatorModel,
   SurveyLogic,
 } from 'survey-creator-core';
-import type { SurveyModel } from 'survey-core';
+import { QuestionMatrixDynamicModel, type SurveyModel } from 'survey-core';
 import '@camp-registration/common/form';
 import { hideIrrelevantProperties } from './hiddenProperties';
 import {
@@ -101,6 +101,53 @@ describe('editor modes', () => {
       expect(properties()).toContain('groupCountryMatch');
     }
   });
+
+  describe.each(['simple', 'standard', 'expert'] as const)(
+    'prices in the %s mode',
+    (mode) => {
+      function propertyGridOf(name: string): SurveyModel | undefined {
+        const creator = createCreator();
+        creator.JSON = {
+          elements: [
+            { type: 'boolean', name: 'bus' },
+            { type: 'radiogroup', name: 'room', choices: ['single'] },
+            { type: 'matrix', name: 'grid', rows: ['a'], columns: ['b'] },
+          ],
+        };
+        let grid: SurveyModel | undefined;
+        creator.onSurveyInstanceCreated.add((_, options) => {
+          if (options.area === 'property-grid') {
+            grid = options.survey;
+          }
+        });
+        applyEditorMode(creator, mode, context);
+        creator.selectElement(creator.survey.getQuestionByName(name));
+
+        return grid;
+      }
+
+      function columnsOf(name: string, table: string): string[] {
+        const question = propertyGridOf(name)?.getQuestionByName(table);
+        return question instanceof QuestionMatrixDynamicModel
+          ? question.visibleColumns.map((column) => column.name)
+          : [];
+      }
+
+      it('offers the price of a boolean', () => {
+        expect(
+          propertyGridOf('bus')?.getQuestionByName('price')?.isVisible,
+        ).toBe(true);
+      });
+
+      it('offers a price column for choices', () => {
+        expect(columnsOf('room', 'choices')).toContain('price');
+      });
+
+      it('offers no price for matrix rows', () => {
+        expect(columnsOf('grid', 'rows')).not.toContain('price');
+      });
+    },
+  );
 
   it('rebuilds the property grid of the selected element', () => {
     const creator = createCreator();

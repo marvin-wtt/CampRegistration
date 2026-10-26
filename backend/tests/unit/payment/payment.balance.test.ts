@@ -18,6 +18,7 @@ describe('registrationPayment', () => {
       currency: 'EUR',
       amountDue: null,
       amountPaid: 0,
+      outstanding: 0,
     });
   });
 
@@ -88,8 +89,6 @@ describe('outstandingAmount', () => {
   it('never goes negative', () => {
     expect(
       outstandingAmount({
-        status: 'PAID',
-        currency: 'EUR',
         amountDue: 1000,
         amountPaid: 1500,
       }),

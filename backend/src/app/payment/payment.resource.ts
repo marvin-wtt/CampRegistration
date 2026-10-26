@@ -13,6 +13,9 @@ export class PaymentResource extends JsonResource<
     return {
       id: payment.id,
       registrationId: payment.registrationId,
+      registrationRef: payment.registrationRef,
+      payerName: payment.payerName,
+      settlement: payment.settlement as PaymentData['settlement'],
       source: payment.source as PaymentData['source'],
       status: payment.status,
       amount: payment.amount,

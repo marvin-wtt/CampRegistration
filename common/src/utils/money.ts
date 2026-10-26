@@ -4,6 +4,25 @@
  * refund limits are exact.
  */
 
+/**
+ * Currencies an event can charge in: all with two decimal places, which the
+ * amount inputs (steps of 0.01) and the price validation assume. EUR first.
+ */
+export const SUPPORTED_CURRENCIES = [
+  'EUR',
+  'CHF',
+  'CZK',
+  'DKK',
+  'GBP',
+  'NOK',
+  'PLN',
+  'RON',
+  'SEK',
+  'USD',
+] as const;
+
+export type SupportedCurrency = (typeof SUPPORTED_CURRENCIES)[number];
+
 /** Number of decimal places the currency uses (2 for EUR, 0 for JPY, 3 for KWD). */
 export function currencyFractionDigits(currency: string): number {
   return (

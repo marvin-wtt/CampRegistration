@@ -3,6 +3,7 @@ import { inject } from 'inversify';
 import { BaseController } from '#core/base/BaseController';
 import { PaymentService } from './payment.service.js';
 import { PaymentNotifier } from './payment.notifier.js';
+import { PaymentReconciliationService } from './payment-reconciliation.service.js';
 import validator from './payment.validation.js';
 
 /**
@@ -13,6 +14,8 @@ export class PaymentPublicController extends BaseController {
   constructor(
     @inject(PaymentService) private readonly paymentService: PaymentService,
     @inject(PaymentNotifier) private readonly notifier: PaymentNotifier,
+    @inject(PaymentReconciliationService)
+    private readonly reconciliation: PaymentReconciliationService,
   ) {
     super();
   }
@@ -26,7 +29,7 @@ export class PaymentPublicController extends BaseController {
     // page): reconcile now instead of waiting for the webhook, which may be
     // late — or, on a local dev server, never arrive.
     await this.notifier.notify(
-      await this.paymentService.syncLatestOpen(registration.id),
+      await this.reconciliation.reconcileLatestOpen(registration.id),
     );
 
     const summary = await this.paymentService.getSummary(event, registration);

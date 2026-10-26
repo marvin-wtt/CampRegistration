@@ -53,11 +53,22 @@ export class RegistrationResource extends JsonResource<
       // file slots (`field = 'custom:<slot>'`).
       customFiles: customFileSlots(this.data.files ?? []),
       locale: this.data.locale,
-      payment: registrationPayment(
-        this.data.amountDue,
-        this.data.event?.currency ?? 'EUR',
-        this.data.payments ?? [],
-      ),
+      payment: {
+        ...registrationPayment(
+          this.data.amountDue,
+          this.data.event?.currency ?? 'EUR',
+          this.data.payments ?? [],
+        ),
+        quotedAmount: this.data.quotedAmount,
+        requestedAt: this.data.paymentRequestedAt?.toISOString() ?? null,
+        remindedAt: this.data.paymentReminderSentAt?.toISOString() ?? null,
+        adjustment: this.data.amountDueAdjustedAt
+          ? {
+              note: this.data.amountDueNote,
+              adjustedAt: this.data.amountDueAdjustedAt.toISOString(),
+            }
+          : null,
+      },
       room: this.data.bed ? this.data.bed.room.name : null,
       // Use snake case because form keys should be snake case too
       updatedAt: this.data.updatedAt?.toISOString() ?? null,
