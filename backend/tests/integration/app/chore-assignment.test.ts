@@ -846,6 +846,36 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
       expect(body.data.members[0]).toHaveProperty('missed', true);
     });
 
+    it('should keep its own counts over the slot, and clear them with null', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const chore = await createChore(event);
+      const slot = await prisma.choreSlot.update({
+        where: { id: (await createSlot(chore.id)).id },
+        data: { headcount: 4, supervisorCount: 1 },
+      });
+      const assignment = await createAssignment(event, chore.id, {
+        choreSlot: { connect: { id: slot.id } },
+      });
+      const url = `/api/v1/events/${event.id}/chore-assignments/${assignment.id}`;
+
+      const { body } = await request()
+        .patch(url)
+        .send({ headcount: 2, supervisorCount: 0 })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+      expect(body.data).toMatchObject({ headcount: 2, supervisorCount: 0 });
+
+      const { body: cleared } = await request()
+        .patch(url)
+        .send({ headcount: null, supervisorCount: null })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+      expect(cleared.data).toMatchObject({
+        headcount: null,
+        supervisorCount: null,
+      });
+    });
+
     it('should leave membership untouched when members is omitted', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();
       const chore = await createChore(event);
@@ -950,6 +980,25 @@ describe('/api/v1/events/:eventId/chore-assignments', () => {
         (m: { registrationId: string }) => m.registrationId,
       ) as string[];
       expect(ids.sort()).toEqual([existing.id, other.id].sort());
+    });
+
+    it("tops up only to the duty's own headcount", async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const chore = await createChore(event, { defaultCount: 3 });
+      await Promise.all([1, 2, 3].map(() => createRegistration(event)));
+      const assignment = await createAssignment(event, chore.id, {
+        date: '2026-09-01',
+        headcount: 1,
+      });
+
+      const { body } = await request()
+        .post(
+          `/api/v1/events/${event.id}/chore-assignments/${assignment.id}/fill`,
+        )
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(body.data.members).toHaveLength(1);
     });
 
     it('should respond with `403` when user is VIEWER', async () => {

@@ -21,6 +21,8 @@ export class ChoreAssignmentResource extends JsonResource<
       date: toDateString(this.data.date),
       status: this.data.status,
       note: this.data.note,
+      headcount: this.data.headcount,
+      supervisorCount: this.data.supervisorCount,
       members: this.data.members.map((member) => ({
         registrationId: member.registrationId,
         role: member.role,

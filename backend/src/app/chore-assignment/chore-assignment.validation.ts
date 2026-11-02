@@ -18,6 +18,9 @@ const ROTATION_UNIT = z.enum(['PERSON', 'ROOM']);
 const ROLE = z.enum(['MEMBER', 'SUPERVISOR']);
 const STATUS = z.enum(['PLANNED', 'DONE', 'CANCELLED']);
 
+const HEADCOUNT = z.number().int().min(0).max(500);
+const SUPERVISOR_COUNT = z.number().int().min(0).max(100);
+
 const MEMBERS = z
   .array(
     z.object({
@@ -67,8 +70,8 @@ const autoFill = z.object({
     slotId: z.ulid().nullable().optional(),
     date: DateSchema,
     rotationUnit: ROTATION_UNIT,
-    headcount: z.number().int().min(0).max(500).optional(),
-    supervisorCount: z.number().int().min(0).max(100).optional(),
+    headcount: HEADCOUNT.optional(),
+    supervisorCount: SUPERVISOR_COUNT.optional(),
     members: MEMBERS,
     assignmentId: z.ulid().optional(),
   }) satisfies ZodType<ChoreAutoFillData>,
@@ -82,6 +85,8 @@ const store = z.object({
     rotationUnit: ROTATION_UNIT,
     date: DateSchema,
     note: z.string().trim().max(500).nullable().optional(),
+    headcount: HEADCOUNT.nullable().optional(),
+    supervisorCount: SUPERVISOR_COUNT.nullable().optional(),
     members: MEMBERS.optional(),
     autoFill: z.boolean().optional(),
   }) satisfies ZodType<ChoreAssignmentCreateData>,
@@ -162,6 +167,8 @@ const update = z.object({
       date: DateSchema,
       status: STATUS,
       note: z.string().trim().max(500).nullable(),
+      headcount: HEADCOUNT.nullable(),
+      supervisorCount: SUPERVISOR_COUNT.nullable(),
       members: MEMBERS,
     })
     .partial() satisfies ZodType<ChoreAssignmentUpdateData>,

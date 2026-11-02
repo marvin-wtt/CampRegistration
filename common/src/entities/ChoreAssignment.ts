@@ -20,6 +20,9 @@ export interface ChoreAssignment extends Identifiable {
   date: string;
   status: ChoreAssignmentStatus;
   note: string | null;
+  // This duty's own counts; null inherits the slot's, then the chore's.
+  headcount: number | null;
+  supervisorCount: number | null;
   members: ChoreAssignmentMember[];
 }
 
@@ -33,7 +36,9 @@ export type ChoreAssignmentCreateData = Pick<
   ChoreAssignment,
   'choreId' | 'date' | 'rotationUnit'
 > &
-  Partial<Pick<ChoreAssignment, 'slotId' | 'note'>> & {
+  Partial<
+    Pick<ChoreAssignment, 'slotId' | 'note' | 'headcount' | 'supervisorCount'>
+  > & {
     members?: ChoreAssignmentMemberData[];
     // Fill the remaining members and supervisors with the fairest candidates.
     autoFill?: boolean;
@@ -42,7 +47,14 @@ export type ChoreAssignmentCreateData = Pick<
 export type ChoreAssignmentUpdateData = Partial<
   Pick<
     ChoreAssignment,
-    'choreId' | 'date' | 'slotId' | 'rotationUnit' | 'status' | 'note'
+    | 'choreId'
+    | 'date'
+    | 'slotId'
+    | 'rotationUnit'
+    | 'status'
+    | 'note'
+    | 'headcount'
+    | 'supervisorCount'
   > & { members: ChoreAssignmentMemberData[] }
 >;
 
