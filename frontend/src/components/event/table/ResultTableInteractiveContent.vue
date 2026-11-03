@@ -281,9 +281,6 @@
 
         <template #body="bodyProps">
           <q-tr
-            v-touch-hold="
-              (details: TouchHoldDetails) => onRowHold(details, bodyProps.row)
-            "
             :props="bodyProps"
             class="participant-row"
             :class="{ 'cursor-pointer': quasar.screen.xs }"
@@ -308,8 +305,7 @@
         </template>
       </q-table>
 
-      <!-- Shared row context menu (long-press on touch, right-click on desktop).
-           Anchored to a zero-size point at the cursor so that a tap anywhere
+      <!-- Shared row context menu (right-click on desktop). Anchored to a zero-size point at the cursor so that a tap anywhere
            outside the menu (but still inside the table) dismisses it. -->
       <div
         ref="menuAnchorRef"
@@ -406,13 +402,7 @@
 </template>
 
 <script lang="ts" setup>
-import {
-  type QInput,
-  type QMenu,
-  type QTableColumn,
-  type TouchHoldValue,
-  useQuasar,
-} from 'quasar';
+import { type QInput, type QMenu, type QTableColumn, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import type {
@@ -623,8 +613,6 @@ function editTemplates() {
 
 // --- Row interactions -------------------------------------------------------
 
-export type TouchHoldDetails = Parameters<NonNullable<TouchHoldValue>>[0];
-
 // Quasar augments body-slot columns with `value` at runtime; the static column
 // type does not expose it, so keep these structural shapes loose.
 interface BodyScope {
@@ -655,16 +643,6 @@ const menuAnchorRef = ref<HTMLElement | null>(null);
 const menuAnchorStyle = ref<Record<string, string>>({});
 const menuTarget = ref<true | HTMLElement>(true);
 
-function eventPoint(evt: Event): { x: number; y: number } {
-  const touch =
-    (evt as TouchEvent).changedTouches?.[0] ?? (evt as TouchEvent).touches?.[0];
-  if (touch) {
-    return { x: touch.clientX, y: touch.clientY };
-  }
-  const mouseEvt = evt as MouseEvent;
-  return { x: mouseEvt.clientX, y: mouseEvt.clientY };
-}
-
 function bodyCellProps(
   bodyProps: BodyScope,
   col: BodyCol,
@@ -678,16 +656,15 @@ function bodyCellProps(
   } as unknown as QTableBodyCellProps<unknown, Registration>;
 }
 
-function openRowMenu(evt: Event, row: Registration): void {
+function openRowMenu(evt: MouseEvent, row: Registration): void {
   if (!actionsEnabled.value) {
     return;
   }
 
-  const { x, y } = eventPoint(evt);
   menuAnchorStyle.value = {
     position: 'fixed',
-    left: `${x}px`,
-    top: `${y}px`,
+    left: `${evt.clientX}px`,
+    top: `${evt.clientY}px`,
   };
   menuRow.value = row;
   if (menuAnchorRef.value) {
@@ -698,22 +675,13 @@ function openRowMenu(evt: Event, row: Registration): void {
   void nextTick(() => rowMenuRef.value?.show());
 }
 
-function onRowHold(details: TouchHoldDetails, row: Registration): void {
-  if (!details.evt) {
-    return;
-  }
-
-  // touch-hold already cancels itself once the finger moves (i.e. scrolls).
-  openRowMenu(details.evt, row);
-}
-
 function onRowContext(evt: MouseEvent, row: Registration): void {
-  // Suppress the native context menu everywhere; on touch the long-press is
-  // handled by touch-hold so we only open the menu for real mouse right-clicks.
-  evt.preventDefault();
+  // On touch a long-press is native text selection (e.g. to copy a phone
+  // number), so it must not be cancelled or taken over by the row menu.
   if (quasar.platform.is.mobile) {
     return;
   }
+  evt.preventDefault();
   openRowMenu(evt, row);
 }
 
