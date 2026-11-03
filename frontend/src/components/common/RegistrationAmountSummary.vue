@@ -1,11 +1,24 @@
 <template>
   <div
-    v-if="model.lastPage && model.amount > 0"
-    class="amount-summary row items-center no-wrap rounded-lg"
+    v-if="model.shown"
+    class="amount-summary bg-surface-container-high rounded-xl"
     data-test="registration-amount-summary"
   >
-    <span class="col text-body1">{{ t('total') }}</span>
-    <span class="amount text-h6">{{ formattedAmount }}</span>
+    <div class="row items-center no-wrap total">
+      <q-avatar
+        color="primary-container"
+        icon="receipt_long"
+        size="40px"
+        text-color="on-primary-container"
+      />
+      <span class="col text-subtitle1 text-on-surface">{{ t('total') }}</span>
+      <span
+        aria-live="polite"
+        class="figure amount text-h5 text-primary"
+      >
+        {{ formattedAmount }}
+      </span>
+    </div>
   </div>
 </template>
 
@@ -27,11 +40,16 @@ const formattedAmount = computed(() =>
 
 <style scoped>
 .amount-summary {
-  gap: 16px;
-  padding: 12px 16px;
+  padding: 16px;
   margin-bottom: 16px;
-  background-color: var(--md3-secondary-container);
-  color: var(--md3-on-secondary-container);
+}
+
+.total {
+  gap: 16px;
+}
+
+.figure {
+  font-variant-numeric: tabular-nums;
 }
 
 .amount {

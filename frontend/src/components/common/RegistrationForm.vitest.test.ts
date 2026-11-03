@@ -423,6 +423,51 @@ describe('RegistrationForm', () => {
       expect(survey.completeText).toBe('Kostenpflichtig anmelden');
     });
 
+    const twoPages = {
+      pages: [
+        { name: 'page1', elements: [{ type: 'text', name: 'a' }] },
+        { name: 'page2', elements: [{ type: 'text', name: 'b' }] },
+      ],
+    };
+
+    const onePage = {
+      pages: [{ name: 'page1', elements: [{ type: 'text', name: 'a' }] }],
+    };
+
+    it('waits for the last page', async () => {
+      const { survey, summary } = mountForm(120, twoPages);
+      await flushPromises();
+
+      expect(summary().exists()).toBe(false);
+
+      survey.nextPage();
+      await flushPromises();
+
+      expect(summary().exists()).toBe(true);
+    });
+
+    it('shows a zero total when set to always', async () => {
+      const { summary } = mountForm(0, {
+        ...onePage,
+        showPaymentTotal: 'always',
+      });
+      await flushPromises();
+
+      expect(summary().text()).toContain('0.00');
+    });
+
+    it('shows no total when set to never, but keeps the paid button label', async () => {
+      const { survey, summary } = mountForm(120, {
+        ...onePage,
+        showPaymentTotal: 'never',
+      });
+      survey.locale = 'de';
+      await flushPromises();
+
+      expect(summary().exists()).toBe(false);
+      expect(survey.completeText).toBe('Kostenpflichtig anmelden');
+    });
+
     it('shows nothing for a free event', async () => {
       const { summary } = mountForm(0, {
         pages: [{ name: 'page1', elements: [{ type: 'text', name: 'a' }] }],

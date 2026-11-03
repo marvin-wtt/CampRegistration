@@ -49,7 +49,13 @@ const SIMPLE_PROPERTY_GRID: ISurveyPropertyGridDefinition = {
   generateOtherTab: false,
   classes: {
     survey: {
-      properties: ['title', 'description', 'completeText', 'completedHtml'],
+      properties: [
+        'title',
+        'description',
+        'completeText',
+        'showPaymentTotal',
+        'completedHtml',
+      ],
     },
     page: { properties: ['title', 'description'] },
     panel: { properties: ['title', 'description'] },

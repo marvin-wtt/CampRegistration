@@ -1,7 +1,10 @@
 import { reactive } from 'vue';
 import type { SurveyModel } from 'survey-core';
 import { ComponentFactory } from 'survey-vue3-ui';
-import { extractPaymentAmounts } from '@camp-registration/common/form';
+import {
+  type PaymentTotalMode,
+  extractPaymentAmounts,
+} from '@camp-registration/common/form';
 import { computeAmountDue } from '@camp-registration/common/utils';
 import { setCompleteTextDefault } from '@/lib/surveyJs/completeText';
 import RegistrationAmountSummary from '@/components/common/RegistrationAmountSummary.vue';
@@ -17,7 +20,12 @@ export interface AmountDueState {
   /** Minor units of `currency`. */
   amount: number;
   currency: string;
-  lastPage: boolean;
+  /** Whether the summary belongs on the current page. */
+  shown: boolean;
+}
+
+function paymentTotalMode(survey: SurveyModel): PaymentTotalMode {
+  return survey.getPropertyValue('showPaymentTotal') as PaymentTotalMode;
 }
 
 /**
@@ -33,12 +41,15 @@ export function trackAmountDue(
   const state = reactive<AmountDueState>({
     amount: 0,
     currency: event.currency,
-    lastPage: false,
+    shown: false,
   });
 
   const update = () => {
     state.amount = computeAmountDue(event, extractPaymentAmounts(survey));
-    state.lastPage = survey.isLastPage;
+    const mode = paymentTotalMode(survey);
+    state.shown =
+      survey.isLastPage &&
+      (mode === 'always' || (mode === 'nonZero' && state.amount > 0));
     setCompleteTextDefault(survey, state.amount > 0);
   };
 
@@ -61,6 +72,9 @@ export function addAmountSummary(
   survey: SurveyModel,
   state: AmountDueState,
 ): void {
+  if (paymentTotalMode(survey) === 'never') {
+    return;
+  }
   survey.addLayoutElement({
     id: 'amount-summary',
     container: 'contentBottom',

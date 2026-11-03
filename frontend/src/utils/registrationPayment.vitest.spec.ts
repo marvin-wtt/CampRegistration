@@ -7,7 +7,7 @@ import {
   owesFee,
   paymentOpen,
   paymentOverpaid,
-} from '@/components/event/table/localTableTemplates';
+} from '@/utils/registrationPayment';
 
 function registration(
   status: Registration['status'],
@@ -30,7 +30,7 @@ function registration(
   } as Registration;
 }
 
-describe('payment templates', () => {
+describe('registration payment', () => {
   it('lists accepted registrations that are not paid in full', () => {
     expect(paymentOpen(registration('ACCEPTED', 'UNPAID'))).toBe(true);
     expect(paymentOpen(registration('ACCEPTED', 'PARTIAL'))).toBe(true);
