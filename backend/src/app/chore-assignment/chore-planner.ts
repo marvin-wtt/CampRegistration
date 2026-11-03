@@ -694,7 +694,10 @@ function timelineOf(
       return [
         person.id,
         dates.map((date) =>
-          days.reduce((sum, [day, { load }]) => sum + (day <= date ? load : 0), 0),
+          days.reduce(
+            (sum, [day, { load }]) => sum + (day <= date ? load : 0),
+            0,
+          ),
         ),
       ];
     }),
@@ -711,9 +714,7 @@ function timelineOf(
       const sums = Array<number>(dates.length + 1).fill(0);
       for (let index = dates.length - 1; index >= 0; index--) {
         sums[index] =
-          (sums[index + 1] ?? 0) +
-          (loads[index] ?? 0) -
-          (averages[index] ?? 0);
+          (sums[index + 1] ?? 0) + (loads[index] ?? 0) - (averages[index] ?? 0);
       }
       suffix.set(person.id, sums);
     }
@@ -756,7 +757,9 @@ function findTransfers(
     const keys = new Set(
       duty.members.flatMap((member) => {
         const roomId = roomOf.get(member.registrationId);
-        return roomId ? [member.registrationId, roomId] : [member.registrationId];
+        return roomId
+          ? [member.registrationId, roomId]
+          : [member.registrationId];
       }),
     );
     for (const key of keys) {
@@ -922,10 +925,20 @@ function gainOf(
     const index = timeline.indexOf.get(duty.date) ?? 0;
     const effort = EFFORT_POINTS[duty.effort];
     for (const id of leaving) {
-      pushShift(shifts, id, { index, date: duty.date, load: -effort, duties: -1 });
+      pushShift(shifts, id, {
+        index,
+        date: duty.date,
+        load: -effort,
+        duties: -1,
+      });
     }
     for (const id of joining) {
-      pushShift(shifts, id, { index, date: duty.date, load: effort, duties: 1 });
+      pushShift(shifts, id, {
+        index,
+        date: duty.date,
+        load: effort,
+        duties: 1,
+      });
     }
   }
 
