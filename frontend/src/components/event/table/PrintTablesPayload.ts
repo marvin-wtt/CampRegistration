@@ -14,4 +14,11 @@ export interface PrintTablesPayload {
   event: EventDetails;
 
   templates: TableTemplate[];
+  // Empty prints every group.
+  groups?: string[];
+}
+
+export interface PrintTablesSelection {
+  templateIds: string[];
+  groups: string[];
 }

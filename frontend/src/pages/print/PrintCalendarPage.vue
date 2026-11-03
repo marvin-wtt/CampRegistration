@@ -27,6 +27,7 @@
 
     <div
       v-else
+      ref="sheetRef"
       class="print-sheet"
       :class="isPortrait ? 'print-sheet--portrait' : 'print-sheet--landscape'"
     >
@@ -232,12 +233,16 @@ const { locale, t, d } = useI18n();
 const { payload: data, error } = usePrintPage<PrintData>({
   messagePrefix: 'PRINT_CALENDAR',
   beforePrint: fitEventText,
-  prepare: async () => {
+  prepare: async (payload) => {
+    gridInterval.value = payload.interval;
     // First pass: template renders with data, the measured refs become available
     await waitForStableLayout();
     updateSlotHeight();
     // Second pass: --slot-h applied, slots have correct heights
     await waitForStableLayout();
+    if (shrinkToPage()) {
+      await waitForStableLayout();
+    }
     fitEventText();
   },
 });
@@ -272,7 +277,13 @@ const SAFETY_PX = 4;
 // Floor for the text of an event that does not fit its box even at the size the
 // layout picked for it.
 const MIN_FONT_PX = 6;
+// Shortest slot that still prints legibly. A finer interval is coarsened to the
+// next grid that fits instead of shrinking the slots below it.
+const MIN_SLOT_PX = 14;
+const MAX_SLOT_PX = 52;
+const GRID_INTERVALS = [5, 10, 15, 20, 30, 60];
 
+const sheetRef = ref<HTMLElement | null>(null);
 const calPhRef = ref<HTMLElement | null>(null);
 const headRowRef = ref<HTMLElement | null>(null);
 const allDayRowRef = ref<HTMLElement | null>(null);
@@ -306,37 +317,38 @@ const settingsDayEndMinutes = computed<number>(
   () => (data.value && parseTimeToMinutes(data.value.dayEnd)) || 0,
 );
 
-// Expand the time range to ensure every timed event in the visible days is included.
-const dayStartMinutes = computed<number>(() => {
-  if (!data.value) {
-    return 0;
-  }
-  const interval = data.value.interval;
-  const min = visibleDays.value
-    .flatMap((day) => getTimedEvents(day))
-    .reduce(
-      (acc, e) => Math.min(acc, parseTimeToMinutes(e.time!) ?? acc),
-      settingsDayStartMinutes.value,
-    );
+// Minutes per printed row: the planner's interval, or coarser when it does not fit.
+const gridInterval = ref<number>(30);
 
-  return Math.floor(min / interval) * interval;
-});
+// Expanded so every timed event in the visible days is included.
+function timeRange(interval: number): { start: number; end: number } {
+  const timed = visibleDays.value.flatMap((day) => getTimedEvents(day));
+  const min = timed.reduce(
+    (acc, e) => Math.min(acc, parseTimeToMinutes(e.time!) ?? acc),
+    settingsDayStartMinutes.value,
+  );
+  const max = timed.reduce(
+    (acc, e) => Math.max(acc, (parseTimeToMinutes(e.time!) ?? 0) + e.duration!),
+    settingsDayEndMinutes.value,
+  );
 
-const dayEndMinutes = computed<number>(() => {
-  if (!data.value) {
-    return 0;
-  }
-  const interval = data.value.interval;
-  const max = visibleDays.value
-    .flatMap((day) => getTimedEvents(day))
-    .reduce(
-      (acc, e) =>
-        Math.max(acc, (parseTimeToMinutes(e.time!) ?? 0) + e.duration!),
-      settingsDayEndMinutes.value,
-    );
+  return {
+    start: Math.floor(min / interval) * interval,
+    end: Math.ceil(max / interval) * interval,
+  };
+}
 
-  return Math.ceil(max / interval) * interval;
-});
+function slotCount(interval: number): number {
+  const { start, end } = timeRange(interval);
+
+  return (end - start) / interval;
+}
+
+const dayStartMinutes = computed<number>(
+  () => timeRange(gridInterval.value).start,
+);
+
+const dayEndMinutes = computed<number>(() => timeRange(gridInterval.value).end);
 
 const timeSlots = computed<TimeSlot[]>(() => {
   if (!data.value) {
@@ -346,7 +358,7 @@ const timeSlots = computed<TimeSlot[]>(() => {
   for (
     let m = dayStartMinutes.value;
     m < dayEndMinutes.value;
-    m += data.value.interval
+    m += gridInterval.value
   ) {
     const h = Math.floor(m / 60);
     const min = m % 60;
@@ -398,11 +410,14 @@ function fitEventText() {
   });
 }
 
+function pageHeight(): number {
+  return isPortrait.value ? PORTRAIT_H_PX : LANDSCAPE_H_PX;
+}
+
 function updateSlotHeight() {
-  if (!timeSlots.value.length) {
+  if (!data.value || !timeSlots.value.length) {
     return;
   }
-  const pageH = isPortrait.value ? PORTRAIT_H_PX : LANDSCAPE_H_PX;
   // Measure what is actually rendered — multi-line event titles, wrapped all-day
   // chips and the A/B day header all change these heights.
   const headerH = (calPhRef.value?.offsetHeight ?? 55) + HEADER_GAP_PX;
@@ -410,12 +425,38 @@ function updateSlotHeight() {
     (headRowRef.value?.offsetHeight ?? 34) +
     (allDayRowRef.value?.offsetHeight ?? 0) +
     2; // grid border, top + bottom
-  const available = pageH - headerH - gridOverhead - SAFETY_PX;
+  const available = pageHeight() - headerH - gridOverhead - SAFETY_PX;
+
+  const interval = data.value.interval;
+  const options = [
+    interval,
+    ...GRID_INTERVALS.filter((c) => c > interval && c % interval === 0),
+  ];
+  gridInterval.value =
+    options.find((c) => slotCount(c) * MIN_SLOT_PX <= available) ??
+    options[options.length - 1]!;
 
   slotHeight.value = Math.max(
-    14,
-    Math.min(52, Math.floor(available / timeSlots.value.length)),
+    1,
+    Math.min(
+      MAX_SLOT_PX,
+      Math.floor(available / slotCount(gridInterval.value)),
+    ),
   );
+}
+
+/** Safety net for overhead the estimate missed; true when it had to shrink. */
+function shrinkToPage(): boolean {
+  const overflow = (sheetRef.value?.offsetHeight ?? 0) - pageHeight();
+  if (overflow <= 0 || !timeSlots.value.length) {
+    return false;
+  }
+  slotHeight.value = Math.max(
+    1,
+    slotHeight.value - Math.ceil(overflow / timeSlots.value.length),
+  );
+
+  return true;
 }
 
 const eventsMap = computed<Record<string, ProgramItem[]>>(() => {
@@ -462,7 +503,7 @@ function layoutFor(date: string): PlacedEvent[] {
 
   return layoutDayEvents(getTimedEvents(date), {
     dayStartMinutes: dayStartMinutes.value,
-    interval: data.value.interval,
+    interval: gridInterval.value,
     slotHeight: slotHeight.value,
     splitPlans: showPlanSplit.value,
   }).map(toPlacedEvent);
@@ -907,15 +948,6 @@ $rule-hair: #f0f0f0;
 }
 
 @media print {
-  /* Prevent blank trailing page from Quasar layout wrappers */
-  .q-layout,
-  .q-page-container,
-  .q-page {
-    min-height: 0 !important;
-    height: auto !important;
-    padding: 0 !important;
-  }
-
   .print-sheet {
     break-after: avoid;
     page-break-after: avoid;

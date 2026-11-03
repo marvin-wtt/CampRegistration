@@ -25,7 +25,10 @@ import type { TableColumnTemplate } from '@camp-registration/common/entities';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import RegistrationDetailsDialog from '@/components/event/table/dialogs/RegistrationDetailsDialog.vue';
 import { extractFormFields } from '@/utils/surveyJS';
-import type { PrintTablesPayload } from '@/components/event/table/PrintTablesPayload';
+import type {
+  PrintTablesPayload,
+  PrintTablesSelection,
+} from '@/components/event/table/PrintTablesPayload';
 import { openPrintIframe } from '@/utils/printIframe';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
@@ -122,7 +125,7 @@ const columns = computed<TableColumnTemplate[]>(() => {
   );
 });
 
-function onTemplatesPrint(templateIds: string[]) {
+function onTemplatesPrint({ templateIds, groups }: PrintTablesSelection) {
   if (!templateStore.data || !event.value) {
     return;
   }
@@ -138,6 +141,7 @@ function onTemplatesPrint(templateIds: string[]) {
     registrations: registrations.value ?? [],
     event: event.value,
     templates,
+    groups,
     timestamp: new Date().toISOString(),
   };
 

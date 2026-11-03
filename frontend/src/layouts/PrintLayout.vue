@@ -55,18 +55,27 @@ quasar.dark.set(false);
 }
 
 @media print {
-  /* Remove Quasar UI */
-  #q-notify,
-  div[id^="q-portal--"],
-  /* Dev only */
-  vite-plugin-checker-error-overlay {
-    display: none;
+  /* Everything outside the app: Quasar's notify, portals and loading bar, the
+     dev checker overlay. Any box after a named-page sheet, even an empty one,
+     breaks onto a trailing blank page of its own. */
+  body > :not(#q-app) {
+    display: none !important;
   }
 
   html,
   body,
   .print-layout {
     background: white !important;
+  }
+
+  /* Quasar sizes these to the print frame's viewport, which is taller than a
+     page's printable area; a short document would spill onto a blank page. */
+  .print-layout,
+  .print-layout .q-page-container,
+  .print-layout .q-page {
+    min-height: 0 !important;
+    height: auto !important;
+    padding: 0 !important;
   }
 
   body {
