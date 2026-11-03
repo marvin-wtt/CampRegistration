@@ -4,6 +4,7 @@ import type { Event } from '@camp-registration/common/entities';
 import { zonedInstant } from '@camp-registration/common/utils';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import {
+  addDays,
   daysBetweenDates,
   formatLocalDate,
   parseLocalDate,
@@ -23,15 +24,23 @@ function isEventPhase(value: unknown): value is EventPhase {
   return EVENT_PHASES.includes(value as EventPhase);
 }
 
-/** The event's dates decide first, so late registrations don't hide a running event. */
+/**
+ * The event's dates decide first, so late registrations don't hide a running
+ * event. It runs for whole calendar days in its timezone: the team needs the
+ * day's program before arrival and the duties after departure.
+ */
 export function eventPhaseOf(event: Event, now = Date.now()): EventPhase {
-  const startAt = zonedInstant(event.startAt, event.timezone).getTime();
-  const endAt = zonedInstant(event.endAt, event.timezone).getTime();
+  const { first, last } = eventDays(event);
+  const runsFrom = zonedInstant(`${first}T00:00:00`, event.timezone);
+  const runsUntil = zonedInstant(
+    `${addDays(last, 1)}T00:00:00`,
+    event.timezone,
+  );
 
-  if (now > endAt) {
+  if (now >= runsUntil.getTime()) {
     return 'wrapUp';
   }
-  if (now >= startAt) {
+  if (now >= runsFrom.getTime()) {
     return 'running';
   }
 
