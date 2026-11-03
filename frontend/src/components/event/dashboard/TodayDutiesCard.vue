@@ -65,7 +65,19 @@
             </q-item-label>
           </q-item-section>
           <q-item-section
-            v-if="duty.done"
+            v-if="canTick && !duty.cancelled"
+            side
+          >
+            <q-checkbox
+              :model-value="duty.done"
+              :aria-label="duty.title"
+              :data-test="`dashboard-duty-${duty.id}`"
+              color="positive"
+              @update:model-value="toggle(duty)"
+            />
+          </q-item-section>
+          <q-item-section
+            v-else-if="duty.done"
             side
           >
             <q-icon
@@ -90,8 +102,10 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { Event } from '@camp-registration/common/entities';
 import DashboardCardHeader from '@/components/event/dashboard/DashboardCardHeader.vue';
-import { useDayDuties } from '@/composables/dayDuties';
+import { type DayDuty, useDayDuties } from '@/composables/dayDuties';
 import { eventDayOf, shownEventDate } from '@/composables/eventPhase';
+import { usePermissions } from '@/composables/permissions';
+import { useChoreAssignmentStore } from '@/stores/chore-assignment-store';
 import { formatLocalDate } from '@/utils/date';
 
 // The day's roster; outside the event, its first day.
@@ -108,6 +122,22 @@ const isToday = computed<boolean>(
 );
 
 const day = computed(() => eventDayOf(event, date.value));
+
+const { can } = usePermissions();
+const choreAssignmentStore = useChoreAssignmentStore();
+
+// Like the planner: a duty can't be done ahead of its day.
+const canTick = computed<boolean>(
+  () =>
+    can('event.chore_assignments.edit') &&
+    date.value <= formatLocalDate(new Date()),
+);
+
+function toggle(duty: DayDuty) {
+  return choreAssignmentStore.updateData(duty.id, {
+    status: duty.done ? 'PLANNED' : 'DONE',
+  });
+}
 
 const {
   duties: dayDuties,

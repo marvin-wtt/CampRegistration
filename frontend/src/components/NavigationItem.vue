@@ -15,6 +15,7 @@
     v-else-if="!props.children || props.children.length === 0"
     v-ripple
     :to="props.to"
+    :data-test="`nav-${props.name}`"
     clickable
     :disable="disabled"
     :inset-level="props.insertLevel"

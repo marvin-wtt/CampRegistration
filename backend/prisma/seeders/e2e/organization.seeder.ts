@@ -1,4 +1,8 @@
-import { OrganizationFactory } from '../../factories';
+import {
+  OrganizationFactory,
+  OrganizationMemberFactory,
+} from '../../factories';
+import { E2E_ROLE_USERS } from './user.seeder.js';
 
 /**
  * Fixed ids and values — the factory fills unset fields with faker data that
@@ -34,5 +38,11 @@ export async function seedE2eOrganizations(): Promise<void> {
     registrationNumber: 'VR654321',
     verificationStatus: 'PENDING',
     verificationNote: 'Awaiting moderation.',
+  });
+
+  await OrganizationMemberFactory.create({
+    role: 'ADMIN',
+    user: { connect: { id: E2E_ROLE_USERS.ORGANIZATION_ADMIN } },
+    organization: { connect: { id: E2E_ORGANIZATION_ID } },
   });
 }

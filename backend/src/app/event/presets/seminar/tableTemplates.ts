@@ -104,6 +104,83 @@ export default [
     sortBy: 'created_at',
     filterStatus: undefined,
     sortDirection: 'desc',
+    // Lists the waiting list too, which misleads once the event runs.
+    phases: ['setup', 'registration', 'preparation'],
+  },
+  {
+    title: {
+      en: 'Participants',
+      de: 'Teilnehmende',
+      fr: 'Participants',
+      cs: 'Účastníci',
+      pl: 'Uczestnicy',
+    },
+    order: 1,
+    columns: [
+      {
+        name: 'first_name',
+        label: {
+          en: 'First name',
+          de: 'Vorname',
+          fr: 'Prénom',
+          cs: 'Jméno',
+          pl: 'Imię',
+        },
+        field: 'data.first_name',
+        source: 'form',
+        renderAs: 'name',
+        align: 'left',
+        sortable: true,
+      },
+      {
+        name: 'last_name',
+        label: {
+          en: 'Last name',
+          de: 'Nachname',
+          fr: 'Nom de famille',
+          cs: 'Příjmení',
+          pl: 'Nazwisko',
+        },
+        field: 'data.last_name',
+        source: 'form',
+        renderAs: 'name',
+        align: 'left',
+        sortable: true,
+      },
+      {
+        name: 'organization',
+        label: {
+          en: 'Company / Organization',
+          de: 'Unternehmen / Organisation',
+          fr: 'Entreprise / Organisation',
+          cs: 'Firma / Organizace',
+          pl: 'Firma / Organizacja',
+        },
+        field: 'data.organization',
+        source: 'form',
+        renderAs: 'text',
+        align: 'left',
+      },
+      {
+        name: 'email',
+        label: {
+          en: 'E-Mail',
+          de: 'E-Mail',
+          fr: 'E-Mail',
+          cs: 'E-mail',
+          pl: 'E-mail',
+        },
+        field: 'data.email',
+        source: 'form',
+        renderAs: 'email',
+        align: 'left',
+        sortable: false,
+      },
+    ],
+    filterStatus: ['ACCEPTED'],
+    indexed: true,
+    actions: true,
+    sortBy: 'first_name',
   },
   {
     title: {
@@ -113,7 +190,7 @@ export default [
       cs: 'Čekací listina',
       pl: 'Lista oczekujących',
     },
-    order: 1,
+    order: 2,
     columns: [
       {
         name: 'first_name',
@@ -179,5 +256,6 @@ export default [
     indexed: true,
     actions: true,
     sortBy: 'date',
+    phases: ['registration', 'preparation'],
   },
 ];

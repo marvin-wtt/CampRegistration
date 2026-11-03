@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { nextTick, ref } from 'vue';
 import {
+  PLAIN_TEMPLATE_ID,
   sortRows,
   useResultTableModel,
   type Pagination,
@@ -9,6 +10,7 @@ import { LOCAL_TEMPLATE_PENDING } from '@/components/event/table/localTableTempl
 import type { CTableColumnTemplate } from '@/types/CTableTemplate';
 import type {
   EventDetails,
+  EventPhase,
   Registration,
   TableColumnTemplate,
   TableTemplate,
@@ -261,5 +263,78 @@ describe('useResultTableModel group column', () => {
 
   it('hides it on a single-country event, where it never differs', () => {
     expect(columnNames(['de'])).toEqual(['last_name']);
+  });
+});
+
+describe('useResultTableModel phases', () => {
+  // Mirrors the camp preset: an overview meant for before the event.
+  const templates = [
+    {
+      id: 'overview',
+      title: 'Overview',
+      columns: [],
+      order: 0,
+      phases: ['registration', 'preparation'],
+    },
+    { id: 'participants', title: 'Participants', columns: [], order: 1 },
+    { id: 'team', title: 'Team', columns: [], order: 2 },
+  ] as unknown as TableTemplate[];
+
+  function setup(
+    phase: EventPhase | undefined,
+    stored: TableTemplate[] = templates,
+  ) {
+    return useResultTableModel({
+      questions: ref<TableColumnTemplate[]>([]),
+      registrations: ref<Registration[]>([]),
+      templates: ref(stored),
+      event: ref({ countries: [] } as unknown as EventDetails),
+      phase: ref(phase),
+    });
+  }
+
+  const ids = (model: ReturnType<typeof setup>) =>
+    model.templateOptions.value.map((t) => t.id);
+
+  it('opens a template in its own phase', () => {
+    expect(setup('registration').template.value.id).toBe('overview');
+  });
+
+  it('opens the next template outside it, and moves it last', () => {
+    const model = setup('running');
+
+    expect(model.template.value.id).toBe('participants');
+    expect(ids(model)).toEqual([
+      'participants',
+      'team',
+      PLAIN_TEMPLATE_ID,
+      'overview',
+    ]);
+    expect(model.templateOptions.value.at(-1)?.forOtherPhases).toBe(true);
+  });
+
+  it('treats every template as in phase without a known phase', () => {
+    expect(setup(undefined).template.value.id).toBe('overview');
+  });
+
+  it('prefers the first by order over the plain template when none fits', () => {
+    const model = setup('running', [templates[0]!]);
+
+    expect(model.template.value.id).toBe('overview');
+  });
+
+  it('still opens a template for other phases from a deep link', () => {
+    const model = useResultTableModel(
+      {
+        questions: ref<TableColumnTemplate[]>([]),
+        registrations: ref<Registration[]>([]),
+        templates: ref(templates),
+        event: ref({ countries: [] } as unknown as EventDetails),
+        phase: ref<EventPhase>('running'),
+      },
+      { initialTemplateId: 'overview' },
+    );
+
+    expect(model.template.value.id).toBe('overview');
   });
 });

@@ -60,6 +60,13 @@ Youth Adventures also has one member who was invited by email and never register
 | Harbour Sailing Week | Harbour Youth Trust  | DIRECTOR           | upcoming       | Unpublished by the rejection                                                      |
 | Seaside Camp         | Coastal Camps        | —                  | upcoming       | In the public directory; every management route must refuse                       |
 
+### The running camp
+
+"City Camp" is the camp in progress, so it is where the dashboard's running layout shows real data: a program on every
+day, today's duties and tasks, two birthdays today and one tomorrow, and twelve free places while four people wait. It
+uses the camp preset's table templates, so the participants page opens on "Participants" and lists "Overview" under
+"For other phases". John is a COUNSELOR there, which is enough to tick off duties and tasks from the dashboard.
+
 Because organization ADMINs hold `ORGANIZATION_CAMP_PERMISSIONS` on every camp their organization owns, a narrow role
 under **Youth Adventures** is always widened by `camp.edit`. The unmerged roles therefore live under **Alpine
 Explorers**, where John is only a MEMBER.
@@ -69,13 +76,16 @@ Explorers**, where John is only a MEMBER.
 "Summer Camp" is the one camp with a complete set of child models:
 
 - two countries (`gb`, `fr`) and a five-locale registration form
-- 58 registrations: accepted, waitlisted, pending, plus adult counselors
+- 60 registrations: accepted, waitlisted, pending, plus adult counselors. `gb` is full with a waiting list, while `fr`
+  has two places left and two waiting — the dashboard's "free places for the waiting list"
+- two birthdays during the camp, on its second and fourth day
 - seven rooms with 40 beds, 23 of them assigned, one room left empty
 - a program covering every day of the week, with A/B activity blocks
 - four documents: the rules and terms its form links, in both locales, plus a public packing list and a private internal
   one
 - tasks with and without an assignee, one of them overdue
-- four hand-written table templates, the default message templates per country
+- four hand-written table templates (the waiting list limited to the phases before the camp), the default message
+  templates per country
 - three sent messages with per-recipient deliveries
 - stored room planner and program planner settings
 - five managers, one of them expiring, plus one invited by email

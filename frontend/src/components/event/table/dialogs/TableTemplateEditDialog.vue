@@ -139,6 +139,23 @@
           </q-select>
 
           <q-select
+            v-model="template.phases"
+            :label="t('field.phases.label')"
+            :hint="t('field.phases.hint')"
+            :options="phaseOptions"
+            emit-value
+            map-options
+            multiple
+            use-chips
+            outlined
+            rounded
+          >
+            <template #prepend>
+              <q-icon name="event_repeat" />
+            </template>
+          </q-select>
+
+          <q-select
             v-model="printOrientation"
             :label="t('field.print_orientation.label')"
             :hint="t('field.print_orientation.hint')"
@@ -232,11 +249,13 @@ import {
 } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from '@/composables/objectTranslation';
-import type {
-  TableTemplate,
-  TableColumnTemplate,
-  Event,
-  Registration,
+import {
+  EVENT_PHASES,
+  type TableTemplate,
+  type TableColumnTemplate,
+  type Event,
+  type EventPhase,
+  type Registration,
 } from '@camp-registration/common/entities';
 import TranslatedInput from '@/components/common/inputs/TranslatedInput.vue';
 import { computed, reactive, ref } from 'vue';
@@ -294,6 +313,11 @@ const statusOptions: QSelectOption<Registration['status']>[] = [
     label: t('field.filter_status.option.pending'),
   },
 ];
+
+const phaseOptions: QSelectOption<EventPhase>[] = EVENT_PHASES.map((phase) => ({
+  value: phase,
+  label: t(`field.phases.option.${phase}`),
+}));
 
 // Use 'auto' as placeholder for undefined - will be removed by setter
 type PrintOrientation =
@@ -481,6 +505,15 @@ field:
       accepted: 'Accepted'
       pending: 'Pending'
       waitlisted: 'Waitlisted'
+  phases:
+    label: 'For phases'
+    hint: 'Elsewhere it moves to the end of the list and never opens first. Empty means all phases.'
+    option:
+      setup: 'Setup'
+      registration: 'Registration'
+      preparation: 'Preparation'
+      running: 'Running'
+      wrapUp: 'Wrap-up'
   print_orientation:
     label: 'Print orientation'
     hint: 'Page orientation when this table is printed'
@@ -535,6 +568,15 @@ field:
       accepted: 'Akzeptiert'
       pending: 'Ausstehend'
       waitlisted: 'Auf der Warteliste'
+  phases:
+    label: 'Für Phasen'
+    hint: 'Sonst rückt sie ans Ende der Liste und öffnet nie zuerst. Leer heißt alle Phasen.'
+    option:
+      setup: 'Einrichtung'
+      registration: 'Anmeldung'
+      preparation: 'Vorbereitung'
+      running: 'Läuft'
+      wrapUp: 'Nachbereitung'
   print_orientation:
     label: 'Druckausrichtung'
     hint: 'Seitenausrichtung beim Drucken dieser Tabelle'
@@ -589,6 +631,15 @@ field:
       accepted: 'Accepté'
       pending: 'En attente'
       waitlisted: "Sur liste d'attente"
+  phases:
+    label: 'Pour les phases'
+    hint: 'Ailleurs, il passe en fin de liste et ne s’ouvre jamais en premier. Vide signifie toutes les phases.'
+    option:
+      setup: 'Configuration'
+      registration: 'Inscriptions'
+      preparation: 'Préparation'
+      running: 'En cours'
+      wrapUp: 'Clôture'
   print_orientation:
     label: "Orientation d'impression"
     hint: "Orientation de la page lors de l'impression de ce tableau"
@@ -643,6 +694,15 @@ field:
       accepted: 'Zaakceptowane'
       pending: 'Oczekujące'
       waitlisted: 'Na liście oczekujących'
+  phases:
+    label: 'Dla faz'
+    hint: 'W innych fazach trafia na koniec listy i nigdy nie otwiera się jako pierwszy. Puste oznacza wszystkie fazy.'
+    option:
+      setup: 'Konfiguracja'
+      registration: 'Rejestracja'
+      preparation: 'Przygotowanie'
+      running: 'W trakcie'
+      wrapUp: 'Podsumowanie'
   print_orientation:
     label: 'Orientacja wydruku'
     hint: 'Orientacja strony podczas drukowania tej tabeli'
@@ -697,6 +757,15 @@ field:
       accepted: 'Přijato'
       pending: 'Čeká na vyřízení'
       waitlisted: 'Na čekací listině'
+  phases:
+    label: 'Pro fáze'
+    hint: 'V ostatních fázích se přesune na konec seznamu a nikdy se neotevře jako první. Prázdné znamená všechny fáze.'
+    option:
+      setup: 'Nastavení'
+      registration: 'Registrace'
+      preparation: 'Příprava'
+      running: 'Probíhá'
+      wrapUp: 'Uzavření'
   print_orientation:
     label: 'Orientace tisku'
     hint: 'Orientace stránky při tisku této tabulky'

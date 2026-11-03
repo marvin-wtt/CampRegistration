@@ -73,6 +73,8 @@
               v-else-if="card.key === 'attention'"
               :phase
               :loading
+              :registrations="features.registrations"
+              :files="features.files"
               :rooms="features.rooms"
               :style="card.style"
             />
@@ -100,7 +102,7 @@
               v-else-if="card.key === 'readiness' && event"
               :event
               :loading
-              :rooms="features.rooms"
+              :rooms="features.rooms && features.registrations"
               :program="features.program"
               :style="card.style"
             />
@@ -149,7 +151,6 @@ import { useNavigationSettings } from '@/composables/eventNavigationSettings';
 import { type EventPhase, useEventPhase } from '@/composables/eventPhase';
 import type { PermissionRequirement } from '@/composables/scopePermissions';
 import type { HideableNavigationItem } from '@camp-registration/common/settings';
-
 type CardKey =
   | 'setup'
   | 'attention'
@@ -231,8 +232,17 @@ const {
 const { isLoading: registrationsLoading, error: registrationsError } =
   storeToRefs(registrationStore);
 
+// The profile loads alongside the page; until then, the cards most managers
+// see are skeletonized rather than left out.
+const permissionsLoading = computed<boolean>(
+  () => profileStore.user === undefined,
+);
+
 const loading = computed<boolean>(
-  () => registrationsLoading.value || eventLoading.value,
+  () =>
+    permissionsLoading.value ||
+    registrationsLoading.value ||
+    eventLoading.value,
 );
 
 const error = computed<string | null>(
@@ -240,42 +250,70 @@ const error = computed<string | null>(
 );
 
 const features = computed(() => ({
+  registrations: can('event.registrations.view'),
+  files: can('event.files.view'),
   tasks: can('event.tasks.view') && isShown('tasks'),
   duties:
-    can('event.chore_assignments.view') &&
-    can('event.chores.view') &&
+    can('event.chore_assignments.view', 'event.chores.view') &&
     isShown('chore_planner'),
   program: can('event.program_items.view') && isShown('program_planner'),
   rooms: can('event.rooms.view') && isShown('room_planner'),
 }));
 
+// A store is only asked once its permission is known to be held, so a
+// forbidden resource leaves its cards out instead of failing the page.
+function fetchWhen(allowed: () => boolean, ...fetches: (() => unknown)[]) {
+  watch(
+    allowed,
+    (ok) => {
+      if (ok) {
+        fetches.forEach((fetch) => void fetch());
+      }
+    },
+    { immediate: true },
+  );
+}
+
 // Started during setup, not awaited: the stores flag themselves loading before
 // the first render, so the page renders its skeletons instead of an idle frame.
 // Tasks are optional to the dashboard: a failed fetch leaves them out.
-void registrationStore.fetchData();
 void eventDetailsStore.fetchData();
-void eventFilesStore.fetchData();
-void taskStore.fetchData();
-watch(
-  features,
-  ({ program, duties }) => {
-    if (program) {
-      void programStore.fetchData();
-      void publishedDayStore.fetchData();
-    }
-    if (duties) {
-      void choreStore.fetchData();
-      void choreAssignmentStore.fetchData();
-    }
-  },
-  { immediate: true },
+fetchWhen(
+  () => features.value.registrations,
+  () => registrationStore.fetchData(),
+);
+fetchWhen(
+  () => features.value.files,
+  () => eventFilesStore.fetchData(),
+);
+fetchWhen(
+  () => features.value.tasks,
+  () => taskStore.fetchData(),
+);
+fetchWhen(
+  () => features.value.program,
+  () => programStore.fetchData(),
+  () => publishedDayStore.fetchData(),
+);
+fetchWhen(
+  () => features.value.duties,
+  () => choreStore.fetchData(),
+  () => choreAssignmentStore.fetchData(),
 );
 
 // Before the event has loaded the registration layout stands in.
 const phase = computed<EventPhase>(() => viewedPhase.value ?? 'registration');
 
 function isAvailable(key: CardKey): boolean {
+  const registrations =
+    features.value.registrations || permissionsLoading.value;
+
   switch (key) {
+    case 'attention':
+      return registrations || features.value.files;
+    case 'registrations':
+    case 'demographics':
+      return registrations;
     case 'tasks':
       return features.value.tasks;
     case 'program':
@@ -283,7 +321,7 @@ function isAvailable(key: CardKey): boolean {
     case 'duties':
       return features.value.duties;
     case 'readiness':
-      return features.value.rooms || features.value.program;
+      return (registrations && features.value.rooms) || features.value.program;
     default:
       return true;
   }

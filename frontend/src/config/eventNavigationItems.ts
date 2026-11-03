@@ -25,7 +25,7 @@ export const EVENT_NAVIGATION_ITEMS: EventNavigationItemDef[] = [
   {
     name: 'dashboard',
     icon: 'dashboard',
-    permission: 'event.registrations.view',
+    permission: 'event.view',
     routeName: 'management.event.dashboard',
   },
   {

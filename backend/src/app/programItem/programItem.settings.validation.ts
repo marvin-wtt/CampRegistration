@@ -7,4 +7,5 @@ export const ProgramSettingsValidation = z.object({
   timeInterval: z.number(),
   showAllTranslations: z.boolean(),
   browseOutsideEventDates: z.boolean(),
+  showBirthdays: z.boolean(),
 }) satisfies z.ZodType<ProgramPlannerSettings>;

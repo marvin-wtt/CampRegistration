@@ -26,4 +26,6 @@ export interface CTableTemplate extends Omit<TableTemplate, 'columns'> {
    * "missing contact details" or "age outside the event range").
    */
   localFilter?: (registration: Registration) => boolean;
+  /** Its `phases` exclude the event's current phase. */
+  forOtherPhases?: boolean;
 }

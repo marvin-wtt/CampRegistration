@@ -175,6 +175,31 @@
                     </q-btn>
                   </div>
                 </div>
+                <template v-if="settings.showBirthdays">
+                  <div
+                    v-for="birthday in birthdaysOn(timestamp.date)"
+                    :key="birthday.registrationId"
+                    class="cal-day-birthday"
+                    data-test="calendar-birthday"
+                    @click.stop
+                  >
+                    <q-icon
+                      name="cake"
+                      size="14px"
+                    />
+                    <span class="cal-day-birthday__name q-calendar__ellipsis">
+                      {{ birthday.name }}
+                    </span>
+                    <q-tooltip>
+                      {{
+                        t('birthday', {
+                          name: birthday.name,
+                          age: birthday.age,
+                        })
+                      }}
+                    </q-tooltip>
+                  </div>
+                </template>
                 <calendar-day-item
                   v-for="event in getFullDayEvents(timestamp.date)"
                   :key="event.id"
@@ -355,8 +380,11 @@ import { programItemMinutesRange } from '@/utils/programItem';
 import { useEventSettings } from '@/composables/eventSettings';
 import { SETTING_KEYS } from '@camp-registration/common/settings';
 import { usePermissions } from '@/composables/permissions';
+import { useEventBirthdays } from '@/composables/eventBirthdays';
+import { useProgramPlannerSettings } from '@/composables/programPlannerSettings';
 import { storeToRefs } from 'pinia';
 import { useProgramPublishedDayStore } from '@/stores/program-published-day-store';
+import { useRegistrationsStore } from '@/stores/registration-store';
 
 const { t, locale } = useI18n();
 const quasar = useQuasar();
@@ -392,15 +420,19 @@ const emit = defineEmits<{
   (e: 'delete', id: string): void;
 }>();
 
-const { settings } = useEventSettings<ProgramPlannerSettings>(
-  SETTING_KEYS.PROGRAM_PLANNER,
-  {
-    dayStart: '08:00',
-    dayEnd: '21:00',
-    timeInterval: 30,
-    showAllTranslations: false,
-    browseOutsideEventDates: false,
+const { settings } = useProgramPlannerSettings();
+
+// Registrations are only fetched for the birthdays, so only when they show.
+const registrationsStore = useRegistrationsStore();
+const { birthdaysOn } = useEventBirthdays(() => event);
+watch(
+  () => settings.showBirthdays && can('event.registrations.view'),
+  (shown) => {
+    if (shown) {
+      void registrationsStore.fetchData();
+    }
   },
+  { immediate: true },
 );
 
 const { settings: publicSettings } = useEventSettings<ProgramPublicSettings>(
@@ -2391,6 +2423,27 @@ function onPreviousNavigation() {
   border-radius: 8px;
 }
 
+// Derived from registrations, not a program item: tonal rather than an item's
+// filled color, and inert.
+.cal-day-birthday {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 2px;
+  padding: 2px 6px;
+  overflow: hidden;
+  color: var(--md3-on-tertiary-container);
+  background-color: var(--md3-tertiary-container);
+  border-radius: 6px;
+  cursor: default;
+
+  &__name {
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+}
+
 .cal-day-actions {
   display: flex;
   justify-content: flex-end;
@@ -2499,6 +2552,7 @@ dialog:
     message: 'Are you sure you want to delete this event?'
 actions:
   printDay: 'Print this day'
+birthday: '{name} turns {age}'
 public:
   day:
     unpublished: 'Not published'
@@ -2517,6 +2571,7 @@ dialog:
     message: 'Bist du sicher, dass du dieses Ereignis löschen möchtest?'
 actions:
   printDay: 'Diesen Tag drucken'
+birthday: '{name} wird {age}'
 public:
   day:
     unpublished: 'Nicht veröffentlicht'
@@ -2535,6 +2590,7 @@ dialog:
     message: 'Êtes-vous sûr de vouloir supprimer cet événement ?'
 actions:
   printDay: 'Imprimer ce jour'
+birthday: '{name} fête ses {age} ans'
 public:
   day:
     unpublished: 'Non publié'
@@ -2553,6 +2609,7 @@ dialog:
     message: 'Czy na pewno chcesz usunąć to wydarzenie?'
 actions:
   printDay: 'Drukuj ten dzień'
+birthday: '{name} obchodzi {age}. urodziny'
 public:
   day:
     unpublished: 'Nieopublikowany'
@@ -2571,6 +2628,7 @@ dialog:
     message: 'Opravdu chcete smazat tuto událost?'
 actions:
   printDay: 'Vytisknout tento den'
+birthday: '{name} slaví {age}. narozeniny'
 public:
   day:
     unpublished: 'Nezveřejněno'

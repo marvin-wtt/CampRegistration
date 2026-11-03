@@ -8,6 +8,7 @@ import { TableCellRenderer } from '@/components/event/table/TableCellRenderer';
 import type { QTable } from 'quasar';
 import type {
   EventDetails,
+  EventPhase,
   Registration,
   TableTemplate,
   TableColumnTemplate,
@@ -23,11 +24,16 @@ import {
 
 export type Pagination = Exclude<QTable['pagination'], undefined>;
 
+/** The generated template showing every form answer as stored. */
+export const PLAIN_TEMPLATE_ID = '-1';
+
 export interface ResultTableModelInput {
   questions: Ref<TableColumnTemplate[]>;
   registrations: Ref<Registration[]>;
   templates: Ref<TableTemplate[]>;
   event: Ref<EventDetails>;
+  /** The event's phase; without one, every template counts as in phase. */
+  phase?: Ref<EventPhase | undefined>;
 }
 
 export interface ResultTableModelOptions {
@@ -139,11 +145,19 @@ export function useResultTableModel(
   // An event's groups are its countries.
   const groups = computed(() => input.event.value.countries);
 
+  function isForOtherPhases(template: TableTemplate): boolean {
+    const phase = input.phase?.value;
+    const phases = template.phases ?? [];
+
+    return phase !== undefined && phases.length > 0 && !phases.includes(phase);
+  }
+
   function mapTemplate(
     template: TableTemplate | LocalTableTemplate,
   ): CTableTemplate {
     return {
       ...template,
+      forOtherPhases: isForOtherPhases(template),
       columns: template.columns.map((column) => ({
         ...column,
         field: (row: unknown) => objectValueByPath(column.field, row),
@@ -167,7 +181,7 @@ export function useResultTableModel(
 
     // Default template to show all information
     mapped.push({
-      id: '-1',
+      id: PLAIN_TEMPLATE_ID,
       title: 'Original (Plain)',
       columns: input.questions.value.map((column) => ({
         ...column,
@@ -181,20 +195,36 @@ export function useResultTableModel(
     return mapped.sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
   });
 
-  const visibleTemplates = computed<CTableTemplate[]>(() =>
-    allTemplates.value.filter((template) => !template.hidden),
-  );
+  // Templates for another phase follow all others, the plain one included.
+  const visibleTemplates = computed<CTableTemplate[]>(() => {
+    const visible = allTemplates.value.filter((template) => !template.hidden);
+
+    return [
+      ...visible.filter((template) => !template.forOtherPhases),
+      ...visible.filter((template) => template.forOtherPhases),
+    ];
+  });
 
   function applyTemplateSort(template: CTableTemplate) {
     pagination.value.sortBy = template.sortBy ?? null;
     pagination.value.descending = template.sortDirection === 'desc';
   }
 
+  // The first template for the current phase. The plain one is only a last
+  // resort, so when all are for other phases the first by order stands in.
   function defaultTemplate(): CTableTemplate {
-    if (visibleTemplates.value.length === 0) {
+    const visible = allTemplates.value.filter((template) => !template.hidden);
+    const fallback = visible[0];
+    if (!fallback) {
       throw new Error('No templates available');
     }
-    return visibleTemplates.value[0]!;
+
+    return (
+      visible.find(
+        (template) =>
+          !template.forOtherPhases && template.id !== PLAIN_TEMPLATE_ID,
+      ) ?? fallback
+    );
   }
 
   // Resolved against all templates so hidden, local targets (e.g. dashboard

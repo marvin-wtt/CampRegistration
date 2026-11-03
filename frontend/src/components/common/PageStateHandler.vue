@@ -21,7 +21,10 @@
         v-else-if="pageError"
         name="error"
       >
-        <div class="text-center self-center column items-center q-gutter-y-md">
+        <div
+          class="text-center self-center column items-center q-gutter-y-md"
+          data-test="page-error"
+        >
           <q-icon
             name="error_outline"
             size="80px"

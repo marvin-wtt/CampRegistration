@@ -168,9 +168,18 @@
           </template>
           <template #option="scope">
             <!-- Custom separator for plain option -->
-            <q-separator v-if="scope.opt.id === '-1'" />
+            <q-separator v-if="scope.opt.id === PLAIN_TEMPLATE_ID" />
+            <template v-if="startsOtherPhases(scope.index)">
+              <q-separator />
+              <q-item-label header>{{ t('other_phases') }}</q-item-label>
+            </template>
 
-            <q-item v-bind="scope.itemProps">
+            <q-item
+              v-bind="scope.itemProps"
+              :class="{
+                'template-option--other-phase': scope.opt.forOtherPhases,
+              }"
+            >
               <q-item-section>
                 <q-item-label>
                   {{ to(scope.opt.title) }}
@@ -420,7 +429,8 @@ import CountryIcon from '@/components/common/localization/CountryIcon.vue';
 import BottomSheet from '@/components/BottomSheet.vue';
 import type { QTableBodyCellProps } from '@/types/quasar/QTableBodyCellProps';
 import type { CTableColumnTemplate } from '@/types/CTableTemplate';
-import { useResultTableModel } from './useResultTableModel';
+import { PLAIN_TEMPLATE_ID, useResultTableModel } from './useResultTableModel';
+import { eventPhaseOf } from '@/composables/eventPhase';
 import { useCsvExport } from './useCsvExport';
 import PrintTableDialog from '@/components/event/table/dialogs/PrintTableDialog.vue';
 import type { PrintTablesSelection } from '@/components/event/table/PrintTablesPayload';
@@ -469,6 +479,7 @@ const {
     registrations: toRef(() => registrations),
     templates: toRef(() => templates),
     event: toRef(() => event),
+    phase: computed(() => eventPhaseOf(event)),
   },
   {
     // A `?template=` query param (used by dashboard deep links, including the
@@ -482,6 +493,14 @@ const {
           : null,
   },
 );
+
+// Templates for other phases come last; the first of them heads their section.
+function startsOtherPhases(index: number): boolean {
+  return (
+    templateOptions.value[index]?.forOtherPhases === true &&
+    templateOptions.value[index - 1]?.forOtherPhases !== true
+  );
+}
 
 const filterSheetOpen = ref<boolean>(false);
 
@@ -763,6 +782,10 @@ function onRowClick(evt: MouseEvent, row: Registration): void {
   min-width: 220px;
 }
 
+.template-option--other-phase {
+  color: var(--md3-on-surface-variant);
+}
+
 .search-field {
   max-width: 360px;
 }
@@ -887,6 +910,7 @@ function onRowClick(evt: MouseEvent, row: Registration): void {
 
 <i18n lang="yaml" locale="en">
 template: 'Template'
+other_phases: 'For other phases'
 title: 'Participants'
 subtitle: 'Browse, filter, and print the registrations of this event.'
 
@@ -916,6 +940,7 @@ error:
 
 <i18n lang="yaml" locale="de">
 template: 'Vorlage'
+other_phases: 'Für andere Phasen'
 title: 'Teilnehmende'
 subtitle: 'Durchsuche, filtere und drucke die Anmeldungen dieser Veranstaltung.'
 
@@ -945,6 +970,7 @@ error:
 
 <i18n lang="yaml" locale="fr">
 template: 'Modèle'
+other_phases: 'Pour d’autres phases'
 title: 'Participants'
 subtitle: 'Parcourez, filtrez et imprimez les inscriptions de cet événement.'
 
@@ -974,6 +1000,7 @@ error:
 
 <i18n lang="yaml" locale="pl">
 template: 'Szablon'
+other_phases: 'Dla innych faz'
 title: 'Uczestnicy'
 subtitle: 'Przeglądaj, filtruj i drukuj zgłoszenia tego wydarzenia.'
 
@@ -1003,6 +1030,7 @@ error:
 
 <i18n lang="yaml" locale="cs">
 template: 'Šablona'
+other_phases: 'Pro jiné fáze'
 title: 'Účastníci'
 subtitle: 'Procházejte, filtrujte a tiskněte přihlášky této akce.'
 

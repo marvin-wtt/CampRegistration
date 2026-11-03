@@ -1,6 +1,9 @@
 import { z, type ZodType } from 'zod';
 import { translatedValue } from '#core/validation/helper';
-import type { TableTemplateCreateData } from '@camp-registration/common/entities';
+import {
+  EVENT_PHASES,
+  type TableTemplateCreateData,
+} from '@camp-registration/common/entities';
 
 const TableTemplateBodySchema = z.object({
   title: translatedValue(z.string()),
@@ -43,6 +46,7 @@ const TableTemplateBodySchema = z.object({
   sortBy: z.string().nullable().optional(),
   sortDirection: z.enum(['asc', 'desc']).optional(),
   generated: z.boolean().optional(),
+  phases: z.array(z.enum(EVENT_PHASES)).optional(),
 }) satisfies ZodType<TableTemplateCreateData>;
 
 const show = z.object({

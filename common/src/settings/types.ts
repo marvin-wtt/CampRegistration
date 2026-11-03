@@ -42,6 +42,13 @@ export interface ProgramPlannerSettings {
    * @default false
    */
   browseOutsideEventDates: boolean;
+  /**
+   * Mark registrants' birthdays on the event's days, for managers who may see
+   * registrations. Never part of the published program.
+   *
+   * @default true
+   */
+  showBirthdays: boolean;
 }
 
 /** Nav-rail items an event can hide via `SETTING_KEYS.NAVIGATION`. */

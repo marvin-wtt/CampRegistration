@@ -149,6 +149,15 @@ const CITY_ASSIGNMENTS: ChoreAssignmentData[] = [
     memberCount: 3,
   },
   { choreIndex: 1, day: -1, rotationUnit: 'PERSON' },
+  // Today's roster, for the dashboard's duties card.
+  {
+    choreIndex: 0,
+    day: 0,
+    slot: 0,
+    rotationUnit: 'PERSON',
+    memberCount: 3,
+  },
+  { choreIndex: 1, day: 0, rotationUnit: 'PERSON' },
   {
     choreIndex: 0,
     day: 1,

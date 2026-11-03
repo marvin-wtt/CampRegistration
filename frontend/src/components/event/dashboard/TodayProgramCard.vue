@@ -14,6 +14,18 @@
     </q-card-section>
 
     <q-card-section
+      v-if="birthdays.length > 0"
+      class="birthday-bar"
+      data-test="dashboard-birthdays"
+    >
+      <q-icon
+        name="cake"
+        size="18px"
+      />
+      <span>{{ birthdayText }}</span>
+    </q-card-section>
+
+    <q-card-section
       v-if="!programLoading && hasAlternatives"
       class="plan-bar"
     >
@@ -172,6 +184,8 @@ import { useProgramPublishedDayStore } from '@/stores/program-published-day-stor
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { useMinuteClock } from '@/composables/minuteClock';
 import { eventDayOf, shownEventDate } from '@/composables/eventPhase';
+import { useEventBirthdays } from '@/composables/eventBirthdays';
+import { useProgramPlannerSettings } from '@/composables/programPlannerSettings';
 import {
   formatLocalDate,
   formatMinutesAsTime,
@@ -226,6 +240,18 @@ const day = computed(() => eventDayOf(event, date.value));
 
 const caption = computed<string>(
   () => `${t('dayOf', day.value)} · ${d(parseLocalDate(date.value), 'date')}`,
+);
+
+// The planner's setting decides here too; the dashboard fetches registrations.
+const { settings: plannerSettings } = useProgramPlannerSettings();
+const { birthdaysOn } = useEventBirthdays(() => event);
+const birthdays = computed(() =>
+  plannerSettings.showBirthdays ? birthdaysOn(date.value) : [],
+);
+const birthdayText = computed<string>(() =>
+  birthdays.value
+    .map(({ name, age }) => t('birthday', { name, age }))
+    .join(' · '),
 );
 
 const programLoading = computed<boolean>(() => programStore.isLoading);
@@ -395,6 +421,19 @@ const nextRow = computed(() => {
   padding-top: 0;
 }
 
+.birthday-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 16px 8px;
+  padding: 8px 12px;
+  color: var(--md3-on-tertiary-container);
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: var(--md3-tertiary-container);
+  border-radius: 12px;
+}
+
 .plan-bar {
   display: flex;
   flex-wrap: wrap;
@@ -539,6 +578,7 @@ title:
   today: "Today's program"
   day: 'Program · Day {day}'
 dayOf: 'Day {day} of {days}'
+birthday: '{name} turns {age}'
 plan:
   a: 'Plan A'
   b: 'Plan B'
@@ -565,6 +605,7 @@ title:
   today: 'Programm heute'
   day: 'Programm · Tag {day}'
 dayOf: 'Tag {day} von {days}'
+birthday: '{name} wird {age}'
 plan:
   a: 'Plan A'
   b: 'Plan B'
@@ -591,6 +632,7 @@ title:
   today: 'Programme du jour'
   day: 'Programme · Jour {day}'
 dayOf: 'Jour {day} sur {days}'
+birthday: '{name} fête ses {age} ans'
 plan:
   a: 'Plan A'
   b: 'Plan B'
@@ -617,6 +659,7 @@ title:
   today: 'Dzisiejszy program'
   day: 'Program · Dzień {day}'
 dayOf: 'Dzień {day} z {days}'
+birthday: '{name} obchodzi {age}. urodziny'
 plan:
   a: 'Plan A'
   b: 'Plan B'
@@ -643,6 +686,7 @@ title:
   today: 'Dnešní program'
   day: 'Program · Den {day}'
 dayOf: 'Den {day} z {days}'
+birthday: '{name} slaví {age}. narozeniny'
 plan:
   a: 'Plán A'
   b: 'Plán B'

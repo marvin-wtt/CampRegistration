@@ -22,6 +22,7 @@ export interface LocalTableTemplate extends TableTemplate {
 export const LOCAL_TEMPLATE_PENDING = 'attention-pending';
 export const LOCAL_TEMPLATE_MISSING = 'attention-missing';
 export const LOCAL_TEMPLATE_AGE = 'attention-age';
+export const LOCAL_TEMPLATE_WAITLISTED = 'attention-waitlisted';
 
 type RegistrationHelper = ReturnType<typeof useRegistrationHelper>;
 
@@ -206,6 +207,32 @@ export function buildLocalTableTemplates(
         return age < event.minAge || age > event.maxAge;
       },
       columns: [...NAME_COLUMNS, AGE_COLUMN, GROUP_COLUMN, STATUS_COLUMN],
+    },
+    {
+      // Oldest first: the waiting list is usually worked in order.
+      id: LOCAL_TEMPLATE_WAITLISTED,
+      title: {
+        en: 'Waiting list',
+        de: 'Warteliste',
+        fr: 'Liste d’attente',
+        cs: 'Čekací listina',
+        pl: 'Lista oczekujących',
+      },
+      hidden: true,
+      generated: true,
+      order: 903,
+      indexed: true,
+      actions: true,
+      filterStatus: ['WAITLISTED'],
+      sortBy: 'created_at',
+      sortDirection: 'asc',
+      localFilter: isParticipant,
+      columns: [
+        ...NAME_COLUMNS,
+        GROUP_COLUMN,
+        REGISTERED_COLUMN,
+        STATUS_COLUMN,
+      ],
     },
   ];
 }

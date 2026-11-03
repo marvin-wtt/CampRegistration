@@ -69,7 +69,24 @@
           class="task-item"
           :class="{ 'task-item--mine': isMine(task) }"
         >
+          <!-- The row links to the tasks page; ticking must not follow it. -->
           <q-item-section
+            v-if="canUpdate"
+            avatar
+            class="checkbox-section"
+            @click.stop.prevent
+          >
+            <q-checkbox
+              :model-value="task.completed"
+              :aria-label="task.title"
+              :data-test="`dashboard-task-${task.id}`"
+              color="primary"
+              dense
+              @update:model-value="toggle(task)"
+            />
+          </q-item-section>
+          <q-item-section
+            v-else
             avatar
             class="due-marker-section"
           >
@@ -80,7 +97,11 @@
           </q-item-section>
           <q-item-section>
             <q-item-label class="row items-center no-wrap q-gutter-x-xs">
-              <span class="ellipsis">{{ task.title }}</span>
+              <span
+                class="ellipsis"
+                :class="{ 'task-title--done': task.completed }"
+                >{{ task.title }}</span
+              >
               <q-badge
                 v-if="isMine(task)"
                 class="mine-badge"
@@ -103,11 +124,12 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import DashboardCardHeader from '@/components/event/dashboard/DashboardCardHeader.vue';
 import { useTaskStore } from '@/stores/task-store';
 import { useCurrentManager } from '@/composables/currentManager';
+import { usePermissions } from '@/composables/permissions';
 import type { Task } from '@camp-registration/common/entities';
 import { taskPhaseOf } from '@/utils/taskPhase';
 import { parseLocalDate } from '@/utils/date';
@@ -120,13 +142,28 @@ const { loading = false } = defineProps<{
 const { t, d } = useI18n();
 const taskStore = useTaskStore();
 const { currentManagerId } = useCurrentManager();
+const { can } = usePermissions();
+
+const canUpdate = computed<boolean>(() => can('event.tasks.update'));
 
 const openTasks = computed<Task[]>(() =>
   (taskStore.data ?? []).filter((task) => !task.completed),
 );
 
+// Ticked here, they stay listed until the page is left, so a mistap can be
+// unticked again.
+const completedHere = ref(new Set<string>());
+
+function toggle(task: Task) {
+  if (!task.completed) {
+    completedHere.value.add(task.id);
+  }
+  return taskStore.toggleCompleted(task);
+}
+
 const upcomingTasks = computed<Task[]>(() => {
-  return openTasks.value
+  return (taskStore.data ?? [])
+    .filter((task) => !task.completed || completedHere.value.has(task.id))
     .filter(
       (task) =>
         task.assigneeId === null || task.assigneeId === currentManagerId.value,
@@ -202,6 +239,16 @@ function isMine(task: Task): boolean {
 .due-marker-section {
   min-width: 0;
   padding-right: 12px;
+}
+
+.checkbox-section {
+  min-width: 0;
+  padding-right: 8px;
+}
+
+.task-title--done {
+  color: var(--md3-on-surface-variant);
+  text-decoration: line-through;
 }
 
 .due-marker {

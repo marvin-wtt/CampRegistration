@@ -19,9 +19,14 @@ export class RegistrationSeeder {
 
   constructor(private event: Event) {}
 
-  async seed(n: number = 50, overrides: Data = {}): Promise<void> {
+  /** `birthdayOn` gives every registrant their birthday on that day. */
+  async seed(
+    n: number = 50,
+    overrides: Data = {},
+    { birthdayOn }: { birthdayOn?: Date } = {},
+  ): Promise<void> {
     for (let i = 0; i < n; i++) {
-      const registrant = this.createRegistrant(overrides);
+      const registrant = this.createRegistrant(overrides, birthdayOn);
 
       // The answers are the source of truth: they are generated from the
       // event's own form, and the computed columns are then derived from them
@@ -59,7 +64,7 @@ export class RegistrationSeeder {
     }
   }
 
-  private createRegistrant(overrides: Data): Registrant {
+  private createRegistrant(overrides: Data, birthdayOn?: Date): Registrant {
     const group =
       (overrides.group as string | undefined) ??
       faker.helpers.arrayElement(this.event.countries);
@@ -79,10 +84,18 @@ export class RegistrationSeeder {
       gender:
         (overrides.gender as string | undefined) ??
         faker.helpers.arrayElement(['m', 'f']),
-      dateOfBirth: faker.date.between({
-        from: moment(this.event.startAt).subtract(oldest, 'years').toDate(),
-        to: moment(this.event.startAt).subtract(youngest, 'years').toDate(),
-      }),
+      // Turning at least `youngest + 1` keeps them in range on arrival too.
+      dateOfBirth: birthdayOn
+        ? moment(birthdayOn)
+            .subtract(
+              faker.number.int({ min: youngest + 1, max: oldest }),
+              'years',
+            )
+            .toDate()
+        : faker.date.between({
+            from: moment(this.event.startAt).subtract(oldest, 'years').toDate(),
+            to: moment(this.event.startAt).subtract(youngest, 'years').toDate(),
+          }),
       email: faker.internet.email({ firstName, lastName }),
       phoneNumber: faker.phone.number({ style: 'international' }),
       street: faker.location.streetAddress(),
