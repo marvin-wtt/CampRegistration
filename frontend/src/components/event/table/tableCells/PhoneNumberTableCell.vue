@@ -1,19 +1,22 @@
 <template>
   {{ formattedPhoneNumber }}
 
-  <q-tooltip v-if="formattedPhoneNumber">
+  <!-- On touch a tooltip blocks text selection for the whole press -->
+  <q-tooltip v-if="formattedPhoneNumber && !quasar.platform.is.mobile">
     {{ cellProps.value }}
   </q-tooltip>
 </template>
 
 <script lang="ts" setup>
 import { computed } from 'vue';
+import { useQuasar } from 'quasar';
 import type { TableCellProps } from '@/components/event/table/tableCells/TableCellProps';
 import { useRegistrationHelper } from '@/composables/registrationHelper';
 import { formatPhoneNumber } from '@/utils/formatPhoneNumber';
 import type { Registration } from '@camp-registration/common/entities';
 
 const { props: cellProps, event } = defineProps<TableCellProps>();
+const quasar = useQuasar();
 const registrationHelper = useRegistrationHelper();
 
 const registration = computed<Registration>(() => {
