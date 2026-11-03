@@ -6,6 +6,7 @@ import {
   defaultSettingsForPreset,
   getEventPreset,
 } from '#app/event/presets/index';
+import tableTemplateValidation from '#app/tableTemplate/table-template.validation';
 
 const PRESETS = EVENT_PRESET_NAMES;
 const TRANSLATED_KEYS = ['en', 'de', 'fr', 'pl', 'cs', 'es', 'default'];
@@ -146,6 +147,32 @@ describe('getEventPreset', () => {
         EVENT_PRESETS.camp.tableTemplates[0]?.title,
       );
     });
+
+    // Presets are typed loosely; the API's own schema catches a misspelt
+    // phase or status.
+    it.each(PRESETS)('passes template validation (%s)', (preset) => {
+      for (const template of EVENT_PRESETS[preset].tableTemplates) {
+        const { id: _id, ...body } = template;
+
+        expect(() =>
+          tableTemplateValidation.store.shape.body.parse(body),
+        ).not.toThrow();
+      }
+    });
+
+    it.each(PRESETS)(
+      'opens an accepted-only template while the event runs (%s)',
+      (preset) => {
+        const running = [...EVENT_PRESETS[preset].tableTemplates]
+          .filter((template) => {
+            const phases = template.phases as string[] | undefined;
+            return !phases?.length || phases.includes('running');
+          })
+          .sort((a, b) => (a.order as number) - (b.order as number));
+
+        expect(running[0]?.filterStatus).toEqual(['ACCEPTED']);
+      },
+    );
   });
 });
 

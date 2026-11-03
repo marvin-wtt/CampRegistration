@@ -1,6 +1,10 @@
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import type { Event } from '@camp-registration/common/entities';
+import {
+  EVENT_PHASES,
+  type Event,
+  type EventPhase,
+} from '@camp-registration/common/entities';
 import { zonedInstant } from '@camp-registration/common/utils';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import {
@@ -10,15 +14,7 @@ import {
   parseLocalDate,
 } from '@/utils/date';
 
-export const EVENT_PHASES = [
-  'setup',
-  'registration',
-  'preparation',
-  'running',
-  'wrapUp',
-] as const;
-
-export type EventPhase = (typeof EVENT_PHASES)[number];
+export { EVENT_PHASES, type EventPhase };
 
 function isEventPhase(value: unknown): value is EventPhase {
   return EVENT_PHASES.includes(value as EventPhase);

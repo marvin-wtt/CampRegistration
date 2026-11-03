@@ -7,6 +7,16 @@ import type { OrganizationVerificationStatus } from './Organization.js';
 export const EVENT_PRESET_NAMES = ['camp', 'seminar', 'general'] as const;
 export type EventPresetName = (typeof EVENT_PRESET_NAMES)[number];
 
+/** The stages of an event's life, as the management UI derives them. */
+export const EVENT_PHASES = [
+  'setup',
+  'registration',
+  'preparation',
+  'running',
+  'wrapUp',
+] as const;
+export type EventPhase = (typeof EVENT_PHASES)[number];
+
 export interface Event extends Identifiable {
   organizationId: string;
   organizationName: string;

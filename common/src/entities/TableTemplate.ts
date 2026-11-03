@@ -1,4 +1,5 @@
 import type { Identifiable } from './Identifiable.js';
+import type { EventPhase } from './Event.js';
 
 export interface TableTemplate extends Identifiable {
   title: string | Record<string, string>;
@@ -15,6 +16,11 @@ export interface TableTemplate extends Identifiable {
   sortBy?: string | null | undefined;
   sortDirection?: 'asc' | 'desc' | undefined;
   generated?: boolean | undefined;
+  /**
+   * The phases the template is meant for; empty or unset means all. Outside
+   * them it moves to the end of the picker and is never the default.
+   */
+  phases?: EventPhase[] | undefined;
 }
 
 export type TableTemplateCreateData = Omit<TableTemplate, 'id'>;

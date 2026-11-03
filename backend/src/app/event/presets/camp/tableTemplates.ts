@@ -200,6 +200,8 @@ export default [
     actions: true,
     sortBy: 'created_at',
     sortDirection: 'desc',
+    // Lists the waiting list too, which misleads during the camp.
+    phases: ['setup', 'registration', 'preparation'],
     id: '01KVH6HQPTK7MKEXYVJZP76TMA',
   },
   {
