@@ -50,6 +50,14 @@
             >
               <span>{{ to(payload.event.name) }}</span>
             </div>
+
+            <!-- A partial printout must never pass as the full list. -->
+            <div
+              v-if="groupLabel"
+              class="print-header__groups"
+            >
+              {{ t('groups', { countries: groupLabel }) }}
+            </div>
           </header>
 
           <result-table-print
@@ -57,6 +65,7 @@
             :questions="payload.questions"
             :registrations="payload.registrations"
             :event="payload.event"
+            :groups="payload.groups"
             :template
           />
 
@@ -96,8 +105,9 @@ import {
   supportsMarginBoxes,
   usePageStyle,
 } from '@/utils/printMarginBoxes';
+import { countryName } from '@/utils/countries';
 
-const { d } = useI18n();
+const { d, t, locale } = useI18n();
 const { to } = useObjectTranslation();
 
 const marginBoxes = supportsMarginBoxes();
@@ -128,6 +138,12 @@ const { payload, error } = usePrintPage<PrintTablesPayload>({
     );
   },
 });
+
+const groupLabel = computed<string>(() =>
+  (payload.value?.groups ?? [])
+    .map((group) => countryName(group, locale.value))
+    .join(', '),
+);
 
 const timestamp = computed<string>(() =>
   d(new Date(payload.value?.timestamp ?? Date.now()), 'dateTime'),
@@ -196,6 +212,13 @@ usePageStyle(
   line-height: 1.2;
 }
 
+.print-header__groups {
+  margin-top: 1.5mm;
+  font-size: 10pt;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
 .print-header__meta {
   margin-top: 1.5mm;
   font-size: 9.5pt;
@@ -238,3 +261,23 @@ usePageStyle(
   white-space: nowrap;
 }
 </style>
+
+<i18n lang="yaml" locale="en">
+groups: 'Countries: {countries}'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+groups: 'Länder: {countries}'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+groups: 'Pays : {countries}'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+groups: 'Kraje: {countries}'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+groups: 'Země: {countries}'
+</i18n>

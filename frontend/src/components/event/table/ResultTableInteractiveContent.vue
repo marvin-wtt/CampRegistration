@@ -423,6 +423,7 @@ import type { CTableColumnTemplate } from '@/types/CTableTemplate';
 import { useResultTableModel } from './useResultTableModel';
 import { useCsvExport } from './useCsvExport';
 import PrintTableDialog from '@/components/event/table/dialogs/PrintTableDialog.vue';
+import type { PrintTablesSelection } from '@/components/event/table/PrintTablesPayload';
 import RegistrationActionList from '@/components/event/table/RegistrationActionList.vue';
 import RegistrationRowCardDialog from '@/components/event/table/dialogs/RegistrationRowCardDialog.vue';
 import { computed, nextTick, ref, toRef } from 'vue';
@@ -439,7 +440,7 @@ const { questions, registrations, templates, event } = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'export', templateIds: string[]): void;
+  (e: 'export', selection: PrintTablesSelection): void;
 }>();
 
 const { t, locale } = useI18n();
@@ -575,10 +576,12 @@ function openPrintDialog() {
       componentProps: {
         templates,
         defaultTemplateId: template.value?.id,
+        groups: groups.value,
+        defaultGroups: groupFilter.value,
       },
     })
-    .onOk((data: string[]) => {
-      emit('export', data);
+    .onOk((selection: PrintTablesSelection) => {
+      emit('export', selection);
     });
 }
 

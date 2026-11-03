@@ -12,7 +12,7 @@
     :registrations
     :templates
     :event
-    @export="(templateIds) => emit('export', templateIds)"
+    @export="(selection) => emit('export', selection)"
   />
 </template>
 
@@ -26,6 +26,7 @@ import type {
 import ResultTableSkeleton from '@/components/event/table/ResultTableSkeleton.vue';
 import ResultTableInteractiveContent from '@/components/event/table/ResultTableInteractiveContent.vue';
 import { computed } from 'vue';
+import type { PrintTablesSelection } from '@/components/event/table/PrintTablesPayload';
 
 // Owns only the loading state. The table itself is stateful — its model
 // resolves the selected template and sort once, at setup — so it is mounted
@@ -40,7 +41,7 @@ const { questions, registrations, templates, event, loading } = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'export', templateIds: string[]): void;
+  (e: 'export', selection: PrintTablesSelection): void;
 }>();
 
 // The page passes `class="absolute fit"`; bind it explicitly so it lands on

@@ -14,10 +14,12 @@ import type {
 
 installQuasarPlugin();
 
-// Only used inside filters of the hidden local templates, which are not
-// printed here; avoids pulling in the stores (and with them router and API).
+// Avoids pulling in the stores (and with them router and API); only the group
+// filter reaches the helper when printing.
 vi.mock('@/composables/registrationHelper', () => ({
-  useRegistrationHelper: () => ({}),
+  useRegistrationHelper: () => ({
+    group: (registration: Registration) => registration.group ?? undefined,
+  }),
 }));
 
 // The shared mock's d() echoes its Date argument; margin boxes need a string.
@@ -25,7 +27,8 @@ vi.mock('vue-i18n', async () => {
   const { ref } = await import('vue');
   return {
     useI18n: () => ({
-      t: (key: string) => key,
+      t: (key: string, values?: Record<string, string>) =>
+        values ? `${key}:${Object.values(values).join()}` : key,
       d: (value: Date) => value.toISOString(),
       locale: ref('en'),
     }),
@@ -59,14 +62,17 @@ function registerAsyncCell(): void {
   );
 }
 
-function registration(firstName: string): Registration {
+function registration(
+  firstName: string,
+  group: string | null = null,
+): Registration {
   return {
     id: firstName,
     locale: 'en',
     data: {},
     computedData: { firstName } as Registration['computedData'],
     customData: {},
-    group: null,
+    group,
     status: 'ACCEPTED',
     createdAt: '2026-01-01T00:00:00Z',
   };
@@ -100,8 +106,11 @@ function payload(): PrintTablesPayload {
         ],
       },
     ],
+    ...extraPayload,
   };
 }
+
+let extraPayload: Partial<PrintTablesPayload> = {};
 
 describe('PrintTablesPage', () => {
   let renderedCellsAtPrint: string[] | undefined;
@@ -131,6 +140,7 @@ describe('PrintTablesPage', () => {
     vi.stubGlobal('opener', opener);
 
     marginBoxSupport.value = true;
+    extraPayload = {};
     renderedCellsAtPrint = undefined;
     // happy-dom does not implement print(); record what would be printed.
     print = vi.fn(() => {
@@ -201,5 +211,32 @@ describe('PrintTablesPage', () => {
     await vi.waitFor(() => expect(print).toHaveBeenCalledOnce());
     expect(wrapper.find('.print-header__meta').text()).toBe('Summer Event');
     expect(wrapper.find('.print-footer__left').text()).toBe('Participants');
+  });
+
+  it('prints only the selected groups and names them in the header', async () => {
+    extraPayload = {
+      registrations: [registration('Alice', 'DE'), registration('Bob', 'FR')],
+      groups: ['FR'],
+    };
+    releaseCellChunk();
+
+    const wrapper = mount(PrintTablesPage, { attachTo: document.body });
+
+    await vi.waitFor(() => expect(print).toHaveBeenCalledOnce());
+    expect(renderedCellsAtPrint).toEqual(['Bob']);
+    expect(wrapper.find('.print-header__groups').text()).toMatch(/^groups:/);
+  });
+
+  it('prints every group without a header label when none is selected', async () => {
+    extraPayload = {
+      registrations: [registration('Alice', 'DE'), registration('Bob', 'FR')],
+    };
+    releaseCellChunk();
+
+    const wrapper = mount(PrintTablesPage, { attachTo: document.body });
+
+    await vi.waitFor(() => expect(print).toHaveBeenCalledOnce());
+    expect(renderedCellsAtPrint).toEqual(['Alice', 'Bob']);
+    expect(wrapper.find('.print-header__groups').exists()).toBe(false);
   });
 });

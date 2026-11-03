@@ -77,26 +77,31 @@ import { useResultTableModel } from './useResultTableModel';
 import { toRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-const { questions, registrations, template, event, title } = defineProps<{
-  questions: TableColumnTemplate[];
-  registrations: Registration[];
-  template: TableTemplate;
-  event: EventDetails;
-  title?: string | undefined;
-}>();
+const { questions, registrations, template, event, title, groups } =
+  defineProps<{
+    questions: TableColumnTemplate[];
+    registrations: Registration[];
+    template: TableTemplate;
+    event: EventDetails;
+    title?: string | undefined;
+    groups?: string[] | undefined;
+  }>();
 
 const { t } = useI18n();
 const { to } = useObjectTranslation();
 
-const { pagination, rows, columns, renderers } = useResultTableModel(
-  {
-    questions: toRef(() => questions),
-    registrations: toRef(() => registrations),
-    templates: toRef(() => [template]),
-    event: toRef(() => event),
-  },
-  { initialTemplateId: template.id },
-);
+const { pagination, rows, columns, renderers, groupFilter } =
+  useResultTableModel(
+    {
+      questions: toRef(() => questions),
+      registrations: toRef(() => registrations),
+      templates: toRef(() => [template]),
+      event: toRef(() => event),
+    },
+    { initialTemplateId: template.id },
+  );
+
+groupFilter.value = groups ?? [];
 </script>
 
 <style lang="scss">
