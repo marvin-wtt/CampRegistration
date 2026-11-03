@@ -86,8 +86,8 @@ import {
   LOCAL_TEMPLATE_PAYMENTS_OVERPAID,
   LOCAL_TEMPLATE_PENDING,
   LOCAL_TEMPLATE_WAITLISTED,
-  paymentOverpaid,
 } from '@/components/event/table/localTableTemplates';
+import { paymentOverpaid } from '@/utils/registrationPayment';
 
 // Issues the app detects on its own; tasks people create live in TasksCard.
 // The flags say which features the manager can see.

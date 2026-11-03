@@ -33,3 +33,7 @@ export {
   FILE_VARIABLE,
 } from './files.js';
 export type { GroupCountryMatch } from './questions/groupCountryMatch.js';
+export {
+  PAYMENT_TOTAL_MODES,
+  type PaymentTotalMode,
+} from './properties/showPaymentTotal.js';

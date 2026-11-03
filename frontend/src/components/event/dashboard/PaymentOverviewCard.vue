@@ -120,11 +120,10 @@ import { type RouteLocationRaw, RouterLink } from 'vue-router';
 import { formatMoney } from '@camp-registration/common/utils';
 import DashboardCardHeader from '@/components/event/dashboard/DashboardCardHeader.vue';
 import {
-  owesFee,
   LOCAL_TEMPLATE_PAYMENTS,
   LOCAL_TEMPLATE_PAYMENTS_OPEN,
-  paymentOpen,
 } from '@/components/event/table/localTableTemplates';
+import { owesFee, paymentOpen } from '@/utils/registrationPayment';
 import { useEventStatistics } from '@/composables/eventStatistics';
 import { usePermissions } from '@/composables/permissions';
 import type { EventPhase } from '@/composables/eventPhase';
