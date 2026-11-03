@@ -49,6 +49,11 @@
           v-model="data.browseOutsideEventDates"
           :label="t('field.browseOutsideEventDates.label')"
         />
+        <!-- Show birthdays -->
+        <q-toggle
+          v-model="data.showBirthdays"
+          :label="t('field.showBirthdays.label')"
+        />
       </div>
 
       <template #actions>
@@ -122,6 +127,8 @@ field:
     label: 'Show all translations'
   browseOutsideEventDates:
     label: 'Allow browsing outside event dates'
+  showBirthdays:
+    label: 'Show birthdays'
 
 actions:
   save: 'Save'
@@ -143,6 +150,8 @@ field:
     label: 'Alle Übersetzungen anzeigen'
   browseOutsideEventDates:
     label: 'Navigation außerhalb des Veranstaltungszeitraums erlauben'
+  showBirthdays:
+    label: 'Geburtstage anzeigen'
 
 actions:
   save: 'Speichern'
@@ -164,6 +173,8 @@ field:
     label: 'Afficher toutes les traductions'
   browseOutsideEventDates:
     label: "Autoriser la navigation en dehors des dates de l'événement"
+  showBirthdays:
+    label: 'Afficher les anniversaires'
 
 actions:
   save: 'Enregistrer'
@@ -185,6 +196,8 @@ field:
     label: 'Pokaż wszystkie tłumaczenia'
   browseOutsideEventDates:
     label: 'Zezwól na przeglądanie poza datami wydarzenia'
+  showBirthdays:
+    label: 'Pokaż urodziny'
 
 actions:
   save: 'Zapisz'
@@ -206,6 +219,8 @@ field:
     label: 'Zobrazit všechny překlady'
   browseOutsideEventDates:
     label: 'Povolit procházení mimo termíny akce'
+  showBirthdays:
+    label: 'Zobrazit narozeniny'
 
 actions:
   save: 'Uložit'
