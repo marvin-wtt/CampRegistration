@@ -154,6 +154,8 @@ class TableTemplateSeeder extends BaseSeeder {
         actions: true,
         sortBy: 'created_at',
         sortDirection: 'asc',
+        // Once the camp runs, it moves to the end of the template picker.
+        phases: ['registration', 'preparation'],
       },
       event: { connect: { id: EVENT_IDS.summer } },
     });

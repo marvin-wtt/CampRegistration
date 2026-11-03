@@ -75,10 +75,18 @@ class EventSeeder extends BaseSeeder {
       updatedAt: seedDate(-3),
     });
 
-    await new RegistrationSeeder(event).seed(24, {
+    await new RegistrationSeeder(event).seed(22, {
       group: 'gb',
       status: 'ACCEPTED',
     });
+    // Birthdays on the second and fourth day, for the program planner.
+    for (const day of [1, 3]) {
+      await new RegistrationSeeder(event).seed(
+        1,
+        { group: 'gb', status: 'ACCEPTED' },
+        { birthdayOn: seedDate(PHASE.upcoming.start + day) },
+      );
+    }
     await new RegistrationSeeder(event).seed(5, {
       group: 'gb',
       status: 'WAITLISTED',
@@ -90,6 +98,12 @@ class EventSeeder extends BaseSeeder {
     await new RegistrationSeeder(event).seed(3, {
       group: 'fr',
       status: 'PENDING',
+    });
+    // `fr` has two places left while two wait — "free places for the waiting
+    // list". `gb` is full, and its waiting list must not count them.
+    await new RegistrationSeeder(event).seed(2, {
+      group: 'fr',
+      status: 'WAITLISTED',
     });
     // Counselors are excluded from the room planner's default role filter.
     await new RegistrationSeeder(event).seed(6, {
@@ -292,8 +306,21 @@ class EventSeeder extends BaseSeeder {
       tableTemplates: presetTableTemplates('camp'),
     });
 
-    await new RegistrationSeeder(city).seed(28, { status: 'ACCEPTED' });
+    // Two birthdays today and one tomorrow, for the dashboard's program card.
+    await new RegistrationSeeder(city).seed(25, { status: 'ACCEPTED' });
+    await new RegistrationSeeder(city).seed(
+      2,
+      { status: 'ACCEPTED' },
+      { birthdayOn: seedDate(0) },
+    );
+    await new RegistrationSeeder(city).seed(
+      1,
+      { status: 'ACCEPTED' },
+      { birthdayOn: seedDate(1) },
+    );
+    // Twelve places left while four wait: "free places for the waiting list".
     await new RegistrationSeeder(city).seed(4, { status: 'WAITLISTED' });
+    await new ProgramItemSeeder(city).seed();
     await new RoomSeeder(city).seed();
     await new EventSettingSeeder(city).seed();
     await new EventFileSeeder(city).seedFormSlots();

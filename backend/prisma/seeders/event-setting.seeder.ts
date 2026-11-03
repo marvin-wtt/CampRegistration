@@ -20,6 +20,7 @@ const programPlanner = {
   timeInterval: 30,
   showAllTranslations: true,
   browseOutsideEventDates: false,
+  showBirthdays: true,
 } satisfies ProgramPlannerSettings;
 
 /** Stored settings, so the planners start from something other than defaults. */
