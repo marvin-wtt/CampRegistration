@@ -84,6 +84,7 @@ import {
   LOCAL_TEMPLATE_AGE,
   LOCAL_TEMPLATE_MISSING,
   LOCAL_TEMPLATE_PENDING,
+  LOCAL_TEMPLATE_WAITLISTED,
 } from '@/components/event/table/localTableTemplates';
 
 // Issues the app detects on its own; tasks people create live in TasksCard.
@@ -154,6 +155,16 @@ const items = computed<AttentionItem[]>(() => {
       count: stats.counts.value.pending,
       icon: 'hourglass_top',
       template: LOCAL_TEMPLATE_PENDING,
+      shown: registrations,
+    },
+    {
+      // Counted per group, so a free place only counts for its own group's
+      // waiting list.
+      key: 'waitlist',
+      label: t('item.waitlist'),
+      count: stats.placeSplit.value.reserved,
+      icon: 'move_up',
+      template: LOCAL_TEMPLATE_WAITLISTED,
       shown: registrations,
     },
     {
@@ -291,6 +302,7 @@ empty: 'Nothing needs your attention'
 summary: '{n} item to check | {n} items to check'
 item:
   pending: 'Pending confirmations'
+  waitlist: 'Free places for the waiting list'
   rooms: 'Without a room'
   missing: 'Missing contact details'
   age: 'Age outside event range'
@@ -303,6 +315,7 @@ empty: 'Nichts zu prüfen'
 summary: '{n} Punkt zu prüfen | {n} Punkte zu prüfen'
 item:
   pending: 'Ausstehende Bestätigungen'
+  waitlist: 'Freie Plätze für die Warteliste'
   rooms: 'Ohne Zimmer'
   missing: 'Fehlende Kontaktdaten'
   age: 'Alter außerhalb des Bereichs'
@@ -315,6 +328,7 @@ empty: 'Rien à vérifier'
 summary: '{n} point à vérifier | {n} points à vérifier'
 item:
   pending: 'Confirmations en attente'
+  waitlist: 'Places libres pour la liste d’attente'
   rooms: 'Sans chambre'
   missing: 'Coordonnées manquantes'
   age: 'Âge hors de la plage'
@@ -327,6 +341,7 @@ empty: 'Nic do sprawdzenia'
 summary: '{n} sprawa do sprawdzenia | {n} sprawy do sprawdzenia'
 item:
   pending: 'Oczekujące potwierdzenia'
+  waitlist: 'Wolne miejsca dla listy oczekujących'
   rooms: 'Bez pokoju'
   missing: 'Brakujące dane kontaktowe'
   age: 'Wiek poza zakresem'
@@ -339,6 +354,7 @@ empty: 'Nic ke kontrole'
 summary: '{n} položka ke kontrole | {n} položky ke kontrole'
 item:
   pending: 'Čekající potvrzení'
+  waitlist: 'Volná místa pro čekací listinu'
   rooms: 'Bez pokoje'
   missing: 'Chybějící kontaktní údaje'
   age: 'Věk mimo rozsah'
