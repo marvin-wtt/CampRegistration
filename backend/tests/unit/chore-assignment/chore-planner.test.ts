@@ -118,6 +118,23 @@ describe('rankPeople', () => {
     ]);
   });
 
+  it('prefers whoever has done least before the day among equal loads', () => {
+    const ledger = buildLedger([
+      duty(['done'], { date: '2026-07-01' }),
+      duty(['done'], { date: '2026-07-02' }),
+      duty(['ahead'], { date: '2026-07-20' }),
+      duty(['ahead'], { date: '2026-07-21' }),
+    ]);
+    const pool = [participant('done'), participant('ahead')];
+
+    const ranked = rankPeople(ledger, pool, {
+      choreId: 'kitchen',
+      date: '2026-07-10',
+    });
+
+    expect(ranked.map((r) => r.person.id)).toEqual(['ahead', 'done']);
+  });
+
   it('interleaves groups without disturbing the order within one', () => {
     const ledger = buildLedger([duty(['de2']), duty(['de3']), duty(['de3'])]);
     const pool = [
@@ -475,7 +492,40 @@ describe('planRebalance', () => {
     }
   });
 
-  it('never hands a duty to someone busy that day or not eligible', () => {
+  it('never hands a duty to someone not eligible', () => {
+    const changes = planRebalance(
+      [
+        duty(['a'], { date: '2026-07-01' }),
+        duty(['a'], { date: '2026-07-02' }),
+      ],
+      [movable('d1', ['a'], '2026-07-10')],
+      [participant('a'), staff('s')],
+    );
+
+    expect(changes).toEqual([]);
+  });
+
+  it('evens loads out even when nobody is far from the average', () => {
+    const fixed = (id: string, days: number) =>
+      Array.from({ length: days }, (_, day) =>
+        duty([id], { date: `2026-07-0${day + 1}` }),
+      );
+
+    const changes = planRebalance(
+      [...fixed('a', 4), ...fixed('b', 3), ...fixed('c', 4), ...fixed('d', 4)],
+      [movable('d1', ['a'], '2026-07-10')],
+      ['a', 'b', 'c', 'd'].map((id) => participant(id)),
+    );
+
+    expect(changes).toEqual([
+      expect.objectContaining({
+        fromRegistrationIds: ['a'],
+        toRegistrationIds: ['b'],
+      }),
+    ]);
+  });
+
+  it('never hands a duty to someone busy that day', () => {
     const changes = planRebalance(
       [
         duty(['a'], { date: '2026-07-01' }),
@@ -484,7 +534,7 @@ describe('planRebalance', () => {
         duty(['b'], { date: '2026-07-10', choreId: 'dishes' }),
       ],
       [movable('d1', ['a'], '2026-07-10')],
-      [participant('a'), participant('b'), staff('s')],
+      [participant('a'), participant('b')],
     );
 
     expect(changes).toEqual([]);
@@ -512,6 +562,39 @@ describe('planRebalance', () => {
       expect.objectContaining({
         fromRegistrationIds: ['a'],
         toRegistrationIds: ['b'],
+      }),
+    );
+  });
+
+  it('brings duties forward for whoever has done least so far', () => {
+    // Even in total, but b would do nothing until the 11th.
+    const changes = planRebalance(
+      [
+        duty(['a'], { date: '2026-07-01' }),
+        duty(['a'], { date: '2026-07-02' }),
+        duty(['c'], { date: '2026-07-01' }),
+      ],
+      [
+        movable('c1', ['c'], '2026-07-10', { choreId: 'c1' }),
+        movable('b1', ['b'], '2026-07-11', { choreId: 'b1' }),
+        movable('b2', ['b'], '2026-07-12', { choreId: 'b2' }),
+      ],
+      ['a', 'b', 'c'].map((id) => participant(id)),
+    );
+
+    expect(changes).toHaveLength(2);
+    expect(changes).toContainEqual(
+      expect.objectContaining({
+        assignmentId: 'c1',
+        fromRegistrationIds: ['c'],
+        toRegistrationIds: ['b'],
+      }),
+    );
+    // Either of b's later duties may go back; both are as fair.
+    expect(changes).toContainEqual(
+      expect.objectContaining({
+        fromRegistrationIds: ['b'],
+        toRegistrationIds: ['c'],
       }),
     );
   });

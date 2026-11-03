@@ -200,6 +200,8 @@ interface Ranked {
   // Load already carried on the day being planned.
   dayLoad: number;
   load: number;
+  // Load carried before the day being planned.
+  loadBefore: number;
   choreCount: number;
   last: string;
   group: string;
@@ -209,6 +211,7 @@ function compareRanked(a: Ranked, b: Ranked): number {
   return (
     a.dayLoad - b.dayLoad ||
     a.load - b.load ||
+    a.loadBefore - b.loadBefore ||
     a.choreCount - b.choreCount ||
     a.last.localeCompare(b.last)
   );
@@ -217,9 +220,9 @@ function compareRanked(a: Ranked, b: Ranked): number {
 /**
  * Fairest first: least already carried that day — so a second duty goes to
  * whoever has the lightest one — then lowest load across all chores, then
- * fewest times on this chore, then longest ago — ties shuffled. With group
- * balancing, the group seen least so far goes first among candidates
- * equally loaded — never ahead of a fairer one.
+ * least done before that day, then fewest times on this chore, then longest
+ * ago — ties shuffled. With group balancing, the group seen least so far goes
+ * first among candidates equally loaded — never ahead of a fairer one.
  */
 function rank<T extends Ranked>(items: T[], ctx: RankContext): T[] {
   const sorted = shuffleTiedRuns(
@@ -233,7 +236,10 @@ function rank<T extends Ranked>(items: T[], ctx: RankContext): T[] {
 
   return spreadWithinTies(
     sorted,
-    (a, b) => a.dayLoad === b.dayLoad && a.load === b.load,
+    (a, b) =>
+      a.dayLoad === b.dayLoad &&
+      a.load === b.load &&
+      a.loadBefore === b.loadBefore,
     (item) => item.group,
     ctx.groupCounts,
   );
@@ -241,6 +247,16 @@ function rank<T extends Ranked>(items: T[], ctx: RankContext): T[] {
 
 function dayLoadOf(stats: PersonStats, date: string | undefined): number {
   return date === undefined ? 0 : (stats.days.get(date)?.load ?? 0);
+}
+
+function loadBeforeOf(stats: PersonStats, date: string | undefined): number {
+  let load = 0;
+  if (date !== undefined) {
+    for (const [day, stat] of stats.days) {
+      load += day < date ? stat.load : 0;
+    }
+  }
+  return load;
 }
 
 export interface RankedPerson extends Ranked {
@@ -263,6 +279,7 @@ export function rankPeople(
         busy: dayLoad > 0,
         dayLoad,
         load: stats.load,
+        loadBefore: loadBeforeOf(stats, ctx.date),
         choreCount: stats.choreCounts.get(ctx.choreId) ?? 0,
         last: stats.lastByChore.get(ctx.choreId) ?? '',
         group: person.group ?? '',
@@ -304,6 +321,7 @@ export function rankRooms(
         busy: dayLoad > 0,
         dayLoad,
         load: mean((s) => s.load),
+        loadBefore: mean((s) => loadBeforeOf(s, ctx.date)),
         dutyCount: Math.round(mean((s) => s.dutyCount)),
         choreCount: mean((s) => s.choreCounts.get(ctx.choreId) ?? 0),
         last: stats.reduce((latest, s) => {
@@ -547,11 +565,12 @@ interface Transfer {
 }
 
 /**
- * Evens out loads with as few changes as possible: one upcoming duty at a
- * time passes from a more loaded holder to a less loaded one — or two trade
- * places — as long as one of them is outside the average band. Room duties
- * move by whole rooms. `fixed` duties only count; `movable` ones may change
- * hands.
+ * Evens out loads: one upcoming duty at a time passes from a more loaded
+ * holder to a less loaded one — or two trade places — while that makes loads
+ * fairer at all. Total load comes first; then that nobody is far ahead of the
+ * others along the way, so equal swaps bring forward the duties of whoever has
+ * done least so far. Room duties move by whole rooms. `fixed` duties only
+ * count; `movable` ones may change hands.
  */
 export function planRebalance(
   fixed: LedgerDuty[],
@@ -633,7 +652,81 @@ function holdersOf(pool: PoolPerson[], staff: boolean): Holder[][] {
   ];
 }
 
-// The most uneven pair first; within it, the change that evens loads out best.
+interface Gain {
+  // Drop in the squared distance of loads from their group average.
+  fairness: number;
+  // The same for the load carried by each upcoming duty date.
+  timing: number;
+}
+
+const EPSILON = 1e-9;
+
+// Total load first; timing only between changes equally fair.
+function isBetter(a: Gain, b: Gain): boolean {
+  return (
+    a.fairness - b.fairness > EPSILON ||
+    (Math.abs(a.fairness - b.fairness) <= EPSILON &&
+      a.timing - b.timing > EPSILON)
+  );
+}
+
+const NO_GAIN: Gain = { fairness: 0, timing: 0 };
+
+// Load carried up to each upcoming duty date, done or planned.
+interface Timeline {
+  dates: string[];
+  indexOf: Map<string, number>;
+  cumulative: Map<string, number[]>;
+  // Per person, the sum of their offsets from the group average, from each
+  // date on — so a change's effect on all later dates costs one subtraction.
+  suffix: Map<string, number[]>;
+}
+
+function timelineOf(
+  ledger: ChoreLedger,
+  pool: PoolPerson[],
+  duties: MovableDuty[],
+): Timeline {
+  const dates = [...new Set(duties.map((duty) => duty.date))].sort();
+  const cumulative = new Map(
+    pool.map((person) => {
+      const days = [...statsOf(ledger, person.id).days];
+      return [
+        person.id,
+        dates.map((date) =>
+          days.reduce(
+            (sum, [day, { load }]) => sum + (day <= date ? load : 0),
+            0,
+          ),
+        ),
+      ];
+    }),
+  );
+
+  const suffix = new Map<string, number[]>();
+  for (const staff of [false, true]) {
+    const group = pool.filter((person) => person.staff === staff);
+    const averages = dates.map((_, index) =>
+      mean(group.map((person) => cumulative.get(person.id)?.[index] ?? 0)),
+    );
+    for (const person of group) {
+      const loads = cumulative.get(person.id) ?? [];
+      const sums = Array<number>(dates.length + 1).fill(0);
+      for (let index = dates.length - 1; index >= 0; index--) {
+        sums[index] =
+          (sums[index + 1] ?? 0) + (loads[index] ?? 0) - (averages[index] ?? 0);
+      }
+      suffix.set(person.id, sums);
+    }
+  }
+  const indexOf = new Map(dates.map((date, index) => [date, index]));
+  return { dates, indexOf, cumulative, suffix };
+}
+
+/**
+ * The most loaded holder first; the best change between it and anyone it is
+ * ahead of on some upcoming date — including the last, so in total.
+ */
 function findTransfers(
   ledger: ChoreLedger,
   duties: MovableDuty[],
@@ -641,6 +734,7 @@ function findTransfers(
   roomOf: ReadonlyMap<string, string | null>,
 ): Transfer[] | undefined {
   const averages = groupAverages(ledger, pool);
+  const timeline = timelineOf(ledger, pool, duties);
   const staffIds = new Set(
     pool.filter((person) => person.staff).map((person) => person.id),
   );
@@ -648,34 +742,66 @@ function findTransfers(
     staffIds.has(id) ? averages.staff : averages.participants;
   const loadOf = (holder: Holder) =>
     mean(holder.people.map((person) => statsOf(ledger, person.id).load));
+  const cumulativeOf = (holder: Holder) =>
+    timeline.dates.map((_, index) =>
+      mean(
+        holder.people.map(
+          (person) => timeline.cumulative.get(person.id)?.[index] ?? 0,
+        ),
+      ),
+    );
+
+  // Who holds which duties, by person and by room, so a pair only looks at its own.
+  const held = new Map<string, MovableDuty[]>();
+  for (const duty of duties) {
+    const keys = new Set(
+      duty.members.flatMap((member) => {
+        const roomId = roomOf.get(member.registrationId);
+        return roomId
+          ? [member.registrationId, roomId]
+          : [member.registrationId];
+      }),
+    );
+    for (const key of keys) {
+      held.set(key, [...(held.get(key) ?? []), duty]);
+    }
+  }
+  const heldBy = (holder: Holder) => held.get(holder.id) ?? [];
 
   for (const staff of [false, true]) {
-    const average = staff ? averages.staff : averages.participants;
     for (const holders of holdersOf(pool, staff)) {
       const sorted = holders.sort((a, b) => loadOf(b) - loadOf(a));
+      const cumulative = new Map(sorted.map((h) => [h, cumulativeOf(h)]));
+      // Moving effort e only helps a pair more than e apart somewhere.
+      const minEffort = Math.min(...Object.values(EFFORT_POINTS));
+      const isAhead = (a: Holder, b: Holder) => {
+        const theirs = cumulative.get(b) ?? [];
+        return (cumulative.get(a) ?? []).some(
+          (load, index) => load - (theirs[index] ?? 0) > minEffort + EPSILON,
+        );
+      };
 
       for (const over of sorted) {
-        for (const under of [...sorted].reverse()) {
-          if (loadOf(over) <= loadOf(under)) {
-            break;
-          }
-          const outOfBand =
-            balanceOf(loadOf(over), average).balance === 'ABOVE' ||
-            balanceOf(loadOf(under), average).balance === 'BELOW';
-          if (!outOfBand) {
+        let best: { transfers: Transfer[]; gain: Gain } | undefined;
+        for (const under of sorted) {
+          if (under === over || !isAhead(over, under)) {
             continue;
           }
-          const best = bestTransfers(
+          const found = bestTransfers(
             ledger,
-            duties,
+            heldBy,
             roomOf,
             averageOf,
+            timeline,
             over,
             under,
           );
-          if (best) {
-            return best;
+          if (found && (!best || isBetter(found.gain, best.gain))) {
+            best = found;
           }
+        }
+        if (best) {
+          return best.transfers;
         }
       }
     }
@@ -683,39 +809,46 @@ function findTransfers(
   return undefined;
 }
 
-// A hand-over from `over` to `under`, or a swap of a heavier for a lighter duty.
+/**
+ * A hand-over from `over` to `under`, or a swap for a duty no heavier. Only
+ * changes that are fairer in total, or as fair and better timed; on a tie the
+ * hand-over, as the smaller change.
+ */
 function bestTransfers(
   ledger: ChoreLedger,
-  duties: MovableDuty[],
+  heldBy: (holder: Holder) => MovableDuty[],
   roomOf: ReadonlyMap<string, string | null>,
   averageOf: (id: string) => number,
+  timeline: Timeline,
   over: Holder,
   under: Holder,
-): Transfer[] | undefined {
-  const outgoing = duties.flatMap(
+): { transfers: Transfer[]; gain: Gain } | undefined {
+  const outgoing = heldBy(over).flatMap(
     (duty) => transfer(duty, over, under, roomOf) ?? [],
   );
-  const incoming = duties.flatMap(
+  const incoming = heldBy(under).flatMap(
     (duty) => transfer(duty, under, over, roomOf) ?? [],
   );
 
-  let best: { transfers: Transfer[]; gain: number } | undefined;
+  let best: { transfers: Transfer[]; gain: Gain } | undefined;
   const consider = (transfers: Transfer[]) => {
-    const gain = gainOf(ledger, transfers, averageOf);
-    if (gain > 0 && (!best || gain > best.gain)) {
+    const gain = gainOf(ledger, transfers, averageOf, timeline);
+    if (isBetter(gain, best?.gain ?? NO_GAIN)) {
       best = { transfers, gain };
     }
   };
 
   for (const give of outgoing) {
     consider([give]);
+  }
+  for (const give of outgoing) {
     for (const take of incoming) {
-      if (EFFORT_POINTS[take.duty.effort] < EFFORT_POINTS[give.duty.effort]) {
+      if (EFFORT_POINTS[take.duty.effort] <= EFFORT_POINTS[give.duty.effort]) {
         consider([give, take]);
       }
     }
   }
-  return best?.transfers;
+  return best;
 }
 
 // What `from` holds of the duty, handed to `to` — whole rooms on room duties.
@@ -776,44 +909,87 @@ function transfer(
 /**
  * How much the change evens out loads, as the drop in their squared distance
  * from each person's group average — against the average rather than zero,
- * so a smaller room is not favoured just for doing a duty with fewer people.
- * Zero if it would give anyone more duties on a day than they had already,
- * unless they were free.
+ * so a smaller room is not favoured just for doing a duty with fewer people —
+ * in total and summed over the upcoming dates. None if it would give anyone
+ * more duties on a day than they had already, unless they were free.
  */
 function gainOf(
   ledger: ChoreLedger,
   transfers: Transfer[],
   averageOf: (id: string) => number,
-): number {
-  const loadDelta = new Map<string, number>();
-  const dayDelta = new Map<string, number>();
-  const add = <K>(map: Map<K, number>, key: K, value: number) =>
-    map.set(key, (map.get(key) ?? 0) + value);
-
+  timeline: Timeline,
+): Gain {
+  // Per person, how their load shifts from each changed date on.
+  const shifts = new Map<string, Shift[]>();
   for (const { duty, leaving, joining } of transfers) {
+    const index = timeline.indexOf.get(duty.date) ?? 0;
     const effort = EFFORT_POINTS[duty.effort];
     for (const id of leaving) {
-      add(loadDelta, id, -effort);
-      add(dayDelta, `${id}|${duty.date}`, -1);
+      pushShift(shifts, id, {
+        index,
+        date: duty.date,
+        load: -effort,
+        duties: -1,
+      });
     }
     for (const id of joining) {
-      add(loadDelta, id, effort);
-      add(dayDelta, `${id}|${duty.date}`, 1);
+      pushShift(shifts, id, {
+        index,
+        date: duty.date,
+        load: effort,
+        duties: 1,
+      });
     }
   }
 
-  for (const [key, delta] of dayDelta) {
-    const [id = '', date = ''] = key.split('|');
-    const before = statsOf(ledger, id).days.get(date)?.dutyCount ?? 0;
-    if (delta > 0 && before + delta > Math.max(before, 1)) {
-      return 0;
+  let fairness = 0;
+  for (const [id, changes] of shifts) {
+    const stats = statsOf(ledger, id);
+    for (const { date } of changes) {
+      const added = changes
+        .filter((change) => change.date === date)
+        .reduce((sum, change) => sum + change.duties, 0);
+      const before = stats.days.get(date)?.dutyCount ?? 0;
+      if (added > 0 && before + added > Math.max(before, 1)) {
+        return NO_GAIN;
+      }
     }
+    const delta = changes.reduce((sum, change) => sum + change.load, 0);
+    const offset = stats.load - averageOf(id);
+    fairness += offset * offset - (offset + delta) * (offset + delta);
+  }
+  if (fairness < -EPSILON) {
+    return NO_GAIN;
   }
 
-  let gain = 0;
-  for (const [id, delta] of loadDelta) {
-    const offset = statsOf(ledger, id).load - averageOf(id);
-    gain += offset * offset - (offset + delta) * (offset + delta);
+  let timing = 0;
+  for (const [id, changes] of shifts) {
+    const sums = timeline.suffix.get(id) ?? [];
+    changes.sort((a, b) => a.index - b.index);
+    let shift = 0;
+    for (const [position, { index: start, load }] of changes.entries()) {
+      shift += load;
+      const end = changes[position + 1]?.index ?? timeline.dates.length;
+      // Over the dates in [start, end): Σ o² − (o + shift)².
+      const offsets = (sums[start] ?? 0) - (sums[end] ?? 0);
+      timing -= 2 * shift * offsets + shift * shift * (end - start);
+    }
   }
-  return gain;
+  return { fairness, timing };
+}
+
+interface Shift {
+  index: number;
+  date: string;
+  load: number;
+  duties: number;
+}
+
+function pushShift(shifts: Map<string, Shift[]>, id: string, shift: Shift) {
+  const list = shifts.get(id);
+  if (list) {
+    list.push(shift);
+  } else {
+    shifts.set(id, [shift]);
+  }
 }

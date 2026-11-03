@@ -95,6 +95,7 @@ export class ChoreAssignmentService extends BaseService {
           findSlot(chore, data.slotId),
           data.date,
           data.rotationUnit,
+          data,
         );
         members = [
           ...members,
@@ -110,6 +111,8 @@ export class ChoreAssignmentService extends BaseService {
           rotationUnit: data.rotationUnit,
           date: toDbDate(data.date),
           note: data.note ?? null,
+          headcount: data.headcount ?? null,
+          supervisorCount: data.supervisorCount ?? null,
           members: { createMany: { data: members } },
         },
         include: CHORE_ASSIGNMENT_INCLUDE,
@@ -164,6 +167,7 @@ export class ChoreAssignmentService extends BaseService {
         findSlot(before.chore, before.slotId),
         toDateString(before.date),
         before.rotationUnit,
+        before,
       );
       const picks = pickForOccurrence(ledger, pool, spec, before.members);
 
@@ -285,6 +289,7 @@ export class ChoreAssignmentService extends BaseService {
               slot,
               date,
               replace ? data.rotationUnit : current.rotationUnit,
+              current,
             ),
             existing: replace ? [] : current.members,
             slotId,
@@ -333,7 +338,7 @@ export class ChoreAssignmentService extends BaseService {
           continue;
         }
 
-        // In place, so the duty keeps its id, note and series.
+        // In place, so the duty keeps its id, note, counts and series.
         if (occurrence.replace) {
           await tx.choreAssignmentMember.deleteMany({
             where: { choreAssignmentId: target.id },
@@ -569,6 +574,7 @@ export class ChoreAssignmentService extends BaseService {
           eligibility: assignment.chore.eligibility,
           unit: assignment.rotationUnit,
           headcount:
+            assignment.headcount ??
             assignment.choreSlot?.headcount ??
             assignment.chore.defaultCount ??
             0,
@@ -685,11 +691,18 @@ export class ChoreAssignmentService extends BaseService {
   }
 }
 
+interface OwnCounts {
+  headcount?: number | null | undefined;
+  supervisorCount?: number | null | undefined;
+}
+
+// The duty's own counts win, then the slot's, then the chore's.
 function occurrenceSpec(
   chore: ChoreWithSlots,
   slot: ChoreSlot | null,
   date: string,
   unit: ChoreRotationUnit,
+  own: OwnCounts = {},
 ): OccurrenceSpec {
   return {
     choreId: chore.id,
@@ -698,8 +711,9 @@ function occurrenceSpec(
     effort: effortOf(chore, slot),
     eligibility: chore.eligibility,
     balanceGroups: chore.balanceGroups,
-    headcount: slot?.headcount ?? chore.defaultCount ?? 0,
-    supervisorCount: slot?.supervisorCount ?? chore.supervisorCount,
+    headcount: own.headcount ?? slot?.headcount ?? chore.defaultCount ?? 0,
+    supervisorCount:
+      own.supervisorCount ?? slot?.supervisorCount ?? chore.supervisorCount,
   };
 }
 

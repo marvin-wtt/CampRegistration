@@ -25,6 +25,17 @@ export function requiredCount(
     : (slot?.headcount ?? chore?.defaultCount ?? 0);
 }
 
+// The duty's own count wins over its slot's and chore's.
+export function assignmentCount(
+  assignment: ChoreAssignment,
+  chore: Chore | undefined,
+  role: ChoreMemberRole,
+): number {
+  const own =
+    role === 'SUPERVISOR' ? assignment.supervisorCount : assignment.headcount;
+  return own ?? requiredCount(chore, findSlot(chore, assignment.slotId), role);
+}
+
 export function effortOf(
   chore: Chore | undefined,
   slot: ChoreSlot | undefined,
@@ -52,12 +63,7 @@ export function openSpots(
   const filled = membersWithRole(assignment.members, role).filter(
     (member) => !member.missed,
   ).length;
-  const required = requiredCount(
-    chore,
-    findSlot(chore, assignment.slotId),
-    role,
-  );
-  return Math.max(required - filled, 0);
+  return Math.max(assignmentCount(assignment, chore, role) - filled, 0);
 }
 
 // By date, then in the order chores and their slots are listed.
