@@ -91,10 +91,14 @@ import {
 const {
   phase,
   loading = false,
+  registrations = false,
+  files = false,
   rooms = false,
 } = defineProps<{
   phase: EventPhase;
   loading?: boolean;
+  registrations?: boolean;
+  files?: boolean;
   rooms?: boolean;
 }>();
 
@@ -150,7 +154,7 @@ const items = computed<AttentionItem[]>(() => {
       count: stats.counts.value.pending,
       icon: 'hourglass_top',
       template: LOCAL_TEMPLATE_PENDING,
-      shown: true,
+      shown: registrations,
     },
     {
       key: 'rooms',
@@ -158,7 +162,7 @@ const items = computed<AttentionItem[]>(() => {
       count: withoutRoom,
       icon: 'bed',
       route: 'management.event.room-planner',
-      shown: running && rooms,
+      shown: running && registrations && rooms,
     },
     {
       key: 'missing',
@@ -166,7 +170,7 @@ const items = computed<AttentionItem[]>(() => {
       count: missingInfo,
       icon: 'contact_mail',
       template: LOCAL_TEMPLATE_MISSING,
-      shown: true,
+      shown: registrations,
     },
     {
       key: 'age',
@@ -174,7 +178,7 @@ const items = computed<AttentionItem[]>(() => {
       count: ageOutOfRange,
       icon: 'cake',
       template: LOCAL_TEMPLATE_AGE,
-      shown: true,
+      shown: registrations,
     },
     {
       // The setup checklist covers files while setting up.
@@ -183,7 +187,7 @@ const items = computed<AttentionItem[]>(() => {
       count: eventFilesStore.missingFilesCount,
       icon: 'upload_file',
       route: 'management.event.settings.files',
-      shown: phase !== 'setup',
+      shown: files && phase !== 'setup',
     },
   ];
 
