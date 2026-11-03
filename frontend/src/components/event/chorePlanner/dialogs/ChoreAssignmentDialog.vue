@@ -359,21 +359,26 @@ const selectedSlot = computed(() =>
   findSlot(selectedChore.value, slotId.value),
 );
 
-// Local to this duty — e.g. "we need three more today" — never saved.
-const headcount = ref<number>(0);
-const supervisorCount = ref<number>(0);
+// Counts for this duty alone — e.g. "we need three more today". Saved only
+// where they differ from the slot's or chore's, so later edits there still apply.
+const inheritedCount = (role: ChoreMemberRole) =>
+  requiredCount(selectedChore.value, selectedSlot.value, role);
+const headcount = ref<number>(
+  props.assignment?.headcount ?? inheritedCount('MEMBER'),
+);
+const supervisorCount = ref<number>(
+  props.assignment?.supervisorCount ?? inheritedCount('SUPERVISOR'),
+);
 
 function resetCounts() {
-  headcount.value = Math.max(
-    requiredCount(selectedChore.value, selectedSlot.value, 'MEMBER'),
-    activeCount('MEMBER'),
-  );
-  supervisorCount.value = Math.max(
-    requiredCount(selectedChore.value, selectedSlot.value, 'SUPERVISOR'),
-    activeCount('SUPERVISOR'),
-  );
+  headcount.value = inheritedCount('MEMBER');
+  supervisorCount.value = inheritedCount('SUPERVISOR');
 }
-resetCounts();
+
+function ownCount(role: ChoreMemberRole): number | null {
+  const count = role === 'MEMBER' ? headcount.value : supervisorCount.value;
+  return count === inheritedCount(role) ? null : count;
+}
 
 function firstSlotId(): string | null {
   return selectedChore.value?.slots[0]?.id ?? null;
@@ -788,6 +793,8 @@ function onOKClick(): void {
     date: date.value,
     slotId: slotId.value,
     note: note.value.trim() || null,
+    headcount: ownCount('MEMBER'),
+    supervisorCount: ownCount('SUPERVISOR'),
     members: members.value,
   };
   const payload: ChoreAssignmentCreateData | ChoreAssignmentUpdateData =
