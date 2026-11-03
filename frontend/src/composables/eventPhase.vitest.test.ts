@@ -44,8 +44,6 @@ describe('eventPhaseOf', () => {
     const open = event({ registrationStatus: 'open' });
 
     expect(eventPhaseOf(open, at('2026-08-10T06:00:00Z'))).toBe('running');
-    expect(eventPhaseOf(open, at('2026-08-09T06:00:00Z'))).toBe(
-      'registration',
-    );
+    expect(eventPhaseOf(open, at('2026-08-09T06:00:00Z'))).toBe('registration');
   });
 });

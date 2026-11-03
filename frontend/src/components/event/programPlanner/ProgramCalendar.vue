@@ -192,7 +192,10 @@
                     </span>
                     <q-tooltip>
                       {{
-                        t('birthday', { name: birthday.name, age: birthday.age })
+                        t('birthday', {
+                          name: birthday.name,
+                          age: birthday.age,
+                        })
                       }}
                     </q-tooltip>
                   </div>

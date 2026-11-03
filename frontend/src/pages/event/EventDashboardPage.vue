@@ -240,7 +240,9 @@ const permissionsLoading = computed<boolean>(
 
 const loading = computed<boolean>(
   () =>
-    permissionsLoading.value || registrationsLoading.value || eventLoading.value,
+    permissionsLoading.value ||
+    registrationsLoading.value ||
+    eventLoading.value,
 );
 
 const error = computed<string | null>(
