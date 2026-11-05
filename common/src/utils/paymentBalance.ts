@@ -1,17 +1,21 @@
 import type {
+  PaymentStatus,
+  RefundStatus,
   RegistrationPayment,
   RegistrationPaymentStatus,
-} from '@camp-registration/common/entities';
-import type { Payment, PaymentRefund } from '#generated/prisma/client.js';
+} from '../entities/Payment.js';
 
-export type PaymentWithRefunds = Pick<Payment, 'status' | 'amount'> & {
-  refunds: Pick<PaymentRefund, 'status' | 'amount'>[];
-};
+/** A payment's ledger entries as far as its balance needs them. */
+export interface PaymentWithRefunds {
+  status: PaymentStatus;
+  amount: number;
+  refunds: { status: RefundStatus; amount: number }[];
+}
 
 /** Refunds that took, or may still take, money back: everything not failed or canceled. */
-export function countsAgainstPayment(
-  refund: Pick<PaymentRefund, 'status'>,
-): boolean {
+export function countsAgainstPayment(refund: {
+  status: RefundStatus;
+}): boolean {
   return refund.status === 'PENDING' || refund.status === 'REFUNDED';
 }
 

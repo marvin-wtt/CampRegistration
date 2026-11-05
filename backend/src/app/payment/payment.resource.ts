@@ -1,7 +1,7 @@
 import type { Payment as PaymentData } from '@camp-registration/common/entities';
 import { JsonResource } from '#core/resource/JsonResource';
 import type { PaymentWithDetails } from './payment.service.js';
-import { refundedAmount } from './payment.balance.js';
+import { refundedAmount } from '@camp-registration/common/utils';
 
 export class PaymentResource extends JsonResource<
   PaymentWithDetails,
@@ -29,6 +29,7 @@ export class PaymentResource extends JsonResource<
       refunds: payment.refunds.map((refund) => ({
         id: refund.id,
         paymentId: refund.paymentId,
+        kind: refund.kind,
         status: refund.status,
         amount: refund.amount,
         reason: refund.reason,

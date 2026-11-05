@@ -6,14 +6,12 @@ import ApiError from '#utils/ApiError';
 import { PaymentService } from './payment.service.js';
 import { PaymentNotifier } from './payment.notifier.js';
 import { PaymentResource } from './payment.resource.js';
-import { PaymentRequestedMessage } from './messages/requested.mail.js';
+import { PaymentCollectionService } from './payment-collection.service.js';
 import { PaymentRefundedMessage } from './messages/refunded.mail.js';
 import validator from './payment.validation.js';
 import { paymentPageUrl } from './payment-link.js';
 import { PaymentAccountService } from '#app/paymentAccount/payment-account.service';
 import { RealtimeService } from '#core/realtime/RealtimeService';
-import { EventService } from '#app/event/event.service';
-import { toMinorUnits } from '@camp-registration/common/utils';
 import type {
   EventPaymentStatus,
   PaymentRequestResult,
@@ -28,7 +26,8 @@ export class PaymentController extends BaseController {
     private readonly accountService: PaymentAccountService,
     @inject(RealtimeService)
     private readonly realtimeService: RealtimeService,
-    @inject(EventService) private readonly eventService: EventService,
+    @inject(PaymentCollectionService)
+    private readonly collection: PaymentCollectionService,
   ) {
     super();
   }
@@ -61,9 +60,8 @@ export class PaymentController extends BaseController {
           : null,
         organizationVerified:
           event.organization.verificationStatus === 'VERIFIED',
-        unrequested: (await this.paymentService.findUnrequested(event.id))
-          .length,
-        currencyLocked: await this.eventService.isCurrencyLocked(event.id),
+        unrequested: (await this.paymentService.findUnrequested(event)).length,
+        currencyLocked: await this.paymentService.isCurrencyLocked(event.id),
       } satisfies EventPaymentStatus,
     });
   }
@@ -172,10 +170,7 @@ export class PaymentController extends BaseController {
         { code: 'PAYMENT_NO_QUOTE' },
       );
     }
-    const amountDue =
-      body.amount === null
-        ? registration.quotedAmount
-        : toMinorUnits(body.amount, event.currency);
+    const amountDue = body.amount ?? registration.quotedAmount;
 
     await this.paymentService.setAmountDue(event, registration, {
       amountDue,
@@ -201,26 +196,10 @@ export class PaymentController extends BaseController {
     await req.validate(validator.eventIndex);
     const event = req.modelOrFail('event');
 
-    const settings = await this.paymentService.getSettings(event.id);
-    if (
-      !settings.enabled ||
-      !this.paymentService.requestsOpen(settings, event)
-    ) {
-      throw new ApiError(
-        httpStatus.CONFLICT,
-        'Payment requests are not due for this event',
-        { code: 'PAYMENT_REQUESTS_CLOSED' },
-      );
-    }
-
-    const registrations = await this.paymentService.findUnrequested(event.id);
-    for (const registration of registrations) {
-      await PaymentRequestedMessage.enqueueFor(event, registration);
-      await this.paymentService.markRequested(registration);
-    }
+    const requested = await this.collection.requestAll(event);
 
     res.json({
-      data: { requested: registrations.length } satisfies PaymentRequestResult,
+      data: { requested } satisfies PaymentRequestResult,
     });
   }
 
@@ -230,16 +209,7 @@ export class PaymentController extends BaseController {
     const event = req.modelOrFail('event');
     const registration = req.modelOrFail('registration');
 
-    if (!registration.amountDue) {
-      throw new ApiError(
-        httpStatus.CONFLICT,
-        'This registration does not owe a payment',
-        { code: 'PAYMENT_NOTHING_DUE' },
-      );
-    }
-
-    await PaymentRequestedMessage.enqueueFor(event, registration);
-    await this.paymentService.markRequested(registration);
+    await this.collection.request(event, registration);
 
     res.status(httpStatus.NO_CONTENT).send();
   }

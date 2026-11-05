@@ -65,6 +65,19 @@ export interface ProviderRefundSnapshot {
   refundedAt: Date | null;
 }
 
+/**
+ * Money the payer's bank took back (a Stripe dispute, a Mollie chargeback).
+ * `PENDING` while disputed with the funds withdrawn, `REFUNDED` once lost,
+ * `CANCELED` when won or reversed — the money is back.
+ */
+export interface ProviderChargebackSnapshot {
+  providerChargebackId: string;
+  status: RefundStatus;
+  /** Minor units. */
+  amount: number;
+  createdAt: Date;
+}
+
 /** The provider's authoritative view of one payment, fetched — never taken from a webhook body. */
 export interface ProviderPaymentSnapshot {
   providerPaymentId: string;
@@ -75,6 +88,7 @@ export interface ProviderPaymentSnapshot {
   method: string | null;
   paidAt: Date | null;
   refunds: ProviderRefundSnapshot[];
+  chargebacks: ProviderChargebackSnapshot[];
 }
 
 export type RawBodyRequest = Request & { rawBody?: Buffer };

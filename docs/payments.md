@@ -15,9 +15,14 @@ connection and the providers; it knows nothing of payments).
   units** plus an ISO currency (`Event.currency`). Status only moves forward
   (`OPEN → PENDING → PAID | FAILED | CANCELED | EXPIRED`), `PAID` is terminal.
   Kept when the registration is deleted (`registrationId → null`); an event
-  with `PAID` payments can't be deleted.
+  with `PAID` payments can't be deleted until their retention period is over.
+  The API takes and returns minor units throughout; only the dialogs convert.
 - `PaymentRefund` — money going back, as ledger rows: a payment stays `PAID`.
-  Pending and completed refunds count against it.
+  Pending and completed refunds count against it. `kind = CHARGEBACK` books
+  money the payer's bank took back (a Stripe dispute, a Mollie chargeback) the
+  same way: `PENDING` while disputed, `REFUNDED` once lost, `CANCELED` when won
+  or reversed. `amountDueReduction` remembers what a refund took off the amount
+  due, given back if the refund fails — at once or later, by webhook.
 - `Registration.quotedAmount` — what the server calculated at submission, which
   is what the form showed: `Event.price` plus what the answers add
   (`extractPaymentAmounts`), clamped at zero. Adjustments are major units,
@@ -33,15 +38,15 @@ connection and the providers; it knows nothing of payments).
   different total. The presets waive the price for every role but
   `participant` with a `Team discount` line shown only to them.
   `Registration.payment` in the API is derived from the ledger
-  (`payment.balance.ts`).
+  (`paymentBalance.ts` in `common`, shared with the frontend).
 
 ### The price check
 
 The registration form sends `priceCheck.displayedTotal`, the total its summary
 showed. It is **untrusted and never an amount**: `assertPriceUnchanged`
 (`registration.price-check.ts`) only compares it with the server's own quote
-before anything is created, and it goes no further — the service's input type
-has no field for it, and tests assert it never reaches the registration. On a
+inside `createRegistration`, against the quote it is about to store, and goes
+no further — it never becomes part of the registration's data. On a
 mismatch the server refuses with `REGISTRATION_PRICE_CHANGED` and its quote in
 `details`; the form shows that amount and resubmits only once the person
 confirms it, so a client and server that calculate differently can't block
@@ -52,10 +57,19 @@ registrations either.
 Event setting `payment` (`enabled`, `timing`, `requestDate`,
 `requestDaysBeforeStart`, `reminderAfterDays`):
 
-Only accepted registrations are ever asked to pay, and only while `enabled`.
-Registrations accepted before payments were turned on (or before a request
-date) are asked with one deliberate step: `POST /events/:eventId/payments/request`,
-offered on the payment settings page with the count from `…/payments/status`.
+`PaymentCollectionService` alone decides who is asked: accepted registrations
+that still owe money (by the ledger, not just `amountDue`), while the event
+collects — `enabled`, the request date reached, the organization verified and
+its provider connected. Acceptance, a manager's (re-)request, the bulk request
+and the daily job all go through it. Registrations accepted before payments
+were turned on (or before a request date) are asked with one deliberate step:
+`POST /events/:eventId/payments/request`, offered on the payment settings page
+with the count from `…/payments/status`. A registration that leaves `ACCEPTED`
+gets its open checkouts closed.
+
+The setting and `…/payments/status` need `event.payments.adjust` and
+`event.payments.view`: turning payments on emails participants, so it is not
+part of an organization admin's `event.edit`.
 
 - `ACCEPTANCE` — on acceptance, the `payment_requested` mail carries the link.
   A registration accepted on submit (automatic confirmation) also gets a
@@ -64,16 +78,18 @@ offered on the payment settings page with the count from `…/payments/status`.
   or `requestDaysBeforeStart` days before the start (`paymentRequestDate` in
   `common`, a calendar date in the event's time zone). The daily
   `payment-reminders` job first sends the requests that came due, then the
-  reminders; checkout refuses until then.
+  reminders; checkout refuses until then. Reminders stop once the event has
+  ended.
 
 A director (`event.payments.adjust`) can set what a registration owes
 (`PUT …/payments/amount-due`, with a note); `amountDueAdjustedAt` then keeps
 edited answers from recalculating it until it is reset with `amount: null`.
 
 Every payment action is audited on its registration (`payment.audit.ts`):
-recorded, deleted and refunded payments, requests, adjustments, and provider
-status changes as system entries. Amounts are recorded; notes, reasons and
-methods are free text and never are.
+recorded, deleted and refunded payments, requests, adjustments, and — as
+system entries — provider status changes, dashboard refunds, failed refunds
+and chargebacks. A refund is audited only once the provider accepted it.
+Amounts are recorded; notes, reasons and methods are free text and never are.
 
 The participant's page `/events/:eventId/registrations/:registrationId/payment`
 is authenticated by an HMAC token (`payment-link.ts`, `PAYMENT_LINK_SECRET`)
@@ -81,7 +97,8 @@ and is also the provider's return URL (`&returned=1`).
 
 Checkout refuses — rather than registration — when nothing is due, the
 organization is unverified or has no account, or the registration isn't
-accepted or asked to pay yet.
+accepted or asked to pay yet. It locks the registration's row until the
+checkout is stored, so concurrent clicks share one checkout.
 
 ### Overpayments
 
@@ -113,8 +130,10 @@ of them, deleted registrations included, and exports CSV for the treasurer.
 Keeping them rests on a legal obligation (Art. 6(1)(c) GDPR; Germany: HGB
 § 257, AO § 147). The monthly `payment-record-retention` job removes the payer
 snapshot of payments whose registration is gone once
-`PAYMENT_RECORD_RETENTION_YEARS` (default 10) have passed; the anonymous
-amounts stay.
+`PAYMENT_RECORD_RETENTION_YEARS` (default 10) have passed for the payment and
+its refunds — counted from the end of the calendar year they were made in
+(HGB § 257(5), AO § 147(4); `payment.retention.ts`); the anonymous amounts
+stay. After the same period an event's ledger no longer blocks its deletion.
 
 ## Reconciling with providers
 
@@ -122,9 +141,12 @@ The provider is never trusted from a webhook body. `POST
 /api/v1/webhooks/payments/:provider/:accountId` only learns _which_ payment
 changed (verifying Stripe's signature per account), then a `payment` queue job
 re-fetches it (`PaymentProvider.fetchPayment`) and
-`PaymentReconciliationService.applySnapshot` applies it idempotently — including every refund, so refunds made in the
-provider dashboard show up too. The participant's return triggers the same
-reconciliation, which is what makes local development work without public webhooks.
+`PaymentReconciliationService.applySnapshot` applies it idempotently —
+including every refund and chargeback, so refunds made in the provider
+dashboard show up too (without a participant mail: the organizer decided that
+there). The participant's return triggers the same reconciliation, at most
+every few seconds per payment while the page polls, which is what makes local
+development work without public webhooks.
 
 Mail and realtime side effects go through `PaymentNotifier`, so exactly the
 call that moved a status notifies.

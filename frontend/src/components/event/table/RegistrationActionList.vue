@@ -123,6 +123,7 @@ import type {
   RegistrationUpdateQuery,
 } from '@camp-registration/common/entities';
 import { useRegistrationsStore } from '@/stores/registration-store';
+import { usePaymentStore } from '@/stores/payment-store';
 import { usePermissions } from '@/composables/permissions';
 import RegistrationDeleteDialog from '@/components/event/table/dialogs/RegistrationDeleteDialog.vue';
 import RegistrationAcceptDialog from '@/components/event/table/dialogs/RegistrationAcceptDialog.vue';
@@ -150,6 +151,7 @@ const { t } = useI18n();
 const apiService = useAPIService();
 const eventDetailStore = useEventDetailsStore();
 const registrationStore = useRegistrationsStore();
+const paymentStore = usePaymentStore();
 const messageTemplateService = useMessageTemplateService();
 const { data: eventData } = storeToRefs(eventDetailStore);
 const { can } = usePermissions();
@@ -185,7 +187,7 @@ function recordPayment() {
     })
     .onOk((data: PaymentCreateData) => {
       void runPaymentAction(
-        () => apiService.createManualPayment(eventId, registration.id, data),
+        () => paymentStore.record(eventId, registration.id, data),
         t('notify.recorded'),
       );
     });
@@ -197,7 +199,7 @@ function requestPayment() {
     return;
   }
   void runPaymentAction(
-    () => apiService.requestPayment(eventId, registration.id),
+    () => paymentStore.request(eventId, registration.id),
     t('notify.requested'),
   );
 }
@@ -211,8 +213,6 @@ async function runPaymentAction(
     quasar.notify({ type: 'positive', message: success });
   } catch (err) {
     quasar.notify({ type: 'negative', message: extractErrorText(err) });
-  } finally {
-    await registrationStore.refreshOne(registration.id);
   }
 }
 

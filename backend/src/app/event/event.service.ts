@@ -7,6 +7,7 @@ import type { OptionalByKeys } from '#types/utils';
 import { BaseService } from '#core/base/BaseService';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service.js';
+import { PaymentService } from '#app/payment/payment.service';
 import { AuditService } from '#app/audit/audit.service';
 import { eventAuditPolicy } from '#app/event/event.audit';
 import { calculateFreePlaces, type FreePlaces } from '#app/event/event.util';
@@ -65,24 +66,11 @@ interface EventQueryArgs {
 
 @injectable()
 export class EventService extends BaseService {
-  /**
-   * Whether the currency is fixed: stored amounts are minor units of it, so
-   * changing it after anything was quoted or paid would change their value.
-   */
-  async isCurrencyLocked(eventId: string): Promise<boolean> {
-    const [payments, quoted] = await Promise.all([
-      this.prisma.payment.count({ where: { eventId } }),
-      this.prisma.registration.count({
-        where: { eventId, quotedAmount: { gt: 0 } },
-      }),
-    ]);
-
-    return payments > 0 || quoted > 0;
-  }
-
   constructor(
     @inject(FileService) private readonly fileService: FileService,
     @inject(AuditService) private readonly audit: AuditService,
+    @inject(PaymentService)
+    private readonly paymentService: PaymentService,
   ) {
     super();
   }
@@ -491,6 +479,18 @@ export class EventService extends BaseService {
   }
 
   async updateEvent(event: Event, data: EventUpdateData) {
+    if (
+      data.currency !== undefined &&
+      data.currency !== event.currency &&
+      (await this.paymentService.isCurrencyLocked(event.id))
+    ) {
+      throw new ApiError(
+        httpStatus.CONFLICT,
+        'The currency cannot change once amounts were quoted or paid',
+        { code: 'EVENT_CURRENCY_LOCKED' },
+      );
+    }
+
     return this.transaction(async (tx) => {
       const before = await tx.event.findUniqueOrThrow({
         where: { id: event.id },
@@ -513,25 +513,9 @@ export class EventService extends BaseService {
     });
   }
 
-  /**
-   * Money that changed hands keeps its record: an event with paid payments
-   * can't be deleted (the ledger's event reference is `Restrict`). Attempts
-   * that never settled carry no money and go with the event.
-   */
   async deleteEventById(id: string) {
     await this.transaction(async (tx) => {
-      const paid = await tx.payment.count({
-        where: { eventId: id, status: 'PAID' },
-      });
-      if (paid > 0) {
-        throw new ApiError(
-          httpStatus.CONFLICT,
-          'This event has received payments and cannot be deleted',
-          { code: 'EVENT_HAS_PAYMENTS' },
-        );
-      }
-
-      await tx.payment.deleteMany({ where: { eventId: id } });
+      await this.paymentService.releaseEventLedger(id);
       // The FK nulls `eventId` on the event's audit rows; retention purges them later.
       await tx.event.delete({ where: { id } });
 

@@ -155,6 +155,7 @@ export class FakeProvider implements PaymentProvider {
         amount: refund.amount,
         refundedAt: refund.refundedAt,
       })),
+      chargebacks: [],
     });
   }
 

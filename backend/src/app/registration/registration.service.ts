@@ -3,7 +3,11 @@ import httpStatus from 'http-status';
 import { Prisma, type Registration } from '#generated/prisma/client.js';
 import type { EventWithFreePlaces } from '#app/event/event.types';
 import { computeAmountDue } from '@camp-registration/common/utils';
-import type { PaymentSettlement } from '@camp-registration/common/entities';
+import type {
+  PaymentSettlement,
+  RegistrationPriceCheck,
+} from '@camp-registration/common/entities';
+import { assertPriceUnchanged } from './registration.price-check.js';
 import { PaymentService } from '#app/payment/payment.service';
 import { getRequestContext } from '#core/context/requestContext';
 import { RegistrationForm } from '#app/registration/registration.form';
@@ -104,26 +108,14 @@ export class RegistrationService extends BaseService {
   }
 
   /**
-   * What a submission of `data` would be charged, as `createRegistration`
-   * calculates it — the server's own amount, for comparing with what the
-   * form displayed.
+   * `priceCheck` is what the form displayed: a submission whose price changed
+   * meanwhile is refused (`assertPriceUnchanged`), never charged differently.
    */
-  quoteAmount(
-    event: EventWithFreePlaces,
-    data: Pick<Registration, 'data' | 'locale' | 'group'>,
-  ): number {
-    const form = new RegistrationForm(event, {
-      locale: data.locale,
-      group: data.group,
-    }).load(data.data);
-
-    return computeAmountDue(event, form.paymentAmounts());
-  }
-
   async createRegistration(
     event: EventWithFreePlaces,
     data: Pick<Registration, 'data' | 'locale' | 'group'>,
     fileField: string,
+    priceCheck?: RegistrationPriceCheck,
   ) {
     // Built in the locale the data was validated in: event variables such as
     // `{event.price}` resolve per locale, so computed values can differ.
@@ -142,6 +134,7 @@ export class RegistrationService extends BaseService {
     // Stored whether or not payments are collected: the form showed it, so
     // it is what this person agreed to.
     const quotedAmount = computeAmountDue(event, form.paymentAmounts());
+    assertPriceUnchanged(quotedAmount, priceCheck);
 
     const fileIds = form.getFileIds();
 
@@ -281,6 +274,8 @@ export class RegistrationService extends BaseService {
       let computedData: Partial<Prisma.RegistrationCreateInput> = {};
       let formFileIds: string[] | undefined;
 
+      // What is owed is never re-priced by an edit: people owe what the form
+      // showed them, unless a manager changes it explicitly.
       if (data.data) {
         // Read as the form it was answered in: the group's `{event.*}` values
         // and the locale can change what the form shows and computes.
@@ -291,9 +286,6 @@ export class RegistrationService extends BaseService {
         const eventData = form.extractEventData();
         computedData = computedRegistrationData(eventData);
         formFileIds = form.getFileIds();
-
-        // What is owed is never re-priced by an edit: people owe what the
-        // form showed them, unless a manager changes it explicitly.
       }
       if (data.customFiles) {
         before.customFiles = await this.customFileSlots(tx, registrationId);

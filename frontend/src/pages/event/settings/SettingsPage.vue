@@ -187,7 +187,7 @@ const items = computed<SettingsItem[]>(() => [
     icon: 'payments',
     color: 'secondary',
     to: { name: 'management.event.settings.payments' },
-    permission: 'event.edit',
+    permission: 'event.payments.view',
   },
   {
     name: 'privacy',

@@ -10,6 +10,7 @@ import {
 
 const molliePayments = { get: vi.fn(), create: vi.fn() };
 const mollieRefunds = { page: vi.fn(), create: vi.fn() };
+const mollieChargebacks = { page: vi.fn() };
 
 vi.mock('@mollie/api-client', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@mollie/api-client')>();
@@ -19,6 +20,7 @@ vi.mock('@mollie/api-client', async (importOriginal) => {
     default: () => ({
       payments: molliePayments,
       paymentRefunds: mollieRefunds,
+      paymentChargebacks: mollieChargebacks,
       profiles: { getCurrent: vi.fn().mockResolvedValue({ name: 'Shop' }) },
     }),
   };
@@ -26,6 +28,7 @@ vi.mock('@mollie/api-client', async (importOriginal) => {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mollieChargebacks.page.mockResolvedValue([]);
 });
 
 describe('StripeProvider.parseWebhook', () => {
@@ -81,6 +84,28 @@ describe('StripeProvider.parseWebhook', () => {
     await expect(
       provider.parseWebhook(req, credentials),
     ).rejects.toBeInstanceOf(InvalidWebhookError);
+  });
+
+  it('follows a dispute to the session of its payment', async () => {
+    const lookup = vi
+      .spyOn(
+        provider as unknown as {
+          sessionForIntent: (c: unknown, id: string) => Promise<string>;
+        },
+        'sessionForIntent',
+      )
+      .mockResolvedValue('cs_test_1');
+    const req = signedRequest({
+      id: 'evt_1',
+      object: 'event',
+      type: 'charge.dispute.created',
+      data: { object: { id: 'dp_1', payment_intent: 'pi_1' } },
+    });
+
+    await expect(provider.parseWebhook(req, credentials)).resolves.toBe(
+      'cs_test_1',
+    );
+    expect(lookup).toHaveBeenCalledWith(credentials, 'pi_1');
   });
 
   it('ignores unrelated events', async () => {
@@ -144,6 +169,38 @@ describe('MollieProvider', () => {
           amount: 1050,
         },
         { providerRefundId: 're_2', reference: null, status: 'PENDING' },
+      ],
+    });
+  });
+
+  it('books a chargeback as lost, and a reversed one as returned', async () => {
+    molliePayments.get.mockResolvedValue({
+      id: 'tr_1',
+      status: 'paid',
+      amount: { currency: 'EUR', value: '50.00' },
+    });
+    mollieRefunds.page.mockResolvedValue([]);
+    mollieChargebacks.page.mockResolvedValue([
+      {
+        id: 'chb_1',
+        amount: { currency: 'EUR', value: '50.00' },
+        createdAt: '2026-01-05T10:00:00Z',
+        reversedAt: null,
+      },
+      {
+        id: 'chb_2',
+        amount: { currency: 'EUR', value: '20.00' },
+        createdAt: '2026-01-06T10:00:00Z',
+        reversedAt: '2026-01-07T10:00:00Z',
+      },
+    ]);
+
+    await expect(
+      provider.fetchPayment(credentials, 'tr_1'),
+    ).resolves.toMatchObject({
+      chargebacks: [
+        { providerChargebackId: 'chb_1', status: 'REFUNDED', amount: 5000 },
+        { providerChargebackId: 'chb_2', status: 'CANCELED', amount: 2000 },
       ],
     });
   });

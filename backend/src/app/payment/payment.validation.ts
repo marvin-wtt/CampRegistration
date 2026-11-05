@@ -34,6 +34,10 @@ export const PaymentSettingsValidation = z
     }
   }) satisfies z.ZodType<PaymentSettings>;
 
+// Minor units, well below the `UnsignedInt` columns' limit.
+const MAX_AMOUNT = 100_000_000;
+const amount = z.number().int().positive().max(MAX_AMOUNT);
+
 const eventParams = z.object({
   eventId: z.ulid(),
 });
@@ -61,7 +65,7 @@ const index = z.object({
 const store = z.object({
   params: registrationParams,
   body: z.object({
-    amount: z.number().positive().multipleOf(0.001),
+    amount,
     paidAt: z.iso.datetime({ offset: true }).optional(),
     method: z.string().trim().max(64).nullable().optional(),
     note: z.string().trim().max(2000).nullable().optional(),
@@ -75,7 +79,7 @@ const destroy = z.object({
 const refund = z.object({
   params: paymentParams,
   body: z.object({
-    amount: z.number().int().positive(),
+    amount,
     reason: z.string().trim().max(500).nullable().optional(),
     suppressMessage: z.boolean().optional(),
     outsideApp: z.boolean().optional(),
@@ -90,12 +94,7 @@ const request = z.object({
 const updateAmountDue = z.object({
   params: registrationParams,
   body: z.object({
-    amount: z
-      .number()
-      .nonnegative()
-      .max(1_000_000)
-      .multipleOf(0.001)
-      .nullable(),
+    amount: z.number().int().nonnegative().max(MAX_AMOUNT).nullable(),
     note: z.string().trim().max(500).nullable().optional(),
   }) satisfies ZodType<AmountDueUpdateData>,
 });

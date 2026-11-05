@@ -13,10 +13,16 @@ import { describeError } from '#utils/errors';
 import { AuditService } from '#app/audit/audit.service';
 import { PaymentAccountService } from '#app/paymentAccount/payment-account.service';
 import type {
+  ProviderChargebackSnapshot,
   ProviderPaymentSnapshot,
   ProviderRefundSnapshot,
 } from '#app/paymentAccount/providers/payment.provider';
-import { paymentAuditEntry } from './payment.audit.js';
+import { type PaymentAuditAction, paymentAuditEntry } from './payment.audit.js';
+import { PaymentService } from './payment.service.js';
+
+// The public payment page polls; the provider is asked at most this often
+// per payment and process.
+const RECONCILE_INTERVAL_MS = 5_000;
 
 const PAYMENT_STATUS_RANK: Record<PaymentStatus, number> = {
   OPEN: 0,
@@ -53,6 +59,22 @@ export function isRefundStatusAdvance(
   return from === 'PENDING' && to !== 'PENDING';
 }
 
+/** Like a refund, except that a lost chargeback can still be reversed. */
+export function isChargebackStatusAdvance(
+  from: RefundStatus,
+  to: RefundStatus,
+): boolean {
+  return (
+    isRefundStatusAdvance(from, to) ||
+    (from === 'REFUNDED' && to === 'CANCELED')
+  );
+}
+
+type PaymentWithLedger = Payment & {
+  refunds: PaymentRefund[];
+  registration: Registration | null;
+};
+
 /** What a reconciliation changed, so the caller can notify (mail, realtime). */
 export interface ReconciliationOutcome {
   payment: Payment;
@@ -60,7 +82,7 @@ export interface ReconciliationOutcome {
   event: Event;
   /** The new payment status, if it changed. */
   statusChange: PaymentStatus | null;
-  /** Refunds that just completed. */
+  /** Refunds (not chargebacks) that just completed. */
   completedRefunds: PaymentRefund[];
   /** Whether anything at all was written. */
   changed: boolean;
@@ -73,10 +95,13 @@ export interface ReconciliationOutcome {
  */
 @injectable()
 export class PaymentReconciliationService extends BaseService {
+  private readonly lastReconciled = new Map<string, number>();
+
   constructor(
     @inject(PaymentAccountService)
     private readonly accountService: PaymentAccountService,
     @inject(AuditService) private readonly audit: AuditService,
+    @inject(PaymentService) private readonly paymentService: PaymentService,
   ) {
     super();
   }
@@ -130,7 +155,10 @@ export class PaymentReconciliationService extends BaseService {
     return this.applySnapshot(payment.id, snapshot);
   }
 
-  /** Reconciles a registration's latest unsettled provider payment, if any. */
+  /**
+   * Reconciles a registration's latest unsettled provider payment, if any —
+   * at most once per `RECONCILE_INTERVAL_MS`, as the payment page polls.
+   */
   async reconcileLatestOpen(
     registrationId: string,
   ): Promise<ReconciliationOutcome | null> {
@@ -143,7 +171,7 @@ export class PaymentReconciliationService extends BaseService {
       },
       orderBy: { createdAt: 'desc' },
     });
-    if (!payment?.providerPaymentId) {
+    if (!payment?.providerPaymentId || this.throttled(payment.id)) {
       return null;
     }
 
@@ -158,6 +186,20 @@ export class PaymentReconciliationService extends BaseService {
       );
       return null;
     }
+  }
+
+  private throttled(paymentId: string, now = Date.now()): boolean {
+    for (const [id, at] of this.lastReconciled) {
+      if (now - at >= RECONCILE_INTERVAL_MS) {
+        this.lastReconciled.delete(id);
+      }
+    }
+    if (this.lastReconciled.has(paymentId)) {
+      return true;
+    }
+
+    this.lastReconciled.set(paymentId, now);
+    return false;
   }
 
   async applySnapshot(
@@ -189,32 +231,28 @@ export class PaymentReconciliationService extends BaseService {
             },
           });
           changed = true;
-          // Reported by the provider: no one did this in the app.
-          if (current.registration) {
-            await this.audit.record({
-              ...paymentAuditEntry(
-                current.registration,
-                'payment_status_changed',
-                { paymentStatus: snapshot.status, amount: current.amount },
-              ),
-              actorId: null,
-            });
-          }
+          await this.recordProviderChange(
+            current.registration,
+            'payment_status_changed',
+            { paymentStatus: snapshot.status, amount: current.amount },
+          );
         }
 
         const completedRefunds: PaymentRefund[] = [];
         for (const refundSnapshot of snapshot.refunds) {
           const result = await this.applyRefundSnapshot(
             tx,
-            current.id,
-            current.refunds,
+            current,
             refundSnapshot,
           );
-          if (result.changed) {
-            changed = true;
-          }
+          changed ||= result.changed;
           if (result.completed) {
             completedRefunds.push(result.completed);
+          }
+        }
+        for (const chargeback of snapshot.chargebacks) {
+          if (await this.applyChargebackSnapshot(tx, current, chargeback)) {
+            changed = true;
           }
         }
 
@@ -231,12 +269,26 @@ export class PaymentReconciliationService extends BaseService {
     );
   }
 
+  /** Reported by the provider: no one did this in the app. */
+  private async recordProviderChange(
+    registration: Registration | null,
+    action: PaymentAuditAction,
+    values: Record<string, string | number>,
+  ): Promise<void> {
+    if (registration) {
+      await this.audit.record({
+        ...paymentAuditEntry(registration, action, values),
+        actorId: null,
+      });
+    }
+  }
+
   private async applyRefundSnapshot(
     tx: Prisma.TransactionClient,
-    paymentId: string,
-    known: PaymentRefund[],
+    payment: PaymentWithLedger,
     snapshot: ProviderRefundSnapshot,
   ): Promise<{ changed: boolean; completed: PaymentRefund | null }> {
+    const known = payment.refunds.filter((r) => r.kind === 'REFUND');
     // Our own refund is matched by provider id, or — before we stored that —
     // by the reference we passed; anything else was made in the dashboard.
     const existing =
@@ -246,15 +298,25 @@ export class PaymentReconciliationService extends BaseService {
       );
 
     if (!existing) {
+      // Made in the provider's dashboard, where the organizer decided
+      // whether to tell the participant: the app doesn't.
       const created = await tx.paymentRefund.create({
         data: {
-          paymentId,
+          paymentId: payment.id,
           providerRefundId: snapshot.providerRefundId,
           status: snapshot.status,
           amount: snapshot.amount,
           refundedAt: snapshot.refundedAt,
+          notifyParticipant: false,
         },
       });
+      if (created.status === 'PENDING' || created.status === 'REFUNDED') {
+        await this.recordProviderChange(
+          payment.registration,
+          'payment_refunded',
+          { amount: created.amount },
+        );
+      }
 
       return {
         changed: true,
@@ -277,9 +339,78 @@ export class PaymentReconciliationService extends BaseService {
       },
     });
 
+    if (advance && updated.status !== 'REFUNDED') {
+      // The history said refunded and the amount due was lowered for it.
+      await this.recordProviderChange(
+        payment.registration,
+        'payment_refund_failed',
+        { amount: updated.amount },
+      );
+      await this.paymentService.restoreAmountDue(updated);
+    }
+
     return {
       changed: true,
       completed: advance && updated.status === 'REFUNDED' ? updated : null,
     };
+  }
+
+  /** Books a chargeback like a refund, so the balance follows it. */
+  private async applyChargebackSnapshot(
+    tx: Prisma.TransactionClient,
+    payment: PaymentWithLedger,
+    snapshot: ProviderChargebackSnapshot,
+  ): Promise<boolean> {
+    const existing = payment.refunds.find(
+      (r) =>
+        r.kind === 'CHARGEBACK' &&
+        r.providerRefundId === snapshot.providerChargebackId,
+    );
+
+    if (!existing) {
+      await tx.paymentRefund.create({
+        data: {
+          paymentId: payment.id,
+          providerRefundId: snapshot.providerChargebackId,
+          kind: 'CHARGEBACK',
+          status: snapshot.status,
+          amount: snapshot.amount,
+          refundedAt:
+            snapshot.status === 'REFUNDED' ? snapshot.createdAt : null,
+          notifyParticipant: false,
+        },
+      });
+      await this.recordProviderChange(
+        payment.registration,
+        snapshot.status === 'CANCELED'
+          ? 'payment_chargeback_reversed'
+          : 'payment_charged_back',
+        { amount: snapshot.amount },
+      );
+      return true;
+    }
+
+    if (!isChargebackStatusAdvance(existing.status, snapshot.status)) {
+      return false;
+    }
+
+    await tx.paymentRefund.update({
+      where: { id: existing.id },
+      data: {
+        status: snapshot.status,
+        refundedAt:
+          snapshot.status === 'REFUNDED'
+            ? (existing.refundedAt ?? new Date())
+            : null,
+      },
+    });
+    if (snapshot.status === 'CANCELED') {
+      await this.recordProviderChange(
+        payment.registration,
+        'payment_chargeback_reversed',
+        { amount: existing.amount },
+      );
+    }
+    return true;
   }
 }

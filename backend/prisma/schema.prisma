@@ -278,7 +278,7 @@ model Registration {
   // Set when a manager fixed `amountDue` by hand; edited answers then leave it.
   amountDueAdjustedAt                DateTime?          @map("amount_due_adjusted_at")
   amountDueNote                      String?            @map("amount_due_note") @db.Text
-  paymentRequestedAt                DateTime?          @map("payment_requested_at")
+  paymentRequestedAt                 DateTime?          @map("payment_requested_at")
   paymentReminderSentAt              DateTime?          @map("payment_reminder_sent_at")
   // Which privacy information this person was actually shown. Nullable because
   // registrations predating the feature were shown none — do not backfill.
@@ -833,6 +833,13 @@ enum RefundStatus {
   CANCELED
 }
 
+// A chargeback is money the payer's bank took back: booked like a refund, but
+// no one in the app issued it, and a reversed one returns the money.
+enum RefundKind {
+  REFUND
+  CHARGEBACK
+}
+
 // An organization's connected payment provider account. Credentials are an
 // encrypted JSON blob (see core/encryption/secrets.ts) and never leave the
 // backend.
@@ -891,18 +898,22 @@ model Payment {
 }
 
 model PaymentRefund {
-  id                String       @id @unique(map: "payment_refunds_id_unique") @default(ulid()) @db.Char(26)
-  paymentId         String       @map("payment_id") @db.Char(26)
-  providerRefundId  String?      @map("provider_refund_id") @db.VarChar(255)
-  status            RefundStatus
-  amount            Int          @db.UnsignedInt
-  reason            String?      @db.Text
+  id                 String       @id @unique(map: "payment_refunds_id_unique") @default(ulid()) @db.Char(26)
+  paymentId          String       @map("payment_id") @db.Char(26)
+  providerRefundId   String?      @map("provider_refund_id") @db.VarChar(255)
+  kind               RefundKind   @default(REFUND)
+  status             RefundStatus
+  amount             Int          @db.UnsignedInt
+  // How much the refund lowered the registration's amount due, given back
+  // should the refund fail.
+  amountDueReduction Int?         @map("amount_due_reduction") @db.UnsignedInt
+  reason             String?      @db.Text
   // Whether the participant is emailed once the refund completes.
-  notifyParticipant Boolean      @default(true) @map("notify_participant")
-  createdById       String?      @map("created_by_id") @db.Char(26)
-  refundedAt        DateTime?    @map("refunded_at")
-  createdAt         DateTime     @default(now()) @map("created_at")
-  updatedAt         DateTime?    @updatedAt @map("updated_at")
+  notifyParticipant  Boolean      @default(true) @map("notify_participant")
+  createdById        String?      @map("created_by_id") @db.Char(26)
+  refundedAt         DateTime?    @map("refunded_at")
+  createdAt          DateTime     @default(now()) @map("created_at")
+  updatedAt          DateTime?    @updatedAt @map("updated_at")
 
   payment   Payment @relation(fields: [paymentId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "payment_refunds_payment_id_foreign")
   createdBy User?   @relation(fields: [createdById], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "payment_refunds_created_by_id_foreign")

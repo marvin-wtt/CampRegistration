@@ -41,7 +41,7 @@ export class EventPaymentRouter extends ModuleRouter {
     this.router.get(
       '/status',
       auth(),
-      guard(hasEventPermission('event.edit')),
+      guard(hasEventPermission('event.payments.view')),
       controller(paymentController, 'status'),
     );
     this.router.post(

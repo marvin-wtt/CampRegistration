@@ -86,6 +86,7 @@ import {
   currencySymbol,
   formatMoney,
   fromMinorUnits,
+  toMinorUnits,
 } from '@camp-registration/common/utils';
 
 const {
@@ -126,7 +127,7 @@ function submit(): void {
   }
 
   onDialogOK({
-    amount: Number(amount.value),
+    amount: toMinorUnits(Number(amount.value), currency),
     note: note.value.trim() || null,
   } satisfies AmountDueUpdateData);
 }

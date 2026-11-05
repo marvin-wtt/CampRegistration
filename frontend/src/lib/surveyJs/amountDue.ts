@@ -1,11 +1,8 @@
 import { reactive } from 'vue';
 import type { SurveyModel } from 'survey-core';
 import { ComponentFactory } from 'survey-vue3-ui';
-import {
-  type PaymentTotalMode,
-  extractPaymentAmounts,
-} from '@camp-registration/common/form';
-import { computeAmountDue } from '@camp-registration/common/utils';
+import type { PaymentTotalMode } from '@camp-registration/common/form';
+import { surveyAmountDue } from '@/lib/surveyJs/quote';
 import { setCompleteTextDefault } from '@/lib/surveyJs/completeText';
 import RegistrationAmountSummary from '@/components/common/RegistrationAmountSummary.vue';
 
@@ -45,7 +42,7 @@ export function trackAmountDue(
   });
 
   const update = () => {
-    state.amount = computeAmountDue(event, extractPaymentAmounts(survey));
+    state.amount = surveyAmountDue(survey, event);
     const mode = paymentTotalMode(survey);
     state.shown =
       survey.isLastPage &&

@@ -29,6 +29,9 @@ const WEBHOOK_EVENTS: Stripe.WebhookEndpointCreateParams.EnabledEvent[] = [
   'charge.refund.updated',
   'refund.updated',
   'refund.failed',
+  'charge.dispute.created',
+  'charge.dispute.updated',
+  'charge.dispute.closed',
 ];
 
 const REFUND_STATUS: Record<string, RefundStatus> = {
@@ -41,6 +44,24 @@ const REFUND_STATUS: Record<string, RefundStatus> = {
 
 function refundStatus(status: string | null): RefundStatus {
   return REFUND_STATUS[status ?? 'pending'] ?? 'PENDING';
+}
+
+/**
+ * Inquiries (`warning_*`) withdraw nothing; a dispute holds the money from
+ * its creation, loses it when lost and returns it when won. `null`: ignored.
+ */
+function disputeStatus(status: Stripe.Dispute.Status): RefundStatus | null {
+  switch (status) {
+    case 'needs_response':
+    case 'under_review':
+      return 'PENDING';
+    case 'lost':
+      return 'REFUNDED';
+    case 'won':
+      return 'CANCELED';
+    default:
+      return null;
+  }
 }
 
 // Stripe Checkout locales our own locales map onto.
@@ -224,6 +245,10 @@ export class StripeProvider implements PaymentProvider {
       ? (await stripe.refunds.list({ payment_intent: intent.id, limit: 100 }))
           .data
       : [];
+    const disputes = intent
+      ? (await stripe.disputes.list({ payment_intent: intent.id, limit: 100 }))
+          .data
+      : [];
 
     const status = sessionStatus(session);
 
@@ -247,6 +272,19 @@ export class StripeProvider implements PaymentProvider {
             ? new Date(refund.created * 1000)
             : null,
       })),
+      chargebacks: disputes.flatMap((dispute) => {
+        const status = disputeStatus(dispute.status);
+        return status
+          ? [
+              {
+                providerChargebackId: dispute.id,
+                status,
+                amount: dispute.amount,
+                createdAt: new Date(dispute.created * 1000),
+              },
+            ]
+          : [];
+      }),
     };
   }
 
@@ -291,6 +329,9 @@ export class StripeProvider implements PaymentProvider {
       case 'charge.refund.updated':
       case 'refund.updated':
       case 'refund.failed':
+      case 'charge.dispute.created':
+      case 'charge.dispute.updated':
+      case 'charge.dispute.closed':
         return this.sessionForIntent(
           credentials,
           idOf(event.data.object.payment_intent),

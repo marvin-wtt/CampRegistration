@@ -109,7 +109,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useMeta } from 'quasar';
 import { useRoute } from 'vue-router';
@@ -154,13 +154,7 @@ useMeta(() => ({
   titleTemplate: (pageTitle: string) => `${pageTitle} | ${t('app_name')}`,
 }));
 
-const outstanding = computed<number>(() => {
-  if (!summary.value || summary.value.amountDue === null) {
-    return 0;
-  }
-
-  return Math.max(0, summary.value.amountDue - summary.value.amountPaid);
-});
+const outstanding = computed<number>(() => summary.value?.outstanding ?? 0);
 
 // A checkout the participant may have just come back from, not yet settled.
 const inFlight = computed<boolean>(
@@ -265,7 +259,7 @@ async function pay(): Promise<void> {
   }
 }
 
-onMounted(load);
+void load();
 
 onBeforeUnmount(() => {
   clearTimeout(pollTimer);

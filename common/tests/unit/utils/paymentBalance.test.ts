@@ -5,7 +5,7 @@ import {
   refundableAmount,
   registrationPayment,
   type PaymentWithRefunds,
-} from '#app/payment/payment.balance';
+} from '../../../src/utils/paymentBalance.js';
 
 const paid = (
   amount: number,
