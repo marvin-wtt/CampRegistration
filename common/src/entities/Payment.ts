@@ -24,15 +24,14 @@ export type RefundStatus = 'PENDING' | 'REFUNDED' | 'FAILED' | 'CANCELED';
  * `REFUNDED` means money was paid and the net paid amount is back to zero.
  */
 export type RegistrationPaymentStatus =
-  | 'NOT_REQUIRED'
-  | 'UNPAID'
-  | 'PARTIAL'
-  | 'PAID'
-  | 'OVERPAID'
-  | 'REFUNDED';
+  'NOT_REQUIRED' | 'UNPAID' | 'PARTIAL' | 'PAID' | 'OVERPAID' | 'REFUNDED';
+
+/** A chargeback is money the payer's bank took back, booked like a refund. */
+export type RefundKind = 'REFUND' | 'CHARGEBACK';
 
 export interface PaymentRefund extends Identifiable {
   paymentId: string;
+  kind: RefundKind;
   status: RefundStatus;
   /** Minor units (e.g. cents) of the payment's currency. */
   amount: number;
@@ -78,7 +77,7 @@ export interface Payment extends Identifiable {
 }
 
 export interface PaymentCreateData {
-  /** Major units, as entered (e.g. `12.5` for 12.50 EUR). */
+  /** Minor units. */
   amount: number;
   paidAt?: string | undefined;
   method?: string | null | undefined;

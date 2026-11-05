@@ -5,3 +5,4 @@ export * from './countries.js';
 export * from './money.js';
 export * from './amountDue.js';
 export * from './paymentRequest.js';
+export * from './paymentBalance.js';

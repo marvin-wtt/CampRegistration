@@ -393,11 +393,11 @@ if (props.data) {
 
 // After loading data: assigning `model.data` fires no change event. Managers
 // never see the Complete button, so neither needs the total.
-const amountShown = moderationLayout
+const amountDue = moderationLayout
   ? null
   : trackAmountDue(model, props.eventDetails);
-if (amountShown) {
-  addAmountSummary(model, amountShown);
+if (amountDue) {
+  addAmountSummary(model, amountDue);
 }
 
 const bgColor = ref<string>();
@@ -502,13 +502,14 @@ function createModel(eventId: string, form: object): SurveyModel {
 
     mapFileQuestionValues(sender);
 
-    // What the summary showed. Only for the server to compare: it charges
-    // its own amount, whatever this says.
+    // What the form presented (the summary, or the Complete button's paid
+    // label when the summary is hidden). Only for the server to compare: it
+    // charges its own amount, whatever this says.
     const priceCheck =
       serverQuote.value !== null
         ? { displayedTotal: serverQuote.value }
-        : amountShown
-          ? { displayedTotal: amountShown.amount }
+        : amountDue
+          ? { displayedTotal: amountDue.amount }
           : undefined;
 
     try {

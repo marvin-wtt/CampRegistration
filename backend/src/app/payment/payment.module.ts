@@ -14,7 +14,7 @@ import { PaymentService } from './payment.service.js';
 import { PaymentReconciliationService } from './payment-reconciliation.service.js';
 import { PaymentNotifier } from './payment.notifier.js';
 import { PaymentReconciliationQueue } from './payment-reconciliation.queue.js';
-import { PaymentReminderService } from './payment-reminder.service.js';
+import { PaymentCollectionService } from './payment-collection.service.js';
 import { PaymentController } from './payment.controller.js';
 import { PaymentPublicController } from './payment-public.controller.js';
 import {
@@ -35,7 +35,7 @@ export class PaymentModule implements AppModule {
     options.bind(PaymentReconciliationService).toSelf().inSingletonScope();
     options.bind(PaymentNotifier).toSelf().inSingletonScope();
     options.bind(PaymentReconciliationQueue).toSelf().inSingletonScope();
-    options.bind(PaymentReminderService).toSelf().inSingletonScope();
+    options.bind(PaymentCollectionService).toSelf().inSingletonScope();
     options.bind(PaymentController).toSelf().inSingletonScope();
     options.bind(PaymentPublicController).toSelf().inSingletonScope();
   }
@@ -43,8 +43,9 @@ export class PaymentModule implements AppModule {
   configure(_options: ModuleOptions): void {
     resolve(SettingsRegistry).register(SETTING_KEYS.PAYMENT, {
       schema: PaymentSettingsValidation,
-      viewPermission: 'event.view',
-      editPermission: 'event.edit',
+      // Turning payments on emails participants: not for organization admins.
+      viewPermission: 'event.payments.view',
+      editPermission: 'event.payments.adjust',
     });
 
     const mailRegistry = resolve(MailableRegistry);
@@ -93,7 +94,7 @@ export class PaymentModule implements AppModule {
       await resolve(PaymentService).anonymizeExpiredPayers();
     });
     scheduler.schedule('payment-reminders', '0 9 * * *', async () => {
-      const service = resolve(PaymentReminderService);
+      const service = resolve(PaymentCollectionService);
       // Requests first: a reminder counts from the request.
       await service.sendDueRequests();
       await service.sendDueReminders();

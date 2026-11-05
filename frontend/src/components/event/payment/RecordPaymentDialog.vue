@@ -149,7 +149,7 @@ function submit(): void {
   }
 
   onDialogOK({
-    amount: amount.value,
+    amount: toMinorUnits(amount.value, currency),
     method: method.value,
     paidAt: new Date(`${paidAt.value ?? today}T12:00:00`).toISOString(),
     note: note.value.trim() || null,

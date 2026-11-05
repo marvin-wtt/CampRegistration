@@ -4,6 +4,7 @@
     :model-value="model"
     :label
     :clearable
+    :disable
     stack-label
     outlined
     rounded
@@ -22,6 +23,7 @@
     <!-- The calendar is the only surface: the menu around it is invisible,
          or its own padding and size frame the calendar. -->
     <q-popup-proxy
+      :no-parent-event="disable"
       anchor="bottom left"
       self="top left"
       class="date-input-popup"
@@ -76,6 +78,7 @@ import { formatLocalDate, parseLocalDate } from '@/utils/date';
 const props = defineProps<{
   label: string;
   clearable?: boolean;
+  disable?: boolean;
   // Inclusive `YYYY-MM-DD` bounds.
   min?: string | undefined;
   max?: string | undefined;

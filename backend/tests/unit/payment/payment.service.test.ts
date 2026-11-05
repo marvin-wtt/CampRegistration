@@ -56,8 +56,10 @@ const buildRefund = (
   id: 'refund-1',
   paymentId: 'payment-1',
   providerRefundId: null,
+  kind: 'REFUND',
   status: 'PENDING',
   amount: 1000,
+  amountDueReduction: null,
   reason: null,
   notifyParticipant: true,
   createdById: 'user-1',
@@ -80,11 +82,27 @@ describe('PaymentService.refund', () => {
     credentials: { apiKey: 'sk_test' },
   };
 
+  const registration = {
+    id: 'registration-1',
+    eventId: event.id,
+    amountDue: 4000,
+  };
+
   const setup = (payment: Payment, refunds: PaymentRefund[] = []) => {
     prisma.payment.findUniqueOrThrow.mockResolvedValue({
       ...payment,
       refunds,
+      registration,
     } as never);
+    prisma.paymentRefund.update.mockImplementation(((args: {
+      data: Prisma.PaymentRefundUncheckedUpdateInput;
+    }) =>
+      Promise.resolve(
+        buildRefund({
+          amountDueReduction:
+            (args.data.amountDueReduction as number | undefined) ?? null,
+        }),
+      )) as never);
     accountService.resolveForOrganization.mockResolvedValue(resolved as never);
     prisma.paymentRefund.create.mockImplementation(((args: {
       data: Prisma.PaymentRefundUncheckedCreateInput;
@@ -95,7 +113,11 @@ describe('PaymentService.refund', () => {
           amount: args.data.amount,
         }),
       )) as never);
-    prisma.paymentRefund.findUniqueOrThrow.mockResolvedValue(buildRefund());
+    prisma.paymentRefund.findUniqueOrThrow.mockResolvedValue({
+      ...buildRefund(),
+      payment: { registrationId: 'registration-1' },
+    } as never);
+    prisma.paymentRefund.updateMany.mockResolvedValue({ count: 1 });
   };
 
   const refund = (
@@ -186,14 +208,52 @@ describe('PaymentService.refund', () => {
     setup(buildPayment({ status: 'PAID' }));
     owing(5000);
     provider.createRefund.mockRejectedValue(new Error('insufficient balance'));
+    prisma.paymentRefund.updateMany.mockResolvedValue({ count: 1 });
+    prisma.paymentRefund.findUniqueOrThrow.mockResolvedValue({
+      ...buildRefund({ amountDueReduction: 1000 }),
+      payment: { registrationId: 'registration-1' },
+    } as never);
+    prisma.registration.update.mockResolvedValue(registration as never);
 
     await expect(refund(1000, false, true)).rejects.toMatchObject({
       statusCode: 502,
     });
     expect(prisma.registration.update).toHaveBeenLastCalledWith({
       where: { id: 'registration-1' },
-      data: { amountDue: 5000, amountDueAdjustedAt: null, amountDueNote: null },
+      data: { amountDue: { increment: 1000 } },
     });
+    expect(prisma.paymentRefund.update).toHaveBeenLastCalledWith({
+      where: { id: 'refund-1' },
+      data: { amountDueReduction: null },
+    });
+  });
+
+  it('records the refund only once the provider took it', async () => {
+    setup(buildPayment({ status: 'PAID' }));
+    provider.createRefund.mockRejectedValue(new Error('insufficient balance'));
+    prisma.paymentRefund.updateMany.mockResolvedValue({ count: 1 });
+
+    await expect(refund(1000)).rejects.toMatchObject({ statusCode: 502 });
+    expect(audit.record).not.toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'payment_refunded' }),
+    );
+  });
+
+  it('records a refund the provider accepted', async () => {
+    setup(buildPayment({ status: 'PAID' }));
+    provider.createRefund.mockResolvedValue({
+      providerRefundId: 're_1',
+      status: 'PENDING',
+    });
+
+    await refund(1000);
+
+    expect(audit.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'payment_refunded',
+        details: { values: { amount: 1000 } },
+      }),
+    );
   });
 
   it('records an online refund given back outside the app at once', async () => {
@@ -360,5 +420,65 @@ describe('PaymentService.closeStaleCheckouts', () => {
     await service.closeStaleCheckouts(event, registration, 0);
 
     expect(provider.cancelCheckout).not.toHaveBeenCalled();
+  });
+});
+
+describe('PaymentService.anonymizeExpiredPayers', () => {
+  it('counts the retention period from the end of the year', async () => {
+    prisma.payment.updateMany.mockResolvedValue({ count: 0 });
+
+    await service.anonymizeExpiredPayers(new Date('2037-06-15T00:00:00Z'));
+
+    expect(prisma.payment.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          createdAt: { lt: new Date('2027-01-01T00:00:00Z') },
+          refunds: {
+            none: { createdAt: { gte: new Date('2027-01-01T00:00:00Z') } },
+          },
+        }) as unknown,
+      }),
+    );
+  });
+});
+
+describe('PaymentService.findUnrequested', () => {
+  it('leaves out registrations that already paid', async () => {
+    prisma.registration.findMany.mockResolvedValue([
+      {
+        id: 'paid',
+        amountDue: 5000,
+        payments: [{ status: 'PAID', amount: 5000, refunds: [] }],
+      },
+      { id: 'owing', amountDue: 5000, payments: [] },
+    ] as never);
+
+    const registrations = await service.findUnrequested(event);
+
+    expect(registrations.map((r) => r.id)).toEqual(['owing']);
+  });
+});
+
+describe('PaymentService.releaseEventLedger', () => {
+  it('refuses while paid payments must still be kept', async () => {
+    prisma.payment.count.mockResolvedValue(1);
+
+    await expect(service.releaseEventLedger(event.id)).rejects.toMatchObject({
+      code: 'EVENT_HAS_PAYMENTS',
+    });
+    expect(prisma.payment.deleteMany).not.toHaveBeenCalled();
+  });
+
+  it('removes the ledger once the retention period has passed', async () => {
+    prisma.payment.count.mockResolvedValue(0);
+
+    await service.releaseEventLedger(event.id);
+
+    expect(prisma.paymentRefund.deleteMany).toHaveBeenCalledWith({
+      where: { payment: { eventId: event.id } },
+    });
+    expect(prisma.payment.deleteMany).toHaveBeenCalledWith({
+      where: { eventId: event.id },
+    });
   });
 });

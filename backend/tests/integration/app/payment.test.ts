@@ -23,7 +23,7 @@ import { SETTING_KEYS } from '@camp-registration/common/settings';
 import { encryptSecret } from '#core/secrets';
 import { signPaymentToken } from '#app/payment/payment-link';
 import { resolve } from '#core/ioc/container';
-import { PaymentReminderService } from '#app/payment/payment-reminder.service';
+import { PaymentCollectionService } from '#app/payment/payment-collection.service';
 import { PaymentService } from '#app/payment/payment.service';
 
 const paymentForm = createForm([
@@ -375,7 +375,7 @@ describe('payments', () => {
           .post(
             `/api/v1/events/${event.id}/registrations/${registration.id}/payments`,
           )
-          .send({ amount: 150, method: 'bank_transfer' })
+          .send({ amount: 15000, method: 'bank_transfer' })
           .auth(accessToken, { type: 'bearer' })
           .expect(status);
       },
@@ -391,11 +391,12 @@ describe('payments', () => {
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
-      expect(body.data.payment).toEqual({
+      expect(body.data.payment).toMatchObject({
         status: 'PAID',
         currency: 'EUR',
         amountDue: 15000,
         amountPaid: 15000,
+        outstanding: 0,
         adjustment: null,
       });
     });
@@ -448,7 +449,7 @@ describe('payments', () => {
       });
       const { body } = await request()
         .post(`${deletePath(event, registration.id)}/payments`)
-        .send({ amount: 150, method: 'cash' })
+        .send({ amount: 15000, method: 'cash' })
         .auth(accessToken, { type: 'bearer' })
         .expect(201);
 
@@ -531,6 +532,70 @@ describe('payments', () => {
         registrationRef: null,
         amount: 15000,
       });
+    });
+
+    it('lets an organization admin neither see nor change payment settings', async () => {
+      const { event, organization } = await createPaymentEvent();
+      const user = await UserFactory.create();
+      await prisma.organizationMember.create({
+        data: {
+          organizationId: organization.id,
+          userId: user.id,
+          role: 'ADMIN',
+        },
+      });
+      const accessToken = generateAccessToken(user);
+
+      await request()
+        .put(`/api/v1/events/${event.id}/settings/${SETTING_KEYS.PAYMENT}`)
+        .send({ data: settings({ enabled: false }) })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(403);
+      await request()
+        .get(`/api/v1/events/${event.id}/payments/status`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(403);
+    });
+
+    it('closes the checkout of a registration no longer accepted', async () => {
+      const { event } = await createPaymentEvent();
+      const accessToken = await createManager(event);
+      const { data } = await register(event);
+
+      await request()
+        .patch(`/api/v1/events/${event.id}/registrations/${data.id}`)
+        .send({ status: 'WAITLISTED' })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      const payments = await prisma.payment.findMany({
+        where: { registrationId: data.id },
+      });
+      expect(payments).toHaveLength(1);
+      expect(payments[0]!.checkoutUrl).toBeNull();
+    });
+
+    it('deletes an event whose payments are past the retention period', async () => {
+      const { event } = await createPaymentEvent({ account: false });
+      const accessToken = await createManager(event);
+      await prisma.payment.create({
+        data: {
+          eventId: event.id,
+          source: 'manual',
+          status: 'PAID',
+          amount: 15000,
+          currency: 'EUR',
+          createdAt: new Date('2010-01-01T00:00:00Z'),
+        },
+      });
+
+      await request()
+        .delete(`/api/v1/events/${event.id}`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(204);
+      await expect(
+        prisma.payment.count({ where: { eventId: event.id } }),
+      ).resolves.toBe(0);
     });
 
     it('refuses to delete an event that received payments', async () => {
@@ -720,7 +785,7 @@ describe('payments', () => {
 });
 describe('payment timing', () => {
   const sendDueRequests = (now: Date) =>
-    resolve(PaymentReminderService).sendDueRequests(now);
+    resolve(PaymentCollectionService).sendDueRequests(now);
 
   it('waits for a fixed request date, then the daily job asks', async () => {
     const { event } = await createPaymentEvent({
@@ -777,6 +842,32 @@ describe('payment timing', () => {
     expectEmailWith({ to: answers.email, subject: 'payment_requested' });
   });
 
+  it('stops reminding once the event has ended', async () => {
+    const { event } = await createPaymentEvent({
+      settings: settings({ reminderAfterDays: 7 }),
+      event: {
+        startAt: new Date('2099-07-01T00:00:00Z'),
+        endAt: new Date('2099-07-10T00:00:00Z'),
+      },
+    });
+    await RegistrationFactory.create({
+      event: { connect: { id: event.id } },
+      status: 'ACCEPTED',
+      amountDue: 15000,
+      emails: [answers.email],
+      paymentRequestedAt: new Date('2099-06-01T00:00:00Z'),
+    });
+    const sendDueReminders = (now: Date) =>
+      resolve(PaymentCollectionService).sendDueReminders(now);
+
+    await expect(
+      sendDueReminders(new Date('2099-07-20T12:00:00Z')),
+    ).resolves.toBe(0);
+    await expect(
+      sendDueReminders(new Date('2099-06-20T12:00:00Z')),
+    ).resolves.toBe(1);
+  });
+
   it('refuses a checkout before the request date', async () => {
     const { event } = await createPaymentEvent({
       settings: settings({ timing: 'DATE', requestDate: '2099-05-01' }),
@@ -831,7 +922,7 @@ describe('amount due adjustments', () => {
 
     await request()
       .put(amountDuePath(event, data.id))
-      .send({ amount: 20, note: 'Hardship' })
+      .send({ amount: 2000, note: 'Hardship' })
       .auth(accessToken, { type: 'bearer' })
       .expect(204);
     await request()
@@ -897,7 +988,7 @@ describe('payment audit', () => {
 
     const { body } = await request()
       .post(base)
-      .send({ amount: 150, method: 'cash', note: 'Paid at the desk' })
+      .send({ amount: 15000, method: 'cash', note: 'Paid at the desk' })
       .auth(accessToken, { type: 'bearer' })
       .expect(201);
     await request()
@@ -1094,6 +1185,40 @@ describe('requesting payment from every accepted registration', () => {
       (await prisma.registration.findUniqueOrThrow({ where: { id: data.id } }))
         .paymentRequestedAt,
     ).not.toBeNull();
+  });
+
+  it('skips those who already paid', async () => {
+    const { event } = await createPaymentEvent();
+    const accessToken = await createManager(event);
+    await createPaidRegistration(event);
+
+    const { body } = await request()
+      .post(requestAllPath(event))
+      .auth(accessToken, { type: 'bearer' })
+      .expect(200);
+
+    expect(body.data.requested).toBe(0);
+    expectNoEmailWith({ to: answers.email, subject: 'payment_requested' });
+  });
+
+  it('refuses a single request for a registration not accepted', async () => {
+    const { event } = await createPaymentEvent();
+    const accessToken = await createManager(event);
+    const registration = await RegistrationFactory.create({
+      event: { connect: { id: event.id } },
+      status: 'WAITLISTED',
+      amountDue: 15000,
+      emails: [answers.email],
+    });
+
+    const { body } = await request()
+      .post(
+        `/api/v1/events/${event.id}/registrations/${registration.id}/payments/request`,
+      )
+      .auth(accessToken, { type: 'bearer' })
+      .expect(409);
+
+    expect(body.errorCode).toBe('PAYMENT_NOT_ACCEPTED');
   });
 
   it('refuses before the request date', async () => {

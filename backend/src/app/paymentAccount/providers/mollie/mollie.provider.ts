@@ -78,7 +78,7 @@ function metadataReference(metadata: unknown, key: string): string | null {
  * Mollie Payments API. Mollie webhooks carry only the payment id (`id=tr_…`)
  * and are unsigned by design — the snapshot is always re-fetched with the
  * account's own key, so a forged call can at most trigger a harmless re-sync.
- * Refund changes arrive on the same payment webhook.
+ * Refund and chargeback changes arrive on the same payment webhook.
  */
 export class MollieProvider implements PaymentProvider {
   readonly name = 'mollie' as const;
@@ -156,6 +156,10 @@ export class MollieProvider implements PaymentProvider {
       paymentId: providerPaymentId,
       limit: 250,
     });
+    const chargebacks = await client.paymentChargebacks.page({
+      paymentId: providerPaymentId,
+      limit: 250,
+    });
 
     return {
       providerPaymentId: payment.id,
@@ -173,6 +177,16 @@ export class MollieProvider implements PaymentProvider {
           refund.status === MollieRefundStatus.refunded
             ? new Date(refund.createdAt)
             : null,
+      })),
+      // Mollie books a chargeback as lost at once; a reversal returns it.
+      chargebacks: chargebacks.map((chargeback) => ({
+        providerChargebackId: chargeback.id,
+        status: chargeback.reversedAt ? 'CANCELED' : 'REFUNDED',
+        amount: fromDecimalString(
+          chargeback.amount.value,
+          chargeback.amount.currency,
+        ),
+        createdAt: new Date(chargeback.createdAt),
       })),
     };
   }

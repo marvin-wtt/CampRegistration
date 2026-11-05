@@ -109,7 +109,7 @@
           <q-item-section side>
             <q-toggle
               v-model="settings.enabled"
-              :disable="isLoading"
+              :disable="isLoading || !canEdit"
               data-test="payment-settings-enabled"
             />
           </q-item-section>
@@ -141,7 +141,7 @@
                     :model-value="settings.timing"
                     :val="option.value"
                     :label="option.label"
-                    :disable="isLoading"
+                    :disable="isLoading || !canEdit"
                     :data-test="`payment-settings-timing-${option.value}`"
                     @update:model-value="updateTiming"
                   />
@@ -154,6 +154,7 @@
                       :model-value="settings.requestDate"
                       :label="t('timing.date')"
                       :max="eventStartDate"
+                      :disable="isLoading || !canEdit"
                       data-test="payment-settings-request-date"
                       @update:model-value="updateRequestDate"
                     />
@@ -172,7 +173,7 @@
                       :max="365"
                       :label="t('timing.days')"
                       :suffix="t('timing.daysSuffix')"
-                      :disable="isLoading"
+                      :disable="isLoading || !canEdit"
                       outlined
                       rounded
                       hide-bottom-space
@@ -216,7 +217,7 @@
                 dense
                 outlined
                 :suffix="t('reminder.days')"
-                :disable="isLoading"
+                :disable="isLoading || !canEdit"
                 class="q-mt-sm reminder-input"
                 @update:model-value="updateReminderDays"
               />
@@ -227,7 +228,7 @@
             >
               <q-toggle
                 :model-value="settings.reminderAfterDays !== null"
-                :disable="isLoading"
+                :disable="isLoading || !canEdit"
                 @update:model-value="
                   (on) => (settings.reminderAfterDays = on ? 7 : null)
                 "
@@ -261,7 +262,9 @@
               dense
               outlined
               options-dense
-              :disable="!event || status?.currencyLocked === true"
+              :disable="
+                !event || !can('event.edit') || status?.currencyLocked === true
+              "
               class="currency-select"
               data-test="payment-settings-currency"
               @update:model-value="updateCurrency"
@@ -292,7 +295,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import type { EventPaymentStatus } from '@camp-registration/common/entities';
@@ -316,12 +319,14 @@ import { usePermissions } from '@/composables/permissions';
 import { useErrorExtractor } from '@/composables/serviceHandler';
 import { useEventSettings } from '@/composables/eventSettings';
 import { useEventDetailsStore } from '@/stores/event-details-store';
-import { useAPIService } from '@/services/APIService';
+import { usePaymentStore } from '@/stores/payment-store';
 
 const { t, locale } = useI18n();
-const api = useAPIService();
+const paymentStore = usePaymentStore();
 const quasar = useQuasar();
 const { can } = usePermissions();
+// Turning payments on emails participants: the director's call.
+const canEdit = computed<boolean>(() => can('event.payments.adjust'));
 const { extractErrorText } = useErrorExtractor();
 const eventDetailsStore = useEventDetailsStore();
 const { data: event } = storeToRefs(eventDetailsStore);
@@ -346,7 +351,7 @@ async function loadStatus(): Promise<void> {
   }
 
   try {
-    status.value = await api.fetchEventPaymentStatus(eventId);
+    status.value = await paymentStore.fetchStatus(eventId);
   } catch {
     status.value = null;
   }
@@ -355,7 +360,8 @@ async function loadStatus(): Promise<void> {
 // Only offered while requests may go out, and only to those allowed to.
 const unrequested = computed<number>(() => {
   if (
-    !status.value ||
+    !status.value?.account ||
+    !status.value.organizationVerified ||
     !event.value ||
     !settings.enabled ||
     !can('event.payments.create') ||
@@ -395,7 +401,7 @@ function requestAll(): void {
 async function sendAllRequests(eventId: string): Promise<void> {
   requesting.value = true;
   try {
-    const { requested } = await api.requestAllPayments(eventId);
+    const { requested } = await paymentStore.requestAll(eventId);
     quasar.notify({
       type: 'positive',
       message: t('unrequested.done', { count: requested }, requested),
@@ -408,8 +414,7 @@ async function sendAllRequests(eventId: string): Promise<void> {
   }
 }
 
-onMounted(loadStatus);
-watch(() => event.value?.id, loadStatus);
+watch(() => event.value?.id, loadStatus, { immediate: true });
 
 const timingOptions = computed<{ value: PaymentTiming; label: string }[]>(
   () => [

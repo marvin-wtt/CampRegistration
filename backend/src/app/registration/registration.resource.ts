@@ -5,7 +5,7 @@ import { customFileSlots } from '#app/registration/registration.helper';
 import {
   registrationPayment,
   type PaymentWithRefunds,
-} from '#app/payment/payment.balance';
+} from '@camp-registration/common/utils';
 
 export interface RegistrationWithBed extends Registration {
   bed?: BedWithRoom | null;

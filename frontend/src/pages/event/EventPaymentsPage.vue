@@ -151,45 +151,40 @@ import {
   formatMoney,
   fromMinorUnits,
 } from '@camp-registration/common/utils';
-import { useAPIService } from '@/services/APIService';
 import { useEventDetailsStore } from '@/stores/event-details-store';
+import { usePaymentStore } from '@/stores/payment-store';
 import { useRegistrationsStore } from '@/stores/registration-store';
 import { csvSeparatorForLocale, toCsv } from '@/utils/csv';
 import { useRegistrationHelper } from '@/composables/registrationHelper';
 
 const { t, d, locale } = useI18n();
 const quasar = useQuasar();
-const api = useAPIService();
 const { data: event } = storeToRefs(useEventDetailsStore());
+const paymentStore = usePaymentStore();
+const { data: ledger } = storeToRefs(paymentStore);
 const registrationsStore = useRegistrationsStore();
 const helper = useRegistrationHelper();
 const { data: registrations } = storeToRefs(registrationsStore);
 
-const payments = ref<Payment[]>([]);
+const payments = computed<Payment[]>(() => ledger.value ?? []);
 // Until the event is known there is nothing to fetch yet, but the page is
 // still loading; payer names wait for the registrations.
-const fetching = ref(true);
 const loading = computed<boolean>(
-  () => fetching.value || registrationsStore.isLoading,
+  () => !event.value || paymentStore.isLoading || registrationsStore.isLoading,
 );
 // Failed, canceled and expired checkouts moved no money.
 const showAttempts = ref(false);
 
-async function load(): Promise<void> {
-  const eventId = event.value?.id;
-  if (!eventId) {
-    return;
-  }
-  fetching.value = true;
-  try {
-    payments.value = await api.fetchEventPayments(eventId);
-  } finally {
-    fetching.value = false;
-  }
-}
-
 void registrationsStore.fetchData();
-watch(() => event.value?.id, load, { immediate: true });
+watch(
+  () => event.value?.id,
+  (eventId) => {
+    if (eventId) {
+      void paymentStore.fetchData(eventId);
+    }
+  },
+  { immediate: true },
+);
 
 interface LedgerRow {
   id: string;
