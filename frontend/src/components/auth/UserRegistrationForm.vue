@@ -98,6 +98,8 @@
           </q-input>
         </q-card-section>
 
+        <slot name="before-submit" />
+
         <q-card-actions
           class="q-px-md"
           :class="hasFooter ? 'q-pb-none' : 'q-pb-lg'"

@@ -1,4 +1,4 @@
-import { api, ensureCsrfToken } from '@/services/api';
+import { api, withCaptcha, ensureCsrfToken } from '@/services/api';
 import type {
   AuthTokens,
   Authentication,
@@ -154,19 +154,21 @@ export function useAuthService() {
     email: string,
     password: string,
   ): Promise<void> {
-    const response = await api.post('auth/register', {
-      name,
-      email,
-      password,
-    });
+    const response = await api.post(
+      'auth/register',
+      { name, email, password },
+      withCaptcha('signup'),
+    );
 
     return response?.data;
   }
 
   async function forgotPassword(email: string): Promise<void> {
-    const response = await api.post('auth/forgot-password', {
-      email,
-    });
+    const response = await api.post(
+      'auth/forgot-password',
+      { email },
+      withCaptcha('forgot-password'),
+    );
 
     return response?.data;
   }

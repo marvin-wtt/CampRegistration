@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import helmet from 'helmet';
+import helmet, { type HelmetOptions } from 'helmet';
 import compression from 'compression';
 import config from '#config/index';
 import { serverErrorHandler } from '#core/morgan';
@@ -10,6 +10,24 @@ import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 import staticRoutes from '#routes/static';
 import apiRouter from '#routes/api';
+import { resolve } from '#core/ioc/container';
+import { CaptchaService } from '#core/captcha/captcha.service';
+
+function helmetOptions(): HelmetOptions {
+  const captcha = resolve(CaptchaService).cspSources;
+  if (!captcha) {
+    return {};
+  }
+
+  return {
+    contentSecurityPolicy: {
+      directives: {
+        scriptSrc: ["'self'", ...captcha.scriptSrc],
+        frameSrc: ["'self'", ...captcha.frameSrc],
+      },
+    },
+  };
+}
 
 export function createApp() {
   const app = express();
@@ -18,7 +36,7 @@ export function createApp() {
   app.use(serverErrorHandler);
 
   // set security HTTP headers
-  app.use(helmet());
+  app.use(helmet(helmetOptions()));
 
   // reduce fingerprint -prevents express from sending the header
   app.disable('x-powered-by');

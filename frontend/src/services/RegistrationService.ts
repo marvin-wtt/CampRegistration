@@ -5,7 +5,7 @@ import type {
   RegistrationUpdateData,
   RegistrationUpdateQuery,
 } from '@camp-registration/common/entities';
-import { api } from '@/services/api';
+import { api, withCaptcha } from '@/services/api';
 
 export function useRegistrationService() {
   async function fetchRegistrations(eventId: string): Promise<Registration[]> {
@@ -29,7 +29,11 @@ export function useRegistrationService() {
     eventId: string,
     data: RegistrationCreateData,
   ): Promise<Registration> {
-    const response = await api.post(`events/${eventId}/registrations/`, data);
+    const response = await api.post(
+      `events/${eventId}/registrations/`,
+      data,
+      withCaptcha('registration'),
+    );
 
     return response?.data?.data;
   }

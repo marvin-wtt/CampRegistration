@@ -52,7 +52,14 @@
           @bg-color-update="(color) => updateBgColor(color)"
           @active-change="(active) => (formActive = active)"
           @restart="registerAnother"
-        />
+        >
+          <template #submit-status>
+            <captcha-widget
+              action="registration"
+              class="q-px-md q-pb-md"
+            />
+          </template>
+        </registration-form>
         <privacy-notice-disclosure
           v-if="formActive"
           :event-id="event.id"
@@ -229,6 +236,7 @@ import { useI18n } from 'vue-i18n';
 import { useErrorExtractor } from '@/composables/serviceHandler';
 import { usePermissions } from '@/composables/permissions';
 import { useRouteQueryParams } from '@/composables/useRouteQueryParams';
+import CaptchaWidget from '@/components/common/CaptchaWidget.vue';
 
 const { t, d, locale } = useI18n();
 const { to } = useObjectTranslation();

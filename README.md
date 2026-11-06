@@ -10,11 +10,11 @@ This is an [npm workspaces](https://docs.npmjs.com/cli/using-npm/workspaces)
 monorepo with four packages:
 
 | Package                   | Description                                                           |
-| ------------------------- |-----------------------------------------------------------------------|
+| ------------------------- | --------------------------------------------------------------------- |
 | [`common/`](./common)     | Shared TypeScript types, entities, form definitions, and permissions. |
 | [`backend/`](./backend)   | Node.js / Express 5 REST API (Prisma, InversifyJS, BullMQ).           |
 | [`frontend/`](./frontend) | Vue 3 / Quasar SPA (Pinia, SurveyJS, vue-i18n).                       |
-| [`e2e/`](./e2e)           | Playwright end-to-end tests.                                           |
+| [`e2e/`](./e2e)           | Playwright end-to-end tests.                                          |
 
 > **Build order matters:** `common` must be built before `backend` and
 > `frontend`. The root `build` script handles this for you.
@@ -67,11 +67,11 @@ MailDev, PhpMyAdmin, and Redis):
 docker-compose -f backend/docker-compose.yml --profile dev up -d
 ```
 
-| Service    | Port                    | Notes                                  |
-| ---------- | ----------------------- | -------------------------------------- |
-| MariaDB    | 3306                    | Dev database                           |
-| MailDev    | 1080 (web), 1025 (SMTP) | Catches outgoing emails                |
-| PhpMyAdmin | 8080                    | Database GUI                           |
+| Service    | Port                    | Notes                                    |
+| ---------- | ----------------------- | ---------------------------------------- |
+| MariaDB    | 3306                    | Dev database                             |
+| MailDev    | 1080 (web), 1025 (SMTP) | Catches outgoing emails                  |
+| PhpMyAdmin | 8080                    | Database GUI                             |
 | Redis      | 6379                    | Optional — only for `QUEUE_DRIVER=redis` |
 
 Integration tests use a separate database on port 3307 (`--profile test`).
@@ -111,6 +111,16 @@ Build all workspaces and run the database migrations, then start the server
 npm run build-and-migrate
 npm run production
 ```
+
+### Bot protection
+
+Signup, forgot password, event registrations and the contact form can be
+protected with [Cloudflare Turnstile](https://developers.cloudflare.com/turnstile/).
+Create a widget for your domain and set `CAPTCHA_DRIVER=turnstile`,
+`TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET` on the backend. The frontend reads
+the driver and site key from the backend at runtime, so the build needs no
+configuration. Visitors usually see nothing; a challenge appears next to the
+submit button only when Cloudflare asks for one.
 
 ## License
 

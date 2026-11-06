@@ -7,6 +7,12 @@
     :error="error"
     @submit="onSubmit"
   >
+    <template #before-submit>
+      <captcha-widget
+        action="signup"
+        class="q-px-md q-pb-sm"
+      />
+    </template>
     <template #footer>
       <q-card-section class="text-center q-pt-sm q-pb-lg">
         <q-btn
@@ -30,6 +36,7 @@ import { storeToRefs } from 'pinia';
 import UserRegistrationForm, {
   type RegistrationCredentials,
 } from '../../components/auth/UserRegistrationForm.vue';
+import CaptchaWidget from '@/components/common/CaptchaWidget.vue';
 
 const { t } = useI18n();
 

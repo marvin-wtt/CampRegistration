@@ -9,6 +9,7 @@ import { RedisEnvSchema } from './redis.schema.js';
 import { QueueEnvSchema } from './queue.schema.js';
 import { RealtimeEnvSchema } from './realtime.schema.js';
 import { TranslationEnvSchema } from './translation.schema.js';
+import { CaptchaEnvSchema } from './captcha.schema.js';
 
 export const EnvSchema = z
   .object({})
@@ -22,6 +23,7 @@ export const EnvSchema = z
   .and(QueueEnvSchema)
   .and(RealtimeEnvSchema)
   .and(TranslationEnvSchema)
+  .and(CaptchaEnvSchema)
   .readonly();
 
 export type Env = z.output<typeof EnvSchema>;
