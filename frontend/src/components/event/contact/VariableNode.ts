@@ -4,6 +4,7 @@ export interface VariableDefinition {
   value: string;
   label: string;
   category?: string | undefined;
+  type?: 'url' | undefined;
 }
 
 export type VariableList = VariableDefinition[];

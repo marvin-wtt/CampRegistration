@@ -227,6 +227,24 @@
               <q-separator vertical />
             </template>
 
+            <template v-if="!plainText && !singleLine">
+              <q-btn
+                :label="t('button.label')"
+                icon="smart_button"
+                size="xs"
+                unelevated
+                outline
+                rounded
+                @click="onAddButton"
+              >
+                <q-tooltip :delay="200">
+                  {{ t('tooltip.addButton') }}
+                </q-tooltip>
+              </q-btn>
+
+              <q-separator vertical />
+            </template>
+
             <q-btn
               icon="undo"
               :disable="!editor.can().undo()"
@@ -305,6 +323,8 @@ import Variable, {
   type VariableDefinition,
   type VariableList,
 } from './VariableNode';
+import EmailButton, { type EmailButtonAttributes } from './ButtonNode';
+import ButtonEditDialog from './ButtonEditDialog.vue';
 
 const quasar = useQuasar();
 const { t } = useI18n();
@@ -330,6 +350,10 @@ const variables = computed<VariableList>(() => {
   return tokens.flatMap(tokenRegistryToVariableList);
 });
 
+const urlTokens = computed<VariableList>(() =>
+  variables.value.filter(({ type }) => type === 'url'),
+);
+
 function tokenRegistryToVariableList(
   registry: TokenRegistry | Token,
 ): VariableList {
@@ -351,6 +375,7 @@ function tokenToVariable(token: Token): VariableDefinition {
     value: token.value,
     label: token.label,
     category: token.category,
+    type: token.type,
   };
 }
 
@@ -399,6 +424,9 @@ const editor = useEditor({
     Variable.configure({
       variables: variables.value,
     }),
+    ...(singleLine || plainText
+      ? []
+      : [EmailButton.configure({ edit: openButtonDialog })]),
     Typography,
   ],
   editorProps: {
@@ -447,10 +475,13 @@ function getEditorValue(editor: Editor) {
 }
 
 function wrapTemplateVariables(html: string): string {
-  // This regex matches patterns like {{ some.variable }}
-  const regex = /(\{\{\s*[a-zA-Z0-9_.[\]]+\s*}})/g;
+  // Matches a whole tag, so a {{ some.variable }} inside an attribute such as
+  // a button's href stays as it is, or a variable in text.
+  const regex = /(<[^>]*>)|(\{\{\s*[a-zA-Z0-9_.[\]]+\s*}})/g;
 
-  return html.replace(regex, '<span data-variable>$1</span>');
+  return html.replace(regex, (match, tag?: string) =>
+    tag ? match : `<span data-variable>${match}</span>`,
+  );
 }
 
 function unwrapTemplateVariables(html: string): string {
@@ -490,6 +521,30 @@ function onAddToken() {
         .insertVariable(tokenToVariable(token))
         .run();
     });
+}
+
+function openButtonDialog(
+  button?: EmailButtonAttributes,
+): Promise<EmailButtonAttributes | null | undefined> {
+  return new Promise((resolve) => {
+    quasar
+      .dialog({
+        component: ButtonEditDialog,
+        componentProps: {
+          button,
+          urlTokens: urlTokens.value,
+        },
+      })
+      .onOk((result: EmailButtonAttributes | null) => resolve(result))
+      .onCancel(() => resolve(undefined));
+  });
+}
+
+async function onAddButton() {
+  const button = await openButtonDialog();
+  if (button) {
+    editor.value?.chain().focus().insertEmailButton(button).run();
+  }
 }
 </script>
 
@@ -553,6 +608,38 @@ function onAddToken() {
     margin-right: 4px;
     font-style: italic;
     color: var(--md3-primary);
+  }
+}
+
+.email-button {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  margin: 8px 0;
+  max-width: 100%;
+  cursor: pointer;
+
+  &.ProseMirror-selectednode .email-button__label {
+    outline: 2px solid var(--md3-outline);
+    outline-offset: 2px;
+  }
+
+  .email-button__label {
+    background-color: var(--md3-primary);
+    color: var(--md3-on-primary);
+    border-radius: 6px;
+    padding: 10px 24px;
+    font-weight: 600;
+  }
+
+  .email-button__target {
+    color: var(--md3-on-surface-variant);
+    font-size: 0.8em;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
 
@@ -694,6 +781,9 @@ placeholder: 'Type your message here...'
 token:
   label: 'Variables'
 
+button:
+  label: 'Button'
+
 tooltip:
   formatBold: 'Bold'
   formatItalic: 'Italic'
@@ -707,6 +797,7 @@ tooltip:
   formatIndentIncrease: 'Increase indent'
   formatClear: 'Clear formatting'
   addToken: 'Add token'
+  addButton: 'Add button'
   undo: 'Undo'
   redo: 'Redo'
 </i18n>
@@ -716,6 +807,9 @@ placeholder: 'Gib hier deine Nachricht ein...'
 
 token:
   label: 'Variablen'
+
+button:
+  label: 'Button'
 
 tooltip:
   formatBold: 'Fett'
@@ -730,6 +824,7 @@ tooltip:
   formatIndentIncrease: 'Einzug vergrößern'
   formatClear: 'Formatierung löschen'
   addToken: 'Variable hinzufügen'
+  addButton: 'Button hinzufügen'
   undo: 'Rückgängig'
   redo: 'Wiederholen'
 </i18n>
@@ -739,6 +834,9 @@ placeholder: 'Tapez votre message ici...'
 
 token:
   label: 'Variables'
+
+button:
+  label: 'Bouton'
 
 tooltip:
   formatBold: 'Gras'
@@ -753,6 +851,7 @@ tooltip:
   formatIndentIncrease: 'Augmenter le retrait'
   formatClear: 'Effacer la mise en forme'
   addToken: 'Ajouter un jeton'
+  addButton: 'Ajouter un bouton'
   undo: 'Annuler'
   redo: 'Rétablir'
 </i18n>
@@ -762,6 +861,9 @@ placeholder: 'Wpisz tutaj swoją wiadomość...'
 
 token:
   label: 'Zmienne'
+
+button:
+  label: 'Przycisk'
 
 tooltip:
   formatBold: 'Pogrubienie'
@@ -776,6 +878,7 @@ tooltip:
   formatIndentIncrease: 'Zwiększ wcięcie'
   formatClear: 'Wyczyść formatowanie'
   addToken: 'Dodaj zmienną'
+  addButton: 'Dodaj przycisk'
   undo: 'Cofnij'
   redo: 'Ponów'
 </i18n>
@@ -785,6 +888,9 @@ placeholder: 'Zadejte svou zprávu sem...'
 
 token:
   label: 'Proměnné'
+
+button:
+  label: 'Tlačítko'
 
 tooltip:
   formatBold: 'Tučné'
@@ -799,6 +905,7 @@ tooltip:
   formatIndentIncrease: 'Zvětšit odsazení'
   formatClear: 'Vymazat formátování'
   addToken: 'Přidat proměnnou'
+  addButton: 'Přidat tlačítko'
   undo: 'Zpět'
   redo: 'Znovu'
 </i18n>

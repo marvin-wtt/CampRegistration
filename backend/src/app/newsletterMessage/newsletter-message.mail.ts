@@ -7,6 +7,8 @@ import { FileService } from '#app/file/file.service';
 import type { StorageFile } from '#core/storage/storage';
 import type { NewsletterProps, LocalContext } from '#views/emails/types';
 import { htmlToPreviewText } from '#utils/emailPreview';
+import { renderEmailLinks } from '#core/mail/links';
+import config from '#config/index';
 
 export interface NewsletterMailPayload {
   to: string;
@@ -82,12 +84,15 @@ export class NewsletterMessageMail extends MailBase<NewsletterMailPayload> {
 
   protected content() {
     const t = this.getT();
+    const body = renderEmailLinks(this.payload.body, {
+      buttonColor: config.primaryColor,
+    });
 
     return {
       template: 'newsletter',
       context: {
-        preview: htmlToPreviewText(this.payload.body),
-        body: this.payload.body,
+        preview: htmlToPreviewText(body),
+        body,
         reason: t('reason'),
         unsubscribeUrl: this.getUnsubscribeUrl(),
         unsubscribeLabel: t('unsubscribe'),
