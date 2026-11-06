@@ -28,6 +28,7 @@
   "main": "dist/index.js",
   "exports": {
     "./form": "./dist/form/index.js",
+    "./captcha": "./dist/captcha/index.js",
     "./entities": "./dist/entities/index.js",
     "./locales": "./dist/locales.js",
     "./permissions": "./dist/permissions/index.js",

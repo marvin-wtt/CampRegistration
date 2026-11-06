@@ -40,6 +40,9 @@
           </p>
         </q-card-section>
 
+        <!-- Rendered in the card for every submit state, e.g. a bot check. -->
+        <slot name="submit-status" />
+
         <q-card-section
           v-if="submitState === 'error' && submitError"
           class="q-pt-none"

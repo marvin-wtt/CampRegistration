@@ -139,6 +139,28 @@ function googleTranslationConfig(): GoogleTranslationConfig | undefined {
   };
 }
 
+interface TurnstileConfig {
+  siteKey: string;
+  secret: string;
+  hostnames: string[];
+}
+
+function turnstileConfig(): TurnstileConfig | undefined {
+  if (!env.TURNSTILE_SITE_KEY || !env.TURNSTILE_SECRET) {
+    return undefined;
+  }
+
+  const hostnames = env.TURNSTILE_HOSTNAMES?.split(',')
+    .map((hostname) => hostname.trim().toLowerCase())
+    .filter(Boolean);
+
+  return {
+    siteKey: env.TURNSTILE_SITE_KEY,
+    secret: env.TURNSTILE_SECRET,
+    hostnames: hostnames?.length ? hostnames : [new URL(env.APP_URL).hostname],
+  };
+}
+
 const config = {
   env: env.NODE_ENV,
   appName: env.APP_NAME,
@@ -225,6 +247,10 @@ const config = {
   },
   rateLimit: {
     disabled: env.RATE_LIMIT_DISABLED,
+  },
+  captcha: {
+    driver: env.CAPTCHA_DRIVER,
+    turnstile: turnstileConfig(),
   },
 };
 

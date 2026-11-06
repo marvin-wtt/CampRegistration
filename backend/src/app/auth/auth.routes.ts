@@ -1,4 +1,5 @@
 import { auth, authLimiter, guest, refreshLimiter } from '#middlewares';
+import { captcha } from '#core/captcha/captcha.middleware';
 import { ensureCsrfSession } from '#middlewares/csrf.middleware';
 import { AuthController } from '#app/auth/auth.controller';
 import { controller } from '#utils/bindController';
@@ -17,6 +18,7 @@ export class AuthRouter extends ModuleRouter {
       '/register',
       authLimiter,
       guest(),
+      captcha('signup'),
       controller(authController, 'register'),
     );
     this.router.post(
@@ -45,6 +47,7 @@ export class AuthRouter extends ModuleRouter {
       '/forgot-password',
       authLimiter,
       guest(),
+      captcha('forgot-password'),
       controller(authController, 'forgotPassword'),
     );
     this.router.post(

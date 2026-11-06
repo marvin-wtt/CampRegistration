@@ -258,6 +258,24 @@ response must stay a pure function of the event (no permission branch, no
 cache), and its data must come from `EventResource`.
 `tests/integration/app/event-meta.test.ts` asserts both properties.
 
+## Bot protection (captcha)
+
+`#core/captcha` holds the `CaptchaProvider` drivers (`CAPTCHA_DRIVER`;
+Turnstile today), the injectable `CaptchaService` and the `captcha(action)`
+middleware. Unset driver → the middleware is a no-op, so tests and dev need no
+keys; integration tests turn it on by spying on `CaptchaService`. The frontend
+reads driver and site key from `GET /captcha` at runtime, so only the backend
+is configured. Protecting another anonymous endpoint takes:
+
+1. the action added to `CaptchaAction` (`common/src/captcha`)
+2. backend route: `captcha('<action>')` after the cheap guards
+3. frontend service: `withCaptcha('<action>')` on the request
+4. frontend page: `<captcha-widget action="<action>" />` near the submit button
+
+A new driver needs a backend `CaptchaProvider` and a frontend challenge
+component (`frontend/src/components/common/captcha/`) implementing
+`CaptchaChallenge`, plus its variant in `CaptchaClientConfig`.
+
 ## Backend Path Alias
 
 `#*` maps to `src/*` in backend TypeScript.

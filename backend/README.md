@@ -70,6 +70,11 @@ include:
 - `EMAIL_FROM`, `EMAIL_REPLY_TO`, `EMAIL_ADMIN` — email addresses
 - `EMAIL_ENVELOPE_FROM` — envelope sender (return-path) used for bounce
   handling; defaults to `EMAIL_FROM`
+- `CAPTCHA_DRIVER` — bot protection for signup, forgot password, event
+  registrations and the contact form (`turnstile`; unset disables it). With
+  `turnstile`, set `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET` and optionally
+  `TURNSTILE_HOSTNAMES` (defaults to the hostname of `APP_URL`). The frontend
+  picks up the driver and site key from `GET /api/v1/captcha`.
 
 See `.env.dev` for the complete list of options.
 

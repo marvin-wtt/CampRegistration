@@ -1,6 +1,11 @@
 import axios, { type AxiosRequestConfig } from 'axios';
 import { CLIENT_ID_HEADER } from '@camp-registration/common/realtime';
 import { clientId } from '@/services/clientId';
+import {
+  type CaptchaAction,
+  CAPTCHA_TOKEN_HEADER,
+} from '@camp-registration/common/captcha';
+import { solveCaptcha } from '@/lib/captcha';
 
 // Axios config flag used to coordinate the CSRF bootstrap: the token request
 // itself must not be retried by the CSRF retry interceptor, which would loop.
@@ -52,3 +57,25 @@ export function setApiLocale(locale: string): void {
 }
 
 export { api };
+
+type CaptchaRequestConfig = AxiosRequestConfig & {
+  _captcha?: CaptchaAction;
+};
+
+// Marks a request as gated by the captcha widget mounted for `action`.
+export function withCaptcha(action: CaptchaAction): AxiosRequestConfig {
+  return { _captcha: action } as CaptchaRequestConfig;
+}
+
+// Solved per send, so retries (CSRF, token refresh) carry a fresh token.
+api.interceptors.request.use(async (config) => {
+  const action = (config as CaptchaRequestConfig)._captcha;
+  if (action) {
+    const token = await solveCaptcha(action);
+    if (token) {
+      config.headers.set(CAPTCHA_TOKEN_HEADER, token);
+    }
+  }
+
+  return config;
+});

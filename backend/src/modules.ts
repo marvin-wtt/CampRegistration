@@ -46,6 +46,8 @@ import { QueueManagerModule } from '#core/queue/queue-manager.module';
 import { SchedulerModule } from '#core/scheduler/scheduler.module';
 import { MailModule } from '#core/mail/mail.module';
 import { RealtimeModule } from '#core/realtime/realtime.module';
+import { CaptchaModule as CaptchaCoreModule } from '#core/captcha/captcha.module';
+import { CaptchaModule } from '#app/captcha/captcha.module';
 
 // Order matters: earlier modules boot first and shut down last.
 export const createCoreModules = (): CoreModule[] => [
@@ -57,12 +59,14 @@ export const createCoreModules = (): CoreModule[] => [
   new SchedulerModule(),
   new MailModule(),
   new RealtimeModule(),
+  new CaptchaCoreModule(),
 ];
 
 // Order matters: earlier modules boot first and shut down last.
 export const createAppModules = (): AppModule[] => [
   new SettingModule(),
   new HealthModule(),
+  new CaptchaModule(),
   new QueueModule(),
   new AuditModule(),
   new TokenModule(),

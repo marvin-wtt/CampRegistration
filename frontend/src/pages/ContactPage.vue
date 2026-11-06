@@ -73,6 +73,11 @@
           rounded
         />
 
+        <captcha-widget
+          action="feedback"
+          align="end"
+        />
+
         <div
           v-if="error"
           class="text-negative"
@@ -106,6 +111,7 @@ import { useRouter } from 'vue-router';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import { useAPIService } from '@/services/APIService';
 import { useErrorExtractor } from '@/composables/serviceHandler';
+import CaptchaWidget from '@/components/common/CaptchaWidget.vue';
 
 const { t } = useI18n();
 const router = useRouter();

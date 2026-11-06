@@ -37,7 +37,7 @@
             :label="t('field.email.label')"
             type="email"
             autocomplete="email"
-            :disable="loading"
+            :disable="loading || sending"
             :rules="[(val?: string) => !!val || t('field.email.rule.required')]"
             hide-bottom-space
             data-test="email"
@@ -50,11 +50,16 @@
           </q-input>
         </q-card-section>
 
+        <captcha-widget
+          action="forgot-password"
+          class="q-px-md q-pb-sm"
+        />
+
         <q-card-actions class="q-px-md q-pb-none">
           <q-btn
             :label="t('action.register')"
             type="submit"
-            :loading
+            :loading="loading || sending"
             color="primary"
             size="lg"
             class="full-width"
@@ -83,6 +88,7 @@ import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/stores/auth-store';
 import { storeToRefs } from 'pinia';
 import { useQuasar } from 'quasar';
+import CaptchaWidget from '@/components/common/CaptchaWidget.vue';
 
 const quasar = useQuasar();
 const { t } = useI18n();
@@ -95,8 +101,17 @@ const email = ref<string>('');
 // Suppress any previous errors
 authStore.reset();
 
-function resetPassword() {
-  void authStore.forgotPassword(email.value);
+// The store's notification flow leaves `loading` untouched, but the request
+// can wait on a bot check.
+const sending = ref<boolean>(false);
+
+async function resetPassword() {
+  sending.value = true;
+  try {
+    await authStore.forgotPassword(email.value);
+  } finally {
+    sending.value = false;
+  }
 }
 </script>
 

@@ -1,6 +1,7 @@
 import { FeedbackController } from './feedback.controller.js';
 import { ModuleRouter } from '#core/router/ModuleRouter';
 import { controller } from '#utils/bindController';
+import { captcha } from '#core/captcha/captcha.middleware';
 import { inject, injectable } from 'inversify';
 
 @injectable()
@@ -17,6 +18,10 @@ export class FeedbackRouter extends ModuleRouter {
   }
 
   protected defineRoutes() {
-    this.router.post('/', controller(this.feedbackController, 'store'));
+    this.router.post(
+      '/',
+      captcha('feedback'),
+      controller(this.feedbackController, 'store'),
+    );
   }
 }

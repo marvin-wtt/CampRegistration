@@ -9,6 +9,7 @@ import { useEventManagerService } from '@/services/EventManagerService';
 import axios, { type AxiosError } from 'axios';
 import { useFileService } from '@/services/FileService';
 import { useFeedbackService } from '@/services/FeedbackService';
+import { useCaptchaService } from '@/services/CaptchaService';
 import { useProfileService } from '@/services/ProfileService';
 import { useTotpService } from '@/services/TotpService';
 import { useMessageTemplateService } from '@/services/MessageTemplateService';
@@ -45,6 +46,7 @@ export function useAPIService() {
     ...useRoomService(),
     ...useFileService(),
     ...useFeedbackService(),
+    ...useCaptchaService(),
     ...useTotpService(),
     ...useMessageService(),
     ...useMessageTemplateService(),

@@ -1,4 +1,4 @@
-import { api } from '@/services/api';
+import { api, withCaptcha } from '@/services/api';
 
 export interface FeedbackData {
   message: string;
@@ -8,7 +8,7 @@ export interface FeedbackData {
 
 export function useFeedbackService() {
   async function sendFeedback(data: FeedbackData): Promise<void> {
-    const response = await api.post('feedback/', data);
+    const response = await api.post('feedback/', data, withCaptcha('feedback'));
 
     return response?.data?.data;
   }
