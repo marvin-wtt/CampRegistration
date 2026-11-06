@@ -34,7 +34,7 @@ const ALLOWED_TAGS = [
 ];
 
 const ALLOWED_ATTRIBUTES: sanitizeHtml.IOptions['allowedAttributes'] = {
-  a: ['href', 'title', 'target', 'rel'],
+  a: ['href', 'title', 'target', 'rel', 'data-button'],
   img: ['src', 'alt', 'width', 'height'],
   '*': ['style', 'class'],
 };
@@ -62,7 +62,7 @@ const ALLOWED_STYLES: sanitizeHtml.IOptions['allowedStyles'] = {
   },
 };
 
-const ALLOWED_SCHEMES = ['http', 'https', 'mailto', 'tel'];
+export const LINK_SCHEMES = ['http', 'https', 'mailto', 'tel'];
 
 /**
  * For fields the client renders as text rather than markup. Tags are discarded
@@ -82,9 +82,9 @@ export function sanitizeHtmlContent(html: string): string {
     allowedTags: ALLOWED_TAGS,
     allowedAttributes: ALLOWED_ATTRIBUTES,
     allowedStyles: ALLOWED_STYLES,
-    allowedSchemes: ALLOWED_SCHEMES,
+    allowedSchemes: LINK_SCHEMES,
     allowedSchemesByTag: {
-      a: ALLOWED_SCHEMES,
+      a: LINK_SCHEMES,
       img: ['http', 'https'],
     },
   });

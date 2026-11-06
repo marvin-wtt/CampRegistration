@@ -28,6 +28,8 @@ import {
   type SafeHtml,
   TemplateError,
 } from '#core/mail/templating';
+import { renderEmailLinks } from '#core/mail/links';
+import config from '#config/index';
 import { RegistrationMessage } from './base.mail.js';
 import type { RenderableMessage } from './renderable-message.js';
 import type {
@@ -267,9 +269,11 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
   private renderBody(): string {
     const template = this.payload.message.body;
 
-    return unwrapChangesBlock(
+    const html = unwrapChangesBlock(
       renderTemplate(template, this.context('html'), 'html'),
     );
+
+    return renderEmailLinks(html, { buttonColor: config.primaryColor });
   }
 
   /** Subject and body as this recipient would get them, without sending. */
