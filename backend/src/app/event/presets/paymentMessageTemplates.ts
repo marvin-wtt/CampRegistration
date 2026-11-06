@@ -13,27 +13,27 @@ const paymentMessageTemplates: PaymentMessageTemplates = {
     body: {
       en: `<p>Hi {{ registration.computedData.firstName }},</p>
            <p>The participation fee for <strong>{{ event.name }}</strong> is <strong>{{ payment.amount }}</strong>. Please pay it online using the link below:</p>
-           <p><a href="{{ payment.url }}">Pay now</a></p>
+           <a data-button href="{{ payment.url }}">Pay now</a>
            <p>If you have any questions, feel free to reply to this email.</p>
            <p>Best regards,<br>Your Event Team</p>`,
       de: `<p>Hallo {{ registration.computedData.firstName }},</p>
            <p>Der Teilnahmebeitrag für <strong>{{ event.name }}</strong> beträgt <strong>{{ payment.amount }}</strong>. Bitte bezahle ihn online über den folgenden Link:</p>
-           <p><a href="{{ payment.url }}">Jetzt bezahlen</a></p>
+           <a data-button href="{{ payment.url }}">Jetzt bezahlen</a>
            <p>Wenn du Fragen hast, antworte einfach auf diese E-Mail.</p>
            <p>Herzliche Grüße<br>Dein Veranstaltungsteam</p>`,
       fr: `<p>Salut {{ registration.computedData.firstName }},</p>
            <p>Les frais de participation pour <strong>{{ event.name }}</strong> s'élèvent à <strong>{{ payment.amount }}</strong>. Merci de les régler en ligne via le lien ci-dessous :</p>
-           <p><a href="{{ payment.url }}">Payer maintenant</a></p>
+           <a data-button href="{{ payment.url }}">Payer maintenant</a>
            <p>Si tu as des questions, n'hésite pas à répondre directement à cet e-mail.</p>
            <p>Bien à toi,<br>Ton équipe de l'événement</p>`,
       pl: `<p>Cześć {{ registration.computedData.firstName }},</p>
            <p>Opłata za udział w <strong>{{ event.name }}</strong> wynosi <strong>{{ payment.amount }}</strong>. Prosimy o zapłatę online, korzystając z poniższego linku:</p>
-           <p><a href="{{ payment.url }}">Zapłać teraz</a></p>
+           <a data-button href="{{ payment.url }}">Zapłać teraz</a>
            <p>W razie pytań możesz odpowiedzieć na tego maila.</p>
            <p>Serdecznie pozdrawiamy,<br>Zespół wydarzenia</p>`,
       cs: `<p>Ahoj {{ registration.computedData.firstName }},</p>
            <p>Účastnický poplatek za <strong>{{ event.name }}</strong> činí <strong>{{ payment.amount }}</strong>. Zaplať ho prosím online přes následující odkaz:</p>
-           <p><a href="{{ payment.url }}">Zaplatit nyní</a></p>
+           <a data-button href="{{ payment.url }}">Zaplatit nyní</a>
            <p>Pokud máš dotazy, odpověz na tento e-mail.</p>
            <p>S pozdravem,<br>Tým akce</p>`,
     },
@@ -80,27 +80,27 @@ const paymentMessageTemplates: PaymentMessageTemplates = {
     body: {
       en: `<p>Hi {{ registration.computedData.firstName }},</p>
            <p>Unfortunately, your payment for <strong>{{ event.name }}</strong> did not go through. You can try again using the link below:</p>
-           <p><a href="{{ payment.url }}">Try again</a></p>
+           <a data-button href="{{ payment.url }}">Try again</a>
            <p>If you have any questions, feel free to reply to this email.</p>
            <p>Best regards,<br>Your Event Team</p>`,
       de: `<p>Hallo {{ registration.computedData.firstName }},</p>
            <p>Leider ist deine Zahlung für <strong>{{ event.name }}</strong> fehlgeschlagen. Über den folgenden Link kannst du es erneut versuchen:</p>
-           <p><a href="{{ payment.url }}">Erneut versuchen</a></p>
+           <a data-button href="{{ payment.url }}">Erneut versuchen</a>
            <p>Wenn du Fragen hast, antworte einfach auf diese E-Mail.</p>
            <p>Herzliche Grüße<br>Dein Veranstaltungsteam</p>`,
       fr: `<p>Salut {{ registration.computedData.firstName }},</p>
            <p>Malheureusement, ton paiement pour <strong>{{ event.name }}</strong> n'a pas abouti. Tu peux réessayer via le lien ci-dessous :</p>
-           <p><a href="{{ payment.url }}">Réessayer</a></p>
+           <a data-button href="{{ payment.url }}">Réessayer</a>
            <p>Si tu as des questions, n'hésite pas à répondre directement à cet e-mail.</p>
            <p>Bien à toi,<br>Ton équipe de l'événement</p>`,
       pl: `<p>Cześć {{ registration.computedData.firstName }},</p>
            <p>Niestety Twoja płatność za <strong>{{ event.name }}</strong> nie powiodła się. Możesz spróbować ponownie, korzystając z poniższego linku:</p>
-           <p><a href="{{ payment.url }}">Spróbuj ponownie</a></p>
+           <a data-button href="{{ payment.url }}">Spróbuj ponownie</a>
            <p>W razie pytań możesz odpowiedzieć na tego maila.</p>
            <p>Serdecznie pozdrawiamy,<br>Zespół wydarzenia</p>`,
       cs: `<p>Ahoj {{ registration.computedData.firstName }},</p>
            <p>Tvoje platba za <strong>{{ event.name }}</strong> bohužel neprošla. Můžeš to zkusit znovu přes následující odkaz:</p>
-           <p><a href="{{ payment.url }}">Zkusit znovu</a></p>
+           <a data-button href="{{ payment.url }}">Zkusit znovu</a>
            <p>Pokud máš dotazy, odpověz na tento e-mail.</p>
            <p>S pozdravem,<br>Tým akce</p>`,
     },
@@ -147,27 +147,27 @@ const paymentMessageTemplates: PaymentMessageTemplates = {
     body: {
       en: `<p>Hi {{ registration.computedData.firstName }},</p>
            <p>This is a friendly reminder that the participation fee of <strong>{{ payment.amount }}</strong> for <strong>{{ event.name }}</strong> is still outstanding.</p>
-           <p><a href="{{ payment.url }}">Pay now</a></p>
+           <a data-button href="{{ payment.url }}">Pay now</a>
            <p>If you have any questions, feel free to reply to this email.</p>
            <p>Best regards,<br>Your Event Team</p>`,
       de: `<p>Hallo {{ registration.computedData.firstName }},</p>
            <p>Dies ist eine freundliche Erinnerung, dass der Teilnahmebeitrag von <strong>{{ payment.amount }}</strong> für <strong>{{ event.name }}</strong> noch offen ist.</p>
-           <p><a href="{{ payment.url }}">Jetzt bezahlen</a></p>
+           <a data-button href="{{ payment.url }}">Jetzt bezahlen</a>
            <p>Wenn du Fragen hast, antworte einfach auf diese E-Mail.</p>
            <p>Herzliche Grüße<br>Dein Veranstaltungsteam</p>`,
       fr: `<p>Salut {{ registration.computedData.firstName }},</p>
            <p>Petit rappel : les frais de participation de <strong>{{ payment.amount }}</strong> pour <strong>{{ event.name }}</strong> sont toujours en attente.</p>
-           <p><a href="{{ payment.url }}">Payer maintenant</a></p>
+           <a data-button href="{{ payment.url }}">Payer maintenant</a>
            <p>Si tu as des questions, n'hésite pas à répondre directement à cet e-mail.</p>
            <p>Bien à toi,<br>Ton équipe de l'événement</p>`,
       pl: `<p>Cześć {{ registration.computedData.firstName }},</p>
            <p>Przypominamy, że opłata za udział w wysokości <strong>{{ payment.amount }}</strong> za <strong>{{ event.name }}</strong> nie została jeszcze uregulowana.</p>
-           <p><a href="{{ payment.url }}">Zapłać teraz</a></p>
+           <a data-button href="{{ payment.url }}">Zapłać teraz</a>
            <p>W razie pytań możesz odpowiedzieć na tego maila.</p>
            <p>Serdecznie pozdrawiamy,<br>Zespół wydarzenia</p>`,
       cs: `<p>Ahoj {{ registration.computedData.firstName }},</p>
            <p>Připomínáme, že účastnický poplatek ve výši <strong>{{ payment.amount }}</strong> za <strong>{{ event.name }}</strong> zatím nebyl uhrazen.</p>
-           <p><a href="{{ payment.url }}">Zaplatit nyní</a></p>
+           <a data-button href="{{ payment.url }}">Zaplatit nyní</a>
            <p>Pokud máš dotazy, odpověz na tento e-mail.</p>
            <p>S pozdravem,<br>Tým akce</p>`,
     },
