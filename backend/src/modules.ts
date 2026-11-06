@@ -15,6 +15,7 @@ import { FeedbackModule } from '#app/feedback/feedback.module';
 import { ProfileModule } from '#app/profile/profile.module';
 import { TranslationModule } from '#app/translation/translation.module';
 import { TotpModule } from '#app/totp/totp.module';
+import { PasskeyModule } from '#app/passkey/passkey.module';
 import { UserModule } from '#app/user/user.module';
 import { SetupModule } from '#app/setup/setup.module';
 import { FileModule } from '#app/file/file.module';
@@ -69,6 +70,7 @@ export const createAppModules = (): AppModule[] => [
   new AuthModule(),
   new SetupModule(),
   new TotpModule(),
+  new PasskeyModule(),
   new ProfileModule(),
   new FileModule(),
   new OrganizationModule(),

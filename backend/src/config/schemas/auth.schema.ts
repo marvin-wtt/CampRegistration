@@ -30,6 +30,28 @@ export const AuthEnvSchema = z.object({
     .positive()
     .describe('Time in minutes until email verification token expires')
     .default(10),
+  WEBAUTHN_RP_ID: z
+    .string()
+    .optional()
+    .describe(
+      'WebAuthn relying party ID that passkeys are bound to. Defaults to the ' +
+        'APP_URL hostname. Changing it invalidates every registered passkey.',
+    ),
+  WEBAUTHN_RP_NAME: z
+    .string()
+    .optional()
+    .describe(
+      'Relying party name shown in passkey prompts. Defaults to APP_NAME.',
+    ),
+  WEBAUTHN_ORIGINS: z
+    .string()
+    .optional()
+    .describe(
+      'Comma-separated list of origins passkey ceremonies may come from. ' +
+        'Defaults to the APP_URL origin; set it when the frontend is served ' +
+        'elsewhere, such as the dev server.',
+    )
+    .meta({ examples: ['http://localhost:9000'] }),
 });
 
 export type AuthEnv = z.output<typeof AuthEnvSchema>;

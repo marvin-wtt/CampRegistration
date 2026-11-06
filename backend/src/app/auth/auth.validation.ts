@@ -1,6 +1,10 @@
 import { z, type ZodType } from 'zod';
 import { PasswordSchema } from '#core/validation/helper';
-import type { LoginData } from '@camp-registration/common/entities';
+import type {
+  LoginData,
+  PasskeyLoginData,
+} from '@camp-registration/common/entities';
+import { authenticationResponse } from '#app/passkey/passkey.validation';
 
 const register = z.object({
   body: z.object({
@@ -24,6 +28,13 @@ const verifyOTP = z.object({
     otp: z.string(),
     remember: z.boolean().default(false),
   }),
+});
+
+const loginWithPasskey = z.object({
+  body: z.object({
+    response: authenticationResponse,
+    remember: z.boolean().default(false),
+  }) satisfies ZodType<PasskeyLoginData>,
 });
 
 const logout = z.object({
@@ -68,6 +79,7 @@ export default {
   register,
   login,
   verifyOTP,
+  loginWithPasskey,
   logout,
   refreshTokens,
   forgotPassword,

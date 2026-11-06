@@ -9,6 +9,9 @@ import ApiError from '#utils/ApiError';
 import authResource from './auth.resource.js';
 import validator from './auth.validation.js';
 import { TotpService } from '#app/totp/totp.service';
+import { PasskeyService } from '#app/passkey/passkey.service';
+import { PasskeyOptionsResource } from '#app/passkey/passkey.resource';
+import type { User } from '#generated/prisma/client.js';
 import {
   ResetPasswordMessage,
   VerifyEmailMessage,
@@ -30,6 +33,7 @@ export class AuthController extends BaseController {
     @inject(UserService) private readonly userService: UserService,
     @inject(TokenService) private readonly tokenService: TokenService,
     @inject(TotpService) private readonly totpService: TotpService,
+    @inject(PasskeyService) private readonly passkeyService: PasskeyService,
   ) {
     super();
   }
@@ -83,9 +87,30 @@ export class AuthController extends BaseController {
 
     // Check if email is required
     if (!user.emailVerified) {
-      const token = this.tokenService.generateSendVerifyEmailToken(user);
+      this.sendEmailNotVerifiedResponse(res, user);
+      return;
+    }
 
-      this.sendPartialAuthResponse(res, token, 'EMAIL_NOT_VERIFIED');
+    await this.sendAuthResponse(req, res, user.id, remember);
+  }
+
+  async passkeyOptions(_req: Request, res: Response) {
+    const options = await this.passkeyService.generateAuthenticationOptions();
+
+    res.resource(new PasskeyOptionsResource(options));
+  }
+
+  async loginWithPasskey(req: Request, res: Response) {
+    const {
+      body: { response, remember },
+    } = await req.validate(validator.loginWithPasskey);
+
+    const user = await this.authService.loginWithPasskey(response);
+
+    // No TOTP step: the passkey required user verification (PIN or
+    // biometric), so it already is a second factor.
+    if (!user.emailVerified) {
+      this.sendEmailNotVerifiedResponse(res, user);
       return;
     }
 
@@ -123,6 +148,12 @@ export class AuthController extends BaseController {
         tokens,
       }),
     );
+  }
+
+  sendEmailNotVerifiedResponse(res: Response, user: User) {
+    const token = this.tokenService.generateSendVerifyEmailToken(user);
+
+    this.sendPartialAuthResponse(res, token, 'EMAIL_NOT_VERIFIED');
   }
 
   sendPartialAuthResponse(res: Response, token: string, type: string) {

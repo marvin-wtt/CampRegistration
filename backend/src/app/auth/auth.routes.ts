@@ -30,6 +30,16 @@ export class AuthRouter extends ModuleRouter {
       controller(authController, 'verifyOTP'),
     );
     this.router.post(
+      '/passkey/options',
+      authLimiter,
+      controller(authController, 'passkeyOptions'),
+    );
+    this.router.post(
+      '/passkey/verify',
+      authLimiter,
+      controller(authController, 'loginWithPasskey'),
+    );
+    this.router.post(
       '/logout',
       authLimiter,
       auth(),

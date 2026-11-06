@@ -7,12 +7,15 @@ import { isPasswordMatch, passwordNeedsRehash } from '#core/encryption';
 import type { AuthTokensResponse } from '#types/response';
 import { BaseService } from '#core/base/BaseService';
 import { inject, injectable } from 'inversify';
+import { PasskeyService } from '#app/passkey/passkey.service';
+import type { AuthenticationResponseJSON } from '@simplewebauthn/server';
 
 @injectable()
 export class AuthService extends BaseService {
   constructor(
     @inject(UserService) private readonly userService: UserService,
     @inject(TokenService) private readonly tokenService: TokenService,
+    @inject(PasskeyService) private readonly passkeyService: PasskeyService,
   ) {
     super();
   }
@@ -30,6 +33,16 @@ export class AuthService extends BaseService {
     if (passwordNeedsRehash(user.password)) {
       await this.userService.updateUserById(user.id, { password });
     }
+
+    if (user.locked) {
+      throw new ApiError(httpStatus.FORBIDDEN, 'Account is locked');
+    }
+
+    return user;
+  }
+
+  async loginWithPasskey(response: AuthenticationResponseJSON) {
+    const user = await this.passkeyService.verifyAuthentication(response);
 
     if (user.locked) {
       throw new ApiError(httpStatus.FORBIDDEN, 'Account is locked');

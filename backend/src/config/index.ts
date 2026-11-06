@@ -188,6 +188,13 @@ const config = {
   totp: {
     recoveryCodeSecret: env.TOTP_RECOVERY_CODE_SECRET,
   },
+  webauthn: {
+    rpId: env.WEBAUTHN_RP_ID ?? new URL(env.APP_URL).hostname,
+    rpName: env.WEBAUTHN_RP_NAME ?? env.APP_NAME,
+    origins: env.WEBAUTHN_ORIGINS?.split(',')
+      .map((origin) => origin.trim())
+      .filter(Boolean) ?? [new URL(env.APP_URL).origin],
+  },
   redis: {
     host: env.REDIS_HOST,
     port: env.REDIS_PORT,
