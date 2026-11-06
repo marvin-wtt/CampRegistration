@@ -23,6 +23,7 @@ function makeColumn(
 function makeCtx(overrides: Partial<CsvFormatContext> = {}): CsvFormatContext {
   return {
     translate: (value) => (typeof value === 'string' ? value : ''),
+    currency: 'EUR',
     translateCountry: (country) => country,
     getFormSelectOptions: () => undefined,
     ...overrides,

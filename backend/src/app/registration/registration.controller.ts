@@ -18,6 +18,7 @@ import { BaseController } from '#core/base/BaseController';
 import { RealtimeService } from '#core/realtime/RealtimeService';
 import { inject } from 'inversify';
 import { isDeepStrictEqual } from 'node:util';
+import { PaymentCollectionService } from '#app/payment/payment-collection.service';
 
 export class RegistrationController extends BaseController {
   constructor(
@@ -25,6 +26,8 @@ export class RegistrationController extends BaseController {
     private readonly registrationService: RegistrationService,
     @inject(RealtimeService)
     private readonly realtimeService: RealtimeService,
+    @inject(PaymentCollectionService)
+    private readonly paymentCollection: PaymentCollectionService,
   ) {
     super();
   }
@@ -48,17 +51,14 @@ export class RegistrationController extends BaseController {
   async store(req: Request, res: Response) {
     const event = req.modelOrFail('event');
     const {
-      body: { data, locale, group },
+      body: { data, locale, group, priceCheck },
     } = await req.validate(validator.store(event, req.preferredLocale()));
 
     const registration = await this.registrationService.createRegistration(
       event,
-      {
-        data,
-        locale,
-        group,
-      },
+      { data, locale, group },
       req.sessionId,
+      priceCheck,
     );
 
     // Notify participant
@@ -73,6 +73,11 @@ export class RegistrationController extends BaseController {
     // Notify contact email
     await RegistrationNotifyMessage.enqueue({ event, registration });
 
+    const payment = await this.paymentCollection.forNewRegistration(
+      event,
+      registration,
+    );
+
     void this.realtimeService.emit(
       event.id,
       'registration',
@@ -80,9 +85,12 @@ export class RegistrationController extends BaseController {
       'created',
     );
 
-    res
-      .status(httpStatus.CREATED)
-      .resource(new RegistrationResource(registration));
+    const resource = new RegistrationResource(registration);
+    if (payment) {
+      resource.withMeta({ payment });
+    }
+
+    res.status(httpStatus.CREATED).resource(resource);
   }
 
   async update(req: Request, res: Response) {
@@ -135,6 +143,13 @@ export class RegistrationController extends BaseController {
       }
     }
 
+    await this.paymentCollection.statusChanged(
+      event,
+      previousRegistration.status,
+      registration,
+      { notify: !suppressMessage },
+    );
+
     void this.realtimeService.emit(
       event.id,
       'registration',
@@ -147,12 +162,16 @@ export class RegistrationController extends BaseController {
 
   async destroy(req: Request, res: Response) {
     const {
-      query: { suppressMessage, reason },
+      query: { suppressMessage, reason, paymentSettlement },
     } = await req.validate(validator.destroy);
     const event = req.modelOrFail('event');
     const registration = req.modelOrFail('registration');
 
-    await this.registrationService.deleteRegistration(registration, reason);
+    await this.registrationService.deleteRegistration(
+      registration,
+      reason,
+      paymentSettlement,
+    );
 
     if (!suppressMessage) {
       await RegistrationDeletedMessage.enqueueFor(event, registration);

@@ -14,6 +14,7 @@ import { RegistrationDeletedMessage } from '#app/registration/messages/deleted.m
 import { RegistrationSubmittedMessage } from '#app/registration/messages/submitted.mail';
 import { RegistrationUpdatedMessage } from '#app/registration/messages/updated.mail';
 import { RegistrationWaitlistedMessage } from '#app/registration/messages/waitlisted.mail';
+import { PaymentCollectionService } from '#app/payment/payment-collection.service';
 
 vi.mock('#app/registration/messages/notify.mail', () => ({
   RegistrationNotifyMessage: { enqueue: vi.fn() },
@@ -39,10 +40,12 @@ vi.mock('#app/registration/messages/waitlisted.mail', () => ({
 
 const registrationService = mock<RegistrationService>();
 const realtimeService = mock<RealtimeService>();
+const paymentCollection = mock<PaymentCollectionService>();
 
 const controller = new RegistrationController(
   registrationService,
   realtimeService,
+  paymentCollection,
 );
 
 // A real form and the variables `setVariables` reads, so the update path can
@@ -71,6 +74,14 @@ type RegistrationEntity = Prisma.RegistrationGetPayload<{
   include: {
     bed: { include: { room: true } };
     files: { select: { id: true; field: true } };
+    payments: {
+      select: {
+        status: true;
+        amount: true;
+        refunds: { select: { status: true; amount: true } };
+      };
+    };
+    event: { select: { id: true; currency: true } };
   };
 }>;
 
@@ -98,8 +109,13 @@ const buildRegistration = (
     locale: 'en-US',
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
+    amountDue: null,
+    paymentRequestedAt: null,
+    paymentReminderSentAt: null,
     bed: null,
     files: [],
+    payments: [],
+    event: { id: event.id, currency: 'EUR' },
     ...overrides,
   }) as unknown as RegistrationEntity;
 
@@ -146,6 +162,7 @@ const resourceData = (res: ReturnType<typeof fakeResponse>): unknown =>
 
 beforeEach(() => {
   vi.clearAllMocks();
+  paymentCollection.forNewRegistration.mockResolvedValue(null);
 });
 
 describe('RegistrationController.show', () => {
@@ -410,6 +427,7 @@ describe('RegistrationController.destroy', () => {
     expect(registrationService.deleteRegistration).toHaveBeenCalledWith(
       registration,
       undefined,
+      undefined,
     );
     expect(RegistrationDeletedMessage.enqueueFor).toHaveBeenCalledWith(
       event,
@@ -435,4 +453,81 @@ describe('RegistrationController.destroy', () => {
 
     expect(RegistrationDeletedMessage.enqueueFor).not.toHaveBeenCalled();
   });
+});
+
+describe('RegistrationController payments', () => {
+  const resourceMeta = (res: ReturnType<typeof fakeResponse>): unknown =>
+    (
+      res.resource.mock.calls[0]?.[0] as RegistrationResource | undefined
+    )?.getAllMetadata();
+
+  it('hands the price check to the service, which alone compares it', async () => {
+    registrationService.createRegistration.mockResolvedValue(
+      buildRegistration({ status: 'PENDING' }),
+    );
+    const req = fakeRequest({
+      models: { event },
+      validateResult: {
+        body: { data: {}, locale: null, priceCheck: { displayedTotal: 20000 } },
+      },
+    });
+
+    await controller.store(req, fakeResponse());
+
+    const [, input, , priceCheck] =
+      registrationService.createRegistration.mock.calls[0]!;
+    expect(JSON.stringify(input)).not.toContain('displayedTotal');
+    expect(priceCheck).toEqual({ displayedTotal: 20000 });
+  });
+
+  it('adds the payment meta of a new registration', async () => {
+    const registration = buildRegistration({ status: 'ACCEPTED' });
+    registrationService.createRegistration.mockResolvedValue(registration);
+    const payment = {
+      checkoutUrl: 'https://checkout',
+      pageUrl: 'https://page',
+    };
+    paymentCollection.forNewRegistration.mockResolvedValue(payment);
+    const res = fakeResponse();
+
+    await controller.store(
+      fakeRequest({
+        models: { event },
+        validateResult: { body: { data: {}, locale: null } },
+      }),
+      res,
+    );
+
+    expect(paymentCollection.forNewRegistration).toHaveBeenCalledWith(
+      event,
+      registration,
+    );
+    expect(resourceMeta(res)).toEqual({ payment });
+  });
+
+  it.each([false, true])(
+    'follows a status change with payments (messages suppressed: %s)',
+    async (suppressMessage) => {
+      const registration = buildRegistration({ status: 'ACCEPTED' });
+      registrationService.updateRegistrationById.mockResolvedValue(
+        registration,
+      );
+      const req = fakeRequest({
+        models: { event, registration: buildRegistration() },
+        validateResult: {
+          body: { status: 'ACCEPTED' },
+          query: { suppressMessage },
+        },
+      });
+
+      await controller.update(req, fakeResponse());
+
+      expect(paymentCollection.statusChanged).toHaveBeenCalledWith(
+        event,
+        'PENDING',
+        registration,
+        { notify: !suppressMessage },
+      );
+    },
+  );
 });

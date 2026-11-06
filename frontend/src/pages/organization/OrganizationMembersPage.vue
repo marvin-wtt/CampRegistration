@@ -48,6 +48,8 @@
                 dense
                 square
                 size="sm"
+                color="secondary-container"
+                text-color="on-secondary-container"
               >
                 {{ t('you') }}
               </q-chip>
@@ -62,6 +64,8 @@
                 dense
                 square
                 size="sm"
+                color="tertiary-container"
+                text-color="on-tertiary-container"
                 icon="schedule"
               >
                 {{ t('status.pending') }}
@@ -70,7 +74,16 @@
                 dense
                 square
                 size="sm"
-                :class="`role--${member.role.toLowerCase()}`"
+                :color="
+                  member.role === 'ADMIN'
+                    ? 'primary-container'
+                    : 'surface-container-high'
+                "
+                :text-color="
+                  member.role === 'ADMIN'
+                    ? 'on-primary-container'
+                    : 'on-surface-variant'
+                "
               >
                 {{ t(`role.${member.role}`) }}
               </q-chip>
@@ -213,18 +226,6 @@ onMounted(async () => {
   await store.fetchData();
 });
 </script>
-
-<style lang="scss" scoped>
-.role--admin {
-  background: var(--md3-primary-container);
-  color: var(--md3-on-primary-container);
-}
-
-.role--member {
-  background: var(--md3-surface-container-high);
-  color: var(--md3-on-surface-variant);
-}
-</style>
 
 <i18n lang="yaml" locale="en">
 title: 'Members'

@@ -5,6 +5,11 @@ import type {
   TableTemplate,
 } from '@camp-registration/common/entities';
 import type { useRegistrationHelper } from '@/composables/registrationHelper';
+import {
+  owesFee,
+  paymentOpen,
+  paymentOverpaid,
+} from '@/utils/registrationPayment';
 
 /**
  * Hidden, frontend-only table templates.
@@ -23,6 +28,9 @@ export const LOCAL_TEMPLATE_PENDING = 'attention-pending';
 export const LOCAL_TEMPLATE_MISSING = 'attention-missing';
 export const LOCAL_TEMPLATE_AGE = 'attention-age';
 export const LOCAL_TEMPLATE_WAITLISTED = 'attention-waitlisted';
+export const LOCAL_TEMPLATE_PAYMENTS = 'payments';
+export const LOCAL_TEMPLATE_PAYMENTS_OPEN = 'payments-open';
+export const LOCAL_TEMPLATE_PAYMENTS_OVERPAID = 'payments-overpaid';
 
 type RegistrationHelper = ReturnType<typeof useRegistrationHelper>;
 
@@ -105,6 +113,78 @@ const STATUS_COLUMN: TableColumnTemplate = {
   align: 'left',
   sortable: true,
   renderAs: 'status',
+};
+
+const PAYMENT_STATUS_COLUMN: TableColumnTemplate = {
+  name: 'payment_status',
+  field: 'payment.status',
+  label: {
+    en: 'Payment',
+    de: 'Zahlung',
+    fr: 'Paiement',
+    cs: 'Platba',
+    pl: 'Płatność',
+  },
+  align: 'left',
+  sortable: true,
+  renderAs: 'payment_status',
+};
+
+// Minor units of the event currency, right-aligned so amounts line up.
+const moneyColumn = (
+  name: string,
+  field: string,
+  label: TableColumnTemplate['label'],
+): TableColumnTemplate => ({
+  name,
+  field,
+  label,
+  align: 'right',
+  sortable: true,
+  renderAs: 'money',
+});
+
+const AMOUNT_DUE_COLUMN = moneyColumn('amount_due', 'payment.amountDue', {
+  en: 'Due',
+  de: 'Fällig',
+  fr: 'Dû',
+  cs: 'Dlužno',
+  pl: 'Należne',
+});
+
+const AMOUNT_PAID_COLUMN = moneyColumn('amount_paid', 'payment.amountPaid', {
+  en: 'Paid',
+  de: 'Bezahlt',
+  fr: 'Payé',
+  cs: 'Zaplaceno',
+  pl: 'Zapłacono',
+});
+
+const AMOUNT_COLUMNS: TableColumnTemplate[] = [
+  AMOUNT_DUE_COLUMN,
+  AMOUNT_PAID_COLUMN,
+  moneyColumn('outstanding', 'payment.outstanding', {
+    en: 'Open',
+    de: 'Offen',
+    fr: 'À payer',
+    cs: 'Nezaplaceno',
+    pl: 'Do zapłaty',
+  }),
+];
+
+const REQUESTED_COLUMN: TableColumnTemplate = {
+  name: 'requested_at',
+  field: 'payment.requestedAt',
+  label: {
+    en: 'Asked to pay',
+    de: 'Aufgefordert',
+    fr: 'Demande envoyée',
+    cs: 'Vyzváno',
+    pl: 'Wezwano',
+  },
+  align: 'left',
+  sortable: true,
+  renderAs: 'time_ago',
 };
 
 const REGISTERED_COLUMN: TableColumnTemplate = {
@@ -232,6 +312,91 @@ export function buildLocalTableTemplates(
         GROUP_COLUMN,
         REGISTERED_COLUMN,
         STATUS_COLUMN,
+      ],
+    },
+    {
+      id: LOCAL_TEMPLATE_PAYMENTS_OPEN,
+      title: {
+        en: 'Not paid in full',
+        de: 'Nicht vollständig bezahlt',
+        fr: 'Pas entièrement payé',
+        cs: 'Nezaplaceno v plné výši',
+        pl: 'Nie w pełni opłacone',
+      },
+      hidden: true,
+      generated: true,
+      order: 903,
+      indexed: true,
+      actions: true,
+      // Largest open amount first: who to chase.
+      sortBy: 'outstanding',
+      sortDirection: 'desc',
+      localFilter: paymentOpen,
+      columns: [
+        ...NAME_COLUMNS,
+        GROUP_COLUMN,
+        PAYMENT_STATUS_COLUMN,
+        ...AMOUNT_COLUMNS,
+        REQUESTED_COLUMN,
+        EMAIL_COLUMN,
+      ],
+    },
+    {
+      id: LOCAL_TEMPLATE_PAYMENTS_OVERPAID,
+      title: {
+        en: 'Overpaid',
+        de: 'Überzahlt',
+        fr: 'Trop-perçus',
+        cs: 'Přeplaceno',
+        pl: 'Nadpłacone',
+      },
+      hidden: true,
+      generated: true,
+      order: 905,
+      indexed: true,
+      actions: true,
+      sortBy: 'overpaid',
+      sortDirection: 'desc',
+      localFilter: paymentOverpaid,
+      columns: [
+        ...NAME_COLUMNS,
+        GROUP_COLUMN,
+        STATUS_COLUMN,
+        PAYMENT_STATUS_COLUMN,
+        AMOUNT_DUE_COLUMN,
+        AMOUNT_PAID_COLUMN,
+        moneyColumn('overpaid', 'payment.overpaid', {
+          en: 'Overpaid',
+          de: 'Überzahlt',
+          fr: 'Trop-perçu',
+          cs: 'Přeplaceno',
+          pl: 'Nadpłata',
+        }),
+        EMAIL_COLUMN,
+      ],
+    },
+    {
+      id: LOCAL_TEMPLATE_PAYMENTS,
+      title: {
+        en: 'Payments',
+        de: 'Zahlungen',
+        fr: 'Paiements',
+        cs: 'Platby',
+        pl: 'Płatności',
+      },
+      hidden: true,
+      generated: true,
+      order: 904,
+      indexed: true,
+      actions: true,
+      sortBy: 'last_name',
+      localFilter: owesFee,
+      columns: [
+        ...NAME_COLUMNS,
+        GROUP_COLUMN,
+        STATUS_COLUMN,
+        PAYMENT_STATUS_COLUMN,
+        ...AMOUNT_COLUMNS,
       ],
     },
   ];

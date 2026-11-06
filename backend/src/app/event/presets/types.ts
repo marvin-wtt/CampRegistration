@@ -12,6 +12,13 @@ export type MessageTemplateTrigger =
   | 'registration_updated'
   | 'registration_canceled';
 
+export type PaymentMessageTemplateTrigger =
+  | 'payment_requested'
+  | 'payment_received'
+  | 'payment_failed'
+  | 'payment_refunded'
+  | 'payment_reminder';
+
 export interface PresetMessageTemplate {
   subject: Record<AppLocale, string>;
   body: Record<AppLocale, string>;
@@ -19,6 +26,11 @@ export interface PresetMessageTemplate {
 
 export type PresetMessageTemplates = Record<
   MessageTemplateTrigger,
+  PresetMessageTemplate
+>;
+
+export type PaymentMessageTemplates = Record<
+  PaymentMessageTemplateTrigger,
   PresetMessageTemplate
 >;
 

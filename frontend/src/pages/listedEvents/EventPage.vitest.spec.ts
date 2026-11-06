@@ -12,7 +12,7 @@ installQuasarPlugin({ plugins: { Dialog, Meta } });
 
 const api = {
   fetchEvent: vi.fn(),
-  createRegistration: vi.fn(),
+  submitRegistration: vi.fn(),
   createTemporaryFile: vi.fn(),
 };
 
@@ -212,7 +212,7 @@ describe('EventPage', () => {
 
     await submit('event-1', { first_name: 'Ann' }, 'de-DE');
 
-    expect(api.createRegistration).toHaveBeenCalledWith('event-1', {
+    expect(api.submitRegistration).toHaveBeenCalledWith('event-1', {
       data: { first_name: 'Ann' },
       locale: 'de-DE',
       group: 'fr',

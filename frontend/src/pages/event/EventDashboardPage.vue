@@ -76,6 +76,7 @@
               :registrations="features.registrations"
               :files="features.files"
               :rooms="features.rooms"
+              :payments="can('event.payments.view')"
               :style="card.style"
             />
             <tasks-card
@@ -95,6 +96,13 @@
             />
             <registration-overview-card
               v-else-if="card.key === 'registrations'"
+              :loading
+              :style="card.style"
+            />
+            <payment-overview-card
+              v-else-if="card.key === 'payments' && event"
+              :currency="event.currency"
+              :phase
               :loading
               :style="card.style"
             />
@@ -133,6 +141,7 @@ import SetupChecklistCard from '@/components/event/dashboard/SetupChecklistCard.
 import TodayProgramCard from '@/components/event/dashboard/TodayProgramCard.vue';
 import TodayDutiesCard from '@/components/event/dashboard/TodayDutiesCard.vue';
 import RegistrationOverviewCard from '@/components/event/dashboard/RegistrationOverviewCard.vue';
+import PaymentOverviewCard from '@/components/event/dashboard/PaymentOverviewCard.vue';
 import ReadinessCard from '@/components/event/dashboard/ReadinessCard.vue';
 import DemographicsCard from '@/components/event/dashboard/DemographicsCard.vue';
 import OrganizationUnverifiedNotice from '@/components/organization/OrganizationUnverifiedNotice.vue';
@@ -150,7 +159,12 @@ import { usePermissions } from '@/composables/permissions';
 import { useNavigationSettings } from '@/composables/eventNavigationSettings';
 import { type EventPhase, useEventPhase } from '@/composables/eventPhase';
 import type { PermissionRequirement } from '@/composables/scopePermissions';
-import type { HideableNavigationItem } from '@camp-registration/common/settings';
+import {
+  type HideableNavigationItem,
+  type PaymentSettings,
+  SETTING_KEYS,
+} from '@camp-registration/common/settings';
+import { useEventSettings } from '@/composables/eventSettings';
 type CardKey =
   | 'setup'
   | 'attention'
@@ -158,6 +172,7 @@ type CardKey =
   | 'program'
   | 'duties'
   | 'registrations'
+  | 'payments'
   | 'readiness'
   | 'demographics';
 
@@ -176,12 +191,14 @@ const LAYOUTS: Record<EventPhase, [CardKey, Column][]> = {
     ['attention', 'side'],
     ['tasks', 'side'],
     ['registrations', 'main'],
+    ['payments', 'side'],
     ['demographics', 'main'],
   ],
   preparation: [
     ['attention', 'side'],
     ['tasks', 'side'],
     ['registrations', 'main'],
+    ['payments', 'side'],
     ['readiness', 'side'],
     ['demographics', 'main'],
   ],
@@ -191,12 +208,14 @@ const LAYOUTS: Record<EventPhase, [CardKey, Column][]> = {
     ['duties', 'side'],
     ['tasks', 'side'],
     ['registrations', 'main'],
+    ['payments', 'side'],
     ['demographics', 'main'],
   ],
   wrapUp: [
     ['attention', 'side'],
     ['tasks', 'side'],
     ['registrations', 'main'],
+    ['payments', 'side'],
     ['demographics', 'main'],
   ],
 };
@@ -218,6 +237,9 @@ const { can, canAccess } = usePermissions();
 const { settings: navigationSettings, isLoading: navigationLoading } =
   useNavigationSettings();
 const { viewedPhase } = useEventPhase();
+const { settings: paymentSettings } = useEventSettings<
+  Pick<PaymentSettings, 'enabled'>
+>(SETTING_KEYS.PAYMENT, { enabled: false });
 
 // Features hidden from the nav rail are hidden here too.
 function isShown(item: HideableNavigationItem): boolean {
@@ -258,6 +280,15 @@ const features = computed(() => ({
     isShown('chore_planner'),
   program: can('event.program_items.view') && isShown('program_planner'),
   rooms: can('event.rooms.view') && isShown('room_planner'),
+  // Form answers can make a free event's registrations owe money too.
+  // Every priced registration stores what it owes, so only an event that
+  // collects payments gets the card.
+  payments:
+    can('event.payments.view') &&
+    paymentSettings.enabled &&
+    registrationStore.data?.some(
+      (registration) => registration.payment.status !== 'NOT_REQUIRED',
+    ) === true,
 }));
 
 // A store is only asked once its permission is known to be held, so a
@@ -320,6 +351,8 @@ function isAvailable(key: CardKey): boolean {
       return features.value.program;
     case 'duties':
       return features.value.duties;
+    case 'payments':
+      return features.value.payments;
     case 'readiness':
       return (registrations && features.value.rooms) || features.value.program;
     default:

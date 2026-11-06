@@ -151,6 +151,26 @@ export const useRegistrationsStore = defineStore('registrations', () => {
     });
   }
 
+  /**
+   * Re-reads one registration after a change made through another resource
+   * (e.g. a payment), which our own realtime echo suppression won't reflect.
+   */
+  async function refreshOne(registrationId: string): Promise<void> {
+    const eventId = route.params.eventId as string | undefined;
+    if (!eventId || !data.value) {
+      return;
+    }
+
+    const registration = await apiService.fetchRegistration(
+      eventId,
+      registrationId,
+    );
+    data.value = data.value.map((current) =>
+      current.id === registrationId ? registration : current,
+    );
+    bus.emit('update', registration);
+  }
+
   return {
     reset,
     data,
@@ -161,5 +181,6 @@ export const useRegistrationsStore = defineStore('registrations', () => {
     updateData,
     deleteData,
     invalidate,
+    refreshOne,
   };
 });

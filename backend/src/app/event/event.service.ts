@@ -1,3 +1,5 @@
+import ApiError from '#utils/ApiError';
+import httpStatus from 'http-status';
 import type { Event, File, Prisma } from '#generated/prisma/client.js';
 import { ulid } from '#utils/ulid';
 import { dbNullable } from '#utils/db';
@@ -5,6 +7,7 @@ import type { OptionalByKeys } from '#types/utils';
 import { BaseService } from '#core/base/BaseService';
 import { inject, injectable } from 'inversify';
 import { FileService } from '#app/file/file.service.js';
+import { PaymentService } from '#app/payment/payment.service';
 import { AuditService } from '#app/audit/audit.service';
 import { eventAuditPolicy } from '#app/event/event.audit';
 import { calculateFreePlaces, type FreePlaces } from '#app/event/event.util';
@@ -66,6 +69,8 @@ export class EventService extends BaseService {
   constructor(
     @inject(FileService) private readonly fileService: FileService,
     @inject(AuditService) private readonly audit: AuditService,
+    @inject(PaymentService)
+    private readonly paymentService: PaymentService,
   ) {
     super();
   }
@@ -474,6 +479,18 @@ export class EventService extends BaseService {
   }
 
   async updateEvent(event: Event, data: EventUpdateData) {
+    if (
+      data.currency !== undefined &&
+      data.currency !== event.currency &&
+      (await this.paymentService.isCurrencyLocked(event.id))
+    ) {
+      throw new ApiError(
+        httpStatus.CONFLICT,
+        'The currency cannot change once amounts were quoted or paid',
+        { code: 'EVENT_CURRENCY_LOCKED' },
+      );
+    }
+
     return this.transaction(async (tx) => {
       const before = await tx.event.findUniqueOrThrow({
         where: { id: event.id },
@@ -498,6 +515,7 @@ export class EventService extends BaseService {
 
   async deleteEventById(id: string) {
     await this.transaction(async (tx) => {
+      await this.paymentService.releaseEventLedger(id);
       // The FK nulls `eventId` on the event's audit rows; retention purges them later.
       await tx.event.delete({ where: { id } });
 

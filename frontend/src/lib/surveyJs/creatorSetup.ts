@@ -30,15 +30,32 @@ PropertyGridEditorCollection.register(eventDataMapping);
 
 hideIrrelevantProperties();
 
+// Deep, so a nested section like `pe.tabs` adds to the built-in strings
+// instead of replacing them.
+function mergeStrings(
+  target: Record<string, unknown>,
+  source: Record<string, unknown>,
+): void {
+  for (const [key, value] of Object.entries(source)) {
+    const existing = target[key];
+    if (
+      value &&
+      typeof value === 'object' &&
+      existing &&
+      typeof existing === 'object'
+    ) {
+      mergeStrings(
+        existing as Record<string, unknown>,
+        value as Record<string, unknown>,
+      );
+    } else {
+      target[key] = value;
+    }
+  }
+}
+
 for (const [locale, sections] of Object.entries(
   surveyCreatorCustomLocaleConfig,
 )) {
-  const strings = localization.getLocale(locale);
-
-  for (const [key, source] of Object.entries(sections)) {
-    const target = strings[key];
-    if (target && typeof target === 'object') {
-      Object.assign(target, source);
-    }
-  }
+  mergeStrings(localization.getLocale(locale), sections);
 }

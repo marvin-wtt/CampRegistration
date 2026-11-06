@@ -2,6 +2,14 @@ import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';
 import { Prisma, type Registration } from '#generated/prisma/client.js';
 import type { EventWithFreePlaces } from '#app/event/event.types';
+import { computeAmountDue } from '@camp-registration/common/utils';
+import type {
+  PaymentSettlement,
+  RegistrationPriceCheck,
+} from '@camp-registration/common/entities';
+import { assertPriceUnchanged } from './registration.price-check.js';
+import { PaymentService } from '#app/payment/payment.service';
+import { getRequestContext } from '#core/context/requestContext';
 import { RegistrationForm } from '#app/registration/registration.form';
 import { BaseService } from '#core/base/BaseService';
 import {
@@ -16,6 +24,7 @@ import type { RegistrationDeleteReason } from '@camp-registration/common/entitie
 import {
   type AuditedRegistration,
   registrationAuditPolicy,
+  registrationIdentity,
 } from '#app/registration/registration.audit';
 import type { PrismaTransaction } from '#core/database/transaction';
 import { PrivacyNoticeService } from '#app/privacyNotice/privacy-notice.service';
@@ -38,6 +47,15 @@ export class RegistrationService extends BaseService {
       select: { id: true, field: true },
       where: { field: { startsWith: CUSTOM_FILE_FIELD_PREFIX } },
     },
+    // The ledger summary (`Registration.payment`) is derived on read.
+    payments: {
+      select: {
+        status: true,
+        amount: true,
+        refunds: { select: { status: true, amount: true } },
+      },
+    },
+    event: { select: { id: true, currency: true } },
   } satisfies Prisma.RegistrationInclude;
 
   constructor(
@@ -45,6 +63,8 @@ export class RegistrationService extends BaseService {
     @inject(PrivacyNoticeService)
     private readonly privacyNoticeService: PrivacyNoticeService,
     @inject(AuditService) private readonly audit: AuditService,
+    @inject(PaymentService)
+    private readonly paymentService: PaymentService,
   ) {
     super();
   }
@@ -70,10 +90,7 @@ export class RegistrationService extends BaseService {
   async getRegistrationWithEventById(id: string) {
     return this.prisma.registration.findUnique({
       where: { id },
-      include: {
-        ...this.registrationInclude,
-        event: { select: { id: true } },
-      },
+      include: this.registrationInclude,
     });
   }
 
@@ -90,10 +107,15 @@ export class RegistrationService extends BaseService {
     return { total };
   }
 
+  /**
+   * `priceCheck` is what the form displayed: a submission whose price changed
+   * meanwhile is refused (`assertPriceUnchanged`), never charged differently.
+   */
   async createRegistration(
     event: EventWithFreePlaces,
     data: Pick<Registration, 'data' | 'locale' | 'group'>,
     fileField: string,
+    priceCheck?: RegistrationPriceCheck,
   ) {
     // Built in the locale the data was validated in: event variables such as
     // `{event.price}` resolve per locale, so computed values can differ.
@@ -109,6 +131,10 @@ export class RegistrationService extends BaseService {
     const formData = form.data;
     const eventData = form.extractEventData();
     const computedData = computedRegistrationData(eventData);
+    // Stored whether or not payments are collected: the form showed it, so
+    // it is what this person agreed to.
+    const quotedAmount = computeAmountDue(event, form.paymentAmounts());
+    assertPriceUnchanged(quotedAmount, priceCheck);
 
     const fileIds = form.getFileIds();
 
@@ -174,6 +200,8 @@ export class RegistrationService extends BaseService {
             id: undefined, // Force new ID generation
             data: formData,
             status,
+            quotedAmount,
+            amountDue: quotedAmount,
             platformPrivacyPolicyUpdatedAt:
               privacyStamp.platformPrivacyPolicyUpdatedAt,
             organizationPrivacyNotice: connectVersion(
@@ -185,6 +213,7 @@ export class RegistrationService extends BaseService {
             event: { connect: { id: event.id } },
             files: this.fileService.getFileConnectInput(fileIds, fileField),
           },
+          include: this.registrationInclude,
         });
 
         // A registration is created by an external party via the public
@@ -245,6 +274,8 @@ export class RegistrationService extends BaseService {
       let computedData: Partial<Prisma.RegistrationCreateInput> = {};
       let formFileIds: string[] | undefined;
 
+      // What is owed is never re-priced by an edit: people owe what the form
+      // showed them, unless a manager changes it explicitly.
       if (data.data) {
         // Read as the form it was answered in: the group's `{event.*}` values
         // and the locale can change what the form shows and computes.
@@ -252,7 +283,8 @@ export class RegistrationService extends BaseService {
           locale: before.locale,
           group: data.group ?? before.group,
         }).load(data.data);
-        computedData = computedRegistrationData(form.extractEventData());
+        const eventData = form.extractEventData();
+        computedData = computedRegistrationData(eventData);
         formFileIds = form.getFileIds();
       }
       if (data.customFiles) {
@@ -352,14 +384,31 @@ export class RegistrationService extends BaseService {
   async deleteRegistration(
     registration: Registration,
     reason?: RegistrationDeleteReason,
+    paymentSettlement?: PaymentSettlement,
   ) {
     await this.transaction(async (tx) => {
+      // Payments stay, with their payer snapshot; money still held must be
+      // settled first, or the deletion is refused.
+      const settlement = await this.paymentService.settleForDeletion(
+        registration,
+        paymentSettlement,
+        getRequestContext()?.userId ?? null,
+      );
+
       const deleted = await tx.registration.delete({
         where: { id: registration.id },
       });
 
       await this.audit.deleted(registrationAuditPolicy, deleted, {
-        details: { reason },
+        details: {
+          reason,
+          ...(settlement && {
+            context: {
+              ...registrationIdentity(deleted).context,
+              paymentSettlement: settlement,
+            },
+          }),
+        },
       });
     });
   }

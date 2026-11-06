@@ -24,6 +24,8 @@ Serializer.getProperty('file', 'storeDataAsText').defaultValue = false;
 
 export { setVariables, VARIABLE_NAMES };
 export { formLintOptions } from './lint.js';
+export { extractEventData } from './eventData.js';
+export { extractPaymentAmounts } from './paymentAmounts.js';
 export {
   selectFileByLocale,
   EVENT_LOGO_SLOT,
@@ -31,3 +33,7 @@ export {
   FILE_VARIABLE,
 } from './files.js';
 export type { GroupCountryMatch } from './questions/groupCountryMatch.js';
+export {
+  PAYMENT_TOTAL_MODES,
+  type PaymentTotalMode,
+} from './properties/showPaymentTotal.js';

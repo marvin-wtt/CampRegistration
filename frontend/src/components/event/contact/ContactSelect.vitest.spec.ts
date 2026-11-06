@@ -58,6 +58,18 @@ function createRegistration(
     customData: {},
     group: null,
     status: 'ACCEPTED',
+    payment: {
+      status: 'NOT_REQUIRED',
+      currency: 'EUR',
+      amountDue: null,
+      amountPaid: 0,
+      quotedAmount: null,
+      adjustment: null,
+      outstanding: 0,
+      overpaid: 0,
+      requestedAt: null,
+      remindedAt: null,
+    },
     createdAt: '2024-01-01T00:00:00Z',
     ...overrides,
   };
