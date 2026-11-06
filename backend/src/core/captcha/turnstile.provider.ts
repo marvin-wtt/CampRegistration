@@ -69,25 +69,12 @@ export class TurnstileProvider implements CaptchaProvider {
       body.set('remoteip', remoteIp);
     }
 
-    let result: SiteverifyResponse;
-    try {
-      const response = await fetch(SITEVERIFY_URL, {
-        method: 'POST',
-        body,
-        signal: AbortSignal.timeout(TIMEOUT_MS),
-      });
-      if (!response.ok) {
-        throw new Error(`Siteverify responded with ${response.status}`);
-      }
-      result = (await response.json()) as SiteverifyResponse;
-    } catch (error) {
-      throw new CaptchaUnavailableError('Turnstile siteverify failed', {
-        cause: error,
-      });
-    }
+    const result = await this.siteverify(body);
 
     const errorCodes = Array.isArray(result['error-codes'])
-      ? result['error-codes']
+      ? result['error-codes'].filter(
+          (code): code is string => typeof code === 'string',
+        )
       : [];
     if (errorCodes.some((code) => MISCONFIGURED_ERROR_CODES.has(code))) {
       // A fault, not an outage: logged and reported.
@@ -103,5 +90,25 @@ export class TurnstileProvider implements CaptchaProvider {
       typeof result.hostname === 'string' &&
       this.options.hostnames.includes(result.hostname.toLowerCase())
     );
+  }
+
+  private async siteverify(body: URLSearchParams): Promise<SiteverifyResponse> {
+    const unavailable = (cause: unknown) =>
+      new CaptchaUnavailableError('Turnstile siteverify failed', { cause });
+
+    const response = await fetch(SITEVERIFY_URL, {
+      method: 'POST',
+      body,
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    }).catch((error: unknown) => {
+      throw unavailable(error);
+    });
+    if (!response.ok) {
+      throw unavailable(`Siteverify responded with ${String(response.status)}`);
+    }
+
+    return (await response.json().catch((error: unknown) => {
+      throw unavailable(error);
+    })) as SiteverifyResponse;
   }
 }

@@ -2,10 +2,11 @@
   <!-- Takes no space unless the provider needs the visitor to interact. -->
   <div
     class="captcha-widget column"
-    :class="[
-      align === 'end' ? 'items-end' : 'items-center',
-      { 'captcha-widget--collapsed': !interactive },
-    ]"
+    :class="{
+      'items-end': align === 'end',
+      'items-center': align === 'center',
+      'captcha-widget--collapsed': !interactive,
+    }"
     data-test="captcha"
   >
     <p
