@@ -12,4 +12,6 @@ export interface TokenRegistry {
 export type Token = QSelectOption<string> & {
   caption?: string;
   category?: string | undefined;
+  // `url` tokens always hold a link, so a button may point at them.
+  type?: 'url' | undefined;
 };
