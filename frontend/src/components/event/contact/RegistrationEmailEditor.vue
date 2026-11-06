@@ -144,6 +144,7 @@ const tokens = computed<
                 value: 'url',
                 label: t('token.payment.url.label'),
                 caption: t('token.payment.url.caption'),
+                type: 'url',
               },
             ],
           },
