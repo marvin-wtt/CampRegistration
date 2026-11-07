@@ -1,7 +1,7 @@
 import type { Request } from 'express';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import httpStatus from 'http-status';
-import { catchMiddlewareAsync } from '#utils/catchAsync';
+import { catchMiddlewareAsync } from '#core/router/catchAsync';
 
 export type GuardFn = (
   req: Request,

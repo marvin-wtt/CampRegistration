@@ -1,7 +1,7 @@
 import { BaseService } from '#core/base/BaseService';
 import { injectable } from 'inversify';
 import httpStatus from 'http-status';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import type {
   ChoreCreateData,
   ChoreSlotData,

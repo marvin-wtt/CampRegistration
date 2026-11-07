@@ -3,7 +3,7 @@ import { guard } from '#core/guard';
 import { ModuleRouter } from '#core/router/ModuleRouter';
 import { NewsletterSubscriberController } from './newsletter-subscriber.controller.js';
 import { NewsletterSubscriberService } from './newsletter-subscriber.service.js';
-import { controller } from '#utils/bindController';
+import { controller } from '#core/router/bindController';
 import { newsletterManager } from '#app/newsletter/newsletter.guard';
 import { resolve } from '#core/ioc/container';
 

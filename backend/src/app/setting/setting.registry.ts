@@ -2,7 +2,7 @@ import type { EventScopedPermission } from '@camp-registration/common/permission
 import type { SettingKey } from '@camp-registration/common/settings';
 import type { ZodType } from 'zod';
 import { injectable } from 'inversify';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import httpStatus from 'http-status';
 
 export interface SettingDefinition<T = unknown> {

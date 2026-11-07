@@ -5,7 +5,7 @@ import { FileService } from '#app/file/file.service';
 import { resolve } from '#core/ioc/container';
 import { fileTypeFromFile } from 'file-type';
 import { remove } from 'fs-extra';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import httpStatus from 'http-status';
 import logger from '#core/logger';
 import { isPathInside } from '#core/storage/safe-path';

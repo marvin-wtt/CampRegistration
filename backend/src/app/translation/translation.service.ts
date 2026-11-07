@@ -2,7 +2,7 @@ import { inspect } from 'node:util';
 import { injectable } from 'inversify';
 import { TranslationProviderFactory } from '#app/translation/translation.factory';
 import type { TranslationProvider } from '#app/translation/translation.provider';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import httpStatus from 'http-status';
 import config from '#config/index';
 import logger from '#core/logger';

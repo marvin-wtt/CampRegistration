@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import morgan from 'morgan';
 import config from '#config/index';
 import logger from '#core/logger';
-import { anonymizeIp } from '#utils/anonymizeIp';
+import { anonymizeIp } from '#core/anonymizeIp';
 
 const extractMessage = (res: Response): string | undefined => {
   if (

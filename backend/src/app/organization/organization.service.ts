@@ -2,7 +2,7 @@ import type { Prisma } from '#generated/prisma/client.js';
 import { BaseService } from '#core/base/BaseService';
 import { inject, injectable } from 'inversify';
 import httpStatus from 'http-status';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import { PrivacyNoticeService } from '#app/privacyNotice/privacy-notice.service';
 import type {
   OrganizationCreateData,

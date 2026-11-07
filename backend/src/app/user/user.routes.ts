@@ -1,7 +1,7 @@
 import { auth } from '#core/auth/auth.middleware';
 import { guard } from '#core/guard';
 import { UserController } from './user.controller.js';
-import { controller } from '#utils/bindController';
+import { controller } from '#core/router/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';
 import { UserService } from '#app/user/user.service';
 import { resolve } from '#core/ioc/container';

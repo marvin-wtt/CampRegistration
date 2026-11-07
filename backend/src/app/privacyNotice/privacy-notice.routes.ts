@@ -1,7 +1,7 @@
 import { auth } from '#core/auth/auth.middleware';
 import { guard } from '#core/guard';
 import { ModuleRouter } from '#core/router/ModuleRouter';
-import { controller } from '#utils/bindController';
+import { controller } from '#core/router/bindController';
 import { resolve } from '#core/ioc/container';
 import { or } from '#core/guard';
 import { organizationMember } from '#app/organization/organization.guard';

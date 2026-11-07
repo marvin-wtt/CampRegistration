@@ -1,6 +1,6 @@
 import { auth } from '#core/auth/auth.middleware';
 import { guard } from '#core/guard';
-import { controller } from '#utils/bindController';
+import { controller } from '#core/router/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';
 import { SettingController } from '#app/setting/setting.controller';
 import { settingGuard } from '#app/setting/setting.guard';

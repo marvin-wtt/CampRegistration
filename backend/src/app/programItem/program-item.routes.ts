@@ -4,7 +4,7 @@ import { hasEventPermission } from '#app/event/event.guard';
 import { ProgramItemService } from './program-item.service.js';
 import { ProgramItemController } from './program-item.controller.js';
 import { ModuleRouter } from '#core/router/ModuleRouter';
-import { controller } from '#utils/bindController';
+import { controller } from '#core/router/bindController';
 import { inject, injectable } from 'inversify';
 
 @injectable()

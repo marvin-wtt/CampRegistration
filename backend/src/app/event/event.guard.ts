@@ -2,7 +2,7 @@ import type { Request } from 'express';
 import type { ScopePermission } from '@camp-registration/common/permissions';
 import { type GuardFn, or } from '#core/guard';
 import { scoped, type ScopeResolver } from '#core/permission/permission.guard';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import httpStatus from 'http-status';
 import { EventService } from '#app/event/event.service';
 import { EventManagerService } from '#app/eventManager/event-manager.service';

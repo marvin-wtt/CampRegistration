@@ -4,7 +4,7 @@ import { hasEventPermission } from '#app/event/event.guard';
 import { TaskService } from './task.service.js';
 import { TaskController } from './task.controller.js';
 import { ModuleRouter } from '#core/router/ModuleRouter';
-import { controller } from '#utils/bindController';
+import { controller } from '#core/router/bindController';
 import { inject, injectable } from 'inversify';
 
 @injectable()

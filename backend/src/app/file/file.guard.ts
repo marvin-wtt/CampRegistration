@@ -1,6 +1,6 @@
 import type { Request } from 'express';
 import type { GuardFn } from '#core/guard';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import httpStatus from 'http-status';
 
 type File = Exclude<Request['models']['file'], undefined>;

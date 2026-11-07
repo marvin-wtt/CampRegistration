@@ -1,5 +1,5 @@
 import { auth } from '#core/auth/auth.middleware';
-import { controller } from '#utils/bindController';
+import { controller } from '#core/router/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';
 import { resolve } from '#core/ioc/container';
 import { PermissionController } from './permission.controller.js';

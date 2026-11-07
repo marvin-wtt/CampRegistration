@@ -3,7 +3,7 @@ import { authLimiter, refreshLimiter } from '#core/rate-limit/limiters';
 import { captcha } from '#core/captcha/captcha.middleware';
 import { ensureCsrfSession } from '#core/auth/csrf.middleware';
 import { AuthController } from '#app/auth/auth.controller';
-import { controller } from '#utils/bindController';
+import { controller } from '#core/router/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';
 import { resolve } from '#core/ioc/container';
 

@@ -6,7 +6,7 @@ import config from '#config/index';
 import { serverErrorHandler } from '#core/morgan';
 import { errorConverter, errorHandler } from '#core/router/error.middleware';
 import cookieParser from 'cookie-parser';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import httpStatus from 'http-status';
 import staticRoutes from '#routes/static';
 import apiRouter from '#routes/api';

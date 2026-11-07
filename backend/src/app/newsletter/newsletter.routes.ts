@@ -3,7 +3,7 @@ import { guard } from '#core/guard';
 import { ModuleRouter } from '#core/router/ModuleRouter';
 import { NewsletterController } from './newsletter.controller.js';
 import { NewsletterService } from './newsletter.service.js';
-import { controller } from '#utils/bindController';
+import { controller } from '#core/router/bindController';
 import { newsletterManager } from './newsletter.guard.js';
 import { resolve } from '#core/ioc/container';
 import type { NewsletterQuery } from '@camp-registration/common/entities';

@@ -5,7 +5,7 @@ import { auth } from '#core/auth/auth.middleware';
 import { guard } from '#core/guard';
 import { eventManagerSubscriber } from '#app/eventManager/event-manager.guard';
 import type { EventQuery } from '@camp-registration/common/entities';
-import { controller } from '#utils/bindController';
+import { controller } from '#core/router/bindController';
 import { realtimeStream } from '#app/realtime/realtime.stream';
 import { resolve } from '#core/ioc/container';
 import { hasEventPermission, eventViewGuard } from '#app/event/event.guard';

@@ -1,7 +1,7 @@
 import httpStatus from 'http-status';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import { type Request } from 'express';
-import { catchMiddlewareAsync } from '#utils/catchAsync';
+import { catchMiddlewareAsync } from '#core/router/catchAsync';
 
 export const authUserId = (req: Request): string | never => {
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition

@@ -65,7 +65,10 @@ Request → Router → Controller → Service (business logic) → Prisma → Re
 - Middleware lives with the core mechanism it serves — there is no `src/middlewares/`: request pipeline (model binding,
   validation, request extensions, errors, maintenance) in `#core/router/`, `auth`/`guest`/session/CSRF in
   `#core/auth/`, `guard()` beside the `GuardFn` combinators in `#core/guard`, limiters in
-  `#core/rate-limit/limiters`, `multipart` in `#core/storage/`. A feature's own middleware stays in its module
+  `#core/rate-limit/limiters`, `multipart` in `#core/storage/`. A feature's own middleware stays in its module.
+  `ApiError`, `controller()` (`bindController`) and `catchMiddlewareAsync` sit in `#core/router/` beside the error
+  middleware. `#utils/` is only for generic helpers with no owning mechanism — a helper tied to one core or app
+  module (cookies, Prisma JSON nulls, email preview text) lives in that module
 - Use `Zod` for complex data shapes (JSON columns, form definitions)
 - Extend `ModuleRouter` for all routers; use model binding for route params (`:eventId` → `Event` entity)
 - In controllers, prefer the bound model's `.id` (e.g. `req.modelOrFail('event').id`) over the raw route param (`req.params.eventId`) for service calls and realtime emits — the binding already fetched and validated the entity, so there's no cost to using it, and it's the only option for guard-derived bindings that have no route param at all

@@ -1,6 +1,6 @@
 import { guard } from '#core/guard';
 import { ModuleRouter } from '#core/router/ModuleRouter';
-import { controller } from '#utils/bindController';
+import { controller } from '#core/router/bindController';
 import { realtimeStream } from '#app/realtime/realtime.stream';
 import {
   programPublicSubscriber,

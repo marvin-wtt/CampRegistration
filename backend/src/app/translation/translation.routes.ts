@@ -1,7 +1,7 @@
 import { auth } from '#core/auth/auth.middleware';
 import { translationLimiter } from '#app/translation/translation.middleware';
 import { TranslationController } from '#app/translation/translation.controller';
-import { controller } from '#utils/bindController';
+import { controller } from '#core/router/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';
 import { resolve } from '#core/ioc/container';
 

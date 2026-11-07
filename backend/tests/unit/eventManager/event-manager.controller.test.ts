@@ -3,7 +3,7 @@ import type { Request, Response } from 'express';
 import { mock } from 'vitest-mock-extended';
 import httpStatus from 'http-status';
 import type { Event } from '#generated/prisma/client.js';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import { EventManagerService } from '#app/eventManager/event-manager.service';
 import { UserService } from '#app/user/user.service';
 import { RealtimeService } from '#core/realtime/RealtimeService';

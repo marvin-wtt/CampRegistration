@@ -6,7 +6,7 @@ import { resolve } from '#core/ioc/container';
 import { FileService } from '#app/file/file.service';
 import type { StorageFile } from '#core/storage/storage';
 import type { NewsletterProps, LocalContext } from '#views/emails/types';
-import { htmlToPreviewText } from '#utils/emailPreview';
+import { htmlToPreviewText } from '#core/mail/emailPreview';
 import { renderEmailLinks } from '#core/mail/links';
 import config from '#config/index';
 

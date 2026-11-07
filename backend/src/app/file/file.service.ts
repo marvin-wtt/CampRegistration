@@ -7,9 +7,12 @@ import logger from '#core/logger';
 import { DiskStorage } from '#core/storage/disk.storage';
 import { StorageRegistry } from '#core/storage/storage.registry';
 import { BaseService } from '#core/base/BaseService';
-import { extractKeyFromFieldName, fileNameExtension } from '#utils/file';
+import {
+  extractKeyFromFieldName,
+  fileNameExtension,
+} from '#app/file/file.utils';
 import { isClientDisconnect } from '#utils/stream';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import httpStatus from 'http-status';
 import { buffer } from 'node:stream/consumers';
 import { inject, injectable } from 'inversify';

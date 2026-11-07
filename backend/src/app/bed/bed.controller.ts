@@ -1,7 +1,7 @@
 import { BedService } from './bed.service.js';
 import { RegistrationService } from '#app/registration/registration.service';
 import httpStatus from 'http-status';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import validator from './bed.validation.js';
 import type { Request, Response } from 'express';
 import { BedResource } from '#app/bed/bed.resource';

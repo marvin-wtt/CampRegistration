@@ -4,7 +4,7 @@ import { and, or } from '#core/guard';
 import { hasEventPermission } from '#app/event/event.guard';
 import { choreFromBody } from './chore-assignment.middleware.js';
 import { ChoreAssignmentController } from './chore-assignment.controller.js';
-import { controller } from '#utils/bindController';
+import { controller } from '#core/router/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';
 import { ChoreAssignmentService } from '#app/chore-assignment/chore-assignment.service';
 import { inject, injectable } from 'inversify';

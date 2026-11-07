@@ -1,6 +1,6 @@
 import { FeedbackController } from './feedback.controller.js';
 import { ModuleRouter } from '#core/router/ModuleRouter';
-import { controller } from '#utils/bindController';
+import { controller } from '#core/router/bindController';
 import { captcha } from '#core/captcha/captcha.middleware';
 import { inject, injectable } from 'inversify';
 

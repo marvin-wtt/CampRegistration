@@ -3,7 +3,7 @@ import { Prisma } from '#generated/prisma/client.js';
 import httpStatus from 'http-status';
 import config from '#config/index';
 import logger from '#core/logger';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
