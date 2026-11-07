@@ -6,7 +6,7 @@ import {
   getStringCookie,
   secureCookieOptions,
   secureCookieName,
-} from '#utils/cookie';
+} from '#core/auth/cookie';
 
 declare module 'express-serve-static-core' {
   interface Request {

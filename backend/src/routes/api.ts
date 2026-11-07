@@ -1,14 +1,15 @@
-import { generalLimiter, maintenance } from '#middlewares/index';
+import { generalLimiter } from '#core/rate-limit/limiters';
+import maintenance from '#core/router/maintenance.middleware';
 import passport from 'passport';
 import { successHandler, clientErrorHandler } from '#core/morgan';
 import context, {
   authenticatedUserContext,
-} from '#middlewares/context.middleware';
-import extensions from '#middlewares/extension.middleware';
+} from '#core/context/context.middleware';
+import extensions from '#core/router/extension.middleware';
 import { createRouter } from '#core/router/router';
-import { csrfProtection } from '#middlewares/csrf.middleware';
-import { sessionId } from '#middlewares/session.middleware';
-import convertEmptyStringsToNull from '#middlewares/string.middleware';
+import { csrfProtection } from '#core/auth/csrf.middleware';
+import { sessionId } from '#core/auth/session.middleware';
+import convertEmptyStringsToNull from '#core/router/string.middleware';
 import { initializePassport } from '#core/passport';
 
 // authentication

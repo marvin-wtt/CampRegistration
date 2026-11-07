@@ -5,7 +5,7 @@ import { TokenService } from '#app/token/token.service';
 import { type Request, type Response } from 'express';
 import type { AuthTokensResponse } from '#types/response';
 import type { AppConfig } from '#config';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import authResource from './auth.resource.js';
 import validator from './auth.validation.js';
 import { TotpService } from '#app/totp/totp.service';
@@ -16,7 +16,7 @@ import {
 import { BaseController } from '#core/base/BaseController';
 import { inject, injectable } from 'inversify';
 import { Config } from '#core/ioc/decorators';
-import { getStringCookie, secureCookieOptions } from '#utils/cookie';
+import { getStringCookie, secureCookieOptions } from '#core/auth/cookie';
 import {
   ACCESS_TOKEN_COOKIE,
   REFRESH_TOKEN_COOKIE,

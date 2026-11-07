@@ -6,7 +6,7 @@ import os from 'node:os';
 import path from 'node:path';
 import type { EventWithRelations } from '#app/event/event.types';
 import { registerRouteModelBinding } from '#core/router/router';
-import extensions from '#middlewares/extension.middleware';
+import extensions from '#core/router/extension.middleware';
 
 /** The shell as Quasar emits it: minified, comments stripped, quotes dropped. */
 const SHELL =

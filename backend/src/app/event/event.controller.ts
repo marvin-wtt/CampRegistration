@@ -18,7 +18,7 @@ import { EventManagerService } from '#app/eventManager/event-manager.service.js'
 import { SettingService } from '#app/setting/setting.service';
 import { PrivacyNoticeService } from '#app/privacyNotice/privacy-notice.service';
 import { RealtimeService } from '#core/realtime/RealtimeService';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import { inject, injectable } from 'inversify';
 
 @injectable()

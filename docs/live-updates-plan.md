@@ -87,7 +87,7 @@ instead of a per-entity event stampede.
 **Echo suppression.** The server emits on _every_ write, including the
 originator's. Each app instance (browser tab) generates an in-memory `clientId`
 (`crypto.randomUUID()`) and sends it on mutating requests via the `X-Client-Id`
-header. The context middleware (`middlewares/context.middleware.ts`) stores it
+header. The context middleware (`core/context/context.middleware.ts`) stores it
 in the ambient **request context** (`core/context/requestContext.ts`,
 AsyncLocalStorage), and `RealtimeService`
 stamps it onto `event.origin` itself — emit calls never pass it explicitly.

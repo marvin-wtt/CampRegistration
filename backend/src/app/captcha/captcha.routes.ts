@@ -1,5 +1,5 @@
 import { CaptchaController } from './captcha.controller.js';
-import { controller } from '#utils/bindController';
+import { controller } from '#core/router/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';
 import { resolve } from '#core/ioc/container';
 

@@ -1,4 +1,4 @@
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import httpStatus from 'http-status';
 
 const MAX_LOGGED_BODY_LENGTH = 1000;

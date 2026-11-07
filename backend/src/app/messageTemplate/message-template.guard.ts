@@ -1,7 +1,7 @@
 import type { Request } from 'express';
 import { hasEventPermission } from '#app/event/event.guard';
 import { type GuardFn } from '#core/guard';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import httpStatus from 'http-status';
 import { EventService } from '#app/event/event.service';
 import { MessageTemplateService } from '#app/messageTemplate/message-template.service';

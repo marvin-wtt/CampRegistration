@@ -4,7 +4,7 @@ import type { RealtimeEvent } from '@camp-registration/common/realtime';
 import type { Permission } from '@camp-registration/common/permissions';
 import { RealtimeService } from '#core/realtime/RealtimeService';
 import { resolve } from '#core/ioc/container';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import logger from '#core/logger';
 
 // Proxies (and the compression middleware) may buffer the stream; a periodic

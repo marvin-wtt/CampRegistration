@@ -4,10 +4,10 @@ import express, {
   type Router,
   type RouterOptions,
 } from 'express';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import httpStatus from 'http-status';
 import type { AppRouter } from '#core/base/AppModule';
-import { catchMiddlewareAsync } from '#utils/catchAsync';
+import { catchMiddlewareAsync } from '#core/router/catchAsync';
 
 type Models = Request['models'];
 export type ModelKey = keyof Models;

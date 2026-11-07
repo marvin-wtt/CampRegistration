@@ -1,6 +1,6 @@
 import { ModuleRouter } from '#core/router/ModuleRouter';
 import { NewsletterSubscriberController } from './newsletter-subscriber.controller.js';
-import { controller } from '#utils/bindController';
+import { controller } from '#core/router/bindController';
 import { resolve } from '#core/ioc/container';
 
 export class NewsletterUnsubscribeRouter extends ModuleRouter {

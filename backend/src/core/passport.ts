@@ -12,7 +12,7 @@ import passport from 'passport';
 import { UserService } from '#app/user/user.service';
 import { resolve } from '#core/ioc/container';
 import { ACCESS_TOKEN_COOKIE } from '#app/auth/auth.cookies';
-import { getStringCookie } from '#utils/cookie';
+import { getStringCookie } from '#core/auth/cookie';
 
 function cookieExtractor(req: Request) {
   return getStringCookie(req, ACCESS_TOKEN_COOKIE);

@@ -11,7 +11,7 @@ import path from 'node:path';
 import os from 'node:os';
 import fse from 'fs-extra';
 import httpStatus from 'http-status';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import type { StorageFile } from '#core/storage/storage';
 
 const { sendMock } = vi.hoisted(() => ({

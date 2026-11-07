@@ -1,5 +1,5 @@
 import { createRouter } from '#core/router/router';
-import extensions from '#middlewares/extension.middleware';
+import extensions from '#core/router/extension.middleware';
 
 /**
  * Browser-facing routes served outside `/api/v1`, filled by modules through

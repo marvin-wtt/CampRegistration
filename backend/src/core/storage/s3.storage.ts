@@ -12,7 +12,7 @@ import {
   S3ServiceException,
   DeleteObjectCommand,
 } from '@aws-sdk/client-s3';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import httpStatus from 'http-status';
 import fse from 'fs-extra';
 import { Readable } from 'stream';

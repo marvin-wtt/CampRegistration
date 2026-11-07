@@ -1,5 +1,5 @@
 import type { RequestHandler } from 'express';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import httpStatus from 'http-status';
 import { isRegisteredModel } from '#core/router/router';
 

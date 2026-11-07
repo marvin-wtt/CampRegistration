@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 import argon2 from 'argon2';
 import bcrypt from 'bcryptjs';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import { AuthService } from '#app/auth/auth.service';
 import { UserService } from '#app/user/user.service';
 import { TokenService } from '#app/token/token.service';

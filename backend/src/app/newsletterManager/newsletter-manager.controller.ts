@@ -1,4 +1,4 @@
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import httpStatus from 'http-status';
 import { NewsletterManagerService } from './newsletter-manager.service.js';
 import { NewsletterManagerResource } from './newsletter-manager.resource.js';

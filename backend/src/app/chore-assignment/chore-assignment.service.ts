@@ -1,5 +1,5 @@
 import { BaseService } from '#core/base/BaseService';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import httpStatus from 'http-status';
 import { injectable } from 'inversify';
 import type {

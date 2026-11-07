@@ -13,7 +13,7 @@ import {
   templateToRenderable,
 } from '#app/registration/messages/renderable-message';
 import { RegistrationTemplateMessage } from '#app/registration/messages/template.mail';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 
 export class MessageDeliveryController extends BaseController {
   constructor(

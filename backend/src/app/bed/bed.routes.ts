@@ -1,9 +1,10 @@
-import { auth, guard } from '#middlewares/index';
+import { auth } from '#core/auth/auth.middleware';
+import { guard } from '#core/guard';
 import { hasEventPermission } from '#app/event/event.guard';
 import { BedController } from './bed.controller.js';
 import { ModuleRouter } from '#core/router/ModuleRouter';
 import { BedService } from '#app/bed/bed.service';
-import { controller } from '#utils/bindController';
+import { controller } from '#core/router/bindController';
 import { resolve } from '#core/ioc/container';
 
 export class BedRouter extends ModuleRouter {

@@ -1,9 +1,10 @@
 import { RegistrationController } from './registration.controller.js';
-import { auth, guard } from '#middlewares/index';
+import { auth } from '#core/auth/auth.middleware';
+import { guard } from '#core/guard';
 import { captcha } from '#core/captcha/captcha.middleware';
 import { or, and } from '#core/guard';
 import { hasEventPermission } from '#app/event/event.guard';
-import { controller } from '#utils/bindController';
+import { controller } from '#core/router/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';
 import { RegistrationService } from '#app/registration/registration.service';
 import { resolve } from '#core/ioc/container';

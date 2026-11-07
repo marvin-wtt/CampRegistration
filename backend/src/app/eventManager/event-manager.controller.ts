@@ -1,4 +1,4 @@
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import httpStatus from 'http-status';
 import { UserService } from '#app/user/user.service';
 import { EventManagerService } from '#app/eventManager/event-manager.service.js';

@@ -1,6 +1,6 @@
 import type { Prisma, User } from '#generated/prisma/client.js';
 import httpStatus from 'http-status';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import { encryptPassword } from '#core/encryption';
 import type {
   AccountDeletionBlocker,

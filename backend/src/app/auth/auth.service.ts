@@ -1,7 +1,7 @@
 import httpStatus from 'http-status';
 import { UserService } from '#app/user/user.service';
 import { TokenService } from '#app/token/token.service';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import { TokenType } from '#generated/prisma/client.js';
 import { isPasswordMatch, passwordNeedsRehash } from '#core/encryption';
 import type { AuthTokensResponse } from '#types/response';

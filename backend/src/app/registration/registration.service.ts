@@ -1,4 +1,4 @@
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import httpStatus from 'http-status';
 import { Prisma, type Registration } from '#generated/prisma/client.js';
 import type { EventWithFreePlaces } from '#app/event/event.types';

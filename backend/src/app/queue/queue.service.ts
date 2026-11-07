@@ -3,7 +3,7 @@ import httpStatus from 'http-status';
 import moment from 'moment';
 import { QueueManager } from '#core/queue/QueueManager';
 import { BaseService } from '#core/base/BaseService';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import type { QueueInfo } from '@camp-registration/common/entities';
 
 @injectable()

@@ -1,5 +1,5 @@
 import httpStatus from 'http-status';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import { type Request, type Response } from 'express';
 import { BaseController } from '#core/base/BaseController';
 import { inject, injectable } from 'inversify';

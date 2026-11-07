@@ -5,7 +5,7 @@ import type {
 } from '#core/storage/storage';
 import fse from 'fs-extra';
 import config from '#config/index';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import httpStatus from 'http-status';
 import { safeJoinFilePath } from '#core/storage/safe-path';
 

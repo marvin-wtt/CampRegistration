@@ -1,7 +1,7 @@
 import { pipeline } from 'stream/promises';
 import { FileService } from './file.service.js';
 import httpStatus from 'http-status';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import logger from '#core/logger';
 import type { Request, Response } from 'express';
 import { FileResource } from './file.resource.js';

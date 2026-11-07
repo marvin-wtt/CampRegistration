@@ -4,8 +4,8 @@ import {
   type CaptchaAction,
   CAPTCHA_TOKEN_HEADER,
 } from '@camp-registration/common/captcha';
-import ApiError from '#utils/ApiError';
-import { catchMiddlewareAsync } from '#utils/catchAsync';
+import ApiError from '#core/router/ApiError';
+import { catchMiddlewareAsync } from '#core/router/catchAsync';
 import { resolve } from '#core/ioc/container';
 import { CaptchaUnavailableError } from './captcha.provider.js';
 import { CaptchaService } from './captcha.service.js';
