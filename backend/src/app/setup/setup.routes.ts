@@ -1,4 +1,4 @@
-import { authLimiter } from '#middlewares';
+import { authLimiter } from '#core/rate-limit/limiters';
 import { SetupController } from '#app/setup/setup.controller';
 import { setupAvailable } from '#app/setup/setup.guard';
 import { controller } from '#utils/bindController';

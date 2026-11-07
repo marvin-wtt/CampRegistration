@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Request } from 'express';
-import { requestLocale } from '#middlewares/i18n.middleware';
+import { requestLocale } from '#core/i18n/i18n.middleware';
 
 /** Mirrors what `accepts` hands back for the header in question. */
 const req = (accepted: (string | undefined)[]): Request =>

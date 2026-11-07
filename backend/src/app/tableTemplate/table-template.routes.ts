@@ -1,4 +1,5 @@
-import { auth, guard } from '#middlewares/index';
+import { auth } from '#core/auth/auth.middleware';
+import { guard } from '#core/guard';
 import { hasEventPermission } from '#app/event/event.guard';
 import { TableTemplateController } from './table-template.controller.js';
 import { controller } from '#utils/bindController';

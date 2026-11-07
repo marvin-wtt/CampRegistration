@@ -1,4 +1,5 @@
-import { auth, guard } from '#middlewares/index';
+import { auth } from '#core/auth/auth.middleware';
+import { guard } from '#core/guard';
 import { and, or } from '#core/guard';
 import { hasEventPermission } from '#app/event/event.guard';
 import { choreFromBody } from './chore-assignment.middleware.js';

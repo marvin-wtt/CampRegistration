@@ -1,4 +1,4 @@
-import { auth } from '#middlewares/auth.middleware';
+import { auth } from '#core/auth/auth.middleware';
 import { ProfileController } from '#app/profile/profile.controller';
 import { controller } from '#utils/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';

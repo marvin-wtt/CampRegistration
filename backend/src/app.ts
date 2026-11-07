@@ -4,7 +4,7 @@ import helmet, { type HelmetOptions } from 'helmet';
 import compression from 'compression';
 import config from '#config/index';
 import { serverErrorHandler } from '#core/morgan';
-import { errorConverter, errorHandler } from '#middlewares/error.middleware';
+import { errorConverter, errorHandler } from '#core/router/error.middleware';
 import cookieParser from 'cookie-parser';
 import ApiError from '#utils/ApiError';
 import httpStatus from 'http-status';

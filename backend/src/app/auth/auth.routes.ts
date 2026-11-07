@@ -1,6 +1,7 @@
-import { auth, authLimiter, guest, refreshLimiter } from '#middlewares';
+import { auth, guest } from '#core/auth/auth.middleware';
+import { authLimiter, refreshLimiter } from '#core/rate-limit/limiters';
 import { captcha } from '#core/captcha/captcha.middleware';
-import { ensureCsrfSession } from '#middlewares/csrf.middleware';
+import { ensureCsrfSession } from '#core/auth/csrf.middleware';
 import { AuthController } from '#app/auth/auth.controller';
 import { controller } from '#utils/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';

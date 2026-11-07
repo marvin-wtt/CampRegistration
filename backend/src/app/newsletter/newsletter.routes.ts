@@ -1,4 +1,5 @@
-import { auth, guard } from '#middlewares/index';
+import { auth } from '#core/auth/auth.middleware';
+import { guard } from '#core/guard';
 import { ModuleRouter } from '#core/router/ModuleRouter';
 import { NewsletterController } from './newsletter.controller.js';
 import { NewsletterService } from './newsletter.service.js';

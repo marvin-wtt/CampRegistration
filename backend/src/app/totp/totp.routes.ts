@@ -1,6 +1,6 @@
-import { auth } from '#middlewares/auth.middleware';
+import { auth } from '#core/auth/auth.middleware';
 import { TotPController } from '#app/totp/totp.controller';
-import { authLimiter } from '#middlewares/index';
+import { authLimiter } from '#core/rate-limit/limiters';
 import { controller } from '#utils/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';
 import { resolve } from '#core/ioc/container';

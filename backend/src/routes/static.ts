@@ -1,5 +1,5 @@
 import express from 'express';
-import { staticLimiter } from '#middlewares/rateLimiter.middleware';
+import { staticLimiter } from '#core/rate-limit/limiters';
 import { spaIndexPath, spaPath } from '#utils/paths';
 import webRoutes from '#routes/web';
 

@@ -1,4 +1,4 @@
-import { guard } from '#middlewares/index';
+import { guard } from '#core/guard';
 import { ModuleRouter } from '#core/router/ModuleRouter';
 import { controller } from '#utils/bindController';
 import { realtimeStream } from '#app/realtime/realtime.stream';

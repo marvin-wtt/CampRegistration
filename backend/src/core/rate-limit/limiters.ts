@@ -1,4 +1,4 @@
-import { createRateLimiter } from '#core/rate-limit';
+import { createRateLimiter } from '#core/rate-limit/rate-limit';
 
 export const authLimiter = createRateLimiter('Auth', {
   limit: 15,

@@ -1,7 +1,9 @@
 import httpStatus from 'http-status';
 import { FileController } from '#app/file/file.controller';
 import { FileService } from '#app/file/file.service';
-import { auth, guard, multipart } from '#middlewares/index';
+import { auth } from '#core/auth/auth.middleware';
+import { guard } from '#core/guard';
+import multipart from '#core/storage/multipart.middleware';
 import { hasEventPermission } from '#app/event/event.guard';
 import fileAccessGuard from '#app/file/file.guard';
 import { controller } from '#utils/bindController';
