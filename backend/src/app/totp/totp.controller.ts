@@ -3,7 +3,7 @@ import { TotpService } from './totp.service.js';
 import httpStatus from 'http-status';
 import validator from './totp.validation.js';
 import { TotpResource, TotpRecoveryCodesResource } from './totp.resource.js';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import { type Request, type Response } from 'express';
 import { BaseController } from '#core/base/BaseController';
 import { isPasswordMatch } from '#core/encryption';

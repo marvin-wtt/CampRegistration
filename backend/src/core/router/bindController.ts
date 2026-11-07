@@ -1,6 +1,6 @@
 import type { RequestHandler } from 'express';
 import type { BaseController } from '#core/base/BaseController';
-import { requireModels } from '#middlewares/model.middleware';
+import { requireModels } from '#core/router/model.middleware';
 
 export function controller<T extends BaseController>(
   instance: T,

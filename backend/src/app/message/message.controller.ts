@@ -7,7 +7,7 @@ import {
   MessageService,
   prepareMessageContent,
 } from '#app/message/message.service';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import {
   draftToRenderable,
   messageToRenderable,

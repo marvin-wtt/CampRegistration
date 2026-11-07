@@ -1,8 +1,9 @@
-import { auth, guard } from '#middlewares/index';
+import { auth } from '#core/auth/auth.middleware';
+import { guard } from '#core/guard';
 import { eventManagerSelf } from '#app/eventManager/event-manager.guard';
 import { hasEventPermission } from '#app/event/event.guard';
 import { EventManagerController } from './event-manager.controller.js';
-import { controller } from '#utils/bindController';
+import { controller } from '#core/router/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';
 import { EventManagerService } from '#app/eventManager/event-manager.service.js';
 import { resolve } from '#core/ioc/container';

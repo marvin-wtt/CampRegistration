@@ -1,15 +1,17 @@
 import httpStatus from 'http-status';
 import { FileController } from '#app/file/file.controller';
 import { FileService } from '#app/file/file.service';
-import { auth, guard, multipart } from '#middlewares/index';
+import { auth } from '#core/auth/auth.middleware';
+import { guard } from '#core/guard';
+import multipart from '#core/storage/multipart.middleware';
 import { hasEventPermission } from '#app/event/event.guard';
 import fileAccessGuard from '#app/file/file.guard';
-import { controller } from '#utils/bindController';
-import { catchMiddlewareAsync } from '#utils/catchAsync';
+import { controller } from '#core/router/bindController';
+import { catchMiddlewareAsync } from '#core/router/catchAsync';
 import validator from '#app/file/file.validation';
 import { ModuleRouter } from '#core/router/ModuleRouter';
 import { resolve } from '#core/ioc/container';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import { eventGroup } from '@camp-registration/common/utils';
 
 export class EventFilesRouter extends ModuleRouter {

@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 
-vi.mock('#middlewares/rateLimiter.middleware', () => {
+vi.mock('#core/rate-limit/limiters', () => {
   const passThrough = (_req: any, _res: any, next: any) => next();
 
   return {

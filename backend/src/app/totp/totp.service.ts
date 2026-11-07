@@ -2,7 +2,7 @@ import type { User, UserTwoFactor } from '#generated/prisma/client.js';
 import * as OTPAuth from 'otpauth';
 import { createHmac, randomInt } from 'node:crypto';
 import { type AppConfig } from '#config';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import httpStatus from 'http-status';
 import { BaseService } from '#core/base/BaseService';
 import { injectable } from 'inversify';

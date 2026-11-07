@@ -12,7 +12,7 @@ import type {
   RegistrationMessageProps,
   LocalContext,
 } from '#views/emails/types';
-import { htmlToPreviewText } from '#utils/emailPreview';
+import { htmlToPreviewText } from '#core/mail/emailPreview';
 
 export interface EmailFixture {
   template: string;

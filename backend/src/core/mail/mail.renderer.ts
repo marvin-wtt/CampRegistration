@@ -10,7 +10,7 @@ import type { Envelope, Translator } from '#core/mail/mail.types';
 import { addressLikeToString } from '#core/mail/mail.utils.js';
 import logger from '#core/logger';
 import type { DefaultEmailProps, LocalContext } from '#views/emails/types';
-import { htmlToPreviewText } from '#utils/emailPreview';
+import { htmlToPreviewText } from '#core/mail/emailPreview';
 
 interface RenderContentOptions {
   envelope: Pick<Envelope, 'to' | 'subject'>;

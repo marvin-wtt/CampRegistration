@@ -4,7 +4,7 @@ import { AuthService } from '#app/auth/auth.service';
 import httpStatus from 'http-status';
 import { ProfileResource } from './profile.resource.js';
 import validator from './profile.validation.js';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import { type Request, type Response } from 'express';
 import { VerifyEmailMessage } from '#app/auth/auth.messages';
 import { BaseController } from '#core/base/BaseController';

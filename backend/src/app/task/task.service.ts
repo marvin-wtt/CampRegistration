@@ -1,6 +1,6 @@
 import { BaseService } from '#core/base/BaseService';
 import { EventManagerService } from '#app/eventManager/event-manager.service';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import httpStatus from 'http-status';
 import { inject, injectable } from 'inversify';
 

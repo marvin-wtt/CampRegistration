@@ -1,8 +1,8 @@
 import type { NextFunction, Request, Response } from 'express';
-import { routeModel, verifyModel } from '#middlewares/model.middleware';
-import { validateRequest } from '#middlewares/validate.middleware';
-import { authUserId } from '#middlewares/auth.middleware';
-import { requestLocale } from '#middlewares/i18n.middleware';
+import { routeModel, verifyModel } from '#core/router/model.middleware';
+import { validateRequest } from '#core/router/validate.middleware';
+import { authUserId } from '#core/auth/auth.middleware';
+import { requestLocale } from '#core/i18n/i18n.middleware';
 
 export default (req: Request, res: Response, next: NextFunction) => {
   // ---------------------------------------------------------------------------

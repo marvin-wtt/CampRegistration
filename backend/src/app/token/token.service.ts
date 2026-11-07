@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken';
 import moment, { type Moment } from 'moment';
 import httpStatus from 'http-status';
 import type { AppConfig } from '#config';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import { type Token, TokenType, type User } from '#generated/prisma/client.js';
 import type { AuthTokensResponse } from '#types/response';
 import { BaseService } from '#core/base/BaseService';

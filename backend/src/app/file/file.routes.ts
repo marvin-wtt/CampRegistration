@@ -1,6 +1,7 @@
-import { multipart, guard } from '#middlewares/index';
+import multipart from '#core/storage/multipart.middleware';
+import { guard } from '#core/guard';
 import { FileController } from './file.controller.js';
-import { controller } from '#utils/bindController';
+import { controller } from '#core/router/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';
 import fileAccessGuard from './file.guard.js';
 import { FileService } from '#app/file/file.service';

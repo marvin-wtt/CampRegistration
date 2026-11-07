@@ -1,7 +1,9 @@
-import { auth, guard, multipart } from '#middlewares/index';
+import { auth } from '#core/auth/auth.middleware';
+import { guard } from '#core/guard';
+import multipart from '#core/storage/multipart.middleware';
 import { hasEventPermission } from '#app/event/event.guard';
 import { MessageController } from './message.controller.js';
-import { controller } from '#utils/bindController';
+import { controller } from '#core/router/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';
 import { MessageService } from '#app/message/message.service';
 import { resolve } from '#core/ioc/container';

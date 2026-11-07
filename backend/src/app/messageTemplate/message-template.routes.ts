@@ -1,7 +1,9 @@
-import { auth, guard, multipart } from '#middlewares/index';
+import { auth } from '#core/auth/auth.middleware';
+import { guard } from '#core/guard';
+import multipart from '#core/storage/multipart.middleware';
 import { hasEventPermission } from '#app/event/event.guard';
 import { MessageTemplateController } from './message-template.controller.js';
-import { controller } from '#utils/bindController';
+import { controller } from '#core/router/bindController';
 import { ModuleRouter } from '#core/router/ModuleRouter';
 import { MessageTemplateService } from '#app/messageTemplate/message-template.service';
 import { inject, injectable } from 'inversify';

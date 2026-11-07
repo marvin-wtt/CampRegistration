@@ -3,7 +3,7 @@ import type {
   ErrorContext,
   ErrorTracker,
 } from '#core/errorTracking/errorTracker.types';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import config from '#config/index';
 
 export class SentryTracker implements ErrorTracker {

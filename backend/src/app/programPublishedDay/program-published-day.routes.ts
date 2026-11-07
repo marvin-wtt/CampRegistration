@@ -1,7 +1,8 @@
-import { auth, guard } from '#middlewares/index';
+import { auth } from '#core/auth/auth.middleware';
+import { guard } from '#core/guard';
 import { hasEventPermission } from '#app/event/event.guard';
 import { ModuleRouter } from '#core/router/ModuleRouter';
-import { controller } from '#utils/bindController';
+import { controller } from '#core/router/bindController';
 import { ProgramPublishedDayController } from './program-published-day.controller.js';
 import { inject, injectable } from 'inversify';
 

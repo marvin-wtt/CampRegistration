@@ -1,5 +1,5 @@
 import httpStatus from 'http-status';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import { ChoreAssignmentService } from './chore-assignment.service.js';
 import { ChoreAssignmentResource } from './chore-assignment.resource.js';
 import validator from './chore-assignment.validation.js';

@@ -1,7 +1,7 @@
 import httpStatus from 'http-status';
 import { type Request } from 'express';
-import ApiError from '#utils/ApiError';
-import { catchMiddlewareAsync } from '#utils/catchAsync';
+import ApiError from '#core/router/ApiError';
+import { catchMiddlewareAsync } from '#core/router/catchAsync';
 import { resolve } from '#core/ioc/container';
 import { SetupService } from '#app/setup/setup.service';
 

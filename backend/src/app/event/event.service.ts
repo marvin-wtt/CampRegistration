@@ -1,6 +1,6 @@
 import type { Event, File, Prisma } from '#generated/prisma/client.js';
 import { ulid } from '#utils/ulid';
-import { dbNullable } from '#utils/db';
+import { dbNullable } from '#core/database/json';
 import type { OptionalByKeys } from '#types/utils';
 import { BaseService } from '#core/base/BaseService';
 import { inject, injectable } from 'inversify';

@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
-import { createCookieIfMissing } from '#utils/cookie';
+import { createCookieIfMissing } from '#core/auth/cookie';
 
 declare module 'express-serve-static-core' {
   interface Request {

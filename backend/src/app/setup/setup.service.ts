@@ -1,6 +1,6 @@
 import httpStatus from 'http-status';
 import type { Prisma, User } from '#generated/prisma/client.js';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import { encryptPassword } from '#core/encryption';
 import { BaseService } from '#core/base/BaseService';
 import { injectable } from 'inversify';

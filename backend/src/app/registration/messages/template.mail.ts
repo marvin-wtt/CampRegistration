@@ -19,7 +19,7 @@ import type { SendMailResult } from '#core/mail/mailer.types';
 import { FileService } from '#app/file/file.service';
 import { addressLikeToString } from '#core/mail/mail.utils';
 import { resolve } from '#core/ioc/container';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import httpStatus from 'http-status';
 import type { RegistrationChange } from '../registration.changes.js';
 import { redactChangeValues, unwrapChangesBlock } from './changes.markup.js';
@@ -36,7 +36,7 @@ import type {
   RegistrationMessageProps,
   LocalContext,
 } from '#views/emails/types';
-import { htmlToPreviewText } from '#utils/emailPreview';
+import { htmlToPreviewText } from '#core/mail/emailPreview';
 import { htmlToText } from 'html-to-text';
 
 function dateToString(date: Date | string | null): string | null {

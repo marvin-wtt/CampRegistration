@@ -1,7 +1,7 @@
 import type { Request } from 'express';
 import { type ZodObject, type z, ZodError } from 'zod';
 import { fromError } from 'zod-validation-error';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import httpStatus from 'http-status';
 import { FileService } from '#app/file/file.service';
 import logger from '#core/logger';

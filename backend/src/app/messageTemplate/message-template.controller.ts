@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import validator from './message-template.validation.js';
 import { MessageTemplateService } from './message-template.service.js';
 import httpStatus from 'http-status';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import { MessageTemplateResource } from '#app/messageTemplate/message-template.resource';
 import { BaseController } from '#core/base/BaseController';
 import { inject, injectable } from 'inversify';

@@ -1,7 +1,7 @@
 import httpStatus from 'http-status';
 import { type Request, type Response } from 'express';
 import { inject, injectable } from 'inversify';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import { BaseController } from '#core/base/BaseController';
 import { RealtimeService } from '#core/realtime/RealtimeService';
 import { SettingService } from '#app/setting/setting.service';
