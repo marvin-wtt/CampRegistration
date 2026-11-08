@@ -3,6 +3,8 @@ import type { PerGroup, Translatable } from '../../entities/index.js';
 import {
   eventGroup,
   eventGroupFields,
+  fromMinorUnits,
+  groupPrice,
   translate,
   utcCarrierToNaiveDateTime,
 } from '../../utils/index.js';
@@ -19,7 +21,9 @@ export interface Data {
   minAge: number;
   maxAge: number;
   location: Translatable | null;
-  price: number;
+  /** Minor units, as stored; the form sees the group's, in major units. */
+  price: PerGroup<number>;
+  currency?: string;
   freePlaces: PerGroup<number> | null;
   logo?: string | null;
 }
@@ -38,6 +42,7 @@ const EVENT_VARIABLES = [
   'maxAge',
   'location',
   'price',
+  'currency',
   'logo',
 ] as const;
 
@@ -85,6 +90,8 @@ export const setVariables = (
   // One representation on every side, so expressions over them agree.
   const startAt = naiveDateTime(data.startAt);
   const endAt = naiveDateTime(data.endAt);
+  const group = eventGroup(data, options.group);
+  const currency = data.currency ?? 'EUR';
 
   const values: Record<EventVariable, unknown> = {
     countries: data.countries,
@@ -98,7 +105,9 @@ export const setVariables = (
     minAge: data.minAge,
     maxAge: data.maxAge,
     location: translate(data.location, locale) ?? null,
-    price: data.price,
+    // Major units, like the prices form authors give choices.
+    price: fromMinorUnits(groupPrice(data.price, group), currency),
+    currency,
     logo: data.logo ?? null,
   };
 
@@ -108,7 +117,6 @@ export const setVariables = (
 
   model.setVariable('_validationEnabled', model.validationEnabled);
 
-  const group = eventGroup(data, options.group);
   const fields = eventGroupFields(data, group);
   model.setVariable('event.group', group);
   for (const name of GROUP_VARIABLES) {

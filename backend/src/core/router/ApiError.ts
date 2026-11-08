@@ -10,11 +10,16 @@ export interface ApiErrorOptions {
   // 5xx that is anticipated rather than a bug — an upstream outage, say — to
   // keep it out of the error log and off the reporting pipeline.
   fault?: boolean;
+  // Machine-readable facts the client needs to recover, e.g. the current
+  // price after `REGISTRATION_PRICE_CHANGED`. Withheld with the message on a
+  // masked fault.
+  details?: Record<string, string | number | boolean | null>;
 }
 
 class ApiError extends Error {
   statusCode: number;
   readonly code: string | undefined;
+  readonly details: ApiErrorOptions['details'];
   private readonly fault: boolean | undefined;
 
   constructor(
@@ -25,6 +30,7 @@ class ApiError extends Error {
     super(message, { cause: options.cause });
     this.statusCode = statusCode;
     this.code = options.code;
+    this.details = options.details;
     this.fault = options.fault;
     Error.captureStackTrace(this, this.constructor);
   }

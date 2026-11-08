@@ -88,6 +88,28 @@
         </q-card-actions>
 
         <q-card-actions
+          v-else-if="submitState === 'priceChanged'"
+          align="center"
+          class="q-gutter-sm q-pb-md"
+        >
+          <m-btn
+            primary
+            icon="how_to_reg"
+            :label="t('submit.priceChanged.confirm', { amount: quotedPrice })"
+            data-test="registration-price-confirm"
+            @click="confirmServerQuote"
+          />
+          <m-btn
+            outline
+            primary
+            icon="edit"
+            :label="t('submit.priceChanged.back')"
+            data-test="registration-price-back"
+            @click="backToForm"
+          />
+        </q-card-actions>
+
+        <q-card-actions
           v-else-if="submitState === 'error'"
           align="center"
           class="q-pb-md"
@@ -143,11 +165,15 @@ import {
 } from '@/lib/surveyJs/textProcessing';
 import { readAsDataURL } from '@/utils/readAsDataURL';
 import { emphasizeForwardNavigation } from '@/lib/surveyJs/navigation';
+import { addAmountSummary, trackAmountDue } from '@/lib/surveyJs/amountDue';
 import type {
   EventDetails,
   Registration,
+  RegistrationPriceCheck,
 } from '@camp-registration/common/entities';
+import { formatMoney } from '@camp-registration/common/utils';
 import { useAPIService } from '@/services/APIService';
+import { serverQuoteFromPriceChange } from '@/services/RegistrationService';
 import { useErrorExtractor } from '@/composables/serviceHandler';
 
 const { locale, t } = useI18n();
@@ -163,6 +189,8 @@ interface Props {
     id: string,
     formData: Record<string, unknown>,
     locale: string,
+    // What the form displayed, for the server to compare — never an amount.
+    priceCheck?: RegistrationPriceCheck,
   ) => Promise<Registration | void>;
   uploadFileFn?: (file: File) => Promise<string>;
   moderation?: boolean;
@@ -184,7 +212,11 @@ const emit = defineEmits<{
 
 // Submit lifecycle shown by the custom overlay. While it is non-null the
 // survey (including its own completed page) is hidden and this UI takes over.
-const submitState = ref<'saving' | 'success' | 'error' | null>(null);
+const submitState = ref<'saving' | 'success' | 'error' | 'priceChanged' | null>(
+  null,
+);
+// After a price change: the server's amount, which the person confirms.
+const serverQuote = ref<number | null>(null);
 const submitError = ref<string>();
 // Stays true once the submission succeeded, including when survey-core takes
 // the screen back over to show the form's own completed page.
@@ -215,6 +247,8 @@ const statusTitle = computed(() => {
       }
     case 'error':
       return t('submit.error.title');
+    case 'priceChanged':
+      return t('submit.priceChanged.title');
     default:
       return '';
   }
@@ -235,6 +269,8 @@ const statusText = computed(() => {
       }
     case 'error':
       return t('submit.error.text');
+    case 'priceChanged':
+      return t('submit.priceChanged.text', { amount: quotedPrice.value });
     default:
       return '';
   }
@@ -253,6 +289,8 @@ const badgeColor = computed(() => {
       }
     case 'error':
       return 'error-container';
+    case 'priceChanged':
+      return 'warning-container';
     default:
       return 'primary-container';
   }
@@ -271,12 +309,17 @@ const badgeTextColor = computed(() => {
       }
     case 'error':
       return 'on-error-container';
+    case 'priceChanged':
+      return 'on-warning-container';
     default:
       return 'on-primary-container';
   }
 });
 
 const badgeIcon = computed(() => {
+  if (submitState.value === 'priceChanged') {
+    return 'price_change';
+  }
   if (submitState.value !== 'success') {
     return 'error';
   }
@@ -306,6 +349,15 @@ model.readOnly = props.readonly;
 if (props.data) {
   model.data = props.data;
   mapFileIdToFileContent(model);
+}
+
+// After loading data: assigning `model.data` fires no change event. Managers
+// never see the Complete button, so neither needs the total.
+const amountDue = moderationLayout
+  ? null
+  : trackAmountDue(model, props.eventDetails);
+if (amountDue) {
+  addAmountSummary(model, amountDue);
 }
 
 const bgColor = ref<string>();
@@ -409,14 +461,26 @@ function createModel(eventId: string, form: object): SurveyModel {
 
     mapFileQuestionValues(sender);
 
+    // What the form presented (the summary, or the Complete button's paid
+    // label when the summary is hidden). Only for the server to compare: it
+    // charges its own amount, whatever this says.
+    const priceCheck =
+      serverQuote.value !== null
+        ? { displayedTotal: serverQuote.value }
+        : amountDue
+          ? { displayedTotal: amountDue.amount }
+          : undefined;
+
     try {
       const registration = await submitFn(
         eventId,
         sender.data ?? {},
         sender.locale,
+        priceCheck,
       );
       submittedRegistration.value = registration ?? undefined;
       submitted.value = true;
+
       if (sender.showCompletePage && hasCustomCompletedHtml(sender)) {
         // Reveal the form-defined completed page (survey-core shows it by
         // default; the survey element is unhidden as submitState clears).
@@ -429,12 +493,35 @@ function createModel(eventId: string, form: object): SurveyModel {
         redirect(pendingRedirect);
       }
     } catch (e: unknown) {
+      const quote = serverQuoteFromPriceChange(e);
+      if (quote !== null) {
+        serverQuote.value = quote;
+        submitState.value = 'priceChanged';
+        return;
+      }
       submitError.value = extractErrorText(e);
       submitState.value = 'error';
     }
   });
 
   return survey;
+}
+
+const quotedPrice = computed(() =>
+  serverQuote.value === null
+    ? ''
+    : formatMoney(serverQuote.value, props.eventDetails.currency, locale.value),
+);
+
+// Resubmits, now confirming the server's amount the person was just shown.
+function confirmServerQuote() {
+  retrySubmit();
+}
+
+function backToForm() {
+  serverQuote.value = null;
+  model.clear(false, false);
+  submitState.value = null;
 }
 
 function retrySubmit() {
@@ -534,6 +621,11 @@ submit:
   saving:
     title: 'Submitting registration'
     text: 'Please wait while your registration is being saved.'
+  priceChanged:
+    title: 'The price has changed'
+    text: 'Registering now costs {amount}. The price changed while the form was open.'
+    confirm: 'Register for {amount}'
+    back: 'Back to the form'
   error:
     title: 'Registration failed'
     text: 'Your registration could not be saved. Please try again.'
@@ -558,6 +650,11 @@ submit:
   saving:
     title: 'Anmeldung wird gesendet'
     text: 'Bitte warte, während deine Anmeldung gespeichert wird.'
+  priceChanged:
+    title: 'Der Preis hat sich geändert'
+    text: 'Die Anmeldung kostet jetzt {amount}. Der Preis hat sich geändert, während das Formular geöffnet war.'
+    confirm: 'Für {amount} anmelden'
+    back: 'Zurück zum Formular'
   error:
     title: 'Anmeldung fehlgeschlagen'
     text: 'Deine Anmeldung konnte nicht gespeichert werden. Bitte versuche es erneut.'
@@ -582,6 +679,11 @@ submit:
   saving:
     title: "Envoi de l'inscription"
     text: "Veuillez patienter pendant l'enregistrement de votre inscription."
+  priceChanged:
+    title: 'Le prix a changé'
+    text: "L'inscription coûte désormais {amount}. Le prix a changé pendant que le formulaire était ouvert."
+    confirm: "S'inscrire pour {amount}"
+    back: 'Retour au formulaire'
   error:
     title: "Échec de l'inscription"
     text: "Votre inscription n'a pas pu être enregistrée. Veuillez réessayer."
@@ -606,6 +708,11 @@ submit:
   saving:
     title: 'Wysyłanie rejestracji'
     text: 'Poczekaj, trwa zapisywanie rejestracji.'
+  priceChanged:
+    title: 'Cena się zmieniła'
+    text: 'Rejestracja kosztuje teraz {amount}. Cena zmieniła się, gdy formularz był otwarty.'
+    confirm: 'Zarejestruj się za {amount}'
+    back: 'Wróć do formularza'
   error:
     title: 'Rejestracja nie powiodła się'
     text: 'Nie udało się zapisać rejestracji. Spróbuj ponownie.'
@@ -630,6 +737,11 @@ submit:
   saving:
     title: 'Odesílání registrace'
     text: 'Počkej prosím, než bude registrace uložena.'
+  priceChanged:
+    title: 'Cena se změnila'
+    text: 'Registrace nyní stojí {amount}. Cena se změnila, zatímco byl formulář otevřený.'
+    confirm: 'Zaregistrovat se za {amount}'
+    back: 'Zpět k formuláři'
   error:
     title: 'Registrace se nezdařila'
     text: 'Registraci se nepodařilo uložit. Zkus to prosím znovu.'

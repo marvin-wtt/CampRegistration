@@ -48,17 +48,14 @@ export class RegistrationController extends BaseController {
   async store(req: Request, res: Response) {
     const event = req.modelOrFail('event');
     const {
-      body: { data, locale, group },
+      body: { data, locale, group, priceCheck },
     } = await req.validate(validator.store(event, req.preferredLocale()));
 
     const registration = await this.registrationService.createRegistration(
       event,
-      {
-        data,
-        locale,
-        group,
-      },
+      { data, locale, group },
       req.sessionId,
+      priceCheck,
     );
 
     // Notify participant

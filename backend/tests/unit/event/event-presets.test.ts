@@ -1,4 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { SurveyModel } from 'survey-core';
+import { extractPaymentAmounts } from '@camp-registration/common/form';
+import { computeAmountDue } from '@camp-registration/common/utils';
 import { EVENT_PRESET_NAMES } from '@camp-registration/common/entities';
 import {
   EVENT_PRESETS,
@@ -116,6 +119,30 @@ describe('getEventPreset', () => {
       // at all.
       expect(localeKeys(form)).toEqual(new Set());
       expect(findElement(form, 'i_age')?.title).toBe('Age');
+    });
+  });
+
+  describe('amount due', () => {
+    // Minor units; the form's `{event.price}` is in major units.
+    const event = { price: 12000, currency: 'EUR' };
+
+    // Loaded the way the server reads a submission: the data as submitted,
+    // computed questions recalculated from it.
+    function amountDue(preset: (typeof PRESETS)[number], role: string) {
+      const survey = new SurveyModel(EVENT_PRESETS[preset].form);
+      survey.setVariable('event.price', 120);
+      survey.setData({ role });
+
+      return computeAmountDue(event, extractPaymentAmounts(survey), null);
+    }
+
+    it.each(PRESETS)('charges participants the event price (%s)', (preset) => {
+      expect(amountDue(preset, 'participant')).toBe(12000);
+    });
+
+    it.each(PRESETS)('waives the price for every other role (%s)', (preset) => {
+      expect(amountDue(preset, 'counselor')).toBe(0);
+      expect(amountDue(preset, 'helper')).toBe(0);
     });
   });
 

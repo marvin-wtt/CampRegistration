@@ -71,6 +71,20 @@ export function eventGroup(
 }
 
 /** Every group's distinct value, for when no single group applies. */
+/** `fn` applied to the one value, or to each group's. */
+export function mapPerGroup<T, U>(
+  value: PerGroup<T>,
+  fn: (value: T) => U,
+): PerGroup<U> {
+  if (!isRecord(value)) {
+    return fn(value);
+  }
+
+  return Object.fromEntries(
+    Object.entries(value).map(([group, entry]) => [group, fn(entry)]),
+  );
+}
+
 export function allGroupValues<T>(value: PerGroup<T>): T[] {
   return isRecord(value) ? [...new Set(Object.values(value))] : [value];
 }

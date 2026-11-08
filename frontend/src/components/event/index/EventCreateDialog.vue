@@ -432,8 +432,9 @@
           </translated-input>
 
           <!-- price -->
-          <q-input
+          <translated-input
             v-model.number="data.price"
+            :countries="data.countries"
             :disable="loading"
             :label="t('field.price')"
             :rules="[
@@ -442,15 +443,16 @@
             ]"
             hide-bottom-space
             input-class="text-right"
+            no-translation
             outlined
             rounded
-            suffix="€"
+            :suffix="currencySymbol(data.currency ?? 'EUR', locale)"
             type="number"
           >
             <template #before>
               <q-icon name="euro" />
             </template>
-          </q-input>
+          </translated-input>
         </event-edit-step>
 
         <!-- Visibility -->
@@ -481,6 +483,12 @@
 </template>
 
 <script setup lang="ts">
+import {
+  currencySymbol,
+  fromMinorUnits,
+  mapPerGroup,
+  toMinorUnits,
+} from '@camp-registration/common/utils';
 import {
   date as dateUtil,
   type QSelectOption,
@@ -531,7 +539,7 @@ const loading = ref<boolean>(false);
 const data = ref<EventCreateData>({
   ...DEFAULT_DATA,
 });
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const { to } = useObjectTranslation();
 
 const organizationsStore = useOrganizationsStore();
@@ -678,7 +686,6 @@ watch(
       'minAge',
       'maxAge',
       'location',
-      'price',
       'listed',
       'confirmationMode',
     ] as const satisfies ReadonlyArray<
@@ -690,6 +697,10 @@ watch(
         data.value[key] = refEvent[key] as never;
       }
     }
+    // Entered in major units, like a price typed in here.
+    data.value.price ??= mapPerGroup(refEvent.price, (minor) =>
+      fromMinorUnits(minor, refEvent.currency),
+    );
   },
 );
 
@@ -697,7 +708,14 @@ async function onComplete() {
   loading.value = true;
   // Create event
   try {
-    await eventStore.createEntry(data.value);
+    // The price is entered in major units; the API takes minor units.
+    const currency = data.value.currency ?? 'EUR';
+    await eventStore.createEntry({
+      ...data.value,
+      price: mapPerGroup(data.value.price, (major) =>
+        toMinorUnits(major, currency),
+      ),
+    });
 
     onDialogOK();
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
