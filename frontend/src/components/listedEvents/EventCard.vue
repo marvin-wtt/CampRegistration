@@ -125,7 +125,12 @@
       </div>
 
       <div class="event-card__footer">
-        <span class="event-card__price">{{ priceLabel }}</span>
+        <span
+          v-if="priceLabel"
+          class="event-card__price"
+        >
+          {{ priceLabel }}
+        </span>
         <div class="event-card__flags">
           <country-icon
             v-for="country in props.event.countries"
@@ -228,12 +233,14 @@ const dateRange = computed<string>(() => {
   }
 });
 
-// With a price per group, the lowest one: "from …".
-const priceLabel = computed<string>(() => {
+// Only prices above zero are shown: zero leaves the price to the form, or
+// makes it free — and a card can't tell which. With a group at zero, the
+// group step shows each group's price instead.
+const priceLabel = computed<string | null>(() => {
   const prices = allGroupValues(props.event.price);
   const lowest = Math.min(...prices);
-  if (Math.max(...prices) === 0) {
-    return t('free');
+  if (lowest <= 0) {
+    return null;
   }
 
   const major = fromMinorUnits(lowest, props.event.currency);
@@ -449,6 +456,8 @@ function navigate(e: MouseEvent) {
   display: flex;
   align-items: center;
   gap: 4px;
+  /* Right-aligned with or without a price beside them */
+  margin-left: auto;
 }
 
 /* Availability */
@@ -556,7 +565,6 @@ function navigate(e: MouseEvent) {
 
 <i18n lang="yaml" locale="en">
 age_range: '{min}–{max} years'
-free: 'Free'
 priceFrom: 'from {amount}'
 via: 'via {organization}'
 until: 'Until {date}'
@@ -566,7 +574,6 @@ places_left_label: 'Places left'
 </i18n>
 <i18n lang="yaml" locale="de">
 age_range: '{min}–{max} Jahre'
-free: 'Kostenlos'
 priceFrom: 'ab {amount}'
 via: 'über {organization}'
 until: 'Bis {date}'
@@ -576,7 +583,6 @@ places_left_label: 'Freie Plätze'
 </i18n>
 <i18n lang="yaml" locale="fr">
 age_range: '{min}–{max} ans'
-free: 'Gratuit'
 priceFrom: 'à partir de {amount}'
 via: 'via {organization}'
 until: "Jusqu'au {date}"
@@ -586,7 +592,6 @@ places_left_label: 'Places restantes'
 </i18n>
 <i18n lang="yaml" locale="pl">
 age_range: '{min}–{max} lat'
-free: 'Bezpłatnie'
 priceFrom: 'od {amount}'
 via: 'przez {organization}'
 until: 'Do {date}'
@@ -597,7 +602,6 @@ places_left_label: 'Wolne miejsca'
 </i18n>
 <i18n lang="yaml" locale="cs">
 age_range: '{min}–{max} let'
-free: 'Zdarma'
 priceFrom: 'od {amount}'
 via: 'prostřednictvím {organization}'
 until: 'Do {date}'

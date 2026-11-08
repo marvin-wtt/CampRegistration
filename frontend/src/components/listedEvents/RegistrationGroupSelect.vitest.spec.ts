@@ -52,4 +52,19 @@ describe('RegistrationGroupSelect', () => {
     expect(text).toMatch(/02\.02\.2027|02\/02\/2027/);
     expect(text).toContain('Sometown');
   });
+
+  it('shows each group’s price above zero', () => {
+    const wrapper = mount(RegistrationGroupSelect, {
+      props: {
+        event: eventWith({ price: { de: 15000, fr: 0 }, currency: 'EUR' }),
+      },
+    });
+
+    expect(
+      wrapper.find('[data-test="registration-group-de-price"]').text(),
+    ).toMatch(/150/);
+    expect(
+      wrapper.find('[data-test="registration-group-fr-price"]').exists(),
+    ).toBe(false);
+  });
 });

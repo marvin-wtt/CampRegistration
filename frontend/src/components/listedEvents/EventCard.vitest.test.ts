@@ -128,4 +128,32 @@ describe('EventCard', () => {
     expect(cover.exists()).toBe(true);
     expect(cover.props('event').id).toBe('01J0000000000000000000000A');
   });
+
+  describe('price', () => {
+    const price = (event: Event) => mountCard(event).find('.event-card__price');
+
+    it('shows the one price', () => {
+      expect(price(createEvent()).text()).toContain('180');
+    });
+
+    it('shows the lowest of differing group prices', () => {
+      const label = price(
+        createEvent({
+          countries: ['de', 'pl'],
+          price: { de: 18000, pl: 12000 },
+        }),
+      );
+
+      expect(label.text()).toMatch(/^priceFrom:.*120/);
+    });
+
+    it('shows none when a group has no base price', () => {
+      expect(
+        price(
+          createEvent({ countries: ['de', 'pl'], price: { de: 18000, pl: 0 } }),
+        ).exists(),
+      ).toBe(false);
+      expect(price(createEvent({ price: 0 })).exists()).toBe(false);
+    });
+  });
 });
