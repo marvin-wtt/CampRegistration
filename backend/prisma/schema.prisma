@@ -269,10 +269,13 @@ model Registration {
   locale                             String             @default("en-GB") @db.VarChar(5)
   //
   status                             RegistrationStatus @default(PENDING)
-  // Minor units of the event currency: what the server calculated — and the
-  // form showed — at submission, and never changes. Null on registrations
+  // What the server calculated — and the form showed — at submission, in
+  // minor units of `currency`, and never changes. Null on registrations
   // predating it.
   quotedAmount                       Int?               @map("quoted_amount") @db.UnsignedInt
+  // The currency the registration's amounts are in: its event's at
+  // submission, so each amount says what it is in.
+  currency                           String?            @db.Char(3)
   // Which privacy information this person was actually shown. Nullable because
   // registrations predating the feature were shown none — do not backfill.
   organizationPrivacyNoticeVersionId String?            @map("organization_privacy_notice_version_id") @db.Char(26)

@@ -187,6 +187,7 @@ export class RegistrationService extends BaseService {
             data: formData,
             status,
             quotedAmount,
+            currency: event.currency,
             platformPrivacyPolicyUpdatedAt:
               privacyStamp.platformPrivacyPolicyUpdatedAt,
             organizationPrivacyNotice: connectVersion(

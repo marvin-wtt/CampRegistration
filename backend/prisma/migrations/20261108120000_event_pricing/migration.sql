@@ -13,6 +13,7 @@ UPDATE `events` SET
 ALTER TABLE `events` DROP COLUMN `price`,
     CHANGE COLUMN `price_minor` `price` JSON NOT NULL;
 
--- What the form showed at submission, in minor units: what the person agreed
--- to. `null` on registrations from before.
-ALTER TABLE `registrations` ADD COLUMN `quoted_amount` INTEGER UNSIGNED NULL;
+-- What the form showed at submission, in minor units of `currency`: what the
+-- person agreed to. `null` on registrations from before.
+ALTER TABLE `registrations` ADD COLUMN `quoted_amount` INTEGER UNSIGNED NULL,
+    ADD COLUMN `currency` CHAR(3) NULL;

@@ -179,6 +179,7 @@ export class RegistrationSeeder {
       group,
       // As the API stores it on submission: what the form showed.
       quotedAmount: computeAmountDue(this.event, form.paymentAmounts(), group),
+      currency: this.event.currency,
     };
   }
 }
