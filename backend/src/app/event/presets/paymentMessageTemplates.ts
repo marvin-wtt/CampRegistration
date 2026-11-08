@@ -146,27 +146,27 @@ const paymentMessageTemplates: PaymentMessageTemplates = {
     },
     body: {
       en: `<p>Hi {{ registration.computedData.firstName }},</p>
-           <p>This is a friendly reminder that the participation fee of <strong>{{ payment.amount }}</strong> for <strong>{{ event.name }}</strong> is still outstanding.</p>
+           <p>This is a friendly reminder that the participation fee of <strong>{{ payment.outstanding }}</strong> for <strong>{{ event.name }}</strong> is still outstanding.</p>
            <a data-button href="{{ payment.url }}">Pay now</a>
            <p>If you have any questions, feel free to reply to this email.</p>
            <p>Best regards,<br>Your Event Team</p>`,
       de: `<p>Hallo {{ registration.computedData.firstName }},</p>
-           <p>Dies ist eine freundliche Erinnerung, dass der Teilnahmebeitrag von <strong>{{ payment.amount }}</strong> für <strong>{{ event.name }}</strong> noch offen ist.</p>
+           <p>Dies ist eine freundliche Erinnerung, dass der Teilnahmebeitrag von <strong>{{ payment.outstanding }}</strong> für <strong>{{ event.name }}</strong> noch offen ist.</p>
            <a data-button href="{{ payment.url }}">Jetzt bezahlen</a>
            <p>Wenn du Fragen hast, antworte einfach auf diese E-Mail.</p>
            <p>Herzliche Grüße<br>Dein Veranstaltungsteam</p>`,
       fr: `<p>Salut {{ registration.computedData.firstName }},</p>
-           <p>Petit rappel : les frais de participation de <strong>{{ payment.amount }}</strong> pour <strong>{{ event.name }}</strong> sont toujours en attente.</p>
+           <p>Petit rappel : les frais de participation de <strong>{{ payment.outstanding }}</strong> pour <strong>{{ event.name }}</strong> sont toujours en attente.</p>
            <a data-button href="{{ payment.url }}">Payer maintenant</a>
            <p>Si tu as des questions, n'hésite pas à répondre directement à cet e-mail.</p>
            <p>Bien à toi,<br>Ton équipe de l'événement</p>`,
       pl: `<p>Cześć {{ registration.computedData.firstName }},</p>
-           <p>Przypominamy, że opłata za udział w wysokości <strong>{{ payment.amount }}</strong> za <strong>{{ event.name }}</strong> nie została jeszcze uregulowana.</p>
+           <p>Przypominamy, że opłata za udział w wysokości <strong>{{ payment.outstanding }}</strong> za <strong>{{ event.name }}</strong> nie została jeszcze uregulowana.</p>
            <a data-button href="{{ payment.url }}">Zapłać teraz</a>
            <p>W razie pytań możesz odpowiedzieć na tego maila.</p>
            <p>Serdecznie pozdrawiamy,<br>Zespół wydarzenia</p>`,
       cs: `<p>Ahoj {{ registration.computedData.firstName }},</p>
-           <p>Připomínáme, že účastnický poplatek ve výši <strong>{{ payment.amount }}</strong> za <strong>{{ event.name }}</strong> zatím nebyl uhrazen.</p>
+           <p>Připomínáme, že účastnický poplatek ve výši <strong>{{ payment.outstanding }}</strong> za <strong>{{ event.name }}</strong> zatím nebyl uhrazen.</p>
            <a data-button href="{{ payment.url }}">Zaplatit nyní</a>
            <p>Pokud máš dotazy, odpověz na tento e-mail.</p>
            <p>S pozdravem,<br>Tým akce</p>`,

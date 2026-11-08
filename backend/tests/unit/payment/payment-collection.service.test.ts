@@ -8,6 +8,7 @@ import type {
 } from '#app/payment/payment.service';
 import { PaymentRequestedMessage } from '#app/payment/messages/requested.mail';
 import { PaymentReminderMessage } from '#app/payment/messages/reminder.mail';
+import prisma from '../../../src/__mock__/client.js';
 
 vi.mock('#app/payment/messages/requested.mail', () => ({
   PaymentRequestedMessage: { enqueueFor: vi.fn() },
@@ -18,11 +19,14 @@ vi.mock('#app/payment/messages/reminder.mail', () => ({
 
 const paymentService = mock<PaymentService>();
 const service = new PaymentCollectionService(paymentService);
+(service as unknown as { prisma: typeof prisma }).prisma = prisma;
 
 const event = {
   id: 'event-1',
   organizationId: 'org-1',
   currency: 'EUR',
+  endAt: new Date('2099-01-10T00:00:00Z'),
+  timezone: 'Europe/Berlin',
   organization: { verificationStatus: 'VERIFIED' },
 } as EventWithOrganization;
 
@@ -35,6 +39,7 @@ const buildRegistration = (
     status: 'ACCEPTED',
     amountDue: 5000,
     paymentRequestedAt: null,
+    paymentHoldAt: null,
     ...overrides,
   }) as Registration;
 
@@ -49,7 +54,8 @@ const collection = {
     requestDaysBeforeStart: null,
     reminderAfterDays: null,
   },
-  accountReady: true,
+  organizationVerified: true,
+  accountConnected: true,
 } as const;
 
 beforeEach(() => {
@@ -67,7 +73,10 @@ describe('PaymentCollectionService.requestOnAcceptance', () => {
     await expect(
       service.requestOnAcceptance(event, registration),
     ).resolves.toBe(true);
-    expect(paymentService.markRequested).toHaveBeenCalledWith(registration);
+    expect(paymentService.markRequested).toHaveBeenCalledWith(
+      registration,
+      undefined,
+    );
     expect(PaymentRequestedMessage.enqueueFor).toHaveBeenCalledWith(
       event,
       registration,
@@ -100,6 +109,16 @@ describe('PaymentCollectionService.requestOnAcceptance', () => {
       expect(PaymentRequestedMessage.enqueueFor).not.toHaveBeenCalled();
     },
   );
+
+  it('does not ask a registration on hold', async () => {
+    await expect(
+      service.requestOnAcceptance(
+        event,
+        buildRegistration({ paymentHoldAt: new Date() }),
+      ),
+    ).resolves.toBe(false);
+    expect(PaymentRequestedMessage.enqueueFor).not.toHaveBeenCalled();
+  });
 
   it('waits while the event does not collect', async () => {
     paymentService.isCollecting.mockReturnValue(false);
@@ -141,6 +160,16 @@ describe('PaymentCollectionService.request', () => {
 
     expect(PaymentRequestedMessage.enqueueFor).toHaveBeenCalledTimes(1);
   });
+
+  it('lifts a hold: the manager decided to ask', async () => {
+    const registration = buildRegistration({ paymentHoldAt: new Date() });
+
+    await service.request(event, registration);
+
+    expect(paymentService.markRequested).toHaveBeenCalledWith(registration, {
+      release: true,
+    });
+  });
 });
 
 describe('PaymentCollectionService.forNewRegistration', () => {
@@ -148,6 +177,7 @@ describe('PaymentCollectionService.forNewRegistration', () => {
     paymentService.startCheckout.mockResolvedValue({
       checkoutUrl: 'https://checkout.example/abc',
       payment: {} as never,
+      created: true,
     });
     const registration = buildRegistration();
 
@@ -224,20 +254,77 @@ describe('PaymentCollectionService.statusChanged', () => {
   });
 });
 
+describe('PaymentCollectionService.findUnrequested', () => {
+  it('leaves out registrations that already paid', async () => {
+    prisma.registration.findMany.mockResolvedValue([
+      {
+        id: 'paid',
+        amountDue: 5000,
+        payments: [{ status: 'PAID', amount: 5000, refunds: [] }],
+      },
+      { id: 'owing', amountDue: 5000, payments: [] },
+    ] as never);
+
+    const registrations = await service.findUnrequested(event);
+
+    expect(registrations.map((r) => r.id)).toEqual(['owing']);
+    expect(prisma.registration.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ paymentHoldAt: null }) as unknown,
+      }),
+    );
+  });
+});
+
 describe('PaymentCollectionService.sendDueReminders', () => {
+  const now = new Date('2099-01-01T12:00:00Z');
+
+  beforeEach(() => {
+    prisma.eventSetting.findMany.mockResolvedValue([
+      {
+        data: { enabled: true, timing: 'ACCEPTANCE', reminderAfterDays: 7 },
+        event,
+      },
+    ] as never);
+    prisma.paymentAccount.findMany.mockResolvedValue([
+      { organizationId: event.organizationId },
+    ] as never);
+  });
+
   it('reminds each due registration and keeps going after a failure', async () => {
-    const first = buildRegistration({ id: 'first' });
-    const second = buildRegistration({ id: 'second' });
-    paymentService.findDueReminders.mockResolvedValue([
-      { event, registration: first },
-      { event, registration: second },
-    ]);
+    prisma.registration.findMany.mockResolvedValue([
+      { ...buildRegistration({ id: 'first' }), payments: [] },
+      { ...buildRegistration({ id: 'second' }), payments: [] },
+    ] as never);
     vi.mocked(PaymentReminderMessage.enqueueFor).mockRejectedValueOnce(
       new Error('queue down'),
     );
 
-    await expect(service.sendDueReminders()).resolves.toBe(1);
+    await expect(service.sendDueReminders(now)).resolves.toBe(1);
     expect(paymentService.markReminded).toHaveBeenCalledTimes(1);
     expect(paymentService.markReminded).toHaveBeenCalledWith('second');
+  });
+
+  it('skips registrations on hold and those that no longer owe', async () => {
+    prisma.registration.findMany.mockResolvedValue([
+      {
+        ...buildRegistration({ id: 'paid' }),
+        payments: [{ status: 'PAID', amount: 5000, refunds: [] }],
+      },
+    ] as never);
+
+    await expect(service.sendDueReminders(now)).resolves.toBe(0);
+    expect(prisma.registration.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ paymentHoldAt: null }) as unknown,
+      }),
+    );
+  });
+
+  it('stops once the event has ended', async () => {
+    await expect(
+      service.sendDueReminders(new Date('2099-02-01T00:00:00Z')),
+    ).resolves.toBe(0);
+    expect(prisma.registration.findMany).not.toHaveBeenCalled();
   });
 });

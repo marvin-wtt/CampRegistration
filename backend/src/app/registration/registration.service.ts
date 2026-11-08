@@ -1,6 +1,10 @@
 import ApiError from '#core/router/ApiError';
 import httpStatus from 'http-status';
-import { Prisma, type Registration } from '#generated/prisma/client.js';
+import {
+  type Event,
+  Prisma,
+  type Registration,
+} from '#generated/prisma/client.js';
 import type { EventWithFreePlaces } from '#app/event/event.types';
 import { computeAmountDue } from '@camp-registration/common/utils';
 import type {
@@ -8,8 +12,11 @@ import type {
   RegistrationPriceCheck,
 } from '@camp-registration/common/entities';
 import { assertPriceUnchanged } from './registration.price-check.js';
-import { PaymentService } from '#app/payment/payment.service';
-import { getRequestContext } from '#core/context/requestContext';
+import {
+  type DeletionActor,
+  registrationPaymentInclude,
+  RegistrationPayments,
+} from '#app/payment/registration-payments';
 import { RegistrationForm } from '#app/registration/registration.form';
 import { BaseService } from '#core/base/BaseService';
 import {
@@ -48,14 +55,7 @@ export class RegistrationService extends BaseService {
       where: { field: { startsWith: CUSTOM_FILE_FIELD_PREFIX } },
     },
     // The ledger summary (`Registration.payment`) is derived on read.
-    payments: {
-      select: {
-        status: true,
-        amount: true,
-        refunds: { select: { status: true, amount: true } },
-      },
-    },
-    event: { select: { id: true, currency: true } },
+    ...registrationPaymentInclude,
   } satisfies Prisma.RegistrationInclude;
 
   constructor(
@@ -63,8 +63,8 @@ export class RegistrationService extends BaseService {
     @inject(PrivacyNoticeService)
     private readonly privacyNoticeService: PrivacyNoticeService,
     @inject(AuditService) private readonly audit: AuditService,
-    @inject(PaymentService)
-    private readonly paymentService: PaymentService,
+    @inject(RegistrationPayments)
+    private readonly payments: RegistrationPayments,
   ) {
     super();
   }
@@ -382,17 +382,20 @@ export class RegistrationService extends BaseService {
   }
 
   async deleteRegistration(
+    event: Pick<Event, 'organizationId' | 'currency'>,
     registration: Registration,
-    reason?: RegistrationDeleteReason,
-    paymentSettlement?: PaymentSettlement,
+    reason: RegistrationDeleteReason | undefined,
+    paymentSettlement: PaymentSettlement | undefined,
+    actor: DeletionActor,
   ) {
     await this.transaction(async (tx) => {
       // Payments stay, with their payer snapshot; money still held must be
-      // settled first, or the deletion is refused.
-      const settlement = await this.paymentService.settleForDeletion(
+      // settled first, or the deletion is refused. Open checkouts close.
+      const settlement = await this.payments.beforeDelete(
+        event,
         registration,
         paymentSettlement,
-        getRequestContext()?.userId ?? null,
+        actor,
       );
 
       const deleted = await tx.registration.delete({

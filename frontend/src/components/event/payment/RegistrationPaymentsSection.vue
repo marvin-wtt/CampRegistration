@@ -2,7 +2,7 @@
   <div data-test="registration-payments">
     <q-list class="segmented-list">
       <payment-balance-item
-        :payment="registration.payment"
+        :payment="balance"
         :answers-amount="answersAmount"
         :can-adjust="can('event.payments.adjust')"
         :can-refund-overpaid="!!overpaymentSource"
@@ -78,6 +78,7 @@ import type {
   PaymentCreateData,
   PaymentRefundCreateData,
   Registration,
+  RegistrationPaymentDetails,
 } from '@camp-registration/common/entities';
 import { refundableAmount } from '@camp-registration/common/utils';
 import { useEventDetailsStore } from '@/stores/event-details-store';
@@ -92,9 +93,12 @@ import RecordPaymentDialog from '@/components/event/payment/RecordPaymentDialog.
 import AdjustAmountDueDialog from '@/components/event/payment/AdjustAmountDueDialog.vue';
 import RefundPaymentDialog from '@/components/event/payment/RefundPaymentDialog.vue';
 
-const { eventId, registration } = defineProps<{
+// `balance` is the registration's own, passed in non-null: the section is
+// only shown to whoever may see payment data.
+const { eventId, registration, balance } = defineProps<{
   eventId: string;
   registration: Registration;
+  balance: RegistrationPaymentDetails;
 }>();
 
 const { t } = useI18n();
@@ -131,7 +135,7 @@ function canDelete(payment: Payment): boolean {
 // The payment to give the excess back from: the latest one that can return
 // all of it, else the latest that can return anything.
 const overpaymentSource = computed<Payment | null>(() => {
-  const { overpaid } = registration.payment;
+  const { overpaid } = balance;
   if (overpaid <= 0) {
     return null;
   }
@@ -152,13 +156,12 @@ const overpaymentSource = computed<Payment | null>(() => {
 // no manager has set the amount: edits never re-price on their own.
 const answersAmount = computed<number | null>(() => {
   const event = eventDetailsStore.data;
-  const { payment } = registration;
-  if (!event || payment.adjustment || payment.amountDue === null) {
+  if (!event || balance.adjustment || balance.amountDue === null) {
     return null;
   }
 
   const amount = quoteRegistration(event, registration);
-  return amount === payment.amountDue ? null : amount;
+  return amount === balance.amountDue ? null : amount;
 });
 
 async function run(action: () => Promise<unknown>, success: string) {
@@ -173,7 +176,6 @@ async function run(action: () => Promise<unknown>, success: string) {
 // What concerns the balance sits in its tile's menu; recording a payment is
 // the list's own last row.
 const balanceActions = computed<BalanceAction[]>(() => {
-  const { payment } = registration;
   const actions: (BalanceAction & { shown: boolean })[] = [
     {
       key: 'adjust',
@@ -189,7 +191,7 @@ const balanceActions = computed<BalanceAction[]>(() => {
       shown:
         can('event.payments.create') &&
         registration.status === 'ACCEPTED' &&
-        payment.outstanding > 0,
+        balance.outstanding > 0,
       run: () =>
         void run(
           () => paymentStore.request(eventId, registration.id),
@@ -200,7 +202,7 @@ const balanceActions = computed<BalanceAction[]>(() => {
       key: 'copy-link',
       icon: 'link',
       label: t('action.copyLink'),
-      shown: !!payment.amountDue,
+      shown: !!balance.amountDue,
       run: () => void copyLink(),
     },
   ];
@@ -209,14 +211,13 @@ const balanceActions = computed<BalanceAction[]>(() => {
 });
 
 function record(): void {
-  const { payment } = registration;
   quasar
     .dialog({
       component: RecordPaymentDialog,
       componentProps: {
-        currency: payment.currency,
-        outstanding: payment.outstanding,
-        amountDue: payment.amountDue,
+        currency: balance.currency,
+        outstanding: balance.outstanding,
+        amountDue: balance.amountDue,
       },
     })
     .onOk((data: PaymentCreateData) => {
@@ -228,17 +229,16 @@ function record(): void {
 }
 
 function adjust(suggestedAmount: number | null = null): void {
-  const { payment } = registration;
   quasar
     .dialog({
       component: AdjustAmountDueDialog,
       componentProps: {
-        currency: payment.currency,
-        amountDue: payment.amountDue,
-        quotedAmount: payment.quotedAmount,
+        currency: balance.currency,
+        amountDue: balance.amountDue,
+        quotedAmount: balance.quotedAmount,
         suggestedAmount,
-        note: payment.adjustment?.note ?? null,
-        adjusted: payment.adjustment !== null,
+        note: balance.adjustment?.note ?? null,
+        adjusted: balance.adjustment !== null,
       },
     })
     .onOk((data: AmountDueUpdateData) => {
@@ -256,7 +256,7 @@ function refund(payment: Payment): void {
       componentProps: {
         currency: payment.currency,
         refundable: refundableAmount(payment),
-        overpaid: registration.payment.overpaid,
+        overpaid: balance.overpaid,
         manual: payment.source === 'manual',
       },
     })

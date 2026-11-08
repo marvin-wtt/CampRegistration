@@ -65,6 +65,8 @@ const payer = (registration: Registration) => ({
  * waived by hand.
  */
 export class PaymentSeeder {
+  private accountId: string | null = null;
+
   constructor(private event: Event) {}
 
   async seed(): Promise<void> {
@@ -110,9 +112,10 @@ export class PaymentSeeder {
       return;
     }
 
-    await prisma.paymentAccount.create({
+    const account = await prisma.paymentAccount.create({
       data: {
         organizationId: ORGANIZATION_IDS.youthAdventures,
+        activeOrganizationId: ORGANIZATION_IDS.youthAdventures,
         provider: 'fake',
         mode: 'test',
         displayName: 'Fake payments',
@@ -122,6 +125,7 @@ export class PaymentSeeder {
         ),
       },
     });
+    this.accountId = account.id;
   }
 
   private async waive(registration: Registration): Promise<void> {
@@ -267,6 +271,7 @@ export class PaymentSeeder {
         eventId: this.event.id,
         ...payer(registration),
         source: 'fake',
+        paymentAccountId: this.accountId,
         providerPaymentId: `fake_${ulid()}`,
         status,
         amount,

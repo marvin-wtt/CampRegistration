@@ -270,6 +270,7 @@ import { extractFormFields } from '@/utils/surveyJS';
 import type { PartialBy } from '@/types';
 import { deepToRaw } from '@/utils/deepToRaw';
 import { FormSelectCache } from '@/components/event/table/tableCells/FormSelectCache';
+import { usePermissions } from '@/composables/permissions';
 
 const { event, column } = defineProps<{
   column: TableColumnTemplate;
@@ -281,6 +282,7 @@ defineEmits([...useDialogPluginComponent.emits]);
 // eslint-disable-next-line @typescript-eslint/unbound-method
 const { t, te } = useI18n();
 const { to } = useObjectTranslation();
+const { can } = usePermissions();
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
@@ -524,10 +526,15 @@ const fieldOptions = computed<QSelectOption[]>(() => {
   }
 
   if (data.source === 'meta') {
-    return META_FIELDS.map((value) => ({
-      label: t(`field.field.options.${value}`),
-      value,
-    })).sort((a, b) => a.label.localeCompare(b.label));
+    // Without payment access the registrations carry no balance to show.
+    return META_FIELDS.filter(
+      (value) => value !== 'payment' || can('event.payments.view'),
+    )
+      .map((value) => ({
+        label: t(`field.field.options.${value}`),
+        value,
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label));
   }
 
   return extractFormFields(event.form);

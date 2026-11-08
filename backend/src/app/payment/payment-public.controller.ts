@@ -42,12 +42,12 @@ export class PaymentPublicController extends BaseController {
     const event = req.modelOrFail('event');
     const registration = req.modelOrFail('registration');
 
-    const { checkoutUrl, payment } = await this.paymentService.startCheckout(
-      event,
-      registration,
-    );
+    const { checkoutUrl, payment, created } =
+      await this.paymentService.startCheckout(event, registration);
 
-    this.notifier.emit(event.id, payment.id, null, 'created');
+    if (created) {
+      this.notifier.emit(event.id, payment.id, null, 'created');
+    }
 
     res.json({ data: { checkoutUrl } });
   }

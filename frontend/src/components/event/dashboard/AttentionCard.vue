@@ -83,11 +83,12 @@ import type { EventPhase } from '@/composables/eventPhase';
 import {
   LOCAL_TEMPLATE_AGE,
   LOCAL_TEMPLATE_MISSING,
+  LOCAL_TEMPLATE_PAYMENTS_HELD,
   LOCAL_TEMPLATE_PAYMENTS_OVERPAID,
   LOCAL_TEMPLATE_PENDING,
   LOCAL_TEMPLATE_WAITLISTED,
 } from '@/components/event/table/localTableTemplates';
-import { paymentOverpaid } from '@/utils/registrationPayment';
+import { paymentHeld, paymentOverpaid } from '@/utils/registrationPayment';
 
 // Issues the app detects on its own; tasks people create live in TasksCard.
 // The flags say which features the manager can see.
@@ -202,6 +203,15 @@ const items = computed<AttentionItem[]>(() => {
       count: stats.registrations.value.filter(paymentOverpaid).length,
       icon: 'currency_exchange',
       template: LOCAL_TEMPLATE_PAYMENTS_OVERPAID,
+      shown: payments,
+    },
+    {
+      // A dashboard refund or a chargeback: is the money still owed?
+      key: 'held',
+      label: t('item.held'),
+      count: stats.registrations.value.filter(paymentHeld).length,
+      icon: 'pause_circle',
+      template: LOCAL_TEMPLATE_PAYMENTS_HELD,
       shown: payments,
     },
     {
@@ -320,6 +330,7 @@ item:
   missing: 'Missing contact details'
   age: 'Age outside event range'
   overpaid: 'Overpaid'
+  held: 'Payments on hold'
   files: 'Missing files'
 </i18n>
 
@@ -334,6 +345,7 @@ item:
   missing: 'Fehlende Kontaktdaten'
   age: 'Alter außerhalb des Bereichs'
   overpaid: 'Überzahlt'
+  held: 'Zahlungen pausiert'
   files: 'Fehlende Dateien'
 </i18n>
 
@@ -348,6 +360,7 @@ item:
   missing: 'Coordonnées manquantes'
   age: 'Âge hors de la plage'
   overpaid: 'Trop-perçus'
+  held: 'Paiements suspendus'
   files: 'Fichiers manquants'
 </i18n>
 
@@ -362,6 +375,7 @@ item:
   missing: 'Brakujące dane kontaktowe'
   age: 'Wiek poza zakresem'
   overpaid: 'Nadpłacone'
+  held: 'Wstrzymane płatności'
   files: 'Brakujące pliki'
 </i18n>
 
@@ -376,5 +390,6 @@ item:
   missing: 'Chybějící kontaktní údaje'
   age: 'Věk mimo rozsah'
   overpaid: 'Přeplaceno'
+  held: 'Pozastavené platby'
   files: 'Chybějící soubory'
 </i18n>

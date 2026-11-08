@@ -188,6 +188,9 @@ const state = computed<State>(() => {
   if (status === 'REFUNDED') {
     return { key: 'refunded', color: 'info-container', icon: 'undo' };
   }
+  if (status === 'CHARGED_BACK') {
+    return { key: 'chargedBack', color: 'error-container', icon: 'undo' };
+  }
   if (summary.value?.latestPaymentStatus === 'PENDING') {
     return { key: 'pending', color: 'info-container', icon: 'schedule' };
   }
@@ -303,6 +306,9 @@ state:
   refunded:
     title: 'Payment refunded'
     text: 'Your payment has been refunded.'
+  chargedBack:
+    title: 'Payment reversed'
+    text: 'Your bank reversed this payment. Please contact the organizer to settle the fee.'
   pending:
     title: 'Payment processing'
     text: 'Your payment is being processed. This can take a moment for some payment methods — we will email you once it is confirmed.'
@@ -339,6 +345,9 @@ state:
   refunded:
     title: 'Zahlung erstattet'
     text: 'Deine Zahlung wurde zurückerstattet.'
+  chargedBack:
+    title: 'Zahlung zurückgebucht'
+    text: 'Deine Bank hat diese Zahlung zurückgebucht. Bitte wende dich an die Veranstalter, um den Beitrag zu klären.'
   pending:
     title: 'Zahlung wird verarbeitet'
     text: 'Deine Zahlung wird verarbeitet. Bei manchen Zahlungsmethoden kann das etwas dauern — wir schicken dir eine E-Mail, sobald sie bestätigt ist.'
@@ -375,6 +384,9 @@ state:
   refunded:
     title: 'Paiement remboursé'
     text: 'Ton paiement a été remboursé.'
+  chargedBack:
+    title: 'Paiement annulé par la banque'
+    text: "Ta banque a annulé ce paiement. Contacte l'organisateur pour régler les frais."
   pending:
     title: 'Paiement en cours'
     text: "Ton paiement est en cours de traitement. Cela peut prendre un moment selon le moyen de paiement — nous t'enverrons un e-mail dès qu'il sera confirmé."
@@ -411,6 +423,9 @@ state:
   refunded:
     title: 'Płatność zwrócona'
     text: 'Twoja płatność została zwrócona.'
+  chargedBack:
+    title: 'Płatność cofnięta'
+    text: 'Twój bank cofnął tę płatność. Skontaktuj się z organizatorem, aby rozliczyć opłatę.'
   pending:
     title: 'Płatność w toku'
     text: 'Twoja płatność jest przetwarzana. Przy niektórych metodach płatności może to chwilę potrwać — wyślemy Ci e-mail, gdy zostanie potwierdzona.'
@@ -447,6 +462,9 @@ state:
   refunded:
     title: 'Platba vrácena'
     text: 'Tvoje platba byla vrácena.'
+  chargedBack:
+    title: 'Platba vrácena bankou'
+    text: 'Tvoje banka tuto platbu vrátila. Obrať se prosím na pořadatele a domluv se na úhradě.'
   pending:
     title: 'Platba se zpracovává'
     text: 'Tvoje platba se zpracovává. U některých platebních metod to může chvíli trvat — jakmile bude potvrzena, pošleme ti e-mail.'

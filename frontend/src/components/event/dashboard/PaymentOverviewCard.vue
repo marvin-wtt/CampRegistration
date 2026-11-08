@@ -154,6 +154,9 @@ const summary = computed(() => {
 
   for (const registration of stats.registrations.value) {
     const { payment } = registration;
+    if (!payment) {
+      continue;
+    }
     collected += payment.amountPaid;
 
     if (!owesFee(registration)) {
@@ -164,7 +167,10 @@ const summary = computed(() => {
       counts.paid++;
     } else if (payment.status === 'PARTIAL') {
       counts.partial++;
-    } else if (payment.status === 'REFUNDED') {
+    } else if (
+      payment.status === 'REFUNDED' ||
+      payment.status === 'CHARGED_BACK'
+    ) {
       counts.refunded++;
     } else {
       counts.open++;

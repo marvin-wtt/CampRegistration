@@ -38,8 +38,7 @@ import type {
 } from '#views/emails/types';
 import { htmlToPreviewText } from '#core/mail/emailPreview';
 import { htmlToText } from 'html-to-text';
-import { formatMoney } from '@camp-registration/common/utils';
-import { paymentPageUrl } from '#app/payment/payment-link';
+import { resolveTemplateContexts } from './template-context.js';
 
 function dateToString(date: Date | string | null): string | null {
   if (date === null) {
@@ -78,14 +77,16 @@ export interface RegistrationTemplatePayload {
   changes?: RegistrationChange[];
   // Groups this send's per-address deliveries; absent on jobs queued before it.
   batchId?: string;
-  /** Set for the `payment_refunded` trigger; minor units of the event currency. */
-  refund?: { amount: number; reason: string | null };
+  /** Per-mail values for other modules' template contexts (`template-context.ts`). */
+  extra?: Record<string, unknown>;
 }
 
 export class RegistrationTemplateMessage extends RegistrationMessage<RegistrationTemplatePayload> {
   static readonly type: string = 'registration:template:simple';
 
   private generatedMessageIdToken?: string;
+  // Other modules' tokens, loaded before anything renders.
+  private extraContext: Record<string, object | null> = {};
 
   // Generated here, not by the mailer, so `build()` can persist the same
   // value on the MessageDelivery row and reuse it as the DSN ENVID.
@@ -158,38 +159,14 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
     return '';
   }
 
-  /**
-   * The `payment.*` tokens, available in every registration template so a
-   * manager can put the payment link into e.g. the confirmation mail too.
-   * `null` when the registration owes nothing.
-   */
-  private paymentContext(): object | null {
-    const { registration, event } = this.payload;
-    if (registration.amountDue === null || registration.amountDue === 0) {
-      return null;
-    }
-
-    return {
-      amount: formatMoney(
-        registration.amountDue,
-        event.currency,
-        this.locale(),
-      ),
-      url: paymentPageUrl(event.id, registration.id),
-    };
-  }
-
-  /** The `refund.*` tokens of the `payment_refunded` trigger. */
-  private refundContext(): object | null {
-    const { refund, event } = this.payload;
-    if (!refund) {
-      return null;
-    }
-
-    return {
-      amount: formatMoney(refund.amount, event.currency, this.locale()),
-      reason: refund.reason,
-    };
+  private async loadContexts(): Promise<void> {
+    const { event, registration, extra } = this.payload;
+    this.extraContext = await resolveTemplateContexts({
+      event,
+      registration,
+      locale: this.locale(),
+      extra: extra ?? {},
+    });
   }
 
   private context(format: 'html' | 'text'): object {
@@ -234,8 +211,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
         updatedAt: dateToString(this.payload.registration.updatedAt),
         createdAt: dateToString(this.payload.registration.createdAt),
       },
-      payment: this.paymentContext(),
-      refund: this.refundContext(),
+      ...this.extraContext,
     };
   }
 
@@ -246,6 +222,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
   }
 
   async build(): Promise<BuiltMail> {
+    await this.loadContexts();
     const mail = await super.build();
 
     const message = this.payload.message;
@@ -318,6 +295,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
 
   /** Subject and body as this recipient would get them, without sending. */
   async preview(): Promise<{ subject: string; body: string }> {
+    await this.loadContexts();
     try {
       return {
         subject: await this.subject(),

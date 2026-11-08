@@ -8,9 +8,15 @@ connection and the providers; it knows nothing of payments).
 
 ## Model
 
-- `PaymentAccount` — one per organization. `credentials` is an encrypted JSON
-  blob (`#core/secrets`, keyed by `SECRETS_ENCRYPTION_KEYS` — deliberately not
-  the file storage keys). No encryption keys → accounts can't be connected.
+- `PaymentAccount` — an organization's provider connection; at most one is
+  current (`activeOrganizationId`). `credentials` is an encrypted JSON blob
+  (`#core/secrets`, keyed by `SECRETS_ENCRYPTION_KEYS` — deliberately not the
+  file storage keys). No encryption keys → accounts can't be connected.
+  Replacing or disconnecting one retires it (`retiredAt`) instead of deleting
+  it while payments were made through it: each online payment records its
+  `paymentAccountId`, and its webhooks, reconciliation, checkout cancelling and
+  refunds always go through that account. An account without payments is
+  removed, its provider-side webhook with it.
 - `Payment` — one row per attempt or manual entry. Money is integer **minor
   units** plus an ISO currency (`Event.currency`). Status only moves forward
   (`OPEN → PENDING → PAID | FAILED | CANCELED | EXPIRED`), `PAID` is terminal.
@@ -22,7 +28,10 @@ connection and the providers; it knows nothing of payments).
   money the payer's bank took back (a Stripe dispute, a Mollie chargeback) the
   same way: `PENDING` while disputed, `REFUNDED` once lost, `CANCELED` when won
   or reversed. `amountDueReduction` remembers what a refund took off the amount
-  due, given back if the refund fails — at once or later, by webhook.
+  due, given back if the refund fails — at once or later, by webhook. Refunds
+  live in `PaymentRefundService`; the ledger itself in `PaymentService`. A
+  registration whose money all went back shows `REFUNDED`, or `CHARGED_BACK`
+  when a chargeback was among it.
 - `Registration.quotedAmount` — what the server calculated at submission, which
   is what the form showed: `Event.price` plus what the answers add
   (`extractPaymentAmounts`), clamped at zero. Adjustments are major units,
@@ -38,7 +47,19 @@ connection and the providers; it knows nothing of payments).
   different total. The presets waive the price for every role but
   `participant` with a `Team discount` line shown only to them.
   `Registration.payment` in the API is derived from the ledger
-  (`paymentBalance.ts` in `common`, shared with the frontend).
+  (`paymentBalance.ts` in `common`, shared with the frontend), and is `null`
+  for whoever lacks `event.payments.view` — the registrant's own create
+  response included.
+
+### How registrations use payments
+
+The registration module reaches payments through `RegistrationPayments`
+(`registration-payments.ts`) only: the include and `present()` for the
+balance, `created`, `statusChanged` and `beforeDelete` for its lifecycle.
+Payment tokens in mail come from `registerTemplateContext` (registration's
+`template-context.ts`), which the payment module fills with `payment.*`
+(`amount`, `outstanding`, `url`) and `refund.*`; the template base knows
+nothing about them.
 
 ### The price check
 
@@ -57,15 +78,24 @@ registrations either.
 Event setting `payment` (`enabled`, `timing`, `requestDate`,
 `requestDaysBeforeStart`, `reminderAfterDays`):
 
-`PaymentCollectionService` alone decides who is asked: accepted registrations
-that still owe money (by the ledger, not just `amountDue`), while the event
-collects — `enabled`, the request date reached, the organization verified and
-its provider connected. Acceptance, a manager's (re-)request, the bulk request
+`PaymentCollectionService` alone decides who is asked — its finders included:
+accepted registrations that still owe money (by the ledger, not just
+`amountDue`) and aren't on hold, while the event collects — `enabled`, the
+request date reached, the organization verified and its provider connected
+(`PaymentService.collectionBlocker` names the first that fails). Acceptance, a manager's (re-)request, the bulk request
 and the daily job all go through it. Registrations accepted before payments
 were turned on (or before a request date) are asked with one deliberate step:
 `POST /events/:eventId/payments/request`, offered on the payment settings page
-with the count from `…/payments/status`. A registration that leaves `ACCEPTED`
-gets its open checkouts closed.
+with the count from `…/payments/status`. A registration that leaves `ACCEPTED`,
+or is deleted, gets its open checkouts closed.
+
+**Holds.** Money that went back outside the app — a refund made in the
+provider's dashboard, a chargeback — makes the registration owe again by the
+ledger, though the organizer may not want it asked for. Reconciliation sets
+`Registration.paymentHoldAt`: no automatic requests or reminders, no
+checkout, and the dashboard lists it under "Payments on hold". A manager's
+adjustment of the amount due, a recorded payment or a (re-)request lifts it,
+as does a chargeback that is won or reversed, unless another still counts.
 
 The setting and `…/payments/status` need `event.payments.adjust` and
 `event.payments.view`: turning payments on emails participants, so it is not
@@ -97,8 +127,13 @@ and is also the provider's return URL (`&returned=1`).
 
 Checkout refuses — rather than registration — when nothing is due, the
 organization is unverified or has no account, or the registration isn't
-accepted or asked to pay yet. It locks the registration's row until the
-checkout is stored, so concurrent clicks share one checkout.
+accepted or asked to pay yet, or is on hold. It locks the registration's row
+until the checkout is stored, so concurrent clicks share one checkout; the
+lock spans the provider call (at most 30 s), so other writes to that
+registration wait for it. What is owed is read again under the lock.
+
+Managers get the link to pass on by other means from
+`GET …/payments/link` (`event.payments.view`).
 
 ### Overpayments
 
@@ -122,7 +157,10 @@ minus refunded) can only be deleted with a `paymentSettlement`, recorded on its
 payments and in the deletion's audit entry: `retained` keeps the money (e.g. a
 cancellation fee), `settled_outside` books the rest as refunded outside the
 app. Without one the server refuses (`PAYMENT_SETTLEMENT_REQUIRED`); the
-dialog also offers to refund first.
+dialog also offers to refund first. Settling is a refund decision: it needs
+`event.payments.refund` (`PAYMENT_SETTLEMENT_FORBIDDEN`), so a coordinator
+can delete such a registration only once a director settled it. Deleting a
+registration, or an event, closes its open checkouts.
 
 The event's payment ledger (`/management/events/:eventId/payments`) lists all
 of them, deleted registrations included, and exports CSV for the treasurer.
@@ -149,7 +187,9 @@ every few seconds per payment while the page polls, which is what makes local
 development work without public webhooks.
 
 Mail and realtime side effects go through `PaymentNotifier`, so exactly the
-call that moved a status notifies.
+call that moved a status notifies. `applySnapshot` and the refund booking run
+serializable and are retried on a deadlock (`transactional`'s `retries`): a
+webhook and the page's poll may apply the same payment at once.
 
 ## Adding a provider
 

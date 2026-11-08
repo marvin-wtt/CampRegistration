@@ -32,6 +32,7 @@ const ROLES: Record<RegistrationPaymentStatus, string> = {
   PARTIAL: 'warning',
   UNPAID: 'error',
   REFUNDED: 'info',
+  CHARGED_BACK: 'error',
   NOT_REQUIRED: 'surface-variant',
 };
 
@@ -41,6 +42,7 @@ const ICONS: Record<RegistrationPaymentStatus, string> = {
   PARTIAL: 'timelapse',
   UNPAID: 'schedule',
   REFUNDED: 'undo',
+  CHARGED_BACK: 'gavel',
   NOT_REQUIRED: 'remove',
 };
 
@@ -90,6 +92,7 @@ status:
   PARTIAL: 'Partially paid'
   UNPAID: 'Unpaid'
   REFUNDED: 'Refunded'
+  CHARGED_BACK: 'Charged back'
   NOT_REQUIRED: 'No payment'
 </i18n>
 
@@ -100,6 +103,7 @@ status:
   PARTIAL: 'Teilweise bezahlt'
   UNPAID: 'Offen'
   REFUNDED: 'Erstattet'
+  CHARGED_BACK: 'Zurückgebucht'
   NOT_REQUIRED: 'Keine Zahlung'
 </i18n>
 
@@ -110,6 +114,7 @@ status:
   PARTIAL: 'Partiellement payé'
   UNPAID: 'Impayé'
   REFUNDED: 'Remboursé'
+  CHARGED_BACK: 'Rétrofacturé'
   NOT_REQUIRED: 'Pas de paiement'
 </i18n>
 
@@ -120,6 +125,7 @@ status:
   PARTIAL: 'Częściowo opłacone'
   UNPAID: 'Nieopłacone'
   REFUNDED: 'Zwrócone'
+  CHARGED_BACK: 'Obciążenie zwrotne'
   NOT_REQUIRED: 'Bez płatności'
 </i18n>
 
@@ -130,5 +136,6 @@ status:
   PARTIAL: 'Částečně zaplaceno'
   UNPAID: 'Nezaplaceno'
   REFUNDED: 'Vráceno'
+  CHARGED_BACK: 'Zpětně zúčtováno'
   NOT_REQUIRED: 'Bez platby'
 </i18n>

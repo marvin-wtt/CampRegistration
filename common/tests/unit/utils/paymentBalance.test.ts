@@ -63,6 +63,25 @@ describe('registrationPayment', () => {
     expect(registrationPayment(5000, 'EUR', [payment]).status).toBe('REFUNDED');
   });
 
+  it('is CHARGED_BACK when a chargeback took it back', () => {
+    const payment = paid(5000, [
+      { status: 'REFUNDED', amount: 5000, kind: 'CHARGEBACK' },
+    ]);
+
+    expect(registrationPayment(5000, 'EUR', [payment])).toMatchObject({
+      status: 'CHARGED_BACK',
+      outstanding: 5000,
+    });
+  });
+
+  it('is not CHARGED_BACK once the chargeback was reversed', () => {
+    const payment = paid(5000, [
+      { status: 'CANCELED', amount: 5000, kind: 'CHARGEBACK' },
+    ]);
+
+    expect(registrationPayment(5000, 'EUR', [payment]).status).toBe('PAID');
+  });
+
   it('counts payments even when none was required', () => {
     expect(registrationPayment(null, 'EUR', [paid(1000)]).status).toBe('PAID');
   });

@@ -72,6 +72,15 @@ export const admin = (req: Request): boolean | string => {
 };
 
 /**
+ * Whether the request passes `guardFn` the way `guard()` would let it through
+ * — administrators always do — for what a route shows rather than allows.
+ */
+export const passes = async (
+  req: Request,
+  guardFn: GuardFn,
+): Promise<boolean> => (await or(admin, guardFn)(req)) === true;
+
+/**
  * Middleware to guard the access to a route.
  * Multiple guards can be combined by using the 'and', and 'or' guard.
  *

@@ -44,6 +44,7 @@ const createCellProps = (
       overpaid: 0,
       requestedAt: null,
       remindedAt: null,
+      heldAt: null,
     },
     createdAt: '2023-01-01T00:00:00Z',
   },

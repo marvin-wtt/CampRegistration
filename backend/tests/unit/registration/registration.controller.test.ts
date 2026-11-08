@@ -14,8 +14,13 @@ import { RegistrationDeletedMessage } from '#app/registration/messages/deleted.m
 import { RegistrationSubmittedMessage } from '#app/registration/messages/submitted.mail';
 import { RegistrationUpdatedMessage } from '#app/registration/messages/updated.mail';
 import { RegistrationWaitlistedMessage } from '#app/registration/messages/waitlisted.mail';
-import { PaymentCollectionService } from '#app/payment/payment-collection.service';
+import { RegistrationPayments } from '#app/payment/registration-payments';
+import { passes } from '#core/guard';
 
+vi.mock('#core/guard', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('#core/guard')>()),
+  passes: vi.fn(),
+}));
 vi.mock('#app/registration/messages/notify.mail', () => ({
   RegistrationNotifyMessage: { enqueue: vi.fn() },
 }));
@@ -40,12 +45,12 @@ vi.mock('#app/registration/messages/waitlisted.mail', () => ({
 
 const registrationService = mock<RegistrationService>();
 const realtimeService = mock<RealtimeService>();
-const paymentCollection = mock<PaymentCollectionService>();
+const payments = mock<RegistrationPayments>();
 
 const controller = new RegistrationController(
   registrationService,
   realtimeService,
-  paymentCollection,
+  payments,
 );
 
 // A real form and the variables `setVariables` reads, so the update path can
@@ -78,7 +83,7 @@ type RegistrationEntity = Prisma.RegistrationGetPayload<{
       select: {
         status: true;
         amount: true;
-        refunds: { select: { status: true; amount: true } };
+        refunds: { select: { status: true; amount: true; kind: true } };
       };
     };
     event: { select: { id: true; currency: true } };
@@ -112,6 +117,7 @@ const buildRegistration = (
     amountDue: null,
     paymentRequestedAt: null,
     paymentReminderSentAt: null,
+    paymentHoldAt: null,
     bed: null,
     files: [],
     payments: [],
@@ -137,6 +143,7 @@ const fakeRequest = ({
     validate: vi.fn().mockResolvedValue(validateResult),
     sessionId,
     preferredLocale: () => preferredLocale,
+    authUserId: () => 'user-1',
   }) as unknown as Request;
 
 const fakeResponse = (): Response & {
@@ -162,18 +169,32 @@ const resourceData = (res: ReturnType<typeof fakeResponse>): unknown =>
 
 beforeEach(() => {
   vi.clearAllMocks();
-  paymentCollection.forNewRegistration.mockResolvedValue(null);
+  payments.created.mockResolvedValue(null);
+  payments.present.mockReturnValue(null);
+  vi.mocked(passes).mockResolvedValue(true);
 });
 
 describe('RegistrationController.show', () => {
-  it('resolves the bound registration model into a resource', () => {
+  it('resolves the bound registration model into a resource', async () => {
     const registration = buildRegistration();
     const req = fakeRequest({ models: { registration } });
     const res = fakeResponse();
 
-    controller.show(req, res);
+    await controller.show(req, res);
 
-    expect(resourceData(res)).toBe(registration);
+    expect(resourceData(res)).toEqual({ ...registration, payment: null });
+  });
+
+  it('shows the balance only to whoever may see payments', async () => {
+    const registration = buildRegistration();
+    vi.mocked(passes).mockResolvedValue(false);
+
+    await controller.show(
+      fakeRequest({ models: { registration } }),
+      fakeResponse(),
+    );
+
+    expect(payments.present).toHaveBeenCalledWith(registration, false);
   });
 });
 
@@ -222,7 +243,7 @@ describe('RegistrationController.store', () => {
       'created',
     );
     expect(res.status).toHaveBeenCalledWith(httpStatus.CREATED);
-    expect(resourceData(res)).toBe(registration);
+    expect(resourceData(res)).toEqual({ ...registration, payment: null });
   });
 
   it('enqueues the waitlisted message for waitlisted registrations', async () => {
@@ -425,9 +446,16 @@ describe('RegistrationController.destroy', () => {
     await controller.destroy(req, res);
 
     expect(registrationService.deleteRegistration).toHaveBeenCalledWith(
+      event,
       registration,
       undefined,
       undefined,
+      { userId: 'user-1', maySettle: true },
+    );
+    // Its payments lose the registration: the ledger reloads.
+    expect(realtimeService.emitInvalidation).toHaveBeenCalledWith(
+      event.id,
+      'payment',
     );
     expect(RegistrationDeletedMessage.enqueueFor).toHaveBeenCalledWith(
       event,
@@ -487,7 +515,7 @@ describe('RegistrationController payments', () => {
       checkoutUrl: 'https://checkout',
       pageUrl: 'https://page',
     };
-    paymentCollection.forNewRegistration.mockResolvedValue(payment);
+    payments.created.mockResolvedValue(payment);
     const res = fakeResponse();
 
     await controller.store(
@@ -498,10 +526,7 @@ describe('RegistrationController payments', () => {
       res,
     );
 
-    expect(paymentCollection.forNewRegistration).toHaveBeenCalledWith(
-      event,
-      registration,
-    );
+    expect(payments.created).toHaveBeenCalledWith(event, registration);
     expect(resourceMeta(res)).toEqual({ payment });
   });
 
@@ -522,7 +547,7 @@ describe('RegistrationController payments', () => {
 
       await controller.update(req, fakeResponse());
 
-      expect(paymentCollection.statusChanged).toHaveBeenCalledWith(
+      expect(payments.statusChanged).toHaveBeenCalledWith(
         event,
         'PENDING',
         registration,

@@ -1,8 +1,11 @@
 import type { Registration } from '@camp-registration/common/entities';
 
+// Without `event.payments.view` there is no balance: every predicate is false.
+
 /** Has a fee at all. */
 export function hasFee(registration: Registration): boolean {
-  return registration.payment.status !== 'NOT_REQUIRED';
+  const status = registration.payment?.status;
+  return status !== undefined && status !== 'NOT_REQUIRED';
 }
 
 /**
@@ -18,7 +21,7 @@ export function owesFee(registration: Registration): boolean {
  * still be turned down, so they don't count as owing yet.
  */
 export function paymentOpen(registration: Registration): boolean {
-  const { status } = registration.payment;
+  const status = registration.payment?.status;
   return (
     registration.status === 'ACCEPTED' &&
     (status === 'UNPAID' || status === 'PARTIAL')
@@ -27,5 +30,13 @@ export function paymentOpen(registration: Registration): boolean {
 
 /** Paid more than is due, whatever the registration's status: to refund. */
 export function paymentOverpaid(registration: Registration): boolean {
-  return registration.payment.status === 'OVERPAID';
+  return registration.payment?.status === 'OVERPAID';
+}
+
+/**
+ * Money went back outside the app (a dashboard refund, a chargeback):
+ * reminders and checkouts wait for a manager to decide what is owed.
+ */
+export function paymentHeld(registration: Registration): boolean {
+  return !!registration.payment?.heldAt;
 }

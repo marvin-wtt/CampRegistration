@@ -109,12 +109,12 @@ model Organization {
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime? @updatedAt @map("updated_at")
 
-  reviewedBy     User?                    @relation("OrganizationReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "organizations_reviewed_by_user_id_foreign")
-  members        OrganizationMember[]
-  invitations    OrganizationInvitation[]
-  events         Event[]
-  newsletters    Newsletter[]
-  paymentAccount PaymentAccount?
+  reviewedBy      User?                    @relation("OrganizationReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "organizations_reviewed_by_user_id_foreign")
+  members         OrganizationMember[]
+  invitations     OrganizationInvitation[]
+  events          Event[]
+  newsletters     Newsletter[]
+  paymentAccounts PaymentAccount[]
 
   @@index([verificationStatus], map: "organizations_verification_status_index")
   @@index([reviewedByUserId], map: "organizations_reviewed_by_user_id_index")
@@ -280,6 +280,9 @@ model Registration {
   amountDueNote                      String?            @map("amount_due_note") @db.Text
   paymentRequestedAt                 DateTime?          @map("payment_requested_at")
   paymentReminderSentAt              DateTime?          @map("payment_reminder_sent_at")
+  // Money went back outside the app (a dashboard refund, a chargeback): no
+  // automatic reminders or checkouts until a manager has looked at it.
+  paymentHoldAt                      DateTime?          @map("payment_hold_at")
   // Which privacy information this person was actually shown. Nullable because
   // registrations predating the feature were shown none — do not backfill.
   organizationPrivacyNoticeVersionId String?            @map("organization_privacy_notice_version_id") @db.Char(26)
@@ -843,18 +846,27 @@ enum RefundKind {
 // An organization's connected payment provider account. Credentials are an
 // encrypted JSON blob (see core/encryption/secrets.ts) and never leave the
 // backend.
+// An organization's provider connection. Replacing or disconnecting it retires
+// the row instead of deleting it while payments were made through it: their
+// webhooks, reconciliation and refunds still need its credentials.
 model PaymentAccount {
-  id             String    @id @unique(map: "payment_accounts_id_unique") @default(ulid()) @db.Char(26)
-  organizationId String    @unique(map: "payment_accounts_organization_id_unique") @map("organization_id") @db.Char(26)
-  provider       String    @db.VarChar(32)
-  mode           String    @db.VarChar(8)
-  displayName    String?   @map("display_name") @db.VarChar(255)
-  credentials    String    @db.Text
-  createdAt      DateTime  @default(now()) @map("created_at")
-  updatedAt      DateTime? @updatedAt @map("updated_at")
+  id                   String    @id @unique(map: "payment_accounts_id_unique") @default(ulid()) @db.Char(26)
+  organizationId       String    @map("organization_id") @db.Char(26)
+  // The organization's id while this is its current account, `null` once
+  // retired: one current account per organization, enforced by the index.
+  activeOrganizationId String?   @unique(map: "payment_accounts_active_organization_id_unique") @map("active_organization_id") @db.Char(26)
+  provider             String    @db.VarChar(32)
+  mode                 String    @db.VarChar(8)
+  displayName          String?   @map("display_name") @db.VarChar(255)
+  credentials          String    @db.Text
+  retiredAt            DateTime? @map("retired_at")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime? @updatedAt @map("updated_at")
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "payment_accounts_organization_id_foreign")
+  payments     Payment[]
 
+  @@index([organizationId], map: "payment_accounts_organization_id_index")
   @@map("payment_accounts")
 }
 
@@ -865,6 +877,8 @@ model Payment {
   registrationId    String?       @map("registration_id") @db.Char(26)
   eventId           String        @map("event_id") @db.Char(26)
   source            String        @db.VarChar(32)
+  // The account an online payment went through; `null` for manual ones.
+  paymentAccountId  String?       @map("payment_account_id") @db.Char(26)
   providerPaymentId String?       @map("provider_payment_id") @db.VarChar(255)
   status            PaymentStatus
   amount            Int           @db.UnsignedInt
@@ -888,12 +902,14 @@ model Payment {
   registration Registration?   @relation(fields: [registrationId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "payments_registration_id_foreign")
   event        Event           @relation(fields: [eventId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "payments_event_id_foreign")
   createdBy    User?           @relation(fields: [createdById], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "payments_created_by_id_foreign")
+  account      PaymentAccount? @relation(fields: [paymentAccountId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "payments_payment_account_id_foreign")
   refunds      PaymentRefund[]
 
   @@unique([source, providerPaymentId], map: "payments_source_provider_payment_id_unique")
   @@index([registrationId], map: "payments_registration_id_index")
   @@index([eventId], map: "payments_event_id_index")
   @@index([createdById], map: "payments_created_by_id_index")
+  @@index([paymentAccountId], map: "payments_payment_account_id_index")
   @@map("payments")
 }
 

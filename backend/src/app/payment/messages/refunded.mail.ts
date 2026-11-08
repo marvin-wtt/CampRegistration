@@ -4,6 +4,7 @@ import type {
   Registration,
 } from '#generated/prisma/client.js';
 import { RegistrationEventMessage } from '#app/registration/messages/event.mail';
+import type { RefundTemplateExtra } from '../payment.template-context.js';
 
 export class PaymentRefundedMessage extends RegistrationEventMessage {
   static readonly trigger = 'payment_refunded';
@@ -19,7 +20,12 @@ export class PaymentRefundedMessage extends RegistrationEventMessage {
     await this.enqueueMany(
       payloads.map((payload) => ({
         ...payload,
-        refund: { amount: refund.amount, reason: refund.reason },
+        extra: {
+          refund: {
+            amount: refund.amount,
+            reason: refund.reason,
+          } satisfies RefundTemplateExtra,
+        },
       })),
     );
   }

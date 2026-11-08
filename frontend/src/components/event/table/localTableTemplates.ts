@@ -7,6 +7,7 @@ import type {
 import type { useRegistrationHelper } from '@/composables/registrationHelper';
 import {
   owesFee,
+  paymentHeld,
   paymentOpen,
   paymentOverpaid,
 } from '@/utils/registrationPayment';
@@ -31,6 +32,7 @@ export const LOCAL_TEMPLATE_WAITLISTED = 'attention-waitlisted';
 export const LOCAL_TEMPLATE_PAYMENTS = 'payments';
 export const LOCAL_TEMPLATE_PAYMENTS_OPEN = 'payments-open';
 export const LOCAL_TEMPLATE_PAYMENTS_OVERPAID = 'payments-overpaid';
+export const LOCAL_TEMPLATE_PAYMENTS_HELD = 'payments-held';
 
 type RegistrationHelper = ReturnType<typeof useRegistrationHelper>;
 
@@ -372,6 +374,31 @@ export function buildLocalTableTemplates(
           cs: 'Přeplaceno',
           pl: 'Nadpłata',
         }),
+        EMAIL_COLUMN,
+      ],
+    },
+    {
+      id: LOCAL_TEMPLATE_PAYMENTS_HELD,
+      title: {
+        en: 'Payments on hold',
+        de: 'Zahlungen pausiert',
+        fr: 'Paiements suspendus',
+        cs: 'Pozastavené platby',
+        pl: 'Wstrzymane płatności',
+      },
+      hidden: true,
+      generated: true,
+      order: 906,
+      indexed: true,
+      actions: true,
+      sortBy: 'last_name',
+      localFilter: paymentHeld,
+      columns: [
+        ...NAME_COLUMNS,
+        GROUP_COLUMN,
+        STATUS_COLUMN,
+        PAYMENT_STATUS_COLUMN,
+        ...AMOUNT_COLUMNS,
         EMAIL_COLUMN,
       ],
     },

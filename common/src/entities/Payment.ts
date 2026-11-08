@@ -21,10 +21,17 @@ export type RefundStatus = 'PENDING' | 'REFUNDED' | 'FAILED' | 'CANCELED';
 
 /**
  * A registration's overall payment state, derived from its ledger:
- * `REFUNDED` means money was paid and the net paid amount is back to zero.
+ * `REFUNDED` means money was paid and the net paid amount is back to zero;
+ * `CHARGED_BACK` the same, with a chargeback among what took it back.
  */
 export type RegistrationPaymentStatus =
-  'NOT_REQUIRED' | 'UNPAID' | 'PARTIAL' | 'PAID' | 'OVERPAID' | 'REFUNDED';
+  | 'NOT_REQUIRED'
+  | 'UNPAID'
+  | 'PARTIAL'
+  | 'PAID'
+  | 'OVERPAID'
+  | 'REFUNDED'
+  | 'CHARGED_BACK';
 
 /** A chargeback is money the payer's bank took back, booked like a refund. */
 export type RefundKind = 'REFUND' | 'CHARGEBACK';
@@ -133,15 +140,27 @@ export interface RegistrationPaymentDetails extends RegistrationPayment {
   /** When the person was last asked to pay, and last reminded. */
   requestedAt: string | null;
   remindedAt: string | null;
+  /**
+   * Since when automatic reminders and checkouts are paused: money went back
+   * outside the app (a dashboard refund, a chargeback). A manager's
+   * adjustment, recorded payment or request lifts it.
+   */
+  heldAt: string | null;
 }
 
 /**
- * Sets what a registration owes. `amount` is in major units; `null` goes back
+ * Sets what a registration owes. `amount` is in minor units; `null` goes back
  * to the quoted amount — what the registration form showed.
  */
 export interface AmountDueUpdateData {
   amount: number | null;
   note?: string | null | undefined;
+}
+
+/** A registration's payment page, for managers to pass on by other means. */
+export interface RegistrationPaymentLink {
+  /** `null` when nothing is owed. */
+  pageUrl: string | null;
 }
 
 /** The public, token-authenticated view of a registration's balance. */

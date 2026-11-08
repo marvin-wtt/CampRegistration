@@ -141,10 +141,15 @@ const tokens = computed<
                 caption: t('token.payment.amount.caption'),
               },
               {
+                value: 'outstanding',
+                label: t('token.payment.outstanding.label'),
+                caption: t('token.payment.outstanding.caption'),
+              },
+              {
                 value: 'url',
                 label: t('token.payment.url.label'),
                 caption: t('token.payment.url.caption'),
-                type: 'url',
+                type: 'url' as const,
               },
             ],
           },
@@ -190,6 +195,9 @@ token:
     amount:
       label: 'Amount'
       caption: 'The amount due, formatted in the event currency'
+    outstanding:
+      label: 'Outstanding'
+      caption: 'What is still to pay after the payments so far'
     url:
       label: 'Payment link'
       caption: "Link to the participant's personal payment page"
@@ -274,6 +282,9 @@ token:
     amount:
       label: 'Betrag'
       caption: 'Der fällige Betrag in der Währung der Veranstaltung'
+    outstanding:
+      label: 'Offener Betrag'
+      caption: 'Was nach den bisherigen Zahlungen noch zu zahlen ist'
     url:
       label: 'Zahlungslink'
       caption: 'Link zur persönlichen Zahlungsseite der teilnehmenden Person'
@@ -358,6 +369,9 @@ token:
     amount:
       label: 'Montant'
       caption: "Le montant dû, dans la devise de l'événement"
+    outstanding:
+      label: 'Reste à payer'
+      caption: 'Ce qui reste à payer après les paiements déjà reçus'
     url:
       label: 'Lien de paiement'
       caption: 'Lien vers la page de paiement personnelle du participant'
@@ -447,6 +461,9 @@ token:
     amount:
       label: 'Kwota'
       caption: 'Należna kwota w walucie wydarzenia'
+    outstanding:
+      label: 'Pozostało do zapłaty'
+      caption: 'Kwota, która pozostała do zapłaty po dotychczasowych wpłatach'
     url:
       label: 'Link do płatności'
       caption: 'Link do osobistej strony płatności uczestnika'
@@ -531,6 +548,9 @@ token:
     amount:
       label: 'Částka'
       caption: 'Splatná částka v měně akce'
+    outstanding:
+      label: 'Zbývá zaplatit'
+      caption: 'Kolik zbývá zaplatit po dosavadních platbách'
     url:
       label: 'Odkaz na platbu'
       caption: 'Odkaz na osobní platební stránku účastníka'

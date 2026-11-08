@@ -5,6 +5,7 @@ import type {
 } from '@camp-registration/common/entities';
 import {
   owesFee,
+  paymentHeld,
   paymentOpen,
   paymentOverpaid,
 } from '@/utils/registrationPayment';
@@ -26,6 +27,7 @@ function registration(
       overpaid: 0,
       requestedAt: null,
       remindedAt: null,
+      heldAt: null,
     },
   } as Registration;
 }
@@ -55,5 +57,13 @@ describe('registration payment', () => {
     expect(paymentOverpaid(registration('WAITLISTED', 'OVERPAID'))).toBe(true);
     expect(paymentOverpaid(registration('ACCEPTED', 'PAID'))).toBe(false);
     expect(paymentOpen(registration('ACCEPTED', 'OVERPAID'))).toBe(false);
+  });
+
+  it('lists registrations whose payments are on hold', () => {
+    const held = registration('ACCEPTED', 'REFUNDED');
+    held.payment!.heldAt = '2026-11-07T10:00:00.000Z';
+
+    expect(paymentHeld(held)).toBe(true);
+    expect(paymentHeld(registration('ACCEPTED', 'UNPAID'))).toBe(false);
   });
 });

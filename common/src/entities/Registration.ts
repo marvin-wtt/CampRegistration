@@ -29,7 +29,8 @@ export interface Registration extends Identifiable, Timestamps {
   group: string | null;
   status: 'PENDING' | 'WAITLISTED' | 'ACCEPTED';
   locale: string;
-  payment: RegistrationPaymentDetails;
+  /** `null` for whoever may not see payment data (`event.payments.view`). */
+  payment: RegistrationPaymentDetails | null;
   room?: Translatable | null;
   customFiles?: Record<string, string>;
 }

@@ -15,6 +15,8 @@ import { PaymentReconciliationService } from './payment-reconciliation.service.j
 import { PaymentNotifier } from './payment.notifier.js';
 import { PaymentReconciliationQueue } from './payment-reconciliation.queue.js';
 import { PaymentCollectionService } from './payment-collection.service.js';
+import { PaymentRefundService } from './payment-refund.service.js';
+import { RegistrationPayments } from './registration-payments.js';
 import { PaymentController } from './payment.controller.js';
 import { PaymentPublicController } from './payment-public.controller.js';
 import {
@@ -22,6 +24,7 @@ import {
   RegistrationPaymentRouter,
 } from './payment.routes.js';
 import { paymentWebhookHandler } from './payment-webhook.handler.js';
+import { registerPaymentTemplateContexts } from './payment.template-context.js';
 import { PaymentSettingsValidation } from './payment.validation.js';
 import { PaymentRequestedMessage } from './messages/requested.mail.js';
 import { PaymentReceivedMessage } from './messages/received.mail.js';
@@ -36,6 +39,8 @@ export class PaymentModule implements AppModule {
     options.bind(PaymentNotifier).toSelf().inSingletonScope();
     options.bind(PaymentReconciliationQueue).toSelf().inSingletonScope();
     options.bind(PaymentCollectionService).toSelf().inSingletonScope();
+    options.bind(PaymentRefundService).toSelf().inSingletonScope();
+    options.bind(RegistrationPayments).toSelf().inSingletonScope();
     options.bind(PaymentController).toSelf().inSingletonScope();
     options.bind(PaymentPublicController).toSelf().inSingletonScope();
   }
@@ -54,6 +59,8 @@ export class PaymentModule implements AppModule {
     mailRegistry.register(PaymentFailedMessage);
     mailRegistry.register(PaymentRefundedMessage);
     mailRegistry.register(PaymentReminderMessage);
+
+    registerPaymentTemplateContexts(resolve(PaymentService));
   }
 
   registerApiRoutes(router: AppRouter): void {

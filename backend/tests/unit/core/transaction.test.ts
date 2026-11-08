@@ -41,4 +41,33 @@ describe('transactional', () => {
     expect(inner).toBe(tx);
     expect($transaction).toHaveBeenCalledOnce();
   });
+
+  it('runs the callback again after a write conflict when asked to', async () => {
+    const { client, $transaction } = fakeClient();
+    const conflict = Object.assign(new Error('deadlock'), { code: 'P2034' });
+    let calls = 0;
+
+    const result = await transactional(
+      client,
+      () => (++calls === 1 ? Promise.reject(conflict) : Promise.resolve(calls)),
+      { retries: 2 },
+    );
+
+    expect(result).toBe(2);
+    expect($transaction).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not retry other errors, or without retries', async () => {
+    const { client } = fakeClient();
+    const conflict = Object.assign(new Error('deadlock'), { code: 'P2034' });
+
+    await expect(
+      transactional(client, () => Promise.reject(new Error('boom')), {
+        retries: 2,
+      }),
+    ).rejects.toThrow('boom');
+    await expect(
+      transactional(client, () => Promise.reject(conflict)),
+    ).rejects.toBe(conflict);
+  });
 });

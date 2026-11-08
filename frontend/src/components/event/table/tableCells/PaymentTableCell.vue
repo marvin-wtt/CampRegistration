@@ -36,7 +36,7 @@ const { t, locale } = useI18n();
 const payment = computed(() => cellProps.row.payment);
 
 function money(minor: number): string {
-  return formatMoney(minor, payment.value.currency, locale.value);
+  return formatMoney(minor, payment.value?.currency ?? 'EUR', locale.value);
 }
 </script>
 

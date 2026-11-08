@@ -19,10 +19,13 @@ import type {
 } from '#app/paymentAccount/providers/payment.provider';
 import { type PaymentAuditAction, paymentAuditEntry } from './payment.audit.js';
 import { PaymentService } from './payment.service.js';
+import { PaymentRefundService } from './payment-refund.service.js';
 
 // The public payment page polls; the provider is asked at most this often
 // per payment and process.
 const RECONCILE_INTERVAL_MS = 5_000;
+// A webhook and the page's poll may apply the same payment at once.
+const CONFLICT_RETRIES = 3;
 
 const PAYMENT_STATUS_RANK: Record<PaymentStatus, number> = {
   OPEN: 0,
@@ -102,6 +105,8 @@ export class PaymentReconciliationService extends BaseService {
     private readonly accountService: PaymentAccountService,
     @inject(AuditService) private readonly audit: AuditService,
     @inject(PaymentService) private readonly paymentService: PaymentService,
+    @inject(PaymentRefundService)
+    private readonly refundService: PaymentRefundService,
   ) {
     super();
   }
@@ -128,7 +133,6 @@ export class PaymentReconciliationService extends BaseService {
   ): Promise<ReconciliationOutcome | null> {
     const payment = await this.prisma.payment.findUnique({
       where: { source_providerPaymentId: { source, providerPaymentId } },
-      include: { event: true },
     });
     if (!payment) {
       logger.debug(
@@ -137,12 +141,11 @@ export class PaymentReconciliationService extends BaseService {
       return null;
     }
 
-    const resolved = await this.accountService.resolveForOrganization(
-      payment.event.organizationId,
-    );
-    if (resolved?.account.provider !== source) {
+    // Through the account it was made with, even if since replaced.
+    const resolved = await this.accountService.resolveForPayment(payment);
+    if (!resolved) {
       logger.warn(
-        `Cannot reconcile ${source} payment ${providerPaymentId}: the organization's account changed`,
+        `Cannot reconcile ${source} payment ${providerPaymentId}: it has no account`,
       );
       return null;
     }
@@ -265,7 +268,10 @@ export class PaymentReconciliationService extends BaseService {
           changed,
         };
       },
-      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+        retries: CONFLICT_RETRIES,
+      },
     );
   }
 
@@ -316,6 +322,7 @@ export class PaymentReconciliationService extends BaseService {
           'payment_refunded',
           { amount: created.amount },
         );
+        await this.hold(payment);
       }
 
       return {
@@ -346,7 +353,7 @@ export class PaymentReconciliationService extends BaseService {
         'payment_refund_failed',
         { amount: updated.amount },
       );
-      await this.paymentService.restoreAmountDue(updated);
+      await this.refundService.restoreAmountDue(updated);
     }
 
     return {
@@ -387,6 +394,9 @@ export class PaymentReconciliationService extends BaseService {
           : 'payment_charged_back',
         { amount: snapshot.amount },
       );
+      if (snapshot.status !== 'CANCELED') {
+        await this.hold(payment);
+      }
       return true;
     }
 
@@ -410,7 +420,38 @@ export class PaymentReconciliationService extends BaseService {
         'payment_chargeback_reversed',
         { amount: existing.amount },
       );
+      await this.releaseChargebackHold(tx, payment);
     }
     return true;
+  }
+
+  /** Money went back outside the app: a manager decides what is still owed. */
+  private async hold(payment: PaymentWithLedger): Promise<void> {
+    if (payment.registrationId) {
+      await this.paymentService.holdPayments(payment.registrationId);
+    }
+  }
+
+  /**
+   * A won or reversed chargeback gave the money back: the hold it caused
+   * goes, unless another chargeback of the registration still counts.
+   */
+  private async releaseChargebackHold(
+    tx: Prisma.TransactionClient,
+    payment: PaymentWithLedger,
+  ): Promise<void> {
+    if (!payment.registrationId) {
+      return;
+    }
+    const open = await tx.paymentRefund.count({
+      where: {
+        kind: 'CHARGEBACK',
+        status: { in: ['PENDING', 'REFUNDED'] },
+        payment: { registrationId: payment.registrationId },
+      },
+    });
+    if (open === 0) {
+      await this.paymentService.releaseHold(payment.registrationId);
+    }
   }
 }

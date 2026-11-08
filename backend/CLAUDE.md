@@ -241,9 +241,12 @@ Driver: `REALTIME_DRIVER` env (`redis`/`memory`); defaults to `redis` only when
 Organizations connect Mollie/Stripe; events opt in through the `payment`
 setting — full design in `docs/payments.md`. Money is integer minor units +
 `Event.currency`, never `Float`. Provider state only enters the ledger through
-`PaymentService.applySnapshot` after a re-fetch — never from a webhook body.
-Payment data is `event.payments.*` only (refunds: DIRECTOR); never add it to
-`ORGANIZATION_EVENT_PERMISSIONS`.
+`PaymentReconciliationService.applySnapshot` after a re-fetch — never from a
+webhook body. Payment data is `event.payments.*` only (refunds: DIRECTOR),
+including the `payment` field on registrations; never add it to
+`ORGANIZATION_EVENT_PERMISSIONS`. Other modules use payments through a narrow
+entry point (`RegistrationPayments`, `registerTemplateContext`), not the
+payment services.
 
 ## Link previews (Open Graph)
 

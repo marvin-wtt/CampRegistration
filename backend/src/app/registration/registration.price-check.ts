@@ -3,7 +3,7 @@ import {
   REGISTRATION_PRICE_CHANGED,
   type RegistrationPriceCheck,
 } from '@camp-registration/common/entities';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 
 /**
  * Refuses a submission whose price changed while its form was open, so nobody

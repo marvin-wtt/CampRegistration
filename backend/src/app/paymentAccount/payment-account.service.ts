@@ -5,7 +5,7 @@ import type { PaymentProviderName } from '@camp-registration/common/entities';
 import { BaseService } from '#core/base/BaseService';
 import { decryptSecret, encryptSecret, secretsAvailable } from '#core/secrets';
 import logger from '#core/logger';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import { describeError } from '#utils/errors';
 import { generateApiUrl } from '#utils/url';
 import { ulid } from '#utils/ulid';
@@ -38,13 +38,16 @@ export function paymentWebhookUrl(account: {
 /**
  * An organization's connection to a payment provider. The API key is only
  * ever held encrypted at rest and decrypted per use; nothing in here returns
- * it to a client.
+ * it to a client. A replaced or disconnected account is retired, not deleted,
+ * while payments were made through it: each payment is reconciled and
+ * refunded through its own account (`resolveForPayment`).
  */
 @injectable()
 export class PaymentAccountService extends BaseService {
+  /** The organization's current account. */
   async getByOrganization(organizationId: string) {
     return this.prisma.paymentAccount.findUnique({
-      where: { organizationId },
+      where: { activeOrganizationId: organizationId },
     });
   }
 
@@ -73,10 +76,21 @@ export class PaymentAccountService extends BaseService {
     return account ? this.resolve(account) : null;
   }
 
+  /** The account a payment went through, retired or not; `null` for manual ones. */
+  async resolveForPayment(payment: {
+    paymentAccountId: string | null;
+  }): Promise<ResolvedPaymentAccount | null> {
+    const account = payment.paymentAccountId
+      ? await this.getById(payment.paymentAccountId)
+      : null;
+
+    return account ? this.resolve(account) : null;
+  }
+
   /**
    * Connects (or replaces) the organization's account. The row id is fixed
    * before talking to the provider so the webhook URL registered there
-   * stays valid for this account.
+   * stays valid for this account. A replaced account is retired.
    */
   async connect(
     organizationId: string,
@@ -95,7 +109,7 @@ export class PaymentAccountService extends BaseService {
     }
 
     const existing = await this.getByOrganization(organizationId);
-    const id = existing?.id ?? ulid();
+    const id = ulid();
     const provider = getPaymentProvider(providerName);
 
     let result;
@@ -117,35 +131,56 @@ export class PaymentAccountService extends BaseService {
       );
     }
 
-    if (existing) {
-      await this.teardown(existing);
-    }
+    const credentials = await encryptSecret(
+      JSON.stringify(result.credentials),
+      CREDENTIALS_PURPOSE,
+    );
 
-    const data = {
-      provider: providerName,
-      mode: result.mode,
-      displayName: result.displayName,
-      credentials: await encryptSecret(
-        JSON.stringify(result.credentials),
-        CREDENTIALS_PURPOSE,
-      ),
-    };
+    return this.transaction(async (tx) => {
+      if (existing) {
+        await this.retire(existing);
+      }
 
-    return this.prisma.paymentAccount.upsert({
-      where: { organizationId },
-      create: { id, organizationId, ...data },
-      update: data,
+      return tx.paymentAccount.create({
+        data: {
+          id,
+          organizationId,
+          activeOrganizationId: organizationId,
+          provider: providerName,
+          mode: result.mode,
+          displayName: result.displayName,
+          credentials,
+        },
+      });
     });
   }
 
   async disconnect(organizationId: string): Promise<void> {
     const account = await this.getByOrganization(organizationId);
-    if (!account) {
+    if (account) {
+      await this.retire(account);
+    }
+  }
+
+  /**
+   * Takes an account out of use. Without payments it goes entirely; with
+   * them it stays, keys and webhook included, so open checkouts still settle
+   * and refunds still go through.
+   */
+  private async retire(account: PaymentAccount): Promise<void> {
+    const payments = await this.db.payment.count({
+      where: { paymentAccountId: account.id },
+    });
+    if (payments > 0) {
+      await this.db.paymentAccount.update({
+        where: { id: account.id },
+        data: { activeOrganizationId: null, retiredAt: new Date() },
+      });
       return;
     }
 
     await this.teardown(account);
-    await this.prisma.paymentAccount.delete({ where: { id: account.id } });
+    await this.db.paymentAccount.delete({ where: { id: account.id } });
   }
 
   /** Best effort: a provider-side leftover must not block disconnecting. */

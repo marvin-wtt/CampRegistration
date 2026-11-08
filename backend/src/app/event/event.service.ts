@@ -1,4 +1,4 @@
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import httpStatus from 'http-status';
 import type { Event, File, Prisma } from '#generated/prisma/client.js';
 import { ulid } from '#utils/ulid';

@@ -8,9 +8,10 @@ import { PaymentRefundedMessage } from './messages/refunded.mail.js';
 
 /**
  * Turns a ledger change into its side effects: participant mail, realtime
- * invalidation, and closing checkouts a payment made redundant. The one place outside a controller that emits realtime —
- * reconciliations also run from the queue worker, which has no controller to
- * hand the outcome back to — so `PaymentService` itself stays side-effect free.
+ * invalidation, and closing checkouts a payment made redundant. The one
+ * place outside a controller that emits realtime — reconciliations also run
+ * from the queue worker, which has no controller to hand the outcome back to
+ * — so `PaymentService` itself stays side-effect free.
  */
 @injectable()
 export class PaymentNotifier {

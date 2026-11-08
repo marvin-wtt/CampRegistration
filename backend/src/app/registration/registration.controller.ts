@@ -18,7 +18,13 @@ import { BaseController } from '#core/base/BaseController';
 import { RealtimeService } from '#core/realtime/RealtimeService';
 import { inject } from 'inversify';
 import { isDeepStrictEqual } from 'node:util';
-import { PaymentCollectionService } from '#app/payment/payment-collection.service';
+import type { Registration } from '#generated/prisma/client.js';
+import {
+  RegistrationPayments,
+  type RegistrationWithPayments,
+} from '#app/payment/registration-payments';
+import { hasEventPermission } from '#app/event/event.guard';
+import { passes } from '#core/guard';
 
 export class RegistrationController extends BaseController {
   constructor(
@@ -26,16 +32,43 @@ export class RegistrationController extends BaseController {
     private readonly registrationService: RegistrationService,
     @inject(RealtimeService)
     private readonly realtimeService: RealtimeService,
-    @inject(PaymentCollectionService)
-    private readonly paymentCollection: PaymentCollectionService,
+    @inject(RegistrationPayments)
+    private readonly payments: RegistrationPayments,
   ) {
     super();
   }
 
-  show(req: Request, res: Response) {
+  /** Whether the requester may see payment data. */
+  private paymentsVisible(req: Request): Promise<boolean> {
+    return passes(req, hasEventPermission('event.payments.view'));
+  }
+
+  /** Adds each registration's balance, `null` without payment access. */
+  private async withPayments<T extends RegistrationWithPayments>(
+    req: Request,
+    registrations: T[],
+  ): Promise<(T & Pick<RegistrationWithBed, 'payment'>)[]> {
+    const visible = await this.paymentsVisible(req);
+
+    return registrations.map((registration) => ({
+      ...registration,
+      payment: this.payments.present(registration, visible),
+    }));
+  }
+
+  private async resourceFor(req: Request, registration: Registration) {
+    const visible = await this.paymentsVisible(req);
+
+    return new RegistrationResource({
+      ...registration,
+      payment: this.payments.present(registration, visible),
+    });
+  }
+
+  async show(req: Request, res: Response) {
     const registration = req.modelOrFail('registration');
 
-    res.resource(new RegistrationResource(registration));
+    res.resource(await this.resourceFor(req, registration));
   }
 
   async index(req: Request, res: Response) {
@@ -45,7 +78,11 @@ export class RegistrationController extends BaseController {
     const registrations: RegistrationWithBed[] =
       await this.registrationService.queryRegistrations(event.id);
 
-    res.resource(RegistrationResource.collection(registrations));
+    res.resource(
+      RegistrationResource.collection(
+        await this.withPayments(req, registrations),
+      ),
+    );
   }
 
   async store(req: Request, res: Response) {
@@ -73,10 +110,7 @@ export class RegistrationController extends BaseController {
     // Notify contact email
     await RegistrationNotifyMessage.enqueue({ event, registration });
 
-    const payment = await this.paymentCollection.forNewRegistration(
-      event,
-      registration,
-    );
+    const payment = await this.payments.created(event, registration);
 
     void this.realtimeService.emit(
       event.id,
@@ -85,7 +119,7 @@ export class RegistrationController extends BaseController {
       'created',
     );
 
-    const resource = new RegistrationResource(registration);
+    const resource = await this.resourceFor(req, registration);
     if (payment) {
       resource.withMeta({ payment });
     }
@@ -143,7 +177,7 @@ export class RegistrationController extends BaseController {
       }
     }
 
-    await this.paymentCollection.statusChanged(
+    await this.payments.statusChanged(
       event,
       previousRegistration.status,
       registration,
@@ -157,7 +191,7 @@ export class RegistrationController extends BaseController {
       'updated',
     );
 
-    res.resource(new RegistrationResource(registration));
+    res.resource(await this.resourceFor(req, registration));
   }
 
   async destroy(req: Request, res: Response) {
@@ -168,9 +202,17 @@ export class RegistrationController extends BaseController {
     const registration = req.modelOrFail('registration');
 
     await this.registrationService.deleteRegistration(
+      event,
       registration,
       reason,
       paymentSettlement,
+      {
+        userId: req.authUserId(),
+        maySettle: await passes(
+          req,
+          hasEventPermission('event.payments.refund'),
+        ),
+      },
     );
 
     if (!suppressMessage) {
@@ -183,6 +225,8 @@ export class RegistrationController extends BaseController {
       registration.id,
       'deleted',
     );
+    // Its payments stay, without the registration.
+    void this.realtimeService.emitInvalidation(event.id, 'payment');
 
     res.status(httpStatus.NO_CONTENT).send();
   }

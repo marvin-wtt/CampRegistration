@@ -7,6 +7,7 @@ import type {
   PaymentRefund,
 } from '#generated/prisma/client.js';
 import prisma from '../../../src/__mock__/client.js';
+import { buildPayment, buildRefund } from './fixtures.js';
 import {
   isChargebackStatusAdvance,
   isPaymentStatusAdvance,
@@ -15,16 +16,19 @@ import {
 } from '#app/payment/payment-reconciliation.service';
 import type { PaymentAccountService } from '#app/paymentAccount/payment-account.service';
 import type { PaymentService } from '#app/payment/payment.service';
+import type { PaymentRefundService } from '#app/payment/payment-refund.service';
 import type { ProviderPaymentSnapshot } from '#app/paymentAccount/providers/payment.provider';
 
 const accountService = mock<PaymentAccountService>();
 const audit = mock<AuditService>();
 const paymentService = mock<PaymentService>();
+const refundService = mock<PaymentRefundService>();
 
 const service = new PaymentReconciliationService(
   accountService,
   audit,
   paymentService,
+  refundService,
 );
 (service as unknown as { prisma: typeof prisma }).prisma = prisma;
 
@@ -33,48 +37,6 @@ const event = {
   organizationId: 'org-1',
   currency: 'EUR',
 } as Event;
-
-const buildPayment = (overrides: Partial<Payment> = {}): Payment => ({
-  id: 'payment-1',
-  registrationId: 'registration-1',
-  eventId: event.id,
-  source: 'stripe',
-  providerPaymentId: 'cs_1',
-  status: 'OPEN',
-  amount: 5000,
-  currency: 'EUR',
-  method: null,
-  checkoutUrl: 'https://checkout',
-  expiresAt: null,
-  paidAt: null,
-  note: null,
-  createdById: null,
-  payerName: null,
-  registrationRef: null,
-  settlement: null,
-  createdAt: new Date(),
-  updatedAt: null,
-  ...overrides,
-});
-
-const buildRefund = (
-  overrides: Partial<PaymentRefund> = {},
-): PaymentRefund => ({
-  id: 'refund-1',
-  paymentId: 'payment-1',
-  providerRefundId: null,
-  kind: 'REFUND',
-  status: 'PENDING',
-  amount: 1000,
-  amountDueReduction: null,
-  reason: null,
-  notifyParticipant: true,
-  createdById: 'user-1',
-  refundedAt: null,
-  createdAt: new Date(),
-  updatedAt: null,
-  ...overrides,
-});
 
 const snapshot = (
   overrides: Partial<ProviderPaymentSnapshot> = {},
@@ -208,6 +170,8 @@ describe('PaymentReconciliationService.applySnapshot', () => {
       expect.objectContaining({ action: 'payment_refunded', actorId: null }),
     );
     expect(outcome.completedRefunds).toEqual([created]);
+    // Whether it is still owed is the manager's call: no reminders meanwhile.
+    expect(paymentService.holdPayments).toHaveBeenCalledWith('registration-1');
   });
 
   it('gives back the amount due when a refund fails later', async () => {
@@ -235,7 +199,7 @@ describe('PaymentReconciliationService.applySnapshot', () => {
       }),
     );
 
-    expect(paymentService.restoreAmountDue).toHaveBeenCalledWith(failed);
+    expect(refundService.restoreAmountDue).toHaveBeenCalledWith(failed);
     expect(audit.record).toHaveBeenCalledWith(
       expect.objectContaining({ action: 'payment_refund_failed' }),
     );
@@ -272,6 +236,7 @@ describe('PaymentReconciliationService.applySnapshot', () => {
       expect.objectContaining({ action: 'payment_charged_back' }),
     );
     expect(outcome).toMatchObject({ changed: true, completedRefunds: [] });
+    expect(paymentService.holdPayments).toHaveBeenCalledWith('registration-1');
   });
 
   it('records a won chargeback as reversed', async () => {
@@ -282,6 +247,7 @@ describe('PaymentReconciliationService.applySnapshot', () => {
       amount: 5000,
     });
     loadCurrent(buildPayment({ status: 'PAID' }), [chargeback]);
+    prisma.paymentRefund.count.mockResolvedValue(0);
 
     await service.applySnapshot(
       'payment-1',
@@ -305,6 +271,34 @@ describe('PaymentReconciliationService.applySnapshot', () => {
     expect(audit.record).toHaveBeenCalledWith(
       expect.objectContaining({ action: 'payment_chargeback_reversed' }),
     );
+    expect(paymentService.releaseHold).toHaveBeenCalledWith('registration-1');
+  });
+
+  it('keeps the hold while another chargeback still counts', async () => {
+    const chargeback = buildRefund({
+      kind: 'CHARGEBACK',
+      providerRefundId: 'dp_1',
+      status: 'PENDING',
+    });
+    loadCurrent(buildPayment({ status: 'PAID' }), [chargeback]);
+    prisma.paymentRefund.count.mockResolvedValue(1);
+
+    await service.applySnapshot(
+      'payment-1',
+      snapshot({
+        status: 'PAID',
+        chargebacks: [
+          {
+            providerChargebackId: 'dp_1',
+            status: 'CANCELED',
+            amount: 1000,
+            createdAt: new Date(),
+          },
+        ],
+      }),
+    );
+
+    expect(paymentService.releaseHold).not.toHaveBeenCalled();
   });
 
   it('matches its own refund by reference instead of duplicating it', async () => {

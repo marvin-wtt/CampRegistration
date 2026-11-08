@@ -25,6 +25,7 @@ import { signPaymentToken } from '#app/payment/payment-link';
 import { resolve } from '#core/ioc/container';
 import { PaymentCollectionService } from '#app/payment/payment-collection.service';
 import { PaymentService } from '#app/payment/payment.service';
+import { getFakePayment } from '#app/paymentAccount/providers/fake/fake.provider';
 
 const paymentForm = createForm([
   { name: 'email', type: 'text', eventDataType: 'email' },
@@ -93,6 +94,7 @@ const createPaymentEvent = async ({
     await prisma.paymentAccount.create({
       data: {
         organizationId: organization.id,
+        activeOrganizationId: organization.id,
         provider: 'fake',
         mode: 'test',
         displayName: 'Fake payments',
@@ -164,10 +166,11 @@ describe('payments', () => {
 
       const body = await register(event);
 
-      expect(body.data.payment).toMatchObject({
-        status: 'UNPAID',
-        amountDue: 15000,
-      });
+      // The registrant's response carries no balance: that is managers' data.
+      expect(body.data.payment).toBeNull();
+      await expect(
+        prisma.registration.findUniqueOrThrow({ where: { id: body.data.id } }),
+      ).resolves.toMatchObject({ amountDue: 15000 });
       expect(body.meta.payment?.checkoutUrl).toContain(
         '/webhooks/payments/fake/checkout/',
       );
@@ -183,10 +186,9 @@ describe('payments', () => {
 
       const body = await register(event);
 
-      expect(body.data.payment).toMatchObject({
-        amountDue: 15000,
-        quotedAmount: 15000,
-      });
+      await expect(
+        prisma.registration.findUniqueOrThrow({ where: { id: body.data.id } }),
+      ).resolves.toMatchObject({ amountDue: 15000, quotedAmount: 15000 });
       expect(body.meta.payment).toBeUndefined();
       expectNoEmailWith({ to: answers.email, subject: 'payment_requested' });
     });
@@ -437,6 +439,21 @@ describe('payments', () => {
       ).resolves.toBe(1);
     });
 
+    it('leaves settling money held to whoever may refund', async () => {
+      const { event } = await createPaymentEvent({ account: false });
+      const accessToken = await createManager(event, 'COORDINATOR');
+      const { registration } = await createPaidRegistration(event);
+
+      const { body } = await request()
+        .delete(deletePath(event, registration.id))
+        .query({ paymentSettlement: 'settled_outside' })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(403);
+
+      expect(body.errorCode).toBe('PAYMENT_SETTLEMENT_FORBIDDEN');
+      await expect(prisma.paymentRefund.count()).resolves.toBe(0);
+    });
+
     it('keeps retained payments with their payer after deletion', async () => {
       const { event } = await createPaymentEvent({ account: false });
       const accessToken = await createManager(event);
@@ -610,6 +627,24 @@ describe('payments', () => {
 
       expect(body.errorCode).toBe('EVENT_HAS_PAYMENTS');
     });
+
+    it('closes the open checkouts of a deleted event', async () => {
+      const { event } = await createPaymentEvent();
+      const accessToken = await createManager(event);
+      const body = await register(event);
+      const payment = await prisma.payment.findFirstOrThrow({
+        where: { registrationId: body.data.id },
+      });
+
+      await request()
+        .delete(`/api/v1/events/${event.id}`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(204);
+
+      expect(getFakePayment(payment.providerPaymentId!)?.status).toBe(
+        'CANCELED',
+      );
+    });
   });
 
   describe('refunds', () => {
@@ -706,6 +741,140 @@ describe('payments', () => {
       expect(refund).toMatchObject({ status: 'REFUNDED', amount: 5000 });
       expectEmailWith({ to: answers.email, subject: 'payment_refunded' });
     });
+
+    it('pauses reminders after a dashboard refund until a manager decides', async () => {
+      const { event } = await createPaymentEvent({
+        settings: settings({ reminderAfterDays: 7 }),
+        event: {
+          startAt: new Date('2099-07-01T00:00:00Z'),
+          endAt: new Date('2099-07-10T00:00:00Z'),
+        },
+      });
+      const accessToken = await createManager(event);
+      const body = await register(event);
+      const checkoutPath = new URL(body.meta.payment!.checkoutUrl!).pathname;
+      await request().get(`${checkoutPath}/complete?outcome=paid`).expect(303);
+      await settle();
+      const payment = await prisma.payment.findFirstOrThrow({
+        where: { registrationId: body.data.id },
+      });
+      const account = await prisma.paymentAccount.findFirstOrThrow({
+        where: { organizationId: event.organizationId },
+      });
+
+      // The organizer gives the money back in the provider's dashboard.
+      getFakePayment(payment.providerPaymentId!)!.refunds.push({
+        id: 'fake_refund_dashboard',
+        reference: '',
+        amount: 15000,
+        status: 'REFUNDED',
+        refundedAt: new Date(),
+      });
+      await request()
+        .post(`/api/v1/webhooks/payments/fake/${account.id}`)
+        .send({ id: payment.providerPaymentId })
+        .expect(200);
+      await settle();
+
+      const held = await prisma.registration.findUniqueOrThrow({
+        where: { id: body.data.id },
+      });
+      expect(held.paymentHoldAt).not.toBeNull();
+
+      const later = new Date(Date.now() + 8 * 86_400_000);
+      const sendDueReminders = () =>
+        resolve(PaymentCollectionService).sendDueReminders(later);
+      await expect(sendDueReminders()).resolves.toBe(0);
+      const { body: summary } = await request()
+        .get(paymentPath(event, body.data.id))
+        .query({ token: signPaymentToken(body.data.id) })
+        .expect(200);
+      expect(summary.data).toMatchObject({
+        outstanding: 15000,
+        payable: false,
+      });
+
+      // The manager decides it is still owed: reminders resume.
+      await request()
+        .put(
+          `/api/v1/events/${event.id}/registrations/${body.data.id}/payments/amount-due`,
+        )
+        .send({ amount: 15000 })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(204);
+      await expect(sendDueReminders()).resolves.toBe(1);
+    });
+  });
+
+  describe('payment data on registrations', () => {
+    it.each([
+      { role: 'DIRECTOR', visible: true },
+      { role: 'COUNSELOR', visible: false },
+    ])('shows a $role the balance: $visible', async ({ role, visible }) => {
+      const { event } = await createPaymentEvent({ account: false });
+      const accessToken = await createManager(event, role);
+      const { registration } = await createPaidRegistration(event);
+
+      const { body } = await request()
+        .get(`/api/v1/events/${event.id}/registrations/${registration.id}`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      if (visible) {
+        expect(body.data.payment).toMatchObject({ amountPaid: 15000 });
+      } else {
+        expect(body.data.payment).toBeNull();
+      }
+    });
+  });
+
+  describe('payment link', () => {
+    it.each([
+      { role: 'DIRECTOR', status: 200 },
+      { role: 'COUNSELOR', status: 403 },
+    ])('gives a $role the link: $status', async ({ role, status }) => {
+      const { event } = await createPaymentEvent();
+      const accessToken = await createManager(event, role);
+      const body = await register(event);
+
+      const { body: link } = await request()
+        .get(
+          `/api/v1/events/${event.id}/registrations/${body.data.id}/payments/link`,
+        )
+        .auth(accessToken, { type: 'bearer' })
+        .expect(status);
+
+      if (status === 200) {
+        expect(link.data.pageUrl).toContain(
+          `token=${signPaymentToken(body.data.id)}`,
+        );
+      }
+    });
+  });
+
+  describe('registration deletion', () => {
+    it('closes the open checkouts of a deleted registration', async () => {
+      const { event } = await createPaymentEvent();
+      const accessToken = await createManager(event);
+      const body = await register(event);
+      const payment = await prisma.payment.findFirstOrThrow({
+        where: { registrationId: body.data.id },
+      });
+
+      await request()
+        .delete(`/api/v1/events/${event.id}/registrations/${body.data.id}`)
+        .query({ suppressMessage: true })
+        .auth(accessToken, { type: 'bearer' })
+        .expect(204);
+
+      expect(getFakePayment(payment.providerPaymentId!)?.status).toBe(
+        'CANCELED',
+      );
+      const kept = await prisma.payment.findUniqueOrThrow({
+        where: { id: payment.id },
+      });
+      expect(kept).toMatchObject({ registrationId: null, checkoutUrl: null });
+    });
   });
 
   describe('organization payment account', () => {
@@ -734,9 +903,47 @@ describe('payments', () => {
       expect(body.data).toMatchObject({ provider: 'fake', mode: 'test' });
       expect(JSON.stringify(body)).not.toContain('fake_secret_key');
       const stored = await prisma.paymentAccount.findUniqueOrThrow({
-        where: { organizationId: organization.id },
+        where: { activeOrganizationId: organization.id },
       });
       expect(stored.credentials).not.toContain('fake_secret_key');
+    });
+
+    it('keeps settling payments made through a replaced account', async () => {
+      const { event } = await createPaymentEvent();
+      const admin = await UserFactory.create();
+      await prisma.organizationMember.create({
+        data: {
+          organizationId: event.organizationId,
+          userId: admin.id,
+          role: 'ADMIN',
+        },
+      });
+      const body = await register(event);
+      const checkoutPath = new URL(body.meta.payment!.checkoutUrl!).pathname;
+      const old = await prisma.paymentAccount.findUniqueOrThrow({
+        where: { activeOrganizationId: event.organizationId },
+      });
+
+      await request()
+        .put(accountPath(event.organizationId))
+        .send({ provider: 'fake', apiKey: 'fake_new_key' })
+        .auth(generateAccessToken(admin), { type: 'bearer' })
+        .expect(200);
+      // The checkout opened before the switch is paid afterwards.
+      await request().get(`${checkoutPath}/complete?outcome=paid`).expect(303);
+      await request()
+        .get(paymentPath(event, body.data.id))
+        .query({ token: signPaymentToken(body.data.id) })
+        .expect(200);
+
+      await expect(
+        prisma.paymentAccount.findUniqueOrThrow({ where: { id: old.id } }),
+      ).resolves.toMatchObject({ activeOrganizationId: null });
+      await expect(
+        prisma.payment.findFirstOrThrow({
+          where: { registrationId: body.data.id },
+        }),
+      ).resolves.toMatchObject({ status: 'PAID', paymentAccountId: old.id });
     });
 
     it('rejects an invalid key', async () => {
@@ -1083,7 +1290,9 @@ describe('price check', () => {
 
     const { body } = await submit(event, 15000).expect(201);
 
-    expect(body.data.payment.quotedAmount).toBe(15000);
+    await expect(
+      prisma.registration.findUniqueOrThrow({ where: { id: body.data.id } }),
+    ).resolves.toMatchObject({ quotedAmount: 15000 });
   });
 
   it('refuses a changed price with the quote, registering nobody', async () => {

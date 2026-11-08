@@ -165,6 +165,7 @@ import {
   SETTING_KEYS,
 } from '@camp-registration/common/settings';
 import { useEventSettings } from '@/composables/eventSettings';
+import { hasFee } from '@/utils/registrationPayment';
 type CardKey =
   | 'setup'
   | 'attention'
@@ -286,9 +287,8 @@ const features = computed(() => ({
   payments:
     can('event.payments.view') &&
     paymentSettings.enabled &&
-    registrationStore.data?.some(
-      (registration) => registration.payment.status !== 'NOT_REQUIRED',
-    ) === true,
+    registrationStore.data?.some((registration) => hasFee(registration)) ===
+      true,
 }));
 
 // A store is only asked once its permission is known to be held, so a

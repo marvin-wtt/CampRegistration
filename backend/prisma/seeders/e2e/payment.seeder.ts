@@ -32,6 +32,7 @@ export async function seedE2ePayments(): Promise<void> {
   await prisma.paymentAccount.create({
     data: {
       organizationId: E2E_ORGANIZATION_ID,
+      activeOrganizationId: E2E_ORGANIZATION_ID,
       provider: 'fake',
       mode: 'test',
       displayName: 'Fake payments',

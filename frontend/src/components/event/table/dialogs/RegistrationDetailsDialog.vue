@@ -268,7 +268,10 @@
                   <q-item-section side>
                     <div class="row items-center no-wrap q-gutter-x-xs">
                       <payment-status-chip
-                        v-if="registration.payment.status !== 'NOT_REQUIRED'"
+                        v-if="
+                          registration.payment &&
+                          registration.payment.status !== 'NOT_REQUIRED'
+                        "
                         :status="registration.payment.status"
                       />
                       <q-icon
@@ -298,7 +301,7 @@
         </q-tab-panel>
 
         <q-tab-panel
-          v-if="showPayments && event"
+          v-if="showPayments && event && registration.payment"
           name="payments"
           class="q-pa-none"
           lazy-render
@@ -307,6 +310,7 @@
             <registration-payments-section
               :event-id="event.id"
               :registration
+              :balance="registration.payment"
             />
           </div>
         </q-tab-panel>
@@ -424,7 +428,8 @@ const showPayments = computed<boolean>(() => {
   return (
     paymentSettings.enabled ||
     payment.amountPaid > 0 ||
-    payment.status === 'REFUNDED'
+    payment.status === 'REFUNDED' ||
+    payment.status === 'CHARGED_BACK'
   );
 });
 

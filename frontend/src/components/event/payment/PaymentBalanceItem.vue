@@ -80,6 +80,13 @@
         </template>
       </q-item-label>
       <q-item-label
+        v-if="payment.heldAt"
+        class="row-caption row-caption--warning"
+        data-test="payment-held"
+      >
+        {{ t('held') }}
+      </q-item-label>
+      <q-item-label
         v-if="answersAmount !== null"
         class="row-caption row-caption--warning"
         data-test="payment-answers-differ"
@@ -176,6 +183,7 @@ paidShare: 'Share paid'
 adjusted: 'Set by hand'
 quoted: 'Shown at registration: {amount}'
 answersDiffer: 'The answers now come to {amount}.'
+held: 'Money went back outside the app. Reminders and online payment are paused until you adjust the amount, record a payment or send a request.'
 refund: 'Refund'
 adjust: 'Change amount'
 more: 'More payment actions'
@@ -191,6 +199,7 @@ paidShare: 'Bezahlter Anteil'
 adjusted: 'Von Hand festgelegt'
 quoted: 'Bei der Anmeldung angezeigt: {amount}'
 answersDiffer: 'Die Antworten ergeben jetzt {amount}.'
+held: 'Geld ging außerhalb der App zurück. Erinnerungen und Online-Zahlung pausieren, bis du den Betrag anpasst, eine Zahlung erfasst oder eine Aufforderung sendest.'
 refund: 'Erstatten'
 adjust: 'Betrag ändern'
 more: 'Weitere Zahlungsaktionen'
@@ -206,6 +215,7 @@ paidShare: 'Part payée'
 adjusted: 'Défini manuellement'
 quoted: "Affiché à l'inscription : {amount}"
 answersDiffer: 'Les réponses donnent maintenant {amount}.'
+held: "De l'argent a été rendu en dehors de l'application. Les rappels et le paiement en ligne sont suspendus jusqu'à un ajustement du montant, un paiement enregistré ou une demande envoyée."
 refund: 'Rembourser'
 adjust: 'Modifier le montant'
 more: 'Autres actions de paiement'
@@ -221,6 +231,7 @@ paidShare: 'Zapłacona część'
 adjusted: 'Ustawione ręcznie'
 quoted: 'Pokazane przy rejestracji: {amount}'
 answersDiffer: 'Odpowiedzi dają teraz {amount}.'
+held: 'Pieniądze zostały zwrócone poza aplikacją. Przypomnienia i płatność online są wstrzymane do czasu korekty kwoty, zapisania płatności lub wysłania prośby.'
 refund: 'Zwróć'
 adjust: 'Zmień kwotę'
 more: 'Więcej działań płatności'
@@ -236,6 +247,7 @@ paidShare: 'Zaplacený podíl'
 adjusted: 'Nastaveno ručně'
 quoted: 'Zobrazeno při registraci: {amount}'
 answersDiffer: 'Odpovědi teď dávají {amount}.'
+held: 'Peníze se vrátily mimo aplikaci. Připomínky a online platba jsou pozastaveny do úpravy částky, zaznamenání platby nebo odeslání výzvy.'
 refund: 'Vrátit'
 adjust: 'Změnit částku'
 more: 'Další akce plateb'

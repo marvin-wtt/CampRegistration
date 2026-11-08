@@ -1,14 +1,13 @@
 import type { AuditService } from '#app/audit/audit.service';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
-import type {
-  Event,
-  Payment,
-  PaymentRefund,
-  Prisma,
-} from '#generated/prisma/client.js';
+import type { Registration } from '#generated/prisma/client.js';
 import prisma from '../../../src/__mock__/client.js';
-import { PaymentService } from '#app/payment/payment.service';
+import { buildPayment } from './fixtures.js';
+import {
+  type EventWithOrganization,
+  PaymentService,
+} from '#app/payment/payment.service';
 import type { PaymentAccountService } from '#app/paymentAccount/payment-account.service';
 import type { SettingService } from '#app/setting/setting.service';
 import type { PaymentProvider } from '#app/paymentAccount/providers/payment.provider';
@@ -25,49 +24,10 @@ const event = {
   id: 'event-1',
   organizationId: 'org-1',
   currency: 'EUR',
-} as Event;
-
-const buildPayment = (overrides: Partial<Payment> = {}): Payment => ({
-  id: 'payment-1',
-  registrationId: 'registration-1',
-  eventId: event.id,
-  source: 'stripe',
-  providerPaymentId: 'cs_1',
-  status: 'OPEN',
-  amount: 5000,
-  currency: 'EUR',
-  method: null,
-  checkoutUrl: 'https://checkout',
-  expiresAt: null,
-  paidAt: null,
-  note: null,
-  createdById: null,
-  payerName: null,
-  registrationRef: null,
-  settlement: null,
-  createdAt: new Date(),
-  updatedAt: null,
-  ...overrides,
-});
-
-const buildRefund = (
-  overrides: Partial<PaymentRefund> = {},
-): PaymentRefund => ({
-  id: 'refund-1',
-  paymentId: 'payment-1',
-  providerRefundId: null,
-  kind: 'REFUND',
-  status: 'PENDING',
-  amount: 1000,
-  amountDueReduction: null,
-  reason: null,
-  notifyParticipant: true,
-  createdById: 'user-1',
-  refundedAt: null,
-  createdAt: new Date(),
-  updatedAt: null,
-  ...overrides,
-});
+  startAt: new Date('2020-01-01T00:00:00Z'),
+  timezone: 'Europe/Berlin',
+  organization: { verificationStatus: 'VERIFIED' },
+} as EventWithOrganization;
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -75,301 +35,11 @@ beforeEach(() => {
     fn(prisma)) as never);
 });
 
-describe('PaymentService.refund', () => {
-  const resolved = {
-    account: { provider: 'stripe' },
-    provider,
-    credentials: { apiKey: 'sk_test' },
-  };
-
-  const registration = {
-    id: 'registration-1',
-    eventId: event.id,
-    amountDue: 4000,
-  };
-
-  const setup = (payment: Payment, refunds: PaymentRefund[] = []) => {
-    prisma.payment.findUniqueOrThrow.mockResolvedValue({
-      ...payment,
-      refunds,
-      registration,
-    } as never);
-    prisma.paymentRefund.update.mockImplementation(((args: {
-      data: Prisma.PaymentRefundUncheckedUpdateInput;
-    }) =>
-      Promise.resolve(
-        buildRefund({
-          amountDueReduction:
-            (args.data.amountDueReduction as number | undefined) ?? null,
-        }),
-      )) as never);
-    accountService.resolveForOrganization.mockResolvedValue(resolved as never);
-    prisma.paymentRefund.create.mockImplementation(((args: {
-      data: Prisma.PaymentRefundUncheckedCreateInput;
-    }) =>
-      Promise.resolve(
-        buildRefund({
-          status: args.data.status,
-          amount: args.data.amount,
-        }),
-      )) as never);
-    prisma.paymentRefund.findUniqueOrThrow.mockResolvedValue({
-      ...buildRefund(),
-      payment: { registrationId: 'registration-1' },
-    } as never);
-    prisma.paymentRefund.updateMany.mockResolvedValue({ count: 1 });
-  };
-
-  const refund = (
-    amount: number,
-    outsideApp = false,
-    reduceAmountDue = false,
-    reason: string | null = null,
-  ) =>
-    service.refund(
-      event,
-      'payment-1',
-      {
-        amount,
-        reason,
-        notifyParticipant: true,
-        outsideApp,
-        reduceAmountDue,
-      },
-      'user-1',
-    );
-
-  // What the registration owes, and what it paid before the refund.
-  const owing = (amountDue: number, paidBefore = amountDue) => {
-    prisma.registration.findUniqueOrThrow.mockResolvedValue({
-      id: 'registration-1',
-      eventId: event.id,
-      amountDue,
-      amountDueAdjustedAt: null,
-      amountDueNote: null,
-    } as never);
-    // The ledger as the reduction reads it: the new refund already booked.
-    prisma.payment.findMany.mockImplementation((() => {
-      const refunds = vi
-        .mocked(prisma.paymentRefund.create)
-        .mock.calls.map(([args]) => ({
-          status: 'PENDING',
-          amount: args.data.amount,
-        }));
-      return Promise.resolve([{ status: 'PAID', amount: paidBefore, refunds }]);
-    }) as never);
-  };
-
-  it('lowers what is owed by the refund when asked to', async () => {
-    setup(buildPayment({ status: 'PAID', source: 'manual' }));
-    owing(5000);
-
-    await refund(1000, false, true, 'Arrives late');
-
-    expect(prisma.registration.update).toHaveBeenCalledWith({
-      where: { id: 'registration-1' },
-      data: expect.objectContaining({
-        amountDue: 4000,
-        amountDueNote: 'Arrives late',
-      }) as unknown,
-    });
-  });
-
-  it('leaves what is owed alone when the refund only returns an overpayment', async () => {
-    setup(buildPayment({ status: 'PAID', source: 'manual' }));
-    owing(5000, 10000);
-
-    await refund(5000, false, true);
-
-    expect(prisma.registration.update).not.toHaveBeenCalled();
-  });
-
-  it('lowers what is owed only by the part beyond the overpayment', async () => {
-    setup(buildPayment({ status: 'PAID', source: 'manual' }));
-    owing(5000, 6000);
-
-    await refund(3000, false, true);
-
-    expect(prisma.registration.update).toHaveBeenCalledWith({
-      where: { id: 'registration-1' },
-      data: expect.objectContaining({ amountDue: 3000 }) as unknown,
-    });
-  });
-
-  it('keeps what is owed unless asked to lower it', async () => {
-    setup(buildPayment({ status: 'PAID', source: 'manual' }));
-
-    await refund(1000);
-
-    expect(prisma.registration.update).not.toHaveBeenCalled();
-  });
-
-  it('restores what was owed when the provider rejects the refund', async () => {
-    setup(buildPayment({ status: 'PAID' }));
-    owing(5000);
-    provider.createRefund.mockRejectedValue(new Error('insufficient balance'));
-    prisma.paymentRefund.updateMany.mockResolvedValue({ count: 1 });
-    prisma.paymentRefund.findUniqueOrThrow.mockResolvedValue({
-      ...buildRefund({ amountDueReduction: 1000 }),
-      payment: { registrationId: 'registration-1' },
-    } as never);
-    prisma.registration.update.mockResolvedValue(registration as never);
-
-    await expect(refund(1000, false, true)).rejects.toMatchObject({
-      statusCode: 502,
-    });
-    expect(prisma.registration.update).toHaveBeenLastCalledWith({
-      where: { id: 'registration-1' },
-      data: { amountDue: { increment: 1000 } },
-    });
-    expect(prisma.paymentRefund.update).toHaveBeenLastCalledWith({
-      where: { id: 'refund-1' },
-      data: { amountDueReduction: null },
-    });
-  });
-
-  it('records the refund only once the provider took it', async () => {
-    setup(buildPayment({ status: 'PAID' }));
-    provider.createRefund.mockRejectedValue(new Error('insufficient balance'));
-    prisma.paymentRefund.updateMany.mockResolvedValue({ count: 1 });
-
-    await expect(refund(1000)).rejects.toMatchObject({ statusCode: 502 });
-    expect(audit.record).not.toHaveBeenCalledWith(
-      expect.objectContaining({ action: 'payment_refunded' }),
-    );
-  });
-
-  it('records a refund the provider accepted', async () => {
-    setup(buildPayment({ status: 'PAID' }));
-    provider.createRefund.mockResolvedValue({
-      providerRefundId: 're_1',
-      status: 'PENDING',
-    });
-
-    await refund(1000);
-
-    expect(audit.record).toHaveBeenCalledWith(
-      expect.objectContaining({
-        action: 'payment_refunded',
-        details: { values: { amount: 1000 } },
-      }),
-    );
-  });
-
-  it('records an online refund given back outside the app at once', async () => {
-    setup(buildPayment({ status: 'PAID' }));
-
-    const result = await refund(1000, true);
-
-    expect(accountService.resolveForOrganization).not.toHaveBeenCalled();
-    expect(prisma.paymentRefund.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({ status: 'REFUNDED' }) as unknown,
-      }),
-    );
-    expect(result.completedNow).toBe(true);
-  });
-
-  it('rejects refunding more than is left', async () => {
-    setup(buildPayment({ status: 'PAID' }), [
-      buildRefund({ amount: 4000, status: 'REFUNDED' }),
-    ]);
-
-    await expect(refund(1500)).rejects.toMatchObject({ statusCode: 422 });
-    expect(prisma.paymentRefund.create).not.toHaveBeenCalled();
-  });
-
-  it('only refunds paid payments', async () => {
-    setup(buildPayment({ status: 'OPEN' }));
-
-    await expect(refund(100)).rejects.toMatchObject({ statusCode: 409 });
-  });
-
-  it('refuses when the payment’s provider account is gone', async () => {
-    setup(buildPayment({ status: 'PAID' }));
-    accountService.resolveForOrganization.mockResolvedValue(null);
-
-    await expect(refund(100)).rejects.toMatchObject({
-      code: 'PAYMENT_ACCOUNT_CHANGED',
-    });
-  });
-
-  it('calls the provider with the refund row as reference', async () => {
-    setup(buildPayment({ status: 'PAID' }));
-    provider.createRefund.mockResolvedValue({
-      providerRefundId: 're_1',
-      status: 'PENDING',
-    });
-
-    const result = await refund(1000);
-
-    expect(provider.createRefund).toHaveBeenCalledWith(
-      resolved.credentials,
-      'cs_1',
-      {
-        amount: 1000,
-        currency: 'EUR',
-        reason: null,
-        reference: 'refund-1',
-      },
-    );
-    expect(prisma.paymentRefund.update).toHaveBeenCalledWith({
-      where: { id: 'refund-1' },
-      data: { providerRefundId: 're_1' },
-    });
-    expect(result.completedNow).toBe(false);
-  });
-
-  it('completes immediately when the provider settles synchronously', async () => {
-    setup(buildPayment({ status: 'PAID' }));
-    provider.createRefund.mockResolvedValue({
-      providerRefundId: 're_1',
-      status: 'REFUNDED',
-    });
-    prisma.paymentRefund.updateMany.mockResolvedValue({ count: 1 });
-
-    const result = await refund(1000);
-
-    expect(result.completedNow).toBe(true);
-  });
-
-  it('marks the refund failed when the provider rejects it', async () => {
-    setup(buildPayment({ status: 'PAID' }));
-    provider.createRefund.mockRejectedValue(new Error('insufficient balance'));
-
-    await expect(refund(1000)).rejects.toMatchObject({ statusCode: 502 });
-    expect(prisma.paymentRefund.updateMany).toHaveBeenCalledWith({
-      where: { id: 'refund-1', status: 'PENDING' },
-      data: { status: 'FAILED' },
-    });
-  });
-
-  it('records manual refunds as done without a provider', async () => {
-    setup(
-      buildPayment({
-        status: 'PAID',
-        source: 'manual',
-        providerPaymentId: null,
-      }),
-    );
-
-    const result = await refund(1000);
-
-    expect(provider.createRefund).not.toHaveBeenCalled();
-    expect(prisma.paymentRefund.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({ status: 'REFUNDED' }) as unknown,
-      }),
-    );
-    expect(result.completedNow).toBe(true);
-  });
-});
-
 describe('PaymentService.closeStaleCheckouts', () => {
   const registration = { id: 'registration-1', amountDue: 5000 };
 
   beforeEach(() => {
-    accountService.resolveForOrganization.mockResolvedValue({
+    accountService.resolveForPayment.mockResolvedValue({
       account: { provider: 'stripe' },
       provider,
       credentials: { apiKey: 'sk_test' },
@@ -412,14 +82,15 @@ describe('PaymentService.closeStaleCheckouts', () => {
     expect(prisma.payment.updateMany).not.toHaveBeenCalled();
   });
 
-  it('leaves checkouts of a no longer connected account alone', async () => {
-    prisma.payment.findMany.mockResolvedValueOnce([
-      buildPayment({ source: 'mollie', providerPaymentId: 'tr_1' }),
-    ]);
+  it('cancels through the account the checkout was opened with', async () => {
+    const opened = buildPayment({ paymentAccountId: 'account-retired' });
+    prisma.payment.findMany.mockResolvedValueOnce([opened]);
 
     await service.closeStaleCheckouts(event, registration, 0);
 
-    expect(provider.cancelCheckout).not.toHaveBeenCalled();
+    expect(accountService.resolveForPayment).toHaveBeenCalledWith(opened);
+    expect(accountService.resolveForOrganization).not.toHaveBeenCalled();
+    expect(provider.cancelCheckout).toHaveBeenCalled();
   });
 });
 
@@ -442,23 +113,6 @@ describe('PaymentService.anonymizeExpiredPayers', () => {
   });
 });
 
-describe('PaymentService.findUnrequested', () => {
-  it('leaves out registrations that already paid', async () => {
-    prisma.registration.findMany.mockResolvedValue([
-      {
-        id: 'paid',
-        amountDue: 5000,
-        payments: [{ status: 'PAID', amount: 5000, refunds: [] }],
-      },
-      { id: 'owing', amountDue: 5000, payments: [] },
-    ] as never);
-
-    const registrations = await service.findUnrequested(event);
-
-    expect(registrations.map((r) => r.id)).toEqual(['owing']);
-  });
-});
-
 describe('PaymentService.releaseEventLedger', () => {
   it('refuses while paid payments must still be kept', async () => {
     prisma.payment.count.mockResolvedValue(1);
@@ -469,8 +123,28 @@ describe('PaymentService.releaseEventLedger', () => {
     expect(prisma.payment.deleteMany).not.toHaveBeenCalled();
   });
 
+  it('closes the open checkouts it removes', async () => {
+    prisma.payment.count.mockResolvedValue(0);
+    accountService.resolveForPayment.mockResolvedValue({
+      account: { provider: 'stripe' },
+      provider,
+      credentials: { apiKey: 'sk_test' },
+    } as never);
+    prisma.payment.findMany.mockResolvedValue([buildPayment()]);
+    prisma.payment.updateMany.mockResolvedValue({ count: 1 });
+
+    await service.releaseEventLedger(event.id);
+
+    expect(provider.cancelCheckout).toHaveBeenCalledWith(
+      { apiKey: 'sk_test' },
+      'cs_1',
+    );
+    expect(prisma.payment.deleteMany).toHaveBeenCalled();
+  });
+
   it('removes the ledger once the retention period has passed', async () => {
     prisma.payment.count.mockResolvedValue(0);
+    prisma.payment.findMany.mockResolvedValue([]);
 
     await service.releaseEventLedger(event.id);
 
@@ -480,5 +154,173 @@ describe('PaymentService.releaseEventLedger', () => {
     expect(prisma.payment.deleteMany).toHaveBeenCalledWith({
       where: { eventId: event.id },
     });
+  });
+});
+
+describe('PaymentService.collectionBlocker', () => {
+  const settings = {
+    enabled: true,
+    timing: 'ACCEPTANCE',
+    requestDate: null,
+    requestDaysBeforeStart: null,
+    reminderAfterDays: null,
+  } as const;
+
+  it('names the first thing that stops collecting', () => {
+    const blocker = (
+      collection: Partial<Parameters<typeof service.collectionBlocker>[0]>,
+    ) =>
+      service.collectionBlocker(
+        {
+          settings,
+          organizationVerified: true,
+          accountConnected: true,
+          ...collection,
+        },
+        event,
+      );
+
+    expect(blocker({})).toBeNull();
+    expect(blocker({ settings: { ...settings, enabled: false } })).toBe(
+      'disabled',
+    );
+    expect(
+      blocker({ organizationVerified: false, accountConnected: false }),
+    ).toBe('unverified');
+    expect(blocker({ accountConnected: false })).toBe('no_account');
+  });
+});
+
+describe('PaymentService.startCheckout', () => {
+  const registration = {
+    id: 'registration-1',
+    eventId: event.id,
+    status: 'ACCEPTED',
+    amountDue: 5000,
+    paymentHoldAt: null,
+    firstName: 'Ada',
+    lastName: 'Lovelace',
+    locale: 'en-US',
+    emails: [],
+  } as unknown as Registration;
+
+  beforeEach(() => {
+    settingService.getSetting.mockResolvedValue({
+      data: { enabled: true, timing: 'ACCEPTANCE' },
+    } as never);
+    accountService.getByOrganization.mockResolvedValue({} as never);
+    accountService.resolveForOrganization.mockResolvedValue({
+      account: { provider: 'stripe', id: 'account-1' },
+      provider,
+      credentials: { apiKey: 'sk_test' },
+    } as never);
+    prisma.$queryRaw.mockResolvedValue([] as never);
+    prisma.payment.findMany.mockResolvedValue([]);
+  });
+
+  it('charges what is owed by the row read under the lock', async () => {
+    // A manager lowered the amount after the request loaded the registration.
+    prisma.registration.findUniqueOrThrow.mockResolvedValue({
+      ...registration,
+      amountDue: 3000,
+    });
+    prisma.payment.findFirst.mockResolvedValue(
+      buildPayment({ amount: 3000, checkoutUrl: 'https://reuse' }),
+    );
+
+    // The bound model still says 5000.
+    const result = await service.startCheckout(event, registration);
+
+    expect(prisma.payment.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ amount: 3000 }) as unknown,
+      }),
+    );
+    expect(result).toMatchObject({
+      checkoutUrl: 'https://reuse',
+      created: false,
+    });
+  });
+
+  it('refuses a registration on hold', async () => {
+    prisma.registration.findUniqueOrThrow.mockResolvedValue({
+      ...registration,
+      paymentHoldAt: new Date(),
+    });
+
+    await expect(
+      service.startCheckout(event, registration),
+    ).rejects.toMatchObject({ code: 'PAYMENT_ON_HOLD' });
+    expect(provider.createCheckout).not.toHaveBeenCalled();
+  });
+});
+
+describe('PaymentService.settleForDeletion', () => {
+  it('closes open checkouts, so nothing is paid after the deletion', async () => {
+    accountService.resolveForPayment.mockResolvedValue({
+      account: { provider: 'stripe' },
+      provider,
+      credentials: { apiKey: 'sk_test' },
+    } as never);
+    prisma.payment.findMany
+      // Nothing paid, so nothing to settle…
+      .mockResolvedValueOnce([])
+      // …but a checkout is still open.
+      .mockResolvedValueOnce([buildPayment()]);
+    prisma.payment.updateMany.mockResolvedValue({ count: 1 });
+
+    await expect(
+      service.settleForDeletion(
+        event,
+        { id: 'registration-1', amountDue: 5000 } as Registration,
+        undefined,
+        { userId: null, maySettle: false },
+      ),
+    ).resolves.toBeNull();
+    expect(provider.cancelCheckout).toHaveBeenCalledWith(
+      { apiKey: 'sk_test' },
+      'cs_1',
+    );
+  });
+});
+
+describe('PaymentService.settleForDeletion permissions', () => {
+  it('lets only someone allowed to refund settle money held', async () => {
+    prisma.payment.findMany.mockResolvedValueOnce([
+      { ...buildPayment({ status: 'PAID' }), refunds: [] },
+    ] as never);
+
+    await expect(
+      service.settleForDeletion(
+        event,
+        { id: 'registration-1', amountDue: 5000 } as Registration,
+        'settled_outside',
+        { userId: 'user-1', maySettle: false },
+      ),
+    ).rejects.toMatchObject({ code: 'PAYMENT_SETTLEMENT_FORBIDDEN' });
+    expect(prisma.paymentRefund.create).not.toHaveBeenCalled();
+  });
+});
+
+describe('PaymentService.setAmountDue', () => {
+  it('lifts a hold: a manager decided what is owed', async () => {
+    prisma.registration.update.mockResolvedValue({
+      id: 'registration-1',
+      eventId: event.id,
+      amountDue: 0,
+    } as never);
+    prisma.payment.findMany.mockResolvedValue([]);
+
+    await service.setAmountDue(
+      event,
+      { id: 'registration-1' },
+      { amountDue: 0, adjusted: true, note: null },
+    );
+
+    expect(prisma.registration.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ paymentHoldAt: null }) as unknown,
+      }),
+    );
   });
 });

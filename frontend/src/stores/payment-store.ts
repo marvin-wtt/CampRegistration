@@ -1,5 +1,4 @@
 import { defineStore } from 'pinia';
-import { useRoute } from 'vue-router';
 import type {
   AmountDueUpdateData,
   EventPaymentStatus,
@@ -20,7 +19,6 @@ import { useRegistrationsStore } from '@/stores/registration-store';
  * through the realtime stream. Callers notify about the outcome themselves.
  */
 export const usePaymentStore = defineStore('payment', () => {
-  const route = useRoute();
   const api = useAPIService();
   const authBus = useAuthBus();
   const eventBus = useEventBus();
@@ -33,14 +31,17 @@ export const usePaymentStore = defineStore('payment', () => {
     invalidate,
     lazyFetch,
     backgroundFetch,
-    checkNotNullWithError,
   } = useServiceHandler<Payment[]>('payment');
+  // The event whose ledger `data` holds, for realtime reloads.
+  let loadedEventId: string | null = null;
 
   authBus.on('logout', () => {
+    loadedEventId = null;
     reset();
   });
 
   eventBus.on('change', () => {
+    loadedEventId = null;
     reset();
   });
 
@@ -48,18 +49,16 @@ export const usePaymentStore = defineStore('payment', () => {
   useRealtimeCollection<Payment>('payment', {
     data,
     invalidate,
-    reload: () => fetchData(undefined, { background: true }),
+    reload: async () => {
+      if (loadedEventId) {
+        await fetchData(loadedEventId, { background: true });
+      }
+    },
   });
 
-  function currentEventId(eventId?: string): string {
-    return checkNotNullWithError(
-      eventId ?? (route.params.eventId as string | undefined),
-    );
-  }
-
-  async function fetchData(eventId?: string, opts?: { background?: boolean }) {
-    const cid = currentEventId(eventId);
-    const fetcher = () => api.fetchEventPayments(cid);
+  async function fetchData(eventId: string, opts?: { background?: boolean }) {
+    loadedEventId = eventId;
+    const fetcher = () => api.fetchEventPayments(eventId);
     await (opts?.background ? backgroundFetch(fetcher) : lazyFetch(fetcher));
   }
 
@@ -148,10 +147,7 @@ export const usePaymentStore = defineStore('payment', () => {
     eventId: string,
     registrationId: string,
   ): Promise<string | null> {
-    const { pageUrl } = await api.fetchRegistrationPayments(
-      eventId,
-      registrationId,
-    );
+    const { pageUrl } = await api.fetchPaymentLink(eventId, registrationId);
 
     return pageUrl;
   }

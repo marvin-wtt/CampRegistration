@@ -2,11 +2,12 @@ import httpStatus from 'http-status';
 import type { Request, Response } from 'express';
 import { inject } from 'inversify';
 import { BaseController } from '#core/base/BaseController';
-import ApiError from '#utils/ApiError';
+import ApiError from '#core/router/ApiError';
 import { PaymentService } from './payment.service.js';
 import { PaymentNotifier } from './payment.notifier.js';
 import { PaymentResource } from './payment.resource.js';
 import { PaymentCollectionService } from './payment-collection.service.js';
+import { PaymentRefundService } from './payment-refund.service.js';
 import { PaymentRefundedMessage } from './messages/refunded.mail.js';
 import validator from './payment.validation.js';
 import { paymentPageUrl } from './payment-link.js';
@@ -16,6 +17,7 @@ import type {
   EventPaymentStatus,
   PaymentRequestResult,
   PaymentProviderName,
+  RegistrationPaymentLink,
 } from '@camp-registration/common/entities';
 
 export class PaymentController extends BaseController {
@@ -28,6 +30,8 @@ export class PaymentController extends BaseController {
     private readonly realtimeService: RealtimeService,
     @inject(PaymentCollectionService)
     private readonly collection: PaymentCollectionService,
+    @inject(PaymentRefundService)
+    private readonly refundService: PaymentRefundService,
   ) {
     super();
   }
@@ -60,7 +64,7 @@ export class PaymentController extends BaseController {
           : null,
         organizationVerified:
           event.organization.verificationStatus === 'VERIFIED',
-        unrequested: (await this.paymentService.findUnrequested(event)).length,
+        unrequested: (await this.collection.findUnrequested(event)).length,
         currencyLocked: await this.paymentService.isCurrencyLocked(event.id),
       } satisfies EventPaymentStatus,
     });
@@ -74,14 +78,22 @@ export class PaymentController extends BaseController {
       registration.id,
     );
 
-    // The participant's payment link, for managers to pass on by other means.
-    res.resource(
-      PaymentResource.collection(payments, {
+    res.resource(PaymentResource.collection(payments));
+  }
+
+  /** The participant's payment link, for managers to pass on by other means. */
+  async link(req: Request, res: Response) {
+    await req.validate(validator.index);
+    const event = req.modelOrFail('event');
+    const registration = req.modelOrFail('registration');
+
+    res.json({
+      data: {
         pageUrl: registration.amountDue
-          ? paymentPageUrl(req.modelOrFail('event').id, registration.id)
+          ? paymentPageUrl(event.id, registration.id)
           : null,
-      }),
-    );
+      } satisfies RegistrationPaymentLink,
+    });
   }
 
   async store(req: Request, res: Response) {
@@ -125,9 +137,8 @@ export class PaymentController extends BaseController {
     const payment = req.modelOrFail('payment');
 
     const notifyParticipant = !body.suppressMessage;
-    const result = await this.paymentService.refund(
-      event,
-      payment.id,
+    const result = await this.refundService.refund(
+      payment,
       {
         amount: body.amount,
         reason: body.reason ?? null,

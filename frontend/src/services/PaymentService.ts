@@ -6,6 +6,7 @@ import type {
   PaymentCreateData,
   PaymentRefundCreateData,
   PaymentRequestResult,
+  RegistrationPaymentLink,
   RegistrationPaymentSummary,
 } from '@camp-registration/common/entities';
 import { api } from '@/services/api';
@@ -25,18 +26,15 @@ export function usePaymentService() {
     return response?.data?.data;
   }
 
-  async function fetchRegistrationPayments(
+  async function fetchPaymentLink(
     eventId: string,
     registrationId: string,
-  ): Promise<{ payments: Payment[]; pageUrl: string | null }> {
+  ): Promise<RegistrationPaymentLink> {
     const response = await api.get(
-      `events/${eventId}/registrations/${registrationId}/payments/`,
+      `events/${eventId}/registrations/${registrationId}/payments/link/`,
     );
 
-    return {
-      payments: response?.data?.data ?? [],
-      pageUrl: response?.data?.meta?.pageUrl ?? null,
-    };
+    return response?.data?.data;
   }
 
   async function createManualPayment(
@@ -134,7 +132,7 @@ export function usePaymentService() {
   return {
     fetchEventPayments,
     fetchEventPaymentStatus,
-    fetchRegistrationPayments,
+    fetchPaymentLink,
     createManualPayment,
     updateAmountDue,
     deletePayment,

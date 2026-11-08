@@ -1,5 +1,6 @@
 import type {
   PaymentStatus,
+  RefundKind,
   RefundStatus,
   RegistrationPayment,
   RegistrationPaymentStatus,
@@ -9,7 +10,7 @@ import type {
 export interface PaymentWithRefunds {
   status: PaymentStatus;
   amount: number;
-  refunds: { status: RefundStatus; amount: number }[];
+  refunds: { status: RefundStatus; amount: number; kind?: RefundKind }[];
 }
 
 /** Refunds that took, or may still take, money back: everything not failed or canceled. */
@@ -49,9 +50,14 @@ export function registrationPayment(
     0,
   );
   const amountPaid = received - refunded;
+  const chargedBack = paid.some((payment) =>
+    payment.refunds.some(
+      (refund) => refund.kind === 'CHARGEBACK' && countsAgainstPayment(refund),
+    ),
+  );
 
   return {
-    status: paymentStatus(amountDue, received, amountPaid),
+    status: paymentStatus(amountDue, received, amountPaid, chargedBack),
     currency,
     amountDue,
     amountPaid,
@@ -64,9 +70,10 @@ function paymentStatus(
   amountDue: number | null,
   received: number,
   amountPaid: number,
+  chargedBack: boolean,
 ): RegistrationPaymentStatus {
   if (received > 0 && amountPaid <= 0) {
-    return 'REFUNDED';
+    return chargedBack ? 'CHARGED_BACK' : 'REFUNDED';
   }
   if (amountDue === null) {
     return amountPaid > 0 ? 'PAID' : 'NOT_REQUIRED';
