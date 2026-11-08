@@ -1,7 +1,6 @@
 import { faker } from '@faker-js/faker/locale/en';
 import { Prisma } from '#generated/prisma/client.js';
 import type { PerGroup } from '@camp-registration/common/entities';
-import { allGroupValues } from '@camp-registration/common/utils';
 import prisma from '../client.js';
 import { MessageTemplateFactory } from './message-template.factory';
 import { OrganizationFactory } from './organization.factory';
@@ -46,7 +45,6 @@ export const EventFactory = {
       startAt,
       endAt,
       price,
-      priceFrom: Math.min(...allGroupValues(price)),
       location: faker.location.city(),
       form: {},
       themes: {},

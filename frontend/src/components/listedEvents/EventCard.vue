@@ -234,8 +234,7 @@ const dateRange = computed<string>(() => {
 });
 
 // Only prices above zero are shown: zero leaves the price to the form, or
-// makes it free — and a card can't tell which. With a group at zero, the
-// group step shows each group's price instead.
+// makes it free — and a card can't tell which. The form's total then says.
 const priceLabel = computed<string | null>(() => {
   const prices = allGroupValues(props.event.price);
   const lowest = Math.min(...prices);

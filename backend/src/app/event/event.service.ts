@@ -12,8 +12,6 @@ import {
   EVENT_LOGO_SLOT,
   EVENT_BANNER_SLOT,
 } from '@camp-registration/common/form';
-import type { PerGroup } from '@camp-registration/common/entities';
-import { allGroupValues } from '@camp-registration/common/utils';
 
 type TableTemplateCreateData = OptionalByKeys<
   Prisma.TableTemplateCreateManyEventInput,
@@ -35,13 +33,8 @@ type EventSettingCreateData = OptionalByKeys<
 // it is written once by the retention job and never by an author.
 export type EventCreateData = Omit<
   Event,
-  'id' | 'createdAt' | 'updatedAt' | 'retentionReminderSentAt' | 'priceFrom'
+  'id' | 'createdAt' | 'updatedAt' | 'retentionReminderSentAt'
 >;
-
-/** What an event costs at least, whichever group: `priceFrom`, for sorting. */
-function lowestPrice(price: PerGroup<number>): number {
-  return Math.min(...allGroupValues(price));
-}
 // Ownership moves through `moveEventToOrganization`, never a field update.
 export type EventUpdateData = Partial<Omit<EventCreateData, 'organizationId'>>;
 
@@ -308,9 +301,7 @@ export class EventService extends BaseService {
     } = {},
   ) {
     const limit = options.limit ?? 25;
-    // A per-group price sorts by its lowest.
-    const sortBy =
-      options.sortBy === 'price' ? 'priceFrom' : (options.sortBy ?? 'startAt');
+    const sortBy = options.sortBy ?? 'startAt';
     const sortType = options.sortType ?? 'desc';
 
     const nameMatchIds = await this.eventIdsMatchingName(filter.name);
@@ -390,7 +381,6 @@ export class EventService extends BaseService {
       const created = await tx.event.create({
         data: {
           ...data,
-          priceFrom: lowestPrice(data.price),
           location: dbNullable(data.location),
           form,
           eventManager: {
@@ -493,9 +483,6 @@ export class EventService extends BaseService {
         where: { id: event.id },
         data: {
           ...data,
-          ...(data.price !== undefined && {
-            priceFrom: lowestPrice(data.price),
-          }),
           location: dbNullable(data.location),
         },
         include: { ...this.eventResourceInclude() },

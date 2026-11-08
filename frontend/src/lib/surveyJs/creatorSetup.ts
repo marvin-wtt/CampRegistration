@@ -30,6 +30,9 @@ PropertyGridEditorCollection.register(eventDataMapping);
 
 hideIrrelevantProperties();
 
+// Keys that would reach an object's prototype instead of the object.
+const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
 // Deep, so a nested section like `pe.tabs` adds to the built-in strings
 // instead of replacing them.
 function mergeStrings(
@@ -37,7 +40,10 @@ function mergeStrings(
   source: Record<string, unknown>,
 ): void {
   for (const [key, value] of Object.entries(source)) {
-    const existing = target[key];
+    if (UNSAFE_KEYS.has(key)) {
+      continue;
+    }
+    const existing = Object.hasOwn(target, key) ? target[key] : undefined;
     if (
       value &&
       typeof value === 'object' &&

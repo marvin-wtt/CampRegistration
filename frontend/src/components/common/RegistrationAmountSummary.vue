@@ -41,7 +41,12 @@ const formattedAmount = computed(() =>
 <style scoped>
 .amount-summary {
   padding: 16px;
-  margin-bottom: 16px;
+  /* In line with the questions and the navigation below it, whose inset
+     SurveyJS narrows on small screens */
+  margin-inline: var(
+    --sjs2-layout-component-survey-footer-padding-horizontal,
+    40px
+  );
 }
 
 .total {

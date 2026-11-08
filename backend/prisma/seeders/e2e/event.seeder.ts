@@ -4,8 +4,11 @@ import { E2E_ORGANIZATION_ID } from './organization.seeder.js';
 // The factory fills unset fields with faker data, which changes on every
 // reseed. Anything the event page renders — the contact email in particular —
 // must be pinned here, or the visual baselines would drift on every run.
+const E2E_EVENT_PRICE = 15000;
+
 export async function seedE2eEvents(): Promise<void> {
   await EventFactory.create({
+    price: E2E_EVENT_PRICE,
     id: '01JHP0CXJFR4MQS8SF1HQJCY38',
     name: 'Simple Event',
     listed: true,
@@ -30,6 +33,7 @@ export async function seedE2eEvents(): Promise<void> {
   });
 
   await EventFactory.create({
+    price: E2E_EVENT_PRICE,
     id: '01JKEMXG5C62NBMA6V0QQDJ7JD',
     name: 'Files Event',
     listed: true,
@@ -57,6 +61,7 @@ export async function seedE2eEvents(): Promise<void> {
 
   // Registration window opens in the far future -> "upcoming" status.
   await EventFactory.create({
+    price: E2E_EVENT_PRICE,
     id: '01JHP0CXJFR4MQS8SF1HQJCA10',
     name: 'Upcoming Event',
     // Shown on the status page, which has a visual baseline.
@@ -73,6 +78,7 @@ export async function seedE2eEvents(): Promise<void> {
 
   // Registration window already ended -> "closed" status.
   await EventFactory.create({
+    price: E2E_EVENT_PRICE,
     id: '01JHP0CXJFR4MQS8SF1HQJCA20',
     name: 'Closed Event',
     // Shown on the status page, which has a visual baseline.
@@ -90,6 +96,7 @@ export async function seedE2eEvents(): Promise<void> {
   // Two groups, chosen before the form. Unlisted, so the listing baselines
   // don't change. The address is strict (the default), the nationality warns.
   await EventFactory.create({
+    price: E2E_EVENT_PRICE,
     id: E2E_GROUP_EVENT_ID,
     name: 'Group Event',
     listed: false,
@@ -120,6 +127,7 @@ export async function seedE2eEvents(): Promise<void> {
   // Closed and upcoming with a contact per group, labelled on the status page.
   // Germany and Austria share one, so it is listed once for both.
   await EventFactory.create({
+    price: E2E_EVENT_PRICE,
     id: E2E_GROUP_CLOSED_EVENT_ID,
     name: 'Closed Group Event',
     // Shown on the status page, which has a visual baseline.
@@ -141,6 +149,7 @@ export async function seedE2eEvents(): Promise<void> {
   });
 
   await EventFactory.create({
+    price: E2E_EVENT_PRICE,
     id: E2E_GROUP_UPCOMING_EVENT_ID,
     name: 'Upcoming Group Event',
     // Shown on the status page, which has a visual baseline.
@@ -163,6 +172,7 @@ export async function seedE2eEvents(): Promise<void> {
   // The French group is full, so a registration for it goes on the waiting
   // list. Fixed subjects, so the test can tell which message arrived.
   await EventFactory.create({
+    price: E2E_EVENT_PRICE,
     id: E2E_WAITLIST_EVENT_ID,
     name: 'Waitlist Event',
     listed: false,

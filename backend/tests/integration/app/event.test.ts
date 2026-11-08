@@ -773,21 +773,32 @@ describe('/api/v1/events', () => {
       });
 
       it('should sort by an allowed column', async () => {
-        const cheap = await EventFactory.create({ ...eventListed, price: 10 });
-        const expensive = await EventFactory.create({
+        const younger = await EventFactory.create({
           ...eventListed,
-          price: 500,
+          minAge: 6,
+        });
+        const older = await EventFactory.create({
+          ...eventListed,
+          minAge: 14,
         });
 
         const { body } = await request()
           .get('/api/v1/events/')
-          .query({ sortBy: 'price', sortType: 'desc' })
+          .query({ sortBy: 'minAge', sortType: 'desc' })
           .send()
           .expect(200);
 
         const ids = body.data.map((event: { id: string }) => event.id);
 
-        expect(ids).toEqual([expensive.id, cheap.id]);
+        expect(ids).toEqual([older.id, younger.id]);
+      });
+
+      it('should not sort by the per-group price', async () => {
+        await request()
+          .get('/api/v1/events/')
+          .query({ sortBy: 'price' })
+          .send()
+          .expect(400);
       });
 
       it('should reject a sortBy column that is not offered', async () => {

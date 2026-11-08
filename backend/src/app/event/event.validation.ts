@@ -58,7 +58,6 @@ const index = z.object({
       sortBy: z.enum([
         'startAt',
         'endAt',
-        'price',
         'minAge',
         'maxAge',
         'listed',

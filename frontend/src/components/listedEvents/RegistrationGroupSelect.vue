@@ -44,14 +44,6 @@
             }}
           </q-item-label>
         </q-item-section>
-        <q-item-section
-          v-if="option.price !== null"
-          side
-          class="text-body1 text-on-surface"
-          :data-test="`registration-group-${option.group}-price`"
-        >
-          {{ option.price }}
-        </q-item-section>
         <q-item-section side>
           <q-icon name="chevron_right" />
         </q-item-section>
@@ -66,7 +58,6 @@ import { useI18n } from 'vue-i18n';
 import type { EventDetails } from '@camp-registration/common/entities';
 import CountryIcon from '@/components/common/localization/CountryIcon.vue';
 import EventIdentity from '@/components/listedEvents/EventIdentity.vue';
-import { formatMoney, forGroup } from '@camp-registration/common/utils';
 import { countryName } from '@/utils/countries';
 import { groupFreePlaces } from '@/utils/eventAvailability';
 
@@ -83,14 +74,8 @@ const { t, locale } = useI18n();
 interface GroupOption {
   group: string;
   name: string;
+  // Null when the event shares one limit or doesn't publish its free places.
   free: number | null;
-  price: string | null;
-}
-
-function groupPriceLabel(group: string): string | null {
-  const price = forGroup(event.price, group) ?? 0;
-
-  return price > 0 ? formatMoney(price, event.currency, locale.value) : null;
 }
 
 const options = computed<GroupOption[]>(() =>
@@ -98,7 +83,6 @@ const options = computed<GroupOption[]>(() =>
     group,
     name: countryName(group, locale.value),
     free: groupFreePlaces(event, group),
-    price: groupPriceLabel(group),
   })),
 );
 </script>

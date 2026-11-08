@@ -14,15 +14,16 @@ units; the conversion happens at the edges (`toMinorUnits`, `fromMinorUnits`).
 
 - `Event.price` — minor units of `Event.currency`, one for every group or one
   per group (`{"de": 15000, "pl": 12000}`), like `maxParticipants`; the event
-  validation requires a price for each of the event's groups.
-  `Event.priceFrom`, the lowest, is kept with it so events sort by price.
+  validation requires a price for each of the event's groups. Events don't
+  sort by price: it is per group, and zero may leave the cost to the form.
 - In a form, `{event.price}` is the registration's group price in **major**
   units (`setVariables`), and in mail templates `{{ event.price }}` is that
   price formatted (`translateEventContext`).
 - A price of zero means no base price: the form may still charge everything,
   so zero is never shown as "free". The event card shows a price only when
-  every group has one above zero ("from …" when they differ); the group step
-  shows each group's price above zero.
+  every group has one above zero ("from …" when they differ). The group step
+  shows none: a group is chosen by who someone is, not by its price; the
+  form's total shows it before submitting.
 
 ## What a registration owes
 
