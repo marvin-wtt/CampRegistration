@@ -29,6 +29,7 @@ import type {
 } from '@camp-registration/common/entities';
 import { useQuasar } from 'quasar';
 import { formLintOptions, setVariables } from '@camp-registration/common/form';
+import { allGroupValues } from '@camp-registration/common/utils';
 import {
   addDesignerFileSlotResolver,
   addFileSlotResolver,
@@ -336,7 +337,10 @@ creator.onSurveyInstanceCreated.add((_, options) => {
     addMarkdownRenderer(survey);
     // Shows the default the registration form will use until the form sets
     // its own Complete button text; the preview follows its answers below.
-    setCompleteTextDefault(survey, props.event.price > 0);
+    setCompleteTextDefault(
+      survey,
+      allGroupValues(props.event.price).some((price) => price > 0),
+    );
   }
 
   // Design mode skips text processing, so file slots need their own resolver.

@@ -175,7 +175,11 @@ export class RegistrationSeeder {
     ).load(data);
 
     // As the API stores it on submission: what the form showed.
-    const quotedAmount = computeAmountDue(this.event, form.paymentAmounts());
+    const quotedAmount = computeAmountDue(
+      this.event,
+      form.paymentAmounts(),
+      group,
+    );
 
     return {
       ...computedRegistrationData(form.extractEventData()),

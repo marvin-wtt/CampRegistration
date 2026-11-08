@@ -52,7 +52,7 @@ export async function seedE2ePayments(): Promise<void> {
     countries: ['de'],
     confirmationMode: 'AUTOMATIC',
     maxParticipants: 100,
-    price: 150,
+    price: 15000,
     currency: 'EUR',
     form: {
       name: 'Paid event',

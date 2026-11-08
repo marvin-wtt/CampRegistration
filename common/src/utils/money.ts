@@ -6,20 +6,10 @@
 
 /**
  * Currencies an event can charge in: all with two decimal places, which the
- * amount inputs (steps of 0.01) and the price validation assume. EUR first.
+ * amount inputs (steps of 0.01) and the price validation assume. EUR only for
+ * now: whether a provider account accepts another currency is not checked.
  */
-export const SUPPORTED_CURRENCIES = [
-  'EUR',
-  'CHF',
-  'CZK',
-  'DKK',
-  'GBP',
-  'NOK',
-  'PLN',
-  'RON',
-  'SEK',
-  'USD',
-] as const;
+export const SUPPORTED_CURRENCIES = ['EUR'] as const;
 
 export type SupportedCurrency = (typeof SUPPORTED_CURRENCIES)[number];
 

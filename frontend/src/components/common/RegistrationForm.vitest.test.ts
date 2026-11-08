@@ -337,7 +337,7 @@ describe('RegistrationForm', () => {
     }
 
     it('says registering costs money when the event has a price', () => {
-      expect(completeText(120).text).toBe('Kostenpflichtig anmelden');
+      expect(completeText(12000).text).toBe('Kostenpflichtig anmelden');
     });
 
     it('asks for a binding registration when the event is free', () => {
@@ -399,7 +399,7 @@ describe('RegistrationForm', () => {
     }
 
     it('shows the event price above the button on the last page', async () => {
-      const { summary } = mountForm(120, {
+      const { summary } = mountForm(12000, {
         pages: [{ name: 'page1', elements: [{ type: 'text', name: 'a' }] }],
       });
       await flushPromises();
@@ -497,7 +497,7 @@ describe('RegistrationForm', () => {
         props: {
           eventDetails: {
             ...simpleEventDetails,
-            price: 120,
+            price: 12000,
             form: { ...simpleEventDetails.form, ...pricedForm },
           },
           submitFn: submitFn as never,

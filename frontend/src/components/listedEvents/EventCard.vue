@@ -141,7 +141,11 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import type { Event } from '@camp-registration/common/entities';
-import { eventGroupFields } from '@camp-registration/common/utils';
+import {
+  allGroupValues,
+  eventGroupFields,
+  fromMinorUnits,
+} from '@camp-registration/common/utils';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { useLink } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -224,16 +228,24 @@ const dateRange = computed<string>(() => {
   }
 });
 
+// With a price per group, the lowest one: "from …".
 const priceLabel = computed<string>(() => {
-  if (props.event.price === 0) {
+  const prices = allGroupValues(props.event.price);
+  const lowest = Math.min(...prices);
+  if (Math.max(...prices) === 0) {
     return t('free');
   }
 
-  return new Intl.NumberFormat(locale.value, {
+  const major = fromMinorUnits(lowest, props.event.currency);
+  const amount = new Intl.NumberFormat(locale.value, {
     style: 'currency',
     currency: props.event.currency,
-    minimumFractionDigits: Number.isInteger(props.event.price) ? 0 : 2,
-  }).format(props.event.price);
+    minimumFractionDigits: Number.isInteger(major) ? 0 : 2,
+  }).format(major);
+
+  return prices.some((price) => price !== lowest)
+    ? t('priceFrom', { amount })
+    : amount;
 });
 
 const closesSoonThresholdMs = 14 * 24 * 60 * 60 * 1000;
@@ -545,6 +557,7 @@ function navigate(e: MouseEvent) {
 <i18n lang="yaml" locale="en">
 age_range: '{min}–{max} years'
 free: 'Free'
+priceFrom: 'from {amount}'
 via: 'via {organization}'
 until: 'Until {date}'
 waitlist: 'Waitlist'
@@ -554,6 +567,7 @@ places_left_label: 'Places left'
 <i18n lang="yaml" locale="de">
 age_range: '{min}–{max} Jahre'
 free: 'Kostenlos'
+priceFrom: 'ab {amount}'
 via: 'über {organization}'
 until: 'Bis {date}'
 waitlist: 'Warteliste'
@@ -563,6 +577,7 @@ places_left_label: 'Freie Plätze'
 <i18n lang="yaml" locale="fr">
 age_range: '{min}–{max} ans'
 free: 'Gratuit'
+priceFrom: 'à partir de {amount}'
 via: 'via {organization}'
 until: "Jusqu'au {date}"
 waitlist: "Liste d'attente"
@@ -572,6 +587,7 @@ places_left_label: 'Places restantes'
 <i18n lang="yaml" locale="pl">
 age_range: '{min}–{max} lat'
 free: 'Bezpłatnie'
+priceFrom: 'od {amount}'
 via: 'przez {organization}'
 until: 'Do {date}'
 waitlist: 'Lista rezerwowa'
@@ -582,6 +598,7 @@ places_left_label: 'Wolne miejsca'
 <i18n lang="yaml" locale="cs">
 age_range: '{min}–{max} let'
 free: 'Zdarma'
+priceFrom: 'od {amount}'
 via: 'prostřednictvím {organization}'
 until: 'Do {date}'
 waitlist: 'Čekací listina'

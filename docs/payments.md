@@ -25,8 +25,10 @@ connection and the providers; it knows nothing of payments).
   `#core/database/transaction`), so a slow provider never holds a deletion's
   transaction open.
 - `Payment` — one row per attempt or manual entry. Money is integer **minor
-  units** plus an ISO currency (`Event.currency`). Status only moves forward
-  (`OPEN → PENDING → PAID | FAILED | CANCELED | EXPIRED`), `PAID` is terminal.
+  units** plus an ISO currency (`Event.currency`; EUR only for now, see
+  `SUPPORTED_CURRENCIES`: a provider account's currencies aren't checked).
+  Status only moves forward (`OPEN → PENDING → PAID | FAILED | CANCELED |
+EXPIRED`), `PAID` is terminal.
   Kept when the registration is deleted (`registrationId → null`); an event
   with `PAID` payments can't be deleted until their retention period is over.
   The API takes and returns minor units throughout; only the dialogs convert.
@@ -40,8 +42,12 @@ connection and the providers; it knows nothing of payments).
   registration whose money all went back shows `REFUNDED`, or `CHARGED_BACK`
   when a chargeback was among it.
 - `Registration.quotedAmount` — what the server calculated at submission, which
-  is what the form showed: `Event.price` plus what the answers add
-  (`extractPaymentAmounts`), clamped at zero. Adjustments are major units,
+  is what the form showed: the price of the registration's group plus what
+  the answers add (`computeAmountDue`, `extractPaymentAmounts`), clamped at
+  zero. `Event.price` is minor units, one for every group or one per group
+  (`{"de": 15000, "pl": 12000}`, like `maxParticipants`); `Event.priceFrom`,
+  the lowest, keeps events sortable by price. The form's `{event.price}` is
+  the group's price in major units. Adjustments are major units,
   negative for a discount: the `price` of a selected choice (radio, dropdown,
   checkbox, tag box) or of a boolean answered yes, and the answer of a question
   tagged `payment_amount` (an expression). Only visible questions and choices

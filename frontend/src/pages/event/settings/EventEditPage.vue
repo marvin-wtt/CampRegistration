@@ -416,8 +416,9 @@
 
             <q-card-section class="column q-gutter-y-md">
               <!-- Price -->
-              <q-input
+              <translated-input
                 v-model.number="event.price"
+                :countries="event.countries"
                 :disable="loading"
                 :label="t('field.price')"
                 :rules="[
@@ -427,6 +428,7 @@
                 ]"
                 hide-bottom-space
                 input-class="text-right"
+                no-translation
                 outlined
                 rounded
                 :suffix="currencySymbol(event.currency, locale)"
@@ -435,7 +437,7 @@
                 <template #before>
                   <q-icon name="sell" />
                 </template>
-              </q-input>
+              </translated-input>
 
               <!-- Listed -->
               <q-toggle
@@ -473,7 +475,12 @@
 
 <script lang="ts" setup>
 import PageHeader from '@/components/common/PageHeader.vue';
-import { currencySymbol } from '@camp-registration/common/utils';
+import {
+  currencySymbol,
+  fromMinorUnits,
+  mapPerGroup,
+  toMinorUnits,
+} from '@camp-registration/common/utils';
 import { computed, onMounted, ref, watch } from 'vue';
 import type { Event, EventDetails } from '@camp-registration/common/entities';
 import { useRoute, useRouter } from 'vue-router';
@@ -536,10 +543,14 @@ const confirmationModeOptions = computed<
   ];
 });
 
-// Clone so edits never mutate the shared store state.
+// Clone so edits never mutate the shared store state. The price is edited
+// as entered, in major units; the API takes minor units (`onSubmit`).
 function clone(value: EventDetails): EventDetails {
   const cloned = structuredClone(deepToRaw(value));
   cloned.listed = cloned.listed ?? false;
+  cloned.price = mapPerGroup(cloned.price, (minor) =>
+    fromMinorUnits(minor, cloned.currency),
+  );
 
   return cloned;
 }
@@ -566,7 +577,12 @@ async function onSubmit() {
     return;
   }
 
-  const newEvent = await eventStore.updateData(value);
+  const newEvent = await eventStore.updateData({
+    ...value,
+    price: mapPerGroup(value.price, (major) =>
+      toMinorUnits(major, value.currency),
+    ),
+  });
   if (!newEvent) {
     updating.value = false;
     return;

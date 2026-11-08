@@ -1714,7 +1714,7 @@ describe('/api/v1/events', () => {
           endAt: utcCarrierToNaiveDateTime(
             moment().add('22 days').startOf('hour').toDate(),
           ),
-          price: 100.0,
+          price: 10000,
           location: 'Somewhere',
           form: {},
           themes: {},

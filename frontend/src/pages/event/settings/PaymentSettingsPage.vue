@@ -237,7 +237,11 @@
           </q-item>
         </template>
 
-        <q-item class="q-py-md">
+        <!-- Only once there is a choice: EUR only for now. -->
+        <q-item
+          v-if="currencyOptions.length > 1"
+          class="q-py-md"
+        >
           <q-item-section avatar>
             <q-icon
               name="currency_exchange"
@@ -309,7 +313,6 @@ import {
   paymentRequestDate,
   SUPPORTED_CURRENCIES,
   paymentRequestsOpen,
-  toMinorUnits,
 } from '@camp-registration/common/utils';
 import { useQuasar } from 'quasar';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
@@ -493,11 +496,16 @@ const formattedPrice = computed<string>(() => {
     return '';
   }
 
-  return formatMoney(
-    toMinorUnits(event.value.price, event.value.currency),
-    event.value.currency,
-    locale.value,
-  );
+  const { price, currency } = event.value;
+  const format = (minor: number) => formatMoney(minor, currency, locale.value);
+  if (typeof price === 'number') {
+    return format(price);
+  }
+
+  // Per group: each with its country code, as the event's groups are named.
+  return Object.entries(price)
+    .map(([group, minor]) => `${group.toUpperCase()} ${format(minor)}`)
+    .join(', ');
 });
 
 function updateReminderDays(value: string | number | null) {

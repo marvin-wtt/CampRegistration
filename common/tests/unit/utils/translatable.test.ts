@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  mapPerGroup,
   eventGroup,
   eventGroupFields,
   forGroup,
@@ -113,6 +114,19 @@ describe('eventGroupFields', () => {
     expect(eventGroupFields(event, 'pl')).toMatchObject({
       organizer: 'Verein / Association',
       freePlaces: null,
+    });
+  });
+});
+
+describe('mapPerGroup', () => {
+  it('maps the one value', () => {
+    expect(mapPerGroup(150, (value) => value * 100)).toBe(15000);
+  });
+
+  it('maps each group’s value', () => {
+    expect(mapPerGroup({ de: 150, pl: 120 }, (value) => value * 100)).toEqual({
+      de: 15000,
+      pl: 12000,
     });
   });
 });

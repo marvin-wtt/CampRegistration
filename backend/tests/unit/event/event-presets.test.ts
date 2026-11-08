@@ -124,16 +124,17 @@ describe('getEventPreset', () => {
   });
 
   describe('amount due', () => {
-    const event = { price: 120, currency: 'EUR' };
+    // Minor units; the form's `{event.price}` is in major units.
+    const event = { price: 12000, currency: 'EUR' };
 
     // Loaded the way the server reads a submission: the data as submitted,
     // computed questions recalculated from it.
     function amountDue(preset: (typeof PRESETS)[number], role: string) {
       const survey = new SurveyModel(EVENT_PRESETS[preset].form);
-      survey.setVariable('event.price', event.price);
+      survey.setVariable('event.price', 120);
       survey.setData({ role });
 
-      return computeAmountDue(event, extractPaymentAmounts(survey));
+      return computeAmountDue(event, extractPaymentAmounts(survey), null);
     }
 
     it.each(PRESETS)('charges participants the event price (%s)', (preset) => {

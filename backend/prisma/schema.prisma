@@ -174,7 +174,11 @@ model Event {
   startAt                 DateTime         @map("start_at") @db.DateTime(0)
   endAt                   DateTime         @map("end_at") @db.DateTime(0)
   timezone                String           @default("Europe/Berlin") @db.VarChar(64)
-  price                   Float
+  /// Minor units of `currency`: one for every group, or one per group.
+  /// ![number | Record<string, number>]
+  price                   Json             @db.Json
+  /// The lowest group price, kept with `price` for sorting by it.
+  priceFrom               Int              @default(0) @map("price_from") @db.UnsignedInt
   currency                String           @default("EUR") @db.Char(3)
   /// ![string | Record<string, string>]
   location                Json?            @db.Json

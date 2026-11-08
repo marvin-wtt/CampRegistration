@@ -132,8 +132,8 @@ export class RegistrationService extends BaseService {
     const eventData = form.extractEventData();
     const computedData = computedRegistrationData(eventData);
     // Stored whether or not payments are collected: the form showed it, so
-    // it is what this person agreed to.
-    const quotedAmount = computeAmountDue(event, form.paymentAmounts());
+    // it is what this person agreed to, at its group's price.
+    const quotedAmount = computeAmountDue(event, form.paymentAmounts(), group);
     assertPriceUnchanged(quotedAmount, priceCheck);
 
     const fileIds = form.getFileIds();

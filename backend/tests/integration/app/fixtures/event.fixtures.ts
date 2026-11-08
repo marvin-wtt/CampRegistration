@@ -37,7 +37,7 @@ export const eventCreateNational = {
     moment().add(22, 'days').startOf('hour').toDate(),
   ),
   timezone: 'Europe/Berlin',
-  price: 100.0,
+  price: 10000,
   location: 'Somewhere',
 } satisfies EventCreateData;
 
@@ -54,7 +54,7 @@ export const eventInputNational: Partial<Prisma.EventCreateInput> = {
   maxAge: 15,
   startAt: moment().add(20, 'days').startOf('hour').toDate().toISOString(),
   endAt: moment().add(22, 'days').startOf('hour').toDate().toISOString(),
-  price: 100.0,
+  price: 10000,
   location: 'Somewhere',
 };
 
@@ -591,6 +591,22 @@ export const eventCreatedBody: CreateBodyData[] = [
       price: 123.456,
     },
     expected: 400,
+  },
+  {
+    name: 'Price per group missing a group',
+    data: {
+      ...eventCreateInternational,
+      price: { de: 10000 },
+    },
+    expected: 400,
+  },
+  {
+    name: 'Price per group',
+    data: {
+      ...eventCreateInternational,
+      price: { de: 10000, fr: 8000 },
+    },
+    expected: 201,
   },
   // Location
   {
@@ -1316,7 +1332,7 @@ export const eventUpdateBody: UpdateBodyData[] = [
   {
     name: 'Price',
     data: {
-      price: 100,
+      price: 10000,
     },
     expected: 200,
   },

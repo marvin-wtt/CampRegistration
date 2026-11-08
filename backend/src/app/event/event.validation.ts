@@ -85,7 +85,12 @@ function validateRecordKeys(
 // Text is keyed by the languages the event's countries write in (`en`, `cs`);
 // per-group values by the groups, the countries themselves (`gb`, `cz`).
 const LOCALE_KEYED = ['name', 'location'] as const;
-const GROUP_KEYED = ['organizer', 'contactEmail', 'maxParticipants'] as const;
+const GROUP_KEYED = [
+  'organizer',
+  'contactEmail',
+  'maxParticipants',
+  'price',
+] as const;
 
 type KeyedField = (typeof LOCALE_KEYED)[number] | (typeof GROUP_KEYED)[number];
 
@@ -178,7 +183,8 @@ const store = z.object({
       minAge: z.number().int().nonnegative(),
       maxAge: z.number().int().max(99),
       location: translatedValue(z.string()),
-      price: z.number().multipleOf(0.01).nonnegative(),
+      // Minor units.
+      price: translatedValue(z.number().int().nonnegative()),
       currency: CurrencySchema.optional(),
       form: z.record(z.string(), z.unknown()).optional(),
       themes: z.record(z.string(), z.unknown()).optional(),
@@ -254,7 +260,7 @@ const update = (event: Event) =>
         minAge: z.number().int().nonnegative(),
         maxAge: z.number().int().max(99),
         location: translatedValue(z.string()),
-        price: z.number().nonnegative().multipleOf(0.01),
+        price: translatedValue(z.number().int().nonnegative()),
         currency: CurrencySchema,
         form: z.record(z.string(), z.unknown()),
         themes: z.record(z.string(), z.unknown()),

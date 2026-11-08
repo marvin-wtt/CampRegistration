@@ -40,7 +40,8 @@ export interface Event extends Identifiable {
   minAge: number;
   maxAge: number;
   location: Translatable | null;
-  price: number;
+  /** Minor units of `currency`: one for every group, or one per group. */
+  price: PerGroup<number>;
   /** ISO 4217 code `price` and every payment amount of this event is in. */
   currency: string;
   freePlaces: PerGroup<number> | null;

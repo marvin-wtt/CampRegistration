@@ -1,6 +1,7 @@
 import { reactive } from 'vue';
 import type { SurveyModel } from 'survey-core';
 import { ComponentFactory } from 'survey-vue3-ui';
+import type { PerGroup } from '@camp-registration/common/entities';
 import type { PaymentTotalMode } from '@camp-registration/common/form';
 import { surveyAmountDue } from '@/lib/surveyJs/quote';
 import { setCompleteTextDefault } from '@/lib/surveyJs/completeText';
@@ -33,7 +34,7 @@ function paymentTotalMode(survey: SurveyModel): PaymentTotalMode {
  */
 export function trackAmountDue(
   survey: SurveyModel,
-  event: { price: number; currency: string },
+  event: { price: PerGroup<number>; currency: string },
 ): AmountDueState {
   const state = reactive<AmountDueState>({
     amount: 0,

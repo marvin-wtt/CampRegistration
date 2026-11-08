@@ -232,6 +232,23 @@ describe('variables', () => {
     });
   });
 
+  describe('price', () => {
+    it('should give the group’s price in major units', () => {
+      const model = new SurveyModel({});
+
+      setVariables(
+        model,
+        fakeEventData({
+          countries: ['de', 'pl'],
+          price: { de: 15000, pl: 12050 },
+        }),
+        { group: 'pl' },
+      );
+
+      expect(model.getVariable('event.price')).toBe(120.5);
+    });
+  });
+
   describe('dates', () => {
     it('should set the date for a given locale', () => {
       const model = new SurveyModel();

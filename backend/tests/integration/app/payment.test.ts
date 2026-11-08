@@ -26,6 +26,7 @@ import { resolve } from '#core/ioc/container';
 import { PaymentAccountService } from '#app/paymentAccount/payment-account.service';
 import { PaymentCollectionService } from '#app/payment/payment-collection.service';
 import { PaymentService } from '#app/payment/payment.service';
+import { EventService } from '#app/event/event.service';
 import { getFakePayment } from '#app/paymentAccount/providers/fake/fake.provider';
 
 const paymentForm = createForm([
@@ -76,7 +77,7 @@ const createPaymentEvent = async ({
     countries: ['de'],
     confirmationMode: 'AUTOMATIC',
     maxParticipants: 100,
-    price: 150,
+    price: 15000,
     currency: 'EUR',
     form: paymentForm,
     messageTemplates: { createMany: { data: templates } },
@@ -1391,7 +1392,7 @@ describe('the quote', () => {
 
     await prisma.event.update({
       where: { id: event.id },
-      data: { price: 300 },
+      data: { price: 30000 },
     });
     await request()
       .patch(`/api/v1/events/${event.id}/registrations/${data.id}`)
@@ -1511,21 +1512,22 @@ describe('event currency', () => {
       .send({ currency })
       .auth(accessToken, { type: 'bearer' });
 
-  it('can change while nothing was quoted or paid', async () => {
+  it('is EUR only for now', async () => {
     const { event } = await createPaymentEvent({ account: false });
     const accessToken = await createManager(event);
 
-    await update(event, accessToken, 'CHF').expect(200);
+    await update(event, accessToken, 'EUR').expect(200);
+    await update(event, accessToken, 'CHF').expect(400);
   });
 
   it('is fixed once an amount was quoted', async () => {
     const { event } = await createPaymentEvent({ account: false });
-    const accessToken = await createManager(event);
     await register(event);
 
-    const { body } = await update(event, accessToken, 'CHF').expect(409);
-
-    expect(body.errorCode).toBe('EVENT_CURRENCY_LOCKED');
+    // Past the validation, which allows no other currency yet.
+    await expect(
+      resolve(EventService).updateEvent(event, { currency: 'CHF' }),
+    ).rejects.toMatchObject({ code: 'EVENT_CURRENCY_LOCKED' });
   });
 
   it('accepts only two-decimal currencies', async () => {

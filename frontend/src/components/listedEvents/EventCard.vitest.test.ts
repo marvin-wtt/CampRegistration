@@ -44,7 +44,7 @@ const createEvent = (overrides: Partial<Event> = {}): Event => ({
   timezone: 'UTC',
   minAge: 8,
   maxAge: 14,
-  price: 180,
+  price: 18000,
   currency: 'EUR',
   location: 'Bad Segeberg',
   freePlaces: null,
