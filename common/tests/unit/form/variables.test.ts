@@ -247,6 +247,20 @@ describe('variables', () => {
 
       expect(model.getVariable('event.price')).toBe(120.5);
     });
+
+    it('should give it formatted for text, in the form’s language', () => {
+      const model = new SurveyModel({});
+      model.locale = 'de';
+
+      setVariables(model, fakeEventData({ price: 15000, currency: 'EUR' }));
+
+      expect(model.getVariable('event.priceWithCurrency')).toBe(
+        new Intl.NumberFormat('de', {
+          style: 'currency',
+          currency: 'EUR',
+        }).format(150),
+      );
+    });
   });
 
   describe('dates', () => {

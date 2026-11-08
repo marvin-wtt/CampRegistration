@@ -86,7 +86,7 @@ export const summerCampForm = {
             cs: 'Cena',
             default: 'Price',
           },
-          description: '{event.price} {event.currency}',
+          description: '{event.priceWithCurrency}',
         },
         {
           type: 'role',

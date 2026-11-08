@@ -3,6 +3,7 @@ import type { PerGroup, Translatable } from '../../entities/index.js';
 import {
   eventGroup,
   eventGroupFields,
+  formatMoney,
   fromMinorUnits,
   groupPrice,
   translate,
@@ -42,6 +43,7 @@ const EVENT_VARIABLES = [
   'maxAge',
   'location',
   'price',
+  'priceWithCurrency',
   'currency',
   'logo',
 ] as const;
@@ -92,6 +94,7 @@ export const setVariables = (
   const endAt = naiveDateTime(data.endAt);
   const group = eventGroup(data, options.group);
   const currency = data.currency ?? 'EUR';
+  const price = groupPrice(data.price, group);
 
   const values: Record<EventVariable, unknown> = {
     countries: data.countries,
@@ -105,8 +108,10 @@ export const setVariables = (
     minAge: data.minAge,
     maxAge: data.maxAge,
     location: translate(data.location, locale) ?? null,
-    // Major units, like the prices form authors give choices.
-    price: fromMinorUnits(groupPrice(data.price, group), currency),
+    // Major units, like the prices form authors give choices: for expressions.
+    price: fromMinorUnits(price, currency),
+    // For text: with its currency, as the form's language writes it.
+    priceWithCurrency: formatMoney(price, currency, locale),
     currency,
     logo: data.logo ?? null,
   };

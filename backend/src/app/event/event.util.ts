@@ -5,6 +5,7 @@ import {
   eventGroupFields,
   forGroup,
   formatMoney,
+  fromMinorUnits,
   groupPrice,
   translate,
 } from '@camp-registration/common/utils';
@@ -24,6 +25,7 @@ export function translateEventContext(
     event,
     group,
   );
+  const price = groupPrice(event.price, group);
 
   return {
     ...event,
@@ -32,8 +34,9 @@ export function translateEventContext(
     organizer,
     contactEmail,
     maxParticipants,
-    // The group's, ready to read: stored in minor units, maybe per group.
-    price: formatMoney(groupPrice(event.price, group), event.currency, locale),
+    // The group's, as in forms: a number in major units, and for text.
+    price: fromMinorUnits(price, event.currency),
+    priceWithCurrency: formatMoney(price, event.currency, locale),
   };
 }
 

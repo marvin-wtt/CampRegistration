@@ -16,9 +16,10 @@ units; the conversion happens at the edges (`toMinorUnits`, `fromMinorUnits`).
   per group (`{"de": 15000, "pl": 12000}`), like `maxParticipants`; the event
   validation requires a price for each of the event's groups. Events don't
   sort by price: it is per group, and zero may leave the cost to the form.
-- In a form, `{event.price}` is the registration's group price in **major**
-  units (`setVariables`), and in mail templates `{{ event.price }}` is that
-  price formatted (`translateEventContext`).
+- Forms and mail templates get the registration's group price twice:
+  `price` in **major** units, for expressions, and `priceWithCurrency`
+  formatted in their language, for text (`setVariables`,
+  `translateEventContext`).
 - A price of zero means no base price: the form may still charge everything,
   so zero is never shown as "free". The event card shows a price only when
   every group has one above zero ("from …" when they differ). The group step
@@ -42,7 +43,10 @@ every role but `participant` with a `Team discount` line shown only to them.
 
 The server computes it from the validated submission and stores it as
 `Registration.quotedAmount`, with `Registration.currency`. It never changes:
-neither a changed price, a changed form nor edited answers re-price it.
+neither a changed price, a changed form nor edited answers re-price it. Mail
+templates get it like the event's price: `{{ registration.price }}` and
+`{{ registration.priceWithCurrency }}`, empty on registrations from before
+quotes.
 
 ## The form's total and the price check
 

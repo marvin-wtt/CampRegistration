@@ -14,10 +14,11 @@ const event = {
 } as unknown as Event;
 
 describe('translateEventContext', () => {
-  it('gives templates the group’s price, formatted', () => {
-    expect(
-      translateEventContext(event, { locale: 'de', group: 'pl' }).price,
-    ).toBe(formatted(120.5));
+  it('gives templates the group’s price, as in forms', () => {
+    const context = translateEventContext(event, { locale: 'de', group: 'pl' });
+
+    expect(context.price).toBe(120.5);
+    expect(context.priceWithCurrency).toBe(formatted(120.5));
   });
 });
 
