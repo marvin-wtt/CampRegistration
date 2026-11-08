@@ -286,6 +286,7 @@ const features = computed(() => ({
   // collects payments gets the card.
   payments:
     can('event.payments.view') &&
+    isShown('payments') &&
     paymentSettings.enabled &&
     registrationStore.data?.some((registration) => hasFee(registration)) ===
       true,

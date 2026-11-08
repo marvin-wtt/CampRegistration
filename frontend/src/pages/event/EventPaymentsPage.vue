@@ -495,7 +495,7 @@ column:
   amount: 'Amount'
   refunded: 'Refunded'
   net: 'Net'
-  settlement: 'On deletion'
+  settlement: 'Deleted registration'
 method:
   bank_transfer: 'Bank transfer'
   cash: 'Cash'
@@ -513,8 +513,8 @@ status:
   CANCELED: 'Canceled'
   EXPIRED: 'Expired'
 settlement:
-  retained: 'Kept'
-  settled_outside: 'Given back outside the app'
+  retained: 'Money kept'
+  settled_outside: 'Refunded outside the app'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -536,7 +536,7 @@ column:
   amount: 'Betrag'
   refunded: 'Erstattet'
   net: 'Netto'
-  settlement: 'Beim Löschen'
+  settlement: 'Gelöschte Anmeldung'
 method:
   bank_transfer: 'Überweisung'
   cash: 'Bar'
@@ -554,7 +554,7 @@ status:
   CANCELED: 'Abgebrochen'
   EXPIRED: 'Abgelaufen'
 settlement:
-  retained: 'Behalten'
+  retained: 'Geld behalten'
   settled_outside: 'Außerhalb der App erstattet'
 </i18n>
 
@@ -577,7 +577,7 @@ column:
   amount: 'Montant'
   refunded: 'Remboursé'
   net: 'Net'
-  settlement: 'À la suppression'
+  settlement: 'Inscription supprimée'
 method:
   bank_transfer: 'Virement'
   cash: 'Espèces'
@@ -595,7 +595,7 @@ status:
   CANCELED: 'Annulé'
   EXPIRED: 'Expiré'
 settlement:
-  retained: 'Conservé'
+  retained: 'Montant conservé'
   settled_outside: "Remboursé en dehors de l'application"
 </i18n>
 
@@ -618,7 +618,7 @@ column:
   amount: 'Kwota'
   refunded: 'Zwrócono'
   net: 'Netto'
-  settlement: 'Przy usunięciu'
+  settlement: 'Usunięte zgłoszenie'
 method:
   bank_transfer: 'Przelew'
   cash: 'Gotówka'
@@ -636,7 +636,7 @@ status:
   CANCELED: 'Anulowane'
   EXPIRED: 'Wygasłe'
 settlement:
-  retained: 'Zatrzymane'
+  retained: 'Kwota zatrzymana'
   settled_outside: 'Zwrócone poza aplikacją'
 </i18n>
 
@@ -659,7 +659,7 @@ column:
   amount: 'Částka'
   refunded: 'Vráceno'
   net: 'Čistá částka'
-  settlement: 'Při smazání'
+  settlement: 'Smazaná registrace'
 method:
   bank_transfer: 'Převod'
   cash: 'Hotově'
@@ -677,6 +677,6 @@ status:
   CANCELED: 'Zrušeno'
   EXPIRED: 'Vypršelo'
 settlement:
-  retained: 'Ponecháno'
+  retained: 'Částka ponechána'
   settled_outside: 'Vráceno mimo aplikaci'
 </i18n>

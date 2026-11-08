@@ -148,6 +148,7 @@ export class StripeProvider implements PaymentProvider {
 
     const credentials: ProviderCredentials = { apiKey };
     try {
+      await this.removeEndpointsFor(stripe, webhookUrl);
       const endpoint = await stripe.webhookEndpoints.create({
         url: webhookUrl,
         enabled_events: WEBHOOK_EVENTS,
@@ -168,12 +169,22 @@ export class StripeProvider implements PaymentProvider {
 
     return {
       credentials,
+      remoteAccountId: account.id,
       mode,
       displayName:
         account.settings?.dashboard.display_name ??
         account.business_profile?.name ??
         null,
     };
+  }
+
+  /** A rotated key's predecessor registered the same URL: it is replaced. */
+  private async removeEndpointsFor(stripe: Stripe, url: string): Promise<void> {
+    for await (const endpoint of stripe.webhookEndpoints.list({ limit: 100 })) {
+      if (endpoint.url === url) {
+        await stripe.webhookEndpoints.del(endpoint.id);
+      }
+    }
   }
 
   async disconnect(credentials: ProviderCredentials): Promise<void> {

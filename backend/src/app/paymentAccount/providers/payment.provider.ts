@@ -12,12 +12,17 @@ export type ProviderName = PaymentProviderName;
 
 export interface ConnectInput {
   apiKey: string;
-  /** The account's webhook URL, for providers that register one up front (Stripe). */
+  /**
+   * The account's webhook URL, for providers that register one up front
+   * (Stripe). An earlier registration of the same URL is replaced.
+   */
   webhookUrl: string;
 }
 
 export interface ConnectResult {
   credentials: ProviderCredentials;
+  /** The provider's id of the account the key belongs to. */
+  remoteAccountId: string;
   mode: 'test' | 'live';
   displayName: string | null;
 }

@@ -70,6 +70,13 @@ export const EVENT_NAVIGATION_ITEMS: EventNavigationItemDef[] = [
     hideable: true,
   },
   {
+    name: 'payments',
+    icon: 'payments',
+    permission: 'event.payments.view',
+    routeName: 'management.event.payments',
+    hideable: true,
+  },
+  {
     name: 'settings',
     icon: 'settings',
     routeName: 'management.event.settings',

@@ -111,12 +111,13 @@ export class PaymentReconciliationService extends BaseService {
     super();
   }
 
+  /** Whether the payment was made through this account. */
   async isKnownProviderPayment(
-    source: string,
+    accountId: string,
     providerPaymentId: string,
   ): Promise<boolean> {
     const count = await this.prisma.payment.count({
-      where: { source, providerPaymentId },
+      where: { paymentAccountId: accountId, providerPaymentId },
     });
 
     return count > 0;
@@ -354,6 +355,9 @@ export class PaymentReconciliationService extends BaseService {
         { amount: updated.amount },
       );
       await this.refundService.restoreAmountDue(updated);
+      if (updated.createdById === null) {
+        await this.releaseProviderHold(tx, payment);
+      }
     }
 
     return {
@@ -420,7 +424,7 @@ export class PaymentReconciliationService extends BaseService {
         'payment_chargeback_reversed',
         { amount: existing.amount },
       );
-      await this.releaseChargebackHold(tx, payment);
+      await this.releaseProviderHold(tx, payment);
     }
     return true;
   }
@@ -433,10 +437,11 @@ export class PaymentReconciliationService extends BaseService {
   }
 
   /**
-   * A won or reversed chargeback gave the money back: the hold it caused
-   * goes, unless another chargeback of the registration still counts.
+   * Money that went back outside the app returned after all — a chargeback
+   * won or reversed, a dashboard refund failed: the hold it caused goes,
+   * unless another such one of the registration still counts.
    */
-  private async releaseChargebackHold(
+  private async releaseProviderHold(
     tx: Prisma.TransactionClient,
     payment: PaymentWithLedger,
   ): Promise<void> {
@@ -445,7 +450,8 @@ export class PaymentReconciliationService extends BaseService {
     }
     const open = await tx.paymentRefund.count({
       where: {
-        kind: 'CHARGEBACK',
+        // Dashboard refunds are the ones no one in the app created.
+        OR: [{ kind: 'CHARGEBACK' }, { kind: 'REFUND', createdById: null }],
         status: { in: ['PENDING', 'REFUNDED'] },
         payment: { registrationId: payment.registrationId },
       },

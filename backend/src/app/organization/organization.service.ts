@@ -4,6 +4,7 @@ import { inject, injectable } from 'inversify';
 import httpStatus from 'http-status';
 import ApiError from '#core/router/ApiError';
 import { PrivacyNoticeService } from '#app/privacyNotice/privacy-notice.service';
+import { PaymentAccountService } from '#app/paymentAccount/payment-account.service';
 import type {
   OrganizationCreateData,
   OrganizationUpdateData,
@@ -17,6 +18,8 @@ export class OrganizationService extends BaseService {
   constructor(
     @inject(PrivacyNoticeService)
     private readonly privacyNoticeService: PrivacyNoticeService,
+    @inject(PaymentAccountService)
+    private readonly paymentAccounts: PaymentAccountService,
   ) {
     super();
   }
@@ -128,7 +131,11 @@ export class OrganizationService extends BaseService {
   }
 
   async deleteOrganization(id: string) {
-    await this.prisma.organization.delete({ where: { id } });
+    await this.transaction(async (tx) => {
+      // Their webhooks registered at the provider go with them.
+      await this.paymentAccounts.removeForOrganization(id);
+      await tx.organization.delete({ where: { id } });
+    });
   }
 
   async countOwnedResources(id: string) {

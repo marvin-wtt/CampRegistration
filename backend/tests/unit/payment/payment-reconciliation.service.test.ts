@@ -301,6 +301,38 @@ describe('PaymentReconciliationService.applySnapshot', () => {
     expect(paymentService.releaseHold).not.toHaveBeenCalled();
   });
 
+  it('lifts the hold when a dashboard refund fails', async () => {
+    const dashboard = buildRefund({
+      providerRefundId: 're_dash',
+      createdById: null,
+      notifyParticipant: false,
+    });
+    loadCurrent(buildPayment({ status: 'PAID' }), [dashboard]);
+    prisma.paymentRefund.update.mockResolvedValue({
+      ...dashboard,
+      status: 'FAILED',
+    });
+    prisma.paymentRefund.count.mockResolvedValue(0);
+
+    await service.applySnapshot(
+      'payment-1',
+      snapshot({
+        status: 'PAID',
+        refunds: [
+          {
+            providerRefundId: 're_dash',
+            reference: null,
+            status: 'FAILED',
+            amount: 1000,
+            refundedAt: null,
+          },
+        ],
+      }),
+    );
+
+    expect(paymentService.releaseHold).toHaveBeenCalledWith('registration-1');
+  });
+
   it('matches its own refund by reference instead of duplicating it', async () => {
     const own = buildRefund();
     loadCurrent(buildPayment({ status: 'PAID' }), [own]);

@@ -10,6 +10,7 @@ import { resolve } from '#core/ioc/container';
 import type { JobScheduler } from '#core/scheduler/JobScheduler';
 import { MailableRegistry } from '#core/mail/mail.registry';
 import { SettingsRegistry } from '#app/setting/setting.registry';
+import { PaymentAccountService } from '#app/paymentAccount/payment-account.service';
 import { PaymentService } from './payment.service.js';
 import { PaymentReconciliationService } from './payment-reconciliation.service.js';
 import { PaymentNotifier } from './payment.notifier.js';
@@ -99,6 +100,8 @@ export class PaymentModule implements AppModule {
     // requires; then just the anonymous amounts remain.
     scheduler.schedule('payment-record-retention', '0 4 1 * *', async () => {
       await resolve(PaymentService).anonymizeExpiredPayers();
+      // Retired accounts last as long as a payment refers to them.
+      await resolve(PaymentAccountService).purgeRetired();
     });
     scheduler.schedule('payment-reminders', '0 9 * * *', async () => {
       const service = resolve(PaymentCollectionService);

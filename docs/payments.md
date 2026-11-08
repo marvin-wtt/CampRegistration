@@ -12,11 +12,18 @@ connection and the providers; it knows nothing of payments).
   current (`activeOrganizationId`). `credentials` is an encrypted JSON blob
   (`#core/secrets`, keyed by `SECRETS_ENCRYPTION_KEYS` — deliberately not the
   file storage keys). No encryption keys → accounts can't be connected.
-  Replacing or disconnecting one retires it (`retiredAt`) instead of deleting
-  it while payments were made through it: each online payment records its
-  `paymentAccountId`, and its webhooks, reconciliation, checkout cancelling and
-  refunds always go through that account. An account without payments is
-  removed, its provider-side webhook with it.
+  A new key for the same provider account and mode (`remoteAccountId`) is a
+  rotation: the row keeps its id, payments and webhook URL. Any other
+  replacement, or disconnecting, retires the account (`retiredAt`) instead of
+  deleting it while payments were made through it: each online payment
+  records its `paymentAccountId`, and its webhooks, reconciliation, checkout
+  cancelling and refunds always go through that account. An account without
+  payments is removed, its provider-side webhook with it; the monthly
+  retention job removes retired ones once their payments are gone.
+- Provider calls that follow a write (cancelling checkouts, tearing down a
+  webhook) run after the transaction commits (`afterCommit` in
+  `#core/database/transaction`), so a slow provider never holds a deletion's
+  transaction open.
 - `Payment` — one row per attempt or manual entry. Money is integer **minor
   units** plus an ISO currency (`Event.currency`). Status only moves forward
   (`OPEN → PENDING → PAID | FAILED | CANCELED | EXPIRED`), `PAID` is terminal.

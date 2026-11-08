@@ -337,7 +337,7 @@ action:
   cancel: 'Cancel'
 disconnect:
   title: 'Disconnect payment provider?'
-  message: 'Participants will no longer be able to pay online, and online payments made so far can no longer be refunded from here. Recorded payments are kept.'
+  message: 'Participants can no longer start online payments. Payments already started still go through, and online payments made so far can still be refunded here.'
 notify:
   connected: 'Payment provider connected'
   disconnected: 'Payment provider disconnected'
@@ -371,7 +371,7 @@ action:
   cancel: 'Abbrechen'
 disconnect:
   title: 'Zahlungsanbieter trennen?'
-  message: 'Teilnehmende können dann nicht mehr online bezahlen, und bisherige Online-Zahlungen können hier nicht mehr erstattet werden. Erfasste Zahlungen bleiben erhalten.'
+  message: 'Teilnehmende können dann keine Online-Zahlung mehr beginnen. Bereits begonnene Zahlungen gehen noch durch, und bisherige Online-Zahlungen kannst du hier weiterhin erstatten.'
 notify:
   connected: 'Zahlungsanbieter verbunden'
   disconnected: 'Zahlungsanbieter getrennt'
@@ -405,7 +405,7 @@ action:
   cancel: 'Annuler'
 disconnect:
   title: 'Déconnecter le prestataire de paiement ?'
-  message: 'Les participants ne pourront plus payer en ligne, et les paiements en ligne déjà effectués ne pourront plus être remboursés ici. Les paiements enregistrés sont conservés.'
+  message: 'Les participants ne pourront plus commencer de paiement en ligne. Les paiements déjà commencés aboutissent encore, et les paiements en ligne déjà effectués peuvent toujours être remboursés ici.'
 notify:
   connected: 'Prestataire de paiement connecté'
   disconnected: 'Prestataire de paiement déconnecté'
@@ -439,7 +439,7 @@ action:
   cancel: 'Anuluj'
 disconnect:
   title: 'Odłączyć operatora płatności?'
-  message: 'Uczestnicy nie będą już mogli płacić online, a dotychczasowych płatności online nie będzie można tu zwrócić. Zapisane płatności zostaną zachowane.'
+  message: 'Uczestnicy nie będą już mogli rozpocząć płatności online. Rozpoczęte płatności zostaną jeszcze zrealizowane, a dotychczasowe płatności online nadal można tu zwrócić.'
 notify:
   connected: 'Operator płatności połączony'
   disconnected: 'Operator płatności odłączony'
@@ -473,7 +473,7 @@ action:
   cancel: 'Zrušit'
 disconnect:
   title: 'Odpojit platebního poskytovatele?'
-  message: 'Účastníci pak nebudou moci platit online a dosavadní online platby zde již nebude možné vrátit. Zaznamenané platby zůstanou zachovány.'
+  message: 'Účastníci pak nebudou moci zahájit online platbu. Již zahájené platby se ještě dokončí a dosavadní online platby zde lze stále vrátit.'
 notify:
   connected: 'Platební poskytovatel propojen'
   disconnected: 'Platební poskytovatel odpojen'

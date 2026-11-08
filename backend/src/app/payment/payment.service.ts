@@ -23,6 +23,7 @@ import {
   utcCarrierToNaiveDateTime,
 } from '@camp-registration/common/utils';
 import { BaseService } from '#core/base/BaseService';
+import { afterCommit } from '#core/database/transaction';
 import logger from '#core/logger';
 import ApiError from '#core/router/ApiError';
 import { describeError } from '#utils/errors';
@@ -436,8 +437,10 @@ export class PaymentService extends BaseService {
 
   /**
    * Cancels the open provider checkouts matching `where`, each through the
-   * account it was opened with. Best effort: a failure is logged, and the
-   * checkout then shows up as a payment if it is paid after all.
+   * account it was opened with. They are never handed out again at once; the
+   * provider is called once the caller's transaction committed. Best effort:
+   * a failure is logged, and the checkout then shows up as a payment if it
+   * is paid after all.
    */
   private async cancelCheckouts(
     where: Prisma.PaymentWhereInput,
@@ -445,28 +448,33 @@ export class PaymentService extends BaseService {
     const open = await this.db.payment.findMany({
       where: { ...where, status: 'OPEN', providerPaymentId: { not: null } },
     });
-
-    for (const payment of open) {
-      try {
-        const resolved = await this.accountService.resolveForPayment(payment);
-        if (!resolved || !payment.providerPaymentId) {
-          continue;
-        }
-        await resolved.provider.cancelCheckout(
-          resolved.credentials,
-          payment.providerPaymentId,
-        );
-        // Never handed out again; the status follows with the next re-fetch.
-        await this.db.payment.updateMany({
-          where: { id: payment.id, status: 'OPEN' },
-          data: { checkoutUrl: null },
-        });
-      } catch (error) {
-        logger.warn(
-          `Could not cancel checkout ${payment.id}: ${describeError(error)}`,
-        );
-      }
+    if (open.length === 0) {
+      return;
     }
+
+    // The status follows with the next re-fetch.
+    await this.db.payment.updateMany({
+      where: { id: { in: open.map(({ id }) => id) }, status: 'OPEN' },
+      data: { checkoutUrl: null },
+    });
+
+    await afterCommit(async () => {
+      for (const payment of open) {
+        try {
+          const resolved = await this.accountService.resolveForPayment(payment);
+          if (resolved && payment.providerPaymentId) {
+            await resolved.provider.cancelCheckout(
+              resolved.credentials,
+              payment.providerPaymentId,
+            );
+          }
+        } catch (error) {
+          logger.warn(
+            `Could not cancel checkout ${payment.id}: ${describeError(error)}`,
+          );
+        }
+      }
+    });
   }
 
   /** Inside `startCheckout`'s transaction: a provider failure rolls the row back. */

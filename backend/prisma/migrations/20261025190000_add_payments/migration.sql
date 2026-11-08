@@ -16,6 +16,7 @@ CREATE TABLE `payment_accounts` (
     `organization_id` CHAR(26) NOT NULL,
     `active_organization_id` CHAR(26) NULL,
     `provider` VARCHAR(32) NOT NULL,
+    `remote_account_id` VARCHAR(255) NULL,
     `mode` VARCHAR(8) NOT NULL,
     `display_name` VARCHAR(255) NULL,
     `credentials` TEXT NOT NULL,

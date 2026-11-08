@@ -67,19 +67,19 @@ describe('PaymentService.closeStaleCheckouts', () => {
       'cs_1',
     );
     expect(prisma.payment.updateMany).toHaveBeenCalledWith({
-      where: { id: 'payment-2', status: 'OPEN' },
+      where: { id: { in: ['payment-2'] }, status: 'OPEN' },
       data: { checkoutUrl: null },
     });
   });
 
-  it('keeps the checkout bookable when the provider refuses', async () => {
+  it('withdraws the checkout even when the provider refuses', async () => {
     prisma.payment.findMany.mockResolvedValueOnce([buildPayment()]);
     provider.cancelCheckout.mockRejectedValue(new Error('not cancelable'));
 
     await expect(
       service.closeStaleCheckouts(event, registration, 0),
     ).resolves.toBeUndefined();
-    expect(prisma.payment.updateMany).not.toHaveBeenCalled();
+    expect(prisma.payment.updateMany).toHaveBeenCalledOnce();
   });
 
   it('cancels through the account the checkout was opened with', async () => {

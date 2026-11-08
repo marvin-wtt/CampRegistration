@@ -10,14 +10,10 @@
         icon="payments"
         :title="t('title')"
         :caption="t('subtitle')"
-        :link="
-          canOpen
-            ? {
-                label: t('allPayments'),
-                to: tableRoute(LOCAL_TEMPLATE_PAYMENTS),
-              }
-            : undefined
-        "
+        :link="{
+          label: t('ledger'),
+          to: { name: 'management.event.payments' },
+        }"
       />
     </q-card-section>
 
@@ -428,7 +424,7 @@ function money(minor: number): string {
 <i18n lang="yaml" locale="en">
 title: 'Payments'
 subtitle: 'Fees of confirmed participants'
-allPayments: 'All payments'
+ledger: 'Payment ledger'
 paidInFull: 'Paid in full'
 meterLabel: '{paid} of {total} paid in full'
 legend:
@@ -445,7 +441,7 @@ collectedCaption: 'Net of refunds'
 <i18n lang="yaml" locale="de">
 title: 'Zahlungen'
 subtitle: 'Beiträge bestätigter Teilnehmender'
-allPayments: 'Alle Zahlungen'
+ledger: 'Zahlungsbuch'
 paidInFull: 'Vollständig bezahlt'
 meterLabel: '{paid} von {total} vollständig bezahlt'
 legend:
@@ -462,7 +458,7 @@ collectedCaption: 'Abzüglich Erstattungen'
 <i18n lang="yaml" locale="fr">
 title: 'Paiements'
 subtitle: 'Frais des participants confirmés'
-allPayments: 'Tous les paiements'
+ledger: 'Registre des paiements'
 paidInFull: 'Entièrement payé'
 meterLabel: '{paid} sur {total} entièrement payés'
 legend:
@@ -479,7 +475,7 @@ collectedCaption: 'Remboursements déduits'
 <i18n lang="yaml" locale="pl">
 title: 'Płatności'
 subtitle: 'Opłaty potwierdzonych uczestników'
-allPayments: 'Wszystkie płatności'
+ledger: 'Rejestr płatności'
 paidInFull: 'Opłacone w całości'
 meterLabel: 'W pełni opłacone: {paid} z {total}'
 legend:
@@ -496,7 +492,7 @@ collectedCaption: 'Po odliczeniu zwrotów'
 <i18n lang="yaml" locale="cs">
 title: 'Platby'
 subtitle: 'Poplatky potvrzených účastníků'
-allPayments: 'Všechny platby'
+ledger: 'Kniha plateb'
 paidInFull: 'Zaplaceno v plné výši'
 meterLabel: 'Zaplaceno v plné výši: {paid} z {total}'
 legend:

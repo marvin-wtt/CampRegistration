@@ -856,6 +856,9 @@ model PaymentAccount {
   // retired: one current account per organization, enforced by the index.
   activeOrganizationId String?   @unique(map: "payment_accounts_active_organization_id_unique") @map("active_organization_id") @db.Char(26)
   provider             String    @db.VarChar(32)
+  // The provider's id of the account the key reaches: a new key for the
+  // same one (and mode) rotates this row instead of retiring it.
+  remoteAccountId      String?   @map("remote_account_id") @db.VarChar(255)
   mode                 String    @db.VarChar(8)
   displayName          String?   @map("display_name") @db.VarChar(255)
   credentials          String    @db.Text

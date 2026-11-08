@@ -106,6 +106,8 @@ export class MollieProvider implements PaymentProvider {
 
       return {
         credentials: { apiKey },
+        // A Mollie key belongs to one website profile.
+        remoteAccountId: profile.id,
         mode,
         displayName: profile.name,
       };

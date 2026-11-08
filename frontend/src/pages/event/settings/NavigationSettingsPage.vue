@@ -124,6 +124,9 @@ readOnly: 'You can view these settings but not change them.'
 contact:
   label: 'Contact'
   description: 'Show or hide the contact page.'
+payments:
+  label: 'Payments'
+  description: 'Show or hide the payment ledger and the payments card.'
 program_planner:
   label: 'Program'
   description: 'Show or hide the program planner.'
@@ -145,6 +148,9 @@ readOnly: 'Du kannst diese Einstellungen ansehen, aber nicht ändern.'
 contact:
   label: 'Kontakt'
   description: 'Kontaktseite ein- oder ausblenden.'
+payments:
+  label: 'Zahlungen'
+  description: 'Zahlungsbuch und Zahlungskarte ein- oder ausblenden.'
 program_planner:
   label: 'Programm'
   description: 'Programmplaner ein- oder ausblenden.'
@@ -166,6 +172,9 @@ readOnly: 'Vous pouvez consulter ces paramètres, mais pas les modifier.'
 contact:
   label: 'Contact'
   description: 'Afficher ou masquer la page de contact.'
+payments:
+  label: 'Paiements'
+  description: 'Afficher ou masquer le registre des paiements et la carte des paiements.'
 program_planner:
   label: 'Programme'
   description: "Afficher ou masquer l'aménageur de programme."
@@ -187,6 +196,9 @@ readOnly: 'Możesz przeglądać te ustawienia, ale nie możesz ich zmieniać.'
 contact:
   label: 'Kontakt'
   description: 'Pokaż lub ukryj stronę kontaktową.'
+payments:
+  label: 'Płatności'
+  description: 'Pokaż lub ukryj rejestr płatności i kartę płatności.'
 program_planner:
   label: 'Program'
   description: 'Pokaż lub ukryj planer programu.'
@@ -208,6 +220,9 @@ readOnly: 'Tato nastavení můžete zobrazit, ale ne měnit.'
 contact:
   label: 'Kontakt'
   description: 'Zobrazit nebo skrýt kontaktní stránku.'
+payments:
+  label: 'Platby'
+  description: 'Zobrazit nebo skrýt knihu plateb a kartu plateb.'
 program_planner:
   label: 'Program'
   description: 'Zobrazit nebo skrýt plánovač programu.'

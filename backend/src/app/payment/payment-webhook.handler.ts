@@ -49,12 +49,12 @@ export const paymentWebhookHandler: RequestHandler = async (req, res) => {
     return;
   }
 
-  // Only payments we created are reconciled; anything else on the account (other
-  // shops, dashboard-made payments) is acknowledged and ignored.
+  // Only payments made through this account are reconciled; anything else
+  // (other shops, dashboard-made payments) is acknowledged and ignored.
   const known =
     providerPaymentId !== null &&
     (await resolve(PaymentReconciliationService).isKnownProviderPayment(
-      account.provider,
+      account.id,
       providerPaymentId,
     ));
 

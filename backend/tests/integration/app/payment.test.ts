@@ -23,6 +23,7 @@ import { SETTING_KEYS } from '@camp-registration/common/settings';
 import { encryptSecret } from '#core/secrets';
 import { signPaymentToken } from '#app/payment/payment-link';
 import { resolve } from '#core/ioc/container';
+import { PaymentAccountService } from '#app/paymentAccount/payment-account.service';
 import { PaymentCollectionService } from '#app/payment/payment-collection.service';
 import { PaymentService } from '#app/payment/payment.service';
 import { getFakePayment } from '#app/paymentAccount/providers/fake/fake.provider';
@@ -944,6 +945,56 @@ describe('payments', () => {
           where: { registrationId: body.data.id },
         }),
       ).resolves.toMatchObject({ status: 'PAID', paymentAccountId: old.id });
+    });
+
+    it('rotates the key of the same provider account in place', async () => {
+      const { organization, accessToken } =
+        await createOrganizationMember('ADMIN');
+      const connect = (apiKey: string) =>
+        request()
+          .put(accountPath(organization.id))
+          .send({ provider: 'fake', apiKey })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+      await connect('fake_shop_old');
+      const before = await prisma.paymentAccount.findUniqueOrThrow({
+        where: { activeOrganizationId: organization.id },
+      });
+      await connect('fake_shop_new');
+
+      const accounts = await prisma.paymentAccount.findMany({
+        where: { organizationId: organization.id },
+      });
+      expect(accounts).toHaveLength(1);
+      expect(accounts[0]).toMatchObject({
+        id: before.id,
+        remoteAccountId: 'shop',
+        activeOrganizationId: organization.id,
+      });
+      expect(accounts[0]?.credentials).not.toBe(before.credentials);
+    });
+
+    it('removes retired accounts once no payment refers to them', async () => {
+      const { organization } = await createOrganizationMember('ADMIN');
+      const retired = await prisma.paymentAccount.create({
+        data: {
+          organizationId: organization.id,
+          provider: 'fake',
+          mode: 'test',
+          retiredAt: new Date(),
+          credentials: await encryptSecret(
+            JSON.stringify({ apiKey: 'fake_key' }),
+            'payment-credentials',
+          ),
+        },
+      });
+
+      await resolve(PaymentAccountService).purgeRetired();
+
+      await expect(
+        prisma.paymentAccount.findUnique({ where: { id: retired.id } }),
+      ).resolves.toBeNull();
     });
 
     it('rejects an invalid key', async () => {

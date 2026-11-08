@@ -95,6 +95,8 @@ export class FakeProvider implements PaymentProvider {
 
     return Promise.resolve({
       credentials: { apiKey },
+      // `fake_<account>_<secret>` names its account; other keys are one each.
+      remoteAccountId: /^fake_([^_]+)_./.exec(apiKey)?.[1] ?? apiKey,
       mode: 'test',
       displayName: 'Fake payments',
     });

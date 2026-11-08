@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { PrismaClient } from '#generated/prisma/client.js';
 import {
+  afterCommit,
   currentTransaction,
   transactional,
   type PrismaTransaction,
@@ -69,5 +70,50 @@ describe('transactional', () => {
     await expect(
       transactional(client, () => Promise.reject(conflict)),
     ).rejects.toBe(conflict);
+  });
+
+  it('runs after-commit tasks once the outermost transaction committed', async () => {
+    const { client } = fakeClient();
+    const order: string[] = [];
+
+    await transactional(client, async () => {
+      await transactional(client, () =>
+        afterCommit(() => {
+          order.push('task');
+          return Promise.resolve();
+        }),
+      );
+      order.push('body');
+    });
+
+    expect(order).toEqual(['body', 'task']);
+  });
+
+  it('drops after-commit tasks of a rolled-back attempt', async () => {
+    const { client, $transaction } = fakeClient();
+    const conflict = Object.assign(new Error('deadlock'), { code: 'P2034' });
+    const task = vi.fn(() => Promise.resolve());
+    let calls = 0;
+
+    await transactional(
+      client,
+      async () => {
+        calls++;
+        await afterCommit(task);
+        if (calls === 1) {
+          throw conflict;
+        }
+      },
+      { retries: 1 },
+    );
+
+    expect($transaction).toHaveBeenCalledTimes(2);
+    expect(task).toHaveBeenCalledOnce();
+  });
+
+  it('runs an after-commit task at once outside a transaction, logging failures', async () => {
+    await expect(
+      afterCommit(() => Promise.reject(new Error('provider down'))),
+    ).resolves.toBeUndefined();
   });
 });
