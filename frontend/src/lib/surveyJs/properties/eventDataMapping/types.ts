@@ -188,10 +188,11 @@ export const newsletterConsent: EventDataType = {
   },
 };
 
-// Questions tagged here adjust the event's price while shown: a number or
-// expression by its value, a boolean or select question by the prices it then
-// offers (`pricedQuestions.ts`). Tagged calculated values always count: rules
-// the registrant never sees. See docs/pricing.md.
+// Questions tagged here adjust the event's price while shown: an expression
+// by its value, a boolean or select question by the prices it then offers
+// (`pricedQuestions.ts`). Tagged calculated values always count: rules the
+// registrant never sees. Never a typed answer, or the registrant would set
+// their own price. See docs/pricing.md.
 const PRICED_TYPES = [
   'expression',
   'calculatedvalue',
@@ -214,10 +215,6 @@ export const paymentAmount: EventDataType = {
     },
   },
   fit: (obj) => {
-    return (
-      PRICED_TYPES.includes(obj.getType()) ||
-      (obj.getType() === 'text' &&
-        obj.getPropertyValue('inputType') === 'number')
-    );
+    return PRICED_TYPES.includes(obj.getType());
   },
 };

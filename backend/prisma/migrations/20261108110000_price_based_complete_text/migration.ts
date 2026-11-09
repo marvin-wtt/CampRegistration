@@ -26,7 +26,14 @@ const PRESET_COMPLETE_TEXTS: Record<string, string>[] = [
   },
 ];
 
+// Presets are stored with only the event's locales, and a single remaining
+// locale serializes as a plain string, so any subset of a preset matches.
 function isPresetText(value: unknown): boolean {
+  if (typeof value === 'string') {
+    return PRESET_COMPLETE_TEXTS.some((preset) =>
+      Object.values(preset).includes(value),
+    );
+  }
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return false;
   }
@@ -34,7 +41,7 @@ function isPresetText(value: unknown): boolean {
 
   return PRESET_COMPLETE_TEXTS.some(
     (preset) =>
-      entries.length === Object.keys(preset).length &&
+      entries.length > 0 &&
       entries.every(([locale, text]) => preset[locale] === text),
   );
 }

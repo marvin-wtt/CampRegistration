@@ -35,15 +35,28 @@ describe('extractPaymentAmounts', () => {
     });
 
     it('reads numeric strings and counts anything else as zero', () => {
+      const json = (expression: string) => ({
+        elements: [fee('a', { expression })],
+      });
+
+      expect(amounts(json("'12.5'"))).toEqual([12.5]);
+      expect(amounts(json("'abc'"))).toEqual([0]);
+      expect(amounts(json('{missing}'))).toEqual([0]);
+    });
+
+    it('never counts a typed answer, so nobody sets their own price', () => {
       const json = {
         elements: [
-          { type: 'text', name: 'a', eventDataType: 'payment_amount' },
+          {
+            type: 'text',
+            name: 'a',
+            inputType: 'number',
+            eventDataType: 'payment_amount',
+          },
         ],
       };
 
-      expect(amounts(json, { a: '12.5' })).toEqual([12.5]);
-      expect(amounts(json, { a: 'abc' })).toEqual([0]);
-      expect(amounts(json)).toEqual([0]);
+      expect(amounts(json, { a: -500 })).toEqual([]);
     });
 
     it('leaves out one that is always hidden', () => {

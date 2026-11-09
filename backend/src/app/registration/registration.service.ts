@@ -3,7 +3,10 @@ import httpStatus from 'http-status';
 import { Prisma, type Registration } from '#generated/prisma/client.js';
 import type { EventWithFreePlaces } from '#app/event/event.types';
 import { computeAmountDue } from '@camp-registration/common/utils';
-import { assertPriceUnchanged } from './registration.price-check.js';
+import {
+  assertAmountWithinLimit,
+  assertPriceUnchanged,
+} from './registration.price-check.js';
 import { RegistrationForm } from '#app/registration/registration.form';
 import { BaseService } from '#core/base/BaseService';
 import {
@@ -119,6 +122,7 @@ export class RegistrationService extends BaseService {
     // Stored whether or not anyone is asked to pay: the form showed it, so it
     // is what this person agreed to, at its group's price.
     const quotedAmount = computeAmountDue(event, form.paymentAmounts(), group);
+    assertAmountWithinLimit(quotedAmount);
     assertPriceUnchanged(quotedAmount, displayedTotal);
 
     const fileIds = form.getFileIds();

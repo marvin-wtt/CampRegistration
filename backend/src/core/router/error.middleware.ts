@@ -109,7 +109,6 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   // the internal cause (`ECONNREFUSED`, a driver code) just as its message
   // does — mask it on the same terms, or the masking is undone by it.
   const errorCode = masked ? undefined : err.code;
-  const details = masked ? undefined : err.details;
 
   res.locals.errorMessage = err.message;
 
@@ -117,7 +116,6 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     code: statusCode,
     message,
     ...(errorCode !== undefined && { errorCode }),
-    ...(details !== undefined && { details }),
     ...(config.env === 'development' && { stack: err.stack }),
   };
 

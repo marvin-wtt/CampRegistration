@@ -1,13 +1,6 @@
-import { SurveyModel } from 'survey-core';
-import type {
-  EventDetails,
-  PerGroup,
-  Registration,
-} from '@camp-registration/common/entities';
-import {
-  extractPaymentAmounts,
-  setVariables,
-} from '@camp-registration/common/form';
+import type { SurveyModel } from 'survey-core';
+import type { PerGroup } from '@camp-registration/common/entities';
+import { extractPaymentAmounts } from '@camp-registration/common/form';
 import { computeAmountDue } from '@camp-registration/common/utils';
 
 /**
@@ -25,20 +18,4 @@ export function surveyAmountDue(
     extractPaymentAmounts(survey),
     typeof group === 'string' ? group : null,
   );
-}
-
-/**
- * What a stored registration's answers come to under the event's current
- * form and price, read in the locale and group it was submitted with.
- */
-export function quoteRegistration(
-  event: EventDetails,
-  registration: Pick<Registration, 'data' | 'locale' | 'group'>,
-): number {
-  const survey = new SurveyModel(event.form);
-  survey.locale = registration.locale;
-  setVariables(survey, event, { group: registration.group });
-  survey.data = registration.data;
-
-  return surveyAmountDue(survey, event);
 }

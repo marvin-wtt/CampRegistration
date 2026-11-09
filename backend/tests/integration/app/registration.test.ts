@@ -600,7 +600,6 @@ describe('/api/v1/events/:eventId/registrations', () => {
         ).expect(409);
 
         expect(body).toHaveProperty('errorCode', 'REGISTRATION_PRICE_CHANGED');
-        expect(body).toHaveProperty('details', { quotedAmount: 15000 });
         await expect(countRegistrations(event)).resolves.toBe(0);
       });
     });

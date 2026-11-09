@@ -55,10 +55,17 @@ export function setCompleteTextDefault(
   paid: boolean,
 ): void {
   registerStrings();
-  // Created on first access (unlike `getLocalizableString`, which only finds
-  // it afterwards); survey-core defines it at runtime but leaves it untyped.
-  const { locCompleteText } = survey as unknown as {
-    locCompleteText: LocalizableString;
-  };
-  locCompleteText.localizationName = paid ? PAID_KEY : FREE_KEY;
+  completeText(survey).localizationName = paid ? PAID_KEY : FREE_KEY;
+}
+
+/** Whether the Complete button shows the default, not the form's own text. */
+export function usesCompleteTextDefault(survey: SurveyModel): boolean {
+  return completeText(survey).isEmpty;
+}
+
+// Created on first access (unlike `getLocalizableString`, which only finds it
+// afterwards); survey-core defines it at runtime but leaves it untyped.
+function completeText(survey: SurveyModel): LocalizableString {
+  return (survey as unknown as { locCompleteText: LocalizableString })
+    .locCompleteText;
 }

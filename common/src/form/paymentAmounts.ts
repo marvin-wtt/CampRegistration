@@ -3,6 +3,7 @@ import {
   type ChoiceItem,
   type Question,
   QuestionBooleanModel,
+  QuestionExpressionModel,
   QuestionSelectBase,
   type SurveyModel,
 } from 'survey-core';
@@ -15,8 +16,9 @@ import { PAYMENT_AMOUNT_TAG } from '../utils/amountDue.js';
  * form previews what the server charges.
  * - a visible tagged boolean answered yes: its `price`;
  * - a visible tagged select question: the `price` of each selected choice;
- * - any other visible tagged question: its value;
+ * - a visible tagged expression: its value;
  * - a tagged calculated value: its value, always (never shown).
+ * Never a typed answer: the registrant would set their own price.
  */
 export function extractPaymentAmounts(survey: SurveyModel): number[] {
   // Nested: the questions of every dynamic panel entry, each its own answer.
@@ -43,8 +45,11 @@ function questionAmounts(question: Question): unknown[] {
       .filter((choice) => question.isItemSelected(choice))
       .map(price);
   }
+  if (question instanceof QuestionExpressionModel) {
+    return [question.value];
+  }
 
-  return [question.value];
+  return [];
 }
 
 function isTagged(item: Question | CalculatedValue): boolean {

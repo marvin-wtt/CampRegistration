@@ -4,7 +4,10 @@ import { ComponentFactory } from 'survey-vue3-ui';
 import type { PerGroup } from '@camp-registration/common/entities';
 import type { PaymentTotalMode } from '@camp-registration/common/form';
 import { surveyAmountDue } from '@/lib/surveyJs/quote';
-import { setCompleteTextDefault } from '@/lib/surveyJs/completeText';
+import {
+  setCompleteTextDefault,
+  usesCompleteTextDefault,
+} from '@/lib/surveyJs/completeText';
 import RegistrationAmountSummary from '@/components/common/RegistrationAmountSummary.vue';
 
 const SUMMARY_COMPONENT = 'cr-registration-amount-summary';
@@ -20,6 +23,18 @@ export interface AmountDueState {
   currency: string;
   /** Whether the summary belongs on the current page. */
   shown: boolean;
+}
+
+/**
+ * Whether the person was shown what registering costs: the summary, or the
+ * Complete button's default label, which says whether it costs money. Only
+ * then is there a displayed total for the server to check.
+ */
+export function amountPresented(
+  survey: SurveyModel,
+  state: AmountDueState,
+): boolean {
+  return state.shown || usesCompleteTextDefault(survey);
 }
 
 function paymentTotalMode(survey: SurveyModel): PaymentTotalMode {

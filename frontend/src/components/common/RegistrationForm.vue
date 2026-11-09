@@ -90,22 +90,14 @@
         <q-card-actions
           v-else-if="submitState === 'priceChanged'"
           align="center"
-          class="q-gutter-sm q-pb-md"
+          class="q-pb-md"
         >
           <m-btn
             primary
-            icon="how_to_reg"
-            :label="t('submit.priceChanged.confirm', { amount: quotedPrice })"
-            data-test="registration-price-confirm"
-            @click="confirmServerQuote"
-          />
-          <m-btn
-            outline
-            primary
-            icon="edit"
-            :label="t('submit.priceChanged.back')"
-            data-test="registration-price-back"
-            @click="backToForm"
+            icon="refresh"
+            :label="t('submit.priceChanged.reload')"
+            data-test="registration-price-reload"
+            @click="reloadPage"
           />
         </q-card-actions>
 
@@ -165,14 +157,17 @@ import {
 } from '@/lib/surveyJs/textProcessing';
 import { readAsDataURL } from '@/utils/readAsDataURL';
 import { emphasizeForwardNavigation } from '@/lib/surveyJs/navigation';
-import { addAmountSummary, trackAmountDue } from '@/lib/surveyJs/amountDue';
+import {
+  addAmountSummary,
+  amountPresented,
+  trackAmountDue,
+} from '@/lib/surveyJs/amountDue';
 import type {
   EventDetails,
   Registration,
 } from '@camp-registration/common/entities';
-import { formatMoney } from '@camp-registration/common/utils';
 import { useAPIService } from '@/services/APIService';
-import { serverQuoteFromPriceChange } from '@/services/RegistrationService';
+import { isPriceChangedError } from '@/services/RegistrationService';
 import { useErrorExtractor } from '@/composables/serviceHandler';
 
 const { locale, t } = useI18n();
@@ -214,8 +209,6 @@ const emit = defineEmits<{
 const submitState = ref<'saving' | 'success' | 'error' | 'priceChanged' | null>(
   null,
 );
-// After a price change: the server's amount, which the person confirms.
-const serverQuote = ref<number | null>(null);
 const submitError = ref<string>();
 // Stays true once the submission succeeded, including when survey-core takes
 // the screen back over to show the form's own completed page.
@@ -269,7 +262,7 @@ const statusText = computed(() => {
     case 'error':
       return t('submit.error.text');
     case 'priceChanged':
-      return t('submit.priceChanged.text', { amount: quotedPrice.value });
+      return t('submit.priceChanged.text');
     default:
       return '';
   }
@@ -463,10 +456,12 @@ function createModel(eventId: string, form: object): SurveyModel {
 
     mapFileQuestionValues(sender);
 
-    // What the form presented (the summary, or the Complete button's paid
-    // label when the summary is hidden). Only for the server to compare: it
-    // charges its own amount, whatever this says.
-    const displayedTotal = serverQuote.value ?? amountDue?.amount;
+    // What the form presented, if it presented a price at all. Only for the
+    // server to compare: it charges its own amount, whatever this says.
+    const displayedTotal =
+      amountDue && amountPresented(sender, amountDue)
+        ? amountDue.amount
+        : undefined;
 
     try {
       const registration = await submitFn(
@@ -490,9 +485,9 @@ function createModel(eventId: string, form: object): SurveyModel {
         redirect(pendingRedirect);
       }
     } catch (e: unknown) {
-      const quote = serverQuoteFromPriceChange(e);
-      if (quote !== null) {
-        serverQuote.value = quote;
+      // Its cause is unknown (a changed price or form, a passed deadline, an
+      // outdated page), so the person starts over on a freshly loaded page.
+      if (isPriceChangedError(e)) {
         submitState.value = 'priceChanged';
         return;
       }
@@ -504,21 +499,8 @@ function createModel(eventId: string, form: object): SurveyModel {
   return survey;
 }
 
-const quotedPrice = computed(() =>
-  serverQuote.value === null
-    ? ''
-    : formatMoney(serverQuote.value, props.eventDetails.currency, locale.value),
-);
-
-// Resubmits, now confirming the server's amount the person was just shown.
-function confirmServerQuote() {
-  retrySubmit();
-}
-
-function backToForm() {
-  serverQuote.value = null;
-  model.clear(false, false);
-  submitState.value = null;
+function reloadPage() {
+  window.location.reload();
 }
 
 function retrySubmit() {
@@ -620,9 +602,8 @@ submit:
     text: 'Please wait while your registration is being saved.'
   priceChanged:
     title: 'The price has changed'
-    text: 'Registering now costs {amount}. The price changed while the form was open.'
-    confirm: 'Register for {amount}'
-    back: 'Back to the form'
+    text: 'The price changed while you were filling in the form. Please reload the page and register again.'
+    reload: 'Reload page'
   error:
     title: 'Registration failed'
     text: 'Your registration could not be saved. Please try again.'
@@ -649,9 +630,8 @@ submit:
     text: 'Bitte warte, während deine Anmeldung gespeichert wird.'
   priceChanged:
     title: 'Der Preis hat sich geändert'
-    text: 'Die Anmeldung kostet jetzt {amount}. Der Preis hat sich geändert, während das Formular geöffnet war.'
-    confirm: 'Für {amount} anmelden'
-    back: 'Zurück zum Formular'
+    text: 'Der Preis hat sich geändert, während du das Formular ausgefüllt hast. Bitte lade die Seite neu und melde dich erneut an.'
+    reload: 'Seite neu laden'
   error:
     title: 'Anmeldung fehlgeschlagen'
     text: 'Deine Anmeldung konnte nicht gespeichert werden. Bitte versuche es erneut.'
@@ -678,9 +658,8 @@ submit:
     text: "Veuillez patienter pendant l'enregistrement de votre inscription."
   priceChanged:
     title: 'Le prix a changé'
-    text: "L'inscription coûte désormais {amount}. Le prix a changé pendant que le formulaire était ouvert."
-    confirm: "S'inscrire pour {amount}"
-    back: 'Retour au formulaire'
+    text: 'Le prix a changé pendant que tu remplissais le formulaire. Recharge la page et inscris-toi à nouveau.'
+    reload: 'Recharger la page'
   error:
     title: "Échec de l'inscription"
     text: "Votre inscription n'a pas pu être enregistrée. Veuillez réessayer."
@@ -707,9 +686,8 @@ submit:
     text: 'Poczekaj, trwa zapisywanie rejestracji.'
   priceChanged:
     title: 'Cena się zmieniła'
-    text: 'Rejestracja kosztuje teraz {amount}. Cena zmieniła się, gdy formularz był otwarty.'
-    confirm: 'Zarejestruj się za {amount}'
-    back: 'Wróć do formularza'
+    text: 'Cena zmieniła się podczas wypełniania formularza. Odśwież stronę i zarejestruj się ponownie.'
+    reload: 'Odśwież stronę'
   error:
     title: 'Rejestracja nie powiodła się'
     text: 'Nie udało się zapisać rejestracji. Spróbuj ponownie.'
@@ -736,9 +714,8 @@ submit:
     text: 'Počkej prosím, než bude registrace uložena.'
   priceChanged:
     title: 'Cena se změnila'
-    text: 'Registrace nyní stojí {amount}. Cena se změnila, zatímco byl formulář otevřený.'
-    confirm: 'Zaregistrovat se za {amount}'
-    back: 'Zpět k formuláři'
+    text: 'Cena se změnila během vyplňování formuláře. Načti stránku znovu a zaregistruj se znovu.'
+    reload: 'Načíst stránku znovu'
   error:
     title: 'Registrace se nezdařila'
     text: 'Registraci se nepodařilo uložit. Zkus to prosím znovu.'

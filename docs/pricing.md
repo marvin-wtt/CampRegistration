@@ -38,8 +38,14 @@ price") count:
 - a boolean: its `price` when answered yes;
 - a select question (radio, dropdown, checkbox, tag box): the `price` of each
   selected choice;
-- a number or expression question: its value;
+- an expression question: its value;
 - a calculated value: its value.
+
+Never a typed answer: a tagged text or number field adds nothing, or the
+registrant would set their own price. An expression over a typed answer
+(`{nights} * 20`) is the organizer's rule, and the question's own validators
+(minimum, maximum) bound it; the server refuses a quote above `MAX_AMOUNT_DUE`
+(`assertAmountWithinLimit`), what its column can hold.
 
 The form editor shows the price fields only on tagged questions
 (`pricedQuestions.ts`), and a `price` left on an untagged question charges
@@ -50,6 +56,13 @@ person sees and chooses. Calculated values are never shown and always count:
 rules the organizer applies in the background. The presets waive the price
 for every role but `participant` with one (`payment_team_discount`), so the
 team sees no discount line, just no price.
+
+Only events created from a preset after this change get that discount: forms
+are copied into the event, and no migration adds it to existing ones, since
+what `role` means is up to each form. On an existing event the team is quoted
+the full price until a director adds the discount, e.g. a calculated value
+tagged "Affects the price" with
+`iif({role} notempty and {role} <> 'participant', 0 - {event.price}, 0)`.
 
 The server computes it from the validated submission and stores it as
 `Registration.quotedAmount`, with `Registration.currency`. It never changes:
@@ -65,10 +78,15 @@ The registration form shows the same total live (`trackAmountDue`,
 and its Complete button says whether registering costs money
 (`completeText.ts`).
 
-On submit the form sends `displayedTotal`, the total it showed. It
-is **untrusted and never an amount**: `assertPriceUnchanged`
+On submit the form sends `displayedTotal`, the total it showed, but only if
+it showed a price: the summary, or the Complete button's default label
+(`amountPresented`). A form that hides the total and sets its own button text
+sends none. It is **untrusted and never an amount**: `assertPriceUnchanged`
 (`registration.price-check.ts`) only compares it with the server's own quote.
-On a mismatch the server refuses with `REGISTRATION_PRICE_CHANGED` and its
-quote in `details.quotedAmount`; the form asks the person to confirm that
-amount and resubmits with it. Nobody is charged an amount they were not shown.
+On a mismatch the server refuses with `REGISTRATION_PRICE_CHANGED`, and the
+form asks the person to reload the page and register again. The cause is
+unknown — a changed price or form, a passed date in an expression, an outdated
+page after a deploy — and a fresh page fixes them all; it is rare enough that
+keeping the answers isn't worth the code. Nobody is charged an amount they
+were not shown.
 Without a check (API clients, managers' forms) nothing is compared.

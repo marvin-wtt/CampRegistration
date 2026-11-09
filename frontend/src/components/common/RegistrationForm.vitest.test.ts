@@ -358,16 +358,16 @@ describe('RegistrationForm', () => {
   });
 
   describe('amount summary', () => {
-    // A priced option: its answer is what the registration costs.
+    // A priced option: choosing it is what the registration costs.
     const pricedForm = {
       pages: [
         {
           name: 'page1',
           elements: [
             {
-              type: 'text',
+              type: 'boolean',
               name: 'option',
-              inputType: 'number',
+              price: 45,
               eventDataType: 'payment_amount',
             },
           ],
@@ -416,7 +416,7 @@ describe('RegistrationForm', () => {
       expect(summary().exists()).toBe(false);
       expect(survey.completeText).toBe('Verbindlich anmelden');
 
-      survey.setValue('option', 45);
+      survey.setValue('option', true);
       await flushPromises();
 
       expect(summary().text()).toContain('45.00');
@@ -502,13 +502,10 @@ describe('RegistrationForm', () => {
   });
 
   describe('price check', () => {
-    const priceChanged = (quotedAmount: number) =>
+    const priceChanged = () =>
       new AxiosError('Conflict', '409', undefined, undefined, {
         status: 409,
-        data: {
-          errorCode: 'REGISTRATION_PRICE_CHANGED',
-          details: { quotedAmount },
-        },
+        data: { errorCode: 'REGISTRATION_PRICE_CHANGED' },
       } as never);
 
     const pricedForm: object = {
@@ -549,11 +546,10 @@ describe('RegistrationForm', () => {
       );
     });
 
-    it('confirms the server amount after a price change, never its own', async () => {
-      const submitFn = vi
-        .fn()
-        .mockRejectedValueOnce(priceChanged(15000))
-        .mockResolvedValue(undefined);
+    it('asks the person to reload and register again after a price change', async () => {
+      const submitFn = vi.fn().mockRejectedValueOnce(priceChanged());
+      const reload = vi.fn();
+      vi.stubGlobal('location', { ...window.location, reload });
       const { wrapper, survey } = mountPriced(submitFn);
 
       survey.doComplete();
@@ -564,35 +560,82 @@ describe('RegistrationForm', () => {
           .find('[data-test="registration-submit-status-priceChanged"]')
           .exists(),
       ).toBe(true);
+      expect(
+        wrapper.find('[data-test="registration-submit-retry"]').exists(),
+      ).toBe(false);
 
       await wrapper
-        .find('[data-test="registration-price-confirm"]')
+        .find('[data-test="registration-price-reload"]')
         .trigger('click');
-      await flushPromises();
 
-      expect(submitFn).toHaveBeenLastCalledWith(
-        expect.anything(),
-        expect.anything(),
-        expect.anything(),
-        15000,
-      );
+      expect(reload).toHaveBeenCalled();
+      expect(submitFn).toHaveBeenCalledTimes(1);
+      vi.unstubAllGlobals();
     });
 
-    it('goes back to the form instead', async () => {
-      const submitFn = vi.fn().mockRejectedValueOnce(priceChanged(15000));
-      const { wrapper, survey } = mountPriced(submitFn);
+    it('sends no total when the form showed no price', async () => {
+      const submitFn = vi.fn(() => Promise.resolve());
+      const wrapper = mount(RegistrationForm, {
+        props: {
+          eventDetails: {
+            ...simpleEventDetails,
+            price: 12000,
+            form: {
+              ...simpleEventDetails.form,
+              ...pricedForm,
+              showPaymentTotal: 'never',
+              completeText: 'Absenden',
+            },
+          },
+          submitFn: submitFn as never,
+          uploadFileFn: () => Promise.reject(new Error()),
+        },
+      });
+      const survey = wrapper
+        .getComponent(SurveyComponent)
+        .props('model') as SurveyModel;
 
       survey.doComplete();
       await flushPromises();
-      await wrapper
-        .find('[data-test="registration-price-back"]')
-        .trigger('click');
+
+      expect(submitFn).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        undefined,
+      );
+    });
+
+    it('still sends the total behind the paid button label', async () => {
+      const submitFn = vi.fn(() => Promise.resolve());
+      const wrapper = mount(RegistrationForm, {
+        props: {
+          eventDetails: {
+            ...simpleEventDetails,
+            price: 12000,
+            form: {
+              ...simpleEventDetails.form,
+              ...pricedForm,
+              showPaymentTotal: 'never',
+            },
+          },
+          submitFn: submitFn as never,
+          uploadFileFn: () => Promise.reject(new Error()),
+        },
+      });
+      const survey = wrapper
+        .getComponent(SurveyComponent)
+        .props('model') as SurveyModel;
+
+      survey.doComplete();
       await flushPromises();
 
-      expect(survey.state).toBe('running');
-      expect(
-        wrapper.find('[data-test="registration-submit-status"]').exists(),
-      ).toBe(false);
+      expect(submitFn).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        12000,
+      );
     });
   });
 

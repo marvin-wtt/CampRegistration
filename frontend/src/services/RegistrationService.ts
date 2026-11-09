@@ -74,21 +74,12 @@ export function useRegistrationService() {
   };
 }
 
-/**
- * The server's own amount from a `REGISTRATION_PRICE_CHANGED` refusal, or
- * `null` for any other error. This — never what the form displayed — is what
- * the person is asked to confirm.
- */
-export function serverQuoteFromPriceChange(error: unknown): number | null {
+/** Whether the server refused a total the form showed as outdated. */
+export function isPriceChangedError(error: unknown): boolean {
   if (!axios.isAxiosError(error)) {
-    return null;
+    return false;
   }
-  const body = error.response?.data as
-    { errorCode?: unknown; details?: { quotedAmount?: unknown } } | undefined;
-  const quote = body?.details?.quotedAmount;
+  const body = error.response?.data as { errorCode?: unknown } | undefined;
 
-  return body?.errorCode === REGISTRATION_PRICE_CHANGED &&
-    typeof quote === 'number'
-    ? quote
-    : null;
+  return body?.errorCode === REGISTRATION_PRICE_CHANGED;
 }
