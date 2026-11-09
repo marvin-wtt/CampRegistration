@@ -1825,6 +1825,13 @@ describe('/api/v1/events/:eventId/registrations', () => {
         expectEmailWith({
           html: expect.stringContaining('Jhon') as string,
         });
+        // Inserted after sanitizing, so its own inline styles survive.
+        expectEmailWith({
+          html: expect.stringContaining('padding-left:1.5em') as string,
+        });
+        expectEmailWith({
+          html: expect.not.stringMatching(/changes-[0-9A-Z]{26}/) as string,
+        });
 
         // The durable copy names what moved without repeating what it now says.
         const delivery = await prisma.messageDelivery.findFirst({

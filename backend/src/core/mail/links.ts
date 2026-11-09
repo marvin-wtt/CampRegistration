@@ -1,5 +1,5 @@
 import sanitizeHtml from 'sanitize-html';
-import { LINK_SCHEMES } from '#utils/sanitize';
+import { HTML_CONTENT_OPTIONS, LINK_SCHEMES } from '#utils/sanitize';
 import { escapeHtml } from '#core/mail/templating';
 
 // Buttons are stored as `<a data-button href="…">Label</a>` and only take their
@@ -25,18 +25,28 @@ function buttonMarkup(href: string, label: string, color: string): string {
 }
 
 /**
- * Prepares rendered email HTML for sending: drops every link whose scheme
- * isn't allowed — values filled into a template reach `href` unchecked — and
- * expands buttons. A button left without a target is removed.
+ * Prepares a rendered email body for sending: sanitizes it against the rich
+ * content allowlist and expands buttons. A button left without a target is
+ * removed.
+ *
+ * Sanitizing here, not only on save, covers what a save can't see: newsletter
+ * bodies, and values a `{{{ }}}` placeholder inserts unescaped.
  */
 export function renderEmailLinks(
   html: string,
   options: { buttonColor: string },
 ): string {
   const marked = sanitizeHtml(html, {
-    allowedTags: false,
-    allowedAttributes: false,
-    allowedSchemes: LINK_SCHEMES,
+    ...HTML_CONTENT_OPTIONS,
+    allowedTags: [...HTML_CONTENT_OPTIONS.allowedTags, BUTTON_TAG],
+    allowedAttributes: {
+      ...HTML_CONTENT_OPTIONS.allowedAttributes,
+      [BUTTON_TAG]: ['href'],
+    },
+    allowedSchemesByTag: {
+      ...HTML_CONTENT_OPTIONS.allowedSchemesByTag,
+      [BUTTON_TAG]: LINK_SCHEMES,
+    },
     transformTags: {
       a: (tagName, attribs) => {
         if (!('data-button' in attribs)) {

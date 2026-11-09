@@ -26,12 +26,8 @@ import { resolve } from '#core/ioc/container';
 import ApiError from '#core/router/ApiError';
 import httpStatus from 'http-status';
 import type { RegistrationChange } from '../registration.changes.js';
-import { redactChangeValues, unwrapChangesBlock } from './changes.markup.js';
-import {
-  renderTemplate,
-  type SafeHtml,
-  TemplateError,
-} from '#core/mail/templating';
+import { insertChangesBlock, redactChangeValues } from './changes.markup.js';
+import { renderTemplate, TemplateError } from '#core/mail/templating';
 import { renderEmailLinks } from '#core/mail/links';
 import config from '#config/index';
 import { RegistrationMessage } from './base.mail.js';
@@ -127,7 +123,11 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
     }
 
     // A subject is plain text, so values must not be HTML-escaped.
-    const subject = renderTemplate(template, this.context('text'), 'text');
+    const subject = renderTemplate(
+      template,
+      this.context(this.renderChanges('text')),
+      'text',
+    );
 
     // A header can't span lines
     return subject.replace(/\s+/g, ' ').trim();
@@ -154,7 +154,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
    * previous version to diff, so elsewhere the token renders to nothing
    * rather than breaking the mail.
    */
-  protected renderChanges(_format: 'html' | 'text'): SafeHtml | string {
+  protected renderChanges(_format: 'html' | 'text'): string {
     return '';
   }
 
@@ -176,7 +176,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
     };
   }
 
-  private context(format: 'html' | 'text'): object {
+  private context(changes: string): object {
     const event = this.payload.event;
 
     return {
@@ -209,7 +209,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
           phoneNumbers: this.payload.registration.phoneNumbers,
         },
         customData: this.payload.registration.customData ?? {},
-        changes: this.renderChanges(format),
+        changes,
         ...this.quotedPrice(event),
         locale: this.payload.registration.locale,
         // The group's country code; the address's own is `address.country`.
@@ -292,11 +292,15 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
   private renderBody(): string {
     const template = this.payload.message.body;
 
-    const html = unwrapChangesBlock(
-      renderTemplate(template, this.context('html'), 'html'),
-    );
+    // The list is our markup, so like buttons it goes in after sanitizing. The
+    // placeholder is random, so an answer can't fake one. No list, no
+    // placeholder: `{{#if registration.changes}}` must stay false.
+    const list = this.renderChanges('html');
+    const placeholder = list ? `changes-${ulid()}` : '';
+    const html = renderTemplate(template, this.context(placeholder), 'html');
+    const body = renderEmailLinks(html, { buttonColor: config.primaryColor });
 
-    return renderEmailLinks(html, { buttonColor: config.primaryColor });
+    return placeholder ? insertChangesBlock(body, placeholder, list) : body;
   }
 
   /** Subject and body as this recipient would get them, without sending. */

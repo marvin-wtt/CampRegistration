@@ -52,9 +52,33 @@ describe('renderEmailLinks', () => {
   it('keeps plain links and existing inline styles', () => {
     const html =
       '<p style="text-align:center">See <a href="https://example.com/?a=1&amp;b=2">here</a></p>' +
-      '<ul class="registration-changes" style="margin:0"><li><span class="change-value">v</span></li></ul>';
+      '<ul class="list" style="color:#ff0000"><li><span class="value">v</span></li></ul>';
 
     expect(renderEmailLinks(html, options)).toBe(html);
+  });
+
+  it('strips markup outside the content allowlist', () => {
+    const html = renderEmailLinks(
+      '<p onclick="x()">Hi</p><script>alert(1)</script><style>p{}</style>' +
+        '<form action="https://evil.com"><input name="pw"></form>',
+      options,
+    );
+
+    expect(html).toBe('<p>Hi</p>');
+  });
+
+  it('sanitizes a value a triple-stash placeholder inserted unescaped', () => {
+    const rendered = renderTemplate(
+      '<p>Hello {{{ name }}}</p>',
+      {
+        name: '<img src="x" onerror="alert(1)"><iframe src="https://evil.com"></iframe>',
+      },
+      'html',
+    );
+
+    expect(renderEmailLinks(rendered, options)).toBe(
+      '<p>Hello <img src="x" /></p>',
+    );
   });
 
   it('keeps an escaped label escaped', () => {
