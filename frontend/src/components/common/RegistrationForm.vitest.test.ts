@@ -545,7 +545,7 @@ describe('RegistrationForm', () => {
         expect.anything(),
         expect.anything(),
         expect.anything(),
-        { displayedTotal: 12000 },
+        12000,
       );
     });
 
@@ -574,7 +574,7 @@ describe('RegistrationForm', () => {
         expect.anything(),
         expect.anything(),
         expect.anything(),
-        { displayedTotal: 15000 },
+        15000,
       );
     });
 

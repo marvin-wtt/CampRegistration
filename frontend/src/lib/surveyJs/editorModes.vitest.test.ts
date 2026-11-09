@@ -189,6 +189,41 @@ describe('editor modes', () => {
     },
   );
 
+  describe('the payment total setting', () => {
+    function surveyGrid(mode: 'standard' | 'expert') {
+      const creator = createCreator();
+      let grid: SurveyModel | undefined;
+      creator.onSurveyInstanceCreated.add((_, options) => {
+        if (options.area === 'property-grid') {
+          grid = options.survey;
+        }
+      });
+      applyEditorMode(creator, mode, context);
+      creator.selectElement(creator.survey);
+
+      return grid;
+    }
+
+    it.each(['standard', 'expert'] as const)(
+      'sits in the Navigation tab (%s)',
+      (mode) => {
+        expect(
+          surveyGrid(mode)?.getQuestionByName('showPaymentTotal')?.parent.name,
+        ).toBe('navigation');
+      },
+    );
+
+    it('follows the Complete button text (expert)', () => {
+      const names = surveyGrid('expert')!
+        .getAllQuestions()
+        .map((question) => question.name);
+
+      expect(names.indexOf('showPaymentTotal')).toBe(
+        names.indexOf('completeText') + 1,
+      );
+    });
+  });
+
   it('rebuilds the property grid of the selected element', () => {
     const creator = createCreator();
     const properties = trackPropertyGrid(creator);

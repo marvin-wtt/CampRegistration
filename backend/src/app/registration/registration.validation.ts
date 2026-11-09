@@ -4,7 +4,6 @@ import { RegistrationForm } from '#app/registration/registration.form';
 import {
   REGISTRATION_DELETE_REASONS,
   type RegistrationCreateData,
-  type RegistrationPriceCheck,
   type RegistrationUpdateData,
   type RegistrationUpdateQuery,
   type RegistrationDeleteQuery,
@@ -52,12 +51,14 @@ const store = (event: EventWithRelations, fallbackLocale: string) =>
           .transform((group) => eventGroup(event, group)),
         // Untrusted, never an amount: compared with the server's quote only
         // (`assertPriceUnchanged`).
-        priceCheck: z
-          .object({
-            displayedTotal: z.number().int().nonnegative().max(1_000_000_000),
-          })
-          .strict()
-          .optional() satisfies ZodType<RegistrationPriceCheck | undefined>,
+        displayedTotal: z
+          .number()
+          .int()
+          .nonnegative()
+          .max(1_000_000_000)
+          .optional() satisfies ZodType<
+          RegistrationCreateData['displayedTotal']
+        >,
       })
       .superRefine(async ({ data, locale, group }, ctx) => {
         if (event.countries.length > 1 && !group) {

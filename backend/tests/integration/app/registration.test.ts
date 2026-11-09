@@ -586,7 +586,7 @@ describe('/api/v1/events/:eventId/registrations', () => {
         await register(
           event,
           { role: 'counselor' },
-          { priceCheck: { displayedTotal: 0 } },
+          { displayedTotal: 0 },
         ).expect(201);
       });
 
@@ -596,7 +596,7 @@ describe('/api/v1/events/:eventId/registrations', () => {
         const { body } = await register(
           event,
           { role: 'participant', bus: true },
-          { priceCheck: { displayedTotal: 12000 } },
+          { displayedTotal: 12000 },
         ).expect(409);
 
         expect(body).toHaveProperty('errorCode', 'REGISTRATION_PRICE_CHANGED');

@@ -10,8 +10,6 @@ type PropertyKey =
 type LocaleSection = {
   qt: Record<QtKey, string>;
   toolboxCategories: { registration: string };
-  // Property grid category titles.
-  pe: { tabs: { payment: string } };
   p: Record<PropertyKey, string>;
   pehelp: Record<PropertyKey, string>;
   // Property values, looked up by the creator as `pv.<property>.<value>`.
@@ -34,9 +32,6 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
       },
       toolboxCategories: {
         registration: 'Anmeldung',
-      },
-      pe: {
-        tabs: { payment: 'Bezahlung' },
       },
       p: {
         eventDataType: 'Daten-Tag',
@@ -86,9 +81,6 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
       toolboxCategories: {
         registration: 'Registration',
       },
-      pe: {
-        tabs: { payment: 'Payment' },
-      },
       p: {
         eventDataType: 'Data Tag',
         groupCountryMatch: 'Match with group',
@@ -135,9 +127,6 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
       },
       toolboxCategories: {
         registration: 'Inscription',
-      },
-      pe: {
-        tabs: { payment: 'Paiement' },
       },
       p: {
         eventDataType: 'Étiquette de données',
@@ -187,9 +176,6 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
       toolboxCategories: {
         registration: 'Rejestracja',
       },
-      pe: {
-        tabs: { payment: 'Płatność' },
-      },
       p: {
         eventDataType: 'Tag danych',
         groupCountryMatch: 'Zgodność z grupą',
@@ -237,9 +223,6 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
       },
       toolboxCategories: {
         registration: 'Registrace',
-      },
-      pe: {
-        tabs: { payment: 'Platba' },
       },
       p: {
         eventDataType: 'Datový štítek',

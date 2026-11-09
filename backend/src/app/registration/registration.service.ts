@@ -3,7 +3,6 @@ import httpStatus from 'http-status';
 import { Prisma, type Registration } from '#generated/prisma/client.js';
 import type { EventWithFreePlaces } from '#app/event/event.types';
 import { computeAmountDue } from '@camp-registration/common/utils';
-import type { RegistrationPriceCheck } from '@camp-registration/common/entities';
 import { assertPriceUnchanged } from './registration.price-check.js';
 import { RegistrationForm } from '#app/registration/registration.form';
 import { BaseService } from '#core/base/BaseService';
@@ -94,14 +93,14 @@ export class RegistrationService extends BaseService {
   }
 
   /**
-   * `priceCheck` is what the form displayed: a submission whose price changed
+   * `displayedTotal` is what the form showed: a submission whose price changed
    * meanwhile is refused (`assertPriceUnchanged`), never charged differently.
    */
   async createRegistration(
     event: EventWithFreePlaces,
     data: Pick<Registration, 'data' | 'locale' | 'group'>,
     fileField: string,
-    priceCheck?: RegistrationPriceCheck,
+    displayedTotal?: number,
   ) {
     // Built in the locale the data was validated in: event variables such as
     // `{event.price}` resolve per locale, so computed values can differ.
@@ -120,7 +119,7 @@ export class RegistrationService extends BaseService {
     // Stored whether or not anyone is asked to pay: the form showed it, so it
     // is what this person agreed to, at its group's price.
     const quotedAmount = computeAmountDue(event, form.paymentAmounts(), group);
-    assertPriceUnchanged(quotedAmount, priceCheck);
+    assertPriceUnchanged(quotedAmount, displayedTotal);
 
     const fileIds = form.getFileIds();
 

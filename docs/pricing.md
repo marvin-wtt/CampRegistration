@@ -65,7 +65,7 @@ The registration form shows the same total live (`trackAmountDue`,
 and its Complete button says whether registering costs money
 (`completeText.ts`).
 
-On submit the form sends `priceCheck.displayedTotal`, the total it showed. It
+On submit the form sends `displayedTotal`, the total it showed. It
 is **untrusted and never an amount**: `assertPriceUnchanged`
 (`registration.price-check.ts`) only compares it with the server's own quote.
 On a mismatch the server refuses with `REGISTRATION_PRICE_CHANGED` and its

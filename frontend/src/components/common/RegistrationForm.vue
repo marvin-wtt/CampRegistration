@@ -169,7 +169,6 @@ import { addAmountSummary, trackAmountDue } from '@/lib/surveyJs/amountDue';
 import type {
   EventDetails,
   Registration,
-  RegistrationPriceCheck,
 } from '@camp-registration/common/entities';
 import { formatMoney } from '@camp-registration/common/utils';
 import { useAPIService } from '@/services/APIService';
@@ -190,7 +189,7 @@ interface Props {
     formData: Record<string, unknown>,
     locale: string,
     // What the form displayed, for the server to compare — never an amount.
-    priceCheck?: RegistrationPriceCheck,
+    displayedTotal?: number,
   ) => Promise<Registration | void>;
   uploadFileFn?: (file: File) => Promise<string>;
   moderation?: boolean;
@@ -464,19 +463,14 @@ function createModel(eventId: string, form: object): SurveyModel {
     // What the form presented (the summary, or the Complete button's paid
     // label when the summary is hidden). Only for the server to compare: it
     // charges its own amount, whatever this says.
-    const priceCheck =
-      serverQuote.value !== null
-        ? { displayedTotal: serverQuote.value }
-        : amountDue
-          ? { displayedTotal: amountDue.amount }
-          : undefined;
+    const displayedTotal = serverQuote.value ?? amountDue?.amount;
 
     try {
       const registration = await submitFn(
         eventId,
         sender.data ?? {},
         sender.locale,
-        priceCheck,
+        displayedTotal,
       );
       submittedRegistration.value = registration ?? undefined;
       submitted.value = true;

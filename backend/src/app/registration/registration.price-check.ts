@@ -1,25 +1,22 @@
 import httpStatus from 'http-status';
-import {
-  REGISTRATION_PRICE_CHANGED,
-  type RegistrationPriceCheck,
-} from '@camp-registration/common/entities';
+import { REGISTRATION_PRICE_CHANGED } from '@camp-registration/common/entities';
 import ApiError from '#core/router/ApiError';
 
 /**
  * Refuses a submission whose price changed while its form was open, so nobody
  * is charged an amount they were never shown.
  *
- * `priceCheck` is untrusted client input. It is only ever compared here and
+ * `displayedTotal` is untrusted client input. It is only ever compared here and
  * returns nothing: what a registration owes is always `quotedAmount`, the
  * server's own calculation. Never pass the displayed total on, store it or
- * charge it. Without a check (API clients, managers' forms) nothing is
+ * charge it. Without one (API clients, managers' forms) nothing is
  * compared.
  */
 export function assertPriceUnchanged(
   quotedAmount: number,
-  priceCheck: RegistrationPriceCheck | undefined,
+  displayedTotal: number | undefined,
 ): void {
-  if (!priceCheck || priceCheck.displayedTotal === quotedAmount) {
+  if (displayedTotal === undefined || displayedTotal === quotedAmount) {
     return;
   }
 

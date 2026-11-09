@@ -228,7 +228,6 @@ import { countryName } from '@/utils/countries';
 import {
   type EventDetails,
   type EventRegistrationStatus,
-  type RegistrationPriceCheck,
 } from '@camp-registration/common/entities';
 import { forGroup } from '@camp-registration/common/utils';
 import { isAPIServiceError, useAPIService } from '@/services/APIService';
@@ -489,13 +488,13 @@ async function submit(
   eventId: string,
   formData: Record<string, unknown>,
   locale: string,
-  priceCheck?: RegistrationPriceCheck,
+  displayedTotal?: number,
 ) {
   return api.createRegistration(eventId, {
     data: formData,
     locale,
     group: group.value ?? null,
-    priceCheck,
+    displayedTotal,
   });
 }
 
