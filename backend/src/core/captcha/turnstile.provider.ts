@@ -7,6 +7,8 @@ import {
   type CaptchaProvider,
   CaptchaUnavailableError,
 } from './captcha.provider.js';
+import logger from '#core/logger';
+import { describeError } from '#utils/errors';
 
 const ORIGIN = 'https://challenges.cloudflare.com';
 const SITEVERIFY_URL = `${ORIGIN}/turnstile/v0/siteverify`;
@@ -84,17 +86,33 @@ export class TurnstileProvider implements CaptchaProvider {
       throw new CaptchaUnavailableError('Turnstile siteverify internal error');
     }
 
-    return (
-      result.success === true &&
-      result.action === action &&
-      typeof result.hostname === 'string' &&
-      this.options.hostnames.includes(result.hostname.toLowerCase())
+    if (result.success !== true) {
+      return false;
+    }
+
+    const hostname =
+      typeof result.hostname === 'string' ? result.hostname.toLowerCase() : '';
+    if (result.action === action && this.options.hostnames.includes(hostname)) {
+      return true;
+    }
+
+    // Cloudflare accepted the token, so a mismatch points at our
+    // configuration (TURNSTILE_HOSTNAMES, the widget's action), not a bot.
+    logger.warn(
+      `Turnstile token passed siteverify but was rejected: got action ` +
+        `'${String(result.action)}' on '${hostname}', expected '${action}' ` +
+        `on one of [${this.options.hostnames.join(', ')}].`,
     );
+    return false;
   }
 
   private async siteverify(body: URLSearchParams): Promise<SiteverifyResponse> {
+    // The detail goes in the message too: the logger prints messages only.
     const unavailable = (cause: unknown) =>
-      new CaptchaUnavailableError('Turnstile siteverify failed', { cause });
+      new CaptchaUnavailableError(
+        `Turnstile siteverify failed: ${describeError(cause)}`,
+        { cause },
+      );
 
     const response = await fetch(SITEVERIFY_URL, {
       method: 'POST',

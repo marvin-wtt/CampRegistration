@@ -1,6 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CaptchaUnavailableError } from '#core/captcha/captcha.provider';
 import { TurnstileProvider } from '#core/captcha/turnstile.provider';
+import logger from '#core/logger';
+
+vi.mock('#core/logger', () => ({
+  default: { warn: vi.fn(), error: vi.fn() },
+}));
 
 const options = {
   siteKey: 'site-key',
@@ -25,6 +30,7 @@ describe('TurnstileProvider', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     fetchMock.mockReset();
+    vi.mocked(logger.warn).mockClear();
   });
 
   it('accepts a successful token for the expected action and hostname', async () => {
@@ -61,6 +67,36 @@ describe('TurnstileProvider', () => {
     await expect(provider.verify('token', 'signup')).resolves.toBe(false);
   });
 
+  it.each([
+    ['action', { success: true, action: 'feedback', hostname: 'example.com' }],
+    [
+      'hostname',
+      { success: true, action: 'signup', hostname: 'www.example.com' },
+    ],
+  ])(
+    'warns when a token passing siteverify has another %s',
+    async (_, body) => {
+      respond(body);
+
+      await provider.verify('tok-1234', 'signup');
+
+      expect(logger.warn).toHaveBeenCalledOnce();
+      const [message] = vi.mocked(logger.warn).mock.calls[0] as [string];
+      expect(message).toContain(String(body.action));
+      expect(message).toContain(String(body.hostname));
+      expect(message).not.toContain('tok-1234');
+      expect(message).not.toContain(options.secret);
+    },
+  );
+
+  it('does not warn about a token failing siteverify', async () => {
+    respond({ success: false, 'error-codes': ['timeout-or-duplicate'] });
+
+    await provider.verify('token', 'signup');
+
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
   it.each([undefined, '', 'x'.repeat(2049), 42])(
     'rejects a malformed token without calling siteverify',
     async (token) => {
@@ -82,17 +118,17 @@ describe('TurnstileProvider', () => {
   it('reports an unreachable siteverify as unavailable', async () => {
     fetchMock.mockRejectedValueOnce(new TypeError('fetch failed'));
 
-    await expect(provider.verify('token', 'signup')).rejects.toBeInstanceOf(
-      CaptchaUnavailableError,
-    );
+    const error = await provider.verify('token', 'signup').catch((e) => e);
+    expect(error).toBeInstanceOf(CaptchaUnavailableError);
+    expect(error.message).toContain('fetch failed');
   });
 
   it('reports a failing siteverify as unavailable', async () => {
     respond({}, 500);
 
-    await expect(provider.verify('token', 'signup')).rejects.toBeInstanceOf(
-      CaptchaUnavailableError,
-    );
+    const error = await provider.verify('token', 'signup').catch((e) => e);
+    expect(error).toBeInstanceOf(CaptchaUnavailableError);
+    expect(error.message).toContain('500');
   });
 
   it('reports a Cloudflare internal error as unavailable', async () => {
