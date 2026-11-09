@@ -66,8 +66,6 @@ export function renderChangesText(
 }
 
 const CHANGE_VALUE_RE = /<span class="change-value">[\s\S]*?<\/span>/g;
-const WRAPPED_BLOCK_RE =
-  /<p>\s*(<ul class="registration-changes"[\s\S]*?<\/ul>)\s*<\/p>/g;
 
 /**
  * Strips the answers out of a rendered change list, leaving the field labels.
@@ -82,10 +80,16 @@ export function redactChangeValues(html: string): string {
 }
 
 /**
- * Lifts the list out of the paragraph the editor wraps around a standalone
- * token. `<ul>` inside `<p>` is not valid, and parsers recover from it by
- * splitting the paragraph.
+ * Puts the list where the template's placeholder landed. A placeholder alone
+ * in a paragraph replaces the paragraph: `<ul>` inside `<p>` is not valid.
  */
-export function unwrapChangesBlock(html: string): string {
-  return html.replace(WRAPPED_BLOCK_RE, '$1');
+export function insertChangesBlock(
+  html: string,
+  placeholder: string,
+  list: string,
+): string {
+  // A function, so a `$` in an answer isn't read as a replacement pattern.
+  return html
+    .replaceAll(`<p>${placeholder}</p>`, () => list)
+    .replaceAll(placeholder, () => list);
 }

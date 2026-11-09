@@ -77,15 +77,18 @@ export function sanitizePlainText(text: string): string {
   });
 }
 
+/** The allowlist for rich content, for callers that extend it. */
+export const HTML_CONTENT_OPTIONS = {
+  allowedTags: ALLOWED_TAGS,
+  allowedAttributes: ALLOWED_ATTRIBUTES,
+  allowedStyles: ALLOWED_STYLES,
+  allowedSchemes: LINK_SCHEMES,
+  allowedSchemesByTag: {
+    a: LINK_SCHEMES,
+    img: ['http', 'https'],
+  },
+} satisfies sanitizeHtml.IOptions;
+
 export function sanitizeHtmlContent(html: string): string {
-  return sanitizeHtml(html, {
-    allowedTags: ALLOWED_TAGS,
-    allowedAttributes: ALLOWED_ATTRIBUTES,
-    allowedStyles: ALLOWED_STYLES,
-    allowedSchemes: LINK_SCHEMES,
-    allowedSchemesByTag: {
-      a: LINK_SCHEMES,
-      img: ['http', 'https'],
-    },
-  });
+  return sanitizeHtml(html, HTML_CONTENT_OPTIONS);
 }

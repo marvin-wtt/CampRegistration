@@ -5,10 +5,10 @@ import {
   diffRegistrationData,
 } from '#app/registration/registration.changes';
 import {
+  insertChangesBlock,
   redactChangeValues,
   renderChangesHtml,
   renderChangesText,
-  unwrapChangesBlock,
 } from '#app/registration/messages/changes.markup';
 
 const labels = { cleared: 'removed', file: 'file updated' };
@@ -337,18 +337,26 @@ describe('renderChangesText', () => {
   });
 });
 
-describe('unwrapChangesBlock', () => {
-  it('lifts the list out of the paragraph the editor wraps it in', () => {
-    const html = '<p>Hi</p><p><ul class="registration-changes"></ul></p>';
+describe('insertChangesBlock', () => {
+  const list = '<ul class="registration-changes"></ul>';
 
-    expect(unwrapChangesBlock(html)).toBe(
-      '<p>Hi</p><ul class="registration-changes"></ul>',
+  it('replaces the paragraph the editor wraps around the placeholder', () => {
+    const html = '<p>Hi</p><p>changes-1</p>';
+
+    expect(insertChangesBlock(html, 'changes-1', list)).toBe(
+      `<p>Hi</p>${list}`,
     );
   });
 
-  it('leaves a list the manager placed between other content alone', () => {
-    const html = '<p>Hi</p><ul class="registration-changes"></ul><p>Bye</p>';
+  it('replaces a placeholder inside other text', () => {
+    expect(insertChangesBlock('<p>See changes-1</p>', 'changes-1', list)).toBe(
+      `<p>See ${list}</p>`,
+    );
+  });
 
-    expect(unwrapChangesBlock(html)).toBe(html);
+  it('inserts a `$` in the list literally', () => {
+    expect(insertChangesBlock('<p>changes-1</p>', 'changes-1', "$& $'")).toBe(
+      "$& $'",
+    );
   });
 });

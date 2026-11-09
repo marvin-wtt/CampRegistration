@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { renderTemplate, SafeHtml, TemplateError } from '#core/mail/templating';
+import { renderTemplate, TemplateError } from '#core/mail/templating';
 
 describe('renderTemplate', () => {
   it('escapes inserted values in html', () => {
@@ -12,14 +12,6 @@ describe('renderTemplate', () => {
     expect(
       renderTemplate('Hi {{ name }}', { name: "O'Neil & co" }, 'text'),
     ).toBe("Hi O'Neil & co");
-  });
-
-  it('emits our own markup without escaping it again', () => {
-    const list = new SafeHtml('<ul><li>a</li></ul>');
-
-    expect(renderTemplate('{{ list }}', { list }, 'html')).toBe(
-      '<ul><li>a</li></ul>',
-    );
   });
 
   it('allows the built-in blocks', () => {
