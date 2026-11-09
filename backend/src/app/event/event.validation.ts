@@ -1,5 +1,5 @@
 import { z, type ZodType } from 'zod';
-import { translatedValue } from '#core/validation/helper';
+import { CurrencySchema, translatedValue } from '#core/validation/helper';
 import type { Event } from '#generated/prisma/client.js';
 import {
   EVENT_PRESET_NAMES,
@@ -58,7 +58,6 @@ const index = z.object({
       sortBy: z.enum([
         'startAt',
         'endAt',
-        'price',
         'minAge',
         'maxAge',
         'listed',
@@ -85,7 +84,12 @@ function validateRecordKeys(
 // Text is keyed by the languages the event's countries write in (`en`, `cs`);
 // per-group values by the groups, the countries themselves (`gb`, `cz`).
 const LOCALE_KEYED = ['name', 'location'] as const;
-const GROUP_KEYED = ['organizer', 'contactEmail', 'maxParticipants'] as const;
+const GROUP_KEYED = [
+  'organizer',
+  'contactEmail',
+  'maxParticipants',
+  'price',
+] as const;
 
 type KeyedField = (typeof LOCALE_KEYED)[number] | (typeof GROUP_KEYED)[number];
 
@@ -178,7 +182,9 @@ const store = z.object({
       minAge: z.number().int().nonnegative(),
       maxAge: z.number().int().max(99),
       location: translatedValue(z.string()),
-      price: z.number().multipleOf(0.01).nonnegative(),
+      // Minor units.
+      price: translatedValue(z.number().int().nonnegative()),
+      currency: CurrencySchema.optional(),
       form: z.record(z.string(), z.unknown()).optional(),
       themes: z.record(z.string(), z.unknown()).optional(),
       preset: z.enum(EVENT_PRESET_NAMES).nullable().optional(),
@@ -253,7 +259,8 @@ const update = (event: Event) =>
         minAge: z.number().int().nonnegative(),
         maxAge: z.number().int().max(99),
         location: translatedValue(z.string()),
-        price: z.number().nonnegative().multipleOf(0.01),
+        price: translatedValue(z.number().int().nonnegative()),
+        currency: CurrencySchema,
         form: z.record(z.string(), z.unknown()),
         themes: z.record(z.string(), z.unknown()),
       })

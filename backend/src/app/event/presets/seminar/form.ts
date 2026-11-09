@@ -59,8 +59,7 @@ export default {
             cs: 'Cena',
             default: 'Price',
           },
-          description: '{event.price} €',
-          currency: 'EUR',
+          description: '{event.priceWithCurrency}',
         },
         {
           type: 'role',
@@ -266,16 +265,17 @@ export default {
       ],
     },
   ],
+  calculatedValues: [
+    {
+      name: 'payment_team_discount',
+      // The team takes part free of charge; an empty role counts as a participant.
+      expression:
+        "iif({role} notempty and {role} <> 'participant', 0 - {event.price}, 0)",
+      eventDataType: 'payment_amount',
+    },
+  ],
   showProgressBar: true,
   progressBarLocation: 'bottom',
-  completeText: {
-    en: 'Complete Registration',
-    de: 'Anmeldung abschließen',
-    fr: "Finaliser l'inscription",
-    pl: 'Zakończ rejestrację',
-    cs: 'Dokončit registraci',
-    default: 'Complete Registration',
-  },
   showCompletePage: false,
   widthMode: 'static',
 };

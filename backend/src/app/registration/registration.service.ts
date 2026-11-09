@@ -2,6 +2,11 @@ import ApiError from '#core/router/ApiError';
 import httpStatus from 'http-status';
 import { Prisma, type Registration } from '#generated/prisma/client.js';
 import type { EventWithFreePlaces } from '#app/event/event.types';
+import { computeAmountDue } from '@camp-registration/common/utils';
+import {
+  assertAmountWithinLimit,
+  assertPriceUnchanged,
+} from './registration.price-check.js';
 import { RegistrationForm } from '#app/registration/registration.form';
 import { BaseService } from '#core/base/BaseService';
 import {
@@ -90,10 +95,15 @@ export class RegistrationService extends BaseService {
     return { total };
   }
 
+  /**
+   * `displayedTotal` is what the form showed: a submission whose price changed
+   * meanwhile is refused (`assertPriceUnchanged`), never charged differently.
+   */
   async createRegistration(
     event: EventWithFreePlaces,
     data: Pick<Registration, 'data' | 'locale' | 'group'>,
     fileField: string,
+    displayedTotal?: number,
   ) {
     // Built in the locale the data was validated in: event variables such as
     // `{event.price}` resolve per locale, so computed values can differ.
@@ -109,6 +119,11 @@ export class RegistrationService extends BaseService {
     const formData = form.data;
     const eventData = form.extractEventData();
     const computedData = computedRegistrationData(eventData);
+    // Stored whether or not anyone is asked to pay: the form showed it, so it
+    // is what this person agreed to, at its group's price.
+    const quotedAmount = computeAmountDue(event, form.paymentAmounts(), group);
+    assertAmountWithinLimit(quotedAmount);
+    assertPriceUnchanged(quotedAmount, displayedTotal);
 
     const fileIds = form.getFileIds();
 
@@ -174,6 +189,8 @@ export class RegistrationService extends BaseService {
             id: undefined, // Force new ID generation
             data: formData,
             status,
+            quotedAmount,
+            currency: event.currency,
             platformPrivacyPolicyUpdatedAt:
               privacyStamp.platformPrivacyPolicyUpdatedAt,
             organizationPrivacyNotice: connectVersion(

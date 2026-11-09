@@ -1,9 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
+import { AxiosError } from 'axios';
 import RegistrationForm from '@/components/common/RegistrationForm.vue';
 import { installQuasarPlugin } from '@/../test/vitest/utils/quasar';
 import { SurveyComponent } from 'survey-vue3-ui';
 import type { SurveyModel } from 'survey-core';
+// The app loads it in the surveyJS boot file.
+import 'survey-core/i18n/german';
 
 // The completed-page markup builds action links via `router.resolve(...)`;
 // stub it out since routing itself is irrelevant to these tests.
@@ -39,6 +42,7 @@ describe('RegistrationForm', () => {
     minAge: 0,
     maxAge: 0,
     price: 0,
+    currency: 'EUR',
     location: '',
     freePlaces: 0,
     freePlacesTotal: 0,
@@ -310,6 +314,330 @@ describe('RegistrationForm', () => {
   it.todo('should map files');
 
   it.todo('should submit the form');
+
+  describe('complete button text', () => {
+    function completeText(price: number, form: object = {}) {
+      const wrapper = mount(RegistrationForm, {
+        props: {
+          eventDetails: {
+            ...simpleEventDetails,
+            price,
+            form: { ...simpleEventDetails.form, ...form },
+          },
+          submitFn: () => Promise.resolve(),
+          uploadFileFn: () => Promise.reject(new Error()),
+        },
+      });
+      const survey = wrapper
+        .getComponent(SurveyComponent)
+        .props('model') as SurveyModel;
+      survey.locale = 'de';
+
+      return { survey, text: survey.completeText };
+    }
+
+    it('says registering costs money when the event has a price', () => {
+      expect(completeText(12000).text).toBe('Kostenpflichtig anmelden');
+    });
+
+    it('asks for a binding registration when the event is free', () => {
+      expect(completeText(0).text).toBe('Verbindlich anmelden');
+    });
+
+    it('keeps a text set in the form editor', () => {
+      expect(
+        completeText(120, { completeText: { de: 'Jetzt anmelden' } }).text,
+      ).toBe('Jetzt anmelden');
+    });
+
+    it('never writes the default into the form JSON', () => {
+      expect(completeText(120).survey.toJSON()).not.toHaveProperty(
+        'completeText',
+      );
+    });
+  });
+
+  describe('amount summary', () => {
+    // A priced option: choosing it is what the registration costs.
+    const pricedForm = {
+      pages: [
+        {
+          name: 'page1',
+          elements: [
+            {
+              type: 'boolean',
+              name: 'option',
+              price: 45,
+              eventDataType: 'payment_amount',
+            },
+          ],
+        },
+      ],
+    };
+
+    function mountForm(price: number, form: object) {
+      const wrapper = mount(RegistrationForm, {
+        props: {
+          eventDetails: {
+            ...simpleEventDetails,
+            price,
+            form: { ...simpleEventDetails.form, ...form },
+          },
+          submitFn: () => Promise.resolve(),
+          uploadFileFn: () => Promise.reject(new Error()),
+        },
+      });
+      const survey = wrapper
+        .getComponent(SurveyComponent)
+        .props('model') as SurveyModel;
+
+      return {
+        survey,
+        summary: () =>
+          wrapper.find('[data-test="registration-amount-summary"]'),
+      };
+    }
+
+    it('shows the event price above the button on the last page', async () => {
+      const { summary } = mountForm(12000, {
+        pages: [{ name: 'page1', elements: [{ type: 'text', name: 'a' }] }],
+      });
+      await flushPromises();
+
+      expect(summary().exists()).toBe(true);
+      expect(summary().text()).toContain('120.00');
+    });
+
+    it('turns a free event paid once a priced answer is given', async () => {
+      const { survey, summary } = mountForm(0, pricedForm);
+      survey.locale = 'de';
+      await flushPromises();
+
+      expect(summary().exists()).toBe(false);
+      expect(survey.completeText).toBe('Verbindlich anmelden');
+
+      survey.setValue('option', true);
+      await flushPromises();
+
+      expect(summary().text()).toContain('45.00');
+      expect(survey.completeText).toBe('Kostenpflichtig anmelden');
+    });
+
+    it('applies a hidden discount from a tagged calculated value', async () => {
+      const { survey, summary } = mountForm(12000, {
+        pages: [{ name: 'page1', elements: [{ type: 'text', name: 'role' }] }],
+        calculatedValues: [
+          {
+            name: 'team_discount',
+            expression: "iif({role} = 'team', 0 - {event.price}, 0)",
+            eventDataType: 'payment_amount',
+          },
+        ],
+      });
+      survey.locale = 'de';
+      await flushPromises();
+
+      expect(summary().text()).toContain('120.00');
+
+      survey.setValue('role', 'team');
+      await flushPromises();
+
+      expect(summary().exists()).toBe(false);
+      expect(survey.completeText).toBe('Verbindlich anmelden');
+    });
+
+    const twoPages = {
+      pages: [
+        { name: 'page1', elements: [{ type: 'text', name: 'a' }] },
+        { name: 'page2', elements: [{ type: 'text', name: 'b' }] },
+      ],
+    };
+
+    const onePage = {
+      pages: [{ name: 'page1', elements: [{ type: 'text', name: 'a' }] }],
+    };
+
+    it('waits for the last page', async () => {
+      const { survey, summary } = mountForm(120, twoPages);
+      await flushPromises();
+
+      expect(summary().exists()).toBe(false);
+
+      survey.nextPage();
+      await flushPromises();
+
+      expect(summary().exists()).toBe(true);
+    });
+
+    it('shows a zero total when set to always', async () => {
+      const { summary } = mountForm(0, {
+        ...onePage,
+        showPaymentTotal: 'always',
+      });
+      await flushPromises();
+
+      expect(summary().text()).toContain('0.00');
+    });
+
+    it('shows no total when set to never, but keeps the paid button label', async () => {
+      const { survey, summary } = mountForm(120, {
+        ...onePage,
+        showPaymentTotal: 'never',
+      });
+      survey.locale = 'de';
+      await flushPromises();
+
+      expect(summary().exists()).toBe(false);
+      expect(survey.completeText).toBe('Kostenpflichtig anmelden');
+    });
+
+    it('shows nothing for a free event', async () => {
+      const { summary } = mountForm(0, {
+        pages: [{ name: 'page1', elements: [{ type: 'text', name: 'a' }] }],
+      });
+      await flushPromises();
+
+      expect(summary().exists()).toBe(false);
+    });
+  });
+
+  describe('price check', () => {
+    const priceChanged = () =>
+      new AxiosError('Conflict', '409', undefined, undefined, {
+        status: 409,
+        data: { errorCode: 'REGISTRATION_PRICE_CHANGED' },
+      } as never);
+
+    const pricedForm: object = {
+      pages: [{ name: 'page1', elements: [{ type: 'text', name: 'a' }] }],
+    };
+
+    function mountPriced(submitFn: (...args: unknown[]) => Promise<unknown>) {
+      const wrapper = mount(RegistrationForm, {
+        props: {
+          eventDetails: {
+            ...simpleEventDetails,
+            price: 12000,
+            form: { ...simpleEventDetails.form, ...pricedForm },
+          },
+          submitFn: submitFn as never,
+          uploadFileFn: () => Promise.reject(new Error()),
+        },
+      });
+      const survey = wrapper
+        .getComponent(SurveyComponent)
+        .props('model') as SurveyModel;
+
+      return { wrapper, survey };
+    }
+
+    it('sends what the summary showed, for the server to compare', async () => {
+      const submitFn = vi.fn(() => Promise.resolve());
+      const { survey } = mountPriced(submitFn);
+
+      survey.doComplete();
+      await flushPromises();
+
+      expect(submitFn).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        12000,
+      );
+    });
+
+    it('asks the person to reload and register again after a price change', async () => {
+      const submitFn = vi.fn().mockRejectedValueOnce(priceChanged());
+      const reload = vi.fn();
+      vi.stubGlobal('location', { ...window.location, reload });
+      const { wrapper, survey } = mountPriced(submitFn);
+
+      survey.doComplete();
+      await flushPromises();
+
+      expect(
+        wrapper
+          .find('[data-test="registration-submit-status-priceChanged"]')
+          .exists(),
+      ).toBe(true);
+      expect(
+        wrapper.find('[data-test="registration-submit-retry"]').exists(),
+      ).toBe(false);
+
+      await wrapper
+        .find('[data-test="registration-price-reload"]')
+        .trigger('click');
+
+      expect(reload).toHaveBeenCalled();
+      expect(submitFn).toHaveBeenCalledTimes(1);
+      vi.unstubAllGlobals();
+    });
+
+    it('sends no total when the form showed no price', async () => {
+      const submitFn = vi.fn(() => Promise.resolve());
+      const wrapper = mount(RegistrationForm, {
+        props: {
+          eventDetails: {
+            ...simpleEventDetails,
+            price: 12000,
+            form: {
+              ...simpleEventDetails.form,
+              ...pricedForm,
+              showPaymentTotal: 'never',
+              completeText: 'Absenden',
+            },
+          },
+          submitFn: submitFn as never,
+          uploadFileFn: () => Promise.reject(new Error()),
+        },
+      });
+      const survey = wrapper
+        .getComponent(SurveyComponent)
+        .props('model') as SurveyModel;
+
+      survey.doComplete();
+      await flushPromises();
+
+      expect(submitFn).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        undefined,
+      );
+    });
+
+    it('still sends the total behind the paid button label', async () => {
+      const submitFn = vi.fn(() => Promise.resolve());
+      const wrapper = mount(RegistrationForm, {
+        props: {
+          eventDetails: {
+            ...simpleEventDetails,
+            price: 12000,
+            form: {
+              ...simpleEventDetails.form,
+              ...pricedForm,
+              showPaymentTotal: 'never',
+            },
+          },
+          submitFn: submitFn as never,
+          uploadFileFn: () => Promise.reject(new Error()),
+        },
+      });
+      const survey = wrapper
+        .getComponent(SurveyComponent)
+        .props('model') as SurveyModel;
+
+      survey.doComplete();
+      await flushPromises();
+
+      expect(submitFn).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        12000,
+      );
+    });
+  });
 
   describe('redirect after submit', () => {
     function mountWithRedirect(

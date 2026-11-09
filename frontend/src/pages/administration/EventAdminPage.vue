@@ -188,8 +188,16 @@ import { useServerTable } from '@/composables/serverTable';
 import TranslationTd from '@/components/administration/events/TranslationTd.vue';
 import CountryIcon from '@/components/common/localization/CountryIcon.vue';
 import { useRouteQueryParams } from '@/composables/useRouteQueryParams';
+import { allGroupValues, formatMoney } from '@camp-registration/common/utils';
 
 const { t, locale } = useI18n();
+
+// Every distinct group price, so an admin sees what each group pays.
+function formatPrices(event: Event): string {
+  return allGroupValues(event.price)
+    .map((price) => formatMoney(price, event.currency, locale.value))
+    .join(' / ');
+}
 const { to } = useObjectTranslation();
 const quasar = useQuasar();
 const router = useRouter();
@@ -312,9 +320,9 @@ const columns = computed<QTableColumn<Event>[]>(() => [
   {
     name: 'price',
     label: t('column.price'),
-    field: 'price',
+    // Per group and in minor units, so neither sortable nor shown raw.
+    field: (row: Event) => formatPrices(row),
     align: 'right',
-    sortable: true,
   },
   {
     name: 'registrationStatus',

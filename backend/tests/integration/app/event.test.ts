@@ -84,6 +84,7 @@ const assertEventModel = async (id: string, data: EventCreateData) => {
     endAt: naiveDateTimeToUtcCarrier(data.endAt as string),
     timezone: data.timezone ?? 'Europe/Berlin',
     price: data.price,
+    currency: data.currency ?? 'EUR',
     location: data.location,
     form: data.form ?? expect.anything(),
     themes: data.themes ?? expect.anything(),
@@ -124,6 +125,7 @@ const assertEventResponseBody = (
     endAt: data.endAt,
     timezone: data.timezone ?? 'Europe/Berlin',
     price: data.price,
+    currency: data.currency ?? 'EUR',
     location: data.location,
     freePlaces: data.maxParticipants,
     freePlacesTotal: sumParticipants(data.maxParticipants),
@@ -771,21 +773,32 @@ describe('/api/v1/events', () => {
       });
 
       it('should sort by an allowed column', async () => {
-        const cheap = await EventFactory.create({ ...eventListed, price: 10 });
-        const expensive = await EventFactory.create({
+        const younger = await EventFactory.create({
           ...eventListed,
-          price: 500,
+          minAge: 6,
+        });
+        const older = await EventFactory.create({
+          ...eventListed,
+          minAge: 14,
         });
 
         const { body } = await request()
           .get('/api/v1/events/')
-          .query({ sortBy: 'price', sortType: 'desc' })
+          .query({ sortBy: 'minAge', sortType: 'desc' })
           .send()
           .expect(200);
 
         const ids = body.data.map((event: { id: string }) => event.id);
 
-        expect(ids).toEqual([expensive.id, cheap.id]);
+        expect(ids).toEqual([older.id, younger.id]);
+      });
+
+      it('should not sort by the per-group price', async () => {
+        await request()
+          .get('/api/v1/events/')
+          .query({ sortBy: 'price' })
+          .send()
+          .expect(400);
       });
 
       it('should reject a sortBy column that is not offered', async () => {
@@ -836,6 +849,7 @@ describe('/api/v1/events', () => {
         endAt: utcCarrierToNaiveDateTime(event.endAt),
         timezone: event.timezone,
         price: event.price,
+        currency: event.currency,
         location: event.location,
         form: event.form,
         themes: event.themes,
@@ -1711,7 +1725,7 @@ describe('/api/v1/events', () => {
           endAt: utcCarrierToNaiveDateTime(
             moment().add('22 days').startOf('hour').toDate(),
           ),
-          price: 100.0,
+          price: 10000,
           location: 'Somewhere',
           form: {},
           themes: {},

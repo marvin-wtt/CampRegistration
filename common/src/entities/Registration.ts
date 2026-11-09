@@ -32,7 +32,16 @@ export interface Registration extends Identifiable, Timestamps {
 export type RegistrationCreateData = Pick<Registration, 'data'> & {
   locale?: string | null;
   group?: string | null;
+  /**
+   * The total the form showed, in minor units of the event currency.
+   * Untrusted and **never an amount**: not stored, charged or shown. The
+   * server only compares it with its own calculation and on a mismatch
+   * refuses with `REGISTRATION_PRICE_CHANGED` and its own amount.
+   */
+  displayedTotal?: number | undefined;
 };
+
+export const REGISTRATION_PRICE_CHANGED = 'REGISTRATION_PRICE_CHANGED';
 
 export type RegistrationUpdateData = Partial<
   Pick<Registration, 'data' | 'customData' | 'status' | 'group'>

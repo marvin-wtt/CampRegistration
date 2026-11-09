@@ -1,5 +1,6 @@
 import { faker } from '@faker-js/faker/locale/en';
 import { Prisma } from '#generated/prisma/client.js';
+import type { PerGroup } from '@camp-registration/common/entities';
 import prisma from '../client.js';
 import { MessageTemplateFactory } from './message-template.factory';
 import { OrganizationFactory } from './organization.factory';
@@ -25,6 +26,9 @@ export const EventFactory = {
     const maxParticipants = faker.number.int({ min: 1, max: 100 });
 
     const countries = data.countries ?? ['de'];
+    // Minor units.
+    const price = (data.price ??
+      faker.number.int({ min: 0, max: 1000 }) * 100) as PerGroup<number>;
     return {
       // Give the event an owner unless the caller named one.
       organization: data.organization ?? {
@@ -40,7 +44,7 @@ export const EventFactory = {
       maxAge,
       startAt,
       endAt,
-      price: faker.number.int({ min: 0, max: 1000 }),
+      price,
       location: faker.location.city(),
       form: {},
       themes: {},

@@ -49,6 +49,14 @@ const store = (event: EventWithRelations, fallbackLocale: string) =>
           .nullable()
           .optional()
           .transform((group) => eventGroup(event, group)),
+        // Untrusted, never an amount: compared with the server's quote only
+        displayedTotal: z
+          .number()
+          .int()
+          .nonnegative()
+          .optional() satisfies ZodType<
+          RegistrationCreateData['displayedTotal']
+        >,
       })
       .superRefine(async ({ data, locale, group }, ctx) => {
         if (event.countries.length > 1 && !group) {

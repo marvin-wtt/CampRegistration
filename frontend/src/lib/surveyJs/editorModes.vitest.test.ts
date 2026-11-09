@@ -4,9 +4,10 @@ import {
   SurveyCreatorModel,
   SurveyLogic,
 } from 'survey-creator-core';
-import type { SurveyModel } from 'survey-core';
+import { QuestionMatrixDynamicModel, type SurveyModel } from 'survey-core';
 import '@camp-registration/common/form';
 import { hideIrrelevantProperties } from './hiddenProperties';
+import { showPricesOnlyWhenTagged } from './pricedQuestions';
 import {
   addConditionBadge,
   applyEditorMode,
@@ -100,6 +101,135 @@ describe('editor modes', () => {
       creator.selectElement(creator.survey.getQuestionByName(name));
       expect(properties()).toContain('groupCountryMatch');
     }
+  });
+
+  describe.each(['simple', 'standard', 'expert'] as const)(
+    'prices in the %s mode',
+    (mode) => {
+      const priced = { eventDataType: 'payment_amount' };
+
+      function openGrid(name: string) {
+        const creator = createCreator();
+        showPricesOnlyWhenTagged(creator);
+        creator.JSON = {
+          elements: [
+            { type: 'boolean', name: 'bus', ...priced },
+            {
+              type: 'radiogroup',
+              name: 'room',
+              choices: ['single'],
+              ...priced,
+            },
+            { type: 'boolean', name: 'consent' },
+            { type: 'radiogroup', name: 'gender', choices: ['f'] },
+            { type: 'matrix', name: 'grid', rows: ['a'], columns: ['b'] },
+          ],
+        };
+        let grid: SurveyModel | undefined;
+        creator.onSurveyInstanceCreated.add((_, options) => {
+          if (options.area === 'property-grid') {
+            grid = options.survey;
+          }
+        });
+        applyEditorMode(creator, mode, context);
+        const question = creator.survey.getQuestionByName(name);
+        creator.selectElement(question);
+
+        return { grid, question };
+      }
+
+      function propertyGridOf(name: string): SurveyModel | undefined {
+        return openGrid(name).grid;
+      }
+
+      function visibleColumns(grid: SurveyModel | undefined, table: string) {
+        const question = grid?.getQuestionByName(table);
+        return question instanceof QuestionMatrixDynamicModel
+          ? question.visibleColumns.map((column) => column.name)
+          : [];
+      }
+
+      function columnsOf(name: string, table: string): string[] {
+        return visibleColumns(propertyGridOf(name), table);
+      }
+
+      it('offers the price of a boolean', () => {
+        expect(
+          propertyGridOf('bus')?.getQuestionByName('price')?.isVisible,
+        ).toBe(true);
+      });
+
+      it('offers a price column for choices', () => {
+        expect(columnsOf('room', 'choices')).toContain('price');
+      });
+
+      it('offers no price for matrix rows', () => {
+        expect(columnsOf('grid', 'rows')).not.toContain('price');
+      });
+
+      it('offers no price on an untagged boolean', () => {
+        expect(
+          propertyGridOf('consent')?.getQuestionByName('price')?.isVisible,
+        ).toBe(false);
+      });
+
+      it('offers no price column on untagged choices', () => {
+        expect(columnsOf('gender', 'choices')).not.toContain('price');
+      });
+
+      it('follows the tag while the question stays selected', () => {
+        const { grid, question } = openGrid('gender');
+
+        question.setPropertyValue('eventDataType', 'payment_amount');
+        expect(visibleColumns(grid, 'choices')).toContain('price');
+
+        question.setPropertyValue('eventDataType', undefined);
+        expect(visibleColumns(grid, 'choices')).not.toContain('price');
+      });
+
+      it('follows the tag picked in the property grid', () => {
+        const { grid } = openGrid('gender');
+
+        grid!.getQuestionByName('eventDataType').value = 'payment_amount';
+
+        expect(visibleColumns(grid, 'choices')).toContain('price');
+      });
+    },
+  );
+
+  describe('the payment total setting', () => {
+    function surveyGrid(mode: 'standard' | 'expert') {
+      const creator = createCreator();
+      let grid: SurveyModel | undefined;
+      creator.onSurveyInstanceCreated.add((_, options) => {
+        if (options.area === 'property-grid') {
+          grid = options.survey;
+        }
+      });
+      applyEditorMode(creator, mode, context);
+      creator.selectElement(creator.survey);
+
+      return grid;
+    }
+
+    it.each(['standard', 'expert'] as const)(
+      'sits in the Navigation tab (%s)',
+      (mode) => {
+        expect(
+          surveyGrid(mode)?.getQuestionByName('showPaymentTotal')?.parent.name,
+        ).toBe('navigation');
+      },
+    );
+
+    it('follows the Complete button text (expert)', () => {
+      const names = surveyGrid('expert')!
+        .getAllQuestions()
+        .map((question) => question.name);
+
+      expect(names.indexOf('showPaymentTotal')).toBe(
+        names.indexOf('completeText') + 1,
+      );
+    });
   });
 
   it('rebuilds the property grid of the selected element', () => {

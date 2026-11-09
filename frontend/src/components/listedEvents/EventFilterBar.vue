@@ -1070,8 +1070,6 @@ sort_label: 'Sort'
 sort:
   start_asc: 'Starting soonest'
   start_desc: 'Starting latest'
-  price_asc: 'Lowest price'
-  price_desc: 'Highest price'
 preset:
   this_month: 'This month'
   next_3_months: 'Next 3 months'
@@ -1097,8 +1095,6 @@ sort_label: 'Sortierung'
 sort:
   start_asc: 'Beginnt am frühesten'
   start_desc: 'Beginnt am spätesten'
-  price_asc: 'Niedrigster Preis'
-  price_desc: 'Höchster Preis'
 preset:
   this_month: 'Diesen Monat'
   next_3_months: 'Nächste 3 Monate'
@@ -1124,8 +1120,6 @@ sort_label: 'Trier'
 sort:
   start_asc: 'Commence le plus tôt'
   start_desc: 'Commence le plus tard'
-  price_asc: 'Prix le plus bas'
-  price_desc: 'Prix le plus élevé'
 preset:
   this_month: 'Ce mois-ci'
   next_3_months: 'Les 3 prochains mois'
@@ -1151,8 +1145,6 @@ sort_label: 'Sortowanie'
 sort:
   start_asc: 'Najbliższy termin'
   start_desc: 'Najpóźniejszy termin'
-  price_asc: 'Najniższa cena'
-  price_desc: 'Najwyższa cena'
 preset:
   this_month: 'W tym miesiącu'
   next_3_months: 'Najbliższe 3 miesiące'
@@ -1178,8 +1170,6 @@ sort_label: 'Řazení'
 sort:
   start_asc: 'Nejbližší začátek'
   start_desc: 'Nejpozdější začátek'
-  price_asc: 'Nejnižší cena'
-  price_desc: 'Nejvyšší cena'
 preset:
   this_month: 'Tento měsíc'
   next_3_months: 'Příští 3 měsíce'

@@ -1,3 +1,4 @@
+import { SUPPORTED_CURRENCIES } from '@camp-registration/common/utils';
 import { z, type ZodType } from 'zod';
 
 export const PasswordSchema = z.string().min(8).max(72);
@@ -26,3 +27,8 @@ export const TimeSchema = z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/);
 export const translatedValue = <T extends ZodType>(valueSchema: T) => {
   return z.union([z.record(z.string(), valueSchema), valueSchema]);
 };
+
+/** An ISO 4217 currency code the runtime knows, e.g. `EUR`. */
+// Two-decimal currencies only: the amount inputs and the price validation
+// assume cents.
+export const CurrencySchema = z.enum(SUPPORTED_CURRENCIES);

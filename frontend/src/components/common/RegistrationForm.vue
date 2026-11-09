@@ -88,6 +88,20 @@
         </q-card-actions>
 
         <q-card-actions
+          v-else-if="submitState === 'priceChanged'"
+          align="center"
+          class="q-pb-md"
+        >
+          <m-btn
+            primary
+            icon="refresh"
+            :label="t('submit.priceChanged.reload')"
+            data-test="registration-price-reload"
+            @click="reloadPage"
+          />
+        </q-card-actions>
+
+        <q-card-actions
           v-else-if="submitState === 'error'"
           align="center"
           class="q-pb-md"
@@ -143,11 +157,17 @@ import {
 } from '@/lib/surveyJs/textProcessing';
 import { readAsDataURL } from '@/utils/readAsDataURL';
 import { emphasizeForwardNavigation } from '@/lib/surveyJs/navigation';
+import {
+  addAmountSummary,
+  amountPresented,
+  trackAmountDue,
+} from '@/lib/surveyJs/amountDue';
 import type {
   EventDetails,
   Registration,
 } from '@camp-registration/common/entities';
 import { useAPIService } from '@/services/APIService';
+import { isPriceChangedError } from '@/services/RegistrationService';
 import { useErrorExtractor } from '@/composables/serviceHandler';
 
 const { locale, t } = useI18n();
@@ -163,6 +183,8 @@ interface Props {
     id: string,
     formData: Record<string, unknown>,
     locale: string,
+    // What the form displayed, for the server to compare — never an amount.
+    displayedTotal?: number,
   ) => Promise<Registration | void>;
   uploadFileFn?: (file: File) => Promise<string>;
   moderation?: boolean;
@@ -184,7 +206,9 @@ const emit = defineEmits<{
 
 // Submit lifecycle shown by the custom overlay. While it is non-null the
 // survey (including its own completed page) is hidden and this UI takes over.
-const submitState = ref<'saving' | 'success' | 'error' | null>(null);
+const submitState = ref<'saving' | 'success' | 'error' | 'priceChanged' | null>(
+  null,
+);
 const submitError = ref<string>();
 // Stays true once the submission succeeded, including when survey-core takes
 // the screen back over to show the form's own completed page.
@@ -215,6 +239,8 @@ const statusTitle = computed(() => {
       }
     case 'error':
       return t('submit.error.title');
+    case 'priceChanged':
+      return t('submit.priceChanged.title');
     default:
       return '';
   }
@@ -235,6 +261,8 @@ const statusText = computed(() => {
       }
     case 'error':
       return t('submit.error.text');
+    case 'priceChanged':
+      return t('submit.priceChanged.text');
     default:
       return '';
   }
@@ -253,6 +281,8 @@ const badgeColor = computed(() => {
       }
     case 'error':
       return 'error-container';
+    case 'priceChanged':
+      return 'warning-container';
     default:
       return 'primary-container';
   }
@@ -271,12 +301,17 @@ const badgeTextColor = computed(() => {
       }
     case 'error':
       return 'on-error-container';
+    case 'priceChanged':
+      return 'on-warning-container';
     default:
       return 'on-primary-container';
   }
 });
 
 const badgeIcon = computed(() => {
+  if (submitState.value === 'priceChanged') {
+    return 'price_change';
+  }
   if (submitState.value !== 'success') {
     return 'error';
   }
@@ -291,8 +326,8 @@ const badgeIcon = computed(() => {
   }
 });
 
-// A readonly form reuses the moderation layout (TOC, no validation) and puts
-// survey-core into display mode.
+// A readonly form reuses the moderation layout (TOC, no validation) and shows
+// answers as text (survey-core's view mode) instead of disabled inputs.
 const moderationLayout = props.moderation || props.readonly;
 
 const model = createModel(
@@ -303,9 +338,21 @@ const model = createModel(
 );
 model.validationEnabled = !moderationLayout;
 model.readOnly = props.readonly;
+if (props.readonly) {
+  model.readOnlyMode = 'view';
+}
 if (props.data) {
   model.data = props.data;
   mapFileIdToFileContent(model);
+}
+
+// After loading data: assigning `model.data` fires no change event. Managers
+// never see the Complete button, so neither needs the total.
+const amountDue = moderationLayout
+  ? null
+  : trackAmountDue(model, props.eventDetails);
+if (amountDue) {
+  addAmountSummary(model, amountDue);
 }
 
 const bgColor = ref<string>();
@@ -409,14 +456,23 @@ function createModel(eventId: string, form: object): SurveyModel {
 
     mapFileQuestionValues(sender);
 
+    // What the form presented, if it presented a price at all. Only for the
+    // server to compare: it charges its own amount, whatever this says.
+    const displayedTotal =
+      amountDue && amountPresented(sender, amountDue)
+        ? amountDue.amount
+        : undefined;
+
     try {
       const registration = await submitFn(
         eventId,
         sender.data ?? {},
         sender.locale,
+        displayedTotal,
       );
       submittedRegistration.value = registration ?? undefined;
       submitted.value = true;
+
       if (sender.showCompletePage && hasCustomCompletedHtml(sender)) {
         // Reveal the form-defined completed page (survey-core shows it by
         // default; the survey element is unhidden as submitState clears).
@@ -429,12 +485,22 @@ function createModel(eventId: string, form: object): SurveyModel {
         redirect(pendingRedirect);
       }
     } catch (e: unknown) {
+      // Its cause is unknown (a changed price or form, a passed deadline, an
+      // outdated page), so the person starts over on a freshly loaded page.
+      if (isPriceChangedError(e)) {
+        submitState.value = 'priceChanged';
+        return;
+      }
       submitError.value = extractErrorText(e);
       submitState.value = 'error';
     }
   });
 
   return survey;
+}
+
+function reloadPage() {
+  window.location.reload();
 }
 
 function retrySubmit() {
@@ -534,6 +600,10 @@ submit:
   saving:
     title: 'Submitting registration'
     text: 'Please wait while your registration is being saved.'
+  priceChanged:
+    title: 'The price has changed'
+    text: 'The price changed while you were filling in the form. Please reload the page and register again.'
+    reload: 'Reload page'
   error:
     title: 'Registration failed'
     text: 'Your registration could not be saved. Please try again.'
@@ -558,6 +628,10 @@ submit:
   saving:
     title: 'Anmeldung wird gesendet'
     text: 'Bitte warte, während deine Anmeldung gespeichert wird.'
+  priceChanged:
+    title: 'Der Preis hat sich geändert'
+    text: 'Der Preis hat sich geändert, während du das Formular ausgefüllt hast. Bitte lade die Seite neu und melde dich erneut an.'
+    reload: 'Seite neu laden'
   error:
     title: 'Anmeldung fehlgeschlagen'
     text: 'Deine Anmeldung konnte nicht gespeichert werden. Bitte versuche es erneut.'
@@ -582,6 +656,10 @@ submit:
   saving:
     title: "Envoi de l'inscription"
     text: "Veuillez patienter pendant l'enregistrement de votre inscription."
+  priceChanged:
+    title: 'Le prix a changé'
+    text: 'Le prix a changé pendant que tu remplissais le formulaire. Recharge la page et inscris-toi à nouveau.'
+    reload: 'Recharger la page'
   error:
     title: "Échec de l'inscription"
     text: "Votre inscription n'a pas pu être enregistrée. Veuillez réessayer."
@@ -606,6 +684,10 @@ submit:
   saving:
     title: 'Wysyłanie rejestracji'
     text: 'Poczekaj, trwa zapisywanie rejestracji.'
+  priceChanged:
+    title: 'Cena się zmieniła'
+    text: 'Cena zmieniła się podczas wypełniania formularza. Odśwież stronę i zarejestruj się ponownie.'
+    reload: 'Odśwież stronę'
   error:
     title: 'Rejestracja nie powiodła się'
     text: 'Nie udało się zapisać rejestracji. Spróbuj ponownie.'
@@ -630,6 +712,10 @@ submit:
   saving:
     title: 'Odesílání registrace'
     text: 'Počkej prosím, než bude registrace uložena.'
+  priceChanged:
+    title: 'Cena se změnila'
+    text: 'Cena se změnila během vyplňování formuláře. Načti stránku znovu a zaregistruj se znovu.'
+    reload: 'Načíst stránku znovu'
   error:
     title: 'Registrace se nezdařila'
     text: 'Registraci se nepodařilo uložit. Zkus to prosím znovu.'

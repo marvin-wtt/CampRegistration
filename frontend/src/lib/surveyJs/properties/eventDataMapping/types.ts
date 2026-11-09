@@ -187,3 +187,34 @@ export const newsletterConsent: EventDataType = {
     return obj.getType() === 'boolean';
   },
 };
+
+// Questions tagged here adjust the event's price while shown: an expression
+// by its value, a boolean or select question by the prices it then offers
+// (`pricedQuestions.ts`). Tagged calculated values always count: rules the
+// registrant never sees. Never a typed answer, or the registrant would set
+// their own price. See docs/pricing.md.
+const PRICED_TYPES = [
+  'expression',
+  'calculatedvalue',
+  'boolean',
+  'radiogroup',
+  'dropdown',
+  'checkbox',
+  'tagbox',
+];
+
+export const paymentAmount: EventDataType = {
+  element: {
+    value: 'payment_amount',
+    text: {
+      en: 'Affects the price',
+      de: 'Beeinflusst den Preis',
+      fr: 'Modifie le prix',
+      pl: 'Wpływa na cenę',
+      cs: 'Ovlivňuje cenu',
+    },
+  },
+  fit: (obj) => {
+    return PRICED_TYPES.includes(obj.getType());
+  },
+};

@@ -1,0 +1,30 @@
+import { describe, expect, it } from 'vitest';
+import type { Event } from '#generated/prisma/client.js';
+import { translateEventContext } from '#app/event/event.util';
+
+const event = {
+  name: 'Camp',
+  location: null,
+  organizer: 'Org',
+  contactEmail: 'a@example.com',
+  maxParticipants: 10,
+  countries: ['de', 'pl'],
+  price: { de: 15000, pl: 12050 },
+  currency: 'EUR',
+} as unknown as Event;
+
+describe('translateEventContext', () => {
+  it('gives templates the group’s price, as in forms', () => {
+    const context = translateEventContext(event, { locale: 'de', group: 'pl' });
+
+    expect(context.price).toBe(120.5);
+    expect(context.priceWithCurrency).toBe(formatted(120.5));
+  });
+});
+
+function formatted(amount: number): string {
+  return new Intl.NumberFormat('de', {
+    style: 'currency',
+    currency: 'EUR',
+  }).format(amount);
+}

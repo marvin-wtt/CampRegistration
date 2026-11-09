@@ -72,8 +72,7 @@ export default {
             cs: 'Cena',
             default: 'Price',
           },
-          description: '{event.price} €',
-          currency: 'EUR',
+          description: '{event.priceWithCurrency}',
         },
         {
           type: 'role',
@@ -914,6 +913,13 @@ export default {
   ],
   calculatedValues: [
     {
+      name: 'payment_team_discount',
+      // The team takes part free of charge; an empty role counts as a participant.
+      expression:
+        "iif({role} notempty and {role} <> 'participant', 0 - {event.price}, 0)",
+      eventDataType: 'payment_amount',
+    },
+    {
       name: 'isadult',
       expression: 'isAdult({date_of_birth}, {event.startAt})',
     },
@@ -924,14 +930,6 @@ export default {
   ],
   showProgressBar: true,
   progressBarLocation: 'bottom',
-  completeText: {
-    en: 'Register for a fee',
-    de: 'Kostenpflichtig Anmelden',
-    fr: 'Inscription payante',
-    pl: 'Zarejestruj się (płatne)',
-    cs: 'Zaregistrovat se (placeně)',
-    default: 'Register for a fee',
-  },
   showCompletePage: false,
   widthMode: 'static',
 };

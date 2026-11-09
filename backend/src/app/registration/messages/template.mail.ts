@@ -1,5 +1,9 @@
 import type { Event, Registration } from '#generated/prisma/client.js';
-import { translate } from '@camp-registration/common/utils';
+import {
+  formatMoney,
+  fromMinorUnits,
+  translate,
+} from '@camp-registration/common/utils';
 import { eventContactFor, translateEventContext } from '#app/event/event.util';
 import type {
   Address,
@@ -154,6 +158,24 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
     return '';
   }
 
+  /**
+   * What the registration costs, as quoted at submission — like the event's
+   * price: a number in major units and the text with its currency. Empty on
+   * registrations from before quotes.
+   */
+  private quotedPrice(event: Event) {
+    const { quotedAmount, currency } = this.payload.registration;
+    if (quotedAmount === null) {
+      return { price: null, priceWithCurrency: null };
+    }
+    const code = currency ?? event.currency;
+
+    return {
+      price: fromMinorUnits(quotedAmount, code),
+      priceWithCurrency: formatMoney(quotedAmount, code, this.locale()),
+    };
+  }
+
   private context(format: 'html' | 'text'): object {
     const event = this.payload.event;
 
@@ -188,6 +210,7 @@ export class RegistrationTemplateMessage extends RegistrationMessage<Registratio
         },
         customData: this.payload.registration.customData ?? {},
         changes: this.renderChanges(format),
+        ...this.quotedPrice(event),
         locale: this.payload.registration.locale,
         // The group's country code; the address's own is `address.country`.
         group: this.payload.registration.group,

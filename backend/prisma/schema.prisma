@@ -171,7 +171,10 @@ model Event {
   startAt                 DateTime         @map("start_at") @db.DateTime(0)
   endAt                   DateTime         @map("end_at") @db.DateTime(0)
   timezone                String           @default("Europe/Berlin") @db.VarChar(64)
-  price                   Float
+  /// Minor units of `currency`: one for every group, or one per group.
+  /// ![number | Record<string, number>]
+  price                   Json             @db.Json
+  currency                String           @default("EUR") @db.Char(3)
   /// ![string | Record<string, string>]
   location                Json?            @db.Json
   /// ![Record<string, unknown>]
@@ -264,6 +267,13 @@ model Registration {
   locale                             String             @default("en-GB") @db.VarChar(5)
   //
   status                             RegistrationStatus @default(PENDING)
+  // What the server calculated — and the form showed — at submission, in
+  // minor units of `currency`, and never changes. Null on registrations
+  // predating it.
+  quotedAmount                       Int?               @map("quoted_amount") @db.UnsignedInt
+  // The currency the registration's amounts are in: its event's at
+  // submission, so each amount says what it is in.
+  currency                           String?            @db.Char(3)
   // Which privacy information this person was actually shown. Nullable because
   // registrations predating the feature were shown none — do not backfill.
   organizationPrivacyNoticeVersionId String?            @map("organization_privacy_notice_version_id") @db.Char(26)

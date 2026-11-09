@@ -6,15 +6,11 @@ export { EVENT_COUNTRIES } from '@/i18n/locales';
  * Sorting is offered as single opaque values rather than a field/direction pair,
  * so the select stays one control and the URL carries one parameter.
  *
- * `name` is deliberately absent: it is a JSON column, so ordering by it sorts the
- * serialized translation object, not the string the visitor reads.
+ * `name` and `price` are deliberately absent: both are JSON columns (per
+ * locale, per group), so ordering by them sorts the serialized value, not
+ * what the visitor reads — and a price of zero may leave the cost to the form.
  */
-export const EVENT_SORT_OPTIONS = [
-  'start_asc',
-  'start_desc',
-  'price_asc',
-  'price_desc',
-] as const;
+export const EVENT_SORT_OPTIONS = ['start_asc', 'start_desc'] as const;
 
 export type EventSortOption = (typeof EVENT_SORT_OPTIONS)[number];
 
@@ -28,8 +24,6 @@ interface SortOrder {
 const SORT_ORDERS: Record<EventSortOption, SortOrder> = {
   start_asc: { sortBy: 'startAt', descending: false },
   start_desc: { sortBy: 'startAt', descending: true },
-  price_asc: { sortBy: 'price', descending: false },
-  price_desc: { sortBy: 'price', descending: true },
 };
 
 export function sortOrderOf(option: EventSortOption): SortOrder {

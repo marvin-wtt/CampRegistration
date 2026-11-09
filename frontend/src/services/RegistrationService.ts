@@ -1,11 +1,13 @@
-import type {
-  Registration,
-  RegistrationCreateData,
-  RegistrationDeleteQuery,
-  RegistrationUpdateData,
-  RegistrationUpdateQuery,
+import {
+  REGISTRATION_PRICE_CHANGED,
+  type Registration,
+  type RegistrationCreateData,
+  type RegistrationDeleteQuery,
+  type RegistrationUpdateData,
+  type RegistrationUpdateQuery,
 } from '@camp-registration/common/entities';
 import { api, withCaptcha } from '@/services/api';
+import axios from 'axios';
 
 export function useRegistrationService() {
   async function fetchRegistrations(eventId: string): Promise<Registration[]> {
@@ -70,4 +72,14 @@ export function useRegistrationService() {
     updateRegistration,
     deleteRegistration,
   };
+}
+
+/** Whether the server refused a total the form showed as outdated. */
+export function isPriceChangedError(error: unknown): boolean {
+  if (!axios.isAxiosError(error)) {
+    return false;
+  }
+  const body = error.response?.data as { errorCode?: unknown } | undefined;
+
+  return body?.errorCode === REGISTRATION_PRICE_CHANGED;
 }

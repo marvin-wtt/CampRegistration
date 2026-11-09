@@ -1,5 +1,6 @@
 import { createForm } from '../utils/form.js';
 import { Prisma } from '#generated/prisma/client';
+import { PAYMENT_AMOUNT_TAG } from '@camp-registration/common/utils';
 
 export const eventPrivate = {
   listed: false,
@@ -461,5 +462,43 @@ export const eventWithFormFunctions = {
       type: 'boolean',
       requiredIf: "isMinor({date}, '2018-01-01')",
     },
+  ]),
+};
+
+// The presets' hidden team discount, plus a priced option the registrant picks.
+const pricedForm = (elements: object[] = []) => ({
+  ...createForm([
+    { name: 'first_name', type: 'text', isRequired: true },
+    { name: 'role', type: 'text' },
+    {
+      name: 'bus',
+      type: 'boolean',
+      price: 30,
+      eventDataType: PAYMENT_AMOUNT_TAG,
+    },
+    ...elements,
+  ]),
+  calculatedValues: [
+    {
+      name: 'payment_team_discount',
+      expression:
+        "iif({role} notempty and {role} <> 'participant', 0 - {event.price}, 0)",
+      eventDataType: PAYMENT_AMOUNT_TAG,
+    },
+  ],
+});
+
+export const eventWithPrice = {
+  price: 12000,
+  currency: 'EUR',
+  form: pricedForm(),
+};
+
+export const eventWithGroupPrices = {
+  countries: ['de', 'pl'],
+  price: { de: 12000, pl: 9000 },
+  currency: 'EUR',
+  form: pricedForm([
+    { name: 'country', type: 'text', eventDataType: 'country' },
   ]),
 };

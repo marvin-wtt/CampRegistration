@@ -35,7 +35,8 @@ const { form, trigger, singleLine, plainText, placeholder } = defineProps<{
   placeholder?: string;
 }>();
 
-const eventTokens: (keyof EventDetails)[] = [
+// Mail templates also get the price with its currency (`translateEventContext`).
+const eventTokens: (keyof EventDetails | 'priceWithCurrency')[] = [
   'name',
   'organizer',
   'countries',
@@ -46,6 +47,7 @@ const eventTokens: (keyof EventDetails)[] = [
   'maxAge',
   'maxParticipants',
   'location',
+  'priceWithCurrency',
 ];
 
 const tokens = computed<
@@ -88,6 +90,11 @@ const tokens = computed<
               },
             ]
           : []),
+        {
+          value: 'priceWithCurrency',
+          label: t('token.registration.price.label'),
+          caption: t('token.registration.price.caption'),
+        },
         {
           value: 'computedData',
           label: t('token.registration.computed.label'),
@@ -164,9 +171,9 @@ token:
       location:
         label: 'Location'
         caption: 'The location of the event'
-      price:
+      priceWithCurrency:
         label: 'Price'
-        caption: 'The participation fee'
+        caption: 'The group’s fee, with currency'
   registration:
     label: 'Registration'
     caption: 'Data submitted by the participant during registration'
@@ -176,6 +183,9 @@ token:
     changes:
       label: 'Changes'
       caption: 'The fields this edit changed, with their new values'
+    price:
+      label: 'Price'
+      caption: 'What this registration costs, with currency'
     computed:
       label: 'Computed'
       caption: 'Fields computed based on data tag'
@@ -230,9 +240,9 @@ token:
       location:
         label: 'Ort'
         caption: 'Der Ort der Veranstaltung'
-      price:
+      priceWithCurrency:
         label: 'Preis'
-        caption: 'Der Teilnahmebeitrag'
+        caption: 'Beitrag der Gruppe, mit Währung'
   registration:
     label: 'Anmeldung'
     caption: 'Daten aus der Anmeldung des Teilnehmers'
@@ -242,6 +252,9 @@ token:
     changes:
       label: 'Änderungen'
       caption: 'Die geänderten Felder mit ihren neuen Werten'
+    price:
+      label: 'Preis'
+      caption: 'Was diese Anmeldung kostet, mit Währung'
     computed:
       label: 'Berechnet'
       caption: 'Felder, die basierend auf dem Daten-Tag berechnet werden'
@@ -301,9 +314,9 @@ token:
         label: 'Lieu'
         caption: "Le lieu de l'événement"
 
-      price:
+      priceWithCurrency:
         label: 'Prix'
-        caption: 'Les frais de participation'
+        caption: 'Frais du groupe, avec devise'
   registration:
     label: 'Inscription'
     caption: "Données issues de l'inscription du participant"
@@ -313,6 +326,9 @@ token:
     changes:
       label: 'Modifications'
       caption: 'Les champs modifiés, avec leurs nouvelles valeurs'
+    price:
+      label: 'Prix'
+      caption: 'Coût de cette inscription, avec devise'
     computed:
       label: 'Calculé'
       caption: 'Champs calculés en fonction du tag de données'
@@ -367,9 +383,9 @@ token:
       location:
         label: 'Miejsce'
         caption: 'Miejsce wydarzenia'
-      price:
+      priceWithCurrency:
         label: 'Cena'
-        caption: 'Opłata za uczestnictwo'
+        caption: 'Opłata grupy, z walutą'
   registration:
     label: 'Rejestracja'
     caption: 'Dane z rejestracji uczestnika'
@@ -379,6 +395,9 @@ token:
     changes:
       label: 'Zmiany'
       caption: 'Zmienione pola wraz z ich nowymi wartościami'
+    price:
+      label: 'Cena'
+      caption: 'Koszt tego zgłoszenia, z walutą'
     computed:
       label: 'Obliczone'
       caption: 'Pola obliczane na podstawie danych zgłoszenia'
@@ -433,9 +452,9 @@ token:
       location:
         label: 'Místo'
         caption: 'Místo konání akce'
-      price:
+      priceWithCurrency:
         label: 'Cena'
-        caption: 'Účastnický poplatek'
+        caption: 'Poplatek skupiny, s měnou'
   registration:
     label: 'Registrace'
     caption: 'Údaje z registrace účastníka'
@@ -445,6 +464,9 @@ token:
     changes:
       label: 'Změny'
       caption: 'Změněná pole a jejich nové hodnoty'
+    price:
+      label: 'Cena'
+      caption: 'Cena této registrace, s měnou'
     computed:
       label: 'Vypočtené'
       caption: 'Pole vypočítaná na základě dat registrace'

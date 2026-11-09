@@ -488,11 +488,13 @@ async function submit(
   eventId: string,
   formData: Record<string, unknown>,
   locale: string,
+  displayedTotal?: number,
 ) {
   return api.createRegistration(eventId, {
     data: formData,
     locale,
     group: group.value ?? null,
+    displayedTotal,
   });
 }
 

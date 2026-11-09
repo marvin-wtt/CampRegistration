@@ -19,6 +19,7 @@ import { uploadFile } from './utils/file.js';
 import { expectEmailCount, expectEmailWith } from '../utils/mail.js';
 import { Registration, Message, User } from '#generated/prisma/client';
 import Handlebars from 'handlebars';
+import { formatMoney, fromMinorUnits } from '@camp-registration/common/utils';
 
 // The message body is HTML, so Handlebars escapes interpolated values there
 // (e.g. `'` -> `&#x27;`). Faker-generated fields such as the company name can
@@ -165,8 +166,11 @@ describe('/api/v1/events/:eventId/messages', () => {
         },
         emails: ['test@example.com'],
         group: 'de',
+        quotedAmount: 12345,
+        currency: 'EUR',
       });
 
+      // Registered before quotes: its price stays empty.
       const registrationB = await RegistrationFactory.create({
         event: { connect: { id: event.id } },
         data: {
@@ -181,7 +185,8 @@ describe('/api/v1/events/:eventId/messages', () => {
           'Hi, {{ registration.data.first_name }}, welcome to {{ event.name }}',
         body:
           'Hello {{ registration.data.first_name }}, the min age is {{ event.minAge }}. {{ event.maxAge }} ' +
-          '{{ event.maxParticipants }} {{ event.location }} {{ event.organizer }} {{ event.price }}',
+          '{{ event.maxParticipants }} {{ event.location }} {{ event.organizer }} {{ event.price }} ' +
+          '[{{ registration.priceWithCurrency }}]',
         priority: 'high',
       };
 
@@ -202,12 +207,16 @@ describe('/api/v1/events/:eventId/messages', () => {
       });
       expect(stored?.sentByUserId).toBe(user.id);
 
+      // In major units, as in forms.
+      const price = fromMinorUnits(event.price as number, event.currency);
+
       await assertMessages(body.data.id, [
         {
           subject: `Hi, ${registrationA.data.first_name}, welcome to ${event.name as string}`,
           body:
             `Hello ${esc(registrationA.data.first_name)}, the min age is ${esc(event.minAge)}. ` +
-            `${esc(event.maxAge)} ${esc(event.maxParticipants as number)} ${esc(event.location as string)} ${esc(event.organizer as string)} ${esc(event.price)}`,
+            `${esc(event.maxAge)} ${esc(event.maxParticipants as number)} ${esc(event.location as string)} ${esc(event.organizer as string)} ${esc(price)} ` +
+            `[${esc(formatMoney(12345, 'EUR', registrationA.locale))}]`,
           priority: 'high',
           replyTo: event.contactEmail as string,
           emails: registrationA.emails!,
@@ -216,7 +225,7 @@ describe('/api/v1/events/:eventId/messages', () => {
           subject: `Hi, ${registrationB.data.first_name}, welcome to ${event.name as string}`,
           body:
             `Hello ${esc(registrationB.data.first_name)}, the min age is ${esc(event.minAge)}. ` +
-            `${esc(event.maxAge)} ${esc(event.maxParticipants as number)} ${esc(event.location as string)} ${esc(event.organizer as string)} ${esc(event.price)}`,
+            `${esc(event.maxAge)} ${esc(event.maxParticipants as number)} ${esc(event.location as string)} ${esc(event.organizer as string)} ${esc(price)} []`,
           priority: 'high',
           replyTo: event.contactEmail as string,
           emails: registrationB.emails!,

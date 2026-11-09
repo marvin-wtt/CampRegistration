@@ -125,7 +125,12 @@
       </div>
 
       <div class="event-card__footer">
-        <span class="event-card__price">{{ priceLabel }}</span>
+        <span
+          v-if="priceLabel"
+          class="event-card__price"
+        >
+          {{ priceLabel }}
+        </span>
         <div class="event-card__flags">
           <country-icon
             v-for="country in props.event.countries"
@@ -141,7 +146,11 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import type { Event } from '@camp-registration/common/entities';
-import { eventGroupFields } from '@camp-registration/common/utils';
+import {
+  allGroupValues,
+  eventGroupFields,
+  fromMinorUnits,
+} from '@camp-registration/common/utils';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { useLink } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -224,16 +233,25 @@ const dateRange = computed<string>(() => {
   }
 });
 
-const priceLabel = computed<string>(() => {
-  if (props.event.price === 0) {
-    return t('free');
+// Only prices above zero are shown: zero leaves the price to the form, or
+// makes it free — and a card can't tell which. The form's total then says.
+const priceLabel = computed<string | null>(() => {
+  const prices = allGroupValues(props.event.price);
+  const lowest = Math.min(...prices);
+  if (lowest <= 0) {
+    return null;
   }
 
-  return new Intl.NumberFormat(locale.value, {
+  const major = fromMinorUnits(lowest, props.event.currency);
+  const amount = new Intl.NumberFormat(locale.value, {
     style: 'currency',
-    currency: 'EUR',
-    minimumFractionDigits: Number.isInteger(props.event.price) ? 0 : 2,
-  }).format(props.event.price);
+    currency: props.event.currency,
+    minimumFractionDigits: Number.isInteger(major) ? 0 : 2,
+  }).format(major);
+
+  return prices.some((price) => price !== lowest)
+    ? t('priceFrom', { amount })
+    : amount;
 });
 
 const closesSoonThresholdMs = 14 * 24 * 60 * 60 * 1000;
@@ -437,6 +455,8 @@ function navigate(e: MouseEvent) {
   display: flex;
   align-items: center;
   gap: 4px;
+  /* Right-aligned with or without a price beside them */
+  margin-left: auto;
 }
 
 /* Availability */
@@ -544,7 +564,7 @@ function navigate(e: MouseEvent) {
 
 <i18n lang="yaml" locale="en">
 age_range: '{min}–{max} years'
-free: 'Free'
+priceFrom: 'from {amount}'
 via: 'via {organization}'
 until: 'Until {date}'
 waitlist: 'Waitlist'
@@ -553,7 +573,7 @@ places_left_label: 'Places left'
 </i18n>
 <i18n lang="yaml" locale="de">
 age_range: '{min}–{max} Jahre'
-free: 'Kostenlos'
+priceFrom: 'ab {amount}'
 via: 'über {organization}'
 until: 'Bis {date}'
 waitlist: 'Warteliste'
@@ -562,7 +582,7 @@ places_left_label: 'Freie Plätze'
 </i18n>
 <i18n lang="yaml" locale="fr">
 age_range: '{min}–{max} ans'
-free: 'Gratuit'
+priceFrom: 'à partir de {amount}'
 via: 'via {organization}'
 until: "Jusqu'au {date}"
 waitlist: "Liste d'attente"
@@ -571,7 +591,7 @@ places_left_label: 'Places restantes'
 </i18n>
 <i18n lang="yaml" locale="pl">
 age_range: '{min}–{max} lat'
-free: 'Bezpłatnie'
+priceFrom: 'od {amount}'
 via: 'przez {organization}'
 until: 'Do {date}'
 waitlist: 'Lista rezerwowa'
@@ -581,7 +601,7 @@ places_left_label: 'Wolne miejsca'
 </i18n>
 <i18n lang="yaml" locale="cs">
 age_range: '{min}–{max} let'
-free: 'Zdarma'
+priceFrom: 'od {amount}'
 via: 'prostřednictvím {organization}'
 until: 'Do {date}'
 waitlist: 'Čekací listina'

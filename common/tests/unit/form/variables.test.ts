@@ -232,6 +232,37 @@ describe('variables', () => {
     });
   });
 
+  describe('price', () => {
+    it('should give the group’s price in major units', () => {
+      const model = new SurveyModel({});
+
+      setVariables(
+        model,
+        fakeEventData({
+          countries: ['de', 'pl'],
+          price: { de: 15000, pl: 12050 },
+        }),
+        { group: 'pl' },
+      );
+
+      expect(model.getVariable('event.price')).toBe(120.5);
+    });
+
+    it('should give it formatted for text, in the form’s language', () => {
+      const model = new SurveyModel({});
+      model.locale = 'de';
+
+      setVariables(model, fakeEventData({ price: 15000, currency: 'EUR' }));
+
+      expect(model.getVariable('event.priceWithCurrency')).toBe(
+        new Intl.NumberFormat('de', {
+          style: 'currency',
+          currency: 'EUR',
+        }).format(150),
+      );
+    });
+  });
+
   describe('dates', () => {
     it('should set the date for a given locale', () => {
       const model = new SurveyModel();
