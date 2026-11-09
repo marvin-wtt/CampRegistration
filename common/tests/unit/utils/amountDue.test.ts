@@ -9,16 +9,12 @@ describe('computeAmountDue', () => {
     expect(computeAmountDue(event, [], null)).toBe(15000);
   });
 
-  it('adds every value tagged payment_amount to the price', () => {
-    expect(computeAmountDue(event, [100, 25.5, '10'], null)).toBe(28550);
+  it('adds every amount to the price', () => {
+    expect(computeAmountDue(event, [100, 25.5, 10], null)).toBe(28550);
   });
 
   it('subtracts a discount from the price', () => {
     expect(computeAmountDue(event, [-20], null)).toBe(13000);
-  });
-
-  it('ignores unanswered or non-numeric tagged values', () => {
-    expect(computeAmountDue(event, [null, 'abc'], null)).toBe(15000);
   });
 
   it('never owes a negative amount', () => {

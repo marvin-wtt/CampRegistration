@@ -1,5 +1,6 @@
 import { createForm } from '../utils/form.js';
 import { Prisma } from '#generated/prisma/client';
+import presetPaymentAmounts from '#app/event/presets/paymentAmount.js';
 
 export const eventPrivate = {
   listed: false,
@@ -461,5 +462,31 @@ export const eventWithFormFunctions = {
       type: 'boolean',
       requiredIf: "isMinor({date}, '2018-01-01')",
     },
+  ]),
+};
+
+// The presets' hidden team discount, plus a priced option the registrant picks.
+const pricedForm = (elements: object[] = []) => ({
+  ...createForm([
+    { name: 'first_name', type: 'text', isRequired: true },
+    { name: 'role', type: 'text' },
+    { name: 'bus', type: 'boolean', price: 30 },
+    ...elements,
+  ]),
+  calculatedValues: presetPaymentAmounts,
+});
+
+export const eventWithPrice = {
+  price: 12000,
+  currency: 'EUR',
+  form: pricedForm(),
+};
+
+export const eventWithGroupPrices = {
+  countries: ['de', 'pl'],
+  price: { de: 12000, pl: 9000 },
+  currency: 'EUR',
+  form: pricedForm([
+    { name: 'country', type: 'text', eventDataType: 'country' },
   ]),
 };

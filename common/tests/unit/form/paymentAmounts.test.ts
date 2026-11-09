@@ -34,6 +34,18 @@ describe('extractPaymentAmounts', () => {
       expect(amounts(json, { role: 'team' })).toEqual([10]);
     });
 
+    it('reads numeric strings and counts anything else as zero', () => {
+      const json = {
+        elements: [
+          { type: 'text', name: 'a', eventDataType: 'payment_amount' },
+        ],
+      };
+
+      expect(amounts(json, { a: '12.5' })).toEqual([12.5]);
+      expect(amounts(json, { a: 'abc' })).toEqual([0]);
+      expect(amounts(json)).toEqual([0]);
+    });
+
     it('leaves out one that is always hidden', () => {
       expect(amounts({ elements: [fee('a', { visible: false })] })).toEqual([]);
     });
@@ -81,6 +93,46 @@ describe('extractPaymentAmounts', () => {
       expect(amounts(json, { children: [{ age: 2 }, { age: 5 }] })).toEqual([
         10,
       ]);
+    });
+  });
+
+  describe('tagged calculated values', () => {
+    const json = (extra: Record<string, unknown> = {}) => ({
+      elements: [role],
+      calculatedValues: [
+        {
+          name: 'team_discount',
+          expression: "iif({role} = 'team', -10, 0)",
+          eventDataType: 'payment_amount',
+          ...extra,
+        },
+      ],
+    });
+
+    it('count without being shown', () => {
+      expect(amounts(json(), { role: 'team' })).toEqual([-10]);
+      expect(amounts(json(), { role: 'participant' })).toEqual([0]);
+    });
+
+    it('follow later answers', () => {
+      const survey = new SurveyModel(json());
+      survey.setValue('role', 'participant');
+      survey.setValue('role', 'team');
+
+      expect(extractPaymentAmounts(survey)).toEqual([-10]);
+    });
+
+    it('read survey variables', () => {
+      const survey = new SurveyModel(json({ expression: '0 - {event.price}' }));
+      survey.setVariable('event.price', 150);
+
+      expect(extractPaymentAmounts(survey)).toEqual([-150]);
+    });
+
+    it('leaves out untagged ones', () => {
+      expect(
+        amounts(json({ eventDataType: undefined }), { role: 'team' }),
+      ).toEqual([]);
     });
   });
 
@@ -146,7 +198,7 @@ describe('extractPaymentAmounts', () => {
     it('gives a choice without a price nothing to add', () => {
       const json = { elements: [{ type: 'radiogroup', name: 'r', choices }] };
 
-      expect(amounts(json, { r: 'shared' })).toEqual([undefined]);
+      expect(amounts(json, { r: 'shared' })).toEqual([0]);
     });
 
     it('leaves out a choice hidden by its condition', () => {

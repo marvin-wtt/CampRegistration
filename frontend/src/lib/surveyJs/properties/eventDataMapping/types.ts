@@ -189,7 +189,8 @@ export const newsletterConsent: EventDataType = {
 };
 
 // Numbers here adjust the event's price to what a registration owes (see the
-// event's payment settings) — negative for a discount — while shown.
+// event's payment settings) — negative for a discount — while shown. Tagged
+// calculated values always count: rules the registrant never sees.
 export const paymentAmount: EventDataType = {
   element: {
     value: 'payment_amount',
@@ -203,7 +204,7 @@ export const paymentAmount: EventDataType = {
   },
   fit: (obj) => {
     return (
-      obj.getType() === 'expression' ||
+      ['expression', 'calculatedvalue'].includes(obj.getType()) ||
       (obj.getType() === 'text' &&
         obj.getPropertyValue('inputType') === 'number')
     );

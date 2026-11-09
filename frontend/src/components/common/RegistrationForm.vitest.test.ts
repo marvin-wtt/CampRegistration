@@ -423,6 +423,29 @@ describe('RegistrationForm', () => {
       expect(survey.completeText).toBe('Kostenpflichtig anmelden');
     });
 
+    it('applies a hidden discount from a tagged calculated value', async () => {
+      const { survey, summary } = mountForm(12000, {
+        pages: [{ name: 'page1', elements: [{ type: 'text', name: 'role' }] }],
+        calculatedValues: [
+          {
+            name: 'team_discount',
+            expression: "iif({role} = 'team', 0 - {event.price}, 0)",
+            eventDataType: 'payment_amount',
+          },
+        ],
+      });
+      survey.locale = 'de';
+      await flushPromises();
+
+      expect(summary().text()).toContain('120.00');
+
+      survey.setValue('role', 'team');
+      await flushPromises();
+
+      expect(summary().exists()).toBe(false);
+      expect(survey.completeText).toBe('Verbindlich anmelden');
+    });
+
     const twoPages = {
       pages: [
         { name: 'page1', elements: [{ type: 'text', name: 'a' }] },

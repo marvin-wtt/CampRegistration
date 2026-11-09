@@ -36,10 +36,14 @@ little. The answers add, in major units and negative for a discount
 
 - the `price` of a selected choice (radio, dropdown, checkbox, tag box) or of
   a boolean answered yes;
-- the value of a question tagged `payment_amount` (an expression or number).
+- the value of a question tagged `payment_amount` (an expression or number);
+- the value of a calculated value tagged `payment_amount`.
 
-Only visible questions and choices count. The presets waive the price for
-every role but `participant` with a `Team discount` line shown only to them.
+Questions and choices count only while visible: they are adjustments the
+person sees and chooses. Calculated values are never shown and always count:
+rules the organizer applies in the background. The presets waive the price
+for every role but `participant` with one (`payment_team_discount`), so the
+team sees no discount line, just no price.
 
 The server computes it from the validated submission and stores it as
 `Registration.quotedAmount`, with `Registration.currency`. It never changes:

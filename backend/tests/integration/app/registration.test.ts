@@ -37,6 +37,8 @@ import {
   eventWithMultipleFilesRequired,
   eventWithAddressEventDataTypes,
   eventWithEmailAndCountry,
+  eventWithPrice,
+  eventWithGroupPrices,
 } from './fixtures/registration.fixtures.js';
 import { request } from '../utils/request.js';
 import { NoOpMailer } from '#core/mail/drivers/noop.mailer.js';
@@ -493,6 +495,113 @@ describe('/api/v1/events/:eventId/registrations', () => {
           .post(`/api/v1/events/${event.id}/registrations`)
           .send({ data: invalidData })
           .expect(400);
+      });
+    });
+
+    describe('price', () => {
+      const register = (
+        event: Event,
+        data: Record<string, unknown>,
+        extra: Record<string, unknown> = {},
+      ) =>
+        request()
+          .post(`/api/v1/events/${event.id}/registrations`)
+          .send({ data: { first_name: 'Jhon', ...data }, ...extra });
+
+      const quoteOf = async (id: string) =>
+        prisma.registration.findUniqueOrThrow({
+          where: { id },
+          select: { quotedAmount: true, currency: true },
+        });
+
+      it('should store the event price as the quote', async () => {
+        const event = await EventFactory.create(eventWithPrice);
+
+        const { body } = await register(event, { role: 'participant' }).expect(
+          201,
+        );
+
+        await expect(quoteOf(body.data.id)).resolves.toEqual({
+          quotedAmount: 12000,
+          currency: 'EUR',
+        });
+      });
+
+      it('should add the price of a selected option', async () => {
+        const event = await EventFactory.create(eventWithPrice);
+
+        const { body } = await register(event, {
+          role: 'participant',
+          bus: true,
+        }).expect(201);
+
+        await expect(quoteOf(body.data.id)).resolves.toHaveProperty(
+          'quotedAmount',
+          15000,
+        );
+      });
+
+      it('should apply the hidden team discount', async () => {
+        const event = await EventFactory.create(eventWithPrice);
+
+        const { body } = await register(event, { role: 'counselor' }).expect(
+          201,
+        );
+
+        await expect(quoteOf(body.data.id)).resolves.toHaveProperty(
+          'quotedAmount',
+          0,
+        );
+      });
+
+      it('should charge an empty role as a participant', async () => {
+        const event = await EventFactory.create(eventWithPrice);
+
+        const { body } = await register(event, {}).expect(201);
+
+        await expect(quoteOf(body.data.id)).resolves.toHaveProperty(
+          'quotedAmount',
+          12000,
+        );
+      });
+
+      it("should quote the registration's group price", async () => {
+        const event = await EventFactory.create(eventWithGroupPrices);
+
+        const { body } = await register(
+          event,
+          { role: 'participant', country: 'pl' },
+          { group: 'pl' },
+        ).expect(201);
+
+        await expect(quoteOf(body.data.id)).resolves.toHaveProperty(
+          'quotedAmount',
+          9000,
+        );
+      });
+
+      it('should accept a matching price check', async () => {
+        const event = await EventFactory.create(eventWithPrice);
+
+        await register(
+          event,
+          { role: 'counselor' },
+          { priceCheck: { displayedTotal: 0 } },
+        ).expect(201);
+      });
+
+      it('should respond with `409` status code when the displayed total differs', async () => {
+        const event = await EventFactory.create(eventWithPrice);
+
+        const { body } = await register(
+          event,
+          { role: 'participant', bus: true },
+          { priceCheck: { displayedTotal: 12000 } },
+        ).expect(409);
+
+        expect(body).toHaveProperty('errorCode', 'REGISTRATION_PRICE_CHANGED');
+        expect(body).toHaveProperty('details', { quotedAmount: 15000 });
+        await expect(countRegistrations(event)).resolves.toBe(0);
       });
     });
 

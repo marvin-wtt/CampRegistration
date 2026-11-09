@@ -1,4 +1,4 @@
-import paymentAmount from '../paymentAmount.js';
+import paymentAmounts from '../paymentAmount.js';
 
 export default {
   title: '{event.name}',
@@ -78,7 +78,6 @@ export default {
           isRequired: true,
           eventDataType: 'role',
         },
-        ...paymentAmount,
       ],
     },
     {
@@ -268,6 +267,7 @@ export default {
       ],
     },
   ],
+  calculatedValues: [...paymentAmounts],
   showProgressBar: true,
   progressBarLocation: 'bottom',
   showCompletePage: false,

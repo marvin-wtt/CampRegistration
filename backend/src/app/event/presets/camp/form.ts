@@ -1,4 +1,4 @@
-import paymentAmount from '../paymentAmount.js';
+import paymentAmounts from '../paymentAmount.js';
 
 export default {
   locale: 'de',
@@ -91,7 +91,6 @@ export default {
           isRequired: true,
           eventDataType: 'role',
         },
-        ...paymentAmount,
       ],
       title: {
         en: 'Information',
@@ -915,6 +914,7 @@ export default {
     },
   ],
   calculatedValues: [
+    ...paymentAmounts,
     {
       name: 'isadult',
       expression: 'isAdult({date_of_birth}, {event.startAt})',

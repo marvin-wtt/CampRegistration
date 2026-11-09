@@ -19,3 +19,10 @@ export default {
   className: propertyInfo.className ?? '',
   propertyInfo: propertyInfo,
 };
+
+// Calculated values take the tag too: one tagged `payment_amount` adjusts the
+// price without a question the registrant sees.
+export const calculatedValueDataType = {
+  className: 'calculatedvalue',
+  propertyInfo: { ...propertyInfo, className: undefined },
+};

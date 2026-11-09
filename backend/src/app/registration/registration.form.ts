@@ -248,7 +248,7 @@ export class RegistrationForm {
   }
 
   /** What the answers add to the event price, for `computeAmountDue`. */
-  paymentAmounts(): unknown[] {
+  paymentAmounts(): number[] {
     return extractPaymentAmounts(this.survey);
   }
 
