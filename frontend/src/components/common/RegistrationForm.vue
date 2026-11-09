@@ -333,8 +333,8 @@ const badgeIcon = computed(() => {
   }
 });
 
-// A readonly form reuses the moderation layout (TOC, no validation) and puts
-// survey-core into display mode.
+// A readonly form reuses the moderation layout (TOC, no validation) and shows
+// answers as text (survey-core's view mode) instead of disabled inputs.
 const moderationLayout = props.moderation || props.readonly;
 
 const model = createModel(
@@ -345,6 +345,9 @@ const model = createModel(
 );
 model.validationEnabled = !moderationLayout;
 model.readOnly = props.readonly;
+if (props.readonly) {
+  model.readOnlyMode = 'view';
+}
 if (props.data) {
   model.data = props.data;
   mapFileIdToFileContent(model);
