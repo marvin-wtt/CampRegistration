@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { REGISTRATION_PRICE_CHANGED } from '@camp-registration/common/entities';
-import { MAX_AMOUNT_DUE } from '@camp-registration/common/utils';
 import {
   assertAmountWithinLimit,
   assertPriceUnchanged,
+  MAX_AMOUNT_DUE,
 } from '#app/registration/registration.price-check';
 
 describe('assertPriceUnchanged', () => {

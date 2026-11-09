@@ -1,6 +1,5 @@
 import httpStatus from 'http-status';
 import { REGISTRATION_PRICE_CHANGED } from '@camp-registration/common/entities';
-import { MAX_AMOUNT_DUE } from '@camp-registration/common/utils';
 import ApiError from '#core/router/ApiError';
 
 /**
@@ -28,6 +27,9 @@ export function assertPriceUnchanged(
     { code: REGISTRATION_PRICE_CHANGED },
   );
 }
+
+/** The most a registration may owe, in minor units: fits its INT column. */
+export const MAX_AMOUNT_DUE = 1_000_000_000;
 
 /**
  * Refuses a quote too large to store. Prices come from the form, and an

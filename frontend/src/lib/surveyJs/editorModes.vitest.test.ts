@@ -186,6 +186,14 @@ describe('editor modes', () => {
         question.setPropertyValue('eventDataType', undefined);
         expect(visibleColumns(grid, 'choices')).not.toContain('price');
       });
+
+      it('follows the tag picked in the property grid', () => {
+        const { grid } = openGrid('gender');
+
+        grid!.getQuestionByName('eventDataType').value = 'payment_amount';
+
+        expect(visibleColumns(grid, 'choices')).toContain('price');
+      });
     },
   );
 

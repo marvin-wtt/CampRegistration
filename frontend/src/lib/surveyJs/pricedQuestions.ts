@@ -38,11 +38,12 @@ export function showPricesOnlyWhenTagged(creator: SurveyCreatorModel): void {
       column.visible = isPriced(element);
     };
     update();
-    // Keyed, so selecting the question again replaces the listener.
-    element.registerFunctionOnPropertyValueChanged(
-      'eventDataType',
-      update,
-      'priceColumn',
-    );
+    // On the grid, not the element: the listener goes with the grid, and the
+    // grid is where the tag is edited.
+    options.survey.onValueChanged.add((_, change) => {
+      if (change.name === 'eventDataType') {
+        update();
+      }
+    });
   });
 }

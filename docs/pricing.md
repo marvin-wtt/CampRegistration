@@ -45,7 +45,9 @@ Never a typed answer: a tagged text or number field adds nothing, or the
 registrant would set their own price. An expression over a typed answer
 (`{nights} * 20`) is the organizer's rule, and the question's own validators
 (minimum, maximum) bound it; the server refuses a quote above `MAX_AMOUNT_DUE`
-(`assertAmountWithinLimit`), what its column can hold.
+(`assertAmountWithinLimit` in `registration.price-check.ts`), what its column
+can hold. That is the only bound: `displayedTotal` is just compared, never
+stored.
 
 The form editor shows the price fields only on tagged questions
 (`pricedQuestions.ts`), and a `price` left on an untagged question charges

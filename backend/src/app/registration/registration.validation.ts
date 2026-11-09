@@ -50,12 +50,10 @@ const store = (event: EventWithRelations, fallbackLocale: string) =>
           .optional()
           .transform((group) => eventGroup(event, group)),
         // Untrusted, never an amount: compared with the server's quote only
-        // (`assertPriceUnchanged`).
         displayedTotal: z
           .number()
           .int()
           .nonnegative()
-          .max(1_000_000_000)
           .optional() satisfies ZodType<
           RegistrationCreateData['displayedTotal']
         >,
