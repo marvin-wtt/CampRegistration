@@ -1,7 +1,8 @@
 import type { PropertyDefinition } from './ProptertyDefinition.js';
 
 // Major units of the event currency, added to the amount due while selected —
-// negative for a discount. Read by `extractPaymentAmounts`.
+// negative for a discount. Counts only on a question tagged `payment_amount`
+// (`extractPaymentAmounts`); the editor shows it only there.
 const name = 'price:number';
 
 // The choices of select questions; matrix rows and columns are plain item

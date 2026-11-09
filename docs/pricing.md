@@ -32,12 +32,18 @@ units; the conversion happens at the edges (`toMinorUnits`, `fromMinorUnits`).
 the group's price plus what the answers add, clamped at zero. Without a group
 the event has a price for, the highest price applies, so nobody is quoted too
 little. The answers add, in major units and negative for a discount
-(`extractPaymentAmounts`):
+(`extractPaymentAmounts`). Only elements tagged `payment_amount` ("Affects the
+price") count:
 
-- the `price` of a selected choice (radio, dropdown, checkbox, tag box) or of
-  a boolean answered yes;
-- the value of a question tagged `payment_amount` (an expression or number);
-- the value of a calculated value tagged `payment_amount`.
+- a boolean: its `price` when answered yes;
+- a select question (radio, dropdown, checkbox, tag box): the `price` of each
+  selected choice;
+- a number or expression question: its value;
+- a calculated value: its value.
+
+The form editor shows the price fields only on tagged questions
+(`pricedQuestions.ts`), and a `price` left on an untagged question charges
+nothing, so removing the tag reliably removes the price.
 
 Questions and choices count only while visible: they are adjustments the
 person sees and chooses. Calculated values are never shown and always count:

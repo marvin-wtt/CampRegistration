@@ -1,6 +1,6 @@
 import { createForm } from '../utils/form.js';
 import { Prisma } from '#generated/prisma/client';
-import presetPaymentAmounts from '#app/event/presets/paymentAmount.js';
+import { PAYMENT_AMOUNT_TAG } from '@camp-registration/common/utils';
 
 export const eventPrivate = {
   listed: false,
@@ -470,10 +470,22 @@ const pricedForm = (elements: object[] = []) => ({
   ...createForm([
     { name: 'first_name', type: 'text', isRequired: true },
     { name: 'role', type: 'text' },
-    { name: 'bus', type: 'boolean', price: 30 },
+    {
+      name: 'bus',
+      type: 'boolean',
+      price: 30,
+      eventDataType: PAYMENT_AMOUNT_TAG,
+    },
     ...elements,
   ]),
-  calculatedValues: presetPaymentAmounts,
+  calculatedValues: [
+    {
+      name: 'payment_team_discount',
+      expression:
+        "iif({role} notempty and {role} <> 'participant', 0 - {event.price}, 0)",
+      eventDataType: PAYMENT_AMOUNT_TAG,
+    },
+  ],
 });
 
 export const eventWithPrice = {

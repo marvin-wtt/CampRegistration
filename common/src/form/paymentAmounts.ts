@@ -10,16 +10,21 @@ import { PAYMENT_AMOUNT_TAG } from '../utils/amountDue.js';
 
 /**
  * What the answers add to the event price, in major units, negative for a
- * discount. Shared so the registration form previews what the server charges.
- * - a visible question tagged `payment_amount`: its value;
- * - a visible boolean answered yes, or a visible selected choice: its `price`;
- * - a calculated value tagged `payment_amount`: its value, always (never shown).
+ * discount. Only elements tagged `payment_amount` count, so a stray `price`
+ * on an untagged question never charges anything. Shared so the registration
+ * form previews what the server charges.
+ * - a visible tagged boolean answered yes: its `price`;
+ * - a visible tagged select question: the `price` of each selected choice;
+ * - any other visible tagged question: its value;
+ * - a tagged calculated value: its value, always (never shown).
  */
 export function extractPaymentAmounts(survey: SurveyModel): number[] {
   // Nested: the questions of every dynamic panel entry, each its own answer.
   const questions = survey
     .getAllQuestions(false, false, true)
+    .filter(isTagged)
     .filter((question) => question.isVisibleInSurvey);
+
   const calculated = survey.calculatedValues.filter(isTagged);
 
   return [
@@ -29,9 +34,6 @@ export function extractPaymentAmounts(survey: SurveyModel): number[] {
 }
 
 function questionAmounts(question: Question): unknown[] {
-  if (isTagged(question)) {
-    return [question.value];
-  }
   if (question instanceof QuestionBooleanModel) {
     return question.booleanValue === true ? [price(question)] : [];
   }
@@ -42,7 +44,7 @@ function questionAmounts(question: Question): unknown[] {
       .map(price);
   }
 
-  return [];
+  return [question.value];
 }
 
 function isTagged(item: Question | CalculatedValue): boolean {

@@ -1,5 +1,3 @@
-import paymentAmounts from '../paymentAmount.js';
-
 export default {
   title: '{event.name}',
   description: '{event.startAtDate} - {event.endAtDate}',
@@ -253,7 +251,15 @@ export default {
       ],
     },
   ],
-  calculatedValues: [...paymentAmounts],
+  calculatedValues: [
+    {
+      name: 'payment_team_discount',
+      // The team takes part free of charge; an empty role counts as a participant.
+      expression:
+        "iif({role} notempty and {role} <> 'participant', 0 - {event.price}, 0)",
+      eventDataType: 'payment_amount',
+    },
+  ],
   showProgressBar: true,
   progressBarLocation: 'bottom',
   showCompletePage: false,

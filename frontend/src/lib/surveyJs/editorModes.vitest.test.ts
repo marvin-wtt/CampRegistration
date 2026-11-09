@@ -7,6 +7,7 @@ import {
 import { QuestionMatrixDynamicModel, type SurveyModel } from 'survey-core';
 import '@camp-registration/common/form';
 import { hideIrrelevantProperties } from './hiddenProperties';
+import { showPricesOnlyWhenTagged } from './pricedQuestions';
 import {
   addConditionBadge,
   applyEditorMode,
@@ -105,12 +106,22 @@ describe('editor modes', () => {
   describe.each(['simple', 'standard', 'expert'] as const)(
     'prices in the %s mode',
     (mode) => {
-      function propertyGridOf(name: string): SurveyModel | undefined {
+      const priced = { eventDataType: 'payment_amount' };
+
+      function openGrid(name: string) {
         const creator = createCreator();
+        showPricesOnlyWhenTagged(creator);
         creator.JSON = {
           elements: [
-            { type: 'boolean', name: 'bus' },
-            { type: 'radiogroup', name: 'room', choices: ['single'] },
+            { type: 'boolean', name: 'bus', ...priced },
+            {
+              type: 'radiogroup',
+              name: 'room',
+              choices: ['single'],
+              ...priced,
+            },
+            { type: 'boolean', name: 'consent' },
+            { type: 'radiogroup', name: 'gender', choices: ['f'] },
             { type: 'matrix', name: 'grid', rows: ['a'], columns: ['b'] },
           ],
         };
@@ -121,16 +132,25 @@ describe('editor modes', () => {
           }
         });
         applyEditorMode(creator, mode, context);
-        creator.selectElement(creator.survey.getQuestionByName(name));
+        const question = creator.survey.getQuestionByName(name);
+        creator.selectElement(question);
 
-        return grid;
+        return { grid, question };
       }
 
-      function columnsOf(name: string, table: string): string[] {
-        const question = propertyGridOf(name)?.getQuestionByName(table);
+      function propertyGridOf(name: string): SurveyModel | undefined {
+        return openGrid(name).grid;
+      }
+
+      function visibleColumns(grid: SurveyModel | undefined, table: string) {
+        const question = grid?.getQuestionByName(table);
         return question instanceof QuestionMatrixDynamicModel
           ? question.visibleColumns.map((column) => column.name)
           : [];
+      }
+
+      function columnsOf(name: string, table: string): string[] {
+        return visibleColumns(propertyGridOf(name), table);
       }
 
       it('offers the price of a boolean', () => {
@@ -145,6 +165,26 @@ describe('editor modes', () => {
 
       it('offers no price for matrix rows', () => {
         expect(columnsOf('grid', 'rows')).not.toContain('price');
+      });
+
+      it('offers no price on an untagged boolean', () => {
+        expect(
+          propertyGridOf('consent')?.getQuestionByName('price')?.isVisible,
+        ).toBe(false);
+      });
+
+      it('offers no price column on untagged choices', () => {
+        expect(columnsOf('gender', 'choices')).not.toContain('price');
+      });
+
+      it('follows the tag while the question stays selected', () => {
+        const { grid, question } = openGrid('gender');
+
+        question.setPropertyValue('eventDataType', 'payment_amount');
+        expect(visibleColumns(grid, 'choices')).toContain('price');
+
+        question.setPropertyValue('eventDataType', undefined);
+        expect(visibleColumns(grid, 'choices')).not.toContain('price');
       });
     },
   );

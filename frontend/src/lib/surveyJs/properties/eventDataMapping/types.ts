@@ -188,23 +188,34 @@ export const newsletterConsent: EventDataType = {
   },
 };
 
-// Numbers here adjust the event's price to what a registration owes (see the
-// event's payment settings) — negative for a discount — while shown. Tagged
-// calculated values always count: rules the registrant never sees.
+// Questions tagged here adjust the event's price while shown: a number or
+// expression by its value, a boolean or select question by the prices it then
+// offers (`pricedQuestions.ts`). Tagged calculated values always count: rules
+// the registrant never sees. See docs/pricing.md.
+const PRICED_TYPES = [
+  'expression',
+  'calculatedvalue',
+  'boolean',
+  'radiogroup',
+  'dropdown',
+  'checkbox',
+  'tagbox',
+];
+
 export const paymentAmount: EventDataType = {
   element: {
     value: 'payment_amount',
     text: {
-      en: 'Payment amount',
-      de: 'Zahlungsbetrag',
-      fr: 'Montant du paiement',
-      pl: 'Kwota płatności',
-      cs: 'Částka platby',
+      en: 'Affects the price',
+      de: 'Beeinflusst den Preis',
+      fr: 'Modifie le prix',
+      pl: 'Wpływa na cenę',
+      cs: 'Ovlivňuje cenu',
     },
   },
   fit: (obj) => {
     return (
-      ['expression', 'calculatedvalue'].includes(obj.getType()) ||
+      PRICED_TYPES.includes(obj.getType()) ||
       (obj.getType() === 'text' &&
         obj.getPropertyValue('inputType') === 'number')
     );

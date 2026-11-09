@@ -52,7 +52,8 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
           'Nie: bei kostenpflichtigen Veranstaltungen nur, wenn du den Preis anderswo im Formular nennst.',
         eventDataType:
           'Wähle aus, welche Art von Daten die Person eingibt. ' +
-          'Die Informationen werden dem Dienst unabhängig vom Feldnamen zur Verfügung gestellt.',
+          'Die Informationen werden dem Dienst unabhängig vom Feldnamen zur Verfügung gestellt. ' +
+          '„Beeinflusst den Preis“ gibt den Antworten einen Preis.',
         price:
           'Wird zum Preis der Veranstaltung addiert, solange die Antwort gewählt und sichtbar ist. Ein negativer Betrag ist ein Rabatt.',
         groupCountryMatch:
@@ -102,7 +103,8 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
           'Never: for a paid event, only if the form states the price elsewhere.',
         eventDataType:
           'Select what type of data the user enters. ' +
-          'The information is made available to the service regardless of the field name.',
+          'The information is made available to the service regardless of the field name. ' +
+          '"Affects the price" gives the answers a price.',
         price:
           'Added to the event price while this answer is selected and shown. A negative amount is a discount.',
         groupCountryMatch:
@@ -151,7 +153,8 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
           'Jamais : pour un événement payant, seulement si le formulaire indique le prix ailleurs.',
         eventDataType:
           'Sélectionnez le type de données que l’utilisateur saisit. ' +
-          'Les informations sont mises à la disposition du service indépendamment du nom du champ.',
+          'Les informations sont mises à la disposition du service indépendamment du nom du champ. ' +
+          '« Modifie le prix » donne un prix aux réponses.',
         price:
           "Ajouté au prix de l'événement tant que cette réponse est choisie et affichée. Un montant négatif est une réduction.",
         groupCountryMatch:
@@ -201,7 +204,8 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
           'Nigdy: przy płatnym wydarzeniu tylko wtedy, gdy formularz podaje cenę w innym miejscu.',
         eventDataType:
           'Wybierz, jaki typ danych wprowadza użytkownik. ' +
-          'Informacje są przekazywane do usługi niezależnie od nazwy pola.',
+          'Informacje są przekazywane do usługi niezależnie od nazwy pola. ' +
+          '„Wpływa na cenę” nadaje odpowiedziom cenę.',
         price:
           'Dodawana do ceny wydarzenia, dopóki ta odpowiedź jest wybrana i widoczna. Kwota ujemna oznacza zniżkę.',
         groupCountryMatch:
@@ -251,7 +255,8 @@ export const surveyCreatorCustomLocaleConfig: Record<LocaleKey, LocaleSection> =
           'Nikdy: u placené akce jen tehdy, když formulář uvádí cenu jinde.',
         eventDataType:
           'Vyberte, jaký typ dat uživatel zadává. ' +
-          'Informace jsou službě k dispozici nezávisle na názvu pole.',
+          'Informace jsou službě k dispozici nezávisle na názvu pole. ' +
+          '„Ovlivňuje cenu“ dává odpovědím cenu.',
         price:
           'Připočítá se k ceně akce, dokud je tato odpověď vybraná a zobrazená. Záporná částka je sleva.',
         groupCountryMatch:

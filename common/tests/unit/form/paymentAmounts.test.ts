@@ -96,6 +96,26 @@ describe('extractPaymentAmounts', () => {
     });
   });
 
+  describe('untagged questions', () => {
+    it('add nothing, whatever their price', () => {
+      const json = {
+        elements: [
+          { type: 'boolean', name: 'bus', price: 30 },
+          {
+            type: 'radiogroup',
+            name: 'room',
+            choices: [{ value: 'single', price: 25 }],
+          },
+          { type: 'text', name: 'amount', inputType: 'number' },
+        ],
+      };
+
+      expect(amounts(json, { bus: true, room: 'single', amount: 10 })).toEqual(
+        [],
+      );
+    });
+  });
+
   describe('tagged calculated values', () => {
     const json = (extra: Record<string, unknown> = {}) => ({
       elements: [role],
@@ -138,7 +158,14 @@ describe('extractPaymentAmounts', () => {
 
   describe('priced booleans', () => {
     const json = {
-      elements: [{ type: 'boolean', name: 'bus', price: 30 }],
+      elements: [
+        {
+          type: 'boolean',
+          name: 'bus',
+          price: 30,
+          eventDataType: 'payment_amount',
+        },
+      ],
     };
 
     it('adds the price when answered yes', () => {
@@ -157,6 +184,7 @@ describe('extractPaymentAmounts', () => {
             type: 'boolean',
             name: 'bus',
             price: -15,
+            eventDataType: 'payment_amount',
             valueTrue: 'yes',
             valueFalse: 'no',
           },
@@ -177,7 +205,11 @@ describe('extractPaymentAmounts', () => {
     it.each(['radiogroup', 'dropdown'])(
       'adds the price of the selected choice (%s)',
       (type) => {
-        const json = { elements: [{ type, name: 'room', choices }] };
+        const json = {
+          elements: [
+            { type, name: 'room', choices, eventDataType: 'payment_amount' },
+          ],
+        };
 
         expect(amounts(json, { room: 'single' })).toEqual([25]);
         expect(amounts(json, { room: 'sibling' })).toEqual([-20]);
@@ -187,7 +219,11 @@ describe('extractPaymentAmounts', () => {
     it.each(['checkbox', 'tagbox'])(
       'adds the price of every selected choice (%s)',
       (type) => {
-        const json = { elements: [{ type, name: 'extras', choices }] };
+        const json = {
+          elements: [
+            { type, name: 'extras', choices, eventDataType: 'payment_amount' },
+          ],
+        };
 
         expect(amounts(json, { extras: ['single', 'sibling'] })).toEqual([
           25, -20,
@@ -196,7 +232,16 @@ describe('extractPaymentAmounts', () => {
     );
 
     it('gives a choice without a price nothing to add', () => {
-      const json = { elements: [{ type: 'radiogroup', name: 'r', choices }] };
+      const json = {
+        elements: [
+          {
+            type: 'radiogroup',
+            name: 'r',
+            choices,
+            eventDataType: 'payment_amount',
+          },
+        ],
+      };
 
       expect(amounts(json, { r: 'shared' })).toEqual([0]);
     });
@@ -208,6 +253,7 @@ describe('extractPaymentAmounts', () => {
           {
             type: 'checkbox',
             name: 'extras',
+            eventDataType: 'payment_amount',
             choices: [
               { value: 'bus', price: 30 },
               { value: 'team_shirt', price: 10, visibleIf: "{role} = 'team'" },
@@ -228,6 +274,7 @@ describe('extractPaymentAmounts', () => {
           {
             type: 'radiogroup',
             name: 'room',
+            eventDataType: 'payment_amount',
             visibleIf: "{role} = 'team'",
             choices,
           },

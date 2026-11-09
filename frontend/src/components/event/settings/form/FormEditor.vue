@@ -52,6 +52,7 @@ import { fieldFromParts } from '@/utils/fileField';
 import { emphasizeForwardNavigation } from '@/lib/surveyJs/navigation';
 import { setCompleteTextDefault } from '@/lib/surveyJs/completeText';
 import { addAmountSummary, trackAmountDue } from '@/lib/surveyJs/amountDue';
+import { showPricesOnlyWhenTagged } from '@/lib/surveyJs/pricedQuestions';
 import { readAsDataURL } from '@/utils/readAsDataURL';
 
 const props = defineProps<{
@@ -74,6 +75,7 @@ const creatorOptions: ICreatorOptions = {
 };
 
 const creator = new SurveyCreatorModel(creatorOptions);
+showPricesOnlyWhenTagged(creator);
 
 // Same options the preset lint test uses (see `formLintOptions`).
 creator.onLintSurvey.add((_, options) => {

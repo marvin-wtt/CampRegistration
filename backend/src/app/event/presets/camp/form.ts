@@ -1,5 +1,3 @@
-import paymentAmounts from '../paymentAmount.js';
-
 export default {
   locale: 'de',
   title: '{event.name}',
@@ -914,7 +912,13 @@ export default {
     },
   ],
   calculatedValues: [
-    ...paymentAmounts,
+    {
+      name: 'payment_team_discount',
+      // The team takes part free of charge; an empty role counts as a participant.
+      expression:
+        "iif({role} notempty and {role} <> 'participant', 0 - {event.price}, 0)",
+      eventDataType: 'payment_amount',
+    },
     {
       name: 'isadult',
       expression: 'isAdult({date_of_birth}, {event.startAt})',
