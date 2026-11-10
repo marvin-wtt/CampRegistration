@@ -1,5 +1,5 @@
 import type { TableCellProps } from '@/components/event/table/tableCells/TableCellProps';
-import { getSelectOptions } from '@/utils/surveyJS';
+import { getSelectOptions } from '@camp-registration/common/form';
 
 type Entry = Record<string, string | Record<string, string>>;
 

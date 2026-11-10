@@ -53,7 +53,7 @@
             v-if="!data.source || data.source === 'form'"
             v-model="data.field"
             :label="t('field.field.label')"
-            :hint="t('field.field.hint')"
+            :hint="fieldWarnings.length > 0 ? undefined : t('field.field.hint')"
             :options="fieldFilterOptions"
             emit-value
             use-input
@@ -71,6 +71,21 @@
                   <q-item-label caption>{{ scope.opt.value }}</q-item-label>
                 </q-item-section>
               </q-item>
+            </template>
+
+            <template
+              v-if="fieldWarnings.length > 0"
+              #hint
+            >
+              <div
+                v-for="(message, index) in fieldWarnings"
+                :key="index"
+                class="text-warning"
+                data-test="column-field-warning"
+              >
+                <q-icon name="warning" />
+                {{ message }}
+              </div>
             </template>
 
             <template #append>
@@ -95,7 +110,22 @@
             clearable
             outlined
             rounded
-          />
+          >
+            <template
+              v-if="fieldWarnings.length > 0"
+              #hint
+            >
+              <div
+                v-for="(message, index) in fieldWarnings"
+                :key="index"
+                class="text-warning"
+                data-test="column-field-warning"
+              >
+                <q-icon name="warning" />
+                {{ message }}
+              </div>
+            </template>
+          </q-select>
 
           <q-input
             v-else
@@ -137,6 +167,16 @@
               />
             </q-expansion-item>
           </q-list>
+
+          <div
+            v-for="(message, index) in valueWarnings"
+            :key="index"
+            class="text-warning text-caption"
+            data-test="column-value-warning"
+          >
+            <q-icon name="warning" />
+            {{ message }}
+          </div>
 
           <q-select
             v-model="data.align"
@@ -257,23 +297,28 @@ import {
   watch,
   watchEffect,
 } from 'vue';
-import type {
-  EventDetails,
-  TableColumnTemplate,
-  Registration,
+import {
+  TABLE_COMPUTED_FIELDS,
+  TABLE_META_FIELDS,
+  type EventDetails,
+  type Registration,
+  type TableColumnTemplate,
 } from '@camp-registration/common/entities';
 import TranslatedInput from '@/components/common/inputs/TranslatedInput.vue';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import ComponentRegistry from '@/components/event/table/ComponentRegistry';
 import ToggleItem from '@/components/common/ToggleItem.vue';
-import { extractFormFields } from '@/utils/surveyJS';
+import { extractFormFields } from '@camp-registration/common/form';
 import type { PartialBy } from '@/types';
+import { TableTemplateReferenceChecker } from '@camp-registration/common/form';
+import { useTableTemplateIssueMessage } from '@/components/event/table/tableTemplateIssues';
 import { deepToRaw } from '@/utils/deepToRaw';
 import { FormSelectCache } from '@/components/event/table/tableCells/FormSelectCache';
 
-const { event, column } = defineProps<{
+const { event, column, registrations } = defineProps<{
   column: TableColumnTemplate;
   event: EventDetails;
+  registrations?: Registration[] | undefined;
 }>();
 
 defineEmits([...useDialogPluginComponent.emits]);
@@ -300,19 +345,24 @@ const FIELD_MAP: Record<PrefixedSource, string> = {
 // of customData.
 const CUSTOM_FILES_FIELD_PREFIX = 'customFiles';
 
-// Registration metadata columns. Unlike the other sources these are not
-// prefixed — they sit at the top level of the row — so they are matched by
-// exact field name both when building the picker and when guessing the source
-// of an existing column.
-const META_FIELDS = [
-  'status',
-  'group',
-  'room',
-  'createdAt',
-] as const satisfies readonly (keyof Omit<
-  Registration,
-  'data' | 'computedData' | 'customData' | 'customFiles'
->)[];
+// Meta columns are unprefixed — they sit at the top level of the row — so
+// they are matched by exact field name when guessing an existing column's
+// source.
+const META_FIELDS: readonly string[] = TABLE_META_FIELDS;
+
+const COMPUTED_FIELD_LABELS = {
+  firstName: 'firstName',
+  lastName: 'lastName',
+  dateOfBirth: 'dateOfBirth',
+  'emails.*': 'emails',
+  role: 'role',
+  gender: 'gender',
+  address: 'address',
+  'address.street': 'addressStreet',
+  'address.city': 'addressCity',
+  'address.zipCode': 'addressZipCode',
+  'address.country': 'addressCountry',
+} as const satisfies Record<(typeof TABLE_COMPUTED_FIELDS)[number], string>;
 
 const data = reactive<PartialBy<TableColumnTemplate, 'name'>>({
   ...structuredClone(deepToRaw(column)),
@@ -332,7 +382,7 @@ function getFieldSource(): TableColumnTemplate['source'] {
     return entry[0];
   }
 
-  if ((META_FIELDS as readonly string[]).includes(column.field)) {
+  if (META_FIELDS.includes(column.field)) {
     return 'meta';
   }
 
@@ -497,28 +547,10 @@ const sourceOptions = computed<QSelectOption[]>(() => {
 
 const fieldOptions = computed<QSelectOption[]>(() => {
   if (data.source === 'computed') {
-    return [
-      { label: t('field.field.computed.firstName'), value: 'firstName' },
-      { label: t('field.field.computed.lastName'), value: 'lastName' },
-      { label: t('field.field.computed.dateOfBirth'), value: 'dateOfBirth' },
-      { label: t('field.field.computed.emails'), value: 'emails.*' },
-      { label: t('field.field.computed.role'), value: 'role' },
-      { label: t('field.field.computed.gender'), value: 'gender' },
-      { label: t('field.field.computed.address'), value: 'address' },
-      {
-        label: t('field.field.computed.addressStreet'),
-        value: 'address.street',
-      },
-      { label: t('field.field.computed.addressCity'), value: 'address.city' },
-      {
-        label: t('field.field.computed.addressZipCode'),
-        value: 'address.zipCode',
-      },
-      {
-        label: t('field.field.computed.addressCountry'),
-        value: 'address.country',
-      },
-    ].sort((a, b) => a.label.localeCompare(b.label));
+    return TABLE_COMPUTED_FIELDS.map((value) => ({
+      label: t(`field.field.computed.${COMPUTED_FIELD_LABELS[value]}`),
+      value,
+    })).sort((a, b) => a.label.localeCompare(b.label));
   }
 
   if (data.source === 'meta') {
@@ -575,6 +607,31 @@ function updateFieldPath(): string {
 
   return `${prefix}.${data.field}`;
 }
+
+const checker = computed(
+  () => new TableTemplateReferenceChecker(event.form, registrations),
+);
+const issueMessage = useTableTemplateIssueMessage();
+
+const issues = computed(() =>
+  checker.value.checkColumn({
+    ...data,
+    name: data.name ?? '',
+    field: updateFieldPath(),
+  }),
+);
+
+const fieldWarnings = computed<string[]>(() =>
+  issues.value
+    .filter((issue) => issue.code === 'field/unknown')
+    .map(issueMessage),
+);
+
+const valueWarnings = computed<string[]>(() =>
+  issues.value
+    .filter((issue) => issue.code === 'value/unknown')
+    .map(issueMessage),
+);
 
 function onOKClick(): void {
   updateFieldPath();

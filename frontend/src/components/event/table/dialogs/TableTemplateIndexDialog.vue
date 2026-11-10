@@ -25,6 +25,20 @@
           <q-item-section>
             {{ to(slotProps.item.title) }}
           </q-item-section>
+          <q-item-section
+            v-if="issueCount(slotProps.item) > 0"
+            side
+          >
+            <q-icon
+              name="warning"
+              color="warning"
+              :data-test="`template-issues-${slotProps.item.id}`"
+            >
+              <q-tooltip>
+                {{ t('issues', issueCount(slotProps.item)) }}
+              </q-tooltip>
+            </q-icon>
+          </q-item-section>
         </sortable-list>
       </q-card-section>
 
@@ -52,16 +66,22 @@
 import { useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from '@/composables/objectTranslation';
-import type { Event, TableTemplate } from '@camp-registration/common/entities';
+import type {
+  EventDetails,
+  Registration,
+  TableTemplate,
+} from '@camp-registration/common/entities';
 import TableTemplateEditDialog from '@/components/event/table/dialogs/TableTemplateEditDialog.vue';
 import SortableList from '@/components/common/SortableList.vue';
-import { ref, toRaw } from 'vue';
+import { computed, ref, toRaw } from 'vue';
+import { TableTemplateReferenceChecker } from '@camp-registration/common/form';
 import { usePermissions } from '@/composables/permissions';
 import { deepToRaw } from '@/utils/deepToRaw';
 
-const { event, templates } = defineProps<{
+const { event, templates, registrations } = defineProps<{
   templates: TableTemplate[];
-  event: Event;
+  event: EventDetails;
+  registrations?: Registration[];
 }>();
 
 defineEmits([...useDialogPluginComponent.emits]);
@@ -73,6 +93,14 @@ const { can } = usePermissions();
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
+
+const checker = computed(
+  () => new TableTemplateReferenceChecker(event.form, registrations),
+);
+
+function issueCount(template: TableTemplate): number {
+  return checker.value.check(template).length;
+}
 
 const modifiedTemplates = ref<TableTemplate[]>(propTemplates());
 
@@ -127,6 +155,7 @@ function addTemplate() {
       componentProps: {
         template,
         event,
+        registrations,
       },
     })
     .onOk((payload) => {
@@ -141,6 +170,7 @@ function editTemplate(template: TableTemplate) {
       componentProps: {
         template,
         event,
+        registrations,
       },
       persistent: true,
     })
@@ -169,6 +199,8 @@ action:
   ok: 'Ok'
   cancel: 'Cancel'
 
+issues: 'One reference cannot be found in the form | {n} references cannot be found in the form'
+
 default:
   title: 'New template'
 </i18n>
@@ -179,6 +211,8 @@ title: 'Tabellen bearbeiten'
 action:
   ok: 'Ok'
   cancel: 'Abbrechen'
+
+issues: 'Ein Verweis fehlt im Formular | {n} Verweise fehlen im Formular'
 
 default:
   title: 'Neue Vorlage'
@@ -191,6 +225,8 @@ action:
   ok: 'Ok'
   cancel: 'Annuler'
 
+issues: 'Une référence est introuvable dans le formulaire | {n} références sont introuvables dans le formulaire'
+
 default:
   title: 'Nouveau modèle'
 </i18n>
@@ -202,6 +238,8 @@ action:
   ok: 'OK'
   cancel: 'Anuluj'
 
+issues: 'W formularzu brakuje 1 odwołania | Brakujące odwołania w formularzu: {n}'
+
 default:
   title: 'Nowy szablon'
 </i18n>
@@ -212,6 +250,8 @@ title: 'Upravit tabulky'
 action:
   ok: 'OK'
   cancel: 'Zrušit'
+
+issues: 'Ve formuláři chybí 1 odkaz | Chybějící odkazy ve formuláři: {n}'
 
 default:
   title: 'Nová šablona'

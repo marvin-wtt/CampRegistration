@@ -57,6 +57,14 @@
             flat
             round
           >
+            <q-badge
+              v-if="brokenTemplateCount > 0"
+              color="warning"
+              rounded
+              floating
+              :label="brokenTemplateCount"
+              data-test="template-issues-badge"
+            />
             <q-menu>
               <q-list style="min-width: 180px">
                 <q-item
@@ -102,7 +110,25 @@
                     />
                   </q-item-section>
                   <q-item-section>
-                    {{ t('action.edit_templates') }}
+                    <q-item-label>{{
+                      t('action.edit_templates')
+                    }}</q-item-label>
+                    <q-item-label
+                      v-if="brokenTemplateCount > 0"
+                      caption
+                    >
+                      {{ t('template_issues', brokenTemplateCount) }}
+                    </q-item-label>
+                  </q-item-section>
+                  <q-item-section
+                    v-if="brokenTemplateCount > 0"
+                    side
+                  >
+                    <q-icon
+                      name="warning"
+                      color="warning"
+                      size="sm"
+                    />
                   </q-item-section>
                 </q-item>
               </q-list>
@@ -120,7 +146,20 @@
             round
             @click="editTemplates"
           >
-            <q-tooltip>{{ t('action.edit_templates') }}</q-tooltip>
+            <q-badge
+              v-if="brokenTemplateCount > 0"
+              color="warning"
+              rounded
+              floating
+              :label="brokenTemplateCount"
+              data-test="template-issues-badge"
+            />
+            <q-tooltip>
+              <div>{{ t('action.edit_templates') }}</div>
+              <div v-if="brokenTemplateCount > 0">
+                {{ t('template_issues', brokenTemplateCount) }}
+              </div>
+            </q-tooltip>
           </q-btn>
 
           <m-btn
@@ -422,6 +461,7 @@ import type {
 } from '@camp-registration/common/entities';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { usePermissions } from '@/composables/permissions';
+import { TableTemplateReferenceChecker } from '@camp-registration/common/form';
 import { useTemplateStore } from '@/stores/template-store';
 import TableTemplateIndexDialog from '@/components/event/table/dialogs/TableTemplateIndexDialog.vue';
 import TableCellWrapper from '@/components/event/table/TableCellWrapper.vue';
@@ -533,6 +573,23 @@ const canEditTemplates = computed<boolean>(() => {
   );
 });
 
+const referenceChecker = computed(
+  () => new TableTemplateReferenceChecker(event.form, registrations),
+);
+
+// Templates referencing fields or values the form doesn't have.
+const brokenTemplateCount = computed<number>(() => {
+  if (!canEditTemplates.value) {
+    return 0;
+  }
+
+  return templates.filter(
+    (template) =>
+      template.generated !== true &&
+      referenceChecker.value.check(template).length > 0,
+  ).length;
+});
+
 const countLabel = computed<string>(() => {
   const total = registrations.length;
 
@@ -626,6 +683,7 @@ function editTemplates() {
       componentProps: {
         templates,
         event,
+        registrations,
       },
     })
     .onOk((payload: TableTemplate[]) => {
@@ -914,6 +972,8 @@ other_phases: 'For other phases'
 title: 'Participants'
 subtitle: 'Browse, filter, and print the registrations of this event.'
 
+template_issues: 'One template references something the form does not have | {n} templates reference something the form does not have'
+
 action:
   print: 'Print'
   export_csv: 'Export CSV'
@@ -943,6 +1003,8 @@ template: 'Vorlage'
 other_phases: 'Für andere Phasen'
 title: 'Teilnehmende'
 subtitle: 'Durchsuche, filtere und drucke die Anmeldungen dieser Veranstaltung.'
+
+template_issues: 'Eine Vorlage verweist auf etwas, das das Formular nicht hat | {n} Vorlagen verweisen auf etwas, das das Formular nicht hat'
 
 action:
   print: 'Drucken'
@@ -974,6 +1036,8 @@ other_phases: 'Pour d’autres phases'
 title: 'Participants'
 subtitle: 'Parcourez, filtrez et imprimez les inscriptions de cet événement.'
 
+template_issues: 'Un modèle fait référence à un élément absent du formulaire | {n} modèles font référence à des éléments absents du formulaire'
+
 action:
   print: 'Imprimer'
   export_csv: 'Exporter en CSV'
@@ -1004,6 +1068,8 @@ other_phases: 'Dla innych faz'
 title: 'Uczestnicy'
 subtitle: 'Przeglądaj, filtruj i drukuj zgłoszenia tego wydarzenia.'
 
+template_issues: 'Jeden szablon odwołuje się do czegoś, czego nie ma w formularzu | Szablony odwołujące się do czegoś, czego nie ma w formularzu: {n}'
+
 action:
   print: 'Drukuj'
   export_csv: 'Eksportuj CSV'
@@ -1033,6 +1099,8 @@ template: 'Šablona'
 other_phases: 'Pro jiné fáze'
 title: 'Účastníci'
 subtitle: 'Procházejte, filtrujte a tiskněte přihlášky této akce.'
+
+template_issues: 'Jedna šablona odkazuje na něco, co formulář nemá | Šablony odkazující na něco, co formulář nemá: {n}'
 
 action:
   print: 'Tisk'
