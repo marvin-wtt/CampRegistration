@@ -348,7 +348,25 @@
         <!-- List -->
         <template v-else>
           <div
-            v-for="group in upcomingGroups"
+            v-if="pastGroups.length > 0"
+            class="row"
+          >
+            <q-btn-toggle
+              v-model="listRange"
+              :class="{ 'full-width': quasar.screen.lt.sm }"
+              class="compact-toggle"
+              spread
+              no-caps
+              rounded
+              unelevated
+              toggle-color="secondary"
+              :options="listRangeOptions"
+              data-test="chore-list-range"
+            />
+          </div>
+
+          <div
+            v-for="group in shownGroups"
             :key="group.date"
           >
             <div class="row items-center q-mb-xs">
@@ -401,7 +419,7 @@
           </div>
 
           <div
-            v-if="upcomingGroups.length === 0"
+            v-if="!showingPast && upcomingGroups.length === 0"
             class="empty-state column no-wrap items-center"
           >
             <q-icon
@@ -422,52 +440,6 @@
               icon="event_repeat"
               @click="planSeries()"
             />
-          </div>
-
-          <div v-if="pastGroups.length > 0">
-            <q-item
-              clickable
-              class="history-toggle rounded-lg"
-              @click="showPast = !showPast"
-            >
-              <q-item-section class="text-grey-7 text-weight-medium">
-                {{ t('past.toggle', { count: pastCount }) }}
-              </q-item-section>
-              <q-item-section side>
-                <q-icon
-                  :name="showPast ? 'expand_less' : 'expand_more'"
-                  color="grey-7"
-                />
-              </q-item-section>
-            </q-item>
-
-            <div
-              v-if="showPast"
-              class="column no-wrap q-gutter-y-md q-mt-sm"
-            >
-              <div
-                v-for="group in pastGroups"
-                :key="group.date"
-              >
-                <div class="text-subtitle2 text-weight-medium q-mb-xs">
-                  {{ d(parseLocalDate(group.date), 'dateFull') }}
-                </div>
-                <q-card
-                  flat
-                  bordered
-                  class="rounded-xl overflow-hidden"
-                >
-                  <q-list separator>
-                    <chore-assignment-card
-                      v-for="assignment in group.items"
-                      :key="assignment.id"
-                      v-bind="cardProps(assignment)"
-                      v-on="cardHandlers(assignment)"
-                    />
-                  </q-list>
-                </q-card>
-              </div>
-            </div>
           </div>
         </template>
       </template>
@@ -819,7 +791,6 @@ const weekLabel = computed<string>(
 );
 
 // List view
-const showPast = ref(false);
 
 function groupByDate(list: ChoreAssignment[]) {
   const groups: { date: string; items: ChoreAssignment[] }[] = [];
@@ -844,9 +815,31 @@ const pastGroups = computed(() =>
   ).reverse(),
 );
 
-const pastCount = computed<number>(() =>
-  pastGroups.value.reduce((sum, group) => sum + group.items.length, 0),
+function countItems(groups: { items: ChoreAssignment[] }[]): number {
+  return groups.reduce((sum, group) => sum + group.items.length, 0);
+}
+
+// Past days list newest first, so the most recent history is on top.
+const listRange = ref<'upcoming' | 'past'>('upcoming');
+
+const showingPast = computed<boolean>(
+  () => listRange.value === 'past' && pastGroups.value.length > 0,
 );
+
+const shownGroups = computed(() =>
+  showingPast.value ? pastGroups.value : upcomingGroups.value,
+);
+
+const listRangeOptions = computed(() => [
+  {
+    value: 'upcoming',
+    label: t('range.upcoming', { count: countItems(upcomingGroups.value) }),
+  },
+  {
+    value: 'past',
+    label: t('range.past', { count: countItems(pastGroups.value) }),
+  },
+]);
 
 // Card wiring
 function cardProps(assignment: ChoreAssignment) {
@@ -1337,10 +1330,6 @@ function printPages({
   opacity: 0.6;
 }
 
-.history-toggle {
-  min-height: 44px;
-}
-
 .filter-chip {
   height: 32px;
   margin: 0;
@@ -1411,8 +1400,9 @@ empty:
   title: 'No chores yet'
   message: 'Create a chore — like Kitchen or Dishwashing — to start planning.'
 
-past:
-  toggle: 'Past duties ({count})'
+range:
+  upcoming: 'Upcoming ({count})'
+  past: 'Past ({count})'
 
 dialog:
   delete:
@@ -1473,8 +1463,9 @@ empty:
   title: 'Noch keine Diensttypen'
   message: 'Erstelle einen Diensttyp — z. B. Küche oder Abwasch — um mit der Planung zu beginnen.'
 
-past:
-  toggle: 'Vergangene Dienste ({count})'
+range:
+  upcoming: 'Anstehend ({count})'
+  past: 'Vergangen ({count})'
 
 dialog:
   delete:
@@ -1535,8 +1526,9 @@ empty:
   title: 'Aucune corvée pour le moment'
   message: 'Crée une corvée — comme Cuisine ou Vaisselle — pour commencer à planifier.'
 
-past:
-  toggle: 'Corvées passées ({count})'
+range:
+  upcoming: 'À venir ({count})'
+  past: 'Passées ({count})'
 
 dialog:
   delete:
@@ -1597,8 +1589,9 @@ empty:
   title: 'Brak obowiązków'
   message: 'Utwórz obowiązek — np. Kuchnia lub Zmywanie — aby zacząć planowanie.'
 
-past:
-  toggle: 'Minione dyżury ({count})'
+range:
+  upcoming: 'Nadchodzące ({count})'
+  past: 'Minione ({count})'
 
 dialog:
   delete:
@@ -1659,8 +1652,9 @@ empty:
   title: 'Zatím žádné povinnosti'
   message: 'Vytvoř povinnost — např. Kuchyně nebo Mytí nádobí — a začni plánovat.'
 
-past:
-  toggle: 'Minulé služby ({count})'
+range:
+  upcoming: 'Nadcházející ({count})'
+  past: 'Minulé ({count})'
 
 dialog:
   delete:

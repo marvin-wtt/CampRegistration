@@ -26,17 +26,10 @@
           </template>
         </q-input>
 
-        <q-input
+        <task-notes-input
           v-model="data.notes"
           :label="t('field.notes.label')"
-          autogrow
-          outlined
-          rounded
-        >
-          <template #prepend>
-            <q-icon name="description" />
-          </template>
-        </q-input>
+        />
 
         <q-input
           v-model="data.dueDate"
@@ -130,6 +123,7 @@ import { type QSelectOption, useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
 import DialogCard from '@/components/common/dialogs/DialogCard.vue';
+import TaskNotesInput from '@/components/event/tasks/TaskNotesInput.vue';
 import { computed, reactive } from 'vue';
 import type {
   EventManager,
@@ -172,10 +166,10 @@ const assigneeOptions = computed<QSelectOption[]>(() => {
 
 function onOKClick(): void {
   const payload: TaskCreateData | TaskUpdateData = isEdit.value
-    ? { ...data }
+    ? { ...data, notes: data.notes?.trim() || null }
     : {
         title: data.title ?? '',
-        notes: data.notes ?? null,
+        notes: data.notes?.trim() || null,
         dueDate: data.dueDate ?? null,
         assigneeId: data.assigneeId ?? null,
       };

@@ -81,12 +81,24 @@
 
       <!-- Notes -->
       <div class="details-notes">
-        <div class="meta-label q-mb-xs">{{ t('field.notes') }}</div>
+        <div class="row items-center q-mb-xs">
+          <div class="meta-label col">{{ t('field.notes') }}</div>
+          <div
+            v-if="progress"
+            class="meta-label"
+          >
+            {{ t('checklist', progress) }}
+          </div>
+        </div>
         <div
-          v-if="task.notes"
+          v-if="notes"
           class="notes-box"
         >
-          {{ task.notes }}
+          <task-notes-view
+            :notes
+            :interactive="canUpdate"
+            @toggle="toggleItem"
+          />
         </div>
         <div
           v-else
@@ -129,11 +141,14 @@
 <script lang="ts" setup>
 import { useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import type { Task } from '@camp-registration/common/entities';
 import { taskPhaseOf } from '@/utils/taskPhase';
 import { parseLocalDate } from '@/utils/date';
+import { checklistProgress, toggleChecklistLine } from '@/utils/taskNotes';
+import { useTaskStore } from '@/stores/task-store';
 import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
+import TaskNotesView from '@/components/event/tasks/TaskNotesView.vue';
 
 const quasar = useQuasar();
 const { t, d } = useI18n();
@@ -155,6 +170,20 @@ const sheet = computed<boolean>(() => quasar.screen.lt.sm);
 
 const phase = computed(() => taskPhaseOf(props.task));
 const dueTextClass = computed<string>(() => `due-text--${phase.value}`);
+
+const taskStore = useTaskStore();
+
+// The task prop is a snapshot; ticks apply here first, then save.
+const notes = ref<string | null>(props.task.notes);
+const progress = computed(() => checklistProgress(notes.value));
+
+function toggleItem(line: number) {
+  if (!notes.value) {
+    return;
+  }
+  notes.value = toggleChecklistLine(notes.value, line);
+  void taskStore.updateData(props.task.id, { notes: notes.value });
+}
 
 function onEdit() {
   onDialogOK({ action: 'edit' });
@@ -301,9 +330,6 @@ function onDelete() {
   padding: 12px 14px;
   border-radius: 12px;
   background: var(--md3-surface-container-high);
-  white-space: pre-wrap;
-  font-size: 14px;
-  line-height: 1.5;
 }
 
 .details-actions {
@@ -312,6 +338,7 @@ function onDelete() {
 </style>
 
 <i18n lang="yaml" locale="en">
+checklist: '{done}/{total} checked'
 noDueDate: 'No due date'
 noNotes: 'No notes'
 you: 'You'
@@ -329,6 +356,7 @@ action:
 </i18n>
 
 <i18n lang="yaml" locale="de">
+checklist: '{done}/{total} abgehakt'
 noDueDate: 'Kein Fälligkeitsdatum'
 noNotes: 'Keine Notizen'
 you: 'Du'
@@ -346,6 +374,7 @@ action:
 </i18n>
 
 <i18n lang="yaml" locale="fr">
+checklist: '{done}/{total} cochés'
 noDueDate: "Pas d'échéance"
 noNotes: 'Aucune note'
 you: 'Toi'
@@ -363,6 +392,7 @@ action:
 </i18n>
 
 <i18n lang="yaml" locale="pl">
+checklist: '{done}/{total} odhaczonych'
 noDueDate: 'Brak terminu'
 noNotes: 'Brak notatek'
 you: 'Ty'
@@ -380,6 +410,7 @@ action:
 </i18n>
 
 <i18n lang="yaml" locale="cs">
+checklist: '{done}/{total} odškrtnuto'
 noDueDate: 'Bez termínu'
 noNotes: 'Žádné poznámky'
 you: 'Ty'

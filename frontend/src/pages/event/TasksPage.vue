@@ -53,28 +53,45 @@
       </div>
 
       <template v-else>
-        <!-- Filter -->
-        <div class="row items-center filter-row">
-          <q-chip
-            v-for="option in filterOptions"
-            :key="option.value"
-            :icon="option.icon"
-            clickable
-            class="filter-chip"
-            :class="{ 'filter-chip--active': filter === option.value }"
-            @click="filter = option.value"
-          >
-            {{ option.label }}
-          </q-chip>
+        <!-- Status + filter -->
+        <div class="row items-center q-col-gutter-sm">
+          <div class="col-12 col-sm-auto">
+            <q-btn-toggle
+              v-model="status"
+              :class="{ 'full-width': quasar.screen.lt.sm }"
+              class="compact-toggle"
+              spread
+              no-caps
+              rounded
+              unelevated
+              toggle-color="primary"
+              :options="statusOptions"
+              data-test="task-status-toggle"
+            />
+          </div>
+          <div class="col-12 col-sm">
+            <div class="row items-center no-wrap filter-row">
+              <q-chip
+                v-for="option in filterOptions"
+                :key="option.value"
+                :icon="option.icon"
+                clickable
+                class="filter-chip"
+                :class="{ 'filter-chip--active': filter === option.value }"
+                @click="filter = option.value"
+              >
+                {{ option.label }}
+              </q-chip>
+            </div>
+          </div>
         </div>
 
-        <!-- Open tasks -->
         <q-list
-          v-if="openTasks.length > 0"
+          v-if="shownTasks.length > 0"
           separator
         >
           <task-row
-            v-for="task in openTasks"
+            v-for="task in shownTasks"
             :key="task.id"
             :task="task"
             :mine="isMine(task)"
@@ -92,56 +109,10 @@
           class="row items-center q-gutter-x-sm text-body2 text-grey-6"
         >
           <q-icon
-            :name="filteredTasks.length > 0 ? 'task_alt' : 'filter_alt_off'"
+            :name="emptyHint.icon"
             size="20px"
           />
-          <span>
-            {{ filteredTasks.length > 0 ? t('allDone') : t('noMatch') }}
-          </span>
-        </div>
-
-        <!-- Completed tasks: tucked away -->
-        <div v-if="completedTasks.length > 0">
-          <q-item
-            clickable
-            class="completed-toggle"
-            @click="showCompleted = !showCompleted"
-          >
-            <q-item-section class="text-grey-7 text-weight-medium">
-              {{
-                showCompleted
-                  ? t('action.hideCompleted')
-                  : t('action.toggleCompleted', {
-                      count: completedTasks.length,
-                    })
-              }}
-            </q-item-section>
-            <q-item-section side>
-              <q-icon
-                :name="showCompleted ? 'expand_less' : 'expand_more'"
-                color="grey-7"
-              />
-            </q-item-section>
-          </q-item>
-          <q-list
-            v-if="showCompleted"
-            separator
-            class="q-mt-sm"
-          >
-            <task-row
-              v-for="task in completedTasks"
-              :key="task.id"
-              :task="task"
-              :mine="isMine(task)"
-              :can-update="can('event.tasks.update')"
-              :can-delete="can('event.tasks.delete')"
-              :assignee-label="assigneeLabel(task)"
-              @toggle="taskStore.toggleCompleted(task)"
-              @open="showDetailsDialog(task)"
-              @edit="showEditDialog(task)"
-              @delete="showDeleteDialog(task)"
-            />
-          </q-list>
+          <span>{{ emptyHint.text }}</span>
         </div>
       </template>
     </div>
@@ -173,7 +144,8 @@ const eventManagerStore = useEventManagerStore();
 const { can } = usePermissions();
 const { currentManagerId } = useCurrentManager();
 
-const showCompleted = ref<boolean>(false);
+type TaskStatus = 'open' | 'done';
+const status = ref<TaskStatus>('open');
 
 type TaskFilter = 'all' | 'mine' | 'unassigned';
 const filter = ref<TaskFilter>('all');
@@ -257,6 +229,32 @@ const openTasks = computed<Task[]>(() => {
 
 const completedTasks = computed<Task[]>(() => {
   return sortByDueDate(filteredTasks.value.filter((task) => task.completed));
+});
+
+const shownTasks = computed<Task[]>(() =>
+  status.value === 'open' ? openTasks.value : completedTasks.value,
+);
+
+const statusOptions = computed(() => [
+  {
+    value: 'open',
+    label: t('status.open', { count: openTasks.value.length }),
+    ...(quasar.screen.lt.sm ? {} : { icon: 'radio_button_unchecked' }),
+  },
+  {
+    value: 'done',
+    label: t('status.done', { count: completedTasks.value.length }),
+    ...(quasar.screen.lt.sm ? {} : { icon: 'task_alt' }),
+  },
+]);
+
+const emptyHint = computed<{ icon: string; text: string }>(() => {
+  if (filteredTasks.value.length === 0) {
+    return { icon: 'filter_alt_off', text: t('noMatch') };
+  }
+  return status.value === 'open'
+    ? { icon: 'task_alt', text: t('allDone') }
+    : { icon: 'hourglass_empty', text: t('noneDone') };
 });
 
 // The real assignee name (never "You") — used where a badge conveys ownership.
@@ -359,6 +357,8 @@ function showDeleteDialog(task: Task) {
 
 .filter-row {
   gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
 
 .filter-chip {
@@ -380,10 +380,6 @@ function showDeleteDialog(task: Task) {
   background: var(--md3-secondary-container);
   color: var(--md3-on-secondary-container);
 }
-
-.completed-toggle {
-  min-height: 44px;
-}
 </style>
 
 <i18n lang="yaml" locale="en">
@@ -393,6 +389,11 @@ unassigned: 'Unassigned'
 you: 'You'
 allDone: 'No open tasks — nice work!'
 noMatch: 'No tasks match this filter.'
+noneDone: 'Nothing completed yet.'
+
+status:
+  open: 'Open ({count})'
+  done: 'Done ({count})'
 
 filter:
   all: 'All'
@@ -401,8 +402,6 @@ filter:
 
 action:
   add: 'Add task'
-  toggleCompleted: 'Show completed ({count})'
-  hideCompleted: 'Hide completed'
   delete: 'Delete'
 
 dialog:
@@ -422,6 +421,11 @@ unassigned: 'Nicht zugewiesen'
 you: 'Du'
 allDone: 'Keine offenen Aufgaben — gut gemacht!'
 noMatch: 'Keine Aufgaben entsprechen diesem Filter.'
+noneDone: 'Noch nichts erledigt.'
+
+status:
+  open: 'Offen ({count})'
+  done: 'Erledigt ({count})'
 
 filter:
   all: 'Alle'
@@ -430,8 +434,6 @@ filter:
 
 action:
   add: 'Aufgabe hinzufügen'
-  toggleCompleted: 'Erledigte anzeigen ({count})'
-  hideCompleted: 'Erledigte ausblenden'
   delete: 'Löschen'
 
 dialog:
@@ -451,6 +453,11 @@ unassigned: 'Non assignée'
 you: 'Toi'
 allDone: 'Aucune tâche en cours — bien joué !'
 noMatch: 'Aucune tâche ne correspond à ce filtre.'
+noneDone: 'Rien de terminé pour le moment.'
+
+status:
+  open: 'En cours ({count})'
+  done: 'Terminées ({count})'
 
 filter:
   all: 'Toutes'
@@ -459,8 +466,6 @@ filter:
 
 action:
   add: 'Ajouter une tâche'
-  toggleCompleted: 'Afficher terminées ({count})'
-  hideCompleted: 'Masquer terminées'
   delete: 'Supprimer'
 
 dialog:
@@ -480,6 +485,11 @@ unassigned: 'Nieprzypisane'
 you: 'Ty'
 allDone: 'Brak otwartych zadań — świetna robota!'
 noMatch: 'Żadne zadania nie pasują do tego filtra.'
+noneDone: 'Nic jeszcze nie ukończono.'
+
+status:
+  open: 'Otwarte ({count})'
+  done: 'Ukończone ({count})'
 
 filter:
   all: 'Wszystkie'
@@ -488,8 +498,6 @@ filter:
 
 action:
   add: 'Dodaj zadanie'
-  toggleCompleted: 'Pokaż ukończone ({count})'
-  hideCompleted: 'Ukryj ukończone'
   delete: 'Usuń'
 
 dialog:
@@ -509,6 +517,11 @@ unassigned: 'Nepřiřazeno'
 you: 'Ty'
 allDone: 'Žádné otevřené úkoly — skvělá práce!'
 noMatch: 'Žádné úkoly neodpovídají tomuto filtru.'
+noneDone: 'Zatím nic dokončeno.'
+
+status:
+  open: 'Otevřené ({count})'
+  done: 'Dokončené ({count})'
 
 filter:
   all: 'Vše'
@@ -517,8 +530,6 @@ filter:
 
 action:
   add: 'Přidat úkol'
-  toggleCompleted: 'Zobrazit dokončené ({count})'
-  hideCompleted: 'Skrýt dokončené'
   delete: 'Smazat'
 
 dialog:

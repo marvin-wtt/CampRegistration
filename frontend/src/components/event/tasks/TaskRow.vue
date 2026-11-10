@@ -26,8 +26,21 @@
         >
           {{ task.title }}
         </span>
+        <span
+          v-if="progress"
+          class="checklist-progress row items-center no-wrap"
+          :class="{
+            'checklist-progress--done': progress.done === progress.total,
+          }"
+        >
+          <q-icon
+            name="checklist"
+            size="14px"
+          />
+          {{ progress.done }}/{{ progress.total }}
+        </span>
         <q-icon
-          v-if="task.notes"
+          v-else-if="task.notes"
           name="notes"
           size="16px"
           class="notes-icon"
@@ -122,6 +135,7 @@ import { computed } from 'vue';
 import type { Task } from '@camp-registration/common/entities';
 import { taskPhaseOf } from '@/utils/taskPhase';
 import { parseLocalDate } from '@/utils/date';
+import { checklistProgress } from '@/utils/taskNotes';
 
 const { t, d } = useI18n();
 
@@ -139,6 +153,8 @@ const emit = defineEmits<{
   edit: [];
   delete: [];
 }>();
+
+const progress = computed(() => checklistProgress(props.task.notes));
 
 const dueTextClass = computed<string>(() => {
   return `due-text--${taskPhaseOf(props.task)}`;
@@ -178,6 +194,22 @@ const dueTextClass = computed<string>(() => {
 .notes-icon {
   flex: 0 0 auto;
   color: var(--md3-on-surface-variant);
+}
+
+.checklist-progress {
+  flex: 0 0 auto;
+  gap: 2px;
+  padding: 0 6px;
+  border-radius: 6px;
+  background: var(--md3-surface-container-highest);
+  color: var(--md3-on-surface-variant);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.checklist-progress--done {
+  background: var(--md3-primary-container);
+  color: var(--md3-on-primary-container);
 }
 
 .task-caption {
