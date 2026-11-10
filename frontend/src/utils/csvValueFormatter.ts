@@ -1,13 +1,15 @@
 import { isoToLocalDate } from '@/utils/date';
+import {
+  formSelectLabels,
+  type SelectOptions,
+} from '@/utils/formatters/formSelectLabels';
 
 export interface CsvFormatContext {
   translate: (
     value: string | Record<string, string> | null | undefined,
   ) => string;
   translateCountry: (country: string) => string;
-  getFormSelectOptions: (
-    fieldName: string,
-  ) => Record<string, string | Record<string, string>> | undefined;
+  getFormSelectOptions: (fieldName: string) => SelectOptions | undefined;
 }
 
 // Generic fallback used by cell renderers that have no CSV-specific
@@ -61,10 +63,9 @@ export function formatFormSelectCsvValue(
   }
 
   const options = ctx.getFormSelectOptions(fieldName.substring(5));
-  const key = String(value);
-  if (!options || !(key in options)) {
-    return stringifyCsvValue(value);
-  }
+  const labels = formSelectLabels(value, options);
 
-  return ctx.translate(options[key]);
+  return labels
+    ? labels.map(ctx.translate).join('; ')
+    : stringifyCsvValue(value);
 }

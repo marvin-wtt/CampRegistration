@@ -1,12 +1,11 @@
 import type { TableCellProps } from '@/components/event/table/tableCells/TableCellProps';
+import type { SelectOptions } from '@/utils/formatters/formSelectLabels';
 import { getSelectOptions } from '@camp-registration/common/form';
-
-type Entry = Record<string, string | Record<string, string>>;
 
 export class FormSelectCache {
   private static eventId: string | undefined;
   private static form: object | undefined;
-  private static cache = new Map<string, Entry | undefined>();
+  private static cache = new Map<string, SelectOptions | undefined>();
 
   public static get(event: TableCellProps['event'], field: string) {
     // Invalidate when switching events or when the event's form is updated.
