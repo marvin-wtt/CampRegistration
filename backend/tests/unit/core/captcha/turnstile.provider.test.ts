@@ -81,7 +81,7 @@ describe('TurnstileProvider', () => {
       await provider.verify('tok-1234', 'signup');
 
       expect(logger.warn).toHaveBeenCalledOnce();
-      const [message] = vi.mocked(logger.warn).mock.calls[0] as [string];
+      const message = String(vi.mocked(logger.warn).mock.calls[0]?.[0]);
       expect(message).toContain(String(body.action));
       expect(message).toContain(String(body.hostname));
       expect(message).not.toContain('tok-1234');
