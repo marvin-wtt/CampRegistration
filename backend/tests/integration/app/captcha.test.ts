@@ -3,6 +3,7 @@ import { request } from '../utils/request.js';
 import { resolve } from '#core/ioc/container';
 import { CaptchaService } from '#core/captcha/captcha.service';
 import { CaptchaUnavailableError } from '#core/captcha/captcha.provider';
+import logger from '#core/logger';
 
 function enableCaptcha(verify: CaptchaService['verify']) {
   const service = resolve(CaptchaService);
@@ -45,6 +46,7 @@ describe('captcha middleware', () => {
   });
 
   it('reports an unreachable provider as unavailable', async () => {
+    const warn = vi.spyOn(logger, 'warn');
     enableCaptcha(async () => {
       throw new CaptchaUnavailableError('down');
     });
@@ -55,5 +57,6 @@ describe('captcha middleware', () => {
       .expect(503);
 
     expect(body.errorCode).toBe('CAPTCHA_UNAVAILABLE');
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('down'));
   });
 });

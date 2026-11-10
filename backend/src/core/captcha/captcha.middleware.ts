@@ -7,6 +7,8 @@ import {
 import ApiError from '#core/router/ApiError';
 import { catchMiddlewareAsync } from '#core/router/catchAsync';
 import { resolve } from '#core/ioc/container';
+import logger from '#core/logger';
+import { describeError } from '#utils/errors';
 import { CaptchaUnavailableError } from './captcha.provider.js';
 import { CaptchaService } from './captcha.service.js';
 
@@ -34,6 +36,11 @@ function toUnavailableError(error: unknown): never {
   if (!(error instanceof CaptchaUnavailableError)) {
     throw error;
   }
+  // `warn`, not `error`: an outage is not a fault worth reporting, but every
+  // protected form is failing while it lasts.
+  logger.warn(
+    `Captcha provider unavailable; rejecting submission: ${describeError(error)}`,
+  );
   throw new ApiError(
     httpStatus.SERVICE_UNAVAILABLE,
     'Bot protection is temporarily unavailable.',
