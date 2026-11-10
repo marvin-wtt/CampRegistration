@@ -442,7 +442,7 @@ import {
   useErrorExtractor,
   useServiceNotifications,
 } from '@/composables/serviceHandler';
-import { extractEventDataTypes } from '@/utils/surveyJS';
+import { extractEventDataTypes } from '@camp-registration/common/form';
 import { APP_LOCALES, eventTextLocales } from '@/i18n/locales';
 
 const { t, d } = useI18n();

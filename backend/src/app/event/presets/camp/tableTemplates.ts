@@ -651,7 +651,7 @@ export default [
       },
       {
         name: 'guardian_first_name',
-        field: 'data.guardian..first_name',
+        field: 'data.guardian.*.first_name',
         source: 'form',
         label: {
           en: 'First name',
@@ -666,7 +666,7 @@ export default [
       },
       {
         name: 'guardian_last_name',
-        field: 'data.guardian..last_name',
+        field: 'data.guardian.*.last_name',
         source: 'form',
         label: {
           en: 'Last name',
@@ -775,7 +775,7 @@ export default [
       },
       {
         name: 'contact_description',
-        field: 'data.emergency_contacts..description',
+        field: 'data.emergency_contacts.*.description',
         source: 'form',
         label: {
           en: 'Contact',
@@ -790,7 +790,7 @@ export default [
       },
       {
         name: 'emergency_phone',
-        field: 'data.emergency_contacts..phone_number',
+        field: 'data.emergency_contacts.*.phone_number',
         source: 'form',
         label: {
           en: 'Phone',

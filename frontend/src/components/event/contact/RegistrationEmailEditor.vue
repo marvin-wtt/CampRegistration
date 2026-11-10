@@ -11,7 +11,7 @@
 <script setup lang="ts">
 import type { EventDetails } from '@camp-registration/common/entities';
 import { computed } from 'vue';
-import { extractFormFields } from '@/utils/surveyJS';
+import { extractFormFields } from '@camp-registration/common/form';
 import EmailEditor from '@/components/event/contact/EmailEditor.vue';
 import { useI18n } from 'vue-i18n';
 import type {

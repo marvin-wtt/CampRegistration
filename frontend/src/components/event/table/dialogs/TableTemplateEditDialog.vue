@@ -44,6 +44,25 @@
               {{ to(slotProps.item.label) }}
             </q-item-label>
           </q-item-section>
+          <q-item-section
+            v-if="messagesOf(slotProps.item).length > 0"
+            side
+          >
+            <q-icon
+              name="warning"
+              color="warning"
+              :data-test="`column-issue-${slotProps.item.name}`"
+            >
+              <q-tooltip>
+                <div
+                  v-for="(message, index) in messagesOf(slotProps.item)"
+                  :key="index"
+                >
+                  {{ message }}
+                </div>
+              </q-tooltip>
+            </q-icon>
+          </q-item-section>
         </sortable-list>
       </q-card-section>
 
@@ -58,6 +77,8 @@
             :label="t('field.sortBy.label')"
             :hint="t('field.sortBy.hint')"
             :options="sortByOptions"
+            :error="sortByIssue !== undefined"
+            :error-message="sortByIssue"
             emit-value
             map-options
             hide-bottom-space
@@ -253,12 +274,14 @@ import {
   EVENT_PHASES,
   type TableTemplate,
   type TableColumnTemplate,
-  type Event,
+  type EventDetails,
   type EventPhase,
   type Registration,
 } from '@camp-registration/common/entities';
 import TranslatedInput from '@/components/common/inputs/TranslatedInput.vue';
-import { computed, reactive, ref } from 'vue';
+import { computed, reactive, ref, toRaw } from 'vue';
+import type { TableTemplateReferenceChecker } from '@camp-registration/common/form';
+import { useTableTemplateIssueMessage } from '@/components/event/table/tableTemplateIssues';
 import SortableList from '@/components/common/SortableList.vue';
 import TableTemplateColumnEditDialog from '@/components/event/table/dialogs/TableTemplateColumnEditDialog.vue';
 import type { PartialBy } from '@/types';
@@ -267,7 +290,9 @@ import { deepToRaw } from '@/utils/deepToRaw';
 
 interface Props {
   template: TableTemplate;
-  event: Event;
+  event: EventDetails;
+  /** Shared down the dialogs, built once from the form and registrations. */
+  checker: TableTemplateReferenceChecker;
 }
 
 const props = defineProps<Props>();
@@ -364,6 +389,27 @@ const sortByOptions = computed<QSelectOption[]>(() => {
   });
 });
 
+const issueMessage = useTableTemplateIssueMessage();
+
+// Keyed by the raw column, so a lookup works for the list's own proxies.
+const columnMessages = computed(
+  () =>
+    new Map(
+      template.columns.map((column) => [
+        toRaw(column),
+        props.checker.checkColumn(column).map(issueMessage),
+      ]),
+    ),
+);
+
+function messagesOf(column: TableColumnTemplate): string[] {
+  return columnMessages.value.get(toRaw(column)) ?? [];
+}
+
+const sortByIssue = computed<string | undefined>(() =>
+  props.checker.checkSort(template).map(issueMessage).at(0),
+);
+
 const cardStyle = computed<CSSStyleValue>(() => {
   if (quasar.screen.gt.sm) {
     return {
@@ -393,6 +439,7 @@ function addColumn(): void {
       componentProps: {
         column: column,
         event: props.event,
+        checker: props.checker,
       },
     })
     .onOk((payload: TableColumnTemplate) => {
@@ -426,6 +473,7 @@ function editColumn(column: TableColumnTemplate): void {
           ...column,
         },
         event: props.event,
+        checker: props.checker,
       },
     })
     .onOk((payload: TableColumnTemplate) => {

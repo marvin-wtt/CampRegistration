@@ -87,6 +87,19 @@ describe('formatFormSelectCsvValue', () => {
     );
   });
 
+  it('joins several selections with a semicolon', () => {
+    const ctx = makeContext({
+      getFormSelectOptions: () => ({
+        vegetarian: { en: 'Vegetarian' },
+        no_pork: { en: 'No pork' },
+      }),
+    });
+
+    expect(
+      formatFormSelectCsvValue('data.diet', ['vegetarian', 'no_pork'], ctx),
+    ).toBe('Vegetarian; No pork');
+  });
+
   it('falls back to the raw value for non-form fields', () => {
     const ctx = makeContext();
     expect(
