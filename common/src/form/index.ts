@@ -27,6 +27,15 @@ export { formLintOptions } from './lint.js';
 export { extractEventData } from './eventData.js';
 export { extractPaymentAmounts } from './paymentAmounts.js';
 export {
+  extractFormFields,
+  extractEventDataTypes,
+  getSelectOptions,
+} from './fields.js';
+export {
+  TableTemplateReferenceChecker,
+  type TableTemplateIssue,
+} from './tableTemplateReferences.js';
+export {
   selectFileByLocale,
   EVENT_LOGO_SLOT,
   EVENT_BANNER_SLOT,

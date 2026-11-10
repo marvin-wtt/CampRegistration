@@ -6,7 +6,7 @@ import type {
   AuditValue,
 } from '@camp-registration/common/entities';
 import { useEventDetailsStore } from '@/stores/event-details-store';
-import { extractFormFields } from '@/utils/surveyJS';
+import { extractFormFields } from '@camp-registration/common/form';
 import { countryName } from '@/utils/countries';
 
 // How the backend records a `Date` value.

@@ -3,6 +3,7 @@
 import stores from './stores';
 import audit from './audit';
 import privacy from './privacy';
+import tableTemplates from './tableTemplates';
 
 export default {
   //app_name: '',
@@ -10,6 +11,7 @@ export default {
   stores,
   audit,
   privacy,
+  tableTemplates,
   service: {
     internal: 'Erreur interne',
     invalidParams: 'Paramètre(s) invalide(s).',

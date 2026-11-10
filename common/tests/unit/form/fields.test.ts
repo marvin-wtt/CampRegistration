@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import '@camp-registration/common/form';
-import { extractFormFields, getSelectOptions } from './surveyJS';
+import {
+  extractFormFields,
+  getSelectOptions,
+} from '../../../src/form/index.js';
 
 describe('extractFormFields', () => {
   it('extracts field labels and values while applying prefixes and wildcards', () => {
@@ -95,6 +97,33 @@ describe('extractFormFields', () => {
         label: 'Household > Attendees > * > Interests > *',
         value: 'attendees.*.interests.*',
       },
+    ]);
+  });
+  it('lists fixed-row matrix answers per row', () => {
+    const form = {
+      elements: [
+        {
+          type: 'matrixdropdown',
+          name: 'md',
+          title: 'Sizes',
+          rows: [{ value: 'r1', text: 'Shirt' }],
+          columns: [{ name: 'c1', title: 'Size', cellType: 'text' }],
+        },
+        {
+          type: 'matrix',
+          name: 'm',
+          title: 'Rate',
+          rows: ['r1'],
+          columns: ['a'],
+        },
+      ],
+    };
+
+    expect(extractFormFields(form)).toEqual([
+      { label: 'Sizes', value: 'md' },
+      { label: 'Sizes > Shirt > Size', value: 'md.r1.c1' },
+      { label: 'Rate', value: 'm' },
+      { label: 'Rate > r1', value: 'm.r1' },
     ]);
   });
 });
@@ -210,5 +239,53 @@ describe('getSelectOptions', () => {
     expect(getSelectOptions(form, 'missing')).toBeUndefined();
     expect(getSelectOptions(form, 'notes')).toBeUndefined();
     expect(getSelectOptions(form, 'empty')).toBeUndefined();
+  });
+  it('resolves fixed-row matrix cells', () => {
+    const form = {
+      elements: [
+        {
+          type: 'matrixdropdown',
+          name: 'md',
+          rows: ['r1'],
+          columns: [{ name: 'c1', cellType: 'dropdown', choices: ['x'] }],
+        },
+      ],
+    };
+
+    expect(getSelectOptions(form, 'md.r1.c1')).toEqual({ x: 'x' });
+  });
+
+  it('labels the special items beside the choices', () => {
+    const form = {
+      elements: [
+        {
+          type: 'radiogroup',
+          name: 'q',
+          choices: ['a'],
+          showOtherItem: true,
+          showNoneItem: true,
+        },
+      ],
+    };
+
+    expect(Object.keys(getSelectOptions(form, 'q') ?? {})).toEqual([
+      'a',
+      'other',
+      'none',
+    ]);
+  });
+
+  it('resolves dynamic panel fields without their wildcard', () => {
+    const form = {
+      elements: [
+        {
+          type: 'paneldynamic',
+          name: 'p',
+          templateElements: [{ type: 'dropdown', name: 'd', choices: ['x'] }],
+        },
+      ],
+    };
+
+    expect(getSelectOptions(form, 'p.d')).toEqual({ x: 'x' });
   });
 });

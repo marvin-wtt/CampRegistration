@@ -24,7 +24,7 @@ import { useRouteQueryParams } from '@/composables/useRouteQueryParams';
 import type { TableColumnTemplate } from '@camp-registration/common/entities';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import RegistrationDetailsDialog from '@/components/event/table/dialogs/RegistrationDetailsDialog.vue';
-import { extractFormFields } from '@/utils/surveyJS';
+import { extractFormFields } from '@camp-registration/common/form';
 import type {
   PrintTablesPayload,
   PrintTablesSelection,
