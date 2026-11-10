@@ -8,6 +8,8 @@ import {
   fromMinorUnits,
   groupPrice,
   translate,
+  utcCarrierToNaiveDateTime,
+  zonedInstant,
 } from '@camp-registration/common/utils';
 import { localeForCountry } from '@camp-registration/common/locales';
 import type { Event, Registration } from '#generated/prisma/client';
@@ -66,8 +68,15 @@ export function eventContactFor(
 export function eventRegistrationStatus(event: Event): EventRegistrationStatus {
   const now = new Date();
 
+  // Without a window, registration simply hasn't been scheduled yet — unless
+  // the event is already over.
   if (!event.registrationOpensAt && !event.registrationClosesAt) {
-    return 'closed';
+    const endsAt = zonedInstant(
+      utcCarrierToNaiveDateTime(event.endAt),
+      event.timezone,
+    );
+
+    return now < endsAt ? 'upcoming' : 'closed';
   }
 
   if (
