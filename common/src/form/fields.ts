@@ -7,6 +7,7 @@ import {
   type Question,
   QuestionBooleanModel,
   QuestionMatrixDropdownModel,
+  QuestionMatrixDynamicModel,
   QuestionMatrixModel,
   QuestionPanelDynamicModel,
   QuestionSelectBase,
@@ -68,7 +69,9 @@ function buildLabelAndValue(
   };
 }
 
-// A fixed-row matrix stores its answers per row: `{ row: { column: … } }`.
+// Matrix cells, read from the columns: a matrix's rows (and so its nested
+// questions) only exist once it has some. A fixed-row matrix stores its
+// answers per row (`{ row: { column: … } }`), a dynamic one per entry.
 function matrixRowFields(
   question: Question,
   label: string,
@@ -82,6 +85,14 @@ function matrixRowFields(
         question: column.templateQuestion,
       })),
     );
+  }
+
+  if (question instanceof QuestionMatrixDynamicModel) {
+    return (question.columns as MatrixDropdownColumn[]).map((column) => ({
+      label: `${label} > ${column.title}`,
+      value: [value, column.name].join(SEPARATOR),
+      question: column.templateQuestion,
+    }));
   }
 
   if (question instanceof QuestionMatrixModel) {
@@ -147,6 +158,29 @@ export function collectStoredFields(model: SurveyModel): FormField[] {
   return model
     .getAllQuestions()
     .flatMap((q) => collectFields(q, STORELESS_TYPES));
+}
+
+/**
+ * The question behind each stored field path. An array field (`tags.*`) is
+ * also reachable without its wildcard, as a column of the whole array.
+ */
+export function buildFieldIndex(model: SurveyModel): Map<string, Question> {
+  const index = new Map<string, Question>();
+  for (const { value, question } of collectStoredFields(model)) {
+    const target =
+      (question.questionWrapper as Question | undefined) ?? question;
+    for (const path of [value, withoutWildcard(value)]) {
+      if (!index.has(path)) {
+        index.set(path, target);
+      }
+    }
+  }
+
+  return index;
+}
+
+export function withoutWildcard(path: string): string {
+  return path.endsWith(`${SEPARATOR}${WILDCARD}`) ? path.slice(0, -2) : path;
 }
 
 export function extractEventDataTypes(form: object): string[] {
@@ -242,12 +276,51 @@ function getQuestionOptions(
   }
 
   // `choices` is always normalised to ItemValue instances.
+  const items = [
+    ...(question.choices as ItemValue[]),
+    ...specialItems(question),
+  ];
+
   return Object.fromEntries(
-    question.choices.map((choice: ItemValue) => [
-      String(choice.value),
-      translations(choice.locText, choice.text),
+    items.map((item) => [
+      String(item.value),
+      translations(item.locText, item.text),
     ]),
   );
+}
+
+// Items the question shows beside its choices, each storing its own value.
+function specialItems(question: QuestionSelectBase): ItemValue[] {
+  return [
+    question.hasOther && question.otherItem,
+    question.hasNone && question.noneItem,
+    question.showRefuseItem && question.refuseItem,
+    question.showDontKnowItem && question.dontKnowItem,
+  ].filter((item): item is ItemValue => item !== false);
+}
+
+// Whether a select question can store values its items don't list.
+function acceptsAnyValue(question: QuestionSelectBase): boolean {
+  return (
+    question.isUsingRestful ||
+    !!question.choicesFromQuestion ||
+    // Typed "other" text is stored as the value itself.
+    (question.hasOther && !question.getStoreOthersAsComment()) ||
+    question.getPropertyValue('allowCustomChoices') === true ||
+    // Checkbox answers stored as objects, not values.
+    !!question.getPropertyValue('valuePropertyName')
+  );
+}
+
+/** The values a question can store, or undefined when any value is possible. */
+export function storedValues(question: Question): Set<string> | undefined {
+  if (question instanceof QuestionSelectBase && acceptsAnyValue(question)) {
+    return undefined;
+  }
+
+  const options = getQuestionOptions(question);
+
+  return options ? new Set(Object.keys(options)) : undefined;
 }
 
 function findFormQuestion(
@@ -266,7 +339,10 @@ export function getSelectOptions(
   form: object,
   field: string,
 ): Record<string, string | Record<string, string>> | undefined {
-  const question = findFormQuestion(new SurveyModel(form), field);
+  const model = new SurveyModel(form);
+  // The walk also resolves paths that leave out a dynamic panel's wildcard.
+  const question =
+    buildFieldIndex(model).get(field) ?? findFormQuestion(model, field);
 
   return question ? getQuestionOptions(question) : undefined;
 }

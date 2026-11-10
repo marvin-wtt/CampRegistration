@@ -240,4 +240,52 @@ describe('getSelectOptions', () => {
     expect(getSelectOptions(form, 'notes')).toBeUndefined();
     expect(getSelectOptions(form, 'empty')).toBeUndefined();
   });
+  it('resolves fixed-row matrix cells', () => {
+    const form = {
+      elements: [
+        {
+          type: 'matrixdropdown',
+          name: 'md',
+          rows: ['r1'],
+          columns: [{ name: 'c1', cellType: 'dropdown', choices: ['x'] }],
+        },
+      ],
+    };
+
+    expect(getSelectOptions(form, 'md.r1.c1')).toEqual({ x: 'x' });
+  });
+
+  it('labels the special items beside the choices', () => {
+    const form = {
+      elements: [
+        {
+          type: 'radiogroup',
+          name: 'q',
+          choices: ['a'],
+          showOtherItem: true,
+          showNoneItem: true,
+        },
+      ],
+    };
+
+    expect(Object.keys(getSelectOptions(form, 'q') ?? {})).toEqual([
+      'a',
+      'other',
+      'none',
+    ]);
+  });
+
+  it('resolves dynamic panel fields without their wildcard', () => {
+    const form = {
+      elements: [
+        {
+          type: 'paneldynamic',
+          name: 'p',
+          templateElements: [{ type: 'dropdown', name: 'd', choices: ['x'] }],
+        },
+      ],
+    };
+
+    expect(getSelectOptions(form, 'p.d')).toEqual({ x: 'x' });
+  });
 });

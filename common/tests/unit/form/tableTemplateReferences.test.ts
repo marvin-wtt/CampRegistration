@@ -12,6 +12,40 @@ const form = {
       choices: ['alone', 'group', { value: 'none', text: 'None' }],
     },
     { type: 'radiogroup', name: 'open', choices: ['a'], showOtherItem: true },
+    {
+      type: 'radiogroup',
+      name: 'other_as_value',
+      choices: ['a'],
+      showOtherItem: true,
+      storeOthersAsComment: false,
+    },
+    {
+      type: 'radiogroup',
+      name: 'special',
+      choices: ['a'],
+      showNoneItem: true,
+      showRefuseItem: true,
+      showDontKnowItem: true,
+    },
+    {
+      type: 'tagbox',
+      name: 'custom',
+      choices: ['a'],
+      allowCustomChoices: true,
+    },
+    {
+      type: 'checkbox',
+      name: 'objects',
+      choices: ['a'],
+      valuePropertyName: 'fruit',
+    },
+    { type: 'matrix', name: 'numbered', rows: [1, 2], columns: ['a'] },
+    {
+      type: 'matrixdynamic',
+      name: 'empty',
+      rowCount: 0,
+      columns: [{ name: 'phone', cellType: 'text' }],
+    },
     { type: 'boolean', name: 'swim' },
     {
       type: 'paneldynamic',
@@ -86,6 +120,9 @@ describe('TableTemplateReferenceChecker', () => {
       'data.diet-Comment',
       'data.open-Comment',
       'data.total',
+      'data.numbered.1',
+      'data.empty.*.phone',
+      'data.empty.0.phone',
       'customData.anything',
       'customFiles.passport',
       '',
@@ -106,6 +143,7 @@ describe('TableTemplateReferenceChecker', () => {
       'data.first_name-Comment',
       'data.info',
       'data.internal',
+      'data.numbered.3',
     ])('reports %s', (field) => {
       expect(checker.checkColumn(column(field))).toEqual([
         { code: 'field/unknown', column: 'col', field },
@@ -153,9 +191,30 @@ describe('TableTemplateReferenceChecker', () => {
       ).toHaveLength(1);
     });
 
-    it('accepts any value when the question has an other item', () => {
-      expect(checker.checkColumn(iconMapping('data.open', ['b']))).toEqual([]);
+    it('knows the value an other item stores', () => {
+      expect(
+        checker
+          .checkColumn(iconMapping('data.open', ['a', 'other', 'b']))
+          .map((issue) => issue.code === 'value/unknown' && issue.value),
+      ).toEqual(['b']);
     });
+
+    it('knows the values of none, refuse and dont-know items', () => {
+      expect(
+        checker.checkColumn(
+          iconMapping('data.special', ['a', 'none', 'refused', 'dontknow']),
+        ),
+      ).toEqual([]);
+    });
+
+    it.each(['other_as_value', 'custom', 'objects'])(
+      'accepts any value for %s, which stores values its items lack',
+      (name) => {
+        expect(
+          checker.checkColumn(iconMapping(`data.${name}`, ['typed'])),
+        ).toEqual([]);
+      },
+    );
 
     it('ignores mappings of other renderers', () => {
       const col = column('data.leave', {

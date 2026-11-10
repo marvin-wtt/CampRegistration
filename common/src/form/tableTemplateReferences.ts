@@ -1,10 +1,4 @@
-import {
-  type ItemValue,
-  type Question,
-  QuestionBooleanModel,
-  QuestionSelectBase,
-  SurveyModel,
-} from 'survey-core';
+import { type Question, QuestionSelectBase, SurveyModel } from 'survey-core';
 import {
   TABLE_COMPUTED_FIELDS,
   TABLE_META_FIELDS,
@@ -12,7 +6,7 @@ import {
   type TableColumnTemplate,
   type TableTemplate,
 } from '../entities/index.js';
-import { collectStoredFields } from './fields.js';
+import { buildFieldIndex, storedValues, withoutWildcard } from './fields.js';
 
 /** `registrations` counts those that still hold the field or value. */
 export type TableTemplateIssue =
@@ -35,7 +29,6 @@ const FORM_PREFIX = 'data.';
 const COMPUTED_PREFIX = 'computedData.';
 // Staff-entered: the column itself defines the field.
 const FREE_PREFIXES = ['customData.', 'customFiles.'];
-const WILDCARD = '*';
 
 // Everything a row has, beyond what the column picker offers.
 const ROW_FIELDS = [
@@ -46,16 +39,8 @@ const ROW_FIELDS = [
 ] as const satisfies readonly (keyof Registration)[];
 const COMPUTED_FIELDS = [...TABLE_COMPUTED_FIELDS, 'phoneNumbers.*'];
 
-// An array index reads the same field as the wildcard does.
-function normalize(path: string): string {
-  return path
-    .split('.')
-    .map((key) => (/^\d+$/.test(key) ? WILDCARD : key))
-    .join('.');
-}
-
 // A known field also covers its parents, e.g. `address` for `address.city`.
-function pathSet(paths: readonly string[]): Set<string> {
+function pathSet(paths: Iterable<string>): Set<string> {
   const set = new Set<string>();
   for (const path of paths) {
     const keys = path.split('.');
@@ -67,37 +52,20 @@ function pathSet(paths: readonly string[]): Set<string> {
   return set;
 }
 
-function withoutWildcard(path: string): string {
-  return path.endsWith(`.${WILDCARD}`) ? path.slice(0, -2) : path;
-}
-
-// The values a question can store, or undefined when any value is possible.
-function closedValues(question: Question): Set<string> | undefined {
-  if (question instanceof QuestionBooleanModel) {
-    return new Set([
-      String(question.valueTrue ?? true),
-      String(question.valueFalse ?? false),
-    ]);
-  }
-
-  if (
-    !(question instanceof QuestionSelectBase) ||
-    question.choices.length === 0 ||
-    question.hasOther ||
-    question.isUsingRestful ||
-    question.choicesFromQuestion
-  ) {
-    return undefined;
-  }
-
-  const values = question.choices.map((choice: ItemValue) =>
-    String(choice.value),
+/**
+ * The spellings a path can be known under: a numeric key is either a name
+ * (a matrix row `1`) or an array index, read the same as `*`.
+ */
+function candidates(path: string): string[] {
+  return path.split('.').reduce<string[]>(
+    (prefixes, key) => {
+      const keys = /^\d+$/.test(key) ? [key, '*'] : [key];
+      return prefixes.flatMap((prefix) =>
+        keys.map((k) => (prefix ? `${prefix}.${k}` : k)),
+      );
+    },
+    [''],
   );
-  if (question.hasNone) {
-    values.push(String(question.noneItem.value));
-  }
-
-  return new Set(values);
 }
 
 function hasComment(question: Question): boolean {
@@ -136,7 +104,7 @@ function valuesAt(value: unknown, keys: readonly string[]): unknown[] {
   }
 
   const [key, ...rest] = keys as [string, ...string[]];
-  if (key === WILDCARD) {
+  if (key === '*') {
     return Array.isArray(value)
       ? value.flatMap((entry: unknown) => valuesAt(entry, rest))
       : [];
@@ -156,7 +124,7 @@ function valuesAt(value: unknown, keys: readonly string[]): unknown[] {
  */
 export class TableTemplateReferenceChecker {
   private readonly formFields: Set<string>;
-  private readonly questions = new Map<string, Question>();
+  private readonly questions: Map<string, Question>;
   private readonly computedFields = pathSet(COMPUTED_FIELDS);
   private readonly rowFields = new Set<string>(ROW_FIELDS);
   private readonly usage = new Map<string, number>();
@@ -166,20 +134,14 @@ export class TableTemplateReferenceChecker {
     private readonly registrations: readonly object[] = [],
   ) {
     const model = new SurveyModel(form);
-    const paths: string[] = [];
+    this.questions = buildFieldIndex(model);
 
-    for (const { value, question } of collectStoredFields(model)) {
-      paths.push(value);
-      for (const path of [value, withoutWildcard(value)]) {
-        if (!this.questions.has(path)) {
-          this.questions.set(path, question);
-        }
-      }
+    const paths = [...this.questions.keys()];
+    for (const [path, question] of this.questions) {
       if (hasComment(question)) {
-        paths.push(withoutWildcard(value) + model.commentSuffix);
+        paths.push(withoutWildcard(path) + model.commentSuffix);
       }
     }
-
     for (const calculated of model.calculatedValues) {
       if (calculated.includeIntoResult) {
         paths.push(calculated.name);
@@ -190,16 +152,21 @@ export class TableTemplateReferenceChecker {
   }
 
   check(template: Pick<TableTemplate, 'columns' | 'sortBy'>) {
-    const issues = template.columns.flatMap((column) =>
-      this.checkColumn(column),
-    );
+    return [
+      ...template.columns.flatMap((column) => this.checkColumn(column)),
+      ...this.checkSort(template),
+    ];
+  }
 
+  checkSort(
+    template: Pick<TableTemplate, 'columns' | 'sortBy'>,
+  ): TableTemplateIssue[] {
     const sortBy = template.sortBy;
-    if (sortBy && !template.columns.some((column) => column.name === sortBy)) {
-      issues.push({ code: 'sort/unknown', column: sortBy });
+    if (!sortBy || template.columns.some((column) => column.name === sortBy)) {
+      return [];
     }
 
-    return issues;
+    return [{ code: 'sort/unknown', column: sortBy }];
   }
 
   checkColumn(column: TableColumnTemplate): TableTemplateIssue[] {
@@ -208,24 +175,20 @@ export class TableTemplateReferenceChecker {
       return [];
     }
 
-    const path = normalize(field);
-    if (!this.knowsField(path)) {
+    if (!this.knowsField(field)) {
       return [
-        {
-          code: 'field/unknown',
-          column: name,
-          field,
-          ...this.inUse(path),
-        },
+        { code: 'field/unknown', column: name, field, ...this.inUse(field) },
       ];
     }
 
-    if (!path.startsWith(FORM_PREFIX)) {
+    if (!field.startsWith(FORM_PREFIX)) {
       return [];
     }
 
-    const question = this.questions.get(path.slice(FORM_PREFIX.length));
-    const allowed = question ? closedValues(question) : undefined;
+    const question = candidates(field.slice(FORM_PREFIX.length))
+      .map((path) => this.questions.get(path))
+      .find((entry) => entry !== undefined);
+    const allowed = question ? storedValues(question) : undefined;
     if (!allowed) {
       return [];
     }
@@ -237,27 +200,26 @@ export class TableTemplateReferenceChecker {
         column: name,
         field,
         value,
-        ...this.inUse(path, value),
+        ...this.inUse(field, value),
       }));
   }
 
-  private knowsField(path: string): boolean {
-    if (path.startsWith(FORM_PREFIX)) {
-      return this.formFields.has(path.slice(FORM_PREFIX.length));
-    }
-    if (path.startsWith(COMPUTED_PREFIX)) {
-      return this.computedFields.has(path.slice(COMPUTED_PREFIX.length));
-    }
+  private knowsField(field: string): boolean {
+    const [known, path] = field.startsWith(FORM_PREFIX)
+      ? [this.formFields, field.slice(FORM_PREFIX.length)]
+      : field.startsWith(COMPUTED_PREFIX)
+        ? [this.computedFields, field.slice(COMPUTED_PREFIX.length)]
+        : [this.rowFields, field];
 
-    return this.rowFields.has(path);
+    return candidates(path).some((candidate) => known.has(candidate));
   }
 
-  // How many registrations hold the path, or that value at it.
-  private inUse(path: string, value?: string): { registrations?: number } {
-    const key = value === undefined ? path : `${path}\u0000${value}`;
+  // How many registrations hold the field, or that value in it.
+  private inUse(field: string, value?: string): { registrations?: number } {
+    const key = value === undefined ? field : `${field}\u0000${value}`;
     let count = this.usage.get(key);
     if (count === undefined) {
-      const keys = path.split('.');
+      const keys = field.split('.');
       count = this.registrations.filter((registration) => {
         const values = valuesAt(registration, keys);
         return value === undefined

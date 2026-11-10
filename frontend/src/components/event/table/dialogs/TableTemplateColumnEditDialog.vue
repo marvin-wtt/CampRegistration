@@ -77,15 +77,10 @@
               v-if="fieldWarnings.length > 0"
               #hint
             >
-              <div
-                v-for="(message, index) in fieldWarnings"
-                :key="index"
-                class="text-warning"
+              <column-warnings
+                :messages="fieldWarnings"
                 data-test="column-field-warning"
-              >
-                <q-icon name="warning" />
-                {{ message }}
-              </div>
+              />
             </template>
 
             <template #append>
@@ -115,15 +110,10 @@
               v-if="fieldWarnings.length > 0"
               #hint
             >
-              <div
-                v-for="(message, index) in fieldWarnings"
-                :key="index"
-                class="text-warning"
+              <column-warnings
+                :messages="fieldWarnings"
                 data-test="column-field-warning"
-              >
-                <q-icon name="warning" />
-                {{ message }}
-              </div>
+              />
             </template>
           </q-select>
 
@@ -168,15 +158,11 @@
             </q-expansion-item>
           </q-list>
 
-          <div
-            v-for="(message, index) in valueWarnings"
-            :key="index"
-            class="text-warning text-caption"
+          <column-warnings
+            class="text-caption"
+            :messages="valueWarnings"
             data-test="column-value-warning"
-          >
-            <q-icon name="warning" />
-            {{ message }}
-          </div>
+          />
 
           <q-select
             v-model="data.align"
@@ -301,24 +287,27 @@ import {
   TABLE_COMPUTED_FIELDS,
   TABLE_META_FIELDS,
   type EventDetails,
-  type Registration,
   type TableColumnTemplate,
 } from '@camp-registration/common/entities';
 import TranslatedInput from '@/components/common/inputs/TranslatedInput.vue';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import ComponentRegistry from '@/components/event/table/ComponentRegistry';
 import ToggleItem from '@/components/common/ToggleItem.vue';
-import { extractFormFields } from '@camp-registration/common/form';
+import {
+  extractFormFields,
+  type TableTemplateReferenceChecker,
+} from '@camp-registration/common/form';
 import type { PartialBy } from '@/types';
-import { TableTemplateReferenceChecker } from '@camp-registration/common/form';
+import ColumnWarnings from '@/components/event/table/dialogs/ColumnWarnings.vue';
 import { useTableTemplateIssueMessage } from '@/components/event/table/tableTemplateIssues';
 import { deepToRaw } from '@/utils/deepToRaw';
 import { FormSelectCache } from '@/components/event/table/tableCells/FormSelectCache';
 
-const { event, column, registrations } = defineProps<{
+const { event, column, checker } = defineProps<{
   column: TableColumnTemplate;
   event: EventDetails;
-  registrations?: Registration[] | undefined;
+  /** Shared with the template dialog, which knows the registrations. */
+  checker: TableTemplateReferenceChecker;
 }>();
 
 defineEmits([...useDialogPluginComponent.emits]);
@@ -608,13 +597,10 @@ function updateFieldPath(): string {
   return `${prefix}.${data.field}`;
 }
 
-const checker = computed(
-  () => new TableTemplateReferenceChecker(event.form, registrations),
-);
 const issueMessage = useTableTemplateIssueMessage();
 
 const issues = computed(() =>
-  checker.value.checkColumn({
+  checker.checkColumn({
     ...data,
     name: data.name ?? '',
     field: updateFieldPath(),

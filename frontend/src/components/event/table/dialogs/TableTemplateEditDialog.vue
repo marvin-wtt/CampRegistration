@@ -45,7 +45,7 @@
             </q-item-label>
           </q-item-section>
           <q-item-section
-            v-if="columnIssues(slotProps.item).length > 0"
+            v-if="messagesOf(slotProps.item).length > 0"
             side
           >
             <q-icon
@@ -55,7 +55,7 @@
             >
               <q-tooltip>
                 <div
-                  v-for="(message, index) in columnIssues(slotProps.item)"
+                  v-for="(message, index) in messagesOf(slotProps.item)"
                   :key="index"
                 >
                   {{ message }}
@@ -279,8 +279,8 @@ import {
   type Registration,
 } from '@camp-registration/common/entities';
 import TranslatedInput from '@/components/common/inputs/TranslatedInput.vue';
-import { computed, reactive, ref } from 'vue';
-import { TableTemplateReferenceChecker } from '@camp-registration/common/form';
+import { computed, reactive, ref, toRaw } from 'vue';
+import type { TableTemplateReferenceChecker } from '@camp-registration/common/form';
 import { useTableTemplateIssueMessage } from '@/components/event/table/tableTemplateIssues';
 import SortableList from '@/components/common/SortableList.vue';
 import TableTemplateColumnEditDialog from '@/components/event/table/dialogs/TableTemplateColumnEditDialog.vue';
@@ -291,8 +291,8 @@ import { deepToRaw } from '@/utils/deepToRaw';
 interface Props {
   template: TableTemplate;
   event: EventDetails;
-  /** Lets warnings tell a removed field apart from one never stored. */
-  registrations?: Registration[];
+  /** Shared down the dialogs, built once from the form and registrations. */
+  checker: TableTemplateReferenceChecker;
 }
 
 const props = defineProps<Props>();
@@ -389,23 +389,26 @@ const sortByOptions = computed<QSelectOption[]>(() => {
   });
 });
 
-const checker = computed(
-  () =>
-    new TableTemplateReferenceChecker(props.event.form, props.registrations),
-);
 const issueMessage = useTableTemplateIssueMessage();
 
-function columnIssues(column: TableColumnTemplate): string[] {
-  return checker.value.checkColumn(column).map(issueMessage);
+// Keyed by the raw column, so a lookup works for the list's own proxies.
+const columnMessages = computed(
+  () =>
+    new Map(
+      template.columns.map((column) => [
+        toRaw(column),
+        props.checker.checkColumn(column).map(issueMessage),
+      ]),
+    ),
+);
+
+function messagesOf(column: TableColumnTemplate): string[] {
+  return columnMessages.value.get(toRaw(column)) ?? [];
 }
 
-const sortByIssue = computed<string | undefined>(() => {
-  const issue = checker.value
-    .check(template)
-    .find(({ code }) => code === 'sort/unknown');
-
-  return issue ? issueMessage(issue) : undefined;
-});
+const sortByIssue = computed<string | undefined>(() =>
+  props.checker.checkSort(template).map(issueMessage).at(0),
+);
 
 const cardStyle = computed<CSSStyleValue>(() => {
   if (quasar.screen.gt.sm) {
@@ -436,7 +439,7 @@ function addColumn(): void {
       componentProps: {
         column: column,
         event: props.event,
-        registrations: props.registrations,
+        checker: props.checker,
       },
     })
     .onOk((payload: TableColumnTemplate) => {
@@ -470,7 +473,7 @@ function editColumn(column: TableColumnTemplate): void {
           ...column,
         },
         event: props.event,
-        registrations: props.registrations,
+        checker: props.checker,
       },
     })
     .onOk((payload: TableColumnTemplate) => {

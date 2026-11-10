@@ -573,11 +573,13 @@ const canEditTemplates = computed<boolean>(() => {
   );
 });
 
+// Without registrations: the count only needs whether a template has issues,
+// and live registration updates shouldn't re-check every template.
 const referenceChecker = computed(
-  () => new TableTemplateReferenceChecker(event.form, registrations),
+  () => new TableTemplateReferenceChecker(event.form),
 );
 
-// Templates referencing fields or values the form doesn't have.
+// Templates with broken references (fields, values or the sort column).
 const brokenTemplateCount = computed<number>(() => {
   if (!canEditTemplates.value) {
     return 0;
@@ -972,7 +974,7 @@ other_phases: 'For other phases'
 title: 'Participants'
 subtitle: 'Browse, filter, and print the registrations of this event.'
 
-template_issues: 'One template references something the form does not have | {n} templates reference something the form does not have'
+template_issues: 'One template has broken references | {n} templates have broken references'
 
 action:
   print: 'Print'
@@ -1004,7 +1006,7 @@ other_phases: 'Für andere Phasen'
 title: 'Teilnehmende'
 subtitle: 'Durchsuche, filtere und drucke die Anmeldungen dieser Veranstaltung.'
 
-template_issues: 'Eine Vorlage verweist auf etwas, das das Formular nicht hat | {n} Vorlagen verweisen auf etwas, das das Formular nicht hat'
+template_issues: 'Eine Vorlage hat fehlerhafte Verweise | {n} Vorlagen haben fehlerhafte Verweise'
 
 action:
   print: 'Drucken'
@@ -1036,7 +1038,7 @@ other_phases: 'Pour d’autres phases'
 title: 'Participants'
 subtitle: 'Parcourez, filtrez et imprimez les inscriptions de cet événement.'
 
-template_issues: 'Un modèle fait référence à un élément absent du formulaire | {n} modèles font référence à des éléments absents du formulaire'
+template_issues: 'Un modèle contient des références invalides | {n} modèles contiennent des références invalides'
 
 action:
   print: 'Imprimer'
@@ -1068,7 +1070,7 @@ other_phases: 'Dla innych faz'
 title: 'Uczestnicy'
 subtitle: 'Przeglądaj, filtruj i drukuj zgłoszenia tego wydarzenia.'
 
-template_issues: 'Jeden szablon odwołuje się do czegoś, czego nie ma w formularzu | Szablony odwołujące się do czegoś, czego nie ma w formularzu: {n}'
+template_issues: 'Jeden szablon ma błędne odwołania | Szablony z błędnymi odwołaniami: {n}'
 
 action:
   print: 'Drukuj'
@@ -1100,7 +1102,7 @@ other_phases: 'Pro jiné fáze'
 title: 'Účastníci'
 subtitle: 'Procházejte, filtrujte a tiskněte přihlášky této akce.'
 
-template_issues: 'Jedna šablona odkazuje na něco, co formulář nemá | Šablony odkazující na něco, co formulář nemá: {n}'
+template_issues: 'Jedna šablona má chybné odkazy | Šablony s chybnými odkazy: {n}'
 
 action:
   print: 'Tisk'

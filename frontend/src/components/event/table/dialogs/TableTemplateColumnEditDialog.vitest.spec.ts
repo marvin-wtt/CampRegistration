@@ -6,9 +6,9 @@ import { DOMWrapper, mount } from '@vue/test-utils';
 import { nextTick } from 'vue';
 import type {
   EventDetails,
-  Registration,
   TableColumnTemplate,
 } from '@camp-registration/common/entities';
+import { TableTemplateReferenceChecker } from '@camp-registration/common/form';
 import TableTemplateColumnEditDialog from '@/components/event/table/dialogs/TableTemplateColumnEditDialog.vue';
 
 installQuasarPlugin({
@@ -29,13 +29,13 @@ const event = {
 
 async function open(
   column: Pick<TableColumnTemplate, 'field'> & Partial<TableColumnTemplate>,
-  registrations?: Partial<Registration>[],
+  registrations?: object[],
 ) {
   const wrapper = mount(TableTemplateColumnEditDialog, {
     props: {
       column: { name: 'col', label: 'Col', source: 'form', ...column },
       event,
-      registrations: registrations as Registration[] | undefined,
+      checker: new TableTemplateReferenceChecker(event.form, registrations),
     },
   });
   wrapper.findComponent(QDialog).vm.show();

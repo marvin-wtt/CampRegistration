@@ -98,11 +98,22 @@ const checker = computed(
   () => new TableTemplateReferenceChecker(event.form, registrations),
 );
 
-function issueCount(template: TableTemplate): number {
-  return checker.value.check(template).length;
-}
-
 const modifiedTemplates = ref<TableTemplate[]>(propTemplates());
+
+// Keyed by the raw template, so a lookup works for the list's own proxies.
+const issueCounts = computed(
+  () =>
+    new Map(
+      modifiedTemplates.value.map((template) => [
+        toRaw(template),
+        checker.value.check(template).length,
+      ]),
+    ),
+);
+
+function issueCount(template: TableTemplate): number {
+  return issueCounts.value.get(toRaw(template)) ?? 0;
+}
 
 function propTemplates(): TableTemplate[] {
   // Filter generated templates as they cannot be edited and remove vue proxies
@@ -155,7 +166,7 @@ function addTemplate() {
       componentProps: {
         template,
         event,
-        registrations,
+        checker: checker.value,
       },
     })
     .onOk((payload) => {
@@ -170,7 +181,7 @@ function editTemplate(template: TableTemplate) {
       componentProps: {
         template,
         event,
-        registrations,
+        checker: checker.value,
       },
       persistent: true,
     })
@@ -199,7 +210,7 @@ action:
   ok: 'Ok'
   cancel: 'Cancel'
 
-issues: 'One reference cannot be found in the form | {n} references cannot be found in the form'
+issues: 'One reference is broken | {n} references are broken'
 
 default:
   title: 'New template'
@@ -212,7 +223,7 @@ action:
   ok: 'Ok'
   cancel: 'Abbrechen'
 
-issues: 'Ein Verweis fehlt im Formular | {n} Verweise fehlen im Formular'
+issues: 'Ein Verweis ist fehlerhaft | {n} Verweise sind fehlerhaft'
 
 default:
   title: 'Neue Vorlage'
@@ -225,7 +236,7 @@ action:
   ok: 'Ok'
   cancel: 'Annuler'
 
-issues: 'Une référence est introuvable dans le formulaire | {n} références sont introuvables dans le formulaire'
+issues: 'Une référence est invalide | {n} références sont invalides'
 
 default:
   title: 'Nouveau modèle'
@@ -238,7 +249,7 @@ action:
   ok: 'OK'
   cancel: 'Anuluj'
 
-issues: 'W formularzu brakuje 1 odwołania | Brakujące odwołania w formularzu: {n}'
+issues: 'Jedno odwołanie jest błędne | Błędne odwołania: {n}'
 
 default:
   title: 'Nowy szablon'
@@ -251,7 +262,7 @@ action:
   ok: 'OK'
   cancel: 'Zrušit'
 
-issues: 'Ve formuláři chybí 1 odkaz | Chybějící odkazy ve formuláři: {n}'
+issues: 'Jeden odkaz je chybný | Chybné odkazy: {n}'
 
 default:
   title: 'Nová šablona'
