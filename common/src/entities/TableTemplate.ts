@@ -1,5 +1,32 @@
 import type { Identifiable } from './Identifiable.js';
 import type { EventPhase } from './Event.js';
+import type { Registration } from './Registration.js';
+
+/** Top-level registration fields a `meta` column can read, unprefixed. */
+export const TABLE_META_FIELDS = [
+  'status',
+  'group',
+  'room',
+  'createdAt',
+] as const satisfies readonly (keyof Omit<
+  Registration,
+  'data' | 'computedData' | 'customData' | 'customFiles'
+>)[];
+
+/** Paths a `computed` column can read below `computedData`. */
+export const TABLE_COMPUTED_FIELDS = [
+  'firstName',
+  'lastName',
+  'dateOfBirth',
+  'emails.*',
+  'role',
+  'gender',
+  'address',
+  'address.street',
+  'address.city',
+  'address.zipCode',
+  'address.country',
+] as const;
 
 export interface TableTemplate extends Identifiable {
   title: string | Record<string, string>;

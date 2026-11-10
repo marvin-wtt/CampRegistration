@@ -25,6 +25,20 @@
           <q-item-section>
             {{ to(slotProps.item.title) }}
           </q-item-section>
+          <q-item-section
+            v-if="issueCount(slotProps.item) > 0"
+            side
+          >
+            <q-icon
+              name="warning"
+              color="warning"
+              :data-test="`template-issues-${slotProps.item.id}`"
+            >
+              <q-tooltip>
+                {{ t('issues', issueCount(slotProps.item)) }}
+              </q-tooltip>
+            </q-icon>
+          </q-item-section>
         </sortable-list>
       </q-card-section>
 
@@ -52,16 +66,22 @@
 import { useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { useObjectTranslation } from '@/composables/objectTranslation';
-import type { Event, TableTemplate } from '@camp-registration/common/entities';
+import type {
+  EventDetails,
+  Registration,
+  TableTemplate,
+} from '@camp-registration/common/entities';
 import TableTemplateEditDialog from '@/components/event/table/dialogs/TableTemplateEditDialog.vue';
 import SortableList from '@/components/common/SortableList.vue';
-import { ref, toRaw } from 'vue';
+import { computed, ref, toRaw } from 'vue';
+import { TableTemplateReferenceChecker } from '@camp-registration/common/form';
 import { usePermissions } from '@/composables/permissions';
 import { deepToRaw } from '@/utils/deepToRaw';
 
-const { event, templates } = defineProps<{
+const { event, templates, registrations } = defineProps<{
   templates: TableTemplate[];
-  event: Event;
+  event: EventDetails;
+  registrations?: Registration[];
 }>();
 
 defineEmits([...useDialogPluginComponent.emits]);
@@ -74,7 +94,26 @@ const { can } = usePermissions();
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
 
+const checker = computed(
+  () => new TableTemplateReferenceChecker(event.form, registrations),
+);
+
 const modifiedTemplates = ref<TableTemplate[]>(propTemplates());
+
+// Keyed by the raw template, so a lookup works for the list's own proxies.
+const issueCounts = computed(
+  () =>
+    new Map(
+      modifiedTemplates.value.map((template) => [
+        toRaw(template),
+        checker.value.check(template).length,
+      ]),
+    ),
+);
+
+function issueCount(template: TableTemplate): number {
+  return issueCounts.value.get(toRaw(template)) ?? 0;
+}
 
 function propTemplates(): TableTemplate[] {
   // Filter generated templates as they cannot be edited and remove vue proxies
@@ -127,6 +166,7 @@ function addTemplate() {
       componentProps: {
         template,
         event,
+        checker: checker.value,
       },
     })
     .onOk((payload) => {
@@ -141,6 +181,7 @@ function editTemplate(template: TableTemplate) {
       componentProps: {
         template,
         event,
+        checker: checker.value,
       },
       persistent: true,
     })
@@ -169,6 +210,8 @@ action:
   ok: 'Ok'
   cancel: 'Cancel'
 
+issues: 'One reference is broken | {n} references are broken'
+
 default:
   title: 'New template'
 </i18n>
@@ -179,6 +222,8 @@ title: 'Tabellen bearbeiten'
 action:
   ok: 'Ok'
   cancel: 'Abbrechen'
+
+issues: 'Ein Verweis ist fehlerhaft | {n} Verweise sind fehlerhaft'
 
 default:
   title: 'Neue Vorlage'
@@ -191,6 +236,8 @@ action:
   ok: 'Ok'
   cancel: 'Annuler'
 
+issues: 'Une référence est invalide | {n} références sont invalides'
+
 default:
   title: 'Nouveau modèle'
 </i18n>
@@ -202,6 +249,8 @@ action:
   ok: 'OK'
   cancel: 'Anuluj'
 
+issues: 'Jedno odwołanie jest błędne | Błędne odwołania: {n}'
+
 default:
   title: 'Nowy szablon'
 </i18n>
@@ -212,6 +261,8 @@ title: 'Upravit tabulky'
 action:
   ok: 'OK'
   cancel: 'Zrušit'
+
+issues: 'Jeden odkaz je chybný | Chybné odkazy: {n}'
 
 default:
   title: 'Nová šablona'
