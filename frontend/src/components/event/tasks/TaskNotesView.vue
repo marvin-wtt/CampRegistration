@@ -1,124 +1,259 @@
 <template>
-  <div class="task-notes column no-wrap">
-    <template
-      v-for="(block, index) in blocks"
-      :key="index"
-    >
-      <div
-        v-if="block.kind === 'text'"
-        class="notes-text"
-      >
-        {{ block.text }}
-      </div>
-
-      <ul
-        v-else-if="block.kind === 'bullets'"
-        class="notes-bullets"
-      >
-        <li
-          v-for="(item, itemIndex) in block.items"
-          :key="itemIndex"
-        >
-          {{ item }}
-        </li>
-      </ul>
-
-      <q-list
-        v-else
-        dense
-        class="notes-checklist"
-      >
-        <q-item
-          v-for="item in block.items"
-          :key="item.line"
-          :tag="interactive ? 'label' : 'div'"
-          :clickable="interactive"
-          class="checklist-item rounded-md"
-          :data-test="`task-checklist-item-${item.line}`"
-        >
-          <q-item-section
-            avatar
-            class="checklist-box"
-          >
-            <q-checkbox
-              v-if="interactive"
-              :model-value="item.checked"
-              color="primary"
-              dense
-              @update:model-value="emit('toggle', item.line)"
-            />
-            <q-icon
-              v-else
-              :name="item.checked ? 'check_box' : 'check_box_outline_blank'"
-              :color="item.checked ? 'primary' : undefined"
-              size="20px"
-            />
-          </q-item-section>
-          <q-item-section
-            :class="{ 'checklist-text--done': item.checked }"
-            class="checklist-text"
-          >
-            {{ item.text }}
-          </q-item-section>
-        </q-item>
-      </q-list>
-    </template>
+  <div
+    class="notes-view task-notes-content"
+    :class="{
+      'notes-view--editable': editable,
+      'notes-view--editing': editing,
+      'notes-view--static': !editable,
+    }"
+    :tabindex="editable && !editing ? 0 : undefined"
+    :role="editable && !editing ? 'button' : undefined"
+    :aria-label="editable && !editing ? t('edit') : undefined"
+    data-test="task-notes-view"
+    @click="onClick"
+    @change="onChange"
+    @keydown.enter.self.prevent="startEditing()"
+  >
+    <editor-content
+      v-if="editor"
+      :editor
+      class="notes-view__content"
+    />
+    <task-notes-toolbar
+      v-if="editor && editing"
+      :editor
+      class="notes-view__toolbar"
+    />
+    <q-icon
+      v-else-if="editable"
+      name="edit"
+      size="16px"
+      class="notes-view__hint"
+    />
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
-import { parseNotes } from '@/utils/taskNotes';
+import { onBeforeUnmount, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { EditorContent, useEditor } from '@tiptap/vue-3';
+import Placeholder from '@tiptap/extension-placeholder';
+import {
+  applyReadOnlyCheck,
+  notesMarkdown,
+  taskNotesExtensions,
+} from '@/components/event/tasks/taskNotesEditor';
+import TaskNotesToolbar from '@/components/event/tasks/TaskNotesToolbar.vue';
 
-const { notes, interactive = false } = defineProps<{
-  notes: string;
-  interactive?: boolean;
+// Rendered notes. With `editable`, checklist items tick in place and a click
+// on the text turns the same editor instance editable — switching instances
+// would lose the tap, and with it the iOS keyboard and the click position.
+const { editable = false } = defineProps<{
+  editable?: boolean;
 }>();
+
+const modelValue = defineModel<string>({ default: '' });
 
 const emit = defineEmits<{
-  toggle: [line: number];
+  focus: [];
+  blur: [];
 }>();
 
-const blocks = computed(() => parseNotes(notes));
+const { t } = useI18n();
+
+const editing = ref<boolean>(false);
+
+// Set by `onUpdate` so the model watcher skips changes the editor made itself.
+let isInternalUpdate = false;
+
+const editor = useEditor({
+  extensions: [
+    ...taskNotesExtensions((item) => t('checkboxLabel', { item })),
+    Placeholder.configure({
+      placeholder: () => (editable ? t('placeholder') : ''),
+      showOnlyWhenEditable: false,
+    }),
+  ],
+  content: modelValue.value,
+  contentType: 'markdown',
+  editable: false,
+  onUpdate: ({ editor }) => {
+    isInternalUpdate = true;
+    modelValue.value = notesMarkdown(editor);
+  },
+  onBlur: () => stopEditing(),
+});
+
+watch(modelValue, (value) => {
+  if (isInternalUpdate) {
+    isInternalUpdate = false;
+    return;
+  }
+  if (!editing.value) {
+    editor.value?.commands.setContent(value, {
+      contentType: 'markdown',
+      emitUpdate: false,
+    });
+  }
+});
+
+function startEditing(event?: MouseEvent) {
+  const instance = editor.value;
+  if (!editable || !instance || editing.value) {
+    return;
+  }
+
+  editing.value = true;
+  instance.setEditable(true, false);
+
+  const position = event
+    ? instance.view.posAtCoords({ left: event.clientX, top: event.clientY })
+    : null;
+  instance.commands.focus(position?.pos ?? 'end');
+  emit('focus');
+}
+
+function stopEditing() {
+  if (!editing.value) {
+    return;
+  }
+  editing.value = false;
+  editor.value?.setEditable(false, false);
+  emit('blur');
+}
+
+// Links open and checkboxes tick without entering edit mode.
+function onClick(event: MouseEvent) {
+  if (!(event.target as Element).closest('a, label, input')) {
+    startEditing(event);
+  }
+}
+
+// Runs after TipTap's own checkbox handler, which bubbles up to here.
+function onChange(event: Event) {
+  const target = event.target as HTMLElement;
+  if (editor.value && target instanceof HTMLInputElement) {
+    applyReadOnlyCheck(editor.value, target);
+  }
+}
+
+onBeforeUnmount(() => {
+  editor.value?.destroy();
+});
 </script>
 
+<style src="./taskNotesContent.css"></style>
+
 <style scoped>
-.task-notes {
+.notes-view {
+  display: flex;
+  align-items: flex-start;
   gap: 8px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  outline: 2px solid transparent;
+  background: var(--md3-surface-container-highest);
   font-size: 14px;
   line-height: 1.5;
+  transition:
+    background-color 150ms ease,
+    outline-color 150ms ease;
 }
 
-.notes-text {
-  white-space: pre-wrap;
-  word-break: break-word;
+.notes-view--editable:not(.notes-view--editing) {
+  cursor: text;
 }
 
-.notes-bullets {
-  margin: 0;
-  padding-left: 20px;
+/* MD3 hover state layer: 8% on-surface over the container. */
+.notes-view--editable:not(.notes-view--editing):hover {
+  background: color-mix(
+    in srgb,
+    var(--md3-on-surface) 8%,
+    var(--md3-surface-container-highest)
+  );
 }
 
-.notes-checklist {
-  margin: 0 -8px;
+.notes-view--editing,
+.notes-view:focus-visible {
+  outline-color: var(--md3-primary);
 }
 
-.checklist-item {
-  min-height: 36px;
-  padding: 2px 8px;
-}
-
-.checklist-box {
+.notes-view__content {
+  flex: 1;
   min-width: 0;
-  padding-right: 10px;
 }
 
-.checklist-text {
-  word-break: break-word;
+/* Buttons are taller than a text line; let them overhang the padding. */
+.notes-view__toolbar {
+  margin: -6px -8px -6px 0;
 }
 
-.checklist-text--done {
+.notes-view__hint {
+  flex: 0 0 auto;
+  margin-top: 2px;
   color: var(--md3-on-surface-variant);
-  text-decoration: line-through;
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.notes-view:hover .notes-view__hint,
+.notes-view:focus-visible .notes-view__hint {
+  opacity: 1;
+}
+
+/* No hover on touch screens: keep the hint faintly visible instead. */
+@media (hover: none) {
+  .notes-view__hint {
+    opacity: 0.6;
+  }
+}
+
+.notes-view__content :deep(p.is-editor-empty:first-child::before) {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: var(--md3-on-surface-variant);
+}
+
+.notes-view--static :deep(input[type='checkbox']) {
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notes-view,
+  .notes-view__hint {
+    transition: none;
+  }
 }
 </style>
+
+<i18n lang="yaml" locale="en">
+placeholder: 'Add details, a list or a checklist…'
+checkboxLabel: 'Checklist item: {item}'
+edit: 'Edit details'
+</i18n>
+
+<i18n lang="yaml" locale="de">
+placeholder: 'Details, eine Liste oder eine Checkliste hinzufügen…'
+checkboxLabel: 'Checklisten-Punkt: {item}'
+edit: 'Details bearbeiten'
+</i18n>
+
+<i18n lang="yaml" locale="fr">
+placeholder: 'Ajoute des détails, une liste ou une checklist…'
+checkboxLabel: 'Élément de checklist : {item}'
+edit: 'Modifier les détails'
+</i18n>
+
+<i18n lang="yaml" locale="pl">
+placeholder: 'Dodaj szczegóły, listę lub listę kontrolną…'
+checkboxLabel: 'Pozycja listy kontrolnej: {item}'
+edit: 'Edytuj szczegóły'
+</i18n>
+
+<i18n lang="yaml" locale="cs">
+placeholder: 'Přidej podrobnosti, seznam nebo kontrolní seznam…'
+checkboxLabel: 'Položka kontrolního seznamu: {item}'
+edit: 'Upravit podrobnosti'
+</i18n>

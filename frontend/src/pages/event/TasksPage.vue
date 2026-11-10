@@ -53,56 +53,39 @@
       </div>
 
       <template v-else>
-        <!-- Status + filter -->
-        <div class="row items-center q-col-gutter-sm">
-          <div class="col-12 col-sm-auto">
-            <q-btn-toggle
-              v-model="status"
-              :class="{ 'full-width': quasar.screen.lt.sm }"
-              class="compact-toggle"
-              spread
-              no-caps
-              rounded
-              unelevated
-              toggle-color="primary"
-              :options="statusOptions"
-              data-test="task-status-toggle"
-            />
-          </div>
-          <div class="col-12 col-sm">
-            <div class="row items-center no-wrap filter-row">
-              <q-chip
-                v-for="option in filterOptions"
-                :key="option.value"
-                :icon="option.icon"
-                clickable
-                class="filter-chip"
-                :class="{ 'filter-chip--active': filter === option.value }"
-                @click="filter = option.value"
-              >
-                {{ option.label }}
-              </q-chip>
-            </div>
-          </div>
+        <div class="row items-center no-wrap filter-row">
+          <q-chip
+            v-for="option in filterOptions"
+            :key="option.value"
+            :icon="option.icon"
+            clickable
+            class="filter-chip"
+            :class="{ 'filter-chip--active': filter === option.value }"
+            @click="filter = option.value"
+          >
+            {{ option.label }}
+          </q-chip>
         </div>
 
         <q-list
-          v-if="shownTasks.length > 0"
+          v-if="openTasks.length > 0"
           separator
+          class="task-list"
         >
-          <task-row
-            v-for="task in shownTasks"
-            :key="task.id"
-            :task="task"
-            :mine="isMine(task)"
-            :can-update="can('event.tasks.update')"
-            :can-delete="can('event.tasks.delete')"
-            :assignee-label="assigneeLabel(task)"
-            @toggle="taskStore.toggleCompleted(task)"
-            @open="showDetailsDialog(task)"
-            @edit="showEditDialog(task)"
-            @delete="showDeleteDialog(task)"
-          />
+          <transition-group name="task-row">
+            <task-row
+              v-for="task in openTasks"
+              :key="task.id"
+              :task="shown(task)"
+              :mine="isMine(task)"
+              :can-update="can('event.tasks.update')"
+              :can-delete="can('event.tasks.delete')"
+              :assignee-label="assigneeLabel(task)"
+              @toggle="toggle(task)"
+              @open="showDetailsDialog(task)"
+              @delete="showDeleteDialog(task)"
+            />
+          </transition-group>
         </q-list>
         <div
           v-else
@@ -113,6 +96,46 @@
             size="20px"
           />
           <span>{{ emptyHint.text }}</span>
+        </div>
+
+        <div
+          v-if="completedTasks.length > 0"
+          class="column no-wrap"
+        >
+          <q-btn
+            :label="t('completed', { count: completedTasks.length })"
+            :icon-right="showCompleted ? 'expand_less' : 'expand_more'"
+            text-color="on-surface-variant"
+            class="self-start"
+            flat
+            dense
+            rounded
+            no-caps
+            data-test="task-completed-toggle"
+            @click="showCompleted = !showCompleted"
+          />
+          <q-slide-transition>
+            <q-list
+              v-show="showCompleted"
+              separator
+              class="task-list q-mt-sm"
+            >
+              <transition-group name="task-row">
+                <task-row
+                  v-for="task in completedTasks"
+                  :key="task.id"
+                  :task="shown(task)"
+                  :mine="isMine(task)"
+                  :can-update="can('event.tasks.update')"
+                  :can-delete="can('event.tasks.delete')"
+                  :assignee-label="assigneeLabel(task)"
+                  @toggle="toggle(task)"
+                  @open="showDetailsDialog(task)"
+                  @delete="showDeleteDialog(task)"
+                />
+              </transition-group>
+            </q-list>
+          </q-slide-transition>
         </div>
       </template>
     </div>
@@ -144,8 +167,7 @@ const eventManagerStore = useEventManagerStore();
 const { can } = usePermissions();
 const { currentManagerId } = useCurrentManager();
 
-type TaskStatus = 'open' | 'done';
-const status = ref<TaskStatus>('open');
+const showCompleted = ref<boolean>(false);
 
 type TaskFilter = 'all' | 'mine' | 'unassigned';
 const filter = ref<TaskFilter>('all');
@@ -223,39 +245,53 @@ const filteredTasks = computed<Task[]>(() => {
   return tasks.value;
 });
 
+// A toggled task stays in its list for a moment, already showing its new
+// state, before it moves — so the click reads as done, not as vanished.
+const SETTLE_MS = 700;
+const settling = ref(new Map<string, boolean>());
+
+function listedAsCompleted(task: Task): boolean {
+  return settling.value.get(task.id) ?? task.completed;
+}
+
+function shown(task: Task): Task {
+  const completed = settling.value.get(task.id);
+  return completed === undefined ? task : { ...task, completed: !completed };
+}
+
+async function toggle(task: Task) {
+  if (settling.value.has(task.id)) {
+    return;
+  }
+
+  settling.value.set(task.id, task.completed);
+  try {
+    await Promise.all([
+      taskStore.toggleCompleted(task),
+      new Promise((resolve) => setTimeout(resolve, SETTLE_MS)),
+    ]);
+  } finally {
+    settling.value.delete(task.id);
+  }
+}
+
 const openTasks = computed<Task[]>(() => {
-  return sortByDueDate(filteredTasks.value.filter((task) => !task.completed));
+  return sortByDueDate(
+    filteredTasks.value.filter((task) => !listedAsCompleted(task)),
+  );
 });
 
 const completedTasks = computed<Task[]>(() => {
-  return sortByDueDate(filteredTasks.value.filter((task) => task.completed));
+  return sortByDueDate(
+    filteredTasks.value.filter((task) => listedAsCompleted(task)),
+  );
 });
 
-const shownTasks = computed<Task[]>(() =>
-  status.value === 'open' ? openTasks.value : completedTasks.value,
+const emptyHint = computed<{ icon: string; text: string }>(() =>
+  filteredTasks.value.length === 0
+    ? { icon: 'filter_alt_off', text: t('noMatch') }
+    : { icon: 'task_alt', text: t('allDone') },
 );
-
-const statusOptions = computed(() => [
-  {
-    value: 'open',
-    label: t('status.open', { count: openTasks.value.length }),
-    ...(quasar.screen.lt.sm ? {} : { icon: 'radio_button_unchecked' }),
-  },
-  {
-    value: 'done',
-    label: t('status.done', { count: completedTasks.value.length }),
-    ...(quasar.screen.lt.sm ? {} : { icon: 'task_alt' }),
-  },
-]);
-
-const emptyHint = computed<{ icon: string; text: string }>(() => {
-  if (filteredTasks.value.length === 0) {
-    return { icon: 'filter_alt_off', text: t('noMatch') };
-  }
-  return status.value === 'open'
-    ? { icon: 'task_alt', text: t('allDone') }
-    : { icon: 'hourglass_empty', text: t('noneDone') };
-});
 
 // The real assignee name (never "You") — used where a badge conveys ownership.
 function assigneeName(task: Task): string {
@@ -281,46 +317,25 @@ function showDetailsDialog(task: Task) {
       component: TaskDetailsDialog,
       componentProps: {
         task,
-        mine: isMine(task),
+        managers: eventManagerStore.data ?? [],
         canUpdate: can('event.tasks.update'),
         canDelete: can('event.tasks.delete'),
-        assigneeLabel: assigneeName(task),
       },
     })
-    .onOk((result: { action: 'edit' | 'delete' }) => {
-      if (result.action === 'edit') {
-        showEditDialog(task);
-      } else if (result.action === 'delete') {
+    .onOk((result: { action: 'delete' }) => {
+      if (result.action === 'delete') {
         showDeleteDialog(task);
       }
     });
 }
 
 function showAddDialog() {
-  quasar
-    .dialog({
-      component: TaskFormDialog,
-      componentProps: {
-        managers: eventManagerStore.data ?? [],
-      },
-    })
-    .onOk((data) => {
-      void taskStore.createData(data);
-    });
-}
-
-function showEditDialog(task: Task) {
-  quasar
-    .dialog({
-      component: TaskFormDialog,
-      componentProps: {
-        task,
-        managers: eventManagerStore.data ?? [],
-      },
-    })
-    .onOk((data) => {
-      void taskStore.updateData(task.id, data);
-    });
+  quasar.dialog({
+    component: TaskFormDialog,
+    componentProps: {
+      managers: eventManagerStore.data ?? [],
+    },
+  });
 }
 
 function showDeleteDialog(task: Task) {
@@ -344,6 +359,39 @@ function showDeleteDialog(task: Task) {
 .tasks-content {
   max-width: 960px;
   padding-bottom: 24px;
+}
+
+.task-list {
+  position: relative;
+}
+
+.task-row-move,
+.task-row-enter-active,
+.task-row-leave-active {
+  transition:
+    transform 300ms cubic-bezier(0.2, 0, 0, 1),
+    opacity 300ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.task-row-enter-from,
+.task-row-leave-to {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+/* Taken out of the flow so the remaining rows can slide into its place. */
+.task-row-leave-active {
+  position: absolute;
+  left: 0;
+  right: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .task-row-move,
+  .task-row-enter-active,
+  .task-row-leave-active {
+    transition: none;
+  }
 }
 
 .empty-state {
@@ -389,11 +437,8 @@ unassigned: 'Unassigned'
 you: 'You'
 allDone: 'No open tasks — nice work!'
 noMatch: 'No tasks match this filter.'
-noneDone: 'Nothing completed yet.'
 
-status:
-  open: 'Open ({count})'
-  done: 'Done ({count})'
+completed: 'Completed ({count})'
 
 filter:
   all: 'All'
@@ -421,11 +466,8 @@ unassigned: 'Nicht zugewiesen'
 you: 'Du'
 allDone: 'Keine offenen Aufgaben — gut gemacht!'
 noMatch: 'Keine Aufgaben entsprechen diesem Filter.'
-noneDone: 'Noch nichts erledigt.'
 
-status:
-  open: 'Offen ({count})'
-  done: 'Erledigt ({count})'
+completed: 'Erledigt ({count})'
 
 filter:
   all: 'Alle'
@@ -453,11 +495,8 @@ unassigned: 'Non assignée'
 you: 'Toi'
 allDone: 'Aucune tâche en cours — bien joué !'
 noMatch: 'Aucune tâche ne correspond à ce filtre.'
-noneDone: 'Rien de terminé pour le moment.'
 
-status:
-  open: 'En cours ({count})'
-  done: 'Terminées ({count})'
+completed: 'Terminées ({count})'
 
 filter:
   all: 'Toutes'
@@ -485,11 +524,8 @@ unassigned: 'Nieprzypisane'
 you: 'Ty'
 allDone: 'Brak otwartych zadań — świetna robota!'
 noMatch: 'Żadne zadania nie pasują do tego filtra.'
-noneDone: 'Nic jeszcze nie ukończono.'
 
-status:
-  open: 'Otwarte ({count})'
-  done: 'Ukończone ({count})'
+completed: 'Ukończone ({count})'
 
 filter:
   all: 'Wszystkie'
@@ -517,11 +553,8 @@ unassigned: 'Nepřiřazeno'
 you: 'Ty'
 allDone: 'Žádné otevřené úkoly — skvělá práce!'
 noMatch: 'Žádné úkoly neodpovídají tomuto filtru.'
-noneDone: 'Zatím nic dokončeno.'
 
-status:
-  open: 'Otevřené ({count})'
-  done: 'Dokončené ({count})'
+completed: 'Dokončené ({count})'
 
 filter:
   all: 'Vše'

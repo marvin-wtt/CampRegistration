@@ -4,7 +4,7 @@
     @hide="onDialogHide"
   >
     <dialog-card
-      :title="isEdit ? t('title.edit') : t('title.create')"
+      :title="t('title.create')"
       :width="560"
       @submit="onOKClick"
       @cancel="onDialogCancel"
@@ -60,6 +60,7 @@
                 <q-date
                   v-model="data.dueDate"
                   mask="YYYY-MM-DD"
+                  minimal
                 >
                   <div class="row items-center justify-end">
                     <q-btn
@@ -91,12 +92,6 @@
             <q-icon name="person" />
           </template>
         </q-select>
-
-        <q-checkbox
-          v-if="isEdit"
-          v-model="data.completed"
-          :label="t('field.completed.label')"
-        />
       </div>
 
       <template #actions>
@@ -111,7 +106,8 @@
           type="submit"
           rounded
           color="primary"
-          :label="isEdit ? t('action.save') : t('action.create')"
+          :label="t('action.create')"
+          :loading="saving"
         />
       </template>
     </dialog-card>
@@ -124,36 +120,34 @@ import { useI18n } from 'vue-i18n';
 import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
 import DialogCard from '@/components/common/dialogs/DialogCard.vue';
 import TaskNotesInput from '@/components/event/tasks/TaskNotesInput.vue';
-import { computed, reactive } from 'vue';
+import { useTaskStore } from '@/stores/task-store';
+import { computed, reactive, ref } from 'vue';
 import type {
   EventManager,
-  Task,
   TaskCreateData,
-  TaskUpdateData,
 } from '@camp-registration/common/entities';
 
+// Creates a task. Existing tasks are edited in place in TaskDetailsDialog.
 const { t } = useI18n();
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
 
 const props = defineProps<{
-  task?: Task;
   managers: EventManager[];
 }>();
 
 defineEmits([...useDialogPluginComponent.emits]);
 
-const isEdit = computed<boolean>(() => props.task !== undefined);
+const taskStore = useTaskStore();
 
-const data = reactive<
-  Partial<TaskCreateData> & Partial<Pick<TaskUpdateData, 'completed'>>
->({
-  title: props.task?.title ?? '',
-  notes: props.task?.notes ?? null,
-  dueDate: props.task?.dueDate ?? null,
-  assigneeId: props.task?.assigneeId ?? null,
-  completed: props.task?.completed ?? false,
+const data = reactive<TaskCreateData>({
+  title: '',
+  notes: null,
+  dueDate: null,
+  assigneeId: null,
 });
+
+const saving = ref<boolean>(false);
 
 const assigneeOptions = computed<QSelectOption[]>(() => {
   return props.managers
@@ -164,17 +158,22 @@ const assigneeOptions = computed<QSelectOption[]>(() => {
     }));
 });
 
-function onOKClick(): void {
-  const payload: TaskCreateData | TaskUpdateData = isEdit.value
-    ? { ...data, notes: data.notes?.trim() || null }
-    : {
-        title: data.title ?? '',
-        notes: data.notes?.trim() || null,
-        dueDate: data.dueDate ?? null,
-        assigneeId: data.assigneeId ?? null,
-      };
+// Closes only once the task exists, so a failed request keeps the input.
+async function onOKClick() {
+  if (saving.value) {
+    return;
+  }
 
-  onDialogOK(payload);
+  saving.value = true;
+  const created = await taskStore.createData({
+    ...data,
+    notes: data.notes?.trim() || null,
+  });
+  saving.value = false;
+
+  if (created) {
+    onDialogOK();
+  }
 }
 </script>
 
@@ -183,7 +182,6 @@ function onOKClick(): void {
 <i18n lang="yaml" locale="en">
 title:
   create: 'Add task'
-  edit: 'Edit task'
 
 field:
   title:
@@ -191,27 +189,23 @@ field:
     rule:
       required: 'The title is required'
   notes:
-    label: 'Notes'
+    label: 'Details'
   dueDate:
     label: 'Due date'
     hint: 'Optional'
   assignee:
     label: 'Assignee'
     hint: 'Optional'
-  completed:
-    label: 'Completed'
 
 action:
   cancel: 'Cancel'
   close: 'Close'
   create: 'Create'
-  save: 'Save'
 </i18n>
 
 <i18n lang="yaml" locale="de">
 title:
   create: 'Aufgabe hinzufügen'
-  edit: 'Aufgabe bearbeiten'
 
 field:
   title:
@@ -219,27 +213,23 @@ field:
     rule:
       required: 'Der Titel ist erforderlich'
   notes:
-    label: 'Notizen'
+    label: 'Details'
   dueDate:
     label: 'Fälligkeitsdatum'
     hint: 'Optional'
   assignee:
     label: 'Zuständig'
     hint: 'Optional'
-  completed:
-    label: 'Erledigt'
 
 action:
   cancel: 'Abbrechen'
   close: 'Schließen'
   create: 'Erstellen'
-  save: 'Speichern'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
 title:
   create: 'Ajouter une tâche'
-  edit: 'Modifier la tâche'
 
 field:
   title:
@@ -247,27 +237,23 @@ field:
     rule:
       required: 'Le titre est requis'
   notes:
-    label: 'Notes'
+    label: 'Détails'
   dueDate:
     label: 'Date d’échéance'
     hint: 'Facultatif'
   assignee:
     label: 'Assigné à'
     hint: 'Facultatif'
-  completed:
-    label: 'Terminée'
 
 action:
   cancel: 'Annuler'
   close: 'Fermer'
   create: 'Créer'
-  save: 'Enregistrer'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
 title:
   create: 'Dodaj zadanie'
-  edit: 'Edytuj zadanie'
 
 field:
   title:
@@ -275,27 +261,23 @@ field:
     rule:
       required: 'Tytuł jest wymagany'
   notes:
-    label: 'Notatki'
+    label: 'Szczegóły'
   dueDate:
     label: 'Termin'
     hint: 'Opcjonalne'
   assignee:
     label: 'Przypisane do'
     hint: 'Opcjonalne'
-  completed:
-    label: 'Ukończone'
 
 action:
   cancel: 'Anuluj'
   close: 'Zamknij'
   create: 'Utwórz'
-  save: 'Zapisz'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
 title:
   create: 'Přidat úkol'
-  edit: 'Upravit úkol'
 
 field:
   title:
@@ -303,19 +285,16 @@ field:
     rule:
       required: 'Název je povinný'
   notes:
-    label: 'Poznámky'
+    label: 'Podrobnosti'
   dueDate:
     label: 'Termín'
     hint: 'Volitelné'
   assignee:
     label: 'Přiřazeno'
     hint: 'Volitelné'
-  completed:
-    label: 'Dokončeno'
 
 action:
   cancel: 'Zrušit'
   close: 'Zavřít'
   create: 'Vytvořit'
-  save: 'Uložit'
 </i18n>

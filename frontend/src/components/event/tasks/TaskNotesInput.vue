@@ -1,51 +1,43 @@
 <template>
-  <div class="column no-wrap">
-    <q-input
-      ref="inputRef"
-      :model-value="modelValue ?? ''"
-      :label
-      :hint="t('hint')"
-      type="textarea"
-      autogrow
-      outlined
-      rounded
-      class="notes-input"
-      data-test="task-notes-input"
-      @update:model-value="(value) => (modelValue = String(value ?? ''))"
-      @keydown.enter="onEnter"
-    >
-      <template #prepend>
-        <q-icon name="description" />
-      </template>
-    </q-input>
-    <div class="row items-center q-gutter-x-xs q-mt-xs notes-toolbar">
-      <q-btn
-        v-for="option in listOptions"
-        :key="option.kind"
-        :icon="option.icon"
-        :label="option.label"
-        :data-test="`task-notes-${option.kind}`"
-        color="primary"
-        size="sm"
-        flat
-        rounded
-        no-caps
-        @click="applyList(option.kind)"
+  <q-field
+    :model-value="modelValue"
+    :label
+    outlined
+    rounded
+    data-test="task-notes-input"
+    @click="focusFromField"
+  >
+    <template #prepend>
+      <q-icon name="description" />
+    </template>
+
+    <template #control>
+      <editor-content
+        v-if="editor"
+        :editor
+        class="notes-editor task-notes-content full-width"
       />
-    </div>
-  </div>
+    </template>
+
+    <template #append>
+      <task-notes-toolbar
+        v-if="editor"
+        :editor
+      />
+    </template>
+  </q-field>
 </template>
 
 <script lang="ts" setup>
-import { computed, nextTick, useTemplateRef } from 'vue';
+import { onBeforeUnmount, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import type { QInput } from 'quasar';
+import { EditorContent, useEditor } from '@tiptap/vue-3';
+import Placeholder from '@tiptap/extension-placeholder';
 import {
-  LIST_PREFIX,
-  type ListKind,
-  parseLine,
-  setLinePrefix,
-} from '@/utils/taskNotes';
+  notesMarkdown,
+  taskNotesExtensions,
+} from '@/components/event/tasks/taskNotesEditor';
+import TaskNotesToolbar from '@/components/event/tasks/TaskNotesToolbar.vue';
 
 const { label } = defineProps<{
   label: string;
@@ -53,131 +45,107 @@ const { label } = defineProps<{
 
 const modelValue = defineModel<string | null | undefined>();
 
+const emit = defineEmits<{
+  focus: [];
+  blur: [];
+}>();
+
 const { t } = useI18n();
 
-const inputRef = useTemplateRef<QInput>('inputRef');
+// Set by `onUpdate` so the model watcher skips changes the editor made itself.
+let isInternalUpdate = false;
 
-const listOptions = computed<{ kind: ListKind; icon: string; label: string }[]>(
-  () => [
-    {
-      kind: 'checklist',
-      icon: 'checklist',
-      label: t('action.checklist'),
-    },
-    {
-      kind: 'bullets',
-      icon: 'format_list_bulleted',
-      label: t('action.bullets'),
-    },
+const editor = useEditor({
+  extensions: [
+    ...taskNotesExtensions((item) => t('checkboxLabel', { item })),
+    Placeholder.configure({ placeholder: () => t('placeholder') }),
   ],
-);
+  content: modelValue.value ?? '',
+  contentType: 'markdown',
+  onFocus: () => emit('focus'),
+  onBlur: () => emit('blur'),
+  onUpdate: ({ editor }) => {
+    isInternalUpdate = true;
+    modelValue.value = notesMarkdown(editor);
+  },
+});
 
-function textarea(): HTMLTextAreaElement | undefined {
-  return inputRef.value?.getNativeElement() as HTMLTextAreaElement | undefined;
-}
-
-async function write(value: string, caret: number) {
-  modelValue.value = value;
-  await nextTick();
-  const el = textarea();
-  el?.focus();
-  el?.setSelectionRange(caret, caret);
-}
-
-// Toggles the list kind on every line the selection touches.
-function applyList(kind: ListKind) {
-  const value = modelValue.value ?? '';
-  const el = textarea();
-  const start = el?.selectionStart ?? value.length;
-  const end = el?.selectionEnd ?? value.length;
-
-  const from = value.lastIndexOf('\n', start - 1) + 1;
-  const nextBreak = value.indexOf('\n', end);
-  const to = nextBreak === -1 ? value.length : nextBreak;
-
-  const lines = value.slice(from, to).split('\n');
-  const allOfKind = lines.every((line) => parseLine(line).kind === kind);
-  const replaced = lines
-    .map((line) => setLinePrefix(line, allOfKind ? null : kind))
-    .join('\n');
-
-  void write(
-    value.slice(0, from) + replaced + value.slice(to),
-    from + replaced.length,
-  );
-}
-
-// Enter continues a list; Enter on an empty item ends it.
-function onEnter(event: KeyboardEvent) {
-  if (event.shiftKey || event.isComposing) {
+watch(modelValue, (value) => {
+  if (isInternalUpdate) {
+    isInternalUpdate = false;
     return;
   }
+  editor.value?.commands.setContent(value ?? '', {
+    contentType: 'markdown',
+    emitUpdate: false,
+  });
+});
 
-  const el = textarea();
-  const value = modelValue.value ?? '';
-  if (!el || el.selectionStart !== el.selectionEnd) {
-    return;
+// Clicks on the field's padding or icon should still land in the editor.
+function focusFromField(event: MouseEvent) {
+  if (!(event.target as Element).closest('.ProseMirror, .q-menu')) {
+    editor.value?.commands.focus('end');
   }
-
-  const caret = el.selectionStart;
-  const from = value.lastIndexOf('\n', caret - 1) + 1;
-  const parsed = parseLine(value.slice(from, caret));
-  if (parsed.kind === 'text') {
-    return;
-  }
-
-  event.preventDefault();
-
-  if (parsed.text.trim() === '') {
-    void write(value.slice(0, from) + value.slice(caret), from);
-    return;
-  }
-
-  const insert = `\n${LIST_PREFIX[parsed.kind]}`;
-  void write(
-    value.slice(0, caret) + insert + value.slice(caret),
-    caret + insert.length,
-  );
 }
+
+onBeforeUnmount(() => {
+  editor.value?.destroy();
+});
 </script>
 
+<style src="./taskNotesContent.css"></style>
+
 <style scoped>
-.notes-toolbar {
-  margin-left: 4px;
+/* Pin icon and buttons to the first line, not the middle of a long note. */
+:deep(.q-field__prepend),
+:deep(.q-field__append) {
+  align-self: flex-start;
+  height: 56px;
+}
+
+/* Textarea-like: the field grows from the top instead of centring one line. */
+:deep(.q-field__native) {
+  align-items: flex-start;
+}
+
+/* The MD3 theme gives auto-height outlined fields 4px; this tops it up to the
+   16px the single-line fields use. */
+.notes-editor {
+  padding: 12px 0;
+  line-height: 24px;
+}
+
+.notes-editor
+  :deep(.ProseMirror-focused p.is-editor-empty:first-child::before) {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: var(--md3-on-surface-variant);
 }
 </style>
 
 <i18n lang="yaml" locale="en">
-hint: 'Start a line with "- " for a bullet or "- [ ] " for a checklist item'
-action:
-  checklist: 'Checklist'
-  bullets: 'Bullet list'
+placeholder: 'Add details, a list or a checklist…'
+checkboxLabel: 'Checklist item: {item}'
 </i18n>
 
 <i18n lang="yaml" locale="de">
-hint: 'Beginne eine Zeile mit „- “ für einen Aufzählungspunkt oder „- [ ] “ für einen Checklisten-Punkt'
-action:
-  checklist: 'Checkliste'
-  bullets: 'Aufzählung'
+placeholder: 'Details, eine Liste oder eine Checkliste hinzufügen…'
+checkboxLabel: 'Checklisten-Punkt: {item}'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
-hint: 'Commence une ligne par « - » pour une puce ou « - [ ] » pour un élément de checklist'
-action:
-  checklist: 'Checklist'
-  bullets: 'Liste à puces'
+placeholder: 'Ajoute des détails, une liste ou une checklist…'
+checkboxLabel: 'Élément de checklist : {item}'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
-hint: 'Zacznij wiersz od „- ”, aby dodać punktor, lub od „- [ ] ”, aby dodać pozycję listy kontrolnej'
-action:
-  checklist: 'Lista kontrolna'
-  bullets: 'Lista punktowana'
+placeholder: 'Dodaj szczegóły, listę lub listę kontrolną…'
+checkboxLabel: 'Pozycja listy kontrolnej: {item}'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
-hint: 'Začni řádek „- “ pro odrážku nebo „- [ ] “ pro položku kontrolního seznamu'
-action:
-  checklist: 'Kontrolní seznam'
-  bullets: 'Odrážky'
+placeholder: 'Přidej podrobnosti, seznam nebo kontrolní seznam…'
+checkboxLabel: 'Položka kontrolního seznamu: {item}'
 </i18n>

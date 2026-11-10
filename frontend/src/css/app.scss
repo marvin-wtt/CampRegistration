@@ -183,3 +183,12 @@ input[type='number'] {
     grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
   }
 }
+
+// QDate/QTime draw their own MD3 surface, and the MD3 theme pads and colours
+// every QMenu — so a picker in a popup menu showed a second frame around it.
+// Let the picker be the menu's surface; the menu only adds the elevation.
+.q-menu:has(> .q-date, > .q-time) {
+  padding: 0;
+  border-radius: 28px;
+  background: transparent;
+}

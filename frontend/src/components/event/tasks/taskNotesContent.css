@@ -1,0 +1,116 @@
+/* Rendered task notes, shared by the editor and the read-only view. */
+.task-notes-content .ProseMirror {
+  outline: none;
+  word-break: break-word;
+}
+
+.task-notes-content p {
+  margin: 0;
+}
+
+.task-notes-content p + p,
+.task-notes-content p + ul,
+.task-notes-content p + ol,
+.task-notes-content ul + p,
+.task-notes-content ol + p {
+  margin-top: 8px;
+}
+
+.task-notes-content ul,
+.task-notes-content ol {
+  margin: 0;
+  padding-left: 22px;
+}
+
+.task-notes-content a {
+  color: var(--md3-primary);
+}
+
+.task-notes-content code {
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: var(--md3-surface-container-highest);
+  font-size: 0.9em;
+}
+
+.task-notes-content ul[data-type='taskList'] {
+  padding-left: 0;
+  list-style: none;
+}
+
+.task-notes-content ul[data-type='taskList'] ul[data-type='taskList'] {
+  padding-left: 26px;
+}
+
+.task-notes-content ul[data-type='taskList'] > li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.task-notes-content ul[data-type='taskList'] > li > label {
+  flex: 0 0 auto;
+  padding-top: 3px;
+}
+
+/* Drawn with tokens: native checkboxes ignore the theme's dark mode. */
+.task-notes-content ul[data-type='taskList'] input[type='checkbox'] {
+  appearance: none;
+  display: grid;
+  place-content: center;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  border: 2px solid var(--md3-on-surface-variant);
+  border-radius: 2px;
+  background: transparent;
+  cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease;
+}
+
+.task-notes-content ul[data-type='taskList'] input[type='checkbox']:checked {
+  border-color: var(--md3-primary);
+  background: var(--md3-primary);
+}
+
+.task-notes-content
+  ul[data-type='taskList']
+  input[type='checkbox']:checked::after {
+  content: '';
+  width: 10px;
+  height: 5px;
+  border: solid var(--md3-on-primary);
+  border-width: 0 0 2px 2px;
+  transform: translateY(-1px) rotate(-45deg);
+}
+
+.task-notes-content
+  ul[data-type='taskList']
+  input[type='checkbox']:focus-visible {
+  outline: 2px solid var(--md3-primary);
+  outline-offset: 2px;
+}
+
+.task-notes-content ul[data-type='taskList'] > li > div {
+  flex: 1;
+  min-width: 0;
+  text-decoration: line-through;
+  text-decoration-color: transparent;
+  transition:
+    color 200ms ease,
+    text-decoration-color 200ms ease;
+}
+
+.task-notes-content ul[data-type='taskList'] > li[data-checked='true'] > div {
+  color: var(--md3-on-surface-variant);
+  text-decoration-color: currentColor;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .task-notes-content ul[data-type='taskList'] > li > div,
+  .task-notes-content ul[data-type='taskList'] input[type='checkbox'] {
+    transition: none;
+  }
+}
