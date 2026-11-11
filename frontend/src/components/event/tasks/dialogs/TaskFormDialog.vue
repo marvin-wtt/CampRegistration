@@ -165,15 +165,16 @@ async function onOKClick() {
   }
 
   saving.value = true;
-  const created = await taskStore.createData({
-    ...data,
-    notes: data.notes?.trim() || null,
-  });
-  saving.value = false;
-
-  if (created) {
-    onDialogOK();
+  try {
+    await taskStore.createData({
+      ...data,
+      notes: data.notes?.trim() || null,
+    });
+  } finally {
+    saving.value = false;
   }
+
+  onDialogOK();
 }
 </script>
 

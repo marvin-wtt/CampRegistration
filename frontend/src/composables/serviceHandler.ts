@@ -8,6 +8,7 @@ import { useI18n } from 'vue-i18n';
 import { computed, ref } from 'vue';
 import { isAPIServiceError } from '@/services/APIService';
 import { useRoute } from 'vue-router';
+import { asReportedError } from '@/utils/reportedError';
 
 export interface ProgressOptions {
   progress?: QNotifyCreateOptions;
@@ -15,12 +16,25 @@ export interface ProgressOptions {
   error?: QNotifyUpdateOptions;
 }
 
+export interface MutateOptions {
+  // For bulk or slow actions; quick edits show their result in place.
+  progress?: boolean | ProgressOptions;
+}
+
+export interface ServiceHandlerOptions {
+  // Resyncs the data after a failed mutation; reads the current route itself.
+  reload?: () => Promise<unknown>;
+}
+
 export interface ResultOptions {
   success?: QNotifyCreateOptions;
   error?: QNotifyCreateOptions;
 }
 
-export function useServiceHandler<T>(storeName?: string) {
+export function useServiceHandler<T>(
+  storeName?: string,
+  options: ServiceHandlerOptions = {},
+) {
   const { t } = useI18n({
     useScope: 'global',
   });
@@ -46,16 +60,16 @@ export function useServiceHandler<T>(storeName?: string) {
   async function forceFetch(
     fn: () => Promise<T> | Promise<undefined>,
   ): Promise<void> {
-    const token = ++requestToken;
-    await errorOnFailure(fn, token);
-    if (token === requestToken) {
-      needsUpdate.value = false;
-    }
+    await errorOnFailure(fn, ++requestToken);
   }
 
   async function asyncUpdate(fn: () => Promise<unknown>) {
     pendingRequests.value++;
-    await fn().finally(() => pendingRequests.value--);
+    try {
+      await fn();
+    } finally {
+      pendingRequests.value--;
+    }
   }
 
   async function errorOnFailure(
@@ -98,6 +112,8 @@ export function useServiceHandler<T>(storeName?: string) {
     fn: () => Promise<T> | Promise<undefined>,
   ): Promise<void> {
     const token = ++requestToken;
+    // Superseding a first load leaves its loading flag and error to this one.
+    const supersedesLoad = isLoading.value;
     await asyncUpdate(async () => {
       try {
         const result = await fn();
@@ -107,13 +123,61 @@ export function useServiceHandler<T>(storeName?: string) {
         data.value = result;
         error.value = null;
         needsUpdate.value = false;
-      } catch {
+      } catch (err: unknown) {
         if (token !== requestToken) {
           return;
         }
         needsUpdate.value = true;
+        if (supersedesLoad) {
+          error.value = extractErrorText(err);
+        }
+      } finally {
+        if (supersedesLoad && token === requestToken) {
+          isLoading.value = false;
+        }
       }
     });
+  }
+
+  // Runs a write. On failure it reports the error, reloads in the background
+  // (the server may have applied all, some or none of it) and rejects with
+  // the error marked as reported: follow-ups are skipped, nothing shows it
+  // twice. Counts towards requestPending while it runs.
+  async function mutate<R>(
+    operation: string,
+    fn: () => Promise<R>,
+    mutateOptions: MutateOptions = {},
+  ): Promise<R> {
+    const { progress } = mutateOptions;
+    pendingRequests.value++;
+    try {
+      return progress
+        ? await serviceNotifications.withProgressNotification(
+            operation,
+            fn,
+            progress === true ? undefined : progress,
+          )
+        : await fn();
+    } catch (err: unknown) {
+      if (!progress) {
+        serviceNotifications.showErrorNotification(operation, {
+          caption: extractErrorText(err),
+        });
+      }
+      resync();
+      throw asReportedError(err);
+    } finally {
+      pendingRequests.value--;
+    }
+  }
+
+  // Fire and forget: a failing reload leaves the data as it is and stale.
+  function resync() {
+    try {
+      void options.reload?.()?.catch(() => undefined);
+    } catch {
+      needsUpdate.value = true;
+    }
   }
 
   function checkNotNullWithError(
@@ -161,6 +225,7 @@ export function useServiceHandler<T>(storeName?: string) {
     lazyFetch,
     backgroundFetch,
     asyncUpdate,
+    mutate,
     checkNotNullWithError,
     queryParam,
     ...serviceNotifications,
@@ -178,7 +243,13 @@ export function useErrorExtractor() {
     }
 
     if (err.response) {
-      return err.response.data.message ?? err.response.statusText;
+      // The body may be empty or not JSON (e.g. a proxy's error page).
+      const message: unknown = (
+        err.response.data as { message?: unknown } | null | undefined
+      )?.message;
+      return typeof message === 'string' && message.length > 0
+        ? message
+        : err.response.statusText || t('service.unknown');
     }
 
     return t('service.unknown');
@@ -258,8 +329,7 @@ export function useServiceNotifications(storeName?: string) {
     } catch (error: unknown) {
       opt.error.caption = extractErrorText(error);
       notify(opt.error);
-
-      throw error;
+      throw asReportedError(error);
     }
   }
 
@@ -314,8 +384,7 @@ export function useServiceNotifications(storeName?: string) {
     } catch (error: unknown) {
       opt.error.caption = extractErrorText(error);
       quasar.notify(opt.error);
-
-      throw error;
+      throw asReportedError(error);
     }
   }
 

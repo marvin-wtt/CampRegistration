@@ -21,12 +21,14 @@ export const useTaskStore = defineStore('task', () => {
     error,
     reset,
     invalidate,
-    withErrorNotification,
+    mutate,
     lazyFetch,
     backgroundFetch,
     checkNotNullWithError,
     checkNotNullWithNotification,
-  } = useServiceHandler<Task[]>('task');
+  } = useServiceHandler<Task[]>('task', {
+    reload: () => fetchData(undefined, { background: true }),
+  });
 
   authBus.on('logout', () => {
     reset();
@@ -53,65 +55,50 @@ export const useTaskStore = defineStore('task', () => {
   }
 
   // Results show in place (rows appear, move or vanish), so only failures are
-  // notified. Each call reports whether it succeeded so callers can roll back.
-  async function createData(newData: TaskCreateData): Promise<boolean> {
+  // notified; the list then reloads and the call rejects with an already
+  // reported error.
+  async function createData(newData: TaskCreateData): Promise<Task> {
     const eventId = route.params.eventId as string;
 
     checkNotNullWithError(eventId);
 
-    const task = await withErrorNotification('create', () =>
-      api.createTask(eventId, newData),
-    );
-    if (!task) {
-      return false;
-    }
+    const task = await mutate('create', () => api.createTask(eventId, newData));
 
     data.value?.push(task);
-    return true;
+    return task;
   }
 
   async function updateData(
     taskId: string,
     updateData: TaskUpdateData,
-  ): Promise<boolean> {
+  ): Promise<void> {
     const eventId = route.params.eventId as string;
 
     checkNotNullWithError(eventId);
     checkNotNullWithNotification(taskId);
 
-    const task = await withErrorNotification('update', () =>
+    const task = await mutate('update', () =>
       api.updateTask(eventId, taskId, updateData),
     );
-    if (!task) {
-      return false;
-    }
 
     data.value = data.value?.map((value) =>
       value.id === task.id ? task : value,
     );
-    return true;
   }
 
-  async function toggleCompleted(task: Task): Promise<boolean> {
+  async function toggleCompleted(task: Task): Promise<void> {
     return updateData(task.id, { completed: !task.completed });
   }
 
-  async function deleteData(taskId: string): Promise<boolean> {
+  async function deleteData(taskId: string): Promise<void> {
     const eventId = route.params.eventId as string;
 
     checkNotNullWithError(eventId);
     checkNotNullWithNotification(taskId);
 
-    const deleted = await withErrorNotification('delete', async () => {
-      await api.deleteTask(eventId, taskId);
-      return true;
-    });
-    if (!deleted) {
-      return false;
-    }
+    await mutate('delete', () => api.deleteTask(eventId, taskId));
 
     data.value = data.value?.filter((task) => task.id !== taskId);
-    return true;
   }
 
   return {

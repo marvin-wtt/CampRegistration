@@ -21,12 +21,14 @@ export const useChoreStore = defineStore('chore', () => {
     error,
     reset,
     invalidate,
-    withProgressNotification,
+    mutate,
     lazyFetch,
     backgroundFetch,
     checkNotNullWithError,
     checkNotNullWithNotification,
-  } = useServiceHandler<Chore[]>('chore');
+  } = useServiceHandler<Chore[]>('chore', {
+    reload: () => fetchData(undefined, { background: true }),
+  });
 
   authBus.on('logout', () => {
     reset();
@@ -51,46 +53,48 @@ export const useChoreStore = defineStore('chore', () => {
     await (opts?.background ? backgroundFetch(fetcher) : lazyFetch(fetcher));
   }
 
-  async function createData(newData: ChoreCreateData) {
+  // Results show in place, so only failures are notified; the list then
+  // reloads and the call rejects with an already reported error.
+  async function createData(newData: ChoreCreateData): Promise<Chore> {
     const eventId = route.params.eventId as string;
 
     checkNotNullWithError(eventId);
 
-    return withProgressNotification('create', async () => {
-      const chore = await api.createChore(eventId, newData);
+    const chore = await mutate('create', () =>
+      api.createChore(eventId, newData),
+    );
 
-      data.value?.push(chore);
-
-      return chore;
-    });
+    data.value?.push(chore);
+    return chore;
   }
 
-  async function updateData(choreId: string, updateData: ChoreUpdateData) {
+  async function updateData(
+    choreId: string,
+    updateData: ChoreUpdateData,
+  ): Promise<void> {
     const eventId = route.params.eventId as string;
 
     checkNotNullWithError(eventId);
     checkNotNullWithNotification(choreId);
 
-    await withProgressNotification('update', async () => {
-      const chore = await api.updateChore(eventId, choreId, updateData);
+    const chore = await mutate('update', () =>
+      api.updateChore(eventId, choreId, updateData),
+    );
 
-      data.value = data.value?.map((value) =>
-        value.id === chore.id ? chore : value,
-      );
-    });
+    data.value = data.value?.map((value) =>
+      value.id === chore.id ? chore : value,
+    );
   }
 
-  async function deleteData(choreId: string) {
+  async function deleteData(choreId: string): Promise<void> {
     const eventId = route.params.eventId as string;
 
     checkNotNullWithError(eventId);
     checkNotNullWithNotification(choreId);
 
-    await withProgressNotification('delete', async () => {
-      await api.deleteChore(eventId, choreId);
+    await mutate('delete', () => api.deleteChore(eventId, choreId));
 
-      data.value = data.value?.filter((chore) => chore.id !== choreId);
-    });
+    data.value = data.value?.filter((chore) => chore.id !== choreId);
   }
 
   return {

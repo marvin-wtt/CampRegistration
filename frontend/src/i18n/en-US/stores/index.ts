@@ -15,6 +15,7 @@ import newsletterManager from './newsletter-manager';
 import task from './task';
 import chore from './chore';
 import choreAssignment from './chore-assignment';
+import room from './room';
 import organization from './organization';
 import organizationMember from './organization-member';
 import organizationEvents from './organization-events';
@@ -40,6 +41,7 @@ export default {
   task,
   chore,
   choreAssignment,
+  room,
   organization,
   organizationMember,
   organizationEvents,

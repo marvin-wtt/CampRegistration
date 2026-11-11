@@ -31,12 +31,14 @@ export const useChoreAssignmentStore = defineStore('choreAssignment', () => {
     error,
     reset,
     invalidate,
-    withProgressNotification,
+    mutate,
     lazyFetch,
     backgroundFetch,
     checkNotNullWithError,
     checkNotNullWithNotification,
-  } = useServiceHandler<ChoreAssignment[]>('choreAssignment');
+  } = useServiceHandler<ChoreAssignment[]>('choreAssignment', {
+    reload: () => fetchData(undefined, { background: true }),
+  });
 
   authBus.on('logout', () => {
     reset();
@@ -112,100 +114,113 @@ export const useChoreAssignmentStore = defineStore('choreAssignment', () => {
     data.value = list;
   }
 
-  async function createData(newData: ChoreAssignmentCreateData) {
+  // Single changes show in place, so only failures are notified; bulk ones
+  // keep a progress toast. A failure reloads the list and rejects with an
+  // already reported error, so callers' follow-ups are skipped.
+  async function createData(
+    newData: ChoreAssignmentCreateData,
+  ): Promise<ChoreAssignment> {
     const eventId = currentEventId();
 
-    return withProgressNotification('create', async () => {
-      const assignment = await api.createChoreAssignment(eventId, newData);
+    const assignment = await mutate('create', () =>
+      api.createChoreAssignment(eventId, newData),
+    );
 
-      insertSorted(assignment);
-
-      return assignment;
-    });
+    insertSorted(assignment);
+    return assignment;
   }
 
   async function updateData(
     choreAssignmentId: string,
     updateData: ChoreAssignmentUpdateData,
-  ) {
+  ): Promise<void> {
     const eventId = currentEventId();
     checkNotNullWithNotification(choreAssignmentId);
 
-    await withProgressNotification('update', async () => {
-      insertSorted(
-        await api.updateChoreAssignment(eventId, choreAssignmentId, updateData),
-      );
-    });
+    insertSorted(
+      await mutate('update', () =>
+        api.updateChoreAssignment(eventId, choreAssignmentId, updateData),
+      ),
+    );
   }
 
   // e.g. "mark all of today done" — one notification for the whole batch.
   async function setStatusMany(
     choreAssignmentIds: string[],
     status: ChoreAssignmentStatus,
-  ) {
+  ): Promise<void> {
     const eventId = currentEventId();
 
-    await withProgressNotification('update', async () => {
-      const results = await Promise.allSettled(
-        choreAssignmentIds.map((id) =>
-          api.updateChoreAssignment(eventId, id, { status }),
-        ),
-      );
-      // Saved ones must show as saved even when another failed — our own
-      // realtime echo is suppressed, so nothing else would correct them.
-      const failed = results.filter((result) => {
-        if (result.status === 'fulfilled') {
-          replaceLocal(result.value);
+    await mutate(
+      'update',
+      async () => {
+        const results = await Promise.allSettled(
+          choreAssignmentIds.map((id) =>
+            api.updateChoreAssignment(eventId, id, { status }),
+          ),
+        );
+        // A partial failure still throws, so mutate reloads the rest.
+        const failed = results.filter((result) => {
+          if (result.status === 'fulfilled') {
+            replaceLocal(result.value);
+          }
+          return result.status === 'rejected';
+        });
+        if (failed[0]) {
+          throw failed[0].reason;
         }
-        return result.status === 'rejected';
-      });
-      if (failed[0]) {
-        throw failed[0].reason;
-      }
-    });
+      },
+      { progress: true },
+    );
   }
 
-  async function fillData(choreAssignmentId: string) {
+  async function fillData(choreAssignmentId: string): Promise<void> {
     const eventId = currentEventId();
 
-    await withProgressNotification('fill', async () => {
-      replaceLocal(await api.fillChoreAssignment(eventId, choreAssignmentId));
-    });
+    replaceLocal(
+      await mutate('fill', () =>
+        api.fillChoreAssignment(eventId, choreAssignmentId),
+      ),
+    );
   }
 
-  async function deleteData(choreAssignmentId: string) {
+  async function deleteData(choreAssignmentId: string): Promise<void> {
     const eventId = currentEventId();
     checkNotNullWithNotification(choreAssignmentId);
 
-    await withProgressNotification('delete', async () => {
-      await api.deleteChoreAssignment(eventId, choreAssignmentId);
+    await mutate('delete', () =>
+      api.deleteChoreAssignment(eventId, choreAssignmentId),
+    );
 
-      data.value = data.value?.filter(
-        (assignment) => assignment.id !== choreAssignmentId,
-      );
-    });
+    data.value = data.value?.filter(
+      (assignment) => assignment.id !== choreAssignmentId,
+    );
   }
 
   async function planSeries(plan: ChoreSeriesPlanData) {
     const eventId = currentEventId();
 
-    const result = await withProgressNotification('series', () =>
-      api.planChoreSeries(eventId, plan),
+    const result = await mutate(
+      'series',
+      () => api.planChoreSeries(eventId, plan),
+      { progress: true },
     );
-    await reload();
 
+    await reload();
     return result;
   }
 
   async function deleteMany(query: ChoreAssignmentBulkDeleteQuery) {
     const eventId = currentEventId();
 
-    const count = await withProgressNotification('deleteMany', () =>
-      api.deleteChoreAssignments(eventId, query),
+    const result = await mutate(
+      'deleteMany',
+      () => api.deleteChoreAssignments(eventId, query),
+      { progress: true },
     );
-    await reload();
 
-    return count;
+    await reload();
+    return result;
   }
 
   async function removeMember(
@@ -214,11 +229,13 @@ export const useChoreAssignmentStore = defineStore('choreAssignment', () => {
   ) {
     const eventId = currentEventId();
 
-    const result = await withProgressNotification('removePerson', () =>
-      api.removeChoreMember(eventId, registrationId, query),
+    const result = await mutate(
+      'removePerson',
+      () => api.removeChoreMember(eventId, registrationId, query),
+      { progress: true },
     );
-    await reload();
 
+    await reload();
     return result;
   }
 
@@ -226,12 +243,17 @@ export const useChoreAssignmentStore = defineStore('choreAssignment', () => {
     return api.fetchChoreRebalance(currentEventId());
   }
 
-  async function applyRebalance(changes: ChoreRebalanceChange[]) {
+  async function applyRebalance(
+    changes: ChoreRebalanceChange[],
+  ): Promise<void> {
     const eventId = currentEventId();
 
-    await withProgressNotification('rebalance', () =>
-      api.applyChoreRebalance(eventId, { changes }),
+    await mutate(
+      'rebalance',
+      () => api.applyChoreRebalance(eventId, { changes }),
+      { progress: true },
     );
+
     await reload();
   }
 

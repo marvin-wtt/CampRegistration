@@ -280,6 +280,7 @@ import { computed, ref } from 'vue';
 import { useQuasar } from 'quasar';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import { useRegistrationsStore } from '@/stores/registration-store';
+import { useRoomStore } from '@/stores/room-store';
 import type { Roommate, RoomWithRoommates } from '@/types/Room';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import CountryIcon from '@/components/common/localization/CountryIcon.vue';
@@ -296,21 +297,18 @@ import type {
 } from '@camp-registration/common/entities';
 import { useI18n } from 'vue-i18n';
 import { usePermissions } from '@/composables/permissions';
-import { useServiceHandler } from '@/composables/serviceHandler';
-import { useRealtimeCollection } from '@/composables/realtimeCollection';
 import { formatPersonName } from '@/utils/formatters';
 import { useRegistrationHelper } from '@/composables/registrationHelper';
 import { useEventSettings } from '@/composables/eventSettings';
 import { SETTING_KEYS } from '@camp-registration/common/settings';
 import type { RoomPlannerSettings } from '@camp-registration/common/settings';
-import { useAPIService } from '@/services/APIService';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
 const quasar = useQuasar();
 const { t } = useI18n();
-const apiService = useAPIService();
 const eventDetailsStore = useEventDetailsStore();
 const registrationsStore = useRegistrationsStore();
+const roomStore = useRoomStore();
 const registrationHelper = useRegistrationHelper();
 const { can } = usePermissions();
 
@@ -334,46 +332,21 @@ const sortByOptions = computed<
   { label: t('settings.sortBy.option.name'), value: 'name' },
 ]);
 
-const {
-  data,
-  isLoading,
-  error: roomError,
-  invalidate,
-  withProgressNotification,
-  withErrorNotification,
-  lazyFetch,
-  backgroundFetch,
-  queryParam,
-  asyncUpdate,
-  requestPending,
-  checkNotNullWithError,
-} = useServiceHandler<Room[]>();
-
-// React to live room/bed changes pushed from other clients while the planner
-// is open (bed changes arrive as 'room updated' events for the parent room;
-// bulk reorders arrive as one collection-level invalidation).
-useRealtimeCollection<Room>('room', {
-  data,
-  invalidate,
-  reload: () => fetchRooms({ background: true }),
-  fetchOne: (eventId, id) => apiService.fetchRoom(eventId, id),
-});
-
 // Started during setup, not awaited: the stores flag themselves loading before
 // the first render, so the page renders its skeletons instead of an idle frame.
 void registrationsStore.fetchData();
-void fetchRooms();
+void roomStore.fetchData();
 
 const loading = computed<boolean>(() => {
-  return registrationsStore.isLoading || isLoading.value;
+  return registrationsStore.isLoading || roomStore.isLoading;
 });
 
 const error = computed<string | null>(() => {
-  return eventDetailsStore.error ?? registrationsStore.error ?? roomError.value;
+  return eventDetailsStore.error ?? registrationsStore.error ?? roomStore.error;
 });
 
 const updateInProgress = computed<boolean>(() => {
-  return requestPending.value;
+  return roomStore.requestPending;
 });
 
 const locales = computed<string[] | undefined>(() => {
@@ -381,11 +354,11 @@ const locales = computed<string[] | undefined>(() => {
 });
 
 const rooms = computed<RoomWithRoommates[]>(() => {
-  if (!data.value) {
+  if (!roomStore.data) {
     return [];
   }
 
-  return data.value
+  return roomStore.data
     .map(mapResponseRoom)
     .sort((a, b) => a.sortOrder - b.sortOrder);
 });
@@ -436,14 +409,6 @@ const availablePeople = computed<Roommate[]>(() => {
     .map(mapRegistrationRoommate)
     .sort(settings.sortBy === 'name' ? sortByName : sortByAge);
 });
-
-async function fetchRooms(opts?: { background?: boolean }) {
-  const eventId = queryParam('eventId');
-
-  const cid = checkNotNullWithError(eventId);
-  const fetcher = () => apiService.fetchRooms(cid);
-  await (opts?.background ? backgroundFetch(fetcher) : lazyFetch(fetcher));
-}
 
 function addRoom() {
   quasar
@@ -503,83 +468,23 @@ function onBedUpdate(
   void updateBed(room, position, roommate);
 }
 
-async function createRoom(
-  createData: RoomCreateData,
-): Promise<Room | undefined> {
-  const eventId = queryParam('eventId');
-
-  return withProgressNotification('create', async () => {
-    const room = await apiService.createRoom(eventId, createData);
-
-    data.value?.push(room);
-
-    return room;
-  });
+function createRoom(createData: RoomCreateData) {
+  return roomStore.createData(createData);
 }
 
-async function updateRoom(
+function updateRoom(
   room: RoomWithRoommates,
   { capacity, ...updateData }: RoomUpdateData & { capacity: number },
-): Promise<Room | undefined> {
-  const eventId = queryParam('eventId');
-
-  return withProgressNotification('update', async () => {
-    let updatedRoom = await apiService.updateRoom(eventId, room.id, updateData);
-
-    const diff = capacity - room.beds.length;
-    if (diff > 0) {
-      for (let i = 0; i < diff; i++) {
-        await apiService.createBed(eventId, room.id);
-      }
-    } else if (diff < 0) {
-      // Remove empty beds only, starting from the last one
-      const removableBeds = room.beds.filter((bed) => !bed.person).slice(diff);
-      for (const bed of removableBeds) {
-        await apiService.deleteBed(eventId, room.id, bed.id);
-      }
-    }
-
-    if (diff !== 0) {
-      updatedRoom = await apiService.fetchRoom(eventId, room.id);
-    }
-
-    const index = data.value?.findIndex((value) => value.id === room.id);
-    if (index !== undefined && index != -1) {
-      data.value?.splice(index, 1, updatedRoom);
-    }
-
-    return updatedRoom;
-  });
+) {
+  return roomStore.updateData(room.id, updateData, capacity);
 }
 
-async function bulkUpdateRooms(
-  rooms: RoomWithRoommates[],
-): Promise<Room[] | undefined> {
-  const eventId = queryParam('eventId');
-
-  return withProgressNotification('update', async () => {
-    const updatedRooms = await apiService.bulkUpdateRooms(eventId, rooms);
-
-    data.value = data.value?.map((room) => {
-      return updatedRooms.find((r) => r.id === room.id) ?? room;
-    });
-
-    return updatedRooms;
-  });
+function bulkUpdateRooms(rooms: RoomWithRoommates[]) {
+  return roomStore.reorder(rooms);
 }
 
-async function deleteRoom(roomId: string) {
-  const eventId = queryParam('eventId');
-
-  await withProgressNotification('delete', async () => {
-    await apiService.deleteRoom(eventId, roomId);
-
-    // Remove the room from the list
-    const index = data.value?.findIndex((value) => value.id === roomId);
-    if (index !== undefined && index != -1) {
-      data.value?.splice(index, 1);
-    }
-  });
+function deleteRoom(roomId: string) {
+  return roomStore.deleteData(roomId);
 }
 
 async function updateBed(
@@ -587,51 +492,18 @@ async function updateBed(
   position: number,
   person: Roommate | null,
 ) {
-  const eventId = queryParam('eventId');
-  const roomId = room.id;
   const bedId = room.beds[position]?.id;
-  const registrationId = person?.id ?? null;
-
   if (bedId === undefined) {
     return;
   }
 
-  let succeeded = false;
-  await asyncUpdate(() => {
-    return withErrorNotification('update-bed', async () => {
-      const updatedBed = await apiService.updateBed(
-        eventId,
-        roomId,
-        bedId,
-        registrationId,
-      );
-
-      // Invalidate the registration store to ensure the data is fresh
-      // The registration store will contains the room as well
-      registrationsStore.invalidate();
-
-      succeeded = true;
-      return updatedBed;
-    });
-  });
-
-  // withErrorNotification swallows request failures, so only update the local
-  // state once the request actually succeeded — otherwise a rejected request
-  // would leave a phantom assignment in the UI that was never persisted.
-  if (!succeeded) {
-    return;
+  try {
+    await roomStore.updateBed(room.id, bedId, person?.id ?? null);
+  } finally {
+    // The registration store holds each person's room as well — invalidated
+    // even on failure, as the server may have applied it.
+    registrationsStore.invalidate();
   }
-
-  data.value = data.value!.map((r) => {
-    if (r.id !== roomId) {
-      return r;
-    }
-
-    const updatedRoom = { ...r };
-    updatedRoom.beds[position] = { id: bedId, registrationId };
-
-    return updatedRoom;
-  });
 }
 
 function mapRegistrationRoommate(registration: Registration): Roommate {
@@ -853,28 +725,6 @@ settings:
 empty:
   title: 'No rooms yet'
   message: 'Create rooms to start assigning people to beds.'
-
-request:
-  fetch:
-    error: 'Failed to fetch rooms'
-  create:
-    progress: 'Creating room...'
-    success: 'Room created successfully'
-    error: 'Failed to create room'
-    invalid: 'Invalid event id'
-  update:
-    progress: 'Updating room...'
-    success: 'Room updated successfully'
-    error: 'Failed to update room'
-    invalid: 'Invalid room id or event id'
-  update-bed:
-    error: 'Failed to update bed'
-    invalid: 'Invalid bed id or event id'
-  delete:
-    progress: 'Deleting room...'
-    success: 'Room deleted successfully'
-    error: 'Failed to delete room'
-    invalid: 'Invalid room id or event id'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -910,28 +760,6 @@ settings:
 empty:
   title: 'Noch keine Zimmer'
   message: 'Erstelle Zimmer, um Personen Betten zuzuweisen.'
-
-request:
-  fetch:
-    error: 'Fehler beim Abrufen der Zimmer'
-  create:
-    progress: 'Zimmer wird erstellt...'
-    success: 'Zimmer erfolgreich erstellt'
-    error: 'Fehler beim Erstellen des Zimmers'
-    invalid: 'Ungültige Veranstaltungs-ID'
-  update:
-    progress: 'Zimmer wird aktualisiert...'
-    success: 'Zimmer erfolgreich aktualisiert'
-    error: 'Fehler beim Aktualisieren des Zimmers'
-    invalid: 'Ungültige Zimmer-ID oder Veranstaltungs-ID'
-  update-bed:
-    error: 'Fehler beim Aktualisieren des Betts'
-    invalid: 'Ungültige Bett-ID oder Veranstaltungs-ID'
-  delete:
-    progress: 'Zimmer wird gelöscht...'
-    success: 'Zimmer erfolgreich gelöscht'
-    error: 'Fehler beim Löschen des Zimmers'
-    invalid: 'Ungültige Zimmer-ID oder Veranstaltungs-ID'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -967,31 +795,6 @@ settings:
 empty:
   title: 'Pas encore de chambres'
   message: 'Créez des chambres pour commencer à attribuer des lits.'
-
-request:
-  fetch:
-    error: 'Échec de la récupération des chambres'
-  create:
-    progress: 'Création de la chambre en cours...'
-    success: 'Chambre créée avec succès'
-    error: 'Impossible de créer la chambre'
-    invalid: "ID de l'événement invalide"
-
-  update:
-    progress: 'Mise à jour de la chambre en cours...'
-    success: 'Chambre mise à jour avec succès'
-    error: 'Impossible de mettre à jour la chambre'
-    invalid: "ID de la chambre ou de l'événement invalide"
-
-  update-bed:
-    error: 'Impossible de mettre à jour le lit'
-    invalid: "ID du lit ou de l'événement invalide"
-
-  delete:
-    progress: 'Suppression de la chambre en cours...'
-    success: 'Chambre supprimée avec succès'
-    error: 'Impossible de supprimer la chambre'
-    invalid: "ID de la chambre ou de l'événement invalide"
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -1027,28 +830,6 @@ settings:
 empty:
   title: 'Brak pokoi'
   message: 'Utwórz pokoje, aby zacząć przydzielać łóżka.'
-
-request:
-  fetch:
-    error: 'Nie udało się pobrać pokoi'
-  create:
-    progress: 'Tworzenie pokoju...'
-    success: 'Pokój został utworzony'
-    error: 'Nie udało się utworzyć pokoju'
-    invalid: 'Nieprawidłowy identyfikator wydarzenia'
-  update:
-    progress: 'Aktualizowanie pokoju...'
-    success: 'Pokój został zaktualizowany'
-    error: 'Nie udało się zaktualizować pokoju'
-    invalid: 'Nieprawidłowy identyfikator pokoju lub wydarzenia'
-  update-bed:
-    error: 'Nie udało się zaktualizować łóżka'
-    invalid: 'Nieprawidłowy identyfikator łóżka lub wydarzenia'
-  delete:
-    progress: 'Usuwanie pokoju...'
-    success: 'Pokój został usunięty'
-    error: 'Nie udało się usunąć pokoju'
-    invalid: 'Nieprawidłowy identyfikator pokoju lub wydarzenia'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -1084,26 +865,4 @@ settings:
 empty:
   title: 'Zatím žádné pokoje'
   message: 'Vytvořte pokoje a začněte přiřazovat lůžka.'
-
-request:
-  fetch:
-    error: 'Nepodařilo se načíst pokoje'
-  create:
-    progress: 'Vytváření pokoje...'
-    success: 'Pokoj byl úspěšně vytvořen'
-    error: 'Nepodařilo se vytvořit pokoj'
-    invalid: 'Neplatné ID akce'
-  update:
-    progress: 'Aktualizace pokoje...'
-    success: 'Pokoj byl úspěšně aktualizován'
-    error: 'Nepodařilo se aktualizovat pokoj'
-    invalid: 'Neplatné ID pokoje nebo akce'
-  update-bed:
-    error: 'Nepodařilo se aktualizovat lůžko'
-    invalid: 'Neplatné ID lůžka nebo akce'
-  delete:
-    progress: 'Odstraňování pokoje...'
-    success: 'Pokoj byl úspěšně odstraněn'
-    error: 'Nepodařilo se odstranit pokoj'
-    invalid: 'Neplatné ID pokoje nebo akce'
 </i18n>

@@ -23,6 +23,7 @@ export default defineConfig((ctx) => {
       'notify-defaults',
       'navigation-progress',
       'chunk-reload',
+      'reported-errors',
     ],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#css

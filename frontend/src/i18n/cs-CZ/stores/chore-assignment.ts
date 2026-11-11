@@ -3,8 +3,6 @@ export default {
     error: 'Nepodařilo se načíst přiřazení služeb',
   },
   create: {
-    progress: 'Vytváření přiřazení služby...',
-    success: 'Přiřazení služby bylo úspěšně vytvořeno',
     error: 'Nepodařilo se vytvořit přiřazení služby',
   },
   update: {
@@ -14,14 +12,10 @@ export default {
     invalid: 'Neplatné ID akce',
   },
   delete: {
-    progress: 'Odstraňování přiřazení služby...',
-    success: 'Přiřazení služby bylo úspěšně odstraněno',
     error: 'Nepodařilo se odstranit přiřazení služby',
     invalid: 'Neplatné ID akce',
   },
   fill: {
-    progress: 'Obsazování volných míst...',
-    success: 'Volná místa obsazena',
     error: 'Nepodařilo se obsadit volná místa',
   },
   series: {

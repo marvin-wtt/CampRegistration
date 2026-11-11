@@ -3,8 +3,6 @@ export default {
     error: 'Fehler beim Abrufen der Diensteinsätze',
   },
   create: {
-    progress: 'Diensteinsatz wird erstellt...',
-    success: 'Diensteinsatz erfolgreich erstellt',
     error: 'Fehler beim Erstellen des Diensteinsatzes',
   },
   update: {
@@ -14,14 +12,10 @@ export default {
     invalid: 'Ungültige Veranstaltungs-ID',
   },
   delete: {
-    progress: 'Diensteinsatz wird gelöscht...',
-    success: 'Diensteinsatz erfolgreich gelöscht',
     error: 'Fehler beim Löschen des Diensteinsatzes',
     invalid: 'Ungültige Veranstaltungs-ID',
   },
   fill: {
-    progress: 'Offene Plätze werden besetzt...',
-    success: 'Offene Plätze besetzt',
     error: 'Fehler beim Besetzen der offenen Plätze',
   },
   series: {
