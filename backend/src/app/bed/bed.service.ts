@@ -1,5 +1,7 @@
 import { BaseService } from '#core/base/BaseService';
 import { injectable } from 'inversify';
+import httpStatus from 'http-status';
+import ApiError from '#core/router/ApiError';
 
 @injectable()
 export class BedService extends BaseService {
@@ -30,11 +32,21 @@ export class BedService extends BaseService {
     });
   }
 
+  // Occupied beds are kept; unassign the person first.
   async deleteBedById(id: string) {
-    return this.prisma.bed.delete({
-      where: {
-        id,
-      },
+    const { count } = await this.prisma.bed.deleteMany({
+      where: { id, registrationId: null },
     });
+    if (count > 0) {
+      return;
+    }
+    const bed = await this.prisma.bed.findUnique({ where: { id } });
+    if (bed) {
+      throw new ApiError(
+        httpStatus.CONFLICT,
+        'An occupied bed cannot be removed',
+      );
+    }
+    throw new ApiError(httpStatus.NOT_FOUND, 'Bed not found');
   }
 }

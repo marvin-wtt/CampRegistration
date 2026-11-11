@@ -315,6 +315,25 @@ describe('/api/v1/events/:eventId/rooms/:roomId/beds', () => {
       },
     );
 
+    it('should respond with `409` status code when the bed is occupied', async () => {
+      const { event, accessToken } = await createEventWithManagerAndToken();
+      const room = await createRoomWithEvent(event);
+      const registration = await createRegistration(event);
+      const bed = await BedFactory.create({
+        room: { connect: { id: room.id } },
+        registration: { connect: { id: registration.id } },
+      });
+
+      await request()
+        .delete(`/api/v1/events/${event.id}/rooms/${room.id}/beds/${bed.id}`)
+        .send()
+        .auth(accessToken, { type: 'bearer' })
+        .expect(409);
+
+      const remaining = await prisma.bed.findUnique({ where: { id: bed.id } });
+      expect(remaining?.registrationId).toBe(registration.id);
+    });
+
     it('should respond with `403` status code when user is not event manager', async () => {
       const event = await EventFactory.create();
       const room = await createRoomWithEvent(event);

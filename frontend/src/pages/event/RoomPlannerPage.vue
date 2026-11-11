@@ -441,8 +441,10 @@ function editRoom(room: RoomWithRoommates): void {
         locales: locales.value,
       },
     })
-    .onOk((payload: RoomUpdateData & { capacity: number }) => {
-      void updateRoom(room, payload);
+    .onOk(({ capacity, ...payload }: RoomUpdateData) => {
+      // An unchanged count is stale if beds changed elsewhere meanwhile.
+      const resized = capacity !== undefined && capacity !== room.beds.length;
+      void updateRoom(room, resized ? { ...payload, capacity } : payload);
     });
 }
 
@@ -472,11 +474,8 @@ function createRoom(createData: RoomCreateData) {
   return roomStore.createData(createData);
 }
 
-function updateRoom(
-  room: RoomWithRoommates,
-  { capacity, ...updateData }: RoomUpdateData & { capacity: number },
-) {
-  return roomStore.updateData(room.id, updateData, capacity);
+function updateRoom(room: RoomWithRoommates, updateData: RoomUpdateData) {
+  return roomStore.updateData(room.id, updateData);
 }
 
 function bulkUpdateRooms(rooms: RoomWithRoommates[]) {

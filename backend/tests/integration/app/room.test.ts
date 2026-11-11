@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  BedFactory,
   EventFactory,
   EventManagerFactory,
+  RegistrationFactory,
   RoomFactory,
   UserFactory,
 } from '../../../prisma/factories/index.js';
@@ -10,6 +12,7 @@ import prisma from '../utils/prisma.js';
 import { generateAccessToken } from './utils/token.js';
 import { Event, Room } from '#generated/prisma/client.js';
 import { ulid } from 'ulidx';
+import { ulid as monotonicUlid } from '#utils/ulid';
 
 describe('/api/v1/events/:eventId/rooms/', () => {
   const createEventWithManagerAndToken = async (role = 'DIRECTOR') => {
@@ -397,6 +400,98 @@ describe('/api/v1/events/:eventId/rooms/', () => {
         }
       },
     );
+
+    describe('capacity', () => {
+      const createBeds = async (room: Room, occupied: boolean[]) => {
+        const beds = [];
+        for (const isOccupied of occupied) {
+          const registration = isOccupied
+            ? await RegistrationFactory.create({
+                event: { connect: { id: room.eventId } },
+              })
+            : undefined;
+          beds.push(
+            await BedFactory.create({
+              id: monotonicUlid(),
+              room: { connect: { id: room.id } },
+              ...(registration && {
+                registration: { connect: { id: registration.id } },
+              }),
+            }),
+          );
+        }
+        return beds;
+      };
+
+      it('should add beds when the capacity grows', async () => {
+        const { event, accessToken } = await createEventWithManagerAndToken();
+        const room = await createRoomWithEvent(event);
+        await createBeds(room, [true]);
+
+        const { body } = await request()
+          .patch(`/api/v1/events/${event.id}/rooms/${room.id}`)
+          .send({ capacity: 3 })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        expect(body.data.beds).toHaveLength(3);
+        expect(await prisma.bed.count({ where: { roomId: room.id } })).toBe(3);
+      });
+
+      it('should remove the last empty beds when the capacity shrinks', async () => {
+        const { event, accessToken } = await createEventWithManagerAndToken();
+        const room = await createRoomWithEvent(event);
+        const [first, occupied] = await createBeds(room, [false, true, false]);
+
+        const { body } = await request()
+          .patch(`/api/v1/events/${event.id}/rooms/${room.id}`)
+          .send({ capacity: 2 })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(200);
+
+        expect(body.data.beds.map((bed: { id: string }) => bed.id)).toEqual([
+          first.id,
+          occupied.id,
+        ]);
+      });
+
+      it('should respond with `409` and change nothing when occupied beds would be removed', async () => {
+        const { event, accessToken } = await createEventWithManagerAndToken();
+        const room = await createRoomWithEvent(event, { name: 'Before' });
+        await createBeds(room, [true, true, false]);
+
+        await request()
+          .patch(`/api/v1/events/${event.id}/rooms/${room.id}`)
+          .send({ name: 'After', capacity: 1 })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(409);
+
+        expect(await prisma.bed.count({ where: { roomId: room.id } })).toBe(3);
+        expect(
+          await prisma.bed.count({
+            where: { roomId: room.id, registrationId: { not: null } },
+          }),
+        ).toBe(2);
+        const unchanged = await prisma.room.findUnique({
+          where: { id: room.id },
+        });
+        expect(unchanged?.name).toBe('Before');
+      });
+
+      it.each([0, -1, 1.5])(
+        'should respond with `400` when capacity is %s',
+        async (capacity) => {
+          const { event, accessToken } = await createEventWithManagerAndToken();
+          const room = await createRoomWithEvent(event);
+
+          await request()
+            .patch(`/api/v1/events/${event.id}/rooms/${room.id}`)
+            .send({ capacity })
+            .auth(accessToken, { type: 'bearer' })
+            .expect(400);
+        },
+      );
+    });
 
     it('should respond with `200` status code when name is translated', async () => {
       const { event, accessToken } = await createEventWithManagerAndToken();

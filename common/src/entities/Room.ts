@@ -12,7 +12,9 @@ export type RoomCreateData = Pick<Room, 'name'> & {
   capacity: number;
 };
 
-export type RoomUpdateData = Partial<Pick<Room, 'name' | 'sortOrder'>>;
+export type RoomUpdateData = Partial<
+  Pick<Room, 'name' | 'sortOrder'> & { capacity: number }
+>;
 
 export interface RoomBulkUpdateData {
   rooms: (Pick<Room, 'id'> & Partial<Pick<Room, 'name' | 'sortOrder'>>)[];

@@ -49,14 +49,14 @@ export class RoomController extends BaseController {
     const event = req.modelOrFail('event');
     const room = req.modelOrFail('room');
     const {
-      body: { name, sortOrder },
+      body: { name, sortOrder, capacity },
     } = await req.validate(validator.update);
 
-    const updatedRoom = await this.roomService.updateRoomById(
-      room.id,
+    const updatedRoom = await this.roomService.updateRoomById(room.id, {
       name,
+      capacity,
       sortOrder,
-    );
+    });
 
     void this.realtimeService.emit(event.id, 'room', updatedRoom.id, 'updated');
 

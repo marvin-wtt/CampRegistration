@@ -6,6 +6,9 @@ import type {
   RoomBulkUpdateData,
 } from '@camp-registration/common/entities';
 
+// Keeps one resize to a single small insert.
+const MAX_BEDS = 100;
+
 const show = z.object({
   params: z.object({
     eventId: z.ulid(),
@@ -25,7 +28,7 @@ const store = z.object({
   }),
   body: z.object({
     name: translatedValue(z.string()),
-    capacity: z.number().int().positive().default(1),
+    capacity: z.number().int().positive().max(MAX_BEDS).default(1),
   }) satisfies ZodType<RoomCreateData>,
 });
 
@@ -38,6 +41,7 @@ const update = z.object({
     .object({
       name: translatedValue(z.string()),
       sortOrder: z.number(),
+      capacity: z.number().int().positive().max(MAX_BEDS),
     })
     .partial() satisfies ZodType<RoomUpdateData>,
 });

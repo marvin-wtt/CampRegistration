@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
-import { useI18n } from 'vue-i18n';
 import { useAPIService } from '@/services/APIService';
 import { useCollection, useRouteKey } from '@/composables/resource';
 import {
@@ -42,7 +41,6 @@ function withBed(
 // toast; assigning a bed shows in place and only reports failures.
 export const useRoomStore = defineStore('room', () => {
   const api = useAPIService();
-  const { t } = useI18n({ useScope: 'global' });
   const rooms = useCollection<Room>({
     name: 'room',
     key: useRouteKey('eventId'),
@@ -70,45 +68,16 @@ export const useRoomStore = defineStore('room', () => {
     );
   }
 
-  // Several requests: if one fails midway, the reload shows what was saved.
-  // Shrinking removes empty beds only, starting from the last one.
+  // Capacity changes are applied atomically by the backend, which refuses to
+  // remove occupied beds.
   function updateData(
     roomId: string,
     updateData: RoomUpdateData,
-    capacity?: number,
   ): Promise<Room> {
-    const beds = rooms.data.value?.find((room) => room.id === roomId)?.beds;
-    if (capacity !== undefined && !beds) {
-      // Without the beds there is no telling which to add or remove.
-      return rooms.mutate('update', () =>
-        Promise.reject(new Error(t('service.notLoaded'))),
-      );
-    }
-    const diff = capacity === undefined || !beds ? 0 : capacity - beds.length;
-    const add = Math.max(diff, 0);
-    const removeBedIds =
-      diff < 0
-        ? (beds ?? [])
-            .filter((bed) => bed.registrationId === null)
-            .slice(diff)
-            .map((bed) => bed.id)
-        : [];
-
     return rooms.mutate(
       'update',
-      async (eventId) => {
-        const room = await api.updateRoom(eventId, roomId, updateData);
-        for (let i = 0; i < add; i++) {
-          await api.createBed(eventId, roomId);
-        }
-        for (const bedId of removeBedIds) {
-          await api.deleteBed(eventId, roomId, bedId);
-        }
-        return add > 0 || removeBedIds.length > 0
-          ? api.fetchRoom(eventId, roomId)
-          : room;
-      },
-      { feedback: 'progress', apply: replaceById, multiWrite: true },
+      (eventId) => api.updateRoom(eventId, roomId, updateData),
+      { feedback: 'progress', apply: replaceById },
     );
   }
 
