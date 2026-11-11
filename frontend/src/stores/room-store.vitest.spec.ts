@@ -16,9 +16,7 @@ const mocks = vi.hoisted(() => ({
     updateRoom: vi.fn(),
     bulkUpdateRooms: vi.fn(),
     deleteRoom: vi.fn(),
-    createBed: vi.fn(),
     updateBed: vi.fn(),
-    deleteBed: vi.fn(),
   },
   notify: vi.fn(),
   realtime: undefined as ((event: RealtimeEvent) => void) | undefined,
@@ -148,47 +146,22 @@ describe('room store', () => {
     expect(store.requestPending).toBe(false);
   });
 
-  it('shrinks a room by its last empty beds, never an occupied one', async () => {
-    const store = await loadedStore([
-      room('a', [
-        ['bed-1', null],
-        ['bed-2', 'reg-1'],
-        ['bed-3', null],
-      ]),
-    ]);
-    mocks.api.updateRoom.mockResolvedValueOnce(room('a', []));
-    mocks.api.fetchRoom.mockResolvedValueOnce(
-      room('a', [
-        ['bed-1', null],
-        ['bed-2', 'reg-1'],
-      ]),
-    );
-
-    await store.updateData('a', { name: 'A' }, 2);
-
-    expect(mocks.api.createBed).not.toHaveBeenCalled();
-    expect(mocks.api.deleteBed).toHaveBeenCalledOnce();
-    expect(mocks.api.deleteBed).toHaveBeenCalledWith('event-1', 'a', 'bed-3');
-    expect(store.data![0]!.beds.map((b) => b.id)).toEqual(['bed-1', 'bed-2']);
-  });
-
-  it('reloads what was saved when a capacity change fails midway', async () => {
+  it('sends a capacity change as a single room update', async () => {
     const store = await loadedStore([room('a', [['bed-1', null]])]);
-    mocks.api.updateRoom.mockResolvedValueOnce(room('a', []));
-    mocks.api.createBed
-      .mockResolvedValueOnce({})
-      .mockRejectedValueOnce(new Error('offline'));
-    mocks.api.fetchRooms.mockResolvedValueOnce([
+    mocks.api.updateRoom.mockResolvedValueOnce(
       room('a', [
         ['bed-1', null],
         ['bed-2', null],
       ]),
-    ]);
+    );
 
-    await expect(store.updateData('a', {}, 3)).rejects.toThrow('offline');
-    await flushPromises();
+    await store.updateData('a', { name: 'A', capacity: 2 });
 
-    expect(store.data![0]!.beds).toHaveLength(2);
+    expect(mocks.api.updateRoom).toHaveBeenCalledWith('event-1', 'a', {
+      name: 'A',
+      capacity: 2,
+    });
+    expect(store.data![0]!.beds.map((b) => b.id)).toEqual(['bed-1', 'bed-2']);
   });
 
   it('applies live updates while no page shows the rooms', async () => {

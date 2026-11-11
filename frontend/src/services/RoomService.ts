@@ -1,6 +1,5 @@
 import { api } from '@/services/api';
 import type {
-  Bed,
   Room,
   RoomCreateData,
   RoomUpdateData,
@@ -60,12 +59,6 @@ export function useRoomService() {
     await api.delete(`events/${eventId}/rooms/${id}/`);
   }
 
-  async function createBed(eventId: string, roomId: string): Promise<Bed> {
-    const response = await api.post(`events/${eventId}/rooms/${roomId}/beds/`);
-
-    return response?.data?.data;
-  }
-
   async function updateBed(
     eventId: string,
     roomId: string,
@@ -77,14 +70,6 @@ export function useRoomService() {
     });
   }
 
-  async function deleteBed(
-    eventId: string,
-    roomId: string,
-    bedId: string,
-  ): Promise<void> {
-    await api.delete(`events/${eventId}/rooms/${roomId}/beds/${bedId}/`);
-  }
-
   return {
     fetchRooms,
     bulkUpdateRooms,
@@ -92,8 +77,6 @@ export function useRoomService() {
     createRoom,
     updateRoom,
     deleteRoom,
-    createBed,
     updateBed,
-    deleteBed,
   };
 }
