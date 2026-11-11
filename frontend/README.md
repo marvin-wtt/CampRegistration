@@ -18,7 +18,7 @@ register for a youth camp and lets counselors manage the camp.
 
 ## Prerequisites
 
-- Node.js `>=22 <25`
+- Node.js `>=24`
 - A running [backend](../backend) instance for the API
 
 ## Setup

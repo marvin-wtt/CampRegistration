@@ -111,7 +111,7 @@ jobs:
 
     strategy:
       matrix:
-        node: [22, 24]
+        node: [24, 26]
 
     container:
       image: node:${{ matrix.node }}-bookworm
@@ -209,7 +209,7 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
 
     container:
-      image: mcr.microsoft.com/playwright:v1.63.0-noble
+      image: mcr.microsoft.com/playwright:v1.65.0-noble
       # Chromium needs more shared memory than the container default
       options: --ipc=host
 
@@ -479,7 +479,7 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
 
     container:
-      image: mcr.microsoft.com/playwright:v1.63.0-noble
+      image: mcr.microsoft.com/playwright:v1.65.0-noble
       # Chromium needs more shared memory than the container default
       options: --ipc=host
 

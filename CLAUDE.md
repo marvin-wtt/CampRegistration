@@ -41,7 +41,7 @@ npm run format --workspace backend
 npm run test:unit --workspace backend -- run tests/unit/path/to/test.ts
 # Single test file (integration) — `test:int` doesn't load `.env.test`, so call
 # vitest through dotenv; the suite prints only at the end when not in a terminal
-npm exec --workspace backend -- dotenv -e .env.test -- vitest -c ./vitest.config.integration.ts run tests/integration/path/to/test.ts
+npm exec --workspace backend -- dotenv run -f .env.test -- vitest -c ./vitest.config.integration.ts run tests/integration/path/to/test.ts
 
 # Database
 npm run db:migrate --workspace backend               # Apply Prisma migrations

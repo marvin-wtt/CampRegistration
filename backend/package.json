@@ -50,7 +50,7 @@
     "directory": "backend"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=24"
   },
   "imports": {
     "#app/*": "./src/app/*.js",

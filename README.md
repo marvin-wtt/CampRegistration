@@ -21,7 +21,7 @@ monorepo with four packages:
 
 ## Prerequisites
 
-- Node.js `>=22 <25`
+- Node.js `>=24`
 - npm 10+
 - MySQL >= 8.0.1 or MariaDB >= 10.6 (for the backend) — see
   [Local Services](#local-services) for a Docker setup
