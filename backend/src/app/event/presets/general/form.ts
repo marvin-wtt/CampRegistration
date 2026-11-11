@@ -208,23 +208,16 @@ export default {
             default:
               'I have read the [General Terms and Conditions]({_file.toc}) and agree to them.',
           },
-          correctAnswer: true,
-          isRequired: true,
-          validators: [
-            {
-              type: 'expression',
-              text: {
-                en: 'You must agree to our terms and conditions in order to participate!',
-                de: 'Du musst unseren AGB zustimmen, um teilnehmen zu können!',
-                fr: 'Tu dois accepter nos conditions générales pour pouvoir participer !',
-                pl: 'Aby wziąć udział, musisz zaakceptować nasze warunki!',
-                cs: 'Pro účast musíš souhlasit s našimi podmínkami!',
-                default:
-                  'You must agree to our terms and conditions in order to participate!',
-              },
-              expression: '{consent_general_terms_and_conditions} = true',
-            },
-          ],
+          requireTrue: true,
+          requireTrueErrorText: {
+            en: 'You must agree to our terms and conditions in order to participate!',
+            de: 'Du musst unseren AGB zustimmen, um teilnehmen zu können!',
+            fr: 'Tu dois accepter nos conditions générales pour pouvoir participer !',
+            pl: 'Aby wziąć udział, musisz zaakceptować nasze warunki!',
+            cs: 'Pro účast musíš souhlasit s našimi podmínkami!',
+            default:
+              'You must agree to our terms and conditions in order to participate!',
+          },
         },
         {
           type: 'boolean',
