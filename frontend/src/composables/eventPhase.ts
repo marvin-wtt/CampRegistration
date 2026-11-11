@@ -46,10 +46,7 @@ export function eventPhaseOf(event: Event, now = Date.now()): EventPhase {
     case 'upcoming':
       return 'setup';
     case 'closed':
-      // Without a registration window the event was never opened.
-      return event.registrationOpensAt || event.registrationClosesAt
-        ? 'preparation'
-        : 'setup';
+      return 'preparation';
   }
 }
 

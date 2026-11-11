@@ -55,17 +55,13 @@ export class TaskController extends BaseController {
     const event = req.modelOrFail('event');
     const existingTask = req.modelOrFail('task');
 
-    const task = await this.taskService.updateTaskById(
-      event.id,
-      existingTask.id,
-      {
-        title: body.title,
-        notes: body.notes,
-        dueDate: body.dueDate,
-        completed: body.completed,
-        assigneeId: body.assigneeId,
-      },
-    );
+    const task = await this.taskService.updateTaskById(event.id, existingTask, {
+      title: body.title,
+      notes: body.notes,
+      dueDate: body.dueDate,
+      completed: body.completed,
+      assigneeId: body.assigneeId,
+    });
 
     void this.realtimeService.emit(event.id, 'task', task.id, 'updated');
 

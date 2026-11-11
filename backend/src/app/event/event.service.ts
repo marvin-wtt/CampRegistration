@@ -140,19 +140,24 @@ export class EventService extends BaseService {
 
   /**
    * Build the registration-status filter as date conditions on the
-   * registration window, mirroring the shared status derivation.
+   * registration window, mirroring `eventRegistrationStatus`. Without a window,
+   * `startAt` (local digits) is compared as UTC — off by the event's offset
+   * around its start, which is fine for a filter.
    */
   private eventStatusWhere(
     status: EventRegistrationStatusFilter,
     now: Date,
   ): Prisma.EventWhereInput {
+    const noWindow = { registrationOpensAt: null, registrationClosesAt: null };
+
     switch (status) {
       case 'upcoming':
         return {
-          AND: [
-            { registrationOpensAt: { gt: now } },
-            // Check for invariant where close is before open
+          OR: [
+            { ...noWindow, startAt: { gt: now } },
             {
+              registrationOpensAt: { gt: now },
+              // Check for invariant where close is before open
               OR: [
                 { registrationClosesAt: null },
                 { registrationClosesAt: { gt: now } },
@@ -163,7 +168,7 @@ export class EventService extends BaseService {
       case 'closed':
         return {
           OR: [
-            { registrationOpensAt: null, registrationClosesAt: null },
+            { ...noWindow, startAt: { lte: now } },
             { registrationClosesAt: { lte: now } },
           ],
         };

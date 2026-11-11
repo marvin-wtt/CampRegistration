@@ -46,4 +46,13 @@ describe('eventPhaseOf', () => {
     expect(eventPhaseOf(open, at('2026-08-10T06:00:00Z'))).toBe('running');
     expect(eventPhaseOf(open, at('2026-08-09T06:00:00Z'))).toBe('registration');
   });
+
+  it('is in setup before registration opens, preparation after it closes', () => {
+    const before = at('2026-08-01T00:00:00Z');
+
+    expect(
+      eventPhaseOf(event({ registrationStatus: 'upcoming' }), before),
+    ).toBe('setup');
+    expect(eventPhaseOf(event(), before)).toBe('preparation');
+  });
 });

@@ -622,11 +622,14 @@ model Task {
   completed  Boolean @default(false)
   assigneeId String? @map("assignee_id") @db.Char(26)
 
+  reminderSentAt DateTime? @map("reminder_sent_at")
+
   event    Event         @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "tasks_event_id_foreign")
   assignee EventManager? @relation(fields: [assigneeId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "tasks_assignee_id_foreign")
 
   @@index([eventId], map: "tasks_event_id_foreign")
   @@index([assigneeId], map: "tasks_assignee_id_foreign")
+  @@index([dueDate], map: "tasks_due_date_index")
   @@map("tasks")
 }
 

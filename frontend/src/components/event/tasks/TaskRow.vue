@@ -8,10 +8,10 @@
       avatar
       class="task-checkbox"
     >
-      <q-checkbox
-        :model-value="task.completed"
+      <task-status-toggle
+        :completed="task.completed"
         :disable="!canUpdate"
-        @update:model-value="emit('toggle')"
+        @toggle="emit('toggle')"
       />
     </q-item-section>
 
@@ -26,8 +26,21 @@
         >
           {{ task.title }}
         </span>
+        <span
+          v-if="progress"
+          class="checklist-progress row items-center no-wrap"
+          :class="{
+            'checklist-progress--done': progress.done === progress.total,
+          }"
+        >
+          <q-icon
+            name="checklist"
+            size="14px"
+          />
+          {{ progress.done }}/{{ progress.total }}
+        </span>
         <q-icon
-          v-if="task.notes"
+          v-else-if="task.notes"
           name="notes"
           size="16px"
           class="notes-icon"
@@ -63,7 +76,7 @@
     </q-item-section>
 
     <q-item-section
-      v-if="canUpdate || canDelete"
+      v-if="canDelete"
       side
       class="task-actions"
     >
@@ -77,23 +90,6 @@
         <q-menu>
           <q-list style="min-width: 180px">
             <q-item
-              v-if="canUpdate"
-              clickable
-              v-close-popup
-              @click="emit('edit')"
-            >
-              <q-item-section avatar>
-                <q-icon
-                  name="edit"
-                  size="sm"
-                />
-              </q-item-section>
-              <q-item-section>
-                {{ t('action.edit') }}
-              </q-item-section>
-            </q-item>
-            <q-item
-              v-if="canDelete"
               clickable
               v-close-popup
               class="text-negative"
@@ -122,6 +118,8 @@ import { computed } from 'vue';
 import type { Task } from '@camp-registration/common/entities';
 import { taskPhaseOf } from '@/utils/taskPhase';
 import { parseLocalDate } from '@/utils/date';
+import { checklistProgress } from '@/utils/taskNotes';
+import TaskStatusToggle from '@/components/event/tasks/TaskStatusToggle.vue';
 
 const { t, d } = useI18n();
 
@@ -136,9 +134,10 @@ const props = defineProps<{
 const emit = defineEmits<{
   toggle: [];
   open: [];
-  edit: [];
   delete: [];
 }>();
+
+const progress = computed(() => checklistProgress(props.task.notes));
 
 const dueTextClass = computed<string>(() => {
   return `due-text--${taskPhaseOf(props.task)}`;
@@ -168,16 +167,43 @@ const dueTextClass = computed<string>(() => {
 .task-title {
   min-width: 0;
   font-weight: 500;
+  text-decoration: line-through;
+  text-decoration-color: transparent;
+  transition:
+    color 200ms ease,
+    text-decoration-color 200ms ease;
 }
 
 .task-title--done {
   color: var(--md3-on-surface-variant);
-  text-decoration: line-through;
+  text-decoration-color: currentColor;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .task-title {
+    transition: none;
+  }
 }
 
 .notes-icon {
   flex: 0 0 auto;
   color: var(--md3-on-surface-variant);
+}
+
+.checklist-progress {
+  flex: 0 0 auto;
+  gap: 2px;
+  padding: 0 6px;
+  border-radius: 6px;
+  background: var(--md3-surface-container-highest);
+  color: var(--md3-on-surface-variant);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.checklist-progress--done {
+  background: var(--md3-primary-container);
+  color: var(--md3-on-primary-container);
 }
 
 .task-caption {
@@ -209,7 +235,6 @@ const dueTextClass = computed<string>(() => {
 noDueDate: 'No due date'
 action:
   menu: 'Actions'
-  edit: 'Edit'
   delete: 'Delete'
 </i18n>
 
@@ -217,7 +242,6 @@ action:
 noDueDate: 'Kein Fälligkeitsdatum'
 action:
   menu: 'Aktionen'
-  edit: 'Bearbeiten'
   delete: 'Löschen'
 </i18n>
 
@@ -225,7 +249,6 @@ action:
 noDueDate: "Pas d'échéance"
 action:
   menu: 'Actions'
-  edit: 'Modifier'
   delete: 'Supprimer'
 </i18n>
 
@@ -233,7 +256,6 @@ action:
 noDueDate: 'Brak terminu'
 action:
   menu: 'Akcje'
-  edit: 'Edytuj'
   delete: 'Usuń'
 </i18n>
 
@@ -241,6 +263,5 @@ action:
 noDueDate: 'Bez termínu'
 action:
   menu: 'Akce'
-  edit: 'Upravit'
   delete: 'Smazat'
 </i18n>

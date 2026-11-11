@@ -312,7 +312,7 @@ function shortDate(value: string): string {
 const CLOSING_SOON_WINDOW = 3 * 24 * 60 * 60 * 1000;
 
 interface Status {
-  kind: 'open' | 'closes' | 'opens' | 'closed' | 'blocked';
+  kind: 'open' | 'closes' | 'opens' | 'unscheduled' | 'closed' | 'blocked';
   icon: string;
   label: string;
 }
@@ -362,12 +362,20 @@ const status = computed<Status>(() => {
     return { kind: 'open', icon: 'check_circle', label: t('status.open') };
   }
 
-  if (event.registrationStatus === 'upcoming' && event.registrationOpensAt) {
-    return {
-      kind: 'opens',
-      icon: 'upcoming',
-      label: t('status.opens', { date: shortDate(event.registrationOpensAt) }),
-    };
+  if (event.registrationStatus === 'upcoming') {
+    return event.registrationOpensAt
+      ? {
+          kind: 'opens',
+          icon: 'upcoming',
+          label: t('status.opens', {
+            date: shortDate(event.registrationOpensAt),
+          }),
+        }
+      : {
+          kind: 'unscheduled',
+          icon: 'event_note',
+          label: t('status.unscheduled'),
+        };
   }
 
   return { kind: 'closed', icon: 'lock', label: t('status.closed') };
@@ -737,6 +745,7 @@ async function withLoading(flag: Ref<boolean>, fn: () => Promise<void>) {
 }
 
 .mgmt-card__status--opens,
+.mgmt-card__status--unscheduled,
 .mgmt-card__status--closed {
   background: var(--md3-surface-container-highest);
   color: var(--md3-on-surface-variant);
@@ -794,6 +803,7 @@ status:
   openUntil: 'Open until {date}'
   closes: 'Closes {date}'
   opens: 'Opens {date}'
+  unscheduled: 'Registration not scheduled'
   closed: 'Registration closed'
   pendingVerification: 'Pending verification'
   organizationRejected: 'Organization rejected'
@@ -831,6 +841,7 @@ status:
   openUntil: 'Offen bis {date}'
   closes: 'Schließt {date}'
   opens: 'Öffnet {date}'
+  unscheduled: 'Anmeldung nicht geplant'
   closed: 'Anmeldung geschlossen'
   pendingVerification: 'Verifizierung ausstehend'
   organizationRejected: 'Organisation abgelehnt'
@@ -868,6 +879,7 @@ status:
   openUntil: "Ouvert jusqu'au {date}"
   closes: 'Ferme le {date}'
   opens: 'Ouvre le {date}'
+  unscheduled: 'Inscription non planifiée'
   closed: 'Inscription fermée'
   pendingVerification: 'Vérification en attente'
   organizationRejected: 'Organisation refusée'
@@ -909,6 +921,7 @@ status:
   openUntil: 'Otwarte do {date}'
   closes: 'Zamyka się {date}'
   opens: 'Otwiera się {date}'
+  unscheduled: 'Rejestracja nie zaplanowana'
   closed: 'Rejestracja zamknięta'
   pendingVerification: 'Oczekuje na weryfikację'
   organizationRejected: 'Organizacja odrzucona'
@@ -946,6 +959,7 @@ status:
   openUntil: 'Otevřeno do {date}'
   closes: 'Uzavírá se {date}'
   opens: 'Otevírá se {date}'
+  unscheduled: 'Registrace není naplánována'
   closed: 'Registrace uzavřena'
   pendingVerification: 'Čeká na ověření'
   organizationRejected: 'Organizace zamítnuta'

@@ -129,7 +129,14 @@ const assertEventResponseBody = (
     location: data.location,
     freePlaces: data.maxParticipants,
     freePlacesTotal: sumParticipants(data.maxParticipants),
-    registrationStatus: eventRegistrationStatus(data as Event),
+    registrationStatus: eventRegistrationStatus({
+      ...data,
+      startAt:
+        typeof data.startAt === 'string'
+          ? naiveDateTimeToUtcCarrier(data.startAt)
+          : data.startAt,
+      timezone: data.timezone ?? 'Europe/Berlin',
+    } as unknown as Event),
     logo: null,
     banner: null,
     form: data.form ?? expect.anything(),

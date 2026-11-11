@@ -31,6 +31,29 @@ index 465bdbf..a2769bc 100644
  // === Dialog Action Buttons ===
  // MD3E: action label text is primary-colored
  .q-dialog__inner > .q-card > .q-card__actions .q-btn {
+diff --git a/node_modules/@anoyomoose/q2-fresh-paint-md3e/dist/theme/components/QMenu.scss b/node_modules/@anoyomoose/q2-fresh-paint-md3e/dist/theme/components/QMenu.scss
+index 770dbf0..c03b61a 100644
+--- a/node_modules/@anoyomoose/q2-fresh-paint-md3e/dist/theme/components/QMenu.scss
++++ b/node_modules/@anoyomoose/q2-fresh-paint-md3e/dist/theme/components/QMenu.scss
+@@ -175,3 +175,18 @@ body.desktop .q-menu .q-item.q-focusable:focus > .q-focus-helper {
+ .q-menu--vibrant .q-separator {
+   background: var(--md3-on-tertiary-container);
+ }
++
++// === Pickers in Menus ===
++// QDate, QTime and QColor draw their own surface and expect the container to
++// add only elevation (see QDate.scss). A QPopupProxy menu would otherwise frame
++// them with its padding and background, so the picker becomes the surface.
++.q-menu:has(> .q-date, > .q-time) {
++  padding: 0;
++  border-radius: $md3-corner-extra-large;
++  background: transparent;
++}
++
++// QColor keeps Quasar's small radius; the menu's corners clip it instead.
++.q-menu:has(> .q-color-picker) {
++  padding: 0;
++}
 diff --git a/node_modules/@anoyomoose/q2-fresh-paint-md3e/dist/theme/components/QNotify.scss b/node_modules/@anoyomoose/q2-fresh-paint-md3e/dist/theme/components/QNotify.scss
 index f438471..347ca2b 100644
 --- a/node_modules/@anoyomoose/q2-fresh-paint-md3e/dist/theme/components/QNotify.scss

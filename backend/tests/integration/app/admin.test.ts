@@ -102,10 +102,17 @@ describe('/api/v1/admin/overview', () => {
       const { accessToken } = await createAdminWithToken();
       const now = new Date();
 
-      // No registration window at all: counts as closed.
+      // No registration window: upcoming until the event starts, then closed.
       await EventFactory.create({
         registrationOpensAt: null,
         registrationClosesAt: null,
+        startAt: moment(now).subtract(1, 'day').toDate(),
+      });
+      await EventFactory.create({
+        registrationOpensAt: null,
+        registrationClosesAt: null,
+        startAt: moment(now).add(1, 'day').toDate(),
+        endAt: moment(now).add(2, 'days').toDate(),
       });
       // Window currently spans `now`: open.
       await EventFactory.create({
@@ -130,9 +137,9 @@ describe('/api/v1/admin/overview', () => {
         .auth(accessToken, { type: 'bearer' })
         .expect(200);
 
-      expect(body.data.events.total).toBe(4);
+      expect(body.data.events.total).toBe(5);
       expect(body.data.events.open).toBe(1);
-      expect(body.data.events.upcoming).toBe(1);
+      expect(body.data.events.upcoming).toBe(2);
       expect(body.data.events.closed).toBe(2);
       expect(body.data.files.total).toBe(1);
     });

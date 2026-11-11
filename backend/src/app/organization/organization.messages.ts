@@ -53,7 +53,7 @@ export class OrganizationReviewPendingMessage extends OrganizationMessage<Organi
     const vars = { organization: this.payload.organization };
 
     return {
-      template: 'organization-review-pending',
+      template: 'action-card',
       context: {
         ...resolveActionCardText(t, vars),
         url: generateUrl(['administration', 'organizations']),
@@ -81,7 +81,7 @@ export class OrganizationVerifiedMessage extends OrganizationMessage<Organizatio
     const vars = { organization: this.payload.organization };
 
     return {
-      template: 'organization-verified',
+      template: 'action-card',
       context: {
         ...resolveActionCardText(t, vars),
         url: generateUrl([

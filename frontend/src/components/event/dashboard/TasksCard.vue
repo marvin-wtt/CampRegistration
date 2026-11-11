@@ -65,11 +65,11 @@
           v-for="task in upcomingTasks"
           :key="task.id"
           clickable
-          :to="{ name: 'management.event.tasks' }"
           class="task-item"
           :class="{ 'task-item--mine': isMine(task) }"
+          @click="showDetails(task)"
         >
-          <!-- The row links to the tasks page; ticking must not follow it. -->
+          <!-- The row opens the task; ticking must not. -->
           <q-item-section
             v-if="canUpdate"
             avatar
@@ -133,6 +133,7 @@ import { usePermissions } from '@/composables/permissions';
 import type { Task } from '@camp-registration/common/entities';
 import { taskPhaseOf } from '@/utils/taskPhase';
 import { parseLocalDate } from '@/utils/date';
+import { useTaskDialogs } from '@/composables/taskDialogs';
 
 // Open tasks the team created, unassigned or the manager's own first.
 const { loading = false } = defineProps<{
@@ -143,6 +144,7 @@ const { t, d } = useI18n();
 const taskStore = useTaskStore();
 const { currentManagerId } = useCurrentManager();
 const { can } = usePermissions();
+const { showDetails } = useTaskDialogs();
 
 const canUpdate = computed<boolean>(() => can('event.tasks.update'));
 

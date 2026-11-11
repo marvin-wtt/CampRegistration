@@ -21,7 +21,7 @@ export const useTaskStore = defineStore('task', () => {
     error,
     reset,
     invalidate,
-    withProgressNotification,
+    withErrorNotification,
     lazyFetch,
     backgroundFetch,
     checkNotNullWithError,
@@ -52,48 +52,66 @@ export const useTaskStore = defineStore('task', () => {
     await (opts?.background ? backgroundFetch(fetcher) : lazyFetch(fetcher));
   }
 
-  async function createData(newData: TaskCreateData) {
+  // Results show in place (rows appear, move or vanish), so only failures are
+  // notified. Each call reports whether it succeeded so callers can roll back.
+  async function createData(newData: TaskCreateData): Promise<boolean> {
     const eventId = route.params.eventId as string;
 
     checkNotNullWithError(eventId);
 
-    await withProgressNotification('create', async () => {
-      const task = await api.createTask(eventId, newData);
+    const task = await withErrorNotification('create', () =>
+      api.createTask(eventId, newData),
+    );
+    if (!task) {
+      return false;
+    }
 
-      data.value?.push(task);
-    });
+    data.value?.push(task);
+    return true;
   }
 
-  async function updateData(taskId: string, updateData: TaskUpdateData) {
-    const eventId = route.params.eventId as string;
-
-    checkNotNullWithError(eventId);
-    checkNotNullWithNotification(taskId);
-
-    await withProgressNotification('update', async () => {
-      const task = await api.updateTask(eventId, taskId, updateData);
-
-      data.value = data.value?.map((value) =>
-        value.id === task.id ? task : value,
-      );
-    });
-  }
-
-  async function toggleCompleted(task: Task) {
-    await updateData(task.id, { completed: !task.completed });
-  }
-
-  async function deleteData(taskId: string) {
+  async function updateData(
+    taskId: string,
+    updateData: TaskUpdateData,
+  ): Promise<boolean> {
     const eventId = route.params.eventId as string;
 
     checkNotNullWithError(eventId);
     checkNotNullWithNotification(taskId);
 
-    await withProgressNotification('delete', async () => {
+    const task = await withErrorNotification('update', () =>
+      api.updateTask(eventId, taskId, updateData),
+    );
+    if (!task) {
+      return false;
+    }
+
+    data.value = data.value?.map((value) =>
+      value.id === task.id ? task : value,
+    );
+    return true;
+  }
+
+  async function toggleCompleted(task: Task): Promise<boolean> {
+    return updateData(task.id, { completed: !task.completed });
+  }
+
+  async function deleteData(taskId: string): Promise<boolean> {
+    const eventId = route.params.eventId as string;
+
+    checkNotNullWithError(eventId);
+    checkNotNullWithNotification(taskId);
+
+    const deleted = await withErrorNotification('delete', async () => {
       await api.deleteTask(eventId, taskId);
-
-      data.value = data.value?.filter((task) => task.id !== taskId);
+      return true;
     });
+    if (!deleted) {
+      return false;
+    }
+
+    data.value = data.value?.filter((task) => task.id !== taskId);
+    return true;
   }
 
   return {

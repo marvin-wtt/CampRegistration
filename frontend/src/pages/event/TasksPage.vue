@@ -53,8 +53,7 @@
       </div>
 
       <template v-else>
-        <!-- Filter -->
-        <div class="row items-center filter-row">
+        <div class="row items-center no-wrap filter-row">
           <q-chip
             v-for="option in filterOptions"
             :key="option.value"
@@ -68,80 +67,75 @@
           </q-chip>
         </div>
 
-        <!-- Open tasks -->
         <q-list
           v-if="openTasks.length > 0"
           separator
+          class="task-list"
         >
-          <task-row
-            v-for="task in openTasks"
-            :key="task.id"
-            :task="task"
-            :mine="isMine(task)"
-            :can-update="can('event.tasks.update')"
-            :can-delete="can('event.tasks.delete')"
-            :assignee-label="assigneeLabel(task)"
-            @toggle="taskStore.toggleCompleted(task)"
-            @open="showDetailsDialog(task)"
-            @edit="showEditDialog(task)"
-            @delete="showDeleteDialog(task)"
-          />
+          <transition-group name="task-row">
+            <task-row
+              v-for="task in openTasks"
+              :key="task.id"
+              :task="shown(task)"
+              :mine="isMine(task)"
+              :can-update="can('event.tasks.update')"
+              :can-delete="can('event.tasks.delete')"
+              :assignee-label="assigneeLabel(task)"
+              @toggle="toggle(task)"
+              @open="showDetailsDialog(task)"
+              @delete="showDeleteDialog(task)"
+            />
+          </transition-group>
         </q-list>
         <div
           v-else
           class="row items-center q-gutter-x-sm text-body2 text-grey-6"
         >
           <q-icon
-            :name="filteredTasks.length > 0 ? 'task_alt' : 'filter_alt_off'"
+            :name="emptyHint.icon"
             size="20px"
           />
-          <span>
-            {{ filteredTasks.length > 0 ? t('allDone') : t('noMatch') }}
-          </span>
+          <span>{{ emptyHint.text }}</span>
         </div>
 
-        <!-- Completed tasks: tucked away -->
-        <div v-if="completedTasks.length > 0">
-          <q-item
-            clickable
-            class="completed-toggle"
+        <div
+          v-if="completedTasks.length > 0"
+          class="column no-wrap"
+        >
+          <q-btn
+            :label="t('completed', { count: completedTasks.length })"
+            :icon-right="showCompleted ? 'expand_less' : 'expand_more'"
+            text-color="on-surface-variant"
+            class="self-start"
+            flat
+            dense
+            rounded
+            no-caps
+            data-test="task-completed-toggle"
             @click="showCompleted = !showCompleted"
-          >
-            <q-item-section class="text-grey-7 text-weight-medium">
-              {{
-                showCompleted
-                  ? t('action.hideCompleted')
-                  : t('action.toggleCompleted', {
-                      count: completedTasks.length,
-                    })
-              }}
-            </q-item-section>
-            <q-item-section side>
-              <q-icon
-                :name="showCompleted ? 'expand_less' : 'expand_more'"
-                color="grey-7"
-              />
-            </q-item-section>
-          </q-item>
-          <q-list
-            v-if="showCompleted"
-            separator
-            class="q-mt-sm"
-          >
-            <task-row
-              v-for="task in completedTasks"
-              :key="task.id"
-              :task="task"
-              :mine="isMine(task)"
-              :can-update="can('event.tasks.update')"
-              :can-delete="can('event.tasks.delete')"
-              :assignee-label="assigneeLabel(task)"
-              @toggle="taskStore.toggleCompleted(task)"
-              @open="showDetailsDialog(task)"
-              @edit="showEditDialog(task)"
-              @delete="showDeleteDialog(task)"
-            />
-          </q-list>
+          />
+          <q-slide-transition>
+            <q-list
+              v-show="showCompleted"
+              separator
+              class="task-list q-mt-sm"
+            >
+              <transition-group name="task-row">
+                <task-row
+                  v-for="task in completedTasks"
+                  :key="task.id"
+                  :task="shown(task)"
+                  :mine="isMine(task)"
+                  :can-update="can('event.tasks.update')"
+                  :can-delete="can('event.tasks.delete')"
+                  :assignee-label="assigneeLabel(task)"
+                  @toggle="toggle(task)"
+                  @open="showDetailsDialog(task)"
+                  @delete="showDeleteDialog(task)"
+                />
+              </transition-group>
+            </q-list>
+          </q-slide-transition>
         </div>
       </template>
     </div>
@@ -152,24 +146,18 @@
 import PageHeader from '@/components/common/PageHeader.vue';
 import { useI18n } from 'vue-i18n';
 import { useTaskStore } from '@/stores/task-store';
-import { useEventManagerStore } from '@/stores/event-manager-store';
-import { computed, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import type { Task } from '@camp-registration/common/entities';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
-import { useQuasar } from 'quasar';
-import ConfirmDialog from '@/components/common/dialogs/ConfirmDialog.vue';
-import TaskFormDialog from '@/components/event/tasks/dialogs/TaskFormDialog.vue';
-import TaskDetailsDialog from '@/components/event/tasks/dialogs/TaskDetailsDialog.vue';
 import TaskRow from '@/components/event/tasks/TaskRow.vue';
 import TaskListSkeleton from '@/components/event/tasks/TaskListSkeleton.vue';
 import { usePermissions } from '@/composables/permissions';
 import { useCurrentManager } from '@/composables/currentManager';
+import { useTaskDialogs } from '@/composables/taskDialogs';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
-const quasar = useQuasar();
 const { t } = useI18n();
 const taskStore = useTaskStore();
-const eventManagerStore = useEventManagerStore();
 const { can } = usePermissions();
 const { currentManagerId } = useCurrentManager();
 
@@ -186,28 +174,15 @@ const filterOptions = computed<
   { value: 'unassigned', icon: 'person_off', label: t('filter.unassigned') },
 ]);
 
-// The roster is only needed to populate the assignee picker; every role that can
-// create or update a task also holds `event.managers.view`.
-const canAssign = computed<boolean>(
-  () => can('event.tasks.create') || can('event.tasks.update'),
-);
-
 // Started during setup, not awaited: the stores flag themselves loading before
 // the first render, so the page renders its skeletons instead of an idle frame.
 void taskStore.fetchData();
 
-// Permissions resolve with the profile and the event, both of which the parent
-// layout loads after this page mounts — so the roster has to be fetched when
-// the answer arrives, not once at mount.
-watch(
-  canAssign,
-  (allowed) => {
-    if (allowed) {
-      void eventManagerStore.fetchData();
-    }
-  },
-  { immediate: true },
-);
+const {
+  showDetails: showDetailsDialog,
+  showAdd: showAddDialog,
+  showDelete: showDeleteDialog,
+} = useTaskDialogs();
 
 const error = computed<string | null>(() => {
   return taskStore.error;
@@ -251,13 +226,53 @@ const filteredTasks = computed<Task[]>(() => {
   return tasks.value;
 });
 
+// A toggled task stays in its list for a moment, already showing its new
+// state, before it moves — so the click reads as done, not as vanished.
+const SETTLE_MS = 700;
+const settling = ref(new Map<string, boolean>());
+
+function listedAsCompleted(task: Task): boolean {
+  return settling.value.get(task.id) ?? task.completed;
+}
+
+function shown(task: Task): Task {
+  const completed = settling.value.get(task.id);
+  return completed === undefined ? task : { ...task, completed: !completed };
+}
+
+async function toggle(task: Task) {
+  if (settling.value.has(task.id)) {
+    return;
+  }
+
+  settling.value.set(task.id, task.completed);
+  try {
+    await Promise.all([
+      taskStore.toggleCompleted(task),
+      new Promise((resolve) => setTimeout(resolve, SETTLE_MS)),
+    ]);
+  } finally {
+    settling.value.delete(task.id);
+  }
+}
+
 const openTasks = computed<Task[]>(() => {
-  return sortByDueDate(filteredTasks.value.filter((task) => !task.completed));
+  return sortByDueDate(
+    filteredTasks.value.filter((task) => !listedAsCompleted(task)),
+  );
 });
 
 const completedTasks = computed<Task[]>(() => {
-  return sortByDueDate(filteredTasks.value.filter((task) => task.completed));
+  return sortByDueDate(
+    filteredTasks.value.filter((task) => listedAsCompleted(task)),
+  );
 });
+
+const emptyHint = computed<{ icon: string; text: string }>(() =>
+  filteredTasks.value.length === 0
+    ? { icon: 'filter_alt_off', text: t('noMatch') }
+    : { icon: 'task_alt', text: t('allDone') },
+);
 
 // The real assignee name (never "You") — used where a badge conveys ownership.
 function assigneeName(task: Task): string {
@@ -276,76 +291,45 @@ function assigneeLabel(task: Task): string {
 
   return assigneeName(task);
 }
-
-function showDetailsDialog(task: Task) {
-  quasar
-    .dialog({
-      component: TaskDetailsDialog,
-      componentProps: {
-        task,
-        mine: isMine(task),
-        canUpdate: can('event.tasks.update'),
-        canDelete: can('event.tasks.delete'),
-        assigneeLabel: assigneeName(task),
-      },
-    })
-    .onOk((result: { action: 'edit' | 'delete' }) => {
-      if (result.action === 'edit') {
-        showEditDialog(task);
-      } else if (result.action === 'delete') {
-        showDeleteDialog(task);
-      }
-    });
-}
-
-function showAddDialog() {
-  quasar
-    .dialog({
-      component: TaskFormDialog,
-      componentProps: {
-        managers: eventManagerStore.data ?? [],
-      },
-    })
-    .onOk((data) => {
-      void taskStore.createData(data);
-    });
-}
-
-function showEditDialog(task: Task) {
-  quasar
-    .dialog({
-      component: TaskFormDialog,
-      componentProps: {
-        task,
-        managers: eventManagerStore.data ?? [],
-      },
-    })
-    .onOk((data) => {
-      void taskStore.updateData(task.id, data);
-    });
-}
-
-function showDeleteDialog(task: Task) {
-  quasar
-    .dialog({
-      component: ConfirmDialog,
-      componentProps: {
-        title: t('dialog.delete.title'),
-        message: t('dialog.delete.message', { title: task.title }),
-        okLabel: t('action.delete'),
-        color: 'negative',
-      },
-    })
-    .onOk(() => {
-      void taskStore.deleteData(task.id);
-    });
-}
 </script>
 
 <style scoped>
 .tasks-content {
   max-width: 960px;
   padding-bottom: 24px;
+}
+
+.task-list {
+  position: relative;
+}
+
+.task-row-move,
+.task-row-enter-active,
+.task-row-leave-active {
+  transition:
+    transform 300ms cubic-bezier(0.2, 0, 0, 1),
+    opacity 300ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.task-row-enter-from,
+.task-row-leave-to {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+/* Taken out of the flow so the remaining rows can slide into its place. */
+.task-row-leave-active {
+  position: absolute;
+  left: 0;
+  right: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .task-row-move,
+  .task-row-enter-active,
+  .task-row-leave-active {
+    transition: none;
+  }
 }
 
 .empty-state {
@@ -359,6 +343,8 @@ function showDeleteDialog(task: Task) {
 
 .filter-row {
   gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
 
 .filter-chip {
@@ -380,10 +366,6 @@ function showDeleteDialog(task: Task) {
   background: var(--md3-secondary-container);
   color: var(--md3-on-secondary-container);
 }
-
-.completed-toggle {
-  min-height: 44px;
-}
 </style>
 
 <i18n lang="yaml" locale="en">
@@ -394,6 +376,8 @@ you: 'You'
 allDone: 'No open tasks — nice work!'
 noMatch: 'No tasks match this filter.'
 
+completed: 'Completed ({count})'
+
 filter:
   all: 'All'
   mine: 'Mine'
@@ -401,14 +385,6 @@ filter:
 
 action:
   add: 'Add task'
-  toggleCompleted: 'Show completed ({count})'
-  hideCompleted: 'Hide completed'
-  delete: 'Delete'
-
-dialog:
-  delete:
-    title: 'Delete task'
-    message: 'Do you really want to delete the task "{title}"?'
 
 empty:
   title: 'No tasks yet'
@@ -423,6 +399,8 @@ you: 'Du'
 allDone: 'Keine offenen Aufgaben — gut gemacht!'
 noMatch: 'Keine Aufgaben entsprechen diesem Filter.'
 
+completed: 'Erledigt ({count})'
+
 filter:
   all: 'Alle'
   mine: 'Meine'
@@ -430,14 +408,6 @@ filter:
 
 action:
   add: 'Aufgabe hinzufügen'
-  toggleCompleted: 'Erledigte anzeigen ({count})'
-  hideCompleted: 'Erledigte ausblenden'
-  delete: 'Löschen'
-
-dialog:
-  delete:
-    title: 'Aufgabe löschen'
-    message: 'Möchtest du die Aufgabe "{title}" wirklich löschen?'
 
 empty:
   title: 'Noch keine Aufgaben'
@@ -452,6 +422,8 @@ you: 'Toi'
 allDone: 'Aucune tâche en cours — bien joué !'
 noMatch: 'Aucune tâche ne correspond à ce filtre.'
 
+completed: 'Terminées ({count})'
+
 filter:
   all: 'Toutes'
   mine: 'Les miennes'
@@ -459,14 +431,6 @@ filter:
 
 action:
   add: 'Ajouter une tâche'
-  toggleCompleted: 'Afficher terminées ({count})'
-  hideCompleted: 'Masquer terminées'
-  delete: 'Supprimer'
-
-dialog:
-  delete:
-    title: 'Supprimer la tâche'
-    message: 'Veux-tu vraiment supprimer la tâche « {title} » ?'
 
 empty:
   title: 'Aucune tâche pour le moment'
@@ -481,6 +445,8 @@ you: 'Ty'
 allDone: 'Brak otwartych zadań — świetna robota!'
 noMatch: 'Żadne zadania nie pasują do tego filtra.'
 
+completed: 'Ukończone ({count})'
+
 filter:
   all: 'Wszystkie'
   mine: 'Moje'
@@ -488,14 +454,6 @@ filter:
 
 action:
   add: 'Dodaj zadanie'
-  toggleCompleted: 'Pokaż ukończone ({count})'
-  hideCompleted: 'Ukryj ukończone'
-  delete: 'Usuń'
-
-dialog:
-  delete:
-    title: 'Usuń zadanie'
-    message: 'Czy na pewno chcesz usunąć zadanie „{title}”?'
 
 empty:
   title: 'Brak zadań'
@@ -510,6 +468,8 @@ you: 'Ty'
 allDone: 'Žádné otevřené úkoly — skvělá práce!'
 noMatch: 'Žádné úkoly neodpovídají tomuto filtru.'
 
+completed: 'Dokončené ({count})'
+
 filter:
   all: 'Vše'
   mine: 'Moje'
@@ -517,14 +477,6 @@ filter:
 
 action:
   add: 'Přidat úkol'
-  toggleCompleted: 'Zobrazit dokončené ({count})'
-  hideCompleted: 'Skrýt dokončené'
-  delete: 'Smazat'
-
-dialog:
-  delete:
-    title: 'Smazat úkol'
-    message: 'Opravdu chceš smazat úkol „{title}“?'
 
 empty:
   title: 'Zatím žádné úkoly'

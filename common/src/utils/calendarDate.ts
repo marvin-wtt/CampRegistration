@@ -1,20 +1,25 @@
-/** The current calendar date (`YYYY-MM-DD`) as observed in `timeZone`. */
-export function currentDateInTimeZone(timeZone: string): string {
-  const formatter = new Intl.DateTimeFormat('en-US', {
-    timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  });
+import { zonedNaiveDateTime } from './naiveDateTime.js';
 
-  const parts = formatter
-    .formatToParts(new Date())
-    .reduce<Record<string, string>>((acc, part) => {
-      acc[part.type] = part.value;
-      return acc;
-    }, {});
+/** The calendar date (`YYYY-MM-DD`) `now` falls on in `timeZone`. */
+export function currentDateInTimeZone(
+  timeZone: string,
+  now = new Date(),
+): string {
+  return zonedNaiveDateTime(now, timeZone).slice(0, 10);
+}
 
-  return `${parts.year}-${parts.month}-${parts.day}`;
+/** `YYYY-MM-DD` strings from `date + from` to `date + to` days, inclusive. */
+export function dateRange(date: string, from: number, to: number): string[] {
+  const base = new Date(`${date}T00:00:00Z`);
+  const dates: string[] = [];
+
+  for (let offset = from; offset <= to; offset++) {
+    const day = new Date(base);
+    day.setUTCDate(base.getUTCDate() + offset);
+    dates.push(day.toISOString().slice(0, 10));
+  }
+
+  return dates;
 }
 
 /** Clamps a plain `YYYY-MM-DD` date to the inclusive `[min, max]` range. */

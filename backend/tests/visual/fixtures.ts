@@ -16,6 +16,7 @@ import { htmlToPreviewText } from '#core/mail/emailPreview';
 
 export interface EmailFixture {
   template: string;
+  name?: string;
   subject: string;
   context: Record<string, unknown>;
 }
@@ -107,7 +108,8 @@ export const fixtures: EmailFixture[] = [
     } satisfies LocalContext<ResetPasswordProps>,
   },
   {
-    template: 'manager-invitation',
+    template: 'action-card',
+    name: 'manager-invitation',
     subject: 'Event Invitation',
     context: {
       preview: 'You have been invited to manage Summer Camp 2026',
@@ -123,7 +125,8 @@ export const fixtures: EmailFixture[] = [
     } satisfies LocalContext<ActionCardProps>,
   },
   {
-    template: 'organization-review-pending',
+    template: 'action-card',
+    name: 'organization-review-pending',
     subject: 'Organization awaiting review: Adventure Org',
     context: {
       preview: 'Adventure Org is waiting to be verified',
@@ -138,7 +141,8 @@ export const fixtures: EmailFixture[] = [
     } satisfies LocalContext<ActionCardProps>,
   },
   {
-    template: 'organization-verified',
+    template: 'action-card',
+    name: 'organization-verified',
     subject: 'Your organization has been verified',
     context: {
       preview: 'Adventure Org can now publish events',

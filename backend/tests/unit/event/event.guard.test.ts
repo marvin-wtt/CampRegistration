@@ -91,7 +91,12 @@ describe('registrationOpen', () => {
   const at = (iso: string) => new Date(iso);
 
   it('returns false when neither an opens nor a closes date is set', () => {
-    const event = { registrationOpensAt: null, registrationClosesAt: null };
+    const event = {
+      registrationOpensAt: null,
+      registrationClosesAt: null,
+      startAt: at('2999-01-01'),
+      timezone: 'Europe/Berlin',
+    };
 
     expect(registrationOpen(fakeReq(event))).toBe(false);
   });
