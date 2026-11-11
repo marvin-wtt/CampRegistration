@@ -34,14 +34,14 @@
 </template>
 
 <script lang="ts" setup>
-import { onBeforeUnmount, ref, watch } from 'vue';
+import { onBeforeUnmount, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { EditorContent, useEditor } from '@tiptap/vue-3';
 import Placeholder from '@tiptap/extension-placeholder';
 import {
   applyReadOnlyCheck,
-  notesMarkdown,
   taskNotesExtensions,
+  useNotesModel,
 } from '@/components/event/tasks/taskNotesEditor';
 import TaskNotesToolbar from '@/components/event/tasks/TaskNotesToolbar.vue';
 
@@ -63,12 +63,12 @@ const { t } = useI18n();
 
 const editing = ref<boolean>(false);
 
-// Set by `onUpdate` so the model watcher skips changes the editor made itself.
-let isInternalUpdate = false;
-
 const editor = useEditor({
   extensions: [
-    ...taskNotesExtensions((item) => t('checkboxLabel', { item })),
+    ...taskNotesExtensions(
+      (item) => t('checkboxLabel', { item }),
+      () => editable,
+    ),
     Placeholder.configure({
       placeholder: () => (editable ? t('placeholder') : ''),
       showOnlyWhenEditable: false,
@@ -77,25 +77,16 @@ const editor = useEditor({
   content: modelValue.value,
   contentType: 'markdown',
   editable: false,
-  onUpdate: ({ editor }) => {
-    isInternalUpdate = true;
-    modelValue.value = notesMarkdown(editor);
-  },
+  onUpdate: ({ editor }) => onEditorUpdate(editor),
   onBlur: () => stopEditing(),
 });
 
-watch(modelValue, (value) => {
-  if (isInternalUpdate) {
-    isInternalUpdate = false;
-    return;
-  }
-  if (!editing.value) {
-    editor.value?.commands.setContent(value, {
-      contentType: 'markdown',
-      emitUpdate: false,
-    });
-  }
-});
+// Typing owns the content; outside changes wait until editing stops.
+const { onUpdate: onEditorUpdate, sync } = useNotesModel(
+  editor,
+  modelValue,
+  () => !editing.value,
+);
 
 function startEditing(event?: MouseEvent) {
   const instance = editor.value;
@@ -119,6 +110,7 @@ function stopEditing() {
   }
   editing.value = false;
   editor.value?.setEditable(false, false);
+  sync();
   emit('blur');
 }
 
@@ -132,7 +124,7 @@ function onClick(event: MouseEvent) {
 // Runs after TipTap's own checkbox handler, which bubbles up to here.
 function onChange(event: Event) {
   const target = event.target as HTMLElement;
-  if (editor.value && target instanceof HTMLInputElement) {
+  if (editable && editor.value && target instanceof HTMLInputElement) {
     applyReadOnlyCheck(editor.value, target);
   }
 }

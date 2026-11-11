@@ -1,10 +1,15 @@
 import { BaseService } from '#core/base/BaseService';
 import { injectable } from 'inversify';
 import logger from '#core/logger';
+import {
+  currentDateInTimeZone,
+  dateRange,
+  zonedNaiveDateTime,
+} from '@camp-registration/common/utils';
 import { TaskDueReminderMessage } from './task.messages.js';
 
-/** Local hour from which reminders go out, so nobody is mailed at night. */
-const REMINDER_HOUR = 8;
+/** Local hours (from inclusive, until exclusive) reminders go out in. */
+const REMINDER_HOURS = { from: 8, until: 21 };
 
 /** How many days before the due date the reminder is sent. */
 const LEAD_DAYS = 1;
@@ -57,7 +62,8 @@ export class TaskReminderService extends BaseService {
       }
 
       try {
-        // Claim before enqueuing so overlapping runs never send twice.
+        // Claim before enqueuing so overlapping runs never send twice. A failed
+        // enqueue drops this reminder; it is only a courtesy.
         const { count } = await this.prisma.task.updateMany({
           where: { id: task.id, reminderSentAt: null },
           data: { reminderSentAt: now },
@@ -79,19 +85,35 @@ export class TaskReminderService extends BaseService {
 
   /**
    * The due dates to remind about, per group of event timezones that share a
-   * local date and are past the reminder hour.
+   * local date and are within the reminder hours.
    */
   private async dueWindows(now: Date): Promise<DueWindow[]> {
+    // Every timezone's local date lies within a day of UTC's.
+    const candidates = dateRange(
+      currentDateInTimeZone('UTC', now),
+      -1,
+      1 + LEAD_DAYS,
+    );
     const events = await this.prisma.event.findMany({
-      where: { tasks: { some: { completed: false, reminderSentAt: null } } },
+      where: {
+        tasks: {
+          some: {
+            completed: false,
+            reminderSentAt: null,
+            dueDate: { in: candidates },
+          },
+        },
+      },
       distinct: ['timezone'],
       select: { timezone: true },
     });
 
     const byDate = new Map<string, string[]>();
     for (const { timezone } of events) {
-      const { date, hour } = zonedDateAndHour(now, timezone);
-      if (hour >= REMINDER_HOUR) {
+      const local = zonedNaiveDateTime(now, timezone);
+      const date = local.slice(0, 10);
+      const hour = Number(local.slice(11, 13));
+      if (hour >= REMINDER_HOURS.from && hour < REMINDER_HOURS.until) {
         byDate.set(date, [...(byDate.get(date) ?? []), timezone]);
       }
     }
@@ -106,38 +128,4 @@ export class TaskReminderService extends BaseService {
 interface DueWindow {
   timezones: string[];
   dueDates: string[];
-}
-
-function zonedDateAndHour(now: Date, timeZone: string) {
-  const parts = Object.fromEntries(
-    new Intl.DateTimeFormat('en-US', {
-      timeZone,
-      hourCycle: 'h23',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-    })
-      .formatToParts(now)
-      .map((part) => [part.type, part.value]),
-  );
-
-  return {
-    date: `${parts.year}-${parts.month}-${parts.day}`,
-    hour: Number(parts.hour),
-  };
-}
-
-/** `YYYY-MM-DD` strings from `date + from` to `date + to` days, inclusive. */
-function dateRange(date: string, from: number, to: number): string[] {
-  const base = new Date(`${date}T00:00:00Z`);
-  const dates: string[] = [];
-
-  for (let offset = from; offset <= to; offset++) {
-    const day = new Date(base);
-    day.setUTCDate(base.getUTCDate() + offset);
-    dates.push(day.toISOString().slice(0, 10));
-  }
-
-  return dates;
 }

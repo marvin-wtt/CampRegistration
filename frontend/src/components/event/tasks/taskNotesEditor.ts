@@ -1,3 +1,4 @@
+import { watch, type Ref, type ShallowRef } from 'vue';
 import type { Editor, Extensions } from '@tiptap/vue-3';
 import StarterKit from '@tiptap/starter-kit';
 import { TaskItem, TaskList } from '@tiptap/extension-list';
@@ -9,6 +10,7 @@ const SAFE_URL = /^(https?:\/\/|mailto:)/i;
 // read-only view share this setup so both read a note the same way.
 export function taskNotesExtensions(
   checkboxLabel: (text: string) => string = (text) => text,
+  canTick: () => boolean = () => true,
 ): Extensions {
   return [
     StarterKit.configure({
@@ -32,7 +34,7 @@ export function taskNotesExtensions(
       nested: true,
       // Keeps a read-only tick instead of reverting it; `applyReadOnlyCheck`
       // then writes it into the document.
-      onReadOnlyChecked: () => true,
+      onReadOnlyChecked: () => canTick(),
       a11y: { checkboxLabel: (node) => checkboxLabel(node.textContent) },
     }),
     // `breaks`: a single newline is a line break, as in GitHub issues.
@@ -74,4 +76,39 @@ export function applyReadOnlyCheck(
       return;
     }
   }
+}
+
+/**
+ * Two-way sync between a notes editor and its `v-model`. Outside values are
+ * applied unless `canApply` says no (e.g. while the user is typing); `sync`
+ * catches up on them once it says yes again.
+ */
+export function useNotesModel(
+  editor: ShallowRef<Editor | undefined>,
+  model: Ref<string> | Ref<string | null | undefined>,
+  canApply: () => boolean = () => true,
+) {
+  // The value the editor currently shows, so its own updates aren't echoed.
+  let shown = model.value;
+
+  function sync() {
+    const value = model.value;
+    if (value === shown || !canApply()) {
+      return;
+    }
+    shown = value;
+    editor.value?.commands.setContent(value ?? '', {
+      contentType: 'markdown',
+      emitUpdate: false,
+    });
+  }
+
+  watch(model, sync);
+
+  function onUpdate(instance: Parameters<typeof notesMarkdown>[0]) {
+    shown = notesMarkdown(instance);
+    model.value = shown;
+  }
+
+  return { onUpdate, sync };
 }

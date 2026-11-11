@@ -14,7 +14,9 @@ const tg = (key: string, vars?: Record<string, unknown>) => {
 };
 
 for (const fixture of fixtures) {
-  test(`${fixture.template} email renders unchanged`, async ({ page }) => {
+  const name = fixture.name ?? fixture.template;
+
+  test(`${name} email renders unchanged`, async ({ page }) => {
     const renderer = new MailRenderer(tg);
 
     const html = await renderer.renderFile({
@@ -25,7 +27,7 @@ for (const fixture of fixtures) {
 
     await page.setContent(html, { waitUntil: 'load' });
 
-    await expect(page).toHaveScreenshot(`${fixture.template}.png`, {
+    await expect(page).toHaveScreenshot(`${name}.png`, {
       fullPage: true,
     });
   });

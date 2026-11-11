@@ -29,13 +29,13 @@
 </template>
 
 <script lang="ts" setup>
-import { onBeforeUnmount, watch } from 'vue';
+import { onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { EditorContent, useEditor } from '@tiptap/vue-3';
 import Placeholder from '@tiptap/extension-placeholder';
 import {
-  notesMarkdown,
   taskNotesExtensions,
+  useNotesModel,
 } from '@/components/event/tasks/taskNotesEditor';
 import TaskNotesToolbar from '@/components/event/tasks/TaskNotesToolbar.vue';
 
@@ -52,9 +52,6 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
-// Set by `onUpdate` so the model watcher skips changes the editor made itself.
-let isInternalUpdate = false;
-
 const editor = useEditor({
   extensions: [
     ...taskNotesExtensions((item) => t('checkboxLabel', { item })),
@@ -64,22 +61,10 @@ const editor = useEditor({
   contentType: 'markdown',
   onFocus: () => emit('focus'),
   onBlur: () => emit('blur'),
-  onUpdate: ({ editor }) => {
-    isInternalUpdate = true;
-    modelValue.value = notesMarkdown(editor);
-  },
+  onUpdate: ({ editor }) => onEditorUpdate(editor),
 });
 
-watch(modelValue, (value) => {
-  if (isInternalUpdate) {
-    isInternalUpdate = false;
-    return;
-  }
-  editor.value?.commands.setContent(value ?? '', {
-    contentType: 'markdown',
-    emitUpdate: false,
-  });
-});
+const { onUpdate: onEditorUpdate } = useNotesModel(editor, modelValue);
 
 // Clicks on the field's padding or icon should still land in the editor.
 function focusFromField(event: MouseEvent) {
@@ -113,6 +98,12 @@ onBeforeUnmount(() => {
 .notes-editor {
   padding: 12px 0;
   line-height: 24px;
+}
+
+/* Room for a few lines up front; the whole area takes clicks. */
+.notes-editor :deep(.ProseMirror) {
+  min-height: 120px;
+  outline: none;
 }
 
 .notes-editor

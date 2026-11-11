@@ -94,7 +94,7 @@ describe('registrationOpen', () => {
     const event = {
       registrationOpensAt: null,
       registrationClosesAt: null,
-      endAt: at('2999-01-01'),
+      startAt: at('2999-01-01'),
       timezone: 'Europe/Berlin',
     };
 

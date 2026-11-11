@@ -1,3 +1,4 @@
+import type { Task } from '#generated/prisma/client';
 import { BaseService } from '#core/base/BaseService';
 import { EventManagerService } from '#app/eventManager/event-manager.service';
 import ApiError from '#core/router/ApiError';
@@ -65,22 +66,22 @@ export class TaskService extends BaseService {
     });
   }
 
-  async updateTaskById(eventId: string, id: string, data: TaskUpdateDto) {
+  async updateTaskById(
+    eventId: string,
+    current: Pick<Task, 'id' | 'dueDate' | 'assigneeId'>,
+    data: TaskUpdateDto,
+  ) {
     if (data.assigneeId) {
       await this.assertAssigneeBelongsToEvent(eventId, data.assigneeId);
     }
 
-    const current = await this.prisma.task.findUniqueOrThrow({
-      where: { id },
-      select: { dueDate: true, assigneeId: true },
-    });
     // A new date or a new assignee earns a fresh reminder.
     const resetReminder =
       (data.dueDate !== undefined && data.dueDate !== current.dueDate) ||
       (data.assigneeId !== undefined && data.assigneeId !== current.assigneeId);
 
     return this.prisma.task.update({
-      where: { id },
+      where: { id: current.id },
       data: resetReminder ? { ...data, reminderSentAt: null } : data,
       include: TASK_INCLUDE,
     });

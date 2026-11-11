@@ -92,15 +92,29 @@ describe('task due reminders', () => {
     expect(mailer.sendMail).not.toHaveBeenCalled();
   });
 
-  it('should use the event timezone to decide the day', async () => {
-    // 08:00 UTC is still the night of the 10th in Los Angeles.
-    const { task } = await assignedTask('2026-11-12', {
-      timezone: 'America/Los_Angeles',
-    });
+  it('should not send at night', async () => {
+    const { task } = await assignedTask('2026-11-12');
 
-    await run();
+    // 22:00 in Berlin.
+    await run(new Date('2026-11-11T21:00:00Z'));
 
     expect(await reminderSentAt(task.id)).toBeNull();
+  });
+
+  it('should use the event timezone to decide the day', async () => {
+    // 20:00 UTC on the 11th is 09:00 on the 12th in Auckland: the 13th is
+    // tomorrow there, while the 11th is already overdue.
+    const { task: dueTomorrow } = await assignedTask('2026-11-13', {
+      timezone: 'Pacific/Auckland',
+    });
+    const { task: overdue } = await assignedTask('2026-11-11', {
+      timezone: 'Pacific/Auckland',
+    });
+
+    await run(new Date('2026-11-11T20:00:00Z'));
+
+    expect(await reminderSentAt(dueTomorrow.id)).not.toBeNull();
+    expect(await reminderSentAt(overdue.id)).toBeNull();
   });
 
   it.each([

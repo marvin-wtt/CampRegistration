@@ -2,10 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Event } from '#generated/prisma/client';
 import { eventRegistrationStatus } from '#app/event/event.util';
 
-// Ends at 11:00 Berlin summer time (09:00 UTC); stored as a UTC carrier.
+// Starts at 11:00 Berlin summer time (09:00 UTC); stored as a UTC carrier.
 function event(overrides: Partial<Event> = {}): Event {
   return {
-    endAt: new Date('2026-08-15T11:00:00Z'),
+    startAt: new Date('2026-08-15T11:00:00Z'),
     timezone: 'Europe/Berlin',
     registrationOpensAt: null,
     registrationClosesAt: null,
@@ -17,7 +17,7 @@ describe('eventRegistrationStatus', () => {
   beforeEach(() => vi.useFakeTimers());
   afterEach(() => vi.useRealTimers());
 
-  it('is upcoming without a window until the event ends', () => {
+  it('is upcoming without a window until the event starts', () => {
     vi.setSystemTime(new Date('2026-08-15T08:59:59Z'));
     expect(eventRegistrationStatus(event())).toBe('upcoming');
 

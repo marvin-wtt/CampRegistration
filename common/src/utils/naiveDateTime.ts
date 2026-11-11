@@ -86,9 +86,9 @@ export function utcCarrierToNaiveDateTime(date: Date): string {
   });
 }
 
-/** The UTC offset of `timeZone` at `date`, in milliseconds. */
-function timeZoneOffsetMs(date: Date, timeZone: string): number {
-  const formatter = new Intl.DateTimeFormat('en-US', {
+/** The wall-clock digits `instant` shows in `timeZone`, as a naive datetime. */
+export function zonedNaiveDateTime(instant: Date, timeZone: string): string {
+  const parts = new Intl.DateTimeFormat('en-US', {
     timeZone,
     hourCycle: 'h23',
     year: 'numeric',
@@ -97,25 +97,28 @@ function timeZoneOffsetMs(date: Date, timeZone: string): number {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
-  });
-
-  const parts = formatter
-    .formatToParts(date)
+  })
+    .formatToParts(instant)
     .reduce<Record<string, string>>((acc, part) => {
       acc[part.type] = part.value;
       return acc;
     }, {});
 
-  const asUtc = Date.UTC(
-    Number(parts.year),
-    Number(parts.month) - 1,
-    Number(parts.day),
-    Number(parts.hour === '24' ? '0' : parts.hour),
-    Number(parts.minute),
-    Number(parts.second),
-  );
+  return formatNaiveDateTime({
+    year: Number(parts.year),
+    month: Number(parts.month),
+    day: Number(parts.day),
+    hour: parts.hour === '24' ? 0 : Number(parts.hour),
+    minute: Number(parts.minute),
+    second: Number(parts.second),
+  });
+}
 
-  return asUtc - date.getTime();
+/** The UTC offset of `timeZone` at `date`, in milliseconds. */
+function timeZoneOffsetMs(date: Date, timeZone: string): number {
+  const asUtc = naiveDateTimeToUtcCarrier(zonedNaiveDateTime(date, timeZone));
+
+  return asUtc.getTime() - date.getTime();
 }
 
 /**

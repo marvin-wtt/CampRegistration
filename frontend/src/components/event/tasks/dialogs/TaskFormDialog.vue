@@ -26,11 +26,6 @@
           </template>
         </q-input>
 
-        <task-notes-input
-          v-model="data.notes"
-          :label="t('field.notes.label')"
-        />
-
         <q-input
           v-model="data.dueDate"
           :label="t('field.dueDate.label')"
@@ -92,6 +87,11 @@
             <q-icon name="person" />
           </template>
         </q-select>
+
+        <task-notes-input
+          v-model="data.notes"
+          :label="t('field.notes.label')"
+        />
       </div>
 
       <template #actions>

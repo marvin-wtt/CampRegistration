@@ -131,10 +131,10 @@ const assertEventResponseBody = (
     freePlacesTotal: sumParticipants(data.maxParticipants),
     registrationStatus: eventRegistrationStatus({
       ...data,
-      endAt:
-        typeof data.endAt === 'string'
-          ? naiveDateTimeToUtcCarrier(data.endAt)
-          : data.endAt,
+      startAt:
+        typeof data.startAt === 'string'
+          ? naiveDateTimeToUtcCarrier(data.startAt)
+          : data.startAt,
       timezone: data.timezone ?? 'Europe/Berlin',
     } as unknown as Event),
     logo: null,

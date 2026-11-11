@@ -69,14 +69,14 @@ export function eventRegistrationStatus(event: Event): EventRegistrationStatus {
   const now = new Date();
 
   // Without a window, registration simply hasn't been scheduled yet — unless
-  // the event is already over.
+  // the event has already started.
   if (!event.registrationOpensAt && !event.registrationClosesAt) {
-    const endsAt = zonedInstant(
-      utcCarrierToNaiveDateTime(event.endAt),
+    const startsAt = zonedInstant(
+      utcCarrierToNaiveDateTime(event.startAt),
       event.timezone,
     );
 
-    return now < endsAt ? 'upcoming' : 'closed';
+    return now < startsAt ? 'upcoming' : 'closed';
   }
 
   if (

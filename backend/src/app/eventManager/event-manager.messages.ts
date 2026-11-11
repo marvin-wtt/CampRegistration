@@ -83,7 +83,7 @@ export class EventManagerInvitationMessage extends EventManagerMessage<{
     const vars = { event: { name: eventName } };
 
     return {
-      template: 'manager-invitation',
+      template: 'action-card',
       context: {
         ...resolveActionCardText(t, vars),
         url,

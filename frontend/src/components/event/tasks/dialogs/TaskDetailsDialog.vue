@@ -476,68 +476,77 @@ function setAssignee(value: string | null) {
 }
 
 // Notes — typing saves on blur (one save, not one per keystroke); a checkbox
-// ticked without focusing the editor saves right away. A failed tick reverts;
-// failed typing is kept and offered for retry, as it can't be redone cheaply.
+// ticked without focusing the editor saves right away. A failed save keeps
+// the edit and offers a retry.
 const notes = ref<string>(props.task.notes ?? '');
 const notesFocused = ref<boolean>(false);
 const notesFailed = ref<boolean>(false);
-let notesDirty = false;
+// Local edits not sent yet.
+let notesPending = false;
+let notesSaving = false;
 
 const progress = computed(() =>
   checklistProgress(props.canUpdate ? notes.value : task.value.notes),
 );
 
-watch(
-  () => task.value.notes,
-  (value) => {
-    if (!notesFocused.value && !notesDirty && !notesFailed.value) {
-      notes.value = value ?? '';
-    }
-  },
-);
+// The stored notes win only while nothing local is in flight.
+function syncNotes() {
+  if (
+    !notesFocused.value &&
+    !notesPending &&
+    !notesSaving &&
+    !notesFailed.value
+  ) {
+    notes.value = task.value.notes ?? '';
+  }
+}
+
+watch(() => task.value.notes, syncNotes);
 
 function onNotesInput(value: string | null | undefined) {
   const before = checklistProgress(notes.value);
   notes.value = value ?? '';
-  notesDirty = true;
+  notesPending = true;
   updateCompleteHint(before);
 
   if (!notesFocused.value) {
-    commitNotes(true);
+    void flushNotes();
   }
 }
 
 function onNotesBlur() {
   notesFocused.value = false;
-  commitNotes(false);
+  void flushNotes();
+  syncNotes();
 }
 
-function commitNotes(revertOnFailure: boolean) {
-  if (!notesDirty) {
+// One save at a time, so responses can't land out of order; whatever changed
+// meanwhile goes out next.
+async function flushNotes() {
+  if (notesSaving || !notesPending) {
     return;
   }
-  notesDirty = false;
+  notesPending = false;
 
   const value = notes.value.trim() || null;
-  if (value === task.value.notes) {
+  if (value !== task.value.notes) {
+    notesSaving = true;
+    notesFailed.value = !(await save({ notes: value }));
+    notesSaving = false;
+  } else {
     notesFailed.value = false;
-    return;
   }
 
-  void save({ notes: value }).then((saved) => {
-    if (saved) {
-      notesFailed.value = false;
-    } else if (revertOnFailure && !notesFailed.value) {
-      notes.value = task.value.notes ?? '';
-    } else {
-      notesFailed.value = true;
-    }
-  });
+  if (notesPending) {
+    void flushNotes();
+  } else {
+    syncNotes();
+  }
 }
 
 function retryNotes() {
-  notesDirty = true;
-  commitNotes(false);
+  notesPending = true;
+  void flushNotes();
 }
 
 // Suggest completing the task when this user ticks its last open item —
@@ -572,7 +581,7 @@ function onDelete() {
 // edits are committed here too.
 function onHide() {
   commitTitle();
-  commitNotes(false);
+  void flushNotes();
   onDialogHide();
 }
 </script>

@@ -41,7 +41,7 @@ export class TaskDueReminderMessage extends MailBase<TaskDueReminderPayload> {
     const { event } = this.payload;
 
     return {
-      template: 'task-due-reminder',
+      template: 'action-card',
       context: {
         ...resolveActionCardText(t, this.context()),
         url: generateUrl(['management', 'events', event.id, 'tasks']),
