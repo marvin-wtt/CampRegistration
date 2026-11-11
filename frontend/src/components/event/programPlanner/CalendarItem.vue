@@ -81,8 +81,8 @@ const {
   editable?: boolean;
   deletable?: boolean;
   creatable?: boolean;
-  timeStartPosition: (time?: string) => number;
-  timeDurationHeight: (duration?: number) => number;
+  timeStartPosition: (time: string) => number | false;
+  timeDurationHeight: (minutes: number) => number;
   durationOverride?: number | undefined;
   planOverride?: ProgramItem['plan'] | undefined;
   depth?: number;
@@ -207,7 +207,9 @@ const INSET_PER_LEVEL = 12;
 const MAX_INSET_FRACTION = 0.4;
 
 const badgeStyles = computed<StyleValue>(() => {
-  const top = event.time ? timeStartPosition(event.time) + 'px' : undefined;
+  const top = event.time
+    ? `${timeStartPosition(event.time) || 0}px`
+    : undefined;
 
   const dur = durationOverride ?? event.duration;
   const height = dur ? `calc(${timeDurationHeight(dur)}px - 2px)` : undefined;

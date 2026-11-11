@@ -151,8 +151,10 @@
                     <span
                       v-if="item.compact"
                       class="cal-print__event__time"
-                      >{{ item.time }}</span
-                    >{{ item.title }}
+                    >
+                      {{ item.time }}
+                    </span>
+                    {{ item.title }}
                   </div>
                   <div
                     v-if="!item.compact"
