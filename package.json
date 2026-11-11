@@ -8,7 +8,7 @@
     "format": "npm run format --workspaces --if-present",
     "migrate": "npm run migrate --workspaces --if-present",
     "build-and-migrate": "run-s build migrate",
-    "production": "cross-env NODE_ENV=production node backend/build/entry.cjs"
+    "production": "npm run production --workspace backend"
   },
   "keywords": [],
   "author": "marvin-wtt <31454580+marvin-wtt@users.noreply.github.com>",
@@ -19,7 +19,7 @@
     "url": "https://github.com/marvin-wtt/CampRegistration"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=24"
   },
   "workspaces": [
     "common",
@@ -28,7 +28,6 @@
     "e2e"
   ],
   "devDependencies": {
-    "cross-env": "^7.0.3",
     "husky": "^9.1.7",
     "lint-staged": "^17.6.0",
     "patch-package": "^8.0.1",

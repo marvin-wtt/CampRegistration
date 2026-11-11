@@ -35,6 +35,7 @@ export interface MailableCtor<P> {
 export abstract class MailBase<P> {
   private t?: Translator;
   private tg?: Translator;
+  private resolvedLocale?: string;
   private config: AppConfig;
 
   constructor(protected readonly payload: P) {
@@ -45,29 +46,36 @@ export abstract class MailBase<P> {
     return {};
   }
 
+  /** The recipient's preferred locale; `undefined` uses the app default. */
   protected locale(): string | undefined {
     return undefined;
   }
 
+  /** The locale the mail is actually written in. */
+  protected getLocale(): string {
+    return (this.resolvedLocale ??= this.locale() ?? i18n.language);
+  }
+
+  /** Translator scoped to {@link getTranslationOptions}. */
   public getT(): Translator {
     if (!this.t) {
       const { namespace, keyPrefix } = this.getTranslationOptions();
-      const locale = this.locale() ?? i18n.language;
-
-      this.t = i18n.getFixedT(locale, namespace, keyPrefix);
+      this.t = this.fixedT(namespace, keyPrefix);
     }
 
     return this.t;
   }
 
+  /** Unscoped translator — keys need their namespace (`ns:key`). */
   public getTg(): Translator {
-    if (!this.tg) {
-      const locale = this.locale() ?? i18n.language;
+    return (this.tg ??= this.fixedT());
+  }
 
-      this.tg = i18n.getFixedT(locale);
-    }
+  private fixedT(namespace?: string, keyPrefix?: string): Translator {
+    const t = i18n.getFixedT(this.getLocale(), namespace, keyPrefix);
 
-    return this.tg;
+    // i18next 27's overloaded TFunction no longer accepts an optional options arg.
+    return (key, context) => t(key, context ?? {});
   }
 
   protected abstract to(): AddressLike; // required

@@ -50,7 +50,7 @@ export class TaskDueReminderMessage extends MailBase<TaskDueReminderPayload> {
   }
 
   private context() {
-    const locale = this.locale() ?? 'en';
+    const locale = this.getLocale();
     const { event, task } = this.payload;
 
     return {

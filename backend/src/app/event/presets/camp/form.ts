@@ -745,9 +745,8 @@ export default {
             default:
               'I have read the [event rules]({_file.rules}) and agree to them.',
           },
-          correctAnswer: true,
-          isRequired: true,
-          requiredErrorText: {
+          requireTrue: true,
+          requireTrueErrorText: {
             en: 'You must agree to the event rules in order to participate in the event',
             de: 'Du musst den Veranstaltungsregeln zustimmen, um an der Veranstaltung teilnehmen zu können',
             fr: "Tu dois accepter le règlement de l'événement pour pouvoir y participer.",
@@ -756,21 +755,6 @@ export default {
             default:
               'You must agree to the event rules in order to participate in the event',
           },
-          validators: [
-            {
-              type: 'expression',
-              text: {
-                en: 'You must agree to the event rules in order to participate in the event',
-                de: 'Du musst den Veranstaltungsregeln zustimmen, um an der Veranstaltung teilnehmen zu können',
-                fr: "Tu dois accepter le règlement de l'événement pour pouvoir y participer.",
-                pl: 'Aby wziąć udział w wydarzeniu, musisz zaakceptować regulamin wydarzenia',
-                cs: 'Pro účast na akci musíš souhlasit s pravidly akce',
-                default:
-                  'You must agree to the event rules in order to participate in the event',
-              },
-              expression: '{consent_rules} = true',
-            },
-          ],
         },
         {
           type: 'boolean',
@@ -784,9 +768,8 @@ export default {
             default:
               'I have read the [General Terms and Conditions]({_file.toc}) and agree to them.',
           },
-          correctAnswer: true,
-          isRequired: true,
-          requiredErrorText: {
+          requireTrue: true,
+          requireTrueErrorText: {
             en: 'You must agree to our terms and conditions in order to participate!',
             de: 'Du musst unseren AGB zustimmen, um teilnehmen zu können!',
             fr: 'Tu dois accepter nos conditions générales pour pouvoir participer !',
@@ -795,21 +778,6 @@ export default {
             default:
               'You must agree to our terms and conditions in order to participate!',
           },
-          validators: [
-            {
-              type: 'expression',
-              text: {
-                en: 'You must agree to our terms and conditions in order to participate!',
-                de: 'Du musst unseren AGB zustimmen, um teilnehmen zu können!',
-                fr: 'Tu dois accepter nos conditions générales pour pouvoir participer !',
-                pl: 'Aby wziąć udział, musisz zaakceptować nasze warunki!',
-                cs: 'Pro účast musíš souhlasit s našimi podmínkami!',
-                default:
-                  'You must agree to our terms and conditions in order to participate!',
-              },
-              expression: '{consent_general_terms_and_conditions} = true',
-            },
-          ],
         },
         {
           type: 'boolean',

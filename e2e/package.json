@@ -19,9 +19,9 @@
     "update-snapshots": "docker compose --profile snapshots run --rm snapshots"
   },
   "devDependencies": {
-    "@playwright/test": "1.63.0",
-    "@types/node": "^25.9.3",
-    "dotenv": "^17.4.2",
+    "@playwright/test": "1.65.0",
+    "@types/node": "^24.13.2",
+    "dotenv": "^18.0.10",
     "otplib": "^13.4.0",
     "prettier": "^3.8.3",
     "typescript": "^6.0.3"

@@ -17,7 +17,7 @@ This is an **npm workspaces monorepo** with the following workspaces:
 
 ### Backend
 
-- **Runtime**: Node.js 22–24
+- **Runtime**: Node.js >=24
 - **Language**: TypeScript (strict mode)
 - **Framework**: Express 5
 - **ORM**: Prisma (MySQL/MariaDB)
@@ -123,10 +123,18 @@ Each feature is an `AppModule` with four responsibilities:
 
 ```ts
 class ExampleModule implements AppModule {
-  bindContainers(container: Container): void { /* register DI bindings */ }
-  configure(app: Application): void { /* middleware, config */ }
-  registerRoutes(app: Application): void { /* mount router */ }
-  registerPermissions(): void { /* define RBAC permissions */ }
+  bindContainers(container: Container): void {
+    /* register DI bindings */
+  }
+  configure(app: Application): void {
+    /* middleware, config */
+  }
+  registerRoutes(app: Application): void {
+    /* mount router */
+  }
+  registerPermissions(): void {
+    /* define RBAC permissions */
+  }
 }
 ```
 
@@ -241,10 +249,10 @@ src/
 
 ### Workflows
 
-| Workflow | Trigger | Jobs |
-|----------|---------|------|
-| `test.yml` | Push to `main`, PRs | verify-migrations, test-backend (Node 22 & 24), test-frontend, test-e2e (Chrome + Firefox) |
-| `style.yml` | PRs | lint, format |
+| Workflow    | Trigger             | Jobs                                                                                       |
+| ----------- | ------------------- | ------------------------------------------------------------------------------------------ |
+| `test.yml`  | Push to `main`, PRs | verify-migrations, test-backend (Node 24 & 26), test-frontend, test-e2e (Chrome + Firefox) |
+| `style.yml` | PRs                 | lint, format                                                                               |
 
 ### PR Requirements
 

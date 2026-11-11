@@ -11,7 +11,17 @@ export class SentryTracker implements ErrorTracker {
     Sentry.init({
       dsn: config.errorTracking.sentry.dsn,
       environment: config.env,
-      sendDefaultPii: false,
+      // v11 collects everything by default; keep registrant data out of Sentry.
+      dataCollection: {
+        userInfo: false,
+        cookies: false,
+        httpHeaders: { request: { allow: ['user-agent', 'accept-language'] } },
+        httpBodies: [],
+        urlQueryParams: false,
+        databaseQueryData: false,
+        queues: false,
+        stackFrameVariables: false,
+      },
       beforeSend(event, hint) {
         const err = hint.originalException;
         if (err instanceof ApiError && !err.isFault) {

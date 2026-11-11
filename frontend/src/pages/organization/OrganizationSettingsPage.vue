@@ -281,7 +281,8 @@
         >
           <router-link
             v-if="
-              organization.ownedEvents > 0 && canOrg('organization.events.view')
+              (organization?.ownedEvents ?? 0) > 0 &&
+              canOrg('organization.events.view')
             "
             class="text-primary text-body2"
             :to="{ name: 'management.organization.events' }"
@@ -290,7 +291,7 @@
           </router-link>
           <router-link
             v-if="
-              organization.ownedNewsletters > 0 &&
+              (organization?.ownedNewsletters ?? 0) > 0 &&
               canOrg('organization.newsletters.view')
             "
             class="text-primary text-body2"

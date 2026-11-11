@@ -8,7 +8,7 @@
 # Stage 1 — build: install, compile common -> backend -> frontend, drop dev deps.
 # Full source is copied before `npm ci` so package postinstalls (quasar prepare,
 # prisma engines, esbuild) have the files they need.
-FROM node:22-bookworm-slim AS build
+FROM node:24-bookworm-slim AS build
 
 # Openssl required by prisma
 RUN apt-get update && apt-get install -y openssl
@@ -29,7 +29,7 @@ RUN npm run build
 RUN npm prune --omit=dev
 
 # Stage 2 — runtime.
-FROM node:22-bookworm-slim AS runtime
+FROM node:24-bookworm-slim AS runtime
 
 ENV NODE_ENV=production \
     APP_PORT=3000

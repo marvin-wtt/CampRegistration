@@ -19,7 +19,7 @@ room assignments, users, files, and email notifications.
 
 ## Prerequisites
 
-- Node.js `>=22`
+- Node.js `>=24`
 - MySQL >= 8.0.1 or MariaDB >= 10.6
 - Redis 7 — optional, only required when `QUEUE_DRIVER=redis`
 

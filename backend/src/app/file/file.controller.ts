@@ -9,7 +9,7 @@ import validator from './file.validation.js';
 import { BaseController } from '#core/base/BaseController';
 import { RealtimeService } from '#core/realtime/RealtimeService';
 import { inject, injectable } from 'inversify';
-import contentDisposition from 'content-disposition';
+import * as contentDisposition from 'content-disposition';
 import { isClientDisconnect } from '#utils/stream';
 
 // Types a browser shows without running anything. Everything else downloads:

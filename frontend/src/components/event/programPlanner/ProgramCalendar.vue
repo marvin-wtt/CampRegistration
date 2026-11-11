@@ -1459,7 +1459,7 @@ const dragSelection = ref<DragSelection | null>(null);
 function onOverlayMouseDown(
   e: MouseEvent,
   timestamp: Timestamp,
-  timeDurationHeight: (d?: number) => number,
+  timeDurationHeight: (minutes: number) => number,
 ) {
   const hadSelection = selectedEventIds.value.size > 0;
   clearSelection();
@@ -1472,7 +1472,7 @@ function onOverlayMouseDown(
 function onOverlayClick(
   e: MouseEvent,
   timestamp: Timestamp,
-  timeDurationHeight: (d?: number) => number,
+  timeDurationHeight: (minutes: number) => number,
 ) {
   const hadSelection = selectedEventIds.value.size > 0;
   clearSelection();
@@ -1485,7 +1485,7 @@ function onOverlayClick(
 function onBodyMouseDown(
   e: MouseEvent,
   timestamp: Timestamp,
-  timeDurationHeight: (d?: number) => number,
+  timeDurationHeight: (minutes: number) => number,
 ) {
   if (!canCreate.value) {
     return;
@@ -1569,7 +1569,7 @@ function onBodyMouseDown(
 function onBodyClick(
   e: MouseEvent,
   timestamp: Timestamp,
-  timeDurationHeight: (d?: number) => number,
+  timeDurationHeight: (minutes: number) => number,
 ) {
   if (!canCreate.value) {
     return;
@@ -1621,7 +1621,7 @@ const hoverSlot = ref<HoverSlot | null>(null);
 function onBodyMouseMove(
   e: MouseEvent,
   timestamp: Timestamp,
-  timeDurationHeight: (d?: number) => number,
+  timeDurationHeight: (minutes: number) => number,
 ) {
   if (
     !canCreate.value ||
