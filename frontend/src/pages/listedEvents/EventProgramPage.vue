@@ -129,7 +129,9 @@ useProgramPublicStream(eventId, () => {
   void fetchView();
 });
 
-void (async () => {
+void loadPage();
+
+async function loadPage() {
   try {
     loading.value = true;
 
@@ -159,7 +161,7 @@ void (async () => {
   } finally {
     loading.value = false;
   }
-})();
+}
 
 // Guards against out-of-order responses: the stream, `jumpToDate` and the
 // initial mount can all have a fetch in flight at once, and only the

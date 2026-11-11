@@ -595,7 +595,9 @@ watch(selectedOrganizationUnverified, (unverified) => {
   }
 });
 
-void (async () => {
+void loadOrganizations();
+
+async function loadOrganizations() {
   await organizationsStore.fetchData();
 
   // Skip a pointless choice when there is only one.
@@ -603,7 +605,7 @@ void (async () => {
   if (eligible.length === 1) {
     data.value.organizationId = eligible[0]!.value;
   }
-})();
+}
 
 const referenceEvent = computed<Event | undefined>(() => {
   return assignedEventsStore.data?.find(

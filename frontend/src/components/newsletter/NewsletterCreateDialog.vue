@@ -124,7 +124,9 @@ function onSubmit() {
   onDialogOK(data);
 }
 
-void (async () => {
+void loadOrganizations();
+
+async function loadOrganizations() {
   await organizationsStore.fetchData();
 
   // Skip a pointless choice when there is only one.
@@ -132,7 +134,7 @@ void (async () => {
   if (eligible.length === 1) {
     organizationId.value = eligible[0]!.value;
   }
-})();
+}
 </script>
 
 <i18n lang="yaml" locale="en">

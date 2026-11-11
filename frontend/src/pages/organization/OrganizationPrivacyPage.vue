@@ -716,7 +716,9 @@ const canEdit = computed<boolean>(() => canAccessOrg('organization.edit'));
 
 const completeness = computed(() => privacyNoticeCompleteness(content.value));
 
-void (async () => {
+void loadNotice();
+
+async function loadNotice() {
   try {
     const notice = await fetchOrganizationNotice(organizationId.value);
     // Replace rather than merge: `content` is a ref now, and Object.assign on
@@ -735,7 +737,7 @@ void (async () => {
   } finally {
     loading.value = false;
   }
-})();
+}
 
 watch(step, (value) => {
   furthestStep.value = Math.max(furthestStep.value, value);

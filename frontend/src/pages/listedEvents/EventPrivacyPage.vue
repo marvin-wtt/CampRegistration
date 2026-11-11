@@ -63,7 +63,9 @@ useMeta(() => ({
   titleTemplate: (pageTitle: string) => `${pageTitle} | ${t('app_name')}`,
 }));
 
-void (async () => {
+void loadNotice();
+
+async function loadNotice() {
   try {
     notice.value = await fetchEventNotice(props.eventId);
   } catch (err) {
@@ -71,7 +73,7 @@ void (async () => {
   } finally {
     loading.value = false;
   }
-})();
+}
 
 function goBack() {
   if (window.history.length > 1) {

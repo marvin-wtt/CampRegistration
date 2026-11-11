@@ -41,10 +41,12 @@ const title = computed<string>(() => {
   );
 });
 
-void (async () => {
+void initialize();
+
+async function initialize() {
   await authStore.init();
   await newsletterStore.fetchData();
-})();
+}
 </script>
 
 <i18n lang="yaml" locale="en">

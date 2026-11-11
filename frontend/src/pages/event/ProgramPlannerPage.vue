@@ -32,10 +32,12 @@ const { data: events } = storeToRefs(programPlannerStore);
 const eventDetailsStore = useEventDetailsStore();
 const { data: event } = storeToRefs(eventDetailsStore);
 
-void (async () => {
+void loadPage();
+
+async function loadPage() {
   await eventDetailsStore.fetchData();
   await programPlannerStore.fetchData();
-})();
+}
 
 const loading = computed<boolean>(() => {
   return eventDetailsStore.isLoading || programPlannerStore.isLoading;

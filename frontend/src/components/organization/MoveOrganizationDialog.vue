@@ -209,10 +209,12 @@ watch(organizationId, (id) => {
     : undefined;
 });
 
-void (async () => {
+void loadOptions();
+
+async function loadOptions() {
   organizations.value = await fetchOrganizations();
   filteredOptions.value = allOptions.value;
-})();
+}
 </script>
 
 <style lang="scss" scoped>

@@ -45,7 +45,9 @@ const error = computed(() => {
   return eventDetailsStore.error || registrationStore.error;
 });
 
-void (async () => {
+void loadPage();
+
+async function loadPage() {
   await Promise.allSettled([
     eventDetailsStore.fetchData(),
     registrationStore.fetchData(),
@@ -73,7 +75,7 @@ void (async () => {
   } else {
     showEditor.value = true;
   }
-})();
+}
 
 async function saveForm(form: SurveyJSEventData): Promise<void> {
   const data = {

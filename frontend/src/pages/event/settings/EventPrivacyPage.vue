@@ -526,7 +526,9 @@ function loadPublished(published: PrivacyNoticeAddendum | undefined) {
   publishedSnapshot.value = JSON.stringify(content.value);
 }
 
-void (async () => {
+void loadPage();
+
+async function loadPage() {
   try {
     // On a reload this page is what instantiates the event store, so the store's
     // own route guard has already run and nothing has fetched the event yet.
@@ -555,7 +557,7 @@ void (async () => {
   } finally {
     loading.value = false;
   }
-})();
+}
 
 /* The organization baseline */
 

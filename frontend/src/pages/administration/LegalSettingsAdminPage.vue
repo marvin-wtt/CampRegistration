@@ -114,7 +114,9 @@ const privacyPolicyModified = computed(
   () => privacyPolicyEditorRef.value?.isModified ?? false,
 );
 
-void (async () => {
+void loadDocuments();
+
+async function loadDocuments() {
   try {
     documents.value = await fetchLegalDocuments();
   } catch (err) {
@@ -122,7 +124,7 @@ void (async () => {
   } finally {
     loading.value = false;
   }
-})();
+}
 
 const imprintContent = computed(() => {
   return (

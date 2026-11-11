@@ -49,7 +49,9 @@ const eventDetailStore = useEventDetailsStore();
 const assignedEventsStore = useAssignedEventsStore();
 const realtimeStore = useRealtimeStore();
 
-void (async () => {
+void initialize();
+
+async function initialize() {
   await authStore.init();
   realtimeStore.connect();
 
@@ -57,7 +59,7 @@ void (async () => {
     await eventDetailStore.fetchData();
     void assignedEventsStore.fetchData();
   }
-})();
+}
 
 // Drives the router-view :key — changes only when the active event changes, so
 // pages remount (and refetch) on event switch but not on intra-event navigation.
