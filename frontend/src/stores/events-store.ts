@@ -15,7 +15,7 @@ export const useEventsStore = defineStore('events', () => {
   const { run } = useAction('event');
 
   async function createEntry(createData: EventCreateData): Promise<Event> {
-    const event = await run('update', () => api.createEvent(createData), {
+    const event = await run('create', () => api.createEvent(createData), {
       feedback: 'progress',
     });
     bus.emit('create', event);

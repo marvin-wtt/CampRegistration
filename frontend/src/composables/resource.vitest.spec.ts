@@ -3,20 +3,24 @@ import { effectScope, nextTick, reactive } from 'vue';
 import { flushPromises } from '@vue/test-utils';
 import { AxiosError, AxiosHeaders } from 'axios';
 import { EventBus } from 'quasar';
+import type * as QuasarModule from 'quasar';
 import type { RealtimeEvent } from '@camp-registration/common/realtime';
 import { useCollection, useResource } from '@/composables/resource';
 import { isReportedError } from '@/utils/reportedError';
 import { replaceById } from '@/utils/collection';
 
-const mocks = vi.hoisted(() => ({
-  notify: vi.fn(),
-  route: { params: {} as Record<string, string | undefined> },
-  authBus: undefined as unknown as EventBus,
-  realtime: undefined as ((event: RealtimeEvent) => void) | undefined,
-}));
+const mocks = vi.hoisted(() => {
+  const params: Record<string, string | undefined> = {};
+  return {
+    notify: vi.fn(),
+    route: { params },
+    authBus: undefined as unknown as EventBus,
+    realtime: undefined as ((event: RealtimeEvent) => void) | undefined,
+  };
+});
 
 vi.mock('quasar', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('quasar')>()),
+  ...(await importOriginal<typeof QuasarModule>()),
   useQuasar: () => ({ notify: mocks.notify }),
 }));
 vi.mock('vue-i18n', () => ({
@@ -529,6 +533,46 @@ describe('mutate', () => {
     expect(resource.data.value).toEqual([row('1', 'saved')]);
   });
 
+  it('rolls back by the given undo when the data changed meanwhile', async () => {
+    const fetch = vi.fn().mockResolvedValue([row('1')]);
+    const resource = setup(fetch);
+    await resource.load();
+    const request = deferred<Row>();
+
+    const writing = resource.mutate('create', () => request.promise, {
+      optimistic: (list) => [...list, row('#tmp')],
+      rollback: (list) => list.filter((entry) => entry.id !== '#tmp'),
+    });
+    resource.update((list) => [...list, row('2')]);
+    request.reject(await refused().catch((err: unknown) => err));
+    await writing.catch(() => undefined);
+    await flushPromises();
+
+    expect(resource.data.value?.map((entry) => entry.id)).toEqual(['1', '2']);
+    expect(fetch).toHaveBeenCalledOnce();
+  });
+
+  it('reloads when a refused optimistic change cannot be undone', async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce([row('1')])
+      .mockResolvedValueOnce([row('1')]);
+    const resource = setup(fetch);
+    await resource.load();
+    const request = deferred<Row>();
+
+    const writing = resource.mutate('update', () => request.promise, {
+      optimistic: () => [row('1', 'moved')],
+    });
+    resource.update((list) => [...list, row('2')]);
+    request.reject(await refused().catch((err: unknown) => err));
+    await writing.catch(() => undefined);
+    await flushPromises();
+
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(resource.data.value).toEqual([row('1')]);
+  });
+
   it('counts as pending while it runs', async () => {
     const request = deferred<void>();
     const resource = setup(() => Promise.resolve([]));
@@ -546,9 +590,13 @@ describe('mutate', () => {
     mocks.route.params.eventId = undefined;
     const request = vi.fn();
 
-    await expect(resource.mutate('update', request)).rejects.toThrow(
-      'no scope',
+    const writing = resource.mutate('update', request);
+
+    await expect(writing).rejects.toThrow('service.invalidParams');
+    await writing.catch((err: unknown) =>
+      expect(isReportedError(err)).toBe(true),
     );
+    expect(mocks.notify).toHaveBeenCalledOnce();
     expect(request).not.toHaveBeenCalled();
   });
 

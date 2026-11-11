@@ -172,6 +172,7 @@ export const useEventFilesStore = defineStore('eventFiles', () => {
       {
         feedback: 'progress',
         apply: (list, created) => [...removeById(list, oldFile.id), created],
+        multiWrite: true,
       },
     );
     refreshEventMedia(oldFile.field, file.field);

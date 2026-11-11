@@ -71,6 +71,7 @@ describe('run', () => {
 
   it('wraps a non-error rejection so it can be marked', async () => {
     const rejection = await run('update', () =>
+      // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- the case under test
       Promise.reject('offline'),
     ).catch((err: unknown) => err);
 

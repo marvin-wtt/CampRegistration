@@ -9,6 +9,7 @@ import { useCollection, useRouteKey } from '@/composables/resource';
 import { useAction } from '@/composables/action';
 import { removeById, replaceById, upsertById } from '@/utils/collection';
 import { createUuid } from '@/utils/uuid';
+import { useI18n } from 'vue-i18n';
 
 // Placeholders for items still being created carry a `#` id.
 function isPlaceholder(id: string): boolean {
@@ -33,6 +34,7 @@ function placeholder(id: string, item: ProgramItemCreateData): ProgramItem {
 // only failures are reported; a failed one is undone.
 export const useProgramPlannerStore = defineStore('program-planner', () => {
   const api = useAPIService();
+  const { t } = useI18n({ useScope: 'global' });
   const { run } = useAction('programPlanner');
   const items = useCollection<ProgramItem>({
     name: 'programPlanner',
@@ -55,6 +57,7 @@ export const useProgramPlannerStore = defineStore('program-planner', () => {
       (eventId) => api.createProgramItem(eventId, item),
       {
         optimistic: (list) => [...list, placeholder(tmpId, item)],
+        rollback: (list) => removeById(list, tmpId),
         // An upsert, as the realtime "created" echo may have inserted it.
         apply: (list, created) => upsertById(removeById(list, tmpId), created),
       },
@@ -64,7 +67,7 @@ export const useProgramPlannerStore = defineStore('program-planner', () => {
   // A placeholder has no server id yet, so it can't be changed until created.
   function rejectPlaceholder(operation: string): Promise<never> {
     return run(operation, () =>
-      Promise.reject(new Error('Please wait until the event is created')),
+      Promise.reject(new Error(t('stores.programPlanner.pendingCreate'))),
     );
   }
 

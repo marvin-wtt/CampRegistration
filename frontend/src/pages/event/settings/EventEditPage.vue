@@ -565,6 +565,8 @@ async function onSubmit() {
   } finally {
     updating.value = false;
   }
+  // Takes the stored copy, so leaving doesn't ask about unsaved changes.
+  onReset();
 
   await router.push({
     name: 'management.event',

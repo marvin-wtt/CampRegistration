@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { useAPIService } from '@/services/APIService';
 import { requireKey, useCollection, useRouteKey } from '@/composables/resource';
+import { settleAll } from '@/composables/action';
 import { removeById, replaceAllById, replaceById } from '@/utils/collection';
 import type {
   ChoreAssignment,
@@ -100,22 +101,15 @@ export const useChoreAssignmentStore = defineStore('choreAssignment', () => {
   ): Promise<void> {
     await assignments.mutate(
       'update',
-      async (eventId) => {
-        const results = await Promise.allSettled(
-          choreAssignmentIds.map((id) =>
-            api.updateChoreAssignment(eventId, id, { status }),
+      (eventId, report) =>
+        settleAll(
+          choreAssignmentIds.map(
+            (id) => () => api.updateChoreAssignment(eventId, id, { status }),
           ),
-        );
-        // A partial failure rejects, so the reload shows what was saved.
-        const failed = results.find((result) => result.status === 'rejected');
-        if (failed) {
-          throw failed.reason;
-        }
-        return results.map(
-          (result) => (result as PromiseFulfilledResult<ChoreAssignment>).value,
-        );
-      },
-      { feedback: 'progress', apply: replaceAllById },
+          report,
+        ),
+      // A partial failure rejects, so the reload shows what was saved.
+      { feedback: 'progress', apply: replaceAllById, multiWrite: true },
     );
   }
 

@@ -1,4 +1,5 @@
 export default {
+  pendingCreate: 'Poczekaj, aż wydarzenie zostanie utworzone',
   create: {
     error: 'Błąd podczas tworzenia wydarzenia',
   },

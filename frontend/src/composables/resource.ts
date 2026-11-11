@@ -51,6 +51,11 @@ export interface MutateOptions<T, R> extends ActionOptions {
   apply?: (current: T, result: R) => T;
   /** Shown right away; undone if the write fails. */
   optimistic?: (current: T) => T;
+  /**
+   * Takes the optimistic change back out when the data changed meanwhile
+   * (e.g. drops a placeholder by id). Without it, a reload undoes it.
+   */
+  rollback?: (current: T) => T;
   /** Overrides the scope the write targets; defaults to the current key. */
   key?: string;
   /**
@@ -260,6 +265,7 @@ function createResource<T>(options: ResourceOptions<T>) {
     {
       apply,
       optimistic,
+      rollback,
       key: explicitKey,
       multiWrite = false,
       ...action
@@ -267,7 +273,12 @@ function createResource<T>(options: ResourceOptions<T>) {
   ): Promise<R> {
     const key = explicitKey ?? currentKey();
     if (key === undefined) {
-      throw new Error(`${options.name ?? 'resource'}.${operation}: no scope`);
+      // Reported like any failed write, so no page swaps for an error state.
+      return run(
+        operation,
+        () => Promise.reject(new Error(t('service.invalidParams'))),
+        action,
+      );
     }
 
     let previous: T | undefined;
@@ -296,10 +307,21 @@ function createResource<T>(options: ResourceOptions<T>) {
       }
       return result;
     } catch (err: unknown) {
-      if (shown !== undefined && toRaw(data.value) === toRaw(shown)) {
-        data.value = previous;
+      // Whether the optimistic change is still shown with nothing to undo it.
+      let leftOver = false;
+      if (shown !== undefined && loadedKey.value === key) {
+        if (toRaw(data.value) === toRaw(shown)) {
+          data.value = previous;
+        } else if (rollback && data.value !== undefined) {
+          data.value = rollback(data.value);
+        } else {
+          leftOver = true;
+        }
       }
-      if (loadedKey.value === key && mayHaveApplied(err, multiWrite)) {
+      if (
+        loadedKey.value === key &&
+        (leftOver || mayHaveApplied(err, multiWrite))
+      ) {
         void reload();
       }
       throw err;

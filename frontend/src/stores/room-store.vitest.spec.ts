@@ -3,6 +3,7 @@ import { computed, reactive } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import { flushPromises } from '@vue/test-utils';
 import { EventBus } from 'quasar';
+import type * as QuasarModule from 'quasar';
 import type { RealtimeEvent } from '@camp-registration/common/realtime';
 import type { Room } from '@camp-registration/common/entities';
 import { useRoomStore } from '@/stores/room-store';
@@ -30,7 +31,7 @@ vi.mock('@/services/APIService', () => ({
   isAPIServiceError: () => false,
 }));
 vi.mock('quasar', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('quasar')>()),
+  ...(await importOriginal<typeof QuasarModule>()),
   useQuasar: () => ({ notify: mocks.notify }),
 }));
 vi.mock('vue-i18n', () => ({
@@ -62,7 +63,7 @@ function room(id: string, beds: [string, string | null][]): Room {
       id: bedId,
       registrationId,
     })),
-  } as Room;
+  };
 }
 
 async function loadedStore(rooms: Room[]) {
@@ -208,7 +209,7 @@ describe('room store', () => {
     const store = await loadedStore([room('a', [])]);
 
     mocks.api.createRoom.mockResolvedValueOnce(room('b', []));
-    await store.createData({ name: 'b', capacity: 0 } as never);
+    await store.createData({ name: 'b', capacity: 0 });
     expect(store.data?.map((r) => r.id)).toEqual(['a', 'b']);
 
     mocks.api.bulkUpdateRooms.mockResolvedValueOnce([

@@ -66,7 +66,7 @@ export function useNotifier(storeName?: string): Notifier {
         update({
           type: 'positive',
           color: 'positive',
-          textColor: 'white',
+          textColor: 'on-positive',
           spinner: false,
           timeout: RESULT_TIMEOUT,
           message: text(operation, 'success'),
@@ -76,7 +76,7 @@ export function useNotifier(storeName?: string): Notifier {
         update({
           type: 'negative',
           color: 'negative',
-          textColor: 'white',
+          textColor: 'on-error',
           spinner: false,
           timeout: RESULT_TIMEOUT,
           message: message ?? text(operation, 'error'),

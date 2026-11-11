@@ -20,7 +20,7 @@ afterEach(() => {
 
 // A button whose click handler returns the failing save, like
 // `@click="store.updateData(...)"` does.
-function failingButton(error: unknown) {
+function failingButton(error: Error) {
   return defineComponent({
     setup: () => () =>
       h('button', {
@@ -30,7 +30,7 @@ function failingButton(error: unknown) {
   });
 }
 
-function mountPage(error: unknown) {
+function mountPage(error: Error) {
   return mount(PageStateHandler, {
     slots: { default: () => h(failingButton(error)) },
   });
