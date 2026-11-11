@@ -7,6 +7,7 @@ import newsletter from './newsletter/index.js';
 import organization from './organization/index.js';
 import programPublic from './programPublic/index.js';
 import registration from './registration/index.js';
+import task from './task/index.js';
 
 export default {
   // Translation is the default namespace
@@ -20,4 +21,5 @@ export default {
   organization,
   programPublic,
   registration,
+  task,
 };

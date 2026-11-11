@@ -70,9 +70,18 @@ export class TaskService extends BaseService {
       await this.assertAssigneeBelongsToEvent(eventId, data.assigneeId);
     }
 
+    const current = await this.prisma.task.findUniqueOrThrow({
+      where: { id },
+      select: { dueDate: true, assigneeId: true },
+    });
+    // A new date or a new assignee earns a fresh reminder.
+    const resetReminder =
+      (data.dueDate !== undefined && data.dueDate !== current.dueDate) ||
+      (data.assigneeId !== undefined && data.assigneeId !== current.assigneeId);
+
     return this.prisma.task.update({
       where: { id },
-      data,
+      data: resetReminder ? { ...data, reminderSentAt: null } : data,
       include: TASK_INCLUDE,
     });
   }
