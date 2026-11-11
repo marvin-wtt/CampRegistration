@@ -22,7 +22,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import WorkspaceSwitcher from '@/components/layout/WorkspaceSwitcher.vue';
 import { useEventDetailsStore } from '@/stores/event-details-store';
@@ -49,7 +49,7 @@ const eventDetailStore = useEventDetailsStore();
 const assignedEventsStore = useAssignedEventsStore();
 const realtimeStore = useRealtimeStore();
 
-onMounted(async () => {
+void (async () => {
   await authStore.init();
   realtimeStore.connect();
 
@@ -57,7 +57,7 @@ onMounted(async () => {
     await eventDetailStore.fetchData();
     void assignedEventsStore.fetchData();
   }
-});
+})();
 
 // Drives the router-view :key — changes only when the active event changes, so
 // pages remount (and refetch) on event switch but not on intra-event navigation.

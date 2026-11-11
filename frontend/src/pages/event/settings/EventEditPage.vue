@@ -481,7 +481,7 @@ import {
   mapPerGroup,
   toMinorUnits,
 } from '@camp-registration/common/utils';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import type { Event, EventDetails } from '@camp-registration/common/entities';
 import { useRoute, useRouter } from 'vue-router';
 import { useEventDetailsStore } from '@/stores/event-details-store';
@@ -511,9 +511,7 @@ const { data, error, isLoading } = storeToRefs(eventStore);
 const event = ref<EventDetails | undefined>(initialValue());
 const updating = ref<boolean>(false);
 
-onMounted(async () => {
-  await Promise.allSettled([eventStore.fetchData()]);
-});
+void eventStore.fetchData();
 
 const loading = computed(() => isLoading.value || updating.value);
 

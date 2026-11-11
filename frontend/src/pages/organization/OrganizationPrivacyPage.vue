@@ -615,7 +615,7 @@
 
 <script lang="ts" setup>
 import PageHeader from '@/components/common/PageHeader.vue';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
 import { useRoute, useRouter } from 'vue-router';
@@ -716,7 +716,7 @@ const canEdit = computed<boolean>(() => canAccessOrg('organization.edit'));
 
 const completeness = computed(() => privacyNoticeCompleteness(content.value));
 
-onMounted(async () => {
+void (async () => {
   try {
     const notice = await fetchOrganizationNotice(organizationId.value);
     // Replace rather than merge: `content` is a ref now, and Object.assign on
@@ -735,7 +735,7 @@ onMounted(async () => {
   } finally {
     loading.value = false;
   }
-});
+})();
 
 watch(step, (value) => {
   furthestStep.value = Math.max(furthestStep.value, value);

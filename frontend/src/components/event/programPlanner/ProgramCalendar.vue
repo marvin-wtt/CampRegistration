@@ -531,11 +531,12 @@ const activePlan = ref<'a' | 'b' | 'both'>('both');
 
 let bodyResizeObserver: ResizeObserver | null = null;
 
+void programPublishedDayStore.fetchData(event.id);
+
 onMounted(() => {
   observeCalendarBody();
   window.addEventListener('keydown', onKeydown);
   window.addEventListener('click', onGlobalClick);
-  void programPublishedDayStore.fetchData(event.id);
 });
 
 onUnmounted(() => {

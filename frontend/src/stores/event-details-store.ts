@@ -59,10 +59,11 @@ export const useEventDetailsStore = defineStore('eventDetails', () => {
     }
   });
 
-  router.beforeEach(async (to, from) => {
+  router.beforeEach((to, from) => {
     // Leaving the event only marks it stale: the page being left keeps
     // rendering until its route is resolved and its fade-out ends, and must
-    // not see the event vanish. Entering an event loads it before the page.
+    // not see the event vanish. Entering an event starts loading it while
+    // the page's chunk downloads; the page shows the loading state.
     const eventId = to.params.eventId as string | undefined;
     if (eventId === undefined) {
       if (from.params.eventId !== undefined) {
@@ -73,7 +74,7 @@ export const useEventDetailsStore = defineStore('eventDetails', () => {
 
     if (details.data.value === undefined || eventId !== from.params.eventId) {
       details.invalidate();
-      await details.load(eventId);
+      void details.load(eventId);
     }
   });
 

@@ -73,7 +73,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
@@ -86,9 +86,7 @@ const { data, isLoading, error } = storeToRefs(store);
 
 const newsletters = computed<Newsletter[]>(() => data.value ?? []);
 
-onMounted(async () => {
-  await store.fetchData();
-});
+void store.fetchData();
 </script>
 
 <style lang="scss" scoped>

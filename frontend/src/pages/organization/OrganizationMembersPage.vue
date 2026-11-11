@@ -120,7 +120,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
 import { storeToRefs } from 'pinia';
@@ -209,9 +209,7 @@ function confirmRemove(member: OrganizationMember) {
     });
 }
 
-onMounted(async () => {
-  await store.fetchData();
-});
+void store.fetchData();
 </script>
 
 <style lang="scss" scoped>

@@ -404,7 +404,7 @@
 
 <script lang="ts" setup>
 import PageHeader from '@/components/common/PageHeader.vue';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
@@ -526,7 +526,7 @@ function loadPublished(published: PrivacyNoticeAddendum | undefined) {
   publishedSnapshot.value = JSON.stringify(content.value);
 }
 
-onMounted(async () => {
+void (async () => {
   try {
     // On a reload this page is what instantiates the event store, so the store's
     // own route guard has already run and nothing has fetched the event yet.
@@ -555,7 +555,7 @@ onMounted(async () => {
   } finally {
     loading.value = false;
   }
-});
+})();
 
 /* The organization baseline */
 

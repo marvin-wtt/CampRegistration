@@ -11,7 +11,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import GeneralLayout from '@/components/layout/GeneralLayout.vue';
 import WorkspaceSwitcher from '@/components/layout/WorkspaceSwitcher.vue';
@@ -41,10 +41,10 @@ const title = computed<string>(() => {
   );
 });
 
-onMounted(async () => {
+void (async () => {
   await authStore.init();
   await newsletterStore.fetchData();
-});
+})();
 </script>
 
 <i18n lang="yaml" locale="en">

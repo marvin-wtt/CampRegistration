@@ -317,7 +317,7 @@
 
 <script lang="ts" setup>
 import PageHeader from '@/components/common/PageHeader.vue';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
 import { useRouter } from 'vue-router';
@@ -524,9 +524,7 @@ function confirmDelete() {
     });
 }
 
-onMounted(async () => {
-  await store.fetchData();
-});
+void store.fetchData();
 </script>
 
 <style lang="scss" scoped>

@@ -68,7 +68,7 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, ref } from 'vue';
+import { ref } from 'vue';
 import { useMeta } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import type {
@@ -129,7 +129,7 @@ useProgramPublicStream(eventId, () => {
   void fetchView();
 });
 
-onMounted(async () => {
+void (async () => {
   try {
     loading.value = true;
 
@@ -159,7 +159,7 @@ onMounted(async () => {
   } finally {
     loading.value = false;
   }
-});
+})();
 
 // Guards against out-of-order responses: the stream, `jumpToDate` and the
 // initial mount can all have a fetch in flight at once, and only the

@@ -281,7 +281,7 @@
 import PageHeader from '@/components/common/PageHeader.vue';
 import { useI18n } from 'vue-i18n';
 import { useEventManagerStore } from '@/stores/event-manager-store';
-import { computed, onMounted } from 'vue';
+import { computed } from 'vue';
 import type {
   EventManager,
   EventManagerCreateData,
@@ -310,12 +310,10 @@ const profileStore = useProfileStore();
 const { can } = usePermissions();
 const router = useRouter();
 
-onMounted(async () => {
-  await Promise.allSettled([
-    eventManagerStore.fetchData(),
-    eventDetailsStore.fetchData(),
-  ]);
-});
+void Promise.allSettled([
+  eventManagerStore.fetchData(),
+  eventDetailsStore.fetchData(),
+]);
 
 const error = computed<string | null>(() => {
   return eventManagerStore.error ?? eventDetailsStore.error;

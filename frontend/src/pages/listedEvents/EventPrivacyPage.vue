@@ -34,7 +34,7 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, ref } from 'vue';
+import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useMeta } from 'quasar';
 import { useRouter } from 'vue-router';
@@ -63,7 +63,7 @@ useMeta(() => ({
   titleTemplate: (pageTitle: string) => `${pageTitle} | ${t('app_name')}`,
 }));
 
-onMounted(async () => {
+void (async () => {
   try {
     notice.value = await fetchEventNotice(props.eventId);
   } catch (err) {
@@ -71,7 +71,7 @@ onMounted(async () => {
   } finally {
     loading.value = false;
   }
-});
+})();
 
 function goBack() {
   if (window.history.length > 1) {
