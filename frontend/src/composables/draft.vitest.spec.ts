@@ -80,8 +80,9 @@ describe('useDraft', () => {
     const { source, draft, isModified, save } = setup({ name: 'a', tags: [] });
     draft.value!.name = 'edited';
 
-    await save(async () => {
+    await save(() => {
       source.value = { name: 'edited', tags: ['derived'] };
+      return Promise.resolve();
     });
 
     expect(draft.value).toEqual({ name: 'edited', tags: ['derived'] });
