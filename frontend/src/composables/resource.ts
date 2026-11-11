@@ -12,6 +12,7 @@ import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import type { RealtimeResource } from '@camp-registration/common/realtime';
 import { useAuthBus } from '@/composables/bus';
+import { isAPIServiceError } from '@/services/APIService';
 import { useErrorExtractor } from '@/composables/errorText';
 import { useAction } from '@/composables/action';
 import type { ActionOptions, ReportProgress } from '@/composables/action';
@@ -22,6 +23,16 @@ import {
 
 /** Unscoped resources (e.g. the user's own organizations) use this key. */
 const GLOBAL_KEY = 'global';
+
+// Statuses where the server refused the whole request and changed nothing.
+const REFUSED_STATUSES = new Set([400, 403, 422]);
+
+function mayHaveApplied(err: unknown, multiWrite: boolean): boolean {
+  if (multiWrite || !isAPIServiceError(err) || !err.response) {
+    return true;
+  }
+  return !REFUSED_STATUSES.has(err.response.status);
+}
 
 export interface ResourceOptions<T> {
   /** Words the toasts as `stores.<name>.*`; a page leaves it out. */
@@ -42,6 +53,11 @@ export interface MutateOptions<T, R> extends ActionOptions {
   optimistic?: (current: T) => T;
   /** Overrides the scope the write targets; defaults to the current key. */
   key?: string;
+  /**
+   * The request makes several writes, so even a refused one may have left
+   * some applied: it reloads after any failure.
+   */
+  multiWrite?: boolean;
 }
 
 /**
@@ -66,7 +82,8 @@ function createResource<T>(options: ResourceOptions<T>) {
   // The scope the data belongs to; set when a load for it starts.
   const loadedKey = shallowRef<string>();
   let stale = true;
-  let reloadsInFlight = 0;
+  // Loads and reloads; a write landing during one has to fetch again.
+  let fetchesInFlight = 0;
   // Bumped by every load; a response that isn't the latest is dropped.
   let token = 0;
 
@@ -95,11 +112,35 @@ function createResource<T>(options: ResourceOptions<T>) {
     return loadedKey.value === key && data.value !== undefined;
   }
 
-  /** Loads the data for `key` unless it is already loaded and fresh. */
+  function untilLoaded(): Promise<void> {
+    if (!isLoading.value) {
+      return Promise.resolve();
+    }
+    return new Promise((resolve) => {
+      const stop = watch(
+        isLoading,
+        (loading) => {
+          if (!loading) {
+            stop();
+            resolve();
+          }
+        },
+        { flush: 'sync' },
+      );
+    });
+  }
+
+  /**
+   * Loads the data for `key` unless it is already loaded and fresh. A call
+   * while that key is loading joins the load in flight.
+   */
   async function load(key: string | undefined = currentKey()): Promise<void> {
     if (key === undefined) {
       error.value = t('service.invalidParams');
       return;
+    }
+    if (key === loadedKey.value && isLoading.value) {
+      return untilLoaded();
     }
     if (key === loadedKey.value && !stale) {
       return;
@@ -110,6 +151,7 @@ function createResource<T>(options: ResourceOptions<T>) {
     data.value = undefined;
     error.value = null;
     isLoading.value = true;
+    fetchesInFlight++;
     try {
       const result = await options.fetch(key);
       if (ticket === token) {
@@ -121,9 +163,14 @@ function createResource<T>(options: ResourceOptions<T>) {
         error.value = extractErrorText(err);
       }
     } finally {
+      fetchesInFlight--;
       if (ticket === token) {
         isLoading.value = false;
       }
+    }
+    // A reload that superseded this load decides when it ends.
+    if (loadedKey.value === key) {
+      await untilLoaded();
     }
   }
 
@@ -141,7 +188,7 @@ function createResource<T>(options: ResourceOptions<T>) {
     const ticket = ++token;
     // A reload superseding a first load inherits its loading state.
     const supersedesLoad = isLoading.value;
-    reloadsInFlight++;
+    fetchesInFlight++;
     pendingCount.value++;
     try {
       const result = await options.fetch(key);
@@ -158,7 +205,7 @@ function createResource<T>(options: ResourceOptions<T>) {
         }
       }
     } finally {
-      reloadsInFlight--;
+      fetchesInFlight--;
       pendingCount.value--;
       if (supersedesLoad && ticket === token) {
         isLoading.value = false;
@@ -202,9 +249,10 @@ function createResource<T>(options: ResourceOptions<T>) {
 
   /**
    * Runs a write for the current scope. On failure the error is reported, the
-   * data is reloaded — the server may have applied all, some or none of it —
-   * and the call rejects with the error marked as reported, so follow-ups
-   * are skipped without anything reporting it twice.
+   * data is reloaded unless the server refused the request outright — it may
+   * have applied all, some or none of it — and the call rejects with the
+   * error marked as reported, so follow-ups are skipped without anything
+   * reporting it twice.
    */
   async function mutate<R>(
     operation: string,
@@ -213,6 +261,7 @@ function createResource<T>(options: ResourceOptions<T>) {
       apply,
       optimistic,
       key: explicitKey,
+      multiWrite = false,
       ...action
     }: MutateOptions<T, R> = {},
   ): Promise<R> {
@@ -236,10 +285,12 @@ function createResource<T>(options: ResourceOptions<T>) {
         (report) => request(key, report),
         action,
       );
-      if (apply && isLoadedFor(key)) {
-        data.value = apply(data.value as T, result);
-        // A reload started before this write would bring back the old state.
-        if (reloadsInFlight > 0) {
+      if (apply && loadedKey.value === key) {
+        if (data.value !== undefined) {
+          data.value = apply(data.value, result);
+        }
+        // A fetch started before this write would bring back the old state.
+        if (fetchesInFlight > 0) {
           void reload();
         }
       }
@@ -248,7 +299,7 @@ function createResource<T>(options: ResourceOptions<T>) {
       if (shown !== undefined && toRaw(data.value) === toRaw(shown)) {
         data.value = previous;
       }
-      if (loadedKey.value === key) {
+      if (loadedKey.value === key && mayHaveApplied(err, multiWrite)) {
         void reload();
       }
       throw err;

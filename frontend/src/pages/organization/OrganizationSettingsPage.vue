@@ -393,14 +393,19 @@ function snapshot(value: OrganizationDetails): OrganizationUpdateData {
 const form = ref<OrganizationUpdateData>({});
 const saved = ref<OrganizationUpdateData>({});
 
+// A reload (e.g. after a failed save, or a change made elsewhere) must not
+// throw away edits the form still holds.
 watch(
   organization,
   (value) => {
     if (!value) {
       return;
     }
+    const edited = JSON.stringify(form.value) !== JSON.stringify(saved.value);
     saved.value = snapshot(value);
-    form.value = { ...saved.value };
+    if (!edited) {
+      form.value = { ...saved.value };
+    }
   },
   { immediate: true },
 );
@@ -444,6 +449,11 @@ function payload(data: OrganizationUpdateData): OrganizationUpdateData {
 
 async function persist() {
   await store.updateData(payload(form.value));
+  // The saved form counts as edited until it takes what the server stored.
+  if (organization.value) {
+    saved.value = snapshot(organization.value);
+    form.value = { ...saved.value };
+  }
 
   // An identity edit demotes a rejected organization back to PENDING on its
   // own; anything else leaves it rejected, and only an explicit request moves

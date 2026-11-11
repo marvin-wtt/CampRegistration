@@ -18,11 +18,7 @@ export const useEventDetailsStore = defineStore('eventDetails', () => {
   const details = useResource<EventDetails>({
     name: 'event',
     key: eventKey,
-    fetch: async (eventId) => {
-      const event = await api.fetchEvent(eventId);
-      bus.emit('change', event);
-      return event;
-    },
+    fetch: (eventId) => api.fetchEvent(eventId),
   });
 
   bus.on('update', (event) => {
@@ -71,7 +67,6 @@ export const useEventDetailsStore = defineStore('eventDetails', () => {
     if (eventId === undefined) {
       if (from.params.eventId !== undefined) {
         details.invalidate();
-        bus.emit('change', undefined);
       }
       return;
     }

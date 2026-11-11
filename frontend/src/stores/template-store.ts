@@ -77,7 +77,7 @@ export const useTemplateStore = defineStore('templates', () => {
           ],
           report,
         ),
-      { feedback: 'progress' },
+      { feedback: 'progress', multiWrite: true },
     );
     await templates.reload();
   }

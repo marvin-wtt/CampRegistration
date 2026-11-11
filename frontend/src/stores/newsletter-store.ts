@@ -23,12 +23,20 @@ export const useNewsletterStore = defineStore('newsletter', () => {
   // Adds a newsletter the list doesn't hold (e.g. opened by link). Its own
   // page reports failures through the manager/subscriber/message stores.
   async function fetchById(id: string): Promise<void> {
+    await newsletters.load();
     if (newsletters.data.value?.some((n) => n.id === id)) {
       return;
     }
     const newsletter = await api.fetchNewsletter(id).catch(() => undefined);
-    if (newsletter) {
+    if (!newsletter) {
+      return;
+    }
+    if (newsletters.data.value) {
       newsletters.update((list) => upsertById(list, newsletter));
+    } else {
+      // The list failed to load: show this one and fetch the list next time.
+      newsletters.seed([newsletter]);
+      newsletters.invalidate();
     }
   }
 

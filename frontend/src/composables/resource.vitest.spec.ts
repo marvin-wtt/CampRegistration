@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope, nextTick, reactive } from 'vue';
 import { flushPromises } from '@vue/test-utils';
+import { AxiosError, AxiosHeaders } from 'axios';
 import { EventBus } from 'quasar';
 import type { RealtimeEvent } from '@camp-registration/common/realtime';
 import { useCollection, useResource } from '@/composables/resource';
@@ -53,6 +54,16 @@ function deferred<T>() {
 }
 
 const offline = () => Promise.reject(new Error('offline'));
+const refused = () =>
+  Promise.reject(
+    new AxiosError('Bad request', 'ERR', undefined, undefined, {
+      status: 422,
+      statusText: '',
+      headers: new AxiosHeaders(),
+      config: { headers: new AxiosHeaders() },
+      data: { message: 'invalid' },
+    }),
+  );
 const row = (id: string, name = id): Row => ({ id, name });
 
 function setup(fetch: (key: string) => Promise<Row[]>) {
@@ -191,6 +202,44 @@ describe('load', () => {
   });
 });
 
+describe('concurrent load', () => {
+  it('joins a load in flight for the same scope', async () => {
+    const first = deferred<Row[]>();
+    const fetch = vi.fn().mockReturnValueOnce(first.promise);
+    const resource = setup(fetch);
+
+    const a = resource.load();
+    const b = resource.load();
+    first.resolve([row('1')]);
+    await Promise.all([a, b]);
+
+    expect(fetch).toHaveBeenCalledOnce();
+    expect(resource.data.value).toEqual([row('1')]);
+  });
+
+  it('resolves once a superseding reload has landed', async () => {
+    const first = deferred<Row[]>();
+    const second = deferred<Row[]>();
+    const fetch = vi
+      .fn()
+      .mockReturnValueOnce(first.promise)
+      .mockReturnValueOnce(second.promise);
+    const resource = setup(fetch);
+
+    const loading = resource.load();
+    const reloading = resource.reload();
+    first.resolve([row('stale')]);
+    let settled = false;
+    void loading.then(() => (settled = true));
+    await flushPromises();
+    expect(settled).toBe(false);
+
+    second.resolve([row('fresh')]);
+    await Promise.all([loading, reloading]);
+    expect(resource.data.value).toEqual([row('fresh')]);
+  });
+});
+
 describe('reload', () => {
   it('keeps the data shown until the response arrives', async () => {
     const next = deferred<Row[]>();
@@ -320,6 +369,50 @@ describe('mutate', () => {
       }),
     );
     expect(resource.data.value).toEqual([row('1', 'server')]);
+  });
+
+  it('does not reload after a write the server refused', async () => {
+    const fetch = vi.fn().mockResolvedValue([row('1')]);
+    const resource = setup(fetch);
+    await resource.load();
+
+    await expect(resource.mutate('update', refused)).rejects.toThrow();
+    await flushPromises();
+
+    expect(fetch).toHaveBeenCalledOnce();
+  });
+
+  it('reloads after a refused multi-write, which may have applied some', async () => {
+    const fetch = vi.fn().mockResolvedValue([row('1')]);
+    const resource = setup(fetch);
+    await resource.load();
+
+    await expect(
+      resource.mutate('update', refused, { multiWrite: true }),
+    ).rejects.toThrow();
+    await flushPromises();
+
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('refetches when it lands during the first load', async () => {
+    const first = deferred<Row[]>();
+    const fetch = vi
+      .fn()
+      .mockReturnValueOnce(first.promise)
+      .mockResolvedValueOnce([row('1'), row('2')]);
+    const resource = setup(fetch);
+
+    const loading = resource.load();
+    await resource.mutate('create', () => Promise.resolve(row('2')), {
+      apply: (list, created) => [...list, created],
+    });
+    first.resolve([row('1')]);
+    await loading;
+    await flushPromises();
+
+    expect(resource.data.value).toEqual([row('1'), row('2')]);
+    expect(resource.isLoading.value).toBe(false);
   });
 
   it('skips the follow-up of a failed write', async () => {

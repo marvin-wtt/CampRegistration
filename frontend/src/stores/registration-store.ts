@@ -8,7 +8,6 @@ import type {
   RegistrationUpdateQuery,
 } from '@camp-registration/common/entities';
 import { useCollection, useRouteKey } from '@/composables/resource';
-import { useRegistrationBus } from '@/composables/bus';
 import { useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { formatPersonName } from '@/utils/formatters';
@@ -18,7 +17,6 @@ export const useRegistrationsStore = defineStore('registrations', () => {
   const api = useAPIService();
   const quasar = useQuasar();
   const { t } = useI18n({ useScope: 'global' });
-  const bus = useRegistrationBus();
   // Live changes are refetched through the REST API (where full permissions
   // apply) and reconciled into the list.
   const registrations = useCollection<Registration>({
@@ -28,12 +26,7 @@ export const useRegistrationsStore = defineStore('registrations', () => {
     realtime: {
       resource: 'registration',
       fetchOne: (eventId, id) => api.fetchRegistration(eventId, id),
-      onCreate: (registration) => {
-        bus.emit('create', registration);
-        showRealtimeCreateNotification(registration);
-      },
-      onUpdate: (registration) => bus.emit('update', registration),
-      onDelete: (id) => bus.emit('delete', id),
+      onCreate: showRealtimeCreateNotification,
     },
   });
 
@@ -80,13 +73,12 @@ export const useRegistrationsStore = defineStore('registrations', () => {
     updateData: RegistrationUpdateData,
     params?: RegistrationUpdateQuery,
   ): Promise<void> {
-    const registration = await registrations.mutate(
+    await registrations.mutate(
       'update',
       (eventId) =>
         api.updateRegistration(eventId, registrationId, updateData, params),
       { feedback: 'progress', apply: replaceById },
     );
-    bus.emit('update', registration);
   }
 
   async function deleteData(
@@ -101,7 +93,6 @@ export const useRegistrationsStore = defineStore('registrations', () => {
         apply: (list) => removeById(list, registrationId),
       },
     );
-    bus.emit('delete', registrationId);
   }
 
   return {

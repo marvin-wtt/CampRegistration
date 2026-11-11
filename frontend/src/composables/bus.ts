@@ -1,52 +1,38 @@
-import { inject } from 'vue';
 import { EventBus } from 'quasar';
-import {
-  AUTH_BUS,
-  EVENT_BUS,
-  ORGANIZATION_BUS,
-  REGISTRATION_BUS,
-  TEMPLATE_BUS,
-} from '@/utils/keys';
 import type {
   Event,
   Organization,
-  Registration,
   Profile,
 } from '@camp-registration/common/entities';
 
-export function useAuthBus(): EventBus<{
+// App-wide singletons: every store and component shares the same bus, also
+// outside an injection context (e.g. a resource created in a plain function).
+const authBus = new EventBus<{
   login: (user: Profile) => void;
   logout: () => void;
-}> {
-  return inject(AUTH_BUS, new EventBus());
-}
+}>();
 
-export function useEventBus(): EventBus<{
-  change: (event?: Event, oldEvent?: Event) => void;
+// Keeps the events list, details and assigned events in sync with each other.
+const eventBus = new EventBus<{
   create: (event: Event) => void;
   update: (event: Event) => void;
   delete: (eventId: string) => void;
-}> {
-  return inject(EVENT_BUS, new EventBus());
-}
+}>();
 
-export function useRegistrationBus(): EventBus<{
-  create: (registration: Registration) => void;
-  update: (registration: Registration) => void;
-  delete: (registrationId: string) => void;
-}> {
-  return inject(REGISTRATION_BUS, new EventBus());
-}
-
-export function useOrganizationBus(): EventBus<{
-  change: (organization?: Organization) => void;
-  create: (organization: Organization) => void;
+// Keeps the organizations list in sync with the details view.
+const organizationBus = new EventBus<{
   update: (organization: Organization) => void;
   delete: (organizationId: string) => void;
-}> {
-  return inject(ORGANIZATION_BUS, new EventBus());
+}>();
+
+export function useAuthBus() {
+  return authBus;
 }
 
-export function useTemplateBus(): EventBus {
-  return inject(TEMPLATE_BUS, new EventBus());
+export function useEventBus() {
+  return eventBus;
+}
+
+export function useOrganizationBus() {
+  return organizationBus;
 }

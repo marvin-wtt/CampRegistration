@@ -23,11 +23,7 @@ export const useOrganizationDetailsStore = defineStore(
     const details = useResource<OrganizationDetails>({
       name: 'organization',
       key: useRouteKey('organizationId'),
-      fetch: async (organizationId) => {
-        const organization = await api.fetchOrganization(organizationId);
-        organizationBus.emit('change', organization);
-        return organization;
-      },
+      fetch: (organizationId) => api.fetchOrganization(organizationId),
     });
 
     router.beforeEach((to, from) => {
@@ -36,7 +32,6 @@ export const useOrganizationDetailsStore = defineStore(
         return;
       }
       details.reset();
-      organizationBus.emit('change', undefined);
     });
 
     function fetchData(organizationId?: string) {

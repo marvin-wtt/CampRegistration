@@ -563,32 +563,40 @@ function onReset() {
   event.value = initialValue();
 }
 
-watch(data, (value) => {
-  if (value) {
+// A reload (e.g. after a failed save, or another manager's change) must not
+// throw away edits the form still holds.
+watch(data, (value, previous) => {
+  if (!value) {
+    return;
+  }
+  const edited =
+    event.value !== undefined &&
+    previous !== undefined &&
+    JSON.stringify(event.value) !== JSON.stringify(clone(previous));
+  if (!edited) {
     event.value = clone(value);
   }
 });
 
 async function onSubmit() {
-  updating.value = true;
   const value: Event | undefined = event.value;
-
   if (value === undefined) {
     return;
   }
 
-  const newEvent = await eventStore.updateData({
-    ...value,
-    price: mapPerGroup(value.price, (major) =>
-      toMinorUnits(major, value.currency),
-    ),
-  });
-  if (!newEvent) {
+  updating.value = true;
+  try {
+    await eventStore.updateData({
+      ...value,
+      price: mapPerGroup(value.price, (major) =>
+        toMinorUnits(major, value.currency),
+      ),
+    });
+  } finally {
     updating.value = false;
-    return;
   }
 
-  return router.push({
+  await router.push({
     name: 'management.event',
     params: { eventId: route.params.eventId },
   });

@@ -442,12 +442,11 @@ async function fillTranslations(
       return;
     }
 
-    // A missing/null entry means that locale's translation failed — either
-    // the whole request failed (store already surfaced an error
-    // notification) or just that locale did within an otherwise-successful
-    // batch; either way, leave that field untouched.
+    // A missing/null entry means just that locale failed within the batch;
+    // leave its field untouched. A failed request has been reported and
+    // rejected before this point.
     targetLocales.forEach((targetLocale) => {
-      const translated = results?.[languageOf(targetLocale)];
+      const translated = results[languageOf(targetLocale)];
       if (translated == null) {
         return;
       }

@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia';
+import { computed, ref } from 'vue';
 import { useAPIService } from '@/services/APIService';
 import { useCollection, useRouteKey } from '@/composables/resource';
 import {
@@ -52,6 +53,9 @@ export const useRoomStore = defineStore('room', () => {
     },
   });
 
+  // Bed assignments in flight; leaving the page would lose them.
+  const bedUpdates = ref<number>(0);
+
   function fetchData(eventId?: string) {
     return rooms.load(eventId);
   }
@@ -96,7 +100,7 @@ export const useRoomStore = defineStore('room', () => {
           ? api.fetchRoom(eventId, roomId)
           : room;
       },
-      { feedback: 'progress', apply: replaceById },
+      { feedback: 'progress', apply: replaceById, multiWrite: true },
     );
   }
 
@@ -120,18 +124,23 @@ export const useRoomStore = defineStore('room', () => {
     bedId: string,
     registrationId: string | null,
   ): Promise<void> {
-    await rooms.mutate(
-      'updateBed',
-      (eventId) => api.updateBed(eventId, roomId, bedId, registrationId),
-      { apply: (list) => withBed(list, roomId, bedId, registrationId) },
-    );
+    bedUpdates.value++;
+    try {
+      await rooms.mutate(
+        'updateBed',
+        (eventId) => api.updateBed(eventId, roomId, bedId, registrationId),
+        { apply: (list) => withBed(list, roomId, bedId, registrationId) },
+      );
+    } finally {
+      bedUpdates.value--;
+    }
   }
 
   return {
     data: rooms.data,
     isLoading: rooms.isLoading,
     error: rooms.error,
-    requestPending: rooms.pending,
+    requestPending: computed(() => bedUpdates.value > 0),
     reset: rooms.reset,
     fetchData,
     createData,

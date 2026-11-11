@@ -44,7 +44,6 @@ export const useOrganizationsStore = defineStore('organizations', () => {
       () => api.createOrganization(createData),
       { feedback: 'progress', apply: upsertById },
     );
-    organizationBus.emit('create', organization);
     // The new membership reaches the client only through the profile, and
     // every permission gate reads it from there.
     await profileStore.fetchProfile();
