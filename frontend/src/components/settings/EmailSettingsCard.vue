@@ -89,6 +89,7 @@ import type {
   ProfileUpdateData,
 } from '@camp-registration/common/entities';
 import { computed, ref } from 'vue';
+import { useDraft } from '@/composables/draft';
 
 const { t } = useI18n();
 
@@ -100,30 +101,25 @@ const emit = defineEmits<{
   (e: 'save', data: ProfileUpdateData): void;
 }>();
 
-const data = ref({
-  email: profile.email,
-  currentPassword: '',
-});
+const toDraft = ({ email }: Profile) => ({ email, currentPassword: '' });
+const {
+  draft: data,
+  isModified: draftModified,
+  reset,
+} = useDraft(() => profile, { toDraft, initial: toDraft(profile) });
 
 const confirmEmail = ref<string>();
 
-const isModified = computed<boolean>(() => {
-  return (
-    data.value.email !== profile.email ||
-    data.value.currentPassword !== '' ||
-    !!confirmEmail.value
-  );
-});
+const isModified = computed<boolean>(
+  () => draftModified.value || !!confirmEmail.value,
+);
 
 function onSave() {
   emit('save', data.value);
 }
 
 function onReset() {
-  data.value = {
-    email: profile.email,
-    currentPassword: '',
-  };
+  reset();
   confirmEmail.value = undefined;
 }
 </script>

@@ -72,7 +72,7 @@ import type {
   Profile,
   ProfileUpdateData,
 } from '@camp-registration/common/entities';
-import { computed, ref } from 'vue';
+import { useDraft } from '@/composables/draft';
 
 const { t } = useI18n();
 
@@ -84,26 +84,20 @@ const emit = defineEmits<{
   (e: 'save', data: ProfileUpdateData): void;
 }>();
 
-const data = ref<Pick<ProfileUpdateData, 'name' | 'locale'>>({
-  name: profile.name,
-  locale: profile.locale,
-});
-
-const isModified = computed<boolean>(() => {
-  return (
-    data.value.name !== profile.name || data.value.locale !== profile.locale
-  );
+const {
+  draft: data,
+  isModified,
+  reset: onReset,
+} = useDraft(() => profile, {
+  toDraft: ({ name, locale }): Pick<ProfileUpdateData, 'name' | 'locale'> => ({
+    name,
+    locale,
+  }),
+  initial: { name: profile.name, locale: profile.locale },
 });
 
 function onSave() {
   emit('save', data.value);
-}
-
-function onReset() {
-  data.value = {
-    name: profile.name,
-    locale: profile.locale,
-  };
 }
 </script>
 

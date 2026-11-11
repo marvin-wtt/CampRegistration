@@ -8,6 +8,7 @@ import { useAPIService } from '@/services/APIService';
 import { useCollection, useRouteKey } from '@/composables/resource';
 import { settleAll } from '@/composables/action';
 import { removeById, replaceById, upsertById } from '@/utils/collection';
+import { isDeepEqual } from '@/utils/deepEqual';
 
 interface TemplateChanges {
   added: TableTemplate[];
@@ -24,10 +25,7 @@ function diffTemplates(
     added: next.filter((template) => !byId.has(template.id)),
     modified: next.filter((template) => {
       const before = byId.get(template.id);
-      return (
-        before !== undefined &&
-        JSON.stringify(before) !== JSON.stringify(template)
-      );
+      return before !== undefined && !isDeepEqual(before, template);
     }),
     // Generated templates belong to the server and are never deleted here.
     removed: current.filter(

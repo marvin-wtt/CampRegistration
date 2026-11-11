@@ -317,7 +317,8 @@
 
 <script lang="ts" setup>
 import PageHeader from '@/components/common/PageHeader.vue';
-import { computed, ref, watch } from 'vue';
+import { computed } from 'vue';
+import { useDraft } from '@/composables/draft';
 import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
 import { useRouter } from 'vue-router';
@@ -390,34 +391,15 @@ function snapshot(value: OrganizationDetails): OrganizationUpdateData {
   };
 }
 
-const form = ref<OrganizationUpdateData>({});
-const saved = ref<OrganizationUpdateData>({});
-
-// A reload (e.g. after a failed save, or a change made elsewhere) must not
-// throw away edits the form still holds.
-watch(
-  organization,
-  (value) => {
-    if (!value) {
-      return;
-    }
-    const edited = JSON.stringify(form.value) !== JSON.stringify(saved.value);
-    saved.value = snapshot(value);
-    if (!edited) {
-      form.value = { ...saved.value };
-    }
-  },
-  { immediate: true },
-);
-
-// Both objects come from `snapshot`, so their key order matches.
-const isModified = computed(
-  () => JSON.stringify(form.value) !== JSON.stringify(saved.value),
-);
-
-function reset() {
-  form.value = { ...saved.value };
-}
+// Edits survive a reload, e.g. after a failed save or a change made elsewhere.
+const {
+  draft: form,
+  isModified,
+  reset,
+} = useDraft(() => organization.value, {
+  toDraft: snapshot,
+  initial: {},
+});
 
 function required(value?: string | null): true | string {
   return !!value?.trim() || t('rule.required');
@@ -450,10 +432,7 @@ function payload(data: OrganizationUpdateData): OrganizationUpdateData {
 async function persist() {
   await store.updateData(payload(form.value));
   // The saved form counts as edited until it takes what the server stored.
-  if (organization.value) {
-    saved.value = snapshot(organization.value);
-    form.value = { ...saved.value };
-  }
+  reset();
 
   // An identity edit demotes a rejected organization back to PENDING on its
   // own; anything else leaves it rejected, and only an explicit request moves
