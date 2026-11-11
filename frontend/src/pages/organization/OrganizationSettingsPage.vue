@@ -317,7 +317,8 @@
 
 <script lang="ts" setup>
 import PageHeader from '@/components/common/PageHeader.vue';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed } from 'vue';
+import { useDraft } from '@/composables/draft';
 import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
 import { useRouter } from 'vue-router';
@@ -390,29 +391,16 @@ function snapshot(value: OrganizationDetails): OrganizationUpdateData {
   };
 }
 
-const form = ref<OrganizationUpdateData>({});
-const saved = ref<OrganizationUpdateData>({});
-
-watch(
-  organization,
-  (value) => {
-    if (!value) {
-      return;
-    }
-    saved.value = snapshot(value);
-    form.value = { ...saved.value };
-  },
-  { immediate: true },
-);
-
-// Both objects come from `snapshot`, so their key order matches.
-const isModified = computed(
-  () => JSON.stringify(form.value) !== JSON.stringify(saved.value),
-);
-
-function reset() {
-  form.value = { ...saved.value };
-}
+// Edits survive a reload, e.g. after a failed save or a change made elsewhere.
+const {
+  draft: form,
+  isModified,
+  reset,
+  save: saveDraft,
+} = useDraft(() => organization.value, {
+  toDraft: snapshot,
+  initial: {},
+});
 
 function required(value?: string | null): true | string {
   return !!value?.trim() || t('rule.required');
@@ -443,7 +431,7 @@ function payload(data: OrganizationUpdateData): OrganizationUpdateData {
 }
 
 async function persist() {
-  await store.updateData(payload(form.value));
+  await saveDraft(() => store.updateData(payload(form.value)));
 
   // An identity edit demotes a rejected organization back to PENDING on its
   // own; anything else leaves it rejected, and only an explicit request moves
@@ -514,9 +502,7 @@ function confirmDelete() {
     });
 }
 
-onMounted(async () => {
-  await store.fetchData();
-});
+void store.fetchData();
 </script>
 
 <style lang="scss" scoped>

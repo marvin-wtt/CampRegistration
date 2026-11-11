@@ -71,6 +71,7 @@ import {
 import { onBeforeRouteLeave, useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
+import { isReportedError } from '@/utils/reportedError';
 
 const {
   error = null,
@@ -156,6 +157,12 @@ function refreshPage() {
 }
 
 onErrorCaptured((err) => {
+  // A failed save the user was already told about must not replace the page.
+  if (isReportedError(err)) {
+    // eslint-disable-next-line no-console
+    console.warn('Reported error:', err);
+    return false;
+  }
   // eslint-disable-next-line no-console
   console.error('PageStateHandler captured an error:', err);
   localError.value = err.message;

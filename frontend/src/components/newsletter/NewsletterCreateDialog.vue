@@ -78,7 +78,7 @@
 <script lang="ts" setup>
 import { useDialogPluginComponent, type QSelectOption } from 'quasar';
 import { useI18n } from 'vue-i18n';
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useOrganizationsStore } from '@/stores/organizations-store';
 import { useOrganizationPermissions } from '@/composables/organizationPermissions';
@@ -124,7 +124,9 @@ function onSubmit() {
   onDialogOK(data);
 }
 
-onMounted(async () => {
+void loadOrganizations();
+
+async function loadOrganizations() {
   await organizationsStore.fetchData();
 
   // Skip a pointless choice when there is only one.
@@ -132,7 +134,7 @@ onMounted(async () => {
   if (eligible.length === 1) {
     organizationId.value = eligible[0]!.value;
   }
-});
+}
 </script>
 
 <i18n lang="yaml" locale="en">

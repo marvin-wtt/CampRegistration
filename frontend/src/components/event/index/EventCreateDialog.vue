@@ -500,7 +500,7 @@ import CountrySelect from '@/components/common/CountrySelect.vue';
 import TranslatedInput from '@/components/common/inputs/TranslatedInput.vue';
 import { EVENT_COUNTRIES, eventTextLocales } from '@/i18n/locales';
 import DateRangeInput from '@/components/common/inputs/DateRangeInput.vue';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import {
   EVENT_PRESET_NAMES,
   type Event,
@@ -595,7 +595,9 @@ watch(selectedOrganizationUnverified, (unverified) => {
   }
 });
 
-onMounted(async () => {
+void loadOrganizations();
+
+async function loadOrganizations() {
   await organizationsStore.fetchData();
 
   // Skip a pointless choice when there is only one.
@@ -603,7 +605,7 @@ onMounted(async () => {
   if (eligible.length === 1) {
     data.value.organizationId = eligible[0]!.value;
   }
-});
+}
 
 const referenceEvent = computed<Event | undefined>(() => {
   return assignedEventsStore.data?.find(

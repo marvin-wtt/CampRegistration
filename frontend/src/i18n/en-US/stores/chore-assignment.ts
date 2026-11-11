@@ -3,8 +3,6 @@ export default {
     error: 'Failed to fetch duty assignments',
   },
   create: {
-    progress: 'Creating duty assignment...',
-    success: 'Duty assignment created successfully',
     error: 'Failed to create duty assignment',
   },
   update: {
@@ -14,14 +12,10 @@ export default {
     invalid: 'Invalid event id',
   },
   delete: {
-    progress: 'Deleting duty assignment...',
-    success: 'Duty assignment deleted successfully',
     error: 'Failed to delete duty assignment',
     invalid: 'Invalid event id',
   },
   fill: {
-    progress: 'Filling open spots...',
-    success: 'Open spots filled',
     error: 'Failed to fill open spots',
   },
   series: {

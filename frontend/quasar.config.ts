@@ -16,13 +16,13 @@ export default defineConfig((ctx) => {
     // https://v2.quasar.dev/quasar-cli-vite/boot-files
     boot: [
       '~@anoyomoose/q2-fresh-paint-md3e/boot',
-      'bus',
       'i18n',
       'language-pack',
       'surveyJS',
       'notify-defaults',
       'navigation-progress',
       'chunk-reload',
+      'reported-errors',
     ],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#css

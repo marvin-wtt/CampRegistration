@@ -109,7 +109,7 @@ const quasar = useQuasar();
 const { t } = useI18n();
 
 const authStore = useAuthStore();
-const { loading, error } = storeToRefs(authStore);
+const { isLoading: loading, error } = storeToRefs(authStore);
 
 const password = ref<string>('');
 const confirmPassword = ref<string>('');

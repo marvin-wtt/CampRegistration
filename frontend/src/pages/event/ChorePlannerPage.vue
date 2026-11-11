@@ -470,8 +470,7 @@ import { useChoreStore } from '@/stores/chore-store';
 import { useChoreAssignmentStore } from '@/stores/chore-assignment-store';
 import { useRegistrationsStore } from '@/stores/registration-store';
 import { useEventDetailsStore } from '@/stores/event-details-store';
-import { useAPIService } from '@/services/APIService';
-import { useServiceHandler } from '@/composables/serviceHandler';
+import { useRoomStore } from '@/stores/room-store';
 import { usePermissions } from '@/composables/permissions';
 import { useRegistrationHelper } from '@/composables/registrationHelper';
 import { useObjectTranslation } from '@/composables/objectTranslation';
@@ -515,7 +514,7 @@ type View = 'today' | 'week' | 'list';
 
 const quasar = useQuasar();
 const { t, d, locale } = useI18n();
-const apiService = useAPIService();
+const roomStore = useRoomStore();
 const choreStore = useChoreStore();
 const choreAssignmentStore = useChoreAssignmentStore();
 const registrationsStore = useRegistrationsStore();
@@ -524,32 +523,18 @@ const registrationHelper = useRegistrationHelper();
 const { to } = useObjectTranslation();
 const { can } = usePermissions();
 
-const {
-  data: roomsData,
-  isLoading: roomsLoading,
-  error: roomsError,
-  lazyFetch: lazyFetchRooms,
-  queryParam,
-  checkNotNullWithError,
-} = useServiceHandler<Room[]>();
-
 // Started in setup so the first render already shows the loading state.
 void registrationsStore.fetchData();
 void choreStore.fetchData();
 void choreAssignmentStore.fetchData();
-void fetchRooms();
-
-async function fetchRooms() {
-  const eventId = checkNotNullWithError(queryParam('eventId'));
-  await lazyFetchRooms(() => apiService.fetchRooms(eventId));
-}
+void roomStore.fetchData();
 
 const loading = computed<boolean>(
   () =>
     registrationsStore.isLoading ||
     choreStore.isLoading ||
     choreAssignmentStore.isLoading ||
-    roomsLoading.value,
+    roomStore.isLoading,
 );
 
 const error = computed<string | null>(
@@ -558,7 +543,7 @@ const error = computed<string | null>(
     registrationsStore.error ??
     choreStore.error ??
     choreAssignmentStore.error ??
-    roomsError.value,
+    roomStore.error,
 );
 
 const chores = computed<Chore[]>(() => choreStore.data ?? []);
@@ -568,7 +553,7 @@ const assignments = computed<ChoreAssignment[]>(
 const registrations = computed<Registration[]>(
   () => registrationsStore.data ?? [],
 );
-const rooms = computed<Room[]>(() => roomsData.value ?? []);
+const rooms = computed<Room[]>(() => roomStore.data ?? []);
 const choreById = computed(() => new Map(chores.value.map((c) => [c.id, c])));
 
 const names = computed<Map<string, string>>(

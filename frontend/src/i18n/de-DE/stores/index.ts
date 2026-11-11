@@ -15,12 +15,14 @@ import newsletterManager from './newsletter-manager';
 import task from './task';
 import chore from './chore';
 import choreAssignment from './chore-assignment';
+import room from './room';
 import organization from './organization';
 import organizationMember from './organization-member';
 import organizationEvents from './organization-events';
 import organizationNewsletters from './organization-newsletters';
 import translation from './translation';
 import setting from './setting';
+import user from './user';
 
 export default {
   event,
@@ -40,10 +42,12 @@ export default {
   task,
   chore,
   choreAssignment,
+  room,
   organization,
   organizationMember,
   organizationEvents,
   organizationNewsletters,
   translation,
   setting,
+  user,
 };

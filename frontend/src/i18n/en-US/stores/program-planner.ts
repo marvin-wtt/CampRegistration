@@ -1,4 +1,5 @@
 export default {
+  pendingCreate: 'Please wait until the event has been created',
   create: {
     error: 'Failed to create event',
   },

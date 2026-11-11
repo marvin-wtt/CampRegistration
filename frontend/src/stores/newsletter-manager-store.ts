@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { useAPIService } from '@/services/APIService';
-import { useServiceHandler } from '@/composables/serviceHandler';
-import { useAuthBus } from '@/composables/bus';
+import { useCollection, useRouteKey } from '@/composables/resource';
+import { removeById, upsertById } from '@/utils/collection';
 import type {
   NewsletterManager,
   NewsletterManagerCreateData,
@@ -11,62 +11,48 @@ export const useNewsletterManagerStore = defineStore(
   'newsletterManager',
   () => {
     const api = useAPIService();
-    const authBus = useAuthBus();
-    const {
-      data,
-      isLoading,
-      error,
-      reset,
-      invalidate,
-      withProgressNotification,
-      lazyFetch,
-      checkNotNullWithError,
-      checkNotNullWithNotification,
-    } = useServiceHandler<NewsletterManager[]>('newsletterManager');
+    const managers = useCollection<NewsletterManager>({
+      name: 'newsletterManager',
+      key: useRouteKey('newsletterId'),
+      fetch: (newsletterId) => api.fetchNewsletterManagers(newsletterId),
+    });
 
-    authBus.on('logout', reset);
-
-    let lastNewsletterId: string | null = null;
-
-    async function fetchData(newsletterId: string) {
-      if (lastNewsletterId != null && lastNewsletterId !== newsletterId) {
-        invalidate();
-      }
-      await lazyFetch(async () => {
-        return await api.fetchNewsletterManagers(newsletterId);
-      });
-      lastNewsletterId = newsletterId;
+    function fetchData(newsletterId: string) {
+      return managers.load(newsletterId);
     }
 
     async function createData(
       newsletterId: string,
-      newData: NewsletterManagerCreateData,
-    ) {
-      checkNotNullWithError(newsletterId);
-      await withProgressNotification('create', async () => {
-        const manager = await api.createNewsletterManager(
-          newsletterId,
-          newData,
-        );
-        data.value?.push(manager);
-      });
+      createData: NewsletterManagerCreateData,
+    ): Promise<void> {
+      await managers.mutate(
+        'create',
+        (key) => api.createNewsletterManager(key, createData),
+        { key: newsletterId, feedback: 'progress', apply: upsertById },
+      );
     }
 
-    async function deleteData(newsletterId: string, managerId: string) {
-      checkNotNullWithError(newsletterId);
-      checkNotNullWithNotification(managerId);
-      await withProgressNotification('delete', async () => {
-        await api.deleteNewsletterManager(newsletterId, managerId);
-        data.value = data.value?.filter((m) => m.id !== managerId);
-      });
+    async function deleteData(
+      newsletterId: string,
+      managerId: string,
+    ): Promise<void> {
+      await managers.mutate(
+        'delete',
+        (key) => api.deleteNewsletterManager(key, managerId),
+        {
+          key: newsletterId,
+          feedback: 'progress',
+          apply: (list) => removeById(list, managerId),
+        },
+      );
     }
 
     return {
-      reset,
-      invalidate,
-      data,
-      isLoading,
-      error,
+      data: managers.data,
+      isLoading: managers.isLoading,
+      error: managers.error,
+      reset: managers.reset,
+      invalidate: managers.invalidate,
       fetchData,
       createData,
       deleteData,

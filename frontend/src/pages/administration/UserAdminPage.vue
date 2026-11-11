@@ -205,7 +205,7 @@ const {
   onVirtualScroll,
   identitySort,
   reload,
-  withProgressNotification,
+  run,
 } = useServerTable<User, UserQuery>({
   storeName: 'user',
   sortBy: 'lastSeen',
@@ -478,22 +478,24 @@ function onResetTwoFactor(user: User) {
 }
 
 async function resetTwoFactor(id: string) {
-  await withProgressNotification('update', () => api.resetUserTwoFactor(id));
+  await run('resetTwoFactor', () => api.resetUserTwoFactor(id), {
+    feedback: 'progress',
+  });
   reload();
 }
 
 async function createUser(data: UserCreateData) {
-  await withProgressNotification('update', () => api.createUser(data));
+  await run('create', () => api.createUser(data), { feedback: 'progress' });
   reload();
 }
 
 async function updateUser(id: string, data: UserUpdateData) {
-  await withProgressNotification('update', () => api.updateUser(id, data));
+  await run('update', () => api.updateUser(id, data), { feedback: 'progress' });
   reload();
 }
 
 async function deleteUser(id: string) {
-  await withProgressNotification('delete', () => api.deleteUser(id));
+  await run('delete', () => api.deleteUser(id), { feedback: 'progress' });
   reload();
 }
 </script>

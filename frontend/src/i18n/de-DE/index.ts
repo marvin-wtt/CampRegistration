@@ -17,6 +17,7 @@ export default {
   service: {
     internal: 'Interner Fehler',
     invalidParams: 'Ungültige(r) Parameter.',
+    notLoaded: 'Die Daten sind noch nicht geladen. Bitte versuche es erneut.',
     unavailable:
       'Dienst vorübergehend nicht verfügbar. Bitte versuche es später erneut.',
     unknown: 'Dienst vorübergehend nicht verfügbar.',

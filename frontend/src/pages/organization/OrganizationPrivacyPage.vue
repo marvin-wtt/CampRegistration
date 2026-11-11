@@ -615,7 +615,7 @@
 
 <script lang="ts" setup>
 import PageHeader from '@/components/common/PageHeader.vue';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
 import { useRoute, useRouter } from 'vue-router';
@@ -664,10 +664,8 @@ import PrivacyRetentionStep from '@/components/organization/privacy/PrivacyReten
 import { usePrivacyNoticeService } from '@/services/PrivacyNoticeService';
 import { useOrganizationDetailsStore } from '@/stores/organization-details-store';
 import { useOrganizationPermissions } from '@/composables/organizationPermissions';
-import {
-  useErrorExtractor,
-  useServiceNotifications,
-} from '@/composables/serviceHandler';
+import { useErrorExtractor } from '@/composables/errorText';
+import { useNotifier } from '@/composables/notifier';
 import { countryName } from '@/utils/countries';
 import { APP_LOCALES as locales } from '@/i18n/locales';
 
@@ -680,7 +678,7 @@ const organizationStore = useOrganizationDetailsStore();
 const { data: organization } = storeToRefs(organizationStore);
 const { canAccessOrg } = useOrganizationPermissions();
 const { extractErrorText } = useErrorExtractor();
-const { showErrorNotification } = useServiceNotifications();
+const notifier = useNotifier();
 const { fetchOrganizationNotice, publishOrganizationNotice } =
   usePrivacyNoticeService();
 
@@ -718,7 +716,9 @@ const canEdit = computed<boolean>(() => canAccessOrg('organization.edit'));
 
 const completeness = computed(() => privacyNoticeCompleteness(content.value));
 
-onMounted(async () => {
+void loadNotice();
+
+async function loadNotice() {
   try {
     const notice = await fetchOrganizationNotice(organizationId.value);
     // Replace rather than merge: `content` is a ref now, and Object.assign on
@@ -737,7 +737,7 @@ onMounted(async () => {
   } finally {
     loading.value = false;
   }
-});
+}
 
 watch(step, (value) => {
   furthestStep.value = Math.max(furthestStep.value, value);
@@ -1091,10 +1091,7 @@ async function publish() {
     // Notify rather than set `error`: that swaps the whole page for an error
     // state, and since the draft lives only in this browser, it would throw away
     // everything the author just wrote.
-    showErrorNotification('publish', {
-      message: t('notify.publishFailed'),
-      caption: extractErrorText(err),
-    });
+    notifier.error('publish', err, t('notify.publishFailed'));
   } finally {
     publishing.value = false;
   }

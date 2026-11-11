@@ -91,7 +91,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { type RouteLocationRaw, useRouter } from 'vue-router';
 import type { AdminOverview } from '@camp-registration/common/entities';
@@ -99,7 +99,7 @@ import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import AdministrationCard from '@/components/administration/AdministrationCard.vue';
 import AdministrationStatCard from '@/components/administration/AdministrationStatCard.vue';
 import { useAPIService } from '@/services/APIService';
-import { useServiceHandler } from '@/composables/serviceHandler';
+import { useResource } from '@/composables/resource';
 
 interface StatTile {
   key: string;
@@ -126,12 +126,12 @@ const {
   data: overview,
   error,
   isLoading: loading,
-  forceFetch,
-} = useServiceHandler<AdminOverview>();
-
-onMounted(async () => {
-  await forceFetch(() => api.fetchAdminOverview());
+  load,
+} = useResource<AdminOverview>({
+  fetch: () => api.fetchAdminOverview(),
 });
+
+void load();
 
 const platformStats = computed<StatTile[]>(() => {
   const data = overview.value;

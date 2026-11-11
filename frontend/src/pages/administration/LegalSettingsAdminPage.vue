@@ -80,12 +80,12 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import LegalDocumentEditor from '@/components/administration/legal/LegalDocumentEditor.vue';
 import { useLegalService } from '@/services/LegalService';
-import { useErrorExtractor } from '@/composables/serviceHandler';
+import { useErrorExtractor } from '@/composables/errorText';
 import { useRouteTab } from '@/composables/routeTab';
 import type { LegalDocument } from '@camp-registration/common/entities';
 
@@ -114,7 +114,9 @@ const privacyPolicyModified = computed(
   () => privacyPolicyEditorRef.value?.isModified ?? false,
 );
 
-onMounted(async () => {
+void loadDocuments();
+
+async function loadDocuments() {
   try {
     documents.value = await fetchLegalDocuments();
   } catch (err) {
@@ -122,7 +124,7 @@ onMounted(async () => {
   } finally {
     loading.value = false;
   }
-});
+}
 
 const imprintContent = computed(() => {
   return (

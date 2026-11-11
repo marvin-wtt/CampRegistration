@@ -1,45 +1,30 @@
 import { defineStore } from 'pinia';
-import { useRoute } from 'vue-router';
 import { useAPIService } from '@/services/APIService';
-import { useServiceHandler } from '@/composables/serviceHandler';
-import { useAuthBus, useOrganizationBus } from '@/composables/bus';
+import { useCollection, useRouteKey } from '@/composables/resource';
 import type { Newsletter } from '@camp-registration/common/entities';
 
 /** The newsletters owned by the organization in the current route. */
 export const useOrganizationNewslettersStore = defineStore(
   'organizationNewsletters',
   () => {
-    const route = useRoute();
     const api = useAPIService();
-    const authBus = useAuthBus();
-    const organizationBus = useOrganizationBus();
-    const { data, isLoading, error, reset, invalidate, lazyFetch } =
-      useServiceHandler<Newsletter[]>('organizationNewsletters');
-
-    authBus.on('logout', () => {
-      reset();
+    const newsletters = useCollection<Newsletter>({
+      name: 'organizationNewsletters',
+      key: useRouteKey('organizationId'),
+      fetch: (organizationId) =>
+        api.fetchOrganizationNewsletters(organizationId),
     });
 
-    organizationBus.on('change', () => {
-      invalidate();
-    });
-
-    async function fetchData(organizationId?: string) {
-      const id =
-        organizationId ?? (route.params.organizationId as string | undefined);
-      if (!id) {
-        return;
-      }
-
-      await lazyFetch(() => api.fetchOrganizationNewsletters(id));
+    function fetchData(organizationId?: string) {
+      return newsletters.load(organizationId);
     }
 
     return {
-      data,
-      isLoading,
-      error,
-      reset,
-      invalidate,
+      data: newsletters.data,
+      isLoading: newsletters.isLoading,
+      error: newsletters.error,
+      reset: newsletters.reset,
+      invalidate: newsletters.invalidate,
       fetchData,
     };
   },

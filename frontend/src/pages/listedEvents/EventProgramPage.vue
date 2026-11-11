@@ -68,7 +68,7 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, ref } from 'vue';
+import { ref } from 'vue';
 import { useMeta } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import type {
@@ -80,7 +80,7 @@ import { addDays } from '@/utils/date';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import PublicProgramCalendar from '@/components/event/programPlanner/PublicProgramCalendar.vue';
 import { isAPIServiceError, useAPIService } from '@/services/APIService';
-import { useErrorExtractor } from '@/composables/serviceHandler';
+import { useErrorExtractor } from '@/composables/errorText';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { useProgramPublicStream } from '@/composables/programPublicStream';
 import { useRouteQueryParams } from '@/composables/useRouteQueryParams';
@@ -129,7 +129,9 @@ useProgramPublicStream(eventId, () => {
   void fetchView();
 });
 
-onMounted(async () => {
+void loadPage();
+
+async function loadPage() {
   try {
     loading.value = true;
 
@@ -159,7 +161,7 @@ onMounted(async () => {
   } finally {
     loading.value = false;
   }
-});
+}
 
 // Guards against out-of-order responses: the stream, `jumpToDate` and the
 // initial mount can all have a fetch in flight at once, and only the

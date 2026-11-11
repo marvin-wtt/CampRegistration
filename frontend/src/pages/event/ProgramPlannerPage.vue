@@ -17,7 +17,7 @@
 
 <script lang="ts" setup>
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
-import { computed, onMounted } from 'vue';
+import { computed } from 'vue';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import ProgramCalendar from '@/components/event/programPlanner/ProgramCalendar.vue';
 import { storeToRefs } from 'pinia';
@@ -32,10 +32,8 @@ const { data: events } = storeToRefs(programPlannerStore);
 const eventDetailsStore = useEventDetailsStore();
 const { data: event } = storeToRefs(eventDetailsStore);
 
-onMounted(async () => {
-  await eventDetailsStore.fetchData();
-  await programPlannerStore.fetchData();
-});
+void eventDetailsStore.fetchData();
+void programPlannerStore.fetchData();
 
 const loading = computed<boolean>(() => {
   return eventDetailsStore.isLoading || programPlannerStore.isLoading;

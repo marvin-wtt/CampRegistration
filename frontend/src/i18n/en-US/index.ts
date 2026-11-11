@@ -17,6 +17,7 @@ export default {
   service: {
     internal: 'Internal error',
     invalidParams: 'Invalid parameter(s).',
+    notLoaded: 'The data is not loaded yet. Please try again.',
     unavailable: 'Service temporarily unavailable. Please try again later.',
     unknown: 'Service temporary not available.',
   },

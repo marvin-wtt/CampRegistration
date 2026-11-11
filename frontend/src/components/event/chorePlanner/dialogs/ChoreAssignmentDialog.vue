@@ -762,10 +762,8 @@ async function autoFill(role: ChoreMemberRole) {
 
 async function createChore(payload: ChoreCreateData) {
   const chore = await choreStore.createData(payload);
-  if (chore) {
-    choreId.value = chore.id;
-    onChoreChange();
-  }
+  choreId.value = chore.id;
+  onChoreChange();
 }
 
 function addChore() {

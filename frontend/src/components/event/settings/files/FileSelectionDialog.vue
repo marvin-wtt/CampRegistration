@@ -118,7 +118,7 @@ import {
   useEventFilesStore,
 } from '@/stores/event-files-store';
 import { storeToRefs } from 'pinia';
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 import type { ServiceFile } from '@camp-registration/common/entities';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import FileUploadDialog from '@/components/event/settings/files/FileUploadDialog.vue';
@@ -130,9 +130,7 @@ const { t } = useI18n();
 const { to } = useObjectTranslation();
 const { data, isLoading } = storeToRefs(eventFileStore);
 
-onMounted(async () => {
-  await Promise.allSettled([eventFileStore.fetchData()]);
-});
+void eventFileStore.fetchData();
 
 defineEmits([...useDialogPluginComponent.emits]);
 

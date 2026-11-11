@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia';
-import { useRoute, useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 import { useAPIService } from '@/services/APIService';
-import { useServiceHandler } from '@/composables/serviceHandler';
-import { useAuthBus, useOrganizationBus } from '@/composables/bus';
+import { useResource, useRouteKey } from '@/composables/resource';
+import { useOrganizationBus } from '@/composables/bus';
 import { useProfileStore } from '@/stores/profile-store';
 import type {
   OrganizationDetails,
@@ -16,123 +16,79 @@ import type {
 export const useOrganizationDetailsStore = defineStore(
   'organizationDetails',
   () => {
-    const route = useRoute();
     const router = useRouter();
     const api = useAPIService();
-    const authBus = useAuthBus();
     const organizationBus = useOrganizationBus();
     const profileStore = useProfileStore();
-    const {
-      data,
-      isLoading,
-      error,
-      reset,
-      invalidate,
-      lazyFetch,
-      forceFetch,
-      withProgressNotification,
-      checkNotNullWithError,
-    } = useServiceHandler<OrganizationDetails>('organization');
-
-    authBus.on('logout', () => {
-      reset();
+    const details = useResource<OrganizationDetails>({
+      name: 'organization',
+      key: useRouteKey('organizationId'),
+      fetch: (organizationId) => api.fetchOrganization(organizationId),
     });
 
     router.beforeEach((to, from) => {
       const id = to.params.organizationId as string | undefined;
-      if (id === (from.params.organizationId as string | undefined)) {
+      if (id !== undefined || from.params.organizationId === undefined) {
         return;
       }
-
-      if (!id) {
-        reset();
-        organizationBus.emit('change', undefined);
-        return;
-      }
-
-      invalidate();
+      details.reset();
     });
 
-    async function fetchData(organizationId?: string) {
-      const id = checkNotNullWithError(
-        organizationId ?? (route.params.organizationId as string),
-      );
-
-      await lazyFetch(async () => {
-        const result = await api.fetchOrganization(id);
-        organizationBus.emit('change', result);
-
-        return result;
-      });
+    function fetchData(organizationId?: string) {
+      return details.load(organizationId);
     }
 
-    async function updateData(updateData: OrganizationUpdateData) {
-      const id = checkNotNullWithError(
-        route.params.organizationId as string | undefined,
+    async function updateData(update: OrganizationUpdateData): Promise<void> {
+      const previousStatus = details.data.value?.verificationStatus;
+      const organization = await details.mutate(
+        'update',
+        (id) => api.updateOrganization(id, update),
+        { feedback: 'progress', apply: (_, updated) => updated },
       );
+      organizationBus.emit('update', organization);
 
-      await withProgressNotification('update', async () => {
-        const previousStatus = data.value?.verificationStatus;
-        const organization = await api.updateOrganization(id, updateData);
-
-        data.value = organization;
-        organizationBus.emit('update', organization);
-
-        // Editing the vetted identity demotes the organization, and the status
-        // is mirrored in `organizationAccess` — which gates newsletter
-        // creation, so a stale copy would offer an action the API refuses.
-        if (organization.verificationStatus !== previousStatus) {
-          await profileStore.fetchProfile();
-        }
-      });
-    }
-
-    async function deleteData() {
-      const id = checkNotNullWithError(
-        route.params.organizationId as string | undefined,
-      );
-
-      await withProgressNotification('delete', async () => {
-        await api.deleteOrganization(id);
-
-        reset();
-        organizationBus.emit('delete', id);
+      // Editing the vetted identity demotes the organization, and the status
+      // is mirrored in `organizationAccess` — which gates newsletter
+      // creation, so a stale copy would offer an action the API refuses.
+      if (organization.verificationStatus !== previousStatus) {
         await profileStore.fetchProfile();
-      });
+      }
+    }
+
+    async function deleteData(): Promise<void> {
+      const id = await details.mutate(
+        'delete',
+        async (id) => {
+          await api.deleteOrganization(id);
+          return id;
+        },
+        { feedback: 'progress' },
+      );
+      details.reset();
+      organizationBus.emit('delete', id);
+      await profileStore.fetchProfile();
     }
 
     /** Resubmit for moderation after a rejection. */
-    async function submitVerification() {
-      const id = checkNotNullWithError(
-        route.params.organizationId as string | undefined,
+    async function submitVerification(): Promise<void> {
+      const organization = await details.mutate(
+        'submitVerification',
+        (id) => api.submitOrganizationVerification(id),
+        { feedback: 'progress', apply: (_, updated) => updated },
       );
-
-      await withProgressNotification('submitVerification', async () => {
-        const organization = await api.submitOrganizationVerification(id);
-
-        data.value = organization;
-        organizationBus.emit('update', organization);
-        // The verification status is mirrored in `organizationAccess`.
-        await profileStore.fetchProfile();
-      });
-    }
-
-    async function reload() {
-      const id = checkNotNullWithError(
-        route.params.organizationId as string | undefined,
-      );
-
-      await forceFetch(() => api.fetchOrganization(id));
+      organizationBus.emit('update', organization);
+      // The verification status is mirrored in `organizationAccess`.
+      await profileStore.fetchProfile();
     }
 
     return {
-      data,
-      isLoading,
-      error,
-      reset,
-      invalidate,
+      data: details.data,
+      isLoading: details.isLoading,
+      error: details.error,
+      reset: details.reset,
+      invalidate: details.invalidate,
+      reload: details.reload,
       fetchData,
-      reload,
       updateData,
       deleteData,
       submitVerification,

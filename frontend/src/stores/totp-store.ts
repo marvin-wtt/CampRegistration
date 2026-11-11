@@ -1,63 +1,46 @@
 import { defineStore } from 'pinia';
+import { ref } from 'vue';
 import { useAPIService } from '@/services/APIService';
-import { useServiceHandler } from '@/composables/serviceHandler';
+import { useFormSubmission } from '@/composables/formSubmission';
 import type { TotpData } from '@camp-registration/common/entities';
 import { useProfileStore } from '@/stores/profile-store';
-import { ref } from 'vue';
 
+// The two-factor dialogs show failures inline.
 export const useTotpStore = defineStore('totp', () => {
-  const apiService = useAPIService();
+  const api = useAPIService();
   const profileStore = useProfileStore();
-  const { isLoading, error, errorOnFailure } = useServiceHandler<void>('totp');
-  const data = ref<TotpData | undefined>(undefined);
+  const form = useFormSubmission();
+  const data = ref<TotpData>();
+  const recoveryCodes = ref<string[]>();
 
-  async function setupTotp(password: string): Promise<void> {
-    await errorOnFailure(async () => {
-      data.value = await apiService.setupTotp({
-        password,
-      });
+  function setupTotp(password: string): Promise<void> {
+    return form.submit(async () => {
+      data.value = await api.setupTotp({ password });
     });
   }
 
-  async function enableTotp(otp: string): Promise<void> {
-    await errorOnFailure(async () => {
-      await apiService.enableTotp({
-        otp,
-      });
-
+  function enableTotp(otp: string): Promise<void> {
+    return form.submit(async () => {
+      await api.enableTotp({ otp });
       data.value = undefined;
-
       await profileStore.fetchProfile();
     });
   }
 
-  async function disableTotp(password: string, otp: string): Promise<void> {
-    await errorOnFailure(async () => {
-      await apiService.disableTotp({
-        password,
-        otp,
-      });
-
+  function disableTotp(password: string, otp: string): Promise<void> {
+    return form.submit(async () => {
+      await api.disableTotp({ password, otp });
       data.value = undefined;
       recoveryCodes.value = undefined;
-
       await profileStore.fetchProfile();
     });
   }
 
-  const recoveryCodes = ref<string[] | undefined>(undefined);
-
-  async function generateRecoveryCodes(
-    password: string,
-    otp: string,
-  ): Promise<void> {
-    await errorOnFailure(async () => {
-      const result = await apiService.generateTotpRecoveryCodes({
-        password,
-        otp,
-      });
-
-      recoveryCodes.value = result.codes;
+  function generateRecoveryCodes(password: string, otp: string): Promise<void> {
+    return form.submit(async () => {
+      recoveryCodes.value = (
+        await api.generateTotpRecoveryCodes({ password, otp })
+      ).codes;
     });
   }
 
@@ -67,8 +50,8 @@ export const useTotpStore = defineStore('totp', () => {
 
   return {
     data,
-    error,
-    loading: isLoading,
+    error: form.error,
+    isLoading: form.isLoading,
     recoveryCodes,
     setupTotp,
     enableTotp,

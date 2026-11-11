@@ -233,7 +233,7 @@ import { forGroup } from '@camp-registration/common/utils';
 import { isAPIServiceError, useAPIService } from '@/services/APIService';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { useErrorExtractor } from '@/composables/serviceHandler';
+import { useErrorExtractor } from '@/composables/errorText';
 import { usePermissions } from '@/composables/permissions';
 import { useRouteQueryParams } from '@/composables/useRouteQueryParams';
 import CaptchaWidget from '@/components/common/CaptchaWidget.vue';

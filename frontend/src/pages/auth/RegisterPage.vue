@@ -41,7 +41,7 @@ import CaptchaWidget from '@/components/common/CaptchaWidget.vue';
 const { t } = useI18n();
 
 const authStore = useAuthStore();
-const { loading, error } = storeToRefs(authStore);
+const { isLoading: loading, error } = storeToRefs(authStore);
 
 // Suppress any previous errors
 authStore.reset();

@@ -17,6 +17,8 @@ export default {
     progress: 'Datei wird ersetzt...',
     success: 'Datei erfolgreich ersetzt',
     error: 'Fehler beim Ersetzen der Datei',
+    oldFileKept:
+      'Die neue Datei wurde hochgeladen, aber die alte konnte nicht entfernt werden',
   },
   update: {
     progress: 'Datei wird aktualisiert...',

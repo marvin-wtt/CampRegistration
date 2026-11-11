@@ -1,17 +1,17 @@
 import { defineStore } from 'pinia';
-import { useAPIService } from '@/services/APIService';
-import { useServiceNotifications } from '@/composables/serviceHandler';
 import { ref } from 'vue';
+import { useAPIService } from '@/services/APIService';
+import { useAction } from '@/composables/action';
 
 export const useTranslationStore = defineStore('translation', () => {
-  const apiService = useAPIService();
-  const { withErrorNotification } = useServiceNotifications('translation');
+  const api = useAPIService();
+  const { run } = useAction('translation');
 
   // `null` means "not checked yet". Checked once, the moment the store is
   // first created (Pinia stores are singletons), so consumers can just read
   // `available` instead of each having to trigger the check themselves.
   const available = ref<boolean | null>(null);
-  void apiService
+  void api
     .fetchTranslationStatus()
     .then((status) => {
       available.value = status.available;
@@ -20,13 +20,14 @@ export const useTranslationStore = defineStore('translation', () => {
       available.value = false;
     });
 
-  async function translate(
+  /** Rejects (already reported) when the translation request fails. */
+  function translate(
     text: string,
     targetLocales: string[],
     sourceLocale?: string,
-  ): Promise<Record<string, string | null> | undefined> {
-    return withErrorNotification('autoTranslate', () =>
-      apiService.translateText(text, targetLocales, sourceLocale),
+  ): Promise<Record<string, string | null>> {
+    return run('autoTranslate', () =>
+      api.translateText(text, targetLocales, sourceLocale),
     );
   }
 

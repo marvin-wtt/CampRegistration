@@ -34,7 +34,7 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, ref } from 'vue';
+import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useMeta } from 'quasar';
 import { useRouter } from 'vue-router';
@@ -43,7 +43,7 @@ import type { PublishedPrivacyNotice } from '@camp-registration/common/privacy';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import PrivacyNotice from '@/components/privacy/PrivacyNotice.vue';
 import { usePrivacyNoticeService } from '@/services/PrivacyNoticeService';
-import { useErrorExtractor } from '@/composables/serviceHandler';
+import { useErrorExtractor } from '@/composables/errorText';
 
 const props = defineProps<{
   eventId: string;
@@ -63,7 +63,9 @@ useMeta(() => ({
   titleTemplate: (pageTitle: string) => `${pageTitle} | ${t('app_name')}`,
 }));
 
-onMounted(async () => {
+void loadNotice();
+
+async function loadNotice() {
   try {
     notice.value = await fetchEventNotice(props.eventId);
   } catch (err) {
@@ -71,7 +73,7 @@ onMounted(async () => {
   } finally {
     loading.value = false;
   }
-});
+}
 
 function goBack() {
   if (window.history.length > 1) {

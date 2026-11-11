@@ -141,7 +141,7 @@
 <script setup lang="ts">
 import PageHeader from '@/components/common/PageHeader.vue';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
-import { computed, onMounted } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { countryName } from '@/utils/countries';
 import { useQuasar } from 'quasar';
@@ -149,30 +149,26 @@ import MessageEditDialog from '@/components/event/settings/emails/MessageEditDia
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import type { MessageTemplate } from '@camp-registration/common/entities';
 import { useAPIService } from '@/services/APIService';
-import { useServiceHandler } from '@/composables/serviceHandler';
+import { useResource, useRouteKey } from '@/composables/resource';
 import { usePermissions } from '@/composables/permissions';
 import { storeToRefs } from 'pinia';
 import CountryIcon from '@/components/common/localization/CountryIcon.vue';
 
-const {
-  queryParam,
-  data,
-  withResultNotification,
-  forceFetch,
-  isLoading,
-  error,
-} = useServiceHandler<MessageTemplate[]>();
-
 const api = useAPIService();
+const { data, isLoading, error, load, mutate } = useResource<MessageTemplate[]>(
+  {
+    key: useRouteKey('eventId'),
+    fetch: (eventId) => api.fetchMessageTemplates(eventId),
+  },
+);
+
 const quasar = useQuasar();
 const { t, locale } = useI18n();
 const eventDetailsStore = useEventDetailsStore();
 const { data: event } = storeToRefs(eventDetailsStore);
 const { can } = usePermissions();
 
-onMounted(async () => {
-  await Promise.allSettled([eventDetailsStore.fetchData(), loadData()]);
-});
+void Promise.allSettled([eventDetailsStore.fetchData(), load()]);
 
 const TEMPLATE_ICONS: Record<string, string> = {
   registration_submitted: 'o_assignment_turned_in',
@@ -199,12 +195,6 @@ const loading = computed<boolean>(() => {
 const pageError = computed<string | null>(() => {
   return error.value ?? eventDetailsStore.error;
 });
-
-async function loadData() {
-  await forceFetch(async () => {
-    return api.fetchMessageTemplates(queryParam('eventId'));
-  });
-}
 
 interface MappedTemplate {
   trigger: string;
@@ -248,38 +238,37 @@ function addTemplate(trigger: string, group: string) {
   // Search for existing template for same trigger but different group
   const template = data.value?.find((template) => template.trigger === trigger);
 
-  quasar
-    .dialog({
-      component: MessageEditDialog,
-      componentProps: {
-        name: t(`template.${trigger}.label`),
-        trigger,
-        group,
-        form: event.form,
-        subject: template?.subject ?? '',
-        body: template?.body ?? '',
-        attachments: template?.attachments,
+  quasar.dialog({
+    component: MessageEditDialog,
+    componentProps: {
+      name: t(`template.${trigger}.label`),
+      trigger,
+      group,
+      form: event.form,
+      subject: template?.subject ?? '',
+      body: template?.body ?? '',
+      attachments: template?.attachments,
 
-        saveFn: async (message: {
-          subject: string;
-          body: string;
-          attachmentIds: string[] | null;
-        }) => {
-          await withResultNotification('create', async () => {
-            return api.createMessageTemplate(event.id, {
+      saveFn: async (message: {
+        subject: string;
+        body: string;
+        attachmentIds: string[] | null;
+      }) => {
+        await mutate(
+          'create',
+          (eventId) =>
+            api.createMessageTemplate(eventId, {
               trigger,
               group,
               subject: message.subject,
               body: message.body,
               attachmentIds: message.attachmentIds ?? undefined,
-            });
-          });
-        },
+            }),
+          { feedback: 'result', reload: true },
+        );
       },
-    })
-    .onOk(() => {
-      void loadData();
-    });
+    },
+  });
 }
 
 function editTemplate(template: MessageTemplate | undefined) {
@@ -292,36 +281,35 @@ function editTemplate(template: MessageTemplate | undefined) {
     return;
   }
 
-  quasar
-    .dialog({
-      component: MessageEditDialog,
-      componentProps: {
-        name: t(`template.${template.trigger}.label`),
-        trigger: template.trigger,
-        group: template.group,
-        form: event.form,
-        subject: template.subject,
-        body: template.body,
-        attachments: template.attachments,
+  quasar.dialog({
+    component: MessageEditDialog,
+    componentProps: {
+      name: t(`template.${template.trigger}.label`),
+      trigger: template.trigger,
+      group: template.group,
+      form: event.form,
+      subject: template.subject,
+      body: template.body,
+      attachments: template.attachments,
 
-        saveFn: async (message: {
-          subject: string;
-          body: string;
-          attachmentIds: string[] | null;
-        }) => {
-          await withResultNotification('update', async () => {
-            return api.updateMessageTemplate(event.id, template.id, {
+      saveFn: async (message: {
+        subject: string;
+        body: string;
+        attachmentIds: string[] | null;
+      }) => {
+        await mutate(
+          'update',
+          (eventId) =>
+            api.updateMessageTemplate(eventId, template.id, {
               subject: message.subject,
               body: message.body,
               attachmentIds: message.attachmentIds ?? undefined,
-            });
-          });
-        },
+            }),
+          { feedback: 'result', reload: true },
+        );
       },
-    })
-    .onOk(() => {
-      void loadData();
-    });
+    },
+  });
 }
 
 async function deleteTemplate(id: string | undefined) {
@@ -329,15 +317,9 @@ async function deleteTemplate(id: string | undefined) {
     return;
   }
 
-  const event = eventDetailsStore.data;
-  if (!event) {
-    return;
-  }
-
-  await withResultNotification('delete', async () => {
-    return api.deleteMessageTemplate(event.id, id);
-  }).then(async () => {
-    await loadData();
+  await mutate('delete', (eventId) => api.deleteMessageTemplate(eventId, id), {
+    feedback: 'result',
+    reload: true,
   });
 }
 </script>

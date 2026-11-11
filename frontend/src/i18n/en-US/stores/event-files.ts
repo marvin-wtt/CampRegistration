@@ -17,6 +17,8 @@ export default {
     progress: 'Replacing file...',
     success: 'File replaced successfully',
     error: 'Failed to replace file',
+    oldFileKept:
+      'The new file was uploaded, but the old one could not be removed',
   },
   update: {
     progress: 'Updating file...',

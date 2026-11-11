@@ -404,7 +404,7 @@
 
 <script lang="ts" setup>
 import PageHeader from '@/components/common/PageHeader.vue';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
@@ -438,10 +438,8 @@ import { useEventDetailsStore } from '@/stores/event-details-store';
 import { usePermissions } from '@/composables/permissions';
 import { useOrganizationPermissions } from '@/composables/organizationPermissions';
 import { usePrivacyLabels } from '@/composables/privacyLabels';
-import {
-  useErrorExtractor,
-  useServiceNotifications,
-} from '@/composables/serviceHandler';
+import { useErrorExtractor } from '@/composables/errorText';
+import { useNotifier } from '@/composables/notifier';
 import { extractEventDataTypes } from '@camp-registration/common/form';
 import { APP_LOCALES, eventTextLocales } from '@/i18n/locales';
 
@@ -453,7 +451,7 @@ const { can } = usePermissions();
 const { canOrgFor } = useOrganizationPermissions();
 const { categoryLabel, purposeLabel, recipientLabel } = usePrivacyLabels();
 const { extractErrorText } = useErrorExtractor();
-const { showErrorNotification } = useServiceNotifications();
+const notifier = useNotifier();
 const { fetchEventAddendum, publishEventAddendum, fetchEventNotice } =
   usePrivacyNoticeService();
 
@@ -528,7 +526,9 @@ function loadPublished(published: PrivacyNoticeAddendum | undefined) {
   publishedSnapshot.value = JSON.stringify(content.value);
 }
 
-onMounted(async () => {
+void loadPage();
+
+async function loadPage() {
   try {
     // On a reload this page is what instantiates the event store, so the store's
     // own route guard has already run and nothing has fetched the event yet.
@@ -557,7 +557,7 @@ onMounted(async () => {
   } finally {
     loading.value = false;
   }
-});
+}
 
 /* The organization baseline */
 
@@ -878,10 +878,7 @@ async function publish() {
     // Notify rather than set `error`: that swaps the whole page for an error
     // state, and since the draft lives only in this browser, it would throw away
     // everything the author just wrote.
-    showErrorNotification('publish', {
-      message: t('notify.publishFailed'),
-      caption: extractErrorText(err),
-    });
+    notifier.error('publish', err, t('notify.publishFailed'));
   } finally {
     publishing.value = false;
   }

@@ -481,7 +481,7 @@ import {
   mapPerGroup,
   toMinorUnits,
 } from '@camp-registration/common/utils';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import type { Event, EventDetails } from '@camp-registration/common/entities';
 import { useRoute, useRouter } from 'vue-router';
 import { useEventDetailsStore } from '@/stores/event-details-store';
@@ -499,6 +499,7 @@ import { deepToRaw } from '@/utils/deepToRaw';
 import { MToolbar } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eToolbar';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import { usePermissions } from '@/composables/permissions';
+import { useDraft } from '@/composables/draft';
 
 const route = useRoute();
 const router = useRouter();
@@ -508,25 +509,18 @@ const { can } = usePermissions();
 const eventStore = useEventDetailsStore();
 const { data, error, isLoading } = storeToRefs(eventStore);
 
-const event = ref<EventDetails | undefined>(initialValue());
+// Edits survive a reload, e.g. after a failed save or another manager's change.
+const {
+  draft: event,
+  isModified: preventLeave,
+  reset: onReset,
+  save,
+} = useDraft(() => data.value, { toDraft: clone });
 const updating = ref<boolean>(false);
 
-onMounted(async () => {
-  await Promise.allSettled([eventStore.fetchData()]);
-});
+void eventStore.fetchData();
 
 const loading = computed(() => isLoading.value || updating.value);
-
-// Only guard against navigation while the form holds unsaved edits.
-// Compare against a freshly cloned baseline so the `listed` default and key
-// order match the working copy and don't register as spurious changes.
-const preventLeave = computed<boolean>(() => {
-  if (!data.value) {
-    return false;
-  }
-
-  return JSON.stringify(event.value) !== JSON.stringify(clone(data.value));
-});
 
 const confirmationModeOptions = computed<
   QSelectOption<EventDetails['confirmationMode']>[]
@@ -555,40 +549,27 @@ function clone(value: EventDetails): EventDetails {
   return cloned;
 }
 
-function initialValue(): EventDetails | undefined {
-  return data.value ? clone(data.value) : undefined;
-}
-
-function onReset() {
-  event.value = initialValue();
-}
-
-watch(data, (value) => {
-  if (value) {
-    event.value = clone(value);
-  }
-});
-
 async function onSubmit() {
-  updating.value = true;
   const value: Event | undefined = event.value;
-
   if (value === undefined) {
     return;
   }
 
-  const newEvent = await eventStore.updateData({
-    ...value,
-    price: mapPerGroup(value.price, (major) =>
-      toMinorUnits(major, value.currency),
-    ),
-  });
-  if (!newEvent) {
+  updating.value = true;
+  try {
+    await save(() =>
+      eventStore.updateData({
+        ...value,
+        price: mapPerGroup(value.price, (major) =>
+          toMinorUnits(major, value.currency),
+        ),
+      }),
+    );
+  } finally {
     updating.value = false;
-    return;
   }
 
-  return router.push({
+  await router.push({
     name: 'management.event',
     params: { eventId: route.params.eventId },
   });

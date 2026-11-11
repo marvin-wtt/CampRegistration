@@ -180,7 +180,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
 import { useRouter } from 'vue-router';
@@ -207,9 +207,7 @@ const privacyNoticeMissing = computed(
   () => privacyNoticePublished.value === false,
 );
 
-onMounted(async () => {
-  await store.fetchData();
-});
+void store.fetchData();
 
 // Keyed on the organization, not on the mount: the page is reused when the
 // route switches to another organization.

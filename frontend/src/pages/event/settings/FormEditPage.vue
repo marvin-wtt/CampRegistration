@@ -16,7 +16,7 @@
 
 <script lang="ts" setup>
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import { useEventFilesStore } from '@/stores/event-files-store';
 import { storeToRefs } from 'pinia';
@@ -45,7 +45,9 @@ const error = computed(() => {
   return eventDetailsStore.error || registrationStore.error;
 });
 
-onMounted(async () => {
+void loadPage();
+
+async function loadPage() {
   await Promise.allSettled([
     eventDetailsStore.fetchData(),
     registrationStore.fetchData(),
@@ -73,14 +75,14 @@ onMounted(async () => {
   } else {
     showEditor.value = true;
   }
-});
+}
 
 async function saveForm(form: SurveyJSEventData): Promise<void> {
   const data = {
     form,
   };
 
-  await eventDetailsStore.updateData(data, 'none');
+  await eventDetailsStore.updateData(data, 'error');
 }
 
 async function saveTheme(theme: ITheme): Promise<void> {
@@ -93,7 +95,7 @@ async function saveTheme(theme: ITheme): Promise<void> {
     },
   };
 
-  await eventDetailsStore.updateData(data, 'none');
+  await eventDetailsStore.updateData(data, 'error');
 }
 
 async function saveFile(file: File): Promise<string> {

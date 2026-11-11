@@ -433,10 +433,8 @@ const missingHeadcount = computed<boolean>(
 
 async function createChore(payload: ChoreCreateData) {
   const newChore = await choreStore.createData(payload);
-  if (newChore) {
-    choreId.value = newChore.id;
-    onChoreChange();
-  }
+  choreId.value = newChore.id;
+  onChoreChange();
 }
 
 function addChore() {

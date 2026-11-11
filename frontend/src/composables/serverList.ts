@@ -7,10 +7,8 @@ import {
   type WatchSource,
 } from 'vue';
 import type { CursorPaginated } from '@camp-registration/common/entities';
-import {
-  useErrorExtractor,
-  useServiceNotifications,
-} from '@/composables/serviceHandler';
+import { useErrorExtractor } from '@/composables/errorText';
+import { useAction } from '@/composables/action';
 
 export interface ServerListQueryContext {
   /** Cursor for the next chunk; `undefined` on the first (reset) load. */
@@ -37,7 +35,7 @@ export interface UseServerListOptions<TRow, TQuery> {
    * call: the first load starts during setup and would otherwise miss it.
    */
   search?: string;
-  /** Store name for the mutation progress notifications. */
+  /** Store name wording the toasts of actions started through `run`. */
   storeName?: string;
   /** Runs on `nextTick` after a reset load resolved — scroll the view back to the top. */
   onReset?: () => void;
@@ -57,7 +55,7 @@ export function useServerList<TRow, TQuery>(
   options: UseServerListOptions<TRow, TQuery>,
 ) {
   const { extractErrorText } = useErrorExtractor();
-  const notifications = useServiceNotifications(options.storeName);
+  const { run } = useAction(options.storeName);
 
   const pageSize = options.pageSize ?? 50;
 
@@ -171,6 +169,6 @@ export function useServerList<TRow, TQuery>(
     hasMore,
     reload,
     loadMore,
-    ...notifications,
+    run,
   };
 }

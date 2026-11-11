@@ -99,7 +99,7 @@
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { countryName } from '@/utils/countries';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import type { NewsletterSubscriberImportData } from '@camp-registration/common/entities';
 import { useAssignedEventsStore } from '@/stores/assigned-events-store';
 import { useObjectTranslation } from '@/composables/objectTranslation';
@@ -112,9 +112,7 @@ const assignedEventsStore = useAssignedEventsStore();
 
 defineEmits([...useDialogPluginComponent.emits]);
 
-onMounted(async () => {
-  await assignedEventsStore.fetchData();
-});
+void assignedEventsStore.fetchData();
 
 const eventId = ref<string>('');
 const group = ref<string | null>(null);

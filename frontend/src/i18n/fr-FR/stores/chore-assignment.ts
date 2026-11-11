@@ -3,8 +3,6 @@ export default {
     error: 'Échec de la récupération des affectations de corvée',
   },
   create: {
-    progress: "Création de l'affectation en cours...",
-    success: 'Affectation créée avec succès',
     error: "Impossible de créer l'affectation",
   },
   update: {
@@ -14,14 +12,10 @@ export default {
     invalid: "ID de l'événement invalide",
   },
   delete: {
-    progress: "Suppression de l'affectation en cours...",
-    success: 'Affectation supprimée avec succès',
     error: "Impossible de supprimer l'affectation",
     invalid: "ID de l'événement invalide",
   },
   fill: {
-    progress: 'Attribution des places libres...',
-    success: 'Places libres attribuées',
     error: "Impossible d'attribuer les places libres",
   },
   series: {

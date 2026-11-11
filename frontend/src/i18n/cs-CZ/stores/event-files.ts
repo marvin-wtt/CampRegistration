@@ -17,6 +17,7 @@ export default {
     progress: 'Nahrazování souboru...',
     success: 'Soubor úspěšně nahrazen',
     error: 'Chyba při nahrazování souboru',
+    oldFileKept: 'Nový soubor byl nahrán, ale starý se nepodařilo odstranit',
   },
   update: {
     progress: 'Aktualizace souboru...',

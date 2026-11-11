@@ -1,8 +1,10 @@
 import { defineStore } from 'pinia';
 import { useAPIService } from '@/services/APIService';
-import { useServiceHandler } from '@/composables/serviceHandler';
-import { useAuthBus, useEventBus } from '@/composables/bus';
-import { useRealtimeCollection } from '@/composables/realtimeCollection';
+import { useCollection, useRouteKey } from '@/composables/resource';
+import { useAction } from '@/composables/action';
+import { useNotifier } from '@/composables/notifier';
+import { useI18n } from 'vue-i18n';
+import { removeById, replaceById, upsertById } from '@/utils/collection';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import type {
   ServiceFileCreateData,
@@ -51,40 +53,19 @@ export function splitFieldVersion(field: string): {
 }
 
 export const useEventFilesStore = defineStore('eventFiles', () => {
-  const apiService = useAPIService();
+  const api = useAPIService();
   const eventStore = useEventDetailsStore();
-  const eventBus = useEventBus();
-  const authBus = useAuthBus();
-  const {
-    data,
-    isLoading,
-    error,
-    reset,
-    invalidate,
-    withProgressNotification,
-    withErrorNotification,
-    checkNotNullWithNotification,
-    queryParam,
-    lazyFetch,
-    backgroundFetch,
-  } = useServiceHandler<ServiceFile[]>('eventFiles');
-
-  authBus.on('logout', () => {
-    reset();
-  });
-
-  eventBus.on('change', () => {
-    invalidate();
-  });
-
-  // React to live changes pushed from other clients. List mode (no per-id
-  // metadata endpoint). Note: the async upload-completion (READY) status flip
-  // does not emit — the list refreshes on the next created/updated/deleted
-  // event or page load.
-  useRealtimeCollection<ServiceFile>('file', {
-    data,
-    invalidate,
-    reload: () => fetchData({ background: true }),
+  const { run } = useAction('eventFiles');
+  const notifier = useNotifier('eventFiles');
+  const { t } = useI18n({ useScope: 'global' });
+  // List mode (no per-id metadata endpoint). The async upload-completion
+  // (READY) status flip does not emit — the list refreshes on the next
+  // created/updated/deleted event or page load.
+  const files = useCollection<ServiceFile>({
+    name: 'eventFiles',
+    key: useRouteKey('eventId'),
+    fetch: (eventId) => api.fetchEventFiles(eventId),
+    realtime: { resource: 'file' },
   });
 
   // The file behind the reserved logo slot, if any — a single file, not
@@ -107,7 +88,7 @@ export const useEventFilesStore = defineStore('eventFiles', () => {
       (file.uploadStatus === 'READY' ? 2 : 0) +
       (file.accessLevel === 'public' ? 1 : 0);
 
-    return (data.value ?? [])
+    return (files.data.value ?? [])
       .filter((file) => file.field === slot)
       .sort(
         (a, b) => rank(b) - rank(a) || b.createdAt.localeCompare(a.createdAt),
@@ -122,7 +103,7 @@ export const useEventFilesStore = defineStore('eventFiles', () => {
     }
 
     const uploadedFields = new Set(
-      (data.value ?? []).map((f) => f.field).filter(Boolean),
+      (files.data.value ?? []).map((f) => f.field).filter(Boolean),
     );
 
     const json = JSON.stringify(form);
@@ -146,7 +127,7 @@ export const useEventFilesStore = defineStore('eventFiles', () => {
       return [];
     }
 
-    return missingSlotFiles(data.value ?? [], {
+    return missingSlotFiles(files.data.value ?? [], {
       locales: event.locales,
       groups: event.countries,
     });
@@ -159,76 +140,85 @@ export const useEventFilesStore = defineStore('eventFiles', () => {
     () => pendingSlots.value.length + missingFiles.value.length,
   );
 
-  async function fetchData(opts?: { background?: boolean }) {
-    const eventId = queryParam('eventId');
+  function fieldOf(id: string): string | null | undefined {
+    return files.data.value?.find((file) => file.id === id)?.field;
+  }
 
-    const fetcher = () => apiService.fetchEventFiles(eventId);
-    await (opts?.background ? backgroundFetch(fetcher) : lazyFetch(fetcher));
+  function fetchData(eventId?: string) {
+    return files.load(eventId);
   }
 
   async function createEntry(
     createData: ServiceFileCreateData,
-    options?: { withoutNotifications: boolean },
   ): Promise<ServiceFile> {
-    const eventId = queryParam('eventId');
-
-    const createFn = async () => {
-      const file = await apiService.createEventFile(eventId, createData);
-
-      data.value?.push(file);
-      refreshEventMedia(file.field);
-
-      return file;
-    };
-
-    return options?.withoutNotifications
-      ? createFn()
-      : withProgressNotification('create', createFn);
+    const file = await files.mutate(
+      'create',
+      (eventId) => api.createEventFile(eventId, createData),
+      { feedback: 'progress', apply: upsertById },
+    );
+    refreshEventMedia(file.field);
+    return file;
   }
 
+  // Uploads the new file, then deletes the old one. Once the upload is in,
+  // the replace counts as done: a failed delete keeps the old file listed and
+  // is reported, so retrying doesn't upload another copy.
   async function replaceFile(
     oldFile: ServiceFile,
     createData: ServiceFileCreateData,
   ): Promise<ServiceFile> {
-    const eventId = queryParam('eventId');
-
-    return withProgressNotification('replace', async () => {
-      const newFile = await apiService.createEventFile(eventId, createData);
-      data.value?.push(newFile);
-
-      await apiService.deleteFile(oldFile.id);
-      data.value = data.value?.filter((f) => f.id !== oldFile.id);
-      refreshEventMedia(oldFile.field, newFile.field);
-
-      return newFile;
-    });
+    let deleteError: unknown;
+    const file = await files.mutate(
+      'replace',
+      async (eventId) => {
+        const created = await api.createEventFile(eventId, createData);
+        deleteError = await api.deleteFile(oldFile.id).then(
+          () => undefined,
+          (err: unknown) => err ?? new Error('delete failed'),
+        );
+        return created;
+      },
+      {
+        feedback: 'progress',
+        apply: (list, created) =>
+          upsertById(
+            deleteError ? list : removeById(list, oldFile.id),
+            created,
+          ),
+      },
+    );
+    if (deleteError) {
+      notifier.error(
+        'replace',
+        deleteError,
+        t('stores.eventFiles.replace.oldFileKept'),
+      );
+    }
+    refreshEventMedia(oldFile.field, file.field);
+    return file;
   }
 
   async function updateEntry(
     id: string,
     updateData: ServiceFileUpdateData,
   ): Promise<ServiceFile> {
-    const previousField = data.value?.find((entry) => entry.id === id)?.field;
-
-    return withProgressNotification('update', async () => {
-      const file = await apiService.updateFile(id, updateData);
-
-      data.value = data.value?.map((entry) => (entry.id === id ? file : entry));
-      refreshEventMedia(previousField, file.field);
-
-      return file;
-    });
+    const previousField = fieldOf(id);
+    const file = await files.mutate(
+      'update',
+      () => api.updateFile(id, updateData),
+      { feedback: 'progress', apply: replaceById },
+    );
+    refreshEventMedia(previousField, file.field);
+    return file;
   }
 
-  async function deleteEntry(id: string) {
-    const field = data.value?.find((file) => file.id === id)?.field;
-
-    await withProgressNotification('delete', async () => {
-      await apiService.deleteFile(id);
-
-      data.value = data.value?.filter((file) => file.id !== id);
-      refreshEventMedia(field);
+  async function deleteEntry(id: string): Promise<void> {
+    const field = fieldOf(id);
+    await files.mutate('delete', () => api.deleteFile(id), {
+      feedback: 'progress',
+      apply: (list) => removeById(list, id),
     });
+    refreshEventMedia(field);
   }
 
   /**
@@ -240,29 +230,22 @@ export const useEventFilesStore = defineStore('eventFiles', () => {
    */
   function refreshEventMedia(...fields: (string | null | undefined)[]) {
     if (
-      !fields.includes(EVENT_LOGO_SLOT) &&
-      !fields.includes(EVENT_BANNER_SLOT)
+      fields.includes(EVENT_LOGO_SLOT) ||
+      fields.includes(EVENT_BANNER_SLOT)
     ) {
-      return;
+      void eventStore.reload();
     }
-
-    void eventStore.fetchData(undefined, { background: true });
   }
 
-  async function downloadFile(file: ServiceFile) {
-    await withErrorNotification('download', async () => {
-      const blob = await apiService.downloadFile(file.id);
-
-      exportFile(file.name, blob, {
-        mimeType: file.type,
-      });
+  async function downloadFile(file: ServiceFile): Promise<void> {
+    await run('download', async () => {
+      const blob = await api.downloadFile(file.id);
+      exportFile(file.name, blob, { mimeType: file.type });
     });
   }
 
   function getUrl(id: string) {
-    checkNotNullWithNotification(id);
-
-    return apiService.getFileUrl(id);
+    return api.getFileUrl(id);
   }
 
   /**
@@ -273,7 +256,9 @@ export const useEventFilesStore = defineStore('eventFiles', () => {
    */
   function nextAvailableField(baseField: string): string {
     const used = new Set(
-      (data.value ?? []).map((f) => f.field).filter((f): f is string => !!f),
+      (files.data.value ?? [])
+        .map((f) => f.field)
+        .filter((f): f is string => !!f),
     );
 
     if (!used.has(baseField)) {
@@ -289,10 +274,10 @@ export const useEventFilesStore = defineStore('eventFiles', () => {
   }
 
   return {
-    reset,
-    data,
-    isLoading,
-    error,
+    data: files.data,
+    isLoading: files.isLoading,
+    error: files.error,
+    reset: files.reset,
     logoFile,
     bannerFile,
     pendingSlots,

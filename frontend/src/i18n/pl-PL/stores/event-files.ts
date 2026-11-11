@@ -17,6 +17,7 @@ export default {
     progress: 'Zastępowanie pliku...',
     success: 'Plik pomyślnie zastąpiony',
     error: 'Błąd podczas zastępowania pliku',
+    oldFileKept: 'Nowy plik został przesłany, ale nie udało się usunąć starego',
   },
   update: {
     progress: 'Aktualizowanie pliku...',

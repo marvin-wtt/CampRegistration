@@ -240,14 +240,7 @@
 </template>
 
 <script lang="ts" setup>
-import {
-  computed,
-  nextTick,
-  onBeforeUnmount,
-  onMounted,
-  ref,
-  watch,
-} from 'vue';
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import ContactSelect from '@/components/event/contact/ContactSelect.vue';
 import type {
@@ -260,7 +253,7 @@ import { QForm, type QSelectOption, useQuasar } from 'quasar';
 import { type QRejectedEntry } from 'quasar';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import RegistrationEmailEditor from '@/components/event/contact/RegistrationEmailEditor.vue';
-import { useServiceNotifications } from '@/composables/serviceHandler';
+import { useAction } from '@/composables/action';
 import { useAPIService } from '@/services/APIService';
 import FileInput, {
   type FileInputModel,
@@ -297,11 +290,12 @@ const quasar = useQuasar();
 const { t } = useI18n();
 const apiService = useAPIService();
 const eventDetailsStore = useEventDetailsStore();
-const { withResultNotification } = useServiceNotifications();
+const { run } = useAction();
 const { can } = usePermissions();
 const { contactFor } = useRegistrationContact();
 
-onMounted(async () => {
+// Called at the end of setup, once the refs it fills are declared.
+async function initialize() {
   if (initialContacts?.length) {
     to.value = [...initialContacts];
   } else if (!draft) {
@@ -316,7 +310,7 @@ onMounted(async () => {
   if (to.value.length > 0) {
     applyDefaultReplyTo();
   }
-});
+}
 
 const formRef = ref<QForm>();
 const to = ref<Contact[]>([]);
@@ -539,19 +533,22 @@ async function send() {
 
   sendInProgress.value = true;
   try {
-    const message = await withResultNotification('send', async () => {
-      return apiService.createMessage(eventId, {
-        // Selected groups may overlap; the server expects each id once.
-        registrationIds: [...recipientIds(to.value)],
-        replyTo: replyTo.value,
-        subject: subject.value,
-        body: text.value,
-        priority: priority.value,
-        attachmentIds: attachments.value
-          ?.filter((v) => v.id !== undefined)
-          .map((file) => file.id),
-      });
-    });
+    const message = await run(
+      'send',
+      () =>
+        apiService.createMessage(eventId, {
+          // Selected groups may overlap; the server expects each id once.
+          registrationIds: [...recipientIds(to.value)],
+          replyTo: replyTo.value,
+          subject: subject.value,
+          body: text.value,
+          priority: priority.value,
+          attachmentIds: attachments.value
+            ?.filter((v) => v.id !== undefined)
+            .map((file) => file.id),
+        }),
+      { feedback: 'result' },
+    );
 
     // Reset all fields on success
     reset();
@@ -839,6 +836,8 @@ function discard() {
 }
 
 defineExpose({ dirty, unsaved, hasContent, load });
+
+void initialize();
 </script>
 
 <style scoped>

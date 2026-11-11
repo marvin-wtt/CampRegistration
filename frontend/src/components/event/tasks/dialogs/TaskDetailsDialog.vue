@@ -379,9 +379,9 @@ const assigneeOptions = computed<{ label: string; value: string }[]>(() =>
     })),
 );
 
-// The store notifies failures and keeps its copy unchanged; callers use the
-// result to roll back what the dialog shows locally.
-function save(data: TaskUpdateData): Promise<boolean> {
+// The store notifies failures, reloads and rejects; callers that show a
+// local copy roll it back in their catch.
+function save(data: TaskUpdateData): Promise<void> {
   return taskStore.updateData(task.value.id, data);
 }
 
@@ -447,8 +447,8 @@ function commitTitle() {
     return;
   }
   if (value !== task.value.title) {
-    void save({ title: value }).then((saved) => {
-      if (!saved && !titleEditing.value) {
+    save({ title: value }).catch(() => {
+      if (!titleEditing.value) {
         title.value = task.value.title;
       }
     });
@@ -531,8 +531,14 @@ async function flushNotes() {
   const value = notes.value.trim() || null;
   if (value !== task.value.notes) {
     notesSaving = true;
-    notesFailed.value = !(await save({ notes: value }));
-    notesSaving = false;
+    try {
+      await save({ notes: value });
+      notesFailed.value = false;
+    } catch {
+      notesFailed.value = true;
+    } finally {
+      notesSaving = false;
+    }
   } else {
     notesFailed.value = false;
   }

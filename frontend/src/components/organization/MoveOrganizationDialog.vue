@@ -96,7 +96,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { useAPIService } from '@/services/APIService';
@@ -209,10 +209,12 @@ watch(organizationId, (id) => {
     : undefined;
 });
 
-onMounted(async () => {
+void loadOptions();
+
+async function loadOptions() {
   organizations.value = await fetchOrganizations();
   filteredOptions.value = allOptions.value;
-});
+}
 </script>
 
 <style lang="scss" scoped>

@@ -137,7 +137,7 @@ const password = ref<string>('');
 const remember = ref<boolean>(true);
 
 const authStore = useAuthStore();
-const { loading } = storeToRefs(authStore);
+const { isLoading: loading } = storeToRefs(authStore);
 
 const error = computed(() => {
   return authStore.error;
@@ -150,14 +150,14 @@ onMounted(async () => {
   const queryToken = route.query.token;
   const queryEmail = route.query.email;
 
-  // Verify email
-  if (typeof queryToken === 'string') {
-    await authStore.verifyEmail(queryToken);
-  }
-
   // Set email field
   if (typeof queryEmail === 'string') {
     email.value = queryEmail;
+  }
+
+  // Verify email
+  if (typeof queryToken === 'string') {
+    await authStore.verifyEmail(queryToken);
   }
 });
 

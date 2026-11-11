@@ -62,7 +62,7 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, ref } from 'vue';
+import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
 import { useAuthStore } from '@/stores/auth-store';
@@ -76,7 +76,7 @@ const { t } = useI18n();
 const quasar = useQuasar();
 
 const authStore = useAuthStore();
-const { loading, error } = storeToRefs(authStore);
+const { isLoading: loading, error } = storeToRefs(authStore);
 
 // 'checking' while we probe status, 'open' to show the form, 'completed' once
 // an admin already exists (this page is then a dead end → offer login).
@@ -85,9 +85,11 @@ const state = ref<'checking' | 'open' | 'completed'>('checking');
 // Suppress any previous errors
 authStore.reset();
 
-onMounted(async () => {
+void checkSetup();
+
+async function checkSetup() {
   state.value = (await isSetupRequired()) ? 'open' : 'completed';
-});
+}
 
 async function onSubmit(credentials: RegistrationCredentials) {
   const outcome = await authStore.setup(

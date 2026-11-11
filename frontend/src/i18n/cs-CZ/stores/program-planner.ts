@@ -1,4 +1,5 @@
 export default {
+  pendingCreate: 'Počkejte, než bude událost vytvořena',
   create: {
     error: 'Chyba při vytváření události',
   },

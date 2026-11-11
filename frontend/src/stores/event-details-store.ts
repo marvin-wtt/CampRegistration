@@ -1,145 +1,131 @@
 import { defineStore } from 'pinia';
-import { useRoute, useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 import type { EventDetails } from '@camp-registration/common/entities';
 import { useAPIService } from '@/services/APIService';
-import { useServiceHandler } from '@/composables/serviceHandler';
-import { useAuthBus, useEventBus } from '@/composables/bus';
+import { useResource, useRouteKey } from '@/composables/resource';
+import type { Feedback } from '@/composables/action';
+import { useEventBus } from '@/composables/bus';
 import type { RealtimeEvent } from '@camp-registration/common/realtime';
 import { useRealtimeStore } from '@/stores/realtime-store';
 import { omitProperty } from '@/utils/omitProperty';
+import { isDeepEqual } from '@/utils/deepEqual';
 
 export const useEventDetailsStore = defineStore('eventDetails', () => {
-  const route = useRoute();
   const router = useRouter();
   const api = useAPIService();
   const bus = useEventBus();
-  const authBus = useAuthBus();
   const realtime = useRealtimeStore();
-  const {
-    data,
-    isLoading,
-    error,
-    reset,
-    invalidate,
-    handlerByType,
-    lazyFetch,
-    backgroundFetch,
-    checkNotNullWithError,
-  } = useServiceHandler<EventDetails>('event');
-
-  authBus.on('logout', () => {
-    reset();
+  const eventKey = useRouteKey('eventId');
+  const details = useResource<EventDetails>({
+    name: 'event',
+    key: eventKey,
+    fetch: (eventId) => api.fetchEvent(eventId),
   });
 
   bus.on('update', (event) => {
-    if (event?.id !== data.value?.id) {
+    if (event?.id !== details.data.value?.id) {
       return;
     }
 
     if ('form' in event) {
-      // We can assume that the event contains all details, and we don't need to prefetch it.
-      data.value = event as EventDetails;
+      // It carries all details; no need to fetch them.
+      details.update(() => event as EventDetails);
     } else {
-      // It's a normal event - we need to fetch the details
-      invalidate();
-      void fetchData(event?.id);
+      void details.reload();
     }
   });
 
   bus.on('delete', (eventId) => {
-    if (data.value?.id !== eventId) {
-      return;
+    if (details.data.value?.id === eventId) {
+      details.reset();
     }
-    reset();
   });
 
-  // React to live changes pushed from other clients.
-  realtime.on('event', (event) => void handleRemoteChange(event));
+  // React to live changes pushed from other clients. Details are refetched
+  // through REST (where permissions apply) rather than trusting pushed data.
+  realtime.on('event', (event: RealtimeEvent) => {
+    if (details.data.value?.id !== event.id) {
+      return;
+    }
+    if (event.operation === 'deleted') {
+      details.reset();
+      bus.emit('delete', event.id);
+      return;
+    }
+    // Passed on like a local update, so the stores derived from it follow.
+    const formBefore = details.data.value?.form;
+    void details.reload().then(() => {
+      const updated = details.data.value;
+      if (updated?.id === event.id) {
+        bus.emit('update', updated);
+        emitFormChange(formBefore, updated);
+      }
+    });
+  });
   realtime.onReconnect('event', () => {
-    if (data.value === undefined || route.params.eventId === undefined) {
-      return;
+    if (details.data.value !== undefined && eventKey() !== undefined) {
+      void details.reload();
     }
-    void fetchData(data.value.id, { background: true });
   });
 
-  router.beforeEach(async (to, from) => {
+  router.beforeEach((to, from) => {
     // Leaving the event only marks it stale: the page being left keeps
     // rendering until its route is resolved and its fade-out ends, and must
-    // not see the event vanish. Entering any event refetches it below.
-    if (to.params.eventId === undefined) {
+    // not see the event vanish. Entering an event starts loading it while
+    // the page's chunk downloads; the page shows the loading state.
+    const eventId = to.params.eventId as string | undefined;
+    if (eventId === undefined) {
       if (from.params.eventId !== undefined) {
-        invalidate();
-        bus.emit('change', undefined);
+        details.invalidate();
       }
       return;
     }
 
-    if (data.value === undefined || to.params.eventId !== from.params.eventId) {
-      const eventId = to.params.eventId as string;
-      invalidate();
-      await fetchData(eventId);
+    if (details.data.value === undefined || eventId !== from.params.eventId) {
+      details.invalidate();
+      void details.load(eventId);
     }
   });
 
-  async function fetchData(id?: string, opts?: { background?: boolean }) {
-    const eventId = id ?? (route.params.eventId as string);
+  function fetchData(eventId?: string) {
+    return details.load(eventId);
+  }
 
-    const cid = checkNotNullWithError(eventId);
-    const fetcher = async () => {
-      const result = await api.fetchEvent(cid);
-      bus.emit('change', result);
-
-      return result;
-    };
-    await (opts?.background ? backgroundFetch(fetcher) : lazyFetch(fetcher));
+  function emitFormChange(before: unknown, updated: EventDetails) {
+    if (!isDeepEqual(before, updated.form)) {
+      bus.emit('formChange', updated.id);
+    }
   }
 
   async function updateData(
-    newData: Partial<EventDetails>,
-    notificationType: 'progress' | 'result' | 'error' | 'none' = 'progress',
-  ): Promise<EventDetails | undefined> {
-    const eventId =
-      newData.id ?? data.value?.id ?? (route.params.eventId as string);
-
-    checkNotNullWithError(eventId);
-
-    // TODO Create multi omit function
-    const newDataWithoutFreePlaces = omitProperty(newData, 'freePlaces');
-    const newDataWithoutId = omitProperty(newDataWithoutFreePlaces, 'id');
-
-    return handlerByType<EventDetails | undefined>(notificationType)(
+    update: Partial<EventDetails>,
+    feedback: Feedback = 'progress',
+  ): Promise<EventDetails> {
+    const formBefore = details.data.value?.form;
+    const event = await details.mutate(
       'update',
-      async () => {
-        const updatedEvent = await api.updateEvent(eventId, newDataWithoutId);
-
-        bus.emit('update', updatedEvent);
-
-        return updatedEvent;
+      (eventId) =>
+        api.updateEvent(
+          eventId,
+          omitProperty(omitProperty(update, 'freePlaces'), 'id'),
+        ),
+      {
+        feedback,
+        ...(update.id ? { key: update.id } : {}),
+        apply: (_, updated) => updated,
       },
     );
-  }
-
-  // Applies a realtime change for the event currently loaded. Re-fetches details
-  // through REST (where permissions apply) rather than trusting pushed data.
-  async function handleRemoteChange(event: RealtimeEvent) {
-    if (data.value?.id !== event.id) {
-      return;
-    }
-
-    if (event.operation === 'deleted') {
-      reset();
-      bus.emit('delete', event.id);
-      return;
-    }
-
-    await fetchData(event.id, { background: true });
+    bus.emit('update', event);
+    emitFormChange(formBefore, event);
+    return event;
   }
 
   return {
-    reset,
-    data,
-    isLoading,
-    error,
+    data: details.data,
+    isLoading: details.isLoading,
+    error: details.error,
+    reset: details.reset,
+    reload: details.reload,
     fetchData,
     updateData,
   };

@@ -445,7 +445,7 @@ import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import { useI18n } from 'vue-i18n';
 import { countryName } from '@/utils/countries';
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { copyToClipboard, useQuasar } from 'quasar';
 import FileUploadDialog from '@/components/event/settings/files/FileUploadDialog.vue';
 import FileSlotCard from '@/components/event/settings/files/FileSlotCard.vue';
@@ -472,12 +472,7 @@ const eventStore = useEventDetailsStore();
 const eventFileStore = useEventFilesStore();
 const { can } = usePermissions();
 
-onMounted(async () => {
-  await Promise.allSettled([
-    eventStore.fetchData(),
-    eventFileStore.fetchData(),
-  ]);
-});
+void Promise.allSettled([eventStore.fetchData(), eventFileStore.fetchData()]);
 
 const uploadOngoing = ref(false);
 

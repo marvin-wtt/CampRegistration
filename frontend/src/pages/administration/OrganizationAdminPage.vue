@@ -89,7 +89,7 @@ import OrganizationReviewDialog, {
 import SafeDeleteDialog from '@/components/common/dialogs/SafeDeleteDialog.vue';
 import { useAPIService } from '@/services/APIService';
 import { useServerTable } from '@/composables/serverTable';
-import { useServiceNotifications } from '@/composables/serviceHandler';
+import { useAction } from '@/composables/action';
 import { useRouter } from 'vue-router';
 import { countryName } from '@/utils/countries';
 import type {
@@ -102,7 +102,8 @@ const { t, d, locale } = useI18n();
 const quasar = useQuasar();
 const router = useRouter();
 const api = useAPIService();
-const { withErrorNotification } = useServiceNotifications();
+// Each call passes its own error message instead of the store's wording.
+const pageAction = useAction();
 
 const status = ref<OrganizationVerificationStatus | null>(null);
 
@@ -117,7 +118,7 @@ const {
   onVirtualScroll,
   identitySort,
   reload,
-  withProgressNotification,
+  run,
 } = useServerTable<Organization, OrganizationQuery>({
   storeName: 'organization',
   sortBy: 'submittedAt',
@@ -259,15 +260,11 @@ function showDetails(organization: Organization) {
  * confirm and only then being refused.
  */
 async function onDelete(organization: Organization) {
-  const details = await withErrorNotification(
+  const details = await pageAction.run(
     'details',
     () => api.fetchOrganization(organization.id),
-    { message: t('notify.detailsFailed') },
+    { errorMessage: t('notify.detailsFailed') },
   );
-
-  if (details === undefined) {
-    return;
-  }
 
   if (details.ownedEvents > 0 || details.ownedNewsletters > 0) {
     quasar.dialog({
@@ -296,13 +293,9 @@ async function onDelete(organization: Organization) {
       },
     })
     .onOk(() => {
-      void withProgressNotification('delete', () =>
-        api.deleteOrganization(organization.id),
-      ).then(
-        () => reload(),
-        // Already reported by the progress notification.
-        () => undefined,
-      );
+      void run('delete', () => api.deleteOrganization(organization.id), {
+        feedback: 'progress',
+      }).then(() => reload());
     });
 }
 
@@ -313,20 +306,16 @@ function review(organization: Organization) {
       componentProps: { organization },
     })
     .onOk((decision: OrganizationReviewResult) => {
-      void (async () => {
-        // The decision can legitimately be refused — an organization cannot be
-        // verified before its privacy notice is published, which is the state of
-        // every fresh submission. Without this the dialog just closes.
-        const result = await withErrorNotification(
+      // The decision can legitimately be refused — an organization cannot be
+      // verified before its privacy notice is published, which is the state of
+      // every fresh submission. Without this the dialog just closes.
+      void pageAction
+        .run(
           'review',
           () => api.reviewOrganization(organization.id, decision),
-          { message: t('notify.reviewFailed') },
-        );
-
-        if (result !== undefined) {
-          reload();
-        }
-      })();
+          { errorMessage: t('notify.reviewFailed') },
+        )
+        .then(() => reload());
     });
 }
 </script>

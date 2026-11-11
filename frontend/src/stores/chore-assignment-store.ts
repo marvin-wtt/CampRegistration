@@ -1,9 +1,8 @@
 import { defineStore } from 'pinia';
-import { useRoute } from 'vue-router';
 import { useAPIService } from '@/services/APIService';
-import { useServiceHandler } from '@/composables/serviceHandler';
-import { useRealtimeCollection } from '@/composables/realtimeCollection';
-import { useAuthBus, useEventBus } from '@/composables/bus';
+import { requireKey, useCollection, useRouteKey } from '@/composables/resource';
+import { settleAll } from '@/composables/action';
+import { removeById, replaceAllById, replaceById } from '@/utils/collection';
 import type {
   ChoreAssignment,
   ChoreAssignmentBulkDeleteQuery,
@@ -20,230 +19,166 @@ import type {
   ChoreRebalanceChange,
 } from '@camp-registration/common/entities';
 
+// The page groups assignments by date assuming the list is sorted ascending
+// (as the backend returns it), so a created or updated one is placed by date
+// rather than appended or left at its old index.
+function placeByDate(
+  list: ChoreAssignment[],
+  assignment: ChoreAssignment,
+): ChoreAssignment[] {
+  const rest = removeById(list, assignment.id);
+  const index = rest.findIndex((value) => value.date > assignment.date);
+  return index === -1
+    ? [...rest, assignment]
+    : [...rest.slice(0, index), assignment, ...rest.slice(index)];
+}
+
+// Single changes show in place and only report failures; bulk ones show a
+// progress toast and reload the list afterwards.
 export const useChoreAssignmentStore = defineStore('choreAssignment', () => {
-  const route = useRoute();
   const api = useAPIService();
-  const authBus = useAuthBus();
-  const eventBus = useEventBus();
-  const {
-    data,
-    isLoading,
-    error,
-    reset,
-    invalidate,
-    withProgressNotification,
-    lazyFetch,
-    backgroundFetch,
-    checkNotNullWithError,
-    checkNotNullWithNotification,
-  } = useServiceHandler<ChoreAssignment[]>('choreAssignment');
-
-  authBus.on('logout', () => {
-    reset();
+  const eventKey = useRouteKey('eventId');
+  const assignments = useCollection<ChoreAssignment>({
+    name: 'choreAssignment',
+    key: eventKey,
+    fetch: (eventId) => api.fetchChoreAssignments(eventId),
+    realtime: {
+      resource: 'choreAssignment',
+      fetchOne: (eventId, id) => api.fetchChoreAssignment(eventId, id),
+    },
   });
 
-  eventBus.on('change', () => {
-    invalidate();
-  });
-
-  // React to live changes pushed from other clients.
-  useRealtimeCollection<ChoreAssignment>('choreAssignment', {
-    data,
-    invalidate,
-    reload: () => fetchData(undefined, { background: true }),
-    fetchOne: (eventId, id) => api.fetchChoreAssignment(eventId, id),
-  });
-
-  function currentEventId(): string {
-    return checkNotNullWithError(route.params.eventId as string | undefined);
+  function fetchData(eventId?: string) {
+    return assignments.load(eventId);
   }
 
-  async function fetchData(eventId?: string, opts?: { background?: boolean }) {
-    eventId ??= route.params.eventId as string;
-
-    const cid = checkNotNullWithError(eventId);
-    const fetcher = () => api.fetchChoreAssignments(cid);
-    await (opts?.background ? backgroundFetch(fetcher) : lazyFetch(fetcher));
-  }
-
-  // Bulk operations change many rows at once; reload quietly afterwards.
-  async function reload() {
-    await fetchData(undefined, { background: true });
-  }
-
-  function replaceLocal(assignment: ChoreAssignment) {
-    data.value = data.value?.map((value) =>
-      value.id === assignment.id ? assignment : value,
-    );
-  }
-
+  // Async so a missing scope rejects instead of throwing at the call.
   async function fetchSuggestions(
     query: ChoreAssignmentSuggestionQuery,
   ): Promise<ChoreAssignmentSuggestions | undefined> {
-    return api.fetchChoreAssignmentSuggestions(currentEventId(), query);
+    return api.fetchChoreAssignmentSuggestions(requireKey(eventKey), query);
   }
 
   async function fetchFairness(): Promise<ChoreFairnessEntry[]> {
-    return api.fetchChoreFairness(currentEventId());
+    return api.fetchChoreFairness(requireKey(eventKey));
   }
 
   async function autoFillMembers(
     data: ChoreAutoFillData,
   ): Promise<ChoreAssignmentMemberData[]> {
-    return api.autoFillChoreMembers(currentEventId(), data);
+    return api.autoFillChoreMembers(requireKey(eventKey), data);
   }
 
-  // The page groups assignments by date assuming the list is sorted
-  // ascending (matching the backend's `orderBy: [{ date }, { createdAt }]`),
-  // so a locally-added/updated assignment must be placed by date rather than
-  // appended or left at its old index — otherwise same-date groups split.
-  function insertSorted(assignment: ChoreAssignment) {
-    const list = (data.value ?? []).filter(
-      (value) => value.id !== assignment.id,
+  async function fetchRebalance(): Promise<ChoreRebalanceChange[]> {
+    return api.fetchChoreRebalance(requireKey(eventKey));
+  }
+
+  function createData(
+    createData: ChoreAssignmentCreateData,
+  ): Promise<ChoreAssignment> {
+    return assignments.mutate(
+      'create',
+      (eventId) => api.createChoreAssignment(eventId, createData),
+      { apply: placeByDate },
     );
-    const index = list.findIndex((value) => value.date > assignment.date);
-
-    if (index === -1) {
-      list.push(assignment);
-    } else {
-      list.splice(index, 0, assignment);
-    }
-
-    data.value = list;
-  }
-
-  async function createData(newData: ChoreAssignmentCreateData) {
-    const eventId = currentEventId();
-
-    return withProgressNotification('create', async () => {
-      const assignment = await api.createChoreAssignment(eventId, newData);
-
-      insertSorted(assignment);
-
-      return assignment;
-    });
   }
 
   async function updateData(
     choreAssignmentId: string,
     updateData: ChoreAssignmentUpdateData,
-  ) {
-    const eventId = currentEventId();
-    checkNotNullWithNotification(choreAssignmentId);
-
-    await withProgressNotification('update', async () => {
-      insertSorted(
-        await api.updateChoreAssignment(eventId, choreAssignmentId, updateData),
-      );
-    });
+  ): Promise<void> {
+    await assignments.mutate(
+      'update',
+      (eventId) =>
+        api.updateChoreAssignment(eventId, choreAssignmentId, updateData),
+      { apply: placeByDate },
+    );
   }
 
-  // e.g. "mark all of today done" — one notification for the whole batch.
+  // e.g. "mark all of today done" — one toast for the whole batch.
   async function setStatusMany(
     choreAssignmentIds: string[],
     status: ChoreAssignmentStatus,
-  ) {
-    const eventId = currentEventId();
-
-    await withProgressNotification('update', async () => {
-      const results = await Promise.allSettled(
-        choreAssignmentIds.map((id) =>
-          api.updateChoreAssignment(eventId, id, { status }),
+  ): Promise<void> {
+    await assignments.mutate(
+      'update',
+      (eventId, report) =>
+        settleAll(
+          choreAssignmentIds.map(
+            (id) => () => api.updateChoreAssignment(eventId, id, { status }),
+          ),
+          report,
         ),
-      );
-      // Saved ones must show as saved even when another failed — our own
-      // realtime echo is suppressed, so nothing else would correct them.
-      const failed = results.filter((result) => {
-        if (result.status === 'fulfilled') {
-          replaceLocal(result.value);
-        }
-        return result.status === 'rejected';
-      });
-      if (failed[0]) {
-        throw failed[0].reason;
-      }
-    });
-  }
-
-  async function fillData(choreAssignmentId: string) {
-    const eventId = currentEventId();
-
-    await withProgressNotification('fill', async () => {
-      replaceLocal(await api.fillChoreAssignment(eventId, choreAssignmentId));
-    });
-  }
-
-  async function deleteData(choreAssignmentId: string) {
-    const eventId = currentEventId();
-    checkNotNullWithNotification(choreAssignmentId);
-
-    await withProgressNotification('delete', async () => {
-      await api.deleteChoreAssignment(eventId, choreAssignmentId);
-
-      data.value = data.value?.filter(
-        (assignment) => assignment.id !== choreAssignmentId,
-      );
-    });
-  }
-
-  async function planSeries(plan: ChoreSeriesPlanData) {
-    const eventId = currentEventId();
-
-    const result = await withProgressNotification('series', () =>
-      api.planChoreSeries(eventId, plan),
+      // A partial failure rejects, so the reload shows what was saved.
+      { feedback: 'progress', apply: replaceAllById, multiWrite: true },
     );
-    await reload();
-
-    return result;
   }
 
-  async function deleteMany(query: ChoreAssignmentBulkDeleteQuery) {
-    const eventId = currentEventId();
+  async function fillData(choreAssignmentId: string): Promise<void> {
+    await assignments.mutate(
+      'fill',
+      (eventId) => api.fillChoreAssignment(eventId, choreAssignmentId),
+      { apply: replaceById },
+    );
+  }
 
-    const count = await withProgressNotification('deleteMany', () =>
+  async function deleteData(choreAssignmentId: string): Promise<void> {
+    await assignments.mutate(
+      'delete',
+      (eventId) => api.deleteChoreAssignment(eventId, choreAssignmentId),
+      { apply: (list) => removeById(list, choreAssignmentId) },
+    );
+  }
+
+  // Bulk changes touch many rows at once; the list is reloaded afterwards.
+  function bulk<R>(
+    operation: string,
+    request: (eventId: string) => Promise<R>,
+  ): Promise<R> {
+    return assignments.mutate(operation, request, {
+      feedback: 'progress',
+      reload: true,
+    });
+  }
+
+  function planSeries(plan: ChoreSeriesPlanData) {
+    return bulk('series', (eventId) => api.planChoreSeries(eventId, plan));
+  }
+
+  function deleteMany(query: ChoreAssignmentBulkDeleteQuery) {
+    return bulk('deleteMany', (eventId) =>
       api.deleteChoreAssignments(eventId, query),
     );
-    await reload();
-
-    return count;
   }
 
-  async function removeMember(
+  function removeMember(
     registrationId: string,
     query: ChoreMemberRemovalQuery,
   ) {
-    const eventId = currentEventId();
-
-    const result = await withProgressNotification('removePerson', () =>
+    return bulk('removePerson', (eventId) =>
       api.removeChoreMember(eventId, registrationId, query),
     );
-    await reload();
-
-    return result;
   }
 
-  async function fetchRebalance(): Promise<ChoreRebalanceChange[]> {
-    return api.fetchChoreRebalance(currentEventId());
-  }
-
-  async function applyRebalance(changes: ChoreRebalanceChange[]) {
-    const eventId = currentEventId();
-
-    await withProgressNotification('rebalance', () =>
+  async function applyRebalance(
+    changes: ChoreRebalanceChange[],
+  ): Promise<void> {
+    await bulk('rebalance', (eventId) =>
       api.applyChoreRebalance(eventId, { changes }),
     );
-    await reload();
   }
 
   return {
-    reset,
-    data,
-    isLoading,
-    error,
+    data: assignments.data,
+    isLoading: assignments.isLoading,
+    error: assignments.error,
+    reset: assignments.reset,
+    reload: assignments.reload,
     fetchData,
     fetchSuggestions,
     fetchFairness,
     autoFillMembers,
+    fetchRebalance,
     createData,
     updateData,
     setStatusMany,
@@ -252,7 +187,6 @@ export const useChoreAssignmentStore = defineStore('choreAssignment', () => {
     planSeries,
     deleteMany,
     removeMember,
-    fetchRebalance,
     applyRebalance,
   };
 });
