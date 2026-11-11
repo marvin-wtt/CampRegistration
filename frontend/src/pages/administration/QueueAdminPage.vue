@@ -260,15 +260,15 @@ function onDeleteFailed(queue: QueueInfo) {
 async function retryFailed(name: string) {
   await mutate('retry', () => api.retryFailedJobs(name), {
     feedback: 'progress',
+    reload: true,
   });
-  await reload();
 }
 
 async function deleteFailed(name: string) {
   await mutate('delete', () => api.deleteFailedJobs(name), {
     feedback: 'progress',
+    reload: true,
   });
-  await reload();
 }
 </script>
 

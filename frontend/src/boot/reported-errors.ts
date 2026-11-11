@@ -17,8 +17,11 @@ export function installReportedErrorHandling(app: App, target: Window) {
       previous(err, instance, info);
       return;
     }
+    // Setting a handler turns off Vue's own logging; keep where it happened.
+    const component =
+      instance?.$options.name ?? instance?.$options.__name ?? 'anonymous';
     // eslint-disable-next-line no-console
-    console.error(err);
+    console.error(`Unhandled error during ${info} in <${component}>:`, err);
   };
 
   target.addEventListener('unhandledrejection', (event) => {

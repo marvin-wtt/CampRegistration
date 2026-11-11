@@ -22,6 +22,7 @@ import organizationEvents from './organization-events';
 import organizationNewsletters from './organization-newsletters';
 import translation from './translation';
 import setting from './setting';
+import user from './user';
 
 export default {
   event,
@@ -48,4 +49,5 @@ export default {
   organizationNewsletters,
   translation,
   setting,
+  user,
 };

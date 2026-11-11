@@ -6,6 +6,8 @@ import type {
 } from '@camp-registration/common/entities';
 import { useAPIService } from '@/services/APIService';
 import { useCollection, useRouteKey } from '@/composables/resource';
+import { useEventBus } from '@/composables/bus';
+import { useI18n } from 'vue-i18n';
 import { settleAll } from '@/composables/action';
 import { removeById, replaceById, upsertById } from '@/utils/collection';
 import { isDeepEqual } from '@/utils/deepEqual';
@@ -37,6 +39,7 @@ function diffTemplates(
 
 export const useTemplateStore = defineStore('templates', () => {
   const api = useAPIService();
+  const { t } = useI18n({ useScope: 'global' });
   const templates = useCollection<TableTemplate>({
     name: 'template',
     key: useRouteKey('eventId'),
@@ -49,15 +52,22 @@ export const useTemplateStore = defineStore('templates', () => {
     realtime: { resource: 'table_template' },
   });
 
+  // Generated templates follow the event's form, whoever changed it.
+  useEventBus().on('update', (event) => templates.refresh(event.id));
+
   function fetchData(eventId?: string) {
     return templates.load(eventId);
   }
 
   // Saves the whole edited set at once. The server derives parts of the
-  // templates, so the list is reloaded afterwards — on failure by mutate.
+  // templates, so the list is reloaded afterwards.
   async function updateCollection(next: TableTemplate[]): Promise<void> {
     const current = templates.data.value;
     if (current === undefined) {
+      // Nothing to diff against: refused like a failed save, never as one.
+      await templates.mutate('update', () =>
+        Promise.reject(new Error(t('service.notLoaded'))),
+      );
       return;
     }
 
@@ -75,9 +85,8 @@ export const useTemplateStore = defineStore('templates', () => {
           ],
           report,
         ),
-      { feedback: 'progress', multiWrite: true },
+      { feedback: 'progress', multiWrite: true, reload: true },
     );
-    await templates.reload();
   }
 
   function createEntry(

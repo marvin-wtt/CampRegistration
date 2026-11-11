@@ -51,7 +51,13 @@ export const useEventDetailsStore = defineStore('eventDetails', () => {
       bus.emit('delete', event.id);
       return;
     }
-    void details.reload();
+    // Passed on like a local update, so the stores derived from it follow.
+    void details.reload().then(() => {
+      const updated = details.data.value;
+      if (updated?.id === event.id) {
+        bus.emit('update', updated);
+      }
+    });
   });
   realtime.onReconnect('event', () => {
     if (details.data.value !== undefined && eventKey() !== undefined) {

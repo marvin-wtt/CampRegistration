@@ -244,6 +244,33 @@ describe('concurrent load', () => {
   });
 });
 
+describe('refresh', () => {
+  it('reloads the scope when its data is shown', async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce([row('1')])
+      .mockResolvedValueOnce([row('2')]);
+    const resource = setup(fetch);
+    await resource.load();
+
+    resource.refresh('A');
+    await flushPromises();
+
+    expect(resource.data.value).toEqual([row('2')]);
+  });
+
+  it('ignores another scope', async () => {
+    const fetch = vi.fn().mockResolvedValue([row('1')]);
+    const resource = setup(fetch);
+    await resource.load();
+
+    resource.refresh('B');
+    await flushPromises();
+
+    expect(fetch).toHaveBeenCalledOnce();
+  });
+});
+
 describe('reload', () => {
   it('keeps the data shown until the response arrives', async () => {
     const next = deferred<Row[]>();
@@ -571,6 +598,19 @@ describe('mutate', () => {
 
     expect(fetch).toHaveBeenCalledTimes(2);
     expect(resource.data.value).toEqual([row('1')]);
+  });
+
+  it('resolves after the reload it was asked for', async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce([row('1')])
+      .mockResolvedValueOnce([row('1'), row('derived')]);
+    const resource = setup(fetch);
+    await resource.load();
+
+    await resource.mutate('bulk', () => Promise.resolve(), { reload: true });
+
+    expect(resource.data.value).toEqual([row('1'), row('derived')]);
   });
 
   it('counts as pending while it runs', async () => {

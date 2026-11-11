@@ -2,6 +2,8 @@ import { defineStore } from 'pinia';
 import { useAPIService } from '@/services/APIService';
 import { useCollection, useRouteKey } from '@/composables/resource';
 import { useAction } from '@/composables/action';
+import { useNotifier } from '@/composables/notifier';
+import { useI18n } from 'vue-i18n';
 import { removeById, replaceById, upsertById } from '@/utils/collection';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import type {
@@ -54,6 +56,8 @@ export const useEventFilesStore = defineStore('eventFiles', () => {
   const api = useAPIService();
   const eventStore = useEventDetailsStore();
   const { run } = useAction('eventFiles');
+  const notifier = useNotifier('eventFiles');
+  const { t } = useI18n({ useScope: 'global' });
   // List mode (no per-id metadata endpoint). The async upload-completion
   // (READY) status flip does not emit — the list refreshes on the next
   // created/updated/deleted event or page load.
@@ -156,25 +160,39 @@ export const useEventFilesStore = defineStore('eventFiles', () => {
     return file;
   }
 
-  // Uploads the new file, then deletes the old one; should the delete fail,
-  // the reload shows both.
+  // Uploads the new file, then deletes the old one. Once the upload is in,
+  // the replace counts as done: a failed delete keeps the old file listed and
+  // is reported, so retrying doesn't upload another copy.
   async function replaceFile(
     oldFile: ServiceFile,
     createData: ServiceFileCreateData,
   ): Promise<ServiceFile> {
+    let deleteError: unknown;
     const file = await files.mutate(
       'replace',
       async (eventId) => {
         const created = await api.createEventFile(eventId, createData);
-        await api.deleteFile(oldFile.id);
+        deleteError = await api.deleteFile(oldFile.id).then(
+          () => undefined,
+          (err: unknown) => err ?? new Error('delete failed'),
+        );
         return created;
       },
       {
         feedback: 'progress',
-        apply: (list, created) => [...removeById(list, oldFile.id), created],
-        multiWrite: true,
+        apply: (list, created) => [
+          ...(deleteError ? list : removeById(list, oldFile.id)),
+          created,
+        ],
       },
     );
+    if (deleteError) {
+      notifier.error(
+        'replace',
+        deleteError,
+        t('stores.eventFiles.replace.oldFileKept'),
+      );
+    }
     refreshEventMedia(oldFile.field, file.field);
     return file;
   }

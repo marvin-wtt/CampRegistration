@@ -56,7 +56,7 @@ async function initialize() {
   realtimeStore.connect();
 
   if (route.params.eventId) {
-    await eventDetailStore.fetchData();
+    void eventDetailStore.fetchData();
     void assignedEventsStore.fetchData();
   }
 }

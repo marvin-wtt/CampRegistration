@@ -52,23 +52,24 @@ export const useChoreAssignmentStore = defineStore('choreAssignment', () => {
     return assignments.load(eventId);
   }
 
-  function fetchSuggestions(
+  // Async so a missing scope rejects instead of throwing at the call.
+  async function fetchSuggestions(
     query: ChoreAssignmentSuggestionQuery,
   ): Promise<ChoreAssignmentSuggestions | undefined> {
     return api.fetchChoreAssignmentSuggestions(requireKey(eventKey), query);
   }
 
-  function fetchFairness(): Promise<ChoreFairnessEntry[]> {
+  async function fetchFairness(): Promise<ChoreFairnessEntry[]> {
     return api.fetchChoreFairness(requireKey(eventKey));
   }
 
-  function autoFillMembers(
+  async function autoFillMembers(
     data: ChoreAutoFillData,
   ): Promise<ChoreAssignmentMemberData[]> {
     return api.autoFillChoreMembers(requireKey(eventKey), data);
   }
 
-  function fetchRebalance(): Promise<ChoreRebalanceChange[]> {
+  async function fetchRebalance(): Promise<ChoreRebalanceChange[]> {
     return api.fetchChoreRebalance(requireKey(eventKey));
   }
 
@@ -130,15 +131,14 @@ export const useChoreAssignmentStore = defineStore('choreAssignment', () => {
   }
 
   // Bulk changes touch many rows at once; the list is reloaded afterwards.
-  async function bulk<R>(
+  function bulk<R>(
     operation: string,
     request: (eventId: string) => Promise<R>,
   ): Promise<R> {
-    const result = await assignments.mutate(operation, request, {
+    return assignments.mutate(operation, request, {
       feedback: 'progress',
+      reload: true,
     });
-    await assignments.reload();
-    return result;
   }
 
   function planSeries(plan: ChoreSeriesPlanData) {

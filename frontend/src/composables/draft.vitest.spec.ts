@@ -64,6 +64,42 @@ describe('useDraft', () => {
     expect(isModified.value).toBe(false);
   });
 
+  it('takes a source that now matches the edits', async () => {
+    const { source, draft } = setup({ name: 'a', tags: [] });
+    draft.value!.name = 'saved';
+
+    source.value = { name: 'saved', tags: [] };
+    await nextTick();
+    source.value = { name: 'changed elsewhere', tags: [] };
+    await nextTick();
+
+    expect(draft.value?.name).toBe('changed elsewhere');
+  });
+
+  it('takes the stored copy after a save', async () => {
+    const { source, draft, isModified, save } = setup({ name: 'a', tags: [] });
+    draft.value!.name = 'edited';
+
+    await save(async () => {
+      source.value = { name: 'edited', tags: ['derived'] };
+    });
+
+    expect(draft.value).toEqual({ name: 'edited', tags: ['derived'] });
+    expect(isModified.value).toBe(false);
+  });
+
+  it('keeps the edits when the save fails', async () => {
+    const { draft, isModified, save } = setup({ name: 'a', tags: [] });
+    draft.value!.name = 'edited';
+
+    await expect(
+      save(() => Promise.reject(new Error('offline'))),
+    ).rejects.toThrow();
+
+    expect(draft.value?.name).toBe('edited');
+    expect(isModified.value).toBe(true);
+  });
+
   it('compares what normalize keeps', () => {
     const source = shallowRef({ name: 'a', tags: [] as string[] });
     const { draft, isModified } = useDraft(() => source.value, {

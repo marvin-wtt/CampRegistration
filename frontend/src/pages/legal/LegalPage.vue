@@ -35,7 +35,7 @@ import { useI18n } from 'vue-i18n';
 import { useMeta } from 'quasar';
 import { useRouter } from 'vue-router';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import type { LegalDocumentType } from '@camp-registration/common/entities';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import LegalPlaceholder from '@/components/legal/LegalPlaceholder.vue';
@@ -61,10 +61,6 @@ const title = computed<string>(() =>
   props.type === 'IMPRINT' ? t('imprint') : t('privacyPolicy'),
 );
 
-onMounted(() => {
-  void loadDocument(props.type);
-});
-
 useMeta(() => {
   return {
     title: title.value,
@@ -72,7 +68,7 @@ useMeta(() => {
   };
 });
 
-watch(() => props.type, loadDocument);
+watch(() => props.type, loadDocument, { immediate: true });
 
 async function loadDocument(type: LegalDocumentType) {
   loading.value = true;

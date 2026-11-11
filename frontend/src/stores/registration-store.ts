@@ -8,6 +8,7 @@ import type {
   RegistrationUpdateQuery,
 } from '@camp-registration/common/entities';
 import { useCollection, useRouteKey } from '@/composables/resource';
+import { useEventBus } from '@/composables/bus';
 import { useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { formatPersonName } from '@/utils/formatters';
@@ -29,6 +30,9 @@ export const useRegistrationsStore = defineStore('registrations', () => {
       onCreate: showRealtimeCreateNotification,
     },
   });
+
+  // Computed values follow the event's form, whoever changed it.
+  useEventBus().on('update', (event) => registrations.refresh(event.id));
 
   function showRealtimeCreateNotification(registration: Registration) {
     quasar.notify({

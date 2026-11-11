@@ -514,6 +514,7 @@ const {
   draft: event,
   isModified: preventLeave,
   reset: onReset,
+  save,
 } = useDraft(() => data.value, { toDraft: clone });
 const updating = ref<boolean>(false);
 
@@ -556,17 +557,17 @@ async function onSubmit() {
 
   updating.value = true;
   try {
-    await eventStore.updateData({
-      ...value,
-      price: mapPerGroup(value.price, (major) =>
-        toMinorUnits(major, value.currency),
-      ),
-    });
+    await save(() =>
+      eventStore.updateData({
+        ...value,
+        price: mapPerGroup(value.price, (major) =>
+          toMinorUnits(major, value.currency),
+        ),
+      }),
+    );
   } finally {
     updating.value = false;
   }
-  // Takes the stored copy, so leaving doesn't ask about unsaved changes.
-  onReset();
 
   await router.push({
     name: 'management.event',

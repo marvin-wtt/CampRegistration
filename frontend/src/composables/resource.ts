@@ -59,6 +59,11 @@ export interface MutateOptions<T, R> extends ActionOptions {
   /** Overrides the scope the write targets; defaults to the current key. */
   key?: string;
   /**
+   * Reloads after a successful write, for one whose effect the result doesn't
+   * show (bulk changes, data the server derives). The call resolves after it.
+   */
+  reload?: boolean;
+  /**
    * The request makes several writes, so even a refused one may have left
    * some applied: it reloads after any failure.
    */
@@ -223,6 +228,18 @@ function createResource<T>(options: ResourceOptions<T>) {
     stale = true;
   }
 
+  /** Brings `key`'s data up to date: reloads it if shown, else marks it stale. */
+  function refresh(key: string) {
+    if (loadedKey.value !== key) {
+      return;
+    }
+    if (data.value === undefined) {
+      stale = true;
+      return;
+    }
+    void reload();
+  }
+
   function reset() {
     token++;
     loadedKey.value = undefined;
@@ -267,6 +284,7 @@ function createResource<T>(options: ResourceOptions<T>) {
       optimistic,
       rollback,
       key: explicitKey,
+      reload: reloadAfter = false,
       multiWrite = false,
       ...action
     }: MutateOptions<T, R> = {},
@@ -301,9 +319,12 @@ function createResource<T>(options: ResourceOptions<T>) {
           data.value = apply(data.value, result);
         }
         // A fetch started before this write would bring back the old state.
-        if (fetchesInFlight > 0) {
+        if (fetchesInFlight > 0 && !reloadAfter) {
           void reload();
         }
+      }
+      if (reloadAfter && loadedKey.value === key) {
+        await reload();
       }
       return result;
     } catch (err: unknown) {
@@ -339,6 +360,7 @@ function createResource<T>(options: ResourceOptions<T>) {
     load,
     reload,
     invalidate,
+    refresh,
     reset,
     seed,
     update,

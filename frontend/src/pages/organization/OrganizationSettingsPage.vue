@@ -396,6 +396,7 @@ const {
   draft: form,
   isModified,
   reset,
+  save: saveDraft,
 } = useDraft(() => organization.value, {
   toDraft: snapshot,
   initial: {},
@@ -430,9 +431,7 @@ function payload(data: OrganizationUpdateData): OrganizationUpdateData {
 }
 
 async function persist() {
-  await store.updateData(payload(form.value));
-  // The saved form counts as edited until it takes what the server stored.
-  reset();
+  await saveDraft(() => store.updateData(payload(form.value)));
 
   // An identity edit demotes a rejected organization back to PENDING on its
   // own; anything else leaves it rejected, and only an explicit request moves

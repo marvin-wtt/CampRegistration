@@ -34,17 +34,15 @@ export const useNewsletterSubscriberStore = defineStore(
     }
 
     // Adds many at once; the list is reloaded to show them.
-    async function importFromEvent(
+    function importFromEvent(
       newsletterId: string,
       importData: NewsletterSubscriberImportData,
     ): Promise<{ added: number; skipped: number }> {
-      const result = await subscribers.mutate(
+      return subscribers.mutate(
         'import',
         (key) => api.importNewsletterSubscribers(key, importData),
-        { key: newsletterId, feedback: 'progress' },
+        { key: newsletterId, feedback: 'progress', reload: true },
       );
-      await subscribers.reload();
-      return result;
     }
 
     async function deleteData(

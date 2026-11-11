@@ -17,6 +17,8 @@ export default {
     progress: 'Remplacement du fichier en cours...',
     success: 'Fichier remplacé avec succès',
     error: 'Échec du remplacement du fichier',
+    oldFileKept:
+      "Le nouveau fichier a été téléversé, mais l'ancien n'a pas pu être supprimé",
   },
   update: {
     progress: 'Mise à jour du fichier en cours...',

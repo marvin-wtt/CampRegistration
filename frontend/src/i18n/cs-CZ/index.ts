@@ -17,6 +17,7 @@ export default {
   service: {
     internal: 'Interní chyba',
     invalidParams: 'Neplatné parametry.',
+    notLoaded: 'Data ještě nejsou načtena. Zkuste to prosím znovu.',
     unavailable: 'Služba je dočasně nedostupná. Zkuste to prosím později.',
     unknown: 'Služba je dočasně nedostupná.',
   },

@@ -155,12 +155,12 @@ import { storeToRefs } from 'pinia';
 import CountryIcon from '@/components/common/localization/CountryIcon.vue';
 
 const api = useAPIService();
-const { data, isLoading, error, load, reload, mutate } = useResource<
-  MessageTemplate[]
->({
-  key: useRouteKey('eventId'),
-  fetch: (eventId) => api.fetchMessageTemplates(eventId),
-});
+const { data, isLoading, error, load, mutate } = useResource<MessageTemplate[]>(
+  {
+    key: useRouteKey('eventId'),
+    fetch: (eventId) => api.fetchMessageTemplates(eventId),
+  },
+);
 
 const quasar = useQuasar();
 const { t, locale } = useI18n();
@@ -238,41 +238,37 @@ function addTemplate(trigger: string, group: string) {
   // Search for existing template for same trigger but different group
   const template = data.value?.find((template) => template.trigger === trigger);
 
-  quasar
-    .dialog({
-      component: MessageEditDialog,
-      componentProps: {
-        name: t(`template.${trigger}.label`),
-        trigger,
-        group,
-        form: event.form,
-        subject: template?.subject ?? '',
-        body: template?.body ?? '',
-        attachments: template?.attachments,
+  quasar.dialog({
+    component: MessageEditDialog,
+    componentProps: {
+      name: t(`template.${trigger}.label`),
+      trigger,
+      group,
+      form: event.form,
+      subject: template?.subject ?? '',
+      body: template?.body ?? '',
+      attachments: template?.attachments,
 
-        saveFn: async (message: {
-          subject: string;
-          body: string;
-          attachmentIds: string[] | null;
-        }) => {
-          await mutate(
-            'create',
-            (eventId) =>
-              api.createMessageTemplate(eventId, {
-                trigger,
-                group,
-                subject: message.subject,
-                body: message.body,
-                attachmentIds: message.attachmentIds ?? undefined,
-              }),
-            { feedback: 'result' },
-          );
-        },
+      saveFn: async (message: {
+        subject: string;
+        body: string;
+        attachmentIds: string[] | null;
+      }) => {
+        await mutate(
+          'create',
+          (eventId) =>
+            api.createMessageTemplate(eventId, {
+              trigger,
+              group,
+              subject: message.subject,
+              body: message.body,
+              attachmentIds: message.attachmentIds ?? undefined,
+            }),
+          { feedback: 'result', reload: true },
+        );
       },
-    })
-    .onOk(() => {
-      void reload();
-    });
+    },
+  });
 }
 
 function editTemplate(template: MessageTemplate | undefined) {
@@ -285,39 +281,35 @@ function editTemplate(template: MessageTemplate | undefined) {
     return;
   }
 
-  quasar
-    .dialog({
-      component: MessageEditDialog,
-      componentProps: {
-        name: t(`template.${template.trigger}.label`),
-        trigger: template.trigger,
-        group: template.group,
-        form: event.form,
-        subject: template.subject,
-        body: template.body,
-        attachments: template.attachments,
+  quasar.dialog({
+    component: MessageEditDialog,
+    componentProps: {
+      name: t(`template.${template.trigger}.label`),
+      trigger: template.trigger,
+      group: template.group,
+      form: event.form,
+      subject: template.subject,
+      body: template.body,
+      attachments: template.attachments,
 
-        saveFn: async (message: {
-          subject: string;
-          body: string;
-          attachmentIds: string[] | null;
-        }) => {
-          await mutate(
-            'update',
-            (eventId) =>
-              api.updateMessageTemplate(eventId, template.id, {
-                subject: message.subject,
-                body: message.body,
-                attachmentIds: message.attachmentIds ?? undefined,
-              }),
-            { feedback: 'result' },
-          );
-        },
+      saveFn: async (message: {
+        subject: string;
+        body: string;
+        attachmentIds: string[] | null;
+      }) => {
+        await mutate(
+          'update',
+          (eventId) =>
+            api.updateMessageTemplate(eventId, template.id, {
+              subject: message.subject,
+              body: message.body,
+              attachmentIds: message.attachmentIds ?? undefined,
+            }),
+          { feedback: 'result', reload: true },
+        );
       },
-    })
-    .onOk(() => {
-      void reload();
-    });
+    },
+  });
 }
 
 async function deleteTemplate(id: string | undefined) {
@@ -327,8 +319,8 @@ async function deleteTemplate(id: string | undefined) {
 
   await mutate('delete', (eventId) => api.deleteMessageTemplate(eventId, id), {
     feedback: 'result',
+    reload: true,
   });
-  await reload();
 }
 </script>
 

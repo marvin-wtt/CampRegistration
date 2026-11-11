@@ -13,12 +13,17 @@ export interface Draft<D> {
   isModified: Readonly<Ref<boolean>>;
   /** Drops the edits and takes the source as it is now. */
   reset: () => void;
+  /**
+   * Runs a save and then takes what it stored, including fields the server
+   * derives that the draft still holds the old value of.
+   */
+  save: <R>(fn: () => Promise<R>) => Promise<R>;
 }
 
 /**
  * An editable copy of `source` that follows it while it is unedited. Once
  * edited, a changed source (a reload, someone else's change) only moves the
- * baseline, so the edits survive; `reset` after a save takes the stored copy.
+ * baseline, so the edits survive — unless it now matches them.
  */
 export function useDraft<S, D>(
   source: () => S | null | undefined,
@@ -54,8 +59,12 @@ export function useDraft<S, D>(
       if (value == null) {
         return;
       }
-      if (isModified.value) {
-        baseline.value = options.toDraft(value);
+      const next = options.toDraft(value);
+      const keepEdits =
+        isModified.value &&
+        !isDeepEqual(normalize(draft.value as D), normalize(next));
+      if (keepEdits) {
+        baseline.value = next;
       } else {
         take(value);
       }
@@ -70,5 +79,11 @@ export function useDraft<S, D>(
     }
   }
 
-  return { draft, isModified, reset };
+  async function save<R>(fn: () => Promise<R>): Promise<R> {
+    const result = await fn();
+    reset();
+    return result;
+  }
+
+  return { draft, isModified, reset, save };
 }
