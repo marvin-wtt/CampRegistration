@@ -1,9 +1,7 @@
 import { defineStore } from 'pinia';
-import { useRoute } from 'vue-router';
 import { useAPIService } from '@/services/APIService';
-import { useServiceHandler } from '@/composables/serviceHandler';
-import { useAuthBus, useEventBus } from '@/composables/bus';
-import { useRealtimeCollection } from '@/composables/realtimeCollection';
+import { useCollection, useRouteKey } from '@/composables/resource';
+import { removeById, replaceById, upsertById } from '@/utils/collection';
 import type {
   EventManager,
   EventManagerCreateData,
@@ -11,99 +9,53 @@ import type {
 } from '@camp-registration/common/entities';
 
 export const useEventManagerStore = defineStore('eventManager', () => {
-  const route = useRoute();
   const api = useAPIService();
-  const authBus = useAuthBus();
-  const eventBus = useEventBus();
-  const {
-    data,
-    isLoading,
-    error,
-    reset,
-    invalidate,
-    withProgressNotification,
-    lazyFetch,
-    backgroundFetch,
-    checkNotNullWithError,
-    checkNotNullWithNotification,
-  } = useServiceHandler<EventManager[]>('eventManager');
-
-  authBus.on('logout', () => {
-    reset();
+  const managers = useCollection<EventManager>({
+    name: 'eventManager',
+    key: useRouteKey('eventId'),
+    fetch: (eventId) => api.fetchEventManagers(eventId),
+    realtime: {
+      resource: 'manager',
+      fetchOne: (eventId, id) => api.fetchEventManager(eventId, id),
+    },
   });
 
-  eventBus.on('change', () => {
-    invalidate();
-  });
-
-  // React to live changes pushed from other clients.
-  useRealtimeCollection<EventManager>('manager', {
-    data,
-    invalidate,
-    reload: () => fetchData(undefined, { background: true }),
-    fetchOne: (eventId, id) => api.fetchEventManager(eventId, id),
-  });
-
-  async function fetchData(eventId?: string, opts?: { background?: boolean }) {
-    eventId ??= route.params.eventId as string;
-
-    const cid = checkNotNullWithError(eventId);
-    const fetcher = () => api.fetchEventManagers(cid);
-    await (opts?.background ? backgroundFetch(fetcher) : lazyFetch(fetcher));
+  function fetchData(eventId?: string) {
+    return managers.load(eventId);
   }
 
-  async function createData(newData: EventManagerCreateData) {
-    const eventId = route.params.eventId as string;
-
-    checkNotNullWithError(eventId);
-
-    await withProgressNotification('create', async () => {
-      const eventManager = await api.createEventManager(eventId, newData);
-
-      data.value?.push(eventManager);
-    });
+  async function createData(createData: EventManagerCreateData): Promise<void> {
+    await managers.mutate(
+      'create',
+      (eventId) => api.createEventManager(eventId, createData),
+      { feedback: 'progress', apply: upsertById },
+    );
   }
 
   async function updateData(
     managerId: string,
     updateData: EventManagerUpdateData,
-  ) {
-    const eventId = route.params.eventId as string;
-
-    checkNotNullWithError(eventId);
-    checkNotNullWithNotification(managerId);
-
-    await withProgressNotification('update', async () => {
-      const manager = await api.updateEventManager(
-        eventId,
-        managerId,
-        updateData,
-      );
-
-      data.value = data.value?.map((value) =>
-        value.id === manager.id ? manager : value,
-      );
-    });
+  ): Promise<void> {
+    await managers.mutate(
+      'update',
+      (eventId) => api.updateEventManager(eventId, managerId, updateData),
+      { feedback: 'progress', apply: replaceById },
+    );
   }
 
-  async function deleteData(managerId: string) {
-    const eventId = route.params.eventId as string;
-
-    checkNotNullWithError(eventId);
-    checkNotNullWithNotification(managerId);
-
-    await withProgressNotification('delete', async () => {
-      await api.deleteEventManager(eventId, managerId);
-
-      data.value = data.value?.filter((manager) => manager.id !== managerId);
-    });
+  async function deleteData(managerId: string): Promise<void> {
+    await managers.mutate(
+      'delete',
+      (eventId) => api.deleteEventManager(eventId, managerId),
+      { feedback: 'progress', apply: (list) => removeById(list, managerId) },
+    );
   }
 
   return {
-    reset,
-    data,
-    isLoading,
-    error,
+    data: managers.data,
+    isLoading: managers.isLoading,
+    error: managers.error,
+    reset: managers.reset,
     fetchData,
     createData,
     updateData,

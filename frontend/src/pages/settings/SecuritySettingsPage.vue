@@ -126,7 +126,12 @@ const { t } = useI18n();
 
 const profileStore = useProfileStore();
 const totpStore = useTotpStore();
-const { loading, data, error, recoveryCodes } = storeToRefs(totpStore);
+const {
+  isLoading: loading,
+  data,
+  error,
+  recoveryCodes,
+} = storeToRefs(totpStore);
 
 const enabled = computed<boolean>(() => {
   return profileStore.user?.twoFactorEnabled ?? false;

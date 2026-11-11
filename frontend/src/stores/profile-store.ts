@@ -6,64 +6,57 @@ import type {
 } from '@camp-registration/common/entities';
 import { useRouter } from 'vue-router';
 import { useAuthBus, useEventBus } from '@/composables/bus';
-import { useServiceHandler } from '@/composables/serviceHandler';
+import { useResource } from '@/composables/resource';
 
 export const useProfileStore = defineStore('profile', () => {
-  const apiService = useAPIService();
+  const api = useAPIService();
   const router = useRouter();
   const authBus = useAuthBus();
   const eventBus = useEventBus();
-  const {
-    data,
-    isLoading,
-    error,
-    reset,
-    withProgressNotification,
-    errorOnFailure,
-  } = useServiceHandler<Profile>('profile');
-
-  authBus.on('login', (profile) => {
-    data.value = profile;
+  const profile = useResource<Profile>({
+    name: 'profile',
+    fetch: () => api.fetchProfile(),
   });
 
-  authBus.on('logout', reset);
+  authBus.on('login', (user) => {
+    profile.seed(user);
+  });
 
   eventBus.on('create', () => {
     void fetchProfile();
   });
 
+  // Refreshes the profile in place: it gates every permission check, so it
+  // must never be blank while a newer copy is on its way.
   async function fetchProfile(): Promise<void> {
-    await errorOnFailure(async () => {
-      return await apiService.fetchProfile();
+    if (profile.data.value === undefined) {
+      await profile.load();
+    } else {
+      await profile.reload();
+    }
+  }
+
+  function updateProfile(update: ProfileUpdateData): Promise<Profile> {
+    return profile.mutate('update', () => api.updateProfile(update), {
+      feedback: 'progress',
+      apply: (_, updated) => updated,
     });
   }
 
-  async function updateProfile(profile: ProfileUpdateData) {
-    return withProgressNotification('update', async () => {
-      const updatedProfile = await apiService.updateProfile(profile);
-
-      data.value = updatedProfile;
-
-      return updatedProfile;
+  async function deleteProfile(): Promise<void> {
+    await profile.mutate('delete', () => api.deleteProfile(), {
+      feedback: 'progress',
     });
-  }
-
-  async function deleteProfile() {
-    await withProgressNotification('delete', async () => {
-      await apiService.deleteProfile();
-
-      reset();
-      authBus.emit('logout');
-
-      await router.push('/');
-    });
+    profile.reset();
+    authBus.emit('logout');
+    await router.push('/');
   }
 
   return {
-    user: data,
-    error,
-    loading: isLoading,
-    reset,
+    user: profile.data,
+    error: profile.error,
+    isLoading: profile.isLoading,
+    reset: profile.reset,
     fetchProfile,
     updateProfile,
     deleteProfile,

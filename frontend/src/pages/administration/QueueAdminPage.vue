@@ -7,8 +7,8 @@
           icon="refresh"
           round
           flat
-          :loading
-          @click="refresh"
+          :loading="loading || pending"
+          @click="reload"
         >
           <q-tooltip>{{ t('refresh') }}</q-tooltip>
         </q-btn>
@@ -143,7 +143,7 @@ import { useI18n } from 'vue-i18n';
 import { useQuasar, type QTableColumn } from 'quasar';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import { useAPIService } from '@/services/APIService';
-import { useServiceHandler } from '@/composables/serviceHandler';
+import { useResource } from '@/composables/resource';
 import type { QueueInfo } from '@/services/QueueService';
 
 const { t } = useI18n();
@@ -154,9 +154,16 @@ const {
   data: queues,
   error,
   isLoading: loading,
-  forceFetch,
-  withProgressNotification,
-} = useServiceHandler<QueueInfo[]>('queue');
+  load,
+  pending,
+  reload,
+  mutate,
+} = useResource<QueueInfo[]>({
+  name: 'queue',
+  fetch: () => api.fetchQueues(),
+});
+
+void load();
 
 const columns = computed<QTableColumn<QueueInfo>[]>(() => [
   {
@@ -204,9 +211,8 @@ const columns = computed<QTableColumn<QueueInfo>[]>(() => [
 
 let refreshInterval: ReturnType<typeof setInterval> | null = null;
 
-onMounted(async () => {
-  await refresh();
-  refreshInterval = setInterval(() => void refresh(), 15_000);
+onMounted(() => {
+  refreshInterval = setInterval(() => void reload(), 15_000);
 });
 
 onUnmounted(() => {
@@ -214,10 +220,6 @@ onUnmounted(() => {
     clearInterval(refreshInterval);
   }
 });
-
-async function refresh() {
-  await forceFetch(() => api.fetchQueues());
-}
 
 function onRetryFailed(queue: QueueInfo) {
   quasar
@@ -256,13 +258,17 @@ function onDeleteFailed(queue: QueueInfo) {
 }
 
 async function retryFailed(name: string) {
-  await withProgressNotification('retry', () => api.retryFailedJobs(name));
-  await refresh();
+  await mutate('retry', () => api.retryFailedJobs(name), {
+    feedback: 'progress',
+  });
+  await reload();
 }
 
 async function deleteFailed(name: string) {
-  await withProgressNotification('delete', () => api.deleteFailedJobs(name));
-  await refresh();
+  await mutate('delete', () => api.deleteFailedJobs(name), {
+    feedback: 'progress',
+  });
+  await reload();
 }
 </script>
 

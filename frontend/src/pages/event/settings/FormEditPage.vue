@@ -80,7 +80,7 @@ async function saveForm(form: SurveyJSEventData): Promise<void> {
     form,
   };
 
-  await eventDetailsStore.updateData(data, 'none');
+  await eventDetailsStore.updateData(data, 'error');
 }
 
 async function saveTheme(theme: ITheme): Promise<void> {
@@ -93,7 +93,7 @@ async function saveTheme(theme: ITheme): Promise<void> {
     },
   };
 
-  await eventDetailsStore.updateData(data, 'none');
+  await eventDetailsStore.updateData(data, 'error');
 }
 
 async function saveFile(file: File): Promise<string> {

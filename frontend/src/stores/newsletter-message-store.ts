@@ -1,51 +1,44 @@
 import { defineStore } from 'pinia';
 import { useAPIService } from '@/services/APIService';
-import { useServiceHandler } from '@/composables/serviceHandler';
-import { useAuthBus } from '@/composables/bus';
+import { useCollection, useRouteKey } from '@/composables/resource';
+import { removeById } from '@/utils/collection';
 import type { NewsletterMessage } from '@camp-registration/common/entities';
 
 export const useNewsletterMessageStore = defineStore(
   'newsletterMessage',
   () => {
     const api = useAPIService();
-    const authBus = useAuthBus();
-    const {
-      data,
-      isLoading,
-      error,
-      reset,
-      invalidate,
-      lazyFetch,
-      withProgressNotification,
-    } = useServiceHandler<NewsletterMessage[]>('newsletterMessage');
+    const messages = useCollection<NewsletterMessage>({
+      name: 'newsletterMessage',
+      key: useRouteKey('newsletterId'),
+      fetch: (newsletterId) => api.fetchNewsletterMessages(newsletterId),
+    });
 
-    authBus.on('logout', reset);
-
-    let lastNewsletterId: string | null = null;
-
-    async function fetchData(newsletterId: string) {
-      if (lastNewsletterId != null && lastNewsletterId !== newsletterId) {
-        invalidate();
-      }
-      await lazyFetch(async () => {
-        return await api.fetchNewsletterMessages(newsletterId);
-      });
-      lastNewsletterId = newsletterId;
+    function fetchData(newsletterId: string) {
+      return messages.load(newsletterId);
     }
 
-    async function deleteData(newsletterId: string, messageId: string) {
-      await withProgressNotification('delete', async () => {
-        await api.deleteNewsletterMessage(newsletterId, messageId);
-        data.value = data.value?.filter((m) => m.id !== messageId);
-      });
+    async function deleteData(
+      newsletterId: string,
+      messageId: string,
+    ): Promise<void> {
+      await messages.mutate(
+        'delete',
+        (key) => api.deleteNewsletterMessage(key, messageId),
+        {
+          key: newsletterId,
+          feedback: 'progress',
+          apply: (list) => removeById(list, messageId),
+        },
+      );
     }
 
     return {
-      reset,
-      invalidate,
-      data,
-      isLoading,
-      error,
+      data: messages.data,
+      isLoading: messages.isLoading,
+      error: messages.error,
+      reset: messages.reset,
+      invalidate: messages.invalidate,
       fetchData,
       deleteData,
     };

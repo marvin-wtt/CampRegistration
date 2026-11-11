@@ -43,7 +43,7 @@ import type { PublishedPrivacyNotice } from '@camp-registration/common/privacy';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import PrivacyNotice from '@/components/privacy/PrivacyNotice.vue';
 import { usePrivacyNoticeService } from '@/services/PrivacyNoticeService';
-import { useErrorExtractor } from '@/composables/serviceHandler';
+import { useErrorExtractor } from '@/composables/errorText';
 
 const props = defineProps<{
   eventId: string;

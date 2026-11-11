@@ -80,7 +80,7 @@ import { addDays } from '@/utils/date';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import PublicProgramCalendar from '@/components/event/programPlanner/PublicProgramCalendar.vue';
 import { isAPIServiceError, useAPIService } from '@/services/APIService';
-import { useErrorExtractor } from '@/composables/serviceHandler';
+import { useErrorExtractor } from '@/composables/errorText';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { useProgramPublicStream } from '@/composables/programPublicStream';
 import { useRouteQueryParams } from '@/composables/useRouteQueryParams';

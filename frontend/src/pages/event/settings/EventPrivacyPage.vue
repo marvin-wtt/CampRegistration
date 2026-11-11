@@ -438,10 +438,8 @@ import { useEventDetailsStore } from '@/stores/event-details-store';
 import { usePermissions } from '@/composables/permissions';
 import { useOrganizationPermissions } from '@/composables/organizationPermissions';
 import { usePrivacyLabels } from '@/composables/privacyLabels';
-import {
-  useErrorExtractor,
-  useServiceNotifications,
-} from '@/composables/serviceHandler';
+import { useErrorExtractor } from '@/composables/errorText';
+import { useNotifier } from '@/composables/notifier';
 import { extractEventDataTypes } from '@camp-registration/common/form';
 import { APP_LOCALES, eventTextLocales } from '@/i18n/locales';
 
@@ -453,7 +451,7 @@ const { can } = usePermissions();
 const { canOrgFor } = useOrganizationPermissions();
 const { categoryLabel, purposeLabel, recipientLabel } = usePrivacyLabels();
 const { extractErrorText } = useErrorExtractor();
-const { showErrorNotification } = useServiceNotifications();
+const notifier = useNotifier();
 const { fetchEventAddendum, publishEventAddendum, fetchEventNotice } =
   usePrivacyNoticeService();
 
@@ -878,10 +876,7 @@ async function publish() {
     // Notify rather than set `error`: that swaps the whole page for an error
     // state, and since the draft lives only in this browser, it would throw away
     // everything the author just wrote.
-    showErrorNotification('publish', {
-      message: t('notify.publishFailed'),
-      caption: extractErrorText(err),
-    });
+    notifier.error('publish', err, t('notify.publishFailed'));
   } finally {
     publishing.value = false;
   }

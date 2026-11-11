@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { computed } from 'vue';
+import { computed, reactive } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import { flushPromises } from '@vue/test-utils';
 import { EventBus } from 'quasar';
@@ -22,6 +22,7 @@ const mocks = vi.hoisted(() => ({
   notify: vi.fn(),
   realtime: undefined as ((event: RealtimeEvent) => void) | undefined,
   eventBus: undefined as EventBus | undefined,
+  route: { params: { eventId: 'event-1' } },
 }));
 
 vi.mock('@/services/APIService', () => ({
@@ -36,7 +37,7 @@ vi.mock('vue-i18n', () => ({
   useI18n: () => ({ t: (key: string) => key }),
 }));
 vi.mock('vue-router', () => ({
-  useRoute: () => ({ params: { eventId: 'event-1' } }),
+  useRoute: () => mocks.route,
 }));
 vi.mock('@/composables/bus', () => ({
   useAuthBus: () => new EventBus(),
@@ -76,6 +77,7 @@ beforeEach(() => {
   Object.values(mocks.api).forEach((fn) => fn.mockReset());
   mocks.notify.mockReset().mockReturnValue(vi.fn());
   mocks.eventBus = new EventBus();
+  mocks.route = reactive({ params: { eventId: 'event-1' } });
 });
 
 describe('room store', () => {
@@ -86,10 +88,11 @@ describe('room store', () => {
     expect(mocks.api.fetchRooms).toHaveBeenCalledOnce();
 
     mocks.api.fetchRooms.mockResolvedValueOnce([room('b', [])]);
-    mocks.eventBus!.emit('change');
+    mocks.route.params.eventId = 'event-2';
     await store.fetchData();
 
     expect(mocks.api.fetchRooms).toHaveBeenCalledTimes(2);
+    expect(mocks.api.fetchRooms).toHaveBeenLastCalledWith('event-2');
     expect(store.data?.map((r) => r.id)).toEqual(['b']);
   });
 

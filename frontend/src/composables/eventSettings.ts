@@ -3,10 +3,8 @@ import type { SettingKey } from '@camp-registration/common/settings';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import { useRealtimeStore } from '@/stores/realtime-store';
 import { useAPIService } from '@/services/APIService';
-import {
-  useErrorExtractor,
-  useServiceNotifications,
-} from '@/composables/serviceHandler';
+import { useErrorExtractor } from '@/composables/errorText';
+import { useAction } from '@/composables/action';
 
 /**
  * Reactive settings object backed by the shared, event-scoped settings API
@@ -28,7 +26,7 @@ export function useEventSettings<T extends object>(
   const realtime = useRealtimeStore();
   const api = useAPIService();
   const { extractErrorText } = useErrorExtractor();
-  const { withErrorNotification } = useServiceNotifications('setting');
+  const { run } = useAction('setting');
 
   const settings = reactive<T>({ ...defaults });
   const isLoading = ref(false);
@@ -92,12 +90,11 @@ export function useEventSettings<T extends object>(
   );
 
   async function save(eventId: string) {
-    const saved = await withErrorNotification('update', async () => {
-      await api.updateEventSetting<T>(eventId, key, { ...settings } as T);
-      return true;
-    });
-
-    if (!saved) {
+    try {
+      await run('update', () =>
+        api.updateEventSetting<T>(eventId, key, { ...settings } as T),
+      );
+    } catch {
       await load();
     }
   }

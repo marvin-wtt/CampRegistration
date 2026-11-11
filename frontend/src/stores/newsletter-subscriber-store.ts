@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { useAPIService } from '@/services/APIService';
-import { useServiceHandler } from '@/composables/serviceHandler';
-import { useAuthBus } from '@/composables/bus';
+import { useCollection, useRouteKey } from '@/composables/resource';
+import { removeById, upsertById } from '@/utils/collection';
 import type {
   NewsletterSubscriber,
   NewsletterSubscriberCreateData,
@@ -12,79 +12,62 @@ export const useNewsletterSubscriberStore = defineStore(
   'newsletterSubscriber',
   () => {
     const api = useAPIService();
-    const authBus = useAuthBus();
-    const {
-      data,
-      isLoading,
-      error,
-      reset,
-      invalidate,
-      withProgressNotification,
-      lazyFetch,
-      checkNotNullWithError,
-      checkNotNullWithNotification,
-    } = useServiceHandler<NewsletterSubscriber[]>('newsletterSubscriber');
+    const subscribers = useCollection<NewsletterSubscriber>({
+      name: 'newsletterSubscriber',
+      key: useRouteKey('newsletterId'),
+      fetch: (newsletterId) => api.fetchNewsletterSubscribers(newsletterId),
+    });
 
-    authBus.on('logout', reset);
-
-    let lastNewsletterId: string | null = null;
-
-    async function fetchData(newsletterId: string) {
-      if (lastNewsletterId != null && lastNewsletterId !== newsletterId) {
-        invalidate();
-      }
-      await lazyFetch(async () => {
-        return await api.fetchNewsletterSubscribers(newsletterId);
-      });
-      lastNewsletterId = newsletterId;
+    function fetchData(newsletterId: string) {
+      return subscribers.load(newsletterId);
     }
 
     async function createData(
       newsletterId: string,
-      newData: NewsletterSubscriberCreateData,
-    ) {
-      checkNotNullWithError(newsletterId);
-      await withProgressNotification('create', async () => {
-        const subscriber = await api.createNewsletterSubscriber(
-          newsletterId,
-          newData,
-        );
-        data.value?.push(subscriber);
-      });
+      createData: NewsletterSubscriberCreateData,
+    ): Promise<void> {
+      await subscribers.mutate(
+        'create',
+        (key) => api.createNewsletterSubscriber(key, createData),
+        { key: newsletterId, feedback: 'progress', apply: upsertById },
+      );
     }
 
+    // Adds many at once; the list is reloaded to show them.
     async function importFromEvent(
       newsletterId: string,
       importData: NewsletterSubscriberImportData,
     ): Promise<{ added: number; skipped: number }> {
-      checkNotNullWithError(newsletterId);
-      let result = { added: 0, skipped: 0 };
-      await withProgressNotification('import', async () => {
-        result = await api.importNewsletterSubscribers(
-          newsletterId,
-          importData,
-        );
-        // Invalidate so it reloads on next fetch
-        invalidate();
-      });
+      const result = await subscribers.mutate(
+        'import',
+        (key) => api.importNewsletterSubscribers(key, importData),
+        { key: newsletterId, feedback: 'progress' },
+      );
+      await subscribers.reload();
       return result;
     }
 
-    async function deleteData(newsletterId: string, subscriberId: string) {
-      checkNotNullWithError(newsletterId);
-      checkNotNullWithNotification(subscriberId);
-      await withProgressNotification('delete', async () => {
-        await api.deleteNewsletterSubscriber(newsletterId, subscriberId);
-        data.value = data.value?.filter((s) => s.id !== subscriberId);
-      });
+    async function deleteData(
+      newsletterId: string,
+      subscriberId: string,
+    ): Promise<void> {
+      await subscribers.mutate(
+        'delete',
+        (key) => api.deleteNewsletterSubscriber(key, subscriberId),
+        {
+          key: newsletterId,
+          feedback: 'progress',
+          apply: (list) => removeById(list, subscriberId),
+        },
+      );
     }
 
     return {
-      reset,
-      invalidate,
-      data,
-      isLoading,
-      error,
+      data: subscribers.data,
+      isLoading: subscribers.isLoading,
+      error: subscribers.error,
+      reset: subscribers.reset,
+      invalidate: subscribers.invalidate,
       fetchData,
       createData,
       importFromEvent,

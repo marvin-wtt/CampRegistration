@@ -4,11 +4,14 @@ import { mount } from '@vue/test-utils';
 import type { CursorPaginated } from '@camp-registration/common/entities';
 import { useServerList } from '@/composables/serverList';
 
-vi.mock('@/composables/serviceHandler', () => ({
+vi.mock('@/composables/errorText', () => ({
   useErrorExtractor: () => ({
     extractErrorText: (err: unknown) => (err as Error).message,
   }),
-  useServiceNotifications: () => ({}),
+}));
+
+vi.mock('@/composables/action', () => ({
+  useAction: () => ({ run: vi.fn() }),
 }));
 
 interface Row {

@@ -95,7 +95,7 @@ import { useI18n } from 'vue-i18n';
 import CountryIcon from '@/components/common/localization/CountryIcon.vue';
 import RichTextEditor from '@/components/common/inputs/RichTextEditor.vue';
 import { useLegalService } from '@/services/LegalService';
-import { useServiceNotifications } from '@/composables/serviceHandler';
+import { useAction } from '@/composables/action';
 import type {
   LegalDocumentType,
   Translatable,
@@ -108,7 +108,7 @@ const { type, content: initialContent } = defineProps<{
 
 const { t } = useI18n();
 const { updateLegalDocument } = useLegalService();
-const { withResultNotification } = useServiceNotifications();
+const { run } = useAction();
 
 // The app's fixed locale set (see CLAUDE.md) — legal content is instance-wide,
 // unlike event fields whose locales follow the event's target countries.
@@ -241,8 +241,10 @@ async function onSave() {
   try {
     const payload = normalize(currentContent.value);
 
-    const document = await withResultNotification('save', () =>
-      updateLegalDocument(type, payload),
+    const document = await run(
+      'save',
+      () => updateLegalDocument(type, payload),
+      { feedback: 'result' },
     );
     applyContent(document.content);
   } finally {

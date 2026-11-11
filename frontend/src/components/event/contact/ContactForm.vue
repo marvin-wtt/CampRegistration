@@ -260,7 +260,7 @@ import { QForm, type QSelectOption, useQuasar } from 'quasar';
 import { type QRejectedEntry } from 'quasar';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import RegistrationEmailEditor from '@/components/event/contact/RegistrationEmailEditor.vue';
-import { useServiceNotifications } from '@/composables/serviceHandler';
+import { useAction } from '@/composables/action';
 import { useAPIService } from '@/services/APIService';
 import FileInput, {
   type FileInputModel,
@@ -297,7 +297,7 @@ const quasar = useQuasar();
 const { t } = useI18n();
 const apiService = useAPIService();
 const eventDetailsStore = useEventDetailsStore();
-const { withResultNotification } = useServiceNotifications();
+const { run } = useAction();
 const { can } = usePermissions();
 const { contactFor } = useRegistrationContact();
 
@@ -539,19 +539,22 @@ async function send() {
 
   sendInProgress.value = true;
   try {
-    const message = await withResultNotification('send', async () => {
-      return apiService.createMessage(eventId, {
-        // Selected groups may overlap; the server expects each id once.
-        registrationIds: [...recipientIds(to.value)],
-        replyTo: replyTo.value,
-        subject: subject.value,
-        body: text.value,
-        priority: priority.value,
-        attachmentIds: attachments.value
-          ?.filter((v) => v.id !== undefined)
-          .map((file) => file.id),
-      });
-    });
+    const message = await run(
+      'send',
+      () =>
+        apiService.createMessage(eventId, {
+          // Selected groups may overlap; the server expects each id once.
+          registrationIds: [...recipientIds(to.value)],
+          replyTo: replyTo.value,
+          subject: subject.value,
+          body: text.value,
+          priority: priority.value,
+          attachmentIds: attachments.value
+            ?.filter((v) => v.id !== undefined)
+            .map((file) => file.id),
+        }),
+      { feedback: 'result' },
+    );
 
     // Reset all fields on success
     reset();

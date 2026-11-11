@@ -1,89 +1,68 @@
 import { defineStore } from 'pinia';
 import { useAPIService } from '@/services/APIService';
-import { useServiceHandler } from '@/composables/serviceHandler';
-import { useAuthBus } from '@/composables/bus';
+import { useCollection } from '@/composables/resource';
+import { removeById, replaceById, upsertById } from '@/utils/collection';
 import type {
   Newsletter,
   NewsletterCreateData,
   NewsletterUpdateData,
 } from '@camp-registration/common/entities';
 
+/** The newsletters the signed-in user manages. */
 export const useNewsletterStore = defineStore('newsletter', () => {
   const api = useAPIService();
-  const authBus = useAuthBus();
-  const {
-    data,
-    isLoading,
-    error,
-    reset,
-    invalidate,
-    withProgressNotification,
-    lazyFetch,
-    checkNotNullWithError,
-    checkNotNullWithNotification,
-  } = useServiceHandler<Newsletter[]>('newsletter');
-
-  authBus.on('logout', () => {
-    reset();
+  const newsletters = useCollection<Newsletter>({
+    name: 'newsletter',
+    fetch: () => api.fetchNewsletters(),
   });
 
-  async function fetchData() {
-    await lazyFetch(async () => {
-      return await api.fetchNewsletters();
-    });
+  function fetchData() {
+    return newsletters.load();
   }
 
-  async function createData(newData: NewsletterCreateData) {
-    await withProgressNotification('create', async () => {
-      const newsletter = await api.createNewsletter(newData);
-      // The list is undefined for a user who had no newsletter to fetch, so
-      // the new one has to create it rather than be pushed into nothing.
-      data.value = [...(data.value ?? []), newsletter];
-    });
-  }
-
-  async function updateData(id: string, updateData: NewsletterUpdateData) {
-    checkNotNullWithError(id);
-    await withProgressNotification('update', async () => {
-      const newsletter = await api.updateNewsletter(id, updateData);
-      data.value = data.value?.map((n) =>
-        n.id === newsletter.id ? newsletter : n,
-      );
-    });
-  }
-
-  async function deleteData(id: string) {
-    checkNotNullWithNotification(id);
-    await withProgressNotification('delete', async () => {
-      await api.deleteNewsletter(id);
-      data.value = data.value?.filter((n) => n.id !== id);
-    });
-  }
-
+  // Adds a newsletter the list doesn't hold (e.g. opened by link). Its own
+  // page reports failures through the manager/subscriber/message stores.
   async function fetchById(id: string): Promise<void> {
-    if (data.value?.find((n) => n.id === id)) {
+    if (newsletters.data.value?.some((n) => n.id === id)) {
       return;
     }
-    try {
-      const newsletter = await api.fetchNewsletter(id);
-      if (data.value) {
-        if (!data.value.find((n) => n.id === newsletter.id)) {
-          data.value = [...data.value, newsletter];
-        }
-      } else {
-        data.value = [newsletter];
-      }
-    } catch {
-      // Errors surface through manager/subscriber/message store fetches
+    const newsletter = await api.fetchNewsletter(id).catch(() => undefined);
+    if (newsletter) {
+      newsletters.update((list) => upsertById(list, newsletter));
     }
+  }
+
+  async function createData(createData: NewsletterCreateData): Promise<void> {
+    await newsletters.mutate('create', () => api.createNewsletter(createData), {
+      feedback: 'progress',
+      apply: upsertById,
+    });
+  }
+
+  async function updateData(
+    id: string,
+    updateData: NewsletterUpdateData,
+  ): Promise<void> {
+    await newsletters.mutate(
+      'update',
+      () => api.updateNewsletter(id, updateData),
+      { feedback: 'progress', apply: replaceById },
+    );
+  }
+
+  async function deleteData(id: string): Promise<void> {
+    await newsletters.mutate('delete', () => api.deleteNewsletter(id), {
+      feedback: 'progress',
+      apply: (list) => removeById(list, id),
+    });
   }
 
   return {
-    reset,
-    invalidate,
-    data,
-    isLoading,
-    error,
+    data: newsletters.data,
+    isLoading: newsletters.isLoading,
+    error: newsletters.error,
+    reset: newsletters.reset,
+    invalidate: newsletters.invalidate,
     fetchData,
     fetchById,
     createData,

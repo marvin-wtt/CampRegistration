@@ -168,7 +168,7 @@ import type {
 } from '@camp-registration/common/entities';
 import { useAPIService } from '@/services/APIService';
 import { isPriceChangedError } from '@/services/RegistrationService';
-import { useErrorExtractor } from '@/composables/serviceHandler';
+import { useErrorExtractor } from '@/composables/errorText';
 
 const { locale, t } = useI18n();
 const api = useAPIService();

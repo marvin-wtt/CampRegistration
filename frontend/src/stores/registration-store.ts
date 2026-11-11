@@ -1,5 +1,4 @@
 import { defineStore } from 'pinia';
-import { useRoute } from 'vue-router';
 import { useAPIService } from '@/services/APIService';
 import type {
   Registration,
@@ -8,68 +7,44 @@ import type {
   RegistrationUpdateData,
   RegistrationUpdateQuery,
 } from '@camp-registration/common/entities';
-import { useServiceHandler } from '@/composables/serviceHandler';
-import { useRealtimeCollection } from '@/composables/realtimeCollection';
-import { useAuthBus, useEventBus, useRegistrationBus } from '@/composables/bus';
+import { useCollection, useRouteKey } from '@/composables/resource';
+import { useRegistrationBus } from '@/composables/bus';
 import { useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { formatPersonName } from '@/utils/formatters';
+import { removeById, replaceById } from '@/utils/collection';
 
 export const useRegistrationsStore = defineStore('registrations', () => {
-  const route = useRoute();
-  const apiService = useAPIService();
+  const api = useAPIService();
   const quasar = useQuasar();
-  const { t } = useI18n({
-    useScope: 'global',
-  });
-  const authBus = useAuthBus();
+  const { t } = useI18n({ useScope: 'global' });
   const bus = useRegistrationBus();
-  const eventBus = useEventBus();
-  const {
-    data,
-    isLoading,
-    error,
-    reset,
-    invalidate,
-    withProgressNotification,
-    lazyFetch,
-    backgroundFetch,
-    checkNotNullWithError,
-    checkNotNullWithNotification,
-  } = useServiceHandler<Registration[]>('registration');
-
-  authBus.on('logout', () => {
-    reset();
-  });
-
-  eventBus.on('change', () => {
-    invalidate();
-  });
-
-  // React to live changes pushed from other clients: refetch the affected
-  // registration through the REST API (where full permissions apply) and
-  // reconcile it into the local list.
-  useRealtimeCollection<Registration>('registration', {
-    data,
-    invalidate,
-    reload: () => fetchData(undefined, { background: true }),
-    fetchOne: (eventId, id) => apiService.fetchRegistration(eventId, id),
-    onCreate: (registration) => {
-      bus.emit('create', registration);
-      showRealtimeCreateNotification(registration);
+  // Live changes are refetched through the REST API (where full permissions
+  // apply) and reconciled into the list.
+  const registrations = useCollection<Registration>({
+    name: 'registration',
+    key: useRouteKey('eventId'),
+    fetch: (eventId) => api.fetchRegistrations(eventId),
+    realtime: {
+      resource: 'registration',
+      fetchOne: (eventId, id) => api.fetchRegistration(eventId, id),
+      onCreate: (registration) => {
+        bus.emit('create', registration);
+        showRealtimeCreateNotification(registration);
+      },
+      onUpdate: (registration) => bus.emit('update', registration),
+      onDelete: (id) => bus.emit('delete', id),
     },
-    onUpdate: (registration) => bus.emit('update', registration),
-    onDelete: (id) => bus.emit('delete', id),
   });
 
   function showRealtimeCreateNotification(registration: Registration) {
-    const name = registrationName(registration);
-
     quasar.notify({
       type: 'positive',
       icon: 'person_add',
       message: t('stores.registration.realtimeCreate.message'),
-      caption: t('stores.registration.realtimeCreate.caption', { name }),
+      caption: t('stores.registration.realtimeCreate.caption', {
+        name: registrationName(registration),
+      }),
       timeout: 5000,
     });
   }
@@ -88,78 +63,56 @@ export const useRegistrationsStore = defineStore('registrations', () => {
       : t('stores.registration.realtimeCreate.fallbackName');
   }
 
-  async function fetchData(eventId?: string, opts?: { background?: boolean }) {
-    const cid: string = eventId ?? (route.params.eventId as string);
-    checkNotNullWithError(cid);
-
-    const fetcher = () => apiService.fetchRegistrations(cid);
-    await (opts?.background ? backgroundFetch(fetcher) : lazyFetch(fetcher));
+  function fetchData(eventId?: string) {
+    return registrations.load(eventId);
   }
 
+  // A public registration through the form; reported by the form itself.
   async function storeData(
     eventId: string,
     registration: RegistrationCreateData,
-  ) {
-    checkNotNullWithError(eventId);
-
-    await apiService.createRegistration(eventId, registration);
+  ): Promise<void> {
+    await api.createRegistration(eventId, registration);
   }
 
   async function updateData(
-    registrationId: string | undefined,
+    registrationId: string,
     updateData: RegistrationUpdateData,
     params?: RegistrationUpdateQuery,
-  ) {
-    const eventId = route.params.eventId as string;
-
-    const cid = checkNotNullWithError(eventId);
-    const rid = checkNotNullWithNotification(registrationId);
-    await withProgressNotification('update', async () => {
-      const updatedRegistration = await apiService.updateRegistration(
-        cid,
-        rid,
-        updateData,
-        params,
-      );
-
-      // Replace the registration with a new one
-      data.value = data.value?.map((registration) =>
-        registration.id === registrationId ? updatedRegistration : registration,
-      );
-
-      bus.emit('update', updatedRegistration);
-    });
+  ): Promise<void> {
+    const registration = await registrations.mutate(
+      'update',
+      (eventId) =>
+        api.updateRegistration(eventId, registrationId, updateData, params),
+      { feedback: 'progress', apply: replaceById },
+    );
+    bus.emit('update', registration);
   }
 
   async function deleteData(
-    registrationId?: string,
+    registrationId: string,
     params?: RegistrationDeleteQuery,
-  ) {
-    const eventId = route.params.eventId as string;
-
-    const cid = checkNotNullWithError(eventId);
-    const rid = checkNotNullWithNotification(registrationId);
-    await withProgressNotification('delete', async () => {
-      await apiService.deleteRegistration(cid, rid, params);
-
-      // Replace the registration with a new one
-      data.value = data.value?.filter(
-        (registration) => registration.id !== registrationId,
-      );
-
-      bus.emit('delete', rid);
-    });
+  ): Promise<void> {
+    await registrations.mutate(
+      'delete',
+      (eventId) => api.deleteRegistration(eventId, registrationId, params),
+      {
+        feedback: 'progress',
+        apply: (list) => removeById(list, registrationId),
+      },
+    );
+    bus.emit('delete', registrationId);
   }
 
   return {
-    reset,
-    data,
-    isLoading,
-    error,
+    data: registrations.data,
+    isLoading: registrations.isLoading,
+    error: registrations.error,
+    reset: registrations.reset,
+    invalidate: registrations.invalidate,
     fetchData,
     storeData,
     updateData,
     deleteData,
-    invalidate,
   };
 });

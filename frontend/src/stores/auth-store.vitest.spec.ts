@@ -8,7 +8,7 @@ const mocks = vi.hoisted(() => ({
   refreshTokens: vi.fn(),
   logout: vi.fn(),
   fetchProfile: vi.fn(),
-  showErrorNotification: vi.fn(),
+  notifyError: vi.fn(),
   push: vi.fn(),
   route: {
     meta: { auth: true },
@@ -37,30 +37,20 @@ vi.mock('@/composables/bus', () => ({
   useAuthBus: () => mocks.bus,
 }));
 
-vi.mock('@/composables/serviceHandler', async () => {
-  const { ref } = await import('vue');
+// The real useAction and useFormSubmission run on top of these.
+vi.mock('@/composables/notifier', () => ({
+  useNotifier: () => ({
+    error: mocks.notifyError,
+    success: vi.fn(),
+    progress: vi.fn(),
+  }),
+}));
 
-  return {
-    useServiceHandler: () => ({
-      isLoading: ref(false),
-      error: ref(),
-      reset: vi.fn(),
-      // Mirrors the real implementation's contract: swallow the error and
-      // resolve to undefined, since callers (e.g. logout()) branch on that.
-      withErrorNotification: vi.fn(async (_op: string, fn: () => unknown) => {
-        try {
-          return await fn();
-        } catch {
-          return undefined;
-        }
-      }),
-      withResultNotification: vi.fn(),
-      errorOnFailure: vi.fn(),
-      checkNotNullWithError: vi.fn(),
-      showErrorNotification: mocks.showErrorNotification,
-    }),
-  };
-});
+vi.mock('@/composables/errorText', () => ({
+  useErrorExtractor: () => ({
+    extractErrorText: (err: unknown) => String(err),
+  }),
+}));
 
 vi.mock('@/stores/profile-store', () => ({
   useProfileStore: () => ({
@@ -124,7 +114,7 @@ describe('auth store refresh', () => {
     expect(mocks.refreshTokens).toHaveBeenCalledTimes(3);
     expect(store.status).toBe('authenticated');
     expect(mocks.fetchProfile).toHaveBeenCalledOnce();
-    expect(mocks.showErrorNotification).toHaveBeenCalledOnce();
+    expect(mocks.notifyError).toHaveBeenCalledOnce();
   });
 
   it('honours Retry-After on a rate-limited refresh', async () => {
@@ -210,7 +200,7 @@ describe('auth store logout', () => {
     mocks.logout.mockRejectedValue(httpError(500));
     const store = useAuthStore();
 
-    await store.logout();
+    await expect(store.logout()).rejects.toThrow();
 
     expect(mocks.push).not.toHaveBeenCalled();
   });

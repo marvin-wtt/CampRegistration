@@ -4,186 +4,123 @@ import type {
   TableTemplateCreateData,
   TableTemplateUpdateData,
 } from '@camp-registration/common/entities';
-import { useRoute } from 'vue-router';
 import { useAPIService } from '@/services/APIService';
-import { useServiceHandler } from '@/composables/serviceHandler';
-import { useAuthBus, useEventBus } from '@/composables/bus';
-import { useRealtimeCollection } from '@/composables/realtimeCollection';
+import { useCollection, useRouteKey } from '@/composables/resource';
+import { settleAll } from '@/composables/action';
+import { removeById, replaceById, upsertById } from '@/utils/collection';
+
+interface TemplateChanges {
+  added: TableTemplate[];
+  modified: TableTemplate[];
+  removed: TableTemplate[];
+}
+
+function diffTemplates(
+  current: readonly TableTemplate[],
+  next: TableTemplate[],
+): TemplateChanges {
+  const byId = new Map(current.map((template) => [template.id, template]));
+  return {
+    added: next.filter((template) => !byId.has(template.id)),
+    modified: next.filter((template) => {
+      const before = byId.get(template.id);
+      return (
+        before !== undefined &&
+        JSON.stringify(before) !== JSON.stringify(template)
+      );
+    }),
+    // Generated templates belong to the server and are never deleted here.
+    removed: current.filter(
+      (template) =>
+        !template.generated && !next.some((n) => n.id === template.id),
+    ),
+  };
+}
 
 export const useTemplateStore = defineStore('templates', () => {
-  const route = useRoute();
-  const apiService = useAPIService();
-  const authBus = useAuthBus();
-  const eventBus = useEventBus();
-  const {
-    data,
-    isLoading,
-    error,
-    reset,
-    invalidate,
-    withProgressNotification,
-    withMultiProgressNotification,
-    lazyFetch,
-    backgroundFetch,
-    checkNotNullWithError,
-    checkNotNullWithNotification,
-  } = useServiceHandler<TableTemplate[]>('template');
-
-  authBus.on('logout', () => {
-    reset();
+  const api = useAPIService();
+  const templates = useCollection<TableTemplate>({
+    name: 'template',
+    key: useRouteKey('eventId'),
+    fetch: async (eventId) =>
+      (await api.fetchTableTemplates(eventId)).sort(
+        (a, b) => a.order - b.order,
+      ),
+    // List mode: a template sync fans out many create/update/delete calls,
+    // so remote clients coalesce the burst into one debounced refetch.
+    realtime: { resource: 'table_template' },
   });
 
-  eventBus.on('change', () => {
-    invalidate();
-  });
-
-  // React to live changes pushed from other clients. List mode: a template
-  // sync fans out many create/update/delete calls, so remote clients coalesce
-  // the resulting event burst into one debounced list refetch.
-  useRealtimeCollection<TableTemplate>('table_template', {
-    data,
-    invalidate,
-    reload: () => fetchData(undefined, { background: true }),
-  });
-
-  async function forceFetchData(id?: string) {
-    invalidate();
-    return fetchData(id);
+  function fetchData(eventId?: string) {
+    return templates.load(eventId);
   }
 
-  async function fetchData(eventId?: string, opts?: { background?: boolean }) {
-    eventId = eventId ?? (route.params.eventId as string | undefined);
-
-    const cid = checkNotNullWithError(eventId);
-    const fetcher = async () => {
-      const data = await apiService.fetchTableTemplates(cid);
-      return data.sort((a, b) => {
-        return a.order - b.order;
-      });
-    };
-    await (opts?.background ? backgroundFetch(fetcher) : lazyFetch(fetcher));
-  }
-
-  async function updateCollection(templates: TableTemplate[]) {
-    const currentTemplates = data.value;
-
-    const eventId = route.params.eventId as string | undefined;
-
-    const cid = checkNotNullWithError(eventId);
-
-    if (currentTemplates === undefined) {
-      // TODO notify
+  // Saves the whole edited set at once. The server derives parts of the
+  // templates, so the list is reloaded afterwards — on failure by mutate.
+  async function updateCollection(next: TableTemplate[]): Promise<void> {
+    const current = templates.data.value;
+    if (current === undefined) {
       return;
     }
 
-    // Extract all new elements that were not there before
-    const added = templates.filter((update) => {
-      return currentTemplates.every((template) => {
-        return template.id !== update.id;
-      });
-    });
-
-    // Extract all elements that were deleted
-    const removed = currentTemplates.filter((template) => {
-      if (template.generated) {
-        return false;
-      }
-
-      return !templates.some((update) => {
-        return template.id === update.id;
-      });
-    });
-
-    // Extract all elements that were updated
-    const modified = templates.filter((update) => {
-      const template = currentTemplates.find((v) => v.id === update.id);
-
-      return (
-        template !== undefined &&
-        JSON.stringify(template) !== JSON.stringify(update)
-      );
-    });
-
-    const results: Promise<TableTemplate | void>[] = [];
-
-    for (const t of added) {
-      results.push(apiService.createTableTemplate(cid, t));
-    }
-
-    for (const t of modified) {
-      results.push(apiService.updateTableTemplate(cid, t.id, t));
-    }
-
-    for (const t of removed) {
-      results.push(apiService.deleteTableTemplate(cid, t.id));
-    }
-
-    await withMultiProgressNotification(results, 'update');
-
-    // Always force update because a partial update could happen
-    await forceFetchData();
+    const { added, modified, removed } = diffTemplates(current, next);
+    await templates.mutate(
+      'update',
+      (eventId, report) =>
+        settleAll<unknown>(
+          [
+            ...added.map((t) => () => api.createTableTemplate(eventId, t)),
+            ...modified.map(
+              (t) => () => api.updateTableTemplate(eventId, t.id, t),
+            ),
+            ...removed.map((t) => () => api.deleteTableTemplate(eventId, t.id)),
+          ],
+          report,
+        ),
+      { feedback: 'progress' },
+    );
+    await templates.reload();
   }
 
-  async function createEntry(
+  function createEntry(
     template: TableTemplateCreateData,
     eventId?: string,
-  ) {
-    eventId = eventId ?? (route.params.eventId as string | undefined);
-    const cid = checkNotNullWithError(eventId);
-
-    return await withProgressNotification('create', async () => {
-      const result = await apiService.createTableTemplate(cid, template);
-
-      // Add item to data
-      data.value?.push(result);
-
-      return result;
-    });
+  ): Promise<TableTemplate> {
+    return templates.mutate(
+      'create',
+      (key) => api.createTableTemplate(key, template),
+      {
+        feedback: 'progress',
+        apply: upsertById,
+        ...(eventId ? { key: eventId } : {}),
+      },
+    );
   }
 
-  async function updateEntry(
+  function updateEntry(
     templateId: string,
     template: TableTemplateUpdateData,
-  ) {
-    const eventId = route.params.eventId as string | undefined;
-
-    const cid = checkNotNullWithError(eventId);
-    return await withProgressNotification('update', async () => {
-      const result = await apiService.updateTableTemplate(
-        cid,
-        templateId,
-        template,
-      );
-
-      // Replace item in data
-      data.value = data.value?.map((value) =>
-        value.id === templateId ? result : value,
-      );
-
-      return result;
-    });
+  ): Promise<TableTemplate> {
+    return templates.mutate(
+      'update',
+      (eventId) => api.updateTableTemplate(eventId, templateId, template),
+      { feedback: 'progress', apply: replaceById },
+    );
   }
 
-  async function deleteEntry(id: string) {
-    const eventId = route.params.eventId as string | undefined;
-
-    const cid = checkNotNullWithError(eventId);
-    const tid = checkNotNullWithNotification(id);
-    return await withProgressNotification('delete', async () => {
-      const result = apiService.deleteTableTemplate(cid, tid);
-
-      // Remove item from data
-      data.value = data.value?.filter((value) => value.id !== id);
-
-      return result;
-    });
+  async function deleteEntry(templateId: string): Promise<void> {
+    await templates.mutate(
+      'delete',
+      (eventId) => api.deleteTableTemplate(eventId, templateId),
+      { feedback: 'progress', apply: (list) => removeById(list, templateId) },
+    );
   }
 
   return {
-    reset,
-    data,
-    isLoading,
-    error,
+    data: templates.data,
+    isLoading: templates.isLoading,
+    error: templates.error,
+    reset: templates.reset,
     fetchData,
     createEntry,
     updateEntry,

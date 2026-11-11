@@ -85,7 +85,7 @@ import { useI18n } from 'vue-i18n';
 const { t } = useI18n();
 
 const profileStore = useProfileStore();
-const { user, loading, error } = storeToRefs(profileStore);
+const { user, isLoading: loading, error } = storeToRefs(profileStore);
 
 function updateProfile(data: ProfileUpdateData) {
   void profileStore.updateProfile(data);

@@ -62,7 +62,7 @@ const { t } = useI18n();
 const quasar = useQuasar();
 const apiService = useAPIService();
 const profileStore = useProfileStore();
-const { user, loading, error } = storeToRefs(profileStore);
+const { user, isLoading: loading, error } = storeToRefs(profileStore);
 
 const blockers = ref<AccountDeletionBlocker[] | null>(null);
 

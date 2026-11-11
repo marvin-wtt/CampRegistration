@@ -7,13 +7,16 @@ import type {
 } from '@camp-registration/common/entities';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthBus } from '@/composables/bus';
-import { useServiceHandler } from '@/composables/serviceHandler';
+import { useFormSubmission } from '@/composables/formSubmission';
+import { useAction } from '@/composables/action';
+import { useNotifier } from '@/composables/notifier';
+import { useI18n } from 'vue-i18n';
 import { useProfileStore } from '@/stores/profile-store';
 import { createInitialAdmin } from '@/services/SetupService';
 import { isCustomAxiosError } from '@/services/AuthService';
 import { isRefreshFailureAuthoritative } from '@/services/authRefreshToken';
 import { createRetryScheduler } from '@/utils/retryScheduler';
-import { computed, ref } from 'vue';
+import { computed, readonly, ref } from 'vue';
 import { Dialog } from 'quasar';
 import TwoFactorSuggestionDialog from '@/components/settings/twoFactor/TwoFactorSuggestionDialog.vue';
 
@@ -34,16 +37,12 @@ export const useAuthStore = defineStore('auth', () => {
   const route = useRoute();
   const bus = useAuthBus();
   const profileStore = useProfileStore();
-  const {
-    isLoading,
-    error,
-    reset: resetDefault,
-    withErrorNotification,
-    withResultNotification,
-    errorOnFailure,
-    checkNotNullWithError,
-    showErrorNotification,
-  } = useServiceHandler<void>('auth');
+  const { t } = useI18n({ useScope: 'global' });
+  // The auth forms show their failures inline; other actions as toasts.
+  const form = useFormSubmission();
+  const { run } = useAction('auth');
+  const notifier = useNotifier('auth');
+  const refreshing = ref<boolean>(false);
 
   const status = ref<AuthStatus>('unknown');
 
@@ -107,7 +106,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   // Clears form state only; the session timers outlive the auth pages
   function reset() {
-    resetDefault();
+    form.reset();
   }
 
   function stopRetry() {
@@ -131,7 +130,7 @@ export const useAuthStore = defineStore('auth', () => {
       initRetry.schedule(
         () => init(forceRefresh),
         result.error,
-        () => showErrorNotification('refresh'),
+        () => notifier.error('refresh'),
       );
       return;
     }
@@ -148,7 +147,7 @@ export const useAuthStore = defineStore('auth', () => {
     password: string,
     remember = false,
   ): Promise<void> {
-    return errorOnFailure(async () => {
+    return form.submit(async () => {
       try {
         const result = await apiService.login(email, password, remember);
 
@@ -187,8 +186,6 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function verifyOtp(otp: string) {
-    checkNotNullWithError(otp);
-
     const token = partialAuthToken;
     if (token === undefined) {
       await router.push({
@@ -200,7 +197,10 @@ export const useAuthStore = defineStore('auth', () => {
 
     const remember = route.query.remember === 'true';
 
-    await errorOnFailure(async () => {
+    await form.submit(async () => {
+      if (!otp) {
+        throw new Error(t('service.invalidParams'));
+      }
       const result = await apiService.verifyOtp(token, otp, remember);
 
       await handleAuthentication(result);
@@ -252,7 +252,7 @@ export const useAuthStore = defineStore('auth', () => {
   // Only a 400/401 from the refresh endpoint proves the session is gone; a
   // 429, 5xx or network error leaves the status untouched.
   async function tryRefresh(): Promise<RefreshResult> {
-    isLoading.value = true;
+    refreshing.value = true;
 
     try {
       // Deduped in AuthService, so concurrent callers share one request
@@ -280,7 +280,7 @@ export const useAuthStore = defineStore('auth', () => {
 
       return { outcome: 'unauthenticated' };
     } finally {
-      isLoading.value = false;
+      refreshing.value = false;
     }
   }
 
@@ -288,7 +288,7 @@ export const useAuthStore = defineStore('auth', () => {
     const result = await tryRefresh();
     if (result.outcome === 'unavailable') {
       backgroundRefreshRetry.schedule(refreshInBackground, result.error, () =>
-        showErrorNotification('refresh'),
+        notifier.error('refresh'),
       );
     }
   }
@@ -309,24 +309,16 @@ export const useAuthStore = defineStore('auth', () => {
     }, refreshTime);
   }
 
+  // A failed request rejects and leaves the session (cookies, status,
+  // timers) as-is — nothing navigates away as if it had logged out.
   async function logout(): Promise<void> {
-    const succeeded = await withErrorNotification('logout', async () => {
-      await apiService.logout();
-
-      bus.emit('logout');
-
-      return true;
-    });
-
-    // A failed request leaves the session (cookies, status, timers) as-is —
-    // don't navigate away as if it had actually logged out.
-    if (succeeded) {
-      await router.push('/');
-    }
+    await run('logout', () => apiService.logout());
+    bus.emit('logout');
+    await router.push('/');
   }
 
   async function register(name: string, email: string, password: string) {
-    await errorOnFailure(async () => {
+    await form.submit(async () => {
       await apiService.register(name, email, password);
 
       await router.push({ name: 'login' });
@@ -340,7 +332,7 @@ export const useAuthStore = defineStore('auth', () => {
   ): Promise<'ok' | 'closed'> {
     let outcome: 'ok' | 'closed' = 'ok';
 
-    await errorOnFailure(async () => {
+    await form.submit(async () => {
       // The web client is CSRF-protected, and init() (which normally seeds the
       // token) does not run on the setup screen — fetch one explicitly.
       await apiService.requestCsrfToken();
@@ -365,32 +357,28 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function forgotPassword(email: string) {
-    await withResultNotification('forgot-password', async () => {
-      await apiService.forgotPassword(email);
-
-      await router.push({ name: 'login' });
+    await run('forgot-password', () => apiService.forgotPassword(email), {
+      feedback: 'result',
     });
+    await router.push({ name: 'login' });
   }
 
   async function resetPassword(password: string) {
-    const email = route.query.email as string;
-    const token = route.query.token as string;
+    const email = route.query.email as string | undefined;
+    const token = route.query.token as string | undefined;
 
-    checkNotNullWithError(email);
-    checkNotNullWithError(token);
-
-    await withErrorNotification('reset-password', async () => {
+    await run('reset-password', async () => {
+      if (!email || !token) {
+        throw new Error(t('service.invalidParams'));
+      }
       await apiService.resetPassword(token, email, password);
-
-      await router.push({ name: 'login' });
     });
+    await router.push({ name: 'login' });
   }
 
   async function verifyEmail(token: string) {
-    checkNotNullWithError(token);
-
-    await withResultNotification('verify-email', async () => {
-      await apiService.verifyEmail(token);
+    await run('verify-email', () => apiService.verifyEmail(token), {
+      feedback: 'result',
     });
   }
 
@@ -404,15 +392,17 @@ export const useAuthStore = defineStore('auth', () => {
       return;
     }
 
-    await errorOnFailure(async () => {
-      await apiService.sendEmailVerify(token);
-    });
+    await form.submit(() => apiService.sendEmailVerify(token));
   }
 
+  const isLoading = computed<boolean>(
+    () => form.isLoading.value || refreshing.value,
+  );
+
   return {
-    error,
-    loading: isLoading,
-    status: computed(() => status.value),
+    error: form.error,
+    isLoading,
+    status: readonly(status),
     init,
     reset,
     refreshTokens,

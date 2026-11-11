@@ -5,46 +5,37 @@ import type {
   EventUpdateData,
 } from '@camp-registration/common/entities';
 import { useAPIService } from '@/services/APIService';
-import { useServiceNotifications } from '@/composables/serviceHandler';
+import { useAction } from '@/composables/action';
 import { useEventBus } from '@/composables/bus';
 
+/** Writes to events by id; the lists holding them follow through the bus. */
 export const useEventsStore = defineStore('events', () => {
-  const apiService = useAPIService();
+  const api = useAPIService();
   const bus = useEventBus();
-  const { withProgressNotification, checkNotNullWithNotification } =
-    useServiceNotifications('event');
+  const { run } = useAction('event');
 
   async function createEntry(createData: EventCreateData): Promise<Event> {
-    return withProgressNotification('update', async () => {
-      const newEvent = await apiService.createEvent(createData);
-
-      bus.emit('create', newEvent);
-
-      return newEvent;
+    const event = await run('update', () => api.createEvent(createData), {
+      feedback: 'progress',
     });
+    bus.emit('create', event);
+    return event;
   }
 
   async function updateEntry(
     id: string,
     updateData: EventUpdateData,
-  ): Promise<Event | undefined> {
-    checkNotNullWithNotification(id);
-    return withProgressNotification('update', async () => {
-      const updatedEvent = await apiService.updateEvent(id, updateData);
-
-      bus.emit('update', updatedEvent);
-
-      return updatedEvent;
+  ): Promise<Event> {
+    const event = await run('update', () => api.updateEvent(id, updateData), {
+      feedback: 'progress',
     });
+    bus.emit('update', event);
+    return event;
   }
 
-  async function deleteEntry(id: string) {
-    checkNotNullWithNotification(id);
-    await withProgressNotification('delete', async () => {
-      await apiService.deleteEvent(id);
-
-      bus.emit('delete', id);
-    });
+  async function deleteEntry(id: string): Promise<void> {
+    await run('delete', () => api.deleteEvent(id), { feedback: 'progress' });
+    bus.emit('delete', id);
   }
 
   return {

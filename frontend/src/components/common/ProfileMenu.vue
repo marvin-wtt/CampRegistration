@@ -271,7 +271,7 @@ const initials = computed<string>(() => {
 });
 
 const loading = computed<boolean>(() => {
-  return authStore.loading || profileStore.loading;
+  return authStore.isLoading || profileStore.isLoading;
 });
 
 const authenticated = computed<boolean>(() => {

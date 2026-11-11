@@ -77,7 +77,7 @@ const {
   onVirtualScroll,
   identitySort,
   reload,
-  withProgressNotification,
+  run,
 } = useServerTable<Newsletter, NewsletterQuery>({
   storeName: 'newsletter',
   sortBy: 'createdAt',
@@ -185,8 +185,10 @@ function showMoveDialog(newsletter: Newsletter) {
       },
     })
     .onOk((organizationId: string) => {
-      void withProgressNotification('move', () =>
-        api.moveNewsletterToOrganization(newsletter.id, organizationId),
+      void run(
+        'move',
+        () => api.moveNewsletterToOrganization(newsletter.id, organizationId),
+        { feedback: 'progress' },
       ).then(() => reload());
     });
 }
@@ -203,9 +205,9 @@ function showDeleteDialog(newsletter: Newsletter) {
       },
     })
     .onOk(() => {
-      void withProgressNotification('delete', () =>
-        api.deleteNewsletter(newsletter.id),
-      ).then(() => reload());
+      void run('delete', () => api.deleteNewsletter(newsletter.id), {
+        feedback: 'progress',
+      }).then(() => reload());
     });
 }
 </script>

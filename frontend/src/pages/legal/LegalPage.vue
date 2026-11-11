@@ -41,7 +41,7 @@ import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import LegalPlaceholder from '@/components/legal/LegalPlaceholder.vue';
 import { useLegalService } from '@/services/LegalService';
 import { useObjectTranslation } from '@/composables/objectTranslation';
-import { useErrorExtractor } from '@/composables/serviceHandler';
+import { useErrorExtractor } from '@/composables/errorText';
 
 const props = defineProps<{
   type: LegalDocumentType;

@@ -179,8 +179,7 @@ async function performChoreDelete(chore: Chore) {
   await choreStore.deleteData(chore.id);
   // Deleting a chore cascades its assignments server-side; no
   // per-assignment realtime event fires for that, so refetch explicitly.
-  choreAssignmentStore.reset();
-  await choreAssignmentStore.fetchData();
+  await choreAssignmentStore.reload();
 }
 
 function deleteChore(chore: Chore) {

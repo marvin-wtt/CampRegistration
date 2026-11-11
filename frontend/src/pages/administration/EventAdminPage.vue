@@ -226,7 +226,7 @@ const {
   onVirtualScroll,
   identitySort,
   reload,
-  withProgressNotification,
+  run,
 } = useServerTable<Event, EventQuery>({
   storeName: 'event',
   sortBy: 'startAt',
@@ -445,10 +445,11 @@ function onMoveEvent(event: Event) {
       },
     })
     .onOk((organizationId: string) => {
-      void withProgressNotification('move', async () => {
-        await api.moveEventToOrganization(event.id, organizationId);
-        reload();
-      });
+      void run(
+        'move',
+        () => api.moveEventToOrganization(event.id, organizationId),
+        { feedback: 'progress' },
+      ).then(() => reload());
     });
 }
 
@@ -611,12 +612,14 @@ function onUnpublishEvent(event: Event) {
 }
 
 async function updateEvent(id: string, data: EventUpdateData) {
-  await withProgressNotification('update', () => api.updateEvent(id, data));
+  await run('update', () => api.updateEvent(id, data), {
+    feedback: 'progress',
+  });
   reload();
 }
 
 async function deleteEvent(id: string) {
-  await withProgressNotification('delete', () => api.deleteEvent(id));
+  await run('delete', () => api.deleteEvent(id), { feedback: 'progress' });
   reload();
 }
 </script>

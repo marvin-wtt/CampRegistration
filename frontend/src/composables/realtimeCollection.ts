@@ -9,7 +9,7 @@ import { useRealtimeStore } from '@/stores/realtime-store';
 import { isAPIServiceError } from '@/services/APIService';
 
 export interface RealtimeCollectionOptions<T extends { id: string }> {
-  /** The list state to reconcile (usually `data` from `useServiceHandler`). */
+  /** The list state to reconcile (usually a resource's data). */
   data: Ref<T[] | undefined>;
   /** Mark the list stale without fetching (list not currently loaded). */
   invalidate: () => void;

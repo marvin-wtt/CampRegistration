@@ -1,45 +1,29 @@
 import { defineStore } from 'pinia';
-import { useRoute } from 'vue-router';
 import { useAPIService } from '@/services/APIService';
-import { useServiceHandler } from '@/composables/serviceHandler';
-import { useAuthBus, useOrganizationBus } from '@/composables/bus';
+import { useCollection, useRouteKey } from '@/composables/resource';
 import type { Event } from '@camp-registration/common/entities';
 
 /** The events owned by the organization in the current route. */
 export const useOrganizationEventsStore = defineStore(
   'organizationEvents',
   () => {
-    const route = useRoute();
     const api = useAPIService();
-    const authBus = useAuthBus();
-    const organizationBus = useOrganizationBus();
-    const { data, isLoading, error, reset, invalidate, lazyFetch } =
-      useServiceHandler<Event[]>('organizationEvents');
-
-    authBus.on('logout', () => {
-      reset();
+    const events = useCollection<Event>({
+      name: 'organizationEvents',
+      key: useRouteKey('organizationId'),
+      fetch: (organizationId) => api.fetchOrganizationEvents(organizationId),
     });
 
-    organizationBus.on('change', () => {
-      invalidate();
-    });
-
-    async function fetchData(organizationId?: string) {
-      const id =
-        organizationId ?? (route.params.organizationId as string | undefined);
-      if (!id) {
-        return;
-      }
-
-      await lazyFetch(() => api.fetchOrganizationEvents(id));
+    function fetchData(organizationId?: string) {
+      return events.load(organizationId);
     }
 
     return {
-      data,
-      isLoading,
-      error,
-      reset,
-      invalidate,
+      data: events.data,
+      isLoading: events.isLoading,
+      error: events.error,
+      reset: events.reset,
+      invalidate: events.invalidate,
       fetchData,
     };
   },

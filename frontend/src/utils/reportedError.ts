@@ -16,11 +16,10 @@ export function isReportedError(error: unknown): boolean {
   );
 }
 
-// Primitives can't be marked, so they are wrapped first.
-export function asReportedError(error: unknown): object {
+// Anything thrown that isn't an Error (a string, a plain object) is wrapped,
+// keeping the original as its cause.
+export function asReportedError(error: unknown): Error {
   return markReported(
-    typeof error === 'object' && error !== null
-      ? error
-      : new Error(String(error)),
+    error instanceof Error ? error : new Error(String(error), { cause: error }),
   );
 }

@@ -76,7 +76,7 @@ const { t } = useI18n();
 const quasar = useQuasar();
 
 const authStore = useAuthStore();
-const { loading, error } = storeToRefs(authStore);
+const { isLoading: loading, error } = storeToRefs(authStore);
 
 // 'checking' while we probe status, 'open' to show the form, 'completed' once
 // an admin already exists (this page is then a dead end → offer login).

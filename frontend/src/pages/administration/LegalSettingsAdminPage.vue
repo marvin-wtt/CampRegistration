@@ -85,7 +85,7 @@ import { useI18n } from 'vue-i18n';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import LegalDocumentEditor from '@/components/administration/legal/LegalDocumentEditor.vue';
 import { useLegalService } from '@/services/LegalService';
-import { useErrorExtractor } from '@/composables/serviceHandler';
+import { useErrorExtractor } from '@/composables/errorText';
 import { useRouteTab } from '@/composables/routeTab';
 import type { LegalDocument } from '@camp-registration/common/entities';
 

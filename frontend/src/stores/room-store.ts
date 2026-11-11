@@ -1,9 +1,12 @@
 import { defineStore } from 'pinia';
-import { useRoute } from 'vue-router';
 import { useAPIService } from '@/services/APIService';
-import { useServiceHandler } from '@/composables/serviceHandler';
-import { useRealtimeCollection } from '@/composables/realtimeCollection';
-import { useAuthBus, useEventBus } from '@/composables/bus';
+import { useCollection, useRouteKey } from '@/composables/resource';
+import {
+  removeById,
+  replaceAllById,
+  replaceById,
+  upsertById,
+} from '@/utils/collection';
 import type {
   Room,
   RoomCreateData,
@@ -15,176 +18,121 @@ export interface RoomOrderData {
   sortOrder?: number;
 }
 
+function withBed(
+  rooms: Room[],
+  roomId: string,
+  bedId: string,
+  registrationId: string | null,
+): Room[] {
+  return rooms.map((room) =>
+    room.id !== roomId
+      ? room
+      : {
+          ...room,
+          beds: room.beds.map((bed) =>
+            bed.id === bedId ? { ...bed, registrationId } : bed,
+          ),
+        },
+  );
+}
+
+// Room changes come from dialogs that close first, so they show a progress
+// toast; assigning a bed shows in place and only reports failures.
 export const useRoomStore = defineStore('room', () => {
-  const route = useRoute();
   const api = useAPIService();
-  const authBus = useAuthBus();
-  const eventBus = useEventBus();
-  const {
-    data,
-    isLoading,
-    error,
-    requestPending,
-    reset,
-    invalidate,
-    mutate,
-    lazyFetch,
-    backgroundFetch,
-    checkNotNullWithError,
-  } = useServiceHandler<Room[]>('room', {
-    reload: () => fetchData(undefined, { background: true }),
+  const rooms = useCollection<Room>({
+    name: 'room',
+    key: useRouteKey('eventId'),
+    fetch: (eventId) => api.fetchRooms(eventId),
+    // Bed changes arrive as 'room updated' events for the parent room; bulk
+    // reorders as one collection-level invalidation.
+    realtime: {
+      resource: 'room',
+      fetchOne: (eventId, id) => api.fetchRoom(eventId, id),
+    },
   });
 
-  authBus.on('logout', () => {
-    reset();
-  });
-
-  eventBus.on('change', () => {
-    invalidate();
-  });
-
-  // Bed changes arrive as 'room updated' events for the parent room; bulk
-  // reorders as one collection-level invalidation.
-  useRealtimeCollection<Room>('room', {
-    data,
-    invalidate,
-    reload: () => fetchData(undefined, { background: true }),
-    fetchOne: (eventId, id) => api.fetchRoom(eventId, id),
-  });
-
-  function currentEventId(): string {
-    return checkNotNullWithError(route.params.eventId as string | undefined);
+  function fetchData(eventId?: string) {
+    return rooms.load(eventId);
   }
 
-  async function fetchData(eventId?: string, opts?: { background?: boolean }) {
-    eventId ??= route.params.eventId as string;
-
-    const cid = checkNotNullWithError(eventId);
-    const fetcher = () => api.fetchRooms(cid);
-    await (opts?.background ? backgroundFetch(fetcher) : lazyFetch(fetcher));
-  }
-
-  function replaceLocal(room: Room) {
-    data.value = data.value?.map((value) =>
-      value.id === room.id ? room : value,
-    );
-  }
-
-  // Room changes come from dialogs that close first, so they keep a progress
-  // toast. A failure reloads the list and rejects with an already reported
-  // error.
-  async function createData(createData: RoomCreateData): Promise<Room> {
-    const eventId = currentEventId();
-
-    const room = await mutate(
+  function createData(createData: RoomCreateData): Promise<Room> {
+    return rooms.mutate(
       'create',
-      () => api.createRoom(eventId, createData),
-      { progress: true },
+      (eventId) => api.createRoom(eventId, createData),
+      { feedback: 'progress', apply: upsertById },
     );
-
-    data.value?.push(room);
-    return room;
   }
 
-  // Several requests: if one fails midway, mutate reloads what was saved.
+  // Several requests: if one fails midway, the reload shows what was saved.
   // Shrinking removes empty beds only, starting from the last one.
-  async function updateData(
+  function updateData(
     roomId: string,
     updateData: RoomUpdateData,
     capacity?: number,
   ): Promise<Room> {
-    const eventId = currentEventId();
-    const beds = data.value?.find((room) => room.id === roomId)?.beds ?? [];
-    const diff = capacity === undefined ? 0 : capacity - beds.length;
+    const beds = rooms.data.value?.find((room) => room.id === roomId)?.beds;
+    const diff = capacity === undefined || !beds ? 0 : capacity - beds.length;
     const add = Math.max(diff, 0);
     const removeBedIds =
       diff < 0
-        ? beds
+        ? (beds ?? [])
             .filter((bed) => bed.registrationId === null)
             .slice(diff)
             .map((bed) => bed.id)
         : [];
 
-    const room = await mutate(
+    return rooms.mutate(
       'update',
-      async () => {
-        let room = await api.updateRoom(eventId, roomId, updateData);
-
+      async (eventId) => {
+        const room = await api.updateRoom(eventId, roomId, updateData);
         for (let i = 0; i < add; i++) {
           await api.createBed(eventId, roomId);
         }
         for (const bedId of removeBedIds) {
           await api.deleteBed(eventId, roomId, bedId);
         }
-
-        if (add > 0 || removeBedIds.length > 0) {
-          room = await api.fetchRoom(eventId, roomId);
-        }
-
-        return room;
+        return add > 0 || removeBedIds.length > 0
+          ? api.fetchRoom(eventId, roomId)
+          : room;
       },
-      { progress: true },
+      { feedback: 'progress', apply: replaceById },
     );
-
-    replaceLocal(room);
-    return room;
   }
 
-  async function reorder(rooms: RoomOrderData[]): Promise<Room[]> {
-    const eventId = currentEventId();
-
-    const updatedRooms = await mutate(
+  function reorder(order: RoomOrderData[]): Promise<Room[]> {
+    return rooms.mutate(
       'update',
-      () => api.bulkUpdateRooms(eventId, rooms),
-      { progress: true },
+      (eventId) => api.bulkUpdateRooms(eventId, order),
+      { feedback: 'progress', apply: replaceAllById },
     );
-
-    data.value = data.value?.map(
-      (room) => updatedRooms.find((r) => r.id === room.id) ?? room,
-    );
-    return updatedRooms;
   }
 
   async function deleteData(roomId: string): Promise<void> {
-    const eventId = currentEventId();
-
-    await mutate('delete', () => api.deleteRoom(eventId, roomId), {
-      progress: true,
+    await rooms.mutate('delete', (eventId) => api.deleteRoom(eventId, roomId), {
+      feedback: 'progress',
+      apply: (list) => removeById(list, roomId),
     });
-
-    data.value = data.value?.filter((room) => room.id !== roomId);
   }
 
-  // Assigning a bed shows in place, so only failures are notified.
   async function updateBed(
     roomId: string,
     bedId: string,
     registrationId: string | null,
   ): Promise<void> {
-    const eventId = currentEventId();
-
-    await mutate('updateBed', () =>
-      api.updateBed(eventId, roomId, bedId, registrationId),
-    );
-
-    data.value = data.value?.map((room) =>
-      room.id !== roomId
-        ? room
-        : {
-            ...room,
-            beds: room.beds.map((bed) =>
-              bed.id === bedId ? { ...bed, registrationId } : bed,
-            ),
-          },
+    await rooms.mutate(
+      'updateBed',
+      (eventId) => api.updateBed(eventId, roomId, bedId, registrationId),
+      { apply: (list) => withBed(list, roomId, bedId, registrationId) },
     );
   }
 
   return {
-    reset,
-    data,
-    isLoading,
-    error,
-    requestPending,
+    data: rooms.data,
+    isLoading: rooms.isLoading,
+    error: rooms.error,
+    requestPending: rooms.pending,
+    reset: rooms.reset,
     fetchData,
     createData,
     updateData,

@@ -4,168 +4,108 @@ import type {
   ProgramItemCreateData,
   ProgramItemUpdateData,
 } from '@camp-registration/common/entities';
-import { useRoute } from 'vue-router';
 import { useAPIService } from '@/services/APIService';
-import { useServiceHandler } from '@/composables/serviceHandler';
-import { useAuthBus, useEventBus } from '@/composables/bus';
-import { useRealtimeCollection } from '@/composables/realtimeCollection';
+import { useCollection, useRouteKey } from '@/composables/resource';
+import { useAction } from '@/composables/action';
+import { removeById, replaceById, upsertById } from '@/utils/collection';
 import { createUuid } from '@/utils/uuid';
 
+// Placeholders for items still being created carry a `#` id.
+function isPlaceholder(id: string): boolean {
+  return id.startsWith('#');
+}
+
+function placeholder(id: string, item: ProgramItemCreateData): ProgramItem {
+  return {
+    id,
+    title: item.title,
+    details: item.details ?? null,
+    location: item.location ?? null,
+    date: item.date ?? null,
+    time: item.time ?? null,
+    duration: item.duration ?? null,
+    color: item.color ?? null,
+    plan: item.plan ?? 'both',
+  };
+}
+
+// Changes show in the calendar right away (for responsive drag-and-drop) and
+// only failures are reported; a failed one is undone.
 export const useProgramPlannerStore = defineStore('program-planner', () => {
-  const route = useRoute();
-  const apiService = useAPIService();
-  const authBus = useAuthBus();
-  const eventBus = useEventBus();
-  const {
-    data,
-    isLoading,
-    error,
-    reset,
-    invalidate,
-    withErrorNotification,
-    lazyFetch,
-    backgroundFetch,
-    checkNotNullWithError,
-  } = useServiceHandler<ProgramItem[]>('programPlanner');
-
-  authBus.on('logout', () => {
-    reset();
+  const api = useAPIService();
+  const { run } = useAction('programPlanner');
+  const items = useCollection<ProgramItem>({
+    name: 'programPlanner',
+    key: useRouteKey('eventId'),
+    fetch: (eventId) => api.fetchProgramItems(eventId),
+    realtime: {
+      resource: 'program_item',
+      fetchOne: (eventId, id) => api.fetchProgramItem(eventId, id),
+    },
   });
 
-  eventBus.on('change', () => {
-    invalidate();
-  });
-
-  // React to live changes pushed from other clients.
-  useRealtimeCollection<ProgramItem>('program_item', {
-    data,
-    invalidate,
-    reload: () => fetchData(undefined, { background: true }),
-    fetchOne: (eventId, id) => apiService.fetchProgramItem(eventId, id),
-  });
-
-  // Replace the event with this id, or append it if not present.
-  function upsertEntry(event: ProgramItem) {
-    const list = data.value ?? [];
-    data.value = list.some((e) => e.id === event.id)
-      ? list.map((e) => (e.id === event.id ? event : e))
-      : [...list, event];
+  function fetchData(eventId?: string) {
+    return items.load(eventId);
   }
 
-  async function fetchData(
-    eventId?: string,
-    opts?: { background?: boolean },
-  ): Promise<void> {
-    const cid = checkNotNullWithError(
-      eventId ?? (route.params.eventId as string),
-    );
-    const fetcher = () => apiService.fetchProgramItems(cid);
-    await (opts?.background ? backgroundFetch(fetcher) : lazyFetch(fetcher));
-  }
-
-  async function createEntry(event: ProgramItemCreateData) {
-    const eventId = route.params.eventId as string;
-    checkNotNullWithError(eventId);
-
+  function createEntry(item: ProgramItemCreateData): Promise<ProgramItem> {
     const tmpId = `#${createUuid()}`;
-
-    // Optimistic update: add event immediately so it appears in the calendar
-    const tmpEvent: ProgramItem = {
-      id: tmpId,
-      title: event.title,
-      details: event.details ?? null,
-      location: event.location ?? null,
-      date: event.date ?? null,
-      time: event.time ?? null,
-      duration: event.duration ?? null,
-      color: event.color ?? null,
-      plan: event.plan ?? 'both',
-    };
-    data.value = [...(data.value ?? []), tmpEvent];
-
-    const result = await withErrorNotification('create', () =>
-      apiService.createProgramItem(eventId, event),
+    return items.mutate(
+      'create',
+      (eventId) => api.createProgramItem(eventId, item),
+      {
+        optimistic: (list) => [...list, placeholder(tmpId, item)],
+        // An upsert, as the realtime "created" echo may have inserted it.
+        apply: (list, created) => upsertById(removeById(list, tmpId), created),
+      },
     );
-
-    if (result) {
-      // Drop the optimistic placeholder and upsert the server response. Using
-      // an id-keyed upsert (rather than a plain replace) dedupes the case where
-      // the realtime "created" echo already inserted the server event.
-      data.value = (data.value ?? []).filter((value) => value.id !== tmpId);
-      upsertEntry(result);
-    } else {
-      // Error occurred - remove optimistic event
-      data.value = data.value?.filter((value) => value.id !== tmpId);
-    }
-
-    return result;
   }
 
-  function isIdOptimistic(id: string): boolean {
-    return id.startsWith('#');
-  }
-
-  async function updateEntry(id: string, event: ProgramItemUpdateData) {
-    const eventId = route.params.eventId as string;
-    checkNotNullWithError(eventId);
-
-    if (isIdOptimistic(id)) {
-      return withErrorNotification('update', () => {
-        throw new Error('Please wait until the event is created');
-      });
-    }
-
-    // Optimistic update: update UI immediately for responsive drag-and-drop
-    const previousData = data.value ? [...data.value] : undefined;
-    const currentEvent = data.value?.find((e) => e.id === id);
-    if (currentEvent) {
-      const optimisticEvent = { ...currentEvent, ...event };
-      data.value = data.value?.map((value) =>
-        value.id === id ? optimisticEvent : value,
-      );
-    }
-
-    const result = await withErrorNotification('update', () =>
-      apiService.updateProgramItem(eventId, id, event),
+  // A placeholder has no server id yet, so it can't be changed until created.
+  function rejectPlaceholder(operation: string): Promise<never> {
+    return run(operation, () =>
+      Promise.reject(new Error('Please wait until the event is created')),
     );
-
-    if (result) {
-      // Reconcile with server response
-      data.value = data.value?.map((value) =>
-        value.id === id ? result : value,
-      );
-    } else {
-      // Error occurred - revert to previous state
-      data.value = previousData;
-    }
   }
 
-  async function deleteEntry(id: string) {
-    const eventId = route.params.eventId as string;
-    checkNotNullWithError(eventId);
-
-    if (isIdOptimistic(id)) {
-      return withErrorNotification('delete', () => {
-        throw new Error('Please wait until the event is created');
-      });
+  async function updateEntry(
+    id: string,
+    update: ProgramItemUpdateData,
+  ): Promise<void> {
+    if (isPlaceholder(id)) {
+      return rejectPlaceholder('update');
     }
 
-    let deleted = false;
-    await withErrorNotification('delete', async () => {
-      await apiService.deleteProgramItem(eventId, id);
-      deleted = true;
-    });
+    await items.mutate(
+      'update',
+      (eventId) => api.updateProgramItem(eventId, id, update),
+      {
+        optimistic: (list) =>
+          list.map((entry) =>
+            entry.id === id ? { ...entry, ...update } : entry,
+          ),
+        apply: replaceById,
+      },
+    );
+  }
 
-    if (deleted) {
-      data.value = data.value?.filter((event) => event.id !== id);
+  async function deleteEntry(id: string): Promise<void> {
+    if (isPlaceholder(id)) {
+      return rejectPlaceholder('delete');
     }
+
+    await items.mutate(
+      'delete',
+      (eventId) => api.deleteProgramItem(eventId, id),
+      { apply: (list) => removeById(list, id) },
+    );
   }
 
   return {
-    reset,
-    data,
-    isLoading,
-    error,
+    data: items.data,
+    isLoading: items.isLoading,
+    error: items.error,
+    reset: items.reset,
     fetchData,
     createEntry,
     updateEntry,
