@@ -4,6 +4,7 @@ import stores from './stores';
 import audit from './audit';
 import privacy from './privacy';
 import tableTemplates from './tableTemplates';
+import tasks from './tasks';
 
 export default {
   app_name: 'Inscriva',
@@ -12,6 +13,7 @@ export default {
   audit,
   privacy,
   tableTemplates,
+  tasks,
   service: {
     internal: 'Internal error',
     invalidParams: 'Invalid parameter(s).',

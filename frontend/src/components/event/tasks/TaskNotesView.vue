@@ -175,6 +175,11 @@ onBeforeUnmount(() => {
   min-width: 0;
 }
 
+/* An editable area of a few lines, like the create dialog's field. */
+.notes-view--editable .notes-view__content :deep(.ProseMirror) {
+  min-height: calc(4 * 1.5em);
+}
+
 /* Buttons are taller than a text line; let them overhang the padding. */
 .notes-view__toolbar {
   margin: -6px -8px -6px 0;

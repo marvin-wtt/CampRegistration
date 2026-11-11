@@ -146,24 +146,18 @@
 import PageHeader from '@/components/common/PageHeader.vue';
 import { useI18n } from 'vue-i18n';
 import { useTaskStore } from '@/stores/task-store';
-import { useEventManagerStore } from '@/stores/event-manager-store';
-import { computed, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import type { Task } from '@camp-registration/common/entities';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
-import { useQuasar } from 'quasar';
-import ConfirmDialog from '@/components/common/dialogs/ConfirmDialog.vue';
-import TaskFormDialog from '@/components/event/tasks/dialogs/TaskFormDialog.vue';
-import TaskDetailsDialog from '@/components/event/tasks/dialogs/TaskDetailsDialog.vue';
 import TaskRow from '@/components/event/tasks/TaskRow.vue';
 import TaskListSkeleton from '@/components/event/tasks/TaskListSkeleton.vue';
 import { usePermissions } from '@/composables/permissions';
 import { useCurrentManager } from '@/composables/currentManager';
+import { useTaskDialogs } from '@/composables/taskDialogs';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 
-const quasar = useQuasar();
 const { t } = useI18n();
 const taskStore = useTaskStore();
-const eventManagerStore = useEventManagerStore();
 const { can } = usePermissions();
 const { currentManagerId } = useCurrentManager();
 
@@ -180,28 +174,15 @@ const filterOptions = computed<
   { value: 'unassigned', icon: 'person_off', label: t('filter.unassigned') },
 ]);
 
-// The roster is only needed to populate the assignee picker; every role that can
-// create or update a task also holds `event.managers.view`.
-const canAssign = computed<boolean>(
-  () => can('event.tasks.create') || can('event.tasks.update'),
-);
-
 // Started during setup, not awaited: the stores flag themselves loading before
 // the first render, so the page renders its skeletons instead of an idle frame.
 void taskStore.fetchData();
 
-// Permissions resolve with the profile and the event, both of which the parent
-// layout loads after this page mounts — so the roster has to be fetched when
-// the answer arrives, not once at mount.
-watch(
-  canAssign,
-  (allowed) => {
-    if (allowed) {
-      void eventManagerStore.fetchData();
-    }
-  },
-  { immediate: true },
-);
+const {
+  showDetails: showDetailsDialog,
+  showAdd: showAddDialog,
+  showDelete: showDeleteDialog,
+} = useTaskDialogs();
 
 const error = computed<string | null>(() => {
   return taskStore.error;
@@ -310,49 +291,6 @@ function assigneeLabel(task: Task): string {
 
   return assigneeName(task);
 }
-
-function showDetailsDialog(task: Task) {
-  quasar
-    .dialog({
-      component: TaskDetailsDialog,
-      componentProps: {
-        task,
-        managers: eventManagerStore.data ?? [],
-        canUpdate: can('event.tasks.update'),
-        canDelete: can('event.tasks.delete'),
-      },
-    })
-    .onOk((result: { action: 'delete' }) => {
-      if (result.action === 'delete') {
-        showDeleteDialog(task);
-      }
-    });
-}
-
-function showAddDialog() {
-  quasar.dialog({
-    component: TaskFormDialog,
-    componentProps: {
-      managers: eventManagerStore.data ?? [],
-    },
-  });
-}
-
-function showDeleteDialog(task: Task) {
-  quasar
-    .dialog({
-      component: ConfirmDialog,
-      componentProps: {
-        title: t('dialog.delete.title'),
-        message: t('dialog.delete.message', { title: task.title }),
-        okLabel: t('action.delete'),
-        color: 'negative',
-      },
-    })
-    .onOk(() => {
-      void taskStore.deleteData(task.id);
-    });
-}
 </script>
 
 <style scoped>
@@ -447,12 +385,6 @@ filter:
 
 action:
   add: 'Add task'
-  delete: 'Delete'
-
-dialog:
-  delete:
-    title: 'Delete task'
-    message: 'Do you really want to delete the task "{title}"?'
 
 empty:
   title: 'No tasks yet'
@@ -476,12 +408,6 @@ filter:
 
 action:
   add: 'Aufgabe hinzufügen'
-  delete: 'Löschen'
-
-dialog:
-  delete:
-    title: 'Aufgabe löschen'
-    message: 'Möchtest du die Aufgabe "{title}" wirklich löschen?'
 
 empty:
   title: 'Noch keine Aufgaben'
@@ -505,12 +431,6 @@ filter:
 
 action:
   add: 'Ajouter une tâche'
-  delete: 'Supprimer'
-
-dialog:
-  delete:
-    title: 'Supprimer la tâche'
-    message: 'Veux-tu vraiment supprimer la tâche « {title} » ?'
 
 empty:
   title: 'Aucune tâche pour le moment'
@@ -534,12 +454,6 @@ filter:
 
 action:
   add: 'Dodaj zadanie'
-  delete: 'Usuń'
-
-dialog:
-  delete:
-    title: 'Usuń zadanie'
-    message: 'Czy na pewno chcesz usunąć zadanie „{title}”?'
 
 empty:
   title: 'Brak zadań'
@@ -563,12 +477,6 @@ filter:
 
 action:
   add: 'Přidat úkol'
-  delete: 'Smazat'
-
-dialog:
-  delete:
-    title: 'Smazat úkol'
-    message: 'Opravdu chceš smazat úkol „{title}“?'
 
 empty:
   title: 'Zatím žádné úkoly'
