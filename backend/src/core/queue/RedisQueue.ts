@@ -84,7 +84,6 @@ export class RedisQueue<P, R, N extends string> extends Queue<P, R, N> {
     const failedJobs = await this.bull.getJobs(['failed']);
     const delayedJobs = await this.bull.getJobs(['delayed']);
     const pendingJobs = await this.bull.getJobs([
-      'paused',
       'wait',
       'waiting',
       'waiting-children',
@@ -171,14 +170,13 @@ export class RedisQueue<P, R, N extends string> extends Queue<P, R, N> {
       'failed',
       'waiting',
       'delayed',
-      'paused',
       'prioritized',
     );
 
     return {
       active: counts.active + counts.prioritized,
       failed: counts.failed,
-      pending: counts.waiting + counts.paused,
+      pending: counts.waiting,
       delayed: counts.delayed,
     };
   }

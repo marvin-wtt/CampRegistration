@@ -180,10 +180,11 @@ export const useEventFilesStore = defineStore('eventFiles', () => {
       },
       {
         feedback: 'progress',
-        apply: (list, created) => [
-          ...(deleteError ? list : removeById(list, oldFile.id)),
-          created,
-        ],
+        apply: (list, created) =>
+          upsertById(
+            deleteError ? list : removeById(list, oldFile.id),
+            created,
+          ),
       },
     );
     if (deleteError) {

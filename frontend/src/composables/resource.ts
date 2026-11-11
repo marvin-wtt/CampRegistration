@@ -8,7 +8,6 @@ import {
   toRaw,
   watch,
 } from 'vue';
-import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import type { RealtimeResource } from '@camp-registration/common/realtime';
 import { useAuthBus } from '@/composables/bus';
@@ -226,18 +225,10 @@ function createResource<T>(options: ResourceOptions<T>) {
   /** Marks the data stale, so the next `load` fetches it again. */
   function invalidate() {
     stale = true;
-  }
-
-  /** Brings `key`'s data up to date: reloads it if shown, else marks it stale. */
-  function refresh(key: string) {
-    if (loadedKey.value !== key) {
-      return;
+    // A response on its way predates the change; a reload replaces it.
+    if (fetchesInFlight > 0) {
+      void reload();
     }
-    if (data.value === undefined) {
-      stale = true;
-      return;
-    }
-    void reload();
   }
 
   function reset() {
@@ -318,8 +309,9 @@ function createResource<T>(options: ResourceOptions<T>) {
         if (data.value !== undefined) {
           data.value = apply(data.value, result);
         }
-        // A fetch started before this write would bring back the old state.
-        if (fetchesInFlight > 0 && !reloadAfter) {
+        // A fetch started before this write would bring back the old state;
+        // a failed load left nothing to add to, so the whole data is fetched.
+        if (!reloadAfter && (fetchesInFlight > 0 || data.value === undefined)) {
           void reload();
         }
       }
@@ -360,7 +352,6 @@ function createResource<T>(options: ResourceOptions<T>) {
     load,
     reload,
     invalidate,
-    refresh,
     reset,
     seed,
     update,
@@ -373,7 +364,7 @@ function createResource<T>(options: ResourceOptions<T>) {
 
 export type CollectionRealtimeOptions<Item extends { id: string }> = Omit<
   RealtimeCollectionOptions<Item>,
-  'data' | 'invalidate' | 'reload'
+  'data' | 'invalidate' | 'reload' | 'key'
 > & { resource: RealtimeResource };
 
 export interface CollectionOptions<
@@ -387,7 +378,11 @@ export interface CollectionOptions<
 export function useCollection<Item extends { id: string }>(
   options: CollectionOptions<Item>,
 ) {
-  const { resource, internal } = createResource<Item[]>(options);
+  // An empty list may come back as nothing; a write then has a list to join.
+  const { resource, internal } = createResource<Item[]>({
+    ...options,
+    fetch: async (key) => (await options.fetch(key)) ?? [],
+  });
 
   if (options.realtime) {
     const { resource: realtimeResource, ...callbacks } = options.realtime;
@@ -406,6 +401,7 @@ export function useCollection<Item extends { id: string }>(
       }),
       invalidate: resource.invalidate,
       reload: resource.reload,
+      ...(options.key ? { key: options.key } : {}),
     });
   }
 
@@ -421,13 +417,4 @@ export function requireKey(key: () => string | undefined): string {
   return value;
 }
 
-/** The scope key of a route param, e.g. `useRouteKey('eventId')`. */
-export function useRouteKey(param: string): () => string | undefined {
-  // Undefined outside a router (e.g. a component test): no scope is open.
-  const route = useRoute() as ReturnType<typeof useRoute> | undefined;
-  return () => {
-    const value = route?.params[param];
-    const key = Array.isArray(value) ? value[0] : value;
-    return key && key.length > 0 ? key : undefined;
-  };
-}
+export { useRouteKey } from '@/composables/routeKey';

@@ -244,30 +244,21 @@ describe('concurrent load', () => {
   });
 });
 
-describe('refresh', () => {
-  it('reloads the scope when its data is shown', async () => {
+describe('invalidate', () => {
+  it('refetches when it arrives during a load', async () => {
+    const first = deferred<Row[]>();
     const fetch = vi
       .fn()
-      .mockResolvedValueOnce([row('1')])
-      .mockResolvedValueOnce([row('2')]);
+      .mockReturnValueOnce(first.promise)
+      .mockResolvedValueOnce([row('changed')]);
     const resource = setup(fetch);
-    await resource.load();
 
-    resource.refresh('A');
-    await flushPromises();
+    const loading = resource.load();
+    resource.invalidate();
+    first.resolve([row('old')]);
+    await loading;
 
-    expect(resource.data.value).toEqual([row('2')]);
-  });
-
-  it('ignores another scope', async () => {
-    const fetch = vi.fn().mockResolvedValue([row('1')]);
-    const resource = setup(fetch);
-    await resource.load();
-
-    resource.refresh('B');
-    await flushPromises();
-
-    expect(fetch).toHaveBeenCalledOnce();
+    expect(resource.data.value).toEqual([row('changed')]);
   });
 });
 
@@ -613,6 +604,23 @@ describe('mutate', () => {
     expect(resource.data.value).toEqual([row('1'), row('derived')]);
   });
 
+  it('fetches the list after a write when its load had failed', async () => {
+    const fetch = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValueOnce([row('1'), row('2')]);
+    const resource = setup(fetch);
+    await resource.load();
+
+    await resource.mutate('create', () => Promise.resolve(row('2')), {
+      apply: (list, created) => [...list, created],
+    });
+    await flushPromises();
+
+    expect(resource.data.value).toEqual([row('1'), row('2')]);
+    expect(resource.error.value).toBeNull();
+  });
+
   it('counts as pending while it runs', async () => {
     const request = deferred<void>();
     const resource = setup(() => Promise.resolve([]));
@@ -653,6 +661,22 @@ describe('mutate', () => {
     expect(toast).toHaveBeenCalledWith(
       expect.objectContaining({ type: 'negative', caption: 'offline' }),
     );
+  });
+});
+
+describe('useCollection', () => {
+  it('takes a missing list as an empty one', async () => {
+    const collection = useCollection<Row>({
+      key: () => mocks.route.params.eventId,
+      fetch: () => Promise.resolve(undefined as unknown as Row[]),
+    });
+    await collection.load();
+
+    await collection.mutate('create', () => Promise.resolve(row('1')), {
+      apply: (list, created) => [...list, created],
+    });
+
+    expect(collection.data.value).toEqual([row('1')]);
   });
 });
 

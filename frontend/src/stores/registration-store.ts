@@ -20,9 +20,10 @@ export const useRegistrationsStore = defineStore('registrations', () => {
   const { t } = useI18n({ useScope: 'global' });
   // Live changes are refetched through the REST API (where full permissions
   // apply) and reconciled into the list.
+  const eventKey = useRouteKey('eventId');
   const registrations = useCollection<Registration>({
     name: 'registration',
-    key: useRouteKey('eventId'),
+    key: eventKey,
     fetch: (eventId) => api.fetchRegistrations(eventId),
     realtime: {
       resource: 'registration',
@@ -31,8 +32,13 @@ export const useRegistrationsStore = defineStore('registrations', () => {
     },
   });
 
-  // Computed values follow the event's form, whoever changed it.
-  useEventBus().on('update', (event) => registrations.refresh(event.id));
+  // Marked stale, not refetched: a form being edited changes on every
+  // autosave, and the next visit to the list loads it fresh.
+  useEventBus().on('formChange', (eventId) => {
+    if (eventId === eventKey()) {
+      registrations.invalidate();
+    }
+  });
 
   function showRealtimeCreateNotification(registration: Registration) {
     quasar.notify({

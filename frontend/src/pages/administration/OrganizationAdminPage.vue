@@ -306,17 +306,16 @@ function review(organization: Organization) {
       componentProps: { organization },
     })
     .onOk((decision: OrganizationReviewResult) => {
-      void (async () => {
-        // The decision can legitimately be refused — an organization cannot be
-        // verified before its privacy notice is published, which is the state of
-        // every fresh submission. Without this the dialog just closes.
-        await pageAction.run(
+      // The decision can legitimately be refused — an organization cannot be
+      // verified before its privacy notice is published, which is the state of
+      // every fresh submission. Without this the dialog just closes.
+      void pageAction
+        .run(
           'review',
           () => api.reviewOrganization(organization.id, decision),
           { errorMessage: t('notify.reviewFailed') },
-        );
-        reload();
-      })();
+        )
+        .then(() => reload());
     });
 }
 </script>

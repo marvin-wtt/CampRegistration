@@ -1,6 +1,7 @@
 import { onScopeDispose } from 'vue';
 import type { Ref } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRouteKey } from '@/composables/routeKey';
+import { removeById, upsertById } from '@/utils/collection';
 import type {
   RealtimeEvent,
   RealtimeResource,
@@ -11,6 +12,8 @@ import { isAPIServiceError } from '@/services/APIService';
 export interface RealtimeCollectionOptions<T extends { id: string }> {
   /** The list state to reconcile (usually a resource's data). */
   data: Ref<T[] | undefined>;
+  /** The open scope the events belong to; defaults to the route's event. */
+  key?: () => string | undefined;
   /** Mark the list stale without fetching (list not currently loaded). */
   invalidate: () => void;
   /** Invalidate and refetch the full list. */
@@ -67,7 +70,6 @@ export function useRealtimeCollection<T extends { id: string }>(
   resource: RealtimeResource,
   options: RealtimeCollectionOptions<T>,
 ): void {
-  const route = useRoute();
   const realtime = useRealtimeStore();
 
   const debounceMs = options.debounceMs ?? DEFAULT_DEBOUNCE_MS;
@@ -80,23 +82,18 @@ export function useRealtimeCollection<T extends { id: string }>(
   // generation discard their result.
   let generation = 0;
 
-  const activeEventId = (): string | undefined => {
-    const value = route.params.eventId;
-    return Array.isArray(value) ? value[0] : value;
-  };
+  const activeEventId = options.key ?? useRouteKey('eventId');
 
   function upsert(item: T) {
     const list = options.data.value;
     if (list === undefined) {
       return;
     }
-    if (list.some((entry) => entry.id === item.id)) {
-      options.data.value = list.map((entry) =>
-        entry.id === item.id ? item : entry,
-      );
+    const exists = list.some((entry) => entry.id === item.id);
+    options.data.value = upsertById(list, item);
+    if (exists) {
       options.onUpdate?.(item);
     } else {
-      options.data.value = [...list, item];
       options.onCreate?.(item);
     }
   }
@@ -106,7 +103,7 @@ export function useRealtimeCollection<T extends { id: string }>(
     if (list === undefined || !list.some((entry) => entry.id === id)) {
       return;
     }
-    options.data.value = list.filter((entry) => entry.id !== id);
+    options.data.value = removeById(list, id);
     options.onDelete?.(id);
   }
 

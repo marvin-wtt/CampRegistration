@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useAPIService } from '@/services/APIService';
 import { useCollection, useRouteKey } from '@/composables/resource';
 import {
@@ -41,6 +42,7 @@ function withBed(
 // toast; assigning a bed shows in place and only reports failures.
 export const useRoomStore = defineStore('room', () => {
   const api = useAPIService();
+  const { t } = useI18n({ useScope: 'global' });
   const rooms = useCollection<Room>({
     name: 'room',
     key: useRouteKey('eventId'),
@@ -76,6 +78,12 @@ export const useRoomStore = defineStore('room', () => {
     capacity?: number,
   ): Promise<Room> {
     const beds = rooms.data.value?.find((room) => room.id === roomId)?.beds;
+    if (capacity !== undefined && !beds) {
+      // Without the beds there is no telling which to add or remove.
+      return rooms.mutate('update', () =>
+        Promise.reject(new Error(t('service.notLoaded'))),
+      );
+    }
     const diff = capacity === undefined || !beds ? 0 : capacity - beds.length;
     const add = Math.max(diff, 0);
     const removeBedIds =

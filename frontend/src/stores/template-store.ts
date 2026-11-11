@@ -40,9 +40,10 @@ function diffTemplates(
 export const useTemplateStore = defineStore('templates', () => {
   const api = useAPIService();
   const { t } = useI18n({ useScope: 'global' });
+  const eventKey = useRouteKey('eventId');
   const templates = useCollection<TableTemplate>({
     name: 'template',
-    key: useRouteKey('eventId'),
+    key: eventKey,
     fetch: async (eventId) =>
       (await api.fetchTableTemplates(eventId)).sort(
         (a, b) => a.order - b.order,
@@ -52,8 +53,13 @@ export const useTemplateStore = defineStore('templates', () => {
     realtime: { resource: 'table_template' },
   });
 
-  // Generated templates follow the event's form, whoever changed it.
-  useEventBus().on('update', (event) => templates.refresh(event.id));
+  // Marked stale, not refetched: a form being edited changes on every
+  // autosave, and the next visit to the list loads it fresh.
+  useEventBus().on('formChange', (eventId) => {
+    if (eventId === eventKey()) {
+      templates.invalidate();
+    }
+  });
 
   function fetchData(eventId?: string) {
     return templates.load(eventId);

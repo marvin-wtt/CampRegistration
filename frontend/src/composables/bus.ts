@@ -17,6 +17,8 @@ const eventBus = new EventBus<{
   create: (event: Event) => void;
   update: (event: Event) => void;
   delete: (eventId: string) => void;
+  // The registration form changed; computed values and templates follow it.
+  formChange: (eventId: string) => void;
 }>();
 
 // Keeps the organizations list in sync with the details view.

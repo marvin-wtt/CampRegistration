@@ -8,6 +8,7 @@ import { useEventBus } from '@/composables/bus';
 import type { RealtimeEvent } from '@camp-registration/common/realtime';
 import { useRealtimeStore } from '@/stores/realtime-store';
 import { omitProperty } from '@/utils/omitProperty';
+import { isDeepEqual } from '@/utils/deepEqual';
 
 export const useEventDetailsStore = defineStore('eventDetails', () => {
   const router = useRouter();
@@ -52,10 +53,12 @@ export const useEventDetailsStore = defineStore('eventDetails', () => {
       return;
     }
     // Passed on like a local update, so the stores derived from it follow.
+    const formBefore = details.data.value?.form;
     void details.reload().then(() => {
       const updated = details.data.value;
       if (updated?.id === event.id) {
         bus.emit('update', updated);
+        emitFormChange(formBefore, updated);
       }
     });
   });
@@ -88,10 +91,17 @@ export const useEventDetailsStore = defineStore('eventDetails', () => {
     return details.load(eventId);
   }
 
+  function emitFormChange(before: unknown, updated: EventDetails) {
+    if (!isDeepEqual(before, updated.form)) {
+      bus.emit('formChange', updated.id);
+    }
+  }
+
   async function updateData(
     update: Partial<EventDetails>,
     feedback: Feedback = 'progress',
   ): Promise<EventDetails> {
+    const formBefore = details.data.value?.form;
     const event = await details.mutate(
       'update',
       (eventId) =>
@@ -106,6 +116,7 @@ export const useEventDetailsStore = defineStore('eventDetails', () => {
       },
     );
     bus.emit('update', event);
+    emitFormChange(formBefore, event);
     return event;
   }
 

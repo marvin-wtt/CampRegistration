@@ -478,14 +478,14 @@ function onResetTwoFactor(user: User) {
 }
 
 async function resetTwoFactor(id: string) {
-  await run('update', () => api.resetUserTwoFactor(id), {
+  await run('resetTwoFactor', () => api.resetUserTwoFactor(id), {
     feedback: 'progress',
   });
   reload();
 }
 
 async function createUser(data: UserCreateData) {
-  await run('update', () => api.createUser(data), { feedback: 'progress' });
+  await run('create', () => api.createUser(data), { feedback: 'progress' });
   reload();
 }
 

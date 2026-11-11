@@ -240,14 +240,7 @@
 </template>
 
 <script lang="ts" setup>
-import {
-  computed,
-  nextTick,
-  onBeforeUnmount,
-  onMounted,
-  ref,
-  watch,
-} from 'vue';
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import ContactSelect from '@/components/event/contact/ContactSelect.vue';
 import type {
@@ -301,7 +294,8 @@ const { run } = useAction();
 const { can } = usePermissions();
 const { contactFor } = useRegistrationContact();
 
-onMounted(async () => {
+// Called at the end of setup, once the refs it fills are declared.
+async function initialize() {
   if (initialContacts?.length) {
     to.value = [...initialContacts];
   } else if (!draft) {
@@ -316,7 +310,7 @@ onMounted(async () => {
   if (to.value.length > 0) {
     applyDefaultReplyTo();
   }
-});
+}
 
 const formRef = ref<QForm>();
 const to = ref<Contact[]>([]);
@@ -842,6 +836,8 @@ function discard() {
 }
 
 defineExpose({ dirty, unsaved, hasContent, load });
+
+void initialize();
 </script>
 
 <style scoped>
