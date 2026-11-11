@@ -26,7 +26,9 @@ ARG SURVEYJS_LICENSE_KEY
 COPY . .
 RUN npm ci
 RUN npm run build
-RUN npm prune --omit=dev
+# Prune only removes packages; its scripts (e.g. quasar prepare) would run
+# after their dev-dep binaries are already gone.
+RUN npm prune --omit=dev --ignore-scripts
 
 # Stage 2 — runtime.
 FROM node:24-bookworm-slim AS runtime
