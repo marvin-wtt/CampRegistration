@@ -6,7 +6,45 @@
   "packages": {
     ".": {
       "package-name": "camp-registration",
-      "skip-changelog": true
+      "skip-changelog": true,
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "common/package.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "backend/package.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "frontend/package.json",
+          "jsonpath": "$.version"
+        },
+        { "type": "json", "path": "e2e/package.json", "jsonpath": "$.version" },
+        {
+          "type": "json",
+          "path": "package-lock.json",
+          "jsonpath": "$.packages.common.version"
+        },
+        {
+          "type": "json",
+          "path": "package-lock.json",
+          "jsonpath": "$.packages.backend.version"
+        },
+        {
+          "type": "json",
+          "path": "package-lock.json",
+          "jsonpath": "$.packages.frontend.version"
+        },
+        {
+          "type": "json",
+          "path": "package-lock.json",
+          "jsonpath": "$.packages.e2e.version"
+        }
+      ]
     }
   }
 }
