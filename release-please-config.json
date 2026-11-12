@@ -6,7 +6,7 @@
   "packages": {
     ".": {
       "package-name": "camp-registration",
-      "changelog-path": "CHANGELOG.md"
+      "skip-changelog": true
     }
   }
 }
