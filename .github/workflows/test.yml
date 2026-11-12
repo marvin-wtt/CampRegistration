@@ -566,3 +566,21 @@ jobs:
             e2e/test-results/
           if-no-files-found: ignore
           retention-days: 14
+
+  # The single required check for main. Skipped matrix jobs report under the
+  # bare job name, never as "test-e2e (chromium, chromium)", so requiring the
+  # matrix legs directly blocks every PR whose tests are skipped (release PRs).
+  tests-passed:
+    if: always()
+    needs:
+      - verify-migrations
+      - test-common
+      - test-backend
+      - test-frontend
+      - build-e2e
+      - test-e2e
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Fail if a required job failed
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1
