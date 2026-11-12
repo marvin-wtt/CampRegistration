@@ -101,6 +101,13 @@ jobs:
             - Breaking changes must say what operators or users have to do.
             - No heading with the version and no intro or closing text.
 
+            Leave out:
+            - Fixes for bugs introduced within this release; they never shipped.
+              Describe the feature in its final state instead.
+            - Changes reverted within this release.
+            - Test-only, docs-only and formatting changes.
+            - Release PRs (chore(main): release …) and merge commits.
+
             Only write the file. Don't create comments, edit releases or push.
           claude_args: |
             --max-turns 40
