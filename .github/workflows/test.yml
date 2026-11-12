@@ -25,7 +25,7 @@ permissions:
 jobs:
   verify-migrations:
     runs-on: ubuntu-24.04
-    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    if: (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && !startsWith(github.head_ref, 'release-please--')
 
     services:
       # Use MySQL (not MariaDB) as the shadow database. Prisma's `mysql` provider
@@ -72,7 +72,7 @@ jobs:
 
   test-common:
     runs-on: ubuntu-24.04
-    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    if: (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && !startsWith(github.head_ref, 'release-please--')
 
     steps:
       - name: Checkout code
@@ -107,7 +107,7 @@ jobs:
 
   test-backend:
     runs-on: ubuntu-24.04
-    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    if: (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && !startsWith(github.head_ref, 'release-please--')
 
     strategy:
       matrix:
@@ -206,7 +206,7 @@ jobs:
   # caught a structural MJML error the old build-time `mjml` CLI used to.
   test-backend-email-visual:
     runs-on: ubuntu-24.04
-    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    if: (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && !startsWith(github.head_ref, 'release-please--')
 
     container:
       image: mcr.microsoft.com/playwright:v1.65.0-noble
@@ -251,7 +251,7 @@ jobs:
 
   test-frontend:
     runs-on: ubuntu-24.04
-    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    if: (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && !startsWith(github.head_ref, 'release-please--')
 
     steps:
       - name: Checkout code
@@ -295,7 +295,7 @@ jobs:
   # This avoids five identical builds without delaying the independent unit tests.
   build-e2e:
     runs-on: ubuntu-24.04
-    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    if: (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && !startsWith(github.head_ref, 'release-please--')
 
     env:
       APP_PORT: 3001
@@ -360,7 +360,7 @@ jobs:
   test-e2e:
     needs: build-e2e
     runs-on: ubuntu-24.04
-    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    if: (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && !startsWith(github.head_ref, 'release-please--')
 
     strategy:
       fail-fast: false
@@ -476,7 +476,7 @@ jobs:
   test-e2e-visual:
     needs: build-e2e
     runs-on: ubuntu-24.04
-    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    if: (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && !startsWith(github.head_ref, 'release-please--')
 
     container:
       image: mcr.microsoft.com/playwright:v1.65.0-noble
