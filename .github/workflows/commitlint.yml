@@ -1,0 +1,31 @@
+name: Commit Lint
+
+# release-please derives the version bump from every commit that lands on
+# main (merge commits keep branch commits), so each one must be a
+# Conventional Commit. Merge commits themselves are ignored.
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - reopened
+      - synchronize
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  commitlint:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: wagoid/commitlint-github-action@v6
+        with:
+          configFile: commitlint.config.mjs

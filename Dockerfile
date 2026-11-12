@@ -26,7 +26,10 @@ ARG SURVEYJS_LICENSE_KEY
 COPY . .
 RUN npm ci
 RUN npm run build
-RUN npm prune --omit=dev
+# --ignore-scripts: prune re-runs workspace postinstalls, and `quasar prepare`
+# fails once the dev-only quasar CLI is gone. Everything they produce already
+# exists from `npm ci`.
+RUN npm prune --omit=dev --ignore-scripts
 
 # Stage 2 — runtime.
 FROM node:24-bookworm-slim AS runtime
