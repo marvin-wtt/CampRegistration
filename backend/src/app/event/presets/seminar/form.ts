@@ -38,6 +38,7 @@ export default {
         {
           type: 'expression',
           name: 'i_location',
+          startWithNewLine: false,
           title: {
             en: 'Location',
             de: 'Ort',
@@ -51,6 +52,7 @@ export default {
         {
           type: 'expression',
           name: 'i_price',
+          width: '50%',
           title: {
             en: 'Price',
             de: 'Preis',
