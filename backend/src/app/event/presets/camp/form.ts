@@ -30,6 +30,20 @@ export default {
         },
         {
           type: 'expression',
+          name: 'i_location',
+          startWithNewLine: false,
+          title: {
+            en: 'Location',
+            de: 'Ort',
+            fr: 'Lieu',
+            pl: 'Miejsce',
+            cs: 'Místo',
+            default: 'Location',
+          },
+          description: '{event.location}',
+        },
+        {
+          type: 'expression',
           name: 'i_age',
           title: {
             en: 'Age',
@@ -50,20 +64,8 @@ export default {
         },
         {
           type: 'expression',
-          name: 'i_location',
-          title: {
-            en: 'Location',
-            de: 'Ort',
-            fr: 'Lieu',
-            pl: 'Miejsce',
-            cs: 'Místo',
-            default: 'Location',
-          },
-          description: '{event.location}',
-        },
-        {
-          type: 'expression',
           name: 'i_price',
+          startWithNewLine: false,
           title: {
             en: 'Price',
             de: 'Preis',
