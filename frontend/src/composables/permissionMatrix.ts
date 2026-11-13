@@ -23,14 +23,16 @@ export interface PermissionRow {
 /**
  * Splits `event.rooms.beds.create` into group `rooms.beds` and action `create`.
  * A permission naming the scope itself (`event.view`) falls into the group named
- * after the scope.
+ * after the scope. A `:own` suffix stays on the action (`edit:own`).
  */
 export function splitPermission(
   scope: PermissionScope,
   permission: string,
 ): { group: string; action: string } {
-  const segments = permission.split('.');
-  const action = segments[segments.length - 1] ?? permission;
+  const [base = permission, qualifier] = permission.split(':');
+  const segments = base.split('.');
+  const verb = segments[segments.length - 1] ?? base;
+  const action = qualifier ? `${verb}:${qualifier}` : verb;
   const group = segments.slice(1, -1).join('.');
 
   return { group: group === '' ? scope : group, action };

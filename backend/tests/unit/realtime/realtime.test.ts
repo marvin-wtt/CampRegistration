@@ -4,7 +4,7 @@ import type {
   RealtimeResource,
 } from '@camp-registration/common/realtime';
 import { RESOURCE_VIEW_PERMISSION } from '@camp-registration/common/realtime';
-import type { Permission } from '@camp-registration/common/permissions';
+import type { ScopeGrant } from '@camp-registration/common/permissions';
 import { MemoryRealtimeBus } from '#core/realtime/MemoryRealtimeBus';
 import { RealtimeService } from '#core/realtime/RealtimeService';
 import { runWithRequestContext } from '#core/context/requestContext';
@@ -20,7 +20,7 @@ const memoryConfig = {
 } as AppConfig;
 
 const subscriber = (
-  ...permissions: Permission[]
+  ...permissions: ScopeGrant<'event'>[]
 ): RealtimeSubscriber & { managerId: string } => ({
   managerId: 'manager-self',
   permissions: new Set(permissions),

@@ -1,5 +1,6 @@
 // Helpers
 export * from './Identifiable.js';
+export * from './Ownable.js';
 export * from './Pagination.js';
 export * from './Timestamps.js';
 export * from './Translatable.js';

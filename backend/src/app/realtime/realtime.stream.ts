@@ -1,7 +1,7 @@
 import type { Request, RequestHandler, Response } from 'express';
 import httpStatus from 'http-status';
 import type { RealtimeEvent } from '@camp-registration/common/realtime';
-import type { Permission } from '@camp-registration/common/permissions';
+import type { ScopeGrant } from '@camp-registration/common/permissions';
 import { RealtimeService } from '#core/realtime/RealtimeService';
 import { resolve } from '#core/ioc/container';
 import ApiError from '#core/router/ApiError';
@@ -20,7 +20,7 @@ export interface RealtimeSubscriber {
    * ever affect the permissions of that one manager, never anyone else's.
    */
   managerId: string;
-  permissions: ReadonlySet<Permission>;
+  permissions: ReadonlySet<ScopeGrant<'event'>>;
   /** Event-manager expiry; `null` = never expires. */
   expiresAt: Date | null;
   /**

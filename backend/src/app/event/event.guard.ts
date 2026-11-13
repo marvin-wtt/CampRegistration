@@ -1,7 +1,12 @@
 import type { Request } from 'express';
 import type { ScopePermission } from '@camp-registration/common/permissions';
 import { type GuardFn, or } from '#core/guard';
-import { scoped, type ScopeResolver } from '#core/permission/permission.guard';
+import {
+  scoped,
+  scopedView,
+  type ScopeResolver,
+} from '#core/permission/permission.guard';
+import type { ModelKey } from '#core/permission/ownership';
 import ApiError from '#core/router/ApiError';
 import httpStatus from 'http-status';
 import { EventService } from '#app/event/event.service';
@@ -22,7 +27,12 @@ export const eventScopeResolver: ScopeResolver<'event'> = {
 
 export const hasEventPermission = (
   permission: ScopePermission<'event'>,
-): GuardFn => scoped('event', permission);
+  options: { own?: ModelKey } = {},
+): GuardFn => scoped('event', permission, options);
+
+/** For lists with `?view=all|own`; see {@link scopedView}. */
+export const hasEventView = (permission: ScopePermission<'event'>): GuardFn =>
+  scopedView('event', permission);
 
 export const registrationOpen = (req: Request): boolean => {
   const event = req.modelOrFail('event');

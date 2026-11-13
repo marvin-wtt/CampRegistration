@@ -3,7 +3,7 @@ import type {
   PermissionScope,
   RoleToPermissions,
   ScopedPermissions,
-  ScopePermission,
+  ScopeGrant,
   ScopeRole,
 } from '@camp-registration/common/permissions';
 import { PERMISSION_SCOPES } from '@camp-registration/common/permissions';
@@ -14,10 +14,10 @@ import { PERMISSION_SCOPES } from '@camp-registration/common/permissions';
  * complete policy.
  */
 export class ScopeRegistry<S extends PermissionScope> {
-  private map = new Map<ScopeRole<S>, Set<ScopePermission<S>>>();
+  private map = new Map<ScopeRole<S>, Set<ScopeGrant<S>>>();
 
-  register(role: ScopeRole<S>, perms: ScopePermission<S>[]) {
-    const set = this.map.get(role) ?? new Set<ScopePermission<S>>();
+  register(role: ScopeRole<S>, perms: ScopeGrant<S>[]) {
+    const set = this.map.get(role) ?? new Set<ScopeGrant<S>>();
     perms.forEach((p) => set.add(p));
     this.map.set(role, set);
   }
@@ -25,18 +25,18 @@ export class ScopeRegistry<S extends PermissionScope> {
   registerAll(permissions: RoleToPermissions<S>) {
     const entries = Object.entries(permissions) as [
       ScopeRole<S>,
-      ScopePermission<S>[],
+      ScopeGrant<S>[],
     ][];
     for (const [role, perms] of entries) {
       this.register(role, perms);
     }
   }
 
-  get(role: ScopeRole<S>): ScopePermission<S>[] {
+  get(role: ScopeRole<S>): ScopeGrant<S>[] {
     return Array.from(this.map.get(role) ?? []);
   }
 
-  getPermissions(role: string): ScopePermission<S>[] {
+  getPermissions(role: string): ScopeGrant<S>[] {
     return this.map.has(role as ScopeRole<S>)
       ? this.get(role as ScopeRole<S>)
       : [];
@@ -46,7 +46,7 @@ export class ScopeRegistry<S extends PermissionScope> {
     return this.map.has(role as ScopeRole<S>);
   }
 
-  getAll(): Record<string, ScopePermission<S>[]> {
+  getAll(): Record<string, ScopeGrant<S>[]> {
     return Object.fromEntries(
       [...this.map.entries()].map(([role, perms]) => [role, Array.from(perms)]),
     );

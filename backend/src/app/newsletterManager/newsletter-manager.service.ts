@@ -2,7 +2,7 @@ import { BaseService } from '#core/base/BaseService';
 import { inject, injectable } from 'inversify';
 import type {
   NewsletterManagerRole,
-  NewsletterPermission,
+  ScopeGrant,
 } from '@camp-registration/common/permissions';
 import { permissionRegistry } from '#core/permission/permission.registry';
 import { OrganizationMemberService } from '#app/organizationMember/organization-member.service';
@@ -40,7 +40,7 @@ export class NewsletterManagerService extends BaseService {
   async getManagerPermissions(
     newsletterId: string,
     userId: string,
-  ): Promise<ReadonlySet<NewsletterPermission> | null> {
+  ): Promise<ReadonlySet<ScopeGrant<'newsletter'>> | null> {
     const [manager, organizationPermissions] = await Promise.all([
       this.getManagerByUserId(newsletterId, userId),
       this.organizationMembers.getOrganizationNewsletterPermissions(

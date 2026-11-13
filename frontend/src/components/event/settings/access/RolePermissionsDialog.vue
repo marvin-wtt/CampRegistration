@@ -49,6 +49,7 @@
           <div
             class="pm-matrix"
             role="table"
+            :style="{ '--pm-role-count': roles.length }"
           >
             <!-- Role header -->
             <div
@@ -297,9 +298,13 @@ function groupLabel(group: string): string {
   return te(key) ? t(key) : group;
 }
 
+/** `edit:own` reads "Edit (own)": only on records the user owns. */
 function actionLabel(action: string): string {
-  const key = `permissions.action.${ACTION_I18N_ALIAS[action] ?? action}`;
-  return te(key) ? t(key) : action;
+  const [verb = action, qualifier] = action.split(':');
+  const key = `permissions.action.${ACTION_I18N_ALIAS[verb] ?? verb}`;
+  const label = te(key) ? t(key) : verb;
+
+  return qualifier === 'own' ? `${label} (${t('permissions.own')})` : label;
 }
 
 function groupIcon(group: string): string {
@@ -307,14 +312,15 @@ function groupIcon(group: string): string {
 }
 
 function actionIcon(action: string): string {
-  return ACTION_ICONS[action] ?? 'circle';
+  const [verb = action] = action.split(':');
+  return ACTION_ICONS[verb] ?? 'circle';
 }
 </script>
 
 <style scoped>
 .roles-dialog {
   width: 100%;
-  max-width: min(900px, 95vw);
+  max-width: min(1000px, 95vw);
 }
 
 .dialog-header {
@@ -339,7 +345,7 @@ function actionIcon(action: string): string {
 }
 
 .pm-matrix {
-  min-width: 720px;
+  min-width: calc(178px + var(--pm-role-count) * 128px);
   overflow: hidden;
   border: 1px solid var(--md3-outline-variant);
   border-radius: 16px;
@@ -348,7 +354,9 @@ function actionIcon(action: string): string {
 
 .pm-row {
   display: grid;
-  grid-template-columns: minmax(178px, 1.2fr) repeat(4, minmax(128px, 1fr));
+  grid-template-columns:
+    minmax(178px, 1.2fr)
+    repeat(var(--pm-role-count), minmax(128px, 1fr));
   align-items: stretch;
 }
 
@@ -637,6 +645,7 @@ permissions:
     create: 'Create'
     edit: 'Edit'
     delete: 'Delete'
+  own: 'own'
 
 organization:
   title: 'Organization administrators have partial access'
@@ -675,6 +684,7 @@ permissions:
     create: 'Erstellen'
     edit: 'Bearbeiten'
     delete: 'Löschen'
+  own: 'eigene'
 
 organization:
   title: 'Organisations-Administratoren haben eingeschränkten Zugriff'
@@ -713,6 +723,7 @@ permissions:
     create: 'Créer'
     edit: 'Modifier'
     delete: 'Supprimer'
+  own: 'les siens'
 
 organization:
   title: "Les administrateurs de l'organisation ont un accès partiel"
@@ -751,6 +762,7 @@ permissions:
     create: 'Tworzenie'
     edit: 'Edycja'
     delete: 'Usuwanie'
+  own: 'własne'
 
 organization:
   title: 'Administratorzy organizacji mają częściowy dostęp'
@@ -789,6 +801,7 @@ permissions:
     create: 'Vytvořit'
     edit: 'Upravit'
     delete: 'Smazat'
+  own: 'vlastní'
 
 organization:
   title: 'Správci organizace mají částečný přístup'
