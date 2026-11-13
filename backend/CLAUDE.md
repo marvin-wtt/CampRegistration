@@ -136,8 +136,20 @@ export interface PermissionScopes {
   `GET /permissions`.
 - **Never hardcode the matrix in the frontend.** `GET /permissions` serves
   `permissionRegistry.toMatrix()`; `usePermissionMatrix(scope)` consumes it.
+- **Own records**: grant `'event.<resource>.edit:own'` to reach only records the user
+  owns. Ownership is declared once per model, where its router binds it:
+  `bindModel('<model>', handler, { ownedBy: ['createdByUserId'] })` — only fields
+  holding a user id are accepted.
+  - A record route opts in by naming the model:
+    `hasEventPermission('event.<resource>.edit', { own: '<model>' })`. Without `own`,
+    a `:own` grant never passes; a model that isn't bound or declares no owners throws.
+  - A list takes `?view=all|own` (default `own`), like `GET /events?view=assigned`:
+    `hasEventView(p)` lets `all` through only on the full grant, and the handler
+    filters `own` with `ownedWhere(model, userId)`.
+  - Resources expose `owned: ownedByRequester(model, data)`; the frontend's
+    `canOn(p, record)` reads it.
 
-State and ownership rules (`registrationOpen`, `eventOrganizationVerified`,
+State rules (`registrationOpen`, `eventOrganizationVerified`,
 `eventManagerSelf`, `organizationMemberSelf`, `buildEventWhere`, `file.guard.ts`)
 are deliberately **not** permissions — they stay plain `GuardFn`s composed with
 `or`/`and`.

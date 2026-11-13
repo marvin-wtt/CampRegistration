@@ -49,6 +49,7 @@
           <div
             class="pm-matrix"
             role="table"
+            :style="{ '--pm-role-count': roles.length }"
           >
             <!-- Role header -->
             <div
@@ -218,6 +219,9 @@ const GROUP_ORDER = [
   'tasks',
   'chores',
   'chore_assignments',
+  'expenses',
+  'payouts',
+  'finances',
   'audit',
 ];
 
@@ -235,6 +239,9 @@ const GROUP_ICONS: Record<string, string> = {
   tasks: 'task_alt',
   chores: 'cleaning_services',
   chore_assignments: 'checklist',
+  expenses: 'receipt_long',
+  payouts: 'payments',
+  finances: 'tune',
   audit: 'history',
 };
 
@@ -253,6 +260,8 @@ const ACTION_ICONS: Record<string, string> = {
   edit: 'edit',
   update: 'edit',
   delete: 'delete',
+  sign: 'draw',
+  configure: 'tune',
 };
 
 const orderedRows = computed(() =>
@@ -280,7 +289,13 @@ const organizationGrants = computed(() =>
   })),
 );
 
-const KNOWN_ROLE_CLASSES = ['director', 'coordinator', 'counselor', 'viewer'];
+const KNOWN_ROLE_CLASSES = [
+  'director',
+  'coordinator',
+  'treasurer',
+  'counselor',
+  'viewer',
+];
 
 function roleClass(role: string): string {
   const normalized = role.toLowerCase();
@@ -297,9 +312,13 @@ function groupLabel(group: string): string {
   return te(key) ? t(key) : group;
 }
 
+/** `edit:own` reads "Edit (own)": only on records the user owns. */
 function actionLabel(action: string): string {
-  const key = `permissions.action.${ACTION_I18N_ALIAS[action] ?? action}`;
-  return te(key) ? t(key) : action;
+  const [verb = action, qualifier] = action.split(':');
+  const key = `permissions.action.${ACTION_I18N_ALIAS[verb] ?? verb}`;
+  const label = te(key) ? t(key) : verb;
+
+  return qualifier === 'own' ? `${label} (${t('permissions.own')})` : label;
 }
 
 function groupIcon(group: string): string {
@@ -307,14 +326,15 @@ function groupIcon(group: string): string {
 }
 
 function actionIcon(action: string): string {
-  return ACTION_ICONS[action] ?? 'circle';
+  const [verb = action] = action.split(':');
+  return ACTION_ICONS[verb] ?? 'circle';
 }
 </script>
 
 <style scoped>
 .roles-dialog {
   width: 100%;
-  max-width: min(900px, 95vw);
+  max-width: min(1000px, 95vw);
 }
 
 .dialog-header {
@@ -339,7 +359,7 @@ function actionIcon(action: string): string {
 }
 
 .pm-matrix {
-  min-width: 720px;
+  min-width: calc(178px + var(--pm-role-count) * 128px);
   overflow: hidden;
   border: 1px solid var(--md3-outline-variant);
   border-radius: 16px;
@@ -348,7 +368,9 @@ function actionIcon(action: string): string {
 
 .pm-row {
   display: grid;
-  grid-template-columns: minmax(178px, 1.2fr) repeat(4, minmax(128px, 1fr));
+  grid-template-columns:
+    minmax(178px, 1.2fr)
+    repeat(var(--pm-role-count), minmax(128px, 1fr));
   align-items: stretch;
 }
 
@@ -527,6 +549,11 @@ function actionIcon(action: string): string {
   color: var(--md3-on-secondary-container);
 }
 
+.role--treasurer {
+  background: var(--md3-secondary-container);
+  color: var(--md3-on-secondary-container);
+}
+
 .role--counselor {
   background: var(--md3-tertiary-container);
   color: var(--md3-on-tertiary-container);
@@ -612,6 +639,7 @@ close: 'Close'
 
 role:
   coordinator: 'Coordinator'
+  treasurer: 'Treasurer'
   counselor: 'Counselor'
   director: 'Director'
   viewer: 'Viewer'
@@ -631,12 +659,18 @@ permissions:
     tasks: 'Tasks'
     chores: 'Chores'
     chore_assignments: 'Duty roster'
+    expenses: 'Expenses'
+    payouts: 'Payouts'
+    finances: 'Finance settings'
     audit: 'Audit log'
   action:
     view: 'View'
     create: 'Create'
     edit: 'Edit'
     delete: 'Delete'
+    configure: 'Configure'
+    sign: 'Sign'
+  own: 'own'
 
 organization:
   title: 'Organization administrators have partial access'
@@ -650,6 +684,7 @@ close: 'Schließen'
 
 role:
   coordinator: 'Koordination'
+  treasurer: 'Kasse'
   counselor: 'Betreuung'
   director: 'Leitung'
   viewer: 'Lesezugriff'
@@ -669,12 +704,18 @@ permissions:
     tasks: 'Aufgaben'
     chores: 'Diensttypen'
     chore_assignments: 'Dienstplan'
+    expenses: 'Ausgaben'
+    payouts: 'Auszahlungen'
+    finances: 'Finanzeinstellungen'
     audit: 'Änderungsprotokoll'
   action:
     view: 'Anzeigen'
     create: 'Erstellen'
     edit: 'Bearbeiten'
     delete: 'Löschen'
+    configure: 'Einrichten'
+    sign: 'Unterschreiben'
+  own: 'eigene'
 
 organization:
   title: 'Organisations-Administratoren haben eingeschränkten Zugriff'
@@ -688,6 +729,7 @@ close: 'Fermer'
 
 role:
   coordinator: 'Coordination'
+  treasurer: 'Trésorerie'
   counselor: 'Encadrement'
   director: 'Direction'
   viewer: 'Lecture seule'
@@ -707,12 +749,18 @@ permissions:
     tasks: 'Tâches'
     chores: 'Corvées'
     chore_assignments: 'Plan des corvées'
+    expenses: 'Dépenses'
+    payouts: 'Versements'
+    finances: 'Paramètres financiers'
     audit: 'Journal d’audit'
   action:
     view: 'Voir'
     create: 'Créer'
     edit: 'Modifier'
     delete: 'Supprimer'
+    configure: 'Configurer'
+    sign: 'Signer'
+  own: 'les siens'
 
 organization:
   title: "Les administrateurs de l'organisation ont un accès partiel"
@@ -726,6 +774,7 @@ close: 'Zamknij'
 
 role:
   coordinator: 'Koordynacja'
+  treasurer: 'Skarbnik'
   counselor: 'Opieka'
   director: 'Kierownictwo'
   viewer: 'Podgląd'
@@ -745,12 +794,18 @@ permissions:
     tasks: 'Zadania'
     chores: 'Obowiązki'
     chore_assignments: 'Grafik dyżurów'
+    expenses: 'Wydatki'
+    payouts: 'Wypłaty'
+    finances: 'Ustawienia finansów'
     audit: 'Dziennik zmian'
   action:
     view: 'Podgląd'
     create: 'Tworzenie'
     edit: 'Edycja'
     delete: 'Usuwanie'
+    configure: 'Konfigurowanie'
+    sign: 'Podpisywanie'
+  own: 'własne'
 
 organization:
   title: 'Administratorzy organizacji mają częściowy dostęp'
@@ -764,6 +819,7 @@ close: 'Zavřít'
 
 role:
   coordinator: 'Koordinace'
+  treasurer: 'Pokladna'
   counselor: 'Dozor'
   director: 'Vedení'
   viewer: 'Jen čtení'
@@ -783,12 +839,18 @@ permissions:
     tasks: 'Úkoly'
     chores: 'Povinnosti'
     chore_assignments: 'Rozpis služeb'
+    expenses: 'Výdaje'
+    payouts: 'Výplaty'
+    finances: 'Nastavení financí'
     audit: 'Protokol změn'
   action:
     view: 'Zobrazit'
     create: 'Vytvořit'
     edit: 'Upravit'
     delete: 'Smazat'
+    configure: 'Nastavit'
+    sign: 'Podepsat'
+  own: 'vlastní'
 
 organization:
   title: 'Správci organizace mají částečný přístup'

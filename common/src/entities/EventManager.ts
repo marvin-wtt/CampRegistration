@@ -1,7 +1,14 @@
 import type { Identifiable } from './Identifiable.js';
 
-export type EventManagerRole =
-  'DIRECTOR' | 'COORDINATOR' | 'COUNSELOR' | 'VIEWER';
+export const EVENT_MANAGER_ROLES = [
+  'DIRECTOR',
+  'COORDINATOR',
+  'TREASURER',
+  'COUNSELOR',
+  'VIEWER',
+] as const;
+
+export type EventManagerRole = (typeof EVENT_MANAGER_ROLES)[number];
 
 export type EventManagerStatus = 'ACCEPTED' | 'PENDING';
 

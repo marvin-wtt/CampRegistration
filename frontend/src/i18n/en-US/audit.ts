@@ -31,6 +31,7 @@ export default {
         location: 'Location',
         timezone: 'Time zone',
         form: 'Registration form',
+        payoutNumberPrefix: 'Payout number prefix',
       },
     },
     registration: {
@@ -74,6 +75,7 @@ export default {
         role: {
           DIRECTOR: 'Director',
           COORDINATOR: 'Coordinator',
+          TREASURER: 'Treasurer',
           COUNSELOR: 'Counselor',
           VIEWER: 'Viewer',
         },
@@ -89,6 +91,60 @@ export default {
       },
       view: 'View message',
       gone: 'This message no longer exists',
+    },
+    expense: {
+      label: 'Expense',
+      fields: {
+        type: 'Type',
+        amount: 'Amount',
+        originalAmount: 'Original amount',
+        originalCurrency: 'Original currency',
+        date: 'Date',
+        description: 'Description',
+        categoryId: 'Category',
+        paidByUserId: 'Paid by',
+        paidByName: 'Paid by (name)',
+        files: 'Receipt files',
+        receiptNumber: 'Receipt number',
+      },
+      values: {
+        type: {
+          EXPENSE: 'Expense',
+          REFUND: 'Refund',
+        },
+      },
+    },
+    expenseCategory: {
+      label: 'Expense category',
+      fields: {
+        name: 'Name',
+        parentId: 'Group',
+        position: 'Position',
+        archivedAt: 'Archived',
+      },
+    },
+    payout: {
+      label: 'Payout',
+      actions: {
+        signed: 'Signed',
+        unsigned: 'Signature removed',
+      },
+      fields: {
+        recipientUserId: 'Recipient',
+        recipientName: 'Recipient (name)',
+        direction: 'Direction',
+        amount: 'Amount',
+        note: 'Note',
+        number: 'Number',
+        paidOn: 'Paid on',
+        signedAt: 'Signed',
+      },
+      values: {
+        direction: {
+          OUT: 'Paid out',
+          IN: 'Paid back',
+        },
+      },
     },
     messageTemplate: {
       label: 'Automated email',

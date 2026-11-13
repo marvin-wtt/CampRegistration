@@ -136,6 +136,9 @@ tasks:
 chore_planner:
   label: 'Duty Roster'
   description: 'Show or hide the duty roster.'
+finances:
+  label: 'Finances'
+  description: 'Show or hide expenses, payouts and balances.'
 </i18n>
 
 <i18n lang="yaml" locale="de">
@@ -157,6 +160,9 @@ tasks:
 chore_planner:
   label: 'Dienstplan'
   description: 'Dienstplan ein- oder ausblenden.'
+finances:
+  label: 'Finanzen'
+  description: 'Ausgaben, Auszahlungen und Salden anzeigen oder ausblenden.'
 </i18n>
 
 <i18n lang="yaml" locale="fr">
@@ -178,6 +184,9 @@ tasks:
 chore_planner:
   label: 'Plan des corvées'
   description: 'Afficher ou masquer le plan des corvées.'
+finances:
+  label: 'Finances'
+  description: 'Afficher ou masquer les dépenses, versements et soldes.'
 </i18n>
 
 <i18n lang="yaml" locale="pl">
@@ -199,6 +208,9 @@ tasks:
 chore_planner:
   label: 'Grafik dyżurów'
   description: 'Pokaż lub ukryj grafik dyżurów.'
+finances:
+  label: 'Finanse'
+  description: 'Pokaż lub ukryj wydatki, wypłaty i salda.'
 </i18n>
 
 <i18n lang="yaml" locale="cs">
@@ -220,4 +232,7 @@ tasks:
 chore_planner:
   label: 'Rozpis služeb'
   description: 'Zobrazit nebo skrýt rozpis služeb.'
+finances:
+  label: 'Finance'
+  description: 'Zobrazit nebo skrýt výdaje, výplaty a zůstatky.'
 </i18n>

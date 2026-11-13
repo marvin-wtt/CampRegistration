@@ -21,7 +21,10 @@ export type RealtimeResource =
   | 'message'
   | 'file'
   | 'table_template'
-  | 'setting';
+  | 'setting'
+  | 'expense'
+  | 'expense_category'
+  | 'payout';
 
 /**
  * `created` / `updated` / `deleted` target a single entity (`id` set).
@@ -90,4 +93,9 @@ export const RESOURCE_VIEW_PERMISSION: Record<
   file: 'event.files.view',
   table_template: 'event.table_templates.view',
   setting: 'event.view',
+  // Counselors see only their own expenses and payouts: no events about others'.
+  expense: 'event.expenses.view',
+  payout: 'event.payouts.view',
+  // Everyone who records needs the category picker current.
+  expense_category: 'event.expenses.create',
 };

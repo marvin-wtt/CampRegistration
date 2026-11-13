@@ -1,5 +1,7 @@
+import type { Ownable } from '@camp-registration/common/entities';
 import type {
   PermissionScope,
+  ScopeGrant,
   ScopePermission,
 } from '@camp-registration/common/permissions';
 
@@ -20,7 +22,7 @@ interface ScopePermissionOptions<S extends PermissionScope> {
   /** Whether the current user bypasses every check (system administrator). */
   isAdmin: () => boolean;
   /** The permissions granted on `subjectId`, from the profile's access list. */
-  granted: (subjectId: string | undefined) => ScopePermission<S>[];
+  granted: (subjectId: string | undefined) => ScopeGrant<S>[];
   /** The subject `can()` defaults to — the event/organization currently open. */
   currentSubjectId: () => string | undefined;
 }
@@ -50,6 +52,17 @@ export function createScopePermissions<S extends PermissionScope>(
     return canFor(options.currentSubjectId(), ...permissions);
   }
 
+  /** `permission` on `record`: held outright, or as `:own` on an owned record. */
+  function canOn(permission: P, record: Ownable): boolean {
+    if (can(permission)) {
+      return true;
+    }
+
+    const granted = options.granted(options.currentSubjectId());
+
+    return record.owned && granted.includes(`${permission}:own`);
+  }
+
   function canAny(...permissions: P[]): boolean {
     return permissions.some((value) => can(value));
   }
@@ -73,5 +86,5 @@ export function createScopePermissions<S extends PermissionScope>(
       : can(...requirement.all);
   }
 
-  return { can, canAny, canFor, cannot, canAccess };
+  return { can, canAny, canFor, canOn, cannot, canAccess };
 }

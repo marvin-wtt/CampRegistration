@@ -212,6 +212,11 @@ const routes: RouteRecordRaw[] = [
                 component: () => import('@/pages/event/ChorePlannerPage.vue'),
               },
               {
+                path: 'finances',
+                name: 'management.event.finances',
+                component: () => import('@/pages/event/FinancesPage.vue'),
+              },
+              {
                 path: 'settings',
                 children: [
                   {
@@ -457,6 +462,11 @@ const routes: RouteRecordRaw[] = [
         path: 'chores',
         name: 'print.chores',
         component: () => import('@/pages/print/PrintChoreRosterPage.vue'),
+      },
+      {
+        path: 'payout-slip',
+        name: 'print.payout-slip',
+        component: () => import('@/pages/print/PrintPayoutSlipPage.vue'),
       },
     ],
   },

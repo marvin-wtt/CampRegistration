@@ -1,4 +1,5 @@
 import type { Event, File, Prisma } from '#generated/prisma/client.js';
+import type { ExpenseCategoryCreateManyData } from '#app/expenseCategory/expense-category.service';
 import { ulid } from '#utils/ulid';
 import { dbNullable } from '#core/database/json';
 import type { OptionalByKeys } from '#types/utils';
@@ -31,9 +32,17 @@ type EventSettingCreateData = OptionalByKeys<
 // query shape are the service's business — a caller never writes Prisma input.
 // `retentionReminderSentAt` sits with the timestamps rather than the payload:
 // it is written once by the retention job and never by an author.
+// Finance numbering is the finance module's: counters and prefix keep their
+// defaults on creation and are never part of an event edit.
 export type EventCreateData = Omit<
   Event,
-  'id' | 'createdAt' | 'updatedAt' | 'retentionReminderSentAt'
+  | 'id'
+  | 'createdAt'
+  | 'updatedAt'
+  | 'retentionReminderSentAt'
+  | 'payoutNumberPrefix'
+  | 'lastReceiptNumber'
+  | 'lastPayoutNumber'
 >;
 // Ownership moves through `moveEventToOrganization`, never a field update.
 export type EventUpdateData = Partial<Omit<EventCreateData, 'organizationId'>>;
@@ -359,6 +368,7 @@ export class EventService extends BaseService {
     messageTemplates: MessageTemplateCreateData = [],
     files: FileCreateData = [],
     settings: EventSettingCreateData = [],
+    expenseCategories: ExpenseCategoryCreateManyData = [],
   ) {
     const fileIds = files.map((f) => f.id).filter((f) => f != null);
     const fileIdMap = new Map<string, string>();
@@ -404,6 +414,9 @@ export class EventService extends BaseService {
           eventSettings: {
             createMany: { data: this.stripIds(settings) },
           },
+          // Not stripped: the ids are new ones, generated up front so a
+          // category can name its group's new id in this same insert.
+          expenseCategories: { createMany: { data: expenseCategories } },
         },
         include: { ...this.eventResourceInclude() },
       });

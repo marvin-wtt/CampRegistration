@@ -7,6 +7,7 @@ import type {
   EventScopedPermission,
   NewsletterPermission,
   OrganizationPermission,
+  ScopeGrant,
   OrganizationRole,
 } from '@camp-registration/common/permissions';
 import {
@@ -67,7 +68,7 @@ export class OrganizationMemberService extends BaseService {
   async getMemberPermissions(
     organizationId: string,
     userId: string,
-  ): Promise<ReadonlySet<OrganizationPermission> | null> {
+  ): Promise<ReadonlySet<ScopeGrant<'organization'>> | null> {
     const member = await this.getMemberByUserId(organizationId, userId);
     if (member === null) {
       return null;

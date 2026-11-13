@@ -36,6 +36,10 @@ import { NewsletterSubscriberModule } from '#app/newsletterSubscriber/newsletter
 import { NewsletterManagerModule } from '#app/newsletterManager/newsletter-manager.module';
 import { NewsletterMessageModule } from '#app/newsletterMessage/newsletter-message.module';
 import { AuditModule } from '#app/audit/audit.module';
+import { FinanceModule } from '#app/finance/finance.module';
+import { ExpenseCategoryModule } from '#app/expenseCategory/expense-category.module';
+import { ExpenseModule } from '#app/expense/expense.module';
+import { PayoutModule } from '#app/payout/payout.module';
 import { AdminModule } from '#app/admin/admin.module';
 import { PermissionModule } from '#app/permission/permission.module';
 import type { CoreModule } from '#core/base/CoreModule';
@@ -96,6 +100,10 @@ export const createAppModules = (): AppModule[] => [
   new TaskModule(),
   new ChoreModule(),
   new ChoreAssignmentModule(),
+  new FinanceModule(),
+  new ExpenseCategoryModule(),
+  new ExpenseModule(),
+  new PayoutModule(),
   new FeedbackModule(),
   new NewsletterModule(),
   new NewsletterSubscriberModule(),

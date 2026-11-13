@@ -18,6 +18,7 @@ import { EventManagerService } from '#app/eventManager/event-manager.service.js'
 import { SettingService } from '#app/setting/setting.service';
 import { PrivacyNoticeService } from '#app/privacyNotice/privacy-notice.service';
 import { RealtimeService } from '#core/realtime/RealtimeService';
+import { ExpenseCategoryService } from '#app/expenseCategory/expense-category.service';
 import ApiError from '#core/router/ApiError';
 import { inject, injectable } from 'inversify';
 
@@ -38,6 +39,8 @@ export class EventController extends BaseController {
     private readonly settingService: SettingService,
     @inject(PrivacyNoticeService)
     private readonly privacyNoticeService: PrivacyNoticeService,
+    @inject(ExpenseCategoryService)
+    private readonly expenseCategoryService: ExpenseCategoryService,
     @inject(RealtimeService)
     private readonly realtimeService: RealtimeService,
   ) {
@@ -113,6 +116,9 @@ export class EventController extends BaseController {
       cloned?.messageTemplates ??
       defaultMessageTemplatesForCountries(body.countries, body.preset);
     const settings = cloned?.settings ?? defaultSettingsForPreset(preset);
+    const expenseCategories =
+      cloned?.expenseCategories ??
+      this.expenseCategoryService.defaultCategories(body.countries);
 
     const event = await this.eventService.createEvent(
       userId,
@@ -142,6 +148,7 @@ export class EventController extends BaseController {
       messageTemplates,
       files,
       settings,
+      expenseCategories,
     );
 
     // Privacy notice versions aren't part of the event's own row, so they
@@ -205,18 +212,30 @@ export class EventController extends BaseController {
 
   /** Everything cloned off a reference event that isn't the event row itself. */
   private async cloneReferenceEventResources(referenceEventId: string) {
-    const [files, tableTemplates, messageTemplates, settings] =
-      await Promise.all([
-        this.fileService.queryModelFiles({
-          name: 'event',
-          id: referenceEventId,
-        }),
-        this.tableTemplateService.queryTemplates(referenceEventId),
-        this.messageTemplateService.queryMessageTemplates(referenceEventId),
-        this.settingService.querySettings(referenceEventId),
-      ]);
+    const [
+      files,
+      tableTemplates,
+      messageTemplates,
+      settings,
+      expenseCategories,
+    ] = await Promise.all([
+      this.fileService.queryModelFiles({
+        name: 'event',
+        id: referenceEventId,
+      }),
+      this.tableTemplateService.queryTemplates(referenceEventId),
+      this.messageTemplateService.queryMessageTemplates(referenceEventId),
+      this.settingService.querySettings(referenceEventId),
+      this.expenseCategoryService.cloneCategories(referenceEventId),
+    ]);
 
-    return { files, tableTemplates, messageTemplates, settings };
+    return {
+      files,
+      tableTemplates,
+      messageTemplates,
+      settings,
+      expenseCategories,
+    };
   }
 
   async updateOrganization(req: Request, res: Response) {

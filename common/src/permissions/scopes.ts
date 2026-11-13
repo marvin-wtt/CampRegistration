@@ -29,8 +29,24 @@ export type ScopeRole<S extends PermissionScope> = PermissionScopes[S]['role'];
 export type ScopePermission<S extends PermissionScope> =
   PermissionScopes[S]['permission'];
 
+/**
+ * A permission as a role holds it: on every record, or with `:own` only on
+ * records the user owns. Ownership is declared where the backend binds the
+ * model, so any permission can carry the suffix.
+ */
+export type ScopeGrant<S extends PermissionScope> =
+  ScopePermission<S> | `${ScopePermission<S>}:own`;
+
+/**
+ * Which records a list returns: everything (needs the full grant) or the
+ * requester's own (a `:own` grant suffices). Lists default to `own`.
+ */
+export type RecordView = 'all' | 'own';
+
+export const RECORD_VIEWS = ['all', 'own'] as const satisfies RecordView[];
+
 export type RoleToPermissions<S extends PermissionScope> = Partial<
-  Record<ScopeRole<S>, ScopePermission<S>[]>
+  Record<ScopeRole<S>, ScopeGrant<S>[]>
 >;
 
 /** What a module returns from `registerPermissions()`. */

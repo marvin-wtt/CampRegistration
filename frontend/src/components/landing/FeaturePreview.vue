@@ -826,6 +826,102 @@
         </g>
       </g>
 
+      <!-- ============================================== LEDGER -->
+      <!-- Receipts with their numbers above a balance settling to zero. -->
+      <g v-else-if="variant === 'ledger'">
+        <g
+          v-for="(y, i) in [40, 72, 104]"
+          :key="y"
+        >
+          <rect
+            x="16"
+            :y="y"
+            width="288"
+            height="26"
+            rx="10"
+            fill="var(--md3-surface-container-low)"
+            stroke="var(--md3-outline-variant)"
+          />
+          <rect
+            x="26"
+            :y="y + 6"
+            width="24"
+            height="14"
+            rx="4"
+            :fill="
+              i === 2
+                ? 'var(--md3-tertiary-container)'
+                : 'var(--md3-primary-container)'
+            "
+          />
+          <rect
+            x="60"
+            :y="y + 10"
+            :width="104 - i * 18"
+            height="6"
+            rx="3"
+            fill="var(--md3-outline-variant)"
+          />
+          <rect
+            x="184"
+            :y="y + 8"
+            width="38"
+            height="10"
+            rx="5"
+            fill="var(--md3-surface-container-high)"
+          />
+          <rect
+            x="248"
+            :y="y + 9"
+            width="44"
+            height="8"
+            rx="4"
+            :fill="
+              i === 2 ? 'var(--md3-tertiary)' : 'var(--md3-on-surface-variant)'
+            "
+            :opacity="i === 2 ? 0.8 : 0.45"
+          />
+        </g>
+        <rect
+          x="16"
+          y="146"
+          width="64"
+          height="6"
+          rx="3"
+          fill="var(--md3-outline-variant)"
+        />
+        <rect
+          x="16"
+          y="160"
+          width="244"
+          height="12"
+          rx="6"
+          fill="var(--md3-surface-container-high)"
+        />
+        <rect
+          x="16"
+          y="160"
+          width="244"
+          height="12"
+          rx="6"
+          fill="var(--md3-positive-container)"
+        />
+        <circle
+          cx="284"
+          cy="166"
+          r="12"
+          fill="var(--md3-positive)"
+        />
+        <path
+          d="M278.5 166l3.5 3.5 6.5-7"
+          stroke="var(--md3-on-positive)"
+          stroke-width="2"
+          fill="none"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </g>
+
       <!-- ============================================== DUTY ROSTER -->
       <g v-else-if="variant === 'rota'">
         <rect

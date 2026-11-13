@@ -13,6 +13,7 @@ export type FeaturePreviewVariant =
   | 'newsletter'
   | 'checklist'
   | 'rota'
+  | 'ledger'
   | 'files'
   | 'org'
   | 'shield'
@@ -114,6 +115,13 @@ export const LANDING_FEATURES: LandingFeature[] = [
     category: 'communication',
     preview: 'inbox',
     points: 3,
+  },
+  {
+    id: 'finances',
+    icon: 'receipt_long',
+    category: 'planning',
+    preview: 'ledger',
+    points: 4,
   },
   {
     id: 'rooms',

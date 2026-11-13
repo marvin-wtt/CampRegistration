@@ -31,6 +31,7 @@ export default {
         location: 'Ort',
         timezone: 'Zeitzone',
         form: 'Anmeldeformular',
+        payoutNumberPrefix: 'Präfix der Auszahlungsnummern',
       },
     },
     registration: {
@@ -74,6 +75,7 @@ export default {
         role: {
           DIRECTOR: 'Leitung',
           COORDINATOR: 'Koordination',
+          TREASURER: 'Kasse',
           COUNSELOR: 'Betreuung',
           VIEWER: 'Lesezugriff',
         },
@@ -89,6 +91,60 @@ export default {
       },
       view: 'Nachricht ansehen',
       gone: 'Diese Nachricht existiert nicht mehr',
+    },
+    expense: {
+      label: 'Ausgabe',
+      fields: {
+        type: 'Art',
+        amount: 'Betrag',
+        originalAmount: 'Ursprünglicher Betrag',
+        originalCurrency: 'Ursprüngliche Währung',
+        date: 'Datum',
+        description: 'Beschreibung',
+        categoryId: 'Kategorie',
+        paidByUserId: 'Bezahlt von',
+        paidByName: 'Bezahlt von (Name)',
+        files: 'Belegdateien',
+        receiptNumber: 'Belegnummer',
+      },
+      values: {
+        type: {
+          EXPENSE: 'Ausgabe',
+          REFUND: 'Erstattung',
+        },
+      },
+    },
+    expenseCategory: {
+      label: 'Ausgabenkategorie',
+      fields: {
+        name: 'Name',
+        parentId: 'Gruppe',
+        position: 'Position',
+        archivedAt: 'Archiviert',
+      },
+    },
+    payout: {
+      label: 'Auszahlung',
+      actions: {
+        signed: 'Unterschrieben',
+        unsigned: 'Unterschrift entfernt',
+      },
+      fields: {
+        recipientUserId: 'Empfänger:in',
+        recipientName: 'Empfänger:in (Name)',
+        direction: 'Richtung',
+        amount: 'Betrag',
+        note: 'Notiz',
+        number: 'Nummer',
+        paidOn: 'Bezahlt am',
+        signedAt: 'Unterschrieben',
+      },
+      values: {
+        direction: {
+          OUT: 'Ausgezahlt',
+          IN: 'Zurückgezahlt',
+        },
+      },
     },
     messageTemplate: {
       label: 'Automatische E-Mail',

@@ -1,5 +1,6 @@
 // Helpers
 export * from './Identifiable.js';
+export * from './Ownable.js';
 export * from './Pagination.js';
 export * from './Timestamps.js';
 export * from './Translatable.js';
@@ -12,6 +13,9 @@ export * from './Event.js';
 export * from './EventManager.js';
 export * from './EventSetting.js';
 export * from './Expense.js';
+export * from './ExpenseCategory.js';
+export * from './Finance.js';
+export * from './Payout.js';
 export * from './LegalDocument.js';
 export * from './Profile.js';
 export * from './ProgramItem.js';

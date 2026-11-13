@@ -109,6 +109,20 @@ uploaded for, which is what the files page warns about.
 Translated seed content (program events, room names) is narrowed to the locales the camp's countries imply, so no camp
 carries a translation it cannot show.
 
+## Finances
+
+Every event has the default expense categories in its own languages, as after the migration. Three events carry a
+ledger:
+
+| Event       | John's role | What it shows                                                                                                                                                                                                                     |
+| ----------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Spring Camp | DIRECTOR    | Settled after the fact: eligible / not-eligible groups, refunds (a deposit back, a bottle deposit), a GBP receipt, a free-text payer, a gap where receipt #12 was deleted, advances and partial payouts — owed, settled and owing |
+| City Camp   | COUNSELOR   | Running: he sees only the receipts he recorded or paid, and his own balance                                                                                                                                                       |
+| Summer Camp | DIRECTOR    | Paid ahead: a house deposit from event funds and an advance not yet covered                                                                                                                                                       |
+
+Spring Camp also has Maria as `TREASURER` and Peter as `COUNSELOR`. Most receipts have a scanned PDF; a few don't, for
+the "missing receipt file" filter.
+
 ## Newsletters
 
 | Newsletter             | Organization         | John's role        | Subscribers | Sent |

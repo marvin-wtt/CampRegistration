@@ -6,6 +6,9 @@ export const AUDIT_ENTITY_TYPES = [
   'eventManager',
   'message',
   'messageTemplate',
+  'expense',
+  'expenseCategory',
+  'payout',
 ] as const;
 
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];

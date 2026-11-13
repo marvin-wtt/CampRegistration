@@ -33,6 +33,10 @@ model User {
   organizationMembers    OrganizationMember[]
   reviewedOrganizations  Organization[]       @relation("OrganizationReviewer")
   twoFactor              UserTwoFactor?
+  paidExpenses           Expense[]            @relation("ExpensePaidBy")
+  createdExpenses        Expense[]            @relation("ExpenseCreatedBy")
+  receivedPayouts        Payout[]             @relation("PayoutRecipient")
+  createdPayouts         Payout[]             @relation("PayoutCreatedBy")
 
   @@map("users")
 }
@@ -182,6 +186,12 @@ model Event {
   /// ![Record<string, unknown>]
   themes                  Json             @default("{}") @db.Json
   retentionReminderSentAt DateTime?        @map("retention_reminder_sent_at")
+  /// Shown before payout numbers (`P1`); fixed once the first payout exists.
+  payoutNumberPrefix      String           @default("P") @map("payout_number_prefix") @db.VarChar(8)
+  /// The last receipt and payout numbers handed out. Counters rather than
+  /// `MAX() + 1`, so deleting the newest record never frees its number.
+  lastReceiptNumber       Int              @default(0) @map("last_receipt_number") @db.UnsignedInt
+  lastPayoutNumber        Int              @default(0) @map("last_payout_number") @db.UnsignedInt
   createdAt               DateTime?        @default(now()) @map("created_at")
   updatedAt               DateTime?        @updatedAt @map("updated_at")
 
@@ -200,6 +210,9 @@ model Event {
   choreAssignments     ChoreAssignment[]
   eventSettings        EventSetting[]
   auditLogs            AuditLog[]
+  expenseCategories    ExpenseCategory[]
+  expenses             Expense[]
+  payouts              Payout[]
 
   @@index([organizationId], map: "events_organization_id_index")
   @@map("events")
@@ -382,6 +395,7 @@ model File {
   messageDeliveryId   String?      @map("message_delivery_id") @db.Char(26) // Prisma does not support morth
   messageTemplateId   String?      @map("message_template_id") @db.Char(26) // Prisma does not support morth
   newsletterMessageId String?      @map("newsletter_message_id") @db.Char(26) // Prisma does not support morth
+  expenseId           String?      @map("expense_id") @db.Char(26) // Prisma does not support morth
   name                String
   originalName        String       @map("original_name")
   field               String?
@@ -402,8 +416,112 @@ model File {
   messageDelivery   MessageDelivery?   @relation(fields: [messageDeliveryId], references: [id], onDelete: SetNull)
   messageTemplate   MessageTemplate?   @relation(fields: [messageTemplateId], references: [id], onDelete: SetNull)
   newsletterMessage NewsletterMessage? @relation(fields: [newsletterMessageId], references: [id], onDelete: SetNull)
+  expense           Expense?           @relation(fields: [expenseId], references: [id], onDelete: SetNull)
 
+  @@index([expenseId], map: "files_expense_id_index")
   @@map("files")
+}
+
+// Per event, never shared: see docs/finances.md. One level of grouping — a
+// category with a `parentId` is a leaf, and only leaves hold expenses.
+model ExpenseCategory {
+  id         String    @id @unique(map: "expense_categories_id_unique") @default(ulid()) @db.Char(26)
+  eventId    String    @map("event_id") @db.Char(26)
+  parentId   String?   @map("parent_id") @db.Char(26)
+  /// ![string | Record<string, string>]
+  name       Json      @db.Json
+  position   Int       @default(0) @db.UnsignedInt
+  // Used categories are archived instead of deleted: hidden from the picker,
+  // kept on their expenses.
+  archivedAt DateTime? @map("archived_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime? @updatedAt @map("updated_at")
+
+  event    Event             @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "expense_categories_event_id_foreign")
+  parent   ExpenseCategory?  @relation("ExpenseCategoryGroup", fields: [parentId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "expense_categories_parent_id_foreign")
+  children ExpenseCategory[] @relation("ExpenseCategoryGroup")
+  expenses Expense[]
+
+  @@index([eventId], map: "expense_categories_event_id_index")
+  @@index([parentId], map: "expense_categories_parent_id_index")
+  @@map("expense_categories")
+}
+
+enum ExpenseType {
+  EXPENSE
+  REFUND
+}
+
+// Amounts are positive minor units of the event's currency; `type` carries
+// the direction. Neither payer column set means event funds paid.
+model Expense {
+  id               String      @id @unique(map: "expenses_id_unique") @default(ulid()) @db.Char(26)
+  eventId          String      @map("event_id") @db.Char(26)
+  receiptNumber    Int         @map("receipt_number") @db.UnsignedInt
+  type             ExpenseType @default(EXPENSE)
+  amount           Int         @db.UnsignedInt
+  // What the receipt says, when it is in another currency; set together.
+  originalAmount   Int?        @map("original_amount") @db.UnsignedInt
+  originalCurrency String?     @map("original_currency") @db.Char(3)
+  // The date on the receipt; `null` while the receipt is still to come.
+  date             String?     @db.Char(10)
+  description      String      @db.VarChar(255)
+  categoryId       String?     @map("category_id") @db.Char(26)
+  paidByUserId     String?     @map("paid_by_user_id") @db.Char(26)
+  // A snapshot for a manager, the only identity for anyone else.
+  paidByName       String?     @map("paid_by_name") @db.VarChar(255)
+  createdByUserId  String?     @map("created_by_user_id") @db.Char(26)
+  createdAt        DateTime    @default(now()) @map("created_at")
+  updatedAt        DateTime?   @updatedAt @map("updated_at")
+
+  event     Event            @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "expenses_event_id_foreign")
+  category  ExpenseCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "expenses_category_id_foreign")
+  paidBy    User?            @relation("ExpensePaidBy", fields: [paidByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "expenses_paid_by_user_id_foreign")
+  createdBy User?            @relation("ExpenseCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "expenses_created_by_user_id_foreign")
+  files     File[]
+
+  @@unique([eventId, receiptNumber], map: "expenses_event_id_receipt_number_unique")
+  @@index([categoryId], map: "expenses_category_id_index")
+  @@index([paidByUserId], map: "expenses_paid_by_user_id_index")
+  @@index([createdByUserId], map: "expenses_created_by_user_id_index")
+  @@map("expenses")
+}
+
+enum PayoutDirection {
+  OUT
+  IN
+}
+
+// A transfer between event funds and a person, never a cost: `OUT` pays
+// them, `IN` is money they hand back.
+model Payout {
+  id              String          @id @unique(map: "payouts_id_unique") @default(ulid()) @db.Char(26)
+  eventId         String          @map("event_id") @db.Char(26)
+  number          Int             @db.UnsignedInt
+  recipientUserId String?         @map("recipient_user_id") @db.Char(26)
+  recipientName   String          @map("recipient_name") @db.VarChar(255)
+  direction       PayoutDirection
+  amount          Int             @db.UnsignedInt
+  // When the money moved; `null` while the payout is still to be made (the
+  // statement is usually signed first, the transfer follows).
+  paidOn          String?         @map("paid_on") @db.Char(10)
+  note            String?         @db.VarChar(255)
+  // The recipient's signature under the statement, as SVG path data; cleared
+  // when what they signed (amount, direction, recipient) changes.
+  signature       String?         @db.Text
+  signedAt        DateTime?       @map("signed_at")
+  createdByUserId String?         @map("created_by_user_id") @db.Char(26)
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime?       @updatedAt @map("updated_at")
+
+  event     Event @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "payouts_event_id_foreign")
+  recipient User? @relation("PayoutRecipient", fields: [recipientUserId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "payouts_recipient_user_id_foreign")
+  createdBy User? @relation("PayoutCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "payouts_created_by_user_id_foreign")
+
+  @@unique([eventId, number], map: "payouts_event_id_number_unique")
+  @@index([recipientUserId], map: "payouts_recipient_user_id_index")
+  @@index([createdByUserId], map: "payouts_created_by_user_id_index")
+  @@map("payouts")
 }
 
 model Message {

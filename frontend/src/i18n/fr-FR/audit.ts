@@ -31,6 +31,7 @@ export default {
         location: 'Lieu',
         timezone: 'Fuseau horaire',
         form: 'Formulaire d’inscription',
+        payoutNumberPrefix: 'Préfixe des numéros de versement',
       },
     },
     registration: {
@@ -74,6 +75,7 @@ export default {
         role: {
           DIRECTOR: 'Direction',
           COORDINATOR: 'Coordination',
+          TREASURER: 'Trésorerie',
           COUNSELOR: 'Encadrement',
           VIEWER: 'Lecture seule',
         },
@@ -89,6 +91,60 @@ export default {
       },
       view: 'Voir le message',
       gone: 'Ce message n’existe plus',
+    },
+    expense: {
+      label: 'Dépense',
+      fields: {
+        type: 'Type',
+        amount: 'Montant',
+        originalAmount: "Montant d'origine",
+        originalCurrency: "Devise d'origine",
+        date: 'Date',
+        description: 'Description',
+        categoryId: 'Catégorie',
+        paidByUserId: 'Payé par',
+        paidByName: 'Payé par (nom)',
+        files: 'Fichiers des justificatifs',
+        receiptNumber: 'Numéro de justificatif',
+      },
+      values: {
+        type: {
+          EXPENSE: 'Dépense',
+          REFUND: 'Remboursement',
+        },
+      },
+    },
+    expenseCategory: {
+      label: 'Catégorie de dépense',
+      fields: {
+        name: 'Nom',
+        parentId: 'Groupe',
+        position: 'Position',
+        archivedAt: 'Archivée',
+      },
+    },
+    payout: {
+      label: 'Versement',
+      actions: {
+        signed: 'Signé',
+        unsigned: 'Signature retirée',
+      },
+      fields: {
+        recipientUserId: 'Bénéficiaire',
+        recipientName: 'Bénéficiaire (nom)',
+        direction: 'Sens',
+        amount: 'Montant',
+        note: 'Note',
+        number: 'Numéro',
+        paidOn: 'Payé le',
+        signedAt: 'Signé',
+      },
+      values: {
+        direction: {
+          OUT: 'Versé',
+          IN: 'Rendu',
+        },
+      },
     },
     messageTemplate: {
       label: 'E-mail automatique',
