@@ -31,6 +31,7 @@ export default {
         location: 'Místo',
         timezone: 'Časové pásmo',
         form: 'Registrační formulář',
+        payoutNumberPrefix: 'Předpona čísel výplat',
       },
     },
     registration: {
@@ -74,6 +75,7 @@ export default {
         role: {
           DIRECTOR: 'Vedení',
           COORDINATOR: 'Koordinace',
+          TREASURER: 'Pokladna',
           COUNSELOR: 'Dozor',
           VIEWER: 'Jen čtení',
         },
@@ -89,6 +91,60 @@ export default {
       },
       view: 'Zobrazit zprávu',
       gone: 'Tato zpráva již neexistuje',
+    },
+    expense: {
+      label: 'Výdaj',
+      fields: {
+        type: 'Druh',
+        amount: 'Částka',
+        originalAmount: 'Původní částka',
+        originalCurrency: 'Původní měna',
+        date: 'Datum',
+        description: 'Popis',
+        categoryId: 'Kategorie',
+        paidByUserId: 'Zaplatil(a)',
+        paidByName: 'Zaplatil(a) (jméno)',
+        files: 'Soubory dokladů',
+        receiptNumber: 'Číslo dokladu',
+      },
+      values: {
+        type: {
+          EXPENSE: 'Výdaj',
+          REFUND: 'Vratka',
+        },
+      },
+    },
+    expenseCategory: {
+      label: 'Kategorie výdajů',
+      fields: {
+        name: 'Název',
+        parentId: 'Skupina',
+        position: 'Pořadí',
+        archivedAt: 'Archivováno',
+      },
+    },
+    payout: {
+      label: 'Výplata',
+      actions: {
+        signed: 'Podepsáno',
+        unsigned: 'Podpis odebrán',
+      },
+      fields: {
+        recipientUserId: 'Příjemce',
+        recipientName: 'Příjemce (jméno)',
+        direction: 'Směr',
+        amount: 'Částka',
+        note: 'Poznámka',
+        number: 'Číslo',
+        paidOn: 'Zaplaceno',
+        signedAt: 'Podepsáno',
+      },
+      values: {
+        direction: {
+          OUT: 'Vyplaceno',
+          IN: 'Vráceno',
+        },
+      },
     },
     messageTemplate: {
       label: 'Automatický e-mail',

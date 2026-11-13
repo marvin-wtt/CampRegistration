@@ -31,6 +31,7 @@ export default {
         location: 'Lokalizacja',
         timezone: 'Strefa czasowa',
         form: 'Formularz rejestracyjny',
+        payoutNumberPrefix: 'Prefiks numerów wypłat',
       },
     },
     registration: {
@@ -74,6 +75,7 @@ export default {
         role: {
           DIRECTOR: 'Kierownictwo',
           COORDINATOR: 'Koordynacja',
+          TREASURER: 'Skarbnik',
           COUNSELOR: 'Opieka',
           VIEWER: 'Podgląd',
         },
@@ -89,6 +91,60 @@ export default {
       },
       view: 'Zobacz wiadomość',
       gone: 'Ta wiadomość już nie istnieje',
+    },
+    expense: {
+      label: 'Wydatek',
+      fields: {
+        type: 'Rodzaj',
+        amount: 'Kwota',
+        originalAmount: 'Kwota pierwotna',
+        originalCurrency: 'Waluta pierwotna',
+        date: 'Data',
+        description: 'Opis',
+        categoryId: 'Kategoria',
+        paidByUserId: 'Zapłacone przez',
+        paidByName: 'Zapłacone przez (nazwa)',
+        files: 'Pliki paragonów',
+        receiptNumber: 'Numer paragonu',
+      },
+      values: {
+        type: {
+          EXPENSE: 'Wydatek',
+          REFUND: 'Zwrot',
+        },
+      },
+    },
+    expenseCategory: {
+      label: 'Kategoria wydatków',
+      fields: {
+        name: 'Nazwa',
+        parentId: 'Grupa',
+        position: 'Pozycja',
+        archivedAt: 'Zarchiwizowana',
+      },
+    },
+    payout: {
+      label: 'Wypłata',
+      actions: {
+        signed: 'Podpisano',
+        unsigned: 'Podpis usunięty',
+      },
+      fields: {
+        recipientUserId: 'Odbiorca',
+        recipientName: 'Odbiorca (nazwa)',
+        direction: 'Kierunek',
+        amount: 'Kwota',
+        note: 'Notatka',
+        number: 'Numer',
+        paidOn: 'Zapłacono',
+        signedAt: 'Podpisano',
+      },
+      values: {
+        direction: {
+          OUT: 'Wypłacone',
+          IN: 'Zwrócone',
+        },
+      },
     },
     messageTemplate: {
       label: 'Automatyczny e-mail',

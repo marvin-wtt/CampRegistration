@@ -5,6 +5,11 @@ import { useRegistrationAuditView } from '@/composables/audit/entities/registrat
 import { useEventManagerAuditView } from '@/composables/audit/entities/eventManager';
 import { useMessageAuditView } from '@/composables/audit/entities/message';
 import { useMessageTemplateAuditView } from '@/composables/audit/entities/messageTemplate';
+import {
+  useExpenseAuditView,
+  useExpenseCategoryAuditView,
+  usePayoutAuditView,
+} from '@/composables/audit/entities/finance';
 
 // Every audited entity type's view. Typed over `AuditEntityType`, so a new
 // type fails to compile until it's registered here.
@@ -15,5 +20,8 @@ export function useAuditEntities(): Record<AuditEntityType, AuditEntityView> {
     eventManager: useEventManagerAuditView(),
     message: useMessageAuditView(),
     messageTemplate: useMessageTemplateAuditView(),
+    expense: useExpenseAuditView(),
+    expenseCategory: useExpenseCategoryAuditView(),
+    payout: usePayoutAuditView(),
   };
 }

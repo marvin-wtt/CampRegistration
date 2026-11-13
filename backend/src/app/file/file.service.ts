@@ -58,6 +58,7 @@ const fileRelationIdFieldsNull: RequireIdKeys<Prisma.FileWhereInput, null> = {
   messageDeliveryId: null,
   messageTemplateId: null,
   newsletterMessageId: null,
+  expenseId: null,
 };
 
 // Relational fields for create input fields

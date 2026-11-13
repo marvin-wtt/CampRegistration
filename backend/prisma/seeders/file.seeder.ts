@@ -213,6 +213,23 @@ export async function seedRegistrationUpload(
   );
 }
 
+/** A scanned receipt: a one-page PDF filed under its expense. */
+export async function seedReceiptFile(
+  eventId: string,
+  expenseId: string,
+  receiptNumber: number,
+  description: string,
+) {
+  return writeDocument(
+    {
+      name: `Receipt ${String(receiptNumber)}.pdf`,
+      lines: [`Receipt #${String(receiptNumber)}`, '', description],
+    },
+    `seed_${eventId}_receipt_${String(receiptNumber)}.pdf`,
+    { accessLevel: 'private', expense: { connect: { id: expenseId } } },
+  );
+}
+
 async function writeDocument(
   document: SeedDocument,
   // Deterministic storage names, unlike the ULIDs the upload path generates:

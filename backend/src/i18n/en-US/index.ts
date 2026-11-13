@@ -2,6 +2,7 @@ import auth from './auth/index.js';
 import event from './event/index.js';
 import email from './email/index.js';
 import feedback from './feedback/index.js';
+import finance from './finance/index.js';
 import manager from './manager/index.js';
 import newsletter from './newsletter/index.js';
 import organization from './organization/index.js';
@@ -18,6 +19,7 @@ export default {
   event,
   email,
   feedback,
+  finance,
   manager,
   newsletter,
   organization,

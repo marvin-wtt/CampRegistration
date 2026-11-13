@@ -90,6 +90,10 @@ const assertEventModel = async (id: string, data: EventCreateData) => {
     themes: data.themes ?? expect.anything(),
     // Written only by the retention reminder job, never on create or update.
     retentionReminderSentAt: null,
+    // Finance numbering keeps its defaults: never part of an event edit.
+    payoutNumberPrefix: 'P',
+    lastReceiptNumber: 0,
+    lastPayoutNumber: 0,
     updatedAt: expect.anything(),
     createdAt: expect.anything(),
   });
@@ -1252,6 +1256,24 @@ describe('/api/v1/events', () => {
         expect(templates.length).not.toBe(0);
       });
 
+      it('should create the default expense categories in the event languages', async () => {
+        const accessToken = await createEventCreatorToken();
+
+        const { body } = await request()
+          .post(`/api/v1/events/`)
+          .send(eventCreateNational)
+          .auth(accessToken, { type: 'bearer' })
+          .expect(201);
+
+        const categories = await prisma.expenseCategory.findMany({
+          where: { eventId: body.data.id },
+          orderBy: { position: 'asc' },
+        });
+
+        expect(categories).toHaveLength(6);
+        expect(categories.every((c) => typeof c.name === 'string')).toBe(true);
+      });
+
       describe('message templates', () => {
         it('should create default message templates', async () => {
           const accessToken = await createEventCreatorToken();
@@ -1361,6 +1383,50 @@ describe('/api/v1/events', () => {
           .expect(201);
 
         expect(body.data.themes).toStrictEqual(referenceThemes);
+      });
+
+      it('should copy the expense categories with their groups, not the archived ones', async () => {
+        const { event: referenceEvent, accessToken } =
+          await createEventWithManagerAndToken();
+        const group = await prisma.expenseCategory.create({
+          data: { eventId: referenceEvent.id, name: 'Eligible', position: 0 },
+        });
+        await prisma.expenseCategory.create({
+          data: {
+            eventId: referenceEvent.id,
+            parentId: group.id,
+            name: 'Food',
+            position: 0,
+          },
+        });
+        await prisma.expenseCategory.create({
+          data: {
+            eventId: referenceEvent.id,
+            name: 'Snacks',
+            position: 1,
+            archivedAt: new Date(),
+          },
+        });
+
+        const { body } = await request()
+          .post(`/api/v1/events/`)
+          .send({ ...eventCreateNational, referenceEventId: referenceEvent.id })
+          .auth(accessToken, { type: 'bearer' })
+          .expect(201);
+
+        const categories = await prisma.expenseCategory.findMany({
+          where: { eventId: body.data.id },
+        });
+        const copiedGroup = categories.find((c) => c.name === 'Eligible');
+
+        expect(categories.map((c) => c.name).sort()).toEqual([
+          'Eligible',
+          'Food',
+        ]);
+        expect(copiedGroup?.id).not.toBe(group.id);
+        expect(categories.find((c) => c.name === 'Food')?.parentId).toBe(
+          copiedGroup?.id,
+        );
       });
 
       it('should copy all table templates from the referenced event', async () => {

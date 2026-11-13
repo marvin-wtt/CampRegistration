@@ -3,6 +3,7 @@ import audit from './audit';
 import privacy from './privacy';
 import tableTemplates from './tableTemplates';
 import tasks from './tasks';
+import finance from './finance';
 
 export default {
   //app_name: '',
@@ -12,6 +13,7 @@ export default {
   privacy,
   tableTemplates,
   tasks,
+  finance,
   service: {
     internal: 'Błąd wewnętrzny',
     invalidParams: 'Nieprawidłowe parametry.',

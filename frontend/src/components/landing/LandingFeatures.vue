@@ -460,7 +460,7 @@ category:
   registration: 'Registration'
   planning: 'Planning'
   communication: 'Communication'
-  trust: 'Team & trust'
+  trust: 'Access & privacy'
 extra:
   realtime: 'Live updates across your team'
   languages: 'Five interface languages'
@@ -582,6 +582,15 @@ feature:
       3: 'Suggestions for who is next — individual people or a whole room'
       4: 'Fairness built in: fewest turns first, then whoever waited longest'
       5: 'A full history of who has already taken a turn'
+  finances:
+    title: 'Expenses and payouts'
+    text: 'Snap the receipt at the till, and see after the event who is still owed what.'
+    detail: 'Every expense gets a receipt number to write on the paper copy, a category of your own, and the person who paid. Advances and payouts settle each person’s balance to zero, each payout comes with a signed statement, and the export hands your treasurer the totals per category plus every receipt.'
+    point:
+      1: 'Record expenses from your phone, with a photo of the receipt'
+      2: 'Your own categories, copied to your next event'
+      3: 'Advances, partial payouts and a signed reimbursement statement'
+      4: 'Export to CSV/XLSX with a ZIP of receipts'
   files:
     title: 'Documents in one place'
     text: 'Upload the forms and information sheets your event needs, share them by link, and see which ones are still missing.'
@@ -629,7 +638,7 @@ category:
   registration: 'Anmeldung'
   planning: 'Planung'
   communication: 'Kommunikation'
-  trust: 'Team & Vertrauen'
+  trust: 'Zugriff & Datenschutz'
 extra:
   realtime: 'Live-Updates im ganzen Team'
   languages: 'Fünf Oberflächensprachen'
@@ -751,6 +760,15 @@ feature:
       3: 'Vorschläge, wer als Nächstes dran ist — einzelne Personen oder ein ganzes Zimmer'
       4: 'Fairness eingebaut: die wenigsten Dienste zuerst, dann wer am längsten wartet'
       5: 'Vollständige Historie, wer schon an der Reihe war'
+  finances:
+    title: 'Ausgaben und Auszahlungen'
+    text: 'Fotografiere den Beleg direkt an der Kasse und sieh nach der Veranstaltung, wem noch wie viel zusteht.'
+    detail: 'Jede Ausgabe bekommt eine Belegnummer für das Papier, eine Kategorie nach deinen Vorstellungen und die Person, die bezahlt hat. Vorschüsse und Auszahlungen bringen jeden Saldo auf null, jede Auszahlung kommt mit einer unterschriebenen Erklärung, und der Export gibt deiner Kasse die Summen je Kategorie samt aller Belege.'
+    point:
+      1: 'Ausgaben vom Handy erfassen, mit Foto vom Beleg'
+      2: 'Eigene Kategorien, übernommen in die nächste Veranstaltung'
+      3: 'Vorschüsse, Teilauszahlungen und unterschriebene Auslagenerstattung'
+      4: 'Export als CSV/XLSX mit ZIP aller Belege'
   files:
     title: 'Dokumente an einem Ort'
     text: 'Lade die Formulare und Infoblätter deiner Veranstaltung hoch, teile sie per Link und sieh, welche noch fehlen.'
@@ -798,7 +816,7 @@ category:
   registration: 'Inscription'
   planning: 'Planification'
   communication: 'Communication'
-  trust: 'Équipe et confiance'
+  trust: 'Accès et confidentialité'
 extra:
   realtime: 'Mises à jour en direct pour toute l’équipe'
   languages: 'Cinq langues d’interface'
@@ -920,6 +938,15 @@ feature:
       3: 'Des suggestions pour le prochain tour — des personnes ou une chambre entière'
       4: 'Équité intégrée : le moins de tours d’abord, puis celui qui attend depuis le plus longtemps'
       5: 'Un historique complet de qui est déjà passé'
+  finances:
+    title: 'Dépenses et versements'
+    text: 'Photographiez le justificatif en caisse et voyez après l’événement à qui il reste de l’argent dû.'
+    detail: 'Chaque dépense reçoit un numéro à reporter sur le justificatif papier, une catégorie à votre convenance et la personne qui a payé. Avances et versements ramènent chaque solde à zéro, chaque versement s’accompagne d’une déclaration signée, et l’export remet à votre trésorerie les totaux par catégorie et tous les justificatifs.'
+    point:
+      1: 'Saisissez les dépenses depuis votre téléphone, avec une photo du justificatif'
+      2: 'Vos propres catégories, reprises pour le prochain événement'
+      3: 'Avances, versements partiels et note de remboursement signée'
+      4: 'Export CSV/XLSX avec un ZIP des justificatifs'
   files:
     title: 'Les documents au même endroit'
     text: 'Déposez les formulaires et fiches d’information de votre événement, partagez-les par lien, et voyez ceux qui manquent encore.'
@@ -967,7 +994,7 @@ category:
   registration: 'Rejestracja'
   planning: 'Planowanie'
   communication: 'Komunikacja'
-  trust: 'Zespół i zaufanie'
+  trust: 'Dostęp i prywatność'
 extra:
   realtime: 'Aktualizacje na żywo w całym zespole'
   languages: 'Pięć języków interfejsu'
@@ -1089,6 +1116,15 @@ feature:
       3: 'Podpowiedzi, kto jest następny — pojedyncze osoby albo cały pokój'
       4: 'Sprawiedliwość wbudowana: najpierw najmniej dyżurów, potem kto czeka najdłużej'
       5: 'Pełna historia tego, kto już miał swoją kolej'
+  finances:
+    title: 'Wydatki i wypłaty'
+    text: 'Zrób zdjęcie paragonu od razu przy kasie i po wydarzeniu sprawdź, komu jeszcze ile się należy.'
+    detail: 'Każdy wydatek dostaje numer, który zapisujesz na papierowym paragonie, własną kategorię i osobę, która zapłaciła. Zaliczki i wypłaty sprowadzają saldo każdej osoby do zera, każda wypłata ma podpisane oświadczenie, a eksport daje skarbnikowi sumy według kategorii razem ze wszystkimi paragonami.'
+    point:
+      1: 'Zapisuj wydatki z telefonu, ze zdjęciem paragonu'
+      2: 'Własne kategorie, przenoszone do kolejnego wydarzenia'
+      3: 'Zaliczki, wypłaty częściowe i podpisane rozliczenie'
+      4: 'Eksport do CSV/XLSX z plikiem ZIP paragonów'
   files:
     title: 'Dokumenty w jednym miejscu'
     text: 'Wgraj formularze i ulotki informacyjne swojego wydarzenia, udostępniaj je linkiem i sprawdzaj, których jeszcze brakuje.'
@@ -1136,7 +1172,7 @@ category:
   registration: 'Registrace'
   planning: 'Plánování'
   communication: 'Komunikace'
-  trust: 'Tým a důvěra'
+  trust: 'Přístup a soukromí'
 extra:
   realtime: 'Živé aktualizace pro celý tým'
   languages: 'Pět jazyků rozhraní'
@@ -1258,6 +1294,15 @@ feature:
       3: 'Návrhy, kdo je na řadě — jednotliví lidé, nebo celý pokoj'
       4: 'Spravedlnost je součástí: nejdřív nejméně služeb, pak kdo čeká nejdéle'
       5: 'Úplná historie toho, kdo už byl na řadě'
+  finances:
+    title: 'Výdaje a výplaty'
+    text: 'Vyfoťte doklad hned u pokladny a po akci uvidíte, komu ještě kolik dlužíte.'
+    detail: 'Každý výdaj dostane číslo, které napíšete na papírový doklad, vlastní kategorii a osobu, která platila. Zálohy a výplaty srovnají zůstatek každého na nulu, ke každé výplatě patří podepsané prohlášení a export předá pokladně součty podle kategorií i všechny doklady.'
+    point:
+      1: 'Výdaje zapisujte z mobilu, s fotkou dokladu'
+      2: 'Vlastní kategorie, převzaté do další akce'
+      3: 'Zálohy, částečné výplaty a podepsané vyúčtování'
+      4: 'Export do CSV/XLSX se ZIPem dokladů'
   files:
     title: 'Dokumenty na jednom místě'
     text: 'Nahrajte formuláře a informační listy své akce, sdílejte je odkazem a sledujte, které ještě chybí.'

@@ -70,6 +70,21 @@ export type ChoreAssignmentPermission =
   | 'event.chore_assignments.edit'
   | 'event.chore_assignments.delete';
 
+export type ExpensePermission =
+  | 'event.expenses.view'
+  | 'event.expenses.create'
+  | 'event.expenses.edit'
+  | 'event.expenses.delete';
+
+export type PayoutPermission =
+  | 'event.payouts.view'
+  | 'event.payouts.create'
+  | 'event.payouts.edit'
+  | 'event.payouts.sign'
+  | 'event.payouts.delete';
+
+export type FinancePermission = 'event.finances.configure';
+
 export type NewsletterPermission =
   | 'newsletter.view'
   | 'newsletter.edit'
@@ -116,7 +131,10 @@ export type EventScopedPermission =
   | ProgramItemPermission
   | TaskPermission
   | ChorePermission
-  | ChoreAssignmentPermission;
+  | ChoreAssignmentPermission
+  | ExpensePermission
+  | PayoutPermission
+  | FinancePermission;
 
 export type Permission =
   EventScopedPermission | NewsletterPermission | OrganizationPermission;

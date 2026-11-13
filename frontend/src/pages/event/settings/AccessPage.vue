@@ -282,11 +282,12 @@ import PageHeader from '@/components/common/PageHeader.vue';
 import { useI18n } from 'vue-i18n';
 import { useEventManagerStore } from '@/stores/event-manager-store';
 import { computed } from 'vue';
-import type {
-  EventManager,
-  EventManagerCreateData,
-  EventManagerRole,
-  EventManagerUpdateData,
+import {
+  EVENT_MANAGER_ROLES,
+  type EventManager,
+  type EventManagerCreateData,
+  type EventManagerRole,
+  type EventManagerUpdateData,
 } from '@camp-registration/common/entities';
 import PageStateHandler from '@/components/common/PageStateHandler.vue';
 import { type QSelectOption, useQuasar } from 'quasar';
@@ -359,7 +360,13 @@ const sections = computed<AccessSection[]>(() => {
   ].filter((section) => section.managers.length > 0);
 });
 
-const roleOrder = ['director', 'coordinator', 'counselor', 'viewer'];
+const roleOrder = [
+  'director',
+  'coordinator',
+  'treasurer',
+  'counselor',
+  'viewer',
+];
 
 function sortManagers(managers: EventManager[]): EventManager[] {
   const rank = (manager: EventManager): number => {
@@ -415,9 +422,7 @@ function canLeave(manager: EventManager): boolean {
 }
 
 function getRoleOptions(): QSelectOption<EventManagerRole>[] {
-  const roles = ['DIRECTOR', 'COORDINATOR', 'COUNSELOR', 'VIEWER'] as const;
-
-  return roles.map((role) => ({
+  return EVENT_MANAGER_ROLES.map((role) => ({
     label: t('role.' + role.toLocaleLowerCase()),
     value: role,
   }));
@@ -625,6 +630,11 @@ async function leaveEvent(manager: EventManager) {
   color: var(--md3-on-secondary-container);
 }
 
+.role--treasurer {
+  background: var(--md3-secondary-container);
+  color: var(--md3-on-secondary-container);
+}
+
 .role--counselor {
   background: var(--md3-tertiary-container);
   color: var(--md3-on-tertiary-container);
@@ -700,6 +710,7 @@ you: 'You'
 
 role:
   coordinator: 'Coordinator'
+  treasurer: 'Treasurer'
   counselor: 'Counselor'
   director: 'Director'
   viewer: 'Viewer'
@@ -747,6 +758,7 @@ you: 'Du'
 
 role:
   coordinator: 'Koordination'
+  treasurer: 'Kasse'
   counselor: 'Betreuung'
   director: 'Leitung'
   viewer: 'Lesezugriff'
@@ -796,6 +808,7 @@ you: 'Vous'
 
 role:
   coordinator: 'Coordination'
+  treasurer: 'Trésorerie'
   counselor: 'Encadrement'
   director: 'Direction'
   viewer: 'Lecture seule'
@@ -843,6 +856,7 @@ you: 'Ty'
 
 role:
   coordinator: 'Koordynacja'
+  treasurer: 'Skarbnik'
   counselor: 'Opieka'
   director: 'Kierownictwo'
   viewer: 'Podgląd'
@@ -890,6 +904,7 @@ you: 'Vy'
 
 role:
   coordinator: 'Koordinace'
+  treasurer: 'Pokladna'
   counselor: 'Dozor'
   director: 'Vedení'
   viewer: 'Jen čtení'

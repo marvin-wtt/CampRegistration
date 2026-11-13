@@ -152,6 +152,7 @@ settings: 'Settings'
 statistics: 'Statistics'
 tasks: 'Tasks'
 chore_planner: 'Duty Roster'
+finances: 'Finances'
 title: 'Event Management'
 </i18n>
 
@@ -165,6 +166,7 @@ settings: 'Einstellungen'
 statistics: 'Statistiken'
 tasks: 'Aufgaben'
 chore_planner: 'Dienstplan'
+finances: 'Finanzen'
 title: 'Veranstaltungsverwaltung'
 </i18n>
 
@@ -178,6 +180,7 @@ settings: 'Paramètres'
 statistics: 'Statistiques'
 tasks: 'Tâches'
 chore_planner: 'Plan des corvées'
+finances: 'Finances'
 title: "Gestion de l'événement"
 </i18n>
 
@@ -191,6 +194,7 @@ settings: 'Ustawienia'
 statistics: 'Statystyki'
 tasks: 'Zadania'
 chore_planner: 'Grafik dyżurów'
+finances: 'Finanse'
 title: 'Zarządzanie wydarzeniem'
 </i18n>
 
@@ -204,6 +208,7 @@ settings: 'Nastavení'
 statistics: 'Statistiky'
 tasks: 'Úkoly'
 chore_planner: 'Rozpis služeb'
+finances: 'Finance'
 title: 'Správa akce'
 </i18n>
 
