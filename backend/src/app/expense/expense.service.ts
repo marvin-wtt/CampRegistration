@@ -93,7 +93,11 @@ export class ExpenseService extends BaseService {
   ) {
     return this.transaction(async (tx) => {
       if (data.categoryId) {
-        await this.categoryService.assertAssignable(eventId, data.categoryId);
+        await this.categoryService.assertAssignable(
+          eventId,
+          data.categoryId,
+          'EXPENSE',
+        );
       }
       const payer = await this.partyService.resolveParty(eventId, {
         userId: data.paidByUserId,
@@ -140,6 +144,7 @@ export class ExpenseService extends BaseService {
         await this.categoryService.assertAssignable(
           expense.eventId,
           data.categoryId,
+          'EXPENSE',
         );
       }
 

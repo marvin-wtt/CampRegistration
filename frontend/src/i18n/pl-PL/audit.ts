@@ -115,7 +115,7 @@ export default {
       },
     },
     financeCategory: {
-      label: 'Kategoria wydatków',
+      label: 'Kategoria finansowa',
       fields: {
         name: 'Nazwa',
         parentId: 'Grupa',

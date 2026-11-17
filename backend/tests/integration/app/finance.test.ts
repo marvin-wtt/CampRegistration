@@ -503,11 +503,18 @@ describe('finances', () => {
         .get(`/api/v1/events/${event.id}/finance-categories`)
         .auth(token, { type: 'bearer' })
         .expect(200);
+      // The expense list by default; income ones only when asked for.
       expect(
-        (body.data as { id: string; kind: string }[]).find(
-          (c) => c.id === created.id,
-        )?.kind,
-      ).toBe('EXPENSE');
+        (body.data as { id: string; kind: string }[]).map((c) => [
+          c.id,
+          c.kind,
+        ]),
+      ).toEqual([[created.id, 'EXPENSE']]);
+      const { body: income } = await request()
+        .get(`/api/v1/events/${event.id}/finance-categories?kind=INCOME`)
+        .auth(token, { type: 'bearer' })
+        .expect(200);
+      expect(income.data.map((c: { id: string }) => c.id)).toEqual([grants.id]);
 
       await request()
         .post(`/api/v1/events/${event.id}/expenses`)

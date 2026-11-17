@@ -39,9 +39,9 @@ export class FinanceCategoryService extends BaseService {
     });
   }
 
-  async queryCategories(eventId: string) {
+  async queryCategories(eventId: string, kind: FinanceCategoryKind) {
     return this.prisma.financeCategory.findMany({
-      where: { eventId },
+      where: { eventId, kind },
       include: withCount,
       orderBy: [{ position: 'asc' }, { id: 'asc' }],
     });
@@ -109,7 +109,7 @@ export class FinanceCategoryService extends BaseService {
     if (category._count.expenses > 0) {
       throw new ApiError(
         httpStatus.CONFLICT,
-        'A category with expenses can only be archived.',
+        'A category in use can only be archived.',
         { code: 'FINANCE_CATEGORY_IN_USE' },
       );
     }
@@ -132,15 +132,16 @@ export class FinanceCategoryService extends BaseService {
   }
 
   /**
-   * Applies a reordered tree in one go. The tree keeps one level of grouping:
-   * a parent is a top-level category, has no expenses, and a category with
-   * children stays at the top.
+   * Applies one kind's reordered tree in one go. The tree keeps one level of
+   * grouping: a parent is a top-level category of the same kind, has no
+   * expenses, and a category with children stays at the top.
    */
   async reorderCategories(
     eventId: string,
+    kind: FinanceCategoryKind,
     items: { id: string; parentId: string | null; position: number }[],
   ) {
-    const categories = await this.queryCategories(eventId);
+    const categories = await this.queryCategories(eventId, kind);
     const byId = new Map(categories.map((category) => [category.id, category]));
     const next = new Map(categories.map((c) => [c.id, c.parentId]));
 
@@ -156,13 +157,9 @@ export class FinanceCategoryService extends BaseService {
         continue;
       }
       const parent = byId.get(parentId);
+      // Another kind's group is unknown here, as it is to createCategory.
       if (!parent || parentId === id) {
         throw this.invalidTree('Unknown parent category.');
-      }
-      if (parent.kind !== byId.get(id)?.kind) {
-        throw this.invalidTree(
-          'Expense and income categories are grouped apart.',
-        );
       }
       if (next.get(parentId) !== null) {
         throw this.invalidTree(
@@ -196,7 +193,7 @@ export class FinanceCategoryService extends BaseService {
       }
 
       return tx.financeCategory.findMany({
-        where: { eventId },
+        where: { eventId, kind },
         include: withCount,
         orderBy: [{ position: 'asc' }, { id: 'asc' }],
       });
@@ -207,22 +204,23 @@ export class FinanceCategoryService extends BaseService {
   async assertAssignable(
     eventId: string,
     categoryId: string,
-    options: { kind?: FinanceCategoryKind; allowArchived?: boolean } = {},
+    kind: FinanceCategoryKind,
+    options: { allowArchived?: boolean } = {},
   ) {
     const category = await this.db.financeCategory.findFirst({
-      where: { id: categoryId, eventId, kind: options.kind ?? 'EXPENSE' },
+      where: { id: categoryId, eventId, kind },
       include: { _count: { select: { children: true } } },
     });
 
     if (!category) {
-      throw new ApiError(httpStatus.BAD_REQUEST, 'Unknown expense category.', {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Unknown category.', {
         code: 'FINANCE_CATEGORY_INVALID',
       });
     }
     if (category._count.children > 0) {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
-        'Expenses belong to a category, not to its group.',
+        'Records belong to a category, not to its group.',
         { code: 'FINANCE_CATEGORY_INVALID' },
       );
     }
@@ -283,7 +281,10 @@ export class FinanceCategoryService extends BaseService {
       include: withCount,
     });
 
-    if (parent?.parentId !== null) {
+    if (!parent) {
+      throw this.invalidTree('Unknown parent category.');
+    }
+    if (parent.parentId !== null) {
       throw this.invalidTree('Categories can only be grouped one level deep.');
     }
     if (parent._count.expenses > 0) {

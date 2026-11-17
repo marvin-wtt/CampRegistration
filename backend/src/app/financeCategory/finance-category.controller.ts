@@ -19,10 +19,15 @@ export class FinanceCategoryController extends BaseController {
   }
 
   async index(req: Request, res: Response) {
-    await req.validate(validator.index);
+    const {
+      query: { kind },
+    } = await req.validate(validator.index);
     const event = req.modelOrFail('event');
 
-    const categories = await this.categoryService.queryCategories(event.id);
+    const categories = await this.categoryService.queryCategories(
+      event.id,
+      kind,
+    );
 
     res.resource(FinanceCategoryResource.collection(categories));
   }
@@ -62,11 +67,15 @@ export class FinanceCategoryController extends BaseController {
   }
 
   async order(req: Request, res: Response) {
-    const { body } = await req.validate(validator.order);
+    const {
+      body,
+      query: { kind },
+    } = await req.validate(validator.order);
     const event = req.modelOrFail('event');
 
     const categories = await this.categoryService.reorderCategories(
       event.id,
+      kind,
       body.items,
     );
 

@@ -115,7 +115,7 @@ export default {
       },
     },
     financeCategory: {
-      label: 'Kategorie výdajů',
+      label: 'Finanční kategorie',
       fields: {
         name: 'Název',
         parentId: 'Skupina',

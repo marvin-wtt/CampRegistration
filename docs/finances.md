@@ -273,7 +273,11 @@ Event   … lastIncomeNumber, incomeNumberPrefix (default "I")
   categories (defaults: grants, donations, own contributions, other), so a
   funder's breakdown — FGYO's own funds and third-party funds, say — is a
   list typed in once. They are `FinanceCategory` rows of kind `INCOME`, not a
-  second table; the editor shows one kind at a time.
+  second table; the editor shows one kind at a time (`?kind=INCOME` on the
+  list and reorder routes). The in-use guards still count expenses only:
+  deleting (archive instead), regrouping and becoming a group must count
+  income records too once they exist, or a used income category could be
+  deleted or turned into a group.
 - **Expected or received.** `receivedOn` empty means promised but not yet
   paid, like a pending receipt. The summary keeps the two apart, so the
   result is never overstated by money that hasn't arrived.
