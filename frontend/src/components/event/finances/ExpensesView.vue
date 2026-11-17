@@ -121,6 +121,7 @@
             :key="expense.id"
             :expense
             :wide
+            @open="dialogs.expenseDetails"
           />
         </q-list>
       </div>
@@ -142,6 +143,7 @@ import ExpenseRow from '@/components/event/finances/ExpenseRow.vue';
 import FinanceFigure from '@/components/event/finances/FinanceFigure.vue';
 import FinanceTotalsStrip from '@/components/event/finances/FinanceTotalsStrip.vue';
 import { useExpenseFilters } from '@/composables/expenseFilters';
+import { useFinanceDialogs } from '@/composables/financeDialogs';
 import { useFinanceFormat } from '@/composables/financeFormat';
 import { parseLocalDate } from '@/utils/date';
 
@@ -149,6 +151,8 @@ const { expenses, categories } = defineProps<{
   expenses: readonly Expense[];
   categories: readonly ExpenseCategory[];
 }>();
+
+const dialogs = useFinanceDialogs();
 
 const quasar = useQuasar();
 const { t, d } = useI18n();

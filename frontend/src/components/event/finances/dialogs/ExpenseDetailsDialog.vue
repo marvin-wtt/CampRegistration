@@ -69,7 +69,7 @@
             :icon="category ? 'category' : 'label_off'"
             :label="t('finance.field.category')"
             :value="category || t('finance.noCategory')"
-            :warn="!category"
+            :warn="missingCategory"
           />
           <detail-row
             v-if="statements"
@@ -104,7 +104,7 @@
             icon="no_photography"
             :label="t('finance.field.receipt')"
             :value="t('finance.noFile')"
-            :warn="!!expense.date"
+            :warn="isMissingFile(expense)"
           />
         </q-list>
       </div>
@@ -143,6 +143,7 @@ import { useFinanceFormat } from '@/composables/financeFormat';
 import { statementLabels } from '@/composables/payoutStatements';
 import { useFinanceStore } from '@/stores/finance-store';
 import { parseLocalDate } from '@/utils/date';
+import { isMissingFile } from '@/utils/expenseState';
 
 const { expense: opened } = defineProps<{
   /** As opened; the dialog then follows the store's copy. */

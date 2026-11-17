@@ -227,10 +227,18 @@ export class PayoutService extends BaseService {
       });
 
       await this.audit.updated(payoutAuditPolicy, before, after);
-      // Signed once; further pages of the scan are an update.
-      if (added.length > 0 && before.files.length === 0) {
+      // Further pages of a scan are an update. A scan replaced whole is
+      // another signed slip; one removed whole takes the signature back.
+      const kept = before.files.filter((f) =>
+        after.files.some((a) => a.id === f.id),
+      );
+      if (added.length > 0 && kept.length === 0) {
         await this.audit.recordFor(payoutAuditPolicy, 'signed', after, {
           details: { values: { scans: after.files.length } },
+        });
+      } else if (before.files.length > 0 && after.files.length === 0) {
+        await this.audit.recordFor(payoutAuditPolicy, 'unsigned', after, {
+          details: { values: { scans: before.files.length } },
         });
       }
 

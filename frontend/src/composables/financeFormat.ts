@@ -46,7 +46,7 @@ export function useFinanceFormat() {
   const { t, locale } = useI18n({ useScope: 'global' });
   const { to } = useObjectTranslation();
   const { data: event } = storeToRefs(useEventDetailsStore());
-  const { categories } = storeToRefs(useFinanceStore());
+  const { categoriesById } = storeToRefs(useFinanceStore());
 
   const currency = computed(() => event.value?.currency ?? 'EUR');
 
@@ -58,10 +58,6 @@ export function useFinanceFormat() {
   function signedMoney(expense: Pick<Expense, 'amount' | 'type'>): string {
     return money(expense.type === 'REFUND' ? -expense.amount : expense.amount);
   }
-
-  const categoriesById = computed(
-    () => new Map((categories.value ?? []).map((c) => [c.id, c])),
-  );
 
   function categoryName(id: string | null | undefined): string {
     const category = id ? categoriesById.value.get(id) : undefined;

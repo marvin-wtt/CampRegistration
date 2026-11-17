@@ -85,7 +85,7 @@
           class="q-px-none rounded-sm"
           :class="{ 'payout-linked': linkedPayoutId === payout.id }"
           data-test="payout-item"
-          @click="dialogs.payoutDetails(payout)"
+          @click="emit('open', payout)"
         >
           <q-item-section>
             <q-item-label class="row items-center no-wrap q-gutter-x-sm">
@@ -136,7 +136,7 @@
         rounded
         class="col"
         data-test="balance-pay-out"
-        @click="pay('OUT')"
+        @click="emit('pay', 'OUT')"
       />
       <m-btn
         :label="t('finance.action.receive')"
@@ -144,7 +144,7 @@
         :text="balance.open >= 0"
         rounded
         class="col"
-        @click="pay('IN')"
+        @click="emit('pay', 'IN')"
       />
     </q-card-actions>
   </q-card>
@@ -159,9 +159,7 @@ import type {
   Payout,
   PayoutDirection,
 } from '@camp-registration/common/entities';
-import { useFinanceDialogs } from '@/composables/financeDialogs';
 import { useFinanceFormat } from '@/composables/financeFormat';
-import { usePayoutActions } from '@/composables/payoutActions';
 import { usePayoutStatus } from '@/composables/payoutStatus';
 import { usePermissions } from '@/composables/permissions';
 
@@ -177,11 +175,12 @@ const {
   linkedPayoutId?: string | null;
 }>();
 
+// Handled by the list, so a card per person needn't set up the dialogs.
+const emit = defineEmits<{ open: [payout: Payout]; pay: [PayoutDirection] }>();
+
 const { t } = useI18n();
 const { can } = usePermissions();
 const { money } = useFinanceFormat();
-const dialogs = useFinanceDialogs();
-const { create } = usePayoutActions();
 const { status: payoutStatus } = usePayoutStatus();
 
 const rows = computed(() =>
@@ -189,11 +188,6 @@ const rows = computed(() =>
 );
 
 const initial = computed(() => balance.name.trim().charAt(0).toUpperCase());
-
-// After creating, its details open: the next step is signing it.
-function pay(direction: PayoutDirection) {
-  create(balance, direction, dialogs.payoutDetails);
-}
 
 // By what is left to arrange: an agreed payout no longer reads as owed.
 const status = computed(() => {

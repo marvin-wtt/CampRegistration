@@ -9,6 +9,7 @@ import { groupCategories, useFinanceFormat } from '@/composables/financeFormat';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 import { useRouteQueryParams } from '@/composables/useRouteQueryParams';
 import { useFinanceStore } from '@/stores/finance-store';
+import { hasNoCategory, isMissingFile, isPending } from '@/utils/expenseState';
 
 export interface FilterOption {
   value: string;
@@ -107,10 +108,6 @@ export function useExpenseFilters(
     },
   ]);
 
-  // A receipt still to come is expected to lack its file, as in the badge.
-  const missingFile = (e: Expense) => e.files.length === 0 && !!e.date;
-  const pending = (e: Expense) => e.date === null;
-
   const flags = computed<FlagFilter[]>(() => {
     const list = toValue(expenses);
     const count = (test: (e: Expense) => boolean) => list.filter(test).length;
@@ -136,7 +133,7 @@ export function useExpenseFilters(
       flagFilter(
         'noFile',
         'no_photography',
-        t('finance.filter.missingFile', { count: count(missingFile) }),
+        t('finance.filter.missingFile', { count: count(isMissingFile) }),
         t('finance.noFile'),
         true,
       ),
@@ -152,17 +149,18 @@ export function useExpenseFilters(
       flagFilter(
         'pending',
         'hourglass_empty',
-        t('finance.filter.pending', { count: count(pending) }),
+        t('finance.filter.pending', { count: count(isPending) }),
         t('finance.receiptPending'),
-        count(pending) > 0 || flag('pending'),
+        count(isPending) > 0 || flag('pending'),
       ),
     ];
   });
 
   const flagTests: Record<string, (e: Expense) => boolean> = {
-    noFile: missingFile,
-    noCategory: (e) => !e.categoryId,
-    pending,
+    noFile: isMissingFile,
+    // Also where the event doesn't flag it, e.g. from an older link.
+    noCategory: hasNoCategory,
+    pending: isPending,
   };
 
   const filtered = computed(() => {

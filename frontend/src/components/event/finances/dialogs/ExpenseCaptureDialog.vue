@@ -201,7 +201,7 @@
 
           <!-- Read off the receipt with the amount: often yesterday's, never
                a day ahead. -->
-          <date-input
+          <event-date-input
             v-model="form.date"
             :label="t('finance.field.receiptDate')"
             :hint="form.date ? undefined : t('finance.field.receiptPending')"
@@ -334,7 +334,7 @@ import CategoryPicker from '@/components/event/finances/CategoryPicker.vue';
 import PartySelect, {
   type PartyValue,
 } from '@/components/event/finances/PartySelect.vue';
-import DateInput from '@/components/common/inputs/DateInput.vue';
+import EventDateInput from '@/components/event/EventDateInput.vue';
 import { useFinanceStore } from '@/stores/finance-store';
 import { useFinanceFormat } from '@/composables/financeFormat';
 import { formatLocalDate, parseLocalDate } from '@/utils/date';

@@ -74,21 +74,31 @@ export function usePayoutActions() {
     return canSign(payout) && !isSigned(payout) && !payout.outdated;
   }
 
-  // A picker per use: the camera or a PDF on phones. Nothing to mount.
+  /**
+   * A picker per use: the camera or a PDF on phones. In the document while
+   * open, since a detached input may be collected or never fire `change`
+   * while a slow camera app is in front.
+   */
   function pickScan(payout: Payout) {
+    document.querySelector('[data-test="payout-scan-input"]')?.remove();
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*,application/pdf';
+    input.hidden = true;
+    input.dataset.test = 'payout-scan-input';
     input.addEventListener(
       'change',
       () => {
         const file = input.files?.[0];
+        input.remove();
         if (file) {
           financeStore.attachPayoutScan(payout, file).catch(() => undefined);
         }
       },
       { once: true },
     );
+    input.addEventListener('cancel', () => input.remove(), { once: true });
+    document.body.append(input);
     input.click();
   }
 

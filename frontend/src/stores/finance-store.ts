@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { exportFile } from 'quasar';
 import { useAction } from '@/composables/action';
-import { watch } from 'vue';
+import { computed, watch } from 'vue';
 import { useAPIService } from '@/services/APIService';
 import {
   useCollection,
@@ -38,6 +38,7 @@ import type {
   PayoutCreateData,
   PayoutUpdateData,
 } from '@camp-registration/common/entities';
+import { hasNoCategory } from '@/utils/expenseState';
 
 /** Which categories the expenses use, as a key that changes when that does. */
 function categoryUse(list: readonly Expense[] | undefined): string {
@@ -116,6 +117,11 @@ export const useFinanceStore = defineStore('finance', () => {
     realtime: { resource: 'expense_category' },
   });
 
+  // Once for every view and row that names a category.
+  const categoriesById = computed(
+    () => new Map((categories.data.value ?? []).map((c) => [c.id, c])),
+  );
+
   const balances = useResource<FinanceBalance[]>({
     name: 'finance',
     key,
@@ -146,7 +152,7 @@ export const useFinanceStore = defineStore('finance', () => {
 
   /** Without a category, unless the event doesn't sort its expenses. */
   function isMissingCategory(expense: Pick<Expense, 'categoryId'>): boolean {
-    return display.flagMissingCategories && !expense.categoryId;
+    return display.flagMissingCategories && hasNoCategory(expense);
   }
 
   const settings = useResource<FinanceSettings>({
@@ -176,17 +182,25 @@ export const useFinanceStore = defineStore('finance', () => {
     void summary.reload();
   }
 
+  // Kept from the last change, so each change builds the keys once.
+  let usedCategories = '';
+  let usedInStatements = '';
+
   watch(expenses.data, async (next, prev) => {
+    const nextCategories = categoryUse(next);
+    const nextStatements = statementUse(next);
+    const categoriesChanged = nextCategories !== usedCategories;
+    const statementsChanged = nextStatements !== usedInStatements;
+    usedCategories = nextCategories;
+    usedInStatements = nextStatements;
+
     if (prev === undefined) {
       return;
     }
-    if (categoryUse(next) !== categoryUse(prev)) {
+    if (categoriesChanged) {
       void categories.reload();
     }
-    if (
-      payouts.data.value !== undefined &&
-      statementUse(next) !== statementUse(prev)
-    ) {
+    if (payouts.data.value !== undefined && statementsChanged) {
       await reloadPayouts();
     }
     reloadTotals();
@@ -423,6 +437,7 @@ export const useFinanceStore = defineStore('finance', () => {
     expenses: expenses.data,
     payouts: payouts.data,
     categories: categories.data,
+    categoriesById,
     balances: balances.data,
     summary: summary.data,
     summaryIsLoading: summary.isLoading,

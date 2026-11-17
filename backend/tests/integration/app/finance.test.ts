@@ -890,6 +890,39 @@ describe('finances', () => {
         );
         expect(logs.filter((log) => log.action === 'signed')).toHaveLength(1);
       });
+
+      it('logs a scan replaced or removed in an edit as a signing', async () => {
+        const { event, user, token } = await setup();
+        const payout = await createPayout(event, token, user.id);
+        const sessionId = crypto.randomUUID();
+        const [first, second] = await Promise.all([
+          FileFactory.create({ field: sessionId }),
+          FileFactory.create({ field: sessionId }),
+        ]);
+        const url = `/api/v1/events/${event.id}/payouts/${payout.id}`;
+
+        for (const fileIds of [[first.id], [second.id], []]) {
+          await request()
+            .patch(url)
+            .send({ fileIds })
+            .setSessionId(sessionId)
+            .auth(token, { type: 'bearer' })
+            .expect(200);
+        }
+
+        const logs = await prisma.auditLog.findMany({
+          where: {
+            entityType: 'payout',
+            entityId: payout.id,
+            action: { in: ['signed', 'unsigned'] },
+          },
+        });
+        expect(logs.map((log) => log.action).sort()).toEqual([
+          'signed',
+          'signed',
+          'unsigned',
+        ]);
+      });
     });
 
     it('refuses a payout without a recipient', async () => {

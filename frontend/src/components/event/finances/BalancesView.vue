@@ -69,6 +69,8 @@
         :balance
         :payouts="payoutsOf(balance)"
         :linked-payout-id="linkedPayoutId"
+        @open="dialogs.payoutDetails"
+        @pay="(direction) => pay(balance, direction)"
       />
     </div>
 
@@ -88,11 +90,13 @@ import { useQuasar } from 'quasar';
 import type {
   FinanceBalance,
   Payout,
+  PayoutDirection,
 } from '@camp-registration/common/entities';
 import { partyKey, recipientKey } from '@camp-registration/common/utils';
 import BalanceCard from '@/components/event/finances/BalanceCard.vue';
 import FinanceFigure from '@/components/event/finances/FinanceFigure.vue';
 import FinanceTotalsStrip from '@/components/event/finances/FinanceTotalsStrip.vue';
+import { useFinanceDialogs } from '@/composables/financeDialogs';
 import { useFinanceFormat } from '@/composables/financeFormat';
 import { usePayoutActions } from '@/composables/payoutActions';
 import { usePermissions } from '@/composables/permissions';
@@ -106,7 +110,8 @@ const { balances, payouts } = defineProps<{
 const { t } = useI18n();
 const { can } = usePermissions();
 const { money } = useFinanceFormat();
-const { sign, awaitsSignature } = usePayoutActions();
+const { create, sign, awaitsSignature } = usePayoutActions();
+const dialogs = useFinanceDialogs();
 const financeStore = useFinanceStore();
 const route = useRoute();
 const router = useRouter();
@@ -175,6 +180,11 @@ onMounted(() => {
     { immediate: true },
   );
 });
+
+// After creating, its details open: the next step is signing it.
+function pay(balance: FinanceBalance, direction: PayoutDirection) {
+  create(balance, direction, dialogs.payoutDetails);
+}
 </script>
 
 <style scoped>

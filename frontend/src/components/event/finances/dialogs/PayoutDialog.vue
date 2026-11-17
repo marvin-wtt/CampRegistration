@@ -70,7 +70,7 @@
           data-test="payout-note"
         />
         <!-- Money has moved or it hasn't: never a date ahead. -->
-        <date-input
+        <event-date-input
           v-model="paidOn"
           :label="t('finance.field.paidOn')"
           :hint="paidOn ? undefined : t('finance.payout.toPayHint')"
@@ -126,7 +126,7 @@ import type {
 import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
 import DialogCard from '@/components/common/dialogs/DialogCard.vue';
 import AmountInput from '@/components/event/finances/AmountInput.vue';
-import DateInput from '@/components/common/inputs/DateInput.vue';
+import EventDateInput from '@/components/event/EventDateInput.vue';
 import { useFinanceStore } from '@/stores/finance-store';
 import { useFinanceFormat } from '@/composables/financeFormat';
 import { formatLocalDate } from '@/utils/date';

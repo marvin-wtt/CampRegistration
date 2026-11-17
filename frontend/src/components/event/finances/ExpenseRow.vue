@@ -5,7 +5,7 @@
     clickable
     class="expense-row"
     data-test="expense-item"
-    @click="dialogs.expenseDetails(expense)"
+    @click="emit('open', expense)"
   >
     <q-item-section avatar>
       <receipt-badge
@@ -181,9 +181,9 @@ import { useI18n } from 'vue-i18n';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import type { Expense } from '@camp-registration/common/entities';
 import ReceiptBadge from '@/components/event/finances/ReceiptBadge.vue';
-import { useFinanceDialogs } from '@/composables/financeDialogs';
 import { useFinanceFormat } from '@/composables/financeFormat';
 import { useFinanceStore } from '@/stores/finance-store';
+import { isMissingFile } from '@/utils/expenseState';
 
 const { expense, wide = false } = defineProps<{
   expense: Expense;
@@ -192,15 +192,13 @@ const { expense, wide = false } = defineProps<{
 }>();
 
 const { t } = useI18n();
-const dialogs = useFinanceDialogs();
+// Handled by the list, like the cards on the balances tab.
+const emit = defineEmits<{ open: [expense: Expense] }>();
 const financeStore = useFinanceStore();
 const { money, signedMoney, categoryName, categoryPath, payerName } =
   useFinanceFormat();
 
-// A receipt still to come is expected to lack its file.
-const missingFile = computed(
-  () => expense.files.length === 0 && !!expense.date,
-);
+const missingFile = computed(() => isMissingFile(expense));
 
 // Wide: the category with its group. Narrow: category and payer, which has
 // no column there.

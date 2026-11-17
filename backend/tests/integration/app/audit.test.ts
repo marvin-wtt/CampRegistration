@@ -418,7 +418,7 @@ describe('/api/v1/events/:eventId/registrations/:registrationId/audit', () => {
 
     it.each([
       { role: 'DIRECTOR', expectedStatus: 200 },
-      { role: 'COORDINATOR', expectedStatus: 200 },
+      { role: 'COORDINATOR', expectedStatus: 403 },
       { role: 'VIEWER', expectedStatus: 403 },
       { role: 'COUNSELOR', expectedStatus: 403 },
     ])(
@@ -438,7 +438,7 @@ describe('/api/v1/events/:eventId/registrations/:registrationId/audit', () => {
 
     it.each([
       { role: 'DIRECTOR', expectedStatus: 200 },
-      { role: 'COORDINATOR', expectedStatus: 200 },
+      { role: 'COORDINATOR', expectedStatus: 403 },
       { role: 'VIEWER', expectedStatus: 403 },
       { role: 'COUNSELOR', expectedStatus: 403 },
     ])(

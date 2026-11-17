@@ -59,46 +59,12 @@
         </translated-input>
 
         <!-- Date -->
-        <q-input
+        <event-date-input
           v-model="data.date"
           :label="t('field.date.label')"
-          outlined
-          rounded
-        >
-          <template #prepend>
-            <q-icon name="calendar_month" />
-          </template>
-          <template #append>
-            <q-icon
-              name="event"
-              class="cursor-pointer"
-            >
-              <q-popup-proxy
-                cover
-                transition-show="scale"
-                transition-hide="scale"
-              >
-                <q-date
-                  v-model="data.date"
-                  mask="YYYY-MM-DD"
-                  :options="dateOptions"
-                  :navigation-min-year-month="monthYearMin"
-                  :navigation-max-year-month="monthYearMax"
-                >
-                  <div class="row items-center justify-end">
-                    <q-btn
-                      v-close-popup
-                      :label="t('action.close')"
-                      color="primary"
-                      flat
-                      rounded
-                    />
-                  </div>
-                </q-date>
-              </q-popup-proxy>
-            </q-icon>
-          </template>
-        </q-input>
+          :min="dateMin"
+          :max="dateMax"
+        />
 
         <q-toggle
           v-if="data.date"
@@ -189,6 +155,7 @@ import type {
   ProgramItemUpdateData,
 } from '@camp-registration/common/entities';
 import { isoToLocalDate, isValidTimeRange, timeDifference } from '@/utils/date';
+import EventDateInput from '@/components/event/EventDateInput.vue';
 
 const { t } = useI18n();
 const $q = useQuasar();
@@ -278,26 +245,13 @@ const planOptions = computed(() => {
   ];
 });
 
-const monthYearMin = computed<string | undefined>(() => {
-  return props.dateTimeMin ? extractYearMonth(props.dateTimeMin) : undefined;
-});
-
-const monthYearMax = computed<string | undefined>(() => {
-  return props.dateTimeMax ? extractYearMonth(props.dateTimeMax) : undefined;
-});
-
-function extractYearMonth(dateTime: string): string {
-  const [year, month] = isoToLocalDate(dateTime).split('-');
-  return `${year}/${month}`;
-}
-
-function dateOptions(date: string): boolean {
-  const dateStr = date.replace(/\//g, '-');
-  const dateMin = props.dateTimeMin ? isoToLocalDate(props.dateTimeMin) : null;
-  const dateMax = props.dateTimeMax ? isoToLocalDate(props.dateTimeMax) : null;
-
-  return (!dateMin || dateStr >= dateMin) && (!dateMax || dateStr <= dateMax);
-}
+// The planner's range, as days.
+const dateMin = computed(() =>
+  props.dateTimeMin ? isoToLocalDate(props.dateTimeMin) : undefined,
+);
+const dateMax = computed(() =>
+  props.dateTimeMax ? isoToLocalDate(props.dateTimeMax) : undefined,
+);
 
 function onOKClick(): void {
   onDialogOK({
