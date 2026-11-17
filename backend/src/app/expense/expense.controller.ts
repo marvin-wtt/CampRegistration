@@ -18,10 +18,11 @@ export class ExpenseController extends BaseController {
   }
 
   async index(req: Request, res: Response) {
-    const { query } = await req.validate(validator.index);
-    const event = req.modelOrFail('event');
+    const {
+      query: { view, ...filter },
+    } = await req.validate(validator.index);
 
-    const { view, ...filter } = query;
+    const event = req.modelOrFail('event');
     const expenses = await this.expenseService.queryExpenses(event.id, {
       ...filter,
       ownerId: view === 'own' ? req.authUserId() : undefined,
@@ -32,8 +33,9 @@ export class ExpenseController extends BaseController {
 
   async show(req: Request, res: Response) {
     await req.validate(validator.show);
+    const expense = req.modelOrFail('expense');
 
-    res.resource(new ExpenseResource(req.modelOrFail('expense')));
+    res.resource(new ExpenseResource(expense));
   }
 
   async store(req: Request, res: Response) {

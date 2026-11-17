@@ -4,12 +4,7 @@ import { FileService } from '#app/file/file.service';
 import { RegistrationService } from '#app/registration/registration.service';
 import { TableTemplateService } from '#app/tableTemplate/table-template.service';
 import httpStatus from 'http-status';
-import {
-  defaultMessageTemplatesForCountries,
-  defaultSettingsForPreset,
-  getEventPreset,
-} from '#app/event/presets/index.js';
-import { localesForCountries } from '@camp-registration/common/locales';
+import { presetSeed } from '#app/event/presets/index.js';
 import validator from './event.validation.js';
 import type { Request, Response } from 'express';
 import { BaseController } from '#core/base/BaseController';
@@ -89,40 +84,22 @@ export class EventController extends BaseController {
     const userId = req.authUserId();
     const organization = req.modelOrFail('organization');
 
-    const referenceEvent = body.referenceEventId
-      ? await this.loadReferenceEvent(
+    const { form, themes, ...seed } = body.referenceEventId
+      ? await this.cloneReferenceEvent(
           body.referenceEventId,
           userId,
           body.countries,
         )
-      : undefined;
+      : {
+          ...presetSeed(body.preset, body.countries),
+          financeCategories: this.financeCategoryService.defaultCategories(
+            body.countries,
+          ),
+        };
 
-    const preset = getEventPreset(
-      body.preset,
-      localesForCountries(body.countries),
-    );
-
-    const cloned = body.referenceEventId
-      ? await this.cloneReferenceEventResources(body.referenceEventId)
-      : undefined;
-
-    const form = body.form ?? referenceEvent?.form ?? preset.form;
-    const themes = body.themes ?? referenceEvent?.themes ?? preset.themes;
-    const files = cloned?.files ?? [];
-    const tableTemplates =
-      cloned?.tableTemplates ??
-      preset.tableTemplates.map((value) => ({ data: value }));
-    const messageTemplates =
-      cloned?.messageTemplates ??
-      defaultMessageTemplatesForCountries(body.countries, body.preset);
-    const settings = cloned?.settings ?? defaultSettingsForPreset(preset);
-    const financeCategories =
-      cloned?.financeCategories ??
-      this.financeCategoryService.defaultCategories(body.countries);
-
-    const event = await this.eventService.createEvent(
-      userId,
-      {
+    const event = await this.eventService.createEvent({
+      directorId: userId,
+      event: {
         organizationId: organization.id,
         countries: body.countries,
         name: body.name,
@@ -141,15 +118,11 @@ export class EventController extends BaseController {
         price: body.price,
         currency: body.currency ?? 'EUR',
         location: body.location,
-        form: form,
-        themes: themes,
+        form: body.form ?? form,
+        themes: body.themes ?? themes,
       },
-      tableTemplates,
-      messageTemplates,
-      files,
-      settings,
-      financeCategories,
-    );
+      seed,
+    });
 
     // Privacy notice versions aren't part of the event's own row, so they
     // can't ride along in `createEvent`'s single insert — copy them over in
@@ -167,9 +140,9 @@ export class EventController extends BaseController {
 
   /**
    * Confirms the caller may clone the reference event and that its countries
-   * match the new event's, then returns it for its form/themes fallback.
+   * match the new event's, then copies its form, themes and child records.
    */
-  private async loadReferenceEvent(
+  private async cloneReferenceEvent(
     referenceEventId: string,
     userId: string,
     countries: string[],
@@ -190,28 +163,22 @@ export class EventController extends BaseController {
     const referenceEvent =
       await this.eventService.getEventById(referenceEventId);
 
-    // Verify that the countries of the new event match the countries of the reference event
-    // This is important to ensure that the translations are present
-    if (referenceEvent) {
-      const countriesMatch =
-        referenceEvent.countries.length === countries.length &&
-        referenceEvent.countries.every((country) =>
-          countries.includes(country),
-        );
-
-      if (!countriesMatch) {
-        throw new ApiError(
-          httpStatus.BAD_REQUEST,
-          'The countries of the new event must match the countries of the reference event.',
-        );
-      }
+    if (!referenceEvent) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Reference event not found.');
     }
 
-    return referenceEvent;
-  }
+    // Matching countries guarantee the cloned content has every translation
+    const countriesMatch =
+      referenceEvent.countries.length === countries.length &&
+      referenceEvent.countries.every((country) => countries.includes(country));
 
-  /** Everything cloned off a reference event that isn't the event row itself. */
-  private async cloneReferenceEventResources(referenceEventId: string) {
+    if (!countriesMatch) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'The countries of the new event must match the countries of the reference event.',
+      );
+    }
+
     const [
       files,
       tableTemplates,
@@ -230,6 +197,8 @@ export class EventController extends BaseController {
     ]);
 
     return {
+      form: referenceEvent.form,
+      themes: referenceEvent.themes,
       files,
       tableTemplates,
       messageTemplates,

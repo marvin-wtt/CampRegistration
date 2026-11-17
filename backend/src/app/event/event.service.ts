@@ -28,6 +28,15 @@ type EventSettingCreateData = OptionalByKeys<
   'id'
 >[];
 
+// The child records a new event starts with, cloned or from a preset.
+export interface EventSeed {
+  tableTemplates?: TableTemplateCreateData;
+  messageTemplates?: MessageTemplateCreateData;
+  files?: FileCreateData;
+  settings?: EventSettingCreateData;
+  financeCategories?: FinanceCategoryCreateManyData;
+}
+
 // The event's own fields, as plain values. Relations, generated columns and the
 // query shape are the service's business — a caller never writes Prisma input.
 // `retentionReminderSentAt` sits with the timestamps rather than the payload:
@@ -44,6 +53,13 @@ export type EventCreateData = Omit<
   | 'lastReceiptNumber'
   | 'lastPayoutNumber'
 >;
+export interface EventCreateInput {
+  event: EventCreateData;
+  /** The creating user, who becomes the event's director. */
+  directorId: string;
+  seed?: EventSeed;
+}
+
 // Ownership moves through `moveEventToOrganization`, never a field update.
 export type EventUpdateData = Partial<Omit<EventCreateData, 'organizationId'>>;
 
@@ -361,15 +377,14 @@ export class EventService extends BaseService {
     return { total, open, upcoming, closed };
   }
 
-  async createEvent(
-    userId: string,
-    data: EventCreateData,
-    tableTemplates: TableTemplateCreateData = [],
-    messageTemplates: MessageTemplateCreateData = [],
-    files: FileCreateData = [],
-    settings: EventSettingCreateData = [],
-    financeCategories: FinanceCategoryCreateManyData = [],
-  ) {
+  async createEvent({ event: data, directorId, seed = {} }: EventCreateInput) {
+    const {
+      tableTemplates = [],
+      messageTemplates = [],
+      files = [],
+      settings = [],
+      financeCategories = [],
+    } = seed;
     const fileIds = files.map((f) => f.id).filter((f) => f != null);
     const fileIdMap = new Map<string, string>();
     const form = this.replaceFormFileUrls(data.form, fileIds, fileIdMap);
@@ -400,7 +415,7 @@ export class EventService extends BaseService {
           form,
           eventManager: {
             create: {
-              userId,
+              userId: directorId,
               role: 'DIRECTOR',
             },
           },
