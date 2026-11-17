@@ -41,8 +41,13 @@ different categories, and a funder's scheme (FGYO, Erasmus+) is just a list
 someone typed in once, never something the code knows about.
 
 ```
-ExpenseCategory  id, eventId, parentId?, name (Json), position, archivedAt?
+FinanceCategory  id, eventId, kind, parentId?, name (Json), position, archivedAt?
 ```
+
+- **Two kinds, one table.** `kind` is `EXPENSE` or `INCOME` (see
+  [Income](#income)); each kind is a list of its own, grouped within itself,
+  and a record is filed under its own kind only. Only expense categories
+  exist until income is built.
 
 - **One level of grouping.** A category with a `parentId` is a leaf; a parent
   must not have one itself. Groups exist for schemes like FGYO's eligible /
@@ -267,9 +272,8 @@ Event   … lastIncomeNumber, incomeNumberPrefix (default "I")
 - **Categories of its own**, per event, grouped and copied like expense
   categories (defaults: grants, donations, own contributions, other), so a
   funder's breakdown — FGYO's own funds and third-party funds, say — is a
-  list typed in once. Expense categories are still unreleased, so they become
-  `FinanceCategory` with a `kind` (`EXPENSE` | `INCOME`) instead of a second
-  table; the editor shows one kind at a time.
+  list typed in once. They are `FinanceCategory` rows of kind `INCOME`, not a
+  second table; the editor shows one kind at a time.
 - **Expected or received.** `receivedOn` empty means promised but not yet
   paid, like a pending receipt. The summary keeps the two apart, so the
   result is never overstated by money that hasn't arrived.

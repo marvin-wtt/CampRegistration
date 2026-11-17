@@ -3,7 +3,7 @@ import type { Expense, Payout } from '@camp-registration/common/entities';
 import ExpenseCaptureDialog from '@/components/event/finances/dialogs/ExpenseCaptureDialog.vue';
 import ExpenseDetailsDialog from '@/components/event/finances/dialogs/ExpenseDetailsDialog.vue';
 import PayoutDetailsDialog from '@/components/event/finances/dialogs/PayoutDetailsDialog.vue';
-import ExpenseCategoryDialog from '@/components/event/finances/dialogs/ExpenseCategoryDialog.vue';
+import FinanceCategoryDialog from '@/components/event/finances/dialogs/FinanceCategoryDialog.vue';
 import FinanceSettingsDialog from '@/components/event/finances/dialogs/FinanceSettingsDialog.vue';
 
 /**
@@ -32,7 +32,7 @@ export function useFinanceDialogs() {
   }
 
   function categories() {
-    quasar.dialog({ component: ExpenseCategoryDialog });
+    quasar.dialog({ component: FinanceCategoryDialog });
   }
 
   function settings() {

@@ -1265,7 +1265,7 @@ describe('/api/v1/events', () => {
           .auth(accessToken, { type: 'bearer' })
           .expect(201);
 
-        const categories = await prisma.expenseCategory.findMany({
+        const categories = await prisma.financeCategory.findMany({
           where: { eventId: body.data.id },
           orderBy: { position: 'asc' },
         });
@@ -1388,10 +1388,10 @@ describe('/api/v1/events', () => {
       it('should copy the expense categories with their groups, not the archived ones', async () => {
         const { event: referenceEvent, accessToken } =
           await createEventWithManagerAndToken();
-        const group = await prisma.expenseCategory.create({
+        const group = await prisma.financeCategory.create({
           data: { eventId: referenceEvent.id, name: 'Eligible', position: 0 },
         });
-        await prisma.expenseCategory.create({
+        await prisma.financeCategory.create({
           data: {
             eventId: referenceEvent.id,
             parentId: group.id,
@@ -1399,7 +1399,7 @@ describe('/api/v1/events', () => {
             position: 0,
           },
         });
-        await prisma.expenseCategory.create({
+        await prisma.financeCategory.create({
           data: {
             eventId: referenceEvent.id,
             name: 'Snacks',
@@ -1414,7 +1414,7 @@ describe('/api/v1/events', () => {
           .auth(accessToken, { type: 'bearer' })
           .expect(201);
 
-        const categories = await prisma.expenseCategory.findMany({
+        const categories = await prisma.financeCategory.findMany({
           where: { eventId: body.data.id },
         });
         const copiedGroup = categories.find((c) => c.name === 'Eligible');

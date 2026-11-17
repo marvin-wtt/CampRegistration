@@ -28,7 +28,7 @@ export default {
       error: "Échec de l'annulation du versement",
     },
   },
-  expenseCategory: {
+  financeCategory: {
     fetch: { error: 'Échec du chargement des catégories' },
     create: { error: 'Échec de la création de la catégorie' },
     update: { error: 'Échec de la mise à jour de la catégorie' },

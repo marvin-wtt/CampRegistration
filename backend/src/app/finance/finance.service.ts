@@ -156,7 +156,7 @@ export class FinanceService extends BaseService {
         where: { eventId },
         orderBy: { number: 'asc' },
       }),
-      this.prisma.expenseCategory.findMany({ where: { eventId } }),
+      this.prisma.financeCategory.findMany({ where: { eventId } }),
     ]);
 
     return {

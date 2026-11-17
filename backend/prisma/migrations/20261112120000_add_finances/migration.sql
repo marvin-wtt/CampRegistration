@@ -8,9 +8,10 @@ ALTER TABLE `files` ADD COLUMN `expense_id` CHAR(26) NULL,
     ADD COLUMN `payout_id` CHAR(26) NULL;
 
 -- CreateTable
-CREATE TABLE `expense_categories` (
+CREATE TABLE `finance_categories` (
     `id` CHAR(26) NOT NULL,
     `event_id` CHAR(26) NOT NULL,
+    `kind` ENUM('EXPENSE', 'INCOME') NOT NULL DEFAULT 'EXPENSE',
     `parent_id` CHAR(26) NULL,
     `name` JSON NOT NULL,
     `position` INTEGER UNSIGNED NOT NULL DEFAULT 0,
@@ -18,9 +19,9 @@ CREATE TABLE `expense_categories` (
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NULL,
 
-    UNIQUE INDEX `expense_categories_id_unique`(`id`),
-    INDEX `expense_categories_event_id_index`(`event_id`),
-    INDEX `expense_categories_parent_id_index`(`parent_id`),
+    UNIQUE INDEX `finance_categories_id_unique`(`id`),
+    INDEX `finance_categories_event_id_index`(`event_id`),
+    INDEX `finance_categories_parent_id_index`(`parent_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -89,16 +90,16 @@ ALTER TABLE `files` ADD CONSTRAINT `files_expense_id_fkey` FOREIGN KEY (`expense
 ALTER TABLE `files` ADD CONSTRAINT `files_payout_id_fkey` FOREIGN KEY (`payout_id`) REFERENCES `payouts`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `expense_categories` ADD CONSTRAINT `expense_categories_event_id_foreign` FOREIGN KEY (`event_id`) REFERENCES `events`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `finance_categories` ADD CONSTRAINT `finance_categories_event_id_foreign` FOREIGN KEY (`event_id`) REFERENCES `events`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `expense_categories` ADD CONSTRAINT `expense_categories_parent_id_foreign` FOREIGN KEY (`parent_id`) REFERENCES `expense_categories`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `finance_categories` ADD CONSTRAINT `finance_categories_parent_id_foreign` FOREIGN KEY (`parent_id`) REFERENCES `finance_categories`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `expenses` ADD CONSTRAINT `expenses_event_id_foreign` FOREIGN KEY (`event_id`) REFERENCES `events`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `expenses` ADD CONSTRAINT `expenses_category_id_foreign` FOREIGN KEY (`category_id`) REFERENCES `expense_categories`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE `expenses` ADD CONSTRAINT `expenses_category_id_foreign` FOREIGN KEY (`category_id`) REFERENCES `finance_categories`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `expenses` ADD CONSTRAINT `expenses_paid_by_user_id_foreign` FOREIGN KEY (`paid_by_user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;

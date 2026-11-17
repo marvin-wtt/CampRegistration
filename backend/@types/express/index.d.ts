@@ -26,7 +26,7 @@ import type { NewsletterWithOrganization } from '#app/newsletter/newsletter.type
 import type { TaskWithAssignee } from '#app/task/task.types';
 import type { ChoreAssignmentWithRelations } from '#app/chore-assignment/chore-assignment.types';
 import type { ChoreWithSlots } from '#app/chore/chore.types';
-import type { ExpenseCategoryWithCount } from '#app/expenseCategory/expense-category.service';
+import type { FinanceCategoryWithCount } from '#app/financeCategory/finance-category.service';
 import type { ExpenseWithFiles } from '#app/expense/expense.service';
 import type { PayoutWithPrefix } from '#app/payout/payout.service';
 
@@ -62,7 +62,7 @@ declare global {
       task?: TaskWithAssignee;
       chore?: ChoreWithSlots;
       choreAssignment?: ChoreAssignmentWithRelations;
-      expenseCategory?: ExpenseCategoryWithCount;
+      financeCategory?: FinanceCategoryWithCount;
       expense?: ExpenseWithFiles;
       payout?: PayoutWithPrefix;
     }

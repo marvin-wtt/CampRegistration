@@ -23,7 +23,7 @@ export type RealtimeResource =
   | 'table_template'
   | 'setting'
   | 'expense'
-  | 'expense_category'
+  | 'finance_category'
   | 'payout';
 
 /**
@@ -97,5 +97,5 @@ export const RESOURCE_VIEW_PERMISSION: Record<
   expense: 'event.expenses.view',
   payout: 'event.payouts.view',
   // Everyone who records needs the category picker current.
-  expense_category: 'event.expenses.create',
+  finance_category: 'event.expenses.create',
 };

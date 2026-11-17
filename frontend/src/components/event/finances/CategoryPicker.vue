@@ -17,7 +17,7 @@
     outlined
     rounded
     hide-bottom-space
-    data-test="expense-category"
+    data-test="finance-category"
     @filter="onFilter"
   >
     <template #option="{ opt, itemProps }">
@@ -50,12 +50,12 @@
 <script lang="ts" setup>
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import type { ExpenseCategory } from '@camp-registration/common/entities';
+import type { FinanceCategory } from '@camp-registration/common/entities';
 import { groupCategories } from '@/composables/financeFormat';
 import { useObjectTranslation } from '@/composables/objectTranslation';
 
 const { categories, keep = null } = defineProps<{
-  categories: readonly ExpenseCategory[];
+  categories: readonly FinanceCategory[];
   /** An archived category the expense already has: still shown, still picked. */
   keep?: string | null;
 }>();

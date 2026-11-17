@@ -4,7 +4,7 @@ import { inject, injectable } from 'inversify';
 import { ownedWhere } from '#core/permission/ownership';
 import { AuditService } from '#app/audit/audit.service';
 import { FileService } from '#app/file/file.service';
-import { ExpenseCategoryService } from '#app/expenseCategory/expense-category.service';
+import { FinanceCategoryService } from '#app/financeCategory/finance-category.service';
 import { FinancePartyService } from '#app/finance/finance-party.service';
 import { expenseAuditPolicy } from '#app/expense/expense.audit';
 import { nextFinanceNumber } from '#app/finance/finance.sequence';
@@ -44,8 +44,8 @@ export class ExpenseService extends BaseService {
   constructor(
     @inject(AuditService) private readonly audit: AuditService,
     @inject(FileService) private readonly fileService: FileService,
-    @inject(ExpenseCategoryService)
-    private readonly categoryService: ExpenseCategoryService,
+    @inject(FinanceCategoryService)
+    private readonly categoryService: FinanceCategoryService,
     @inject(FinancePartyService)
     private readonly partyService: FinancePartyService,
   ) {

@@ -42,15 +42,15 @@ const DEFAULT_CATEGORIES: Localized[] = [
   { en: 'Other', de: 'Sonstiges', fr: 'Autres', cs: 'Ostatní', pl: 'Inne' },
 ];
 
-export interface DefaultExpenseCategory {
+export interface DefaultFinanceCategory {
   name: string | Record<string, string>;
   position: number;
 }
 
 /** The generic starting list, in the event's languages only. */
-export function defaultExpenseCategoriesForCountries(
+export function defaultFinanceCategoriesForCountries(
   countries: readonly string[],
-): DefaultExpenseCategory[] {
+): DefaultFinanceCategory[] {
   const locales = localesForCountries(countries);
 
   return DEFAULT_CATEGORIES.map((names, position) => ({

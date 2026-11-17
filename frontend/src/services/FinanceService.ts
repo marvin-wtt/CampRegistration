@@ -1,10 +1,10 @@
 import type { RecordView } from '@camp-registration/common/permissions';
 import type {
   Expense,
-  ExpenseCategory,
-  ExpenseCategoryCreateData,
-  ExpenseCategoryOrderData,
-  ExpenseCategoryUpdateData,
+  FinanceCategory,
+  FinanceCategoryCreateData,
+  FinanceCategoryOrderData,
+  FinanceCategoryUpdateData,
   ExpenseCreateData,
   ExpenseQuery,
   ExpenseUpdateData,
@@ -21,56 +21,56 @@ import type {
 import { api } from '@/services/api';
 
 export function useFinanceService() {
-  async function fetchExpenseCategories(
+  async function fetchFinanceCategories(
     eventId: string,
-  ): Promise<ExpenseCategory[]> {
-    const response = await api.get(`events/${eventId}/expense-categories/`);
+  ): Promise<FinanceCategory[]> {
+    const response = await api.get(`events/${eventId}/finance-categories/`);
 
     return response?.data?.data;
   }
 
-  async function createExpenseCategory(
+  async function createFinanceCategory(
     eventId: string,
-    data: ExpenseCategoryCreateData,
-  ): Promise<ExpenseCategory> {
+    data: FinanceCategoryCreateData,
+  ): Promise<FinanceCategory> {
     const response = await api.post(
-      `events/${eventId}/expense-categories/`,
+      `events/${eventId}/finance-categories/`,
       data,
     );
 
     return response?.data?.data;
   }
 
-  async function updateExpenseCategory(
+  async function updateFinanceCategory(
     eventId: string,
     categoryId: string,
-    data: ExpenseCategoryUpdateData,
-  ): Promise<ExpenseCategory> {
+    data: FinanceCategoryUpdateData,
+  ): Promise<FinanceCategory> {
     const response = await api.patch(
-      `events/${eventId}/expense-categories/${categoryId}/`,
+      `events/${eventId}/finance-categories/${categoryId}/`,
       data,
     );
 
     return response?.data?.data;
   }
 
-  async function orderExpenseCategories(
+  async function orderFinanceCategories(
     eventId: string,
-    data: ExpenseCategoryOrderData,
-  ): Promise<ExpenseCategory[]> {
+    data: FinanceCategoryOrderData,
+  ): Promise<FinanceCategory[]> {
     const response = await api.put(
-      `events/${eventId}/expense-categories/order/`,
+      `events/${eventId}/finance-categories/order/`,
       data,
     );
 
     return response?.data?.data;
   }
 
-  async function deleteExpenseCategory(
+  async function deleteFinanceCategory(
     eventId: string,
     categoryId: string,
   ): Promise<void> {
-    await api.delete(`events/${eventId}/expense-categories/${categoryId}/`);
+    await api.delete(`events/${eventId}/finance-categories/${categoryId}/`);
   }
 
   async function fetchExpenses(
@@ -259,11 +259,11 @@ export function useFinanceService() {
   }
 
   return {
-    fetchExpenseCategories,
-    createExpenseCategory,
-    updateExpenseCategory,
-    orderExpenseCategories,
-    deleteExpenseCategory,
+    fetchFinanceCategories,
+    createFinanceCategory,
+    updateFinanceCategory,
+    orderFinanceCategories,
+    deleteFinanceCategory,
     fetchExpenses,
     fetchExpense,
     createExpense,

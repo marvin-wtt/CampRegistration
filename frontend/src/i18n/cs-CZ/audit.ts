@@ -114,7 +114,7 @@ export default {
         },
       },
     },
-    expenseCategory: {
+    financeCategory: {
       label: 'Kategorie výdajů',
       fields: {
         name: 'Název',

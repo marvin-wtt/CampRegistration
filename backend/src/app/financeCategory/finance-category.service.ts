@@ -1,42 +1,46 @@
-import type { ExpenseCategory, Prisma } from '#generated/prisma/client';
+import type {
+  FinanceCategory,
+  FinanceCategoryKind,
+  Prisma,
+} from '#generated/prisma/client';
 import { BaseService } from '#core/base/BaseService';
 import { inject, injectable } from 'inversify';
 import { AuditService } from '#app/audit/audit.service';
-import { expenseCategoryAuditPolicy } from '#app/expenseCategory/expense-category.audit';
-import { defaultExpenseCategoriesForCountries } from '#app/expenseCategory/expense-category.defaults';
+import { financeCategoryAuditPolicy } from '#app/financeCategory/finance-category.audit';
+import { defaultFinanceCategoriesForCountries } from '#app/financeCategory/finance-category.defaults';
 import ApiError from '#core/router/ApiError';
 import httpStatus from 'http-status';
 import { ulid } from '#utils/ulid';
 
 type Translatable = string | Record<string, string>;
 
-export type ExpenseCategoryWithCount = ExpenseCategory & {
+export type FinanceCategoryWithCount = FinanceCategory & {
   _count: { expenses: number };
 };
 
 const withCount = { _count: { select: { expenses: true } } } as const;
 
 /** What a new event's category rows are built from; ids are fresh. */
-export type ExpenseCategoryCreateManyData = Omit<
-  Prisma.ExpenseCategoryCreateManyEventInput,
+export type FinanceCategoryCreateManyData = Omit<
+  Prisma.FinanceCategoryCreateManyEventInput,
   'createdAt' | 'updatedAt'
 >[];
 
 @injectable()
-export class ExpenseCategoryService extends BaseService {
+export class FinanceCategoryService extends BaseService {
   constructor(@inject(AuditService) private readonly audit: AuditService) {
     super();
   }
 
   async getCategoryById(eventId: string, id: string) {
-    return this.prisma.expenseCategory.findFirst({
+    return this.prisma.financeCategory.findFirst({
       where: { id, eventId },
       include: withCount,
     });
   }
 
   async queryCategories(eventId: string) {
-    return this.prisma.expenseCategory.findMany({
+    return this.prisma.financeCategory.findMany({
       where: { eventId },
       include: withCount,
       orderBy: [{ position: 'asc' }, { id: 'asc' }],
@@ -45,31 +49,39 @@ export class ExpenseCategoryService extends BaseService {
 
   async createCategory(
     eventId: string,
-    data: { parentId?: string | null; name: Translatable; position?: number },
+    data: {
+      kind?: FinanceCategoryKind;
+      parentId?: string | null;
+      name: Translatable;
+      position?: number;
+    },
   ) {
     return this.transaction(async (tx) => {
+      const kind = data.kind ?? 'EXPENSE';
       const parentId = data.parentId ?? null;
       if (parentId) {
-        await this.assertGroupable(eventId, parentId);
+        await this.assertGroupable(eventId, parentId, kind);
       }
 
       const position =
         data.position ??
-        (await tx.expenseCategory.count({ where: { eventId, parentId } }));
+        (await tx.financeCategory.count({
+          where: { eventId, kind, parentId },
+        }));
 
-      const category = await tx.expenseCategory.create({
-        data: { eventId, parentId, name: data.name, position },
+      const category = await tx.financeCategory.create({
+        data: { eventId, kind, parentId, name: data.name, position },
         include: withCount,
       });
 
-      await this.audit.created(expenseCategoryAuditPolicy, category);
+      await this.audit.created(financeCategoryAuditPolicy, category);
 
       return category;
     });
   }
 
   async updateCategory(
-    category: ExpenseCategory,
+    category: FinanceCategory,
     data: { name?: Translatable | undefined; archived?: boolean | undefined },
   ) {
     return this.transaction(async (tx) => {
@@ -80,42 +92,42 @@ export class ExpenseCategoryService extends BaseService {
             ? (category.archivedAt ?? new Date())
             : null;
 
-      const after = await tx.expenseCategory.update({
+      const after = await tx.financeCategory.update({
         where: { id: category.id },
         data: { name: data.name, archivedAt },
         include: withCount,
       });
 
-      await this.audit.updated(expenseCategoryAuditPolicy, category, after);
+      await this.audit.updated(financeCategoryAuditPolicy, category, after);
 
       return after;
     });
   }
 
   /** Only unused categories go; a used one is archived instead. */
-  async deleteCategory(category: ExpenseCategoryWithCount) {
+  async deleteCategory(category: FinanceCategoryWithCount) {
     if (category._count.expenses > 0) {
       throw new ApiError(
         httpStatus.CONFLICT,
         'A category with expenses can only be archived.',
-        { code: 'EXPENSE_CATEGORY_IN_USE' },
+        { code: 'FINANCE_CATEGORY_IN_USE' },
       );
     }
 
-    const childCount = await this.prisma.expenseCategory.count({
+    const childCount = await this.prisma.financeCategory.count({
       where: { parentId: category.id },
     });
     if (childCount > 0) {
       throw new ApiError(
         httpStatus.CONFLICT,
         'Move or delete the categories of this group first.',
-        { code: 'EXPENSE_CATEGORY_HAS_CHILDREN' },
+        { code: 'FINANCE_CATEGORY_HAS_CHILDREN' },
       );
     }
 
     await this.transaction(async (tx) => {
-      await tx.expenseCategory.delete({ where: { id: category.id } });
-      await this.audit.deleted(expenseCategoryAuditPolicy, category);
+      await tx.financeCategory.delete({ where: { id: category.id } });
+      await this.audit.deleted(financeCategoryAuditPolicy, category);
     });
   }
 
@@ -147,6 +159,11 @@ export class ExpenseCategoryService extends BaseService {
       if (!parent || parentId === id) {
         throw this.invalidTree('Unknown parent category.');
       }
+      if (parent.kind !== byId.get(id)?.kind) {
+        throw this.invalidTree(
+          'Expense and income categories are grouped apart.',
+        );
+      }
       if (next.get(parentId) !== null) {
         throw this.invalidTree(
           'Categories can only be grouped one level deep.',
@@ -169,16 +186,16 @@ export class ExpenseCategoryService extends BaseService {
           continue;
         }
 
-        const after = await tx.expenseCategory.update({
+        const after = await tx.financeCategory.update({
           where: { id: item.id },
           data: { parentId: item.parentId, position: item.position },
         });
         if (before?.parentId !== item.parentId) {
-          await this.audit.updated(expenseCategoryAuditPolicy, before, after);
+          await this.audit.updated(financeCategoryAuditPolicy, before, after);
         }
       }
 
-      return tx.expenseCategory.findMany({
+      return tx.financeCategory.findMany({
         where: { eventId },
         include: withCount,
         orderBy: [{ position: 'asc' }, { id: 'asc' }],
@@ -186,32 +203,32 @@ export class ExpenseCategoryService extends BaseService {
     });
   }
 
-  /** A leaf of the event that may receive a new expense. */
+  /** A leaf of the event, of the record's kind, that may receive a new one. */
   async assertAssignable(
     eventId: string,
     categoryId: string,
-    options: { allowArchived?: boolean } = {},
+    options: { kind?: FinanceCategoryKind; allowArchived?: boolean } = {},
   ) {
-    const category = await this.db.expenseCategory.findFirst({
-      where: { id: categoryId, eventId },
+    const category = await this.db.financeCategory.findFirst({
+      where: { id: categoryId, eventId, kind: options.kind ?? 'EXPENSE' },
       include: { _count: { select: { children: true } } },
     });
 
     if (!category) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Unknown expense category.', {
-        code: 'EXPENSE_CATEGORY_INVALID',
+        code: 'FINANCE_CATEGORY_INVALID',
       });
     }
     if (category._count.children > 0) {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
         'Expenses belong to a category, not to its group.',
-        { code: 'EXPENSE_CATEGORY_INVALID' },
+        { code: 'FINANCE_CATEGORY_INVALID' },
       );
     }
     if (category.archivedAt && !options.allowArchived) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'This category is archived.', {
-        code: 'EXPENSE_CATEGORY_ARCHIVED',
+        code: 'FINANCE_CATEGORY_ARCHIVED',
       });
     }
   }
@@ -219,8 +236,8 @@ export class ExpenseCategoryService extends BaseService {
   /** The defaults in the event's languages, for a new event without a reference. */
   defaultCategories(
     countries: readonly string[],
-  ): ExpenseCategoryCreateManyData {
-    return defaultExpenseCategoriesForCountries(countries).map((category) => ({
+  ): FinanceCategoryCreateManyData {
+    return defaultFinanceCategoriesForCountries(countries).map((category) => ({
       id: ulid(),
       parentId: null,
       name: category.name,
@@ -234,8 +251,8 @@ export class ExpenseCategoryService extends BaseService {
    */
   async cloneCategories(
     referenceEventId: string,
-  ): Promise<ExpenseCategoryCreateManyData> {
-    const categories = await this.prisma.expenseCategory.findMany({
+  ): Promise<FinanceCategoryCreateManyData> {
+    const categories = await this.prisma.financeCategory.findMany({
       where: { eventId: referenceEventId, archivedAt: null },
       orderBy: [{ position: 'asc' }, { id: 'asc' }],
     });
@@ -250,14 +267,19 @@ export class ExpenseCategoryService extends BaseService {
         parentId: category.parentId
           ? (ids.get(category.parentId) ?? null)
           : null,
+        kind: category.kind,
         name: category.name,
         position: category.position,
       }));
   }
 
-  private async assertGroupable(eventId: string, parentId: string) {
-    const parent = await this.db.expenseCategory.findFirst({
-      where: { id: parentId, eventId },
+  private async assertGroupable(
+    eventId: string,
+    parentId: string,
+    kind: FinanceCategoryKind,
+  ) {
+    const parent = await this.db.financeCategory.findFirst({
+      where: { id: parentId, eventId, kind },
       include: withCount,
     });
 
@@ -271,7 +293,7 @@ export class ExpenseCategoryService extends BaseService {
 
   private invalidTree(message: string) {
     return new ApiError(httpStatus.BAD_REQUEST, message, {
-      code: 'EXPENSE_CATEGORY_TREE_INVALID',
+      code: 'FINANCE_CATEGORY_TREE_INVALID',
     });
   }
 }

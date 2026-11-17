@@ -1,5 +1,5 @@
 import type { Event, File, Prisma } from '#generated/prisma/client.js';
-import type { ExpenseCategoryCreateManyData } from '#app/expenseCategory/expense-category.service';
+import type { FinanceCategoryCreateManyData } from '#app/financeCategory/finance-category.service';
 import { ulid } from '#utils/ulid';
 import { dbNullable } from '#core/database/json';
 import type { OptionalByKeys } from '#types/utils';
@@ -368,7 +368,7 @@ export class EventService extends BaseService {
     messageTemplates: MessageTemplateCreateData = [],
     files: FileCreateData = [],
     settings: EventSettingCreateData = [],
-    expenseCategories: ExpenseCategoryCreateManyData = [],
+    financeCategories: FinanceCategoryCreateManyData = [],
   ) {
     const fileIds = files.map((f) => f.id).filter((f) => f != null);
     const fileIdMap = new Map<string, string>();
@@ -416,7 +416,7 @@ export class EventService extends BaseService {
           },
           // Not stripped: the ids are new ones, generated up front so a
           // category can name its group's new id in this same insert.
-          expenseCategories: { createMany: { data: expenseCategories } },
+          financeCategories: { createMany: { data: financeCategories } },
         },
         include: { ...this.eventResourceInclude() },
       });

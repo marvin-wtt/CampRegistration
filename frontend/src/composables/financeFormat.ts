@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n';
 import { formatMoney } from '@camp-registration/common/utils';
 import type {
   Expense,
-  ExpenseCategory,
+  FinanceCategory,
 } from '@camp-registration/common/entities';
 import { useEventDetailsStore } from '@/stores/event-details-store';
 import { useFinanceStore } from '@/stores/finance-store';
@@ -13,15 +13,15 @@ import { useObjectTranslation } from '@/composables/objectTranslation';
 /** A category grouped under its parent, for pickers and the summary. */
 export interface CategoryGroup {
   /** `null` for the top-level categories that belong to no group. */
-  group: ExpenseCategory | null;
-  categories: ExpenseCategory[];
+  group: FinanceCategory | null;
+  categories: FinanceCategory[];
 }
 
-const byPosition = (a: ExpenseCategory, b: ExpenseCategory) =>
+const byPosition = (a: FinanceCategory, b: FinanceCategory) =>
   a.position - b.position || a.id.localeCompare(b.id);
 
 /** Splits a flat category list into groups; leaves without a group come first. */
-export function groupCategories(list: readonly ExpenseCategory[]) {
+export function groupCategories(list: readonly FinanceCategory[]) {
   const sorted = [...list].sort(byPosition);
   const parentIds = new Set(sorted.flatMap((c) => c.parentId ?? []));
   const groups: CategoryGroup[] = [

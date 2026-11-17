@@ -1,16 +1,16 @@
 import { changedKeysByAllowList, composeDetails } from '#app/audit/audit.diff';
 import type { AuditChangePolicy } from '#app/audit/audit.policy';
-import type { ExpenseCategory } from '#generated/prisma/client';
+import type { FinanceCategory } from '#generated/prisma/client';
 
-const FIELD_ALLOWLIST: (keyof ExpenseCategory)[] = [
+const FIELD_ALLOWLIST: (keyof FinanceCategory)[] = [
   'name',
   'parentId',
   'position',
   'archivedAt',
 ];
 
-export const expenseCategoryAuditPolicy: AuditChangePolicy<ExpenseCategory> = {
-  entityType: 'expenseCategory',
+export const financeCategoryAuditPolicy: AuditChangePolicy<FinanceCategory> = {
+  entityType: 'financeCategory',
 
   locate: (category) => ({ entityId: category.id, eventId: category.eventId }),
 

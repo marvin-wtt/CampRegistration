@@ -1,6 +1,6 @@
 import moment from 'moment';
 import type { PrismaClient } from '#generated/prisma/client.js';
-import { defaultExpenseCategoriesForCountries } from '#app/expenseCategory/expense-category.defaults.js';
+import { defaultFinanceCategoriesForCountries } from '#app/financeCategory/finance-category.defaults.js';
 import { BaseSeeder } from './BaseSeeder';
 import { EVENT_IDS, USER_IDS } from './ids';
 import { seedReceiptFile } from './file.seeder';
@@ -360,8 +360,8 @@ class FinanceSeeder extends BaseSeeder {
       if (event.id === EVENT_IDS.spring) {
         continue;
       }
-      await prisma.expenseCategory.createMany({
-        data: defaultExpenseCategoriesForCountries(
+      await prisma.financeCategory.createMany({
+        data: defaultFinanceCategoriesForCountries(
           event.countries as string[],
         ).map((category) => ({ eventId: event.id, ...category })),
       });
@@ -386,11 +386,11 @@ class FinanceSeeder extends BaseSeeder {
     let position = 0;
     for (const set of ledger.categories) {
       const group = set.group
-        ? await prisma.expenseCategory.create({
+        ? await prisma.financeCategory.create({
             data: { eventId, name: set.group, position: position++ },
           })
         : null;
-      await prisma.expenseCategory.createMany({
+      await prisma.financeCategory.createMany({
         data: set.names.map((name, index) => ({
           eventId,
           parentId: group?.id ?? null,
@@ -400,7 +400,7 @@ class FinanceSeeder extends BaseSeeder {
       });
     }
 
-    const categories = await prisma.expenseCategory.findMany({
+    const categories = await prisma.financeCategory.findMany({
       where: { eventId },
     });
     const categoryId = (name: string) => {

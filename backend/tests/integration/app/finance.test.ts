@@ -449,7 +449,7 @@ describe('finances', () => {
       status = 201,
     ) => {
       const { body } = await request()
-        .post(`/api/v1/events/${event.id}/expense-categories`)
+        .post(`/api/v1/events/${event.id}/finance-categories`)
         .send(data)
         .auth(token, { type: 'bearer' })
         .expect(status);
@@ -491,17 +491,53 @@ describe('finances', () => {
       await createExpense(event, token, { categoryId: food.id });
     });
 
+    it('keeps expense and income categories apart', async () => {
+      const { event, token } = await setup();
+      const created = await createCategory(event, token, { name: 'Food' });
+      // No route makes income categories yet.
+      const grants = await prisma.financeCategory.create({
+        data: { eventId: event.id, kind: 'INCOME', name: 'Grants' },
+      });
+
+      const { body } = await request()
+        .get(`/api/v1/events/${event.id}/finance-categories`)
+        .auth(token, { type: 'bearer' })
+        .expect(200);
+      expect(
+        (body.data as { id: string; kind: string }[]).find(
+          (c) => c.id === created.id,
+        )?.kind,
+      ).toBe('EXPENSE');
+
+      await request()
+        .post(`/api/v1/events/${event.id}/expenses`)
+        .send(expense({ categoryId: grants.id }))
+        .auth(token, { type: 'bearer' })
+        .expect(400);
+      await createCategory(
+        event,
+        token,
+        { name: 'Snacks', parentId: grants.id },
+        400,
+      );
+      await request()
+        .put(`/api/v1/events/${event.id}/finance-categories/order`)
+        .send({ items: [{ id: created.id, parentId: grants.id, position: 0 }] })
+        .auth(token, { type: 'bearer' })
+        .expect(400);
+    });
+
     it('archives a used category instead of deleting it', async () => {
       const { event, token } = await setup();
       const food = await createCategory(event, token, { name: 'Food' });
       await createExpense(event, token, { categoryId: food.id });
 
       await request()
-        .delete(`/api/v1/events/${event.id}/expense-categories/${food.id}`)
+        .delete(`/api/v1/events/${event.id}/finance-categories/${food.id}`)
         .auth(token, { type: 'bearer' })
         .expect(409);
       await request()
-        .patch(`/api/v1/events/${event.id}/expense-categories/${food.id}`)
+        .patch(`/api/v1/events/${event.id}/finance-categories/${food.id}`)
         .send({ archived: true })
         .auth(token, { type: 'bearer' })
         .expect(200);
@@ -518,7 +554,7 @@ describe('finances', () => {
       const travel = await createCategory(event, token, { name: 'Travel' });
 
       const { body } = await request()
-        .put(`/api/v1/events/${event.id}/expense-categories/order`)
+        .put(`/api/v1/events/${event.id}/finance-categories/order`)
         .send({
           items: [
             { id: group.id, parentId: null, position: 0 },

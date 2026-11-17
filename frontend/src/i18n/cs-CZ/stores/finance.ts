@@ -25,7 +25,7 @@ export default {
       error: 'Zrušení výplaty se nezdařilo',
     },
   },
-  expenseCategory: {
+  financeCategory: {
     fetch: { error: 'Načtení kategorií se nezdařilo' },
     create: { error: 'Vytvoření kategorie se nezdařilo' },
     update: { error: 'Úprava kategorie se nezdařila' },

@@ -25,7 +25,7 @@ export default {
       error: 'Nie udało się cofnąć wypłaty',
     },
   },
-  expenseCategory: {
+  financeCategory: {
     fetch: { error: 'Nie udało się pobrać kategorii' },
     create: { error: 'Nie udało się utworzyć kategorii' },
     update: { error: 'Nie udało się zaktualizować kategorii' },

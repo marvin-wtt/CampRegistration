@@ -135,7 +135,7 @@ import { useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import type {
   Expense,
-  ExpenseCategory,
+  FinanceCategory,
 } from '@camp-registration/common/entities';
 import FilterChip from '@/components/common/FilterChip.vue';
 import ExpenseFilterBar from '@/components/event/finances/ExpenseFilterBar.vue';
@@ -149,7 +149,7 @@ import { parseLocalDate } from '@/utils/date';
 
 const { expenses, categories } = defineProps<{
   expenses: readonly Expense[];
-  categories: readonly ExpenseCategory[];
+  categories: readonly FinanceCategory[];
 }>();
 
 const dialogs = useFinanceDialogs();

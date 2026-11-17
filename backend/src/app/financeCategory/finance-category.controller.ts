@@ -3,15 +3,15 @@ import type { Request, Response } from 'express';
 import { inject, injectable } from 'inversify';
 import { BaseController } from '#core/base/BaseController';
 import { RealtimeService } from '#core/realtime/RealtimeService';
-import { ExpenseCategoryService } from '#app/expenseCategory/expense-category.service';
-import { ExpenseCategoryResource } from '#app/expenseCategory/expense-category.resource';
-import validator from '#app/expenseCategory/expense-category.validation';
+import { FinanceCategoryService } from '#app/financeCategory/finance-category.service';
+import { FinanceCategoryResource } from '#app/financeCategory/finance-category.resource';
+import validator from '#app/financeCategory/finance-category.validation';
 
 @injectable()
-export class ExpenseCategoryController extends BaseController {
+export class FinanceCategoryController extends BaseController {
   constructor(
-    @inject(ExpenseCategoryService)
-    private readonly categoryService: ExpenseCategoryService,
+    @inject(FinanceCategoryService)
+    private readonly categoryService: FinanceCategoryService,
     @inject(RealtimeService)
     private readonly realtimeService: RealtimeService,
   ) {
@@ -24,7 +24,7 @@ export class ExpenseCategoryController extends BaseController {
 
     const categories = await this.categoryService.queryCategories(event.id);
 
-    res.resource(ExpenseCategoryResource.collection(categories));
+    res.resource(FinanceCategoryResource.collection(categories));
   }
 
   async store(req: Request, res: Response) {
@@ -35,30 +35,30 @@ export class ExpenseCategoryController extends BaseController {
 
     void this.realtimeService.emit(
       event.id,
-      'expense_category',
+      'finance_category',
       category.id,
       'created',
     );
 
     res
       .status(httpStatus.CREATED)
-      .resource(new ExpenseCategoryResource(category));
+      .resource(new FinanceCategoryResource(category));
   }
 
   async update(req: Request, res: Response) {
     const { body } = await req.validate(validator.update);
-    const category = req.modelOrFail('expenseCategory');
+    const category = req.modelOrFail('financeCategory');
 
     const updated = await this.categoryService.updateCategory(category, body);
 
     void this.realtimeService.emit(
       updated.eventId,
-      'expense_category',
+      'finance_category',
       updated.id,
       'updated',
     );
 
-    res.resource(new ExpenseCategoryResource(updated));
+    res.resource(new FinanceCategoryResource(updated));
   }
 
   async order(req: Request, res: Response) {
@@ -70,20 +70,20 @@ export class ExpenseCategoryController extends BaseController {
       body.items,
     );
 
-    void this.realtimeService.emitInvalidation(event.id, 'expense_category');
+    void this.realtimeService.emitInvalidation(event.id, 'finance_category');
 
-    res.resource(ExpenseCategoryResource.collection(categories));
+    res.resource(FinanceCategoryResource.collection(categories));
   }
 
   async destroy(req: Request, res: Response) {
     await req.validate(validator.destroy);
-    const category = req.modelOrFail('expenseCategory');
+    const category = req.modelOrFail('financeCategory');
 
     await this.categoryService.deleteCategory(category);
 
     void this.realtimeService.emit(
       category.eventId,
-      'expense_category',
+      'finance_category',
       category.id,
       'deleted',
     );

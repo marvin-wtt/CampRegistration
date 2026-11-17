@@ -5,7 +5,7 @@ import { ulid } from 'ulidx';
  * Every event owns its expense categories; new events get the defaults on
  * creation. Give existing events the same list, in their own languages, so
  * nothing has to initialize lazily. Frozen copy of
- * `expense-category.defaults.ts` as of this migration.
+ * `finance-category.defaults.ts` as of this migration.
  */
 const DEFAULTS: Record<string, string>[] = [
   {
@@ -70,7 +70,7 @@ function localesOf(countries: unknown): string[] {
 
 export async function up(tx: Prisma.TransactionClient): Promise<void> {
   const events = await tx.event.findMany({
-    where: { expenseCategories: { none: {} } },
+    where: { financeCategories: { none: {} } },
     select: { id: true, countries: true },
   });
 
@@ -91,6 +91,6 @@ export async function up(tx: Prisma.TransactionClient): Promise<void> {
   });
 
   if (data.length > 0) {
-    await tx.expenseCategory.createMany({ data });
+    await tx.financeCategory.createMany({ data });
   }
 }

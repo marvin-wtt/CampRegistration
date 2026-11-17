@@ -2,7 +2,7 @@ import { computed, toValue, type MaybeRefOrGetter } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type {
   Expense,
-  ExpenseCategory,
+  FinanceCategory,
 } from '@camp-registration/common/entities';
 import { payerKey } from '@camp-registration/common/utils';
 import { groupCategories, useFinanceFormat } from '@/composables/financeFormat';
@@ -58,7 +58,7 @@ const payerFilterKey = (expense: Expense) => payerKey(expense) ?? 'funds';
  */
 export function useExpenseFilters(
   expenses: MaybeRefOrGetter<readonly Expense[]>,
-  categories: MaybeRefOrGetter<readonly ExpenseCategory[]>,
+  categories: MaybeRefOrGetter<readonly FinanceCategory[]>,
 ) {
   const { t } = useI18n();
   const { to } = useObjectTranslation();

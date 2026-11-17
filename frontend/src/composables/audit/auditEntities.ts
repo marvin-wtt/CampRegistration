@@ -7,7 +7,7 @@ import { useMessageAuditView } from '@/composables/audit/entities/message';
 import { useMessageTemplateAuditView } from '@/composables/audit/entities/messageTemplate';
 import {
   useExpenseAuditView,
-  useExpenseCategoryAuditView,
+  useFinanceCategoryAuditView,
   usePayoutAuditView,
 } from '@/composables/audit/entities/finance';
 
@@ -21,7 +21,7 @@ export function useAuditEntities(): Record<AuditEntityType, AuditEntityView> {
     message: useMessageAuditView(),
     messageTemplate: useMessageTemplateAuditView(),
     expense: useExpenseAuditView(),
-    expenseCategory: useExpenseCategoryAuditView(),
+    financeCategory: useFinanceCategoryAuditView(),
     payout: usePayoutAuditView(),
   };
 }

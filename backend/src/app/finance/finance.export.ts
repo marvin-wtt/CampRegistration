@@ -5,7 +5,7 @@ import { computeCategoryTotals } from '#app/finance/finance.balances';
 import { fromMinorUnits, translate } from '@camp-registration/common/utils';
 import type {
   Expense,
-  ExpenseCategory,
+  FinanceCategory,
   File,
   Payout,
 } from '#generated/prisma/client';
@@ -15,7 +15,7 @@ export interface FinanceExportData {
   payoutNumberPrefix: string;
   expenses: (Expense & { files: Pick<File, 'id'>[] })[];
   payouts: Payout[];
-  categories: ExpenseCategory[];
+  categories: FinanceCategory[];
 }
 
 const MONEY = '#,##0.00';
@@ -161,7 +161,7 @@ export function buildFinanceSheets(
  * (the root) when it has no group.
  */
 export function receiptGroupFolder(
-  categories: Pick<ExpenseCategory, 'id' | 'parentId' | 'name'>[],
+  categories: Pick<FinanceCategory, 'id' | 'parentId' | 'name'>[],
   locale: string,
 ): (expense: { categoryId: string | null }) => string | null {
   const byId = new Map(categories.map((c) => [c.id, c]));

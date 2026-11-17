@@ -7,7 +7,7 @@ export const AUDIT_ENTITY_TYPES = [
   'message',
   'messageTemplate',
   'expense',
-  'expenseCategory',
+  'financeCategory',
   'payout',
 ] as const;
 

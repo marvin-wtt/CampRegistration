@@ -22,7 +22,7 @@ export default {
     update: { error: 'Failed to update the payout' },
     delete: { success: 'Payout undone', error: 'Failed to undo the payout' },
   },
-  expenseCategory: {
+  financeCategory: {
     fetch: { error: 'Failed to fetch categories' },
     create: { error: 'Failed to create the category' },
     update: { error: 'Failed to update the category' },

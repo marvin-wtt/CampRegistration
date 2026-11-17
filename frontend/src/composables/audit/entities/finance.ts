@@ -30,7 +30,7 @@ export function useExpenseAuditView(): AuditEntityView {
   };
 }
 
-export function useExpenseCategoryAuditView(): AuditEntityView {
+export function useFinanceCategoryAuditView(): AuditEntityView {
   return { icon: 'category' };
 }
 

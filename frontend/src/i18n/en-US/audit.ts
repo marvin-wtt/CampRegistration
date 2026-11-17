@@ -114,7 +114,7 @@ export default {
         },
       },
     },
-    expenseCategory: {
+    financeCategory: {
       label: 'Expense category',
       fields: {
         name: 'Name',

@@ -23,10 +23,10 @@ import type {
 } from '@camp-registration/common/permissions';
 import type {
   Expense,
-  ExpenseCategory,
-  ExpenseCategoryCreateData,
-  ExpenseCategoryOrderData,
-  ExpenseCategoryUpdateData,
+  FinanceCategory,
+  FinanceCategoryCreateData,
+  FinanceCategoryOrderData,
+  FinanceCategoryUpdateData,
   ExpenseCreateData,
   ExpenseUpdateData,
   FinanceBalance,
@@ -110,11 +110,11 @@ export const useFinanceStore = defineStore('finance', () => {
     realtime: { resource: 'payout' },
   });
 
-  const categories = useCollection<ExpenseCategory>({
-    name: 'expenseCategory',
+  const categories = useCollection<FinanceCategory>({
+    name: 'financeCategory',
     key,
-    fetch: (eventId) => api.fetchExpenseCategories(eventId),
-    realtime: { resource: 'expense_category' },
+    fetch: (eventId) => api.fetchFinanceCategories(eventId),
+    realtime: { resource: 'finance_category' },
   });
 
   // Once for every view and row that names a category.
@@ -350,32 +350,32 @@ export const useFinanceStore = defineStore('finance', () => {
   }
 
   function createCategory(
-    data: ExpenseCategoryCreateData,
-  ): Promise<ExpenseCategory> {
+    data: FinanceCategoryCreateData,
+  ): Promise<FinanceCategory> {
     return categories.mutate(
       'create',
-      (eventId) => api.createExpenseCategory(eventId, data),
+      (eventId) => api.createFinanceCategory(eventId, data),
       { apply: upsertById },
     );
   }
 
   function updateCategory(
     categoryId: string,
-    data: ExpenseCategoryUpdateData,
-  ): Promise<ExpenseCategory> {
+    data: FinanceCategoryUpdateData,
+  ): Promise<FinanceCategory> {
     return categories.mutate(
       'update',
-      (eventId) => api.updateExpenseCategory(eventId, categoryId, data),
+      (eventId) => api.updateFinanceCategory(eventId, categoryId, data),
       { apply: replaceById },
     );
   }
 
   function orderCategories(
-    data: ExpenseCategoryOrderData,
-  ): Promise<ExpenseCategory[]> {
+    data: FinanceCategoryOrderData,
+  ): Promise<FinanceCategory[]> {
     return categories.mutate(
       'order',
-      (eventId) => api.orderExpenseCategories(eventId, data),
+      (eventId) => api.orderFinanceCategories(eventId, data),
       {
         // Shown in place while the request runs.
         optimistic: (list) =>
@@ -391,7 +391,7 @@ export const useFinanceStore = defineStore('finance', () => {
   async function deleteCategory(categoryId: string): Promise<void> {
     await categories.mutate(
       'delete',
-      (eventId) => api.deleteExpenseCategory(eventId, categoryId),
+      (eventId) => api.deleteFinanceCategory(eventId, categoryId),
       { apply: (list) => removeById(list, categoryId) },
     );
   }

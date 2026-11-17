@@ -18,7 +18,7 @@ import { EventManagerService } from '#app/eventManager/event-manager.service.js'
 import { SettingService } from '#app/setting/setting.service';
 import { PrivacyNoticeService } from '#app/privacyNotice/privacy-notice.service';
 import { RealtimeService } from '#core/realtime/RealtimeService';
-import { ExpenseCategoryService } from '#app/expenseCategory/expense-category.service';
+import { FinanceCategoryService } from '#app/financeCategory/finance-category.service';
 import ApiError from '#core/router/ApiError';
 import { inject, injectable } from 'inversify';
 
@@ -39,8 +39,8 @@ export class EventController extends BaseController {
     private readonly settingService: SettingService,
     @inject(PrivacyNoticeService)
     private readonly privacyNoticeService: PrivacyNoticeService,
-    @inject(ExpenseCategoryService)
-    private readonly expenseCategoryService: ExpenseCategoryService,
+    @inject(FinanceCategoryService)
+    private readonly financeCategoryService: FinanceCategoryService,
     @inject(RealtimeService)
     private readonly realtimeService: RealtimeService,
   ) {
@@ -116,9 +116,9 @@ export class EventController extends BaseController {
       cloned?.messageTemplates ??
       defaultMessageTemplatesForCountries(body.countries, body.preset);
     const settings = cloned?.settings ?? defaultSettingsForPreset(preset);
-    const expenseCategories =
-      cloned?.expenseCategories ??
-      this.expenseCategoryService.defaultCategories(body.countries);
+    const financeCategories =
+      cloned?.financeCategories ??
+      this.financeCategoryService.defaultCategories(body.countries);
 
     const event = await this.eventService.createEvent(
       userId,
@@ -148,7 +148,7 @@ export class EventController extends BaseController {
       messageTemplates,
       files,
       settings,
-      expenseCategories,
+      financeCategories,
     );
 
     // Privacy notice versions aren't part of the event's own row, so they
@@ -217,7 +217,7 @@ export class EventController extends BaseController {
       tableTemplates,
       messageTemplates,
       settings,
-      expenseCategories,
+      financeCategories,
     ] = await Promise.all([
       this.fileService.queryModelFiles({
         name: 'event',
@@ -226,7 +226,7 @@ export class EventController extends BaseController {
       this.tableTemplateService.queryTemplates(referenceEventId),
       this.messageTemplateService.queryMessageTemplates(referenceEventId),
       this.settingService.querySettings(referenceEventId),
-      this.expenseCategoryService.cloneCategories(referenceEventId),
+      this.financeCategoryService.cloneCategories(referenceEventId),
     ]);
 
     return {
@@ -234,7 +234,7 @@ export class EventController extends BaseController {
       tableTemplates,
       messageTemplates,
       settings,
-      expenseCategories,
+      financeCategories,
     };
   }
 

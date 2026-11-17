@@ -37,7 +37,7 @@ import { NewsletterManagerModule } from '#app/newsletterManager/newsletter-manag
 import { NewsletterMessageModule } from '#app/newsletterMessage/newsletter-message.module';
 import { AuditModule } from '#app/audit/audit.module';
 import { FinanceModule } from '#app/finance/finance.module';
-import { ExpenseCategoryModule } from '#app/expenseCategory/expense-category.module';
+import { FinanceCategoryModule } from '#app/financeCategory/finance-category.module';
 import { ExpenseModule } from '#app/expense/expense.module';
 import { PayoutModule } from '#app/payout/payout.module';
 import { AdminModule } from '#app/admin/admin.module';
@@ -101,7 +101,7 @@ export const createAppModules = (): AppModule[] => [
   new ChoreModule(),
   new ChoreAssignmentModule(),
   new FinanceModule(),
-  new ExpenseCategoryModule(),
+  new FinanceCategoryModule(),
   new ExpenseModule(),
   new PayoutModule(),
   new FeedbackModule(),

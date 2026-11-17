@@ -28,7 +28,7 @@ export default {
       error: 'Fehler beim Rückgängigmachen der Auszahlung',
     },
   },
-  expenseCategory: {
+  financeCategory: {
     fetch: { error: 'Fehler beim Abrufen der Kategorien' },
     create: { error: 'Fehler beim Erstellen der Kategorie' },
     update: { error: 'Fehler beim Aktualisieren der Kategorie' },

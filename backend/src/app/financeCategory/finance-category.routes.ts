@@ -5,22 +5,22 @@ import { ModuleRouter } from '#core/router/ModuleRouter';
 import { controller } from '#core/router/bindController';
 import { hasEventPermission } from '#app/event/event.guard';
 import { financeMember } from '#app/finance/finance.guard';
-import { ExpenseCategoryService } from '#app/expenseCategory/expense-category.service';
-import { ExpenseCategoryController } from '#app/expenseCategory/expense-category.controller';
+import { FinanceCategoryService } from '#app/financeCategory/finance-category.service';
+import { FinanceCategoryController } from '#app/financeCategory/finance-category.controller';
 
 @injectable()
-export class ExpenseCategoryRouter extends ModuleRouter {
+export class FinanceCategoryRouter extends ModuleRouter {
   constructor(
-    @inject(ExpenseCategoryService)
-    private readonly categoryService: ExpenseCategoryService,
-    @inject(ExpenseCategoryController)
-    private readonly categoryController: ExpenseCategoryController,
+    @inject(FinanceCategoryService)
+    private readonly categoryService: FinanceCategoryService,
+    @inject(FinanceCategoryController)
+    private readonly categoryController: FinanceCategoryController,
   ) {
     super();
   }
 
   protected registerBindings() {
-    this.bindModel('expenseCategory', (req, id) => {
+    this.bindModel('financeCategory', (req, id) => {
       const event = req.modelOrFail('event');
       return this.categoryService.getCategoryById(event.id, id);
     });
@@ -48,12 +48,12 @@ export class ExpenseCategoryRouter extends ModuleRouter {
       controller(this.categoryController, 'order'),
     );
     this.router.patch(
-      '/:expenseCategoryId',
+      '/:financeCategoryId',
       configure,
       controller(this.categoryController, 'update'),
     );
     this.router.delete(
-      '/:expenseCategoryId',
+      '/:financeCategoryId',
       configure,
       controller(this.categoryController, 'destroy'),
     );

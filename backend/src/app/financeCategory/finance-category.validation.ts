@@ -1,9 +1,9 @@
 import { z, type ZodType } from 'zod';
 import { translatedValue } from '#core/validation/helper';
 import type {
-  ExpenseCategoryCreateData,
-  ExpenseCategoryOrderData,
-  ExpenseCategoryUpdateData,
+  FinanceCategoryCreateData,
+  FinanceCategoryOrderData,
+  FinanceCategoryUpdateData,
 } from '@camp-registration/common/entities';
 
 const NAME = translatedValue(z.string().trim().min(1).max(100));
@@ -12,7 +12,7 @@ const POSITION = z.number().int().min(0).max(10_000);
 const eventParams = z.object({ eventId: z.ulid() });
 const categoryParams = z.object({
   eventId: z.ulid(),
-  expenseCategoryId: z.ulid(),
+  financeCategoryId: z.ulid(),
 });
 
 const index = z.object({ params: eventParams });
@@ -23,7 +23,7 @@ const store = z.object({
     parentId: z.ulid().nullable().optional(),
     name: NAME,
     position: POSITION.optional(),
-  }) satisfies ZodType<ExpenseCategoryCreateData>,
+  }) satisfies ZodType<FinanceCategoryCreateData>,
 });
 
 const update = z.object({
@@ -31,7 +31,7 @@ const update = z.object({
   body: z.object({
     name: NAME.optional(),
     archived: z.boolean().optional(),
-  }) satisfies ZodType<ExpenseCategoryUpdateData>,
+  }) satisfies ZodType<FinanceCategoryUpdateData>,
 });
 
 const order = z.object({
@@ -46,7 +46,7 @@ const order = z.object({
         }),
       )
       .max(500),
-  }) satisfies ZodType<ExpenseCategoryOrderData>,
+  }) satisfies ZodType<FinanceCategoryOrderData>,
 });
 
 const destroy = z.object({ params: categoryParams });

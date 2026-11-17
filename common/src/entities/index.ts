@@ -13,7 +13,7 @@ export * from './Event.js';
 export * from './EventManager.js';
 export * from './EventSetting.js';
 export * from './Expense.js';
-export * from './ExpenseCategory.js';
+export * from './FinanceCategory.js';
 export * from './Finance.js';
 export * from './Payout.js';
 export * from './LegalDocument.js';

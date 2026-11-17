@@ -280,7 +280,7 @@ import { computed } from 'vue';
 import type { RouteLocationRaw } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import type {
-  ExpenseCategory,
+  FinanceCategory,
   FinanceSummary,
 } from '@camp-registration/common/entities';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
@@ -292,7 +292,7 @@ import { useObjectTranslation } from '@/composables/objectTranslation';
 
 const { summary, categories } = defineProps<{
   summary: FinanceSummary;
-  categories: readonly ExpenseCategory[];
+  categories: readonly FinanceCategory[];
 }>();
 
 const { t } = useI18n();
@@ -372,7 +372,7 @@ interface Row {
 // Totals per category with group subtotals; archived categories still count.
 const rows = computed(() => {
   const totals = new Map(summary.byCategory.map((c) => [c.categoryId, c]));
-  const toRow = (category: ExpenseCategory): Row | null => {
+  const toRow = (category: FinanceCategory): Row | null => {
     const total = totals.get(category.id);
     return total
       ? {

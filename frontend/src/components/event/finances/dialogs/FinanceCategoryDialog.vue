@@ -257,7 +257,7 @@ import { storeToRefs } from 'pinia';
 import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
-import type { ExpenseCategory } from '@camp-registration/common/entities';
+import type { FinanceCategory } from '@camp-registration/common/entities';
 import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
 import DialogCard from '@/components/common/dialogs/DialogCard.vue';
 import CategoryNameForm from '@/components/event/finances/CategoryNameForm.vue';
@@ -270,8 +270,8 @@ import { useObjectTranslation } from '@/composables/objectTranslation';
 
 interface Section {
   id: string | null;
-  category: ExpenseCategory | null;
-  categories: ExpenseCategory[];
+  category: FinanceCategory | null;
+  categories: FinanceCategory[];
 }
 
 defineEmits([...useDialogPluginComponent.emits]);
@@ -300,13 +300,13 @@ const all = computed(() =>
 const active = computed(() => all.value.filter((c) => c.archivedAt === null));
 const archived = computed(() => all.value.filter((c) => c.archivedAt !== null));
 
-function hasChildren(category: ExpenseCategory): boolean {
+function hasChildren(category: FinanceCategory): boolean {
   return all.value.some((c) => c.parentId === category.id);
 }
 
 /** A top-level category with children, or one created as a group. */
 const groupIds = ref(new Set<string>());
-function isGroup(category: ExpenseCategory): boolean {
+function isGroup(category: FinanceCategory): boolean {
   return (
     category.parentId === null &&
     (hasChildren(category) || groupIds.value.has(category.id))
@@ -329,7 +329,7 @@ const sections = computed<Section[]>(() => [
     })),
 ]);
 
-function moveTargets(category: ExpenseCategory) {
+function moveTargets(category: FinanceCategory) {
   const targets: { id: string | null; label: string }[] = [];
   if (category.parentId !== null) {
     targets.push({ id: null, label: t('finance.categories.noGroup') });
@@ -347,7 +347,7 @@ function moveTargets(category: ExpenseCategory) {
 function orderWith(
   changes: Map<string, { parentId: string | null; index: number }>,
 ) {
-  const lists = new Map<string | null, ExpenseCategory[]>();
+  const lists = new Map<string | null, FinanceCategory[]>();
   for (const category of all.value) {
     const parentId = changes.get(category.id)?.parentId ?? category.parentId;
     lists.set(parentId, [...(lists.get(parentId) ?? []), category]);
@@ -387,7 +387,7 @@ function move(section: Section, index: number, delta: number) {
   });
 }
 
-function regroup(category: ExpenseCategory, parentId: string | null) {
+function regroup(category: FinanceCategory, parentId: string | null) {
   void financeStore.orderCategories({
     items: orderWith(
       new Map([[category.id, { parentId, index: Number.MAX_SAFE_INTEGER }]]),
@@ -395,7 +395,7 @@ function regroup(category: ExpenseCategory, parentId: string | null) {
   });
 }
 
-function actionsFor(category: ExpenseCategory): ResponsiveMenuItem[] {
+function actionsFor(category: FinanceCategory): ResponsiveMenuItem[] {
   return [
     {
       label: t('finance.categories.rename'),
@@ -423,11 +423,11 @@ function actionsFor(category: ExpenseCategory): ResponsiveMenuItem[] {
   ];
 }
 
-function archive(category: ExpenseCategory, value: boolean) {
+function archive(category: FinanceCategory, value: boolean) {
   void financeStore.updateCategory(category.id, { archived: value });
 }
 
-function remove(category: ExpenseCategory) {
+function remove(category: FinanceCategory) {
   void financeStore.deleteCategory(category.id);
 }
 
@@ -448,7 +448,7 @@ function stopAdding() {
 
 type CategoryName = string | Record<string, string>;
 
-function renameOf(category: ExpenseCategory) {
+function renameOf(category: FinanceCategory) {
   return (name: CategoryName) =>
     financeStore.updateCategory(category.id, { name });
 }
