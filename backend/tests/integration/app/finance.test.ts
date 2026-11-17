@@ -804,12 +804,30 @@ describe('finances', () => {
           scan.id,
         ]);
 
-        // Removing the signature detaches the scan, so it can be signed anew.
+        // A further page is an update, not a second signing.
+        const page = await FileFactory.create({ field: sessionId });
+        await request()
+          .patch(`/api/v1/events/${event.id}/payouts/${payout.id}`)
+          .send({ fileIds: [scan.id, page.id] })
+          .setSessionId(sessionId)
+          .auth(token, { type: 'bearer' })
+          .expect(200);
+
+        // Removing the signature detaches the scans, so it can be signed anew.
         const { body: unsigned } = await request()
           .delete(`/api/v1/events/${event.id}/payouts/${payout.id}/signature`)
           .auth(token, { type: 'bearer' })
           .expect(200);
         expect(unsigned.data.files).toEqual([]);
+        // Not even its uploader's session keeps the revoked slip.
+        const detached = await prisma.file.findMany({
+          where: { id: { in: [scan.id, page.id] } },
+          select: { payoutId: true, field: true },
+        });
+        expect(detached).toEqual([
+          { payoutId: null, field: null },
+          { payoutId: null, field: null },
+        ]);
 
         // Both are logged, the scans with them: the unsigned one is gone.
         const logs = await prisma.auditLog.findMany({
@@ -825,9 +843,10 @@ describe('finances', () => {
           expect.arrayContaining([
             ['created', undefined],
             ['signed', 1],
-            ['unsigned', 1],
+            ['unsigned', 2],
           ]),
         );
+        expect(logs.filter((log) => log.action === 'signed')).toHaveLength(1);
       });
     });
 

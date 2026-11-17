@@ -149,7 +149,7 @@
       position="bottom-right"
       :offset="[16, 16]"
     >
-      <q-btn
+      <m-btn
         fab
         icon="add"
         :label="t('finance.action.expense')"

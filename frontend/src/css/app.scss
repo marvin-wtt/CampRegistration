@@ -183,3 +183,14 @@ input[type='number'] {
     grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
   }
 }
+
+// Money and counts that line up in columns and never break mid-figure.
+.text-amount {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+// Receipt and payout numbers, set as they are written on paper.
+.text-mono {
+  font-family: 'Roboto Mono', ui-monospace, monospace;
+}

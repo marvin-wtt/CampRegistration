@@ -38,14 +38,8 @@ export class PayoutModule implements AppModule {
           'event.payouts.sign',
           'event.payouts.delete',
         ],
-        COORDINATOR: [
-          'event.payouts.view',
-          'event.payouts.create',
-          'event.payouts.edit',
-          'event.payouts.sign',
-          'event.payouts.delete',
-        ],
         // See and sign the payouts made to them.
+        COORDINATOR: ['event.payouts.view:own', 'event.payouts.sign:own'],
         COUNSELOR: ['event.payouts.view:own', 'event.payouts.sign:own'],
       },
     };

@@ -42,12 +42,12 @@
             v-if="quasar.screen.lt.md"
             #tools
           >
-            <q-btn
+            <m-btn
               :label="t('finance.statement.signLarge')"
               icon="open_in_full"
-              flat
+              text
               rounded
-              no-caps
+              color="primary"
               size="sm"
               data-test="payout-sign-large"
               @click="signLarge"
@@ -77,7 +77,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useDialogPluginComponent, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
@@ -89,7 +89,10 @@ import SignatureFullscreenDialog from '@/components/common/inputs/SignatureFulls
 import PayoutStatementView from '@/components/event/finances/PayoutStatementView.vue';
 import { useFinanceStore } from '@/stores/finance-store';
 
-const { payout } = defineProps<{ payout: Payout }>();
+const { payout: opened } = defineProps<{
+  /** As opened; the dialog then follows the store's copy. */
+  payout: Payout;
+}>();
 
 defineEmits([...useDialogPluginComponent.emits]);
 
@@ -98,6 +101,11 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 
 const { t } = useI18n();
 const financeStore = useFinanceStore();
+
+// Live, so a receipt changing meanwhile shows as outdated before signing.
+const payout = computed(
+  () => financeStore.payouts?.find((p) => p.id === opened.id) ?? opened,
+);
 
 const signature = ref<string | null>(null);
 const quasar = useQuasar();
@@ -108,7 +116,9 @@ function signLarge() {
       component: SignatureFullscreenDialog,
       componentProps: {
         initial: signature.value,
-        label: t('finance.statement.signHere', { name: payout.recipientName }),
+        label: t('finance.statement.signHere', {
+          name: payout.value.recipientName,
+        }),
         clearLabel: t('finance.statement.clear'),
       },
     })
@@ -116,6 +126,7 @@ function signLarge() {
       signature.value = drawn;
     });
 }
+
 const saving = ref(false);
 
 async function sign() {
@@ -124,7 +135,7 @@ async function sign() {
   }
   saving.value = true;
   try {
-    onDialogOK(await financeStore.signPayout(payout.id, signature.value));
+    onDialogOK(await financeStore.signPayout(payout.value.id, signature.value));
   } catch {
     // Reported by the store.
   } finally {

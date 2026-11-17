@@ -31,24 +31,21 @@
       <!-- Filters -->
       <div class="filter-row">
         <template v-if="historyEntityId">
-          <q-chip
+          <filter-chip
             removable
-            class="filter-chip filter-chip--active"
+            active
             @remove="historyEntityId = null"
           >
             {{ t('filter.history', { id: shortId(historyEntityId) }) }}
-          </q-chip>
+          </filter-chip>
         </template>
 
         <template v-else>
-          <q-chip
+          <filter-chip
             v-for="option in entityTypeOptions"
             :key="option.value"
             clickable
-            class="filter-chip"
-            :class="{
-              'filter-chip--active': selectedEntityTypes.includes(option.value),
-            }"
+            :active="selectedEntityTypes.includes(option.value)"
             @click="toggleEntityType(option.value)"
           >
             {{ option.label }}
@@ -58,13 +55,12 @@
               size="16px"
               class="q-ml-xs"
             />
-          </q-chip>
+          </filter-chip>
 
-          <q-chip
+          <filter-chip
             v-if="actorOptions.length > 0"
             clickable
-            class="filter-chip"
-            :class="{ 'filter-chip--active': selectedActorIds.length > 0 }"
+            :active="selectedActorIds.length > 0"
           >
             {{ t('filter.actor') }}
             <template v-if="selectedActorIds.length > 0">
@@ -97,13 +93,12 @@
                 </q-item>
               </q-list>
             </q-menu>
-          </q-chip>
+          </filter-chip>
 
-          <q-chip
+          <filter-chip
             clickable
             :removable="!!dateRange"
-            class="filter-chip"
-            :class="{ 'filter-chip--active': !!dateRange }"
+            :active="!!dateRange"
             @remove="dateRange = null"
           >
             <q-icon
@@ -121,12 +116,11 @@
                 @update:model-value="onDateRangeUpdate"
               />
             </q-menu>
-          </q-chip>
+          </filter-chip>
 
-          <q-chip
+          <filter-chip
             clickable
-            class="filter-chip"
-            :class="{ 'filter-chip--active': showSystemEvents }"
+            :active="showSystemEvents"
             @click="showSystemEvents = !showSystemEvents"
           >
             {{ t('filter.showSystemEvents') }}
@@ -136,7 +130,7 @@
               size="16px"
               class="q-ml-xs"
             />
-          </q-chip>
+          </filter-chip>
         </template>
       </div>
 
@@ -353,6 +347,7 @@
 </template>
 
 <script setup lang="ts">
+import FilterChip from '@/components/common/FilterChip.vue';
 import { computed, onMounted, ref, useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
@@ -606,26 +601,6 @@ const dateRangeLabel = computed<string | null>(() => {
   .filter-chip {
     flex-shrink: 0;
   }
-}
-
-.filter-chip {
-  height: 32px;
-  margin: 0;
-  padding: 0 12px;
-  border: 1px solid var(--md3-outline-variant);
-  border-radius: 8px;
-
-  background: transparent;
-  color: var(--md3-on-surface-variant);
-
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.filter-chip--active {
-  border-color: transparent;
-  background: var(--md3-secondary-container);
-  color: var(--md3-on-secondary-container);
 }
 
 /* Spacing is padding, not margin: QVirtualScroll sizes items by offsetHeight. */

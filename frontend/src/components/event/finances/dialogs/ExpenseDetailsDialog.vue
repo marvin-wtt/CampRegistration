@@ -1,5 +1,5 @@
 <template>
-  <!-- What a receipt is; changing it goes through Edit. -->
+  <!-- What a receipt is. It stays open: editing opens on top and returns. -->
   <responsive-dialog
     ref="dialogRef"
     @hide="onDialogHide"
@@ -10,211 +10,116 @@
       closable
       @cancel="onDialogCancel"
     >
-      <!-- The receipt number, styled as in the list. -->
       <template #avatar>
-        <div
-          class="receipt-badge rounded-md column items-center justify-center q-mr-md"
-          :class="{ 'receipt-badge--pending': !expense.date }"
-        >
-          <q-icon
-            v-if="!expense.date"
-            name="hourglass_empty"
-            size="14px"
-          />
-          #{{ expense.receiptNumber.toString() }}
-        </div>
+        <receipt-badge
+          :number="expense.receiptNumber"
+          :pending="!expense.date"
+          class="q-mr-md"
+        />
+      </template>
+      <template
+        v-if="menu.length > 0"
+        #header-actions
+      >
+        <responsive-menu
+          :items="menu"
+          :label="t('finance.expenseDetails.actions')"
+          :title="`#${expense.receiptNumber.toString()} · ${expense.description}`"
+        />
       </template>
 
       <div class="column no-wrap q-gutter-y-sm">
-        <div class="column items-center text-center q-pb-sm">
-          <div class="text-h4 amount">{{ signedMoney(expense) }}</div>
-          <div class="text-body2 text-on-surface-variant">
-            {{
-              expense.type === 'REFUND'
-                ? t('finance.type.refund')
-                : t('finance.type.expense')
-            }}
-            <template
-              v-if="expense.originalAmount !== null && expense.originalCurrency"
-            >
-              ·
-              <span class="amount">
-                {{ money(expense.originalAmount, expense.originalCurrency) }}
-              </span>
-            </template>
-          </div>
-        </div>
+        <finance-hero
+          :amount="signedMoney(expense)"
+          :caption="caption"
+        />
 
         <q-list>
-          <q-item>
-            <q-item-section avatar>
-              <q-icon
-                :name="expense.date ? 'event' : 'hourglass_empty'"
-                :color="expense.date ? 'on-surface-variant' : 'warning'"
-              />
-            </q-item-section>
-            <q-item-section>
-              <q-item-label caption>
-                {{ t('finance.field.receiptDate') }}
-              </q-item-label>
-              <q-item-label :class="{ 'text-warning': !expense.date }">
-                {{
-                  expense.date
-                    ? d(parseLocalDate(expense.date), 'date')
-                    : t('finance.receiptPending')
-                }}
-              </q-item-label>
-            </q-item-section>
-          </q-item>
-          <q-item>
-            <q-item-section avatar>
-              <q-icon
-                name="person"
-                color="on-surface-variant"
-              />
-            </q-item-section>
-            <q-item-section>
-              <q-item-label caption>
-                {{
-                  expense.type === 'REFUND'
-                    ? t('finance.field.receivedBy')
-                    : t('finance.field.paidBy')
-                }}
-              </q-item-label>
-              <q-item-label>{{ payerName(expense) }}</q-item-label>
-            </q-item-section>
-          </q-item>
-          <q-item v-if="expense.vendor">
-            <q-item-section avatar>
-              <q-icon
-                name="storefront"
-                color="on-surface-variant"
-              />
-            </q-item-section>
-            <q-item-section>
-              <q-item-label caption>
-                {{
-                  expense.type === 'REFUND'
-                    ? t('finance.field.vendorRefund')
-                    : t('finance.field.vendor')
-                }}
-              </q-item-label>
-              <q-item-label>{{ expense.vendor }}</q-item-label>
-            </q-item-section>
-          </q-item>
-          <q-item v-if="category || missingCategory">
-            <q-item-section avatar>
-              <q-icon
-                :name="category ? 'category' : 'label_off'"
-                :color="category ? 'on-surface-variant' : 'warning'"
-              />
-            </q-item-section>
-            <q-item-section>
-              <q-item-label caption>
-                {{ t('finance.field.category') }}
-              </q-item-label>
-              <q-item-label :class="{ 'text-warning': !category }">
-                {{ category || t('finance.noCategory') }}
-              </q-item-label>
-            </q-item-section>
-          </q-item>
-          <q-item v-if="statements">
-            <q-item-section avatar>
-              <q-icon
-                name="request_quote"
-                color="on-surface-variant"
-              />
-            </q-item-section>
-            <q-item-section>
-              <q-item-label caption>
-                {{ t('finance.expenseDetails.statements') }}
-              </q-item-label>
-              <q-item-label>{{ statements }}</q-item-label>
-            </q-item-section>
-          </q-item>
+          <detail-row
+            :icon="expense.date ? 'event' : 'hourglass_empty'"
+            :label="t('finance.field.receiptDate')"
+            :value="
+              expense.date
+                ? d(parseLocalDate(expense.date), 'date')
+                : t('finance.receiptPending')
+            "
+            :warn="!expense.date"
+          />
+          <detail-row
+            icon="person"
+            :label="
+              expense.type === 'REFUND'
+                ? t('finance.field.receivedBy')
+                : t('finance.field.paidBy')
+            "
+            :value="payerName(expense)"
+          />
+          <detail-row
+            v-if="expense.vendor"
+            icon="storefront"
+            :label="
+              expense.type === 'REFUND'
+                ? t('finance.field.vendorRefund')
+                : t('finance.field.vendor')
+            "
+            :value="expense.vendor"
+          />
+          <detail-row
+            v-if="category || missingCategory"
+            :icon="category ? 'category' : 'label_off'"
+            :label="t('finance.field.category')"
+            :value="category || t('finance.noCategory')"
+            :warn="!category"
+          />
+          <detail-row
+            v-if="statements"
+            icon="request_quote"
+            :label="t('finance.expenseDetails.statements')"
+            :value="statements"
+          />
 
           <!-- The receipt files, each opened as stored -->
-          <q-item
+          <detail-row
             v-for="file in expense.files"
             :key="file.id"
+            :icon="file.type === 'application/pdf' ? 'picture_as_pdf' : 'image'"
+            tone="primary"
+            :label="t('finance.field.receipt')"
+            :value="file.name"
             clickable
             :href="file.url"
             target="_blank"
             rel="noopener"
           >
-            <q-item-section avatar>
-              <q-icon
-                :name="
-                  file.type === 'application/pdf' ? 'picture_as_pdf' : 'image'
-                "
-                color="primary"
-              />
-            </q-item-section>
-            <q-item-section>
-              <q-item-label caption>
-                {{ t('finance.field.receipt') }}
-              </q-item-label>
-              <q-item-label class="ellipsis text-primary">
-                {{ file.name }}
-              </q-item-label>
-            </q-item-section>
-            <q-item-section side>
+            <template #side>
               <q-icon
                 name="open_in_new"
                 size="20px"
               />
-            </q-item-section>
-          </q-item>
+            </template>
+          </detail-row>
           <!-- A receipt still to come is expected to lack its file. -->
-          <q-item v-if="expense.files.length === 0">
-            <q-item-section avatar>
-              <q-icon
-                name="no_photography"
-                :color="expense.date ? 'warning' : 'on-surface-variant'"
-              />
-            </q-item-section>
-            <q-item-section>
-              <q-item-label caption>
-                {{ t('finance.field.receipt') }}
-              </q-item-label>
-              <q-item-label :class="{ 'text-warning': expense.date }">
-                {{ t('finance.noFile') }}
-              </q-item-label>
-            </q-item-section>
-          </q-item>
+          <detail-row
+            v-if="expense.files.length === 0"
+            icon="no_photography"
+            :label="t('finance.field.receipt')"
+            :value="t('finance.noFile')"
+            :warn="!!expense.date"
+          />
         </q-list>
       </div>
 
       <template
-        v-if="canEdit || canDelete"
+        v-if="actions.edit"
         #actions
       >
-        <!-- Destructive, so apart from the main action; an icon on phones. -->
-        <q-btn
-          v-if="canDelete"
-          :label="quasar.screen.xs ? undefined : t('finance.action.delete')"
-          icon="delete"
-          flat
-          :round="quasar.screen.xs"
-          :rounded="!quasar.screen.xs"
-          no-caps
-          color="negative"
-          class="q-mr-auto"
-          :aria-label="t('finance.action.delete')"
-          data-test="expense-details-delete"
-          @click="onDialogOK('delete')"
-        >
-          <q-tooltip v-if="quasar.screen.xs">
-            {{ t('finance.action.delete') }}
-          </q-tooltip>
-        </q-btn>
         <m-btn
-          v-if="canEdit"
-          :label="t('finance.expenseDetails.edit')"
-          icon="edit"
+          :label="actions.edit.label"
+          :icon="actions.edit.icon"
+          rounded
           color="primary"
           data-test="expense-details-edit"
-          @click="edit"
+          @click="actions.edit.onClick()"
         />
       </template>
     </dialog-card>
@@ -222,80 +127,73 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
-import { storeToRefs } from 'pinia';
-import { useDialogPluginComponent, useQuasar } from 'quasar';
+import { computed, watch } from 'vue';
+import { useDialogPluginComponent } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import type { Expense } from '@camp-registration/common/entities';
 import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
 import DialogCard from '@/components/common/dialogs/DialogCard.vue';
+import ResponsiveMenu from '@/components/common/ResponsiveMenu.vue';
+import DetailRow from '@/components/event/finances/DetailRow.vue';
+import FinanceHero from '@/components/event/finances/FinanceHero.vue';
+import ReceiptBadge from '@/components/event/finances/ReceiptBadge.vue';
+import { useExpenseActions } from '@/composables/expenseActions';
 import { useFinanceFormat } from '@/composables/financeFormat';
 import { statementLabels } from '@/composables/payoutStatements';
 import { useFinanceStore } from '@/stores/finance-store';
 import { parseLocalDate } from '@/utils/date';
 
-const {
-  expense,
-  canEdit = false,
-  canDelete = false,
-} = defineProps<{
+const { expense: opened } = defineProps<{
+  /** As opened; the dialog then follows the store's copy. */
   expense: Expense;
-  canEdit?: boolean;
-  canDelete?: boolean;
 }>();
 
 defineEmits([...useDialogPluginComponent.emits]);
 
-const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
-  useDialogPluginComponent();
+const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent();
 
-const quasar = useQuasar();
 const { t, d } = useI18n();
-const { money, signedMoney, categoryName, categoryGroupName, payerName } =
-  useFinanceFormat();
-const { payouts, display } = storeToRefs(useFinanceStore());
+const { money, signedMoney, categoryPath, payerName } = useFinanceFormat();
+const { actionsFor } = useExpenseActions();
+const financeStore = useFinanceStore();
 
-const category = computed<string>(() =>
-  [categoryGroupName(expense.categoryId), categoryName(expense.categoryId)]
-    .filter(Boolean)
-    .join(' · '),
+const current = computed(
+  () => financeStore.expenses?.find((e) => e.id === opened.id) ?? null,
+);
+const expense = computed(() => current.value ?? opened);
+const actions = computed(() => actionsFor(expense.value));
+
+// Deleted, here or by someone else: nothing left to show.
+watch(current, (found) => {
+  if (found === null) {
+    onDialogCancel();
+  }
+});
+
+// Destructive, so behind the menu rather than beside Edit.
+const menu = computed(() =>
+  [actions.value.remove].filter((a) => a !== undefined),
 );
 
-const missingCategory = computed(
-  () => display.value.flagMissingCategories && !expense.categoryId,
+const caption = computed(() => {
+  const { type, originalAmount, originalCurrency } = expense.value;
+  const kind =
+    type === 'REFUND' ? t('finance.type.refund') : t('finance.type.expense');
+  return originalAmount !== null && originalCurrency
+    ? `${kind} · ${money(originalAmount, originalCurrency)}`
+    : kind;
+});
+
+const category = computed(() => categoryPath(expense.value.categoryId));
+const missingCategory = computed(() =>
+  financeStore.isMissingCategory(expense.value),
 );
 
 // The payout statements this receipt is on, by label.
 const statements = computed(() =>
-  statementLabels(expense.id, payouts.value, { includeOutdated: true }),
+  statementLabels(expense.value.id, financeStore.payouts, {
+    includeOutdated: true,
+  }),
 );
-
-// The dialog closes with what the caller does next: 'edit' or 'delete'.
-function edit() {
-  onDialogOK('edit');
-}
 </script>
-
-<style scoped>
-.receipt-badge {
-  flex: none;
-  width: 44px;
-  height: 44px;
-  background: var(--md3-surface-container-highest);
-  color: var(--md3-on-surface-variant);
-  font-family: 'Roboto Mono', ui-monospace, monospace;
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.receipt-badge--pending {
-  background: var(--md3-warning-container);
-  color: var(--md3-on-warning-container);
-}
-
-.amount {
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-</style>

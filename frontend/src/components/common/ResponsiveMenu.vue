@@ -73,14 +73,10 @@ import { computed, ref } from 'vue';
 import { useQuasar } from 'quasar';
 import BottomSheet from '@/components/BottomSheet.vue';
 
-export interface ResponsiveMenuItem {
-  label: string;
-  icon: string;
-  /** A color role, e.g. `negative` for a destructive action. */
-  color?: string | undefined;
-  hidden?: boolean | undefined;
-  onClick: () => void;
-}
+import type { ResponsiveMenuItem } from '@/types/menu';
+
+// Re-exported for the components that import it from here.
+export type { ResponsiveMenuItem };
 
 defineOptions({ inheritAttrs: false });
 

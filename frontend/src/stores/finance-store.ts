@@ -9,6 +9,7 @@ import {
   useRouteKey,
 } from '@/composables/resource';
 import { removeById, replaceById, upsertById } from '@/utils/collection';
+import { payerKey } from '@camp-registration/common/utils';
 import { usePermissions } from '@/composables/permissions';
 import { useProfileStore } from '@/stores/profile-store';
 import { useEventSettings } from '@/composables/eventSettings';
@@ -44,6 +45,21 @@ function categoryUse(list: readonly Expense[] | undefined): string {
     .map((expense) => `${expense.id}:${expense.categoryId ?? ''}`)
     .sort()
     .join(',');
+}
+
+/**
+ * What payout statements depend on: the figures a statement freezes. A
+ * description, date or file change leaves every statement as it was.
+ */
+function statementUse(list: readonly Expense[] | undefined): string {
+  return (list ?? [])
+    .map((e) => `${e.id}:${e.type}:${e.amount.toString()}:${payerKey(e) ?? ''}`)
+    .sort()
+    .join(',');
+}
+
+function ids(list: readonly Payout[] | undefined): Set<string> {
+  return new Set((list ?? []).map((p) => p.id));
 }
 
 /**
@@ -128,6 +144,11 @@ export const useFinanceStore = defineStore('finance', () => {
     { flagMissingCategories: true },
   );
 
+  /** Without a category, unless the event doesn't sort its expenses. */
+  function isMissingCategory(expense: Pick<Expense, 'categoryId'>): boolean {
+    return display.flagMissingCategories && !expense.categoryId;
+  }
+
   const settings = useResource<FinanceSettings>({
     name: 'finance',
     key,
@@ -136,9 +157,19 @@ export const useFinanceStore = defineStore('finance', () => {
 
   // Derived data follows every change of what it is derived from, including
   // realtime ones; a first load (nothing before) has nothing to refresh.
-  // An expense change reloads the payouts first (their `outdated` depends on
-  // it), so balances and the summary reload once, after both.
-  let followingExpenses = false;
+  // `outdated` is computed by the server from other records, so the payouts
+  // reload when those change: a statement's figures, or a payout going. Then
+  // balances and the summary reload once, after both.
+  let followingChange = false;
+
+  async function reloadPayouts() {
+    followingChange = true;
+    try {
+      await payouts.reload();
+    } finally {
+      followingChange = false;
+    }
+  }
 
   function reloadTotals() {
     void balances.reload();
@@ -152,21 +183,25 @@ export const useFinanceStore = defineStore('finance', () => {
     if (categoryUse(next) !== categoryUse(prev)) {
       void categories.reload();
     }
-    if (payouts.data.value !== undefined) {
-      followingExpenses = true;
-      try {
-        await payouts.reload();
-      } finally {
-        followingExpenses = false;
-      }
+    if (
+      payouts.data.value !== undefined &&
+      statementUse(next) !== statementUse(prev)
+    ) {
+      await reloadPayouts();
     }
     reloadTotals();
   });
 
-  watch(payouts.data, (_next, prev) => {
-    if (prev !== undefined && !followingExpenses) {
-      reloadTotals();
+  watch(payouts.data, async (next, prev) => {
+    if (prev === undefined || followingChange) {
+      return;
     }
+    // An undone payout drops out of the later statements it was listed on.
+    const remaining = ids(next);
+    if ([...ids(prev)].some((id) => !remaining.has(id))) {
+      await reloadPayouts();
+    }
+    reloadTotals();
   });
 
   /** Everything the page shows except the summary, which needs its tab. */
@@ -395,6 +430,7 @@ export const useFinanceStore = defineStore('finance', () => {
     parties: parties.data,
     settings: settings.data,
     display,
+    isMissingCategory,
     isLoading: expenses.isLoading,
     error: expenses.error,
     fetchData,

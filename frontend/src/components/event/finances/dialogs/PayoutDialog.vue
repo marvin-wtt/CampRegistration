@@ -29,7 +29,7 @@
                   : t('finance.payout.in')
               }}
             </span>
-            <strong class="amount">
+            <strong class="text-amount">
               {{ payout.direction === 'OUT' ? '−' : '+'
               }}{{ money(payout.amount) }}
             </strong>
@@ -70,7 +70,7 @@
           data-test="payout-note"
         />
         <!-- Money has moved or it hasn't: never a date ahead. -->
-        <chore-date-input
+        <date-input
           v-model="paidOn"
           :label="t('finance.field.paidOn')"
           :hint="paidOn ? undefined : t('finance.payout.toPayHint')"
@@ -126,7 +126,7 @@ import type {
 import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
 import DialogCard from '@/components/common/dialogs/DialogCard.vue';
 import AmountInput from '@/components/event/finances/AmountInput.vue';
-import ChoreDateInput from '@/components/event/chorePlanner/ChoreDateInput.vue';
+import DateInput from '@/components/common/inputs/DateInput.vue';
 import { useFinanceStore } from '@/stores/finance-store';
 import { useFinanceFormat } from '@/composables/financeFormat';
 import { formatLocalDate } from '@/utils/date';
@@ -253,11 +253,6 @@ async function save(write: () => Promise<Payout>) {
 <style scoped>
 .frozen {
   background: var(--md3-surface-container-high);
-}
-
-.amount {
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
 }
 
 .after-row {

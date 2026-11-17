@@ -14,7 +14,7 @@
       <span class="col text-subtitle1 text-on-surface">{{ t('total') }}</span>
       <span
         aria-live="polite"
-        class="figure amount text-h5 text-primary"
+        class="text-amount amount text-h5 text-primary"
       >
         {{ formattedAmount }}
       </span>
@@ -51,10 +51,6 @@ const formattedAmount = computed(() =>
 
 .total {
   gap: 16px;
-}
-
-.figure {
-  font-variant-numeric: tabular-nums;
 }
 
 .amount {

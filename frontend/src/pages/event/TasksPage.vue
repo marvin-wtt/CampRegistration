@@ -54,17 +54,16 @@
 
       <template v-else>
         <div class="row items-center no-wrap filter-row">
-          <q-chip
+          <filter-chip
             v-for="option in filterOptions"
             :key="option.value"
             :icon="option.icon"
             clickable
-            class="filter-chip"
-            :class="{ 'filter-chip--active': filter === option.value }"
+            :active="filter === option.value"
             @click="filter = option.value"
           >
             {{ option.label }}
-          </q-chip>
+          </filter-chip>
         </div>
 
         <q-list
@@ -143,6 +142,7 @@
 </template>
 
 <script lang="ts" setup>
+import FilterChip from '@/components/common/FilterChip.vue';
 import PageHeader from '@/components/common/PageHeader.vue';
 import { useI18n } from 'vue-i18n';
 import { useTaskStore } from '@/stores/task-store';
@@ -345,26 +345,6 @@ function assigneeLabel(task: Task): string {
   gap: 8px;
   overflow-x: auto;
   scrollbar-width: none;
-}
-
-.filter-chip {
-  height: 32px;
-  margin: 0;
-  padding: 0 12px;
-  border: 1px solid var(--md3-outline-variant);
-  border-radius: 8px;
-
-  background: transparent;
-  color: var(--md3-on-surface-variant);
-
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.filter-chip--active {
-  border-color: transparent;
-  background: var(--md3-secondary-container);
-  color: var(--md3-on-secondary-container);
 }
 </style>
 

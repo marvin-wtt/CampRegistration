@@ -73,6 +73,13 @@ export function useFinanceFormat() {
     return categoryName(parentId);
   }
 
+  /** Group and category, as `Travel · Fuel`; empty without a category. */
+  function categoryPath(id: string | null | undefined): string {
+    return [categoryGroupName(id), categoryName(id)]
+      .filter(Boolean)
+      .join(' · ');
+  }
+
   function payerName(
     expense: Pick<Expense, 'paidByUserId' | 'paidByName'>,
   ): string {
@@ -85,6 +92,7 @@ export function useFinanceFormat() {
     signedMoney,
     categoryName,
     categoryGroupName,
+    categoryPath,
     payerName,
   };
 }

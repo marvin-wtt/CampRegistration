@@ -86,6 +86,7 @@ export default {
     undoPayout: 'Annuler le versement',
   },
   expenseDetails: {
+    actions: 'Actions du justificatif',
     statements: 'Sur les versements',
     edit: 'Modifier',
   },
@@ -157,6 +158,13 @@ export default {
       signedOn: 'Signé le {date}',
       signedScan: 'Signé sur papier (scan)',
       unsigned: 'Pas encore signé',
+    },
+    status: {
+      outdated: 'Obsolète',
+      unsigned: 'Non signé',
+      toPay: 'À payer',
+      toReceive: 'À récupérer',
+      done: 'Terminé',
     },
     markPaid: 'Marquer comme payé',
     markUnpaid: 'Marquer comme non payé',

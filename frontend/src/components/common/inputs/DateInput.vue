@@ -1,5 +1,6 @@
 <template>
-  <!-- A field, not a readonly input: that would render a dashed border. -->
+  <!-- The shared date field, a q-date popup with numeric dates. A field, not a
+       readonly input: that would render a dashed border. -->
   <q-field
     :model-value="model"
     :label

@@ -14,7 +14,7 @@
             avatar
             class="number"
           >
-            <span class="receipt-mono text-on-surface-variant">
+            <span class="text-mono text-on-surface-variant">
               {{ line.number }}
             </span>
           </q-item-section>
@@ -24,7 +24,7 @@
           </q-item-section>
           <q-item-section
             side
-            class="amount text-on-surface"
+            class="text-amount text-on-surface"
           >
             {{ line.amount }}
           </q-item-section>
@@ -134,11 +134,6 @@ const hiddenCount = computed(
   min-width: 40px;
 }
 
-.receipt-mono {
-  font-family: 'Roboto Mono', ui-monospace, monospace;
-}
-
-.amount,
 .totals dd {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;

@@ -17,7 +17,7 @@
           :key="group.id ?? 'top'"
           flat
           bordered
-          class="rounded-lg overflow-hidden"
+          class="section-card rounded-lg overflow-hidden"
         >
           <!-- Next to groups, the ungrouped categories say so. -->
           <div
@@ -40,18 +40,22 @@
               name="folder"
               class="q-mr-sm"
             />
-            <category-name-editor
+            <category-name-form
               v-if="editingId === group.category.id"
-              :category="group.category"
+              :label="t('finance.categories.name')"
               :locales
+              :initial="group.category.name"
+              :save="renameOf(group.category)"
               class="col"
-              @done="editingId = null"
+              @saved="editingId = null"
+              @cancel="editingId = null"
             />
             <template v-else>
               <span class="col text-weight-medium ellipsis">
                 {{ to(group.category.name) }}
               </span>
-              <q-btn
+              <m-btn
+                color="on-surface-variant"
                 icon="edit"
                 flat
                 round
@@ -59,7 +63,8 @@
                 :aria-label="t('finance.categories.rename')"
                 @click="editingId = group.category.id"
               />
-              <q-btn
+              <m-btn
+                color="on-surface-variant"
                 v-if="group.categories.length === 0"
                 icon="delete"
                 flat
@@ -78,11 +83,14 @@
               class="category-item"
             >
               <q-item-section>
-                <category-name-editor
+                <category-name-form
                   v-if="editingId === category.id"
-                  :category
+                  :label="t('finance.categories.name')"
                   :locales
-                  @done="editingId = null"
+                  :initial="category.name"
+                  :save="renameOf(category)"
+                  @saved="editingId = null"
+                  @cancel="editingId = null"
                 />
                 <template v-else>
                   <q-item-label>{{ to(category.name) }}</q-item-label>
@@ -100,7 +108,8 @@
                 side
               >
                 <div class="row no-wrap items-center">
-                  <q-btn
+                  <m-btn
+                    color="on-surface-variant"
                     icon="arrow_upward"
                     flat
                     round
@@ -109,7 +118,8 @@
                     :aria-label="t('finance.categories.up')"
                     @click="move(group, index, -1)"
                   />
-                  <q-btn
+                  <m-btn
+                    color="on-surface-variant"
                     icon="arrow_downward"
                     flat
                     round
@@ -131,41 +141,13 @@
             <!-- New category, right where it will live -->
             <q-item v-if="addingIn === group.id">
               <q-item-section>
-                <q-form
-                  class="row items-start no-wrap q-gutter-x-xs"
-                  @submit.prevent="createCategory(group.id)"
-                >
-                  <translated-input
-                    v-model="newName"
-                    :label="t('finance.categories.newCategory')"
-                    :locales
-                    :rules="[
-                      (val: unknown) => !!val || t('finance.validation.name'),
-                    ]"
-                    class="col"
-                    autofocus
-                    dense
-                    outlined
-                    rounded
-                    hide-bottom-space
-                    @keydown.esc="stopAdding"
-                  />
-                  <q-btn
-                    icon="check"
-                    type="submit"
-                    flat
-                    round
-                    color="primary"
-                    :aria-label="t('finance.action.save')"
-                  />
-                  <q-btn
-                    icon="close"
-                    flat
-                    round
-                    :aria-label="t('finance.action.cancel')"
-                    @click="stopAdding"
-                  />
-                </q-form>
+                <category-name-form
+                  :label="t('finance.categories.newCategory')"
+                  :locales
+                  :save="(name) => createCategory(group.id, name)"
+                  @saved="stopAdding"
+                  @cancel="stopAdding"
+                />
               </q-item-section>
             </q-item>
             <q-item
@@ -190,41 +172,16 @@
           v-if="addingGroup"
           flat
           bordered
-          class="rounded-lg"
+          class="section-card rounded-lg"
         >
-          <q-form
-            class="row items-start no-wrap q-gutter-x-xs q-pa-sm"
-            @submit.prevent="createGroup"
-          >
-            <translated-input
-              v-model="newName"
-              :label="t('finance.categories.newGroup')"
-              :locales
-              :rules="[(val: unknown) => !!val || t('finance.validation.name')]"
-              class="col"
-              autofocus
-              dense
-              outlined
-              rounded
-              hide-bottom-space
-              @keydown.esc="stopAdding"
-            />
-            <q-btn
-              icon="check"
-              type="submit"
-              flat
-              round
-              color="primary"
-              :aria-label="t('finance.action.save')"
-            />
-            <q-btn
-              icon="close"
-              flat
-              round
-              :aria-label="t('finance.action.cancel')"
-              @click="stopAdding"
-            />
-          </q-form>
+          <category-name-form
+            :label="t('finance.categories.newGroup')"
+            :locales
+            :save="createGroup"
+            class="q-pa-sm"
+            @saved="stopAdding"
+            @cancel="stopAdding"
+          />
         </q-card>
         <m-btn
           v-else
@@ -238,7 +195,8 @@
 
         <!-- Archived -->
         <div v-if="archived.length > 0">
-          <q-btn
+          <m-btn
+            color="on-surface-variant"
             :label="
               t('finance.categories.showArchived', { count: archived.length })
             "
@@ -302,8 +260,7 @@ import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import type { ExpenseCategory } from '@camp-registration/common/entities';
 import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
 import DialogCard from '@/components/common/dialogs/DialogCard.vue';
-import TranslatedInput from '@/components/common/inputs/TranslatedInput.vue';
-import CategoryNameEditor from '@/components/event/finances/CategoryNameEditor.vue';
+import CategoryNameForm from '@/components/event/finances/CategoryNameForm.vue';
 import ResponsiveMenu, {
   type ResponsiveMenuItem,
 } from '@/components/common/ResponsiveMenu.vue';
@@ -334,7 +291,6 @@ const showArchived = ref(false);
 // the ungrouped ones, `false` while nothing is being added.
 const addingIn = ref<string | null | false>(false);
 const addingGroup = ref(false);
-const newName = ref<string | Record<string, string> | undefined>(undefined);
 
 const all = computed(() =>
   [...(storeCategories.value ?? [])].sort(
@@ -478,49 +434,43 @@ function remove(category: ExpenseCategory) {
 function startAdding(sectionId: string | null) {
   addingGroup.value = false;
   addingIn.value = sectionId;
-  newName.value = undefined;
 }
 
 function startAddingGroup() {
   addingIn.value = false;
   addingGroup.value = true;
-  newName.value = undefined;
 }
 
 function stopAdding() {
   addingIn.value = false;
   addingGroup.value = false;
-  newName.value = undefined;
 }
 
-async function createCategory(parentId: string | null) {
-  if (!newName.value) {
-    return;
-  }
-  try {
-    await financeStore.createCategory({ name: newName.value, parentId });
-    stopAdding();
-  } catch {
-    // Reported by the store.
-  }
+type CategoryName = string | Record<string, string>;
+
+function renameOf(category: ExpenseCategory) {
+  return (name: CategoryName) =>
+    financeStore.updateCategory(category.id, { name });
 }
 
-async function createGroup() {
-  if (!newName.value) {
-    return;
-  }
-  try {
-    const created = await financeStore.createCategory({ name: newName.value });
-    // Shown as a group although it holds no categories yet.
-    groupIds.value = new Set([...groupIds.value, created.id]);
-    stopAdding();
-  } catch {
-    // Reported by the store.
-  }
+function createCategory(parentId: string | null, name: CategoryName) {
+  return financeStore.createCategory({ name, parentId });
+}
+
+async function createGroup(name: CategoryName) {
+  const created = await financeStore.createCategory({ name });
+  // Shown as a group although it holds no categories yet.
+  groupIds.value = new Set([...groupIds.value, created.id]);
 }
 </script>
 
 <style scoped>
+/* On the dialog's own surface, outlined: a card's darker fill would read as
+   a hole in the dialog. */
+.section-card {
+  background: transparent;
+}
+
 .group-header {
   background: var(--md3-secondary-container);
   color: var(--md3-on-secondary-container);

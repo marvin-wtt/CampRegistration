@@ -85,6 +85,7 @@ export default {
     undoPayout: 'Zrušit výplatu',
   },
   expenseDetails: {
+    actions: 'Akce dokladu',
     statements: 'Na výplatách',
     edit: 'Upravit',
   },
@@ -154,6 +155,13 @@ export default {
       signedOn: 'Podepsáno {date}',
       signedScan: 'Podepsáno na papíře (sken)',
       unsigned: 'Zatím nepodepsáno',
+    },
+    status: {
+      outdated: 'Neaktuální',
+      unsigned: 'Nepodepsáno',
+      toPay: 'K zaplacení',
+      toReceive: 'K vrácení',
+      done: 'Hotovo',
     },
     markPaid: 'Označit jako zaplacené',
     markUnpaid: 'Označit jako nezaplacené',

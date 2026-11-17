@@ -258,12 +258,11 @@
         class="col-12 col-sm-auto"
       >
         <div class="row items-center filter-row">
-          <q-chip
+          <filter-chip
             v-for="group in groups"
             :key="group"
             clickable
-            class="filter-chip"
-            :class="{ 'filter-chip--active': isGroupActive(group) }"
+            :active="isGroupActive(group)"
             @click="toggleGroup(group)"
           >
             <country-icon
@@ -277,7 +276,7 @@
               size="16px"
               class="q-ml-xs"
             />
-          </q-chip>
+          </filter-chip>
         </div>
       </div>
     </div>
@@ -450,6 +449,7 @@
 </template>
 
 <script lang="ts" setup>
+import FilterChip from '@/components/common/FilterChip.vue';
 import { type QInput, type QMenu, type QTableColumn, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
@@ -852,26 +852,6 @@ function onRowClick(evt: MouseEvent, row: Registration): void {
 
 .filter-row {
   gap: 8px;
-}
-
-.filter-chip {
-  height: 32px;
-  margin: 0;
-  padding: 0 12px;
-  border: 1px solid var(--md3-outline-variant);
-  border-radius: 8px;
-
-  background: transparent;
-  color: var(--md3-on-surface-variant);
-
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.filter-chip--active {
-  border-color: transparent;
-  background: var(--md3-secondary-container);
-  color: var(--md3-on-secondary-container);
 }
 
 .chip-flag {

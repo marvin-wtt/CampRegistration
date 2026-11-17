@@ -86,6 +86,7 @@ export default {
     undoPayout: 'Cofnij wypłatę',
   },
   expenseDetails: {
+    actions: 'Działania paragonu',
     statements: 'W wypłatach',
     edit: 'Edytuj',
   },
@@ -155,6 +156,13 @@ export default {
       signedOn: 'Podpisano {date}',
       signedScan: 'Podpisano na papierze (skan)',
       unsigned: 'Jeszcze niepodpisane',
+    },
+    status: {
+      outdated: 'Nieaktualne',
+      unsigned: 'Bez podpisu',
+      toPay: 'Do zapłaty',
+      toReceive: 'Do zwrotu',
+      done: 'Gotowe',
     },
     markPaid: 'Oznacz jako zapłacone',
     markUnpaid: 'Oznacz jako niezapłacone',

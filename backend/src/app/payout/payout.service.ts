@@ -125,8 +125,10 @@ export class PayoutService extends BaseService {
     locale: string,
   ) {
     return this.transaction(async (tx) => {
-      const recipient = await this.resolveRecipient(eventId, data);
+      // The counter's row lock comes first: every read after it sees the
+      // receipts up to `lastReceiptNumber`, none committed in between.
       const number = await nextFinanceNumber(tx, eventId, 'payout');
+      const recipient = await this.resolveRecipient(eventId, data);
       const [event, ledger] = await Promise.all([
         tx.event.findUniqueOrThrow({
           where: { id: eventId },
@@ -225,7 +227,8 @@ export class PayoutService extends BaseService {
       });
 
       await this.audit.updated(payoutAuditPolicy, before, after);
-      if (added.length > 0) {
+      // Signed once; further pages of the scan are an update.
+      if (added.length > 0 && before.files.length === 0) {
         await this.audit.recordFor(payoutAuditPolicy, 'signed', after, {
           details: { values: { scans: after.files.length } },
         });
@@ -269,9 +272,15 @@ export class PayoutService extends BaseService {
         return before;
       }
 
+      // Detached like any removed file: its uploader's session loses it
+      // too, so a revoked slip can't be opened or attached elsewhere.
+      await tx.file.updateMany({
+        where: { payoutId: payout.id },
+        data: { payoutId: null, field: null },
+      });
       const unsigned = await tx.payout.update({
         where: { id: payout.id },
-        data: { signature: null, signedAt: null, files: { set: [] } },
+        data: { signature: null, signedAt: null },
         include,
       });
 

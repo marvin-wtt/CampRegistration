@@ -1,43 +1,34 @@
 <template>
   <div class="column no-wrap summary-view">
     <!-- The totals, then who paid them: one strip, as on the balances tab. -->
-    <div
-      class="totals-strip rounded-xl column q-px-lg q-py-md"
+    <finance-totals-strip
+      :alert="summary.owedToEvent > 0"
       data-test="finance-summary-totals"
     >
       <div class="figures row items-end">
-        <div class="column">
-          <span class="text-caption text-on-surface-variant">
-            {{ t('finance.summary.total') }}
-          </span>
-          <span class="text-h5 amount">{{ money(summary.total) }}</span>
-          <span class="text-caption text-on-surface-variant">
-            {{
-              t('finance.summary.totalCaption', {
-                expenses: money(summary.expenses),
-                refunds: money(summary.refunds),
-              })
-            }}
-          </span>
-        </div>
-        <div class="column">
-          <span class="text-caption text-on-surface-variant">
-            {{ t('finance.balance.owedToPeople') }}
-          </span>
-          <span class="text-h6 amount">{{ money(summary.owedToPeople) }}</span>
-        </div>
-        <!-- Rare: only while someone owes the event. -->
-        <div
-          v-if="summary.owedToEvent > 0"
-          class="column"
+        <finance-figure
+          :label="t('finance.summary.total')"
+          :value="money(summary.total)"
+          lead
         >
-          <span class="text-caption text-on-surface-variant">
-            {{ t('finance.balance.owedToEvent') }}
-          </span>
-          <span class="text-h6 amount text-warning">
-            {{ money(summary.owedToEvent) }}
-          </span>
-        </div>
+          {{
+            t('finance.summary.totalCaption', {
+              expenses: money(summary.expenses),
+              refunds: money(summary.refunds),
+            })
+          }}
+        </finance-figure>
+        <finance-figure
+          :label="t('finance.balance.owedToPeople')"
+          :value="money(summary.owedToPeople)"
+        />
+        <!-- Rare: only while someone owes the event. -->
+        <finance-figure
+          v-if="summary.owedToEvent > 0"
+          :label="t('finance.balance.owedToEvent')"
+          :value="money(summary.owedToEvent)"
+          tone="warning"
+        />
       </div>
 
       <q-separator class="q-my-md" />
@@ -60,16 +51,16 @@
           <span class="row items-center no-wrap q-gutter-x-xs">
             <span class="legend legend--people" />
             <span>{{ t('finance.summary.people') }}</span>
-            <span class="amount">{{ money(summary.paidByPeople) }}</span>
+            <span class="text-amount">{{ money(summary.paidByPeople) }}</span>
           </span>
           <span class="row items-center no-wrap q-gutter-x-xs">
             <span class="legend legend--funds" />
             <span>{{ t('finance.eventFunds') }}</span>
-            <span class="amount">{{ money(summary.paidByFunds) }}</span>
+            <span class="text-amount">{{ money(summary.paidByFunds) }}</span>
           </span>
         </div>
       </div>
-    </div>
+    </finance-totals-strip>
 
     <q-card
       flat
@@ -88,7 +79,7 @@
           class="group-row row items-center justify-between q-px-md q-py-sm"
         >
           <span class="text-weight-medium">{{ group.name }}</span>
-          <span class="text-weight-medium amount">{{
+          <span class="text-weight-medium text-amount">{{
             money(group.total)
           }}</span>
         </div>
@@ -122,7 +113,7 @@
               :style="{ width: `${barWidth(row.total)}%` }"
             />
           </div>
-          <span class="text-right amount">{{ money(row.total) }}</span>
+          <span class="text-right text-amount">{{ money(row.total) }}</span>
         </router-link>
       </template>
       <q-separator />
@@ -130,7 +121,7 @@
         <span class="text-subtitle1 text-weight-bold">
           {{ t('finance.summary.total') }}
         </span>
-        <span class="text-subtitle1 text-weight-bold amount">
+        <span class="text-subtitle1 text-weight-bold text-amount">
           {{ money(summary.total) }}
         </span>
       </q-card-section>
@@ -146,7 +137,7 @@
           <span class="text-subtitle1 text-weight-medium">
             {{ t('finance.summary.receiptFiles') }}
           </span>
-          <span class="text-body2 text-on-surface-variant amount">
+          <span class="text-body2 text-on-surface-variant text-amount">
             {{ withFile }} / {{ summary.receiptCount }}
           </span>
         </div>
@@ -293,6 +284,8 @@ import type {
   FinanceSummary,
 } from '@camp-registration/common/entities';
 import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
+import FinanceFigure from '@/components/event/finances/FinanceFigure.vue';
+import FinanceTotalsStrip from '@/components/event/finances/FinanceTotalsStrip.vue';
 import { groupCategories, useFinanceFormat } from '@/composables/financeFormat';
 import { useFinanceStore } from '@/stores/finance-store';
 import { useObjectTranslation } from '@/composables/objectTranslation';
@@ -446,17 +439,8 @@ function barWidth(total: number): number {
   background: var(--md3-surface-container);
 }
 
-.totals-strip {
-  background: var(--md3-surface-container);
-}
-
 .figures {
   gap: 8px 32px;
-}
-
-.amount {
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
 }
 
 .group-row {

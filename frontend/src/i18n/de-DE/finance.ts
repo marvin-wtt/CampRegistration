@@ -86,6 +86,7 @@ export default {
     undoPayout: 'Auszahlung rückgängig machen',
   },
   expenseDetails: {
+    actions: 'Aktionen zum Beleg',
     statements: 'Auf Auszahlungen',
     edit: 'Bearbeiten',
   },
@@ -157,6 +158,13 @@ export default {
       signedOn: 'Unterschrieben am {date}',
       signedScan: 'Auf Papier unterschrieben (Scan)',
       unsigned: 'Noch nicht unterschrieben',
+    },
+    status: {
+      outdated: 'Veraltet',
+      unsigned: 'Unterschrift fehlt',
+      toPay: 'Zu zahlen',
+      toReceive: 'Zurückzuerhalten',
+      done: 'Erledigt',
     },
     markPaid: 'Als bezahlt markieren',
     markUnpaid: 'Als unbezahlt markieren',

@@ -86,6 +86,7 @@ export default {
     undoPayout: 'Undo payout',
   },
   expenseDetails: {
+    actions: 'Receipt actions',
     statements: 'On payouts',
     edit: 'Edit',
   },
@@ -154,6 +155,13 @@ export default {
       signedOn: 'Signed on {date}',
       signedScan: 'Signed on paper (scan)',
       unsigned: 'Not signed yet',
+    },
+    status: {
+      outdated: 'Outdated',
+      unsigned: 'Not signed',
+      toPay: 'To pay',
+      toReceive: 'To get back',
+      done: 'Done',
     },
     markPaid: 'Mark as paid',
     markUnpaid: 'Mark as unpaid',

@@ -28,6 +28,10 @@ export function storedReceiptFile(file: ServiceFile): ReceiptFile {
 
 const isBlob = (file: ReceiptFile) => file.url?.startsWith('blob:') ?? false;
 
+// Unique per upload: phones name every gallery photo `image.jpg`, and a
+// batch is added within the same millisecond.
+let uploadCount = 0;
+
 /**
  * Receipt photos as they are taken: each uploads at once as a temporary file
  * of the session, previewed from a blob meanwhile. A failed one is dropped.
@@ -44,7 +48,8 @@ export function useReceiptUploads(initial: readonly ServiceFile[]) {
   );
 
   async function upload(file: File) {
-    const key = `${Date.now().toString()}-${file.name}`;
+    uploadCount += 1;
+    const key = `upload-${uploadCount.toString()}`;
     const url = URL.createObjectURL(file);
     files.value.push({
       key,

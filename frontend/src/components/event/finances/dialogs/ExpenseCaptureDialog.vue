@@ -16,12 +16,13 @@
       <template #header-actions>
         <div
           v-if="!saved && expense"
-          class="text-body2 text-on-surface-variant receipt-mono q-mt-sm"
+          class="text-body2 text-on-surface-variant text-mono q-mt-sm"
         >
           #{{ expense.receiptNumber }}
         </div>
         <!-- The persistent sheet can't be swiped away; cancel lives here. -->
-        <q-btn
+        <m-btn
+          color="on-surface-variant"
           v-if="quasar.screen.lt.sm"
           icon="close"
           flat
@@ -46,9 +47,7 @@
             />
             <span>{{ t('finance.capture.savedAs') }}</span>
           </div>
-          <div class="receipt-number receipt-mono">
-            #{{ saved.receiptNumber }}
-          </div>
+          <div class="receipt-number text-mono">#{{ saved.receiptNumber }}</div>
           <div class="row items-center no-wrap q-gutter-x-xs text-body2">
             <q-icon
               name="edit_note"
@@ -73,7 +72,7 @@
             </q-item-section>
             <q-item-section
               side
-              class="text-subtitle1 text-weight-medium text-on-surface amount"
+              class="text-subtitle1 text-weight-medium text-on-surface text-amount"
             >
               {{ signedMoney(saved) }}
             </q-item-section>
@@ -109,7 +108,8 @@
           >
             {{ t('finance.capture.restored') }}
             <template #action>
-              <q-btn
+              <m-btn
+                color="on-surface-variant"
                 flat
                 rounded
                 :label="t('finance.action.discard')"
@@ -142,7 +142,7 @@
           >
             <template #append>
               <!-- Rare: a receipt in another currency, kept out of the way. -->
-              <q-btn
+              <m-btn
                 icon="currency_exchange"
                 :color="showOriginal ? 'primary' : undefined"
                 flat
@@ -155,7 +155,7 @@
                 @click="showOriginal = !showOriginal"
               >
                 <q-tooltip>{{ t('finance.field.originalToggle') }}</q-tooltip>
-              </q-btn>
+              </m-btn>
             </template>
           </amount-input>
 
@@ -200,7 +200,7 @@
 
           <!-- Read off the receipt with the amount: often yesterday's, never
                a day ahead. -->
-          <chore-date-input
+          <date-input
             v-model="form.date"
             :label="t('finance.field.receiptDate')"
             :hint="form.date ? undefined : t('finance.field.receiptPending')"
@@ -333,7 +333,7 @@ import CategoryPicker from '@/components/event/finances/CategoryPicker.vue';
 import PartySelect, {
   type PartyValue,
 } from '@/components/event/finances/PartySelect.vue';
-import ChoreDateInput from '@/components/event/chorePlanner/ChoreDateInput.vue';
+import DateInput from '@/components/common/inputs/DateInput.vue';
 import { useFinanceStore } from '@/stores/finance-store';
 import { useFinanceFormat } from '@/composables/financeFormat';
 import { formatLocalDate, parseLocalDate } from '@/utils/date';
@@ -601,8 +601,7 @@ function startNext() {
 </script>
 
 <style scoped>
-.receipt-mono {
-  font-family: 'Roboto Mono', ui-monospace, monospace;
+.text-mono {
   font-variant-numeric: tabular-nums;
 }
 
@@ -617,11 +616,6 @@ function startNext() {
   font-size: 64px;
   font-weight: 700;
   line-height: 1.1;
-}
-
-.amount {
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
 }
 
 .original-currency {

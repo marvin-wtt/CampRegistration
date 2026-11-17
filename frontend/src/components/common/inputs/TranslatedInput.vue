@@ -14,6 +14,7 @@
             v-model="value"
             :model-modifiers="modifiers"
             v-bind="inputProps"
+            :autofocus="props.autofocus"
           >
             <!-- Parent slots -->
             <template
@@ -47,6 +48,7 @@
                 :key="index"
                 v-model.number="translations[locale]"
                 v-bind="inputProps"
+                :autofocus="props.autofocus && index === 0"
                 :lang="languageOf(locale)"
                 :aria-label="fieldAriaLabel(locale)"
                 :disable="Boolean(props.disable) || isAutoTranslating(locale)"
@@ -113,6 +115,7 @@
                 :key="index"
                 v-model="translations[locale]"
                 v-bind="inputProps"
+                :autofocus="props.autofocus && index === 0"
                 :lang="languageOf(locale)"
                 :aria-label="fieldAriaLabel(locale)"
                 :disable="Boolean(props.disable) || isAutoTranslating(locale)"
@@ -241,7 +244,10 @@ const props = withDefaults(defineProps<Props>(), {
   noTranslation: false,
 });
 
+// `autofocus` goes to the first input only: on each of them, the last
+// would win, and the first would lose focus and show its rule's error.
 const inputProps = usePassthroughProps(props, [
+  'autofocus',
   'locales',
   'countries',
   'always',

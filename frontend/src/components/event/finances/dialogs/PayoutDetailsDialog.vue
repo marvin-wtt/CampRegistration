@@ -27,62 +27,47 @@
       </template>
 
       <div class="column no-wrap q-gutter-y-md">
-        <div class="column items-center text-center q-py-sm">
-          <div class="text-h4 amount">{{ money(payout.amount) }}</div>
-          <div class="text-body1 text-on-surface-variant">
-            {{
-              t(
-                payout.direction === 'OUT'
-                  ? 'finance.payout.details.outTo'
-                  : 'finance.payout.details.inFrom',
-                { name: payout.recipientName },
-              )
-            }}
-          </div>
-        </div>
+        <finance-hero
+          :amount="money(payout.amount)"
+          :caption="
+            t(
+              payout.direction === 'OUT'
+                ? 'finance.payout.details.outTo'
+                : 'finance.payout.details.inFrom',
+              { name: payout.recipientName },
+            )
+          "
+        />
 
         <!-- Each state with the step that changes it. -->
         <q-list>
-          <q-item data-test="payout-details-paid">
-            <q-item-section avatar>
-              <q-icon
-                :name="payout.paidOn ? 'task_alt' : 'schedule'"
-                :color="payout.paidOn ? 'positive' : 'tertiary'"
-              />
-            </q-item-section>
-            <q-item-section>
-              {{
-                payout.paidOn
-                  ? t('finance.payout.details.paidOn', {
-                      date: d(parseLocalDate(payout.paidOn), 'date'),
-                    })
-                  : t('finance.payout.details.toPay')
-              }}
-            </q-item-section>
-            <q-item-section
+          <detail-row
+            :icon="payout.paidOn ? 'task_alt' : 'schedule'"
+            :tone="payout.paidOn ? 'positive' : 'tertiary'"
+            :value="paidText(payout)"
+            data-test="payout-details-paid"
+          >
+            <template
               v-if="actions.markPaid && actions.markPaid !== primary"
-              side
+              #side
             >
               <m-btn
                 :label="actions.markPaid.label"
                 text
                 rounded
                 color="primary"
-                @click="run(actions.markPaid)"
+                @click="actions.markPaid.onClick()"
               />
-            </q-item-section>
-          </q-item>
-          <q-item>
-            <q-item-section avatar>
-              <q-icon
-                :name="signed ? 'history_edu' : 'draw'"
-                :color="signed ? 'primary' : 'on-surface-variant'"
-              />
-            </q-item-section>
-            <q-item-section>{{ signedText }}</q-item-section>
-            <q-item-section
+            </template>
+          </detail-row>
+          <detail-row
+            :icon="signed ? 'history_edu' : 'draw'"
+            :tone="signed ? 'primary' : undefined"
+            :value="signedText(payout)"
+          >
+            <template
               v-if="actions.scans.length > 0"
-              side
+              #side
             >
               <div class="row no-wrap">
                 <m-btn
@@ -98,22 +83,14 @@
                   <q-tooltip>{{ scan.label }}</q-tooltip>
                 </m-btn>
               </div>
-            </q-item-section>
-          </q-item>
-          <q-item v-if="payout.note">
-            <q-item-section avatar>
-              <q-icon
-                name="notes"
-                color="on-surface-variant"
-              />
-            </q-item-section>
-            <q-item-section>
-              <q-item-label caption>
-                {{ t('finance.payout.details.note') }}
-              </q-item-label>
-              <q-item-label>{{ payout.note }}</q-item-label>
-            </q-item-section>
-          </q-item>
+            </template>
+          </detail-row>
+          <detail-row
+            v-if="payout.note"
+            icon="notes"
+            :label="t('finance.payout.details.note')"
+            :value="payout.note"
+          />
         </q-list>
 
         <q-banner
@@ -125,11 +102,7 @@
           <template #avatar>
             <q-icon name="error_outline" />
           </template>
-          {{
-            payout.paidOn
-              ? t('finance.statement.correctedLaterHint')
-              : t('finance.statement.outdatedHint')
-          }}
+          {{ outdatedHint(payout) }}
         </q-banner>
 
         <!-- No declaration: nobody signs here. -->
@@ -148,7 +121,7 @@
           tonal
           rounded
           color="primary"
-          @click="run(actions.print)"
+          @click="actions.print.onClick()"
         />
         <m-btn
           :label="primary.label"
@@ -156,34 +129,12 @@
           rounded
           color="primary"
           data-test="payout-details-primary"
-          @click="run(primary)"
+          @click="primary.onClick()"
         />
       </template>
     </dialog-card>
   </responsive-dialog>
 </template>
-
-<script lang="ts">
-export interface PayoutAction {
-  label: string;
-  icon: string;
-  onClick: () => void;
-}
-
-/** What the viewer may do with the payout; absent where not allowed now. */
-export interface PayoutActions {
-  sign?: PayoutAction | undefined;
-  uploadScan?: PayoutAction | undefined;
-  scans: PayoutAction[];
-  unsign?: PayoutAction | undefined;
-  markPaid?: PayoutAction | undefined;
-  markUnpaid?: PayoutAction | undefined;
-  print: PayoutAction;
-  copyLink: PayoutAction;
-  edit?: PayoutAction | undefined;
-  remove?: PayoutAction | undefined;
-}
-</script>
 
 <script lang="ts" setup>
 import { computed, watch } from 'vue';
@@ -196,16 +147,17 @@ import DialogCard from '@/components/common/dialogs/DialogCard.vue';
 import ResponsiveMenu, {
   type ResponsiveMenuItem,
 } from '@/components/common/ResponsiveMenu.vue';
+import DetailRow from '@/components/event/finances/DetailRow.vue';
+import FinanceHero from '@/components/event/finances/FinanceHero.vue';
 import PayoutStatementView from '@/components/event/finances/PayoutStatementView.vue';
 import { useFinanceFormat } from '@/composables/financeFormat';
-import { parseLocalDate } from '@/utils/date';
+import { usePayoutActions } from '@/composables/payoutActions';
+import { isSigned, usePayoutStatus } from '@/composables/payoutStatus';
 import { useFinanceStore } from '@/stores/finance-store';
 
-const { payout: opened, actionsFor } = defineProps<{
+const { payout: opened } = defineProps<{
   /** As opened; the dialog then follows the store's copy. */
   payout: Payout;
-  /** Built from the current payout, so they follow each change. */
-  actionsFor: (payout: Payout) => PayoutActions;
 }>();
 
 defineEmits([...useDialogPluginComponent.emits]);
@@ -214,36 +166,24 @@ const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent();
 
 const { t, d } = useI18n();
 const { money } = useFinanceFormat();
+const { paidText, signedText, outdatedHint } = usePayoutStatus();
+const { actionsFor } = usePayoutActions();
 const financeStore = useFinanceStore();
 
-// Stays open through its actions and shows their outcome.
+// Stays open through its actions and shows their outcome; signing and
+// editing open on top and return here.
 const current = computed(
   () => financeStore.payouts?.find((p) => p.id === opened.id) ?? null,
 );
 const payout = computed(() => current.value ?? opened);
 const actions = computed(() => actionsFor(payout.value));
+const signed = computed(() => isSigned(payout.value));
 
 // Undone, here or by someone else: nothing left to show.
 watch(current, (found) => {
   if (found === null) {
     onDialogCancel();
   }
-});
-
-const signed = computed(
-  () => payout.value.signedAt !== null || payout.value.files.length > 0,
-);
-
-const signedText = computed(() => {
-  const { signedAt, files } = payout.value;
-  if (signedAt) {
-    return t('finance.payout.details.signedOn', {
-      date: d(new Date(signedAt), 'date'),
-    });
-  }
-  return files.length > 0
-    ? t('finance.payout.details.signedScan')
-    : t('finance.payout.details.unsigned');
 });
 
 // The next step leads: signing, then paying, then the slip.
@@ -255,23 +195,10 @@ const menu = computed<ResponsiveMenuItem[]>(() => {
   const { edit, copyLink, markUnpaid, uploadScan, unsign, remove } =
     actions.value;
   return [edit, copyLink, markUnpaid, uploadScan, unsign, remove]
-    .filter((a): a is PayoutAction => a !== undefined)
+    .filter((a) => a !== undefined)
     .map((a) => ({
       ...a,
       color: a === unsign || a === remove ? 'negative' : undefined,
-      onClick: () => run(a),
     }));
 });
-
-// Changes apply in place; signing and editing open on top and return here.
-function run(action: PayoutAction) {
-  action.onClick();
-}
 </script>
-
-<style scoped>
-.amount {
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-</style>

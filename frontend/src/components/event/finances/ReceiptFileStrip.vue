@@ -32,7 +32,7 @@
               color="primary"
             />
           </button>
-          <q-btn
+          <m-btn
             class="file-remove"
             icon="close"
             size="sm"
@@ -99,6 +99,7 @@
 </template>
 
 <script lang="ts" setup>
+import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import { useTemplateRef } from 'vue';
 import { openURL } from 'quasar';
 import { useI18n } from 'vue-i18n';

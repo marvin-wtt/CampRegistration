@@ -101,28 +101,3 @@ export function useExpenseDeleteMessage() {
       : t('finance.delete.message');
   };
 }
-
-/**
- * Deleting a payout that was paid undoes a record of real money: only for a
- * recording error, and with the slip printed first.
- */
-export function useConfirmRemovePayout() {
-  const quasar = useQuasar();
-  const { t } = useI18n({ useScope: 'global' });
-
-  return (payout: Payout, onConfirm: () => void) => {
-    quasar
-      .dialog({
-        component: ConfirmDialog,
-        componentProps: {
-          title: t('finance.payout.delete.title', { label: payout.label }),
-          message: payout.paidOn
-            ? t('finance.payout.delete.messagePaid')
-            : t('finance.payout.delete.message'),
-          okLabel: t('finance.payout.delete.ok'),
-          color: 'negative',
-        },
-      })
-      .onOk(onConfirm);
-  };
-}

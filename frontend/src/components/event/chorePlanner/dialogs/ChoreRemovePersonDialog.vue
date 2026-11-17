@@ -31,11 +31,11 @@
         </q-select>
 
         <div class="field-grid field-grid--2">
-          <chore-date-input
+          <date-input
             v-model="from"
             :label="t('field.from')"
           />
-          <chore-date-input
+          <date-input
             v-model="to"
             :label="t('field.to')"
             :min="from ?? undefined"
@@ -89,7 +89,7 @@ import type {
 import { useRegistrationHelper } from '@/composables/registrationHelper';
 import { formatPersonName } from '@/utils/formatters';
 import { formatLocalDate } from '@/utils/date';
-import ChoreDateInput from '@/components/event/chorePlanner/ChoreDateInput.vue';
+import DateInput from '@/components/common/inputs/DateInput.vue';
 import DialogCard from '@/components/common/dialogs/DialogCard.vue';
 import ResponsiveDialog from '@/components/common/dialogs/ResponsiveDialog.vue';
 

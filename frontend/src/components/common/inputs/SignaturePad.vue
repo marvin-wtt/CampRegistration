@@ -42,13 +42,13 @@
     <div class="row items-center no-wrap">
       <slot name="tools" />
       <q-space />
-      <q-btn
+      <m-btn
         :label="clearLabel"
         :disable="!model"
         icon="backspace"
-        flat
+        text
         rounded
-        no-caps
+        color="primary"
         size="sm"
         @click="clear"
       />
@@ -58,6 +58,7 @@
 
 <script lang="ts" setup>
 import { computed, ref, useTemplateRef } from 'vue';
+import { MBtn } from '@anoyomoose/q2-fresh-paint-md3e/components/Md3eBtn';
 import { SIGNATURE_VIEWBOX } from '@camp-registration/common/entities';
 
 const {

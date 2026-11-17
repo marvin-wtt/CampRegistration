@@ -37,12 +37,11 @@ export class ExpenseModule implements AppModule {
           'event.expenses.delete',
         ],
         COORDINATOR: [
-          'event.expenses.view',
           'event.expenses.create',
-          'event.expenses.edit',
-          'event.expenses.delete',
+          'event.expenses.view:own',
+          'event.expenses.edit:own',
+          'event.expenses.delete:own',
         ],
-        // Names, amounts and receipts are personal data: only their own.
         COUNSELOR: [
           'event.expenses.create',
           'event.expenses.view:own',

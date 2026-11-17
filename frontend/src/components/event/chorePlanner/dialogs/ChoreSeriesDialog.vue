@@ -65,16 +65,15 @@
             {{ t('field.slots') }}
           </div>
           <div class="chip-row row">
-            <q-chip
+            <filter-chip
               v-for="slot in chore.slots"
               :key="slot.id"
               clickable
-              class="filter-chip"
-              :class="{ 'filter-chip--active': slotIds.includes(slot.id) }"
+              :active="slotIds.includes(slot.id)"
               @click="toggleSlot(slot.id)"
             >
               {{ to(slot.name) }}
-            </q-chip>
+            </filter-chip>
           </div>
         </div>
 
@@ -215,6 +214,7 @@
 </template>
 
 <script lang="ts" setup>
+import FilterChip from '@/components/common/FilterChip.vue';
 import {
   type QSelectOption,
   useDialogPluginComponent,
@@ -469,20 +469,6 @@ function onOKClick() {
 <style scoped>
 .chip-row {
   gap: 8px;
-}
-
-.filter-chip {
-  margin: 0;
-  border: 1px solid var(--md3-outline-variant);
-  border-radius: 8px;
-  background: transparent;
-  color: var(--md3-on-surface-variant);
-}
-
-.filter-chip--active {
-  border-color: transparent;
-  background: var(--md3-secondary-container);
-  color: var(--md3-on-secondary-container);
 }
 
 .replace-warning {

@@ -10,10 +10,11 @@
     <div class="sign-full column no-wrap">
       <div class="row items-center no-wrap q-pl-md q-pr-sm q-py-sm">
         <div class="col text-subtitle1 ellipsis">{{ label }}</div>
-        <q-btn
+        <m-btn
           icon="close"
           flat
           round
+          color="on-surface-variant"
           :aria-label="t('cancel')"
           @click="onDialogCancel"
         />

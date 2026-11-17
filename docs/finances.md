@@ -332,18 +332,22 @@ them (`?tab=expenses&filter=pending`).
   settings (event setting `finances`, for events that don't sort expenses).
   Filters: category, payer, missing receipt file, missing category (while
   marked), still to come, kept in the query (`category`, `payer`, `noFile`,
-  `noCategory`, `pending`) so the summary and dashboard link to them. Tapping a receipt opens its details — amounts,
-  date, payer, vendor, category, the payout statements it is on and its files —
-  for everyone who sees it; **Edit** and **Delete** continue from there for
-  those allowed. The edit form itself has no delete.
+  `noCategory`, `pending`) so the summary and dashboard link to them. Tapping
+  a receipt opens its details — amounts, date, payer, vendor, category, the
+  payout statements it is on and its files — for everyone who sees it. Like a
+  payout's, the dialog follows the record live and stays open: **Edit** is the
+  main button and opens on top, **Delete** is in its menu; it closes once the
+  receipt is gone. Neither the list rows nor the edit form offer delete.
 - **Balances.** A strip on top: still open (nothing arranged yet, by the
   cards' own status rule), agreed but not paid, what is still to come back
   (only when not zero), and how many people are settled. Then one card per
   person: the balance, then paid, refunds received,
   paid out and paid back — four figures kept apart, since each direction is its
   own record; refunds and paid back only when not zero. **Pay out** and
-  **Receive** actions and their payouts by number. A payout row shows its state
-  as icons (paid or to pay, signed, outdated; the date in the tooltip); tapping
+  **Receive** actions (the open balance's direction filled, the other quiet,
+  for advances) and their payouts by number. A payout row shows one status
+  word, the next step: outdated, not signed, to pay or to get back, done —
+  signing ranks before paying, and the dates are in the details; tapping
   it opens its details: the amount, a row each for paid and signed with the step
   that changes it (mark as paid, open scan), the note, and the frozen statement,
   its receipts cut to five behind "show all". The next step (sign, mark as paid,
